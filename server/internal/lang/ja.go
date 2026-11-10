@@ -335,9 +335,11 @@ func lastVowel(b []byte) byte {
 
 // romajiToKana converts a lowercase romaji query to kana: syllables
 // match longest-first, a doubled consonant becomes the small tsu, and
-// an n before a consonant, before another n, before an apostrophe, or
-// at the end is ん. A query that does not parse as romaji stays as
-// written.
+// a closing n — before another n, an apostrophe, a consonant other
+// than y, or the end — is ん. An n before a y is an onset instead:
+// nya, nyu, nyo are にゃ, にゅ, にょ, and the んや reading writes its
+// apostrophe (shin'ya), so the romaji the pack derives from kana
+// round-trips. A query that does not parse as romaji stays as written.
 func romajiToKana(s string) string {
 	var b strings.Builder
 	i := 0
@@ -355,9 +357,7 @@ func romajiToKana(s string) string {
 			i++ // the t is the sokuon; the cha/chu/cho syllable follows
 			continue
 		}
-		// An n before a consonant, before another n or an apostrophe,
-		// or at the end is ん.
-		if s[i] == 'n' && (i+1 == len(s) || isConsonant(s[i+1]) || s[i+1] == 'n' || s[i+1] == '\'') {
+		if s[i] == 'n' && nCloses(s, i) {
 			b.WriteString("ん")
 			i++
 			if i < len(s) && s[i] == '\'' {
@@ -379,6 +379,21 @@ func romajiToKana(s string) string {
 		}
 	}
 	return b.String()
+}
+
+// nCloses reports whether the n at s[i] is the moraic nasal ん closing
+// a syllable rather than the onset of one: it closes at the end of the
+// query, before another n, before an apostrophe, or before a consonant
+// other than y. An n before a y is an onset — nya, nyu, nyo are にゃ,
+// にゅ, にょ — and a んや reading writes its apostrophe (shin'ya), so
+// the romaji the pack derives from kana converts back to the kana it
+// came from.
+func nCloses(s string, i int) bool {
+	if i+1 == len(s) {
+		return true
+	}
+	next := s[i+1]
+	return next == 'n' || next == '\'' || (isConsonant(next) && next != 'y')
 }
 
 // isConsonant reports whether c is a lowercase romaji consonant.

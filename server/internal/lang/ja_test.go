@@ -42,8 +42,9 @@ func TestJaNormalizeReading(t *testing.T) {
 func TestJaSearchPlain(t *testing.T) {
 	p := lang.For("ja")
 	// Romaji queries become kana — the canonical form of stored kana
-	// readings — with the small tsu for doubled consonants, ん for an n
-	// before a consonant, and small ya/yu/yo combining.
+	// readings — with the small tsu for doubled consonants, ん for a
+	// closing n, and small ya/yu/yo combining. An n before a y is the
+	// にゃ/にゅ/にょ onset, never ん; the ん-forms write their apostrophe.
 	for _, tc := range []struct{ query, want string }{
 		{"gakkou", "がっこう"},
 		{"kitte", "きって"},
@@ -52,6 +53,11 @@ func TestJaSearchPlain(t *testing.T) {
 		{"kyou", "きょう"},
 		{"toukyou", "とうきょう"},
 		{"manabu", "まなぶ"},
+		{"nyuuryoku", "にゅうりょく"},
+		{"nyuu", "にゅう"},
+		{"konnyaku", "こんにゃく"},
+		{"shin'ya", "しんや"},
+		{"kin'you", "きんよう"},
 	} {
 		if got := p.SearchPlain(tc.query); got != tc.want {
 			t.Errorf("ja SearchPlain(%q) = %q, want %q", tc.query, got, tc.want)
@@ -90,9 +96,10 @@ func TestJaDeriveReadings(t *testing.T) {
 		{"こーひー", "koohii"},
 		{"まな.ぶ", "manabu"},
 		{"こんにちわ", "konnichiwa"},
-		{"ガッコウ", "gakkou"}, // katakana folds before it converts
-		{"ファイル", "fairu"},  // loanword small vowels combine: ふ+ぁ = fa
-		{"コーヒー", "koohii"}, // the prolonged mark expands in the plain form
+		{"ガッコウ", "gakkou"},      // katakana folds before it converts
+		{"ファイル", "fairu"},       // loanword small vowels combine: ふ+ぁ = fa
+		{"コーヒー", "koohii"},      // the prolonged mark expands in the plain form
+		{"にゅうりょく", "nyuuryoku"}, // the ny combo the closing-n rule must not shadow
 	} {
 		out := p.DeriveReadings([]model.Reading{{Type: "kana", Value: tc.kana}})
 		if len(out) != 2 {
@@ -142,6 +149,18 @@ func TestJaPackRomaji(t *testing.T) {
 	out := p.DeriveReadings([]model.Reading{{Type: "kana", Value: "がっこう"}})
 	if len(out) != 2 || out[1].Type != "romaji" || out[1].Value != "gakkou" {
 		t.Errorf("DeriveReadings(がっこう) = %+v, want a derived romaji reading gakkou", out)
+	}
+
+	// The invariant holds for the ny syllables end to end: the romaji
+	// derived from a にゅ reading converts back to the kana plain it was
+	// derived from — a closing n never shadows the ny combos. (The んや
+	// reading writes its apostrophe: shin'ya.)
+	out = p.DeriveReadings([]model.Reading{{Type: "kana", Value: "にゅうりょく"}})
+	if len(out) != 2 || out[1].Type != "romaji" {
+		t.Fatalf("DeriveReadings(にゅうりょく) = %+v, want a derived romaji reading", out)
+	}
+	if got := p.SearchPlain(out[1].Value); got != "にゅうりょく" {
+		t.Errorf("SearchPlain(%q) = %q, want にゅうりょく — the derived romaji must round-trip", out[1].Value, got)
 	}
 
 	// Katakana and hiragana are equivalent everywhere: stored plains
