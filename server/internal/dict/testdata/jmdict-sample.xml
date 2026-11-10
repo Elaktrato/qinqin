@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JMdict [
+<!ENTITY n "noun (common)">
+<!ENTITY pn "pronoun">
+]>
+<JMdict>
+<entry>
+<ent_seq>1412300</ent_seq>
+<k_ele>
+<keb>学校</keb>
+<ke_inf>&gai;</ke_inf>
+<ke_pri>news1</ke_pri>
+</k_ele>
+<k_ele>
+<keb>學校</keb>
+</k_ele>
+<r_ele>
+<reb>がっこう</reb>
+<re_pri>news1</re_pri>
+</r_ele>
+<sense>
+<pos>&n;</pos>
+<gloss>school</gloss>
+<gloss xml:lang="dut">school</gloss>
+</sense>
+</entry>
+<entry>
+<ent_seq>1528300</ent_seq>
+<r_ele>
+<reb>これ</reb>
+<re_pri>ichi1</re_pri>
+</r_ele>
+<sense>
+<pos>&pn;</pos>
+<gloss>this</gloss>
+<gloss>this one (indicating an item near the listener)</gloss>
+</sense>
+</entry>
+</JMdict>

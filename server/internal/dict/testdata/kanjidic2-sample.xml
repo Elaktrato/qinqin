@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kanjidic2>
+<header>
+<file_version>4</file_version>
+<database_version>2026-111</database_version>
+<date_of_creation>2026-11-10</date_of_creation>
+</header>
+<character>
+<literal>日</literal>
+<codepoint>
+<cp_value cp_type="ucs">65e5</cp_value>
+<cp_value cp_type="jis208">33-88</cp_value>
+</codepoint>
+<radical>
+<rad_value rad_type="classical">72</rad_value>
+</radical>
+<misc>
+<grade>1</grade>
+<stroke_count>4</stroke_count>
+<freq>2</freq>
+<jlpt>5</jlpt>
+</misc>
+<dic_number>
+<dic_ref dr_type="nelson_c">3</dic_ref>
+</dic_number>
+<query_code>
+<skip_code>4d3.1</skip_code>
+</query_code>
+<reading_meaning>
+<rmgroup>
+<reading r_type="ja_on">ニチ</reading>
+<reading r_type="ja_on">ジツ</reading>
+<reading r_type="ja_kun">ひ</reading>
+<reading r_type="pinyin">ri4</reading>
+<meaning>day, sun</meaning>
+<meaning m_lang="es">día, sol</meaning>
+</rmgroup>
+<nam_readings>
+<nanori>あ</nanori>
+<nanori>あきら</nanori>
+</nam_readings>
+</reading_meaning>
+</character>
+<character>
+<literal>学</literal>
+<codepoint>
+<cp_value cp_type="ucs">5b66</cp_value>
+</codepoint>
+<radical>
+<rad_value rad_type="classical">39</rad_value>
+</radical>
+<misc>
+<grade>2</grade>
+<stroke_count>8</stroke_count>
+<freq>175</freq>
+</misc>
+<reading_meaning>
+<rmgroup>
+<reading r_type="ja_on">ガク</reading>
+<reading r_type="ja_kun">まな.ぶ</reading>
+<reading r_type="pinyin">xue2</reading>
+<meaning>study</meaning>
+<meaning>learning</meaning>
+</rmgroup>
+</reading_meaning>
+</character>
+</kanjidic2>

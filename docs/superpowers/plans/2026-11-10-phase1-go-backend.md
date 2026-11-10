@@ -6,7 +6,7 @@
 
 **Architecture:** One Go binary, pure-Go SQLite, stdlib HTTP. Domain packages under `server/internal` share one `*sql.DB` opened by `internal/db` with embedded ordered migrations. All content flows through one upsert pipeline (`internal/dict`) so re-imports replace pack-owned rows and never touch entries or user overlays. Every write sets server UTC `updated_at`; deletions are soft (`deleted_at`) so the sync pull can ship tombstones.
 
-**Tech Stack:** Go ≥ 1.23; `modernc.org/sqlite` (no CGO); `golang.org/x/crypto` (argon2id); `github.com/oklog/ulid/v2`; stdlib `net/http` pattern routing.
+**Tech Stack:** Go ≥ 1.26 (floor raised from 1.23 — forced by `modernc.org/sqlite` v1.62.0; ratified by controller ruling R3, Task 16's builder image must be `golang:1.26`+); `modernc.org/sqlite` (no CGO); `golang.org/x/crypto` (argon2id); `github.com/oklog/ulid/v2`; stdlib `net/http` pattern routing.
 
 **Spec:** `docs/superpowers/specs/2026-11-10-chinese-learning-platform-design.md` — the plan argues from the spec; executors read both.
 
@@ -22,6 +22,9 @@
 - No hard `DELETE`s on entries/senses/members/sentences/plugin_data — soft-delete via `deleted_at`.
 - Study events: append-only, immutable, idempotent by their ULID `id`.
 - Every pack manifest MUST carry `license` + `attribution`; importers reject packs without them.
+- Every content pack manifest (`dictionary`/`levels`/`sentences`) MUST carry a `language` code; an unknown code auto-registers a data-only language (name from the manifest) — importing a Spanish–English dictionary is enough to study Spanish.
+- Entry identity key is `(written, kind, language)`; `Kind` values are `character` and `word` (renamed from `hanzi` in Task 4R).
+- Language packs are compile-time modules implementing the `lang.Pack` interface; unregistered codes fall back to the generic pack (lowercase normalization).
 - Data layout on disk: `<data>/qinqin.db`, `<data>/packs/` (installed packs).
 - Commits: conventional (`feat:`, `test:`, `chore:`), at least one per task.
 
@@ -61,6 +64,7 @@ scripts/fetch-seeds.sh
 3. **Duplicate study-event push** (same ULID retried after a flaky connection) — stored once, reported as duplicate, not an error. Test: `TestEventBatchIdempotent` (Task 11).
 4. **Pack uninstall / changed re-import** — deletions must reach clients as tombstones; entries stay. Test: `TestPullShipsTombstones` (Task 14).
 5. **Pinyin edge cases** — ü (nǚ → ㄋㄩˇ), tone numbers (ni3 → nǐ), toneless search (nihao matches nǐ hǎo). Tests: `TestBopomofoTable`, `TestSearchToneInsensitive` (Tasks 2, 13).
+6. **Language scoping** — the same written form in two languages (手/zh, 手/ja) must be distinct entries; search must not leak across languages; an unknown language code in a pack must auto-register data-only (the Spanish–English flow). Tests: `TestSameWrittenFormTwoLanguages` (Task 4R), `TestUnknownLanguageAutoRegisters` (Task 5), `TestSearchLanguageScoped` (Task 13).
 
 ---
 
@@ -163,6 +167,35 @@ plus `TestMarkedAndPlain`: `ToMarked("ni3 hao3") == "nǐ hǎo"`, `Plain("Nǐ hǎ
 
 - [ ] **Step 5: Commit** — `feat: entries, variants, radical and word-char links`
 
+### Task 4R: Language packs, readings, workspaces (retrofit)
+
+**Files:**
+- Rewrite: `server/internal/db/migrations/003_entries.sql` (greenfield — no deployed DB exists; ledger ruling R5)
+- Create: `server/internal/db/migrations/004_lang.sql`, `server/internal/lang/lang.go`, `server/internal/lang/zh.go`, `server/internal/api/handlers_workspaces.go`
+- Modify: `server/internal/model/model.go`, `server/internal/entries/store.go`, `server/internal/api/handlers_entries.go`, `server/cmd/qinqin/main.go` (zh pack registration), Task 4's tests
+- Test: `server/internal/lang/lang_test.go`, `server/internal/entries/store_test.go` (amended), `server/internal/api/handlers_workspaces_test.go`
+
+**Interfaces:**
+- Consumes: the `pinyin` package (Task 2 — wrapped by the zh pack, unchanged); Task 4's link machinery, identity semantics, soft-delete conventions (all unchanged).
+- Supersedes: Task 4's phonetic-column contract — `Pinyin`, `PinyinPlain`, `Bopomofo`, `Strokes` leave the `entries` table (readings/attrs child rows instead); everything else about Task 4 stands.
+- Produces:
+  - `model.Entry{ID int64; Language string; Kind string; Written string; Readings []model.Reading; Attrs map[string]string; RadicalID *int64; UpdatedAt time.Time; DeletedAt *time.Time}` — `Kind` ∈ `"character"`, `"word"`; `RadicalID` stays link-derived.
+  - `model.Reading{Type, Value, Plain string; Ord int}` — `Type` is pack-defined (`pinyin`, `bopomofo`, `kana`, `on`, `kun`, `romaji`, …).
+  - `lang.Pack` interface: `Code() string`, `NormalizeReading(readType, value string) string`, `SearchPlain(query string) string`; `lang.Register(Pack)` at init, `lang.For(code string) Pack` — unknown code returns the generic pack (lowercase). The zh pack derives a `bopomofo` reading from a `pinyin` reading via `pinyin.ToBopomofo` and normalizes via `pinyin.Plain`.
+  - `entries.Store.Upsert` — new contract: unique key `(written, kind, language)`; fills each reading's `Plain` via `lang.For(entry.Language).NormalizeReading`; attrs persisted as child rows; `GetByWritten(ctx, written, kind, language)`.
+  - Tables: `languages(code, name, updated_at)` (data-only registrations), `workspaces(id, user_id, language, settings JSON, updated_at)` unique `(user_id, language)`, `readings(entry_id, type, value, plain, ord, updated_at, deleted_at)`, `entry_attrs(entry_id, key, value)`.
+  - Routes: `POST /api/workspaces {language}` (auto-registers unknown codes as data-only), `GET /api/workspaces`, `PUT /api/workspaces/{id}` (settings merge). Workspaces are per-user; other users' workspaces invisible.
+
+- [ ] **Step 1: Write failing tests** — `TestSameWrittenFormTwoLanguages` (手 as zh character and as ja character = two entries, both retrievable); `TestUpsertFillsReadingsViaPack` (zh 好 with reading `{pinyin, "hǎo"}` → stored `Plain` `hao` + derived `bopomofo` reading `ㄏㄠˇ`); `TestGenericPackFallback` (unregistered `es` word with reading `{latin, "Hola"}` → `Plain` `hola`); `TestWorkspaceCrud` (create/list/settings-update; isolation between users); amend Task 4's roundtrip test to the new model.
+
+- [ ] **Step 2: Run** — FAIL.
+
+- [ ] **Step 3: Implement** — rewrite `003_entries.sql` (language column, kind values `character|word`, no phonetic/stroke columns); `004_lang.sql`; lang package + zh pack; store changes (readings/attrs persistence, language in key and queries); workspace handlers; zh pack registration in `main.go`.
+
+- [ ] **Step 4: Run** `go test ./... && go vet ./...` — PASS.
+
+- [ ] **Step 5: Commit** — `feat: language packs, reading rows, workspaces`
+
 ### Task 5: Dictionary packs — manifest, JSON import, registry endpoints
 
 **Files:**
@@ -173,20 +206,21 @@ plus `TestMarkedAndPlain`: `ToMarked("ni3 hao3") == "nǐ hǎo"`, `Plain("Nǐ hǎ
 **Interfaces:**
 - Consumes: `entries.Store`, `pinyin.*`.
 - Produces:
-  - `dict.Manifest{ID, Name, Version, Type, License, Attribution, Format string}` — `Type` ∈ `dictionary|levels|sentences`; `Format` ∈ `json|cedict|unihan`; `Validate() error` rejects missing license/attribution and bad enums.
+  - `dict.Manifest{ID, Name, Version, Type, Language, License, Attribution, Format string}` — `Type` ∈ `dictionary|levels|sentences`; `Format` ∈ `json|cedict|unihan|jmdict|kanjidic2`; `Language` required — a registered code or an unknown code that auto-registers a data-only language (name from the manifest); `Validate() error` rejects missing license/attribution/language and bad enums. Import resolves `lang.For(manifest.Language)` and fills reading `Plain` values through it.
   - `dict.LoadPack(path string) (dict.Pack, error)` — a directory or `.zip`; `Pack{Manifest; Dir string}`.
   - `dict.Import(ctx, *sql.DB, pack dict.Pack) (dict.Result, error)` — `Result{Entries, Senses int}`. Import semantics: upsert entries; senses keyed `(dictionary_id, entry_id)` — a re-import **replaces that dictionary's senses** (soft-delete removed, insert new) and never modifies `entries.updated_at`-owned overlay data or user edits.
   - JSON dictionary format (`format: "json"`), file `dictionary.json`:
 
 ```json
 {"entries": [
-  {"written": "你好", "trad": "你好", "kind": "word", "pinyin": "nǐ hǎo",
+  {"written": "你好", "trad": "你好", "kind": "word",
+   "readings": [{"type": "pinyin", "value": "nǐ hǎo"}],
    "glosses": ["hello", "hi"]}]}
 ```
-  `trad` optional; when present and different, a second entry + `LinkVariant` (both forms get the sense).
+  (the zh pack derives the `bopomofo` reading at import; `trad` optional — when present and different, a second entry + `LinkVariant`, both forms get the sense and readings)
   - Routes: `GET /api/dictionaries` (id, name, version, license, attribution); `POST /api/admin/dictionaries` (admin, multipart zip → saved to `<data>/packs/<id>-<version>/` → imported); `DELETE /api/admin/dictionaries/{id}` (admin, uninstall: soft-deletes that dictionary's senses).
 
-- [ ] **Step 1: Write failing tests** — `TestManifestRequiresLicense` (reject `{...no license...}`); `TestImportJsonPack` (fixture pack with 好/你好: 3 entries incl. trad pair, senses under dictionary id, bopomofo derived); `TestReimportReplacesSenses` (re-import with changed gloss → new gloss, old sense tombstoned, `entries` rows untouched); `TestUninstallSoftDeletesSenses`.
+- [ ] **Step 1: Write failing tests** — `TestManifestRequiresLicense` (reject `{...no license...}`); `TestUnknownLanguageAutoRegisters` (pack with `language: "es"` imports, creating a data-only `es` row in `languages` — the Spanish–English flow); `TestImportJsonPack` (fixture pack with 好/你好: 3 entries incl. trad pair, senses under dictionary id, bopomofo derived); `TestReimportReplacesSenses` (re-import with changed gloss → new gloss, old sense tombstoned, `entries` rows untouched); `TestUninstallSoftDeletesSenses`.
 
 - [ ] **Step 2: Run** — FAIL.
 
@@ -242,6 +276,26 @@ plus `TestMarkedAndPlain`: `ToMarked("ni3 hao3") == "nǐ hǎo"`, `Plain("Nǐ hǎ
 - [ ] **Step 4: Run** — PASS.
 
 - [ ] **Step 5: Commit** — `feat: unihan importer — variants, radicals, character glosses`
+
+### Task 7J: Japanese seed importers — KANJIDIC2 + JMdict
+
+**Files:**
+- Create: `server/internal/dict/kanjidic2.go`, `server/internal/dict/jmdict.go`, `server/internal/lang/ja.go`
+- Test: `server/internal/dict/kanjidic2_test.go`, `server/internal/dict/jmdict_test.go`, `server/internal/lang/ja_test.go`, XML fixtures in `testdata/`
+
+**Interfaces:**
+- Consumes: `dict.Import` dispatch (`Format: "kanjidic2"` / `"jmdict"`, `Language: "ja"`), `entries.Store` (readings rows, `Attrs["strokes"]`, `SetRadical`, `LinkVariant` for shinjitai/kyūjitai pairs), `lang.Register`.
+- Produces: the `ja` language pack — kana↔romaji table converter (`SearchPlain` normalizes romaji queries; `NormalizeReading` lowercases kana readings and derives a `romaji` reading from a `kana` one); `kanjidic2.Parse(r io.Reader) ([]dict.RawEntry, error)` → character entries with `on`/`kun` readings (skip nanori — YAGNI), English meanings as senses under a built-in `kanjidic2` dictionary (license CC BY-SA, attribution EDRDG), strokes in `Attrs`, radicals via `SetRadical` (same Kangxi table as Task 7); `jmdict.Parse(r io.Reader) ([]dict.RawEntry, error)` → word entries (kanji written form, `kana` reading, glosses as senses), variant links across multiple kanji forms.
+
+- [ ] **Step 1: Write failing tests** — `TestKanjidic2Import` (fixture: 日 — ON ニチ/ジツ, KUN ひ, meaning "day, sun", strokes 4, radical 72 → readings rows + sense under `kanjidic2` + attrs + radical link); `TestJmdictImport` (fixture: 学校 / がっこう / "school" → word entry with `kana` reading + derived `romaji` `gakkou` + gloss senses); `TestJaPackRomaji` (がっこう ↔ gakkou both directions; katakana/hiragana equivalence).
+
+- [ ] **Step 2: Run** — FAIL.
+
+- [ ] **Step 3: Implement** — `encoding/xml` parsers (kanjidic2: `character/reading[@r_type=ja_on|ja_kun]`, `meaning`, `misc/stroke_count`; jmdict: `keb`, `reb`, `sense/gloss`); ja pack kana↔romaji tables (mechanical, like Task 2's pinyin tables).
+
+- [ ] **Step 4: Run** — PASS.
+
+- [ ] **Step 5: Commit** — `feat: japanese language pack and kanjidic2/jmdict importers`
 
 ### Task 8: Per-user edit overlays
 
@@ -322,7 +376,7 @@ plus `TestMarkedAndPlain`: `ToMarked("ni3 hao3") == "nǐ hǎo"`, `Plain("Nǐ hǎ
 
 **Interfaces:**
 - Consumes: auth.
-- Produces: `model.StudyEvent{ID string; UserID int64; Device string; TS time.Time; Type string; Payload json.RawMessage}`; `events.Append(ctx, db, evts []model.StudyEvent) (accepted, duplicates int, err)` (INSERT, on ULID conflict count duplicate — never an error); `events.Since(ctx, db, userID int64, since time.Time) ([]model.StudyEvent, error)`. Route: `POST /api/events/batch` (auth; events' `UserID` forced from token, client `TS` kept) → `{"accepted": n, "duplicates": m}`; `GET /api/events?since=` (auth, own events only).
+- Produces: `model.StudyEvent{ID string; UserID int64; WorkspaceID int64; Device string; TS time.Time; Type string; Payload json.RawMessage}` — `WorkspaceID` from the request body, validated to belong to the caller (enables per-workspace heatmaps and the combined cross-language view); `events.Append(ctx, db, evts []model.StudyEvent) (accepted, duplicates int, err)` (INSERT, on ULID conflict count duplicate — never an error); `events.Since(ctx, db, userID int64, since time.Time, workspaceID *int64) ([]model.StudyEvent, error)` (nil workspace = all the user's workspaces — the combined view). Route: `POST /api/events/batch` (auth; events' `UserID` forced from token, client `TS` kept) → `{"accepted": n, "duplicates": m}`; `GET /api/events?since=&workspace=` (auth, own events only).
 
 - [ ] **Step 1: Write failing tests** — `TestEventAppendAndSince`; `TestEventBatchIdempotent` (same 2-event batch twice → second: accepted 0, duplicates 2; rows still 2) — Review Focus #3.
 
@@ -347,7 +401,7 @@ plus `TestMarkedAndPlain`: `ToMarked("ni3 hao3") == "nǐ hǎo"`, `Plain("Nǐ hǎ
   - `plugins.Register(ctx, db, m dict.Manifest) error` (upsert into registry; data-plugin imports register themselves)
   - `plugins.ListFor(ctx, db, userID) ([]model.PluginInfo{Manifest, Enabled bool, Order int}, ...)` (data + feature plugins; default enabled = true)
   - `plugins.SetState(ctx, db, userID, pluginID string, enabled bool, order int) error`
-  - `plugins.PutData(ctx, db, userID, pluginID, key string, val json.RawMessage) (version int, err)` — increments `version`, sets `updated_at`
+  - `plugins.PutData(ctx, db, userID, workspaceID *int64, pluginID, key string, val json.RawMessage) (version int, err)` — increments `version`, sets `updated_at`; `plugin_data` rows are workspace-scoped (nil workspace = user-global data such as settings — flashcard decks will be workspace-scoped content). `GetData`/`DeleteData` take the same `workspaceID *int64`; `PullData` returns rows carrying their `workspace_id`.
   - `plugins.GetData(ctx, db, userID, pluginID, key) (*model.PluginData, error)`; `plugins.PullData(ctx, db, userID, since time.Time) ([]model.PluginData, ...)` (includes tombstones)
   - `plugins.DeleteData(ctx, db, userID, pluginID, key) error` (soft)
   - Routes: `POST /api/admin/plugins` (admin; registers a feature-plugin manifest JSON), `GET /api/plugins` (caller's list+states), `PUT /api/plugins/{id}/state`, `GET|PUT /api/plugins/{id}/data/{key}`, `DELETE /api/plugins/{id}/data/{key}`.
@@ -371,9 +425,9 @@ plus `TestMarkedAndPlain`: `ToMarked("ni3 hao3") == "nǐ hǎo"`, `Plain("Nǐ hǎ
 
 **Interfaces:**
 - Consumes: `entries.Store`, `levels.EntryIDs`, senses tables.
-- Produces: `entries.Search(ctx, q entries.SearchQuery) ([]model.SearchHit, error)`; `SearchQuery{Text, Kind, SchemeID, LevelName string; Limit int}` (0 → 50); `model.SearchHit{Entry; Source string}` (why it matched: `"written"|"pinyin"|"bopomofo"|"gloss"`). Matching, in rank order: exact `written`; `PinyinPlain` exact; `PinyinPlain` prefix; `bopomofo` prefix; gloss substring across active senses. `Kind` and scheme+level (via `levels.EntryIDs`) narrow the candidate set before text match.
+- Produces: `entries.Search(ctx, q entries.SearchQuery) ([]model.SearchHit, error)`; `SearchQuery{Text, Lang, Kind, SchemeID, LevelName string; Limit int}` (0 → 50); `Lang` required — candidates are language-scoped and text normalization runs through `lang.For(Lang).SearchPlain` (tone-insensitive pinyin for zh, romaji↔kana for ja, lowercase for data-only languages); `model.SearchHit{Entry; Source string}` (why it matched: `"written"|"pinyin"|"bopomofo"|"gloss"`). Matching, in rank order: exact `written`; `PinyinPlain` exact; `PinyinPlain` prefix; `bopomofo` prefix; gloss substring across active senses. `Kind` and scheme+level (via `levels.EntryIDs`) narrow the candidate set before text match.
 
-- [ ] **Step 1: Write failing tests** — `TestSearchToneInsensitive` (`"nihao"` and `"ni hao"` both find 你好) — Review Focus #5; `TestSearchExactWrittenRanksFirst` (query 好 → hanzi 好 before words containing 好); `TestSearchByGloss` (`"hello"` finds 你好, source `gloss`); `TestSearchKindAndLevelFilter` (`kind=hanzi, scheme=hsk-mini, level=1` → hanzi members only, incl. derived 好).
+- [ ] **Step 1: Write failing tests** — `TestSearchToneInsensitive` (`"nihao"` and `"ni hao"` both find 你好) — Review Focus #5; `TestSearchExactWrittenRanksFirst` (query 好 → character 好 before words containing 好); `TestSearchByGloss` (`"hello"` finds 你好, source `gloss`); `TestSearchKindAndLevelFilter` (`kind=character, scheme=hsk-mini, level=1` → character members only, incl. derived 好); `TestSearchLanguageScoped` (ja-scoped search for 手 returns the ja entry only, not the zh one with the identical written form) — Review Focus #6.
 
 - [ ] **Step 2: Run** — FAIL.
 
@@ -414,7 +468,7 @@ plus `TestMarkedAndPlain`: `ToMarked("ni3 hao3") == "nǐ hǎo"`, `Plain("Nǐ hǎ
 
 **Interfaces:**
 - Consumes: `dict.LoadPack/Import`, `levels`, `sentences`, `auth.CreateUser`.
-- Produces: `qinqin seed --data <dir> --packs <dir>` (walks pack dirs, dispatches on manifest `Type`: dictionary→`dict.Import`, levels→`levels.Import`, sentences→`sentences.ImportPack`; registers each in the plugin registry; idempotent — re-running re-imports safely); `qinqin adduser --data <dir> --admin --username U` (prompts password); `fetch-seeds.sh` downloads CC-CEDICT `.gz` + Unihan `.txt` files into `plugins/data/cedict/` and `plugins/data/unihan/` (gitignored — large).
+- Produces: `qinqin seed --data <dir> --packs <dir>` (walks pack dirs, dispatches on manifest `Type`: dictionary→`dict.Import`, levels→`levels.Import`, sentences→`sentences.ImportPack`; registers each in the plugin registry; idempotent — re-running re-imports safely); `qinqin adduser --data <dir> --admin --username U` (prompts password); `fetch-seeds.sh` downloads CC-CEDICT, Unihan, JMdict, and KANJIDIC2 into `plugins/data/{cedict,unihan,jmdict,kanjidic2}/` (gitignored — large). Committed small packs: `hsk-mini`, `jlpt-mini` (N5 sample), and `es-demo` (a tiny Spanish–English dictionary, `language: "es"`) proving the data-only auto-registration path end-to-end. Seed walks and imports both languages' packs plus the demo.
 
 - [ ] **Step 1: Write failing test** — `TestSeedIdempotent`: temp data dir, run seed twice over a fixture pack dir (hsk-mini + a small dictionary pack) → no error, entry/sense counts identical after second run.
 

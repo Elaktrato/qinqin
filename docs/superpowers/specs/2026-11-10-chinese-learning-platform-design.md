@@ -33,6 +33,11 @@ proves it) and can add a dictionary or a widget without touching core code.
   Word-based schemes (HSK) derive a character list at import (a character
   gets the lowest level whose words contain it), so hanzi carry HSK badges —
   computed at import, never silently at query time.
+- **Multi-language core**: language-agnostic entry model (reading rows,
+  attributes, variant links); Chinese and Japanese ship as language packs;
+  further languages addable (code packs or data-only packs).
+- **Workspaces**: per-user, per-language isolated study spaces with their own
+  settings, plus an optional combined cross-language statistics view.
 - **Feature plugins**: home widgets, full views, behaviors. First plugin: the
   home-screen consistency heatmap. Second (follow-up design round): flashcards
   + hanzi map.
@@ -79,6 +84,10 @@ proves it) and can add a dictionary or a widget without touching core code.
   - HSK 2012 and HSK 3.0 (2021) word lists as level-scheme packs; mainland
     curriculum character tables; TOCFL if data is at hand. New editions
     (e.g. a 2026 HSK revision) are just new packs — no code change.
+  - Japanese seeds: JMdict (words) + KANJIDIC2 (kanji readings/meanings/
+    strokes/radicals) — Electronic Dictionary Research and Development
+    Group, CC BY-SA; JLPT lists as level packs. EDRDG attribution required
+    and surfaced like every other source.
   - Example-sentence packs (e.g. Tatoeba-derived, keyed to words), plus
     user-added sentences.
 - Licenses require attribution: the app must surface source + license per
@@ -138,6 +147,23 @@ primitives (flashcard flips, stroke animations), lighter for a non-SEO app.
   a dictionary or a changed re-import removes its senses/level tags across
   all clients, and views degrade gracefully (a badge or sense disappears,
   the entry stays).
+
+### Language scope
+
+- **Chinese-only core, languages bolted on later** — rejected: the entry
+  model (pinyin/bopomofo columns) and both clients would hard-code Chinese
+  field names within weeks; retrofitting after the clients costs double.
+- **Per-language code packs only** — rejected: iOS forbids downloaded native
+  code, so users could never add languages without the owner rebuilding.
+- **Two-tier packs (CHOSEN)**: language-agnostic core (reading rows,
+  attributes, language-tagged entries/dictionaries/schemes); code packs for
+  CJK-class languages (zh + ja ship by default), runtime-addable data-only
+  packs for simple languages. Decided mid-build at task 4/16 — the cheapest
+  retrofit window.
+- **Workspaces (owner's decision)**: real isolated (user, language)
+  containers with per-workspace settings, not a mere UI language filter;
+  combined cross-language statistics remain available as an aggregate view
+  over study events.
 
 ## Decided design
 
@@ -207,6 +233,40 @@ feature-plugin code* to mobile still requires the owner to add the module and
 rebuild — the registry governs state, not code. Data plugins install at
 runtime, no rebuild ever.
 
+### Languages, language packs, and workspaces
+
+The core is language-agnostic; Chinese and Japanese ship as **language
+packs** — a compile-time module (feature-plugin shape) plus seed data:
+
+- identity: code (`zh`, `ja`), display name, script metadata
+- reading systems: entries carry **reading rows** (type, value, normalized
+  plain form) instead of hard-coded pinyin/bopomofo columns. zh emits
+  `pinyin` + `bopomofo` (derived via the existing pinyin converter); ja
+  emits kana readings (words, JMdict) and ON/KUN readings (kanji, KANJIDIC2)
+- converter hooks: per-language search normalization (pinyin tone-stripping;
+  kana↔romaji) and display-form derivation
+- seed data: dictionaries, level schemes (JLPT is a pack, exactly like HSK),
+  sentence packs
+
+Two tiers: **code packs** for languages with real phonology (zh, ja — added
+by the owner with a rebuild, same trade-off as feature plugins) and
+**data-only packs** for simple languages (latin-script, no converter —
+registered at runtime from a config manifest, or auto-registered the moment
+a pack or workspace references an unknown code, so importing a
+Spanish–English dictionary is all it takes to open an `es` workspace and
+study it; generic plain = lowercase behavior). Japanese seed data: JMdict (words) + KANJIDIC2 (kanji readings,
+meanings, strokes, radicals) + JLPT lists — the counterparts of
+CC-CEDICT/Unihan/HSK. Radicals and stroke counts are shared Kangxi concepts
+served by the same link/attr machinery; shinjitai/kyūjitai pairs are
+ordinary variant links.
+
+**Workspaces** are real isolated containers: a workspace = (user, language)
+with its own settings (active dictionaries, defaults, display preferences).
+Views, study data, and plugin-owned content data are workspace-scoped. A
+**combined cross-language statistics view** aggregates across a user's
+workspaces (the heatmap plugin offers per-workspace and combined modes) —
+possible because study events carry `workspace_id`.
+
 ### Clients
 
 - Web (SvelteKit SPA): search (hanzi, pinyin with/without tones, zhuyin,
@@ -241,8 +301,9 @@ TLS is left to the user's reverse proxy (NGINX/Traefik, whatever the Portainer
 setup already uses); the app speaks plain HTTP behind it.
 ### Build order (each phase usable on its own)
 
-1. **Backend**: schema, auth, REST API, data-plugin ingestion, seed imports,
-   edit overlays, event log. Done = seeded API, curl-able.
+1. **Backend**: schema, auth, languages + workspaces, REST API,
+   data-plugin ingestion, seed imports (zh + ja), edit overlays, event log.
+   Done = seeded API, curl-able.
 2. **Web**: core views, search, editing, plugin host + heatmap.
 3. **Mobile**: offline store, sync, core views, plugin host + heatmap.
 4. **Flashcards + hanzi map**: new design round before implementation.
@@ -266,6 +327,10 @@ setup already uses); the app speaks plain HTTP behind it.
 - Bopomofo derived from pinyin, cached.
 - TOCFL supported as just another scheme pack.
 - SvelteKit (not Next) for web.
+- Two-tier language packs (code packs for zh/ja, runtime-addable data-only
+  packs); workspaces as real (user, language) containers with per-workspace
+  settings and a combined-stats aggregate view. (2026-11-10 amendment,
+  owner's decisions.)
 
 ## Left to the builder
 

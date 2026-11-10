@@ -1,0 +1,17 @@
+{
+  "entries": [
+    {
+      "word": "你好",
+      "sentences": [
+        {"hanzi": "你好，世界。", "pinyin": "nǐ hǎo, shì jiè.", "translation": "Hello, world."},
+        {"hanzi": "你好吗？", "pinyin": "nǐ hǎo ma?", "translation": "How are you?"}
+      ]
+    },
+    {
+      "word": "谢谢",
+      "sentences": [
+        {"hanzi": "谢谢你。", "pinyin": "xiè xie nǐ.", "translation": "Thank you."}
+      ]
+    }
+  ]
+}
