@@ -6,7 +6,7 @@
 
 **Architecture:** One Go binary, pure-Go SQLite, stdlib HTTP. Domain packages under `server/internal` share one `*sql.DB` opened by `internal/db` with embedded ordered migrations. All content flows through one upsert pipeline (`internal/dict`) so re-imports replace pack-owned rows and never touch entries or user overlays. Every write sets server UTC `updated_at`; deletions are soft (`deleted_at`) so the sync pull can ship tombstones.
 
-**Tech Stack:** Go ≥ 1.23; `modernc.org/sqlite` (no CGO); `golang.org/x/crypto` (argon2id); `github.com/oklog/ulid/v2`; stdlib `net/http` pattern routing.
+**Tech Stack:** Go ≥ 1.26 (floor raised from 1.23 — forced by `modernc.org/sqlite` v1.62.0; ratified by controller ruling R3, Task 16's builder image must be `golang:1.26`+); `modernc.org/sqlite` (no CGO); `golang.org/x/crypto` (argon2id); `github.com/oklog/ulid/v2`; stdlib `net/http` pattern routing.
 
 **Spec:** `docs/superpowers/specs/2026-11-10-chinese-learning-platform-design.md` — the plan argues from the spec; executors read both.
 
