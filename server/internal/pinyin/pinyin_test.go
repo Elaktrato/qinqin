@@ -48,6 +48,31 @@ func TestMarkedAndPlain(t *testing.T) {
 	}
 }
 
+func TestDictionarySyllablesAccepted(t *testing.T) {
+	cases := []struct {
+		in, bopomofo, marked string
+	}{
+		{"dia3", "ㄉㄧㄚˇ", "diǎ"},
+		{"lo", "ㄌㄛ", "lo"},
+		{"kei1", "ㄎㄟ", "kēi"},
+		{"tei1", "ㄊㄟ", "tēi"},
+	}
+	for _, c := range cases {
+		b, err := ToBopomofo(c.in)
+		if err != nil {
+			t.Errorf("ToBopomofo(%q) unexpected error: %v", c.in, err)
+		} else if b != c.bopomofo {
+			t.Errorf("ToBopomofo(%q) = %q, want %q", c.in, b, c.bopomofo)
+		}
+		m, err := ToMarked(c.in)
+		if err != nil {
+			t.Errorf("ToMarked(%q) unexpected error: %v", c.in, err)
+		} else if m != c.marked {
+			t.Errorf("ToMarked(%q) = %q, want %q", c.in, m, c.marked)
+		}
+	}
+}
+
 func TestRealSyllablesAccepted(t *testing.T) {
 	for _, in := range []string{
 		"a", "o", "e", "er", "yi", "wu", "yu", "yong", "weng", "wen",
