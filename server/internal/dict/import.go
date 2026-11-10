@@ -29,7 +29,7 @@ const dictionaryFile = "dictionary.json"
 
 // Result counts what one dictionary import wrote.
 type Result struct {
-	Entries int // entry rows upserted, traditional forms included
+	Entries int // the pack's entries upserted, traditional forms included; bare character entries created only to link words to their hanzi are not counted
 	Senses  int // sense rows inserted for the dictionary
 }
 
@@ -44,12 +44,16 @@ type senseRow struct {
 // Import installs the dictionary pack: it upserts the pack's entries —
 // readings normalize and derive through the language pack, inside the
 // entry upsert — and replaces the dictionary's senses with the pack's
-// glosses. A language code without a registered code pack auto-registers
-// as a data-only language named from the manifest; a registered code
-// (zh, ja) gets no language row. Imports key on the manifest id: the
-// dictionary row is upserted (reviving an uninstalled one) and its
-// senses replaced — old rows tombstoned, new rows inserted — without
-// ever removing entries or user data.
+// glosses. A cedict pack reads dictionary.txt: its tone-numbered pinyin
+// becomes the marked pinyin reading, and every word entry — its
+// traditional twin included — links to a character entry for each
+// distinct hanzi it is written with, upserting bare character entries
+// where the dictionary has none. A language code without a registered
+// code pack auto-registers as a data-only language named from the
+// manifest; a registered code (zh, ja) gets no language row. Imports
+// key on the manifest id: the dictionary row is upserted (reviving an
+// uninstalled one) and its senses replaced — old rows tombstoned, new
+// rows inserted — without ever removing entries or user data.
 func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 	m := pack.Manifest
 	m.normalize()
@@ -59,14 +63,20 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 	if m.Type != TypeDictionary {
 		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotDictionary, m.ID, m.Type)
 	}
-	var raw []jsonEntry
+	var es []entry
 	switch m.Format {
 	case FormatJSON:
 		parsed, err := readJSONPack(pack.Dir)
 		if err != nil {
 			return Result{}, err
 		}
-		raw = parsed
+		es = parsed
+	case FormatCedict:
+		parsed, err := readCedictPack(pack.Dir)
+		if err != nil {
+			return Result{}, err
+		}
+		es = parsed
 	default:
 		return Result{}, fmt.Errorf("%w: dictionary format %q is not implemented", ErrInvalidPack, m.Format)
 	}
@@ -90,7 +100,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 		senses []senseRow
 		result Result
 	)
-	for _, e := range raw {
+	for _, e := range es {
 		id, err := store.Upsert(ctx, &model.Entry{
 			Language: m.Language,
 			Kind:     e.Kind,
@@ -105,8 +115,9 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 
 		// A differing traditional form is its own entry, linked to the
 		// base as a variant; both forms carry the readings and glosses.
+		var tradID int64
 		if e.Trad != "" && e.Trad != e.Written {
-			tradID, err := store.Upsert(ctx, &model.Entry{
+			tradID, err = store.Upsert(ctx, &model.Entry{
 				Language: m.Language,
 				Kind:     e.Kind,
 				Written:  e.Trad,
@@ -120,6 +131,22 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 				return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
 			}
 			senses = append(senses, e.sensesFor(tradID)...)
+		}
+
+		// A cedict word links to a character entry for every distinct
+		// hanzi in each of its written forms — the simplified entry and
+		// its traditional twin alike — so words are findable by their
+		// characters.
+		if m.Format == FormatCedict && e.Kind == "word" {
+			forms := []wordForm{{id: id, written: e.Written}}
+			if tradID != 0 {
+				forms = append(forms, wordForm{id: tradID, written: e.Trad})
+			}
+			for _, form := range forms {
+				if err := linkWordChars(ctx, store, m.Language, form.written, form.id); err != nil {
+					return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
+				}
+			}
 		}
 	}
 
@@ -203,6 +230,46 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
 	return tx.Commit()
 }
 
+// RawEntry is one entry of a native-format dictionary source — a
+// written form, its optional traditional variant, a pronunciation
+// carried in the source's own notation, and its glosses. Format
+// importers resolve raw entries into readings and kinds.
+type RawEntry struct {
+	Written string
+	Trad    string
+	Pinyin  string
+	Glosses []string
+}
+
+// entry is one parsed dictionary entry in the shape the import loop
+// consumes, whichever format produced it: kind and readings resolved,
+// glosses in sense order.
+type entry struct {
+	Written  string
+	Trad     string
+	Kind     string
+	Readings []model.Reading
+	Glosses  []string
+}
+
+// readings returns a fresh copy of the entry's readings, so the base
+// and traditional forms upsert independently — Upsert normalizes the
+// slice it is given in place.
+func (e entry) readings() []model.Reading {
+	rs := make([]model.Reading, len(e.Readings))
+	copy(rs, e.Readings)
+	return rs
+}
+
+// sensesFor returns the entry's glosses as sense rows for entryID.
+func (e entry) sensesFor(entryID int64) []senseRow {
+	rows := make([]senseRow, len(e.Glosses))
+	for i, g := range e.Glosses {
+		rows[i] = senseRow{entryID: entryID, gloss: g, ord: i}
+	}
+	return rows
+}
+
 // jsonPack is the decoded dictionary.json of a format "json" pack.
 type jsonPack struct {
 	Entries []jsonEntry `json:"entries"`
@@ -224,28 +291,24 @@ type jsonReading struct {
 	Value string `json:"value"`
 }
 
-// readings returns the entry's readings as model readings, a fresh
-// slice per call so the base and traditional forms upsert independently.
-func (e jsonEntry) readings() []model.Reading {
+// toEntry maps the decoded JSON entry onto the pipeline's entry shape.
+func (e jsonEntry) toEntry() entry {
 	rs := make([]model.Reading, len(e.Readings))
 	for i, r := range e.Readings {
 		rs[i] = model.Reading{Type: r.Type, Value: r.Value}
 	}
-	return rs
-}
-
-// sensesFor returns the entry's glosses as sense rows for entryID.
-func (e jsonEntry) sensesFor(entryID int64) []senseRow {
-	rows := make([]senseRow, len(e.Glosses))
-	for i, g := range e.Glosses {
-		rows[i] = senseRow{entryID: entryID, gloss: g, ord: i}
+	return entry{
+		Written:  e.Written,
+		Trad:     e.Trad,
+		Kind:     e.Kind,
+		Readings: rs,
+		Glosses:  e.Glosses,
 	}
-	return rows
 }
 
 // readJSONPack reads and validates the entries of dictionary.json in
 // dir, rejecting malformed entries before anything is written.
-func readJSONPack(dir string) ([]jsonEntry, error) {
+func readJSONPack(dir string) ([]entry, error) {
 	data, err := os.ReadFile(filepath.Join(dir, dictionaryFile))
 	if err != nil {
 		return nil, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, dictionaryFile, dir, err)
@@ -272,7 +335,11 @@ func readJSONPack(dir string) ([]jsonEntry, error) {
 			}
 		}
 	}
-	return p.Entries, nil
+	es := make([]entry, len(p.Entries))
+	for i, je := range p.Entries {
+		es[i] = je.toEntry()
+	}
+	return es, nil
 }
 
 // now returns the server clock as UTC RFC 3339, the timestamp

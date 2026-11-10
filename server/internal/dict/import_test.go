@@ -677,18 +677,18 @@ func TestImportRejectsUnimplementedFormat(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := newDB(t)
 	m := fixtureManifest
-	m.Format = "cedict" // a valid enum value whose importer arrives in a later task
+	m.Format = "unihan" // a valid enum value whose importer arrives in a later task
 	dir := writePack(t, m, `{}`)
 	pack, err := dict.LoadPack(dir)
 	if err != nil {
-		t.Fatalf("LoadPack(cedict pack): %v", err)
+		t.Fatalf("LoadPack(unihan pack): %v", err)
 	}
 	_, err = dict.Import(ctx, sqlDB, pack)
 	if !errors.Is(err, dict.ErrInvalidPack) {
-		t.Fatalf("Import of cedict-format pack = %v, want ErrInvalidPack", err)
+		t.Fatalf("Import of unihan-format pack = %v, want ErrInvalidPack", err)
 	}
-	if !strings.Contains(err.Error(), "cedict") {
-		t.Errorf("Import of cedict-format pack = %v, want the error to name the format", err)
+	if !strings.Contains(err.Error(), "unihan") {
+		t.Errorf("Import of unihan-format pack = %v, want the error to name the format", err)
 	}
 	var dictRows int
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM dictionaries`).Scan(&dictRows); err != nil {
