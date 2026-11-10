@@ -1,0 +1,9 @@
+# Unihan database sample — fixture of the unihan importer.
+# Comment lines and blank lines are skipped.
+
+U+597D	kRSUnicode	38.6
+U+597D	kDefinition	"good, excellent, fine; well"
+
+U+5FA9	kSimplifiedVariant	U+590D
+U+8907	kSimplifiedVariant	复
+U+590D	kTraditionalVariant	U+5FA9 U+8907

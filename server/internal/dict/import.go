@@ -48,9 +48,10 @@ type senseRow struct {
 // becomes the marked pinyin reading, and every word entry — its
 // traditional twin included — links to a character entry for each
 // distinct hanzi it is written with, upserting bare character entries
-// where the dictionary has none. A language code without a registered
-// code pack auto-registers as a data-only language named from the
-// manifest; a registered code (zh, ja) gets no language row. Imports
+// where the dictionary has none. A unihan pack instead installs the
+// built-in Unihan database (see importUnihan). A language code without a
+// registered code pack auto-registers as a data-only language named from
+// the manifest; a registered code (zh, ja) gets no language row. Imports
 // key on the manifest id: the dictionary row is upserted (reviving an
 // uninstalled one) and its senses replaced — old rows tombstoned, new
 // rows inserted — without ever removing entries or user data.
@@ -77,6 +78,12 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 			return Result{}, err
 		}
 		es = parsed
+	case FormatUnihan:
+		data, err := readUnihanPack(pack.Dir)
+		if err != nil {
+			return Result{}, err
+		}
+		return importUnihan(ctx, sqlDB, m, data)
 	default:
 		return Result{}, fmt.Errorf("%w: dictionary format %q is not implemented", ErrInvalidPack, m.Format)
 	}
@@ -84,13 +91,8 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 	// A language code without a registered code pack auto-registers as a
 	// data-only language; code packs (zh, ja) live in code, not in the
 	// table.
-	if !lang.Registered(m.Language) {
-		if _, err := sqlDB.ExecContext(ctx, `
-			INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
-			ON CONFLICT (code) DO NOTHING`,
-			m.Language, m.Name, now()); err != nil {
-			return Result{}, fmt.Errorf("register language %s: %w", m.Language, err)
-		}
+	if err := registerLanguage(ctx, sqlDB, m); err != nil {
+		return Result{}, err
 	}
 
 	// Entries upsert through the entries store, each in its own
@@ -154,9 +156,38 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 	// the previous senses are tombstoned and the new list inserted, so a
 	// re-import swaps a dictionary's glosses atomically, scoped to that
 	// dictionary alone.
+	if _, err := replaceSenses(ctx, sqlDB, m.ID, m.Name, m.Version, m.License, m.Attribution, senses); err != nil {
+		return Result{}, err
+	}
+	result.Senses = len(senses)
+	return result, nil
+}
+
+// registerLanguage auto-registers the manifest's language as a data-only
+// language when no code pack is registered for it; code packs (zh, ja)
+// live in code, not in the table.
+func registerLanguage(ctx context.Context, sqlDB *sql.DB, m Manifest) error {
+	if lang.Registered(m.Language) {
+		return nil
+	}
+	if _, err := sqlDB.ExecContext(ctx, `
+		INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
+		ON CONFLICT (code) DO NOTHING`,
+		m.Language, m.Name, now()); err != nil {
+		return fmt.Errorf("register language %s: %w", m.Language, err)
+	}
+	return nil
+}
+
+// replaceSenses registers or revives the dictionary keyed by packID in
+// one transaction and replaces its senses: the previous senses are
+// tombstoned and the new list inserted, so a re-import swaps a
+// dictionary's glosses atomically, scoped to that dictionary alone. It
+// returns the dictionary's row id.
+func replaceSenses(ctx context.Context, sqlDB *sql.DB, packID, name, version, license, attribution string, senses []senseRow) (int64, error) {
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
-		return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
+		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
 	}
 	defer tx.Rollback()
 	stamp := now()
@@ -172,28 +203,27 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 			updated_at = excluded.updated_at,
 			deleted_at = NULL
 		RETURNING id`,
-		m.ID, m.Name, m.Version, m.License, m.Attribution, stamp).Scan(&dictID); err != nil {
-		return Result{}, fmt.Errorf("register dictionary %s: %w", m.ID, err)
+		packID, name, version, license, attribution, stamp).Scan(&dictID); err != nil {
+		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
 	}
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE senses SET deleted_at = ?, updated_at = ?
 		WHERE dictionary_id = ? AND deleted_at IS NULL`,
 		stamp, stamp, dictID); err != nil {
-		return Result{}, fmt.Errorf("replace senses of dictionary %s: %w", m.ID, err)
+		return 0, fmt.Errorf("replace senses of dictionary %s: %w", packID, err)
 	}
 	for _, s := range senses {
 		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO senses (dictionary_id, entry_id, gloss, ord, updated_at)
 			VALUES (?, ?, ?, ?, ?)`,
 			dictID, s.entryID, s.gloss, s.ord, stamp); err != nil {
-			return Result{}, fmt.Errorf("insert sense of dictionary %s: %w", m.ID, err)
+			return 0, fmt.Errorf("insert sense of dictionary %s: %w", packID, err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
+		return 0, fmt.Errorf("import dictionary %s: %w", packID, err)
 	}
-	result.Senses = len(senses)
-	return result, nil
+	return dictID, nil
 }
 
 // Uninstall soft-deletes the dictionary with row id id and all of its
