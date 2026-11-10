@@ -1,0 +1,7 @@
+{
+  "entries": [
+    {"written": "学校", "kind": "word", "readings": [{"type": "kana", "value": "がっこう"}], "glosses": ["school"]},
+    {"written": "水", "kind": "word", "readings": [{"type": "kana", "value": "みず"}], "glosses": ["water"]},
+    {"written": "食べる", "kind": "word", "readings": [{"type": "kana", "value": "たべる"}], "glosses": ["to eat"]}
+  ]
+}

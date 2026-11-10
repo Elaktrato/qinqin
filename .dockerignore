@@ -1,0 +1,12 @@
+.git
+.github
+.claude
+.superpowers
+docs
+apps/
+data/
+server/data/
+plugins/data/cedict
+plugins/data/unihan
+plugins/data/jmdict
+plugins/data/kanjidic2

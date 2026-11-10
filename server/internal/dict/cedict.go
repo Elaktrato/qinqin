@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -26,16 +28,51 @@ const cedictFile = "dictionary.txt"
 // traditional simplified [pinyin] /gloss/gloss/…/ — exactly.
 var cedictLine = regexp.MustCompile(`^(\S+) (\S+) \[([^\]]+)\] /(.*)/$`)
 
-// ParseCedict parses CC-CEDICT lines from r. Comment lines (starting
-// with #) and blank lines are skipped; any other line that does not
-// match the entry shape, or matches it without a gloss, is an error
-// naming its line number. Pinyin stays tone-numbered as written — the
-// importer resolves it into the marked reading.
+// ParseCedict parses CC-CEDICT lines from r strictly. Comment lines
+// (starting with #) and blank lines are skipped; any other line that
+// does not match the entry shape, or matches it without a gloss, is an
+// error naming its line number. Pinyin stays tone-numbered as written —
+// the importer resolves it into the marked reading.
 func ParseCedict(r io.Reader) ([]RawEntry, error) {
+	p, err := parseCedictLenient(r)
+	if err != nil {
+		return nil, err
+	}
+	if p.skipped > 0 {
+		return nil, fmt.Errorf("cedict: %s", p.firstSkip)
+	}
+	return p.entries, nil
+}
+
+// cedictParse is the outcome of a lenient parse: the entries read, how
+// many lines were skipped as malformed, and the first skip's message.
+type cedictParse struct {
+	entries   []RawEntry
+	skipped   int
+	firstSkip string
+}
+
+// maxLoggedSkips caps how many skipped lines (or unconverted pinyin) an
+// import logs; the rest are only counted.
+const maxLoggedSkips = 10
+
+// parseCedictLenient parses CC-CEDICT lines from r, skipping — and
+// counting — lines that are not entry lines or carry no glosses instead
+// of failing on them. Only a read error fails the parse.
+func parseCedictLenient(r io.Reader) (cedictParse, error) {
 	var (
-		parsed []RawEntry
+		p      cedictParse
 		lineNo int
 	)
+	skip := func(msg string) {
+		if p.skipped == 0 {
+			p.firstSkip = msg
+		}
+		p.skipped++
+		if p.skipped <= maxLoggedSkips {
+			log.Printf("cedict: skipping %s", msg)
+		}
+	}
 	sc := bufio.NewScanner(r)
 	for sc.Scan() {
 		lineNo++
@@ -45,7 +82,8 @@ func ParseCedict(r io.Reader) ([]RawEntry, error) {
 		}
 		m := cedictLine.FindStringSubmatch(line)
 		if m == nil {
-			return nil, fmt.Errorf("cedict: line %d (%q) is not an entry line", lineNo, line)
+			skip(fmt.Sprintf("line %d (%q) is not an entry line", lineNo, line))
+			continue
 		}
 		var glosses []string
 		for _, g := range strings.Split(m[4], "/") {
@@ -54,9 +92,10 @@ func ParseCedict(r io.Reader) ([]RawEntry, error) {
 			}
 		}
 		if len(glosses) == 0 {
-			return nil, fmt.Errorf("cedict: line %d (%q) carries no glosses", lineNo, line)
+			skip(fmt.Sprintf("line %d (%q) carries no glosses", lineNo, line))
+			continue
 		}
-		parsed = append(parsed, RawEntry{
+		p.entries = append(p.entries, RawEntry{
 			Written: m[2],
 			Trad:    m[1],
 			Pinyin:  m[3],
@@ -64,33 +103,58 @@ func ParseCedict(r io.Reader) ([]RawEntry, error) {
 		})
 	}
 	if err := sc.Err(); err != nil {
-		return nil, fmt.Errorf("cedict: read: %w", err)
+		return cedictParse{}, fmt.Errorf("cedict: read: %w", err)
 	}
-	return parsed, nil
+	return p, nil
+}
+
+// maxSkippedShare is the largest fraction of a cedict file's entry
+// lines an import skips as malformed before it concludes the file is not
+// CC-CEDICT (an error page, a truncated download) and fails.
+const maxSkippedShare = 0.05
+
+// cedictStats are the operational counters of one cedict read.
+type cedictStats struct {
+	skipped     int // malformed lines skipped
+	unconverted int // entries whose pinyin did not convert, kept as written
 }
 
 // readCedictPack reads and parses the dictionary.txt of the format
 // "cedict" pack in dir, resolving each raw entry into the pipeline's
 // entry shape: one hanzi is a character, several are a word, and the
-// tone-numbered pinyin becomes the marked pinyin reading. Pinyin that
-// does not convert is kept as written, leaving the bopomofo underived
-// rather than failing the import — the reading pipeline never fails on
-// unconvertible input.
-func readCedictPack(dir string) ([]entry, error) {
+// tone-numbered pinyin becomes the marked pinyin reading. Malformed
+// lines are skipped and counted (failing only when they exceed
+// maxSkippedShare of the file or leave nothing). Pinyin that does not
+// convert is kept as written and counted, leaving the bopomofo
+// underived rather than failing the import — the reading pipeline never
+// fails on unconvertible input. Homograph lines for one written form
+// merge into one entry carrying all their readings and senses.
+func readCedictPack(dir string) ([]entry, cedictStats, error) {
 	f, err := os.Open(filepath.Join(dir, cedictFile))
 	if err != nil {
-		return nil, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
+		return nil, cedictStats{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
 	}
 	defer f.Close()
-	raw, err := ParseCedict(f)
+	p, err := parseCedictLenient(f)
 	if err != nil {
-		return nil, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
+		return nil, cedictStats{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
 	}
-	es := make([]entry, len(raw))
-	for i, r := range raw {
+	if p.skipped > 0 && (len(p.entries) == 0 ||
+		float64(p.skipped) > maxSkippedShare*float64(p.skipped+len(p.entries))) {
+		return nil, cedictStats{}, fmt.Errorf("%w: %s of %s: %d of %d entry lines are malformed (first: %s)",
+			ErrInvalidPack, cedictFile, dir, p.skipped, p.skipped+len(p.entries), p.firstSkip)
+	}
+	stats := cedictStats{skipped: p.skipped}
+	es := make([]entry, len(p.entries))
+	for i, r := range p.entries {
 		marked := r.Pinyin
 		if m, err := pinyin.ToMarked(r.Pinyin); err == nil {
 			marked = m
+		} else {
+			stats.unconverted++
+			if stats.unconverted <= maxLoggedSkips {
+				log.Printf("cedict: pinyin %q of %s does not convert; kept as written", r.Pinyin, r.Written)
+			}
 		}
 		es[i] = entry{
 			Written:  r.Written,
@@ -100,7 +164,45 @@ func readCedictPack(dir string) ([]entry, error) {
 			Glosses:  r.Glosses,
 		}
 	}
-	return es, nil
+	return mergeHomographs(es), stats, nil
+}
+
+// mergeHomographs folds the lines of one written form and kind into one
+// entry, at the position of its first line: readings and glosses are
+// the distinct ones in file order, forms the union. Readings replace
+// wholesale on upsert, so without this the entry would keep only its
+// last line's pronunciation (行 would lose xíng). A traditional twin
+// shared by several lines (发's 發 and 髮) therefore carries all of the
+// simplified form's readings — a superset, never a loss.
+func mergeHomographs(es []entry) []entry {
+	out := make([]entry, 0, len(es))
+	at := make(map[string]int, len(es))
+	for _, e := range es {
+		key := e.Kind + "\x00" + e.Written
+		i, seen := at[key]
+		if !seen {
+			at[key] = len(out)
+			out = append(out, e)
+			continue
+		}
+		m := &out[i]
+		for _, r := range e.Readings {
+			if !slices.ContainsFunc(m.Readings, func(x model.Reading) bool { return x.Type == r.Type && x.Value == r.Value }) {
+				m.Readings = append(m.Readings, r)
+			}
+		}
+		for _, g := range e.Glosses {
+			if !slices.Contains(m.Glosses, g) {
+				m.Glosses = append(m.Glosses, g)
+			}
+		}
+		for _, f := range e.Forms {
+			if !slices.Contains(m.Forms, f) {
+				m.Forms = append(m.Forms, f)
+			}
+		}
+	}
+	return out
 }
 
 // cedictKind classifies a CC-CEDICT written form: one hanzi is a

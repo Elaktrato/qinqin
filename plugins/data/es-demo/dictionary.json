@@ -1,0 +1,8 @@
+{
+  "entries": [
+    {"written": "hola", "kind": "word", "readings": [{"type": "latin", "value": "hola"}], "glosses": ["hello", "hi"]},
+    {"written": "gracias", "kind": "word", "readings": [{"type": "latin", "value": "gracias"}], "glosses": ["thank you", "thanks"]},
+    {"written": "agua", "kind": "word", "readings": [{"type": "latin", "value": "agua"}], "glosses": ["water"]},
+    {"written": "casa", "kind": "word", "readings": [{"type": "latin", "value": "casa"}], "glosses": ["house", "home"]}
+  ]
+}

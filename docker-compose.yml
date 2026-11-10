@@ -1,0 +1,23 @@
+# Portainer stack for qinqin. The database and installed packs live in
+# ./data next to this file.
+#
+# First run — seed the sample packs and create the admin user:
+#   docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs
+#   docker compose exec qinqin qinqin adduser --username <name> --admin
+# (or register the first user over the API: the first registration is the admin).
+services:
+  qinqin:
+    image: ${QINQIN_IMAGE:-ghcr.io/elaktrato/qinqin:latest}
+    restart: unless-stopped
+    ports:
+      - "${QINQIN_PORT:-8080}:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      QINQIN_DATA: /data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

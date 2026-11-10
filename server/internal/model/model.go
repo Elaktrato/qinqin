@@ -32,6 +32,14 @@ type Entry struct {
 	DeletedAt *time.Time        `json:"deletedAt"`
 }
 
+// SearchHit is one search result: the matching entry and why it matched.
+// Source is "written", "gloss", or the type of the matching reading
+// ("pinyin", "bopomofo", "kana", ...).
+type SearchHit struct {
+	Entry
+	Source string `json:"source"`
+}
+
 // Reading is one pronunciation of an entry. Type is pack-defined —
 // "pinyin", "bopomofo", "kana", "on", "kun", "romaji", … — Value is the
 // display form, Plain the normalized search form, Ord the position among
