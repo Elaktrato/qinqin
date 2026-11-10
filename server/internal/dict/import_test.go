@@ -21,10 +21,11 @@ import (
 	"qinqin/internal/model"
 )
 
-// The zh pack registers for these tests the same way main.go registers it
-// for the server; import normalizes and derives readings through it.
+// The zh and ja packs register for these tests the same way main.go
+// registers them; import normalizes and derives readings through them.
 func init() {
 	lang.Register(lang.Zh{})
+	lang.Register(lang.Ja{})
 }
 
 // fixturePack is the on-disk fixture pack, relative to this package's
@@ -673,22 +674,25 @@ func TestImportRejectsNonDictionaryType(t *testing.T) {
 	}
 }
 
-func TestImportRejectsUnimplementedFormat(t *testing.T) {
+func TestImportRejectsMissingDataFile(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := newDB(t)
-	m := fixtureManifest
-	m.Format = "jmdict" // a valid enum value whose importer arrives in a later task
-	dir := writePack(t, m, `{}`)
-	pack, err := dict.LoadPack(dir)
-	if err != nil {
-		t.Fatalf("LoadPack(jmdict pack): %v", err)
-	}
-	_, err = dict.Import(ctx, sqlDB, pack)
-	if !errors.Is(err, dict.ErrInvalidPack) {
-		t.Fatalf("Import of jmdict-format pack = %v, want ErrInvalidPack", err)
-	}
-	if !strings.Contains(err.Error(), "jmdict") {
-		t.Errorf("Import of jmdict-format pack = %v, want the error to name the format", err)
+	for _, format := range []string{"jmdict", "kanjidic2"} {
+		m := fixtureManifest
+		m.Format = format
+		m.Language = "ja"
+		dir := writePack(t, m, "{}")
+		pack, err := dict.LoadPack(dir)
+		if err != nil {
+			t.Fatalf("LoadPack(%s pack): %v", format, err)
+		}
+		_, err = dict.Import(ctx, sqlDB, pack)
+		if !errors.Is(err, dict.ErrInvalidPack) {
+			t.Fatalf("Import of %s pack = %v, want ErrInvalidPack", format, err)
+		}
+		if !strings.Contains(err.Error(), format) {
+			t.Errorf("Import of %s pack = %v, want the error to name the format", format, err)
+		}
 	}
 	var dictRows int
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM dictionaries`).Scan(&dictRows); err != nil {

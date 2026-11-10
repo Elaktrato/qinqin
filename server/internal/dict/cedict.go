@@ -69,13 +69,6 @@ func ParseCedict(r io.Reader) ([]RawEntry, error) {
 	return parsed, nil
 }
 
-// wordForm pairs one written form of a word entry with the entry id it
-// upserted to.
-type wordForm struct {
-	id      int64
-	written string
-}
-
 // readCedictPack reads and parses the dictionary.txt of the format
 // "cedict" pack in dir, resolving each raw entry into the pipeline's
 // entry shape: one hanzi is a character, several are a word, and the
@@ -101,7 +94,7 @@ func readCedictPack(dir string) ([]entry, error) {
 		}
 		es[i] = entry{
 			Written:  r.Written,
-			Trad:     r.Trad,
+			Forms:    tradForms(r.Written, r.Trad),
 			Kind:     cedictKind(r.Written),
 			Readings: []model.Reading{{Type: "pinyin", Value: marked}},
 			Glosses:  r.Glosses,

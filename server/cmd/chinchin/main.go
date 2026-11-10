@@ -26,8 +26,10 @@ func main() {
 
 func run(addr, dataDir string) error {
 	// Code packs register before the server starts serving: the zh pack
-	// normalizes pinyin readings and derives their bopomofo forms.
+	// normalizes pinyin readings and derives their bopomofo forms, the
+	// ja pack folds kana readings and derives their romaji.
 	lang.Register(lang.Zh{})
+	lang.Register(lang.Ja{})
 
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return fmt.Errorf("create data directory %s: %w", dataDir, err)
