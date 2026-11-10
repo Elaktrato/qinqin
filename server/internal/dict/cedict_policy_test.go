@@ -95,10 +95,10 @@ func TestCedictImportCountsUnconvertedPinyin(t *testing.T) {
 	}
 }
 
-// Ruling (Task 15b): homographs — several CEDICT lines for one written
-// form — accumulate their senses, while the entry keeps the reading of
-// the last line (readings replace wholesale on upsert). Pinned here so
-// a change to either half is deliberate.
+// Homographs — several CEDICT lines for one written form (行 xíng /
+// háng, 了 le / liǎo, …) — merge into one entry carrying every distinct
+// pronunciation in file order and every line's senses. (Readings replace
+// wholesale on upsert, so merging has to happen before the upsert.)
 func TestCedictHomographPolicy(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := newDB(t)
@@ -112,7 +112,20 @@ func TestCedictHomographPolicy(t *testing.T) {
 	if !slices.Equal(glosses, []string{"row", "to walk"}) {
 		t.Errorf("glosses of 行 = %v, want both lines' senses", glosses)
 	}
-	if py := findReading(e, "pinyin"); py == nil || py.Value != "háng" {
-		t.Errorf("readings of 行 = %+v, want the last line's háng", e.Readings)
+	var pinyins []string
+	for _, r := range e.Readings {
+		if r.Type == "pinyin" {
+			pinyins = append(pinyins, r.Value)
+		}
+	}
+	if !slices.Equal(pinyins, []string{"xíng", "háng"}) {
+		t.Errorf("pinyin readings of 行 = %v, want both, in file order", pinyins)
+	}
+	// Either pronunciation finds the entry.
+	for _, q := range []string{"xing", "hang"} {
+		hits, err := entries.Store{DB: sqlDB}.Search(ctx, entries.SearchQuery{Text: q, Lang: "zh"})
+		if err != nil || len(hits) == 0 || hits[0].Written != "行" {
+			t.Errorf("search %q = %+v, %v; want 行 first", q, hits, err)
+		}
 	}
 }

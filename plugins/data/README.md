@@ -27,4 +27,4 @@ CC-CEDICT import policy: malformed lines are skipped, logged (first ten) and
 counted; a file where more than 5% of entry lines are malformed is rejected as
 the wrong file. Pinyin that cannot be converted is kept as written and counted
 (no bopomofo is derived for it). Homograph lines for one written form
-accumulate their senses; the entry keeps the last line's reading.
+(行 xíng / háng) merge into one entry with all their readings and senses.

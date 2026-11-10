@@ -15,6 +15,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"qinqin/internal/entries"
@@ -65,34 +66,68 @@ type Delta struct {
 	Sentences    []model.Sentence    `json:"sentences"`
 	PluginData   []model.PluginData  `json:"pluginData"`
 	PluginStates []model.PluginState `json:"pluginStates"`
+	Overlays     []Overlay           `json:"overlays"`
 }
 
+// Overlay is one of the caller's per-user entry edits (user_edits row):
+// nil Written and nil Readings are untouched fields, as in
+// model.EntryPatch.
+type Overlay struct {
+	EntryID   int64           `json:"entryId"`
+	Written   *string         `json:"written"`
+	Readings  []model.Reading `json:"readings"`
+	UpdatedAt time.Time       `json:"updatedAt"`
+}
+
+// cursorMargin is how far a pull's returned cursor lags the server
+// clock. A writer stamps its rows before it commits (an import
+// transaction can run for many seconds, a write can wait out the busy
+// timeout), so a row can commit after a pull while carrying an earlier
+// stamp; with the cursor at "now" the next pull would skip it. The
+// margin exceeds any such delay, and the redelivery it causes is
+// harmless: clients upsert by key.
+const cursorMargin = 30 * time.Second
+
 // Pull returns every row changed at or after cursor (the zero time means
-// everything), tombstones included. Cursor is the server clock read
-// before any query ran, so a row written mid-pull is picked up by the
-// next pull from it.
+// everything), tombstones included — except from the zero cursor, where
+// the client holds nothing to delete and only live rows ship. The
+// returned Cursor is the server clock read before any query ran, minus
+// cursorMargin, so a row written mid-pull is picked up by the next pull.
 func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time) (Delta, error) {
-	d := Delta{Cursor: time.Now().UTC().Truncate(time.Second)}
+	d := Delta{Cursor: time.Now().UTC().Add(-cursorMargin).Truncate(time.Second)}
 	since := cursor.UTC().Format(time.RFC3339)
+	live := ""
+	if cursor.IsZero() {
+		live = " AND deleted_at IS NULL"
+	}
 	var err error
 
 	if d.Entries, err = (entries.Store{DB: sqlDB}).ChangedSince(ctx, cursor); err != nil {
 		return Delta{}, fmt.Errorf("sync pull: %w", err)
 	}
-	if d.Links, err = pullLinks(ctx, sqlDB, since); err != nil {
+	if cursor.IsZero() {
+		d.Entries = slices.DeleteFunc(d.Entries, func(e model.Entry) bool { return e.DeletedAt != nil })
+	}
+	if d.Links, err = pullLinks(ctx, sqlDB, since, live); err != nil {
 		return Delta{}, err
 	}
-	if d.Senses, err = pullSenses(ctx, sqlDB, since); err != nil {
+	if d.Senses, err = pullSenses(ctx, sqlDB, since, live); err != nil {
 		return Delta{}, err
 	}
-	if d.LevelMembers, err = pullLevelMembers(ctx, sqlDB, since); err != nil {
+	if d.LevelMembers, err = pullLevelMembers(ctx, sqlDB, since, live); err != nil {
 		return Delta{}, err
 	}
-	if d.Sentences, err = pullSentences(ctx, sqlDB, userID, since); err != nil {
+	if d.Sentences, err = pullSentences(ctx, sqlDB, userID, since, live); err != nil {
 		return Delta{}, err
 	}
 	if d.PluginData, err = plugins.PullData(ctx, sqlDB, userID, cursor); err != nil {
 		return Delta{}, fmt.Errorf("sync pull: %w", err)
+	}
+	if cursor.IsZero() {
+		d.PluginData = slices.DeleteFunc(d.PluginData, func(r model.PluginData) bool { return r.DeletedAt != nil })
+	}
+	if d.Overlays, err = pullOverlays(ctx, sqlDB, userID, since); err != nil {
+		return Delta{}, err
 	}
 	if d.PluginStates, err = pullPluginStates(ctx, sqlDB, userID, since); err != nil {
 		return Delta{}, err
@@ -163,6 +198,9 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		if row.PluginID == "" || row.Key == "" {
 			return PushResult{}, fmt.Errorf("%w: plugin data %d needs pluginId and key", ErrInvalid, i)
 		}
+		if editTime(row).IsZero() {
+			return PushResult{}, fmt.Errorf("%w: plugin data %d needs updatedAt or deletedAt to order it", ErrInvalid, i)
+		}
 		if row.WorkspaceID != nil {
 			if err := checkWorkspace(*row.WorkspaceID); err != nil {
 				return PushResult{}, err
@@ -202,9 +240,28 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 	return res, nil
 }
 
+// editTime is when the client made the edit a plugin data row carries:
+// its updatedAt, or its deletedAt when that is later (a tombstone that
+// sets only deletedAt). Zero when the row has neither.
+func editTime(row model.PluginData) time.Time {
+	t := row.UpdatedAt
+	if row.DeletedAt != nil && row.DeletedAt.After(t) {
+		t = *row.DeletedAt
+	}
+	return t.UTC()
+}
+
 // applyData applies one incoming plugin data row under last-write-wins
-// and reports whether it changed the server.
+// on edit time — the client's clock, clamped to the server's so a clock
+// running ahead cannot pin a row — and reports whether it changed the
+// server. The comparison is against the stored edit time (modified_at),
+// not the server's arrival stamp, so an edit made later on another
+// device wins even when it syncs after an earlier one.
 func applyData(ctx context.Context, sqlDB *sql.DB, userID int64, row model.PluginData) (bool, error) {
+	edited := editTime(row)
+	if nowT := time.Now().UTC(); edited.After(nowT) {
+		edited = nowT
+	}
 	var workspace any
 	if row.WorkspaceID != nil {
 		workspace = *row.WorkspaceID
@@ -212,7 +269,7 @@ func applyData(ctx context.Context, sqlDB *sql.DB, userID int64, row model.Plugi
 	var serverUpdated string
 	var serverDeleted sql.NullString
 	err := sqlDB.QueryRowContext(ctx, `
-		SELECT updated_at, deleted_at FROM plugin_data
+		SELECT COALESCE(modified_at, updated_at), deleted_at FROM plugin_data
 		WHERE pack_id = ? AND user_id = ? AND IFNULL(workspace_id, 0) = IFNULL(?, 0) AND key = ?`,
 		row.PluginID, userID, workspace, row.Key).Scan(&serverUpdated, &serverDeleted)
 	exists := !errors.Is(err, sql.ErrNoRows)
@@ -224,9 +281,9 @@ func applyData(ctx context.Context, sqlDB *sql.DB, userID int64, row model.Plugi
 		if err != nil {
 			return false, fmt.Errorf("sync push: parse updated_at %q of %s/%s: %w", serverUpdated, row.PluginID, row.Key, err)
 		}
-		// Server timestamps are second-truncated, so compare at that
+		// Stored edit times are second-truncated, so compare at that
 		// precision: a same-second write by the client wins.
-		if server.After(row.UpdatedAt.UTC().Truncate(time.Second)) {
+		if server.After(edited.Truncate(time.Second)) {
 			return false, nil
 		}
 	}
@@ -234,12 +291,12 @@ func applyData(ctx context.Context, sqlDB *sql.DB, userID int64, row model.Plugi
 		if !exists || serverDeleted.Valid {
 			return false, nil
 		}
-		if err := plugins.DeleteData(ctx, sqlDB, userID, row.WorkspaceID, row.PluginID, row.Key); err != nil {
+		if err := plugins.DeleteDataAt(ctx, sqlDB, userID, row.WorkspaceID, row.PluginID, row.Key, edited); err != nil {
 			return false, fmt.Errorf("sync push: %w", err)
 		}
 		return true, nil
 	}
-	if _, err := plugins.PutData(ctx, sqlDB, userID, row.WorkspaceID, row.PluginID, row.Key, row.Data); err != nil {
+	if _, err := plugins.PutDataAt(ctx, sqlDB, userID, row.WorkspaceID, row.PluginID, row.Key, row.Data, edited); err != nil {
 		return false, fmt.Errorf("sync push: %w", err)
 	}
 	return true, nil

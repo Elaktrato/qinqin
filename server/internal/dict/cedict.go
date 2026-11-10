@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -127,8 +128,7 @@ type cedictStats struct {
 // convert is kept as written and counted, leaving the bopomofo
 // underived rather than failing the import — the reading pipeline never
 // fails on unconvertible input. Homograph lines for one written form
-// each upsert in file order: senses accumulate across them, and the
-// entry keeps the last line's reading.
+// merge into one entry carrying all their readings and senses.
 func readCedictPack(dir string) ([]entry, cedictStats, error) {
 	f, err := os.Open(filepath.Join(dir, cedictFile))
 	if err != nil {
@@ -164,7 +164,45 @@ func readCedictPack(dir string) ([]entry, cedictStats, error) {
 			Glosses:  r.Glosses,
 		}
 	}
-	return es, stats, nil
+	return mergeHomographs(es), stats, nil
+}
+
+// mergeHomographs folds the lines of one written form and kind into one
+// entry, at the position of its first line: readings and glosses are
+// the distinct ones in file order, forms the union. Readings replace
+// wholesale on upsert, so without this the entry would keep only its
+// last line's pronunciation (行 would lose xíng). A traditional twin
+// shared by several lines (发's 發 and 髮) therefore carries all of the
+// simplified form's readings — a superset, never a loss.
+func mergeHomographs(es []entry) []entry {
+	out := make([]entry, 0, len(es))
+	at := make(map[string]int, len(es))
+	for _, e := range es {
+		key := e.Kind + "\x00" + e.Written
+		i, seen := at[key]
+		if !seen {
+			at[key] = len(out)
+			out = append(out, e)
+			continue
+		}
+		m := &out[i]
+		for _, r := range e.Readings {
+			if !slices.ContainsFunc(m.Readings, func(x model.Reading) bool { return x.Type == r.Type && x.Value == r.Value }) {
+				m.Readings = append(m.Readings, r)
+			}
+		}
+		for _, g := range e.Glosses {
+			if !slices.Contains(m.Glosses, g) {
+				m.Glosses = append(m.Glosses, g)
+			}
+		}
+		for _, f := range e.Forms {
+			if !slices.Contains(m.Forms, f) {
+				m.Forms = append(m.Forms, f)
+			}
+		}
+	}
+	return out
 }
 
 // cedictKind classifies a CC-CEDICT written form: one hanzi is a

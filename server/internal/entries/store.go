@@ -319,10 +319,22 @@ func (s Store) attachChildren(ctx context.Context, es []*model.Entry) error {
 		e.Readings = []model.Reading{}
 		e.Attrs = map[string]string{}
 	}
-	if len(es) == 0 {
-		return nil
+	// SQLite caps bound variables per statement, so children load in
+	// chunks of ids.
+	for start := 0; start < len(es); start += childChunk {
+		end := min(start+childChunk, len(es))
+		if err := s.attachChunk(ctx, es[start:end]); err != nil {
+			return err
+		}
 	}
+	return nil
+}
 
+// childChunk is how many entry ids one children query binds.
+const childChunk = 500
+
+// attachChunk loads the readings and attrs of one chunk of entries.
+func (s Store) attachChunk(ctx context.Context, es []*model.Entry) error {
 	byID := make(map[int64]*model.Entry, len(es))
 	ids := make([]any, len(es))
 	for i, e := range es {

@@ -13,6 +13,10 @@ import (
 // defaultSearchLimit caps a search whose query sets no Limit.
 const defaultSearchLimit = 50
 
+// maxSearchLimit caps any requested Limit: search is a public route, and
+// every hit loads its entry.
+const maxSearchLimit = 200
+
 // ErrInvalidQuery reports a search query that cannot be run: no language,
 // or a level name without a scheme.
 var ErrInvalidQuery = errors.New("invalid search query")
@@ -57,19 +61,20 @@ func (s Store) Search(ctx context.Context, q SearchQuery) ([]model.SearchHit, er
 	if limit <= 0 {
 		limit = defaultSearchLimit
 	}
+	limit = min(limit, maxSearchLimit)
 
 	where, base := candidateFilter(q)
 	plain := lang.For(q.Lang).SearchPlain(text)
 	tiers := []searchTier{
-		{`SELECT e.id, 'written' FROM entries e` + where + ` AND e.written = ?`,
+		{`SELECT DISTINCT e.id, 'written' FROM entries e` + where + ` AND e.written = ?`,
 			append(base[:len(base):len(base)], text)},
 	}
 	if plain != "" {
 		tiers = append(tiers,
-			searchTier{`SELECT e.id, r.type FROM entries e JOIN readings r ON r.entry_id = e.id` +
+			searchTier{`SELECT DISTINCT e.id, r.type FROM entries e JOIN readings r ON r.entry_id = e.id` +
 				where + ` AND r.deleted_at IS NULL AND r.plain = ?`,
 				append(base[:len(base):len(base)], plain)},
-			searchTier{`SELECT e.id, r.type FROM entries e JOIN readings r ON r.entry_id = e.id` +
+			searchTier{`SELECT DISTINCT e.id, r.type FROM entries e JOIN readings r ON r.entry_id = e.id` +
 				where + ` AND r.deleted_at IS NULL AND r.type != 'bopomofo' AND r.plain LIKE ? ESCAPE '\'`,
 				append(base[:len(base):len(base)], likeEscape(plain)+"%")},
 		)
@@ -77,10 +82,10 @@ func (s Store) Search(ctx context.Context, q SearchQuery) ([]model.SearchHit, er
 	// Bopomofo plain forms are the stored reading itself, so the prefix
 	// tier matches the lowercased query as typed, not its SearchPlain form.
 	tiers = append(tiers,
-		searchTier{`SELECT e.id, r.type FROM entries e JOIN readings r ON r.entry_id = e.id` +
+		searchTier{`SELECT DISTINCT e.id, r.type FROM entries e JOIN readings r ON r.entry_id = e.id` +
 			where + ` AND r.deleted_at IS NULL AND r.type = 'bopomofo' AND r.plain LIKE ? ESCAPE '\'`,
 			append(base[:len(base):len(base)], likeEscape(strings.ToLower(text))+"%")},
-		searchTier{`SELECT e.id, 'gloss' FROM entries e` +
+		searchTier{`SELECT DISTINCT e.id, 'gloss' FROM entries e` +
 			` JOIN senses sn ON sn.entry_id = e.id AND sn.deleted_at IS NULL` +
 			` JOIN dictionaries d ON d.id = sn.dictionary_id AND d.deleted_at IS NULL` +
 			where + ` AND sn.gloss LIKE ? ESCAPE '\'`,
@@ -93,7 +98,10 @@ func (s Store) Search(ctx context.Context, q SearchQuery) ([]model.SearchHit, er
 		if len(order) >= limit {
 			break
 		}
-		rows, err := s.DB.QueryContext(ctx, t.query+` ORDER BY e.id`, t.args...)
+		// At most limit new ids can be needed, plus those already
+		// collected by earlier tiers that this tier may repeat.
+		rows, err := s.DB.QueryContext(ctx, t.query+` ORDER BY e.id LIMIT ?`,
+			append(t.args[:len(t.args):len(t.args)], limit+len(order))...)
 		if err != nil {
 			return nil, fmt.Errorf("search %q: %w", text, err)
 		}

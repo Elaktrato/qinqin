@@ -3,6 +3,7 @@ package sync
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -30,10 +31,13 @@ func parseDeleted(s sql.NullString) (*time.Time, error) {
 	return &t, nil
 }
 
-func pullLinks(ctx context.Context, sqlDB *sql.DB, since string) ([]Link, error) {
+// The pull helpers take live, an extra WHERE fragment — " AND deleted_at
+// IS NULL" for a pull from the zero cursor, empty otherwise.
+
+func pullLinks(ctx context.Context, sqlDB *sql.DB, since, live string) ([]Link, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT from_id, to_id, type, updated_at, deleted_at FROM entry_links
-		WHERE updated_at >= ? ORDER BY from_id, to_id, type`, since)
+		WHERE updated_at >= ?`+live+` ORDER BY from_id, to_id, type`, since)
 	if err != nil {
 		return nil, fmt.Errorf("sync pull links: %w", err)
 	}
@@ -60,10 +64,10 @@ func pullLinks(ctx context.Context, sqlDB *sql.DB, since string) ([]Link, error)
 	return list, nil
 }
 
-func pullSenses(ctx context.Context, sqlDB *sql.DB, since string) ([]model.Sense, error) {
+func pullSenses(ctx context.Context, sqlDB *sql.DB, since, live string) ([]model.Sense, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT id, dictionary_id, entry_id, gloss, ord, updated_at, deleted_at FROM senses
-		WHERE updated_at >= ? ORDER BY id`, since)
+		WHERE updated_at >= ?`+live+` ORDER BY id`, since)
 	if err != nil {
 		return nil, fmt.Errorf("sync pull senses: %w", err)
 	}
@@ -90,10 +94,10 @@ func pullSenses(ctx context.Context, sqlDB *sql.DB, since string) ([]model.Sense
 	return list, nil
 }
 
-func pullLevelMembers(ctx context.Context, sqlDB *sql.DB, since string) ([]LevelMember, error) {
+func pullLevelMembers(ctx context.Context, sqlDB *sql.DB, since, live string) ([]LevelMember, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT id, level_id, entry_id, derived, updated_at, deleted_at FROM level_members
-		WHERE updated_at >= ? ORDER BY id`, since)
+		WHERE updated_at >= ?`+live+` ORDER BY id`, since)
 	if err != nil {
 		return nil, fmt.Errorf("sync pull level members: %w", err)
 	}
@@ -124,11 +128,11 @@ func pullLevelMembers(ctx context.Context, sqlDB *sql.DB, since string) ([]Level
 
 // pullSentences returns the changed pack sentences and the caller's own;
 // other users' sentences never leave the server.
-func pullSentences(ctx context.Context, sqlDB *sql.DB, userID int64, since string) ([]model.Sentence, error) {
+func pullSentences(ctx context.Context, sqlDB *sql.DB, userID int64, since, live string) ([]model.Sentence, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at
 		FROM sentences
-		WHERE updated_at >= ? AND (user_id IS NULL OR user_id = ?) ORDER BY id`, since, userID)
+		WHERE updated_at >= ?`+live+` AND (user_id IS NULL OR user_id = ?) ORDER BY id`, since, userID)
 	if err != nil {
 		return nil, fmt.Errorf("sync pull sentences: %w", err)
 	}
@@ -156,6 +160,44 @@ func pullSentences(ctx context.Context, sqlDB *sql.DB, userID int64, since strin
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("sync pull sentences: %w", err)
+	}
+	return list, nil
+}
+
+// pullOverlays returns the caller's changed entry overlays; other users'
+// edits never leave the server.
+func pullOverlays(ctx context.Context, sqlDB *sql.DB, userID int64, since string) ([]Overlay, error) {
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT entry_id, written, readings, updated_at FROM user_edits
+		WHERE user_id = ? AND updated_at >= ? ORDER BY entry_id`, userID, since)
+	if err != nil {
+		return nil, fmt.Errorf("sync pull overlays: %w", err)
+	}
+	defer rows.Close()
+	list := make([]Overlay, 0)
+	for rows.Next() {
+		var o Overlay
+		var written, readings sql.NullString
+		var updated string
+		if err := rows.Scan(&o.EntryID, &written, &readings, &updated); err != nil {
+			return nil, fmt.Errorf("sync pull overlays: %w", err)
+		}
+		if written.Valid {
+			w := written.String
+			o.Written = &w
+		}
+		if readings.Valid {
+			if err := json.Unmarshal([]byte(readings.String), &o.Readings); err != nil {
+				return nil, fmt.Errorf("sync pull overlays: readings of entry %d: %w", o.EntryID, err)
+			}
+		}
+		if o.UpdatedAt, err = parseTS(updated); err != nil {
+			return nil, err
+		}
+		list = append(list, o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("sync pull overlays: %w", err)
 	}
 	return list, nil
 }

@@ -134,11 +134,10 @@ func TestPullAll(t *testing.T) {
 		t.Fatalf("bob data: %v", err)
 	}
 
-	before := time.Now().UTC().Add(-2 * time.Second)
 	d := mustPull(t, sqlDB, alice, time.Time{})
 
-	if d.Cursor.Before(before) || d.Cursor.After(time.Now().UTC().Add(2*time.Second)) {
-		t.Errorf("cursor = %v, want server now", d.Cursor)
+	if d.Cursor.Before(time.Now().UTC().Add(-5*time.Minute)) || d.Cursor.After(time.Now().UTC()) {
+		t.Errorf("cursor = %v, want shortly before server now", d.Cursor)
 	}
 	if len(d.Entries) < 3 {
 		t.Fatalf("entries = %d, want the imported world (好, 你好, 妳好)", len(d.Entries))

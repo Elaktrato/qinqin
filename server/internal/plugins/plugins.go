@@ -315,6 +315,19 @@ const dataSelect = `
 // nil. It increments the row's version, stamps updated_at, and revives
 // a tombstoned row; the first write of a row is version 1.
 func PutData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, key string, val json.RawMessage) (int, error) {
+	return PutDataAt(ctx, sqlDB, userID, workspaceID, pluginID, key, val, time.Time{})
+}
+
+// PutDataAt is PutData for a write that was made earlier elsewhere:
+// modifiedAt is when the edit happened — the clock last-write-wins
+// compares — while updated_at still takes the server's write stamp. The
+// zero time means "now". Callers clamp modifiedAt to the server clock.
+func PutDataAt(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, key string, val json.RawMessage, modifiedAt time.Time) (int, error) {
+	stamp := now()
+	modified := stamp
+	if !modifiedAt.IsZero() {
+		modified = modifiedAt.UTC().Format(time.RFC3339)
+	}
 	var workspace any
 	if workspaceID != nil {
 		workspace = *workspaceID
@@ -324,15 +337,16 @@ func PutData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int6
 	// table's unique key: the user-global row and every workspace's row
 	// are distinct rows for the same key.
 	err := sqlDB.QueryRowContext(ctx, `
-		INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at)
-		VALUES (?, ?, ?, ?, ?, 1, ?)
+		INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
+		VALUES (?, ?, ?, ?, ?, 1, ?, ?)
 		ON CONFLICT (pack_id, user_id, IFNULL(workspace_id, 0), key) DO UPDATE SET
 			data = excluded.data,
 			version = plugin_data.version + 1,
 			updated_at = excluded.updated_at,
+			modified_at = excluded.modified_at,
 			deleted_at = NULL
 		RETURNING version`,
-		pluginID, userID, workspace, key, dataOf(val), now()).Scan(&version)
+		pluginID, userID, workspace, key, dataOf(val), stamp, modified).Scan(&version)
 	if err != nil {
 		return 0, fmt.Errorf("plugins: put data %s/%s for user %d: %w", pluginID, key, userID, err)
 	}
@@ -396,11 +410,22 @@ func PullData(ctx context.Context, sqlDB *sql.DB, userID int64, since time.Time)
 // sees the deletion. Deleting a missing or already-deleted row is
 // ErrNotFound.
 func DeleteData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, key string) error {
+	return DeleteDataAt(ctx, sqlDB, userID, workspaceID, pluginID, key, time.Time{})
+}
+
+// DeleteDataAt is DeleteData for a deletion made earlier elsewhere:
+// modifiedAt is when it happened (zero means now), the edit time
+// last-write-wins compares. Callers clamp it to the server clock.
+func DeleteDataAt(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, key string, modifiedAt time.Time) error {
 	query := `
-		UPDATE plugin_data SET deleted_at = ?, updated_at = ?
+		UPDATE plugin_data SET deleted_at = ?, updated_at = ?, modified_at = ?
 		WHERE pack_id = ? AND user_id = ? AND key = ? AND deleted_at IS NULL`
 	stamp := now()
-	args := []any{stamp, stamp, pluginID, userID, key}
+	modified := stamp
+	if !modifiedAt.IsZero() {
+		modified = modifiedAt.UTC().Format(time.RFC3339)
+	}
+	args := []any{stamp, stamp, modified, pluginID, userID, key}
 	if workspaceID == nil {
 		query += ` AND workspace_id IS NULL`
 	} else {
