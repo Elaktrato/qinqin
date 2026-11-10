@@ -118,3 +118,20 @@ type Badge struct {
 	LevelName  string `json:"levelName"`
 	Derived    bool   `json:"derived"`
 }
+
+// Sentence is one example sentence on an entry: a pack-provided one
+// carries its source pack and no owner; a user-added one carries the
+// owning user and no pack. Pack imports replace that pack's sentences
+// wholesale and never touch user-owned rows, so a user's sentence
+// survives pack re-imports.
+type Sentence struct {
+	ID          int64      `json:"id"`
+	EntryID     int64      `json:"entryId"`
+	SourcePack  string     `json:"sourcePack"`
+	UserID      *int64     `json:"userId"`
+	Hanzi       string     `json:"hanzi"`
+	Pinyin      string     `json:"pinyin"`
+	Translation string     `json:"translation"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+	DeletedAt   *time.Time `json:"deletedAt"`
+}

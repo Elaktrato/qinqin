@@ -12,14 +12,16 @@ import (
 	"qinqin/internal/levels"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
+	"qinqin/internal/sentences"
 )
 
-// entryResponse is an entry together with its variants and scheme
-// badges: the body of GET and PUT /api/entries/{id}.
+// entryResponse is an entry together with its variants, scheme badges,
+// and example sentences: the body of GET and PUT /api/entries/{id}.
 type entryResponse struct {
 	model.Entry
-	Variants []model.Entry `json:"variants"`
-	Badges   []model.Badge `json:"badges"`
+	Variants  []model.Entry    `json:"variants"`
+	Badges    []model.Badge    `json:"badges"`
+	Sentences []model.Sentence `json:"sentences"`
 }
 
 // handleGetEntry serves GET /api/entries/{id} with the entry, its
@@ -65,7 +67,12 @@ func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants, Badges: badges})
+	entrySentences, err := sentences.ForEntry(r.Context(), s.db, id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants, Badges: badges, Sentences: entrySentences})
 }
 
 // handlePutEntry serves PUT /api/entries/{id}: it stores the
@@ -126,5 +133,10 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants, Badges: badges})
+	entrySentences, err := sentences.ForEntry(r.Context(), s.db, id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants, Badges: badges, Sentences: entrySentences})
 }

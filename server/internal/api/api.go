@@ -26,6 +26,7 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("GET /api/auth/me", s.handleMe)
 	mux.HandleFunc("GET /api/entries/{id}", s.handleGetEntry)
 	mux.HandleFunc("PUT /api/entries/{id}", s.handlePutEntry)
+	mux.HandleFunc("POST /api/entries/{id}/sentences", s.handleAddSentence)
 	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
 	mux.HandleFunc("GET /api/workspaces", s.handleListWorkspaces)
 	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
@@ -34,6 +35,7 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
 	mux.HandleFunc("GET /api/schemes", s.handleListSchemes)
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
+	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	return mux
 }
 

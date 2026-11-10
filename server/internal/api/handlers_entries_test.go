@@ -20,8 +20,9 @@ import (
 // entryBody mirrors the JSON body of GET /api/entries/{id}.
 type entryBody struct {
 	model.Entry
-	Variants []model.Entry `json:"variants"`
-	Badges   []badgeBody   `json:"badges"`
+	Variants  []model.Entry    `json:"variants"`
+	Badges    []badgeBody      `json:"badges"`
+	Sentences []model.Sentence `json:"sentences"`
 }
 
 // newServer opens a fresh migrated database and serves the API on it.
