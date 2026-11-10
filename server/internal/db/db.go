@@ -22,7 +22,9 @@ var migrationsFS embed.FS
 // migrations are recorded in schema_migrations by their filename-derived
 // version (e.g. "001_init") and are never applied twice.
 func Open(path string) (*sql.DB, error) {
-	sqlDB, err := sql.Open("sqlite", path)
+	// busy_timeout(5000) makes concurrent writers wait for the lock instead
+	// of failing immediately with SQLITE_BUSY (applied per pooled connection).
+	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, fmt.Errorf("open database %s: %w", path, err)
 	}
