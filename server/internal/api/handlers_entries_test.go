@@ -146,3 +146,126 @@ func TestGetEntryEndpoint(t *testing.T) {
 		}
 	}
 }
+
+func TestPutEntryEndpoint(t *testing.T) {
+	// Entries carry readings normalized through the zh pack.
+	lang.Register(lang.Zh{})
+
+	ts, sqlDB := newServer(t)
+	st := entries.Store{DB: sqlDB}
+
+	fa := mustUpsertEntry(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "发",
+		Readings: []model.Reading{{Type: "pinyin", Value: "fā"}},
+	})
+	path := "/api/entries/" + strconv.FormatInt(fa, 10)
+
+	alice := registerUser(t, ts.URL, "alice", "")
+	bob := registerUser(t, ts.URL, "bob", alice)
+
+	// PUT requires authentication.
+	if resp := doJSON(t, http.MethodPut, ts.URL, path, "", map[string]any{"written": "發"}); resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("PUT without token: status = %d, want %d", resp.StatusCode, http.StatusUnauthorized)
+	}
+
+	// PUT stores the caller's patch; the response is the caller's
+	// patched view, readings exactly as saved — nothing re-derived.
+	put := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{
+		"written":  "發",
+		"readings": []map[string]string{{"type": "pinyin", "value": "fa4"}},
+	})
+	if put.StatusCode != http.StatusOK {
+		t.Fatalf("PUT patch: status = %d, want %d", put.StatusCode, http.StatusOK)
+	}
+	var body entryBody
+	decodeJSON(t, put, &body)
+	if body.ID != fa || body.Written != "發" {
+		t.Errorf("PUT response = id %d, written %q, want 发's id and alice's patched 發", body.ID, body.Written)
+	}
+	if len(body.Readings) != 1 || body.Readings[0].Type != "pinyin" || body.Readings[0].Value != "fa4" {
+		t.Errorf("PUT response readings = %+v, want exactly the saved pinyin fa4", body.Readings)
+	}
+	if body.Readings[0].Plain != "" {
+		t.Errorf("PUT response reading plain = %q, want empty — overlays are never re-derived", body.Readings[0].Plain)
+	}
+
+	// GET applies the caller's patch for alice only; bob and anonymous
+	// callers see the shared entry.
+	get := doJSON(t, http.MethodGet, ts.URL, path, alice, nil)
+	if get.StatusCode != http.StatusOK {
+		t.Fatalf("GET 发 as alice: status = %d, want %d", get.StatusCode, http.StatusOK)
+	}
+	body = entryBody{}
+	decodeJSON(t, get, &body)
+	if body.Written != "發" {
+		t.Errorf("GET as alice: written = %q, want her patched 發", body.Written)
+	}
+	if len(body.Readings) != 1 || body.Readings[0].Value != "fa4" {
+		t.Errorf("GET as alice: readings = %+v, want exactly her saved pinyin fa4", body.Readings)
+	}
+
+	for name, token := range map[string]string{"bob": bob, "anonymous": ""} {
+		resp := doJSON(t, http.MethodGet, ts.URL, path, token, nil)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("GET 发 as %s: status = %d, want %d", name, resp.StatusCode, http.StatusOK)
+		}
+		body = entryBody{}
+		decodeJSON(t, resp, &body)
+		if body.Written != "发" {
+			t.Errorf("GET as %s: written = %q, want the shared 发", name, body.Written)
+		}
+		if py := findReading(body.Entry, "pinyin"); py == nil || py.Value != "fā" || py.Plain != "fa" {
+			t.Errorf("GET as %s: readings = %+v, want the shared pinyin fā/fa", name, body.Readings)
+		}
+		if bm := findReading(body.Entry, "bopomofo"); bm == nil || bm.Value != "ㄈㄚ" {
+			t.Errorf("GET as %s: readings = %+v, want the shared derived bopomofo ㄈㄚ", name, body.Readings)
+		}
+	}
+
+	// A second PUT replaces the patch wholesale: alice patches
+	// readings only, and her written form falls back to the shared one.
+	put = doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{
+		"readings": []map[string]string{{"type": "pinyin", "value": "fa1"}},
+	})
+	if put.StatusCode != http.StatusOK {
+		t.Fatalf("PUT replacement patch: status = %d, want %d", put.StatusCode, http.StatusOK)
+	}
+	body = entryBody{}
+	decodeJSON(t, put, &body)
+	if body.Written != "发" {
+		t.Errorf("PUT replacement response: written = %q, want the shared 发", body.Written)
+	}
+	if len(body.Readings) != 1 || body.Readings[0].Value != "fa1" {
+		t.Errorf("PUT replacement response: readings = %+v, want exactly her saved pinyin fa1", body.Readings)
+	}
+
+	// An all-nil patch is a valid no-op: every field shows its shared
+	// value.
+	if resp := doJSON(t, http.MethodPut, ts.URL, path, bob, map[string]any{}); resp.StatusCode != http.StatusOK {
+		t.Errorf("PUT empty patch: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	resp := doJSON(t, http.MethodGet, ts.URL, path, bob, nil)
+	body = entryBody{}
+	decodeJSON(t, resp, &body)
+	if body.Written != "发" || len(body.Readings) != 2 {
+		t.Errorf("GET as bob after empty patch = %q/%+v, want the shared entry", body.Written, body.Readings)
+	}
+
+	// Unknown and malformed ids are 404; malformed bodies, an empty
+	// written form, and readings without a type or value are 400.
+	for _, bad := range []string{"/api/entries/999999", "/api/entries/NaN"} {
+		if resp := doJSON(t, http.MethodPut, ts.URL, bad, alice, map[string]any{"written": "發"}); resp.StatusCode != http.StatusNotFound {
+			t.Errorf("PUT %s: status = %d, want %d", bad, resp.StatusCode, http.StatusNotFound)
+		}
+	}
+	for name, req := range map[string]any{
+		"malformed body":  "not-an-object",
+		"empty written":   map[string]any{"written": ""},
+		"reading no type": map[string]any{"readings": []map[string]string{{"value": "fa4"}}},
+		"reading no val":  map[string]any{"readings": []map[string]string{{"type": "pinyin"}}},
+	} {
+		if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, req); resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("PUT %s: status = %d, want %d", name, resp.StatusCode, http.StatusBadRequest)
+		}
+	}
+}

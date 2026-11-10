@@ -40,6 +40,19 @@ type Reading struct {
 	Ord   int    `json:"ord"`
 }
 
+// EntryPatch is one user's edit of one shared entry — the per-user
+// overlay stored beside the entry and layered on it at read time, never
+// written back to the shared rows. Nil fields are untouched: the
+// shared value shows. A non-nil Written replaces the user's view of
+// the written form; non-nil Readings replace the user's view of the
+// readings with exactly the list saved — stored and served verbatim,
+// never re-derived through a language pack. Sense-level edits are out
+// of scope.
+type EntryPatch struct {
+	Written  *string   `json:"written"`
+	Readings []Reading `json:"readings"`
+}
+
 // Dictionary is the registry row one imported dictionary pack creates,
 // keyed by the pack's manifest id. Re-imports upsert the row; uninstall
 // soft-deletes it.
