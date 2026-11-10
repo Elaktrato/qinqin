@@ -38,6 +38,12 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("GET /api/schemes", s.handleListSchemes)
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
+	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
+	mux.HandleFunc("GET /api/plugins", s.handleListPlugins)
+	mux.HandleFunc("PUT /api/plugins/{id}/state", s.handleSetPluginState)
+	mux.HandleFunc("GET /api/plugins/{id}/data/{key}", s.handleGetPluginData)
+	mux.HandleFunc("PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData)
+	mux.HandleFunc("DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData)
 	return mux
 }
 

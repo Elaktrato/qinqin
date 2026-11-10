@@ -139,6 +139,45 @@ type StudyEvent struct {
 	Payload     json.RawMessage `json:"payload"`
 }
 
+// PluginInfo is one plugin as listed for a user: its manifest and the
+// user's state for it. Feature plugins carry the admin-registered
+// manifest verbatim; data plugins (dictionary, levels, sentences
+// packs) a manifest synthesized from their pack registries. Default
+// state — no plugin_states row — is enabled at order 0.
+type PluginInfo struct {
+	ID       string          `json:"id"`
+	Manifest json.RawMessage `json:"manifest"`
+	Enabled  bool            `json:"enabled"`
+	Order    int             `json:"order"`
+}
+
+// PluginState is one user's state for one plugin: whether it is
+// enabled on their home and where it sits in the home order.
+type PluginState struct {
+	PluginID  string    `json:"pluginId"`
+	UserID    int64     `json:"userId"`
+	Enabled   bool      `json:"enabled"`
+	Order     int       `json:"order"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// PluginData is one plugin-owned data row — settings, decks, anything a
+// plugin stores per key. A nil WorkspaceID is user-global data shared
+// by all the user's workspaces; a non-nil one scopes the row to a
+// single workspace. Version increments on every write, so clients can
+// sync by pulling rows changed since a timestamp; DeletedAt set marks
+// a tombstone.
+type PluginData struct {
+	PluginID    string          `json:"pluginId"`
+	Key         string          `json:"key"`
+	UserID      int64           `json:"userId"`
+	WorkspaceID *int64          `json:"workspaceId"`
+	Data        json.RawMessage `json:"data"`
+	Version     int             `json:"version"`
+	UpdatedAt   time.Time       `json:"updatedAt"`
+	DeletedAt   *time.Time      `json:"deletedAt"`
+}
+
 // Sentence is one example sentence on an entry: a pack-provided one
 // carries its source pack and no owner; a user-added one carries the
 // owning user and no pack. Pack imports replace that pack's sentences
