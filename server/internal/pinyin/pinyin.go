@@ -102,7 +102,7 @@ var finalBopomofo = map[string]string{
 	"ün":   "ㄩㄣ",
 }
 
-var toneBopomofo = [6]string{"", "", "ˊ", "ˇ", "ˋ", "˙"}
+var toneBopomofo = [6]string{"", "", "ˊ", "ˇ", "ˋ", ""}
 
 // syllable is one parsed pinyin syllable.
 type syllable struct {
@@ -120,9 +120,6 @@ func (s syllable) bopomofo() string {
 	body := initialBopomofo[s.initial]
 	if !s.isApical() {
 		body += finalBopomofo[s.final]
-	}
-	if s.tone == 5 {
-		return toneBopomofo[5] + body
 	}
 	return body + toneBopomofo[s.tone]
 }
@@ -300,17 +297,17 @@ func baseVowel(r rune) rune {
 }
 
 // Plain returns lowercase pinyin letters only: tones, spaces, and apostrophes are
-// removed, and ü is written as u.
+// removed, and ü, u:, and v are all written as v.
 func Plain(s string) string {
-	var b strings.Builder
+	var base strings.Builder
 	for _, r := range strings.ToLower(s) {
 		if m, ok := toneMarks[r]; ok {
 			r = m.base
 		}
-		switch r {
-		case 'ü', 'v':
-			r = 'u'
-		}
+		base.WriteRune(r)
+	}
+	var b strings.Builder
+	for _, r := range strings.NewReplacer("u:", "v", "ü", "v").Replace(base.String()) {
 		if r >= 'a' && r <= 'z' {
 			b.WriteRune(r)
 		}

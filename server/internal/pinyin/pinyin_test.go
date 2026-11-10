@@ -12,6 +12,7 @@ func TestBopomofoTable(t *testing.T) {
 		{"zhōng wén", "ㄓㄨㄥ ㄨㄣˊ"},
 		{"ma", "ㄇㄚ"},
 		{"lǜ", "ㄌㄩˋ"},
+		{"fa5", "ㄈㄚ"},
 	}
 	for _, c := range cases {
 		got, err := ToBopomofo(c.in)
@@ -35,6 +36,15 @@ func TestMarkedAndPlain(t *testing.T) {
 	}
 	if p := Plain("Nǐ hǎo"); p != "nihao" {
 		t.Errorf("Plain(\"Nǐ hǎo\") = %q, want %q", p, "nihao")
+	}
+	if p := Plain("lǜ"); p != "lv" {
+		t.Errorf("Plain(\"lǜ\") = %q, want %q", p, "lv")
+	}
+	if p := Plain("lü"); p != "lv" {
+		t.Errorf("Plain(\"lü\") = %q, want %q", p, "lv")
+	}
+	if p := Plain("lu:"); p != "lv" {
+		t.Errorf("Plain(\"lu:\") = %q, want %q", p, "lv")
 	}
 }
 
