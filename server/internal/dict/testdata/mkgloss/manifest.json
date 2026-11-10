@@ -1,0 +1,10 @@
+{
+  "id": "mkgloss",
+  "name": "Mkgloss demo dictionary",
+  "version": "1.0",
+  "type": "dictionary",
+  "language": "zh",
+  "license": "CC BY-SA 4.0",
+  "attribution": "Qinqin test fixtures",
+  "format": "json"
+}

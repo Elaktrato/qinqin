@@ -18,7 +18,7 @@ func TestHealthz(t *testing.T) {
 	}
 	defer sqlDB.Close()
 
-	ts := httptest.NewServer(api.New(sqlDB))
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir()))
 	defer ts.Close()
 
 	resp, err := http.Get(ts.URL + "/healthz")

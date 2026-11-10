@@ -39,3 +39,30 @@ type Reading struct {
 	Plain string `json:"plain"`
 	Ord   int    `json:"ord"`
 }
+
+// Dictionary is the registry row one imported dictionary pack creates,
+// keyed by the pack's manifest id. Re-imports upsert the row; uninstall
+// soft-deletes it.
+type Dictionary struct {
+	ID          int64      `json:"id"`
+	PackID      string     `json:"packId"`
+	Name        string     `json:"name"`
+	Version     string     `json:"version"`
+	License     string     `json:"license"`
+	Attribution string     `json:"attribution"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+	DeletedAt   *time.Time `json:"deletedAt"`
+}
+
+// Sense is one gloss of one entry under one dictionary. Imports replace
+// a dictionary's senses wholesale — old rows are soft-deleted, new rows
+// inserted — so re-imports never touch entries or user data.
+type Sense struct {
+	ID           int64      `json:"id"`
+	DictionaryID int64      `json:"dictionaryId"`
+	EntryID      int64      `json:"entryId"`
+	Gloss        string     `json:"gloss"`
+	Ord          int        `json:"ord"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
+	DeletedAt    *time.Time `json:"deletedAt"`
+}

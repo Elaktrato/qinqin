@@ -7,15 +7,18 @@ import (
 	"net/http"
 )
 
-// server carries the shared database handle for all route handlers.
+// server carries the shared database handle and data directory for all
+// route handlers.
 type server struct {
-	db *sql.DB
+	db      *sql.DB
+	dataDir string
 }
 
 // New returns the root HTTP handler with all qinqin routes mounted.
-// Domain routes are added to the mux by later tasks, all sharing sqlDB.
-func New(sqlDB *sql.DB) http.Handler {
-	s := &server{db: sqlDB}
+// Uploaded packs are stored under dataDir/packs/. Domain routes are
+// added to the mux by later tasks, all sharing sqlDB.
+func New(sqlDB *sql.DB, dataDir string) http.Handler {
+	s := &server{db: sqlDB, dataDir: dataDir}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
 	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
@@ -25,6 +28,9 @@ func New(sqlDB *sql.DB) http.Handler {
 	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
 	mux.HandleFunc("GET /api/workspaces", s.handleListWorkspaces)
 	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
+	mux.HandleFunc("GET /api/dictionaries", s.handleListDictionaries)
+	mux.HandleFunc("POST /api/admin/dictionaries", s.handleInstallDictionary)
+	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
 	return mux
 }
 

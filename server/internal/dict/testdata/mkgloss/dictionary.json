@@ -1,0 +1,18 @@
+{
+  "entries": [
+    {
+      "written": "好",
+      "trad": "好",
+      "kind": "character",
+      "readings": [{"type": "pinyin", "value": "hǎo"}],
+      "glosses": ["good"]
+    },
+    {
+      "written": "你好",
+      "trad": "妳好",
+      "kind": "word",
+      "readings": [{"type": "pinyin", "value": "nǐ hǎo"}],
+      "glosses": ["hello", "hi"]
+    }
+  ]
+}

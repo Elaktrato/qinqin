@@ -39,5 +39,5 @@ func run(addr, dataDir string) error {
 	defer sqlDB.Close()
 
 	log.Printf("qinqin listening on %s (data: %s)", addr, dataDir)
-	return http.ListenAndServe(addr, api.New(sqlDB))
+	return http.ListenAndServe(addr, api.New(sqlDB, dataDir))
 }
