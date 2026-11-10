@@ -313,6 +313,60 @@ func TestPluginDataTombstone(t *testing.T) {
 	}
 }
 
+func TestPluginDataRevive(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+
+	// A row is stored, then tombstoned: the active read is gone.
+	if _, err := plugins.PutData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "decks", json.RawMessage(`{"daily":["你好"]}`)); err != nil {
+		t.Fatalf("first PutData: %v", err)
+	}
+	stored, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "decks")
+	if err != nil {
+		t.Fatalf("GetData: %v", err)
+	}
+	if err := plugins.DeleteData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "decks"); err != nil {
+		t.Fatalf("DeleteData: %v", err)
+	}
+	if _, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "decks"); !errors.Is(err, plugins.ErrNotFound) {
+		t.Fatalf("GetData after delete err = %v, want ErrNotFound", err)
+	}
+
+	// Re-putting the key revives the tombstoned row: the version
+	// continues from the deleted row's, not restarting at 1.
+	revivedAt := stored.UpdatedAt
+	version, err := plugins.PutData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "decks", json.RawMessage(`{"daily":["你好","谢谢"]}`))
+	if err != nil {
+		t.Fatalf("reviving PutData: %v", err)
+	}
+	if version <= stored.Version {
+		t.Errorf("revived version = %d, want greater than the deleted row's %d", version, stored.Version)
+	}
+
+	// The revived row reads back active, carrying the new value.
+	revived, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "decks")
+	if err != nil {
+		t.Fatalf("GetData after revive: %v", err)
+	}
+	if string(revived.Data) != `{"daily":["你好","谢谢"]}` || revived.Version != version || revived.DeletedAt != nil {
+		t.Errorf("revived data = %+v, want version %d active with the new value", revived, version)
+	}
+
+	// A sync pull since before the revive reports the row as active,
+	// not still deleted.
+	pulled, err := plugins.PullData(ctx, sqlDB, alice, revivedAt)
+	if err != nil {
+		t.Fatalf("PullData: %v", err)
+	}
+	if len(pulled) != 1 {
+		t.Fatalf("pulled = %+v, want the one revived row", pulled)
+	}
+	if pulled[0].DeletedAt != nil || pulled[0].Version != version || string(pulled[0].Data) != `{"daily":["你好","谢谢"]}` {
+		t.Errorf("pulled row = %+v, want the revived row active at version %d", pulled[0], version)
+	}
+}
+
 func TestPluginDataIsolatedBetweenUsers(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
