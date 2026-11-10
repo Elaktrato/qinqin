@@ -44,8 +44,9 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body chinsync.PushBody
+	r.Body = http.MaxBytesReader(w, r.Body, maxPushBody)
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		badBody(w, err)
 		return
 	}
 	res, err := chinsync.Push(r.Context(), s.db, u.ID, body)

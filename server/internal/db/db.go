@@ -24,7 +24,10 @@ var migrationsFS embed.FS
 func Open(path string) (*sql.DB, error) {
 	// busy_timeout(5000) makes concurrent writers wait for the lock instead
 	// of failing immediately with SQLITE_BUSY (applied per pooled connection).
-	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)")
+	// journal_mode(WAL) lets the server keep reading while another process
+	// (qinqin seed via docker compose exec) writes; with the default
+	// rollback journal those reads would block until the busy timeout.
+	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
 	if err != nil {
 		return nil, fmt.Errorf("open database %s: %w", path, err)
 	}

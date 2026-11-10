@@ -48,6 +48,7 @@ type SearchQuery struct {
 // and ja accepts romaji or kana.
 func (s Store) Search(ctx context.Context, q SearchQuery) ([]model.SearchHit, error) {
 	text := strings.TrimSpace(q.Text)
+	q.Lang = strings.ToLower(q.Lang)
 	if q.Lang == "" {
 		return nil, fmt.Errorf("%w: language required", ErrInvalidQuery)
 	}

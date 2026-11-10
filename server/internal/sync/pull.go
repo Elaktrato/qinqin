@@ -164,6 +164,96 @@ func pullSentences(ctx context.Context, sqlDB *sql.DB, userID int64, since, live
 	return list, nil
 }
 
+func pullDictionaries(ctx context.Context, sqlDB *sql.DB, since, live string) ([]model.Dictionary, error) {
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT id, pack_id, name, version, license, attribution, updated_at, deleted_at FROM dictionaries
+		WHERE updated_at >= ?`+live+` ORDER BY id`, since)
+	if err != nil {
+		return nil, fmt.Errorf("sync pull dictionaries: %w", err)
+	}
+	defer rows.Close()
+	list := make([]model.Dictionary, 0)
+	for rows.Next() {
+		var d model.Dictionary
+		var updated string
+		var deleted sql.NullString
+		if err := rows.Scan(&d.ID, &d.PackID, &d.Name, &d.Version, &d.License, &d.Attribution, &updated, &deleted); err != nil {
+			return nil, fmt.Errorf("sync pull dictionaries: %w", err)
+		}
+		if d.UpdatedAt, err = parseTS(updated); err != nil {
+			return nil, err
+		}
+		if d.DeletedAt, err = parseDeleted(deleted); err != nil {
+			return nil, err
+		}
+		list = append(list, d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("sync pull dictionaries: %w", err)
+	}
+	return list, nil
+}
+
+func pullSchemes(ctx context.Context, sqlDB *sql.DB, since, live string) ([]model.Scheme, error) {
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT id, pack_id, name, unit, language, version, license, attribution, updated_at, deleted_at FROM schemes
+		WHERE updated_at >= ?`+live+` ORDER BY id`, since)
+	if err != nil {
+		return nil, fmt.Errorf("sync pull schemes: %w", err)
+	}
+	defer rows.Close()
+	list := make([]model.Scheme, 0)
+	for rows.Next() {
+		s := model.Scheme{Levels: []model.Level{}}
+		var updated string
+		var deleted sql.NullString
+		if err := rows.Scan(&s.ID, &s.PackID, &s.Name, &s.Unit, &s.Language, &s.Version, &s.License, &s.Attribution, &updated, &deleted); err != nil {
+			return nil, fmt.Errorf("sync pull schemes: %w", err)
+		}
+		if s.UpdatedAt, err = parseTS(updated); err != nil {
+			return nil, err
+		}
+		if s.DeletedAt, err = parseDeleted(deleted); err != nil {
+			return nil, err
+		}
+		list = append(list, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("sync pull schemes: %w", err)
+	}
+	return list, nil
+}
+
+func pullLevels(ctx context.Context, sqlDB *sql.DB, since, live string) ([]model.Level, error) {
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT id, scheme_id, ord, name, updated_at, deleted_at FROM levels
+		WHERE updated_at >= ?`+live+` ORDER BY scheme_id, ord`, since)
+	if err != nil {
+		return nil, fmt.Errorf("sync pull levels: %w", err)
+	}
+	defer rows.Close()
+	list := make([]model.Level, 0)
+	for rows.Next() {
+		var l model.Level
+		var updated string
+		var deleted sql.NullString
+		if err := rows.Scan(&l.ID, &l.SchemeID, &l.Ord, &l.Name, &updated, &deleted); err != nil {
+			return nil, fmt.Errorf("sync pull levels: %w", err)
+		}
+		if l.UpdatedAt, err = parseTS(updated); err != nil {
+			return nil, err
+		}
+		if l.DeletedAt, err = parseDeleted(deleted); err != nil {
+			return nil, err
+		}
+		list = append(list, l)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("sync pull levels: %w", err)
+	}
+	return list, nil
+}
+
 // pullOverlays returns the caller's changed entry overlays; other users'
 // edits never leave the server.
 func pullOverlays(ctx context.Context, sqlDB *sql.DB, userID int64, since string) ([]Overlay, error) {

@@ -2,9 +2,10 @@
 # ./data next to this file.
 #
 # First run — seed the sample packs and create the admin user:
-#   docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs
+#   docker compose exec qinqin qinqin seed
 #   docker compose exec qinqin qinqin adduser --username <name> --admin
-# (or register the first user over the API: the first registration is the admin).
+# Do this BEFORE exposing the port beyond your LAN: until a user exists, the
+# first registration over the API becomes the admin — whoever makes it.
 services:
   qinqin:
     image: ${QINQIN_IMAGE:-ghcr.io/elaktrato/qinqin:latest}

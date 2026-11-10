@@ -4,6 +4,7 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -48,6 +49,24 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData)
 	mux.HandleFunc("DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData)
 	return mux
+}
+
+// Request body caps of the two bulk write routes, the largest bodies the
+// API accepts.
+const (
+	maxBatchBody = 4 << 20 // POST /api/events/batch
+	maxPushBody  = 8 << 20 // POST /api/sync/push
+)
+
+// badBody answers a request body that failed to decode: 413 when it
+// exceeded its cap, 400 when it was malformed.
+func badBody(w http.ResponseWriter, err error) {
+	var tooBig *http.MaxBytesError
+	if errors.As(err, &tooBig) {
+		http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+		return
+	}
+	http.Error(w, "malformed request body", http.StatusBadRequest)
 }
 
 func handleHealthz(w http.ResponseWriter, r *http.Request) {

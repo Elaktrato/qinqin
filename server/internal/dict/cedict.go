@@ -139,6 +139,9 @@ func readCedictPack(dir string) ([]entry, cedictStats, error) {
 	if err != nil {
 		return nil, cedictStats{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
 	}
+	if len(p.entries) == 0 && p.skipped == 0 {
+		return nil, cedictStats{}, fmt.Errorf("%w: %s of %s has no entries", ErrInvalidPack, cedictFile, dir)
+	}
 	if p.skipped > 0 && (len(p.entries) == 0 ||
 		float64(p.skipped) > maxSkippedShare*float64(p.skipped+len(p.entries))) {
 		return nil, cedictStats{}, fmt.Errorf("%w: %s of %s: %d of %d entry lines are malformed (first: %s)",
