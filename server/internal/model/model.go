@@ -1,7 +1,10 @@
 // Package model holds the domain types shared across the qinqin backend.
 package model
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // User is an authenticated account. The first user registered on a fresh
 // database becomes the instance admin.
@@ -117,6 +120,23 @@ type Badge struct {
 	SchemeName string `json:"schemeName"`
 	LevelName  string `json:"levelName"`
 	Derived    bool   `json:"derived"`
+}
+
+// StudyEvent is one recorded study action — a review, a lookup, a
+// session tick — pushed by a client in batches and stored append-only:
+// rows are never updated or deleted. ID is the client-generated ULID,
+// so a retried push of the same batch counts as duplicates instead of
+// errors. TS is the client's event time, kept verbatim; WorkspaceID
+// scopes the event to one of the owner's language workspaces; Payload
+// carries the event-type-specific details verbatim.
+type StudyEvent struct {
+	ID          string          `json:"id"`
+	UserID      int64           `json:"userId"`
+	WorkspaceID int64           `json:"workspaceId"`
+	Device      string          `json:"device"`
+	TS          time.Time       `json:"ts"`
+	Type        string          `json:"type"`
+	Payload     json.RawMessage `json:"payload"`
 }
 
 // Sentence is one example sentence on an entry: a pack-provided one

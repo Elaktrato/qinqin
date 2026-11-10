@@ -30,6 +30,8 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
 	mux.HandleFunc("GET /api/workspaces", s.handleListWorkspaces)
 	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
+	mux.HandleFunc("POST /api/events/batch", s.handleEventBatch)
+	mux.HandleFunc("GET /api/events", s.handleListEvents)
 	mux.HandleFunc("GET /api/dictionaries", s.handleListDictionaries)
 	mux.HandleFunc("POST /api/admin/dictionaries", s.handleInstallDictionary)
 	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
