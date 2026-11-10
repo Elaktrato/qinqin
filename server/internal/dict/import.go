@@ -32,6 +32,12 @@ const dictionaryFile = "dictionary.json"
 type Result struct {
 	Entries int // the pack's entries upserted, variant forms included; bare character entries created only to link words to their hanzi or to serve as radicals are not counted
 	Senses  int // sense rows inserted for the dictionary
+
+	// Operational counters of a cedict import: malformed lines skipped,
+	// and entries whose pinyin did not convert (kept as written, so no
+	// bopomofo derives for them).
+	Skipped     int
+	Unconverted int
 }
 
 // senseRow is one sense to insert: a gloss at its position for one
@@ -72,7 +78,10 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 	if m.Type != TypeDictionary {
 		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotDictionary, m.ID, m.Type)
 	}
-	var es []entry
+	var (
+		es    []entry
+		stats cedictStats
+	)
 	switch m.Format {
 	case FormatJSON:
 		parsed, err := readJSONPack(pack.Dir)
@@ -81,11 +90,11 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 		}
 		es = parsed
 	case FormatCedict:
-		parsed, err := readCedictPack(pack.Dir)
+		parsed, st, err := readCedictPack(pack.Dir)
 		if err != nil {
 			return Result{}, err
 		}
-		es = parsed
+		es, stats = parsed, st
 	case FormatUnihan:
 		data, err := readUnihanPack(pack.Dir)
 		if err != nil {
@@ -120,7 +129,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 	store := entries.Store{DB: sqlDB}
 	var (
 		senses []senseRow
-		result Result
+		result = Result{Skipped: stats.skipped, Unconverted: stats.unconverted}
 	)
 	for _, e := range es {
 		// Every written form — the primary plus the extras — becomes its
