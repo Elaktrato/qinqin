@@ -48,11 +48,27 @@ func TestMarkedAndPlain(t *testing.T) {
 	}
 }
 
-func TestInvalidSyllableErrors(t *testing.T) {
-	if _, err := ToBopomofo("hello"); err == nil {
-		t.Error("ToBopomofo(\"hello\") expected error")
+func TestRealSyllablesAccepted(t *testing.T) {
+	for _, in := range []string{
+		"a", "o", "e", "er", "yi", "wu", "yu", "yong", "weng", "wen",
+		"bo", "mo", "fo", "me", "miu", "diu", "niu", "liu", "dei", "zhei", "shei",
+		"nü", "lüe", "nüe", "jiong", "juan", "xun", "zhua", "shuai", "chuang",
+		"zi", "ci", "si", "zhi", "chi", "shi", "ri", "ruo", "ruan",
+		"hei", "gei", "ou", "cou", "den", "ban", "ren",
+	} {
+		if _, err := ToBopomofo(in); err != nil {
+			t.Errorf("ToBopomofo(%q) unexpected error: %v", in, err)
+		}
 	}
-	if _, err := ToMarked("hello"); err == nil {
-		t.Error("ToMarked(\"hello\") expected error")
+}
+
+func TestInvalidSyllableErrors(t *testing.T) {
+	for _, in := range []string{"hello", "hi", "fai", "duang", "gi", "ki"} {
+		if _, err := ToBopomofo(in); err == nil {
+			t.Errorf("ToBopomofo(%q) expected error", in)
+		}
+		if _, err := ToMarked(in); err == nil {
+			t.Errorf("ToMarked(%q) expected error", in)
+		}
 	}
 }

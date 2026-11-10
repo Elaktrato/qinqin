@@ -102,6 +102,54 @@ var finalBopomofo = map[string]string{
 	"ün":   "ㄩㄣ",
 }
 
+// finalsByInitial lists the finals each initial takes in standard Mandarin
+// syllables. Keys may name several initials separated by spaces.
+var finalsByInitial = map[string]string{
+	"b p":   "a o ai ei ao ou an en ang eng i ie iao ian in ing u",
+	"m":     "a e o ai ei ao ou an en ang eng i ie iao iou ian in ing u",
+	"f":     "a o ei ou an en ang eng u",
+	"d":     "a e ai ei ao ou an en ang eng ong i ie iao iou ian ing u uo uei uan uen",
+	"t":     "a e ai ao ou an ang eng ong i ie iao ian ing u uo uei uan uen",
+	"n":     "a e ai ei ao ou an en ang eng ong i ie iao iou ian in iang ing u uo uan uen ü üe",
+	"l":     "a e ai ei ao ou an en ang eng ong i ia ie iao iou ian in iang ing u uo uan uen ü üe",
+	"g h":   "a e ai ei ao ou an en ang eng ong u ua uo uai uei uan uen uang",
+	"k":     "a e ai ao ou an en ang eng ong u ua uo uai uei uan uen uang",
+	"j q x": "i ia ie iao iou ian in iang ing iong ü üe üan ün",
+	"zh ch": "a e ai ei ao ou an en ang eng ong u ua uo uai uei uan uen uang",
+	"sh":    "a e ai ei ao ou an en ang eng u ua uo uai uei uan uen uang",
+	"r":     "e ao ou an en ang eng ong u uo uei uan uen",
+	"z":     "a e ai ei ao ou an en ang eng ong u uo uei uan uen",
+	"c s":   "a e ai ao ou an en ang eng ong u uo uei uan uen",
+}
+
+var validFinals = func() map[string]map[string]bool {
+	set := make(map[string]map[string]bool)
+	for initialGroup, finals := range finalsByInitial {
+		for _, ini := range strings.Fields(initialGroup) {
+			if set[ini] == nil {
+				set[ini] = make(map[string]bool)
+			}
+			for _, f := range strings.Fields(finals) {
+				set[ini][f] = true
+			}
+		}
+	}
+	return set
+}()
+
+// validSyllable reports whether an initial and final form a real Mandarin syllable.
+// A bare zero-initial final must be a standalone syllable, so "ong" is excluded.
+func validSyllable(initial, final string) bool {
+	switch {
+	case initial == "":
+		_, ok := finalBopomofo[final]
+		return ok && final != "ong"
+	case apicalInitials[initial] && final == "i":
+		return true
+	}
+	return validFinals[initial][final]
+}
+
 var toneBopomofo = [6]string{"", "", "ˊ", "ˇ", "ˋ", ""}
 
 // syllable is one parsed pinyin syllable.
@@ -197,14 +245,10 @@ func parse(token string) (syllable, error) {
 		}
 	}
 
-	syl := syllable{initial: initial, final: final, spelled: spelled, tone: tone}
-	if syl.isApical() {
-		return syl, nil
-	}
-	if _, ok := finalBopomofo[final]; !ok {
+	if !validSyllable(initial, final) {
 		return syllable{}, invalid
 	}
-	return syl, nil
+	return syllable{initial: initial, final: final, spelled: spelled, tone: tone}, nil
 }
 
 func parseAll(s string) ([]syllable, error) {
