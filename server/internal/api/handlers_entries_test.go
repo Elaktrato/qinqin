@@ -13,6 +13,7 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/db"
 	"qinqin/internal/entries"
+	"qinqin/internal/lang"
 	"qinqin/internal/model"
 )
 
@@ -40,7 +41,7 @@ func mustUpsertEntry(t *testing.T, st entries.Store, e *model.Entry) int64 {
 	t.Helper()
 	id, err := st.Upsert(context.Background(), e)
 	if err != nil {
-		t.Fatalf("upsert %q (%s): %v", e.Written, e.Kind, err)
+		t.Fatalf("upsert %q (%s/%s): %v", e.Written, e.Kind, e.Language, err)
 	}
 	return id
 }
@@ -56,14 +57,36 @@ func getEntry(t *testing.T, tsURL, path string) *http.Response {
 	return resp
 }
 
+// findReading returns e's reading of the given type, or nil.
+func findReading(e model.Entry, readType string) *model.Reading {
+	for i := range e.Readings {
+		if e.Readings[i].Type == readType {
+			return &e.Readings[i]
+		}
+	}
+	return nil
+}
+
 func TestGetEntryEndpoint(t *testing.T) {
+	// Entries carry readings normalized through the zh pack.
+	lang.Register(lang.Zh{})
+
 	ts, sqlDB := newServer(t)
 	ctx := context.Background()
 	st := entries.Store{DB: sqlDB}
 
-	hao := mustUpsertEntry(t, st, &model.Entry{Kind: "hanzi", Written: "好", Pinyin: "hǎo"})
-	fa := mustUpsertEntry(t, st, &model.Entry{Kind: "hanzi", Written: "发", Pinyin: "fā"})
-	faTrad := mustUpsertEntry(t, st, &model.Entry{Kind: "hanzi", Written: "發", Pinyin: "fā"})
+	hao := mustUpsertEntry(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "好",
+		Readings: []model.Reading{{Type: "pinyin", Value: "hǎo"}},
+	})
+	fa := mustUpsertEntry(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "发",
+		Readings: []model.Reading{{Type: "pinyin", Value: "fā"}},
+	})
+	faTrad := mustUpsertEntry(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "發",
+		Readings: []model.Reading{{Type: "pinyin", Value: "fā"}},
+	})
 	if err := st.LinkVariant(ctx, fa, faTrad); err != nil {
 		t.Fatalf("link 发↔發: %v", err)
 	}
@@ -77,12 +100,23 @@ func TestGetEntryEndpoint(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
 		t.Fatalf("decode entry response: %v", err)
 	}
-	if body.ID != fa || body.Kind != "hanzi" || body.Written != "发" ||
-		body.PinyinPlain != "fa" || body.Bopomofo != "ㄈㄚ" {
+	if body.ID != fa || body.Language != "zh" || body.Kind != "character" || body.Written != "发" {
 		t.Errorf("entry body = %+v, want the 发 entry", body.Entry)
+	}
+	if py := findReading(body.Entry, "pinyin"); py == nil || py.Value != "fā" || py.Plain != "fa" {
+		t.Errorf("entry readings = %+v, want pinyin fā/fa", body.Readings)
+	}
+	if bm := findReading(body.Entry, "bopomofo"); bm == nil || bm.Value != "ㄈㄚ" {
+		t.Errorf("entry readings = %+v, want derived bopomofo ㄈㄚ", body.Readings)
+	}
+	if body.Attrs == nil {
+		t.Errorf("attrs = null, want an empty object")
 	}
 	if len(body.Variants) != 1 || body.Variants[0].ID != faTrad || body.Variants[0].Written != "發" {
 		t.Errorf("variants = %+v, want just 發", body.Variants)
+	}
+	if py := findReading(body.Variants[0], "pinyin"); py == nil || py.Plain != "fa" {
+		t.Errorf("variant readings = %+v, want pinyin plain fa", body.Variants[0].Readings)
 	}
 
 	// An entry without variants returns an empty variants array.
@@ -100,10 +134,13 @@ func TestGetEntryEndpoint(t *testing.T) {
 	if body.Variants == nil || len(body.Variants) != 0 {
 		t.Errorf("variants of unlinked entry = %v, want an empty array", body.Variants)
 	}
+	if body.Readings == nil || len(body.Readings) != 2 {
+		t.Errorf("readings of 好 = %v, want pinyin plus derived bopomofo", body.Readings)
+	}
 
 	// Unknown and malformed ids are 404.
 	for _, path := range []string{"/api/entries/999999", "/api/entries/NaN"} {
-		resp := getEntry(t, ts.URL, path)
+		resp = getEntry(t, ts.URL, path)
 		if resp.StatusCode != http.StatusNotFound {
 			t.Errorf("GET %s: status = %d, want %d", path, resp.StatusCode, http.StatusNotFound)
 		}

@@ -1,6 +1,6 @@
-// Package entries stores dictionary entries — hanzi and words — and the
-// links between them: variant pairs, radical classification, and
-// word-character composition.
+// Package entries stores dictionary entries — characters and words in any
+// language — and the links between them: variant pairs, radical
+// classification, and word-character composition.
 package entries
 
 import (
@@ -8,14 +8,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
+	"qinqin/internal/lang"
 	"qinqin/internal/model"
-	"qinqin/internal/pinyin"
 )
 
 // ErrNotFound reports an entry lookup that matched nothing: the id or
-// (written, kind) key is unknown, or its row is soft-deleted.
+// (written, kind, language) key is unknown, or its row is soft-deleted.
 var ErrNotFound = errors.New("entry not found")
 
 // Link types stored in entry_links. Variant links are stored in both
@@ -32,35 +33,76 @@ type Store struct {
 	DB *sql.DB
 }
 
-// Upsert writes e keyed by (written, kind), reviving a soft-deleted row
-// with the same key, and returns its id. It fills e.PinyinPlain from
-// e.Pinyin via pinyin.Plain and e.Bopomofo via pinyin.ToBopomofo; pinyin
-// that cannot be converted leaves Bopomofo empty and never fails the upsert.
+// Upsert writes e keyed by (written, kind, language), reviving a
+// soft-deleted row with the same key, and returns its id. Each reading's
+// Plain is filled via the entry's language pack, which also derives extra
+// readings (zh appends bopomofo from pinyin) and never fails on
+// unconvertible input; ord is the reading's position among the entry's
+// readings. Attrs persist as child rows keyed by (entry_id, key).
 func (s Store) Upsert(ctx context.Context, e *model.Entry) (int64, error) {
-	e.PinyinPlain = pinyin.Plain(e.Pinyin)
-	bopomofo, err := pinyin.ToBopomofo(e.Pinyin)
+	pack := lang.For(e.Language)
+	normalizeReadings(e.Readings, pack)
+	e.Readings = pack.DeriveReadings(e.Readings)
+	normalizeReadings(e.Readings, pack)
+
+	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
-		bopomofo = ""
+		return 0, fmt.Errorf("upsert entry %q (%s/%s): %w", e.Written, e.Kind, e.Language, err)
 	}
-	e.Bopomofo = bopomofo
+	defer tx.Rollback()
+	stamp := now()
 
 	var id int64
-	err = s.DB.QueryRowContext(ctx, `
-		INSERT INTO entries (kind, written, pinyin, pinyin_plain, bopomofo, strokes, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (written, kind) DO UPDATE SET
-			pinyin = excluded.pinyin,
-			pinyin_plain = excluded.pinyin_plain,
-			bopomofo = excluded.bopomofo,
-			strokes = excluded.strokes,
+	err = tx.QueryRowContext(ctx, `
+		INSERT INTO entries (language, kind, written, updated_at)
+		VALUES (?, ?, ?, ?)
+		ON CONFLICT (written, kind, language) DO UPDATE SET
 			updated_at = excluded.updated_at,
 			deleted_at = NULL
 		RETURNING id`,
-		e.Kind, e.Written, e.Pinyin, e.PinyinPlain, e.Bopomofo, e.Strokes, now()).
-		Scan(&id)
+		e.Language, e.Kind, e.Written, stamp).Scan(&id)
 	if err != nil {
-		return 0, fmt.Errorf("upsert entry %q (%s): %w", e.Written, e.Kind, err)
+		return 0, fmt.Errorf("upsert entry %q (%s/%s): %w", e.Written, e.Kind, e.Language, err)
 	}
+
+	for i, r := range e.Readings {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO readings (entry_id, type, value, plain, ord, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?)
+			ON CONFLICT (entry_id, ord) DO UPDATE SET
+				type = excluded.type,
+				value = excluded.value,
+				plain = excluded.plain,
+				updated_at = excluded.updated_at,
+				deleted_at = NULL`,
+			id, r.Type, r.Value, r.Plain, i, stamp); err != nil {
+			return 0, fmt.Errorf("upsert reading %d of entry %q: %w", i, e.Written, err)
+		}
+	}
+	// A reading list that shrank leaves high-ord rows behind: retire them.
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE readings SET deleted_at = ?, updated_at = ?
+		WHERE entry_id = ? AND ord >= ? AND deleted_at IS NULL`,
+		stamp, stamp, id, len(e.Readings)); err != nil {
+		return 0, fmt.Errorf("retire readings of entry %q: %w", e.Written, err)
+	}
+
+	for k, v := range e.Attrs {
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO entry_attrs (entry_id, key, value, updated_at)
+			VALUES (?, ?, ?, ?)
+			ON CONFLICT (entry_id, key) DO UPDATE SET
+				value = excluded.value,
+				updated_at = excluded.updated_at`,
+			id, k, v, stamp); err != nil {
+			return 0, fmt.Errorf("upsert attr %q of entry %q: %w", k, e.Written, err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("upsert entry %q (%s/%s): %w", e.Written, e.Kind, e.Language, err)
+	}
+	e.ID = id
 	return id, nil
 }
 
@@ -75,19 +117,26 @@ func (s Store) GetByID(ctx context.Context, id int64) (*model.Entry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get entry %d: %w", id, err)
 	}
+	if err := s.attachChildren(ctx, []*model.Entry{e}); err != nil {
+		return nil, fmt.Errorf("get entry %d: %w", id, err)
+	}
 	return e, nil
 }
 
-// GetByWritten returns the entry with the given written form and kind, or
-// ErrNotFound when no active entry has them.
-func (s Store) GetByWritten(ctx context.Context, written, kind string) (*model.Entry, error) {
+// GetByWritten returns the entry with the given written form, kind, and
+// language, or ErrNotFound when no active entry has them.
+func (s Store) GetByWritten(ctx context.Context, written, kind, language string) (*model.Entry, error) {
 	e, err := scanEntry(s.DB.QueryRowContext(ctx, entrySelect+`
-		WHERE e.written = ? AND e.kind = ? AND e.deleted_at IS NULL`, written, kind))
+		WHERE e.written = ? AND e.kind = ? AND e.language = ? AND e.deleted_at IS NULL`,
+		written, kind, language))
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("get entry %q (%s): %w", written, kind, err)
+		return nil, fmt.Errorf("get entry %q (%s/%s): %w", written, kind, language, err)
+	}
+	if err := s.attachChildren(ctx, []*model.Entry{e}); err != nil {
+		return nil, fmt.Errorf("get entry %q (%s/%s): %w", written, kind, language, err)
 	}
 	return e, nil
 }
@@ -188,14 +237,14 @@ func (s Store) WordsContaining(ctx context.Context, charID int64) ([]model.Entry
 // under, reached through its active radical link. SetRadical keeps at most
 // one active radical link per character, so the join never fans out.
 const entrySelect = `
-	SELECT e.id, e.kind, e.written, e.pinyin, e.pinyin_plain, e.bopomofo,
-	       e.strokes, e.updated_at, e.deleted_at, r.to_id
+	SELECT e.id, e.language, e.kind, e.written, e.updated_at, e.deleted_at, r.to_id
 	FROM entries e
 	LEFT JOIN entry_links r
 	       ON r.from_id = e.id AND r.type = 'radical' AND r.deleted_at IS NULL`
 
 // listEntries runs a query built on entrySelect and scans every row into
-// an entry. It returns a non-nil (possibly empty) slice.
+// an entry with its readings and attrs. It returns a non-nil (possibly
+// empty) slice.
 func (s Store) listEntries(ctx context.Context, query string, args ...any) ([]model.Entry, error) {
 	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -211,7 +260,18 @@ func (s Store) listEntries(ctx context.Context, query string, args ...any) ([]mo
 		}
 		list = append(list, *e)
 	}
-	return list, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	byID := make([]*model.Entry, len(list))
+	for i := range list {
+		byID[i] = &list[i]
+	}
+	if err := s.attachChildren(ctx, byID); err != nil {
+		return nil, err
+	}
+	return list, nil
 }
 
 // scanner is anything with a Scan method: *sql.Row and *sql.Rows.
@@ -221,6 +281,7 @@ type scanner interface {
 
 // scanEntry reads one row of entrySelect into an Entry, parsing the stored
 // RFC 3339 timestamps and resolving the radical link into RadicalID.
+// Readings and attrs are left zero; attachChildren fills them.
 func scanEntry(row scanner) (*model.Entry, error) {
 	var (
 		e         model.Entry
@@ -228,8 +289,8 @@ func scanEntry(row scanner) (*model.Entry, error) {
 		updatedAt string
 		deletedAt sql.NullString
 	)
-	if err := row.Scan(&e.ID, &e.Kind, &e.Written, &e.Pinyin, &e.PinyinPlain,
-		&e.Bopomofo, &e.Strokes, &updatedAt, &deletedAt, &radicalID); err != nil {
+	if err := row.Scan(&e.ID, &e.Language, &e.Kind, &e.Written,
+		&updatedAt, &deletedAt, &radicalID); err != nil {
 		return nil, err
 	}
 	updated, err := time.Parse(time.RFC3339, updatedAt)
@@ -249,6 +310,77 @@ func scanEntry(row scanner) (*model.Entry, error) {
 		e.RadicalID = &id
 	}
 	return &e, nil
+}
+
+// attachChildren loads every entry's readings and attrs, replacing the
+// zero values left by scanEntry. Entries without children get an empty
+// reading slice and an empty attrs map, so they marshal as [] and {}.
+func (s Store) attachChildren(ctx context.Context, es []*model.Entry) error {
+	for _, e := range es {
+		e.Readings = []model.Reading{}
+		e.Attrs = map[string]string{}
+	}
+	if len(es) == 0 {
+		return nil
+	}
+
+	byID := make(map[int64]*model.Entry, len(es))
+	ids := make([]any, len(es))
+	for i, e := range es {
+		byID[e.ID] = e
+		ids[i] = e.ID
+	}
+	placeHolders := strings.TrimSuffix(strings.Repeat("?,", len(es)), ",")
+
+	rows, err := s.DB.QueryContext(ctx, `
+		SELECT entry_id, type, value, plain, ord FROM readings
+		WHERE entry_id IN (`+placeHolders+`) AND deleted_at IS NULL
+		ORDER BY entry_id, ord`, ids...)
+	if err != nil {
+		return fmt.Errorf("load readings: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			entryID int64
+			r       model.Reading
+		)
+		if err := rows.Scan(&entryID, &r.Type, &r.Value, &r.Plain, &r.Ord); err != nil {
+			return fmt.Errorf("load readings: %w", err)
+		}
+		byID[entryID].Readings = append(byID[entryID].Readings, r)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("load readings: %w", err)
+	}
+
+	attrRows, err := s.DB.QueryContext(ctx, `
+		SELECT entry_id, key, value FROM entry_attrs
+		WHERE entry_id IN (`+placeHolders+`)`, ids...)
+	if err != nil {
+		return fmt.Errorf("load attrs: %w", err)
+	}
+	defer attrRows.Close()
+	for attrRows.Next() {
+		var (
+			entryID int64
+			k, v    string
+		)
+		if err := attrRows.Scan(&entryID, &k, &v); err != nil {
+			return fmt.Errorf("load attrs: %w", err)
+		}
+		byID[entryID].Attrs[k] = v
+	}
+	return attrRows.Err()
+}
+
+// normalizeReadings fills each reading's Plain via pack and stamps its
+// position among the entry's readings.
+func normalizeReadings(rs []model.Reading, pack lang.Pack) {
+	for i := range rs {
+		rs[i].Plain = pack.NormalizeReading(rs[i].Type, rs[i].Value)
+		rs[i].Ord = i
+	}
 }
 
 // execer abstracts *sql.DB and *sql.Tx for link writes.

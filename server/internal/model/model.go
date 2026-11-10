@@ -11,20 +11,31 @@ type User struct {
 	Admin    bool   `json:"admin"`
 }
 
-// Entry is one written form in the dictionary: a single hanzi or a
-// multi-character word. Simplified and traditional spellings are separate
-// entries linked to each other as variants. RadicalID points at the entry
-// of the radical a character is classified under; it is nil for words and
-// unclassified characters.
+// Entry is one written form in a language's dictionary: a single character
+// or a multi-character word. The same written form in two languages is two
+// entries. Readings and attrs are child rows; readings normalize through
+// the entry's language pack. RadicalID points at the entry of the radical
+// a character is classified under; it is nil for words and unclassified
+// characters.
 type Entry struct {
-	ID          int64      `json:"id"`
-	Kind        string     `json:"kind"` // "hanzi" or "word"
-	Written     string     `json:"written"`
-	Pinyin      string     `json:"pinyin"`
-	PinyinPlain string     `json:"pinyinPlain"`
-	Bopomofo    string     `json:"bopomofo"`
-	Strokes     int        `json:"strokes"`
-	RadicalID   *int64     `json:"radicalId"`
-	UpdatedAt   time.Time  `json:"updatedAt"`
-	DeletedAt   *time.Time `json:"deletedAt"`
+	ID        int64             `json:"id"`
+	Language  string            `json:"language"`
+	Kind      string            `json:"kind"` // "character" or "word"
+	Written   string            `json:"written"`
+	Readings  []Reading         `json:"readings"`
+	Attrs     map[string]string `json:"attrs"`
+	RadicalID *int64            `json:"radicalId"`
+	UpdatedAt time.Time         `json:"updatedAt"`
+	DeletedAt *time.Time        `json:"deletedAt"`
+}
+
+// Reading is one pronunciation of an entry. Type is pack-defined —
+// "pinyin", "bopomofo", "kana", "on", "kun", "romaji", … — Value is the
+// display form, Plain the normalized search form, Ord the position among
+// the entry's readings.
+type Reading struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+	Plain string `json:"plain"`
+	Ord   int    `json:"ord"`
 }

@@ -11,6 +11,7 @@ import (
 
 	"qinqin/internal/api"
 	"qinqin/internal/db"
+	"qinqin/internal/lang"
 )
 
 func main() {
@@ -24,6 +25,10 @@ func main() {
 }
 
 func run(addr, dataDir string) error {
+	// Code packs register before the server starts serving: the zh pack
+	// normalizes pinyin readings and derives their bopomofo forms.
+	lang.Register(lang.Zh{})
+
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return fmt.Errorf("create data directory %s: %w", dataDir, err)
 	}
