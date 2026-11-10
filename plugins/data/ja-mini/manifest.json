@@ -1,0 +1,10 @@
+{
+  "id": "ja-mini",
+  "name": "Japanese mini dictionary (sample)",
+  "version": "1.0",
+  "type": "dictionary",
+  "language": "ja",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written sample data",
+  "format": "json"
+}

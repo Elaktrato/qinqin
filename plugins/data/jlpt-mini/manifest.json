@@ -1,0 +1,10 @@
+{
+  "id": "jlpt-mini",
+  "name": "JLPT N5 mini (sample)",
+  "version": "1.0",
+  "type": "levels",
+  "language": "ja",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written sample data, not an official JLPT list",
+  "format": "json"
+}

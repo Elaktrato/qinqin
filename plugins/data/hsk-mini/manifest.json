@@ -1,0 +1,10 @@
+{
+  "id": "hsk-mini",
+  "name": "HSK mini (sample)",
+  "version": "1.0",
+  "type": "levels",
+  "language": "zh",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written sample data, not the official HSK lists",
+  "format": "json"
+}

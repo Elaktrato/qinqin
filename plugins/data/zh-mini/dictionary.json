@@ -1,0 +1,11 @@
+{
+  "entries": [
+    {"written": "好", "kind": "character", "readings": [{"type": "pinyin", "value": "hǎo"}], "glosses": ["good", "well"]},
+    {"written": "谢", "trad": "謝", "kind": "character", "readings": [{"type": "pinyin", "value": "xiè"}], "glosses": ["to thank"]},
+    {"written": "银", "trad": "銀", "kind": "character", "readings": [{"type": "pinyin", "value": "yín"}], "glosses": ["silver"]},
+    {"written": "行", "kind": "character", "readings": [{"type": "pinyin", "value": "háng"}], "glosses": ["row", "profession", "bank (in 银行)"]},
+    {"written": "你好", "kind": "word", "readings": [{"type": "pinyin", "value": "nǐ hǎo"}], "glosses": ["hello", "hi"]},
+    {"written": "谢谢", "trad": "謝謝", "kind": "word", "readings": [{"type": "pinyin", "value": "xiè xie"}], "glosses": ["thanks", "thank you"]},
+    {"written": "银行", "trad": "銀行", "kind": "word", "readings": [{"type": "pinyin", "value": "yín háng"}], "glosses": ["bank"]}
+  ]
+}

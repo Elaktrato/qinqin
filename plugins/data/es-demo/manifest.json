@@ -1,0 +1,10 @@
+{
+  "id": "es-demo",
+  "name": "Spanish–English demo dictionary",
+  "version": "1.0",
+  "type": "dictionary",
+  "language": "es",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written sample data",
+  "format": "json"
+}
