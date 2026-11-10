@@ -21,6 +21,7 @@ import (
 type entryBody struct {
 	model.Entry
 	Variants []model.Entry `json:"variants"`
+	Badges   []badgeBody   `json:"badges"`
 }
 
 // newServer opens a fresh migrated database and serves the API on it.

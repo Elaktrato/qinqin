@@ -9,21 +9,23 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/entries"
+	"qinqin/internal/levels"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
 )
 
-// entryResponse is an entry together with its variants: the body of
-// GET /api/entries/{id}.
+// entryResponse is an entry together with its variants and scheme
+// badges: the body of GET and PUT /api/entries/{id}.
 type entryResponse struct {
 	model.Entry
 	Variants []model.Entry `json:"variants"`
+	Badges   []model.Badge `json:"badges"`
 }
 
-// handleGetEntry serves GET /api/entries/{id} with the entry and its
-// variants. Unknown and malformed ids are 404. An authenticated caller
-// sees the entry with their own patch applied; everyone else sees the
-// shared entry.
+// handleGetEntry serves GET /api/entries/{id} with the entry, its
+// variants, and its scheme badges. Unknown and malformed ids are 404.
+// An authenticated caller sees the entry with their own patch applied;
+// everyone else sees the shared entry.
 func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -58,7 +60,12 @@ func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants})
+	badges, err := levels.ForEntry(r.Context(), s.db, id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants, Badges: badges})
 }
 
 // handlePutEntry serves PUT /api/entries/{id}: it stores the
@@ -114,5 +121,10 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants})
+	badges, err := levels.ForEntry(r.Context(), s.db, id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants, Badges: badges})
 }

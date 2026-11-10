@@ -79,3 +79,42 @@ type Sense struct {
 	UpdatedAt    time.Time  `json:"updatedAt"`
 	DeletedAt    *time.Time `json:"deletedAt"`
 }
+
+// Scheme is the registry row one imported levels pack creates — HSK,
+// JLPT, a curriculum table: any ordered ladder of levels over one
+// language's entries — keyed by the pack's manifest id. Re-imports
+// upsert the row and replace its levels and memberships; uninstall
+// soft-deletes them. Entries survive both.
+type Scheme struct {
+	ID          int64      `json:"id"`
+	PackID      string     `json:"packId"`
+	Name        string     `json:"name"`
+	Unit        string     `json:"unit"` // "word" or "character"
+	Language    string     `json:"language"`
+	Version     string     `json:"version"`
+	License     string     `json:"license"`
+	Attribution string     `json:"attribution"`
+	Levels      []Level    `json:"levels"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+	DeletedAt   *time.Time `json:"deletedAt"`
+}
+
+// Level is one rung of a scheme's ladder, ordered by Ord.
+type Level struct {
+	ID        int64      `json:"id"`
+	SchemeID  int64      `json:"schemeId"`
+	Ord       int        `json:"ord"`
+	Name      string     `json:"name"`
+	UpdatedAt time.Time  `json:"updatedAt"`
+	DeletedAt *time.Time `json:"deletedAt"`
+}
+
+// Badge is one scheme's tag on an entry: the scheme, the level the entry
+// belongs to, and whether that membership was derived from a member
+// word's characters rather than listed by the pack.
+type Badge struct {
+	SchemeID   int64  `json:"schemeId"`
+	SchemeName string `json:"schemeName"`
+	LevelName  string `json:"levelName"`
+	Derived    bool   `json:"derived"`
+}
