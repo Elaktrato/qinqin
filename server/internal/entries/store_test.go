@@ -2,6 +2,7 @@ package entries_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"path/filepath"
 	"testing"
@@ -169,23 +170,6 @@ func TestUpsertGetRoundtrip(t *testing.T) {
 		t.Errorf("after re-upsert attrs = %v, want strokes 7", got.Attrs)
 	}
 
-	// A re-upsert with fewer readings retires the surplus rows: the entry
-	// now reports only its current readings.
-	_, err = st.Upsert(ctx, &model.Entry{
-		Language: "zh", Kind: "character", Written: "好",
-		Readings: []model.Reading{reading("pinyin", "hǎo")},
-	})
-	if err != nil {
-		t.Fatalf("re-upsert 好 with one reading: %v", err)
-	}
-	got, err = st.GetByID(ctx, id)
-	if err != nil {
-		t.Fatalf("GetByID(好) after shrink: %v", err)
-	}
-	if len(got.Readings) != 2 { // pinyin + derived bopomofo
-		t.Errorf("after shrink readings = %+v, want pinyin plus derived bopomofo only", got.Readings)
-	}
-
 	// Pinyin that cannot be converted derives no bopomofo; the upsert
 	// still succeeds and the plain form is the pinyin letters.
 	oddID := mustUpsert(t, st, &model.Entry{
@@ -201,6 +185,67 @@ func TestUpsertGetRoundtrip(t *testing.T) {
 	}
 	if py := findReading(*odd, "pinyin"); py == nil || py.Plain != "xyz" {
 		t.Errorf("pinyin reading of 㐀 = %+v, want plain xyz", py)
+	}
+}
+
+// countActiveReadings returns the entry's active reading rows, queried
+// directly in the database.
+func countActiveReadings(t *testing.T, st entries.Store, entryID int64) int {
+	t.Helper()
+	var n int
+	if err := st.DB.QueryRow(`SELECT COUNT(*) FROM readings
+		WHERE entry_id = ? AND deleted_at IS NULL`, entryID).Scan(&n); err != nil {
+		t.Fatalf("count active readings of %d: %v", entryID, err)
+	}
+	return n
+}
+
+func TestUpsertShrinksReadings(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+
+	// 好 with a pinyin and a latin reading stores three rows: the zh pack
+	// derives a bopomofo reading from the pinyin one.
+	id := mustUpsert(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "好",
+		Readings: []model.Reading{reading("pinyin", "hǎo"), reading("latin", "good")},
+	})
+	if n := countActiveReadings(t, st, id); n != 3 {
+		t.Fatalf("stored reading rows = %d, want 3 (pinyin, latin, derived bopomofo)", n)
+	}
+
+	// Re-upserting with only the pinyin reading replaces the list: the
+	// entry reports pinyin plus derived bopomofo and nothing else.
+	if _, err := st.Upsert(ctx, &model.Entry{
+		Language: "zh", Kind: "character", Written: "好",
+		Readings: []model.Reading{reading("pinyin", "hǎo")},
+	}); err != nil {
+		t.Fatalf("re-upsert 好 with one reading: %v", err)
+	}
+	got, err := st.GetByID(ctx, id)
+	if err != nil {
+		t.Fatalf("GetByID(好) after shrink: %v", err)
+	}
+	if len(got.Readings) != 2 { // pinyin + derived bopomofo
+		t.Errorf("readings after shrink = %+v, want pinyin plus derived bopomofo only", got.Readings)
+	}
+	if r := findReading(*got, "latin"); r != nil {
+		t.Errorf("latin reading after shrink = %+v, want it retired", r)
+	}
+	if n := countActiveReadings(t, st, id); n != 2 {
+		t.Errorf("active reading rows after shrink = %d, want 2", n)
+	}
+
+	// The superseded latin row is soft-deleted in the database — never
+	// returned, never hard-deleted.
+	var deletedAt sql.NullString
+	err = st.DB.QueryRow(`SELECT deleted_at FROM readings
+		WHERE entry_id = ? AND type = 'latin'`, id).Scan(&deletedAt)
+	if err != nil {
+		t.Fatalf("latin reading row after shrink: %v (want a soft-deleted row)", err)
+	}
+	if !deletedAt.Valid || deletedAt.String == "" {
+		t.Errorf("latin reading row deleted_at = %v, want a timestamp", deletedAt)
 	}
 }
 

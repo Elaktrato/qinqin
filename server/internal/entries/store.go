@@ -38,7 +38,9 @@ type Store struct {
 // Plain is filled via the entry's language pack, which also derives extra
 // readings (zh appends bopomofo from pinyin) and never fails on
 // unconvertible input; ord is the reading's position among the entry's
-// readings. Attrs persist as child rows keyed by (entry_id, key).
+// readings. Readings replace wholesale — superseded rows are soft-deleted
+// and the new list inserted — and attrs persist as child rows keyed by
+// (entry_id, key).
 func (s Store) Upsert(ctx context.Context, e *model.Entry) (int64, error) {
 	pack := lang.For(e.Language)
 	normalizeReadings(e.Readings, pack)
@@ -65,26 +67,23 @@ func (s Store) Upsert(ctx context.Context, e *model.Entry) (int64, error) {
 		return 0, fmt.Errorf("upsert entry %q (%s/%s): %w", e.Written, e.Kind, e.Language, err)
 	}
 
+	// Readings replace wholesale: superseded rows are soft-deleted, then
+	// the new list inserted. An entry's active readings are always exactly
+	// its latest upsert, and a reading that drops off the list leaves a
+	// tombstone rather than being overwritten in place.
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE readings SET deleted_at = ?, updated_at = ?
+		WHERE entry_id = ? AND deleted_at IS NULL`,
+		stamp, stamp, id); err != nil {
+		return 0, fmt.Errorf("retire readings of entry %q: %w", e.Written, err)
+	}
 	for i, r := range e.Readings {
 		if _, err := tx.ExecContext(ctx, `
 			INSERT INTO readings (entry_id, type, value, plain, ord, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?)
-			ON CONFLICT (entry_id, ord) DO UPDATE SET
-				type = excluded.type,
-				value = excluded.value,
-				plain = excluded.plain,
-				updated_at = excluded.updated_at,
-				deleted_at = NULL`,
+			VALUES (?, ?, ?, ?, ?, ?)`,
 			id, r.Type, r.Value, r.Plain, i, stamp); err != nil {
-			return 0, fmt.Errorf("upsert reading %d of entry %q: %w", i, e.Written, err)
+			return 0, fmt.Errorf("insert reading %d of entry %q: %w", i, e.Written, err)
 		}
-	}
-	// A reading list that shrank leaves high-ord rows behind: retire them.
-	if _, err := tx.ExecContext(ctx, `
-		UPDATE readings SET deleted_at = ?, updated_at = ?
-		WHERE entry_id = ? AND ord >= ? AND deleted_at IS NULL`,
-		stamp, stamp, id, len(e.Readings)); err != nil {
-		return 0, fmt.Errorf("retire readings of entry %q: %w", e.Written, err)
 	}
 
 	for k, v := range e.Attrs {

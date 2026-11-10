@@ -23,17 +23,21 @@ CREATE TABLE workspaces (
 -- Readings are entry pronunciations: type is pack-defined (pinyin,
 -- bopomofo, kana, on, kun, romaji, ...), plain is the normalized search
 -- form, ord is the reading's position among the entry's readings. Upserts
--- replace an entry's reading list; superseded rows are soft-deleted.
+-- replace an entry's reading list: superseded rows are soft-deleted and
+-- the new list inserted, so an entry's active readings are always exactly
+-- its latest upsert.
 CREATE TABLE readings (
+    id INTEGER PRIMARY KEY,
     entry_id INTEGER NOT NULL REFERENCES entries(id),
     type TEXT NOT NULL,
     value TEXT NOT NULL,
     plain TEXT NOT NULL,
     ord INTEGER NOT NULL,
     updated_at TEXT NOT NULL,
-    deleted_at TEXT,
-    PRIMARY KEY (entry_id, ord)
+    deleted_at TEXT
 );
+
+CREATE INDEX idx_readings_entry ON readings (entry_id, ord);
 
 -- Entry attributes carry per-entry metadata such as stroke counts. Keys
 -- upsert in place.
