@@ -263,24 +263,112 @@ func replaceSenses(ctx context.Context, sqlDB *sql.DB, packID, name, version, li
 		packID, name, version, license, attribution, stamp).Scan(&dictID); err != nil {
 		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
 	}
-	if _, err := tx.ExecContext(ctx, `
-		UPDATE senses SET deleted_at = ?, updated_at = ?
-		WHERE dictionary_id = ? AND deleted_at IS NULL`,
-		stamp, stamp, dictID); err != nil {
+	if err := diffSenses(ctx, tx, dictID, senses, stamp); err != nil {
 		return 0, fmt.Errorf("replace senses of dictionary %s: %w", packID, err)
-	}
-	for _, s := range senses {
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO senses (dictionary_id, entry_id, gloss, ord, updated_at)
-			VALUES (?, ?, ?, ?, ?)`,
-			dictID, s.entryID, s.gloss, s.ord, stamp); err != nil {
-			return 0, fmt.Errorf("insert sense of dictionary %s: %w", packID, err)
-		}
 	}
 	if err := tx.Commit(); err != nil {
 		return 0, fmt.Errorf("import dictionary %s: %w", packID, err)
 	}
 	return dictID, nil
+}
+
+// senseKey identifies a sense within one dictionary: the same gloss on
+// the same entry is the same sense, whatever its position.
+type senseKey struct {
+	entryID int64
+	gloss   string
+}
+
+// storedSense is an existing senses row.
+type storedSense struct {
+	id     int64
+	ord    int
+	active bool
+}
+
+// diffSenses brings the dictionary's senses to exactly want, writing only
+// the difference: a sense already active at the same position is left
+// untouched (no re-stamp, same id), a moved one is updated in place, a
+// tombstoned one that returns is revived, a new one is inserted, and an
+// active one no longer wanted is tombstoned. Re-importing an identical
+// pack therefore writes nothing, and a real change ships only its own
+// rows. A gloss listed twice for one entry counts once.
+func diffSenses(ctx context.Context, tx *sql.Tx, dictID int64, want []senseRow, stamp string) error {
+	// Active rows first, so when old data holds duplicates of a key the
+	// active one is the one kept and the extras are retired below.
+	rows, err := tx.QueryContext(ctx, `
+		SELECT id, entry_id, gloss, ord, deleted_at IS NULL FROM senses
+		WHERE dictionary_id = ?
+		ORDER BY deleted_at IS NULL DESC, id`, dictID)
+	if err != nil {
+		return err
+	}
+	existing := map[senseKey]storedSense{}
+	var extras []int64 // active duplicates of an already-seen key
+	for rows.Next() {
+		var (
+			k senseKey
+			s storedSense
+		)
+		if err := rows.Scan(&s.id, &k.entryID, &k.gloss, &s.ord, &s.active); err != nil {
+			rows.Close()
+			return err
+		}
+		if _, dup := existing[k]; dup {
+			if s.active {
+				extras = append(extras, s.id)
+			}
+			continue
+		}
+		existing[k] = s
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return err
+	}
+
+	wanted := make(map[senseKey]bool, len(want))
+	for _, w := range want {
+		k := senseKey{w.entryID, w.gloss}
+		if wanted[k] {
+			continue
+		}
+		wanted[k] = true
+		cur, ok := existing[k]
+		switch {
+		case !ok:
+			if _, err := tx.ExecContext(ctx, `
+				INSERT INTO senses (dictionary_id, entry_id, gloss, ord, updated_at)
+				VALUES (?, ?, ?, ?, ?)`,
+				dictID, w.entryID, w.gloss, w.ord, stamp); err != nil {
+				return fmt.Errorf("insert sense: %w", err)
+			}
+		case cur.active && cur.ord == w.ord:
+			// unchanged
+		default: // moved, or returning from a tombstone
+			if _, err := tx.ExecContext(ctx, `
+				UPDATE senses SET ord = ?, deleted_at = NULL, updated_at = ? WHERE id = ?`,
+				w.ord, stamp, cur.id); err != nil {
+				return fmt.Errorf("update sense %d: %w", cur.id, err)
+			}
+		}
+	}
+
+	retire := extras
+	for k, s := range existing {
+		if s.active && !wanted[k] {
+			retire = append(retire, s.id)
+		}
+	}
+	for _, id := range retire {
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE senses SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+			stamp, stamp, id); err != nil {
+			return fmt.Errorf("retire sense %d: %w", id, err)
+		}
+	}
+	return nil
 }
 
 // Uninstall soft-deletes the dictionary with row id id and all of its

@@ -421,51 +421,162 @@ func writeScheme(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, unit strin
 		return fmt.Errorf("register scheme %s: %w", m.ID, err)
 	}
 
-	// Memberships replace wholesale, the readings and senses
-	// discipline: previous rows are tombstoned so a re-import never
-	// leaves stale levels or members behind.
-	if _, err := tx.ExecContext(ctx, `
-		UPDATE level_members SET deleted_at = ?, updated_at = ?
-		WHERE deleted_at IS NULL AND level_id IN (
-			SELECT id FROM levels WHERE scheme_id = ?)`,
-		stamp, stamp, schemeID); err != nil {
-		return fmt.Errorf("retire members of scheme %s: %w", m.ID, err)
+	// Levels and memberships are diffed against what is stored, writing
+	// only the difference: unchanged rows keep their id and stamp (so an
+	// identical re-import ships nothing to clients), changed or returning
+	// rows are updated or revived in place, and rows the pack no longer
+	// lists are tombstoned so a re-import never leaves stale levels or
+	// members behind.
+	levelIDs, err := diffLevels(ctx, tx, schemeID, lvls, stamp)
+	if err != nil {
+		return fmt.Errorf("import scheme %s: %w", m.ID, err)
 	}
-	if _, err := tx.ExecContext(ctx, `
-		UPDATE levels SET deleted_at = ?, updated_at = ?
-		WHERE scheme_id = ? AND deleted_at IS NULL`,
-		stamp, stamp, schemeID); err != nil {
-		return fmt.Errorf("retire levels of scheme %s: %w", m.ID, err)
-	}
-
-	levelIDs := make([]int64, len(lvls))
-	for i, lv := range lvls {
-		if err := tx.QueryRowContext(ctx, `
-			INSERT INTO levels (scheme_id, ord, name, updated_at)
-			VALUES (?, ?, ?, ?)
-			ON CONFLICT (scheme_id, name) DO UPDATE SET
-				ord = excluded.ord,
-				updated_at = excluded.updated_at,
-				deleted_at = NULL
-			RETURNING id`,
-			schemeID, i, lv.Name, stamp).Scan(&levelIDs[i]); err != nil {
-			return fmt.Errorf("upsert level %q of scheme %s: %w", lv.Name, m.ID, err)
-		}
-	}
-	for _, mem := range ms {
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO level_members (level_id, entry_id, derived, updated_at)
-			VALUES (?, ?, ?, ?)
-			ON CONFLICT (level_id, entry_id) DO UPDATE SET
-				derived = excluded.derived,
-				updated_at = excluded.updated_at,
-				deleted_at = NULL`,
-			levelIDs[mem.level], mem.entry, mem.derived, stamp); err != nil {
-			return fmt.Errorf("upsert member of scheme %s: %w", m.ID, err)
-		}
+	if err := diffMembers(ctx, tx, schemeID, levelIDs, ms, stamp); err != nil {
+		return fmt.Errorf("import scheme %s: %w", m.ID, err)
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("import scheme %s: %w", m.ID, err)
+	}
+	return nil
+}
+
+// diffLevels brings the scheme's levels to exactly lvls (by name, in
+// order), writing only differences, and returns each level's row id in
+// the pack's order.
+func diffLevels(ctx context.Context, tx *sql.Tx, schemeID int64, lvls []packLevel, stamp string) ([]int64, error) {
+	type stored struct {
+		id     int64
+		ord    int
+		active bool
+	}
+	rows, err := tx.QueryContext(ctx, `
+		SELECT id, name, ord, deleted_at IS NULL FROM levels WHERE scheme_id = ?`, schemeID)
+	if err != nil {
+		return nil, fmt.Errorf("read levels: %w", err)
+	}
+	existing := map[string]stored{}
+	for rows.Next() {
+		var (
+			name string
+			s    stored
+		)
+		if err := rows.Scan(&s.id, &name, &s.ord, &s.active); err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("read levels: %w", err)
+		}
+		existing[name] = s
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return nil, fmt.Errorf("read levels: %w", err)
+	}
+
+	ids := make([]int64, len(lvls))
+	wanted := make(map[string]bool, len(lvls))
+	for i, lv := range lvls {
+		wanted[lv.Name] = true
+		cur, ok := existing[lv.Name]
+		switch {
+		case !ok:
+			if err := tx.QueryRowContext(ctx, `
+				INSERT INTO levels (scheme_id, ord, name, updated_at) VALUES (?, ?, ?, ?)
+				RETURNING id`, schemeID, i, lv.Name, stamp).Scan(&ids[i]); err != nil {
+				return nil, fmt.Errorf("insert level %q: %w", lv.Name, err)
+			}
+		case cur.active && cur.ord == i:
+			ids[i] = cur.id
+		default: // moved, or returning from a tombstone
+			ids[i] = cur.id
+			if _, err := tx.ExecContext(ctx, `
+				UPDATE levels SET ord = ?, deleted_at = NULL, updated_at = ? WHERE id = ?`,
+				i, stamp, cur.id); err != nil {
+				return nil, fmt.Errorf("update level %q: %w", lv.Name, err)
+			}
+		}
+	}
+	for name, s := range existing {
+		if s.active && !wanted[name] {
+			if _, err := tx.ExecContext(ctx, `
+				UPDATE levels SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+				stamp, stamp, s.id); err != nil {
+				return nil, fmt.Errorf("retire level %q: %w", name, err)
+			}
+		}
+	}
+	return ids, nil
+}
+
+// diffMembers brings the scheme's memberships to exactly ms (levels
+// resolved through levelIDs), writing only differences. Memberships of
+// a level that was dropped are not in ms, so they are tombstoned here.
+func diffMembers(ctx context.Context, tx *sql.Tx, schemeID int64, levelIDs []int64, ms []member, stamp string) error {
+	type key struct{ level, entry int64 }
+	type stored struct {
+		id      int64
+		derived bool
+		active  bool
+	}
+	rows, err := tx.QueryContext(ctx, `
+		SELECT m.id, m.level_id, m.entry_id, m.derived, m.deleted_at IS NULL
+		FROM level_members m JOIN levels l ON l.id = m.level_id
+		WHERE l.scheme_id = ?`, schemeID)
+	if err != nil {
+		return fmt.Errorf("read members: %w", err)
+	}
+	existing := map[key]stored{}
+	for rows.Next() {
+		var (
+			k       key
+			s       stored
+			derived int
+		)
+		if err := rows.Scan(&s.id, &k.level, &k.entry, &derived, &s.active); err != nil {
+			rows.Close()
+			return fmt.Errorf("read members: %w", err)
+		}
+		s.derived = derived != 0
+		existing[k] = s
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return fmt.Errorf("read members: %w", err)
+	}
+
+	wanted := make(map[key]bool, len(ms))
+	for _, mem := range ms {
+		k := key{levelIDs[mem.level], mem.entry}
+		if wanted[k] {
+			continue
+		}
+		wanted[k] = true
+		cur, ok := existing[k]
+		switch {
+		case !ok:
+			if _, err := tx.ExecContext(ctx, `
+				INSERT INTO level_members (level_id, entry_id, derived, updated_at) VALUES (?, ?, ?, ?)`,
+				k.level, k.entry, mem.derived, stamp); err != nil {
+				return fmt.Errorf("insert member: %w", err)
+			}
+		case cur.active && cur.derived == mem.derived:
+			// unchanged
+		default: // flag changed, or returning from a tombstone
+			if _, err := tx.ExecContext(ctx, `
+				UPDATE level_members SET derived = ?, deleted_at = NULL, updated_at = ? WHERE id = ?`,
+				mem.derived, stamp, cur.id); err != nil {
+				return fmt.Errorf("update member %d: %w", cur.id, err)
+			}
+		}
+	}
+	for k, s := range existing {
+		if s.active && !wanted[k] {
+			if _, err := tx.ExecContext(ctx, `
+				UPDATE level_members SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+				stamp, stamp, s.id); err != nil {
+				return fmt.Errorf("retire member %d: %w", s.id, err)
+			}
+		}
 	}
 	return nil
 }

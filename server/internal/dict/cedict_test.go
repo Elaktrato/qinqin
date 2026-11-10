@@ -288,8 +288,9 @@ func TestCedictImport(t *testing.T) {
 	if wordCharLinks != 10 {
 		t.Errorf("wordchar links after re-import = %d, want 10 — linking twice must not duplicate", wordCharLinks)
 	}
-	if a, d := senseCounts(t, sqlDB, dictID); a != 10 || d != 10 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 10 and 10", a, d)
+	// An unchanged pack re-imports as a no-op: no tombstone + insert pairs.
+	if a, d := senseCounts(t, sqlDB, dictID); a != 10 || d != 0 {
+		t.Errorf("senses after re-import = %d active, %d tombstoned, want 10 and 0", a, d)
 	}
 	if got := wordsContaining(t, st, fa); !slices.Equal(got, []string{"发展", "头发"}) {
 		t.Errorf("WordsContaining(发) after re-import = %v, want [发展 头发]", got)

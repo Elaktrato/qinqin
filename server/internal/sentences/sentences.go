@@ -251,18 +251,85 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, rows []sente
 	defer tx.Rollback()
 	stamp := now()
 
-	if _, err := tx.ExecContext(ctx, `
-		UPDATE sentences SET deleted_at = ?, updated_at = ?
-		WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL`,
-		stamp, stamp, m.ID); err != nil {
-		return fmt.Errorf("retire sentences of pack %s: %w", m.ID, err)
+	// Diff against the pack's stored sentences — identified by entry and
+	// text — and write only the difference: an unchanged sentence keeps
+	// its row and stamp, one returning from a tombstone is revived, a new
+	// one inserted, and one the pack dropped tombstoned. An identical
+	// re-import therefore writes nothing.
+	type key struct {
+		entryID                  int64
+		hanzi, pinyin, translate string
 	}
+	type stored struct {
+		id     int64
+		active bool
+	}
+	cur, err := tx.QueryContext(ctx, `
+		SELECT id, entry_id, hanzi, pinyin, translation, deleted_at IS NULL FROM sentences
+		WHERE source_pack = ? AND user_id IS NULL
+		ORDER BY deleted_at IS NULL DESC, id`, m.ID)
+	if err != nil {
+		return fmt.Errorf("read sentences of pack %s: %w", m.ID, err)
+	}
+	existing := map[key]stored{}
+	var extras []int64 // active duplicates of an already-seen sentence
+	for cur.Next() {
+		var (
+			k key
+			s stored
+		)
+		if err := cur.Scan(&s.id, &k.entryID, &k.hanzi, &k.pinyin, &k.translate, &s.active); err != nil {
+			cur.Close()
+			return fmt.Errorf("read sentences of pack %s: %w", m.ID, err)
+		}
+		if _, dup := existing[k]; dup {
+			if s.active {
+				extras = append(extras, s.id)
+			}
+			continue
+		}
+		existing[k] = s
+	}
+	err = cur.Err()
+	cur.Close()
+	if err != nil {
+		return fmt.Errorf("read sentences of pack %s: %w", m.ID, err)
+	}
+
+	wanted := make(map[key]bool, len(rows))
 	for _, r := range rows {
+		k := key{r.entryID, r.sentence.Hanzi, r.sentence.Pinyin, r.sentence.Translation}
+		if wanted[k] {
+			continue
+		}
+		wanted[k] = true
+		switch have, ok := existing[k]; {
+		case !ok:
+			if _, err := tx.ExecContext(ctx, `
+				INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
+				VALUES (?, ?, NULL, ?, ?, ?, ?)`,
+				r.entryID, m.ID, k.hanzi, k.pinyin, k.translate, stamp); err != nil {
+				return fmt.Errorf("insert sentence of pack %s: %w", m.ID, err)
+			}
+		case !have.active:
+			if _, err := tx.ExecContext(ctx, `
+				UPDATE sentences SET deleted_at = NULL, updated_at = ? WHERE id = ?`,
+				stamp, have.id); err != nil {
+				return fmt.Errorf("revive sentence %d of pack %s: %w", have.id, m.ID, err)
+			}
+		}
+	}
+	retire := extras
+	for k, s := range existing {
+		if s.active && !wanted[k] {
+			retire = append(retire, s.id)
+		}
+	}
+	for _, id := range retire {
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
-			VALUES (?, ?, NULL, ?, ?, ?, ?)`,
-			r.entryID, m.ID, r.sentence.Hanzi, r.sentence.Pinyin, r.sentence.Translation, stamp); err != nil {
-			return fmt.Errorf("insert sentence of pack %s: %w", m.ID, err)
+			UPDATE sentences SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+			stamp, stamp, id); err != nil {
+			return fmt.Errorf("retire sentence %d of pack %s: %w", id, m.ID, err)
 		}
 	}
 	if err := tx.Commit(); err != nil {

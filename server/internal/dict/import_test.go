@@ -558,8 +558,10 @@ func TestReimportReplacesSenses(t *testing.T) {
 	if got := activeGlosses(t, sqlDB, dictID, hao.ID); !slices.Equal(got, []string{"good"}) {
 		t.Errorf("glosses of 好 after re-import = %v, want [good]", got)
 	}
-	if a, d := senseCounts(t, sqlDB, dictID); a != 3 || d != 5 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 3 and 5", a, d)
+	// Only the changed glosses are tombstoned: hello and hi on both forms
+	// of 你好 (4 rows). 好's unchanged gloss keeps its row.
+	if a, d := senseCounts(t, sqlDB, dictID); a != 3 || d != 4 {
+		t.Errorf("senses after re-import = %d active, %d tombstoned, want 3 and 4", a, d)
 	}
 
 	// The entry rows are untouched: same ids, same language-tagged data,
@@ -638,8 +640,9 @@ func TestUninstallSoftDeletesSenses(t *testing.T) {
 	if got := dictionaryID(t, sqlDB, "mkgloss"); got != dictID {
 		t.Errorf("dictionary id after re-import = %d, want %d revived in place", got, dictID)
 	}
-	if a, d := senseCounts(t, sqlDB, dictID); a != 5 || d != 5 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 5 and 5", a, d)
+	// The tombstoned senses come back in place, not as a second copy.
+	if a, d := senseCounts(t, sqlDB, dictID); a != 5 || d != 0 {
+		t.Errorf("senses after re-import = %d active, %d tombstoned, want 5 and 0", a, d)
 	}
 	var revivedAt sql.NullString
 	if err := sqlDB.QueryRow(`SELECT deleted_at FROM dictionaries WHERE id = ?`, dictID).Scan(&revivedAt); err != nil {
