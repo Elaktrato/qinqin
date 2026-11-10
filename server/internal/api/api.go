@@ -21,6 +21,7 @@ func New(sqlDB *sql.DB) http.Handler {
 	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
 	mux.HandleFunc("POST /api/auth/login", s.handleLogin)
 	mux.HandleFunc("GET /api/auth/me", s.handleMe)
+	mux.HandleFunc("GET /api/entries/{id}", s.handleGetEntry)
 	return mux
 }
 
