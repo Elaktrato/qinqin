@@ -11,7 +11,17 @@ import (
 	"time"
 
 	"qinqin/internal/model"
+
+	"github.com/oklog/ulid/v2"
 )
+
+// ValidID reports whether id is a well-formed ULID — the form every
+// client-generated event id takes. Anything else is rejected at the API
+// door rather than stored.
+func ValidID(id string) bool {
+	_, err := ulid.ParseStrict(id)
+	return err == nil
+}
 
 // Append inserts evts as new study_events rows inside one transaction,
 // counting rows whose id already exists as duplicates — a retried batch

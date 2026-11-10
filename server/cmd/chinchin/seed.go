@@ -20,7 +20,7 @@ import (
 func seedCmd(args []string, out io.Writer) error {
 	fset := flag.NewFlagSet("seed", flag.ContinueOnError)
 	data := fset.String("data", defaultData(), "data directory holding the SQLite database (default $QINQIN_DATA or ./data)")
-	packs := fset.String("packs", "plugins/data", "directory of seed packs to import")
+	packs := fset.String("packs", defaultPacks(), "directory of seed packs to import (default $QINQIN_PACKS or plugins/data)")
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
@@ -31,6 +31,15 @@ func seedCmd(args []string, out io.Writer) error {
 	}
 	defer sqlDB.Close()
 	return seed(context.Background(), sqlDB, *packs, out)
+}
+
+// defaultPacks is the --packs default: $QINQIN_PACKS (the image sets it
+// to the sample packs it ships) or the repo's plugins/data.
+func defaultPacks() string {
+	if p := os.Getenv("QINQIN_PACKS"); p != "" {
+		return p
+	}
+	return "plugins/data"
 }
 
 // seedPack is one pack found under the packs directory.

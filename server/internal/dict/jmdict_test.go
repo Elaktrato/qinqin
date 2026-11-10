@@ -204,7 +204,7 @@ func TestJmdictImport(t *testing.T) {
 		t.Errorf("id of 学校 after re-import = %d, want %d", again.ID, gakkou.ID)
 	}
 	wantVariants(t, st, again, "學校")
-	if a, d := senseCounts(t, sqlDB, dictID); a != 4 || d != 4 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 4 and 4", a, d)
+	if a, d := senseCounts(t, sqlDB, dictID); a != 4 || d != 0 {
+		t.Errorf("senses after re-import = %d active, %d tombstoned, want 4 and 0", a, d)
 	}
 }

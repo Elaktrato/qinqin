@@ -238,7 +238,7 @@ func TestKanjidic2Import(t *testing.T) {
 	if again := mustGet(t, st, "子", "character", "ja"); again.ID != ko.ID {
 		t.Errorf("id of 子 after re-import = %d, want %d", again.ID, ko.ID)
 	}
-	if a, d := senseCounts(t, sqlDB, dictID); a != 3 || d != 3 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 3 and 3", a, d)
+	if a, d := senseCounts(t, sqlDB, dictID); a != 3 || d != 0 {
+		t.Errorf("senses after re-import = %d active, %d tombstoned, want 3 and 0", a, d)
 	}
 }

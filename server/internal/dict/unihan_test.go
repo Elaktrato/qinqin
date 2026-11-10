@@ -437,8 +437,8 @@ func TestUnihanImportIdempotent(t *testing.T) {
 	if got := activeLinkCount(t, sqlDB, "radical"); got != 1 {
 		t.Errorf("radical links after re-import = %d, want 1", got)
 	}
-	if a, d := senseCounts(t, sqlDB, dictionaryID(t, sqlDB, "unihan")); a != 1 || d != 1 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 1 and 1", a, d)
+	if a, d := senseCounts(t, sqlDB, dictionaryID(t, sqlDB, "unihan")); a != 1 || d != 0 {
+		t.Errorf("senses after re-import = %d active, %d tombstoned, want 1 and 0", a, d)
 	}
 	var entryRows int
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL`).Scan(&entryRows); err != nil {

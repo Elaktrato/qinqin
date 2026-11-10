@@ -67,6 +67,14 @@ type Delta struct {
 	PluginData   []model.PluginData  `json:"pluginData"`
 	PluginStates []model.PluginState `json:"pluginStates"`
 	Overlays     []Overlay           `json:"overlays"`
+
+	// The registry rows the rows above reference — senses point at a
+	// dictionary id, level members at a level id — so a client holding
+	// only the delta can resolve them. Schemes ship without their nested
+	// levels; Levels carries those.
+	Dictionaries []model.Dictionary `json:"dictionaries"`
+	Schemes      []model.Scheme     `json:"schemes"`
+	Levels       []model.Level      `json:"levels"`
 }
 
 // Overlay is one of the caller's per-user entry edits (user_edits row):
@@ -129,6 +137,15 @@ func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time) (D
 	if d.Overlays, err = pullOverlays(ctx, sqlDB, userID, since); err != nil {
 		return Delta{}, err
 	}
+	if d.Dictionaries, err = pullDictionaries(ctx, sqlDB, since, live); err != nil {
+		return Delta{}, err
+	}
+	if d.Schemes, err = pullSchemes(ctx, sqlDB, since, live); err != nil {
+		return Delta{}, err
+	}
+	if d.Levels, err = pullLevels(ctx, sqlDB, since, live); err != nil {
+		return Delta{}, err
+	}
 	if d.PluginStates, err = pullPluginStates(ctx, sqlDB, userID, since); err != nil {
 		return Delta{}, err
 	}
@@ -185,8 +202,8 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 	copy(evts, body.Events)
 	for i := range evts {
 		ev := &evts[i]
-		if ev.ID == "" || ev.TS.IsZero() {
-			return PushResult{}, fmt.Errorf("%w: event %d needs an id and ts", ErrInvalid, i)
+		if !events.ValidID(ev.ID) || ev.TS.IsZero() {
+			return PushResult{}, fmt.Errorf("%w: event %d needs a ULID id and a ts", ErrInvalid, i)
 		}
 		if err := checkWorkspace(ev.WorkspaceID); err != nil {
 			return PushResult{}, err

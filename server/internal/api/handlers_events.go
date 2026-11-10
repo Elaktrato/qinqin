@@ -33,8 +33,9 @@ func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req eventBatch
+	r.Body = http.MaxBytesReader(w, r.Body, maxBatchBody)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		badBody(w, err)
 		return
 	}
 	if req.Events == nil {
@@ -45,8 +46,8 @@ func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 	owned := make(map[int64]bool, len(req.Events))
 	for i := range req.Events {
 		ev := &req.Events[i]
-		if ev.ID == "" {
-			http.Error(w, "event id is required", http.StatusBadRequest)
+		if !events.ValidID(ev.ID) {
+			http.Error(w, "event id must be a ULID", http.StatusBadRequest)
 			return
 		}
 		if ev.TS.IsZero() {

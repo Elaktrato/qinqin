@@ -54,47 +54,86 @@ func (s Store) Upsert(ctx context.Context, e *model.Entry) (int64, error) {
 	defer tx.Rollback()
 	stamp := now()
 
-	var id int64
+	// Upserting what is already stored writes nothing: a re-import of an
+	// unchanged pack must not re-stamp entries (every client would pull
+	// them again) or churn tombstones. changed tracks whether anything
+	// about the entry — its row, readings, or attrs — actually differs;
+	// the entry is stamped once if so, which is what the sync pull reads
+	// to ship its children.
+	var (
+		id      int64
+		deleted sql.NullString
+		changed bool
+	)
 	err = tx.QueryRowContext(ctx, `
-		INSERT INTO entries (language, kind, written, updated_at)
-		VALUES (?, ?, ?, ?)
-		ON CONFLICT (written, kind, language) DO UPDATE SET
-			updated_at = excluded.updated_at,
-			deleted_at = NULL
-		RETURNING id`,
-		e.Language, e.Kind, e.Written, stamp).Scan(&id)
-	if err != nil {
+		SELECT id, deleted_at FROM entries
+		WHERE written = ? AND kind = ? AND language = ?`,
+		e.Written, e.Kind, e.Language).Scan(&id, &deleted)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		if err := tx.QueryRowContext(ctx, `
+			INSERT INTO entries (language, kind, written, updated_at)
+			VALUES (?, ?, ?, ?)
+			RETURNING id`,
+			e.Language, e.Kind, e.Written, stamp).Scan(&id); err != nil {
+			return 0, fmt.Errorf("upsert entry %q (%s/%s): %w", e.Written, e.Kind, e.Language, err)
+		}
+		changed = true // inserted already carries the stamp; the UPDATE below is a harmless no-op
+	case err != nil:
 		return 0, fmt.Errorf("upsert entry %q (%s/%s): %w", e.Written, e.Kind, e.Language, err)
+	case deleted.Valid:
+		changed = true // reviving a soft-deleted entry
 	}
 
-	// Readings replace wholesale: superseded rows are soft-deleted, then
-	// the new list inserted. An entry's active readings are always exactly
-	// its latest upsert, and a reading that drops off the list leaves a
-	// tombstone rather than being overwritten in place.
-	if _, err := tx.ExecContext(ctx, `
-		UPDATE readings SET deleted_at = ?, updated_at = ?
-		WHERE entry_id = ? AND deleted_at IS NULL`,
-		stamp, stamp, id); err != nil {
-		return 0, fmt.Errorf("retire readings of entry %q: %w", e.Written, err)
+	// Readings replace wholesale, but only when the list differs from the
+	// stored one: superseded rows are soft-deleted, then the new list
+	// inserted, so an entry's active readings are always exactly its
+	// latest upsert and a reading that drops off leaves a tombstone.
+	same, err := readingsMatch(ctx, tx, id, e.Readings)
+	if err != nil {
+		return 0, fmt.Errorf("compare readings of entry %q: %w", e.Written, err)
 	}
-	for i, r := range e.Readings {
+	if !same {
+		changed = true
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO readings (entry_id, type, value, plain, ord, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?)`,
-			id, r.Type, r.Value, r.Plain, i, stamp); err != nil {
-			return 0, fmt.Errorf("insert reading %d of entry %q: %w", i, e.Written, err)
+			UPDATE readings SET deleted_at = ?, updated_at = ?
+			WHERE entry_id = ? AND deleted_at IS NULL`,
+			stamp, stamp, id); err != nil {
+			return 0, fmt.Errorf("retire readings of entry %q: %w", e.Written, err)
+		}
+		for i, r := range e.Readings {
+			if _, err := tx.ExecContext(ctx, `
+				INSERT INTO readings (entry_id, type, value, plain, ord, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?)`,
+				id, r.Type, r.Value, r.Plain, i, stamp); err != nil {
+				return 0, fmt.Errorf("insert reading %d of entry %q: %w", i, e.Written, err)
+			}
 		}
 	}
 
+	// Attrs merge: only keys whose value differs (or is new) are written.
 	for k, v := range e.Attrs {
-		if _, err := tx.ExecContext(ctx, `
+		res, err := tx.ExecContext(ctx, `
 			INSERT INTO entry_attrs (entry_id, key, value, updated_at)
 			VALUES (?, ?, ?, ?)
 			ON CONFLICT (entry_id, key) DO UPDATE SET
 				value = excluded.value,
-				updated_at = excluded.updated_at`,
-			id, k, v, stamp); err != nil {
+				updated_at = excluded.updated_at
+			WHERE entry_attrs.value IS NOT excluded.value`,
+			id, k, v, stamp)
+		if err != nil {
 			return 0, fmt.Errorf("upsert attr %q of entry %q: %w", k, e.Written, err)
+		}
+		if n, _ := res.RowsAffected(); n > 0 {
+			changed = true
+		}
+	}
+
+	if changed {
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE entries SET updated_at = ?, deleted_at = NULL WHERE id = ?`,
+			stamp, id); err != nil {
+			return 0, fmt.Errorf("stamp entry %q: %w", e.Written, err)
 		}
 	}
 
@@ -385,6 +424,38 @@ func (s Store) attachChunk(ctx context.Context, es []*model.Entry) error {
 	return attrRows.Err()
 }
 
+// queryer is anything that can run a query: *sql.DB and *sql.Tx.
+type queryer interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+}
+
+// readingsMatch reports whether the entry's active readings are exactly
+// want: same type, value, and plain form, in the same order.
+func readingsMatch(ctx context.Context, db queryer, entryID int64, want []model.Reading) (bool, error) {
+	rows, err := db.QueryContext(ctx, `
+		SELECT type, value, plain FROM readings
+		WHERE entry_id = ? AND deleted_at IS NULL ORDER BY ord, id`, entryID)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	i := 0
+	for rows.Next() {
+		var typ, value, plain string
+		if err := rows.Scan(&typ, &value, &plain); err != nil {
+			return false, err
+		}
+		if i >= len(want) || want[i].Type != typ || want[i].Value != value || want[i].Plain != plain {
+			return false, nil
+		}
+		i++
+	}
+	if err := rows.Err(); err != nil {
+		return false, err
+	}
+	return i == len(want), nil
+}
+
 // normalizeReadings fills each reading's Plain via pack and stamps its
 // position among the entry's readings.
 func normalizeReadings(rs []model.Reading, pack lang.Pack) {
@@ -400,15 +471,17 @@ type execer interface {
 }
 
 // upsertLink inserts the link (from -> to, typ) or revives its soft-deleted
-// row; an already-active link is only re-stamped. Linking twice never
-// duplicates a row: (from, to, typ) is the primary key.
+// row; an already-active link is left untouched — re-linking must not
+// re-stamp it, or every re-import would ship every link again. Linking
+// twice never duplicates a row: (from, to, typ) is the primary key.
 func upsertLink(ctx context.Context, db execer, from, to int64, typ, stamp string) error {
 	_, err := db.ExecContext(ctx, `
 		INSERT INTO entry_links (from_id, to_id, type, updated_at)
 		VALUES (?, ?, ?, ?)
 		ON CONFLICT (from_id, to_id, type) DO UPDATE SET
 			deleted_at = NULL,
-			updated_at = excluded.updated_at`,
+			updated_at = excluded.updated_at
+		WHERE entry_links.deleted_at IS NOT NULL`,
 		from, to, typ, stamp)
 	if err != nil {
 		return fmt.Errorf("upsert %s link %d->%d: %w", typ, from, to, err)
