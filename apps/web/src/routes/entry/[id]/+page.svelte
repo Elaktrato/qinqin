@@ -7,6 +7,7 @@
 	import Readings from '$lib/components/Readings.svelte';
 	import Senses from '$lib/components/Senses.svelte';
 	import Sentences from '$lib/components/Sentences.svelte';
+	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
@@ -100,6 +101,9 @@
 					<span class="chip">{entry.kind}</span>
 					<span class="chip">{entry.language}</span>
 				</div>
+				{#if entry.kind === 'character' && entry.language === 'zh'}
+					<StrokePlayer char={entry.written} />
+				{/if}
 			</div>
 			<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
 		</header>
