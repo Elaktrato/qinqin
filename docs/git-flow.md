@@ -1,0 +1,55 @@
+# Git Flow
+
+This repository uses [git-flow](https://github.com/petervanderdoes/gitflow-avh)
+(AVH edition), with `main` as production and `develop` as the integration branch.
+
+## Branches
+
+| Branch | Purpose |
+|---|---|
+| `main` | Production. Every commit is a released state; releases are tagged `vX.Y.Z`. Never commit here directly. |
+| `develop` | Integration. All finished features land here. |
+| `feature/<name>` | One feature or change. Branched from `develop`, finished back into `develop`. |
+| `release/<version>` | Release stabilization. Branched from `develop`, finished into `main` (+ tag) and back into `develop`. |
+| `hotfix/<version>` | Emergency production fix. Branched from `main`, finished into `main` (+ tag) and back into `develop`. |
+| `support/<name>` | Long-lived maintenance branches (rarely needed). |
+
+## Day-to-day
+
+```bash
+git flow feature start my-change   # branch from develop
+# ... commits ...
+git flow feature finish my-change  # merge --no-ff into develop, delete the branch
+git push origin develop
+```
+
+## Release
+
+```bash
+git flow release start 0.1.0       # branch from develop
+# version bumps / final fixes only
+git flow release finish 0.1.0      # merge into main, tag v0.1.0, merge back into develop
+git push origin main develop --tags
+```
+
+## Hotfix
+
+```bash
+git flow hotfix start 0.1.1        # branch from main
+# fix
+git flow hotfix finish 0.1.1       # merge into main, tag v0.1.1, merge back into develop
+git push origin main develop --tags
+```
+
+## CI/CD mapping
+
+- Every push to `develop` and every PR into `develop`/`main`: vet + tests.
+- Pushes to `main` and `v*` tags: tests, then build and push the Docker image to GHCR
+  (`latest` from `main`, version tags from releases).
+- `develop` pushes never publish images.
+
+## Repository settings
+
+Merge commits only (no squash/rebase) so git-flow's merge topology — and its
+ability to merge releases back into `develop` — stays intact. Head branches are
+deleted automatically after merge.
