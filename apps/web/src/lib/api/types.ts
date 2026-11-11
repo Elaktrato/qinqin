@@ -72,6 +72,16 @@ export interface Workspace {
 	updatedAt: string;
 }
 
+// PluginInfo is one element of GET /api/plugins: the plugin manifest
+// (feature plugins verbatim, pack plugins synthesized) plus the
+// caller's home state.
+export interface PluginInfo {
+	id: string;
+	manifest: { name?: unknown; [key: string]: unknown };
+	enabled: boolean;
+	order: number;
+}
+
 // StudyEventBody is one event in POST /api/events/batch. The server
 // overwrites userId with the token's user and keeps ts verbatim.
 export interface StudyEventBody {
