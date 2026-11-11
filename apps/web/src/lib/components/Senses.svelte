@@ -1,0 +1,125 @@
+<script lang="ts">
+	import type { SenseView } from '$lib/api/types';
+
+	let { senses }: { senses: SenseView[] } = $props();
+
+	interface SenseGroup {
+		dictionaryId: number;
+		dictionaryName: string;
+		license: string;
+		attribution: string;
+		glosses: string[];
+	}
+
+	// Group by dictionary in first-seen order: the API's stable order is
+	// preserved rather than resorted by name or id.
+	const groups = $derived.by((): SenseGroup[] => {
+		const byDictionary = new Map<number, SenseGroup>();
+		for (const sense of senses) {
+			let group = byDictionary.get(sense.dictionaryId);
+			if (!group) {
+				group = {
+					dictionaryId: sense.dictionaryId,
+					dictionaryName: sense.dictionaryName,
+					license: sense.license,
+					attribution: sense.attribution,
+					glosses: []
+				};
+				byDictionary.set(sense.dictionaryId, group);
+			}
+			group.glosses.push(sense.gloss);
+		}
+		return [...byDictionary.values()];
+	});
+
+	interface AttributionPart {
+		text: string;
+		href: string | null;
+	}
+
+	// Attributions commonly carry a URL in parentheses; make it a link
+	// while keeping the surrounding credit text intact.
+	function attributionParts(text: string): AttributionPart[] {
+		return text
+			.split(/(https?:\/\/[^\s)]+)/)
+			.filter((part) => part !== '')
+			.map((part) => (/^https?:\/\//.test(part) ? { text: part, href: part } : { text: part, href: null }));
+	}
+</script>
+
+{#if groups.length > 0}
+	<section class="senses" aria-labelledby="senses-heading">
+		<h2 id="senses-heading">Senses</h2>
+		{#each groups as group (group.dictionaryId)}
+			<article class="dictionary">
+				<h3>{group.dictionaryName}</h3>
+				<ol class="glosses">
+					{#each group.glosses as gloss, index (index)}
+						<li>{gloss}</li>
+					{/each}
+				</ol>
+				{#if group.license || group.attribution}
+					<p class="source">
+						{#if group.license}<span class="license">{group.license}</span>{/if}
+						{#if group.license && group.attribution}<span class="separator">·</span>{/if}
+						{#each attributionParts(group.attribution) as part, index (index)}
+							{#if part.href}
+								<a href={part.href} target="_blank" rel="noreferrer">{part.text}</a>
+							{:else}
+								{part.text}
+							{/if}
+						{/each}
+					</p>
+				{/if}
+			</article>
+		{/each}
+	</section>
+{/if}
+
+<style>
+	.senses {
+		margin-top: 2rem;
+	}
+
+	.senses h2,
+	.senses h3 {
+		margin: 0;
+	}
+
+	.senses h2 {
+		font-size: 0.8rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		opacity: 0.7;
+	}
+
+	.dictionary + .dictionary {
+		margin-top: 1rem;
+	}
+
+	.dictionary h3 {
+		font-size: 1rem;
+		margin-top: 0.75rem;
+	}
+
+	.glosses {
+		margin: 0.4rem 0 0;
+		padding-left: 1.4rem;
+		display: grid;
+		gap: 0.25rem;
+	}
+
+	.source {
+		margin: 0.35rem 0 0;
+		font-size: 0.75rem;
+		opacity: 0.7;
+	}
+
+	.separator {
+		margin: 0 0.25rem;
+	}
+
+	.source a {
+		color: inherit;
+	}
+</style>
