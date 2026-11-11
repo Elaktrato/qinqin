@@ -11,6 +11,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +20,7 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/db"
 	"qinqin/internal/lang"
+	"qinqin/internal/webdist"
 )
 
 // errUsage marks a command invoked with missing or invalid arguments.
@@ -101,5 +103,16 @@ func serveCmd(args []string) error {
 	defer sqlDB.Close()
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, api.New(sqlDB, *data))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data)))
+}
+
+// rootHandler mounts the API on /api/ and /healthz and the web frontend on
+// everything else. The SPA handler must never shadow the API, and the API's
+// own mux stays the sole owner of its routes.
+func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/api/", apiHandler)
+	mux.Handle("/healthz", apiHandler)
+	mux.Handle("/", webdist.Handler(web))
+	return mux
 }
