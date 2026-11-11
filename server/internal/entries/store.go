@@ -251,6 +251,36 @@ func (s Store) CharsUnder(ctx context.Context, radicalID int64) ([]model.Entry, 
 	return cs, nil
 }
 
+// Senses returns the active senses of the entry, each with its active
+// dictionary, ordered by dictionary id then the sense's ord within that
+// dictionary. It returns a non-nil (possibly empty) slice.
+func (s Store) Senses(ctx context.Context, entryID int64) ([]model.SenseView, error) {
+	rows, err := s.DB.QueryContext(ctx, `
+		SELECT d.id, d.name, d.pack_id, d.license, d.attribution, s.gloss
+		FROM senses s
+		JOIN dictionaries d ON d.id = s.dictionary_id
+		WHERE s.entry_id = ? AND s.deleted_at IS NULL AND d.deleted_at IS NULL
+		ORDER BY d.id, s.ord`, entryID)
+	if err != nil {
+		return nil, fmt.Errorf("senses of %d: %w", entryID, err)
+	}
+	defer rows.Close()
+
+	list := make([]model.SenseView, 0)
+	for rows.Next() {
+		var v model.SenseView
+		if err := rows.Scan(&v.DictionaryID, &v.DictionaryName, &v.PackID,
+			&v.License, &v.Attribution, &v.Gloss); err != nil {
+			return nil, fmt.Errorf("senses of %d: %w", entryID, err)
+		}
+		list = append(list, v)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("senses of %d: %w", entryID, err)
+	}
+	return list, nil
+}
+
 // LinkWordChar records that the word entry wordID is written with the
 // character entry charID. Linking an existing pair again is a no-op.
 func (s Store) LinkWordChar(ctx context.Context, wordID, charID int64) error {

@@ -15,14 +15,19 @@ Each pack directory carries its `manifest.json` (including `license` and
 (`ATTRIBUTION.md`). The files are redistributed **unmodified**; the
 download-and-bundle procedure lives in `scripts/fetch-seeds.sh`.
 
-The dictionaries are independent of the application code's license. The
+The dictionary licenses apply only to the dictionary data. The
 API exposes each active dictionary's `license` and `attribution` via
 `GET /api/dictionaries`, and the web app surfaces those credits in its
 sources view.
 
-## Planned for the web view
+## Stroke-order data
 
 Stroke-order animation data (`hanzi-writer-data`, derived from the
 Make Me a Hanzi dataset) is licensed under the **Arphic Public License**.
-When the web frontend bundles it, its license text and notices must be
-included alongside this file.
+The web frontend bundles it and credits it on its Sources page. The full
+license text is committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim
+from the `hanzi-writer-data` package) and is served by the app at
+[`/ARPHICPL.TXT`](/ARPHICPL.TXT).
+
+Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
+[hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).

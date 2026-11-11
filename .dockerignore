@@ -3,6 +3,8 @@
 .claude
 .superpowers
 docs
-apps/
+apps/web/node_modules
+apps/web/build
+apps/web/.svelte-kit
 data/
 server/data/
