@@ -29,6 +29,19 @@ function card(id: string, deckIds: string[] = ['general'], createdAt = '2026-01-
 	return { id, kind: 'vocab', entryId: 1, deckIds, createdAt };
 }
 
+// Event rows are only validated for id/ts server-side, so a payload can
+// still be out of contract when it reaches the scheduler.
+function malformed(cardId: string, grade: number, ts: string): ReviewEvent {
+	return {
+		id: eventId(9),
+		workspaceId: 7,
+		device: 'web',
+		ts,
+		type: 'review',
+		payload: { cardId, mode: 'vocab', grade }
+	} as unknown as ReviewEvent;
+}
+
 const NOW = new Date('2026-06-01T00:00:00.000Z');
 
 describe('scheduleFor', () => {
@@ -223,5 +236,44 @@ describe('levelFromXp', () => {
 		expect(levelFromXp(99)).toBe(1);
 		expect(levelFromXp(100)).toBe(2);
 		expect(levelFromXp(250)).toBe(3);
+	});
+});
+
+describe('malformed review events', () => {
+	it('ignores an out-of-range grade for scheduling and xp', () => {
+		const valid = review('c1', 3, '2026-01-01T00:00:00.000Z', eventId(1));
+		const poisoned = malformed('c1', 9, '2026-01-02T00:00:00.000Z');
+
+		expect(scheduleFor('c1', [valid, poisoned], NOW)).toEqual(scheduleFor('c1', [valid], NOW));
+		expect(xpFromReviews([valid, poisoned])).toBe(15);
+	});
+
+	it('ignores an invalid timestamp and an empty card id', () => {
+		expect(scheduleFor('c1', [malformed('c1', 3, 'not-a-timestamp')], NOW)).toBeNull();
+		expect(scheduleFor('c1', [malformed('', 3, '2026-01-01T00:00:00.000Z')], NOW)).toBeNull();
+	});
+
+	it('does not throw while building a queue and treats cleaned cards as new', () => {
+		const cards = [
+			card('c1', ['general'], '2026-01-01T00:00:00.000Z'),
+			card('c2', ['general'], '2026-01-02T00:00:00.000Z')
+		];
+		const reviews = [
+			malformed('c1', 9, '2026-01-02T00:00:00.000Z'),
+			malformed('c2', 3, 'garbage')
+		];
+
+		let queue: StudyCard[] = [];
+		expect(() => {
+			queue = buildQueue({
+				cards,
+				reviews,
+				deckIds: ['general'],
+				newLimit: 20,
+				reviewLimit: 100,
+				now: NOW
+			});
+		}).not.toThrow();
+		expect(queue.map((item) => item.id)).toEqual(['c1', 'c2']);
 	});
 });

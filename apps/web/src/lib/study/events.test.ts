@@ -40,6 +40,16 @@ function pending(): Record<string, unknown>[] {
 	return raw === null ? [] : (JSON.parse(raw) as Record<string, unknown>[]);
 }
 
+// Flatten every event sent across all batch calls, so a flush that sends
+// one event per request and one that sends a single batch both read the
+// same way.
+function sentEvents(): Record<string, unknown>[] {
+	return vi.mocked(fetch).mock.calls.flatMap(([, init]) => {
+		const body = JSON.parse(String(init?.body)) as { events?: Record<string, unknown>[] };
+		return body.events ?? [];
+	});
+}
+
 describe('recordReview', () => {
 	beforeEach(() => {
 		vi.stubGlobal('localStorage', fakeStorage());
@@ -138,12 +148,86 @@ describe('flushPendingReviews', () => {
 		expect(queued).toHaveLength(2);
 		const ids = queued.map((event) => event.id);
 
-		vi.mocked(fetch).mockResolvedValue(jsonResponse({ accepted: 2, duplicates: 0 }));
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch).mockImplementation(async () =>
+			jsonResponse({ accepted: 1, duplicates: 0 })
+		);
 		await flushPendingReviews();
 
-		const flushed = lastBatch().events;
-		expect(flushed.map((event) => event.id)).toEqual(ids);
+		expect(sentEvents().map((event) => event.id)).toEqual(ids);
 		expect(pending()).toEqual([]);
+	});
+
+	it('drops one permanently rejected event without blocking the rest', async () => {
+		vi.mocked(fetch)
+			.mockRejectedValueOnce(new Error('offline'))
+			.mockRejectedValueOnce(new Error('offline'));
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+		await recordReview(7, 'card-1', 3);
+		await recordReview(7, 'card-2', 4);
+		const ids = pending().map((event) => event.id);
+
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch)
+			.mockResolvedValueOnce(new Response('bad payload', { status: 400 }))
+			.mockResolvedValueOnce(jsonResponse({ accepted: 1, duplicates: 0 }));
+		await flushPendingReviews();
+
+		expect(pending()).toEqual([]);
+		expect(sentEvents().map((event) => event.id)).toEqual(ids);
+		expect(warn).toHaveBeenCalled();
+		warn.mockRestore();
+	});
+
+	it('keeps every event queued on a network failure', async () => {
+		vi.mocked(fetch).mockRejectedValue(new Error('offline'));
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+		await recordReview(7, 'card-1', 3);
+		await recordReview(7, 'card-2', 4);
+		await flushPendingReviews();
+
+		expect(pending()).toHaveLength(2);
+		warn.mockRestore();
+	});
+
+	it('drops a 404 event for one workspace without blocking another workspace', async () => {
+		vi.mocked(fetch)
+			.mockRejectedValueOnce(new Error('offline'))
+			.mockRejectedValueOnce(new Error('offline'));
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+		await recordReview(5, 'card-1', 3);
+		await recordReview(9, 'card-2', 4);
+		const ids = pending().map((event) => event.id);
+
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch)
+			.mockResolvedValueOnce(new Response('no such workspace', { status: 404 }))
+			.mockResolvedValueOnce(jsonResponse({ accepted: 1, duplicates: 0 }));
+		await flushPendingReviews();
+
+		expect(pending()).toEqual([]);
+		expect(sentEvents().map((event) => event.id)).toEqual(ids);
+		warn.mockRestore();
+	});
+
+	it('keeps an event queued on a retryable 5xx and on 429', async () => {
+		vi.mocked(fetch).mockRejectedValueOnce(new Error('offline'));
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+		await recordReview(7, 'card-1', 3);
+
+		vi.mocked(fetch)
+			.mockResolvedValueOnce(new Response('boom', { status: 503 }))
+			.mockResolvedValueOnce(new Response('slow down', { status: 429 }));
+		await flushPendingReviews();
+		expect(pending()).toHaveLength(1);
+
+		await flushPendingReviews();
+		expect(pending()).toHaveLength(1);
+		warn.mockRestore();
 	});
 
 	it('is idempotent: a second flush sends nothing', async () => {

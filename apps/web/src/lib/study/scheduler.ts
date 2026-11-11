@@ -48,6 +48,22 @@ function instant(ts: string): number {
 	return Number.isNaN(ms) ? 0 : ms;
 }
 
+/**
+ * isValidReview guards the replay against out-of-contract payloads. The
+ * server only validates a review's id and ts, so a stored grade can be
+ * anything; ts-fsrs throws on unknown grades and would otherwise break
+ * every queue build.
+ */
+function isValidReview(review: ReviewEvent): boolean {
+	if (review === null || typeof review !== 'object') return false;
+	if (typeof review.ts !== 'string' || Number.isNaN(Date.parse(review.ts))) return false;
+	const payload: unknown = review.payload;
+	if (typeof payload !== 'object' || payload === null) return false;
+	const { cardId, grade } = payload as { cardId?: unknown; grade?: unknown };
+	if (typeof cardId !== 'string' || cardId.length === 0) return false;
+	return grade === 1 || grade === 2 || grade === 3 || grade === 4;
+}
+
 function byId(a: { id: string }, b: { id: string }): number {
 	return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
@@ -74,7 +90,9 @@ export function scheduleFor(
 ): Schedule | null {
 	void now;
 
-	const history = sortedReviews(reviews.filter((review) => review.payload.cardId === cardId));
+	const history = sortedReviews(
+		reviews.filter((review) => isValidReview(review) && review.payload.cardId === cardId)
+	);
 	if (history.length === 0) return null;
 
 	let card: Card = createEmptyCard(new Date(history[0].ts));
@@ -119,6 +137,7 @@ export function buildQueue({
 
 	const historyByCard = new Map<string, ReviewEvent[]>();
 	for (const review of reviews) {
+		if (!isValidReview(review)) continue;
 		const history = historyByCard.get(review.payload.cardId);
 		if (history === undefined) {
 			historyByCard.set(review.payload.cardId, [review]);
@@ -156,10 +175,9 @@ export function buildQueue({
  * Hard add nothing, Good 5, Easy 10.
  */
 export function xpFromReviews(reviews: readonly ReviewEvent[]): number {
-	return reviews.reduce(
-		(total, review) => total + 10 + GRADE_BONUS[review.payload.grade],
-		0
-	);
+	return reviews
+		.filter(isValidReview)
+		.reduce((total, review) => total + 10 + GRADE_BONUS[review.payload.grade], 0);
 }
 
 /** levelFromXp maps 100 xp per level, starting at level 1. */

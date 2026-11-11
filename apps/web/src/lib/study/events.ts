@@ -4,6 +4,7 @@
 // arrives) and is retried on boot and when the browser goes online.
 
 import type { StudyEventBody } from '../api/types';
+import { ApiError } from '../api/client';
 import { postEvents } from '../events';
 import { newUlid } from '../ulid';
 import type { ReviewEvent, ReviewGrade } from './types';
@@ -92,26 +93,44 @@ export async function recordReview(
 }
 
 /**
- * flushPendingReviews retries every queued review in one batch. Events
- * keep their original ULIDs, so a retry after an ambiguous failure is
- * deduplicated by the server. Failures leave the queue untouched; the
- * function never throws.
+ * flushPendingReviews retries every queued review one event at a time.
+ * A single bad row cannot wedge the outbox: a permanent 4xx (other than
+ * 401/408/429, which are worth retrying) drops just that event, while
+ * network errors and transient statuses keep it queued. Events keep
+ * their original ULIDs, so an ambiguous retry is deduplicated by the
+ * server. The function never throws.
  */
 export async function flushPendingReviews(): Promise<void> {
 	const queued = readPending();
 	if (queued.length === 0) return;
 
-	try {
-		await postEvents(queued);
-	} catch (err) {
-		console.warn('pending reviews not flushed', err);
-		return;
+	for (const event of queued) {
+		try {
+			await postEvents([event]);
+			removePending(event.id);
+		} catch (err) {
+			if (isPermanentFailure(err)) {
+				console.warn(`review event "${event.id}" rejected permanently; dropped`, err);
+				removePending(event.id);
+			} else {
+				console.warn(`review event "${event.id}" not flushed; kept for retry`, err);
+			}
+		}
 	}
+}
 
-	// Re-read so a review recorded while the POST was in flight stays
-	// queued instead of being overwritten by this flush.
-	const flushed = new Set(queued.map((event) => event.id));
-	writePending(readPending().filter((event) => !flushed.has(event.id)));
+function removePending(id: string): void {
+	writePending(readPending().filter((event) => event.id !== id));
+}
+
+/**
+ * A 4xx means the server will reject this row again; 401/408/429 and
+ * non-HTTP failures are transient or auth-related and stay queued.
+ */
+function isPermanentFailure(err: unknown): boolean {
+	if (!(err instanceof ApiError)) return false;
+	if (err.status < 400 || err.status >= 500) return false;
+	return err.status !== 401 && err.status !== 408 && err.status !== 429;
 }
 
 // Retry on the next connection and once when the app boots.
