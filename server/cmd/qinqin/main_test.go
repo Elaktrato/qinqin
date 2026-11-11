@@ -81,9 +81,9 @@ func TestRootMuxKeepsAPI(t *testing.T) {
 }
 
 // TestRegisterBuiltinPlugins proves the serve startup registration puts
-// the shipped heatmap into the server registry: Settings lists it, and
-// with no state row it is enabled at order 0. Running twice must be a
-// no-op upsert, as it happens on every start.
+// the shipped flashcards plugin into the server registry: Settings lists
+// it, and with no state row it is enabled at order 0. Running twice must
+// be a no-op upsert, as it happens on every start.
 func TestRegisterBuiltinPlugins(t *testing.T) {
 	sqlDB, err := openData(t.TempDir())
 	if err != nil {
@@ -108,13 +108,69 @@ func TestRegisterBuiltinPlugins(t *testing.T) {
 		t.Fatalf("ListFor: %v", err)
 	}
 	for _, plugin := range list {
-		if plugin.ID != "qinqin-heatmap" {
+		if plugin.ID != "qinqin-flashcards" {
 			continue
 		}
 		if !plugin.Enabled || plugin.Order != 0 {
-			t.Errorf("heatmap state = enabled %t, order %d, want enabled, 0", plugin.Enabled, plugin.Order)
+			t.Errorf("flashcards state = enabled %t, order %d, want enabled, 0", plugin.Enabled, plugin.Order)
 		}
 		return
 	}
-	t.Fatalf("qinqin-heatmap not in plugin list %+v", list)
+	t.Fatalf("qinqin-flashcards not in plugin list %+v", list)
+}
+
+// TestRegisterBuiltinPluginsRetiresHeatmap simulates a database upgraded
+// from a build that shipped the heatmap: its registry row and per-user
+// state survive, and the serve startup must remove both while keeping
+// the flashcards plugin. Running startup again must stay a no-op.
+func TestRegisterBuiltinPluginsRetiresHeatmap(t *testing.T) {
+	sqlDB, err := openData(t.TempDir())
+	if err != nil {
+		t.Fatalf("openData: %v", err)
+	}
+	defer sqlDB.Close()
+
+	ctx := context.Background()
+	user, err := auth.CreateUser(ctx, sqlDB, "alice", "pw-alice", false)
+	if err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	if err := plugins.Register(ctx, sqlDB, []byte(`{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)); err != nil {
+		t.Fatalf("register old heatmap: %v", err)
+	}
+	if err := plugins.SetState(ctx, sqlDB, user.ID, "qinqin-heatmap", false, 4); err != nil {
+		t.Fatalf("set heatmap state: %v", err)
+	}
+
+	for i := 0; i < 2; i++ {
+		if err := registerBuiltinPlugins(ctx, sqlDB); err != nil {
+			t.Fatalf("registerBuiltinPlugins (run %d): %v", i+1, err)
+		}
+	}
+
+	list, err := plugins.ListFor(ctx, sqlDB, user.ID)
+	if err != nil {
+		t.Fatalf("ListFor: %v", err)
+	}
+	var hasFlashcards bool
+	for _, plugin := range list {
+		switch plugin.ID {
+		case "qinqin-heatmap":
+			t.Errorf("retired plugin qinqin-heatmap is still listed: %+v", plugin)
+		case "qinqin-flashcards":
+			hasFlashcards = true
+		}
+	}
+	if !hasFlashcards {
+		t.Errorf("qinqin-flashcards not in plugin list %+v", list)
+	}
+
+	var states int
+	if err := sqlDB.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM plugin_states WHERE pack_id = 'qinqin-heatmap'`).Scan(&states); err != nil {
+		t.Fatalf("count heatmap states: %v", err)
+	}
+	if states != 0 {
+		t.Errorf("heatmap state rows = %d, want 0", states)
+	}
 }

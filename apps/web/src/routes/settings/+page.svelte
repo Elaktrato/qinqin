@@ -140,8 +140,8 @@
 	<section>
 		<h2>Plugins</h2>
 		<p class="hint">
-			The server registers built-in widgets, such as the study heatmap, at startup. Enabled
-			plugins appear on the home page in ascending order.
+			The server registers built-in widgets at startup. The flashcards plugin includes the
+			study heatmap; enabled plugins appear on the home page in ascending order.
 		</p>
 
 		{#if pluginsLoading}

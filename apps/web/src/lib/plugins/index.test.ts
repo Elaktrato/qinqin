@@ -17,14 +17,16 @@ function state(id: string, order: number, enabled = true): PluginInfo {
 
 describe('plugin registry state', () => {
 	it('resolves a web id through the server qinqin- alias', () => {
-		const serverState = state('qinqin-heatmap', 4, false);
+		const serverState = state('qinqin-flashcards', 4, false);
 
-		expect(pluginState('heatmap', [serverState])).toBe(serverState);
-		expect(pluginEnabled('heatmap', [serverState])).toBe(false);
+		expect(pluginState('flashcards', [serverState])).toBe(serverState);
+		expect(pluginState('qinqin-flashcards', [serverState])).toBe(serverState);
+		expect(pluginEnabled('flashcards', [serverState])).toBe(false);
+		expect(pluginEnabled('qinqin-flashcards', [serverState])).toBe(false);
 	});
 
 	it('treats a plugin without state as enabled at order 0', () => {
-		expect(pluginEnabled('heatmap', [])).toBe(true);
+		expect(pluginEnabled('qinqin-flashcards', [])).toBe(true);
 	});
 
 	it('orders by state ascending and keeps registry order for ties', () => {
