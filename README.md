@@ -25,7 +25,7 @@ database with a SvelteKit single-page app embedded in the binary.
   recorded views, lookups, and sessions.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
   are installable data packs; home widgets and views are feature plugins that
-  can be enabled and ordered in Settings.
+  the server registers at startup so Settings can enable and order them.
 
 ## Quick start (Docker Compose / Portainer)
 

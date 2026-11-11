@@ -4,15 +4,19 @@
 	import { api } from '$lib/api/client';
 	import type { PluginInfo } from '$lib/api/types';
 	import { APP_NAME } from '$lib/app';
-	import { pluginEnabled, webPlugins } from '$lib/plugins';
+	import { pluginEnabled, orderPlugins, webPlugins } from '$lib/plugins';
 
 	let query = $state('');
 	let pluginStates = $state<PluginInfo[]>([]);
 
 	// Only the installed, enabled plugins this build can render get a
-	// slot; unknown or disabled plugins simply do not appear.
+	// slot; unknown or disabled plugins simply do not appear, and the
+	// rest follow the user's Settings order.
 	const plugins = $derived(
-		webPlugins.filter((plugin) => pluginEnabled(plugin.manifest.id, pluginStates))
+		orderPlugins(
+			webPlugins.filter((plugin) => pluginEnabled(plugin.manifest.id, pluginStates)),
+			pluginStates
+		)
 	);
 
 	onMount(async () => {

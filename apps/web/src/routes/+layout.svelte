@@ -5,7 +5,7 @@
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
 	import { APP_NAME } from '$lib/app';
-	import { auth, loadMe } from '$lib/auth';
+	import { auth, loadMe, logout, user } from '$lib/auth';
 	import { recordSessionOnce } from '$lib/events';
 	import {
 		create as createWorkspace,
@@ -161,6 +161,12 @@
 					<button type="submit" disabled={creating}>New</button>
 				</form>
 			</div>
+			<div class="account">
+				{#if $user}
+					<span class="username">{$user.username}</span>
+				{/if}
+				<button type="button" onclick={logout}>Sign out</button>
+			</div>
 		</header>
 
 		{#if workspaceError}
@@ -229,6 +235,27 @@
 	.new-workspace {
 		display: flex;
 		gap: 0.35rem;
+	}
+
+	.account {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.9rem;
+	}
+
+	.username {
+		font-weight: 600;
+	}
+
+	.account button {
+		font: inherit;
+		padding: 0.25rem 0.55rem;
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border-radius: 0.4rem;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
 	}
 
 	.workspace-error {

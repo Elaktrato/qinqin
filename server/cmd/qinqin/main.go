@@ -7,6 +7,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"flag"
@@ -20,6 +21,7 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/db"
 	"qinqin/internal/lang"
+	"qinqin/internal/plugins"
 	"qinqin/internal/webdist"
 )
 
@@ -69,6 +71,22 @@ func defaultData() string {
 	return "./data"
 }
 
+// builtinHeatmapManifest registers the study heatmap the web build
+// ships. The manifest lives here, next to serving, so the server
+// registry lists the widget in Settings and can carry its per-user
+// enabled/order state; Register upserts by id, so every start is safe.
+const builtinHeatmapManifest = `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature","surfaces":["home-widget"]}`
+
+// registerBuiltinPlugins puts the feature plugins this build ships a
+// component for into the server registry. It runs at serve startup,
+// after migrations and before the HTTP server accepts requests.
+func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
+	if err := plugins.Register(ctx, sqlDB, []byte(builtinHeatmapManifest)); err != nil {
+		return fmt.Errorf("register built-in plugin qinqin-heatmap: %w", err)
+	}
+	return nil
+}
+
 // openData creates the data directory if needed and opens (migrating)
 // the SQLite database inside it, with the durable serving settings.
 func openData(dataDir string) (*sql.DB, error) {
@@ -101,6 +119,10 @@ func serveCmd(args []string) error {
 		return err
 	}
 	defer sqlDB.Close()
+
+	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
+		return err
+	}
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
 	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data)))

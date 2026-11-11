@@ -29,6 +29,20 @@
 		return fallback;
 	}
 
+	// One lookup per query and language for this page visit: the URL
+	// effect re-runs on navigation and workspace switches, but a repeat
+	// search must not inflate the study log.
+	const recordedLookups = new Set<string>();
+
+	function recordLookup(q: string, language: string): void {
+		const key = `${language}\u0000${q}`;
+		if (recordedLookups.has(key)) return;
+		const workspace = get(workspaces).current;
+		if (!workspace) return;
+		recordedLookups.add(key);
+		void record('lookup', workspace.id, { query: q });
+	}
+
 	function sourceLabel(source: string): string {
 		return source === 'written' ? 'written form' : source;
 	}
@@ -55,8 +69,8 @@
 	function submit(event: SubmitEvent): void {
 		event.preventDefault();
 		const q = query.trim();
-		const workspace = get(workspaces).current;
-		if (q && workspace) void record('lookup', workspace.id, { query: q });
+		// The URL effect below runs the query and records the lookup, so
+		// submitting only navigates.
 		void goto(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
 	}
 
@@ -84,6 +98,7 @@
 			return;
 		}
 		void runSearch(q, language);
+		recordLookup(q, language);
 	});
 </script>
 

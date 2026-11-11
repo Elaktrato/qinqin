@@ -139,7 +139,10 @@
 
 	<section>
 		<h2>Plugins</h2>
-		<p class="hint">Enabled plugins appear on the home page in ascending order.</p>
+		<p class="hint">
+			The server registers built-in widgets, such as the study heatmap, at startup. Enabled
+			plugins appear on the home page in ascending order.
+		</p>
 
 		{#if pluginsLoading}
 			<p>Loading plugins…</p>
