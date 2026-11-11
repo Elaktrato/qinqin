@@ -10,7 +10,7 @@ import (
 // `qinqin seed` with no --packs must honor $QINQIN_PACKS instead of
 // the repo-relative plugins/data default.
 func TestSeedPacksDefaultsFromEnv(t *testing.T) {
-	t.Setenv("QINQIN_PACKS", committedPacks)
+	t.Setenv("QINQIN_PACKS", smallPacks(t))
 	dir := t.TempDir()
 	if err := seedCmd([]string{"--data", dir}, io.Discard); err != nil {
 		t.Fatalf("seed with $QINQIN_PACKS and no --packs: %v", err)

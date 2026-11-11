@@ -35,6 +35,46 @@ func openTestDB(t *testing.T) (*sql.DB, string) {
 	return sqlDB, dir
 }
 
+// smallPacks copies the hand-written sample packs from the committed
+// packs directory into a temp dir. Seed tests exercise the committed
+// acceptance paths (zh/ja/es dictionaries plus zh/ja level packs) without
+// importing the full bundled dictionaries, which would add minutes to
+// every run.
+func smallPacks(t *testing.T) string {
+	t.Helper()
+	dest := t.TempDir()
+	for _, name := range []string{"es-demo", "hsk-mini", "ja-mini", "jlpt-mini", "zh-mini"} {
+		copyTree(t, filepath.Join(committedPacks, name), filepath.Join(dest, name))
+	}
+	return dest
+}
+
+// copyTree copies a directory tree into dst, creating parents.
+func copyTree(t *testing.T, src, dst string) {
+	t.Helper()
+	err := filepath.WalkDir(src, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(dst, rel)
+		if d.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, data, 0o644)
+	})
+	if err != nil {
+		t.Fatalf("copy %s: %v", src, err)
+	}
+}
+
 // counts are the active row counts the seed writes.
 type counts struct{ entries, senses, members, languages int }
 
@@ -59,7 +99,8 @@ func TestSeedIdempotent(t *testing.T) {
 	sqlDB, _ := openTestDB(t)
 
 	var out bytes.Buffer
-	if err := seed(ctx, sqlDB, committedPacks, &out); err != nil {
+	packs := smallPacks(t)
+	if err := seed(ctx, sqlDB, packs, &out); err != nil {
 		t.Fatalf("first seed: %v", err)
 	}
 	first := countRows(t, sqlDB)
@@ -72,7 +113,7 @@ func TestSeedIdempotent(t *testing.T) {
 		}
 	}
 
-	if err := seed(ctx, sqlDB, committedPacks, io.Discard); err != nil {
+	if err := seed(ctx, sqlDB, packs, io.Discard); err != nil {
 		t.Fatalf("second seed: %v", err)
 	}
 	if second := countRows(t, sqlDB); second != first {
@@ -87,7 +128,7 @@ func TestSeedIdempotent(t *testing.T) {
 func TestSeedCommittedPacksEndToEnd(t *testing.T) {
 	ctx := context.Background()
 	sqlDB, _ := openTestDB(t)
-	if err := seed(ctx, sqlDB, committedPacks, io.Discard); err != nil {
+	if err := seed(ctx, sqlDB, smallPacks(t), io.Discard); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	st := entries.Store{DB: sqlDB}
