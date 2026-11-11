@@ -10,12 +10,17 @@
 	import Senses from '$lib/components/Senses.svelte';
 	import Sentences from '$lib/components/Sentences.svelte';
 	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
+	import { record } from '$lib/events';
+	import { workspaces } from '$lib/workspaces';
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
 	let loading = $state(true);
 	let notFound = $state(false);
 	let error = $state('');
+	// The entry a view event was already recorded for, so a re-render
+	// or a workspace arriving late never double-counts one visit.
+	let viewedEntry = $state<number | null>(null);
 
 	// Guards against a slow earlier request overwriting a newer entry.
 	let requestSeq = 0;
@@ -95,6 +100,16 @@
 			return;
 		}
 		void load(id);
+	});
+
+	// Record the visit once the entry and the workspace are both known:
+	// the shell may still be loading workspaces when the entry lands.
+	$effect(() => {
+		const viewed = entry?.id ?? null;
+		const workspace = $workspaces.current?.id ?? null;
+		if (viewed === null || workspace === null || viewedEntry === viewed) return;
+		viewedEntry = viewed;
+		void record('view', workspace, { entryId: viewed });
 	});
 </script>
 

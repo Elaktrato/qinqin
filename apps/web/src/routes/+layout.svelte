@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
 	import { APP_NAME } from '$lib/app';
 	import { auth, loadMe } from '$lib/auth';
+	import { recordSessionOnce } from '$lib/events';
 	import {
 		create as createWorkspace,
 		load as loadWorkspaces,
@@ -70,9 +72,16 @@
 		if (token === loadedToken) return;
 		loadedToken = token;
 		workspaceError = '';
-		void loadWorkspaces().catch((err) => {
-			workspaceError = message(err, 'Could not load workspaces.');
-		});
+		void loadWorkspaces()
+			.then(() => {
+				// One session event per workspace per UTC day, recorded
+				// once the shell knows which workspace is active.
+				const current = get(workspaces).current;
+				if (current) recordSessionOnce(current.id);
+			})
+			.catch((err) => {
+				workspaceError = message(err, 'Could not load workspaces.');
+			});
 	});
 
 	// Re-evaluate on every client-side navigation and auth change, so

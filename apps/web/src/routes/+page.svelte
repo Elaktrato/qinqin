@@ -1,8 +1,28 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { api } from '$lib/api/client';
+	import type { PluginInfo } from '$lib/api/types';
 	import { APP_NAME } from '$lib/app';
+	import { pluginEnabled, webPlugins } from '$lib/plugins';
 
 	let query = $state('');
+	let pluginStates = $state<PluginInfo[]>([]);
+
+	// Only the installed, enabled plugins this build can render get a
+	// slot; unknown or disabled plugins simply do not appear.
+	const plugins = $derived(
+		webPlugins.filter((plugin) => pluginEnabled(plugin.manifest.id, pluginStates))
+	);
+
+	onMount(async () => {
+		try {
+			pluginStates = await api<PluginInfo[]>('/api/plugins');
+		} catch {
+			// Without server state the registry default — enabled —
+			// keeps the home page useful.
+		}
+	});
 
 	async function search(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
@@ -24,8 +44,12 @@
 		<button type="submit">Search</button>
 	</form>
 
-	<!-- Enabled home plugins render into this slot. -->
-	<section class="plugin-slot" data-plugin-slot="home" aria-label="Home widgets"></section>
+	<section class="plugin-slot" data-plugin-slot="home" aria-label="Home widgets">
+		{#each plugins as plugin (plugin.manifest.id)}
+			{@const Widget = plugin.component}
+			<Widget />
+		{/each}
+	</section>
 </main>
 
 <style>
@@ -62,9 +86,5 @@
 
 	.plugin-slot:empty {
 		display: none;
-	}
-
-	.plugin-slot {
-		margin-top: 2rem;
 	}
 </style>

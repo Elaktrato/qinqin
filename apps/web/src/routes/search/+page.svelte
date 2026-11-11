@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
 	import { search } from '$lib/api/search';
 	import type { SearchHit } from '$lib/api/types';
-	import { currentLanguage } from '$lib/workspaces';
+	import { record } from '$lib/events';
+	import { currentLanguage, workspaces } from '$lib/workspaces';
 
 	let query = $state('');
 	let hits = $state<SearchHit[]>([]);
@@ -53,6 +55,8 @@
 	function submit(event: SubmitEvent): void {
 		event.preventDefault();
 		const q = query.trim();
+		const workspace = get(workspaces).current;
+		if (q && workspace) void record('lookup', workspace.id, { query: q });
 		void goto(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
 	}
 
