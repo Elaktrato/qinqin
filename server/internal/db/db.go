@@ -27,7 +27,10 @@ func Open(path string) (*sql.DB, error) {
 	// journal_mode(WAL) lets the server keep reading while another process
 	// (qinqin seed via docker compose exec) writes; with the default
 	// rollback journal those reads would block until the busy timeout.
-	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
+	// synchronous(NORMAL) is the standard WAL pairing: no fsync per commit
+	// (a crash can lose the last transactions but never corrupts the DB —
+	// and seeding is idempotent), which matters for bulk imports.
+	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(NORMAL)")
 	if err != nil {
 		return nil, fmt.Errorf("open database %s: %w", path, err)
 	}
