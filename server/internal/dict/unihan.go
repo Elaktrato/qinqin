@@ -20,6 +20,18 @@ import (
 // Unicode Unihan database's line format.
 const unihanFile = "dictionary.txt"
 
+// unihanZipFile is the upstream distribution of the Unihan database. The
+// members below carry every field the importer parses: kRSUnicode lives
+// in the radical-stroke file (not IRGSources), variants in the variants
+// file, and kDefinition in the readings file.
+const unihanZipFile = "Unihan.zip"
+
+var unihanZipMembers = []string{
+	"Unihan_RadicalStrokeCounts.txt",
+	"Unihan_Variants.txt",
+	"Unihan_Readings.txt",
+}
+
 // The built-in dictionary a unihan import registers. The Unihan database
 // is one canonical dataset with fixed license terms, whatever pack
 // delivered the file, so its row is keyed "unihan" with those terms —
@@ -154,10 +166,26 @@ func parseDefinition(value string) (string, error) {
 	return def, nil
 }
 
-// readUnihanPack reads and parses the dictionary.txt of the format
-// "unihan" pack in dir.
+// readUnihanPack reads and parses the data of the format "unihan" pack in
+// dir. Two layouts are accepted: the upstream distribution, Unihan.zip,
+// from which the members carrying the parsed fields are concatenated
+// (radical-stroke counts, variants, readings — kDefinition included),
+// and a single plain or gzip-compressed dictionary.txt.
 func readUnihanPack(dir string) (UnihanData, error) {
-	f, err := os.Open(filepath.Join(dir, unihanFile))
+	zipPath := filepath.Join(dir, unihanZipFile)
+	if _, err := os.Stat(zipPath); err == nil {
+		f, err := openZipMembers(zipPath, unihanZipMembers...)
+		if err != nil {
+			return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, unihanZipFile, dir, err)
+		}
+		defer f.Close()
+		data, err := ParseUnihan(f)
+		if err != nil {
+			return UnihanData{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, unihanZipFile, dir, err)
+		}
+		return data, nil
+	}
+	f, err := openMaybeGz(filepath.Join(dir, unihanFile))
 	if err != nil {
 		return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, unihanFile, dir, err)
 	}

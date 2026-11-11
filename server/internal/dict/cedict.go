@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -130,7 +129,7 @@ type cedictStats struct {
 // fails on unconvertible input. Homograph lines for one written form
 // merge into one entry carrying all their readings and senses.
 func readCedictPack(dir string) ([]entry, cedictStats, error) {
-	f, err := os.Open(filepath.Join(dir, cedictFile))
+	f, err := openMaybeGz(filepath.Join(dir, cedictFile))
 	if err != nil {
 		return nil, cedictStats{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
 	}
