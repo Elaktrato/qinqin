@@ -1,7 +1,7 @@
 # Flashcards Phase — Design
 
 Date: 2026-11-12
-Status: agreed in conversation; build order fixed (three rounds).
+Status: Round 1 shipped 2026-11-12; Rounds 2–3 pending — [#24](https://github.com/Elaktrato/qinqin/issues/24), [#25](https://github.com/Elaktrato/qinqin/issues/25). Design agreed in conversation; build order fixed (three rounds).
 
 ## Intent
 
@@ -82,7 +82,7 @@ level curve. Per workspace. Mascot art is out of scope until the owner draws it.
 
 ## Rounds (build order)
 
-- **Round 1 — core study loop** (this build): plugin scaffold + registration,
+- **Round 1 — core study loop** (shipped 2026-11-12): plugin scaffold + registration,
   decks (general + custom), `+` add-from-entry, session setup (decks, card-type
   opt-out, limits), vocab repetition cards, 4-grade FSRS scheduling, review-driven
   heatmap home widget, session summary with derived EXP/level. No backend logic

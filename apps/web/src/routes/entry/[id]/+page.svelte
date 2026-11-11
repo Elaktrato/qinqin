@@ -4,6 +4,7 @@
 	import { ApiError } from '$lib/api/client';
 	import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
 	import type { Entry, EntryBase, EntryDetail } from '$lib/api/types';
+	import AddToStudy from '$lib/components/AddToStudy.svelte';
 	import Badges from '$lib/components/Badges.svelte';
 	import EntryEditor from '$lib/components/EntryEditor.svelte';
 	import Readings from '$lib/components/Readings.svelte';
@@ -137,9 +138,12 @@
 					<StrokePlayer char={entry.written} />
 				{/if}
 			</div>
-			{#if !editing}
-				<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
-			{/if}
+			<div class="actions">
+				<AddToStudy {entry} />
+				{#if !editing}
+					<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
+				{/if}
+			</div>
 		</header>
 
 		{#if editing}
@@ -252,6 +256,13 @@
 		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		border-radius: 999px;
 		opacity: 0.8;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: 0.6rem;
 	}
 
 	.edit {

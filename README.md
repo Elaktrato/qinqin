@@ -21,8 +21,9 @@ database with a SvelteKit single-page app embedded in the binary.
   current workspace language.
 - **Editing** — correct written forms and readings per user without mutating
   the shared dictionary data.
-- **Study heatmap** — a GitHub-style consistency grid on the home page, fed by
-  recorded views, lookups, and sessions.
+- **Study mode** — add any word from its entry page and review it with Anki-style
+  grading; the flashcards plugin derives FSRS schedules, a review heatmap, and
+  EXP/levels from the event log.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
   are installable data packs; home widgets and views are feature plugins that
   the server registers at startup so Settings can enable and order them.
@@ -55,6 +56,32 @@ an image.
 > Seed and create the admin account **before** exposing the port beyond your
 > LAN: while no user exists, the first registration over the API becomes the
 > admin — whoever makes it.
+
+## Studying
+
+Study is a web feature plugin (`qinqin-flashcards`). To add a word, open any
+character or word entry and press **Add to study** next to its title; the card
+joins the general deck and keeps the entry's first example sentence for context.
+
+`/study` is the session setup: choose the decks to draw from, opt out of card
+types (Round 1 ships vocab repetition; sentence, writing, and tone cards follow
+in Round 3), and set the new-card and review limits. Starting a session shows the
+word, its readings, and the example sentence with the word blanked; **Show
+answer** then adds the meanings. Grade each card **Again**, **Hard**, **Good**,
+or **Easy** (or press 1–4). The grade is appended to the study-event log and
+FSRS derives the next due date from the card's whole review history, so schedules
+are never stored and two devices merge cleanly by event id.
+
+The home page widget shows what is due and new, plus a review-driven heatmap,
+daily review counts, and derived EXP/levels per workspace. Studying adds no
+bundled data: decks and cards are workspace plugin data and reviews are events,
+so the dictionaries in `plugins/data/` stay unmodified.
+
+Rounds 2–3 are pending: level sessions and the Hanzi/Kanji mastery map, then Word
+Salad, stroke-checked writing, and tone cards. See the
+[design doc](docs/superpowers/specs/2026-11-12-flashcards-design.md) for the full
+model; [issue #24](https://github.com/Elaktrato/qinqin/issues/24) and
+[issue #25](https://github.com/Elaktrato/qinqin/issues/25) track them.
 
 ## Bundled data
 
@@ -105,6 +132,7 @@ Gates:
 
 ```bash
 npm --prefix apps/web run check
+npm --prefix apps/web test
 npm --prefix apps/web run build
 cd server && go vet ./... && go test ./...
 ```
