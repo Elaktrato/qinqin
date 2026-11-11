@@ -12,3 +12,50 @@ main {
 	max-width: 48rem;
 	padding: 3rem 1.5rem;
 }
+
+.auth form {
+	display: grid;
+	gap: 1rem;
+	max-width: 22rem;
+}
+
+.auth label {
+	display: grid;
+	gap: 0.35rem;
+	font-weight: 600;
+}
+
+.auth input {
+	font: inherit;
+	padding: 0.55rem 0.7rem;
+	border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+	border-radius: 0.4rem;
+	background: transparent;
+	color: inherit;
+}
+
+.auth button {
+	font: inherit;
+	font-weight: 600;
+	padding: 0.6rem 1rem;
+	border: 0;
+	border-radius: 0.4rem;
+	background: #0b6bcb;
+	color: #fff;
+	cursor: pointer;
+}
+
+.auth button:disabled {
+	opacity: 0.6;
+	cursor: progress;
+}
+
+.auth .error {
+	margin: 0;
+	color: #c62828;
+	font-weight: 600;
+}
+
+.auth .hint {
+	opacity: 0.75;
+}

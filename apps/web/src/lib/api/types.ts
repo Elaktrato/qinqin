@@ -1,0 +1,84 @@
+// Structural mirrors of the JSON the Go API serves. Only the fields the
+// web client reads are declared; later pages extend these as needed.
+
+export interface Reading {
+	type: string;
+	value: string;
+	plain: string;
+	ord: number;
+}
+
+export interface Badge {
+	schemeId: number;
+	schemeName: string;
+	levelName: string;
+	derived: boolean;
+}
+
+export interface SenseView {
+	dictionaryId: number;
+	dictionaryName: string;
+	packId: string;
+	license: string;
+	attribution: string;
+	gloss: string;
+}
+
+export interface Sentence {
+	id: number;
+	entryId: number;
+	sourcePack: string;
+	userId: number | null;
+	hanzi: string;
+	pinyin: string;
+	translation: string;
+}
+
+// EntryBase is an entry as it appears nested inside another entry's
+// variants: the shared row without the detail sections.
+export interface EntryBase {
+	id: number;
+	language: string;
+	kind: string;
+	written: string;
+	readings: Reading[];
+	attrs: Record<string, string>;
+	radicalId: number | null;
+}
+
+// Entry is GET /api/entries/{id}: the shared row plus the caller's
+// senses, scheme badges, variants, and example sentences.
+export interface Entry extends EntryBase {
+	badges: Badge[];
+	variants: EntryBase[];
+	sentences: Sentence[];
+	senses: SenseView[];
+}
+
+export interface Dictionary {
+	id: number;
+	packId: string;
+	name: string;
+	version: string;
+	license: string;
+	attribution: string;
+	updatedAt: string;
+}
+
+export interface Workspace {
+	id: number;
+	language: string;
+	settings: Record<string, unknown>;
+	updatedAt: string;
+}
+
+// StudyEventBody is one event in POST /api/events/batch. The server
+// overwrites userId with the token's user and keeps ts verbatim.
+export interface StudyEventBody {
+	id: string;
+	workspaceId: number;
+	device: string;
+	ts: string;
+	type: string;
+	payload: unknown;
+}
