@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
 	import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
-	import type { Entry, EntryBase } from '$lib/api/types';
+	import type { Entry, EntryBase, EntryDetail } from '$lib/api/types';
 	import Badges from '$lib/components/Badges.svelte';
+	import EntryEditor from '$lib/components/EntryEditor.svelte';
 	import Readings from '$lib/components/Readings.svelte';
 	import Senses from '$lib/components/Senses.svelte';
 	import Sentences from '$lib/components/Sentences.svelte';
@@ -63,6 +65,21 @@
 	}
 
 	const entryId = $derived(parseEntryId(page.params.id));
+	const editing = $derived(page.url.searchParams.get('edit') === '1');
+
+	// Cancel drops ?edit=1 without a round trip or a scroll jump. The
+	// entry effect keys on the id only, so the view is not refetched.
+	function closeEditor(): void {
+		const id = entryId;
+		if (id === null) return;
+		void goto(`/entry/${id}`, { replaceState: true, noScroll: true, keepFocus: true });
+	}
+
+	function handleSaved(updated: EntryDetail): void {
+		// The PUT response is the caller's patched view, so it replaces
+		// the entry without another GET.
+		entry = updated;
+	}
 
 	// The route param is the source of truth: loading it also makes
 	// navigating between entries refetch instead of showing stale data.
@@ -105,10 +122,18 @@
 					<StrokePlayer char={entry.written} />
 				{/if}
 			</div>
-			<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
+			{#if !editing}
+				<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
+			{/if}
 		</header>
 
-		<Readings readings={entry.readings} />
+		{#if editing}
+			{#key entry.id}
+				<EntryEditor entry={entry} onSaved={handleSaved} onCancel={closeEditor} />
+			{/key}
+		{:else}
+			<Readings readings={entry.readings} />
+		{/if}
 		<Badges badges={entry.badges} />
 		<Senses senses={entry.senses} />
 

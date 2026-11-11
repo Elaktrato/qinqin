@@ -62,6 +62,10 @@ export interface Entry extends EntryBase {
 	senses: SenseView[];
 }
 
+// EntryDetail is the full entry view returned by GET and PUT
+// /api/entries/{id}: the entry plus the sections above.
+export type EntryDetail = Entry;
+
 export interface Dictionary {
 	id: number;
 	packId: string;
