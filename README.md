@@ -59,7 +59,7 @@ an image.
 ## Bundled data
 
 A fresh install can seed offline; the image ships these upstream dictionaries
-under `plugins/data/`:
+under `/opt/qinqin/packs` (source: `plugins/data/`):
 
 | Pack | Provides | License |
 |---|---|---|
@@ -85,7 +85,7 @@ cd server
 go run ./cmd/qinqin
 ```
 
-Optional first-run seed and admin user:
+Optional first-run seed and admin user, in a second terminal:
 
 ```bash
 cd server
