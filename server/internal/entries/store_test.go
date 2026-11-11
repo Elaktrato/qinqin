@@ -627,3 +627,87 @@ func TestWordCharLinks(t *testing.T) {
 		t.Errorf("Variants(好) = %v, want empty", entryIDs(variants))
 	}
 }
+
+func TestSenses(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+
+	hao := mustUpsert(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "好",
+		Readings: []model.Reading{reading("pinyin", "hǎo")},
+	})
+
+	// insertDictionary installs one active dictionary row.
+	insertDictionary := func(packID, name, license, attribution string) int64 {
+		t.Helper()
+		var id int64
+		if err := st.DB.QueryRowContext(ctx, `
+			INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
+			VALUES (?, ?, '1.0', ?, ?, '2026-01-01T00:00:00Z')
+			RETURNING id`, packID, name, license, attribution).Scan(&id); err != nil {
+			t.Fatalf("insert dictionary %s: %v", packID, err)
+		}
+		return id
+	}
+	// insertSense writes one sense; a non-empty deletedAt soft-deletes it.
+	insertSense := func(dictID int64, gloss string, ord int, deletedAt string) {
+		t.Helper()
+		var deleted any
+		if deletedAt != "" {
+			deleted = deletedAt
+		}
+		if _, err := st.DB.ExecContext(ctx, `
+			INSERT INTO senses (dictionary_id, entry_id, gloss, ord, updated_at, deleted_at)
+			VALUES (?, ?, ?, ?, '2026-01-01T00:00:00Z', ?)`,
+			dictID, hao, gloss, ord, deleted); err != nil {
+			t.Fatalf("insert sense %q: %v", gloss, err)
+		}
+	}
+
+	zdic := insertDictionary("zdic", "Zdic", "CC BY-SA 4.0", "Zdic contributors")
+	wd := insertDictionary("wd", "Wordlist", "CC0 1.0", "Wordlist contributors")
+	dead := insertDictionary("dead", "Uninstalled", "CC0 1.0", "Nobody")
+
+	// Sense rows carry no guaranteed insertion order: ord decides within a
+	// dictionary, and the dictionaries' own ids decide across them.
+	insertSense(zdic, "fine", 1, "")
+	insertSense(zdic, "good", 0, "")
+	insertSense(zdic, "stale", 2, "2026-01-02T00:00:00Z") // soft-deleted sense
+	insertSense(wd, "well", 0, "")
+	insertSense(dead, "gone", 0, "") // its dictionary is uninstalled below
+	if _, err := st.DB.ExecContext(ctx, `
+		UPDATE dictionaries SET deleted_at = '2026-01-02T00:00:00Z' WHERE id = ?`, dead); err != nil {
+		t.Fatalf("uninstall dictionary: %v", err)
+	}
+
+	want := []model.SenseView{
+		{DictionaryID: zdic, DictionaryName: "Zdic", PackID: "zdic", License: "CC BY-SA 4.0", Attribution: "Zdic contributors", Gloss: "good"},
+		{DictionaryID: zdic, DictionaryName: "Zdic", PackID: "zdic", License: "CC BY-SA 4.0", Attribution: "Zdic contributors", Gloss: "fine"},
+		{DictionaryID: wd, DictionaryName: "Wordlist", PackID: "wd", License: "CC0 1.0", Attribution: "Wordlist contributors", Gloss: "well"},
+	}
+	got, err := st.Senses(ctx, hao)
+	if err != nil {
+		t.Fatalf("Senses(好): %v", err)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("Senses(好) = %+v, want %+v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("sense %d = %+v, want %+v", i, got[i], want[i])
+		}
+	}
+
+	// An entry with no senses answers a non-nil empty slice.
+	empty := mustUpsert(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "子",
+		Readings: []model.Reading{reading("pinyin", "zǐ")},
+	})
+	got, err = st.Senses(ctx, empty)
+	if err != nil {
+		t.Fatalf("Senses(子): %v", err)
+	}
+	if got == nil || len(got) != 0 {
+		t.Errorf("Senses(子) = %v, want a non-nil empty slice", got)
+	}
+}

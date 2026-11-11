@@ -2,12 +2,10 @@
 /data/
 /server/data/
 
-# large seed datasets fetched by scripts/fetch-seeds.sh
-/plugins/data/cedict/
-/plugins/data/unihan/
-/plugins/data/jmdict/
-/plugins/data/kanjidic2/
-
 # local tooling scratch
 /.superpowers/
 /.claude/worktrees/
+
+# generated web build copied into the embed dir (Docker/CI)
+/server/internal/webdist/dist/*
+!/server/internal/webdist/dist/.gitkeep

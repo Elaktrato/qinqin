@@ -15,19 +15,20 @@ import (
 	"qinqin/internal/sentences"
 )
 
-// entryResponse is an entry together with its variants, scheme badges,
-// and example sentences: the body of GET and PUT /api/entries/{id}.
+// entryResponse is an entry together with its senses, variants, scheme
+// badges, and example sentences: the body of GET and PUT /api/entries/{id}.
 type entryResponse struct {
 	model.Entry
-	Variants  []model.Entry    `json:"variants"`
-	Badges    []model.Badge    `json:"badges"`
-	Sentences []model.Sentence `json:"sentences"`
+	Senses    []model.SenseView `json:"senses"`
+	Variants  []model.Entry     `json:"variants"`
+	Badges    []model.Badge     `json:"badges"`
+	Sentences []model.Sentence  `json:"sentences"`
 }
 
 // handleGetEntry serves GET /api/entries/{id} with the entry, its
-// variants, and its scheme badges. Unknown and malformed ids are 404.
-// An authenticated caller sees the entry with their own patch applied;
-// everyone else sees the shared entry.
+// senses, variants, scheme badges, and example sentences. Unknown and
+// malformed ids are 404. An authenticated caller sees the entry with
+// their own patch applied; everyone else sees the shared entry.
 func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -57,6 +58,11 @@ func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	senses, err := store.Senses(r.Context(), id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	variants, err := store.Variants(r.Context(), id)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -72,7 +78,34 @@ func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants, Badges: badges, Sentences: entrySentences})
+	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Senses: senses, Variants: variants, Badges: badges, Sentences: entrySentences})
+}
+
+// handleCharsUnderRadical serves GET /api/entries/{id}/chars with the
+// active characters classified under the radical entry {id}, ordered by
+// written form. A radical without characters answers an empty array;
+// unknown and malformed ids are 404.
+func (s *server) handleCharsUnderRadical(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "entry not found", http.StatusNotFound)
+		return
+	}
+	store := entries.Store{DB: s.db}
+	if _, err := store.GetByID(r.Context(), id); err != nil {
+		if errors.Is(err, entries.ErrNotFound) {
+			http.Error(w, "entry not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	chars, err := store.CharsUnder(r.Context(), id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, chars)
 }
 
 // handlePutEntry serves PUT /api/entries/{id}: it stores the
@@ -123,6 +156,11 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	senses, err := store.Senses(r.Context(), id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	variants, err := store.Variants(r.Context(), id)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -138,5 +176,5 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Variants: variants, Badges: badges, Sentences: entrySentences})
+	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Senses: senses, Variants: variants, Badges: badges, Sentences: entrySentences})
 }

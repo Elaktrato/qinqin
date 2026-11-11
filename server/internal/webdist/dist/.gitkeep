@@ -1,0 +1,2 @@
+Placeholder so //go:embed all:dist compiles before a web build exists.
+The Docker image replaces this directory with apps/web/build.

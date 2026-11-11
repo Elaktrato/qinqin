@@ -20,15 +20,25 @@ import (
 // Unicode Unihan database's line format.
 const unihanFile = "dictionary.txt"
 
+// unihanZipFile is the upstream distribution of the Unihan database. The
+// members below carry every field the importer parses: kRSUnicode lives
+// in the IRG sources file (not the Adobe radical-stroke file, which
+// carries a different field), variants in the variants file, and
+// kDefinition in the readings file.
+const unihanZipFile = "Unihan.zip"
+
+var unihanZipMembers = []string{
+	"Unihan_IRGSources.txt",
+	"Unihan_Variants.txt",
+	"Unihan_Readings.txt",
+}
+
 // The built-in dictionary a unihan import registers. The Unihan database
-// is one canonical dataset with fixed license terms, whatever pack
-// delivered the file, so its row is keyed "unihan" with those terms —
-// re-importing any unihan pack replaces the built-in's senses.
-const (
-	unihanPackID      = "unihan"
-	unihanLicense     = "Unicode License"
-	unihanAttribution = "Unicode Common Locale Data Repository / Unihan database"
-)
+// is one canonical dataset, whatever pack delivered the file, so its row
+// is keyed "unihan"; the license and attribution come from the pack's
+// manifest so the registry always reflects the bundled source's real
+// terms — re-importing any unihan pack replaces the built-in's senses.
+const unihanPackID = "unihan"
 
 // UnihanData is what ParseUnihan extracts from a Unihan database file:
 // the four fields the importer consumes, keyed by character.
@@ -154,10 +164,26 @@ func parseDefinition(value string) (string, error) {
 	return def, nil
 }
 
-// readUnihanPack reads and parses the dictionary.txt of the format
-// "unihan" pack in dir.
+// readUnihanPack reads and parses the data of the format "unihan" pack in
+// dir. Two layouts are accepted: the upstream distribution, Unihan.zip,
+// from which the members carrying the parsed fields are concatenated
+// (radical-stroke counts, variants, readings — kDefinition included),
+// and a single plain or gzip-compressed dictionary.txt.
 func readUnihanPack(dir string) (UnihanData, error) {
-	f, err := os.Open(filepath.Join(dir, unihanFile))
+	zipPath := filepath.Join(dir, unihanZipFile)
+	if _, err := os.Stat(zipPath); err == nil {
+		f, err := openZipMembers(zipPath, unihanZipMembers...)
+		if err != nil {
+			return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, unihanZipFile, dir, err)
+		}
+		defer f.Close()
+		data, err := ParseUnihan(f)
+		if err != nil {
+			return UnihanData{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, unihanZipFile, dir, err)
+		}
+		return data, nil
+	}
+	f, err := openMaybeGz(filepath.Join(dir, unihanFile))
 	if err != nil {
 		return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, unihanFile, dir, err)
 	}
@@ -264,7 +290,7 @@ func importUnihan(ctx context.Context, sqlDB *sql.DB, m Manifest, data UnihanDat
 			senses = append(senses, senseRow{entryID: ids[ch], gloss: def})
 		}
 	}
-	if _, err := replaceSenses(ctx, sqlDB, unihanPackID, m.Name, m.Version, unihanLicense, unihanAttribution, senses); err != nil {
+	if _, err := replaceSenses(ctx, sqlDB, unihanPackID, m.Name, m.Version, m.License, m.Attribution, senses); err != nil {
 		return Result{}, err
 	}
 	return Result{Entries: len(chars), Senses: len(senses)}, nil

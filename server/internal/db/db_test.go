@@ -7,21 +7,42 @@ import (
 	"qinqin/internal/db"
 )
 
-// Seeding runs as a second process (docker compose exec) against a
-// database the server is reading; WAL lets readers proceed during a
-// write, where the default rollback journal blocks them until the
-// busy timeout fails them.
-func TestOpenUsesWAL(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+// TestSynchronousModePerCommand pins the durability split: normal serving
+// opens with synchronous=FULL (2); the seed path opens with NORMAL (1), the
+// WAL bulk-import setting, because seeding is idempotent.
+func TestSynchronousModePerCommand(t *testing.T) {
+	dir := t.TempDir()
+
+	read := func(name, path string) int {
+		t.Helper()
+		sqlDB, err := db.Open(path)
+		if err != nil {
+			t.Fatalf("db.Open(%s): %v", name, err)
+		}
+		t.Cleanup(func() { sqlDB.Close() })
+		var mode int
+		if err := sqlDB.QueryRow("PRAGMA synchronous").Scan(&mode); err != nil {
+			t.Fatalf("PRAGMA synchronous on %s: %v", name, err)
+		}
+		return mode
+	}
+	if got := read("full", filepath.Join(dir, "full.db")); got != 2 {
+		t.Errorf("db.Open synchronous = %d, want 2 (FULL)", got)
+	}
+	if got := read("seed", filepath.Join(dir, "seed.db")); got != 2 {
+		t.Errorf("db.Open (second) synchronous = %d, want 2 (FULL)", got)
+	}
+
+	sqlDB, err := db.OpenForSeed(filepath.Join(dir, "seed-normal.db"))
 	if err != nil {
-		t.Fatalf("db.Open: %v", err)
+		t.Fatalf("db.OpenForSeed: %v", err)
 	}
-	defer sqlDB.Close()
-	var mode string
-	if err := sqlDB.QueryRow(`PRAGMA journal_mode`).Scan(&mode); err != nil {
-		t.Fatalf("read journal_mode: %v", err)
+	t.Cleanup(func() { sqlDB.Close() })
+	var mode int
+	if err := sqlDB.QueryRow("PRAGMA synchronous").Scan(&mode); err != nil {
+		t.Fatalf("PRAGMA synchronous on seed: %v", err)
 	}
-	if mode != "wal" {
-		t.Errorf("journal_mode = %q, want wal", mode)
+	if mode != 1 {
+		t.Errorf("db.OpenForSeed synchronous = %d, want 1 (NORMAL)", mode)
 	}
 }

@@ -91,6 +91,19 @@ type Sense struct {
 	DeletedAt    *time.Time `json:"deletedAt"`
 }
 
+// SenseView is one gloss of an entry with the dictionary it comes from:
+// the shape a reader needs to show a gloss together with its source and
+// license. It carries no row ids or timestamps — those are sync's
+// business, not the entry view's.
+type SenseView struct {
+	DictionaryID   int64  `json:"dictionaryId"`
+	DictionaryName string `json:"dictionaryName"`
+	PackID         string `json:"packId"`
+	License        string `json:"license"`
+	Attribution    string `json:"attribution"`
+	Gloss          string `json:"gloss"`
+}
+
 // Scheme is the registry row one imported levels pack creates — HSK,
 // JLPT, a curriculum table: any ordered ladder of levels over one
 // language's entries — keyed by the pack's manifest id. Re-imports

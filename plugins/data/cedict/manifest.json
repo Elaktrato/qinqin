@@ -1,0 +1,10 @@
+{
+  "id": "cedict",
+  "name": "CC-CEDICT",
+  "version": "2026-11-11",
+  "type": "dictionary",
+  "language": "zh",
+  "license": "CC BY-SA 4.0",
+  "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+  "format": "cedict"
+}

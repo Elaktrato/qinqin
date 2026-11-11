@@ -26,6 +26,7 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("POST /api/auth/login", s.handleLogin)
 	mux.HandleFunc("GET /api/auth/me", s.handleMe)
 	mux.HandleFunc("GET /api/entries/{id}", s.handleGetEntry)
+	mux.HandleFunc("GET /api/entries/{id}/chars", s.handleCharsUnderRadical)
 	mux.HandleFunc("PUT /api/entries/{id}", s.handlePutEntry)
 	mux.HandleFunc("POST /api/entries/{id}/sentences", s.handleAddSentence)
 	mux.HandleFunc("GET /api/search", s.handleSearch)

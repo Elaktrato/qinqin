@@ -2,10 +2,10 @@ name: build
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     tags: ["v*"]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 # Least privilege by default; the image job asks for packages: write itself.
 permissions:
@@ -16,20 +16,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Check and test web
+        working-directory: apps/web
+        run: |
+          npm run check
+          npm test
       - uses: actions/setup-go@v5
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
-      - name: Vet and test
+      - name: Vet and test Go
         working-directory: server
         run: |
           go vet ./...
           go test ./...
+      - name: Build web
+        working-directory: apps/web
+        run: npm run build
 
   image:
     needs: test
-    # Pull requests only run the tests; images publish from main and tags.
-    if: github.event_name == 'push'
+    # Develop pushes are test-only; images publish from main and release tags.
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: read

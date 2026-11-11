@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -120,7 +119,7 @@ func ParseJMdict(r io.Reader) ([]RawEntry, error) {
 // pack in dir, resolving each word into the pipeline's entry shape:
 // kind word, one entry per kanji form, kana readings, glosses.
 func readJMdictPack(dir string) ([]entry, error) {
-	f, err := os.Open(filepath.Join(dir, jmdictFile))
+	f, err := openMaybeGz(filepath.Join(dir, jmdictFile))
 	if err != nil {
 		return nil, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, jmdictFile, dir, err)
 	}

@@ -17,17 +17,28 @@ import (
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
-// Open opens the SQLite database at path, creating the file if it does not
-// exist, and applies every embedded migration that has not run yet. Applied
-// migrations are recorded in schema_migrations by their filename-derived
-// version (e.g. "001_init") and are never applied twice.
+// Open opens the SQLite database at path with synchronous=FULL, the
+// durable default for serving: committed transactions survive an OS or
+// power failure.
 func Open(path string) (*sql.DB, error) {
+	return open(path, "FULL")
+}
+
+// OpenForSeed opens the database like Open but with synchronous=NORMAL,
+// the WAL bulk-import setting: no fsync per commit. Seeding is
+// idempotent, so a crash costs a re-run, never corruption or stale
+// user data. Only seed uses this.
+func OpenForSeed(path string) (*sql.DB, error) {
+	return open(path, "NORMAL")
+}
+
+func open(path, synchronous string) (*sql.DB, error) {
 	// busy_timeout(5000) makes concurrent writers wait for the lock instead
 	// of failing immediately with SQLITE_BUSY (applied per pooled connection).
 	// journal_mode(WAL) lets the server keep reading while another process
 	// (qinqin seed via docker compose exec) writes; with the default
 	// rollback journal those reads would block until the busy timeout.
-	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
+	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous("+synchronous+")")
 	if err != nil {
 		return nil, fmt.Errorf("open database %s: %w", path, err)
 	}
