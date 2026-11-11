@@ -31,11 +31,11 @@
 
 		void (async () => {
 			try {
-				// The URL map is its own lazy chunk: it must not ride along
-				// with the entry page for every non-stroke entry.
-				const { hanziDataUrl } = await import('$lib/hanzi-data-urls');
-				if (cancelled) return;
-				const url = hanziDataUrl(symbol);
+				// The stroke data is copied into static/hanzi by the prebuild
+				// step under codepoint names (U597D.json), so the URL is
+				// computed here and no giant URL map ships with the page.
+				const codepoint = symbol.codePointAt(0);
+				const url = codepoint === undefined ? null : `/hanzi/U${codepoint.toString(16).toUpperCase()}.json`;
 				if (!url) {
 					unavailableFor = symbol;
 					return;

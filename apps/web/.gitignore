@@ -1,6 +1,7 @@
 node_modules/
 /build/
 /.svelte-kit/
+/static/hanzi/
 .env
 .env.*
 !.env.example
