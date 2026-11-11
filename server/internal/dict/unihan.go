@@ -34,14 +34,11 @@ var unihanZipMembers = []string{
 }
 
 // The built-in dictionary a unihan import registers. The Unihan database
-// is one canonical dataset with fixed license terms, whatever pack
-// delivered the file, so its row is keyed "unihan" with those terms —
-// re-importing any unihan pack replaces the built-in's senses.
-const (
-	unihanPackID      = "unihan"
-	unihanLicense     = "Unicode License"
-	unihanAttribution = "Unicode Common Locale Data Repository / Unihan database"
-)
+// is one canonical dataset, whatever pack delivered the file, so its row
+// is keyed "unihan"; the license and attribution come from the pack's
+// manifest so the registry always reflects the bundled source's real
+// terms — re-importing any unihan pack replaces the built-in's senses.
+const unihanPackID = "unihan"
 
 // UnihanData is what ParseUnihan extracts from a Unihan database file:
 // the four fields the importer consumes, keyed by character.
@@ -293,7 +290,7 @@ func importUnihan(ctx context.Context, sqlDB *sql.DB, m Manifest, data UnihanDat
 			senses = append(senses, senseRow{entryID: ids[ch], gloss: def})
 		}
 	}
-	if _, err := replaceSenses(ctx, sqlDB, unihanPackID, m.Name, m.Version, unihanLicense, unihanAttribution, senses); err != nil {
+	if _, err := replaceSenses(ctx, sqlDB, unihanPackID, m.Name, m.Version, m.License, m.Attribution, senses); err != nil {
 		return Result{}, err
 	}
 	return Result{Entries: len(chars), Senses: len(senses)}, nil

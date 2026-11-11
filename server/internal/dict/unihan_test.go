@@ -28,8 +28,8 @@ var unihanManifest = dict.Manifest{
 	Version:     "1.0",
 	Type:        "dictionary",
 	Language:    "zh",
-	License:     "Unicode License",
-	Attribution: "Unicode Common Locale Data Repository / Unihan database",
+	License:     "Unicode License v3 (fixture)",
+	Attribution: "Unicode Consortium (fixture attribution)",
 	Format:      "unihan",
 }
 
@@ -306,8 +306,8 @@ func TestUnihanDefinitions(t *testing.T) {
 		t.Fatalf("read unihan dictionary row: %v", err)
 	}
 	if name != unihanManifest.Name || version != unihanManifest.Version ||
-		license != "Unicode License" || attribution != "Unicode Common Locale Data Repository / Unihan database" {
-		t.Errorf("unihan dictionary row = %q %q %q %q, want the built-in's fixed license terms", name, version, license, attribution)
+		license != unihanManifest.License || attribution != unihanManifest.Attribution {
+		t.Errorf("unihan dictionary row = %q %q %q %q, want the manifest's name/version/license/attribution", name, version, license, attribution)
 	}
 	if deletedAt.Valid {
 		t.Errorf("unihan dictionary deleted_at = %v, want active", deletedAt)
@@ -347,9 +347,9 @@ func TestUnihanBuiltInDictionary(t *testing.T) {
 		FROM dictionaries WHERE id = ?`, dictID).Scan(&packID, &license, &attribution); err != nil {
 		t.Fatalf("read unihan dictionary row: %v", err)
 	}
-	if packID != "unihan" || license != "Unicode License" ||
-		attribution != "Unicode Common Locale Data Repository / Unihan database" {
-		t.Errorf("dictionary row = %q %q %q, want the built-in unihan dictionary", packID, license, attribution)
+	if packID != "unihan" || license != m.License || attribution != m.Attribution {
+		t.Errorf("dictionary row = %q %q %q, want pack id unihan with the manifest's license %q and attribution %q",
+			packID, license, attribution, m.License, m.Attribution)
 	}
 	var manifestKeyed int
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM dictionaries
