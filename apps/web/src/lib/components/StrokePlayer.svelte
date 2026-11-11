@@ -9,34 +9,21 @@
 
 	let { char, size = 160 }: Props = $props();
 
-	// Resolve every character file to an emitted asset URL at build time.
-	// Only the URL map ships in the JS bundle; the JSON itself is fetched
-	// lazily, and an uncovered character has no entry, so the player renders
-	// nothing instead of requesting a 404.
-	const charUrls: Record<string, string | undefined> = import.meta.glob(
-		'/node_modules/hanzi-writer-data/*.json',
-		{ query: '?url&no-inline', import: 'default', eager: true }
-	);
-
 	let host = $state<HTMLDivElement | null>(null);
 	let ready = $state(false);
-	let failedUrl = $state<string | null>(null);
+	let unavailableFor = $state<string | null>(null);
 	let looping = $state(false);
 
 	let writer: HanziWriter | null = null;
 
-	const dataUrl = $derived(charUrls[`/node_modules/hanzi-writer-data/${char}.json`]);
-
 	$effect(() => {
 		const symbol = char;
-		const url = dataUrl;
+		const node = host;
 		// Read synchronously so a size change re-initialises the writer.
 		const dimension = size;
-		// Do not retry an asset that already failed for this character;
-		// a different character (different URL) gets a fresh attempt.
-		if (!url || url === failedUrl) return;
-		const node = host;
-		if (!node) return;
+		// Do not retry a character whose data is missing or failed; a
+		// different character gets a fresh attempt.
+		if (!node || unavailableFor === symbol) return;
 
 		let cancelled = false;
 		ready = false;
@@ -44,6 +31,15 @@
 
 		void (async () => {
 			try {
+				// The URL map is its own lazy chunk: it must not ride along
+				// with the entry page for every non-stroke entry.
+				const { hanziDataUrl } = await import('$lib/hanzi-data-urls');
+				if (cancelled) return;
+				const url = hanziDataUrl(symbol);
+				if (!url) {
+					unavailableFor = symbol;
+					return;
+				}
 				const [module, response] = await Promise.all([import('hanzi-writer'), fetch(url)]);
 				if (cancelled) return;
 				if (!response.ok) throw new Error(`No stroke data for ${symbol}`);
@@ -63,7 +59,7 @@
 				});
 				ready = true;
 			} catch {
-				if (!cancelled) failedUrl = url;
+				if (!cancelled) unavailableFor = symbol;
 			}
 		})();
 
@@ -99,7 +95,7 @@
 	}
 </script>
 
-{#if dataUrl && failedUrl !== dataUrl}
+{#if unavailableFor !== char}
 	<div class="stroke-player">
 		<div
 			class="canvas"
