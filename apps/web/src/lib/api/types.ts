@@ -46,6 +46,13 @@ export interface EntryBase {
 	radicalId: number | null;
 }
 
+// SearchHit is one result of GET /api/search: the entry plus the source
+// of the match — "written", "gloss", or the type of the matching reading
+// ("pinyin", "bopomofo", "kana", …).
+export interface SearchHit extends EntryBase {
+	source: string;
+}
+
 // Entry is GET /api/entries/{id}: the shared row plus the caller's
 // senses, scheme badges, variants, and example sentences.
 export interface Entry extends EntryBase {
