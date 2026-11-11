@@ -71,18 +71,18 @@ func defaultData() string {
 	return "./data"
 }
 
-// builtinHeatmapManifest registers the study heatmap the web build
-// ships. The manifest lives here, next to serving, so the server
+// builtinFlashcardsManifest registers the flashcards feature the web
+// build ships. The manifest lives here, next to serving, so the server
 // registry lists the widget in Settings and can carry its per-user
 // enabled/order state; Register upserts by id, so every start is safe.
-const builtinHeatmapManifest = `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature","surfaces":["home-widget"]}`
+const builtinFlashcardsManifest = `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature","surfaces":["home-widget"]}`
 
 // registerBuiltinPlugins puts the feature plugins this build ships a
 // component for into the server registry. It runs at serve startup,
 // after migrations and before the HTTP server accepts requests.
 func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
-	if err := plugins.Register(ctx, sqlDB, []byte(builtinHeatmapManifest)); err != nil {
-		return fmt.Errorf("register built-in plugin qinqin-heatmap: %w", err)
+	if err := plugins.Register(ctx, sqlDB, []byte(builtinFlashcardsManifest)); err != nil {
+		return fmt.Errorf("register built-in plugin qinqin-flashcards: %w", err)
 	}
 	return nil
 }

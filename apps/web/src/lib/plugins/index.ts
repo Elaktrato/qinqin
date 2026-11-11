@@ -7,6 +7,8 @@ import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
 import Heatmap from './heatmap/Heatmap.svelte';
 import { heatmapManifest } from './heatmap/manifest';
+import Flashcards from './flashcards/FlashcardsWidget.svelte';
+import { flashcardsManifest } from './flashcards/manifest';
 
 export interface PluginManifest {
 	id: string;
@@ -20,7 +22,10 @@ export interface WebPlugin {
 	component: Component;
 }
 
-export const webPlugins: WebPlugin[] = [{ manifest: heatmapManifest, component: Heatmap }];
+export const webPlugins: WebPlugin[] = [
+	{ manifest: heatmapManifest, component: Heatmap },
+	{ manifest: flashcardsManifest, component: Flashcards }
+];
 
 /**
  * pluginState returns the caller's server state for a web manifest id.
