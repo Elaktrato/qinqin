@@ -1,0 +1,10 @@
+{
+  "id": "unihan",
+  "name": "Unihan database",
+  "version": "2026-11-11",
+  "type": "dictionary",
+  "language": "zh",
+  "license": "Unicode License v3",
+  "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+  "format": "unihan"
+}

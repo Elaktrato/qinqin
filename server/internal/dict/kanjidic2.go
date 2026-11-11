@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -131,7 +130,7 @@ func ParseKanjidic2(r io.Reader) ([]RawEntry, error) {
 // "kanjidic2" pack in dir, resolving each character into the pipeline's
 // entry shape: kind character, ON and KUN readings as written.
 func readKanjidic2Pack(dir string) ([]entry, error) {
-	f, err := os.Open(filepath.Join(dir, kanjidic2File))
+	f, err := openMaybeGz(filepath.Join(dir, kanjidic2File))
 	if err != nil {
 		return nil, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, kanjidic2File, dir, err)
 	}

@@ -1,0 +1,10 @@
+{
+  "id": "kanjidic2",
+  "name": "KANJIDIC2",
+  "version": "2026-11-11",
+  "type": "dictionary",
+  "language": "ja",
+  "license": "CC BY-SA 4.0",
+  "attribution": "Electronic Dictionary Research and Development Group (EDRDG), KANJIDIC2",
+  "format": "kanjidic2"
+}
