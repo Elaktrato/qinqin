@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { ApiError } from '$lib/api/client';
 	import type { Entry } from '$lib/api/types';
-	import { addCard, loadStudyData } from '$lib/study/store';
+	import { GENERAL_DECK_ID, addCard, loadStudyData } from '$lib/study/store';
+	import type { Deck } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
 
 	let { entry }: { entry: Entry } = $props();
@@ -11,6 +12,10 @@
 	// button stays disabled. Only a failed check frees it, because the
 	// click then has to surface the real error.
 	let inDeck = $state<boolean | null>(null);
+	// The workspace's custom decks, and the deck a new card goes to.
+	// General is the default and always exists.
+	let decks = $state<Deck[]>([]);
+	let selectedDeckId = $state(GENERAL_DECK_ID);
 	let saving = $state(false);
 	let error = $state('');
 
@@ -40,9 +45,21 @@
 			try {
 				const data = await loadStudyData();
 				if (stale) return;
+				decks = [...data.decks].sort(
+					(a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
+				);
+				// A deck deleted elsewhere must not stay the target.
+				if (
+					selectedDeckId !== GENERAL_DECK_ID &&
+					!decks.some((deck) => deck.id === selectedDeckId)
+				) {
+					selectedDeckId = GENERAL_DECK_ID;
+				}
 				inDeck = data.cards.some((card) => card.entryId === entryId);
 			} catch {
 				if (stale) return;
+				decks = [];
+				selectedDeckId = GENERAL_DECK_ID;
 				inDeck = false;
 			}
 		})();
@@ -59,8 +76,10 @@
 		error = '';
 		try {
 			// The first example sentence travels with the card so the
-			// review front can show the word in context.
-			await addCard(entry.id, entry.sentences?.[0]?.id);
+			// review front can show the word in context. An existing card
+			// is returned unchanged, so the chosen deck is only used for
+			// a genuinely new card.
+			await addCard(entry.id, entry.sentences?.[0]?.id, [selectedDeckId]);
 			inDeck = true;
 		} catch (err) {
 			error = message(err, 'Could not add this entry to your study deck.');
@@ -71,6 +90,17 @@
 </script>
 
 <div class="add-to-study">
+	{#if decks.length > 0}
+		<label class="deck-picker">
+			Deck
+			<select bind:value={selectedDeckId} disabled={saving || inDeck === true}>
+				<option value={GENERAL_DECK_ID}>General</option>
+				{#each decks as deck (deck.id)}
+					<option value={deck.id}>{deck.name}</option>
+				{/each}
+			</select>
+		</label>
+	{/if}
 	<button
 		type="button"
 		class="action"
@@ -98,6 +128,22 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	.deck-picker {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.9rem;
+	}
+
+	.deck-picker select {
+		font: inherit;
+		padding: 0.35rem 0.45rem;
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border-radius: 0.4rem;
+		background: transparent;
+		color: inherit;
 	}
 
 	.action {

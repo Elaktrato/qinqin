@@ -210,21 +210,28 @@ export async function deleteDeck(id: string): Promise<void> {
 }
 
 /**
- * addCard stores a new vocab card in `general` and returns it. The
- * optional example sentence is kept when supplied. Adding an entry that
+ * addCard stores a new vocab card and returns it. The optional example
+ * sentence is kept when supplied, and deckIds names the decks the card
+ * belongs to (General by default; unknown ids are the caller's choice —
+ * the setup page only offers decks that exist). Adding an entry that
  * already has a card is a no-op: the entry page can race a slow pull,
  * and a second card would split its reviews and EXP permanently.
  */
-export async function addCard(entryId: number, sentenceId?: number): Promise<StudyCard> {
+export async function addCard(
+	entryId: number,
+	sentenceId?: number,
+	deckIds: readonly string[] = [GENERAL_DECK_ID]
+): Promise<StudyCard> {
 	const workspaceId = requireWorkspaceId();
 	const { cards } = await fetchStudyData(workspaceId);
 	const existing = cards.find((card) => card.entryId === entryId);
 	if (existing !== undefined) return existing;
+	const chosen = [...new Set(deckIds.filter((id) => id !== ''))];
 	const card: StudyCard = {
 		id: newUlid(),
 		kind: 'vocab',
 		entryId,
-		deckIds: [GENERAL_DECK_ID],
+		deckIds: chosen.length === 0 ? [GENERAL_DECK_ID] : chosen,
 		createdAt: new Date().toISOString()
 	};
 	if (sentenceId !== undefined) {

@@ -4,7 +4,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { PENDING_REVIEWS_KEY, flushPendingReviews, recordReview } from './events';
+import { PENDING_REVIEWS_KEY, flushPendingReviews, recordReview, startReviewOutbox } from './events';
 
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -261,5 +261,70 @@ describe('flushPendingReviews', () => {
 
 		await expect(flushPendingReviews()).resolves.toBeUndefined();
 		expect(fetch).not.toHaveBeenCalled();
+	});
+
+	it('shares one in-flight flush between concurrent callers', async () => {
+		vi.mocked(fetch).mockRejectedValueOnce(new Error('offline'));
+		await recordReview(7, 'card-1', 3);
+
+		vi.mocked(fetch).mockClear();
+		let release: (response: Response) => void = () => {};
+		vi.mocked(fetch).mockImplementation(
+			() =>
+				new Promise<Response>((resolve) => {
+					release = resolve;
+				})
+		);
+
+		const first = flushPendingReviews();
+		const second = flushPendingReviews();
+		expect(second).toBe(first);
+
+		release(jsonResponse({ accepted: 1, duplicates: 0 }));
+		await Promise.all([first, second]);
+		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(pending()).toEqual([]);
+	});
+});
+
+describe('startReviewOutbox', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('is callable and safe without a window, storage, or fetch', () => {
+		vi.stubGlobal('localStorage', undefined);
+		vi.stubGlobal('fetch', vi.fn());
+
+		expect(() => startReviewOutbox()).not.toThrow();
+		expect(fetch).not.toHaveBeenCalled();
+	});
+
+	it('installs the online listener once and drains the queue', async () => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ accepted: 1, duplicates: 0 })));
+		const addEventListener = vi.fn();
+		vi.stubGlobal('window', { addEventListener });
+		localStorage.setItem(
+			PENDING_REVIEWS_KEY,
+			JSON.stringify([
+				{
+					id: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+					workspaceId: 7,
+					device: 'web',
+					ts: '2026-03-15T08:30:00.000Z',
+					type: 'review',
+					payload: { cardId: 'card-1', mode: 'vocab', grade: 3 }
+				}
+			])
+		);
+
+		startReviewOutbox();
+		startReviewOutbox();
+		await flushPendingReviews();
+
+		expect(addEventListener).toHaveBeenCalledTimes(1);
+		expect(addEventListener).toHaveBeenCalledWith('online', expect.any(Function));
+		expect(pending()).toEqual([]);
 	});
 });

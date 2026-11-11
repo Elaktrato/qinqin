@@ -7,7 +7,7 @@
 	import type { StudyEvent } from '$lib/events';
 	import { formatReading } from '$lib/format';
 	import { buildVocabFaces } from '$lib/study/cardView';
-	import { recordReview } from '$lib/study/events';
+	import { flushPendingReviews, recordReview } from '$lib/study/events';
 	import { buildQueue, levelFromXp, xpFromReviews } from '$lib/study/scheduler';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { loadStudyData } from '$lib/study/store';
@@ -187,6 +187,16 @@
 		}
 
 		try {
+			// Queued reviews must land before the history is read: the
+			// queue is built from those events, and a review still in the
+			// outbox would let the same card be graded twice. A failed
+			// retry leaves the queue for the next boot and never blocks
+			// the session.
+			try {
+				await flushPendingReviews();
+			} catch {
+				// The outbox retries on the next boot or reconnect.
+			}
 			const [data, events] = await Promise.all([
 				loadStudyData(),
 				api<StudyEvent[]>(

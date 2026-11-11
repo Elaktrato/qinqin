@@ -77,12 +77,22 @@ func defaultData() string {
 // enabled/order state; Register upserts by id, so every start is safe.
 const builtinFlashcardsManifest = `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature","surfaces":["home-widget"]}`
 
+// retiredHeatmapPlugin is the plugin id earlier builds registered for
+// the generic home heatmap. The flashcards widget replaced it; an
+// upgraded database still carries the old registry row, so startup
+// unregisters it to keep Settings free of a dead plugin.
+const retiredHeatmapPlugin = "qinqin-heatmap"
+
 // registerBuiltinPlugins puts the feature plugins this build ships a
-// component for into the server registry. It runs at serve startup,
-// after migrations and before the HTTP server accepts requests.
+// component for into the server registry and retires the ones it no
+// longer ships. It runs at serve startup, after migrations and before
+// the HTTP server accepts requests; both steps are idempotent.
 func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
 	if err := plugins.Register(ctx, sqlDB, []byte(builtinFlashcardsManifest)); err != nil {
 		return fmt.Errorf("register built-in plugin qinqin-flashcards: %w", err)
+	}
+	if err := plugins.Unregister(ctx, sqlDB, retiredHeatmapPlugin); err != nil {
+		return fmt.Errorf("unregister retired plugin %s: %w", retiredHeatmapPlugin, err)
 	}
 	return nil
 }

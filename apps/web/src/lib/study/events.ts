@@ -92,6 +92,12 @@ export async function recordReview(
 	}
 }
 
+// One flush at a time: boot, reconnect, and a session load can all ask
+// for a retry, and sharing the promise keeps them from sending the same
+// queued event twice.
+let flushing: Promise<void> | null = null;
+let outboxStarted = false;
+
 /**
  * flushPendingReviews retries every queued review one event at a time.
  * A single bad row cannot wedge the outbox: a permanent 4xx (other than
@@ -100,7 +106,15 @@ export async function recordReview(
  * their original ULIDs, so an ambiguous retry is deduplicated by the
  * server. The function never throws.
  */
-export async function flushPendingReviews(): Promise<void> {
+export function flushPendingReviews(): Promise<void> {
+	if (flushing !== null) return flushing;
+	flushing = flushOnce().finally(() => {
+		flushing = null;
+	});
+	return flushing;
+}
+
+async function flushOnce(): Promise<void> {
 	const queued = readPending();
 	if (queued.length === 0) return;
 
@@ -133,10 +147,21 @@ function isPermanentFailure(err: unknown): boolean {
 	return err.status !== 401 && err.status !== 408 && err.status !== 429;
 }
 
-// Retry on the next connection and once when the app boots.
-if (typeof window !== 'undefined') {
-	window.addEventListener('online', () => {
-		void flushPendingReviews();
-	});
+/**
+ * startReviewOutbox wires the retry queue to the app shell: it flushes
+ * once now and again whenever the browser comes back online. The root
+ * layout calls it on mount, so a user who reopens the app on any route
+ * — not just the session page — drains queued reviews. Idempotent: the
+ * listener is installed once and repeated calls only trigger a flush,
+ * which shares one in-flight promise.
+ */
+export function startReviewOutbox(): void {
+	if (typeof window === 'undefined') return;
+	if (!outboxStarted) {
+		outboxStarted = true;
+		window.addEventListener('online', () => {
+			void flushPendingReviews();
+		});
+	}
 	void flushPendingReviews();
 }

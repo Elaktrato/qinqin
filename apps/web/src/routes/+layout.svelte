@@ -7,6 +7,7 @@
 	import { APP_NAME } from '$lib/app';
 	import { auth, loadMe, logout, user } from '$lib/auth';
 	import { recordSessionOnce } from '$lib/events';
+	import { startReviewOutbox } from '$lib/study/events';
 	import {
 		create as createWorkspace,
 		load as loadWorkspaces,
@@ -50,6 +51,9 @@
 	}
 
 	onMount(async () => {
+		// Drain reviews queued while offline as soon as the shell boots,
+		// on whichever route the user opens. Never blocks the boot.
+		startReviewOutbox();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();

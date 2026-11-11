@@ -387,11 +387,37 @@ describe('study store', () => {
 			expect(JSON.parse(String(call[1]?.body))).toEqual(added);
 		});
 
+		it('stores the card in explicitly requested decks', async () => {
+			respondWith([]);
+
+			const added = await addCard(42, undefined, ['deck-a', 'deck-b', 'deck-a']);
+
+			expect(added.deckIds).toEqual(['deck-a', 'deck-b']);
+			const [call] = calls().filter(([, init]) => init?.method === 'PUT');
+			expect(JSON.parse(String(call[1]?.body))).toEqual(added);
+		});
+
+		it('falls back to general when no deck is given', async () => {
+			respondWith([]);
+
+			const added = await addCard(42, undefined, []);
+
+			expect(added.deckIds).toEqual([GENERAL_DECK_ID]);
+		});
+
 		it('returns the existing card instead of writing a duplicate', async () => {
 			const existing = card('card-1', 42, ['general']);
 			respondWith([pluginRow('card:card-1', existing)]);
 
 			await expect(addCard(42)).resolves.toEqual(existing);
+			expect(putBodies()).toEqual([]);
+		});
+
+		it('leaves an existing card in its deck even when another is requested', async () => {
+			const existing = card('card-1', 42, ['general']);
+			respondWith([pluginRow('card:card-1', existing)]);
+
+			await expect(addCard(42, undefined, ['deck-a'])).resolves.toEqual(existing);
 			expect(putBodies()).toEqual([]);
 		});
 	});

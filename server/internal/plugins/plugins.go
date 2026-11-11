@@ -77,6 +77,32 @@ func manifestID(manifestJSON []byte) (string, error) {
 	return id, nil
 }
 
+// Unregister removes a feature plugin from the registry together with
+// every user's state for it. It is how a build retires a plugin it no
+// longer ships: an upgraded database keeps the old row otherwise, and
+// Settings would list a dead plugin. Unregistering an id that is not
+// present is a no-op, so it is safe on every start.
+func Unregister(ctx context.Context, sqlDB *sql.DB, pluginID string) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("plugins: unregister %s: %w", pluginID, err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM plugin_states WHERE pack_id = ?`, pluginID); err != nil {
+		return fmt.Errorf("plugins: unregister %s: delete states: %w", pluginID, err)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM plugin_registry WHERE pack_id = ?`, pluginID); err != nil {
+		return fmt.Errorf("plugins: unregister %s: delete registry row: %w", pluginID, err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("plugins: unregister %s: %w", pluginID, err)
+	}
+	return nil
+}
+
 // ListFor returns every plugin the user can put on their home —
 // feature plugins from the registry plus the data plugins registered
 // by pack imports — each with the user's state overlaid: default

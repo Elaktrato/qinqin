@@ -176,7 +176,7 @@
 		if (loading) return 'Loading your study data…';
 		if (selectedDeckIds.length === 0) return 'Select at least one deck to start.';
 		if (selectedCards.length === 0) {
-			return 'The selected decks have no cards yet. Add cards from search first.';
+			return 'The selected decks have no cards yet. Open a word from search and add it from its entry page — new cards go to General unless you pick a deck there.';
 		}
 		if (counts.due + counts.fresh === 0) {
 			return 'Nothing is due and no new cards are left in the selected decks.';
