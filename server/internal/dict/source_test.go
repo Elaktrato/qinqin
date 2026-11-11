@@ -180,6 +180,38 @@ func TestUnihanImportReadsZip(t *testing.T) {
 	}
 }
 
+// TestCedictPlainFileWinsOverGz pins the importer's source precedence:
+// when both dictionary.txt and dictionary.txt.gz exist, the plain file
+// wins. fetch-seeds.sh removes legacy plain payloads so a refreshed pack
+// cannot silently keep importing the old data.
+func TestCedictPlainFileWinsOverGz(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+
+	plain, err := os.ReadFile("testdata/cedict-sample.txt")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	dir := writeCompressedPack(t, compressedManifest("cedict", "zh"), "dictionary.txt.gz", gzipBytes(t, plain))
+	mustWriteFile(t, filepath.Join(dir, "dictionary.txt"),
+		"舊 旧 [jiu4] /old/\n")
+
+	pack, err := dict.LoadPack(dir)
+	if err != nil {
+		t.Fatalf("LoadPack: %v", err)
+	}
+	if _, err := dict.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatalf("Import: %v", err)
+	}
+	st := entries.Store{DB: sqlDB}
+	if _, err := st.GetByWritten(ctx, "旧", "character", "zh"); err != nil {
+		t.Fatalf("plain dictionary.txt was not used: GetByWritten(旧): %v", err)
+	}
+	if _, err := st.GetByWritten(ctx, "你好", "word", "zh"); err == nil {
+		t.Errorf("gz payload was imported; plain file should win")
+	}
+}
+
 // TestJMdictImportReadsGz imports the JMdict fixture from jmdict.xml.gz and
 // checks kana plus derived romaji readings.
 func TestJMdictImportReadsGz(t *testing.T) {

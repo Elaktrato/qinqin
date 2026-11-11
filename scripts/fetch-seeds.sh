@@ -14,6 +14,13 @@ dest="${1:-$root/plugins/data}"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
+# Legacy layout from the previous script: decompressed payloads
+# (dictionary.txt, jmdict.xml, kanjidic2.xml) take precedence over the new
+# compressed files in the importers' lookup order, so refreshing an old
+# directory would silently keep importing stale data. Remove them.
+rm -f "$dest"/cedict/dictionary.txt "$dest"/unihan/dictionary.txt \
+      "$dest"/jmdict/jmdict.xml "$dest"/kanjidic2/kanjidic2.xml
+
 fetch() { # url outfile
   echo "downloading $1"
   curl -fsSL --retry 3 -o "$2" "$1"

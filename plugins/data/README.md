@@ -15,8 +15,21 @@ Committed (small, hand-written, CC0 — samples, not the official lists):
 | `jlpt-mini` | levels | ja | an N5 sample |
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack) |
 
-Not committed (large; fetched by `scripts/fetch-seeds.sh` into `cedict/`,
-`unihan/`, `jmdict/`, `kanjidic2/`): CC-CEDICT, Unihan, JMdict, KANJIDIC2.
+Committed too (the starter bundle, compressed upstream files as shipped,
+with `LICENSE` and `ATTRIBUTION.md` in each directory):
+
+| Pack | Type | Language | Contents |
+|------|------|----------|----------|
+| `cedict` | dictionary | zh | CC-CEDICT words (`dictionary.txt.gz`) |
+| `unihan` | dictionary | zh | radical-stroke counts, variants, definitions (`Unihan.zip`) |
+| `jmdict` | dictionary | ja | JMdict words (`jmdict.xml.gz`) |
+| `kanjidic2` | dictionary | ja | KANJIDIC2 kanji (`kanjidic2.xml.gz`) |
+
+The importers read the compressed files directly, so a fresh clone or the
+Docker image seeds with no network and no decompression step. Run
+`scripts/fetch-seeds.sh` to refresh the bundle; it rewrites these four pack
+directories in the bundled layout and removes any legacy decompressed
+payloads (`dictionary.txt`, `jmdict.xml`, `kanjidic2.xml`).
 
 Seeding is idempotent: re-running replaces each pack's own rows and touches
 nothing else. Dictionaries (including the character data) import before level
