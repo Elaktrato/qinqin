@@ -5,14 +5,13 @@
 
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
-import Heatmap from './heatmap/Heatmap.svelte';
-import { heatmapManifest } from './heatmap/manifest';
 import Flashcards from './flashcards/FlashcardsWidget.svelte';
 import { flashcardsManifest } from './flashcards/manifest';
 
 export interface PluginManifest {
 	id: string;
 	name: string;
+	version?: string;
 	/** Where the plugin may render; home widgets today. */
 	surfaces: string[];
 }
@@ -23,15 +22,14 @@ export interface WebPlugin {
 }
 
 export const webPlugins: WebPlugin[] = [
-	{ manifest: heatmapManifest, component: Heatmap },
 	{ manifest: flashcardsManifest, component: Flashcards }
 ];
 
 /**
  * pluginState returns the caller's server state for a web manifest id.
  * Feature plugins are registered server-side under the `qinqin-` pack
- * id (`qinqin-heatmap`) while the web manifest keeps the short client
- * id, so either form resolves to the same state.
+ * id (`qinqin-flashcards`) while callers may hold the short client id,
+ * so either form resolves to the same state.
  */
 export function pluginState(id: string, states: PluginInfo[]): PluginInfo | undefined {
 	return states.find((plugin) => plugin.id === id || plugin.id === `qinqin-${id}`);
