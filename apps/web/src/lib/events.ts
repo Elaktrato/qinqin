@@ -6,7 +6,7 @@ import { api } from './api/client';
 import type { StudyEventBody } from './api/types';
 import { newUlid } from './ulid';
 
-export type EventType = 'session' | 'view' | 'lookup';
+export type EventType = 'session' | 'view' | 'lookup' | 'review';
 
 // StudyEvent is one event as GET /api/events serves it: the row the
 // server stored, with the caller's own timestamp kept verbatim.
@@ -29,6 +29,18 @@ function utcDayKey(now: Date): string {
 }
 
 /**
+ * postEvents sends a batch of already-built events. Unlike `record` it
+ * propagates failures so callers that must not lose an event (reviews)
+ * can put it in a retry queue.
+ */
+export async function postEvents(events: StudyEventBody[]): Promise<void> {
+	await api('/api/events/batch', {
+		method: 'POST',
+		body: { events }
+	});
+}
+
+/**
  * record appends one study event to the server log. Failures are
  * logged to the console and swallowed: recording is telemetry, never
  * page-breaking.
@@ -48,10 +60,7 @@ export async function record(
 	};
 
 	try {
-		await api('/api/events/batch', {
-			method: 'POST',
-			body: { events: [event] }
-		});
+		await postEvents([event]);
 	} catch (err) {
 		console.warn(`study event "${type}" not recorded`, err);
 	}

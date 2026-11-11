@@ -14,6 +14,29 @@ export interface Deck {
 // sentence, writing and tone kinds for later rounds.
 export type StudyCardKind = 'vocab';
 
+/** Anki-style grades: 1 Again, 2 Hard, 3 Good, 4 Easy. */
+export type ReviewGrade = 1 | 2 | 3 | 4;
+
+/** The payload of a `review` study event. */
+export interface ReviewPayload {
+	cardId: string;
+	mode: StudyCardKind;
+	grade: ReviewGrade;
+}
+
+/**
+ * One review as the append-only event log stores it. A card's schedule
+ * is derived by replaying these events; it is never written anywhere.
+ */
+export interface ReviewEvent {
+	id: string;
+	workspaceId: number;
+	device: string;
+	ts: string;
+	type: 'review';
+	payload: ReviewPayload;
+}
+
 /** One study card. A card may belong to several decks at once. */
 export interface StudyCard {
 	id: string;
