@@ -211,10 +211,15 @@ export async function deleteDeck(id: string): Promise<void> {
 
 /**
  * addCard stores a new vocab card in `general` and returns it. The
- * optional example sentence is kept when supplied.
+ * optional example sentence is kept when supplied. Adding an entry that
+ * already has a card is a no-op: the entry page can race a slow pull,
+ * and a second card would split its reviews and EXP permanently.
  */
 export async function addCard(entryId: number, sentenceId?: number): Promise<StudyCard> {
 	const workspaceId = requireWorkspaceId();
+	const { cards } = await fetchStudyData(workspaceId);
+	const existing = cards.find((card) => card.entryId === entryId);
+	if (existing !== undefined) return existing;
 	const card: StudyCard = {
 		id: newUlid(),
 		kind: 'vocab',

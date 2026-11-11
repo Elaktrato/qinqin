@@ -7,8 +7,9 @@
 	let { entry }: { entry: Entry } = $props();
 
 	// Whether this entry already has a card in the current workspace.
-	// `null` means "not known": the load failed or is still running, so
-	// the button stays usable and a click surfaces the real error.
+	// `null` means "not known yet": the check is still running, so the
+	// button stays disabled. Only a failed check frees it, because the
+	// click then has to surface the real error.
 	let inDeck = $state<boolean | null>(null);
 	let saving = $state(false);
 	let error = $state('');
@@ -20,9 +21,9 @@
 	}
 
 	// A failed load must not hide the button: an unavailable workspace or
-	// a flaky pull is reported when the user actually tries to add, not
-	// by silently removing the affordance. The workspace id is read so a
-	// switch refetches instead of showing the previous deck's answer.
+	// a flaky pull is reported when the user actually tries to add. Until
+	// the check answers, though, the button is disabled: it must never
+	// offer to add an entry that is already in the deck.
 	$effect(() => {
 		const entryId = entry.id;
 		const workspaceId = $workspaces.current?.id ?? null;
@@ -51,7 +52,9 @@
 	});
 
 	async function add(): Promise<void> {
-		if (saving || inDeck === true) return;
+		// Unresolved or already-added means "no new card"; addCard itself
+		// is idempotent, so a race across tabs cannot duplicate either.
+		if (saving || inDeck !== false) return;
 		saving = true;
 		error = '';
 		try {
@@ -72,11 +75,17 @@
 		type="button"
 		class="action"
 		class:added={inDeck === true}
-		disabled={saving || inDeck === true}
-		aria-busy={saving}
+		disabled={saving || inDeck !== false}
+		aria-busy={saving || inDeck === null}
 		onclick={() => void add()}
 	>
-		{saving ? 'Adding…' : inDeck === true ? 'In study deck' : 'Add to study'}
+		{saving
+			? 'Adding…'
+			: inDeck === null
+				? 'Checking…'
+				: inDeck
+					? 'In study deck'
+					: 'Add to study'}
 	</button>
 	{#if error}
 		<p class="error" role="alert">{error}</p>

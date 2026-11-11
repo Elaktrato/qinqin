@@ -349,8 +349,17 @@ describe('study store', () => {
 	});
 
 	describe('addCard', () => {
+		// addCard reads the workspace's cards before writing so a repeat
+		// add returns the existing card; the pull must be answered too.
+		function respondWith(rows: unknown[]): void {
+			vi.mocked(fetch).mockImplementation(async (_input, init) => {
+				if (init?.method === 'PUT') return jsonResponse({ version: 1 });
+				return jsonResponse({ pluginData: rows });
+			});
+		}
+
 		it('writes a vocab card in the general deck', async () => {
-			vi.mocked(fetch).mockResolvedValue(jsonResponse({ version: 1 }));
+			respondWith([]);
 
 			const added = await addCard(42);
 
@@ -360,7 +369,7 @@ describe('study store', () => {
 			expect(added.deckIds).toEqual([GENERAL_DECK_ID]);
 			expect(added.createdAt).toEqual(expect.any(String));
 			expect('sentenceId' in added).toBe(false);
-			const [call] = calls();
+			const [call] = calls().filter(([, init]) => init?.method === 'PUT');
 			expect(String(call[0])).toBe(
 				`/api/plugins/${PLUGIN_ID}/data/card:${added.id}?workspace=${WORKSPACE_ID}`
 			);
@@ -369,12 +378,21 @@ describe('study store', () => {
 		});
 
 		it('records the sentence id when one is given', async () => {
-			vi.mocked(fetch).mockResolvedValue(jsonResponse({ version: 1 }));
+			respondWith([]);
 
 			const added = await addCard(42, 9);
 
 			expect(added.sentenceId).toBe(9);
-			expect(JSON.parse(String(calls()[0][1]?.body))).toEqual(added);
+			const [call] = calls().filter(([, init]) => init?.method === 'PUT');
+			expect(JSON.parse(String(call[1]?.body))).toEqual(added);
+		});
+
+		it('returns the existing card instead of writing a duplicate', async () => {
+			const existing = card('card-1', 42, ['general']);
+			respondWith([pluginRow('card:card-1', existing)]);
+
+			await expect(addCard(42)).resolves.toEqual(existing);
+			expect(putBodies()).toEqual([]);
 		});
 	});
 
