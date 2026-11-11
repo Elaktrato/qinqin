@@ -20,9 +20,12 @@ API exposes each active dictionary's `license` and `attribution` via
 `GET /api/dictionaries`, and the web app surfaces those credits in its
 sources view.
 
-## Planned for the web view
+## Stroke-order data
 
 Stroke-order animation data (`hanzi-writer-data`, derived from the
 Make Me a Hanzi dataset) is licensed under the **Arphic Public License**.
-When the web frontend bundles it, its license text and notices must be
-included alongside this file.
+The web frontend bundles it and credits it on its Sources page. The upstream
+license text ships with the `hanzi-writer-data` package.
+
+Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
+[hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).

@@ -66,14 +66,15 @@ export interface Entry extends EntryBase {
 // /api/entries/{id}: the entry plus the sections above.
 export type EntryDetail = Entry;
 
+// Dictionary is one element of GET /api/dictionaries: an installed
+// dictionary pack's credit line. The list endpoint does not expose the
+// pack id or timestamps.
 export interface Dictionary {
 	id: number;
-	packId: string;
 	name: string;
 	version: string;
 	license: string;
 	attribution: string;
-	updatedAt: string;
 }
 
 export interface Workspace {
