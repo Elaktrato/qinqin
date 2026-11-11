@@ -99,7 +99,7 @@ describe('auth store', () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
-	it('logout clears storage and the store', async () => {
+	it('logout clears storage, the store, and navigates to /login', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
 		auth.set({ token: 'stored', user });
 
@@ -107,5 +107,6 @@ describe('auth store', () => {
 
 		expect(localStorage.getItem('qinqin.token')).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(goto).toHaveBeenCalledWith('/login');
 	});
 });

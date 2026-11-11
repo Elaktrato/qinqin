@@ -1,3 +1,4 @@
+import { goto } from '$app/navigation';
 import { derived, writable } from 'svelte/store';
 import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from './api/client';
 
@@ -77,8 +78,13 @@ export async function register(username: string, password: string): Promise<User
 	return created;
 }
 
-/** logout forgets the token and the in-memory user. */
+/**
+ * logout forgets the token and the in-memory user, then leaves any
+ * protected page. Storage and store clearing stay synchronous; the
+ * navigation is fire-and-forget.
+ */
 export function logout(): void {
 	clearToken();
 	auth.set({ token: null, user: null });
+	void goto('/login');
 }
