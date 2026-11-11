@@ -68,12 +68,22 @@ func defaultData() string {
 }
 
 // openData creates the data directory if needed and opens (migrating)
-// the SQLite database inside it.
+// the SQLite database inside it, with the durable serving settings.
 func openData(dataDir string) (*sql.DB, error) {
+	return openDataWith(dataDir, db.Open)
+}
+
+// openDataForSeed is openData for bulk seeding: same directory handling,
+// but synchronous=NORMAL (see db.OpenForSeed).
+func openDataForSeed(dataDir string) (*sql.DB, error) {
+	return openDataWith(dataDir, db.OpenForSeed)
+}
+
+func openDataWith(dataDir string, open func(string) (*sql.DB, error)) (*sql.DB, error) {
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return nil, fmt.Errorf("create data directory %s: %w", dataDir, err)
 	}
-	return db.Open(filepath.Join(dataDir, "qinqin.db"))
+	return open(filepath.Join(dataDir, "qinqin.db"))
 }
 
 func serveCmd(args []string) error {

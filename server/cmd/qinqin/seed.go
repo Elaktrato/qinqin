@@ -25,7 +25,7 @@ func seedCmd(args []string, out io.Writer) error {
 		return err
 	}
 	registerLanguages()
-	sqlDB, err := openData(*data)
+	sqlDB, err := openDataForSeed(*data)
 	if err != nil {
 		return err
 	}
