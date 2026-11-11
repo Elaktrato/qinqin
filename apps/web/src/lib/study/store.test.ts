@@ -268,6 +268,10 @@ describe('study store', () => {
 				{
 					url: `/api/plugins/${PLUGIN_ID}/data/card:card-orphan?workspace=${WORKSPACE_ID}`,
 					body: { ...orphan, deckIds: [GENERAL_DECK_ID] }
+				},
+				{
+					url: `/api/plugins/${PLUGIN_ID}/data/card:card-shared?workspace=${WORKSPACE_ID}`,
+					body: { ...shared, deckIds: ['deck-2'] }
 				}
 			]);
 		});
@@ -277,7 +281,7 @@ describe('study store', () => {
 			expect(fetch).not.toHaveBeenCalled();
 		});
 
-		it('does not rewrite cards that still live in another deck', async () => {
+		it('keeps a card in its other decks when one deck is deleted', async () => {
 			const shared = card('card-shared', 43, ['deck-1', 'deck-2']);
 			vi.mocked(fetch).mockImplementation(async (_input, init) => {
 				if (init?.method === 'DELETE') return new Response(null, { status: 204 });
@@ -293,8 +297,54 @@ describe('study store', () => {
 
 			await deleteDeck('deck-1');
 
-			expect(putBodies()).toEqual([]);
+			expect(putBodies()).toEqual([
+				{
+					url: `/api/plugins/${PLUGIN_ID}/data/card:card-shared?workspace=${WORKSPACE_ID}`,
+					body: { ...shared, deckIds: ['deck-2'] }
+				}
+			]);
 			expect(calls().some(([, init]) => init?.method === 'DELETE')).toBe(true);
+		});
+
+		it('lands a multi-deck card in general after sequential deck deletions', async () => {
+			const decks = new Map<string, Deck>([
+				['deck:deck-1', deck('deck-1', 'One')],
+				['deck:deck-2', deck('deck-2', 'Two')]
+			]);
+			const cards = new Map<string, StudyCard>([
+				['card:card-1', card('card-1', 42, ['deck-1', 'deck-2'])]
+			]);
+			const keyOf = (input: unknown): string => {
+				const path = String(input).split('/data/')[1] ?? '';
+				return path.split('?')[0];
+			};
+			vi.mocked(fetch).mockImplementation(async (input, init) => {
+				if (init?.method === 'PUT') {
+					const key = keyOf(input);
+					const body = JSON.parse(String(init.body)) as StudyCard;
+					cards.set(key, body);
+					return jsonResponse({ version: 2 });
+				}
+				if (init?.method === 'DELETE') {
+					decks.delete(keyOf(input));
+					return new Response(null, { status: 204 });
+				}
+				return jsonResponse({
+					pluginData: [
+						...[...decks].map(([key, data]) => pluginRow(key, data)),
+						...[...cards].map(([key, data]) => pluginRow(key, data))
+					]
+				});
+			});
+
+			await deleteDeck('deck-1');
+			await deleteDeck('deck-2');
+
+			expect(cards.get('card:card-1')?.deckIds).toEqual([GENERAL_DECK_ID]);
+			expect(putBodies().map((entry) => (entry.body as StudyCard).deckIds)).toEqual([
+				['deck-2'],
+				[GENERAL_DECK_ID]
+			]);
 		});
 	});
 

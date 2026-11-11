@@ -187,10 +187,11 @@ export async function renameDeck(id: string, name: string): Promise<Deck> {
 }
 
 /**
- * deleteDeck tombstones the deck and rescues the cards that would be
- * left in no deck by moving them to `general`. Cards that also live in
- * another deck are untouched. Cards are rescued before the delete so a
- * failed write cannot orphan them behind a tombstone.
+ * deleteDeck tombstones the deck and strips it from every card that
+ * references it, so a later delete cannot leave a card pointing only
+ * at dead decks. A card left with no deck moves to `general`. Cards are
+ * rewritten before the tombstone so a failed write cannot orphan them
+ * behind a deleted deck.
  */
 export async function deleteDeck(id: string): Promise<void> {
 	const workspaceId = requireWorkspaceId();
@@ -200,8 +201,10 @@ export async function deleteDeck(id: string): Promise<void> {
 	}
 	const { cards } = await fetchStudyData(workspaceId);
 	for (const card of cards) {
-		if (card.deckIds.length !== 1 || card.deckIds[0] !== id) continue;
-		await putData(workspaceId, cardKey(card.id), { ...card, deckIds: [GENERAL_DECK_ID] });
+		if (!card.deckIds.includes(id)) continue;
+		const remaining = card.deckIds.filter((deckId) => deckId !== id);
+		const deckIds = remaining.length === 0 ? [GENERAL_DECK_ID] : remaining;
+		await putData(workspaceId, cardKey(card.id), { ...card, deckIds });
 	}
 	await deleteData(workspaceId, deckKey(id));
 }
