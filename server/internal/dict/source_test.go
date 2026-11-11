@@ -114,7 +114,7 @@ func TestUnihanImportReadsZip(t *testing.T) {
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 	members := map[string]string{
-		"Unihan_RadicalStrokeCounts.txt": "U+597D\tkRSUnicode\t38.6\n",
+		"Unihan_IRGSources.txt": "U+597D\tkRSUnicode\t38.6\n",
 		"Unihan_Variants.txt": "U+5FA9\tkSimplifiedVariant\tU+590D\n" +
 			"U+8907\tkSimplifiedVariant\t复\n" +
 			"U+590D\tkTraditionalVariant\tU+5FA9 U+8907\n",

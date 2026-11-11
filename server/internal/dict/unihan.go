@@ -22,12 +22,13 @@ const unihanFile = "dictionary.txt"
 
 // unihanZipFile is the upstream distribution of the Unihan database. The
 // members below carry every field the importer parses: kRSUnicode lives
-// in the radical-stroke file (not IRGSources), variants in the variants
-// file, and kDefinition in the readings file.
+// in the IRG sources file (not the Adobe radical-stroke file, which
+// carries a different field), variants in the variants file, and
+// kDefinition in the readings file.
 const unihanZipFile = "Unihan.zip"
 
 var unihanZipMembers = []string{
-	"Unihan_RadicalStrokeCounts.txt",
+	"Unihan_IRGSources.txt",
 	"Unihan_Variants.txt",
 	"Unihan_Readings.txt",
 }
