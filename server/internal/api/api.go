@@ -40,6 +40,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
 	mux.HandleFunc("GET /api/search", s.handleSearch)
 	mux.HandleFunc("GET /api/segment/at", s.handleSegmentAt)
 	mux.HandleFunc("POST /api/segment", s.handleSegment)
+	mux.HandleFunc("GET /api/lookup", s.handleLookup)
 	mux.HandleFunc("GET /api/sync/pull", s.handleSyncPull)
 	mux.HandleFunc("POST /api/sync/push", s.handleSyncPush)
 	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
@@ -81,6 +82,7 @@ const (
 	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
 	maxSegmentRunes   = 5000      // POST /api/segment text code points
 	maxSegmentAtRunes = 64        // GET /api/segment/at text code points (the client sends <= 16)
+	maxLookupRunes    = 64        // GET /api/lookup text code points
 )
 
 // badBody answers a request body that failed to decode: 413 when it
