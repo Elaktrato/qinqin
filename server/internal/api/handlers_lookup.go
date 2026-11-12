@@ -127,7 +127,7 @@ func (s *server) handleLookup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "text too long", http.StatusRequestEntityTooLarge)
 		return
 	}
-	svc := lookup.Service{Lexicon: lexicon.Store{DB: s.db}, Freq: freq.Store{DB: s.db}, DB: s.db}
+	svc := s.lookupService()
 	found, err := svc.Lookup(r.Context(), language, text, offset, kinds)
 	if err != nil {
 		log.Printf("lookup %s: %v", language, err)
@@ -139,4 +139,9 @@ func (s *server) handleLookup(w http.ResponseWriter, r *http.Request) {
 		results = append(results, toLookupResult(f))
 	}
 	writeJSON(w, http.StatusOK, map[string][]lookupResult{"results": results})
+}
+
+// lookupService is the lookup engine over the server's database.
+func (s *server) lookupService() lookup.Service {
+	return lookup.Service{Lexicon: lexicon.Store{DB: s.db}, Freq: freq.Store{DB: s.db}, DB: s.db}
 }

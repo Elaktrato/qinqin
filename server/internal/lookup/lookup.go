@@ -80,6 +80,14 @@ type Result struct {
 	// Senses are the entry's senses as stored: grouped by dictionary.
 	Senses []SenseOut
 	Pri    int
+	// Lemma is the dictionary form of Matched: the deinflected form for
+	// an inflected match (する for した, 電話する for 電話した), Matched
+	// itself for an exact one. Not part of the lookup wire format; the
+	// tokenizer reports it.
+	Lemma string
+	// ViaReading is true when the entry matched by one of its readings
+	// rather than by a written form. Not part of the lookup wire format.
+	ViaReading bool
 }
 
 // Service looks text up in the lexicon and ranks it with the frequency
@@ -93,6 +101,7 @@ type Service struct {
 // probe is one dictionary-side text tried for a prefix of the source.
 type probe struct {
 	term    string   // text looked up: the prefix, a deinflected form or a する-compound stem
+	form    string   // dictionary form of the prefix: the prefix or the deinflected form
 	length  int      // code points of source text it accounts for
 	reasons []string // inflection chain; nil when exact
 	class   string   // word class an entry must have (lang.ClassMatches); "" = any
@@ -223,12 +232,12 @@ func buildProbes(pack lang.Pack, window []rune) []probe {
 	var probes []probe
 	for n := 1; n <= len(window); n++ {
 		prefix := string(window[:n])
-		probes = append(probes, probe{term: prefix, length: n})
+		probes = append(probes, probe{term: prefix, form: prefix, length: n})
 		if deinflector == nil {
 			continue
 		}
 		for _, d := range deinflector.Deinflect(prefix) {
-			p := probe{term: d.Form, length: n, reasons: d.Reasons, class: d.Class}
+			p := probe{term: d.Form, form: d.Form, length: n, reasons: d.Reasons, class: d.Class}
 			probes = append(probes, p)
 			// JMdict tags vs on the noun (勉強: n, vs), not on 勉強する.
 			if stem, ok := strings.CutSuffix(d.Form, "する"); ok && stem != "" && d.Class == lang.ClassVs {
@@ -336,6 +345,8 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 		Frequencies: append([]Frequency{}, freqs...),
 		Senses:      make([]SenseOut, len(e.Senses)),
 		Pri:         e.Pri,
+		Lemma:       m.probe.form,
+		ViaReading:  m.reading >= 0,
 	}
 	switch {
 	case m.reading >= 0:

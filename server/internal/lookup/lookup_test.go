@@ -345,6 +345,27 @@ func TestSuffixSuruFindsTheNoun(t *testing.T) {
 	}
 }
 
+// Lemma and ViaReading feed the tokenizer: the dictionary form of the
+// matched text and whether a reading matched.
+func TestLemmaAndViaReading(t *testing.T) {
+	s := jaService(t, false)
+	for _, c := range []struct {
+		text, term, lemma string
+		viaReading        bool
+	}{
+		{"勉強した", "勉強", "勉強する", false}, // する compound: the deinflected form, not the stem
+		{"話した", "話す", "話す", false},
+		{"した", "為る", "する", true},  // deinflected through the reading
+		{"こと", "事", "こと", true},   // exact reading match
+		{"宿題", "宿題", "宿題", false}, // exact form match
+	} {
+		r := find(run(t, s, "ja", c.text, 0), c.term)
+		if r == nil || r.Lemma != c.lemma || r.ViaReading != c.viaReading {
+			t.Errorf("%s: %s = %+v, want lemma %s viaReading %v", c.text, c.term, r, c.lemma, c.viaReading)
+		}
+	}
+}
+
 func TestHanashitaOffersTheNounOnlyAsSuruVerb(t *testing.T) {
 	t.Run("noun without vs", func(t *testing.T) {
 		rs := run(t, jaService(t, false), "ja", "話した", 0)

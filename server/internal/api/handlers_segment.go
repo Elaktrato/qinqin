@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"unicode/utf8"
 
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
 	"qinqin/internal/segment"
 )
@@ -31,7 +30,7 @@ func (s *server) handleSegmentAt(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "text too long", http.StatusRequestEntityTooLarge)
 		return
 	}
-	svc := segment.Service{Entries: entries.Store{DB: s.db}}
+	svc := s.segmenter()
 	m, err := svc.MatchAt(r.Context(), language, text, offset)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -72,11 +71,16 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "text too long", http.StatusRequestEntityTooLarge)
 		return
 	}
-	svc := segment.Service{Entries: entries.Store{DB: s.db}}
+	svc := s.segmenter()
 	matches, err := svc.Segment(r.Context(), req.Lang, req.Text)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string][]segment.Match{"matches": matches})
+}
+
+// segmenter is the tokenizer over the lookup engine.
+func (s *server) segmenter() segment.Service {
+	return segment.Service{Lookup: s.lookupService()}
 }

@@ -168,7 +168,7 @@ func (Ja) Deinflect(surface string) []Deinflection {
 				seen[k] = true
 				reasons := append(append([]string(nil), n.reasons...), r.reason)
 				next = append(next, node{k, reasons})
-				out = append(out, Deinflection{Form: k.form, Reason: joinReversed(reasons), Reasons: reasons, Class: k.class})
+				out = append(out, Deinflection{Form: k.form, Reason: ReasonOf(reasons), Reasons: reasons, Class: k.class})
 			}
 		}
 		level = next
@@ -176,7 +176,10 @@ func (Ja) Deinflect(surface string) []Deinflection {
 	return out
 }
 
-func joinReversed(reasons []string) string {
+// ReasonOf renders an inflection chain in application order (see
+// Deinflection.Reasons) as Deinflection.Reason: innermost first,
+// space-joined, e.g. "passive past" for [past passive].
+func ReasonOf(reasons []string) string {
 	rev := make([]string, len(reasons))
 	for i, r := range reasons {
 		rev[len(reasons)-1-i] = r

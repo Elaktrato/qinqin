@@ -1,28 +1,33 @@
 package api_test
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
 
-	"qinqin/internal/entries"
+	"qinqin/internal/dict"
 	"qinqin/internal/lang"
-	"qinqin/internal/model"
+	"qinqin/internal/lexicon"
 )
 
-// seedSegmentWords upserts zh 学 (character) and 学习 (word), returning the
-// word's id.
+// seedSegmentWords imports a CC-CEDICT holding zh 学 (character) and
+// 学习 (word), returning the word's id.
 func seedSegmentWords(t *testing.T) (tsURL string, wordID int64) {
 	t.Helper()
 	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
-	st := entries.Store{DB: sqlDB}
-	r := []model.Reading{{Type: "pinyin", Value: "x"}}
-	mustUpsertEntry(t, st, &model.Entry{Language: "zh", Kind: "character", Written: "学", Readings: r})
-	wordID = mustUpsertEntry(t, st, &model.Entry{Language: "zh", Kind: "word", Written: "学习", Readings: r})
-	return ts.URL, wordID
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
+		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict",
+	}, "dictionary.txt", lookupCedict)
+	words, err := lexicon.Store{DB: sqlDB}.ByForm(context.Background(), "zh", []string{"学习"})
+	if err != nil || len(words["学习"]) != 1 {
+		t.Fatalf("ByForm(学习) = %v, %v, want one word", words, err)
+	}
+	return ts.URL, words["学习"][0].ID
 }
 
 type segmentMatchBody struct {
