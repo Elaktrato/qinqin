@@ -258,8 +258,10 @@ func TestCharsUnderAndRadicals(t *testing.T) {
 	}
 	nu := char("女")
 	zi := char("子")
-	ta := char("她")
+	// 好 gets the lower id, 她 the smaller headword: the sort must not
+	// fall back to id order.
 	hao := char("好")
+	ta := char("她")
 	ctx := context.Background()
 	for _, c := range []int64{ta, hao} {
 		if err := st.Link(ctx, c, nu, lexicon.LinkRadical); err != nil {
@@ -270,7 +272,10 @@ func TestCharsUnderAndRadicals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Ordered by headword: 她 (U+5979) before 好 (U+597D).
+	// Ordered by headword: 她 (U+5979) before 好 (U+597D), against id order.
+	if hao > ta {
+		t.Fatalf("fixture: 好 id %d should be below 她 id %d", hao, ta)
+	}
 	if want := []int64{ta, hao}; !reflect.DeepEqual(ids(got), want) {
 		t.Errorf("CharsUnder(女) = %v, want %v", ids(got), want)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"testing"
 
 	"qinqin/internal/dict"
@@ -66,16 +67,30 @@ func TestSearchEndpoint(t *testing.T) {
 	if _, hits = search("q=行&lang=zh"); len(hits) != 1 || hitsOf(hits)[0] != (hit{xing, "written"}) {
 		t.Errorf("行 = %+v, want 行 written", hitsOf(hits))
 	}
-	if _, hits = search("q=ha&lang=zh"); len(hits) != 2 || hitsOf(hits)[0] != (hit{hao, "pinyin"}) || hitsOf(hits)[1] != (hit{xing, "pinyin"}) {
-		t.Errorf("ha = %+v, want 好 then 行 by pinyin prefix", hitsOf(hits))
+	// CC-CEDICT carries no priority, so within a tier the hits tie and
+	// only the set is asserted here; rank order is checked below on
+	// Japanese, where it differs from id order.
+	if _, hits = search("q=ha&lang=zh"); len(hits) != 2 || !slices.Contains(hitsOf(hits), hit{hao, "pinyin"}) || !slices.Contains(hitsOf(hits), hit{xing, "pinyin"}) {
+		t.Errorf("ha = %+v, want 好 and 行 by pinyin prefix", hitsOf(hits))
+	}
+	// Either reading of the merged two-line 行 entry finds it.
+	for _, q := range []string{"xing", "hang"} {
+		if _, hits = search("q=" + q + "&lang=zh"); len(hits) == 0 || hitsOf(hits)[0] != (hit{xing, "pinyin"}) {
+			t.Errorf("%s = %+v, want 行 via pinyin first", q, hitsOf(hits))
+		}
 	}
 	if _, hits = search("q=row&lang=zh"); len(hits) != 1 || hitsOf(hits)[0] != (hit{xing, "gloss"}) {
 		t.Errorf("row = %+v, want 行 by gloss", hitsOf(hits))
 	}
 
-	// Romaji reaches the kana reading of a Japanese word.
-	if _, hits = search("q=suru&lang=ja"); len(hits) != 1 || hitsOf(hits)[0] != (hit{suru, "kana"}) || hits[0].Written != "為る" {
-		t.Errorf("suru = %+v, want 為る via kana", hits)
+	// Romaji reaches the kana reading of a Japanese word; within the
+	// tier the usually-kana 為る with priority ranks above 刷る although
+	// 刷る has the lower id.
+	if suri := lexID(t, sqlDB, "ja", "word", "j:1397500"); suri > suru {
+		t.Fatalf("fixture: 刷る id %d should be below 為る id %d", suri, suru)
+	}
+	if _, hits = search("q=suru&lang=ja"); len(hits) != 2 || hitsOf(hits)[0] != (hit{suru, "kana"}) || hits[0].Written != "為る" || hits[1].Written != "刷る" {
+		t.Errorf("suru = %+v, want 為る then 刷る via kana", hitsOf(hits))
 	}
 
 	// Kind and scheme/level filters ride on query parameters.

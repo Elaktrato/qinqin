@@ -130,16 +130,24 @@ func findReading(e model.EntryBase, readType string) *model.Reading {
 }
 
 // entriesJMdict is a JMdict excerpt in the real element and entity shape:
-// 為る with two senses (the second inherits the first's part of speech)
-// and a cross-reference.
+// 刷る (imported first, no uk) and 為る (uk, with priority) both read
+// する; 為る has two senses (the second inherits the first's part of
+// speech) and a cross-reference.
 const entriesJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE JMdict [
 <!ENTITY rK "rarely used kanji form">
 <!ENTITY uk "word usually written using kana alone">
 <!ENTITY vs-i "suru verb - included">
 <!ENTITY vt "transitive verb">
+<!ENTITY v5r "Godan verb with 'ru' ending">
 ]>
 <JMdict>
+<entry>
+<ent_seq>1397500</ent_seq>
+<k_ele><keb>刷る</keb><ke_pri>news1</ke_pri></k_ele>
+<r_ele><reb>する</reb><re_pri>news1</re_pri></r_ele>
+<sense><pos>&v5r;</pos><gloss>to print</gloss></sense>
+</entry>
 <entry>
 <ent_seq>1157170</ent_seq>
 <k_ele><keb>為る</keb><ke_inf>&rK;</ke_inf></k_ele>
