@@ -337,15 +337,19 @@ func (s Store) Best(ctx context.Context, language, kind, form string) (*Entry, e
 // readings by its plain index like the match queries: a word entry
 // whose FIRST reading (ord 0) is a kana reading with the given plain
 // form, and which is written in kana — it has no written form, or it is
-// marked usually-kana (uk).
+// marked usually-kana (uk). For a hiragana word (the first parameter
+// after plain is 1) the reading must be written in hiragana too (value
+// equal to its plain form), and the reading written exactly as the word
+// sorts first.
 const bestKanaWordQuery = `
 	SELECT e.id FROM readings r
 	CROSS JOIN entries e ON e.id = r.entry_id
 	WHERE r.plain = ? AND r.type = 'kana' AND r.ord = 0 AND r.deleted_at IS NULL
+	  AND (? = 0 OR r.value = r.plain)
 	  AND e.language = ? AND e.kind = 'word' AND e.deleted_at IS NULL
 	  AND (e.uk = 1 OR NOT EXISTS (
 		SELECT 1 FROM forms f WHERE f.entry_id = e.id AND f.deleted_at IS NULL))
-	ORDER BY e.pri DESC, e.id
+	ORDER BY (r.value = ?) DESC, e.pri DESC, e.id
 	LIMIT 1`
 
 // BestWord resolves a word as a level or sentence pack lists it to one
@@ -359,7 +363,10 @@ const bestKanaWordQuery = `
 // written form (これ, テレビ) or are marked usually-kana (する → 為る); a
 // word whose kanji form is the usual spelling, or that lists the kana
 // only as a later reading, is never picked by its reading. Among the
-// candidates the highest priority wins, then the lowest id. It returns
+// candidates a reading written exactly as the word (same script: もの,
+// not モノ) wins first, then the highest priority, then the lowest id. A
+// hiragana word never falls back to a katakana-only reading: だれ stays
+// unresolved rather than resolving to ダレ (誰 is not marked uk). It returns
 // ErrNotFound when neither step matches.
 func (s Store) BestWord(ctx context.Context, language, form string) (*Entry, error) {
 	e, err := s.Best(ctx, language, "word", form)
@@ -368,7 +375,11 @@ func (s Store) BestWord(ctx context.Context, language, form string) (*Entry, err
 	}
 	plain := lang.For(language).NormalizeReading("kana", form)
 	var id int64
-	err = s.DB.QueryRowContext(ctx, bestKanaWordQuery, plain, language).Scan(&id)
+	hiragana := 0
+	if plain == form {
+		hiragana = 1 // NormalizeReading folds katakana to hiragana: an unchanged word is hiragana
+	}
+	err = s.DB.QueryRowContext(ctx, bestKanaWordQuery, plain, hiragana, language, form).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}

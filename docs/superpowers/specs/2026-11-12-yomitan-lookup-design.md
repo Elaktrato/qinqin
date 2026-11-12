@@ -130,9 +130,13 @@ deinflection of the best-ranked result; only `Entries[0]` corresponds to
 `Lemma`/`Reason`, later candidates (at most 8) are other readings or entries with
 the same surface. `lexicon.Store.BestWord` resolves level and sentence pack
 words: by written form, else by kana reading (word entries whose first reading
-is that kana and which are written in kana or marked `uk`). Known
-imperfections of that fallback: いう, わるい, あつい, さむい and たかい stay
-unresolved; だれ resolves to ダレ, いる to 要る, なる to 生る and やすい to 易い.
+is that kana and which are written in kana or marked `uk`); the reading written
+exactly as the word wins first (もの resolves to 物, not the katakana homograph
+モノ), and a hiragana word never falls back to a katakana-only reading. Known
+imperfections of that fallback: いう, わるい, あつい, さむい, たかい and だれ
+(誰 is not marked `uk`; its only kana-only homograph is the katakana ダレ) stay
+unresolved; いる resolves to 要る, なる to 生る and やすい to 易い (frequency
+would be needed to pick 居る, 成る and 安い).
 
 **Licence decisions.** The Jiten global frequency list is bundled on the
 publisher's stated CC BY-SA 4.0 (the frequency-dictionaries page and terms

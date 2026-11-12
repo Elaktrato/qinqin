@@ -115,6 +115,79 @@ func importJMdict(t *testing.T, st lexicon.Store, xml string) {
 	}
 }
 
+// scriptJMdict has katakana homographs FIRST (lowest ids): モノ ("mono")
+// at the same priority as 物 (uk) and the kana-only もの; ダレ
+// ("undercut") beside 誰, which, as in the real JMdict, is not marked uk
+// and so is never a reading fallback candidate.
+const scriptJMdict = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JMdict [
+<!ENTITY uk "word usually written using kana alone">
+<!ENTITY n "noun (common) (futsuumeishi)">
+<!ENTITY pn "pronoun">
+]>
+<JMdict>
+<entry>
+<ent_seq>2860001</ent_seq>
+<r_ele><reb>モノ</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>mono</gloss></sense>
+</entry>
+<entry>
+<ent_seq>2860002</ent_seq>
+<r_ele><reb>ダレ</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>undercut of a machined edge</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1502390</ent_seq>
+<k_ele><keb>物</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>もの</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><misc>&uk;</misc><gloss>thing</gloss></sense>
+</entry>
+<entry>
+<ent_seq>2860003</ent_seq>
+<r_ele><reb>もの</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>thing (kana only)</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1420710</ent_seq>
+<k_ele><keb>誰</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>だれ</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&pn;</pos><gloss>who</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1081610</ent_seq>
+<r_ele><reb>テレビ</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>television</gloss></sense>
+</entry>
+</JMdict>
+`
+
+// TestBestWordPrefersTheQueryScript: the reading written exactly as the
+// word wins over a priority tie (もの: 物, never モノ), and a hiragana
+// word never falls back to a katakana-only reading: だれ stays
+// unresolved rather than resolving to ダレ. A katakana word still
+// matches a hiragana reading when nothing else does.
+func TestBestWordPrefersTheQueryScript(t *testing.T) {
+	st := newStore(t)
+	importJMdict(t, st, scriptJMdict)
+	ctx := context.Background()
+	for _, tc := range []struct{ word, wantKey string }{
+		{"もの", "j:1502390"}, // 物 (uk) and もの tie; never モノ
+		{"モノ", "j:2860001"},
+		{"ダレ", "j:2860002"},
+		{"テレビ", "j:1081610"},
+	} {
+		e, err := st.BestWord(ctx, "ja", tc.word)
+		if err != nil || e.Key != tc.wantKey {
+			t.Errorf("BestWord(%s) = %v, %v; want %s", tc.word, e, err, tc.wantKey)
+		}
+	}
+	for _, word := range []string{"だれ", "てれび"} {
+		if e, err := st.BestWord(ctx, "ja", word); !errors.Is(err, lexicon.ErrNotFound) {
+			t.Errorf("BestWord(%s) = %v, %v; want ErrNotFound (only a katakana-only reading)", word, e, err)
+		}
+	}
+}
+
 func TestBestWordFallsBackToFirstKanaReading(t *testing.T) {
 	st := newStore(t)
 	importJMdict(t, st, bestWordJMdict)
@@ -125,7 +198,6 @@ func TestBestWordFallsBackToFirstKanaReading(t *testing.T) {
 		{"する", "j:1157170", "uk 為る; the non-uk 刷る is not a fallback candidate despite its priority"},
 		{"これ", "j:1288810", "kana-only word"},
 		{"テレビ", "j:1081610", "katakana-only word"},
-		{"てれび", "j:1081610", "hiragana and katakana are one plain form"},
 		{"ここ", "j:9000001", "a form match beats a reading match"},
 		{"それ", "j:9000004", "priority orders the fallback"},
 		{"いる", "j:1577980", "only the FIRST reading counts: おる/いる is not picked"},

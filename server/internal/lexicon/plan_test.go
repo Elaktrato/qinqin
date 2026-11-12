@@ -121,7 +121,7 @@ func TestMatchQueriesUseTheTextIndexes(t *testing.T) {
 			{"ByReading", fmt.Sprintf(byReadingQuery, in), keyArgs(n, "ja"), "SEARCH r USING INDEX idx_readings_plain"},
 			{"ByReadingKind", fmt.Sprintf(byReadingKindQuery, in), keyArgs(n, "ja", "word"), "SEARCH r USING INDEX idx_readings_plain"},
 			{"Best", bestQuery, []any{"f1", "ja", "word"}, "SEARCH f USING INDEX idx_forms_text"},
-			{"BestWord fallback", bestKanaWordQuery, []any{"r1", "ja"}, "SEARCH r USING INDEX idx_readings_plain"},
+			{"BestWord fallback", bestKanaWordQuery, []any{"r1", 1, "ja", "r1"}, "SEARCH r USING INDEX idx_readings_plain"},
 		}
 		for _, tt := range tests {
 			got := plan(t, sqlDB, tt.query, tt.args...)
