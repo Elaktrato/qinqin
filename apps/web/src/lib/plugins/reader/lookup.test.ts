@@ -4,6 +4,7 @@ import {
 	codePointToUtf16,
 	homophoneNote,
 	hoverable,
+	otherEntriesText,
 	pickEntry,
 	preferredEntry,
 	selectionTarget,
@@ -164,6 +165,30 @@ describe('homophoneNote', () => {
 			)
 		).toBeNull();
 		expect(homophoneNote(null, 'word')).toBeNull();
+	});
+
+	it('says N+ when the server capped the reading candidates', () => {
+		const eight = [1, 2, 3, 4, 5, 6, 7, 8].map((id) => reading(id));
+		expect(homophoneNote(kana(eight), 'word')).toEqual({
+			count: 7,
+			href: `/search?q=${encodeURIComponent('する')}`,
+			text: '7+ other entries are read this way — search for it'
+		});
+		// One short of the cap is an exact count.
+		expect(homophoneNote(kana(eight.slice(0, 7)), 'word')?.text).toBe(
+			'6 other entries are read this way — search for it'
+		);
+		// The cap counts every reading candidate, whatever its kind.
+		expect(
+			homophoneNote(kana([...eight.slice(0, 7), reading(9, 'character')]), 'word')?.text
+		).toBe('6+ other entries are read this way — search for it');
+	});
+
+	it('words the count exactly below the cap and as N+ at it', () => {
+		expect(otherEntriesText(1, false)).toBe('1 other entry is read this way — search for it');
+		expect(otherEntriesText(3, false)).toBe('3 other entries are read this way — search for it');
+		expect(otherEntriesText(1, true)).toBe('1+ other entries are read this way — search for it');
+		expect(otherEntriesText(7, true)).toBe('7+ other entries are read this way — search for it');
 	});
 
 	it('counts the kind actually shown when the preferred kind is missing', () => {

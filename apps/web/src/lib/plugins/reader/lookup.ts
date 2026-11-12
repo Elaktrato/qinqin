@@ -75,14 +75,30 @@ export function homophoneNote(
 	if (!match || !shown?.reading) return null;
 	const count = match.entries.filter((e) => e.kind === shown.kind && e.reading).length - 1;
 	if (count < 1) return null;
+	const capped = match.entries.filter((e) => e.reading).length >= MAX_READING_CANDIDATES;
 	return {
 		count,
 		href: `/search?q=${encodeURIComponent(match.lemma)}`,
-		text:
-			count === 1
-				? '1 other entry is read this way — search for it'
-				: `${count} other entries are read this way — search for it`
+		text: otherEntriesText(count, capped)
 	};
+}
+
+/**
+ * MAX_READING_CANDIDATES mirrors the server's segment.MaxReadingCandidates:
+ * a match found by reading carries at most this many candidates, so a
+ * list that long may have been cut.
+ */
+export const MAX_READING_CANDIDATES = 8;
+
+/**
+ * otherEntriesText words the homophone count: exact below the server cap,
+ * "N+" when the candidate list was capped and more may exist.
+ */
+export function otherEntriesText(count: number, capped: boolean): string {
+	if (capped) return `${count}+ other entries are read this way — search for it`;
+	return count === 1
+		? '1 other entry is read this way — search for it'
+		: `${count} other entries are read this way — search for it`;
 }
 
 // Whitespace, punctuation and symbols never have a dictionary entry.
