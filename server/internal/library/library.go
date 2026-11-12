@@ -14,8 +14,10 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
+
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
 
 // ErrNotFound reports a book (or chapter) that does not exist for the
@@ -102,7 +104,7 @@ func (s Store) Create(ctx context.Context, b Book, chapters []Chapter) (Book, er
 		b.SourceURL, b.Attribution, b.LicenseNote, b.ChapterCount, b.Position,
 		b.CreatedAt.Format(time.RFC3339))
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+		if isUniqueViolation(err) {
 			return Book{}, ErrDuplicate
 		}
 		return Book{}, fmt.Errorf("library: insert book: %w", err)
@@ -122,11 +124,17 @@ func (s Store) Create(ctx context.Context, b Book, chapters []Chapter) (Book, er
 	return b, nil
 }
 
+// isUniqueViolation reports whether err is a SQLite UNIQUE constraint error.
+func isUniqueViolation(err error) bool {
+	var sqliteErr *sqlite.Error
+	return errors.As(err, &sqliteErr) && sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE
+}
+
 // writeFile writes content to path atomically via a temp file in the
 // same directory; no partial file remains on failure.
 func writeFile(path string, content []byte) error {
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return err
 	}
 	tmp, err := os.CreateTemp(dir, ".tmp-*")
@@ -155,7 +163,9 @@ func scan(row interface{ Scan(...any) error }) (Book, error) {
 	if err != nil {
 		return Book{}, err
 	}
-	b.CreatedAt, _ = time.Parse(time.RFC3339, created)
+	if b.CreatedAt, err = time.Parse(time.RFC3339, created); err != nil {
+		return Book{}, fmt.Errorf("library: parse created_at %q: %w", created, err)
+	}
 	return b, nil
 }
 
@@ -225,7 +235,9 @@ func (s Store) SetPosition(ctx context.Context, userID, id int64, position strin
 	if err != nil {
 		return fmt.Errorf("library: set position %d: %w", id, err)
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
+	if n, err := res.RowsAffected(); err != nil {
+		return fmt.Errorf("library: set position %d: %w", id, err)
+	} else if n == 0 {
 		return ErrNotFound
 	}
 	return nil
@@ -238,9 +250,13 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 	if err != nil {
 		return fmt.Errorf("library: delete %d: %w", id, err)
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
+	if n, err := res.RowsAffected(); err != nil {
+		return fmt.Errorf("library: delete %d: %w", id, err)
+	} else if n == 0 {
 		return ErrNotFound
 	}
+	// A failed file removal after the row delete can leave an orphan file;
+	// a reused id overwrites it.
 	if err := os.Remove(s.path(userID, id)); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("library: delete content %d: %w", id, err)
 	}
