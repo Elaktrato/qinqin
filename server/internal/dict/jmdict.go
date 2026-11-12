@@ -137,15 +137,18 @@ func ParseJMdict(r io.Reader) ([]RawEntry, error) {
 			formAttrs[forms[0]] = jmdictAttrs(kanaScore, uk)
 		}
 		for i, k := range kEles {
-			// A kanji form scores by its own priority tags. A uk word is
-			// read in kana, so its readings' score counts for each of its
-			// forms too. A rare, outdated, irregular or search-only form
-			// is penalized either way.
-			score := priorityScore(k.Pri)
+			// A kanji form scores by its own priority tags, penalized
+			// when the form is rare, outdated, irregular or search-only.
+			// A uk word is read in kana, so its readings' score counts
+			// for each of its forms too, unpenalized: the kanji of a
+			// usually-kana word is expected to be rare (為る/する and
+			// 居る/いる are rK), which says nothing about how common the
+			// word is.
+			score := formScore(k.Pri, k.Inf)
 			if uk {
 				score = max(score, kanaScore)
 			}
-			formAttrs[forms[i]] = jmdictAttrs(penalize(score, k.Inf), uk)
+			formAttrs[forms[i]] = jmdictAttrs(score, uk)
 		}
 		var glosses []string
 		for _, s := range x.Senses {

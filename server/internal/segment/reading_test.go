@@ -109,10 +109,14 @@ func itoa(n int) string { return strconv.Itoa(n) }
 // words that should NOT rank first come first in the file, so their
 // entry ids are lower and an id order would pick them.
 var jmFixture = []jmEntry{
-	// する: 為る is usually written in kana (uk), so it ranks first.
+	// する: 為る is usually written in kana (uk), so it ranks first —
+	// though, as in the real file, its kanji form is rK (no penalty for a
+	// uk word) and 擦る is uk too through a homograph (擦る/こする), which
+	// leaves the two tied at ichi1: する is 為る's first reading.
 	{kanji: []string{"擦る"}, readings: []string{"こする", "する"}, kpri: map[string][]string{"擦る": {"ichi1"}}}, // する is its second reading
+	{kanji: []string{"擦る"}, readings: []string{"こする"}, uk: true},
 	{kanji: []string{"刷る"}, readings: []string{"する"}, kpri: map[string][]string{"刷る": {"news2", "nf30"}}},
-	{kanji: []string{"為る"}, readings: []string{"する"}, rpri: map[string][]string{"する": {"ichi1"}}, uk: true},
+	{kanji: []string{"為る"}, readings: []string{"する"}, kinf: map[string]string{"為る": "rK"}, rpri: map[string][]string{"する": {"ichi1"}}, uk: true},
 	{kanji: []string{"来る"}, readings: []string{"くる"}},
 	// こと: 琴 is common, but 事 is uk.
 	{kanji: []string{"琴"}, readings: []string{"こと"}, kpri: map[string][]string{"琴": {"ichi1", "news1", "nf05"}}},

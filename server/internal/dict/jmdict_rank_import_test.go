@@ -96,9 +96,10 @@ func TestJmdictParseKeepsRankingData(t *testing.T) {
 		t.Fatalf("ParseJMdict: %v", err)
 	}
 	want := []map[string]map[string]string{
-		// 居る/いる: uk, and its kana's ichi1 counts for a uk word — less
-		// the rK penalty of its only kanji form.
-		{"居る": {"jmdict.pri": "20", "jmdict.uk": "1"}},
+		// 居る/いる: uk, so its kana's ichi1 counts — unpenalized: a uk
+		// word is read in kana, so its kanji being rare (rK) says nothing
+		// about how common the word is. (Real data: 為る/する is rK too.)
+		{"居る": {"jmdict.pri": "60", "jmdict.uk": "1"}},
 		// 居る/おる: nf19 is the best tag.
 		{"居る": {"jmdict.pri": "82", "jmdict.uk": "1"}},
 		// 学校 nf02; 學校 an outdated form without tags of its own.
