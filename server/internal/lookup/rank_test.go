@@ -23,20 +23,20 @@ func TestRankKeys(t *testing.T) {
 		}, func(c *candidate) {
 			c.primary, c.freqRank, c.exactCount, c.ukPri, c.pri, c.headword = true, 1, 5, true, 100, "a"
 		}},
-		{"primary reading match", func(c *candidate) {
-			c.primary = true
-		}, func(c *candidate) {
-			c.freqRank, c.exactCount, c.headword = 1, 5, "a"
-		}},
 		{"frequency order", func(c *candidate) {
 			c.freqRank = 10
 		}, func(c *candidate) {
-			c.freqRank, c.chainLen, c.exactCount, c.headword = 20, 0, 5, "a"
+			c.freqRank, c.primary, c.exactCount, c.headword = 20, true, 5, "a"
 		}},
 		{"entries with frequency data before those without", func(c *candidate) {
 			c.freqRank, c.chainLen = 50000, 2
 		}, func(c *candidate) {
-			c.freqRank, c.chainLen, c.exactCount, c.headword = 0, 0, 5, "a"
+			c.freqRank, c.primary, c.chainLen, c.exactCount, c.headword = 0, true, 0, 5, "a"
+		}},
+		{"primary reading match", func(c *candidate) {
+			c.primary, c.chainLen = true, 1
+		}, func(c *candidate) {
+			c.chainLen, c.exactCount, c.headword = 0, 5, "a"
 		}},
 		{"inflection chain length", func(c *candidate) {
 			c.chainLen = 0

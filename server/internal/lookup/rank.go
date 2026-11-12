@@ -11,14 +11,14 @@ import (
 type candidate struct {
 	// matchedLen is the length of the matched source text in code points.
 	matchedLen int
+	// freqRank is the entry's rank in the ranking pack (see
+	// rankingRanks); 0 when that pack has no data for the entry.
+	freqRank int
 	// primary: the dictionary-side text that matched (the deinflected
 	// form for an inflected match, the source text otherwise) equals the
 	// entry's first reading (plain-normalized for kana) or first form,
 	// or a CC-CEDICT traditional form.
 	primary bool
-	// freqRank is the entry's rank in the ranking pack (see
-	// rankingRanks); 0 when that pack has no data for the entry.
-	freqRank int
 	// chainLen is the length of the inflection chain; 0 for exact.
 	chainLen int
 	// exactCount is how many of the entry's forms and readings equal the
@@ -41,12 +41,15 @@ type candidate struct {
 // through to the next on a tie:
 //
 //  1. matched source text length, longest first;
-//  2. primary reading match, true first — among equal-length matches
-//     only, so a word found by an alternative form or reading (子ども
-//     for 子供) still beats a shorter headword match (子);
-//  3. frequency order: lower rank first, entries with data in the
+//  2. frequency order: lower rank first, entries with data in the
 //     ranking pack before those without (with no frequency data at all
 //     every rank is 0 and the key is a no-op);
+//  3. primary reading match, true first. It only breaks ties: a word
+//     found by an alternative form or reading (子ども for 子供) still
+//     beats a shorter headword match (子), and a frequent word that has
+//     the matched reading second (行く: いく, ゆく) beats a rarer one
+//     reading it first (征く) — merged JMdict entries lack Yomitan's
+//     per-reading headwords, so frequency must be able to decide;
 //  4. inflection chain length, shortest first;
 //  5. exact source-term matches, most first;
 //  6. dictionary order, lowest dictionary id first;
@@ -59,10 +62,10 @@ func compareCandidates(a, b candidate) int {
 	if c := cmp.Compare(b.matchedLen, a.matchedLen); c != 0 {
 		return c
 	}
-	if c := cmpTrueFirst(a.primary, b.primary); c != 0 {
+	if c := cmpRank(a.freqRank, b.freqRank); c != 0 {
 		return c
 	}
-	if c := cmpRank(a.freqRank, b.freqRank); c != 0 {
+	if c := cmpTrueFirst(a.primary, b.primary); c != 0 {
 		return c
 	}
 	if c := cmp.Compare(a.chainLen, b.chainLen); c != 0 {

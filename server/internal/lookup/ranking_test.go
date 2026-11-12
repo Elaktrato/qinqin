@@ -237,3 +237,39 @@ func TestFrequencyFailureDegrades(t *testing.T) {
 		}
 	}
 }
+
+// yukuWord is 征く, whose FIRST reading is ゆく; 行く has ゆく second.
+const yukuWord = `<entry>
+<ent_seq>1578860</ent_seq>
+<k_ele><keb>征く</keb></k_ele>
+<r_ele><reb>ゆく</reb></r_ele>
+<sense><pos>&v5k-s;</pos><pos>&vi;</pos><gloss>to go (to war)</gloss></sense>
+</entry>
+`
+
+func TestFrequencyOutranksPrimaryReadingMatch(t *testing.T) {
+	tests := []struct {
+		name string
+		freq string // rows of one pack; "" = no frequency data
+		want []string
+	}{
+		// No frequency data: primary match decides (征く reads ゆく first).
+		{"no frequency", "", []string{"征く/word", "行く/word", "湯/word"}},
+		// 行く is the more frequent word: frequency beats primary match.
+		{"frequency", "行く,ゆく,50\n征く,ゆく,30000\n", []string{"行く/word", "征く/word", "湯/word"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sqlDB, _ := openDB(t)
+			importJMdict(t, sqlDB, jaWords+altWords+yukuWord)
+			importKanjidic(t, sqlDB)
+			if tt.freq != "" {
+				importFreqPack(t, sqlDB, "a", tt.freq)
+			}
+			rs := run(t, service(sqlDB), "ja", "ゆく", 0)
+			if got := headwords(rs); !slices.Equal(got, tt.want) {
+				t.Errorf("results = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
