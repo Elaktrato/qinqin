@@ -208,3 +208,50 @@ func TestJmdictImport(t *testing.T) {
 		t.Errorf("senses after re-import = %d active, %d tombstoned, want 4 and 0", a, d)
 	}
 }
+
+// TestJmdictImportMergesHomographReadings: one written form shared by
+// several JMdict words (為る is する and a form of 成る/なる; 林檎 is りんご
+// and the rare りゅうごう) keeps every word's kana readings, in file order,
+// instead of the last word's readings replacing the earlier ones.
+func TestJmdictImportMergesHomographReadings(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	dir := t.TempDir()
+	manifest, err := json.Marshal(jmdictManifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
+	mustWriteFile(t, filepath.Join(dir, "jmdict.xml"), `<JMdict>
+<entry><ent_seq>1</ent_seq><k_ele><keb>為る</keb></k_ele><r_ele><reb>する</reb></r_ele><sense><gloss>to do</gloss></sense></entry>
+<entry><ent_seq>2</ent_seq><k_ele><keb>林檎</keb></k_ele><r_ele><reb>りんご</reb></r_ele><r_ele><reb>リンゴ</reb></r_ele><sense><gloss>apple</gloss></sense></entry>
+<entry><ent_seq>3</ent_seq><k_ele><keb>成る</keb></k_ele><k_ele><keb>為る</keb></k_ele><r_ele><reb>なる</reb></r_ele><sense><gloss>to become</gloss></sense></entry>
+<entry><ent_seq>4</ent_seq><k_ele><keb>林檎</keb></k_ele><r_ele><reb>りゅうごう</reb></r_ele><sense><gloss>Chinese pear-leaf crabapple</gloss></sense></entry>
+</JMdict>`)
+	pack, err := dict.LoadPack(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := dict.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatalf("Import: %v", err)
+	}
+	st := entries.Store{DB: sqlDB}
+	kana := func(written string) []string {
+		var out []string
+		for _, r := range mustGet(t, st, written, "word", "ja").Readings {
+			if r.Type == "kana" {
+				out = append(out, r.Value)
+			}
+		}
+		return out
+	}
+	for written, want := range map[string][]string{
+		"為る": {"する", "なる"},
+		"成る": {"なる"},
+		"林檎": {"りんご", "リンゴ", "りゅうごう"},
+	} {
+		if got := kana(written); !slices.Equal(got, want) {
+			t.Errorf("%s kana readings = %v, want %v", written, got, want)
+		}
+	}
+}

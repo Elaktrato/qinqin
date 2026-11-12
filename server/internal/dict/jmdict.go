@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"qinqin/internal/model"
@@ -117,7 +118,8 @@ func ParseJMdict(r io.Reader) ([]RawEntry, error) {
 
 // readJMdictPack reads and parses the jmdict.xml of the format "jmdict"
 // pack in dir, resolving each word into the pipeline's entry shape:
-// kind word, one entry per kanji form, kana readings, glosses.
+// kind word, one entry per kanji form, kana readings, glosses. A form
+// shared by several words gets all of their readings.
 func readJMdictPack(dir string) ([]entry, error) {
 	f, err := openMaybeGz(filepath.Join(dir, jmdictFile))
 	if err != nil {
@@ -128,6 +130,25 @@ func readJMdictPack(dir string) ([]entry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, jmdictFile, dir, err)
 	}
+	// A kanji form can belong to several words (為る is する, and a form
+	// of 成る read なる). Entries are keyed by written form and readings
+	// replace wholesale on upsert, so each form carries the union of its
+	// words' readings in file order — otherwise the last word would win
+	// and する would vanish from 為る.
+	byForm := map[string][]model.Reading{}
+	shared := map[string]bool{}
+	for _, r := range raw {
+		for _, form := range append([]string{r.Written}, r.Forms...) {
+			if _, seen := byForm[form]; seen {
+				shared[form] = true
+			}
+			for _, rd := range r.Readings {
+				if !slices.Contains(byForm[form], rd) {
+					byForm[form] = append(byForm[form], rd)
+				}
+			}
+		}
+	}
 	es := make([]entry, len(raw))
 	for i, r := range raw {
 		es[i] = entry{
@@ -136,6 +157,14 @@ func readJMdictPack(dir string) ([]entry, error) {
 			Readings: r.Readings,
 			Glosses:  r.Glosses,
 			Forms:    r.Forms,
+		}
+		for _, form := range append([]string{r.Written}, r.Forms...) {
+			if shared[form] {
+				if es[i].FormReadings == nil {
+					es[i].FormReadings = map[string][]model.Reading{}
+				}
+				es[i].FormReadings[form] = byForm[form]
+			}
 		}
 	}
 	return es, nil

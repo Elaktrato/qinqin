@@ -148,7 +148,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 				Language: m.Language,
 				Kind:     e.Kind,
 				Written:  form,
-				Readings: e.readings(),
+				Readings: e.readingsFor(form),
 				Attrs:    e.Attrs,
 			})
 			if err != nil {
@@ -433,6 +433,10 @@ type entry struct {
 	Glosses  []string
 	Attrs    map[string]string // entry attrs (kanjidic2 strokes)
 	Radical  int               // Kangxi radical number; 0 = unclassified
+	// FormReadings, when set, holds the readings of individual written
+	// forms (Written or one of Forms) that differ from Readings: a JMdict
+	// form shared by several words carries all of their readings.
+	FormReadings map[string][]model.Reading
 }
 
 // tradForms returns trad as a single extra written form, or nil when it
@@ -448,8 +452,18 @@ func tradForms(written, trad string) []string {
 // and traditional forms upsert independently — Upsert normalizes the
 // slice it is given in place.
 func (e entry) readings() []model.Reading {
-	rs := make([]model.Reading, len(e.Readings))
-	copy(rs, e.Readings)
+	return e.readingsFor(e.Written)
+}
+
+// readingsFor returns a copy of the readings of one written form of the
+// entry: its own FormReadings when set, else the entry's Readings.
+func (e entry) readingsFor(form string) []model.Reading {
+	src := e.Readings
+	if rs, ok := e.FormReadings[form]; ok {
+		src = rs
+	}
+	rs := make([]model.Reading, len(src))
+	copy(rs, src)
 	return rs
 }
 

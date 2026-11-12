@@ -91,6 +91,11 @@ var jmFixture = []jmEntry{
 	{kanji: []string{"食べる"}, readings: []string{"たべる"}},
 	{readings: []string{"これ"}},                        // kana-only word: written これ
 	{kanji: []string{"此れ"}, readings: []string{"これ"}}, // homophone written in kanji
+	// Homographs, as in the real JMdict: 為る is also a form of 成る (なる)
+	// and 林檎 also a rare word read りゅうごう. Their readings merge, so
+	// する and りんご still find 為る and 林檎.
+	{kanji: []string{"成る", "為る"}, readings: []string{"なる"}},
+	{kanji: []string{"林檎"}, readings: []string{"りゅうごう"}},
 }
 
 // writtenOf returns the written form of every candidate of m, in order.
