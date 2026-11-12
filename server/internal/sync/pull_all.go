@@ -42,7 +42,9 @@ func ParseCollections(list string) (map[string]bool, error) {
 // cursorMargin, so a row written mid-pull is picked up by the next pull.
 //
 // Only the collections in only are queried (see Collections); nil means
-// all. The others stay empty, so the JSON shape does not change.
+// all. The others stay empty, so the JSON shape does not change. The
+// returned cursor is valid only for the collections requested; a client
+// that mixes subset pulls with one global cursor would miss changes.
 func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, only map[string]bool) (Delta, error) {
 	d := Delta{
 		Cursor:  time.Now().UTC().Add(-cursorMargin).Truncate(time.Second),

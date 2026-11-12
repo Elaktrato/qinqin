@@ -28,12 +28,16 @@ type Candidate struct {
 
 // Match is one recognized word in the text.
 type Match struct {
-	Surface string      `json:"surface"` // text as written in the input
-	Start   int         `json:"start"`   // code-point offset
-	End     int         `json:"end"`     // code-point offset, exclusive
-	Lemma   string      `json:"lemma"`   // dictionary form (== Surface unless deinflected)
-	Reason  string      `json:"reason"`  // "" or deinflection reason, e.g. "past"
-	Entries []Candidate `json:"entries"` // entries matching Surface, in ranking order, at most MaxReadingCandidates
+	Surface string `json:"surface"` // text as written in the input
+	Start   int    `json:"start"`   // code-point offset
+	End     int    `json:"end"`     // code-point offset, exclusive
+	Lemma   string `json:"lemma"`   // dictionary form (== Surface unless deinflected)
+	Reason  string `json:"reason"`  // "" or deinflection reason, e.g. "past"
+	// Entries are the entries matching Surface, in ranking order, at most
+	// MaxReadingCandidates. Only Entries[0] corresponds to Lemma and
+	// Reason; later candidates are other readings or entries with the
+	// same surface, which may have a different lemma.
+	Entries []Candidate `json:"entries"`
 }
 
 // Service tokenizes text with the lookup engine.

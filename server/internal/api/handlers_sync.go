@@ -13,7 +13,9 @@ import (
 // or after the RFC 3339 cursor (absent = everything), tombstones
 // included, plus the cursor to pull from next time. The optional
 // collections= (comma-separated Delta collection names) limits the pull
-// to those; the others come back empty, and an unknown name is 400.
+// to those; the others come back empty, and an unknown name is 400. The
+// returned cursor is valid only for the collections requested; a client
+// that mixes subset pulls with one global cursor would miss changes.
 // Authenticated.
 func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
