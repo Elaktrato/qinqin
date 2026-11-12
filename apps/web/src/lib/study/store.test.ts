@@ -166,7 +166,7 @@ describe('study store', () => {
 			expect(data.cards).toEqual([word, sentenceCard, card('card-3', 44, ['general'])]);
 			expect('written' in data.cards[2]!).toBe(false);
 			expect(calls().map(([url]) => String(url))).toEqual([
-				'/api/sync/pull?cursor=1970-01-01T00:00:00Z'
+				'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates'
 			]);
 		});
 

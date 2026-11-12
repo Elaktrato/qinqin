@@ -165,10 +165,10 @@ func TestPullIncrementalChildOnlyChanges(t *testing.T) {
 		pack string
 		edit func(e *lexicon.Entry)
 	}{
-		"a form":    {"mkgloss", func(e *lexicon.Entry) { e.Forms = append(e.Forms, lexicon.Form{Text: "妳好"}) }},
+		"a form":            {"mkgloss", func(e *lexicon.Entry) { e.Forms = append(e.Forms, lexicon.Form{Text: "妳好"}) }},
 		"a removed form":    {"mkgloss", func(e *lexicon.Entry) { e.Forms = e.Forms[:len(e.Forms)-1] }},
 		"a removed reading": {"mkgloss", func(e *lexicon.Entry) { e.Readings = e.Readings[:len(e.Readings)-1] }},
-		"a reading": {"mkgloss", func(e *lexicon.Entry) { e.Readings[0].Plain += "x" }},
+		"a reading":         {"mkgloss", func(e *lexicon.Entry) { e.Readings[0].Plain += "x" }},
 		"a sense": {"mkgloss", func(e *lexicon.Entry) {
 			for i := range e.Senses {
 				e.Senses[i].Glosses = []string{"greetings"}

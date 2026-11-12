@@ -16,7 +16,7 @@ export const GENERAL_DECK_ID = 'general';
 
 const DECK_PREFIX = 'deck:';
 const CARD_PREFIX = 'card:';
-const SYNC_PULL_PATH = '/api/sync/pull?cursor=1970-01-01T00:00:00Z';
+const SYNC_PULL_PATH = '/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates';
 
 // Only the fields the study layer reads; the server sends more.
 interface PluginDataRow {
