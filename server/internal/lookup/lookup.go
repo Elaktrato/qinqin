@@ -31,6 +31,9 @@ const (
 // tagUsuallyKana marks an entry JMdict says is usually written in kana.
 const tagUsuallyKana = "usually kana"
 
+// flagTrad marks a CC-CEDICT traditional form.
+const flagTrad = "trad"
+
 // Frequency is one frequency pack's rank for an entry: the best rank
 // among the entry's terms in that pack.
 type Frequency struct {
@@ -264,14 +267,25 @@ func rankKeys(pack lang.Pack, m *match) candidate {
 		headword:   headword(e),
 		entryID:    e.ID,
 	}
-	c.primary = len(e.Readings) > 0 && readingIs(e.Readings[0]) || len(e.Forms) > 0 && e.Forms[0].Text == term
+	// Primary: the text that matched the dictionary is the headword — the
+	// first reading or first form. A traditional form (CC-CEDICT's trad
+	// flag) is the same headword in the other script, so 學習 is as
+	// primary for 学习 as 学习 itself.
+	c.primary = len(e.Readings) > 0 && readingIs(e.Readings[0]) ||
+		len(e.Forms) > 0 && e.Forms[0].Text == term ||
+		slices.ContainsFunc(e.Forms, func(f lexicon.Form) bool {
+			return f.Text == term && slices.Contains(f.Flags, flagTrad)
+		})
 	for _, f := range e.Forms {
 		if f.Text == term {
 			c.exactCount++
 		}
 	}
+	// A reading counts once per plain form: する and スる are one match.
+	var counted []string
 	for _, r := range e.Readings {
-		if readingIs(r) {
+		if readingIs(r) && !slices.Contains(counted, r.Plain) {
+			counted = append(counted, r.Plain)
 			c.exactCount++
 		}
 	}

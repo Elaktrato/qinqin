@@ -46,6 +46,13 @@ const jaWords = `<entry>
 <sense><pos>&vs-i;</pos><pos>&vt;</pos><misc>&uk;</misc><gloss>to do</gloss></sense>
 </entry>
 <entry>
+<ent_seq>1567440</ent_seq>
+<k_ele><keb>掏る</keb></k_ele>
+<r_ele><reb>する</reb></r_ele>
+<r_ele><reb>スる</reb></r_ele>
+<sense><pos>&v5r;</pos><pos>&vt;</pos><misc>&uk;</misc><gloss>to pickpocket</gloss></sense>
+</entry>
+<entry>
 <ent_seq>1009850</ent_seq>
 <k_ele><keb>下</keb><ke_pri>ichi1</ke_pri><ke_pri>news1</ke_pri><ke_pri>nf05</ke_pri></k_ele>
 <r_ele><reb>した</reb><re_pri>ichi1</re_pri><re_pri>news1</re_pri><re_pri>nf05</re_pri></r_ele>
@@ -370,6 +377,13 @@ func TestIruPrefersUsuallyKanaWord(t *testing.T) {
 	}
 }
 
+func TestExactMatchesCountReadingsOnce(t *testing.T) {
+	// 掏る reads する and スる: one reading in two scripts, not two exact
+	// matches, so the usually-kana score decides.
+	rs := run(t, jaService(t, false), "ja", "する", 0)
+	wantPrefix(t, rs, "為る", "掏る")
+}
+
 func TestKotoAndAruOrder(t *testing.T) {
 	tests := []struct {
 		text     string
@@ -391,16 +405,28 @@ func TestKotoAndAruOrder(t *testing.T) {
 	}
 }
 
+// unihanLines gives the traditional 學 a character entry of its own, as
+// the real Unihan import does.
+const unihanLines = "U+5B78\tkDefinition\tlearning, knowledge; school\n"
+
+// zhService seeds CC-CEDICT, then Unihan.
 func zhService(t *testing.T) lookup.Service {
 	t.Helper()
 	sqlDB, _ := openDB(t)
 	importCedict(t, sqlDB)
+	importPack(t, sqlDB, dict.Manifest{
+		ID: "unihan", Name: "Unihan", Version: "1", Type: "dictionary", Language: "zh",
+		License: "Unicode License v3", Attribution: "Unicode", Format: "unihan",
+	}, "dictionary.txt", unihanLines)
 	return service(sqlDB)
 }
 
 func TestChineseTraditionalFindsSimplified(t *testing.T) {
 	rs := run(t, zhService(t), "zh", "學習", 0)
-	wantPrefix(t, rs, "学习", "学")
+	// A traditional form is the headword in traditional script: 学习
+	// matches it as a primary match, so its length decides, not the
+	// single character 學 whose first form the text happens to be.
+	wantPrefix(t, rs, "学习", "学", "學")
 	if r := rs[0]; r.Matched != "學習" || r.End != 2 || r.Reading != "xué xí" || r.Kind != "word" {
 		t.Errorf("学习 = matched %q end %d reading %q kind %s", r.Matched, r.End, r.Reading, r.Kind)
 	}
