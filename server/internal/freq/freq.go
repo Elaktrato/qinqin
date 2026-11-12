@@ -538,29 +538,25 @@ func (s Store) Packs(ctx context.Context) ([]PackInfo, error) {
 	return out, rows.Err()
 }
 
-// Lookup returns, for each requested term that has data, at most one Hit
-// per pack, in pack order (see Packs): the best — lowest — rank among the
-// term's rows in that pack. As in Yomitan, a row that carries a reading
-// applies only to headwords with that reading: when readings[term] is
-// non-empty only rows whose reading is listed, or empty (an empty reading
-// matches any), count, and a pack with no such row for the term gives no
-// hit. When no readings are passed for the term, the best row overall
-// counts. Reading comparison is exact: hiragana and katakana are
-// different readings, so callers pass both script variants. Duplicate
-// terms are harmless.
-func (s Store) Lookup(ctx context.Context, terms []string, readings map[string][]string) (map[string][]Hit, error) {
-	type best struct {
-		any, match *Hit
-	}
-	type key struct {
-		term string
-		pack int64
-	}
+// Row is one stored frequency row with its pack: Reading "" applies to
+// any reading of the term.
+type Row struct {
+	PackID                 int64
+	PackName               string
+	Term, Reading, Display string
+	Rank                   int
+	ord, rowid             int64 // pack priority and row position: the Rows order
+}
+
+// Rows returns every row of the active packs for the given terms —
+// one statement per lookupBatch terms, under SQLite's variable limit —
+// ordered by pack priority (ord, id), then row position. Duplicate terms
+// are harmless.
+func (s Store) Rows(ctx context.Context, terms []string) ([]Row, error) {
 	var (
-		uniq  []string
-		seen  = map[string]bool{}
-		accs  = map[key]*best{}
-		order = map[string][]int64{} // term -> packs in first-seen (ord) order
+		uniq []string
+		seen = map[string]bool{}
+		out  []Row
 	)
 	for _, t := range terms {
 		if !seen[t] {
@@ -575,7 +571,7 @@ func (s Store) Lookup(ctx context.Context, terms []string, readings map[string][
 			args[i] = t
 		}
 		rows, err := s.DB.QueryContext(ctx, `
-			SELECT f.term, f.reading, f.rank, f.display, p.id, p.name
+			SELECT f.term, f.reading, f.rank, f.display, p.id, p.name, p.ord, f.rowid
 			FROM lx_frequency f JOIN lx_freq_packs p ON p.id = f.pack_id
 			WHERE p.deleted_at IS NULL AND f.term IN (`+strings.TrimSuffix(strings.Repeat("?,", len(chunk)), ",")+`)
 			ORDER BY p.ord, p.id, f.rowid`, args...)
@@ -583,48 +579,93 @@ func (s Store) Lookup(ctx context.Context, terms []string, readings map[string][
 			return nil, err
 		}
 		for rows.Next() {
-			var (
-				term, reading string
-				h             Hit
-			)
-			if err := rows.Scan(&term, &reading, &h.Rank, &h.Display, &h.PackID, &h.PackName); err != nil {
+			var r Row
+			if err := rows.Scan(&r.Term, &r.Reading, &r.Rank, &r.Display, &r.PackID, &r.PackName, &r.ord, &r.rowid); err != nil {
 				rows.Close()
 				return nil, err
 			}
-			k := key{term, h.PackID}
-			a := accs[k]
-			if a == nil {
-				a = &best{}
-				accs[k] = a
-				order[term] = append(order[term], h.PackID)
-			}
-			if a.any == nil || h.Rank < a.any.Rank {
-				hit := h
-				a.any = &hit
-			}
-			if reading == "" || contains(readings[term], reading) {
-				if a.match == nil || h.Rank < a.match.Rank {
-					hit := h
-					a.match = &hit
-				}
-			}
+			out = append(out, r)
 		}
 		if err := errors.Join(rows.Err(), rows.Close()); err != nil {
 			return nil, err
 		}
 	}
+	// Each chunk comes sorted; restore the global order across chunks.
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		if a.ord != b.ord {
+			return a.ord < b.ord
+		}
+		if a.PackID != b.PackID {
+			return a.PackID < b.PackID
+		}
+		return a.rowid < b.rowid
+	})
+	return out, nil
+}
 
+// BestHits returns at most one Hit per pack, in the order packs first
+// appear in rows (the Rows order: pack priority): the best — lowest —
+// rank among the rows of any of terms. As in Yomitan, a row that carries
+// a reading applies only to headwords with that reading: with readings
+// non-empty only rows whose reading is listed, or empty (an empty
+// reading matches any), count, and a pack with no such row gives no
+// hit. With no readings the best row overall counts. Reading comparison
+// is exact. On equal ranks the earlier row wins.
+func BestHits(rows []Row, terms, readings []string) []Hit {
+	var (
+		order []int64
+		best  = map[int64]*Row{}
+		seen  = map[int64]bool{}
+	)
+	for i := range rows {
+		r := &rows[i]
+		if !contains(terms, r.Term) {
+			continue
+		}
+		if !seen[r.PackID] {
+			seen[r.PackID] = true
+			order = append(order, r.PackID)
+		}
+		if len(readings) > 0 && r.Reading != "" && !contains(readings, r.Reading) {
+			continue // the row names another reading
+		}
+		if b := best[r.PackID]; b == nil || r.Rank < b.Rank {
+			best[r.PackID] = r
+		}
+	}
+	var out []Hit
+	for _, id := range order {
+		if b := best[id]; b != nil {
+			out = append(out, Hit{PackID: b.PackID, PackName: b.PackName, Rank: b.Rank, Display: b.Display})
+		}
+	}
+	return out
+}
+
+// Lookup returns, for each requested term that has data, at most one Hit
+// per pack, in pack order (see Packs): BestHits of the term's rows with
+// readings[term]. As in Yomitan, a row that carries a reading applies
+// only to headwords with that reading: when readings[term] is non-empty
+// only rows whose reading is listed, or empty (an empty reading matches
+// any), count, and a pack with no such row for the term gives no hit.
+// When no readings are passed for the term, the best row overall
+// counts. Reading comparison is exact: hiragana and katakana are
+// different readings, so callers pass both script variants. Duplicate
+// terms are harmless.
+func (s Store) Lookup(ctx context.Context, terms []string, readings map[string][]string) (map[string][]Hit, error) {
+	rows, err := s.Rows(ctx, terms)
+	if err != nil {
+		return nil, err
+	}
+	byTerm := map[string][]Row{}
+	for _, r := range rows {
+		byTerm[r.Term] = append(byTerm[r.Term], r)
+	}
 	out := map[string][]Hit{}
-	for term, packs := range order {
-		for _, id := range packs {
-			a := accs[key{term, id}]
-			switch {
-			case len(readings[term]) == 0:
-				out[term] = append(out[term], *a.any)
-			case a.match != nil:
-				out[term] = append(out[term], *a.match)
-			}
-			// else: the pack's rows for the term all name other readings.
+	for term, rs := range byTerm {
+		if hits := BestHits(rs, []string{term}, readings[term]); len(hits) > 0 {
+			out[term] = hits
 		}
 	}
 	return out, nil
