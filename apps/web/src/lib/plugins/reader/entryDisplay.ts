@@ -33,9 +33,17 @@ export function readingLine(r: LookupResult, lang: string): string {
 	return [...byType].map(([type, values]) => formatReading(type, values.join(', '))).join(' · ');
 }
 
-/** otherForms lists other written forms of the entry (traditional characters, kanji variants). */
+// SEARCH_ONLY is JMdict's sK flag: a form kept for searching, never shown.
+const SEARCH_ONLY = 'sK';
+
+/**
+ * otherForms lists other written forms of the entry (traditional
+ * characters, kanji variants); JMdict's search-only (sK) forms are hidden,
+ * irregular (iK) and rare (rK) ones stay.
+ */
 export function otherForms(r: LookupResult): string[] {
 	return r.forms
+		.filter((f) => !f.flags?.includes(SEARCH_ONLY))
 		.map((f) => f.text)
 		.filter((text) => text !== r.term)
 		.slice(0, MAX_OTHER_FORMS);

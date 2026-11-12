@@ -99,6 +99,17 @@ describe('otherForms', () => {
 		const forms = ['學習', '学习', 'a', 'b', 'c', 'd'].map((text) => ({ text }));
 		expect(otherForms(result({ term: '学习', forms }))).toEqual(['學習', 'a', 'b', 'c']);
 	});
+
+	it('hides search-only (sK) forms and keeps irregular or rare ones', () => {
+		const forms = [
+			{ text: '此れ', flags: ['rK'] },
+			{ text: '此', flags: ['sK'] },
+			{ text: '是れ', flags: ['sK'] },
+			{ text: '之', flags: ['iK'] },
+			{ text: '維' }
+		];
+		expect(otherForms(result({ term: 'これ', forms }))).toEqual(['此れ', '之', '維']);
+	});
 });
 
 describe('joinForms', () => {
