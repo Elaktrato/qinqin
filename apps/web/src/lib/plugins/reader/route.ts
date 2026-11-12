@@ -10,6 +10,11 @@ export function bookHref(id: number, chapter = 0): string {
 	return `${LIBRARY_HREF}/book/${id}/${chapter}`;
 }
 
+/** safeHttpUrl returns url when it is an http(s) link, else '' (never a javascript: or data: URL). */
+export function safeHttpUrl(url: string): string {
+	return url.startsWith('https://') || url.startsWith('http://') ? url : '';
+}
+
 const library: ReaderRoute = { view: 'library' };
 
 // A plain non-negative decimal integer; rejects signs, fractions, exponents.

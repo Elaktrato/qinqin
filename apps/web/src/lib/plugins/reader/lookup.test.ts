@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { SegmentMatch } from '$lib/api/types';
-import { codePointToUtf16, pickEntry, selectionTarget, utf16ToCodePoint } from './lookup';
+import {
+	codePointToUtf16,
+	pickEntry,
+	preferredEntry,
+	selectionTarget,
+	utf16ToCodePoint
+} from './lookup';
 
 function match(entries: SegmentMatch['entries']): SegmentMatch {
 	return { surface: '学习', start: 0, end: 2, lemma: '学习', reason: '', entries };
@@ -50,6 +56,30 @@ describe('pickEntry', () => {
 	it('returns undefined when no candidate of that kind exists', () => {
 		expect(pickEntry(match([{ id: 2, kind: 'word' }]), 'character')).toBeUndefined();
 		expect(pickEntry(match([]), 'word')).toBeUndefined();
+	});
+});
+
+describe('preferredEntry', () => {
+	it('prefers the requested kind and falls back to the other', () => {
+		const both = match([
+			{ id: 1, kind: 'character' },
+			{ id: 2, kind: 'word' }
+		]);
+		expect(preferredEntry(both, 'word')).toEqual({ id: 2, kind: 'word' });
+		expect(preferredEntry(both, 'character')).toEqual({ id: 1, kind: 'character' });
+		expect(preferredEntry(match([{ id: 1, kind: 'character' }]), 'word')).toEqual({
+			id: 1,
+			kind: 'character'
+		});
+		expect(preferredEntry(match([{ id: 2, kind: 'word' }]), 'character')).toEqual({
+			id: 2,
+			kind: 'word'
+		});
+	});
+
+	it('returns undefined without a match or candidates', () => {
+		expect(preferredEntry(null, 'word')).toBeUndefined();
+		expect(preferredEntry(match([]), 'character')).toBeUndefined();
 	});
 });
 

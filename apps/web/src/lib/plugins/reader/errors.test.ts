@@ -42,4 +42,16 @@ describe('apiErrorMessage', () => {
 	it('only maps 422 specially for upload', () => {
 		expect(apiErrorMessage(new ApiError(422, ''), 'import')).not.toMatch(/epub/);
 	});
+
+	it('explains missing books and chapters in the reading view', () => {
+		expect(apiErrorMessage(new ApiError(404, ''), 'book')).toBe('This book is not in your library.');
+		expect(apiErrorMessage(new ApiError(404, ''), 'chapter')).toBe('This chapter does not exist.');
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'book')).toBe('Could not load this book.');
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'chapter')).toBe(
+			'Could not load this chapter.'
+		);
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'lookup')).toBe(
+			'Could not look this up.'
+		);
+	});
 });

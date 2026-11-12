@@ -1,7 +1,8 @@
-// Only the two one-way bundles are imported (not the full opencc-js
-// build) to keep the reader's bundle small.
-import * as Cn2t from 'opencc-js/cn2t';
-import * as T2cn from 'opencc-js/t2cn';
+// Chinese script variants via opencc-js. Its dictionaries are large (about
+// half a megabyte gzipped), and the reader plugin is part of the app's
+// eagerly loaded registry, so each one-way converter bundle is fetched on
+// first use (prepareVariant) rather than imported statically. Only the two
+// one-way bundles are used, never the full build.
 
 export type Variant = 'original' | 'simplified' | 'traditional';
 
@@ -9,18 +10,37 @@ export const VARIANTS: readonly Variant[] = ['original', 'simplified', 'traditio
 
 type Convert = (text: string) => string;
 
-// Building a converter loads its dictionaries into a trie, so each one is
-// created on first use and then reused.
-let toTraditional: Convert | null = null;
-let toSimplified: Convert | null = null;
+const converters: Partial<Record<Exclude<Variant, 'original'>, Convert>> = {};
+const loading: Partial<Record<Exclude<Variant, 'original'>, Promise<void>>> = {};
 
-/** convertText renders text in a Chinese script variant; identity for 'original'. */
+async function load(to: Exclude<Variant, 'original'>): Promise<void> {
+	// Building a converter loads its dictionaries into a trie: once each.
+	if (to === 'traditional') {
+		const { Converter } = await import('opencc-js/cn2t');
+		converters.traditional = Converter({ from: 'cn', to: 't' });
+	} else {
+		const { Converter } = await import('opencc-js/t2cn');
+		converters.simplified = Converter({ from: 't', to: 'cn' });
+	}
+}
+
+/** prepareVariant loads the converter for a variant; resolves at once for 'original'. */
+export function prepareVariant(to: Variant): Promise<void> {
+	if (to === 'original' || converters[to]) return Promise.resolve();
+	loading[to] ??= load(to).catch((err: unknown) => {
+		delete loading[to];
+		throw err;
+	});
+	return loading[to];
+}
+
+/**
+ * convertText renders text in a Chinese script variant; identity for
+ * 'original'. The variant must have been prepared (prepareVariant).
+ */
 export function convertText(text: string, to: Variant): string {
 	if (to === 'original' || text === '') return text;
-	if (to === 'traditional') {
-		toTraditional ??= Cn2t.Converter({ from: 'cn', to: 't' });
-		return toTraditional(text);
-	}
-	toSimplified ??= T2cn.Converter({ from: 't', to: 'cn' });
-	return toSimplified(text);
+	const convert = converters[to];
+	if (!convert) throw new Error(`convertText: variant ${to} is not prepared`);
+	return convert(text);
 }

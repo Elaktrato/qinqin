@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LIBRARY_HREF, SOURCES_HREF, bookHref, parseRoute } from './route';
+import { LIBRARY_HREF, SOURCES_HREF, bookHref, parseRoute, safeHttpUrl } from './route';
 
 const library = { view: 'library' };
 
@@ -44,5 +44,20 @@ describe('hrefs', () => {
 		expect(SOURCES_HREF).toBe('/p/reader/sources');
 		expect(bookHref(12)).toBe('/p/reader/book/12/0');
 		expect(bookHref(12, 3)).toBe('/p/reader/book/12/3');
+	});
+});
+
+describe('safeHttpUrl', () => {
+	it('keeps http and https URLs', () => {
+		expect(safeHttpUrl('https://www.aozora.gr.jp/cards/1.html')).toBe(
+			'https://www.aozora.gr.jp/cards/1.html'
+		);
+		expect(safeHttpUrl('http://example.org/')).toBe('http://example.org/');
+	});
+
+	it('drops every other scheme and empty input', () => {
+		for (const bad of ['', 'javascript:alert(1)', 'data:text/html,x', '//example.org', ' https://x']) {
+			expect(safeHttpUrl(bad)).toBe('');
+		}
 	});
 });

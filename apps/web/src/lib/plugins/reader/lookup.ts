@@ -45,6 +45,18 @@ export function pickEntry(
 	return match.entries.find((entry) => entry.kind === kind);
 }
 
+/**
+ * preferredEntry picks the candidate to show: the preferred kind, else the
+ * other kind for the same written form (never an unrelated entry).
+ */
+export function preferredEntry(
+	match: SegmentMatch | null,
+	kind: LookupKind
+): { id: number; kind: LookupKind } | undefined {
+	if (!match) return undefined;
+	return pickEntry(match, kind) ?? pickEntry(match, kind === 'word' ? 'character' : 'word');
+}
+
 // Whitespace, punctuation and symbols never have a dictionary entry.
 const NOTHING_TO_LOOK_UP = /^[\s\p{P}\p{S}\p{Z}]*$/u;
 

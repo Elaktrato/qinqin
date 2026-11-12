@@ -1,13 +1,30 @@
 import { ApiError } from '$lib/api/client';
 
-export type ErrorContext = 'upload' | 'import' | 'list' | 'delete' | 'search';
+export type ErrorContext =
+	| 'upload'
+	| 'import'
+	| 'list'
+	| 'delete'
+	| 'search'
+	| 'book'
+	| 'chapter'
+	| 'lookup';
 
 const fallbacks: Record<ErrorContext, string> = {
 	upload: 'Could not upload the file.',
 	import: 'Could not import this work.',
 	list: 'Could not load your library.',
 	delete: 'Could not delete the book.',
-	search: 'Could not search the source.'
+	search: 'Could not search the source.',
+	book: 'Could not load this book.',
+	chapter: 'Could not load this chapter.',
+	lookup: 'Could not look this up.'
+};
+
+const notFound: Partial<Record<ErrorContext, string>> = {
+	import: 'This work is not available from the source.',
+	book: 'This book is not in your library.',
+	chapter: 'This chapter does not exist.'
 };
 
 // Server text is shown only when it is short and free of markup.
@@ -33,7 +50,7 @@ export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 			case 502:
 				return 'The source is unavailable right now, try again later.';
 			case 404:
-				if (context === 'import') return 'This work is not available from the source.';
+				if (notFound[context]) return notFound[context];
 				break;
 		}
 		const text = err.message.trim();

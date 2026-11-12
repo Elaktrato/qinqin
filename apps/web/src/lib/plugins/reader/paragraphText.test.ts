@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { displayRuns, locate, offsetFromRun, paragraphString, sliceCodePoints } from './paragraphText';
+import { prepareVariant } from './variants';
+
+beforeAll(() => prepareVariant('traditional'));
 
 describe('displayRuns / paragraphString', () => {
 	it('concatenates run texts and never includes ruby', () => {
