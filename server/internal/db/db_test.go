@@ -7,6 +7,24 @@ import (
 	"qinqin/internal/db"
 )
 
+// TestLexiconTables pins the lexicon schema migration 014 creates.
+func TestLexiconTables(t *testing.T) {
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	for _, table := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses", "lx_links"} {
+		var n int
+		if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?`, table).Scan(&n); err != nil {
+			t.Fatalf("look up table %s: %v", table, err)
+		}
+		if n != 1 {
+			t.Errorf("table %s missing", table)
+		}
+	}
+}
+
 // TestSynchronousModePerCommand pins the durability split: normal serving
 // opens with synchronous=FULL (2); the seed path opens with NORMAL (1), the
 // WAL bulk-import setting, because seeding is idempotent.
