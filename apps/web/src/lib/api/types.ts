@@ -113,6 +113,17 @@ export interface Dictionary {
 	attribution: string;
 }
 
+// FrequencyPack is one element of GET /api/frequency-packs: an installed
+// word-frequency pack's credit line, in priority order.
+export interface FrequencyPack {
+	id: number;
+	name: string;
+	version: string;
+	language: string;
+	license: string;
+	attribution: string;
+}
+
 export interface Workspace {
 	id: number;
 	language: string;

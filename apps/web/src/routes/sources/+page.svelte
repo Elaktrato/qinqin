@@ -1,11 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
-	import type { Dictionary } from '$lib/api/types';
+	import type { Dictionary, FrequencyPack } from '$lib/api/types';
 
 	let dictionaries = $state<Dictionary[]>([]);
 	let loading = $state(true);
 	let error = $state('');
+
+	let frequencyPacks = $state<FrequencyPack[]>([]);
+	let frequencyLoading = $state(true);
+	let frequencyError = $state('');
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -28,13 +32,30 @@
 		}
 	}
 
-	onMount(load);
+	async function loadFrequency(): Promise<void> {
+		frequencyLoading = true;
+		frequencyError = '';
+		try {
+			frequencyPacks = await api<FrequencyPack[]>('/api/frequency-packs', { auth: false });
+		} catch (err) {
+			frequencyPacks = [];
+			frequencyError = message(err, 'Could not load frequency list credits.');
+		} finally {
+			frequencyLoading = false;
+		}
+	}
+
+	onMount(() => {
+		load();
+		loadFrequency();
+	});
 </script>
 
 <main class="sources">
 	<h1>Sources</h1>
 	<p class="lede">
-		Meanings, character data, and stroke diagrams come from upstream open datasets. Their
+		Meanings, character data, word frequencies, and stroke diagrams come from upstream open
+		datasets. Their
 		credits and licenses are listed here.
 	</p>
 
@@ -81,6 +102,52 @@
 			Bundled dictionaries are redistributed as unmodified upstream files. The upstream
 			dictionary packs under <code>plugins/data/</code> carry their <code>LICENSE</code> and
 			<code>ATTRIBUTION.md</code>; the full index is in <code>docs/sources.md</code>.
+		</p>
+	</section>
+
+	<section>
+		<h2>Frequency lists</h2>
+
+		{#if frequencyLoading}
+			<p>Loading frequency list credits…</p>
+		{:else if frequencyError}
+			<p class="error" role="alert">{frequencyError}</p>
+			<button type="button" onclick={loadFrequency}>Retry</button>
+		{:else if frequencyPacks.length === 0}
+			<p>No frequency lists are installed; lookups rank without them.</p>
+		{:else}
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">Name</th>
+							<th scope="col">Language</th>
+							<th scope="col">Version</th>
+							<th scope="col">License</th>
+							<th scope="col">Attribution</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each frequencyPacks as pack (pack.id)}
+							<tr>
+								<td class="name">{pack.name}</td>
+								<td>{pack.language}</td>
+								<td>{pack.version}</td>
+								<td>{pack.license}</td>
+								<td>{pack.attribution}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
+		<p class="notice">
+			Word frequency ranks order the lookup results. The bundled Jiten list is
+			<a href="https://jiten.moe/frequency-dictionaries" rel="noreferrer">Jiten</a>'s global
+			frequency list, licensed CC BY-SA 4.0 by its publisher, with its ranks unmodified and
+			converted to CSV. Frequency lists with unclear licences are never bundled; an instance may
+			add them locally from <code>plugins/data-local/</code>.
 		</p>
 	</section>
 
