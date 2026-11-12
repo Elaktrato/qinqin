@@ -19,6 +19,8 @@ database with a SvelteKit single-page app embedded in the binary.
   a combined view for cross-language statistics.
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
+- **Yomitan-style lookup** — in the Reader, hovering a word shows a ranked stack
+  of dictionary entries with frequency chips, and popups open from inside popups.
 - **Editing** — correct written forms and readings per user without mutating
   the shared dictionary data.
 - **Study mode** — add any word from its entry page and review it with Anki-style
@@ -45,6 +47,16 @@ admin account:
 docker compose exec qinqin qinqin seed
 docker compose exec qinqin qinqin adduser --admin --username you
 ```
+
+`qinqin seed` takes `--data <dir>` (the data directory; default `$QINQIN_DATA` or
+`./data`) and `--packs <dir>[,<dir>...]` (pack roots, comma-separated and/or
+repeated; default `$QINQIN_PACKS`, or `plugins/data` plus `plugins/data-local`
+when that exists; the image sets `QINQIN_PACKS` to the packs it ships). The full
+bundle seeds in about 40 s and is idempotent: re-running replaces each pack's own
+rows and touches nothing else. Nothing is published yet, so there is no upgrade
+path for old dictionary data: a development database from before the lookup
+rewrite (migration 017 drops the legacy tables) is rebuilt by deleting its data
+directory and seeding again.
 
 The `adduser` command prompts for a password. Then open
 <http://localhost:8080>.
@@ -104,11 +116,12 @@ level sessions and mastery map, and
 Reader is a web feature plugin (`qinqin-reader`) for reading Chinese and Japanese
 text with dictionary lookup in place. It offers:
 
-- **Hover and selection lookup** — the word under the cursor is resolved by the
-  server's longest-match tokenizer (Japanese forms are deinflected, and words
-  written in kana — する, こと, りんご — are found by their kana readings), and
-  selecting text looks up the selection. Hovering Latin letters, digits or a spot
-  with no dictionary word shows nothing.
+- **Hover and selection lookup** — the text under the cursor is looked up on the
+  server (`GET /api/lookup`), which returns every plausible entry, ranked. Japanese
+  forms are deinflected with part-of-speech gating, and words written in kana —
+  する, こと, りんご — are found by their kana readings. Selecting text looks up
+  the selection. Hovering Latin letters, digits or a spot with no dictionary word
+  shows nothing.
 - **Ruby toggle** — furigana in Japanese books can be shown or hidden.
 - **Script conversion** — Chinese books can be shown as original, simplified, or
   traditional (converted in the browser with `opencc-js`); lookup works on either.
@@ -121,23 +134,32 @@ text with dictionary lookup in place. It offers:
 
 Open **Reader** in the nav. Import a work from a source (search, then Import) or
 upload an epub; for an upload whose epub declares no supported language you pick
-Chinese or Japanese. Open a book and hover a word for its entry. Select text to
-look it up: a single hanzi or kanji shows the character, longer text shows the
-word at the start of the selection. **Escape** closes the popup. A kana word can
-be the reading of several entries (する: 為る, 刷る, 擦る...); the popup shows the
-best one — common words JMdict marks as usually written in kana first (為る for
-する, 居る for いる), then by JMdict frequency priority, then reading position — and
-says how many others are read the same way ("8+" when the list of 8 was cut),
-with a link to search for them. A kana word that is itself a dictionary entry
-or an exact reading still wins over a deinflection, so した shows 下 rather than
-する, and みた shows 共 rather than 見る.
+Chinese or Japanese. Open a book and hover a word.
 
-> **Existing installs: re-import JMdict.** The homophone ranking and the readings
-> of kanji forms shared by several words (為る read する, 林檎 read りんご) come
-> from the JMdict import. A database seeded before this release lacks both: run
-> `qinqin seed` again (or re-install the jmdict pack). Re-importing is safe and
-> only rewrites what changed. The first re-import after upgrading changes most
-> JMdict entries, so sync clients pull most of JMdict once.
+The popup shows the matching entries as a **stack**, best first, not a single
+guess. Each entry lists its headword and readings, chips for the inflection
+(like "past"), part-of-speech and usage tags, and the **frequency rank** from
+each installed frequency pack, then its senses grouped by dictionary. The first
+3 entries and the first 3 senses of an entry show; "Show N more entries" and
+"Show N more senses" reveal the rest (it is client-side, the server already
+returned up to 30 entries). A kana word can be read by many entries (する: 為る,
+刷る, 擦る...), and a longer match always beats a shorter one; the order is
+described in [the lookup design](docs/superpowers/specs/2026-11-12-yomitan-lookup-design.md).
+Roughly: longest match, then frequency (bundled Jiten list for Japanese), then
+primary-reading match, inflection chain length, exact-match count, dictionary
+order, JMdict priority and usually-kana. Japanese deinflection is gated by part
+of speech, so a candidate whose part of speech does not fit the inflection (話する for 話した) is dropped before ranking, and a kana word that is itself an
+entry still competes with the deinflection: した shows 為る first (frequent), then
+下 and 舌. Without any frequency pack the ranking falls back to the inflection
+chain length and the priority score. Chinese words usually give one merged entry
+that lists all readings (行: xíng, háng).
+
+**Hold Shift and hover** a word inside a popup to open a nested popup for it
+(without Shift nothing opens, so reading a popup never floods the server);
+popups nest up to 4 deep. **Escape** closes the topmost popup only; the last one
+closes the whole stack, and so does a click outside the popups. Select text to
+look it up: a single hanzi or kanji shows the character entry, longer text shows
+the entries for the start of the selection.
 
 Limits you may hit:
 
@@ -154,12 +176,16 @@ Limits you may hit:
 ### API
 
 All library and source routes need a signed-in user, and so does
-`POST /api/segment`; `GET /api/segment/at` is public.
+`POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,
+`GET /api/entries/{id}`, `GET /api/search` and `GET /api/frequency-packs` are public.
 
 | Route | Purpose |
 |---|---|
-| `GET /api/segment/at?lang=&text=&offset=` | Longest dictionary match at a code-point offset. `text` up to 64 code points (the web app sends 16). Each candidate has `reading: true` when it matched by a kana reading (Japanese) |
-| `POST /api/segment` `{lang, text}` | Every match in order; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
+| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, forms, readings, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
+| `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates (at most 8) are other readings or entries with the same surface. A candidate has `reading: true` when it matched by a kana reading (Japanese) |
+| `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
+| `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license` and `attribution` (the Sources page lists them) |
+| `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/library/books`, `GET`/`DELETE /api/library/books/{id}` | List, read, delete a book |
 | `GET /api/library/books/{id}/chapters/{n}` | One chapter's paragraphs |
 | `PUT /api/library/books/{id}/position` | Store the reading position |
@@ -168,8 +194,11 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/library/sources/{source}/search?q=&limit=` | Search a source's catalog (limit up to 100) |
 | `POST /api/library/sources/{source}/import` `{sourceId}` | Import one work |
 
-`lang` must be `zh` or `ja`, and offsets count Unicode code points, not bytes or
-UTF-16 units.
+`lang` must be a registered language (`zh` or `ja` for the reader), and offsets
+count Unicode code points, not bytes or UTF-16 units. `GET /api/search` ranks hits
+by tier (exact form, exact reading, reading prefix, bopomofo prefix, then a gloss
+substring), at most 50 hits unless `limit` asks for more (up to 200); within a
+tier by usually-kana-with-priority, then priority, then id.
 
 ### Operations
 
@@ -213,10 +242,76 @@ is registered on the server (built-in manifests are registered at startup in
 share one fetch of those states through the `pluginStates` store in
 `apps/web/src/lib/plugins/states.ts`.
 
+## Dictionary data model
+
+The dictionary is stored as `entries`, `forms`, `readings`, `senses`,
+`entry_links`, `frequency_packs` and `frequency` (migrations 014–017). An entry
+is one dictionary headword, identified by its source's key within a language and
+kind (`word` or `character`). Its `forms` are the written forms (with flags), its
+`readings` carry the reading text plus a normalized `plain` form that lookup
+matches against (kana, pinyin, bopomofo), and its `senses` belong to a dictionary
+and hold the glosses, cross-references and tags, so several dictionaries can gloss
+one entry. `entry_links` connect characters to their radical and to variants.
+
+- **Japanese**: one entry per JMdict word (`ent_seq`), with every form and
+  reading, the part-of-speech tags **per sense**, the `uk` flag (usually written
+  in kana) and a priority score derived from JMdict's priority markers.
+  Homographs are separate entries, so 為る and 刷る are two results for する.
+- **Chinese**: one entry per simplified written form; its traditional forms are
+  forms of the same entry (flag `trad`), so 學習 finds 学习. Homograph lines
+  (行 xíng / háng) merge into one entry carrying all readings, with one sense per
+  CC-CEDICT line.
+- **Characters** (kanji and hanzi) are `character` entries with `radical` and
+  `variant` links.
+- **Frequency** lives in `frequency`, one row per term (optionally tied to one
+  reading) with its rank, grouped by pack in `frequency_packs`.
+
+Importers live in `server/internal/dict/` (`jmdict`, `cedict`, `kanjidic2`,
+`unihan` and the `json` pack format) and write through one lexicon importer;
+frequency packs are in `server/internal/freq`. Imports are idempotent and write
+nothing when nothing changed, and every table soft-deletes so clients sync
+deletions.
+
+## Frequency data
+
+A frequency pack is a word-frequency list whose ranks order lookup results and
+appear as a chip in the popup. Frequency order is optional: with no pack, ranking
+falls back to the inflection chain length and the priority score. Packs are
+ranked by priority (the order first imported): the first pack that has data for
+any of the entries decides the frequency order, and every pack's rank is shown.
+
+- **Bundled**: the Jiten global list (`plugins/data/jiten-frequency`, Japanese),
+  CC BY-SA 4.0, credited on the Sources page and in `plugins/data/jiten-frequency/ATTRIBUTION.md`.
+- **Local-only**: data with an unclear or restrictive licence is never committed.
+  Put it in the gitignored `plugins/data-local/`; `qinqin seed` imports it after
+  `plugins/data` when the directory exists. A pack is a directory with a
+  `manifest.json` and either a Yomitan frequency dictionary (`format`
+  `yomitan-freq`: the downloaded `.zip`, or its unpacked `index.json` and
+  `term_meta_bank_*.json`) or a CSV (`format` `freq-csv`: `freq.csv` or
+  `freq.csv.gz` with the header `term,reading,rank`):
+
+```json
+{
+  "id": "my-freq",
+  "name": "My frequency list",
+  "version": "2026-11-12",
+  "type": "frequency",
+  "language": "ja",
+  "license": "as stated by its publisher",
+  "attribution": "who made it, with a link",
+  "format": "yomitan-freq"
+}
+```
+
+`license` and `attribution` are required. Seed with `qinqin seed` (default roots),
+or name the roots: `qinqin seed --packs ../plugins/data,../plugins/data-local`.
+Chinese frequency packs are local-only: none is bundled. See
+[docs/sources.md](docs/sources.md) for the licence decisions.
+
 ## Bundled data
 
 A fresh install can seed offline; the image ships these upstream dictionaries
-under `/opt/qinqin/packs` (source: `plugins/data/`):
+and frequency list under `/opt/qinqin/packs` (source: `plugins/data/`):
 
 | Pack | Provides | License |
 |---|---|---|
@@ -224,8 +319,10 @@ under `/opt/qinqin/packs` (source: `plugins/data/`):
 | [Unihan](https://www.unicode.org/reports/tr38/) | Radical-stroke counts, variant mappings, character definitions | Unicode License v3 |
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
+| [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
 
-The files are redistributed **unmodified**. See
+The dictionary files are redistributed **unmodified**; the Jiten list is a
+conversion of the published file with unmodified ranks. See
 [docs/sources.md](docs/sources.md) for attributions, upstream links, and the
 redistribution policy. Stroke-order data (`hanzi-writer-data`, derived from the
 Make Me a Hanzi dataset) is licensed under the **Arphic Public License** and is
@@ -261,7 +358,8 @@ npm --prefix apps/web install
 npm --prefix apps/web run dev
 ```
 
-Gates:
+Gates (a slow opt-in test seeds the real bundled packs and checks lookups against
+them: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` from `server/`):
 
 ```bash
 npm --prefix apps/web run check
@@ -277,11 +375,12 @@ Dockerfile copies that directory into the Go binary before compiling.
 
 | Path | Contents |
 |---|---|
-| `server/` | Go API, SQLite migrations, pack importers, and the `qinqin` CLI (`serve`, `seed`, `adduser`) |
+| `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
-| `plugins/data/` | Bundled seed packs with their licenses and attribution notices |
+| `plugins/data/` | Bundled seed packs (dictionaries and the Jiten frequency list) with their licenses and attribution notices |
+| `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
 | `docs/` | Design notes, data sources, and the git-flow guide |
-| `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries |
+| `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
 
 ## Branches
 
