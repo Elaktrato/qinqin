@@ -200,10 +200,15 @@ Decisions that differ from or extend the spec above.
   uk from any. Score = max over tags: `nf01`–`nf24` → 100–77, tier 1 (`news1`,
   `ichi1`, `spec1`, `gai1`) → 60, `nf25`–`nf48` → 53–30, tier 2 → 30. A rare form
   loses 40 (floor 0). A kanji form scores by its own `ke_pri`; a uk word's forms
-  also get the best score of its readings, unpenalized (為る and 居る are rK); a
-  kana-only word scores by its readings. Reading flags only lower a reading's
-  score. Reading hits order: uk first, then `jmdict.pri` descending, then reading
-  position, then entry id. The importer owns the `jmdict.*` attrs: a re-import
+  also get the best score of its readings, penalized for `sK`/`iK`/`oK` but not
+  for `rK` (為る and 居る are rK, and a usually-kana word's kanji is expected to be
+  rare); a kana-only word scores by its readings. Reading flags only lower a
+  reading's score. Reading hits order: uk entries that also carry a priority
+  score first, then `jmdict.pri` descending (as a number), then reading
+  position, then entry id. A uk entry without a priority gets no boost, so
+  archaic uk-only words (癒る) sit below scored homophones (入る, 射る); the cost
+  is that a genuinely common uk word JMdict left untagged would lose to a scored
+  non-uk homophone. The importer owns the `jmdict.*` attrs: a re-import
   replaces them (`UpsertReplacingAttrs`), so none goes stale. The attr joins use
   `entry_attrs`' primary key; no new index was needed. Existing installs must
   re-seed (or re-install jmdict) to get the ranking and the homograph readings

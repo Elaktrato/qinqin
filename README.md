@@ -125,8 +125,8 @@ Chinese or Japanese. Open a book and hover a word for its entry. Select text to
 look it up: a single hanzi or kanji shows the character, longer text shows the
 word at the start of the selection. **Escape** closes the popup. A kana word can
 be the reading of several entries (する: 為る, 刷る, 擦る...); the popup shows the
-best one — words JMdict marks as usually written in kana first (為る for する,
-居る for いる), then by JMdict frequency priority, then reading position — and
+best one — common words JMdict marks as usually written in kana first (為る for
+する, 居る for いる), then by JMdict frequency priority, then reading position — and
 says how many others are read the same way ("8+" when the list of 8 was cut),
 with a link to search for them. A kana word that is itself a dictionary entry
 or an exact reading still wins over a deinflection, so した shows 下 rather than
@@ -136,7 +136,8 @@ or an exact reading still wins over a deinflection, so した shows 下 rather t
 > of kanji forms shared by several words (為る read する, 林檎 read りんご) come
 > from the JMdict import. A database seeded before this release lacks both: run
 > `qinqin seed` again (or re-install the jmdict pack). Re-importing is safe and
-> only rewrites what changed.
+> only rewrites what changed. The first re-import after upgrading changes most
+> JMdict entries, so sync clients pull most of JMdict once.
 
 Limits you may hit:
 
