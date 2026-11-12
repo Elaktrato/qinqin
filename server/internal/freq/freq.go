@@ -34,11 +34,23 @@ const (
 	csvFile        = "freq.csv"
 	indexFile      = "index.json"
 	bankGlob       = "term_meta_bank_*.json"
-	insertBatch    = 150 // rows per INSERT: 5 columns each, under SQLite's 999-variable floor
+	insertBatch    = 150 // rows per INSERT: 5 columns each = 750 variables, under SQLite's 999 default limit
 	lookupBatch    = 500 // terms per IN (...) list
 	modeRank       = "rank-based"
 	modeOccurrence = "occurrence-based"
 )
+
+// Input caps: pack files are untrusted, so nothing is read beyond these.
+// Variables so tests can lower them.
+var (
+	maxIndexBytes  int64 = 1 << 20   // index.json
+	maxMemberBytes int64 = 512 << 20 // a bank or the CSV, uncompressed (also the gzip-inflated size)
+	maxRows              = 5_000_000 // rows per pack
+)
+
+// maxValue bounds a rank or occurrence count: above 2^53 a float64 no
+// longer holds an integer exactly.
+const maxValue = 1 << 53
 
 // row is one parsed frequency row. value is the number the pack gave —
 // the rank itself, or an occurrence count until ranks are derived.
@@ -92,7 +104,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 		err = fmt.Errorf("format %q is not a frequency format (want yomitan-freq or freq-csv)", m.Format)
 	}
 	if err != nil {
-		return dict.Result{}, fmt.Errorf("%w: frequency pack %s: %v", dict.ErrInvalidPack, m.ID, err)
+		return dict.Result{}, fmt.Errorf("%w: frequency pack %s: %w", dict.ErrInvalidPack, m.ID, err)
 	}
 	hash := fingerprint(rows)
 
@@ -184,17 +196,19 @@ func fingerprint(rows []row) string {
 
 // readCSV parses freq.csv or freq.csv.gz of dir.
 func readCSV(dir string) ([]row, error) {
+	name := csvFile
 	f, err := os.Open(filepath.Join(dir, csvFile))
 	var src io.Reader = f
 	if errors.Is(err, fs.ErrNotExist) {
-		gz, gzErr := os.Open(filepath.Join(dir, csvFile+".gz"))
+		name = csvFile + ".gz"
+		gz, gzErr := os.Open(filepath.Join(dir, name))
 		if gzErr != nil {
 			return nil, fmt.Errorf("neither %s nor %s.gz found", csvFile, csvFile)
 		}
 		defer gz.Close()
 		zr, zErr := gzip.NewReader(gz)
 		if zErr != nil {
-			return nil, fmt.Errorf("%s.gz: %w", csvFile, zErr)
+			return nil, fmt.Errorf("%s: %w", name, zErr)
 		}
 		defer zr.Close()
 		src = zr
@@ -202,17 +216,24 @@ func readCSV(dir string) ([]row, error) {
 		return nil, err
 	} else {
 		defer f.Close()
+		info, err := f.Stat()
+		if err != nil {
+			return nil, err
+		}
+		if info.Size() > maxMemberBytes {
+			return nil, tooLarge(name, maxMemberBytes)
+		}
 	}
 
-	r := csv.NewReader(src)
+	r := csv.NewReader(&capReader{r: src, limit: maxMemberBytes, what: name})
 	r.FieldsPerRecord = 3
 	r.ReuseRecord = true
 	head, err := r.Read()
 	if err != nil {
-		return nil, fmt.Errorf("%s: read header: %w", csvFile, err)
+		return nil, fmt.Errorf("%s: read header: %w", name, err)
 	}
 	if h := strings.TrimPrefix(strings.Join(head, ","), bom); h != "term,reading,rank" {
-		return nil, fmt.Errorf("%s: header is %q, want term,reading,rank", csvFile, h)
+		return nil, fmt.Errorf("%s: header is %q, want term,reading,rank", name, h)
 	}
 	var rows []row
 	for i := 0; ; i++ {
@@ -221,14 +242,17 @@ func readCSV(dir string) ([]row, error) {
 			return rows, nil
 		}
 		if err != nil {
-			return nil, fmt.Errorf("%s row %d: %w", csvFile, i, err)
+			return nil, fmt.Errorf("%s row %d: %w", name, i, err)
+		}
+		if len(rows) >= maxRows {
+			return nil, fmt.Errorf("%s row %d: more than %d rows in the pack", name, i, maxRows)
 		}
 		if rec[0] == "" {
-			return nil, fmt.Errorf("%s row %d: empty term", csvFile, i)
+			return nil, fmt.Errorf("%s row %d: empty term", name, i)
 		}
-		rank, err := strconv.Atoi(strings.TrimSpace(rec[2]))
-		if err != nil || rank < 1 {
-			return nil, fmt.Errorf("%s row %d: rank %q is not a positive integer", csvFile, i, rec[2])
+		rank, err := strconv.ParseInt(strings.TrimSpace(rec[2]), 10, 64)
+		if err != nil || rank < 1 || rank > maxValue {
+			return nil, fmt.Errorf("%s row %d: rank %q is not a positive integer up to 2^53", name, i, rec[2])
 		}
 		rows = append(rows, row{term: rec[0], reading: rec[1], value: float64(rank)})
 	}
@@ -241,7 +265,16 @@ func readYomitan(dir string) ([]row, error) {
 	if _, err := os.Stat(filepath.Join(dir, indexFile)); err == nil {
 		fsys = os.DirFS(dir)
 	} else {
-		zips, _ := filepath.Glob(filepath.Join(dir, "*.zip"))
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return nil, err
+		}
+		var zips []string
+		for _, e := range entries {
+			if !e.IsDir() && strings.EqualFold(filepath.Ext(e.Name()), ".zip") {
+				zips = append(zips, filepath.Join(dir, e.Name()))
+			}
+		}
 		if len(zips) != 1 {
 			return nil, fmt.Errorf("want %s with term_meta_bank files, or exactly one .zip, in the pack (found %d zips)", indexFile, len(zips))
 		}
@@ -256,9 +289,14 @@ func readYomitan(dir string) ([]row, error) {
 	var index struct {
 		FrequencyMode string `json:"frequencyMode"`
 	}
-	raw, err := fs.ReadFile(fsys, indexFile)
+	xf, err := openMember(fsys, indexFile, maxIndexBytes)
 	if err != nil {
 		return nil, err
+	}
+	raw, err := io.ReadAll(xf)
+	xf.Close()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", indexFile, err)
 	}
 	if err := json.Unmarshal(raw, &index); err != nil {
 		return nil, fmt.Errorf("%s: %w", indexFile, err)
@@ -291,14 +329,18 @@ func readYomitan(dir string) ([]row, error) {
 
 // readBank streams one term_meta_bank file, appending its freq rows.
 func readBank(fsys fs.FS, name, mode string, rows []row) ([]row, error) {
-	f, err := fsys.Open(name)
+	f, err := openMember(fsys, name, maxMemberBytes)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
 	dec := json.NewDecoder(f)
 	dec.UseNumber()
-	if tok, err := dec.Token(); err != nil || tok != json.Delim('[') {
+	tok, err := dec.Token()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", name, err)
+	}
+	if tok != json.Delim('[') {
 		return nil, fmt.Errorf("%s: not a JSON array of rows", name)
 	}
 	for i := 0; dec.More(); i++ {
@@ -315,6 +357,9 @@ func readBank(fsys fs.FS, name, mode string, rows []row) ([]row, error) {
 		}
 		if kind != "freq" {
 			continue // pitch, ipa, ...
+		}
+		if len(rows) >= maxRows {
+			return nil, fmt.Errorf("%s row %d: more than %d rows in the pack", name, i, maxRows)
 		}
 		if term == "" {
 			return nil, fmt.Errorf("%s row %d: empty term", name, i)
@@ -333,6 +378,50 @@ func readBank(fsys fs.FS, name, mode string, rows []row) ([]row, error) {
 		return nil, fmt.Errorf("%s: %w", name, err)
 	}
 	return rows, nil
+}
+
+// openMember opens name of fsys for reading at most limit bytes: a member
+// whose header already claims more is refused, and the reader stops at
+// limit however many bytes the data really holds (a zip header can lie).
+func openMember(fsys fs.FS, name string, limit int64) (io.ReadCloser, error) {
+	f, err := fsys.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	info, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
+	if info.Size() > limit {
+		f.Close()
+		return nil, tooLarge(name, limit)
+	}
+	return struct {
+		io.Reader
+		io.Closer
+	}{&capReader{r: f, limit: limit, what: name}, f}, nil
+}
+
+func tooLarge(what string, limit int64) error {
+	return fmt.Errorf("%s exceeds the %d-byte limit", what, limit)
+}
+
+// capReader reads r and fails once more than limit bytes came out of it.
+type capReader struct {
+	r     io.Reader
+	limit int64
+	read  int64
+	what  string
+}
+
+func (c *capReader) Read(p []byte) (int, error) {
+	n, err := io.LimitReader(c.r, c.limit+1-c.read).Read(p)
+	c.read += int64(n)
+	if c.read > c.limit {
+		return 0, tooLarge(c.what, c.limit)
+	}
+	return n, err
 }
 
 // parseData reads a freq row's data cell: a scalar, or {reading,
@@ -380,8 +469,8 @@ func parseScalar(raw json.RawMessage) (row, error) {
 		s = n.String()
 	}
 	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
-	if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
-		return row{}, fmt.Errorf("frequency %q is not a non-negative number", s)
+	if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 || v > maxValue {
+		return row{}, fmt.Errorf("frequency %q is not a non-negative number up to 2^53", s)
 	}
 	r.value = v
 	return r, nil
@@ -451,10 +540,14 @@ func (s Store) Packs(ctx context.Context) ([]PackInfo, error) {
 
 // Lookup returns, for each requested term that has data, at most one Hit
 // per pack, in pack order (see Packs): the best — lowest — rank among the
-// term's rows in that pack. When readings[term] is non-empty the rows
-// whose reading is one of them, or empty (an empty reading matches any),
-// are preferred; if the pack has none of those for the term, its best row
-// overall is used. Duplicate terms are harmless.
+// term's rows in that pack. As in Yomitan, a row that carries a reading
+// applies only to headwords with that reading: when readings[term] is
+// non-empty only rows whose reading is listed, or empty (an empty reading
+// matches any), count, and a pack with no such row for the term gives no
+// hit. When no readings are passed for the term, the best row overall
+// counts. Reading comparison is exact: hiragana and katakana are
+// different readings, so callers pass both script variants. Duplicate
+// terms are harmless.
 func (s Store) Lookup(ctx context.Context, terms []string, readings map[string][]string) (map[string][]Hit, error) {
 	type best struct {
 		any, match *Hit
@@ -530,9 +623,8 @@ func (s Store) Lookup(ctx context.Context, terms []string, readings map[string][
 				out[term] = append(out[term], *a.any)
 			case a.match != nil:
 				out[term] = append(out[term], *a.match)
-			default:
-				out[term] = append(out[term], *a.any)
 			}
+			// else: the pack's rows for the term all name other readings.
 		}
 	}
 	return out, nil
