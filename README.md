@@ -72,16 +72,32 @@ or **Easy** (or press 1–4). The grade is appended to the study-event log and
 FSRS derives the next due date from the card's whole review history, so schedules
 are never stored and two devices merge cleanly by event id.
 
+Sessions can also draw from a level instead of a deck: choose **By level**, pick
+an installed scheme (HSK, JLPT, or a curriculum pack) and one of its levels, and
+the session queues that level's words. A word that already has a card reuses it;
+the rest get a card in the general deck when you first grade them, so abandoning
+a level session creates nothing.
+
+`/study/map` is the Hanzi/Kanji mastery map for the current workspace language.
+It shows a grid of the characters in the selected scheme and level — or the whole
+scheme — with a filter for each, plus a level-progress list of mastered counts.
+Colour is the character's mastery band: grey for not studied, then red, amber,
+blue, and green for fresh, learning, mature, and learned. A character's 0–100
+score is the mean over every reviewed card whose word contains it of how firmly
+that card's schedule has settled, with a year of FSRS stability counting fully;
+characters at 80 or above count as mastered. The map is derived from your cards
+and review events, so nothing schedule-shaped is stored for it either.
+
 The home page widget shows what is due and new, plus a review-driven heatmap,
 daily review counts, and derived EXP/levels per workspace. Studying adds no
 bundled data: decks and cards are workspace plugin data and reviews are events,
 so the dictionaries in `plugins/data/` stay unmodified.
 
-Rounds 2–3 are pending: level sessions and the Hanzi/Kanji mastery map, then Word
-Salad, stroke-checked writing, and tone cards. See the
+Round 3 is pending: Word Salad, stroke-checked writing, and tone cards. See the
 [design doc](docs/superpowers/specs/2026-11-12-flashcards-design.md) for the full
-model; [issue #24](https://github.com/Elaktrato/qinqin/issues/24) and
-[issue #25](https://github.com/Elaktrato/qinqin/issues/25) track them.
+model; [issue #24](https://github.com/Elaktrato/qinqin/issues/24) shipped the
+level sessions and mastery map, and
+[issue #25](https://github.com/Elaktrato/qinqin/issues/25) tracks the rest.
 
 ## Bundled data
 

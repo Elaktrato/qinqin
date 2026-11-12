@@ -73,7 +73,7 @@ For character `c`, consider every reviewed vocab card whose entry's written form
 
 **Interfaces:**
 - `StudySessionConfig` gains `mode: 'decks' | 'levels'`, `schemeId: number | null`, `levelName: string | null`; defaults `mode:'decks'`, nulls; validation: levels mode requires scheme + level (and ignores decks), decks mode requires ≥1 deck.
-- `buildLevelQueue({entries, cards, reviews, newLimit, reviewLimit, now})` → `LevelQueueItem{cardId: string; entryId: number; virtual: boolean}`: existing vocab cards matched by entryId (due first via `scheduleFor`), level entries without cards become virtual items (`cardId: 'level:' + entryId`) up to `newLimit`; capped by `reviewLimit`/`newLimit`; words only (`kind === 'word'`).
+- `buildLevelQueue({entries, cards, reviews, newLimit, reviewLimit, now})` → `LevelQueueItem{cardId: string; entryId: number; virtual: boolean}`: existing vocab cards matched by entryId (due first via `scheduleFor`); level entries without cards become virtual items (`cardId: 'level:' + entryId`) up to `newLimit`; existing cards that were added but never reviewed join the new bucket with their real card id and share `newLimit` with the virtual items; capped by `reviewLimit`/`newLimit`; words only (`kind === 'word'`).
 - Tests: existing card reused (not virtual); virtual ids stable; caps; unreviewed vs due classification; non-word entries skipped.
 
 - [ ] **Step 1: Write failing tests.** **Step 2: Run** — FAIL. **Step 3: Implement.** **Step 4: Run** gates — PASS.
