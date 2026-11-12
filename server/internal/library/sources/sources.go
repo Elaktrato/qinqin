@@ -9,11 +9,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"qinqin/internal/library"
@@ -36,8 +38,15 @@ type Source interface {
 	Fetch(ctx context.Context, sourceID string) (Imported, error)
 }
 
-// ErrTooLarge reports a response body above the caller's cap.
-var ErrTooLarge = errors.New("sources: response too large")
+var (
+	// ErrTooLarge reports a response body (or imported work) above its cap.
+	ErrTooLarge = errors.New("sources: response too large")
+	// ErrBlocked reports a URL refused by the host policy, a scheme
+	// downgrade, or a non-public address.
+	ErrBlocked = errors.New("sources: request blocked")
+	// ErrTooManyRedirects reports a redirect chain longer than allowed.
+	ErrTooManyRedirects = errors.New("sources: too many redirects")
+)
 
 const (
 	requestTimeout = 15 * time.Second
@@ -45,12 +54,17 @@ const (
 	maxRedirects   = 5
 )
 
-// HTTPClient fetches http(s) URLs with a User-Agent, a timeout, at most
-// one request per second per host, a body cap and an on-disk cache.
-type HTTPClient struct {
-	hc       *http.Client
-	ua       string
-	cacheDir string
+// shared is the state common to a client and its policy views: the
+// cache, the per-host rate limiter, the clock and the transport.
+type shared struct {
+	ua        string
+	cacheDir  string
+	transport *http.Transport
+
+	// AllowPrivate lets the client connect to loopback, private and
+	// other non-public addresses. It is off in production; tests that
+	// talk to httptest servers on 127.0.0.1 turn it on before use.
+	AllowPrivate bool
 
 	mu    sync.Mutex
 	next  map[string]time.Time // earliest start of the next request per host
@@ -58,19 +72,20 @@ type HTTPClient struct {
 	sleep func(ctx context.Context, d time.Duration) error
 }
 
+// HTTPClient fetches http(s) URLs with a User-Agent, a timeout, at most
+// one request per second per host, a body cap and an on-disk cache. It
+// only connects to public addresses and applies an optional host policy
+// to the first URL and to every redirect hop.
+type HTTPClient struct {
+	*shared
+	hc    *http.Client
+	check func(*url.URL) error
+}
+
 // NewHTTPClient returns a client caching under cacheDir (created on
 // first write) and sending userAgent.
 func NewHTTPClient(cacheDir, userAgent string) *HTTPClient {
-	return &HTTPClient{
-		hc: &http.Client{
-			Timeout: requestTimeout,
-			CheckRedirect: func(req *http.Request, via []*http.Request) error {
-				if len(via) >= maxRedirects {
-					return errors.New("sources: too many redirects")
-				}
-				return checkScheme(req.URL)
-			},
-		},
+	s := &shared{
 		ua:       userAgent,
 		cacheDir: cacheDir,
 		next:     map[string]time.Time{},
@@ -86,7 +101,65 @@ func NewHTTPClient(cacheDir, userAgent string) *HTTPClient {
 			}
 		},
 	}
+	dialer := &net.Dialer{
+		Timeout: requestTimeout,
+		// Control sees the resolved address, so it also stops hostnames
+		// that resolve (or rebind) to a non-public IP.
+		Control: func(network, address string, _ syscall.RawConn) error {
+			if s.AllowPrivate {
+				return nil
+			}
+			host, _, err := net.SplitHostPort(address)
+			if err != nil {
+				return ErrBlocked
+			}
+			if ip := net.ParseIP(host); ip == nil || !isPublic(ip) {
+				return ErrBlocked
+			}
+			return nil
+		},
+	}
+	s.transport = &http.Transport{
+		DialContext:         dialer.DialContext,
+		TLSHandshakeTimeout: requestTimeout,
+		MaxIdleConnsPerHost: 2,
+		IdleConnTimeout:     30 * time.Second,
+	}
+	return s.view(nil)
 }
+
+func isPublic(ip net.IP) bool {
+	return !(ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() ||
+		ip.IsInterfaceLocalMulticast() || ip.IsMulticast() || ip.IsUnspecified())
+}
+
+func (s *shared) view(check func(*url.URL) error) *HTTPClient {
+	return &HTTPClient{
+		shared: s,
+		check:  check,
+		hc: &http.Client{
+			Timeout:   requestTimeout,
+			Transport: s.transport,
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				if len(via) >= maxRedirects {
+					return ErrTooManyRedirects
+				}
+				if err := checkURL(req.URL, check); err != nil {
+					return err
+				}
+				if prev := via[len(via)-1].URL; prev.Scheme == "https" && req.URL.Scheme != "https" {
+					return fmt.Errorf("%w: https to http redirect", ErrBlocked)
+				}
+				return nil
+			},
+		},
+	}
+}
+
+// For returns a view of the client that additionally enforces check on
+// every URL it fetches, redirects included. The view shares the cache,
+// rate limiter and clock with c.
+func (c *HTTPClient) For(check func(*url.URL) error) *HTTPClient { return c.view(check) }
 
 // SetClock replaces the clock and the sleep used for rate limiting and
 // cache expiry; it exists so tests do not wait.
@@ -96,12 +169,24 @@ func (c *HTTPClient) SetClock(now func() time.Time, sleep func(ctx context.Conte
 	c.mu.Unlock()
 }
 
-func checkScheme(u *url.URL) error {
+// Now returns the client's (possibly injected) current time.
+func (c *HTTPClient) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now()
+}
+
+func checkURL(u *url.URL, check func(*url.URL) error) error {
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return fmt.Errorf("sources: unsupported URL scheme %q", u.Scheme)
+		return fmt.Errorf("%w: unsupported URL scheme %q", ErrBlocked, u.Scheme)
 	}
 	if u.Host == "" {
-		return errors.New("sources: URL has no host")
+		return fmt.Errorf("%w: URL has no host", ErrBlocked)
+	}
+	if check != nil {
+		if err := check(u); err != nil {
+			return fmt.Errorf("%w: host %s", ErrBlocked, u.Host)
+		}
 	}
 	return nil
 }
@@ -112,15 +197,44 @@ func (c *HTTPClient) cachePath(rawURL string) string {
 	return filepath.Join(c.cacheDir, hex.EncodeToString(sum[:]))
 }
 
+// Invalidate removes the cached body of rawURL; a missing entry is not
+// an error. Callers use it when a cached body turned out to be bad.
+func (c *HTTPClient) Invalidate(rawURL string) error {
+	if err := os.Remove(c.cachePath(rawURL)); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return nil
+}
+
+// sanitize keeps request errors from leaking URLs and IP addresses
+// while preserving errors.Is for the sentinels and context errors.
+func sanitize(host string, err error) error {
+	switch {
+	case errors.Is(err, ErrBlocked):
+		return fmt.Errorf("sources: GET %s: %w", host, ErrBlocked)
+	case errors.Is(err, ErrTooManyRedirects):
+		return fmt.Errorf("sources: GET %s: %w", host, ErrTooManyRedirects)
+	case errors.Is(err, context.Canceled):
+		return fmt.Errorf("sources: GET %s: %w", host, context.Canceled)
+	case errors.Is(err, context.DeadlineExceeded):
+		return fmt.Errorf("sources: GET %s: %w", host, context.DeadlineExceeded)
+	}
+	var ne net.Error
+	if errors.As(err, &ne) && ne.Timeout() {
+		return fmt.Errorf("sources: GET %s: %w", host, context.DeadlineExceeded)
+	}
+	return fmt.Errorf("sources: GET %s: request failed", host)
+}
+
 // Get returns the body of rawURL. A cached copy younger than ttl is
 // returned without a request; ttl <= 0 disables caching. A body larger
 // than maxBytes is an ErrTooLarge error, never a truncated result.
 func (c *HTTPClient) Get(ctx context.Context, rawURL string, maxBytes int64, ttl time.Duration) ([]byte, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return nil, fmt.Errorf("sources: bad URL: %w", err)
+		return nil, errors.New("sources: bad URL")
 	}
-	if err := checkScheme(u); err != nil {
+	if err := checkURL(u, c.check); err != nil {
 		return nil, err
 	}
 	path := c.cachePath(rawURL)
@@ -134,12 +248,12 @@ func (c *HTTPClient) Get(ctx context.Context, rawURL string, maxBytes int64, ttl
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("sources: bad URL")
 	}
 	req.Header.Set("User-Agent", c.ua)
 	resp, err := c.hc.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, sanitize(u.Host, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -150,7 +264,7 @@ func (c *HTTPClient) Get(ctx context.Context, rawURL string, maxBytes int64, ttl
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBytes+1))
 	if err != nil {
-		return nil, err
+		return nil, sanitize(u.Host, err)
 	}
 	if int64(len(body)) > maxBytes {
 		return nil, ErrTooLarge
@@ -182,10 +296,7 @@ func (c *HTTPClient) readCache(path string, maxBytes int64, ttl time.Duration) (
 	if err != nil || !fi.Mode().IsRegular() || fi.Size() > maxBytes {
 		return nil, false
 	}
-	c.mu.Lock()
-	now := c.now()
-	c.mu.Unlock()
-	if now.Sub(fi.ModTime()) >= ttl {
+	if c.Now().Sub(fi.ModTime()) >= ttl {
 		return nil, false
 	}
 	b, err := os.ReadFile(path)

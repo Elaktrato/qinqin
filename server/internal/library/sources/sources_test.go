@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -48,6 +49,7 @@ func newClient(t *testing.T, ua string) (*sources.HTTPClient, *fakeClock, string
 	c := sources.NewHTTPClient(dir, ua)
 	fc := &fakeClock{t: time.Now()}
 	c.SetClock(fc.now, fc.sleep)
+	c.AllowPrivate = true // httptest listens on 127.0.0.1
 	return c, fc, dir
 }
 
@@ -110,22 +112,28 @@ func TestHTTPClientRateLimitsPerHost(t *testing.T) {
 	defer srv.Close()
 	c, fc, _ := newClient(t, "ua")
 	ctx := context.Background()
-	c.Get(ctx, srv.URL+"/1", 10, 0)
+	get := func(u string) {
+		t.Helper()
+		if _, err := c.Get(ctx, u, 10, 0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	get(srv.URL + "/1")
 	if len(fc.sleeps) != 0 {
 		t.Fatalf("first request slept: %v", fc.sleeps)
 	}
-	c.Get(ctx, srv.URL+"/2", 10, 0)
+	get(srv.URL + "/2")
 	if len(fc.sleeps) != 1 || fc.sleeps[0] != time.Second {
 		t.Fatalf("second request sleeps = %v, want [1s]", fc.sleeps)
 	}
 	// a different host name for the same server is not throttled
 	other := strings.Replace(srv.URL, "127.0.0.1", "localhost", 1)
-	c.Get(ctx, other+"/3", 10, 0)
+	get(other + "/3")
 	if len(fc.sleeps) != 1 {
 		t.Fatalf("other host slept: %v", fc.sleeps)
 	}
 	fc.advance(5 * time.Second)
-	c.Get(ctx, srv.URL+"/4", 10, 0)
+	get(srv.URL + "/4")
 	if len(fc.sleeps) != 1 {
 		t.Fatalf("request after the interval slept: %v", fc.sleeps)
 	}
@@ -191,5 +199,95 @@ func TestHTTPClientConcurrentSameURL(t *testing.T) {
 	b, err := c.Get(context.Background(), srv.URL, 1<<20, time.Hour)
 	if err != nil || string(b) != body {
 		t.Fatalf("cached read: len %d err %v", len(b), err)
+	}
+}
+
+func TestHTTPClientRefusesNonPublicAddress(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "x") }))
+	defer srv.Close()
+	c := sources.NewHTTPClient(t.TempDir(), "ua") // AllowPrivate defaults to false
+	_, err := c.Get(context.Background(), srv.URL, 10, 0)
+	if !errors.Is(err, sources.ErrBlocked) {
+		t.Fatalf("err = %v, want ErrBlocked", err)
+	}
+	if strings.Contains(err.Error(), "127.0.0.1:") && strings.Contains(err.Error(), "dial") {
+		t.Fatalf("error leaks dial details: %v", err)
+	}
+}
+
+func TestHTTPClientHostPolicyAppliesToRedirects(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/redir":
+			http.Redirect(w, r, strings.Replace(srv0(r), "127.0.0.1", "localhost", 1)+"/ok", http.StatusFound)
+		case "/loop":
+			http.Redirect(w, r, "/loop", http.StatusFound)
+		default:
+			fmt.Fprint(w, "ok")
+		}
+	}))
+	defer srv.Close()
+	c, _, _ := newClient(t, "ua")
+	only := c.For(func(u *url.URL) error {
+		if u.Hostname() != "127.0.0.1" {
+			return errors.New("no")
+		}
+		return nil
+	})
+	ctx := context.Background()
+	if _, err := only.Get(ctx, srv.URL+"/redir", 10, 0); !errors.Is(err, sources.ErrBlocked) {
+		t.Fatalf("redirect to other host: %v", err)
+	}
+	if _, err := only.Get(ctx, strings.Replace(srv.URL, "127.0.0.1", "localhost", 1)+"/ok", 10, 0); !errors.Is(err, sources.ErrBlocked) {
+		t.Fatalf("initial other host: %v", err)
+	}
+	if b, err := only.Get(ctx, srv.URL+"/ok", 10, 0); err != nil || string(b) != "ok" {
+		t.Fatalf("allowed host: %q %v", b, err)
+	}
+	if _, err := only.Get(ctx, srv.URL+"/loop", 10, 0); !errors.Is(err, sources.ErrTooManyRedirects) {
+		t.Fatalf("redirect loop: %v", err)
+	}
+}
+
+func srv0(r *http.Request) string { return "http://" + r.Host }
+
+func TestHTTPClientErrorsDoNotLeakAddresses(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	u := srv.URL
+	srv.Close() // nothing listens any more
+	c, _, _ := newClient(t, "ua")
+	_, err := c.Get(context.Background(), u+"/secret?token=1", 10, 0)
+	if err == nil || strings.Contains(err.Error(), "secret") || strings.Contains(err.Error(), "token") {
+		t.Fatalf("err = %v", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := c.Get(ctx, u, 10, 0); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled: %v", err)
+	}
+}
+
+func TestHTTPClientInvalidate(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		fmt.Fprint(w, "x")
+	}))
+	defer srv.Close()
+	c, _, dir := newClient(t, "ua")
+	ctx := context.Background()
+	c.Get(ctx, srv.URL, 10, time.Hour)
+	if err := c.Invalidate(srv.URL); err != nil {
+		t.Fatal(err)
+	}
+	if entries, _ := os.ReadDir(dir); len(entries) != 0 {
+		t.Fatalf("cache not cleared: %v", entries)
+	}
+	if err := c.Invalidate(srv.URL); err != nil { // already gone
+		t.Fatal(err)
+	}
+	c.Get(ctx, srv.URL, 10, time.Hour)
+	if hits.Load() != 2 {
+		t.Fatalf("hits = %d, want 2", hits.Load())
 	}
 }

@@ -34,6 +34,8 @@ const (
 	defaultCatalogURL = "https://www.aozora.gr.jp/index_pages/list_person_all_extended_utf8.zip"
 	catalogTTL        = 7 * 24 * time.Hour
 	workTTL           = 24 * time.Hour
+	negativeTTL       = 30 * time.Second
+	loadTimeout       = 90 * time.Second
 
 	maxCatalogZip = 32 << 20  // download
 	maxCatalogCSV = 128 << 20 // unzipped
@@ -53,9 +55,6 @@ const (
 	rootNote    = "青空文庫 (https://www.aozora.gr.jp/)"
 )
 
-// ErrTooLarge reports a work that exceeds the import limits.
-var ErrTooLarge = errors.New("aozora: work exceeds import limits")
-
 var idPattern = regexp.MustCompile(`^[0-9]{1,10}$`)
 
 type work struct {
@@ -71,28 +70,49 @@ type catalog struct {
 	byKey map[string]*work // id without leading zeros
 }
 
+// flight is one in-progress catalog download shared by all waiters.
+type flight struct {
+	done chan struct{}
+	cat  *catalog
+	err  error
+}
+
 type adapter struct {
 	c            *sources.HTTPClient
 	catalogURL   string
 	allowedHosts map[string]bool
+	allowHTTP    bool  // production fetches over https only
+	maxBody      int64 // cap for one card or text zip
 
-	mu      sync.Mutex
-	cat     *catalog
-	expires time.Time
+	mu        sync.Mutex
+	cat       *catalog
+	expires   time.Time
+	flight    *flight
+	failErr   error     // negative cache of the last failed load
+	failUntil time.Time // until when failErr is returned without retrying
 }
 
-// New returns the Aozora Bunko source.
+// New returns the Aozora Bunko source. It fetches over https only, from
+// aozora.gr.jp (and the GitHub mirror hosts when a catalog row points
+// there), and enforces that on every redirect hop too.
 func New(c *sources.HTTPClient) sources.Source {
-	return &adapter{
-		c:          c,
-		catalogURL: defaultCatalogURL,
-		allowedHosts: map[string]bool{
-			"www.aozora.gr.jp":          true,
-			"aozora.gr.jp":              true,
-			"github.com":                true,
-			"raw.githubusercontent.com": true,
-		},
-	}
+	return newAdapter(c, defaultCatalogURL, map[string]bool{
+		"www.aozora.gr.jp":          true,
+		"aozora.gr.jp":              true,
+		"github.com":                true,
+		"raw.githubusercontent.com": true,
+	}, false)
+}
+
+func newAdapter(c *sources.HTTPClient, catalogURL string, hosts map[string]bool, allowHTTP bool) *adapter {
+	a := &adapter{catalogURL: catalogURL, allowedHosts: hosts, allowHTTP: allowHTTP, maxBody: maxWorkBody}
+	a.c = c.For(func(u *url.URL) error {
+		if !a.urlAllowed(u) {
+			return errors.New("aozora: host not allowed")
+		}
+		return nil
+	})
+	return a
 }
 
 func (a *adapter) ID() string { return "aozora" }
@@ -125,7 +145,7 @@ func readZipEntry(data []byte, suffix string, max int64) ([]byte, error) {
 			continue
 		}
 		if f.UncompressedSize64 > uint64(max) {
-			return nil, ErrTooLarge
+			return nil, sources.ErrTooLarge
 		}
 		rc, err := f.Open()
 		if err != nil {
@@ -137,7 +157,7 @@ func readZipEntry(data []byte, suffix string, max int64) ([]byte, error) {
 			return nil, fmt.Errorf("aozora: bad zip: %w", err)
 		}
 		if int64(len(b)) > max {
-			return nil, ErrTooLarge
+			return nil, sources.ErrTooLarge
 		}
 		return b, nil
 	}
@@ -149,7 +169,7 @@ var requiredColumns = []string{
 	"役割フラグ", "人物著作権フラグ", "テキストファイルURL", "XHTML/HTMLファイルURL",
 }
 
-func parseCatalog(zipData []byte) (*catalog, error) {
+func parseCatalog(zipData []byte, usable func(*work) bool) (*catalog, error) {
 	raw, err := readZipEntry(zipData, ".csv", maxCatalogCSV)
 	if err != nil {
 		return nil, err
@@ -211,7 +231,7 @@ func parseCatalog(zipData []byte) (*catalog, error) {
 	}
 	cat := &catalog{byKey: map[string]*work{}}
 	for _, w := range byID {
-		if w.blocked {
+		if w.blocked || !usable(w) {
 			continue
 		}
 		w.hay = normalize(w.title + w.author)
@@ -224,24 +244,79 @@ func parseCatalog(zipData []byte) (*catalog, error) {
 	return cat, nil
 }
 
-// catalog returns the parsed catalog, downloading it at most once per
-// catalogTTL.
+// catalog returns the parsed catalog. Downloads are single-flight and
+// run detached from any one caller's context; waiters give up when their
+// own ctx ends. A failed load is remembered for negativeTTL, and while a
+// stale catalog exists it is served instead of the error.
 func (a *adapter) catalog(ctx context.Context) (*catalog, error) {
 	a.mu.Lock()
-	defer a.mu.Unlock()
-	if a.cat != nil && time.Now().Before(a.expires) {
-		return a.cat, nil
+	now := a.c.Now()
+	if a.cat != nil && now.Before(a.expires) {
+		cat := a.cat
+		a.mu.Unlock()
+		return cat, nil
 	}
+	if a.failErr != nil && now.Before(a.failUntil) {
+		cat, err := a.cat, a.failErr
+		a.mu.Unlock()
+		if cat != nil {
+			return cat, nil
+		}
+		return nil, err
+	}
+	f := a.flight
+	if f == nil {
+		f = &flight{done: make(chan struct{})}
+		a.flight = f
+		go a.load(f)
+	}
+	a.mu.Unlock()
+	select {
+	case <-f.done:
+		return f.cat, f.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func (a *adapter) load(f *flight) {
+	ctx, cancel := context.WithTimeout(context.Background(), loadTimeout)
+	defer cancel()
+	cat, err := a.download(ctx)
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	now := a.c.Now()
+	if err == nil {
+		a.cat, a.expires, a.failErr = cat, now.Add(catalogTTL), nil
+		f.cat = cat
+	} else {
+		a.failErr, a.failUntil = err, now.Add(negativeTTL)
+		if a.cat != nil { // keep serving the stale catalog
+			f.cat = a.cat
+		} else {
+			f.err = err
+		}
+	}
+	a.flight = nil
+	close(f.done)
+}
+
+func (a *adapter) download(ctx context.Context) (*catalog, error) {
 	data, err := a.c.Get(ctx, a.catalogURL, maxCatalogZip, catalogTTL)
 	if err != nil {
 		return nil, err
 	}
-	cat, err := parseCatalog(data)
+	cat, err := parseCatalog(data, a.usable)
 	if err != nil {
+		a.c.Invalidate(a.catalogURL) // do not let a bad body stick for the TTL
 		return nil, err
 	}
-	a.cat, a.expires = cat, time.Now().Add(catalogTTL)
 	return cat, nil
+}
+
+// usable reports whether the work has a download URL this adapter may use.
+func (a *adapter) usable(w *work) bool {
+	return a.allowed(w.htmlURL) || a.allowed(w.textURL)
 }
 
 func (a *adapter) Search(ctx context.Context, q string, limit int) ([]sources.Result, error) {
@@ -273,10 +348,14 @@ func (a *adapter) Search(ctx context.Context, q string, limit int) ([]sources.Re
 	return out, nil
 }
 
-// allowed reports whether rawURL is an http(s) URL on an allowed host.
+func (a *adapter) urlAllowed(u *url.URL) bool {
+	return (u.Scheme == "https" || (a.allowHTTP && u.Scheme == "http")) && a.allowedHosts[u.Host]
+}
+
+// allowed reports whether rawURL is a URL this adapter may fetch.
 func (a *adapter) allowed(rawURL string) bool {
 	u, err := url.Parse(rawURL)
-	return err == nil && (u.Scheme == "https" || u.Scheme == "http") && a.allowedHosts[u.Host]
+	return rawURL != "" && err == nil && a.urlAllowed(u)
 }
 
 func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported, error) {
@@ -297,22 +376,30 @@ func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported,
 		tried    bool
 		lastErr  error
 	)
-	if w.htmlURL != "" && a.allowed(w.htmlURL) {
+	if a.allowed(w.htmlURL) {
 		tried = true
-		body, err := a.c.Get(ctx, w.htmlURL, maxWorkBody, workTTL)
+		body, err := a.c.Get(ctx, w.htmlURL, a.maxBody, workTTL)
 		if err == nil {
 			chapters, footer, err = parseXHTML(body, w.title)
+			if err != nil {
+				a.c.Invalidate(w.htmlURL)
+			}
 		}
-		if errors.Is(err, ErrTooLarge) {
+		// A card over the size caps is an error, deliberately not a
+		// reason to try the text zip: it holds the same work.
+		if errors.Is(err, sources.ErrTooLarge) {
 			return sources.Imported{}, err
 		}
 		lastErr = err
 	}
-	if chapters == nil && w.textURL != "" && a.allowed(w.textURL) {
+	if chapters == nil && a.allowed(w.textURL) {
 		tried = true
-		body, err := a.c.Get(ctx, w.textURL, maxWorkBody, workTTL)
+		body, err := a.c.Get(ctx, w.textURL, a.maxBody, workTTL)
 		if err == nil {
 			chapters, footer, err = parseZipText(body, w.title)
+			if err != nil {
+				a.c.Invalidate(w.textURL)
+			}
 		}
 		lastErr = err
 	}
@@ -367,7 +454,7 @@ func (b *budget) addRun(n int) error {
 	b.text += n
 	b.runs++
 	if b.text > maxText || b.runs > maxRuns {
-		return ErrTooLarge
+		return sources.ErrTooLarge
 	}
 	return nil
 }
@@ -375,7 +462,7 @@ func (b *budget) addRun(n int) error {
 func (b *budget) addParagraph() error {
 	b.paras++
 	if b.paras > maxParagraphs {
-		return ErrTooLarge
+		return sources.ErrTooLarge
 	}
 	return nil
 }
@@ -383,7 +470,7 @@ func (b *budget) addParagraph() error {
 func (b *budget) addChapter() error {
 	b.chapters++
 	if b.chapters > maxChapters {
-		return ErrTooLarge
+		return sources.ErrTooLarge
 	}
 	return nil
 }

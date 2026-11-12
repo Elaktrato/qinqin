@@ -5,11 +5,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -89,9 +93,38 @@ const txt = "羅生門\r\n芥川龍之介\r\n\r\n" +
 	"　　　1977（昭和52）年1月\r\n" +
 	"入力：テスト\r\n"
 
+type testClock struct {
+	mu sync.Mutex
+	t  time.Time
+}
+
+func (c *testClock) now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.t
+}
+
+func (c *testClock) advance(d time.Duration) {
+	c.mu.Lock()
+	c.t = c.t.Add(d)
+	c.mu.Unlock()
+}
+
+const (
+	catOK      = 0
+	catGarbage = 1
+	catFail    = 2
+)
+
 type fixture struct {
-	srv *httptest.Server
-	ad  *adapter
+	srv      *httptest.Server
+	ad       *adapter
+	clock    *testClock
+	cacheDir string
+	catHits  atomic.Int32
+	zipHits  atomic.Int32
+	catMode  atomic.Int32
+	catGate  chan struct{} // when non-nil, catalog requests wait for it (or the client to leave)
 }
 
 func newFixture(t *testing.T, head []string) *fixture {
@@ -117,23 +150,39 @@ func newFixture(t *testing.T, head []string) *fixture {
 		row("000008", "Sample ＡＢＣ", "なし", "太宰", "治", "著者", "なし", base+"/f/4_ruby.zip", ""),
 	}
 	cat := catalogZip(t, head, rows)
-	mux.HandleFunc("/catalog.zip", func(w http.ResponseWriter, r *http.Request) { w.Write(cat) })
+	mux.HandleFunc("/catalog.zip", func(w http.ResponseWriter, r *http.Request) {
+		f.catHits.Add(1)
+		if f.catGate != nil {
+			select {
+			case <-f.catGate:
+			case <-r.Context().Done():
+				return
+			}
+		}
+		switch f.catMode.Load() {
+		case catGarbage:
+			w.Write([]byte("this is not a zip"))
+		case catFail:
+			http.Error(w, "down", http.StatusInternalServerError)
+		default:
+			w.Write(cat)
+		}
+	})
 	mux.HandleFunc("/f/1.html", func(w http.ResponseWriter, r *http.Request) { w.Write(sjis(t, xhtml)) })
 	mux.HandleFunc("/f/1_ruby.zip", func(w http.ResponseWriter, r *http.Request) {
+		f.zipHits.Add(1)
 		w.Write(zipOf(t, "1_ruby.txt", sjis(t, "x\r\n本文\r\n")))
 	})
 	mux.HandleFunc("/f/4_ruby.zip", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(zipOf(t, "4_ruby.txt", sjis(t, txt)))
 	})
 	u, _ := url.Parse(base)
-	c := sources.NewHTTPClient(t.TempDir(), "ua")
-	now := time.Now()
-	c.SetClock(func() time.Time { return now }, func(context.Context, time.Duration) error { return nil })
-	f.ad = &adapter{
-		c:            c,
-		catalogURL:   base + "/catalog.zip",
-		allowedHosts: map[string]bool{u.Host: true},
-	}
+	f.cacheDir = t.TempDir()
+	c := sources.NewHTTPClient(f.cacheDir, "ua")
+	c.AllowPrivate = true // httptest listens on 127.0.0.1
+	f.clock = &testClock{t: time.Now()}
+	c.SetClock(f.clock.now, func(context.Context, time.Duration) error { return nil })
+	f.ad = newAdapter(c, base+"/catalog.zip", map[string]bool{u.Host: true}, true)
 	return f
 }
 
@@ -153,15 +202,16 @@ func TestAozoraSearchFiltersCopyrighted(t *testing.T) {
 		t.Fatal(err)
 	}
 	// only works whose work AND person flags are both なし, ordered by id
-	if want := []string{"000001", "000004", "000007", "000008"}; !reflect.DeepEqual(ids(rs), want) {
+	// (000007 is free but has no download URL on an allowed host)
+	if want := []string{"000001", "000004", "000008"}; !reflect.DeepEqual(ids(rs), want) {
 		t.Fatalf("all = %v, want %v", ids(rs), want)
 	}
 	if rs[0].Title != "吾輩は猫である" || rs[0].Author != "夏目漱石" || rs[0].Language != "ja" {
 		t.Fatalf("result = %+v", rs[0])
 	}
 	for q, want := range map[string][]string{
-		"漱石":      {"000001", "000007"},
-		"夏目 漱石":   {"000001", "000007"},
+		"漱石":      {"000001"},
+		"夏目 漱石":   {"000001"},
 		"羅生":      {"000004"},
 		"abc":     {"000008"}, // NFKC + case-insensitive
 		"著作権あり":   {},         // copyrighted work is never found
@@ -278,5 +328,118 @@ func TestAozoraFetchRejects(t *testing.T) {
 		if _, err := f.ad.Fetch(context.Background(), id); err == nil {
 			t.Errorf("Fetch(%q) succeeded", id)
 		}
+	}
+}
+
+func TestAozoraCatalogSingleFlight(t *testing.T) {
+	f := newFixture(t, header)
+	f.catGate = make(chan struct{})
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := f.ad.Search(context.Background(), "", 5); err != nil {
+				t.Error(err)
+			}
+		}()
+	}
+	for f.catHits.Load() == 0 {
+		time.Sleep(time.Millisecond)
+	}
+	time.Sleep(50 * time.Millisecond) // let the other callers queue up
+	close(f.catGate)
+	wg.Wait()
+	if n := f.catHits.Load(); n != 1 {
+		t.Fatalf("catalog downloads = %d, want 1", n)
+	}
+}
+
+func TestAozoraCatalogWaiterHonorsContext(t *testing.T) {
+	f := newFixture(t, header)
+	f.catGate = make(chan struct{})
+	defer close(f.catGate)
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	_, err := f.ad.Search(ctx, "", 5)
+	if !errors.Is(err, context.DeadlineExceeded) || time.Since(start) > 2*time.Second {
+		t.Fatalf("err = %v after %v", err, time.Since(start))
+	}
+}
+
+func TestAozoraStaleCatalogServedWhenRefreshFails(t *testing.T) {
+	f := newFixture(t, header)
+	ctx := context.Background()
+	if _, err := f.ad.Search(ctx, "", 5); err != nil {
+		t.Fatal(err)
+	}
+	f.catMode.Store(catFail)
+	f.clock.advance(catalogTTL + time.Hour)
+	rs, err := f.ad.Search(ctx, "", 5)
+	if err != nil || len(rs) != 3 {
+		t.Fatalf("stale search: %v %v", ids(rs), err)
+	}
+	hits := f.catHits.Load()
+	if _, err := f.ad.Search(ctx, "", 5); err != nil || f.catHits.Load() != hits {
+		t.Fatalf("retried within the negative window: hits %d -> %d, err %v", hits, f.catHits.Load(), err)
+	}
+	f.clock.advance(negativeTTL + time.Second)
+	if _, err := f.ad.Search(ctx, "", 5); err != nil || f.catHits.Load() != hits+1 {
+		t.Fatalf("no retry after the window: hits %d, err %v", f.catHits.Load(), err)
+	}
+}
+
+func TestAozoraFailureIsNegativelyCached(t *testing.T) {
+	f := newFixture(t, header)
+	ctx := context.Background()
+	f.catMode.Store(catFail)
+	if _, err := f.ad.Search(ctx, "", 5); err == nil {
+		t.Fatal("expected error")
+	}
+	if _, err := f.ad.Search(ctx, "", 5); err == nil || f.catHits.Load() != 1 {
+		t.Fatalf("second call: hits %d, err %v", f.catHits.Load(), err)
+	}
+	f.catMode.Store(catOK)
+	f.clock.advance(negativeTTL + time.Second)
+	if rs, err := f.ad.Search(ctx, "", 5); err != nil || len(rs) != 3 || f.catHits.Load() != 2 {
+		t.Fatalf("after window: %v hits %d err %v", ids(rs), f.catHits.Load(), err)
+	}
+}
+
+func TestAozoraBadCatalogBodyIsNotCached(t *testing.T) {
+	f := newFixture(t, header)
+	ctx := context.Background()
+	f.catMode.Store(catGarbage)
+	if _, err := f.ad.Search(ctx, "", 5); err == nil {
+		t.Fatal("expected error for garbage catalog")
+	}
+	if entries, _ := os.ReadDir(f.cacheDir); len(entries) != 0 {
+		t.Fatalf("bad body stayed in the cache: %v", entries)
+	}
+	f.catMode.Store(catOK)
+	f.clock.advance(negativeTTL + time.Second)
+	if rs, err := f.ad.Search(ctx, "", 5); err != nil || len(rs) != 3 {
+		t.Fatalf("refetch: %v %v", ids(rs), err)
+	}
+}
+
+func TestAozoraOversizedCardDoesNotFallBack(t *testing.T) {
+	f := newFixture(t, header)
+	f.ad.maxBody = 200 // the card is larger, the text zip would be too
+	_, err := f.ad.Fetch(context.Background(), "000001")
+	if !errors.Is(err, sources.ErrTooLarge) {
+		t.Fatalf("err = %v, want ErrTooLarge", err)
+	}
+	if f.zipHits.Load() != 0 {
+		t.Fatal("fell back to the text zip after a size error")
+	}
+}
+
+func TestAozoraProductionIsHTTPSOnly(t *testing.T) {
+	a := New(sources.NewHTTPClient(t.TempDir(), "ua")).(*adapter)
+	if a.allowed("http://www.aozora.gr.jp/cards/1/f.html") || a.allowed("https://evil.example.com/x") ||
+		!a.allowed("https://www.aozora.gr.jp/cards/1/f.html") {
+		t.Fatal("unexpected allowlist behaviour")
 	}
 }
