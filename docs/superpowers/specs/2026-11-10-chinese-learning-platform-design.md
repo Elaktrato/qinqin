@@ -183,7 +183,8 @@ primitives (flashcard flips, stroke animations), lighter for a non-SEO app.
   enable/disable + ordering), plugin_data (per-plugin, per-user owned data,
   versioned, tombstoned).
 - **Entry identity**: one entry per written form. Simplified and traditional
-  are separate entries linked as variants (Unihan variant mappings are
+  are separate entries linked as variants (as built: one entry, with the
+  traditional spelling as a `trad` form) (Unihan variant mappings are
   many-to-many, and stroke data differs per form). Views pair the forms for
   display; IDs, links, level tags, and overlays attach to the concrete form.
 - JSON REST API, token auth. Admin vs user role only.

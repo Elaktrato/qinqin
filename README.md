@@ -52,8 +52,8 @@ docker compose exec qinqin qinqin adduser --admin --username you
 `./data`) and `--packs <dir>[,<dir>...]` (pack roots, comma-separated and/or
 repeated; default `$QINQIN_PACKS`, or `plugins/data` plus `plugins/data-local`
 when that exists; the image sets `QINQIN_PACKS` to the packs it ships). The full
-bundle seeds in under a minute (about 45 s measured) and is idempotent: re-running replaces each pack's own
-rows and touches nothing else. Nothing is published yet, so there is no upgrade
+bundle seeds in under a minute (about 45 s measured) and is idempotent:
+re-running replaces each pack's own rows and touches nothing else. Nothing is published yet, so there is no upgrade
 path for old dictionary data: a development database from before the lookup
 rewrite (migration 017 drops the legacy tables) is rebuilt by deleting its data
 directory and seeding again.
@@ -182,7 +182,7 @@ All library and source routes need a signed-in user, and so does
 | Route | Purpose |
 |---|---|
 | `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, forms, readings, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
-| `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates (at most 8) are other readings or entries with the same surface. A candidate has `reading: true` when it matched by a kana reading (Japanese) |
+| `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates are other readings or entries with the same surface (at most 8 candidates in all). A candidate has `reading: true` when it matched by a kana reading (Japanese) |
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license` and `attribution` (the Sources page lists them) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
@@ -269,8 +269,9 @@ one entry. `entry_links` connect characters to their radical and to variants.
 Importers live in `server/internal/dict/` (`jmdict`, `cedict`, `kanjidic2`,
 `unihan` and the `json` pack format) and write through one lexicon importer;
 frequency packs are in `server/internal/freq`. Imports are idempotent and write
-nothing when nothing changed, and every table soft-deletes so clients sync
-deletions.
+nothing when nothing changed. `entries`, `forms`, `readings`, `senses`,
+`entry_links` and `frequency_packs` soft-delete and are picked up by the delta
+sync; `frequency` rows are replaced per pack on import and are not synced.
 
 ## Frequency data
 

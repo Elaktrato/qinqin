@@ -92,8 +92,10 @@ data moved (a database is rebuilt by seeding again). Final tables: `entries`
 (text, flags), `readings` (type, value, `plain`, flags), `senses` (per
 dictionary: `pos`, `tags`, `glosses`, `xrefs` as JSON text), `entry_links`
 (`variant`, stored both ways, and `radical`), `frequency_packs` (`ord` = priority,
-`content_hash`) and `frequency` (term, reading, rank, display). Every lexicon
-table soft-deletes and stamps `updated_at`, which the delta sync pulls by.
+`content_hash`) and `frequency` (term, reading, rank, display). `entries`,
+`forms`, `readings`, `senses`, `entry_links` and `frequency_packs` soft-delete and
+stamp `updated_at`, which the delta sync pulls by; `frequency` rows are replaced
+per pack on import and are not synced.
 Japanese: one entry per JMdict `ent_seq`, POS per sense. Chinese: one entry per
 simplified form, traditional forms as `trad`-flagged forms, all readings, one
 sense per CC-CEDICT line.
