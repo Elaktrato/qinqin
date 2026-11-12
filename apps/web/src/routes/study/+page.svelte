@@ -54,6 +54,7 @@
 	// whether a saved selection is kept or cleared.
 	let schemes = $state<Scheme[]>([]);
 	let workspaceLanguage = $state<string | null>(null);
+	let activeWorkspaceId = $state<number | null>(null);
 	let schemesLoaded = $state(false);
 	let schemeError = $state('');
 
@@ -125,6 +126,7 @@
 		levelEntriesError = '';
 		schemes = [];
 		workspaceLanguage = language;
+		activeWorkspaceId = workspaceId;
 		schemesLoaded = false;
 		schemeError = '';
 
@@ -212,6 +214,19 @@
 		return [...scheme.levels].sort((a, b) => a.ord - b.ord);
 	});
 
+	// The selection a level session can actually use: it must resolve
+	// against the loaded schemes of the current workspace language, not
+	// just against the id saved in sessionStorage. Effects and Start key
+	// off this so a stale or not-yet-resolved scheme cannot fetch or start.
+	const levelSelection = $derived.by((): { schemeId: number; levelName: string } | null => {
+		if (!schemesLoaded) return null;
+		const scheme = selectedScheme;
+		const level = levelName;
+		if (scheme === null || level === null) return null;
+		if (!schemeLevels.some((item) => item.name === level)) return null;
+		return { schemeId: scheme.id, levelName: level };
+	});
+
 	// Keep the saved selection when it still exists; otherwise fall back
 	// to the first scheme/level. Clearing on an empty list means a stale
 	// levels setup from another language cannot start.
@@ -251,16 +266,19 @@
 	}
 
 	// Fetch the chosen level's words so the counts below reflect the
-	// exact level a session would study.
+	// exact level a session would study. Depending on the resolved
+	// selection and the workspace id makes a same-language workspace
+	// switch refetch even though the saved scheme/level stay valid.
 	$effect(() => {
-		if (mode !== 'levels' || schemeId === null || levelName === null) {
+		const selection = levelSelection;
+		if (mode !== 'levels' || activeWorkspaceId === null || selection === null) {
 			levelEntriesSeq += 1;
 			levelEntries = [];
 			levelEntriesLoading = false;
 			levelEntriesError = '';
 			return;
 		}
-		void loadLevelEntries(schemeId, levelName);
+		void loadLevelEntries(selection.schemeId, selection.levelName);
 	});
 
 	// Due and new are counted separately so the setup shows what a
@@ -289,7 +307,7 @@
 	});
 
 	const levelCounts = $derived.by(() => {
-		if (schemeId === null || levelName === null || levelEntries.length === 0) {
+		if (levelSelection === null || levelEntries.length === 0) {
 			return { due: 0, fresh: 0 };
 		}
 		const now = new Date();
@@ -327,7 +345,7 @@
 			if (schemesForLanguage.length === 0) {
 				return 'No level schemes are installed for this workspace language.';
 			}
-			if (schemeId === null || levelName === null) {
+			if (levelSelection === null) {
 				return 'Choose a scheme and a level to start.';
 			}
 			if (levelEntriesError) return levelEntriesError;
@@ -464,6 +482,12 @@
 			cardTypes: [...cardTypes]
 		};
 		errors = validateConfig(config);
+		// A saved scheme from another workspace language still has a
+		// positive id and a level name, so validation alone cannot catch
+		// it; the resolved selection can.
+		if (errors.length === 0 && mode === 'levels' && levelSelection === null) {
+			errors = ['Choose a level from a scheme installed for this workspace.'];
+		}
 		if (errors.length > 0) return;
 
 		starting = true;
@@ -678,7 +702,7 @@
 					<strong>{levelWordCount}</strong>
 					{levelWordCount === 1 ? 'word' : 'words'} in
 					<strong>{selectedScheme?.name ?? 'this scheme'}</strong>
-					{levelName ?? ''} ·
+					{levelSelection?.levelName ?? ''} ·
 					<strong>{counts.due}</strong>
 					due ·
 					<strong>{counts.fresh}</strong>
