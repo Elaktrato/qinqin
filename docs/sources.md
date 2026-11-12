@@ -1,7 +1,8 @@
 # Starter data sources
 
-The repository bundles four upstream dictionaries under `plugins/data/` so
-that a fresh clone or Docker image seeds offline (`qinqin seed`):
+The repository bundles four upstream dictionaries and one frequency list
+under `plugins/data/` so that a fresh clone or Docker image seeds offline
+(`qinqin seed`):
 
 | Pack | Provides | License | Upstream |
 |---|---|---|---|
@@ -9,16 +10,82 @@ that a fresh clone or Docker image seeds offline (`qinqin seed`):
 | **Unihan** (`unihan`) | Radical-stroke counts, simplified/traditional variant mappings, character definitions | Unicode License v3 | https://www.unicode.org/reports/tr38/ |
 | **JMdict** (`jmdict`) | Japanese–English words and meanings; its priority and usually-kana tags rank homophones in the Reader | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/ |
 | **KANJIDIC2** (`kanjidic2`) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/wiki/index.php/KANJIDIC_Project |
+| **Jiten frequency list** (`jiten-frequency`) | Japanese word frequency ranks that order lookup results | CC BY-SA 4.0 (Jitensoft) | https://jiten.moe/frequency-dictionaries |
 
 Each pack directory carries its `manifest.json` (including `license` and
 `attribution`), the full license text (`LICENSE`), and credits
-(`ATTRIBUTION.md`). The files are redistributed **unmodified**; the
-download-and-bundle procedure lives in `scripts/fetch-seeds.sh`.
+(`ATTRIBUTION.md`). The dictionary files are redistributed **unmodified**;
+the download-and-bundle procedure lives in `scripts/fetch-seeds.sh`.
 
 The dictionary licenses apply only to the dictionary data. The
 API exposes each active dictionary's `license` and `attribution` via
 `GET /api/dictionaries`, and the web app surfaces those credits in its
 sources view.
+
+## Frequency data
+
+**Jiten** (<https://jiten.moe>, published by Jitensoft) builds word
+frequency lists from the Japanese media it analyses (anime and drama
+subtitles, novels, visual novels, games, manga and more). The bundled pack is
+its **global** list. The publisher states the licence on
+<https://jiten.moe/frequency-dictionaries> ("All frequency lists are licensed
+under CC BY-SA 4.0.") and in article 6.1 of its terms,
+<https://jiten.moe/terms> (version 2026-08-08: frequency lists "licensed under
+CC BY-SA 4.0. Within that licence, commercial use is permitted, subject to
+attribution and share-alike."); both checked on 2026-11-12.
+
+`scripts/fetch-jiten-frequency.sh` (called by `fetch-seeds.sh`) downloads the
+published Yomitan-format file once and writes `plugins/data/jiten-frequency/`:
+**unmodified ranks** converted to `freq.csv.gz` (`term,reading,rank`), the
+CC BY-SA 4.0 text and the attribution. The converted file is shared under the
+same licence. The app never calls Jiten's API: lookups use the snapshot only.
+`GET /api/frequency-packs` exposes each installed frequency pack's `license`
+and `attribution`, and the Sources page lists them.
+
+## Local-only data
+
+Data whose licence is unclear or restrictive is never committed. It can live
+in `plugins/data-local/`, which `.gitignore` excludes: `qinqin seed` with no
+`--packs` imports `plugins/data` and then `plugins/data-local` when that
+directory exists (or name the roots: `--packs plugins/data,plugins/data-local`).
+The app works without anything there; frequency packs only reorder lookup
+results.
+
+A frequency pack is a directory with a `manifest.json` and its data:
+
+- a Yomitan frequency dictionary: put the `.zip` as downloaded (or its
+  unpacked `index.json` and `term_meta_bank_*.json`) in the directory, with
+  `"format": "yomitan-freq"`;
+- a CSV: `freq.csv` or `freq.csv.gz` with the header `term,reading,rank`
+  (an empty reading applies to any reading), with `"format": "freq-csv"`.
+
+```json
+{
+  "id": "my-freq",
+  "name": "My frequency list",
+  "version": "2026-11-12",
+  "type": "frequency",
+  "language": "ja",
+  "license": "as stated by its publisher",
+  "attribution": "who made it, with a link",
+  "format": "yomitan-freq"
+}
+```
+
+`license` and `attribution` are required. Then run `qinqin seed`. Packs keep
+the order they were first imported in, and the first pack with data for a word
+decides its frequency ordering, so with the default roots the bundled Jiten
+list comes first.
+
+Researched and **not bundled** (no redistribution; use locally only, if their
+terms allow it):
+
+- **BCCWJ** frequency lists (NINJAL): licensed for research and education only.
+- **JPDB** frequency lists: built from scraped data; no licence from the source.
+- **SUBTLEX-CH**: terms of use unclear.
+- **Leiden Weibo corpus** frequencies: non-commercial licence.
+- **wordfreq** (zh) and **jieba** word counts: provenance of the underlying
+  counts unclear.
 
 ## Stroke-order data
 

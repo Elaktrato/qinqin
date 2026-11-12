@@ -2,7 +2,7 @@
 
 `qinqin seed --data <dir> --packs plugins/data` imports every pack under this
 directory. A pack is a directory with a `manifest.json` (id, name, version,
-`type` dictionary|levels|sentences, `language`, `license`, `attribution`,
+`type` dictionary|levels|sentences|frequency, `language`, `license`, `attribution`,
 `format`) plus the data file its format reads.
 
 Committed (small, hand-written, CC0 — samples, not the official lists):
@@ -24,12 +24,18 @@ with `LICENSE` and `ATTRIBUTION.md` in each directory):
 | `unihan` | dictionary | zh | radical-stroke counts, variants, definitions (`Unihan.zip`) |
 | `jmdict` | dictionary | ja | JMdict words (`jmdict.xml.gz`) |
 | `kanjidic2` | dictionary | ja | KANJIDIC2 kanji (`kanjidic2.xml.gz`) |
+| `jiten-frequency` | frequency | ja | Jiten global word frequency ranks, converted to `freq.csv.gz` (`term,reading,rank`, ranks unmodified) |
 
 The importers read the compressed files directly, so a fresh clone or the
 Docker image seeds with no network and no decompression step. Run
-`scripts/fetch-seeds.sh` to refresh the bundle; it rewrites these four pack
+`scripts/fetch-seeds.sh` to refresh the bundle; it rewrites these pack
 directories in the bundled layout and removes any legacy decompressed
-payloads (`dictionary.txt`, `jmdict.xml`, `kanjidic2.xml`).
+payloads (`dictionary.txt`, `jmdict.xml`, `kanjidic2.xml`). The Jiten pack
+alone is refreshed by `scripts/fetch-jiten-frequency.sh`.
+
+Data with an unclear or restrictive licence is never committed here: it goes
+in the gitignored `plugins/data-local/`, which `qinqin seed` also imports
+when it exists (see `docs/sources.md`, "Local-only data").
 
 Seeding is idempotent: re-running replaces each pack's own rows and touches
 nothing else. Dictionaries (including the character data) import before level
