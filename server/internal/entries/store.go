@@ -215,6 +215,62 @@ func (s Store) EntriesByWritten(ctx context.Context, language string, writtens [
 	return out, nil
 }
 
+// ReadingHit is one entry found by a reading: its id, kind and written
+// form, and Ord, the position of the matched reading among the entry's
+// readings (0 = its first reading).
+type ReadingHit struct {
+	ID      int64
+	Kind    string
+	Written string
+	Ord     int
+}
+
+// EntriesByReading returns the active entries of a language that carry an
+// active reading of type readType whose plain (normalized) form is one of
+// plains, grouped by plain form. Within a group, entries for which the
+// reading is the first one come first, then by ascending ord, ties by
+// entry id. Forms without a hit are absent from the map.
+func (s Store) EntriesByReading(ctx context.Context, language, readType string, plains []string) (map[string][]ReadingHit, error) {
+	out := make(map[string][]ReadingHit)
+	for start := 0; start < len(plains); start += childChunk {
+		chunk := plains[start:min(start+childChunk, len(plains))]
+		args := make([]any, 0, len(chunk)+2)
+		args = append(args, language, readType)
+		for _, p := range chunk {
+			args = append(args, p)
+		}
+		rows, err := s.DB.QueryContext(ctx, `
+			SELECT r.plain, e.id, e.kind, e.written, MIN(r.ord) AS ord
+			FROM readings r
+			JOIN entries e ON e.id = r.entry_id
+			WHERE e.language = ? AND e.deleted_at IS NULL
+			  AND r.deleted_at IS NULL AND r.type = ?
+			  AND r.plain IN (`+placeholders(len(chunk))+`)
+			GROUP BY r.plain, e.id
+			ORDER BY r.plain, ord, e.id`, args...)
+		if err != nil {
+			return nil, fmt.Errorf("entries by reading: %w", err)
+		}
+		for rows.Next() {
+			var (
+				plain string
+				h     ReadingHit
+			)
+			if err := rows.Scan(&plain, &h.ID, &h.Kind, &h.Written, &h.Ord); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("entries by reading: %w", err)
+			}
+			out[plain] = append(out[plain], h)
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, fmt.Errorf("entries by reading: %w", err)
+		}
+	}
+	return out, nil
+}
+
 // GetByID returns the entry with the given id, or ErrNotFound when no
 // active entry has it.
 func (s Store) GetByID(ctx context.Context, id int64) (*model.Entry, error) {

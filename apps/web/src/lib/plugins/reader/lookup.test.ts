@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SegmentMatch } from '$lib/api/types';
 import {
 	codePointToUtf16,
+	homophoneNote,
 	pickEntry,
 	preferredEntry,
 	selectionTarget,
@@ -117,5 +118,54 @@ describe('selectionTarget', () => {
 		expect(selectionTarget('。 ')).toBeNull();
 		expect(selectionTarget('「」、！')).toBeNull();
 		expect(selectionTarget('　')).toBeNull();
+	});
+});
+
+describe('homophoneNote', () => {
+	const reading = (id: number, kind: 'word' | 'character' = 'word') => ({
+		id,
+		kind,
+		reading: true
+	});
+	const kana = (entries: SegmentMatch['entries']): SegmentMatch => ({
+		surface: 'した',
+		start: 0,
+		end: 2,
+		lemma: 'する',
+		reason: 'past',
+		entries
+	});
+
+	it('counts the other reading candidates of the shown kind and links a search', () => {
+		const note = homophoneNote(kana([reading(1), reading(2), reading(3), reading(4, 'character')]), 'word');
+		expect(note).toEqual({
+			count: 2,
+			href: `/search?q=${encodeURIComponent('する')}`,
+			text: '2 other entries are read this way — search for it'
+		});
+	});
+
+	it('uses the singular for one other entry', () => {
+		expect(homophoneNote(kana([reading(1), reading(2)]), 'word')?.text).toBe(
+			'1 other entry is read this way — search for it'
+		);
+	});
+
+	it('is null for a single candidate, written-form hits, or no match', () => {
+		expect(homophoneNote(kana([reading(1)]), 'word')).toBeNull();
+		expect(
+			homophoneNote(
+				kana([
+					{ id: 1, kind: 'word' },
+					{ id: 2, kind: 'word' }
+				]),
+				'word'
+			)
+		).toBeNull();
+		expect(homophoneNote(null, 'word')).toBeNull();
+	});
+
+	it('counts the kind actually shown when the preferred kind is missing', () => {
+		expect(homophoneNote(kana([reading(1), reading(2)]), 'character')?.count).toBe(1);
 	});
 });

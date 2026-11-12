@@ -13,7 +13,7 @@
 	import Readings from '$lib/components/Readings.svelte';
 	import Senses from '$lib/components/Senses.svelte';
 	import { apiErrorMessage } from './errors';
-	import { preferredEntry, type LookupKind } from './lookup';
+	import { homophoneNote, preferredEntry, type LookupKind } from './lookup';
 
 	let {
 		lang,
@@ -42,6 +42,7 @@
 	const MARGIN = 8;
 
 	const choice = $derived(match ? preferredEntry(match, kind) : undefined);
+	const homophones = $derived(match ? homophoneNote(match, kind) : null);
 	// A primitive, so re-anchoring the same lookup never refetches.
 	const choiceId = $derived(choice?.id);
 	let entry = $state<Entry | null>(null);
@@ -127,6 +128,9 @@
 			<Readings readings={entry.readings} />
 			<Badges badges={entry.badges} />
 			<Senses senses={entry.senses} />
+			{#if homophones}
+				<p class="hint homophones"><a href={homophones.href}>{homophones.text}</a></p>
+			{/if}
 			{#if mode === 'selection'}
 				<p class="more"><a href={`/entry/${entry.id}`}>Open full entry</a></p>
 			{/if}

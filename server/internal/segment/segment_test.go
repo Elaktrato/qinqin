@@ -185,7 +185,13 @@ func TestMatchAtPrefersShallowerDeinflection(t *testing.T) {
 }
 
 func TestMatchAtIrregularVerbs(t *testing.T) {
-	svc := seedJa(t, "する", "来る", "くる", "行く")
+	// Real-importer shape: する and くる exist only as readings of 為る
+	// and 来る.
+	svc, _ := importJMdict(t, []jmEntry{
+		{kanji: []string{"為る"}, readings: []string{"する"}},
+		{kanji: []string{"来る"}, readings: []string{"くる"}},
+		{kanji: []string{"行く"}, readings: []string{"いく", "ゆく"}},
+	})
 	for _, c := range []struct{ text, lemma, reason string }{
 		{"した", "する", "past"},
 		{"来ました", "来る", "polite past"},

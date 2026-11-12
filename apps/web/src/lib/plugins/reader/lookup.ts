@@ -1,4 +1,4 @@
-import type { SegmentMatch } from '$lib/api/types';
+import type { SegmentCandidate, SegmentMatch } from '$lib/api/types';
 
 export type LookupKind = 'character' | 'word';
 
@@ -45,7 +45,7 @@ export function codePointToUtf16(text: string, cpIndex: number): number {
 export function pickEntry(
 	match: SegmentMatch,
 	kind: LookupKind
-): { id: number; kind: LookupKind } | undefined {
+): SegmentCandidate | undefined {
 	return match.entries.find((entry) => entry.kind === kind);
 }
 
@@ -56,9 +56,33 @@ export function pickEntry(
 export function preferredEntry(
 	match: SegmentMatch | null,
 	kind: LookupKind
-): { id: number; kind: LookupKind } | undefined {
+): SegmentCandidate | undefined {
 	if (!match) return undefined;
 	return pickEntry(match, kind) ?? pickEntry(match, kind === 'word' ? 'character' : 'word');
+}
+
+/**
+ * homophoneNote describes the other entries a reading match resolves to:
+ * when the shown candidate matched by its kana reading and more
+ * candidates of the shown kind did too, the count of the others and a
+ * link to the search page for the reading. Null otherwise.
+ */
+export function homophoneNote(
+	match: SegmentMatch | null,
+	kind: LookupKind
+): { count: number; href: string; text: string } | null {
+	const shown = preferredEntry(match, kind);
+	if (!match || !shown?.reading) return null;
+	const count = match.entries.filter((e) => e.kind === shown.kind && e.reading).length - 1;
+	if (count < 1) return null;
+	return {
+		count,
+		href: `/search?q=${encodeURIComponent(match.lemma)}`,
+		text:
+			count === 1
+				? '1 other entry is read this way — search for it'
+				: `${count} other entries are read this way — search for it`
+	};
 }
 
 // Whitespace, punctuation and symbols never have a dictionary entry.

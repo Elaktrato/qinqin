@@ -131,7 +131,15 @@ export interface SegmentMatch {
 	end: number;
 	lemma: string;
 	reason: string;
-	entries: { id: number; kind: 'character' | 'word' }[];
+	entries: SegmentCandidate[];
+}
+
+// SegmentCandidate is one entry a match resolves to; reading is true when
+// it matched by a kana reading rather than its written form (Japanese).
+export interface SegmentCandidate {
+	id: number;
+	kind: 'character' | 'word';
+	reading?: boolean;
 }
 
 // Book is one library book as served by /api/library/books.
