@@ -1,7 +1,7 @@
 # Yomitan-style Lookup — Design
 
 Date: 2026-11-12
-Status: Draft for approval. Design agreed in conversation; nothing built yet.
+Status: Implemented 2026-11-13 on feature/yomitan-lookup
 Builds on: `docs/superpowers/specs/2026-11-12-reader-design.md` (the reader plugin, the core tokenizer, JMdict reading-based matching and `uk`/priority ranking). This work starts from the tip of `feature/reader` on its own branch, `feature/yomitan-lookup`.
 
 ## Intent
@@ -80,3 +80,73 @@ Make dictionary lookup in the reader behave like Yomitan's: hovering a word show
 - **Jiten snapshot:** commit a compact converted file (not the Yomitan zip) with its CC BY-SA 4.0 licence and attribution files beside it; add an in-app Sources entry. Frequency for Chinese, when a local pack is present, is matched through CC-CEDICT's own simplified/traditional pairs (and Unihan variants for single characters); no client-only conversion is used on the server.
 - **Chinese uses the same "show more" thresholds** (3 entries, 3 senses, nested depth 4); for Chinese the entry list is usually one merged entry with several readings, shown as one stacked entry listing all readings.
 - **Fallback when frequency is absent:** the chain falls through; Japanese then ranks by inflection chain length and the `uk`/priority score; Chinese by matched length and headword text.
+
+## Implementation notes
+
+What was built, where it differs from the design above.
+
+**Schema.** Migrations 014-016 built the lexicon beside the legacy tables;
+migration 017 dropped the legacy tables and renamed the lexicon ones, with no
+data moved (a database is rebuilt by seeding again). Final tables: `entries`
+(language, kind `word`|`character`, `ext_key`, `pri`, `uk`, `attrs`), `forms`
+(text, flags), `readings` (type, value, `plain`, flags), `senses` (per
+dictionary: `pos`, `tags`, `glosses`, `xrefs` as JSON text), `entry_links`
+(`variant`, stored both ways, and `radical`), `frequency_packs` (`ord` = priority,
+`content_hash`) and `frequency` (term, reading, rank, display). Every lexicon
+table soft-deletes and stamps `updated_at`, which the delta sync pulls by.
+Japanese: one entry per JMdict `ent_seq`, POS per sense. Chinese: one entry per
+simplified form, traditional forms as `trad`-flagged forms, all readings, one
+sense per CC-CEDICT line.
+
+**Sort chain as built** (`server/internal/lookup/rank.go`): matched source
+length, frequency rank (entries without data last; a no-op when no pack has
+data), primary-reading match, inflection chain length, exact-match count,
+dictionary order, entry score (usually-kana with priority, then priority), then
+headword and entry id. This deviates from Yomitan: matched length and frequency
+lead, and frequency outranks the inflection chain. History: primary-reading
+match first sat above frequency, as in the design, but merged JMdict entries
+lose Yomitan's per-reading headwords (行く lists いく before ゆく while 征く
+lists ゆく first), so a rare word reading the matched kana first beat the
+frequent one; it moved below frequency. The ranking pack is the first pack, in
+priority order, with data for any of the entries.
+
+**Endpoints and limits.** `GET /api/lookup` is public: `text` at most 64 code
+points (413 above), at most 30 results, `kind` (`word`|`character`) repeatable,
+an engine window of 12 code points. `GET /api/segment/at` is public (64 code
+points); `POST /api/segment` needs a user (5000 code points, 256 KiB).
+`GET /api/sync/pull?collections=` limits a pull to the named Delta collections;
+its cursor is valid only for the collections requested. `GET /api/frequency-packs`
+lists packs with licence and attribution. The web popup stack is in
+`apps/web/src/lib/plugins/reader/`: 3 entries and 3 senses before "show more",
+Shift+hover nested popups to depth 4, Esc closes the top popup, an outside click
+closes the stack.
+
+**Tokenizer.** The tokenizer endpoints are now a thin layer over the lookup
+engine (this replaces the design's "unchanged"): the match is the longest text
+any result matched; `Lemma` is the dictionary form and `Reason` the
+deinflection of the best-ranked result; only `Entries[0]` corresponds to
+`Lemma`/`Reason`, later candidates (at most 8) are other readings or entries with
+the same surface. `lexicon.Store.BestWord` resolves level and sentence pack
+words: by written form, else by kana reading (word entries whose first reading
+is that kana and which are written in kana or marked `uk`). Known
+imperfections of that fallback: いう, わるい, あつい, さむい and たかい stay
+unresolved; だれ resolves to ダレ, いる to 要る, なる to 生る and やすい to 易い.
+
+**Licence decisions.** The Jiten global frequency list is bundled on the
+publisher's stated CC BY-SA 4.0 (the frequency-dictionaries page and terms
+article 6.1, with 6.2) read against article 5(c) of the same terms; with ranks
+unmodified, attribution and the licence text beside the file. Data with an
+uncertain licence is local-only (`plugins/data-local/`, gitignored). See
+`docs/sources.md`.
+
+**Known limitations.**
+
+- JMdict `re_restr`, `re_nokanji`, `stagk`, `stagr`, `field`, `dial` and
+  `s_inf` are not imported.
+- CC-CEDICT's pairing of a gloss with its reading is lost in the merged entry
+  (senses are kept per line but a reading is not tied to them in the view).
+- The gloss tier of search scans all senses (about 100 ms).
+- Chinese search hits are ordered by id within a tier: there is no Chinese
+  frequency yet, and the Chinese frequency packs are local-only.
+- Popups are not re-placed when the window is resized.
+- Opening a popup from a selection does not move focus into it.

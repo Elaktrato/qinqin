@@ -169,6 +169,11 @@ primitives (flashcard flips, stroke animations), lighter for a non-SEO app.
 
 ### Backend (Go)
 
+- > **Update (2026-11-13):** the dictionary tables below were redesigned for
+  > the Yomitan-style lookup (`entries`, `forms`, `readings`, `senses`,
+  > `entry_links`, `frequency_packs`, `frequency`; one JMdict word per entry).
+  > See `docs/superpowers/specs/2026-11-12-yomitan-lookup-design.md`,
+  > "Implementation notes". The text here is kept as the original design.
 - SQLite via a thin data layer. Tables (indicative): users, sessions,
   dictionaries (source registry), entries (hanzi + words unified with a kind
   field), senses (per dictionary, per entry), entry_links (radical/word
