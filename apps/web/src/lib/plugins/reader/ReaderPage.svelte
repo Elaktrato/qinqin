@@ -1,8 +1,18 @@
 <script lang="ts">
-	// Stub: the reader's internal routing arrives with the reader UI.
+	import BookView from './BookView.svelte';
+	import Library from './Library.svelte';
+	import SourceBrowser from './SourceBrowser.svelte';
+	import { parseRoute } from './route';
+
 	let { rest }: { rest: string } = $props();
+
+	const route = $derived(parseRoute(rest));
 </script>
 
-<main data-rest={rest}>
-	<h1>Reader</h1>
-</main>
+{#if route.view === 'sources'}
+	<SourceBrowser />
+{:else if route.view === 'book'}
+	<BookView id={route.id} chapter={route.chapter} />
+{:else}
+	<Library />
+{/if}
