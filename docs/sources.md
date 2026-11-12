@@ -46,6 +46,8 @@ to run without them). Its one request to Jiten is the published file's
 download link, the same request the page's "Yomitan" download button makes;
 it does not query, iterate or proxy Jiten's API, and the app never contacts
 Jiten: lookups use the snapshot only.
+In short: a refresh is a single manual download of the published file (see
+article 5(b) of the terms), never automated in CI.
 `GET /api/frequency-packs` exposes each installed frequency pack's `license`
 and `attribution`, and the Sources page lists them. An opt-in test seeds the
 real bundle and checks lookups against it (about a minute):
@@ -59,6 +61,12 @@ in `plugins/data-local/`, which `.gitignore` excludes: `qinqin seed` with no
 directory exists (or name the roots: `--packs plugins/data,plugins/data-local`).
 The app works without anything there; frequency packs only reorder lookup
 results.
+
+Under Docker the image holds only its bundled packs (`/opt/qinqin/packs`):
+`docker compose exec qinqin qinqin seed` does not see the host's
+`plugins/data-local` unless it is mounted. Add a volume such as
+`./plugins/data-local:/opt/qinqin/local:ro` to the service and seed with
+`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/local`.
 
 A frequency pack is a directory with a `manifest.json` and its data:
 

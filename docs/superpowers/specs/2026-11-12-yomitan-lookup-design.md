@@ -11,7 +11,7 @@ Make dictionary lookup in the reader behave like Yomitan's: hovering a word show
 ## Goals
 
 - A lookup returns an **ordered list of entries**, grouped by term + reading, each with: the matched source text, the inflection chain (e.g. `past`), tags, one frequency value per installed frequency pack, the source dictionary, and its senses with part-of-speech tags.
-- **Yomitan's sort chain, with one deliberate deviation (decided)**: matched source text length (longest first), **frequency order**, primary-reading match, inflection chain length (shortest first), count of exact source-term matches, dictionary order, entry score, headword text. Yomitan itself puts inflection chain length before frequency; here frequency outranks it, so a frequent deinflected verb is listed above a rare exact homophone (for `した` in `宿題をした`: 為る (past) first, then 下, then 舌). Where a key has no data (no frequency pack installed, one dictionary only), the chain falls through to the next key; with no frequency data at all the order is exactly Yomitan's. The existing JMdict `uk`/priority score is the entry score for Japanese.
+- **Yomitan's sort chain, with one deliberate deviation (decided)**: matched source text length (longest first), **frequency order**, primary-reading match, inflection chain length (shortest first), count of exact source-term matches, dictionary order, entry score, headword text. Yomitan itself puts inflection chain length before frequency; here frequency outranks it, so a frequent deinflected verb is listed above a rare exact homophone (for `した` in `宿題をした`: 為る (past) first, then 下, then 舌). Where a key has no data (no frequency pack installed, one dictionary only), the chain falls through to the next key; with no frequency data at all the frequency key is a no-op, so matched source text length still leads and the remaining keys decide in the order above (an exact homophone of the same length then beats a deinflected verb: `下` before `為る (past)`). The existing JMdict `uk`/priority score is the entry score for Japanese.
 - **Part-of-speech-gated deinflection** for Japanese: JMdict part-of-speech tags are stored, deinflection rules carry the word classes they apply to (for example ichidan, godan variants, `vs-i`, `vk`, `adj-i`), and a deinflected candidate is accepted only if the entry's classes match. This removes spurious candidates such as 話する.
 - **Frequency packs**: installable data packs in a Yomitan-compatible shape (`term_meta_bank` style `freq` rows: a rank or occurrence value, optional reading, optional display value; the pack says which mode it is). One frequency chip per installed pack in the popup.
 - **Popup behaviour like Yomitan's**:
@@ -75,8 +75,8 @@ Make dictionary lookup in the reader behave like Yomitan's: hovering a word show
 - Part-of-speech tags are stored for Japanese only and shown as chips in the popup.
 - **Entry model (answers the builder check; updated after the no-compatibility decision):** because the old database can be thrown away, do NOT layer a second store on top of the merged entries. Redesign the dictionary storage so the unit of a Japanese result is **one JMdict word (`ent_seq`)**: its forms, its readings, its senses with a part-of-speech set per sense, the word-level `uk`/priority score, and frequency per (term, reading). The importer stops merging JMdict homographs. Chinese keeps its decided shape: one entry per written form carrying all its readings and glosses. The builder designs the whole schema (entry identity, readings, senses, tags, frequency tables, indexes) and adapts search, the entry page, flashcards and the tokenizer to it; `entries` ids need not stay stable across the rebuild. Existing tests that encoded the old merged layout are rewritten, not preserved.
 - **Part-of-speech gating:** a deinflected candidate is accepted for a word row if ANY of its senses' part-of-speech tags satisfies the rule's condition (Yomitan does this at term level). Candidates failing the gate are dropped before ranking.
-- **New chain fully replaces the reader's reading-hit ordering for the new lookup.** The older rules ("written-form beats reading hit", "exact beats deinflected", `uk`+priority ordering) remain only inside the existing tokenizer endpoints, which flashcards Round 3 may use and which stay unchanged. "Primary reading match" means: the matched text equals the word's first listed reading or first listed written form (the headword), not merely one of its alternative forms.
-- **Endpoint and limits:** the new lookup endpoint is public, like `GET /api/segment/at`, takes the same short window (at most 16 code points on the client, 64 on the server) and returns at most 30 entries; "show more" is client-side over the returned list, not another request. Nested lookups only fire on Shift+hover (debounced), so they cannot flood the server.
+- **New chain fully replaces the reader's reading-hit ordering for the new lookup.** The older rules ("written-form beats reading hit", "exact beats deinflected", `uk`+priority ordering) are gone: the tokenizer endpoints, which flashcards Round 3 may use, keep their wire shape, but their behaviour now comes from the lookup engine (see Implementation notes, Tokenizer): the match is the longest text any result matched, `Lemma` is the dictionary form of the best result, and only `Entries[0]` corresponds to `Lemma`/`Reason`. "Primary reading match" means: the matched text equals the word's first listed reading or first listed written form (the headword), not merely one of its alternative forms.
+- **Endpoint and limits:** the new lookup endpoint is public, like `GET /api/segment/at`, takes a short window (the client sends the 12 code points the engine reads, `LOOKUP_WINDOW` = `lookup.MaxWindowRunes`; the server accepts at most 64) and returns at most 30 entries; "show more" is client-side over the returned list, not another request. Nested lookups only fire on Shift+hover (debounced), so they cannot flood the server.
 - **Jiten snapshot:** commit a compact converted file (not the Yomitan zip) with its CC BY-SA 4.0 licence and attribution files beside it; add an in-app Sources entry. Frequency for Chinese, when a local pack is present, is matched through CC-CEDICT's own simplified/traditional pairs (and Unihan variants for single characters); no client-only conversion is used on the server.
 - **Chinese uses the same "show more" thresholds** (3 entries, 3 senses, nested depth 4); for Chinese the entry list is usually one merged entry with several readings, shown as one stacked entry listing all readings.
 - **Fallback when frequency is absent:** the chain falls through; Japanese then ranks by inflection chain length and the `uk`/priority score; Chinese by matched length and headword text.
@@ -111,6 +111,23 @@ lose Yomitan's per-reading headwords (行く lists いく before ゆく while �
 lists ゆく first), so a rare word reading the matched kana first beat the
 frequent one; it moved below frequency. The ranking pack is the first pack, in
 priority order, with data for any of the entries.
+
+**Deinflection as built** (`server/internal/lang/ja_deinflect.go`): past,
+negative, polite, te-form, conditional, volitional, passive, causative and
+potential rules, plus the progressive (the auxiliary いる chained onto a
+te-form: している → して → する, Reasons `[progressive te-form]`; its own
+inflections reach ている through the ichidan rules first, so していた is
+`[past progressive te-form]`; contracted てる/でる too), the desiderative (たい
+on the masu stem, inflecting as an i-adjective: 行きたかった → `[past desire]`),
+the imperative (ろ/よ, godan e-row, しろ/せよ, こい/来い) and kana いった/いって
+for 行く. Chains reach depth 4 (していました). Two guards keep frequency from
+turning common words into verbs: the generic imperative and たい rules skip a
+kana-only stem of one code point (いえ, いろ, あれ, いたい, みたい stay 家, 色,
+彼, 痛い, みたい), and the よ imperative never follows a te-form (見てよ is 見て
+plus the particle). Not covered: でした (copula), ちゃう/じゃう, ておく/とく,
+causative-short forms. The bundled sample dictionaries (`zh-mini`, `ja-mini`)
+live in `plugins/samples/`, outside the default seed root, since their
+written-form keyed entries would duplicate JMdict's and CC-CEDICT's.
 
 **Endpoints and limits.** `GET /api/lookup` is public: `text` at most 64 code
 points (413 above), at most 30 results, `kind` (`word`|`character`) repeatable,

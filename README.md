@@ -51,7 +51,11 @@ docker compose exec qinqin qinqin adduser --admin --username you
 `qinqin seed` takes `--data <dir>` (the data directory; default `$QINQIN_DATA` or
 `./data`) and `--packs <dir>[,<dir>...]` (pack roots, comma-separated and/or
 repeated; default `$QINQIN_PACKS`, or `plugins/data` plus `plugins/data-local`
-when that exists; the image sets `QINQIN_PACKS` to the packs it ships). The full
+when that exists; the image sets `QINQIN_PACKS` to the packs it ships). Under
+Docker, `qinqin seed` sees only the image's packs, not the host's
+`plugins/data-local`: mount it (for example
+`./plugins/data-local:/opt/qinqin/local:ro`) and pass
+`--packs /opt/qinqin/packs,/opt/qinqin/local`. The full
 bundle seeds in under a minute (about 45 s measured) and is idempotent:
 re-running replaces each pack's own rows and touches nothing else.
 

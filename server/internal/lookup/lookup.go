@@ -61,9 +61,12 @@ type SenseOut struct {
 // Result is one ranked entry.
 type Result struct {
 	EntryID int64
-	// Kind is word or character. Term is the entry's headword — its first
-	// form, or its first reading for an entry without forms (a kana-only
-	// word) — and Reading the reading that matched, else the first one.
+	// Kind is word or character. Term is the headword shown: for a
+	// Japanese form match the written form that MATCHED (解る, not
+	// 分かる); otherwise (a reading match, or Chinese) the entry's
+	// headword — its first form, or its first reading for an entry
+	// without forms (a kana-only word). Reading is the reading that
+	// matched, else the first one.
 	Kind, Term, Reading string
 	Forms               []lexicon.Form
 	Readings            []lexicon.Reading

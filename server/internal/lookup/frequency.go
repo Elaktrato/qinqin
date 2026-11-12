@@ -31,7 +31,9 @@ type freqGroup struct {
 //
 // A Japanese character entry (KANJIDIC) has none: word frequency rows
 // would rank a kanji as if it were the word written with it. Chinese
-// character entries are CC-CEDICT words and keep theirs.
+// character entries (single hanzi from CC-CEDICT or Unihan, merged by
+// written form) keep theirs: a Chinese frequency row for a single hanzi
+// is the frequency of that one-character word.
 func freqGroups(language string, e lexicon.Entry) []freqGroup {
 	if language == "ja" && e.Kind == kindCharacter {
 		return nil
