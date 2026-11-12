@@ -3,11 +3,11 @@
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-		import { APP_NAME } from '$lib/app';
+	import { ApiError } from '$lib/api/client';
+	import { APP_NAME } from '$lib/app';
 	import { auth, loadMe, logout, user } from '$lib/auth';
-	import { ApiError, api } from '$lib/api/client';
-	import type { PluginInfo } from '$lib/api/types';
 	import { navPages, webPlugins } from '$lib/plugins';
+	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionOnce } from '$lib/events';
 	import { startReviewOutbox } from '$lib/study/events';
 	import {
@@ -27,12 +27,11 @@
 	let workspaceError = $state('');
 	let newLanguage = $state('');
 	let creating = $state(false);
-	let pluginStates = $state<PluginInfo[]>([]);
-	const pluginLinks = $derived(navPages(webPlugins, pluginStates));
 
 	const publicPaths = new Set(['/login', '/register']);
 
 	const path = $derived(page.url.pathname.replace(/\/+$/, '') || '/');
+	const pluginLinks = $derived(navPages(webPlugins, $pluginStates.list));
 	const isPublic = $derived(publicPaths.has(path));
 	const signedIn = $derived($auth.token !== null);
 	// Render a route only when the session matches it: protected pages
@@ -74,13 +73,14 @@
 		const token = $auth.token;
 		if (token === null) {
 			loadedToken = null;
-			pluginStates = [];
+			resetPluginStates();
 			workspaces.set({ list: [], current: null });
 			return;
 		}
 		if (token === loadedToken) return;
 		loadedToken = token;
 		workspaceError = '';
+		void loadPluginStates();
 		void loadWorkspaces()
 			.then(() => {
 				// One session event per workspace per UTC day, recorded
@@ -140,10 +140,12 @@
 				<a href="/study/map" aria-current={path === '/study/map' ? 'page' : undefined}>Map</a>
 				<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>Settings</a>
 				<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}>Sources</a>
-				{#each pluginLinks as link (link.href)}
-					{@const href = link.href}
-					<a {href} aria-current={path === href || path.startsWith(`${href}/`) ? 'page' : undefined}
-						>{link.title}</a
+				{#each pluginLinks as link (`${link.slug}:${link.title}`)}
+					<a
+						href={link.href}
+						aria-current={path === link.href || path.startsWith(`${link.href}/`)
+							? 'page'
+							: undefined}>{link.title}</a
 					>
 				{/each}
 			</nav>
