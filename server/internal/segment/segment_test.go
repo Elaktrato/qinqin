@@ -205,6 +205,23 @@ func TestMatchAtIrregularVerbs(t *testing.T) {
 	}
 }
 
+func TestMatchAtAmbiguousClassesKeepLegacyMatch(t *testing.T) {
+	// Each surface deinflects to the same lemma as both an ichidan and a
+	// godan verb; the tokenizer still reports one match with the reason
+	// of the first candidate.
+	svc := seedJa(t, "いる", "帰る", "来る")
+	for _, c := range []struct{ text, lemma, reason string }{
+		{"いれば", "いる", "conditional"},
+		{"帰れる", "帰る", "potential"},
+		{"来た", "来る", "past"},
+	} {
+		m, err := svc.MatchAt(context.Background(), "ja", c.text, 0)
+		if err != nil || m == nil || m.Surface != c.text || m.Lemma != c.lemma || m.Reason != c.reason || len(m.Entries) != 1 {
+			t.Errorf("MatchAt(%q) = %+v, %v, want %s (%s) with one entry", c.text, m, err, c.lemma, c.reason)
+		}
+	}
+}
+
 func TestSegmentCoversText(t *testing.T) {
 	svc := seedSegment(t)
 	text := "我喜欢，学习 abc 汉语!"

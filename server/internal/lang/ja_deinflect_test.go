@@ -45,7 +45,7 @@ func TestJaDeinflect(t *testing.T) {
 	var d lang.Deinflector = lang.Ja{}
 	for _, c := range cases {
 		got := d.Deinflect(c.surface)
-		if !slices.Contains(got, lang.Deinflection{Form: c.form, Reason: c.reason}) {
+		if !slices.ContainsFunc(got, func(d lang.Deinflection) bool { return d.Form == c.form && d.Reason == c.reason }) {
 			t.Errorf("Deinflect(%q) = %v, want to contain %s (%s)", c.surface, got, c.form, c.reason)
 		}
 	}
@@ -59,11 +59,12 @@ func TestJaDeinflectNone(t *testing.T) {
 
 func TestJaDeinflectExcludesSurfaceAndDuplicates(t *testing.T) {
 	got := lang.Ja{}.Deinflect("食べられなかった")
-	seen := map[string]bool{}
+	seen := map[[2]string]bool{}
 	for _, c := range got {
-		if c.Form == "食べられなかった" || seen[c.Form] {
+		key := [2]string{c.Form, c.Class}
+		if c.Form == "食べられなかった" || seen[key] {
 			t.Errorf("bad candidate %v in %v", c, got)
 		}
-		seen[c.Form] = true
+		seen[key] = true
 	}
 }
