@@ -101,7 +101,7 @@ func TestSeedIdempotent(t *testing.T) {
 
 	var out bytes.Buffer
 	packs := smallPacks(t)
-	if err := seed(ctx, sqlDB, packs, &out); err != nil {
+	if err := seed(ctx, sqlDB, []string{packs}, &out); err != nil {
 		t.Fatalf("first seed: %v", err)
 	}
 	first := countRows(t, sqlDB)
@@ -114,7 +114,7 @@ func TestSeedIdempotent(t *testing.T) {
 		}
 	}
 
-	if err := seed(ctx, sqlDB, packs, io.Discard); err != nil {
+	if err := seed(ctx, sqlDB, []string{packs}, io.Discard); err != nil {
 		t.Fatalf("second seed: %v", err)
 	}
 	if second := countRows(t, sqlDB); second != first {
@@ -129,7 +129,7 @@ func TestSeedIdempotent(t *testing.T) {
 func TestSeedCommittedPacksEndToEnd(t *testing.T) {
 	ctx := context.Background()
 	sqlDB, _ := openTestDB(t)
-	if err := seed(ctx, sqlDB, smallPacks(t), io.Discard); err != nil {
+	if err := seed(ctx, sqlDB, []string{smallPacks(t)}, io.Discard); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	st := entries.Store{DB: sqlDB}
@@ -179,7 +179,7 @@ func TestSeedNamesTheBadPack(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(bad, "manifest.json"), []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	err := seed(context.Background(), sqlDB, packs, io.Discard)
+	err := seed(context.Background(), sqlDB, []string{packs}, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "no-license") {
 		t.Fatalf("seed(bad pack) err = %v, want an error naming no-license", err)
 	}
