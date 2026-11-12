@@ -113,6 +113,10 @@
 			{/if}
 		</header>
 		{#if note}<p class="note">{note}</p>{/if}
+		<!-- Right under the header: a hover popup clips its overflow. -->
+		{#if homophones && !error}
+			<p class="hint homophones"><a href={homophones.href}>{homophones.text}</a></p>
+		{/if}
 
 		{#if error}
 			<p class="error">{error}</p>
@@ -128,9 +132,6 @@
 			<Readings readings={entry.readings} />
 			<Badges badges={entry.badges} />
 			<Senses senses={entry.senses} />
-			{#if homophones}
-				<p class="hint homophones"><a href={homophones.href}>{homophones.text}</a></p>
-			{/if}
 			{#if mode === 'selection'}
 				<p class="more"><a href={`/entry/${entry.id}`}>Open full entry</a></p>
 			{/if}
