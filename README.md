@@ -99,6 +99,94 @@ model; [issue #24](https://github.com/Elaktrato/qinqin/issues/24) shipped the
 level sessions and mastery map, and
 [issue #25](https://github.com/Elaktrato/qinqin/issues/25) tracks the rest.
 
+## Reading
+
+Reader is a web feature plugin (`qinqin-reader`) for reading Chinese and Japanese
+text with dictionary lookup in place. It offers:
+
+- **Hover and selection lookup** — the word under the cursor is resolved by the
+  server's longest-match tokenizer (Japanese forms are deinflected), and selecting
+  text looks up the selection.
+- **Ruby toggle** — furigana in Japanese books can be shown or hidden.
+- **Script conversion** — Chinese books can be shown as original, simplified, or
+  traditional (converted in the browser with `opencc-js`); lookup works on either.
+- **A personal library** — books are stored per user, with the source link and
+  attribution shown for each, and the reading position is remembered per book.
+- **Import** from Aozora Bunko and Project Gutenberg, or **upload** your own epub.
+
+Open **Reader** in the nav. Import a work from a source (search, then Import) or
+upload an epub; for an upload whose epub declares no supported language you pick
+Chinese or Japanese. Open a book and hover a word for its entry. Select text to
+look it up: a single hanzi or kanji shows the character, longer text shows the
+word at the start of the selection. **Escape** closes the popup.
+
+Limits you may hit:
+
+- Epub uploads are capped at 20 MB, and malformed or oversized epubs are rejected.
+- One import runs at a time per user; a second one answers "another import is
+  already running". A work already in your library is not imported twice.
+- Only public-domain Aozora works are offered, and only Chinese and Japanese books
+  are supported.
+- Webview only for now. Hover needs a mouse; selection lookup also works on touch.
+
+### API
+
+All library and source routes need a signed-in user; the segment routes are public.
+
+| Route | Purpose |
+|---|---|
+| `GET /api/segment/at?lang=&text=&offset=` | Longest dictionary match at a code-point offset. `text` up to 20000 code points |
+| `POST /api/segment` `{lang, text}` | Every match in order. `text` up to 5000 code points, body up to 256 KiB |
+| `GET /api/library/books`, `GET`/`DELETE /api/library/books/{id}` | List, read, delete a book |
+| `GET /api/library/books/{id}/chapters/{n}` | One chapter's paragraphs |
+| `PUT /api/library/books/{id}/position` | Store the reading position |
+| `POST /api/library/upload` | Multipart `file` (epub), optional `language` |
+| `GET /api/library/sources` | Available sources |
+| `GET /api/library/sources/{source}/search?q=&limit=` | Search a source's catalog (limit up to 100) |
+| `POST /api/library/sources/{source}/import` `{sourceId}` | Import one work |
+
+`lang` must be `zh` or `ja`, and offsets count Unicode code points, not bytes or
+UTF-16 units.
+
+### Operations
+
+Imports run on the server, only when a user asks, one work per request. Requests
+to the sources send `User-Agent: qinqin/dev (+https://github.com/Elaktrato/qinqin)`,
+are limited to one per second per host, and are cached under `<data>/cache/sources`
+(catalogs for 7 days, works for 1 day). Books live under `<data>/books/<user id>/`,
+with their metadata and reading position in the SQLite database.
+
+The source client only fetches `https` URLs from a host allow-list (Aozora Bunko
+and its GitHub mirror, Gutenberg), checks every redirect hop, and refuses
+loopback, private, and other non-public addresses. Environment proxies
+(`HTTP_PROXY`, `HTTPS_PROXY`) are intentionally **not** used, because a proxy would
+bypass that check. A self-hoster behind a mandatory outbound proxy therefore
+cannot import from the sources; epub uploads still work.
+
+### Extending: plugin pages
+
+A web plugin can contribute pages. Declare the `page` surface and a `pages` list in
+`apps/web/src/lib/plugins/index.ts`:
+
+```ts
+import MyPage from './my/MyPage.svelte';
+
+export const webPlugins: WebPlugin[] = [
+	{
+		manifest: { id: 'qinqin-my', name: 'My plugin', surfaces: ['page'] },
+		pages: [{ title: 'My page', nav: true, component: MyPage }]
+	}
+];
+```
+
+The page renders at `/p/<slug>/<rest>`, where the slug is the plugin id without
+the `qinqin-` prefix; the component receives `rest` as a prop and routes inside it.
+`nav: true` adds a link to the shell nav. The page is shown only while the plugin
+is registered on the server (built-in manifests are registered at startup in
+`server/cmd/qinqin/main.go`) and enabled for the user; the shell and the page route
+share one fetch of those states through the `pluginStates` store in
+`apps/web/src/lib/plugins/states.ts`.
+
 ## Bundled data
 
 A fresh install can seed offline; the image ships these upstream dictionaries

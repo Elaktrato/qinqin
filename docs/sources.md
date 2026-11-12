@@ -31,3 +31,27 @@ from the `hanzi-writer-data` package) and is served by the app at
 
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).
+
+## Reader text sources
+
+The Reader (see the README) imports public-domain works on user request. Nothing
+from these sources is bundled; each imported book stores its source link,
+attribution, and a licence note, which the Reader shows.
+
+- **Aozora Bunko** (<https://www.aozora.gr.jp/>) — only works in the public domain
+  are listed or importable: the catalog's work copyright flag **and** person
+  copyright flag must both say no copyright, and a row that does not is skipped
+  (fail closed). The catalog is used under CC BY 4.0, as stated on aozora.gr.jp,
+  and each book keeps its 底本 (source edition) credit.
+- **Project Gutenberg** (<https://www.gutenberg.org/>) — ebooks the catalog marks
+  as public domain in the USA, which is a per-ebook statement and may not hold in
+  other countries. A book is fetched only when a user imports it, one book per
+  request, with requests rate limited and cached.
+- **Wikisource** was considered and left out of v1 pending a licence check.
+
+## Conversion library
+
+Traditional/simplified conversion in the Reader runs in the browser with
+[`opencc-js`](https://github.com/nk2028/opencc-js), whose package metadata gives
+the licence as `MIT AND Apache-2.0`. It is bundled in the web build and loaded only
+when a script conversion is selected.

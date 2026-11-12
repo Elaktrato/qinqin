@@ -1,7 +1,7 @@
 # Reader Plugin & Core Tokenizer — Design
 
 Date: 2026-11-12
-Status: Draft for approval. Design agreed in conversation; nothing built yet.
+Status: Implemented 2026-11-12 on feature/reader
 
 ## Intent
 
@@ -156,3 +156,42 @@ A generic, language-aware "longest dictionary match" service in core.
 - **Source search/browse:** downloading each source's **catalog index** (Aozora's
   CC BY 4.0 CSV, Gutenberg's public-domain catalog) and querying it locally is
   acceptable; downloading book **content** stays user-triggered, one book at a time.
+
+## Implementation notes
+
+Decisions that differ from or extend the spec above.
+
+- **Storage is per user.** Books are rows in `library_books` (migration `012`) with
+  chapter content in `<data>/books/<user id>/<id>.json`; nothing goes in
+  `plugin_data`. The same work cannot be added twice per user (uploads are keyed
+  by a content hash).
+- **Reading position is not synced.** It is a string stored per book through
+  `PUT /api/library/books/{id}/position` (at most 1024 bytes) and read back with
+  the book; it is not part of plugin data sync.
+- **Epub parser caps.** At most 2000 zip entries, 200 MiB uncompressed in total,
+  50 MiB per entry, 5 MiB for the package document and `container.xml`, 32 MiB of
+  extracted text, 2,000,000 runs, 500,000 paragraphs and 2000 chapters. Anything
+  above is a 422 with nothing stored. Gutenberg epubs go through the same parser;
+  Aozora texts get the same text, run, paragraph and chapter caps.
+- **Segment text caps.** `POST /api/segment` takes at most 5000 code points (and a
+  256 KiB body); `GET /api/segment/at` at most 20000. Hover lookups are window
+  based: the client sends at most 16 code points starting at the hovered offset
+  with `offset=0` and shifts the result back, and caches by window.
+- **One import per user at a time**, enforced in memory (429 for a second one),
+  with a 60 second timeout for a whole import.
+- **Deinflection** also covers irregular verb forms (suru, kuru and similar), on top
+  of the forms the spec lists.
+- **Aozora is https only**, and the source client does not use environment
+  proxies, so the dialer can refuse non-public addresses. See the README for the
+  consequence for self-hosters behind a mandatory proxy.
+- **opencc-js is loaded lazily**, only when a Chinese book is shown in a converted
+  script.
+
+### Known limitations
+
+- An epub `<h1>` can appear both as the chapter title and as the first paragraph.
+- Japanese deinflection is part-of-speech blind: rules do not check the part of speech, so a
+  rewritten form can match an entry that is not a verb or adjective.
+- No vertical text and no images.
+- The traditional-script bundle chunk is large (about 466 kB gzipped); it loads only
+  when that script is selected.
