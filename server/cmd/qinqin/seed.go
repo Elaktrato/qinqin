@@ -132,6 +132,13 @@ func importPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, err
 		if r.Skipped > 0 || r.Unconverted > 0 {
 			line += fmt.Sprintf(" (skipped %d malformed lines, %d pinyin unconverted)", r.Skipped, r.Unconverted)
 		}
+		// Temporary dual import: the lexicon is filled next to the legacy
+		// tables until the cutover removes the legacy import.
+		lr, err := dict.ImportLexicon(ctx, sqlDB, &pack)
+		if err != nil {
+			return "", fmt.Errorf("lexicon: %w", err)
+		}
+		line += fmt.Sprintf("; lexicon %d entries, %d senses", lr.Entries, lr.Senses)
 		return line, nil
 	case dict.TypeLevels:
 		r, err := levels.Import(ctx, sqlDB, pack)

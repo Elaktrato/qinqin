@@ -15,6 +15,7 @@ import (
 	"qinqin/internal/db"
 	"qinqin/internal/entries"
 	"qinqin/internal/levels"
+	"qinqin/internal/lexicon"
 )
 
 // committedPacks is the repo's committed seed pack directory, relative
@@ -132,6 +133,16 @@ func TestSeedCommittedPacksEndToEnd(t *testing.T) {
 		t.Fatalf("seed: %v", err)
 	}
 	st := entries.Store{DB: sqlDB}
+
+	// Temporary dual import: every dictionary pack also fills the lexicon.
+	lx := lexicon.Store{DB: sqlDB}
+	byForm, err := lx.ByForm(ctx, "zh", []string{"你好"})
+	if err != nil || len(byForm["你好"]) == 0 {
+		t.Errorf("lexicon ByForm(你好) = %+v, %v; want the seeded entry", byForm, err)
+	}
+	if byForm, err = lx.ByForm(ctx, "es", []string{"hola"}); err != nil || len(byForm["hola"]) == 0 {
+		t.Errorf("lexicon ByForm(hola) = %+v, %v; want the seeded es entry", byForm, err)
+	}
 
 	hits, err := st.Search(ctx, entries.SearchQuery{Text: "nihao", Lang: "zh"})
 	if err != nil || len(hits) == 0 || hits[0].Written != "你好" {
