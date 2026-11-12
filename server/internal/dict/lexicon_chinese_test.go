@@ -408,3 +408,118 @@ func TestLexiconJSONInvalidEntryWritesNothing(t *testing.T) {
 	}
 	assertNoLexiconRows(t, sqlDB)
 }
+
+var zhMiniLexManifest = dict.Manifest{
+	ID: "zh-mini-lex", Name: "zh mini", Version: "1.0", Type: "dictionary", Language: "zh",
+	License: "CC0", Attribution: "t", Format: "json",
+}
+
+const lexMiniJSON = `{"entries": [
+	{"written": "行", "kind": "character", "readings": [{"type": "pinyin", "value": "háng"}], "glosses": ["row (mini)"]}]}`
+
+func miniLexPack(t *testing.T, content string) *dict.Pack {
+	t.Helper()
+	return lexPack(t, zhMiniLexManifest, "dictionary.json", content)
+}
+
+var xingReadings = []string{"pinyin|xíng|xing", "pinyin|háng|hang", "bopomofo|ㄒㄧㄥˊ|ㄒㄧㄥˊ", "bopomofo|ㄏㄤˊ|ㄏㄤˊ"}
+
+func TestLexiconMergeJSONAfterCedictKeepsCedictReadings(t *testing.T) {
+	sqlDB := newDB(t)
+	importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedict))
+	importLexiconPack(t, sqlDB, miniLexPack(t, lexMiniJSON))
+	xing := lexByKey(t, sqlDB, "zh", "character", "行")
+	if got := readingList(xing); !reflect.DeepEqual(got, xingReadings) {
+		t.Errorf("行 readings = %v, want %v", got, xingReadings)
+	}
+	got := senseGlosses(t, sqlDB, xing)
+	slices.Sort(got)
+	if want := []string{"cedict-lex: row/line", "cedict-lex: to walk/to go", "zh-mini-lex: row (mini)"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("行 senses = %v, want %v", got, want)
+	}
+}
+
+func TestLexiconMergeCedictAfterJSONOwnsReadings(t *testing.T) {
+	sqlDB := newDB(t)
+	importLexiconPack(t, sqlDB, miniLexPack(t, lexMiniJSON))
+	importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedict))
+	xing := lexByKey(t, sqlDB, "zh", "character", "行")
+	if got := readingList(xing); !reflect.DeepEqual(got, xingReadings) {
+		t.Errorf("行 readings = %v, want CEDICT's %v", got, xingReadings)
+	}
+	got := senseGlosses(t, sqlDB, xing)
+	slices.Sort(got)
+	if want := []string{"cedict-lex: row/line", "cedict-lex: to walk/to go", "zh-mini-lex: row (mini)"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("行 senses = %v, want %v", got, want)
+	}
+}
+
+func TestLexiconMergeJSONDuplicateWrittenInOnePack(t *testing.T) {
+	sqlDB := newDB(t)
+	res := importLexiconPack(t, sqlDB, miniLexPack(t, `{"entries": [
+		{"written": "行", "kind": "character", "readings": [{"type": "pinyin", "value": "xíng"}], "glosses": ["to walk"]},
+		{"written": "行", "kind": "character", "readings": [{"type": "pinyin", "value": "háng"}], "glosses": ["row"]},
+		{"written": "好", "kind": "character", "glosses": ["good"]}]}`))
+	// Entries counts distinct lexicon entries, not entry lines.
+	if res.Entries != 2 || res.Senses != 3 {
+		t.Errorf("result = %+v, want 2 entries, 3 senses", res)
+	}
+	xing := lexByKey(t, sqlDB, "zh", "character", "行")
+	// JSON lines carry their derived bopomofo right after their own pinyin.
+	if got, want := readingList(xing), []string{"pinyin|xíng|xing", "bopomofo|ㄒㄧㄥˊ|ㄒㄧㄥˊ", "pinyin|háng|hang", "bopomofo|ㄏㄤˊ|ㄏㄤˊ"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("行 readings = %v, want %v", got, want)
+	}
+	if got, want := senseGlosses(t, sqlDB, xing), []string{"zh-mini-lex: to walk", "zh-mini-lex: row"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("行 senses = %v, want %v", got, want)
+	}
+}
+
+func lexiconCounts(t *testing.T, sqlDB *sql.DB) map[string]int {
+	t.Helper()
+	m := map[string]int{}
+	for _, table := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses", "lx_links"} {
+		m[table] = totalRows(t, sqlDB, table)
+	}
+	return m
+}
+
+func TestLexiconReimportsWriteNothing(t *testing.T) {
+	packs := map[string]func(*testing.T) *dict.Pack{
+		"cedict":    func(t *testing.T) *dict.Pack { return cedictLexPack(t, lexCedict+lexCedictChars) },
+		"json":      func(t *testing.T) *dict.Pack { return miniLexPack(t, lexMiniJSON) },
+		"unihan":    func(t *testing.T) *dict.Pack { return unihanLexPack(t) },
+		"kanjidic2": func(t *testing.T) *dict.Pack { return kanjidicLexPack(t, "") },
+	}
+	// Each case imports its packs in order, backdates every row, then
+	// runs the last pack again.
+	for name, order := range map[string][]string{
+		"cedict":              {"cedict"},
+		"json":                {"json"},
+		"unihan after cedict": {"cedict", "unihan"},
+		"json after cedict":   {"cedict", "json"},
+		"kanjidic2":           {"kanjidic2"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			sqlDB := newDB(t)
+			for _, id := range order {
+				importLexiconPack(t, sqlDB, packs[id](t))
+			}
+			tables := []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses", "lx_links"}
+			for _, table := range tables {
+				if _, err := sqlDB.Exec(`UPDATE ` + table + ` SET updated_at = '` + longAgo + `'`); err != nil {
+					t.Fatalf("backdate %s: %v", table, err)
+				}
+			}
+			before := lexiconCounts(t, sqlDB)
+			importLexiconPack(t, sqlDB, packs[order[len(order)-1]](t))
+			for _, table := range tables {
+				if n := countWhere(t, sqlDB, table, `updated_at > '2021-01-01T00:00:00Z'`); n != 0 {
+					t.Errorf("%s: %d rows written by an identical re-import", table, n)
+				}
+				if got := totalRows(t, sqlDB, table); got != before[table] {
+					t.Errorf("%s rows %d -> %d", table, before[table], got)
+				}
+			}
+		})
+	}
+}

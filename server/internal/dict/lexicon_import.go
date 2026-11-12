@@ -99,9 +99,8 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		}
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			var result Result
-			for _, e := range es {
-				le := jsonLexiconEntry(e, m.Language)
-				if _, err := store.PutTx(ctx, tx, le, dictID); err != nil {
+			for _, le := range jsonLexiconEntries(es, m.Language) {
+				if _, err := putMerged(ctx, tx, store, le, dictID); err != nil {
 					return Result{}, err
 				}
 				result.Entries++
@@ -342,15 +341,33 @@ func putMerged(ctx context.Context, tx *sql.Tx, store lexicon.Store, e *lexicon.
 		return 0, fmt.Errorf("load entry %s/%s/%s: %w", e.Language, e.Kind, e.Key, err)
 	}
 	if old != nil {
-		forms := old.Forms
-		for _, f := range e.Forms {
-			if !slices.ContainsFunc(forms, func(x lexicon.Form) bool { return x.Text == f.Text }) {
-				forms = append(forms, f)
-			}
-		}
-		e.Forms, e.Readings, e.Pri, e.UK, e.Attrs = forms, old.Readings, old.Pri, old.UK, old.Attrs
+		e.Forms = unionForms(old.Forms, e.Forms)
+		e.Readings = unionReadings(old.Readings, e.Readings)
+		e.Pri, e.UK, e.Attrs = old.Pri, old.UK, old.Attrs
 	}
 	return store.PutTx(ctx, tx, e, dictID)
+}
+
+// unionForms returns base followed by the forms of add whose text base
+// lacks.
+func unionForms(base, add []lexicon.Form) []lexicon.Form {
+	for _, f := range add {
+		if !slices.ContainsFunc(base, func(x lexicon.Form) bool { return x.Text == f.Text }) {
+			base = append(base, f)
+		}
+	}
+	return base
+}
+
+// unionReadings returns base followed by the readings of add whose type
+// and value base lacks.
+func unionReadings(base, add []lexicon.Reading) []lexicon.Reading {
+	for _, r := range add {
+		if !slices.ContainsFunc(base, func(x lexicon.Reading) bool { return x.Type == r.Type && x.Value == r.Value }) {
+			base = append(base, r)
+		}
+	}
+	return base
 }
 
 // radicalEntryID returns the id of the character entry of the Kangxi
@@ -500,11 +517,38 @@ func importUnihanLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, d
 	return result, nil
 }
 
-// jsonLexiconEntry builds the lexicon entry of a dictionary.json entry:
-// Key = written, Kind as the pack gives it, the written form then its
-// traditional twin (flag "trad") as forms, the readings as given with
-// Plain and derived readings through the language pack, and one sense
-// of the glosses when there are any.
+// jsonLexiconEntries builds the lexicon entries of a dictionary.json:
+// one per distinct (kind, written) in order of first appearance, so
+// Result.Entries counts entries, not lines. Lines for one written form
+// merge: forms and readings are unioned, and each line contributes its
+// own sense.
+func jsonLexiconEntries(es []entry, language string) []*lexicon.Entry {
+	var (
+		out []*lexicon.Entry
+		at  = map[string]int{}
+	)
+	for _, e := range es {
+		le := jsonLexiconEntry(e, language)
+		key := le.Kind + "\x00" + le.Key
+		i, seen := at[key]
+		if !seen {
+			at[key] = len(out)
+			out = append(out, le)
+			continue
+		}
+		m := out[i]
+		m.Forms = unionForms(m.Forms, le.Forms)
+		m.Readings = unionReadings(m.Readings, le.Readings)
+		m.Senses = append(m.Senses, le.Senses...)
+	}
+	return out
+}
+
+// jsonLexiconEntry builds the lexicon entry of one dictionary.json
+// line: Key = written, Kind as the pack gives it, the written form then
+// its traditional twin (flag "trad") as forms, the readings as given
+// with Plain and derived readings through the language pack, and one
+// sense of the glosses when there are any.
 func jsonLexiconEntry(e entry, language string) *lexicon.Entry {
 	le := &lexicon.Entry{
 		Language: language,
