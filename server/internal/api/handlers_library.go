@@ -107,11 +107,12 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	tag := meta.Language
-	if tag == "" {
-		tag = r.FormValue("language")
+	// The epub's own language wins when it is supported; otherwise the
+	// form field decides.
+	language := epubLanguage(meta.Language)
+	if language == "" {
+		language = epubLanguage(r.FormValue("language"))
 	}
-	language := epubLanguage(tag)
 	if language == "" {
 		http.Error(w, "language must be zh or ja", http.StatusUnprocessableEntity)
 		return

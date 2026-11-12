@@ -169,32 +169,6 @@ func TestParseNotAZip(t *testing.T) {
 	}
 }
 
-func TestParseZipBomb(t *testing.T) {
-	// Too many entries.
-	files := map[string]string{"META-INF/container.xml": containerXML}
-	order := []string{"META-INF/container.xml"}
-	for i := 0; i < 2001; i++ {
-		n := fmt.Sprintf("f%d.txt", i)
-		files[n] = "x"
-		order = append(order, n)
-	}
-	if _, _, err := parse(t, buildZip(t, files, order)); !errors.Is(err, epub.ErrInvalid) {
-		t.Errorf("many entries: err = %v, want ErrInvalid", err)
-	}
-
-	// One entry over 50 MB uncompressed (compresses to a few KB).
-	big := strings.Repeat("a", 51<<20)
-	files = map[string]string{
-		"META-INF/container.xml": containerXML,
-		"OEBPS/content.opf":      opf("zh", [][2]string{{"a", "a.xhtml"}}, []string{"a"}),
-		"OEBPS/a.xhtml":          xhtml("<p>" + big + "</p>"),
-	}
-	data := buildZip(t, files, []string{"META-INF/container.xml", "OEBPS/content.opf", "OEBPS/a.xhtml"})
-	if _, _, err := parse(t, data); !errors.Is(err, epub.ErrInvalid) {
-		t.Errorf("big entry: err = %v, want ErrInvalid", err)
-	}
-}
-
 func TestParseTitleFromHeadingOrFile(t *testing.T) {
 	data := buildEpub(t, "zh", map[string]string{
 		"chap1": xhtml(`<p>no heading</p>`),

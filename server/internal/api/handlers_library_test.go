@@ -32,7 +32,7 @@ func tinyEpub(t *testing.T, lang string) []byte {
 	}
 	files := []struct{ name, body string }{
 		{"META-INF/container.xml", `<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="content.opf"/></rootfiles></container>`},
-		{"content.opf", `<package xmlns="http://www.idpf.org/2007/opf"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Tiny</dc:title><dc:creator>Me</dc:creator>` + langEl + `</metadata><manifest><item id="a" href="a.xhtml"/><item id="b" href="b.xhtml"/></manifest><spine><itemref idref="a"/><itemref idref="b"/></spine></package>`},
+		{"content.opf", `<package xmlns="http://www.idpf.org/2007/opf"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>Tiny</dc:title><dc:creator>Me</dc:creator>` + langEl + `</metadata><manifest><item id="a" href="a.xhtml" media-type="application/xhtml+xml"/><item id="b" href="b.xhtml" media-type="application/xhtml+xml"/></manifest><spine><itemref idref="a"/><itemref idref="b"/></spine></package>`},
 		{"a.xhtml", `<html><body><h1>One</h1><p>你好</p></body></html>`},
 		{"b.xhtml", `<html><body><p>世界</p></body></html>`},
 	}
@@ -115,6 +115,9 @@ func TestLibraryUpload(t *testing.T) {
 	if resp := uploadBook(t, ts.URL, alice, epub, ""); resp.StatusCode != http.StatusConflict {
 		t.Errorf("re-upload: status = %d, want 409", resp.StatusCode)
 	}
+	if n := len(listBooks(t, ts.URL, alice)); n != 1 {
+		t.Errorf("books after duplicate = %d, want 1", n)
+	}
 
 	// Language falls back to the form field; unsupported or absent is 422.
 	noLang := tinyEpub(t, "")
@@ -124,8 +127,26 @@ func TestLibraryUpload(t *testing.T) {
 	if resp := uploadBook(t, ts.URL, alice, noLang, "fr"); resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("fr: status = %d, want 422", resp.StatusCode)
 	}
-	if resp := uploadBook(t, ts.URL, alice, tinyEpub(t, "fr"), "ja"); resp.StatusCode != http.StatusUnprocessableEntity {
-		t.Errorf("opf fr wins over form: status = %d, want 422", resp.StatusCode)
+	if resp := uploadBook(t, ts.URL, alice, tinyEpub(t, "en"), ""); resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("opf en, no form: status = %d, want 422", resp.StatusCode)
+	}
+	// An unsupported OPF language defers to a valid form field.
+	resp = uploadBook(t, ts.URL, alice, tinyEpub(t, "fr"), "ja")
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("opf fr + form ja: status = %d, want 201", resp.StatusCode)
+	}
+	decodeJSON(t, resp, &b)
+	if b.Language != "ja" {
+		t.Errorf("opf fr + form ja: language = %q, want ja", b.Language)
+	}
+	// A valid OPF language wins over the form field.
+	resp = uploadBook(t, ts.URL, alice, tinyEpub(t, "ja"), "zh")
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("opf ja + form zh: status = %d, want 201", resp.StatusCode)
+	}
+	decodeJSON(t, resp, &b)
+	if b.Language != "ja" {
+		t.Errorf("opf ja + form zh: language = %q, want ja", b.Language)
 	}
 	resp = uploadBook(t, ts.URL, alice, noLang, "ja")
 	if resp.StatusCode != http.StatusCreated {
@@ -216,6 +237,9 @@ func TestLibraryReadRoutes(t *testing.T) {
 	}
 	if resp := doJSON(t, http.MethodDelete, ts.URL, "/api/library/books/"+id, bob, nil); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("bob DELETE: status = %d, want 404", resp.StatusCode)
+	}
+	if got := listBooks(t, ts.URL, alice); len(got) != 1 || got[0].ID != b.ID {
+		t.Errorf("alice list after bob DELETE = %+v, want her book intact", got)
 	}
 }
 
