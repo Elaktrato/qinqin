@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
 	import type { PluginInfo } from '$lib/api/types';
+	import { loadPluginStates } from '$lib/plugins/states';
 	import { create, workspaces } from '$lib/workspaces';
 
 	interface PluginRow {
@@ -85,6 +86,8 @@
 				body: { enabled: row.enabled, order: row.order }
 			});
 			row.saved = true;
+			// The shell nav and /p/<plugin> read the shared store.
+			void loadPluginStates();
 		} catch (err) {
 			row.error = message(err, 'Could not save plugin state.');
 		} finally {

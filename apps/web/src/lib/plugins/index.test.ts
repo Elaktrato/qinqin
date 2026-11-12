@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
-import { findPlugin, homeWidgets, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState } from './index';
+import { findPlugin, homeWidgets, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState, visibleNavPages } from './index';
 import type { WebPlugin } from './index';
 
 function plugin(id: string): WebPlugin {
@@ -104,5 +104,25 @@ describe('reader registration', () => {
 		const ids = homeWidgets(webPlugins, []).map((p) => p.manifest.id);
 
 		expect(ids).toEqual(['qinqin-flashcards']);
+	});
+});
+
+describe('visibleNavPages', () => {
+	it('shows no plugin link until the states are loaded', () => {
+		for (const status of ['idle', 'loading', 'error'] as const) {
+			expect(visibleNavPages(webPlugins, { list: [], status })).toEqual([]);
+		}
+	});
+
+	it('shows the links of enabled plugins once ready', () => {
+		expect(visibleNavPages(webPlugins, { list: [], status: 'ready' }).map((l) => l.href)).toContain(
+			'/p/reader'
+		);
+		expect(
+			visibleNavPages(webPlugins, {
+				list: [state('qinqin-reader', 0, false)],
+				status: 'ready'
+			}).map((l) => l.href)
+		).not.toContain('/p/reader');
 	});
 });

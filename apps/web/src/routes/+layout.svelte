@@ -6,7 +6,7 @@
 	import { ApiError } from '$lib/api/client';
 	import { APP_NAME } from '$lib/app';
 	import { auth, loadMe, logout, user } from '$lib/auth';
-	import { navPages, webPlugins } from '$lib/plugins';
+	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionOnce } from '$lib/events';
 	import { startReviewOutbox } from '$lib/study/events';
@@ -31,7 +31,7 @@
 	const publicPaths = new Set(['/login', '/register']);
 
 	const path = $derived(page.url.pathname.replace(/\/+$/, '') || '/');
-	const pluginLinks = $derived(navPages(webPlugins, $pluginStates.list));
+	const pluginLinks = $derived(visibleNavPages(webPlugins, $pluginStates));
 	const isPublic = $derived(publicPaths.has(path));
 	const signedIn = $derived($auth.token !== null);
 	// Render a route only when the session matches it: protected pages

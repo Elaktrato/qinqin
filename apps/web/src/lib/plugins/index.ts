@@ -5,6 +5,7 @@
 
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
+import type { PluginStatesValue } from './states';
 import Flashcards from './flashcards/FlashcardsWidget.svelte';
 import { flashcardsManifest } from './flashcards/manifest';
 import ReaderPage from './reader/ReaderPage.svelte';
@@ -105,6 +106,18 @@ export function navPages(
 			.filter((page) => page.nav)
 			.map((page) => ({ slug, title: page.title, href: `/p/${slug}` }));
 	});
+}
+
+/**
+ * visibleNavPages is navPages gated on the loaded plugin states: no
+ * plugin link shows before they are ready or when they failed to load,
+ * so a plugin the user disabled never flashes in the nav.
+ */
+export function visibleNavPages(
+	plugins: WebPlugin[],
+	state: PluginStatesValue
+): { slug: string; title: string; href: string }[] {
+	return state.status === 'ready' ? navPages(plugins, state.list) : [];
 }
 
 /** findPlugin resolves a /p/<slug> segment; disabled or unknown plugins yield undefined. */
