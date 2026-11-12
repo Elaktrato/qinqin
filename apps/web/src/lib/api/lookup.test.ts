@@ -5,7 +5,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import { ApiError } from './client';
-import { lookupAt } from './lookup';
+import { LOOKUP_WINDOW, lookupAt } from './lookup';
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -26,14 +26,14 @@ describe('lookupAt', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('sends a 16-code-point window at offset 0 to /api/lookup', async () => {
+	it('sends a LOOKUP_WINDOW (12) code-point window at offset 0 to /api/lookup', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ results: [] }));
 		await lookupAt('ja', 'ab' + 'あ'.repeat(30), 2);
 		const url = requestedURL();
 		expect(url.pathname).toBe('/api/lookup');
 		expect(url.searchParams.get('lang')).toBe('ja');
 		expect(url.searchParams.get('offset')).toBe('0');
-		expect(url.searchParams.get('text')).toBe('あ'.repeat(16));
+		expect(url.searchParams.get('text')).toBe('あ'.repeat(LOOKUP_WINDOW));
 		expect(url.searchParams.has('kind')).toBe(false);
 	});
 

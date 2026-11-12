@@ -22,7 +22,9 @@ import (
 
 const (
 	// MaxWindowRunes is the longest source text, in code points, a
-	// lookup tries to match.
+	// lookup tries to match. The web client sends and caches exactly
+	// this window: keep LOOKUP_WINDOW in apps/web/src/lib/api/lookup.ts
+	// equal to it.
 	MaxWindowRunes = 12
 	// MaxEntries caps the results of one lookup, after ranking.
 	MaxEntries = 30

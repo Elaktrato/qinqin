@@ -3,6 +3,14 @@ import { windowAt } from './segment';
 import type { LookupResult } from './types';
 
 /**
+ * LOOKUP_WINDOW is the longest text, in code points, the server's lookup
+ * engine reads from the offset. It must equal lookup.MaxWindowRunes in
+ * server/internal/lookup/lookup.go: the client sends and caches exactly
+ * that window, so texts that differ only past it share one lookup.
+ */
+export const LOOKUP_WINDOW = 12;
+
+/**
  * lookupAt returns the dictionary results for the text starting at the
  * code-point `offset` of `text`, with start/end translated back to the
  * original text's offsets. Only a short window is sent (offset 0 on the
@@ -16,7 +24,7 @@ export async function lookupAt(
 	kinds?: string[],
 	signal?: AbortSignal
 ): Promise<LookupResult[]> {
-	const window = windowAt(text, offset);
+	const window = windowAt(text, offset, LOOKUP_WINDOW);
 	if (window === null) return [];
 	const query = new URLSearchParams({ lang, text: window, offset: '0' });
 	for (const kind of kinds ?? []) query.append('kind', kind);

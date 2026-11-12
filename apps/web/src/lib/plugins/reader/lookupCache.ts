@@ -1,3 +1,4 @@
+import { LOOKUP_WINDOW } from '$lib/api/lookup';
 import { windowAt } from '$lib/api/segment';
 import type { LookupResult } from '$lib/api/types';
 
@@ -12,14 +13,15 @@ export type LookupFn = (
 
 /**
  * cachedLookup wraps lookupAt with a small in-memory LRU keyed by language,
- * kinds and the window lookupAt would send: the results only depend on that
- * window, so hovering the same word again (anywhere) is free. Empty lists
+ * kinds and the LOOKUP_WINDOW code points the server's engine reads: the
+ * results only depend on that window, so hovering the same word again
+ * (anywhere) is free. Empty lists
  * are cached; failures and aborts are not.
  */
 export function cachedLookup(inner: LookupFn, size = 300): LookupFn {
 	const cache = new Map<string, LookupResult[]>();
 	return async (lang, text, offset, kinds, signal) => {
-		const window = windowAt(text, offset);
+		const window = windowAt(text, offset, LOOKUP_WINDOW);
 		if (window === null) return [];
 		const key = `${lang}\u0000${(kinds ?? []).join(',')}\u0000${window}`;
 		let results = cache.get(key);

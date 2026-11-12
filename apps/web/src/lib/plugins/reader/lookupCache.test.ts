@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
+import { LOOKUP_WINDOW } from '$lib/api/lookup';
 import { cachedLookup } from './lookupCache';
 
 function result(term: string, start: number): LookupResult {
@@ -43,6 +44,17 @@ describe('cachedLookup', () => {
 		await lookup('ja', '学习', 0);
 		await lookup('zh', '学习', 0, ['character']);
 		expect(inner).toHaveBeenCalledTimes(3);
+	});
+
+	it('keys on the code points the engine reads (LOOKUP_WINDOW, 12)', async () => {
+		const inner = fake();
+		const lookup = cachedLookup(inner, 10);
+		const head = '一二三四五六七八九十百千'; // 12 code points
+		expect(Array.from(head)).toHaveLength(LOOKUP_WINDOW);
+		await lookup('zh', head + '万亿', 0);
+		await lookup('zh', head + '兆京', 0);
+		expect(inner).toHaveBeenCalledTimes(1);
+		expect(inner).toHaveBeenCalledWith('zh', head, 0, undefined, undefined);
 	});
 
 	it('passes kinds and the signal through', async () => {
