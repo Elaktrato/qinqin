@@ -5,9 +5,11 @@ package segment
 import (
 	"context"
 	"fmt"
+	"slices"
 	"unicode"
 
 	"qinqin/internal/entries"
+	"qinqin/internal/lang"
 )
 
 // MaxWordRunes is the longest word, in code points, the tokenizer tries.
@@ -67,28 +69,46 @@ func (s Service) matchAt(ctx context.Context, language string, runes []rune, off
 	for l := 1; l <= n; l++ {
 		prefixes[l-1] = string(runes[offset : offset+l])
 	}
-	found, err := s.Entries.EntriesByWritten(ctx, language, prefixes)
+	// Deinflected forms of every prefix, when the language inflects.
+	deinflector, _ := lang.For(language).(lang.Deinflector)
+	var inflected [][]lang.Deinflection
+	lookup := slices.Clone(prefixes)
+	if deinflector != nil {
+		inflected = make([][]lang.Deinflection, n)
+		for i, p := range prefixes {
+			inflected[i] = deinflector.Deinflect(p)
+			for _, d := range inflected[i] {
+				lookup = append(lookup, d.Form)
+			}
+		}
+	}
+	found, err := s.Entries.EntriesByWritten(ctx, language, lookup)
 	if err != nil {
 		return nil, fmt.Errorf("segment lookup: %w", err)
 	}
+	// Longest surface wins; at equal length an exact dictionary hit beats
+	// a deinflected one.
 	for l := n; l >= 1; l-- {
-		es := found[prefixes[l-1]]
+		surface := prefixes[l-1]
+		lemma, reason := surface, ""
+		es := found[surface]
+		if len(es) == 0 && inflected != nil {
+			for _, d := range inflected[l-1] {
+				if es = found[d.Form]; len(es) > 0 {
+					lemma, reason = d.Form, d.Reason
+					break
+				}
+			}
+		}
 		if len(es) == 0 {
 			continue
 		}
-		m := &Match{
-			Surface: prefixes[l-1],
-			Start:   offset,
-			End:     offset + l,
-			Lemma:   prefixes[l-1],
-		}
+		m := &Match{Surface: surface, Start: offset, End: offset + l, Lemma: lemma, Reason: reason}
 		for _, e := range es {
 			m.Entries = append(m.Entries, Candidate{ID: e.ID, Kind: e.Kind})
 		}
 		return m, nil
 	}
-	// Seam: Japanese deinflection plugs in here (a lang.Deinflector found
-	// via lang.For(language) type assertion; absent means no deinflection).
 	return nil, nil
 }
 

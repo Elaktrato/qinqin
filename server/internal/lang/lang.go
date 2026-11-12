@@ -27,6 +27,16 @@ type Pack interface {
 	DeriveReadings(readings []model.Reading) []model.Reading
 }
 
+// Deinflection is one possible dictionary form of an inflected surface.
+type Deinflection struct{ Form, Reason string }
+
+// Deinflector is implemented by packs whose surface forms inflect.
+// Deinflect returns possible dictionary forms for surface (never surface
+// itself), most specific first.
+type Deinflector interface {
+	Deinflect(surface string) []Deinflection
+}
+
 var (
 	mu    sync.RWMutex
 	packs = map[string]Pack{}

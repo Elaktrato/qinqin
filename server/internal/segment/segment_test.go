@@ -7,6 +7,7 @@ import (
 
 	"qinqin/internal/db"
 	"qinqin/internal/entries"
+	"qinqin/internal/lang"
 	"qinqin/internal/model"
 	"qinqin/internal/segment"
 )
@@ -102,6 +103,40 @@ func TestMatchAtTraditionalAndSimplified(t *testing.T) {
 		if err != nil || m == nil || m.Surface != w || m.End != 2 {
 			t.Errorf("MatchAt(%q) = %+v, %v", w, m, err)
 		}
+	}
+}
+
+func TestMatchAtJapaneseDeinflected(t *testing.T) {
+	lang.Register(lang.Ja{})
+	ctx := context.Background()
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	st := entries.Store{DB: sqlDB}
+	for _, w := range []string{"昨日", "ケーキ", "食べる", "食", "食べ"} {
+		e := &model.Entry{Language: "ja", Kind: "word", Written: w,
+			Readings: []model.Reading{{Type: "kana", Value: "x"}}}
+		if _, err := st.Upsert(ctx, e); err != nil {
+			t.Fatalf("upsert %q: %v", w, err)
+		}
+	}
+	svc := segment.Service{Entries: st}
+	m, err := svc.MatchAt(ctx, "ja", "昨日ケーキを食べた", 6)
+	if err != nil || m == nil {
+		t.Fatalf("MatchAt = %v, %v", m, err)
+	}
+	if m.Surface != "食べた" || m.Lemma != "食べる" || m.Reason != "past" || m.Start != 6 || m.End != 9 {
+		t.Errorf("match = %+v, want 食べた -> 食べる past 6..9", m)
+	}
+	if len(m.Entries) != 1 {
+		t.Errorf("entries = %+v, want the 食べる entry", m.Entries)
+	}
+	// An exact dictionary hit of equal length beats a deinflected one.
+	m, err = svc.MatchAt(ctx, "ja", "食べる", 0)
+	if err != nil || m == nil || m.Surface != "食べる" || m.Reason != "" {
+		t.Errorf("exact match = %+v, %v", m, err)
 	}
 }
 
