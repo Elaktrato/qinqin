@@ -80,7 +80,7 @@ const (
 
 	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
 	maxSegmentRunes   = 5000      // POST /api/segment text code points
-	maxSegmentAtRunes = 20000     // GET /api/segment/at text code points
+	maxSegmentAtRunes = 64        // GET /api/segment/at text code points (the client sends <= 16)
 )
 
 // badBody answers a request body that failed to decode: 413 when it
