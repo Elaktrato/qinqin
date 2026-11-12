@@ -3,6 +3,7 @@ package lookup
 import (
 	"context"
 	"log"
+	"maps"
 	"slices"
 	"strings"
 
@@ -11,9 +12,12 @@ import (
 )
 
 // freqGroup is a set of terms an entry's frequency is looked up by, with
-// the readings a reading-specific row must name to apply to them.
+// the readings a reading-specific row must name to apply to them. A kana
+// group is a fallback: it applies to a pack only when the entry's other
+// groups have no hit in that pack.
 type freqGroup struct {
 	terms, readings []string
+	kana            bool
 }
 
 // freqGroups lists the term groups of an entry:
@@ -21,7 +25,9 @@ type freqGroup struct {
 //     katakana and plain form (packs compare readings exactly);
 //   - for a word without forms, or one usually written in kana (UK),
 //     each kana reading as a term of its own, with that reading's
-//     variants — a pack lists する, not only 為る.
+//     variants — a pack lists する, not only 為る. Such a kana row is
+//     shared by every UK homophone (する also reads 掏る), so it is a
+//     fallback for packs with nothing for the entry's forms.
 //
 // A Japanese character entry (KANJIDIC) has none: word frequency rows
 // would rank a kanji as if it were the word written with it. Chinese
@@ -45,7 +51,7 @@ func freqGroups(language string, e lexicon.Entry) []freqGroup {
 	if len(e.Forms) == 0 || e.UK {
 		for _, r := range e.Readings {
 			if r.Type == "kana" {
-				groups = append(groups, freqGroup{terms: []string{r.Value}, readings: variants(r)})
+				groups = append(groups, freqGroup{terms: []string{r.Value}, readings: variants(r), kana: true})
 			}
 		}
 	}
@@ -61,8 +67,9 @@ func variants(r lexicon.Reading) []string {
 }
 
 // frequencies returns each entry's frequencies — one per pack of
-// language with data for it, the best rank among its term groups, in
-// pack priority order — and those packs' ids in priority order. The
+// language with data for it, the best rank among its term groups (kana
+// groups only for packs with no hit for the others), in pack priority
+// order — and those packs' ids in priority order. The
 // rows of every entry's terms come from ONE freq.Store.Rows call and are
 // matched per entry with freq.BestHits, Lookup's own semantics.
 //
@@ -104,11 +111,26 @@ func (s Service) frequencies(ctx context.Context, language string, es []lexicon.
 
 	for i := range es {
 		best := map[int64]freq.Hit{}
+		var fallback []freq.Hit
 		for _, g := range groups[i] {
-			for _, h := range freq.BestHits(rows, g.terms, g.readings) {
+			hits := freq.BestHits(rows, g.terms, g.readings)
+			if g.kana {
+				fallback = append(fallback, hits...)
+				continue
+			}
+			for _, h := range hits {
 				if cur, ok := best[h.PackID]; !ok || h.Rank < cur.Rank {
 					best[h.PackID] = h
 				}
+			}
+		}
+		formHit := maps.Clone(best)
+		for _, h := range fallback {
+			if _, ok := formHit[h.PackID]; ok {
+				continue
+			}
+			if cur, ok := best[h.PackID]; !ok || h.Rank < cur.Rank {
+				best[h.PackID] = h
 			}
 		}
 		for _, id := range packIDs {

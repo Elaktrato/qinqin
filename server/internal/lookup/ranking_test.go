@@ -203,6 +203,29 @@ func TestUsuallyKanaWordsUseTheirKanaAsFrequencyTerm(t *testing.T) {
 	}
 }
 
+// In Jiten's keying a kana spelling has its own row (する, no reading)
+// besides the rows of each word's kanji form, so one kana row is shared
+// by every usually-kana homophone. A word's own kanji-form row wins: the
+// kana row applies only when the pack has nothing for its forms.
+func TestKanaTermOnlyWhenTheFormsHaveNoHit(t *testing.T) {
+	s, _ := altService(t, "a", "する,,10\n為る,する,10\n刷る,する,33725\n掏る,する,104634\n",
+		"b", "する,,7\n為る,する,900\n")
+	rs := run(t, s, "ja", "する", 0)
+	want := map[string][]int{"為る": {10, 900}, "刷る": {33725}, "掏る": {104634, 7}}
+	for _, r := range rs {
+		var ranks []int
+		for _, f := range r.Frequencies {
+			ranks = append(ranks, f.Rank)
+		}
+		if w, ok := want[r.Forms[0].Text]; ok && !slices.Equal(ranks, w) {
+			t.Errorf("%s frequencies = %v, want %v", r.Forms[0].Text, ranks, w)
+		}
+	}
+	if got := headwords(rs); !slices.Equal(got[:3], []string{"為る/word", "刷る/word", "掏る/word"}) {
+		t.Errorf("results = %v, want 為る, 刷る, 掏る by their own forms' ranks", got)
+	}
+}
+
 func TestFirstPackWithAnyDataRanks(t *testing.T) {
 	// Pack a has data for 舌 only; pack b for all three. Pack a ranks:
 	// 舌 first, the rest fall through to the chain (exact 下 before 為る).
