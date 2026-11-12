@@ -75,7 +75,9 @@ type shared struct {
 // HTTPClient fetches http(s) URLs with a User-Agent, a timeout, at most
 // one request per second per host, a body cap and an on-disk cache. It
 // only connects to public addresses and applies an optional host policy
-// to the first URL and to every redirect hop.
+// to the first URL and to every redirect hop. Environment proxies are
+// disabled on purpose: the dialer Control hook must see the real target
+// IP, and enabling a proxy would bypass the SSRF guard.
 type HTTPClient struct {
 	*shared
 	hc    *http.Client
@@ -119,6 +121,8 @@ func NewHTTPClient(cacheDir, userAgent string) *HTTPClient {
 			return nil
 		},
 	}
+	// No Proxy on purpose (not http.ProxyFromEnvironment): the dialer Control hook
+	// must see the real target IP, and a proxy would bypass the SSRF guard.
 	s.transport = &http.Transport{
 		DialContext:         dialer.DialContext,
 		TLSHandshakeTimeout: requestTimeout,
