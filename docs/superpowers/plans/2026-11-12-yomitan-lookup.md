@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - No backward compatibility: nothing is published; no data migration, no re-import notes; dev DBs are rebuilt with `qinqin seed`. Existing code that uses the dictionary (search, entry page, flashcards, reader, tokenizer endpoints) must keep working against the new schema; stored data and entry ids need not survive.
-- Sort chain for Japanese and Chinese lookup, in this order: primary-reading match, matched source text length (longest first), **frequency order (ascending rank)**, inflection chain length (shortest first), count of exact source-term matches, dictionary order, entry score (`uk` + priority for Japanese), headword text. Missing data falls through to the next key.
+- Sort chain for Japanese and Chinese lookup, in this order: matched source text length (longest first), **frequency order (ascending rank)**, primary-reading match, inflection chain length (shortest first), count of exact source-term matches, dictionary order, entry score (`uk` + priority for Japanese), headword text. Missing data falls through to the next key.
 - Part-of-speech gating: a deinflected candidate is accepted for a word if ANY of its senses' POS tags satisfies the rule's required class; failing candidates are dropped before ranking.
 - Popup: 3 entries and 3 senses shown before "show more"; nested popups capped at depth 4; nested lookup only while **Shift** is held (reader text keeps plain hover); Esc closes the top popup; moving away or clicking outside closes the whole stack.
 - New lookup endpoint: public, client window ≤ 16 code points, server cap 64 code points, at most 30 entries returned; "show more" is client-side.
