@@ -1,5 +1,3 @@
-import type { SegmentCandidate, SegmentMatch } from '$lib/api/types';
-
 export type LookupKind = 'character' | 'word';
 
 function clamp(n: number, lo: number, hi: number): number {
@@ -39,66 +37,6 @@ export function codePointToUtf16(text: string, cpIndex: number): number {
 		i += pairAt(text, i) ? 2 : 1;
 	}
 	return i;
-}
-
-/** pickEntry returns the match's candidate of the given kind, if any. */
-export function pickEntry(
-	match: SegmentMatch,
-	kind: LookupKind
-): SegmentCandidate | undefined {
-	return match.entries.find((entry) => entry.kind === kind);
-}
-
-/**
- * preferredEntry picks the candidate to show: the preferred kind, else the
- * other kind for the same written form (never an unrelated entry).
- */
-export function preferredEntry(
-	match: SegmentMatch | null,
-	kind: LookupKind
-): SegmentCandidate | undefined {
-	if (!match) return undefined;
-	return pickEntry(match, kind) ?? pickEntry(match, kind === 'word' ? 'character' : 'word');
-}
-
-/**
- * homophoneNote describes the other entries a reading match resolves to:
- * when the shown candidate matched by its kana reading and more
- * candidates of the shown kind did too, the count of the others and a
- * link to the search page for the reading. Null otherwise.
- */
-export function homophoneNote(
-	match: SegmentMatch | null,
-	kind: LookupKind
-): { count: number; href: string; text: string } | null {
-	const shown = preferredEntry(match, kind);
-	if (!match || !shown?.reading) return null;
-	const count = match.entries.filter((e) => e.kind === shown.kind && e.reading).length - 1;
-	if (count < 1) return null;
-	const capped = match.entries.filter((e) => e.reading).length >= MAX_READING_CANDIDATES;
-	return {
-		count,
-		href: `/search?q=${encodeURIComponent(match.lemma)}`,
-		text: otherEntriesText(count, capped)
-	};
-}
-
-/**
- * MAX_READING_CANDIDATES mirrors the server's segment.MaxReadingCandidates:
- * a match found by reading carries at most this many candidates, so a
- * list that long may have been cut.
- */
-export const MAX_READING_CANDIDATES = 8;
-
-/**
- * otherEntriesText words the homophone count: exact below the server cap,
- * "N+" when the candidate list was capped and more may exist.
- */
-export function otherEntriesText(count: number, capped: boolean): string {
-	if (capped) return `${count}+ other entries are read this way — search for it`;
-	return count === 1
-		? '1 other entry is read this way — search for it'
-		: `${count} other entries are read this way — search for it`;
 }
 
 // Whitespace, punctuation and symbols never have a dictionary entry.

@@ -4,7 +4,7 @@
 	import { getBook, getChapter, setPosition } from '$lib/api/library';
 	import type { Book, Chapter } from '$lib/api/types';
 	import ChapterText from './ChapterText.svelte';
-	import LookupPopup from './LookupPopup.svelte';
+	import PopupStackView from './PopupStackView.svelte';
 	import { paragraphElement } from './dom';
 	import { apiErrorMessage } from './errors';
 	import { displayRuns } from './paragraphText';
@@ -280,19 +280,7 @@
 			{/if}
 		</footer>
 
-		{#if lookup.view}
-			<LookupPopup
-				lang={book.language}
-				mode={lookup.view.mode}
-				match={lookup.view.match}
-				text={lookup.view.text}
-				kind={lookup.view.kind}
-				note={lookup.view.note}
-				error={lookup.view.error}
-				anchor={lookup.view.anchor}
-				onclose={() => lookup.close()}
-			/>
-		{/if}
+		<PopupStackView {lookup} />
 	{/if}
 </main>
 

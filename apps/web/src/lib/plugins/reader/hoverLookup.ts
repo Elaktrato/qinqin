@@ -4,15 +4,18 @@
 // show. HIDING and ABORTING are separate:
 // - the grace timer only hides the popup currently shown; it never touches
 //   a lookup in flight, so a slow lookup for the next word still shows;
-// - a pointer on no word aborts the lookup in flight (its word was left)
-//   and arms the grace hide;
+// - a pointer on no word (or leaving the text) aborts the lookup in flight
+//   (its word was left) and arms the grace hide;
+// - the popups are interactive: entering one cancels the grace hide and
+//   leaving the last one arms it again, so the pointer can travel from the
+//   word into its popup (and into nested popups) without losing them;
 // - a lookup that finds nothing shows no popup: it counts as "no word"
 //   (a not-found hint is for selections only);
-// - close() does both at once (Escape, scroll, leaving the text, re-render).
-import type { SegmentMatch } from '$lib/api/types';
+// - close() does both at once (Escape, scroll, re-render, outside click).
+import type { LookupResult } from '$lib/api/types';
 import { apiErrorMessage } from './errors';
+import type { LookupFn } from './lookupCache';
 import { sliceCodePoints } from './paragraphText';
-import type { SegmentFn } from './selectionLookup';
 
 export const HOVER_GRACE_MS = 250;
 
@@ -23,14 +26,18 @@ export interface Span {
 }
 
 export interface HoverShown {
+	/** The paragraph span of the first (longest) result. */
 	span: Span;
-	match: SegmentMatch | null;
+	/** The matched source text, or the hovered character after an error. */
 	text: string;
+	/** The hovered code-point offset in the paragraph. */
+	offset: number;
+	results: LookupResult[];
 	error: string;
 }
 
 export interface HoverDeps {
-	segment: SegmentFn;
+	lookup: LookupFn;
 	lang: () => string;
 	show: (shown: HoverShown) => void;
 	hide: () => void;
@@ -45,6 +52,8 @@ export class HoverLookup {
 	#shown: Span | null = null;
 	/** The last offset whose lookup found nothing, so it is not refetched. */
 	#empty: { p: number; offset: number } | null = null;
+	/** The pointer is inside a popup of the shown stack. */
+	#inPopup = false;
 
 	constructor(deps: HoverDeps) {
 		this.#deps = deps;
@@ -52,6 +61,7 @@ export class HoverLookup {
 
 	/** The pointer rests on character `offset` of paragraph `p` (whose text is `text`). */
 	point(p: number, text: string, offset: number): void {
+		this.#inPopup = false;
 		const shown = this.#shown;
 		if (shown && shown.p === p && offset >= shown.start && offset < shown.end) {
 			// Back on (or still on) the shown word: keep it, drop any newer lookup.
@@ -65,15 +75,28 @@ export class HoverLookup {
 		void this.#lookup(p, text, offset);
 	}
 
-	/** The pointer rests on no word (a gap, punctuation, outside the runs). */
+	/** The pointer rests on no word (a gap, punctuation, outside the text). */
 	noWord(): void {
 		this.#abort();
+		this.#hideSoon();
+	}
+
+	/** The pointer entered a popup: keep the shown stack. */
+	enterPopup(): void {
+		this.#inPopup = true;
+		this.#cancelHide();
+	}
+
+	/** The pointer left a popup (for somewhere that is not another popup). */
+	leavePopup(): void {
+		this.#inPopup = false;
 		this.#hideSoon();
 	}
 
 	/** Aborts everything and hides at once. */
 	close(): void {
 		this.#empty = null;
+		this.#inPopup = false;
 		this.#abort();
 		this.#cancelHide();
 		this.#hide();
@@ -91,7 +114,7 @@ export class HoverLookup {
 	}
 
 	#hideSoon(): void {
-		if (!this.#shown || this.#hideTimer !== undefined) return;
+		if (!this.#shown || this.#inPopup || this.#hideTimer !== undefined) return;
 		this.#hideTimer = setTimeout(() => {
 			this.#hideTimer = undefined;
 			this.#hide();
@@ -108,17 +131,17 @@ export class HoverLookup {
 		const flight = { p, offset, abort: new AbortController() };
 		this.#inFlight = flight;
 		const { signal } = flight.abort;
-		let match: SegmentMatch | null = null;
+		let results: LookupResult[] = [];
 		let error = '';
 		try {
-			match = await this.#deps.segment(this.#deps.lang(), text, offset, signal);
+			results = await this.#deps.lookup(this.#deps.lang(), text, offset, undefined, signal);
 		} catch (err) {
 			error = apiErrorMessage(err, 'lookup');
 		}
 		// Superseded, aborted, or closed meanwhile: discard.
 		if (this.#inFlight !== flight || signal.aborted) return;
 		this.#inFlight = null;
-		if (!match && !error) {
+		if (results.length === 0 && !error) {
 			// Nothing here: like a pointer on no word, the shown popup (if
 			// any) goes after the grace delay.
 			this.#empty = { p, offset };
@@ -126,15 +149,15 @@ export class HoverLookup {
 			return;
 		}
 		this.#empty = null;
-		const span = match
-			? { p, start: match.start, end: match.end }
-			: { p, start: offset, end: offset + 1 };
+		const first = results[0];
+		const span = first ? { p, start: first.start, end: first.end } : { p, start: offset, end: offset + 1 };
 		this.#cancelHide();
 		this.#shown = span;
 		this.#deps.show({
 			span,
-			match,
-			text: match?.surface ?? sliceCodePoints(text, offset, offset + 1),
+			text: first?.matched ?? sliceCodePoints(text, offset, offset + 1),
+			offset,
+			results,
 			error
 		});
 	}

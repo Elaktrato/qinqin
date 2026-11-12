@@ -1,19 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SegmentMatch } from '$lib/api/types';
-import {
-	codePointToUtf16,
-	homophoneNote,
-	hoverable,
-	otherEntriesText,
-	pickEntry,
-	preferredEntry,
-	selectionTarget,
-	utf16ToCodePoint
-} from './lookup';
-
-function match(entries: SegmentMatch['entries']): SegmentMatch {
-	return { surface: '学习', start: 0, end: 2, lemma: '学习', reason: '', entries };
-}
+import { codePointToUtf16, hoverable, selectionTarget, utf16ToCodePoint } from './lookup';
 
 describe('utf16ToCodePoint / codePointToUtf16', () => {
 	it('counts a surrogate pair as one code point', () => {
@@ -62,47 +48,6 @@ describe('utf16ToCodePoint / codePointToUtf16', () => {
 	});
 });
 
-describe('pickEntry', () => {
-	const both = match([
-		{ id: 1, kind: 'character' },
-		{ id: 2, kind: 'word' }
-	]);
-
-	it('returns the candidate of the requested kind', () => {
-		expect(pickEntry(both, 'character')).toEqual({ id: 1, kind: 'character' });
-		expect(pickEntry(both, 'word')).toEqual({ id: 2, kind: 'word' });
-	});
-
-	it('returns undefined when no candidate of that kind exists', () => {
-		expect(pickEntry(match([{ id: 2, kind: 'word' }]), 'character')).toBeUndefined();
-		expect(pickEntry(match([]), 'word')).toBeUndefined();
-	});
-});
-
-describe('preferredEntry', () => {
-	it('prefers the requested kind and falls back to the other', () => {
-		const both = match([
-			{ id: 1, kind: 'character' },
-			{ id: 2, kind: 'word' }
-		]);
-		expect(preferredEntry(both, 'word')).toEqual({ id: 2, kind: 'word' });
-		expect(preferredEntry(both, 'character')).toEqual({ id: 1, kind: 'character' });
-		expect(preferredEntry(match([{ id: 1, kind: 'character' }]), 'word')).toEqual({
-			id: 1,
-			kind: 'character'
-		});
-		expect(preferredEntry(match([{ id: 2, kind: 'word' }]), 'character')).toEqual({
-			id: 2,
-			kind: 'word'
-		});
-	});
-
-	it('returns undefined without a match or candidates', () => {
-		expect(preferredEntry(null, 'word')).toBeUndefined();
-		expect(preferredEntry(match([]), 'character')).toBeUndefined();
-	});
-});
-
 describe('selectionTarget', () => {
 	it('trims and maps one code point to a character', () => {
 		expect(selectionTarget('  学 ')).toEqual({ text: '学', kind: 'character' });
@@ -120,79 +65,6 @@ describe('selectionTarget', () => {
 		expect(selectionTarget('。 ')).toBeNull();
 		expect(selectionTarget('「」、！')).toBeNull();
 		expect(selectionTarget('　')).toBeNull();
-	});
-});
-
-describe('homophoneNote', () => {
-	const reading = (id: number, kind: 'word' | 'character' = 'word') => ({
-		id,
-		kind,
-		reading: true
-	});
-	const kana = (entries: SegmentMatch['entries']): SegmentMatch => ({
-		surface: 'した',
-		start: 0,
-		end: 2,
-		lemma: 'する',
-		reason: 'past',
-		entries
-	});
-
-	it('counts the other reading candidates of the shown kind and links a search', () => {
-		const note = homophoneNote(kana([reading(1), reading(2), reading(3), reading(4, 'character')]), 'word');
-		expect(note).toEqual({
-			count: 2,
-			href: `/search?q=${encodeURIComponent('する')}`,
-			text: '2 other entries are read this way — search for it'
-		});
-	});
-
-	it('uses the singular for one other entry', () => {
-		expect(homophoneNote(kana([reading(1), reading(2)]), 'word')?.text).toBe(
-			'1 other entry is read this way — search for it'
-		);
-	});
-
-	it('is null for a single candidate, written-form hits, or no match', () => {
-		expect(homophoneNote(kana([reading(1)]), 'word')).toBeNull();
-		expect(
-			homophoneNote(
-				kana([
-					{ id: 1, kind: 'word' },
-					{ id: 2, kind: 'word' }
-				]),
-				'word'
-			)
-		).toBeNull();
-		expect(homophoneNote(null, 'word')).toBeNull();
-	});
-
-	it('says N+ when the server capped the reading candidates', () => {
-		const eight = [1, 2, 3, 4, 5, 6, 7, 8].map((id) => reading(id));
-		expect(homophoneNote(kana(eight), 'word')).toEqual({
-			count: 7,
-			href: `/search?q=${encodeURIComponent('する')}`,
-			text: '7+ other entries are read this way — search for it'
-		});
-		// One short of the cap is an exact count.
-		expect(homophoneNote(kana(eight.slice(0, 7)), 'word')?.text).toBe(
-			'6 other entries are read this way — search for it'
-		);
-		// The cap counts every reading candidate, whatever its kind.
-		expect(
-			homophoneNote(kana([...eight.slice(0, 7), reading(9, 'character')]), 'word')?.text
-		).toBe('6+ other entries are read this way — search for it');
-	});
-
-	it('words the count exactly below the cap and as N+ at it', () => {
-		expect(otherEntriesText(1, false)).toBe('1 other entry is read this way — search for it');
-		expect(otherEntriesText(3, false)).toBe('3 other entries are read this way — search for it');
-		expect(otherEntriesText(1, true)).toBe('1+ other entries are read this way — search for it');
-		expect(otherEntriesText(7, true)).toBe('7+ other entries are read this way — search for it');
-	});
-
-	it('counts the kind actually shown when the preferred kind is missing', () => {
-		expect(homophoneNote(kana([reading(1), reading(2)]), 'character')?.count).toBe(1);
 	});
 });
 

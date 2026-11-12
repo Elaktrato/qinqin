@@ -2,7 +2,9 @@
 // <p data-p="i"> and each run as an element with data-r="j" whose FIRST
 // text node is the run's displayed text; a shown furigana lives in an <rt>
 // after it. Everything here maps DOM boundary points onto that model and
-// back; the arithmetic itself lives in paragraphText.ts.
+// back; the arithmetic itself lives in paragraphText.ts. The last two
+// helpers serve Shift+hover scanning inside the lookup popups.
+import { codePointToUtf16, utf16ToCodePoint } from './lookup';
 import { locate, offsetFromRun, paragraphString, type Run } from './paragraphText';
 
 export interface RunPoint {
@@ -144,4 +146,52 @@ export function selectionSpan(
 		if (end > start) return { p, start, end };
 	}
 	return null;
+}
+
+/**
+ * caretUnderPoint is the caret BEFORE the character whose box holds (x, y):
+ * caretFromPoint reports the boundary nearest the pointer, which is after
+ * the character over its right half. Null when no character is under the
+ * point (padding, the space after a line's end).
+ */
+export function caretUnderPoint(x: number, y: number): { node: Node; offset: number } | null {
+	const caret = caretFromPoint(x, y);
+	if (!caret || caret.node.nodeType !== Node.TEXT_NODE) return null;
+	const text = caret.node as Text;
+	const range = document.createRange();
+	const isLow = (i: number) => {
+		const c = text.data.charCodeAt(i);
+		return c >= 0xdc00 && c <= 0xdfff;
+	};
+	const holds = (start: number) => {
+		if (start < 0 || start >= text.length) return false;
+		range.setStart(text, start);
+		range.setEnd(text, start + (isLow(start + 1) ? 2 : 1));
+		return rangeContainsPoint(range, x, y);
+	};
+	const before = caret.offset - (caret.offset >= 2 && isLow(caret.offset - 1) ? 2 : 1);
+	const start = [caret.offset, before].find(holds);
+	return start === undefined ? null : { node: text, offset: start };
+}
+
+/** rangeForText builds a range over code points [start,end) of an element's text. */
+export function rangeForText(element: Element, start: number, end: number): Range {
+	const range = document.createRange();
+	range.selectNodeContents(element);
+	const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+	let cp = 0;
+	let startSet = false;
+	for (let node = walker.nextNode() as Text | null; node; node = walker.nextNode() as Text | null) {
+		const length = utf16ToCodePoint(node.data, node.length);
+		if (!startSet && start < cp + length) {
+			range.setStart(node, codePointToUtf16(node.data, start - cp));
+			startSet = true;
+		}
+		if (startSet && end <= cp + length) {
+			range.setEnd(node, codePointToUtf16(node.data, end - cp));
+			break;
+		}
+		cp += length;
+	}
+	return range;
 }

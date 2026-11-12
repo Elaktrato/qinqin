@@ -1,18 +1,12 @@
-// Resolves a text selection to a dictionary match. DOM-free: the caller
+// Resolves a text selection to dictionary results. DOM-free: the caller
 // maps the selection to code-point offsets in the displayed paragraph and
-// injects the segment function (segmentAt, usually through a cache).
-import type { SegmentMatch } from '$lib/api/types';
+// injects the lookup function (lookupAt, usually through a cache).
+import type { LookupResult } from '$lib/api/types';
 import { selectionTarget, type LookupKind } from './lookup';
+import type { LookupFn } from './lookupCache';
 import { sliceCodePoints } from './paragraphText';
 
-export const START_NOTE = 'Showing the word at the start of your selection.';
-
-export type SegmentFn = (
-	lang: string,
-	text: string,
-	offset: number,
-	signal?: AbortSignal
-) => Promise<SegmentMatch | null>;
+export const START_NOTE = 'Showing matches at the start of your selection.';
 
 export interface SpanTarget {
 	start: number;
@@ -22,7 +16,8 @@ export interface SpanTarget {
 }
 
 export interface SelectionResult {
-	match: SegmentMatch | null;
+	/** Offsets are in the paragraph. */
+	results: LookupResult[];
 	note: string;
 }
 
@@ -45,31 +40,31 @@ export function selectionSpanTarget(paragraph: string, start: number, end: numbe
 
 /**
  * lookupSelection finds what a selection means:
- * - one code point: that character on its own (the text sent is just the
+ * - one code point: its character entries (the text sent is just the
  *   character, so a longer word starting there cannot shadow it);
- * - several: the selected text itself when it is exactly a word (so
- *   selecting 中文 in 中文课本 shows 中文, not a longer word), else the
- *   longest match at the selection start in the paragraph when it covers
- *   the whole selection (this catches inflected forms, 食べ in 食べた),
- *   else that start match with START_NOTE. Nothing is ever invented.
+ * - several: the results for the selected text itself that cover all of it
+ *   (selecting 中文 in 中文课本 shows 中文, not a longer word), else the
+ *   paragraph results at the selection start that cover it (this catches
+ *   inflected forms, 食べ in 食べた), else every result at the start with
+ *   START_NOTE. Nothing is ever invented.
  */
 export async function lookupSelection(
 	lang: string,
 	paragraph: string,
 	target: SpanTarget,
-	segment: SegmentFn,
+	lookup: LookupFn,
 	signal?: AbortSignal
 ): Promise<SelectionResult> {
-	const exact = await segment(lang, target.text, 0, signal);
-	const length = target.end - target.start;
-	if (exact && (target.kind === 'character' || exact.end === length)) {
-		return {
-			match: { ...exact, start: exact.start + target.start, end: exact.end + target.start },
-			note: ''
-		};
+	const shift = (r: LookupResult) => ({ ...r, start: r.start + target.start, end: r.end + target.start });
+	if (target.kind === 'character') {
+		const found = await lookup(lang, target.text, 0, ['character'], signal);
+		return { results: found.map(shift), note: '' };
 	}
-	if (target.kind === 'character') return { match: null, note: '' };
-	const atStart = await segment(lang, paragraph, target.start, signal);
-	if (!atStart) return { match: null, note: '' };
-	return { match: atStart, note: atStart.end >= target.end ? '' : START_NOTE };
+	const length = target.end - target.start;
+	const exact = (await lookup(lang, target.text, 0, undefined, signal)).filter((r) => r.end === length);
+	if (exact.length > 0) return { results: exact.map(shift), note: '' };
+	const atStart = await lookup(lang, paragraph, target.start, undefined, signal);
+	const covering = atStart.filter((r) => r.end >= target.end);
+	if (covering.length > 0) return { results: covering, note: '' };
+	return { results: atStart, note: atStart.length > 0 ? START_NOTE : '' };
 }

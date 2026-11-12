@@ -59,12 +59,11 @@ export function closeAbove(frames: PopupFrame[], id: number): PopupFrame[] {
 	return idx < 0 || idx === frames.length - 1 ? frames : frames.slice(0, idx + 1);
 }
 
-/** Patches results/error of an open frame; a closed frame is a no-op. */
-export function updateFrame(
-	frames: PopupFrame[],
-	id: number,
-	patch: Partial<Pick<PopupFrame, 'results' | 'error'>>
-): PopupFrame[] {
+export type FramePatch = Partial<Pick<PopupFrame, 'results' | 'error' | 'anchor'>>;
+
+/** Patches results/error/anchor of an open frame; a closed frame is a no-op. */
+export function updateFrame(frames: PopupFrame[], id: number, patch: FramePatch): PopupFrame[] {
 	if (!frames.some((f) => f.id === id)) return frames;
-	return frames.map((f) => (f.id === id ? { ...f, ...patch } : f));
+	const copy = patch.anchor ? { ...patch, anchor: { ...patch.anchor } } : patch;
+	return frames.map((f) => (f.id === id ? { ...f, ...copy } : f));
 }

@@ -181,4 +181,15 @@ describe('updateFrame', () => {
 		const before = h.frames;
 		expect(updateFrame(before, a, { results: [] })).toBe(before);
 	});
+
+	it('moves an open frame to a new anchor (re-anchoring after a scroll)', () => {
+		const h = harness();
+		const a = h.open()!;
+		const before = h.frames;
+		const anchor = { x: 5, y: 6, w: 7, h: 8 };
+		const next = updateFrame(before, a, { anchor });
+		expect(next[0].anchor).toEqual(anchor);
+		expect(next[0].anchor).not.toBe(anchor);
+		expect(before[0].anchor).not.toEqual(anchor);
+	});
 });

@@ -1,28 +1,49 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { SegmentMatch } from '$lib/api/types';
+import type { LookupResult } from '$lib/api/types';
 import { START_NOTE, lookupSelection, selectionSpanTarget } from './selectionLookup';
 
-type Dictionary = Record<string, SegmentMatch['entries']>;
+type Dictionary = Record<string, LookupResult['kind']>;
 
 const base: Dictionary = {
-	学: [{ id: 1, kind: 'character' }],
-	学习: [{ id: 2, kind: 'word' }],
-	中: [{ id: 4, kind: 'character' }],
-	中文: [{ id: 5, kind: 'word' }]
+	学: 'character',
+	学习: 'word',
+	中: 'character',
+	中文: 'word'
 };
 
-// Longest prefix match at the offset, like the server's tokenizer.
-function fakeSegment(words: Dictionary = base) {
-	return vi.fn(async (_lang: string, text: string, offset: number, _signal?: AbortSignal) => {
-		const points = Array.from(text);
-		for (let end = points.length; end > offset; end--) {
-			const surface = points.slice(offset, end).join('');
-			if (words[surface]) {
-				return { surface, start: offset, end, lemma: surface, reason: '', entries: words[surface] };
+function result(term: string, kind: LookupResult['kind'], start: number): LookupResult {
+	return {
+		entryId: term.length,
+		kind,
+		term,
+		reading: '',
+		forms: [],
+		readings: [],
+		matched: term,
+		start,
+		end: start + Array.from(term).length,
+		reasons: [],
+		tags: [],
+		frequencies: [],
+		senses: [],
+		pri: 0
+	};
+}
+
+// Every prefix match at the offset, longest first, like the lookup endpoint.
+function fakeLookup(words: Dictionary = base) {
+	return vi.fn(
+		async (_lang: string, text: string, offset: number, kinds?: string[], _signal?: AbortSignal) => {
+			const points = Array.from(text);
+			const found: LookupResult[] = [];
+			for (let end = points.length; end > offset; end--) {
+				const term = points.slice(offset, end).join('');
+				const kind = words[term];
+				if (kind && (!kinds || kinds.includes(kind))) found.push(result(term, kind, offset));
 			}
+			return found;
 		}
-		return null;
-	});
+	);
 }
 
 describe('selectionSpanTarget', () => {
@@ -48,55 +69,52 @@ describe('selectionSpanTarget', () => {
 });
 
 describe('lookupSelection', () => {
-	it('looks a single character up on its own, not as part of a longer word', async () => {
-		const segment = fakeSegment();
-		const target = { start: 0, end: 1, text: '学', kind: 'character' as const };
-		const result = await lookupSelection('zh', '学习', target, segment);
-		expect(result).toEqual({ match: expect.objectContaining({ surface: '学' }), note: '' });
-		expect(segment).toHaveBeenCalledWith('zh', '学', 0, undefined);
+	it('looks a single character up as a character entry, on its own', async () => {
+		const lookup = fakeLookup();
+		const target = { start: 3, end: 4, text: '学', kind: 'character' as const };
+		const found = await lookupSelection('zh', '我们在学习', target, lookup);
+		expect(found.note).toBe('');
+		expect(found.results).toMatchObject([{ term: '学', kind: 'character', start: 3, end: 4 }]);
+		expect(lookup).toHaveBeenCalledWith('zh', '学', 0, ['character'], undefined);
+		expect(lookup).toHaveBeenCalledTimes(1);
 	});
 
-	it('prefers a word that equals the selection over a longer one', async () => {
-		const segment = fakeSegment({ ...base, 中文课: [{ id: 6, kind: 'word' }] });
+	it('keeps only the results covering a selection that is a word itself', async () => {
+		const lookup = fakeLookup({ ...base, 中文课: 'word' });
 		const target = { start: 0, end: 2, text: '中文', kind: 'word' as const };
-		const result = await lookupSelection('zh', '中文课本', target, segment);
-		expect(result).toEqual({ match: expect.objectContaining({ surface: '中文' }), note: '' });
-		expect(segment).toHaveBeenCalledTimes(1);
+		const found = await lookupSelection('zh', '中文课本', target, lookup);
+		expect(found).toMatchObject({ note: '', results: [{ term: '中文', start: 0, end: 2 }] });
+		expect(found.results).toHaveLength(1);
+		expect(lookup).toHaveBeenCalledWith('zh', '中文', 0, undefined, undefined);
+		expect(lookup).toHaveBeenCalledTimes(1);
 	});
 
-	it('uses the paragraph match when it covers a selection that is no word itself', async () => {
-		const segment = fakeSegment({ 中: base['中'], 中文课: [{ id: 6, kind: 'word' }] });
+	it('uses the paragraph results covering the selection when it is no word itself', async () => {
+		const lookup = fakeLookup({ 中: 'character', 中文课: 'word' });
 		const target = { start: 1, end: 3, text: '中文', kind: 'word' as const };
-		const result = await lookupSelection('zh', '学中文课本', target, segment);
-		expect(result).toEqual({
-			match: expect.objectContaining({ surface: '中文课', start: 1, end: 4 }),
-			note: ''
-		});
+		const found = await lookupSelection('zh', '学中文课本', target, lookup);
+		expect(found).toMatchObject({ note: '', results: [{ term: '中文课', start: 1, end: 4 }] });
+		expect(found.results).toHaveLength(1);
 	});
 
-	it('falls back to the word at the start with a note when nothing covers the selection', async () => {
-		const segment = fakeSegment();
+	it('falls back to the matches at the start with a note when nothing covers the selection', async () => {
+		const lookup = fakeLookup();
 		const target = { start: 0, end: 4, text: '学习中文', kind: 'word' as const };
-		const result = await lookupSelection('zh', '学习中文', target, segment);
-		expect(result).toEqual({
-			match: expect.objectContaining({ surface: '学习', start: 0, end: 2 }),
-			note: START_NOTE
-		});
+		const found = await lookupSelection('zh', '学习中文', target, lookup);
+		expect(found.note).toBe(START_NOTE);
+		expect(found.results.map((r) => r.term)).toEqual(['学习', '学']);
 	});
 
-	it('reports no match without a note when the start matches nothing', async () => {
+	it('reports no results without a note when the start matches nothing', async () => {
 		const target = { start: 0, end: 2, text: '你好', kind: 'word' as const };
-		expect(await lookupSelection('zh', '你好', target, fakeSegment())).toEqual({
-			match: null,
-			note: ''
-		});
+		expect(await lookupSelection('zh', '你好', target, fakeLookup())).toEqual({ results: [], note: '' });
 	});
 
 	it('passes the abort signal through', async () => {
-		const segment = fakeSegment();
+		const lookup = fakeLookup();
 		const signal = new AbortController().signal;
 		const target = { start: 0, end: 4, text: '学习中文', kind: 'word' as const };
-		await lookupSelection('zh', '学习中文', target, segment, signal);
-		expect(segment).toHaveBeenLastCalledWith('zh', '学习中文', 0, signal);
+		await lookupSelection('zh', '学习中文', target, lookup, signal);
+		expect(lookup).toHaveBeenLastCalledWith('zh', '学习中文', 0, undefined, signal);
 	});
 });

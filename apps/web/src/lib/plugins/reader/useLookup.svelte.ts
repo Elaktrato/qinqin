@@ -1,11 +1,11 @@
-// Hover and selection lookup over the chapter text. One controller per
-// reading view; the chapter container delegates its pointer events here
-// (no per-paragraph listeners) and attach() wires the document-level ones.
-// This file is the DOM side: it turns pointers and selections into
-// paragraph offsets. The hover timing (grace, aborts, stale results) lives
-// in the DOM-free HoverLookup.
-import { segmentAt } from '$lib/api/segment';
-import type { SegmentMatch } from '$lib/api/types';
+// Hover and selection lookup over the chapter text, shown as a stack of
+// popups. One controller per reading view; the chapter container delegates
+// its pointer events here (no per-paragraph listeners), the popups delegate
+// theirs to `popups` (PopupPointer), and attach() wires the document-level
+// ones. This file is the DOM side: it turns pointers and selections into
+// text offsets. The timing (grace, aborts, stale results) lives in the
+// DOM-free HoverLookup and NestedScan.
+import { lookupAt } from '$lib/api/lookup';
 import {
 	caretFromPoint,
 	rangeContainsPoint,
@@ -16,26 +16,24 @@ import {
 } from './dom';
 import { apiErrorMessage } from './errors';
 import { HoverLookup, type HoverShown, type Span } from './hoverLookup';
-import { hoverable, type LookupKind } from './lookup';
+import { hoverable } from './lookup';
+import { cachedLookup } from './lookupCache';
 import { offsetFromRun, paragraphString, sliceCodePoints } from './paragraphText';
-import { cachedSegment } from './segmentCache';
+import { anchorOf, inPopup, PopupPointer } from './popupPointer.svelte';
+import { PopupStack } from './popupStack.svelte';
 import { lookupSelection, selectionSpanTarget } from './selectionLookup';
 
 const HOVER_DEBOUNCE_MS = 80;
 const SELECTION_DEBOUNCE_MS = 250;
 const HIGHLIGHT = 'reader-lookup';
 
-export interface LookupView {
+/** What the whole open stack shares: how it was opened and its language. */
+export interface StackInfo {
+	/** Hover stacks close after the grace delay; selection stacks are sticky. */
 	mode: 'hover' | 'selection';
-	/** Where the looked-up text is on screen (viewport coordinates). */
-	anchor: DOMRect;
-	/** undefined while the tokenizer is still resolving; null when it found nothing. */
-	match: SegmentMatch | null | undefined;
-	/** The looked-up text, shown when there is no match. */
-	text: string;
-	kind: LookupKind;
+	lang: string;
+	/** Shown in the root popup (selection fallbacks). */
 	note: string;
-	error: string;
 }
 
 export interface LookupOptions {
@@ -45,10 +43,12 @@ export interface LookupOptions {
 }
 
 export class LookupController {
-	view = $state<LookupView | null>(null);
+	readonly stack = new PopupStack();
+	info = $state<StackInfo | null>(null);
+	readonly popups: PopupPointer;
 
 	#opts: LookupOptions;
-	#segment = cachedSegment(segmentAt);
+	#lookup = cachedLookup(lookupAt);
 	#hover: HoverLookup;
 	#hoverTimer: ReturnType<typeof setTimeout> | undefined;
 	#pointer = { x: 0, y: 0, target: null as EventTarget | null };
@@ -64,29 +64,32 @@ export class LookupController {
 	constructor(opts: LookupOptions) {
 		this.#opts = opts;
 		this.#hover = new HoverLookup({
-			segment: this.#segment,
+			lookup: this.#lookup,
 			lang: opts.lang,
 			show: (shown) => this.#showHover(shown),
 			hide: () => {
-				if (this.view?.mode !== 'hover') return;
-				this.#highlight(null);
-				this.view = null;
+				if (this.info?.mode === 'hover') this.close();
 			}
+		});
+		this.popups = new PopupPointer({
+			lookup: this.#lookup,
+			stack: this.stack,
+			entered: () => this.#hover.enterPopup(),
+			left: () => this.#hover.leavePopup()
 		});
 	}
 
 	/** Document-level listeners; returns the cleanup. */
 	attach(): () => void {
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === 'Escape' && this.view) this.close();
+			if (e.key === 'Escape' && this.info) this.closeTop();
+			this.popups.key(e);
 		};
 		const onDown = (e: PointerEvent) => {
 			// Tracked document-wide, so a drag that starts outside the text
 			// and extends into it still counts as a drag in progress.
 			if (e.button === 0) this.#pointerDown = true;
-			if (this.view?.mode !== 'selection') return;
-			const target = e.target as Element | null;
-			if (!target?.closest?.('[data-lookup-popup]')) this.close();
+			if (this.info && !inPopup(e.target)) this.close();
 		};
 		const onUp = () => {
 			if (!this.#pointerDown) return;
@@ -96,11 +99,15 @@ export class LookupController {
 		const onSelection = () => {
 			if (!this.#pointerDown) this.#scheduleSelection(SELECTION_DEBOUNCE_MS);
 		};
-		const onScroll = () => {
-			if (this.view?.mode === 'hover') this.close();
-			else if (this.view && !this.#frame) this.#frame = requestAnimationFrame(() => this.#reanchor());
+		const onScroll = (e: Event) => {
+			// A popup scrolling its own long entry list moves nothing.
+			if (!this.info || inPopup(e.target)) return;
+			if (this.info.mode === 'hover') this.close();
+			else if (!this.#frame) this.#frame = requestAnimationFrame(() => this.#reanchor());
 		};
 		window.addEventListener('keydown', onKey);
+		window.addEventListener('keyup', this.popups.key);
+		window.addEventListener('blur', this.popups.blur);
 		window.addEventListener('pointerdown', onDown, true);
 		window.addEventListener('pointerup', onUp);
 		window.addEventListener('pointercancel', onUp);
@@ -108,6 +115,8 @@ export class LookupController {
 		document.addEventListener('selectionchange', onSelection);
 		return () => {
 			window.removeEventListener('keydown', onKey);
+			window.removeEventListener('keyup', this.popups.key);
+			window.removeEventListener('blur', this.popups.blur);
 			window.removeEventListener('pointerdown', onDown, true);
 			window.removeEventListener('pointerup', onUp);
 			window.removeEventListener('pointercancel', onUp);
@@ -128,7 +137,7 @@ export class LookupController {
 			this.#scheduleSelection(30);
 		}
 		if (this.#pointerDown || e.buttons !== 0) return;
-		if (this.view?.mode === 'selection') return;
+		if (this.info?.mode === 'selection') return;
 		this.#pointer = { x: e.clientX, y: e.clientY, target: e.target };
 		clearTimeout(this.#hoverTimer);
 		this.#hoverTimer = setTimeout(() => this.#resolveHover(), HOVER_DEBOUNCE_MS);
@@ -137,7 +146,8 @@ export class LookupController {
 	pointerleave = (e: PointerEvent): void => {
 		if (e.pointerType !== 'mouse') return;
 		clearTimeout(this.#hoverTimer);
-		this.#hover.close();
+		// Possibly on the way into the popup: the grace delay decides.
+		this.#hover.noWord();
 	};
 
 	pointerdown = (e: PointerEvent): void => {
@@ -146,10 +156,13 @@ export class LookupController {
 		this.#hover.close();
 	};
 
-	/** Closes the popup and cancels everything in flight. */
+	// --- closing ---
+
+	/** Closes every popup and cancels everything in flight. */
 	close(): void {
 		clearTimeout(this.#hoverTimer);
 		this.#hover.close();
+		this.popups.cancel();
 		this.#selectionSeq++;
 		this.#selectionAbort?.abort();
 		this.#selectionAbort = null;
@@ -158,7 +171,24 @@ export class LookupController {
 		cancelAnimationFrame(this.#frame);
 		this.#frame = 0;
 		this.#highlight(null);
-		this.view = null;
+		this.stack.closeAll();
+		this.info = null;
+	}
+
+	/** Escape: the top popup only; the last one closes everything. */
+	closeTop(): void {
+		if (this.stack.frames.length <= 1) return this.close();
+		this.stack.closeTop();
+		this.popups.prune();
+	}
+
+	/** A popup's close button: that popup and the ones opened from it. */
+	closeFrame(id: number): void {
+		const index = this.stack.frames.findIndex((f) => f.id === id);
+		if (index < 0) return;
+		if (index === 0) return this.close();
+		this.stack.closeAbove(this.stack.frames[index - 1].id);
+		this.popups.prune();
 	}
 
 	// --- hover ---
@@ -192,20 +222,20 @@ export class LookupController {
 	}
 
 	#showHover(shown: HoverShown): void {
-		// A sticky selection popup is never replaced by a hover result.
-		if (this.view?.mode === 'selection') return;
+		// A sticky selection stack is never replaced by a hover result.
+		if (this.info?.mode === 'selection') return;
 		const range = this.#rangeOf(shown.span);
 		if (!range) return this.#hover.close();
 		this.#highlight(range);
-		this.view = {
-			mode: 'hover',
-			anchor: range.getBoundingClientRect(),
-			match: shown.match,
+		this.popups.cancel();
+		this.stack.open({
+			anchor: anchorOf(range.getBoundingClientRect()),
 			text: shown.text,
-			kind: 'word',
-			note: '',
-			error: shown.error
-		};
+			offset: shown.offset,
+			results: shown.results,
+			error: shown.error || undefined
+		});
+		this.info = { mode: 'hover', lang: this.#opts.lang(), note: '' };
 	}
 
 	// --- selection ---
@@ -228,7 +258,7 @@ export class LookupController {
 		const span = { p: found.p, start: target.start, end: target.end };
 		const shown = this.#selectionSpan;
 		if (
-			this.view?.mode === 'selection' &&
+			this.info?.mode === 'selection' &&
 			shown &&
 			shown.p === span.p &&
 			shown.start === span.start &&
@@ -238,31 +268,28 @@ export class LookupController {
 		}
 		const range = this.#rangeOf(span);
 		if (!range) return;
-		clearTimeout(this.#hoverTimer);
-		this.#hover.close();
-		this.#selectionAbort?.abort();
+		this.close();
 		const abort = new AbortController();
 		this.#selectionAbort = abort;
-		const seq = ++this.#selectionSeq;
+		const seq = this.#selectionSeq;
 		this.#selectionSpan = span;
-		this.#highlight(null);
-		this.view = {
-			mode: 'selection',
-			anchor: range.getBoundingClientRect(),
-			match: undefined,
-			text: target.text,
-			kind: target.kind,
-			note: '',
-			error: ''
-		};
 		const lang = this.#opts.lang();
+		const id = this.stack.open({
+			anchor: anchorOf(range.getBoundingClientRect()),
+			text: target.text,
+			offset: target.start,
+			results: null
+		});
+		if (id === null) return;
+		this.info = { mode: 'selection', lang, note: '' };
 		try {
-			const result = await lookupSelection(lang, text, target, this.#segment, abort.signal);
-			if (seq !== this.#selectionSeq || !this.view) return;
-			this.view = { ...this.view, match: result.match, note: result.note };
+			const found = await lookupSelection(lang, text, target, this.#lookup, abort.signal);
+			if (seq !== this.#selectionSeq || !this.info) return;
+			this.stack.update(id, { results: found.results });
+			this.info = { ...this.info, note: found.note };
 		} catch (err) {
-			if (abort.signal.aborted || seq !== this.#selectionSeq || !this.view) return;
-			this.view = { ...this.view, match: null, error: apiErrorMessage(err, 'lookup') };
+			if (abort.signal.aborted || seq !== this.#selectionSeq) return;
+			this.stack.update(id, { results: [], error: apiErrorMessage(err, 'lookup') });
 		}
 	}
 
@@ -274,13 +301,19 @@ export class LookupController {
 		return container && runs ? rangeForSpan(container, span.p, runs, span.start, span.end) : null;
 	}
 
+	// The page scrolled under a sticky selection stack: the root follows its
+	// text; popups opened from it would no longer sit on their words.
 	#reanchor(): void {
 		this.#frame = 0;
+		const root = this.stack.frames[0];
 		const range = this.#selectionSpan && this.#rangeOf(this.#selectionSpan);
-		if (range && this.view) this.view = { ...this.view, anchor: range.getBoundingClientRect() };
+		if (!root || !range) return;
+		this.stack.closeAbove(root.id);
+		this.popups.prune();
+		this.stack.update(root.id, { anchor: anchorOf(range.getBoundingClientRect()) });
 	}
 
-	// Marks the hovered word without touching the DOM, where supported.
+	// Marks the looked-up word without touching the DOM, where supported.
 	#highlight(range: Range | null): void {
 		if (typeof CSS === 'undefined' || !('highlights' in CSS)) return;
 		if (range) CSS.highlights.set(HIGHLIGHT, new Highlight(range));

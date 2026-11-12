@@ -4,6 +4,7 @@ import {
 	closeTop,
 	openFrame,
 	updateFrame,
+	type FramePatch,
 	type PopupFrame
 } from './popupStackCore';
 
@@ -41,7 +42,7 @@ export class PopupStack {
 	}
 
 	/** No-op for a closed frame, so stale responses never touch it. */
-	update(id: number, patch: Partial<Pick<PopupFrame, 'results' | 'error'>>): void {
+	update(id: number, patch: FramePatch): void {
 		this.frames = updateFrame(this.frames, id, patch);
 	}
 }
