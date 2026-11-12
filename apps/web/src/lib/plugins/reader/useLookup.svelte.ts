@@ -74,7 +74,11 @@ export class LookupController {
 		this.popups = new PopupPointer({
 			lookup: this.#lookup,
 			stack: this.stack,
-			entered: () => this.#hover.enterPopup(),
+			// A hover lookup still debouncing is for a word passed on the way.
+			entered: () => {
+				clearTimeout(this.#hoverTimer);
+				this.#hover.enterPopup();
+			},
 			left: () => this.#hover.leavePopup()
 		});
 	}

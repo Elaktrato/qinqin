@@ -144,6 +144,50 @@ describe('HoverLookup', () => {
 		expect(t.visible()).toBeNull();
 	});
 
+	it('entering a popup aborts the lookup for another word in flight; its late result is dropped', async () => {
+		const t = setup();
+		t.hover.point(0, text, 1);
+		t.calls[0].resolve([result('学习', 1)]);
+		await vi.advanceTimersByTimeAsync(0);
+		// The pointer rests on 中文 long enough to start its lookup, then goes into the popup.
+		t.hover.point(0, text, 3);
+		t.hover.enterPopup();
+		expect(t.calls[1].signal?.aborted).toBe(true);
+		t.calls[1].resolve([result('中文', 3)]);
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(t.shown.map((s) => s.results[0].term)).toEqual(['学习']);
+		expect(t.visible()).not.toBeNull();
+	});
+
+	it('leaves no stuck "in popup" state: leaving after such an abort still hides on grace', async () => {
+		const t = setup();
+		t.hover.point(0, text, 1);
+		t.calls[0].resolve([result('学习', 1)]);
+		await vi.advanceTimersByTimeAsync(0);
+		t.hover.point(0, text, 3);
+		t.hover.enterPopup();
+		t.calls[1].resolve([result('中文', 3)]);
+		await vi.advanceTimersByTimeAsync(0);
+		t.hover.leavePopup();
+		await vi.advanceTimersByTimeAsync(HOVER_GRACE_MS);
+		expect(t.visible()).toBeNull();
+	});
+
+	it('drops a result that arrives while the pointer is in a popup, even if not aborted', async () => {
+		const t = setup();
+		t.hover.point(0, text, 1);
+		t.calls[0].resolve([result('学习', 1)]);
+		await vi.advanceTimersByTimeAsync(0);
+		t.hover.point(0, text, 3);
+		const signal = t.calls[1].signal!;
+		t.hover.enterPopup();
+		// Even a lookup that ignored its abort signal must not replace the stack under the pointer.
+		Object.defineProperty(signal, 'aborted', { value: false });
+		t.calls[1].resolve([result('中文', 3)]);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(t.show).toHaveBeenCalledTimes(1);
+	});
+
 	it('moving between popups (leave then enter) keeps them', async () => {
 		const t = setup();
 		t.hover.point(0, text, 1);

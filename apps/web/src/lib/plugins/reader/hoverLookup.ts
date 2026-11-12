@@ -6,9 +6,10 @@
 //   a lookup in flight, so a slow lookup for the next word still shows;
 // - a pointer on no word (or leaving the text) aborts the lookup in flight
 //   (its word was left) and arms the grace hide;
-// - the popups are interactive: entering one cancels the grace hide and
-//   leaving the last one arms it again, so the pointer can travel from the
-//   word into its popup (and into nested popups) without losing them;
+// - the popups are interactive: entering one cancels the grace hide (and
+//   aborts a lookup for a word passed on the way) and leaving the last one
+//   arms it again, so the pointer can travel from the word into its popup
+//   (and into nested popups) without losing them;
 // - a lookup that finds nothing shows no popup: it counts as "no word"
 //   (a not-found hint is for selections only);
 // - close() does both at once (Escape, scroll, re-render, outside click).
@@ -81,10 +82,15 @@ export class HoverLookup {
 		this.#hideSoon();
 	}
 
-	/** The pointer entered a popup: keep the shown stack. */
+	/**
+	 * The pointer entered a popup: keep the shown stack, and abort a lookup
+	 * for a word passed on the way, whose result would otherwise replace the
+	 * stack under the pointer.
+	 */
 	enterPopup(): void {
 		this.#inPopup = true;
 		this.#cancelHide();
+		this.#abort();
 	}
 
 	/** The pointer left a popup (for somewhere that is not another popup). */
@@ -141,6 +147,8 @@ export class HoverLookup {
 		// Superseded, aborted, or closed meanwhile: discard.
 		if (this.#inFlight !== flight || signal.aborted) return;
 		this.#inFlight = null;
+		// Never replace the stack under a pointer that is inside it.
+		if (this.#inPopup) return;
 		if (results.length === 0 && !error) {
 			// Nothing here: like a pointer on no word, the shown popup (if
 			// any) goes after the grace delay.
