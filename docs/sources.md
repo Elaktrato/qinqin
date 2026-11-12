@@ -37,10 +37,19 @@ attribution and share-alike."); both checked on 2026-11-12.
 `scripts/fetch-jiten-frequency.sh` (called by `fetch-seeds.sh`) downloads the
 published Yomitan-format file once and writes `plugins/data/jiten-frequency/`:
 **unmodified ranks** converted to `freq.csv.gz` (`term,reading,rank`), the
-CC BY-SA 4.0 text and the attribution. The converted file is shared under the
-same licence. The app never calls Jiten's API: lookups use the snapshot only.
+CC BY-SA 4.0 text and the attribution, with exact duplicate rows kept once.
+The converted file is shared under the same licence. Refreshing the snapshot
+is a one-off **manual** maintainer action, never run in CI or at app runtime:
+re-read the two pages above first, then run the script with
+`JITEN_LICENCE_CHECKED=<YYYY-MM-DD> JITEN_TERMS_VERSION=<version>` (it refuses
+to run without them). Its one request to Jiten is the published file's
+download link, the same request the page's "Yomitan" download button makes;
+it does not query, iterate or proxy Jiten's API, and the app never contacts
+Jiten: lookups use the snapshot only.
 `GET /api/frequency-packs` exposes each installed frequency pack's `license`
-and `attribution`, and the Sources page lists them.
+and `attribution`, and the Sources page lists them. An opt-in test seeds the
+real bundle and checks lookups against it (about a minute):
+`QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` (from `server/`).
 
 ## Local-only data
 

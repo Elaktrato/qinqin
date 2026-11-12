@@ -15,8 +15,9 @@ Committed (small, hand-written, CC0 — samples, not the official lists):
 | `jlpt-mini` | levels | ja | an N5 sample |
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack) |
 
-Committed too (the starter bundle, compressed upstream files as shipped,
-with `LICENSE` and `ATTRIBUTION.md` in each directory):
+Committed too (the starter bundle: compressed upstream files as shipped, and
+the converted Jiten list, with `LICENSE` and `ATTRIBUTION.md` in each
+directory):
 
 | Pack | Type | Language | Contents |
 |------|------|----------|----------|
@@ -31,7 +32,15 @@ Docker image seeds with no network and no decompression step. Run
 `scripts/fetch-seeds.sh` to refresh the bundle; it rewrites these pack
 directories in the bundled layout and removes any legacy decompressed
 payloads (`dictionary.txt`, `jmdict.xml`, `kanjidic2.xml`). The Jiten pack
-alone is refreshed by `scripts/fetch-jiten-frequency.sh`.
+alone is refreshed by `scripts/fetch-jiten-frequency.sh`, a manual
+maintainer step: re-check Jiten's licence first and pass
+`JITEN_LICENCE_CHECKED=<YYYY-MM-DD> JITEN_TERMS_VERSION=<version>` (both
+scripts require them). That conversion needs `python3`; building, running
+and testing the app do not.
+
+A slow test seeds this whole directory and checks lookups against the real
+data; it is opt-in: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v`
+(from `server/`).
 
 Data with an unclear or restrictive licence is never committed here: it goes
 in the gitignored `plugins/data-local/`, which `qinqin seed` also imports

@@ -124,6 +124,8 @@ func (s Service) frequencies(ctx context.Context, language string, es []lexicon.
 				}
 			}
 		}
+		// Trade-off: a UK entry whose kanji form has a poor rank and no
+		// attributed kana row keeps that poor rank, not the kana row's.
 		formHit := maps.Clone(best)
 		for _, h := range fallback {
 			if _, ok := formHit[h.PackID]; ok {
