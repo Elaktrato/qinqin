@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sync"
+
+	"qinqin/internal/library/sources"
 )
 
 // server carries the shared database handle and data directory for all
@@ -13,13 +16,18 @@ import (
 type server struct {
 	db      *sql.DB
 	dataDir string
+	sources []sources.Source
+
+	importMu  sync.Mutex
+	importing map[int64]bool // users with an import in flight
 }
 
 // New returns the root HTTP handler with all qinqin routes mounted.
 // Uploaded packs are stored under dataDir/packs/. Domain routes are
-// added to the mux by later tasks, all sharing sqlDB.
-func New(sqlDB *sql.DB, dataDir string) http.Handler {
-	s := &server{db: sqlDB, dataDir: dataDir}
+// added to the mux by later tasks, all sharing sqlDB. srcs are the
+// public-domain text sources the library can search and import from.
+func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
+	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
 	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
@@ -54,6 +62,9 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("GET /api/library/books/{id}/chapters/{n}", s.handleGetChapter)
 	mux.HandleFunc("PUT /api/library/books/{id}/position", s.handleSetBookPosition)
 	mux.HandleFunc("DELETE /api/library/books/{id}", s.handleDeleteBook)
+	mux.HandleFunc("GET /api/library/sources", s.handleListSources)
+	mux.HandleFunc("GET /api/library/sources/{source}/search", s.handleSearchSource)
+	mux.HandleFunc("POST /api/library/sources/{source}/import", s.handleImportSource)
 	mux.HandleFunc("PUT /api/plugins/{id}/state", s.handleSetPluginState)
 	mux.HandleFunc("GET /api/plugins/{id}/data/{key}", s.handleGetPluginData)
 	mux.HandleFunc("PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData)

@@ -32,7 +32,7 @@ func newServerWithDir(t *testing.T) (*httptest.Server, *sql.DB, string) {
 		t.Fatalf("db.Open: %v", err)
 	}
 	t.Cleanup(func() { sqlDB.Close() })
-	ts := httptest.NewServer(api.New(sqlDB, dataDir))
+	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB, dataDir
 }

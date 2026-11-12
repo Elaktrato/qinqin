@@ -59,7 +59,7 @@ func newDB(t *testing.T) *sql.DB {
 func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
 	sqlDB := newDB(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir()))
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
 }

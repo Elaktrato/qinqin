@@ -21,6 +21,9 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/db"
 	"qinqin/internal/lang"
+	"qinqin/internal/library/sources"
+	"qinqin/internal/library/sources/aozora"
+	"qinqin/internal/library/sources/gutenberg"
 	"qinqin/internal/plugins"
 	"qinqin/internal/webdist"
 )
@@ -135,7 +138,18 @@ func serveCmd(args []string) error {
 	}
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data)))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data))))
+}
+
+// version is sent in the User-Agent of requests to the text sources.
+const version = "dev"
+
+// librarySources builds the public-domain text sources, sharing one
+// HTTP client (rate limits and cache under <data>/cache/sources).
+func librarySources(dataDir string) []sources.Source {
+	c := sources.NewHTTPClient(filepath.Join(dataDir, "cache", "sources"),
+		"qinqin/"+version+" (+https://github.com/Elaktrato/qinqin)")
+	return []sources.Source{aozora.New(c), gutenberg.New(c)}
 }
 
 // rootHandler mounts the API on /api/ and /healthz and the web frontend on

@@ -24,7 +24,7 @@ func TestRootMuxKeepsAPI(t *testing.T) {
 	}
 	// The API handler is real; an empty POST body fails decoding before it
 	// ever touches the (nil) database.
-	h := rootHandler(web, api.New(nil, t.TempDir()))
+	h := rootHandler(web, api.New(nil, t.TempDir(), nil))
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 

@@ -95,7 +95,7 @@ func buildPack(t *testing.T, id, sentencesJSON string) dict.Pack {
 func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
 	sqlDB := newDB(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir()))
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
 }

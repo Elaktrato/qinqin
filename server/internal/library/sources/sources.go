@@ -22,7 +22,13 @@ import (
 )
 
 // Result is one search hit.
-type Result struct{ SourceID, Title, Author, Language, Note string }
+type Result struct {
+	SourceID string `json:"sourceId"`
+	Title    string `json:"title"`
+	Author   string `json:"author"`
+	Language string `json:"language"`
+	Note     string `json:"note"`
+}
 
 // Imported is a fetched work; Meta has title, author, language, source,
 // source_id, source_url, attribution and license_note filled.

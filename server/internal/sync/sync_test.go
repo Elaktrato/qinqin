@@ -319,7 +319,7 @@ func TestPushRejectsForeignWorkspaceAndUnknownPlugin(t *testing.T) {
 
 func TestSyncEndpoints(t *testing.T) {
 	sqlDB := newDB(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir()))
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	seedWorld(t, sqlDB)
 
