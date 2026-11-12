@@ -147,6 +147,31 @@ func TestSeedRealPacksRanksWithJiten(t *testing.T) {
 	first("宿題をしている", 3, "為る[progressive te-form]")
 	first("食べたい", 0, "食べる[desire]")
 	first("いる", 0, "居る")
+	// No sample dictionary in the default root: every card headed by the
+	// word is a JMdict entry with its part of speech (no POS-less
+	// duplicate), and the first is one of them.
+	for _, w := range []string{"学校", "水", "食べる"} {
+		rs, err := s.Lookup(ctx, "ja", w, 0, []string{"word"})
+		if err != nil || len(rs) == 0 {
+			t.Fatalf("Lookup(%s) = %v, %v", w, rs, err)
+		}
+		if rs[0].Term != w {
+			t.Errorf("%s first card = %s, want %s", w, rs[0].Term, w)
+		}
+		for _, r := range rs {
+			if r.Term != w {
+				continue
+			}
+			if len(r.Senses) == 0 || len(r.Senses[0].POS) == 0 {
+				t.Errorf("%s card %d has no part of speech: %+v", w, r.EntryID, r.Senses)
+			}
+			for _, sn := range r.Senses {
+				if sn.DictionaryName != "JMdict" {
+					t.Errorf("%s card %d has a sense from %q, want JMdict only", w, r.EntryID, sn.DictionaryName)
+				}
+			}
+		}
+	}
 	first("こと", 0, "事")
 	// Jiten ranks なる written in kana under 成る; 生る must not share it.
 	first("なる", 0, "成る")

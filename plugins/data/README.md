@@ -9,11 +9,18 @@ Committed (small, hand-written, CC0 — samples, not the official lists):
 
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
-| `zh-mini` | dictionary | zh | pinyin → bopomofo, traditional variants |
 | `hsk-mini` | levels | zh | word levels with derived character levels |
-| `ja-mini` | dictionary | ja | kana readings, romaji search |
 | `jlpt-mini` | levels | ja | an N5 sample |
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack) |
+
+The hand-written sample DICTIONARIES `zh-mini` (pinyin → bopomofo,
+traditional variants) and `ja-mini` (kana readings, romaji search) live in
+`plugins/samples/`, outside the default seed root: their entries are keyed by
+written form, so next to CC-CEDICT and JMdict they would add a second,
+part-of-speech-less card for the same words, ranked first. Seed them explicitly
+(for a small demo database, or alongside the full bundle) with
+`qinqin seed --packs plugins/samples` (or `--packs plugins/data,plugins/samples`).
+The seed tests use them as small fixtures.
 
 Committed too (the starter bundle: compressed upstream files as shipped, and
 the converted Jiten list, with `LICENSE` and `ATTRIBUTION.md` in each

@@ -40,8 +40,8 @@ the Compose plugin required) run:
 docker compose up -d
 ```
 
-On the first run, seed the bundled sample and upstream packs, then create the
-admin account:
+On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
+frequency list and the level samples), then create the admin account:
 
 ```bash
 docker compose exec qinqin qinqin seed
@@ -380,6 +380,7 @@ Dockerfile copies that directory into the Go binary before compiling.
 | `apps/web/` | SvelteKit SPA (adapter-static) |
 | `plugins/data/` | Bundled seed packs (dictionaries and the Jiten frequency list) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
+| `plugins/samples/` | Hand-written sample dictionaries (`zh-mini`, `ja-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
 

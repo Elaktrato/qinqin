@@ -21,6 +21,11 @@ import (
 // to this package's test working directory.
 const committedPacks = "../../../plugins/data"
 
+// samplePacks holds the hand-written dictionary samples (zh-mini,
+// ja-mini): out of the default seed root, since their entries would
+// duplicate CC-CEDICT's and JMdict's.
+const samplePacks = "../../../plugins/samples"
+
 // openTestDB opens a fresh migrated database in a temp data directory
 // and returns it with the directory.
 func openTestDB(t *testing.T) (*sql.DB, string) {
@@ -35,18 +40,43 @@ func openTestDB(t *testing.T) (*sql.DB, string) {
 	return sqlDB, dir
 }
 
-// smallPacks copies the hand-written sample packs from the committed
-// packs directory into a temp dir. Seed tests exercise the committed
-// acceptance paths (zh/ja/es dictionaries plus zh/ja level packs) without
-// importing the full bundled dictionaries, which would add minutes to
-// every run.
+// smallPacks copies the hand-written sample packs (es-demo and the level
+// samples from the committed packs directory, the zh-mini and ja-mini
+// dictionaries from plugins/samples) into a temp dir. Seed tests
+// exercise the committed acceptance paths (zh/ja/es dictionaries plus
+// zh/ja level packs) without importing the full bundled dictionaries,
+// which would add minutes to every run.
 func smallPacks(t *testing.T) string {
 	t.Helper()
 	dest := t.TempDir()
-	for _, name := range []string{"es-demo", "hsk-mini", "ja-mini", "jlpt-mini", "zh-mini"} {
+	for _, name := range []string{"es-demo", "hsk-mini", "jlpt-mini"} {
 		copyTree(t, filepath.Join(committedPacks, name), filepath.Join(dest, name))
 	}
+	for _, name := range []string{"ja-mini", "zh-mini"} {
+		copyTree(t, filepath.Join(samplePacks, name), filepath.Join(dest, name))
+	}
 	return dest
+}
+
+// TestDefaultRootHoldsNoDictionarySamples: a hand-written json dictionary
+// for a language with a real bundled dictionary would add a second,
+// POS-less entry per word (json entries are keyed by written form,
+// JMdict's by sequence number), ranked first by its lower dictionary id.
+func TestDefaultRootHoldsNoDictionarySamples(t *testing.T) {
+	packs, err := findPacksIn(committedPacks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range packs {
+		if p.pack.Type == "dictionary" && p.pack.Format == "json" && (p.pack.Language == "zh" || p.pack.Language == "ja") {
+			t.Errorf("default root holds the %s sample dictionary %s; it belongs in plugins/samples", p.pack.Language, p.pack.ID)
+		}
+	}
+	for _, name := range []string{"ja-mini", "zh-mini"} {
+		if _, err := os.Stat(filepath.Join(samplePacks, name, "manifest.json")); err != nil {
+			t.Errorf("sample %s: %v", name, err)
+		}
+	}
 }
 
 // copyTree copies a directory tree into dst, creating parents.
