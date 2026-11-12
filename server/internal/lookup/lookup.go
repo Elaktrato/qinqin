@@ -128,7 +128,8 @@ type match struct {
 // entry has the deinflection's word class. A する compound (勉強した →
 // 勉強する) is also looked up by its stem (勉強), accepted when the stem
 // is a する noun (JMdict tags vs on the noun). Each category is one
-// batched store call, whatever the window length.
+// batched store call, whatever the window length. An entry whose senses
+// all belonged to uninstalled dictionaries is not a result.
 func (s Service) Lookup(ctx context.Context, language, text string, offset int, kinds []string) ([]Result, error) {
 	runes := []rune(text)
 	if offset < 0 || offset >= len(runes) || !wordStart(language, runes[offset]) {
@@ -191,6 +192,9 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 		for _, e := range byReading[pl] {
 			consider(e, p, slices.IndexFunc(e.Readings, func(r lexicon.Reading) bool { return r.Plain == pl }))
 		}
+	}
+	if order, err = s.dropRetired(ctx, order, best); err != nil {
+		return nil, err
 	}
 	if len(order) == 0 {
 		return []Result{}, nil
@@ -364,6 +368,42 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 		}
 	}
 	return r
+}
+
+// dropRetired removes from order the entries that have no active sense
+// (of an installed dictionary) but did have senses: the words of an
+// uninstalled dictionary, whose entries survive with tombstoned senses.
+// An entry that never had a sense — a character created only from
+// Unihan's or KANJIDIC2's character data — stays. One query, run only
+// when some entry has no active sense.
+func (s Service) dropRetired(ctx context.Context, order []int64, best map[int64]*match) ([]int64, error) {
+	var ids []any
+	for _, id := range order {
+		if len(best[id].entry.Senses) == 0 {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return order, nil
+	}
+	rows, err := s.DB.QueryContext(ctx, `SELECT DISTINCT entry_id FROM senses WHERE entry_id IN (`+
+		strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")+`)`, ids...)
+	if err != nil {
+		return nil, fmt.Errorf("lookup: retired entries: %w", err)
+	}
+	defer rows.Close()
+	retired := map[int64]bool{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("lookup: retired entries: %w", err)
+		}
+		retired[id] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("lookup: retired entries: %w", err)
+	}
+	return slices.DeleteFunc(order, func(id int64) bool { return retired[id] }), nil
 }
 
 // dictionaryNames returns the names of the dictionaries the senses of

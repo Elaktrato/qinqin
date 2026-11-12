@@ -442,6 +442,47 @@ func zhService(t *testing.T) lookup.Service {
 	return service(sqlDB)
 }
 
+// TestUninstalledDictionaryWordsDisappear: an uninstalled dictionary's
+// senses are tombstoned while its entries survive; an entry left with
+// no active senses is not a lookup result, one another dictionary still
+// gives senses stays, and an entry that never had senses (a bare Unihan
+// character) is unaffected.
+func TestUninstalledDictionaryWordsDisappear(t *testing.T) {
+	sqlDB, _ := openDB(t)
+	importCedict(t, sqlDB)
+	importPack(t, sqlDB, dict.Manifest{
+		ID: "zh-extra", Name: "zh extra", Version: "1", Type: "dictionary", Language: "zh",
+		License: "CC0-1.0", Attribution: "test", Format: "json",
+	}, "dictionary.json", `{"entries": [{"written": "学习", "kind": "word", "readings": [{"type": "pinyin", "value": "xué xí"}], "glosses": ["to study (extra)"]}]}`)
+	importPack(t, sqlDB, dict.Manifest{
+		ID: "unihan", Name: "Unihan", Version: "1", Type: "dictionary", Language: "zh",
+		License: "Unicode License v3", Attribution: "Unicode", Format: "unihan",
+	}, "dictionary.txt", "U+5B57\tkRSUnicode\t39.3\n")
+	s := service(sqlDB)
+	before := terms(run(t, s, "zh", "你好", 0))
+	if r := find(run(t, s, "zh", "字", 0), "字"); r == nil || len(r.Senses) != 0 {
+		t.Fatalf("字 = %+v, want the sense-less Unihan character", r)
+	}
+	var cedictID int64
+	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'cedict-test'`).Scan(&cedictID); err != nil {
+		t.Fatal(err)
+	}
+	if err := dict.Uninstall(context.Background(), sqlDB, cedictID); err != nil {
+		t.Fatal(err)
+	}
+	if rs := run(t, s, "zh", "你好", 0); find(rs, "你好") != nil || find(rs, "你") != nil {
+		t.Errorf("after uninstall 你好 results = %v (before %v), want no CC-CEDICT-only entry", terms(rs), before)
+	}
+	r := find(run(t, s, "zh", "学习", 0), "学习")
+	if r == nil || len(r.Senses) != 1 || r.Senses[0].DictionaryName != "zh extra" {
+		t.Errorf("学习 after uninstall = %+v, want it with the extra dictionary's sense only", r)
+	}
+	// 字 never had a sense (only Unihan's radical data): it stays.
+	if r := find(run(t, s, "zh", "字", 0), "字"); r == nil {
+		t.Errorf("字 after uninstall missing, want the Unihan character unaffected")
+	}
+}
+
 func TestChineseTraditionalFindsSimplified(t *testing.T) {
 	rs := run(t, zhService(t), "zh", "學習", 0)
 	// A traditional form is the headword in traditional script: 学习
