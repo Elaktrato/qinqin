@@ -146,3 +146,57 @@ func TestMatchQueriesUseTheTextIndexes(t *testing.T) {
 		}
 	}
 }
+
+func TestSearchTiersUseTheTextIndexes(t *testing.T) {
+	sqlDB := seededPlanDB(t)
+	tierNames := []string{"form", "reading", "reading prefix", "bopomofo prefix", "gloss"}
+	for _, analyzed := range []bool{false, true} {
+		if analyzed {
+			if _, err := sqlDB.Exec(`ANALYZE`); err != nil {
+				t.Fatal(err)
+			}
+		}
+		// Unfiltered: the form and reading tiers seek the text indexes
+		// and join entries by primary key; the gloss tier, a substring
+		// match, reaches senses through their entry index.
+		tiers := searchTiers(SearchQuery{Lang: "ja"}, "r1")
+		if len(tiers) != len(tierNames) {
+			t.Fatalf("%d tiers, want %d", len(tiers), len(tierNames))
+		}
+		for i, tr := range tiers {
+			got := plan(t, sqlDB, tr.query+` LIMIT ?`, append(tr.args, 50)...)
+			switch tierNames[i] {
+			case "form":
+				if !strings.HasPrefix(got, "SEARCH f USING INDEX idx_lx_forms_text") || !strings.Contains(got, "SEARCH e USING INTEGER PRIMARY KEY") {
+					t.Errorf("analyzed=%v form tier plan = %q", analyzed, got)
+				}
+			case "gloss":
+				if !strings.Contains(got, "SEARCH s USING INDEX idx_lx_senses_entry") {
+					t.Errorf("analyzed=%v gloss tier plan = %q, want senses by entry index", analyzed, got)
+				}
+			default:
+				if !strings.HasPrefix(got, "SEARCH r USING INDEX idx_lx_readings_plain") || !strings.Contains(got, "SEARCH e USING INTEGER PRIMARY KEY") {
+					t.Errorf("analyzed=%v %s tier plan = %q", analyzed, tierNames[i], got)
+				}
+			}
+			// Control: without CROSS JOIN the prefix tiers fall into the
+			// language-index trap on this database.
+			if !analyzed && (i == 2 || i == 3) {
+				old := strings.Replace(tr.query, "CROSS JOIN", "JOIN", 1)
+				if got := plan(t, sqlDB, old+` LIMIT ?`, append(tr.args, 50)...); !strings.Contains(got, "sqlite_autoindex_lx_entries_1") {
+					t.Errorf("control %s tier plan = %q, want the language index (setup no longer discriminates)", tierNames[i], got)
+				}
+			}
+		}
+		// Scheme-filtered: no child or entry table is scanned; the
+		// member list may drive the reading tiers.
+		for i, tr := range searchTiers(SearchQuery{Lang: "ja", Kind: "word", SchemeID: "x", LevelName: "1"}, "r1") {
+			got := plan(t, sqlDB, tr.query+` LIMIT ?`, append(tr.args, 50)...)
+			for _, alias := range []string{"f", "r", "e", "s", "m"} {
+				if strings.Contains(got, "SCAN "+alias+";") || strings.HasSuffix(got, "SCAN "+alias) {
+					t.Errorf("analyzed=%v filtered %s tier scans %s: %q", analyzed, tierNames[i], alias, got)
+				}
+			}
+		}
+	}
+}
