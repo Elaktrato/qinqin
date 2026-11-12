@@ -66,6 +66,24 @@ export interface Entry extends EntryBase {
 // /api/entries/{id}: the entry plus the sections above.
 export type EntryDetail = Entry;
 
+// Level is one rung of a scheme's ladder, ordered by ord. GET /api/schemes
+// serves only the fields the web client reads.
+export interface Level {
+	id: number;
+	ord: number;
+	name: string;
+}
+
+// Scheme is GET /api/schemes: an installed levels pack (HSK, JLPT, …) and
+// its ordered levels.
+export interface Scheme {
+	id: number;
+	name: string;
+	unit: string;
+	language: string;
+	levels: Level[];
+}
+
 // Dictionary is one element of GET /api/dictionaries: an installed
 // dictionary pack's credit line. The list endpoint does not expose the
 // pack id or timestamps.

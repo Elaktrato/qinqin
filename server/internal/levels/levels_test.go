@@ -222,6 +222,55 @@ func TestSchemeImportAndBadges(t *testing.T) {
 	}
 }
 
+func TestSchemeEntryIDs(t *testing.T) {
+	// Entries carry readings normalized through the zh pack.
+	lang.Register(lang.Zh{})
+
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	st := entries.Store{DB: sqlDB}
+
+	nihao := mustEntry(t, st, "word", "你好", "nǐ hǎo")
+	xiexie := mustEntry(t, st, "word", "谢谢", "xiè xie")
+	ni := mustEntry(t, st, "character", "你", "nǐ")
+	hao := mustEntry(t, st, "character", "好", "hǎo")
+	xie := mustEntry(t, st, "character", "谢", "xiè")
+
+	// 你好 joins both levels; 谢谢 only level 2. The characters derive
+	// into the lowest level whose words are written with them.
+	pack := buildPack(t, "scheme-members", `{"unit":"word","levels":[
+		{"name":"1","entries":["你好"]},
+		{"name":"2","entries":["你好","谢谢"]}]}`)
+	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatalf("import scheme: %v", err)
+	}
+	schemes, err := levels.List(ctx, sqlDB)
+	if err != nil || len(schemes) != 1 {
+		t.Fatalf("levels.List = %v (err %v), want one scheme", schemes, err)
+	}
+	s := schemes[0]
+
+	level1 := []int64{nihao, ni, hao}
+	level2 := []int64{xiexie, xie}
+	slices.Sort(level1)
+	slices.Sort(level2)
+	want := append(append([]int64{}, level1...), level2...)
+
+	got, err := levels.SchemeEntryIDs(ctx, sqlDB, s.ID)
+	if err != nil {
+		t.Fatalf("SchemeEntryIDs: %v", err)
+	}
+	// Distinct — 你好 sits in both levels — ordered by level then entry id.
+	if !slices.Equal(got, want) {
+		t.Errorf("SchemeEntryIDs = %v, want %v (level order, then entry id, distinct)", got, want)
+	}
+
+	// An unknown scheme is ErrNotFound.
+	if _, err := levels.SchemeEntryIDs(ctx, sqlDB, 999999); !errors.Is(err, levels.ErrNotFound) {
+		t.Errorf("SchemeEntryIDs(unknown) err = %v, want ErrNotFound", err)
+	}
+}
+
 func TestDerivedLevelKeepsLowest(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})

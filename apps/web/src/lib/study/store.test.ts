@@ -78,9 +78,12 @@ function card(
 	id: string,
 	entryId: number,
 	deckIds: string[],
-	createdAt = '2026-01-02T00:00:00Z'
+	createdAt = '2026-01-02T00:00:00Z',
+	written?: string
 ): StudyCard {
-	return { id, kind: 'vocab', entryId, deckIds, createdAt };
+	const result: StudyCard = { id, kind: 'vocab', entryId, deckIds, createdAt };
+	if (written !== undefined) result.written = written;
+	return result;
 }
 
 function selectWorkspace(id: number | null): void {
@@ -119,11 +122,14 @@ describe('study store', () => {
 		it('parses only active flashcard rows of the current workspace', async () => {
 			const general = deck('general', 'General');
 			const custom = deck('deck-1', 'HSK 2');
-			const word = card('card-1', 42, ['general']);
+			const word = card('card-1', 42, ['general'], '2026-01-02T00:00:00Z', '猫');
 			const sentenceCard = {
 				...card('card-2', 43, ['general', 'deck-1']),
 				sentenceId: 9
 			};
+			// A written snapshot of the wrong type is dropped instead of
+			// poisoning the card.
+			const badWritten = { ...card('card-3', 44, ['general']), written: 42 };
 			vi.mocked(fetch).mockResolvedValue(
 				jsonResponse({
 					pluginData: [
@@ -131,6 +137,7 @@ describe('study store', () => {
 						pluginRow('deck:deck-1', custom),
 						pluginRow('card:card-1', word),
 						pluginRow('card:card-2', sentenceCard),
+						pluginRow('card:card-3', badWritten),
 						// Another plugin's data is not study data.
 						pluginRow('deck:other-plugin', deck('other-plugin', 'Other'), {
 							pluginId: 'qinqin-heatmap'
@@ -156,7 +163,8 @@ describe('study store', () => {
 			const data = await loadStudyData();
 
 			expect(data.decks).toEqual([general, custom]);
-			expect(data.cards).toEqual([word, sentenceCard]);
+			expect(data.cards).toEqual([word, sentenceCard, card('card-3', 44, ['general'])]);
+			expect('written' in data.cards[2]!).toBe(false);
 			expect(calls().map(([url]) => String(url))).toEqual([
 				'/api/sync/pull?cursor=1970-01-01T00:00:00Z'
 			]);
@@ -369,6 +377,7 @@ describe('study store', () => {
 			expect(added.deckIds).toEqual([GENERAL_DECK_ID]);
 			expect(added.createdAt).toEqual(expect.any(String));
 			expect('sentenceId' in added).toBe(false);
+			expect('written' in added).toBe(false);
 			const [call] = calls().filter(([, init]) => init?.method === 'PUT');
 			expect(String(call[0])).toBe(
 				`/api/plugins/${PLUGIN_ID}/data/card:${added.id}?workspace=${WORKSPACE_ID}`
@@ -377,11 +386,12 @@ describe('study store', () => {
 			expect(JSON.parse(String(call[1]?.body))).toEqual(added);
 		});
 
-		it('records the sentence id when one is given', async () => {
+		it('stores the entry written form and the sentence id', async () => {
 			respondWith([]);
 
-			const added = await addCard(42, 9);
+			const added = await addCard(42, { written: '猫', sentenceId: 9 });
 
+			expect(added.written).toBe('猫');
 			expect(added.sentenceId).toBe(9);
 			const [call] = calls().filter(([, init]) => init?.method === 'PUT');
 			expect(JSON.parse(String(call[1]?.body))).toEqual(added);
@@ -390,7 +400,7 @@ describe('study store', () => {
 		it('stores the card in explicitly requested decks', async () => {
 			respondWith([]);
 
-			const added = await addCard(42, undefined, ['deck-a', 'deck-b', 'deck-a']);
+			const added = await addCard(42, { deckIds: ['deck-a', 'deck-b', 'deck-a'] });
 
 			expect(added.deckIds).toEqual(['deck-a', 'deck-b']);
 			const [call] = calls().filter(([, init]) => init?.method === 'PUT');
@@ -400,7 +410,7 @@ describe('study store', () => {
 		it('falls back to general when no deck is given', async () => {
 			respondWith([]);
 
-			const added = await addCard(42, undefined, []);
+			const added = await addCard(42, { deckIds: [] });
 
 			expect(added.deckIds).toEqual([GENERAL_DECK_ID]);
 		});
@@ -413,11 +423,19 @@ describe('study store', () => {
 			expect(putBodies()).toEqual([]);
 		});
 
-		it('leaves an existing card in its deck even when another is requested', async () => {
+		it('leaves an existing card unchanged even when another deck is requested', async () => {
 			const existing = card('card-1', 42, ['general']);
 			respondWith([pluginRow('card:card-1', existing)]);
 
-			await expect(addCard(42, undefined, ['deck-a'])).resolves.toEqual(existing);
+			await expect(addCard(42, { deckIds: ['deck-a'] })).resolves.toEqual(existing);
+			expect(putBodies()).toEqual([]);
+		});
+
+		it('leaves an existing legacy card without a written snapshot unchanged', async () => {
+			const existing = card('card-1', 42, ['general']);
+			respondWith([pluginRow('card:card-1', existing)]);
+
+			await expect(addCard(42, { written: '猫' })).resolves.toEqual(existing);
 			expect(putBodies()).toEqual([]);
 		});
 	});

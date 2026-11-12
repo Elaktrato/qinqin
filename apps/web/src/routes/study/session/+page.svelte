@@ -2,15 +2,18 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getEntry } from '$lib/api/entries';
+	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { ApiError, api } from '$lib/api/client';
-	import type { Entry } from '$lib/api/types';
+	import type { Entry, EntryBase } from '$lib/api/types';
 	import type { StudyEvent } from '$lib/events';
 	import { formatReading } from '$lib/format';
 	import { buildVocabFaces } from '$lib/study/cardView';
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
+	import { gradeItem } from '$lib/study/grade';
+	import { buildLevelQueue, type LevelQueueItem } from '$lib/study/levelQueue';
 	import { buildQueue, levelFromXp, xpFromReviews } from '$lib/study/scheduler';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
-	import { loadStudyData } from '$lib/study/store';
+	import { addCard, loadStudyData } from '$lib/study/store';
 	import type { ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
 	import { newUlid } from '$lib/ulid';
 	import { workspaces } from '$lib/workspaces';
@@ -25,6 +28,73 @@
 
 	// The SPA has no SSR, so the tab's setup is readable during init.
 	const config = loadConfig();
+
+	/**
+	 * One queue entry in either mode. Deck sessions map every study card
+	 * directly; level sessions add items whose card does not exist yet
+	 * (`virtual`), carrying the real card once one is known.
+	 */
+	interface SessionItem {
+		cardId: string;
+		entryId: number;
+		virtual: boolean;
+		card: StudyCard | null;
+	}
+
+	function deckItems(cards: readonly StudyCard[]): SessionItem[] {
+		return cards.map((card) => ({
+			cardId: card.id,
+			entryId: card.entryId,
+			virtual: false,
+			card
+		}));
+	}
+
+	function levelItems(
+		items: readonly LevelQueueItem[],
+		cards: readonly StudyCard[]
+	): SessionItem[] {
+		const byId = new Map(cards.map((card) => [card.id, card]));
+		return items.map((item) => ({
+			cardId: item.cardId,
+			entryId: item.entryId,
+			virtual: item.virtual,
+			card: item.virtual ? null : (byId.get(item.cardId) ?? null)
+		}));
+	}
+
+	/**
+	 * A levels session belongs to the workspace language it was set up
+	 * in. The scheme list is global, so the saved id/level must be
+	 * re-validated against the current workspace: a mid-session switch
+	 * to another language must abort instead of studying (or writing)
+	 * cards in the wrong workspace.
+	 */
+	class LevelWorkspaceMismatch extends Error {}
+
+	/** levelEntriesRequest loads the configured level, or nothing in decks mode. */
+	async function levelEntriesRequest(language: string | null): Promise<EntryBase[]> {
+		if (config.mode !== 'levels') return [];
+		if (config.schemeId === null || config.levelName === null) {
+			return Promise.reject(new Error('This level session is missing its scheme or level.'));
+		}
+
+		const schemes = await getSchemes();
+		const scheme = schemes.find(
+			(candidate) => candidate.id === config.schemeId && candidate.language === language
+		);
+		if (scheme === undefined) {
+			throw new LevelWorkspaceMismatch(
+				'This level scheme is not installed for the current workspace language. Start a new session from the study setup.'
+			);
+		}
+		if (!scheme.levels.some((level) => level.name === config.levelName)) {
+			throw new LevelWorkspaceMismatch(
+				`The level “${config.levelName}” no longer exists in ${scheme.name}. Start a new session from the study setup.`
+			);
+		}
+		return getSchemeEntries(config.schemeId, config.levelName);
+	}
 
 	/**
 	 * loadConfig always falls back to the defaults. A direct visit to the
@@ -45,15 +115,18 @@
 
 	let loading = $state(true);
 	let loadError = $state('');
+	let workspaceMismatch = $state('');
 	let noWorkspace = $state(false);
 	let sessionWorkspaceId = $state<number | null>(null);
-	let queue = $state<StudyCard[]>([]);
+	let queue = $state<SessionItem[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let sessionReviews = $state<ReviewEvent[]>([]);
 	let index = $state(0);
 	let revealed = $state(false);
 	let entries = $state<Record<number, Entry>>({});
 	let entryError = $state('');
+	let gradeError = $state('');
+	let grading = $state(false);
 
 	// A non-reactive in-flight marker: only the cache and the error are
 	// rendered, so an entry load must not re-trigger itself.
@@ -108,21 +181,24 @@
 		};
 	}
 
-	const currentCard = $derived(queue[index]);
+	const currentItem = $derived(queue[index]);
 	const currentEntry = $derived(
-		currentCard === undefined ? undefined : entries[currentCard.entryId]
+		currentItem === undefined ? undefined : entries[currentItem.entryId]
 	);
 
 	// A sentence id that no longer resolves is passed as null so the card
-	// simply has no sentence block, matching a card without one.
+	// simply has no sentence block, matching a card without one. A virtual
+	// level card previews the sentence it will be created with.
 	const faces = $derived.by(() => {
-		const card = currentCard;
+		const item = currentItem;
 		const entry = currentEntry;
-		if (card === undefined || entry === undefined) return null;
-		const sentence =
-			card.sentenceId === undefined
+		if (item === undefined || entry === undefined) return null;
+		const sentence = item.virtual
+			? (entry.sentences[0] ?? null)
+			: item.card?.sentenceId === undefined
 				? null
-				: (entry.sentences.find((item) => item.id === card.sentenceId) ?? null);
+				: (entry.sentences.find((candidate) => candidate.id === item.card?.sentenceId) ??
+					null);
 		return buildVocabFaces(entry, sentence, entry.language);
 	});
 
@@ -158,17 +234,18 @@
 	}
 
 	/** ensureEntry loads a card's entry once, on its first display. */
-	function ensureEntry(card: StudyCard | undefined): void {
-		if (card === undefined) return;
+	function ensureEntry(item: SessionItem | undefined): void {
+		if (item === undefined) return;
 		entryError = '';
-		if (entries[card.entryId] !== undefined) return;
-		void loadEntry(card.entryId);
+		if (entries[item.entryId] !== undefined) return;
+		void loadEntry(item.entryId);
 	}
 
-	async function load(workspaceId: number | null): Promise<void> {
+	async function load(workspaceId: number | null, language: string | null): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
 		loadError = '';
+		workspaceMismatch = '';
 		noWorkspace = false;
 		sessionWorkspaceId = workspaceId;
 		queue = [];
@@ -178,6 +255,8 @@
 		revealed = false;
 		entries = {};
 		entryError = '';
+		gradeError = '';
+		grading = false;
 		pendingEntryId = null;
 
 		if (workspaceId === null) {
@@ -197,11 +276,12 @@
 			} catch {
 				// The outbox retries on the next boot or reconnect.
 			}
-			const [data, events] = await Promise.all([
+			const [data, events, schemeEntries] = await Promise.all([
 				loadStudyData(),
 				api<StudyEvent[]>(
 					`/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`
-				)
+				),
+				levelEntriesRequest(language)
 			]);
 			if (seq !== requestSeq) return;
 
@@ -209,29 +289,50 @@
 				.map((event) => asReview(event, workspaceId))
 				.filter((event): event is ReviewEvent => event !== null);
 			reviews = history;
-			queue = buildQueue({
-				cards: data.cards,
-				reviews: history,
-				deckIds: config.deckIds,
-				newLimit: config.newLimit,
-				reviewLimit: config.reviewLimit,
-				now: new Date()
-			});
+			if (config.mode === 'levels') {
+				queue = levelItems(
+					buildLevelQueue({
+						entries: schemeEntries,
+						cards: data.cards,
+						reviews: history,
+						newLimit: config.newLimit,
+						reviewLimit: config.reviewLimit,
+						now: new Date()
+					}),
+					data.cards
+				);
+			} else {
+				queue = deckItems(
+					buildQueue({
+						cards: data.cards,
+						reviews: history,
+						deckIds: config.deckIds,
+						newLimit: config.newLimit,
+						reviewLimit: config.reviewLimit,
+						now: new Date()
+					})
+				);
+			}
 			ensureEntry(queue[0]);
 		} catch (err) {
 			if (seq !== requestSeq) return;
-			loadError = message(err, 'Could not start your session.');
+			queue = [];
+			if (err instanceof LevelWorkspaceMismatch) {
+				workspaceMismatch = err.message;
+			} else {
+				loadError = message(err, 'Could not start your session.');
+			}
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
 	}
 
 	function retryLoad(): void {
-		void load($workspaces.current?.id ?? null);
+		void load($workspaces.current?.id ?? null, $workspaces.current?.language ?? null);
 	}
 
 	function retryEntry(): void {
-		ensureEntry(currentCard);
+		ensureEntry(currentItem);
 	}
 
 	function reveal(): void {
@@ -239,19 +340,42 @@
 	}
 
 	/**
-	 * submitGrade records the review and advances immediately: the
-	 * outbox keeps a failed POST, so waiting would only stall the card.
+	 * submitGrade runs the extracted grade transaction. A virtual item
+	 * creates its card first inside gradeItem, so the review always names
+	 * a real id; a failure leaves the queue untouched and surfaces inline.
+	 * recordReview keeps a failed POST in the outbox, so the review is
+	 * never lost even though the append is awaited here.
 	 */
-	function submitGrade(value: ReviewGrade): void {
-		const card = currentCard;
+	async function submitGrade(value: ReviewGrade): Promise<void> {
+		const item = currentItem;
 		const workspaceId = sessionWorkspaceId;
-		if (!revealed || card === undefined || workspaceId === null) return;
+		if (!revealed || item === undefined || workspaceId === null || grading) return;
 
-		void recordReview(workspaceId, card.id, value);
-		sessionReviews = [...sessionReviews, sessionReview(card, value, workspaceId)];
-		revealed = false;
-		index += 1;
-		ensureEntry(queue[index]);
+		gradeError = '';
+		grading = true;
+		try {
+			const result = await gradeItem({
+				item,
+				grade: value,
+				workspaceId,
+				currentWorkspaceId: $workspaces.current?.id ?? null,
+				entry: entries[item.entryId] ?? null,
+				addCard,
+				recordReview
+			});
+			if (!result.ok) {
+				if (sessionWorkspaceId === workspaceId) gradeError = result.error;
+				return;
+			}
+			if (sessionWorkspaceId !== workspaceId) return;
+
+			sessionReviews = [...sessionReviews, sessionReview(result.card, value, workspaceId)];
+			revealed = false;
+			index += 1;
+			ensureEntry(queue[index]);
+		} finally {
+			grading = false;
+		}
 	}
 
 	/**
@@ -282,7 +406,7 @@
 		const value = GRADE_KEYS[event.key];
 		if (value !== undefined) {
 			event.preventDefault();
-			submitGrade(value);
+			void submitGrade(value);
 		}
 	}
 
@@ -295,8 +419,8 @@
 	// workspace-scoped just like the setup that created it.
 	$effect(() => {
 		if (missingConfig) return;
-		const workspaceId = $workspaces.current?.id ?? null;
-		void load(workspaceId);
+		const workspace = $workspaces.current;
+		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 </script>
 
@@ -305,6 +429,12 @@
 <main class="session">
 	{#if missingConfig}
 		<p class="hint" role="status">Opening study setup…</p>
+	{:else if workspaceMismatch}
+		<section class="state" aria-labelledby="mismatch-heading">
+			<h1 id="mismatch-heading">Session unavailable</h1>
+			<p class="error" role="alert">{workspaceMismatch}</p>
+			<a href="/study">Back to study setup</a>
+		</section>
 	{:else if loadError}
 		<section class="state" aria-labelledby="error-heading">
 			<h1 id="error-heading">Session unavailable</h1>
@@ -393,14 +523,18 @@
 					<button type="button" class="reveal" onclick={reveal}>Show answer</button>
 				{/if}
 
+				{#if gradeError}
+					<p class="error" role="alert">{gradeError}</p>
+				{/if}
+
 				<div class="grades">
 					{#each GRADE_LABELS as item (item.grade)}
 						<button
 							type="button"
 							class="grade grade-{item.grade}"
-							disabled={!revealed}
+							disabled={!revealed || grading}
 							title={item.hint}
-							onclick={() => submitGrade(item.grade)}
+							onclick={() => void submitGrade(item.grade)}
 						>
 							{item.label}
 						</button>

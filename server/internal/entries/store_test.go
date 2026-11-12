@@ -711,3 +711,51 @@ func TestSenses(t *testing.T) {
 		t.Errorf("Senses(子) = %v, want a non-nil empty slice", got)
 	}
 }
+
+func TestGetMany(t *testing.T) {
+	ctx := context.Background()
+	st := newStore(t)
+
+	hao := mustUpsert(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "好",
+		Readings: []model.Reading{reading("pinyin", "hǎo")},
+	})
+	ni := mustUpsert(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "你",
+		Readings: []model.Reading{reading("pinyin", "nǐ")},
+	})
+	xie := mustUpsert(t, st, &model.Entry{
+		Language: "zh", Kind: "character", Written: "谢",
+		Readings: []model.Reading{reading("pinyin", "xiè")},
+	})
+	// Soft-deleted entries are skipped like unknown ids.
+	if _, err := st.DB.ExecContext(ctx,
+		`UPDATE entries SET deleted_at = '2020-01-01T00:00:00Z' WHERE id = ?`, xie); err != nil {
+		t.Fatalf("soft-delete 谢: %v", err)
+	}
+
+	// Input order wins over row order; missing and soft-deleted ids are
+	// silently skipped.
+	got, err := st.GetMany(ctx, []int64{xie, 999999, ni, hao})
+	if err != nil {
+		t.Fatalf("GetMany: %v", err)
+	}
+	if ids := entryIDs(got); len(ids) != 2 || ids[0] != ni || ids[1] != hao {
+		t.Errorf("GetMany ids = %v, want [%d %d] in input order", ids, ni, hao)
+	}
+	// Children load as on any other read.
+	if len(got) == 2 && (findReading(got[0], "pinyin") == nil || findReading(got[1], "pinyin") == nil) {
+		t.Errorf("GetMany entries = %+v, want attached readings", got)
+	}
+
+	// No ids answers a non-nil empty slice.
+	for _, ids := range [][]int64{nil, {}} {
+		got, err := st.GetMany(ctx, ids)
+		if err != nil {
+			t.Fatalf("GetMany(%v): %v", ids, err)
+		}
+		if got == nil || len(got) != 0 {
+			t.Errorf("GetMany(%v) = %v, want a non-nil empty slice", ids, got)
+		}
+	}
+}

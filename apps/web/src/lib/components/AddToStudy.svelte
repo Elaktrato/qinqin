@@ -75,11 +75,16 @@
 		saving = true;
 		error = '';
 		try {
-			// The first example sentence travels with the card so the
-			// review front can show the word in context. An existing card
-			// is returned unchanged, so the chosen deck is only used for
-			// a genuinely new card.
-			await addCard(entry.id, entry.sentences?.[0]?.id, [selectedDeckId]);
+			// The written form is snapshotted onto the card for per-character
+			// mastery, and the first example sentence travels with it so the
+			// review front can show the word in context. An existing card is
+			// returned unchanged, so the chosen deck is only used for a
+			// genuinely new card.
+			await addCard(entry.id, {
+				written: entry.written,
+				sentenceId: entry.sentences?.[0]?.id,
+				deckIds: [selectedDeckId]
+			});
 			inDeck = true;
 		} catch (err) {
 			error = message(err, 'Could not add this entry to your study deck.');

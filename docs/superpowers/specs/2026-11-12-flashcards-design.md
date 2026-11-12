@@ -1,7 +1,7 @@
 # Flashcards Phase — Design
 
 Date: 2026-11-12
-Status: Round 1 shipped 2026-11-12; Rounds 2–3 pending — [#24](https://github.com/Elaktrato/qinqin/issues/24), [#25](https://github.com/Elaktrato/qinqin/issues/25). Design agreed in conversation; build order fixed (three rounds).
+Status: Round 1 shipped 2026-11-12; Round 2 (level sessions and the mastery map) shipped 2026-11-12; Round 3 pending — [#25](https://github.com/Elaktrato/qinqin/issues/25). Design agreed in conversation; build order fixed (three rounds).
 
 ## Intent
 
@@ -60,15 +60,25 @@ Session setup lets the user choose decks and opt out of card types; queue limits
 ## Level study (R2)
 
 Level packs (HSK 1–6, JLPT N5–N1, Jōyō, curriculum tables) can start a study
-session over their tagged words without a deck. Cards finished in a level session
-are added to the general deck. Custom decks remain the explicit path.
+session over their tagged words without a deck. Each graded card is added to the
+general deck (`deckIds: ['general']`) before its review is recorded; a virtual
+word that is never graded is never created, so abandoning a level session leaves
+no cards. Words that already have a card reuse it, and an existing card added to
+study but never reviewed joins the level's new bucket with its real id, sharing
+the new limit with the virtual words. Custom decks remain the explicit path.
 
 ## Mastery map (R2)
 
-A grid of Hanzi/Kanji (per workspace language), filterable by level scheme, shaded
-by derived mastery. Mastery score per character: aggregate of the FSRS states of
-all cards containing it, mapped to Anki-like stages (unknown/fresh/mature/learned)
-and a 0–100 score. Exact aggregation formula fixed in the Round 2 design.
+A grid of Hanzi/Kanji (per workspace language), filterable by level scheme and
+level, shaded by derived mastery, with a level-progress list of mastered counts.
+Mastery is derived, never stored. For a character, each reviewed vocab card whose
+written form contains it contributes a per-card strength
+`m = clamp(log2(1+S)/log2(1+365), 0, 1)`, where `S` is the card's FSRS stability
+in days; a year of stability therefore counts fully. The character's score is
+`round(100 × mean(m))` over those cards, and no reviewed cards means score 0.
+Stages: `0 unknown`, `1–24 fresh`, `25–49 learning`, `50–79 mature`,
+`80–100 learned`. A level's summary counts characters with score ≥ 80 as
+mastered.
 
 ## Heatmap (R1)
 
@@ -87,8 +97,9 @@ level curve. Per workspace. Mascot art is out of scope until the owner draws it.
   opt-out, limits), vocab repetition cards, 4-grade FSRS scheduling, review-driven
   heatmap home widget, session summary with derived EXP/level. No backend logic
   beyond the plugin-registration change.
-- **Round 2 — levels and the map**: level sessions feeding the general deck,
-  per-character mastery aggregation, Hanzi/Kanji map grid with filters.
+- **Round 2 — levels and the map** (shipped 2026-11-12): level sessions feeding the
+  general deck, per-character mastery aggregation, Hanzi/Kanji map grid with
+  filters.
 - **Round 3 — remaining exercises and polish**: Word Salad (+ tokenizer), writing
   (stroke quiz), tone swipe, richer EXP/mascot hooks.
 

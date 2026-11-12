@@ -1,15 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { ApiError, api } from '$lib/api/client';
+	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { workspaces } from '$lib/workspaces';
 	import type { StudyEvent } from '$lib/events';
+	import { buildLevelQueue } from '$lib/study/levelQueue';
 	import { buildQueue } from '$lib/study/scheduler';
 	import {
 		CARD_TYPES,
 		loadConfig,
 		saveConfig,
 		validateConfig,
-		type StudySessionConfig
+		type StudySessionConfig,
+		type StudySessionMode
 	} from '$lib/study/session';
 	import {
 		GENERAL_DECK_ID,
@@ -40,6 +44,24 @@
 	let newLimit = $state(saved.newLimit);
 	let reviewLimit = $state(saved.reviewLimit);
 	let cardTypes = $state<string[]>(saved.cardTypes);
+	let mode = $state<StudySessionMode>(saved.mode);
+	let schemeId = $state<number | null>(saved.schemeId);
+	let levelName = $state<string | null>(saved.levelName);
+
+	// Schemes are global, so they are filtered by the language of the
+	// workspace the setup is running in. `schemesLoaded` separates "not
+	// fetched yet" from "none installed for this language", which decides
+	// whether a saved selection is kept or cleared.
+	let schemes = $state<Scheme[]>([]);
+	let workspaceLanguage = $state<string | null>(null);
+	let activeWorkspaceId = $state<number | null>(null);
+	let schemesLoaded = $state(false);
+	let schemeError = $state('');
+
+	let levelEntries = $state<EntryBase[]>([]);
+	let levelEntriesLoading = $state(false);
+	let levelEntriesError = $state('');
+	let levelEntriesSeq = 0;
 
 	let deckName = $state('');
 	let creating = $state(false);
@@ -90,11 +112,23 @@
 		return kept.length > 0 ? kept : [GENERAL_DECK_ID];
 	}
 
-	async function load(workspaceId: number | null): Promise<void> {
+	async function load(workspaceId: number | null, language: string | null): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
 		loadError = '';
 		noWorkspace = false;
+
+		// A pending level load belongs to the previous workspace or
+		// selection; its result must not land in the new one.
+		levelEntriesSeq += 1;
+		levelEntries = [];
+		levelEntriesLoading = false;
+		levelEntriesError = '';
+		schemes = [];
+		workspaceLanguage = language;
+		activeWorkspaceId = workspaceId;
+		schemesLoaded = false;
+		schemeError = '';
 
 		if (workspaceId === null) {
 			decks = [];
@@ -104,6 +138,10 @@
 			loading = false;
 			return;
 		}
+
+		// Schemes do not gate the deck setup: the request runs alongside
+		// it, and the levels section shows its own loading state.
+		void loadSchemes(seq);
 
 		try {
 			const [data, events] = await Promise.all([
@@ -130,11 +168,25 @@
 		}
 	}
 
+	async function loadSchemes(seq: number): Promise<void> {
+		try {
+			const list = await getSchemes();
+			if (seq !== requestSeq) return;
+			schemes = list;
+		} catch (err) {
+			if (seq !== requestSeq) return;
+			schemes = [];
+			schemeError = message(err, 'Could not load level schemes.');
+		} finally {
+			if (seq === requestSeq) schemesLoaded = true;
+		}
+	}
+
 	// Refetch when the active workspace changes; the header switcher
 	// makes that possible without leaving the page.
 	$effect(() => {
-		const workspaceId = $workspaces.current?.id ?? null;
-		void load(workspaceId);
+		const workspace = $workspaces.current;
+		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 
 	const allDecks = $derived([
@@ -146,10 +198,93 @@
 
 	const selectedCards = $derived(cardsInDecks(cards, selectedDeckIds));
 
+	// Only schemes in the workspace's language are offered: studying a
+	// Japanese ladder in a Chinese workspace would mix entries.
+	const schemesForLanguage = $derived(
+		schemes.filter((scheme) => scheme.language === workspaceLanguage)
+	);
+
+	const selectedScheme = $derived(
+		schemesForLanguage.find((scheme) => scheme.id === schemeId) ?? null
+	);
+
+	const schemeLevels = $derived.by((): Level[] => {
+		const scheme = selectedScheme;
+		if (scheme === null) return [];
+		return [...scheme.levels].sort((a, b) => a.ord - b.ord);
+	});
+
+	// The selection a level session can actually use: it must resolve
+	// against the loaded schemes of the current workspace language, not
+	// just against the id saved in sessionStorage. Effects and Start key
+	// off this so a stale or not-yet-resolved scheme cannot fetch or start.
+	const levelSelection = $derived.by((): { schemeId: number; levelName: string } | null => {
+		if (!schemesLoaded) return null;
+		const scheme = selectedScheme;
+		const level = levelName;
+		if (scheme === null || level === null) return null;
+		if (!schemeLevels.some((item) => item.name === level)) return null;
+		return { schemeId: scheme.id, levelName: level };
+	});
+
+	// Keep the saved selection when it still exists; otherwise fall back
+	// to the first scheme/level. Clearing on an empty list means a stale
+	// levels setup from another language cannot start.
+	$effect(() => {
+		if (!schemesLoaded) return;
+		if (schemesForLanguage.length === 0) {
+			if (schemeId !== null) schemeId = null;
+			if (levelName !== null) levelName = null;
+			return;
+		}
+		if (selectedScheme === null) {
+			const first = schemesForLanguage[0];
+			schemeId = first.id;
+			levelName = [...first.levels].sort((a, b) => a.ord - b.ord)[0]?.name ?? null;
+			return;
+		}
+		if (!schemeLevels.some((level) => level.name === levelName)) {
+			levelName = schemeLevels[0]?.name ?? null;
+		}
+	});
+
+	async function loadLevelEntries(id: number, level: string): Promise<void> {
+		const seq = ++levelEntriesSeq;
+		levelEntriesLoading = true;
+		levelEntriesError = '';
+		levelEntries = [];
+		try {
+			const list = await getSchemeEntries(id, level);
+			if (seq !== levelEntriesSeq) return;
+			levelEntries = list;
+		} catch (err) {
+			if (seq !== levelEntriesSeq) return;
+			levelEntriesError = message(err, 'Could not load this level.');
+		} finally {
+			if (seq === levelEntriesSeq) levelEntriesLoading = false;
+		}
+	}
+
+	// Fetch the chosen level's words so the counts below reflect the
+	// exact level a session would study. Depending on the resolved
+	// selection and the workspace id makes a same-language workspace
+	// switch refetch even though the saved scheme/level stay valid.
+	$effect(() => {
+		const selection = levelSelection;
+		if (mode !== 'levels' || activeWorkspaceId === null || selection === null) {
+			levelEntriesSeq += 1;
+			levelEntries = [];
+			levelEntriesLoading = false;
+			levelEntriesError = '';
+			return;
+		}
+		void loadLevelEntries(selection.schemeId, selection.levelName);
+	});
+
 	// Due and new are counted separately so the setup shows what a
 	// session would actually contain today. Cards reviewed but not due
 	// yet belong to neither bucket.
-	const counts = $derived.by(() => {
+	const deckCounts = $derived.by(() => {
 		if (selectedDeckIds.length === 0) return { due: 0, fresh: 0 };
 		const now = new Date();
 		const due = buildQueue({
@@ -171,9 +306,57 @@
 		return { due, fresh };
 	});
 
+	const levelCounts = $derived.by(() => {
+		if (levelSelection === null || levelEntries.length === 0) {
+			return { due: 0, fresh: 0 };
+		}
+		const now = new Date();
+		const due = buildLevelQueue({
+			entries: levelEntries,
+			cards,
+			reviews,
+			newLimit: 0,
+			reviewLimit: COUNT_CAP,
+			now
+		}).length;
+		const fresh = buildLevelQueue({
+			entries: levelEntries,
+			cards,
+			reviews,
+			newLimit: COUNT_CAP,
+			reviewLimit: 0,
+			now
+		}).length;
+		return { due, fresh };
+	});
+
+	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
+	const levelWordCount = $derived(
+		levelEntries.filter((entry) => entry.kind === 'word').length
+	);
+
 	const guidance = $derived.by(() => {
 		if (noWorkspace) return 'Choose a workspace in the header to set up a study session.';
 		if (loading) return 'Loading your study data…';
+
+		if (mode === 'levels') {
+			if (!schemesLoaded) return 'Loading level schemes…';
+			if (schemeError) return schemeError;
+			if (schemesForLanguage.length === 0) {
+				return 'No level schemes are installed for this workspace language.';
+			}
+			if (levelSelection === null) {
+				return 'Choose a scheme and a level to start.';
+			}
+			if (levelEntriesError) return levelEntriesError;
+			if (levelEntriesLoading) return 'Loading this level…';
+			if (levelEntries.length === 0) return 'This level has no words yet.';
+			if (counts.due + counts.fresh === 0) {
+				return 'Nothing is due and no new cards are left in this level.';
+			}
+			return '';
+		}
+
 		if (selectedDeckIds.length === 0) return 'Select at least one deck to start.';
 		if (selectedCards.length === 0) {
 			return 'The selected decks have no cards yet. Open a word from search and add it from its entry page — new cards go to General unless you pick a deck there.';
@@ -281,14 +464,30 @@
 		}
 	}
 
+	function selectMode(next: StudySessionMode): void {
+		errors = [];
+		mode = next;
+	}
+
 	function start(): void {
 		const config: StudySessionConfig = {
+			mode,
+			// Keep both modes' fields so switching back restores the
+			// selection; validateConfig reads only the active mode's.
+			schemeId,
+			levelName,
 			deckIds: [...selectedDeckIds],
 			newLimit,
 			reviewLimit,
 			cardTypes: [...cardTypes]
 		};
 		errors = validateConfig(config);
+		// A saved scheme from another workspace language still has a
+		// positive id and a level name, so validation alone cannot catch
+		// it; the resolved selection can.
+		if (errors.length === 0 && mode === 'levels' && levelSelection === null) {
+			errors = ['Choose a level from a scheme installed for this workspace.'];
+		}
 		if (errors.length > 0) return;
 
 		starting = true;
@@ -300,6 +499,7 @@
 <main class="setup">
 	<h1>Study</h1>
 	<p class="hint">Choose what this session should draw from.</p>
+	<p class="hint"><a href="/study/map">View the mastery map →</a></p>
 
 	{#if loadError}
 		<p class="error" role="alert">{loadError}</p>
@@ -308,86 +508,154 @@
 	{:else if loading}
 		<p class="hint" role="status">Loading your study data…</p>
 	{:else}
-		<section aria-labelledby="decks-heading">
-			<h2 id="decks-heading">Decks</h2>
-
-			{#if decks.length === 0}
-				<div class="empty">
-					<h3>No decks yet</h3>
-					<p>
-						Your cards start in General. Create a deck below to organise them by topic or
-						level.
-					</p>
-				</div>
-			{/if}
-
-			<ul class="decks">
-				{#each allDecks as deck (deck.id)}
-					<li class="deck">
-						{#if renamingId === deck.id}
-							<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
-								<input
-									bind:value={renameName}
-									aria-label={`New name for ${deck.name}`}
-									maxlength="80"
-									required
-								/>
-								<button type="submit">Save</button>
-								<button type="button" class="secondary" onclick={cancelRename}>Cancel</button>
-							</form>
-						{:else}
-							<label class="deck-choice">
-								<input
-									type="checkbox"
-									checked={selectedDeckIds.includes(deck.id)}
-									onchange={() => toggleDeck(deck.id)}
-								/>
-								<span class="deck-name">{deck.name}</span>
-								{#if deck.id === GENERAL_DECK_ID}
-									<span class="tag">default</span>
-								{/if}
-							</label>
-
-							{#if deck.id !== GENERAL_DECK_ID}
-								<div class="deck-actions">
-									<button type="button" class="secondary" onclick={() => beginRename(deck)}>
-										Rename
-									</button>
-									<button
-										type="button"
-										class="danger"
-										disabled={deletingId === deck.id}
-										onclick={() => removeDeck(deck)}
-									>
-										{deletingId === deck.id ? 'Deleting…' : 'Delete'}
-									</button>
-								</div>
-							{/if}
-						{/if}
-					</li>
-				{/each}
-			</ul>
-
-			<form class="create" onsubmit={addDeck}>
-				<label>
-					New deck
+		<section aria-labelledby="mode-heading">
+			<h2 id="mode-heading">Session source</h2>
+			<div class="modes" role="radiogroup" aria-labelledby="mode-heading">
+				<label class="inline">
 					<input
-						bind:value={deckName}
-						placeholder="HSK 2, Travel, …"
-						maxlength="80"
-						autocomplete="off"
-						required
+						type="radio"
+						name="session-mode"
+						value="decks"
+						checked={mode === 'decks'}
+						onchange={() => selectMode('decks')}
 					/>
+					My decks
 				</label>
-				<button type="submit" disabled={creating}>
-					{creating ? 'Creating…' : 'Create deck'}
-				</button>
-			</form>
-
-			{#if deckError}
-				<p class="error" role="alert">{deckError}</p>
-			{/if}
+				<label class="inline">
+					<input
+						type="radio"
+						name="session-mode"
+						value="levels"
+						checked={mode === 'levels'}
+						onchange={() => selectMode('levels')}
+					/>
+					By level
+				</label>
+			</div>
 		</section>
+
+		{#if mode === 'decks'}
+			<section aria-labelledby="decks-heading">
+				<h2 id="decks-heading">Decks</h2>
+
+				{#if decks.length === 0}
+					<div class="empty">
+						<h3>No decks yet</h3>
+						<p>
+							Your cards start in General. Create a deck below to organise them by topic or
+							level.
+						</p>
+					</div>
+				{/if}
+
+				<ul class="decks">
+					{#each allDecks as deck (deck.id)}
+						<li class="deck">
+							{#if renamingId === deck.id}
+								<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
+									<input
+										bind:value={renameName}
+										aria-label={`New name for ${deck.name}`}
+										maxlength="80"
+										required
+									/>
+									<button type="submit">Save</button>
+									<button type="button" class="secondary" onclick={cancelRename}>Cancel</button>
+								</form>
+							{:else}
+								<label class="deck-choice">
+									<input
+										type="checkbox"
+										checked={selectedDeckIds.includes(deck.id)}
+										onchange={() => toggleDeck(deck.id)}
+									/>
+									<span class="deck-name">{deck.name}</span>
+									{#if deck.id === GENERAL_DECK_ID}
+										<span class="tag">default</span>
+									{/if}
+								</label>
+
+								{#if deck.id !== GENERAL_DECK_ID}
+									<div class="deck-actions">
+										<button type="button" class="secondary" onclick={() => beginRename(deck)}>
+											Rename
+										</button>
+										<button
+											type="button"
+											class="danger"
+											disabled={deletingId === deck.id}
+											onclick={() => removeDeck(deck)}
+										>
+											{deletingId === deck.id ? 'Deleting…' : 'Delete'}
+										</button>
+									</div>
+								{/if}
+							{/if}
+						</li>
+					{/each}
+				</ul>
+
+				<form class="create" onsubmit={addDeck}>
+					<label>
+						New deck
+						<input
+							bind:value={deckName}
+							placeholder="HSK 2, Travel, …"
+							maxlength="80"
+							autocomplete="off"
+							required
+						/>
+					</label>
+					<button type="submit" disabled={creating}>
+						{creating ? 'Creating…' : 'Create deck'}
+					</button>
+				</form>
+
+				{#if deckError}
+					<p class="error" role="alert">{deckError}</p>
+				{/if}
+			</section>
+		{:else}
+			<section aria-labelledby="levels-heading">
+				<h2 id="levels-heading">Level</h2>
+				<p class="hint">Draw words from one level of an installed scheme.</p>
+
+				{#if schemeError}
+					<p class="error" role="alert">{schemeError}</p>
+				{:else if !schemesLoaded}
+					<p class="hint" role="status">Loading schemes…</p>
+				{:else if schemesForLanguage.length === 0}
+					<p class="hint">
+						No level schemes are installed for this workspace language yet.
+					</p>
+				{:else}
+					<div class="levels">
+						<label>
+							Scheme
+							<select bind:value={schemeId}>
+								{#each schemesForLanguage as scheme (scheme.id)}
+									<option value={scheme.id}>{scheme.name}</option>
+								{/each}
+							</select>
+						</label>
+						<label>
+							Level
+							<select bind:value={levelName}>
+								{#each schemeLevels as level (level.id)}
+									<option value={level.name}>{level.name}</option>
+								{/each}
+							</select>
+						</label>
+					</div>
+
+					{#if levelEntriesError}
+						<p class="error" role="alert">{levelEntriesError}</p>
+					{:else if levelEntriesLoading}
+						<p class="hint" role="status">Loading this level…</p>
+					{/if}
+				{/if}
+			</section>
+		{/if}
 
 		<section aria-labelledby="limits-heading">
 			<h2 id="limits-heading">Limits</h2>
@@ -430,16 +698,29 @@
 
 		<section class="summary" aria-labelledby="summary-heading">
 			<h2 id="summary-heading">This session</h2>
-			<p class="stats">
-				<strong>{selectedCards.length}</strong>
-				{selectedCards.length === 1 ? 'card' : 'cards'} in
-				<strong>{selectedDeckIds.length}</strong>
-				{selectedDeckIds.length === 1 ? 'deck' : 'decks'} ·
-				<strong>{counts.due}</strong>
-				due ·
-				<strong>{counts.fresh}</strong>
-				new
-			</p>
+			{#if mode === 'levels'}
+				<p class="stats">
+					<strong>{levelWordCount}</strong>
+					{levelWordCount === 1 ? 'word' : 'words'} in
+					<strong>{selectedScheme?.name ?? 'this scheme'}</strong>
+					{levelSelection?.levelName ?? ''} ·
+					<strong>{counts.due}</strong>
+					due ·
+					<strong>{counts.fresh}</strong>
+					new
+				</p>
+			{:else}
+				<p class="stats">
+					<strong>{selectedCards.length}</strong>
+					{selectedCards.length === 1 ? 'card' : 'cards'} in
+					<strong>{selectedDeckIds.length}</strong>
+					{selectedDeckIds.length === 1 ? 'deck' : 'decks'} ·
+					<strong>{counts.due}</strong>
+					due ·
+					<strong>{counts.fresh}</strong>
+					new
+				</p>
+			{/if}
 
 			{#if errors.length > 0}
 				<ul class="errors" role="alert">
@@ -567,7 +848,8 @@
 	}
 
 	.create label,
-	.limits label {
+	.limits label,
+	.levels label {
 		display: grid;
 		gap: 0.35rem;
 		font-weight: 600;
@@ -579,8 +861,20 @@
 		gap: 1rem;
 	}
 
+	.modes,
+	.levels {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
+	.modes {
+		gap: 1.5rem;
+	}
+
 	.create input,
 	.limits input,
+	.levels select,
 	.rename input,
 	.setup button {
 		font: inherit;
@@ -588,6 +882,7 @@
 
 	.create input,
 	.limits input,
+	.levels select,
 	.rename input {
 		padding: 0.4rem 0.55rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
