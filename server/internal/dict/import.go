@@ -55,10 +55,12 @@ func registerLanguage(ctx context.Context, sqlDB *sql.DB, m Manifest) error {
 }
 
 // upsertDictionary registers or revives the dictionary keyed by packID
-// inside tx and returns its row id.
+// inside tx and returns its row id. An installed dictionary whose
+// manifest fields are unchanged is not written (no restamp), so an
+// identical re-import leaves the registry row as it was.
 func upsertDictionary(ctx context.Context, tx *sql.Tx, packID, name, version, license, attribution, stamp string) (int64, error) {
 	var dictID int64
-	if err := tx.QueryRowContext(ctx, `
+	err := tx.QueryRowContext(ctx, `
 		INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT (pack_id) DO UPDATE SET
@@ -68,8 +70,17 @@ func upsertDictionary(ctx context.Context, tx *sql.Tx, packID, name, version, li
 			attribution = excluded.attribution,
 			updated_at = excluded.updated_at,
 			deleted_at = NULL
+		WHERE dictionaries.name IS NOT excluded.name OR dictionaries.version IS NOT excluded.version
+		   OR dictionaries.license IS NOT excluded.license
+		   OR dictionaries.attribution IS NOT excluded.attribution
+		   OR dictionaries.deleted_at IS NOT NULL
 		RETURNING id`,
-		packID, name, version, license, attribution, stamp).Scan(&dictID); err != nil {
+		packID, name, version, license, attribution, stamp).Scan(&dictID)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Unchanged: the conflict update's WHERE skipped the write.
+		err = tx.QueryRowContext(ctx, `SELECT id FROM dictionaries WHERE pack_id = ?`, packID).Scan(&dictID)
+	}
+	if err != nil {
 		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
 	}
 	return dictID, nil

@@ -504,13 +504,17 @@ func TestLexiconReimportsWriteNothing(t *testing.T) {
 			for _, id := range order {
 				importLexiconPack(t, sqlDB, packs[id](t))
 			}
-			tables := []string{"entries", "forms", "readings", "senses", "entry_links"}
+			// dictionaries too: an unchanged pack restamps no registry row.
+			tables := []string{"entries", "forms", "readings", "senses", "entry_links", "dictionaries"}
 			for _, table := range tables {
 				if _, err := sqlDB.Exec(`UPDATE ` + table + ` SET updated_at = '` + longAgo + `'`); err != nil {
 					t.Fatalf("backdate %s: %v", table, err)
 				}
 			}
-			before := lexiconCounts(t, sqlDB)
+			before := map[string]int{}
+			for _, table := range tables {
+				before[table] = totalRows(t, sqlDB, table)
+			}
 			importLexiconPack(t, sqlDB, packs[order[len(order)-1]](t))
 			for _, table := range tables {
 				if n := countWhere(t, sqlDB, table, `updated_at > '2021-01-01T00:00:00Z'`); n != 0 {
@@ -521,5 +525,38 @@ func TestLexiconReimportsWriteNothing(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// A changed manifest or an uninstalled dictionary still writes the
+// registry row: only an identical re-import skips it.
+func TestLexiconReimportUpdatesChangedDictionaryRow(t *testing.T) {
+	sqlDB := newDB(t)
+	importLexiconPack(t, sqlDB, miniLexPack(t, lexMiniJSON))
+	var id int64
+	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'zh-mini-lex'`).Scan(&id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sqlDB.Exec(`UPDATE dictionaries SET updated_at = '` + longAgo + `'`); err != nil {
+		t.Fatal(err)
+	}
+	m := zhMiniLexManifest
+	m.Version = "2.0"
+	importLexiconPack(t, sqlDB, lexPack(t, m, "dictionary.json", lexMiniJSON))
+	var version, stamp string
+	var gotID int64
+	if err := sqlDB.QueryRow(`SELECT id, version, updated_at FROM dictionaries WHERE pack_id = 'zh-mini-lex'`).Scan(&gotID, &version, &stamp); err != nil {
+		t.Fatal(err)
+	}
+	if gotID != id || version != "2.0" || stamp == longAgo {
+		t.Errorf("after a version bump: id %d version %s updated_at %s, want id %d, 2.0, restamped", gotID, version, stamp, id)
+	}
+	if err := dict.Uninstall(context.Background(), sqlDB, id); err != nil {
+		t.Fatal(err)
+	}
+	importLexiconPack(t, sqlDB, lexPack(t, m, "dictionary.json", lexMiniJSON))
+	var deleted sql.NullString
+	if err := sqlDB.QueryRow(`SELECT deleted_at FROM dictionaries WHERE id = ?`, id).Scan(&deleted); err != nil || deleted.Valid {
+		t.Errorf("re-import after uninstall: deleted_at = %v, %v; want revived", deleted, err)
 	}
 }

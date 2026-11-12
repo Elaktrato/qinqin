@@ -57,7 +57,10 @@ Docker, `qinqin seed` sees only the image's packs, not the host's
 `./plugins/data-local:/opt/qinqin/local:ro`) and pass
 `--packs /opt/qinqin/packs,/opt/qinqin/local`. The full
 bundle seeds in under a minute (about 45 s measured) and is idempotent:
-re-running replaces each pack's own rows and touches nothing else.
+re-running replaces each pack's own rows and touches nothing else (an unchanged
+dictionary writes no rows; frequency rows are replaced). Run `qinqin seed` while the server is idle: each pack is
+one write transaction, JMdict holds the database write lock for about 20 s, and
+the server waits at most 5 s (`busy_timeout`) before a write fails.
 
 > **Upgrading a development database.** Entry ids changed with the dictionary
 > rebuild (the lookup rewrite; migration 017 drops the legacy tables). Nothing is
