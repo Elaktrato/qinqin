@@ -17,7 +17,10 @@ import (
 // (the flat shape the web's entry page and flashcards read), SenseGroups
 // one row per sense with part of speech, tags and cross-references — and
 // its variants, scheme badges and example sentences. Senses are ordered
-// by dictionary, then sense order, then gloss order.
+// by dictionary, then sense order, then gloss order. A user's overlay
+// patches the embedded EntryBase only (written and readings); Forms,
+// Senses and SenseGroups always show the SHARED dictionary values, so
+// a patched written form need not appear among forms.
 type entryResponse struct {
 	model.EntryBase
 	Forms       []formView        `json:"forms"`
