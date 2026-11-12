@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPosition, parsePosition } from './position';
+import { chapterTitle, formatPosition, parsePosition, savedChapter } from './position';
 
 describe('formatPosition', () => {
 	it('formats chapter and paragraph', () => {
@@ -19,5 +19,32 @@ describe('parsePosition', () => {
 			expect(parsePosition(bad)).toBeNull();
 		}
 		expect(parsePosition('99999999999999999999:0')).toBeNull();
+	});
+});
+
+describe('savedChapter', () => {
+	it('is the chapter of the saved position', () => {
+		expect(savedChapter('3:17', 10)).toBe(3);
+	});
+
+	it('clamps to the last chapter', () => {
+		expect(savedChapter('12:0', 10)).toBe(9);
+		expect(savedChapter('5:0', 0)).toBe(0);
+	});
+
+	it('is 0 for a missing or malformed position', () => {
+		expect(savedChapter('', 10)).toBe(0);
+		expect(savedChapter('x:1', 10)).toBe(0);
+	});
+});
+
+describe('chapterTitle', () => {
+	it('is the chapter title when there is one', () => {
+		expect(chapterTitle('序章', 0)).toBe('序章');
+	});
+
+	it('is "Chapter n" (1-based) for an empty title', () => {
+		expect(chapterTitle('', 0)).toBe('Chapter 1');
+		expect(chapterTitle('  ', 4)).toBe('Chapter 5');
 	});
 });

@@ -5,6 +5,7 @@
 	import { currentLanguage } from '$lib/workspaces';
 	import { apiErrorMessage } from './errors';
 	import { initialUploadLanguage } from './uploadLanguage';
+	import { savedChapter } from './position';
 	import { SOURCES_HREF, bookHref } from './route';
 
 	const MAX_BYTES = 20 * 1024 * 1024;
@@ -137,7 +138,9 @@
 			{#each books as book (book.id)}
 				<li>
 					<div class="info">
-						<a class="title" href={bookHref(book.id, 0)}>{book.title}</a>
+						<a class="title" href={bookHref(book.id, savedChapter(book.position, book.chapterCount))}
+							>{book.title}</a
+						>
 						<span class="meta">
 							{book.author || 'Unknown author'} · {book.language} · {book.source} · {book.chapterCount}
 							{book.chapterCount === 1 ? 'chapter' : 'chapters'}

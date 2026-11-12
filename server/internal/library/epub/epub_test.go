@@ -109,8 +109,9 @@ func TestParseSpineOrder(t *testing.T) {
 	if len(chs) != 2 || chs[0].Title != "Second" || chs[1].Title != "First" {
 		t.Fatalf("chapters = %+v, want spine order Second, First", chs)
 	}
-	if len(chs[0].Paragraphs) != 3 {
-		t.Errorf("paragraphs = %d, want heading + 2", len(chs[0].Paragraphs))
+	// The heading became the title; it is not repeated as a paragraph.
+	if len(chs[0].Paragraphs) != 2 || chs[0].Paragraphs[0][0].Text != "two" {
+		t.Errorf("paragraphs = %+v, want the 2 body paragraphs", chs[0].Paragraphs)
 	}
 }
 
@@ -178,7 +179,34 @@ func TestParseTitleFromHeadingOrFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(chs) != 2 || chs[0].Title != "chap1" || chs[1].Title != "Real Title" {
+	// No heading: an empty title (the reader shows "Chapter n"), never the
+	// file name.
+	if len(chs) != 2 || chs[0].Title != "" || chs[1].Title != "Real Title" {
 		t.Fatalf("titles = %+v", chs)
+	}
+	if len(chs[1].Paragraphs) != 1 || chs[1].Paragraphs[0][0].Text != "pre" {
+		t.Errorf("chap2 paragraphs = %+v, want only pre (the title heading dropped)", chs[1].Paragraphs)
+	}
+}
+
+func TestParseTitleHeadingDroppedOnce(t *testing.T) {
+	data := buildEpub(t, "ja", map[string]string{
+		"a": xhtml(`<h1><ruby>序<rt>じょ</rt></ruby>章</h1><p>body</p><h2>Second</h2><p>more</p>`),
+		"b": xhtml(`<h1>Part Two</h1>`),
+	}, []string{"a", "b"}, []string{"a", "b"})
+	_, chs, err := parse(t, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(chs) != 2 || chs[0].Title != "序章" {
+		t.Fatalf("chapters = %+v", chs)
+	}
+	// Only the title heading goes; a later heading stays a paragraph.
+	if len(chs[0].Paragraphs) != 3 || chs[0].Paragraphs[0][0].Text != "body" || chs[0].Paragraphs[1][0].Text != "Second" {
+		t.Errorf("paragraphs = %+v, want body, Second, more", chs[0].Paragraphs)
+	}
+	// A chapter that is only its heading keeps it, so it is not empty.
+	if chs[1].Title != "Part Two" || len(chs[1].Paragraphs) != 1 {
+		t.Errorf("heading-only chapter = %+v", chs[1])
 	}
 }

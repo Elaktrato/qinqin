@@ -193,10 +193,8 @@ func Parse(r io.ReaderAt, size int64) (Meta, []library.Chapter, error) {
 		if len(chapters) >= lim.Chapters {
 			return Meta{}, nil, invalid("too many chapters")
 		}
-		if title == "" {
-			base := path.Base(name)
-			title = strings.TrimSuffix(base, path.Ext(base))
-		}
+		// A chapter without a heading keeps an empty title; the reader
+		// shows "Chapter n" for it.
 		chapters = append(chapters, library.Chapter{Title: title, Paragraphs: paras})
 	}
 	if len(chapters) == 0 {
@@ -289,6 +287,11 @@ func extract(content []byte, b *budget) (string, []library.Paragraph, error) {
 		rt      strings.Builder
 		heading strings.Builder
 		title   string
+		// headAt is the index in paras where the open heading's paragraph
+		// will land; titleAt is the paragraph the title came from (-1:
+		// none).
+		headAt  int
+		titleAt = -1
 		err     error
 	)
 	addRun := func(r library.Run) {
@@ -409,10 +412,14 @@ func extract(content []byte, b *budget) (string, []library.Paragraph, error) {
 					if start {
 						inHead = true
 						heading.Reset()
+						headAt = len(paras)
 					} else if end && inHead {
 						inHead = false
 						if title == "" {
 							title = strings.Join(strings.Fields(heading.String()), " ")
+							if title != "" && len(paras) == headAt+1 {
+								titleAt = headAt
+							}
 						}
 					}
 				}
@@ -425,5 +432,20 @@ func extract(content []byte, b *budget) (string, []library.Paragraph, error) {
 	if err != nil {
 		return "", nil, err
 	}
+	// The title heading is shown as the chapter title; drop its paragraph
+	// so it does not show twice — unless it is all the chapter has.
+	if titleAt >= 0 && len(paras) > 1 && paragraphText(paras[titleAt]) == title {
+		paras = append(paras[:titleAt], paras[titleAt+1:]...)
+	}
 	return title, paras, nil
+}
+
+// paragraphText is the base text of p with whitespace runs collapsed to
+// single spaces, as a heading's title is.
+func paragraphText(p library.Paragraph) string {
+	var b strings.Builder
+	for _, r := range p {
+		b.WriteString(r.Text)
+	}
+	return strings.Join(strings.Fields(b.String()), " ")
 }

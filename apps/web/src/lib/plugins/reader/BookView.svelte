@@ -8,7 +8,7 @@
 	import { paragraphElement } from './dom';
 	import { apiErrorMessage } from './errors';
 	import { displayRuns } from './paragraphText';
-	import { formatPosition, type Position } from './position';
+	import { chapterTitle, formatPosition, type Position } from './position';
 	import { restoreDecision, restorePlan } from './restore';
 	import { PositionSaver } from './positionSaver';
 	import { browserStorage, loadPrefs, savePrefs } from './prefs';
@@ -164,8 +164,13 @@
 		});
 	});
 
-	// Leaving the reading view saves a still-pending position at once.
-	onMount(() => () => saver.flush());
+	// Leaving the reading view saves a still-pending position at once, and
+	// invalidates a book load still in flight so its restore jump (goto)
+	// cannot pull the reader back into the book.
+	onMount(() => () => {
+		bookSeq++;
+		saver.flush();
+	});
 
 	// The first paragraph in view is the position. The <p> elements are
 	// keyed by index, so script and furigana toggles keep them observed.
@@ -254,14 +259,16 @@
 			<p aria-live="polite">Loading chapter…</p>
 		{:else}
 			<article>
-				{#if content.data.title}<h2 lang={textLang}>{content.data.title}</h2>{/if}
+				<h2 lang={content.data.title.trim() ? textLang : undefined}>
+					{chapterTitle(content.data.title, content.n)}
+				</h2>
 				<ChapterText {paragraphs} showRuby={prefs.furigana} lang={textLang} {lookup} bind:container />
 			</article>
 			{@render chapterNav('Chapters (end)')}
 		{/if}
 
 		<footer class="credits">
-			{#if book.attribution}<p>{book.attribution}</p>{/if}
+			{#if book.attribution}<p class="attribution">{book.attribution}</p>{/if}
 			{#if book.licenseNote}<p>{book.licenseNote}</p>{/if}
 			{#if sourceUrl}
 				<p>
@@ -318,6 +325,11 @@
 
 	.credits p {
 		margin: 0.25rem 0;
+	}
+
+	/* Aozora attributions are several lines (底本, 入力, 校正...). */
+	.attribution {
+		white-space: pre-line;
 	}
 
 	.error {

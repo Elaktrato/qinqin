@@ -24,3 +24,18 @@ export function parsePosition(s: string): Position | null {
 	if (chapter === null || paragraph === null) return null;
 	return { chapter, paragraph };
 }
+
+/**
+ * savedChapter is the chapter a library link opens: the chapter of the
+ * saved position, clamped to the book's last chapter; 0 when nothing
+ * (valid) is saved.
+ */
+export function savedChapter(position: string, chapterCount: number): number {
+	const chapter = parsePosition(position)?.chapter ?? 0;
+	return Math.max(0, Math.min(chapter, chapterCount - 1));
+}
+
+/** chapterTitle is what the reader shows for chapter n: its title, else "Chapter n+1". */
+export function chapterTitle(title: string, n: number): string {
+	return title.trim() || `Chapter ${n + 1}`;
+}
