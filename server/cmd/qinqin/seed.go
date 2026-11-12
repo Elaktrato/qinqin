@@ -118,6 +118,9 @@ func seed(ctx context.Context, sqlDB *sql.DB, roots []string, out io.Writer) err
 	if len(found) == 0 {
 		return fmt.Errorf("seed: no packs (directories with a manifest.json) under %s", strings.Join(roots, ", "))
 	}
+	if err := warnEntryIDUsers(ctx, sqlDB, out); err != nil {
+		return err
+	}
 	sort.SliceStable(found, func(i, j int) bool {
 		ri, rj := importOrder[found[i].pack.Type], importOrder[found[j].pack.Type]
 		if ri != rj {
@@ -133,6 +136,33 @@ func seed(ctx context.Context, sqlDB *sql.DB, roots []string, out io.Writer) err
 		}
 		fmt.Fprintf(out, "%-14s %-10s %s\n", p.pack.ID, p.pack.Type, line)
 	}
+	return nil
+}
+
+// flashcardsPack is the plugin_data pack id of the flashcards feature,
+// whose card:<id> rows store an entryId.
+const flashcardsPack = "qinqin-flashcards"
+
+// warnEntryIDUsers prints a WARNING line to out when the database holds
+// user edits or flashcards: both store entry ids, and a development
+// database from before the dictionary rebuild (migration 017) keeps ids
+// that now point at different entries — silently. Nothing is deleted.
+func warnEntryIDUsers(ctx context.Context, sqlDB *sql.DB, out io.Writer) error {
+	var edits, cards int
+	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM user_edits`).Scan(&edits); err != nil {
+		return fmt.Errorf("seed: count user edits: %w", err)
+	}
+	if err := sqlDB.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM plugin_data
+		WHERE pack_id = ? AND key LIKE 'card:%' AND deleted_at IS NULL`, flashcardsPack).Scan(&cards); err != nil {
+		return fmt.Errorf("seed: count flashcards: %w", err)
+	}
+	if edits == 0 && cards == 0 {
+		return nil
+	}
+	fmt.Fprintf(out, "WARNING: this database has %d user edit(s) and %d flashcard(s), which refer to entries by id. "+
+		"If it predates the lexicon rebuild (migration 017), those ids now point at different entries: "+
+		"delete the data directory (or at least qinqin.db) and seed again.\n", edits, cards)
 	return nil
 }
 

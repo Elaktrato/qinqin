@@ -151,6 +151,57 @@ func TestSeedIdempotent(t *testing.T) {
 	}
 }
 
+// TestSeedWarnsAboutUserDataOnEntryIDs: a database with user edits or
+// flashcards (which store entry ids) gets a WARNING line, since a
+// database from before the dictionary rebuild keeps ids that now point at
+// different entries. A database without them gets none.
+func TestSeedWarnsAboutUserDataOnEntryIDs(t *testing.T) {
+	ctx := context.Background()
+	packs := smallPacks(t)
+	seedOut := func(sqlDB *sql.DB) string {
+		t.Helper()
+		var out bytes.Buffer
+		if err := seed(ctx, sqlDB, []string{packs}, &out); err != nil {
+			t.Fatalf("seed: %v", err)
+		}
+		return out.String()
+	}
+	newDB := func() (*sql.DB, int64) {
+		t.Helper()
+		sqlDB, _ := openTestDB(t)
+		if out := seedOut(sqlDB); strings.Contains(out, "WARNING") {
+			t.Errorf("seed of an empty database warned:\n%s", out)
+		}
+		u, err := auth.CreateUser(ctx, sqlDB, "erik", "s3cret-pw", true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return sqlDB, u.ID
+	}
+
+	sqlDB, uid := newDB()
+	if out := seedOut(sqlDB); strings.Contains(out, "WARNING") {
+		t.Errorf("seed with a user but no edits or cards warned:\n%s", out)
+	}
+	if _, err := sqlDB.Exec(`INSERT INTO user_edits (user_id, entry_id, written, updated_at)
+		VALUES (?, (SELECT MIN(id) FROM entries), '猫', '2026-11-13T00:00:00Z')`, uid); err != nil {
+		t.Fatal(err)
+	}
+	if out := seedOut(sqlDB); !strings.Contains(out, "WARNING") || !strings.Contains(out, "1 user edit") {
+		t.Errorf("seed with a user edit = %q, want a WARNING naming 1 user edit", out)
+	}
+
+	sqlDB, uid = newDB()
+	if _, err := sqlDB.Exec(`INSERT INTO plugin_data (pack_id, user_id, key, data, version, updated_at)
+		VALUES ('qinqin-flashcards', ?, 'card:c1', '{"entryId":1}', 1, '2026-11-13T00:00:00Z'),
+		       ('qinqin-flashcards', ?, 'deck:d1', '{}', 1, '2026-11-13T00:00:00Z')`, uid, uid); err != nil {
+		t.Fatal(err)
+	}
+	if out := seedOut(sqlDB); !strings.Contains(out, "WARNING") || !strings.Contains(out, "1 flashcard") {
+		t.Errorf("seed with a flashcard = %q, want a WARNING naming 1 flashcard", out)
+	}
+}
+
 // Each pack prints exactly one line, and a dictionary's line carries its
 // lexicon counts.
 func TestSeedPrintsEachPackOnce(t *testing.T) {

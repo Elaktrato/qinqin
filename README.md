@@ -53,10 +53,16 @@ docker compose exec qinqin qinqin adduser --admin --username you
 repeated; default `$QINQIN_PACKS`, or `plugins/data` plus `plugins/data-local`
 when that exists; the image sets `QINQIN_PACKS` to the packs it ships). The full
 bundle seeds in under a minute (about 45 s measured) and is idempotent:
-re-running replaces each pack's own rows and touches nothing else. Nothing is published yet, so there is no upgrade
-path for old dictionary data: a development database from before the lookup
-rewrite (migration 017 drops the legacy tables) is rebuilt by deleting its data
-directory and seeding again.
+re-running replaces each pack's own rows and touches nothing else.
+
+> **Upgrading a development database.** Entry ids changed with the dictionary
+> rebuild (the lookup rewrite; migration 017 drops the legacy tables). Nothing is
+> published, so there is no upgrade path: **delete the data directory (or at
+> least `qinqin.db`) and seed again.** On an old database the restart and re-seed
+> succeed without an error, but user edits and flashcards created before this
+> change keep their old entry ids and now point at different entries.
+> `qinqin seed` prints a `WARNING` line whenever the database holds user edits or
+> flashcards.
 
 The `adduser` command prompts for a password. Then open
 <http://localhost:8080>.
