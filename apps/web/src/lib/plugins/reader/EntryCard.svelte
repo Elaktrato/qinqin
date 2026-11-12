@@ -78,12 +78,12 @@
 					{#if sense.xrefs.length > 0}
 						<span class="xrefs">
 							{'see also '}
-							{#each sense.xrefs.map(parseXref) as xref, x (x)}
-								{#if x > 0}{', '}{/if}
-								<span class="scan" data-scan={lang} lang={textLang}>{xref.headword}</span>
-								{#if xref.reading}<span lang={textLang}>{`(${xref.reading})`}</span>{/if}
-								{#if xref.senseNo}{`sense ${xref.senseNo}`}{/if}
-							{/each}
+							<!-- One line: whitespace between these nodes would show before the commas. -->
+							{#each sense.xrefs.map(parseXref) as xref, x (x)}{#if x > 0}{', '}{/if}<span
+									class="scan"
+									data-scan={lang}
+									lang={textLang}>{xref.headword}</span
+								>{#if xref.reading}{' '}<span lang={textLang}>{`(${xref.reading})`}</span>{/if}{#if xref.senseNo}{` sense ${xref.senseNo}`}{/if}{/each}
 						</span>
 					{/if}
 				</li>
