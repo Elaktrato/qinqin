@@ -1,6 +1,9 @@
 // Hover and selection lookup over the chapter text. One controller per
 // reading view; the chapter container delegates its pointer events here
 // (no per-paragraph listeners) and attach() wires the document-level ones.
+// This file is the DOM side: it turns pointers and selections into
+// paragraph offsets. The hover timing (grace, aborts, stale results) lives
+// in the DOM-free HoverLookup.
 import { segmentAt } from '$lib/api/segment';
 import type { SegmentMatch } from '$lib/api/types';
 import {
@@ -12,13 +15,13 @@ import {
 	type RunsOf
 } from './dom';
 import { apiErrorMessage } from './errors';
+import { HoverLookup, type HoverShown, type Span } from './hoverLookup';
 import { selectionTarget, type LookupKind } from './lookup';
 import { offsetFromRun, paragraphString, sliceCodePoints } from './paragraphText';
 import { cachedSegment } from './segmentCache';
 import { lookupSelection, selectionSpanTarget } from './selectionLookup';
 
 const HOVER_DEBOUNCE_MS = 80;
-const HOVER_GRACE_MS = 250;
 const SELECTION_DEBOUNCE_MS = 250;
 const HIGHLIGHT = 'reader-lookup';
 
@@ -35,12 +38,6 @@ export interface LookupView {
 	error: string;
 }
 
-interface Span {
-	p: number;
-	start: number;
-	end: number;
-}
-
 export interface LookupOptions {
 	container: () => HTMLElement | null;
 	lang: () => string;
@@ -52,21 +49,30 @@ export class LookupController {
 
 	#opts: LookupOptions;
 	#segment = cachedSegment(segmentAt);
-	#seq = 0;
-	#abort: AbortController | null = null;
+	#hover: HoverLookup;
 	#hoverTimer: ReturnType<typeof setTimeout> | undefined;
-	#closeTimer: ReturnType<typeof setTimeout> | undefined;
-	#selectionTimer: ReturnType<typeof setTimeout> | undefined;
 	#pointer = { x: 0, y: 0, target: null as EventTarget | null };
+	/** Primary button held anywhere in the document: a click or a drag. */
 	#pointerDown = false;
-	/** The span the current popup is about; hovering inside it does nothing. */
-	#span: Span | null = null;
-	/** The hover lookup in flight, so repeated moves over it do not refetch. */
-	#pending: { p: number; offset: number } | null = null;
+	// Selection lookups: their own canceller, sequence and shown span.
+	#selectionAbort: AbortController | null = null;
+	#selectionSeq = 0;
+	#selectionTimer: ReturnType<typeof setTimeout> | undefined;
+	#selectionSpan: Span | null = null;
 	#frame = 0;
 
 	constructor(opts: LookupOptions) {
 		this.#opts = opts;
+		this.#hover = new HoverLookup({
+			segment: this.#segment,
+			lang: opts.lang,
+			show: (shown) => this.#showHover(shown),
+			hide: () => {
+				if (this.view?.mode !== 'hover') return;
+				this.#highlight(null);
+				this.view = null;
+			}
+		});
 	}
 
 	/** Document-level listeners; returns the cleanup. */
@@ -75,6 +81,9 @@ export class LookupController {
 			if (e.key === 'Escape' && this.view) this.close();
 		};
 		const onDown = (e: PointerEvent) => {
+			// Tracked document-wide, so a drag that starts outside the text
+			// and extends into it still counts as a drag in progress.
+			if (e.button === 0) this.#pointerDown = true;
 			if (this.view?.mode !== 'selection') return;
 			const target = e.target as Element | null;
 			if (!target?.closest?.('[data-lookup-popup]')) this.close();
@@ -112,7 +121,13 @@ export class LookupController {
 
 	pointermove = (e: PointerEvent): void => {
 		// Hover is a mouse enhancement; touch and pen select instead.
-		if (e.pointerType !== 'mouse' || this.#pointerDown || e.buttons !== 0) return;
+		if (e.pointerType !== 'mouse') return;
+		if (this.#pointerDown && e.buttons === 0) {
+			// The button was released outside the window: the drag is over.
+			this.#pointerDown = false;
+			this.#scheduleSelection(30);
+		}
+		if (this.#pointerDown || e.buttons !== 0) return;
 		if (this.view?.mode === 'selection') return;
 		this.#pointer = { x: e.clientX, y: e.clientY, target: e.target };
 		clearTimeout(this.#hoverTimer);
@@ -122,25 +137,23 @@ export class LookupController {
 	pointerleave = (e: PointerEvent): void => {
 		if (e.pointerType !== 'mouse') return;
 		clearTimeout(this.#hoverTimer);
-		if (this.view?.mode !== 'selection') this.close();
+		this.#hover.close();
 	};
 
 	pointerdown = (e: PointerEvent): void => {
 		if (e.button !== 0) return;
-		this.#pointerDown = true;
 		clearTimeout(this.#hoverTimer);
-		if (this.view?.mode === 'hover') this.close();
+		this.#hover.close();
 	};
 
 	/** Closes the popup and cancels everything in flight. */
 	close(): void {
-		this.#seq++;
-		this.#abort?.abort();
-		this.#abort = null;
-		this.#pending = null;
-		this.#span = null;
 		clearTimeout(this.#hoverTimer);
-		this.#cancelClose();
+		this.#hover.close();
+		this.#selectionSeq++;
+		this.#selectionAbort?.abort();
+		this.#selectionAbort = null;
+		this.#selectionSpan = null;
 		clearTimeout(this.#selectionTimer);
 		cancelAnimationFrame(this.#frame);
 		this.#frame = 0;
@@ -155,12 +168,12 @@ export class LookupController {
 		const { x, y, target } = this.#pointer;
 		// Only text counts: the gaps between lines and paragraphs do not.
 		if (!container || !(target instanceof Element) || !target.closest('[data-r]')) {
-			return this.#closeSoon();
+			return this.#hover.noWord();
 		}
 		const caret = caretFromPoint(x, y);
 		const point = caret && runPointAt(caret.node, caret.offset, 'start');
 		const runs = point && this.#opts.runsOf(point.p);
-		if (!point || !runs) return this.#closeSoon();
+		if (!point || !runs) return this.#hover.noWord();
 		const text = paragraphString(runs);
 		let offset = offsetFromRun(runs, point.r, point.utf16);
 		if (!point.inRt) {
@@ -171,54 +184,28 @@ export class LookupController {
 				const range = o >= 0 && rangeForSpan(container, point.p, runs, o, o + 1);
 				return range && rangeContainsPoint(range, x, y);
 			});
-			if (under === undefined) return this.#closeSoon();
+			if (under === undefined) return this.#hover.noWord();
 			offset = under;
 		}
-		const span = this.#span;
-		if (span && span.p === point.p && offset >= span.start && offset < span.end) {
-			return this.#cancelClose();
-		}
-		if (this.#pending?.p === point.p && this.#pending.offset === offset) return;
-		const char = sliceCodePoints(text, offset, offset + 1);
-		if (!selectionTarget(char)) return this.#closeSoon();
-		this.#closeSoon();
-		void this.#lookupHover(point.p, text, offset);
+		if (!selectionTarget(sliceCodePoints(text, offset, offset + 1))) return this.#hover.noWord();
+		this.#hover.point(point.p, text, offset);
 	}
 
-	async #lookupHover(p: number, text: string, offset: number): Promise<void> {
-		const { seq, signal } = this.#begin();
-		this.#pending = { p, offset };
-		const lang = this.#opts.lang();
-		let match: SegmentMatch | null = null;
-		let error = '';
-		try {
-			match = await this.#segment(lang, text, offset, signal);
-		} catch (err) {
-			if (signal.aborted) return;
-			error = apiErrorMessage(err, 'lookup');
-		}
-		if (seq !== this.#seq) return;
-		this.#pending = null;
-		const span = match
-			? { p, start: match.start, end: match.end }
-			: { p, start: offset, end: offset + 1 };
-		this.#show('hover', span, {
-			match,
-			text: match?.surface ?? sliceCodePoints(text, offset, offset + 1),
+	#showHover(shown: HoverShown): void {
+		// A sticky selection popup is never replaced by a hover result.
+		if (this.view?.mode === 'selection') return;
+		const range = this.#rangeOf(shown.span);
+		if (!range) return this.#hover.close();
+		this.#highlight(range);
+		this.view = {
+			mode: 'hover',
+			anchor: range.getBoundingClientRect(),
+			match: shown.match,
+			text: shown.text,
 			kind: 'word',
 			note: '',
-			error
-		});
-	}
-
-	#closeSoon(): void {
-		if (this.view?.mode !== 'hover' || this.#closeTimer !== undefined) return;
-		this.#closeTimer = setTimeout(() => this.close(), HOVER_GRACE_MS);
-	}
-
-	#cancelClose(): void {
-		clearTimeout(this.#closeTimer);
-		this.#closeTimer = undefined;
+			error: shown.error
+		};
 	}
 
 	// --- selection ---
@@ -239,7 +226,7 @@ export class LookupController {
 		const target = selectionSpanTarget(text, found.start, found.end);
 		if (!target) return;
 		const span = { p: found.p, start: target.start, end: target.end };
-		const shown = this.#span;
+		const shown = this.#selectionSpan;
 		if (
 			this.view?.mode === 'selection' &&
 			shown &&
@@ -249,45 +236,47 @@ export class LookupController {
 		) {
 			return;
 		}
-		const { seq, signal } = this.#begin();
-		this.#show('selection', span, { match: undefined, text: target.text, kind: target.kind, note: '', error: '' });
+		const range = this.#rangeOf(span);
+		if (!range) return;
+		clearTimeout(this.#hoverTimer);
+		this.#hover.close();
+		this.#selectionAbort?.abort();
+		const abort = new AbortController();
+		this.#selectionAbort = abort;
+		const seq = ++this.#selectionSeq;
+		this.#selectionSpan = span;
+		this.#highlight(null);
+		this.view = {
+			mode: 'selection',
+			anchor: range.getBoundingClientRect(),
+			match: undefined,
+			text: target.text,
+			kind: target.kind,
+			note: '',
+			error: ''
+		};
 		const lang = this.#opts.lang();
 		try {
-			const result = await lookupSelection(lang, text, target, this.#segment, signal);
-			if (seq !== this.#seq || !this.view) return;
+			const result = await lookupSelection(lang, text, target, this.#segment, abort.signal);
+			if (seq !== this.#selectionSeq || !this.view) return;
 			this.view = { ...this.view, match: result.match, note: result.note };
 		} catch (err) {
-			if (signal.aborted || seq !== this.#seq || !this.view) return;
+			if (abort.signal.aborted || seq !== this.#selectionSeq || !this.view) return;
 			this.view = { ...this.view, match: null, error: apiErrorMessage(err, 'lookup') };
 		}
 	}
 
 	// --- shared ---
 
-	/** Starts a lookup: cancels the previous one (hover or selection). */
-	#begin(): { seq: number; signal: AbortSignal } {
-		this.#abort?.abort();
-		this.#abort = new AbortController();
-		return { seq: ++this.#seq, signal: this.#abort.signal };
-	}
-
-	#show(mode: LookupView['mode'], span: Span, rest: Omit<LookupView, 'mode' | 'anchor'>): void {
+	#rangeOf(span: Span): Range | null {
 		const container = this.#opts.container();
 		const runs = this.#opts.runsOf(span.p);
-		const range = container && runs && rangeForSpan(container, span.p, runs, span.start, span.end);
-		if (!range) return this.close();
-		this.#cancelClose();
-		this.#span = span;
-		this.#highlight(mode === 'hover' ? range : null);
-		this.view = { mode, anchor: range.getBoundingClientRect(), ...rest };
+		return container && runs ? rangeForSpan(container, span.p, runs, span.start, span.end) : null;
 	}
 
 	#reanchor(): void {
 		this.#frame = 0;
-		const span = this.#span;
-		const container = this.#opts.container();
-		const runs = span && this.#opts.runsOf(span.p);
-		const range = container && span && runs && rangeForSpan(container, span.p, runs, span.start, span.end);
+		const range = this.#selectionSpan && this.#rangeOf(this.#selectionSpan);
 		if (range && this.view) this.view = { ...this.view, anchor: range.getBoundingClientRect() };
 	}
 

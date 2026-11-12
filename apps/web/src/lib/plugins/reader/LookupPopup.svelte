@@ -1,24 +1,14 @@
 <script module lang="ts">
 	import { getEntry } from '$lib/api/entries';
-	import type { Entry } from '$lib/api/types';
+	import { cachedLoader } from './lruCache';
 
-	// Entries looked up during this visit; a failed fetch is forgotten so
-	// it is retried next time.
-	const entries = new Map<number, Promise<Entry>>();
-
-	function loadEntry(id: number): Promise<Entry> {
-		let entry = entries.get(id);
-		if (!entry) {
-			entry = getEntry(id);
-			entry.catch(() => entries.delete(id));
-			entries.set(id, entry);
-		}
-		return entry;
-	}
+	// The most recent entries looked up during this visit; a failed fetch
+	// is forgotten so it is retried next time.
+	const loadEntry = cachedLoader(getEntry, 200);
 </script>
 
 <script lang="ts">
-	import type { SegmentMatch } from '$lib/api/types';
+	import type { Entry, SegmentMatch } from '$lib/api/types';
 	import Badges from '$lib/components/Badges.svelte';
 	import Readings from '$lib/components/Readings.svelte';
 	import Senses from '$lib/components/Senses.svelte';

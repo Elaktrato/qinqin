@@ -6,8 +6,13 @@ function clamp(n: number, lo: number, hi: number): number {
 	return Math.min(Math.max(n, lo), hi);
 }
 
-function isHighSurrogate(unit: number): boolean {
-	return unit >= 0xd800 && unit <= 0xdbff;
+// True when a surrogate pair starts at UTF-16 index i. A lone surrogate
+// (high without a following low, or a stray low) is one code point, as
+// Array.from and the server count it.
+function pairAt(text: string, i: number): boolean {
+	const high = text.charCodeAt(i);
+	const low = text.charCodeAt(i + 1);
+	return high >= 0xd800 && high <= 0xdbff && low >= 0xdc00 && low <= 0xdfff;
 }
 
 /**
@@ -18,21 +23,20 @@ function isHighSurrogate(unit: number): boolean {
 export function utf16ToCodePoint(text: string, utf16Index: number): number {
 	const end = clamp(utf16Index, 0, text.length);
 	let cp = 0;
-	for (let i = 0; i < end; i++) {
-		if (isHighSurrogate(text.charCodeAt(i)) && i + 1 < end) i++;
+	let i = 0;
+	while (i < end) {
+		i += pairAt(text, i) ? 2 : 1;
 		cp++;
 	}
-	// An index between the halves of a pair counted the high half as a
-	// whole code point: step back so it maps to the pair itself.
-	if (end > 0 && end < text.length && isHighSurrogate(text.charCodeAt(end - 1))) cp--;
-	return cp;
+	// Overshot into the middle of a pair: the index belongs to that pair.
+	return i > end ? cp - 1 : cp;
 }
 
 /** codePointToUtf16 is the inverse of utf16ToCodePoint; out-of-range indexes clamp. */
 export function codePointToUtf16(text: string, cpIndex: number): number {
 	let i = 0;
 	for (let cp = 0; cp < cpIndex && i < text.length; cp++) {
-		i += isHighSurrogate(text.charCodeAt(i)) && i + 1 < text.length ? 2 : 1;
+		i += pairAt(text, i) ? 2 : 1;
 	}
 	return i;
 }

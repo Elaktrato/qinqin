@@ -8,7 +8,8 @@
 	import { paragraphElement } from './dom';
 	import { apiErrorMessage } from './errors';
 	import { displayRuns } from './paragraphText';
-	import { formatPosition, parsePosition, type Position } from './position';
+	import { formatPosition, type Position } from './position';
+	import { restoreDecision, restorePlan } from './restore';
 	import { PositionSaver } from './positionSaver';
 	import { browserStorage, loadPrefs, savePrefs } from './prefs';
 	import { LIBRARY_HREF, bookHref, safeHttpUrl } from './route';
@@ -110,12 +111,10 @@
 
 	// --- reading position ---
 
-	// Restore rule: the saved position is applied once per opened book.
-	// When the URL chapter is the saved chapter, scroll to the saved
-	// paragraph. When it differs, restore only if the URL chapter is 0 (the
-	// default the library links to): then jump to the saved chapter. Any
-	// other chapter in the URL is an explicit choice and wins. Chapter
-	// navigation inside the open book never restores again.
+	// The restore rule lives in restore.ts. It is applied once per opened
+	// book; chapter navigation inside the book never restores again, and a
+	// restore that cannot happen (the reader went elsewhere, the chapter
+	// failed, the jump failed) is dropped rather than blocking reading.
 	let restoredBook = 0;
 	let restoreTo = $state<Position | null>(null);
 	// Positions are saved only once the restore settled, so opening a book
@@ -127,24 +126,38 @@
 		if (restoredBook === loaded.id) return;
 		restoredBook = loaded.id;
 		saver.reset(loaded.position);
-		const saved = parsePosition(loaded.position);
-		const usable =
-			saved && saved.chapter < loaded.chapterCount && (saved.chapter === chapter || chapter === 0);
-		if (!usable) {
+		const plan = restorePlan(loaded.position, loaded.chapterCount, chapter);
+		if (plan.kind === 'none') {
 			tracking = true;
-			return;
-		}
-		restoreTo = saved;
-		if (saved.chapter !== chapter) {
-			void goto(bookHref(loaded.id, saved.chapter), { replaceState: true, noScroll: true });
+		} else if (plan.kind === 'scroll') {
+			restoreTo = plan.target;
+		} else {
+			// Arm the restore only once the jump has landed; the decision
+			// below drops it if the reader has meanwhile gone elsewhere.
+			goto(bookHref(loaded.id, plan.target.chapter), { replaceState: true, noScroll: true })
+				.then(tick)
+				.then(
+					() => (restoreTo = plan.target),
+					() => (tracking = true)
+				);
 		}
 	}
 
 	$effect(() => {
 		const target = restoreTo;
-		if (!target || content?.n !== target.chapter) return;
-		// Clearing it renders the text; scroll once it is in the DOM.
+		if (!target) return;
+		const decision = restoreDecision({
+			target,
+			urlChapter: chapter,
+			loadedChapter: content?.n ?? null,
+			loadFailed: chapterError !== ''
+		});
+		if (decision === 'wait') return;
 		restoreTo = null;
+		if (decision === 'skip') {
+			tracking = true;
+			return;
+		}
 		void tick().then(() => {
 			if (container) paragraphElement(container, target.paragraph)?.scrollIntoView({ block: 'start' });
 			tracking = true;
@@ -237,7 +250,7 @@
 		{#if chapterError}
 			<p class="error" role="alert">{chapterError}</p>
 			<button type="button" onclick={() => loadChapter(id, chapter)}>Retry</button>
-		{:else if !content || content.n !== chapter || restoreTo}
+		{:else if !content || content.n !== chapter}
 			<p aria-live="polite">Loading chapter…</p>
 		{:else}
 			<article>

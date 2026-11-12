@@ -34,6 +34,23 @@ describe('utf16ToCodePoint / codePointToUtf16', () => {
 		expect(codePointToUtf16('a𠮷b', -1)).toBe(0);
 	});
 
+	it('counts a lone surrogate as one code point, like Array.from', () => {
+		const loneHigh = 'a\uD800b';
+		expect(Array.from(loneHigh)).toHaveLength(3);
+		expect(utf16ToCodePoint(loneHigh, 1)).toBe(1);
+		expect(utf16ToCodePoint(loneHigh, 2)).toBe(2);
+		expect(utf16ToCodePoint(loneHigh, 3)).toBe(3);
+		expect(codePointToUtf16(loneHigh, 2)).toBe(2);
+		expect(codePointToUtf16(loneHigh, 3)).toBe(3);
+		const loneLow = 'a\uDC00b';
+		expect(utf16ToCodePoint(loneLow, 2)).toBe(2);
+		expect(utf16ToCodePoint(loneLow, 3)).toBe(3);
+		expect(codePointToUtf16(loneLow, 2)).toBe(2);
+		// A high surrogate at the very end is alone too.
+		expect(utf16ToCodePoint('a\uD800', 2)).toBe(2);
+		expect(codePointToUtf16('a\uD800', 2)).toBe(2);
+	});
+
 	it('round-trips every code point boundary', () => {
 		const text = '𠮷野家で食べた';
 		for (let cp = 0; cp <= Array.from(text).length; cp++) {
