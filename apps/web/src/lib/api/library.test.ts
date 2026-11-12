@@ -116,6 +116,7 @@ describe('library client', () => {
 		const url = new URL(lastCall().url, 'http://localhost');
 		expect(url.pathname).toBe('/api/library/sources/guten%20berg/search');
 		expect(url.searchParams.get('q')).toBe('a b&c');
+		expect(url.searchParams.get('limit')).toBe('100');
 	});
 
 	it('importFromSource POSTs {sourceId}', async () => {

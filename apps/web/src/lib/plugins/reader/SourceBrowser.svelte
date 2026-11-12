@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { ApiError } from '$lib/api/client';
-	import { importFromSource, listSources, searchSource } from '$lib/api/library';
+	import { SOURCE_SEARCH_LIMIT, importFromSource, listSources, searchSource } from '$lib/api/library';
 	import type { Book, SourceInfo, SourceResult } from '$lib/api/types';
 	import { currentLanguage } from '$lib/workspaces';
 	import { apiErrorMessage } from './errors';
 	import { libraryKey } from './libraryKey';
 	import { LIBRARY_HREF, bookHref } from './route';
+	import { resultCountText } from './sourceResults';
 
 	let sources = $state<SourceInfo[]>([]);
 	let active = $state('');
@@ -141,8 +142,11 @@
 		{/if}
 
 		<p role="status" aria-live="polite">
-			{#if searching}Searching…{:else if searched && !searchError}{visible.length}
-				{visible.length === 1 ? 'result' : 'results'}{/if}
+			{#if searching}Searching…{:else if searched && !searchError}{resultCountText(
+					visible.length,
+					results.length,
+					SOURCE_SEARCH_LIMIT
+				)}{/if}
 		</p>
 		<p class="visually-hidden" role="status" aria-live="polite">{importStatus}</p>
 		{#if searchError}

@@ -443,3 +443,26 @@ func TestAozoraProductionIsHTTPSOnly(t *testing.T) {
 		t.Fatal("unexpected allowlist behaviour")
 	}
 }
+
+func TestSearchRanksBeforeTruncating(t *testing.T) {
+	cat := &catalog{}
+	add := func(id, title, author string) {
+		cat.works = append(cat.works, &work{id: id, title: title, author: author, ntitle: normalize(title), nauthor: normalize(author)})
+	}
+	// Catalog (id) order puts the best hits last.
+	add("000001", "x月y", "a")  // substring
+	add("000002", "z", "月野")   // author
+	add("000003", "月の夜", "b")  // title prefix
+	add("000004", "月", "c")    // exact title
+	add("000005", "none", "d") // no match
+	got := []string{}
+	for _, r := range cat.search(normalize("月"), 2) {
+		got = append(got, r.SourceID)
+	}
+	if want := []string{"000004", "000003"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("search = %v, want %v", got, want)
+	}
+	if n := len(cat.search(normalize("月"), 100)); n != 4 {
+		t.Errorf("search all = %d hits, want 4", n)
+	}
+}

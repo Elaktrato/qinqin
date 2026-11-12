@@ -1,0 +1,63 @@
+package sources
+
+import (
+	"slices"
+	"strings"
+)
+
+// Match ranks of a catalog work for a search query, best first. Search
+// results are ranked before they are truncated to the limit, so the best
+// hits are never cut off by catalog (id) order.
+const (
+	RankExactTitle  = iota // the title is the query
+	RankTitlePrefix        // the title starts with the query
+	RankAuthor             // the author contains the query
+	RankSubstring          // the query occurs elsewhere in title+author
+)
+
+// MatchRank returns the rank of a work whose normalized title and author
+// are given for the normalized query q, or -1 when it does not match.
+func MatchRank(q, title, author string) int {
+	switch {
+	case title == q:
+		return RankExactTitle
+	case strings.HasPrefix(title, q):
+		return RankTitlePrefix
+	case strings.Contains(author, q):
+		return RankAuthor
+	case strings.Contains(title+author, q):
+		return RankSubstring
+	}
+	return -1
+}
+
+// TopMatches returns at most limit of items that match (rank >= 0), best
+// rank first, ties by id: shorter ids first, then lexically — numeric
+// order for the digit ids the sources use.
+func TopMatches[T any](items []T, limit int, rank func(T) int, id func(T) string) []T {
+	type ranked struct {
+		item T
+		rank int
+		id   string
+	}
+	var hits []ranked
+	for _, it := range items {
+		if r := rank(it); r >= 0 {
+			hits = append(hits, ranked{it, r, id(it)})
+		}
+	}
+	slices.SortFunc(hits, func(a, b ranked) int {
+		if a.rank != b.rank {
+			return a.rank - b.rank
+		}
+		if len(a.id) != len(b.id) {
+			return len(a.id) - len(b.id)
+		}
+		return strings.Compare(a.id, b.id)
+	})
+	out := make([]T, 0, min(limit, len(hits)))
+	for _, h := range hits[:min(limit, len(hits))] {
+		out = append(out, h.item)
+	}
+	return out
+}

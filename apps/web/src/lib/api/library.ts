@@ -33,8 +33,11 @@ export function listSources(): Promise<SourceInfo[]> {
 	return api<SourceInfo[]>('/api/library/sources');
 }
 
+/** SOURCE_SEARCH_LIMIT is the most results a source search returns (the server max). */
+export const SOURCE_SEARCH_LIMIT = 100;
+
 export function searchSource(source: string, q: string): Promise<SourceResult[]> {
-	const query = new URLSearchParams({ q });
+	const query = new URLSearchParams({ q, limit: String(SOURCE_SEARCH_LIMIT) });
 	return api<SourceResult[]>(`/api/library/sources/${encodeURIComponent(source)}/search?${query}`);
 }
 

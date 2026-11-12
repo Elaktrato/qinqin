@@ -389,3 +389,26 @@ func TestGutenbergProductionPolicy(t *testing.T) {
 		}
 	}
 }
+
+func TestSearchRanksBeforeTruncating(t *testing.T) {
+	cat := &catalog{}
+	add := func(id, title, author string) {
+		cat.works = append(cat.works, &work{id: id, title: title, author: author, language: "zh", ntitle: normalize(title), nauthor: normalize(author)})
+	}
+	// Catalog (id) order puts the best hits last.
+	add("9", "x月y", "a")    // substring
+	add("10", "z", "月野")    // author
+	add("11", "月の夜", "b")   // title prefix
+	add("100", "月", "c")    // exact title
+	add("200", "none", "d") // no match
+	got := []string{}
+	for _, r := range cat.search(normalize("月"), 2) {
+		got = append(got, r.SourceID)
+	}
+	if want := []string{"100", "11"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("search = %v, want %v", got, want)
+	}
+	if n := len(cat.search(normalize("月"), 100)); n != 4 {
+		t.Errorf("search all = %d hits, want 4", n)
+	}
+}

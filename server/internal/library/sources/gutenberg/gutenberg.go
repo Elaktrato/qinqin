@@ -47,7 +47,7 @@ var idPattern = regexp.MustCompile(`^[0-9]{1,10}$`)
 
 type work struct {
 	id, title, author, language string
-	hay                         string // normalized title+author for search
+	ntitle, nauthor             string // normalized title and author for search
 }
 
 type catalog struct {
@@ -170,7 +170,7 @@ func parseCatalog(raw []byte) (*catalog, error) {
 			continue
 		}
 		w := &work{id: id, title: get("Title"), author: get("Authors"), language: lang}
-		w.hay = normalize(w.title + w.author)
+		w.ntitle, w.nauthor = normalize(w.title), normalize(w.author)
 		cat.works = append(cat.works, w)
 		cat.byID[id] = w
 	}
@@ -259,17 +259,20 @@ func (a *adapter) Search(ctx context.Context, q string, limit int) ([]sources.Re
 	if err != nil {
 		return nil, err
 	}
-	nq := normalize(q)
+	return cat.search(normalize(q), limit), nil
+}
+
+// search returns at most limit works matching the normalized query nq,
+// ranked (exact title, title prefix, author, substring; ties by id)
+// before truncating.
+func (cat *catalog) search(nq string, limit int) []sources.Result {
 	out := []sources.Result{}
-	for _, w := range cat.works {
-		if len(out) >= limit {
-			break
-		}
-		if strings.Contains(w.hay, nq) {
-			out = append(out, sources.Result{SourceID: w.id, Title: w.title, Author: w.author, Language: w.language})
-		}
+	for _, w := range sources.TopMatches(cat.works, limit,
+		func(w *work) int { return sources.MatchRank(nq, w.ntitle, w.nauthor) },
+		func(w *work) string { return w.id }) {
+		out = append(out, sources.Result{SourceID: w.id, Title: w.title, Author: w.author, Language: w.language})
 	}
-	return out, nil
+	return out
 }
 
 func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported, error) {
