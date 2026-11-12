@@ -25,6 +25,26 @@ func TestLexiconTables(t *testing.T) {
 	}
 }
 
+// TestSyncUpdatedAtIndexes pins migration 016: the delta pulls scan the
+// lexicon tables by updated_at.
+func TestSyncUpdatedAtIndexes(t *testing.T) {
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	for table, index := range map[string]string{
+		"lx_entries": "idx_lx_entries_updated", "lx_senses": "idx_lx_senses_updated", "lx_links": "idx_lx_links_updated"} {
+		var n int
+		if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ? AND tbl_name = ?`, index, table).Scan(&n); err != nil {
+			t.Fatalf("look up index %s: %v", index, err)
+		}
+		if n != 1 {
+			t.Errorf("index %s on %s missing", index, table)
+		}
+	}
+}
+
 // TestSynchronousModePerCommand pins the durability split: normal serving
 // opens with synchronous=FULL (2); the seed path opens with NORMAL (1), the
 // WAL bulk-import setting, because seeding is idempotent.
