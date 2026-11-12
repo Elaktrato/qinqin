@@ -218,7 +218,7 @@ func TestGutenbergFetch(t *testing.T) {
 	if m.Language != "ja" || m.Title != "羅生門" || m.Author != "芥川, 龍之介, 1892-1927" ||
 		m.Source != "gutenberg" || m.SourceID != "1982" ||
 		m.SourceURL != f.srv.URL+"/ebooks/1982" ||
-		m.LicenseNote != "Public domain in the USA (Project Gutenberg)" ||
+		m.LicenseNote != "Distributed by Project Gutenberg as public domain in the USA; copyright status elsewhere may differ." ||
 		!strings.HasPrefix(m.Attribution, "Project Gutenberg #1982") ||
 		!strings.Contains(m.Attribution, "羅生門") || !strings.Contains(m.Attribution, "芥川") {
 		t.Errorf("meta = %+v", m)
@@ -238,8 +238,9 @@ func TestGutenbergFetchRejects(t *testing.T) {
 	f := newFixture(t, header)
 	ctx := context.Background()
 	for _, id := range []string{"", "abc", "1982/../x", "19 82", "../1982", "1982.epub"} {
-		if _, err := f.ad.Fetch(ctx, id); err == nil || errors.Is(err, sources.ErrNotFound) {
-			t.Errorf("id %q: err = %v, want a validation error", id, err)
+		// A malformed id is not found (404), like an unknown one.
+		if _, err := f.ad.Fetch(ctx, id); !errors.Is(err, sources.ErrNotFound) {
+			t.Errorf("id %q: err = %v, want ErrNotFound", id, err)
 		}
 	}
 	// Valid digits but not a zh/ja text of the catalog.

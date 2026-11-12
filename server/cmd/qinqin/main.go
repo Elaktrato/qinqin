@@ -148,8 +148,9 @@ func serveCmd(args []string) error {
 	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data))))
 }
 
-// version is sent in the User-Agent of requests to the text sources.
-const version = "dev"
+// version is sent in the User-Agent of requests to the text sources; set
+// it at build time with -ldflags "-X main.version=1.2.3".
+var version = "dev"
 
 // librarySources builds the public-domain text sources, sharing one
 // HTTP client (rate limits and cache under <data>/cache/sources).

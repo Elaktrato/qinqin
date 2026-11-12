@@ -93,14 +93,12 @@ type adapter struct {
 }
 
 // New returns the Aozora Bunko source. It fetches over https only, from
-// aozora.gr.jp (and the GitHub mirror hosts when a catalog row points
-// there), and enforces that on every redirect hop too.
+// aozora.gr.jp (the live catalog points nowhere else), and enforces that
+// on every redirect hop too.
 func New(c *sources.HTTPClient) sources.Source {
 	return newAdapter(c, defaultCatalogURL, map[string]bool{
-		"www.aozora.gr.jp":          true,
-		"aozora.gr.jp":              true,
-		"github.com":                true,
-		"raw.githubusercontent.com": true,
+		"www.aozora.gr.jp": true,
+		"aozora.gr.jp":     true,
 	}, false)
 }
 
@@ -362,7 +360,7 @@ func (a *adapter) allowed(rawURL string) bool {
 
 func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported, error) {
 	if !idPattern.MatchString(sourceID) {
-		return sources.Imported{}, errors.New("aozora: source id must be digits")
+		return sources.Imported{}, fmt.Errorf("aozora: source id must be digits: %w", sources.ErrNotFound)
 	}
 	cat, err := a.catalog(ctx)
 	if err != nil {
@@ -370,7 +368,7 @@ func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported,
 	}
 	w := cat.byKey[idKey(sourceID)]
 	if w == nil {
-		return sources.Imported{}, fmt.Errorf("aozora: work %s not found among public-domain works", sourceID)
+		return sources.Imported{}, fmt.Errorf("aozora: work %s not found among public-domain works: %w", sourceID, sources.ErrNotFound)
 	}
 	var (
 		chapters []library.Chapter

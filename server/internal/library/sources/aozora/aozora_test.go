@@ -324,9 +324,10 @@ func TestAozoraFetchStripsGaijiAndFooter(t *testing.T) {
 
 func TestAozoraFetchRejects(t *testing.T) {
 	f := newFixture(t, header)
+	// Malformed and unknown ids alike are not found (404, not 502).
 	for _, id := range []string{"", "abc", "../000001", "000001/../x", "1 ", "000002", "000003", "000005", "000006", "999999", "000007"} {
-		if _, err := f.ad.Fetch(context.Background(), id); err == nil {
-			t.Errorf("Fetch(%q) succeeded", id)
+		if _, err := f.ad.Fetch(context.Background(), id); !errors.Is(err, sources.ErrNotFound) {
+			t.Errorf("Fetch(%q) err = %v, want ErrNotFound", id, err)
 		}
 	}
 }
@@ -441,6 +442,10 @@ func TestAozoraProductionIsHTTPSOnly(t *testing.T) {
 	if a.allowed("http://www.aozora.gr.jp/cards/1/f.html") || a.allowed("https://evil.example.com/x") ||
 		!a.allowed("https://www.aozora.gr.jp/cards/1/f.html") {
 		t.Fatal("unexpected allowlist behaviour")
+	}
+	// The live catalog has no GitHub URLs; the mirrors are not allowed.
+	if a.allowed("https://github.com/aozorabunko/x.html") || a.allowed("https://raw.githubusercontent.com/a/b.zip") {
+		t.Fatal("GitHub hosts must not be allowed")
 	}
 }
 

@@ -40,7 +40,7 @@ const (
 	defaultLimit = 25
 	maxLimit     = 100
 
-	licenseNote = "Public domain in the USA (Project Gutenberg)"
+	licenseNote = "Distributed by Project Gutenberg as public domain in the USA; copyright status elsewhere may differ."
 )
 
 var idPattern = regexp.MustCompile(`^[0-9]{1,10}$`)
@@ -277,7 +277,7 @@ func (cat *catalog) search(nq string, limit int) []sources.Result {
 
 func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported, error) {
 	if !idPattern.MatchString(sourceID) {
-		return sources.Imported{}, errors.New("gutenberg: source id must be digits")
+		return sources.Imported{}, fmt.Errorf("gutenberg: source id must be digits: %w", sources.ErrNotFound)
 	}
 	cat, err := a.catalog(ctx)
 	if err != nil {
