@@ -177,3 +177,48 @@ func TestJmdictReimportUpdatesRankingAttrs(t *testing.T) {
 		t.Errorf("entries stamped by the re-import = %d, want the 3 changed (%v)", w["entries"], w)
 	}
 }
+
+// ukLiftJMdict has two uk words: 為る/する, whose only kanji form is rK,
+// and できる with its common form and an irregular (iK), an outdated (oK)
+// and a search-only (sK) form.
+const ukLiftJMdict = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JMdict [
+<!ENTITY rK "rarely used kanji form">
+<!ENTITY uk "word usually written using kana alone">
+]>
+<JMdict>
+<entry><ent_seq>1157170</ent_seq>
+<k_ele><keb>為る</keb><ke_inf>&rK;</ke_inf></k_ele>
+<r_ele><reb>する</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><misc>&uk;</misc><gloss>to do</gloss></sense></entry>
+<entry><ent_seq>1340450</ent_seq>
+<k_ele><keb>出来る</keb><ke_pri>ichi1</ke_pri><ke_pri>news1</ke_pri><ke_pri>nf15</ke_pri></k_ele>
+<k_ele><keb>出きる</keb><ke_inf>&iK;</ke_inf></k_ele>
+<k_ele><keb>出來る</keb><ke_inf>&oK;</ke_inf></k_ele>
+<k_ele><keb>出け来る</keb><ke_inf>&sK;</ke_inf></k_ele>
+<r_ele><reb>できる</reb><re_pri>ichi1</re_pri><re_pri>news1</re_pri><re_pri>nf15</re_pri></r_ele>
+<sense><misc>&uk;</misc><gloss>to be able</gloss></sense></entry>
+</JMdict>
+`
+
+// A uk word lends its kana score to its kanji forms, and only a rarely
+// used form (rK) is exempt from the rarity penalty: 為る/する is rK and
+// keeps the lifted score. Search-only (sK), irregular (iK) and outdated
+// (oK) forms stay penalized, so they score below the common form even on
+// a uk word.
+func TestJmdictUkLiftExemptsOnlyRareKanji(t *testing.T) {
+	sqlDB := newDB(t)
+	importJMdictXML(t, sqlDB, ukLiftJMdict)
+	st := entries.Store{DB: sqlDB}
+	for form, want := range map[string]map[string]string{
+		"為る":   {"jmdict.pri": "60", "jmdict.uk": "1"}, // rK: lifted, unpenalized
+		"出来る":  {"jmdict.pri": "86", "jmdict.uk": "1"},
+		"出きる":  {"jmdict.pri": "46", "jmdict.uk": "1"}, // iK: 86 − 40
+		"出來る":  {"jmdict.pri": "46", "jmdict.uk": "1"}, // oK
+		"出け来る": {"jmdict.pri": "46", "jmdict.uk": "1"}, // sK
+	} {
+		if got := mustGet(t, st, form, "word", "ja").Attrs; !maps.Equal(got, want) {
+			t.Errorf("attrs of %s = %v, want %v", form, got, want)
+		}
+	}
+}

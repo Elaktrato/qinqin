@@ -140,13 +140,15 @@ func ParseJMdict(r io.Reader) ([]RawEntry, error) {
 			// A kanji form scores by its own priority tags, penalized
 			// when the form is rare, outdated, irregular or search-only.
 			// A uk word is read in kana, so its readings' score counts
-			// for each of its forms too, unpenalized: the kanji of a
-			// usually-kana word is expected to be rare (為る/する and
-			// 居る/いる are rK), which says nothing about how common the
-			// word is.
+			// for each of its forms too. A rarely used (rK) form keeps it
+			// unpenalized: the kanji of a usually-kana word is expected to
+			// be rare (為る/する and 居る/いる are rK), which says nothing
+			// about how common the word is. A search-only, irregular or
+			// outdated form (sK, iK, oK) is still penalized, so it ranks
+			// below the word's real form.
 			score := formScore(k.Pri, k.Inf)
 			if uk {
-				score = max(score, kanaScore)
+				score = max(score, penalize(kanaScore, withoutFlag(k.Inf, "rK")))
 			}
 			formAttrs[forms[i]] = jmdictAttrs(score, uk)
 		}
@@ -266,6 +268,18 @@ func penalize(score int, inf []string) int {
 		}
 	}
 	return score
+}
+
+// withoutFlag returns the info flags inf without the flag named name
+// (as an entity reference or bare).
+func withoutFlag(inf []string, name string) []string {
+	var out []string
+	for _, f := range inf {
+		if entityName(f) != name {
+			out = append(out, f)
+		}
+	}
+	return out
 }
 
 // entityName returns the name of an entity reference as the decoder
