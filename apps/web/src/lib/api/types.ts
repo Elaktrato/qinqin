@@ -123,8 +123,6 @@ export interface StudyEventBody {
 	payload: unknown;
 }
 
-// SegmentMatch is one dictionary match from /api/segment[/at]; start and
-// end are code-point offsets into the segmented text.
 // LookupResult is one entry of GET /api/lookup. start/end are code-point
 // offsets of `matched` in the text the caller passed to lookupAt.
 export interface LookupResult {
@@ -151,6 +149,8 @@ export interface LookupResult {
 	pri: number;
 }
 
+// SegmentMatch is one dictionary match from /api/segment[/at]; start and
+// end are code-point offsets into the segmented text.
 export interface SegmentMatch {
 	surface: string;
 	start: number;

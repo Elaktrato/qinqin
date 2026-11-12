@@ -76,8 +76,9 @@ describe('lookupAt', () => {
 
 	it.each([400, 413])('surfaces ApiError %i', async (status) => {
 		vi.mocked(fetch).mockImplementation(async () => new Response('nope', { status }));
-		await expect(lookupAt('ja', '食', 0)).rejects.toBeInstanceOf(ApiError);
-		await expect(lookupAt('ja', '食', 0)).rejects.toMatchObject({ status });
+		const err = await lookupAt('ja', '食', 0).catch((e) => e);
+		expect(err).toBeInstanceOf(ApiError);
+		expect(err.status).toBe(status);
 	});
 
 	it('forwards the abort signal', async () => {
