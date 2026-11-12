@@ -15,7 +15,7 @@ import (
 	"qinqin/internal/model"
 )
 
-// Put upserts user userID's patch of entry entryID, replacing any
+// Put upserts user userID's patch of lexicon entry entryID, replacing any
 // previous patch wholesale and stamping updated_at with the server
 // clock — the LWW timestamp. Nil fields store NULL, which Apply reads
 // as untouched: that field shows its shared value.
@@ -44,12 +44,12 @@ func Put(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, patch model.
 	return nil
 }
 
-// Apply mutates e in place per user userID's saved patch of e.ID: a
-// non-nil written form replaces e.Written, saved readings replace
-// e.Readings exactly as stored — never re-derived. A user with no
-// saved patch — or whose stored row holds only NULLs — leaves e
-// unchanged.
-func Apply(ctx context.Context, sqlDB *sql.DB, userID int64, e *model.Entry) error {
+// Apply mutates e — the response view of lexicon entry e.ID — in place
+// per user userID's saved patch of it: a non-nil written form replaces
+// e.Written, saved readings replace e.Readings exactly as stored — never
+// re-derived. A user with no saved patch — or whose stored row holds
+// only NULLs — leaves e unchanged.
+func Apply(ctx context.Context, sqlDB *sql.DB, userID int64, e *model.EntryBase) error {
 	var written, readings sql.NullString
 	err := sqlDB.QueryRowContext(ctx, `
 		SELECT written, readings FROM user_edits

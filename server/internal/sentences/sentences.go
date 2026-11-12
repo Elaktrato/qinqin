@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 )
 
@@ -48,9 +48,11 @@ type sentenceRow struct {
 }
 
 // ImportPack installs the sentences pack: every sentence links to the
-// word entry its group names — resolved by written form, word kind, and
-// the pack's language — and carries the pack's manifest id as its
-// source label. Unknown words are skipped and reported, never created.
+// lexicon word entry its group names — resolved by written form, word
+// kind, and the pack's language through lexicon.Store.Best, so a form
+// shared by several words links to the best-ranked one alone — and
+// carries the pack's manifest id as its source label. Unknown words are
+// skipped and reported, never created.
 // The pack's previous sentences are replaced wholesale in one
 // transaction — superseded rows are soft-deleted, the new list
 // inserted — scoped to that pack's rows alone: user-owned sentences
@@ -78,14 +80,14 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 	// Resolve every group's word before writing anything: sentence
 	// packs never create entries, so every sentence must attach to an
 	// existing one.
-	store := entries.Store{DB: sqlDB}
+	store := lexicon.Store{DB: sqlDB}
 	var (
 		rows    []sentenceRow
 		skipped []string
 	)
 	for _, g := range groups {
-		e, err := store.GetByWritten(ctx, g.Word, "word", m.Language)
-		if errors.Is(err, entries.ErrNotFound) {
+		e, err := store.Best(ctx, m.Language, "word", g.Word)
+		if errors.Is(err, lexicon.ErrNotFound) {
 			skipped = append(skipped, g.Word)
 			continue
 		}

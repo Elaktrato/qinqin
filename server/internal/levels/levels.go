@@ -1,5 +1,5 @@
 // Package levels stores level schemes — HSK, JLPT, curriculum tables,
-// any ordered ladder of levels over a language's entries — imported
+// any ordered ladder of levels over a language's lexicon entries — imported
 // from levels packs, and derives character levels for word-based
 // schemes: each character joins the lowest level whose member words are
 // written with it, so hanzi carry scheme badges computed at import,
@@ -16,9 +16,10 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 )
 
@@ -63,14 +64,21 @@ type member struct {
 // memberships wholesale in one transaction — superseded rows are
 // soft-deleted and the new list upserted — so a re-import never leaves
 // stale memberships behind. Membership resolves each listed form
-// against an existing entry of the scheme's language and unit kind:
-// unknown forms are skipped and reported, never created. A word-unit
-// scheme also derives character levels: each distinct character of a
-// member word joins that word's level unless it already sits in an
-// equal-or-lower level of the same scheme — levels are processed in
-// pack order, so a character keeps the lowest level whose member words
-// are written with it. Character-unit schemes rank their members
-// directly and derive nothing.
+// against the lexicon entries of the scheme's language and unit kind
+// (word, or character) that carry it as a written form, through
+// lexicon.Store.Best: a form shared by several entries (two JMdict
+// words written 下) resolves to the BEST-ranked one alone — usually-kana
+// entries with a priority first, then priority, then entry id — so a
+// re-import of the same lexicon resolves to the same entry. Unknown
+// forms are skipped and reported, never created. A word-unit scheme
+// also derives character levels: each distinct Han character of a
+// listed form resolves the same way to a character entry and joins
+// that word's level unless it already sits in an equal-or-lower level
+// of the same scheme — levels are processed in pack order, so a
+// character keeps the lowest level whose member words are written with
+// it. Kana and other non-Han characters derive nothing; a Han character
+// without an entry is skipped and reported. Character-unit schemes rank
+// their members directly and derive nothing.
 func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) {
 	m := pack.Manifest
 	// LoadPack normalizes the manifest; Import re-applies the one part
@@ -92,7 +100,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 
 	// Resolve and derive before writing anything: level packs never
 	// create entries, so every membership must already exist.
-	store := entries.Store{DB: sqlDB}
+	store := lexicon.Store{DB: sqlDB}
 	var (
 		ms         []member
 		skipped    []string
@@ -101,8 +109,8 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 	for i, lv := range lvls {
 		seen := map[int64]bool{}
 		for _, form := range lv.Entries {
-			e, err := store.GetByWritten(ctx, form, unit, m.Language)
-			if errors.Is(err, entries.ErrNotFound) {
+			e, err := store.Best(ctx, m.Language, unit, form)
+			if errors.Is(err, lexicon.ErrNotFound) {
 				skipped = append(skipped, form)
 				continue
 			}
@@ -118,9 +126,9 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 			if unit != UnitWord {
 				continue
 			}
-			for _, r := range distinctRunes(e.Written) {
-				c, err := store.GetByWritten(ctx, string(r), UnitCharacter, m.Language)
-				if errors.Is(err, entries.ErrNotFound) {
+			for _, r := range distinctHan(form) {
+				c, err := store.Best(ctx, m.Language, UnitCharacter, string(r))
+				if errors.Is(err, lexicon.ErrNotFound) {
 					skipped = append(skipped, string(r))
 					continue
 				}
@@ -622,12 +630,13 @@ func diffMembers(ctx context.Context, tx *sql.Tx, schemeID int64, levelIDs []int
 	return nil
 }
 
-// distinctRunes returns written's characters, each once, in order.
-func distinctRunes(written string) []rune {
+// distinctHan returns the Han characters of written, each once, in
+// order; kana and other scripts are left out.
+func distinctHan(written string) []rune {
 	seen := make(map[rune]bool, len(written))
 	rs := make([]rune, 0, len(written))
 	for _, r := range written {
-		if seen[r] {
+		if seen[r] || !unicode.Is(unicode.Han, r) {
 			continue
 		}
 		seen[r] = true

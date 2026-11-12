@@ -12,8 +12,8 @@ import (
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
 )
@@ -46,34 +46,46 @@ func createUser(t *testing.T, sqlDB *sql.DB, username string) model.User {
 	return u
 }
 
-// view returns the entry as userID sees it: the shared entry with that
-// user's patch applied.
-func view(t *testing.T, sqlDB *sql.DB, userID, entryID int64) model.Entry {
+// view returns the lexicon entry as userID sees it: the shared entry
+// mapped onto the response base (headword and flattened readings, as the
+// API maps it) with that user's patch applied.
+func view(t *testing.T, sqlDB *sql.DB, userID, entryID int64) model.EntryBase {
 	t.Helper()
 	ctx := context.Background()
-	e, err := entries.Store{DB: sqlDB}.GetByID(ctx, entryID)
+	e, err := lexicon.Store{DB: sqlDB}.Get(ctx, entryID)
 	if err != nil {
-		t.Fatalf("GetByID(%d): %v", entryID, err)
+		t.Fatalf("Get(%d): %v", entryID, err)
 	}
-	if err := overlay.Apply(ctx, sqlDB, userID, e); err != nil {
+	b := model.EntryBase{ID: e.ID, Language: e.Language, Kind: e.Kind, Written: e.Headword(), Attrs: e.Attrs}
+	for _, r := range e.Readings {
+		b.Readings = append(b.Readings, model.Reading{Type: r.Type, Value: r.Value, Plain: r.Plain, Ord: r.Ord})
+	}
+	if err := overlay.Apply(ctx, sqlDB, userID, &b); err != nil {
 		t.Fatalf("Apply(user %d, entry %d): %v", userID, entryID, err)
 	}
-	return *e
+	return b
 }
 
-// mustGet fetches the entry (written, kind, language), failing the test
-// when it is missing.
-func mustGet(t *testing.T, sqlDB *sql.DB, written, kind, language string) model.Entry {
+// entryID returns the id of the zh lexicon entry keyed key.
+func entryID(t *testing.T, sqlDB *sql.DB, key string) int64 {
 	t.Helper()
-	e, err := entries.Store{DB: sqlDB}.GetByWritten(context.Background(), written, kind, language)
-	if err != nil {
-		t.Fatalf("GetByWritten(%s, %s, %s): %v", written, kind, language, err)
+	var id int64
+	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries WHERE language = 'zh' AND ext_key = ?`, key).Scan(&id); err != nil {
+		t.Fatalf("lexicon entry %s: %v", key, err)
 	}
-	return *e
+	return id
+}
+
+// overlayManifest is the manifest of the test dictionary pack.
+var overlayManifest = dict.Manifest{
+	ID: "overlay-demo", Name: "Overlay demo dictionary", Version: "1.0",
+	Type: "dictionary", Language: "zh",
+	License: "CC BY-SA 4.0", Attribution: "Qinqin test fixtures",
+	Format: "json",
 }
 
 // importPack writes a JSON dictionary pack carrying the given data file
-// and imports it, failing the test on error.
+// and imports it into the lexicon with the real importer.
 func importPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m dict.Manifest, dictionary string) dict.Result {
 	t.Helper()
 	dir := t.TempDir()
@@ -93,41 +105,52 @@ func importPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m dict.Manifes
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	res, err := dict.Import(ctx, sqlDB, pack)
+	res, err := dict.ImportLexicon(ctx, sqlDB, &pack)
 	if err != nil {
-		t.Fatalf("Import: %v", err)
+		t.Fatalf("ImportLexicon: %v", err)
 	}
 	return res
 }
 
+// faJSON is a dictionary.json carrying 发 with one gloss.
+func faJSON(gloss string) string {
+	return `{"entries": [{"written": "发", "kind": "character",
+		"readings": [{"type": "pinyin", "value": "fā"}],
+		"glosses": ["` + gloss + `"]}]}`
+}
+
 // activeGlosses returns the entry's active glosses under the dictionary
-// installed from packID, in ord order.
-func activeGlosses(t *testing.T, sqlDB *sql.DB, packID string, entryID int64) []string {
+// installed from packID, in sense order.
+func activeGlosses(t *testing.T, sqlDB *sql.DB, packID string, id int64) []string {
 	t.Helper()
-	rows, err := sqlDB.Query(`SELECT gloss FROM senses
+	rows, err := sqlDB.Query(`SELECT glosses FROM lx_senses
 		WHERE dictionary_id = (SELECT id FROM dictionaries WHERE pack_id = ?)
 			AND entry_id = ? AND deleted_at IS NULL
-		ORDER BY ord`, packID, entryID)
+		ORDER BY ord`, packID, id)
 	if err != nil {
-		t.Fatalf("load glosses of entry %d: %v", entryID, err)
+		t.Fatalf("load glosses of entry %d: %v", id, err)
 	}
 	defer rows.Close()
 	glosses := []string{}
 	for rows.Next() {
-		var g string
-		if err := rows.Scan(&g); err != nil {
-			t.Fatalf("scan gloss of entry %d: %v", entryID, err)
+		var raw string
+		var gs []string
+		if err := rows.Scan(&raw); err != nil {
+			t.Fatalf("scan glosses of entry %d: %v", id, err)
 		}
-		glosses = append(glosses, g)
+		if err := json.Unmarshal([]byte(raw), &gs); err != nil {
+			t.Fatalf("decode glosses %q: %v", raw, err)
+		}
+		glosses = append(glosses, gs...)
 	}
 	if err := rows.Err(); err != nil {
-		t.Fatalf("load glosses of entry %d: %v", entryID, err)
+		t.Fatalf("load glosses of entry %d: %v", id, err)
 	}
 	return glosses
 }
 
 // findReading returns e's reading of the given type, or nil.
-func findReading(e model.Entry, readType string) *model.Reading {
+func findReading(e model.EntryBase, readType string) *model.Reading {
 	for i := range e.Readings {
 		if e.Readings[i].Type == readType {
 			return &e.Readings[i]
@@ -139,17 +162,11 @@ func findReading(e model.Entry, readType string) *model.Reading {
 func TestPatchMergesForOwnerOnly(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := newDB(t)
-	st := entries.Store{DB: sqlDB}
 
 	// 发 carries its shared pinyin reading plus the bopomofo the zh
 	// pack derives from it.
-	fa, err := st.Upsert(ctx, &model.Entry{
-		Language: "zh", Kind: "character", Written: "发",
-		Readings: []model.Reading{{Type: "pinyin", Value: "fā"}},
-	})
-	if err != nil {
-		t.Fatalf("upsert 发: %v", err)
-	}
+	importPack(t, ctx, sqlDB, overlayManifest, faJSON("to issue"))
+	fa := entryID(t, sqlDB, "发")
 	alice := createUser(t, sqlDB, "alice")
 	bob := createUser(t, sqlDB, "bob")
 
@@ -240,48 +257,35 @@ func TestReimportPreservesOverlay(t *testing.T) {
 	sqlDB := newDB(t)
 
 	// Import a pack carrying 发 with the gloss "to issue".
-	m := dict.Manifest{
-		ID: "overlay-demo", Name: "Overlay demo dictionary", Version: "1.0",
-		Type: "dictionary", Language: "zh",
-		License: "CC BY-SA 4.0", Attribution: "Qinqin test fixtures",
-		Format: "json",
-	}
-	faJSON := func(gloss string) string {
-		return `{"entries": [{"written": "发", "kind": "character",
-			"readings": [{"type": "pinyin", "value": "fā"}],
-			"glosses": ["` + gloss + `"]}]}`
-	}
-	if res := importPack(t, ctx, sqlDB, m, faJSON("to issue")); res.Entries != 1 || res.Senses != 1 {
+	if res := importPack(t, ctx, sqlDB, overlayManifest, faJSON("to issue")); res.Entries != 1 || res.Senses != 1 {
 		t.Fatalf("import = %+v, want 1 entry and 1 sense", res)
 	}
-
-	fa := mustGet(t, sqlDB, "发", "character", "zh")
+	fa := entryID(t, sqlDB, "发")
 	alice := createUser(t, sqlDB, "alice")
 
 	// Alice patches the entry's readings; the shared rows are never
 	// written.
 	patch := model.EntryPatch{Readings: []model.Reading{{Type: "pinyin", Value: "fa4"}}}
-	if err := overlay.Put(ctx, sqlDB, alice.ID, fa.ID, patch); err != nil {
+	if err := overlay.Put(ctx, sqlDB, alice.ID, fa, patch); err != nil {
 		t.Fatalf("Put alice's patch of 发: %v", err)
 	}
 
 	// Re-import the same pack id with the gloss changed to "to send".
-	if res := importPack(t, ctx, sqlDB, m, faJSON("to send")); res.Entries != 1 || res.Senses != 1 {
+	if res := importPack(t, ctx, sqlDB, overlayManifest, faJSON("to send")); res.Entries != 1 || res.Senses != 1 {
 		t.Fatalf("re-import = %+v, want 1 entry and 1 sense", res)
 	}
 
-	// The gloss was replaced; the entry row survived with its id.
-	if got := activeGlosses(t, sqlDB, "overlay-demo", fa.ID); !slices.Equal(got, []string{"to send"}) {
+	// The gloss was replaced; the entry kept its id.
+	if got := activeGlosses(t, sqlDB, "overlay-demo", fa); !slices.Equal(got, []string{"to send"}) {
 		t.Errorf("glosses of 发 after re-import = %v, want [to send]", got)
 	}
-	after := mustGet(t, sqlDB, "发", "character", "zh")
-	if after.ID != fa.ID {
-		t.Errorf("id of 发 after re-import = %d, want %d", after.ID, fa.ID)
+	if after := entryID(t, sqlDB, "发"); after != fa {
+		t.Errorf("id of 发 after re-import = %d, want %d", after, fa)
 	}
 
 	// Alice's patch survived the re-import: her view still shows her
 	// saved reading exactly, not the re-imported shared one.
-	a := view(t, sqlDB, alice.ID, fa.ID)
+	a := view(t, sqlDB, alice.ID, fa)
 	if a.Written != "发" {
 		t.Errorf("alice's written after re-import = %q, want the shared 发", a.Written)
 	}
@@ -292,7 +296,7 @@ func TestReimportPreservesOverlay(t *testing.T) {
 	// The shared entry underneath is untouched by the patch: another
 	// user sees the re-imported pinyin and its derived bopomofo.
 	bob := createUser(t, sqlDB, "bob")
-	shared := view(t, sqlDB, bob.ID, fa.ID)
+	shared := view(t, sqlDB, bob.ID, fa)
 	if py := findReading(shared, "pinyin"); py == nil || py.Value != "fā" || py.Plain != "fa" {
 		t.Errorf("shared readings after re-import = %+v, want pinyin fā/fa", shared.Readings)
 	}

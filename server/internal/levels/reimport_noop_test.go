@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/levels"
 )
 
@@ -35,7 +34,7 @@ func newerThan2021(t *testing.T, sqlDB *sql.DB, table string) int {
 func TestReimportIdenticalSchemeWritesNothing(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := newDB(t)
-	seedFixture(t, entries.Store{DB: sqlDB})
+	seedFixture(t, sqlDB)
 	pack, err := dict.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load pack: %v", err)
@@ -61,7 +60,7 @@ func TestReimportIdenticalSchemeWritesNothing(t *testing.T) {
 func TestReimportTouchesOnlyChangedMembers(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := newDB(t)
-	fe := seedFixture(t, entries.Store{DB: sqlDB})
+	fe := seedFixture(t, sqlDB)
 	reimport := func(json string) {
 		t.Helper()
 		if _, err := levels.Import(ctx, sqlDB, buildPack(t, "hsk-mini", json)); err != nil {

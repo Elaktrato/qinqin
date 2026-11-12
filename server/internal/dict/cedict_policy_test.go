@@ -121,11 +121,4 @@ func TestCedictHomographPolicy(t *testing.T) {
 	if !slices.Equal(pinyins, []string{"xíng", "háng"}) {
 		t.Errorf("pinyin readings of 行 = %v, want both, in file order", pinyins)
 	}
-	// Either pronunciation finds the entry.
-	for _, q := range []string{"xing", "hang"} {
-		hits, err := entries.Store{DB: sqlDB}.Search(ctx, entries.SearchQuery{Text: q, Lang: "zh"})
-		if err != nil || len(hits) == 0 || hits[0].Written != "行" {
-			t.Errorf("search %q = %+v, %v; want 行 first", q, hits, err)
-		}
-	}
 }

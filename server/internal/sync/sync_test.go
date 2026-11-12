@@ -79,6 +79,11 @@ func seedWorld(t *testing.T, sqlDB *sql.DB) {
 	if _, err := dict.Import(ctx, sqlDB, dictPack); err != nil {
 		t.Fatalf("import dictionary fixture: %v", err)
 	}
+	// Levels resolve against the lexicon: the dual import the seed CLI
+	// runs until sync moves onto the lexicon.
+	if _, err := dict.ImportLexicon(ctx, sqlDB, &dictPack); err != nil {
+		t.Fatalf("import dictionary fixture into the lexicon: %v", err)
+	}
 	levelsPack, err := dict.LoadPack("../levels/testdata/hsk-mini")
 	if err != nil {
 		t.Fatalf("load levels fixture: %v", err)

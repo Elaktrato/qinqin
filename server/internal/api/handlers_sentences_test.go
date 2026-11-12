@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 	"qinqin/internal/sentences"
@@ -23,15 +22,9 @@ func TestSentenceRoutes(t *testing.T) {
 
 	ts, sqlDB := newServer(t)
 	ctx := context.Background()
-	st := entries.Store{DB: sqlDB}
-	nihao := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "word", Written: "你好",
-		Readings: []model.Reading{{Type: "pinyin", Value: "nǐ hǎo"}},
-	})
-	ni := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "character", Written: "你",
-		Readings: []model.Reading{{Type: "pinyin", Value: "nǐ"}},
-	})
+	importSchemeCedict(t, sqlDB)
+	nihao := lexID(t, sqlDB, "zh", "word", "你好")
+	ni := lexID(t, sqlDB, "zh", "character", "你")
 
 	// The admin layer dispatches sentence packs by manifest type; the
 	// fixture imports through the library like the seed CLI does.

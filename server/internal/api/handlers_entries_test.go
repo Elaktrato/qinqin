@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -21,14 +22,23 @@ import (
 
 // entryBody mirrors the JSON body of GET /api/entries/{id}.
 type entryBody struct {
-	model.Entry
-	Senses    []senseBody      `json:"senses"`
-	Variants  []model.Entry    `json:"variants"`
-	Badges    []badgeBody      `json:"badges"`
-	Sentences []model.Sentence `json:"sentences"`
+	model.EntryBase
+	Forms       []formBody        `json:"forms"`
+	Senses      []senseBody       `json:"senses"`
+	SenseGroups []senseGroupBody  `json:"senseGroups"`
+	Variants    []model.EntryBase `json:"variants"`
+	Badges      []badgeBody       `json:"badges"`
+	Sentences   []model.Sentence  `json:"sentences"`
 }
 
-// senseBody mirrors one sense in an entry response.
+// formBody mirrors one written form in an entry response.
+type formBody struct {
+	Text  string   `json:"text"`
+	Flags []string `json:"flags"`
+	Pri   int      `json:"pri"`
+}
+
+// senseBody mirrors one gloss in an entry response's flat senses.
 type senseBody struct {
 	DictionaryID   int64  `json:"dictionaryId"`
 	DictionaryName string `json:"dictionaryName"`
@@ -36,6 +46,19 @@ type senseBody struct {
 	License        string `json:"license"`
 	Attribution    string `json:"attribution"`
 	Gloss          string `json:"gloss"`
+}
+
+// senseGroupBody mirrors one sense in an entry response's senseGroups.
+type senseGroupBody struct {
+	DictionaryID   int64    `json:"dictionaryId"`
+	DictionaryName string   `json:"dictionaryName"`
+	PackID         string   `json:"packId"`
+	License        string   `json:"license"`
+	Attribution    string   `json:"attribution"`
+	POS            []string `json:"pos"`
+	Tags           []string `json:"tags"`
+	Glosses        []string `json:"glosses"`
+	Xrefs          []string `json:"xrefs"`
 }
 
 // newServer opens a fresh migrated database and serves the API on it.
@@ -51,7 +74,8 @@ func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	return ts, sqlDB
 }
 
-// mustUpsertEntry upserts e on st and returns its id, failing the test on error.
+// mustUpsertEntry upserts e into the legacy entries store (still read by
+// the tokenizer endpoints) and returns its id, failing the test on error.
 func mustUpsertEntry(t *testing.T, st entries.Store, e *model.Entry) int64 {
 	t.Helper()
 	id, err := st.Upsert(context.Background(), e)
@@ -72,38 +96,31 @@ func getEntry(t *testing.T, tsURL, path string) *http.Response {
 	return resp
 }
 
-// writeDictPack writes a json dictionary pack into a fresh temp
-// directory and returns its path.
-func writeDictPack(t *testing.T, m dict.Manifest, dictionary string) string {
+// lexID returns the id of the active lexicon entry (language, kind, key),
+// failing the test when there is none.
+func lexID(t *testing.T, sqlDB *sql.DB, language, kind, key string) int64 {
 	t.Helper()
-	dir := t.TempDir()
-	manifest, err := json.Marshal(m)
-	if err != nil {
-		t.Fatalf("marshal manifest: %v", err)
+	var id int64
+	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries
+		WHERE language = ? AND kind = ? AND ext_key = ? AND deleted_at IS NULL`,
+		language, kind, key).Scan(&id); err != nil {
+		t.Fatalf("lexicon entry %s/%s/%s: %v", language, kind, key, err)
 	}
-	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), manifest, 0o644); err != nil {
-		t.Fatalf("write manifest: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "dictionary.json"), []byte(dictionary), 0o644); err != nil {
-		t.Fatalf("write dictionary.json: %v", err)
-	}
-	return dir
+	return id
 }
 
-// importDictPack loads and imports the pack in dir.
-func importDictPack(t *testing.T, sqlDB *sql.DB, dir string) {
+// dictID returns the id of the dictionaries row of packID.
+func dictID(t *testing.T, sqlDB *sql.DB, packID string) int64 {
 	t.Helper()
-	pack, err := dict.LoadPack(dir)
-	if err != nil {
-		t.Fatalf("LoadPack(%s): %v", dir, err)
+	var id int64
+	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = ?`, packID).Scan(&id); err != nil {
+		t.Fatalf("dictionary %s: %v", packID, err)
 	}
-	if _, err := dict.Import(context.Background(), sqlDB, pack); err != nil {
-		t.Fatalf("import pack %s: %v", pack.Manifest.ID, err)
-	}
+	return id
 }
 
 // findReading returns e's reading of the given type, or nil.
-func findReading(e model.Entry, readType string) *model.Reading {
+func findReading(e model.EntryBase, readType string) *model.Reading {
 	for i := range e.Readings {
 		if e.Readings[i].Type == readType {
 			return &e.Readings[i]
@@ -112,97 +129,207 @@ func findReading(e model.Entry, readType string) *model.Reading {
 	return nil
 }
 
-func TestGetEntryEndpoint(t *testing.T) {
-	// Entries carry readings normalized through the zh pack.
+// entriesJMdict is a JMdict excerpt in the real element and entity shape:
+// 為る with two senses (the second inherits the first's part of speech)
+// and a cross-reference.
+const entriesJMdict = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JMdict [
+<!ENTITY rK "rarely used kanji form">
+<!ENTITY uk "word usually written using kana alone">
+<!ENTITY vs-i "suru verb - included">
+<!ENTITY vt "transitive verb">
+]>
+<JMdict>
+<entry>
+<ent_seq>1157170</ent_seq>
+<k_ele><keb>為る</keb><ke_inf>&rK;</ke_inf></k_ele>
+<r_ele><reb>する</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&vs-i;</pos><pos>&vt;</pos><misc>&uk;</misc><gloss>to do</gloss><gloss>to carry out</gloss></sense>
+<sense><xref>為さる</xref><gloss>to make</gloss></sense>
+</entry>
+</JMdict>
+`
+
+// entriesCedict is a CC-CEDICT excerpt: 行 has two readings (one merged
+// entry), 复 and 複 feed the Unihan variant links.
+const entriesCedict = "發 发 [fa1] /to send out/to issue/\n" +
+	"好 好 [hao3] /good/\n" +
+	"行 行 [xing2] /to walk/\n" +
+	"行 行 [hang2] /row/\n" +
+	"複 複 [fu4] /complex/\n"
+
+// seedEntries imports the JMdict and CC-CEDICT excerpts and the committed
+// Unihan fixture (好 under radical 38 女; 复 with variants 復 and 複) with
+// the real lexicon importers.
+func seedEntries(t *testing.T, sqlDB *sql.DB) {
+	t.Helper()
+	lang.Register(lang.Ja{})
 	lang.Register(lang.Zh{})
-
-	ts, sqlDB := newServer(t)
-	ctx := context.Background()
-	st := entries.Store{DB: sqlDB}
-
-	hao := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "character", Written: "好",
-		Readings: []model.Reading{{Type: "pinyin", Value: "hǎo"}},
-	})
-	fa := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "character", Written: "发",
-		Readings: []model.Reading{{Type: "pinyin", Value: "fā"}},
-	})
-	faTrad := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "character", Written: "發",
-		Readings: []model.Reading{{Type: "pinyin", Value: "fā"}},
-	})
-	if err := st.LinkVariant(ctx, fa, faTrad); err != nil {
-		t.Fatalf("link 发↔發: %v", err)
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
+		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
+	}, "jmdict.xml", entriesJMdict)
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
+		License: "CC BY-SA 4.0", Attribution: "MDBG", Format: "cedict",
+	}, "dictionary.txt", entriesCedict)
+	unihan, err := os.ReadFile("../dict/testdata/unihan-sample.txt")
+	if err != nil {
+		t.Fatalf("read unihan fixture: %v", err)
 	}
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "unihan", Name: "Unihan database", Version: "1.0", Type: "dictionary", Language: "zh",
+		License: "Unicode License v3 (fixture)", Attribution: "Unicode Consortium (fixture attribution)",
+		Format: "unihan",
+	}, "dictionary.txt", string(unihan))
+}
 
-	// An entry with variants carries them along.
-	resp := getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(fa, 10))
+// getEntryBody fetches GET /api/entries/{id} and decodes its body.
+func getEntryBody(t *testing.T, tsURL string, id int64) entryBody {
+	t.Helper()
+	resp := getEntry(t, tsURL, "/api/entries/"+strconv.FormatInt(id, 10))
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("GET 发: status = %d, want %d", resp.StatusCode, http.StatusOK)
+		t.Fatalf("GET /api/entries/%d: status = %d, want %d", id, resp.StatusCode, http.StatusOK)
 	}
 	var body entryBody
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		t.Fatalf("decode entry response: %v", err)
+	decodeJSON(t, resp, &body)
+	return body
+}
+
+func TestGetEntryJapaneseWord(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	seedEntries(t, sqlDB)
+	suru := lexID(t, sqlDB, "ja", "word", "j:1157170")
+	jm := dictID(t, sqlDB, "jmdict-test")
+
+	// The raw JSON keeps every legacy field name and adds forms and
+	// senseGroups.
+	resp := getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(suru, 10))
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET 為る: status = %d", resp.StatusCode)
 	}
-	if body.ID != fa || body.Language != "zh" || body.Kind != "character" || body.Written != "发" {
-		t.Errorf("entry body = %+v, want the 发 entry", body.Entry)
-	}
-	if py := findReading(body.Entry, "pinyin"); py == nil || py.Value != "fā" || py.Plain != "fa" {
-		t.Errorf("entry readings = %+v, want pinyin fā/fa", body.Readings)
-	}
-	if bm := findReading(body.Entry, "bopomofo"); bm == nil || bm.Value != "ㄈㄚ" {
-		t.Errorf("entry readings = %+v, want derived bopomofo ㄈㄚ", body.Readings)
-	}
-	if body.Attrs == nil {
-		t.Errorf("attrs = null, want an empty object")
-	}
-	if len(body.Variants) != 1 || body.Variants[0].ID != faTrad || body.Variants[0].Written != "發" {
-		t.Errorf("variants = %+v, want just 發", body.Variants)
-	}
-	if py := findReading(body.Variants[0], "pinyin"); py == nil || py.Plain != "fa" {
-		t.Errorf("variant readings = %+v, want pinyin plain fa", body.Variants[0].Readings)
+	var raw map[string]json.RawMessage
+	decodeJSON(t, resp, &raw)
+	for _, k := range []string{"id", "language", "kind", "written", "readings", "attrs", "radicalId",
+		"updatedAt", "deletedAt", "senses", "variants", "badges", "sentences", "forms", "senseGroups"} {
+		if _, ok := raw[k]; !ok {
+			t.Errorf("entry JSON lacks %q: %s", k, raw)
+		}
 	}
 
-	// An entry without variants returns an empty variants array.
-	resp = getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(hao, 10))
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("GET 好: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	body := getEntryBody(t, ts.URL, suru)
+	if body.ID != suru || body.Language != "ja" || body.Kind != "word" || body.Written != "為る" {
+		t.Errorf("entry = %+v, want the 為る word", body.EntryBase)
 	}
-	body = entryBody{}
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		t.Fatalf("decode entry response: %v", err)
+	wantReadings := []model.Reading{
+		{Type: "kana", Value: "する", Plain: "する", Ord: 0},
+		{Type: "romaji", Value: "suru", Plain: "suru", Ord: 1},
 	}
-	if body.Written != "好" {
-		t.Errorf("entry body = %+v, want the 好 entry", body.Entry)
+	if !reflect.DeepEqual(body.Readings, wantReadings) {
+		t.Errorf("readings = %+v, want %+v", body.Readings, wantReadings)
 	}
-	if body.Variants == nil || len(body.Variants) != 0 {
-		t.Errorf("variants of unlinked entry = %v, want an empty array", body.Variants)
+	if body.Attrs == nil || len(body.Attrs) != 0 || body.RadicalID != nil || body.UpdatedAt.IsZero() {
+		t.Errorf("attrs/radicalId/updatedAt = %v/%v/%v, want {}/null/set", body.Attrs, body.RadicalID, body.UpdatedAt)
 	}
-	if body.Readings == nil || len(body.Readings) != 2 {
-		t.Errorf("readings of 好 = %v, want pinyin plus derived bopomofo", body.Readings)
+	if len(body.Forms) != 1 || body.Forms[0].Text != "為る" || !reflect.DeepEqual(body.Forms[0].Flags, []string{"rK"}) {
+		t.Errorf("forms = %+v, want 為る flagged rK", body.Forms)
+	}
+	sense := func(g string) senseBody {
+		return senseBody{DictionaryID: jm, DictionaryName: "JMdict test", PackID: "jmdict-test",
+			License: "CC BY-SA 4.0", Attribution: "EDRDG", Gloss: g}
+	}
+	if want := []senseBody{sense("to do"), sense("to carry out"), sense("to make")}; !reflect.DeepEqual(body.Senses, want) {
+		t.Errorf("senses = %+v, want %+v", body.Senses, want)
+	}
+	group := func(pos, tags, glosses, xrefs []string) senseGroupBody {
+		return senseGroupBody{DictionaryID: jm, DictionaryName: "JMdict test", PackID: "jmdict-test",
+			License: "CC BY-SA 4.0", Attribution: "EDRDG", POS: pos, Tags: tags, Glosses: glosses, Xrefs: xrefs}
+	}
+	wantGroups := []senseGroupBody{
+		group([]string{"vs-i", "vt"}, []string{"uk"}, []string{"to do", "to carry out"}, []string{}),
+		group([]string{"vs-i", "vt"}, []string{}, []string{"to make"}, []string{"為さる"}),
+	}
+	if !reflect.DeepEqual(body.SenseGroups, wantGroups) {
+		t.Errorf("senseGroups = %+v, want %+v", body.SenseGroups, wantGroups)
+	}
+	for name, l := range map[string]int{"variants": len(body.Variants), "badges": len(body.Badges), "sentences": len(body.Sentences)} {
+		if l != 0 {
+			t.Errorf("%s has %d items, want none", name, l)
+		}
+	}
+	if body.Variants == nil || body.Badges == nil || body.Sentences == nil {
+		t.Errorf("variants/badges/sentences = %v/%v/%v, want empty arrays, never null", body.Variants, body.Badges, body.Sentences)
+	}
+}
+
+func TestGetEntryChineseCharacter(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	seedEntries(t, sqlDB)
+
+	// 行: one CEDICT entry for both readings, each with its bopomofo.
+	xing := getEntryBody(t, ts.URL, lexID(t, sqlDB, "zh", "character", "行"))
+	wantReadings := []model.Reading{
+		{Type: "pinyin", Value: "xíng", Plain: "xing", Ord: 0},
+		{Type: "pinyin", Value: "háng", Plain: "hang", Ord: 1},
+		{Type: "bopomofo", Value: "ㄒㄧㄥˊ", Plain: "ㄒㄧㄥˊ", Ord: 2},
+		{Type: "bopomofo", Value: "ㄏㄤˊ", Plain: "ㄏㄤˊ", Ord: 3},
+	}
+	if xing.Written != "行" || !reflect.DeepEqual(xing.Readings, wantReadings) {
+		t.Errorf("行 = %q %+v, want readings %+v", xing.Written, xing.Readings, wantReadings)
+	}
+	if len(xing.SenseGroups) != 2 || xing.SenseGroups[1].Glosses[0] != "row" || xing.SenseGroups[0].POS == nil {
+		t.Errorf("行 senseGroups = %+v, want one per CEDICT line", xing.SenseGroups)
+	}
+
+	// 发 carries its traditional form; senses expand one row per gloss.
+	fa := getEntryBody(t, ts.URL, lexID(t, sqlDB, "zh", "character", "发"))
+	if len(fa.Forms) != 2 || fa.Forms[1].Text != "發" || !reflect.DeepEqual(fa.Forms[1].Flags, []string{"trad"}) {
+		t.Errorf("发 forms = %+v, want 发 then 發 (trad)", fa.Forms)
+	}
+	if len(fa.Senses) != 2 || fa.Senses[0].Gloss != "to send out" || fa.Senses[1].Gloss != "to issue" {
+		t.Errorf("发 senses = %+v, want one row per gloss", fa.Senses)
+	}
+
+	// 好: radical from the Unihan radical link; senses from CEDICT then
+	// Unihan, in dictionary order.
+	hao := getEntryBody(t, ts.URL, lexID(t, sqlDB, "zh", "character", "好"))
+	nu := lexID(t, sqlDB, "zh", "character", "女")
+	if hao.RadicalID == nil || *hao.RadicalID != nu {
+		t.Errorf("好 radicalId = %v, want 女 (%d)", hao.RadicalID, nu)
+	}
+	if len(hao.Senses) != 2 || hao.Senses[0].PackID != "cedict-test" || hao.Senses[1].PackID != "unihan" ||
+		hao.Senses[1].Gloss != "good, excellent, fine; well" {
+		t.Errorf("好 senses = %+v, want CEDICT's then Unihan's", hao.Senses)
+	}
+
+	// 复 lists its Unihan variants by id, with their readings.
+	fu := getEntryBody(t, ts.URL, lexID(t, sqlDB, "zh", "character", "复"))
+	if len(fu.Variants) != 2 {
+		t.Fatalf("复 variants = %+v, want 復 and 複", fu.Variants)
+	}
+	got := map[string]model.EntryBase{}
+	for _, v := range fu.Variants {
+		got[v.Written] = v
+	}
+	if py := findReading(got["複"], "pinyin"); py == nil || py.Plain != "fu" {
+		t.Errorf("variant 複 = %+v, want its pinyin fù", got["複"])
+	}
+	if _, ok := got["復"]; !ok || got["複"].Attrs == nil {
+		t.Errorf("variants = %+v, want 復 and 複 with attrs", fu.Variants)
 	}
 
 	// Unknown and malformed ids are 404.
 	for _, path := range []string{"/api/entries/999999", "/api/entries/NaN"} {
-		resp = getEntry(t, ts.URL, path)
-		if resp.StatusCode != http.StatusNotFound {
+		if resp := getEntry(t, ts.URL, path); resp.StatusCode != http.StatusNotFound {
 			t.Errorf("GET %s: status = %d, want %d", path, resp.StatusCode, http.StatusNotFound)
 		}
 	}
 }
 
 func TestPutEntryEndpoint(t *testing.T) {
-	// Entries carry readings normalized through the zh pack.
-	lang.Register(lang.Zh{})
-
 	ts, sqlDB := newServer(t)
-	st := entries.Store{DB: sqlDB}
-
-	fa := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "character", Written: "发",
-		Readings: []model.Reading{{Type: "pinyin", Value: "fā"}},
-	})
+	seedEntries(t, sqlDB)
+	fa := lexID(t, sqlDB, "zh", "character", "发")
 	path := "/api/entries/" + strconv.FormatInt(fa, 10)
 
 	alice := registerUser(t, ts.URL, "alice", "")
@@ -227,43 +354,33 @@ func TestPutEntryEndpoint(t *testing.T) {
 	if body.ID != fa || body.Written != "發" {
 		t.Errorf("PUT response = id %d, written %q, want 发's id and alice's patched 發", body.ID, body.Written)
 	}
-	if len(body.Readings) != 1 || body.Readings[0].Type != "pinyin" || body.Readings[0].Value != "fa4" {
-		t.Errorf("PUT response readings = %+v, want exactly the saved pinyin fa4", body.Readings)
+	if want := []model.Reading{{Type: "pinyin", Value: "fa4"}}; !reflect.DeepEqual(body.Readings, want) {
+		t.Errorf("PUT response readings = %+v, want exactly the saved %+v (no plain, nothing derived)", body.Readings, want)
 	}
-	if body.Readings[0].Plain != "" {
-		t.Errorf("PUT response reading plain = %q, want empty — overlays are never re-derived", body.Readings[0].Plain)
+	if len(body.Senses) != 2 || len(body.Forms) != 2 {
+		t.Errorf("PUT response = %+v, want the full entry body", body)
 	}
 
 	// GET applies the caller's patch for alice only; bob and anonymous
 	// callers see the shared entry.
 	get := doJSON(t, http.MethodGet, ts.URL, path, alice, nil)
-	if get.StatusCode != http.StatusOK {
-		t.Fatalf("GET 发 as alice: status = %d, want %d", get.StatusCode, http.StatusOK)
-	}
 	body = entryBody{}
 	decodeJSON(t, get, &body)
-	if body.Written != "發" {
-		t.Errorf("GET as alice: written = %q, want her patched 發", body.Written)
+	if body.Written != "發" || len(body.Readings) != 1 || body.Readings[0].Value != "fa4" {
+		t.Errorf("GET as alice = %q/%+v, want her patch", body.Written, body.Readings)
 	}
-	if len(body.Readings) != 1 || body.Readings[0].Value != "fa4" {
-		t.Errorf("GET as alice: readings = %+v, want exactly her saved pinyin fa4", body.Readings)
-	}
-
 	for name, token := range map[string]string{"bob": bob, "anonymous": ""} {
 		resp := doJSON(t, http.MethodGet, ts.URL, path, token, nil)
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("GET 发 as %s: status = %d, want %d", name, resp.StatusCode, http.StatusOK)
-		}
 		body = entryBody{}
 		decodeJSON(t, resp, &body)
 		if body.Written != "发" {
 			t.Errorf("GET as %s: written = %q, want the shared 发", name, body.Written)
 		}
-		if py := findReading(body.Entry, "pinyin"); py == nil || py.Value != "fā" || py.Plain != "fa" {
+		if py := findReading(body.EntryBase, "pinyin"); py == nil || py.Value != "fā" || py.Plain != "fa" {
 			t.Errorf("GET as %s: readings = %+v, want the shared pinyin fā/fa", name, body.Readings)
 		}
-		if bm := findReading(body.Entry, "bopomofo"); bm == nil || bm.Value != "ㄈㄚ" {
-			t.Errorf("GET as %s: readings = %+v, want the shared derived bopomofo ㄈㄚ", name, body.Readings)
+		if bm := findReading(body.EntryBase, "bopomofo"); bm == nil || bm.Value != "ㄈㄚ" {
+			t.Errorf("GET as %s: readings = %+v, want the shared bopomofo ㄈㄚ", name, body.Readings)
 		}
 	}
 
@@ -272,16 +389,10 @@ func TestPutEntryEndpoint(t *testing.T) {
 	put = doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{
 		"readings": []map[string]string{{"type": "pinyin", "value": "fa1"}},
 	})
-	if put.StatusCode != http.StatusOK {
-		t.Fatalf("PUT replacement patch: status = %d, want %d", put.StatusCode, http.StatusOK)
-	}
 	body = entryBody{}
 	decodeJSON(t, put, &body)
-	if body.Written != "发" {
-		t.Errorf("PUT replacement response: written = %q, want the shared 发", body.Written)
-	}
-	if len(body.Readings) != 1 || body.Readings[0].Value != "fa1" {
-		t.Errorf("PUT replacement response: readings = %+v, want exactly her saved pinyin fa1", body.Readings)
+	if body.Written != "发" || len(body.Readings) != 1 || body.Readings[0].Value != "fa1" {
+		t.Errorf("PUT replacement response = %q/%+v, want shared 发 and her fa1", body.Written, body.Readings)
 	}
 
 	// An all-nil patch is a valid no-op: every field shows its shared
@@ -315,157 +426,27 @@ func TestPutEntryEndpoint(t *testing.T) {
 	}
 }
 
-func TestEntryReturnsSenses(t *testing.T) {
-	// Entries carry readings normalized through the zh pack.
-	lang.Register(lang.Zh{})
-
-	ts, sqlDB := newServer(t)
-	ctx := context.Background()
-
-	// Two dictionaries gloss 好 — the first with two senses — so the
-	// entry's senses come from both, ordered by dictionary then ord.
-	importDictPack(t, sqlDB, writeDictPack(t, dict.Manifest{
-		ID: "zdic-demo", Name: "Zdic demo", Version: "1.0", Type: "dictionary",
-		Language: "zh", License: "CC BY-SA 4.0", Attribution: "Zdic contributors",
-		Format: "json",
-	}, `{"entries":[{"written":"好","kind":"character",`+
-		`"readings":[{"type":"pinyin","value":"hǎo"}],`+
-		`"glosses":["good","fine"]}]}`))
-	importDictPack(t, sqlDB, writeDictPack(t, dict.Manifest{
-		ID: "wl-demo", Name: "Word list demo", Version: "2.0", Type: "dictionary",
-		Language: "zh", License: "CC0 1.0", Attribution: "Word list contributors",
-		Format: "json",
-	}, `{"entries":[{"written":"好","kind":"character",`+
-		`"readings":[{"type":"pinyin","value":"hǎo"}],`+
-		`"glosses":["well"]}]}`))
-
-	st := entries.Store{DB: sqlDB}
-	hao, err := st.GetByWritten(ctx, "好", "character", "zh")
-	if err != nil {
-		t.Fatalf("GetByWritten(好): %v", err)
-	}
-	var zdicID, wlID int64
-	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'zdic-demo'`).Scan(&zdicID); err != nil {
-		t.Fatalf("dictionary zdic-demo: %v", err)
-	}
-	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'wl-demo'`).Scan(&wlID); err != nil {
-		t.Fatalf("dictionary wl-demo: %v", err)
-	}
-
-	want := []senseBody{
-		{DictionaryID: zdicID, DictionaryName: "Zdic demo", PackID: "zdic-demo",
-			License: "CC BY-SA 4.0", Attribution: "Zdic contributors", Gloss: "good"},
-		{DictionaryID: zdicID, DictionaryName: "Zdic demo", PackID: "zdic-demo",
-			License: "CC BY-SA 4.0", Attribution: "Zdic contributors", Gloss: "fine"},
-		{DictionaryID: wlID, DictionaryName: "Word list demo", PackID: "wl-demo",
-			License: "CC0 1.0", Attribution: "Word list contributors", Gloss: "well"},
-	}
-
-	// The order is stable across reads: dictionary id, then ord.
-	for read := range 2 {
-		resp := getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(hao.ID, 10))
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("GET 好: status = %d, want %d", resp.StatusCode, http.StatusOK)
-		}
-		var body entryBody
-		decodeJSON(t, resp, &body)
-		if len(body.Senses) != len(want) {
-			t.Fatalf("read %d: senses = %+v, want %+v", read, body.Senses, want)
-		}
-		for i := range want {
-			if body.Senses[i] != want[i] {
-				t.Errorf("read %d: sense %d = %+v, want %+v", read, i, body.Senses[i], want[i])
-			}
-		}
-	}
-}
-
-func TestEntriesNeverNull(t *testing.T) {
-	lang.Register(lang.Zh{})
-
-	ts, sqlDB := newServer(t)
-	st := entries.Store{DB: sqlDB}
-	hao := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "character", Written: "好",
-		Readings: []model.Reading{{Type: "pinyin", Value: "hǎo"}},
-	})
-
-	// An entry without senses, variants, badges, or sentences answers
-	// empty arrays — a client never has to special-case null.
-	resp := getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(hao, 10))
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("GET 好: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
-	var body entryBody
-	decodeJSON(t, resp, &body)
-	if body.Senses == nil || len(body.Senses) != 0 {
-		t.Errorf("senses = %v, want an empty array", body.Senses)
-	}
-	if body.Variants == nil || len(body.Variants) != 0 {
-		t.Errorf("variants = %v, want an empty array", body.Variants)
-	}
-	if body.Badges == nil || len(body.Badges) != 0 {
-		t.Errorf("badges = %v, want an empty array", body.Badges)
-	}
-	if body.Sentences == nil || len(body.Sentences) != 0 {
-		t.Errorf("sentences = %v, want an empty array", body.Sentences)
-	}
-}
-
 func TestCharsUnderRadical(t *testing.T) {
-	lang.Register(lang.Zh{})
-
 	ts, sqlDB := newServer(t)
-	ctx := context.Background()
+	seedEntries(t, sqlDB)
+	nu := lexID(t, sqlDB, "zh", "character", "女")
 
-	// The committed Unihan fixture classifies 好 under radical 38 (女).
-	data, err := os.ReadFile("../dict/testdata/unihan-sample.txt")
-	if err != nil {
-		t.Fatalf("read unihan fixture: %v", err)
-	}
-	dir := t.TempDir()
-	manifest, err := json.Marshal(dict.Manifest{
-		ID: "unihan", Name: "Unihan database", Version: "1.0", Type: "dictionary",
-		Language: "zh", License: "Unicode License v3 (fixture)",
-		Attribution: "Unicode Consortium (fixture attribution)", Format: "unihan",
-	})
-	if err != nil {
-		t.Fatalf("marshal manifest: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), manifest, 0o644); err != nil {
-		t.Fatalf("write manifest: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "dictionary.txt"), data, 0o644); err != nil {
-		t.Fatalf("write dictionary.txt: %v", err)
-	}
-	importDictPack(t, sqlDB, dir)
-
-	st := entries.Store{DB: sqlDB}
-	nu, err := st.GetByWritten(ctx, "女", "character", "zh")
-	if err != nil {
-		t.Fatalf("GetByWritten(女): %v", err)
-	}
-
-	resp := getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(nu.ID, 10)+"/chars")
+	resp := getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(nu, 10)+"/chars")
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("GET 女/chars: status = %d, want %d", resp.StatusCode, http.StatusOK)
 	}
-	var chars []model.Entry
+	var chars []model.EntryBase
 	decodeJSON(t, resp, &chars)
-	if len(chars) != 1 || chars[0].Written != "好" {
-		t.Errorf("chars under 女 = %+v, want just 好", chars)
+	if len(chars) != 1 || chars[0].Written != "好" || chars[0].RadicalID == nil || *chars[0].RadicalID != nu {
+		t.Errorf("chars under 女 = %+v, want just 好 with its radicalId", chars)
 	}
 
-	// A radical without characters answers an empty array, never null.
-	zi := mustUpsertEntry(t, st, &model.Entry{Language: "zh", Kind: "character", Written: "子"})
-	resp = getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(zi, 10)+"/chars")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("GET 子/chars: status = %d, want %d", resp.StatusCode, http.StatusOK)
-	}
+	// A character no other is classified under answers [], never null.
+	resp = getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(lexID(t, sqlDB, "zh", "character", "行"), 10)+"/chars")
 	chars = nil
 	decodeJSON(t, resp, &chars)
 	if chars == nil || len(chars) != 0 {
-		t.Errorf("chars under 子 = %v, want an empty array", chars)
+		t.Errorf("chars under 行 = %v, want an empty array", chars)
 	}
 
 	// Unknown and malformed ids are 404.

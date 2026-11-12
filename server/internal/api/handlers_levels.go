@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"qinqin/internal/entries"
 	"qinqin/internal/levels"
+	"qinqin/internal/lexicon"
 )
 
 // handleSchemeEntries serves GET /api/schemes/{id}/entries: the scheme's
@@ -33,7 +33,13 @@ func (s *server) handleSchemeEntries(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	list, err := entries.Store{DB: s.db}.GetMany(r.Context(), ids)
+	store := lexicon.Store{DB: s.db}
+	es, err := store.GetMany(r.Context(), ids)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	list, err := entryBases(r.Context(), store, es)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

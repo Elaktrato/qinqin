@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"qinqin/internal/entries"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/sentences"
 )
@@ -43,9 +43,8 @@ func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "a sentence needs a hanzi, pinyin, and translation", http.StatusBadRequest)
 		return
 	}
-	store := entries.Store{DB: s.db}
-	_, err = store.GetByID(r.Context(), id)
-	if errors.Is(err, entries.ErrNotFound) {
+	_, err = lexicon.Store{DB: s.db}.Get(r.Context(), id)
+	if errors.Is(err, lexicon.ErrNotFound) {
 		http.Error(w, "entry not found", http.StatusNotFound)
 		return
 	}

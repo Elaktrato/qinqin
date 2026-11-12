@@ -5,16 +5,17 @@ import (
 	"net/http"
 	"strconv"
 
-	"qinqin/internal/entries"
+	"qinqin/internal/lexicon"
 )
 
 // handleSearch serves GET /api/search?q=&lang=&kind=&scheme=&level=&limit=
-// with the ranked hits, each an entry plus the source of its match. The
-// route is public, like entry reads. lang is required; a non-numeric or
-// negative limit is a 400, as is a level without a scheme.
+// with the ranked lexicon hits, each an entry's base fields plus the
+// source of its match. The route is public, like entry reads. lang is
+// required; a non-numeric or negative limit is a 400, as is a level
+// without a scheme.
 func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	params := r.URL.Query()
-	q := entries.SearchQuery{
+	q := lexicon.SearchQuery{
 		Text:      params.Get("q"),
 		Lang:      params.Get("lang"),
 		Kind:      params.Get("kind"),
@@ -29,8 +30,9 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		q.Limit = limit
 	}
-	hits, err := entries.Store{DB: s.db}.Search(r.Context(), q)
-	if errors.Is(err, entries.ErrInvalidQuery) {
+	store := lexicon.Store{DB: s.db}
+	hits, err := store.Search(r.Context(), q)
+	if errors.Is(err, lexicon.ErrInvalidQuery) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -38,5 +40,18 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, hits)
+	es := make([]lexicon.Entry, len(hits))
+	for i, h := range hits {
+		es[i] = h.Entry
+	}
+	bases, err := entryBases(r.Context(), store, es)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	out := make([]searchHit, len(hits))
+	for i, h := range hits {
+		out[i] = searchHit{EntryBase: bases[i], Source: h.Source}
+	}
+	writeJSON(w, http.StatusOK, out)
 }

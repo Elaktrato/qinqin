@@ -53,13 +53,31 @@ export interface SearchHit extends EntryBase {
 	source: string;
 }
 
+// SenseGroup is one sense of an entry as one dictionary gives it, with
+// its part of speech, tags and cross-references.
+export interface SenseGroup {
+	dictionaryId: number;
+	dictionaryName: string;
+	packId: string;
+	license: string;
+	attribution: string;
+	pos: string[];
+	tags: string[];
+	glosses: string[];
+	xrefs: string[];
+}
+
 // Entry is GET /api/entries/{id}: the shared row plus the caller's
-// senses, scheme badges, variants, and example sentences.
+// senses, scheme badges, variants, and example sentences. senses is one
+// row per gloss; senseGroups one row per sense; forms the written forms
+// (flags such as rK or trad).
 export interface Entry extends EntryBase {
 	badges: Badge[];
 	variants: EntryBase[];
 	sentences: Sentence[];
 	senses: SenseView[];
+	forms?: { text: string; flags: string[]; pri?: number }[];
+	senseGroups?: SenseGroup[];
 }
 
 // EntryDetail is the full entry view returned by GET and PUT

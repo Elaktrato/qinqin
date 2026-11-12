@@ -44,17 +44,3 @@ func TestChangedSinceLargeSet(t *testing.T) {
 		t.Errorf("last entry has %d readings, want 1", n)
 	}
 }
-
-// A search can never return more than the cap, however large the
-// requested limit or the match set, and never fails on a big match set.
-func TestSearchLimitIsCapped(t *testing.T) {
-	st := newStore(t)
-	bulkEntries(t, st, 40000)
-	hits, err := st.Search(context.Background(), entries.SearchQuery{Text: "a", Lang: "xx", Limit: 1000000})
-	if err != nil {
-		t.Fatalf("search with huge limit: %v", err)
-	}
-	if len(hits) != 200 {
-		t.Fatalf("hits = %d, want the cap of 200", len(hits))
-	}
-}

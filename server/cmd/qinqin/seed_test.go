@@ -13,7 +13,6 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
-	"qinqin/internal/entries"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
 )
@@ -132,8 +131,6 @@ func TestSeedCommittedPacksEndToEnd(t *testing.T) {
 	if err := seed(ctx, sqlDB, []string{smallPacks(t)}, io.Discard); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
-	st := entries.Store{DB: sqlDB}
-
 	// Temporary dual import: every dictionary pack also fills the lexicon.
 	lx := lexicon.Store{DB: sqlDB}
 	byForm, err := lx.ByForm(ctx, "zh", []string{"你好"})
@@ -144,26 +141,31 @@ func TestSeedCommittedPacksEndToEnd(t *testing.T) {
 		t.Errorf("lexicon ByForm(hola) = %+v, %v; want the seeded es entry", byForm, err)
 	}
 
-	hits, err := st.Search(ctx, entries.SearchQuery{Text: "nihao", Lang: "zh"})
-	if err != nil || len(hits) == 0 || hits[0].Written != "你好" {
+	hits, err := lx.Search(ctx, lexicon.SearchQuery{Text: "nihao", Lang: "zh"})
+	if err != nil || len(hits) == 0 || hits[0].Entry.Headword() != "你好" {
 		t.Fatalf("zh search nihao = %+v, %v; want 你好 first", hits, err)
 	}
-	badges, err := levels.ForEntry(ctx, sqlDB, hits[0].ID)
+	badges, err := levels.ForEntry(ctx, sqlDB, hits[0].Entry.ID)
 	if err != nil || len(badges) == 0 {
 		t.Errorf("你好 badges = %+v, %v; want an hsk-mini level — levels must seed after dictionaries", badges, err)
 	}
 
-	hits, err = st.Search(ctx, entries.SearchQuery{Text: "gakkou", Lang: "ja"})
-	if err != nil || len(hits) == 0 || hits[0].Written != "学校" {
+	hits, err = lx.Search(ctx, lexicon.SearchQuery{Text: "gakkou", Lang: "ja"})
+	if err != nil || len(hits) == 0 || hits[0].Entry.Headword() != "学校" {
 		t.Errorf("ja search gakkou = %+v, %v; want 学校 first", hits, err)
+	}
+	if len(hits) > 0 {
+		if badges, err := levels.ForEntry(ctx, sqlDB, hits[0].Entry.ID); err != nil || len(badges) == 0 {
+			t.Errorf("学校 badges = %+v, %v; want a jlpt-mini level", badges, err)
+		}
 	}
 
 	var code string
 	if err := sqlDB.QueryRow(`SELECT code FROM languages WHERE code = 'es'`).Scan(&code); err != nil {
 		t.Errorf("es not auto-registered as a data-only language: %v", err)
 	}
-	hits, err = st.Search(ctx, entries.SearchQuery{Text: "hello", Lang: "es"})
-	if err != nil || len(hits) == 0 || hits[0].Written != "hola" {
+	hits, err = lx.Search(ctx, lexicon.SearchQuery{Text: "hello", Lang: "es"})
+	if err != nil || len(hits) == 0 || hits[0].Entry.Headword() != "hola" {
 		t.Errorf("es search hello = %+v, %v; want hola first", hits, err)
 	}
 }
