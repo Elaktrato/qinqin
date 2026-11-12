@@ -132,7 +132,10 @@ func (s Service) matchAt(ctx context.Context, language string, runes []rune, off
 }
 
 // MaxReadingCandidates caps the candidates of a match found by reading:
-// a common kana word can be the reading of dozens of homophones.
+// a common kana word can be the reading of dozens of homophones. The cap
+// applies after EntriesByReading's ranking (usually-kana words first,
+// then JMdict priority, reading position, entry id), so the best ones
+// survive.
 const MaxReadingCandidates = 8
 
 // pick returns the lemma, reason and hits of surface: the exact form when

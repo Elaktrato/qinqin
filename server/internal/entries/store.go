@@ -256,9 +256,13 @@ type ReadingHit struct {
 
 // EntriesByReading returns the active entries of a language that carry an
 // active reading of type readType whose plain (normalized) form is one of
-// plains, grouped by plain form. Within a group, entries for which the
-// reading is the first one come first, then by ascending ord, ties by
-// entry id. Forms without a hit are absent from the map.
+// plains, grouped by plain form. Within a group, entries rank by the
+// ranking attrs the JMdict importer stores: usually-written-in-kana words
+// (attr "jmdict.uk") first, then by priority (attr "jmdict.pri", higher
+// first, absent = 0), then by the matched reading's position among the
+// entry's readings (ord, lower first), ties by entry id — deterministic,
+// and without ranking attrs simply ord then id. Forms without a hit are
+// absent from the map.
 func (s Store) EntriesByReading(ctx context.Context, language, readType string, plains []string) (map[string][]ReadingHit, error) {
 	out := make(map[string][]ReadingHit)
 	for start := 0; start < len(plains); start += childChunk {
@@ -272,11 +276,16 @@ func (s Store) EntriesByReading(ctx context.Context, language, readType string, 
 			SELECT r.plain, e.id, e.kind, e.written, MIN(r.ord) AS ord
 			FROM readings r
 			JOIN entries e ON e.id = r.entry_id
+			LEFT JOIN entry_attrs uk ON uk.entry_id = e.id AND uk.key = 'jmdict.uk'
+			LEFT JOIN entry_attrs pri ON pri.entry_id = e.id AND pri.key = 'jmdict.pri'
 			WHERE e.language = ? AND e.deleted_at IS NULL
 			  AND r.deleted_at IS NULL AND r.type = ?
 			  AND r.plain IN (`+placeholders(len(chunk))+`)
 			GROUP BY r.plain, e.id
-			ORDER BY r.plain, ord, e.id`, args...)
+			ORDER BY r.plain,
+			         MAX(uk.value IS NOT NULL) DESC,
+			         MAX(COALESCE(CAST(pri.value AS INTEGER), 0)) DESC,
+			         ord, e.id`, args...)
 		if err != nil {
 			return nil, fmt.Errorf("entries by reading: %w", err)
 		}
