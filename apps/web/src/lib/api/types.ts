@@ -125,6 +125,32 @@ export interface StudyEventBody {
 
 // SegmentMatch is one dictionary match from /api/segment[/at]; start and
 // end are code-point offsets into the segmented text.
+// LookupResult is one entry of GET /api/lookup. start/end are code-point
+// offsets of `matched` in the text the caller passed to lookupAt.
+export interface LookupResult {
+	entryId: number;
+	kind: 'word' | 'character';
+	term: string;
+	reading: string;
+	forms: { text: string; flags?: string[] }[];
+	readings: { type: string; value: string; plain: string }[];
+	matched: string;
+	start: number;
+	end: number;
+	reasons: string[];
+	tags: string[];
+	frequencies: { packId: number; packName: string; rank: number; display?: string }[];
+	senses: {
+		dictionaryId: number;
+		dictionaryName: string;
+		pos: string[];
+		tags: string[];
+		glosses: string[];
+		xrefs: string[];
+	}[];
+	pri: number;
+}
+
 export interface SegmentMatch {
 	surface: string;
 	start: number;
