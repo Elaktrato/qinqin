@@ -258,8 +258,10 @@ type ReadingHit struct {
 // active reading of type readType whose plain (normalized) form is one of
 // plains, grouped by plain form. Within a group, entries rank by the
 // ranking attrs the JMdict importer stores: usually-written-in-kana words
-// (attr "jmdict.uk") first, then by priority (attr "jmdict.pri", higher
-// first, absent = 0), then by the matched reading's position among the
+// (attr "jmdict.uk") that also carry a priority score first — a uk word
+// without one (an archaic 癒る) gets no boost — then by priority (attr
+// "jmdict.pri", higher first, compared as a number, absent = 0), then by
+// the matched reading's position among the
 // entry's readings (ord, lower first), ties by entry id — deterministic,
 // and without ranking attrs simply ord then id. Forms without a hit are
 // absent from the map.
@@ -283,7 +285,7 @@ func (s Store) EntriesByReading(ctx context.Context, language, readType string, 
 			  AND r.plain IN (`+placeholders(len(chunk))+`)
 			GROUP BY r.plain, e.id
 			ORDER BY r.plain,
-			         MAX(uk.value IS NOT NULL) DESC,
+			         MAX(uk.value IS NOT NULL AND COALESCE(CAST(pri.value AS INTEGER), 0) > 0) DESC,
 			         MAX(COALESCE(CAST(pri.value AS INTEGER), 0)) DESC,
 			         ord, e.id`, args...)
 		if err != nil {
@@ -661,6 +663,8 @@ func readingsMatch(ctx context.Context, db queryer, entryID int64, want []model.
 // Attr rows carry no tombstone: the entry's stamp is what ships its new
 // attr map to clients.
 func dropStaleAttrs(ctx context.Context, tx *sql.Tx, entryID int64, prefix string, keep map[string]string) (bool, error) {
+	// substr counts characters while len(prefix) counts bytes: this
+	// assumes an ASCII prefix (as "jmdict." is).
 	rows, err := tx.QueryContext(ctx, `
 		SELECT key FROM entry_attrs
 		WHERE entry_id = ? AND substr(key, 1, ?) = ?`,

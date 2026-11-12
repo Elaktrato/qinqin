@@ -57,6 +57,33 @@ func TestEntriesByReadingRanksByUkThenPriority(t *testing.T) {
 	}
 }
 
+// A uk word only gets the uk boost when it also carries a priority score:
+// an archaic uk-only word (癒る) ranks below scored non-uk homophones,
+// though still above unscored ones by ord and id.
+func TestEntriesByReadingUkWithoutPriorityGetsNoBoost(t *testing.T) {
+	lang.Register(lang.Ja{})
+	st := newStore(t)
+	jaWord(t, st, "癒る", map[string]string{"jmdict.uk": "1"}, "いる")
+	jaWord(t, st, "射る", map[string]string{"jmdict.pri": "52"}, "いる")
+	jaWord(t, st, "鋳る", nil, "いる")
+	jaWord(t, st, "居る", map[string]string{"jmdict.pri": "82", "jmdict.uk": "1"}, "いる")
+	if got, want := writtenByReading(t, st, "いる"), "居る,射る,癒る,鋳る"; got != want {
+		t.Errorf("いる = %s, want %s", got, want)
+	}
+}
+
+// Priorities sort as numbers, not text: "100" ranks above "99" and "82".
+func TestEntriesByReadingSortsPriorityNumerically(t *testing.T) {
+	lang.Register(lang.Ja{})
+	st := newStore(t)
+	jaWord(t, st, "八十二", map[string]string{"jmdict.pri": "82"}, "かな")
+	jaWord(t, st, "九十九", map[string]string{"jmdict.pri": "99"}, "かな")
+	jaWord(t, st, "百", map[string]string{"jmdict.pri": "100"}, "かな")
+	if got, want := writtenByReading(t, st, "かな"), "百,九十九,八十二"; got != want {
+		t.Errorf("かな = %s, want %s", got, want)
+	}
+}
+
 // Without ranking attrs the order is the reading's position, then id —
 // the order before ranking data existed.
 func TestEntriesByReadingWithoutAttrsKeepsOrdThenID(t *testing.T) {

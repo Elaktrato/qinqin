@@ -170,8 +170,9 @@ func TestMatchAtKanaByReading(t *testing.T) {
 	if m.Surface != "する" || m.Lemma != "する" || m.Reason != "" || m.End != 2 {
 		t.Errorf("match = %+v, want する 0..2", m)
 	}
-	// The uk word first, then by priority: 擦る (ichi1) above 刷る
-	// (news2), though する is 擦る's second reading.
+	// 為る and 擦る are both scored uk (擦る only because uk spreads
+	// through its homograph 擦る/こする) and tie at ichi1; 為る wins on
+	// reading position (する is 擦る's second reading). 刷る is not uk.
 	if got := strings.Join(writtenOf(t, st, m), ","); got != "為る,擦る,刷る" {
 		t.Errorf("candidates = %s, want 為る,擦る,刷る", got)
 	}
@@ -309,14 +310,15 @@ func TestMatchAtReadingCapAppliesAfterRanking(t *testing.T) {
 		words = append(words, jmEntry{kanji: []string{k}, readings: []string{"かん"}})
 	}
 	words[8].kpri = map[string][]string{"観": {"news1"}} // 9th in the file
-	words[9].uk = true                                  // 10th
+	words[9].uk = true                                  // 10th: uk and scored
+	words[9].kpri = map[string][]string{"寒": {"news2"}}
 	svc, st := importJMdict(t, words)
 	m, err := svc.MatchAt(context.Background(), "ja", "かん", 0)
 	if err != nil || m == nil {
 		t.Fatalf("MatchAt(かん) = %v, %v", m, err)
 	}
 	if got := strings.Join(writtenOf(t, st, m), ","); got != "寒,観,間,感,缶,館,巻,官" {
-		t.Errorf("candidates = %s, want 寒 (uk), 観 (news1), then the first 6 by entry id", got)
+		t.Errorf("candidates = %s, want 寒 (uk, news2), 観 (news1), then the first 6 by entry id", got)
 	}
 }
 
@@ -340,7 +342,8 @@ func TestReadingLookupUsesPlainIndex(t *testing.T) {
 		WHERE e.language = 'ja' AND e.deleted_at IS NULL AND r.deleted_at IS NULL
 		  AND r.type = 'kana' AND r.plain IN ('する', 'こと')
 		GROUP BY r.plain, e.id
-		ORDER BY r.plain, MAX(uk.value IS NOT NULL) DESC,
+		ORDER BY r.plain,
+		         MAX(uk.value IS NOT NULL AND COALESCE(CAST(pri.value AS INTEGER), 0) > 0) DESC,
 		         MAX(COALESCE(CAST(pri.value AS INTEGER), 0)) DESC, MIN(r.ord), e.id`)
 	if err != nil {
 		t.Fatalf("explain: %v", err)
