@@ -40,9 +40,10 @@ export function selectionSpanTarget(paragraph: string, start: number, end: numbe
 
 /**
  * lookupSelection finds what a selection means:
- * - one code point: its character entries (the text sent is just the
- *   character, so a longer word starting there cannot shadow it);
- * - several: the results for the selected text itself that cover all of it
+ * - one Han code point: its character entries (the text sent is just the
+ *   character, so a longer word starting there cannot shadow it), else,
+ *   once, what the default kinds find for that character alone;
+ * - anything else (a single kana included): the results for the selected text itself that cover all of it
  *   (selecting 中文 in 中文课本 shows 中文, not a longer word), else the
  *   paragraph results at the selection start that cover it (this catches
  *   inflected forms, 食べ in 食べた), else every result at the start with
@@ -56,13 +57,15 @@ export async function lookupSelection(
 	signal?: AbortSignal
 ): Promise<SelectionResult> {
 	const shift = (r: LookupResult) => ({ ...r, start: r.start + target.start, end: r.end + target.start });
+	const length = target.end - target.start;
+	const whole = async () =>
+		(await lookup(lang, target.text, 0, undefined, signal)).filter((r) => r.end === length).map(shift);
 	if (target.kind === 'character') {
 		const found = await lookup(lang, target.text, 0, ['character'], signal);
-		return { results: found.map(shift), note: '' };
+		return { results: found.length > 0 ? found.map(shift) : await whole(), note: '' };
 	}
-	const length = target.end - target.start;
-	const exact = (await lookup(lang, target.text, 0, undefined, signal)).filter((r) => r.end === length);
-	if (exact.length > 0) return { results: exact.map(shift), note: '' };
+	const exact = await whole();
+	if (exact.length > 0) return { results: exact, note: '' };
 	const atStart = await lookup(lang, paragraph, target.start, undefined, signal);
 	const covering = atStart.filter((r) => r.end >= target.end);
 	if (covering.length > 0) return { results: covering, note: '' };

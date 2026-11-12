@@ -42,14 +42,17 @@ export function codePointToUtf16(text: string, cpIndex: number): number {
 // Whitespace, punctuation and symbols never have a dictionary entry.
 const NOTHING_TO_LOOK_UP = /^[\s\p{P}\p{S}\p{Z}]*$/u;
 
+const HAN = /^\p{Script=Han}$/u;
+
 /**
- * selectionTarget decides what a selection looks up: one code point is a
- * character, more is a word. Null for empty or punctuation-only text.
+ * selectionTarget decides what a selection looks up: one Han code point is
+ * a character; anything else (more code points, or a single kana, which
+ * has no character entry) is a word. Null for empty or punctuation-only text.
  */
 export function selectionTarget(selected: string): { text: string; kind: LookupKind } | null {
 	const text = selected.trim();
 	if (NOTHING_TO_LOOK_UP.test(text)) return null;
-	return { text, kind: Array.from(text).length === 1 ? 'character' : 'word' };
+	return { text, kind: HAN.test(text) ? 'character' : 'word' };
 }
 
 // Hovering these never looks anything up: whitespace, punctuation,

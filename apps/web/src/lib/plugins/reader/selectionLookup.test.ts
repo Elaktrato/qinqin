@@ -79,6 +79,31 @@ describe('lookupSelection', () => {
 		expect(lookup).toHaveBeenCalledTimes(1);
 	});
 
+	it('looks a single kana up with the default kinds and finds its word entry', async () => {
+		const lookup = fakeLookup({ は: 'word', はし: 'word' });
+		const target = selectionSpanTarget('はしをわたる', 0, 1)!;
+		expect(target.kind).toBe('word');
+		const found = await lookupSelection('ja', 'はしをわたる', target, lookup);
+		expect(found).toMatchObject({ note: '', results: [{ term: 'は', start: 0, end: 1 }] });
+		expect(lookup).toHaveBeenCalledWith('ja', 'は', 0, undefined, undefined);
+	});
+
+	it('falls back once to the default kinds when a Han character has no character entry', async () => {
+		const lookup = fakeLookup({ 下: 'word' });
+		const target = selectionSpanTarget('下', 0, 1)!;
+		expect(target.kind).toBe('character');
+		const found = await lookupSelection('ja', '下', target, lookup);
+		expect(lookup.mock.calls.map((c) => c[3])).toEqual([['character'], undefined]);
+		expect(found).toMatchObject({ note: '', results: [{ term: '下', kind: 'word' }] });
+	});
+
+	it('reports nothing when neither the character nor the default lookup finds anything', async () => {
+		const lookup = fakeLookup({});
+		const target = selectionSpanTarget('龘', 0, 1)!;
+		expect(await lookupSelection('zh', '龘', target, lookup)).toEqual({ results: [], note: '' });
+		expect(lookup).toHaveBeenCalledTimes(2);
+	});
+
 	it('keeps only the results covering a selection that is a word itself', async () => {
 		const lookup = fakeLookup({ ...base, 中文课: 'word' });
 		const target = { start: 0, end: 2, text: '中文', kind: 'word' as const };

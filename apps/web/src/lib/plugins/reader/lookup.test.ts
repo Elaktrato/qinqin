@@ -49,9 +49,15 @@ describe('utf16ToCodePoint / codePointToUtf16', () => {
 });
 
 describe('selectionTarget', () => {
-	it('trims and maps one code point to a character', () => {
+	it('trims and maps one Han code point to a character', () => {
 		expect(selectionTarget('  学 ')).toEqual({ text: '学', kind: 'character' });
 		expect(selectionTarget('𠮷')).toEqual({ text: '𠮷', kind: 'character' });
+	});
+
+	it('maps one kana (or other non-Han) code point to a word: kana have no character entries', () => {
+		for (const ch of ['は', 'を', 'の', 'ー', 'ア']) {
+			expect(selectionTarget(ch)).toEqual({ text: ch, kind: 'word' });
+		}
 	});
 
 	it('maps several code points to a word', () => {
