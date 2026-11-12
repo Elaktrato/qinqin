@@ -418,6 +418,38 @@ func TestByReadingUsesPlain(t *testing.T) {
 	}
 }
 
+func TestByReadingKindSkipsOtherKinds(t *testing.T) {
+	st := newStore(t)
+	dict := addDictionary(t, st, "jmdict")
+	word := mustPut(t, st, &lexicon.Entry{
+		Language: "ja", Kind: "word", Key: "j:1",
+		Forms:    []lexicon.Form{{Text: "下"}},
+		Readings: []lexicon.Reading{{Type: "kana", Value: "した", Plain: "した"}},
+		Senses:   []lexicon.Sense{{Glosses: []string{"below"}}},
+	}, dict)
+	mustPut(t, st, &lexicon.Entry{
+		Language: "ja", Kind: "character", Key: "下",
+		Forms:    []lexicon.Form{{Text: "下"}},
+		Readings: []lexicon.Reading{{Type: "kun", Value: "した", Plain: "した"}},
+		Senses:   []lexicon.Sense{{Glosses: []string{"below"}}},
+	}, dict)
+
+	got, err := st.ByReadingKind(context.Background(), "ja", "word", []string{"した"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(ids(got["した"]), []int64{word}) {
+		t.Errorf("ByReadingKind(word)[した] = %v, want [%d]", ids(got["した"]), word)
+	}
+	all, err := st.ByReading(context.Background(), "ja", []string{"した"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all["した"]) != 2 {
+		t.Errorf("ByReading[した] = %v, want both kinds", ids(all["した"]))
+	}
+}
+
 func TestBestPrefersUkWithPriority(t *testing.T) {
 	st := newStore(t)
 	dict := addDictionary(t, st, "jmdict")

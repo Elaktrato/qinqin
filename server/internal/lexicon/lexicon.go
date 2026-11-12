@@ -250,12 +250,7 @@ func (s Store) GetMany(ctx context.Context, ids []int64) ([]Entry, error) {
 // whose text is one of forms, fully loaded and grouped by that text,
 // ordered by entry id within a group. Forms without a match are absent.
 func (s Store) ByForm(ctx context.Context, language string, forms []string) (map[string][]Entry, error) {
-	out, err := s.matchBy(ctx, `
-		SELECT DISTINCT f.text, e.id FROM lx_forms f
-		JOIN lx_entries e ON e.id = f.entry_id
-		WHERE e.language = ? AND e.deleted_at IS NULL AND f.deleted_at IS NULL
-		  AND f.text IN (%s)
-		ORDER BY f.text, e.id`, language, forms)
+	out, err := s.matchBy(ctx, byFormQuery, []any{language}, forms)
 	if err != nil {
 		return nil, fmt.Errorf("entries by form: %w", err)
 	}
@@ -267,17 +262,58 @@ func (s Store) ByForm(ctx context.Context, language string, forms []string) (map
 // and grouped by that plain form, ordered by entry id within a group.
 // Plains without a match are absent.
 func (s Store) ByReading(ctx context.Context, language string, plains []string) (map[string][]Entry, error) {
-	out, err := s.matchBy(ctx, `
-		SELECT DISTINCT r.plain, e.id FROM lx_readings r
-		JOIN lx_entries e ON e.id = r.entry_id
-		WHERE e.language = ? AND e.deleted_at IS NULL AND r.deleted_at IS NULL
-		  AND r.plain IN (%s)
-		ORDER BY r.plain, e.id`, language, plains)
+	out, err := s.matchBy(ctx, byReadingQuery, []any{language}, plains)
 	if err != nil {
 		return nil, fmt.Errorf("entries by reading: %w", err)
 	}
 	return out, nil
 }
+
+// ByReadingKind is ByReading limited to entries of one kind (word or
+// character): entries of other kinds are never loaded.
+func (s Store) ByReadingKind(ctx context.Context, language, kind string, plains []string) (map[string][]Entry, error) {
+	out, err := s.matchBy(ctx, byReadingKindQuery, []any{language, kind}, plains)
+	if err != nil {
+		return nil, fmt.Errorf("entries by reading (%s): %w", kind, err)
+	}
+	return out, nil
+}
+
+// The match queries are driven by the forms/readings index: CROSS JOIN
+// makes the child table the outer loop, so SQLite looks each key up in
+// idx_lx_forms_text / idx_lx_readings_plain and joins the entry by
+// primary key. Without it the planner — lacking statistics — prefers the
+// (language, …) index once the IN list has a few values and scans every
+// entry of the language: two to three orders of magnitude slower on a
+// full dictionary. The %s is the IN list.
+const (
+	byFormQuery = `
+		SELECT DISTINCT f.text, e.id FROM lx_forms f
+		CROSS JOIN lx_entries e ON e.id = f.entry_id
+		WHERE f.text IN (%s) AND f.deleted_at IS NULL
+		  AND e.language = ? AND e.deleted_at IS NULL
+		ORDER BY f.text, e.id`
+	byReadingQuery = `
+		SELECT DISTINCT r.plain, e.id FROM lx_readings r
+		CROSS JOIN lx_entries e ON e.id = r.entry_id
+		WHERE r.plain IN (%s) AND r.deleted_at IS NULL
+		  AND e.language = ? AND e.deleted_at IS NULL
+		ORDER BY r.plain, e.id`
+	byReadingKindQuery = `
+		SELECT DISTINCT r.plain, e.id FROM lx_readings r
+		CROSS JOIN lx_entries e ON e.id = r.entry_id
+		WHERE r.plain IN (%s) AND r.deleted_at IS NULL
+		  AND e.language = ? AND e.kind = ? AND e.deleted_at IS NULL
+		ORDER BY r.plain, e.id`
+	// bestQuery is driven from lx_forms the same way.
+	bestQuery = `
+		SELECT e.id FROM lx_forms f
+		CROSS JOIN lx_entries e ON e.id = f.entry_id
+		WHERE f.text = ? AND f.deleted_at IS NULL
+		  AND e.language = ? AND e.kind = ? AND e.deleted_at IS NULL
+		ORDER BY (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
+		LIMIT 1`
+)
 
 // Best returns the best-ranked active entry of the language and kind that
 // has form as an active form: usually-kana entries that carry a priority
@@ -285,13 +321,7 @@ func (s Store) ByReading(ctx context.Context, language string, plains []string) 
 // ErrNotFound when no entry has the form.
 func (s Store) Best(ctx context.Context, language, kind, form string) (*Entry, error) {
 	var id int64
-	err := s.DB.QueryRowContext(ctx, `
-		SELECT e.id FROM lx_entries e
-		WHERE e.language = ? AND e.kind = ? AND e.deleted_at IS NULL
-		  AND EXISTS (SELECT 1 FROM lx_forms f
-		              WHERE f.entry_id = e.id AND f.text = ? AND f.deleted_at IS NULL)
-		ORDER BY (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
-		LIMIT 1`, language, kind, form).Scan(&id)
+	err := s.DB.QueryRowContext(ctx, bestQuery, form, language, kind).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -367,10 +397,10 @@ func (s Store) Variants(ctx context.Context, id int64) ([]Entry, error) {
 // SQLite's bound-variable limit.
 const childChunk = 500
 
-// matchBy runs query (whose %s is the IN list) over keys in chunks; each
-// row is a (key, entry id) pair. It loads the matched entries and groups
-// them by key in row order.
-func (s Store) matchBy(ctx context.Context, query, language string, keys []string) (map[string][]Entry, error) {
+// matchBy runs query (whose %s is the IN list, bound first, followed by
+// the extra args) over keys in chunks; each row is a (key, entry id)
+// pair. It loads the matched entries and groups them by key in row order.
+func (s Store) matchBy(ctx context.Context, query string, extra []any, keys []string) (map[string][]Entry, error) {
 	type hit struct {
 		key string
 		id  int64
@@ -381,11 +411,11 @@ func (s Store) matchBy(ctx context.Context, query, language string, keys []strin
 	)
 	for start := 0; start < len(keys); start += childChunk {
 		chunk := keys[start:min(start+childChunk, len(keys))]
-		args := make([]any, 0, len(chunk)+1)
-		args = append(args, language)
+		args := make([]any, 0, len(chunk)+len(extra))
 		for _, k := range chunk {
 			args = append(args, k)
 		}
+		args = append(args, extra...)
 		rows, err := s.DB.QueryContext(ctx, fmt.Sprintf(query, placeholders(len(chunk))), args...)
 		if err != nil {
 			return nil, err
