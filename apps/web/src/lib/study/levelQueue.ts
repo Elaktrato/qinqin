@@ -47,10 +47,12 @@ export const VIRTUAL_CARD_PREFIX = 'level:';
 
 /**
  * buildLevelQueue assembles one level session: existing vocab cards that
- * are due first, earliest due first, then word entries that have no card
- * yet, in level order. Reviews of existing cards that are not due are
- * omitted; they are neither reviews nor new material. Non-word entries
- * (derived characters, sentences) never become cards.
+ * are due first, earliest due first, then the new bucket. The new bucket
+ * holds existing cards that have never been reviewed (real card ids)
+ * ordered by entry id, followed by word entries that have no card yet
+ * (virtual ids) in level order; the two share one `newLimit`. Reviewed
+ * cards that are not due yet are omitted. Non-word entries (derived
+ * characters, sentences) never become cards.
  */
 export function buildLevelQueue({
 	entries,
@@ -71,6 +73,7 @@ export function buildLevelQueue({
 
 	const seen = new Set<number>();
 	const due: { item: LevelQueueItem; at: number }[] = [];
+	const fresh: LevelQueueItem[] = [];
 	const virtual: LevelQueueItem[] = [];
 
 	for (const entry of entries) {
@@ -88,7 +91,13 @@ export function buildLevelQueue({
 		}
 
 		const schedule = scheduleFor(card.id, reviews, now);
-		if (schedule === null || !isDue(schedule, now)) continue;
+		if (schedule === null) {
+			// A card that was added to study but never graded is new, just
+			// like in a deck session; keep its real id.
+			fresh.push({ cardId: card.id, entryId: entry.id, virtual: false });
+			continue;
+		}
+		if (!isDue(schedule, now)) continue;
 		due.push({
 			item: { cardId: card.id, entryId: entry.id, virtual: false },
 			at: instant(schedule.due)
@@ -96,9 +105,10 @@ export function buildLevelQueue({
 	}
 
 	due.sort((a, b) => a.at - b.at || a.item.entryId - b.item.entryId);
+	fresh.sort((a, b) => a.entryId - b.entryId);
 
 	return [
 		...due.slice(0, cap(reviewLimit)).map((entry) => entry.item),
-		...virtual.slice(0, cap(newLimit))
+		...[...fresh, ...virtual].slice(0, cap(newLimit))
 	];
 }

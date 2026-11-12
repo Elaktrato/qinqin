@@ -127,7 +127,7 @@ describe('buildLevelQueue', () => {
 		expect(queue.map((item) => item.cardId)).toEqual(['c1', 'level:3']);
 	});
 
-	it('treats an existing unreviewed card as neither due nor virtual', () => {
+	it('includes an existing unreviewed card as new, with its real id', () => {
 		const queue = buildLevelQueue({
 			entries: [entry(1), entry(2)],
 			cards: [card('c1', 1)],
@@ -137,7 +137,41 @@ describe('buildLevelQueue', () => {
 			now: NOW
 		});
 
-		expect(queue).toEqual([{ cardId: 'level:2', entryId: 2, virtual: true }]);
+		expect(queue).toEqual([
+			{ cardId: 'c1', entryId: 1, virtual: false },
+			{ cardId: 'level:2', entryId: 2, virtual: true }
+		]);
+	});
+
+	it('caps the combined new bucket, existing cards before virtual entries', () => {
+		const queue = buildLevelQueue({
+			entries: [entry(1), entry(2), entry(3), entry(4)],
+			cards: [card('c3', 3), card('c2', 2)],
+			reviews: [],
+			newLimit: 2,
+			reviewLimit: 100,
+			now: NOW
+		});
+
+		// Existing never-reviewed cards sort by entry id and consume the
+		// cap first; entry 1 and 4 stay out this session.
+		expect(queue).toEqual([
+			{ cardId: 'c2', entryId: 2, virtual: false },
+			{ cardId: 'c3', entryId: 3, virtual: false }
+		]);
+	});
+
+	it('orders the combined new bucket: existing by entry id, then virtual in level order', () => {
+		const queue = buildLevelQueue({
+			entries: [entry(4), entry(3), entry(2), entry(1)],
+			cards: [card('c2', 2), card('c3', 3)],
+			reviews: [],
+			newLimit: 20,
+			reviewLimit: 100,
+			now: NOW
+		});
+
+		expect(queue.map((item) => item.entryId)).toEqual([2, 3, 4, 1]);
 	});
 
 	it('caps due cards and virtual entries independently', () => {
@@ -214,7 +248,7 @@ describe('buildLevelQueue', () => {
 		]);
 	});
 
-	it('ignores reviews that do not belong to a matched card', () => {
+	it('does not mark a card due from reviews of other cards', () => {
 		const queue = buildLevelQueue({
 			entries: [entry(1)],
 			cards: [card('c1', 1)],
@@ -224,6 +258,7 @@ describe('buildLevelQueue', () => {
 			now: NOW
 		});
 
-		expect(queue).toEqual([]);
+		// Still unreviewed as far as its own history goes, so it is new.
+		expect(queue).toEqual([{ cardId: 'c1', entryId: 1, virtual: false }]);
 	});
 });
