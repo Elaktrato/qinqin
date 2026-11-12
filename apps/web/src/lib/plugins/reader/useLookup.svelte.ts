@@ -31,7 +31,10 @@ const HIGHLIGHT = 'reader-lookup';
 export interface StackInfo {
 	/** Hover stacks close after the grace delay; selection stacks are sticky. */
 	mode: 'hover' | 'selection';
+	/** The lookup language (zh, ja): what data-scan regions look up in. */
 	lang: string;
+	/** The lang attribute of CJK text, as the reader text uses (zh-Hans/zh-Hant). */
+	textLang: string;
 	/** Shown in the root popup (selection fallbacks). */
 	note: string;
 }
@@ -39,6 +42,8 @@ export interface StackInfo {
 export interface LookupOptions {
 	container: () => HTMLElement | null;
 	lang: () => string;
+	/** The reader text's lang attribute (zh-Hans/zh-Hant select glyphs). */
+	textLang: () => string;
 	runsOf: RunsOf;
 }
 
@@ -86,7 +91,8 @@ export class LookupController {
 	/** Document-level listeners; returns the cleanup. */
 	attach(): () => void {
 		const onKey = (e: KeyboardEvent) => {
-			if (e.key === 'Escape' && this.info) this.closeTop();
+			// Escape that cancels an IME composition (or was handled) is not ours.
+			if (e.key === 'Escape' && this.info && !e.isComposing && !e.defaultPrevented) this.closeTop();
 			this.popups.key(e);
 		};
 		const onDown = (e: PointerEvent) => {
@@ -239,7 +245,7 @@ export class LookupController {
 			results: shown.results,
 			error: shown.error || undefined
 		});
-		this.info = { mode: 'hover', lang: this.#opts.lang(), note: '' };
+		this.info = { mode: 'hover', lang: this.#opts.lang(), textLang: this.#opts.textLang(), note: '' };
 	}
 
 	// --- selection ---
@@ -285,7 +291,7 @@ export class LookupController {
 			results: null
 		});
 		if (id === null) return;
-		this.info = { mode: 'selection', lang, note: '' };
+		this.info = { mode: 'selection', lang, textLang: this.#opts.textLang(), note: '' };
 		try {
 			const found = await lookupSelection(lang, text, target, this.#lookup, abort.signal);
 			if (seq !== this.#selectionSeq || !this.info) return;

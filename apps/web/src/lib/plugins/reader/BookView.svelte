@@ -62,6 +62,7 @@
 	const lookup = new LookupController({
 		container: () => container,
 		lang: () => book?.language ?? '',
+		textLang: () => textLang,
 		runsOf: (p) => paragraphs[p]
 	});
 	$effect(() => lookup.attach());

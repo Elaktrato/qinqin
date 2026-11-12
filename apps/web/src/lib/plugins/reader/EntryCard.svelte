@@ -4,8 +4,10 @@
 		dictionaryNames,
 		frequencyLabel,
 		hasCjk,
+		joinForms,
 		moreLabel,
 		otherForms,
+		parseXref,
 		readingLine,
 		rubyReading,
 		senseChips,
@@ -14,9 +16,11 @@
 	import { SENSES_VISIBLE, visibleCount } from './showMore';
 
 	// One dictionary entry of a lookup popup. Text that Shift+hover can look
-	// up (cross-references, glosses with Han or kana) is marked data-scan
-	// with the popup's language; plain English glosses are not.
-	let { result, lang }: { result: LookupResult; lang: string } = $props();
+	// up (cross-reference headwords, glosses with Han or kana) is marked
+	// data-scan with the lookup language `lang`; plain English glosses, xref
+	// readings and sense numbers are not. `textLang` is the lang attribute
+	// of CJK text (zh-Hans/zh-Hant pick glyphs, as in the reader text).
+	let { result, lang, textLang }: { result: LookupResult; lang: string; textLang: string } = $props();
 
 	const ruby = $derived(rubyReading(result, lang));
 	const reading = $derived(readingLine(result, lang));
@@ -30,11 +34,11 @@
 
 <article class="entry">
 	<header>
-		<span class="term" {lang}>
+		<span class="term" lang={textLang}>
 			{#if ruby}<ruby>{result.term}<rt>{ruby}</rt></ruby>{:else}{result.term}{/if}
 		</span>
-		{#if reading}<span class="reading" {lang}>{reading}</span>{/if}
-		{#if forms.length > 0}<span class="forms" {lang}>{forms.join('・')}</span>{/if}
+		{#if reading}<span class="reading" lang={textLang}>{reading}</span>{/if}
+		{#if forms.length > 0}<span class="forms" lang={textLang}>{joinForms(forms, lang)}</span>{/if}
 	</header>
 
 	{#if result.reasons.length > 0 || result.tags.length > 0 || result.frequencies.length > 0}
@@ -42,7 +46,7 @@
 			{#if result.reasons.length > 0}
 				<li class="chip inflection" title="Inflection">{result.reasons.join(' → ')}</li>
 			{/if}
-			{#each result.tags as tag (tag)}
+			{#each result.tags as tag, i (i)}
 				<li class="chip">{tag}</li>
 			{/each}
 			{#each result.frequencies as f (f.packId)}
@@ -57,7 +61,7 @@
 	{#if sources.length > 0 || result.matched !== result.term}
 		<p class="source">
 			{sources.join(', ')}{#if result.matched !== result.term}{#if sources.length > 0}&ensp;·&ensp;{/if}matched
-				<span {lang}>{result.matched}</span>{/if}
+				<span lang={textLang}>{result.matched}</span>{/if}
 		</p>
 	{/if}
 
@@ -65,18 +69,20 @@
 		<ol class="senses">
 			{#each senses.slice(0, visible) as sense, i (i)}
 				<li>
-					{#each senseChips(sense) as chip (chip)}<span class="chip pos">{chip}</span>{/each}
+					{#each senseChips(sense) as chip, c (c)}<span class="chip pos">{chip}</span>{/each}
 					<!-- Separators are expressions: Svelte trims literal whitespace at block edges. -->
 					{#each sense.glosses as gloss, g (g)}
 						{#if g > 0}{'; '}{/if}
-						{#if hasCjk(gloss)}<span class="scan" data-scan={lang}>{gloss}</span>{:else}{gloss}{/if}
+						{#if hasCjk(gloss)}<span class="scan" data-scan={lang} lang={textLang}>{gloss}</span>{:else}{gloss}{/if}
 					{/each}
 					{#if sense.xrefs.length > 0}
 						<span class="xrefs">
 							{'see also '}
-							{#each sense.xrefs as xref, x (x)}
+							{#each sense.xrefs.map(parseXref) as xref, x (x)}
 								{#if x > 0}{', '}{/if}
-								<span class="scan" data-scan={lang} {lang}>{xref}</span>
+								<span class="scan" data-scan={lang} lang={textLang}>{xref.headword}</span>
+								{#if xref.reading}<span lang={textLang}>{`(${xref.reading})`}</span>{/if}
+								{#if xref.senseNo}{`sense ${xref.senseNo}`}{/if}
 							{/each}
 						</span>
 					{/if}

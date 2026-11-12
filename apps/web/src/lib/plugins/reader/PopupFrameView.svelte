@@ -69,7 +69,7 @@
 >
 	<div class="inner" bind:offsetHeight={contentHeight}>
 		<div class="bar">
-			{#if isRoot && info.mode === 'selection'}<span class="selected" lang={info.lang}>{frame.text}</span>{/if}
+			{#if isRoot && info.mode === 'selection'}<span class="selected" lang={info.textLang}>{frame.text}</span>{/if}
 			<button type="button" class="close" aria-label="Close" onclick={() => lookup.closeFrame(frame.id)}>×</button>
 		</div>
 		<div class="content" aria-live="polite">
@@ -79,10 +79,10 @@
 			{:else if frame.results === null}
 				<p class="hint">Looking up…</p>
 			{:else if results.length === 0}
-				<p class="hint">No dictionary entry found for <span lang={info.lang}>{frame.text}</span>.</p>
+				<p class="hint">No dictionary entry found for <span lang={info.textLang}>{frame.text}</span>.</p>
 			{:else}
 				{#each results.slice(0, visible) as result, i (`${result.entryId}:${result.kind}:${i}`)}
-					<EntryCard {result} lang={info.lang} />
+					<EntryCard {result} lang={info.lang} textLang={info.textLang} />
 				{/each}
 				{#if hidden > 0}
 					<button type="button" class="more" onclick={() => (shown = visibleCount(results.length, shown))}>

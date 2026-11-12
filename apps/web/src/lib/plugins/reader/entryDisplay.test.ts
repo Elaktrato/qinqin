@@ -4,8 +4,10 @@ import {
 	dictionaryNames,
 	frequencyLabel,
 	hasCjk,
+	joinForms,
 	moreLabel,
 	otherForms,
+	parseXref,
 	readingLine,
 	rubyReading,
 	senseChips,
@@ -99,6 +101,13 @@ describe('otherForms', () => {
 	});
 });
 
+describe('joinForms', () => {
+	it('uses the Japanese list comma for Japanese and a middle dot for Chinese', () => {
+		expect(joinForms(['為る', '爲る'], 'ja')).toBe('為る、爲る');
+		expect(joinForms(['學習', '学習'], 'zh')).toBe('學習 · 学習');
+	});
+});
+
 describe('frequencyLabel', () => {
 	it('prefers the display value, else the rank with thousands separators', () => {
 		expect(frequencyLabel({ packId: 1, packName: 'Jiten', rank: 12345 })).toBe('12,345');
@@ -133,6 +142,20 @@ describe('hasCjk', () => {
 		expect(hasCjk('ヘルプ')).toBe(true);
 		expect(hasCjk('𠮷')).toBe(true);
 		expect(hasCjk('to do; to perform')).toBe(false);
+	});
+});
+
+describe('parseXref', () => {
+	it('splits a JMdict xref into headword, reading and sense number', () => {
+		expect(parseXref('歯・は・1')).toEqual({ headword: '歯', reading: 'は', senseNo: 1 });
+		expect(parseXref('選ばれし者・えらばれしもの')).toEqual({ headword: '選ばれし者', reading: 'えらばれしもの' });
+		expect(parseXref('五刑・2')).toEqual({ headword: '五刑', senseNo: 2 });
+		expect(parseXref('た・1')).toEqual({ headword: 'た', senseNo: 1 });
+	});
+
+	it('keeps a plain headword as it is', () => {
+		expect(parseXref('漢詩')).toEqual({ headword: '漢詩' });
+		expect(parseXref('お願いします')).toEqual({ headword: 'お願いします' });
 	});
 });
 

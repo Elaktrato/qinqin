@@ -41,6 +41,11 @@ export function otherForms(r: LookupResult): string[] {
 		.slice(0, MAX_OTHER_FORMS);
 }
 
+/** joinForms lists written forms: with 、 in Japanese, with " · " in Chinese. */
+export function joinForms(forms: string[], lang: string): string {
+	return forms.join(lang === 'ja' ? '、' : ' · ');
+}
+
 /** frequencyLabel is a pack's display value, else its rank with thousands separators. */
 export function frequencyLabel(f: Frequency): string {
 	return f.display || f.rank.toLocaleString('en-US');
@@ -66,6 +71,29 @@ const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
 /** hasCjk reports Han or kana in a gloss: such text can be scanned with Shift+hover. */
 export function hasCjk(text: string): boolean {
 	return CJK.test(text);
+}
+
+export interface Xref {
+	headword: string;
+	reading?: string;
+	senseNo?: number;
+}
+
+/**
+ * parseXref splits a JMdict cross-reference, `headword[・reading][・senseNo]`.
+ * Only the headword is worth a lookup; the rest is shown as plain text.
+ */
+export function parseXref(text: string): Xref {
+	const parts = text.split('・');
+	const xref: Xref = { headword: parts[0] };
+	let rest = parts.slice(1);
+	const last = rest.at(-1);
+	if (last !== undefined && /^\d+$/.test(last)) {
+		xref.senseNo = Number(last);
+		rest = rest.slice(0, -1);
+	}
+	if (rest.length > 0) xref.reading = rest.join('・');
+	return xref;
 }
 
 /** moreLabel words a "show more" button. */
