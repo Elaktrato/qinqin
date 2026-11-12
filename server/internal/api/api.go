@@ -55,13 +55,15 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	return mux
 }
 
-// Request body caps of the two bulk write routes, the largest bodies the
-// API accepts.
+// Request size limits: body caps of the bulk write routes (the largest
+// bodies the API accepts) and the code-point caps on segmented text.
 const (
 	maxBatchBody = 4 << 20 // POST /api/events/batch
 	maxPushBody  = 8 << 20 // POST /api/sync/push
 
-	maxSegmentBody = 256 << 10 // POST /api/segment
+	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
+	maxSegmentRunes   = 5000      // POST /api/segment text code points
+	maxSegmentAtRunes = 20000     // GET /api/segment/at text code points
 )
 
 // badBody answers a request body that failed to decode: 413 when it

@@ -124,3 +124,45 @@ func TestSegmentBatchTooLarge(t *testing.T) {
 		t.Errorf("status = %d, want 413", resp.StatusCode)
 	}
 }
+
+func TestSegmentTextRuneCaps(t *testing.T) {
+	tsURL, _ := seedSegmentWords(t)
+	post := func(n int) int {
+		resp := doJSON(t, http.MethodPost, tsURL, "/api/segment", "",
+			map[string]string{"lang": "zh", "text": strings.Repeat("学", n)})
+		return resp.StatusCode
+	}
+	if got := post(5000); got != http.StatusOK {
+		t.Errorf("5000 runes = %d, want 200", got)
+	}
+	if got := post(5001); got != http.StatusRequestEntityTooLarge {
+		t.Errorf("5001 runes = %d, want 413", got)
+	}
+	resp := doJSON(t, http.MethodGet, tsURL, segmentAtPath("zh", strings.Repeat("学", 20001), "0"), "", nil)
+	if resp.StatusCode != http.StatusRequestEntityTooLarge {
+		t.Errorf("GET at 20001 runes = %d, want 413", resp.StatusCode)
+	}
+}
+
+func TestSegmentUnsupportedLanguage(t *testing.T) {
+	tsURL, _ := seedSegmentWords(t)
+	resp := doJSON(t, http.MethodGet, tsURL, segmentAtPath("xx", "学", "0"), "", nil)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("GET at unknown lang = %d, want 400", resp.StatusCode)
+	}
+	resp = doJSON(t, http.MethodPost, tsURL, "/api/segment", "", map[string]string{"lang": "xx", "text": "学"})
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("POST unknown lang = %d, want 400", resp.StatusCode)
+	}
+}
+
+func TestSegmentAtOutOfRangeOffset(t *testing.T) {
+	tsURL, _ := seedSegmentWords(t)
+	for _, off := range []string{"-1", "5"} {
+		resp := doJSON(t, http.MethodGet, tsURL, segmentAtPath("zh", "学", off), "", nil)
+		raw, _ := io.ReadAll(resp.Body)
+		if got := strings.TrimSpace(string(raw)); resp.StatusCode != http.StatusOK || got != `{"match":null}` {
+			t.Errorf("offset %s = %d %s, want 200 {\"match\":null}", off, resp.StatusCode, got)
+		}
+	}
+}

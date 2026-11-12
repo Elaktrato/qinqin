@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"unicode/utf8"
 
 	"qinqin/internal/entries"
+	"qinqin/internal/lang"
 	"qinqin/internal/segment"
 )
 
@@ -19,6 +21,14 @@ func (s *server) handleSegmentAt(w http.ResponseWriter, r *http.Request) {
 	offset, err := strconv.Atoi(params.Get("offset"))
 	if language == "" || text == "" || err != nil {
 		http.Error(w, "lang, text and integer offset required", http.StatusBadRequest)
+		return
+	}
+	if !lang.Registered(language) {
+		http.Error(w, "unsupported language", http.StatusBadRequest)
+		return
+	}
+	if utf8.RuneCountInString(text) > maxSegmentAtRunes {
+		http.Error(w, "text too long", http.StatusRequestEntityTooLarge)
 		return
 	}
 	svc := segment.Service{Entries: entries.Store{DB: s.db}}
@@ -48,6 +58,14 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Lang == "" {
 		http.Error(w, "lang required", http.StatusBadRequest)
+		return
+	}
+	if !lang.Registered(req.Lang) {
+		http.Error(w, "unsupported language", http.StatusBadRequest)
+		return
+	}
+	if utf8.RuneCountInString(req.Text) > maxSegmentRunes {
+		http.Error(w, "text too long", http.StatusRequestEntityTooLarge)
 		return
 	}
 	svc := segment.Service{Entries: entries.Store{DB: s.db}}
