@@ -410,6 +410,14 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
 		stamp, stamp, id); err != nil {
 		return fmt.Errorf("uninstall senses of dictionary %d: %w", id, err)
 	}
+	// The lexicon's senses of the dictionary become tombstones too, so
+	// delta sync ships the removal.
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE lx_senses SET deleted_at = ?, updated_at = ?
+		WHERE dictionary_id = ? AND deleted_at IS NULL`,
+		stamp, stamp, id); err != nil {
+		return fmt.Errorf("uninstall lexicon senses of dictionary %d: %w", id, err)
+	}
 	res, err := tx.ExecContext(ctx, `
 		UPDATE dictionaries SET deleted_at = ?, updated_at = ?
 		WHERE id = ? AND deleted_at IS NULL`,

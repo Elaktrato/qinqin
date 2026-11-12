@@ -18,7 +18,6 @@ import (
 	"slices"
 	"time"
 
-	"qinqin/internal/entries"
 	"qinqin/internal/events"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
@@ -32,15 +31,6 @@ var (
 	// ErrInvalid reports a malformed push item.
 	ErrInvalid = errors.New("sync: invalid")
 )
-
-// Link is one entry_links row: a variant, radical, or word-char relation.
-type Link struct {
-	FromID    int64      `json:"fromId"`
-	ToID      int64      `json:"toId"`
-	Type      string     `json:"type"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
-}
 
 // LevelMember is one level_members row: an entry's membership in a level.
 type LevelMember struct {
@@ -59,9 +49,9 @@ type LevelMember struct {
 // deleted_at.
 type Delta struct {
 	Cursor       time.Time           `json:"cursor"`
-	Entries      []model.Entry       `json:"entries"`
+	Entries      []Entry             `json:"entries"`
 	Links        []Link              `json:"links"`
-	Senses       []model.Sense       `json:"senses"`
+	Senses       []Sense             `json:"senses"`
 	LevelMembers []LevelMember       `json:"levelMembers"`
 	Sentences    []model.Sentence    `json:"sentences"`
 	PluginData   []model.PluginData  `json:"pluginData"`
@@ -110,11 +100,8 @@ func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time) (D
 	}
 	var err error
 
-	if d.Entries, err = (entries.Store{DB: sqlDB}).ChangedSince(ctx, cursor); err != nil {
-		return Delta{}, fmt.Errorf("sync pull: %w", err)
-	}
-	if cursor.IsZero() {
-		d.Entries = slices.DeleteFunc(d.Entries, func(e model.Entry) bool { return e.DeletedAt != nil })
+	if d.Entries, err = pullEntries(ctx, sqlDB, since, live); err != nil {
+		return Delta{}, err
 	}
 	if d.Links, err = pullLinks(ctx, sqlDB, since, live); err != nil {
 		return Delta{}, err

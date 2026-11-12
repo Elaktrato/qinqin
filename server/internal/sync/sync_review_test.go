@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
 	"qinqin/internal/plugins"
@@ -60,7 +60,7 @@ func TestPullShipsOwnOverlays(t *testing.T) {
 	ctx := context.Background()
 	alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 	seedWorld(t, sqlDB)
-	hao, err := entries.Store{DB: sqlDB}.GetByWritten(ctx, "好", "character", "zh")
+	hao, err := lexicon.Store{DB: sqlDB}.Best(ctx, "zh", "character", "好")
 	if err != nil {
 		t.Fatalf("get 好: %v", err)
 	}
