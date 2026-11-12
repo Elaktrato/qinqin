@@ -1,13 +1,25 @@
 #!/usr/bin/env bash
-# Download the upstream dictionaries into plugins/data/ as ready-to-seed
-# starter packs: the compressed files exactly as upstream ships them plus
-# a manifest, the license text, and attribution. The importers read
-# .gz/.zip directly, so nothing is decompressed here — and the downloaded
-# binaries are committed to the repo, so a fresh clone/deploy seeds
-# offline. This script exists to reproduce or refresh the bundle.
+# Download the upstream data into plugins/data/ as ready-to-seed starter
+# packs, each with a manifest, the license text, and attribution. The
+# dictionaries are the compressed files exactly as upstream ships them (the
+# importers read .gz/.zip directly, so nothing is decompressed here); the
+# Jiten frequency list is converted to freq-csv by
+# scripts/fetch-jiten-frequency.sh, which needs python3. The results are
+# committed to the repo, so a fresh clone/deploy seeds offline. This script
+# exists to reproduce or refresh the bundle, by hand.
 #
-#   scripts/fetch-seeds.sh [dest]      # dest defaults to plugins/data
+# The Jiten step requires JITEN_LICENCE_CHECKED and JITEN_TERMS_VERSION
+# (see scripts/fetch-jiten-frequency.sh: re-check Jiten's licence first).
+#
+#   JITEN_LICENCE_CHECKED=<YYYY-MM-DD> JITEN_TERMS_VERSION=<version> \
+#     scripts/fetch-seeds.sh [dest]      # dest defaults to plugins/data
 set -euo pipefail
+
+# Fail before downloading anything; the Jiten script explains the values.
+if [ -z "${JITEN_LICENCE_CHECKED:-}" ] || [ -z "${JITEN_TERMS_VERSION:-}" ]; then
+  echo "fetch-seeds: set JITEN_LICENCE_CHECKED and JITEN_TERMS_VERSION (see scripts/fetch-jiten-frequency.sh)" >&2
+  exit 1
+fi
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 dest="${1:-$root/plugins/data}"
