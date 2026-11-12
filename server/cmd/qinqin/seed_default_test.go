@@ -57,9 +57,16 @@ func csvGzRows(t *testing.T, path string) int {
 
 // TestSeedRealPacksRanksWithJiten seeds the committed plugins/data — the
 // full JMdict, KANJIDIC2, CC-CEDICT, Unihan and the Jiten frequency list —
-// and checks lookups against that real data. Slow (about a minute): it
-// is skipped with -short and when the bundle is not checked out.
+// and checks lookups against that real data. Slow (about a minute), so
+// opt-in, like the rule of smallPacks: it runs only with
+//
+//	QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v
+//
+// and is skipped with -short and when the bundle is not checked out.
 func TestSeedRealPacksRanksWithJiten(t *testing.T) {
+	if os.Getenv("QINQIN_REAL_DATA_TESTS") == "" {
+		t.Skip("set QINQIN_REAL_DATA_TESTS=1 to seed the real bundled data (~1 min)")
+	}
 	if testing.Short() {
 		t.Skip("seeds the full bundled data")
 	}
