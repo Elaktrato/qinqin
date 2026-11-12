@@ -21,26 +21,7 @@ trap 'rm -rf "$tmp"' EXIT
 rm -f "$dest"/cedict/dictionary.txt "$dest"/unihan/dictionary.txt \
       "$dest"/jmdict/jmdict.xml "$dest"/kanjidic2/kanjidic2.xml
 
-fetch() { # url outfile
-  echo "downloading $1"
-  curl -fsSL --retry 3 -o "$2" "$1"
-}
-
-manifest() { # dir id name type language license attribution format
-  mkdir -p "$1"
-  cat >"$1/manifest.json" <<EOF
-{
-  "id": "$2",
-  "name": "$3",
-  "version": "$(date -u +%Y-%m-%d)",
-  "type": "$4",
-  "language": "$5",
-  "license": "$6",
-  "attribution": "$7",
-  "format": "$8"
-}
-EOF
-}
+. "$root/scripts/pack-lib.sh"
 
 attribution() { # dir title text url
   cat >"$1/ATTRIBUTION.md" <<EOF
@@ -56,7 +37,7 @@ EOF
 }
 
 # One copy of the CC BY-SA 4.0 text serves the three CC-licensed packs.
-fetch "https://creativecommons.org/licenses/by-sa/4.0/legalcode.txt" "$tmp/CC-BY-SA-4.0.txt"
+fetch "$cc_by_sa_4_url" "$tmp/CC-BY-SA-4.0.txt"
 
 # CC-CEDICT (Mandarin–English words), CC BY-SA 4.0.
 fetch "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz" "$tmp/cedict.gz"
@@ -98,5 +79,8 @@ cp "$tmp/CC-BY-SA-4.0.txt" "$dest/kanjidic2/LICENSE"
 attribution "$dest/kanjidic2" "KANJIDIC2" \
   "Kanji dictionary, © Electronic Dictionary Research and Development Group (EDRDG), licensed under CC BY-SA 4.0." \
   "https://www.edrdg.org/wiki/index.php/KANJIDIC_Project"
+
+# Jiten frequency list (word ranks), CC BY-SA 4.0, converted to freq-csv.
+"$root/scripts/fetch-jiten-frequency.sh" "$dest"
 
 echo "done — now run: qinqin seed --data <dir> --packs $dest"
