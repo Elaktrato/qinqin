@@ -17,17 +17,18 @@ const MaxWordRunes = 12
 
 // Candidate is one dictionary entry a match resolves to.
 type Candidate struct {
-	ID   int64
-	Kind string // "character" | "word"
+	ID   int64  `json:"id"`
+	Kind string `json:"kind"` // "character" | "word"
 }
 
 // Match is one recognized word in the text.
 type Match struct {
-	Surface    string      // text as written in the input
-	Start, End int         // code-point offsets, End exclusive
-	Lemma      string      // dictionary form (== Surface unless deinflected)
-	Reason     string      // "" or deinflection reason, e.g. "past"
-	Entries    []Candidate // all entries with written == Lemma
+	Surface string      `json:"surface"` // text as written in the input
+	Start   int         `json:"start"`   // code-point offset
+	End     int         `json:"end"`     // code-point offset, exclusive
+	Lemma   string      `json:"lemma"`   // dictionary form (== Surface unless deinflected)
+	Reason  string      `json:"reason"`  // "" or deinflection reason, e.g. "past"
+	Entries []Candidate `json:"entries"` // all entries with written == Lemma
 }
 
 // Service tokenizes text over the dictionary entries.

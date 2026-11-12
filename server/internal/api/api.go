@@ -30,6 +30,8 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("PUT /api/entries/{id}", s.handlePutEntry)
 	mux.HandleFunc("POST /api/entries/{id}/sentences", s.handleAddSentence)
 	mux.HandleFunc("GET /api/search", s.handleSearch)
+	mux.HandleFunc("GET /api/segment/at", s.handleSegmentAt)
+	mux.HandleFunc("POST /api/segment", s.handleSegment)
 	mux.HandleFunc("GET /api/sync/pull", s.handleSyncPull)
 	mux.HandleFunc("POST /api/sync/push", s.handleSyncPush)
 	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
@@ -58,6 +60,8 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 const (
 	maxBatchBody = 4 << 20 // POST /api/events/batch
 	maxPushBody  = 8 << 20 // POST /api/sync/push
+
+	maxSegmentBody = 256 << 10 // POST /api/segment
 )
 
 // badBody answers a request body that failed to decode: 413 when it
