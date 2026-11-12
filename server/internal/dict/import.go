@@ -144,13 +144,24 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
 		}
 		ids := make([]int64, 0, len(forms))
 		for _, form := range forms {
-			id, err := store.Upsert(ctx, &model.Entry{
+			ent := &model.Entry{
 				Language: m.Language,
 				Kind:     e.Kind,
 				Written:  form,
 				Readings: e.readingsFor(form),
-				Attrs:    e.Attrs,
-			})
+				Attrs:    e.attrsFor(form),
+			}
+			var (
+				id  int64
+				err error
+			)
+			if m.Format == FormatJMdict {
+				// The jmdict.* ranking attrs belong to this importer: a
+				// re-import replaces them, so none goes stale.
+				id, err = store.UpsertReplacingAttrs(ctx, ent, jmdictAttrPrefix)
+			} else {
+				id, err = store.Upsert(ctx, ent)
+			}
 			if err != nil {
 				return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
 			}
@@ -420,6 +431,9 @@ type RawEntry struct {
 	Attrs    map[string]string // entry attrs (kanjidic2 strokes)
 	Radical  int               // Kangxi radical number (kanjidic2 classical radical)
 	Glosses  []string
+	// FormAttrs, when set, holds the attrs of each written form (Written
+	// and every one of Forms): a JMdict form's ranking attrs.
+	FormAttrs map[string]map[string]string
 }
 
 // entry is one parsed dictionary entry in the shape the import loop
@@ -437,6 +451,18 @@ type entry struct {
 	// forms (Written or one of Forms) that differ from Readings: a JMdict
 	// form shared by several words carries all of their readings.
 	FormReadings map[string][]model.Reading
+	// FormAttrs, when set, holds the attrs of individual written forms,
+	// used instead of Attrs: a JMdict form's ranking attrs.
+	FormAttrs map[string]map[string]string
+}
+
+// attrsFor returns the attrs of one written form of the entry: its own
+// FormAttrs when set, else the entry's Attrs.
+func (e entry) attrsFor(form string) map[string]string {
+	if attrs, ok := e.FormAttrs[form]; ok {
+		return attrs
+	}
+	return e.Attrs
 }
 
 // tradForms returns trad as a single extra written form, or nil when it

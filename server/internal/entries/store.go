@@ -40,8 +40,28 @@ type Store struct {
 // unconvertible input; ord is the reading's position among the entry's
 // readings. Readings replace wholesale — superseded rows are soft-deleted
 // and the new list inserted — and attrs persist as child rows keyed by
-// (entry_id, key).
+// (entry_id, key) and merge: a key e does not carry keeps its stored
+// value.
 func (s Store) Upsert(ctx context.Context, e *model.Entry) (int64, error) {
+	return s.upsert(ctx, e, "")
+}
+
+// UpsertReplacingAttrs is Upsert, except that the attrs whose key starts
+// with prefix are owned by the caller and replace wholesale: a stored key
+// under prefix that e.Attrs no longer carries is deleted (and the entry
+// stamped, so the sync pull ships its new attr map). Keys outside prefix
+// still merge. An importer passes its own namespace ("jmdict.") so a
+// re-import never leaves a stale value behind.
+func (s Store) UpsertReplacingAttrs(ctx context.Context, e *model.Entry, prefix string) (int64, error) {
+	if prefix == "" {
+		return 0, fmt.Errorf("upsert entry %q: replacing attrs needs a key prefix", e.Written)
+	}
+	return s.upsert(ctx, e, prefix)
+}
+
+// upsert is Upsert; a non-empty ownedPrefix makes the attrs under it
+// replace wholesale (see UpsertReplacingAttrs).
+func (s Store) upsert(ctx context.Context, e *model.Entry, ownedPrefix string) (int64, error) {
 	pack := lang.For(e.Language)
 	normalizeReadings(e.Readings, pack)
 	e.Readings = pack.DeriveReadings(e.Readings)
@@ -125,6 +145,15 @@ func (s Store) Upsert(ctx context.Context, e *model.Entry) (int64, error) {
 			return 0, fmt.Errorf("upsert attr %q of entry %q: %w", k, e.Written, err)
 		}
 		if n, _ := res.RowsAffected(); n > 0 {
+			changed = true
+		}
+	}
+	if ownedPrefix != "" {
+		gone, err := dropStaleAttrs(ctx, tx, id, ownedPrefix, e.Attrs)
+		if err != nil {
+			return 0, fmt.Errorf("drop stale attrs of entry %q: %w", e.Written, err)
+		}
+		if gone {
 			changed = true
 		}
 	}
@@ -616,6 +645,43 @@ func readingsMatch(ctx context.Context, db queryer, entryID int64, want []model.
 		return false, err
 	}
 	return i == len(want), nil
+}
+
+// dropStaleAttrs deletes the entry's stored attrs whose key starts with
+// prefix and is not a key of keep, reporting whether any were deleted.
+// Attr rows carry no tombstone: the entry's stamp is what ships its new
+// attr map to clients.
+func dropStaleAttrs(ctx context.Context, tx *sql.Tx, entryID int64, prefix string, keep map[string]string) (bool, error) {
+	rows, err := tx.QueryContext(ctx, `
+		SELECT key FROM entry_attrs
+		WHERE entry_id = ? AND substr(key, 1, ?) = ?`,
+		entryID, len(prefix), prefix)
+	if err != nil {
+		return false, err
+	}
+	var stale []string
+	for rows.Next() {
+		var k string
+		if err := rows.Scan(&k); err != nil {
+			rows.Close()
+			return false, err
+		}
+		if _, ok := keep[k]; !ok {
+			stale = append(stale, k)
+		}
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return false, err
+	}
+	for _, k := range stale {
+		if _, err := tx.ExecContext(ctx, `
+			DELETE FROM entry_attrs WHERE entry_id = ? AND key = ?`, entryID, k); err != nil {
+			return false, err
+		}
+	}
+	return len(stale) > 0, nil
 }
 
 // normalizeReadings fills each reading's Plain via pack and stamps its
