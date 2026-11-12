@@ -105,20 +105,29 @@ Reader is a web feature plugin (`qinqin-reader`) for reading Chinese and Japanes
 text with dictionary lookup in place. It offers:
 
 - **Hover and selection lookup** — the word under the cursor is resolved by the
-  server's longest-match tokenizer (Japanese forms are deinflected), and selecting
-  text looks up the selection.
+  server's longest-match tokenizer (Japanese forms are deinflected, and words
+  written in kana — する, こと, りんご — are found by their kana readings), and
+  selecting text looks up the selection. Hovering Latin letters, digits or a spot
+  with no dictionary word shows nothing.
 - **Ruby toggle** — furigana in Japanese books can be shown or hidden.
 - **Script conversion** — Chinese books can be shown as original, simplified, or
   traditional (converted in the browser with `opencc-js`); lookup works on either.
 - **A personal library** — books are stored per user, with the source link and
   attribution shown for each, and the reading position is remembered per book.
 - **Import** from Aozora Bunko and Project Gutenberg, or **upload** your own epub.
+  Gutenberg books carry the note "Distributed by Project Gutenberg as public domain
+  in the USA; copyright status elsewhere may differ." (its catalog has no rights
+  column, so qinqin claims nothing more).
 
 Open **Reader** in the nav. Import a work from a source (search, then Import) or
 upload an epub; for an upload whose epub declares no supported language you pick
 Chinese or Japanese. Open a book and hover a word for its entry. Select text to
 look it up: a single hanzi or kanji shows the character, longer text shows the
-word at the start of the selection. **Escape** closes the popup.
+word at the start of the selection. **Escape** closes the popup. A kana word can
+be the reading of several entries (する: 為る, 刷る, 擦る...); the popup shows one
+(entries for which it is the first reading come first, then by entry id — JMdict
+priority tags are not imported, so this is not a frequency ranking) and says how
+many others are read the same way, with a link to search for them.
 
 Limits you may hit:
 
@@ -127,16 +136,20 @@ Limits you may hit:
   already running". A work already in your library is not imported twice.
 - Only public-domain Aozora works are offered, and only Chinese and Japanese books
   are supported.
+- A source search shows at most 100 results, best matches first (exact title,
+  title prefix, author, then other matches); refine the search when it says the
+  list is cut off.
 - Webview only for now. Hover needs a mouse; selection lookup also works on touch.
 
 ### API
 
-All library and source routes need a signed-in user; the segment routes are public.
+All library and source routes need a signed-in user, and so does
+`POST /api/segment`; `GET /api/segment/at` is public.
 
 | Route | Purpose |
 |---|---|
-| `GET /api/segment/at?lang=&text=&offset=` | Longest dictionary match at a code-point offset. `text` up to 20000 code points |
-| `POST /api/segment` `{lang, text}` | Every match in order. `text` up to 5000 code points, body up to 256 KiB |
+| `GET /api/segment/at?lang=&text=&offset=` | Longest dictionary match at a code-point offset. `text` up to 64 code points (the web app sends 16). Each candidate has `reading: true` when it matched by a kana reading (Japanese) |
+| `POST /api/segment` `{lang, text}` | Every match in order; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/library/books`, `GET`/`DELETE /api/library/books/{id}` | List, read, delete a book |
 | `GET /api/library/books/{id}/chapters/{n}` | One chapter's paragraphs |
 | `PUT /api/library/books/{id}/position` | Store the reading position |
@@ -151,13 +164,16 @@ UTF-16 units.
 ### Operations
 
 Imports run on the server, only when a user asks, one work per request. Requests
-to the sources send `User-Agent: qinqin/dev (+https://github.com/Elaktrato/qinqin)`,
-are limited to one per second per host, and are cached under `<data>/cache/sources`
+to the sources send `User-Agent: qinqin/<version> (+https://github.com/Elaktrato/qinqin)`,
+where `<version>` is `dev` unless the binary is built with
+`go build -ldflags "-X main.version=1.2.3" ./cmd/qinqin`. They wait at most 15 s
+for a connection and 15 s for the response headers; a download itself is bounded
+only by the import's own deadline. Requests are limited to one per second per host, and are cached under `<data>/cache/sources`
 (catalogs for 7 days, works for 1 day). Books live under `<data>/books/<user id>/`,
 with their metadata and reading position in the SQLite database.
 
-The source client only fetches `https` URLs from a host allow-list (Aozora Bunko
-and its GitHub mirror, Gutenberg), checks every redirect hop, and refuses
+The source client only fetches `https` URLs from a host allow-list (Aozora Bunko,
+Gutenberg), checks every redirect hop, and refuses
 loopback, private, and other non-public addresses. Environment proxies
 (`HTTP_PROXY`, `HTTPS_PROXY`) are intentionally **not** used, because a proxy would
 bypass that check. A self-hoster behind a mandatory outbound proxy therefore
@@ -203,7 +219,10 @@ The files are redistributed **unmodified**. See
 [docs/sources.md](docs/sources.md) for attributions, upstream links, and the
 redistribution policy. Stroke-order data (`hanzi-writer-data`, derived from the
 Make Me a Hanzi dataset) is licensed under the **Arphic Public License** and is
-credited on the app's Sources page.
+credited on the app's Sources page. The Reader's script converter `opencc-js`
+(`MIT AND Apache-2.0`: MIT code, Apache-2.0 dictionary data from `opencc-data`) is
+bundled in the web build, credited on the Sources page, and both licence texts ship
+with the app (`/OPENCC-JS-LICENSE.TXT`, `/OPENCC-APACHE-2.0.TXT`).
 
 ## Development
 

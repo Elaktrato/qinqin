@@ -173,23 +173,62 @@ Decisions that differ from or extend the spec above.
   extracted text, 2,000,000 runs, 500,000 paragraphs and 2000 chapters. Anything
   above is a 422 with nothing stored. Gutenberg epubs go through the same parser;
   Aozora texts get the same text, run, paragraph and chapter caps.
-- **Segment text caps.** `POST /api/segment` takes at most 5000 code points (and a
-  256 KiB body); `GET /api/segment/at` at most 20000. Hover lookups are window
-  based: the client sends at most 16 code points starting at the hovered offset
-  with `offset=0` and shifts the result back, and caches by window.
+- **Segment text caps and access.** `POST /api/segment` needs a signed-in user (one
+  request can run thousands of lookups and nothing in the web app calls it yet) and
+  takes at most 5000 code points (and a 256 KiB body); `GET /api/segment/at` is
+  public and takes at most 64 code points. Hover lookups are window based: the
+  client sends at most 16 code points starting at the hovered offset with
+  `offset=0` and shifts the result back, and caches by window.
+- **Japanese kana words match by reading.** The JMdict importer stores a word that
+  has a kanji form under its kanji forms only (the kana are readings), so する
+  (為る), こと (事), りんご (林檎) never match by written form. Every kana-only
+  candidate (surface prefix or deinflected form; hiragana, katakana, ー) is also
+  looked up by `readings.plain` (type `kana`, normalized like the importer:
+  katakana folded to hiragana) — indexed by migration `013` on
+  `readings(plain, entry_id)`. Longest surface wins; at equal length a
+  written-form hit beats a reading hit, and within each kind an exact hit beats a
+  deinflected one (shallowest deinflection first). A reading hit lists up to 8
+  candidates, flagged `"reading": true`: entries for which the kana is the first
+  reading first, then by reading position and entry id. **Limitation:** JMdict
+  priority tags (`ichi1`, `news1`, `nf01`...) are not imported, so homophones are
+  not frequency ranked (する shows 為る, 刷る... in entry-id order among first
+  readings). The popup says how many other entries share the reading and links
+  to a search for it. Zh matching is unchanged (written forms only).
+  The JMdict importer now gives a kanji form shared by several words the union
+  of their kana readings (in file order), like cedict's homograph merge; before,
+  the last word won and 為る was read only なる, 林檎 only りゅうごう. A kana
+  surface that is itself a reading of some entry (した → 舌) wins over a
+  deinflection of equal length (した → する past), per the ranking above.
+- **Hover shows nothing for no word.** Latin letters, digits, punctuation and
+  whitespace never start a lookup, and a hover lookup that finds nothing shows no
+  popup; the not-found hint is for selections only.
+- **Source search ranks before truncating.** Both adapters rank matches (exact
+  title, title prefix, author, other substring; ties by id) and then cut at the
+  limit; the client asks for the maximum of 100 and says when the list is cut off.
+- **Source requests are bounded by the caller's context.** The client has dial/TLS
+  and response-header timeouts (15 s each) but no whole-request timeout, so the
+  21 MB Gutenberg catalog download runs within the 90 s catalog load and imports
+  within their 60 s deadline. Malformed and unknown source ids are 404.
+- **Gutenberg licence note** is "Distributed by Project Gutenberg as public domain
+  in the USA; copyright status elsewhere may differ." — the catalog CSV has no
+  rights column, so nothing stronger is claimed.
+- **Epub chapter titles.** The heading a chapter title comes from is not repeated
+  as a paragraph (unless it is all the chapter has); a chapter without a heading
+  has an empty title and the reader shows "Chapter n".
 - **One import per user at a time**, enforced in memory (429 for a second one),
   with a 60 second timeout for a whole import.
 - **Deinflection** also covers irregular verb forms (suru, kuru and similar), on top
   of the forms the spec lists.
-- **Aozora is https only**, and the source client does not use environment
+- **Aozora is https only**, from aozora.gr.jp only (the live catalog has no GitHub
+  URLs), and the source client does not use environment
   proxies, so the dialer can refuse non-public addresses. See the README for the
   consequence for self-hosters behind a mandatory proxy.
 - **opencc-js is loaded lazily**, only when a Chinese book is shown in a converted
-  script.
+  script. It is `MIT AND Apache-2.0`; the Sources page credits it and both licence
+  texts ship in `apps/web/static/`.
 
 ### Known limitations
 
-- An epub `<h1>` can appear both as the chapter title and as the first paragraph.
 - Japanese deinflection is part-of-speech blind: rules do not check the part of speech, so a
   rewritten form can match an entry that is not a verb or adjective.
 - No vertical text and no images.

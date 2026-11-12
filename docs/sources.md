@@ -43,15 +43,23 @@ attribution, and a licence note, which the Reader shows.
   copyright flag must both say no copyright, and a row that does not is skipped
   (fail closed). The catalog is used under CC BY 4.0, as stated on aozora.gr.jp,
   and each book keeps its 底本 (source edition) credit.
-- **Project Gutenberg** (<https://www.gutenberg.org/>) — ebooks the catalog marks
-  as public domain in the USA, which is a per-ebook statement and may not hold in
-  other countries. A book is fetched only when a user imports it, one book per
-  request, with requests rate limited and cached.
+- **Project Gutenberg** (<https://www.gutenberg.org/>) — Chinese and Japanese text
+  ebooks from the catalog. The catalog CSV has no rights column, so each imported
+  book carries the note "Distributed by Project Gutenberg as public domain in the
+  USA; copyright status elsewhere may differ." A book is fetched only when a user
+  imports it, one book per request, with requests rate limited and cached.
 - **Wikisource** was considered and left out of v1 pending a licence check.
 
 ## Conversion library
 
 Traditional/simplified conversion in the Reader runs in the browser with
 [`opencc-js`](https://github.com/nk2028/opencc-js), whose package metadata gives
-the licence as `MIT AND Apache-2.0`. It is bundled in the web build and loaded only
-when a script conversion is selected.
+the licence as `MIT AND Apache-2.0`: the library code is MIT, and its conversion
+dictionaries are generated from [`opencc-data`](https://github.com/nk2028/opencc-data)
+under the Apache License, Version 2.0. It is bundled in the web build and loaded
+only when a script conversion is selected. The Sources page credits it, and both
+licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
+`apps/web/static/OPENCC-APACHE-2.0.TXT` (copied verbatim from the `opencc-js`
+package; a web test keeps them identical) and served by the app at
+[`/OPENCC-JS-LICENSE.TXT`](/OPENCC-JS-LICENSE.TXT) and
+[`/OPENCC-APACHE-2.0.TXT`](/OPENCC-APACHE-2.0.TXT).
