@@ -97,6 +97,19 @@
 	</section>
 
 	<section>
+		<h2>Script conversion</h2>
+		<p>
+			Traditional/simplified conversion in the Reader uses
+			<a href="https://github.com/nk2028/opencc-js" rel="noreferrer">opencc-js</a>, licensed
+			<strong>MIT AND Apache-2.0</strong>: the library is under the MIT License, and its
+			conversion dictionaries, generated from
+			<a href="https://github.com/nk2028/opencc-data" rel="noreferrer">opencc-data</a>, under the
+			Apache License, Version 2.0. The <a href="/OPENCC-JS-LICENSE.TXT">MIT license text</a> and
+			the <a href="/OPENCC-APACHE-2.0.TXT">Apache-2.0 license text</a> ship with this app.
+		</p>
+	</section>
+
+	<section>
 		<h2>More</h2>
 		<p>
 			Full license texts and attribution notices for the upstream dictionary packs live in
