@@ -335,6 +335,47 @@ func EntryIDs(ctx context.Context, sqlDB *sql.DB, schemeID int64, levelName stri
 	return ids, nil
 }
 
+// SchemeEntryIDs returns the ids of the entries that are active members of
+// any active level of the scheme, in level order and then entry id, each
+// once even when several levels list it. An unknown or uninstalled scheme
+// returns ErrNotFound.
+func SchemeEntryIDs(ctx context.Context, sqlDB *sql.DB, schemeID int64) ([]int64, error) {
+	var exists int
+	err := sqlDB.QueryRowContext(ctx, `
+		SELECT 1 FROM schemes WHERE id = ? AND deleted_at IS NULL`, schemeID).Scan(&exists)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("find scheme %d: %w", schemeID, err)
+	}
+
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT m.entry_id
+		FROM level_members m
+		JOIN levels l ON l.id = m.level_id AND l.deleted_at IS NULL
+		WHERE l.scheme_id = ? AND m.deleted_at IS NULL
+		GROUP BY m.entry_id
+		ORDER BY MIN(l.ord), m.entry_id`, schemeID)
+	if err != nil {
+		return nil, fmt.Errorf("members of scheme %d: %w", schemeID, err)
+	}
+	defer rows.Close()
+
+	ids := make([]int64, 0)
+	for rows.Next() {
+		var entryID int64
+		if err := rows.Scan(&entryID); err != nil {
+			return nil, fmt.Errorf("members of scheme %d: %w", schemeID, err)
+		}
+		ids = append(ids, entryID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("members of scheme %d: %w", schemeID, err)
+	}
+	return ids, nil
+}
+
 // levelsPack is the decoded levels.json of a pack.
 type levelsPack struct {
 	Unit   string      `json:"unit"`

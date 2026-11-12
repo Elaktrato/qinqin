@@ -144,6 +144,51 @@ func (s Store) Upsert(ctx context.Context, e *model.Entry) (int64, error) {
 	return id, nil
 }
 
+// GetMany returns the active entries with the given ids, in the order the
+// ids appear, silently skipping ids that are unknown or soft-deleted. It
+// returns a non-nil (possibly empty) slice.
+func (s Store) GetMany(ctx context.Context, ids []int64) ([]model.Entry, error) {
+	list := make([]model.Entry, 0, len(ids))
+	if len(ids) == 0 {
+		return list, nil
+	}
+
+	// Query each distinct id once, in chunks within SQLite's bound-variable
+	// budget, then put the entries back in the caller's order.
+	byID := make(map[int64]model.Entry, len(ids))
+	uniq := make([]int64, 0, len(ids))
+	seen := make(map[int64]bool, len(ids))
+	for _, id := range ids {
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		uniq = append(uniq, id)
+	}
+	for start := 0; start < len(uniq); start += childChunk {
+		end := min(start+childChunk, len(uniq))
+		chunk := uniq[start:end]
+		args := make([]any, len(chunk))
+		for i, id := range chunk {
+			args[i] = id
+		}
+		es, err := s.listEntries(ctx, entrySelect+`
+			WHERE e.id IN (`+placeholders(len(chunk))+`) AND e.deleted_at IS NULL`, args...)
+		if err != nil {
+			return nil, fmt.Errorf("get entries: %w", err)
+		}
+		for _, e := range es {
+			byID[e.ID] = e
+		}
+	}
+	for _, id := range ids {
+		if e, ok := byID[id]; ok {
+			list = append(list, e)
+		}
+	}
+	return list, nil
+}
+
 // GetByID returns the entry with the given id, or ErrNotFound when no
 // active entry has it.
 func (s Store) GetByID(ctx context.Context, id int64) (*model.Entry, error) {
@@ -410,7 +455,7 @@ func (s Store) attachChunk(ctx context.Context, es []*model.Entry) error {
 		byID[e.ID] = e
 		ids[i] = e.ID
 	}
-	placeHolders := strings.TrimSuffix(strings.Repeat("?,", len(es)), ",")
+	placeHolders := placeholders(len(es))
 
 	rows, err := s.DB.QueryContext(ctx, `
 		SELECT entry_id, type, value, plain, ord FROM readings
@@ -452,6 +497,11 @@ func (s Store) attachChunk(ctx context.Context, es []*model.Entry) error {
 		byID[entryID].Attrs[k] = v
 	}
 	return attrRows.Err()
+}
+
+// placeholders returns n comma-separated SQL parameter placeholders.
+func placeholders(n int) string {
+	return strings.TrimSuffix(strings.Repeat("?,", n), ",")
 }
 
 // queryer is anything that can run a query: *sql.DB and *sql.Tx.

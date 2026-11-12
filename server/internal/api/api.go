@@ -41,6 +41,7 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("POST /api/admin/dictionaries", s.handleInstallDictionary)
 	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
 	mux.HandleFunc("GET /api/schemes", s.handleListSchemes)
+	mux.HandleFunc("GET /api/schemes/{id}/entries", s.handleSchemeEntries)
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
