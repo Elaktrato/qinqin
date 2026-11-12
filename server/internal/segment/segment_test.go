@@ -1,0 +1,127 @@
+package segment_test
+
+import (
+	"context"
+	"path/filepath"
+	"testing"
+
+	"qinqin/internal/db"
+	"qinqin/internal/entries"
+	"qinqin/internal/model"
+	"qinqin/internal/segment"
+)
+
+// seedSegment returns a service over a fresh database holding a few zh
+// characters and words (simplified and traditional) plus an astral char.
+func seedSegment(t *testing.T) segment.Service {
+	t.Helper()
+	ctx := context.Background()
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	st := entries.Store{DB: sqlDB}
+	add := func(kind, written string) {
+		e := &model.Entry{Language: "zh", Kind: kind, Written: written,
+			Readings: []model.Reading{{Type: "pinyin", Value: "x"}}}
+		if _, err := st.Upsert(ctx, e); err != nil {
+			t.Fatalf("upsert %q: %v", written, err)
+		}
+	}
+	for _, c := range []string{"我", "喜", "欢", "学", "习", "汉", "语", "學", "習", "𠮷"} {
+		add("character", c)
+	}
+	for _, w := range []string{"学习", "學習", "汉语", "喜欢"} {
+		add("word", w)
+	}
+	return segment.Service{Entries: st}
+}
+
+func TestMatchAtLongestWord(t *testing.T) {
+	svc := seedSegment(t)
+	m, err := svc.MatchAt(context.Background(), "zh", "我喜欢学习汉语", 3)
+	if err != nil || m == nil {
+		t.Fatalf("MatchAt = %v, %v", m, err)
+	}
+	if m.Surface != "学习" || m.Start != 3 || m.End != 5 || m.Lemma != "学习" || m.Reason != "" {
+		t.Errorf("match = %+v, want 学习 3..5", m)
+	}
+	if len(m.Entries) != 1 || m.Entries[0].Kind != "word" || m.Entries[0].ID == 0 {
+		t.Errorf("entries = %+v, want one word candidate", m.Entries)
+	}
+}
+
+func TestMatchAtFallsBackToSingleChar(t *testing.T) {
+	svc := seedSegment(t)
+	// 我喜 is not a word; 我 is a character.
+	m, err := svc.MatchAt(context.Background(), "zh", "我喜", 0)
+	if err != nil || m == nil {
+		t.Fatalf("MatchAt = %v, %v", m, err)
+	}
+	if m.Surface != "我" || m.Start != 0 || m.End != 1 {
+		t.Errorf("match = %+v, want 我 0..1", m)
+	}
+}
+
+func TestMatchAtNothing(t *testing.T) {
+	svc := seedSegment(t)
+	for _, text := range []string{"，", " ", "a", "7", "。我"} {
+		m, err := svc.MatchAt(context.Background(), "zh", text, 0)
+		if err != nil || m != nil {
+			t.Errorf("MatchAt(%q) = %+v, %v, want nil, nil", text, m, err)
+		}
+	}
+}
+
+func TestMatchAtAstral(t *testing.T) {
+	svc := seedSegment(t)
+	m, err := svc.MatchAt(context.Background(), "zh", "a𠮷b", 1)
+	if err != nil || m == nil {
+		t.Fatalf("MatchAt = %v, %v", m, err)
+	}
+	if m.Surface != "𠮷" || m.Start != 1 || m.End != 2 {
+		t.Errorf("match = %+v, want 𠮷 1..2", m)
+	}
+}
+
+func TestMatchAtOffsetOutOfRange(t *testing.T) {
+	svc := seedSegment(t)
+	for _, off := range []int{-1, 2, 99} {
+		m, err := svc.MatchAt(context.Background(), "zh", "我喜", off)
+		if err != nil || m != nil {
+			t.Errorf("offset %d = %+v, %v, want nil, nil", off, m, err)
+		}
+	}
+}
+
+func TestMatchAtTraditionalAndSimplified(t *testing.T) {
+	svc := seedSegment(t)
+	for _, w := range []string{"學習", "学习"} {
+		m, err := svc.MatchAt(context.Background(), "zh", w, 0)
+		if err != nil || m == nil || m.Surface != w || m.End != 2 {
+			t.Errorf("MatchAt(%q) = %+v, %v", w, m, err)
+		}
+	}
+}
+
+func TestSegmentCoversText(t *testing.T) {
+	svc := seedSegment(t)
+	text := "我喜欢，学习 abc 汉语!"
+	ms, err := svc.Segment(context.Background(), "zh", text)
+	if err != nil {
+		t.Fatalf("Segment: %v", err)
+	}
+	want := []struct {
+		s          string
+		start, end int
+	}{{"我", 0, 1}, {"喜欢", 1, 3}, {"学习", 4, 6}, {"汉语", 11, 13}}
+	if len(ms) != len(want) {
+		t.Fatalf("matches = %+v, want %d", ms, len(want))
+	}
+	for i, w := range want {
+		if ms[i].Surface != w.s || ms[i].Start != w.start || ms[i].End != w.end {
+			t.Errorf("match %d = %+v, want %+v", i, ms[i], w)
+		}
+	}
+}

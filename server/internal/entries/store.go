@@ -189,6 +189,32 @@ func (s Store) GetMany(ctx context.Context, ids []int64) ([]model.Entry, error) 
 	return list, nil
 }
 
+// EntriesByWritten returns the active entries of a language whose written
+// form is one of writtens, grouped by written form. Forms without an entry
+// are absent from the map. Readings and attrs are attached as usual.
+func (s Store) EntriesByWritten(ctx context.Context, language string, writtens []string) (map[string][]model.Entry, error) {
+	out := make(map[string][]model.Entry)
+	for start := 0; start < len(writtens); start += childChunk {
+		chunk := writtens[start:min(start+childChunk, len(writtens))]
+		args := make([]any, 0, len(chunk)+1)
+		args = append(args, language)
+		for _, w := range chunk {
+			args = append(args, w)
+		}
+		es, err := s.listEntries(ctx, entrySelect+`
+			WHERE e.language = ? AND e.written IN (`+placeholders(len(chunk))+`)
+			  AND e.deleted_at IS NULL
+			ORDER BY e.id`, args...)
+		if err != nil {
+			return nil, fmt.Errorf("entries by written: %w", err)
+		}
+		for _, e := range es {
+			out[e.Written] = append(out[e.Written], e)
+		}
+	}
+	return out, nil
+}
+
 // GetByID returns the entry with the given id, or ErrNotFound when no
 // active entry has it.
 func (s Store) GetByID(ctx context.Context, id int64) (*model.Entry, error) {
