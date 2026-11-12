@@ -499,6 +499,7 @@
 <main class="setup">
 	<h1>Study</h1>
 	<p class="hint">Choose what this session should draw from.</p>
+	<p class="hint"><a href="/study/map">View the mastery map →</a></p>
 
 	{#if loadError}
 		<p class="error" role="alert">{loadError}</p>

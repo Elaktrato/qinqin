@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { masteryForChar, masterySummary } from './mastery';
+import { masteryForChar, masteryForChars, masterySummary, stageOf } from './mastery';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 
 const DAY = 86_400_000;
@@ -212,6 +212,97 @@ describe('masteryForChar', () => {
 	});
 });
 
+describe('masteryForChars', () => {
+	it('matches masteryForChar across many characters and cards', () => {
+		// 40 characters, two cards each, with a mix of short and long
+		// histories plus a few unreviewed cards. Every card's written form
+		// is a two-character word, so most characters share cards.
+		const chars = Array.from({ length: 40 }, (_, index) =>
+			String.fromCodePoint(0x4e00 + index)
+		);
+		const cards: StudyCard[] = [];
+		const reviews: ReviewEvent[] = [];
+		for (let index = 0; index < chars.length; index += 1) {
+			const next = chars[(index + 1) % chars.length];
+			const pair = card(`pair-${index}`, `${chars[index]}${next}`);
+			const single = card(`single-${index}`, chars[index]);
+			cards.push(pair, single);
+			if (index % 7 !== 0) {
+				const offsets = index % 3 === 0 ? [0] : [0, 1, 11, 41];
+				reviews.push(
+					...goodHistory(pair.id, offsets),
+					...goodHistory(single.id, offsets)
+				);
+			}
+		}
+		// A character no card contains, and a legacy card with no snapshot.
+		cards.push(card('legacy'));
+		const requested = [...chars, '龍'];
+
+		const map = masteryForChars(requested, cards, reviews, NOW);
+
+		for (const char of requested) {
+			expect(map.get(char), char).toEqual(masteryForChar(char, cards, reviews, NOW));
+		}
+	});
+
+	it('reports unknown for the empty character', () => {
+		const cards = [card('c1', '猫')];
+		const history = goodHistory('c1', [0, 1, 11, 41]);
+
+		expect(masteryForChars([''], cards, history, NOW).get('')).toEqual({
+			score: 0,
+			stage: 'unknown',
+			reviewedCards: 0
+		});
+		expect(masteryForChar('', cards, history, NOW)).toEqual({
+			score: 0,
+			stage: 'unknown',
+			reviewedCards: 0
+		});
+	});
+
+	it('includes every requested character, even without a reviewed card', () => {
+		const map = masteryForChars(['猫', '狗'], [card('c1', '猫')], goodHistory('c1', [0]), NOW);
+
+		expect(map.size).toBe(2);
+		expect(map.get('狗')).toEqual({ score: 0, stage: 'unknown', reviewedCards: 0 });
+	});
+
+	it('counts one card once per character even when the written form repeats it', () => {
+		const history = goodHistory('c1', [0, 1, 11]);
+		const once = masteryForChar('猫', [card('c1', '猫')], history, NOW);
+		const repeated = masteryForChar('猫', [card('c1', '猫猫')], history, NOW);
+
+		expect(repeated).toEqual(once);
+		expect(repeated.reviewedCards).toBe(1);
+	});
+
+	it('returns an empty map for no characters', () => {
+		expect(masteryForChars([], [card('c1', '猫')], goodHistory('c1', [0]), NOW).size).toBe(0);
+	});
+});
+
+describe('stageOf', () => {
+	it('maps the exact band boundaries', () => {
+		const cases: Array<[number, string]> = [
+			[0, 'unknown'],
+			[1, 'fresh'],
+			[24, 'fresh'],
+			[25, 'learning'],
+			[49, 'learning'],
+			[50, 'mature'],
+			[79, 'mature'],
+			[80, 'learned'],
+			[100, 'learned']
+		];
+
+		for (const [score, stage] of cases) {
+			expect(stageOf(score), String(score)).toBe(stage);
+		}
+	});
+});
+
 describe('masterySummary', () => {
 	const cards = [card('learned', '猫'), card('mature', '鸟')];
 	const reviews = [
@@ -233,5 +324,31 @@ describe('masterySummary', () => {
 
 	it('reports an empty summary for no characters', () => {
 		expect(masterySummary([], cards, reviews, NOW)).toEqual({ mastered: 0, total: 0 });
+	});
+
+	it('agrees with the per-character scores across many characters', () => {
+		const chars = Array.from({ length: 25 }, (_, index) =>
+			String.fromCodePoint(0x4e00 + index)
+		);
+		const manyCards: StudyCard[] = [];
+		const manyReviews: ReviewEvent[] = [];
+		for (let index = 0; index < chars.length; index += 1) {
+			const item = card(`summary-${index}`, chars[index]);
+			manyCards.push(item);
+			if (index % 2 === 0) {
+				manyReviews.push(...goodHistory(item.id, [0, 1, 11, 41]));
+			} else if (index % 3 === 0) {
+				manyReviews.push(...goodHistory(item.id, [0, 1, 11]));
+			}
+		}
+
+		const expected = chars.filter(
+			(char) => masteryForChar(char, manyCards, manyReviews, NOW).score >= 80
+		).length;
+
+		expect(masterySummary(chars, manyCards, manyReviews, NOW)).toEqual({
+			mastered: expected,
+			total: chars.length
+		});
 	});
 });

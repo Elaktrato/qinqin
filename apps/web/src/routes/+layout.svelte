@@ -132,6 +132,7 @@
 			<nav aria-label="Main">
 				<a href="/" aria-current={path === '/' ? 'page' : undefined}>Home</a>
 				<a href="/search" aria-current={path === '/search' ? 'page' : undefined}>Search</a>
+				<a href="/study/map" aria-current={path === '/study/map' ? 'page' : undefined}>Map</a>
 				<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>Settings</a>
 				<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}>Sources</a>
 			</nav>
