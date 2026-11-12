@@ -54,33 +54,49 @@ func (c countingConn) ExecContext(ctx context.Context, query string, args []driv
 	return e.ExecContext(ctx, query, args)
 }
 
-// TestQueriesBounded checks that a full 12-rune kana window — 12
-// prefixes, each also looked up by reading, plus every deinflection of
-// each — costs a small constant number of statements: one batched
-// lookup per category, not one per candidate.
+// TestQueriesBounded checks that a full 12-rune window — 12 prefixes,
+// kana ones also looked up by reading, plus every deinflection of each —
+// costs a constant number of statements whatever the homographs: one
+// batched lookup per category, not one per candidate or per homograph.
 func TestQueriesBounded(t *testing.T) {
 	seeded, path := openDB(t)
-	importJMdict(t, seeded, jaWords+hanashi(false))
-	importJaFreq(t, seeded)
+	importJMdict(t, seeded, jaWords+altWords)
+	importKanjidic(t, seeded)
+	// 生 has three word homographs with their own reading rows, plus a
+	// KANJIDIC entry.
+	importFreqPack(t, seeded, "a", jaFreq+"生,なま,900\n生,せい,1500\n生,き,8000\n")
 
 	var count atomic.Int64
 	counted := sql.OpenDB(countingConnector{drv: seeded.Driver(), dsn: path, count: &count})
 	defer counted.Close()
 	s := service(counted)
 
-	for _, text := range []string{"したしたしたしたしたしたした", "いるいるいるいるいるいる", "ことことことことことこと"} {
+	tests := []struct {
+		text string
+		want int64
+	}{
+		// ByForm match (no hits, no loads) + ByReadingKind match and its 4
+		// loads (entries, forms, readings, senses) + packs + frequency
+		// rows + dictionary names.
+		{"したしたしたしたしたしたした", 9},
+		{"いるいるいるいるいるいる", 9},
+		{"ことことことことことこと", 9},
+		// ByForm match and its 4 loads; no kana term, so no reading
+		// lookup; packs + frequency rows + dictionary names.
+		{"生生生生生生生生生生生生生", 8},
+	}
+	for _, tt := range tests {
 		count.Store(0)
-		rs := run(t, s, "ja", text, 0)
+		rs := run(t, s, "ja", tt.text, 0)
 		if len(rs) == 0 {
-			t.Fatalf("Lookup(%q) found nothing", text)
+			t.Fatalf("Lookup(%q) found nothing", tt.text)
 		}
-		// ByForm and ByReading: 1 match + 4 loads each (entries, forms,
-		// readings, senses); frequency packs 1 + lookup batches (a few:
-		// one per homograph group); dictionary names 1.
-		n := count.Load()
-		t.Logf("Lookup(%q): %d statements", text, n)
-		if n == 0 || n > 16 {
-			t.Errorf("Lookup(%q) ran %d statements, want at most 16", text, n)
+		if n := count.Load(); n != tt.want {
+			t.Errorf("Lookup(%q) ran %d statements, want %d", tt.text, n, tt.want)
 		}
+	}
+	rs := run(t, s, "ja", "生", 0)
+	if len(rs) != 4 {
+		t.Errorf("生 results = %v, want three words and the character", headwords(rs))
 	}
 }

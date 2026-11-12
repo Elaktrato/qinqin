@@ -34,6 +34,12 @@ const tagUsuallyKana = "usually kana"
 // flagTrad marks a CC-CEDICT traditional form.
 const flagTrad = "trad"
 
+// Entry kinds.
+const (
+	kindWord      = "word"
+	kindCharacter = "character"
+)
+
 // Frequency is one frequency pack's rank for an entry: the best rank
 // among the entry's terms in that pack.
 type Frequency struct {
@@ -138,9 +144,12 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	if err != nil {
 		return nil, fmt.Errorf("lookup: %w", err)
 	}
+	// Reading hits are words only: a character entry is found by its
+	// character, as its on and kun readings would make any kana text hit
+	// kanji. ByReadingKind never loads those entries.
 	var byReading map[string][]lexicon.Entry
-	if len(plains) > 0 {
-		if byReading, err = s.Lexicon.ByReading(ctx, language, plains); err != nil {
+	if len(plains) > 0 && (len(kinds) == 0 || slices.Contains(kinds, kindWord)) {
+		if byReading, err = s.Lexicon.ByReadingKind(ctx, language, kindWord, plains); err != nil {
 			return nil, fmt.Errorf("lookup: %w", err)
 		}
 	}
@@ -171,11 +180,6 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 		}
 		pl := pack.NormalizeReading("kana", p.term)
 		for _, e := range byReading[pl] {
-			// A character entry is found by its character only: its on
-			// and kun readings would make any kana text hit kanji.
-			if e.Kind != "word" {
-				continue
-			}
 			consider(e, p, slices.IndexFunc(e.Readings, func(r lexicon.Reading) bool { return r.Plain == pl }))
 		}
 	}
@@ -188,15 +192,12 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	for i, id := range order {
 		matches[i], entries[i] = best[id], best[id].entry
 	}
-	freqs, packIDs, err := s.frequencies(ctx, language, entries)
-	if err != nil {
-		return nil, err
-	}
+	freqs, packIDs := s.frequencies(ctx, language, entries)
 	ranks := rankingRanks(packIDs, freqs)
 
 	cands := make([]candidate, len(matches))
 	for i, m := range matches {
-		cands[i] = rankKeys(pack, m)
+		cands[i] = rankKeys(pack, language, m)
 		cands[i].freqRank = ranks[i]
 		cands[i].at = i
 	}
@@ -209,7 +210,7 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	}
 	out := make([]Result, len(cands))
 	for i, c := range cands {
-		out[i] = result(matches[c.at], freqs[c.at], names, window, offset)
+		out[i] = result(language, matches[c.at], freqs[c.at], names, window, offset)
 	}
 	return out, nil
 }
@@ -249,7 +250,7 @@ func hasClass(e lexicon.Entry, class string) bool {
 }
 
 // rankKeys computes the sort keys of m except the frequency rank.
-func rankKeys(pack lang.Pack, m *match) candidate {
+func rankKeys(pack lang.Pack, language string, m *match) candidate {
 	e, term := m.entry, m.probe.term
 	plain := ""
 	if kanaOnly(term) {
@@ -264,7 +265,7 @@ func rankKeys(pack lang.Pack, m *match) candidate {
 		dictOrder:  math.MaxInt64,
 		ukPri:      e.UK && e.Pri > 0,
 		pri:        e.Pri,
-		headword:   headword(e),
+		headword:   displayTerm(language, m),
 		entryID:    e.ID,
 	}
 	// Primary: the text that matched the dictionary is the headword — the
@@ -295,6 +296,17 @@ func rankKeys(pack lang.Pack, m *match) candidate {
 	return c
 }
 
+// displayTerm is the headword a result shows: for Japanese the written form
+// that matched (解る, not 分かる); otherwise — a reading match, or
+// Chinese, whose traditional match still shows the simplified headword
+// — the entry's headword.
+func displayTerm(language string, m *match) string {
+	if language == "ja" && m.reading < 0 {
+		return m.probe.term
+	}
+	return headword(m.entry)
+}
+
 // headword is an entry's first form, or its first reading when it has
 // no form.
 func headword(e lexicon.Entry) string {
@@ -308,12 +320,12 @@ func headword(e lexicon.Entry) string {
 }
 
 // result renders a ranked match.
-func result(m *match, freqs []Frequency, names map[int64]string, window []rune, offset int) Result {
+func result(language string, m *match, freqs []Frequency, names map[int64]string, window []rune, offset int) Result {
 	e := m.entry
 	r := Result{
 		EntryID:     e.ID,
 		Kind:        e.Kind,
-		Term:        headword(e),
+		Term:        displayTerm(language, m),
 		Forms:       e.Forms,
 		Readings:    e.Readings,
 		Matched:     string(window[:m.probe.length]),
@@ -341,142 +353,6 @@ func result(m *match, freqs []Frequency, names map[int64]string, window []rune, 
 		}
 	}
 	return r
-}
-
-// frequencies returns each entry's frequencies and the ids of the packs
-// of language in priority order. An entry's terms are its forms (its
-// kana readings when it has none) and its readings every reading value
-// in hiragana, katakana and plain form, since the pack compares readings
-// exactly. freq.Store.Lookup filters by reading per term, so entries are
-// batched such that no term appears in one batch with two different
-// reading sets (homographs go to separate batches): one call per batch.
-func (s Service) frequencies(ctx context.Context, language string, es []lexicon.Entry) ([][]Frequency, []int64, error) {
-	out := make([][]Frequency, len(es))
-	packs, err := s.Freq.Packs(ctx)
-	if err != nil {
-		return nil, nil, fmt.Errorf("lookup: frequency packs: %w", err)
-	}
-	var packIDs []int64
-	for _, p := range packs {
-		if strings.EqualFold(p.Language, language) {
-			packIDs = append(packIDs, p.ID)
-		}
-	}
-	if len(packIDs) == 0 {
-		return out, nil, nil
-	}
-
-	type batch struct {
-		terms    []string
-		readings map[string][]string
-		sig      map[string]string // term -> its reading set, joined
-		members  []int
-	}
-	var (
-		batches []*batch
-		terms   = make([][]string, len(es))
-	)
-	for i, e := range es {
-		terms[i] = freqTerms(e)
-		readings := freqReadings(e)
-		sig := strings.Join(readings, "\x00")
-		var b *batch
-		for _, cand := range batches {
-			if !slices.ContainsFunc(terms[i], func(t string) bool { s, ok := cand.sig[t]; return ok && s != sig }) {
-				b = cand
-				break
-			}
-		}
-		if b == nil {
-			b = &batch{readings: map[string][]string{}, sig: map[string]string{}}
-			batches = append(batches, b)
-		}
-		for _, t := range terms[i] {
-			if _, ok := b.sig[t]; !ok {
-				b.terms, b.sig[t] = append(b.terms, t), sig
-				if len(readings) > 0 {
-					b.readings[t] = readings
-				}
-			}
-		}
-		b.members = append(b.members, i)
-	}
-
-	for _, b := range batches {
-		hits, err := s.Freq.Lookup(ctx, b.terms, b.readings)
-		if err != nil {
-			return nil, nil, fmt.Errorf("lookup: frequencies: %w", err)
-		}
-		for _, i := range b.members {
-			bestOf := map[int64]freq.Hit{}
-			for _, t := range terms[i] {
-				for _, h := range hits[t] {
-					if cur, ok := bestOf[h.PackID]; !ok || h.Rank < cur.Rank {
-						bestOf[h.PackID] = h
-					}
-				}
-			}
-			for _, id := range packIDs {
-				if h, ok := bestOf[id]; ok {
-					out[i] = append(out[i], Frequency{PackID: h.PackID, PackName: h.PackName, Rank: h.Rank, Display: h.Display})
-				}
-			}
-		}
-	}
-	return out, packIDs, nil
-}
-
-// freqTerms are the terms an entry's frequency is looked up by: its
-// forms, or its kana readings when it has no form.
-func freqTerms(e lexicon.Entry) []string {
-	var out []string
-	for _, f := range e.Forms {
-		out = append(out, f.Text)
-	}
-	if len(out) == 0 {
-		for _, r := range e.Readings {
-			if r.Type == "kana" {
-				out = append(out, r.Value)
-			}
-		}
-	}
-	return out
-}
-
-// freqReadings are an entry's reading values with their hiragana,
-// katakana and plain variants, sorted and deduplicated.
-func freqReadings(e lexicon.Entry) []string {
-	var out []string
-	for _, r := range e.Readings {
-		out = append(out, r.Value, toHiragana(r.Value), toKatakana(r.Value), r.Plain)
-	}
-	slices.Sort(out)
-	return slices.Compact(out)
-}
-
-// Hiragana ぁ..ゖ and katakana ァ..ヶ are 0x60 apart.
-const (
-	hiraganaLo, hiraganaHi = 0x3041, 0x3096
-	katakanaLo, katakanaHi = 0x30A1, 0x30F6
-	kanaShift              = katakanaLo - hiraganaLo
-)
-
-func toHiragana(s string) string {
-	return strings.Map(func(r rune) rune {
-		if r >= katakanaLo && r <= katakanaHi {
-			return r - kanaShift
-		}
-		return r
-	}, s)
-}
-
-func toKatakana(s string) string {
-	return strings.Map(func(r rune) rune {
-		if r >= hiraganaLo && r <= hiraganaHi {
-			return r + kanaShift
-		}
-		return r
-	}, s)
 }
 
 // dictionaryNames returns the names of the dictionaries the senses of

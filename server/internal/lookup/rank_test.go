@@ -18,15 +18,15 @@ func TestRankKeys(t *testing.T) {
 		name          string
 		winner, loser func(c *candidate)
 	}{
-		{"primary reading match", func(c *candidate) {
-			c.primary = true
-		}, func(c *candidate) {
-			c.matchedLen, c.freqRank, c.headword = 3, 1, "a"
-		}},
 		{"matched source length", func(c *candidate) {
 			c.matchedLen = 3
 		}, func(c *candidate) {
-			c.freqRank, c.exactCount, c.ukPri, c.pri, c.headword = 1, 5, true, 100, "a"
+			c.primary, c.freqRank, c.exactCount, c.ukPri, c.pri, c.headword = true, 1, 5, true, 100, "a"
+		}},
+		{"primary reading match", func(c *candidate) {
+			c.primary = true
+		}, func(c *candidate) {
+			c.freqRank, c.exactCount, c.headword = 1, 5, "a"
 		}},
 		{"frequency order", func(c *candidate) {
 			c.freqRank = 10

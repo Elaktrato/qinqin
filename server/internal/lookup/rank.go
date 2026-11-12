@@ -9,12 +9,13 @@ import (
 // candidate is one entry as the ranker sees it: the keys of the sort
 // chain, precomputed from the entry's best match.
 type candidate struct {
-	// primary: the dictionary-side text that matched (the deinflected
-	// form for an inflected match, the source text otherwise) equals the
-	// entry's first reading (plain-normalized for kana) or first form.
-	primary bool
 	// matchedLen is the length of the matched source text in code points.
 	matchedLen int
+	// primary: the dictionary-side text that matched (the deinflected
+	// form for an inflected match, the source text otherwise) equals the
+	// entry's first reading (plain-normalized for kana) or first form,
+	// or a CC-CEDICT traditional form.
+	primary bool
 	// freqRank is the entry's rank in the ranking pack (see
 	// rankingRanks); 0 when that pack has no data for the entry.
 	freqRank int
@@ -39,8 +40,10 @@ type candidate struct {
 // compareCandidates is the sort chain, best first. Each key falls
 // through to the next on a tie:
 //
-//  1. primary reading match, true first;
-//  2. matched source text length, longest first;
+//  1. matched source text length, longest first;
+//  2. primary reading match, true first — among equal-length matches
+//     only, so a word found by an alternative form or reading (子ども
+//     for 子供) still beats a shorter headword match (子);
 //  3. frequency order: lower rank first, entries with data in the
 //     ranking pack before those without (with no frequency data at all
 //     every rank is 0 and the key is a no-op);
@@ -53,10 +56,10 @@ type candidate struct {
 // Frequency deliberately outranks the inflection chain (Yomitan puts it
 // after), so a frequent deinflected verb beats a rare exact homophone.
 func compareCandidates(a, b candidate) int {
-	if c := cmpTrueFirst(a.primary, b.primary); c != 0 {
+	if c := cmp.Compare(b.matchedLen, a.matchedLen); c != 0 {
 		return c
 	}
-	if c := cmp.Compare(b.matchedLen, a.matchedLen); c != 0 {
+	if c := cmpTrueFirst(a.primary, b.primary); c != 0 {
 		return c
 	}
 	if c := cmpRank(a.freqRank, b.freqRank); c != 0 {
