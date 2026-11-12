@@ -21,6 +21,8 @@ export interface ApiOptions {
 	body?: unknown;
 	/** Attach the stored bearer token. Defaults to true. */
 	auth?: boolean;
+	/** Aborts the request. */
+	signal?: AbortSignal;
 }
 
 let unauthorizedHandler: (() => void) | null = null;
@@ -82,14 +84,18 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
 	}
 
 	const hasBody = options.body !== undefined;
-	if (hasBody) {
+	// FormData is passed through untouched: the browser must set the
+	// multipart content-type itself, including the boundary.
+	const isForm = typeof FormData !== 'undefined' && options.body instanceof FormData;
+	if (hasBody && !isForm) {
 		headers['content-type'] = 'application/json';
 	}
 
 	const response = await fetch(path, {
 		method: options.method ?? (hasBody ? 'POST' : 'GET'),
 		headers,
-		body: hasBody ? JSON.stringify(options.body) : undefined
+		body: hasBody ? (isForm ? (options.body as FormData) : JSON.stringify(options.body)) : undefined,
+		signal: options.signal
 	});
 
 	if (!response.ok) {

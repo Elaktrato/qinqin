@@ -122,3 +122,49 @@ export interface StudyEventBody {
 	type: string;
 	payload: unknown;
 }
+
+// SegmentMatch is one dictionary match from /api/segment[/at]; start and
+// end are code-point offsets into the segmented text.
+export interface SegmentMatch {
+	surface: string;
+	start: number;
+	end: number;
+	lemma: string;
+	reason: string;
+	entries: { id: number; kind: 'character' | 'word' }[];
+}
+
+// Book is one library book as served by /api/library/books.
+export interface Book {
+	id: number;
+	language: string;
+	title: string;
+	author: string;
+	source: string;
+	sourceId: string;
+	sourceUrl: string;
+	attribution: string;
+	licenseNote: string;
+	chapterCount: number;
+	position: string;
+	createdAt: string;
+}
+
+export interface Chapter {
+	title: string;
+	paragraphs: { text: string; ruby?: string }[][];
+}
+
+export interface SourceInfo {
+	id: string;
+	name: string;
+	languages: string[];
+}
+
+export interface SourceResult {
+	sourceId: string;
+	title: string;
+	author: string;
+	language: string;
+	note: string;
+}

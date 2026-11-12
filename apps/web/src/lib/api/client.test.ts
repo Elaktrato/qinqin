@@ -110,3 +110,35 @@ describe('api client', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 });
+
+describe('api client FormData bodies and abort signal', () => {
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn());
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('passes FormData through untouched with no content-type', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({}));
+		const form = new FormData();
+		form.set('a', 'b');
+
+		await api('/x', { body: form });
+
+		const [, init] = vi.mocked(fetch).mock.calls[0];
+		expect(init?.body).toBe(form);
+		expect(new Headers(init?.headers).get('content-type')).toBeNull();
+	});
+
+	it('forwards an abort signal', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({}));
+		const controller = new AbortController();
+
+		await api('/x', { signal: controller.signal });
+
+		expect(vi.mocked(fetch).mock.calls[0][1]?.signal).toBe(controller.signal);
+	});
+});
