@@ -3,10 +3,14 @@ package lang
 import (
 	"slices"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // maxDeinflectDepth bounds how many rules chain on one surface form.
-const maxDeinflectDepth = 3
+// Four reach the longest progressive chains: していました -> しています
+// (past) -> している (polite) -> して (progressive) -> する (te-form).
+const maxDeinflectDepth = 4
 
 // jaRule rewrites a surface suffix to a shallower one. The form it
 // produces has word class out; in lists the classes the form it rewrites
@@ -19,14 +23,47 @@ type jaRule struct {
 	out              string
 	whole            bool // matches only the entire surface, not a suffix
 	bare             bool // may match the entire surface (した -> する)
+	// stemOK, when set, must accept the text the rule leaves before its
+	// suffix (見 for 見ろ), else the rule does not apply.
+	stemOK func(stem string) bool
+}
+
+// longKanaStem is the stem guard of the generic imperative and
+// desiderative rules: a kana-only stem of one code point is refused.
+// いえ, いろ, あれ, いたい, みたい are far more often 家, 色, 彼, 痛い and
+// the suffix みたい than imperatives or desideratives of 言う, 居る, 有る
+// or 見る, and frequency (which outranks the inflection chain) would
+// pick the verb; written with kanji (見ろ, 見たい) they still apply.
+func longKanaStem(stem string) bool {
+	return utf8.RuneCountInString(stem) > 1 || !kanaOnly(stem)
+}
+
+// notTeStem guards the ichidan よ imperative: after a te-form (見てよ,
+// してよ) よ is the sentence particle, not the literary imperative.
+func notTeStem(stem string) bool {
+	return longKanaStem(stem) && !strings.HasSuffix(stem, "て") && !strings.HasSuffix(stem, "で")
+}
+
+// kanaOnly reports whether s is non-empty and all hiragana or katakana.
+func kanaOnly(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r != 'ー' && !unicode.In(r, unicode.Hiragana, unicode.Katakana) {
+			return false
+		}
+	}
+	return true
 }
 
 // jaRules is the deinflection table. Rules chain, so ました -> ます -> む
 // resolves to a dictionary form through an intermediate one, but only
 // when the intermediate form's class is one the next rule takes: a ます
 // form (classMasu) feeds the polite rules, an ichidan form (食べさせる)
-// the passive/causative/potential rules, an adj-i form (食べない) the
-// negative rules. Candidates a rule produces wrongly (話した -> 話する,
+// the passive/causative/potential rules, an adj-i form (食べない,
+// 食べたい) the negative and desiderative rules, a te-form an auxiliary
+// rule left (して, class te) the te-form rules. Candidates a rule produces wrongly (話した -> 話する,
 // class vs) are left to the caller, which checks Class against the
 // dictionary form's POS with ClassMatches.
 var jaRules = buildJaRules()
@@ -42,7 +79,7 @@ var jaIchidan = []struct {
 	{"ます", "polite", []string{classMasu}},
 	{"た", "past", nil},
 	{"たら", "conditional", nil},
-	{"て", "te-form", nil},
+	{"て", "te-form", []string{classTe}},
 	{"れば", "conditional", nil},
 	{"よう", "volitional", nil},
 	// passive, causative and potential forms are themselves ichidan verbs
@@ -52,7 +89,7 @@ var jaIchidan = []struct {
 }
 
 func buildJaRules() []jaRule {
-	adj, masu, v1 := []string{ClassAdjI}, []string{classMasu}, []string{ClassV1}
+	adj, masu, v1, te := []string{ClassAdjI}, []string{classMasu}, []string{ClassV1}, []string{classTe}
 	r := func(from, to, reason, out string, in []string) jaRule {
 		return jaRule{from: from, to: to, reason: reason, in: in, out: out}
 	}
@@ -62,12 +99,16 @@ func buildJaRules() []jaRule {
 	w := func(from, to, reason, out string, in []string) jaRule {
 		return jaRule{from: from, to: to, reason: reason, in: in, out: out, whole: true}
 	}
+	guard := func(rule jaRule, stemOK func(string) bool) jaRule {
+		rule.stemOK = stemOK
+		return rule
+	}
 	// irregular verbs first, so they rank ahead of regular guesses
 	rules := []jaRule{
 		b("行った", "行く", "past", ClassV5, nil),
-		b("行って", "行く", "te-form", ClassV5, nil),
+		b("行って", "行く", "te-form", ClassV5, te),
 		b("した", "する", "past", ClassVs, nil),
-		b("して", "する", "te-form", ClassVs, nil),
+		b("して", "する", "te-form", ClassVs, te),
 		b("しない", "する", "negative", ClassVs, adj),
 		b("しなかった", "する", "negative past", ClassVs, nil),
 		b("します", "する", "polite", ClassVs, masu),
@@ -77,7 +118,7 @@ func buildJaRules() []jaRule {
 		b("させる", "する", "causative", ClassVs, v1),
 		b("し", "する", "stem", ClassVs, nil),
 		w("きた", "くる", "past", ClassVk, nil),
-		w("きて", "くる", "te-form", ClassVk, nil),
+		w("きて", "くる", "te-form", ClassVk, te),
 		w("こない", "くる", "negative", ClassVk, adj),
 		w("きます", "くる", "polite", ClassVk, masu),
 	}
@@ -120,12 +161,48 @@ func buildJaRules() []jaRule {
 			r(g.i+"ます", g.u, "polite", ClassV5, masu),
 			r(g.past, g.u, "past", ClassV5, nil),
 			r(g.past+"ら", g.u, "conditional", ClassV5, nil),
-			r(g.te, g.u, "te-form", ClassV5, nil),
+			r(g.te, g.u, "te-form", ClassV5, te),
 			r(g.e+"ば", g.u, "conditional", ClassV5, nil),
 			r(g.o+"う", g.u, "volitional", ClassV5, nil),
 			r(g.e+"る", g.u, "potential", ClassV5, v1),
 			r(g.a+"れる", g.u, "passive", ClassV5, v1),
 			r(g.a+"せる", g.u, "causative", ClassV5, v1),
+		)
+	}
+	// Progressive, desiderative, imperative and kana 行く rules come last,
+	// so they only add candidates after each surface's earlier ones.
+	rules = append(rules,
+		// Progressive: the auxiliary いる after a te-form. いる is itself
+		// ichidan, so its inflections reach ている through the ichidan
+		// rules first (していた -> している, past), then the te-form is
+		// left with class te (-> して, progressive) for the te-form rules
+		// (-> する, te-form): Reasons [past progressive te-form].
+		r("ている", "て", "progressive", classTe, v1),
+		r("でいる", "で", "progressive", classTe, v1),
+		r("てる", "て", "progressive", classTe, v1), // contracted: してる, してた, してない
+		r("でる", "で", "progressive", classTe, v1),
+		// 行く read いく: irregular past and te-form, like 行った/行って.
+		b("いった", "いく", "past", ClassV5, nil),
+		b("いって", "いく", "te-form", ClassV5, te),
+		// Desiderative: たい on the masu stem inflects as an i-adjective
+		// (食べたかった -> 食べたい, past -> 食べる, desire).
+		b("したい", "する", "desire", ClassVs, adj),
+		w("きたい", "くる", "desire", ClassVk, adj),
+		b("来たい", "来る", "desire", ClassVk, adj),
+		guard(r("たい", "る", "desire", ClassV1, adj), longKanaStem),
+		// Imperative.
+		b("しろ", "する", "imperative", ClassVs, nil),
+		b("せよ", "する", "imperative", ClassVs, nil),
+		w("こい", "くる", "imperative", ClassVk, nil),
+		b("来い", "来る", "imperative", ClassVk, nil),
+		guard(r("ろ", "る", "imperative", ClassV1, nil), longKanaStem),
+		guard(r("よ", "る", "imperative", ClassV1, nil), notTeStem),
+	)
+	for _, g := range godan {
+		rules = append(rules,
+			// the godan stem includes the i-row kana (いき for いきたい), so no guard
+			r(g.i+"たい", g.u, "desire", ClassV5, adj),
+			guard(r(g.e, g.u, "imperative", ClassV5, nil), longKanaStem),
 		)
 	}
 	return rules
@@ -159,6 +236,9 @@ func (Ja) Deinflect(surface string) []Deinflection {
 						continue
 					}
 				} else if !strings.HasSuffix(n.form, r.from) || (len(n.form) == len(r.from) && !r.bare) {
+					continue
+				}
+				if r.stemOK != nil && !r.stemOK(strings.TrimSuffix(n.form, r.from)) {
 					continue
 				}
 				k := key{strings.TrimSuffix(n.form, r.from) + r.to, r.out}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -477,6 +478,47 @@ func TestMatchAtReadingIsJapaneseOnly(t *testing.T) {
 	svc, _ := jaService(t, jaWords, "")
 	if m := matchAt(t, svc, "zh", "する", 0); m != nil {
 		t.Errorf("MatchAt(zh, する) = %+v, want nil", m)
+	}
+}
+
+// TestSegmentProgressive: している is one token (the progressive of する),
+// not してい (指定) plus る. Lemma is the dictionary form, する; the
+// entry is 為る. When 勉強 is a する noun (as in JMdict) the longest
+// match is 勉強している, one token whose entry is 勉強.
+func TestSegmentProgressive(t *testing.T) {
+	words := append([]jw{
+		{kanji: []string{"私"}, readings: []string{"わたし"}, pos: []string{"pn"}, pri: []string{"ichi1"}},
+		{readings: []string{"は"}, pos: []string{"prt"}, pri: []string{"spec1"}},
+		{kanji: []string{"毎日"}, readings: []string{"まいにち"}, pos: []string{"n", "adv"}, pri: []string{"ichi1"}},
+		{kanji: []string{"指定"}, readings: []string{"してい"}, pos: []string{"n", "vs"}, pri: []string{"ichi1"}},
+	}, jaWords...)
+	for _, c := range []struct {
+		name string
+		vs   bool
+		want []string // surface:lemma:reason:headword of the first entry
+	}{
+		{"study as a plain noun", false, []string{"私:私::私", "は:は::は", "毎日:毎日::毎日", "勉強:勉強::勉強", "している:する:te-form progressive:為る"}},
+		{"study as a する noun", true, []string{"私:私::私", "は:は::は", "毎日:毎日::毎日", "勉強している:勉強する:te-form progressive:勉強"}},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			pos := []string{"n"}
+			if c.vs {
+				pos = append(pos, "vs")
+			}
+			svc, sqlDB := jaService(t, append(words, jw{kanji: []string{"勉強"}, readings: []string{"べんきょう"}, pos: pos, pri: []string{"ichi1"}}), "")
+			ms, err := svc.Segment(context.Background(), "ja", "私は毎日勉強している。")
+			if err != nil {
+				t.Fatalf("Segment: %v", err)
+			}
+			var got []string
+			for i := range ms {
+				m := &ms[i]
+				got = append(got, m.Surface+":"+m.Lemma+":"+m.Reason+":"+headwords(t, sqlDB, m)[0])
+			}
+			if !slices.Equal(got, c.want) {
+				t.Errorf("tokens = %q, want %q", got, c.want)
+			}
+		})
 	}
 }
 

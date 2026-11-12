@@ -296,3 +296,121 @@ func TestFrequencyOutranksPrimaryReadingMatch(t *testing.T) {
 		})
 	}
 }
+
+// verbWords are the words of the progressive, desiderative and imperative
+// tests, with 指定 and 姉弟, which read してい: the three code points
+// that beat the te-form して before the progressive rules.
+const verbWords = `<entry>
+<ent_seq>1310890</ent_seq>
+<k_ele><keb>指定</keb><ke_pri>ichi1</ke_pri><ke_pri>news1</ke_pri><ke_pri>nf04</ke_pri></k_ele>
+<r_ele><reb>してい</reb><re_pri>ichi1</re_pri><re_pri>news1</re_pri><re_pri>nf04</re_pri></r_ele>
+<sense><pos>&n;</pos><pos>&vs;</pos><gloss>designation</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1310130</ent_seq>
+<k_ele><keb>姉弟</keb><ke_pri>news2</ke_pri></k_ele>
+<r_ele><reb>してい</reb></r_ele>
+<sense><pos>&n;</pos><gloss>elder sister and younger brother</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1358280</ent_seq>
+<k_ele><keb>食べる</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>たべる</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&v1;</pos><pos>&vt;</pos><gloss>to eat</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1169870</ent_seq>
+<k_ele><keb>飲む</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>のむ</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&v5m;</pos><pos>&vt;</pos><gloss>to drink</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1259290</ent_seq>
+<k_ele><keb>見る</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>みる</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&v1;</pos><pos>&vt;</pos><gloss>to see</gloss></sense>
+</entry>
+<entry>
+<ent_seq>2083120</ent_seq>
+<k_ele><keb>見</keb></k_ele>
+<r_ele><reb>み</reb></r_ele>
+<sense><pos>&n-suf;</pos><gloss>viewing</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1587040</ent_seq>
+<k_ele><keb>言う</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>いう</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&v5u;</pos><pos>&vt;</pos><gloss>to say</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1219960</ent_seq>
+<k_ele><keb>行き</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>いき</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>going</gloss></sense>
+</entry>
+`
+
+// verbService seeds the base, alternative-form and verb words; freq is
+// one frequency pack's rows, "" for none.
+func verbService(t *testing.T, freq string) lookup.Service {
+	t.Helper()
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+altWords+verbWords)
+	if freq != "" {
+		importFreqPack(t, sqlDB, "a", freq)
+	}
+	return service(sqlDB)
+}
+
+func TestProgressiveDesireImperative(t *testing.T) {
+	s := verbService(t, "")
+	for _, c := range []struct{ text, first string }{
+		{"している", "為る[progressive te-form]"},
+		{"してる", "為る[progressive te-form]"},
+		{"していた", "為る[past progressive te-form]"},
+		{"しています", "為る[polite progressive te-form]"},
+		{"食べている", "食べる[progressive te-form]"},
+		{"飲んでいる", "飲む[progressive te-form]"},
+		{"行っていた", "行く[past progressive te-form]"},
+		{"勉強しています", "勉強[polite progressive te-form]"},
+		{"食べたい", "食べる[desire]"},
+		{"食べたくない", "食べる[negative desire]"},
+		{"行きたい", "行く[desire]"},
+		{"行きたかった", "行く[past desire]"},
+		{"見ろ", "見る[imperative]"},
+	} {
+		rs := run(t, s, "ja", c.text, 0)
+		if len(rs) == 0 || terms(rs)[0] != c.first || rs[0].Matched != c.text {
+			t.Errorf("%s: results = %v, want %s matching all of %s first", c.text, terms(rs), c.first, c.text)
+		}
+	}
+	// 食べたい is the desiderative, never 食べた (past) plus a stray い.
+	for _, r := range run(t, s, "ja", "食べたい", 0) {
+		if r.Term == "食べる" && slices.Contains(r.Reasons, "past") {
+			t.Errorf("食べたい: %s %v labelled past", r.Term, r.Reasons)
+		}
+	}
+}
+
+func TestKanaIttaFindsIku(t *testing.T) {
+	s := verbService(t, "")
+	for _, text := range []string{"いった", "いって"} {
+		r := find(run(t, s, "ja", text, 0), "行く")
+		if r == nil || r.Matched != text || len(r.Reasons) != 1 {
+			t.Errorf("%s: 行く = %+v, want it matched as past or te-form", text, r)
+		}
+	}
+}
+
+// している: with frequency data 為る is far more frequent than 指定; with
+// none, 為る is still first because it is the only entry matching all
+// four code points (length leads), and 指定/姉弟 (してい, three) follow.
+func TestShiteiruRanksSuruFirst(t *testing.T) {
+	for _, freq := range []string{"", "為る,する,10\n指定,してい,800\n姉弟,してい,30000\n"} {
+		rs := run(t, verbService(t, freq), "ja", "している", 0)
+		wantPrefix(t, rs, "為る[progressive te-form]", "指定", "姉弟")
+		if rs[0].Lemma != "する" || rs[0].Reading != "する" {
+			t.Errorf("freq %q: 為る lemma %q reading %q, want する する", freq, rs[0].Lemma, rs[0].Reading)
+		}
+	}
+}

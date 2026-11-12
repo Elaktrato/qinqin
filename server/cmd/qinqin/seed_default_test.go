@@ -143,6 +143,9 @@ func TestSeedRealPacksRanksWithJiten(t *testing.T) {
 		}
 	}
 	first("宿題をした", 3, "為る[past]")
+	// The progressive chain (して + いる) beats 指定/姉弟 read してい.
+	first("宿題をしている", 3, "為る[progressive te-form]")
+	first("食べたい", 0, "食べる[desire]")
 	first("いる", 0, "居る")
 	first("こと", 0, "事")
 	// Jiten ranks なる written in kana under 成る; 生る must not share it.

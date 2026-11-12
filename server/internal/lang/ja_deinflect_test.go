@@ -41,12 +41,78 @@ func TestJaDeinflect(t *testing.T) {
 		{"きます", "くる", "polite"},
 		{"行った", "行く", "past"},
 		{"行って", "行く", "te-form"},
+		{"している", "する", "te-form progressive"},
+		{"食べている", "食べる", "te-form progressive"},
+		{"飲んでいる", "飲む", "te-form progressive"},
+		{"行っていた", "行く", "te-form progressive past"},
+		{"しています", "する", "te-form progressive polite"},
+		{"勉強しています", "勉強する", "te-form progressive polite"},
+		{"食べたい", "食べる", "desire"},
+		{"行きたかった", "行く", "desire past"},
+		{"見ろ", "見る", "imperative"},
+		{"いった", "いく", "past"},
 	}
 	var d lang.Deinflector = lang.Ja{}
 	for _, c := range cases {
 		got := d.Deinflect(c.surface)
 		if !slices.ContainsFunc(got, func(d lang.Deinflection) bool { return d.Form == c.form && d.Reason == c.reason }) {
 			t.Errorf("Deinflect(%q) = %v, want to contain %s (%s)", c.surface, got, c.form, c.reason)
+		}
+	}
+}
+
+func TestJaDeinflectDesireIsNotPast(t *testing.T) {
+	for _, d := range (lang.Ja{}).Deinflect("食べたい") {
+		if d.Form == "食べる" && d.Reason != "desire" {
+			t.Errorf("Deinflect(食べたい) 食べる %+v, want only desire", d)
+		}
+	}
+}
+
+// The generic imperative and desiderative rules skip a kana-only form
+// whose stem is a single kana: いえ, いろ, あれ, いたい, みたい are far
+// more often 家, 色, 彼, 痛い and the suffix みたい than the imperative
+// or desiderative of 言う, 居る, 有る or 見る. The ichidan よ imperative
+// never follows a te-form: 見てよ is 見て plus the particle よ.
+func TestJaDeinflectShortKanaStemsAreNotImperativeOrDesire(t *testing.T) {
+	blocked := map[string]string{
+		"いえ": "いう", "いろ": "いる", "あれ": "ある", "なれ": "なる",
+		"いたい": "いる", "みたい": "みる", "見てよ": "見てる", "してよ": "してる",
+	}
+	for surface, form := range blocked {
+		for _, d := range (lang.Ja{}).Deinflect(surface) {
+			if d.Form == form {
+				t.Errorf("Deinflect(%q) = %+v, want no %s", surface, d, form)
+			}
+		}
+	}
+	allowed := []struct{ surface, form, reason string }{
+		{"しまえ", "しまう", "imperative"},
+		{"たべろ", "たべる", "imperative"},
+		{"やめろ", "やめる", "imperative"},
+		{"たべたい", "たべる", "desire"},
+		{"いきたい", "いく", "desire"},
+		{"見ろ", "見る", "imperative"},
+		{"見よ", "見る", "imperative"},
+		{"捨てろ", "捨てる", "imperative"},
+		{"しろ", "する", "imperative"},
+		{"こい", "くる", "imperative"},
+		{"したい", "する", "desire"},
+	}
+	for _, c := range allowed {
+		got := (lang.Ja{}).Deinflect(c.surface)
+		if !slices.ContainsFunc(got, func(d lang.Deinflection) bool { return d.Form == c.form && d.Reason == c.reason }) {
+			t.Errorf("Deinflect(%q) = %v, want %s (%s)", c.surface, got, c.form, c.reason)
+		}
+	}
+}
+
+func TestJaDeinflectDepthAtMostFour(t *testing.T) {
+	for _, s := range []string{"していませんでした", "食べさせられていなかった", "行きたくなかった"} {
+		for _, d := range (lang.Ja{}).Deinflect(s) {
+			if len(d.Reasons) > 4 {
+				t.Errorf("Deinflect(%q): %+v chains more than 4 rules", s, d)
+			}
 		}
 	}
 }

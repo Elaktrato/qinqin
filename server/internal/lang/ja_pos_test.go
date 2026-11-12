@@ -97,6 +97,50 @@ func TestJaDeinflectClasses(t *testing.T) {
 		{"やって来た", "やって来る", lang.ClassVk, []string{"past"}},
 		{"行った", "行く", lang.ClassV5, []string{"past"}},
 		{"行って", "行く", lang.ClassV5, []string{"te-form"}},
+		// progressive: the auxiliary いる (itself ichidan) after a te-form
+		{"している", "する", lang.ClassVs, []string{"progressive", "te-form"}},
+		{"してる", "する", lang.ClassVs, []string{"progressive", "te-form"}},
+		{"していた", "する", lang.ClassVs, []string{"past", "progressive", "te-form"}},
+		{"してた", "する", lang.ClassVs, []string{"past", "progressive", "te-form"}},
+		{"しています", "する", lang.ClassVs, []string{"polite", "progressive", "te-form"}},
+		{"していました", "する", lang.ClassVs, []string{"past", "polite", "progressive", "te-form"}},
+		{"していない", "する", lang.ClassVs, []string{"negative", "progressive", "te-form"}},
+		{"していなかった", "する", lang.ClassVs, []string{"negative past", "progressive", "te-form"}},
+		{"してない", "する", lang.ClassVs, []string{"negative", "progressive", "te-form"}},
+		{"していません", "する", lang.ClassVs, []string{"negative", "polite", "progressive", "te-form"}},
+		{"勉強しています", "勉強する", lang.ClassVs, []string{"polite", "progressive", "te-form"}},
+		{"食べている", "食べる", lang.ClassV1, []string{"progressive", "te-form"}},
+		{"飲んでいる", "飲む", lang.ClassV5, []string{"progressive", "te-form"}},
+		{"飲んでる", "飲む", lang.ClassV5, []string{"progressive", "te-form"}},
+		{"行っていた", "行く", lang.ClassV5, []string{"past", "progressive", "te-form"}},
+		{"来ている", "来る", lang.ClassVk, []string{"progressive", "te-form"}},
+		{"きている", "くる", lang.ClassVk, []string{"progressive", "te-form"}},
+		// desiderative: たい inflects as an i-adjective
+		{"食べたい", "食べる", lang.ClassV1, []string{"desire"}},
+		{"食べたくない", "食べる", lang.ClassV1, []string{"negative", "desire"}},
+		{"食べたかった", "食べる", lang.ClassV1, []string{"past", "desire"}},
+		{"食べたくなかった", "食べる", lang.ClassV1, []string{"negative past", "desire"}},
+		{"行きたい", "行く", lang.ClassV5, []string{"desire"}},
+		{"行きたかった", "行く", lang.ClassV5, []string{"past", "desire"}},
+		{"飲みたい", "飲む", lang.ClassV5, []string{"desire"}},
+		{"したい", "する", lang.ClassVs, []string{"desire"}},
+		{"勉強したい", "勉強する", lang.ClassVs, []string{"desire"}},
+		{"来たい", "来る", lang.ClassVk, []string{"desire"}},
+		{"きたい", "くる", lang.ClassVk, []string{"desire"}},
+		// imperative
+		{"見ろ", "見る", lang.ClassV1, []string{"imperative"}},
+		{"見よ", "見る", lang.ClassV1, []string{"imperative"}},
+		{"行け", "行く", lang.ClassV5, []string{"imperative"}},
+		{"飲め", "飲む", lang.ClassV5, []string{"imperative"}},
+		{"しろ", "する", lang.ClassVs, []string{"imperative"}},
+		{"せよ", "する", lang.ClassVs, []string{"imperative"}},
+		{"勉強しろ", "勉強する", lang.ClassVs, []string{"imperative"}},
+		{"こい", "くる", lang.ClassVk, []string{"imperative"}},
+		{"来い", "来る", lang.ClassVk, []string{"imperative"}},
+		// kana 行く: irregular past and te-form
+		{"いった", "いく", lang.ClassV5, []string{"past"}},
+		{"いって", "いく", lang.ClassV5, []string{"te-form"}},
+		{"いっている", "いく", lang.ClassV5, []string{"progressive", "te-form"}},
 	}
 	for _, c := range cases {
 		got := lang.Ja{}.Deinflect(c.surface)
@@ -165,6 +209,8 @@ func TestJaDeinflectClassGating(t *testing.T) {
 
 // TestJaDeinflectLegacyReasons pins the first candidate per form, as the
 // segment tokenizer sees them, to the output before word classes existed.
+// Rules added since (progressive, desire, imperative, depth 4) may only
+// append candidates: the legacy list must stay the prefix, unchanged.
 func TestJaDeinflectLegacyReasons(t *testing.T) {
 	cases := map[string]string{
 		"食べた":        "食べる(past) 食ぶ(potential past)",
@@ -186,8 +232,8 @@ func TestJaDeinflectLegacyReasons(t *testing.T) {
 				got = append(got, fmt.Sprintf("%s(%s)", d.Form, d.Reason))
 			}
 		}
-		if g := strings.Join(got, " "); g != want {
-			t.Errorf("Deinflect(%q) first per form =\n  %s\nwant\n  %s", surface, g, want)
+		if g := strings.Join(got, " "); g != want && !strings.HasPrefix(g, want+" ") {
+			t.Errorf("Deinflect(%q) first per form =\n  %s\nwant it to start with\n  %s", surface, g, want)
 		}
 	}
 }

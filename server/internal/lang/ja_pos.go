@@ -20,6 +20,11 @@ const (
 // form, so no POS tag matches it.
 const classMasu = "masu"
 
+// classTe is the class of a te-form (して, 飲んで) that an auxiliary
+// rule produced (している -> して): the input of the te-form rules at
+// depth > 0, never a dictionary form, so no POS tag matches it either.
+const classTe = "te"
+
 // classTags lists the JMdict POS tags of each class; ClassV5 matches by
 // prefix instead.
 var classTags = map[string][]string{
