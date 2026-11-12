@@ -87,7 +87,11 @@ func (s Service) matchAt(ctx context.Context, language string, runes []rune, off
 		return nil, fmt.Errorf("segment lookup: %w", err)
 	}
 	// Longest surface wins; at equal length an exact dictionary hit beats
-	// a deinflected one.
+	// a deinflected one. Among deinflected candidates that hit the
+	// dictionary, the shallowest deinflection wins, then the order
+	// Deinflect returns (shallowest first, rule-table order within a
+	// depth). Candidates are not part-of-speech filtered: the dictionary
+	// lookup is the only filter.
 	for l := n; l >= 1; l-- {
 		surface := prefixes[l-1]
 		lemma, reason := surface, ""

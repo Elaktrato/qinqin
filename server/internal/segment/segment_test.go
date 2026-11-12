@@ -140,6 +140,65 @@ func TestMatchAtJapaneseDeinflected(t *testing.T) {
 	}
 }
 
+func seedJa(t *testing.T, words ...string) segment.Service {
+	t.Helper()
+	lang.Register(lang.Ja{})
+	ctx := context.Background()
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	st := entries.Store{DB: sqlDB}
+	for _, w := range words {
+		e := &model.Entry{Language: "ja", Kind: "word", Written: w,
+			Readings: []model.Reading{{Type: "kana", Value: "x"}}}
+		if _, err := st.Upsert(ctx, e); err != nil {
+			t.Fatalf("upsert %q: %v", w, err)
+		}
+	}
+	return segment.Service{Entries: st}
+}
+
+func TestMatchAtExactBeatsDeinflected(t *testing.T) {
+	// 食べた is itself an entry and also deinflects to the seeded 食べる.
+	svc := seedJa(t, "食べた", "食べる")
+	m, err := svc.MatchAt(context.Background(), "ja", "食べた", 0)
+	if err != nil || m == nil {
+		t.Fatalf("MatchAt = %v, %v", m, err)
+	}
+	if m.Surface != "食べた" || m.Lemma != "食べた" || m.Reason != "" {
+		t.Errorf("match = %+v, want exact 食べた with no reason", m)
+	}
+}
+
+func TestMatchAtPrefersShallowerDeinflection(t *testing.T) {
+	// 読まれた -> 読まれる (past, depth 1) and -> 読む (passive past, depth 2).
+	svc := seedJa(t, "読む", "読まれる")
+	m, err := svc.MatchAt(context.Background(), "ja", "読まれた", 0)
+	if err != nil || m == nil {
+		t.Fatalf("MatchAt = %v, %v", m, err)
+	}
+	if m.Lemma != "読まれる" || m.Reason != "past" {
+		t.Errorf("match = %+v, want shallower 読まれる (past)", m)
+	}
+}
+
+func TestMatchAtIrregularVerbs(t *testing.T) {
+	svc := seedJa(t, "する", "来る", "くる", "行く")
+	for _, c := range []struct{ text, lemma, reason string }{
+		{"した", "する", "past"},
+		{"来ました", "来る", "polite past"},
+		{"きて", "くる", "te-form"},
+		{"行って", "行く", "te-form"},
+	} {
+		m, err := svc.MatchAt(context.Background(), "ja", c.text, 0)
+		if err != nil || m == nil || m.Lemma != c.lemma || m.Reason != c.reason {
+			t.Errorf("MatchAt(%q) = %+v, %v, want %s (%s)", c.text, m, err, c.lemma, c.reason)
+		}
+	}
+}
+
 func TestSegmentCoversText(t *testing.T) {
 	svc := seedSegment(t)
 	text := "我喜欢，学习 abc 汉语!"
