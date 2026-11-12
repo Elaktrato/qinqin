@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"qinqin/internal/lang"
 )
 
 // ErrNotFound reports a lookup that matched no active entry.
@@ -327,6 +329,51 @@ func (s Store) Best(ctx context.Context, language, kind, form string) (*Entry, e
 	}
 	if err != nil {
 		return nil, fmt.Errorf("best entry %s/%s/%q: %w", language, kind, form, err)
+	}
+	return s.Get(ctx, id)
+}
+
+// bestKanaWordQuery is BestWord's reading fallback, driven from
+// lx_readings by its plain index like the match queries: a word entry
+// whose FIRST reading (ord 0) is a kana reading with the given plain
+// form, and which is written in kana — it has no written form, or it is
+// marked usually-kana (uk).
+const bestKanaWordQuery = `
+	SELECT e.id FROM lx_readings r
+	CROSS JOIN lx_entries e ON e.id = r.entry_id
+	WHERE r.plain = ? AND r.type = 'kana' AND r.ord = 0 AND r.deleted_at IS NULL
+	  AND e.language = ? AND e.kind = 'word' AND e.deleted_at IS NULL
+	  AND (e.uk = 1 OR NOT EXISTS (
+		SELECT 1 FROM lx_forms f WHERE f.entry_id = e.id AND f.deleted_at IS NULL))
+	ORDER BY e.pri DESC, e.id
+	LIMIT 1`
+
+// BestWord resolves a word as a level or sentence pack lists it to one
+// word entry of the language. First the written form decides exactly as
+// Best(language, "word", form) does — a form shared by several entries
+// resolves to the BEST-ranked one. When no entry has the form, a word
+// written in kana falls back to its reading: the candidates are word
+// entries whose first reading is a kana reading whose plain form (the
+// language pack's NormalizeReading, which unifies hiragana and katakana)
+// equals the word's, and which are written in kana — they have no
+// written form (これ, テレビ) or are marked usually-kana (する → 為る); a
+// word whose kanji form is the usual spelling, or that lists the kana
+// only as a later reading, is never picked by its reading. Among the
+// candidates the highest priority wins, then the lowest id. It returns
+// ErrNotFound when neither step matches.
+func (s Store) BestWord(ctx context.Context, language, form string) (*Entry, error) {
+	e, err := s.Best(ctx, language, "word", form)
+	if !errors.Is(err, ErrNotFound) {
+		return e, err
+	}
+	plain := lang.For(language).NormalizeReading("kana", form)
+	var id int64
+	err = s.DB.QueryRowContext(ctx, bestKanaWordQuery, plain, language).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("best word %s/%q: %w", language, form, err)
 	}
 	return s.Get(ctx, id)
 }
