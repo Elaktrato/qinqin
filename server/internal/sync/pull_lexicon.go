@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -187,7 +188,32 @@ func pullSenses(ctx context.Context, sqlDB *sql.DB, since, live string) ([]Sense
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("sync pull senses: %w", err)
 	}
-	return list, nil
+	return dropSupersededTombstones(list), nil
+}
+
+// senseKey is what a client keys a sense by.
+type senseKey struct {
+	entry, dictionary int64
+	ord               int
+}
+
+// dropSupersededTombstones removes the sense tombstones that have a live
+// sense at the same (entry, dictionary, ord) in the same delta. The
+// lexicon retires a dictionary's senses of an entry and re-inserts them
+// under one stamp, so a changed sense arrives as a tombstone plus its
+// live replacement; a client that applies deletes after upserts, or
+// keeps a map by key, would otherwise lose the live sense. Every other
+// tombstone (a removed sense, an uninstalled dictionary) stays.
+func dropSupersededTombstones(list []Sense) []Sense {
+	live := map[senseKey]bool{}
+	for _, s := range list {
+		if s.DeletedAt == nil {
+			live[senseKey{s.EntryID, s.DictionaryID, s.Ord}] = true
+		}
+	}
+	return slices.DeleteFunc(list, func(s Sense) bool {
+		return s.DeletedAt != nil && live[senseKey{s.EntryID, s.DictionaryID, s.Ord}]
+	})
 }
 
 // pullLinks returns the lexicon links changed since.

@@ -15,7 +15,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"slices"
 	"time"
 
 	"qinqin/internal/events"
@@ -85,59 +84,6 @@ type Overlay struct {
 // margin exceeds any such delay, and the redelivery it causes is
 // harmless: clients upsert by key.
 const cursorMargin = 30 * time.Second
-
-// Pull returns every row changed at or after cursor (the zero time means
-// everything), tombstones included — except from the zero cursor, where
-// the client holds nothing to delete and only live rows ship. The
-// returned Cursor is the server clock read before any query ran, minus
-// cursorMargin, so a row written mid-pull is picked up by the next pull.
-func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time) (Delta, error) {
-	d := Delta{Cursor: time.Now().UTC().Add(-cursorMargin).Truncate(time.Second)}
-	since := cursor.UTC().Format(time.RFC3339)
-	live := ""
-	if cursor.IsZero() {
-		live = " AND deleted_at IS NULL"
-	}
-	var err error
-
-	if d.Entries, err = pullEntries(ctx, sqlDB, since, live); err != nil {
-		return Delta{}, err
-	}
-	if d.Links, err = pullLinks(ctx, sqlDB, since, live); err != nil {
-		return Delta{}, err
-	}
-	if d.Senses, err = pullSenses(ctx, sqlDB, since, live); err != nil {
-		return Delta{}, err
-	}
-	if d.LevelMembers, err = pullLevelMembers(ctx, sqlDB, since, live); err != nil {
-		return Delta{}, err
-	}
-	if d.Sentences, err = pullSentences(ctx, sqlDB, userID, since, live); err != nil {
-		return Delta{}, err
-	}
-	if d.PluginData, err = plugins.PullData(ctx, sqlDB, userID, cursor); err != nil {
-		return Delta{}, fmt.Errorf("sync pull: %w", err)
-	}
-	if cursor.IsZero() {
-		d.PluginData = slices.DeleteFunc(d.PluginData, func(r model.PluginData) bool { return r.DeletedAt != nil })
-	}
-	if d.Overlays, err = pullOverlays(ctx, sqlDB, userID, since); err != nil {
-		return Delta{}, err
-	}
-	if d.Dictionaries, err = pullDictionaries(ctx, sqlDB, since, live); err != nil {
-		return Delta{}, err
-	}
-	if d.Schemes, err = pullSchemes(ctx, sqlDB, since, live); err != nil {
-		return Delta{}, err
-	}
-	if d.Levels, err = pullLevels(ctx, sqlDB, since, live); err != nil {
-		return Delta{}, err
-	}
-	if d.PluginStates, err = pullPluginStates(ctx, sqlDB, userID, since); err != nil {
-		return Delta{}, err
-	}
-	return d, nil
-}
 
 // PushBody is a client's offline work: study events and plugin data
 // rows. Event users are forced to the caller; plugin data rows carry the

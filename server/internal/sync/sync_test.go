@@ -66,7 +66,7 @@ func newWorkspace(t *testing.T, sqlDB *sql.DB, userID int64) int64 {
 
 func mustPull(t *testing.T, sqlDB *sql.DB, userID int64, cursor time.Time) chinsync.Delta {
 	t.Helper()
-	d, err := chinsync.Pull(context.Background(), sqlDB, userID, cursor)
+	d, err := chinsync.Pull(context.Background(), sqlDB, userID, cursor, nil)
 	if err != nil {
 		t.Fatalf("pull: %v", err)
 	}
@@ -208,6 +208,19 @@ func TestSyncEndpoints(t *testing.T) {
 		t.Fatalf("pull status = %d entries = %d, want 200 with the world", resp.StatusCode, len(delta.Entries))
 	}
 	resp.Body.Close()
+
+	resp = call(http.MethodGet, "/api/sync/pull?collections=pluginData,pluginStates", nil)
+	var subset chinsync.Delta
+	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&subset) != nil ||
+		len(subset.Entries) != 0 || len(subset.Senses) != 0 || len(subset.Sentences) != 0 {
+		t.Fatalf("collections pull status = %d entries = %d, want 200 with only the requested collections", resp.StatusCode, len(subset.Entries))
+	}
+	resp.Body.Close()
+	resp = call(http.MethodGet, "/api/sync/pull?collections=entries,bogus", nil)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("unknown collection status = %d, want 400", resp.StatusCode)
+	}
 
 	resp = call(http.MethodGet, "/api/sync/pull?cursor=garbage", nil)
 	resp.Body.Close()

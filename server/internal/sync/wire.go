@@ -53,8 +53,12 @@ type Reading struct {
 // Sense ids are NOT stable: the lexicon retires and re-inserts all of a
 // dictionary's senses of an entry whenever any of them changes, so the
 // ids churn. Clients must key senses by (entryId, dictionaryId, ord),
-// never by id, and treat a tombstone as removing the sense at that key.
-// A sense whose dictionary was uninstalled is a tombstone.
+// never by id. Apply a delta's senses in order (updatedAt, then id). A
+// tombstone without a live row at its key in the same delta removes the
+// sense at that key; the server drops a tombstone that a live
+// replacement at the same key supersedes, so a delta never holds both.
+// A sense whose dictionary was uninstalled, or that a re-import no
+// longer has, is a tombstone.
 type Sense struct {
 	ID           int64      `json:"id"`
 	DictionaryID int64      `json:"dictionaryId"`

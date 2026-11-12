@@ -33,6 +33,7 @@ func TestPullFreshCursorOmitsTombstones(t *testing.T) {
 	sqlDB := newDB(t)
 	alice := newUser(t, sqlDB, "alice")
 	seedWorld(t, sqlDB)
+	backdate(t, sqlDB) // only the uninstall may count as changed
 	var dictID int64
 	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'mkgloss'`).Scan(&dictID); err != nil {
 		t.Fatalf("find dictionary: %v", err)
@@ -50,6 +51,11 @@ func TestPullFreshCursorOmitsTombstones(t *testing.T) {
 	incremental := mustPull(t, sqlDB, alice, time.Now().UTC().Add(-time.Hour))
 	if len(incremental.Senses) == 0 {
 		t.Error("incremental pull shipped no tombstones")
+	}
+	for _, s := range incremental.Senses {
+		if s.DeletedAt == nil {
+			t.Errorf("incremental sense %d is live, want only the uninstall tombstones", s.ID)
+		}
 	}
 }
 
