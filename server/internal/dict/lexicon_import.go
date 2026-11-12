@@ -262,7 +262,7 @@ func existingEntry(ctx context.Context, tx *sql.Tx, language, kind, key string) 
 		attrs string
 	)
 	err := tx.QueryRowContext(ctx, `
-		SELECT id, pri, uk, attrs FROM lx_entries
+		SELECT id, pri, uk, attrs FROM entries
 		WHERE language = ? AND kind = ? AND ext_key = ? AND deleted_at IS NULL`,
 		language, kind, key).Scan(&e.ID, &e.Pri, &uk, &attrs)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -280,7 +280,7 @@ func existingEntry(ctx context.Context, tx *sql.Tx, language, kind, key string) 
 		return l, json.Unmarshal([]byte(raw), &l)
 	}
 	rows, err := tx.QueryContext(ctx, `
-		SELECT text, flags, pri FROM lx_forms
+		SELECT text, flags, pri FROM forms
 		WHERE entry_id = ? AND deleted_at IS NULL ORDER BY ord, id`, e.ID)
 	if err != nil {
 		return nil, err
@@ -303,7 +303,7 @@ func existingEntry(ctx context.Context, tx *sql.Tx, language, kind, key string) 
 		return nil, err
 	}
 	rows, err = tx.QueryContext(ctx, `
-		SELECT type, value, plain, flags, pri FROM lx_readings
+		SELECT type, value, plain, flags, pri FROM readings
 		WHERE entry_id = ? AND deleted_at IS NULL ORDER BY ord, id`, e.ID)
 	if err != nil {
 		return nil, err

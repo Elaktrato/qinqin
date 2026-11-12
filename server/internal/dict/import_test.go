@@ -167,7 +167,7 @@ const (
 // activeEntries returns the ids of the active lexicon entries, ascending.
 func activeEntries(t *testing.T, sqlDB *sql.DB) []int64 {
 	t.Helper()
-	rows, err := sqlDB.Query(`SELECT id FROM lx_entries WHERE deleted_at IS NULL ORDER BY id`)
+	rows, err := sqlDB.Query(`SELECT id FROM entries WHERE deleted_at IS NULL ORDER BY id`)
 	if err != nil {
 		t.Fatalf("list entries: %v", err)
 	}
@@ -192,7 +192,7 @@ func senseCounts(t *testing.T, sqlDB *sql.DB, dictID int64) (active, tombstoned 
 	err := sqlDB.QueryRow(`SELECT
 			COUNT(CASE WHEN deleted_at IS NULL THEN 1 END),
 			COUNT(CASE WHEN deleted_at IS NOT NULL THEN 1 END)
-		FROM lx_senses WHERE dictionary_id = ?`, dictID).Scan(&active, &tombstoned)
+		FROM senses WHERE dictionary_id = ?`, dictID).Scan(&active, &tombstoned)
 	if err != nil {
 		t.Fatalf("count senses of dictionary %d: %v", dictID, err)
 	}

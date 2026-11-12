@@ -92,7 +92,7 @@ func lexID(t *testing.T, sqlDB *sql.DB, language, kind, form string) int64 {
 	t.Helper()
 	var id int64
 	err := sqlDB.QueryRow(`
-		SELECT e.id FROM lx_entries e JOIN lx_forms f ON f.entry_id = e.id
+		SELECT e.id FROM entries e JOIN forms f ON f.entry_id = e.id
 		WHERE e.language = ? AND e.kind = ? AND f.text = ? AND f.deleted_at IS NULL
 		ORDER BY e.id LIMIT 1`, language, kind, form).Scan(&id)
 	if err != nil {
@@ -106,7 +106,7 @@ func lexID(t *testing.T, sqlDB *sql.DB, language, kind, form string) int64 {
 // second-truncated clock.
 func backdate(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	for _, table := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses", "lx_links",
+	for _, table := range []string{"entries", "forms", "readings", "senses", "entry_links",
 		"level_members", "sentences", "plugin_data", "plugin_states", "dictionaries", "schemes", "levels"} {
 		if _, err := sqlDB.Exec(`UPDATE ` + table + ` SET updated_at = '2020-01-01T00:00:00Z'`); err != nil {
 			t.Fatalf("backdate %s: %v", table, err)

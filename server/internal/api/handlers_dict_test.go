@@ -222,7 +222,7 @@ func TestDictionaryRoutes(t *testing.T) {
 
 	// The imported entries are served, with derived readings.
 	var nihaoID int64
-	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries
+	if err := sqlDB.QueryRow(`SELECT id FROM entries
 		WHERE ext_key = '你好' AND kind = 'word' AND language = 'zh'`).Scan(&nihaoID); err != nil {
 		t.Fatalf("find imported 你好: %v", err)
 	}
@@ -254,7 +254,7 @@ func TestDictionaryRoutes(t *testing.T) {
 		t.Errorf("GET /api/dictionaries after uninstall = %+v, want empty", list)
 	}
 	var activeSenses int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM lx_senses
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM senses
 		WHERE dictionary_id = ? AND deleted_at IS NULL`, installed.ID).Scan(&activeSenses); err != nil {
 		t.Fatalf("count active senses: %v", err)
 	}

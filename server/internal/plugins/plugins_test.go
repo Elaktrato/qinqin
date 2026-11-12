@@ -171,11 +171,11 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 		VALUES ('mkgloss', 'mkgloss', '1.0', 'MIT', 'test', ?)`, stamp)
 	exec(`INSERT INTO schemes (pack_id, name, unit, language, version, license, attribution, updated_at)
 		VALUES ('hsk', 'HSK', 'word', 'zh', '1.0', 'CC BY-SA 4.0', 'test', ?)`, stamp)
-	exec(`INSERT INTO lx_entries (language, kind, ext_key, updated_at) VALUES ('zh', 'word', '你好', ?)`, stamp)
-	exec(`INSERT INTO lx_freq_packs (pack_id, name, version, language, license, attribution, ord, updated_at)
+	exec(`INSERT INTO entries (language, kind, ext_key, updated_at) VALUES ('zh', 'word', '你好', ?)`, stamp)
+	exec(`INSERT INTO frequency_packs (pack_id, name, version, language, license, attribution, ord, updated_at)
 		VALUES ('zh-freq', 'Zh frequency', '2', 'zh', 'CC0', 'test', 0, ?)`, stamp)
 	exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
-		VALUES ((SELECT id FROM lx_entries WHERE ext_key = '你好'), 'zh-mini', NULL, '你好。', 'nǐ hǎo.', 'Hello.', ?)`, stamp)
+		VALUES ((SELECT id FROM entries WHERE ext_key = '你好'), 'zh-mini', NULL, '你好。', 'nǐ hǎo.', 'Hello.', ?)`, stamp)
 
 	mustRegister(t, sqlDB, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)
 
@@ -215,11 +215,11 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 	}
 
 	// A soft-deleted frequency pack drops out of the list and of Exists.
-	exec(`UPDATE lx_freq_packs SET deleted_at = ? WHERE pack_id = 'zh-freq'`, stamp)
+	exec(`UPDATE frequency_packs SET deleted_at = ? WHERE pack_id = 'zh-freq'`, stamp)
 	if ok, _ := plugins.Exists(ctx, sqlDB, "zh-freq"); ok {
 		t.Error("Exists(zh-freq) after uninstall = true, want false")
 	}
-	exec(`UPDATE lx_freq_packs SET deleted_at = NULL WHERE pack_id = 'zh-freq'`)
+	exec(`UPDATE frequency_packs SET deleted_at = NULL WHERE pack_id = 'zh-freq'`)
 
 	// A soft-deleted pack drops out of the list.
 	exec(`UPDATE dictionaries SET deleted_at = ? WHERE pack_id = 'mkgloss'`, stamp)

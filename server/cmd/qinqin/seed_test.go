@@ -82,8 +82,8 @@ func countRows(t *testing.T, sqlDB *sql.DB) counts {
 	t.Helper()
 	var c counts
 	for q, dst := range map[string]*int{
-		`SELECT COUNT(*) FROM lx_entries WHERE deleted_at IS NULL`:    &c.entries,
-		`SELECT COUNT(*) FROM lx_senses WHERE deleted_at IS NULL`:     &c.senses,
+		`SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL`:       &c.entries,
+		`SELECT COUNT(*) FROM senses WHERE deleted_at IS NULL`:        &c.senses,
 		`SELECT COUNT(*) FROM level_members WHERE deleted_at IS NULL`: &c.members,
 		`SELECT COUNT(*) FROM languages`:                              &c.languages,
 	} {
@@ -145,7 +145,7 @@ func TestSeedPrintsEachPackOnce(t *testing.T) {
 	// The counts are the lexicon's: the zh-mini pack's entries are the
 	// lexicon entries the pack wrote.
 	var n int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM lx_entries`).Scan(&n); err != nil || n == 0 {
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entries`).Scan(&n); err != nil || n == 0 {
 		t.Fatalf("lexicon entries = %d, %v", n, err)
 	}
 }

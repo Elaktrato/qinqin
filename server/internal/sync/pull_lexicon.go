@@ -16,13 +16,13 @@ const (
 	liveOnly = " AND deleted_at IS NULL"
 
 	entriesQuery = `
-		SELECT id, language, kind, ext_key, pri, uk, attrs, updated_at, deleted_at FROM lx_entries
+		SELECT id, language, kind, ext_key, pri, uk, attrs, updated_at, deleted_at FROM entries
 		WHERE updated_at >= ?%s ORDER BY updated_at, id`
 	sensesQuery = `
-		SELECT id, dictionary_id, entry_id, ord, pos, tags, glosses, xrefs, updated_at, deleted_at FROM lx_senses
+		SELECT id, dictionary_id, entry_id, ord, pos, tags, glosses, xrefs, updated_at, deleted_at FROM senses
 		WHERE updated_at >= ?%s ORDER BY updated_at, id`
 	linksQuery = `
-		SELECT from_id, to_id, type, updated_at, deleted_at FROM lx_links
+		SELECT from_id, to_id, type, updated_at, deleted_at FROM entry_links
 		WHERE updated_at >= ?%s ORDER BY updated_at, from_id, to_id, type`
 )
 
@@ -87,7 +87,7 @@ func loadChildren(ctx context.Context, sqlDB *sql.DB, list []Entry) error {
 		in := strings.TrimSuffix(strings.Repeat("?,", len(chunk)), ",")
 
 		rows, err := sqlDB.QueryContext(ctx, `
-			SELECT entry_id, text, ord, flags, pri FROM lx_forms
+			SELECT entry_id, text, ord, flags, pri FROM forms
 			WHERE entry_id IN (`+in+`) AND deleted_at IS NULL ORDER BY entry_id, ord, id`, chunk...)
 		if err != nil {
 			return fmt.Errorf("sync pull forms: %w", err)
@@ -113,7 +113,7 @@ func loadChildren(ctx context.Context, sqlDB *sql.DB, list []Entry) error {
 		}
 
 		rows, err = sqlDB.QueryContext(ctx, `
-			SELECT entry_id, type, value, plain, ord, flags, pri FROM lx_readings
+			SELECT entry_id, type, value, plain, ord, flags, pri FROM readings
 			WHERE entry_id IN (`+in+`) AND deleted_at IS NULL ORDER BY entry_id, ord, id`, chunk...)
 		if err != nil {
 			return fmt.Errorf("sync pull readings: %w", err)

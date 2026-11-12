@@ -133,7 +133,7 @@ type searchTier struct {
 
 // searchTiers builds the tier queries of a validated query whose trimmed
 // text is text. The form and reading tiers are driven from the
-// lx_forms / lx_readings text indexes: CROSS JOIN fixes the child table
+// forms / readings text indexes: CROSS JOIN fixes the child table
 // as the outer loop so the planner cannot switch to scanning every entry
 // of the language (see byFormQuery). The gloss tier is a substring match
 // and so a scan; it walks the language's entries and their senses by
@@ -145,8 +145,8 @@ func searchTiers(q SearchQuery, text string) []searchTier {
 	}
 	readingTier := func(cond string, args ...any) searchTier {
 		return searchTier{
-			query: `SELECT e.id, MIN(r.type) FROM lx_readings r
-				CROSS JOIN lx_entries e ON e.id = r.entry_id
+			query: `SELECT e.id, MIN(r.type) FROM readings r
+				CROSS JOIN entries e ON e.id = r.entry_id
 				WHERE ` + cond + ` AND r.deleted_at IS NULL` + filter + `
 				GROUP BY e.id` + rankOrder,
 			args: with(args...),
@@ -154,8 +154,8 @@ func searchTiers(q SearchQuery, text string) []searchTier {
 	}
 
 	tiers := []searchTier{{
-		query: `SELECT e.id, 'written' FROM lx_forms f
-			CROSS JOIN lx_entries e ON e.id = f.entry_id
+		query: `SELECT e.id, 'written' FROM forms f
+			CROSS JOIN entries e ON e.id = f.entry_id
 			WHERE f.text = ? AND f.deleted_at IS NULL` + filter + `
 			GROUP BY e.id` + rankOrder,
 		args: with(text),
@@ -185,8 +185,8 @@ func glossTier(filter string, with func(...any) []any, text string) searchTier {
 	inColumn := "%" + likeEscape(string(encoded[1:len(encoded)-1])) + "%"
 	inGloss := "%" + likeEscape(text) + "%"
 	return searchTier{
-		query: `SELECT e.id, 'gloss' FROM lx_entries e
-			JOIN lx_senses s ON s.entry_id = e.id AND s.deleted_at IS NULL
+		query: `SELECT e.id, 'gloss' FROM entries e
+			JOIN senses s ON s.entry_id = e.id AND s.deleted_at IS NULL
 			JOIN dictionaries d ON d.id = s.dictionary_id AND d.deleted_at IS NULL
 			WHERE s.glosses LIKE ? ESCAPE '\'
 			  AND EXISTS (SELECT 1 FROM json_each(s.glosses) g WHERE g.value LIKE ? ESCAPE '\')` + filter + `
@@ -240,7 +240,7 @@ func likeEscape(s string) string {
 // It returns a non-nil (possibly empty) slice.
 func (s Store) CharsUnder(ctx context.Context, radicalID int64) ([]Entry, error) {
 	ids, err := queryIDs(ctx, s.DB, `
-		SELECT from_id FROM lx_links
+		SELECT from_id FROM entry_links
 		WHERE to_id = ? AND type = 'radical' AND deleted_at IS NULL
 		ORDER BY from_id`, radicalID)
 	if err != nil {
@@ -268,8 +268,8 @@ func (s Store) Radicals(ctx context.Context, ids []int64) (map[int64]int64, erro
 			args[i] = id
 		}
 		rows, err := s.DB.QueryContext(ctx, `
-			SELECT l.from_id, MIN(l.to_id) FROM lx_links l
-			JOIN lx_entries r ON r.id = l.to_id AND r.deleted_at IS NULL
+			SELECT l.from_id, MIN(l.to_id) FROM entry_links l
+			JOIN entries r ON r.id = l.to_id AND r.deleted_at IS NULL
 			WHERE l.from_id IN (`+placeholders(len(chunk))+`)
 			  AND l.type = 'radical' AND l.deleted_at IS NULL
 			GROUP BY l.from_id`, args...)

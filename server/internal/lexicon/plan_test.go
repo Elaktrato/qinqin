@@ -16,21 +16,21 @@ import (
 // a regression to that shape.
 const (
 	oldByFormQuery = `
-		SELECT DISTINCT f.text, e.id FROM lx_forms f
-		JOIN lx_entries e ON e.id = f.entry_id
+		SELECT DISTINCT f.text, e.id FROM forms f
+		JOIN entries e ON e.id = f.entry_id
 		WHERE e.language = ? AND e.deleted_at IS NULL AND f.deleted_at IS NULL
 		  AND f.text IN (%s)
 		ORDER BY f.text, e.id`
 	oldByReadingQuery = `
-		SELECT DISTINCT r.plain, e.id FROM lx_readings r
-		JOIN lx_entries e ON e.id = r.entry_id
+		SELECT DISTINCT r.plain, e.id FROM readings r
+		JOIN entries e ON e.id = r.entry_id
 		WHERE e.language = ? AND e.deleted_at IS NULL AND r.deleted_at IS NULL
 		  AND r.plain IN (%s)
 		ORDER BY r.plain, e.id`
 	oldBestQuery = `
-		SELECT e.id FROM lx_entries e
+		SELECT e.id FROM entries e
 		WHERE e.language = ? AND e.kind = ? AND e.deleted_at IS NULL
-		  AND EXISTS (SELECT 1 FROM lx_forms f
+		  AND EXISTS (SELECT 1 FROM forms f
 		              WHERE f.entry_id = e.id AND f.text = ? AND f.deleted_at IS NULL)
 		ORDER BY (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
 		LIMIT 1`
@@ -117,11 +117,11 @@ func TestMatchQueriesUseTheTextIndexes(t *testing.T) {
 			args        []any
 			want        string
 		}{
-			{"ByForm", fmt.Sprintf(byFormQuery, in), keyArgs(n, "ja"), "SEARCH f USING INDEX idx_lx_forms_text"},
-			{"ByReading", fmt.Sprintf(byReadingQuery, in), keyArgs(n, "ja"), "SEARCH r USING INDEX idx_lx_readings_plain"},
-			{"ByReadingKind", fmt.Sprintf(byReadingKindQuery, in), keyArgs(n, "ja", "word"), "SEARCH r USING INDEX idx_lx_readings_plain"},
-			{"Best", bestQuery, []any{"f1", "ja", "word"}, "SEARCH f USING INDEX idx_lx_forms_text"},
-			{"BestWord fallback", bestKanaWordQuery, []any{"r1", "ja"}, "SEARCH r USING INDEX idx_lx_readings_plain"},
+			{"ByForm", fmt.Sprintf(byFormQuery, in), keyArgs(n, "ja"), "SEARCH f USING INDEX idx_forms_text"},
+			{"ByReading", fmt.Sprintf(byReadingQuery, in), keyArgs(n, "ja"), "SEARCH r USING INDEX idx_readings_plain"},
+			{"ByReadingKind", fmt.Sprintf(byReadingKindQuery, in), keyArgs(n, "ja", "word"), "SEARCH r USING INDEX idx_readings_plain"},
+			{"Best", bestQuery, []any{"f1", "ja", "word"}, "SEARCH f USING INDEX idx_forms_text"},
+			{"BestWord fallback", bestKanaWordQuery, []any{"r1", "ja"}, "SEARCH r USING INDEX idx_readings_plain"},
 		}
 		for _, tt := range tests {
 			got := plan(t, sqlDB, tt.query, tt.args...)
@@ -141,7 +141,7 @@ func TestMatchQueriesUseTheTextIndexes(t *testing.T) {
 			"old ByReading": {fmt.Sprintf(oldByReadingQuery, in), append([]any{"ja"}, keyArgs(n)...)},
 			"old Best":      {oldBestQuery, []any{"ja", "word", "f1"}},
 		} {
-			if got := plan(t, sqlDB, q.query, q.args...); !strings.Contains(got, "sqlite_autoindex_lx_entries_1") {
+			if got := plan(t, sqlDB, q.query, q.args...); !strings.Contains(got, "sqlite_autoindex_entries_1") {
 				t.Errorf("control %s plan = %q, want the language index (setup no longer discriminates)", name, got)
 			}
 		}
@@ -168,15 +168,15 @@ func TestSearchTiersUseTheTextIndexes(t *testing.T) {
 			got := plan(t, sqlDB, tr.query+` LIMIT ?`, append(tr.args, 50)...)
 			switch tierNames[i] {
 			case "form":
-				if !strings.HasPrefix(got, "SEARCH f USING INDEX idx_lx_forms_text") || !strings.Contains(got, "SEARCH e USING INTEGER PRIMARY KEY") {
+				if !strings.HasPrefix(got, "SEARCH f USING INDEX idx_forms_text") || !strings.Contains(got, "SEARCH e USING INTEGER PRIMARY KEY") {
 					t.Errorf("analyzed=%v form tier plan = %q", analyzed, got)
 				}
 			case "gloss":
-				if !strings.Contains(got, "SEARCH s USING INDEX idx_lx_senses_entry") {
+				if !strings.Contains(got, "SEARCH s USING INDEX idx_senses_entry") {
 					t.Errorf("analyzed=%v gloss tier plan = %q, want senses by entry index", analyzed, got)
 				}
 			default:
-				if !strings.HasPrefix(got, "SEARCH r USING INDEX idx_lx_readings_plain") || !strings.Contains(got, "SEARCH e USING INTEGER PRIMARY KEY") {
+				if !strings.HasPrefix(got, "SEARCH r USING INDEX idx_readings_plain") || !strings.Contains(got, "SEARCH e USING INTEGER PRIMARY KEY") {
 					t.Errorf("analyzed=%v %s tier plan = %q", analyzed, tierNames[i], got)
 				}
 			}
@@ -184,7 +184,7 @@ func TestSearchTiersUseTheTextIndexes(t *testing.T) {
 			// language-index trap on this database.
 			if !analyzed && (i == 2 || i == 3) {
 				old := strings.Replace(tr.query, "CROSS JOIN", "JOIN", 1)
-				if got := plan(t, sqlDB, old+` LIMIT ?`, append(tr.args, 50)...); !strings.Contains(got, "sqlite_autoindex_lx_entries_1") {
+				if got := plan(t, sqlDB, old+` LIMIT ?`, append(tr.args, 50)...); !strings.Contains(got, "sqlite_autoindex_entries_1") {
 					t.Errorf("control %s tier plan = %q, want the language index (setup no longer discriminates)", tierNames[i], got)
 				}
 			}

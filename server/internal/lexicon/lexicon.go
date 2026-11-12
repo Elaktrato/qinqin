@@ -131,13 +131,13 @@ func (s Store) put(ctx context.Context, tx *sql.Tx, e *Entry, dictionaryID int64
 		inserted  bool
 	)
 	err = tx.QueryRowContext(ctx, `
-		SELECT id, pri, uk, attrs, deleted_at FROM lx_entries
+		SELECT id, pri, uk, attrs, deleted_at FROM entries
 		WHERE language = ? AND kind = ? AND ext_key = ?`,
 		e.Language, e.Kind, e.Key).Scan(&id, &pri, &uk, &oldAttrs, &deletedAt)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		if err := tx.QueryRowContext(ctx, `
-			INSERT INTO lx_entries (language, kind, ext_key, pri, uk, attrs, updated_at)
+			INSERT INTO entries (language, kind, ext_key, pri, uk, attrs, updated_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?)
 			RETURNING id`,
 			e.Language, e.Kind, e.Key, e.Pri, boolInt(e.UK), attrs, stamp).Scan(&id); err != nil {
@@ -160,23 +160,23 @@ func (s Store) put(ctx context.Context, tx *sql.Tx, e *Entry, dictionaryID int64
 	}{
 		{
 			name:   "forms",
-			load:   `SELECT text, ord, flags, pri FROM lx_forms WHERE entry_id = ? AND deleted_at IS NULL ORDER BY ord, id`,
-			retire: `UPDATE lx_forms SET deleted_at = ?, updated_at = ? WHERE entry_id = ? AND deleted_at IS NULL`,
-			insert: `INSERT INTO lx_forms (entry_id, text, ord, flags, pri, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+			load:   `SELECT text, ord, flags, pri FROM forms WHERE entry_id = ? AND deleted_at IS NULL ORDER BY ord, id`,
+			retire: `UPDATE forms SET deleted_at = ?, updated_at = ? WHERE entry_id = ? AND deleted_at IS NULL`,
+			insert: `INSERT INTO forms (entry_id, text, ord, flags, pri, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
 			rows:   forms,
 		},
 		{
 			name:   "readings",
-			load:   `SELECT type, value, plain, ord, flags, pri FROM lx_readings WHERE entry_id = ? AND deleted_at IS NULL ORDER BY ord, id`,
-			retire: `UPDATE lx_readings SET deleted_at = ?, updated_at = ? WHERE entry_id = ? AND deleted_at IS NULL`,
-			insert: `INSERT INTO lx_readings (entry_id, type, value, plain, ord, flags, pri, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			load:   `SELECT type, value, plain, ord, flags, pri FROM readings WHERE entry_id = ? AND deleted_at IS NULL ORDER BY ord, id`,
+			retire: `UPDATE readings SET deleted_at = ?, updated_at = ? WHERE entry_id = ? AND deleted_at IS NULL`,
+			insert: `INSERT INTO readings (entry_id, type, value, plain, ord, flags, pri, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			rows:   readings,
 		},
 		{
 			name:   "senses",
-			load:   `SELECT ord, pos, tags, glosses, xrefs FROM lx_senses WHERE entry_id = ? AND deleted_at IS NULL AND dictionary_id = ? ORDER BY ord, id`,
-			retire: `UPDATE lx_senses SET deleted_at = ?, updated_at = ? WHERE entry_id = ? AND deleted_at IS NULL AND dictionary_id = ?`,
-			insert: `INSERT INTO lx_senses (entry_id, dictionary_id, ord, pos, tags, glosses, xrefs, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			load:   `SELECT ord, pos, tags, glosses, xrefs FROM senses WHERE entry_id = ? AND deleted_at IS NULL AND dictionary_id = ? ORDER BY ord, id`,
+			retire: `UPDATE senses SET deleted_at = ?, updated_at = ? WHERE entry_id = ? AND deleted_at IS NULL AND dictionary_id = ?`,
+			insert: `INSERT INTO senses (entry_id, dictionary_id, ord, pos, tags, glosses, xrefs, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			args:   []any{dictionaryID},
 			rows:   senses,
 		},
@@ -209,7 +209,7 @@ func (s Store) put(ctx context.Context, tx *sql.Tx, e *Entry, dictionaryID int64
 
 	if changed && !inserted {
 		if _, err := tx.ExecContext(ctx, `
-			UPDATE lx_entries SET pri = ?, uk = ?, attrs = ?, updated_at = ?, deleted_at = NULL
+			UPDATE entries SET pri = ?, uk = ?, attrs = ?, updated_at = ?, deleted_at = NULL
 			WHERE id = ?`,
 			e.Pri, boolInt(e.UK), attrs, stamp, id); err != nil {
 			return 0, err
@@ -283,34 +283,34 @@ func (s Store) ByReadingKind(ctx context.Context, language, kind string, plains 
 
 // The match queries are driven by the forms/readings index: CROSS JOIN
 // makes the child table the outer loop, so SQLite looks each key up in
-// idx_lx_forms_text / idx_lx_readings_plain and joins the entry by
+// idx_forms_text / idx_readings_plain and joins the entry by
 // primary key. Without it the planner — lacking statistics — prefers the
 // (language, …) index once the IN list has a few values and scans every
 // entry of the language: two to three orders of magnitude slower on a
 // full dictionary. The %s is the IN list.
 const (
 	byFormQuery = `
-		SELECT DISTINCT f.text, e.id FROM lx_forms f
-		CROSS JOIN lx_entries e ON e.id = f.entry_id
+		SELECT DISTINCT f.text, e.id FROM forms f
+		CROSS JOIN entries e ON e.id = f.entry_id
 		WHERE f.text IN (%s) AND f.deleted_at IS NULL
 		  AND e.language = ? AND e.deleted_at IS NULL
 		ORDER BY f.text, e.id`
 	byReadingQuery = `
-		SELECT DISTINCT r.plain, e.id FROM lx_readings r
-		CROSS JOIN lx_entries e ON e.id = r.entry_id
+		SELECT DISTINCT r.plain, e.id FROM readings r
+		CROSS JOIN entries e ON e.id = r.entry_id
 		WHERE r.plain IN (%s) AND r.deleted_at IS NULL
 		  AND e.language = ? AND e.deleted_at IS NULL
 		ORDER BY r.plain, e.id`
 	byReadingKindQuery = `
-		SELECT DISTINCT r.plain, e.id FROM lx_readings r
-		CROSS JOIN lx_entries e ON e.id = r.entry_id
+		SELECT DISTINCT r.plain, e.id FROM readings r
+		CROSS JOIN entries e ON e.id = r.entry_id
 		WHERE r.plain IN (%s) AND r.deleted_at IS NULL
 		  AND e.language = ? AND e.kind = ? AND e.deleted_at IS NULL
 		ORDER BY r.plain, e.id`
-	// bestQuery is driven from lx_forms the same way.
+	// bestQuery is driven from forms the same way.
 	bestQuery = `
-		SELECT e.id FROM lx_forms f
-		CROSS JOIN lx_entries e ON e.id = f.entry_id
+		SELECT e.id FROM forms f
+		CROSS JOIN entries e ON e.id = f.entry_id
 		WHERE f.text = ? AND f.deleted_at IS NULL
 		  AND e.language = ? AND e.kind = ? AND e.deleted_at IS NULL
 		ORDER BY (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
@@ -334,17 +334,17 @@ func (s Store) Best(ctx context.Context, language, kind, form string) (*Entry, e
 }
 
 // bestKanaWordQuery is BestWord's reading fallback, driven from
-// lx_readings by its plain index like the match queries: a word entry
+// readings by its plain index like the match queries: a word entry
 // whose FIRST reading (ord 0) is a kana reading with the given plain
 // form, and which is written in kana — it has no written form, or it is
 // marked usually-kana (uk).
 const bestKanaWordQuery = `
-	SELECT e.id FROM lx_readings r
-	CROSS JOIN lx_entries e ON e.id = r.entry_id
+	SELECT e.id FROM readings r
+	CROSS JOIN entries e ON e.id = r.entry_id
 	WHERE r.plain = ? AND r.type = 'kana' AND r.ord = 0 AND r.deleted_at IS NULL
 	  AND e.language = ? AND e.kind = 'word' AND e.deleted_at IS NULL
 	  AND (e.uk = 1 OR NOT EXISTS (
-		SELECT 1 FROM lx_forms f WHERE f.entry_id = e.id AND f.deleted_at IS NULL))
+		SELECT 1 FROM forms f WHERE f.entry_id = e.id AND f.deleted_at IS NULL))
 	ORDER BY e.pri DESC, e.id
 	LIMIT 1`
 
@@ -414,12 +414,12 @@ func (s Store) LinkTx(ctx context.Context, tx *sql.Tx, fromID, toID int64, typ s
 	}
 	for _, p := range pairs {
 		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO lx_links (from_id, to_id, type, updated_at)
+			INSERT INTO entry_links (from_id, to_id, type, updated_at)
 			VALUES (?, ?, ?, ?)
 			ON CONFLICT (from_id, to_id, type) DO UPDATE SET
 				deleted_at = NULL,
 				updated_at = excluded.updated_at
-			WHERE lx_links.deleted_at IS NOT NULL`,
+			WHERE entry_links.deleted_at IS NOT NULL`,
 			p[0], p[1], typ, stamp); err != nil {
 			return fmt.Errorf("link %d->%d (%s): %w", p[0], p[1], typ, err)
 		}
@@ -431,7 +431,7 @@ func (s Store) LinkTx(ctx context.Context, tx *sql.Tx, fromID, toID int64, typ s
 // loaded, ordered by entry id. It returns a non-nil (possibly empty) slice.
 func (s Store) Variants(ctx context.Context, id int64) ([]Entry, error) {
 	ids, err := queryIDs(ctx, s.DB, `
-		SELECT to_id FROM lx_links
+		SELECT to_id FROM entry_links
 		WHERE from_id = ? AND type = 'variant' AND deleted_at IS NULL
 		ORDER BY to_id`, id)
 	if err != nil {
@@ -526,7 +526,7 @@ func (s Store) loadChunk(ctx context.Context, ids []any, byID map[int64]*Entry) 
 	in := placeholders(len(ids))
 
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT id, language, kind, ext_key, pri, uk, attrs, updated_at FROM lx_entries
+		SELECT id, language, kind, ext_key, pri, uk, attrs, updated_at FROM entries
 		WHERE id IN (`+in+`) AND deleted_at IS NULL`, ids...)
 	if err != nil {
 		return fmt.Errorf("load entries: %w", err)
@@ -557,7 +557,7 @@ func (s Store) loadChunk(ctx context.Context, ids []any, byID map[int64]*Entry) 
 	}
 
 	rows, err = s.DB.QueryContext(ctx, `
-		SELECT entry_id, text, ord, flags, pri FROM lx_forms
+		SELECT entry_id, text, ord, flags, pri FROM forms
 		WHERE entry_id IN (`+in+`) AND deleted_at IS NULL
 		ORDER BY entry_id, ord, id`, ids...)
 	if err != nil {
@@ -585,7 +585,7 @@ func (s Store) loadChunk(ctx context.Context, ids []any, byID map[int64]*Entry) 
 	}
 
 	rows, err = s.DB.QueryContext(ctx, `
-		SELECT entry_id, type, value, plain, ord, flags, pri FROM lx_readings
+		SELECT entry_id, type, value, plain, ord, flags, pri FROM readings
 		WHERE entry_id IN (`+in+`) AND deleted_at IS NULL
 		ORDER BY entry_id, ord, id`, ids...)
 	if err != nil {
@@ -614,7 +614,7 @@ func (s Store) loadChunk(ctx context.Context, ids []any, byID map[int64]*Entry) 
 
 	rows, err = s.DB.QueryContext(ctx, `
 		SELECT s.entry_id, s.id, s.dictionary_id, s.ord, s.pos, s.tags, s.glosses, s.xrefs
-		FROM lx_senses s
+		FROM senses s
 		JOIN dictionaries d ON d.id = s.dictionary_id AND d.deleted_at IS NULL
 		WHERE s.entry_id IN (`+in+`) AND s.deleted_at IS NULL
 		ORDER BY s.entry_id, s.dictionary_id, s.ord, s.id`, ids...)

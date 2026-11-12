@@ -88,7 +88,7 @@ func getEntry(t *testing.T, tsURL, path string) *http.Response {
 func lexID(t *testing.T, sqlDB *sql.DB, language, kind, key string) int64 {
 	t.Helper()
 	var id int64
-	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries
+	if err := sqlDB.QueryRow(`SELECT id FROM entries
 		WHERE language = ? AND kind = ? AND ext_key = ? AND deleted_at IS NULL`,
 		language, kind, key).Scan(&id); err != nil {
 		t.Fatalf("lexicon entry %s/%s/%s: %v", language, kind, key, err)

@@ -70,7 +70,7 @@ func view(t *testing.T, sqlDB *sql.DB, userID, entryID int64) model.EntryBase {
 func entryID(t *testing.T, sqlDB *sql.DB, key string) int64 {
 	t.Helper()
 	var id int64
-	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries WHERE language = 'zh' AND ext_key = ?`, key).Scan(&id); err != nil {
+	if err := sqlDB.QueryRow(`SELECT id FROM entries WHERE language = 'zh' AND ext_key = ?`, key).Scan(&id); err != nil {
 		t.Fatalf("lexicon entry %s: %v", key, err)
 	}
 	return id
@@ -123,7 +123,7 @@ func faJSON(gloss string) string {
 // installed from packID, in sense order.
 func activeGlosses(t *testing.T, sqlDB *sql.DB, packID string, id int64) []string {
 	t.Helper()
-	rows, err := sqlDB.Query(`SELECT glosses FROM lx_senses
+	rows, err := sqlDB.Query(`SELECT glosses FROM senses
 		WHERE dictionary_id = (SELECT id FROM dictionaries WHERE pack_id = ?)
 			AND entry_id = ? AND deleted_at IS NULL
 		ORDER BY ord`, packID, id)

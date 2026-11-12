@@ -83,7 +83,7 @@ func lexiconPack(t *testing.T, xml string) *dict.Pack {
 func lexiconEntry(t *testing.T, sqlDB *sql.DB, entSeq string) lexicon.Entry {
 	t.Helper()
 	var id int64
-	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries WHERE language = 'ja' AND kind = 'word' AND ext_key = ?`, "j:"+entSeq).Scan(&id); err != nil {
+	if err := sqlDB.QueryRow(`SELECT id FROM entries WHERE language = 'ja' AND kind = 'word' AND ext_key = ?`, "j:"+entSeq).Scan(&id); err != nil {
 		t.Fatalf("find entry j:%s: %v", entSeq, err)
 	}
 	e, err := lexicon.Store{DB: sqlDB}.Get(context.Background(), id)
@@ -243,7 +243,7 @@ func TestJmdictImportRollsBackOnError(t *testing.T) {
 	} else if !strings.Contains(err.Error(), "9") {
 		t.Errorf("error does not name the entry: %v", err)
 	}
-	for _, table := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses", "dictionaries"} {
+	for _, table := range []string{"entries", "forms", "readings", "senses", "dictionaries"} {
 		if n := totalRows(t, sqlDB, table); n != 0 {
 			t.Errorf("%s has %d rows after a failed import, want 0", table, n)
 		}
@@ -253,7 +253,7 @@ func TestJmdictImportRollsBackOnError(t *testing.T) {
 func TestLexiconJMdictReimportWritesNothing(t *testing.T) {
 	sqlDB := newDB(t)
 	importLexicon(t, sqlDB, lexiconJMdict)
-	tables := []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses"}
+	tables := []string{"entries", "forms", "readings", "senses"}
 	for _, table := range tables {
 		if _, err := sqlDB.Exec(`UPDATE ` + table + ` SET updated_at = '` + longAgo + `'`); err != nil {
 			t.Fatalf("backdate %s: %v", table, err)

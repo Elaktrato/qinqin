@@ -73,7 +73,7 @@ func importCedict(t *testing.T, sqlDB *sql.DB, lines ...string) {
 func lexID(t *testing.T, sqlDB *sql.DB, kind, key string) int64 {
 	t.Helper()
 	var id int64
-	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries
+	if err := sqlDB.QueryRow(`SELECT id FROM entries
 		WHERE language = 'zh' AND kind = ? AND ext_key = ? AND deleted_at IS NULL`, kind, key).Scan(&id); err != nil {
 		t.Fatalf("lexicon entry %s/%s: %v", kind, key, err)
 	}
@@ -406,14 +406,14 @@ func TestSkippedUnknownForms(t *testing.T) {
 
 	// No entry was created for the unknown forms.
 	var total int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM lx_entries`).Scan(&total); err != nil {
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entries`).Scan(&total); err != nil {
 		t.Fatalf("count entries: %v", err)
 	}
 	if total != 4 {
 		t.Errorf("entries = %d, want the 4 seeded rows, no new ones", total)
 	}
 	var unknown int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM lx_forms WHERE text = '电脑'`).Scan(&unknown); err != nil {
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM forms WHERE text = '电脑'`).Scan(&unknown); err != nil {
 		t.Fatalf("count 电脑: %v", err)
 	}
 	if unknown != 0 {
@@ -611,7 +611,7 @@ func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
 	key := func(kind, k string) int64 {
 		t.Helper()
 		var id int64
-		if err := sqlDB.QueryRow(`SELECT id FROM lx_entries WHERE language = 'ja' AND kind = ? AND ext_key = ?`, kind, k).Scan(&id); err != nil {
+		if err := sqlDB.QueryRow(`SELECT id FROM entries WHERE language = 'ja' AND kind = ? AND ext_key = ?`, kind, k).Scan(&id); err != nil {
 			t.Fatalf("lexicon entry %s/%s: %v", kind, k, err)
 		}
 		return id

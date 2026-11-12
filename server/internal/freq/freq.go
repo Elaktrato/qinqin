@@ -1,6 +1,6 @@
 // Package freq imports frequency packs — word-frequency lists in the
-// Yomitan or CSV format — into the lexicon's lx_freq_packs and
-// lx_frequency tables, and looks terms up in them. A frequency pack is
+// Yomitan or CSV format — into the lexicon's frequency_packs and
+// frequency tables, and looks terms up in them. A frequency pack is
 // not a dictionary: it carries ranks, no glosses.
 package freq
 
@@ -59,7 +59,7 @@ type row struct {
 	value                  float64
 }
 
-// Import installs the frequency pack p: its lx_freq_packs row and every
+// Import installs the frequency pack p: its frequency_packs row and every
 // frequency row, in ONE transaction, so a malformed row — which aborts
 // the pack with an error naming the file and row index — leaves nothing
 // behind. The pack is parsed completely before the transaction begins.
@@ -122,15 +122,15 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 	)
 	err = tx.QueryRowContext(ctx, `
 		SELECT id, name, version, language, license, attribution, content_hash, deleted_at
-		FROM lx_freq_packs WHERE pack_id = ?`, m.ID).
+		FROM frequency_packs WHERE pack_id = ?`, m.ID).
 		Scan(&id, &name, &version, &language, &license, &attribution, &oldHash, &deleted)
 	result := dict.Result{Entries: len(rows)}
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		stamp := time.Now().UTC().Format(time.RFC3339)
 		if err = tx.QueryRowContext(ctx, `
-			INSERT INTO lx_freq_packs (pack_id, name, version, language, license, attribution, ord, content_hash, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM lx_freq_packs), ?, ?)
+			INSERT INTO frequency_packs (pack_id, name, version, language, license, attribution, ord, content_hash, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs), ?, ?)
 			RETURNING id`,
 			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, hash, stamp).Scan(&id); err != nil {
 			return dict.Result{}, fmt.Errorf("register frequency pack %s: %w", m.ID, err)
@@ -143,14 +143,14 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 			return result, nil // identical: nothing to write
 		}
 		if _, err = tx.ExecContext(ctx, `
-			UPDATE lx_freq_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?,
+			UPDATE frequency_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?,
 				content_hash = ?, updated_at = ?, deleted_at = NULL
 			WHERE id = ?`,
 			m.Name, m.Version, m.Language, m.License, m.Attribution, hash,
 			time.Now().UTC().Format(time.RFC3339), id); err != nil {
 			return dict.Result{}, fmt.Errorf("update frequency pack %s: %w", m.ID, err)
 		}
-		if _, err = tx.ExecContext(ctx, `DELETE FROM lx_frequency WHERE pack_id = ?`, id); err != nil {
+		if _, err = tx.ExecContext(ctx, `DELETE FROM frequency WHERE pack_id = ?`, id); err != nil {
 			return dict.Result{}, fmt.Errorf("replace frequency rows of %s: %w", m.ID, err)
 		}
 	}
@@ -169,7 +169,7 @@ func insertRows(ctx context.Context, tx *sql.Tx, packID int64, rows []row) error
 	for start := 0; start < len(rows); start += insertBatch {
 		batch := rows[start:min(start+insertBatch, len(rows))]
 		var q strings.Builder
-		q.WriteString(`INSERT INTO lx_frequency (pack_id, term, reading, rank, display) VALUES `)
+		q.WriteString(`INSERT INTO frequency (pack_id, term, reading, rank, display) VALUES `)
 		args := make([]any, 0, len(batch)*5)
 		for i, r := range batch {
 			if i > 0 {
@@ -522,7 +522,7 @@ type PackInfo struct {
 func (s Store) Packs(ctx context.Context) ([]PackInfo, error) {
 	rows, err := s.DB.QueryContext(ctx, `
 		SELECT id, pack_id, name, version, language, license, attribution, ord
-		FROM lx_freq_packs WHERE deleted_at IS NULL ORDER BY ord, id`)
+		FROM frequency_packs WHERE deleted_at IS NULL ORDER BY ord, id`)
 	if err != nil {
 		return nil, err
 	}
@@ -572,7 +572,7 @@ func (s Store) Rows(ctx context.Context, terms []string) ([]Row, error) {
 		}
 		rows, err := s.DB.QueryContext(ctx, `
 			SELECT f.term, f.reading, f.rank, f.display, p.id, p.name, p.ord, f.rowid
-			FROM lx_frequency f JOIN lx_freq_packs p ON p.id = f.pack_id
+			FROM frequency f JOIN frequency_packs p ON p.id = f.pack_id
 			WHERE p.deleted_at IS NULL AND f.term IN (`+strings.TrimSuffix(strings.Repeat("?,", len(chunk)), ",")+`)
 			ORDER BY p.ord, p.id, f.rowid`, args...)
 		if err != nil {

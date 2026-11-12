@@ -81,7 +81,7 @@ func importCedict(t *testing.T, sqlDB *sql.DB, lines ...string) {
 func lexID(t *testing.T, sqlDB *sql.DB, language, kind, key string) int64 {
 	t.Helper()
 	var id int64
-	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries
+	if err := sqlDB.QueryRow(`SELECT id FROM entries
 		WHERE language = ? AND kind = ? AND ext_key = ? AND deleted_at IS NULL`, language, kind, key).Scan(&id); err != nil {
 		t.Fatalf("lexicon entry %s/%s/%s: %v", language, kind, key, err)
 	}
@@ -284,7 +284,7 @@ func TestSentencePackImport(t *testing.T) {
 		t.Errorf("active sentences = %d, want the fixture's 3 — nothing written for skipped words", active)
 	}
 	var entryCount int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM lx_entries`).Scan(&entryCount); err != nil {
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entries`).Scan(&entryCount); err != nil {
 		t.Fatalf("count entries: %v", err)
 	}
 	if entryCount != 3 {

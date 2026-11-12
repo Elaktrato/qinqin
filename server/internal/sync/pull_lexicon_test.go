@@ -279,7 +279,7 @@ func TestPullShipsLexiconTombstones(t *testing.T) {
 
 	// A soft-deleted entry ships as a tombstone — except from the zero cursor.
 	gakkou := lexID(t, sqlDB, "ja", "word", "学校")
-	if _, err := sqlDB.Exec(`UPDATE lx_entries SET deleted_at = ?, updated_at = ? WHERE id = ?`,
+	if _, err := sqlDB.Exec(`UPDATE entries SET deleted_at = ?, updated_at = ? WHERE id = ?`,
 		"2026-11-12T00:00:00Z", time.Now().UTC().Format(time.RFC3339), gakkou); err != nil {
 		t.Fatal(err)
 	}

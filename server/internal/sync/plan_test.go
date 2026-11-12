@@ -17,9 +17,9 @@ func TestLexiconPullsUseUpdatedAtIndex(t *testing.T) {
 	}
 	defer sqlDB.Close()
 	for _, tc := range []struct{ name, query, index string }{
-		{"entries", entriesQuery, "idx_lx_entries_updated"},
-		{"senses", sensesQuery, "idx_lx_senses_updated"},
-		{"links", linksQuery, "idx_lx_links_updated"},
+		{"entries", entriesQuery, "idx_entries_updated"},
+		{"senses", sensesQuery, "idx_senses_updated"},
+		{"links", linksQuery, "idx_entry_links_updated"},
 	} {
 		for _, live := range []string{"", liveOnly} {
 			rows, err := sqlDB.Query("EXPLAIN QUERY PLAN "+strings.Replace(tc.query, "%s", live, 1), "2026-01-01T00:00:00Z")

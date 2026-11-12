@@ -47,7 +47,7 @@ func importLexiconPack(t *testing.T, sqlDB *sql.DB, p *dict.Pack) dict.Result {
 func lexByKey(t *testing.T, sqlDB *sql.DB, language, kind, key string) lexicon.Entry {
 	t.Helper()
 	var id int64
-	if err := sqlDB.QueryRow(`SELECT id FROM lx_entries WHERE language = ? AND kind = ? AND ext_key = ? AND deleted_at IS NULL`,
+	if err := sqlDB.QueryRow(`SELECT id FROM entries WHERE language = ? AND kind = ? AND ext_key = ? AND deleted_at IS NULL`,
 		language, kind, key).Scan(&id); err != nil {
 		t.Fatalf("find entry %s/%s/%s: %v", language, kind, key, err)
 	}
@@ -61,7 +61,7 @@ func lexByKey(t *testing.T, sqlDB *sql.DB, language, kind, key string) lexicon.E
 // lexLinks returns the keys of the entries e links to with typ.
 func lexLinks(t *testing.T, sqlDB *sql.DB, e lexicon.Entry, typ string) []string {
 	t.Helper()
-	rows, err := sqlDB.Query(`SELECT x.ext_key FROM lx_links l JOIN lx_entries x ON x.id = l.to_id
+	rows, err := sqlDB.Query(`SELECT x.ext_key FROM entry_links l JOIN entries x ON x.id = l.to_id
 		WHERE l.from_id = ? AND l.type = ? AND l.deleted_at IS NULL ORDER BY x.ext_key`, e.ID, typ)
 	if err != nil {
 		t.Fatalf("links of %s: %v", e.Key, err)
@@ -110,7 +110,7 @@ func senseGlosses(t *testing.T, sqlDB *sql.DB, e lexicon.Entry) []string {
 
 func assertNoLexiconRows(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	for _, table := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses", "lx_links", "dictionaries"} {
+	for _, table := range []string{"entries", "forms", "readings", "senses", "entry_links", "dictionaries"} {
 		if n := totalRows(t, sqlDB, table); n != 0 {
 			t.Errorf("%s has %d rows after a failed import, want 0", table, n)
 		}
@@ -163,7 +163,7 @@ func TestLexiconCedictHomographsMergeIntoOneEntry(t *testing.T) {
 	if got, want := senseGlosses(t, sqlDB, xing), []string{"cedict-lex: to walk/to go", "cedict-lex: row/line"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("行 senses = %v, want %v", got, want)
 	}
-	if n := countWhere(t, sqlDB, "lx_entries", "ext_key = '行'"); n != 1 {
+	if n := countWhere(t, sqlDB, "entries", "ext_key = '行'"); n != 1 {
 		t.Errorf("行 entries = %d, want 1", n)
 	}
 
@@ -323,7 +323,7 @@ func checkMergedChars(t *testing.T, sqlDB *sql.DB) {
 	if got := lexLinks(t, sqlDB, fu, "variant"); !reflect.DeepEqual(got, []string{"復", "複"}) {
 		t.Errorf("复 variants = %v", got)
 	}
-	if n := countWhere(t, sqlDB, "lx_entries", "ext_key = '好' AND kind = 'character'"); n != 1 {
+	if n := countWhere(t, sqlDB, "entries", "ext_key = '好' AND kind = 'character'"); n != 1 {
 		t.Errorf("好 character entries = %d, want 1", n)
 	}
 }
@@ -477,7 +477,7 @@ func TestLexiconMergeJSONDuplicateWrittenInOnePack(t *testing.T) {
 func lexiconCounts(t *testing.T, sqlDB *sql.DB) map[string]int {
 	t.Helper()
 	m := map[string]int{}
-	for _, table := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses", "lx_links"} {
+	for _, table := range []string{"entries", "forms", "readings", "senses", "entry_links"} {
 		m[table] = totalRows(t, sqlDB, table)
 	}
 	return m
@@ -504,7 +504,7 @@ func TestLexiconReimportsWriteNothing(t *testing.T) {
 			for _, id := range order {
 				importLexiconPack(t, sqlDB, packs[id](t))
 			}
-			tables := []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses", "lx_links"}
+			tables := []string{"entries", "forms", "readings", "senses", "entry_links"}
 			for _, table := range tables {
 				if _, err := sqlDB.Exec(`UPDATE ` + table + ` SET updated_at = '` + longAgo + `'`); err != nil {
 					t.Fatalf("backdate %s: %v", table, err)

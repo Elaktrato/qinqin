@@ -134,7 +134,7 @@ func TestPutTxRollsBackWithItsTransaction(t *testing.T) {
 	if err := tx.Rollback(); err != nil {
 		t.Fatalf("rollback: %v", err)
 	}
-	for _, table := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses"} {
+	for _, table := range []string{"entries", "forms", "readings", "senses"} {
 		var n int
 		if err := st.DB.QueryRow(`SELECT COUNT(*) FROM ` + table).Scan(&n); err != nil {
 			t.Fatalf("count %s: %v", table, err)
@@ -255,7 +255,7 @@ func TestPutRevivesSoftDeleted(t *testing.T) {
 	st := newStore(t)
 	dict := addDictionary(t, st, "jmdict")
 	id := mustPut(t, st, suru(), dict)
-	if _, err := st.DB.Exec(`UPDATE lx_entries SET deleted_at = updated_at WHERE id = ?`, id); err != nil {
+	if _, err := st.DB.Exec(`UPDATE entries SET deleted_at = updated_at WHERE id = ?`, id); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := st.Get(context.Background(), id); !errors.Is(err, lexicon.ErrNotFound) {
@@ -302,7 +302,7 @@ func TestPutIsIdempotent(t *testing.T) {
 
 	// Back-date every stamp so a re-stamp (second resolution) is visible.
 	old := "2000-01-01T00:00:00Z"
-	for _, tbl := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses"} {
+	for _, tbl := range []string{"entries", "forms", "readings", "senses"} {
 		if _, err := st.DB.Exec(`UPDATE `+tbl+` SET updated_at = ?`, old); err != nil {
 			t.Fatal(err)
 		}
@@ -310,8 +310,8 @@ func TestPutIsIdempotent(t *testing.T) {
 	count := func() int {
 		var n int
 		if err := st.DB.QueryRow(`SELECT
-			(SELECT COUNT(*) FROM lx_forms) + (SELECT COUNT(*) FROM lx_readings) +
-			(SELECT COUNT(*) FROM lx_senses)`).Scan(&n); err != nil {
+			(SELECT COUNT(*) FROM forms) + (SELECT COUNT(*) FROM readings) +
+			(SELECT COUNT(*) FROM senses)`).Scan(&n); err != nil {
 			t.Fatal(err)
 		}
 		return n
@@ -329,9 +329,9 @@ func TestPutIsIdempotent(t *testing.T) {
 	}
 	var stamped int
 	if err := st.DB.QueryRow(`SELECT
-		(SELECT COUNT(*) FROM lx_forms WHERE updated_at <> ?) +
-		(SELECT COUNT(*) FROM lx_readings WHERE updated_at <> ?) +
-		(SELECT COUNT(*) FROM lx_senses WHERE updated_at <> ?)`, old, old, old).Scan(&stamped); err != nil {
+		(SELECT COUNT(*) FROM forms WHERE updated_at <> ?) +
+		(SELECT COUNT(*) FROM readings WHERE updated_at <> ?) +
+		(SELECT COUNT(*) FROM senses WHERE updated_at <> ?)`, old, old, old).Scan(&stamped); err != nil {
 		t.Fatal(err)
 	}
 	if stamped != 0 {
@@ -377,7 +377,7 @@ func TestByFormSkipsDeleted(t *testing.T) {
 	st := newStore(t)
 	dict := addDictionary(t, st, "jmdict")
 	id := mustPut(t, st, suru(), dict)
-	if _, err := st.DB.Exec(`UPDATE lx_entries SET deleted_at = updated_at WHERE id = ?`, id); err != nil {
+	if _, err := st.DB.Exec(`UPDATE entries SET deleted_at = updated_at WHERE id = ?`, id); err != nil {
 		t.Fatal(err)
 	}
 	got, err := st.ByForm(context.Background(), "ja", []string{"為る"})
@@ -472,7 +472,7 @@ func TestBestPrefersUkWithPriority(t *testing.T) {
 	}
 
 	// Without the uk-with-priority entry, priority decides; ties by id.
-	if _, err := st.DB.Exec(`UPDATE lx_entries SET deleted_at = updated_at WHERE id = ?`, ukPri); err != nil {
+	if _, err := st.DB.Exec(`UPDATE entries SET deleted_at = updated_at WHERE id = ?`, ukPri); err != nil {
 		t.Fatal(err)
 	}
 	if got, err = st.Best(context.Background(), "ja", "word", "為る"); err != nil || got.Key != "b-pri-high" {
@@ -531,7 +531,7 @@ func TestLinkVariantsSymmetricAndIdempotent(t *testing.T) {
 		t.Errorf("Link with unknown type succeeded")
 	}
 	var n int
-	if err := st.DB.QueryRow(`SELECT COUNT(*) FROM lx_links WHERE type = 'variant'`).Scan(&n); err != nil {
+	if err := st.DB.QueryRow(`SELECT COUNT(*) FROM entry_links WHERE type = 'variant'`).Scan(&n); err != nil {
 		t.Fatal(err)
 	}
 	if n != 2 {

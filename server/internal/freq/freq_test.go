@@ -270,18 +270,18 @@ func TestPacksAreOrderedByFirstRegistration(t *testing.T) {
 func TestReimportReplacesRowsAndIdenticalWritesNothing(t *testing.T) {
 	sqlDB := openDB(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n犬,,4\n"))
-	if _, err := sqlDB.Exec(`UPDATE lx_freq_packs SET updated_at = 'sentinel'`); err != nil {
+	if _, err := sqlDB.Exec(`UPDATE frequency_packs SET updated_at = 'sentinel'`); err != nil {
 		t.Fatal(err)
 	}
-	before := count(t, sqlDB, `SELECT max(rowid) FROM lx_frequency`)
+	before := count(t, sqlDB, `SELECT max(rowid) FROM frequency`)
 
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n犬,,4\n"))
 	var stamp string
-	sqlDB.QueryRow(`SELECT updated_at FROM lx_freq_packs`).Scan(&stamp)
+	sqlDB.QueryRow(`SELECT updated_at FROM frequency_packs`).Scan(&stamp)
 	if stamp != "sentinel" {
 		t.Errorf("identical re-import restamped the pack: updated_at = %q", stamp)
 	}
-	if after := count(t, sqlDB, `SELECT max(rowid) FROM lx_frequency`); after != before {
+	if after := count(t, sqlDB, `SELECT max(rowid) FROM frequency`); after != before {
 		t.Errorf("identical re-import rewrote rows (max rowid %d -> %d)", before, after)
 	}
 
@@ -291,7 +291,7 @@ func TestReimportReplacesRowsAndIdenticalWritesNothing(t *testing.T) {
 	if len(got["犬"]) != 0 {
 		t.Errorf("a re-import must replace the pack's rows: 犬 = %+v", got["犬"])
 	}
-	if n := count(t, sqlDB, `SELECT count(*) FROM lx_freq_packs`); n != 1 {
+	if n := count(t, sqlDB, `SELECT count(*) FROM frequency_packs`); n != 1 {
 		t.Errorf("%d pack rows after re-import, want 1", n)
 	}
 }
@@ -339,7 +339,7 @@ func TestMalformedPackWritesNothing(t *testing.T) {
 		if !errors.Is(err, dict.ErrInvalidPack) {
 			t.Errorf("%s: err = %v, want it to wrap dict.ErrInvalidPack", tc.name, err)
 		}
-		if n := count(t, sqlDB, `SELECT count(*) FROM lx_frequency`) + count(t, sqlDB, `SELECT count(*) FROM lx_freq_packs`); n != 0 {
+		if n := count(t, sqlDB, `SELECT count(*) FROM frequency`) + count(t, sqlDB, `SELECT count(*) FROM frequency_packs`); n != 0 {
 			t.Errorf("%s: %d rows written by a failed import", tc.name, n)
 		}
 	}
@@ -377,7 +377,7 @@ func TestCSVWithBOMAndCRLF(t *testing.T) {
 func TestMetadataOnlyChangeIsRegistered(t *testing.T) {
 	sqlDB := openDB(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n"))
-	if _, err := sqlDB.Exec(`UPDATE lx_freq_packs SET updated_at = 'sentinel'`); err != nil {
+	if _, err := sqlDB.Exec(`UPDATE frequency_packs SET updated_at = 'sentinel'`); err != nil {
 		t.Fatal(err)
 	}
 	p := csvPack(t, "p", "猫,,3\n")
@@ -388,7 +388,7 @@ func TestMetadataOnlyChangeIsRegistered(t *testing.T) {
 		t.Fatalf("Packs = %+v, %v; want version 2", packs, err)
 	}
 	var stamp string
-	sqlDB.QueryRow(`SELECT updated_at FROM lx_freq_packs`).Scan(&stamp)
+	sqlDB.QueryRow(`SELECT updated_at FROM frequency_packs`).Scan(&stamp)
 	if stamp == "sentinel" {
 		t.Error("a version bump with identical rows was not restamped")
 	}
@@ -398,7 +398,7 @@ func TestMetadataOnlyChangeIsRegistered(t *testing.T) {
 func TestSoftDeletedPackIsRevived(t *testing.T) {
 	sqlDB := openDB(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n"))
-	if _, err := sqlDB.Exec(`UPDATE lx_freq_packs SET deleted_at = '2020-01-01T00:00:00Z'`); err != nil {
+	if _, err := sqlDB.Exec(`UPDATE frequency_packs SET deleted_at = '2020-01-01T00:00:00Z'`); err != nil {
 		t.Fatal(err)
 	}
 	if got := lookup(t, sqlDB, []string{"猫"}, nil); len(got["猫"]) != 0 {
@@ -406,7 +406,7 @@ func TestSoftDeletedPackIsRevived(t *testing.T) {
 	}
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n")) // identical rows, but deleted: must come back
 	wantRank(t, lookup(t, sqlDB, []string{"猫"}, nil), "猫", 3, "")
-	if n := count(t, sqlDB, `SELECT count(*) FROM lx_freq_packs WHERE deleted_at IS NULL`); n != 1 {
+	if n := count(t, sqlDB, `SELECT count(*) FROM frequency_packs WHERE deleted_at IS NULL`); n != 1 {
 		t.Errorf("%d active packs after revival, want 1", n)
 	}
 }

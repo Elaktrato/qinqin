@@ -223,7 +223,7 @@ func TestFirstPackWithAnyDataRanks(t *testing.T) {
 
 func TestFrequencyFailureDegrades(t *testing.T) {
 	s, sqlDB := altService(t, "a", "為る,する,15\n")
-	if _, err := sqlDB.Exec(`DROP TABLE lx_frequency`); err != nil {
+	if _, err := sqlDB.Exec(`DROP TABLE frequency`); err != nil {
 		t.Fatal(err)
 	}
 	rs, err := s.Lookup(context.Background(), "ja", "宿題をした", 3, nil)

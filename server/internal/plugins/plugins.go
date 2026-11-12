@@ -225,7 +225,7 @@ func schemePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, erro
 func frequencyPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT pack_id, name, version, language, license, attribution
-		FROM lx_freq_packs WHERE deleted_at IS NULL`)
+		FROM frequency_packs WHERE deleted_at IS NULL`)
 	if err != nil {
 		return nil, fmt.Errorf("plugins: read frequency packs: %w", err)
 	}
@@ -325,7 +325,7 @@ func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 		UNION ALL
 		SELECT 1 FROM schemes WHERE pack_id = ? AND deleted_at IS NULL
 		UNION ALL
-		SELECT 1 FROM lx_freq_packs WHERE pack_id = ? AND deleted_at IS NULL
+		SELECT 1 FROM frequency_packs WHERE pack_id = ? AND deleted_at IS NULL
 		UNION ALL
 		SELECT 1 FROM sentences WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL
 		LIMIT 1`, pluginID, pluginID, pluginID, pluginID, pluginID).Scan(&one)
