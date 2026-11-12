@@ -3,10 +3,10 @@
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import type { StudyEvent } from '$lib/events';
-	import { fillMissingWritten } from '$lib/study/entriesCache';
+	import { fillMissingWrittenProgressively } from '$lib/study/entriesCache';
 	import {
 		masteryForChars,
-		masterySummary,
+		summarizeMastery,
 		type CharMastery,
 		type MasteryStage,
 		type MasterySummary
@@ -47,6 +47,9 @@
 	let entries = $state<EntryBase[]>([]);
 	let entriesLoading = $state(false);
 	let entriesError = $state('');
+	// Cards whose legacy written snapshot could not be resolved on this
+	// visit. Reported so a partial map never silently under-reports.
+	let unresolvedCards = $state(0);
 
 	// Per-level character lists keyed `schemeId:levelName`. Kept outside
 	// the reactive summary so a level is fetched once per page visit and
@@ -117,6 +120,21 @@
 		}
 	}
 
+	/**
+	 * backfillWritten keeps the first paint fast: cards that already carry
+	 * a snapshot are scored immediately, and legacy ones are folded in as
+	 * each entry resolves. Failures stay uncached, so the next load tries
+	 * again; whatever remains is reported instead of silently omitted.
+	 */
+	async function backfillWritten(initial: readonly StudyCard[], seq: number): Promise<void> {
+		const result = await fillMissingWrittenProgressively(initial, (nextCards) => {
+			if (seq !== requestSeq) return;
+			cards = nextCards;
+		});
+		if (seq !== requestSeq) return;
+		unresolvedCards = result.unresolvedCards;
+	}
+
 	async function load(id: number | null, lang: string | null): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
@@ -137,6 +155,7 @@
 		entries = [];
 		entriesLoading = false;
 		entriesError = '';
+		unresolvedCards = 0;
 		levelChars = {};
 		summaryLoading = false;
 		summaryError = '';
@@ -160,21 +179,19 @@
 			]);
 			if (seq !== requestSeq) return;
 
-			// Legacy cards carry no written snapshot; resolving those via
-			// the entry API is what makes them visible on the map. A failed
-			// fetch leaves its card out of the aggregate instead of failing
-			// the page.
-			const resolved = await fillMissingWritten(data.cards);
-			if (seq !== requestSeq) return;
-
-			cards = resolved;
+			// Paint with the cards that already know their written form;
+			// legacy snapshots resolve in the background and update the
+			// grid as they arrive.
+			cards = data.cards;
 			reviews = events
 				.map((event) => asReview(event, id))
 				.filter((event): event is ReviewEvent => event !== null);
+			void backfillWritten(data.cards, seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			cards = [];
 			reviews = [];
+			unresolvedCards = 0;
 			loadError = message(err, 'Could not load your review history.');
 		} finally {
 			if (seq === requestSeq) loading = false;
@@ -316,22 +333,35 @@
 
 	const chars = $derived(characterForms(entries));
 
-	const mastery = $derived(masteryForChars(chars, cards, reviews, new Date()));
+	// One per-page mastery index: the union of every level's characters
+	// (plus the current selection, which may paint first) is scored in a
+	// single masteryForChars pass. The grid, the selection count, and all
+	// level progress lines read that same map, so a level is never scored
+	// by replaying the whole review history again.
+	const masteryChars = $derived.by((): string[] => {
+		const union = new Set<string>();
+		for (const forms of Object.values(levelChars)) {
+			for (const char of forms) union.add(char);
+		}
+		for (const char of chars) union.add(char);
+		return [...union];
+	});
+
+	const mastery = $derived(masteryForChars(masteryChars, cards, reviews, new Date()));
 
 	const selectionSummary = $derived(
-		masterySummary(chars, cards, reviews, new Date(), MASTERY_THRESHOLD)
+		summarizeMastery(chars, mastery, MASTERY_THRESHOLD)
 	);
 
 	const levelSummaries = $derived.by((): { level: Level; summary: MasterySummary | null }[] => {
 		const scheme = selectedScheme;
 		if (scheme === null) return [];
-		const now = new Date();
 		return schemeLevels.map((item) => {
 			const forms = levelChars[levelKey(scheme.id, item.name)];
 			if (forms === undefined) return { level: item, summary: null };
 			return {
 				level: item,
-				summary: masterySummary(forms, cards, reviews, now, MASTERY_THRESHOLD)
+				summary: summarizeMastery(forms, mastery, MASTERY_THRESHOLD)
 			};
 		});
 	});
@@ -444,6 +474,14 @@
 						</li>
 					{/each}
 				</ul>
+
+				{#if unresolvedCards > 0}
+					<p class="hint note" role="status">
+						{unresolvedCards}
+						{unresolvedCards === 1 ? 'card' : 'cards'} could not be resolved, so this map may
+						under-report mastery.
+					</p>
+				{/if}
 
 				{#if entriesError}
 					<p class="error" role="alert">{entriesError}</p>

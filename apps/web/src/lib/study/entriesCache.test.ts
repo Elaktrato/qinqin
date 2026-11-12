@@ -1,7 +1,28 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { missingWrittenEntryIds, withWritten } from './entriesCache';
+import { getEntry } from '../api/entries';
+import type { Entry } from '../api/types';
+import {
+	clearEntriesCache,
+	fillMissingWritten,
+	fillMissingWrittenProgressively,
+	missingWrittenEntryIds,
+	withWritten
+} from './entriesCache';
 import type { StudyCard } from './types';
+
+vi.mock('../api/entries', () => ({ getEntry: vi.fn() }));
+
+const getEntryMock = vi.mocked(getEntry);
+
+function entry(written: string): Entry {
+	return { written } as Entry;
+}
+
+beforeEach(() => {
+	clearEntriesCache();
+	getEntryMock.mockReset();
+});
 
 function card(id: string, entryId: number, written?: string): StudyCard {
 	const result: StudyCard = {
@@ -58,5 +79,66 @@ describe('withWritten', () => {
 		withWritten([legacy], new Map([[10, '狗']]));
 
 		expect(legacy).toEqual(card('legacy', 10));
+	});
+});
+
+describe('fillMissingWrittenProgressively', () => {
+	it('publishes cards as each entry resolves', async () => {
+		let release: () => void = () => {};
+		const gate = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		getEntryMock.mockImplementation(async (entryId) => {
+			if (entryId === 11) await gate;
+			return entry(entryId === 10 ? '猫' : '狗');
+		});
+
+		const cards = [card('first', 10), card('second', 11)];
+		const snapshots: string[] = [];
+		const run = fillMissingWrittenProgressively(cards, (next) => {
+			snapshots.push(next.map((item) => item.written ?? '?').join(','));
+		});
+
+		await vi.waitFor(() => expect(snapshots).toHaveLength(1));
+		expect(snapshots[0]).toBe('猫,?');
+
+		release();
+		const result = await run;
+
+		expect(snapshots.at(-1)).toBe('猫,狗');
+		expect(result.unresolvedCards).toBe(0);
+	});
+
+	it('counts cards that could not be resolved', async () => {
+		getEntryMock.mockRejectedValue(new Error('offline'));
+
+		const result = await fillMissingWrittenProgressively(
+			[card('first', 10), card('second', 11)],
+			() => {}
+		);
+
+		expect(result.unresolvedCards).toBe(2);
+	});
+
+	it('does not cache a failed lookup and retries it next load', async () => {
+		getEntryMock
+			.mockRejectedValueOnce(new Error('offline'))
+			.mockResolvedValueOnce(entry('猫'));
+
+		const first = await fillMissingWritten([card('legacy', 10)]);
+		const second = await fillMissingWritten([card('legacy', 10)]);
+
+		expect(first[0].written).toBeUndefined();
+		expect(second[0].written).toBe('猫');
+		expect(getEntryMock).toHaveBeenCalledTimes(2);
+	});
+
+	it('caches a successful resolution across loads', async () => {
+		getEntryMock.mockResolvedValue(entry('猫'));
+
+		await fillMissingWritten([card('legacy', 10)]);
+		await fillMissingWritten([card('legacy', 10)]);
+
+		expect(getEntryMock).toHaveBeenCalledTimes(1);
 	});
 });

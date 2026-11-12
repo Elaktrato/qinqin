@@ -2,17 +2,18 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getEntry } from '$lib/api/entries';
-	import { getSchemeEntries } from '$lib/api/schemes';
+	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { ApiError, api } from '$lib/api/client';
 	import type { Entry, EntryBase } from '$lib/api/types';
 	import type { StudyEvent } from '$lib/events';
 	import { formatReading } from '$lib/format';
 	import { buildVocabFaces } from '$lib/study/cardView';
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
+	import { gradeItem } from '$lib/study/grade';
 	import { buildLevelQueue, type LevelQueueItem } from '$lib/study/levelQueue';
 	import { buildQueue, levelFromXp, xpFromReviews } from '$lib/study/scheduler';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
-	import { GENERAL_DECK_ID, addCard, loadStudyData } from '$lib/study/store';
+	import { addCard, loadStudyData } from '$lib/study/store';
 	import type { ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
 	import { newUlid } from '$lib/ulid';
 	import { workspaces } from '$lib/workspaces';
@@ -62,11 +63,35 @@
 		}));
 	}
 
+	/**
+	 * A levels session belongs to the workspace language it was set up
+	 * in. The scheme list is global, so the saved id/level must be
+	 * re-validated against the current workspace: a mid-session switch
+	 * to another language must abort instead of studying (or writing)
+	 * cards in the wrong workspace.
+	 */
+	class LevelWorkspaceMismatch extends Error {}
+
 	/** levelEntriesRequest loads the configured level, or nothing in decks mode. */
-	function levelEntriesRequest(): Promise<EntryBase[]> {
-		if (config.mode !== 'levels') return Promise.resolve([]);
+	async function levelEntriesRequest(language: string | null): Promise<EntryBase[]> {
+		if (config.mode !== 'levels') return [];
 		if (config.schemeId === null || config.levelName === null) {
 			return Promise.reject(new Error('This level session is missing its scheme or level.'));
+		}
+
+		const schemes = await getSchemes();
+		const scheme = schemes.find(
+			(candidate) => candidate.id === config.schemeId && candidate.language === language
+		);
+		if (scheme === undefined) {
+			throw new LevelWorkspaceMismatch(
+				'This level scheme is not installed for the current workspace language. Start a new session from the study setup.'
+			);
+		}
+		if (!scheme.levels.some((level) => level.name === config.levelName)) {
+			throw new LevelWorkspaceMismatch(
+				`The level “${config.levelName}” no longer exists in ${scheme.name}. Start a new session from the study setup.`
+			);
 		}
 		return getSchemeEntries(config.schemeId, config.levelName);
 	}
@@ -90,6 +115,7 @@
 
 	let loading = $state(true);
 	let loadError = $state('');
+	let workspaceMismatch = $state('');
 	let noWorkspace = $state(false);
 	let sessionWorkspaceId = $state<number | null>(null);
 	let queue = $state<SessionItem[]>([]);
@@ -215,10 +241,11 @@
 		void loadEntry(item.entryId);
 	}
 
-	async function load(workspaceId: number | null): Promise<void> {
+	async function load(workspaceId: number | null, language: string | null): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
 		loadError = '';
+		workspaceMismatch = '';
 		noWorkspace = false;
 		sessionWorkspaceId = workspaceId;
 		queue = [];
@@ -254,7 +281,7 @@
 				api<StudyEvent[]>(
 					`/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`
 				),
-				levelEntriesRequest()
+				levelEntriesRequest(language)
 			]);
 			if (seq !== requestSeq) return;
 
@@ -289,14 +316,19 @@
 			ensureEntry(queue[0]);
 		} catch (err) {
 			if (seq !== requestSeq) return;
-			loadError = message(err, 'Could not start your session.');
+			queue = [];
+			if (err instanceof LevelWorkspaceMismatch) {
+				workspaceMismatch = err.message;
+			} else {
+				loadError = message(err, 'Could not start your session.');
+			}
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
 	}
 
 	function retryLoad(): void {
-		void load($workspaces.current?.id ?? null);
+		void load($workspaces.current?.id ?? null, $workspaces.current?.language ?? null);
 	}
 
 	function retryEntry(): void {
@@ -308,53 +340,11 @@
 	}
 
 	/**
-	 * cardForGrade resolves the card a grade records. A virtual level item
-	 * gets a real card first, in General, so the review never points at an
-	 * id that does not exist. A failure leaves the queue untouched and
-	 * surfaces inline.
-	 */
-	async function cardForGrade(
-		item: SessionItem,
-		workspaceId: number
-	): Promise<StudyCard | null> {
-		if (!item.virtual) {
-			if (item.card === null) {
-				gradeError = 'This card is no longer available.';
-				return null;
-			}
-			return item.card;
-		}
-
-		const entry = entries[item.entryId];
-		if (entry === undefined) {
-			gradeError = 'This word is still loading. Try again.';
-			return null;
-		}
-		// addCard reads the workspace from the store; a switch mid-session
-		// must not create the card in the new one.
-		if (($workspaces.current?.id ?? null) !== workspaceId) {
-			gradeError = 'The workspace changed. Start a new session to continue.';
-			return null;
-		}
-
-		try {
-			return await addCard(item.entryId, {
-				written: entry.written,
-				sentenceId: entry.sentences?.[0]?.id,
-				deckIds: [GENERAL_DECK_ID]
-			});
-		} catch (err) {
-			if (sessionWorkspaceId === workspaceId) {
-				gradeError = message(err, 'Could not add this word to your study cards.');
-			}
-			return null;
-		}
-	}
-
-	/**
-	 * submitGrade records the review and advances: the outbox keeps a
-	 * failed POST, so waiting would only stall the card. A virtual item
-	 * must create its card first, which is the one step worth waiting for.
+	 * submitGrade runs the extracted grade transaction. A virtual item
+	 * creates its card first inside gradeItem, so the review always names
+	 * a real id; a failure leaves the queue untouched and surfaces inline.
+	 * recordReview keeps a failed POST in the outbox, so the review is
+	 * never lost even though the append is awaited here.
 	 */
 	async function submitGrade(value: ReviewGrade): Promise<void> {
 		const item = currentItem;
@@ -364,11 +354,22 @@
 		gradeError = '';
 		grading = true;
 		try {
-			const card = await cardForGrade(item, workspaceId);
-			if (card === null || sessionWorkspaceId !== workspaceId) return;
+			const result = await gradeItem({
+				item,
+				grade: value,
+				workspaceId,
+				currentWorkspaceId: $workspaces.current?.id ?? null,
+				entry: entries[item.entryId] ?? null,
+				addCard,
+				recordReview
+			});
+			if (!result.ok) {
+				if (sessionWorkspaceId === workspaceId) gradeError = result.error;
+				return;
+			}
+			if (sessionWorkspaceId !== workspaceId) return;
 
-			void recordReview(workspaceId, card.id, value);
-			sessionReviews = [...sessionReviews, sessionReview(card, value, workspaceId)];
+			sessionReviews = [...sessionReviews, sessionReview(result.card, value, workspaceId)];
 			revealed = false;
 			index += 1;
 			ensureEntry(queue[index]);
@@ -418,8 +419,8 @@
 	// workspace-scoped just like the setup that created it.
 	$effect(() => {
 		if (missingConfig) return;
-		const workspaceId = $workspaces.current?.id ?? null;
-		void load(workspaceId);
+		const workspace = $workspaces.current;
+		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 </script>
 
@@ -428,6 +429,12 @@
 <main class="session">
 	{#if missingConfig}
 		<p class="hint" role="status">Opening study setup…</p>
+	{:else if workspaceMismatch}
+		<section class="state" aria-labelledby="mismatch-heading">
+			<h1 id="mismatch-heading">Session unavailable</h1>
+			<p class="error" role="alert">{workspaceMismatch}</p>
+			<a href="/study">Back to study setup</a>
+		</section>
 	{:else if loadError}
 		<section class="state" aria-labelledby="error-heading">
 			<h1 id="error-heading">Session unavailable</h1>

@@ -161,11 +161,30 @@ export function masteryForChar(
 }
 
 /**
+ * summarizeMastery counts how many of `chars` reach `threshold` (80 by
+ * default, the `learned` band) using an already-computed mastery map.
+ * The map's grid, its selection figure, and every level's progress line
+ * can therefore share one masteryForChars pass over the union of all
+ * scheme characters instead of replaying the review history per level.
+ */
+export function summarizeMastery(
+	chars: readonly string[],
+	mastery: ReadonlyMap<string, CharMastery>,
+	threshold = 80
+): MasterySummary {
+	let mastered = 0;
+	for (const char of chars) {
+		if ((mastery.get(char)?.score ?? 0) >= threshold) mastered += 1;
+	}
+	return { mastered, total: chars.length };
+}
+
+/**
  * masterySummary counts how many of `chars` reach `threshold` (80 by
- * default, the `learned` band). It is the map's progress figure; the
+ * default, the `learned` band). It is the one-shot progress figure; the
  * denominator is every requested character, including unstudied ones.
- * It shares masteryForChars' single pass, so a level summary does not
- * replay every card's history once per character.
+ * It scores `chars` in a single pass and delegates the counting to
+ * summarizeMastery.
  */
 export function masterySummary(
 	chars: readonly string[],
@@ -174,10 +193,5 @@ export function masterySummary(
 	now: Date,
 	threshold = 80
 ): MasterySummary {
-	const mastery = masteryForChars(chars, cards, reviews, now);
-	let mastered = 0;
-	for (const char of chars) {
-		if ((mastery.get(char)?.score ?? 0) >= threshold) mastered += 1;
-	}
-	return { mastered, total: chars.length };
+	return summarizeMastery(chars, masteryForChars(chars, cards, reviews, now), threshold);
 }

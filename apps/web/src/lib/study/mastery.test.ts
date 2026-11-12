@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { masteryForChar, masteryForChars, masterySummary, stageOf } from './mastery';
+import {
+	masteryForChar,
+	masteryForChars,
+	masterySummary,
+	stageOf,
+	summarizeMastery
+} from './mastery';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 
 const DAY = 86_400_000;
@@ -280,6 +286,36 @@ describe('masteryForChars', () => {
 
 	it('returns an empty map for no characters', () => {
 		expect(masteryForChars([], [card('c1', '猫')], goodHistory('c1', [0]), NOW).size).toBe(0);
+	});
+});
+
+describe('summarizeMastery', () => {
+	const cards = [card('learned', '猫'), card('mature', '鸟')];
+	const reviews = [
+		...goodHistory('learned', [0, 1, 11, 41]),
+		...goodHistory('mature', [0, 1, 11])
+	];
+
+	it('counts from an already-computed mastery map', () => {
+		const chars = ['猫', '狗', '鸟'];
+		const shared = masteryForChars(chars, cards, reviews, NOW);
+
+		expect(summarizeMastery(chars, shared)).toEqual({
+			mastered: 1,
+			total: 3
+		});
+		expect(summarizeMastery(chars, shared, 60)).toEqual({
+			mastered: 2,
+			total: 3
+		});
+	});
+
+	it('agrees with masterySummary', () => {
+		const chars = ['猫', '狗', '鸟'];
+
+		expect(summarizeMastery(chars, masteryForChars(chars, cards, reviews, NOW))).toEqual(
+			masterySummary(chars, cards, reviews, NOW)
+		);
 	});
 });
 
