@@ -254,7 +254,7 @@ func TestDictionaryRoutes(t *testing.T) {
 		t.Errorf("GET /api/dictionaries after uninstall = %+v, want empty", list)
 	}
 	var activeSenses int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM senses
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM lx_senses
 		WHERE dictionary_id = ? AND deleted_at IS NULL`, installed.ID).Scan(&activeSenses); err != nil {
 		t.Fatalf("count active senses: %v", err)
 	}

@@ -1,7 +1,6 @@
 package api_test
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -15,7 +14,6 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/db"
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 )
@@ -72,17 +70,6 @@ func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
-}
-
-// mustUpsertEntry upserts e into the legacy entries store (still read by
-// the tokenizer endpoints) and returns its id, failing the test on error.
-func mustUpsertEntry(t *testing.T, st entries.Store, e *model.Entry) int64 {
-	t.Helper()
-	id, err := st.Upsert(context.Background(), e)
-	if err != nil {
-		t.Fatalf("upsert %q (%s/%s): %v", e.Written, e.Kind, e.Language, err)
-	}
-	return id
 }
 
 // getEntry fetches path from ts and returns the undecoded response.
@@ -210,7 +197,7 @@ func TestGetEntryJapaneseWord(t *testing.T) {
 	suru := lexID(t, sqlDB, "ja", "word", "j:1157170")
 	jm := dictID(t, sqlDB, "jmdict-test")
 
-	// The raw JSON keeps every legacy field name and adds forms and
+	// The raw JSON keeps every earlier field name and adds forms and
 	// senseGroups.
 	resp := getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(suru, 10))
 	if resp.StatusCode != http.StatusOK {

@@ -2,18 +2,13 @@ package dict
 
 import (
 	"bufio"
-	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
-
-	"qinqin/internal/entries"
 )
 
 // unihanFile is the data file of a format "unihan" dictionary pack: the
@@ -193,105 +188,4 @@ func readUnihanPack(dir string) (UnihanData, error) {
 		return UnihanData{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, unihanFile, dir, err)
 	}
 	return data, nil
-}
-
-// importUnihan installs a format "unihan" pack: character entries for
-// every hanzi the file mentions — a field key or a variant counterpart —
-// variant links across simplified/traditional pairs in both directions
-// (a form may have several counterparts either way), radical
-// classification through the Kangxi table, and the kDefinition strings
-// as the senses of the built-in "unihan" dictionary. Unihan fields carry
-// no pronunciations, so a hanzi entered by another dictionary keeps its
-// readings, and one first seen here gets none.
-func importUnihan(ctx context.Context, sqlDB *sql.DB, m Manifest, data UnihanData) (Result, error) {
-	if err := registerLanguage(ctx, sqlDB, m); err != nil {
-		return Result{}, err
-	}
-	store := entries.Store{DB: sqlDB}
-
-	// Every hanzi the file mentions: a key of any consumed field, or a
-	// character named as a variant counterpart.
-	seen := make(map[string]bool, len(data.Radicals)+len(data.Definitions))
-	for ch := range data.Radicals {
-		seen[ch] = true
-	}
-	for ch := range data.Definitions {
-		seen[ch] = true
-	}
-	for _, field := range []map[string][]string{data.TradVariants, data.SimpVariants} {
-		for ch, variants := range field {
-			seen[ch] = true
-			for _, v := range variants {
-				seen[v] = true
-			}
-		}
-	}
-
-	// Entries in sorted order, so an import is deterministic. charEntry
-	// reuses a hanzi another dictionary already entered — readings and
-	// senses intact — and creates or revives a bare one otherwise.
-	chars := make([]string, 0, len(seen))
-	for ch := range seen {
-		chars = append(chars, ch)
-	}
-	slices.Sort(chars)
-	ids := make(map[string]int64, len(chars))
-	for _, ch := range chars {
-		id, err := charEntry(ctx, store, m.Language, ch)
-		if err != nil {
-			return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-		}
-		ids[ch] = id
-	}
-
-	// Variant pairs from both sides of the mapping: LinkVariant writes
-	// both directions and links an existing pair again as a no-op, so a
-	// pair named by a kSimplifiedVariant and a kTraditionalVariant line
-	// alike links once.
-	for _, field := range []map[string][]string{data.TradVariants, data.SimpVariants} {
-		for ch, variants := range field {
-			for _, v := range variants {
-				if v == ch {
-					continue // a self-pair is not a variant
-				}
-				if err := store.LinkVariant(ctx, ids[ch], ids[v]); err != nil {
-					return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-				}
-			}
-		}
-	}
-
-	// Radical classification: the count left of the dot is a Kangxi
-	// radical number, whose character becomes an entry through the
-	// table, so radicals are fetchable and browsable like any hanzi.
-	for _, ch := range chars {
-		n, ok := data.Radicals[ch]
-		if !ok {
-			continue
-		}
-		radical, ok := kangxiRadicals[n]
-		if !ok {
-			return Result{}, fmt.Errorf("import dictionary %s: %s is under radical %d, outside the Kangxi radicals 1–214", m.ID, ch, n)
-		}
-		radicalID, err := charEntry(ctx, store, m.Language, radical)
-		if err != nil {
-			return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-		}
-		if err := store.SetRadical(ctx, ids[ch], radicalID); err != nil {
-			return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-		}
-	}
-
-	// The kDefinition strings become the built-in dictionary's senses,
-	// one sense per character.
-	senses := make([]senseRow, 0, len(data.Definitions))
-	for _, ch := range chars {
-		if def, ok := data.Definitions[ch]; ok {
-			senses = append(senses, senseRow{entryID: ids[ch], gloss: def})
-		}
-	}
-	if _, err := replaceSenses(ctx, sqlDB, unihanPackID, m.Name, m.Version, m.License, m.Attribution, senses); err != nil {
-		return Result{}, err
-	}
-	return Result{Entries: len(chars), Senses: len(senses)}, nil
 }

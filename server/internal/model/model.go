@@ -14,24 +14,6 @@ type User struct {
 	Admin    bool   `json:"admin"`
 }
 
-// Entry is one written form in a language's dictionary: a single character
-// or a multi-character word. The same written form in two languages is two
-// entries. Readings and attrs are child rows; readings normalize through
-// the entry's language pack. RadicalID points at the entry of the radical
-// a character is classified under; it is nil for words and unclassified
-// characters.
-type Entry struct {
-	ID        int64             `json:"id"`
-	Language  string            `json:"language"`
-	Kind      string            `json:"kind"` // "character" or "word"
-	Written   string            `json:"written"`
-	Readings  []Reading         `json:"readings"`
-	Attrs     map[string]string `json:"attrs"`
-	RadicalID *int64            `json:"radicalId"`
-	UpdatedAt time.Time         `json:"updatedAt"`
-	DeletedAt *time.Time        `json:"deletedAt"`
-}
-
 // Reading is one pronunciation of an entry. Type is pack-defined —
 // "pinyin", "bopomofo", "kana", "on", "kun", "romaji", … — Value is the
 // display form, Plain the normalized search form, Ord the position among
@@ -68,19 +50,6 @@ type Dictionary struct {
 	Attribution string     `json:"attribution"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	DeletedAt   *time.Time `json:"deletedAt"`
-}
-
-// Sense is one gloss of one entry under one dictionary. Imports replace
-// a dictionary's senses wholesale — old rows are soft-deleted, new rows
-// inserted — so re-imports never touch entries or user data.
-type Sense struct {
-	ID           int64      `json:"id"`
-	DictionaryID int64      `json:"dictionaryId"`
-	EntryID      int64      `json:"entryId"`
-	Gloss        string     `json:"gloss"`
-	Ord          int        `json:"ord"`
-	UpdatedAt    time.Time  `json:"updatedAt"`
-	DeletedAt    *time.Time `json:"deletedAt"`
 }
 
 // SenseView is one gloss of an entry with the dictionary it comes from:

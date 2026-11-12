@@ -116,17 +116,8 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "invalid pack", http.StatusBadRequest)
 		return
 	}
-	// Temporary dual import, as in the seed CLI: the entry, search and
-	// lookup routes read the lexicon, the tokenizer still the legacy
-	// tables. The two imports are separate transactions, so this is not
-	// atomic across the layers: a failure in the second leaves the legacy
-	// import in place. Both imports are idempotent, so re-uploading the
-	// pack recovers. The next cutover task removes the legacy import.
-	_, err = dict.Import(r.Context(), s.db, pack)
-	if err == nil {
-		_, err = dict.ImportLexicon(r.Context(), s.db, &pack)
-	}
-	if err != nil {
+	// One transaction: a failed import leaves nothing behind.
+	if _, err := dict.ImportLexicon(r.Context(), s.db, &pack); err != nil {
 		if errors.Is(err, dict.ErrInvalidPack) {
 			http.Error(w, "invalid pack", http.StatusBadRequest)
 			return

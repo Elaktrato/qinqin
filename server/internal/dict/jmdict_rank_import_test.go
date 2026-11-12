@@ -1,16 +1,11 @@
 package dict_test
 
 import (
-	"context"
-	"database/sql"
-	"encoding/json"
 	"maps"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 )
 
 // rankingJMdict is a tiny JMdict in the real file's shape: a DOCTYPE
@@ -72,24 +67,6 @@ const rankingJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 `
 
 // importJMdictXML imports xml as a jmdict pack into sqlDB.
-func importJMdictXML(t *testing.T, sqlDB *sql.DB, xml string) {
-	t.Helper()
-	dir := t.TempDir()
-	manifest, err := json.Marshal(jmdictManifest)
-	if err != nil {
-		t.Fatal(err)
-	}
-	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
-	mustWriteFile(t, filepath.Join(dir, "jmdict.xml"), xml)
-	pack, err := dict.LoadPack(dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := dict.Import(context.Background(), sqlDB, pack); err != nil {
-		t.Fatalf("Import: %v", err)
-	}
-}
-
 func TestJmdictParseKeepsRankingData(t *testing.T) {
 	es, err := dict.ParseJMdict(strings.NewReader(rankingJMdict))
 	if err != nil {
@@ -121,66 +98,6 @@ func TestJmdictParseKeepsRankingData(t *testing.T) {
 	}
 }
 
-func TestJmdictImportStoresRankingAttrs(t *testing.T) {
-	sqlDB := newDB(t)
-	importJMdictXML(t, sqlDB, rankingJMdict)
-	st := entries.Store{DB: sqlDB}
-	for written, want := range map[string]map[string]string{
-		// A form shared by several words takes the max score and is uk
-		// when any of them is.
-		"居る": {"jmdict.pri": "82", "jmdict.uk": "1"},
-		"擦る": {"jmdict.pri": "30", "jmdict.uk": "1"},
-		"学校": {"jmdict.pri": "99"},
-		"學校": {},
-		"これ": {"jmdict.pri": "60"},
-		"鋳る": {},
-	} {
-		if got := mustGet(t, st, written, "word", "ja").Attrs; !maps.Equal(got, want) {
-			t.Errorf("attrs of %s = %v, want %v", written, got, want)
-		}
-	}
-}
-
-func TestJmdictReimportUpdatesRankingAttrs(t *testing.T) {
-	sqlDB := newDB(t)
-	importJMdictXML(t, sqlDB, rankingJMdict)
-
-	// An identical re-import writes nothing.
-	backdate(t, sqlDB)
-	importJMdictXML(t, sqlDB, rankingJMdict)
-	if w := writesSince(t, sqlDB); len(w) != 0 {
-		t.Errorf("identical re-import wrote rows: %v", w)
-	}
-
-	// A newer file where 学校 lost its tags, これ dropped to news2 and 鋳る
-	// became uk: stale attrs go, changed ones update, and only the
-	// changed entries are stamped.
-	changed := strings.NewReplacer(
-		"<ke_pri>news1</ke_pri><ke_pri>ichi1</ke_pri><ke_pri>nf02</ke_pri>", "",
-		"<reb>これ</reb><re_pri>ichi1</re_pri>", "<reb>これ</reb><re_pri>news2</re_pri>",
-		"<gloss>to cast</gloss>", "<misc>&uk;</misc><gloss>to cast</gloss>",
-	).Replace(rankingJMdict)
-	backdate(t, sqlDB)
-	importJMdictXML(t, sqlDB, changed)
-	st := entries.Store{DB: sqlDB}
-	for written, want := range map[string]map[string]string{
-		"学校": {}, // its kana's tags do not score a kanji form of a non-uk word
-		"これ": {"jmdict.pri": "30"},
-		"鋳る": {"jmdict.uk": "1"},
-		"居る": {"jmdict.pri": "82", "jmdict.uk": "1"},
-	} {
-		if got := mustGet(t, st, written, "word", "ja").Attrs; !maps.Equal(got, want) {
-			t.Errorf("attrs of %s after re-import = %v, want %v", written, got, want)
-		}
-	}
-	if w := writesSince(t, sqlDB); w["entries"] != 3 {
-		t.Errorf("entries stamped by the re-import = %d, want the 3 changed (%v)", w["entries"], w)
-	}
-}
-
-// ukLiftJMdict has two uk words: 為る/する, whose only kanji form is rK,
-// and できる with its common form and an irregular (iK), an outdated (oK)
-// and a search-only (sK) form.
 const ukLiftJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE JMdict [
 <!ENTITY rK "rarely used kanji form">
@@ -208,17 +125,26 @@ const ukLiftJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 // a uk word.
 func TestJmdictUkLiftExemptsOnlyRareKanji(t *testing.T) {
 	sqlDB := newDB(t)
-	importJMdictXML(t, sqlDB, ukLiftJMdict)
-	st := entries.Store{DB: sqlDB}
-	for form, want := range map[string]map[string]string{
-		"為る":   {"jmdict.pri": "60", "jmdict.uk": "1"}, // rK: lifted, unpenalized
-		"出来る":  {"jmdict.pri": "86", "jmdict.uk": "1"},
-		"出きる":  {"jmdict.pri": "46", "jmdict.uk": "1"}, // iK: 86 − 40
-		"出來る":  {"jmdict.pri": "46", "jmdict.uk": "1"}, // oK
-		"出け来る": {"jmdict.pri": "46", "jmdict.uk": "1"}, // sK
+	importLexicon(t, sqlDB, ukLiftJMdict)
+	forms := map[string]int{}
+	for _, seq := range []string{"1157170", "1340450"} {
+		e := lexiconEntry(t, sqlDB, seq)
+		if !e.UK {
+			t.Errorf("entry %s not uk", seq)
+		}
+		for _, f := range e.Forms {
+			forms[f.Text] = f.Pri
+		}
+	}
+	for form, want := range map[string]int{
+		"為る":   60, // rK: lifted, unpenalized
+		"出来る":  86,
+		"出きる":  46, // iK: 86 − 40
+		"出來る":  46, // oK
+		"出け来る": 46, // sK
 	} {
-		if got := mustGet(t, st, form, "word", "ja").Attrs; !maps.Equal(got, want) {
-			t.Errorf("attrs of %s = %v, want %v", form, got, want)
+		if got, ok := forms[form]; !ok || got != want {
+			t.Errorf("pri of %s = %d (present %v), want %d", form, got, ok, want)
 		}
 	}
 }

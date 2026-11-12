@@ -4,8 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -300,75 +298,4 @@ func entityName(s string) string {
 		return s[1 : len(s)-1]
 	}
 	return s
-}
-
-// readJMdictPack reads and parses the jmdict.xml of the format "jmdict"
-// pack in dir, resolving each word into the pipeline's entry shape:
-// kind word, one entry per kanji form, kana readings, glosses, ranking
-// attrs. A form shared by several words gets all of their readings, the
-// highest of their priority scores, and uk when any of them is uk.
-func readJMdictPack(dir string) ([]entry, error) {
-	f, err := openMaybeGz(filepath.Join(dir, jmdictFile))
-	if err != nil {
-		return nil, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, jmdictFile, dir, err)
-	}
-	defer f.Close()
-	raw, err := ParseJMdict(f)
-	if err != nil {
-		return nil, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, jmdictFile, dir, err)
-	}
-	// A kanji form can belong to several words (為る is する, and a form
-	// of 成る read なる). Entries are keyed by written form and readings
-	// replace wholesale on upsert, so each form carries the union of its
-	// words' readings in file order — otherwise the last word would win
-	// and する would vanish from 為る.
-	// The ranking attrs merge the same way, so every word upserts the
-	// form with the same attrs: the max score, uk if any word is uk.
-	byForm := map[string][]model.Reading{}
-	shared := map[string]bool{}
-	attrsOf := map[string]map[string]string{}
-	for _, r := range raw {
-		for _, form := range append([]string{r.Written}, r.Forms...) {
-			if _, seen := byForm[form]; seen {
-				shared[form] = true
-			}
-			for _, rd := range r.Readings {
-				if !slices.Contains(byForm[form], rd) {
-					byForm[form] = append(byForm[form], rd)
-				}
-			}
-			attrsOf[form] = mergeJMdictAttrs(attrsOf[form], r.FormAttrs[form])
-		}
-	}
-	es := make([]entry, len(raw))
-	for i, r := range raw {
-		es[i] = entry{
-			Written:   r.Written,
-			Kind:      "word",
-			Readings:  r.Readings,
-			Glosses:   r.Glosses,
-			Forms:     r.Forms,
-			FormAttrs: map[string]map[string]string{},
-		}
-		for _, form := range append([]string{r.Written}, r.Forms...) {
-			es[i].FormAttrs[form] = attrsOf[form]
-			if shared[form] {
-				if es[i].FormReadings == nil {
-					es[i].FormReadings = map[string][]model.Reading{}
-				}
-				es[i].FormReadings[form] = byForm[form]
-			}
-		}
-	}
-	return es, nil
-}
-
-// mergeJMdictAttrs merges the ranking attrs of two words sharing a form:
-// the higher priority score, and uk when either is uk. Never nil.
-func mergeJMdictAttrs(a, b map[string]string) map[string]string {
-	score := func(m map[string]string) int {
-		n, _ := strconv.Atoi(m[attrJMdictPri])
-		return n
-	}
-	return jmdictAttrs(max(score(a), score(b)), a[attrJMdictUK] == "1" || b[attrJMdictUK] == "1")
 }

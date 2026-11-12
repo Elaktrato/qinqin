@@ -18,16 +18,16 @@ import (
 	"qinqin/internal/model"
 )
 
-// ImportLexicon installs the dictionary pack into the lexicon (the lx_*
-// tables), alongside the legacy Import it will replace. It dispatches on
-// the pack's format: jmdict, cedict, kanjidic2, unihan and json. The
-// whole pack — the dictionaries row and every entry, link and sense — is
-// written in ONE transaction, so a failure leaves nothing behind; a
-// re-import of identical data writes no lexicon row (see
-// lexicon.Store.Put). A data-only language registers first, outside that
-// transaction, like the legacy import does. kanjidic2 and unihan
-// register the built-in dictionaries "kanjidic2" and "unihan" as the
-// legacy import does.
+// ImportLexicon installs the dictionary pack into the lexicon. It
+// dispatches on the pack's format: jmdict, cedict, kanjidic2, unihan and
+// json. The whole pack — the dictionaries row and every entry, link and
+// sense — is written in ONE transaction, so a failure leaves nothing
+// behind; a re-import of identical data writes no lexicon row (see
+// lexicon.Store.Put). A language code without a registered code pack
+// registers first, outside that transaction, as a data-only language.
+// kanjidic2 and unihan register the built-in dictionaries "kanjidic2"
+// and "unihan": each one canonical dataset with fixed license terms,
+// whatever pack delivered the file.
 //
 // Result.Entries counts the pack's own lexicon entries and Result.Senses
 // the senses written; a bare character entry created only as a radical

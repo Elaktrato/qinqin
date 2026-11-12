@@ -2,20 +2,14 @@ package dict
 
 import (
 	"bufio"
-	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
-	"unicode"
 	"unicode/utf8"
 
-	"qinqin/internal/entries"
-	"qinqin/internal/model"
 	"qinqin/internal/pinyin"
 )
 
@@ -118,36 +112,6 @@ type cedictStats struct {
 	unconverted int // entries whose pinyin did not convert, kept as written
 }
 
-// readCedictPack reads and parses the dictionary.txt of the format
-// "cedict" pack in dir, resolving each raw entry into the pipeline's
-// entry shape: one hanzi is a character, several are a word, and the
-// tone-numbered pinyin becomes the marked pinyin reading. Malformed
-// lines are skipped and counted (failing only when they exceed
-// maxSkippedShare of the file or leave nothing). Pinyin that does not
-// convert is kept as written and counted, leaving the bopomofo
-// underived rather than failing the import — the reading pipeline never
-// fails on unconvertible input. Homograph lines for one written form
-// merge into one entry carrying all their readings and senses.
-func readCedictPack(dir string) ([]entry, cedictStats, error) {
-	p, err := readCedictLines(dir)
-	if err != nil {
-		return nil, cedictStats{}, err
-	}
-	stats := cedictStats{skipped: p.skipped}
-	es := make([]entry, len(p.entries))
-	for i, r := range p.entries {
-		marked := markedPinyin(r, &stats)
-		es[i] = entry{
-			Written:  r.Written,
-			Forms:    tradForms(r.Written, r.Trad),
-			Kind:     cedictKind(r.Written),
-			Readings: []model.Reading{{Type: "pinyin", Value: marked}},
-			Glosses:  r.Glosses,
-		}
-	}
-	return mergeHomographs(es), stats, nil
-}
-
 // readCedictLines reads and parses the dictionary.txt of the format
 // "cedict" pack in dir and applies the malformed-line policy: lines that
 // are not entries are skipped and counted, failing the read only when
@@ -188,44 +152,6 @@ func markedPinyin(r RawEntry, stats *cedictStats) string {
 	return r.Pinyin
 }
 
-// mergeHomographs folds the lines of one written form and kind into one
-// entry, at the position of its first line: readings and glosses are
-// the distinct ones in file order, forms the union. Readings replace
-// wholesale on upsert, so without this the entry would keep only its
-// last line's pronunciation (行 would lose xíng). A traditional twin
-// shared by several lines (发's 發 and 髮) therefore carries all of the
-// simplified form's readings — a superset, never a loss.
-func mergeHomographs(es []entry) []entry {
-	out := make([]entry, 0, len(es))
-	at := make(map[string]int, len(es))
-	for _, e := range es {
-		key := e.Kind + "\x00" + e.Written
-		i, seen := at[key]
-		if !seen {
-			at[key] = len(out)
-			out = append(out, e)
-			continue
-		}
-		m := &out[i]
-		for _, r := range e.Readings {
-			if !slices.ContainsFunc(m.Readings, func(x model.Reading) bool { return x.Type == r.Type && x.Value == r.Value }) {
-				m.Readings = append(m.Readings, r)
-			}
-		}
-		for _, g := range e.Glosses {
-			if !slices.Contains(m.Glosses, g) {
-				m.Glosses = append(m.Glosses, g)
-			}
-		}
-		for _, f := range e.Forms {
-			if !slices.Contains(m.Forms, f) {
-				m.Forms = append(m.Forms, f)
-			}
-		}
-	}
-	return out
-}
-
 // cedictKind classifies a CC-CEDICT written form: one hanzi is a
 // character entry, several hanzi a word.
 func cedictKind(written string) string {
@@ -233,46 +159,4 @@ func cedictKind(written string) string {
 		return "character"
 	}
 	return "word"
-}
-
-// linkWordChars links the word entry wordID to a character entry for
-// every distinct Han character in written, upserting a bare character
-// entry when the dictionary has not supplied one. Linking is
-// idempotent — (word, char) is the link's key — so several words may
-// share a character and a re-import relinks rather than duplicates.
-func linkWordChars(ctx context.Context, store entries.Store, language, written string, wordID int64) error {
-	seen := make(map[rune]bool)
-	for _, r := range written {
-		if !unicode.Is(unicode.Han, r) || seen[r] {
-			continue
-		}
-		seen[r] = true
-		charID, err := charEntry(ctx, store, language, string(r))
-		if err != nil {
-			return err
-		}
-		if err := store.LinkWordChar(ctx, wordID, charID); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// charEntry returns the id of the character entry for hanzi in
-// language, upserting a bare one — kind character, no readings, no
-// senses — when it is absent. An existing entry, however it got there,
-// is linked to as-is, so its readings and senses survive.
-func charEntry(ctx context.Context, store entries.Store, language, hanzi string) (int64, error) {
-	e, err := store.GetByWritten(ctx, hanzi, "character", language)
-	if err == nil {
-		return e.ID, nil
-	}
-	if !errors.Is(err, entries.ErrNotFound) {
-		return 0, err
-	}
-	return store.Upsert(ctx, &model.Entry{
-		Language: language,
-		Kind:     "character",
-		Written:  hanzi,
-	})
 }

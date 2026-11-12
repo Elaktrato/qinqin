@@ -82,8 +82,8 @@ func countRows(t *testing.T, sqlDB *sql.DB) counts {
 	t.Helper()
 	var c counts
 	for q, dst := range map[string]*int{
-		`SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL`:       &c.entries,
-		`SELECT COUNT(*) FROM senses WHERE deleted_at IS NULL`:        &c.senses,
+		`SELECT COUNT(*) FROM lx_entries WHERE deleted_at IS NULL`:    &c.entries,
+		`SELECT COUNT(*) FROM lx_senses WHERE deleted_at IS NULL`:     &c.senses,
 		`SELECT COUNT(*) FROM level_members WHERE deleted_at IS NULL`: &c.members,
 		`SELECT COUNT(*) FROM languages`:                              &c.languages,
 	} {
@@ -122,7 +122,7 @@ func TestSeedIdempotent(t *testing.T) {
 }
 
 // Each pack prints exactly one line, and a dictionary's line carries its
-// lexicon counts (one summary, not a legacy and a lexicon half).
+// lexicon counts.
 func TestSeedPrintsEachPackOnce(t *testing.T) {
 	sqlDB, _ := openTestDB(t)
 	var out bytes.Buffer
@@ -160,7 +160,7 @@ func TestSeedCommittedPacksEndToEnd(t *testing.T) {
 	if err := seed(ctx, sqlDB, []string{smallPacks(t)}, io.Discard); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
-	// Temporary dual import: every dictionary pack also fills the lexicon.
+	// Every dictionary pack fills the lexicon.
 	lx := lexicon.Store{DB: sqlDB}
 	byForm, err := lx.ByForm(ctx, "zh", []string{"你好"})
 	if err != nil || len(byForm["你好"]) == 0 {

@@ -1,7 +1,6 @@
 package dict_test
 
 import (
-	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -10,7 +9,6 @@ import (
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/model"
 )
 
@@ -114,131 +112,5 @@ func TestKanjidic2ParseRejectsBadInput(t *testing.T) {
 	if _, err := dict.ParseKanjidic2(strings.NewReader(
 		`<kanjidic2><character><misc><stroke_count>4</stroke_count></misc></character></kanjidic2>`)); err == nil || !strings.Contains(err.Error(), "literal") {
 		t.Errorf("ParseKanjidic2(character without literal) = %v, want an error naming the literal", err)
-	}
-}
-
-func TestKanjidic2Import(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	pack := loadKanjidic2Fixture(t)
-
-	res, err := dict.Import(ctx, sqlDB, pack)
-	if err != nil {
-		t.Fatalf("Import(kanjidic2 sample): %v", err)
-	}
-	// Two characters, three senses: 日's one meaning and 学's two.
-	if res.Entries != 2 || res.Senses != 3 {
-		t.Fatalf("Import(kanjidic2 sample) = %+v, want 2 entries and 3 senses", res)
-	}
-	dictID := dictionaryID(t, sqlDB, "kanjidic2")
-
-	// The import registers the built-in kanjidic2 dictionary with the
-	// EDRDG's terms, whatever the manifest carried.
-	var license, attribution string
-	if err := sqlDB.QueryRow(`SELECT license, attribution FROM dictionaries WHERE pack_id = 'kanjidic2'`).
-		Scan(&license, &attribution); err != nil {
-		t.Fatalf("read kanjidic2 dictionary row: %v", err)
-	}
-	if license != "CC BY-SA 4.0" || attribution != "Electronic Dictionary Research and Development Group (EDRDG)" {
-		t.Errorf("kanjidic2 dictionary terms = %q / %q, want the built-in EDRDG terms", license, attribution)
-	}
-
-	st := entries.Store{DB: sqlDB}
-	nichi := mustGet(t, st, "日", "character", "ja")
-
-	// ON readings as written (katakana), KUN readings as written, plains
-	// folded to hiragana by the ja pack. Kanji readings derive no
-	// romaji — only kana readings do.
-	wantReadings := []model.Reading{
-		{Type: "on", Value: "ニチ", Plain: "にち", Ord: 0},
-		{Type: "on", Value: "ジツ", Plain: "じつ", Ord: 1},
-		{Type: "kun", Value: "ひ", Plain: "ひ", Ord: 2},
-	}
-	if !slices.Equal(nichi.Readings, wantReadings) {
-		t.Errorf("readings of 日 = %+v, want %+v", nichi.Readings, wantReadings)
-	}
-	if r := findReading(nichi, "romaji"); r != nil {
-		t.Errorf("romaji reading of 日 = %q, want none — kanji readings derive no romaji", r.Value)
-	}
-	if nichi.Attrs["strokes"] != "4" {
-		t.Errorf(`attrs of 日 = %v, want strokes "4"`, nichi.Attrs)
-	}
-	// Radical 72 is 日 itself: the character classifies under its own
-	// entry.
-	if nichi.RadicalID == nil || *nichi.RadicalID != nichi.ID {
-		t.Errorf("radical of 日 = %v, want its own id %d (radical 72 is 日)", nichi.RadicalID, nichi.ID)
-	}
-
-	// 学 classifies under 子 (radical 39): the radical's bare entry is
-	// upserted when the dictionary has none, and 学 is findable under it.
-	gaku := mustGet(t, st, "学", "character", "ja")
-	wantReadings = []model.Reading{
-		{Type: "on", Value: "ガク", Plain: "がく", Ord: 0},
-		{Type: "kun", Value: "まな.ぶ", Plain: "まなぶ", Ord: 1},
-	}
-	if !slices.Equal(gaku.Readings, wantReadings) {
-		t.Errorf("readings of 学 = %+v, want %+v — okurigana punctuation drops from the plain", gaku.Readings, wantReadings)
-	}
-	if gaku.Attrs["strokes"] != "8" {
-		t.Errorf(`attrs of 学 = %v, want strokes "8"`, gaku.Attrs)
-	}
-	ko := mustGet(t, st, "子", "character", "ja")
-	if len(ko.Readings) != 0 {
-		t.Errorf("readings of 子 = %+v, want none — the radical entry is bare", ko.Readings)
-	}
-	if gaku.RadicalID == nil || *gaku.RadicalID != ko.ID {
-		t.Errorf("radical of 学 = %v, want 子's id %d", gaku.RadicalID, ko.ID)
-	}
-	chars, err := st.CharsUnder(ctx, ko.ID)
-	if err != nil {
-		t.Fatalf("CharsUnder(子): %v", err)
-	}
-	if len(chars) != 1 || chars[0].ID != gaku.ID {
-		t.Errorf("CharsUnder(子) = %v, want just 学 (id %d)", chars, gaku.ID)
-	}
-
-	// Senses: 日's meaning and 学's two meanings under the built-in
-	// kanjidic2 dictionary.
-	if got := activeGlosses(t, sqlDB, dictID, nichi.ID); !slices.Equal(got, []string{"day, sun"}) {
-		t.Errorf("glosses of 日 = %v, want [day, sun]", got)
-	}
-	if got := activeGlosses(t, sqlDB, dictID, gaku.ID); !slices.Equal(got, []string{"study", "learning"}) {
-		t.Errorf("glosses of 学 = %v, want [study learning]", got)
-	}
-
-	// ja is a registered code pack: importing it creates no language row.
-	var jaRows int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM languages WHERE code = 'ja'`).Scan(&jaRows); err != nil {
-		t.Fatalf("count ja language rows: %v", err)
-	}
-	if jaRows != 0 {
-		t.Errorf("ja language rows = %d, want 0 (ja is a code pack, not data-only)", jaRows)
-	}
-
-	// Everything the import wrote: the two characters plus the bare
-	// radical 子.
-	var entryRows int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL`).Scan(&entryRows); err != nil {
-		t.Fatalf("count entries: %v", err)
-	}
-	if entryRows != 3 {
-		t.Errorf("entries = %d, want 3 — 2 character entries, the bare radical 子", entryRows)
-	}
-
-	// Re-importing is idempotent: same counts, same entry ids, senses
-	// replaced wholesale.
-	if res, err := dict.Import(ctx, sqlDB, pack); err != nil {
-		t.Fatalf("re-import kanjidic2 sample: %v", err)
-	} else if res.Entries != 2 || res.Senses != 3 {
-		t.Errorf("re-import = %+v, want 2 entries and 3 senses again", res)
-	}
-	if again := mustGet(t, st, "日", "character", "ja"); again.ID != nichi.ID {
-		t.Errorf("id of 日 after re-import = %d, want %d", again.ID, nichi.ID)
-	}
-	if again := mustGet(t, st, "子", "character", "ja"); again.ID != ko.ID {
-		t.Errorf("id of 子 after re-import = %d, want %d", again.ID, ko.ID)
-	}
-	if a, d := senseCounts(t, sqlDB, dictID); a != 3 || d != 0 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 3 and 0", a, d)
 	}
 }
