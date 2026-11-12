@@ -188,17 +188,35 @@ Decisions that differ from or extend the spec above.
   `readings(plain, entry_id)`. Longest surface wins; at equal length a
   written-form hit beats a reading hit, and within each kind an exact hit beats a
   deinflected one (shallowest deinflection first). A reading hit lists up to 8
-  candidates, flagged `"reading": true`: entries for which the kana is the first
-  reading first, then by reading position and entry id. **Limitation:** JMdict
-  priority tags (`ichi1`, `news1`, `nf01`...) are not imported, so homophones are
-  not frequency ranked (する shows 為る, 刷る... in entry-id order among first
-  readings). The popup says how many other entries share the reading and links
-  to a search for it. Zh matching is unchanged (written forms only).
+  candidates, flagged `"reading": true`, ranked by the JMdict ranking attrs (see
+  the next note) and capped after ranking. The popup says how many other entries
+  share the reading ("N+" when the list hit the cap of 8) and links to a search
+  for it. Zh matching is unchanged (written forms only).
+- **JMdict ranking data.** The importer keeps `ke_pri`/`re_pri`, the
+  `rK`/`oK`/`iK`/`sK` and `rk`/`ok`/`ik`/`sk` flags and the `uk` misc tag (Go's
+  decoder passes the entity references through as text, `&uk;`). Each written
+  form's entry gets `jmdict.pri` (0–100, stored when > 0) and `jmdict.uk` ("1"
+  when any sense is uk); a form shared by several words takes the max score and
+  uk from any. Score = max over tags: `nf01`–`nf24` → 100–77, tier 1 (`news1`,
+  `ichi1`, `spec1`, `gai1`) → 60, `nf25`–`nf48` → 53–30, tier 2 → 30. A rare form
+  loses 40 (floor 0). A kanji form scores by its own `ke_pri`; a uk word's forms
+  also get the best score of its readings, unpenalized (為る and 居る are rK); a
+  kana-only word scores by its readings. Reading flags only lower a reading's
+  score. Reading hits order: uk first, then `jmdict.pri` descending, then reading
+  position, then entry id. The importer owns the `jmdict.*` attrs: a re-import
+  replaces them (`UpsertReplacingAttrs`), so none goes stale. The attr joins use
+  `entry_attrs`' primary key; no new index was needed. Existing installs must
+  re-seed (or re-install jmdict) to get the ranking and the homograph readings
+  below. **Remaining limits:** an exact reading hit still beats a deinflection
+  (した → 下, みた → 共, きた → 北, not する/見る/来る), and a kana-only word written
+  in kana beats every reading hit (こと → the particle こと, not 事); `uk` is
+  per word, so a homograph spreads it (擦る is uk through 擦る/こする); part of
+  speech is not stored.
   The JMdict importer now gives a kanji form shared by several words the union
   of their kana readings (in file order), like cedict's homograph merge; before,
   the last word won and 為る was read only なる, 林檎 only りゅうごう. A kana
-  surface that is itself a reading of some entry (した → 舌) wins over a
-  deinflection of equal length (した → する past), per the ranking above.
+  surface that is itself a reading of some entry (した → 下, 舌) wins over a
+  deinflection of equal length (した → する past), per the match rule above.
 - **Hover shows nothing for no word.** Latin letters, digits, punctuation and
   whitespace never start a lookup, and a hover lookup that finds nothing shows no
   popup; the not-found hint is for selections only.

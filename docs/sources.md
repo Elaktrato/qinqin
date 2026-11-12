@@ -7,7 +7,7 @@ that a fresh clone or Docker image seeds offline (`qinqin seed`):
 |---|---|---|---|
 | **CC-CEDICT** (`cedict`) | Mandarin–English words and meanings | CC BY-SA 4.0 | https://cc-cedict.org |
 | **Unihan** (`unihan`) | Radical-stroke counts, simplified/traditional variant mappings, character definitions | Unicode License v3 | https://www.unicode.org/reports/tr38/ |
-| **JMdict** (`jmdict`) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/ |
+| **JMdict** (`jmdict`) | Japanese–English words and meanings; its priority and usually-kana tags rank homophones in the Reader | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/ |
 | **KANJIDIC2** (`kanjidic2`) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/wiki/index.php/KANJIDIC_Project |
 
 Each pack directory carries its `manifest.json` (including `license` and
