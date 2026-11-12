@@ -99,7 +99,7 @@ function parseDeck(key: string, raw: unknown): Deck | null {
 
 function parseCard(key: string, raw: unknown): StudyCard | null {
 	if (!isRecord(raw)) return null;
-	const { id, kind, entryId, sentenceId, deckIds, createdAt } = raw;
+	const { id, kind, entryId, sentenceId, deckIds, createdAt, written } = raw;
 	if (typeof id !== 'string' || kind !== 'vocab' || typeof entryId !== 'number') return null;
 	if (typeof createdAt !== 'string') return null;
 	if (key !== cardKey(id)) return null;
@@ -108,6 +108,9 @@ function parseCard(key: string, raw: unknown): StudyCard | null {
 		...new Set(deckIds.filter((deckId): deckId is string => typeof deckId === 'string'))
 	];
 	const card: StudyCard = { id, kind, entryId, deckIds: decks, createdAt };
+	if (typeof written === 'string') {
+		card.written = written;
+	}
 	if (typeof sentenceId === 'number') {
 		card.sentenceId = sentenceId;
 	}
@@ -210,22 +213,24 @@ export async function deleteDeck(id: string): Promise<void> {
 }
 
 /**
- * addCard stores a new vocab card and returns it. The optional example
- * sentence is kept when supplied, and deckIds names the decks the card
- * belongs to (General by default; unknown ids are the caller's choice —
- * the setup page only offers decks that exist). Adding an entry that
- * already has a card is a no-op: the entry page can race a slow pull,
- * and a second card would split its reviews and EXP permanently.
+ * addCard stores a new vocab card and returns it. `written` snapshots the
+ * entry's written form, which per-character mastery reads without another
+ * entry fetch; `sentenceId` keeps the example sentence shown on the review
+ * front; `deckIds` names the decks the card belongs to (General by
+ * default; unknown ids are the caller's choice — the setup page only
+ * offers decks that exist). Adding an entry that already has a card is a
+ * no-op: the entry page can race a slow pull, and a second card would
+ * split its reviews and EXP permanently.
  */
 export async function addCard(
 	entryId: number,
-	sentenceId?: number,
-	deckIds: readonly string[] = [GENERAL_DECK_ID]
+	opts: { written?: string; sentenceId?: number; deckIds?: string[] } = {}
 ): Promise<StudyCard> {
 	const workspaceId = requireWorkspaceId();
 	const { cards } = await fetchStudyData(workspaceId);
 	const existing = cards.find((card) => card.entryId === entryId);
 	if (existing !== undefined) return existing;
+	const deckIds = opts.deckIds ?? [GENERAL_DECK_ID];
 	const chosen = [...new Set(deckIds.filter((id) => id !== ''))];
 	const card: StudyCard = {
 		id: newUlid(),
@@ -234,8 +239,11 @@ export async function addCard(
 		deckIds: chosen.length === 0 ? [GENERAL_DECK_ID] : chosen,
 		createdAt: new Date().toISOString()
 	};
-	if (sentenceId !== undefined) {
-		card.sentenceId = sentenceId;
+	if (typeof opts.written === 'string') {
+		card.written = opts.written;
+	}
+	if (opts.sentenceId !== undefined) {
+		card.sentenceId = opts.sentenceId;
 	}
 	await putData(workspaceId, cardKey(card.id), card);
 	return card;

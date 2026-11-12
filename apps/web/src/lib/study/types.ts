@@ -42,6 +42,10 @@ export interface StudyCard {
 	id: string;
 	kind: StudyCardKind;
 	entryId: number;
+	// The entry's written form as it looked when the card was added. It is
+	// a snapshot: later analysis uses it without another entry fetch.
+	// Cards added before this field existed have no snapshot.
+	written?: string;
 	sentenceId?: number;
 	deckIds: string[];
 	createdAt: string;
