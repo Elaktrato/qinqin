@@ -78,9 +78,29 @@ type Store struct {
 // ord is its position in its slice (the given Ord is ignored), and every
 // sense is stored under dictionaryID. Replaced rows are soft-deleted. A
 // Put that matches what is stored writes nothing, not even updated_at;
-// otherwise the entry is stamped once. The whole Put is one transaction.
+// otherwise the entry is stamped once. The whole Put is one transaction
+// (see PutTx to join the caller's).
 func (s Store) Put(ctx context.Context, e *Entry, dictionaryID int64) (int64, error) {
-	id, err := s.put(ctx, e, dictionaryID)
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("put entry %s/%s/%s: %w", e.Language, e.Kind, e.Key, err)
+	}
+	defer tx.Rollback()
+	id, err := s.PutTx(ctx, tx, e, dictionaryID)
+	if err != nil {
+		return 0, err
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("put entry %s/%s/%s: %w", e.Language, e.Kind, e.Key, err)
+	}
+	return id, nil
+}
+
+// PutTx is Put inside the caller's transaction: it writes e exactly as
+// Put does but neither begins, commits nor rolls back, so a bulk import
+// can put many entries all-or-nothing. Rolling back tx undoes the put.
+func (s Store) PutTx(ctx context.Context, tx *sql.Tx, e *Entry, dictionaryID int64) (int64, error) {
+	id, err := s.put(ctx, tx, e, dictionaryID)
 	if err != nil {
 		return 0, fmt.Errorf("put entry %s/%s/%s: %w", e.Language, e.Kind, e.Key, err)
 	}
@@ -88,7 +108,7 @@ func (s Store) Put(ctx context.Context, e *Entry, dictionaryID int64) (int64, er
 	return id, nil
 }
 
-func (s Store) put(ctx context.Context, e *Entry, dictionaryID int64) (int64, error) {
+func (s Store) put(ctx context.Context, tx *sql.Tx, e *Entry, dictionaryID int64) (int64, error) {
 	attrs, err := encodeAttrs(e.Attrs)
 	if err != nil {
 		return 0, err
@@ -98,11 +118,6 @@ func (s Store) put(ctx context.Context, e *Entry, dictionaryID int64) (int64, er
 		return 0, err
 	}
 
-	tx, err := s.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Rollback()
 	stamp := now()
 
 	var (
@@ -197,9 +212,6 @@ func (s Store) put(ctx context.Context, e *Entry, dictionaryID int64) (int64, er
 			e.Pri, boolInt(e.UK), attrs, stamp, id); err != nil {
 			return 0, err
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return 0, err
 	}
 	return id, nil
 }

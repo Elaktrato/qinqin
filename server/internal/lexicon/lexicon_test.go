@@ -77,6 +77,51 @@ func suru() *lexicon.Entry {
 	}
 }
 
+func TestPutTxRollsBackWithItsTransaction(t *testing.T) {
+	st := newStore(t)
+	ctx := context.Background()
+	dict := addDictionary(t, st, "jmdict")
+
+	tx, err := st.DB.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+	e := suru()
+	if _, err := st.PutTx(ctx, tx, e, dict); err != nil {
+		t.Fatalf("PutTx: %v", err)
+	}
+	if e.ID == 0 {
+		t.Error("PutTx did not set e.ID")
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatalf("rollback: %v", err)
+	}
+	for _, table := range []string{"lx_entries", "lx_forms", "lx_readings", "lx_senses"} {
+		var n int
+		if err := st.DB.QueryRow(`SELECT COUNT(*) FROM ` + table).Scan(&n); err != nil {
+			t.Fatalf("count %s: %v", table, err)
+		}
+		if n != 0 {
+			t.Errorf("%s has %d rows after rollback, want 0", table, n)
+		}
+	}
+
+	tx, err = st.DB.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+	id, err := st.PutTx(ctx, tx, suru(), dict)
+	if err != nil {
+		t.Fatalf("PutTx: %v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if got := mustGet(t, st, id); got.Key != "1157170" {
+		t.Errorf("committed entry key = %q", got.Key)
+	}
+}
+
 // glosses returns every sense's glosses, flattened, for comparisons.
 func glosses(ss []lexicon.Sense) [][]string {
 	out := make([][]string, len(ss))
