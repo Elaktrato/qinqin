@@ -16,7 +16,7 @@ import {
 } from './dom';
 import { apiErrorMessage } from './errors';
 import { HoverLookup, type HoverShown, type Span } from './hoverLookup';
-import { selectionTarget, type LookupKind } from './lookup';
+import { hoverable, type LookupKind } from './lookup';
 import { offsetFromRun, paragraphString, sliceCodePoints } from './paragraphText';
 import { cachedSegment } from './segmentCache';
 import { lookupSelection, selectionSpanTarget } from './selectionLookup';
@@ -187,7 +187,7 @@ export class LookupController {
 			if (under === undefined) return this.#hover.noWord();
 			offset = under;
 		}
-		if (!selectionTarget(sliceCodePoints(text, offset, offset + 1))) return this.#hover.noWord();
+		if (!hoverable(sliceCodePoints(text, offset, offset + 1))) return this.#hover.noWord();
 		this.#hover.point(point.p, text, offset);
 	}
 

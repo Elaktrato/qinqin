@@ -143,12 +143,34 @@ describe('HoverLookup', () => {
 		expect(t.shown.map((s) => s.match?.surface)).toEqual(['中文']);
 	});
 
-	it('shows a one-character span and no match when the tokenizer finds nothing', async () => {
+	it('shows no popup when the tokenizer finds nothing', async () => {
+		const t = setup();
+		t.hover.point(0, text, 0);
+		t.calls[0].resolve(null);
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(t.show).not.toHaveBeenCalled();
+		expect(t.visible()).toBeNull();
+	});
+
+	it('hides the shown word after the grace delay when the next lookup finds nothing', async () => {
+		const t = setup();
+		t.hover.point(0, text, 1);
+		t.calls[0].resolve(word('学习', 1));
+		await vi.advanceTimersByTimeAsync(0);
+		t.hover.point(0, text, 5);
+		t.calls[1].resolve(null);
+		await vi.advanceTimersByTimeAsync(HOVER_GRACE_MS);
+		expect(t.show).toHaveBeenCalledTimes(1);
+		expect(t.visible()).toBeNull();
+	});
+
+	it('does not refetch an offset that just found nothing', async () => {
 		const t = setup();
 		t.hover.point(0, text, 0);
 		t.calls[0].resolve(null);
 		await vi.advanceTimersByTimeAsync(0);
-		expect(t.visible()).toMatchObject({ span: { p: 0, start: 0, end: 1 }, match: null, text: '我' });
+		t.hover.point(0, text, 0);
+		expect(t.segment).toHaveBeenCalledTimes(1);
 	});
 
 	it('shows an error but stays silent for aborts', async () => {

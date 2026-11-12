@@ -97,3 +97,13 @@ export function selectionTarget(selected: string): { text: string; kind: LookupK
 	if (NOTHING_TO_LOOK_UP.test(text)) return null;
 	return { text, kind: Array.from(text).length === 1 ? 'character' : 'word' };
 }
+
+// Hovering these never looks anything up: whitespace, punctuation,
+// symbols, Latin letters and digits (zh/ja dictionaries have no entry
+// for them, and a "not found" popup over every Latin word is noise).
+const NOT_HOVERABLE = /^[\s\p{P}\p{S}\p{Z}\p{N}\p{Script=Latin}]$/u;
+
+/** hoverable reports whether hovering the code point `ch` may start a lookup. */
+export function hoverable(ch: string): boolean {
+	return Array.from(ch).length === 1 && !NOT_HOVERABLE.test(ch);
+}

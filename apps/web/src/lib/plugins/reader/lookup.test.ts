@@ -3,6 +3,7 @@ import type { SegmentMatch } from '$lib/api/types';
 import {
 	codePointToUtf16,
 	homophoneNote,
+	hoverable,
 	pickEntry,
 	preferredEntry,
 	selectionTarget,
@@ -167,5 +168,17 @@ describe('homophoneNote', () => {
 
 	it('counts the kind actually shown when the preferred kind is missing', () => {
 		expect(homophoneNote(kana([reading(1), reading(2)]), 'character')?.count).toBe(1);
+	});
+});
+
+describe('hoverable', () => {
+	it('accepts CJK characters and kana', () => {
+		for (const ch of ['学', '學', 'す', 'ス', 'ー', '𠮷']) expect(hoverable(ch)).toBe(true);
+	});
+
+	it('rejects Latin letters, digits, punctuation and whitespace', () => {
+		for (const ch of ['a', 'Z', 'é', 'ａ', '7', '７', '½', '。', '，', ' ', '!', '「', '']) {
+			expect(hoverable(ch), ch).toBe(false);
+		}
 	});
 });

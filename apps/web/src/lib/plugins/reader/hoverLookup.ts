@@ -6,6 +6,8 @@
 //   a lookup in flight, so a slow lookup for the next word still shows;
 // - a pointer on no word aborts the lookup in flight (its word was left)
 //   and arms the grace hide;
+// - a lookup that finds nothing shows no popup: it counts as "no word"
+//   (a not-found hint is for selections only);
 // - close() does both at once (Escape, scroll, leaving the text, re-render).
 import type { SegmentMatch } from '$lib/api/types';
 import { apiErrorMessage } from './errors';
@@ -41,6 +43,8 @@ export class HoverLookup {
 	#hideTimer: ReturnType<typeof setTimeout> | undefined;
 	/** The span of the popup currently shown, if any. */
 	#shown: Span | null = null;
+	/** The last offset whose lookup found nothing, so it is not refetched. */
+	#empty: { p: number; offset: number } | null = null;
 
 	constructor(deps: HoverDeps) {
 		this.#deps = deps;
@@ -56,6 +60,7 @@ export class HoverLookup {
 			return;
 		}
 		if (this.#inFlight?.p === p && this.#inFlight.offset === offset) return;
+		if (this.#empty?.p === p && this.#empty.offset === offset) return this.noWord();
 		this.#hideSoon();
 		void this.#lookup(p, text, offset);
 	}
@@ -68,6 +73,7 @@ export class HoverLookup {
 
 	/** Aborts everything and hides at once. */
 	close(): void {
+		this.#empty = null;
 		this.#abort();
 		this.#cancelHide();
 		this.#hide();
@@ -112,6 +118,14 @@ export class HoverLookup {
 		// Superseded, aborted, or closed meanwhile: discard.
 		if (this.#inFlight !== flight || signal.aborted) return;
 		this.#inFlight = null;
+		if (!match && !error) {
+			// Nothing here: like a pointer on no word, the shown popup (if
+			// any) goes after the grace delay.
+			this.#empty = { p, offset };
+			this.#hideSoon();
+			return;
+		}
+		this.#empty = null;
 		const span = match
 			? { p, start: match.start, end: match.end }
 			: { p, start: offset, end: offset + 1 };
