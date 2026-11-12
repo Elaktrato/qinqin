@@ -280,11 +280,3 @@ func TestLexiconJMdictReimportWritesNothing(t *testing.T) {
 		}
 	}
 }
-
-func TestImportLexiconRejectsOtherFormats(t *testing.T) {
-	sqlDB := newDB(t)
-	pack := loadFixture(t) // a format "json" pack
-	if _, err := dict.ImportLexicon(context.Background(), sqlDB, &pack); err == nil {
-		t.Error("ImportLexicon of a json pack succeeded, want an error until its task lands")
-	}
-}

@@ -259,6 +259,23 @@ func replaceSenses(ctx context.Context, sqlDB *sql.DB, packID, name, version, li
 	}
 	defer tx.Rollback()
 	stamp := now()
+	dictID, err := upsertDictionary(ctx, tx, packID, name, version, license, attribution, stamp)
+	if err != nil {
+		return 0, err
+	}
+	if err := diffSenses(ctx, tx, dictID, senses, stamp); err != nil {
+		return 0, fmt.Errorf("replace senses of dictionary %s: %w", packID, err)
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, fmt.Errorf("import dictionary %s: %w", packID, err)
+	}
+	return dictID, nil
+}
+
+// upsertDictionary registers or revives the dictionary keyed by packID
+// inside tx and returns its row id; the legacy and the lexicon imports
+// share it.
+func upsertDictionary(ctx context.Context, tx *sql.Tx, packID, name, version, license, attribution, stamp string) (int64, error) {
 	var dictID int64
 	if err := tx.QueryRowContext(ctx, `
 		INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
@@ -273,12 +290,6 @@ func replaceSenses(ctx context.Context, sqlDB *sql.DB, packID, name, version, li
 		RETURNING id`,
 		packID, name, version, license, attribution, stamp).Scan(&dictID); err != nil {
 		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
-	}
-	if err := diffSenses(ctx, tx, dictID, senses, stamp); err != nil {
-		return 0, fmt.Errorf("replace senses of dictionary %s: %w", packID, err)
-	}
-	if err := tx.Commit(); err != nil {
-		return 0, fmt.Errorf("import dictionary %s: %w", packID, err)
 	}
 	return dictID, nil
 }

@@ -314,6 +314,22 @@ func (s Store) Link(ctx context.Context, fromID, toID int64, typ string) error {
 		return fmt.Errorf("link %d->%d (%s): %w", fromID, toID, typ, err)
 	}
 	defer tx.Rollback()
+	if err := s.LinkTx(ctx, tx, fromID, toID, typ); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("link %d->%d (%s): %w", fromID, toID, typ, err)
+	}
+	return nil
+}
+
+// LinkTx is Link inside the caller's transaction: it neither begins,
+// commits nor rolls back, so a bulk import can link entries it wrote in
+// the same transaction, all-or-nothing.
+func (s Store) LinkTx(ctx context.Context, tx *sql.Tx, fromID, toID int64, typ string) error {
+	if typ != LinkVariant && typ != LinkRadical {
+		return fmt.Errorf("link %d->%d: unknown link type %q", fromID, toID, typ)
+	}
 	stamp := now()
 	pairs := [][2]int64{{fromID, toID}}
 	if typ == LinkVariant {
@@ -330,9 +346,6 @@ func (s Store) Link(ctx context.Context, fromID, toID int64, typ string) error {
 			p[0], p[1], typ, stamp); err != nil {
 			return fmt.Errorf("link %d->%d (%s): %w", p[0], p[1], typ, err)
 		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("link %d->%d (%s): %w", fromID, toID, typ, err)
 	}
 	return nil
 }

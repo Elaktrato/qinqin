@@ -77,6 +77,44 @@ func suru() *lexicon.Entry {
 	}
 }
 
+func TestLinkTxJoinsAndRollsBackWithItsTransaction(t *testing.T) {
+	st := newStore(t)
+	ctx := context.Background()
+	dict := addDictionary(t, st, "jmdict")
+	a, b := suru(), suru()
+	b.Key = "j:2"
+	idA, _ := st.Put(ctx, a, dict)
+	idB, _ := st.Put(ctx, b, dict)
+
+	tx, err := st.DB.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+	if err := st.LinkTx(ctx, tx, idA, idB, lexicon.LinkVariant); err != nil {
+		t.Fatalf("LinkTx: %v", err)
+	}
+	if err := tx.Rollback(); err != nil {
+		t.Fatalf("rollback: %v", err)
+	}
+	if vs, err := st.Variants(ctx, idA); err != nil || len(vs) != 0 {
+		t.Errorf("variants after rollback = %v, %v, want none", vs, err)
+	}
+
+	tx, err = st.DB.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+	if err := st.LinkTx(ctx, tx, idA, idB, lexicon.LinkVariant); err != nil {
+		t.Fatalf("LinkTx: %v", err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if vs, err := st.Variants(ctx, idB); err != nil || len(vs) != 1 || vs[0].ID != idA {
+		t.Errorf("variants of b after commit = %v, %v, want a", vs, err)
+	}
+}
+
 func TestPutTxRollsBackWithItsTransaction(t *testing.T) {
 	st := newStore(t)
 	ctx := context.Background()

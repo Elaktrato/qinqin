@@ -129,35 +129,14 @@ type cedictStats struct {
 // fails on unconvertible input. Homograph lines for one written form
 // merge into one entry carrying all their readings and senses.
 func readCedictPack(dir string) ([]entry, cedictStats, error) {
-	f, err := openMaybeGz(filepath.Join(dir, cedictFile))
+	p, err := readCedictLines(dir)
 	if err != nil {
-		return nil, cedictStats{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
-	}
-	defer f.Close()
-	p, err := parseCedictLenient(f)
-	if err != nil {
-		return nil, cedictStats{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
-	}
-	if len(p.entries) == 0 && p.skipped == 0 {
-		return nil, cedictStats{}, fmt.Errorf("%w: %s of %s has no entries", ErrInvalidPack, cedictFile, dir)
-	}
-	if p.skipped > 0 && (len(p.entries) == 0 ||
-		float64(p.skipped) > maxSkippedShare*float64(p.skipped+len(p.entries))) {
-		return nil, cedictStats{}, fmt.Errorf("%w: %s of %s: %d of %d entry lines are malformed (first: %s)",
-			ErrInvalidPack, cedictFile, dir, p.skipped, p.skipped+len(p.entries), p.firstSkip)
+		return nil, cedictStats{}, err
 	}
 	stats := cedictStats{skipped: p.skipped}
 	es := make([]entry, len(p.entries))
 	for i, r := range p.entries {
-		marked := r.Pinyin
-		if m, err := pinyin.ToMarked(r.Pinyin); err == nil {
-			marked = m
-		} else {
-			stats.unconverted++
-			if stats.unconverted <= maxLoggedSkips {
-				log.Printf("cedict: pinyin %q of %s does not convert; kept as written", r.Pinyin, r.Written)
-			}
-		}
+		marked := markedPinyin(r, &stats)
 		es[i] = entry{
 			Written:  r.Written,
 			Forms:    tradForms(r.Written, r.Trad),
@@ -167,6 +146,46 @@ func readCedictPack(dir string) ([]entry, cedictStats, error) {
 		}
 	}
 	return mergeHomographs(es), stats, nil
+}
+
+// readCedictLines reads and parses the dictionary.txt of the format
+// "cedict" pack in dir and applies the malformed-line policy: lines that
+// are not entries are skipped and counted, failing the read only when
+// they exceed maxSkippedShare of the file or leave nothing.
+func readCedictLines(dir string) (cedictParse, error) {
+	f, err := openMaybeGz(filepath.Join(dir, cedictFile))
+	if err != nil {
+		return cedictParse{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
+	}
+	defer f.Close()
+	p, err := parseCedictLenient(f)
+	if err != nil {
+		return cedictParse{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
+	}
+	if len(p.entries) == 0 && p.skipped == 0 {
+		return cedictParse{}, fmt.Errorf("%w: %s of %s has no entries", ErrInvalidPack, cedictFile, dir)
+	}
+	if p.skipped > 0 && (len(p.entries) == 0 ||
+		float64(p.skipped) > maxSkippedShare*float64(p.skipped+len(p.entries))) {
+		return cedictParse{}, fmt.Errorf("%w: %s of %s: %d of %d entry lines are malformed (first: %s)",
+			ErrInvalidPack, cedictFile, dir, p.skipped, p.skipped+len(p.entries), p.firstSkip)
+	}
+	return p, nil
+}
+
+// markedPinyin returns the marked pinyin of a cedict line's tone-numbered
+// pinyin. Pinyin that does not convert is kept as written and counted in
+// stats.unconverted.
+func markedPinyin(r RawEntry, stats *cedictStats) string {
+	m, err := pinyin.ToMarked(r.Pinyin)
+	if err == nil {
+		return m
+	}
+	stats.unconverted++
+	if stats.unconverted <= maxLoggedSkips {
+		log.Printf("cedict: pinyin %q of %s does not convert; kept as written", r.Pinyin, r.Written)
+	}
+	return r.Pinyin
 }
 
 // mergeHomographs folds the lines of one written form and kind into one
