@@ -67,6 +67,8 @@ type jmdictREle struct {
 // jmdictSense is one <sense> of the word: its glosses and its misc tags
 // (<misc>, entity references such as "&uk;").
 type jmdictSense struct {
+	Pos     []string      `xml:"pos"`
+	Xref    []string      `xml:"xref"`
 	Glosses []jmdictGloss `xml:"gloss"`
 	Misc    []string      `xml:"misc"`
 }
@@ -146,11 +148,7 @@ func ParseJMdict(r io.Reader) ([]RawEntry, error) {
 			// about how common the word is. A search-only, irregular or
 			// outdated form (sK, iK, oK) is still penalized, so it ranks
 			// below the word's real form.
-			score := formScore(k.Pri, k.Inf)
-			if uk {
-				score = max(score, penalize(kanaScore, withoutFlag(k.Inf, "rK")))
-			}
-			formAttrs[forms[i]] = jmdictAttrs(score, uk)
+			formAttrs[forms[i]] = jmdictAttrs(kanjiFormScore(k, uk, kanaScore), uk)
 		}
 		var glosses []string
 		for _, s := range x.Senses {
@@ -176,6 +174,18 @@ func ParseJMdict(r io.Reader) ([]RawEntry, error) {
 		})
 	}
 	return es, nil
+}
+
+// kanjiFormScore is the score of one kanji form of a word whose best
+// reading scores kanaScore: its own formScore, and for a uk word also
+// its readings' score penalized by the form's flags other than rK (see
+// ParseJMdict).
+func kanjiFormScore(k jmdictKEle, uk bool, kanaScore int) int {
+	score := formScore(k.Pri, k.Inf)
+	if uk {
+		score = max(score, penalize(kanaScore, withoutFlag(k.Inf, "rK")))
+	}
+	return score
 }
 
 // jmdictAttrs returns the ranking attrs of one form: attrJMdictPri when
