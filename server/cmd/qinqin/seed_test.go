@@ -121,6 +121,35 @@ func TestSeedIdempotent(t *testing.T) {
 	}
 }
 
+// Each pack prints exactly one line, and a dictionary's line carries its
+// lexicon counts (one summary, not a legacy and a lexicon half).
+func TestSeedPrintsEachPackOnce(t *testing.T) {
+	sqlDB, _ := openTestDB(t)
+	var out bytes.Buffer
+	if err := seed(context.Background(), sqlDB, []string{smallPacks(t)}, &out); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	if len(lines) != 5 {
+		t.Fatalf("seed printed %d lines, want one per pack (5):\n%s", len(lines), out.String())
+	}
+	for _, line := range lines {
+		fields := strings.Fields(line)
+		switch fields[1] {
+		case "dictionary":
+			if !strings.Contains(line, " entries, ") || !strings.Contains(line, " senses") || strings.Contains(line, "lexicon") {
+				t.Errorf("dictionary line = %q, want \"N entries, N senses\" without a lexicon suffix", line)
+			}
+		}
+	}
+	// The counts are the lexicon's: the zh-mini pack's entries are the
+	// lexicon entries the pack wrote.
+	var n int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM lx_entries`).Scan(&n); err != nil || n == 0 {
+		t.Fatalf("lexicon entries = %d, %v", n, err)
+	}
+}
+
 // The committed packs prove all three acceptance paths end to end:
 // zh (levels resolve against the dictionary seeded before them), ja
 // (romaji search through the ja pack), and es (an unknown language code

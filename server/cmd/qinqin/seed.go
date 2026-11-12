@@ -100,7 +100,8 @@ var importOrder = map[string]int{
 }
 
 // seed imports every pack under the roots into sqlDB, dispatching on each
-// manifest's type: dictionary to dict.Import, frequency to freq.Import,
+// manifest's type: dictionary to dict.ImportLexicon (plus the temporary
+// legacy import, see importLegacyDictionary), frequency to freq.Import,
 // levels to levels.Import, sentences to sentences.ImportPack. A pack is
 // any directory holding a manifest.json; the walk does not descend into
 // one. Packs import dictionaries first, then frequency packs, levels and
@@ -179,7 +180,10 @@ func findPacksIn(root string) ([]seedPack, error) {
 func importPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, error) {
 	switch pack.Type {
 	case dict.TypeDictionary:
-		r, err := dict.Import(ctx, sqlDB, pack)
+		if err := importLegacyDictionary(ctx, sqlDB, pack); err != nil {
+			return "", err
+		}
+		r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
 		if err != nil {
 			return "", err
 		}
@@ -187,13 +191,6 @@ func importPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, err
 		if r.Skipped > 0 || r.Unconverted > 0 {
 			line += fmt.Sprintf(" (skipped %d malformed lines, %d pinyin unconverted)", r.Skipped, r.Unconverted)
 		}
-		// Temporary dual import: the lexicon is filled next to the legacy
-		// tables until the cutover removes the legacy import.
-		lr, err := dict.ImportLexicon(ctx, sqlDB, &pack)
-		if err != nil {
-			return "", fmt.Errorf("lexicon: %w", err)
-		}
-		line += fmt.Sprintf("; lexicon %d entries, %d senses", lr.Entries, lr.Senses)
 		return line, nil
 	case dict.TypeFrequency:
 		r, err := freq.Import(ctx, sqlDB, &pack)
@@ -215,4 +212,15 @@ func importPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, err
 		return fmt.Sprintf("%d unknown words skipped", len(r.Skipped)), nil
 	}
 	return "", fmt.Errorf("unsupported pack type %q", pack.Type)
+}
+
+// importLegacyDictionary is the temporary dual import: it fills the
+// legacy entries/senses tables the tokenizer endpoints still read, next
+// to the lexicon. Its result is not reported (the lexicon's counts are).
+// The tokenizer cutover removes it: delete this function and its call.
+func importLegacyDictionary(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) error {
+	if _, err := dict.Import(ctx, sqlDB, pack); err != nil {
+		return fmt.Errorf("legacy dictionary import: %w", err)
+	}
+	return nil
 }
