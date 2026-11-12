@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
-import { findPlugin, navPages, orderPlugins, pluginEnabled, pluginSlug, pluginState } from './index';
+import { findPlugin, homeWidgets, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState } from './index';
 import type { WebPlugin } from './index';
 
 function plugin(id: string): WebPlugin {
@@ -89,5 +89,20 @@ describe('plugin pages', () => {
 		expect(findPlugin('reader', registry, states)).toBe(registry[0]);
 		expect(findPlugin('off', registry, states)).toBeUndefined();
 		expect(findPlugin('nope', registry, states)).toBeUndefined();
+	});
+});
+
+describe('reader registration', () => {
+	it('shows the Reader nav link when enabled and hides it when disabled', () => {
+		expect(navPages(webPlugins, []).filter((link) => link.href === '/p/reader')).toEqual([
+			{ slug: 'reader', title: 'Reader', href: '/p/reader' }
+		]);
+		expect(navPages(webPlugins, [state('qinqin-reader', 0, false)])).toEqual([]);
+	});
+
+	it('keeps page-only plugins out of the home widget slot', () => {
+		const ids = homeWidgets(webPlugins, []).map((p) => p.manifest.id);
+
+		expect(ids).toEqual(['qinqin-flashcards']);
 	});
 });

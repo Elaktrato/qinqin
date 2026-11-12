@@ -107,16 +107,21 @@ func TestRegisterBuiltinPlugins(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListFor: %v", err)
 	}
+	found := map[string]bool{}
 	for _, plugin := range list {
-		if plugin.ID != "qinqin-flashcards" {
+		if plugin.ID != "qinqin-flashcards" && plugin.ID != "qinqin-reader" {
 			continue
 		}
+		found[plugin.ID] = true
 		if !plugin.Enabled || plugin.Order != 0 {
-			t.Errorf("flashcards state = enabled %t, order %d, want enabled, 0", plugin.Enabled, plugin.Order)
+			t.Errorf("%s state = enabled %t, order %d, want enabled, 0", plugin.ID, plugin.Enabled, plugin.Order)
 		}
-		return
 	}
-	t.Fatalf("qinqin-flashcards not in plugin list %+v", list)
+	for _, id := range []string{"qinqin-flashcards", "qinqin-reader"} {
+		if !found[id] {
+			t.Errorf("%s not in plugin list %+v", id, list)
+		}
+	}
 }
 
 // TestRegisterBuiltinPluginsRetiresHeatmap simulates a database upgraded

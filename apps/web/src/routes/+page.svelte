@@ -4,7 +4,7 @@
 	import { api } from '$lib/api/client';
 	import type { PluginInfo } from '$lib/api/types';
 	import { APP_NAME } from '$lib/app';
-	import { pluginEnabled, orderPlugins, webPlugins } from '$lib/plugins';
+	import { homeWidgets, webPlugins } from '$lib/plugins';
 
 	let query = $state('');
 	let pluginStates = $state<PluginInfo[]>([]);
@@ -12,12 +12,7 @@
 	// Only the installed, enabled plugins this build can render get a
 	// slot; unknown or disabled plugins simply do not appear, and the
 	// rest follow the user's Settings order.
-	const plugins = $derived(
-		orderPlugins(
-			webPlugins.filter((plugin) => pluginEnabled(plugin.manifest.id, pluginStates)),
-			pluginStates
-		)
-	);
+	const plugins = $derived(homeWidgets(webPlugins, pluginStates));
 
 	onMount(async () => {
 		try {
@@ -51,7 +46,9 @@
 	<section class="plugin-slot" data-plugin-slot="home" aria-label="Home widgets">
 		{#each plugins as plugin (plugin.manifest.id)}
 			{@const Widget = plugin.component}
-			<Widget />
+			{#if Widget}
+				<Widget />
+			{/if}
 		{/each}
 	</section>
 </main>

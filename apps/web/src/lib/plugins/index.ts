@@ -7,6 +7,8 @@ import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
 import Flashcards from './flashcards/FlashcardsWidget.svelte';
 import { flashcardsManifest } from './flashcards/manifest';
+import ReaderPage from './reader/ReaderPage.svelte';
+import { readerManifest } from './reader/manifest';
 
 export interface PluginManifest {
 	id: string;
@@ -26,13 +28,26 @@ export interface PluginPage {
 
 export interface WebPlugin {
 	manifest: PluginManifest;
-	component: Component;
+	/** Home widget; plugins without one are page-only. */
+	component?: Component;
 	pages?: PluginPage[];
 }
 
 export const webPlugins: WebPlugin[] = [
-	{ manifest: flashcardsManifest, component: Flashcards }
+	{ manifest: flashcardsManifest, component: Flashcards },
+	{
+		manifest: readerManifest,
+		pages: [{ title: 'Reader', nav: true, component: ReaderPage }]
+	}
 ];
+
+/** homeWidgets lists enabled plugins that have a home widget, in the user's order. */
+export function homeWidgets(plugins: WebPlugin[], states: PluginInfo[]): WebPlugin[] {
+	return orderPlugins(
+		plugins.filter((plugin) => plugin.component && pluginEnabled(plugin.manifest.id, states)),
+		states
+	);
+}
 
 /**
  * pluginState returns the caller's server state for a web manifest id.

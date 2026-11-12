@@ -80,6 +80,10 @@ func defaultData() string {
 // enabled/order state; Register upserts by id, so every start is safe.
 const builtinFlashcardsManifest = `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature","surfaces":["home-widget"]}`
 
+// builtinReaderManifest registers the reader, a page-only feature the
+// web build serves at /p/reader.
+const builtinReaderManifest = `{"id":"qinqin-reader","name":"Reader","version":"1.0","type":"feature","surfaces":["page"]}`
+
 // retiredHeatmapPlugin is the plugin id earlier builds registered for
 // the generic home heatmap. The flashcards widget replaced it; an
 // upgraded database still carries the old registry row, so startup
@@ -93,6 +97,9 @@ const retiredHeatmapPlugin = "qinqin-heatmap"
 func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
 	if err := plugins.Register(ctx, sqlDB, []byte(builtinFlashcardsManifest)); err != nil {
 		return fmt.Errorf("register built-in plugin qinqin-flashcards: %w", err)
+	}
+	if err := plugins.Register(ctx, sqlDB, []byte(builtinReaderManifest)); err != nil {
+		return fmt.Errorf("register built-in plugin qinqin-reader: %w", err)
 	}
 	if err := plugins.Unregister(ctx, sqlDB, retiredHeatmapPlugin); err != nil {
 		return fmt.Errorf("unregister retired plugin %s: %w", retiredHeatmapPlugin, err)
