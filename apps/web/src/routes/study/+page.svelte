@@ -283,6 +283,10 @@
 
 	function start(): void {
 		const config: StudySessionConfig = {
+			// The setup page starts deck sessions; Task 4 adds the mode toggle.
+			mode: 'decks',
+			schemeId: null,
+			levelName: null,
 			deckIds: [...selectedDeckIds],
 			newLimit,
 			reviewLimit,

@@ -25,6 +25,9 @@ function fakeStorage(): Storage {
 
 function config(overrides: Partial<StudySessionConfig> = {}): StudySessionConfig {
 	return {
+		mode: 'decks',
+		schemeId: null,
+		levelName: null,
 		deckIds: ['general'],
 		newLimit: 20,
 		reviewLimit: 100,
@@ -36,6 +39,9 @@ function config(overrides: Partial<StudySessionConfig> = {}): StudySessionConfig
 describe('DEFAULT_CONFIG', () => {
 	it('starts on the general deck with the documented limits', () => {
 		expect(DEFAULT_CONFIG).toEqual({
+			mode: 'decks',
+			schemeId: null,
+			levelName: null,
 			deckIds: ['general'],
 			newLimit: 20,
 			reviewLimit: 100,
@@ -96,6 +102,48 @@ describe('loadConfig', () => {
 		expect(loadConfig().cardTypes).toEqual(['vocab', 'writing', 'tone']);
 	});
 
+	it('round-trips a levels config', () => {
+		const saved = config({
+			mode: 'levels',
+			schemeId: 7,
+			levelName: 'N5',
+			deckIds: []
+		});
+		saveConfig(saved);
+
+		expect(loadConfig()).toEqual(saved);
+	});
+
+	it('parses a Round 1 config without a mode as a decks session', () => {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({
+				deckIds: ['general'],
+				newLimit: 20,
+				reviewLimit: 100,
+				cardTypes: ['vocab']
+			})
+		);
+
+		expect(loadConfig()).toEqual({
+			mode: 'decks',
+			schemeId: null,
+			levelName: null,
+			deckIds: ['general'],
+			newLimit: 20,
+			reviewLimit: 100,
+			cardTypes: ['vocab']
+		});
+	});
+
+	it('returns defaults when a stored levels config is incomplete', () => {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify(config({ mode: 'levels', schemeId: null, levelName: 'N5' }))
+		);
+		expect(loadConfig()).toEqual(DEFAULT_CONFIG);
+	});
+
 	it('returns defaults when storage is unavailable', () => {
 		vi.stubGlobal('sessionStorage', {
 			getItem: () => {
@@ -116,8 +164,54 @@ describe('validateConfig', () => {
 		expect(validateConfig(DEFAULT_CONFIG)).toEqual([]);
 	});
 
-	it('requires at least one deck', () => {
+	it('requires at least one deck in decks mode', () => {
 		expect(validateConfig(config({ deckIds: [] }))).not.toEqual([]);
+	});
+
+	it('ignores scheme and level in decks mode', () => {
+		expect(validateConfig(config({ schemeId: 0, levelName: '   ' }))).toEqual([]);
+		expect(validateConfig(config({ schemeId: null, levelName: null }))).toEqual([]);
+	});
+
+	it('accepts a levels config without decks', () => {
+		expect(
+			validateConfig(
+				config({ mode: 'levels', schemeId: 1, levelName: 'N5', deckIds: [] })
+			)
+		).toEqual([]);
+	});
+
+	it('requires a scheme and a level in levels mode', () => {
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: null, levelName: 'N5' }))
+		).not.toEqual([]);
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: 0, levelName: 'N5' }))
+		).not.toEqual([]);
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: 1.5, levelName: 'N5' }))
+		).not.toEqual([]);
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: 1, levelName: null }))
+		).not.toEqual([]);
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: 1, levelName: '' }))
+		).not.toEqual([]);
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: 1, levelName: '  ' }))
+		).not.toEqual([]);
+	});
+
+	it('rejects an unknown mode', () => {
+		expect(
+			validateConfig(config({ mode: 'quiz' as StudySessionConfig['mode'] }))
+		).not.toEqual([]);
+	});
+
+	it('does not require decks in levels mode', () => {
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: 3, levelName: 'A1', deckIds: [] }))
+		).toEqual([]);
 	});
 
 	it('rejects non-positive limits', () => {
@@ -149,5 +243,11 @@ describe('validateConfig', () => {
 		expect(validateConfig(config({ newLimit: 0 })).join(' ')).toMatch(/new/i);
 		expect(validateConfig(config({ reviewLimit: 0 })).join(' ')).toMatch(/review/i);
 		expect(validateConfig(config({ cardTypes: [] })).join(' ')).toMatch(/vocab/i);
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: null, levelName: 'N5' })).join(' ')
+		).toMatch(/scheme/i);
+		expect(
+			validateConfig(config({ mode: 'levels', schemeId: 1, levelName: null })).join(' ')
+		).toMatch(/level/i);
 	});
 });

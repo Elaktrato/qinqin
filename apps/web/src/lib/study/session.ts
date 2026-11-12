@@ -5,10 +5,21 @@
 // next device.
 
 /**
+ * How a session picks its cards: from user decks, or from one level of a
+ * level scheme. The unused mode's fields are kept (and ignored) so a
+ * user can switch back without losing their deck selection.
+ */
+export type StudySessionMode = 'decks' | 'levels';
+
+/**
  * One session setup. `deckIds` may name decks that no longer exist; the
  * page filters those against the loaded study data before starting.
+ * `schemeId` and `levelName` identify the level scheme in levels mode.
  */
 export interface StudySessionConfig {
+	mode: StudySessionMode;
+	schemeId: number | null;
+	levelName: string | null;
 	deckIds: string[];
 	newLimit: number;
 	reviewLimit: number;
@@ -31,6 +42,9 @@ export const IMPLEMENTED_CARD_TYPE = 'vocab';
 
 /** The documented starting point: General deck, 20 new, 100 reviews. */
 export const DEFAULT_CONFIG: StudySessionConfig = {
+	mode: 'decks',
+	schemeId: null,
+	levelName: null,
 	deckIds: ['general'],
 	newLimit: 20,
 	reviewLimit: 100,
@@ -53,16 +67,40 @@ function isPositiveLimit(value: unknown): value is number {
 	return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= MAX_LIMIT;
 }
 
+function isPositiveId(value: unknown): value is number {
+	return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
+function isNonEmptyName(value: unknown): value is string {
+	return typeof value === 'string' && value.trim().length > 0;
+}
+
 /**
  * validateConfig returns one message per problem, empty when the setup
  * can start a session. Only vocab is implemented, so every session
  * must include it; the reserved kinds may be present but cannot replace
- * it.
+ * it. The active mode decides which source fields matter: decks mode
+ * requires a deck and ignores scheme/level, while levels mode requires
+ * a scheme and a level and ignores decks.
  */
 export function validateConfig(config: StudySessionConfig): string[] {
 	const errors: string[] = [];
 
-	if (!Array.isArray(config.deckIds) || config.deckIds.length === 0) {
+	if (config.mode !== 'decks' && config.mode !== 'levels') {
+		errors.push('Choose a session mode.');
+	}
+
+	if (config.mode === 'levels') {
+		if (!isPositiveId(config.schemeId)) {
+			errors.push('Select a scheme.');
+		}
+		if (!isNonEmptyName(config.levelName)) {
+			errors.push('Select a level.');
+		}
+	} else if (
+		config.mode === 'decks' &&
+		(!Array.isArray(config.deckIds) || config.deckIds.length === 0)
+	) {
 		errors.push('Select at least one deck.');
 	}
 
@@ -107,11 +145,18 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { deckIds, newLimit, reviewLimit, cardTypes } = parsed;
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes } = parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
 
+	// Round 1 stored no mode; those setups were all deck sessions.
+	const parsedMode = mode === undefined ? 'decks' : mode;
+	if (parsedMode !== 'decks' && parsedMode !== 'levels') return null;
+
 	const config: StudySessionConfig = {
+		mode: parsedMode,
+		schemeId: typeof schemeId === 'number' ? schemeId : null,
+		levelName: typeof levelName === 'string' ? levelName : null,
 		deckIds: [...deckIds],
 		newLimit,
 		reviewLimit,
