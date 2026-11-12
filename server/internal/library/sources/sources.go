@@ -57,9 +57,14 @@ var (
 )
 
 const (
-	requestTimeout = 15 * time.Second
-	hostInterval   = time.Second
-	maxRedirects   = 5
+	// dialTimeout bounds connecting and the TLS handshake; headerTimeout
+	// bounds the wait for the response headers. Nothing bounds the whole
+	// request: the caller's context does, so a large body (the 21 MB
+	// Gutenberg catalog) may take as long as the caller allows.
+	dialTimeout   = 15 * time.Second
+	headerTimeout = 15 * time.Second
+	hostInterval  = time.Second
+	maxRedirects  = 5
 )
 
 // shared is the state common to a client and its policy views: the
@@ -80,7 +85,8 @@ type shared struct {
 	sleep func(ctx context.Context, d time.Duration) error
 }
 
-// HTTPClient fetches http(s) URLs with a User-Agent, a timeout, at most
+// HTTPClient fetches http(s) URLs with a User-Agent, dial and
+// response-header timeouts (the caller's context bounds the rest), at most
 // one request per second per host, a body cap and an on-disk cache. It
 // only connects to public addresses and applies an optional host policy
 // to the first URL and to every redirect hop. Environment proxies are
@@ -112,7 +118,7 @@ func NewHTTPClient(cacheDir, userAgent string) *HTTPClient {
 		},
 	}
 	dialer := &net.Dialer{
-		Timeout: requestTimeout,
+		Timeout: dialTimeout,
 		// Control sees the resolved address, so it also stops hostnames
 		// that resolve (or rebind) to a non-public IP.
 		Control: func(network, address string, _ syscall.RawConn) error {
@@ -132,10 +138,11 @@ func NewHTTPClient(cacheDir, userAgent string) *HTTPClient {
 	// No Proxy on purpose (not http.ProxyFromEnvironment): the dialer Control hook
 	// must see the real target IP, and a proxy would bypass the SSRF guard.
 	s.transport = &http.Transport{
-		DialContext:         dialer.DialContext,
-		TLSHandshakeTimeout: requestTimeout,
-		MaxIdleConnsPerHost: 2,
-		IdleConnTimeout:     30 * time.Second,
+		DialContext:           dialer.DialContext,
+		TLSHandshakeTimeout:   dialTimeout,
+		ResponseHeaderTimeout: headerTimeout,
+		MaxIdleConnsPerHost:   2,
+		IdleConnTimeout:       30 * time.Second,
 	}
 	return s.view(nil)
 }
@@ -150,7 +157,8 @@ func (s *shared) view(check func(*url.URL) error) *HTTPClient {
 		shared: s,
 		check:  check,
 		hc: &http.Client{
-			Timeout:   requestTimeout,
+			// No Timeout: it would cover the body read too. Requests are
+			// bounded by the caller's context and the transport timeouts.
 			Transport: s.transport,
 			CheckRedirect: func(req *http.Request, via []*http.Request) error {
 				if len(via) >= maxRedirects {
@@ -172,6 +180,13 @@ func (s *shared) view(check func(*url.URL) error) *HTTPClient {
 // every URL it fetches, redirects included. The view shares the cache,
 // rate limiter and clock with c.
 func (c *HTTPClient) For(check func(*url.URL) error) *HTTPClient { return c.view(check) }
+
+// SetResponseHeaderTimeout replaces how long a request waits for the
+// response headers (15 s by default); it exists so tests do not wait.
+// Call it before the client is used.
+func (c *HTTPClient) SetResponseHeaderTimeout(d time.Duration) {
+	c.transport.ResponseHeaderTimeout = d
+}
 
 // SetClock replaces the clock and the sleep used for rate limiting and
 // cache expiry; it exists so tests do not wait.

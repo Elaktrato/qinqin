@@ -291,3 +291,71 @@ func TestHTTPClientInvalidate(t *testing.T) {
 		t.Fatalf("hits = %d, want 2", hits.Load())
 	}
 }
+
+// slowBody sends the headers at once, then the body in chunks spread over
+// total.
+func slowBody(total time.Duration, chunks int) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.(http.Flusher).Flush()
+		for i := 0; i < chunks; i++ {
+			select {
+			case <-time.After(total / time.Duration(chunks)):
+			case <-r.Context().Done():
+				return
+			}
+			fmt.Fprint(w, "x")
+			w.(http.Flusher).Flush()
+		}
+	}
+}
+
+func TestHTTPClientSlowBodyOutlivesHeaderTimeout(t *testing.T) {
+	srv := httptest.NewServer(slowBody(300*time.Millisecond, 6))
+	defer srv.Close()
+	c, _, _ := newClient(t, "ua")
+	c.SetResponseHeaderTimeout(50 * time.Millisecond)
+	body, err := c.Get(context.Background(), srv.URL, 100, 0)
+	if err != nil || string(body) != "xxxxxx" {
+		t.Fatalf("Get = %q, %v, want the whole slow body", body, err)
+	}
+}
+
+func TestHTTPClientHeaderTimeout(t *testing.T) {
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select { // never send headers
+		case <-release:
+		case <-r.Context().Done():
+		}
+	}))
+	defer srv.Close()
+	defer close(release)
+	c, _, _ := newClient(t, "ua")
+	c.SetResponseHeaderTimeout(50 * time.Millisecond)
+	start := time.Now()
+	_, err := c.Get(context.Background(), srv.URL, 100, 0)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("err = %v, want a deadline error", err)
+	}
+	if d := time.Since(start); d > 2*time.Second {
+		t.Errorf("took %v, want about the 50ms header timeout", d)
+	}
+}
+
+func TestHTTPClientContextCancelsBodyRead(t *testing.T) {
+	srv := httptest.NewServer(slowBody(10*time.Second, 10))
+	defer srv.Close()
+	c, _, _ := newClient(t, "ua")
+	c.SetResponseHeaderTimeout(50 * time.Millisecond)
+	ctx, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(200*time.Millisecond, cancel)
+	start := time.Now()
+	_, err := c.Get(ctx, srv.URL, 100, 0)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want context.Canceled", err)
+	}
+	if d := time.Since(start); d > 2*time.Second {
+		t.Errorf("took %v, want the 200ms cancellation", d)
+	}
+}
