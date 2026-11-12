@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 import { NestedScan, SCAN_DEBOUNCE_MS, type ScanRequest } from './nestedScan';
-import { PopupStack } from './popupStack.svelte';
+import { MAX_DEPTH, PopupStack } from './popupStack.svelte';
 
 interface Deferred {
 	lang: string;
@@ -103,7 +103,7 @@ describe('NestedScan', () => {
 
 	it('opens nothing for an empty result list', async () => {
 		const t = setup();
-		t.scan.move(t.req(0, t.root, 'xyz'));
+		t.scan.move(t.req(0, t.root, '龘'));
 		await vi.advanceTimersByTimeAsync(SCAN_DEBOUNCE_MS);
 		const frames = t.stack.frames;
 		t.calls[0].resolve([]);
@@ -198,6 +198,53 @@ describe('NestedScan', () => {
 		t.scan.prune();
 		await vi.advanceTimersByTimeAsync(1000);
 		expect(t.lookup).not.toHaveBeenCalled();
+	});
+
+	it('releasing Shift cancels a pending scan but lets one already sent complete', async () => {
+		const t = setup();
+		t.scan.move(t.req(9));
+		await vi.advanceTimersByTimeAsync(SCAN_DEBOUNCE_MS);
+		// Sent with Shift; then Shift moves on to another word and is released before its debounce ends.
+		t.scan.move(t.req(0, t.root, '為る'));
+		t.setShift(false);
+		t.scan.releaseShift();
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(t.lookup).toHaveBeenCalledTimes(1);
+
+		const u = setup();
+		u.scan.move(u.req(9));
+		await vi.advanceTimersByTimeAsync(SCAN_DEBOUNCE_MS);
+		u.setShift(false);
+		u.scan.releaseShift();
+		expect(u.calls[0].signal?.aborted).toBe(false);
+		u.calls[0].resolve([result('為さる', 9)]);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(u.stack.frames).toHaveLength(2);
+	});
+
+	it('sends nothing for a character that cannot start a word (Latin, digits, punctuation)', async () => {
+		const t = setup();
+		const gloss = 'variant of 馬|马[ma3]';
+		for (const offset of [0, 8, 12, 14, 15]) t.scan.move(t.req(offset, t.root, gloss));
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(t.lookup).not.toHaveBeenCalled();
+		t.scan.move(t.req(11, t.root, gloss));
+		await vi.advanceTimersByTimeAsync(SCAN_DEBOUNCE_MS);
+		expect(t.calls[0]).toMatchObject({ text: gloss, offset: 11 });
+	});
+
+	it('does not scan inside a popup at the maximum depth', async () => {
+		const t = setup();
+		let parent = t.root;
+		for (let depth = 2; depth <= MAX_DEPTH; depth++) {
+			parent = t.stack.open({ anchor, text: 'x', offset: 0, results: [result('為る', 0)] }, parent)!;
+		}
+		expect(t.stack.frames).toHaveLength(MAX_DEPTH);
+		t.scan.move(t.req(9, parent));
+		await vi.advanceTimersByTimeAsync(1000);
+		expect(t.lookup).not.toHaveBeenCalled();
+		expect(t.scan.canScan(parent)).toBe(false);
+		expect(t.scan.canScan(t.root)).toBe(true);
 	});
 
 	it('moving off any scan region aborts the lookup in flight', async () => {

@@ -2,14 +2,18 @@
 // is held, the DOM side resolves the pointer inside a popup to a data-scan
 // region's text and offset (scanText.ts) and feeds it here; this debounces,
 // looks the text up, and opens the results as a child of the popup the
-// pointer is in. Without Shift nothing happens, and releasing Shift closes
-// nothing. One lookup is in flight at a time: a newer scan, leaving the
+// pointer is in. Without Shift nothing happens; releasing Shift closes
+// nothing and only cancels a scan not yet sent. Characters that cannot start
+// a word (Latin, digits, punctuation) and popups at MAX_DEPTH scan nothing.
+// One lookup is in flight at a time: a newer scan, leaving the
 // scan region, or the parent popup closing aborts it, and a late result for
 // a closed parent opens nothing (the stack refuses an unknown parent too).
 import type { LookupResult } from '$lib/api/types';
+import { hoverable } from './lookup';
 import type { LookupFn } from './lookupCache';
+import { sliceCodePoints } from './paragraphText';
 import type { PopupStack } from './popupStack.svelte';
-import type { PopupFrame } from './popupStackCore';
+import { MAX_DEPTH, type PopupFrame } from './popupStackCore';
 
 export const SCAN_DEBOUNCE_MS = 80;
 
@@ -49,6 +53,9 @@ export class NestedScan {
 	/** The pointer moved inside a popup, over `req` or over no scan region (null). */
 	move(req: ScanRequest | null): void {
 		if (!this.#deps.isShift()) return this.#cancelPending();
+		if (req && (!this.canScan(req.parentId) || !hoverable(sliceCodePoints(req.text, req.offset, req.offset + 1)))) {
+			req = null;
+		}
 		if (!req) {
 			this.#cancelPending();
 			return this.#abort();
@@ -76,6 +83,17 @@ export class NestedScan {
 			this.#timer = undefined;
 			void this.#lookup(req);
 		}, SCAN_DEBOUNCE_MS);
+	}
+
+	/** Shift was released: a scan not yet sent is dropped; one in flight completes. */
+	releaseShift(): void {
+		this.#cancelPending();
+	}
+
+	/** canScan reports whether the popup of frame `id` may open a child (it is open, below MAX_DEPTH). */
+	canScan(id: number): boolean {
+		const frame = this.#deps.stack.frames.find((f) => f.id === id);
+		return frame !== undefined && frame.depth < MAX_DEPTH;
 	}
 
 	/** Drops pending and in-flight scans whose parent popup has closed. */

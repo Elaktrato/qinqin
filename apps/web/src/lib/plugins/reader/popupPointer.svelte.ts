@@ -75,16 +75,22 @@ export class PopupPointer {
 		this.#scanAt(this.#at, e.shiftKey);
 	};
 
-	/** Window keydown/keyup/blur. Releasing Shift closes nothing. */
+	/**
+	 * Window keydown/keyup. Releasing Shift closes nothing; it only drops a
+	 * scan still debouncing (one already sent may complete).
+	 */
 	key = (e: KeyboardEvent): void => {
 		if (e.key !== 'Shift') return;
 		this.shiftHeld = e.type === 'keydown';
 		const at = this.#at;
 		if (e.type === 'keydown' && !e.repeat && at?.root.isConnected) this.#scanAt(at, true);
+		if (e.type === 'keyup') this.#scan.releaseShift();
 	};
 
+	/** The window lost focus: its keyup for Shift may never come. */
 	blur = (): void => {
 		this.shiftHeld = false;
+		this.#scan.releaseShift();
 	};
 
 	/** Some popups closed: drop the scans their popups started. */

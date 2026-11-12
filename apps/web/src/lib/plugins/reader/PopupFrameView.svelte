@@ -2,7 +2,7 @@
 	import EntryCard from './EntryCard.svelte';
 	import { moreLabel } from './entryDisplay';
 	import { placePopup } from './placement';
-	import type { PopupFrame } from './popupStackCore';
+	import { MAX_DEPTH, type PopupFrame } from './popupStackCore';
 	import { ENTRIES_VISIBLE, visibleCount } from './showMore';
 	import type { LookupController, StackInfo } from './useLookup.svelte';
 
@@ -54,7 +54,7 @@
 	bind:this={popup}
 	bind:offsetWidth={width}
 	class="popup depth-{frame.depth}"
-	class:scanning={lookup.popups.shiftHeld}
+	class:scanning={lookup.popups.shiftHeld && frame.depth < MAX_DEPTH}
 	data-lookup-popup
 	role="dialog"
 	tabindex="-1"
