@@ -211,7 +211,8 @@ func TestLibraryReadRoutes(t *testing.T) {
 		} `json:"paragraphs"`
 	}
 	decodeJSON(t, resp, &ch)
-	if ch.Title != "One" || len(ch.Paragraphs) != 2 || ch.Paragraphs[1][0].Text != "你好" {
+	// The title heading is not repeated as a paragraph.
+	if ch.Title != "One" || len(ch.Paragraphs) != 1 || ch.Paragraphs[0][0].Text != "你好" {
 		t.Errorf("chapter = %+v", ch)
 	}
 
