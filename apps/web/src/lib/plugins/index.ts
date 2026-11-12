@@ -12,13 +12,22 @@ export interface PluginManifest {
 	id: string;
 	name: string;
 	version?: string;
-	/** Where the plugin may render; home widgets today. */
+	/** Where the plugin may render: 'home-widget' and/or 'page'. */
 	surfaces: string[];
+}
+
+export interface PluginPage {
+	title: string;
+	/** Show a link in the shell nav. */
+	nav?: boolean;
+	/** Rendered at /p/<slug>/<rest>; routes `rest` internally. */
+	component: Component<{ rest: string }>;
 }
 
 export interface WebPlugin {
 	manifest: PluginManifest;
 	component: Component;
+	pages?: PluginPage[];
 }
 
 export const webPlugins: WebPlugin[] = [
@@ -59,4 +68,38 @@ export function orderPlugins(plugins: WebPlugin[], states: PluginInfo[]): WebPlu
 			return orderA - orderB || a.index - b.index;
 		})
 		.map(({ plugin }) => plugin);
+}
+
+/** pluginSlug is the URL segment for a plugin id: `qinqin-reader` -> `reader`. */
+export function pluginSlug(id: string): string {
+	return id.startsWith('qinqin-') ? id.slice('qinqin-'.length) : id;
+}
+
+/**
+ * navPages lists the shell nav links of enabled plugins that declare a
+ * nav page, in the user's plugin order.
+ */
+export function navPages(
+	plugins: WebPlugin[],
+	states: PluginInfo[]
+): { slug: string; title: string; href: string }[] {
+	const enabled = plugins.filter((plugin) => pluginEnabled(plugin.manifest.id, states));
+	return orderPlugins(enabled, states).flatMap((plugin) => {
+		const slug = pluginSlug(plugin.manifest.id);
+		return (plugin.pages ?? [])
+			.filter((page) => page.nav)
+			.map((page) => ({ slug, title: page.title, href: `/p/${slug}` }));
+	});
+}
+
+/** findPlugin resolves a /p/<slug> segment; disabled or unknown plugins yield undefined. */
+export function findPlugin(
+	slug: string,
+	plugins: WebPlugin[],
+	states: PluginInfo[]
+): WebPlugin | undefined {
+	return plugins.find(
+		(plugin) =>
+			pluginSlug(plugin.manifest.id) === slug && pluginEnabled(plugin.manifest.id, states)
+	);
 }
