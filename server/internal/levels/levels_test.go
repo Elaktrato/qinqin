@@ -545,6 +545,7 @@ const sharedFormJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE JMdict [
 <!ENTITY n "noun (common) (futsuumeishi)">
 <!ENTITY v1 "Ichidan verb">
+<!ENTITY uk "word usually written using kana alone">
 ]>
 <JMdict>
 <entry>
@@ -564,6 +565,17 @@ const sharedFormJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 <k_ele><keb>食べる</keb><ke_pri>ichi1</ke_pri></k_ele>
 <r_ele><reb>たべる</reb><re_pri>ichi1</re_pri></r_ele>
 <sense><pos>&v1;</pos><gloss>to eat</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1157170</ent_seq>
+<k_ele><keb>為る</keb></k_ele>
+<r_ele><reb>する</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&v1;</pos><misc>&uk;</misc><gloss>to do</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1081610</ent_seq>
+<r_ele><reb>テレビ</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>television</gloss></sense>
 </entry>
 </JMdict>
 `
@@ -605,6 +617,7 @@ func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
 		return id
 	}
 	moto, shita, taberu := key("word", "j:1009800"), key("word", "j:1009850"), key("word", "j:1358280")
+	suru, terebi := key("word", "j:1157170"), key("word", "j:1081610")
 	shitaChar, shoku := key("character", "下"), key("character", "食")
 
 	dir := t.TempDir()
@@ -612,7 +625,7 @@ func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
 		`"language":"ja","license":"CC0-1.0","attribution":"Qinqin test fixtures","format":"json"}`
 	for name, body := range map[string]string{
 		"manifest.json": manifest,
-		"levels.json":   `{"unit":"word","levels":[{"name":"N5","entries":["下","食べる"]}]}`,
+		"levels.json":   `{"unit":"word","levels":[{"name":"N5","entries":["下","食べる","する","テレビ"]}]}`,
 	} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
 			t.Fatal(err)
@@ -626,10 +639,12 @@ func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
 	if err != nil {
 		t.Fatalf("import scheme: %v", err)
 	}
-	// Only the Han characters derive: the kana of 食べる are neither
-	// members nor reported as skipped.
-	if res.Members != 2 || res.Derived != 2 || len(res.Skipped) != 0 {
-		t.Errorf("import result = %+v, want 2 members, 2 derived (下, 食), nothing skipped", res)
+	// Kana-written words resolve by their first kana reading (する is
+	// the usually-kana 為る, テレビ has no written form). Only the Han
+	// characters of the listed forms derive: kana are neither members
+	// nor reported as skipped.
+	if res.Members != 4 || res.Derived != 2 || len(res.Skipped) != 0 {
+		t.Errorf("import result = %+v, want 4 members, 2 derived (下, 食), nothing skipped", res)
 	}
 	for name, tc := range map[string]struct {
 		id      int64
@@ -639,6 +654,8 @@ func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
 		"下 (した, best-ranked)": {shita, 1, false},
 		"下 (もと)":              {moto, 0, false},
 		"食べる":                 {taberu, 1, false},
+		"する (為る)":             {suru, 1, false},
+		"テレビ":                 {terebi, 1, false},
 		"kanji 下":             {shitaChar, 1, true},
 		"kanji 食":             {shoku, 1, true},
 	} {

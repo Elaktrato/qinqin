@@ -431,22 +431,27 @@ func TestSharedFormLinksToBestRankedWord(t *testing.T) {
 	}, "jmdict.xml", `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE JMdict [
 <!ENTITY n "noun (common) (futsuumeishi)">
+<!ENTITY pn "pronoun">
 ]>
 <JMdict>
 <entry><ent_seq>1009800</ent_seq><k_ele><keb>下</keb></k_ele><r_ele><reb>もと</reb></r_ele>
 <sense><pos>&n;</pos><gloss>under (the influence of)</gloss></sense></entry>
 <entry><ent_seq>1009850</ent_seq><k_ele><keb>下</keb><ke_pri>ichi1</ke_pri></k_ele><r_ele><reb>した</reb><re_pri>ichi1</re_pri></r_ele>
 <sense><pos>&n;</pos><gloss>below</gloss></sense></entry>
+<entry><ent_seq>1288810</ent_seq><r_ele><reb>これ</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&pn;</pos><gloss>this</gloss></sense></entry>
 </JMdict>
 `)
 	moto, shita := lexID(t, sqlDB, "ja", "word", "j:1009800"), lexID(t, sqlDB, "ja", "word", "j:1009850")
+	kore := lexID(t, sqlDB, "ja", "word", "j:1288810")
 
 	dir := t.TempDir()
 	for name, body := range map[string]string{
 		"manifest.json": `{"id":"ja-sentences","name":"ja sentences","version":"1.0","type":"sentences",` +
 			`"language":"ja","license":"CC0-1.0","attribution":"Qinqin test fixtures","format":"json"}`,
 		"sentences.json": `{"entries":[{"word":"下","sentences":[` +
-			`{"hanzi":"机の下にいる。","pinyin":"つくえのしたにいる。","translation":"It is under the desk."}]}]}`,
+			`{"hanzi":"机の下にいる。","pinyin":"つくえのしたにいる。","translation":"It is under the desk."}]},` +
+			`{"word":"これ","sentences":[{"hanzi":"これは本です。","pinyin":"これはほんです。","translation":"This is a book."}]}]}`,
 	} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
 			t.Fatal(err)
@@ -456,8 +461,12 @@ func TestSharedFormLinksToBestRankedWord(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res, err := sentences.ImportPack(ctx, sqlDB, pack); err != nil || res.Sentences != 1 {
-		t.Fatalf("import = %+v, %v; want one sentence", res, err)
+	// これ is kana-only: it resolves by its first kana reading.
+	if res, err := sentences.ImportPack(ctx, sqlDB, pack); err != nil || res.Sentences != 2 || len(res.Skipped) != 0 {
+		t.Fatalf("import = %+v, %v; want two sentences, nothing skipped", res, err)
+	}
+	if got, err := sentences.ForEntry(ctx, sqlDB, kore); err != nil || len(got) != 1 {
+		t.Errorf("sentences of これ = %+v (err %v), want the pack's sentence", got, err)
 	}
 	if got, err := sentences.ForEntry(ctx, sqlDB, shita); err != nil || len(got) != 1 || got[0].EntryID != shita {
 		t.Errorf("sentences of 下 (した) = %+v (err %v), want the pack's sentence", got, err)

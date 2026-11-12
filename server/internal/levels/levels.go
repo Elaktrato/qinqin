@@ -64,12 +64,16 @@ type member struct {
 // memberships wholesale in one transaction — superseded rows are
 // soft-deleted and the new list upserted — so a re-import never leaves
 // stale memberships behind. Membership resolves each listed form
-// against the lexicon entries of the scheme's language and unit kind
-// (word, or character) that carry it as a written form, through
-// lexicon.Store.Best: a form shared by several entries (two JMdict
-// words written 下) resolves to the BEST-ranked one alone — usually-kana
-// entries with a priority first, then priority, then entry id — so a
-// re-import of the same lexicon resolves to the same entry. Unknown
+// against the lexicon entries of the scheme's language and unit kind.
+// A character resolves through lexicon.Store.Best by its written form,
+// a word through lexicon.Store.BestWord: a form shared by several
+// entries (two JMdict words written 下) resolves to the BEST-ranked one
+// alone — usually-kana entries with a priority first, then priority,
+// then entry id — and a word no entry has as a written form falls back
+// to the kana-written words (no written form, or usually-kana) whose
+// first kana reading it is, highest priority first (これ, テレビ,
+// する → 為る). A re-import of the same lexicon resolves to the same
+// entries. Unknown
 // forms are skipped and reported, never created. A word-unit scheme
 // also derives character levels: each distinct Han character of a
 // listed form resolves the same way to a character entry and joins
@@ -109,7 +113,12 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 	for i, lv := range lvls {
 		seen := map[int64]bool{}
 		for _, form := range lv.Entries {
-			e, err := store.Best(ctx, m.Language, unit, form)
+			var e *lexicon.Entry
+			if unit == UnitWord {
+				e, err = store.BestWord(ctx, m.Language, form)
+			} else {
+				e, err = store.Best(ctx, m.Language, unit, form)
+			}
 			if errors.Is(err, lexicon.ErrNotFound) {
 				skipped = append(skipped, form)
 				continue

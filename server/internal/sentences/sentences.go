@@ -48,9 +48,12 @@ type sentenceRow struct {
 }
 
 // ImportPack installs the sentences pack: every sentence links to the
-// lexicon word entry its group names — resolved by written form, word
-// kind, and the pack's language through lexicon.Store.Best, so a form
-// shared by several words links to the best-ranked one alone — and
+// lexicon word entry its group names — resolved in the pack's language
+// through lexicon.Store.BestWord: by written form, a form shared by
+// several words linking to the BEST-ranked one alone, and for a word no
+// entry has as a written form, by the first kana reading of the
+// kana-written words (no written form, or usually-kana), highest
+// priority first (これ, する → 為る) — and
 // carries the pack's manifest id as its source label. Unknown words are
 // skipped and reported, never created.
 // The pack's previous sentences are replaced wholesale in one
@@ -86,7 +89,7 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 		skipped []string
 	)
 	for _, g := range groups {
-		e, err := store.Best(ctx, m.Language, "word", g.Word)
+		e, err := store.BestWord(ctx, m.Language, g.Word)
 		if errors.Is(err, lexicon.ErrNotFound) {
 			skipped = append(skipped, g.Word)
 			continue
