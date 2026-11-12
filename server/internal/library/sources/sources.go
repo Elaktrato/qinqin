@@ -46,6 +46,8 @@ var (
 	ErrBlocked = errors.New("sources: request blocked")
 	// ErrTooManyRedirects reports a redirect chain longer than allowed.
 	ErrTooManyRedirects = errors.New("sources: too many redirects")
+	// ErrNotFound reports a work id the source does not offer.
+	ErrNotFound = errors.New("sources: work not found")
 )
 
 const (
