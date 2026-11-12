@@ -4,6 +4,7 @@
 	import type { Book } from '$lib/api/types';
 	import { currentLanguage } from '$lib/workspaces';
 	import { apiErrorMessage } from './errors';
+	import { initialUploadLanguage } from './uploadLanguage';
 	import { SOURCES_HREF, bookHref } from './route';
 
 	const MAX_BYTES = 20 * 1024 * 1024;
@@ -19,11 +20,11 @@
 	let language = $state('');
 	let input = $state<HTMLInputElement | null>(null);
 
-	// Preselect the workspace language when it is one the reader supports.
+	// Follows the workspace until the user touches the select.
+	let touched = false;
 	$effect(() => {
-		if (language === '' && ($currentLanguage === 'zh' || $currentLanguage === 'ja')) {
-			language = $currentLanguage;
-		}
+		const initial = initialUploadLanguage($currentLanguage);
+		if (!touched) language = initial;
 	});
 
 	async function load(): Promise<void> {
@@ -88,8 +89,13 @@
 	<section class="upload" aria-labelledby="upload-heading">
 		<h2 id="upload-heading">Add an epub</h2>
 		<div class="row">
-			<label for="epub-language">Language</label>
-			<select id="epub-language" bind:value={language} disabled={uploading}>
+			<label for="epub-language">Language (used only if the file does not declare Chinese or Japanese)</label>
+			<select
+				id="epub-language"
+				bind:value={language}
+				onchange={() => (touched = true)}
+				disabled={uploading}
+			>
 				<option value="">Detect from file</option>
 				<option value="zh">Chinese</option>
 				<option value="ja">Japanese</option>

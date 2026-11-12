@@ -34,6 +34,11 @@ describe('apiErrorMessage', () => {
 		expect(apiErrorMessage('weird', 'upload')).toMatch(/could not/i);
 	});
 
+	it('keeps 404 import-only and 409 generic across contexts', () => {
+		expect(apiErrorMessage(new ApiError(404, ''), 'list')).toMatch(/could not/i);
+		expect(apiErrorMessage(new ApiError(409, ''), 'upload')).toMatch(/already in your library/);
+	});
+
 	it('only maps 422 specially for upload', () => {
 		expect(apiErrorMessage(new ApiError(422, ''), 'import')).not.toMatch(/epub/);
 	});

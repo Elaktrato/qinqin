@@ -5,6 +5,7 @@
 	import type { Book, SourceInfo, SourceResult } from '$lib/api/types';
 	import { currentLanguage } from '$lib/workspaces';
 	import { apiErrorMessage } from './errors';
+	import { libraryKey } from './libraryKey';
 	import { LIBRARY_HREF, bookHref } from './route';
 
 	let sources = $state<SourceInfo[]>([]);
@@ -24,6 +25,7 @@
 	let inLibrary = $state<Record<string, Book | null>>({});
 	let importing = $state<string | null>(null);
 	let importError = $state('');
+	let importStatus = $state('');
 
 	const filterLanguage = $derived(
 		$currentLanguage === 'zh' || $currentLanguage === 'ja' ? $currentLanguage : null
@@ -34,7 +36,9 @@
 			: results
 	);
 
-	onMount(async () => {
+	async function loadSources(): Promise<void> {
+		loadingSources = true;
+		sourcesError = '';
 		try {
 			sources = await listSources();
 			active = sources[0]?.id ?? '';
@@ -43,13 +47,16 @@
 		} finally {
 			loadingSources = false;
 		}
-	});
+	}
+
+	onMount(loadSources);
 
 	function pick(id: string): void {
 		active = id;
 		results = [];
 		searched = false;
 		searchError = '';
+		importError = '';
 		requestCounter++; // drop any in-flight search for the previous source
 		searching = false;
 	}
@@ -61,6 +68,7 @@
 		const ticket = ++requestCounter;
 		searching = true;
 		searchError = '';
+		importError = '';
 		try {
 			const found = await searchSource(active, q);
 			if (ticket !== requestCounter) return;
@@ -78,13 +86,17 @@
 
 	async function doImport(result: SourceResult): Promise<void> {
 		if (importing !== null) return;
-		importing = result.sourceId;
+		const source = active;
+		const key = libraryKey(source, result.sourceId);
+		importing = key;
 		importError = '';
+		importStatus = '';
 		try {
-			inLibrary[result.sourceId] = await importFromSource(active, result.sourceId);
+			inLibrary[key] = await importFromSource(source, result.sourceId);
+			importStatus = `Imported "${result.title}".`;
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409) {
-				inLibrary[result.sourceId] = null;
+				inLibrary[key] = null;
 			}
 			importError = apiErrorMessage(err, 'import');
 		} finally {
@@ -101,6 +113,7 @@
 		<p>Loading sources…</p>
 	{:else if sourcesError}
 		<p class="error" role="alert">{sourcesError}</p>
+		<button type="button" onclick={loadSources}>Retry</button>
 	{:else if sources.length === 0}
 		<p>No sources are available.</p>
 	{:else}
@@ -131,6 +144,7 @@
 			{#if searching}Searching…{:else if searched && !searchError}{visible.length}
 				{visible.length === 1 ? 'result' : 'results'}{/if}
 		</p>
+		<p class="visually-hidden" role="status" aria-live="polite">{importStatus}</p>
 		{#if searchError}
 			<p class="error" role="alert">{searchError}</p>
 		{/if}
@@ -140,7 +154,8 @@
 
 		<ul class="results">
 			{#each visible as result (result.sourceId)}
-				{@const done = result.sourceId in inLibrary}
+				{@const key = libraryKey(active, result.sourceId)}
+				{@const done = key in inLibrary}
 				<li>
 					<div class="info">
 						<strong>{result.title}</strong>
@@ -153,8 +168,8 @@
 					{#if done}
 						<span>
 							In library
-							{#if inLibrary[result.sourceId]}
-								<a href={bookHref(inLibrary[result.sourceId]!.id, 0)}>Imported — open it</a>
+							{#if inLibrary[key]}
+								<a href={bookHref(inLibrary[key]!.id, 0)}>Imported — open it</a>
 							{/if}
 						</span>
 					{:else}
@@ -163,7 +178,7 @@
 							disabled={importing !== null}
 							onclick={() => doImport(result)}
 						>
-							{importing === result.sourceId ? 'Importing…' : 'Import'}
+							{importing === key ? 'Importing…' : 'Import'}
 						</button>
 					{/if}
 				</li>
@@ -178,6 +193,15 @@
 </main>
 
 <style>
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
 	.tabs {
 		display: flex;
 		flex-wrap: wrap;
