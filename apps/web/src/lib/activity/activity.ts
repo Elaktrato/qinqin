@@ -2,7 +2,8 @@
 // (flashcard reviews, reading). Pure functions over the event log; the
 // home heatmap draws its cells straight from `activityByDay`.
 
-import { HEATMAP_DAYS } from './heatmap';
+/** Days covered by the heatmap: 13 weeks of 7 cells. */
+export const HEATMAP_DAYS = 91;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -93,6 +94,21 @@ function dayKey(ms: number): string {
 	return new Date(ms).toISOString().slice(0, 10);
 }
 
+function windowLength(days: number): number {
+	return Number.isFinite(days) ? Math.max(0, Math.floor(days)) : HEATMAP_DAYS;
+}
+
+/**
+ * windowStart is UTC midnight of the first day `activityByDay` covers,
+ * so `GET /api/events?since=` can fetch exactly the window (the
+ * server's `since` is an inclusive RFC 3339 bound). An empty window
+ * starts today.
+ */
+export function windowStart(now: Date = new Date(), days: number = HEATMAP_DAYS): Date {
+	const windowDays = Math.max(1, windowLength(days));
+	return new Date(utcDayStart(now.getTime()) - (windowDays - 1) * DAY_MS);
+}
+
 /**
  * activityByDay sums event points per UTC day over the `days` days
  * ending on `now`'s UTC day, oldest first. Every day appears, empty ones
@@ -104,12 +120,12 @@ export function activityByDay(
 	now: Date = new Date(),
 	days: number = HEATMAP_DAYS
 ): Map<string, DayActivity> {
-	const windowDays = Number.isFinite(days) ? Math.max(0, Math.floor(days)) : HEATMAP_DAYS;
+	const windowDays = windowLength(days);
 	const result = new Map<string, DayActivity>();
 	if (windowDays === 0) return result;
 
 	const today = utcDayStart(now.getTime());
-	const start = today - (windowDays - 1) * DAY_MS;
+	const start = windowStart(now, windowDays).getTime();
 
 	for (let day = start; day <= today; day += DAY_MS) {
 		const key = dayKey(day);
@@ -167,11 +183,11 @@ export function dayTooltip(day: DayActivity): string {
 }
 
 /**
- * levelFor maps a day's count to a heat level 0..4. This is the home
- * widget's original absolute rule (0, 1, 2-3, 4-6, 7+), moved unchanged;
- * `max` is accepted for the call signature but does not affect it.
+ * levelFor maps a day's points to a heat level 0..4 by absolute
+ * thresholds (0, 1, 2-3, 4-6, 7+): the old flashcards widget's rule,
+ * moved unchanged. Levels do not scale with the window's maximum.
  */
-export function levelFor(count: number, _max: number): 0 | 1 | 2 | 3 | 4 {
+export function levelFor(count: number): 0 | 1 | 2 | 3 | 4 {
 	if (count <= 0) return 0;
 	if (count === 1) return 1;
 	if (count <= 3) return 2;

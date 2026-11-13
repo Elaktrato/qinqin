@@ -2,12 +2,13 @@
 	import { ApiError, api } from '$lib/api/client';
 	import type { StudyEvent } from '$lib/events';
 	import {
+		HEATMAP_DAYS,
 		activityByDay,
 		dayTooltip,
 		levelFor,
+		windowStart,
 		windowSummary
 	} from '$lib/activity/activity';
-	import { HEATMAP_DAYS } from '$lib/activity/heatmap';
 	import { workspaces } from '$lib/workspaces';
 
 	// The core home heatmap: every learning source in ACTIVITY_SOURCES
@@ -26,12 +27,11 @@
 
 	const byDay = $derived(activityByDay(events, new Date()));
 	const days = $derived([...byDay.values()]);
-	const max = $derived(Math.max(0, ...days.map((day) => day.total)));
 	const cells = $derived(
 		days.map((day) => ({
 			day: day.day,
 			title: dayTooltip(day),
-			level: levelFor(day.total, max)
+			level: levelFor(day.total)
 		}))
 	);
 	const windowTotal = $derived(days.reduce((sum, day) => sum + day.total, 0));
@@ -58,8 +58,11 @@
 		}
 
 		try {
+			// Only the window: `since` is an inclusive bound, and older
+			// events would be dropped by activityByDay anyway.
+			const since = encodeURIComponent(windowStart().toISOString());
 			const all = await api<StudyEvent[]>(
-				`/api/events?since=1970-01-01T00:00:00Z&workspace=${workspace}`
+				`/api/events?since=${since}&workspace=${workspace}`
 			);
 			if (seq !== requestSeq) return;
 			events = all.filter((event) => event.workspaceId === workspace);

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
 	ACTIVITY_SOURCES,
+	HEATMAP_DAYS,
 	activityByDay,
 	dayTooltip,
 	levelFor,
 	readingPoints,
 	sourceTotals,
+	windowStart,
 	windowSummary
 } from './activity';
 
@@ -102,6 +104,35 @@ describe('activityByDay', () => {
 
 	it('supports a custom window', () => {
 		expect(activityByDay([], NOW, 7).size).toBe(7);
+	});
+
+	it('resolves an offset timestamp to its UTC day', () => {
+		// 2026-11-13T01:30+09:00 is 2026-11-12T16:30Z.
+		const map = activityByDay([{ ts: '2026-11-13T01:30:00+09:00', type: 'review' }], NOW);
+		expect(map.get('2026-11-12')?.total).toBe(1);
+		expect(map.get('2026-11-13')?.total).toBe(0);
+	});
+
+	it("counts the window's first day", () => {
+		const map = activityByDay([{ ts: '2026-08-15T00:00:00Z', type: 'review' }], NOW);
+		expect(map.size).toBe(HEATMAP_DAYS);
+		expect(map.get('2026-08-15')?.total).toBe(1);
+	});
+});
+
+describe('windowStart', () => {
+	it("is UTC midnight of the window's first day", () => {
+		expect(windowStart(NOW).toISOString()).toBe('2026-08-15T00:00:00.000Z');
+	});
+
+	it('matches the first key of activityByDay', () => {
+		expect(windowStart(NOW).toISOString().slice(0, 10)).toBe(
+			[...activityByDay([], NOW).keys()][0]
+		);
+	});
+
+	it('supports a custom window', () => {
+		expect(windowStart(NOW, 7).toISOString()).toBe('2026-11-07T00:00:00.000Z');
 	});
 });
 
@@ -204,11 +235,7 @@ describe('levelFor', () => {
 		[7, 4],
 		[500, 4]
 	])('count %i -> level %i', (count, level) => {
-		expect(levelFor(count, 10)).toBe(level);
-	});
-
-	it('does not depend on max (the existing rule is absolute)', () => {
-		expect(levelFor(5, 5)).toBe(levelFor(5, 500));
+		expect(levelFor(count)).toBe(level);
 	});
 });
 
