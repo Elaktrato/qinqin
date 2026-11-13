@@ -47,7 +47,7 @@ docker compose up -d
 ```
 
 On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
-frequency list and the JLPT and HSK 3.0 level lists), then create the admin account:
+frequency list and the JLPT level lists), then create the admin account:
 
 ```bash
 docker compose exec qinqin qinqin seed
@@ -298,9 +298,9 @@ every character of the language, studied or not, shaded by mastery.
   (Japanese) or Common (Chinese). Japanese: Grade, Frequency, Strokes, "JLPT
   (kanji)" (N5–N1, the bundled `jlpt-kanji` pack) and "JLPT (vocabulary)" (the
   N5–N1 word lists of `jlpt-words`). Chinese: Common (GB2312 level 1, level 2,
-  other standard, other), HK primary grade, Strokes, "HSK 3.0 (characters)"
-  (the 3,000 characters by reading level) and "HSK 3.0 (words)" (the 11,092
-  words). A word list is shown as the characters its words are written with,
+  other standard, other), HK primary grade, Strokes and, when you have installed
+  the optional local HSK 3.0 packs (not bundled, see "Bundled data"), "HSK 3.0
+  (characters)" and "HSK 3.0 (words)". A word list is shown as the characters its words are written with,
   each at the lowest level it appears in. Every installed level scheme
   that is not a sample pack is offered the same way, under its name; characters
   outside it land in "Not in this scheme".
@@ -325,7 +325,7 @@ database seeded before this change needs `qinqin seed` (under Docker,
 `docker compose exec qinqin qinqin seed`) to fill them; until then the page shows a
 "Level data missing" banner and lists the characters in one section.
 
-The JLPT and HSK 3.0 levels are bundled level packs (see "Bundled data"); a
+The JLPT levels are bundled level packs (see "Bundled data"); a
 database seeded before they were added needs `qinqin seed` to install them. The
 pre-2010 four-level JLPT scale that KANJIDIC2 carries is no longer imported or
 offered; a re-seed removes it from the character entries. To add another list,
@@ -523,7 +523,31 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
 | [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) (`jlpt-kanji`) | Japanese: JLPT N5–N1 kanji levels (an unofficial reconstruction of unstated provenance; the JLPT publishes no kanji list; omits 172 jōyō kanji such as 分 and 的, see docs/sources.md) | MIT (© 2023 Iridium Szreter) |
 | [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks) (`jlpt-words`) | Japanese: JLPT N5–N1 vocabulary levels (unofficial; per its README taken from chyyran/jlpt-anki-decks, based on the tanos.co.uk lists by Jonathan Waller, described as CC BY) | MIT (© 2020 Jamie Sinclair) |
-| [ivankra/hsk30](https://github.com/ivankra/hsk30) (`hsk30-chars`, `hsk30-words`) | Chinese: HSK 3.0 characters by reading level, and the HSK 3.0 words, levels 1–6 and 7–9 | MIT-labelled upstream (© 2023 Ivan Krasilnikov and others); copyright of the underlying Ministry of Education list uncertain (the ministry site claims copyright; upstream suggests it may be public domain) |
+
+**HSK 3.0 is not bundled.** Its licence status is unclear: the
+[ivankra/hsk30](https://github.com/ivankra/hsk30) code (`*.ipynb`) is MIT, the
+data comes from MIT-labelled copies of the PRC Ministry of Education's HSK 3.0
+document, the ministry's site carries a 版权所有 (all rights reserved) notice,
+and the upstream README itself calls the copyright claims "somewhat
+questionable" and says it "might be public domain". So the repository ships no
+HSK 3.0 data; it is an optional pack you generate for local use only (the map's
+"Group by" and the Sources page pick it up once installed). From the repository
+root:
+
+```bash
+mkdir /tmp/hsk30 && cd /tmp/hsk30
+base=https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192
+curl -fsSLo hsk30.csv $base/hsk30.csv
+curl -fsSLo hsk30-chars.csv $base/hsk30-chars.csv
+curl -fsSLo hsk30-LICENSE $base/LICENSE
+cd -
+node scripts/prepare-level-packs.mjs --hsk /tmp/hsk30   # writes plugins/data-local/
+qinqin seed --packs plugins/data,plugins/data-local
+```
+
+Under Docker, mount `plugins/data-local` as described under "Seeding" and run
+`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/local`.
+Details: [plugins/data/README.md](plugins/data/README.md).
 
 The dictionary files are redistributed **unmodified**; the Jiten list is a
 conversion of the published file with unmodified ranks; the level lists are
@@ -582,12 +606,12 @@ Dockerfile copies that directory into the Go binary before compiling.
 |---|---|
 | `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
-| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the JLPT and HSK 3.0 level lists) with their licenses and attribution notices |
+| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the JLPT level lists) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
 | `plugins/samples/` | Hand-written samples: dictionaries (`zh-mini`, `ja-mini`) and level packs (`hsk-mini`, `jlpt-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
-| `scripts/prepare-level-packs.mjs` | Rebuilds the JLPT and HSK 3.0 level packs from the pinned upstream files (download commands in its header) |
+| `scripts/prepare-level-packs.mjs` | Rebuilds the JLPT level packs from the pinned upstream files; with `--hsk`, generates the optional local-only HSK 3.0 packs into `plugins/data-local/` (download commands in its header) |
 
 ## Branches
 

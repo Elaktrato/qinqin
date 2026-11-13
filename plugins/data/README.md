@@ -17,8 +17,8 @@ variants) and `ja-mini` (kana readings, romaji search) are keyed by written
 form, so next to CC-CEDICT and JMdict they would add a second,
 part-of-speech-less card for the same words, ranked first. The LEVEL packs
 `hsk-mini` (word levels with derived character levels) and `jlpt-mini` (an N5
-sample) would add a second, duplicate badge next to the bundled HSK 3.0 and
-JLPT lists; the map hides them even when seeded. Seed them explicitly
+sample) would add a second, duplicate badge next to the bundled JLPT lists
+(and a locally installed HSK 3.0); the map hides them even when seeded. Seed them explicitly
 (for a small demo database, or alongside the full bundle) with
 `qinqin seed --packs plugins/samples` (or `--packs plugins/data,plugins/samples`).
 The seed tests use them as small fixtures.
@@ -35,15 +35,13 @@ directory):
 | `kanjidic2` | dictionary | ja | KANJIDIC2 kanji (`kanjidic2.xml.gz`) |
 | `jiten-frequency` | frequency | ja | Jiten global word frequency ranks, converted to `freq.csv.gz` (`term,reading,rank`, ranks unmodified) |
 
-Committed level lists (converted, with the upstream `LICENSE` and an
+Committed level lists, JLPT only (converted, with the upstream `LICENSE` and an
 `ATTRIBUTION.md` in each directory):
 
 | Pack | Type | Language | Scheme | Contents | Licence |
 |------|------|----------|--------|----------|---------|
 | `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`, provenance not stated upstream; unofficial, as every N5–N1 list is; omits 172 jōyō kanji such as 分 可 無 的, and its N1 holds 247 jinmeiyō name kanji) | MIT, © 2023 Iridium Szreter |
 | `jlpt-words` | levels | ja | JLPT (vocabulary) | words by JLPT level with their readings, unit `word`: N5 728, N4 668, N3 2,134, N2 1,784, N1 2,694 entries (open-anki-jlpt-decks `src/n5.csv` … `n1.csv`; unofficial) | MIT, © 2020 Jamie Sinclair; upstream chain below |
-| `hsk30-chars` | levels | zh | HSK 3.0 (characters) | the 3,000 HSK 3.0 characters by reading level, unit `character`: HSK 1–6 300 each, HSK 7–9 1,200 (ivankra/hsk30 `hsk30-chars.csv`) | MIT (ivankra/hsk30), see caveat |
-| `hsk30-words` | levels | zh | HSK 3.0 (words) | the 11,092 HSK 3.0 words (10,960 simplified forms once variants are expanded and each form kept at its lowest level), unit `word`, levels HSK 1–6 and HSK 7–9 (ivankra/hsk30 `hsk30.csv`) | MIT-labelled (ivankra/hsk30), see caveat |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
 [{"name": "N5", "entries": [...]}]}`, levels easiest first. An entry is a
@@ -64,21 +62,48 @@ stays) and each form with its reading kept at its easiest level; kana
 spellings of words JMdict writes with kanji (けんか, よい) do not resolve and
 are skipped at seed time (168 of 8,008 entries against the bundled JMdict).
 
-HSK caveat: the hsk30 README says "Code (`*.ipynb`) is MIT licensed" and that
-the data "is largely derived from" elkmovie/hsk30 (an OCR of the Ministry of
-Education's 2021 HSK 3.0 document) and shawkynasr/HSK-official-Query-System
-(a copy of the HSK website's database), "both also under MIT license and
-claiming copyright -- of course, somewhat questionably, as the original work
-they *copy* is PRC's government work (notice on website:
-版权所有：中华人民共和国教育部). Depending on PRC law specifics might be public
-domain." The `LICENSE` file is MIT (© Ivan Krasilnikov, Shawky, Pleco Inc.).
-The packs are redistributed under those MIT terms and claim nothing beyond
-them; the copyright status of the ministry's list is uncertain. Each `ATTRIBUTION.md` quotes the
-README, names the pinned upstream commit and records the SHA-256 of the input
-files. `scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir>` rebuilds the four
-directories byte for byte from those files (the download commands are in its
-header); a one-character HSK word (好) links to the character entry, since
-CC-CEDICT gives single characters as characters, not words.
+HSK 3.0 is NOT bundled. Its licence status is unclear, so it is an optional,
+local-only pack that you generate yourself (see the steps below); the repository
+holds no HSK 3.0 data. The reason: the ivankra/hsk30 README says "Code
+(`*.ipynb`) is MIT licensed" and that the data "is largely derived from"
+elkmovie/hsk30 (an OCR of the Ministry of Education's 2021 HSK 3.0 document)
+and shawkynasr/HSK-official-Query-System (a copy of the HSK website's
+database), "both also under MIT license and claiming copyright -- of course,
+somewhat questionably, as the original work they *copy* is PRC's government
+work (notice on website: 版权所有：中华人民共和国教育部). Depending on PRC law
+specifics might be public domain." The `LICENSE` file is MIT (© Ivan
+Krasilnikov, Shawky, Pleco Inc.), but the copyright status of the ministry's
+list is uncertain.
+
+Generating HSK 3.0 locally (two level packs, `hsk30-chars` "HSK 3.0
+(characters)" and `hsk30-words` "HSK 3.0 (words)"), from the repository root:
+
+```bash
+mkdir /tmp/hsk30 && cd /tmp/hsk30
+base=https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192
+curl -fsSLo hsk30.csv       $base/hsk30.csv
+curl -fsSLo hsk30-chars.csv $base/hsk30-chars.csv
+curl -fsSLo hsk30-LICENSE   $base/LICENSE
+cd -
+node scripts/prepare-level-packs.mjs --hsk /tmp/hsk30       # writes plugins/data-local/
+qinqin seed --packs plugins/data,plugins/data-local
+```
+
+The converter fails with a clear message if one of the three files is missing.
+Under Docker, put the output on a host directory, mount it (for example
+`./plugins/data-local:/opt/qinqin/local:ro`) and run
+`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/local`
+(see the README). Once seeded, the map's "Group by" and the Sources page pick it
+up like any installed scheme. Each generated `ATTRIBUTION.md` quotes the README,
+names the pinned upstream commit, records the SHA-256 of the input files and
+says "not bundled, local use only"; do not commit or redistribute the output
+(`plugins/data-local/` is gitignored). A one-character HSK word (好) links to
+the character entry, since CC-CEDICT gives single characters as characters,
+not words.
+
+`scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir>` rebuilds the
+two JLPT directories byte for byte from the pinned upstream files (the download
+commands are in its header).
 
 The importers read the compressed files directly, so a fresh clone or the
 Docker image seeds with no network and no decompression step. Run
