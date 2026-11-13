@@ -46,6 +46,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
 	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
 	mux.HandleFunc("GET /api/workspaces", s.handleListWorkspaces)
 	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
+	mux.HandleFunc("GET /api/languages", s.handleListLanguages)
 	mux.HandleFunc("POST /api/events/batch", s.handleEventBatch)
 	mux.HandleFunc("GET /api/events", s.handleListEvents)
 	mux.HandleFunc("GET /api/dictionaries", s.handleListDictionaries)

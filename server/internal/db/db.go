@@ -51,6 +51,18 @@ func open(path, synchronous string) (*sql.DB, error) {
 
 // migrate applies each migrations/00N_*.sql file once, in filename order.
 func migrate(sqlDB *sql.DB) error {
+	return migrateThrough(sqlDB, "")
+}
+
+// migrateThrough applies the pending migrations up to and including
+// version last ("" for all), so tests can populate a database at an
+// older schema before the next migration runs.
+//
+// Each migration runs in one transaction on a pooled connection with
+// SQLite's default foreign_keys=OFF (the DSN never enables it), which
+// is what lets a migration rebuild a referenced table (create, copy,
+// drop, rename) without the drop cascading into its children.
+func migrateThrough(sqlDB *sql.DB, last string) error {
 	if _, err := sqlDB.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
 		version TEXT PRIMARY KEY,
 		updated_at TEXT NOT NULL
@@ -71,6 +83,9 @@ func migrate(sqlDB *sql.DB) error {
 
 	for _, name := range names {
 		version := versionOf(name)
+		if last != "" && version > last {
+			break
+		}
 		if applied[version] {
 			continue
 		}
