@@ -24,8 +24,10 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Editing** — correct written forms and readings per user without mutating
   the shared dictionary data.
 - **Study mode** — add any word from its entry page and review it with Anki-style
-  grading; the flashcards plugin derives FSRS schedules, a review heatmap, and
-  EXP/levels from the event log.
+  grading; the flashcards plugin derives FSRS schedules and EXP/levels from the
+  event log.
+- **Activity heatmap** — the home page shows 13 weeks of learning activity per
+  workspace, adding up flashcard reviews and reading time in the Reader.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
   are installable data packs; home widgets and views are feature plugins that
   the server registers at startup so Settings can enable and order them.
@@ -190,13 +192,22 @@ that card's schedule has settled, with a year of FSRS stability counting fully;
 characters at 80 or above count as mastered. The map is derived from your cards
 and review events, so nothing schedule-shaped is stored for it either.
 
-For each workspace, the home page widget shows:
+For each workspace, the flashcards home widget shows:
 
 - what is due and new
-- a review-driven heatmap with daily review counts
 - the level and XP progress
 - the streak
 - the study buddy
+
+Above the plugin widgets, the home page has a core activity heatmap for the
+current workspace: one cell per UTC day over the last 13 weeks, coloured by
+activity points. A flashcard review is one point. Reading in the Reader is one
+point per started 5 minutes; the reader records a `read` event with the active
+seconds of each reading burst (at least 30 s, idle gaps over 2 minutes and
+hidden tabs do not count). Hovering a cell shows the day's points per source,
+with reading in minutes. Other study events (sessions, views, lookups) do not
+count. Adding a source means emitting a study event with a new type and adding
+one entry to `ACTIVITY_SOURCES` in `apps/web/src/lib/activity/activity.ts`.
 
 Studying adds no bundled data. Decks and cards are workspace plugin data and
 reviews are events, so the dictionaries in `plugins/data/` stay unmodified.

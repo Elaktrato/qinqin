@@ -85,6 +85,24 @@ mastered.
 Review-driven, per workspace, one cell per UTC day (review counts). Lives in the
 flashcard plugin's home widget. The generic session/view heatmap is removed.
 
+**Moved to core 2026-11-13** (plan:
+[core activity heatmap](../plans/2026-11-13-core-activity-heatmap.md)). The heatmap is
+now `ActivityHeatmap.svelte` on the home page, between the search and the plugin
+widgets; the flashcards widget keeps due/new counts, level, XP, streak and mascot but
+no grid. It is multi-source: each cell sums activity points per UTC day over 13 weeks,
+per workspace. Sources today:
+
+- `review` — 1 point per review event.
+- `read` — the reader posts `{bookId, seconds}` per reading burst (active, visible
+  time; idle gaps capped at 2 minutes; bursts under 30 s are not posted); 1 point per
+  started 5 minutes, at most 24 per event. Tooltips show real minutes.
+
+Cell levels keep the widget's absolute thresholds (0, 1, 2-3, 4-6, 7+ points). Other
+event types are ignored. To add a source: emit a study event with a new type and add
+one entry (type, label, unit, `points`, `raw`, `describe`) to `ACTIVITY_SOURCES` in
+`apps/web/src/lib/activity/activity.ts`; the tooltip and the grid's aria-label pick it
+up.
+
 ## EXP and levels (R1 stub, R3 polish)
 
 Derived from reviews: base XP per graded review with a small grade bonus; simple
@@ -167,6 +185,7 @@ pinyin readings already stored.
   scope; nothing to license).
 - **Heatmap** stays in the flashcards widget in this round; moving it into core is a
   separate follow-up (it will aggregate reading sessions and other plugins' activity).
+  Done 2026-11-13, see the Heatmap section.
 
 ### Implementation notes (Round 3 as shipped)
 
@@ -213,7 +232,8 @@ Where the build differs from or refines the decisions above, and the known limit
 - **Mascot art is not bundled.** The placeholder probes `/mascot/<stage>-<mood>.svg`
   with HEAD and accepts only an `image/*` response, so the SPA fallback's HTML is not
   mistaken for art.
-- **Heatmap** is still in the flashcards widget.
+- **Heatmap** moved into core on 2026-11-13 (see the Heatmap section); the streak is
+  still flashcards-only.
 - **Setup persistence.** Card-type, deck and limit choices are saved per tab
   (sessionStorage) when a session starts. Changes made without pressing Start are not
   kept across a reload. The card types last started are also remembered per workspace
