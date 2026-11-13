@@ -237,6 +237,7 @@ describe('validateConfig', () => {
 		expect(validateConfig(config({ cardTypes: [] }))).not.toEqual([]);
 		expect(validateConfig(config({ cardTypes: ['bogus'] }))).not.toEqual([]);
 		expect(validateConfig(config({ cardTypes: ['tone'] }))).toEqual([]);
+		expect(validateConfig(config({ cardTypes: ['vocab', 'bogus'] }))).not.toEqual([]);
 		expect(validateConfig(config({ cardTypes: ['vocab', 'sentence'] }))).toEqual([]);
 	});
 

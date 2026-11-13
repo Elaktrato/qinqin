@@ -19,6 +19,8 @@ export interface GradeableItem {
 	kind?: StudyCardKind;
 	/** Sentence a virtual item's card is about; defaults to the entry's first. */
 	sentenceId?: number;
+	/** Decks a virtual item's card joins; General when absent. */
+	deckIds?: string[];
 }
 
 /** The entry data a virtual item needs to create its card. */
@@ -120,7 +122,7 @@ export async function gradeItem({
 			kind,
 			written: entry.written,
 			sentenceId: item.sentenceId ?? entry.sentences?.[0]?.id,
-			deckIds: [GENERAL_DECK_ID]
+			deckIds: item.deckIds ?? [GENERAL_DECK_ID]
 		});
 	} catch (err) {
 		return {

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { gradeItem, type GradeableItem } from './grade';
 import { planCompanions } from './companions';
+import { buildQueue } from './scheduler';
 import type { ReviewGrade, StudyCard } from './types';
 
 function card(id: string, entryId: number, written?: string): StudyCard {
@@ -212,6 +213,39 @@ describe('gradeItem', () => {
 		});
 		expect(recordReview).toHaveBeenCalledWith(7, 'real-9', 3, 'tone', undefined);
 		expect(planCompanions({ cards: [vocab, created], ...plan })).toEqual([]);
+	});
+
+	it('creates a companion card in the deck it was planned from', async () => {
+		const vocab = { ...card('v1', 42, '猫'), deckIds: ['deck-a'] };
+		const plan = { kinds: ['tone' as const], deckIds: ['deck-a'], newBudget: 5 };
+		const [companion] = planCompanions({ cards: [vocab], ...plan });
+		const addCard = vi.fn(async (_id: number, opts: { deckIds?: string[] }) => ({
+			...card('real-5', 42, '猫'),
+			kind: 'tone' as const,
+			deckIds: opts.deckIds ?? []
+		}));
+
+		const result = await gradeItem({
+			item: { ...companion, card: null },
+			grade: 3,
+			workspaceId: 7,
+			entry: { written: companion.written },
+			addCard,
+			recordReview: vi.fn(async () => {})
+		});
+
+		expect(addCard.mock.calls[0][1].deckIds).toEqual(['deck-a']);
+		if (!result.ok) throw new Error('expected ok');
+		const queue = buildQueue({
+			cards: [vocab, result.card],
+			reviews: [],
+			deckIds: ['deck-a'],
+			newLimit: 10,
+			reviewLimit: 10,
+			now: new Date(),
+			kinds: ['tone']
+		});
+		expect(queue.map((c) => c.id)).toEqual(['real-5']);
 	});
 
 	it('waits for a still-loading entry instead of creating a card', async () => {

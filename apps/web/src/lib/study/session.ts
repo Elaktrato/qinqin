@@ -76,10 +76,11 @@ function isNonEmptyName(value: unknown): value is string {
 
 /**
  * validateConfig returns one message per problem, empty when the setup
- * can start a session. At least one known card type must be selected;
- * vocab is not mandatory. The active mode decides which source fields matter: decks mode
- * requires a deck and ignores scheme/level, while levels mode requires
- * a scheme and a level and ignores decks.
+ * can start a session. At least one card type must be selected, every
+ * selected type must be a known kind, and vocab is not mandatory. The
+ * active mode decides which source fields matter: decks mode requires a
+ * deck and ignores scheme/level, while levels mode requires a scheme and
+ * a level and ignores decks.
  */
 export function validateConfig(config: StudySessionConfig): string[] {
 	const errors: string[] = [];
@@ -112,7 +113,8 @@ export function validateConfig(config: StudySessionConfig): string[] {
 
 	if (
 		!Array.isArray(config.cardTypes) ||
-		!config.cardTypes.some((type) => (CARD_KINDS as readonly string[]).includes(type))
+		config.cardTypes.length === 0 ||
+		!config.cardTypes.every((type) => (CARD_KINDS as readonly string[]).includes(type))
 	) {
 		errors.push('Select at least one card type.');
 	}
