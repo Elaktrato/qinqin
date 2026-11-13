@@ -129,8 +129,8 @@
 	</button>
 	{#if justAdded}
 		<p class="note" role="status">
-			Added to study — sentence, writing and tone cards appear automatically in sessions that
-			include them
+			Added to study. Sentence, writing and tone cards (where the word qualifies) appear
+			automatically in sessions that include them.
 		</p>
 	{/if}
 	{#if error}

@@ -168,7 +168,11 @@
 					<span class="flame" aria-hidden="true">🔥</span>
 					<strong>{streak.current}</strong>
 					{streak.current === 1 ? 'day' : 'days'} streak ·
-					{streak.todayDone ? 'done today' : 'study today to keep it'}
+					{streak.todayDone
+						? 'done today'
+						: streak.current === 0
+							? 'study today to start one'
+							: 'study today to keep it'}
 				</p>
 			</div>
 		</div>

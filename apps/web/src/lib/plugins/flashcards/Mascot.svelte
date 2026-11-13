@@ -1,6 +1,8 @@
 <script lang="ts" module>
 	// One HEAD probe per asset path for the whole page lifetime. Static
 	// art is optional and not bundled, so most installs get the placeholder.
+	// Only a definitive answer is cached; a network failure is retried on
+	// the next mount.
 	const probes = new Map<string, Promise<boolean>>();
 
 	function probe(path: string): Promise<boolean> {
@@ -12,8 +14,13 @@
 					// An SPA fallback answers a missing file with index.html and
 					// 200, so only a real image content type counts.
 					const type = response.headers.get('content-type') ?? '';
+					// A server error is transient too; 404/410 are definitive.
+					if (!response.ok && response.status !== 404 && response.status !== 410) {
+						probes.delete(path);
+					}
 					return response.ok && type.toLowerCase().startsWith('image/');
 				} catch {
+					probes.delete(path);
 					return false;
 				}
 			})();
@@ -59,7 +66,16 @@
 </script>
 
 {#if available === buddy.assetPath}
-	<img src={buddy.assetPath} alt={label} width={size} height={size} class="mascot" />
+	<img
+		src={buddy.assetPath}
+		alt={label}
+		width={size}
+		height={size}
+		class="mascot"
+		onerror={() => {
+			if (available === buddy.assetPath) available = null;
+		}}
+	/>
 {:else}
 	<svg class="mascot" role="img" aria-label={label} width={size} height={size} viewBox="0 0 64 64">
 		<circle
