@@ -5,7 +5,8 @@ import {
 	dayTooltip,
 	levelFor,
 	readingPoints,
-	sourceTotals
+	sourceTotals,
+	windowSummary
 } from './activity';
 
 const NOW = new Date('2026-11-13T12:00:00Z');
@@ -208,5 +209,49 @@ describe('levelFor', () => {
 
 	it('does not depend on max (the existing rule is absolute)', () => {
 		expect(levelFor(5, 5)).toBe(levelFor(5, 500));
+	});
+});
+
+describe('windowSummary', () => {
+	const ev = (type: string, payload?: unknown, ts = '2026-11-13T01:00:00Z') => ({
+		ts,
+		type,
+		payload
+	});
+
+	it('says no activity yet for an empty window', () => {
+		expect(windowSummary(activityByDay([], NOW))).toBe(
+			'Learning activity for the last 13 weeks: no activity yet'
+		);
+	});
+
+	it('states points and per-source totals', () => {
+		const map = activityByDay(
+			[ev('review'), ev('review'), ev('read', { seconds: 5700 }, '2026-11-01T01:00:00Z')],
+			NOW
+		);
+		expect(windowSummary(map)).toBe(
+			'Learning activity for the last 13 weeks: 21 points — 2 flashcard reviews, 95 minutes of reading'
+		);
+	});
+
+	it('uses singular forms and shows at least a minute of reading', () => {
+		const map = activityByDay([ev('review'), ev('read', { seconds: 31 })], NOW);
+		expect(windowSummary(map)).toBe(
+			'Learning activity for the last 13 weeks: 2 points — 1 flashcard review, 1 minute of reading'
+		);
+	});
+
+	it('handles reading only', () => {
+		const map = activityByDay([ev('read', { seconds: 600 })], NOW);
+		expect(windowSummary(map)).toBe(
+			'Learning activity for the last 13 weeks: 2 points — 10 minutes of reading'
+		);
+	});
+
+	it('follows the window length', () => {
+		expect(windowSummary(activityByDay([], NOW, 7))).toBe(
+			'Learning activity for the last week: no activity yet'
+		);
 	});
 });

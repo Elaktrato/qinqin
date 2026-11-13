@@ -2,7 +2,6 @@
 	import { parseReview } from '$lib/study/reviewParse';
 	import { ApiError, api } from '$lib/api/client';
 	import type { StudyEvent } from '$lib/events';
-	import { HEATMAP_DAYS, reviewCountsByDay } from '$lib/study/heatmap';
 	import { buildQueue } from '$lib/study/scheduler';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import Mascot from './Mascot.svelte';
@@ -75,23 +74,6 @@
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
 	const streak = $derived(dailyStreak(reviews, Date.now()));
-
-	const cells = $derived(
-		[...reviewCountsByDay(reviews, new Date()).entries()].map(([day, count]) => ({
-			day,
-			count,
-			level: intensity(count)
-		}))
-	);
-	const windowTotal = $derived(cells.reduce((sum, cell) => sum + cell.count, 0));
-
-	function intensity(count: number): number {
-		if (count <= 0) return 0;
-		if (count === 1) return 1;
-		if (count <= 3) return 2;
-		if (count <= 6) return 3;
-		return 4;
-	}
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -193,33 +175,6 @@
 				</p>
 			</div>
 		</div>
-
-		<div
-			class="grid"
-			role="img"
-			aria-label={`Review activity for the last ${Math.round(HEATMAP_DAYS / 7)} weeks: ${windowTotal} ${windowTotal === 1 ? 'review' : 'reviews'}`}
-		>
-			{#each cells as cell (cell.day)}
-				<span
-					class="cell level-{cell.level}"
-					title={`${cell.day}: ${cell.count} ${cell.count === 1 ? 'review' : 'reviews'}`}
-				></span>
-			{/each}
-		</div>
-
-		<footer class="legend">
-			<span>
-				{windowTotal}
-				{windowTotal === 1 ? 'review' : 'reviews'} in the last 13 weeks
-			</span>
-			<span class="scale" aria-hidden="true">
-				Less
-				{#each [0, 1, 2, 3, 4] as level (level)}
-					<span class="cell level-{level}"></span>
-				{/each}
-				More
-			</span>
-		</footer>
 	{/if}
 </section>
 
@@ -300,63 +255,6 @@
 		margin: 0;
 		font-size: 0.9rem;
 		opacity: 0.85;
-	}
-
-	.grid {
-		display: grid;
-		grid-template-rows: repeat(7, 0.85rem);
-		grid-auto-flow: column;
-		grid-auto-columns: 0.85rem;
-		gap: 0.2rem;
-		margin-top: 0.9rem;
-		overflow-x: auto;
-		padding-bottom: 0.2rem;
-	}
-
-	.cell {
-		display: block;
-		width: 0.85rem;
-		height: 0.85rem;
-		border-radius: 0.15rem;
-		background: color-mix(in srgb, currentColor 12%, transparent);
-	}
-
-	.level-1 {
-		background: color-mix(in srgb, #2ea043 35%, transparent);
-	}
-
-	.level-2 {
-		background: color-mix(in srgb, #2ea043 55%, transparent);
-	}
-
-	.level-3 {
-		background: color-mix(in srgb, #2ea043 75%, transparent);
-	}
-
-	.level-4 {
-		background: color-mix(in srgb, #2ea043 100%, transparent);
-	}
-
-	.legend {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem 1rem;
-		margin-top: 0.75rem;
-		font-size: 0.8rem;
-		opacity: 0.75;
-	}
-
-	.scale {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.2rem;
-	}
-
-	.scale .cell {
-		width: 0.65rem;
-		height: 0.65rem;
 	}
 
 	.hint {

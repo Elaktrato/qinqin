@@ -4,6 +4,7 @@
 	import { api } from '$lib/api/client';
 	import type { PluginInfo } from '$lib/api/types';
 	import { APP_NAME } from '$lib/app';
+	import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
 	import { homeWidgets, webPlugins } from '$lib/plugins';
 
 	let query = $state('');
@@ -42,6 +43,8 @@
 		/>
 		<button type="submit">Search</button>
 	</form>
+
+	<ActivityHeatmap />
 
 	<section class="plugin-slot" data-plugin-slot="home" aria-label="Home widgets">
 		{#each plugins as plugin (plugin.manifest.id)}

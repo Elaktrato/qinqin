@@ -20,6 +20,17 @@ export interface ActivitySource {
 	points(payload: unknown): number;
 	/** Raw amount in the source's own unit: seconds for reading, 1 per review. */
 	raw(payload: unknown): number;
+	/** Window total in words for the heatmap's aria-label, e.g. "95 minutes of reading". */
+	describe(raw: number): string;
+}
+
+function plural(count: number, one: string, many: string): string {
+	return `${count} ${count === 1 ? one : many}`;
+}
+
+// Whole minutes for a positive number of seconds, never below 1.
+function minutes(seconds: number): number {
+	return Math.max(1, Math.round(seconds / 60));
 }
 
 /**
@@ -43,9 +54,26 @@ function readingSeconds(payload: unknown): number {
 	return Math.min((payload as { seconds: number }).seconds, MAX_READ_POINTS * SECONDS_PER_POINT);
 }
 
+// The registry of everything the home heatmap counts. To add a source,
+// emit a study event of a new type and add one entry here; unknown
+// types are ignored, so nothing counts until it is listed.
 export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
-	{ type: 'review', label: 'Flashcard reviews', unit: 'review(s)', points: () => 1, raw: () => 1 },
-	{ type: 'read', label: 'Reading', unit: 'min', points: readingPoints, raw: readingSeconds }
+	{
+		type: 'review',
+		label: 'Flashcard reviews',
+		unit: 'review(s)',
+		points: () => 1,
+		raw: () => 1,
+		describe: (count) => plural(count, 'flashcard review', 'flashcard reviews')
+	},
+	{
+		type: 'read',
+		label: 'Reading',
+		unit: 'min',
+		points: readingPoints,
+		raw: readingSeconds,
+		describe: (seconds) => `${plural(minutes(seconds), 'minute', 'minutes')} of reading`
+	}
 ];
 
 export interface DayActivity {
@@ -131,7 +159,7 @@ export function dayTooltip(day: DayActivity): string {
 		if (!count) continue;
 		const text = `${count} ${labelFor(source, count)}`;
 		parts.push(
-			source.type === 'read' ? `${text} (${Math.max(1, Math.round((day.raw[source.type] ?? 0) / 60))} ${source.unit})` : text
+			source.type === 'read' ? `${text} (${minutes(day.raw[source.type] ?? 0)} ${source.unit})` : text
 		);
 	}
 
@@ -164,4 +192,26 @@ export function sourceTotals(
 		}
 	}
 	return totals;
+}
+
+/**
+ * windowSummary is the heatmap's aria-label: the window, its total
+ * points and each source's total in words, e.g. "Learning activity for
+ * the last 13 weeks: 21 points — 2 flashcard reviews, 95 minutes of
+ * reading", or "…: no activity yet" for an empty window.
+ */
+export function windowSummary(map: Map<string, DayActivity>): string {
+	const weeks = Math.round(map.size / 7);
+	const prefix = `Learning activity for the last ${weeks === 1 ? 'week' : `${weeks} weeks`}`;
+	const totals = sourceTotals(map);
+	const parts: string[] = [];
+	let points = 0;
+	for (const source of ACTIVITY_SOURCES) {
+		const total = totals[source.type];
+		if (!total || total.points <= 0) continue;
+		points += total.points;
+		parts.push(source.describe(total.raw));
+	}
+	if (points === 0) return `${prefix}: no activity yet`;
+	return `${prefix}: ${plural(points, 'point', 'points')} — ${parts.join(', ')}`;
 }
