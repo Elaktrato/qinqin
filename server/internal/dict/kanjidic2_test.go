@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -100,6 +101,42 @@ func TestKanjidic2Parse(t *testing.T) {
 	}
 	if got := gaku.Glosses; !slices.Equal(got, []string{"study", "learning"}) {
 		t.Errorf("glosses of 学 = %v, want [study learning]", got)
+	}
+}
+
+// TestKanjidic2ParseLevels: the school grade, the (old, four-level) JLPT
+// level and the newspaper frequency rank are kept as attrs when the
+// character carries them, absent when it does not; every character is
+// marked src=kd2.
+func TestKanjidic2ParseLevels(t *testing.T) {
+	const doc = `<?xml version="1.0" encoding="UTF-8"?>
+<kanjidic2>
+<character><literal>日</literal>
+<misc><grade>1</grade><stroke_count>4</stroke_count><freq>1</freq><jlpt>4</jlpt></misc></character>
+<character><literal>錬</literal>
+<misc><grade>8</grade><stroke_count>16</stroke_count><stroke_count>17</stroke_count><freq>1838</freq></misc></character>
+<character><literal>亘</literal>
+<misc><grade>9</grade><stroke_count>6</stroke_count><jlpt>1</jlpt></misc></character>
+<character><literal>丂</literal>
+<misc><stroke_count>2</stroke_count></misc></character>
+</kanjidic2>`
+	es, err := dict.ParseKanjidic2(strings.NewReader(doc))
+	if err != nil {
+		t.Fatalf("ParseKanjidic2: %v", err)
+	}
+	want := []map[string]string{
+		{"strokes": "4", "grade": "1", "jlpt": "4", "freq": "1", "src": "kd2"},
+		{"strokes": "16", "grade": "8", "freq": "1838", "src": "kd2"},
+		{"strokes": "6", "grade": "9", "jlpt": "1", "src": "kd2"},
+		{"strokes": "2", "src": "kd2"},
+	}
+	if len(es) != len(want) {
+		t.Fatalf("ParseKanjidic2 = %d entries, want %d", len(es), len(want))
+	}
+	for i, e := range es {
+		if !reflect.DeepEqual(e.Attrs, want[i]) {
+			t.Errorf("attrs of %s = %v, want %v", e.Written, e.Attrs, want[i])
+		}
 	}
 }
 

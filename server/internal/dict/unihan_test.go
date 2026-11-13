@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -113,7 +114,7 @@ func TestUnihanParseSkipsCommentsBlanksUnknownFields(t *testing.T) {
 		"# Unihan 15.1.0\n" +
 			"\n" +
 			"U+597D\tkMandarin\thǎo\n" + // pronunciations are out of scope
-			"U+597D\tkTotalStrokes\t3\n" + // as are stroke counts
+			"U+597D\tkCangjie\tVND\n" + // as are input codes
 			"# a comment line\n" +
 			"U+597D\tkRSUnicode\t38.6\n"))
 	if err != nil {
@@ -122,8 +123,54 @@ func TestUnihanParseSkipsCommentsBlanksUnknownFields(t *testing.T) {
 	if len(data.Radicals) != 1 || data.Radicals["好"] != 38 {
 		t.Errorf("Radicals = %v, want only 好 -> 38", data.Radicals)
 	}
-	if len(data.Definitions) != 0 || len(data.TradVariants) != 0 || len(data.SimpVariants) != 0 {
+	if len(data.Definitions) != 0 || len(data.TradVariants) != 0 || len(data.SimpVariants) != 0 || len(data.Attrs) != 0 {
 		t.Errorf("unconsumed fields parsed: %+v", data)
+	}
+}
+
+// TestUnihanParseAttrs: kTotalStrokes (first of several counts),
+// kTGHZ2013 (presence), kGB0 (GB2312 row 16–55 level 1, 56–87 level 2,
+// any other row no level) and kGradeLevel become the character's attrs.
+func TestUnihanParseAttrs(t *testing.T) {
+	data, err := dict.ParseUnihan(strings.NewReader(
+		"U+597D\tkTotalStrokes\t6\n" +
+			"U+597D\tkTGHZ2013\t095.050:hǎo 095.060:hào\n" +
+			"U+597D\tkGB0\t2635\n" +
+			"U+597D\tkGradeLevel\t1\n" +
+			"U+590D\tkTotalStrokes\t7 9\n" +
+			"U+590D\tkGB0\t1603\n" +
+			"U+5FA9\tkGB0\t5601\n" +
+			"U+5FA9\tkGradeLevel\t6\n" +
+			"U+8907\tkGB0\t8794\n" +
+			"U+3000\tkGB0\t0101\n" +
+			"U+4E00\tkGB0\t1501\n" +
+			"U+4E01\tkGB0\t8801\n"))
+	if err != nil {
+		t.Fatalf("ParseUnihan: %v", err)
+	}
+	want := map[string]map[string]string{
+		"好": {"strokes": "6", "tghz": "1", "gb": "1", "hkgrade": "1"},
+		"复": {"strokes": "7", "gb": "1"},
+		"復": {"gb": "2", "hkgrade": "6"},
+		"複": {"gb": "2"},
+	}
+	if !reflect.DeepEqual(data.Attrs, want) {
+		t.Errorf("Attrs = %v, want %v — rows 01, 15 and 88 carry no level", data.Attrs, want)
+	}
+}
+
+func TestUnihanParseRejectsMalformedAttrs(t *testing.T) {
+	for _, line := range []string{
+		"U+597D\tkTotalStrokes\tx",
+		"U+597D\tkTotalStrokes\t0",
+		"U+597D\tkGB0\t26x5",
+		"U+597D\tkGB0\t263",
+		"U+597D\tkGradeLevel\tseven",
+	} {
+		_, err := dict.ParseUnihan(strings.NewReader(line + "\n"))
+		if err == nil || !strings.Contains(err.Error(), "line 1") {
+			t.Errorf("ParseUnihan(%q) = %v, want an error naming line 1", line, err)
+		}
 	}
 }
 

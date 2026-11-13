@@ -133,7 +133,7 @@ type RawEntry struct {
 	Pinyin   string            // the cedict line's tone-numbered pinyin
 	Forms    []string          // additional written forms (JMdict kanji forms)
 	Readings []model.Reading   // readings the source types itself (kanjidic2 on/kun, jmdict kana)
-	Attrs    map[string]string // entry attrs (kanjidic2 strokes)
+	Attrs    map[string]string // entry attrs (kanjidic2 strokes and levels)
 	Radical  int               // Kangxi radical number (kanjidic2 classical radical)
 	Glosses  []string
 	// FormAttrs, when set, holds the attrs of each written form (Written
@@ -150,7 +150,7 @@ type entry struct {
 	Kind     string
 	Readings []model.Reading
 	Glosses  []string
-	Attrs    map[string]string // entry attrs (kanjidic2 strokes)
+	Attrs    map[string]string // entry attrs (kanjidic2 strokes and levels)
 	Radical  int               // Kangxi radical number; 0 = unclassified
 }
 

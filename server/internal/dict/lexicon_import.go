@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -66,7 +67,8 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			result := Result{Skipped: stats.skipped, Unconverted: stats.unconverted}
 			for _, e := range es {
-				if _, err := store.PutTx(ctx, tx, e, dictID); err != nil {
+				// CEDICT owns no attrs: a character keeps Unihan's.
+				if _, err := putOwningAttrs(ctx, tx, store, e, dictID, nil); err != nil {
 					return Result{}, err
 				}
 				result.Entries++
@@ -100,7 +102,7 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			var result Result
 			for _, le := range jsonLexiconEntries(es, m.Language) {
-				if _, err := putMerged(ctx, tx, store, le, dictID); err != nil {
+				if _, err := putMerged(ctx, tx, store, le, dictID, nil); err != nil {
 					return Result{}, err
 				}
 				result.Entries++
@@ -329,13 +331,14 @@ func existingEntry(ctx context.Context, tx *sql.Tx, language, kind, key string) 
 }
 
 // putMerged writes e like PutTx, except that an entry already in the
-// lexicon keeps what other dictionaries gave it: its readings, ranking
-// and attrs stay, and e's forms are added after its own when absent.
+// lexicon keeps what other dictionaries gave it: its readings and
+// ranking stay, e's forms are added after its own when absent, and its
+// attrs merge (see mergeAttrs: e's dictionary owns the keys in owned).
 // Put replaces forms and readings wholesale, so a dictionary that does
 // not own them (Unihan on a hanzi CEDICT supplied the pinyin of) must
 // merge instead of overwrite. Other dictionaries' senses survive Put
 // itself.
-func putMerged(ctx context.Context, tx *sql.Tx, store lexicon.Store, e *lexicon.Entry, dictID int64) (int64, error) {
+func putMerged(ctx context.Context, tx *sql.Tx, store lexicon.Store, e *lexicon.Entry, dictID int64, owned []string) (int64, error) {
 	old, err := existingEntry(ctx, tx, e.Language, e.Kind, e.Key)
 	if err != nil {
 		return 0, fmt.Errorf("load entry %s/%s/%s: %w", e.Language, e.Kind, e.Key, err)
@@ -343,9 +346,53 @@ func putMerged(ctx context.Context, tx *sql.Tx, store lexicon.Store, e *lexicon.
 	if old != nil {
 		e.Forms = unionForms(old.Forms, e.Forms)
 		e.Readings = unionReadings(old.Readings, e.Readings)
-		e.Pri, e.UK, e.Attrs = old.Pri, old.UK, old.Attrs
+		e.Pri, e.UK = old.Pri, old.UK
+		e.Attrs = mergeAttrs(old.Attrs, e.Attrs, owned)
 	}
 	return store.PutTx(ctx, tx, e, dictID)
+}
+
+// putOwningAttrs writes e like PutTx — its forms, readings and ranking
+// replace the stored ones — except for its attrs, which merge into the
+// stored entry's (see mergeAttrs): Put replaces attrs wholesale, and an
+// entry's attrs come from several dictionaries (a zh character's level
+// attrs from Unihan, its readings from CEDICT).
+func putOwningAttrs(ctx context.Context, tx *sql.Tx, store lexicon.Store, e *lexicon.Entry, dictID int64, owned []string) (int64, error) {
+	var raw string
+	err := tx.QueryRowContext(ctx, `
+		SELECT attrs FROM entries
+		WHERE language = ? AND kind = ? AND ext_key = ? AND deleted_at IS NULL`,
+		e.Language, e.Kind, e.Key).Scan(&raw)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+	case err != nil:
+		return 0, fmt.Errorf("load attrs of %s/%s/%s: %w", e.Language, e.Kind, e.Key, err)
+	default:
+		var old map[string]string
+		if err := json.Unmarshal([]byte(raw), &old); err != nil {
+			return 0, fmt.Errorf("attrs of %s/%s/%s: %w", e.Language, e.Kind, e.Key, err)
+		}
+		e.Attrs = mergeAttrs(old, e.Attrs, owned)
+	}
+	return store.PutTx(ctx, tx, e, dictID)
+}
+
+// mergeAttrs returns the attrs an entry holds after a dictionary that
+// owns the keys in owned writes add over old: old's keys outside owned
+// stay (other dictionaries' attrs), and the owned keys are exactly add's —
+// an owned key add lacks is dropped, so a re-import of a newer source
+// leaves no stale value. A dictionary writes only keys it owns.
+func mergeAttrs(old, add map[string]string, owned []string) map[string]string {
+	out := make(map[string]string, len(old)+len(add))
+	for k, v := range old {
+		if !slices.Contains(owned, k) {
+			out[k] = v
+		}
+	}
+	for k, v := range add {
+		out[k] = v
+	}
+	return out
 }
 
 // unionForms returns base followed by the forms of add whose text base
@@ -399,8 +446,9 @@ func radicalEntryID(ctx context.Context, tx *sql.Tx, store lexicon.Store, langua
 // kanjidic2LexiconEntry builds the lexicon entry of a KANJIDIC2
 // character: Kind "character", Key and only form the character itself,
 // its ON and KUN readings (typed "on" and "kun", Plain through the
-// language pack), Attrs["strokes"], and one sense of its English
-// meanings when it has any.
+// language pack), its level attrs (strokes, grade, jlpt, freq, src "kd2";
+// see kanjidic2Attrs), and one sense of its English meanings when it has
+// any.
 func kanjidic2LexiconEntry(e entry, language string) *lexicon.Entry {
 	le := bareCharacter(language, e.Written)
 	le.Readings = lexiconReadings(lang.For(language), e.Readings, false)
@@ -415,7 +463,8 @@ func kanjidic2LexiconEntry(e entry, language string) *lexicon.Entry {
 
 // importKanjidic2Lexicon writes the KANJIDIC2 characters, each linked
 // from the character to its classical Kangxi radical's character entry
-// (a bare one is created when missing).
+// (a bare one is created when missing). It owns the kanjidic2AttrKeys of
+// a character's attrs; other keys stay (see putOwningAttrs).
 func importKanjidic2Lexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m Manifest, es []entry) (Result, error) {
 	var (
 		result Result
@@ -423,7 +472,7 @@ func importKanjidic2Lexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store
 	)
 	for _, e := range es {
 		le := kanjidic2LexiconEntry(e, m.Language)
-		id, err := store.PutTx(ctx, tx, le, dictID)
+		id, err := putOwningAttrs(ctx, tx, store, le, dictID, kanjidic2AttrKeys)
 		if err != nil {
 			return Result{}, err
 		}
@@ -445,18 +494,22 @@ func importKanjidic2Lexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store
 
 // importUnihanLexicon writes a character entry for every hanzi the file
 // mentions — a field key or a variant counterpart — in sorted order:
-// the character as its only form, no readings, and its kDefinition as
-// the one sense under the built-in unihan dictionary. Entries another
-// dictionary supplied (CEDICT's readings and forms) are merged, not
-// overwritten (see putMerged). Simplified/traditional counterparts link
-// as variants (both directions) and each character links to its Kangxi
-// radical.
+// the character as its only form, no readings, its level and stroke
+// attrs (the unihanAttrKeys, see parseUnihanAttr), and its kDefinition
+// as the one sense under the built-in unihan dictionary. Entries another
+// dictionary supplied (CEDICT's readings and forms, other attrs) are
+// merged, not overwritten (see putMerged). Simplified/traditional
+// counterparts link as variants (both directions) and each character
+// links to its Kangxi radical.
 func importUnihanLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m Manifest, data UnihanData) (Result, error) {
 	seen := make(map[string]bool, len(data.Radicals)+len(data.Definitions))
 	for ch := range data.Radicals {
 		seen[ch] = true
 	}
 	for ch := range data.Definitions {
+		seen[ch] = true
+	}
+	for ch := range data.Attrs {
 		seen[ch] = true
 	}
 	for _, field := range []map[string][]string{data.TradVariants, data.SimpVariants} {
@@ -477,11 +530,12 @@ func importUnihanLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, d
 	ids := make(map[string]int64, len(chars))
 	for _, ch := range chars {
 		e := bareCharacter(m.Language, ch)
+		maps.Copy(e.Attrs, data.Attrs[ch])
 		if def, ok := data.Definitions[ch]; ok {
 			e.Senses = []lexicon.Sense{{Glosses: []string{def}}}
 			result.Senses++
 		}
-		id, err := putMerged(ctx, tx, store, e, dictID)
+		id, err := putMerged(ctx, tx, store, e, dictID, unihanAttrKeys)
 		if err != nil {
 			return Result{}, err
 		}

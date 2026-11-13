@@ -496,6 +496,8 @@ func TestLexiconReimportsWriteNothing(t *testing.T) {
 		"cedict":              {"cedict"},
 		"json":                {"json"},
 		"unihan after cedict": {"cedict", "unihan"},
+		"cedict after unihan": {"unihan", "cedict"},
+		"unihan":              {"unihan"},
 		"json after cedict":   {"cedict", "json"},
 		"kanjidic2":           {"kanjidic2"},
 	} {

@@ -16,17 +16,26 @@ import (
 const unihanFile = "dictionary.txt"
 
 // unihanZipFile is the upstream distribution of the Unihan database. The
-// members below carry every field the importer parses: kRSUnicode lives
-// in the IRG sources file (not the Adobe radical-stroke file, which
-// carries a different field), variants in the variants file, and
-// kDefinition in the readings file.
+// members below carry every field the importer parses: kRSUnicode and
+// kTotalStrokes live in the IRG sources file (not the Adobe radical-stroke
+// file, which carries a different field), variants in the variants file,
+// and kDefinition and kTGHZ2013 in the readings file — these three are
+// required. kGB0 lives in the other-mappings file and kGradeLevel in the
+// dictionary-like-data file; an older archive without them still imports,
+// just without those attrs.
 const unihanZipFile = "Unihan.zip"
 
-var unihanZipMembers = []string{
-	"Unihan_IRGSources.txt",
-	"Unihan_Variants.txt",
-	"Unihan_Readings.txt",
-}
+var (
+	unihanZipMembers = []string{
+		"Unihan_IRGSources.txt",
+		"Unihan_Variants.txt",
+		"Unihan_Readings.txt",
+	}
+	unihanZipOptionalMembers = []string{
+		"Unihan_OtherMappings.txt",
+		"Unihan_DictionaryLikeData.txt",
+	}
+)
 
 // The built-in dictionary a unihan import registers. The Unihan database
 // is one canonical dataset, whatever pack delivered the file, so its row
@@ -36,12 +45,15 @@ var unihanZipMembers = []string{
 const unihanPackID = "unihan"
 
 // UnihanData is what ParseUnihan extracts from a Unihan database file:
-// the four fields the importer consumes, keyed by character.
+// the fields the importer consumes, keyed by character.
 type UnihanData struct {
 	Radicals     map[string]int      // kRSUnicode: character -> Kangxi radical number, left of the "."
 	TradVariants map[string][]string // kTraditionalVariant: character -> its traditional variants
 	SimpVariants map[string][]string // kSimplifiedVariant: character -> its simplified variants
 	Definitions  map[string]string   // kDefinition: character -> its English definition
+	// Attrs holds each character's level and stroke attrs (see
+	// unihanAttrKeys): kTotalStrokes, kTGHZ2013, kGB0 and kGradeLevel.
+	Attrs map[string]map[string]string
 }
 
 // ParseUnihan parses Unihan database lines from r: each data line is a
@@ -59,6 +71,7 @@ func ParseUnihan(r io.Reader) (UnihanData, error) {
 		TradVariants: map[string][]string{},
 		SimpVariants: map[string][]string{},
 		Definitions:  map[string]string{},
+		Attrs:        map[string]map[string]string{},
 	}
 	var lineNo int
 	sc := bufio.NewScanner(r)
@@ -85,6 +98,14 @@ func ParseUnihan(r io.Reader) (UnihanData, error) {
 			data.SimpVariants[ch], err = parseVariants(parts[2])
 		case "kDefinition":
 			data.Definitions[ch], err = parseDefinition(parts[2])
+		case "kTotalStrokes", "kTGHZ2013", "kGB0", "kGradeLevel":
+			var key, value string
+			if key, value, err = parseUnihanAttr(parts[1], parts[2]); err == nil && key != "" {
+				if data.Attrs[ch] == nil {
+					data.Attrs[ch] = map[string]string{}
+				}
+				data.Attrs[ch][key] = value
+			}
 		}
 		if err != nil {
 			return UnihanData{}, fmt.Errorf("unihan: line %d (%q): %w", lineNo, line, err)
@@ -126,6 +147,52 @@ func parseRadicalCount(value string) (int, error) {
 	return n, nil
 }
 
+// unihanAttrKeys are the attrs a Unihan import owns on a zh character
+// entry: a re-import replaces exactly these and keeps any other key.
+var unihanAttrKeys = []string{"strokes", "tghz", "gb", "hkgrade"}
+
+// parseUnihanAttr reads one level or stroke field into its attr:
+//   - kTotalStrokes "6" or "7 9" -> strokes, the first (preferred) count;
+//   - kTGHZ2013 (any value: the character is in the 2013 通用规范汉字表)
+//     -> tghz "1";
+//   - kGB0 "RRCC", the GB2312 row and cell -> gb "1" for rows 16–55 (level
+//     1 hanzi), "2" for rows 56–87 (level 2); any other row is not a hanzi
+//     level and yields no attr (key "");
+//   - kGradeLevel "1".."6", the Hong Kong primary-school grade -> hkgrade.
+func parseUnihanAttr(field, value string) (key, attr string, err error) {
+	switch field {
+	case "kTotalStrokes":
+		counts := strings.Fields(value)
+		if len(counts) > 0 {
+			if n, err := strconv.Atoi(counts[0]); err == nil && n > 0 {
+				return "strokes", strconv.Itoa(n), nil
+			}
+		}
+		return "", "", fmt.Errorf("kTotalStrokes value %q is not a stroke count", value)
+	case "kTGHZ2013":
+		return "tghz", "1", nil
+	case "kGB0":
+		code, err := strconv.Atoi(value)
+		if err != nil || len(value) != 4 || strings.Trim(value, "0123456789") != "" {
+			return "", "", fmt.Errorf("kGB0 value %q is not a 4-digit row-cell code", value)
+		}
+		switch row := code / 100; {
+		case row >= 16 && row <= 55:
+			return "gb", "1", nil
+		case row >= 56 && row <= 87:
+			return "gb", "2", nil
+		}
+		return "", "", nil
+	case "kGradeLevel":
+		n, err := strconv.Atoi(value)
+		if err != nil || n < 1 {
+			return "", "", fmt.Errorf("kGradeLevel value %q is not a grade", value)
+		}
+		return "hkgrade", strconv.Itoa(n), nil
+	}
+	return "", "", nil
+}
+
 // parseVariants reads a kSimplifiedVariant or kTraditionalVariant value:
 // space-separated characters, as U+XXXX codepoints or spelled out.
 func parseVariants(value string) ([]string, error) {
@@ -162,12 +229,12 @@ func parseDefinition(value string) (string, error) {
 // readUnihanPack reads and parses the data of the format "unihan" pack in
 // dir. Two layouts are accepted: the upstream distribution, Unihan.zip,
 // from which the members carrying the parsed fields are concatenated
-// (radical-stroke counts, variants, readings — kDefinition included),
+// (see unihanZipMembers; the optional ones only when present),
 // and a single plain or gzip-compressed dictionary.txt.
 func readUnihanPack(dir string) (UnihanData, error) {
 	zipPath := filepath.Join(dir, unihanZipFile)
 	if _, err := os.Stat(zipPath); err == nil {
-		f, err := openZipMembers(zipPath, unihanZipMembers...)
+		f, err := openZipMembers(zipPath, unihanZipMembers, unihanZipOptionalMembers)
 		if err != nil {
 			return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, unihanZipFile, dir, err)
 		}
