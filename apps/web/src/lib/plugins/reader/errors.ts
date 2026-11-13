@@ -69,6 +69,9 @@ export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 				}
 				return 'This book is already in your library.';
 			case 413:
+				if (context === 'highlight' || context === 'highlights') {
+					return 'This highlight or its note is too long to save.';
+				}
 				return 'This file is too large (max 20 MB).';
 			case 422:
 				if (context === 'upload') {

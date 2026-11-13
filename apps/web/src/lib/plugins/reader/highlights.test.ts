@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	HIGHLIGHT_COLORS,
+	buildHighlightBody,
 	clampToParagraph,
 	isHighlightColor,
 	nextColor,
@@ -110,19 +111,22 @@ describe('visibleHighlights', () => {
 		expect(changed.map((h) => h.id)).toEqual([1, 3, 2]);
 	});
 
-	it('tolerates the server trimming whitespace off the snapshot', () => {
-		const { drawn, changed } = visibleHighlights([hl(1, 2, 3, 7, 'def')], 0, textOf);
-		expect(changed).toEqual([]);
-		expect(drawn.get(2)?.map((h) => h.id)).toEqual([1]);
+	it('compares the snapshot exactly: edge whitespace, case or a longer slice is a change', () => {
+		const { drawn, changed } = visibleHighlights(
+			[hl(1, 2, 3, 7, 'def'), hl(2, 2, 0, 3, 'ABC'), hl(3, 0, 0, 2, '猫')],
+			0,
+			textOf
+		);
+		expect(drawn.size).toBe(0);
+		// Reading order: paragraph 0, then paragraph 2 by start.
+		expect(changed.map((h) => h.id)).toEqual([3, 2, 1]);
 	});
 
-	it('trims exactly what Go strings.TrimSpace trims', () => {
-		const para = ['　猫\u0085', '﻿猫'];
-		const of = (p: number) => para[p] ?? null;
-		const { drawn, changed } = visibleHighlights([hl(1, 0, 0, 3, '猫'), hl(2, 1, 0, 2, '猫')], 0, of);
-		expect(drawn.get(0)?.map((h) => h.id)).toEqual([1]);
-		// U+FEFF is not space to Go: the server kept it in the snapshot.
-		expect(changed.map((h) => h.id)).toEqual([2]);
+	it('reports code-point offsets stored as UTF-16 offsets as changed', () => {
+		// 𠮷野 is [0,2) in code points but [0,3) in UTF-16 units.
+		const { drawn, changed } = visibleHighlights([hl(1, 1, 0, 3, '𠮷野')], 0, textOf);
+		expect(drawn.size).toBe(0);
+		expect(changed.map((h) => h.id)).toEqual([1]);
 	});
 
 	it('does not draw overlapping highlights twice: the later one is listed as changed', () => {
@@ -248,6 +252,73 @@ describe('overlaps', () => {
 		expect(overlaps(list, 0, 8, 9)?.id).toBe(3);
 		expect(overlaps(list, 0, 8, 9, 0)).toBeNull();
 		expect(overlaps(list, 0, 8, 9, 1)?.id).toBe(3);
+	});
+});
+
+describe('buildHighlightBody', () => {
+	it('returns the exact slice and its code-point span', () => {
+		expect(buildHighlightBody('猫が好き', 1, 3, 'green')).toEqual({
+			tooLong: false,
+			body: { start: 1, end: 3, text: 'が好', color: 'green' }
+		});
+	});
+
+	it('trims edge whitespace by moving start and end, never the text alone', () => {
+		const para = ' 　漢字 です  。';
+		// [0, 8) is " 　漢字 です " → 漢字 です at [2, 7).
+		const built = buildHighlightBody(para, 0, 8, 'yellow');
+		expect(built).toEqual({ tooLong: false, body: { start: 2, end: 7, text: '漢字 です', color: 'yellow' } });
+		// U+2008 PUNCTUATION SPACE is space too; the 。 stays.
+		expect(buildHighlightBody(para, 6, 9, 'pink')).toEqual({
+			tooLong: false,
+			body: { start: 6, end: 7, text: 'す', color: 'pink' }
+		});
+		expect(buildHighlightBody(para, 7, 10, 'pink')).toEqual({
+			tooLong: false,
+			body: { start: 9, end: 10, text: '。', color: 'pink' }
+		});
+	});
+
+	it('trims exactly what Go strings.TrimSpace trims (U+0085 yes, U+FEFF no)', () => {
+		expect(buildHighlightBody('\u0085猫\n', 0, 3, 'blue')).toEqual({
+			tooLong: false,
+			body: { start: 1, end: 2, text: '猫', color: 'blue' }
+		});
+		expect(buildHighlightBody('﻿猫', 0, 2, 'blue')).toEqual({
+			tooLong: false,
+			body: { start: 0, end: 2, text: '﻿猫', color: 'blue' }
+		});
+	});
+
+	it('counts astral characters as one code point', () => {
+		const para = 'a 𠮷野😀 b';
+		// Code points: a,space,𠮷,野,😀,space,b.
+		expect(buildHighlightBody(para, 1, 6, 'yellow')).toEqual({
+			tooLong: false,
+			body: { start: 2, end: 5, text: '𠮷野😀', color: 'yellow' }
+		});
+	});
+
+	it('normalises a reversed span and clips it to the paragraph', () => {
+		expect(buildHighlightBody('abc', 9, -1, 'yellow')).toEqual({
+			tooLong: false,
+			body: { start: 0, end: 3, text: 'abc', color: 'yellow' }
+		});
+	});
+
+	it('is null when nothing but whitespace is selected', () => {
+		expect(buildHighlightBody('a   b', 1, 4, 'yellow')).toBeNull();
+		expect(buildHighlightBody('abc', 2, 2, 'yellow')).toBeNull();
+		expect(buildHighlightBody('', 0, 3, 'yellow')).toBeNull();
+	});
+
+	it('flags spans over 500 code points after trimming', () => {
+		const exact = '𠮷'.repeat(500);
+		expect(buildHighlightBody(` ${exact} `, 0, 502, 'yellow')).toEqual({
+			tooLong: false,
+			body: { start: 1, end: 501, text: exact, color: 'yellow' }
+		});
+		expect(buildHighlightBody('字'.repeat(501), 0, 501, 'yellow')).toEqual({ tooLong: true });
 	});
 });
 

@@ -93,6 +93,13 @@ describe('apiErrorMessage', () => {
 			'This book already has the most highlights allowed (2000). Delete one to add another.'
 		);
 		expect(apiErrorMessage(new ApiError(404, 'x'), 'highlight')).toBe('This highlight no longer exists.');
+		// A highlight body over the server cap is not a file upload.
+		for (const context of ['highlight', 'highlights'] as const) {
+			expect(apiErrorMessage(new ApiError(413, 'highlight too large'), context)).toBe(
+				'This highlight or its note is too long to save.'
+			);
+		}
+		expect(apiErrorMessage(new ApiError(413, 'x'), 'upload')).toBe('This file is too large (max 20 MB).');
 		expect(apiErrorMessage(new ApiError(422, 'note too long'), 'highlight')).toBe('note too long');
 		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'highlight')).toBe(
 			'Could not save the highlight.'

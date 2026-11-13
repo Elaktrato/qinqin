@@ -242,9 +242,9 @@ export type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink';
 
 // Highlight is one highlighted span of a library book: code points
 // [start,end) of the displayed plain text (ruby excluded) of one
-// paragraph. `text` is the server's snapshot of that span (trimmed, at
-// most 500 code points), used to notice when the text changed; `note` is
-// optional (at most 2000 code points). Only colour and note can change.
+// paragraph. `text` is exactly that span (no edge whitespace, end - start
+// code points, at most 500), used to notice when the text changed; `note`
+// is optional (at most 2000 code points). Only colour and note can change.
 export interface Highlight {
 	id: number;
 	bookId: number;

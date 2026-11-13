@@ -66,20 +66,37 @@ export function clampToParagraph(
 	return null;
 }
 
-// Go's unicode.IsSpace, which the server's strings.TrimSpace uses (JS \s
-// differs: it includes U+FEFF and lacks U+0085).
-const EDGE_SPACE = /^[\t\n\v\f\r\u0085\p{Z}]+|[\t\n\v\f\r\u0085\p{Z}]+$/gu;
+// Go's unicode.IsSpace, which the server's strings.TrimSpace check uses
+// (JS \s differs: it includes U+FEFF and lacks U+0085).
+const SPACE = /^[\t\n\v\f\r\u0085\p{Z}]$/u;
 
-// The server stores the snapshot trimmed (and refuses more than
-// MAX_SNAPSHOT_RUNES), so the slice matches when it equals the snapshot up
-// to edge whitespace. A snapshot at the limit may also be a prefix, should
-// the server ever cut instead of refusing.
-function snapshotMatches(slice: string, snapshot: string): boolean {
-	if (slice === snapshot) return true;
-	const a = slice.replace(EDGE_SPACE, '');
-	const b = snapshot.replace(EDGE_SPACE, '');
-	if (a === b) return b.length > 0;
-	return b.length > 0 && cpLength(b) >= MAX_SNAPSHOT_RUNES && a.startsWith(b);
+export type HighlightBodyResult =
+	| { tooLong: false; body: { start: number; end: number; text: string; color: HighlightColor } }
+	| { tooLong: true }
+	| null;
+
+/**
+ * buildHighlightBody turns code points [start,end) of a paragraph's plain
+ * text into what a new highlight stores: edge whitespace is dropped by
+ * MOVING start and end (the server refuses a snapshot with edge whitespace
+ * and one whose length is not end - start), and `text` is exactly the
+ * slice. Null when nothing but whitespace is selected; `tooLong` when the
+ * trimmed span has more than MAX_SNAPSHOT_RUNES code points.
+ */
+export function buildHighlightBody(
+	paragraphText: string,
+	start: number,
+	end: number,
+	color: HighlightColor
+): HighlightBodyResult {
+	const cps = Array.from(paragraphText);
+	let from = clamp(Math.min(start, end), 0, cps.length);
+	let to = clamp(Math.max(start, end), 0, cps.length);
+	while (from < to && SPACE.test(cps[from])) from++;
+	while (to > from && SPACE.test(cps[to - 1])) to--;
+	if (to <= from) return null;
+	if (to - from > MAX_SNAPSHOT_RUNES) return { tooLong: true };
+	return { tooLong: false, body: { start: from, end: to, text: cps.slice(from, to).join(''), color } };
 }
 
 const byStart = (a: Highlight, b: Highlight) => a.start - b.start || a.end - b.end || a.id - b.id;
@@ -87,8 +104,8 @@ const byStart = (a: Highlight, b: Highlight) => a.start - b.start || a.end - b.e
 /**
  * visibleHighlights sorts the highlights of `chapter` into those to draw
  * (per paragraph, by start) and those whose text changed: the paragraph is
- * missing, the span runs past its end, or its slice no longer matches the
- * snapshot (for example after the variant converter changed the text).
+ * missing, the span runs past its end, or its slice is no longer exactly
+ * the snapshot (for example after the variant converter changed the text).
  * Changed highlights are listed, never drawn and never deleted. A
  * highlight overlapping one already drawn (the server forbids it) counts as
  * changed, so no character is ever drawn twice.
@@ -110,7 +127,7 @@ export function visibleHighlights(
 			h.start >= 0 &&
 			h.end > h.start &&
 			h.end <= cpLength(text) &&
-			snapshotMatches(sliceCodePoints(text, h.start, h.end), h.text);
+			sliceCodePoints(text, h.start, h.end) === h.text;
 		const row = drawn.get(h.paragraph);
 		const last = row?.[row.length - 1];
 		if (!ok || (last && h.start < last.end)) {
@@ -188,7 +205,9 @@ export function splitRunsByHighlights(runs: Run[], highlights: Highlight[]): Seg
 /**
  * overlaps is the highlight sharing at least one code point with
  * [start,end) of `paragraph` (adjacent spans do not overlap), if any. Pass
- * `chapter` when the list holds more than one chapter.
+ * `chapter` when the list holds more than one chapter. An empty span
+ * (start === end) works as a point query: the highlight with that point
+ * strictly inside (not at one of its edges).
  */
 export function overlaps(
 	highlights: Highlight[],

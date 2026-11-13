@@ -117,15 +117,67 @@ describe('HighlightList add', () => {
 		});
 		const list = await loaded(api);
 		const result = await list.add(body);
-		expect(result).toEqual({ ok: false, existingId: 4 });
+		expect(result).toEqual({ ok: false, existingId: 4, available: true });
 		expect(list.items.map((h) => h.id)).toEqual([4]);
 		expect(list.error).toBe('');
+		// Known locally: no reload.
+		expect(api.list).toHaveBeenCalledTimes(1);
+	});
+
+	it('reloads once when the overlapped highlight is not known locally (another tab)', async () => {
+		let lists = 0;
+		const api = fakeApi({
+			list: vi.fn(async () => (++lists === 1 ? [hl(4)] : [hl(4), hl(12, { chapter: 1, paragraph: 2, start: 2, end: 4 })])),
+			add: vi.fn(async () => Promise.reject(new HighlightOverlapError('already highlighted', 12)))
+		});
+		const list = await loaded(api);
+		expect(await list.add(body)).toEqual({ ok: false, existingId: 12, available: true });
+		expect(api.list).toHaveBeenCalledTimes(2);
+		expect(list.get(12)?.id).toBe(12);
+		expect(list.items.map((h) => h.id)).toEqual([4, 12]);
+		expect(list.error).toBe('');
+	});
+
+	it('says so when the overlapped highlight is still unknown after the reload', async () => {
+		const api = fakeApi({
+			add: vi.fn(async () => Promise.reject(new HighlightOverlapError('already highlighted', 12)))
+		});
+		const list = await loaded(api);
+		expect(await list.add(body)).toEqual({ ok: false, existingId: 12, available: false });
+		expect(api.list).toHaveBeenCalledTimes(2);
+		// A failed reload is not a load error: the list stays usable.
+		let loadedOnce = false;
+		const failing = await loaded(
+			fakeApi({
+				list: vi.fn(async () => (loadedOnce ? Promise.reject(new TypeError('x')) : [])),
+				add: vi.fn(async () => Promise.reject(new HighlightOverlapError('already highlighted', 12)))
+			})
+		);
+		loadedOnce = true;
+		expect(await failing.add(body)).toEqual({ ok: false, existingId: 12, available: false });
+		expect(failing.ready).toBe(true);
+		expect(failing.loadError).toBe('');
+	});
+
+	it('the reload keeps unsaved local edits', async () => {
+		const pending = deferred<Highlight>();
+		const api = fakeApi({
+			list: vi.fn(async () => [hl(4)]),
+			update: vi.fn(() => pending.promise),
+			add: vi.fn(async () => Promise.reject(new HighlightOverlapError('already highlighted', 12)))
+		});
+		const list = await loaded(api);
+		const editing = list.update(4, { note: 'mine' });
+		await list.add(body);
+		expect(list.get(4)?.note).toBe('mine');
+		pending.resolve(hl(4, { note: 'mine' }));
+		expect(await editing).toBe(true);
 	});
 
 	it('refuses locally when the selection overlaps a known highlight', async () => {
 		const api = fakeApi({ list: vi.fn(async () => [hl(4, { chapter: 1, paragraph: 2, start: 4, end: 8 })]) });
 		const list = await loaded(api);
-		expect(await list.add(body)).toEqual({ ok: false, existingId: 4 });
+		expect(await list.add(body)).toEqual({ ok: false, existingId: 4, available: true });
 		expect(api.add).not.toHaveBeenCalled();
 		// The same range in another chapter is not an overlap.
 		const other = await loaded(fakeApi({ list: vi.fn(async () => [hl(4, { chapter: 0, paragraph: 2, start: 3, end: 5 })]) }));
@@ -228,16 +280,6 @@ describe('HighlightList update and remove', () => {
 		expect(list.error).toBe('This highlight no longer exists.');
 	});
 
-	it('ignores updates of an unsaved or busy highlight', async () => {
-		const pending = deferred<Highlight>();
-		const api = fakeApi({ list: vi.fn(async () => [hl(4)]), update: vi.fn(() => pending.promise) });
-		const list = await loaded(api);
-		const first = list.update(4, { color: 'green' });
-		expect(await list.update(4, { color: 'blue' })).toBe(false);
-		expect(api.update).toHaveBeenCalledTimes(1);
-		pending.resolve(hl(4, { color: 'green' }));
-		await first;
-	});
 
 	it('drops an update result that arrives after switching books', async () => {
 		const pending = deferred<Highlight>();
@@ -288,5 +330,212 @@ describe('HighlightList update and remove', () => {
 		const list = await loaded(api);
 		await list.add(body);
 		expect(list.items.map((h) => h.id)).toEqual([2, 3, 1]);
+	});
+});
+
+// A queue of controllable server answers for one API method.
+function answers<T>() {
+	const queue: ReturnType<typeof deferred<T>>[] = [];
+	const fn = vi.fn(() => {
+		const d = deferred<T>();
+		queue.push(d);
+		return d.promise;
+	});
+	return { fn, queue };
+}
+
+const flush = () => new Promise((r) => setTimeout(r, 0));
+
+describe('HighlightList edits are never lost', () => {
+	it('colour, then note before the first returns: the note is sent right after', async () => {
+		const up = answers<Highlight>();
+		const api = fakeApi({ list: vi.fn(async () => [hl(4)]), update: up.fn });
+		const list = await loaded(api);
+		const colour = list.update(4, { color: 'pink' });
+		const note = list.update(4, { note: 'long note' });
+		// Both show at once; only one request is in flight.
+		expect(list.get(4)).toMatchObject({ color: 'pink', note: 'long note' });
+		expect(api.update).toHaveBeenCalledTimes(1);
+		expect(api.update).toHaveBeenLastCalledWith(1, 4, { color: 'pink' });
+		up.queue[0].resolve(hl(4, { color: 'pink' }));
+		await flush();
+		// The server's answer to the first did not wipe the pending note.
+		expect(list.get(4)).toMatchObject({ color: 'pink', note: 'long note' });
+		expect(api.update).toHaveBeenCalledTimes(2);
+		expect(api.update).toHaveBeenLastCalledWith(1, 4, { note: 'long note' });
+		up.queue[1].resolve(hl(4, { color: 'pink', note: 'long note' }));
+		expect(await colour).toBe(true);
+		expect(await note).toBe(true);
+		expect(list.busy(4)).toBe(false);
+		expect(list.error).toBe('');
+	});
+
+	it('merges queued edits, the latest value per field winning', async () => {
+		const up = answers<Highlight>();
+		const api = fakeApi({ list: vi.fn(async () => [hl(4)]), update: up.fn });
+		const list = await loaded(api);
+		const all = [
+			list.update(4, { color: 'pink' }),
+			list.update(4, { note: 'a' }),
+			list.update(4, { color: 'blue', note: 'b' }),
+			list.update(4, { note: 'c' })
+		];
+		up.queue[0].resolve(hl(4, { color: 'pink' }));
+		await flush();
+		expect(api.update).toHaveBeenCalledTimes(2);
+		expect(api.update).toHaveBeenLastCalledWith(1, 4, { color: 'blue', note: 'c' });
+		up.queue[1].resolve(hl(4, { color: 'blue', note: 'c' }));
+		expect(await Promise.all(all)).toEqual([true, true, true, true]);
+		expect(list.get(4)).toMatchObject({ color: 'blue', note: 'c' });
+	});
+
+	it("'Note' right after add: the edit waits for the add, then is sent to the real id", async () => {
+		const add = answers<Highlight>();
+		const api = fakeApi({ add: add.fn });
+		const list = await loaded(api);
+		const adding = list.add(body);
+		const tempId = list.items[0].id;
+		expect(tempId).toBeLessThan(0);
+		const note = list.update(tempId, { note: 'my note' });
+		expect(list.get(tempId)?.note).toBe('my note');
+		expect(api.update).not.toHaveBeenCalled();
+		add.queue[0].resolve(hl(7, { ...body }));
+		const result = await adding;
+		expect(result.ok && result.highlight.id).toBe(7);
+		expect(await note).toBe(true);
+		expect(api.update).toHaveBeenCalledWith(1, 7, { note: 'my note' });
+		expect(list.items.map((h) => h.id)).toEqual([7]);
+		expect(list.get(7)?.note).toBe('my note');
+		// The temporary id still finds the saved highlight.
+		expect(list.get(tempId)?.id).toBe(7);
+	});
+
+	it('edits queued on an add that fails are dropped with it', async () => {
+		const api = fakeApi({ add: vi.fn(async () => Promise.reject(new TypeError('offline'))) });
+		const list = await loaded(api);
+		const adding = list.add(body);
+		const note = list.update(list.items[0].id, { note: 'n' });
+		await adding;
+		expect(await note).toBe(false);
+		expect(api.update).not.toHaveBeenCalled();
+		expect(list.items).toEqual([]);
+		expect(list.error).toBe('Could not save the highlight.');
+	});
+
+	it('a failed first edit reverts only its fields; the queued second is still sent', async () => {
+		const up = answers<Highlight>();
+		const api = fakeApi({ list: vi.fn(async () => [hl(4, { color: 'yellow', note: 'old' })]), update: up.fn });
+		const list = await loaded(api);
+		const colour = list.update(4, { color: 'pink' });
+		const note = list.update(4, { note: 'new' });
+		up.queue[0].reject(new ApiError(422, 'bad colour'));
+		await flush();
+		// The colour is back to the server's; the note still shows and is sent.
+		expect(list.get(4)).toMatchObject({ color: 'yellow', note: 'new' });
+		expect(list.error).toBe('bad colour');
+		expect(api.update).toHaveBeenLastCalledWith(1, 4, { note: 'new' });
+		up.queue[1].resolve(hl(4, { color: 'yellow', note: 'new' }));
+		expect(await colour).toBe(false);
+		expect(await note).toBe(true);
+		expect(list.get(4)).toMatchObject({ color: 'yellow', note: 'new' });
+	});
+
+	it('a failed first edit does not revert a field a queued edit changes again', async () => {
+		const up = answers<Highlight>();
+		const api = fakeApi({ list: vi.fn(async () => [hl(4)]), update: up.fn });
+		const list = await loaded(api);
+		void list.update(4, { color: 'pink' });
+		const second = list.update(4, { color: 'blue' });
+		up.queue[0].reject(new TypeError('offline'));
+		await flush();
+		expect(list.get(4)?.color).toBe('blue');
+		expect(api.update).toHaveBeenLastCalledWith(1, 4, { color: 'blue' });
+		up.queue[1].reject(new TypeError('offline'));
+		expect(await second).toBe(false);
+		// Both failed: back to the last confirmed colour.
+		expect(list.get(4)?.color).toBe('yellow');
+		expect(list.error).toBe('Could not save the highlight.');
+	});
+
+	it('an edit back to the confirmed value while one is in flight is still sent', async () => {
+		const up = answers<Highlight>();
+		const api = fakeApi({ list: vi.fn(async () => [hl(4)]), update: up.fn });
+		const list = await loaded(api);
+		void list.update(4, { color: 'pink' });
+		const back = list.update(4, { color: 'yellow' });
+		up.queue[0].resolve(hl(4, { color: 'pink' }));
+		await flush();
+		expect(api.update).toHaveBeenLastCalledWith(1, 4, { color: 'yellow' });
+		up.queue[1].resolve(hl(4, { color: 'yellow' }));
+		expect(await back).toBe(true);
+		expect(list.get(4)?.color).toBe('yellow');
+	});
+
+	it('remove while editing: gone at once, deleted after the edit settles, never re-added', async () => {
+		const up = answers<Highlight>();
+		const api = fakeApi({ list: vi.fn(async () => [hl(4)]), update: up.fn });
+		const list = await loaded(api);
+		const editing = list.update(4, { note: 'x' });
+		const queuedNote = list.update(4, { note: 'y' });
+		const removing = list.remove(4);
+		expect(list.items).toEqual([]);
+		expect(api.remove).not.toHaveBeenCalled();
+		up.queue[0].resolve(hl(4, { note: 'x' }));
+		await removing;
+		expect(api.remove).toHaveBeenCalledWith(1, 4);
+		// The queued note was not sent: the highlight is being deleted.
+		expect(api.update).toHaveBeenCalledTimes(1);
+		expect(await editing).toBe(true);
+		expect(await queuedNote).toBe(false);
+		expect(list.items).toEqual([]);
+		expect(list.announcement).toBe('Highlight removed: 猫が');
+	});
+
+	it('remove while editing restores the last confirmed highlight when the delete fails', async () => {
+		const up = answers<Highlight>();
+		const api = fakeApi({
+			list: vi.fn(async () => [hl(4)]),
+			update: up.fn,
+			remove: vi.fn(async () => Promise.reject(new TypeError('offline')))
+		});
+		const list = await loaded(api);
+		void list.update(4, { color: 'green' });
+		const removing = list.remove(4);
+		up.queue[0].resolve(hl(4, { color: 'green' }));
+		await removing;
+		expect(list.items.map((h) => [h.id, h.color])).toEqual([[4, 'green']]);
+		expect(list.error).toBe('Could not save the highlight.');
+	});
+
+	it('remove right after add deletes the saved highlight once the add resolves', async () => {
+		const add = answers<Highlight>();
+		const api = fakeApi({ add: add.fn });
+		const list = await loaded(api);
+		const adding = list.add(body);
+		const removing = list.remove(list.items[0].id);
+		expect(list.items).toEqual([]);
+		add.queue[0].resolve(hl(7, { ...body }));
+		await adding;
+		await removing;
+		expect(api.remove).toHaveBeenCalledWith(1, 7);
+		expect(list.items).toEqual([]);
+	});
+
+	it('drops queued edits on a book switch: nothing is sent for the old book afterwards', async () => {
+		const up = answers<Highlight>();
+		const api = fakeApi({
+			list: vi.fn(async (bookId: number) => (bookId === 1 ? [hl(4)] : [hl(9, { bookId: 2 })])),
+			update: up.fn
+		});
+		const list = await loaded(api);
+		const first = list.update(4, { color: 'pink' });
+		const second = list.update(4, { note: 'n' });
+		await list.load(2);
+		up.queue[0].resolve(hl(4, { color: 'pink' }));
+		expect(await first).toBe(false);
+		expect(await second).toBe(false);
+		expect(api.update).toHaveBeenCalledTimes(1);
+		expect(list.items.map((h) => h.id)).toEqual([9]);
+		expect(list.busy(9)).toBe(false);
 	});
 });
