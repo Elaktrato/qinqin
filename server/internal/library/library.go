@@ -24,8 +24,24 @@ import (
 // asking user; another user's book is indistinguishable from a missing one.
 var ErrNotFound = errors.New("library: not found")
 
-// ErrDuplicate reports a book whose (source, source id) the user already has.
+// ErrDuplicate reports a book whose (source, source id) the workspace
+// already has.
 var ErrDuplicate = errors.New("library: duplicate book")
+
+// ErrWorkspaceNotFound reports a workspace that does not exist for the
+// asking user; another user's workspace is indistinguishable from a
+// missing one.
+var ErrWorkspaceNotFound = errors.New("library: workspace not found")
+
+// LanguageMismatchError reports a book whose language differs from its
+// workspace's. Its message is meant for the user.
+type LanguageMismatchError struct {
+	Workspace, Book string
+}
+
+func (e *LanguageMismatchError) Error() string {
+	return "workspace language is " + e.Workspace + ", book is " + e.Book
+}
 
 // Run is a stretch of text, optionally carrying its ruby annotation.
 type Run struct {
@@ -46,6 +62,7 @@ type Chapter struct {
 type Book struct {
 	ID           int64     `json:"id"`
 	UserID       int64     `json:"-"`
+	WorkspaceID  int64     `json:"workspaceId"`
 	Language     string    `json:"language"`
 	Title        string    `json:"title"`
 	Author       string    `json:"author"`
@@ -65,7 +82,7 @@ type Store struct {
 	Dir string
 }
 
-const columns = `id, user_id, language, title, author, source, source_id,
+const columns = `id, user_id, workspace_id, language, title, author, source, source_id,
 	source_url, attribution, license_note, chapter_count, position, created_at`
 
 // path is the content file of a book, built from integer ids only.
@@ -77,8 +94,11 @@ func (s Store) path(userID, id int64) string {
 // chapter count and creation time filled in. The row is inserted in a
 // transaction, the content file is written (temp file, then rename)
 // before the commit, and the file is removed again if anything fails,
-// so a failed Create leaves no orphan file. A clash on the user's
-// (source, source id) returns ErrDuplicate.
+// so a failed Create leaves no orphan file. b.WorkspaceID must be one of
+// b.UserID's workspaces (ErrWorkspaceNotFound otherwise) of the book's
+// language (*LanguageMismatchError otherwise); both are checked inside
+// the transaction. A clash on the workspace's (source, source id)
+// returns ErrDuplicate.
 func (s Store) Create(ctx context.Context, b Book, chapters []Chapter) (Book, error) {
 	if chapters == nil {
 		chapters = []Chapter{}
@@ -96,11 +116,15 @@ func (s Store) Create(ctx context.Context, b Book, chapters []Chapter) (Book, er
 	}
 	defer tx.Rollback()
 
+	// The workspace check is part of the INSERT: one statement takes the
+	// write lock before it reads, so the transaction never has to upgrade
+	// a read snapshot (which WAL can refuse with SQLITE_BUSY_SNAPSHOT).
 	res, err := tx.ExecContext(ctx, `
-		INSERT INTO library_books (user_id, language, title, author, source, source_id,
+		INSERT INTO library_books (user_id, workspace_id, language, title, author, source, source_id,
 			source_url, attribution, license_note, chapter_count, position, created_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		b.UserID, b.Language, b.Title, b.Author, b.Source, b.SourceID,
+		SELECT ?1, w.id, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13
+		FROM workspaces w WHERE w.id = ?2 AND w.user_id = ?1 AND w.language = ?3`,
+		b.UserID, b.WorkspaceID, b.Language, b.Title, b.Author, b.Source, b.SourceID,
 		b.SourceURL, b.Attribution, b.LicenseNote, b.ChapterCount, b.Position,
 		b.CreatedAt.Format(time.RFC3339))
 	if err != nil {
@@ -108,6 +132,16 @@ func (s Store) Create(ctx context.Context, b Book, chapters []Chapter) (Book, er
 			return Book{}, ErrDuplicate
 		}
 		return Book{}, fmt.Errorf("library: insert book: %w", err)
+	}
+	if n, err := res.RowsAffected(); err != nil {
+		return Book{}, fmt.Errorf("library: insert book: %w", err)
+	} else if n == 0 {
+		// No row: the workspace is not the user's or has another language.
+		wsLang, err := workspaceLanguage(ctx, tx, b.UserID, b.WorkspaceID)
+		if err != nil {
+			return Book{}, err
+		}
+		return Book{}, &LanguageMismatchError{Workspace: wsLang, Book: b.Language}
 	}
 	if b.ID, err = res.LastInsertId(); err != nil {
 		return Book{}, fmt.Errorf("library: insert book: %w", err)
@@ -158,7 +192,7 @@ func writeFile(path string, content []byte) error {
 func scan(row interface{ Scan(...any) error }) (Book, error) {
 	var b Book
 	var created string
-	err := row.Scan(&b.ID, &b.UserID, &b.Language, &b.Title, &b.Author, &b.Source, &b.SourceID,
+	err := row.Scan(&b.ID, &b.UserID, &b.WorkspaceID, &b.Language, &b.Title, &b.Author, &b.Source, &b.SourceID,
 		&b.SourceURL, &b.Attribution, &b.LicenseNote, &b.ChapterCount, &b.Position, &created)
 	if err != nil {
 		return Book{}, err
@@ -169,10 +203,42 @@ func scan(row interface{ Scan(...any) error }) (Book, error) {
 	return b, nil
 }
 
-// List returns the user's books, oldest first.
-func (s Store) List(ctx context.Context, userID int64) ([]Book, error) {
-	rows, err := s.DB.QueryContext(ctx,
-		`SELECT `+columns+` FROM library_books WHERE user_id = ? ORDER BY id`, userID)
+// queryer is what both *sql.DB and *sql.Tx offer for a single-row read.
+type queryer interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+// workspaceLanguage returns the language of one of the user's
+// workspaces, or ErrWorkspaceNotFound.
+func workspaceLanguage(ctx context.Context, q queryer, userID, workspaceID int64) (string, error) {
+	var language string
+	err := q.QueryRowContext(ctx,
+		`SELECT language FROM workspaces WHERE id = ? AND user_id = ?`, workspaceID, userID).Scan(&language)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrWorkspaceNotFound
+	}
+	if err != nil {
+		return "", fmt.Errorf("library: workspace %d: %w", workspaceID, err)
+	}
+	return language, nil
+}
+
+// WorkspaceLanguage returns the language of one of the user's
+// workspaces, or ErrWorkspaceNotFound.
+func (s Store) WorkspaceLanguage(ctx context.Context, userID, workspaceID int64) (string, error) {
+	return workspaceLanguage(ctx, s.DB, userID, workspaceID)
+}
+
+// List returns the user's books of one workspace, or of all the user's
+// workspaces when workspaceID is 0, oldest first. Another user's
+// workspace lists nothing.
+func (s Store) List(ctx context.Context, userID, workspaceID int64) ([]Book, error) {
+	query, args := `SELECT `+columns+` FROM library_books WHERE user_id = ? ORDER BY id`, []any{userID}
+	if workspaceID != 0 {
+		query = `SELECT ` + columns + ` FROM library_books WHERE user_id = ? AND workspace_id = ? ORDER BY id`
+		args = append(args, workspaceID)
+	}
+	rows, err := s.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("library: list: %w", err)
 	}

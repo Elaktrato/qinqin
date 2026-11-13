@@ -41,6 +41,10 @@ func libraryError(w http.ResponseWriter, err error) {
 		http.Error(w, "not found", http.StatusNotFound)
 	case errors.Is(err, library.ErrDuplicate):
 		http.Error(w, "book already in library", http.StatusConflict)
+	case errors.Is(err, library.ErrWorkspaceNotFound):
+		http.Error(w, "workspace not found", http.StatusNotFound)
+	case errors.As(err, new(*library.LanguageMismatchError)):
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 	default:
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
@@ -56,6 +60,13 @@ func bookID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	return id, true
 }
 
+// parseWorkspaceID reads a workspace id given as a request parameter: a
+// positive integer.
+func parseWorkspaceID(raw string) (int64, bool) {
+	id, err := strconv.ParseInt(raw, 10, 64)
+	return id, err == nil && id > 0
+}
+
 // epubLanguage maps a language tag to a supported language code.
 func epubLanguage(tag string) string {
 	tag = strings.ToLower(strings.TrimSpace(tag))
@@ -69,8 +80,10 @@ func epubLanguage(tag string) string {
 
 // handleUploadBook serves POST /api/library/upload: the multipart
 // "file" field carries an epub, which is parsed and stored in the
-// caller's library. The book's language comes from the epub's
-// dc:language, else from the "language" form field.
+// library of the caller's workspace named by the "workspace" field
+// (required; 404 when it is not the caller's). The book's language
+// comes from the epub's dc:language, else from the "language" form
+// field, and must be the workspace's (422 otherwise).
 func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -82,6 +95,17 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.MultipartForm.RemoveAll()
+	workspaceID, ok := parseWorkspaceID(r.FormValue("workspace"))
+	if !ok {
+		http.Error(w, `form field "workspace" with a workspace id required`, http.StatusBadRequest)
+		return
+	}
+	store := s.library()
+	// Unknown or foreign workspaces are refused before the epub is parsed.
+	if _, err := store.WorkspaceLanguage(r.Context(), u.ID, workspaceID); err != nil {
+		libraryError(w, err)
+		return
+	}
 	file, _, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, `multipart field "file" with the epub required`, http.StatusBadRequest)
@@ -123,13 +147,15 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sum := sha256.Sum256(data)
-	book, err := s.library().Create(r.Context(), library.Book{
-		UserID:   u.ID,
-		Language: language,
-		Title:    title,
-		Author:   meta.Author,
-		Source:   "upload",
-		SourceID: hex.EncodeToString(sum[:]),
+	// Create checks the workspace's language against the book's.
+	book, err := store.Create(r.Context(), library.Book{
+		UserID:      u.ID,
+		WorkspaceID: workspaceID,
+		Language:    language,
+		Title:       title,
+		Author:      meta.Author,
+		Source:      "upload",
+		SourceID:    hex.EncodeToString(sum[:]),
 	}, chapters)
 	if err != nil {
 		libraryError(w, err)
@@ -138,13 +164,29 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, book)
 }
 
-// handleListBooks serves GET /api/library/books.
+// handleListBooks serves GET /api/library/books?workspace=<id>: the
+// books of one of the caller's workspaces (404 when it is not the
+// caller's), or of all the caller's workspaces without the parameter.
 func (s *server) handleListBooks(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
 		return
 	}
-	books, err := s.library().List(r.Context(), u.ID)
+	store := s.library()
+	var workspaceID int64
+	if r.URL.Query().Has("workspace") {
+		id, ok := parseWorkspaceID(r.URL.Query().Get("workspace"))
+		if !ok {
+			http.Error(w, "workspace must be a workspace id", http.StatusBadRequest)
+			return
+		}
+		if _, err := store.WorkspaceLanguage(r.Context(), u.ID, id); err != nil {
+			libraryError(w, err)
+			return
+		}
+		workspaceID = id
+	}
+	books, err := store.List(r.Context(), u.ID, workspaceID)
 	if err != nil {
 		libraryError(w, err)
 		return

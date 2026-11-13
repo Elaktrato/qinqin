@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -134,8 +135,19 @@ func (s *server) endImport(userID int64) {
 	s.importMu.Unlock()
 }
 
+// sourceServes reports whether a source can hold books of language: a
+// source without listed languages may hold any.
+func sourceServes(sourceID, language string) bool {
+	info, ok := sourceInfo[sourceID]
+	return !ok || slices.Contains(info.languages, language)
+}
+
 // handleImportSource serves POST /api/library/sources/{source}/import
-// with the body {"sourceId": string}.
+// with the body {"sourceId": string, "workspaceId": number}: the work is
+// stored in the library of that workspace of the caller (404 when it is
+// not the caller's), whose language the work must have (422 otherwise).
+// A work already in that workspace is a 409; another workspace may hold
+// its own copy.
 func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -147,7 +159,8 @@ func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxImportBody)
 	var in struct {
-		SourceID string `json:"sourceId"`
+		SourceID    string `json:"sourceId"`
+		WorkspaceID int64  `json:"workspaceId"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		badBody(w, err)
@@ -155,6 +168,22 @@ func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 	}
 	if in.SourceID == "" || len(in.SourceID) > maxSourceIDLen {
 		http.Error(w, "sourceId required", http.StatusBadRequest)
+		return
+	}
+	if in.WorkspaceID <= 0 {
+		http.Error(w, "workspaceId required", http.StatusBadRequest)
+		return
+	}
+	store := s.library()
+	wsLang, err := store.WorkspaceLanguage(r.Context(), u.ID, in.WorkspaceID)
+	if err != nil {
+		libraryError(w, err)
+		return
+	}
+	// A source without books of the workspace's language is refused
+	// before anything is downloaded.
+	if !sourceServes(src.ID(), wsLang) {
+		http.Error(w, "this source has no books in the workspace language "+wsLang, http.StatusUnprocessableEntity)
 		return
 	}
 	if !s.startImport(u.ID) {
@@ -165,11 +194,10 @@ func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), importTimeout)
 	defer cancel()
-	store := s.library()
 
-	// Skip the download when the work is already in the library; the
+	// Skip the download when the work is already in the workspace; the
 	// unique constraint below still decides races.
-	books, err := store.List(ctx, u.ID)
+	books, err := store.List(ctx, u.ID, in.WorkspaceID)
 	if err != nil {
 		libraryError(w, err)
 		return
@@ -187,6 +215,8 @@ func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	imp.Meta.UserID = u.ID
+	imp.Meta.WorkspaceID = in.WorkspaceID
+	// Create refuses a work whose language is not the workspace's.
 	book, err := store.Create(ctx, imp.Meta, imp.Chapters)
 	if err != nil {
 		if ctx.Err() != nil {

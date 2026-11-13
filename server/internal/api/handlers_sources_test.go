@@ -91,7 +91,9 @@ func sha256Hex(b []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func importBody(id string) map[string]string { return map[string]string{"sourceId": id} }
+func importBody(id string, workspace int64) map[string]any {
+	return map[string]any{"sourceId": id, "workspaceId": workspace}
+}
 
 func bodyOf(t *testing.T, resp *http.Response) string {
 	t.Helper()
@@ -191,12 +193,13 @@ func TestSourcesImport(t *testing.T) {
 	fake := &fakeSource{id: "fake"}
 	ts, sqlDB, dataDir := newSourcesServer(t, fake)
 	path := "/api/library/sources/fake/import"
-	if resp := doJSON(t, http.MethodPost, ts.URL, path, "", importBody("42")); resp.StatusCode != http.StatusUnauthorized {
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, "", importBody("42", 1)); resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("no token: status = %d, want 401", resp.StatusCode)
 	}
 	alice := registerUser(t, ts.URL, "alice", "")
+	ja := newWorkspace(t, ts.URL, alice, "ja", "")
 
-	resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("42"))
+	resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("42", ja))
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("status = %d: %s", resp.StatusCode, bodyOf(t, resp))
 	}
@@ -208,14 +211,15 @@ func TestSourcesImport(t *testing.T) {
 	}
 	decodeJSON(t, resp, &b)
 	if b.ID == 0 || b.Title != "Work 42" || b.Language != "ja" || b.Source != "fake" || b.SourceID != "42" ||
-		b.SourceURL != "https://example.test/42" || b.Attribution != "attr" || b.LicenseNote != "PD" || b.ChapterCount != 2 {
+		b.SourceURL != "https://example.test/42" || b.Attribution != "attr" || b.LicenseNote != "PD" || b.ChapterCount != 2 ||
+		b.WorkspaceID != ja {
 		t.Errorf("book = %+v", b)
 	}
 	if !fake.deadline.After(time.Now().Add(50*time.Second)) || fake.deadline.After(time.Now().Add(61*time.Second)) {
 		t.Errorf("fetch deadline = %v, want about 60 s from now", time.Until(fake.deadline))
 	}
 
-	books := listBooks(t, ts.URL, alice)
+	books := listBooks(t, ts.URL, alice, ja)
 	if len(books) != 1 || books[0].ID != b.ID {
 		t.Errorf("library = %+v", books)
 	}
@@ -237,22 +241,95 @@ func TestSourcesImportDuplicate(t *testing.T) {
 	ts, _, _ := newSourcesServer(t, fake)
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bob", alice)
+	ja := newWorkspace(t, ts.URL, alice, "ja", "")
+	ja2 := newWorkspace(t, ts.URL, alice, "ja", "second")
+	bobJa := newWorkspace(t, ts.URL, bob, "ja", "")
 	path := "/api/library/sources/fake/import"
-	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("42")); resp.StatusCode != http.StatusCreated {
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("42", ja)); resp.StatusCode != http.StatusCreated {
 		t.Fatalf("first: status = %d", resp.StatusCode)
 	}
-	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("42")); resp.StatusCode != http.StatusConflict {
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("42", ja)); resp.StatusCode != http.StatusConflict {
 		t.Errorf("second: status = %d, want 409", resp.StatusCode)
 	}
-	if n := len(listBooks(t, ts.URL, alice)); n != 1 {
+	if n := len(listBooks(t, ts.URL, alice, 0)); n != 1 {
 		t.Errorf("books = %d, want exactly 1", n)
 	}
 	if n := fake.fetchCount(); n != 1 {
 		t.Errorf("source fetched %d times, want 1 (duplicate is caught before downloading)", n)
 	}
+	// The dedupe scope is the workspace: a second ja workspace of the
+	// same user takes the same work, once.
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("42", ja2)); resp.StatusCode != http.StatusCreated {
+		t.Errorf("second workspace: status = %d, want 201", resp.StatusCode)
+	}
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("42", ja2)); resp.StatusCode != http.StatusConflict {
+		t.Errorf("second workspace again: status = %d, want 409", resp.StatusCode)
+	}
+	if n := len(listBooks(t, ts.URL, alice, ja2)); n != 1 {
+		t.Errorf("second workspace books = %d, want 1", n)
+	}
+	if n := fake.fetchCount(); n != 2 {
+		t.Errorf("source fetched %d times, want 2", n)
+	}
 	// Another user can import the same work.
-	if resp := doJSON(t, http.MethodPost, ts.URL, path, bob, importBody("42")); resp.StatusCode != http.StatusCreated {
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, bob, importBody("42", bobJa)); resp.StatusCode != http.StatusCreated {
 		t.Errorf("other user: status = %d, want 201", resp.StatusCode)
+	}
+}
+
+func TestSourcesImportWorkspace(t *testing.T) {
+	fake := &fakeSource{id: "fake"} // serves ja books
+	aozora := &fakeSource{id: "aozora"}
+	ts, sqlDB, dataDir := newSourcesServer(t, fake, aozora)
+	alice := registerUser(t, ts.URL, "alice", "")
+	bob := registerUser(t, ts.URL, "bob", alice)
+	zh := newWorkspace(t, ts.URL, alice, "zh", "")
+	bobJa := newWorkspace(t, ts.URL, bob, "ja", "")
+	path := "/api/library/sources/fake/import"
+
+	// The workspace is required, must be the caller's and exist.
+	for _, body := range []any{
+		map[string]any{"sourceId": "1"},
+		map[string]any{"sourceId": "1", "workspaceId": 0},
+		map[string]any{"sourceId": "1", "workspaceId": -3},
+		map[string]any{"sourceId": "1", "workspaceId": "7"},
+	} {
+		if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, body); resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("body %v: status = %d, want 400", body, resp.StatusCode)
+		}
+	}
+	for _, ws := range []int64{bobJa, 999999} {
+		if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("1", ws)); resp.StatusCode != http.StatusNotFound {
+			t.Errorf("workspace %d: status = %d, want 404", ws, resp.StatusCode)
+		}
+	}
+	if n := fake.fetchCount(); n != 0 {
+		t.Errorf("rejected imports reached the source %d times", n)
+	}
+
+	// A source that serves no book in the workspace's language is refused
+	// before downloading (Aozora is ja only).
+	resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/aozora/import", alice, importBody("1", zh))
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("aozora into zh: status = %d, want 422", resp.StatusCode)
+	}
+	if n := aozora.fetchCount(); n != 0 {
+		t.Errorf("aozora fetched %d times, want 0", n)
+	}
+
+	// A fetched book of another language is refused with the reason.
+	resp = doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("1", zh))
+	body := bodyOf(t, resp)
+	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "workspace language is zh, book is ja") {
+		t.Errorf("ja book into zh: status = %d, body %q, want 422 with the reason", resp.StatusCode, body)
+	}
+	var n int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM library_books`).Scan(&n)
+	if n != 0 {
+		t.Errorf("rows = %d, want 0", n)
+	}
+	if files := filesUnder(t, filepath.Join(dataDir, "books")); len(files) != 0 {
+		t.Errorf("files left behind: %v", files)
 	}
 }
 
@@ -263,9 +340,10 @@ func TestSourcesImportDuplicateRaceMapsTo409(t *testing.T) {
 	var once sync.Once
 	var ts *httptest.Server
 	var alice string
+	var zh int64
 	fake.fetchHook = func(ctx context.Context, id string) (sources.Imported, error) {
-		once.Do(func() { // the same user's book appears while this fetch runs
-			uploadBook(t, ts.URL, alice, tinyEpub(t, "zh"), "")
+		once.Do(func() { // the same book appears in the workspace while this fetch runs
+			uploadBook(t, ts.URL, alice, tinyEpub(t, "zh"), "", zh)
 		})
 		return sources.Imported{
 			Meta:     library.Book{Language: "zh", Title: "T", Source: "upload", SourceID: sha256Hex(tinyEpub(t, "zh"))},
@@ -274,11 +352,12 @@ func TestSourcesImportDuplicateRaceMapsTo409(t *testing.T) {
 	}
 	ts, _, _ = newSourcesServer(t, fake)
 	alice = registerUser(t, ts.URL, "alice", "")
-	resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/fake/import", alice, importBody("1"))
+	zh = newWorkspace(t, ts.URL, alice, "zh", "")
+	resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/fake/import", alice, importBody("1", zh))
 	if resp.StatusCode != http.StatusConflict {
 		t.Errorf("status = %d, want 409", resp.StatusCode)
 	}
-	if n := len(listBooks(t, ts.URL, alice)); n != 1 {
+	if n := len(listBooks(t, ts.URL, alice, 0)); n != 1 {
 		t.Errorf("books = %d, want 1", n)
 	}
 }
@@ -305,7 +384,8 @@ func TestSourcesImportErrors(t *testing.T) {
 			}}
 			ts, sqlDB, dataDir := newSourcesServer(t, fake)
 			alice := registerUser(t, ts.URL, "alice", "")
-			resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/fake/import", alice, importBody("9"))
+			ja := newWorkspace(t, ts.URL, alice, "ja", "")
+			resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/fake/import", alice, importBody("9", ja))
 			body := bodyOf(t, resp)
 			if resp.StatusCode != tc.status {
 				t.Errorf("status = %d, want %d (%s)", resp.StatusCode, tc.status, body)
@@ -325,7 +405,7 @@ func TestSourcesImportErrors(t *testing.T) {
 			}
 			// The slot is released after a failure.
 			fake.fetchHook = nil
-			if resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/fake/import", alice, importBody("9")); resp.StatusCode != http.StatusCreated {
+			if resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/fake/import", alice, importBody("9", ja)); resp.StatusCode != http.StatusCreated {
 				t.Errorf("retry: status = %d, want 201", resp.StatusCode)
 			}
 		})
@@ -348,10 +428,11 @@ func TestSourcesImportRequestValidation(t *testing.T) {
 	fake := &fakeSource{id: "fake"}
 	ts, _, _ := newSourcesServer(t, fake)
 	alice := registerUser(t, ts.URL, "alice", "")
-	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/nope/import", alice, importBody("1")); resp.StatusCode != http.StatusNotFound {
+	ja := newWorkspace(t, ts.URL, alice, "ja", "")
+	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/nope/import", alice, importBody("1", ja)); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("unknown source: status = %d, want 404", resp.StatusCode)
 	}
-	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/fake/import", alice, importBody("")); resp.StatusCode != http.StatusBadRequest {
+	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/library/sources/fake/import", alice, importBody("", ja)); resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("empty sourceId: status = %d, want 400", resp.StatusCode)
 	}
 	post := func(body string) int {
@@ -394,11 +475,13 @@ func TestSourcesImportOneAtATimePerUser(t *testing.T) {
 	ts, _, _ := newSourcesServer(t, fake)
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bob", alice)
+	ja := newWorkspace(t, ts.URL, alice, "ja", "")
+	bobJa := newWorkspace(t, ts.URL, bob, "ja", "")
 	path := "/api/library/sources/fake/import"
 
 	first := make(chan int, 1)
 	go func() {
-		req, _ := http.NewRequest(http.MethodPost, ts.URL+path, strings.NewReader(`{"sourceId":"1"}`))
+		req, _ := http.NewRequest(http.MethodPost, ts.URL+path, strings.NewReader(fmt.Sprintf(`{"sourceId":"1","workspaceId":%d}`, ja)))
 		req.Header.Set("Authorization", "Bearer "+alice)
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -410,13 +493,13 @@ func TestSourcesImportOneAtATimePerUser(t *testing.T) {
 	}()
 	<-started
 
-	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("2")); resp.StatusCode != http.StatusTooManyRequests {
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("2", ja)); resp.StatusCode != http.StatusTooManyRequests {
 		t.Errorf("second concurrent import: status = %d, want 429", resp.StatusCode)
 	}
 	// Other users are not affected.
 	bobDone := make(chan int, 1)
 	go func() {
-		req, _ := http.NewRequest(http.MethodPost, ts.URL+path, strings.NewReader(`{"sourceId":"3"}`))
+		req, _ := http.NewRequest(http.MethodPost, ts.URL+path, strings.NewReader(fmt.Sprintf(`{"sourceId":"3","workspaceId":%d}`, bobJa)))
 		req.Header.Set("Authorization", "Bearer "+bob)
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -435,7 +518,7 @@ func TestSourcesImportOneAtATimePerUser(t *testing.T) {
 		t.Errorf("bob's import: status = %d, want 201", got)
 	}
 	// The slot is free again.
-	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("2")); resp.StatusCode != http.StatusCreated {
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("2", ja)); resp.StatusCode != http.StatusCreated {
 		t.Errorf("after release: status = %d, want 201", resp.StatusCode)
 	}
 	if fake.fetchCount() != 3 {

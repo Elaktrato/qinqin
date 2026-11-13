@@ -15,7 +15,7 @@ func TestIsUniqueViolation(t *testing.T) {
 	}
 	defer sqlDB.Close()
 	ctx := context.Background()
-	ins := `INSERT INTO library_books (user_id, language, title, source, source_id, created_at) VALUES (?, 'zh', ?, 's', 'x', 't')`
+	ins := `INSERT INTO library_books (user_id, workspace_id, language, title, source, source_id, created_at) VALUES (?, 1, 'zh', ?, 's', 'x', 't')`
 	if _, err := sqlDB.ExecContext(ctx, ins, 1, "a"); err != nil {
 		t.Fatal(err)
 	}
