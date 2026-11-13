@@ -214,7 +214,8 @@
 
 	nav {
 		display: flex;
-		gap: 1rem;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
 	}
 
 	nav a {
