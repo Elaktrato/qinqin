@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 // Convert the upstream JLPT and HSK 3.0 lists into qinqin level packs.
 //
-// Two modes. The JLPT packs are bundled in the repository; the HSK 3.0 packs
-// are NOT (their licence status is unclear, see HSK30_CAVEAT): they are an
-// optional, local-only pack you generate yourself.
+// Three modes. The JLPT kanji pack is bundled in the repository; the HSK 3.0
+// packs and the JLPT vocabulary pack are NOT (their licence status is unclear:
+// the hsk30 data may be Ministry of Education copyright, and the JLPT
+// vocabulary licence chain could not be verified): they are optional,
+// local-only packs you generate yourself.
 //
 // Usage:
-//   node scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir> [<packs-dir>]
+//   node scripts/prepare-level-packs.mjs <upstream-dir> [<packs-dir>]
 //   node scripts/prepare-level-packs.mjs --hsk <hsk-dir> [<local-packs-dir>]
+//   node scripts/prepare-level-packs.mjs --jlpt-vocab <jlpt-vocab-dir> [<local-packs-dir>]
 //
 // JLPT mode: <upstream-dir> must hold the two upstream files of the kanji
 // list, downloaded unmodified from the pinned commit below (a maintainer
@@ -16,15 +19,20 @@
 //   curl -fsSLo jlpt.tsv              https://raw.githubusercontent.com/onlyskin/kanjiapi.dev/76aa080cdf56aa7587304d925e1435bb93469b79/jlpt.tsv
 //   curl -fsSLo kanjiapi.dev-LICENSE  https://raw.githubusercontent.com/onlyskin/kanjiapi.dev/76aa080cdf56aa7587304d925e1435bb93469b79/LICENSE
 //
-// <jlpt-vocab-dir> holds the JLPT vocabulary CSVs of open-anki-jlpt-decks
-// and its licence, as published at the pinned commit:
+// It (re)writes the pack directory jlpt-kanji under <packs-dir> (default
+// plugins/data).
+//
+// JLPT vocabulary mode (optional, local use only, not bundled): <jlpt-vocab-dir>
+// holds the JLPT vocabulary CSVs of open-anki-jlpt-decks and its licence, as
+// published at the pinned commit:
 //
 //   base=https://raw.githubusercontent.com/jamsinclair/open-anki-jlpt-decks/1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0
 //   for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
 //   curl -fsSLo LICENSE $base/LICENSE
 //
-// It (re)writes two pack directories under <packs-dir> (default
-// plugins/data): jlpt-kanji and jlpt-words.
+// It (re)writes jlpt-words under <local-packs-dir> (default plugins/data-local,
+// gitignored; created if missing). Seed it with:
+// qinqin seed --packs plugins/data,plugins/data-local
 //
 // HSK mode (optional, local use only, not bundled): <hsk-dir> must hold the
 // three upstream files of ivankra/hsk30 at the pinned commit:
@@ -430,13 +438,12 @@ function sumsBlock(sums, files) {
 }
 
 async function mainJlpt() {
-	const [upstreamArg, vocabArg, packsArg] = process.argv.slice(2);
-	if (upstreamArg === undefined || vocabArg === undefined) {
-		fail('usage: node scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir> [<packs-dir>]');
+	const [upstreamArg, packsArg] = process.argv.slice(2);
+	if (upstreamArg === undefined) {
+		fail('usage: node scripts/prepare-level-packs.mjs <upstream-dir> [<packs-dir>]');
 	}
 	const here = dirname(fileURLToPath(import.meta.url));
 	const upstream = resolve(upstreamArg);
-	const vocabDir = resolve(vocabArg);
 	const packs = resolve(packsArg ?? join(here, '..', 'plugins', 'data'));
 
 	const files = {};
@@ -454,25 +461,7 @@ async function mainJlpt() {
 	}
 	const text = (name) => stripBOM(files[name].toString('utf8'));
 
-	const vocabFiles = {};
-	const vocabSums = {};
-	for (const name of Object.keys(PINNED_VOCAB_SHA256)) {
-		try {
-			vocabFiles[name] = await readFile(join(vocabDir, name));
-		} catch (err) {
-			fail(`read ${name} from ${vocabDir}: ${err.message}`);
-		}
-		vocabSums[name] = sha256(vocabFiles[name]);
-		if (vocabSums[name] !== PINNED_VOCAB_SHA256[name]) {
-			console.warn(`prepare-level-packs: warning: ${name} differs from the pinned upstream file (sha256 ${vocabSums[name]})`);
-		}
-	}
-	const vocabTexts = Object.fromEntries(
-		Object.entries(vocabFiles).map(([name, buffer]) => [name, stripBOM(buffer.toString('utf8'))])
-	);
-
 	const jlpt = jlptLevels(text('jlpt.tsv'));
-	const vocab = jlptVocabLevels(vocabTexts);
 
 	const kanjiapiSource = `https://github.com/onlyskin/kanjiapi.dev (commit ${KANJIAPI_COMMIT})`;
 	const kanjiapiVersion = `kanjiapi.dev@${KANJIAPI_COMMIT.slice(0, 7)}`;
@@ -519,6 +508,45 @@ ${sumsBlock(sums, ['jlpt.tsv', 'kanjiapi.dev-LICENSE'])}
 `
 	});
 
+	console.log(`jlpt-kanji: ${countsLine(jlpt)}`);
+}
+
+/**
+ * mainJlptVocab converts the optional, local-only JLPT vocabulary pack. It is
+ * not bundled in the repository (its upstream licence chain could not be verified).
+ */
+async function mainJlptVocab(args) {
+	const [vocabArg, localArg] = args;
+	if (vocabArg === undefined) {
+		fail('usage: node scripts/prepare-level-packs.mjs --jlpt-vocab <jlpt-vocab-dir> [<local-packs-dir>]');
+	}
+	const here = dirname(fileURLToPath(import.meta.url));
+	const vocabDir = resolve(vocabArg);
+	const packs = resolve(localArg ?? join(here, '..', 'plugins', 'data-local'));
+
+	const vocabFiles = {};
+	const vocabSums = {};
+	for (const name of Object.keys(PINNED_VOCAB_SHA256)) {
+		try {
+			vocabFiles[name] = await readFile(join(vocabDir, name));
+		} catch (err) {
+			fail(
+				`${name} is missing in ${vocabDir} (${err.code ?? err.message}). JLPT vocabulary is not bundled; download n5.csv … n1.csv ` +
+					'and LICENSE from https://github.com/jamsinclair/open-anki-jlpt-decks first (commands in this ' +
+					"script's header)"
+			);
+		}
+		vocabSums[name] = sha256(vocabFiles[name]);
+		if (vocabSums[name] !== PINNED_VOCAB_SHA256[name]) {
+			console.warn(`prepare-level-packs: warning: ${name} differs from the pinned upstream file (sha256 ${vocabSums[name]})`);
+		}
+	}
+	const vocabTexts = Object.fromEntries(
+		Object.entries(vocabFiles).map(([name, buffer]) => [name, stripBOM(buffer.toString('utf8'))])
+	);
+
+	const vocab = jlptVocabLevels(vocabTexts);
+
 	const vocabSource = `https://github.com/jamsinclair/open-anki-jlpt-decks (commit ${JLPT_DECKS_COMMIT})`;
 	const vocabFormCount = vocab.levels.reduce((sum, level) => sum + level.entries.length, 0);
 	const vocabStats = vocab.stats
@@ -533,9 +561,10 @@ ${sumsBlock(sums, ['jlpt.tsv', 'kanjiapi.dev-LICENSE'])}
 			language: 'ja',
 			license: 'MIT',
 			attribution:
+				'NOT BUNDLED, local use only. ' +
 				'open-anki-jlpt-decks (MIT, © 2020 Jamie Sinclair), https://github.com/jamsinclair/open-anki-jlpt-decks — ' +
 				'unofficial N5–N1 vocabulary lists; per its README taken from chyyran/jlpt-anki-decks, based on the tanos.co.uk ' +
-				'lists (Jonathan Waller, described as CC BY)',
+				'lists (Jonathan Waller, described as CC BY; unverified, the licence chain of this pack could not be confirmed)',
 			format: 'json'
 		},
 		unit: 'word',
@@ -549,12 +578,17 @@ Japanese words grouped by JLPT level, N5 (easiest) to N1, from \`src/n5.csv\`
 Licence: MIT, Copyright (c) 2020 Jamie Sinclair. See LICENSE in this
 directory for the full text, copied verbatim from the upstream repository.
 
+Status: NOT BUNDLED with qinqin, local use only. This pack was generated
+locally by the user and must not be committed or redistributed. Its upstream
+licence chain could not be verified (see Provenance).
+
 Provenance: the open-anki-jlpt-decks README says "Original deck data was
 taken from https://github.com/chyyran/jlpt-anki-decks, which were based on
 decks from tanos.co.uk". The tanos.co.uk lists are Jonathan Waller's
 unofficial JLPT lists, described as published under a Creative Commons
 Attribution (CC BY) licence; that page could not be reached when this pack
-was made, so the description is not verified here. The JLPT has published
+was made, so the description is not verified here, and the MIT label of
+open-anki-jlpt-decks may not cover data derived from it. The JLPT has published
 no official vocabulary list since the 2010 revision of the test; these
 lists are reconstructions and not an official release.
 
@@ -580,11 +614,11 @@ ${sumsBlock(vocabSums, Object.keys(PINNED_VOCAB_SHA256))}
 `
 	});
 
-	console.log(`jlpt-kanji: ${countsLine(jlpt)}`);
 	console.log(`jlpt-words: ${vocabFormCount} forms; ${countsLine(vocab.levels)}`);
 	for (const s of vocab.stats) {
 		console.log(`  ${s.name}: ${s.rows} rows, ${s.dropped} pieces dropped, ${s.repeats} forms already listed (same or easier level)`);
 	}
+	console.log(`written to ${packs} (not bundled, local use only)`);
 }
 
 /**
@@ -726,9 +760,9 @@ ${sumsBlock(sums, hskFiles)}
 async function main() {
 	const args = process.argv.slice(2);
 	if (args[0] === '--hsk') return mainHsk(args.slice(1));
+	if (args[0] === '--jlpt-vocab') return mainJlptVocab(args.slice(1));
 	return mainJlpt();
 }
-
 
 // Run only as a script: the tests import the parsing helpers.
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

@@ -107,3 +107,49 @@ test('--hsk writes the local-only packs deterministically', () => {
 		rmSync(dir, { recursive: true, force: true });
 	}
 });
+
+test('--jlpt-vocab fails clearly when the upstream files are missing', () => {
+	const dir = mkdtempSync(join(tmpdir(), 'jlpt-missing-'));
+	try {
+		const r = spawnSync(process.execPath, [script, '--jlpt-vocab', dir, join(dir, 'out')], { encoding: 'utf8' });
+		assert.equal(r.status, 1);
+		assert.match(r.stderr, /n5\.csv is missing/);
+		assert.match(r.stderr, /not bundled/);
+		assert.equal(existsSync(join(dir, 'out')), false);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('--jlpt-vocab writes the local-only pack deterministically', () => {
+	const dir = mkdtempSync(join(tmpdir(), 'jlpt-local-'));
+	try {
+		const rows = {
+			'n5.csv': 'expression,reading,meaning\n風,かぜ,wind\n',
+			'n4.csv': 'expression,reading,meaning\n勉強する,べんきょうする,study\n',
+			'n3.csv': 'expression,reading,meaning\n学校,がっこう,school\n',
+			'n2.csv': 'expression,reading,meaning\n猫,ねこ,cat\n',
+			'n1.csv': 'expression,reading,meaning\n鳥,とり,bird\n'
+		};
+		for (const [name, text] of Object.entries(rows)) writeFileSync(join(dir, name), text);
+		writeFileSync(join(dir, 'LICENSE'), 'MIT licence text\n');
+		const run = (out) => {
+			const r = spawnSync(process.execPath, [script, '--jlpt-vocab', dir, out], { encoding: 'utf8' });
+			assert.equal(r.status, 0, r.stderr);
+			return ['manifest.json', 'levels.json', 'LICENSE', 'ATTRIBUTION.md'].map((f) =>
+				readFileSync(join(out, 'jlpt-words', f), 'utf8')
+			);
+		};
+		const a = run(join(dir, 'a'));
+		const b = run(join(dir, 'b'));
+		assert.deepEqual(a, b);
+		assert.match(a[0], /NOT BUNDLED, local use only/);
+		assert.match(a[0], /"JLPT \(vocabulary\)"/);
+		assert.match(a[3], /not bundled/i);
+		assert.match(a[3], /tanos\.co\.uk/);
+		assert.match(a[3], /could not be (reached|verified)/);
+		assert.equal(existsSync(join(dir, 'a', 'jlpt-kanji')), false);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

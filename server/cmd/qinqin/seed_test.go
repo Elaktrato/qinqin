@@ -79,10 +79,11 @@ func TestDefaultRootHoldsNoDictionarySamples(t *testing.T) {
 	}
 }
 
-// TestDefaultRootHoldsNoLevelSamples: with the real JLPT and HSK lists
-// bundled, a hand-written sample level pack would only add a second,
-// duplicate badge ("JLPT N5 mini (sample) N5" next to "JLPT (vocabulary)
-// N5"), so a default seed installs real schemes only.
+// TestDefaultRootHoldsNoLevelSamples: with the real JLPT kanji list bundled
+// (JLPT vocabulary and HSK 3.0 are optional local packs, not bundled), a
+// hand-written sample level pack would only add a second, duplicate badge
+// ("JLPT N5 mini (sample) N5" next to "JLPT (kanji) N5"), so a default seed
+// installs real schemes only.
 func TestDefaultRootHoldsNoLevelSamples(t *testing.T) {
 	packs, err := findPacksIn(committedPacks)
 	if err != nil {
@@ -99,7 +100,7 @@ func TestDefaultRootHoldsNoLevelSamples(t *testing.T) {
 		}
 	}
 	slices.Sort(schemes)
-	if want := []string{"jlpt-kanji", "jlpt-words"}; !slices.Equal(schemes, want) {
+	if want := []string{"jlpt-kanji"}; !slices.Equal(schemes, want) {
 		t.Errorf("default level packs = %v, want %v", schemes, want)
 	}
 }

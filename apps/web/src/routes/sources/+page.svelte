@@ -222,12 +222,14 @@
 		{/if}
 		{#if installedPacks.has('jlpt-words')}
 			<p class="notice">
-				The JLPT vocabulary comes from
+				The JLPT vocabulary lists on this instance were installed locally by its operator; qinqin
+				does not bundle them because their licence chain could not be verified. They come from
 				<a href="https://github.com/jamsinclair/open-anki-jlpt-decks" rel="noreferrer"
 					>open-anki-jlpt-decks</a
 				>
-				(MIT), which its README says was taken from chyyran/jlpt-anki-decks, based on the
-				tanos.co.uk lists by Jonathan Waller (described as Creative Commons Attribution).
+				(labelled MIT), which its README says was taken from chyyran/jlpt-anki-decks, based on the
+				tanos.co.uk lists by Jonathan Waller (described as Creative Commons Attribution; the page
+				could not be reached, so this is unverified).
 			</p>
 		{/if}
 		{#if installedPacks.has('hsk30-chars') || installedPacks.has('hsk30-words')}
