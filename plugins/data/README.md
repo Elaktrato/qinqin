@@ -9,8 +9,8 @@ Committed (small, hand-written, CC0 — samples, not the official lists):
 
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
-| `hsk-mini` | levels | zh | word levels with derived character levels |
-| `jlpt-mini` | levels | ja | an N5 sample |
+| `hsk-mini` | levels | zh | word levels with derived character levels (not offered as a map grouping) |
+| `jlpt-mini` | levels | ja | an N5 sample (not offered as a map grouping) |
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack) |
 
 The hand-written sample DICTIONARIES `zh-mini` (pinyin → bopomofo,
@@ -44,6 +44,10 @@ maintainer step: re-check Jiten's licence first and pass
 `JITEN_LICENCE_CHECKED=<YYYY-MM-DD> JITEN_TERMS_VERSION=<version>` (both
 scripts require them). That conversion needs `python3`; building, running
 and testing the app do not.
+
+The `kanjidic2` and `unihan` importers also store grade, JLPT, frequency,
+stroke, GB2312 and standard-list attributes for the character map (see
+`docs/sources.md`); a database seeded earlier needs a re-seed to fill them.
 
 A slow test seeds this whole directory and checks lookups against the real
 data; it is opt-in: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v`

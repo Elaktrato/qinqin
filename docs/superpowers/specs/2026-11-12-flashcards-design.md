@@ -69,6 +69,8 @@ the new limit with the virtual words. Custom decks remain the explicit path.
 
 ## Mastery map (R2)
 
+> Redesigned on 2026-11-13: the map now lists every character of the language, grouped by grade, JLPT, frequency, strokes or an installed scheme, instead of a scheme/level picker. The scoring below is unchanged. See [the character grid plan](../plans/2026-11-13-character-grid.md).
+
 A grid of Hanzi/Kanji (per workspace language), filterable by level scheme and
 level, shaded by derived mastery, with a level-progress list of mastered counts.
 Mastery is derived, never stored. For a character, each reviewed vocab card whose

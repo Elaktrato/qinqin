@@ -287,15 +287,48 @@ the session queues that level's words. A word that already has a card reuses it;
 the rest get a card in the general deck when you first grade them, so abandoning
 a level session creates nothing.
 
-`/study/map` is the Hanzi/Kanji mastery map for the current workspace language.
-It shows a grid of the characters in the selected scheme and level — or the whole
-scheme — with a filter for each, plus a level-progress list of mastered counts.
-Colour is the character's mastery band: grey for not studied, then red, amber,
-blue, and green for fresh, learning, mature, and learned. A character's 0–100
-score is the mean over every reviewed card whose word contains it of how firmly
-that card's schedule has settled, with a year of FSRS stability counting fully;
-characters at 80 or above count as mastered. The map is derived from your cards
-and review events, so nothing schedule-shaped is stored for it either.
+`/study/map` is the Hanzi/Kanji map for the current workspace language. It lists
+every character of the language, studied or not, shaded by mastery.
+
+- **Universe.** Japanese: all 13,108 KANJIDIC2 kanji. Chinese: about 11.1k
+  characters, the standard characters list (通用规范汉字表) plus every character
+  with a CC-CEDICT reading, single Han characters only. A traditional form shares
+  its simplified character's cell: a card written 愛 colours the 爱 cell.
+- **Group by.** The choice is remembered per language. Japanese: Grade, JLPT
+  (the old pre-2010 scale of four levels, labelled as such), Frequency, Strokes.
+  Chinese: Common (GB2312 level 1, level 2, other standard, other), HK primary
+  grade, Strokes. Any installed level scheme that is not a sample pack, such as an
+  HSK pack you install yourself (see below), is added as a further option.
+- **Sections** show learned/total and a stacked stage bar. The stage legend doubles
+  as a filter (All, Not studied, Learning, Learned). Search matches the glyph,
+  the reading (toneless pinyin works), the meaning, and hiragana or katakana.
+  Jump to character opens its section and focuses the cell.
+- **Cells.** Colour is the character's mastery band: grey for not studied, then
+  red, amber, blue, and green for fresh, learning, mature, and learned. Non-colour
+  markers back this up: a tick for learned, a dashed outline for unseen. A popover
+  shows reading, meaning, variants, stage, score and card count (hover, focus, or
+  first tap on touch). The grid is keyboard-navigable: arrows, Home/End, Ctrl+Home/End;
+  Enter opens the entry. Large sections render lazily in batches.
+- **Score.** A character's 0–100 score is the mean over every reviewed card whose
+  word contains it of how firmly that card's schedule has settled, with a year of
+  FSRS stability counting fully; characters at 80 or above count as learned. The
+  map is derived from your cards and review events, so nothing schedule-shaped is
+  stored for it either.
+
+The grade, JLPT, frequency and standard-list fields come from the importers. A
+database seeded before this change needs `qinqin seed` (under Docker,
+`docker compose exec qinqin qinqin seed`) to fill them; until then the page shows a
+"Level data missing" banner and lists the characters in one section.
+
+No HSK list is bundled, because of its licence. To group by HSK, put a level pack
+under `plugins/data-local/<id>/` (see [docs/sources.md](docs/sources.md),
+"Local-only data") and run `qinqin seed`, with `--packs plugins/data,plugins/data-local`
+if you name the roots. A pack is a directory with a `manifest.json` (`"type": "levels"`,
+`"language": "zh"`, `"format": "json"`, plus `id`, `name`, `version`, `license`,
+`attribution`) and a `levels.json` like
+`{"unit": "word", "levels": [{"name": "1", "entries": ["你好", "谢谢"]}]}`; `unit` is
+`word` or `character`. See `plugins/data/hsk-mini` for the layout. The bundled
+`hsk-mini` and `jlpt-mini` samples are not offered as map groupings.
 
 For each workspace, the flashcards home widget shows:
 
@@ -337,6 +370,7 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license` and `attribution` (the Sources page lists them) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
+| `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `j` JLPT (old 1–4 scale), `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
 | `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one; an over-long or invalid name is 422, a duplicate (language, name) 409 |
 | `PUT /api/workspaces/{id}` `{name?, settings?}` | Rename and/or merge settings; at least one field is required. The body used to be the bare settings object |

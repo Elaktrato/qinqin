@@ -53,6 +53,23 @@ and `attribution`, and the Sources page lists them. An opt-in test seeds the
 real bundle and checks lookups against it (about a minute):
 `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` (from `server/`).
 
+## Character fields used by the map
+
+The importers keep a few per-character attributes for the character map
+(`GET /api/characters`):
+
+- **KANJIDIC2**: `<grade>` (school grade, 1–10), `<jlpt>` (the old pre-2010 scale
+  of four levels, not N5–N1), `<freq>` (newspaper rank, 1–2501) and the first
+  stroke count. Every KANJIDIC2 kanji carries `src = kd2`, which defines the
+  Japanese universe.
+- **Unihan**: `kTotalStrokes` (first count), `kTGHZ2013` (in the standard
+  characters list), `kGB0` (GB2312 row: rows 16–55 are level 1, 56–87 level 2) and
+  `kGradeLevel` (Hong Kong primary grade). `kGB0` and `kGradeLevel` come from the
+  optional `OtherMappings` and `DictionaryLikeData` members of `Unihan.zip`.
+
+Each importer owns exactly these keys and replaces them on re-seed; CC-CEDICT
+owns none. No HSK list is bundled (see "Local-only data").
+
 ## Local-only data
 
 Data whose licence is unclear or restrictive is never committed. It can live
@@ -60,7 +77,8 @@ in `plugins/data-local/`, which `.gitignore` excludes: `qinqin seed` with no
 `--packs` imports `plugins/data` and then `plugins/data-local` when that
 directory exists (or name the roots: `--packs plugins/data,plugins/data-local`).
 The app works without anything there; frequency packs only reorder lookup
-results.
+results. A level pack (for example an HSK list) added there appears as a
+grouping on the character map; see "Level packs" below.
 
 Under Docker the image holds only its bundled packs (`/opt/qinqin/packs`):
 `docker compose exec qinqin qinqin seed` does not see the host's
@@ -147,3 +165,12 @@ licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
 package; a web test keeps them identical) and served by the app at
 [`/OPENCC-JS-LICENSE.TXT`](/OPENCC-JS-LICENSE.TXT) and
 [`/OPENCC-APACHE-2.0.TXT`](/OPENCC-APACHE-2.0.TXT).
+
+## Level packs
+
+A levels pack is a directory with a `manifest.json` (`"type": "levels"`, `language`,
+`"format": "json"`, plus `id`, `name`, `version`, `license`, `attribution`) and a
+`levels.json`: `{"unit": "word" | "character", "levels": [{"name": "1", "entries": [...]}]}`.
+Entries must already exist in an imported dictionary; unknown ones are skipped and
+reported. Put one under `plugins/data-local/` and run `qinqin seed`. The map
+offers every installed scheme except the bundled samples (`hsk-mini`, `jlpt-mini`).
