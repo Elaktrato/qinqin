@@ -16,7 +16,8 @@
 		listHighlights,
 		renameBookmark,
 		setPosition,
-		updateHighlight
+		updateHighlight,
+		type NewHighlight
 	} from '$lib/api/library';
 	import type { Book, Chapter } from '$lib/api/types';
 	import BookmarksPanel from './BookmarksPanel.svelte';
@@ -27,7 +28,10 @@
 	import { visibleHighlights, type Highlight, type HighlightColor } from './highlights';
 	import {
 		CLAMP_NOTICE,
+		ELSEWHERE_NOTICE,
 		OVERLAP_NOTICE,
+		addFailure,
+		neighbourAfter,
 		TOO_LONG_NOTICE,
 		highlightKey,
 		highlightKeyBusy,
@@ -435,11 +439,23 @@
 		anchor: HTMLElement;
 		/** Where focus goes back to, if it is still there. */
 		returnTo: HTMLElement | null;
+		/** Opened from the text or from the panel: decides where focus goes after a delete. */
+		from: 'text' | 'panel';
+		/** Where the highlight is (reading order), for focus after it is gone. */
+		place: { chapter: number; paragraph: number; start: number };
 		focusNote: boolean;
 		notice: string;
+		/** A note to start from (carried over from a failed add). */
+		initialNote?: string;
+		/** The add of a "Note" highlight, while it may still fail (then retried with the note). */
+		body?: NewHighlight;
+		failure: string;
 	}
-	let editor = $state<EditorState | null>(null);
+	// Raw: replaced as a whole, never mutated (and `body` keeps its identity).
+	let editor = $state.raw<EditorState | null>(null);
 	let editorKey = 0;
+	// The open editor's note as typed (kept when its add fails).
+	let editorDraft = '';
 
 	function markOf(hid: number): HTMLElement | null {
 		return container?.querySelector<HTMLElement>(`mark[data-h="${hid}"]`) ?? null;
@@ -447,7 +463,15 @@
 
 	async function openEditor(
 		hid: number,
-		opts: { anchor?: HTMLElement | null; returnTo?: HTMLElement | null; focusNote?: boolean; notice?: string } = {}
+		opts: {
+			anchor?: HTMLElement | null;
+			returnTo?: HTMLElement | null;
+			from?: 'text' | 'panel';
+			focusNote?: boolean;
+			notice?: string;
+			initialNote?: string;
+			body?: NewHighlight;
+		} = {}
 	): Promise<void> {
 		await tick();
 		const h = highlights.get(hid);
@@ -455,34 +479,46 @@
 		const mark = markOf(h.id) ?? markOf(hid);
 		const anchor = opts.anchor ?? mark ?? (container && paragraphElement(container, h.paragraph));
 		if (!anchor) return;
+		editorDraft = '';
 		editor = {
 			key: ++editorKey,
 			id: hid,
 			anchor,
 			returnTo: opts.returnTo === undefined ? mark : opts.returnTo,
+			from: opts.from ?? 'text',
+			place: { chapter: h.chapter, paragraph: h.paragraph, start: h.start },
 			focusNote: opts.focusNote ?? false,
-			notice: opts.notice ?? ''
+			notice: opts.notice ?? '',
+			initialNote: opts.initialNote,
+			body: opts.body,
+			failure: ''
 		};
 	}
 
-	function closeEditor(how: { deleted: boolean; refocus: boolean }): void {
+	async function closeEditor(how: { deleted: boolean; refocus: boolean }): Promise<void> {
 		const closing = editor;
 		editor = null;
 		if (!closing || !how.refocus) return;
-		const back = closing.returnTo;
-		if (back?.isConnected) {
-			focusQuietly(back);
+		// Let a delete reach the DOM first: the mark or the panel row that
+		// opened the editor may be on its way out.
+		await tick();
+		if (!how.deleted && closing.returnTo?.isConnected) {
+			focusQuietly(closing.returnTo);
 			return;
 		}
-		// The highlight is gone: the panel heading (opened from the panel)
-		// or its paragraph (opened from the text).
-		const heading = document.getElementById('highlights-heading');
-		if (back && heading?.isConnected && heading.getClientRects().length > 0) {
-			heading.focus({ preventScroll: true });
-			return;
+		if (closing.from === 'panel') {
+			// The next highlight in the panel, else the previous, else the tab.
+			const next = how.deleted ? neighbourAfter(highlights.items, closing.place) : highlights.get(closing.id);
+			const row = next && document.getElementById(`hl-jump-${next.id}`);
+			const target = row ?? document.getElementById('rail-tab-highlights');
+			if (target && target.getClientRects().length > 0) {
+				target.focus({ preventScroll: true });
+				return;
+			}
 		}
-		const paragraph = container && closing.anchor.closest<HTMLElement>('[data-p]');
-		if (paragraph?.isConnected) focusQuietly(paragraph);
+		const paragraph =
+			container && content?.n === closing.place.chapter ? paragraphElement(container, closing.place.paragraph) : null;
+		if (paragraph) focusQuietly(paragraph);
 	}
 
 	// Another chapter or book: the editor's highlight is not on screen.
@@ -491,6 +527,45 @@
 		void openBookId;
 		untrack(() => (editor = null));
 	});
+
+	// An add was refused. Overlapping a highlight known here: open it (the
+	// note typed for the failed one comes along, not yet saved). Otherwise
+	// say why; an editor waiting on this add keeps the note and can retry.
+	async function addRefused(
+		result: { ok: false; existingId?: number; available?: boolean },
+		waitingKey: number | null,
+		withNote: boolean
+	): Promise<void> {
+		const failure = addFailure(result, highlights.error);
+		const waiting = editor && waitingKey !== null && editor.key === waitingKey ? editor : null;
+		const draft = waiting ? editorDraft : '';
+		if (failure.kind === 'existing') {
+			tell(OVERLAP_NOTICE);
+			lookup.close();
+			const existing = highlights.get(failure.id);
+			const carried = draft.trim() && existing ? (existing.note ? `${existing.note}\n${draft}` : draft) : undefined;
+			await openEditor(failure.id, { focusNote: withNote, notice: OVERLAP_NOTICE, initialNote: carried });
+			return;
+		}
+		// The store announces its own errors; this one it does not.
+		if (failure.text === ELSEWHERE_NOTICE) tell(failure.text);
+		if (waiting) editor = { ...waiting, failure: failure.text };
+	}
+
+	async function retryAdd(draft: string): Promise<void> {
+		const open = editor;
+		if (!open?.body) return;
+		const body: NewHighlight = { ...open.body, note: draft.trim() ? draft : undefined };
+		editor = { ...open, body, failure: 'Trying again…' };
+		const result = await highlights.add(body);
+		if (editor?.key !== open.key) return;
+		if (result.ok) {
+			editor = null;
+			await openEditor(result.highlight.id, { from: 'text' });
+			return;
+		}
+		await addRefused(result, open.key, true);
+	}
 
 	/**
 	 * highlightSelection highlights a selection in `color`; with `withNote`
@@ -535,6 +610,7 @@
 		tell(plan.clamped ? CLAMP_NOTICE : '');
 		const body = plan.body;
 		const adding = highlights.add(body);
+		let waitingKey: number | null = null;
 		if (withNote) {
 			// The editor replaces the popup. The new highlight shows at once
 			// (a temporary id until it is saved; the editor follows it).
@@ -542,14 +618,11 @@
 			const temp = highlights.items.find(
 				(h) => h.id < 0 && h.chapter === body.chapter && h.paragraph === body.paragraph && h.start === body.start
 			);
-			if (temp) await openEditor(temp.id, { focusNote: true, notice: plan.clamped ? CLAMP_NOTICE : '' });
+			if (temp) await openEditor(temp.id, { focusNote: true, notice: plan.clamped ? CLAMP_NOTICE : '', body });
+			waitingKey = editor?.body === body ? editor.key : null;
 		}
 		const result = await adding;
-		if (!result.ok && result.existingId !== undefined && result.available) {
-			tell(OVERLAP_NOTICE);
-			lookup.close();
-			await openEditor(result.existingId, { focusNote: withNote, notice: OVERLAP_NOTICE });
-		}
+		if (!result.ok) await addRefused(result, waitingKey, withNote);
 	}
 
 	// The popup's action bar acts on the selection the popup was opened for.
@@ -584,11 +657,11 @@
 	});
 
 	function editFromText(hid: number, mark: HTMLElement): void {
-		void openEditor(hid, { anchor: mark, returnTo: mark });
+		void openEditor(hid, { anchor: mark, returnTo: mark, from: 'text' });
 	}
 
 	function editFromPanel(h: Highlight, opener: HTMLElement): void {
-		void openEditor(h.id, { anchor: opener, returnTo: opener });
+		void openEditor(h.id, { anchor: opener, returnTo: opener, from: 'panel' });
 	}
 
 	function jumpToHighlight(h: Highlight): void {
@@ -827,8 +900,13 @@
 					lang={textLang}
 					focusNote={open.focusNote}
 					notice={open.notice}
+					initialNote={open.initialNote}
+					pending={open.body !== undefined}
+					failure={open.failure}
 					oncolor={rememberColor}
-					onclose={closeEditor}
+					ondraft={(d) => (editorDraft = d)}
+					onretry={(d) => void retryAdd(d)}
+					onclose={(how) => void closeEditor(how)}
 				/>
 			{/each}
 		{/if}

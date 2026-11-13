@@ -18,7 +18,12 @@
 		lang,
 		focusNote = false,
 		notice = '',
+		initialNote,
+		pending = false,
+		failure = '',
 		oncolor,
+		ondraft,
+		onretry,
 		onclose
 	}: {
 		list: HighlightList;
@@ -32,7 +37,21 @@
 		focusNote?: boolean;
 		/** A short message shown on top (an overlap, a clamped selection). */
 		notice?: string;
+		/** A note to start from instead of the saved one (not saved yet). */
+		initialNote?: string;
+		/**
+		 * Opened on a highlight whose add is still pending (the "Note"
+		 * action): if the add fails the editor stays, keeps the typed note
+		 * and offers to try again, instead of closing with it.
+		 */
+		pending?: boolean;
+		/** Why the pending add failed (or that a retry is running). */
+		failure?: string;
 		oncolor?: (color: HighlightColor) => void;
+		/** The note as typed, on every change. */
+		ondraft?: (draft: string) => void;
+		/** Try the failed add again, with this note. */
+		onretry?: (draft: string) => void;
 		/**
 		 * `deleted`: the highlight is gone, focus cannot return to it.
 		 * `refocus`: false when a press elsewhere closed it (focus goes there).
@@ -45,16 +64,36 @@
 	let size = $state({ width: 0, height: 0 });
 	let rect = $state({ x: 0, y: 0, w: 0, h: 0 });
 	let confirming = $state(false);
-	let status = $state<'' | 'saving' | 'saved' | 'error'>('');
+	let status = $state<'' | 'saving' | 'saved' | 'error' | 'unsaved'>('');
 	let closed = false;
 
 	const highlight = $derived(list.get(id));
-	// The draft is the user's: it starts from the saved note and is only
-	// replaced by the server's cleaned version of exactly what was sent.
-	let draft = $state(untracked());
-	function untracked(): string {
-		return list.get(id)?.note ?? '';
+	// What is shown: the highlight, or (once its pending add failed) the
+	// last version of it that was seen.
+	let last = $state(initial().highlight);
+	let everSaved = $state(false);
+	$effect(() => {
+		if (!highlight) return;
+		last = highlight;
+		if (highlight.id > 0) everSaved = true;
+	});
+	const failed = $derived(pending && !highlight && !everSaved);
+	const view = $derived(highlight ?? (failed ? last : null));
+	// The draft is the user's: it starts from the saved note (or the given
+	// one) and is only replaced by the server's cleaned version of exactly
+	// what was sent.
+	let draft = $state(initial().note);
+	function initial(): { highlight: ReturnType<HighlightList['get']>; note: string; carried: boolean } {
+		const h = list.get(id);
+		const saved = h?.note ?? '';
+		return { highlight: h, note: initialNote ?? saved, carried: initialNote !== undefined && initialNote !== saved };
 	}
+	$effect(() => ondraft?.(draft));
+	// A carried-over note is not saved until the user saves it.
+	if (initial().carried) status = 'unsaved';
+
+	// A server message may come without a full stop.
+	const sentence = (text: string) => (/[.!?…。]$/u.test(text.trim()) ? text.trim() : `${text.trim()}.`);
 
 	const runes = $derived(Array.from(draft).length);
 	const tooLong = $derived(runes > MAX_NOTE_RUNES);
@@ -99,9 +138,11 @@
 
 	function close(deleted = false, refocus = true): void {
 		if (closed) return;
-		if (!deleted) void saveNote();
+		// Nothing was saved: closing a failed editor leaves nothing behind.
+		const gone = deleted || !highlight;
+		if (!gone) void saveNote();
 		closed = true;
-		onclose({ deleted, refocus });
+		onclose({ deleted: gone, refocus });
 	}
 
 	async function askDelete(): Promise<void> {
@@ -129,9 +170,10 @@
 		}
 	}
 
-	// The highlight went away (deleted elsewhere, a book switch): nothing to edit.
+	// The highlight went away (deleted elsewhere, a book switch): nothing
+	// to edit. A failed pending add keeps the editor (and the note) instead.
 	$effect(() => {
-		if (!highlight && !closed) {
+		if (!highlight && !failed && !closed) {
 			closed = true;
 			onclose({ deleted: true, refocus: true });
 		}
@@ -173,7 +215,7 @@
 	});
 </script>
 
-{#if highlight}
+{#if view}
 	<div
 		bind:this={box}
 		bind:offsetWidth={size.width}
@@ -188,52 +230,57 @@
 	>
 		<div class="head">
 			<p class="title" id={titleId}>
-				<span class="visually-hidden">Highlight: </span><span class="snippet {highlight.color}" {lang}
-					>{snippetAt(highlight.text, 60)}</span
+				<span class="visually-hidden">Highlight: </span><span class="snippet {view.color}" {lang}
+					>{snippetAt(view.text, 60)}</span
 				>
 			</p>
 			<button type="button" class="close" aria-label="Close the highlight editor" onclick={() => close()}>×</button>
 		</div>
-		{#if notice}<p class="notice">{notice}</p>{/if}
+		{#if failed}
+			<p class="notice failure">{sentence(failure || 'This highlight could not be saved.')} Your note is kept here.</p>
+		{:else if notice}<p class="notice">{notice}</p>{/if}
 
-		<div class="colors" role="group" aria-label="Colour">
+		<div class="colors" role="group" aria-label="Colour" hidden={failed}>
 			{#each HIGHLIGHT_COLORS as color (color)}
 				<button
 					type="button"
 					class="swatch {color}"
-					class:current={color === highlight.color}
+					class:current={color === view.color}
 					aria-label={COLOR_NAMES[color]}
-					aria-pressed={color === highlight.color}
+					aria-pressed={color === view.color}
 					onclick={() => pick(color)}
 				></button>
 			{/each}
 		</div>
 
-		<label class="note-label" for="hl-note-{id}">Note</label>
+		<label class="note-label" for="hl-editor-note-{id}">Note</label>
 		<textarea
 			bind:this={noteField}
-			id="hl-note-{id}"
+			id="hl-editor-note-{id}"
 			rows="4"
 			bind:value={draft}
 			onblur={() => void saveNote()}
 			onkeydown={noteKey}
 			oninput={() => (status = '')}
 			aria-invalid={tooLong}
-			aria-describedby="hl-note-help-{id}"
+			aria-describedby="hl-editor-note-help-{id}"
 		></textarea>
-		<p class="help" id="hl-note-help-{id}">
+		<p class="help" id="hl-editor-note-help-{id}">
 			<span class="count" class:over={tooLong}>{runes}/{MAX_NOTE_RUNES}</span>
-			<span>Saved when you leave the field, or with Ctrl+Enter.</span>
+			{#if !failed}<span>Saved when you leave the field, or with Ctrl+Enter.</span>{/if}
 		</p>
 		<!-- Saves and errors are announced by the reader's live regions. -->
 		<p class="status" class:error={status === 'error'}>
-			{#if status === 'saving'}Saving…{:else if status === 'saved'}Saved.{:else if status === 'error'}{tooLong
+			{#if status === 'unsaved'}Not saved yet.{:else if status === 'saving'}Saving…{:else if status === 'saved'}Saved.{:else if status === 'error'}{tooLong
 					? `The note is too long (${MAX_NOTE_RUNES} characters at most).`
 					: list.error || 'Could not save the note.'}{/if}
 		</p>
 
 		<div class="actions">
-			{#if confirming}
+			{#if failed}
+				<button type="button" class="retry" disabled={tooLong} onclick={() => onretry?.(draft)}>Try again</button>
+				<button type="button" onclick={() => close(true)}>Discard</button>
+			{:else if confirming}
 				<span>Delete this highlight?</span>
 				<button type="button" class="yes" onclick={confirmDelete}>Yes, delete</button>
 				<button type="button" class="cancel" onclick={() => void cancelDelete()}>Cancel</button>
@@ -306,6 +353,15 @@
 		background: transparent;
 		color: inherit;
 		cursor: pointer;
+	}
+
+	.colors[hidden] {
+		display: none;
+	}
+
+	.notice.failure {
+		opacity: 1;
+		color: #b3261e;
 	}
 
 	.notice {
@@ -419,6 +475,7 @@
 		}
 
 		.count.over,
+		.notice.failure,
 		.status.error,
 		.delete,
 		.yes {

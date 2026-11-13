@@ -103,6 +103,8 @@ export type HighlightPlan =
 
 export const CLAMP_NOTICE = 'A highlight stays within one paragraph: only the first paragraph of your selection is used.';
 export const TOO_LONG_NOTICE = 'That selection is too long to highlight (500 characters at most). Select a shorter passage.';
+export const ELSEWHERE_NOTICE =
+	'This overlaps a highlight saved elsewhere (another tab or device). Reload the page to see it.';
 export const OVERLAP_NOTICE = 'This overlaps a highlight you already have, so it opened that one.';
 
 /**
@@ -145,8 +147,6 @@ export function panelGroups(items: Highlight[]): { chapter: number; items: Highl
 }
 
 export interface RunPiece extends Seg {
-	/** The first piece of its highlight: carries the click/focus target id. */
-	first: boolean;
 	/** The last piece of a highlight that has a note: shows the note dot. */
 	noteMark: boolean;
 }
@@ -154,8 +154,7 @@ export interface RunPiece extends Seg {
 /**
  * groupSegsByRun regroups splitRunsByHighlights' pieces per run (ruby
  * stays with its run, so all pieces sit under one <ruby> with the <rt>
- * after them) and marks the first piece of each highlight and the last
- * piece of each highlight with a note.
+ * after them) and marks the last piece of each highlight with a note.
  */
 export function groupSegsByRun(
 	segs: Seg[],
@@ -168,13 +167,41 @@ export function groupSegsByRun(
 		if (!group) return;
 		if (seg.ruby !== undefined) group.ruby = seg.ruby;
 		const h = seg.highlight;
-		const prev = segs[i - 1]?.highlight ?? null;
 		const next = segs[i + 1]?.highlight ?? null;
 		group.segs.push({
 			...seg,
-			first: h !== null && prev?.id !== h.id,
 			noteMark: h !== null && h.note.trim() !== '' && next?.id !== h.id
 		});
 	});
 	return groups;
+}
+
+const readingOrder = (a: { chapter: number; paragraph: number; start: number }, b: typeof a) =>
+	a.chapter - b.chapter || a.paragraph - b.paragraph || a.start - b.start;
+
+/**
+ * neighbourAfter: where focus goes in the panel after a highlight at
+ * `place` was removed: the next saved highlight in reading order, else the
+ * last one before it, else null.
+ */
+export function neighbourAfter(
+	items: Highlight[],
+	place: { chapter: number; paragraph: number; start: number }
+): Highlight | null {
+	const saved = items.filter((h) => h.id > 0).sort((a, b) => readingOrder(a, b) || a.id - b.id);
+	return saved.find((h) => readingOrder(h, place) > 0) ?? saved[saved.length - 1] ?? null;
+}
+
+/**
+ * addFailure: what to do when adding a highlight was refused: open the
+ * overlapped highlight when it is known here, otherwise say why.
+ */
+export function addFailure(
+	result: { ok: false; existingId?: number; available?: boolean },
+	storeError: string
+): { kind: 'existing'; id: number } | { kind: 'message'; text: string } {
+	if (result.existingId !== undefined) {
+		return result.available ? { kind: 'existing', id: result.existingId } : { kind: 'message', text: ELSEWHERE_NOTICE };
+	}
+	return { kind: 'message', text: storeError || 'Could not save the highlight.' };
 }

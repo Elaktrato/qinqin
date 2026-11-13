@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
 	CLAMP_NOTICE,
+	ELSEWHERE_NOTICE,
+	addFailure,
+	neighbourAfter,
 	TOO_LONG_NOTICE,
 	groupSegsByRun,
 	highlightKey,
@@ -269,12 +272,50 @@ describe('groupSegsByRun', () => {
 		const groups = groupSegsByRun(splitRunsByHighlights(runs, [withNote, plain]), runs.length);
 		const marks = groups.flatMap((g) => g.segs.filter((s) => s.noteMark).map((s) => s.text));
 		expect(marks).toEqual(['で']);
-		const firsts = groups.flatMap((g) => g.segs.filter((s) => s.first).map((s) => s.text));
-		expect(firsts).toEqual(['輩', 'る😀']);
+		expect(groups.every((g) => g.segs.every((s) => !('first' in s)))).toBe(true);
 	});
 
 	it('gives an empty run an empty group entry', () => {
 		const groups = groupSegsByRun(splitRunsByHighlights([{ text: '' }, { text: 'a' }], []), 2);
 		expect(groups.map((g) => g.segs.length)).toEqual([1, 1]);
+	});
+});
+
+describe('neighbourAfter', () => {
+	const items = [
+		hl(1, 2, 0, 3),
+		hl(2, 5, 4, 6),
+		hl(3, 0, 0, 1, '', { chapter: 1 })
+	];
+
+	it('is the next highlight in reading order after the removed place', () => {
+		expect(neighbourAfter(items, { chapter: 0, paragraph: 3, start: 0 })?.id).toBe(2);
+		expect(neighbourAfter(items, { chapter: 0, paragraph: 5, start: 5 })?.id).toBe(3);
+		expect(neighbourAfter(items, { chapter: 0, paragraph: 0, start: 0 })?.id).toBe(1);
+	});
+
+	it('falls back to the previous one, then to null', () => {
+		expect(neighbourAfter(items, { chapter: 2, paragraph: 0, start: 0 })?.id).toBe(3);
+		expect(neighbourAfter([], { chapter: 0, paragraph: 0, start: 0 })).toBeNull();
+	});
+
+	it('ignores unsaved (temporary) highlights, which have no panel row to focus', () => {
+		expect(neighbourAfter([hl(-1, 9, 0, 1), hl(4, 1, 0, 1)], { chapter: 0, paragraph: 5, start: 0 })?.id).toBe(4);
+	});
+});
+
+describe('addFailure', () => {
+	it('opens a known overlapped highlight', () => {
+		expect(addFailure({ ok: false, existingId: 7, available: true }, '')).toEqual({ kind: 'existing', id: 7 });
+	});
+
+	it('explains an overlap with a highlight it cannot show', () => {
+		expect(addFailure({ ok: false, existingId: 7, available: false }, '')).toEqual({ kind: 'message', text: ELSEWHERE_NOTICE });
+		expect(ELSEWHERE_NOTICE).toMatch(/[Rr]eload/);
+	});
+
+	it('passes the store error on, with a fallback', () => {
+		expect(addFailure({ ok: false }, 'Server error')).toEqual({ kind: 'message', text: 'Server error' });
+		expect(addFailure({ ok: false }, '')).toEqual({ kind: 'message', text: 'Could not save the highlight.' });
 	});
 });

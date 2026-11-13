@@ -5,10 +5,18 @@
 	// The selection popup's action bar: highlight the selection in one of
 	// four colours, or highlight it in the last colour and open the editor
 	// on its note. The `h` key does what the marked (last used) swatch does.
+	// While the highlights are loading (or failed to) the buttons still
+	// answer, with the same message the `h` key gets, shown under them.
 	let { actions }: { actions: HighlightActions } = $props();
 </script>
 
-<div class="hl-bar" role="group" aria-label="Highlight the selection">
+<div
+	class="hl-bar"
+	class:not-ready={!actions.ready}
+	role="group"
+	aria-label="Highlight the selection"
+	aria-describedby={actions.notice ? 'hl-bar-notice' : undefined}
+>
 	{#each HIGHLIGHT_COLORS as color (color)}
 		<button
 			type="button"
@@ -16,16 +24,14 @@
 			class:last={color === actions.color}
 			aria-label="Highlight in {COLOR_NAMES[color].toLowerCase()}{color === actions.color ? ' (last used, key H)' : ''}"
 			title="Highlight in {COLOR_NAMES[color].toLowerCase()}{color === actions.color ? ' (H)' : ''}"
-			aria-disabled={!actions.ready}
-			onclick={() => actions.ready && actions.pick(color)}
+			onclick={() => actions.pick(color)}
 		></button>
 	{/each}
 	<button
 		type="button"
 		class="note-btn"
 		aria-label="Highlight and add a note"
-		aria-disabled={!actions.ready}
-		onclick={() => actions.ready && actions.note()}
+		onclick={() => actions.note()}
 	>
 		<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
 			<path
@@ -39,7 +45,7 @@
 		Note
 	</button>
 </div>
-{#if actions.notice}<p class="hl-notice">{actions.notice}</p>{/if}
+{#if actions.notice}<p class="hl-notice" id="hl-bar-notice">{actions.notice}</p>{/if}
 
 <style>
 	.hl-bar {
@@ -96,9 +102,8 @@
 		cursor: pointer;
 	}
 
-	[aria-disabled='true'] {
-		opacity: 0.5;
-		cursor: default;
+	.not-ready {
+		opacity: 0.6;
 	}
 
 	.hl-notice {
