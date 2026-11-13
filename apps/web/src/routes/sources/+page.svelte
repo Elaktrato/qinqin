@@ -47,6 +47,7 @@
 	}
 
 	let schemes = $state<Scheme[]>([]);
+	const installedPacks = $derived(new Set(schemes.map((scheme) => scheme.packId)));
 	let schemesLoading = $state(true);
 	let schemesError = $state('');
 
@@ -79,7 +80,7 @@
 	</p>
 
 	<section>
-		<h2>Installed dictionaries</h2>
+		<h2 id="sources-dictionaries">Installed dictionaries</h2>
 
 		{#if loading}
 			<p>Loading dictionary credits…</p>
@@ -94,7 +95,7 @@
 			</p>
 		{:else}
 			<div class="table-wrap">
-				<table>
+				<table aria-labelledby="sources-dictionaries">
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
@@ -106,7 +107,7 @@
 					<tbody>
 						{#each dictionaries as dictionary (dictionary.id)}
 							<tr>
-								<td class="name">{dictionary.name}</td>
+								<th scope="row" class="name">{dictionary.name}</th>
 								<td>{dictionary.version}</td>
 								<td>{dictionary.license}</td>
 								<td>{dictionary.attribution}</td>
@@ -125,7 +126,7 @@
 	</section>
 
 	<section>
-		<h2>Frequency lists</h2>
+		<h2 id="sources-frequency">Frequency lists</h2>
 
 		{#if frequencyLoading}
 			<p>Loading frequency list credits…</p>
@@ -136,7 +137,7 @@
 			<p>No frequency lists are installed; lookups rank without them.</p>
 		{:else}
 			<div class="table-wrap">
-				<table>
+				<table aria-labelledby="sources-frequency">
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
@@ -149,7 +150,7 @@
 					<tbody>
 						{#each frequencyPacks as pack (pack.id)}
 							<tr>
-								<td class="name">{pack.name}</td>
+								<th scope="row" class="name">{pack.name}</th>
 								<td title={pack.language}>{languageLabel(pack.language)}</td>
 								<td>{pack.version}</td>
 								<td>{pack.license}</td>
@@ -171,7 +172,7 @@
 	</section>
 
 	<section>
-		<h2>Level lists</h2>
+		<h2 id="sources-levels">Level lists</h2>
 
 		{#if schemesLoading}
 			<p>Loading level list credits…</p>
@@ -182,7 +183,7 @@
 			<p>No level lists are installed.</p>
 		{:else}
 			<div class="table-wrap">
-				<table>
+				<table aria-labelledby="sources-levels">
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
@@ -195,7 +196,7 @@
 					<tbody>
 						{#each schemes as scheme (scheme.id)}
 							<tr>
-								<td class="name">{scheme.name}</td>
+								<th scope="row" class="name">{scheme.name}</th>
 								<td title={scheme.language}>{languageLabel(scheme.language)}</td>
 								<td>{scheme.version ?? ''}</td>
 								<td>{scheme.license ?? ''}</td>
@@ -208,20 +209,36 @@
 		{/if}
 
 		<p class="notice">
-			Level lists group the character map and badge entries. The JLPT N5–N1 kanji come from
-			<a href="https://github.com/onlyskin/kanjiapi.dev" rel="noreferrer">kanjiapi.dev</a> (MIT);
-			the JLPT publishes no official lists, so every N5–N1 list is a reconstruction. The JLPT
-			vocabulary comes from
-			<a href="https://github.com/jamsinclair/open-anki-jlpt-decks" rel="noreferrer"
-				>open-anki-jlpt-decks</a
-			>
-			(MIT), which its README says was taken from chyyran/jlpt-anki-decks, based on the
-			tanos.co.uk lists by Jonathan Waller (described as Creative Commons Attribution). The HSK
-			3.0 characters and words come from
-			<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a> (MIT), a
-			transcription of the 2021 Ministry of Education standard whose own README doubts the
-			copyright claims on it. Neither is an official release.
+			Level lists group the character map and badge entries. Lists installed from packs are
+			third-party compilations, not official releases of the tests they are named after.
 		</p>
+		{#if installedPacks.has('jlpt-kanji')}
+			<p class="notice">
+				The JLPT kanji come from
+				<a href="https://github.com/onlyskin/kanjiapi.dev" rel="noreferrer">kanjiapi.dev</a>
+				(MIT), which does not state where its list comes from; the JLPT publishes no official
+				lists.
+			</p>
+		{/if}
+		{#if installedPacks.has('jlpt-words')}
+			<p class="notice">
+				The JLPT vocabulary comes from
+				<a href="https://github.com/jamsinclair/open-anki-jlpt-decks" rel="noreferrer"
+					>open-anki-jlpt-decks</a
+				>
+				(MIT), which its README says was taken from chyyran/jlpt-anki-decks, based on the
+				tanos.co.uk lists by Jonathan Waller (described as Creative Commons Attribution).
+			</p>
+		{/if}
+		{#if installedPacks.has('hsk30-chars') || installedPacks.has('hsk30-words')}
+			<p class="notice">
+				The HSK 3.0 lists come from
+				<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a>, labelled
+				MIT, which derives them from copies of the 2021 Ministry of Education standard. The
+				ministry's site claims copyright (版权所有：中华人民共和国教育部) and the hsk30 README
+				suggests the list may be public domain, so its copyright status is uncertain.
+			</p>
+		{/if}
 	</section>
 
 	<section>
@@ -298,7 +315,7 @@
 		border-bottom: 0;
 	}
 
-	th {
+	thead th {
 		font-size: 0.8rem;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;

@@ -20,7 +20,7 @@ seeds offline (`qinqin seed`):
 |---|---|---|---|
 | **CC-CEDICT** (`cedict`) | Mandarin–English words and meanings | CC BY-SA 4.0 | https://cc-cedict.org |
 | **Unihan** (`unihan`) | Radical-stroke counts, simplified/traditional variant mappings, character definitions | Unicode License v3 | https://www.unicode.org/reports/tr38/ |
-| **HSK 3.0 (characters)** (`hsk30-chars`) and **HSK 3.0 (words)** (`hsk30-words`), from ivankra/hsk30 | The 3,000 HSK 3.0 characters by reading level; the 11,092 HSK 3.0 words, levels 1–6 and 7–9 | MIT as stated upstream, copyright of the underlying list uncertain (see "Level lists") | https://github.com/ivankra/hsk30 |
+| **HSK 3.0 (characters)** (`hsk30-chars`) and **HSK 3.0 (words)** (`hsk30-words`), from ivankra/hsk30 | The 3,000 HSK 3.0 characters by reading level; the 11,092 HSK 3.0 words, levels 1–6 and 7–9 | MIT-labelled upstream (the README applies MIT to its code; the data derives from MIT-labelled repos); copyright of the underlying Ministry of Education list uncertain: the ministry site claims copyright, upstream suggests it may be public domain (see "Level lists") | https://github.com/ivankra/hsk30 |
 
 Each pack directory carries its `manifest.json` (including `license` and
 `attribution`), the full license text (`LICENSE`), and credits
@@ -101,7 +101,11 @@ byte.
   Japan Foundation and JEES have published no kanji list since the 2010
   revision of the test, so this, like every N5–N1 list, is an unofficial
   reconstruction; it was chosen over KANJIDIC2's pre-2010 four-level field,
-  which is no longer imported.
+  which is no longer imported. kanjiapi.dev does not say where `jlpt.tsv`
+  comes from. Compared with KANJIDIC2 it has gaps and extras a learner may
+  notice: 172 of the 2,136 jōyō kanji are in no level, among them the common
+  分, 可, 無 and 的, which the map then shows under "Not in this scheme"; and
+  its N1 holds 247 jinmeiyō (name) kanji such as 伊, 智, 弘 and 彦.
 - **JLPT (vocabulary)** (`jlpt-words`, unit `word`): `src/n5.csv` …
   `src/n1.csv` of
   [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks),
@@ -114,15 +118,17 @@ byte.
   Like the kanji lists, they are reconstructions, not official JLPT lists.
   The `expression` column gives the forms: variants split on ";", notes in
   parentheses and affix tildes removed (～円 → 円), grammar patterns with an
-  inner tilde dropped (4 pieces), a する verb reduced to its noun (コピーする →
-  コピー), each form kept once at its easiest level: N5 716, N4 658, N3 2,069,
-  N2 1,725, N1 2,631 forms. The `reading` column is not used, because the
-  importer resolves written forms only. Against the bundled JMdict 168 forms
-  do not resolve and are skipped at seed time (N5 19, N4 16, N3 18, N2 66,
-  N1 49), mostly kana spellings of words JMdict writes with kanji (けんか,
-  よい, にぎやか) and set phrases (いってきます). The seed line reports 208
-  unknown forms: those 168 plus 40 iteration marks 々 in resolved words
-  (時々), for which no character level is derived.
+  inner tilde dropped (4 pieces), a する verb whose stem has two or more
+  characters reduced to its noun (勉強する → 勉強; 関する and 愛する stay
+  whole, as JMdict lists them). Each kanji form carries the `reading` column
+  (`{"form": "風", "reading": "かぜ"}`), so the importer picks the word read
+  so: without it, a form-only lookup put 風 on the usually-kana 振り (ふり)
+  and 外 on 他 (ほか). Each form with its reading is kept once, at its
+  easiest level: N5 728, N4 668, N3 2,134, N2 1,784, N1 2,694 entries.
+  Against the bundled JMdict 168 forms do not resolve and are skipped at
+  seed time (N5 19, N4 16, N3 18, N2 66, N1 49), mostly kana spellings of
+  words JMdict writes with kanji (けんか, よい, にぎやか) and set phrases
+  (いってきます).
 
 ### Chinese
 
@@ -134,24 +140,40 @@ byte.
   the 11,092 words, levels HSK 1–6 and HSK 7–9, in simplified characters.
   Variant rows (爸爸|爸, 有（一）点儿) contribute each cleaned variant upstream
   lists; forms upstream marks as mere examples of a prefix or suffix (第二 for
-  第) are left out; 11,059 forms in all. On the map this word scheme shows the
-  characters its words are written with, each at its lowest level. A
-  one-character word (好) links to the character entry, as CC-CEDICT gives
-  single characters as characters. Words with no dictionary entry are skipped
-  at seed time and reported ("unknown forms skipped").
+  第) are left out. The list repeats a word for each sense or part of speech
+  (好 at HSK 1, 2 and 4); a form keeps only its lowest level, 10,960 forms in
+  all. On the map this word scheme shows the characters its words are
+  written with, each at its lowest level. A one-character word (好) links to
+  the character entry, as CC-CEDICT gives single characters as characters.
+  Words with no dictionary entry are skipped at seed time and reported
+  ("unknown forms skipped"): 27 phrases CC-CEDICT lacks (车上, 不太, 这时候 …).
 
-Licence of both HSK packs: the hsk30 repository states the **MIT licence**
-(Copyright (c) 2023 Ivan Krasilnikov, (c) 2021 Shawky, (c) 2021 Pleco Inc.;
-the full text is each pack's `LICENSE`). Its README is candid about the data:
-it is "largely derived from" elkmovie/hsk30 and
-shawkynasr/HSK-official-Query-System, "both also under MIT license and
-claiming copyright -- of course, somewhat questionably, as the original work
-they *copy* is PRC's government work", and "Depending on PRC law specifics
-might be public domain". The underlying list is the HSK 3.0 standard
-published by the PRC Ministry of Education in March 2021. The project bundles
-it on that basis, under the MIT terms stated upstream, and claims nothing
-beyond them; neither the JLPT nor the HSK packs are official releases, and
-the project is not affiliated with either test.
+Licence of both HSK packs, as the upstream files state it:
+
+- The hsk30 `LICENSE` file is the MIT licence, Copyright (c) 2023 Ivan
+  Krasilnikov, (c) 2021 Shawky, (c) 2021 Pleco Inc. (the full text is each
+  pack's `LICENSE`).
+- Its README scopes that licence: "Code (`*.ipynb`) is MIT licensed." Of the
+  data it says: "Data (`hsk30*.csv`) is largely derived from elkmovie/hsk30 and
+  shawkynasr/HSK-official-Query-System repos, both also under MIT license and
+  claiming copyright -- of course, somewhat questionably, as the original work
+  they *copy* is PRC's government work (notice on website:
+  `版权所有：中华人民共和国教育部`). Depending on PRC law specifics might be
+  public domain."
+- Per that README, elkmovie/hsk30 is a proof-read OCR of the Ministry of
+  Education's scanned 2021 HSK 3.0 standard (hanzi only), and
+  shawkynasr/HSK-official-Query-System copies the database of the HSK website
+  (chinesetest.cn), the source of pinyin and parts of speech. The packs use
+  only the hanzi and levels.
+
+So the data is MIT-labelled upstream, the ministry's site claims copyright in
+the original (版权所有, "all rights reserved"), and upstream itself suggests
+the list may be public domain; its copyright status is uncertain. The project
+bundles the packs on the owner's decision under the MIT terms the upstream
+files state and claims nothing beyond them.
+
+None of the bundled JLPT or HSK lists is an official release, and the project
+is not affiliated with either test.
 
 The hand-written CC0 samples `hsk-mini` and `jlpt-mini` live in `plugins/samples/`,
 outside the default seed root (their badges would duplicate the real lists); the

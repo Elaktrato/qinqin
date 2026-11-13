@@ -65,12 +65,20 @@ const hskLevelName = (level) => (level === '7-9' ? 'HSK 7–9' : `HSK ${level}`)
 // JLPT: the file numbers levels 5 (easiest) … 1.
 const JLPT_LEVELS = ['5', '4', '3', '2', '1'];
 
-const HSK30_CAVEAT = `the hsk30 README says its data is "largely derived from"
-elkmovie/hsk30 and shawkynasr/HSK-official-Query-System, "both also under
-MIT license and claiming copyright -- of course, somewhat questionably, as
-the original work they *copy* is PRC's government work", and that
-"Depending on PRC law specifics might be public domain". qinqin
-redistributes the data under the MIT terms stated upstream and claims
+const HSK30_CAVEAT = `the hsk30 README scopes its licence: "Code (\`*.ipynb\`)
+is MIT licensed." Of the data it says: "Data (\`hsk30*.csv\`) is largely
+derived from elkmovie/hsk30 and shawkynasr/HSK-official-Query-System repos,
+both also under MIT license and claiming copyright -- of course, somewhat
+questionably, as the original work they *copy* is PRC's government work
+(notice on website: \`版权所有：中华人民共和国教育部\`). Depending on PRC law
+specifics might be public domain." Per the same README, elkmovie/hsk30 is a
+proof-read OCR of the Ministry of Education's scanned standard (hanzi only)
+and shawkynasr/HSK-official-Query-System a copy of the HSK website's
+(chinesetest.cn) database; these packs use only the hanzi and the levels.
+The data is thus MIT-labelled upstream, the ministry's site claims copyright
+in the original (版权所有, "all rights reserved"), and upstream suggests it
+may be public domain: its copyright status is uncertain. qinqin
+redistributes it under the MIT terms the upstream files state and claims
 nothing beyond them.`;
 
 const HAN = /^\p{Script=Han}$/u;
@@ -455,10 +463,10 @@ async function main() {
 	const kanjiapiVersion = `kanjiapi.dev@${KANJIAPI_COMMIT.slice(0, 7)}`;
 	const hsk30Version = `hsk30@${HSK30_COMMIT.slice(0, 7)}`;
 	const hskAttribution =
-		'ivankra/hsk30 (MIT, © 2023 Ivan Krasilnikov, © 2021 Shawky, © 2021 Pleco Inc.), ' +
-		'derived from elkmovie/hsk30 and shawkynasr/HSK-official-Query-System (MIT), which ' +
-		'transcribe the PRC Ministry of Education HSK 3.0 standard (2021); copyright status of ' +
-		'the underlying list is uncertain (see ATTRIBUTION.md)';
+		'ivankra/hsk30 (LICENSE: MIT, © 2023 Ivan Krasilnikov, © 2021 Shawky, © 2021 Pleco Inc.), ' +
+		'derived from elkmovie/hsk30 and shawkynasr/HSK-official-Query-System (MIT-labelled), ' +
+		'copies of the PRC Ministry of Education HSK 3.0 standard (2021) and the HSK website; ' +
+		'the ministry claims copyright in the original, so the status is uncertain (see ATTRIBUTION.md)';
 
 	await writePack(join(packs, 'jlpt-kanji'), {
 		manifest: {
@@ -487,6 +495,11 @@ The Japan Foundation and JEES have published no official kanji list since
 the 2010 revision of the test; like every N5–N1 list, this one is an
 unofficial reconstruction. It replaces the pre-2010 four-level scale that
 KANJIDIC2 carries, which qinqin no longer imports.
+
+kanjiapi.dev does not say where \`jlpt.tsv\` comes from. Compared with
+KANJIDIC2 (checked when this pack was made): 172 of the 2,136 jōyō kanji
+are in no level, among them the common 分, 可, 無 and 的, and N1 holds 247
+jinmeiyō (name) kanji such as 伊, 智, 弘 and 彦.
 
 Conversion (\`scripts/prepare-level-packs.mjs\`): each line \`<n>\\t<kanji>\`
 becomes the level "N<n>", ordered N5, N4, N3, N2, N1, one entry per kanji in
@@ -562,7 +575,7 @@ ${sumsBlock(vocabSums, Object.keys(PINNED_VOCAB_SHA256))}
 	const hskFiles = ['hsk30.csv', 'hsk30-chars.csv', 'hsk30-LICENSE'];
 	const hskCommon = `Source: ${hsk30Source}.
 
-Licence: the hsk30 repository is MIT licensed (Copyright (c) 2023 Ivan
+Licence: the hsk30 LICENSE file is the MIT licence (Copyright (c) 2023 Ivan
 Krasilnikov, (c) 2021 Shawky, (c) 2021 Pleco Inc.); see LICENSE in this
 directory for the full text, copied verbatim from the upstream repository.
 

@@ -40,10 +40,10 @@ Committed level lists (converted, with the upstream `LICENSE` and an
 
 | Pack | Type | Language | Scheme | Contents | Licence |
 |------|------|----------|--------|----------|---------|
-| `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`; unofficial, as every N5–N1 list is) | MIT, © 2023 Iridium Szreter |
-| `jlpt-words` | levels | ja | JLPT (vocabulary) | words by JLPT level, unit `word`: N5 716, N4 658, N3 2,069, N2 1,725, N1 2,631 forms (open-anki-jlpt-decks `src/n5.csv` … `n1.csv`; unofficial) | MIT, © 2020 Jamie Sinclair; upstream chain below |
+| `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`, provenance not stated upstream; unofficial, as every N5–N1 list is; omits 172 jōyō kanji such as 分 可 無 的, and its N1 holds 247 jinmeiyō name kanji) | MIT, © 2023 Iridium Szreter |
+| `jlpt-words` | levels | ja | JLPT (vocabulary) | words by JLPT level with their readings, unit `word`: N5 728, N4 668, N3 2,134, N2 1,784, N1 2,694 entries (open-anki-jlpt-decks `src/n5.csv` … `n1.csv`; unofficial) | MIT, © 2020 Jamie Sinclair; upstream chain below |
 | `hsk30-chars` | levels | zh | HSK 3.0 (characters) | the 3,000 HSK 3.0 characters by reading level, unit `character`: HSK 1–6 300 each, HSK 7–9 1,200 (ivankra/hsk30 `hsk30-chars.csv`) | MIT (ivankra/hsk30), see caveat |
-| `hsk30-words` | levels | zh | HSK 3.0 (words) | the 11,092 HSK 3.0 words (11,059 simplified forms once variants are expanded and in-level repeats dropped), unit `word`, levels HSK 1–6 and HSK 7–9 (ivankra/hsk30 `hsk30.csv`) | MIT (ivankra/hsk30), see caveat |
+| `hsk30-words` | levels | zh | HSK 3.0 (words) | the 11,092 HSK 3.0 words (10,960 simplified forms once variants are expanded and each form kept at its lowest level), unit `word`, levels HSK 1–6 and HSK 7–9 (ivankra/hsk30 `hsk30.csv`) | MIT-labelled (ivankra/hsk30), see caveat |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
 [{"name": "N5", "entries": [...]}]}`, levels easiest first. An entry is a
@@ -58,19 +58,22 @@ data was taken from https://github.com/chyyran/jlpt-anki-decks, which were
 based on decks from tanos.co.uk"; the tanos.co.uk lists (Jonathan Waller) are
 described as Creative Commons Attribution, which was not verified here (the
 site was unreachable). Expressions are cleaned (variants split on ";", notes
-in parentheses and affix tildes removed, patterns dropped, a する verb reduced
-to its noun) and each form kept at its easiest level; kana spellings of words
-JMdict writes with kanji (けんか, よい) do not resolve and are skipped at seed
-time (168 of 7,799 forms against the bundled JMdict; the seed line says 208
-because it also counts the 40 iteration marks 々 in resolved words, which
-have no KANJIDIC2 entry to derive a character level for).
+in parentheses and affix tildes removed, patterns dropped, a する verb with a
+stem of two or more characters reduced to its noun: 勉強する → 勉強, 関する
+stays) and each form with its reading kept at its easiest level; kana
+spellings of words JMdict writes with kanji (けんか, よい) do not resolve and
+are skipped at seed time (168 of 8,008 entries against the bundled JMdict).
 
-HSK caveat: the hsk30 README says its data is largely derived from two MIT
-repositories (elkmovie/hsk30, shawkynasr/HSK-official-Query-System) that copy
-the PRC Ministry of Education's 2021 HSK 3.0 document and claim copyright in
-it "somewhat questionably", and that the list "might be public domain"
-depending on PRC law. The pack is redistributed under the MIT terms stated
-upstream and claims nothing beyond them. Each `ATTRIBUTION.md` quotes the
+HSK caveat: the hsk30 README says "Code (`*.ipynb`) is MIT licensed" and that
+the data "is largely derived from" elkmovie/hsk30 (an OCR of the Ministry of
+Education's 2021 HSK 3.0 document) and shawkynasr/HSK-official-Query-System
+(a copy of the HSK website's database), "both also under MIT license and
+claiming copyright -- of course, somewhat questionably, as the original work
+they *copy* is PRC's government work (notice on website:
+版权所有：中华人民共和国教育部). Depending on PRC law specifics might be public
+domain." The `LICENSE` file is MIT (© Ivan Krasilnikov, Shawky, Pleco Inc.).
+The packs are redistributed under those MIT terms and claim nothing beyond
+them; the copyright status of the ministry's list is uncertain. Each `ATTRIBUTION.md` quotes the
 README, names the pinned upstream commit and records the SHA-256 of the input
 files. `scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir>` rebuilds the four
 directories byte for byte from those files (the download commands are in its

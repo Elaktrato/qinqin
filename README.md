@@ -521,9 +521,9 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
-| [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) (`jlpt-kanji`) | Japanese: JLPT N5–N1 kanji levels (an unofficial reconstruction; the JLPT publishes no kanji list) | MIT (© 2023 Iridium Szreter) |
+| [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) (`jlpt-kanji`) | Japanese: JLPT N5–N1 kanji levels (an unofficial reconstruction of unstated provenance; the JLPT publishes no kanji list; omits 172 jōyō kanji such as 分 and 的, see docs/sources.md) | MIT (© 2023 Iridium Szreter) |
 | [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks) (`jlpt-words`) | Japanese: JLPT N5–N1 vocabulary levels (unofficial; per its README taken from chyyran/jlpt-anki-decks, based on the tanos.co.uk lists by Jonathan Waller, described as CC BY) | MIT (© 2020 Jamie Sinclair) |
-| [ivankra/hsk30](https://github.com/ivankra/hsk30) (`hsk30-chars`, `hsk30-words`) | Chinese: HSK 3.0 characters by reading level, and the HSK 3.0 words, levels 1–6 and 7–9 | MIT (© 2023 Ivan Krasilnikov and others), with a caveat: upstream doubts the copyright claims on a transcription of the PRC Ministry of Education list, which may be public domain |
+| [ivankra/hsk30](https://github.com/ivankra/hsk30) (`hsk30-chars`, `hsk30-words`) | Chinese: HSK 3.0 characters by reading level, and the HSK 3.0 words, levels 1–6 and 7–9 | MIT-labelled upstream (© 2023 Ivan Krasilnikov and others); copyright of the underlying Ministry of Education list uncertain (the ministry site claims copyright; upstream suggests it may be public domain) |
 
 The dictionary files are redistributed **unmodified**; the Jiten list is a
 conversion of the published file with unmodified ranks; the level lists are

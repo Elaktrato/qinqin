@@ -11,6 +11,11 @@ the 2010 revision of the test; like every N5–N1 list, this one is an
 unofficial reconstruction. It replaces the pre-2010 four-level scale that
 KANJIDIC2 carries, which qinqin no longer imports.
 
+kanjiapi.dev does not say where `jlpt.tsv` comes from. Compared with
+KANJIDIC2 (checked when this pack was made): 172 of the 2,136 jōyō kanji
+are in no level, among them the common 分, 可, 無 and 的, and N1 holds 247
+jinmeiyō (name) kanji such as 伊, 智, 弘 and 彦.
+
 Conversion (`scripts/prepare-level-packs.mjs`): each line `<n>\t<kanji>`
 becomes the level "N<n>", ordered N5, N4, N3, N2, N1, one entry per kanji in
 file order. Nothing is added or removed. Levels: N5 79, N4 166, N3 367, N2 367, N1 1232.
