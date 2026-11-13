@@ -2,8 +2,16 @@
 	import type { Stage } from '$lib/study/charGroups';
 	import { STAGE_INFO, formatCount, stageSegments } from '$lib/study/mapGrid';
 
-	let { byStage, size = 'small' }: { byStage: Record<Stage, number>; size?: 'small' | 'large' } =
-		$props();
+	let {
+		byStage,
+		size = 'small',
+		decorative = false
+	}: {
+		byStage: Record<Stage, number>;
+		size?: 'small' | 'large';
+		/** Hidden from assistive technology when the numbers are said elsewhere. */
+		decorative?: boolean;
+	} = $props();
 
 	const segments = $derived(stageSegments(byStage));
 	const description = $derived(
@@ -12,7 +20,12 @@
 </script>
 
 <!-- A stacked bar of the five stages; the numbers are in the label and the legend. -->
-<span class="bar {size}" role="img" aria-label={description}>
+<span
+	class="bar {size}"
+	role={decorative ? undefined : 'img'}
+	aria-label={decorative ? undefined : description}
+	aria-hidden={decorative ? 'true' : undefined}
+>
 	{#each segments as segment (segment.stage)}
 		<span class="seg st-{segment.stage}" style:flex-grow={segment.share}></span>
 	{/each}

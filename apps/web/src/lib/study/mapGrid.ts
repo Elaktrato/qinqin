@@ -15,9 +15,6 @@ import {
 	type Stage
 } from './charGroups';
 
-/** Up to this many characters, every section starts expanded. */
-export const EXPAND_ALL_LIMIT = 1500;
-
 /** The five stages in legend order, with their visible names. */
 export const STAGE_INFO: readonly { stage: Stage; label: string }[] = [
 	{ stage: 'unknown', label: 'Not studied' },
@@ -29,15 +26,12 @@ export const STAGE_INFO: readonly { stage: Stage; label: string }[] = [
 
 /**
  * defaultOpenSections is the open state a grouping starts with: every
- * non-empty section when the characters shown total at most 1500,
- * otherwise only the first non-empty one (the rest wait for "Expand all"
- * or a click, so 13k cells never render at once).
+ * non-empty section, so a learner sees literally every character. The
+ * batched renderer (see renderedCount) keeps that cheap: each section
+ * paints a first batch and the biggest ones stream in.
  */
 export function defaultOpenSections(sections: readonly { id: string; size: number }[]): Set<string> {
-	const nonEmpty = sections.filter((section) => section.size > 0);
-	const total = nonEmpty.reduce((sum, section) => sum + section.size, 0);
-	if (total <= EXPAND_ALL_LIMIT) return new Set(nonEmpty.map((section) => section.id));
-	return new Set(nonEmpty.slice(0, 1).map((section) => section.id));
+	return new Set(sections.filter((section) => section.size > 0).map((section) => section.id));
 }
 
 /**
@@ -224,11 +218,35 @@ export const RENDER_BATCH = 1200;
 
 /**
  * renderedCount is how many cells of a section to render next, given how
- * many are rendered now: a first batch, then one more batch per frame, so
- * expanding 3k or 10k cells paints at once and fills in. The active cell
- * (keyboard or jump target) is always included so it can take focus.
+ * many are rendered now: a first batch, then one more batch per step, so
+ * expanding 3k or 10k cells paints at once and fills in. A far keyboard or
+ * jump target does not skip the batching; the caller focuses it once it
+ * exists.
  */
-export function renderedCount(total: number, rendered: number, active: number): number {
+export function renderedCount(total: number, rendered: number): number {
 	const step = rendered < FIRST_BATCH ? FIRST_BATCH : rendered + RENDER_BATCH;
-	return Math.min(total, Math.max(step, active + 1));
+	return Math.min(total, step);
 }
+
+/**
+ * nextBatchOwner picks which waiting section renders its next batch in
+ * this frame: one waiting for a focus target first, else the one highest
+ * on the page, so the sections fill top-down one batch per frame. -1 when
+ * none waits.
+ */
+export function nextBatchOwner(waiting: readonly { order: number; urgent?: boolean }[]): number {
+	let best = -1;
+	for (let index = 0; index < waiting.length; index += 1) {
+		const item = waiting[index];
+		if (best === -1) {
+			best = index;
+			continue;
+		}
+		const current = waiting[best];
+		const urgentWins = (item.urgent ?? false) && !(current.urgent ?? false);
+		const sameUrgency = (item.urgent ?? false) === (current.urgent ?? false);
+		if (urgentWins || (sameUrgency && item.order < current.order)) best = index;
+	}
+	return best;
+}
+

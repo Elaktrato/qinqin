@@ -1,5 +1,44 @@
+<script module lang="ts">
+	import { nextBatchOwner } from '$lib/study/mapGrid';
+
+	interface BatchJob {
+		order: number;
+		urgent: boolean;
+		run: () => void;
+	}
+
+	// One render batch per frame across all open sections, top-down (a
+	// section waiting for a focus target first), so expanding everything
+	// never builds 10k cells in one frame.
+	const waiting: BatchJob[] = [];
+	let pumping = false;
+
+	function pump(): void {
+		if (pumping || waiting.length === 0) return;
+		pumping = true;
+		// The batch goes in after the previous one has painted.
+		requestAnimationFrame(() =>
+			setTimeout(() => {
+				pumping = false;
+				const index = nextBatchOwner(waiting);
+				if (index >= 0) waiting.splice(index, 1)[0].run();
+				pump();
+			}, 0)
+		);
+	}
+
+	function enqueue(job: BatchJob): () => void {
+		waiting.push(job);
+		pump();
+		return () => {
+			const index = waiting.indexOf(job);
+			if (index >= 0) waiting.splice(index, 1);
+		};
+	}
+</script>
+
 <script lang="ts">
-	import { flushSync } from 'svelte';
+	import { tick } from 'svelte';
 	import type { CellState } from '$lib/study/charGroups';
 	import {
 		STAGE_INFO,
@@ -12,6 +51,7 @@
 	let {
 		sectionId,
 		label,
+		order,
 		cells,
 		active = $bindable(0),
 		tipId,
@@ -21,6 +61,8 @@
 	}: {
 		sectionId: string;
 		label: string;
+		/** Position on the page: earlier sections render their batches first. */
+		order: number;
 		cells: CellState[];
 		active?: number;
 		/** Entry id of the cell whose popover is showing, if any. */
@@ -41,30 +83,58 @@
 	// The roving tab stop must point at an existing cell after a filter.
 	const current = $derived(Math.min(Math.max(0, active), Math.max(0, cells.length - 1)));
 
-	// A big section paints its first batch at once and fills in over the
-	// next frames. A filter that changes the cell count starts over; a
+	// A big section paints its first batch at once and fills in one batch
+	// per frame. A filter that changes the cell count starts over; a
 	// mastery update (same cells, new states) keeps what is rendered.
 	const total = $derived(cells.length);
 	let rendered = $derived.by(() => {
 		void total;
 		return 0;
 	});
-	const count = $derived(renderedCount(cells.length, rendered, current));
+	const count = $derived(renderedCount(cells.length, rendered));
 	const visible = $derived(count >= cells.length ? cells : cells.slice(0, count));
+	// The tab stop is the active cell once it is rendered, else the first.
+	const stop = $derived(current < count ? current : 0);
+
+	// A keyboard or jump target that is not rendered yet: the batches go on
+	// (this section first) and the cell is focused as soon as it exists.
+	let target = $state<number | null>(null);
+	let onTarget: ((el: HTMLElement | null) => void) | null = null;
 
 	$effect(() => {
 		const shown = count;
 		if (shown >= cells.length) return;
-		// The next batch goes in after the current one has painted.
-		let timer: ReturnType<typeof setTimeout> | undefined;
-		const frame = requestAnimationFrame(() => {
-			timer = setTimeout(() => (rendered = shown), 0);
-		});
-		return () => {
-			cancelAnimationFrame(frame);
-			clearTimeout(timer);
-		};
+		return enqueue({ order, urgent: target !== null, run: () => (rendered = shown) });
 	});
+
+	$effect(() => {
+		const wanted = target;
+		if (wanted === null || wanted >= count) return;
+		void tick().then(() => {
+			const resolve = onTarget;
+			target = null;
+			onTarget = null;
+			resolve?.(cellElement(wanted));
+		});
+	});
+
+	/**
+	 * reveal makes cell `index` the tab stop and resolves with its element
+	 * once it is rendered (batches keep running; nothing renders at once).
+	 */
+	export function reveal(index: number): Promise<HTMLElement | null> {
+		active = index;
+		onTarget?.(null);
+		if (index < count) {
+			target = null;
+			onTarget = null;
+			return tick().then(() => cellElement(index));
+		}
+		return new Promise((resolve) => {
+			onTarget = resolve;
+			target = index;
+		});
+	}
 
 	function cellAt(target: EventTarget | null): { el: HTMLElement; index: number } | null {
 		if (!(target instanceof Element)) return null;
@@ -91,12 +161,10 @@
 		const next = gridMove(hit.index, event.key, cells.length, columns, event.ctrlKey);
 		if (next === null) return;
 		event.preventDefault();
-		// Render up to the target before focusing it (Ctrl+End in a section
-		// that is still filling in).
-		flushSync(() => (active = next));
-		const el = cellElement(next);
-		el?.focus({ preventScroll: true });
-		el?.scrollIntoView({ block: 'nearest' });
+		void reveal(next).then((el) => {
+			el?.focus({ preventScroll: true });
+			el?.scrollIntoView({ block: 'nearest' });
+		});
 	}
 
 	function onfocusin(event: FocusEvent) {
@@ -166,7 +234,7 @@
 			href="/entry/{cell.char.i}"
 			class="cell st-{cell.stage}"
 			data-i={i}
-			tabindex={i === current ? 0 : -1}
+			tabindex={i === stop ? 0 : -1}
 			aria-label="{cell.char.c}, {STAGE_NAME[cell.stage]}">{cell.char.c}</a
 		>
 	{/each}
@@ -232,6 +300,34 @@
 		background: var(--st-learned-bg);
 		color: var(--st-learned-fg);
 		border-color: var(--st-learned-fg);
+	}
+
+	/* Started but not learned: a bar along the bottom whose length grows
+	   with the band (a quarter, a half, three quarters), so fresh,
+	   learning and mature differ from each other and from "not studied"
+	   without colour. */
+	.st-fresh::after,
+	.st-learning::after,
+	.st-mature::after {
+		content: '';
+		position: absolute;
+		left: 0.2rem;
+		bottom: 0.18rem;
+		height: 0.16rem;
+		border-radius: 0.1rem;
+		background: currentColor;
+	}
+
+	.st-fresh::after {
+		width: calc((100% - 0.4rem) * 0.25);
+	}
+
+	.st-learning::after {
+		width: calc((100% - 0.4rem) * 0.5);
+	}
+
+	.st-mature::after {
+		width: calc((100% - 0.4rem) * 0.75);
 	}
 
 	/* Learned: a corner tick, so the band does not rely on colour alone. */

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { CharRow } from '$lib/api/types';
 import type { CellState } from './charGroups';
 import {
-	EXPAND_ALL_LIMIT,
 	FIRST_BATCH,
 	RENDER_BATCH,
 	STAGE_INFO,
+	nextBatchOwner,
 	renderedCount,
 	columnCount,
 	defaultOpenSections,
@@ -58,28 +58,18 @@ function throwingStorage(): Storage {
 }
 
 describe('defaultOpenSections', () => {
-	it('opens every non-empty section when the total is at most the limit', () => {
+	it('opens every non-empty section, however many characters there are', () => {
 		const open = defaultOpenSections([
-			{ id: 'a', size: 1000 },
+			{ id: 'a', size: 80 },
 			{ id: 'b', size: 0 },
-			{ id: 'c', size: EXPAND_ALL_LIMIT - 1000 }
+			{ id: 'c', size: 10109 },
+			{ id: 'd', size: 3755 }
 		]);
-		expect([...open]).toEqual(['a', 'c']);
+		expect([...open]).toEqual(['a', 'c', 'd']);
 	});
 
-	it('opens only the first non-empty section above the limit', () => {
-		const open = defaultOpenSections([
-			{ id: 'a', size: 0 },
-			{ id: 'b', size: 80 },
-			{ id: 'c', size: EXPAND_ALL_LIMIT }
-		]);
-		expect([...open]).toEqual(['b']);
-	});
-
-	it('uses 1500 as the limit and handles an empty list', () => {
-		expect(EXPAND_ALL_LIMIT).toBe(1500);
+	it('handles an empty list', () => {
 		expect(defaultOpenSections([]).size).toBe(0);
-		expect(defaultOpenSections([{ id: 'x', size: 1500 }, { id: 'y', size: 1 }]).size).toBe(1);
 	});
 });
 
@@ -284,18 +274,33 @@ describe('renderedCount', () => {
 	it('renders a first batch, then grows by a batch per step', () => {
 		expect(FIRST_BATCH).toBeGreaterThan(0);
 		expect(RENDER_BATCH).toBeGreaterThanOrEqual(FIRST_BATCH);
-		expect(renderedCount(3000, 0, 0)).toBe(FIRST_BATCH);
-		expect(renderedCount(3000, FIRST_BATCH, 0)).toBe(FIRST_BATCH + RENDER_BATCH);
-		expect(renderedCount(3000, 2999, 0)).toBe(3000);
+		expect(renderedCount(3000, 0)).toBe(FIRST_BATCH);
+		expect(renderedCount(3000, FIRST_BATCH)).toBe(FIRST_BATCH + RENDER_BATCH);
+		expect(renderedCount(3000, 2999)).toBe(3000);
 	});
 
 	it('never exceeds the total and renders a small section at once', () => {
-		expect(renderedCount(80, 0, 0)).toBe(80);
-		expect(renderedCount(0, 0, 0)).toBe(0);
+		expect(renderedCount(80, 0)).toBe(80);
+		expect(renderedCount(0, 0)).toBe(0);
 	});
 
-	it('always includes the active cell, so it can take focus', () => {
-		expect(renderedCount(10000, 0, 9000)).toBe(9001);
-		expect(renderedCount(10000, FIRST_BATCH, 9999)).toBe(10000);
+	it('keeps batching toward a far target instead of rendering it at once', () => {
+		// A jump to cell 9,000 of 10,000 still grows one batch per frame.
+		expect(renderedCount(10000, 0)).toBe(FIRST_BATCH);
+		expect(renderedCount(10000, FIRST_BATCH)).toBe(FIRST_BATCH + RENDER_BATCH);
+	});
+});
+
+describe('nextBatchOwner', () => {
+	it('picks the waiting section that comes first on the page', () => {
+		expect(nextBatchOwner([{ order: 3 }, { order: 1 }, { order: 2 }])).toBe(1);
+	});
+
+	it('prefers a section waiting for a focus target', () => {
+		expect(nextBatchOwner([{ order: 0 }, { order: 5, urgent: true }])).toBe(1);
+	});
+
+	it('returns -1 when nothing waits', () => {
+		expect(nextBatchOwner([])).toBe(-1);
 	});
 });

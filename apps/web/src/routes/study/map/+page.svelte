@@ -73,6 +73,9 @@
 	let query = $state('');
 	let jumpInput = $state('');
 
+	// The remembered open sections of the grouping, and a separate set for
+	// the filtered view: a search or stage filter opens every section with
+	// a match, and clearing it returns to the remembered state.
 	let openIds = $state.raw<Set<string>>(new Set());
 	let active = $state<Record<string, number>>({});
 	let tip = $state.raw<TipRequest | null>(null);
@@ -84,6 +87,10 @@
 	let members = $state.raw<{ schemeId: number; levels: SchemeLevelMembers[] } | null>(null);
 	let membersLoading = $state(false);
 	let membersError = $state('');
+
+	// The open sections' grids, for jump-to-character.
+	const grids: Record<string, { reveal: (index: number) => Promise<HTMLElement | null> }> = {};
+	let searchBox = $state<HTMLInputElement | null>(null);
 
 	let requestSeq = 0;
 	let membersSeq = 0;
@@ -284,7 +291,19 @@
 
 	const shownTotal = $derived(views.reduce((sum, view) => sum + view.shown.length, 0));
 	const visibleViews = $derived(views.filter((view) => !filtering || view.shown.length > 0));
-	const allOpen = $derived(visibleViews.every((view) => openIds.has(view.id)));
+	// Recomputed (and the learner's toggles in the filtered view dropped)
+	// whenever the filter, search or grouping changes; not on mastery updates.
+	let filterOpenIds = $derived.by(() => {
+		void grouping;
+		void stageFilter;
+		void query;
+		return untrack(
+			() => new Set(views.filter((view) => view.shown.length > 0).map((view) => view.id))
+		);
+	});
+
+	const openSet = $derived(filtering ? filterOpenIds : openIds);
+	const allOpen = $derived(visibleViews.every((view) => openSet.has(view.id)));
 
 	const filterCounts = $derived<Record<StageFilter, number>>({
 		all: totals.total,
@@ -295,15 +314,43 @@
 
 	const levelHint = $derived(universe?.stale === true || grouping?.gap === true);
 
-	// A new grouping or filter starts from the default open state: all
-	// sections when few characters show, else only the first.
+	// A new grouping starts with every section open. Sections the learner
+	// collapses stay collapsed while filtering; only a new grouping resets.
 	$effect(() => {
 		void grouping;
-		void stageFilter;
-		void query;
 		untrack(() => {
-			openIds = defaultOpenSections(views.map((view) => ({ id: view.id, size: view.shown.length })));
+			openIds = defaultOpenSections(views.map((view) => ({ id: view.id, size: view.cells.length })));
+			active = {};
 			tip = null;
+		});
+	});
+
+
+	function setOpen(next: Set<string>) {
+		if (filtering) filterOpenIds = next;
+		else openIds = next;
+	}
+
+	// A filter can remove the focused cell (or its whole section); focus
+	// then falls to <body>. Put it back on that section's tab stop, else on
+	// the search box.
+	let focusSection: string | null = null;
+
+	function trackFocus(event: FocusEvent) {
+		const target = event.target instanceof Element ? event.target : null;
+		focusSection = target?.closest<HTMLElement>('[data-section]')?.dataset.section ?? null;
+	}
+
+	$effect(() => {
+		void visibleViews;
+		const section = focusSection;
+		if (section === null) return;
+		void tick().then(() => {
+			if (document.activeElement !== document.body && document.activeElement !== null) return;
+			const stop = document.querySelector<HTMLElement>(
+				`[data-section="${CSS.escape(section)}"] [tabindex="0"]`
+			);
+			(stop ?? searchBox)?.focus({ preventScroll: stop === null });
 		});
 	});
 
@@ -333,18 +380,36 @@
 	function chooseGroup(key: GroupKey) {
 		groupKey = key;
 		writeGroupBy(storage(), language, key);
+		// A failed scheme load belongs to that scheme only; a late answer
+		// for it must not land on the new grouping either.
+		membersSeq += 1;
+		membersError = '';
+		membersLoading = false;
+	}
+
+	// A collapsed section forgets its active cell: re-expanding starts at
+	// the top and with the first batch, not at a deep jump target.
+	function forgetActive(ids: Iterable<string>) {
+		const next = { ...active };
+		for (const id of ids) delete next[id];
+		active = next;
 	}
 
 	function toggle(id: string) {
-		const next = new Set(openIds);
-		if (next.has(id)) next.delete(id);
-		else next.add(id);
-		openIds = next;
+		const next = new Set(openSet);
+		if (next.has(id)) {
+			next.delete(id);
+			forgetActive([id]);
+		} else {
+			next.add(id);
+		}
+		setOpen(next);
 		tip = null;
 	}
 
 	function toggleAll() {
-		openIds = allOpen ? new Set() : new Set(visibleViews.map((view) => view.id));
+		if (allOpen) forgetActive(openSet);
+		setOpen(allOpen ? new Set() : new Set(visibleViews.map((view) => view.id)));
 		tip = null;
 	}
 
@@ -377,6 +442,8 @@
 				stageFilter = 'all';
 				clearSearch();
 				await tick();
+				// The jump's own announcement follows; drop the "Showing all".
+				clearTimeout(announceTimer);
 				found = everywhere;
 			}
 		}
@@ -385,12 +452,12 @@
 			return;
 		}
 		const target = found;
-		if (!openIds.has(target.sectionId)) openIds = new Set([...openIds, target.sectionId]);
-		active = { ...active, [target.sectionId]: target.index };
+		if (!openSet.has(target.sectionId)) setOpen(new Set([...openSet, target.sectionId]));
 		await tick();
-		const el = document.querySelector<HTMLElement>(
-			`[data-section="${CSS.escape(target.sectionId)}"] [data-i="${target.index}"]`
-		);
+		// The section keeps rendering in batches (this one first); the cell
+		// is focused as soon as it exists.
+		const el = (await grids[target.sectionId]?.reveal(target.index)) ?? null;
+		clearTimeout(announceTimer);
 		if (el === null) return;
 		el.scrollIntoView({ block: 'center' });
 		el.focus({ preventScroll: true });
@@ -401,10 +468,19 @@
 		announcement = `${el.textContent ?? glyph} is in ${label}.`;
 	}
 
+	/** headerName is a section button's name: "Grade 2, 0 of 160 learned". */
+	function headerName(
+		view: { label: string; stats: { learned: number; total: number }; shown: unknown[] },
+		filtered: boolean
+	): string {
+		const base = `${view.label}, ${formatCount(view.stats.learned)} of ${formatCount(view.stats.total)} learned`;
+		return filtered ? `${base}, ${formatCount(view.shown.length)} shown` : base;
+	}
+
 	const langTag = $derived(language.toLowerCase().startsWith('ja') ? 'ja' : 'zh-Hans');
 </script>
 
-<main class="map">
+<main class="map" onfocusin={trackFocus}>
 	<header class="head">
 		<div>
 			<h1>Mastery map</h1>
@@ -508,6 +584,7 @@
 				<input
 					type="search"
 					placeholder="Character, reading or meaning"
+					bind:this={searchBox}
 					bind:value={queryInput}
 					oninput={onSearchInput}
 					onkeydown={(event) => event.key === 'Escape' && clearSearch()}
@@ -527,7 +604,7 @@
 
 		<p class="sr" role="status" aria-live="polite">{announcement}</p>
 
-		{#if membersError}
+		{#if membersError && schemeId !== null}
 			<div class="error-box" role="alert">
 				<p class="error">{membersError}</p>
 				<button type="button" class="btn" onclick={() => schemeId !== null && loadMembers(schemeId)}
@@ -557,8 +634,8 @@
 				<p class="hint">No characters match.</p>
 			{/if}
 
-			{#each visibleViews as view (view.id)}
-				{@const open = openIds.has(view.id)}
+			{#each visibleViews as view, index (view.id)}
+				{@const open = openSet.has(view.id)}
 				<section class="block" class:open aria-labelledby="head-{view.id}">
 					<h2 class="block-head">
 						<button
@@ -566,25 +643,27 @@
 							id="head-{view.id}"
 							aria-expanded={open}
 							aria-controls="cells-{view.id}"
+							aria-label={headerName(view, filtering)}
 							onclick={() => toggle(view.id)}
 						>
 							<span class="chev" aria-hidden="true"></span>
 							<span class="label">{view.label}</span>
-							<span class="count">
+							<span class="count" aria-hidden="true">
 								<strong>{formatCount(view.stats.learned)}</strong>/{formatCount(view.stats.total)}
-								<span class="sr">learned</span>
 							</span>
 							{#if filtering}
-								<span class="shown">{formatCount(view.shown.length)} shown</span>
+								<span class="shown" aria-hidden="true">{formatCount(view.shown.length)} shown</span>
 							{/if}
-							<StageBar byStage={view.stats.byStage} />
+							<StageBar byStage={view.stats.byStage} decorative />
 						</button>
 					</h2>
 					<div id="cells-{view.id}">
 						{#if open}
 							<CharGrid
+								bind:this={grids[view.id]}
 								sectionId={view.id}
 								label={view.label}
+								order={index}
 								cells={view.shown}
 								bind:active={() => active[view.id] ?? 0, (value) => (active[view.id] = value)}
 								tipId={tip?.cell.char.i ?? null}
@@ -620,7 +699,8 @@
 		--st-tip-fg: #1b1b1b;
 		--st-unknown-bg: color-mix(in srgb, currentColor 4%, transparent);
 		--st-unknown-fg: color-mix(in srgb, currentColor 62%, transparent);
-		--st-unknown-edge: color-mix(in srgb, currentColor 30%, transparent);
+		/* ≥ 3:1 against the page and the cell (computed: 3.7 on white). */
+		--st-unknown-edge: #858585;
 		--st-unknown-bar: color-mix(in srgb, currentColor 14%, transparent);
 		--st-fresh-bg: #fdecea;
 		--st-fresh-fg: #8c1d18;
@@ -639,6 +719,8 @@
 	@media (prefers-color-scheme: dark) {
 		.map {
 			--st-focus: #6cb4ff;
+			/* ≥ 3:1 against the dark page and the cell (computed: 3.6 on #121212). */
+			--st-unknown-edge: #6e6e6e;
 			--st-tip-bg: #1f2328;
 			--st-tip-fg: #eef0f2;
 			--st-fresh-bg: #4a1f1c;
@@ -882,6 +964,12 @@
 		transform: rotate(-45deg);
 		margin-right: 0.15rem;
 		transition: transform 0.12s;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.chev {
+			transition: none;
+		}
 	}
 
 	.open .chev {

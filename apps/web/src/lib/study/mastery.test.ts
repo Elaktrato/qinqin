@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-	masteryForChar,
-	masteryForChars,
-	masterySummary,
-	stageOf,
-	summarizeMastery
-} from './mastery';
+import { masteryForChars, stageOf, type CharMastery } from './mastery';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
+
+/** One character scored on its own: the per-character view of the batch API. */
+function masteryForChar(
+	char: string,
+	cards: readonly StudyCard[],
+	reviews: readonly ReviewEvent[],
+	now: Date
+): CharMastery {
+	return masteryForChars([char], cards, reviews, now).get(char)!;
+}
 
 const DAY = 86_400_000;
 const BASE = Date.parse('2025-01-01T00:00:00.000Z');
@@ -243,7 +247,7 @@ describe('masteryForChars across card kinds', () => {
 });
 
 describe('masteryForChars', () => {
-	it('matches masteryForChar across many characters and cards', () => {
+	it('scores each character the same alone or in a batch of many', () => {
 		// 40 characters, two cards each, with a mix of short and long
 		// histories plus a few unreviewed cards. Every card's written form
 		// is a two-character word, so most characters share cards.
@@ -313,36 +317,6 @@ describe('masteryForChars', () => {
 	});
 });
 
-describe('summarizeMastery', () => {
-	const cards = [card('learned', '猫'), card('mature', '鸟')];
-	const reviews = [
-		...goodHistory('learned', [0, 1, 11, 41]),
-		...goodHistory('mature', [0, 1, 11])
-	];
-
-	it('counts from an already-computed mastery map', () => {
-		const chars = ['猫', '狗', '鸟'];
-		const shared = masteryForChars(chars, cards, reviews, NOW);
-
-		expect(summarizeMastery(chars, shared)).toEqual({
-			mastered: 1,
-			total: 3
-		});
-		expect(summarizeMastery(chars, shared, 60)).toEqual({
-			mastered: 2,
-			total: 3
-		});
-	});
-
-	it('agrees with masterySummary', () => {
-		const chars = ['猫', '狗', '鸟'];
-
-		expect(summarizeMastery(chars, masteryForChars(chars, cards, reviews, NOW))).toEqual(
-			masterySummary(chars, cards, reviews, NOW)
-		);
-	});
-});
-
 describe('stageOf', () => {
 	it('maps the exact band boundaries', () => {
 		const cases: Array<[number, string]> = [
@@ -360,55 +334,5 @@ describe('stageOf', () => {
 		for (const [score, stage] of cases) {
 			expect(stageOf(score), String(score)).toBe(stage);
 		}
-	});
-});
-
-describe('masterySummary', () => {
-	const cards = [card('learned', '猫'), card('mature', '鸟')];
-	const reviews = [
-		...goodHistory('learned', [0, 1, 11, 41]),
-		...goodHistory('mature', [0, 1, 11])
-	];
-
-	it('counts characters at or above the threshold', () => {
-		expect(masterySummary(['猫', '狗', '鸟'], cards, reviews, NOW)).toEqual({
-			mastered: 1,
-			total: 3
-		});
-		expect(masterySummary(['猫', '狗', '鸟'], cards, reviews, NOW, 60)).toEqual({
-			mastered: 2,
-			total: 3
-		});
-		expect(masterySummary(['狗'], cards, reviews, NOW)).toEqual({ mastered: 0, total: 1 });
-	});
-
-	it('reports an empty summary for no characters', () => {
-		expect(masterySummary([], cards, reviews, NOW)).toEqual({ mastered: 0, total: 0 });
-	});
-
-	it('agrees with the per-character scores across many characters', () => {
-		const chars = Array.from({ length: 25 }, (_, index) =>
-			String.fromCodePoint(0x4e00 + index)
-		);
-		const manyCards: StudyCard[] = [];
-		const manyReviews: ReviewEvent[] = [];
-		for (let index = 0; index < chars.length; index += 1) {
-			const item = card(`summary-${index}`, chars[index]);
-			manyCards.push(item);
-			if (index % 2 === 0) {
-				manyReviews.push(...goodHistory(item.id, [0, 1, 11, 41]));
-			} else if (index % 3 === 0) {
-				manyReviews.push(...goodHistory(item.id, [0, 1, 11]));
-			}
-		}
-
-		const expected = chars.filter(
-			(char) => masteryForChar(char, manyCards, manyReviews, NOW).score >= 80
-		).length;
-
-		expect(masterySummary(chars, manyCards, manyReviews, NOW)).toEqual({
-			mastered: expected,
-			total: chars.length
-		});
 	});
 });
