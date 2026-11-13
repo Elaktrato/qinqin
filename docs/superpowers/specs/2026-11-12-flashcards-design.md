@@ -94,7 +94,8 @@ per workspace. Sources today:
 
 - `review` — 1 point per review event.
 - `read` — the reader posts `{bookId, seconds}` per reading burst (active, visible
-  time; idle gaps capped at 2 minutes; bursts under 30 s are not posted); 1 point per
+  time; idle gaps capped at 2 minutes; bursts under 30 s are not posted), credited to
+  the workspace matching the book's language, else the selected one; 1 point per
   started 5 minutes, at most 24 per event. Tooltips show real minutes.
 
 Cell levels keep the widget's absolute thresholds (0, 1, 2-3, 4-6, 7+ points). Other

@@ -203,8 +203,10 @@ Above the plugin widgets, the home page has a core activity heatmap for the
 current workspace: one cell per UTC day over the last 13 weeks, coloured by
 activity points. A flashcard review is one point. Reading in the Reader is one
 point per started 5 minutes; the reader records a `read` event with the active
-seconds of each reading burst (at least 30 s, idle gaps over 2 minutes and
-hidden tabs do not count). Hovering a cell shows the day's points per source,
+seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
+between inputs counts at most 2 minutes, and a hidden tab does not count.
+Reading is credited to the workspace matching the book's language, else to the
+selected one. Hovering a cell shows the day's points per source,
 with reading in minutes. Other study events (sessions, views, lookups) do not
 count. Adding a source means emitting a study event with a new type and adding
 one entry to `ACTIVITY_SOURCES` in `apps/web/src/lib/activity/activity.ts`.
