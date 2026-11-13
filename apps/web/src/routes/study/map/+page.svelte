@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { parseReview } from '$lib/study/reviewParse';
 	import { ApiError, api } from '$lib/api/client';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
@@ -68,24 +69,6 @@
 		if (err instanceof ApiError && err.message) return err.message;
 		if (err instanceof Error && err.message) return err.message;
 		return fallback;
-	}
-
-	/**
-	 * asReview narrows a stored event to a review. The server only
-	 * validates id and timestamp, so the grade is checked again by the
-	 * scheduler; here it is enough that the payload names a card.
-	 */
-	function asReview(event: StudyEvent, workspace: number): ReviewEvent | null {
-		if (event.type !== 'review' || event.workspaceId !== workspace) return null;
-		const payload = event.payload;
-		if (typeof payload !== 'object' || payload === null) return null;
-		const { cardId, grade } = payload as Record<string, unknown>;
-		if (typeof cardId !== 'string' || typeof grade !== 'number') return null;
-		return {
-			...event,
-			type: 'review',
-			payload: { cardId, mode: 'vocab', grade: grade as ReviewGrade }
-		};
 	}
 
 	/** characterForms keeps the unique written forms of character entries. */
@@ -184,7 +167,7 @@
 			// grid as they arrive.
 			cards = data.cards;
 			reviews = events
-				.map((event) => asReview(event, id))
+				.map((event) => (event.workspaceId === id ? parseReview(event) : null))
 				.filter((event): event is ReviewEvent => event !== null);
 			void backfillWritten(data.cards, seq);
 		} catch (err) {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { parseReview } from '$lib/study/reviewParse';
 	import { ApiError, api } from '$lib/api/client';
 	import type { StudyEvent } from '$lib/events';
 	import { HEATMAP_DAYS, reviewCountsByDay } from '$lib/study/heatmap';
@@ -77,24 +78,6 @@
 		return fallback;
 	}
 
-	/**
-	 * asReview narrows a stored event to a review of the given workspace.
-	 * Both the query parameter and the payload's workspace are checked so
-	 * a mixed response can never leak another workspace's history.
-	 */
-	function asReview(event: StudyEvent, workspace: number): ReviewEvent | null {
-		if (event.type !== 'review' || event.workspaceId !== workspace) return null;
-		const payload = event.payload;
-		if (typeof payload !== 'object' || payload === null) return null;
-		const { cardId, grade } = payload as Record<string, unknown>;
-		if (typeof cardId !== 'string' || typeof grade !== 'number') return null;
-		return {
-			...event,
-			type: 'review',
-			payload: { cardId, mode: 'vocab', grade: grade as ReviewGrade }
-		};
-	}
-
 	async function load(workspace: number | null): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
@@ -121,7 +104,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = events
-				.map((event) => asReview(event, workspace))
+				.map((event) => (event.workspaceId === workspace ? parseReview(event) : null))
 				.filter((event): event is ReviewEvent => event !== null);
 		} catch (err) {
 			if (seq !== requestSeq) return;

@@ -7,7 +7,13 @@ import type { StudyEventBody } from '../api/types';
 import { ApiError } from '../api/client';
 import { postEvents } from '../events';
 import { newUlid } from '../ulid';
-import type { ReviewEvent, ReviewGrade } from './types';
+import type {
+	ReviewEvent,
+	ReviewGrade,
+	ReviewMeta,
+	ReviewPayload,
+	StudyCardKind
+} from './types';
 
 /** localStorage key of the append-only pending review queue. */
 export const PENDING_REVIEWS_KEY = 'qinqin.study.pending';
@@ -73,15 +79,19 @@ function enqueue(event: StudyEventBody): void {
 export async function recordReview(
 	workspaceId: number,
 	cardId: string,
-	grade: ReviewGrade
+	grade: ReviewGrade,
+	mode: StudyCardKind = 'vocab',
+	meta?: ReviewMeta
 ): Promise<void> {
+	const payload: ReviewPayload = { cardId, mode, grade };
+	if (meta !== undefined) payload.meta = meta;
 	const event: ReviewEvent = {
 		id: newUlid(),
 		workspaceId,
 		device: DEVICE,
 		ts: new Date().toISOString(),
 		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
+		payload
 	};
 
 	try {

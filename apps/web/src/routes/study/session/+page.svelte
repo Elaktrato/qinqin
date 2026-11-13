@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { parseReview } from '$lib/study/reviewParse';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getEntry } from '$lib/api/entries';
@@ -142,25 +143,6 @@
 	}
 
 	/**
-	 * asReview narrows a stored event to a review. The server only
-	 * validates id and timestamp, so the grade is checked again by the
-	 * scheduler; here it is enough that the payload has a card and a
-	 * numeric grade.
-	 */
-	function asReview(event: StudyEvent, workspaceId: number): ReviewEvent | null {
-		if (event.type !== 'review' || event.workspaceId !== workspaceId) return null;
-		const payload = event.payload;
-		if (typeof payload !== 'object' || payload === null) return null;
-		const { cardId, grade } = payload as Record<string, unknown>;
-		if (typeof cardId !== 'string' || typeof grade !== 'number') return null;
-		return {
-			...event,
-			type: 'review',
-			payload: { cardId, mode: 'vocab', grade: grade as ReviewGrade }
-		};
-	}
-
-	/**
 	 * sessionReview mirrors the event recordReview builds, so the
 	 * session's XP is computed from the same shape as the stored log.
 	 * XP depends only on the grade, so the local copy stays accurate even
@@ -286,7 +268,7 @@
 			if (seq !== requestSeq) return;
 
 			const history = events
-				.map((event) => asReview(event, workspaceId))
+				.map((event) => (event.workspaceId === workspaceId ? parseReview(event) : null))
 				.filter((event): event is ReviewEvent => event !== null);
 			reviews = history;
 			if (config.mode === 'levels') {

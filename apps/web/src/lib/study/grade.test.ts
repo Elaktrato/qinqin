@@ -51,11 +51,60 @@ describe('gradeItem', () => {
 		expect(result).toEqual({ ok: true, card: created, created: true });
 		expect(calls).toEqual(['add', 'record']);
 		expect(addCard).toHaveBeenCalledWith(42, {
+			kind: 'vocab',
 			written: '猫',
 			sentenceId: 9,
 			deckIds: ['general']
 		});
-		expect(recordReview).toHaveBeenCalledWith(7, 'real-1', 3);
+		expect(recordReview).toHaveBeenCalledWith(7, 'real-1', 3, 'vocab', undefined);
+	});
+
+	it('creates a virtual item with its own kind and sentence id and forwards mode and meta', async () => {
+		const created = { ...card('real-2', 42, '猫'), kind: 'sentence' as const, sentenceId: 11 };
+		const addCard = vi.fn(async () => created);
+		const recordReview = vi.fn(async () => {});
+		const meta = { tier: 0 as const, mistakes: 1 };
+
+		await gradeItem({
+			item: item({
+				cardId: 'level:42',
+				virtual: true,
+				card: null,
+				kind: 'sentence',
+				sentenceId: 11
+			}),
+			grade: 3,
+			workspaceId: 7,
+			entry: ENTRY,
+			meta,
+			addCard,
+			recordReview
+		});
+
+		expect(addCard).toHaveBeenCalledWith(42, {
+			kind: 'sentence',
+			written: '猫',
+			sentenceId: 11,
+			deckIds: ['general']
+		});
+		expect(recordReview).toHaveBeenCalledWith(7, 'real-2', 3, 'sentence', meta);
+	});
+
+	it('forwards an explicit mode and meta for a real item', async () => {
+		const meta = { hints: 2 };
+		const recordReview = vi.fn(async () => {});
+
+		await gradeItem({
+			item: item(),
+			grade: 1,
+			workspaceId: 7,
+			mode: 'writing',
+			meta,
+			addCard: vi.fn(),
+			recordReview
+		});
+
+		expect(recordReview).toHaveBeenCalledWith(7, 'card-1', 1, 'writing', meta);
 	});
 
 	it('records a real item directly without creating a card', async () => {
@@ -74,7 +123,7 @@ describe('gradeItem', () => {
 		expect(result).toEqual({ ok: true, card: existing, created: false });
 		expect(addCard).not.toHaveBeenCalled();
 		expect(recordReview).toHaveBeenCalledTimes(1);
-		expect(recordReview).toHaveBeenCalledWith(7, 'card-1', 2);
+		expect(recordReview).toHaveBeenCalledWith(7, 'card-1', 2, 'vocab', undefined);
 	});
 
 	it('records nothing and reports the error when card creation fails', async () => {
@@ -111,7 +160,7 @@ describe('gradeItem', () => {
 		});
 
 		expect(result).toEqual({ ok: true, card: existing, created: true });
-		expect(recordReview).toHaveBeenCalledWith(7, 'existing-1', 4);
+		expect(recordReview).toHaveBeenCalledWith(7, 'existing-1', 4, 'vocab', undefined);
 	});
 
 	it('refuses when the workspace changed mid-grade', async () => {

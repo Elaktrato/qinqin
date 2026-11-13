@@ -10,18 +10,30 @@ export interface Deck {
 	createdAt: string;
 }
 
-// Round 1 only understands vocab cards; the data model reserves
-// sentence, writing and tone kinds for later rounds.
-export type StudyCardKind = 'vocab';
+export type StudyCardKind = 'vocab' | 'sentence' | 'writing' | 'tone';
+
+export const CARD_KINDS: readonly StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
 
 /** Anki-style grades: 1 Again, 2 Hard, 3 Good, 4 Easy. */
 export type ReviewGrade = 1 | 2 | 3 | 4;
 
-/** The payload of a `review` study event. */
+/** Optional detail a review event carries beyond its grade. */
+export interface ReviewMeta {
+	tier?: 0 | 1 | 2;
+	mistakes?: number;
+	hints?: number;
+	durationMs?: number;
+}
+
+/**
+ * The payload of a `review` study event. Events stored before kinds
+ * existed carry mode 'vocab' and no meta, and still parse.
+ */
 export interface ReviewPayload {
 	cardId: string;
 	mode: StudyCardKind;
 	grade: ReviewGrade;
+	meta?: ReviewMeta;
 }
 
 /**

@@ -170,6 +170,27 @@ describe('study store', () => {
 			]);
 		});
 
+		it('accepts all four card kinds and rejects unknown kinds', async () => {
+			const kinds = ['vocab', 'sentence', 'writing', 'tone'] as const;
+			const good = kinds.map((kind, i) => ({
+				...card(`card-${kind}`, 40 + i, ['general']),
+				kind
+			}));
+			const bad = { ...card('card-bad', 50, ['general']), kind: 'bogus' };
+			vi.mocked(fetch).mockResolvedValue(
+				jsonResponse({
+					pluginData: [
+						...good.map((row) => pluginRow(`card:${row.id}`, row)),
+						pluginRow('card:card-bad', bad)
+					]
+				})
+			);
+
+			const data = await loadStudyData();
+
+			expect(data.cards).toEqual(good);
+		});
+
 		it('returns empty arrays when the pull has no plugin data', async () => {
 			vi.mocked(fetch).mockResolvedValue(jsonResponse({ cursor: '2026-01-01T00:00:00Z' }));
 
@@ -384,6 +405,31 @@ describe('study store', () => {
 			);
 			expect(call[1]?.method).toBe('PUT');
 			expect(JSON.parse(String(call[1]?.body))).toEqual(added);
+		});
+
+		it('writes the requested kind and does not collide with the vocab card', async () => {
+			const vocab = card('card-1', 42, ['general']);
+			respondWith([pluginRow('card:card-1', vocab)]);
+
+			const added = await addCard(42, { kind: 'sentence', sentenceId: 9 });
+
+			expect(added.id).not.toBe('card-1');
+			expect(added.kind).toBe('sentence');
+			expect(added.sentenceId).toBe(9);
+			expect(calls().filter(([, init]) => init?.method === 'PUT')).toHaveLength(1);
+		});
+
+		it('creates one sentence card per sentence and dedupes a repeat', async () => {
+			const first = { ...card('card-s9', 42, ['general']), kind: 'sentence', sentenceId: 9 };
+			respondWith([pluginRow('card:card-s9', first)]);
+
+			const same = await addCard(42, { kind: 'sentence', sentenceId: 9 });
+			expect(same.id).toBe('card-s9');
+			expect(calls().filter(([, init]) => init?.method === 'PUT')).toHaveLength(0);
+
+			const other = await addCard(42, { kind: 'sentence', sentenceId: 10 });
+			expect(other.id).not.toBe('card-s9');
+			expect(other.sentenceId).toBe(10);
 		});
 
 		it('stores the entry written form and the sentence id', async () => {
