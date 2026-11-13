@@ -34,6 +34,27 @@
 	let writer: HanziWriter | null = null;
 	let strokes = 0;
 	let alive = true;
+	// Set by hanzi-writer's load-error callback; startChar turns it into
+	// the visible failure path instead of a stuck pad.
+	let loadFailed = false;
+
+	// Long enough to see the finished character (and hanzi-writer's
+	// completion flash) before the pad clears for the next one.
+	const NEXT_CHAR_DELAY_MS = 600;
+
+	function prefersReducedMotion(): boolean {
+		try {
+			return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		} catch {
+			return false;
+		}
+	}
+
+	function fail(): void {
+		if (!alive) return;
+		failed = 'The writing pad could not load this character. Continue and grade this card yourself.';
+		busy = false;
+	}
 
 	const written = $derived(item.written ?? entry.written);
 	const masked = $derived(maskWritten(written, chars, done ? chars.length : position));
@@ -44,7 +65,7 @@
 		return Array.isArray(data?.strokes) ? data.strokes.length : 0;
 	}
 
-	function record(outcome: CharOutcome): void {
+	function record(outcome: CharOutcome, pause = false): void {
 		outcomes = [...outcomes, outcome];
 		const next = position + 1;
 		if (next >= chars.length) {
@@ -60,8 +81,17 @@
 			});
 			return;
 		}
-		position = next;
-		void startChar(next);
+		const advance = () => {
+			if (!alive) return;
+			position = next;
+			startChar(next).catch(fail);
+		};
+		if (pause && !prefersReducedMotion()) {
+			busy = true;
+			setTimeout(advance, NEXT_CHAR_DELAY_MS);
+		} else {
+			advance();
+		}
 	}
 
 	async function startChar(index: number): Promise<void> {
@@ -73,8 +103,13 @@
 		outlineShown = false;
 		strokes = await strokeCount(ch);
 		if (!alive || writer !== active) return;
+		// showOutline() persists in the writer's options and setCharacter
+		// reads them, so reset it: every character starts as pure recall.
+		await active.hideOutline({ duration: 0 });
+		loadFailed = false;
 		await active.setCharacter(ch);
 		if (!alive || writer !== active) return;
+		if (loadFailed) throw new Error(`No stroke data for ${ch}`);
 		busy = false;
 		void active.quiz({
 			...quizOptions(),
@@ -95,7 +130,7 @@
 			},
 			onComplete: (summary) => {
 				if (!alive || writer !== active) return;
-				record({ char: ch, mistakes: summary.totalMistakes, strokes, revealed: false });
+				record({ char: ch, mistakes: summary.totalMistakes, strokes, revealed: false }, true);
 			}
 		});
 	}
@@ -136,9 +171,12 @@
 						outlineColor: '#9aa0a6',
 						drawingColor: '#6b7280',
 						charDataLoader: (ch, onLoad, onError) => {
-							void loadStrokeData(ch).then((data) =>
-								data ? onLoad(data as CharacterJson) : onError()
-							);
+							void loadStrokeData(ch)
+								.then((data) => (data ? onLoad(data as CharacterJson) : onError()))
+								.catch(() => onError());
+						},
+						onLoadCharDataError: () => {
+							loadFailed = true;
 						}
 					})
 				);
@@ -147,7 +185,7 @@
 				await startChar(0);
 			} catch {
 				if (!cancelled) {
-					failed = 'The writing pad could not start. Grade this card yourself.';
+					failed = 'The writing pad could not start. Continue and grade this card yourself.';
 					busy = false;
 				}
 			}
@@ -218,8 +256,7 @@
 		data-card-input
 		style:width={`${SIZE}px`}
 		style:height={`${SIZE}px`}
-		role="application"
-		aria-roledescription="writing pad"
+		role="img"
 		aria-label={done
 			? `Written: ${written}`
 			: `Draw character ${Math.min(position + 1, chars.length)} of ${chars.length}, stroke by stroke`}

@@ -34,7 +34,7 @@ export const SESSION_CONFIG_KEY = 'qinqin.study.session';
 /** Every card kind a session can include. */
 export const CARD_TYPES = [
 	{ id: 'vocab', label: 'Vocab', available: true },
-	{ id: 'sentence', label: 'Sentence', available: true },
+	{ id: 'sentence', label: 'Word Salad', available: true },
 	{ id: 'writing', label: 'Writing', available: true },
 	{ id: 'tone', label: 'Tone', available: true }
 ] as const;

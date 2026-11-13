@@ -85,11 +85,13 @@
 	}
 
 	function onPointerDown(event: PointerEvent, index: number): void {
+		// Primary pointer only, and for a mouse only the main button: a
+		// right-click must not set a tone.
 		if (done || !event.isPrimary) return;
+		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		const pad = event.currentTarget as HTMLElement;
 		event.preventDefault();
 		pad.setPointerCapture(event.pointerId);
-		pad.focus();
 		active = index;
 		tracing = index;
 		trace = [point(event, pad)];
@@ -174,7 +176,9 @@
 <svelte:window onkeydown={onKeydown} />
 
 <p class="written" lang="zh">{entry.written}</p>
-<p class="prompt">Choose the tone of each syllable.</p>
+<p class="prompt">
+	Swipe each pad in the tone's shape (a tap is the neutral tone), use the buttons, or press 1–5.
+</p>
 
 <ol class="syllables" aria-label="Syllables" data-card-input>
 	{#each syllables as syllable, index (index)}
@@ -186,10 +190,8 @@
 				class:right={mark === true}
 				class:wrong={mark === false}
 				bind:this={pads[index]}
-				role="button"
-				tabindex={done ? -1 : 0}
-				aria-label={`Syllable ${index + 1}, ${syllable.plain}: ${tone === null ? 'no tone yet' : nameOf(tone)}. Swipe the tone, or press 1 to 5.`}
-				onfocus={() => (active = index)}
+				role="img"
+				aria-label={`Syllable ${index + 1}, ${syllable.plain}: ${tone === null ? 'no tone yet' : nameOf(tone)}`}
 				onpointerdown={(event) => onPointerDown(event, index)}
 				onpointermove={(event) => onPointerMove(event, index)}
 				onpointerup={(event) => onPointerUp(event, index)}
@@ -293,11 +295,6 @@
 
 	.syllable.active .pad {
 		border-color: #0b6bcb;
-	}
-
-	.pad:focus-visible {
-		outline: 2px solid #0b6bcb;
-		outline-offset: 2px;
 	}
 
 	.pad.right {

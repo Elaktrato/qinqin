@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { segmentBatch } from '$lib/api/segment';
 	import type { Entry, Sentence } from '$lib/api/types';
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
@@ -58,16 +59,41 @@
 		};
 	});
 
-	function place(id: number): void {
-		if (done) return;
-		feedback = '';
-		placed = [...placed, id];
+	let bankList = $state<HTMLElement | null>(null);
+	let answerList = $state<HTMLElement | null>(null);
+	let checkButton = $state<HTMLButtonElement | null>(null);
+
+	/**
+	 * A tile button disappears when it moves between bank and answer, so
+	 * keyboard focus is handed to the tile now at the same spot (or the
+	 * last one), falling back to Check when the bank is empty.
+	 */
+	async function refocus(list: HTMLElement | null, at: number, fallback: HTMLElement | null) {
+		await tick();
+		const buttons = list === null ? [] : [...list.querySelectorAll<HTMLButtonElement>('button')];
+		const target = buttons[Math.min(at, buttons.length - 1)] ?? fallback;
+		target?.focus();
 	}
 
-	function unplace(id: number): void {
+	function place(id: number, keyboard: boolean): void {
 		if (done) return;
 		feedback = '';
+		const at = available.indexOf(id);
+		placed = [...placed, id];
+		if (keyboard) void refocus(bankList, at, checkButton);
+	}
+
+	function unplace(id: number, keyboard: boolean): void {
+		if (done) return;
+		feedback = '';
+		const at = placed.indexOf(id);
 		placed = placed.filter((placedId) => placedId !== id);
+		if (keyboard) void refocus(answerList, at, bankList?.querySelector('button') ?? null);
+	}
+
+	// A click with detail 0 comes from the keyboard (Enter/Space).
+	function fromKeyboard(event: MouseEvent): boolean {
+		return event.detail === 0;
 	}
 
 	function undo(): void {
@@ -130,7 +156,7 @@
 	<p class="hint" role="status">Preparing the sentence…</p>
 {:else}
 	<div class="board" data-card-input>
-		<ol class="answer" aria-label="Your sentence" lang={language}>
+		<ol class="answer" aria-label="Your sentence" lang={language} bind:this={answerList}>
 			{#each placed as id (id)}
 				<li>
 					<button
@@ -139,7 +165,7 @@
 						class:right={solved}
 						disabled={done}
 						aria-label={`Remove ${bank[id]}`}
-						onclick={() => unplace(id)}>{bank[id]}</button
+						onclick={(event) => unplace(id, fromKeyboard(event))}>{bank[id]}</button
 					>
 				</li>
 			{:else}
@@ -147,7 +173,7 @@
 			{/each}
 		</ol>
 
-		<ul class="bank" aria-label="Word tiles" lang={language}>
+		<ul class="bank" aria-label="Word tiles" lang={language} bind:this={bankList}>
 			{#each available as id (id)}
 				<li>
 					<button
@@ -155,7 +181,7 @@
 						class="token"
 						disabled={done}
 						aria-label={`Place ${bank[id]}`}
-						onclick={() => place(id)}>{bank[id]}</button
+						onclick={(event) => place(id, fromKeyboard(event))}>{bank[id]}</button
 					>
 				</li>
 			{/each}
@@ -166,7 +192,13 @@
 				<button type="button" class="secondary" disabled={placed.length === 0} onclick={undo}>
 					Undo
 				</button>
-				<button type="button" class="primary" disabled={!complete} onclick={check}>Check</button>
+				<button
+					type="button"
+					class="primary"
+					disabled={!complete}
+					bind:this={checkButton}
+					onclick={check}>Check</button
+				>
 				<button type="button" class="secondary" onclick={giveUp}>Show answer</button>
 			</div>
 		{/if}
