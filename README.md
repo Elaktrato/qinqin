@@ -91,7 +91,9 @@ joins the general deck and keeps the entry's first example sentence for context.
 `/study` is the session setup. Choose the decks to draw from, the card types, and
 the new-card and review limits. At least one type must be selected, and Vocab is
 optional. A session queues only the selected types, so a Tone-only session never
-shows a vocab card. The setup is kept for the browser tab when a session starts.
+shows a vocab card. The setup is kept for the browser tab when a session starts,
+and the card types you last started are preselected in new tabs of the same
+workspace (the home widget counts the same types).
 
 | Type | What you do | Needs |
 |---|---|---|
@@ -105,8 +107,11 @@ chosen decks. They are planned as virtual cards that share the new-card limit, a
 each one is created only when you grade it for the first time. Abandoning a
 session therefore creates nothing. A word that does not qualify (no sentence, no
 drawable character, no pinyin) is skipped silently when its turn comes, and the
-next planned companion takes its place. Each word gets at most one sentence card,
-built from its first example sentence. Companions are planned in deck sessions only.
+next planned companion takes its place (up to `max(30, 2 × new limit)` times per
+session); the tab remembers such words and skips them in later sessions. Each word
+gets at most one sentence card, built from its first example sentence; if that
+sentence later disappears, the card shows the word's first sentence instead.
+Companions are planned in deck sessions only.
 
 **Word Salad tiers** follow the card's FSRS stability *S*, which is derived and
 never stored:

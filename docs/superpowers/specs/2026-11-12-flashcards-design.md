@@ -186,16 +186,28 @@ Where the build differs from or refines the decisions above, and the known limit
   syllable count is accepted.
 - **Writing needs Han characters and bundled stroke data.** Only characters with a
   file in `static/hanzi/` are drawn. Kana stay visible as context, and a word with no
-  drawable character is skipped silently. Revealing a character plays the full
-  stroke-order animation, which takes about one second per stroke.
+  drawable character is skipped silently. Revealing a character plays a quick
+  stroke-order animation (150 ms between strokes, double speed), or shows the
+  character at once under reduced motion.
 - **Companions exist in deck sessions only.** Level sessions stay vocab-only, and setup
   blocks a level session that has no Vocab selected.
 - **Eligibility is decided when a card is shown.** The progress counter ("1 / N")
   counts planned companions that may still be dropped (no sentence, no stroke data,
-  no pinyin). A dropped companion is replaced from a reserve when one is left. A
-  smaller new-card limit therefore cannot be used up by the oldest ineligible words.
-- **A deleted sentence drops its card.** A sentence card whose sentence was deleted is
-  dropped from every session. It stays due, and nothing cleans it up yet.
+  no pinyin). A dropped companion is replaced from a reserve when one is left, at most
+  `max(30, 2 × new limit)` times per session, so a deck of mostly unsuitable words
+  cannot make a session fetch every entry. A smaller new-card limit therefore cannot
+  be used up by the oldest ineligible words.
+- **Unsuitable words are remembered per tab.** A companion found ineligible for a
+  definite reason (the word has no sentence, no Han character, or no clean pinyin
+  reading) is remembered per workspace in sessionStorage as `kind:entryId`, and later
+  sessions and the setup counts in that tab skip it. Missing stroke data and failed
+  loads are not remembered, since they may be transient. A new tab checks again.
+- **Cards added before snapshots** (Round 1 vocab cards without `written`) get
+  companions too; the entry's written form is used when shown and snapshotted when
+  the companion is created.
+- **A retired sentence does not orphan its card.** When a sentence card's stored
+  sentence is gone (deleted, or retired by a pack update), the card shows the word's
+  first sentence instead. Nothing is written; reviews stay on the same card.
 - **The translation reveal counts as a hint** (`meta.hints`). It does not change the
   Word Salad suggestion, which depends only on wrong checks and giving up.
 - **Mascot art is not bundled.** The placeholder probes `/mascot/<stage>-<mood>.svg`
@@ -204,7 +216,11 @@ Where the build differs from or refines the decisions above, and the known limit
 - **Heatmap** is still in the flashcards widget.
 - **Setup persistence.** Card-type, deck and limit choices are saved per tab
   (sessionStorage) when a session starts. Changes made without pressing Start are not
-  kept across a reload.
+  kept across a reload. The card types last started are also remembered per workspace
+  in localStorage and preselected in a tab without its own setup, so opted-in types do
+  not reset to vocab in a new tab. The home widget counts due and new cards of the
+  same types (this tab's setup, else the remembered types, else vocab); it does not
+  count companions that are not created yet.
 
 ## Non-goals
 
