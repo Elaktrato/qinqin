@@ -10,6 +10,8 @@
 //   aborts a lookup for a word passed on the way) and leaving the last one
 //   arms it again, so the pointer can travel from the word into its popup
 //   (and into nested popups) without losing them;
+// - hold() pins the shown stack while a menu inside a popup is open: no
+//   grace hide and no other word replaces it until it is released;
 // - a lookup that finds nothing shows no popup: it counts as "no word"
 //   (a not-found hint is for selections only);
 // - close() does both at once (Escape, scroll, re-render, outside click).
@@ -55,6 +57,8 @@ export class HoverLookup {
 	#empty: { p: number; offset: number } | null = null;
 	/** The pointer is inside a popup of the shown stack. */
 	#inPopup = false;
+	/** Open menus pinning the shown stack (hold). */
+	#held = 0;
 
 	constructor(deps: HoverDeps) {
 		this.#deps = deps;
@@ -63,6 +67,7 @@ export class HoverLookup {
 	/** The pointer rests on character `offset` of paragraph `p` (whose text is `text`). */
 	point(p: number, text: string, offset: number): void {
 		this.#inPopup = false;
+		if (this.#held > 0) return;
 		const shown = this.#shown;
 		if (shown && shown.p === p && offset >= shown.start && offset < shown.end) {
 			// Back on (or still on) the shown word: keep it, drop any newer lookup.
@@ -99,10 +104,27 @@ export class HoverLookup {
 		this.#hideSoon();
 	}
 
+	/**
+	 * hold(true) pins the shown stack (a menu in a popup opened); hold(false)
+	 * releases it, and a pointer already outside the popups arms the grace
+	 * hide again. Holds nest; close() drops them all.
+	 */
+	hold(on: boolean): void {
+		if (on) {
+			this.#held++;
+			this.#cancelHide();
+			return;
+		}
+		if (this.#held === 0) return;
+		this.#held--;
+		if (this.#held === 0 && !this.#inPopup) this.#hideSoon();
+	}
+
 	/** Aborts everything and hides at once. */
 	close(): void {
 		this.#empty = null;
 		this.#inPopup = false;
+		this.#held = 0;
 		this.#abort();
 		this.#cancelHide();
 		this.#hide();
@@ -120,7 +142,7 @@ export class HoverLookup {
 	}
 
 	#hideSoon(): void {
-		if (!this.#shown || this.#inPopup || this.#hideTimer !== undefined) return;
+		if (!this.#shown || this.#inPopup || this.#held > 0 || this.#hideTimer !== undefined) return;
 		this.#hideTimer = setTimeout(() => {
 			this.#hideTimer = undefined;
 			this.#hide();

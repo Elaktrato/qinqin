@@ -1,14 +1,23 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { deleteBook, listBooks, uploadEpub } from '$lib/api/library';
+	import { deleteBook, listBooks, uploadBook } from '$lib/api/library';
 	import type { Book } from '$lib/api/types';
-	import { currentLanguage } from '$lib/workspaces';
+	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import { languageLabel } from '$lib/languages';
+	import { workspaces } from '$lib/workspaces';
 	import { apiErrorMessage } from './errors';
 	import { initialUploadLanguage } from './uploadLanguage';
 	import { savedChapter } from './position';
 	import { SOURCES_HREF, bookHref } from './route';
 
 	const MAX_BYTES = 20 * 1024 * 1024;
+
+	// The library of the selected workspace: switching the workspace in
+	// the header shows that workspace's books, and uploads go there.
+	const workspace = $derived($workspaces.current);
+	const workspaceId = $derived(workspace?.id ?? null);
+	// The language books of this workspace must have; '' when the reader
+	// does not support the workspace's language (no uploads then).
+	const bookLanguage = $derived(initialUploadLanguage(workspace?.language ?? null));
 
 	let books = $state<Book[]>([]);
 	let loading = $state(true);
@@ -18,30 +27,40 @@
 	let uploading = $state(false);
 	let confirmingId = $state<number | null>(null);
 	let deletingId = $state<number | null>(null);
-	let language = $state('');
-	let input = $state<HTMLInputElement | null>(null);
 
-	// Follows the workspace until the user touches the select.
-	let touched = false;
-	$effect(() => {
-		const initial = initialUploadLanguage($currentLanguage);
-		if (!touched) language = initial;
-	});
+	// A response for a workspace that is no longer selected is dropped.
+	let loadSeq = 0;
 
-	async function load(): Promise<void> {
+	async function load(id: number): Promise<void> {
+		const seq = ++loadSeq;
 		loading = true;
 		loadError = '';
 		try {
-			books = await listBooks();
+			const list = await listBooks(id);
+			if (seq !== loadSeq) return;
+			books = list;
 		} catch (err) {
+			if (seq !== loadSeq) return;
 			books = [];
 			loadError = apiErrorMessage(err, 'list');
 		} finally {
-			loading = false;
+			if (seq === loadSeq) loading = false;
 		}
 	}
 
-	onMount(load);
+	$effect(() => {
+		const id = workspaceId;
+		books = [];
+		actionError = '';
+		status = '';
+		confirmingId = null;
+		if (id === null) {
+			loadSeq++;
+			loading = true;
+			return;
+		}
+		void load(id);
+	});
 
 	async function onFile(event: Event): Promise<void> {
 		const el = event.currentTarget as HTMLInputElement;
@@ -49,6 +68,11 @@
 		if (!file) return;
 		actionError = '';
 		status = '';
+		const id = workspaceId;
+		if (id === null || !bookLanguage) {
+			el.value = '';
+			return;
+		}
 		if (file.size > MAX_BYTES) {
 			actionError = 'This file is too large (max 20 MB).';
 			el.value = '';
@@ -56,8 +80,9 @@
 		}
 		uploading = true;
 		try {
-			const book = await uploadEpub(file, language || undefined);
-			books = [book, ...books];
+			// The language fills in for an epub that does not declare one.
+			const book = await uploadBook(file, id, bookLanguage);
+			if (id === workspaceId) books = [book, ...books];
 			status = `Added "${book.title}".`;
 		} catch (err) {
 			actionError = apiErrorMessage(err, 'upload');
@@ -85,39 +110,41 @@
 </script>
 
 <main class="library">
-	<h1>Library</h1>
+	<h1 class="heading">
+		Library
+		{#if workspace}<WorkspaceLabel {workspace} list={$workspaces.list} size={18} />{/if}
+	</h1>
 
-	<section class="upload" aria-labelledby="upload-heading">
-		<h2 id="upload-heading">Add an epub</h2>
-		<div class="row">
-			<label for="epub-language">Language (used only if the file does not declare Chinese or Japanese)</label>
-			<select
-				id="epub-language"
-				bind:value={language}
-				onchange={() => (touched = true)}
-				disabled={uploading}
-			>
-				<option value="">Detect from file</option>
-				<option value="zh">Chinese</option>
-				<option value="ja">Japanese</option>
-			</select>
-		</div>
-		<div class="row">
-			<label for="epub-file">Epub file (max 20 MB)</label>
-			<input
-				id="epub-file"
-				type="file"
-				accept=".epub,application/epub+zip"
-				bind:this={input}
-				onchange={onFile}
-				disabled={uploading}
-			/>
-		</div>
-		<p>
-			Or <a href={SOURCES_HREF}>browse public-domain texts</a> from Aozora Bunko and Project
-			Gutenberg.
-		</p>
-	</section>
+	{#if workspace}
+		<section class="upload" aria-labelledby="upload-heading">
+			<h2 id="upload-heading">Add an epub</h2>
+			{#if bookLanguage}
+				<p class="hint">
+					Books go to this workspace's library and must be in {languageLabel(bookLanguage)}. A
+					file that does not declare its language is read as {languageLabel(bookLanguage)}.
+				</p>
+				<div class="row">
+					<label for="epub-file">Epub file (max 20 MB)</label>
+					<input
+						id="epub-file"
+						type="file"
+						accept=".epub,application/epub+zip"
+						onchange={onFile}
+						disabled={uploading}
+					/>
+				</div>
+				<p>
+					Or <a href={SOURCES_HREF}>browse public-domain texts</a> from Aozora Bunko and Project
+					Gutenberg.
+				</p>
+			{:else}
+				<p class="hint">
+					The reader supports Chinese and Japanese books. Switch to a Chinese or Japanese
+					workspace to add books.
+				</p>
+			{/if}
+		</section>
+	{/if}
 
 	<p class="status" role="status" aria-live="polite">
 		{#if uploading}Uploading…{:else}{status}{/if}
@@ -130,19 +157,26 @@
 		<p>Loading your library…</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" onclick={load}>Retry</button>
+		<button type="button" onclick={() => workspaceId !== null && load(workspaceId)}>Retry</button>
 	{:else if books.length === 0}
-		<p>Your library is empty. Upload an epub or import a text from a source.</p>
+		<p>
+			This workspace's library is empty.{#if bookLanguage}
+				Upload an epub or import a text from a source.{/if}
+		</p>
 	{:else}
 		<ul class="books">
 			{#each books as book (book.id)}
 				<li>
 					<div class="info">
-						<a class="title" href={bookHref(book.id, savedChapter(book.position, book.chapterCount))}
-							>{book.title}</a
+						<a
+							class="title"
+							lang={book.language}
+							href={bookHref(book.id, savedChapter(book.position, book.chapterCount))}>{book.title}</a
 						>
 						<span class="meta">
-							{book.author || 'Unknown author'} · {book.language} · {book.source} · {book.chapterCount}
+							<span lang={book.language}>{book.author || 'Unknown author'}</span> · {languageLabel(
+								book.language
+							)} · {book.source} · {book.chapterCount}
 							{book.chapterCount === 1 ? 'chapter' : 'chapters'}
 						</span>
 					</div>
@@ -171,6 +205,18 @@
 	.upload,
 	.books {
 		margin-top: 1.5rem;
+	}
+
+	.heading {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.hint {
+		font-size: 0.9rem;
+		opacity: 0.8;
 	}
 
 	.row {

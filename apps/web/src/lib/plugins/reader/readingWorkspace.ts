@@ -1,7 +1,6 @@
-// Which workspace a reading session is credited to. The library lists
-// every book whatever workspace is selected, and each workspace is one
-// language, so the book's language decides; the header's selection is
-// only the fallback.
+// Which workspace a reading session is credited to: the workspace whose
+// library holds the book. A book without one (served by an older server)
+// falls back to the workspace of its language, else the selected one.
 
 interface WorkspaceRef {
 	id: number;
@@ -9,18 +8,20 @@ interface WorkspaceRef {
 }
 
 /**
- * workspaceForBook returns the id of the workspace for `bookLanguage`
- * (the selected one if it matches, else the first that does), else the
- * selected workspace, else null (nothing is recorded).
+ * workspaceForBook returns the book's workspace id. Without one: the
+ * selected workspace if its language matches the book's, else the first
+ * that does, else the selected workspace, else null (nothing is recorded).
  */
 export function workspaceForBook(
+	book: { workspaceId?: number | null; language?: string | null },
 	list: readonly WorkspaceRef[],
-	current: WorkspaceRef | null,
-	bookLanguage: string | null | undefined
+	current: WorkspaceRef | null
 ): number | null {
-	if (bookLanguage) {
-		if (current?.language === bookLanguage) return current.id;
-		const match = list.find((workspace) => workspace.language === bookLanguage);
+	if (book.workspaceId && book.workspaceId > 0) return book.workspaceId;
+	const language = book.language;
+	if (language) {
+		if (current?.language === language) return current.id;
+		const match = list.find((workspace) => workspace.language === language);
 		if (match) return match.id;
 	}
 	return current?.id ?? null;

@@ -6,11 +6,14 @@
 	// Shift+hover inside the one before it and sits above it (z-index by
 	// depth). Keyed by frame id, so a replaced child is a new popup with its
 	// own "show more" state.
-	let { lookup }: { lookup: LookupController } = $props();
+	let {
+		lookup,
+		studyWorkspaceId = null
+	}: { lookup: LookupController; studyWorkspaceId?: number | null } = $props();
 </script>
 
 {#if lookup.info}
 	{#each lookup.stack.frames as frame (frame.id)}
-		<PopupFrameView {frame} info={lookup.info} {lookup} />
+		<PopupFrameView {frame} info={lookup.info} {lookup} {studyWorkspaceId} />
 	{/each}
 {/if}

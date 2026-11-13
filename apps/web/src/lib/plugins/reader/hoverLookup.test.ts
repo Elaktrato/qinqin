@@ -297,4 +297,70 @@ describe('HoverLookup', () => {
 		await vi.advanceTimersByTimeAsync(HOVER_GRACE_MS);
 		expect(t.visible()).toBeNull();
 	});
+	describe('hold (a menu open in the popup)', () => {
+		async function shown() {
+			const t = setup();
+			t.hover.point(0, text, 1);
+			t.calls[0].resolve([result('学习', 1)]);
+			await vi.advanceTimersByTimeAsync(0);
+			t.hover.enterPopup();
+			return t;
+		}
+
+		it('keeps the popup when the pointer leaves it while held', async () => {
+			const t = await shown();
+			t.hover.hold(true);
+			t.hover.leavePopup();
+			t.hover.noWord();
+			await vi.advanceTimersByTimeAsync(HOVER_GRACE_MS * 4);
+			expect(t.visible()).not.toBeNull();
+		});
+
+		it('does not replace the popup with another word while held', async () => {
+			const t = await shown();
+			t.hover.hold(true);
+			t.hover.leavePopup();
+			t.hover.point(0, text, 3);
+			await vi.advanceTimersByTimeAsync(HOVER_GRACE_MS * 4);
+			expect(t.lookup).toHaveBeenCalledTimes(1);
+			expect(t.visible()?.text).toBe('学习');
+		});
+
+		it('releasing with the pointer outside arms the grace hide again', async () => {
+			const t = await shown();
+			t.hover.hold(true);
+			t.hover.leavePopup();
+			t.hover.hold(false);
+			await vi.advanceTimersByTimeAsync(HOVER_GRACE_MS);
+			expect(t.visible()).toBeNull();
+		});
+
+		it('releasing with the pointer inside keeps the popup', async () => {
+			const t = await shown();
+			t.hover.hold(true);
+			t.hover.hold(false);
+			await vi.advanceTimersByTimeAsync(HOVER_GRACE_MS * 4);
+			expect(t.visible()).not.toBeNull();
+		});
+
+		it('close still closes, and drops the hold', async () => {
+			const t = await shown();
+			t.hover.hold(true);
+			t.hover.close();
+			expect(t.visible()).toBeNull();
+			t.hover.point(0, text, 3);
+			expect(t.lookup).toHaveBeenCalledTimes(2);
+		});
+
+		it('an extra release after close does not underflow the hold', async () => {
+			const t = await shown();
+			t.hover.hold(true);
+			t.hover.close();
+			t.hover.hold(false);
+			t.hover.hold(true);
+			t.hover.hold(false);
+			t.hover.point(0, text, 3);
+			expect(t.lookup).toHaveBeenCalledTimes(2);
+		});
+	});
 });

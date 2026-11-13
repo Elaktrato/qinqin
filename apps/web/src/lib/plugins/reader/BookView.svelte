@@ -64,6 +64,10 @@
 	);
 	const chapterCount = $derived(book?.chapterCount ?? 0);
 	const sourceUrl = $derived(safeHttpUrl(book?.sourceUrl ?? ''));
+	// Words looked up in the book are added to study in the book's workspace.
+	const studyWorkspaceId = $derived(
+		book ? workspaceForBook(book, $workspaces.list, $workspaces.current) : null
+	);
 
 	const lookup = new LookupController({
 		container: () => container,
@@ -206,17 +210,17 @@
 	// id of the book that was actually read. flush() mutates synchronously,
 	// so two quick flushes cannot report the same seconds twice.
 	//
-	// Reading is credited to the workspace of the book's language, else
-	// the selected one (workspaceForBook). The timer only ever holds time
-	// for one workspace: when that choice changes (a header switch with
-	// no matching workspace, or the list loading), the running burst is
+	// Reading is credited to the book's workspace (workspaceForBook; an
+	// older server's book without one falls back to its language's). The
+	// timer only ever holds time for one workspace: when that choice
+	// changes (only possible on that fallback), the running burst is
 	// flushed to the workspace it was read for and a fresh timer starts
 	// (a carry under 30 s is dropped, as on a book switch). Without a
 	// workspace nothing accrues and nothing is posted.
 	$effect(() => {
 		const bookId = book?.id;
 		if (bookId === undefined) return;
-		const language = book?.language;
+		const ref = { workspaceId: book?.workspaceId, language: book?.language };
 
 		let workspaceId: number | null = null;
 		let timer = createReadingTimer();
@@ -230,7 +234,7 @@
 		};
 		// subscribe() calls back at once with the current selection.
 		const unsubscribe = workspaces.subscribe((state) => {
-			const next = workspaceForBook(state.list, state.current, language);
+			const next = workspaceForBook(ref, state.list, state.current);
 			if (next === workspaceId) return;
 			send();
 			workspaceId = next;
@@ -358,7 +362,7 @@
 			{/if}
 		</footer>
 
-		<PopupStackView {lookup} />
+		<PopupStackView {lookup} {studyWorkspaceId} />
 	{/if}
 </main>
 

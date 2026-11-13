@@ -157,12 +157,35 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
 	return { decks, cards };
 }
 
+// Called after every write with the workspace it touched, so caches of
+// study data (studyData.ts) can drop what is now stale.
+const writeListeners = new Set<(workspaceId: number) => void>();
+
+/** onStudyWrite registers a listener for study-data writes; returns the unsubscribe. */
+export function onStudyWrite(listener: (workspaceId: number) => void): () => void {
+	writeListeners.add(listener);
+	return () => writeListeners.delete(listener);
+}
+
+function notifyWrite(workspaceId: number): void {
+	for (const listener of writeListeners) listener(workspaceId);
+}
+
 async function putData(workspaceId: number, key: string, value: unknown): Promise<void> {
-	await api(dataPath(key, workspaceId), { method: 'PUT', body: value });
+	try {
+		await api(dataPath(key, workspaceId), { method: 'PUT', body: value });
+	} finally {
+		// A failed write may still have landed: stale caches are dropped either way.
+		notifyWrite(workspaceId);
+	}
 }
 
 async function deleteData(workspaceId: number, key: string): Promise<void> {
-	await api(dataPath(key, workspaceId), { method: 'DELETE' });
+	try {
+		await api(dataPath(key, workspaceId), { method: 'DELETE' });
+	} finally {
+		notifyWrite(workspaceId);
+	}
 }
 
 /**
@@ -171,6 +194,14 @@ async function deleteData(workspaceId: number, key: string): Promise<void> {
  */
 export async function loadStudyData(): Promise<StudyData> {
 	return fetchStudyData(requireWorkspaceId());
+}
+
+/**
+ * loadStudyDataFor reads the flashcard rows of one given workspace (one
+ * sync pull). studyData.ts caches it; prefer getStudyData there.
+ */
+export function loadStudyDataFor(workspaceId: number): Promise<StudyData> {
+	return fetchStudyData(workspaceId);
 }
 
 /** createDeck stores a new ULID-keyed deck and returns it. */
@@ -230,7 +261,9 @@ export async function deleteDeck(id: string): Promise<void> {
  * default; unknown ids are the caller's choice — the setup page only
  * offers decks that exist). Adding an entry that already has a card is a
  * no-op: the entry page can race a slow pull, and a second card would
- * split its reviews and EXP permanently.
+ * split its reviews and EXP permanently. `workspaceId` names the
+ * workspace explicitly (the reader adds to the book's workspace); the
+ * selected one is the default.
  */
 export async function addCard(
 	entryId: number,
@@ -239,9 +272,10 @@ export async function addCard(
 		written?: string;
 		sentenceId?: number;
 		deckIds?: string[];
+		workspaceId?: number;
 	} = {}
 ): Promise<StudyCard> {
-	const workspaceId = requireWorkspaceId();
+	const workspaceId = opts.workspaceId ?? requireWorkspaceId();
 	const kind = opts.kind ?? 'vocab';
 	const { cards } = await fetchStudyData(workspaceId);
 	const wanted = cardKey(kind, entryId, opts.sentenceId);

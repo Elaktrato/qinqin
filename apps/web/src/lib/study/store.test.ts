@@ -13,6 +13,7 @@ import {
 	createDeck,
 	deleteDeck,
 	loadStudyData,
+	onStudyWrite,
 	renameDeck
 } from './store';
 
@@ -386,6 +387,38 @@ describe('study store', () => {
 				return jsonResponse({ pluginData: rows });
 			});
 		}
+
+		it('writes into an explicitly given workspace instead of the selected one', async () => {
+			respondWith([]);
+
+			const added = await addCard(42, { workspaceId: 9 });
+
+			const [call] = calls().filter(([, init]) => init?.method === 'PUT');
+			expect(String(call[0])).toBe(`/api/plugins/${PLUGIN_ID}/data/card:${added.id}?workspace=9`);
+		});
+
+		it('reads the explicit workspace for its dedupe', async () => {
+			// The selected workspace (7) has the card; workspace 9 does not.
+			respondWith([pluginRow('card:card-1', card('card-1', 42, ['general']))]);
+
+			const added = await addCard(42, { workspaceId: 9 });
+
+			expect(added.id).not.toBe('card-1');
+		});
+
+		it('tells write listeners which workspace changed', async () => {
+			respondWith([]);
+			const seen: number[] = [];
+			const stop = onStudyWrite((id) => seen.push(id));
+
+			await addCard(42);
+			await addCard(43, { workspaceId: 9 });
+			await createDeck('HSK 1');
+			stop();
+			await addCard(44);
+
+			expect(seen).toEqual([WORKSPACE_ID, 9, WORKSPACE_ID]);
+		});
 
 		it('writes a vocab card in the general deck', async () => {
 			respondWith([]);

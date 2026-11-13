@@ -139,7 +139,7 @@
 				{/if}
 			</div>
 			<div class="actions">
-				<AddToStudy {entry} />
+				<AddToStudy entryId={entry.id} written={entry.written} sentenceId={entry.sentences?.[0]?.id} />
 				{#if !editing}
 					<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
 				{/if}

@@ -1,4 +1,5 @@
 import { ApiError } from '$lib/api/client';
+import { languageLabel } from '$lib/languages';
 
 export type ErrorContext =
 	| 'upload'
@@ -6,6 +7,7 @@ export type ErrorContext =
 	| 'list'
 	| 'delete'
 	| 'search'
+	| 'browse'
 	| 'book'
 	| 'chapter'
 	| 'lookup';
@@ -16,6 +18,7 @@ const fallbacks: Record<ErrorContext, string> = {
 	list: 'Could not load your library.',
 	delete: 'Could not delete the book.',
 	search: 'Could not search the source.',
+	browse: 'Could not load suggestions.',
 	book: 'Could not load this book.',
 	chapter: 'Could not load this chapter.',
 	lookup: 'Could not look this up.'
@@ -32,9 +35,18 @@ function isPlain(text: string): boolean {
 	return text.length > 0 && text.length <= 120 && !/[<>]/.test(text) && !text.includes('\n');
 }
 
+// The library's refusal of a book whose language is not the workspace's.
+const MISMATCH = /^workspace language is ([a-z0-9-]+), book is ([a-z0-9-]+)$/i;
+
 /** Turns an API failure into a short, friendly sentence for the UI. */
 export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 	if (err instanceof ApiError) {
+		const mismatch = err.status === 422 ? MISMATCH.exec(err.message.trim()) : null;
+		if (mismatch) {
+			const workspace = languageLabel(mismatch[1]);
+			const book = languageLabel(mismatch[2]);
+			return `This book is in ${book}, but this workspace is ${workspace}. Switch to a ${book} workspace to add it.`;
+		}
 		switch (err.status) {
 			case 409:
 				return 'This book is already in your library.';
@@ -51,6 +63,9 @@ export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 				return 'The source is unavailable right now, try again later.';
 			case 404:
 				if (notFound[context]) return notFound[context];
+				break;
+			case 501:
+				if (context === 'browse') return 'This source has no suggestions. Search it instead.';
 				break;
 		}
 		const text = err.message.trim();

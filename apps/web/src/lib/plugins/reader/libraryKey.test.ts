@@ -3,7 +3,11 @@ import { libraryKey } from './libraryKey';
 
 describe('libraryKey', () => {
 	it('separates equal ids from different sources', () => {
-		expect(libraryKey('gutenberg', '42')).not.toBe(libraryKey('aozora', '42'));
-		expect(libraryKey('gutenberg', '42')).toBe('gutenberg:42');
+		expect(libraryKey(7, 'gutenberg', '42')).not.toBe(libraryKey(7, 'aozora', '42'));
+		expect(libraryKey(7, 'gutenberg', '42')).toBe('7:gutenberg:42');
+	});
+
+	it('separates the same work in different workspaces', () => {
+		expect(libraryKey(7, 'aozora', '42')).not.toBe(libraryKey(8, 'aozora', '42'));
 	});
 });

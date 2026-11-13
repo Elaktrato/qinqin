@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { LookupResult } from '$lib/api/types';
+	import AddToStudyButtons from './AddToStudyButtons.svelte';
 	import {
 		dictionaryNames,
 		frequencyLabel,
@@ -20,7 +21,18 @@
 	// data-scan with the lookup language `lang`; plain English glosses, xref
 	// readings and sense numbers are not. `textLang` is the lang attribute
 	// of CJK text (zh-Hans/zh-Hant pick glyphs, as in the reader text).
-	let { result, lang, textLang }: { result: LookupResult; lang: string; textLang: string } = $props();
+	// `study` shows the add-to-study buttons (absent: no workspace to add to).
+	let {
+		result,
+		lang,
+		textLang,
+		study
+	}: {
+		result: LookupResult;
+		lang: string;
+		textLang: string;
+		study?: { workspaceId: number; paragraph: string | null; hold: (on: boolean) => void };
+	} = $props();
 
 	const ruby = $derived(rubyReading(result, lang));
 	const reading = $derived(readingLine(result, lang));
@@ -39,6 +51,14 @@
 		</span>
 		{#if reading}<span class="reading" lang={textLang}>{reading}</span>{/if}
 		{#if forms.length > 0}<span class="forms" lang={textLang}>{joinForms(forms, lang)}</span>{/if}
+		{#if study}
+			<AddToStudyButtons
+				{result}
+				workspaceId={study.workspaceId}
+				paragraph={study.paragraph}
+				hold={study.hold}
+			/>
+		{/if}
 	</header>
 
 	{#if result.reasons.length > 0 || result.tags.length > 0 || result.frequencies.length > 0}

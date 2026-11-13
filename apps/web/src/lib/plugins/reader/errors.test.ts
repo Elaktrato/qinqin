@@ -39,6 +39,26 @@ describe('apiErrorMessage', () => {
 		expect(apiErrorMessage(new ApiError(409, ''), 'upload')).toMatch(/already in your library/);
 	});
 
+	it('explains a book in another language than the workspace', () => {
+		const err = new ApiError(422, 'workspace language is ja, book is zh');
+		expect(apiErrorMessage(err, 'upload')).toBe(
+			'This book is in Chinese, but this workspace is Japanese. Switch to a Chinese workspace to add it.'
+		);
+		expect(apiErrorMessage(err, 'import')).toBe(
+			'This book is in Chinese, but this workspace is Japanese. Switch to a Chinese workspace to add it.'
+		);
+	});
+
+	it('has calm messages for browse suggestions', () => {
+		expect(apiErrorMessage(new ApiError(501, 'x'), 'browse')).toBe(
+			'This source has no suggestions. Search it instead.'
+		);
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'browse')).toBe(
+			'Could not load suggestions.'
+		);
+		expect(apiErrorMessage(new ApiError(502, 'x'), 'browse')).toMatch(/unavailable right now/);
+	});
+
 	it('only maps 422 specially for upload', () => {
 		expect(apiErrorMessage(new ApiError(422, ''), 'import')).not.toMatch(/epub/);
 	});

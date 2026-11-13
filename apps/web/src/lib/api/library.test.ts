@@ -6,6 +6,8 @@ vi.mock('$app/navigation', () => ({ goto }));
 
 import { ApiError } from './client';
 import {
+	BROWSE_LIMIT,
+	browseSource,
 	deleteBook,
 	getBook,
 	getChapter,
@@ -14,7 +16,7 @@ import {
 	listSources,
 	searchSource,
 	setPosition,
-	uploadEpub
+	uploadBook
 } from './library';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -42,11 +44,11 @@ describe('library client', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('listBooks GETs /api/library/books', async () => {
+	it('listBooks GETs the books of one workspace', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse([]));
-		expect(await listBooks()).toEqual([]);
+		expect(await listBooks(7)).toEqual([]);
 		const { url, init } = lastCall();
-		expect(url).toBe('/api/library/books');
+		expect(url).toBe('/api/library/books?workspace=7');
 		expect(init.method).toBe('GET');
 		expect(new Headers(init.headers).get('authorization')).toBe('Bearer tok');
 	});
@@ -81,11 +83,11 @@ describe('library client', () => {
 		expect(init.method).toBe('DELETE');
 	});
 
-	it('uploadEpub sends FormData with file and language, without a JSON content type', async () => {
+	it('uploadBook sends FormData with file, workspace and language, without a JSON content type', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ id: 1 }, 201));
 		const file = new File(['x'], 'b.epub', { type: 'application/epub+zip' });
 
-		await uploadEpub(file, 'ja');
+		await uploadBook(file, 7, 'ja');
 
 		const { url, init } = lastCall();
 		expect(url).toBe('/api/library/upload');
@@ -93,14 +95,17 @@ describe('library client', () => {
 		expect(init.body).toBeInstanceOf(FormData);
 		const form = init.body as FormData;
 		expect((form.get('file') as File).name).toBe('b.epub');
+		expect(form.get('workspace')).toBe('7');
 		expect(form.get('language')).toBe('ja');
 		expect(new Headers(init.headers).get('content-type')).toBeNull();
 	});
 
-	it('uploadEpub omits language when not given', async () => {
+	it('uploadBook omits language when not given but always sends the workspace', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ id: 1 }, 201));
-		await uploadEpub(new File(['x'], 'b.epub'));
-		expect((lastCall().init.body as FormData).has('language')).toBe(false);
+		await uploadBook(new File(['x'], 'b.epub'), 3);
+		const form = lastCall().init.body as FormData;
+		expect(form.has('language')).toBe(false);
+		expect(form.get('workspace')).toBe('3');
 	});
 
 	it('listSources GETs /api/library/sources', async () => {
@@ -119,18 +124,39 @@ describe('library client', () => {
 		expect(url.searchParams.get('limit')).toBe('100');
 	});
 
-	it('importFromSource POSTs {sourceId}', async () => {
+	it('importFromSource POSTs {sourceId, workspaceId}', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ id: 9 }, 201));
-		await importFromSource('gutenberg', '23962');
+		await importFromSource('gutenberg', '23962', 7);
 		const { url, init } = lastCall();
 		expect(url).toBe('/api/library/sources/gutenberg/import');
 		expect(init.method).toBe('POST');
-		expect(JSON.parse(String(init.body))).toEqual({ sourceId: '23962' });
+		expect(JSON.parse(String(init.body))).toEqual({ sourceId: '23962', workspaceId: 7 });
+	});
+
+	it('browseSource GETs the assortment with language, seed and limit', async () => {
+		const items = [{ sourceId: '1', title: 'T', author: 'A', language: 'ja', note: '' }];
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(items));
+		expect(await browseSource('ao zora', { language: 'ja', seed: '2026-11-13' })).toEqual(items);
+		const url = new URL(lastCall().url, 'http://localhost');
+		expect(url.pathname).toBe('/api/library/sources/ao%20zora/browse');
+		expect(url.searchParams.get('language')).toBe('ja');
+		expect(url.searchParams.get('seed')).toBe('2026-11-13');
+		expect(url.searchParams.get('limit')).toBe(String(BROWSE_LIMIT));
+		expect(BROWSE_LIMIT).toBe(12);
+	});
+
+	it('browseSource leaves out a missing language and seed', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse([]));
+		await browseSource('gutenberg', { limit: 5 });
+		const url = new URL(lastCall().url, 'http://localhost');
+		expect(url.searchParams.has('language')).toBe(false);
+		expect(url.searchParams.has('seed')).toBe(false);
+		expect(url.searchParams.get('limit')).toBe('5');
 	});
 
 	it.each([404, 409, 413, 422, 429, 502])('surfaces status %i as ApiError', async (status) => {
 		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status }));
-		const err = await importFromSource('gutenberg', '1').catch((e) => e);
+		const err = await importFromSource('gutenberg', '1', 7).catch((e) => e);
 		expect(err).toBeInstanceOf(ApiError);
 		expect(err.status).toBe(status);
 	});

@@ -212,6 +212,8 @@ export interface SegmentCandidate {
 // Book is one library book as served by /api/library/books.
 export interface Book {
 	id: number;
+	/** The workspace whose library holds the book. */
+	workspaceId: number;
 	language: string;
 	title: string;
 	author: string;

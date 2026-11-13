@@ -37,6 +37,12 @@ export interface StackInfo {
 	textLang: string;
 	/** Shown in the root popup (selection fallbacks). */
 	note: string;
+	/**
+	 * The text of the paragraph the root popup was opened on: result
+	 * offsets of the root popup are code points in it (the book sentence
+	 * saved with a study card is cut from it).
+	 */
+	paragraph: string;
 }
 
 export interface LookupOptions {
@@ -185,6 +191,14 @@ export class LookupController {
 		this.info = null;
 	}
 
+	/**
+	 * hold pins a hover stack while a menu inside a popup is open (no grace
+	 * hide, no replacement by another word); release with hold(false).
+	 */
+	hold(on: boolean): void {
+		this.#hover.hold(on);
+	}
+
 	/** Escape: the top popup only; the last one closes everything. */
 	closeTop(): void {
 		if (this.stack.frames.length <= 1) return this.close();
@@ -245,7 +259,14 @@ export class LookupController {
 			results: shown.results,
 			error: shown.error || undefined
 		});
-		this.info = { mode: 'hover', lang: this.#opts.lang(), textLang: this.#opts.textLang(), note: '' };
+		const runs = this.#opts.runsOf(shown.span.p);
+		this.info = {
+			mode: 'hover',
+			lang: this.#opts.lang(),
+			textLang: this.#opts.textLang(),
+			note: '',
+			paragraph: runs ? paragraphString(runs) : ''
+		};
 	}
 
 	// --- selection ---
@@ -291,7 +312,7 @@ export class LookupController {
 			results: null
 		});
 		if (id === null) return;
-		this.info = { mode: 'selection', lang, textLang: this.#opts.textLang(), note: '' };
+		this.info = { mode: 'selection', lang, textLang: this.#opts.textLang(), note: '', paragraph: text };
 		try {
 			const found = await lookupSelection(lang, text, target, this.#lookup, abort.signal);
 			if (seq !== this.#selectionSeq || !this.info) return;

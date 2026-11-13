@@ -9,11 +9,19 @@
 	// One popup of the stack: a non-modal dialog placed at its frame's
 	// anchor, listing the first entries with "show more". Its pointer
 	// events go to the controller (grace hide, Shift+hover scanning).
+	// `studyWorkspaceId` is the workspace study cards go to (the book's);
+	// null hides the add-to-study buttons.
 	let {
 		frame,
 		info,
-		lookup
-	}: { frame: PopupFrame; info: StackInfo; lookup: LookupController } = $props();
+		lookup,
+		studyWorkspaceId
+	}: {
+		frame: PopupFrame;
+		info: StackInfo;
+		lookup: LookupController;
+		studyWorkspaceId: number | null;
+	} = $props();
 
 	let popup = $state<HTMLElement | null>(null);
 	let width = $state(0);
@@ -28,6 +36,14 @@
 	const visible = $derived(visibleCount(results.length, 0, shown));
 	const hidden = $derived(results.length - visible);
 	const isRoot = $derived(frame.depth === 1);
+	const hold = (on: boolean) => lookup.hold(on);
+	// Result offsets of the root popup are in the paragraph; nested popups
+	// look up dictionary text, which has no book sentence.
+	const study = $derived(
+		studyWorkspaceId === null
+			? undefined
+			: { workspaceId: studyWorkspaceId, paragraph: isRoot ? info.paragraph || null : null, hold }
+	);
 	const position = $derived(
 		placePopup(
 			frame.anchor,
@@ -82,7 +98,7 @@
 				<p class="hint">No dictionary entry found for <span lang={info.textLang}>{frame.text}</span>.</p>
 			{:else}
 				{#each results.slice(0, visible) as result, i (`${result.entryId}:${result.kind}:${i}`)}
-					<EntryCard {result} lang={info.lang} textLang={info.textLang} />
+					<EntryCard {result} lang={info.lang} textLang={info.textLang} {study} />
 				{/each}
 				{#if hidden > 0}
 					<button type="button" class="more" onclick={() => (shown = visibleCount(results.length, shown))}>
