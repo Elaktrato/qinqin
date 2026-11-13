@@ -159,6 +159,11 @@ var unihanAttrKeys = []string{"strokes", "tghz", "gb", "hkgrade"}
 //     1 hanzi), "2" for rows 56–87 (level 2); any other row is not a hanzi
 //     level and yields no attr (key "");
 //   - kGradeLevel "1".."6", the Hong Kong primary-school grade -> hkgrade.
+//
+// kGB0 and kGradeLevel come from the optional zip members: a malformed
+// value there yields no attr (key "") instead of failing the import, as a
+// missing member does. A malformed kTotalStrokes (a required member) is
+// an error.
 func parseUnihanAttr(field, value string) (key, attr string, err error) {
 	switch field {
 	case "kTotalStrokes":
@@ -174,7 +179,7 @@ func parseUnihanAttr(field, value string) (key, attr string, err error) {
 	case "kGB0":
 		code, err := strconv.Atoi(value)
 		if err != nil || len(value) != 4 || strings.Trim(value, "0123456789") != "" {
-			return "", "", fmt.Errorf("kGB0 value %q is not a 4-digit row-cell code", value)
+			return "", "", nil // malformed optional value: no attr
 		}
 		switch row := code / 100; {
 		case row >= 16 && row <= 55:
@@ -186,7 +191,7 @@ func parseUnihanAttr(field, value string) (key, attr string, err error) {
 	case "kGradeLevel":
 		n, err := strconv.Atoi(value)
 		if err != nil || n < 1 {
-			return "", "", fmt.Errorf("kGradeLevel value %q is not a grade", value)
+			return "", "", nil // malformed optional value: no attr
 		}
 		return "hkgrade", strconv.Itoa(n), nil
 	}

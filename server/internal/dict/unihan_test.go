@@ -163,14 +163,34 @@ func TestUnihanParseRejectsMalformedAttrs(t *testing.T) {
 	for _, line := range []string{
 		"U+597D\tkTotalStrokes\tx",
 		"U+597D\tkTotalStrokes\t0",
-		"U+597D\tkGB0\t26x5",
-		"U+597D\tkGB0\t263",
-		"U+597D\tkGradeLevel\tseven",
 	} {
 		_, err := dict.ParseUnihan(strings.NewReader(line + "\n"))
 		if err == nil || !strings.Contains(err.Error(), "line 1") {
 			t.Errorf("ParseUnihan(%q) = %v, want an error naming line 1", line, err)
 		}
+	}
+}
+
+// kGB0 and kGradeLevel come from optional members: a malformed value is
+// skipped, the rest of the file still imports.
+func TestUnihanParseSkipsMalformedOptionalAttrs(t *testing.T) {
+	data, err := dict.ParseUnihan(strings.NewReader(
+		"U+597D\tkTotalStrokes\t6\n" +
+			"U+597D\tkGB0\t26x5\n" +
+			"U+597D\tkGradeLevel\tseven\n" +
+			"U+590D\tkGB0\t263\n" +
+			"U+590D\tkGradeLevel\t0\n" +
+			"U+5FA9\tkGB0\t5601\n" +
+			"U+5FA9\tkGradeLevel\t6\n"))
+	if err != nil {
+		t.Fatalf("ParseUnihan: %v", err)
+	}
+	want := map[string]map[string]string{
+		"好": {"strokes": "6"},
+		"復": {"gb": "2", "hkgrade": "6"},
+	}
+	if !reflect.DeepEqual(data.Attrs, want) {
+		t.Errorf("Attrs = %v, want %v", data.Attrs, want)
 	}
 }
 
