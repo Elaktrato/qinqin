@@ -921,9 +921,10 @@
 
 	.block {
 		border-top: 1px solid var(--st-edge);
-		/* Off-screen sections skip layout and paint. */
-		content-visibility: auto;
-		contain-intrinsic-size: auto 3.2rem;
+		/* No content-visibility here: with every section open it lays the
+		   whole 10k-cell block out in one frame the first time it scrolls
+		   into view (a 1 s freeze); plain layout costs a little more up
+		   front but scrolls smoothly. Measured in the Task 4 fix round. */
 	}
 
 	.block-head {
