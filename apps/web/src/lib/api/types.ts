@@ -99,7 +99,45 @@ export interface Scheme {
 	name: string;
 	unit: string;
 	language: string;
+	/** The manifest id of the pack (`hsk-mini`, …); the server always sends it. */
+	packId?: string;
 	levels: Level[];
+}
+
+// CharRow is one character of GET /api/characters in its compact form.
+// Every field but the id and glyph is omitted when absent.
+export interface CharRow {
+	/** Entry id. */
+	i: number;
+	/** The written glyph (simplified for zh). */
+	c: string;
+	/** Stroke count. */
+	s?: number;
+	/** ja: KANJIDIC2 grade (1–6, 8, 9, 10). */
+	g?: number;
+	/** ja: JLPT level on the old pre-2010 scale (4 easiest … 1). */
+	j?: number;
+	/** ja: KANJIDIC2 newspaper frequency rank. */
+	f?: number;
+	/** zh: 1 when the character is in the 通用规范汉字表. */
+	t?: number;
+	/** zh: GB2312 level (1 or 2). */
+	b?: number;
+	/** zh: Hong Kong primary grade (1–6). */
+	h?: number;
+	/** First reading. */
+	r?: string;
+	/** First gloss. */
+	m?: string;
+	/** Variant forms (zh traditional/simplified partners) sharing the cell. */
+	v?: string[];
+}
+
+// CharactersResponse is GET /api/characters?language=.
+export interface CharactersResponse {
+	language: string;
+	count: number;
+	chars: CharRow[];
 }
 
 // Dictionary is one element of GET /api/dictionaries: an installed
