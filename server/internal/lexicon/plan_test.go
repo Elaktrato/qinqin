@@ -201,3 +201,70 @@ func TestSearchTiersUseTheTextIndexes(t *testing.T) {
 		}
 	}
 }
+
+// TestCharacterQueriesUseIndexes: the character universe walks the
+// (language, kind) prefix of the entries key index, and every per-row
+// lookup (first form, reading, gloss, variant links both ways) seeks its
+// table's entry index; no table is scanned.
+func TestCharacterQueriesUseIndexes(t *testing.T) {
+	sqlDB := seededPlanDB(t)
+	for _, analyzed := range []bool{false, true} {
+		if analyzed {
+			if _, err := sqlDB.Exec(`ANALYZE`); err != nil {
+				t.Fatal(err)
+			}
+		}
+		// Scans allowed: v, the per-row union of a character's few
+		// partners, and d, the dictionaries registry (a handful of rows)
+		// the planner may loop over per sense after ANALYZE.
+		noScans := func(name, got string) {
+			t.Helper()
+			for _, line := range strings.Split(got, "; ") {
+				if strings.HasPrefix(line, "SCAN ") && line != "SCAN v" && line != "SCAN d" && line != "SCAN CONSTANT ROW" {
+					t.Errorf("analyzed=%v %s scans a table: %q in\n%s", analyzed, name, line, got)
+				}
+			}
+		}
+		for _, language := range []string{"ja", "zh"} {
+			for _, stale := range []bool{false, true} {
+				list, ok := charactersQuery(language, stale)
+				if !ok {
+					t.Fatalf("no characters query for %s", language)
+				}
+				got := plan(t, sqlDB, list, language)
+				for _, want := range []string{
+					"SEARCH e USING INDEX sqlite_autoindex_entries_1 (language=? AND kind=?)",
+					"SEARCH f USING INDEX idx_forms_entry (entry_id=?)",
+					"SEARCH r USING INDEX idx_readings_entry (entry_id=?)",
+					"SEARCH s USING INDEX idx_senses_entry (entry_id=?)",
+					"SEARCH l USING INDEX sqlite_autoindex_entry_links_1 (from_id=?)",
+					"SEARCH l USING INDEX idx_entry_links_to (to_id=? AND type=?)",
+				} {
+					if !strings.Contains(got, want) {
+						t.Errorf("analyzed=%v %s (stale %v) list plan lacks %q:\n%s", analyzed, language, stale, want, got)
+					}
+				}
+				noScans(language+" list", got)
+			}
+			marker, _ := characterMarkerQuery(language)
+			got := plan(t, sqlDB, marker, language)
+			if !strings.Contains(got, "SEARCH e USING INDEX sqlite_autoindex_entries_1 (language=? AND kind=?)") {
+				t.Errorf("analyzed=%v %s marker plan = %q", analyzed, language, got)
+			}
+			noScans(language+" marker", got)
+		}
+		got := plan(t, sqlDB, charactersVersionQuery)
+		for _, want := range []string{
+			"SEARCH entries USING COVERING INDEX idx_entries_updated",
+			"SEARCH entry_links USING COVERING INDEX idx_entry_links_updated",
+		} {
+			if !strings.Contains(got, want) {
+				t.Errorf("analyzed=%v version plan lacks %q:\n%s", analyzed, want, got)
+			}
+		}
+		noScans("version", got)
+		if _, ok := charactersQuery("es", false); ok {
+			t.Error("charactersQuery(es) is defined, want none")
+		}
+	}
+}

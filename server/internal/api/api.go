@@ -20,6 +20,8 @@ type server struct {
 
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
+
+	chars charactersCache // GET /api/characters payloads
 }
 
 // New returns the root HTTP handler with all qinqin routes mounted.
@@ -47,6 +49,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
 	mux.HandleFunc("GET /api/workspaces", s.handleListWorkspaces)
 	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
 	mux.HandleFunc("GET /api/languages", s.handleListLanguages)
+	mux.HandleFunc("GET /api/characters", s.handleListCharacters)
 	mux.HandleFunc("POST /api/events/batch", s.handleEventBatch)
 	mux.HandleFunc("GET /api/events", s.handleListEvents)
 	mux.HandleFunc("GET /api/dictionaries", s.handleListDictionaries)
