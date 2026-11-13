@@ -1,11 +1,13 @@
 // DOM side of the paragraph mapping. ChapterText renders each paragraph as
 // <p data-p="i"> and each run as an element with data-r="j" whose FIRST
 // text node is the run's displayed text; a shown furigana lives in an <rt>
-// after it. Everything here maps DOM boundary points onto that model and
+// after it. In a paragraph with highlights a run's text is cut into
+// pieces instead: child <span>/<mark> elements with data-o = the piece's
+// UTF-16 start in the run, all before the <rt>. Everything here maps DOM boundary points onto that model and
 // back; the arithmetic itself lives in paragraphText.ts. The last two
 // helpers serve Shift+hover scanning inside the lookup popups.
 import { codePointToUtf16, utf16ToCodePoint } from './lookup';
-import { locate, offsetFromRun, paragraphString, type Run } from './paragraphText';
+import { locate, offsetFromRun, paragraphString, segmentAt, type Run } from './paragraphText';
 
 export interface RunPoint {
 	p: number;
@@ -20,9 +22,43 @@ function elementOf(node: Node): Element | null {
 	return node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
 }
 
-function baseText(run: Element): Text | null {
-	for (const child of run.childNodes) if (child.nodeType === Node.TEXT_NODE) return child as Text;
+/**
+ * A piece of a run's displayed text: either the run's own (first) text
+ * node, or, in a paragraph with highlights, one child element per piece
+ * (a <span> or <mark> with data-o = its UTF-16 start in the run).
+ */
+interface Piece {
+	node: Text | null;
+	el: Element;
+	o: number;
+	length: number;
+}
+
+function firstText(el: Element): Text | null {
+	for (const child of el.childNodes) if (child.nodeType === Node.TEXT_NODE) return child as Text;
 	return null;
+}
+
+function isPiece(node: Node): node is Element {
+	return node.nodeType === Node.ELEMENT_NODE && (node as Element).hasAttribute('data-o');
+}
+
+function piecesOf(run: Element): Piece[] {
+	const out: Piece[] = [];
+	for (const child of run.childNodes) {
+		if (isPiece(child)) {
+			const node = firstText(child);
+			out.push({ node, el: child, o: Number((child as HTMLElement).dataset.o), length: node?.length ?? 0 });
+		}
+	}
+	if (out.length > 0) return out;
+	const node = firstText(run);
+	return [{ node, el: run, o: 0, length: node?.length ?? 0 }];
+}
+
+function runLength(pieces: Piece[]): number {
+	const last = pieces[pieces.length - 1];
+	return last ? last.o + last.length : 0;
 }
 
 function indexOf(el: Element, attr: 'p' | 'r'): number {
@@ -52,14 +88,28 @@ export function runPointAt(node: Node, offset: number, bias: 'start' | 'end'): R
 	const run = el?.closest('[data-r]');
 	const paragraph = run?.closest('[data-p]');
 	if (!el || !run || !paragraph) return null;
-	const text = baseText(run);
-	const length = text?.length ?? 0;
+	const pieces = piecesOf(run);
+	const length = runLength(pieces);
 	const p = indexOf(paragraph, 'p');
 	const r = indexOf(run, 'r');
 	if (el.closest('rt')) return { p, r, utf16: bias === 'start' ? 0 : length, inRt: true };
-	if (node === text) return { p, r, utf16: offset, inRt: false };
-	// The run element itself: offset counts children before the point.
-	return { p, r, utf16: offset === 0 ? 0 : length, inRt: false };
+	const at = (utf16: number): RunPoint => ({ p, r, utf16, inRt: false });
+	const text = pieces.find((piece) => piece.node === node);
+	if (text) return at(text.o + offset);
+	const own = pieces.find((piece) => piece.el === node && piece.el !== run);
+	// A piece element itself: before or after its text.
+	if (own) return at(offset === 0 ? own.o : own.o + own.length);
+	if (node !== run) return at(offset === 0 ? 0 : length);
+	// The run element itself: offset counts children before the point; the
+	// point sits before the next piece, or at the end before the <rt>.
+	const children = run.childNodes;
+	for (let i = offset; i < children.length; i++) {
+		const child = children[i];
+		const piece = pieces.find((pc) => pc.el === child || pc.node === child);
+		if (piece) return at(piece.o);
+		if (child.nodeType === Node.ELEMENT_NODE && (child as Element).tagName.toLowerCase() === 'rt') break;
+	}
+	return at(offset === 0 ? 0 : length);
 }
 
 /** paragraphElement finds <p data-p> of the chapter text. */
@@ -78,16 +128,23 @@ export function rangeForSpan(container: Element, p: number, runs: Run[], start: 
 	if (end > start && to.utf16Offset === 0 && to.runIndex > 0) {
 		to = { runIndex: to.runIndex - 1, utf16Offset: runs[to.runIndex - 1].text.length };
 	}
-	const textOf = (r: number) => {
+	// The text node and offset holding (run, utf16): with highlights a run
+	// is cut into pieces, each with its own text node.
+	const pointOf = (r: number, utf16: number, bias: 'start' | 'end') => {
 		const run = paragraph.querySelector(`[data-r="${r}"]`);
-		return run ? baseText(run) : null;
+		if (!run) return null;
+		const pieces = piecesOf(run);
+		const hit = segmentAt(pieces, utf16, bias);
+		const piece = hit && pieces[hit.index];
+		if (!hit || !piece?.node) return null;
+		return { node: piece.node, offset: Math.min(hit.offset, piece.node.length) };
 	};
-	const startNode = textOf(from.runIndex);
-	const endNode = textOf(to.runIndex);
-	if (!startNode || !endNode) return null;
+	const startPoint = pointOf(from.runIndex, from.utf16Offset, 'start');
+	const endPoint = pointOf(to.runIndex, to.utf16Offset, end > start ? 'end' : 'start');
+	if (!startPoint || !endPoint) return null;
 	const range = document.createRange();
-	range.setStart(startNode, Math.min(from.utf16Offset, startNode.length));
-	range.setEnd(endNode, Math.min(to.utf16Offset, endNode.length));
+	range.setStart(startPoint.node, startPoint.offset);
+	range.setEnd(endPoint.node, endPoint.offset);
 	return range;
 }
 
@@ -131,7 +188,32 @@ export function selectionSpan(
 	range: Range,
 	runsOf: RunsOf
 ): { p: number; start: number; end: number } | null {
-	if (!range.intersectsNode(container)) return null;
+	for (const span of coveredSpans(container, range, runsOf)) return span;
+	return null;
+}
+
+/**
+ * highlightSpan is selectionSpan for the highlighter: the same span, and
+ * `clamped` when the range also covers a later paragraph (a highlight
+ * stays within the paragraph where the selection starts).
+ */
+export function highlightSpan(
+	container: Element,
+	range: Range,
+	runsOf: RunsOf
+): { p: number; start: number; end: number; clamped: boolean } | null {
+	const spans = coveredSpans(container, range, runsOf);
+	const first = spans.next();
+	if (first.done) return null;
+	return { ...first.value, clamped: !spans.next().done };
+}
+
+function* coveredSpans(
+	container: Element,
+	range: Range,
+	runsOf: RunsOf
+): Generator<{ p: number; start: number; end: number }> {
+	if (!range.intersectsNode(container)) return;
 	for (const paragraph of container.querySelectorAll<HTMLElement>('[data-p]')) {
 		if (!range.intersectsNode(paragraph)) continue;
 		const p = indexOf(paragraph, 'p');
@@ -143,9 +225,8 @@ export function selectionSpan(
 		const end = paragraph.contains(range.endContainer)
 			? boundaryOffset(paragraph, runs, range.endContainer, range.endOffset, 'end')
 			: Array.from(paragraphString(runs)).length;
-		if (end > start) return { p, start, end };
+		if (end > start) yield { p, start, end };
 	}
-	return null;
 }
 
 /**

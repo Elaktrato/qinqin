@@ -40,6 +40,12 @@
 	} = $props();
 
 	let rail = $state<HTMLElement | null>(null);
+
+	// Something opened from the rail that floats above it (the highlight
+	// editor, marked data-rail-overlay): using it keeps the drawer open.
+	function inOverlay(node: Node | EventTarget): boolean {
+		return node instanceof Element && node.closest('[data-rail-overlay]') !== null;
+	}
 	let opener = $state<HTMLButtonElement | null>(null);
 
 	const anyAlert = $derived(tabs.some((t) => t.alert));
@@ -114,7 +120,7 @@
 	function railFocusOut(event: FocusEvent): void {
 		if (mode !== 'drawer' || !open) return;
 		const next = event.relatedTarget as Node | null;
-		if (!next || rail?.contains(next) || opener?.contains(next) || inPopup(next)) return;
+		if (!next || rail?.contains(next) || opener?.contains(next) || inPopup(next) || inOverlay(next)) return;
 		onToggle(false);
 	}
 
@@ -142,7 +148,8 @@
 		if (mode !== 'drawer' || !open) return;
 		const onDown = (event: PointerEvent): void => {
 			const target = event.target as Node | null;
-			if (!target || rail?.contains(target) || opener?.contains(target) || inPopup(target)) return;
+			if (!target || rail?.contains(target) || opener?.contains(target) || inPopup(target) || inOverlay(target))
+				return;
 			onToggle(false);
 		};
 		document.addEventListener('pointerdown', onDown, true);

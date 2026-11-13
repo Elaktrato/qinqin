@@ -54,3 +54,27 @@ export function locate(runs: Run[], cpOffset: number): { runIndex: number; utf16
 export function sliceCodePoints(text: string, start: number, end: number): string {
 	return text.slice(codePointToUtf16(text, start), codePointToUtf16(text, Math.max(start, end)));
 }
+
+/**
+ * segmentAt resolves a UTF-16 offset in a run's displayed text to one of
+ * the run's pieces (`o`: where the piece starts in the run, `length`: its
+ * UTF-16 length). With bias 'start' a boundary between pieces belongs to
+ * the later one, with 'end' to the earlier one (a range then never starts
+ * at the end of one text node or ends at the start of the next). Offsets
+ * past the end clamp to the end of the last piece. Null without pieces.
+ */
+export function segmentAt(
+	segs: readonly { o: number; length: number }[],
+	utf16: number,
+	bias: 'start' | 'end'
+): { index: number; offset: number } | null {
+	if (segs.length === 0) return null;
+	for (let i = 0; i < segs.length; i++) {
+		const { o, length } = segs[i];
+		const inside = bias === 'start' ? utf16 >= o && utf16 < o + length : utf16 > o && utf16 <= o + length;
+		if (inside) return { index: i, offset: utf16 - o };
+	}
+	if (utf16 <= segs[0].o) return { index: 0, offset: 0 };
+	const last = segs.length - 1;
+	return { index: last, offset: segs[last].length };
+}

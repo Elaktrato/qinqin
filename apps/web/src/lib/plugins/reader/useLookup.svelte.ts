@@ -8,6 +8,7 @@
 import { lookupAt } from '$lib/api/lookup';
 import {
 	caretFromPoint,
+	highlightSpan,
 	rangeContainsPoint,
 	rangeForSpan,
 	runPointAt,
@@ -15,6 +16,7 @@ import {
 	type RunsOf
 } from './dom';
 import { apiErrorMessage } from './errors';
+import type { ParagraphSpan } from './highlightUi';
 import { HoverLookup, type HoverShown, type Span } from './hoverLookup';
 import { hoverable } from './lookup';
 import { cachedLookup } from './lookupCache';
@@ -71,6 +73,11 @@ export class LookupController {
 	#selectionTimer: ReturnType<typeof setTimeout> | undefined;
 	#selectionSpan: Span | null = null;
 	#frame = 0;
+	/**
+	 * The selection a selection popup was opened for, as the highlighter
+	 * needs it (untrimmed, clamped to its first paragraph); null otherwise.
+	 */
+	selectedSpan: ParagraphSpan | null = null;
 
 	constructor(opts: LookupOptions) {
 		this.#opts = opts;
@@ -183,6 +190,7 @@ export class LookupController {
 		this.#selectionAbort?.abort();
 		this.#selectionAbort = null;
 		this.#selectionSpan = null;
+		this.selectedSpan = null;
 		clearTimeout(this.#selectionTimer);
 		cancelAnimationFrame(this.#frame);
 		this.#frame = 0;
@@ -287,6 +295,7 @@ export class LookupController {
 		const target = selectionSpanTarget(text, found.start, found.end);
 		if (!target) return;
 		const span = { p: found.p, start: target.start, end: target.end };
+		const forHighlight = highlightSpan(container, selection.getRangeAt(0), this.#opts.runsOf);
 		const shown = this.#selectionSpan;
 		if (
 			this.info?.mode === 'selection' &&
@@ -295,6 +304,8 @@ export class LookupController {
 			shown.start === span.start &&
 			shown.end === span.end
 		) {
+			// Same lookup; the selection may have grown past the paragraph.
+			this.selectedSpan = forHighlight;
 			return;
 		}
 		const range = this.#rangeOf(span);
@@ -304,6 +315,7 @@ export class LookupController {
 		this.#selectionAbort = abort;
 		const seq = this.#selectionSeq;
 		this.#selectionSpan = span;
+		this.selectedSpan = forHighlight;
 		const lang = this.#opts.lang();
 		const id = this.stack.open({
 			anchor: anchorOf(range.getBoundingClientRect()),
@@ -322,6 +334,18 @@ export class LookupController {
 			if (abort.signal.aborted || seq !== this.#selectionSeq) return;
 			this.stack.update(id, { results: [], error: apiErrorMessage(err, 'lookup') });
 		}
+	}
+
+	/**
+	 * currentSelection maps the page's selection right now (for the `h`
+	 * key) to the highlighter's span; null when nothing in the chapter text
+	 * is selected.
+	 */
+	currentSelection(): ParagraphSpan | null {
+		const container = this.#opts.container();
+		const selection = typeof window === 'undefined' ? null : window.getSelection();
+		if (!container || !selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+		return highlightSpan(container, selection.getRangeAt(0), this.#opts.runsOf);
 	}
 
 	// --- shared ---

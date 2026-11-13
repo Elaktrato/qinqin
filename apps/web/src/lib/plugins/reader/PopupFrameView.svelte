@@ -1,5 +1,7 @@
 <script lang="ts">
 	import EntryCard from './EntryCard.svelte';
+	import HighlightBar from './HighlightBar.svelte';
+	import type { HighlightActions } from './highlightUi';
 	import { moreLabel } from './entryDisplay';
 	import { placePopup } from './placement';
 	import { MAX_DEPTH, type PopupFrame } from './popupStackCore';
@@ -10,17 +12,21 @@
 	// anchor, listing the first entries with "show more". Its pointer
 	// events go to the controller (grace hide, Shift+hover scanning).
 	// `studyWorkspaceId` is the workspace study cards go to (the book's);
-	// null hides the add-to-study buttons.
+	// null hides the add-to-study buttons. `highlighter` adds the
+	// highlight action bar to the root popup of a selection in the book
+	// (never to hover popups or nested dictionary popups).
 	let {
 		frame,
 		info,
 		lookup,
-		studyWorkspaceId
+		studyWorkspaceId,
+		highlighter = null
 	}: {
 		frame: PopupFrame;
 		info: StackInfo;
 		lookup: LookupController;
 		studyWorkspaceId: number | null;
+		highlighter?: HighlightActions | null;
 	} = $props();
 
 	let popup = $state<HTMLElement | null>(null);
@@ -88,6 +94,7 @@
 			{#if isRoot && info.mode === 'selection'}<span class="selected" lang={info.textLang}>{frame.text}</span>{/if}
 			<button type="button" class="close" aria-label="Close" onclick={() => lookup.closeFrame(frame.id)}>×</button>
 		</div>
+		{#if isRoot && info.mode === 'selection' && highlighter}<HighlightBar actions={highlighter} />{/if}
 		<div class="content" aria-live="polite">
 			{#if isRoot && info.note}<p class="note">{info.note}</p>{/if}
 			{#if frame.error}
