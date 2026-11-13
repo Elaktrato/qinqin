@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"qinqin/internal/lang"
@@ -40,17 +41,25 @@ type rowScanner interface {
 	Scan(dest ...any) error
 }
 
-// workspaceName trims a requested name and reports whether it fits the
-// cap.
-func workspaceName(raw string) (string, bool) {
-	name := strings.TrimSpace(raw)
-	return name, utf8.RuneCountInString(name) <= maxWorkspaceName
+// workspaceName trims a requested name and checks it: at most 40 code
+// points, and no control (Cc) or format (Cf) characters, so no
+// newlines, tabs, zero-width or bidi-override characters. A refused
+// name comes back with the reason, for a 422.
+func workspaceName(raw string) (name, problem string) {
+	name = strings.TrimSpace(raw)
+	if utf8.RuneCountInString(name) > maxWorkspaceName {
+		return "", "name is longer than 40 characters"
+	}
+	if strings.ContainsFunc(name, func(r rune) bool { return unicode.In(r, unicode.Cc, unicode.Cf) }) {
+		return "", "name contains control or invisible characters"
+	}
+	return name, ""
 }
 
 // handleCreateWorkspace serves POST /api/workspaces {language, name?}:
 // it opens a workspace of the request's language for the caller,
 // auto-registering codes without a code pack as data-only languages.
-// The name is trimmed and at most 40 characters (422 otherwise); an
+// The name is trimmed and checked by workspaceName (422 otherwise); an
 // existing (language, name) pair of the caller is a 409.
 func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
@@ -70,9 +79,9 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "language is required", http.StatusBadRequest)
 		return
 	}
-	name, ok := workspaceName(req.Name)
-	if !ok {
-		http.Error(w, "name is longer than 40 characters", http.StatusUnprocessableEntity)
+	name, problem := workspaceName(req.Name)
+	if problem != "" {
+		http.Error(w, problem, http.StatusUnprocessableEntity)
 		return
 	}
 	if !lang.Registered(language) {
@@ -175,7 +184,7 @@ func (s *server) ensureDefaultWorkspaces(ctx context.Context, userID int64) erro
 
 // handleUpdateWorkspace serves PUT /api/workspaces/{id} with a body of
 // {name?: string, settings?: object}: it renames the workspace (trimmed,
-// at most 40 characters, 409 when the caller already has that
+// checked by workspaceName, 409 when the caller already has that
 // (language, name)) and merges settings into the stored object. At
 // least one of the two is required and no other key is accepted. Other
 // users' workspaces are invisible: unknown and foreign ids are 404.
@@ -201,9 +210,9 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 	var name sql.NullString
 	if req.Name != nil {
-		n, ok := workspaceName(*req.Name)
-		if !ok {
-			http.Error(w, "name is longer than 40 characters", http.StatusUnprocessableEntity)
+		n, problem := workspaceName(*req.Name)
+		if problem != "" {
+			http.Error(w, problem, http.StatusUnprocessableEntity)
 			return
 		}
 		name = sql.NullString{String: n, Valid: true}

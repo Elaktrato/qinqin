@@ -331,6 +331,13 @@ func TestWorkspaceNames(t *testing.T) {
 	if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": "Graded readers"}); resp.StatusCode != http.StatusConflict {
 		t.Errorf("PUT rename onto an existing name: status = %d, want %d", resp.StatusCode, http.StatusConflict)
 	}
+	// Renaming to the current name is not a conflict with itself.
+	resp = doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": "HSK 1"})
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("PUT rename to the current name: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	} else if decodeJSON(t, resp, &renamed); renamed.Name != "HSK 1" {
+		t.Errorf("PUT rename to the current name = %+v", renamed)
+	}
 	if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": strings.Repeat("a", 41)}); resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("PUT 41-character name: status = %d, want %d", resp.StatusCode, http.StatusUnprocessableEntity)
 	}
@@ -341,12 +348,29 @@ func TestWorkspaceNames(t *testing.T) {
 		t.Errorf("PUT clear name: status = %d, ws = %+v", resp.StatusCode, renamed)
 	}
 
+	// Names with control or format characters (zero-width ones included)
+	// are refused on create and rename; surrounding whitespace is trimmed.
+	for _, bad := range []string{
+		"a\x00b", "a\nb", "a\tb", "a\x7fb", "a\u0085b", // Cc
+		"a" + string(rune(0x200b)) + "b", "a" + string(rune(0x200d)) + "b", "a" + string(rune(0x200e)) + "b", "a" + string(rune(0x202e)) + "b", string(rune(0xfeff)) + "a", "a" + string(rune(0xad)) + "b", // Cf
+	} {
+		if status, _ := create(map[string]string{"language": "zh", "name": bad}); status != http.StatusUnprocessableEntity {
+			t.Errorf("POST name %q: status = %d, want %d", bad, status, http.StatusUnprocessableEntity)
+		}
+		if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": bad}); resp.StatusCode != http.StatusUnprocessableEntity {
+			t.Errorf("PUT name %q: status = %d, want %d", bad, resp.StatusCode, http.StatusUnprocessableEntity)
+		}
+	}
+	if status, ws := create(map[string]string{"language": "zh", "name": "\n Novels \t"}); status != http.StatusCreated || ws.Name != "Novels" {
+		t.Errorf("POST name with surrounding whitespace: status = %d, ws = %+v", status, ws)
+	}
+
 	// The list carries the names.
 	list := doJSON(t, http.MethodGet, ts.URL, "/api/workspaces", alice, nil)
 	var all []workspaceBody
 	decodeJSON(t, list, &all)
-	if len(all) != 3 || all[1].Name != "Graded readers" {
-		t.Errorf("GET workspaces = %+v, want 3 with names", all)
+	if len(all) != 4 || all[1].Name != "Graded readers" || all[3].Name != "Novels" {
+		t.Errorf("GET workspaces = %+v, want 4 with names", all)
 	}
 }
 
