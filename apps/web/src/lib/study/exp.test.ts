@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { BASE_XP, dailyStreak, levelFromXp, levelProgress, xpFromReviews } from './exp';
+import { BASE_XP, dailyStreak, levelFromXp, levelProgress, xpByKind, xpFromReviews } from './exp';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
 
 function ev(
@@ -68,17 +68,23 @@ describe('xpFromReviews', () => {
 		expect(results[0]).toBe(10 + 20 + (8 + 10) + 10);
 	});
 
-	it('gives the same-ms tie bonus to the lowest id regardless of order', () => {
-		// bonus is flat +10, so verify via a day split: tie across ids stays stable
-		const a = ev(1, '2026-01-01T05:00:00Z');
-		const b = ev(2, '2026-01-01T05:00:00Z');
-		expect(xpFromReviews([b, a])).toBe(xpFromReviews([a, b]));
-	});
-
 	it('ignores malformed events', () => {
 		const bad = ev(2, '2026-01-02T00:00:00Z');
 		(bad.payload as { grade: number }).grade = 9;
 		expect(xpFromReviews([ev(1, '2026-01-01T00:00:00Z', 3), bad])).toBe(25);
+	});
+});
+
+describe('xpByKind', () => {
+	it('splits base and grade xp by kind and leaves out the daily bonus', () => {
+		const r = [
+			ev(1, '2026-01-01T00:00:00Z', 4, 'vocab'),
+			ev(2, '2026-01-02T00:00:00Z', 3, 'writing'),
+			ev(3, '2026-01-02T01:00:00Z', 1, 'writing')
+		];
+		const by = xpByKind(r);
+		expect(by).toEqual({ vocab: 20, sentence: 0, writing: 45, tone: 0 });
+		expect(xpFromReviews(r) - (by.vocab + by.sentence + by.writing + by.tone)).toBe(20);
 	});
 });
 
@@ -148,5 +154,15 @@ describe('dailyStreak', () => {
 	it('uses UTC midnight for day edges', () => {
 		const r = [ev(1, '2026-01-09T23:59:59Z'), ev(2, '2026-01-10T00:00:00Z')];
 		expect(dailyStreak(r, Date.parse('2026-01-10T00:00:01Z')).current).toBe(2);
+	});
+
+	it('ignores future-dated events for both current and best', () => {
+		const r = [
+			ev(1, '2026-01-09T10:00:00Z'),
+			ev(2, '2026-01-12T10:00:00Z'),
+			ev(3, '2026-01-13T10:00:00Z'),
+			ev(4, '2026-01-14T10:00:00Z')
+		];
+		expect(dailyStreak(r, now)).toEqual({ current: 1, best: 1, todayDone: false });
 	});
 });

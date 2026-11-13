@@ -56,8 +56,8 @@ function utcDay(at: number): number {
 
 /**
  * xpFromReviews awards the kind's base XP plus a grade bonus per review,
- * and +10 for the first review of each UTC day. "First" is by timestamp,
- * then id, so the total never depends on the order events arrive in.
+ * and a flat +10 for every distinct UTC day that has at least one review.
+ * Only the day count matters, so the total never depends on event order.
  */
 export function xpFromReviews(reviews: readonly ReviewEvent[]): number {
 	const valid = validReviews(reviews);
@@ -69,6 +69,19 @@ export function xpFromReviews(reviews: readonly ReviewEvent[]): number {
 	// have a review. Counting days keeps it order-independent by design.
 	total += new Set(valid.map((review) => utcDay(review.at))).size * DAILY_BONUS;
 	return total;
+}
+
+/**
+ * xpByKind splits the per-review XP (base plus grade bonus) by card kind.
+ * The daily bonus belongs to no kind and is left out; callers can derive
+ * it as xpFromReviews minus the sum of these.
+ */
+export function xpByKind(reviews: readonly ReviewEvent[]): Record<StudyCardKind, number> {
+	const out: Record<StudyCardKind, number> = { vocab: 0, sentence: 0, writing: 0, tone: 0 };
+	for (const review of validReviews(reviews)) {
+		out[review.mode] += BASE_XP[review.mode] + GRADE_BONUS[review.grade];
+	}
+	return out;
 }
 
 /** levelProgress: the cost of level L to L+1 is 100 * L xp. */
@@ -89,14 +102,21 @@ export function levelFromXp(xp: number): number {
 /**
  * dailyStreak counts consecutive UTC days with a review. The current run
  * counts back from today, or from yesterday while today has none yet.
+ * Days after `now` (clock skew, a device set ahead) are ignored for both
+ * the current run and the best run.
  */
 export function dailyStreak(
 	reviews: readonly ReviewEvent[],
 	now: number
 ): { current: number; best: number; todayDone: boolean } {
-	const days = [...new Set(validReviews(reviews).map((review) => utcDay(review.at)))].sort(
-		(a, b) => a - b
-	);
+	const today = utcDay(now);
+	const days = [
+		...new Set(
+			validReviews(reviews)
+				.map((review) => utcDay(review.at))
+				.filter((day) => day <= today)
+		)
+	].sort((a, b) => a - b);
 	const set = new Set(days);
 
 	let best = 0;
@@ -108,7 +128,6 @@ export function dailyStreak(
 		prev = day;
 	}
 
-	const today = utcDay(now);
 	const todayDone = set.has(today);
 	let cursor = todayDone ? today : today - 1;
 	let current = 0;

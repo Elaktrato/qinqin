@@ -4,7 +4,8 @@
 	import type { StudyEvent } from '$lib/events';
 	import { HEATMAP_DAYS, reviewCountsByDay } from '$lib/study/heatmap';
 	import { buildQueue } from '$lib/study/scheduler';
-	import { levelFromXp, xpFromReviews } from '$lib/study/exp';
+	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
+	import Mascot from './Mascot.svelte';
 	import { loadConfig } from '$lib/study/session';
 	import { GENERAL_DECK_ID, loadStudyData } from '$lib/study/store';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
@@ -54,7 +55,9 @@
 	});
 
 	const xp = $derived(xpFromReviews(reviews));
-	const level = $derived(levelFromXp(xp));
+	const progress = $derived(levelProgress(xp));
+	const level = $derived(progress.level);
+	const streak = $derived(dailyStreak(reviews, Date.now()));
 
 	const cells = $derived(
 		[...reviewCountsByDay(reviews, new Date()).entries()].map(([day, count]) => ({
@@ -141,12 +144,34 @@
 			<button type="button" class="retry" onclick={() => void load(workspaceId)}>Try again</button>
 		</p>
 	{:else}
-		<p class="stats">
-			<strong>{queue.due}</strong>
-			{queue.due === 1 ? 'card' : 'cards'} due ·
-			<strong>{queue.fresh}</strong> new · Level <strong>{level}</strong> ·
-			{xp} XP
-		</p>
+		<div class="buddy">
+			<Mascot {level} streak={streak.current} todayDone={streak.todayDone} />
+			<div class="progress">
+				<p class="stats">
+					<strong>{queue.due}</strong>
+					{queue.due === 1 ? 'card' : 'cards'} due ·
+					<strong>{queue.fresh}</strong> new · Level <strong>{level}</strong> ·
+					{xp} XP
+				</p>
+				<div
+					class="bar"
+					role="progressbar"
+					aria-label="Progress to the next level"
+					aria-valuemin="0"
+					aria-valuemax={progress.xpForNext}
+					aria-valuenow={progress.xpInto}
+					aria-valuetext={`${progress.xpInto} of ${progress.xpForNext} XP to level ${level + 1}`}
+				>
+					<span style:width={`${(progress.xpInto / progress.xpForNext) * 100}%`}></span>
+				</div>
+				<p class="streak" class:idle={!streak.todayDone}>
+					<span class="flame" aria-hidden="true">🔥</span>
+					<strong>{streak.current}</strong>
+					{streak.current === 1 ? 'day' : 'days'} streak ·
+					{streak.todayDone ? 'done today' : 'study today to keep it'}
+				</p>
+			</div>
+		</div>
 
 		<div
 			class="grid"
@@ -211,8 +236,47 @@
 		text-decoration: none;
 	}
 
+	.buddy {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		margin-top: 0.9rem;
+	}
+
+	.progress {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.bar {
+		height: 0.5rem;
+		margin-top: 0.5rem;
+		border-radius: 999px;
+		overflow: hidden;
+		background: color-mix(in srgb, currentColor 14%, transparent);
+	}
+
+	.bar span {
+		display: block;
+		height: 100%;
+		background: #0b6bcb;
+	}
+
+	.streak {
+		margin: 0.5rem 0 0;
+		font-size: 0.85rem;
+	}
+
+	.streak.idle {
+		opacity: 0.75;
+	}
+
+	.streak.idle .flame {
+		filter: grayscale(1);
+	}
+
 	.stats {
-		margin: 0.9rem 0 0;
+		margin: 0;
 		font-size: 0.9rem;
 		opacity: 0.85;
 	}

@@ -17,6 +17,9 @@
 	let decks = $state<Deck[]>([]);
 	let selectedDeckId = $state(GENERAL_DECK_ID);
 	let saving = $state(false);
+	// Set only by a successful add in this view, so the note is not shown
+	// for entries that were already in the deck.
+	let justAdded = $state(false);
 	let error = $state('');
 
 	function message(err: unknown, fallback: string): string {
@@ -34,6 +37,7 @@
 		const workspaceId = $workspaces.current?.id ?? null;
 		let stale = false;
 		inDeck = null;
+		justAdded = false;
 		error = '';
 		void (async () => {
 			if (workspaceId === null) {
@@ -86,6 +90,7 @@
 				deckIds: [selectedDeckId]
 			});
 			inDeck = true;
+			justAdded = true;
 		} catch (err) {
 			error = message(err, 'Could not add this entry to your study deck.');
 		} finally {
@@ -122,6 +127,12 @@
 					? 'In study deck'
 					: 'Add to study'}
 	</button>
+	{#if justAdded}
+		<p class="note" role="status">
+			Added to study — sentence, writing and tone cards appear automatically in sessions that
+			include them
+		</p>
+	{/if}
 	{#if error}
 		<p class="error" role="alert">{error}</p>
 	{/if}
@@ -172,6 +183,12 @@
 		border-color: color-mix(in srgb, currentColor 35%, transparent);
 		color: inherit;
 		cursor: default;
+	}
+
+	.note {
+		margin: 0;
+		font-size: 0.85rem;
+		opacity: 0.8;
 	}
 
 	.error {

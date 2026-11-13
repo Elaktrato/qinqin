@@ -25,7 +25,8 @@
 		type FlowItem
 	} from '$lib/study/cardFlow';
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
-	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
+	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
+	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
@@ -57,6 +58,8 @@
 		writing: 'Writing',
 		tone: 'Tone'
 	};
+
+	const STUDY_KINDS: StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
 
 	const TIER_LABELS: Record<SaladTier, string> = {
 		0: 'Tier 0 · words, translation shown',
@@ -227,6 +230,12 @@
 	const sessionXp = $derived(totalXp - historyXp);
 	const progress = $derived(levelProgress(totalXp));
 	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now()));
+	// Per-kind XP of this session; whatever the kinds do not explain is
+	// the daily bonus.
+	const kindXp = $derived(xpByKind(sessionReviews));
+	const dailyBonusXp = $derived(
+		sessionXp - Object.values(kindXp).reduce((sum, value) => sum + value, 0)
+	);
 
 	async function loadEntry(entryId: number): Promise<void> {
 		if (entries[entryId] !== undefined || pendingEntryId === entryId) return;
@@ -643,6 +652,16 @@
 				{sessionReviews.length === 1 ? 'review' : 'reviews'}
 			</p>
 			<p class="stat"><strong>+{sessionXp}</strong> XP this session</p>
+			<ul class="breakdown" aria-label="XP by card type">
+				{#each STUDY_KINDS as kind (kind)}
+					{#if kindXp[kind] > 0}
+						<li>{KIND_LABELS[kind]} <strong>+{kindXp[kind]}</strong></li>
+					{/if}
+				{/each}
+				{#if dailyBonusXp > 0}
+					<li>Daily bonus <strong>+{dailyBonusXp}</strong></li>
+				{/if}
+			</ul>
 			<p class="stat">Level <strong>{progress.level}</strong></p>
 			<div
 				class="bar"
@@ -656,9 +675,15 @@
 			</div>
 			<p class="hint">{progress.xpInto} / {progress.xpForNext} XP to level {progress.level + 1}</p>
 			<p class="stat">
-				Streak <strong>{streak.current}</strong>
+				<span aria-hidden="true">🔥</span> Streak <strong>{streak.current}</strong>
 				{streak.current === 1 ? 'day' : 'days'}
 			</p>
+			<Mascot
+				level={progress.level}
+				streak={streak.current}
+				todayDone={streak.todayDone}
+				size={72}
+			/>
 			<a href="/study">Back to study setup</a>
 		</section>
 	{:else}
@@ -911,6 +936,17 @@
 	.stat {
 		margin: 0.4rem 0;
 		font-size: 1.1rem;
+	}
+
+	.breakdown {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		margin: 0 0 0.6rem;
+		padding: 0;
+		list-style: none;
+		font-size: 0.9rem;
+		opacity: 0.85;
 	}
 
 	.bar {
