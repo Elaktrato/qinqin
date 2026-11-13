@@ -285,6 +285,21 @@ func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// A source that knows the work's language from its catalog has a
+	// mismatch refused before the download; Create below stays the check
+	// for sources that cannot tell (or a catalog without a language).
+	if d, ok := src.(sources.Describer); ok {
+		res, err := d.Describe(ctx, in.SourceID)
+		if err != nil {
+			sourceError(w, err)
+			return
+		}
+		if res.Language != "" && res.Language != wsLang {
+			libraryError(w, &library.LanguageMismatchError{Workspace: wsLang, Book: res.Language})
+			return
+		}
+	}
+
 	imp, err := src.Fetch(ctx, in.SourceID)
 	if err != nil {
 		sourceError(w, err)

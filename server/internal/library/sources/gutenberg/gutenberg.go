@@ -358,17 +358,37 @@ func (a *adapter) Browse(ctx context.Context, language, seed string, limit int) 
 	return out, nil
 }
 
-func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported, error) {
+// work returns the catalog's Chinese or Japanese text sourceID, or
+// ErrNotFound; it downloads nothing but the (cached) catalog.
+func (a *adapter) work(ctx context.Context, sourceID string) (*work, error) {
 	if !idPattern.MatchString(sourceID) {
-		return sources.Imported{}, fmt.Errorf("gutenberg: source id must be digits: %w", sources.ErrNotFound)
+		return nil, fmt.Errorf("gutenberg: source id must be digits: %w", sources.ErrNotFound)
 	}
 	cat, err := a.catalog(ctx)
 	if err != nil {
-		return sources.Imported{}, err
+		return nil, err
 	}
 	w := cat.byID[sourceID]
 	if w == nil {
-		return sources.Imported{}, fmt.Errorf("gutenberg: #%s is not a Chinese or Japanese text: %w", sourceID, sources.ErrNotFound)
+		return nil, fmt.Errorf("gutenberg: #%s is not a Chinese or Japanese text: %w", sourceID, sources.ErrNotFound)
+	}
+	return w, nil
+}
+
+// Describe reports the catalog entry of sourceID (sources.Describer)
+// without downloading the work.
+func (a *adapter) Describe(ctx context.Context, sourceID string) (sources.Result, error) {
+	w, err := a.work(ctx, sourceID)
+	if err != nil {
+		return sources.Result{}, err
+	}
+	return w.result(), nil
+}
+
+func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported, error) {
+	w, err := a.work(ctx, sourceID)
+	if err != nil {
+		return sources.Imported{}, err
 	}
 	epubURL := a.base + "/ebooks/" + w.id + ".epub.noimages"
 	body, err := a.c.Get(ctx, epubURL, a.maxEpub, workTTL)

@@ -277,6 +277,67 @@ func TestSourcesImportDuplicate(t *testing.T) {
 	}
 }
 
+// describingSource is a fakeSource that also reports catalog metadata
+// (sources.Describer): language per source id, "" for unknown.
+type describingSource struct {
+	*fakeSource
+	languages map[string]string
+	describes int
+}
+
+func (d *describingSource) Describe(_ context.Context, id string) (sources.Result, error) {
+	d.mu.Lock()
+	d.describes++
+	d.mu.Unlock()
+	l, ok := d.languages[id]
+	if !ok {
+		return sources.Result{}, sources.ErrNotFound
+	}
+	return sources.Result{SourceID: id, Language: l}, nil
+}
+
+// TestSourcesImportChecksCatalogLanguageFirst: a source that can
+// describe a work without downloading it has a language mismatch
+// refused before Fetch; a matching or unknown catalog language still
+// downloads (the post-fetch check stays the fallback), and a work the
+// catalog does not know is a 404 without a download.
+func TestSourcesImportChecksCatalogLanguageFirst(t *testing.T) {
+	src := &describingSource{
+		fakeSource: &fakeSource{id: "fake"}, // Fetch serves ja books
+		languages:  map[string]string{"zh-work": "zh", "ja-work": "ja", "blank": ""},
+	}
+	ts, _, _ := newSourcesServer(t, src)
+	alice := registerUser(t, ts.URL, "alice", "")
+	ja := newWorkspace(t, ts.URL, alice, "ja", "")
+	path := "/api/library/sources/fake/import"
+
+	resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("zh-work", ja))
+	body := bodyOf(t, resp)
+	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "workspace language is ja, book is zh") {
+		t.Errorf("zh work into ja: status = %d, body %q, want 422 with the reason", resp.StatusCode, body)
+	}
+	if n := src.fetchCount(); n != 0 {
+		t.Errorf("mismatched work downloaded %d times, want 0", n)
+	}
+
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("missing", ja)); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("unknown work: status = %d, want 404", resp.StatusCode)
+	}
+	if n := src.fetchCount(); n != 0 {
+		t.Errorf("unknown work downloaded %d times, want 0", n)
+	}
+
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("ja-work", ja)); resp.StatusCode != http.StatusCreated {
+		t.Errorf("ja work into ja: status = %d, want 201", resp.StatusCode)
+	}
+	if resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("blank", ja)); resp.StatusCode != http.StatusCreated {
+		t.Errorf("work without catalog language: status = %d, want 201", resp.StatusCode)
+	}
+	if n := src.fetchCount(); n != 2 {
+		t.Errorf("source fetched %d times, want 2 (matching and unknown language)", n)
+	}
+}
+
 func TestSourcesImportWorkspace(t *testing.T) {
 	fake := &fakeSource{id: "fake"} // serves ja books
 	aozora := &fakeSource{id: "aozora"}

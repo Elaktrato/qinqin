@@ -47,6 +47,15 @@ type Source interface {
 	Fetch(ctx context.Context, sourceID string) (Imported, error)
 }
 
+// Describer is the optional capability of a Source to report a work's
+// catalog metadata (language included; "" when the catalog does not say)
+// without downloading the work, so an import can be refused before the
+// download. A work the source does not offer is ErrNotFound, exactly as
+// Fetch would report it.
+type Describer interface {
+	Describe(ctx context.Context, sourceID string) (Result, error)
+}
+
 var (
 	// ErrTooLarge reports a response body (or imported work) above its cap.
 	ErrTooLarge = errors.New("sources: response too large")

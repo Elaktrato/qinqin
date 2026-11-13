@@ -261,6 +261,33 @@ func TestGutenbergFetchRejects(t *testing.T) {
 	}
 }
 
+// TestGutenbergDescribe reports a work's catalog metadata, language
+// included, without downloading its epub; ids Fetch refuses are
+// ErrNotFound here too.
+func TestGutenbergDescribe(t *testing.T) {
+	f := newFixture(t, header)
+	ctx := context.Background()
+	var d sources.Describer = f.ad
+	got, err := d.Describe(ctx, "4572")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (sources.Result{SourceID: "4572", Title: "粉妝樓1-10回", Author: "羅, 貫中", Language: "zh"}); got != want {
+		t.Errorf("Describe(4572) = %+v, want %+v", got, want)
+	}
+	if got, err := d.Describe(ctx, "1982"); err != nil || got.Language != "ja" {
+		t.Errorf("Describe(1982) = %+v, %v, want ja", got, err)
+	}
+	for _, id := range []string{"", "abc", "../1982", "1", "5001", "999999"} {
+		if _, err := d.Describe(ctx, id); !errors.Is(err, sources.ErrNotFound) {
+			t.Errorf("Describe(%q): err = %v, want ErrNotFound", id, err)
+		}
+	}
+	if f.epubHits.Load() != 0 {
+		t.Errorf("Describe downloaded %d epubs, want 0", f.epubHits.Load())
+	}
+}
+
 func TestGutenbergInvalidEpub(t *testing.T) {
 	f := newFixture(t, header)
 	f.epubBody.Store([]byte("not an epub"))
