@@ -313,17 +313,19 @@ const (
 		CROSS JOIN entries e ON e.id = f.entry_id
 		WHERE f.text = ? AND f.deleted_at IS NULL
 		  AND e.language = ? AND e.kind = ? AND e.deleted_at IS NULL
-		ORDER BY (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
+		ORDER BY (? = 'character' AND f.ord = 0) DESC, (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
 		LIMIT 1`
 )
 
 // Best returns the best-ranked active entry of the language and kind that
 // has form as an active form: usually-kana entries that carry a priority
-// first, then priority (higher first), then entry id. It returns
-// ErrNotFound when no entry has the form.
+// first, then priority (higher first), then entry id. A character first
+// prefers an entry headed by the form (its first form): CC-CEDICT folds
+// 覆 into 复's entry as a traditional form, and 覆 also heads its own. It
+// returns ErrNotFound when no entry has the form.
 func (s Store) Best(ctx context.Context, language, kind, form string) (*Entry, error) {
 	var id int64
-	err := s.DB.QueryRowContext(ctx, bestQuery, form, language, kind).Scan(&id)
+	err := s.DB.QueryRowContext(ctx, bestQuery, form, language, kind, kind).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}

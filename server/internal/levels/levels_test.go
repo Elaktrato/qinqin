@@ -426,6 +426,43 @@ func TestSingleCharacterWords(t *testing.T) {
 	}
 }
 
+// TestCharacterResolvesToItsOwnEntry: CC-CEDICT merges the traditional
+// forms of a simplified character into its entry (复 holds 復 and 覆), and
+// 覆 also has an entry of its own. A listed or derived character 覆
+// resolves to the entry headed by 覆 (its own map cell), not to 复.
+func TestCharacterResolvesToItsOwnEntry(t *testing.T) {
+	lang.Register(lang.Zh{})
+
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importCedict(t, sqlDB,
+		"復 复 [fu4] /to return/",
+		"覆 复 [fu4] /variant of 復/",
+		"覆 覆 [fu4] /to cover/",
+		"蓋 盖 [gai4] /lid/",
+		"覆蓋 覆盖 [fu4 gai4] /to cover/")
+	fu := lexID(t, sqlDB, "character", "复")
+	cover := lexID(t, sqlDB, "character", "覆")
+	if fu == cover {
+		t.Fatal("fixture: 复 and 覆 share an entry")
+	}
+
+	chars := buildPack(t, "own-chars", `{"unit":"character","levels":[{"name":"1","entries":["覆"]}]}`)
+	if _, err := levels.Import(ctx, sqlDB, chars); err != nil {
+		t.Fatalf("import characters: %v", err)
+	}
+	words := buildPack(t, "own-words", `{"unit":"word","levels":[{"name":"1","entries":["覆盖"]}]}`)
+	if _, err := levels.Import(ctx, sqlDB, words); err != nil {
+		t.Fatalf("import words: %v", err)
+	}
+	if got, err := levels.ForEntry(ctx, sqlDB, cover); err != nil || len(got) != 2 {
+		t.Errorf("badges of 覆 = %+v (err %v), want the character level and the derived word level", got, err)
+	}
+	if got, err := levels.ForEntry(ctx, sqlDB, fu); err != nil || len(got) != 0 {
+		t.Errorf("badges of 复 = %+v (err %v), want none", got, err)
+	}
+}
+
 func TestSkippedUnknownForms(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
