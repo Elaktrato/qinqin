@@ -120,7 +120,9 @@ byte.
   importer resolves written forms only. Against the bundled JMdict 168 forms
   do not resolve and are skipped at seed time (N5 19, N4 16, N3 18, N2 66,
   N1 49), mostly kana spellings of words JMdict writes with kanji (けんか,
-  よい, にぎやか) and set phrases (いってきます).
+  よい, にぎやか) and set phrases (いってきます). The seed line reports 208
+  unknown forms: those 168 plus 40 iteration marks 々 in resolved words
+  (時々), for which no character level is derived.
 
 ### Chinese
 

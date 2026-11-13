@@ -52,7 +52,9 @@ site was unreachable). Expressions are cleaned (variants split on ";", notes
 in parentheses and affix tildes removed, patterns dropped, a する verb reduced
 to its noun) and each form kept at its easiest level; kana spellings of words
 JMdict writes with kanji (けんか, よい) do not resolve and are skipped at seed
-time (168 of 7,799 forms against the bundled JMdict).
+time (168 of 7,799 forms against the bundled JMdict; the seed line says 208
+because it also counts the 40 iteration marks 々 in resolved words, which
+have no KANJIDIC2 entry to derive a character level for).
 
 HSK caveat: the hsk30 README says its data is largely derived from two MIT
 repositories (elkmovie/hsk30, shawkynasr/HSK-official-Query-System) that copy
