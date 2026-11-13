@@ -15,33 +15,34 @@ const maxBookmarkBody = 1 << 10
 var errTrailingJSON = errors.New("trailing data after the JSON body")
 
 // decodeBookmarkBody reads a bookmark write body into v strictly (see
-// decodeStrictBody) with the maxBookmarkBody cap.
+// decodeStrictJSON) with the maxBookmarkBody cap. It answers a failure
+// itself (413 or 400, see badBody) and reports success.
 func decodeBookmarkBody(w http.ResponseWriter, r *http.Request, v any) bool {
-	return decodeStrictBody(w, r, v, maxBookmarkBody)
-}
-
-// decodeStrictBody reads a JSON body into v strictly: at most limit
-// bytes, no unknown keys, nothing after the value. It answers a failure
-// itself (413 or 400) and reports success.
-func decodeStrictBody(w http.ResponseWriter, r *http.Request, v any, limit int64) bool {
-	r.Body = http.MaxBytesReader(w, r.Body, limit)
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	err := dec.Decode(v)
-	if err == nil {
-		if extra := dec.Decode(&json.RawMessage{}); extra != io.EOF {
-			err = errTrailingJSON
-			var tooBig *http.MaxBytesError
-			if errors.As(extra, &tooBig) {
-				err = extra
-			}
-		}
-	}
-	if err != nil {
+	if err := decodeStrictJSON(w, r, v, maxBookmarkBody); err != nil {
 		badBody(w, err)
 		return false
 	}
 	return true
+}
+
+// decodeStrictJSON reads a JSON body into v strictly: at most limit
+// bytes (an *http.MaxBytesError beyond), no unknown keys, nothing after
+// the value.
+func decodeStrictJSON(w http.ResponseWriter, r *http.Request, v any, limit int64) error {
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(v); err != nil {
+		return err
+	}
+	if extra := dec.Decode(&json.RawMessage{}); extra != io.EOF {
+		var tooBig *http.MaxBytesError
+		if errors.As(extra, &tooBig) {
+			return extra
+		}
+		return errTrailingJSON
+	}
+	return nil
 }
 
 // bookmarkID reads the {bid} path value; a malformed id is a missing

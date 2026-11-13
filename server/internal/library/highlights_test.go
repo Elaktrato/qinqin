@@ -14,6 +14,11 @@ func hl(chapter, paragraph, start, end int, text string) library.Highlight {
 	return library.Highlight{Chapter: chapter, Paragraph: paragraph, Start: start, End: end, Text: text}
 }
 
+// span is a highlight whose text has exactly end-start code points.
+func span(chapter, paragraph, start, end int) library.Highlight {
+	return hl(chapter, paragraph, start, end, strings.Repeat("x", max(end-start, 1)))
+}
+
 func TestHighlightsAddListUpdateDelete(t *testing.T) {
 	f := setup(t)
 	ctx := context.Background()
@@ -23,7 +28,7 @@ func TestHighlightsAddListUpdateDelete(t *testing.T) {
 		t.Fatalf("empty list: %v %#v, want an empty slice", err, list)
 	}
 
-	in := hl(0, 2, 3, 5, "  你好 ")
+	in := hl(0, 2, 3, 5, "你好")
 	in.Note = "line one\nline two"
 	h1, err := f.AddHighlight(ctx, f.a, bk.ID, in)
 	if err != nil {
@@ -120,12 +125,12 @@ func TestHighlightOverlap(t *testing.T) {
 	f := setup(t)
 	ctx := context.Background()
 	bk, _ := f.Create(ctx, book(f.a, f.wa, "h1"), chapters())
-	first, err := f.AddHighlight(ctx, f.a, bk.ID, hl(0, 1, 10, 20, "x"))
+	first, err := f.AddHighlight(ctx, f.a, bk.ID, span(0, 1, 10, 20))
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, r := range [][2]int{{5, 11}, {19, 25}, {12, 15}, {0, 30}, {10, 20}, {10, 11}, {19, 20}} {
-		_, err := f.AddHighlight(ctx, f.a, bk.ID, hl(0, 1, r[0], r[1], "x"))
+		_, err := f.AddHighlight(ctx, f.a, bk.ID, span(0, 1, r[0], r[1]))
 		if !errors.Is(err, library.ErrOverlap) {
 			t.Errorf("%v: %v, want ErrOverlap", r, err)
 			continue
@@ -137,7 +142,7 @@ func TestHighlightOverlap(t *testing.T) {
 	}
 	// Adjacent ranges touch but do not overlap.
 	for _, r := range [][2]int{{5, 10}, {20, 25}} {
-		if _, err := f.AddHighlight(ctx, f.a, bk.ID, hl(0, 1, r[0], r[1], "x")); err != nil {
+		if _, err := f.AddHighlight(ctx, f.a, bk.ID, span(0, 1, r[0], r[1])); err != nil {
 			t.Errorf("adjacent %v: %v", r, err)
 		}
 	}
@@ -147,9 +152,9 @@ func TestHighlightOverlap(t *testing.T) {
 		bookID int64
 		h      library.Highlight
 	}{
-		{bk.ID, hl(0, 2, 10, 20, "x")},
-		{bk.ID, hl(1, 1, 10, 20, "x")},
-		{other.ID, hl(0, 1, 10, 20, "x")},
+		{bk.ID, span(0, 2, 10, 20)},
+		{bk.ID, span(1, 1, 10, 20)},
+		{other.ID, span(0, 1, 10, 20)},
 	} {
 		if _, err := f.AddHighlight(ctx, f.a, tc.bookID, tc.h); err != nil {
 			t.Errorf("elsewhere %+v: %v", tc.h, err)
@@ -159,7 +164,7 @@ func TestHighlightOverlap(t *testing.T) {
 	if err := f.DeleteHighlight(ctx, f.a, bk.ID, first.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := f.AddHighlight(ctx, f.a, bk.ID, hl(0, 1, 12, 15, "x")); err != nil {
+	if _, err := f.AddHighlight(ctx, f.a, bk.ID, span(0, 1, 12, 15)); err != nil {
 		t.Errorf("after delete: %v", err)
 	}
 }
@@ -174,7 +179,7 @@ func TestHighlightConcurrentOverlap(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, errs[i] = f.AddHighlight(ctx, f.a, bk.ID, hl(0, 0, i, i+5, "x"))
+			_, errs[i] = f.AddHighlight(ctx, f.a, bk.ID, span(0, 0, i, i+5))
 		}()
 	}
 	wg.Wait()
@@ -202,24 +207,30 @@ func TestHighlightValidation(t *testing.T) {
 	ctx := context.Background()
 	bk, _ := f.Create(ctx, book(f.a, f.wa, "h1"), chapters()) // two chapters
 
-	withColor := func(c string) library.Highlight { h := hl(0, 0, 0, 1, "x"); h.Color = c; return h }
-	withNote := func(n string) library.Highlight { h := hl(0, 0, 0, 1, "x"); h.Note = n; return h }
+	withColor := func(c string) library.Highlight { h := span(0, 0, 0, 1); h.Color = c; return h }
+	withNote := func(n string) library.Highlight { h := span(0, 0, 0, 1); h.Note = n; return h }
 	for name, tc := range map[string]struct {
 		h    library.Highlight
 		want error
 	}{
-		"chapter beyond count": {hl(2, 0, 0, 1, "x"), library.ErrHighlightRange},
-		"negative chapter":     {hl(-1, 0, 0, 1, "x"), library.ErrHighlightRange},
-		"negative paragraph":   {hl(0, -1, 0, 1, "x"), library.ErrHighlightRange},
-		"negative start":       {hl(0, 0, -1, 1, "x"), library.ErrHighlightRange},
-		"empty range":          {hl(0, 0, 3, 3, "x"), library.ErrHighlightRange},
-		"reversed range":       {hl(0, 0, 4, 3, "x"), library.ErrHighlightRange},
-		"end beyond max":       {hl(0, 0, 0, library.MaxHighlightOffset+1, "x"), library.ErrHighlightRange},
+		"chapter beyond count": {span(2, 0, 0, 1), library.ErrHighlightRange},
+		"negative chapter":     {span(-1, 0, 0, 1), library.ErrHighlightRange},
+		"negative paragraph":   {span(0, -1, 0, 1), library.ErrHighlightRange},
+		"negative start":       {span(0, 0, -1, 1), library.ErrHighlightRange},
+		"empty range":          {span(0, 0, 3, 3), library.ErrHighlightRange},
+		"reversed range":       {span(0, 0, 4, 3), library.ErrHighlightRange},
+		"end beyond max":       {span(0, 0, 0, library.MaxHighlightOffset+1), library.ErrHighlightRange},
 		"unknown colour":       {withColor("red"), library.ErrHighlightColor},
 		"colour case":          {withColor("Yellow"), library.ErrHighlightColor},
 		"empty text":           {hl(0, 0, 0, 1, ""), library.ErrHighlightText},
-		"blank text":           {hl(0, 0, 0, 1, " \n\t "), library.ErrHighlightText},
-		"501-rune text":        {hl(0, 0, 0, 1, strings.Repeat("字", 501)), library.ErrHighlightText},
+		"blank text":           {hl(0, 0, 0, 4, " \n\t "), library.ErrHighlightText},
+		"501-rune text":        {hl(0, 0, 0, 501, strings.Repeat("字", 501)), library.ErrHighlightText},
+		"leading space":        {hl(0, 0, 0, 2, " x"), library.ErrHighlightText},
+		"trailing newline":     {hl(0, 0, 0, 2, "x\n"), library.ErrHighlightText},
+		"ideographic space":    {hl(0, 0, 0, 2, "\u3000字"), library.ErrHighlightText},
+		"text shorter":         {hl(0, 0, 0, 3, "你好"), library.ErrHighlightText},
+		"text longer":          {hl(0, 0, 0, 1, "你好"), library.ErrHighlightText},
+		"UTF-16 offsets":       {hl(0, 0, 0, 2, "😀"), library.ErrHighlightText},
 		"2001-rune note":       {withNote(strings.Repeat("字", 2001)), library.ErrNoteTooLong},
 	} {
 		if _, err := f.AddHighlight(ctx, f.a, bk.ID, tc.h); !errors.Is(err, tc.want) {
@@ -230,9 +241,11 @@ func TestHighlightValidation(t *testing.T) {
 		t.Errorf("rejected adds stored %+v", l)
 	}
 
-	// The limits count runes, not bytes, and text is trimmed first.
+	// The limits count code points, not bytes or UTF-16 units; inner
+	// whitespace is kept and the text is stored exactly.
 	for i, h := range []library.Highlight{
-		hl(1, 0, 0, library.MaxHighlightOffset, "  "+strings.Repeat("字", 500)+"\n"),
+		hl(1, 0, library.MaxHighlightOffset-500, library.MaxHighlightOffset, strings.Repeat("字", 500)),
+		hl(1, 0, 0, 3, "😀 𠀋"),
 		withNote(strings.Repeat("😀", 2000)),
 		withColor("green"),
 	} {
@@ -240,12 +253,12 @@ func TestHighlightValidation(t *testing.T) {
 		got, err := f.AddHighlight(ctx, f.a, bk.ID, h)
 		if err != nil {
 			t.Errorf("at the limits %d: %v", i, err)
-		} else if i == 0 && got.Text != strings.Repeat("字", 500) {
-			t.Errorf("text not trimmed: %q", got.Text)
+		} else if got.Text != h.Text {
+			t.Errorf("text %q stored as %q", h.Text, got.Text)
 		}
 	}
 
-	h, _ := f.AddHighlight(ctx, f.a, bk.ID, hl(0, 9, 0, 1, "x"))
+	h, _ := f.AddHighlight(ctx, f.a, bk.ID, span(0, 9, 0, 1))
 	red, long := "red", strings.Repeat("a", 2001)
 	if _, err := f.UpdateHighlight(ctx, f.a, bk.ID, h.ID, &red, nil); !errors.Is(err, library.ErrHighlightColor) {
 		t.Errorf("update red: %v", err)
@@ -268,15 +281,15 @@ func TestHighlightLimit(t *testing.T) {
 	bk, _ := f.Create(ctx, book(f.a, f.wa, "h1"), chapters())
 	other, _ := f.Create(ctx, book(f.a, f.wa, "h2"), chapters())
 	fillHighlights(t, f, bk.ID, library.MaxHighlights)
-	if _, err := f.AddHighlight(ctx, f.a, bk.ID, hl(1, 0, 0, 1, "x")); !errors.Is(err, library.ErrTooMany) {
+	if _, err := f.AddHighlight(ctx, f.a, bk.ID, span(1, 0, 0, 1)); !errors.Is(err, library.ErrTooMany) {
 		t.Errorf("highlight %d: %v, want ErrTooMany", library.MaxHighlights+1, err)
 	}
 	// An overlap at the cap still reports the overlap.
-	if _, err := f.AddHighlight(ctx, f.a, bk.ID, hl(0, 0, 0, 1, "x")); !errors.Is(err, library.ErrOverlap) {
+	if _, err := f.AddHighlight(ctx, f.a, bk.ID, span(0, 0, 0, 1)); !errors.Is(err, library.ErrOverlap) {
 		t.Errorf("overlap at the cap: %v, want ErrOverlap", err)
 	}
 	// The cap is per book.
-	if _, err := f.AddHighlight(ctx, f.a, other.ID, hl(0, 0, 0, 1, "x")); err != nil {
+	if _, err := f.AddHighlight(ctx, f.a, other.ID, span(0, 0, 0, 1)); err != nil {
 		t.Errorf("other book: %v", err)
 	}
 	if l, err := f.ListHighlights(ctx, f.a, bk.ID); err != nil || len(l) != library.MaxHighlights {
@@ -307,22 +320,22 @@ func TestHighlightsOtherUser(t *testing.T) {
 	f := setup(t)
 	ctx := context.Background()
 	bk, _ := f.Create(ctx, book(f.a, f.wa, "h1"), chapters())
-	h, _ := f.AddHighlight(ctx, f.a, bk.ID, hl(0, 0, 0, 2, "secret"))
+	h, _ := f.AddHighlight(ctx, f.a, bk.ID, hl(0, 0, 0, 6, "secret"))
 	bobs, _ := f.Create(ctx, book(f.b, f.wb, "h1"), chapters())
 	blue := "blue"
 
 	if _, err := f.ListHighlights(ctx, f.b, bk.ID); !errors.Is(err, library.ErrNotFound) {
 		t.Errorf("list: %v", err)
 	}
-	if _, err := f.AddHighlight(ctx, f.b, bk.ID, hl(0, 0, 5, 6, "x")); !errors.Is(err, library.ErrNotFound) {
+	if _, err := f.AddHighlight(ctx, f.b, bk.ID, span(0, 0, 5, 6)); !errors.Is(err, library.ErrNotFound) {
 		t.Errorf("add: %v", err)
 	}
 	// Over alice's range: 404, not her highlight's id.
-	if _, err := f.AddHighlight(ctx, f.b, bk.ID, hl(0, 0, 0, 2, "x")); !errors.Is(err, library.ErrNotFound) {
+	if _, err := f.AddHighlight(ctx, f.b, bk.ID, span(0, 0, 0, 2)); !errors.Is(err, library.ErrNotFound) {
 		t.Errorf("add over alice's: %v", err)
 	}
 	// Beyond the chapter count of alice's book: still 404.
-	if _, err := f.AddHighlight(ctx, f.b, bk.ID, hl(5, 0, 0, 2, "x")); !errors.Is(err, library.ErrNotFound) {
+	if _, err := f.AddHighlight(ctx, f.b, bk.ID, span(5, 0, 0, 2)); !errors.Is(err, library.ErrNotFound) {
 		t.Errorf("add beyond chapters: %v", err)
 	}
 	if _, err := f.UpdateHighlight(ctx, f.b, bk.ID, h.ID, &blue, nil); !errors.Is(err, library.ErrNotFound) {
@@ -349,7 +362,7 @@ func TestHighlightsOtherUser(t *testing.T) {
 	if l, _ := f.ListHighlights(ctx, f.a, bk.ID); len(l) != 1 || l[0] != h {
 		t.Errorf("alice's highlights = %+v, want hers intact", l)
 	}
-	if _, err := f.AddHighlight(ctx, f.a, 999, hl(0, 0, 0, 1, "x")); !errors.Is(err, library.ErrNotFound) {
+	if _, err := f.AddHighlight(ctx, f.a, 999, span(0, 0, 0, 1)); !errors.Is(err, library.ErrNotFound) {
 		t.Errorf("unknown book: %v", err)
 	}
 }
@@ -359,7 +372,7 @@ func TestDeleteBookDeletesHighlights(t *testing.T) {
 	ctx := context.Background()
 	bk, _ := f.Create(ctx, book(f.a, f.wa, "h1"), chapters())
 	keep, _ := f.Create(ctx, book(f.a, f.wa, "h2"), chapters())
-	f.AddHighlight(ctx, f.a, bk.ID, hl(0, 0, 0, 1, "x"))
+	f.AddHighlight(ctx, f.a, bk.ID, span(0, 0, 0, 1))
 	f.AddHighlight(ctx, f.a, bk.ID, hl(1, 0, 0, 1, "y"))
 	f.AddBookmark(ctx, f.a, bk.ID, "0:1", "")
 	kept, _ := f.AddHighlight(ctx, f.a, keep.ID, hl(0, 0, 0, 1, "z"))
@@ -383,5 +396,44 @@ func TestDeleteBookDeletesHighlights(t *testing.T) {
 	}
 	if l, _ := f.ListHighlights(ctx, f.a, keep.ID); len(l) != 1 || l[0].ID != kept.ID {
 		t.Errorf("other book's highlights = %+v", l)
+	}
+}
+
+func TestHighlightNotesAreCleaned(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	bk, _ := f.Create(ctx, book(f.a, f.wa, "h1"), chapters())
+	r := func(c rune) string { return string(c) }
+	for i, tc := range []struct{ in, want string }{
+		{"line one\r\nline two\rthree", "line one\nline two\nthree"},     // CR LF and CR become LF
+		{"  keep\tinner   spacing\n\n ", "  keep\tinner   spacing\n\n "}, // whitespace is not collapsed
+		{"a" + r(0x202e) + "b" + r(0x202c) + "c", "abc"},                 // bidi embeddings and overrides go
+		{r(0x202a) + r(0x202b) + r(0x202d) + "x" + r(0x2066) + r(0x2067) + r(0x2068) + "y" + r(0x2069), "xy"},
+		{"a\x00b\x1fc\x7fd" + r(0x85) + "e", "abcde"}, // other control characters go
+		{"a" + r(0xad) + "b" + r(0x200c) + "c" + r(0x200d) + "d", "a" + r(0xad) + "b" + r(0x200c) + "c" + r(0x200d) + "d"},
+		{"<b>not html</b> & 😀", "<b>not html</b> & 😀"},
+	} {
+		h := span(0, i, 0, 1)
+		h.Note = tc.in
+		got, err := f.AddHighlight(ctx, f.a, bk.ID, h)
+		if err != nil || got.Note != tc.want {
+			t.Errorf("add note %q: %v %q, want %q", tc.in, err, got.Note, tc.want)
+			continue
+		}
+		up, err := f.UpdateHighlight(ctx, f.a, bk.ID, got.ID, nil, &tc.in)
+		if err != nil || up.Note != tc.want {
+			t.Errorf("update note %q: %v %q, want %q", tc.in, err, up.Note, tc.want)
+		}
+	}
+	// The limit counts the cleaned note.
+	h := span(1, 0, 0, 1)
+	h.Note = strings.Repeat("字", 2000) + strings.Repeat(r(0x202e), 10)
+	if _, err := f.AddHighlight(ctx, f.a, bk.ID, h); err != nil {
+		t.Errorf("2000 characters plus controls: %v", err)
+	}
+	// The snapshot is never cleaned: it must equal the book's text.
+	soft := "a" + r(0xad) + "b"
+	if got, err := f.AddHighlight(ctx, f.a, bk.ID, hl(1, 1, 0, 3, soft)); err != nil || got.Text != soft {
+		t.Errorf("snapshot with a soft hyphen: %v %q", err, got.Text)
 	}
 }

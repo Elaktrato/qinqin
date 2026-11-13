@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -36,10 +37,12 @@ var (
 	ErrHighlightRange = errors.New("library: highlight range out of bounds")
 	// ErrHighlightColor reports a colour outside yellow, green, blue, pink.
 	ErrHighlightColor = errors.New("library: unknown highlight colour")
-	// ErrHighlightText reports a text snapshot that is empty after
-	// trimming or longer than MaxHighlightText code points.
-	ErrHighlightText = errors.New("library: highlight text empty or too long")
-	// ErrNoteTooLong reports a note over MaxNoteLen code points.
+	// ErrHighlightText reports a text snapshot that is empty, starts or
+	// ends with whitespace, is longer than MaxHighlightText code points,
+	// or does not have exactly End-Start code points.
+	ErrHighlightText = errors.New("library: highlight text does not match its range")
+	// ErrNoteTooLong reports a note over MaxNoteLen code points after
+	// cleaning.
 	ErrNoteTooLong = errors.New("library: note too long")
 	// ErrOverlap reports a highlight overlapping an existing one in the
 	// same paragraph; the error is an *OverlapError naming it.
@@ -84,15 +87,47 @@ func checkColor(color string) error {
 	return nil
 }
 
-func checkNote(note string) error {
+// cleanNote turns CR LF and lone CR into LF and drops the bidi
+// embedding, override and isolate controls (U+202A-202E, U+2066-2069)
+// and every other control character except newline and tab; whitespace
+// is otherwise kept as written. A result over MaxNoteLen code points is
+// ErrNoteTooLong.
+func cleanNote(raw string) (string, error) {
+	note := strings.ReplaceAll(raw, "\r\n", "\n")
+	note = strings.Map(func(r rune) rune {
+		switch {
+		case r == '\r':
+			return '\n'
+		case r == '\n', r == '\t':
+			return r
+		case unicode.IsControl(r),
+			r >= 0x202a && r <= 0x202e,
+			r >= 0x2066 && r <= 0x2069:
+			return -1
+		}
+		return r
+	}, note)
 	if utf8.RuneCountInString(note) > MaxNoteLen {
-		return ErrNoteTooLong
+		return "", ErrNoteTooLong
+	}
+	return note, nil
+}
+
+// checkText is the snapshot rule: the text is exactly the code points
+// of [start, end), so it is not empty, has no leading or trailing
+// whitespace (the client trims the selection and adjusts the range)
+// and has end-start code points (which also catches UTF-16 offsets).
+// The text is stored as given, never cleaned.
+func checkText(text string, start, end int) error {
+	n := utf8.RuneCountInString(text)
+	if n == 0 || n > MaxHighlightText || n != end-start || text != strings.TrimSpace(text) {
+		return ErrHighlightText
 	}
 	return nil
 }
 
 // cleanHighlight validates a new highlight's fields apart from the
-// chapter count, trims its text and fills in the default colour.
+// chapter count, cleans its note and fills in the default colour.
 func cleanHighlight(h Highlight) (Highlight, error) {
 	if h.Chapter < 0 || h.Paragraph < 0 || h.Start < 0 || h.Start >= h.End || h.End > MaxHighlightOffset {
 		return Highlight{}, ErrHighlightRange
@@ -103,13 +138,14 @@ func cleanHighlight(h Highlight) (Highlight, error) {
 	if err := checkColor(h.Color); err != nil {
 		return Highlight{}, err
 	}
-	h.Text = strings.TrimSpace(h.Text)
-	if h.Text == "" || utf8.RuneCountInString(h.Text) > MaxHighlightText {
-		return Highlight{}, ErrHighlightText
-	}
-	if err := checkNote(h.Note); err != nil {
+	if err := checkText(h.Text, h.Start, h.End); err != nil {
 		return Highlight{}, err
 	}
+	note, err := cleanNote(h.Note)
+	if err != nil {
+		return Highlight{}, err
+	}
+	h.Note = note
 	return h, nil
 }
 
@@ -165,9 +201,9 @@ func (s Store) ListHighlights(ctx context.Context, userID, bookID int64) ([]High
 // AddHighlight highlights a range of one paragraph of one of the user's
 // books; the ID, BookID and timestamps of h are ignored. The range must
 // lie in the book (chapter below its chapter count, see
-// ErrHighlightRange), the colour defaults to yellow, the text is
-// trimmed (ErrHighlightText) and the note is kept as given
-// (ErrNoteTooLong). A range overlapping a highlight of the same
+// ErrHighlightRange), the colour defaults to yellow, the text must be
+// exactly the range's code points (see checkText, ErrHighlightText) and
+// the note is cleaned (see cleanNote, ErrNoteTooLong). A range overlapping a highlight of the same
 // paragraph is an *OverlapError (ErrOverlap); ranges that only touch
 // are fine. A book that is not the user's is ErrNotFound, and a book
 // with MaxHighlights highlights is ErrTooMany.
@@ -247,8 +283,8 @@ func (s Store) whyNoHighlight(ctx context.Context, userID, bookID int64, h Highl
 	return nil
 }
 
-// UpdateHighlight sets the colour and/or the note (a nil pointer keeps
-// the field) of a highlight of one of the user's books and returns the
+// UpdateHighlight sets the colour and/or the note (cleaned, see
+// cleanNote; a nil pointer keeps the field) of a highlight of one of the user's books and returns the
 // highlight; the range and text never change. A highlight that is not
 // in that book of the user is ErrNotFound.
 func (s Store) UpdateHighlight(ctx context.Context, userID, bookID, highlightID int64, color, note *string) (Highlight, error) {
@@ -258,9 +294,11 @@ func (s Store) UpdateHighlight(ctx context.Context, userID, bookID, highlightID 
 		}
 	}
 	if note != nil {
-		if err := checkNote(*note); err != nil {
+		cleaned, err := cleanNote(*note)
+		if err != nil {
 			return Highlight{}, err
 		}
+		note = &cleaned
 	}
 	// Nothing to change leaves updated_at as it is.
 	h, err := scanHighlight(s.DB.QueryRowContext(ctx, `

@@ -50,7 +50,7 @@ func TestHighlightRoutes(t *testing.T) {
 	}
 
 	resp := doJSON(t, http.MethodPost, tsURL, base, alice, map[string]any{
-		"chapter": 1, "paragraph": 0, "start": 0, "end": 2, "text": " 世界 ", "note": "a <b>note</b>\nline",
+		"chapter": 1, "paragraph": 0, "start": 0, "end": 2, "text": "世界", "note": "a <b>note</b>\nline",
 	})
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("add: status = %d %s", resp.StatusCode, bodyOf(t, resp))
@@ -111,11 +111,11 @@ func TestHighlightRoutes(t *testing.T) {
 
 func TestHighlightOverlapRoute(t *testing.T) {
 	tsURL, alice, _, base, _ := highlightFixture(t)
-	resp := doJSON(t, http.MethodPost, tsURL, base, alice, map[string]any{"chapter": 0, "paragraph": 0, "start": 2, "end": 6, "text": "x"})
+	resp := doJSON(t, http.MethodPost, tsURL, base, alice, map[string]any{"chapter": 0, "paragraph": 0, "start": 2, "end": 6, "text": "xxxx"})
 	var h highlightBody
 	decodeJSON(t, resp, &h)
 
-	resp = doJSON(t, http.MethodPost, tsURL, base, alice, map[string]any{"chapter": 0, "paragraph": 0, "start": 5, "end": 8, "text": "y"})
+	resp = doJSON(t, http.MethodPost, tsURL, base, alice, map[string]any{"chapter": 0, "paragraph": 0, "start": 5, "end": 8, "text": "yyy"})
 	if resp.StatusCode != http.StatusConflict {
 		t.Fatalf("overlap: status = %d, want 409", resp.StatusCode)
 	}
@@ -132,10 +132,10 @@ func TestHighlightOverlapRoute(t *testing.T) {
 	}
 	// Adjacent on both sides is fine; the same range in another paragraph too.
 	for _, body := range []map[string]any{
-		{"chapter": 0, "paragraph": 0, "start": 0, "end": 2, "text": "a"},
-		{"chapter": 0, "paragraph": 0, "start": 6, "end": 9, "text": "b"},
-		{"chapter": 0, "paragraph": 1, "start": 2, "end": 6, "text": "c"},
-		{"chapter": 1, "paragraph": 0, "start": 2, "end": 6, "text": "d"},
+		{"chapter": 0, "paragraph": 0, "start": 0, "end": 2, "text": "aa"},
+		{"chapter": 0, "paragraph": 0, "start": 6, "end": 9, "text": "bbb"},
+		{"chapter": 0, "paragraph": 1, "start": 2, "end": 6, "text": "cccc"},
+		{"chapter": 1, "paragraph": 0, "start": 2, "end": 6, "text": "dddd"},
 	} {
 		if resp := doJSON(t, http.MethodPost, tsURL, base, alice, body); resp.StatusCode != http.StatusCreated {
 			t.Errorf("%v: status = %d, want 201", body, resp.StatusCode)
@@ -164,11 +164,15 @@ func TestHighlightValidationRoutes(t *testing.T) {
 		"missing range":        {http.MethodPost, base, `{"chapter":0,"paragraph":1,"text":"x"}`, http.StatusUnprocessableEntity},
 		"unknown colour":       {http.MethodPost, base, add(`,"color":"red"`), http.StatusUnprocessableEntity},
 		"missing text":         {http.MethodPost, base, `{"chapter":0,"paragraph":1,"start":0,"end":1}`, http.StatusUnprocessableEntity},
-		"501-rune text":        {http.MethodPost, base, add(`,"text":"` + strings.Repeat("字", 501) + `"`), http.StatusUnprocessableEntity},
+		"501-rune text":        {http.MethodPost, base, `{"chapter":0,"paragraph":1,"start":0,"end":501,"text":"` + strings.Repeat("字", 501) + `"}`, http.StatusUnprocessableEntity},
+		"padded text":          {http.MethodPost, base, `{"chapter":0,"paragraph":1,"start":0,"end":4,"text":" 世界 "}`, http.StatusUnprocessableEntity},
+		"trailing newline":     {http.MethodPost, base, `{"chapter":0,"paragraph":1,"start":0,"end":3,"text":"世界\n"}`, http.StatusUnprocessableEntity},
+		"UTF-16 range":         {http.MethodPost, base, `{"chapter":0,"paragraph":1,"start":0,"end":2,"text":"😀"}`, http.StatusUnprocessableEntity},
+		"range longer":         {http.MethodPost, base, `{"chapter":0,"paragraph":1,"start":0,"end":3,"text":"世界"}`, http.StatusUnprocessableEntity},
 		"2001-rune note":       {http.MethodPost, base, add(`,"note":"` + strings.Repeat("字", 2001) + `"`), http.StatusUnprocessableEntity},
 		"malformed add":        {http.MethodPost, base, `{`, http.StatusBadRequest},
 		"non-number chapter":   {http.MethodPost, base, `{"chapter":"0","paragraph":0,"start":0,"end":1,"text":"x"}`, http.StatusBadRequest},
-		"oversized add":        {http.MethodPost, base, add(`,"note":"` + strings.Repeat("a", 8200) + `"`), http.StatusRequestEntityTooLarge},
+		"oversized add":        {http.MethodPost, base, add(`,"note":"` + strings.Repeat("a", 16500) + `"`), http.StatusRequestEntityTooLarge},
 		"unknown key add":      {http.MethodPost, base, add(`,"position":"0:1"`), http.StatusBadRequest},
 		"id in add":            {http.MethodPost, base, add(`,"id":3`), http.StatusBadRequest},
 		"trailing JSON add":    {http.MethodPost, base, add(``) + ` {}`, http.StatusBadRequest},
@@ -180,7 +184,7 @@ func TestHighlightValidationRoutes(t *testing.T) {
 		"range in put":         {http.MethodPut, path, `{"color":"blue","start":3}`, http.StatusBadRequest},
 		"text in put":          {http.MethodPut, path, `{"text":"y"}`, http.StatusBadRequest},
 		"trailing JSON put":    {http.MethodPut, path, `{"color":"blue"}{}`, http.StatusBadRequest},
-		"oversized put":        {http.MethodPut, path, `{"note":"` + strings.Repeat("a", 8200) + `"}`, http.StatusRequestEntityTooLarge},
+		"oversized put":        {http.MethodPut, path, `{"note":"` + strings.Repeat("a", 16500) + `"}`, http.StatusRequestEntityTooLarge},
 		"unknown highlight":    {http.MethodPut, base + "/999999", `{"color":"blue"}`, http.StatusNotFound},
 		"malformed highlight":  {http.MethodDelete, base + "/x", ``, http.StatusNotFound},
 		"unknown book":         {http.MethodGet, "/api/library/books/999999/highlights", ``, http.StatusNotFound},
@@ -195,6 +199,43 @@ func TestHighlightValidationRoutes(t *testing.T) {
 		if resp := doRaw(t, tc.method, tsURL, tc.path, token, tc.body); resp.StatusCode != tc.want {
 			t.Errorf("%s: status = %d, want %d", name, resp.StatusCode, tc.want)
 		}
+	}
+	// An oversized body is a 413 with a highlight-specific JSON error.
+	resp = doRaw(t, http.MethodPost, tsURL, base, alice, add(`,"note":"`+strings.Repeat("a", 16500)+`"`))
+	if resp.StatusCode != http.StatusRequestEntityTooLarge {
+		t.Fatalf("oversized: status = %d", resp.StatusCode)
+	}
+	if ct := resp.Header.Get("Content-Type"); ct != "application/json" {
+		t.Errorf("oversized content type = %q", ct)
+	}
+	var tooBig map[string]any
+	decodeJSON(t, resp, &tooBig)
+	if msg, _ := tooBig["error"].(string); msg != "highlight too large" {
+		t.Errorf("oversized body = %v", tooBig)
+	}
+	// The worst valid body fits the cap: a 500-code-point astral snapshot
+	// and a 2000-character note of JSON-escaped characters (6 bytes each).
+	worst := `{"chapter":0,"paragraph":7,"start":0,"end":500,"text":"` + strings.Repeat("😀", 500) +
+		`","color":"yellow","note":"` + strings.Repeat(`\u00e9`, 2000) + `"}`
+	if len(worst) <= 14000 {
+		t.Fatalf("worst body is only %d bytes", len(worst))
+	}
+	if resp := doRaw(t, http.MethodPost, tsURL, base, alice, worst); resp.StatusCode != http.StatusCreated {
+		t.Errorf("worst valid body (%d bytes): status = %d, want 201", len(worst), resp.StatusCode)
+	} else {
+		var got highlightBody
+		decodeJSON(t, resp, &got)
+		if got.Note != strings.Repeat("é", 2000) || got.Text != strings.Repeat("😀", 500) {
+			t.Errorf("worst body stored note %d runes, text %d bytes", len([]rune(got.Note)), len(got.Text))
+		}
+		doJSON(t, http.MethodDelete, tsURL, base+"/"+strconv.FormatInt(got.ID, 10), alice, nil)
+	}
+	// Notes are cleaned: CR LF becomes LF, bidi controls go.
+	resp = doJSON(t, http.MethodPut, tsURL, path, alice, map[string]string{"note": "a\r\nb\u202ec"})
+	var cleaned highlightBody
+	decodeJSON(t, resp, &cleaned)
+	if resp.StatusCode != http.StatusOK || cleaned.Note != "a\nbc" {
+		t.Errorf("cleaned note: status = %d %q", resp.StatusCode, cleaned.Note)
 	}
 	// A note of 2000 CJK characters fits the body cap and the rune limit.
 	resp = doJSON(t, http.MethodPut, tsURL, path, alice, map[string]string{"note": strings.Repeat("字", 2000)})
@@ -250,7 +291,7 @@ func TestHighlightLimitRoute(t *testing.T) {
 
 func TestHighlightsOtherUserRoutes(t *testing.T) {
 	tsURL, alice, bob, base, _ := highlightFixture(t)
-	resp := doJSON(t, http.MethodPost, tsURL, base, alice, map[string]any{"chapter": 0, "paragraph": 0, "start": 0, "end": 2, "text": "secret", "note": "private"})
+	resp := doJSON(t, http.MethodPost, tsURL, base, alice, map[string]any{"chapter": 0, "paragraph": 0, "start": 0, "end": 6, "text": "secret", "note": "private"})
 	var h highlightBody
 	decodeJSON(t, resp, &h)
 	path := base + "/" + strconv.FormatInt(h.ID, 10)
@@ -260,7 +301,7 @@ func TestHighlightsOtherUserRoutes(t *testing.T) {
 		body         any
 	}{
 		{http.MethodGet, base, nil},
-		{http.MethodPost, base, map[string]any{"chapter": 0, "paragraph": 0, "start": 0, "end": 2, "text": "x"}},
+		{http.MethodPost, base, map[string]any{"chapter": 0, "paragraph": 0, "start": 0, "end": 6, "text": "xxxxxx"}},
 		{http.MethodPost, base, map[string]any{"chapter": 0, "paragraph": 0, "start": 5, "end": 6, "text": "x"}},
 		{http.MethodPut, path, map[string]string{"note": "mine now"}},
 		{http.MethodDelete, path, nil},
