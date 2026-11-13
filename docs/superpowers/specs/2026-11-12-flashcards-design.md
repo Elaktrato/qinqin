@@ -103,6 +103,71 @@ level curve. Per workspace. Mascot art is out of scope until the owner draws it.
 - **Round 3 — remaining exercises and polish**: Word Salad (+ tokenizer), writing
   (stroke quiz), tone swipe, richer EXP/mascot hooks.
 
+## Round 3 design decisions (decided 2026-11-13, unattended)
+
+Taken under the rule "avoid licensing issues first, then the best experience for
+the learner, even at higher implementation cost". No new data or dependencies are
+needed: stroke data and `hanzi-writer` are already bundled, the tokenizer is the
+existing lookup-engine-backed `POST /api/segment`, tones come from the tone-marked
+pinyin readings already stored.
+
+- **Card kinds** `sentence`, `writing`, `tone` join `vocab`. Every card keeps the
+  `{id, kind, entryId, written?, sentenceId?, deckIds, createdAt}` shape; `written`
+  is always snapshotted (it is what feeds mastery). Review events carry
+  `payload.mode = card.kind` and an optional `meta` object
+  `{tier?, mistakes?, hints?, durationMs?}` (the server stores payloads verbatim;
+  nothing is validated server-side).
+- **Companion cards are created lazily.** Enabling a card type in session setup plans
+  *virtual* companion cards for the vocab cards in the chosen decks that lack one of
+  that kind (shared new-limit, same pattern as level sessions); a companion is
+  created only when it is first graded, so abandoning a session leaves nothing.
+  Companions exist in deck sessions only (level sessions stay vocab-only). Deduplication
+  is by `(kind, entryId, sentenceId)`.
+- **Eligibility** is decided when the card is shown: a word needs a sentence for
+  `sentence`; at least one Han character with stroke data for `writing`; a Chinese
+  word with a pinyin reading for `tone` (Japanese has no pitch-accent data, so `tone`
+  is Chinese-only; kana have no stroke data, so kana-only words get no `writing`
+  card). An ineligible companion is skipped silently and never created.
+- **Card-type opt-out is real**: the queue honours the selected types (until now the
+  list was stored but ignored). A session needs at least one type; `vocab` is no
+  longer mandatory.
+- **Word Salad** (kind `sentence`, one card per example sentence): tokens come from
+  `POST /api/segment` (longest dictionary match), gaps and unmatched runs fall back
+  to single characters, alphabetic scripts split on whitespace; trailing punctuation
+  stays attached to the previous token. Tier is derived from the card's FSRS
+  stability `S` (no stored state): `S < 4` days (or new) → T0 (jumbled tokens,
+  translation visible); `S < 21` → T1 (translation hidden behind a reveal-cloze);
+  otherwise T2 (jumbled within words as well: tokens are split into characters).
+  The learner taps tokens to build the sentence. Suggested grade: right on the first
+  check = Good; right after 1–2 wrong checks = Hard; revealed/gave up or more wrong
+  checks = Again. The learner can always override with the four grade buttons.
+- **Writing** (kind `writing`, one card per word): `hanzi-writer` quiz mode, one
+  character at a time in order, stroke order and direction enforced, a hint after
+  3 misses (`showHintAfterMisses: 3`), a reveal button counts as a failed
+  character. Suggested grade from totals: no mistakes and no reveal = Good; mistakes
+  ≤ 25 % of strokes = Hard; otherwise (or any reveal) = Again.
+- **Tone** (kind `tone`, Chinese words): for each syllable the learner swipes the
+  tone (up = 1, up-right = 2, down then up = 3, down-right = 4, tap = neutral) or
+  presses 1–5; checked against the entry's pinyin readings (any listed reading with
+  the same syllable count counts, so polyphones like 行 are not marked wrong).
+  Suggested grade: all right = Good; one wrong = Hard; more = Again.
+- **Suggested grades are suggestions**: the card shows them preselected and the
+  learner confirms or overrides (keys 1–4). Easy is never suggested automatically.
+- **Mastery** now counts every reviewed card kind through its `written` snapshot
+  (sentence cards count for the characters of the target word they were created
+  for), with the existing per-card strength formula.
+- **EXP polish**: base XP by kind (`vocab` 10, `sentence` 15, `writing` 20, `tone` 8)
+  plus the existing grade bonus (`+0/+0/+5/+10`) plus +10 for the first review of each
+  UTC day; still derived from the event log per workspace. Level curve: the XP to
+  go from level `L` to `L+1` is `100·L`. A review streak (consecutive UTC days with a
+  review) is derived and shown in the widget and the session summary.
+- **Mascot hooks only**: a pure `mascotState` (stage 1–4 from level, mood from
+  streak/today) and a placeholder component that renders a neutral glyph or an image
+  from `static/mascot/<stage>-<mood>.svg` when the owner supplies one (art out of
+  scope; nothing to license).
+- **Heatmap** stays in the flashcards widget in this round; moving it into core is a
+  separate follow-up (it will aggregate reading sessions and other plugins' activity).
+
 ## Non-goals
 
 - No server-side scheduler; no authoritative scheduling state.
