@@ -5,7 +5,7 @@
 
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
-import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
+import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 /** The derived schedule of one card. `due` is an RFC 3339 instant. */
 export interface Schedule {
@@ -22,6 +22,8 @@ export interface BuildQueueOptions {
 	newLimit: number;
 	reviewLimit: number;
 	now: Date;
+	/** Card kinds to include; every kind when omitted. */
+	kinds?: readonly StudyCardKind[];
 }
 
 // One scheduler instance is enough: it is stateless between calls.
@@ -34,13 +36,6 @@ const RATING: Record<ReviewGrade, Grade> = {
 	2: Rating.Hard,
 	3: Rating.Good,
 	4: Rating.Easy
-};
-
-const GRADE_BONUS: Record<ReviewGrade, number> = {
-	1: 0,
-	2: 0,
-	3: 5,
-	4: 10
 };
 
 function instant(ts: string): number {
@@ -130,10 +125,14 @@ export function buildQueue({
 	deckIds,
 	newLimit,
 	reviewLimit,
-	now
+	now,
+	kinds
 }: BuildQueueOptions): StudyCard[] {
 	const wanted = new Set(deckIds);
-	const scoped = cards.filter((card) => card.deckIds.some((id) => wanted.has(id)));
+	const scoped = cards.filter(
+		(card) =>
+			card.deckIds.some((id) => wanted.has(id)) && (kinds === undefined || kinds.includes(card.kind))
+	);
 
 	const historyByCard = new Map<string, ReviewEvent[]>();
 	for (const review of reviews) {
@@ -170,17 +169,5 @@ export function buildQueue({
 	];
 }
 
-/**
- * xpFromReviews awards 10 xp per review plus a grade bonus: Again and
- * Hard add nothing, Good 5, Easy 10.
- */
-export function xpFromReviews(reviews: readonly ReviewEvent[]): number {
-	return reviews
-		.filter(isValidReview)
-		.reduce((total, review) => total + 10 + GRADE_BONUS[review.payload.grade], 0);
-}
-
-/** levelFromXp maps 100 xp per level, starting at level 1. */
-export function levelFromXp(xp: number): number {
-	return Math.floor(xp / 100) + 1;
-}
+// XP lives in exp.ts; re-exported so existing imports keep working.
+export { levelFromXp, xpFromReviews } from './exp';

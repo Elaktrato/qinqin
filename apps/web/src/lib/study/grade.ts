@@ -7,7 +7,7 @@
 
 import { ApiError } from '../api/client';
 import { GENERAL_DECK_ID } from './store';
-import type { ReviewGrade, StudyCard } from './types';
+import type { ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
 
 /** One queue item as both session modes represent it. */
 export interface GradeableItem {
@@ -15,6 +15,12 @@ export interface GradeableItem {
 	entryId: number;
 	virtual: boolean;
 	card: StudyCard | null;
+	/** Kind of the card a virtual item creates; vocab when absent. */
+	kind?: StudyCardKind;
+	/** Sentence a virtual item's card is about; defaults to the entry's first. */
+	sentenceId?: number;
+	/** Decks a virtual item's card joins; General when absent. */
+	deckIds?: string[];
 }
 
 /** The entry data a virtual item needs to create its card. */
@@ -26,20 +32,30 @@ export interface GradeEntry {
 /** The store write a virtual item needs; injected so tests stay pure. */
 export type AddCard = (
 	entryId: number,
-	opts: { written?: string; sentenceId?: number; deckIds?: string[] }
+	opts: {
+		kind?: StudyCardKind;
+		written?: string;
+		sentenceId?: number;
+		deckIds?: string[];
+	}
 ) => Promise<StudyCard>;
 
 /** The event append a graded item needs; injected for the same reason. */
 export type RecordReview = (
 	workspaceId: number,
 	cardId: string,
-	grade: ReviewGrade
+	grade: ReviewGrade,
+	mode: StudyCardKind,
+	meta?: ReviewMeta
 ) => Promise<void>;
 
 export interface GradeItemInput {
 	item: GradeableItem;
 	grade: ReviewGrade;
 	workspaceId: number;
+	/** Review mode; defaults to the card's (or virtual item's) kind. */
+	mode?: StudyCardKind;
+	meta?: ReviewMeta;
 	/** Writes are workspace-scoped; a switch mid-grade must not happen. */
 	currentWorkspaceId?: number | null;
 	/** Required for virtual items; null means the entry is still loading. */
@@ -73,6 +89,8 @@ export async function gradeItem({
 	item,
 	grade,
 	workspaceId,
+	mode,
+	meta,
 	currentWorkspaceId,
 	entry,
 	addCard,
@@ -89,7 +107,7 @@ export async function gradeItem({
 		if (item.card === null) {
 			return { ok: false, error: 'This card is no longer available.' };
 		}
-		await recordReview(workspaceId, item.card.id, grade);
+		await recordReview(workspaceId, item.card.id, grade, mode ?? item.card.kind, meta);
 		return { ok: true, card: item.card, created: false };
 	}
 
@@ -97,12 +115,19 @@ export async function gradeItem({
 		return { ok: false, error: 'This word is still loading. Try again.' };
 	}
 
+	const kind = item.kind ?? 'vocab';
 	let card: StudyCard;
 	try {
 		card = await addCard(item.entryId, {
+			kind,
 			written: entry.written,
-			sentenceId: entry.sentences?.[0]?.id,
-			deckIds: [GENERAL_DECK_ID]
+			// Only vocab (the example on its front) and sentence cards carry a
+			// sentence; writing and tone cards never store one.
+			sentenceId:
+				kind === 'vocab' || kind === 'sentence'
+					? (item.sentenceId ?? entry.sentences?.[0]?.id)
+					: undefined,
+			deckIds: item.deckIds ?? [GENERAL_DECK_ID]
 		});
 	} catch (err) {
 		return {
@@ -111,6 +136,6 @@ export async function gradeItem({
 		};
 	}
 
-	await recordReview(workspaceId, card.id, grade);
+	await recordReview(workspaceId, card.id, grade, mode ?? kind, meta);
 	return { ok: true, card, created: true };
 }

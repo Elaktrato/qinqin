@@ -82,6 +82,21 @@ describe('recordReview', () => {
 		expect(event.id).toMatch(ULID);
 	});
 
+	it('writes the given mode and meta', async () => {
+		const meta = { tier: 1 as const, mistakes: 2, hints: 1, durationMs: 4000 };
+		await recordReview(7, 'card-1', 2, 'writing', meta);
+
+		const [event] = lastBatch().events;
+		expect(event.payload).toEqual({ cardId: 'card-1', mode: 'writing', grade: 2, meta });
+	});
+
+	it('defaults to vocab and omits meta when none is given', async () => {
+		await recordReview(7, 'card-1', 3);
+
+		const [event] = lastBatch().events;
+		expect(event.payload).toEqual({ cardId: 'card-1', mode: 'vocab', grade: 3 });
+	});
+
 	it('does not enqueue a review the server accepted', async () => {
 		await recordReview(7, 'card-1', 4);
 

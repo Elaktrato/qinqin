@@ -1,0 +1,7 @@
+[
+ ["日本","freq",1200],
+ ["猫","freq",{"value":300,"displayValue":"300㋕"}],
+ ["橋","freq",{"reading":"はし","frequency":50}],
+ ["橋","freq",{"reading":"きょう","frequency":{"value":900,"displayValue":"900K"}}],
+ ["食べる","pitch",{"reading":"たべる","pitches":[{"position":2}]}]
+]

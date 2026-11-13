@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,7 +11,6 @@ import (
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
 	"qinqin/internal/model"
@@ -54,21 +54,40 @@ type schemeIDs struct {
 	hao, fa                int64 // 好 is a derived member, 发 is unaffiliated
 }
 
-// seedSchemeEntries upserts the fixture scheme's words and characters.
-func seedSchemeEntries(t *testing.T, st entries.Store) schemeIDs {
+// schemeCedict is a CC-CEDICT excerpt with the fixture scheme's words,
+// the characters they are written with, and the unaffiliated 发.
+const schemeCedict = "你好 你好 [ni3 hao3] /hello/\n" +
+	"謝謝 谢谢 [xie4 xie5] /thanks/\n" +
+	"銀行 银行 [yin2 hang2] /bank/\n" +
+	"你 你 [ni3] /you/\n" +
+	"好 好 [hao3] /good/\n" +
+	"謝 谢 [xie4] /to thank/\n" +
+	"銀 银 [yin2] /silver/\n" +
+	"行 行 [xing2] /to walk/\n" +
+	"發 发 [fa1] /to send out/\n"
+
+// importSchemeCedict imports schemeCedict into the lexicon with the real
+// CC-CEDICT importer.
+func importSchemeCedict(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	upsert := func(kind, written, pinyin string) int64 {
-		return mustUpsertEntry(t, st, &model.Entry{
-			Language: "zh", Kind: kind, Written: written,
-			Readings: []model.Reading{{Type: "pinyin", Value: pinyin}},
-		})
-	}
+	lang.Register(lang.Zh{})
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
+		License: "CC BY-SA 4.0", Attribution: "MDBG", Format: "cedict",
+	}, "dictionary.txt", schemeCedict)
+}
+
+// seedSchemeEntries imports the fixture scheme's words and characters
+// and returns the lexicon ids the tests refer to.
+func seedSchemeEntries(t *testing.T, sqlDB *sql.DB) schemeIDs {
+	t.Helper()
+	importSchemeCedict(t, sqlDB)
 	return schemeIDs{
-		nihao:   upsert("word", "你好", "nǐ hǎo"),
-		xiexie:  upsert("word", "谢谢", "xiè xie"),
-		yinhang: upsert("word", "银行", "yín háng"),
-		hao:     upsert("character", "好", "hǎo"),
-		fa:      upsert("character", "发", "fā"),
+		nihao:   lexID(t, sqlDB, "zh", "word", "你好"),
+		xiexie:  lexID(t, sqlDB, "zh", "word", "谢谢"),
+		yinhang: lexID(t, sqlDB, "zh", "word", "银行"),
+		hao:     lexID(t, sqlDB, "zh", "character", "好"),
+		fa:      lexID(t, sqlDB, "zh", "character", "发"),
 	}
 }
 
@@ -84,25 +103,13 @@ func listSchemes(t *testing.T, tsURL string) []schemeBody {
 	return list
 }
 
-// getEntryBody fetches GET /api/entries/{id} and decodes its body.
-func getEntryBody(t *testing.T, tsURL string, id int64) entryBody {
-	t.Helper()
-	resp := getEntry(t, tsURL, "/api/entries/"+strconv.FormatInt(id, 10))
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("GET /api/entries/%d: status = %d, want %d", id, resp.StatusCode, http.StatusOK)
-	}
-	var body entryBody
-	decodeJSON(t, resp, &body)
-	return body
-}
-
 func TestSchemeRoutes(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
 	ts, sqlDB := newServer(t)
 	ctx := context.Background()
-	ids := seedSchemeEntries(t, entries.Store{DB: sqlDB})
+	ids := seedSchemeEntries(t, sqlDB)
 
 	// The admin layer dispatches levels packs by manifest type; the
 	// fixture imports through the library like the seed CLI does.
@@ -213,7 +220,7 @@ func writeLevelsPack(t *testing.T, id, levelsJSON string) string {
 }
 
 // entryIDsOf returns the ids of es, for failure messages.
-func entryIDsOf(es []model.Entry) []int64 {
+func entryIDsOf(es []model.EntryBase) []int64 {
 	ids := make([]int64, len(es))
 	for i, e := range es {
 		ids[i] = e.ID
@@ -223,14 +230,14 @@ func entryIDsOf(es []model.Entry) []int64 {
 
 // schemeEntries fetches GET /api/schemes/{id}/entries with the given query
 // and returns the decoded entries, failing on null or a non-200 status.
-func schemeEntries(t *testing.T, tsURL string, id int64, query string) []model.Entry {
+func schemeEntries(t *testing.T, tsURL string, id int64, query string) []model.EntryBase {
 	t.Helper()
 	path := "/api/schemes/" + strconv.FormatInt(id, 10) + "/entries" + query
 	resp := getEntry(t, tsURL, path)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("GET %s: status = %d, want %d", path, resp.StatusCode, http.StatusOK)
 	}
-	var list []model.Entry
+	var list []model.EntryBase
 	decodeJSON(t, resp, &list)
 	if list == nil {
 		t.Errorf("GET %s body is null, want an array", path)
@@ -244,22 +251,11 @@ func TestSchemeEntriesRoute(t *testing.T) {
 
 	ts, sqlDB := newServer(t)
 	ctx := context.Background()
-	st := entries.Store{DB: sqlDB}
-	upsert := func(kind, written, pinyin string) int64 {
-		return mustUpsertEntry(t, st, &model.Entry{
-			Language: "zh", Kind: kind, Written: written,
-			Readings: []model.Reading{{Type: "pinyin", Value: pinyin}},
-		})
-	}
-	nihao := upsert("word", "你好", "nǐ hǎo")
-	xiexie := upsert("word", "谢谢", "xiè xie")
-	yinhang := upsert("word", "银行", "yín háng")
-	ni := upsert("character", "你", "nǐ")
-	hao := upsert("character", "好", "hǎo")
-	xie := upsert("character", "谢", "xiè")
-	yin := upsert("character", "银", "yín")
-	xing := upsert("character", "行", "xíng")
-	upsert("character", "发", "fā") // unaffiliated
+	importSchemeCedict(t, sqlDB) // 发 is unaffiliated
+	word := func(w string) int64 { return lexID(t, sqlDB, "zh", "word", w) }
+	char := func(c string) int64 { return lexID(t, sqlDB, "zh", "character", c) }
+	nihao, xiexie, yinhang := word("你好"), word("谢谢"), word("银行")
+	ni, hao, xie, yin, xing := char("你"), char("好"), char("谢"), char("银"), char("行")
 
 	pack, err := dict.LoadPack(levelsFixture)
 	if err != nil {

@@ -19,18 +19,15 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
-	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
-	"qinqin/internal/levels"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
-	"qinqin/internal/sentences"
 	chinsync "qinqin/internal/sync"
 )
 
 func init() {
 	lang.Register(lang.Zh{})
+	lang.Register(lang.Ja{})
 }
 
 // newDB opens a fresh migrated database.
@@ -67,159 +64,13 @@ func newWorkspace(t *testing.T, sqlDB *sql.DB, userID int64) int64 {
 	return id
 }
 
-// seedWorld imports the shared dictionary and levels fixtures: entries
-// 好, 你好, 妳好 with senses, and hsk-mini level memberships.
-func seedWorld(t *testing.T, sqlDB *sql.DB) {
-	t.Helper()
-	ctx := context.Background()
-	dictPack, err := dict.LoadPack("../dict/testdata/mkgloss")
-	if err != nil {
-		t.Fatalf("load dictionary fixture: %v", err)
-	}
-	if _, err := dict.Import(ctx, sqlDB, dictPack); err != nil {
-		t.Fatalf("import dictionary fixture: %v", err)
-	}
-	levelsPack, err := dict.LoadPack("../levels/testdata/hsk-mini")
-	if err != nil {
-		t.Fatalf("load levels fixture: %v", err)
-	}
-	if _, err := levels.Import(ctx, sqlDB, levelsPack); err != nil {
-		t.Fatalf("import levels fixture: %v", err)
-	}
-}
-
-// backdate rewrites every synced table's updated_at to long ago, so a
-// later pull sees only rows changed after this call regardless of the
-// second-truncated clock.
-func backdate(t *testing.T, sqlDB *sql.DB) {
-	t.Helper()
-	for _, table := range []string{"entries", "entry_links", "senses", "level_members",
-		"sentences", "plugin_data", "plugin_states"} {
-		if _, err := sqlDB.Exec(`UPDATE ` + table + ` SET updated_at = '2020-01-01T00:00:00Z'`); err != nil {
-			t.Fatalf("backdate %s: %v", table, err)
-		}
-	}
-}
-
 func mustPull(t *testing.T, sqlDB *sql.DB, userID int64, cursor time.Time) chinsync.Delta {
 	t.Helper()
-	d, err := chinsync.Pull(context.Background(), sqlDB, userID, cursor)
+	d, err := chinsync.Pull(context.Background(), sqlDB, userID, cursor, nil)
 	if err != nil {
 		t.Fatalf("pull: %v", err)
 	}
 	return d
-}
-
-func TestPullAll(t *testing.T) {
-	sqlDB := newDB(t)
-	ctx := context.Background()
-	alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
-	seedWorld(t, sqlDB)
-
-	st := entries.Store{DB: sqlDB}
-	hao, err := st.GetByWritten(ctx, "好", "character", "zh")
-	if err != nil {
-		t.Fatalf("get 好: %v", err)
-	}
-	if _, err := sentences.AddUser(ctx, sqlDB, alice, hao.ID, model.Sentence{Hanzi: "好！", Pinyin: "hǎo", Translation: "Good!"}); err != nil {
-		t.Fatalf("alice sentence: %v", err)
-	}
-	if _, err := sentences.AddUser(ctx, sqlDB, bob, hao.ID, model.Sentence{Hanzi: "很好", Pinyin: "hěn hǎo", Translation: "Very good"}); err != nil {
-		t.Fatalf("bob sentence: %v", err)
-	}
-	if _, err := plugins.PutData(ctx, sqlDB, alice, nil, "heatmap", "settings", json.RawMessage(`{"a":1}`)); err != nil {
-		t.Fatalf("alice data: %v", err)
-	}
-	if _, err := plugins.PutData(ctx, sqlDB, bob, nil, "heatmap", "settings", json.RawMessage(`{"b":2}`)); err != nil {
-		t.Fatalf("bob data: %v", err)
-	}
-
-	d := mustPull(t, sqlDB, alice, time.Time{})
-
-	if d.Cursor.Before(time.Now().UTC().Add(-5*time.Minute)) || d.Cursor.After(time.Now().UTC()) {
-		t.Errorf("cursor = %v, want shortly before server now", d.Cursor)
-	}
-	if len(d.Entries) < 3 {
-		t.Fatalf("entries = %d, want the imported world (好, 你好, 妳好)", len(d.Entries))
-	}
-	for _, e := range d.Entries {
-		if e.Written == "好" && (len(e.Readings) == 0 || e.Language != "zh") {
-			t.Errorf("entry 好 shipped without readings/language: %+v", e)
-		}
-	}
-	if len(d.Senses) == 0 || len(d.LevelMembers) == 0 {
-		t.Errorf("senses=%d levelMembers=%d, want both populated", len(d.Senses), len(d.LevelMembers))
-	}
-	if len(d.Sentences) != 1 || d.Sentences[0].Hanzi != "好！" {
-		t.Errorf("sentences = %+v, want only alice's own", d.Sentences)
-	}
-	if len(d.PluginData) != 1 || string(d.PluginData[0].Data) != `{"a":1}` {
-		t.Errorf("pluginData = %+v, want only alice's row", d.PluginData)
-	}
-
-	// Collections marshal as [] when empty, never null.
-	empty := mustPull(t, sqlDB, alice, time.Now().UTC().Add(time.Hour))
-	raw, _ := json.Marshal(empty)
-	var generic map[string]any
-	_ = json.Unmarshal(raw, &generic)
-	for _, k := range []string{"entries", "links", "senses", "levelMembers", "sentences", "pluginData", "pluginStates"} {
-		if arr, ok := generic[k].([]any); !ok || len(arr) != 0 {
-			t.Errorf("empty delta %s = %v, want []", k, generic[k])
-		}
-	}
-}
-
-func TestPullShipsTombstones(t *testing.T) {
-	sqlDB := newDB(t)
-	ctx := context.Background()
-	alice := newUser(t, sqlDB, "alice")
-	seedWorld(t, sqlDB)
-
-	first := mustPull(t, sqlDB, alice, time.Time{})
-	if len(first.Senses) == 0 {
-		t.Fatal("first pull has no senses")
-	}
-	backdate(t, sqlDB)
-
-	var dictID int64
-	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'mkgloss'`).Scan(&dictID); err != nil {
-		t.Fatalf("find dictionary: %v", err)
-	}
-	if err := dict.Uninstall(ctx, sqlDB, dictID); err != nil {
-		t.Fatalf("uninstall: %v", err)
-	}
-
-	second := mustPull(t, sqlDB, alice, first.Cursor)
-	if len(second.Senses) == 0 {
-		t.Fatal("second pull shipped no senses, want tombstones")
-	}
-	for _, s := range second.Senses {
-		if s.DeletedAt == nil {
-			t.Errorf("sense %d shipped live after uninstall, want tombstone", s.ID)
-		}
-	}
-	if len(second.Entries) != 0 {
-		t.Errorf("entries re-sent after uninstall: %+v — only senses changed", second.Entries)
-	}
-}
-
-func TestPullShipsEntryChanges(t *testing.T) {
-	sqlDB := newDB(t)
-	alice := newUser(t, sqlDB, "alice")
-	seedWorld(t, sqlDB)
-	backdate(t, sqlDB)
-
-	cursor := mustPull(t, sqlDB, alice, time.Now().UTC().Add(-time.Minute)).Cursor
-	id, err := entries.Store{DB: sqlDB}.Upsert(context.Background(), &model.Entry{
-		Language: "zh", Kind: "word", Written: "谢谢",
-		Readings: []model.Reading{{Type: "pinyin", Value: "xiè xie"}}})
-	if err != nil {
-		t.Fatalf("upsert: %v", err)
-	}
-	d := mustPull(t, sqlDB, alice, cursor)
-	if len(d.Entries) != 1 || d.Entries[0].ID != id || len(d.Entries[0].Readings) == 0 {
-		t.Fatalf("entries = %+v, want only the new entry %d with readings", d.Entries, id)
-	}
 }
 
 func TestPushEventsAndLWW(t *testing.T) {
@@ -319,7 +170,7 @@ func TestPushRejectsForeignWorkspaceAndUnknownPlugin(t *testing.T) {
 
 func TestSyncEndpoints(t *testing.T) {
 	sqlDB := newDB(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir()))
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	seedWorld(t, sqlDB)
 
@@ -357,6 +208,19 @@ func TestSyncEndpoints(t *testing.T) {
 		t.Fatalf("pull status = %d entries = %d, want 200 with the world", resp.StatusCode, len(delta.Entries))
 	}
 	resp.Body.Close()
+
+	resp = call(http.MethodGet, "/api/sync/pull?collections=pluginData,pluginStates", nil)
+	var subset chinsync.Delta
+	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&subset) != nil ||
+		len(subset.Entries) != 0 || len(subset.Senses) != 0 || len(subset.Sentences) != 0 {
+		t.Fatalf("collections pull status = %d entries = %d, want 200 with only the requested collections", resp.StatusCode, len(subset.Entries))
+	}
+	resp.Body.Close()
+	resp = call(http.MethodGet, "/api/sync/pull?collections=entries,bogus", nil)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("unknown collection status = %d, want 400", resp.StatusCode)
+	}
 
 	resp = call(http.MethodGet, "/api/sync/pull?cursor=garbage", nil)
 	resp.Body.Close()

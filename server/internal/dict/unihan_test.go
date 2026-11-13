@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
-	"qinqin/internal/model"
+	"qinqin/internal/lexicon"
 )
 
 // unihanFixture is the committed Unihan database sample, relative to this
@@ -55,17 +55,6 @@ func loadUnihanFixture(t *testing.T) dict.Pack {
 	return pack
 }
 
-// importUnihanFixture loads and imports the pack built around the
-// committed sample.
-func importUnihanFixture(t *testing.T, ctx context.Context, sqlDB *sql.DB) dict.Result {
-	t.Helper()
-	res, err := dict.Import(ctx, sqlDB, loadUnihanFixture(t))
-	if err != nil {
-		t.Fatalf("Import(unihan sample): %v", err)
-	}
-	return res
-}
-
 // importUnihanPack builds a unihan pack around lines with manifest m and
 // imports it, returning the import's result or its error.
 func importUnihanPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m dict.Manifest, lines ...string) (dict.Result, error) {
@@ -81,7 +70,7 @@ func importUnihanPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m dict.M
 	if err != nil {
 		t.Fatalf("LoadPack(unihan pack): %v", err)
 	}
-	return dict.Import(ctx, sqlDB, pack)
+	return dict.ImportLexicon(ctx, sqlDB, &pack)
 }
 
 func TestUnihanParse(t *testing.T) {
@@ -125,7 +114,7 @@ func TestUnihanParseSkipsCommentsBlanksUnknownFields(t *testing.T) {
 		"# Unihan 15.1.0\n" +
 			"\n" +
 			"U+597D\tkMandarin\thǎo\n" + // pronunciations are out of scope
-			"U+597D\tkTotalStrokes\t3\n" + // as are stroke counts
+			"U+597D\tkCangjie\tVND\n" + // as are input codes
 			"# a comment line\n" +
 			"U+597D\tkRSUnicode\t38.6\n"))
 	if err != nil {
@@ -134,8 +123,74 @@ func TestUnihanParseSkipsCommentsBlanksUnknownFields(t *testing.T) {
 	if len(data.Radicals) != 1 || data.Radicals["好"] != 38 {
 		t.Errorf("Radicals = %v, want only 好 -> 38", data.Radicals)
 	}
-	if len(data.Definitions) != 0 || len(data.TradVariants) != 0 || len(data.SimpVariants) != 0 {
+	if len(data.Definitions) != 0 || len(data.TradVariants) != 0 || len(data.SimpVariants) != 0 || len(data.Attrs) != 0 {
 		t.Errorf("unconsumed fields parsed: %+v", data)
+	}
+}
+
+// TestUnihanParseAttrs: kTotalStrokes (first of several counts),
+// kTGHZ2013 (presence), kGB0 (GB2312 row 16–55 level 1, 56–87 level 2,
+// any other row no level) and kGradeLevel become the character's attrs.
+func TestUnihanParseAttrs(t *testing.T) {
+	data, err := dict.ParseUnihan(strings.NewReader(
+		"U+597D\tkTotalStrokes\t6\n" +
+			"U+597D\tkTGHZ2013\t095.050:hǎo 095.060:hào\n" +
+			"U+597D\tkGB0\t2635\n" +
+			"U+597D\tkGradeLevel\t1\n" +
+			"U+590D\tkTotalStrokes\t7 9\n" +
+			"U+590D\tkGB0\t1603\n" +
+			"U+5FA9\tkGB0\t5601\n" +
+			"U+5FA9\tkGradeLevel\t6\n" +
+			"U+8907\tkGB0\t8794\n" +
+			"U+3000\tkGB0\t0101\n" +
+			"U+4E00\tkGB0\t1501\n" +
+			"U+4E01\tkGB0\t8801\n"))
+	if err != nil {
+		t.Fatalf("ParseUnihan: %v", err)
+	}
+	want := map[string]map[string]string{
+		"好": {"strokes": "6", "tghz": "1", "gb": "1", "hkgrade": "1"},
+		"复": {"strokes": "7", "gb": "1"},
+		"復": {"gb": "2", "hkgrade": "6"},
+		"複": {"gb": "2"},
+	}
+	if !reflect.DeepEqual(data.Attrs, want) {
+		t.Errorf("Attrs = %v, want %v — rows 01, 15 and 88 carry no level", data.Attrs, want)
+	}
+}
+
+func TestUnihanParseRejectsMalformedAttrs(t *testing.T) {
+	for _, line := range []string{
+		"U+597D\tkTotalStrokes\tx",
+		"U+597D\tkTotalStrokes\t0",
+	} {
+		_, err := dict.ParseUnihan(strings.NewReader(line + "\n"))
+		if err == nil || !strings.Contains(err.Error(), "line 1") {
+			t.Errorf("ParseUnihan(%q) = %v, want an error naming line 1", line, err)
+		}
+	}
+}
+
+// kGB0 and kGradeLevel come from optional members: a malformed value is
+// skipped, the rest of the file still imports.
+func TestUnihanParseSkipsMalformedOptionalAttrs(t *testing.T) {
+	data, err := dict.ParseUnihan(strings.NewReader(
+		"U+597D\tkTotalStrokes\t6\n" +
+			"U+597D\tkGB0\t26x5\n" +
+			"U+597D\tkGradeLevel\tseven\n" +
+			"U+590D\tkGB0\t263\n" +
+			"U+590D\tkGradeLevel\t0\n" +
+			"U+5FA9\tkGB0\t5601\n" +
+			"U+5FA9\tkGradeLevel\t6\n"))
+	if err != nil {
+		t.Fatalf("ParseUnihan: %v", err)
+	}
+	want := map[string]map[string]string{
+		"好": {"strokes": "6"},
+		"復": {"gb": "2", "hkgrade": "6"},
+	}
+	if !reflect.DeepEqual(data.Attrs, want) {
+		t.Errorf("Attrs = %v, want %v", data.Attrs, want)
 	}
 }
 
@@ -188,17 +243,17 @@ func TestKangxiRadicalsCoverAllNumbers(t *testing.T) {
 	}
 	res, err := importUnihanPack(t, ctx, sqlDB, unihanManifest, lines...)
 	if err != nil {
-		t.Fatalf("Import(214 radical counts): %v", err)
+		t.Fatalf("ImportLexicon(214 radical counts): %v", err)
 	}
 	if res.Entries != 214 || res.Senses != 0 {
-		t.Errorf("Import(214 radical counts) = %+v, want 214 entries and 0 senses", res)
+		t.Errorf("ImportLexicon(214 radical counts) = %+v, want 214 entries and 0 senses", res)
 	}
 
 	for _, n := range []int{0, 215} {
 		sqlDB := newDB(t)
 		_, err := importUnihanPack(t, ctx, sqlDB, unihanManifest, fmt.Sprintf("U+4E00\tkRSUnicode\t%d.0", n))
 		if err == nil || !strings.Contains(err.Error(), "Kangxi") {
-			t.Errorf("radical %d: Import = %v, want an error naming the Kangxi radicals", n, err)
+			t.Errorf("radical %d: ImportLexicon = %v, want an error naming the Kangxi radicals", n, err)
 		}
 		var dictRows int
 		if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM dictionaries`).Scan(&dictRows); err != nil {
@@ -232,259 +287,17 @@ func TestKangxiRadicalCharacters(t *testing.T) {
 		lines[i] = fmt.Sprintf("U+%04X\tkRSUnicode\t%d.0", []rune(a.chr)[0], a.n)
 	}
 	if _, err := importUnihanPack(t, ctx, sqlDB, unihanManifest, lines...); err != nil {
-		t.Fatalf("Import(radical anchors): %v", err)
+		t.Fatalf("ImportLexicon(radical anchors): %v", err)
 	}
-	st := entries.Store{DB: sqlDB}
+	st := lexicon.Store{DB: sqlDB}
 	for _, a := range anchors {
-		e := mustGet(t, st, a.chr, "character", "zh")
-		if e.RadicalID == nil || *e.RadicalID != e.ID {
-			under := "nothing"
-			if e.RadicalID != nil {
-				if r, err := st.GetByID(ctx, *e.RadicalID); err == nil {
-					under = r.Written
-				}
-			}
-			t.Errorf("Kangxi radical %d = %q, want %q", a.n, under, a.chr)
+		e := lexByKey(t, sqlDB, "zh", "character", a.chr)
+		radicals, err := st.Radicals(ctx, []int64{e.ID})
+		if err != nil {
+			t.Fatalf("Radicals(%s): %v", a.chr, err)
 		}
-	}
-}
-
-// TestManyToManyVariants: 复's simplified/traditional mapping spans two
-// traditional forms — three entries, linked as variants in both
-// directions.
-func TestManyToManyVariants(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	res := importUnihanFixture(t, ctx, sqlDB)
-	if res.Entries != 4 || res.Senses != 1 {
-		t.Fatalf("Import(unihan sample) = %+v, want 4 entries (好 and the 复/復/複 trio) and 1 sense", res)
-	}
-	st := entries.Store{DB: sqlDB}
-	fu := mustGet(t, st, "复", "character", "zh")
-	fuFu := mustGet(t, st, "復", "character", "zh")
-	fuZa := mustGet(t, st, "複", "character", "zh")
-	if fu.ID == fuFu.ID || fu.ID == fuZa.ID || fuFu.ID == fuZa.ID {
-		t.Fatalf("the variant trio 复/復/複 collapsed into one entry: ids %d %d %d", fu.ID, fuFu.ID, fuZa.ID)
-	}
-	for _, e := range []model.Entry{fu, fuFu, fuZa} {
-		if e.Kind != "character" || e.Language != "zh" {
-			t.Errorf("entry %s = %s/%s, want a zh character", e.Written, e.Kind, e.Language)
+		if got, ok := radicals[e.ID]; !ok || got != e.ID {
+			t.Errorf("Kangxi radical %d of %s = entry %d (linked %v), want its own entry %d", a.n, a.chr, got, ok, e.ID)
 		}
-		if len(e.Readings) != 0 {
-			t.Errorf("readings of %s = %+v, want none — Unihan fields carry no pronunciation", e.Written, e.Readings)
-		}
-	}
-	wantVariants(t, st, fu, "復", "複")
-	wantVariants(t, st, fuFu, "复")
-	wantVariants(t, st, fuZa, "复")
-	// Exactly the two pairs, stored in both directions — the lines name
-	// them from both sides, and linking twice must not duplicate.
-	var variantLinks int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entry_links
-		WHERE type = 'variant' AND deleted_at IS NULL`).Scan(&variantLinks); err != nil {
-		t.Fatalf("count variant links: %v", err)
-	}
-	if variantLinks != 4 {
-		t.Errorf("variant links = %d, want 4 — 复↔復 and 复↔複, both directions", variantLinks)
-	}
-}
-
-// TestUnihanDefinitions: 好's kDefinition becomes a sense under the
-// built-in "unihan" dictionary, registered with the Unihan database's
-// license terms.
-func TestUnihanDefinitions(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	importUnihanFixture(t, ctx, sqlDB)
-	dictID := dictionaryID(t, sqlDB, "unihan")
-
-	var name, version, license, attribution string
-	var deletedAt sql.NullString
-	err := sqlDB.QueryRow(`SELECT name, version, license, attribution, deleted_at
-		FROM dictionaries WHERE pack_id = 'unihan'`).Scan(&name, &version, &license, &attribution, &deletedAt)
-	if err != nil {
-		t.Fatalf("read unihan dictionary row: %v", err)
-	}
-	if name != unihanManifest.Name || version != unihanManifest.Version ||
-		license != unihanManifest.License || attribution != unihanManifest.Attribution {
-		t.Errorf("unihan dictionary row = %q %q %q %q, want the manifest's name/version/license/attribution", name, version, license, attribution)
-	}
-	if deletedAt.Valid {
-		t.Errorf("unihan dictionary deleted_at = %v, want active", deletedAt)
-	}
-
-	st := entries.Store{DB: sqlDB}
-	hao := mustGet(t, st, "好", "character", "zh")
-	if got := activeGlosses(t, sqlDB, dictID, hao.ID); !slices.Equal(got, []string{"good, excellent, fine; well"}) {
-		t.Errorf("glosses of 好 = %v, want the unquoted kDefinition string as one sense", got)
-	}
-}
-
-// TestUnihanBuiltInDictionary: the dictionary a unihan pack registers is
-// the built-in "unihan" one, whatever the pack's manifest id — the Unihan
-// database is one canonical dataset.
-func TestUnihanBuiltInDictionary(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	data, err := os.ReadFile(unihanFixture)
-	if err != nil {
-		t.Fatalf("read %s: %v", unihanFixture, err)
-	}
-	m := unihanManifest
-	m.ID = "unihan-15.1.0-sample"
-	m.Name = "Unihan database 15.1.0 sample"
-	res, err := importUnihanPack(t, ctx, sqlDB, m, strings.Split(strings.TrimRight(string(data), "\n"), "\n")...)
-	if err != nil {
-		t.Fatalf("Import(unihan sample pack): %v", err)
-	}
-	if res.Entries != 4 || res.Senses != 1 {
-		t.Fatalf("Import(unihan sample pack) = %+v, want 4 entries and 1 sense", res)
-	}
-
-	dictID := dictionaryID(t, sqlDB, "unihan")
-	var packID, license, attribution string
-	if err := sqlDB.QueryRow(`SELECT pack_id, license, attribution
-		FROM dictionaries WHERE id = ?`, dictID).Scan(&packID, &license, &attribution); err != nil {
-		t.Fatalf("read unihan dictionary row: %v", err)
-	}
-	if packID != "unihan" || license != m.License || attribution != m.Attribution {
-		t.Errorf("dictionary row = %q %q %q, want pack id unihan with the manifest's license %q and attribution %q",
-			packID, license, attribution, m.License, m.Attribution)
-	}
-	var manifestKeyed int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM dictionaries
-		WHERE pack_id = 'unihan-15.1.0-sample'`).Scan(&manifestKeyed); err != nil {
-		t.Fatalf("count dictionaries keyed by the manifest id: %v", err)
-	}
-	if manifestKeyed != 0 {
-		t.Errorf("dictionaries keyed by the manifest id = %d, want 0 — the manifest id is not the built-in's key", manifestKeyed)
-	}
-}
-
-// TestRadicalAssignment: U+597D kRSUnicode 38.6 puts 好 under radical 38 —
-// the entry for 女, which exists only through the Kangxi table.
-func TestRadicalAssignment(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	importUnihanFixture(t, ctx, sqlDB)
-	st := entries.Store{DB: sqlDB}
-
-	hao := mustGet(t, st, "好", "character", "zh")
-	nu := mustGet(t, st, "女", "character", "zh")
-	if hao.RadicalID == nil || *hao.RadicalID != nu.ID {
-		t.Errorf("RadicalID of 好 = %v, want the entry of 女 (id %d) — 38 is 女's Kangxi number", hao.RadicalID, nu.ID)
-	}
-
-	// The radical character itself is an entry, fetchable by id — the
-	// promise behind GET /api/entries/{id} on a radical.
-	byID, err := st.GetByID(ctx, nu.ID)
-	if err != nil {
-		t.Fatalf("GetByID(id of 女): %v", err)
-	}
-	if byID.Written != "女" || byID.Kind != "character" || byID.Language != "zh" {
-		t.Errorf("entry %d = %s (%s/%s), want 女 the zh character", nu.ID, byID.Written, byID.Kind, byID.Language)
-	}
-
-	// 好 is findable under its radical.
-	chars, err := st.CharsUnder(ctx, nu.ID)
-	if err != nil {
-		t.Fatalf("CharsUnder(女): %v", err)
-	}
-	found := false
-	for _, c := range chars {
-		if c.ID == hao.ID {
-			found = true
-		}
-	}
-	if !found {
-		t.Errorf("CharsUnder(女) = %d entries, none of them 好", len(chars))
-	}
-
-	// The sample's whole footprint: 好, the variant trio 复/復/複, and the
-	// radical 女 — five entries.
-	var entryRows int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL`).Scan(&entryRows); err != nil {
-		t.Fatalf("count entries: %v", err)
-	}
-	if entryRows != 5 {
-		t.Errorf("entries = %d, want 5 — 好, 复, 復, 複, and 女 via the Kangxi table", entryRows)
-	}
-}
-
-func TestUnihanImportIdempotent(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	first := importUnihanFixture(t, ctx, sqlDB)
-
-	st := entries.Store{DB: sqlDB}
-	ids := map[string]int64{}
-	for _, written := range []string{"好", "复", "復", "複", "女"} {
-		ids[written] = mustGet(t, st, written, "character", "zh").ID
-	}
-
-	second := importUnihanFixture(t, ctx, sqlDB)
-	if second.Entries != first.Entries || second.Senses != first.Senses {
-		t.Errorf("re-import = %+v, want the same counts as %+v", second, first)
-	}
-	for _, written := range []string{"好", "复", "復", "複", "女"} {
-		if id := mustGet(t, st, written, "character", "zh").ID; id != ids[written] {
-			t.Errorf("id of %s after re-import = %d, want %d", written, id, ids[written])
-		}
-	}
-	if got := activeLinkCount(t, sqlDB, "variant"); got != 4 {
-		t.Errorf("variant links after re-import = %d, want 4 — linking twice must not duplicate", got)
-	}
-	if got := activeLinkCount(t, sqlDB, "radical"); got != 1 {
-		t.Errorf("radical links after re-import = %d, want 1", got)
-	}
-	if a, d := senseCounts(t, sqlDB, dictionaryID(t, sqlDB, "unihan")); a != 1 || d != 0 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 1 and 0", a, d)
-	}
-	var entryRows int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entries WHERE deleted_at IS NULL`).Scan(&entryRows); err != nil {
-		t.Fatalf("count entries: %v", err)
-	}
-	if entryRows != 5 {
-		t.Errorf("entries after re-import = %d, want 5", entryRows)
-	}
-}
-
-// activeLinkCount counts the active entry_links of the given type.
-func activeLinkCount(t *testing.T, sqlDB *sql.DB, linkType string) int {
-	t.Helper()
-	var n int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entry_links
-		WHERE type = ? AND deleted_at IS NULL`, linkType).Scan(&n); err != nil {
-		t.Fatalf("count %s links: %v", linkType, err)
-	}
-	return n
-}
-
-// TestUnihanPreservesExistingReadings: a unihan import fits around
-// another dictionary's data — 好's readings and mkgloss senses survive,
-// and the radical and the unihan sense arrive on the same entry.
-func TestUnihanPreservesExistingReadings(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	importFixture(t, ctx, sqlDB) // mkgloss: 好 with a pinyin reading
-	importUnihanFixture(t, ctx, sqlDB)
-
-	st := entries.Store{DB: sqlDB}
-	hao := mustGet(t, st, "好", "character", "zh")
-	if py := findReading(hao, "pinyin"); py == nil || py.Value != "hǎo" || py.Plain != "hao" {
-		t.Errorf("readings of 好 = %+v, want the pinyin reading kept", hao.Readings)
-	}
-	if bm := findReading(hao, "bopomofo"); bm == nil || bm.Value != "ㄏㄠˇ" {
-		t.Errorf("readings of 好 = %+v, want the derived bopomofo kept", hao.Readings)
-	}
-	nu := mustGet(t, st, "女", "character", "zh")
-	if hao.RadicalID == nil || *hao.RadicalID != nu.ID {
-		t.Errorf("RadicalID of 好 = %v, want the entry of 女 (id %d)", hao.RadicalID, nu.ID)
-	}
-	if got := activeGlosses(t, sqlDB, dictionaryID(t, sqlDB, "mkgloss"), hao.ID); !slices.Equal(got, []string{"good"}) {
-		t.Errorf("glosses of 好 under mkgloss = %v, want [good] — the other dictionary's senses survive", got)
-	}
-	if got := activeGlosses(t, sqlDB, dictionaryID(t, sqlDB, "unihan"), hao.ID); !slices.Equal(got, []string{"good, excellent, fine; well"}) {
-		t.Errorf("glosses of 好 under unihan = %v, want [good, excellent, fine; well]", got)
 	}
 }

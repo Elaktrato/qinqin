@@ -6,12 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 )
 
 // cedictPackFromText builds a cedict pack around the given dictionary.txt
@@ -48,9 +46,10 @@ func goodCedictLines(n int) string {
 func TestCedictImportSkipsMalformedLines(t *testing.T) {
 	sqlDB := newDB(t)
 	text := goodCedictLines(40) + "this is not an entry\n" + "你好 你好 [ni3 hao3] //\n"
-	res, err := dict.Import(context.Background(), sqlDB, cedictPackFromText(t, text))
+	pack := cedictPackFromText(t, text)
+	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
 	if err != nil {
-		t.Fatalf("Import with 2 malformed lines in 42: %v", err)
+		t.Fatalf("ImportLexicon with 2 malformed lines in 42: %v", err)
 	}
 	if res.Skipped != 2 {
 		t.Errorf("Result.Skipped = %d, want 2", res.Skipped)
@@ -66,66 +65,9 @@ func TestCedictImportSkipsMalformedLines(t *testing.T) {
 func TestCedictImportRejectsMostlyMalformedFile(t *testing.T) {
 	sqlDB := newDB(t)
 	text := goodCedictLines(1) + strings.Repeat("<html>not cedict</html>\n", 5)
-	_, err := dict.Import(context.Background(), sqlDB, cedictPackFromText(t, text))
+	pack := cedictPackFromText(t, text)
+	_, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
 	if !errors.Is(err, dict.ErrInvalidPack) {
-		t.Fatalf("Import(mostly garbage) err = %v, want ErrInvalidPack", err)
-	}
-}
-
-// Ruling (Task 15c): pinyin the converter cannot resolve is kept as
-// written (so the entry still imports) but counted in
-// Result.Unconverted, so a syllable-table gap is visible on the real
-// data instead of silently leaving entries without bopomofo.
-func TestCedictImportCountsUnconvertedPinyin(t *testing.T) {
-	sqlDB := newDB(t)
-	text := goodCedictLines(20) + "怪怪 怪怪 [xx5 yy] /odd/\n"
-	res, err := dict.Import(context.Background(), sqlDB, cedictPackFromText(t, text))
-	if err != nil {
-		t.Fatalf("Import: %v", err)
-	}
-	if res.Unconverted != 1 {
-		t.Errorf("Result.Unconverted = %d, want 1", res.Unconverted)
-	}
-	e := mustGet(t, entries.Store{DB: sqlDB}, "怪怪", "word", "zh")
-	if py := findReading(e, "pinyin"); py == nil || py.Value != "xx5 yy" {
-		t.Errorf("readings of 怪怪 = %+v, want the pinyin kept as written", e.Readings)
-	}
-	if bm := findReading(e, "bopomofo"); bm != nil {
-		t.Errorf("unconvertible pinyin derived bopomofo %q", bm.Value)
-	}
-}
-
-// Homographs — several CEDICT lines for one written form (行 xíng /
-// háng, 了 le / liǎo, …) — merge into one entry carrying every distinct
-// pronunciation in file order and every line's senses. (Readings replace
-// wholesale on upsert, so merging has to happen before the upsert.)
-func TestCedictHomographPolicy(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	text := goodCedictLines(20) + "行 行 [xing2] /to walk/\n" + "行 行 [hang2] /row/\n"
-	if _, err := dict.Import(ctx, sqlDB, cedictPackFromText(t, text)); err != nil {
-		t.Fatalf("Import: %v", err)
-	}
-	e := mustGet(t, entries.Store{DB: sqlDB}, "行", "character", "zh")
-	glosses := activeGlosses(t, sqlDB, dictionaryID(t, sqlDB, "cedict-sample"), e.ID)
-	slices.Sort(glosses)
-	if !slices.Equal(glosses, []string{"row", "to walk"}) {
-		t.Errorf("glosses of 行 = %v, want both lines' senses", glosses)
-	}
-	var pinyins []string
-	for _, r := range e.Readings {
-		if r.Type == "pinyin" {
-			pinyins = append(pinyins, r.Value)
-		}
-	}
-	if !slices.Equal(pinyins, []string{"xíng", "háng"}) {
-		t.Errorf("pinyin readings of 行 = %v, want both, in file order", pinyins)
-	}
-	// Either pronunciation finds the entry.
-	for _, q := range []string{"xing", "hang"} {
-		hits, err := entries.Store{DB: sqlDB}.Search(ctx, entries.SearchQuery{Text: q, Lang: "zh"})
-		if err != nil || len(hits) == 0 || hits[0].Written != "行" {
-			t.Errorf("search %q = %+v, %v; want 行 first", q, hits, err)
-		}
+		t.Fatalf("ImportLexicon(mostly garbage) err = %v, want ErrInvalidPack", err)
 	}
 }

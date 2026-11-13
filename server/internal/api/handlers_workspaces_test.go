@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	"qinqin/internal/lang"
@@ -15,6 +16,7 @@ import (
 type workspaceBody struct {
 	ID        int64           `json:"id"`
 	Language  string          `json:"language"`
+	Name      string          `json:"name"`
 	Settings  json.RawMessage `json:"settings"`
 	UpdatedAt string          `json:"updatedAt"`
 }
@@ -120,7 +122,7 @@ func TestWorkspaceCrud(t *testing.T) {
 		t.Error("created workspace has no updatedAt")
 	}
 
-	// One workspace per (user, language).
+	// One workspace per (user, language, name): the unnamed zh repeats.
 	again := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
 	if again.StatusCode != http.StatusConflict {
 		t.Errorf("POST duplicate zh workspace: status = %d, want %d", again.StatusCode, http.StatusConflict)
@@ -172,7 +174,7 @@ func TestWorkspaceCrud(t *testing.T) {
 
 	// Settings updates merge into the stored object.
 	put := doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/"+strconv.FormatInt(zhWS.ID, 10), alice,
-		map[string]string{"theme": "dark"})
+		map[string]any{"settings": map[string]string{"theme": "dark"}})
 	if put.StatusCode != http.StatusOK {
 		t.Fatalf("PUT settings: status = %d, want %d", put.StatusCode, http.StatusOK)
 	}
@@ -184,7 +186,7 @@ func TestWorkspaceCrud(t *testing.T) {
 
 	// A second PUT merges: existing keys update, new keys are added.
 	put = doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/"+strconv.FormatInt(zhWS.ID, 10), alice,
-		map[string]string{"theme": "light", "font": "serif"})
+		map[string]any{"settings": map[string]string{"theme": "light", "font": "serif"}})
 	if put.StatusCode != http.StatusOK {
 		t.Fatalf("PUT settings again: status = %d, want %d", put.StatusCode, http.StatusOK)
 	}
@@ -197,20 +199,31 @@ func TestWorkspaceCrud(t *testing.T) {
 		t.Errorf("updated workspace = %+v, want the same zh workspace", updated)
 	}
 
-	// Settings must be a JSON object; unknown and malformed ids are 404.
-	if resp := doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/"+strconv.FormatInt(zhWS.ID, 10), alice, []string{"no"}); resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("PUT array settings: status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	// The body is an object of name and/or settings; settings must be a
+	// JSON object; unknown and malformed ids are 404.
+	zhPath := "/api/workspaces/" + strconv.FormatInt(zhWS.ID, 10)
+	for _, bad := range []any{
+		[]string{"no"},
+		map[string]any{"settings": []string{"no"}},
+		map[string]any{"settings": "dark"},
+		map[string]any{"name": 5},
+		map[string]any{},
+		map[string]any{"theme": "dark"}, // a bare settings object is not the body
+	} {
+		if resp := doJSON(t, http.MethodPut, ts.URL, zhPath, alice, bad); resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("PUT %v: status = %d, want %d", bad, resp.StatusCode, http.StatusBadRequest)
+		}
 	}
-	if resp := doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/999999", alice, map[string]string{"a": "b"}); resp.StatusCode != http.StatusNotFound {
+	if resp := doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/999999", alice, map[string]any{"name": "x"}); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("PUT unknown workspace: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
 	}
-	if resp := doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/NaN", alice, map[string]string{"a": "b"}); resp.StatusCode != http.StatusNotFound {
+	if resp := doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/NaN", alice, map[string]any{"name": "x"}); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("PUT malformed id: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
 	}
 
 	// Other users' workspaces are invisible.
 	bob := registerUser(t, ts.URL, "bob", alice)
-	if resp := doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/"+strconv.FormatInt(zhWS.ID, 10), bob, map[string]string{"a": "b"}); resp.StatusCode != http.StatusNotFound {
+	if resp := doJSON(t, http.MethodPut, ts.URL, "/api/workspaces/"+strconv.FormatInt(zhWS.ID, 10), bob, map[string]any{"name": "x"}); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("PUT another user's workspace: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
 	}
 	bobList := doJSON(t, http.MethodGet, ts.URL, "/api/workspaces", bob, nil)
@@ -247,6 +260,136 @@ func TestWorkspaceCrud(t *testing.T) {
 		if resp := doJSON(t, tc.method, ts.URL, tc.path, "", nil); resp.StatusCode != http.StatusUnauthorized {
 			t.Errorf("%s %s without token: status = %d, want %d", tc.method, tc.path, resp.StatusCode, http.StatusUnauthorized)
 		}
+	}
+}
+
+func TestWorkspaceNames(t *testing.T) {
+	lang.Register(lang.Zh{})
+	ts, _ := newServer(t)
+	alice := registerUser(t, ts.URL, "alice", "")
+
+	create := func(body map[string]string) (int, workspaceBody) {
+		t.Helper()
+		resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, body)
+		var ws workspaceBody
+		if resp.StatusCode == http.StatusCreated {
+			decodeJSON(t, resp, &ws)
+		}
+		return resp.StatusCode, ws
+	}
+
+	// Two zh workspaces with different names; the name is trimmed.
+	status, plain := create(map[string]string{"language": "zh"})
+	if status != http.StatusCreated || plain.Name != "" {
+		t.Fatalf("POST unnamed zh: status = %d, ws = %+v", status, plain)
+	}
+	status, graded := create(map[string]string{"language": "zh", "name": "  Graded readers \t"})
+	if status != http.StatusCreated || graded.Name != "Graded readers" || graded.Language != "zh" {
+		t.Fatalf("POST named zh: status = %d, ws = %+v, want name trimmed", status, graded)
+	}
+
+	// The same (language, name) again is a conflict; a whitespace-only
+	// name is the unnamed workspace.
+	if status, _ := create(map[string]string{"language": "zh", "name": "Graded readers"}); status != http.StatusConflict {
+		t.Errorf("POST duplicate named zh: status = %d, want %d", status, http.StatusConflict)
+	}
+	if status, _ := create(map[string]string{"language": "zh", "name": "   "}); status != http.StatusConflict {
+		t.Errorf("POST blank-named zh: status = %d, want %d", status, http.StatusConflict)
+	}
+
+	// Names hold at most 40 characters (code points, not bytes).
+	if status, ws := create(map[string]string{"language": "zh", "name": strings.Repeat("字", 40)}); status != http.StatusCreated || ws.Name != strings.Repeat("字", 40) {
+		t.Errorf("POST 40-character name: status = %d, ws = %+v, want created", status, ws)
+	}
+	if status, _ := create(map[string]string{"language": "zh", "name": strings.Repeat("a", 41)}); status != http.StatusUnprocessableEntity {
+		t.Errorf("POST 41-character name: status = %d, want %d", status, http.StatusUnprocessableEntity)
+	}
+
+	// Rename: trimmed, length-checked, unique per language; settings
+	// merge alongside.
+	path := "/api/workspaces/" + strconv.FormatInt(plain.ID, 10)
+	resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": " HSK ", "settings": map[string]string{"theme": "dark"}})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("PUT rename: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var renamed workspaceBody
+	decodeJSON(t, resp, &renamed)
+	if renamed.ID != plain.ID || renamed.Name != "HSK" || parseSettings(t, renamed.Settings)["theme"] != "dark" {
+		t.Errorf("renamed workspace = %+v, want HSK with theme dark", renamed)
+	}
+	// A settings-only PUT keeps the name; a name-only PUT keeps settings.
+	resp = doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"settings": map[string]string{"font": "serif"}})
+	decodeJSON(t, resp, &renamed)
+	if renamed.Name != "HSK" {
+		t.Errorf("settings-only PUT name = %q, want HSK", renamed.Name)
+	}
+	resp = doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": "HSK 1"})
+	decodeJSON(t, resp, &renamed)
+	if got := parseSettings(t, renamed.Settings); renamed.Name != "HSK 1" || got["theme"] != "dark" || got["font"] != "serif" {
+		t.Errorf("name-only PUT = %+v, want HSK 1 keeping settings", renamed)
+	}
+	if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": "Graded readers"}); resp.StatusCode != http.StatusConflict {
+		t.Errorf("PUT rename onto an existing name: status = %d, want %d", resp.StatusCode, http.StatusConflict)
+	}
+	// Renaming to the current name is not a conflict with itself.
+	resp = doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": "HSK 1"})
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("PUT rename to the current name: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	} else if decodeJSON(t, resp, &renamed); renamed.Name != "HSK 1" {
+		t.Errorf("PUT rename to the current name = %+v", renamed)
+	}
+	if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": strings.Repeat("a", 41)}); resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("PUT 41-character name: status = %d, want %d", resp.StatusCode, http.StatusUnprocessableEntity)
+	}
+	// Back to unnamed works now that no other zh is unnamed.
+	resp = doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": ""})
+	decodeJSON(t, resp, &renamed)
+	if resp.StatusCode != http.StatusOK || renamed.Name != "" {
+		t.Errorf("PUT clear name: status = %d, ws = %+v", resp.StatusCode, renamed)
+	}
+
+	// Names with control or format characters are refused on create and
+	// rename: bidi controls, ZWSP, word joiner, BOM, soft hyphen; ZWNJ,
+	// ZWJ and tag characters are allowed (see below). Surrounding
+	// whitespace is trimmed.
+	r := func(cs ...rune) string { return string(cs) }
+	for _, bad := range []string{
+		"a\x00b", "a\nb", "a\tb", "a\x7fb", "a\u0085b", // Cc
+		r('a', 0x200b, 'b'), r('a', 0x2060, 'b'), r(0xfeff, 'a'), r('a', 0xad, 'b'), // ZWSP, WJ, BOM, SHY
+		r('a', 0x200e, 'b'), r('a', 0x200f, 'b'), r('a', 0x061c, 'b'), // LRM, RLM, ALM
+		r('a', 0x202a, 'b'), r('a', 0x202e, 'b'), r('a', 0x2066, 'b'), r('a', 0x2069, 'b'), // embeddings, overrides, isolates
+		r('a', 0xe0001, 'b'), // LANGUAGE TAG, outside the allowed tag range
+	} {
+		if status, _ := create(map[string]string{"language": "zh", "name": bad}); status != http.StatusUnprocessableEntity {
+			t.Errorf("POST name %q: status = %d, want %d", bad, status, http.StatusUnprocessableEntity)
+		}
+		if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": bad}); resp.StatusCode != http.StatusUnprocessableEntity {
+			t.Errorf("PUT name %q: status = %d, want %d", bad, resp.StatusCode, http.StatusUnprocessableEntity)
+		}
+	}
+	if status, ws := create(map[string]string{"language": "zh", "name": "\n Novels \t"}); status != http.StatusCreated || ws.Name != "Novels" {
+		t.Errorf("POST name with surrounding whitespace: status = %d, ws = %+v", status, ws)
+	}
+	// ZWJ emoji, ZWNJ in words and tag-sequence subdivision flags.
+	for _, good := range []string{
+		r(0x1f469, 0x200d, 0x1f4bb),                                      // 👩‍💻
+		r('m', 0x06cc, 0x200c, 'x'),                                      // ZWNJ
+		r(0x1f3f4, 0xe0067, 0xe0062, 0xe0073, 0xe0063, 0xe0074, 0xe007f), // Scotland flag
+	} {
+		if status, ws := create(map[string]string{"language": "zh", "name": good}); status != http.StatusCreated || ws.Name != good {
+			t.Errorf("POST name %q: status = %d, ws = %+v, want created", good, status, ws)
+		}
+	}
+	if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": "dev " + r(0x1f469, 0x200d, 0x1f4bb)}); resp.StatusCode != http.StatusOK {
+		t.Errorf("PUT ZWJ emoji name: status = %d, want 200", resp.StatusCode)
+	}
+
+	// The list carries the names.
+	list := doJSON(t, http.MethodGet, ts.URL, "/api/workspaces", alice, nil)
+	var all []workspaceBody
+	decodeJSON(t, list, &all)
+	if len(all) != 7 || all[1].Name != "Graded readers" || all[3].Name != "Novels" {
+		t.Errorf("GET workspaces = %+v, want 7 with names", all)
 	}
 }
 

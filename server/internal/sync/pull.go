@@ -34,66 +34,6 @@ func parseDeleted(s sql.NullString) (*time.Time, error) {
 // The pull helpers take live, an extra WHERE fragment — " AND deleted_at
 // IS NULL" for a pull from the zero cursor, empty otherwise.
 
-func pullLinks(ctx context.Context, sqlDB *sql.DB, since, live string) ([]Link, error) {
-	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT from_id, to_id, type, updated_at, deleted_at FROM entry_links
-		WHERE updated_at >= ?`+live+` ORDER BY from_id, to_id, type`, since)
-	if err != nil {
-		return nil, fmt.Errorf("sync pull links: %w", err)
-	}
-	defer rows.Close()
-	list := make([]Link, 0)
-	for rows.Next() {
-		var l Link
-		var updated string
-		var deleted sql.NullString
-		if err := rows.Scan(&l.FromID, &l.ToID, &l.Type, &updated, &deleted); err != nil {
-			return nil, fmt.Errorf("sync pull links: %w", err)
-		}
-		if l.UpdatedAt, err = parseTS(updated); err != nil {
-			return nil, err
-		}
-		if l.DeletedAt, err = parseDeleted(deleted); err != nil {
-			return nil, err
-		}
-		list = append(list, l)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("sync pull links: %w", err)
-	}
-	return list, nil
-}
-
-func pullSenses(ctx context.Context, sqlDB *sql.DB, since, live string) ([]model.Sense, error) {
-	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT id, dictionary_id, entry_id, gloss, ord, updated_at, deleted_at FROM senses
-		WHERE updated_at >= ?`+live+` ORDER BY id`, since)
-	if err != nil {
-		return nil, fmt.Errorf("sync pull senses: %w", err)
-	}
-	defer rows.Close()
-	list := make([]model.Sense, 0)
-	for rows.Next() {
-		var s model.Sense
-		var updated string
-		var deleted sql.NullString
-		if err := rows.Scan(&s.ID, &s.DictionaryID, &s.EntryID, &s.Gloss, &s.Ord, &updated, &deleted); err != nil {
-			return nil, fmt.Errorf("sync pull senses: %w", err)
-		}
-		if s.UpdatedAt, err = parseTS(updated); err != nil {
-			return nil, err
-		}
-		if s.DeletedAt, err = parseDeleted(deleted); err != nil {
-			return nil, err
-		}
-		list = append(list, s)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("sync pull senses: %w", err)
-	}
-	return list, nil
-}
-
 func pullLevelMembers(ctx context.Context, sqlDB *sql.DB, since, live string) ([]LevelMember, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT id, level_id, entry_id, derived, updated_at, deleted_at FROM level_members

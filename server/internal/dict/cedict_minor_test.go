@@ -14,9 +14,10 @@ import (
 func TestCedictImportAcceptsCRLF(t *testing.T) {
 	sqlDB := newDB(t)
 	text := strings.ReplaceAll(goodCedictLines(30), "\n", "\r\n")
-	res, err := dict.Import(context.Background(), sqlDB, cedictPackFromText(t, text))
+	pack := cedictPackFromText(t, text)
+	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
 	if err != nil {
-		t.Fatalf("Import(CRLF file): %v", err)
+		t.Fatalf("ImportLexicon(CRLF file): %v", err)
 	}
 	if res.Skipped != 0 || res.Entries < 30 {
 		t.Errorf("Result = %+v, want 30 entries and nothing skipped", res)
@@ -31,9 +32,10 @@ func TestCedictImportRejectsEmptyFile(t *testing.T) {
 		"empty":         "",
 		"comments only": "# CC-CEDICT\n#! version=1\n",
 	} {
-		_, err := dict.Import(context.Background(), sqlDB, cedictPackFromText(t, text))
+		pack := cedictPackFromText(t, text)
+		_, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
 		if !errors.Is(err, dict.ErrInvalidPack) {
-			t.Errorf("%s: Import err = %v, want ErrInvalidPack", name, err)
+			t.Errorf("%s: ImportLexicon err = %v, want ErrInvalidPack", name, err)
 		}
 	}
 }

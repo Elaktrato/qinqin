@@ -7,7 +7,8 @@ import { get } from 'svelte/store';
 import { api } from '../api/client';
 import { newUlid } from '../ulid';
 import { workspaces } from '../workspaces';
-import type { Deck, StudyCard, StudyData } from './types';
+import { cardKey } from './reviewParse';
+import { CARD_KINDS, type Deck, type StudyCard, type StudyCardKind, type StudyData } from './types';
 
 export const FLASHCARDS_PLUGIN_ID = 'qinqin-flashcards';
 
@@ -16,7 +17,7 @@ export const GENERAL_DECK_ID = 'general';
 
 const DECK_PREFIX = 'deck:';
 const CARD_PREFIX = 'card:';
-const SYNC_PULL_PATH = '/api/sync/pull?cursor=1970-01-01T00:00:00Z';
+const SYNC_PULL_PATH = '/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates';
 
 // Only the fields the study layer reads; the server sends more.
 interface PluginDataRow {
@@ -49,7 +50,7 @@ function deckKey(id: string): string {
 	return `${DECK_PREFIX}${id}`;
 }
 
-function cardKey(id: string): string {
+function cardRowKey(id: string): string {
 	return `${CARD_PREFIX}${id}`;
 }
 
@@ -100,14 +101,21 @@ function parseDeck(key: string, raw: unknown): Deck | null {
 function parseCard(key: string, raw: unknown): StudyCard | null {
 	if (!isRecord(raw)) return null;
 	const { id, kind, entryId, sentenceId, deckIds, createdAt, written } = raw;
-	if (typeof id !== 'string' || kind !== 'vocab' || typeof entryId !== 'number') return null;
+	if (typeof id !== 'string' || typeof entryId !== 'number') return null;
+	if (!CARD_KINDS.includes(kind as StudyCardKind)) return null;
 	if (typeof createdAt !== 'string') return null;
-	if (key !== cardKey(id)) return null;
+	if (key !== cardRowKey(id)) return null;
 	if (!Array.isArray(deckIds)) return null;
 	const decks = [
 		...new Set(deckIds.filter((deckId): deckId is string => typeof deckId === 'string'))
 	];
-	const card: StudyCard = { id, kind, entryId, deckIds: decks, createdAt };
+	const card: StudyCard = {
+		id,
+		kind: kind as StudyCardKind,
+		entryId,
+		deckIds: decks,
+		createdAt
+	};
 	if (typeof written === 'string') {
 		card.written = written;
 	}
@@ -149,12 +157,35 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
 	return { decks, cards };
 }
 
+// Called after every write with the workspace it touched, so caches of
+// study data (studyData.ts) can drop what is now stale.
+const writeListeners = new Set<(workspaceId: number) => void>();
+
+/** onStudyWrite registers a listener for study-data writes; returns the unsubscribe. */
+export function onStudyWrite(listener: (workspaceId: number) => void): () => void {
+	writeListeners.add(listener);
+	return () => writeListeners.delete(listener);
+}
+
+function notifyWrite(workspaceId: number): void {
+	for (const listener of writeListeners) listener(workspaceId);
+}
+
 async function putData(workspaceId: number, key: string, value: unknown): Promise<void> {
-	await api(dataPath(key, workspaceId), { method: 'PUT', body: value });
+	try {
+		await api(dataPath(key, workspaceId), { method: 'PUT', body: value });
+	} finally {
+		// A failed write may still have landed: stale caches are dropped either way.
+		notifyWrite(workspaceId);
+	}
 }
 
 async function deleteData(workspaceId: number, key: string): Promise<void> {
-	await api(dataPath(key, workspaceId), { method: 'DELETE' });
+	try {
+		await api(dataPath(key, workspaceId), { method: 'DELETE' });
+	} finally {
+		notifyWrite(workspaceId);
+	}
 }
 
 /**
@@ -163,6 +194,14 @@ async function deleteData(workspaceId: number, key: string): Promise<void> {
  */
 export async function loadStudyData(): Promise<StudyData> {
 	return fetchStudyData(requireWorkspaceId());
+}
+
+/**
+ * loadStudyDataFor reads the flashcard rows of one given workspace (one
+ * sync pull). studyData.ts caches it; prefer getStudyData there.
+ */
+export function loadStudyDataFor(workspaceId: number): Promise<StudyData> {
+	return fetchStudyData(workspaceId);
 }
 
 /** createDeck stores a new ULID-keyed deck and returns it. */
@@ -207,34 +246,48 @@ export async function deleteDeck(id: string): Promise<void> {
 		if (!card.deckIds.includes(id)) continue;
 		const remaining = card.deckIds.filter((deckId) => deckId !== id);
 		const deckIds = remaining.length === 0 ? [GENERAL_DECK_ID] : remaining;
-		await putData(workspaceId, cardKey(card.id), { ...card, deckIds });
+		await putData(workspaceId, cardRowKey(card.id), { ...card, deckIds });
 	}
 	await deleteData(workspaceId, deckKey(id));
 }
 
 /**
- * addCard stores a new vocab card and returns it. `written` snapshots the
+ * addCard stores a new card (vocab unless `kind` says otherwise) and
+ * returns it. Cards dedupe by `cardKey`: kind, entry and, for sentence
+ * cards, the sentence. `written` snapshots the
  * entry's written form, which per-character mastery reads without another
  * entry fetch; `sentenceId` keeps the example sentence shown on the review
  * front; `deckIds` names the decks the card belongs to (General by
  * default; unknown ids are the caller's choice — the setup page only
  * offers decks that exist). Adding an entry that already has a card is a
  * no-op: the entry page can race a slow pull, and a second card would
- * split its reviews and EXP permanently.
+ * split its reviews and EXP permanently. `workspaceId` names the
+ * workspace explicitly (the reader adds to the book's workspace); the
+ * selected one is the default.
  */
 export async function addCard(
 	entryId: number,
-	opts: { written?: string; sentenceId?: number; deckIds?: string[] } = {}
+	opts: {
+		kind?: StudyCardKind;
+		written?: string;
+		sentenceId?: number;
+		deckIds?: string[];
+		workspaceId?: number;
+	} = {}
 ): Promise<StudyCard> {
-	const workspaceId = requireWorkspaceId();
+	const workspaceId = opts.workspaceId ?? requireWorkspaceId();
+	const kind = opts.kind ?? 'vocab';
 	const { cards } = await fetchStudyData(workspaceId);
-	const existing = cards.find((card) => card.entryId === entryId);
+	const wanted = cardKey(kind, entryId, opts.sentenceId);
+	const existing = cards.find(
+		(card) => cardKey(card.kind, card.entryId, card.sentenceId) === wanted
+	);
 	if (existing !== undefined) return existing;
 	const deckIds = opts.deckIds ?? [GENERAL_DECK_ID];
 	const chosen = [...new Set(deckIds.filter((id) => id !== ''))];
 	const card: StudyCard = {
 		id: newUlid(),
-		kind: 'vocab',
+		kind,
 		entryId,
 		deckIds: chosen.length === 0 ? [GENERAL_DECK_ID] : chosen,
 		createdAt: new Date().toISOString()
@@ -245,7 +298,7 @@ export async function addCard(
 	if (opts.sentenceId !== undefined) {
 		card.sentenceId = opts.sentenceId;
 	}
-	await putData(workspaceId, cardKey(card.id), card);
+	await putData(workspaceId, cardRowKey(card.id), card);
 	return card;
 }
 

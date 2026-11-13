@@ -171,9 +171,11 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 		VALUES ('mkgloss', 'mkgloss', '1.0', 'MIT', 'test', ?)`, stamp)
 	exec(`INSERT INTO schemes (pack_id, name, unit, language, version, license, attribution, updated_at)
 		VALUES ('hsk', 'HSK', 'word', 'zh', '1.0', 'CC BY-SA 4.0', 'test', ?)`, stamp)
-	exec(`INSERT INTO entries (language, kind, written, updated_at) VALUES ('zh', 'word', '你好', ?)`, stamp)
+	exec(`INSERT INTO entries (language, kind, ext_key, updated_at) VALUES ('zh', 'word', '你好', ?)`, stamp)
+	exec(`INSERT INTO frequency_packs (pack_id, name, version, language, license, attribution, ord, updated_at)
+		VALUES ('zh-freq', 'Zh frequency', '2', 'zh', 'CC0', 'test', 0, ?)`, stamp)
 	exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
-		VALUES ((SELECT id FROM entries WHERE written = '你好'), 'zh-mini', NULL, '你好。', 'nǐ hǎo.', 'Hello.', ?)`, stamp)
+		VALUES ((SELECT id FROM entries WHERE ext_key = '你好'), 'zh-mini', NULL, '你好。', 'nǐ hǎo.', 'Hello.', ?)`, stamp)
 
 	mustRegister(t, sqlDB, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)
 
@@ -188,7 +190,7 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 			t.Errorf("plugin %s = enabled %t, order %d, want the enabled default", p.ID, p.Enabled, p.Order)
 		}
 	}
-	for _, id := range []string{"qinqin-heatmap", "hsk", "mkgloss", "zh-mini"} {
+	for _, id := range []string{"qinqin-heatmap", "hsk", "mkgloss", "zh-mini", "zh-freq"} {
 		if manifests[id] == nil {
 			t.Errorf("plugin %s missing from list %+v", id, list)
 		}
@@ -203,14 +205,30 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 		t.Errorf("zh-mini manifest = %v, want a sentences pack manifest", m)
 	}
 
+	if m := manifests["zh-freq"]; m["type"] != "frequency" || m["name"] != "Zh frequency" || m["version"] != "2" || m["language"] != "zh" || m["license"] != "CC0" {
+		t.Errorf("zh-freq manifest = %v, want the frequency pack registry fields", m)
+	}
+	for _, id := range []string{"mkgloss", "hsk", "zh-mini", "zh-freq", "qinqin-heatmap"} {
+		if ok, err := plugins.Exists(ctx, sqlDB, id); err != nil || !ok {
+			t.Errorf("Exists(%s) = %t, %v, want true", id, ok, err)
+		}
+	}
+
+	// A soft-deleted frequency pack drops out of the list and of Exists.
+	exec(`UPDATE frequency_packs SET deleted_at = ? WHERE pack_id = 'zh-freq'`, stamp)
+	if ok, _ := plugins.Exists(ctx, sqlDB, "zh-freq"); ok {
+		t.Error("Exists(zh-freq) after uninstall = true, want false")
+	}
+	exec(`UPDATE frequency_packs SET deleted_at = NULL WHERE pack_id = 'zh-freq'`)
+
 	// A soft-deleted pack drops out of the list.
 	exec(`UPDATE dictionaries SET deleted_at = ? WHERE pack_id = 'mkgloss'`, stamp)
 	list, err = plugins.ListFor(ctx, sqlDB, alice)
 	if err != nil {
 		t.Fatalf("ListFor after uninstall: %v", err)
 	}
-	if len(list) != 3 {
-		t.Errorf("plugins after uninstall = %+v, want the 3 remaining", list)
+	if len(list) != 4 {
+		t.Errorf("plugins after uninstall = %+v, want the 4 remaining", list)
 	}
 
 	// State left behind by a removed plugin does not leak a phantom
@@ -222,8 +240,8 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListFor after ghost state: %v", err)
 	}
-	if len(list) != 3 {
-		t.Errorf("plugins after ghost state = %+v, want still 3 — no phantom entry", list)
+	if len(list) != 4 {
+		t.Errorf("plugins after ghost state = %+v, want still 4 — no phantom entry", list)
 	}
 }
 

@@ -9,17 +9,18 @@ import type { ReviewEvent, StudyCard } from './types';
 /** The five bands the mastery map colours. */
 export type MasteryStage = 'unknown' | 'fresh' | 'learning' | 'mature' | 'learned';
 
+/**
+ * The lower edge of the `learned` band: a character at or above this
+ * score counts as mastered. The single source for every consumer.
+ */
+export const MASTERY_THRESHOLD = 80;
+
 export interface CharMastery {
 	/** 0–100, the rounded mean of the per-card strength. */
 	score: number;
 	stage: MasteryStage;
 	/** Reviewed cards whose written form contains the character. */
 	reviewedCards: number;
-}
-
-export interface MasterySummary {
-	mastered: number;
-	total: number;
 }
 
 // A year of stability is the ceiling: the formula reaches 1.0 there.
@@ -48,7 +49,7 @@ export function stageOf(score: number): MasteryStage {
 	if (score === 0) return 'unknown';
 	if (score < 25) return 'fresh';
 	if (score < 50) return 'learning';
-	if (score < 80) return 'mature';
+	if (score < MASTERY_THRESHOLD) return 'mature';
 	return 'learned';
 }
 
@@ -89,8 +90,8 @@ function groupReviewsByCard(reviews: readonly ReviewEvent[]): Map<string, Review
  * never matched — `written.includes('')` would otherwise make every
  * string contain it.
  *
- * This is the map page's entry point: the per-character API delegates
- * here, so its results and the batch's agree by construction.
+ * This is the single scoring entry point; the map page calls it once for
+ * every glyph (variants included) it shows.
  */
 export function masteryForChars(
 	chars: readonly string[],
@@ -108,7 +109,6 @@ export function masteryForChars(
 		const reviewsByCard = groupReviewsByCard(reviews);
 
 		for (const card of cards) {
-			if (card.kind !== 'vocab') continue;
 			const written = card.written;
 			if (written === undefined || written === '') continue;
 			const history = reviewsByCard.get(card.id);
@@ -141,57 +141,4 @@ export function masteryForChars(
 		mastery.set(char, { score, stage: stageOf(score), reviewedCards: total.count });
 	}
 	return mastery;
-}
-
-/**
- * masteryForChar scores one character across the reviewed vocab cards
- * whose written snapshot contains it. Cards without a snapshot are
- * legacy rows: the map resolver supplies their written forms separately,
- * so they cannot contribute here. A card with no valid review has no
- * stability and is skipped, which makes an unreviewed card invisible to
- * the average. `scheduleFor` already ignores malformed reviews.
- */
-export function masteryForChar(
-	char: string,
-	cards: readonly StudyCard[],
-	reviews: readonly ReviewEvent[],
-	now: Date
-): CharMastery {
-	return masteryForChars([char], cards, reviews, now).get(char) ?? unknownMastery();
-}
-
-/**
- * summarizeMastery counts how many of `chars` reach `threshold` (80 by
- * default, the `learned` band) using an already-computed mastery map.
- * The map's grid, its selection figure, and every level's progress line
- * can therefore share one masteryForChars pass over the union of all
- * scheme characters instead of replaying the review history per level.
- */
-export function summarizeMastery(
-	chars: readonly string[],
-	mastery: ReadonlyMap<string, CharMastery>,
-	threshold = 80
-): MasterySummary {
-	let mastered = 0;
-	for (const char of chars) {
-		if ((mastery.get(char)?.score ?? 0) >= threshold) mastered += 1;
-	}
-	return { mastered, total: chars.length };
-}
-
-/**
- * masterySummary counts how many of `chars` reach `threshold` (80 by
- * default, the `learned` band). It is the one-shot progress figure; the
- * denominator is every requested character, including unstudied ones.
- * It scores `chars` in a single pass and delegates the counting to
- * summarizeMastery.
- */
-export function masterySummary(
-	chars: readonly string[],
-	cards: readonly StudyCard[],
-	reviews: readonly ReviewEvent[],
-	now: Date,
-	threshold = 80
-): MasterySummary {
-	return summarizeMastery(chars, masteryForChars(chars, cards, reviews, now), threshold);
 }

@@ -3,9 +3,12 @@ package dict
 import (
 	"archive/zip"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
+	"slices"
 )
 
 // openMaybeGz opens path. When path is absent and path+".gz" exists, it
@@ -36,18 +39,22 @@ func openMaybeGz(path string) (io.ReadCloser, error) {
 	return &multiCloser{Reader: zr, closers: []io.Closer{zr, gz}}, nil
 }
 
-// openZipMembers concatenates the named members of the zip at path, in
-// order. Every member must exist; the archive and its member readers
-// close with the returned closer.
-func openZipMembers(path string, names ...string) (io.ReadCloser, error) {
+// openZipMembers concatenates the required members of the zip at path,
+// then the optional ones it has, in order. Every required member must
+// exist; an absent optional member is skipped. The archive and its member
+// readers close with the returned closer.
+func openZipMembers(path string, required, optional []string) (io.ReadCloser, error) {
 	zr, err := zip.OpenReader(path)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", path, err)
 	}
-	readers := make([]io.Reader, 0, len(names))
+	readers := make([]io.Reader, 0, len(required)+len(optional))
 	closers := []io.Closer{zr}
-	for _, name := range names {
+	for i, name := range slices.Concat(required, optional) {
 		rc, err := zr.Open(name)
+		if i >= len(required) && errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
 		if err != nil {
 			for _, c := range closers {
 				c.Close()

@@ -1,11 +1,17 @@
 <script lang="ts">
 	import { ApiError } from '$lib/api/client';
-	import type { Entry } from '$lib/api/types';
-	import { GENERAL_DECK_ID, addCard, loadStudyData } from '$lib/study/store';
+	import { GENERAL_DECK_ID, addCard } from '$lib/study/store';
+	import { getStudyData, hasCard } from '$lib/study/studyData';
 	import type { Deck } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
 
-	let { entry }: { entry: Entry } = $props();
+	// `written` is snapshotted onto the card; `sentenceId` is the example
+	// sentence shown on the review front.
+	let {
+		entryId,
+		written,
+		sentenceId
+	}: { entryId: number; written: string; sentenceId?: number } = $props();
 
 	// Whether this entry already has a card in the current workspace.
 	// `null` means "not known yet": the check is still running, so the
@@ -17,6 +23,9 @@
 	let decks = $state<Deck[]>([]);
 	let selectedDeckId = $state(GENERAL_DECK_ID);
 	let saving = $state(false);
+	// Set only by a successful add in this view, so the note is not shown
+	// for entries that were already in the deck.
+	let justAdded = $state(false);
 	let error = $state('');
 
 	function message(err: unknown, fallback: string): string {
@@ -28,22 +37,24 @@
 	// A failed load must not hide the button: an unavailable workspace or
 	// a flaky pull is reported when the user actually tries to add. Until
 	// the check answers, though, the button is disabled: it must never
-	// offer to add an entry that is already in the deck.
+	// offer to add an entry that is already in the deck. The study data
+	// comes from the shared short-lived cache (studyData.ts).
 	$effect(() => {
-		const entryId = entry.id;
+		const id = entryId;
 		const workspaceId = $workspaces.current?.id ?? null;
 		let stale = false;
 		inDeck = null;
+		justAdded = false;
 		error = '';
 		void (async () => {
 			if (workspaceId === null) {
-				// loadStudyData would throw; keep the button enabled so a
-				// click can explain why nothing can be added yet.
+				// addCard would throw; keep the button enabled so a click
+				// can explain why nothing can be added yet.
 				inDeck = false;
 				return;
 			}
 			try {
-				const data = await loadStudyData();
+				const data = await getStudyData(workspaceId);
 				if (stale) return;
 				decks = [...data.decks].sort(
 					(a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
@@ -55,7 +66,7 @@
 				) {
 					selectedDeckId = GENERAL_DECK_ID;
 				}
-				inDeck = data.cards.some((card) => card.entryId === entryId);
+				inDeck = hasCard(data.cards, id);
 			} catch {
 				if (stale) return;
 				decks = [];
@@ -80,12 +91,13 @@
 			// review front can show the word in context. An existing card is
 			// returned unchanged, so the chosen deck is only used for a
 			// genuinely new card.
-			await addCard(entry.id, {
-				written: entry.written,
-				sentenceId: entry.sentences?.[0]?.id,
+			await addCard(entryId, {
+				written,
+				sentenceId,
 				deckIds: [selectedDeckId]
 			});
 			inDeck = true;
+			justAdded = true;
 		} catch (err) {
 			error = message(err, 'Could not add this entry to your study deck.');
 		} finally {
@@ -122,6 +134,12 @@
 					? 'In study deck'
 					: 'Add to study'}
 	</button>
+	{#if justAdded}
+		<p class="note" role="status">
+			Added to study. Sentence, writing and tone cards (where the word qualifies) appear
+			automatically in sessions that include them.
+		</p>
+	{/if}
 	{#if error}
 		<p class="error" role="alert">{error}</p>
 	{/if}
@@ -172,6 +190,12 @@
 		border-color: color-mix(in srgb, currentColor 35%, transparent);
 		color: inherit;
 		cursor: default;
+	}
+
+	.note {
+		margin: 0;
+		font-size: 0.85rem;
+		opacity: 0.8;
 	}
 
 	.error {

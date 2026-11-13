@@ -1,5 +1,5 @@
 // Package levels stores level schemes — HSK, JLPT, curriculum tables,
-// any ordered ladder of levels over a language's entries — imported
+// any ordered ladder of levels over a language's lexicon entries — imported
 // from levels packs, and derives character levels for word-based
 // schemes: each character joins the lowest level whose member words are
 // written with it, so hanzi carry scheme badges computed at import,
@@ -16,9 +16,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 )
 
@@ -63,14 +65,29 @@ type member struct {
 // memberships wholesale in one transaction — superseded rows are
 // soft-deleted and the new list upserted — so a re-import never leaves
 // stale memberships behind. Membership resolves each listed form
-// against an existing entry of the scheme's language and unit kind:
-// unknown forms are skipped and reported, never created. A word-unit
-// scheme also derives character levels: each distinct character of a
-// member word joins that word's level unless it already sits in an
-// equal-or-lower level of the same scheme — levels are processed in
-// pack order, so a character keeps the lowest level whose member words
-// are written with it. Character-unit schemes rank their members
-// directly and derive nothing.
+// against the lexicon entries of the scheme's language and unit kind.
+// A character resolves through lexicon.Store.Best by its written form,
+// a word through lexicon.Store.BestWord: a form shared by several
+// entries (two JMdict words written 下) resolves to the BEST-ranked one
+// alone — usually-kana entries with a priority first, then priority,
+// then entry id — and a word no entry has as a written form falls back
+// to the kana-written words (no written form, or usually-kana) whose
+// first kana reading it is, highest priority first (これ, テレビ,
+// する → 為る). A one-character word no word entry has resolves to its
+// character entry (CC-CEDICT gives 好 as a character): that character
+// is then a direct member of the level, not a derived one. A re-import
+// of the same lexicon resolves to the same entries. Unknown
+// forms are skipped and reported, never created. A word-unit scheme
+// also derives character levels: each distinct Han character of a
+// listed form resolves the same way to a character entry and joins
+// that word's level unless it already sits in an equal-or-lower level
+// of the same scheme — levels are processed in pack order, so a
+// character keeps the lowest level whose member words are written with
+// it. Whatever the pack lists, an entry ends with one membership of the
+// scheme, at its lowest level (see lowestPerEntry). Kana, other non-Han
+// characters and the iteration mark 々 derive nothing; a Han character
+// without an entry is skipped and reported. Character-unit schemes rank
+// their members directly and derive nothing.
 func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) {
 	m := pack.Manifest
 	// LoadPack normalizes the manifest; Import re-applies the one part
@@ -92,7 +109,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 
 	// Resolve and derive before writing anything: level packs never
 	// create entries, so every membership must already exist.
-	store := entries.Store{DB: sqlDB}
+	store := lexicon.Store{DB: sqlDB}
 	var (
 		ms         []member
 		skipped    []string
@@ -100,9 +117,20 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 	)
 	for i, lv := range lvls {
 		seen := map[int64]bool{}
-		for _, form := range lv.Entries {
-			e, err := store.GetByWritten(ctx, form, unit, m.Language)
-			if errors.Is(err, entries.ErrNotFound) {
+		for _, pe := range lv.Entries {
+			form := pe.Form
+			var e *lexicon.Entry
+			if unit == UnitWord {
+				e, err = store.BestWordReading(ctx, m.Language, form, pe.Reading)
+				if errors.Is(err, lexicon.ErrNotFound) && utf8.RuneCountInString(form) == 1 {
+					// A one-character word (HSK's 好) is a character
+					// entry in CC-CEDICT: the character is the member.
+					e, err = store.Best(ctx, m.Language, UnitCharacter, form)
+				}
+			} else {
+				e, err = store.Best(ctx, m.Language, unit, form)
+			}
+			if errors.Is(err, lexicon.ErrNotFound) {
 				skipped = append(skipped, form)
 				continue
 			}
@@ -118,9 +146,9 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 			if unit != UnitWord {
 				continue
 			}
-			for _, r := range distinctRunes(e.Written) {
-				c, err := store.GetByWritten(ctx, string(r), UnitCharacter, m.Language)
-				if errors.Is(err, entries.ErrNotFound) {
+			for _, r := range distinctHan(form) {
+				c, err := store.Best(ctx, m.Language, UnitCharacter, string(r))
+				if errors.Is(err, lexicon.ErrNotFound) {
 					skipped = append(skipped, string(r))
 					continue
 				}
@@ -131,10 +159,14 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 					continue // already in an equal-or-lower level: it keeps that one
 				}
 				charLowest[c.ID] = i
+				if c.ID == e.ID {
+					continue // the word is this character: a direct member already
+				}
 				ms = append(ms, member{level: i, entry: c.ID, derived: true})
 			}
 		}
 	}
+	ms = lowestPerEntry(ms)
 
 	var result Result
 	for _, mem := range ms {
@@ -382,11 +414,36 @@ type levelsPack struct {
 	Levels []packLevel `json:"levels"`
 }
 
-// packLevel is one level of a levels.json pack: a name and the written
-// forms that belong to it.
+// packLevel is one level of a levels.json pack: a name and the entries
+// that belong to it.
 type packLevel struct {
-	Name    string   `json:"name"`
-	Entries []string `json:"entries"`
+	Name    string      `json:"name"`
+	Entries []packEntry `json:"entries"`
+}
+
+// packEntry is one listed entry: a written form, spelled as a plain JSON
+// string, or an object {"form": "風", "reading": "かぜ"} whose optional
+// reading picks, among the words written with the form, the one read so
+// (see lexicon.Store.BestWordReading).
+type packEntry struct {
+	Form    string `json:"form"`
+	Reading string `json:"reading,omitempty"`
+}
+
+// UnmarshalJSON accepts both spellings of a packEntry.
+func (p *packEntry) UnmarshalJSON(data []byte) error {
+	var form string
+	if err := json.Unmarshal(data, &form); err == nil {
+		*p = packEntry{Form: form}
+		return nil
+	}
+	type plain packEntry
+	var v plain
+	if err := json.Unmarshal(data, &v); err != nil {
+		return fmt.Errorf("an entry is a string or {\"form\", \"reading\"}: %w", err)
+	}
+	*p = packEntry(v)
+	return nil
 }
 
 // readLevelsPack reads and validates the levels.json in dir, rejecting
@@ -423,8 +480,8 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 			return "", nil, fmt.Errorf("%w: %s of %s: level name %q appears twice", dict.ErrInvalidPack, levelsFile, dir, lv.Name)
 		}
 		names[lv.Name] = true
-		for j, form := range lv.Entries {
-			if strings.TrimSpace(form) == "" {
+		for j, pe := range lv.Entries {
+			if strings.TrimSpace(pe.Form) == "" {
 				return "", nil, fmt.Errorf("%w: %s of %s: entry %d of level %q is empty", dict.ErrInvalidPack, levelsFile, dir, j, lv.Name)
 			}
 		}
@@ -622,12 +679,45 @@ func diffMembers(ctx context.Context, tx *sql.Tx, schemeID int64, levelIDs []int
 	return nil
 }
 
-// distinctRunes returns written's characters, each once, in order.
-func distinctRunes(written string) []rune {
+// lowestPerEntry keeps one membership per entry, in first-seen order:
+// at the entry's lowest level, whatever the pack lists — a word repeated
+// at a higher level (HSK lists senses apart: 好 at 1, 2 and 4) or a
+// character derived low and listed higher (些) carries one badge of the
+// scheme. At that level a direct membership wins over a derived one,
+// even when a word of the level derived it first (好人 before 好).
+func lowestPerEntry(ms []member) []member {
+	best := make(map[int64]member, len(ms))
+	for _, mem := range ms {
+		cur, ok := best[mem.entry]
+		switch {
+		case !ok, mem.level < cur.level:
+			best[mem.entry] = mem
+		case mem.level == cur.level && !mem.derived:
+			cur.derived = false
+			best[mem.entry] = cur
+		}
+	}
+	out := ms[:0]
+	for _, mem := range ms {
+		if b, ok := best[mem.entry]; ok {
+			out = append(out, b)
+			delete(best, mem.entry)
+		}
+	}
+	return out
+}
+
+// iterationMark 々 is Han script but repeats the character before it: it
+// is no character of its own and derives no level.
+const iterationMark = '々'
+
+// distinctHan returns the Han characters of written, each once, in
+// order; kana, other scripts and the iteration mark 々 are left out.
+func distinctHan(written string) []rune {
 	seen := make(map[rune]bool, len(written))
 	rs := make([]rune, 0, len(written))
 	for _, r := range written {
-		if seen[r] {
+		if seen[r] || r == iterationMark || !unicode.Is(unicode.Han, r) {
 			continue
 		}
 		seen[r] = true

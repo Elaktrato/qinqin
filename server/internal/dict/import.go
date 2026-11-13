@@ -8,16 +8,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 )
 
-// ErrNotDictionary reports an Import on a pack whose manifest type is
+// ErrNotDictionary reports an ImportLexicon of a pack whose manifest type is
 // not "dictionary": the generic import pipeline installs dictionaries
 // only — level and sentence packs import through their own importers.
 var ErrNotDictionary = errors.New("dict: manifest type is not \"dictionary\"")
@@ -40,186 +38,6 @@ type Result struct {
 	Unconverted int
 }
 
-// senseRow is one sense to insert: a gloss at its position for one
-// entry.
-type senseRow struct {
-	entryID int64
-	gloss   string
-	ord     int
-}
-
-// Import installs the dictionary pack: it upserts the pack's entries —
-// readings normalize and derive through the language pack, inside the
-// entry upsert — and replaces the dictionary's senses with the pack's
-// glosses. A cedict pack reads dictionary.txt: its tone-numbered pinyin
-// becomes the marked pinyin reading, and every word entry — its
-// traditional twin included — links to a character entry for each
-// distinct hanzi it is written with, upserting bare character entries
-// where the dictionary has none. A kanjidic2 pack reads kanjidic2.xml:
-// each character becomes a character entry carrying its ON and KUN
-// readings, its stroke count, and its Kangxi radical classification,
-// with the English meanings as senses of the built-in kanjidic2
-// dictionary. A jmdict pack reads jmdict.xml: each word becomes one
-// entry per kanji form, the forms variant-linked to each other, with
-// its kana readings and glosses. A unihan pack instead installs the
-// built-in Unihan database (see importUnihan). A language code without
-// a registered code pack auto-registers as a data-only language named
-// from the manifest; a registered code (zh, ja) gets no language row.
-// Imports key on the manifest id: the dictionary row is upserted
-// (reviving an uninstalled one) and its senses replaced — old rows
-// tombstoned, new rows inserted — without ever removing entries or user
-// data.
-func Import(ctx context.Context, sqlDB *sql.DB, pack Pack) (Result, error) {
-	m := pack.Manifest
-	m.normalize()
-	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", ErrInvalidPack, err)
-	}
-	if m.Type != TypeDictionary {
-		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotDictionary, m.ID, m.Type)
-	}
-	var (
-		es    []entry
-		stats cedictStats
-	)
-	switch m.Format {
-	case FormatJSON:
-		parsed, err := readJSONPack(pack.Dir)
-		if err != nil {
-			return Result{}, err
-		}
-		es = parsed
-	case FormatCedict:
-		parsed, st, err := readCedictPack(pack.Dir)
-		if err != nil {
-			return Result{}, err
-		}
-		es, stats = parsed, st
-	case FormatUnihan:
-		data, err := readUnihanPack(pack.Dir)
-		if err != nil {
-			return Result{}, err
-		}
-		return importUnihan(ctx, sqlDB, m, data)
-	case FormatKanjidic2:
-		parsed, err := readKanjidic2Pack(pack.Dir)
-		if err != nil {
-			return Result{}, err
-		}
-		es = parsed
-	case FormatJMdict:
-		parsed, err := readJMdictPack(pack.Dir)
-		if err != nil {
-			return Result{}, err
-		}
-		es = parsed
-	default:
-		return Result{}, fmt.Errorf("%w: dictionary format %q is not implemented", ErrInvalidPack, m.Format)
-	}
-
-	// A language code without a registered code pack auto-registers as a
-	// data-only language; code packs (zh, ja) live in code, not in the
-	// table.
-	if err := registerLanguage(ctx, sqlDB, m); err != nil {
-		return Result{}, err
-	}
-
-	// Entries upsert through the entries store, each in its own
-	// transaction; readings normalize and derive there.
-	store := entries.Store{DB: sqlDB}
-	var (
-		senses []senseRow
-		result = Result{Skipped: stats.skipped, Unconverted: stats.unconverted}
-	)
-	for _, e := range es {
-		// Every written form — the primary plus the extras — becomes its
-		// own entry carrying the readings and glosses: a cedict pack's
-		// traditional twin, a JMdict word's other kanji forms. The
-		// extras link to the primary and to each other as variants.
-		forms := []string{e.Written}
-		for _, form := range e.Forms {
-			if !slices.Contains(forms, form) {
-				forms = append(forms, form)
-			}
-		}
-		ids := make([]int64, 0, len(forms))
-		for _, form := range forms {
-			id, err := store.Upsert(ctx, &model.Entry{
-				Language: m.Language,
-				Kind:     e.Kind,
-				Written:  form,
-				Readings: e.readings(),
-				Attrs:    e.Attrs,
-			})
-			if err != nil {
-				return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-			}
-			ids = append(ids, id)
-			result.Entries++
-			senses = append(senses, e.sensesFor(id)...)
-		}
-		for i := 0; i < len(ids); i++ {
-			for j := i + 1; j < len(ids); j++ {
-				if err := store.LinkVariant(ctx, ids[i], ids[j]); err != nil {
-					return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-				}
-			}
-		}
-
-		// A kanjidic2 character classifies under its Kangxi radical —
-		// the same table Task 7 serves — and the radical's own entry is
-		// upserted bare when the dictionary has none, so radicals stay
-		// fetchable like any other entry.
-		if e.Radical != 0 {
-			radical, ok := kangxiRadicals[e.Radical]
-			if !ok {
-				return Result{}, fmt.Errorf("import dictionary %s: %s is under radical %d, outside the Kangxi radicals 1–214", m.ID, e.Written, e.Radical)
-			}
-			radicalID, err := charEntry(ctx, store, m.Language, radical)
-			if err != nil {
-				return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-			}
-			for _, id := range ids {
-				if err := store.SetRadical(ctx, id, radicalID); err != nil {
-					return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-				}
-			}
-		}
-
-		// A cedict word links to a character entry for every distinct
-		// hanzi in each of its written forms — the simplified entry and
-		// its traditional twin alike — so words are findable by their
-		// characters.
-		if m.Format == FormatCedict && e.Kind == "word" {
-			for i, form := range forms {
-				if err := linkWordChars(ctx, store, m.Language, form, ids[i]); err != nil {
-					return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-				}
-			}
-		}
-	}
-
-	// The dictionary row the import registers: a kanjidic2 import
-	// registers the built-in kanjidic2 dictionary — one canonical EDRDG
-	// dataset with fixed license terms, whatever pack delivered the
-	// file, like the built-in unihan dictionary — every other format
-	// the manifest's own id and terms.
-	packID, license, attribution := m.ID, m.License, m.Attribution
-	if m.Format == FormatKanjidic2 {
-		packID, license, attribution = kanjidic2PackID, kanjidic2License, kanjidic2Attribution
-	}
-
-	// One transaction registers the dictionary and replaces its senses:
-	// the previous senses are tombstoned and the new list inserted, so a
-	// re-import swaps a dictionary's glosses atomically, scoped to that
-	// dictionary alone.
-	if _, err := replaceSenses(ctx, sqlDB, packID, m.Name, m.Version, license, attribution, senses); err != nil {
-		return Result{}, err
-	}
-	result.Senses = len(senses)
-	return result, nil
-}
-
 // registerLanguage auto-registers the manifest's language as a data-only
 // language when no code pack is registered for it; code packs (zh, ja)
 // live in code, not in the table.
@@ -236,20 +54,13 @@ func registerLanguage(ctx context.Context, sqlDB *sql.DB, m Manifest) error {
 	return nil
 }
 
-// replaceSenses registers or revives the dictionary keyed by packID in
-// one transaction and replaces its senses: the previous senses are
-// tombstoned and the new list inserted, so a re-import swaps a
-// dictionary's glosses atomically, scoped to that dictionary alone. It
-// returns the dictionary's row id.
-func replaceSenses(ctx context.Context, sqlDB *sql.DB, packID, name, version, license, attribution string, senses []senseRow) (int64, error) {
-	tx, err := sqlDB.BeginTx(ctx, nil)
-	if err != nil {
-		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
-	}
-	defer tx.Rollback()
-	stamp := now()
+// upsertDictionary registers or revives the dictionary keyed by packID
+// inside tx and returns its row id. An installed dictionary whose
+// manifest fields are unchanged is not written (no restamp), so an
+// identical re-import leaves the registry row as it was.
+func upsertDictionary(ctx context.Context, tx *sql.Tx, packID, name, version, license, attribution, stamp string) (int64, error) {
 	var dictID int64
-	if err := tx.QueryRowContext(ctx, `
+	err := tx.QueryRowContext(ctx, `
 		INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT (pack_id) DO UPDATE SET
@@ -259,116 +70,20 @@ func replaceSenses(ctx context.Context, sqlDB *sql.DB, packID, name, version, li
 			attribution = excluded.attribution,
 			updated_at = excluded.updated_at,
 			deleted_at = NULL
+		WHERE dictionaries.name IS NOT excluded.name OR dictionaries.version IS NOT excluded.version
+		   OR dictionaries.license IS NOT excluded.license
+		   OR dictionaries.attribution IS NOT excluded.attribution
+		   OR dictionaries.deleted_at IS NOT NULL
 		RETURNING id`,
-		packID, name, version, license, attribution, stamp).Scan(&dictID); err != nil {
+		packID, name, version, license, attribution, stamp).Scan(&dictID)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Unchanged: the conflict update's WHERE skipped the write.
+		err = tx.QueryRowContext(ctx, `SELECT id FROM dictionaries WHERE pack_id = ?`, packID).Scan(&dictID)
+	}
+	if err != nil {
 		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
 	}
-	if err := diffSenses(ctx, tx, dictID, senses, stamp); err != nil {
-		return 0, fmt.Errorf("replace senses of dictionary %s: %w", packID, err)
-	}
-	if err := tx.Commit(); err != nil {
-		return 0, fmt.Errorf("import dictionary %s: %w", packID, err)
-	}
 	return dictID, nil
-}
-
-// senseKey identifies a sense within one dictionary: the same gloss on
-// the same entry is the same sense, whatever its position.
-type senseKey struct {
-	entryID int64
-	gloss   string
-}
-
-// storedSense is an existing senses row.
-type storedSense struct {
-	id     int64
-	ord    int
-	active bool
-}
-
-// diffSenses brings the dictionary's senses to exactly want, writing only
-// the difference: a sense already active at the same position is left
-// untouched (no re-stamp, same id), a moved one is updated in place, a
-// tombstoned one that returns is revived, a new one is inserted, and an
-// active one no longer wanted is tombstoned. Re-importing an identical
-// pack therefore writes nothing, and a real change ships only its own
-// rows. A gloss listed twice for one entry counts once.
-func diffSenses(ctx context.Context, tx *sql.Tx, dictID int64, want []senseRow, stamp string) error {
-	// Active rows first, so when old data holds duplicates of a key the
-	// active one is the one kept and the extras are retired below.
-	rows, err := tx.QueryContext(ctx, `
-		SELECT id, entry_id, gloss, ord, deleted_at IS NULL FROM senses
-		WHERE dictionary_id = ?
-		ORDER BY deleted_at IS NULL DESC, id`, dictID)
-	if err != nil {
-		return err
-	}
-	existing := map[senseKey]storedSense{}
-	var extras []int64 // active duplicates of an already-seen key
-	for rows.Next() {
-		var (
-			k senseKey
-			s storedSense
-		)
-		if err := rows.Scan(&s.id, &k.entryID, &k.gloss, &s.ord, &s.active); err != nil {
-			rows.Close()
-			return err
-		}
-		if _, dup := existing[k]; dup {
-			if s.active {
-				extras = append(extras, s.id)
-			}
-			continue
-		}
-		existing[k] = s
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return err
-	}
-
-	wanted := make(map[senseKey]bool, len(want))
-	for _, w := range want {
-		k := senseKey{w.entryID, w.gloss}
-		if wanted[k] {
-			continue
-		}
-		wanted[k] = true
-		cur, ok := existing[k]
-		switch {
-		case !ok:
-			if _, err := tx.ExecContext(ctx, `
-				INSERT INTO senses (dictionary_id, entry_id, gloss, ord, updated_at)
-				VALUES (?, ?, ?, ?, ?)`,
-				dictID, w.entryID, w.gloss, w.ord, stamp); err != nil {
-				return fmt.Errorf("insert sense: %w", err)
-			}
-		case cur.active && cur.ord == w.ord:
-			// unchanged
-		default: // moved, or returning from a tombstone
-			if _, err := tx.ExecContext(ctx, `
-				UPDATE senses SET ord = ?, deleted_at = NULL, updated_at = ? WHERE id = ?`,
-				w.ord, stamp, cur.id); err != nil {
-				return fmt.Errorf("update sense %d: %w", cur.id, err)
-			}
-		}
-	}
-
-	retire := extras
-	for k, s := range existing {
-		if s.active && !wanted[k] {
-			retire = append(retire, s.id)
-		}
-	}
-	for _, id := range retire {
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE senses SET deleted_at = ?, updated_at = ? WHERE id = ?`,
-			stamp, stamp, id); err != nil {
-			return fmt.Errorf("retire sense %d: %w", id, err)
-		}
-	}
-	return nil
 }
 
 // Uninstall soft-deletes the dictionary with row id id and all of its
@@ -382,6 +97,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
 	}
 	defer tx.Rollback()
 	stamp := now()
+	// The senses become tombstones, so delta sync ships the removal.
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE senses SET deleted_at = ?, updated_at = ?
 		WHERE dictionary_id = ? AND deleted_at IS NULL`,
@@ -415,23 +131,26 @@ type RawEntry struct {
 	Written  string
 	Trad     string            // the cedict line's traditional twin
 	Pinyin   string            // the cedict line's tone-numbered pinyin
-	Forms    []string          // additional written forms, variant-linked to Written (JMdict kanji forms)
+	Forms    []string          // additional written forms (JMdict kanji forms)
 	Readings []model.Reading   // readings the source types itself (kanjidic2 on/kun, jmdict kana)
-	Attrs    map[string]string // entry attrs (kanjidic2 strokes)
+	Attrs    map[string]string // entry attrs (kanjidic2 strokes and levels)
 	Radical  int               // Kangxi radical number (kanjidic2 classical radical)
 	Glosses  []string
+	// FormAttrs, when set, holds the attrs of each written form (Written
+	// and every one of Forms): a JMdict form's ranking attrs.
+	FormAttrs map[string]map[string]string
 }
 
-// entry is one parsed dictionary entry in the shape the import loop
-// consumes, whichever format produced it: kind and readings resolved,
+// entry is one parsed dictionary entry of a json or kanjidic2 pack, in
+// the shape the lexicon import consumes: kind and readings resolved,
 // glosses in sense order.
 type entry struct {
 	Written  string
-	Forms    []string // additional written forms, linked to Written as variants
+	Forms    []string // additional written forms (a json pack's traditional twin)
 	Kind     string
 	Readings []model.Reading
 	Glosses  []string
-	Attrs    map[string]string // entry attrs (kanjidic2 strokes)
+	Attrs    map[string]string // entry attrs (kanjidic2 strokes and levels)
 	Radical  int               // Kangxi radical number; 0 = unclassified
 }
 
@@ -442,24 +161,6 @@ func tradForms(written, trad string) []string {
 		return nil
 	}
 	return []string{trad}
-}
-
-// readings returns a fresh copy of the entry's readings, so the base
-// and traditional forms upsert independently — Upsert normalizes the
-// slice it is given in place.
-func (e entry) readings() []model.Reading {
-	rs := make([]model.Reading, len(e.Readings))
-	copy(rs, e.Readings)
-	return rs
-}
-
-// sensesFor returns the entry's glosses as sense rows for entryID.
-func (e entry) sensesFor(entryID int64) []senseRow {
-	rows := make([]senseRow, len(e.Glosses))
-	for i, g := range e.Glosses {
-		rows[i] = senseRow{entryID: entryID, gloss: g, ord: i}
-	}
-	return rows
 }
 
 // jsonPack is the decoded dictionary.json of a format "json" pack.

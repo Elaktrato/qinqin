@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sync"
+
+	"qinqin/internal/library/sources"
 )
 
 // server carries the shared database handle and data directory for all
@@ -13,13 +16,20 @@ import (
 type server struct {
 	db      *sql.DB
 	dataDir string
+	sources []sources.Source
+
+	importMu  sync.Mutex
+	importing map[int64]bool // users with an import in flight
+
+	chars charactersCache // GET /api/characters payloads
 }
 
 // New returns the root HTTP handler with all qinqin routes mounted.
 // Uploaded packs are stored under dataDir/packs/. Domain routes are
-// added to the mux by later tasks, all sharing sqlDB.
-func New(sqlDB *sql.DB, dataDir string) http.Handler {
-	s := &server{db: sqlDB, dataDir: dataDir}
+// added to the mux by later tasks, all sharing sqlDB. srcs are the
+// public-domain text sources the library can search and import from.
+func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
+	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
 	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
@@ -30,22 +40,46 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("PUT /api/entries/{id}", s.handlePutEntry)
 	mux.HandleFunc("POST /api/entries/{id}/sentences", s.handleAddSentence)
 	mux.HandleFunc("GET /api/search", s.handleSearch)
+	mux.HandleFunc("GET /api/segment/at", s.handleSegmentAt)
+	mux.HandleFunc("POST /api/segment", s.handleSegment)
+	mux.HandleFunc("GET /api/lookup", s.handleLookup)
 	mux.HandleFunc("GET /api/sync/pull", s.handleSyncPull)
 	mux.HandleFunc("POST /api/sync/push", s.handleSyncPush)
 	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
 	mux.HandleFunc("GET /api/workspaces", s.handleListWorkspaces)
 	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
+	mux.HandleFunc("GET /api/languages", s.handleListLanguages)
+	mux.HandleFunc("GET /api/characters", s.handleListCharacters)
 	mux.HandleFunc("POST /api/events/batch", s.handleEventBatch)
 	mux.HandleFunc("GET /api/events", s.handleListEvents)
 	mux.HandleFunc("GET /api/dictionaries", s.handleListDictionaries)
 	mux.HandleFunc("POST /api/admin/dictionaries", s.handleInstallDictionary)
 	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
+	mux.HandleFunc("GET /api/frequency-packs", s.handleListFrequencyPacks)
 	mux.HandleFunc("GET /api/schemes", s.handleListSchemes)
 	mux.HandleFunc("GET /api/schemes/{id}/entries", s.handleSchemeEntries)
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
 	mux.HandleFunc("GET /api/plugins", s.handleListPlugins)
+	mux.HandleFunc("POST /api/library/upload", s.handleUploadBook)
+	mux.HandleFunc("GET /api/library/books", s.handleListBooks)
+	mux.HandleFunc("GET /api/library/books/{id}", s.handleGetBook)
+	mux.HandleFunc("GET /api/library/books/{id}/chapters/{n}", s.handleGetChapter)
+	mux.HandleFunc("PUT /api/library/books/{id}/position", s.handleSetBookPosition)
+	mux.HandleFunc("DELETE /api/library/books/{id}", s.handleDeleteBook)
+	mux.HandleFunc("GET /api/library/books/{id}/bookmarks", s.handleListBookmarks)
+	mux.HandleFunc("POST /api/library/books/{id}/bookmarks", s.handleAddBookmark)
+	mux.HandleFunc("PUT /api/library/books/{id}/bookmarks/{bid}", s.handleRenameBookmark)
+	mux.HandleFunc("DELETE /api/library/books/{id}/bookmarks/{bid}", s.handleDeleteBookmark)
+	mux.HandleFunc("GET /api/library/books/{id}/highlights", s.handleListHighlights)
+	mux.HandleFunc("POST /api/library/books/{id}/highlights", s.handleAddHighlight)
+	mux.HandleFunc("PUT /api/library/books/{id}/highlights/{hid}", s.handleUpdateHighlight)
+	mux.HandleFunc("DELETE /api/library/books/{id}/highlights/{hid}", s.handleDeleteHighlight)
+	mux.HandleFunc("GET /api/library/sources", s.handleListSources)
+	mux.HandleFunc("GET /api/library/sources/{source}/search", s.handleSearchSource)
+	mux.HandleFunc("GET /api/library/sources/{source}/browse", s.handleBrowseSource)
+	mux.HandleFunc("POST /api/library/sources/{source}/import", s.handleImportSource)
 	mux.HandleFunc("PUT /api/plugins/{id}/state", s.handleSetPluginState)
 	mux.HandleFunc("GET /api/plugins/{id}/data/{key}", s.handleGetPluginData)
 	mux.HandleFunc("PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData)
@@ -53,11 +87,16 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	return mux
 }
 
-// Request body caps of the two bulk write routes, the largest bodies the
-// API accepts.
+// Request size limits: body caps of the bulk write routes (the largest
+// bodies the API accepts) and the code-point caps on segmented text.
 const (
 	maxBatchBody = 4 << 20 // POST /api/events/batch
 	maxPushBody  = 8 << 20 // POST /api/sync/push
+
+	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
+	maxSegmentRunes   = 5000      // POST /api/segment text code points
+	maxSegmentAtRunes = 64        // GET /api/segment/at text code points (the client sends <= 16)
+	maxLookupRunes    = 64        // GET /api/lookup text code points
 )
 
 // badBody answers a request body that failed to decode: 413 when it

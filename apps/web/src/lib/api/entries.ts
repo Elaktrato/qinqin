@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Entry, EntryBase, EntryDetail } from './types';
+import type { Entry, EntryBase, EntryDetail, Sentence } from './types';
 
 /**
  * getEntry queries GET /api/entries/{id}. With a stored bearer token the
@@ -27,4 +27,13 @@ export function getSharedEntry(id: number): Promise<EntryDetail> {
  */
 export function getCharsUnderRadical(id: number): Promise<EntryBase[]> {
 	return api<EntryBase[]>(`/api/entries/${id}/chars`, { auth: false });
+}
+
+/**
+ * addSentence stores the caller's own example sentence on the entry
+ * (POST /api/entries/{id}/sentences) with only its text; reading and
+ * translation stay empty. The response is the stored sentence.
+ */
+export function addSentence(entryId: number, hanzi: string): Promise<Sentence> {
+	return api<Sentence>(`/api/entries/${entryId}/sentences`, { method: 'POST', body: { hanzi } });
 }

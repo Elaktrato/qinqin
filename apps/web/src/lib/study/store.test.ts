@@ -13,6 +13,7 @@ import {
 	createDeck,
 	deleteDeck,
 	loadStudyData,
+	onStudyWrite,
 	renameDeck
 } from './store';
 
@@ -92,7 +93,7 @@ function selectWorkspace(id: number | null): void {
 		current:
 			id === null
 				? null
-				: { id, language: 'zh', settings: {}, updatedAt: '2026-01-01T00:00:00Z' }
+				: { id, language: 'zh', name: '', settings: {}, updatedAt: '2026-01-01T00:00:00Z' }
 	});
 }
 
@@ -166,8 +167,29 @@ describe('study store', () => {
 			expect(data.cards).toEqual([word, sentenceCard, card('card-3', 44, ['general'])]);
 			expect('written' in data.cards[2]!).toBe(false);
 			expect(calls().map(([url]) => String(url))).toEqual([
-				'/api/sync/pull?cursor=1970-01-01T00:00:00Z'
+				'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates'
 			]);
+		});
+
+		it('accepts all four card kinds and rejects unknown kinds', async () => {
+			const kinds = ['vocab', 'sentence', 'writing', 'tone'] as const;
+			const good = kinds.map((kind, i) => ({
+				...card(`card-${kind}`, 40 + i, ['general']),
+				kind
+			}));
+			const bad = { ...card('card-bad', 50, ['general']), kind: 'bogus' };
+			vi.mocked(fetch).mockResolvedValue(
+				jsonResponse({
+					pluginData: [
+						...good.map((row) => pluginRow(`card:${row.id}`, row)),
+						pluginRow('card:card-bad', bad)
+					]
+				})
+			);
+
+			const data = await loadStudyData();
+
+			expect(data.cards).toEqual(good);
 		});
 
 		it('returns empty arrays when the pull has no plugin data', async () => {
@@ -366,6 +388,38 @@ describe('study store', () => {
 			});
 		}
 
+		it('writes into an explicitly given workspace instead of the selected one', async () => {
+			respondWith([]);
+
+			const added = await addCard(42, { workspaceId: 9 });
+
+			const [call] = calls().filter(([, init]) => init?.method === 'PUT');
+			expect(String(call[0])).toBe(`/api/plugins/${PLUGIN_ID}/data/card:${added.id}?workspace=9`);
+		});
+
+		it('reads the explicit workspace for its dedupe', async () => {
+			// The selected workspace (7) has the card; workspace 9 does not.
+			respondWith([pluginRow('card:card-1', card('card-1', 42, ['general']))]);
+
+			const added = await addCard(42, { workspaceId: 9 });
+
+			expect(added.id).not.toBe('card-1');
+		});
+
+		it('tells write listeners which workspace changed', async () => {
+			respondWith([]);
+			const seen: number[] = [];
+			const stop = onStudyWrite((id) => seen.push(id));
+
+			await addCard(42);
+			await addCard(43, { workspaceId: 9 });
+			await createDeck('HSK 1');
+			stop();
+			await addCard(44);
+
+			expect(seen).toEqual([WORKSPACE_ID, 9, WORKSPACE_ID]);
+		});
+
 		it('writes a vocab card in the general deck', async () => {
 			respondWith([]);
 
@@ -384,6 +438,31 @@ describe('study store', () => {
 			);
 			expect(call[1]?.method).toBe('PUT');
 			expect(JSON.parse(String(call[1]?.body))).toEqual(added);
+		});
+
+		it('writes the requested kind and does not collide with the vocab card', async () => {
+			const vocab = card('card-1', 42, ['general']);
+			respondWith([pluginRow('card:card-1', vocab)]);
+
+			const added = await addCard(42, { kind: 'sentence', sentenceId: 9 });
+
+			expect(added.id).not.toBe('card-1');
+			expect(added.kind).toBe('sentence');
+			expect(added.sentenceId).toBe(9);
+			expect(calls().filter(([, init]) => init?.method === 'PUT')).toHaveLength(1);
+		});
+
+		it('creates one sentence card per sentence and dedupes a repeat', async () => {
+			const first = { ...card('card-s9', 42, ['general']), kind: 'sentence', sentenceId: 9 };
+			respondWith([pluginRow('card:card-s9', first)]);
+
+			const same = await addCard(42, { kind: 'sentence', sentenceId: 9 });
+			expect(same.id).toBe('card-s9');
+			expect(calls().filter(([, init]) => init?.method === 'PUT')).toHaveLength(0);
+
+			const other = await addCard(42, { kind: 'sentence', sentenceId: 10 });
+			expect(other.id).not.toBe('card-s9');
+			expect(other.sentenceId).toBe(10);
 		});
 
 		it('stores the entry written form and the sentence id', async () => {
@@ -420,6 +499,15 @@ describe('study store', () => {
 			respondWith([pluginRow('card:card-1', existing)]);
 
 			await expect(addCard(42)).resolves.toEqual(existing);
+			expect(putBodies()).toEqual([]);
+		});
+
+		it('dedupes a legacy vocab card that stored a sentenceId by entry', async () => {
+			const legacy = { ...card('card-1', 42, ['general']), sentenceId: 9 };
+			respondWith([pluginRow('card:card-1', legacy)]);
+
+			await expect(addCard(42)).resolves.toEqual(legacy);
+			await expect(addCard(42, { sentenceId: 10 })).resolves.toEqual(legacy);
 			expect(putBodies()).toEqual([]);
 		});
 

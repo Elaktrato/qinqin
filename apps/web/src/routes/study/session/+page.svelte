@@ -1,66 +1,98 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { parseReview } from '$lib/study/reviewParse';
+	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getEntry } from '$lib/api/entries';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { ApiError, api } from '$lib/api/client';
-	import type { Entry, EntryBase } from '$lib/api/types';
+	import type { Entry, EntryBase, Sentence } from '$lib/api/types';
 	import type { StudyEvent } from '$lib/events';
-	import { formatReading } from '$lib/format';
-	import { buildVocabFaces } from '$lib/study/cardView';
+	import SentenceCard from '$lib/plugins/flashcards/cards/SentenceCard.svelte';
+	import ToneCard from '$lib/plugins/flashcards/cards/ToneCard.svelte';
+	import VocabCard from '$lib/plugins/flashcards/cards/VocabCard.svelte';
+	import WritingCard from '$lib/plugins/flashcards/cards/WritingCard.svelte';
+	import {
+		cardedSentenceIds,
+		deckSessionPlan,
+		dropItem,
+		isEligible,
+		levelSessionItems,
+		rememberDrop,
+		resolveSentence,
+		reviewCountFor,
+		shouldIgnoreGrade,
+		tierForCard,
+		type CardResult,
+		type FlowItem
+	} from '$lib/study/cardFlow';
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
+	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
+	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
+	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
-	import { buildLevelQueue, type LevelQueueItem } from '$lib/study/levelQueue';
-	import { buildQueue, levelFromXp, xpFromReviews } from '$lib/study/scheduler';
+	import { buildLevelQueue } from '$lib/study/levelQueue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { addCard, loadStudyData } from '$lib/study/store';
-	import type { ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
+	import {
+		CARD_KINDS,
+		type ReviewEvent,
+		type ReviewGrade,
+		type ReviewMeta,
+		type StudyCard,
+		type StudyCardKind
+	} from '$lib/study/types';
+	import type { SaladTier } from '$lib/study/wordSalad';
+	import { usableChars } from '$lib/study/writing';
 	import { newUlid } from '$lib/ulid';
 	import { workspaces } from '$lib/workspaces';
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
-	const GRADE_LABELS: { grade: ReviewGrade; label: string; hint: string }[] = [
-		{ grade: 1, label: 'Again', hint: 'Press 1' },
-		{ grade: 2, label: 'Hard', hint: 'Press 2' },
-		{ grade: 3, label: 'Good', hint: 'Press 3' },
-		{ grade: 4, label: 'Easy', hint: 'Press 4' }
+	const GRADE_LABELS: { grade: ReviewGrade; label: string }[] = [
+		{ grade: 1, label: 'Again' },
+		{ grade: 2, label: 'Hard' },
+		{ grade: 3, label: 'Good' },
+		{ grade: 4, label: 'Easy' }
 	];
+
+	const KIND_LABELS: Record<StudyCardKind, string> = {
+		vocab: 'Vocab',
+		sentence: 'Word Salad',
+		writing: 'Writing',
+		tone: 'Tone'
+	};
+
+	const STUDY_KINDS: StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
+
+	const TIER_LABELS: Record<SaladTier, string> = {
+		0: 'Tier 0 · words, translation shown',
+		1: 'Tier 1 · words, translation hidden',
+		2: 'Tier 2 · single characters'
+	};
+
+	// The key map per kind, shown under the grade buttons.
+	const KEY_HINTS: Record<StudyCardKind, string> = {
+		vocab: 'Keys: Space or Enter shows the answer · 1–4 grade',
+		sentence: 'Tap the tiles in order, then Check · keys 1–4 grade once checked',
+		writing: 'Draw each character stroke by stroke · keys 1–4 grade when finished',
+		tone: 'Keys: 1–5 set the highlighted syllable’s tone (5 = neutral) · ←/→ move · Backspace clears · Enter checks · then 1–4 grade'
+	};
 
 	// The SPA has no SSR, so the tab's setup is readable during init.
 	const config = loadConfig();
+	const kinds: StudyCardKind[] = CARD_KINDS.filter((kind) => config.cardTypes.includes(kind));
 
 	/**
-	 * One queue entry in either mode. Deck sessions map every study card
-	 * directly; level sessions add items whose card does not exist yet
-	 * (`virtual`), carrying the real card once one is known.
+	 * A queue item once it can be shown: its entry is loaded and its kind
+	 * is eligible for the word. Sentence cards carry their sentence,
+	 * writing cards the characters that have stroke data.
 	 */
-	interface SessionItem {
-		cardId: string;
-		entryId: number;
-		virtual: boolean;
-		card: StudyCard | null;
-	}
-
-	function deckItems(cards: readonly StudyCard[]): SessionItem[] {
-		return cards.map((card) => ({
-			cardId: card.id,
-			entryId: card.entryId,
-			virtual: false,
-			card
-		}));
-	}
-
-	function levelItems(
-		items: readonly LevelQueueItem[],
-		cards: readonly StudyCard[]
-	): SessionItem[] {
-		const byId = new Map(cards.map((card) => [card.id, card]));
-		return items.map((item) => ({
-			cardId: item.cardId,
-			entryId: item.entryId,
-			virtual: item.virtual,
-			card: item.virtual ? null : (byId.get(item.cardId) ?? null)
-		}));
+	interface Resolved {
+		item: FlowItem;
+		entry: Entry;
+		sentence: Sentence | null;
+		chars: string[];
+		tier: SaladTier;
+		seed: string;
 	}
 
 	/**
@@ -118,15 +150,32 @@
 	let workspaceMismatch = $state('');
 	let noWorkspace = $state(false);
 	let sessionWorkspaceId = $state<number | null>(null);
-	let queue = $state<SessionItem[]>([]);
-	let reviews = $state<ReviewEvent[]>([]);
-	let sessionReviews = $state<ReviewEvent[]>([]);
+	let sessionLanguage = $state('');
+	let cards = $state.raw<StudyCard[]>([]);
+	let queue = $state.raw<FlowItem[]>([]);
+	// Deck-session companions held back beyond the new-card budget; one
+	// replaces each companion dropped as ineligible.
+	let reserve = $state.raw<FlowItem[]>([]);
+	let backfillLeft = 0;
+	let reviews = $state.raw<ReviewEvent[]>([]);
+	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
-	let revealed = $state(false);
-	let entries = $state<Record<number, Entry>>({});
+	let entries = $state.raw<Record<number, Entry>>({});
 	let entryError = $state('');
 	let gradeError = $state('');
 	let grading = $state(false);
+
+	// The card being shown and how far the learner got with it. `done`
+	// unlocks the grade buttons; `suggested` is preselected on them.
+	let resolved = $state.raw<Resolved | null>(null);
+	let done = $state(false);
+	let suggested = $state<ReviewGrade | null>(null);
+	let doneMeta = $state.raw<ReviewMeta>({});
+	let shownAt = 0;
+	// When the suggested grade button received focus; null when not focused.
+	let suggestionFocusedAt: number | null = null;
+	let resolveSeq = 0;
+	let gradeButtons = $state<(HTMLButtonElement | null)[]>([]);
 
 	// A non-reactive in-flight marker: only the cache and the error are
 	// rendered, so an entry load must not re-trigger itself.
@@ -142,34 +191,17 @@
 	}
 
 	/**
-	 * asReview narrows a stored event to a review. The server only
-	 * validates id and timestamp, so the grade is checked again by the
-	 * scheduler; here it is enough that the payload has a card and a
-	 * numeric grade.
-	 */
-	function asReview(event: StudyEvent, workspaceId: number): ReviewEvent | null {
-		if (event.type !== 'review' || event.workspaceId !== workspaceId) return null;
-		const payload = event.payload;
-		if (typeof payload !== 'object' || payload === null) return null;
-		const { cardId, grade } = payload as Record<string, unknown>;
-		if (typeof cardId !== 'string' || typeof grade !== 'number') return null;
-		return {
-			...event,
-			type: 'review',
-			payload: { cardId, mode: 'vocab', grade: grade as ReviewGrade }
-		};
-	}
-
-	/**
-	 * sessionReview mirrors the event recordReview builds, so the
-	 * session's XP is computed from the same shape as the stored log.
-	 * XP depends only on the grade, so the local copy stays accurate even
-	 * when the POST is queued for retry.
+	 * sessionReview mirrors the event recordReview builds (with the card's
+	 * real kind as the mode, and the meta), so the session's XP is computed
+	 * from the same shape as the stored log, even when the POST is queued
+	 * for retry.
 	 */
 	function sessionReview(
 		card: StudyCard,
 		grade: ReviewGrade,
-		workspaceId: number
+		workspaceId: number,
+		mode: StudyCardKind,
+		meta: ReviewMeta
 	): ReviewEvent {
 		return {
 			id: newUlid(),
@@ -177,7 +209,7 @@
 			device: 'web',
 			ts: new Date().toISOString(),
 			type: 'review',
-			payload: { cardId: card.id, mode: 'vocab', grade }
+			payload: { cardId: card.id, mode, grade, meta }
 		};
 	}
 
@@ -185,22 +217,6 @@
 	const currentEntry = $derived(
 		currentItem === undefined ? undefined : entries[currentItem.entryId]
 	);
-
-	// A sentence id that no longer resolves is passed as null so the card
-	// simply has no sentence block, matching a card without one. A virtual
-	// level card previews the sentence it will be created with.
-	const faces = $derived.by(() => {
-		const item = currentItem;
-		const entry = currentEntry;
-		if (item === undefined || entry === undefined) return null;
-		const sentence = item.virtual
-			? (entry.sentences[0] ?? null)
-			: item.card?.sentenceId === undefined
-				? null
-				: (entry.sentences.find((candidate) => candidate.id === item.card?.sentenceId) ??
-					null);
-		return buildVocabFaces(entry, sentence, entry.language);
-	});
 
 	const complete = $derived(
 		!loading &&
@@ -210,8 +226,19 @@
 			index >= queue.length
 	);
 
-	const sessionXp = $derived(xpFromReviews(sessionReviews));
-	const totalLevel = $derived(levelFromXp(xpFromReviews([...reviews, ...sessionReviews])));
+	// XP is the difference the session made to the whole log, so the
+	// daily bonus is only counted when this session earned it.
+	const historyXp = $derived(xpFromReviews(reviews));
+	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews]));
+	const sessionXp = $derived(totalXp - historyXp);
+	const progress = $derived(levelProgress(totalXp));
+	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now()));
+	// Per-kind XP of this session; whatever the kinds do not explain is
+	// the daily bonus.
+	const kindXp = $derived(xpByKind(sessionReviews));
+	const dailyBonusXp = $derived(
+		sessionXp - Object.values(kindXp).reduce((sum, value) => sum + value, 0)
+	);
 
 	async function loadEntry(entryId: number): Promise<void> {
 		if (entries[entryId] !== undefined || pendingEntryId === entryId) return;
@@ -234,7 +261,7 @@
 	}
 
 	/** ensureEntry loads a card's entry once, on its first display. */
-	function ensureEntry(item: SessionItem | undefined): void {
+	function ensureEntry(item: FlowItem | undefined): void {
 		if (item === undefined) return;
 		entryError = '';
 		if (entries[item.entryId] !== undefined) return;
@@ -248,11 +275,14 @@
 		workspaceMismatch = '';
 		noWorkspace = false;
 		sessionWorkspaceId = workspaceId;
+		sessionLanguage = language ?? '';
+		cards = [];
 		queue = [];
+		reserve = [];
+		backfillLeft = 0;
 		reviews = [];
 		sessionReviews = [];
 		index = 0;
-		revealed = false;
 		entries = {};
 		entryError = '';
 		gradeError = '';
@@ -286,37 +316,47 @@
 			if (seq !== requestSeq) return;
 
 			const history = events
-				.map((event) => asReview(event, workspaceId))
+				.map((event) => (event.workspaceId === workspaceId ? parseReview(event) : null))
 				.filter((event): event is ReviewEvent => event !== null);
 			reviews = history;
+			cards = data.cards;
+			const now = new Date();
 			if (config.mode === 'levels') {
-				queue = levelItems(
+				// Level sessions stay vocab-only; companions are deck-only.
+				queue = levelSessionItems(
 					buildLevelQueue({
 						entries: schemeEntries,
 						cards: data.cards,
 						reviews: history,
 						newLimit: config.newLimit,
 						reviewLimit: config.reviewLimit,
-						now: new Date()
+						now
 					}),
-					data.cards
+					data.cards,
+					kinds
 				);
 			} else {
-				queue = deckItems(
-					buildQueue({
-						cards: data.cards,
-						reviews: history,
-						deckIds: config.deckIds,
-						newLimit: config.newLimit,
-						reviewLimit: config.reviewLimit,
-						now: new Date()
-					})
-				);
+				const plan = deckSessionPlan({
+					cards: data.cards,
+					reviews: history,
+					deckIds: config.deckIds,
+					kinds,
+					newLimit: config.newLimit,
+					reviewLimit: config.reviewLimit,
+					now,
+					language: language ?? '',
+					// Words this tab already found unsuitable are not fetched again.
+					skip: loadIneligible(workspaceId)
+				});
+				queue = plan.queue;
+				reserve = plan.reserve;
+				backfillLeft = plan.backfillLeft;
 			}
 			ensureEntry(queue[0]);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			queue = [];
+			reserve = [];
 			if (err instanceof LevelWorkspaceMismatch) {
 				workspaceMismatch = err.message;
 			} else {
@@ -327,6 +367,115 @@
 		}
 	}
 
+	/**
+	 * resolveItem decides whether an item can be shown now and gathers
+	 * what its card needs. Null means ineligible: the item is dropped from
+	 * this session, and a virtual one is never created.
+	 */
+	async function resolveItem(item: FlowItem, entry: Entry): Promise<Resolved | null> {
+		const language = sessionLanguage || entry.language;
+		const now = new Date();
+		const history = [...reviews, ...sessionReviews];
+		const base: Resolved = {
+			item,
+			entry,
+			sentence: null,
+			chars: [],
+			tier: 0,
+			seed: item.cardId
+		};
+
+		switch (item.kind) {
+			case 'vocab':
+				return base;
+			case 'sentence': {
+				const usable = entry.sentences.filter((sentence) => sentence.hanzi.trim() !== '');
+				// A companion takes the word's first sentence without a card;
+				// an existing card keeps its own sentence, or shows the word's
+				// first one when its sentence is gone.
+				const sentence = resolveSentence(item, usable, cardedSentenceIds(cards, item.entryId));
+				if (!isEligible('sentence', entry, { language, hasSentence: sentence !== null })) {
+					return null;
+				}
+				const cardId = item.virtual ? null : item.cardId;
+				return {
+					...base,
+					item: item.virtual ? { ...item, sentenceId: sentence?.id } : item,
+					sentence,
+					tier: tierForCard(cardId, history, now),
+					seed: `${item.card?.id ?? item.cardId}:${reviewCountFor(cardId, history)}`
+				};
+			}
+			case 'writing': {
+				const chars = await usableChars(item.written ?? entry.written);
+				if (!isEligible('writing', entry, { language, hasSentence: false, usableChars: chars })) {
+					return null;
+				}
+				return { ...base, chars };
+			}
+			case 'tone':
+				return isEligible('tone', entry, { language, hasSentence: false }) ? base : null;
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * dropIneligible removes an ineligible item (nothing is written); a
+	 * dropped companion is replaced by the next reserve companion while the
+	 * session's backfill bound lasts. A non-null `entry` that definitively
+	 * lacks what the kind needs (see `rememberDrop`) is remembered: this tab skips
+	 * the word for that kind in later sessions. Failures that may be
+	 * transient (a rejected resolution, missing stroke data) are not
+	 * remembered.
+	 */
+	function dropIneligible(item: FlowItem, entry: Entry | null): void {
+		const workspaceId = sessionWorkspaceId;
+		if (
+			entry !== null &&
+			workspaceId !== null &&
+			rememberDrop(item, item.written ?? entry.written)
+		) {
+			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
+		}
+		const next = dropItem({ queue, reserve, backfillLeft }, item.cardId);
+		queue = next.queue;
+		reserve = next.reserve;
+		backfillLeft = next.backfillLeft;
+		ensureEntry(queue[index]);
+	}
+
+	// Resolve the current item whenever it (or its entry) changes. The
+	// card state resets with it, so a new card always starts unanswered.
+	$effect(() => {
+		const item = currentItem;
+		const entry = currentEntry;
+		const seq = ++resolveSeq;
+		untrack(() => {
+			resolved = null;
+			done = false;
+			suggested = null;
+			doneMeta = {};
+			gradeError = '';
+		});
+		if (item === undefined || entry === undefined) return;
+
+		void untrack(() => resolveItem(item, entry)).then(
+			(result) => {
+				if (seq !== resolveSeq) return;
+				if (result === null) {
+					dropIneligible(item, entry);
+					return;
+				}
+				shownAt = Date.now();
+				resolved = result;
+			},
+			() => {
+				if (seq === resolveSeq) dropIneligible(item, null);
+			}
+		);
+	});
+
 	function retryLoad(): void {
 		void load($workspaces.current?.id ?? null, $workspaces.current?.language ?? null);
 	}
@@ -335,21 +484,59 @@
 		ensureEntry(currentItem);
 	}
 
-	function reveal(): void {
-		if (faces !== null) revealed = true;
+
+	/** onCardDone unlocks grading and preselects the card's suggestion. */
+	async function onCardDone(result: CardResult): Promise<void> {
+		if (resolved === null || done) return;
+		done = true;
+		suggestionFocusedAt = null;
+		// Easy is never suggested automatically.
+		suggested = result.suggested === 4 ? 3 : result.suggested;
+		doneMeta = { ...result.meta, durationMs: Math.max(0, Date.now() - shownAt) };
+		if (suggested !== null) {
+			// Focus the suggestion so Enter/Space (or 1–4) confirms it and a
+			// tile or pad no longer holds focus.
+			await tick();
+			const button = gradeButtons[suggested - 1];
+			if (button) {
+				button.focus();
+				suggestionFocusedAt = Date.now();
+			}
+		}
+	}
+
+	function revealVocab(): void {
+		if (resolved?.item.kind !== 'vocab') return;
+		void onCardDone({ suggested: null, meta: {} });
 	}
 
 	/**
-	 * submitGrade runs the extracted grade transaction. A virtual item
-	 * creates its card first inside gradeItem, so the review always names
-	 * a real id; a failure leaves the queue untouched and surfaces inline.
-	 * recordReview keeps a failed POST in the outbox, so the review is
-	 * never lost even though the append is awaited here.
+	 * submitGrade runs the extracted grade transaction with the card's
+	 * real kind as the mode. A virtual item creates its card first inside
+	 * gradeItem (only now: abandoning a session creates nothing), so the
+	 * review always names a real id; a failure leaves the queue untouched
+	 * and surfaces inline. recordReview keeps a failed POST in the outbox.
 	 */
-	async function submitGrade(value: ReviewGrade): Promise<void> {
-		const item = currentItem;
+	async function submitGrade(
+		value: ReviewGrade,
+		source: 'key-digit' | 'click' | 'activation'
+	): Promise<void> {
+		const current = resolved;
 		const workspaceId = sessionWorkspaceId;
-		if (!revealed || item === undefined || workspaceId === null || grading) return;
+		if (!done || current === null || workspaceId === null || grading) return;
+		if (
+			shouldIgnoreGrade({
+				now: Date.now(),
+				focusedAt: suggestionFocusedAt,
+				source,
+				hadSuggestion: suggested !== null
+			})
+		) {
+			return;
+		}
+
+		const item = current.item;
+		const meta: ReviewMeta = { ...doneMeta };
 
 		gradeError = '';
 		grading = true;
@@ -358,8 +545,10 @@
 				item,
 				grade: value,
 				workspaceId,
+				mode: item.kind,
+				meta,
 				currentWorkspaceId: $workspaces.current?.id ?? null,
-				entry: entries[item.entryId] ?? null,
+				entry: current.entry,
 				addCard,
 				recordReview
 			});
@@ -369,8 +558,14 @@
 			}
 			if (sessionWorkspaceId !== workspaceId) return;
 
-			sessionReviews = [...sessionReviews, sessionReview(result.card, value, workspaceId)];
-			revealed = false;
+			if (result.created) cards = [...cards, result.card];
+			sessionReviews = [
+				...sessionReviews,
+				sessionReview(result.card, value, workspaceId, item.kind, meta)
+			];
+			// The focused grade button is disabled for the next card; drop the
+			// focus so Space/Enter reach the window in every browser.
+			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 			index += 1;
 			ensureEntry(queue[index]);
 		} finally {
@@ -378,10 +573,7 @@
 		}
 	}
 
-	/**
-	 * Keyboard shortcuts stay out of the way of forms: focused inputs,
-	 * buttons, and links keep their native Space/Enter behaviour.
-	 */
+	/** Focused form controls, buttons and links keep native Space/Enter. */
 	function isInteractive(target: EventTarget | null): boolean {
 		if (!(target instanceof HTMLElement)) return false;
 		return (
@@ -389,24 +581,43 @@
 		);
 	}
 
+	/**
+	 * Grade digits never fire into a text field or while a card's own
+	 * input (writing pad, word tiles, tone pads) holds focus.
+	 */
+	function blocksGradeKeys(target: EventTarget | null): boolean {
+		if (!(target instanceof HTMLElement)) return false;
+		return (
+			target.closest('input, textarea, select, [contenteditable="true"], [data-card-input]') !==
+			null
+		);
+	}
+
+	/**
+	 * Key map: vocab — Space/Enter reveal, then 1–4 grade. Other kinds own
+	 * their keys until the learner finishes the card (tone uses 1–5 for
+	 * tones), then 1–4 grade. The runner never handles a key before then.
+	 */
 	function onKeydown(event: KeyboardEvent): void {
 		if (event.defaultPrevented || event.repeat) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
-		if (isInteractive(event.target)) return;
-		if (faces === null || complete) return;
+		const current = resolved;
+		if (current === null || complete) return;
 
-		if (!revealed) {
+		if (!done) {
+			if (current.item.kind !== 'vocab' || isInteractive(event.target)) return;
 			if (event.key === ' ' || event.key === 'Enter') {
 				event.preventDefault();
-				reveal();
+				revealVocab();
 			}
 			return;
 		}
 
+		if (blocksGradeKeys(event.target)) return;
 		const value = GRADE_KEYS[event.key];
 		if (value !== undefined) {
 			event.preventDefault();
-			void submitGrade(value);
+			void submitGrade(value, 'key-digit');
 		}
 	}
 
@@ -464,7 +675,38 @@
 				{sessionReviews.length === 1 ? 'review' : 'reviews'}
 			</p>
 			<p class="stat"><strong>+{sessionXp}</strong> XP this session</p>
-			<p class="stat">Level <strong>{totalLevel}</strong></p>
+			<ul class="breakdown" aria-label="XP by card type">
+				{#each STUDY_KINDS as kind (kind)}
+					{#if kindXp[kind] > 0}
+						<li>{KIND_LABELS[kind]} <strong>+{kindXp[kind]}</strong></li>
+					{/if}
+				{/each}
+				{#if dailyBonusXp > 0}
+					<li>Daily bonus <strong>+{dailyBonusXp}</strong></li>
+				{/if}
+			</ul>
+			<p class="stat">Level <strong>{progress.level}</strong></p>
+			<div
+				class="bar"
+				role="progressbar"
+				aria-label="Progress to the next level"
+				aria-valuemin="0"
+				aria-valuemax={progress.xpForNext}
+				aria-valuenow={progress.xpInto}
+			>
+				<span style:width={`${(progress.xpInto / progress.xpForNext) * 100}%`}></span>
+			</div>
+			<p class="hint">{progress.xpInto} / {progress.xpForNext} XP to level {progress.level + 1}</p>
+			<p class="stat">
+				<span aria-hidden="true">🔥</span> Streak <strong>{streak.current}</strong>
+				{streak.current === 1 ? 'day' : 'days'}
+			</p>
+			<Mascot
+				level={progress.level}
+				streak={streak.current}
+				todayDone={streak.todayDone}
+				size={72}
+			/>
 			<a href="/study">Back to study setup</a>
 		</section>
 	{:else}
@@ -479,67 +721,81 @@
 				<p class="error" role="alert">{entryError}</p>
 				<button type="button" onclick={retryEntry}>Retry</button>
 			</section>
-		{:else if faces === null}
+		{:else if resolved === null}
 			<p class="hint" role="status">Loading card…</p>
 		{:else}
-			<article class="card">
-				<p class="written">{faces.front.written}</p>
+			{@const current = resolved}
+			<article class="card" aria-label={`${KIND_LABELS[current.item.kind]} card`}>
+				<p class="badges">
+					<span class="badge kind-{current.item.kind}">{KIND_LABELS[current.item.kind]}</span>
+					{#if current.item.kind === 'sentence'}
+						<span class="badge">{TIER_LABELS[current.tier]}</span>
+					{/if}
+					{#if current.item.virtual && current.item.kind !== 'vocab'}
+						<span class="badge">new</span>
+					{/if}
+				</p>
 
-				{#if faces.front.readings.length > 0}
-					<ul class="readings" aria-label="Readings">
-						{#each faces.front.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
-							<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
-						{/each}
-					</ul>
-				{/if}
-
-				{#if faces.front.sentenceLines.length > 0}
-					<div class="sentences">
-						{#each faces.front.sentenceLines as line, lineIndex (lineIndex)}
-							<p class="sentence">{line}</p>
-						{/each}
-					</div>
-				{/if}
-
-				{#if revealed}
-					<section class="answer" aria-labelledby="answer-heading">
-						<h2 id="answer-heading">Answer</h2>
-						{#if faces.back.glosses.length > 0}
-							{#each faces.back.glosses as group (group.dictionaryName)}
-								<article class="dictionary">
-									<h3>{group.dictionaryName}</h3>
-									<ol class="glosses">
-										{#each group.glosses as gloss, glossIndex (glossIndex)}
-											<li>{gloss}</li>
-										{/each}
-									</ol>
-								</article>
-							{/each}
-						{:else}
-							<p class="hint">No glosses for this word yet.</p>
-						{/if}
-					</section>
-				{:else}
-					<button type="button" class="reveal" onclick={reveal}>Show answer</button>
-				{/if}
+				{#key current.item.cardId}
+					{#if current.item.kind === 'vocab'}
+						<VocabCard
+							item={current.item}
+							entry={current.entry}
+							revealed={done}
+							onDone={onCardDone}
+						/>
+					{:else if current.item.kind === 'sentence' && current.sentence !== null}
+						<SentenceCard
+							item={current.item}
+							entry={current.entry}
+							sentence={current.sentence}
+							tier={current.tier}
+							seed={current.seed}
+							language={sessionLanguage || current.entry.language}
+							{done}
+							onDone={onCardDone}
+						/>
+					{:else if current.item.kind === 'writing'}
+						<WritingCard
+							item={current.item}
+							entry={current.entry}
+							chars={current.chars}
+							{done}
+							onDone={onCardDone}
+						/>
+					{:else if current.item.kind === 'tone'}
+						<ToneCard item={current.item} entry={current.entry} {done} onDone={onCardDone} />
+					{/if}
+				{/key}
 
 				{#if gradeError}
 					<p class="error" role="alert">{gradeError}</p>
 				{/if}
 
-				<div class="grades">
-					{#each GRADE_LABELS as item (item.grade)}
+				<div class="grades" role="group" aria-label="Grade this card">
+					{#each GRADE_LABELS as option (option.grade)}
 						<button
 							type="button"
-							class="grade grade-{item.grade}"
-							disabled={!revealed || grading}
-							title={item.hint}
-							onclick={() => void submitGrade(item.grade)}
+							class="grade grade-{option.grade}"
+							class:suggested={done && suggested === option.grade}
+							bind:this={gradeButtons[option.grade - 1]}
+							disabled={!done || grading}
+							title={`Press ${option.grade}`}
+							aria-label={done && suggested === option.grade
+								? `${option.label} (suggested), key ${option.grade}`
+								: `${option.label}, key ${option.grade}`}
+							onclick={(event) =>
+								// detail 0: activated from the keyboard, not a pointer.
+								void submitGrade(option.grade, event.detail === 0 ? 'activation' : 'click')}
 						>
-							{item.label}
+							{option.label}
+							{#if done && suggested === option.grade}
+								<span class="suggested-tag" aria-hidden="true">suggested</span>
+							{/if}
 						</button>
 					{/each}
 				</div>
+				<p class="keys">{KEY_HINTS[current.item.kind]}</p>
 			</article>
 		{/if}
 	{/if}
@@ -552,9 +808,7 @@
 		padding: 2.5rem 1.5rem;
 	}
 
-	h1,
-	h2,
-	h3 {
+	h1 {
 		margin-bottom: 0.5rem;
 	}
 
@@ -614,74 +868,32 @@
 		padding: 1.5rem;
 	}
 
-	.written {
-		margin: 0;
-		font-size: 2.75rem;
-		font-weight: 700;
-		line-height: 1.2;
-	}
-
-	.readings {
-		list-style: none;
-		margin: 0.5rem 0 0;
-		padding: 0;
+	.badges {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.35rem 1rem;
+		gap: 0.4rem;
+		margin: 0 0 0.9rem;
+	}
+
+	.badge {
+		font-size: 0.75rem;
+		font-weight: 600;
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border-radius: 999px;
+		padding: 0.05rem 0.55rem;
 		opacity: 0.85;
 	}
 
-	.sentences {
-		margin-top: 1.25rem;
-		display: grid;
-		gap: 0.35rem;
+	.badge.kind-sentence {
+		border-color: #6a1b9a;
 	}
 
-	.sentence {
-		margin: 0;
-		font-size: 1.15rem;
+	.badge.kind-writing {
+		border-color: #ef8f00;
 	}
 
-	.reveal {
-		margin-top: 1.5rem;
-		padding: 0.55rem 1rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
-		font: inherit;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.answer {
-		margin-top: 1.5rem;
-		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		padding-top: 1rem;
-	}
-
-	.answer h2 {
-		margin: 0 0 0.5rem;
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		opacity: 0.7;
-	}
-
-	.dictionary + .dictionary {
-		margin-top: 0.9rem;
-	}
-
-	.dictionary h3 {
-		margin: 0;
-		font-size: 1rem;
-	}
-
-	.glosses {
-		margin: 0.35rem 0 0;
-		padding-left: 1.4rem;
-		display: grid;
-		gap: 0.25rem;
+	.badge.kind-tone {
+		border-color: #2e7d32;
 	}
 
 	.grades {
@@ -697,6 +909,8 @@
 
 	.grades button {
 		flex: 1 1 6rem;
+		display: grid;
+		justify-items: center;
 		padding: 0.6rem 0.8rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 		border-radius: 0.4rem;
@@ -714,13 +928,61 @@
 		border-color: #2e7d32;
 	}
 
+	.grades button.suggested {
+		border-width: 2px;
+		border-color: #0b6bcb;
+		background: color-mix(in srgb, #0b6bcb 14%, transparent);
+	}
+
+	.grades button:focus-visible {
+		outline: 2px solid #0b6bcb;
+		outline-offset: 2px;
+	}
+
+	.suggested-tag {
+		font-size: 0.7rem;
+		font-weight: 500;
+		opacity: 0.8;
+	}
+
 	.session button:disabled {
 		opacity: 0.45;
 		cursor: not-allowed;
 	}
 
+	.keys {
+		margin: 0.75rem 0 0;
+		font-size: 0.85rem;
+		opacity: 0.7;
+	}
+
 	.stat {
 		margin: 0.4rem 0;
 		font-size: 1.1rem;
+	}
+
+	.breakdown {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		margin: 0 0 0.6rem;
+		padding: 0;
+		list-style: none;
+		font-size: 0.9rem;
+		opacity: 0.85;
+	}
+
+	.bar {
+		height: 0.5rem;
+		max-width: 20rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, currentColor 15%, transparent);
+		overflow: hidden;
+	}
+
+	.bar span {
+		display: block;
+		height: 100%;
+		background: #0b6bcb;
 	}
 </style>

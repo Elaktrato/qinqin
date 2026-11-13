@@ -2,6 +2,9 @@
 /data/
 /server/data/
 
+# local-only seed packs (unclear licences; never committed)
+/plugins/data-local/
+
 # local tooling scratch
 /.superpowers/
 /.claude/worktrees/

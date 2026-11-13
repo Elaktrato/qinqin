@@ -6,7 +6,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import type { Workspace } from './api/types';
-import { create, currentLanguage, load, select, workspaces } from './workspaces';
+import { create, currentLanguage, load, rename, select, workspaces } from './workspaces';
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -29,10 +29,11 @@ function jsonResponse(body: unknown, status = 200): Response {
 	});
 }
 
-function workspace(id: number, language: string): Workspace {
+function workspace(id: number, language: string, name = ''): Workspace {
 	return {
 		id,
 		language,
+		name,
 		settings: {},
 		updatedAt: '2026-01-01T00:00:00Z'
 	};
@@ -116,5 +117,75 @@ describe('workspace store', () => {
 		expect(get(workspaces).current).toEqual(ja);
 		expect(get(currentLanguage)).toBe('ja');
 		expect(localStorage.getItem('qinqin.workspace')).toBe('2');
+	});
+	it('creates a named workspace and sends the trimmed name', async () => {
+		const zh = workspace(1, 'zh');
+		const novels = workspace(4, 'zh', 'Novels');
+		vi.mocked(fetch).mockImplementation(async (_input, init) => {
+			if (init?.method === 'POST') return jsonResponse(novels, 201);
+			return jsonResponse([zh, novels]);
+		});
+
+		await create('zh', '  Novels ');
+
+		const calls = vi.mocked(fetch).mock.calls;
+		expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ language: 'zh', name: 'Novels' });
+		expect(get(workspaces).current).toEqual(novels);
+	});
+
+	it('omits a blank name when creating', async () => {
+		const es = workspace(3, 'es');
+		vi.mocked(fetch).mockImplementation(async (_input, init) => {
+			if (init?.method === 'POST') return jsonResponse(es, 201);
+			return jsonResponse([es]);
+		});
+
+		await create('es', '   ');
+
+		expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body))).toEqual({ language: 'es' });
+	});
+
+	it('renames a workspace and updates the list and the current one in place', async () => {
+		const zh = workspace(1, 'zh');
+		const ja = workspace(2, 'ja');
+		workspaces.set({ list: [zh, ja], current: ja });
+		const renamed = { ...ja, name: 'Manga' };
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(renamed));
+
+		const result = await rename(2, ' Manga ');
+
+		expect(result).toEqual(renamed);
+		const [url, init] = vi.mocked(fetch).mock.calls[0];
+		expect(String(url)).toBe('/api/workspaces/2');
+		expect(init?.method).toBe('PUT');
+		expect(JSON.parse(String(init?.body))).toEqual({ name: 'Manga' });
+		expect(get(workspaces)).toEqual({ list: [zh, renamed], current: renamed });
+	});
+
+	it('renaming another workspace keeps the current one', async () => {
+		const zh = workspace(1, 'zh');
+		const ja = workspace(2, 'ja');
+		workspaces.set({ list: [zh, ja], current: zh });
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ ...ja, name: '' }));
+
+		await rename(2, '');
+
+		expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body))).toEqual({ name: '' });
+		expect(get(workspaces).current).toEqual(zh);
+	});
+
+	it('keeps the persisted selection among repeated languages', async () => {
+		localStorage.setItem('qinqin.workspace', '5');
+		const first = workspace(1, 'zh');
+		const second = workspace(5, 'zh', 'HSK');
+		vi.mocked(fetch).mockResolvedValue(jsonResponse([first, second]));
+
+		await load();
+
+		expect(get(workspaces).current).toEqual(second);
+
+		select(1);
+		expect(localStorage.getItem('qinqin.workspace')).toBe('1');
+		expect(get(workspaces).current).toEqual(first);
 	});
 });

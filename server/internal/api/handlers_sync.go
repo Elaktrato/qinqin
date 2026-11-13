@@ -11,7 +11,12 @@ import (
 
 // handleSyncPull serves GET /api/sync/pull?cursor=: every row changed at
 // or after the RFC 3339 cursor (absent = everything), tombstones
-// included, plus the cursor to pull from next time. Authenticated.
+// included, plus the cursor to pull from next time. The optional
+// collections= (comma-separated Delta collection names) limits the pull
+// to those; the others come back empty, and an unknown name is 400. The
+// returned cursor is valid only for the collections requested; a client
+// that mixes subset pulls with one global cursor would miss changes.
+// Authenticated.
 func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -26,7 +31,12 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 		}
 		cursor = t
 	}
-	delta, err := chinsync.Pull(r.Context(), s.db, u.ID, cursor)
+	only, err := chinsync.ParseCollections(r.URL.Query().Get("collections"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	delta, err := chinsync.Pull(r.Context(), s.db, u.ID, cursor, only)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

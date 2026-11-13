@@ -3,15 +3,16 @@ package levels_test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"qinqin/internal/db"
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
 	"qinqin/internal/model"
@@ -32,20 +33,67 @@ func newDB(t *testing.T) *sql.DB {
 	return sqlDB
 }
 
-// mustEntry upserts one zh entry and returns its id.
-func mustEntry(t *testing.T, st entries.Store, kind, written, pinyin string) int64 {
+// importDictionary writes a dictionary pack (manifest m plus one data
+// file) into a temp directory and imports it into the lexicon with the
+// real importer.
+func importDictionary(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content string) {
 	t.Helper()
-	id, err := st.Upsert(context.Background(), &model.Entry{
-		Language: "zh",
-		Kind:     kind,
-		Written:  written,
-		Readings: []model.Reading{{Type: "pinyin", Value: pinyin}},
-	})
+	dir := t.TempDir()
+	manifest, err := json.Marshal(m)
 	if err != nil {
-		t.Fatalf("upsert %s (%s): %v", written, kind, err)
+		t.Fatal(err)
+	}
+	for name, body := range map[string]string{"manifest.json": string(manifest), file: content} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, err := dict.LoadPack(dir)
+	if err != nil {
+		t.Fatalf("LoadPack(%s): %v", m.ID, err)
+	}
+	if _, err := dict.ImportLexicon(context.Background(), sqlDB, &p); err != nil {
+		t.Fatalf("import %s: %v", m.ID, err)
+	}
+}
+
+// importCedict imports CC-CEDICT lines as the zh dictionary pack
+// "cedict-test".
+func importCedict(t *testing.T, sqlDB *sql.DB, lines ...string) {
+	t.Helper()
+	lang.Register(lang.Zh{})
+	importDictionary(t, sqlDB, dict.Manifest{
+		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
+		License: "CC BY-SA 4.0", Attribution: "MDBG", Format: "cedict",
+	}, "dictionary.txt", strings.Join(lines, "\n")+"\n")
+}
+
+// lexID returns the id of the zh lexicon entry of kind keyed key (a
+// CC-CEDICT entry's key is its simplified form).
+func lexID(t *testing.T, sqlDB *sql.DB, kind, key string) int64 {
+	t.Helper()
+	var id int64
+	if err := sqlDB.QueryRow(`SELECT id FROM entries
+		WHERE language = 'zh' AND kind = ? AND ext_key = ? AND deleted_at IS NULL`, kind, key).Scan(&id); err != nil {
+		t.Fatalf("lexicon entry %s/%s: %v", kind, key, err)
 	}
 	return id
 }
+
+// CC-CEDICT lines of the fixture words and characters.
+const (
+	lineNihao   = "你好 你好 [ni3 hao3] /hello/"
+	lineXiexie  = "謝謝 谢谢 [xie4 xie5] /thanks/"
+	lineYinhang = "銀行 银行 [yin2 hang2] /bank/"
+	lineHaoren  = "好人 好人 [hao3 ren2] /good person/"
+	lineNi      = "你 你 [ni3] /you/"
+	lineHao     = "好 好 [hao3] /good/"
+	lineXie     = "謝 谢 [xie4] /to thank/"
+	lineYin     = "銀 银 [yin2] /silver/"
+	lineXing    = "行 行 [xing2] /to walk/"
+	lineFa      = "發 发 [fa1] /to send out/"
+	lineRen     = "人 人 [ren2] /person/"
+)
 
 // fixtureEntries are the entry ids the fixture scheme's tests refer to.
 type fixtureEntries struct {
@@ -53,20 +101,19 @@ type fixtureEntries struct {
 	chars                  map[string]int64 // every character by written form
 }
 
-// seedFixture upserts the fixture scheme's words and the characters they
+// seedFixture imports the fixture scheme's words and the characters they
 // are written with, plus 发, which no scheme touches.
-func seedFixture(t *testing.T, st entries.Store) fixtureEntries {
+func seedFixture(t *testing.T, sqlDB *sql.DB) fixtureEntries {
 	t.Helper()
+	importCedict(t, sqlDB, lineNihao, lineXiexie, lineYinhang, lineNi, lineHao, lineXie, lineYin, lineXing, lineFa)
 	fe := fixtureEntries{
-		nihao:   mustEntry(t, st, "word", "你好", "nǐ hǎo"),
-		xiexie:  mustEntry(t, st, "word", "谢谢", "xiè xie"),
-		yinhang: mustEntry(t, st, "word", "银行", "yín háng"),
+		nihao:   lexID(t, sqlDB, "word", "你好"),
+		xiexie:  lexID(t, sqlDB, "word", "谢谢"),
+		yinhang: lexID(t, sqlDB, "word", "银行"),
 		chars:   map[string]int64{},
 	}
-	for _, c := range []struct{ written, pinyin string }{
-		{"你", "nǐ"}, {"好", "hǎo"}, {"谢", "xiè"}, {"银", "yín"}, {"行", "xíng"}, {"发", "fā"},
-	} {
-		fe.chars[c.written] = mustEntry(t, st, "character", c.written, c.pinyin)
+	for _, c := range []string{"你", "好", "谢", "银", "行", "发"} {
+		fe.chars[c] = lexID(t, sqlDB, "character", c)
 	}
 	return fe
 }
@@ -112,7 +159,7 @@ func TestSchemeImportAndBadges(t *testing.T) {
 
 	sqlDB := newDB(t)
 	ctx := context.Background()
-	fe := seedFixture(t, entries.Store{DB: sqlDB})
+	fe := seedFixture(t, sqlDB)
 
 	pack, err := dict.LoadPack(hskMini)
 	if err != nil {
@@ -228,13 +275,12 @@ func TestSchemeEntryIDs(t *testing.T) {
 
 	sqlDB := newDB(t)
 	ctx := context.Background()
-	st := entries.Store{DB: sqlDB}
-
-	nihao := mustEntry(t, st, "word", "你好", "nǐ hǎo")
-	xiexie := mustEntry(t, st, "word", "谢谢", "xiè xie")
-	ni := mustEntry(t, st, "character", "你", "nǐ")
-	hao := mustEntry(t, st, "character", "好", "hǎo")
-	xie := mustEntry(t, st, "character", "谢", "xiè")
+	importCedict(t, sqlDB, lineNihao, lineXiexie, lineNi, lineHao, lineXie)
+	nihao := lexID(t, sqlDB, "word", "你好")
+	xiexie := lexID(t, sqlDB, "word", "谢谢")
+	ni := lexID(t, sqlDB, "character", "你")
+	hao := lexID(t, sqlDB, "character", "好")
+	xie := lexID(t, sqlDB, "character", "谢")
 
 	// 你好 joins both levels; 谢谢 only level 2. The characters derive
 	// into the lowest level whose words are written with them.
@@ -277,13 +323,13 @@ func TestDerivedLevelKeepsLowest(t *testing.T) {
 
 	sqlDB := newDB(t)
 	ctx := context.Background()
-	st := entries.Store{DB: sqlDB}
 	// 好 is written in a level-1 word (你好) and a level-2 word (好人).
-	nihao := mustEntry(t, st, "word", "你好", "nǐ hǎo")
-	haoren := mustEntry(t, st, "word", "好人", "hǎo rén")
-	ni := mustEntry(t, st, "character", "你", "nǐ")
-	hao := mustEntry(t, st, "character", "好", "hǎo")
-	ren := mustEntry(t, st, "character", "人", "rén")
+	importCedict(t, sqlDB, lineNihao, lineHaoren, lineNi, lineHao, lineRen)
+	nihao := lexID(t, sqlDB, "word", "你好")
+	haoren := lexID(t, sqlDB, "word", "好人")
+	ni := lexID(t, sqlDB, "character", "你")
+	hao := lexID(t, sqlDB, "character", "好")
+	ren := lexID(t, sqlDB, "character", "人")
 
 	pack := buildPack(t, "lowest", `{"unit":"word","levels":[
 		{"name":"1","entries":["你好","你好"]},
@@ -331,18 +377,143 @@ func TestDerivedLevelKeepsLowest(t *testing.T) {
 	}
 }
 
+// TestSingleCharacterWords: a word list names one-character words (HSK 1
+// lists 好 and 人), which CC-CEDICT gives as character entries, not
+// words. Such a form falls back to its character entry and joins the
+// level directly (not derived), even when a word of the same level
+// listed before it already derived it (好人 before 人); a later word
+// written with it does not add a second, higher badge.
+func TestSingleCharacterWords(t *testing.T) {
+	lang.Register(lang.Zh{})
+
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importCedict(t, sqlDB, lineNihao, lineHaoren, lineNi, lineHao, lineRen)
+	nihao := lexID(t, sqlDB, "word", "你好")
+	haoren := lexID(t, sqlDB, "word", "好人")
+	ni := lexID(t, sqlDB, "character", "你")
+	hao := lexID(t, sqlDB, "character", "好")
+	ren := lexID(t, sqlDB, "character", "人")
+
+	pack := buildPack(t, "single", `{"unit":"word","levels":[
+		{"name":"1","entries":["好","你好"]},
+		{"name":"2","entries":["好人","人","猫"]}]}`)
+	res, err := levels.Import(ctx, sqlDB, pack)
+	if err != nil {
+		t.Fatalf("import scheme: %v", err)
+	}
+	// Direct: 好, 你好, 人, 好人. Derived: 你 only — 好 and 人 are direct
+	// members of the level their own word sits in. 猫 has no entry.
+	if res.Members != 4 || res.Derived != 1 || !slices.Equal(res.Skipped, []string{"猫"}) {
+		t.Errorf("import result = %+v, want 4 members, 1 derived, skipped [猫]", res)
+	}
+	for _, c := range []struct {
+		name    string
+		id      int64
+		level   string
+		derived bool
+	}{
+		{"好", hao, "1", false},
+		{"人", ren, "2", false},
+		{"你", ni, "1", true},
+		{"你好", nihao, "1", false},
+		{"好人", haoren, "2", false},
+	} {
+		got, err := levels.ForEntry(ctx, sqlDB, c.id)
+		if err != nil || len(got) != 1 || got[0].LevelName != c.level || got[0].Derived != c.derived {
+			t.Errorf("badges of %s = %+v (err %v), want only level %s (derived %v)", c.name, got, err, c.level, c.derived)
+		}
+	}
+}
+
+// TestCharacterResolvesToItsOwnEntry: CC-CEDICT merges the traditional
+// forms of a simplified character into its entry (复 holds 復 and 覆), and
+// 覆 also has an entry of its own. A listed or derived character 覆
+// resolves to the entry headed by 覆 (its own map cell), not to 复.
+func TestCharacterResolvesToItsOwnEntry(t *testing.T) {
+	lang.Register(lang.Zh{})
+
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importCedict(t, sqlDB,
+		"復 复 [fu4] /to return/",
+		"覆 复 [fu4] /variant of 復/",
+		"覆 覆 [fu4] /to cover/",
+		"蓋 盖 [gai4] /lid/",
+		"覆蓋 覆盖 [fu4 gai4] /to cover/")
+	fu := lexID(t, sqlDB, "character", "复")
+	cover := lexID(t, sqlDB, "character", "覆")
+	if fu == cover {
+		t.Fatal("fixture: 复 and 覆 share an entry")
+	}
+
+	chars := buildPack(t, "own-chars", `{"unit":"character","levels":[{"name":"1","entries":["覆"]}]}`)
+	if _, err := levels.Import(ctx, sqlDB, chars); err != nil {
+		t.Fatalf("import characters: %v", err)
+	}
+	words := buildPack(t, "own-words", `{"unit":"word","levels":[{"name":"1","entries":["覆盖"]}]}`)
+	if _, err := levels.Import(ctx, sqlDB, words); err != nil {
+		t.Fatalf("import words: %v", err)
+	}
+	if got, err := levels.ForEntry(ctx, sqlDB, cover); err != nil || len(got) != 2 {
+		t.Errorf("badges of 覆 = %+v (err %v), want the character level and the derived word level", got, err)
+	}
+	if got, err := levels.ForEntry(ctx, sqlDB, fu); err != nil || len(got) != 0 {
+		t.Errorf("badges of 复 = %+v (err %v), want none", got, err)
+	}
+}
+
+// TestOneLevelPerEntry: an entry carries one level of a scheme, its
+// lowest, whatever the pack lists: a word repeated at a higher level
+// (HSK lists senses separately: 好 at 1, 2 and 4) and a character derived
+// low but listed directly higher (些 from 一些 at 1, 些 itself at 4) keep
+// only the lowest.
+func TestOneLevelPerEntry(t *testing.T) {
+	lang.Register(lang.Zh{})
+
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importCedict(t, sqlDB, lineNihao, lineHaoren, lineNi, lineHao, lineRen)
+	nihao := lexID(t, sqlDB, "word", "你好")
+	hao := lexID(t, sqlDB, "character", "好")
+	ren := lexID(t, sqlDB, "character", "人")
+
+	pack := buildPack(t, "lowest-only", `{"unit":"word","levels":[
+		{"name":"1","entries":["你好"]},
+		{"name":"2","entries":["你好","好人"]},
+		{"name":"3","entries":["好","人","你好"]}]}`)
+	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	for _, c := range []struct {
+		name    string
+		id      int64
+		level   string
+		derived bool
+	}{
+		{"你好", nihao, "1", false},
+		{"好", hao, "1", true},
+		{"人", ren, "2", true},
+	} {
+		got, err := levels.ForEntry(ctx, sqlDB, c.id)
+		if err != nil || len(got) != 1 || got[0].LevelName != c.level || got[0].Derived != c.derived {
+			t.Errorf("badges of %s = %+v (err %v), want only level %s (derived %v)", c.name, got, err, c.level, c.derived)
+		}
+	}
+}
+
 func TestSkippedUnknownForms(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
 	sqlDB := newDB(t)
 	ctx := context.Background()
-	st := entries.Store{DB: sqlDB}
 	// 电脑 is no entry; the character 谢 is missing too.
-	nihao := mustEntry(t, st, "word", "你好", "nǐ hǎo")
-	xiexie := mustEntry(t, st, "word", "谢谢", "xiè xie")
-	ni := mustEntry(t, st, "character", "你", "nǐ")
-	hao := mustEntry(t, st, "character", "好", "hǎo")
+	importCedict(t, sqlDB, lineNihao, lineXiexie, lineNi, lineHao)
+	nihao := lexID(t, sqlDB, "word", "你好")
+	xiexie := lexID(t, sqlDB, "word", "谢谢")
+	ni := lexID(t, sqlDB, "character", "你")
+	hao := lexID(t, sqlDB, "character", "好")
 
 	pack := buildPack(t, "skipped", `{"unit":"word","levels":[
 		{"name":"1","entries":["你好","电脑"]},
@@ -367,7 +538,7 @@ func TestSkippedUnknownForms(t *testing.T) {
 		t.Errorf("entries = %d, want the 4 seeded rows, no new ones", total)
 	}
 	var unknown int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM entries WHERE written = '电脑'`).Scan(&unknown); err != nil {
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM forms WHERE text = '电脑'`).Scan(&unknown); err != nil {
 		t.Fatalf("count 电脑: %v", err)
 	}
 	if unknown != 0 {
@@ -395,9 +566,9 @@ func TestCharacterUnitScheme(t *testing.T) {
 
 	sqlDB := newDB(t)
 	ctx := context.Background()
-	st := entries.Store{DB: sqlDB}
-	hao := mustEntry(t, st, "character", "好", "hǎo")
-	ni := mustEntry(t, st, "character", "你", "nǐ")
+	importCedict(t, sqlDB, lineHao, lineNi)
+	hao := lexID(t, sqlDB, "character", "好")
+	ni := lexID(t, sqlDB, "character", "你")
 
 	// "hanzi" is the pack spelling of the character unit.
 	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "zh-curriculum",
@@ -443,7 +614,7 @@ func TestUninstallAndReimportRevives(t *testing.T) {
 
 	sqlDB := newDB(t)
 	ctx := context.Background()
-	fe := seedFixture(t, entries.Store{DB: sqlDB})
+	fe := seedFixture(t, sqlDB)
 
 	pack, err := dict.LoadPack(hskMini)
 	if err != nil {
@@ -490,6 +661,133 @@ func TestUninstallAndReimportRevives(t *testing.T) {
 	if got, err := levels.ForEntry(ctx, sqlDB, fe.chars["好"]); err != nil || len(got) != 1 ||
 		got[0].LevelName != "1" || !got[0].Derived {
 		t.Errorf("badges of 好 after revive = %v (err %v), want derived level 1", got, err)
+	}
+}
+
+// sharedFormJMdict holds two JMdict words written 下 — the second carries
+// priority, so it is the best-ranked — and 食べる.
+const sharedFormJMdict = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE JMdict [
+<!ENTITY n "noun (common) (futsuumeishi)">
+<!ENTITY v1 "Ichidan verb">
+<!ENTITY uk "word usually written using kana alone">
+]>
+<JMdict>
+<entry>
+<ent_seq>1009800</ent_seq>
+<k_ele><keb>下</keb></k_ele>
+<r_ele><reb>もと</reb></r_ele>
+<sense><pos>&n;</pos><gloss>under (the influence of)</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1009850</ent_seq>
+<k_ele><keb>下</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>した</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>below</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1358280</ent_seq>
+<k_ele><keb>食べる</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>たべる</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&v1;</pos><gloss>to eat</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1157170</ent_seq>
+<k_ele><keb>為る</keb></k_ele>
+<r_ele><reb>する</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&v1;</pos><misc>&uk;</misc><gloss>to do</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1081610</ent_seq>
+<r_ele><reb>テレビ</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>television</gloss></sense>
+</entry>
+</JMdict>
+`
+
+// sharedFormKanjidic2 holds the kanji 下 and 食.
+const sharedFormKanjidic2 = `<?xml version="1.0" encoding="UTF-8"?>
+<kanjidic2>
+<character><literal>下</literal>
+<radical><rad_value rad_type="classical">1</rad_value></radical>
+<misc><stroke_count>3</stroke_count></misc>
+<reading_meaning><rmgroup><reading r_type="ja_on">カ</reading><meaning>below</meaning></rmgroup></reading_meaning>
+</character>
+<character><literal>食</literal>
+<radical><rad_value rad_type="classical">184</rad_value></radical>
+<misc><stroke_count>9</stroke_count></misc>
+<reading_meaning><rmgroup><reading r_type="ja_on">ショク</reading><meaning>eat</meaning></rmgroup></reading_meaning>
+</character>
+</kanjidic2>
+`
+
+func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
+	lang.Register(lang.Ja{})
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importDictionary(t, sqlDB, dict.Manifest{
+		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
+		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
+	}, "jmdict.xml", sharedFormJMdict)
+	importDictionary(t, sqlDB, dict.Manifest{
+		ID: "kanjidic2", Name: "KANJIDIC2 test", Version: "1", Type: "dictionary", Language: "ja",
+		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "kanjidic2",
+	}, "kanjidic2.xml", sharedFormKanjidic2)
+	key := func(kind, k string) int64 {
+		t.Helper()
+		var id int64
+		if err := sqlDB.QueryRow(`SELECT id FROM entries WHERE language = 'ja' AND kind = ? AND ext_key = ?`, kind, k).Scan(&id); err != nil {
+			t.Fatalf("lexicon entry %s/%s: %v", kind, k, err)
+		}
+		return id
+	}
+	moto, shita, taberu := key("word", "j:1009800"), key("word", "j:1009850"), key("word", "j:1358280")
+	suru, terebi := key("word", "j:1157170"), key("word", "j:1081610")
+	shitaChar, shoku := key("character", "下"), key("character", "食")
+
+	dir := t.TempDir()
+	manifest := `{"id":"jlpt-test","name":"JLPT test","version":"1.0","type":"levels",` +
+		`"language":"ja","license":"CC0-1.0","attribution":"Qinqin test fixtures","format":"json"}`
+	for name, body := range map[string]string{
+		"manifest.json": manifest,
+		"levels.json":   `{"unit":"word","levels":[{"name":"N5","entries":["下","食べる","する","テレビ"]}]}`,
+	} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	pack, err := dict.LoadPack(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := levels.Import(ctx, sqlDB, pack)
+	if err != nil {
+		t.Fatalf("import scheme: %v", err)
+	}
+	// Kana-written words resolve by their first kana reading (する is
+	// the usually-kana 為る, テレビ has no written form). Only the Han
+	// characters of the listed forms derive: kana are neither members
+	// nor reported as skipped.
+	if res.Members != 4 || res.Derived != 2 || len(res.Skipped) != 0 {
+		t.Errorf("import result = %+v, want 4 members, 2 derived (下, 食), nothing skipped", res)
+	}
+	for name, tc := range map[string]struct {
+		id      int64
+		badges  int
+		derived bool
+	}{
+		"下 (した, best-ranked)": {shita, 1, false},
+		"下 (もと)":              {moto, 0, false},
+		"食べる":                 {taberu, 1, false},
+		"する (為る)":             {suru, 1, false},
+		"テレビ":                 {terebi, 1, false},
+		"kanji 下":             {shitaChar, 1, true},
+		"kanji 食":             {shoku, 1, true},
+	} {
+		got, err := levels.ForEntry(ctx, sqlDB, tc.id)
+		if err != nil || len(got) != tc.badges || (tc.badges > 0 && (got[0].LevelName != "N5" || got[0].Derived != tc.derived)) {
+			t.Errorf("badges of %s = %+v (err %v), want %d (derived %v)", name, got, err, tc.badges, tc.derived)
+		}
 	}
 }
 

@@ -1,8 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
-	import type { PluginInfo } from '$lib/api/types';
-	import { create, workspaces } from '$lib/workspaces';
+	import type { PluginInfo, Workspace } from '$lib/api/types';
+	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
+	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import { languageLabel } from '$lib/languages';
+	import { loadPluginStates } from '$lib/plugins/states';
+	import { rename, workspaces } from '$lib/workspaces';
 
 	interface PluginRow {
 		id: string;
@@ -14,9 +18,11 @@
 		error: string;
 	}
 
-	let language = $state('');
-	let creating = $state(false);
-	let createError = $state('');
+	// The workspace being renamed (one at a time) and its draft name.
+	let renamingId = $state<number | null>(null);
+	let renameDraft = $state('');
+	let renameSaving = $state(false);
+	let renameError = $state('');
 
 	let plugins = $state<PluginRow[]>([]);
 	let pluginsLoading = $state(true);
@@ -56,21 +62,38 @@
 
 	onMount(loadPlugins);
 
-	async function addWorkspace(event: SubmitEvent): Promise<void> {
-		event.preventDefault();
-		const code = language.trim().toLowerCase();
-		if (!code || creating) return;
+	function startRename(workspace: Workspace): void {
+		renamingId = workspace.id;
+		renameDraft = workspace.name;
+		renameError = '';
+	}
 
-		creating = true;
-		createError = '';
+	function cancelRename(): void {
+		renamingId = null;
+		renameError = '';
+	}
+
+	async function saveRename(event: SubmitEvent, workspace: Workspace): Promise<void> {
+		event.preventDefault();
+		if (renameSaving) return;
+		renameSaving = true;
+		renameError = '';
 		try {
-			await create(code);
-			language = '';
+			await rename(workspace.id, renameDraft);
+			renamingId = null;
 		} catch (err) {
-			createError = message(err, 'Could not create workspace.');
+			renameError =
+				err instanceof ApiError && err.status === 409
+					? 'Another workspace of this language already has that name.'
+					: message(err, 'Could not rename the workspace.');
 		} finally {
-			creating = false;
+			renameSaving = false;
 		}
+	}
+
+	function focusOnMount(node: HTMLInputElement): void {
+		node.focus();
+		node.select();
 	}
 
 	async function savePlugin(row: PluginRow): Promise<void> {
@@ -85,6 +108,8 @@
 				body: { enabled: row.enabled, order: row.order }
 			});
 			row.saved = true;
+			// The shell nav and /p/<plugin> read the shared store.
+			void loadPluginStates();
 		} catch (err) {
 			row.error = message(err, 'Could not save plugin state.');
 		} finally {
@@ -98,7 +123,11 @@
 
 	<section>
 		<h2>Workspaces</h2>
-		<p class="hint">One workspace per language. The switcher in the header changes the active one.</p>
+		<p class="hint">
+			Each workspace keeps its own cards, library and progress. You can have several of the same
+			language; give them names to tell them apart. The switcher in the header changes the active
+			one.
+		</p>
 
 		{#if $workspaces.list.length === 0}
 			<p>No workspaces yet.</p>
@@ -106,42 +135,65 @@
 			<ul class="workspaces">
 				{#each $workspaces.list as workspace (workspace.id)}
 					<li>
-						<span class="language">{workspace.language}</span>
-						<code>#{workspace.id}</code>
-						{#if $workspaces.current?.id === workspace.id}
-							<span class="current">current</span>
+						{#if renamingId === workspace.id}
+							<form class="rename" onsubmit={(event) => saveRename(event, workspace)}>
+								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
+								<label class="sr-only" for="rename-{workspace.id}">Workspace name</label>
+								<input
+									id="rename-{workspace.id}"
+									bind:value={renameDraft}
+									maxlength="40"
+									autocomplete="off"
+									placeholder="No name"
+									use:focusOnMount
+									onkeydown={(event) => {
+										if (event.key === 'Escape') {
+											event.preventDefault();
+											cancelRename();
+										}
+									}}
+								/>
+								<!-- Not disabled while saving, so keyboard focus stays put. -->
+								<button type="submit" aria-busy={renameSaving}>
+									{renameSaving ? 'Saving…' : 'Save'}
+								</button>
+								<button type="button" class="secondary" onclick={cancelRename}>Cancel</button>
+							</form>
+							{#if renameError}
+								<p class="error" role="alert">{renameError}</p>
+							{/if}
+						{:else}
+							<div class="row">
+								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
+								{#if $workspaces.current?.id === workspace.id}
+									<span class="current">current</span>
+								{/if}
+								<button
+									type="button"
+									class="secondary rename-button"
+									onclick={() => startRename(workspace)}
+									aria-label="Rename {languageLabel(workspace.language)}{workspace.name
+										? ` (${workspace.name})`
+										: ''} workspace"
+								>
+									Rename
+								</button>
+							</div>
 						{/if}
 					</li>
 				{/each}
 			</ul>
 		{/if}
 
-		<form class="create" onsubmit={addWorkspace}>
-			<label>
-				Language code
-				<input
-					bind:value={language}
-					placeholder="zh, ja, es"
-					maxlength="16"
-					autocomplete="off"
-					required
-				/>
-			</label>
-			<button type="submit" disabled={creating}>
-				{creating ? 'Creating…' : 'Create workspace'}
-			</button>
-		</form>
-
-		{#if createError}
-			<p class="error" role="alert">{createError}</p>
-		{/if}
+		<h3>New workspace</h3>
+		<WorkspaceCreateForm idPrefix="settings-new" />
 	</section>
 
 	<section>
 		<h2>Plugins</h2>
 		<p class="hint">
-			The server registers built-in widgets at startup. The flashcards plugin includes the
-			study heatmap; enabled plugins appear on the home page in ascending order.
+			The server registers built-in widgets at startup. Enabled plugins appear on the home page
+			below the activity heatmap, in ascending order.
 		</p>
 
 		{#if pluginsLoading}
@@ -224,14 +276,46 @@
 		padding: 0.6rem 0.75rem;
 	}
 
-	.workspaces li {
+	.workspaces .row,
+	.rename {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.5rem 0.75rem;
 	}
 
-	.language {
-		font-weight: 600;
+	.rename-button {
+		margin-left: auto;
+	}
+
+	.rename input {
+		flex: 1 1 10rem;
+		min-width: 0;
+		font: inherit;
+		padding: 0.35rem 0.5rem;
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border-radius: 0.4rem;
+		background: transparent;
+		color: inherit;
+	}
+
+	.settings button.secondary {
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		background: transparent;
+		color: inherit;
+		font-weight: 500;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	.current {
@@ -266,26 +350,11 @@
 		width: 4.5rem;
 	}
 
-	.create {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: end;
-		gap: 0.75rem;
-	}
-
-	.create label {
-		display: grid;
-		gap: 0.35rem;
-		font-weight: 600;
-	}
-
-	.create input,
 	.plugin-controls input,
 	.settings button {
 		font: inherit;
 	}
 
-	.create input,
 	.plugin-controls input {
 		padding: 0.4rem 0.55rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);

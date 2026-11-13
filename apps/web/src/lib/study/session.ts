@@ -4,6 +4,8 @@
 // sessionStorage rather than the server: no sync, no stale setup on the
 // next device.
 
+import { CARD_KINDS } from './types';
+
 /**
  * How a session picks its cards: from user decks, or from one level of a
  * level scheme. The unused mode's fields are kept (and ignored) so a
@@ -29,16 +31,13 @@ export interface StudySessionConfig {
 /** sessionStorage key of the setup. */
 export const SESSION_CONFIG_KEY = 'qinqin.study.session';
 
-/** Round 1 implements vocab only; the rest are reserved kinds. */
+/** Every card kind a session can include. */
 export const CARD_TYPES = [
 	{ id: 'vocab', label: 'Vocab', available: true },
-	{ id: 'sentence', label: 'Sentence', available: false },
-	{ id: 'writing', label: 'Writing', available: false },
-	{ id: 'tone', label: 'Tone', available: false }
+	{ id: 'sentence', label: 'Word Salad', available: true },
+	{ id: 'writing', label: 'Writing', available: true },
+	{ id: 'tone', label: 'Tone', available: true }
 ] as const;
-
-/** The one card kind a session can actually study today. */
-export const IMPLEMENTED_CARD_TYPE = 'vocab';
 
 /** The documented starting point: General deck, 20 new, 100 reviews. */
 export const DEFAULT_CONFIG: StudySessionConfig = {
@@ -48,7 +47,7 @@ export const DEFAULT_CONFIG: StudySessionConfig = {
 	deckIds: ['general'],
 	newLimit: 20,
 	reviewLimit: 100,
-	cardTypes: [IMPLEMENTED_CARD_TYPE]
+	cardTypes: ['vocab']
 };
 
 // The server and the scheduler both treat limits as small counts; a
@@ -77,11 +76,11 @@ function isNonEmptyName(value: unknown): value is string {
 
 /**
  * validateConfig returns one message per problem, empty when the setup
- * can start a session. Only vocab is implemented, so every session
- * must include it; the reserved kinds may be present but cannot replace
- * it. The active mode decides which source fields matter: decks mode
- * requires a deck and ignores scheme/level, while levels mode requires
- * a scheme and a level and ignores decks.
+ * can start a session. At least one card type must be selected, every
+ * selected type must be a known kind, and vocab is not mandatory. The
+ * active mode decides which source fields matter: decks mode requires a
+ * deck and ignores scheme/level, while levels mode requires a scheme and
+ * a level and ignores decks.
  */
 export function validateConfig(config: StudySessionConfig): string[] {
 	const errors: string[] = [];
@@ -114,9 +113,10 @@ export function validateConfig(config: StudySessionConfig): string[] {
 
 	if (
 		!Array.isArray(config.cardTypes) ||
-		!config.cardTypes.includes(IMPLEMENTED_CARD_TYPE)
+		config.cardTypes.length === 0 ||
+		!config.cardTypes.every((type) => (CARD_KINDS as readonly string[]).includes(type))
 	) {
-		errors.push('Vocab cards must be included.');
+		errors.push('Select at least one card type.');
 	}
 
 	return errors;

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
 	"qinqin/internal/plugins"
@@ -33,6 +33,7 @@ func TestPullFreshCursorOmitsTombstones(t *testing.T) {
 	sqlDB := newDB(t)
 	alice := newUser(t, sqlDB, "alice")
 	seedWorld(t, sqlDB)
+	backdate(t, sqlDB) // only the uninstall may count as changed
 	var dictID int64
 	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'mkgloss'`).Scan(&dictID); err != nil {
 		t.Fatalf("find dictionary: %v", err)
@@ -51,6 +52,11 @@ func TestPullFreshCursorOmitsTombstones(t *testing.T) {
 	if len(incremental.Senses) == 0 {
 		t.Error("incremental pull shipped no tombstones")
 	}
+	for _, s := range incremental.Senses {
+		if s.DeletedAt == nil {
+			t.Errorf("incremental sense %d is live, want only the uninstall tombstones", s.ID)
+		}
+	}
 }
 
 // The delta carries the caller's own overlays (and only theirs), so an
@@ -60,7 +66,7 @@ func TestPullShipsOwnOverlays(t *testing.T) {
 	ctx := context.Background()
 	alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 	seedWorld(t, sqlDB)
-	hao, err := entries.Store{DB: sqlDB}.GetByWritten(ctx, "好", "character", "zh")
+	hao, err := lexicon.Store{DB: sqlDB}.Best(ctx, "zh", "character", "好")
 	if err != nil {
 		t.Fatalf("get 好: %v", err)
 	}

@@ -116,7 +116,8 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "invalid pack", http.StatusBadRequest)
 		return
 	}
-	if _, err := dict.Import(r.Context(), s.db, pack); err != nil {
+	// One transaction: a failed import leaves nothing behind.
+	if _, err := dict.ImportLexicon(r.Context(), s.db, &pack); err != nil {
 		if errors.Is(err, dict.ErrInvalidPack) {
 			http.Error(w, "invalid pack", http.StatusBadRequest)
 			return

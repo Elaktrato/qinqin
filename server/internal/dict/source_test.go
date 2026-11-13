@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -12,8 +13,7 @@ import (
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
-	"qinqin/internal/model"
+	"qinqin/internal/lexicon"
 )
 
 // gzipBytes returns data compressed with gzip.
@@ -60,7 +60,7 @@ func compressedManifest(format, language string) dict.Manifest {
 }
 
 // readingValue returns the value of the first reading of the given type.
-func readingValue(e *model.Entry, typ string) string {
+func readingValue(e lexicon.Entry, typ string) string {
 	for _, r := range e.Readings {
 		if r.Type == typ {
 			return r.Value
@@ -69,37 +69,57 @@ func readingValue(e *model.Entry, typ string) string {
 	return ""
 }
 
-// TestCedictImportReadsGz imports the cedict fixture from dictionary.txt.gz
-// (its upstream distribution form) and checks entries, senses, and the
-// derived bopomofo reading survive the compressed path.
-func TestCedictImportReadsGz(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-
-	raw, err := os.ReadFile("testdata/cedict-sample.txt")
-	if err != nil {
-		t.Fatalf("read fixture: %v", err)
-	}
-	dir := writeCompressedPack(t, compressedManifest("cedict", "zh"), "dictionary.txt.gz", gzipBytes(t, raw))
-
+// importDir loads the pack in dir and imports it into the lexicon.
+func importDir(t *testing.T, sqlDB *sql.DB, dir string) dict.Result {
+	t.Helper()
 	pack, err := dict.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	res, err := dict.Import(ctx, sqlDB, pack)
+	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
 	if err != nil {
-		t.Fatalf("Import(cedict gz): %v", err)
+		t.Fatalf("ImportLexicon(%s): %v", pack.Manifest.Format, err)
 	}
-	if res.Entries != 5 || res.Senses != 10 {
-		t.Fatalf("result = %d entries, %d senses; want 5 entries, 10 senses", res.Entries, res.Senses)
-	}
+	return res
+}
 
-	st := entries.Store{DB: sqlDB}
-	hello, err := st.GetByWritten(ctx, "你好", "word", "zh")
+// byForm returns the active entry of kind with the written form, or
+// nil.
+func byForm(t *testing.T, sqlDB *sql.DB, language, kind, form string) *lexicon.Entry {
+	t.Helper()
+	found, err := lexicon.Store{DB: sqlDB}.ByForm(context.Background(), language, []string{form})
 	if err != nil {
-		t.Fatalf("GetByWritten(你好): %v", err)
+		t.Fatalf("ByForm(%s): %v", form, err)
 	}
-	if got := readingValue(hello, "bopomofo"); got != "ㄋㄧˇ ㄏㄠˇ" {
+	for _, e := range found[form] {
+		if e.Kind == kind {
+			return &e
+		}
+	}
+	return nil
+}
+
+// TestCedictImportReadsGz imports the cedict fixture from dictionary.txt.gz
+// (its upstream distribution form) and checks the result matches the
+// plain file's and the derived bopomofo reading survives the compressed
+// path.
+func TestCedictImportReadsGz(t *testing.T) {
+	raw, err := os.ReadFile("testdata/cedict-sample.txt")
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	plain := importDir(t, newDB(t), writeCompressedPack(t, compressedManifest("cedict", "zh"), "dictionary.txt", raw))
+
+	sqlDB := newDB(t)
+	res := importDir(t, sqlDB, writeCompressedPack(t, compressedManifest("cedict", "zh"), "dictionary.txt.gz", gzipBytes(t, raw)))
+	if res != plain || res.Entries == 0 {
+		t.Fatalf("gz result = %+v, want the plain file's %+v", res, plain)
+	}
+	hello := byForm(t, sqlDB, "zh", "word", "你好")
+	if hello == nil {
+		t.Fatal("你好 not imported")
+	}
+	if got := readingValue(*hello, "bopomofo"); got != "ㄋㄧˇ ㄏㄠˇ" {
 		t.Errorf("bopomofo reading = %q, want %q", got, "ㄋㄧˇ ㄏㄠˇ")
 	}
 }
@@ -108,7 +128,6 @@ func TestCedictImportReadsGz(t *testing.T) {
 // the upstream member layout: radicals and definitions in the readings
 // sources, variant mappings in the variants file.
 func TestUnihanImportReadsZip(t *testing.T) {
-	ctx := context.Background()
 	sqlDB := newDB(t)
 
 	var buf bytes.Buffer
@@ -132,51 +151,19 @@ func TestUnihanImportReadsZip(t *testing.T) {
 	if err := zw.Close(); err != nil {
 		t.Fatalf("zip close: %v", err)
 	}
+	importDir(t, sqlDB, writeCompressedPack(t, compressedManifest("unihan", "zh"), "Unihan.zip", buf.Bytes()))
 
-	dir := writeCompressedPack(t, compressedManifest("unihan", "zh"), "Unihan.zip", buf.Bytes())
-	pack, err := dict.LoadPack(dir)
-	if err != nil {
-		t.Fatalf("LoadPack: %v", err)
-	}
-	if _, err := dict.Import(ctx, sqlDB, pack); err != nil {
-		t.Fatalf("Import(unihan zip): %v", err)
+	fu := lexByKey(t, sqlDB, "zh", "character", "复")
+	if got := lexLinks(t, sqlDB, fu, lexicon.LinkVariant); !slices.Equal(got, []string{"復", "複"}) {
+		t.Errorf("variants of 复 = %v, want [復 複]", got)
 	}
 
-	st := entries.Store{DB: sqlDB}
-	fu, err := st.GetByWritten(ctx, "复", "character", "zh")
-	if err != nil {
-		t.Fatalf("GetByWritten(复): %v", err)
+	hao := lexByKey(t, sqlDB, "zh", "character", "好")
+	if got := lexLinks(t, sqlDB, hao, lexicon.LinkRadical); !slices.Equal(got, []string{"女"}) {
+		t.Errorf("radical of 好 = %v, want [女]", got)
 	}
-	variants, err := st.Variants(ctx, fu.ID)
-	if err != nil {
-		t.Fatalf("Variants(复): %v", err)
-	}
-	var written []string
-	for _, v := range variants {
-		written = append(written, v.Written)
-	}
-	slices.Sort(written)
-	if !slices.Equal(written, []string{"復", "複"}) {
-		t.Errorf("variants of 复 = %v, want [復 複]", written)
-	}
-
-	hao, err := st.GetByWritten(ctx, "好", "character", "zh")
-	if err != nil {
-		t.Fatalf("GetByWritten(好): %v", err)
-	}
-	if hao.RadicalID == nil {
-		t.Fatalf("好 has no radical link")
-	}
-	radical, err := st.GetByID(ctx, *hao.RadicalID)
-	if err != nil {
-		t.Fatalf("GetByID(radical): %v", err)
-	}
-	if radical.Written != "女" {
-		t.Errorf("radical of 好 = %q, want 女", radical.Written)
-	}
-	glosses := activeGlosses(t, sqlDB, dictionaryID(t, sqlDB, "unihan"), hao.ID)
-	if !slices.Contains(glosses, "good, excellent, fine; well") {
-		t.Errorf("unihan glosses of 好 = %v, want the kDefinition", glosses)
+	if got := senseGlosses(t, sqlDB, hao); !slices.Contains(got, "unihan: good, excellent, fine; well") {
+		t.Errorf("unihan glosses of 好 = %v, want the kDefinition", got)
 	}
 }
 
@@ -185,29 +172,18 @@ func TestUnihanImportReadsZip(t *testing.T) {
 // wins. fetch-seeds.sh removes legacy plain payloads so a refreshed pack
 // cannot silently keep importing the old data.
 func TestCedictPlainFileWinsOverGz(t *testing.T) {
-	ctx := context.Background()
 	sqlDB := newDB(t)
-
 	plain, err := os.ReadFile("testdata/cedict-sample.txt")
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
 	dir := writeCompressedPack(t, compressedManifest("cedict", "zh"), "dictionary.txt.gz", gzipBytes(t, plain))
-	mustWriteFile(t, filepath.Join(dir, "dictionary.txt"),
-		"舊 旧 [jiu4] /old/\n")
-
-	pack, err := dict.LoadPack(dir)
-	if err != nil {
-		t.Fatalf("LoadPack: %v", err)
+	mustWriteFile(t, filepath.Join(dir, "dictionary.txt"), "舊 旧 [jiu4] /old/\n")
+	importDir(t, sqlDB, dir)
+	if byForm(t, sqlDB, "zh", "character", "旧") == nil {
+		t.Fatal("plain dictionary.txt was not used: 旧 missing")
 	}
-	if _, err := dict.Import(ctx, sqlDB, pack); err != nil {
-		t.Fatalf("Import: %v", err)
-	}
-	st := entries.Store{DB: sqlDB}
-	if _, err := st.GetByWritten(ctx, "旧", "character", "zh"); err != nil {
-		t.Fatalf("plain dictionary.txt was not used: GetByWritten(旧): %v", err)
-	}
-	if _, err := st.GetByWritten(ctx, "你好", "word", "zh"); err == nil {
+	if byForm(t, sqlDB, "zh", "word", "你好") != nil {
 		t.Errorf("gz payload was imported; plain file should win")
 	}
 }
@@ -215,31 +191,20 @@ func TestCedictPlainFileWinsOverGz(t *testing.T) {
 // TestJMdictImportReadsGz imports the JMdict fixture from jmdict.xml.gz and
 // checks kana plus derived romaji readings.
 func TestJMdictImportReadsGz(t *testing.T) {
-	ctx := context.Background()
 	sqlDB := newDB(t)
-
 	raw, err := os.ReadFile("testdata/jmdict-sample.xml")
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
-	dir := writeCompressedPack(t, compressedManifest("jmdict", "ja"), "jmdict.xml.gz", gzipBytes(t, raw))
-	pack, err := dict.LoadPack(dir)
-	if err != nil {
-		t.Fatalf("LoadPack: %v", err)
+	importDir(t, sqlDB, writeCompressedPack(t, compressedManifest("jmdict", "ja"), "jmdict.xml.gz", gzipBytes(t, raw)))
+	gakkou := byForm(t, sqlDB, "ja", "word", "学校")
+	if gakkou == nil {
+		t.Fatal("学校 not imported")
 	}
-	if _, err := dict.Import(ctx, sqlDB, pack); err != nil {
-		t.Fatalf("Import(jmdict gz): %v", err)
-	}
-
-	st := entries.Store{DB: sqlDB}
-	gakkou, err := st.GetByWritten(ctx, "学校", "word", "ja")
-	if err != nil {
-		t.Fatalf("GetByWritten(学校): %v", err)
-	}
-	if got := readingValue(gakkou, "kana"); got != "がっこう" {
+	if got := readingValue(*gakkou, "kana"); got != "がっこう" {
 		t.Errorf("kana reading = %q, want がっこう", got)
 	}
-	if got := readingValue(gakkou, "romaji"); got != "gakkou" {
+	if got := readingValue(*gakkou, "romaji"); got != "gakkou" {
 		t.Errorf("romaji reading = %q, want gakkou", got)
 	}
 }
@@ -247,28 +212,17 @@ func TestJMdictImportReadsGz(t *testing.T) {
 // TestKanjidic2ImportReadsGz imports the KANJIDIC2 fixture from
 // kanjidic2.xml.gz and checks on/kun readings arrive.
 func TestKanjidic2ImportReadsGz(t *testing.T) {
-	ctx := context.Background()
 	sqlDB := newDB(t)
-
 	raw, err := os.ReadFile("testdata/kanjidic2-sample.xml")
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
-	dir := writeCompressedPack(t, compressedManifest("kanjidic2", "ja"), "kanjidic2.xml.gz", gzipBytes(t, raw))
-	pack, err := dict.LoadPack(dir)
-	if err != nil {
-		t.Fatalf("LoadPack: %v", err)
+	importDir(t, sqlDB, writeCompressedPack(t, compressedManifest("kanjidic2", "ja"), "kanjidic2.xml.gz", gzipBytes(t, raw)))
+	hi := byForm(t, sqlDB, "ja", "character", "日")
+	if hi == nil {
+		t.Fatal("日 not imported")
 	}
-	if _, err := dict.Import(ctx, sqlDB, pack); err != nil {
-		t.Fatalf("Import(kanjidic2 gz): %v", err)
-	}
-
-	st := entries.Store{DB: sqlDB}
-	hi, err := st.GetByWritten(ctx, "日", "character", "ja")
-	if err != nil {
-		t.Fatalf("GetByWritten(日): %v", err)
-	}
-	if readingValue(hi, "on") == "" || readingValue(hi, "kun") == "" {
+	if readingValue(*hi, "on") == "" || readingValue(*hi, "kun") == "" {
 		t.Errorf("readings of 日 = %+v, want on and kun readings", hi.Readings)
 	}
 }

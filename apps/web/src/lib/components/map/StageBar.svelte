@@ -1,0 +1,79 @@
+<script lang="ts">
+	import type { Stage } from '$lib/study/charGroups';
+	import { STAGE_INFO, formatCount, stageSegments } from '$lib/study/mapGrid';
+
+	let {
+		byStage,
+		size = 'small',
+		decorative = false
+	}: {
+		byStage: Record<Stage, number>;
+		size?: 'small' | 'large';
+		/** Hidden from assistive technology when the numbers are said elsewhere. */
+		decorative?: boolean;
+	} = $props();
+
+	const segments = $derived(stageSegments(byStage));
+	const description = $derived(
+		STAGE_INFO.map(({ stage, label }) => `${label} ${formatCount(byStage[stage])}`).join(', ')
+	);
+</script>
+
+<!-- A stacked bar of the five stages; the numbers are in the label and the legend. -->
+<span
+	class="bar {size}"
+	role={decorative ? undefined : 'img'}
+	aria-label={decorative ? undefined : description}
+	aria-hidden={decorative ? 'true' : undefined}
+>
+	{#each segments as segment (segment.stage)}
+		<span class="seg st-{segment.stage}" style:flex-grow={segment.share}></span>
+	{/each}
+</span>
+
+<style>
+	.bar {
+		display: flex;
+		overflow: hidden;
+		border-radius: 999px;
+		background: var(--st-unknown-bg);
+		border: 1px solid var(--st-edge);
+	}
+
+	.small {
+		width: 6rem;
+		height: 0.5rem;
+	}
+
+	.large {
+		width: 100%;
+		height: 0.85rem;
+	}
+
+	.seg {
+		flex-basis: 0;
+		/* A stage with one character in 13k still shows as a sliver. */
+		min-width: 3px;
+	}
+
+	.st-unknown {
+		background: var(--st-unknown-bar);
+		min-width: 0;
+	}
+
+	.st-fresh {
+		background: var(--st-fresh-bar);
+	}
+
+	.st-learning {
+		background: var(--st-learning-bar);
+	}
+
+	.st-mature {
+		background: var(--st-mature-bar);
+	}
+
+	.st-learned {
+		background: var(--st-learned-bar);
+	}
+</style>

@@ -1,12 +1,16 @@
 <script lang="ts">
+	import { parseReview } from '$lib/study/reviewParse';
 	import { goto } from '$app/navigation';
 	import { ApiError, api } from '$lib/api/client';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
+	import { usesHan } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 	import type { StudyEvent } from '$lib/events';
+	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
+	import { loadIneligible } from '$lib/study/ineligible';
+	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
-	import { buildQueue } from '$lib/study/scheduler';
 	import {
 		CARD_TYPES,
 		loadConfig,
@@ -23,11 +27,27 @@
 		loadStudyData,
 		renameDeck
 	} from '$lib/study/store';
-	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
+	import {
+		CARD_KINDS,
+		type Deck,
+		type ReviewEvent,
+		type StudyCard,
+		type StudyCardKind
+	} from '$lib/study/types';
 
 	// Counts only need to distinguish "none" from "some"; the actual
 	// session limits are applied by the session page.
 	const COUNT_CAP = 999;
+
+	// One line per card type, shown next to its checkbox.
+	const TYPE_INFO: Record<StudyCardKind, string> = {
+		vocab: 'See the word, recall its meaning, then reveal the answer.',
+		sentence:
+			'Rebuild an example sentence from shuffled tiles; words without sentences are skipped.',
+		writing:
+			'Draw each Han character stroke by stroke; words without Han characters are skipped.',
+		tone: 'Swipe or type the tone of every syllable (Chinese only).'
+	};
 
 	// Restore this tab's setup before the first render: on an SPA the
 	// component never runs during SSR, so sessionStorage is available.
@@ -83,25 +103,6 @@
 	}
 
 	/**
-	 * asReview narrows a stored event to a review. The server only
-	 * validates id and timestamp, so the grade is checked again by the
-	 * scheduler; here it is enough that the payload has a card and a
-	 * numeric grade.
-	 */
-	function asReview(event: StudyEvent, workspaceId: number): ReviewEvent | null {
-		if (event.type !== 'review' || event.workspaceId !== workspaceId) return null;
-		const payload = event.payload;
-		if (typeof payload !== 'object' || payload === null) return null;
-		const { cardId, grade } = payload as Record<string, unknown>;
-		if (typeof cardId !== 'string' || typeof grade !== 'number') return null;
-		return {
-			...event,
-			type: 'review',
-			payload: { cardId, mode: 'vocab', grade: grade as ReviewGrade }
-		};
-	}
-
-	/**
 	 * keepKnownDecks drops decks deleted since the setup was saved (or
 	 * belonging to another workspace). General always exists, so an empty
 	 * selection falls back to it instead of an invalid setup.
@@ -127,6 +128,12 @@
 		schemes = [];
 		workspaceLanguage = language;
 		activeWorkspaceId = workspaceId;
+
+		// A tab without its own setup starts from the types last started in
+		// this workspace (any tab), so opted-in types do not reset to vocab.
+		if (workspaceId !== null && !hasTabSetup()) {
+			cardTypes = [...(loadRememberedTypes(workspaceId) ?? saved.cardTypes)];
+		}
 		schemesLoaded = false;
 		schemeError = '';
 
@@ -154,7 +161,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = events
-				.map((event) => asReview(event, workspaceId))
+				.map((event) => (event.workspaceId === workspaceId ? parseReview(event) : null))
 				.filter((event): event is ReviewEvent => event !== null);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
 		} catch (err) {
@@ -281,33 +288,57 @@
 		void loadLevelEntries(selection.schemeId, selection.levelName);
 	});
 
+	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
+	// hidden type stays in the saved setup (switching back restores it)
+	// but never counts or reaches a session.
+	const visibleTypes = $derived(
+		CARD_TYPES.filter((type) => type.id !== 'tone' || isChinese(workspaceLanguage ?? ''))
+	);
+
+	const selectedKinds = $derived(
+		CARD_KINDS.filter(
+			(kind) => cardTypes.includes(kind) && visibleTypes.some((type) => type.id === kind)
+		)
+	);
+
 	// Due and new are counted separately so the setup shows what a
-	// session would actually contain today. Cards reviewed but not due
-	// yet belong to neither bucket.
-	const deckCounts = $derived.by(() => {
-		if (selectedDeckIds.length === 0) return { due: 0, fresh: 0 };
-		const now = new Date();
-		const due = buildQueue({
+	// session would actually contain today, with the selected types and
+	// the companion cards a deck session would plan. Cards reviewed but
+	// not due yet belong to neither bucket.
+	const deckPlan = $derived.by(() => {
+		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0 } };
+		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
+		const items = deckSessionItems({
 			cards,
 			reviews,
 			deckIds: selectedDeckIds,
-			newLimit: 0,
-			reviewLimit: COUNT_CAP,
-			now
-		}).length;
-		const fresh = buildQueue({
-			cards,
-			reviews,
-			deckIds: selectedDeckIds,
+			kinds: selectedKinds,
 			newLimit: COUNT_CAP,
-			reviewLimit: 0,
-			now
-		}).length;
-		return { due, fresh };
+			reviewLimit: COUNT_CAP,
+			now: new Date(),
+			language: workspaceLanguage ?? '',
+			// Words this tab already found unsuitable are not counted.
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
+		});
+		return sessionCounts(items, reviews);
 	});
 
+	const deckCounts = $derived({ due: deckPlan.due, fresh: deckPlan.fresh });
+
+	// Planned companions are candidates, not promises: whether a word has
+	// a sentence, stroke data or a clean pinyin reading is only known when
+	// it comes up, and unsuitable words are skipped then.
+	const plannedCompanions = $derived(
+		deckPlan.byKind.sentence + deckPlan.byKind.writing + deckPlan.byKind.tone
+	);
+
+	// Level sessions are vocab-only: without vocab selected they are empty.
 	const levelCounts = $derived.by(() => {
-		if (levelSelection === null || levelEntries.length === 0) {
+		if (
+			levelSelection === null ||
+			levelEntries.length === 0 ||
+			!selectedKinds.includes('vocab')
+		) {
 			return { due: 0, fresh: 0 };
 		}
 		const now = new Date();
@@ -330,6 +361,23 @@
 		return { due, fresh };
 	});
 
+	// Selected types that have nothing to study: a warning, not a block,
+	// as long as another selected type has cards.
+	const typeWarnings = $derived.by((): string[] => {
+		if (mode === 'levels') {
+			return selectedKinds.some((kind) => kind !== 'vocab')
+				? ['Level sessions study vocab cards only; the other types apply to deck sessions.']
+				: [];
+		}
+		if (selectedCards.length === 0) return [];
+		return selectedKinds
+			.filter((kind) => deckPlan.byKind[kind] === 0)
+			.map(
+				(kind) =>
+					`${CARD_TYPES.find((type) => type.id === kind)?.label ?? kind}: nothing to study in the selected decks right now.`
+			);
+	});
+
 	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
 	const levelWordCount = $derived(
 		levelEntries.filter((entry) => entry.kind === 'word').length
@@ -338,6 +386,7 @@
 	const guidance = $derived.by(() => {
 		if (noWorkspace) return 'Choose a workspace in the header to set up a study session.';
 		if (loading) return 'Loading your study data…';
+		if (selectedKinds.length === 0) return 'Select at least one card type.';
 
 		if (mode === 'levels') {
 			if (!schemesLoaded) return 'Loading level schemes…';
@@ -351,6 +400,9 @@
 			if (levelEntriesError) return levelEntriesError;
 			if (levelEntriesLoading) return 'Loading this level…';
 			if (levelEntries.length === 0) return 'This level has no words yet.';
+			if (!selectedKinds.includes('vocab')) {
+				return 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
+			}
 			if (counts.due + counts.fresh === 0) {
 				return 'Nothing is due and no new cards are left in this level.';
 			}
@@ -481,7 +533,9 @@
 			reviewLimit,
 			cardTypes: [...cardTypes]
 		};
-		errors = validateConfig(config);
+		// Validate what the session will actually use: a type hidden in
+		// this workspace does not count towards "at least one".
+		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });
 		// A saved scheme from another workspace language still has a
 		// positive id and a level name, so validation alone cannot catch
 		// it; the resolved selection can.
@@ -492,6 +546,7 @@
 
 		starting = true;
 		saveConfig(config);
+		if (activeWorkspaceId !== null) rememberCardTypes(activeWorkspaceId, config.cardTypes);
 		void goto('/study/session');
 	}
 </script>
@@ -499,7 +554,9 @@
 <main class="setup">
 	<h1>Study</h1>
 	<p class="hint">Choose what this session should draw from.</p>
-	<p class="hint"><a href="/study/map">View the mastery map →</a></p>
+	{#if $workspaces.current && usesHan($workspaces.current.language)}
+		<p class="hint"><a href="/study/map">View the mastery map →</a></p>
+	{/if}
 
 	{#if loadError}
 		<p class="error" role="alert">{loadError}</p>
@@ -676,20 +733,19 @@
 		<section aria-labelledby="types-heading">
 			<h2 id="types-heading">Card types</h2>
 
+			<p class="hint">Pick at least one. Sentence, writing and tone cards are made from the words in your decks the first time you study them.</p>
 			<ul class="types">
-				{#each CARD_TYPES as type (type.id)}
+				{#each visibleTypes as type (type.id)}
 					<li>
-						<label class="inline" class:disabled={!type.available}>
+						<label class="type-choice">
 							<input
 								type="checkbox"
 								checked={cardTypes.includes(type.id)}
-								disabled={!type.available}
+								aria-describedby={`type-${type.id}-info`}
 								onchange={() => toggleCardType(type.id)}
 							/>
-							{type.label}
-							{#if !type.available}
-								<span class="tag">soon</span>
-							{/if}
+							<span class="type-label">{type.label}</span>
+							<span class="type-info" id={`type-${type.id}-info`}>{TYPE_INFO[type.id]}</span>
 						</label>
 					</li>
 				{/each}
@@ -720,6 +776,20 @@
 					<strong>{counts.fresh}</strong>
 					new
 				</p>
+				{#if plannedCompanions > 0}
+					<p class="hint">
+						Up to {plannedCompanions} of the new cards are Word Salad, writing or tone cards made the first time
+						you study them; words without a sentence, stroke data or pinyin are skipped then.
+					</p>
+				{/if}
+			{/if}
+
+			{#if typeWarnings.length > 0}
+				<ul class="warnings" aria-label="Card type warnings">
+					{#each typeWarnings as warning (warning)}
+						<li>{warning}</li>
+					{/each}
+				</ul>
 			{/if}
 
 			{#if errors.length > 0}
@@ -787,8 +857,36 @@
 		gap: 0.5rem;
 	}
 
-	.types {
-		grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+	.type-choice {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		column-gap: 0.55rem;
+		row-gap: 0.1rem;
+		align-items: center;
+		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		border-radius: 0.4rem;
+		padding: 0.55rem 0.75rem;
+		cursor: pointer;
+	}
+
+	.type-choice:focus-within {
+		border-color: #0b6bcb;
+	}
+
+	.type-label {
+		font-weight: 600;
+	}
+
+	.type-info {
+		grid-column: 2;
+		font-size: 0.9rem;
+		opacity: 0.8;
+	}
+
+	.warnings {
+		margin: 0 0 1rem;
+		padding-left: 1.25rem;
+		color: #8a5a00;
 	}
 
 	.deck {
