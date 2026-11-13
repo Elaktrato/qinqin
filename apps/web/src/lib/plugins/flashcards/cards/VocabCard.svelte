@@ -1,0 +1,153 @@
+<script lang="ts">
+	import type { Entry } from '$lib/api/types';
+	import { formatReading } from '$lib/format';
+	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
+	import { buildVocabFaces } from '$lib/study/cardView';
+
+	interface Props {
+		item: FlowItem;
+		entry: Entry;
+		/** The runner owns the reveal so Space/Enter can trigger it too. */
+		revealed: boolean;
+		onDone: (result: CardResult) => void;
+	}
+
+	let { item, entry, revealed, onDone }: Props = $props();
+
+	// A sentence id that no longer resolves is passed as null so the card
+	// simply has no sentence block. A virtual level card previews the
+	// sentence it will be created with.
+	const faces = $derived.by(() => {
+		const sentence = item.virtual
+			? (entry.sentences[0] ?? null)
+			: item.card?.sentenceId === undefined
+				? null
+				: (entry.sentences.find((candidate) => candidate.id === item.card?.sentenceId) ?? null);
+		return buildVocabFaces(entry, sentence, entry.language);
+	});
+
+	function reveal(): void {
+		onDone({ suggested: null, meta: {} });
+	}
+</script>
+
+<p class="written">{faces.front.written}</p>
+
+{#if faces.front.readings.length > 0}
+	<ul class="readings" aria-label="Readings">
+		{#each faces.front.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
+			<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
+		{/each}
+	</ul>
+{/if}
+
+{#if faces.front.sentenceLines.length > 0}
+	<div class="sentences">
+		{#each faces.front.sentenceLines as line, lineIndex (lineIndex)}
+			<p class="sentence">{line}</p>
+		{/each}
+	</div>
+{/if}
+
+{#if revealed}
+	<section class="answer" aria-labelledby="answer-heading">
+		<h2 id="answer-heading">Answer</h2>
+		{#if faces.back.glosses.length > 0}
+			{#each faces.back.glosses as group (group.dictionaryName)}
+				<article class="dictionary">
+					<h3>{group.dictionaryName}</h3>
+					<ol class="glosses">
+						{#each group.glosses as gloss, glossIndex (glossIndex)}
+							<li>{gloss}</li>
+						{/each}
+					</ol>
+				</article>
+			{/each}
+		{:else}
+			<p class="hint">No glosses for this word yet.</p>
+		{/if}
+	</section>
+{:else}
+	<button type="button" class="reveal" onclick={reveal}>Show answer</button>
+{/if}
+
+<style>
+	.written {
+		margin: 0;
+		font-size: 2.75rem;
+		font-weight: 700;
+		line-height: 1.2;
+	}
+
+	.readings {
+		list-style: none;
+		margin: 0.5rem 0 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem 1rem;
+		opacity: 0.85;
+	}
+
+	.sentences {
+		margin-top: 1.25rem;
+		display: grid;
+		gap: 0.35rem;
+	}
+
+	.sentence {
+		margin: 0;
+		font-size: 1.15rem;
+	}
+
+	.hint {
+		opacity: 0.75;
+	}
+
+	.reveal {
+		margin-top: 1.5rem;
+		padding: 0.55rem 1rem;
+		border: 0;
+		border-radius: 0.4rem;
+		background: #0b6bcb;
+		color: #fff;
+		font: inherit;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.reveal:focus-visible {
+		outline: 2px solid #0b6bcb;
+		outline-offset: 2px;
+	}
+
+	.answer {
+		margin-top: 1.5rem;
+		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		padding-top: 1rem;
+	}
+
+	.answer h2 {
+		margin: 0 0 0.5rem;
+		font-size: 0.8rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		opacity: 0.7;
+	}
+
+	.dictionary + .dictionary {
+		margin-top: 0.9rem;
+	}
+
+	.dictionary h3 {
+		margin: 0;
+		font-size: 1rem;
+	}
+
+	.glosses {
+		margin: 0.35rem 0 0;
+		padding-left: 1.4rem;
+		display: grid;
+		gap: 0.25rem;
+	}
+</style>

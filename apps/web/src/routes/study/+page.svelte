@@ -6,8 +6,8 @@
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { workspaces } from '$lib/workspaces';
 	import type { StudyEvent } from '$lib/events';
+	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
-	import { buildQueue } from '$lib/study/scheduler';
 	import {
 		CARD_TYPES,
 		loadConfig,
@@ -24,11 +24,27 @@
 		loadStudyData,
 		renameDeck
 	} from '$lib/study/store';
-	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
+	import {
+		CARD_KINDS,
+		type Deck,
+		type ReviewEvent,
+		type StudyCard,
+		type StudyCardKind
+	} from '$lib/study/types';
 
 	// Counts only need to distinguish "none" from "some"; the actual
 	// session limits are applied by the session page.
 	const COUNT_CAP = 999;
+
+	// One line per card type, shown next to its checkbox.
+	const TYPE_INFO: Record<StudyCardKind, string> = {
+		vocab: 'See the word, recall its meaning, then reveal the answer.',
+		sentence:
+			'Word Salad: rebuild an example sentence from shuffled tiles; words without sentences are skipped.',
+		writing:
+			'Draw each Han character stroke by stroke; words without Han characters are skipped.',
+		tone: 'Swipe or type the tone of every syllable (Chinese only).'
+	};
 
 	// Restore this tab's setup before the first render: on an SPA the
 	// component never runs during SSR, so sessionStorage is available.
@@ -263,33 +279,48 @@
 		void loadLevelEntries(selection.schemeId, selection.levelName);
 	});
 
+	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
+	// hidden type stays in the saved setup (switching back restores it)
+	// but never counts or reaches a session.
+	const visibleTypes = $derived(
+		CARD_TYPES.filter((type) => type.id !== 'tone' || isChinese(workspaceLanguage ?? ''))
+	);
+
+	const selectedKinds = $derived(
+		CARD_KINDS.filter(
+			(kind) => cardTypes.includes(kind) && visibleTypes.some((type) => type.id === kind)
+		)
+	);
+
 	// Due and new are counted separately so the setup shows what a
-	// session would actually contain today. Cards reviewed but not due
-	// yet belong to neither bucket.
-	const deckCounts = $derived.by(() => {
-		if (selectedDeckIds.length === 0) return { due: 0, fresh: 0 };
-		const now = new Date();
-		const due = buildQueue({
+	// session would actually contain today, with the selected types and
+	// the companion cards a deck session would plan. Cards reviewed but
+	// not due yet belong to neither bucket.
+	const deckPlan = $derived.by(() => {
+		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0 } };
+		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
+		const items = deckSessionItems({
 			cards,
 			reviews,
 			deckIds: selectedDeckIds,
-			newLimit: 0,
-			reviewLimit: COUNT_CAP,
-			now
-		}).length;
-		const fresh = buildQueue({
-			cards,
-			reviews,
-			deckIds: selectedDeckIds,
+			kinds: selectedKinds,
 			newLimit: COUNT_CAP,
-			reviewLimit: 0,
-			now
-		}).length;
-		return { due, fresh };
+			reviewLimit: COUNT_CAP,
+			now: new Date(),
+			language: workspaceLanguage ?? ''
+		});
+		return sessionCounts(items, reviews);
 	});
 
+	const deckCounts = $derived({ due: deckPlan.due, fresh: deckPlan.fresh });
+
+	// Level sessions are vocab-only: without vocab selected they are empty.
 	const levelCounts = $derived.by(() => {
-		if (levelSelection === null || levelEntries.length === 0) {
+		if (
+			levelSelection === null ||
+			levelEntries.length === 0 ||
+			!selectedKinds.includes('vocab')
+		) {
 			return { due: 0, fresh: 0 };
 		}
 		const now = new Date();
@@ -312,6 +343,23 @@
 		return { due, fresh };
 	});
 
+	// Selected types that have nothing to study: a warning, not a block,
+	// as long as another selected type has cards.
+	const typeWarnings = $derived.by((): string[] => {
+		if (mode === 'levels') {
+			return selectedKinds.some((kind) => kind !== 'vocab')
+				? ['Level sessions study vocab cards only; the other types apply to deck sessions.']
+				: [];
+		}
+		if (selectedCards.length === 0) return [];
+		return selectedKinds
+			.filter((kind) => deckPlan.byKind[kind] === 0)
+			.map(
+				(kind) =>
+					`${CARD_TYPES.find((type) => type.id === kind)?.label ?? kind}: nothing to study in the selected decks right now.`
+			);
+	});
+
 	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
 	const levelWordCount = $derived(
 		levelEntries.filter((entry) => entry.kind === 'word').length
@@ -320,6 +368,7 @@
 	const guidance = $derived.by(() => {
 		if (noWorkspace) return 'Choose a workspace in the header to set up a study session.';
 		if (loading) return 'Loading your study data…';
+		if (selectedKinds.length === 0) return 'Select at least one card type.';
 
 		if (mode === 'levels') {
 			if (!schemesLoaded) return 'Loading level schemes…';
@@ -333,6 +382,9 @@
 			if (levelEntriesError) return levelEntriesError;
 			if (levelEntriesLoading) return 'Loading this level…';
 			if (levelEntries.length === 0) return 'This level has no words yet.';
+			if (!selectedKinds.includes('vocab')) {
+				return 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
+			}
 			if (counts.due + counts.fresh === 0) {
 				return 'Nothing is due and no new cards are left in this level.';
 			}
@@ -463,7 +515,9 @@
 			reviewLimit,
 			cardTypes: [...cardTypes]
 		};
-		errors = validateConfig(config);
+		// Validate what the session will actually use: a type hidden in
+		// this workspace does not count towards "at least one".
+		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });
 		// A saved scheme from another workspace language still has a
 		// positive id and a level name, so validation alone cannot catch
 		// it; the resolved selection can.
@@ -658,20 +712,19 @@
 		<section aria-labelledby="types-heading">
 			<h2 id="types-heading">Card types</h2>
 
+			<p class="hint">Pick at least one. Sentence, writing and tone cards are made from the words in your decks the first time you study them.</p>
 			<ul class="types">
-				{#each CARD_TYPES as type (type.id)}
+				{#each visibleTypes as type (type.id)}
 					<li>
-						<label class="inline" class:disabled={!type.available}>
+						<label class="type-choice">
 							<input
 								type="checkbox"
 								checked={cardTypes.includes(type.id)}
-								disabled={!type.available}
+								aria-describedby={`type-${type.id}-info`}
 								onchange={() => toggleCardType(type.id)}
 							/>
-							{type.label}
-							{#if !type.available}
-								<span class="tag">soon</span>
-							{/if}
+							<span class="type-label">{type.label}</span>
+							<span class="type-info" id={`type-${type.id}-info`}>{TYPE_INFO[type.id]}</span>
 						</label>
 					</li>
 				{/each}
@@ -702,6 +755,14 @@
 					<strong>{counts.fresh}</strong>
 					new
 				</p>
+			{/if}
+
+			{#if typeWarnings.length > 0}
+				<ul class="warnings" aria-label="Card type warnings">
+					{#each typeWarnings as warning (warning)}
+						<li>{warning}</li>
+					{/each}
+				</ul>
 			{/if}
 
 			{#if errors.length > 0}
@@ -769,8 +830,36 @@
 		gap: 0.5rem;
 	}
 
-	.types {
-		grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+	.type-choice {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		column-gap: 0.55rem;
+		row-gap: 0.1rem;
+		align-items: center;
+		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		border-radius: 0.4rem;
+		padding: 0.55rem 0.75rem;
+		cursor: pointer;
+	}
+
+	.type-choice:focus-within {
+		border-color: #0b6bcb;
+	}
+
+	.type-label {
+		font-weight: 600;
+	}
+
+	.type-info {
+		grid-column: 2;
+		font-size: 0.9rem;
+		opacity: 0.8;
+	}
+
+	.warnings {
+		margin: 0 0 1rem;
+		padding-left: 1.25rem;
+		color: #8a5a00;
 	}
 
 	.deck {

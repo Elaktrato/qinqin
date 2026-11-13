@@ -8,7 +8,17 @@ import { buildQueue, scheduleFor } from './scheduler';
 import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
 import { tierFor, type SaladTier } from './wordSalad';
 import { writableChars } from './writing';
-import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
+import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
+
+/**
+ * What a card component reports when the learner has finished it: the
+ * grade it suggests (null for vocab, never Easy) and the review meta. The
+ * runner preselects the suggestion; the learner confirms or overrides.
+ */
+export interface CardResult {
+	suggested: ReviewGrade | null;
+	meta: ReviewMeta;
+}
 
 /**
  * One queue item of a session. A `virtual` item has no card yet: it is
