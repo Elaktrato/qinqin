@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
-	import { APP_NAME } from '$lib/app';
+	import { APP_NAME, APP_NAME_HANZI } from '$lib/app';
 	import { auth, loadMe, logout, user } from '$lib/auth';
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
@@ -132,7 +132,7 @@
 {#if allowed}
 	{#if signedIn}
 		<header class="shell">
-			<a class="brand" href="/">{APP_NAME}</a>
+			<a class="brand" href="/" lang="zh" aria-label={APP_NAME} title={APP_NAME}>{APP_NAME_HANZI}</a>
 
 			<nav aria-label="Main">
 				<a href="/" aria-current={path === '/' ? 'page' : undefined}>Home</a>

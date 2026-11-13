@@ -1,6 +1,6 @@
 # qinqin
 
-qinqin is a self-hosted platform for studying Chinese and Japanese. It combines
+qinqin (written 勤勤 in hanzi, pronounced qínqín) is a self-hosted platform for studying Chinese and Japanese. It combines
 per-dictionary meanings, character readings, stroke-order animation, level
 badges, and study statistics in one small Docker stack: a Go API and SQLite
 database with a SvelteKit single-page app embedded in the binary.
