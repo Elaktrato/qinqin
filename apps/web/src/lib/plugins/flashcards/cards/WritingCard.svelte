@@ -41,6 +41,7 @@
 	// Long enough to see the finished character (and hanzi-writer's
 	// completion flash) before the pad clears for the next one.
 	const NEXT_CHAR_DELAY_MS = 600;
+	let nextTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function prefersReducedMotion(): boolean {
 		try {
@@ -88,7 +89,10 @@
 		};
 		if (pause && !prefersReducedMotion()) {
 			busy = true;
-			setTimeout(advance, NEXT_CHAR_DELAY_MS);
+			nextTimer = setTimeout(() => {
+				nextTimer = null;
+				advance();
+			}, NEXT_CHAR_DELAY_MS);
 		} else {
 			advance();
 		}
@@ -193,6 +197,10 @@
 
 		return () => {
 			cancelled = true;
+			if (nextTimer !== null) {
+				clearTimeout(nextTimer);
+				nextTimer = null;
+			}
 			alive = false;
 			const active = writer;
 			writer = null;

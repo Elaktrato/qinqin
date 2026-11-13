@@ -14,6 +14,7 @@ import {
 	pinyinReadings,
 	reviewCountFor,
 	sessionCounts,
+	shouldIgnoreGrade,
 	tierForCard,
 	toneVerdict
 } from './cardFlow';
@@ -403,5 +404,27 @@ describe('captureListeners', () => {
 			})
 		).toThrow('boom');
 		expect(target.addEventListener).toBe(original);
+	});
+});
+
+describe('shouldIgnoreGrade', () => {
+	const base = { now: 1_000, focusedAt: 900, hadSuggestion: true };
+
+	it('ignores a keyboard activation of the just-focused suggestion (held Enter/Space)', () => {
+		expect(shouldIgnoreGrade({ ...base, source: 'activation' })).toBe(true);
+	});
+
+	it('accepts the activation once the focus has settled', () => {
+		expect(shouldIgnoreGrade({ ...base, now: 1_300, source: 'activation' })).toBe(false);
+	});
+
+	it('never ignores digit keys or pointer clicks', () => {
+		expect(shouldIgnoreGrade({ ...base, source: 'key-digit' })).toBe(false);
+		expect(shouldIgnoreGrade({ ...base, source: 'click' })).toBe(false);
+	});
+
+	it('never guards a card without a suggestion (vocab) or before the focus moved', () => {
+		expect(shouldIgnoreGrade({ ...base, hadSuggestion: false, source: 'activation' })).toBe(false);
+		expect(shouldIgnoreGrade({ ...base, focusedAt: null, source: 'activation' })).toBe(false);
 	});
 });

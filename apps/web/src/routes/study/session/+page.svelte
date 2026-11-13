@@ -19,6 +19,7 @@
 		levelSessionItems,
 		pickSentence,
 		reviewCountFor,
+		shouldIgnoreGrade,
 		tierForCard,
 		type CardResult,
 		type FlowItem
@@ -165,7 +166,8 @@
 	let suggested = $state<ReviewGrade | null>(null);
 	let doneMeta = $state.raw<ReviewMeta>({});
 	let shownAt = 0;
-	let doneAt = 0;
+	// When the suggested grade button received focus; null when not focused.
+	let suggestionFocusedAt: number | null = null;
 	let resolveSeq = 0;
 	let gradeButtons = $state<(HTMLButtonElement | null)[]>([]);
 
@@ -453,16 +455,12 @@
 		ensureEntry(currentItem);
 	}
 
-	// A grade arriving this soon after the card finished is the tail of
-	// the key that finished it (a held Enter on Check re-activates the
-	// newly focused grade button natively), not a decision.
-	const GRADE_SETTLE_MS = 350;
 
 	/** onCardDone unlocks grading and preselects the card's suggestion. */
 	async function onCardDone(result: CardResult): Promise<void> {
 		if (resolved === null || done) return;
 		done = true;
-		doneAt = Date.now();
+		suggestionFocusedAt = null;
 		// Easy is never suggested automatically.
 		suggested = result.suggested === 4 ? 3 : result.suggested;
 		doneMeta = { ...result.meta, durationMs: Math.max(0, Date.now() - shownAt) };
@@ -470,7 +468,11 @@
 			// Focus the suggestion so Enter/Space (or 1–4) confirms it and a
 			// tile or pad no longer holds focus.
 			await tick();
-			gradeButtons[suggested - 1]?.focus();
+			const button = gradeButtons[suggested - 1];
+			if (button) {
+				button.focus();
+				suggestionFocusedAt = Date.now();
+			}
 		}
 	}
 
@@ -486,11 +488,23 @@
 	 * review always names a real id; a failure leaves the queue untouched
 	 * and surfaces inline. recordReview keeps a failed POST in the outbox.
 	 */
-	async function submitGrade(value: ReviewGrade): Promise<void> {
+	async function submitGrade(
+		value: ReviewGrade,
+		source: 'key-digit' | 'click' | 'activation'
+	): Promise<void> {
 		const current = resolved;
 		const workspaceId = sessionWorkspaceId;
 		if (!done || current === null || workspaceId === null || grading) return;
-		if (Date.now() - doneAt < GRADE_SETTLE_MS) return;
+		if (
+			shouldIgnoreGrade({
+				now: Date.now(),
+				focusedAt: suggestionFocusedAt,
+				source,
+				hadSuggestion: suggested !== null
+			})
+		) {
+			return;
+		}
 
 		const item = current.item;
 		const meta: ReviewMeta = { ...doneMeta };
@@ -571,7 +585,7 @@
 		const value = GRADE_KEYS[event.key];
 		if (value !== undefined) {
 			event.preventDefault();
-			void submitGrade(value);
+			void submitGrade(value, 'key-digit');
 		}
 	}
 
@@ -722,7 +736,9 @@
 							aria-label={done && suggested === option.grade
 								? `${option.label} (suggested), key ${option.grade}`
 								: `${option.label}, key ${option.grade}`}
-							onclick={() => void submitGrade(option.grade)}
+							onclick={(event) =>
+								// detail 0: activated from the keyboard, not a pointer.
+								void submitGrade(option.grade, event.detail === 0 ? 'activation' : 'click')}
 						>
 							{option.label}
 							{#if done && suggested === option.grade}

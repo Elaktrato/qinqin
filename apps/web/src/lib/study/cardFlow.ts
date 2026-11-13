@@ -394,3 +394,29 @@ export function captureListeners<T>(
 		}
 	};
 }
+
+/** How long after the suggestion gains focus a keyboard activation is suspect. */
+export const SUGGESTION_SETTLE_MS = 300;
+
+/**
+ * shouldIgnoreGrade guards one case only: when a card finishes, the runner
+ * focuses the suggested grade button, and a still-held Enter (key repeat)
+ * or a Space released just afterwards activates that button natively.
+ * Such a keyboard activation (`activation`, a click with detail 0) within
+ * SUGGESTION_SETTLE_MS of the focus is ignored. Digit keys, pointer clicks
+ * and cards without a suggestion (vocab) are never ignored.
+ */
+export function shouldIgnoreGrade({
+	now,
+	focusedAt,
+	source,
+	hadSuggestion
+}: {
+	now: number;
+	focusedAt: number | null;
+	source: 'key-digit' | 'click' | 'activation';
+	hadSuggestion: boolean;
+}): boolean {
+	if (!hadSuggestion || source !== 'activation' || focusedAt === null) return false;
+	return now - focusedAt < SUGGESTION_SETTLE_MS;
+}
