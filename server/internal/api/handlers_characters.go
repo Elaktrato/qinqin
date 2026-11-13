@@ -24,7 +24,6 @@ type charRow struct {
 	C string   `json:"c"`           // glyph (simplified for zh)
 	S int      `json:"s,omitempty"` // strokes
 	G int      `json:"g,omitempty"` // ja: KANJIDIC2 grade
-	J int      `json:"j,omitempty"` // ja: JLPT, old 1–4 scale
 	F int      `json:"f,omitempty"` // ja: newspaper frequency rank
 	T int      `json:"t,omitempty"` // zh: 1 when on the 通用规范汉字表
 	B int      `json:"b,omitempty"` // zh: GB2312 level
@@ -117,9 +116,16 @@ func (c *charactersCache) get(ctx context.Context, st lexicon.Store, language st
 	return p, nil
 }
 
+// charactersFormat versions the body's shape inside the ETag: a change to
+// the fields (2 dropped "j", the pre-2010 JLPT level) bumps it, so a
+// validator issued for the old shape over an unchanged lexicon never
+// earns a 304.
+const charactersFormat = 2
+
 // buildCharactersPayload lists, encodes and compresses language's
-// universe. The weak ETag names the language, the count and a digest of
-// the lexicon version (the latest stamps), the same for both encodings.
+// universe. The weak ETag names the body format, the language, the count
+// and a digest of the lexicon version (the latest stamps), the same for
+// both encodings.
 func buildCharactersPayload(ctx context.Context, st lexicon.Store, language, version string) (*charactersPayload, error) {
 	set, err := st.Characters(ctx, language)
 	if err != nil {
@@ -129,7 +135,7 @@ func buildCharactersPayload(ctx context.Context, st lexicon.Store, language, ver
 	for i, r := range set.Rows {
 		body.Chars[i] = charRow{
 			I: r.ID, C: r.Char, S: r.Strokes,
-			G: r.Grade, J: r.JLPT, F: r.Freq,
+			G: r.Grade, F: r.Freq,
 			T: r.TGHZ, B: r.GB, H: r.HKGrade,
 			R: r.Reading, M: r.Gloss, V: r.Variants,
 		}
@@ -151,7 +157,7 @@ func buildCharactersPayload(ctx context.Context, st lexicon.Store, language, ver
 	}
 	p.gz = gz.Bytes()
 	sum := sha256.Sum256([]byte(version))
-	p.etag = fmt.Sprintf(`W/"chars-%s-%d-%s"`, language, body.Count, hex.EncodeToString(sum[:8]))
+	p.etag = fmt.Sprintf(`W/"chars%d-%s-%d-%s"`, charactersFormat, language, body.Count, hex.EncodeToString(sum[:8]))
 	return p, nil
 }
 

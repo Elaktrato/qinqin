@@ -11,9 +11,10 @@ export type Stage = MasteryStage;
 // Re-exported from mastery.ts, the single source of the `learned` edge.
 export { MASTERY_THRESHOLD };
 
+// JLPT N5–N1 and HSK 3.0 are level packs (jlpt-kanji, hsk30-chars,
+// hsk30-words), offered as `scheme:` groupings.
 export type GroupKey =
 	| 'grade'
-	| 'jlpt'
 	| 'freq'
 	| 'strokes'
 	| 'common'
@@ -48,7 +49,6 @@ export type StageFilter = 'all' | 'not-started' | 'learning' | 'learned';
 
 const JA_OPTIONS: GroupOption[] = [
 	{ key: 'grade', label: 'Grade' },
-	{ key: 'jlpt', label: 'JLPT (old scale)' },
 	{ key: 'freq', label: 'Frequency' },
 	{ key: 'strokes', label: 'Strokes' }
 ];
@@ -117,15 +117,6 @@ function gradeSlot(row: CharRow): Slot {
 	if (g === 8) return { id: 'grade-8', label: 'Secondary (grade 8)', rank: 8 };
 	if (g === 9 || g === 10) return GRADE_NAMES;
 	return GRADE_NONE;
-}
-
-function jlptSlot(row: CharRow): Slot {
-	const j = row.j;
-	// Old scale: 4 is the easiest level and comes first.
-	if (isPositiveInt(j) && j <= 4) {
-		return { id: `jlpt-${j}`, label: `JLPT ${j} (pre-2010 scale)`, rank: 5 - j };
-	}
-	return { id: 'jlpt-none', label: 'Not in JLPT', rank: 99 };
 }
 
 const FREQ_BUCKET = 500;
@@ -226,8 +217,6 @@ function slotterFor(
 	switch (key) {
 		case 'grade':
 			return gradeSlot;
-		case 'jlpt':
-			return jlptSlot;
 		case 'freq':
 			return freqSlot;
 		case 'strokes':
@@ -394,8 +383,6 @@ function hasField(row: CharRow, key: GroupKey): boolean {
 	switch (key) {
 		case 'grade':
 			return row.g !== undefined;
-		case 'jlpt':
-			return row.j !== undefined;
 		case 'freq':
 			return row.f !== undefined;
 		case 'strokes':

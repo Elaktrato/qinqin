@@ -48,6 +48,7 @@ func seedCharacters(t *testing.T, sqlDB *sql.DB) charIDs {
 		return id
 	}
 	var ids charIDs
+	// "jlpt" is the pre-2010 scale an older seed stored: never served.
 	ids.nichi = put("ja", "日", map[string]string{"src": "kd2", "strokes": "4", "grade": "1", "jlpt": "4", "freq": "1"},
 		[]lexicon.Reading{{Type: "kun", Value: "ひ", Plain: "ひ"}, {Type: "on", Value: "ニチ", Plain: "にち"}},
 		[]string{"day", "sun"})
@@ -110,7 +111,7 @@ func TestCharactersBody(t *testing.T) {
 	// The exact wire form: numbers as JSON numbers, absent fields omitted.
 	want := `{"language":"ja","count":2,"chars":[` +
 		`{"i":` + itoa(ids.bare) + `,"c":"丂"},` +
-		`{"i":` + itoa(ids.nichi) + `,"c":"日","s":4,"g":1,"j":4,"f":1,"r":"ニチ","m":"day"}]}`
+		`{"i":` + itoa(ids.nichi) + `,"c":"日","s":4,"g":1,"f":1,"r":"ニチ","m":"day"}]}`
 	if string(body) != want {
 		t.Errorf("ja body =\n%s\nwant\n%s", body, want)
 	}

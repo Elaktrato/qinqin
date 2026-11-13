@@ -23,7 +23,7 @@ func TestLexiconKanjidic2LevelAttrs(t *testing.T) {
 	sqlDB := newDB(t)
 	importLexiconPack(t, sqlDB, kanjidicLexPack(t, ""))
 	for ch, want := range map[string]map[string]string{
-		"日": {"strokes": "4", "grade": "1", "jlpt": "4", "freq": "2", "src": "kd2"},
+		"日": {"strokes": "4", "grade": "1", "freq": "2", "src": "kd2"},
 		"学": {"strokes": "8", "grade": "2", "freq": "175", "src": "kd2"},
 	} {
 		if got := lexByKey(t, sqlDB, "ja", "character", ch).Attrs; !reflect.DeepEqual(got, want) {
@@ -193,20 +193,21 @@ func entryStamp(t *testing.T, sqlDB *sql.DB, language, key string) string {
 
 // Re-importing over a database an older importer wrote (strokes only, or
 // stale values) updates the importer's own attrs, drops its keys the
-// source no longer carries, keeps keys other importers own, and stamps
-// only the entries whose attrs changed.
+// source no longer carries — and the retired "jlpt" key of the pre-2010
+// scale, which no KANJIDIC2 import writes any more — keeps keys other
+// importers own, and stamps only the entries whose attrs changed.
 func TestLexiconReimportUpdatesOldAttrs(t *testing.T) {
 	t.Run("kanjidic2", func(t *testing.T) {
 		sqlDB := newDB(t)
 		importLexiconPack(t, sqlDB, kanjidicLexPack(t, ""))
-		setAttrs(t, sqlDB, "ja", "日", map[string]string{"strokes": "4"})
+		setAttrs(t, sqlDB, "ja", "日", map[string]string{"strokes": "4", "jlpt": "4"})
 		setAttrs(t, sqlDB, "ja", "学", map[string]string{"strokes": "8", "grade": "9", "jlpt": "3", "freq": "175", "src": "kd2", "other": "kept"})
 		if _, err := sqlDB.Exec(`UPDATE entries SET updated_at = ?`, longAgo); err != nil {
 			t.Fatal(err)
 		}
 		importLexiconPack(t, sqlDB, kanjidicLexPack(t, ""))
 		for ch, want := range map[string]map[string]string{
-			"日": {"strokes": "4", "grade": "1", "jlpt": "4", "freq": "2", "src": "kd2"},
+			"日": {"strokes": "4", "grade": "1", "freq": "2", "src": "kd2"},
 			"学": {"strokes": "8", "grade": "2", "freq": "175", "src": "kd2", "other": "kept"},
 		} {
 			if got := lexByKey(t, sqlDB, "ja", "character", ch).Attrs; !reflect.DeepEqual(got, want) {

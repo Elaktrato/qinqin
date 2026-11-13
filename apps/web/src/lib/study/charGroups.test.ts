@@ -77,8 +77,6 @@ function randomChars(rand: () => number, count: number): CharRow[] {
 		if (s !== undefined) r.s = s;
 		const g = maybe([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0]);
 		if (g !== undefined) r.g = g;
-		const j = maybe([1, 2, 3, 4, 5, 0]);
-		if (j !== undefined) r.j = j;
 		const f = maybe([1, 500, 501, 1000, 1499, 2000, 2001, 2500, 2501, 4000, 0, -3]);
 		if (f !== undefined) r.f = f;
 		const t = maybe([1, 0, 2]);
@@ -93,33 +91,41 @@ function randomChars(rand: () => number, count: number): CharRow[] {
 	return out;
 }
 
-const ALL_FIXED_KEYS: GroupKey[] = ['grade', 'jlpt', 'freq', 'strokes', 'common', 'hkgrade'];
+const ALL_FIXED_KEYS: GroupKey[] = ['grade', 'freq', 'strokes', 'common', 'hkgrade'];
 
 describe('groupOptions', () => {
+	const hsk = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6', 'HSK 7–9'];
+	// The bundled packs as a seeded server lists them: the two samples,
+	// the JLPT N5–N1 kanji and the HSK 3.0 characters and words.
 	const schemes: Scheme[] = [
 		scheme(1, 'HSK mini (sample)', 'zh', 'hsk-mini', ['1', '2']),
-		scheme(2, 'JLPT N5 mini (sample)', 'ja', 'jlpt-mini', ['N5']),
-		scheme(3, 'HSK 3.0', 'zh', 'hsk3', ['1', '2', '3']),
-		scheme(4, 'Jōyō', 'ja', 'joyo', ['Jōyō']),
-		scheme(5, 'hsk-mini', 'zh'),
-		scheme(6, 'JLPT mini', 'ja')
+		scheme(2, 'HSK 3.0 characters', 'zh', 'hsk30-chars', hsk),
+		scheme(3, 'HSK 3.0', 'zh', 'hsk30-words', hsk),
+		scheme(4, 'JLPT', 'ja', 'jlpt-kanji', ['N5', 'N4', 'N3', 'N2', 'N1']),
+		scheme(5, 'JLPT N5 mini (sample)', 'ja', 'jlpt-mini', ['N5']),
+		scheme(6, 'hsk-mini', 'zh'),
+		scheme(12, 'JLPT mini', 'ja')
 	];
 
-	it('offers grade, JLPT, frequency, strokes and the non-sample ja schemes for ja', () => {
+	it('offers grade, frequency, strokes and the non-sample ja schemes (JLPT) for ja', () => {
 		expect(groupOptions('ja', schemes)).toEqual([
 			{ key: 'grade', label: 'Grade' },
-			{ key: 'jlpt', label: 'JLPT (old scale)' },
 			{ key: 'freq', label: 'Frequency' },
 			{ key: 'strokes', label: 'Strokes' },
-			{ key: 'scheme:4', label: 'Jōyō' }
+			{ key: 'scheme:4', label: 'JLPT' }
 		]);
 	});
 
-	it('offers common, HK grade, strokes and the non-sample zh schemes for zh', () => {
+	it('has no built-in JLPT grouping: the pre-2010 scale is gone', () => {
+		expect(groupOptions('ja', []).map((o) => o.label)).toEqual(['Grade', 'Frequency', 'Strokes']);
+	});
+
+	it('offers common, HK grade, strokes and the non-sample zh schemes (HSK 3.0) for zh', () => {
 		expect(groupOptions('zh', schemes)).toEqual([
 			{ key: 'common', label: 'Common' },
 			{ key: 'hkgrade', label: 'HK primary grade' },
 			{ key: 'strokes', label: 'Strokes' },
+			{ key: 'scheme:2', label: 'HSK 3.0 characters' },
 			{ key: 'scheme:3', label: 'HSK 3.0' }
 		]);
 	});
@@ -129,6 +135,7 @@ describe('groupOptions', () => {
 			'common',
 			'hkgrade',
 			'strokes',
+			'scheme:2',
 			'scheme:3'
 		]);
 	});
@@ -198,28 +205,6 @@ describe('buildSections: ja grade', () => {
 	it('gives each section a distinct id', () => {
 		const ids = buildSections(chars, 'grade').map((s) => s.id);
 		expect(new Set(ids).size).toBe(ids.length);
-	});
-});
-
-describe('buildSections: ja JLPT (old scale)', () => {
-	it('orders 4, 3, 2, 1 then Not in JLPT', () => {
-		const chars = [
-			row(1, 'a', { j: 1 }),
-			row(2, 'b', { j: 2 }),
-			row(3, 'c', { j: 3 }),
-			row(4, 'd', { j: 4 }),
-			row(5, 'e'),
-			row(6, 'f', { j: 5 })
-		];
-		const sections = buildSections(chars, 'jlpt');
-		expect(labels(sections)).toEqual([
-			'JLPT 4 (pre-2010 scale)',
-			'JLPT 3 (pre-2010 scale)',
-			'JLPT 2 (pre-2010 scale)',
-			'JLPT 1 (pre-2010 scale)',
-			'Not in JLPT'
-		]);
-		expect(glyphs(bySection(sections, 'Not in JLPT'))).toEqual(['e', 'f']);
 	});
 });
 
@@ -611,8 +596,6 @@ describe('dataGap', () => {
 	it('is true when at least 90 % lack the grouping field', () => {
 		expect(dataGap(fill(100, 10, { g: 1 }), 'grade')).toBe(true);
 		expect(dataGap(fill(100, 11, { g: 1 }), 'grade')).toBe(false);
-		expect(dataGap(fill(100, 0, {}), 'jlpt')).toBe(true);
-		expect(dataGap(fill(100, 50, { j: 2 }), 'jlpt')).toBe(false);
 		expect(dataGap(fill(100, 50, { f: 9 }), 'freq')).toBe(false);
 		expect(dataGap(fill(100, 5, { s: 3 }), 'strokes')).toBe(true);
 		expect(dataGap(fill(100, 5, { h: 3 }), 'hkgrade')).toBe(true);

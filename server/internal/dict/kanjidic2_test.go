@@ -104,10 +104,11 @@ func TestKanjidic2Parse(t *testing.T) {
 	}
 }
 
-// TestKanjidic2ParseLevels: the school grade, the (old, four-level) JLPT
-// level and the newspaper frequency rank are kept as attrs when the
-// character carries them, absent when it does not; every character is
-// marked src=kd2.
+// TestKanjidic2ParseLevels: the school grade and the newspaper frequency
+// rank are kept as attrs when the character carries them, absent when it
+// does not; every character is marked src=kd2. The <jlpt> element (the
+// pre-2010 four-level scale) is ignored: JLPT levels come from the
+// jlpt-kanji level pack.
 func TestKanjidic2ParseLevels(t *testing.T) {
 	const doc = `<?xml version="1.0" encoding="UTF-8"?>
 <kanjidic2>
@@ -125,9 +126,9 @@ func TestKanjidic2ParseLevels(t *testing.T) {
 		t.Fatalf("ParseKanjidic2: %v", err)
 	}
 	want := []map[string]string{
-		{"strokes": "4", "grade": "1", "jlpt": "4", "freq": "1", "src": "kd2"},
+		{"strokes": "4", "grade": "1", "freq": "1", "src": "kd2"},
 		{"strokes": "16", "grade": "8", "freq": "1838", "src": "kd2"},
-		{"strokes": "6", "grade": "9", "jlpt": "1", "src": "kd2"},
+		{"strokes": "6", "grade": "9", "src": "kd2"},
 		{"strokes": "2", "src": "kd2"},
 	}
 	if len(es) != len(want) {

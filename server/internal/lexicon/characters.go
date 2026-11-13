@@ -20,9 +20,8 @@ type CharacterRow struct {
 	Char string // the entry's first written form (simplified for zh)
 
 	Strokes int
-	// ja (KANJIDIC2): grade, JLPT level on the old 1–4 scale, newspaper
-	// frequency rank.
-	Grade, JLPT, Freq int
+	// ja (KANJIDIC2): grade, newspaper frequency rank.
+	Grade, Freq int
 	// zh (Unihan): 1 when in the 通用规范汉字表, GB2312 level (1|2), Hong
 	// Kong primary grade. HKGrade is the lowest grade of the character and
 	// its variant partners: Unihan grades the traditional form (愛), and
@@ -245,7 +244,7 @@ func (s Store) Characters(ctx context.Context, language string) (CharacterSet, e
 			return fmt.Errorf("attrs of entry %d: %w", r.ID, err)
 		}
 		r.Strokes = positiveInt(a.Strokes)
-		r.Grade, r.JLPT, r.Freq = positiveInt(a.Grade), positiveInt(a.JLPT), positiveInt(a.Freq)
+		r.Grade, r.Freq = positiveInt(a.Grade), positiveInt(a.Freq)
 		r.TGHZ, r.GB, r.HKGrade = positiveInt(a.TGHZ), positiveInt(a.GB), positiveInt(a.HKGrade)
 		if reading != nil {
 			r.Reading = cutRunes(*reading, MaxCharacterReading)
@@ -326,7 +325,6 @@ func firstMeaning(lists string) (string, error) {
 type characterAttrs struct {
 	Strokes string `json:"strokes"`
 	Grade   string `json:"grade"`
-	JLPT    string `json:"jlpt"`
 	Freq    string `json:"freq"`
 	TGHZ    string `json:"tghz"`
 	GB      string `json:"gb"`

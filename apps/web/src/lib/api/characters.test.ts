@@ -34,7 +34,7 @@ describe('fetchCharacters', () => {
 				language: 'ja',
 				count: 2,
 				chars: [
-					{ i: 1, c: '一', s: 1, g: 1, j: 4, f: 2, r: 'いち', m: 'one' },
+					{ i: 1, c: '一', s: 1, g: 1, f: 2, r: 'いち', m: 'one' },
 					{ i: 2, c: '二', s: 2 }
 				]
 			})
@@ -46,7 +46,7 @@ describe('fetchCharacters', () => {
 		expect(vi.mocked(fetch).mock.calls[0][1]?.method ?? 'GET').toBe('GET');
 		expect(result.count).toBe(2);
 		expect(result.chars.map((c) => c.c)).toEqual(['一', '二']);
-		expect(result.chars[0]).toEqual({ i: 1, c: '一', s: 1, g: 1, j: 4, f: 2, r: 'いち', m: 'one' });
+		expect(result.chars[0]).toEqual({ i: 1, c: '一', s: 1, g: 1, f: 2, r: 'いち', m: 'one' });
 	});
 
 	it('sends and caches the primary language subtag', async () => {

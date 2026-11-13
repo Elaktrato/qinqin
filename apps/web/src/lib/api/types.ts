@@ -101,6 +101,10 @@ export interface Scheme {
 	language: string;
 	/** The manifest id of the pack (`hsk-mini`, …); the server always sends it. */
 	packId?: string;
+	/** The pack's manifest version, licence and credits (Sources page). */
+	version?: string;
+	license?: string;
+	attribution?: string;
 	levels: Level[];
 }
 
@@ -115,8 +119,6 @@ export interface CharRow {
 	s?: number;
 	/** ja: KANJIDIC2 grade (1–6, 8, 9, 10). */
 	g?: number;
-	/** ja: JLPT level on the old pre-2010 scale (4 easiest … 1). */
-	j?: number;
 	/** ja: KANJIDIC2 newspaper frequency rank. */
 	f?: number;
 	/** zh: 1 when the character is in the 通用规范汉字表. */

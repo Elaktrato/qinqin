@@ -60,30 +60,32 @@ type kanjidic2RadValue struct {
 }
 
 // kanjidic2Misc is a character's <misc> element: its stroke counts (the
-// first is the accepted one), and when it has them its school grade, its
-// rank among the 2,500 most frequent newspaper characters, and its level
-// on the pre-2010 four-level JLPT scale.
+// first is the accepted one), and when it has them its school grade and
+// its rank among the 2,500 most frequent newspaper characters. Its <jlpt>
+// (the pre-2010 four-level scale) is not read: JLPT N5–N1 levels come
+// from the jlpt-kanji level pack.
 type kanjidic2Misc struct {
 	StrokeCounts []int  `xml:"stroke_count"`
 	Grade        string `xml:"grade"`
 	Freq         string `xml:"freq"`
-	JLPT         string `xml:"jlpt"`
 }
 
 // kanjidic2AttrKeys are the attrs a KANJIDIC2 import owns on a ja
 // character entry: a re-import replaces exactly these and keeps any
-// other key. "src" is "kd2" on every KANJIDIC2 character.
+// other key. "src" is "kd2" on every KANJIDIC2 character. "jlpt" (the
+// pre-2010 scale an older import stored) is still owned but never
+// written, so a re-seed drops it.
 var kanjidic2AttrKeys = []string{"strokes", "grade", "jlpt", "freq", "src"}
 
 // kanjidic2Attrs returns the attrs of a character's <misc>: strokes,
-// grade, jlpt and freq as KANJIDIC2 writes them, each only when present,
-// and src "kd2".
+// grade and freq as KANJIDIC2 writes them, each only when present, and
+// src "kd2".
 func kanjidic2Attrs(m kanjidic2Misc) map[string]string {
 	attrs := map[string]string{"src": "kd2"}
 	if len(m.StrokeCounts) > 0 {
 		attrs["strokes"] = strconv.Itoa(m.StrokeCounts[0])
 	}
-	for k, v := range map[string]string{"grade": m.Grade, "jlpt": m.JLPT, "freq": m.Freq} {
+	for k, v := range map[string]string{"grade": m.Grade, "freq": m.Freq} {
 		if v = strings.TrimSpace(v); v != "" {
 			attrs[k] = v
 		}

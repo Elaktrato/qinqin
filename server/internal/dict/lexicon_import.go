@@ -454,7 +454,7 @@ func radicalEntryID(ctx context.Context, tx *sql.Tx, store lexicon.Store, langua
 // kanjidic2LexiconEntry builds the lexicon entry of a KANJIDIC2
 // character: Kind "character", Key and only form the character itself,
 // its ON and KUN readings (typed "on" and "kun", Plain through the
-// language pack), its level attrs (strokes, grade, jlpt, freq, src "kd2";
+// language pack), its level attrs (strokes, grade, freq, src "kd2";
 // see kanjidic2Attrs), and one sense of its English meanings when it has
 // any.
 func kanjidic2LexiconEntry(e entry, language string) *lexicon.Entry {

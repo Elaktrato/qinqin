@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CharRow } from '$lib/api/types';
-import type { CellState } from './charGroups';
+import { groupOptions, type CellState } from './charGroups';
 import {
 	FIRST_BATCH,
 	RENDER_BATCH,
@@ -156,7 +156,7 @@ describe('formatCount and learnedSummary', () => {
 describe('readGroupBy and writeGroupBy', () => {
 	const options = [
 		{ key: 'grade' as const, label: 'Grade' },
-		{ key: 'jlpt' as const, label: 'JLPT' },
+		{ key: 'freq' as const, label: 'Frequency' },
 		{ key: 'scheme:7' as const, label: 'My HSK' }
 	];
 
@@ -166,11 +166,11 @@ describe('readGroupBy and writeGroupBy', () => {
 
 	it('round-trips per primary language', () => {
 		const storage = memoryStorage();
-		writeGroupBy(storage, 'ja', 'jlpt');
+		writeGroupBy(storage, 'ja', 'freq');
 		writeGroupBy(storage, 'zh-TW', 'scheme:7');
-		expect(readGroupBy(storage, 'ja', options)).toBe('jlpt');
+		expect(readGroupBy(storage, 'ja', options)).toBe('freq');
 		expect(readGroupBy(storage, 'zh', options)).toBe('scheme:7');
-		expect(storage.getItem('qinqin.map.groupBy.ja')).toBe('jlpt');
+		expect(storage.getItem('qinqin.map.groupBy.ja')).toBe('freq');
 	});
 
 	it('ignores a stored key that is no longer offered', () => {
@@ -178,11 +178,16 @@ describe('readGroupBy and writeGroupBy', () => {
 		expect(readGroupBy(storage, 'ja', options)).toBe('grade');
 	});
 
+	it('falls back to Grade for the retired pre-2010 JLPT grouping', () => {
+		const storage = memoryStorage({ 'qinqin.map.groupBy.ja': 'jlpt' });
+		expect(readGroupBy(storage, 'ja', groupOptions('ja', []))).toBe('grade');
+	});
+
 	it('survives missing or throwing storage', () => {
 		expect(readGroupBy(null, 'ja', options)).toBe('grade');
 		expect(readGroupBy(throwingStorage(), 'ja', options)).toBe('grade');
-		expect(() => writeGroupBy(throwingStorage(), 'ja', 'jlpt')).not.toThrow();
-		expect(() => writeGroupBy(null, 'ja', 'jlpt')).not.toThrow();
+		expect(() => writeGroupBy(throwingStorage(), 'ja', 'freq')).not.toThrow();
+		expect(() => writeGroupBy(null, 'ja', 'freq')).not.toThrow();
 	});
 
 	it('returns null when there are no options', () => {

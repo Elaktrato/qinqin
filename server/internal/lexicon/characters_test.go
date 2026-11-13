@@ -62,6 +62,7 @@ func TestCharactersJapaneseUniverse(t *testing.T) {
 	kd2 := addDictionary(t, st, "kanjidic2")
 	other := addDictionary(t, st, "other")
 
+	// "jlpt" (the pre-2010 scale) is what an older seed stored: ignored.
 	nichi := putChar(t, st, kd2, charFixture{lang: "ja", char: "日",
 		attrs:    map[string]string{"src": "kd2", "strokes": "4", "grade": "1", "jlpt": "4", "freq": "1"},
 		readings: []lexicon.Reading{kun("ひ"), on("ニチ"), on("ジツ")},
@@ -97,7 +98,7 @@ func TestCharactersJapaneseUniverse(t *testing.T) {
 	got := characters(t, st, "ja", false)
 	want := []lexicon.CharacterRow{
 		{ID: bare, Char: "丂"},
-		{ID: nichi, Char: "日", Strokes: 4, Grade: 1, JLPT: 4, Freq: 1, Reading: "ニチ", Gloss: "day"},
+		{ID: nichi, Char: "日", Strokes: 4, Grade: 1, Freq: 1, Reading: "ニチ", Gloss: "day"},
 		{ID: multi, Char: "語", Grade: 2, Gloss: "word"},
 		{ID: kunOnly, Char: "込", Strokes: 5, Reading: "こ.む", Gloss: "crowded"},
 		{ID: long, Char: "龘", Reading: strings.Repeat("ア", 15) + "…", Gloss: strings.Repeat("g", 47) + "…"},
@@ -463,7 +464,7 @@ func seedCharacterUniverse(t testing.TB, st lexicon.Store, n int) {
 		insert("zh", string(rune(0x30000+i)), `{"strokes":"12"}`, "bopomofo", "ㄅ", "")
 	}
 	for i := 0; i < n; i++ {
-		insert("ja", string(rune(base+i)), `{"freq":"12","grade":"3","jlpt":"2","src":"kd2","strokes":"8"}`, "on", "カン", "a gloss")
+		insert("ja", string(rune(base+i)), `{"freq":"12","grade":"3","src":"kd2","strokes":"8"}`, "on", "カン", "a gloss")
 	}
 	if err := tx.Commit(); err != nil {
 		t.Fatal(err)
