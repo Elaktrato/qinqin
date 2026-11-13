@@ -7,7 +7,7 @@ import type { ReviewGrade } from './types';
 export type SaladTier = 0 | 1 | 2;
 
 export function tierFor(stability: number | null): SaladTier {
-	if (stability === null || !Number.isFinite(stability)) return 0;
+	if (stability === null || Number.isNaN(stability)) return 0;
 	if (stability >= 21) return 2;
 	if (stability >= 4) return 1;
 	return 0;
@@ -25,12 +25,19 @@ export interface MatchSpan {
 	end: number;
 }
 
-// Closing/final/other punctuation and dashes (ASCII and full-width) stick to
-// the previous token. Opening brackets and quotes (Ps, Pi) deliberately do not.
+// Closing/final/other punctuation and dashes (ASCII and full-width) attach to
+// the previous token. Opening brackets and quotes (Ps, Pi: 「 『 （ ( “) attach
+// FORWARD to the next token instead. Straight ASCII quotes " and ' are Po, so
+// they are ambiguous and always attach backward.
 const TRAILING_PUNCT = /^[\p{Pe}\p{Pf}\p{Po}\p{Pd}～〜]+$/u;
+const OPENING_PUNCT = /^[\p{Ps}\p{Pi}]+$/u;
 
 function isTrailingPunct(token: string): boolean {
 	return TRAILING_PUNCT.test(token);
+}
+
+function isOpeningPunct(token: string): boolean {
+	return OPENING_PUNCT.test(token);
 }
 
 function isCjk(language: string): boolean {
@@ -63,15 +70,33 @@ function sanitiseSpans(matches: MatchSpan[], length: number): MatchSpan[] {
 	return out;
 }
 
-/** Attach all-punctuation tokens to the token before them (when there is one). */
+/**
+ * Closing punctuation tokens attach to the previous token, opening ones to the
+ * next (consecutive openers merge); a trailing orphan opener attaches to the
+ * previous token.
+ */
 function attachPunctuation(tokens: string[]): string[] {
 	const out: string[] = [];
+	let pending = '';
 	for (const token of tokens) {
-		if (out.length > 0 && isTrailingPunct(token)) out[out.length - 1] += token;
-		else out.push(token);
+		if (isOpeningPunct(token)) {
+			pending += token;
+		} else if (pending === '' && out.length > 0 && isTrailingPunct(token)) {
+			out[out.length - 1] += token;
+		} else {
+			out.push(pending + token);
+			pending = '';
+		}
+	}
+	if (pending !== '') {
+		if (out.length > 0) out[out.length - 1] += pending;
+		else out.push(pending);
 	}
 	return out;
 }
+
+const isAsciiAlnum = (c: string | undefined) => c !== undefined && /^[A-Za-z0-9]$/.test(c);
+const isDigit = (c: string | undefined) => c !== undefined && /^[0-9]$/.test(c);
 
 export function tokenize(language: string, text: string, matches: MatchSpan[]): string[] {
 	if (!isCjk(language)) {
@@ -80,8 +105,26 @@ export function tokenize(language: string, text: string, matches: MatchSpan[]): 
 	const points = Array.from(text);
 	const raw: string[] = [];
 	const pushGap = (from: number, to: number) => {
-		for (let i = from; i < to; i++) {
+		let i = from;
+		while (i < to) {
+			if (isAsciiAlnum(points[i])) {
+				// Keep Latin letter/digit runs (and 3.14 style numbers) together.
+				let j = i + 1;
+				while (
+					j < to &&
+					(isAsciiAlnum(points[j]) ||
+						((points[j] === '.' || points[j] === ',') &&
+							isDigit(points[j - 1]) &&
+							j + 1 < to &&
+							isDigit(points[j + 1])))
+				)
+					j++;
+				raw.push(points.slice(i, j).join(''));
+				i = j;
+				continue;
+			}
 			if (!WHITESPACE.test(points[i])) raw.push(points[i]);
+			i++;
 		}
 	};
 	let cursor = 0;
@@ -97,15 +140,7 @@ export function tokenize(language: string, text: string, matches: MatchSpan[]): 
 
 /** Tier 2: every token into single code points, punctuation kept with its character. */
 export function splitWithin(tokens: string[]): string[] {
-	const out: string[] = [];
-	for (const token of tokens) {
-		const start = out.length;
-		for (const point of Array.from(token)) {
-			if (out.length > start && isTrailingPunct(point)) out[out.length - 1] += point;
-			else out.push(point);
-		}
-	}
-	return out;
+	return tokens.flatMap((token) => attachPunctuation(Array.from(token)));
 }
 
 // xmur3 string hash + mulberry32 PRNG: small, fast, deterministic.

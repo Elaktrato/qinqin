@@ -16,6 +16,8 @@ describe('tierFor', () => {
 		expect(tierFor(4)).toBe(1);
 		expect(tierFor(20.9)).toBe(1);
 		expect(tierFor(21)).toBe(2);
+		expect(tierFor(Infinity)).toBe(2);
+		expect(tierFor(NaN)).toBe(0);
 	});
 });
 
@@ -35,9 +37,38 @@ describe('tokenize', () => {
 	});
 
 	it('attaches full-width and ASCII punctuation to the previous token', () => {
-		expect(tokenize('ja', '「行く」、そう！？', [])).toEqual(['「', '行', 'く」、', 'そ', 'う！？']);
+		expect(tokenize('ja', '「行く」、そう！？', [])).toEqual(['「行', 'く」、', 'そ', 'う！？']);
 		expect(tokenize('zh', '好.好!', [])).toEqual(['好.', '好!']);
 		expect(tokenize('ja', '本当…', [])).toEqual(['本', '当…']);
+	});
+
+	it('attaches opening punctuation forward and merges consecutive openers', () => {
+		expect(tokenize('ja', '（はい）', [])).toEqual(['（は', 'い）']);
+		expect(tokenize('ja', '「『行』」', [])).toEqual(['「『行』」']);
+		expect(tokenize('en', '“hi”', [])).toEqual(['“hi”']);
+		expect(tokenize('zh', '好“你”', [])).toEqual(['好', '“你”']);
+		expect(tokenize('zh', '好"你"', [])).toEqual(['好"', '你"']);
+	});
+
+	it('attaches a trailing orphan opener to the previous token', () => {
+		expect(tokenize('ja', '行く「', [])).toEqual(['行', 'く「']);
+		expect(tokenize('ja', '「', [])).toEqual(['「']);
+	});
+
+	it('keeps Latin and number runs together in CJK gaps', () => {
+		expect(tokenize('zh', '我爱Hello 3.14元', [])).toEqual(['我', '爱', 'Hello', '3.14', '元']);
+	});
+
+	it('handles whitespace inside a span, language tags and NaN fields', () => {
+		expect(tokenize('ja', '宿 題を', [{ start: 0, end: 3 }])).toEqual(['宿題', 'を']);
+		expect(tokenize('ja-JP', '宿題', [])).toEqual(['宿', '題']);
+		expect(tokenize('zh_TW', '宿題', [])).toEqual(['宿', '題']);
+		expect(
+			tokenize('zh', '宿題', [
+				{ start: NaN, end: 2 },
+				{ start: 0, end: NaN }
+			])
+		).toEqual(['宿', '題']);
 	});
 
 	it('splits other languages on whitespace keeping punctuation', () => {
@@ -68,6 +99,8 @@ describe('splitWithin', () => {
 	it('splits into code points keeping punctuation attached', () => {
 		expect(splitWithin(['宿題', 'した。', '𠮷野」'])).toEqual(['宿', '題', 'し', 'た。', '𠮷', '野」']);
 		expect(splitWithin(['a'])).toEqual(['a']);
+		expect(splitWithin(['「行く」'])).toEqual(['「行', 'く」']);
+		expect(splitWithin(['（『行'])).toEqual(['（『行']);
 	});
 });
 
