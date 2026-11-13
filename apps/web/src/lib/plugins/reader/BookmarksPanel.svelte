@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import type { BookmarkList } from './bookmarkList.svelte';
-	import { MAX_LABEL_RUNES, sortForPanel, type Bookmark } from './bookmarks';
+	import { MAX_LABEL_RUNES, bookmarkName, sortForPanel, type Bookmark } from './bookmarks';
 	import { chapterTitle, parsePosition } from './position';
 
 	// The accessible path to the bookmarks (the margin markers are only
@@ -47,6 +47,11 @@
 		return title && title !== chapterTitle('', p.chapter) ? `${number} · ${title}` : number;
 	}
 
+	// "bookmark 猫", or "untitled bookmark in chapter 3" for an empty label.
+	function actionName(b: Bookmark): string {
+		return b.label ? `bookmark ${b.label}` : bookmarkName(b).replace(/^U/, 'u');
+	}
+
 	function dateOf(b: Bookmark): string {
 		const d = new Date(b.createdAt);
 		return Number.isNaN(d.getTime()) ? '' : dateFormat.format(d);
@@ -87,10 +92,34 @@
 		cancelRename(id);
 	}
 
-	function confirmDelete(b: Bookmark): void {
+	async function askDelete(b: Bookmark): Promise<void> {
+		editingId = null;
+		confirmingId = b.id;
+		await tick();
+		document.getElementById(`bookmark-cancel-${b.id}`)?.focus();
+	}
+
+	function cancelDelete(id: number): void {
+		confirmingId = null;
+		void focusAction(id, 'delete');
+	}
+
+	// After a delete, focus goes to the next bookmark (else the previous
+	// one, else the panel's toggle), never to the page top.
+	async function confirmDelete(b: Bookmark): Promise<void> {
+		const index = sorted.findIndex((x) => x.id === b.id);
+		const neighbour = sorted[index + 1] ?? sorted[index - 1];
 		confirmingId = null;
 		void list.remove(b.id);
-		document.getElementById('bookmarks-toggle')?.focus();
+		await tick();
+		const next = neighbour && document.getElementById(`bookmark-jump-${neighbour.id}`);
+		(next || document.getElementById('bookmarks-toggle'))?.focus();
+	}
+
+	function confirmKey(event: KeyboardEvent, id: number): void {
+		if (event.key !== 'Escape' || event.isComposing) return;
+		event.preventDefault();
+		cancelDelete(id);
 	}
 </script>
 
@@ -115,7 +144,7 @@
 			{#if list.loading}
 				<p>Loading bookmarks…</p>
 			{:else if list.loadError}
-				<p class="error" role="alert">{list.loadError}</p>
+				<p class="error">{list.loadError}</p>
 				<button type="button" onclick={() => list.bookId !== null && list.load(list.bookId)}>
 					Retry
 				</button>
@@ -162,15 +191,17 @@
 										>{dateOf(b)}{/if}
 								</span>
 								{#if confirmingId === b.id}
-									<span class="actions" role="group" aria-label="Confirm delete of bookmark">
+									<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+									<span
+										class="actions"
+										role="group"
+										aria-label="Confirm delete of {actionName(b)}"
+										onkeydown={(e) => confirmKey(e, b.id)}
+									>
 										Delete this bookmark?
 										<button type="button" onclick={() => confirmDelete(b)}>Yes, delete</button>
-										<button
-											type="button"
-											onclick={() => {
-												confirmingId = null;
-												void focusAction(b.id, 'delete');
-											}}>Cancel</button
+										<button id="bookmark-cancel-{b.id}" type="button" onclick={() => cancelDelete(b.id)}
+											>Cancel</button
 										>
 									</span>
 								{:else}
@@ -180,19 +211,16 @@
 											type="button"
 											onclick={() => startRename(b)}
 											disabled={list.busy(b.id)}
-											aria-label="Rename bookmark {b.label}"
+											aria-label="Rename {actionName(b)}"
 										>
 											Rename
 										</button>
 										<button
 											id="bookmark-delete-{b.id}"
 											type="button"
-											onclick={() => {
-												editingId = null;
-												confirmingId = b.id;
-											}}
+											onclick={() => askDelete(b)}
 											disabled={list.busy(b.id)}
-											aria-label="Delete bookmark {b.label}">Delete</button
+											aria-label="Delete {actionName(b)}">Delete</button
 										>
 									</span>
 								{/if}

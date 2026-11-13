@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 import type { Bookmark } from './bookmarks';
-import { BookmarkList, bookmarkKey, type BookmarkApi } from './bookmarkList.svelte';
+import { BookmarkList, bookmarkKey, isTextEntry, type BookmarkApi } from './bookmarkList.svelte';
 
 function mark(id: number, position: string, bookId = 1, label = `b${id}`): Bookmark {
 	return { id, bookId, position, label, createdAt: '2026-11-13T10:00:00Z' };
@@ -55,6 +55,29 @@ describe('BookmarkList loading', () => {
 		const list = await loaded(fakeApi({ list: vi.fn(async () => Promise.reject(new TypeError('x'))) }));
 		expect(list.loadError).toBe('Could not load the bookmarks.');
 		expect(list.ready).toBe(false);
+	});
+
+	it('a toggle after a failed load retries the load instead of doing nothing', async () => {
+		let fail = true;
+		const api = fakeApi({
+			list: vi.fn(async () => (fail ? Promise.reject(new TypeError('x')) : [mark(4, '0:0')]))
+		});
+		const list = await loaded(api);
+		fail = false;
+		await list.toggle('0:0', 'x');
+		expect(api.list).toHaveBeenCalledTimes(2);
+		expect(list.loadError).toBe('');
+		expect(list.items.map((b) => b.id)).toEqual([4]);
+		// Only reloaded: the press did not also add or remove.
+		expect(api.add).not.toHaveBeenCalled();
+		expect(api.remove).not.toHaveBeenCalled();
+	});
+
+	it('announces an unlabelled bookmark by its place', async () => {
+		const api = fakeApi({ add: vi.fn(async () => ({ ...mark(9, '2:3'), label: '' })) });
+		const list = await loaded(api);
+		await list.toggle('2:3', '');
+		expect(list.announcement).toBe('Bookmark added: Untitled bookmark in chapter 3');
 	});
 });
 
@@ -229,6 +252,22 @@ describe('bookmarkKey', () => {
 		['an already handled key', { defaultPrevented: true }]
 	])('rejects %s', (_name, over) => {
 		expect(bookmarkKey(key(over as Partial<KeyboardEvent>), calm)).toBe(false);
+	});
+
+	it('treats only text-entry controls as typing', () => {
+		const el = (tagName: string, type?: string, isContentEditable = false) => ({ tagName, type, isContentEditable });
+		for (const type of ['text', 'search', 'email', 'number', 'password', 'url', 'tel', 'date', undefined, '']) {
+			expect(isTextEntry(el('INPUT', type)), `input ${type}`).toBe(true);
+		}
+		expect(isTextEntry(el('TEXTAREA'))).toBe(true);
+		expect(isTextEntry(el('DIV', undefined, true))).toBe(true);
+		for (const type of ['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image']) {
+			expect(isTextEntry(el('INPUT', type)), `input ${type}`).toBe(false);
+		}
+		expect(isTextEntry(el('SELECT'))).toBe(false);
+		expect(isTextEntry(el('BUTTON'))).toBe(false);
+		expect(isTextEntry(el('P'))).toBe(false);
+		expect(isTextEntry(null)).toBe(false);
 	});
 
 	it('rejects while typing or with a popup open', () => {

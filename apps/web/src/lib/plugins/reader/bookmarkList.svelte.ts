@@ -4,7 +4,7 @@
 // number per loaded book). The API is injected, so this is testable
 // without a server.
 import { ApiError } from '$lib/api/client';
-import { bookmarkAt, type Bookmark } from './bookmarks';
+import { bookmarkAt, bookmarkName, type Bookmark } from './bookmarks';
 import { apiErrorMessage } from './errors';
 
 export interface BookmarkApi {
@@ -76,6 +76,9 @@ export class BookmarkList {
 	 * `label`. Ignored while a toggle is saving or the list is not loaded.
 	 */
 	async toggle(position: string, label: string): Promise<void> {
+		// After a failed load a press retries it (the reader then sees the
+		// state of this spot) rather than doing nothing.
+		if (this.loadError && this.bookId !== null && !this.loading) return this.load(this.bookId);
 		if (this.saving || !this.ready) return;
 		const existing = this.at(position);
 		if (existing && this.busy(existing.id)) return;
@@ -107,7 +110,7 @@ export class BookmarkList {
 			if (seq !== this.#seq) return;
 			// 200 returns an existing bookmark: never list it twice.
 			this.items = [...this.items.filter((b) => b.id !== temp.id && b.id !== saved.id), saved];
-			this.announcement = `Bookmark added: ${saved.label}`;
+			this.announcement = `Bookmark added: ${bookmarkName(saved)}`;
 		} catch (err) {
 			if (seq !== this.#seq) return;
 			this.items = this.items.filter((b) => b.id !== temp.id);
@@ -129,7 +132,7 @@ export class BookmarkList {
 			const saved = await this.#api.rename(bookId, id, wanted);
 			if (seq !== this.#seq) return;
 			this.#setLabel(id, saved.label);
-			this.announcement = `Bookmark renamed: ${saved.label}`;
+			this.announcement = `Bookmark renamed: ${bookmarkName(saved)}`;
 		} catch (err) {
 			if (seq !== this.#seq) return;
 			if (isGone(err)) this.items = this.items.filter((b) => b.id !== id);
@@ -161,7 +164,7 @@ export class BookmarkList {
 		} finally {
 			if (seq === this.#seq) this.#mark(id, false);
 		}
-		if (seq === this.#seq) this.announcement = `Bookmark removed: ${current.label}`;
+		if (seq === this.#seq) this.announcement = `Bookmark removed: ${bookmarkName(current)}`;
 	}
 
 	#setLabel(id: number, label: string): void {
@@ -174,6 +177,36 @@ export class BookmarkList {
 		else next.delete(id);
 		this.#busy = next;
 	}
+}
+
+// Input types that take no typed text: a `b` there is no character.
+const NON_TEXT_INPUTS = new Set([
+	'checkbox',
+	'radio',
+	'button',
+	'submit',
+	'reset',
+	'image',
+	'range',
+	'color',
+	'file',
+	'hidden'
+]);
+
+/**
+ * isTextEntry: the focused element takes typed text (text-like inputs,
+ * textarea, contenteditable). Checkboxes, buttons and closed selects do
+ * not, so `b` still works after ticking Furigana or picking a chapter.
+ */
+export function isTextEntry(
+	el: { tagName: string; type?: string; isContentEditable?: boolean } | null
+): boolean {
+	if (!el) return false;
+	if (el.isContentEditable) return true;
+	const tag = el.tagName.toUpperCase();
+	if (tag === 'TEXTAREA') return true;
+	if (tag !== 'INPUT') return false;
+	return !NON_TEXT_INPUTS.has((el.type ?? '').toLowerCase());
 }
 
 export interface KeyLike {

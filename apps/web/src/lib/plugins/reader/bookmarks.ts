@@ -80,6 +80,13 @@ export function sortForPanel(bookmarks: Bookmark[]): Bookmark[] {
 	});
 }
 
+/** bookmarkName is how a bookmark is named in the UI: its label, else its place. */
+export function bookmarkName(b: Bookmark): string {
+	if (b.label) return b.label;
+	const p = parsePosition(b.position);
+	return p ? `Untitled bookmark in chapter ${p.chapter + 1}` : 'Untitled bookmark';
+}
+
 /** bookmarkedParagraphs is the set of paragraphs of `chapter` that carry a bookmark. */
 export function bookmarkedParagraphs(bookmarks: Bookmark[], chapter: number): Set<number> {
 	const out = new Set<number>();

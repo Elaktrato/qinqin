@@ -18,7 +18,7 @@
 	import BookmarksPanel from './BookmarksPanel.svelte';
 	import ChapterText from './ChapterText.svelte';
 	import PopupStackView from './PopupStackView.svelte';
-	import { BookmarkList, bookmarkKey } from './bookmarkList.svelte';
+	import { BookmarkList, bookmarkKey, isTextEntry } from './bookmarkList.svelte';
 	import { bookmarkedParagraphs, snippetAt, type Bookmark } from './bookmarks';
 	import { paragraphElement } from './dom';
 	import { apiErrorMessage } from './errors';
@@ -302,9 +302,15 @@
 	const herePosition = $derived(here ? formatPosition(here.chapter, here.paragraph) : null);
 	const hereBookmark = $derived(herePosition ? bookmarks.at(herePosition) : null);
 	const canToggle = $derived(herePosition !== null && bookmarks.ready && !bookmarks.saving);
+	// A failed load leaves the button live: pressing it (or `b`) retries.
+	const bookmarksFailed = $derived(bookmarks.loadError !== '' && !bookmarks.loading);
 	const marked = $derived(content ? bookmarkedParagraphs(bookmarks.items, content.n) : new Set<number>());
 
 	function toggleBookmark(): void {
+		if (bookmarksFailed) {
+			void bookmarks.toggle('', '');
+			return;
+		}
 		if (!canToggle || !here || !herePosition || !content) return;
 		const label =
 			snippetAt(paragraphString(paragraphs[here.paragraph] ?? [])) ||
@@ -312,18 +318,11 @@
 		void bookmarks.toggle(herePosition, label);
 	}
 
-	function isTyping(target: EventTarget | null): boolean {
-		if (!(target instanceof HTMLElement)) return false;
-		return (
-			target.isContentEditable ||
-			target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null
-		);
-	}
-
 	$effect(() => {
 		const onKey = (e: KeyboardEvent): void => {
 			const popupOpen = lookup.info !== null || inPopup(e.target);
-			if (!bookmarkKey(e, { typing: isTyping(e.target), popupOpen })) return;
+			const target = e.target instanceof HTMLElement ? e.target : null;
+			if (!bookmarkKey(e, { typing: isTextEntry(target), popupOpen })) return;
 			e.preventDefault();
 			toggleBookmark();
 		};
@@ -487,12 +486,15 @@
 				type="button"
 				class="bookmark-toggle"
 				aria-pressed={hereBookmark !== null}
-				aria-disabled={!canToggle}
-				aria-busy={bookmarks.saving}
+				aria-disabled={!canToggle && !bookmarksFailed}
+				aria-busy={bookmarks.saving || bookmarks.loading}
 				aria-keyshortcuts="B"
-				title={hereBookmark
-					? 'Remove the bookmark at the top of the screen (B)'
-					: 'Bookmark the paragraph at the top of the screen (B)'}
+				aria-describedby={bookmarksFailed ? 'bookmarks-load-error' : undefined}
+				title={bookmarksFailed
+					? 'Bookmarks could not be loaded: press to try again (B)'
+					: hereBookmark
+						? 'Remove the bookmark at the top of the screen (B)'
+						: 'Bookmark the paragraph at the top of the screen (B)'}
 				onclick={toggleBookmark}
 			>
 				<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
@@ -506,6 +508,12 @@
 				</svg>
 				Bookmark
 			</button>
+			{#if bookmarksFailed}
+				<span class="error bookmark-error" id="bookmarks-load-error" role="alert">
+					{bookmarks.loadError}
+					<button type="button" onclick={toggleBookmark}>Retry</button>
+				</span>
+			{/if}
 		</div>
 
 		<BookmarksPanel
@@ -594,6 +602,19 @@
 
 	.bookmark-toggle[aria-pressed='true'] svg {
 		color: #0b6bcb;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.bookmark-toggle[aria-pressed='true'] svg {
+			color: #6cb4ff;
+		}
+	}
+
+	.bookmark-error {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		align-items: center;
 	}
 
 	.bookmark-toggle[aria-disabled='true'] {

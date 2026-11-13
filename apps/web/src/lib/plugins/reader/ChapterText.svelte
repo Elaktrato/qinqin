@@ -77,6 +77,12 @@
 		pointer-events: none;
 	}
 
+	@media (prefers-color-scheme: dark) {
+		.chapter-text p.bookmarked::before {
+			background: #6cb4ff;
+		}
+	}
+
 	/* Furigana is a reading aid, not part of the text: copying or
 	   selecting a passage leaves it out. */
 	rt {

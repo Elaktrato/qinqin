@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	MAX_LABEL_RUNES,
 	bookmarkAt,
+	bookmarkName,
 	bookmarkedParagraphs,
 	snippetAt,
 	sortForPanel,
@@ -113,6 +114,14 @@ describe('sortForPanel', () => {
 		const copy = [...list];
 		expect(sortForPanel(list).map((b) => b.id)).toEqual([3, 2, 1]);
 		expect(list).toEqual(copy);
+	});
+});
+
+describe('bookmarkName', () => {
+	it('is the label, else an untitled name with the chapter', () => {
+		expect(bookmarkName(mark(1, '2:3', { label: '猫' }))).toBe('猫');
+		expect(bookmarkName(mark(1, '2:3', { label: '' }))).toBe('Untitled bookmark in chapter 3');
+		expect(bookmarkName(mark(1, 'bad', { label: '' }))).toBe('Untitled bookmark');
 	});
 });
 
