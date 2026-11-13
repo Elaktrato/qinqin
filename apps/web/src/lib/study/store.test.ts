@@ -92,7 +92,7 @@ function selectWorkspace(id: number | null): void {
 		current:
 			id === null
 				? null
-				: { id, language: 'zh', settings: {}, updatedAt: '2026-01-01T00:00:00Z' }
+				: { id, language: 'zh', name: '', settings: {}, updatedAt: '2026-01-01T00:00:00Z' }
 	});
 }
 

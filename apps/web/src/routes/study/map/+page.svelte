@@ -14,6 +14,7 @@
 	} from '$lib/study/mastery';
 	import { loadStudyData } from '$lib/study/store';
 	import type { ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
+	import { usesHan } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 
 	// The `learned` band: a character at or above this score counts as
@@ -181,8 +182,20 @@
 		}
 	}
 
+	// The map is built from Han characters; other languages get a note
+	// instead (the nav hides the link, but the URL can still be visited).
+	const notHan = $derived(
+		$workspaces.current !== null && !usesHan($workspaces.current.language)
+	);
+
 	$effect(() => {
 		const workspace = $workspaces.current;
+		if (workspace && !usesHan(workspace.language)) {
+			// Drop any in-flight load for a previous workspace.
+			requestSeq++;
+			loading = false;
+			return;
+		}
 		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 
@@ -375,7 +388,11 @@
 		<a class="back" href="/study">Study</a>
 	</header>
 
-	{#if noWorkspace}
+	{#if notHan}
+		<p class="hint" role="status">
+			The character map is for Chinese and Japanese workspaces. <a href="/study">Back to Study</a>
+		</p>
+	{:else if noWorkspace}
 		<p class="hint" role="status">Choose a workspace in the header to see its mastery map.</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>

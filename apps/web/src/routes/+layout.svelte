@@ -4,18 +4,16 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
-	import { APP_NAME, APP_NAME_HANZI } from '$lib/app';
+	import { APP_NAME, APP_NAME_HANZI, APP_VERSION } from '$lib/app';
+	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
+	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
+	import { usesHan } from '$lib/languages';
 	import { auth, loadMe, logout, user } from '$lib/auth';
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionOnce } from '$lib/events';
 	import { startReviewOutbox } from '$lib/study/events';
-	import {
-		create as createWorkspace,
-		load as loadWorkspaces,
-		select as selectWorkspace,
-		workspaces
-	} from '$lib/workspaces';
+	import { load as loadWorkspaces, workspaces } from '$lib/workspaces';
 	import '../app.css';
 
 	let { children } = $props();
@@ -25,8 +23,9 @@
 	// against refetching on unrelated re-runs.
 	let loadedToken = $state<string | null>(null);
 	let workspaceError = $state('');
-	let newLanguage = $state('');
-	let creating = $state(false);
+	// True once the workspace list for the current session has arrived,
+	// so the empty state never flashes while it is loading.
+	let workspacesLoaded = $state(false);
 
 	const publicPaths = new Set(['/login', '/register']);
 
@@ -38,6 +37,13 @@
 	// never flash while a redirect is in flight, and auth pages do not
 	// show once signed in.
 	const allowed = $derived(booted && (signedIn ? !isPublic : isPublic));
+	// The character map only makes sense for Han-script languages.
+	const showMap = $derived(
+		$workspaces.current !== null && usesHan($workspaces.current.language)
+	);
+	const noWorkspaces = $derived(
+		workspacesLoaded && !workspaceError && $workspaces.list.length === 0
+	);
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -73,6 +79,7 @@
 		const token = $auth.token;
 		if (token === null) {
 			loadedToken = null;
+			workspacesLoaded = false;
 			resetPluginStates();
 			workspaces.set({ list: [], current: null });
 			return;
@@ -80,9 +87,11 @@
 		if (token === loadedToken) return;
 		loadedToken = token;
 		workspaceError = '';
+		workspacesLoaded = false;
 		void loadPluginStates();
 		void loadWorkspaces()
 			.then(() => {
+				workspacesLoaded = true;
 				// One session event per workspace per UTC day, recorded
 				// once the shell knows which workspace is active.
 				const current = get(workspaces).current;
@@ -103,101 +112,88 @@
 			void navigate('/');
 		}
 	});
-
-	function switchWorkspace(event: Event): void {
-		const id = Number((event.currentTarget as HTMLSelectElement).value);
-		if (Number.isInteger(id)) {
-			selectWorkspace(id);
-		}
-	}
-
-	async function addWorkspace(event: SubmitEvent): Promise<void> {
-		event.preventDefault();
-		const language = newLanguage.trim().toLowerCase();
-		if (!language || creating) return;
-
-		creating = true;
-		workspaceError = '';
-		try {
-			await createWorkspace(language);
-			newLanguage = '';
-		} catch (err) {
-			workspaceError = message(err, 'Could not create workspace.');
-		} finally {
-			creating = false;
-		}
-	}
 </script>
 
 {#if allowed}
-	{#if signedIn}
-		<header class="shell">
-			<a class="brand" href="/" lang="zh" aria-label={APP_NAME} title={APP_NAME}>{APP_NAME_HANZI}</a>
+	<div class="app">
+		{#if signedIn}
+			<header class="shell">
+				<a class="brand" href="/" lang="zh" aria-label={APP_NAME} title={APP_NAME}>{APP_NAME_HANZI}</a>
 
-			<nav aria-label="Main">
-				<a href="/" aria-current={path === '/' ? 'page' : undefined}>Home</a>
-				<a href="/search" aria-current={path === '/search' ? 'page' : undefined}>Search</a>
-				<a href="/study/map" aria-current={path === '/study/map' ? 'page' : undefined}>Map</a>
-				<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>Settings</a>
-				<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}>Sources</a>
-				{#each pluginLinks as link (`${link.slug}:${link.title}`)}
-					<a
-						href={link.href}
-						aria-current={path === link.href || path.startsWith(`${link.href}/`)
-							? 'page'
-							: undefined}>{link.title}</a
-					>
-				{/each}
-			</nav>
+				<nav aria-label="Main">
+					<a href="/" aria-current={path === '/' ? 'page' : undefined}>Home</a>
+					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}>Search</a>
+					{#if showMap}
+						<a href="/study/map" aria-current={path === '/study/map' ? 'page' : undefined}>Map</a>
+					{/if}
+					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}>Sources</a>
+					{#each pluginLinks as link (`${link.slug}:${link.title}`)}
+						<a
+							href={link.href}
+							aria-current={path === link.href || path.startsWith(`${link.href}/`)
+								? 'page'
+								: undefined}>{link.title}</a
+						>
+					{/each}
+				</nav>
 
-			<div class="workspace">
-				<label>
-					Workspace
-					<select
-						value={$workspaces.current?.id ?? ''}
-						onchange={switchWorkspace}
-						disabled={$workspaces.list.length === 0}
-					>
-						{#if !$workspaces.current}
-							<option value="">None</option>
-						{/if}
-						{#each $workspaces.list as workspace (workspace.id)}
-							<option value={workspace.id}>{workspace.language}</option>
-						{/each}
-					</select>
-				</label>
+				<div class="workspace">
+					<WorkspacePicker />
+				</div>
+				<div class="account">
+					{#if $user}
+						<span class="username">{$user.username}</span>
+					{/if}
+					<button type="button" onclick={logout}>Sign out</button>
+				</div>
+			</header>
 
-				<form class="new-workspace" onsubmit={addWorkspace}>
-					<input
-						bind:value={newLanguage}
-						aria-label="New workspace language"
-						placeholder="zh"
-						size="4"
-						maxlength="16"
-						required
-					/>
-					<button type="submit" disabled={creating}>New</button>
-				</form>
-			</div>
-			<div class="account">
-				{#if $user}
-					<span class="username">{$user.username}</span>
-				{/if}
-				<button type="button" onclick={logout}>Sign out</button>
-			</div>
-		</header>
-
-		{#if workspaceError}
-			<p class="workspace-error" role="alert">{workspaceError}</p>
+			{#if workspaceError}
+				<p class="workspace-error" role="alert">{workspaceError}</p>
+			{/if}
 		{/if}
-	{/if}
 
-	{@render children()}
+		<div class="content">
+			{#if signedIn && noWorkspaces}
+				<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
+					<h2 id="empty-workspaces-heading">Create your first workspace</h2>
+					<p>
+						A workspace holds your study cards, reading library and progress for one language.
+						Pick a language to begin.
+					</p>
+					<WorkspaceCreateForm idPrefix="empty-new" />
+				</section>
+			{/if}
+
+			{@render children()}
+		</div>
+
+		{#if signedIn}
+			<footer class="footer">
+				<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>Settings</a>
+				<span class="version">
+					<span lang="zh">{APP_NAME_HANZI}</span>
+					{APP_NAME} v{APP_VERSION}
+				</span>
+			</footer>
+		{/if}
+	</div>
 {:else}
 	<p class="booting">Loading…</p>
 {/if}
 
 <style>
+	.app {
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+		min-height: 100dvh;
+	}
+
+	.content {
+		flex: 1 0 auto;
+	}
+
 	.shell {
 		display: flex;
 		flex-wrap: wrap;
@@ -237,25 +233,6 @@
 		margin-left: auto;
 	}
 
-	.workspace label {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		font-size: 0.9rem;
-	}
-
-	.workspace select,
-	.workspace input,
-	.workspace button {
-		font: inherit;
-		padding: 0.25rem 0.4rem;
-	}
-
-	.new-workspace {
-		display: flex;
-		gap: 0.35rem;
-	}
-
 	.account {
 		display: flex;
 		align-items: center;
@@ -282,6 +259,44 @@
 		padding: 0.5rem 1.5rem;
 		color: #c62828;
 		font-weight: 600;
+	}
+
+	.empty-workspaces {
+		margin: 2rem auto 0;
+		max-width: 28rem;
+		padding: 1.25rem 1.5rem;
+		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		border-radius: 0.5rem;
+	}
+
+	.empty-workspaces h2 {
+		margin-top: 0;
+	}
+
+	.footer {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem 1.5rem;
+		padding: 1rem 1.5rem;
+		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		font-size: 0.9rem;
+	}
+
+	.footer a {
+		text-decoration: none;
+		opacity: 0.85;
+	}
+
+	.footer a:hover,
+	.footer a[aria-current='page'] {
+		opacity: 1;
+		text-decoration: underline;
+	}
+
+	.version {
+		opacity: 0.65;
 	}
 
 	.booting {

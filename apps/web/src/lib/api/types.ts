@@ -127,8 +127,20 @@ export interface FrequencyPack {
 export interface Workspace {
 	id: number;
 	language: string;
+	/** Optional display name; '' for the first workspace of a language. */
+	name: string;
 	settings: Record<string, unknown>;
 	updatedAt: string;
+}
+
+// Language is one element of GET /api/languages: a language with
+// installed dictionary data. `name` may be a pack title (for example a
+// demo dictionary's name), so the UI labels languages from the code via
+// languageLabel instead of showing it.
+export interface Language {
+	code: string;
+	name: string;
+	installed: boolean;
 }
 
 // PluginInfo is one element of GET /api/plugins: the plugin manifest
@@ -230,4 +242,6 @@ export interface SourceResult {
 	author: string;
 	language: string;
 	note: string;
+	/** The phonetic reading that matched the query (hiragana for ja, toneless pinyin for zh). */
+	reading?: string;
 }

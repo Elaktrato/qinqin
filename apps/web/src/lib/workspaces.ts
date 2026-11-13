@@ -63,16 +63,36 @@ export async function load(): Promise<Workspace[]> {
 
 /**
  * create opens a workspace for `language` (the API lowercases and
- * auto-registers data-only codes), reloads the list, and selects it.
+ * auto-registers data-only codes) with an optional display name,
+ * reloads the list, and selects it. A blank name is not sent; the API
+ * answers 409 when the (language, name) pair already exists.
  */
-export async function create(language: string): Promise<Workspace> {
+export async function create(language: string, name?: string): Promise<Workspace> {
+	const trimmed = name?.trim() ?? '';
 	const created = await api<Workspace>('/api/workspaces', {
 		method: 'POST',
-		body: { language }
+		body: trimmed ? { language, name: trimmed } : { language }
 	});
 	await load();
 	select(created.id);
 	return created;
+}
+
+/**
+ * rename sets a workspace's display name ('' clears it) and replaces
+ * that workspace in the store with the server's copy, keeping the
+ * current selection.
+ */
+export async function rename(id: number, name: string): Promise<Workspace> {
+	const updated = await api<Workspace>(`/api/workspaces/${id}`, {
+		method: 'PUT',
+		body: { name: name.trim() }
+	});
+	workspaces.update((state) => ({
+		list: state.list.map((workspace) => (workspace.id === id ? updated : workspace)),
+		current: state.current?.id === id ? updated : state.current
+	}));
+	return updated;
 }
 
 /** select switches the current workspace and persists the choice. */

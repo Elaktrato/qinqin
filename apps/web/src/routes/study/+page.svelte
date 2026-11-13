@@ -4,6 +4,7 @@
 	import { ApiError, api } from '$lib/api/client';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
+	import { usesHan } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 	import type { StudyEvent } from '$lib/events';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
@@ -553,7 +554,9 @@
 <main class="setup">
 	<h1>Study</h1>
 	<p class="hint">Choose what this session should draw from.</p>
-	<p class="hint"><a href="/study/map">View the mastery map →</a></p>
+	{#if $workspaces.current && usesHan($workspaces.current.language)}
+		<p class="hint"><a href="/study/map">View the mastery map →</a></p>
+	{/if}
 
 	{#if loadError}
 		<p class="error" role="alert">{loadError}</p>
