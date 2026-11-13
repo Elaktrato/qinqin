@@ -67,8 +67,16 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			result := Result{Skipped: stats.skipped, Unconverted: stats.unconverted}
 			for _, e := range es {
-				// CEDICT owns no attrs: a character keeps Unihan's.
-				if _, err := putOwningAttrs(ctx, tx, store, e, dictID, nil); err != nil {
+				// CEDICT owns no attrs: a character keeps Unihan's. Only
+				// characters carry other importers' attrs, so a word
+				// skips the stored-attrs lookup.
+				put := store.PutTx
+				if e.Kind == "character" {
+					put = func(ctx context.Context, tx *sql.Tx, e *lexicon.Entry, dictID int64) (int64, error) {
+						return putOwningAttrs(ctx, tx, store, e, dictID, nil)
+					}
+				}
+				if _, err := put(ctx, tx, e, dictID); err != nil {
 					return Result{}, err
 				}
 				result.Entries++
