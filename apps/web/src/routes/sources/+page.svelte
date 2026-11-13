@@ -232,11 +232,12 @@
 		{/if}
 		{#if installedPacks.has('hsk30-chars') || installedPacks.has('hsk30-words')}
 			<p class="notice">
-				The HSK 3.0 lists come from
-				<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a>, labelled
-				MIT, which derives them from copies of the 2021 Ministry of Education standard. The
-				ministry's site claims copyright (版权所有：中华人民共和国教育部) and the hsk30 README
-				suggests the list may be public domain, so its copyright status is uncertain.
+				The HSK 3.0 lists on this instance were installed locally by its operator; qinqin does not
+				bundle them because their licence status is unclear. They come from
+				<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a> (code MIT,
+				data labelled MIT), which derives them from copies of the 2021 Ministry of Education
+				standard. The ministry's site claims copyright (版权所有：中华人民共和国教育部) and the
+				hsk30 README suggests the list may be public domain, so its copyright status is uncertain.
 			</p>
 		{/if}
 	</section>

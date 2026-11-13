@@ -12,7 +12,8 @@ import (
 	"qinqin/internal/levels"
 )
 
-// bundledPacks is the committed default seed root, relative to this
+// bundledPacks is the committed default seed root (HSK 3.0 is deliberately
+// not in it: it is an optional local pack, see plugins/data/README.md), relative to this
 // package's test working directory.
 const bundledPacks = "../../../plugins/data"
 
@@ -22,7 +23,6 @@ const bundledPacks = "../../../plugins/data"
 // and attribution, and import cleanly — into an empty lexicon every form
 // is skipped and reported, none fails the import.
 func TestBundledLevelPacks(t *testing.T) {
-	hsk := []string{"HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5", "HSK 6", "HSK 7–9"}
 	jlpt := []string{"N5", "N4", "N3", "N2", "N1"}
 	cases := []struct {
 		id, name, language, unit string
@@ -31,8 +31,6 @@ func TestBundledLevelPacks(t *testing.T) {
 	}{
 		{"jlpt-kanji", "JLPT (kanji)", "ja", "character", jlpt, 0},
 		{"jlpt-words", "JLPT (vocabulary)", "ja", "word", jlpt, 0},
-		{"hsk30-chars", "HSK 3.0 (characters)", "zh", "character", hsk, 3000},
-		{"hsk30-words", "HSK 3.0 (words)", "zh", "word", hsk, 0},
 	}
 	for _, c := range cases {
 		t.Run(c.id, func(t *testing.T) {

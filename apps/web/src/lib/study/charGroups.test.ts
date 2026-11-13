@@ -95,8 +95,8 @@ const ALL_FIXED_KEYS: GroupKey[] = ['grade', 'freq', 'strokes', 'common', 'hkgra
 
 describe('groupOptions', () => {
 	const hsk = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6', 'HSK 7–9'];
-	// The bundled packs as a seeded server lists them: the two samples,
-	// the JLPT N5–N1 kanji and the HSK 3.0 characters and words.
+	// The packs of a seeded server: the two samples, the bundled JLPT kanji
+	// and a locally installed HSK 3.0 (optional, not bundled).
 	const schemes: Scheme[] = [
 		scheme(1, 'HSK mini (sample)', 'zh', 'hsk-mini', ['1', '2']),
 		scheme(2, 'HSK 3.0 (characters)', 'zh', 'hsk30-chars', hsk),
@@ -122,7 +122,7 @@ describe('groupOptions', () => {
 		expect(groupOptions('ja', []).map((o) => o.label)).toEqual(['Grade', 'Frequency', 'Strokes']);
 	});
 
-	it('offers common, HK grade, strokes and the non-sample zh schemes (HSK 3.0) for zh', () => {
+	it('offers common, HK grade, strokes and the non-sample zh schemes (a locally installed HSK 3.0) for zh', () => {
 		expect(groupOptions('zh', schemes)).toEqual([
 			{ key: 'common', label: 'Common' },
 			{ key: 'hkgrade', label: 'HK primary grade' },

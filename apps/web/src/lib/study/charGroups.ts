@@ -11,8 +11,8 @@ export type Stage = MasteryStage;
 // Re-exported from mastery.ts, the single source of the `learned` edge.
 export { MASTERY_THRESHOLD };
 
-// JLPT N5–N1 and HSK 3.0 are level packs (jlpt-kanji, hsk30-chars,
-// hsk30-words), offered as `scheme:` groupings.
+// Level packs (the bundled JLPT ones, and any locally installed scheme such
+// as HSK 3.0, which is not bundled) are offered as `scheme:` groupings.
 export type GroupKey =
 	| 'grade'
 	| 'freq'

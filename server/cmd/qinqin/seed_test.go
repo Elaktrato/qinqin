@@ -99,7 +99,7 @@ func TestDefaultRootHoldsNoLevelSamples(t *testing.T) {
 		}
 	}
 	slices.Sort(schemes)
-	if want := []string{"hsk30-chars", "hsk30-words", "jlpt-kanji", "jlpt-words"}; !slices.Equal(schemes, want) {
+	if want := []string{"jlpt-kanji", "jlpt-words"}; !slices.Equal(schemes, want) {
 		t.Errorf("default level packs = %v, want %v", schemes, want)
 	}
 }

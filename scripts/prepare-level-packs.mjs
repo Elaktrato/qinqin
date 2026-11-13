@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 // Convert the upstream JLPT and HSK 3.0 lists into qinqin level packs.
 //
+// Two modes. The JLPT packs are bundled in the repository; the HSK 3.0 packs
+// are NOT (their licence status is unclear, see HSK30_CAVEAT): they are an
+// optional, local-only pack you generate yourself.
+//
 // Usage:
 //   node scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir> [<packs-dir>]
+//   node scripts/prepare-level-packs.mjs --hsk <hsk-dir> [<local-packs-dir>]
 //
-// <upstream-dir> must hold the five upstream files of the kanji and HSK
-// lists, downloaded unmodified from the pinned commits below (a maintainer
+// JLPT mode: <upstream-dir> must hold the two upstream files of the kanji
+// list, downloaded unmodified from the pinned commit below (a maintainer
 // step; nothing here touches the network):
 //
 //   curl -fsSLo jlpt.tsv              https://raw.githubusercontent.com/onlyskin/kanjiapi.dev/76aa080cdf56aa7587304d925e1435bb93469b79/jlpt.tsv
 //   curl -fsSLo kanjiapi.dev-LICENSE  https://raw.githubusercontent.com/onlyskin/kanjiapi.dev/76aa080cdf56aa7587304d925e1435bb93469b79/LICENSE
-//   curl -fsSLo hsk30.csv             https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192/hsk30.csv
-//   curl -fsSLo hsk30-chars.csv       https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192/hsk30-chars.csv
-//   curl -fsSLo hsk30-LICENSE         https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192/LICENSE
 //
 // <jlpt-vocab-dir> holds the JLPT vocabulary CSVs of open-anki-jlpt-decks
 // and its licence, as published at the pinned commit:
@@ -21,11 +23,23 @@
 //   for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
 //   curl -fsSLo LICENSE $base/LICENSE
 //
-// It (re)writes four pack directories under <packs-dir> (default
-// plugins/data): jlpt-kanji, jlpt-words, hsk30-chars and hsk30-words, each with
-// manifest.json, levels.json, LICENSE (the upstream licence, verbatim) and
-// ATTRIBUTION.md. The output depends only on the input files, so a re-run
-// on the same inputs reproduces the committed packs byte for byte. Files
+// It (re)writes two pack directories under <packs-dir> (default
+// plugins/data): jlpt-kanji and jlpt-words.
+//
+// HSK mode (optional, local use only, not bundled): <hsk-dir> must hold the
+// three upstream files of ivankra/hsk30 at the pinned commit:
+//
+//   curl -fsSLo hsk30.csv             https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192/hsk30.csv
+//   curl -fsSLo hsk30-chars.csv       https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192/hsk30-chars.csv
+//   curl -fsSLo hsk30-LICENSE         https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192/LICENSE
+//
+// It (re)writes hsk30-chars and hsk30-words under <local-packs-dir>
+// (default plugins/data-local, gitignored; created if missing). Seed them
+// with: qinqin seed --packs plugins/data,plugins/data-local
+//
+// Each pack has manifest.json, levels.json, LICENSE (the upstream licence,
+// verbatim) and ATTRIBUTION.md. The output depends only on the input files,
+// so a re-run on the same inputs reproduces the packs byte for byte. Files
 // that differ from the pinned SHA-256 sums are converted too, with a
 // warning: ATTRIBUTION.md records the sums of the files actually used.
 //
@@ -42,7 +56,11 @@ const JLPT_DECKS_COMMIT = '1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0';
 
 const PINNED_SHA256 = {
 	'jlpt.tsv': '52ff4165bc3bac8d5784c8521c41a2255c0346a580d8f24ab0f259451564ccfe',
-	'kanjiapi.dev-LICENSE': '8d46c4a0a18ed265ad8824e54c2f2ae672a6c1c8dd01177e3928fb03e45be2c9',
+	'kanjiapi.dev-LICENSE': '8d46c4a0a18ed265ad8824e54c2f2ae672a6c1c8dd01177e3928fb03e45be2c9'
+};
+
+// The ivankra/hsk30 files (HSK mode), read from <hsk-dir>.
+const PINNED_HSK_SHA256 = {
 	'hsk30.csv': '8c2b73f74776240bcf154624730fc6fb2c42c254d5c5d0f88943878b8e575b9b',
 	'hsk30-chars.csv': '8c5957108e6dafd120be10518a827a4d834ea3ce29acbfedeff1022cd7d05280',
 	'hsk30-LICENSE': '9cd70c000ea23c899e71b2cbe7c28e18c60937f6e74d1b344d2923f6bddae44a'
@@ -411,7 +429,7 @@ function sumsBlock(sums, files) {
 	return files.map((name) => `    ${sums[name]}  ${name}`).join('\n');
 }
 
-async function main() {
+async function mainJlpt() {
 	const [upstreamArg, vocabArg, packsArg] = process.argv.slice(2);
 	if (upstreamArg === undefined || vocabArg === undefined) {
 		fail('usage: node scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir> [<packs-dir>]');
@@ -455,19 +473,9 @@ async function main() {
 
 	const jlpt = jlptLevels(text('jlpt.tsv'));
 	const vocab = jlptVocabLevels(vocabTexts);
-	const chars = hskCharLevels(text('hsk30-chars.csv'));
-	const words = hskWordLevels(text('hsk30.csv'));
 
 	const kanjiapiSource = `https://github.com/onlyskin/kanjiapi.dev (commit ${KANJIAPI_COMMIT})`;
-	const hsk30Source = `https://github.com/ivankra/hsk30 (commit ${HSK30_COMMIT})`;
 	const kanjiapiVersion = `kanjiapi.dev@${KANJIAPI_COMMIT.slice(0, 7)}`;
-	const hsk30Version = `hsk30@${HSK30_COMMIT.slice(0, 7)}`;
-	const hskAttribution =
-		'ivankra/hsk30 (LICENSE: MIT, © 2023 Ivan Krasilnikov, © 2021 Shawky, © 2021 Pleco Inc.), ' +
-		'derived from elkmovie/hsk30 and shawkynasr/HSK-official-Query-System (MIT-labelled), ' +
-		'copies of the PRC Ministry of Education HSK 3.0 standard (2021) and the HSK website; ' +
-		'the ministry claims copyright in the original, so the status is uncertain (see ATTRIBUTION.md)';
-
 	await writePack(join(packs, 'jlpt-kanji'), {
 		manifest: {
 			id: 'jlpt-kanji',
@@ -572,12 +580,65 @@ ${sumsBlock(vocabSums, Object.keys(PINNED_VOCAB_SHA256))}
 `
 	});
 
-	const hskFiles = ['hsk30.csv', 'hsk30-chars.csv', 'hsk30-LICENSE'];
-	const hskCommon = `Source: ${hsk30Source}.
+	console.log(`jlpt-kanji: ${countsLine(jlpt)}`);
+	console.log(`jlpt-words: ${vocabFormCount} forms; ${countsLine(vocab.levels)}`);
+	for (const s of vocab.stats) {
+		console.log(`  ${s.name}: ${s.rows} rows, ${s.dropped} pieces dropped, ${s.repeats} forms already listed (same or easier level)`);
+	}
+}
+
+/**
+ * mainHsk converts the optional, local-only HSK 3.0 packs. They are not
+ * bundled in the repository (unclear licence, see HSK30_CAVEAT).
+ */
+async function mainHsk(args) {
+	const [hskArg, localArg] = args;
+	if (hskArg === undefined) {
+		fail('usage: node scripts/prepare-level-packs.mjs --hsk <hsk-dir> [<local-packs-dir>]');
+	}
+	const here = dirname(fileURLToPath(import.meta.url));
+	const upstream = resolve(hskArg);
+	const packs = resolve(localArg ?? join(here, '..', 'plugins', 'data-local'));
+
+	const files = {};
+	const sums = {};
+	const hskFiles = Object.keys(PINNED_HSK_SHA256);
+	for (const name of hskFiles) {
+		try {
+			files[name] = await readFile(join(upstream, name));
+		} catch {
+			fail(
+				`${name} is missing in ${upstream}. HSK 3.0 is not bundled; download hsk30.csv, hsk30-chars.csv ` +
+					'and LICENSE (saved as hsk30-LICENSE) from https://github.com/ivankra/hsk30 first (commands in this ' +
+					"script's header)"
+			);
+		}
+		sums[name] = sha256(files[name]);
+		if (sums[name] !== PINNED_HSK_SHA256[name]) {
+			console.warn(`prepare-level-packs: warning: ${name} differs from the pinned upstream file (sha256 ${sums[name]})`);
+		}
+	}
+	const text = (name) => stripBOM(files[name].toString('utf8'));
+	const chars = hskCharLevels(text('hsk30-chars.csv'));
+	const words = hskWordLevels(text('hsk30.csv'));
+
+	const hsk30Source = `https://github.com/ivankra/hsk30 (commit ${HSK30_COMMIT})`;
+	const hsk30Version = `hsk30@${HSK30_COMMIT.slice(0, 7)}`;
+	const hskAttribution =
+		'NOT BUNDLED, local use only. ' +
+		'ivankra/hsk30 (LICENSE: MIT, © 2023 Ivan Krasilnikov, © 2021 Shawky, © 2021 Pleco Inc.), ' +
+		'derived from elkmovie/hsk30 and shawkynasr/HSK-official-Query-System (MIT-labelled), ' +
+		'copies of the PRC Ministry of Education HSK 3.0 standard (2021) and the HSK website; ' +
+		'the ministry claims copyright in the original, so the status is uncertain (see ATTRIBUTION.md)';
+
+		const hskCommon = `Source: ${hsk30Source}.
 
 Licence: the hsk30 LICENSE file is the MIT licence (Copyright (c) 2023 Ivan
 Krasilnikov, (c) 2021 Shawky, (c) 2021 Pleco Inc.); see LICENSE in this
 directory for the full text, copied verbatim from the upstream repository.
+
+Status: NOT BUNDLED with qinqin, local use only. This pack was generated
+locally by the user and must not be committed or redistributed.
 
 Provenance and caveat: ${HSK30_CAVEAT}
 
@@ -657,14 +718,17 @@ ${sumsBlock(sums, hskFiles)}
 `
 	});
 
-	console.log(`jlpt-kanji: ${countsLine(jlpt)}`);
-	console.log(`jlpt-words: ${vocabFormCount} forms; ${countsLine(vocab.levels)}`);
-	for (const s of vocab.stats) {
-		console.log(`  ${s.name}: ${s.rows} rows, ${s.dropped} pieces dropped, ${s.repeats} forms already listed (same or easier level)`);
-	}
 	console.log(`hsk30-chars: ${chars.rows} characters; ${countsLine(chars.levels)}`);
 	console.log(`hsk30-words: ${words.rows} rows, ${formCount} forms; ${countsLine(words.levels)}`);
+	console.log(`written to ${packs} (not bundled, local use only)`);
 }
+
+async function main() {
+	const args = process.argv.slice(2);
+	if (args[0] === '--hsk') return mainHsk(args.slice(1));
+	return mainJlpt();
+}
+
 
 // Run only as a script: the tests import the parsing helpers.
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
