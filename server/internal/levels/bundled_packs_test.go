@@ -23,14 +23,16 @@ const bundledPacks = "../../../plugins/data"
 // is skipped and reported, none fails the import.
 func TestBundledLevelPacks(t *testing.T) {
 	hsk := []string{"HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5", "HSK 6", "HSK 7–9"}
+	jlpt := []string{"N5", "N4", "N3", "N2", "N1"}
 	cases := []struct {
 		id, name, language, unit string
 		levels                   []string
 		total                    int // forms over all levels; 0 = not pinned
 	}{
-		{"jlpt-kanji", "JLPT", "ja", "character", []string{"N5", "N4", "N3", "N2", "N1"}, 0},
-		{"hsk30-chars", "HSK 3.0 characters", "zh", "character", hsk, 3000},
-		{"hsk30-words", "HSK 3.0", "zh", "word", hsk, 0},
+		{"jlpt-kanji", "JLPT (kanji)", "ja", "character", jlpt, 0},
+		{"jlpt-words", "JLPT (vocabulary)", "ja", "word", jlpt, 0},
+		{"hsk30-chars", "HSK 3.0 (characters)", "zh", "character", hsk, 3000},
+		{"hsk30-words", "HSK 3.0 (words)", "zh", "word", hsk, 0},
 	}
 	for _, c := range cases {
 		t.Run(c.id, func(t *testing.T) {

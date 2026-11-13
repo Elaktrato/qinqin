@@ -1,6 +1,6 @@
 {
   "id": "jlpt-kanji",
-  "name": "JLPT",
+  "name": "JLPT (kanji)",
   "version": "kanjiapi.dev@76aa080",
   "type": "levels",
   "language": "ja",

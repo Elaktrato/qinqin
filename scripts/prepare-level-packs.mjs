@@ -2,11 +2,11 @@
 // Convert the upstream JLPT and HSK 3.0 lists into qinqin level packs.
 //
 // Usage:
-//   node scripts/prepare-level-packs.mjs <upstream-dir> [<packs-dir>]
+//   node scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir> [<packs-dir>]
 //
-// <upstream-dir> must hold the five upstream files, downloaded unmodified
-// from the pinned commits below (a maintainer step; nothing here touches
-// the network):
+// <upstream-dir> must hold the five upstream files of the kanji and HSK
+// lists, downloaded unmodified from the pinned commits below (a maintainer
+// step; nothing here touches the network):
 //
 //   curl -fsSLo jlpt.tsv              https://raw.githubusercontent.com/onlyskin/kanjiapi.dev/76aa080cdf56aa7587304d925e1435bb93469b79/jlpt.tsv
 //   curl -fsSLo kanjiapi.dev-LICENSE  https://raw.githubusercontent.com/onlyskin/kanjiapi.dev/76aa080cdf56aa7587304d925e1435bb93469b79/LICENSE
@@ -14,8 +14,15 @@
 //   curl -fsSLo hsk30-chars.csv       https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192/hsk30-chars.csv
 //   curl -fsSLo hsk30-LICENSE         https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192/LICENSE
 //
-// It (re)writes three pack directories under <packs-dir> (default
-// plugins/data): jlpt-kanji, hsk30-chars and hsk30-words, each with
+// <jlpt-vocab-dir> holds the JLPT vocabulary CSVs of open-anki-jlpt-decks
+// and its licence, as published at the pinned commit:
+//
+//   base=https://raw.githubusercontent.com/jamsinclair/open-anki-jlpt-decks/1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0
+//   for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
+//   curl -fsSLo LICENSE $base/LICENSE
+//
+// It (re)writes four pack directories under <packs-dir> (default
+// plugins/data): jlpt-kanji, jlpt-words, hsk30-chars and hsk30-words, each with
 // manifest.json, levels.json, LICENSE (the upstream licence, verbatim) and
 // ATTRIBUTION.md. The output depends only on the input files, so a re-run
 // on the same inputs reproduces the committed packs byte for byte. Files
@@ -31,6 +38,7 @@ import { fileURLToPath } from 'node:url';
 
 const KANJIAPI_COMMIT = '76aa080cdf56aa7587304d925e1435bb93469b79';
 const HSK30_COMMIT = '4ff9e3915ce87baaecd7ebe263085573a4ea3192';
+const JLPT_DECKS_COMMIT = '1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0';
 
 const PINNED_SHA256 = {
 	'jlpt.tsv': '52ff4165bc3bac8d5784c8521c41a2255c0346a580d8f24ab0f259451564ccfe',
@@ -38,6 +46,16 @@ const PINNED_SHA256 = {
 	'hsk30.csv': '8c2b73f74776240bcf154624730fc6fb2c42c254d5c5d0f88943878b8e575b9b',
 	'hsk30-chars.csv': '8c5957108e6dafd120be10518a827a4d834ea3ce29acbfedeff1022cd7d05280',
 	'hsk30-LICENSE': '9cd70c000ea23c899e71b2cbe7c28e18c60937f6e74d1b344d2923f6bddae44a'
+};
+
+// The open-anki-jlpt-decks files, read from <jlpt-vocab-dir>.
+const PINNED_VOCAB_SHA256 = {
+	'n5.csv': 'f89abc86b391c4f2b551bbf8910b0de6cd600973b3a9f8d98347513921929ebe',
+	'n4.csv': '0e835f40a8d2a1f191d7aa499076002756fa099b95634758376f43c73793e9f6',
+	'n3.csv': 'ba071571d344e60b0e1fd11cd2e98a6aaa04515361653ca45147129460531297',
+	'n2.csv': '2d0f1ddd6222881cd9fc2ca701db74300af99b3f1f84d5ac3c18411c20f0c055',
+	'n1.csv': '120911636c019899552aa6d7bd64b036ecef4bedfe272a744f75735c46aae5cd',
+	LICENSE: 'dfb9747630305cda572f2ed4f77586593ead9f886dc784ee3cd4e35a19acd9eb'
 };
 
 // HSK 3.0 levels as the lists spell them, and the level names the packs use.
@@ -51,7 +69,7 @@ const HSK30_CAVEAT = `the hsk30 README says its data is "largely derived from"
 elkmovie/hsk30 and shawkynasr/HSK-official-Query-System, "both also under
 MIT license and claiming copyright -- of course, somewhat questionably, as
 the original work they *copy* is PRC's government work", and that
-"Depending on PRC law specifics [it] might be public domain". qinqin
+"Depending on PRC law specifics might be public domain". qinqin
 redistributes the data under the MIT terms stated upstream and claims
 nothing beyond them.`;
 
@@ -221,6 +239,73 @@ function hskWordLevels(text) {
 	};
 }
 
+// A cleaned JLPT vocabulary form: kana, kanji, 々, ー and ヶ only.
+const VOCAB_FORM = /^[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}ー々ヶ]+$/u;
+const EDGE_TILDES = /^[～〜~]+|[～〜~]+$/gu;
+const HAS_TILDE = /[～〜~]/u;
+
+/**
+ * vocabForms returns the word forms of one expression cell of
+ * open-anki-jlpt-decks and the number of pieces it dropped. Variants
+ * separated by ";" each count (足; 脚); a parenthesised note goes
+ * (しまった (かん) → しまった; (かさを～) さす → さす); a tilde that marks a
+ * prefix or suffix at either end goes (～円 → 円, お～ → お); a piece with
+ * a tilde inside (いくら～ても, a pattern) or any other character left
+ * over is dropped.
+ */
+function vocabForms(expression) {
+	const forms = [];
+	let dropped = 0;
+	for (const piece of expression.split(/[;；]/u)) {
+		const form = piece
+			.replace(/[（(][^)）]*[)）]/gu, '')
+			.replace(/\s+/gu, '')
+			.replace(EDGE_TILDES, '');
+		if (form === '') continue;
+		if (HAS_TILDE.test(form) || !VOCAB_FORM.test(form)) {
+			dropped++;
+			continue;
+		}
+		// A する verb is listed under its noun in JMdict (コピーする → コピー).
+		forms.push(form.length > 2 && form.endsWith('する') ? form.slice(0, -2) : form);
+	}
+	return { forms, dropped };
+}
+
+/**
+ * jlptVocabLevels reads n5.csv … n1.csv: each row's expression gives its
+ * forms (vocabForms). A form joins only the easiest level that lists it,
+ * once, in file order: the importer resolves a repeat to the same entry,
+ * which would then carry two levels. The reading column is not used: the
+ * importer resolves a written form alone.
+ */
+function jlptVocabLevels(texts) {
+	const seen = new Set();
+	const stats = [];
+	const levels = JLPT_LEVELS.map((n) => {
+		const name = `n${n}.csv`;
+		const rows = records(parseCSV(texts[name]), name, ['expression', 'reading']);
+		const entries = [];
+		let dropped = 0;
+		let repeats = 0;
+		for (const row of rows) {
+			const result = vocabForms(row.expression);
+			dropped += result.dropped;
+			for (const form of result.forms) {
+				if (seen.has(form)) {
+					repeats++;
+					continue;
+				}
+				seen.add(form);
+				entries.push(form);
+			}
+		}
+		stats.push({ name: `N${n}`, rows: rows.length, forms: entries.length, dropped, repeats });
+		return { name: `N${n}`, entries };
+	});
+	return { levels, stats };
+}
+
 function sha256(buffer) {
 	return createHash('sha256').update(buffer).digest('hex');
 }
@@ -253,12 +338,13 @@ function sumsBlock(sums, files) {
 }
 
 async function main() {
-	const [upstreamArg, packsArg] = process.argv.slice(2);
-	if (upstreamArg === undefined) {
-		fail('usage: node scripts/prepare-level-packs.mjs <upstream-dir> [<packs-dir>]');
+	const [upstreamArg, vocabArg, packsArg] = process.argv.slice(2);
+	if (upstreamArg === undefined || vocabArg === undefined) {
+		fail('usage: node scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir> [<packs-dir>]');
 	}
 	const here = dirname(fileURLToPath(import.meta.url));
 	const upstream = resolve(upstreamArg);
+	const vocabDir = resolve(vocabArg);
 	const packs = resolve(packsArg ?? join(here, '..', 'plugins', 'data'));
 
 	const files = {};
@@ -276,7 +362,25 @@ async function main() {
 	}
 	const text = (name) => files[name].toString('utf8').replace(/^﻿/, '');
 
+	const vocabFiles = {};
+	const vocabSums = {};
+	for (const name of Object.keys(PINNED_VOCAB_SHA256)) {
+		try {
+			vocabFiles[name] = await readFile(join(vocabDir, name));
+		} catch (err) {
+			fail(`read ${name} from ${vocabDir}: ${err.message}`);
+		}
+		vocabSums[name] = sha256(vocabFiles[name]);
+		if (vocabSums[name] !== PINNED_VOCAB_SHA256[name]) {
+			console.warn(`prepare-level-packs: warning: ${name} differs from the pinned upstream file (sha256 ${vocabSums[name]})`);
+		}
+	}
+	const vocabTexts = Object.fromEntries(
+		Object.entries(vocabFiles).map(([name, buffer]) => [name, buffer.toString('utf8').replace(/^﻿/, '')])
+	);
+
 	const jlpt = jlptLevels(text('jlpt.tsv'));
+	const vocab = jlptVocabLevels(vocabTexts);
 	const chars = hskCharLevels(text('hsk30-chars.csv'));
 	const words = hskWordLevels(text('hsk30.csv'));
 
@@ -293,7 +397,7 @@ async function main() {
 	await writePack(join(packs, 'jlpt-kanji'), {
 		manifest: {
 			id: 'jlpt-kanji',
-			name: 'JLPT',
+			name: 'JLPT (kanji)',
 			version: kanjiapiVersion,
 			type: 'levels',
 			language: 'ja',
@@ -328,6 +432,64 @@ ${sumsBlock(sums, ['jlpt.tsv', 'kanjiapi.dev-LICENSE'])}
 `
 	});
 
+	const vocabSource = `https://github.com/jamsinclair/open-anki-jlpt-decks (commit ${JLPT_DECKS_COMMIT})`;
+	const vocabFormCount = vocab.levels.reduce((sum, level) => sum + level.entries.length, 0);
+	const vocabStats = vocab.stats
+		.map((s) => `${s.name}: ${s.rows} rows, ${s.forms} forms, ${s.dropped} pieces dropped, ${s.repeats} repeats`)
+		.join('\n- ');
+	await writePack(join(packs, 'jlpt-words'), {
+		manifest: {
+			id: 'jlpt-words',
+			name: 'JLPT (vocabulary)',
+			version: `open-anki-jlpt-decks@${JLPT_DECKS_COMMIT.slice(0, 7)}`,
+			type: 'levels',
+			language: 'ja',
+			license: 'MIT',
+			attribution:
+				'open-anki-jlpt-decks (MIT, © 2020 Jamie Sinclair), https://github.com/jamsinclair/open-anki-jlpt-decks — ' +
+				'unofficial N5–N1 vocabulary lists; per its README taken from chyyran/jlpt-anki-decks, based on the tanos.co.uk ' +
+				'lists (Jonathan Waller, described as CC BY)',
+			format: 'json'
+		},
+		unit: 'word',
+		levels: vocab.levels,
+		license: vocabFiles.LICENSE,
+		attribution: `# JLPT vocabulary levels (N5–N1)
+
+Japanese words grouped by JLPT level, N5 (easiest) to N1, from \`src/n5.csv\`
+… \`src/n1.csv\` of open-anki-jlpt-decks, ${vocabSource}.
+
+Licence: MIT, Copyright (c) 2020 Jamie Sinclair. See LICENSE in this
+directory for the full text, copied verbatim from the upstream repository.
+
+Provenance: the open-anki-jlpt-decks README says "Original deck data was
+taken from https://github.com/chyyran/jlpt-anki-decks, which were based on
+decks from tanos.co.uk". The tanos.co.uk lists are Jonathan Waller's
+unofficial JLPT lists, described as published under a Creative Commons
+Attribution (CC BY) licence; that page could not be reached when this pack
+was made, so the description is not verified here. The JLPT has published
+no official vocabulary list since the 2010 revision of the test; these
+lists are reconstructions and not an official release.
+
+Conversion (\`scripts/prepare-level-packs.mjs\`): the \`expression\` column of
+each level file gives the forms. Variants separated by ";" each count;
+parenthesised notes are removed (しまった (かん) → しまった); a tilde marking a
+prefix or suffix at either end is removed (～円 → 円); a piece with a tilde
+inside (a grammar pattern such as いくら～ても) or other leftover characters is
+dropped; a する verb becomes its noun, as JMdict lists it (コピーする →
+コピー). A form keeps only the easiest level that lists it, once. The
+\`reading\` and \`meaning\` columns are not used: the importer resolves a written
+form (a kana-only form resolves to the kana-written word). ${vocabFormCount}
+forms; levels: ${countsLine(vocab.levels)}.
+
+- ${vocabStats}
+
+Input files (SHA-256):
+
+${sumsBlock(vocabSums, Object.keys(PINNED_VOCAB_SHA256))}
+`
+	});
+
 	const hskFiles = ['hsk30.csv', 'hsk30-chars.csv', 'hsk30-LICENSE'];
 	const hskCommon = `Source: ${hsk30Source}.
 
@@ -345,7 +507,7 @@ an official release.`;
 	await writePack(join(packs, 'hsk30-chars'), {
 		manifest: {
 			id: 'hsk30-chars',
-			name: 'HSK 3.0 characters',
+			name: 'HSK 3.0 (characters)',
 			version: hsk30Version,
 			type: 'levels',
 			language: 'zh',
@@ -379,7 +541,7 @@ ${sumsBlock(sums, hskFiles)}
 	await writePack(join(packs, 'hsk30-words'), {
 		manifest: {
 			id: 'hsk30-words',
-			name: 'HSK 3.0',
+			name: 'HSK 3.0 (words)',
 			version: hsk30Version,
 			type: 'levels',
 			language: 'zh',
@@ -412,6 +574,10 @@ ${sumsBlock(sums, hskFiles)}
 	});
 
 	console.log(`jlpt-kanji: ${countsLine(jlpt)}`);
+	console.log(`jlpt-words: ${vocabFormCount} forms; ${countsLine(vocab.levels)}`);
+	for (const s of vocab.stats) {
+		console.log(`  ${s.name}: ${s.rows} rows, ${s.dropped} pieces dropped, ${s.repeats} forms already listed (same or easier level)`);
+	}
 	console.log(`hsk30-chars: ${chars.rows} characters; ${countsLine(chars.levels)}`);
 	console.log(`hsk30-words: ${words.rows} rows, ${formCount} forms; ${countsLine(words.levels)}`);
 }

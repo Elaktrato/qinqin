@@ -99,12 +99,13 @@ describe('groupOptions', () => {
 	// the JLPT N5–N1 kanji and the HSK 3.0 characters and words.
 	const schemes: Scheme[] = [
 		scheme(1, 'HSK mini (sample)', 'zh', 'hsk-mini', ['1', '2']),
-		scheme(2, 'HSK 3.0 characters', 'zh', 'hsk30-chars', hsk),
-		scheme(3, 'HSK 3.0', 'zh', 'hsk30-words', hsk),
-		scheme(4, 'JLPT', 'ja', 'jlpt-kanji', ['N5', 'N4', 'N3', 'N2', 'N1']),
+		scheme(2, 'HSK 3.0 (characters)', 'zh', 'hsk30-chars', hsk),
+		scheme(3, 'HSK 3.0 (words)', 'zh', 'hsk30-words', hsk),
+		scheme(4, 'JLPT (kanji)', 'ja', 'jlpt-kanji', ['N5', 'N4', 'N3', 'N2', 'N1']),
 		scheme(5, 'JLPT N5 mini (sample)', 'ja', 'jlpt-mini', ['N5']),
 		scheme(6, 'hsk-mini', 'zh'),
-		scheme(12, 'JLPT mini', 'ja')
+		scheme(12, 'JLPT mini', 'ja'),
+		scheme(13, 'JLPT (vocabulary)', 'ja', 'jlpt-words', ['N5', 'N4', 'N3', 'N2', 'N1'])
 	];
 
 	it('offers grade, frequency, strokes and the non-sample ja schemes (JLPT) for ja', () => {
@@ -112,7 +113,8 @@ describe('groupOptions', () => {
 			{ key: 'grade', label: 'Grade' },
 			{ key: 'freq', label: 'Frequency' },
 			{ key: 'strokes', label: 'Strokes' },
-			{ key: 'scheme:4', label: 'JLPT' }
+			{ key: 'scheme:4', label: 'JLPT (kanji)' },
+			{ key: 'scheme:13', label: 'JLPT (vocabulary)' }
 		]);
 	});
 
@@ -125,8 +127,8 @@ describe('groupOptions', () => {
 			{ key: 'common', label: 'Common' },
 			{ key: 'hkgrade', label: 'HK primary grade' },
 			{ key: 'strokes', label: 'Strokes' },
-			{ key: 'scheme:2', label: 'HSK 3.0 characters' },
-			{ key: 'scheme:3', label: 'HSK 3.0' }
+			{ key: 'scheme:2', label: 'HSK 3.0 (characters)' },
+			{ key: 'scheme:3', label: 'HSK 3.0 (words)' }
 		]);
 	});
 
