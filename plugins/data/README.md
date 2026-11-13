@@ -45,6 +45,14 @@ Committed level lists (converted, with the upstream `LICENSE` and an
 | `hsk30-chars` | levels | zh | HSK 3.0 (characters) | the 3,000 HSK 3.0 characters by reading level, unit `character`: HSK 1–6 300 each, HSK 7–9 1,200 (ivankra/hsk30 `hsk30-chars.csv`) | MIT (ivankra/hsk30), see caveat |
 | `hsk30-words` | levels | zh | HSK 3.0 (words) | the 11,092 HSK 3.0 words (11,059 simplified forms once variants are expanded and in-level repeats dropped), unit `word`, levels HSK 1–6 and HSK 7–9 (ivankra/hsk30 `hsk30.csv`) | MIT (ivankra/hsk30), see caveat |
 
+Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
+[{"name": "N5", "entries": [...]}]}`, levels easiest first. An entry is a
+written form (`"外"`) or `{"form": "風", "reading": "かぜ"}`; the optional
+reading makes a word-unit import prefer the word that has both the form and
+the reading (風 かぜ rather than the usually-kana 振り ふり, also written 風)
+and falls back to the form alone when no word has both. Plain-string packs
+are unchanged. `jlpt-words` carries the readings of its source.
+
 JLPT vocabulary chain: the open-anki-jlpt-decks README says "Original deck
 data was taken from https://github.com/chyyran/jlpt-anki-decks, which were
 based on decks from tanos.co.uk"; the tanos.co.uk lists (Jonathan Waller) are

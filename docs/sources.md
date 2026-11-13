@@ -258,6 +258,10 @@ package; a web test keeps them identical) and served by the app at
 A levels pack is a directory with a `manifest.json` (`"type": "levels"`, `language`,
 `"format": "json"`, plus `id`, `name`, `version`, `license`, `attribution`) and a
 `levels.json`: `{"unit": "word" | "character", "levels": [{"name": "1", "entries": [...]}]}`.
+An entry is a written form (`"風"`) or an object with an optional reading
+(`{"form": "風", "reading": "かぜ"}`): for a word unit the reading picks, among
+the words written with the form, the one read so; without a match the form
+alone decides. Packs with plain strings keep working unchanged.
 Entries must already exist in an imported dictionary; unknown ones are skipped and
 reported. Put one under `plugins/data-local/` and run `qinqin seed`. The map
 offers every installed scheme except the samples (`hsk-mini`, `jlpt-mini`, in

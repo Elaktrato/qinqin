@@ -61,8 +61,8 @@ func TestBundledLevelPacks(t *testing.T) {
 			var data struct {
 				Unit   string `json:"unit"`
 				Levels []struct {
-					Name    string   `json:"name"`
-					Entries []string `json:"entries"`
+					Name    string            `json:"name"`
+					Entries []json.RawMessage `json:"entries"` // a form, or {"form", "reading"}
 				} `json:"levels"`
 			}
 			if err := json.Unmarshal(raw, &data); err != nil {

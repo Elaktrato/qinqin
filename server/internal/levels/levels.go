@@ -115,10 +115,11 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 	)
 	for i, lv := range lvls {
 		seen := map[int64]bool{}
-		for _, form := range lv.Entries {
+		for _, pe := range lv.Entries {
+			form := pe.Form
 			var e *lexicon.Entry
 			if unit == UnitWord {
-				e, err = store.BestWord(ctx, m.Language, form)
+				e, err = store.BestWordReading(ctx, m.Language, form, pe.Reading)
 				if errors.Is(err, lexicon.ErrNotFound) && utf8.RuneCountInString(form) == 1 {
 					// A one-character word (HSK's 好) is a character
 					// entry in CC-CEDICT: the character is the member.
@@ -411,11 +412,36 @@ type levelsPack struct {
 	Levels []packLevel `json:"levels"`
 }
 
-// packLevel is one level of a levels.json pack: a name and the written
-// forms that belong to it.
+// packLevel is one level of a levels.json pack: a name and the entries
+// that belong to it.
 type packLevel struct {
-	Name    string   `json:"name"`
-	Entries []string `json:"entries"`
+	Name    string      `json:"name"`
+	Entries []packEntry `json:"entries"`
+}
+
+// packEntry is one listed entry: a written form, spelled as a plain JSON
+// string, or an object {"form": "風", "reading": "かぜ"} whose optional
+// reading picks, among the words written with the form, the one read so
+// (see lexicon.Store.BestWordReading).
+type packEntry struct {
+	Form    string `json:"form"`
+	Reading string `json:"reading,omitempty"`
+}
+
+// UnmarshalJSON accepts both spellings of a packEntry.
+func (p *packEntry) UnmarshalJSON(data []byte) error {
+	var form string
+	if err := json.Unmarshal(data, &form); err == nil {
+		*p = packEntry{Form: form}
+		return nil
+	}
+	type plain packEntry
+	var v plain
+	if err := json.Unmarshal(data, &v); err != nil {
+		return fmt.Errorf("an entry is a string or {\"form\", \"reading\"}: %w", err)
+	}
+	*p = packEntry(v)
+	return nil
 }
 
 // readLevelsPack reads and validates the levels.json in dir, rejecting
@@ -452,8 +478,8 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 			return "", nil, fmt.Errorf("%w: %s of %s: level name %q appears twice", dict.ErrInvalidPack, levelsFile, dir, lv.Name)
 		}
 		names[lv.Name] = true
-		for j, form := range lv.Entries {
-			if strings.TrimSpace(form) == "" {
+		for j, pe := range lv.Entries {
+			if strings.TrimSpace(pe.Form) == "" {
 				return "", nil, fmt.Errorf("%w: %s of %s: entry %d of level %q is empty", dict.ErrInvalidPack, levelsFile, dir, j, lv.Name)
 			}
 		}

@@ -391,6 +391,40 @@ func (s Store) BestWord(ctx context.Context, language, form string) (*Entry, err
 	return s.Get(ctx, id)
 }
 
+// bestFormReadingQuery is BestWordReading's first step, driven from forms
+// like bestQuery: a word entry with the written form that also has the
+// reading, compared by its plain form (the language pack's kana folding)
+// or as written, ranked like Best.
+const bestFormReadingQuery = `
+	SELECT e.id FROM forms f
+	CROSS JOIN entries e ON e.id = f.entry_id
+	WHERE f.text = ? AND f.deleted_at IS NULL
+	  AND e.language = ? AND e.kind = 'word' AND e.deleted_at IS NULL
+	  AND EXISTS (SELECT 1 FROM readings r
+		WHERE r.entry_id = e.id AND r.deleted_at IS NULL AND (r.plain = ? OR r.value = ?))
+	ORDER BY (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
+	LIMIT 1`
+
+// BestWordReading is BestWord for a written form whose reading is known
+// (a JLPT list gives 風 with かぜ): an entry with both the form and the
+// reading wins first, so the usually-kana 振り (also written 風, read
+// ふり) does not take the level of 風 (かぜ). With an empty reading, or
+// one no entry of that form has, it is BestWord.
+func (s Store) BestWordReading(ctx context.Context, language, form, reading string) (*Entry, error) {
+	if reading != "" {
+		plain := lang.For(language).NormalizeReading("kana", reading)
+		var id int64
+		err := s.DB.QueryRowContext(ctx, bestFormReadingQuery, form, language, plain, reading).Scan(&id)
+		if err == nil {
+			return s.Get(ctx, id)
+		}
+		if !errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("best word %s/%q (%s): %w", language, form, reading, err)
+		}
+	}
+	return s.BestWord(ctx, language, form)
+}
+
 // Link links fromID to toID with typ (LinkVariant or LinkRadical). A
 // variant link is stored in both directions so reads are symmetric.
 // Linking an existing pair again writes nothing; a soft-deleted link

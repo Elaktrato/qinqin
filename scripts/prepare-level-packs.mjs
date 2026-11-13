@@ -34,7 +34,7 @@
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const KANJIAPI_COMMIT = '76aa080cdf56aa7587304d925e1435bb93469b79';
 const HSK30_COMMIT = '4ff9e3915ce87baaecd7ebe263085573a4ea3192';
@@ -75,10 +75,15 @@ nothing beyond them.`;
 
 const HAN = /^\p{Script=Han}$/u;
 
+/** PackError is a malformed or missing input; main prints it and exits 1. */
+export class PackError extends Error {}
+
 function fail(message) {
-	console.error(`prepare-level-packs: ${message}`);
-	process.exit(1);
+	throw new PackError(message);
 }
+
+/** stripBOM drops a leading byte order mark. */
+const stripBOM = (text) => (text.charCodeAt(0) === 0xfeff ? text.slice(1) : text);
 
 /** parseCSV reads RFC 4180 CSV (quoted fields, "" escapes, LF or CRLF). */
 export function parseCSV(text) {
@@ -114,7 +119,7 @@ export function parseCSV(text) {
 			field += c;
 		}
 	}
-	if (quoted) throw new Error('unterminated quoted field');
+	if (quoted) fail('unterminated quoted field');
 	if (field !== '' || row.length > 0) {
 		row.push(field);
 		rows.push(row);
@@ -122,8 +127,18 @@ export function parseCSV(text) {
 	return rows;
 }
 
-/** records maps CSV rows to objects keyed by the header row. */
-function records(rows, file, required) {
+/**
+ * records parses one CSV file into objects keyed by its header row; a
+ * malformed or empty file fails with the file's name.
+ */
+export function records(text, file, required) {
+	let rows;
+	try {
+		rows = parseCSV(stripBOM(text));
+	} catch (err) {
+		fail(`${file}: ${err.message}`);
+	}
+	if (rows.length === 0) fail(`${file}: empty file, want a header row`);
 	const [header, ...body] = rows;
 	for (const name of required) {
 		if (!header.includes(name)) fail(`${file}: missing column ${name} (header: ${header.join(',')})`);
@@ -173,7 +188,7 @@ function jlptLevels(text) {
 
 /** hskCharLevels reads hsk30-chars.csv, grouped by reading level. */
 function hskCharLevels(text) {
-	const rows = records(parseCSV(text), 'hsk30-chars.csv', ['Hanzi', 'Level']);
+	const rows = records(text, 'hsk30-chars.csv', ['Hanzi', 'Level']);
 	const byLevel = new Map(HSK_LEVELS.map((level) => [level, []]));
 	const seen = new Set();
 	for (const row of rows) {
@@ -223,7 +238,7 @@ function wordForms(row) {
 
 /** hskWordLevels reads hsk30.csv, grouped by level, variants expanded. */
 function hskWordLevels(text) {
-	const rows = records(parseCSV(text), 'hsk30.csv', ['ID', 'Simplified', 'Level', 'Variants']);
+	const rows = records(text, 'hsk30.csv', ['ID', 'Simplified', 'Level', 'Variants']);
 	const byLevel = new Map(HSK_LEVELS.map((level) => [level, { entries: [], seen: new Set() }]));
 	const ids = new Set();
 	for (const row of rows) {
@@ -244,60 +259,96 @@ const VOCAB_FORM = /^[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}ー々
 const EDGE_TILDES = /^[～〜~]+|[～〜~]+$/gu;
 const HAS_TILDE = /[～〜~]/u;
 
+const KANA_READING = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
+
+/** cleanPiece strips the list's notes, spaces and affix tildes from one piece. */
+function cleanPiece(piece) {
+	return piece
+		.replace(/[（(][^)）]*[)）]/gu, '')
+		.replace(/\s+/gu, '')
+		.replace(EDGE_TILDES, '');
+}
+
 /**
- * vocabForms returns the word forms of one expression cell of
- * open-anki-jlpt-decks and the number of pieces it dropped. Variants
- * separated by ";" each count (足; 脚); a parenthesised note goes
- * (しまった (かん) → しまった; (かさを～) さす → さす); a tilde that marks a
- * prefix or suffix at either end goes (～円 → 円, お～ → お); a piece with
- * a tilde inside (いくら～ても, a pattern) or any other character left
- * over is dropped.
+ * stripSuru reduces a する verb to its noun when the noun has two or more
+ * characters (勉強する → 勉強, コピーする → コピー), which is how JMdict
+ * lists them. A one-character stem keeps する: 関する, 対する and 愛する
+ * are JMdict words of their own, and 関 alone is an unrelated noun.
  */
-function vocabForms(expression) {
+export function stripSuru(form) {
+	return form.length >= 4 && form.endsWith('する') ? form.slice(0, -2) : form;
+}
+
+/**
+ * vocabForms returns the word forms of one row of open-anki-jlpt-decks,
+ * each with its reading when the row gives one, and the number of pieces
+ * it dropped. Variants separated by ";" each count (足; 脚); a
+ * parenthesised note goes (しまった (かん) → しまった; (かさを～) さす →
+ * さす); a tilde that marks a prefix or suffix at either end goes (～円 →
+ * 円, お～ → お); a piece with a tilde inside (いくら～ても, a pattern) or
+ * any other character left over is dropped; a する verb with a stem of
+ * two or more characters becomes its noun (stripSuru). Readings pair with
+ * the pieces by position when the counts match; a single reading applies
+ * to every piece (足; 脚 read あし); otherwise, or when a reading is not
+ * kana, the forms go without.
+ */
+export function vocabForms(expression, reading = '') {
 	const forms = [];
 	let dropped = 0;
-	for (const piece of expression.split(/[;；]/u)) {
-		const form = piece
-			.replace(/[（(][^)）]*[)）]/gu, '')
-			.replace(/\s+/gu, '')
-			.replace(EDGE_TILDES, '');
+	const pieces = expression.split(/[;；]/u);
+	const readings = reading
+		.split(/[;；]/u)
+		.map(cleanPiece)
+		.filter((r) => r !== '');
+	for (const [i, piece] of pieces.entries()) {
+		const form = cleanPiece(piece);
 		if (form === '') continue;
 		if (HAS_TILDE.test(form) || !VOCAB_FORM.test(form)) {
 			dropped++;
 			continue;
 		}
-		// A する verb is listed under its noun in JMdict (コピーする → コピー).
-		forms.push(form.length > 2 && form.endsWith('する') ? form.slice(0, -2) : form);
+		let r = readings.length === pieces.length ? readings[i] : readings.length === 1 ? readings[0] : '';
+		if (!r || !KANA_READING.test(r)) r = '';
+		const stem = stripSuru(form);
+		if (stem !== form && r.endsWith('する')) r = r.slice(0, -2);
+		else if (stem !== form) r = '';
+		forms.push({ form: stem, reading: r === stem ? '' : r });
 	}
 	return { forms, dropped };
 }
 
+/** packEntry is a levels.json entry: the form, or {form, reading}. */
+function packEntry({ form, reading }) {
+	return reading ? { form, reading } : form;
+}
+
 /**
- * jlptVocabLevels reads n5.csv … n1.csv: each row's expression gives its
- * forms (vocabForms). A form joins only the easiest level that lists it,
- * once, in file order: the importer resolves a repeat to the same entry,
- * which would then carry two levels. The reading column is not used: the
- * importer resolves a written form alone.
+ * jlptVocabLevels reads n5.csv … n1.csv: each row's expression and
+ * reading give its forms (vocabForms). A form with its reading joins only
+ * the easiest level that lists it, once, in file order: one entry carries
+ * one level of the scheme. The reading lets the importer pick the word
+ * read so among the words written with the form (風 かぜ, not 振り ふり).
  */
 function jlptVocabLevels(texts) {
 	const seen = new Set();
 	const stats = [];
 	const levels = JLPT_LEVELS.map((n) => {
 		const name = `n${n}.csv`;
-		const rows = records(parseCSV(texts[name]), name, ['expression', 'reading']);
+		const rows = records(texts[name], name, ['expression', 'reading']);
 		const entries = [];
 		let dropped = 0;
 		let repeats = 0;
 		for (const row of rows) {
-			const result = vocabForms(row.expression);
+			const result = vocabForms(row.expression, row.reading);
 			dropped += result.dropped;
-			for (const form of result.forms) {
-				if (seen.has(form)) {
+			for (const item of result.forms) {
+				const key = `${item.form}\t${item.reading}`;
+				if (seen.has(key)) {
 					repeats++;
 					continue;
 				}
-				seen.add(form);
-				entries.push(form);
+				seen.add(key);
+				entries.push(packEntry(item));
 			}
 		}
 		stats.push({ name: `N${n}`, rows: rows.length, forms: entries.length, dropped, repeats });
@@ -360,7 +411,7 @@ async function main() {
 			console.warn(`prepare-level-packs: warning: ${name} differs from the pinned upstream file (sha256 ${sums[name]})`);
 		}
 	}
-	const text = (name) => files[name].toString('utf8').replace(/^﻿/, '');
+	const text = (name) => stripBOM(files[name].toString('utf8'));
 
 	const vocabFiles = {};
 	const vocabSums = {};
@@ -376,7 +427,7 @@ async function main() {
 		}
 	}
 	const vocabTexts = Object.fromEntries(
-		Object.entries(vocabFiles).map(([name, buffer]) => [name, buffer.toString('utf8').replace(/^﻿/, '')])
+		Object.entries(vocabFiles).map(([name, buffer]) => [name, stripBOM(buffer.toString('utf8'))])
 	);
 
 	const jlpt = jlptLevels(text('jlpt.tsv'));
@@ -476,11 +527,14 @@ each level file gives the forms. Variants separated by ";" each count;
 parenthesised notes are removed (しまった (かん) → しまった); a tilde marking a
 prefix or suffix at either end is removed (～円 → 円); a piece with a tilde
 inside (a grammar pattern such as いくら～ても) or other leftover characters is
-dropped; a する verb becomes its noun, as JMdict lists it (コピーする →
-コピー). A form keeps only the easiest level that lists it, once. The
-\`reading\` and \`meaning\` columns are not used: the importer resolves a written
-form (a kana-only form resolves to the kana-written word). ${vocabFormCount}
-forms; levels: ${countsLine(vocab.levels)}.
+dropped; a する verb whose stem has two or more characters becomes its noun,
+as JMdict lists it (勉強する → 勉強), while 関する or 愛する stay whole. The
+\`reading\` column goes with each kanji form ({"form": "風", "reading": "かぜ"})
+so the importer picks the word read so (風 かぜ, not the usually-kana 振り
+ふり); readings pair with the variants by position, or one reading applies to
+all. A form with its reading keeps only the easiest level that lists it, once.
+The \`meaning\` column is not used. ${vocabFormCount} forms; levels:
+${countsLine(vocab.levels)}.
 
 - ${vocabStats}
 
@@ -582,4 +636,13 @@ ${sumsBlock(sums, hskFiles)}
 	console.log(`hsk30-words: ${words.rows} rows, ${formCount} forms; ${countsLine(words.levels)}`);
 }
 
-await main();
+// Run only as a script: the tests import the parsing helpers.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+	try {
+		await main();
+	} catch (err) {
+		if (!(err instanceof PackError)) throw err;
+		console.error(`prepare-level-packs: ${err.message}`);
+		process.exit(1);
+	}
+}
