@@ -294,11 +294,16 @@ every character of the language, studied or not, shaded by mastery.
   characters, the standard characters list (通用规范汉字表) plus every character
   with a CC-CEDICT reading, single Han characters only. A traditional form shares
   its simplified character's cell: a card written 愛 colours the 爱 cell.
-- **Group by.** The choice is remembered per language. Japanese: Grade, JLPT
-  (the old pre-2010 scale of four levels, labelled as such), Frequency, Strokes.
-  Chinese: Common (GB2312 level 1, level 2, other standard, other), HK primary
-  grade, Strokes. Any installed level scheme that is not a sample pack, such as an
-  HSK pack you install yourself (see below), is added as a further option.
+- **Group by.** The choice is remembered per language; the default is Grade
+  (Japanese) or Common (Chinese). Japanese: Grade, Frequency, Strokes, "JLPT
+  (kanji)" (N5–N1, the bundled `jlpt-kanji` pack) and "JLPT (vocabulary)" (the
+  N5–N1 word lists of `jlpt-words`). Chinese: Common (GB2312 level 1, level 2,
+  other standard, other), HK primary grade, Strokes, "HSK 3.0 (characters)"
+  (the 3,000 characters by reading level) and "HSK 3.0 (words)" (the 11,092
+  words). A word list is shown as the characters its words are written with,
+  each at the lowest level it appears in. Every installed level scheme
+  that is not a sample pack is offered the same way, under its name; characters
+  outside it land in "Not in this scheme".
 - **Sections** show learned/total and a stacked stage bar. The stage legend doubles
   as a filter (All, Not studied, Learning, Learned). Search matches the glyph,
   the reading (toneless pinyin works), the meaning, and hiragana or katakana.
@@ -315,13 +320,16 @@ every character of the language, studied or not, shaded by mastery.
   map is derived from your cards and review events, so nothing schedule-shaped is
   stored for it either.
 
-The grade, JLPT, frequency and standard-list fields come from the importers. A
+The grade, frequency and standard-list fields come from the importers. A
 database seeded before this change needs `qinqin seed` (under Docker,
 `docker compose exec qinqin qinqin seed`) to fill them; until then the page shows a
 "Level data missing" banner and lists the characters in one section.
 
-No HSK list is bundled, because of its licence. To group by HSK, put a level pack
-under `plugins/data-local/<id>/` (see [docs/sources.md](docs/sources.md),
+The JLPT and HSK 3.0 levels are bundled level packs (see "Bundled data"); a
+database seeded before they were added needs `qinqin seed` to install them. The
+pre-2010 four-level JLPT scale that KANJIDIC2 carries is no longer imported or
+offered; a re-seed removes it from the character entries. To add another list,
+put a level pack under `plugins/data-local/<id>/` (see [docs/sources.md](docs/sources.md),
 "Local-only data") and run `qinqin seed`, with `--packs plugins/data,plugins/data-local`
 if you name the roots. A pack is a directory with a `manifest.json` (`"type": "levels"`,
 `"language": "zh"`, `"format": "json"`, plus `id`, `name`, `version`, `license`,
@@ -370,7 +378,7 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license` and `attribution` (the Sources page lists them) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
-| `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `j` JLPT (old 1–4 scale), `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
+| `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
 | `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one; an over-long or invalid name is 422, a duplicate (language, name) 409 |
 | `PUT /api/workspaces/{id}` `{name?, settings?}` | Rename and/or merge settings; at least one field is required. The body used to be the bare settings object |
@@ -503,8 +511,8 @@ Chinese frequency packs are local-only: none is bundled. See
 
 ## Bundled data
 
-A fresh install can seed offline; the image ships these upstream dictionaries
-and frequency list under `/opt/qinqin/packs` (source: `plugins/data/`):
+A fresh install can seed offline; the image ships these upstream dictionaries,
+frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/`):
 
 | Pack | Provides | License |
 |---|---|---|
@@ -513,9 +521,13 @@ and frequency list under `/opt/qinqin/packs` (source: `plugins/data/`):
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
+| [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) (`jlpt-kanji`) | Japanese: JLPT N5–N1 kanji levels (an unofficial reconstruction; the JLPT publishes no kanji list) | MIT (© 2023 Iridium Szreter) |
+| [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks) (`jlpt-words`) | Japanese: JLPT N5–N1 vocabulary levels (unofficial; per its README taken from chyyran/jlpt-anki-decks, based on the tanos.co.uk lists by Jonathan Waller, described as CC BY) | MIT (© 2020 Jamie Sinclair) |
+| [ivankra/hsk30](https://github.com/ivankra/hsk30) (`hsk30-chars`, `hsk30-words`) | Chinese: HSK 3.0 characters by reading level, and the HSK 3.0 words, levels 1–6 and 7–9 | MIT (© 2023 Ivan Krasilnikov and others), with a caveat: upstream doubts the copyright claims on a transcription of the PRC Ministry of Education list, which may be public domain |
 
 The dictionary files are redistributed **unmodified**; the Jiten list is a
-conversion of the published file with unmodified ranks. See
+conversion of the published file with unmodified ranks; the level lists are
+converted from pinned upstream files by `scripts/prepare-level-packs.mjs`. See
 [docs/sources.md](docs/sources.md) for attributions, upstream links, and the
 redistribution policy. Stroke-order data (`hanzi-writer-data`, derived from the
 Make Me a Hanzi dataset) is licensed under the **Arphic Public License** and is
@@ -570,11 +582,12 @@ Dockerfile copies that directory into the Go binary before compiling.
 |---|---|
 | `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
-| `plugins/data/` | Bundled seed packs (dictionaries and the Jiten frequency list) with their licenses and attribution notices |
+| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the JLPT and HSK 3.0 level lists) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
 | `plugins/samples/` | Hand-written sample dictionaries (`zh-mini`, `ja-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
+| `scripts/prepare-level-packs.mjs` | Rebuilds the JLPT and HSK 3.0 level packs from the pinned upstream files (download commands in its header) |
 
 ## Branches
 

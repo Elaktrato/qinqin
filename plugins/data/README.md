@@ -34,6 +34,38 @@ directory):
 | `kanjidic2` | dictionary | ja | KANJIDIC2 kanji (`kanjidic2.xml.gz`) |
 | `jiten-frequency` | frequency | ja | Jiten global word frequency ranks, converted to `freq.csv.gz` (`term,reading,rank`, ranks unmodified) |
 
+Committed level lists (converted, with the upstream `LICENSE` and an
+`ATTRIBUTION.md` in each directory):
+
+| Pack | Type | Language | Scheme | Contents | Licence |
+|------|------|----------|--------|----------|---------|
+| `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`; unofficial, as every N5–N1 list is) | MIT, © 2023 Iridium Szreter |
+| `jlpt-words` | levels | ja | JLPT (vocabulary) | words by JLPT level, unit `word`: N5 716, N4 658, N3 2,069, N2 1,725, N1 2,631 forms (open-anki-jlpt-decks `src/n5.csv` … `n1.csv`; unofficial) | MIT, © 2020 Jamie Sinclair; upstream chain below |
+| `hsk30-chars` | levels | zh | HSK 3.0 (characters) | the 3,000 HSK 3.0 characters by reading level, unit `character`: HSK 1–6 300 each, HSK 7–9 1,200 (ivankra/hsk30 `hsk30-chars.csv`) | MIT (ivankra/hsk30), see caveat |
+| `hsk30-words` | levels | zh | HSK 3.0 (words) | the 11,092 HSK 3.0 words (11,059 simplified forms once variants are expanded and in-level repeats dropped), unit `word`, levels HSK 1–6 and HSK 7–9 (ivankra/hsk30 `hsk30.csv`) | MIT (ivankra/hsk30), see caveat |
+
+JLPT vocabulary chain: the open-anki-jlpt-decks README says "Original deck
+data was taken from https://github.com/chyyran/jlpt-anki-decks, which were
+based on decks from tanos.co.uk"; the tanos.co.uk lists (Jonathan Waller) are
+described as Creative Commons Attribution, which was not verified here (the
+site was unreachable). Expressions are cleaned (variants split on ";", notes
+in parentheses and affix tildes removed, patterns dropped, a する verb reduced
+to its noun) and each form kept at its easiest level; kana spellings of words
+JMdict writes with kanji (けんか, よい) do not resolve and are skipped at seed
+time (168 of 7,799 forms against the bundled JMdict).
+
+HSK caveat: the hsk30 README says its data is largely derived from two MIT
+repositories (elkmovie/hsk30, shawkynasr/HSK-official-Query-System) that copy
+the PRC Ministry of Education's 2021 HSK 3.0 document and claim copyright in
+it "somewhat questionably", and that the list "might be public domain"
+depending on PRC law. The pack is redistributed under the MIT terms stated
+upstream and claims nothing beyond them. Each `ATTRIBUTION.md` quotes the
+README, names the pinned upstream commit and records the SHA-256 of the input
+files. `scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir>` rebuilds the four
+directories byte for byte from those files (the download commands are in its
+header); a one-character HSK word (好) links to the character entry, since
+CC-CEDICT gives single characters as characters, not words.
+
 The importers read the compressed files directly, so a fresh clone or the
 Docker image seeds with no network and no decompression step. Run
 `scripts/fetch-seeds.sh` to refresh the bundle; it rewrites these pack
@@ -45,9 +77,12 @@ maintainer step: re-check Jiten's licence first and pass
 scripts require them). That conversion needs `python3`; building, running
 and testing the app do not.
 
-The `kanjidic2` and `unihan` importers also store grade, JLPT, frequency,
-stroke, GB2312 and standard-list attributes for the character map (see
-`docs/sources.md`); a database seeded earlier needs a re-seed to fill them.
+The `kanjidic2` and `unihan` importers also store grade, frequency, stroke,
+GB2312 and standard-list attributes for the character map (see
+`docs/sources.md`); a database seeded earlier needs a re-seed to fill them. The
+KANJIDIC2 `<jlpt>` field (the pre-2010 four-level scale) is not imported: a
+re-seed drops it from entries an older import wrote, and JLPT levels come from
+`jlpt-kanji`.
 
 A slow test seeds this whole directory and checks lookups against the real
 data; it is opt-in: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v`
