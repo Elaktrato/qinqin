@@ -4,12 +4,12 @@
 // with its variant forms (a card written 愛 lights 爱), taking the maximum.
 
 import type { CharRow, Scheme } from '$lib/api/types';
-import { stageOf, type CharMastery, type MasteryStage } from './mastery';
+import { MASTERY_THRESHOLD, stageOf, type CharMastery, type MasteryStage } from './mastery';
 
 export type Stage = MasteryStage;
 
-/** The `learned` band: a cell at or above this score counts as learned. */
-export const MASTERY_THRESHOLD = 80;
+// Re-exported from mastery.ts, the single source of the `learned` edge.
+export { MASTERY_THRESHOLD };
 
 export type GroupKey =
 	| 'grade'
@@ -67,11 +67,13 @@ function primarySubtag(code: string): string {
 }
 
 /**
- * isSampleScheme recognises the bundled samples by pack id, and by name
- * as a fallback (`hsk-mini`, "HSK mini (sample)", "JLPT N5 mini (sample)").
+ * isSampleScheme recognises the bundled samples by pack id. Only a scheme
+ * without a pack id falls back to the name (`hsk-mini`, "HSK mini
+ * (sample)", "JLPT N5 mini (sample)"), so a user's own pack that happens
+ * to be called "HSK Mini" stays visible.
  */
 function isSampleScheme(scheme: Scheme): boolean {
-	if (scheme.packId !== undefined && SAMPLE_PACK_IDS.has(scheme.packId)) return true;
+	if (scheme.packId !== undefined) return SAMPLE_PACK_IDS.has(scheme.packId);
 	const slug = scheme.name
 		.toLowerCase()
 		.replace(/[^a-z0-9]+/g, '-')
@@ -106,13 +108,13 @@ function isPositiveInt(value: number | undefined): value is number {
 	return value !== undefined && Number.isInteger(value) && value > 0;
 }
 
-const GRADE_NAMES: Slot = { id: 'grade-names', label: 'Names (jinmeiyō, grades 9–10)', rank: 9 };
+const GRADE_NAMES: Slot = { id: 'grade-names', label: 'Names (jinmeiyō, 9–10)', rank: 9 };
 const GRADE_NONE: Slot = { id: 'grade-none', label: 'Not graded', rank: 99 };
 
 function gradeSlot(row: CharRow): Slot {
 	const g = row.g;
 	if (isPositiveInt(g) && g <= 6) return { id: `grade-${g}`, label: `Grade ${g}`, rank: g };
-	if (g === 8) return { id: 'grade-8', label: 'Secondary school (grade 8)', rank: 8 };
+	if (g === 8) return { id: 'grade-8', label: 'Secondary (grade 8)', rank: 8 };
 	if (g === 9 || g === 10) return GRADE_NAMES;
 	return GRADE_NONE;
 }
@@ -127,13 +129,16 @@ function jlptSlot(row: CharRow): Slot {
 }
 
 const FREQ_BUCKET = 500;
+// KANJIDIC2 ranks run 1…2501; everything above 2000 shares the last
+// bucket so the lone rank 2501 does not get a one-cell section.
+const FREQ_LAST_BUCKET = 5;
+const FREQ_LAST: Slot = { id: 'freq-5', label: '2001–2501', rank: FREQ_LAST_BUCKET };
 
 function freqSlot(row: CharRow): Slot {
 	const f = row.f;
 	if (!isPositiveInt(f)) return { id: 'freq-none', label: 'Not ranked', rank: Number.MAX_SAFE_INTEGER };
-	// A rank past the last regular bucket keeps its own correctly labelled
-	// 500-wide bucket rather than being mislabelled or dropped.
 	const bucket = Math.ceil(f / FREQ_BUCKET);
+	if (bucket >= FREQ_LAST_BUCKET) return FREQ_LAST;
 	const from = (bucket - 1) * FREQ_BUCKET + 1;
 	const to = bucket * FREQ_BUCKET;
 	return { id: `freq-${bucket}`, label: `${from}–${to}`, rank: bucket };
@@ -162,10 +167,45 @@ function hkgradeSlot(row: CharRow): Slot {
 	return { id: 'hkgrade-none', label: 'No grade', rank: 99 };
 }
 
-function schemeSlotter(members: ReadonlyMap<string, ReadonlySet<string>> | undefined): (row: CharRow) => Slot {
-	const levels = [...(members?.entries() ?? [])].map(([name, set], index) => ({
-		slot: { id: `level-${index}`, label: name, rank: index } satisfies Slot,
-		set
+/**
+ * SchemeLevelMembers is one level of a scheme grouping, in level order:
+ * the Han characters that belong to it. Sections are keyed by `levelId`,
+ * so two levels with the same name stay apart.
+ */
+export interface SchemeLevelMembers {
+	levelId: number;
+	name: string;
+	chars: ReadonlySet<string>;
+}
+
+const HAN = /\p{Script=Han}/u;
+
+/**
+ * schemeCharMembers turns one level's member entries into its Han
+ * characters. A word-unit scheme (HSK lists words) contributes every Han
+ * character of every listed entry; a character-unit scheme contributes
+ * its character entries. Across levels the lowest wins, because
+ * buildSections assigns a glyph to the first level that holds it — the
+ * same rule as the server's character derivation.
+ */
+export function schemeCharMembers(
+	entries: readonly { written: string; kind: string }[],
+	unit: string
+): Set<string> {
+	const chars = new Set<string>();
+	for (const entry of entries) {
+		if (unit === 'character' && entry.kind !== 'character') continue;
+		for (const glyph of Array.from(entry.written ?? '')) {
+			if (HAN.test(glyph)) chars.add(glyph);
+		}
+	}
+	return chars;
+}
+
+function schemeSlotter(members: readonly SchemeLevelMembers[] | undefined): (row: CharRow) => Slot {
+	const levels = (members ?? []).map((level, index) => ({
+		slot: { id: `level-${level.levelId}`, label: level.name, rank: index } satisfies Slot,
+		set: level.chars
 	}));
 	const outside: Slot = { id: 'level-none', label: 'Not in this scheme', rank: Number.MAX_SAFE_INTEGER };
 	return (row) => {
@@ -181,7 +221,7 @@ function schemeSlotter(members: ReadonlyMap<string, ReadonlySet<string>> | undef
 
 function slotterFor(
 	key: GroupKey,
-	members: ReadonlyMap<string, ReadonlySet<string>> | undefined
+	members: readonly SchemeLevelMembers[] | undefined
 ): (row: CharRow) => Slot {
 	switch (key) {
 		case 'grade':
@@ -206,13 +246,14 @@ function slotterFor(
  * their fixed order. Every character lands in exactly one section — the
  * grouping's "other" section catches missing or unexpected values — and
  * keeps its input order there. Empty sections are omitted. For a scheme
- * grouping, `schemeMembers` maps level names (in level order) to their
- * member glyphs.
+ * grouping, `schemeMembers` lists the levels in level order with their
+ * member glyphs (see `schemeCharMembers`); a glyph in several levels
+ * lands in the first.
  */
 export function buildSections(
 	chars: readonly CharRow[],
 	key: GroupKey,
-	schemeMembers?: ReadonlyMap<string, ReadonlySet<string>>
+	schemeMembers?: readonly SchemeLevelMembers[]
 ): Section[] {
 	const slotOf = slotterFor(key, schemeMembers);
 	const byId = new Map<string, { slot: Slot; chars: CharRow[] }>();
@@ -279,8 +320,37 @@ export function sectionStats(cells: readonly CellState[]): SectionStats {
 	return { total: cells.length, learned, byStage };
 }
 
+const LATIN_MARKS = /(\p{Script=Latin})\p{M}+/gu;
+const HIRAGANA = /[ぁ-ゖ]/g;
+const FIELD_SEPARATOR = '\u0000';
+
+/**
+ * fold makes text comparable for search: NFKC, lower case, tone marks and
+ * other accents stripped from Latin letters only (so "hao" finds "hǎo"
+ * while kana keep their dakuten), and hiragana folded to katakana.
+ */
 function fold(text: string): string {
-	return text.normalize('NFKC').toLowerCase();
+	return text
+		.normalize('NFKC')
+		.toLowerCase()
+		.normalize('NFD')
+		.replace(LATIN_MARKS, '$1')
+		.normalize('NFC')
+		.replace(HIRAGANA, (kana) => String.fromCharCode(kana.charCodeAt(0) + 0x60));
+}
+
+// The folded search text per row, computed once: a keystroke then folds
+// only the query, not 13k rows × 4 fields.
+const haystacks = new WeakMap<CharRow, string>();
+
+function haystackOf(row: CharRow): string {
+	let text = haystacks.get(row);
+	if (text === undefined) {
+		const fields = [row.c, ...(row.v ?? []), row.r ?? '', row.m ?? ''];
+		text = fold(fields.join(FIELD_SEPARATOR));
+		haystacks.set(row, text);
+	}
+	return text;
 }
 
 function matchesStage(cell: CellState, filter: StageFilter): boolean {
@@ -299,21 +369,20 @@ function matchesStage(cell: CellState, filter: StageFilter): boolean {
 /**
  * filterCells keeps the cells of a stage filter ("learning" is every
  * started but not yet learned stage) whose glyph, variant, reading or
- * gloss contains the query. Matching is case-insensitive on NFKC forms;
- * a blank query matches everything.
+ * gloss contains the query. Both sides are folded (see `fold`): case,
+ * NFKC, Latin tone marks and hiragana/katakana do not matter. A blank
+ * query matches everything.
  */
 export function filterCells(
 	cells: readonly CellState[],
 	filter: StageFilter,
 	query: string
 ): CellState[] {
-	const needle = fold(query.trim());
+	const needle = fold(query.trim()).replaceAll(FIELD_SEPARATOR, '');
 	return cells.filter((cell) => {
 		if (!matchesStage(cell, filter)) return false;
 		if (needle === '') return true;
-		const { c, v, r, m } = cell.char;
-		const fields = [c, ...(v ?? []), r ?? '', m ?? ''];
-		return fields.some((field) => fold(field).includes(needle));
+		return haystackOf(cell.char).includes(needle);
 	});
 }
 

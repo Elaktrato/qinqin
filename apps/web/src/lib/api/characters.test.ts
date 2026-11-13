@@ -49,6 +49,17 @@ describe('fetchCharacters', () => {
 		expect(result.chars[0]).toEqual({ i: 1, c: '一', s: 1, g: 1, j: 4, f: 2, r: 'いち', m: 'one' });
 	});
 
+	it('sends and caches the primary language subtag', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ language: 'zh', count: 0, chars: [] }));
+		const tw = await fetchCharacters('zh-TW');
+		expect(requestedURL().searchParams.get('language')).toBe('zh');
+		const plain = await fetchCharacters('zh');
+		const underscore = await fetchCharacters('ZH_hant');
+		expect(plain).toBe(tw);
+		expect(underscore).toBe(tw);
+		expect(fetch).toHaveBeenCalledTimes(1);
+	});
+
 	it('encodes the language parameter', async () => {
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ language: 'a&b', count: 0, chars: [] }));
 		await fetchCharacters('a&b');

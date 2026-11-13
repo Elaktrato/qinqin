@@ -9,6 +9,12 @@ import type { ReviewEvent, StudyCard } from './types';
 /** The five bands the mastery map colours. */
 export type MasteryStage = 'unknown' | 'fresh' | 'learning' | 'mature' | 'learned';
 
+/**
+ * The lower edge of the `learned` band: a character at or above this
+ * score counts as mastered. The single source for every consumer.
+ */
+export const MASTERY_THRESHOLD = 80;
+
 export interface CharMastery {
 	/** 0–100, the rounded mean of the per-card strength. */
 	score: number;
@@ -48,7 +54,7 @@ export function stageOf(score: number): MasteryStage {
 	if (score === 0) return 'unknown';
 	if (score < 25) return 'fresh';
 	if (score < 50) return 'learning';
-	if (score < 80) return 'mature';
+	if (score < MASTERY_THRESHOLD) return 'mature';
 	return 'learned';
 }
 
@@ -169,7 +175,7 @@ export function masteryForChar(
 export function summarizeMastery(
 	chars: readonly string[],
 	mastery: ReadonlyMap<string, CharMastery>,
-	threshold = 80
+	threshold = MASTERY_THRESHOLD
 ): MasterySummary {
 	let mastered = 0;
 	for (const char of chars) {
@@ -190,7 +196,7 @@ export function masterySummary(
 	cards: readonly StudyCard[],
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	threshold = 80
+	threshold = MASTERY_THRESHOLD
 ): MasterySummary {
 	return summarizeMastery(chars, masteryForChars(chars, cards, reviews, now), threshold);
 }

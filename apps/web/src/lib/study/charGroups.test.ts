@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { CharRow, Scheme } from '$lib/api/types';
 import type { CharMastery } from './mastery';
-import { stageOf } from './mastery';
+import { MASTERY_THRESHOLD as MASTERY_SOURCE, stageOf } from './mastery';
 import {
 	MASTERY_THRESHOLD,
 	buildSections,
@@ -10,7 +10,9 @@ import {
 	filterCells,
 	groupOptions,
 	masteryGlyphs,
+	schemeCharMembers,
 	sectionStats,
+	type SchemeLevelMembers,
 	type CellState,
 	type GroupKey,
 	type Section
@@ -131,6 +133,12 @@ describe('groupOptions', () => {
 		]);
 	});
 
+	it('keeps a user pack whose name looks like a sample when its pack id differs', () => {
+		const own = [scheme(10, 'HSK Mini', 'zh', 'my-own'), scheme(11, 'JLPT N5 mini (sample)', 'ja', 'mine')];
+		expect(groupOptions('zh', own).some((o) => o.key === 'scheme:10')).toBe(true);
+		expect(groupOptions('ja', own).some((o) => o.key === 'scheme:11')).toBe(true);
+	});
+
 	it('hides the bundled samples by pack id even when renamed', () => {
 		const renamed = [scheme(7, 'My list', 'zh', 'hsk-mini'), scheme(8, 'Other list', 'ja', 'jlpt-mini')];
 		expect(groupOptions('zh', renamed).some((o) => o.key === 'scheme:7')).toBe(false);
@@ -166,8 +174,8 @@ describe('buildSections: ja grade', () => {
 			'Grade 4',
 			'Grade 5',
 			'Grade 6',
-			'Secondary school (grade 8)',
-			'Names (jinmeiyō, grades 9–10)',
+			'Secondary (grade 8)',
+			'Names (jinmeiyō, 9–10)',
 			'Not graded'
 		]);
 	});
@@ -175,7 +183,7 @@ describe('buildSections: ja grade', () => {
 	it('keeps input order inside a section and merges grades 9 and 10', () => {
 		const sections = buildSections(chars, 'grade');
 		expect(glyphs(bySection(sections, 'Grade 1'))).toEqual(['一', '右']);
-		expect(glyphs(bySection(sections, 'Names (jinmeiyō, grades 9–10)'))).toEqual(['丑', '乃']);
+		expect(glyphs(bySection(sections, 'Names (jinmeiyō, 9–10)'))).toEqual(['丑', '乃']);
 	});
 
 	it('puts missing and unknown grades under Not graded', () => {
@@ -235,17 +243,21 @@ describe('buildSections: ja frequency', () => {
 			'501–1000',
 			'1001–1500',
 			'1501–2000',
-			'2001–2500',
+			'2001–2501',
 			'Not ranked'
 		]);
 		expect(glyphs(bySection(sections, '1–500'))).toEqual(['a', 'b']);
-		expect(glyphs(bySection(sections, '2001–2500'))).toEqual(['g', 'h']);
+		expect(glyphs(bySection(sections, '2001–2501'))).toEqual(['g', 'h']);
 		expect(glyphs(bySection(sections, 'Not ranked'))).toEqual(['i', 'j']);
 	});
 
-	it('keeps a rank beyond 2500 in its own 500-wide bucket before Not ranked', () => {
-		const sections = buildSections([row(1, 'z'), row(2, 'y', { f: 2501 })], 'freq');
-		expect(labels(sections)).toEqual(['2501–3000', 'Not ranked']);
+	it('folds every rank above 2000 into the one last bucket 2001–2501', () => {
+		const sections = buildSections(
+			[row(1, 'z'), row(2, 'y', { f: 2501 }), row(3, 'x', { f: 2001 }), row(4, 'w', { f: 4000 })],
+			'freq'
+		);
+		expect(labels(sections)).toEqual(['2001–2501', 'Not ranked']);
+		expect(glyphs(bySection(sections, '2001–2501'))).toEqual(['y', 'x', 'w']);
 	});
 });
 
@@ -305,12 +317,24 @@ describe('buildSections: zh HK grade', () => {
 });
 
 describe('buildSections: scheme', () => {
-	const members = new Map<string, Set<string>>([
-		['HSK 1', new Set(['你', '好'])],
-		['HSK 2', new Set(['银', '好', '愛'])]
-	]);
+	const members: SchemeLevelMembers[] = [
+		{ levelId: 11, name: 'HSK 1', chars: new Set(['你', '好']) },
+		{ levelId: 12, name: 'HSK 2', chars: new Set(['银', '好', '愛']) }
+	];
 
-	it('uses the member map order, then Not in this scheme', () => {
+	it('keys sections by level id so levels with equal names stay apart', () => {
+		const twins: SchemeLevelMembers[] = [
+			{ levelId: 1, name: 'Core', chars: new Set(['你']) },
+			{ levelId: 2, name: 'Core', chars: new Set(['好']) }
+		];
+		const sections = buildSections([row(1, '好'), row(2, '你')], 'scheme:5', twins);
+		expect(sections.map((s) => [s.id, s.label, glyphs(s)])).toEqual([
+			['level-1', 'Core', ['你']],
+			['level-2', 'Core', ['好']]
+		]);
+	});
+
+	it('uses the member list order, then Not in this scheme', () => {
 		const chars = [row(1, '银'), row(2, '你'), row(3, '好'), row(4, '龘')];
 		const sections = buildSections(chars, 'scheme:3', members);
 		expect(labels(sections)).toEqual(['HSK 1', 'HSK 2', 'Not in this scheme']);
@@ -335,10 +359,10 @@ describe('buildSections: property checks', () => {
 		it(`every char lands in exactly one section for every key (seed ${seed})`, () => {
 			const rand = prng(seed);
 			const chars = randomChars(rand, 400);
-			const members = new Map<string, Set<string>>([
-				['A', new Set(chars.filter(() => rand() < 0.2).map((c) => c.c))],
-				['B', new Set(chars.filter(() => rand() < 0.2).map((c) => c.c))]
-			]);
+			const members: SchemeLevelMembers[] = [
+				{ levelId: 1, name: 'A', chars: new Set(chars.filter(() => rand() < 0.2).map((c) => c.c)) },
+				{ levelId: 2, name: 'B', chars: new Set(chars.filter(() => rand() < 0.2).map((c) => c.c)) }
+			];
 			const keys: GroupKey[] = [...ALL_FIXED_KEYS, 'scheme:1'];
 			for (const key of keys) {
 				const sections = buildSections(chars, key, members);
@@ -418,6 +442,9 @@ describe('sectionStats', () => {
 	it('counts learned at the threshold and every stage', () => {
 		const cells = [cell('a', 0), cell('b', 10), cell('c', 30), cell('d', 79), cell('e', 80), cell('f', 100)];
 		expect(MASTERY_THRESHOLD).toBe(80);
+		expect(MASTERY_THRESHOLD).toBe(MASTERY_SOURCE);
+		expect(stageOf(MASTERY_SOURCE)).toBe('learned');
+		expect(stageOf(MASTERY_SOURCE - 1)).toBe('mature');
 		expect(sectionStats(cells)).toEqual({
 			total: 6,
 			learned: 2,
@@ -475,7 +502,7 @@ describe('filterCells', () => {
 	it('searches the glyph, a variant, the reading and the gloss case-insensitively', () => {
 		expect(glyphsOf(filterCells(cells, 'all', '水'))).toEqual(['水']);
 		expect(glyphsOf(filterCells(cells, 'all', '愛'))).toEqual(['爱']);
-		expect(glyphsOf(filterCells(cells, 'all', 'がく'))).toEqual([]);
+		expect(glyphsOf(filterCells(cells, 'all', 'がく'))).toEqual(['学']);
 		expect(glyphsOf(filterCells(cells, 'all', 'ガク'))).toEqual(['学']);
 		expect(glyphsOf(filterCells(cells, 'all', 'love'))).toEqual(['爱']);
 		expect(glyphsOf(filterCells(cells, 'all', '  WAT '))).toEqual(['水']);
@@ -493,6 +520,86 @@ describe('filterCells', () => {
 	it('combines the stage filter and the query', () => {
 		expect(glyphsOf(filterCells(cells, 'learned', 'fire'))).toEqual([]);
 		expect(glyphsOf(filterCells(cells, 'learning', 'fire'))).toEqual(['火']);
+	});
+
+	it('finds toneless pinyin and folds tone marks in the query too', () => {
+		const zh = [cell('好', 0, { r: 'hǎo', m: 'good' }), cell('女', 0, { r: 'nǚ', m: 'woman' })];
+		expect(glyphsOf(filterCells(zh, 'all', 'hao'))).toEqual(['好']);
+		expect(glyphsOf(filterCells(zh, 'all', 'HÁO'))).toEqual(['好']);
+		expect(glyphsOf(filterCells(zh, 'all', 'nu'))).toEqual(['女']);
+	});
+
+	it('folds hiragana to katakana on both sides but keeps the dakuten', () => {
+		const ja = [cell('日', 0, { r: 'ニチ' }), cell('学', 0, { r: 'ガク' }), cell('角', 0, { r: 'かく' })];
+		expect(glyphsOf(filterCells(ja, 'all', 'にち'))).toEqual(['日']);
+		expect(glyphsOf(filterCells(ja, 'all', 'カク'))).toEqual(['角']);
+		expect(glyphsOf(filterCells(ja, 'all', 'がく'))).toEqual(['学']);
+	});
+
+	it('folds each character once, however many queries run', () => {
+		const many = Array.from({ length: 50 }, (_, n) => ({
+			char: row(n, String.fromCodePoint(0x4e00 + n), { r: 'ニチ', m: 'day', v: ['x'] }),
+			score: 0,
+			stage: stageOf(0),
+			reviewedCards: 0
+		}));
+		const spy = vi.spyOn(String.prototype, 'normalize');
+		try {
+			filterCells(many, 'all', 'd');
+			const afterFirst = spy.mock.calls.length;
+			const queries = ['da', 'day', 'mo', 'moon', 'にち'];
+			for (const q of queries) filterCells(many, 'all', q);
+			// Later queries normalise only the query itself, never the 50 rows again.
+			expect(spy.mock.calls.length - afterFirst).toBeLessThanOrEqual(queries.length * 3);
+		} finally {
+			spy.mockRestore();
+		}
+	});
+});
+
+describe('schemeCharMembers', () => {
+	it('splits the words of a word-unit level into their Han characters', () => {
+		const set = schemeCharMembers(
+			[
+				{ written: '你好', kind: 'word' },
+				{ written: '食べる', kind: 'word' },
+				{ written: 'OK', kind: 'word' },
+				{ written: '好', kind: 'character' }
+			],
+			'word'
+		);
+		expect([...set]).toEqual(['你', '好', '食']);
+	});
+
+	it('counts astral Han characters as one glyph', () => {
+		expect([...schemeCharMembers([{ written: '𠮷野家', kind: 'word' }], 'word')]).toEqual([
+			'𠮷',
+			'野',
+			'家'
+		]);
+	});
+
+	it('takes the character entries of a character-unit level', () => {
+		const set = schemeCharMembers(
+			[
+				{ written: '学', kind: 'character' },
+				{ written: '学校', kind: 'word' }
+			],
+			'character'
+		);
+		expect([...set]).toEqual(['学']);
+	});
+
+	it('the lowest level wins when built into sections', () => {
+		const levels: SchemeLevelMembers[] = [
+			{ levelId: 1, name: '1', chars: schemeCharMembers([{ written: '你好', kind: 'word' }], 'word') },
+			{ levelId: 2, name: '2', chars: schemeCharMembers([{ written: '好看', kind: 'word' }], 'word') }
+		];
+		const sections = buildSections([row(1, '好'), row(2, '看')], 'scheme:1', levels);
+		expect(sections.map((s) => [s.label, glyphs(s)])).toEqual([
+			['1', ['好']],
+			['2', ['看']]
+		]);
 	});
 });
 

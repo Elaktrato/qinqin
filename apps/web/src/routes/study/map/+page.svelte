@@ -6,6 +6,7 @@
 	import type { StudyEvent } from '$lib/events';
 	import { fillMissingWrittenProgressively } from '$lib/study/entriesCache';
 	import {
+		MASTERY_THRESHOLD,
 		masteryForChars,
 		summarizeMastery,
 		type CharMastery,
@@ -17,9 +18,6 @@
 	import { usesHan } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 
-	// The `learned` band: a character at or above this score counts as
-	// mastered in the level progress lines.
-	const MASTERY_THRESHOLD = 80;
 	// The empty string is the "All levels" filter value, never a level name.
 	const ALL_LEVELS = '';
 

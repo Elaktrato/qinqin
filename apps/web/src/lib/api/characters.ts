@@ -61,14 +61,17 @@ function start(language: string): Pending {
 }
 
 /**
- * fetchCharacters loads GET /api/characters for a language: every
+ * fetchCharacters loads GET /api/characters for a language (its primary
+ * subtag; requests and the cache are keyed by it): every
  * character of the dictionary universe in compact form. A loaded list is
  * kept in memory per language; concurrent callers share one request.
  * Errors are not cached (HTTP errors arrive as ApiError). Aborting
  * `signal` rejects this caller with an AbortError; the shared request is
  * cancelled only once every caller waiting on it has aborted.
  */
-export function fetchCharacters(language: string, signal?: AbortSignal): Promise<CharacterList> {
+export function fetchCharacters(code: string, signal?: AbortSignal): Promise<CharacterList> {
+	// The endpoint knows only primary languages: `zh-TW` asks for `zh`.
+	const language = code.trim().toLowerCase().split(/[-_]/)[0] ?? '';
 	const cached = loaded.get(language);
 	if (cached !== undefined) return Promise.resolve(cached);
 	if (signal?.aborted) return Promise.reject(abortError());
