@@ -17,8 +17,8 @@ variants) and `ja-mini` (kana readings, romaji search) are keyed by written
 form, so next to CC-CEDICT and JMdict they would add a second,
 part-of-speech-less card for the same words, ranked first. The LEVEL packs
 `hsk-mini` (word levels with derived character levels) and `jlpt-mini` (an N5
-sample) would add a second, duplicate badge next to the bundled JLPT lists
-(and a locally installed HSK 3.0); the map hides them even when seeded. Seed them explicitly
+sample) would add a second, duplicate badge next to the bundled JLPT kanji list
+(and a locally installed HSK 3.0 or JLPT vocabulary); the map hides them even when seeded. Seed them explicitly
 (for a small demo database, or alongside the full bundle) with
 `qinqin seed --packs plugins/samples` (or `--packs plugins/data,plugins/samples`).
 The seed tests use them as small fixtures.
@@ -35,13 +35,12 @@ directory):
 | `kanjidic2` | dictionary | ja | KANJIDIC2 kanji (`kanjidic2.xml.gz`) |
 | `jiten-frequency` | frequency | ja | Jiten global word frequency ranks, converted to `freq.csv.gz` (`term,reading,rank`, ranks unmodified) |
 
-Committed level lists, JLPT only (converted, with the upstream `LICENSE` and an
-`ATTRIBUTION.md` in each directory):
+Committed level list, JLPT kanji only (converted, with the upstream `LICENSE` and an
+`ATTRIBUTION.md`):
 
 | Pack | Type | Language | Scheme | Contents | Licence |
 |------|------|----------|--------|----------|---------|
 | `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`, provenance not stated upstream; unofficial, as every N5–N1 list is; omits 172 jōyō kanji such as 分 可 無 的, and its N1 holds 247 jinmeiyō name kanji) | MIT, © 2023 Iridium Szreter |
-| `jlpt-words` | levels | ja | JLPT (vocabulary) | words by JLPT level with their readings, unit `word`: N5 728, N4 668, N3 2,134, N2 1,784, N1 2,694 entries (open-anki-jlpt-decks `src/n5.csv` … `n1.csv`; unofficial) | MIT, © 2020 Jamie Sinclair; upstream chain below |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
 [{"name": "N5", "entries": [...]}]}`, levels easiest first. An entry is a
@@ -49,9 +48,12 @@ written form (`"外"`) or `{"form": "風", "reading": "かぜ"}`; the optional
 reading makes a word-unit import prefer the word that has both the form and
 the reading (風 かぜ rather than the usually-kana 振り ふり, also written 風)
 and falls back to the form alone when no word has both. Plain-string packs
-are unchanged. `jlpt-words` carries the readings of its source.
+are unchanged. The optional local `jlpt-words` pack carries the readings of its source.
 
-JLPT vocabulary chain: the open-anki-jlpt-decks README says "Original deck
+JLPT vocabulary is NOT bundled. Its upstream licence chain could not be verified,
+so it is an optional, local-only pack that you generate yourself (see the steps
+below); the repository holds no JLPT vocabulary data. The reason: open-anki-jlpt-decks
+labels itself MIT (© 2020 Jamie Sinclair), but its README says "Original deck
 data was taken from https://github.com/chyyran/jlpt-anki-decks, which were
 based on decks from tanos.co.uk"; the tanos.co.uk lists (Jonathan Waller) are
 described as Creative Commons Attribution, which was not verified here (the
@@ -61,6 +63,28 @@ stem of two or more characters reduced to its noun: 勉強する → 勉強, 関
 stays) and each form with its reading kept at its easiest level; kana
 spellings of words JMdict writes with kanji (けんか, よい) do not resolve and
 are skipped at seed time (168 of 8,008 entries against the bundled JMdict).
+
+Generating JLPT vocabulary locally (one level pack, `jlpt-words` "JLPT
+(vocabulary)": N5 728, N4 668, N3 2,134, N2 1,784, N1 2,694 entries), from the
+repository root:
+
+```bash
+mkdir /tmp/jlpt-vocab && cd /tmp/jlpt-vocab
+base=https://raw.githubusercontent.com/jamsinclair/open-anki-jlpt-decks/1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0
+for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
+curl -fsSLo LICENSE $base/LICENSE
+cd -
+node scripts/prepare-level-packs.mjs --jlpt-vocab /tmp/jlpt-vocab   # writes plugins/data-local/
+qinqin seed --packs plugins/data,plugins/data-local
+```
+
+The converter fails with a clear message if one of the six files is missing.
+Under Docker, mount `plugins/data-local` as for HSK 3.0 below. Once seeded, the
+map's "Group by" and the Sources page pick it up like any installed scheme. The
+generated `ATTRIBUTION.md` quotes the README chain, names the pinned upstream
+commit, records the SHA-256 of the input files and says "not bundled, local use
+only"; do not commit or redistribute the output (`plugins/data-local/` is
+gitignored).
 
 HSK 3.0 is NOT bundled. Its licence status is unclear, so it is an optional,
 local-only pack that you generate yourself (see the steps below); the repository
@@ -101,9 +125,9 @@ says "not bundled, local use only"; do not commit or redistribute the output
 the character entry, since CC-CEDICT gives single characters as characters,
 not words.
 
-`scripts/prepare-level-packs.mjs <upstream-dir> <jlpt-vocab-dir>` rebuilds the
-two JLPT directories byte for byte from the pinned upstream files (the download
-commands are in its header).
+`scripts/prepare-level-packs.mjs <upstream-dir>` rebuilds the `jlpt-kanji`
+directory byte for byte from the pinned upstream files (the download commands
+are in its header).
 
 The importers read the compressed files directly, so a fresh clone or the
 Docker image seeds with no network and no decompression step. Run
