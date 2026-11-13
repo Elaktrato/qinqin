@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
-	import type { Dictionary, FrequencyPack } from '$lib/api/types';
+	import type { Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
 	import { languageLabel } from '$lib/languages';
 
 	let dictionaries = $state<Dictionary[]>([]);
@@ -46,9 +46,27 @@
 		}
 	}
 
+	let schemes = $state<Scheme[]>([]);
+	let schemesLoading = $state(true);
+	let schemesError = $state('');
+
+	async function loadSchemes(): Promise<void> {
+		schemesLoading = true;
+		schemesError = '';
+		try {
+			schemes = await api<Scheme[]>('/api/schemes', { auth: false });
+		} catch (err) {
+			schemes = [];
+			schemesError = message(err, 'Could not load level list credits.');
+		} finally {
+			schemesLoading = false;
+		}
+	}
+
 	onMount(() => {
 		load();
 		loadFrequency();
+		loadSchemes();
 	});
 </script>
 
@@ -149,6 +167,60 @@
 			frequency list, licensed CC BY-SA 4.0 by its publisher, with its ranks unmodified and
 			converted to CSV. Frequency lists with unclear licences are never bundled; an instance may
 			add them locally from <code>plugins/data-local/</code>.
+		</p>
+	</section>
+
+	<section>
+		<h2>Level lists</h2>
+
+		{#if schemesLoading}
+			<p>Loading level list credits…</p>
+		{:else if schemesError}
+			<p class="error" role="alert">{schemesError}</p>
+			<button type="button" onclick={loadSchemes}>Retry</button>
+		{:else if schemes.length === 0}
+			<p>No level lists are installed.</p>
+		{:else}
+			<div class="table-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th scope="col">Name</th>
+							<th scope="col">Language</th>
+							<th scope="col">Version</th>
+							<th scope="col">License</th>
+							<th scope="col">Attribution</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each schemes as scheme (scheme.id)}
+							<tr>
+								<td class="name">{scheme.name}</td>
+								<td title={scheme.language}>{languageLabel(scheme.language)}</td>
+								<td>{scheme.version ?? ''}</td>
+								<td>{scheme.license ?? ''}</td>
+								<td>{scheme.attribution ?? ''}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
+		<p class="notice">
+			Level lists group the character map and badge entries. The JLPT N5–N1 kanji come from
+			<a href="https://github.com/onlyskin/kanjiapi.dev" rel="noreferrer">kanjiapi.dev</a> (MIT);
+			the JLPT publishes no official lists, so every N5–N1 list is a reconstruction. The JLPT
+			vocabulary comes from
+			<a href="https://github.com/jamsinclair/open-anki-jlpt-decks" rel="noreferrer"
+				>open-anki-jlpt-decks</a
+			>
+			(MIT), which its README says was taken from chyyran/jlpt-anki-decks, based on the
+			tanos.co.uk lists by Jonathan Waller (described as Creative Commons Attribution). The HSK
+			3.0 characters and words come from
+			<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a> (MIT), a
+			transcription of the 2021 Ministry of Education standard whose own README doubts the
+			copyright claims on it. Neither is an official release.
 		</p>
 	</section>
 
