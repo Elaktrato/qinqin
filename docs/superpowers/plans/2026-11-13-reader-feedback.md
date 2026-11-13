@@ -21,6 +21,8 @@
 - **Settings in a footer:** `Settings` link (and anything else non-navigational such as sign-out stays where it is, but Settings leaves the navbar) lives in a `<footer>` on every page.
 - **Popup add buttons:** each EntryCard in the reader popup gets a `+` (adds to General) and, only when the workspace has custom decks, a second "deck" button opening a small menu to choose a deck. The card snapshot uses `forms[0]?.text ?? readings[0]?.value ?? term` as `written` (same as the entry page); the popup uses the current workspace (books are now workspace-scoped, so it always matches). A shared cached `studyData` store removes the per-card sync pull.
 
+- **Bookmarks (added later in the session):** several bookmarks per book, stored on the server in a new table `library_bookmarks` (migration 020: `id, user_id, book_id REFERENCES library_books(id), position TEXT, label TEXT, created_at`), because books themselves live server-side and are not synced; bookmarks are deleted with their book. `position` uses the same format as the existing reading position (`position.ts`), `label` is a ≤ 120-character text snippet taken at the bookmark's location (editable), max 200 bookmarks per book. API: `GET/POST /api/library/books/{id}/bookmarks`, `PUT/DELETE /api/library/books/{id}/bookmarks/{bid}` (rename label). Reader UI: a bookmark button in the book toolbar (adds one at the current position; tapping again at the same spot removes it), a bookmarks panel listing label, chapter and date with jump / rename / delete, and a small marker in the text margin of a bookmarked paragraph. Keyboard: `b` toggles a bookmark at the current position when no popup/input is focused.
+
 ## Global Constraints
 
 - No new dependencies. Migration 018 is the only schema change; it must run on a database containing data (rebuild the `workspaces` table preserving ids and every FK; `PRAGMA foreign_keys` handling as the migration runner allows; test on a populated DB).
@@ -82,6 +84,24 @@
 - [ ] **Step 1:** Failing tests: backfill (user with a ja workspace and a zh book but no zh workspace → zh workspace created and linked); list filtered by workspace; upload with matching/mismatching workspace language; import into two workspaces of the same language both succeed (different dedupe scope) and a repeat into the same one is 409; books of other users' workspaces are rejected (workspace ownership check); delete/position routes unchanged.
 - [ ] **Step 2:** Run `cd server && go test ./internal/library/... ./internal/api` — FAIL. **Step 3:** implement. **Step 4:** gates + `go test -race ./internal/library/... ./internal/api` — PASS. **Commit** `feat(library): scope books to a workspace`.
 
+### Task 2b: Bookmarks (server)
+
+**Files:**
+- Create: `server/internal/db/migrations/020_library_bookmarks.sql`, `server/internal/library/bookmarks.go`, `bookmarks_test.go`, `server/internal/api/handlers_bookmarks.go` (+ test)
+- Modify: `server/internal/library/library.go` (book delete removes bookmarks), `server/internal/api/api.go`
+
+**Interfaces:**
+- Produces:
+  ```go
+  type Bookmark struct { ID int64; BookID int64; Position string; Label string; CreatedAt time.Time }   // JSON: id, bookId, position, label, createdAt
+  func (s *Store) ListBookmarks(ctx, userID, bookID int64) ([]Bookmark, error)        // ordered by id; 404 semantics via ErrNotFound when the book is not the caller's
+  func (s *Store) AddBookmark(ctx, userID, bookID int64, position, label string) (Bookmark, error)   // validates position like SetPosition (reuse), label trimmed ≤ 120 runes, max 200 per book (ErrTooMany → 409), an existing bookmark at the identical position is returned instead of duplicated
+  func (s *Store) RenameBookmark(ctx, userID, bookID, bookmarkID int64, label string) error
+  func (s *Store) DeleteBookmark(ctx, userID, bookID, bookmarkID int64) error
+  ```
+- [ ] **Step 1:** Failing tests: add/list/rename/delete; duplicate position returns the existing one; 201st bookmark 409; label trimming/length/unicode; another user's book → 404 and nothing leaked; deleting the book deletes its bookmarks; invalid position rejected like SetPosition; request size limits (1 KiB body).
+- [ ] **Step 2:** FAIL. **Step 3:** implement. **Step 4:** gates + `go test -race ./internal/library/... ./internal/api` — PASS. **Commit** `feat(library): bookmarks`.
+
 ### Task 3: Source browse assortment and phonetic search (server)
 
 **Files:**
@@ -140,10 +160,28 @@
 - [ ] **Step 1:** Failing tests: `studyData` cache/in-flight/invalidate (injected loader), `browse.ts` helpers, `library.ts` request shapes (workspace query/body fields), `readingWorkspace` simplification; existing tests updated where signatures changed.
 - [ ] **Step 2:** FAIL. **Step 3:** implement. **Step 4:** web gates — PASS. **Commit** `feat(reader): workspace libraries, tabbed sources, browse suggestions and add-to-study in the popup`.
 
+### Task 5b: Bookmarks UI (web)
+
+**Files:**
+- Create: `apps/web/src/lib/plugins/reader/bookmarks.ts` (+ test), `BookmarksPanel.svelte`
+- Modify: `apps/web/src/lib/api/library.ts` (+ test), `types.ts`, `BookView.svelte`, `ChapterText.svelte` (margin marker)
+
+**Interfaces:**
+- Produces:
+  ```ts
+  export interface Bookmark { id: number; bookId: number; position: string; label: string; createdAt: string }
+  export function snippetAt(text: string, maxRunes?: number): string          // 120-rune whitespace-normalised snippet, ellipsis when cut
+  export function bookmarkAt(bookmarks: Bookmark[], position: string): Bookmark | null    // identical position (same chapter/paragraph/offset as position.ts defines)
+  export function sortForPanel(bookmarks: Bookmark[]): Bookmark[]              // by chapter then offset
+  // library.ts: listBookmarks(bookId), addBookmark(bookId, position, label), renameBookmark(bookId, id, label), deleteBookmark(bookId, id)
+  ```
+  UI as in the Bookmarks ruling (toolbar toggle, `b` key guarded against inputs/popups, panel with jump/rename/delete, margin marker). Jump uses the existing restore logic (`restore.ts`). All calls fire-and-forget safe with inline error text, optimistic list updates rolled back on failure.
+- [ ] **Step 1:** Failing tests for the pure helpers and API request shapes. **Step 2:** FAIL. **Step 3:** implement. **Step 4:** web gates — PASS. **Commit** `feat(reader): bookmarks`.
+
 ### Task 6: Docs and real-app verification
 
 **Files:**
 - Modify: `README.md` (workspaces: names, flags, defaults, per-workspace libraries; importer: tabs, suggestions, romaji/pinyin; popup add buttons; settings footer; migration notes: old DBs are migrated in place — books keep their language workspace), `docs/superpowers/specs/` reader/workspace notes where they exist (grep for "workspace"), `docs/sources.md` (no new third-party hosts)
 
 - [ ] **Step 1:** Write the docs from the real code.
-- [ ] **Step 2:** Real-app verification against a rebuilt container image (`docker build -t qinqin:integration .` from the worktree root, tag unchanged; the owner's data volume `/home/user/qinqin-integration-data` holds a database from the previous build: **copy it to a scratch dir first and test the migration on the copy**; for the user-facing container run `docker rm -f qinqin-integration` then start the same name on 127.0.0.1:8085 with the owner's data volume). Checks: migration of the existing DB (workspace ids unchanged, tester's flashcard data intact); fresh data dir + seed + register → default workspaces zh/ja/es exist; header picker with flags (screenshot), naming a second zh workspace shows names; Settings only in the footer, 390 px layout; reader: library switches per workspace; browse suggestions show; search by `tokyo`/`とうきょう` and a zh pinyin query (needs the Aozora catalog download or a fake catalog URL if offline: report honestly what was reachable); popup `+` adds a card and the deck menu appears only with a custom deck. Playwright-core 1.52 lives in the scratchpad (`.../scratchpad/pw`, Chromium headless shell 1161 from `~/.cache/ms-playwright`; earlier scripts under `.../scratchpad/t3` and the smoke dir are reusable). Report pass/fail/not-run per check; never claim an unrun check. **Commit** `docs: reader and workspace feedback`.
+- [ ] **Step 2:** Real-app verification against a rebuilt container image (`docker build -t qinqin:integration .` from the worktree root, tag unchanged; the owner's data volume `/home/user/qinqin-integration-data` holds a database from the previous build: **copy it to a scratch dir first and test the migration on the copy**; for the user-facing container run `docker rm -f qinqin-integration` then start the same name on 127.0.0.1:8085 with the owner's data volume). Checks: migration of the existing DB (workspace ids unchanged, tester's flashcard data intact); fresh data dir + seed + register → default workspaces zh/ja/es exist; header picker with flags (screenshot), naming a second zh workspace shows names; Settings only in the footer, 390 px layout; reader: library switches per workspace; browse suggestions show; search by `tokyo`/`とうきょう` and a zh pinyin query (needs the Aozora catalog download or a fake catalog URL if offline: report honestly what was reachable); popup `+` adds a card and the deck menu appears only with a custom deck; bookmarks: add via the toolbar and the `b` key, panel jump/rename/delete, margin marker, survives reload, removed with the book. Playwright-core 1.52 lives in the scratchpad (`.../scratchpad/pw`, Chromium headless shell 1161 from `~/.cache/ms-playwright`; earlier scripts under `.../scratchpad/t3` and the smoke dir are reusable). Report pass/fail/not-run per check; never claim an unrun check. **Commit** `docs: reader and workspace feedback`.
