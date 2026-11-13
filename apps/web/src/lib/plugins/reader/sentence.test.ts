@@ -29,11 +29,25 @@ describe('sentenceAround', () => {
 		expect(around(p, '歩き')).toBe('それから二人は歩き出した。');
 	});
 
-	it('keeps a quotation followed by narration in one sentence', () => {
+	it('ends a sentence after a closed quotation, even when narration follows', () => {
 		const p = '「行こう。」と彼は言った。それから歩いた。';
-		expect(around(p, '言った')).toBe('「行こう。」と彼は言った。');
-		expect(around(p, '行こう')).toBe('「行こう。」と彼は言った。');
+		expect(around(p, '行こう')).toBe('「行こう。」');
+		expect(around(p, '言った')).toBe('と彼は言った。');
 		expect(around(p, '歩いた')).toBe('それから歩いた。');
+		const q = '「さようなら。」それから去った。';
+		expect(around(q, 'さようなら')).toBe('「さようなら。」');
+		expect(around(q, '去った')).toBe('それから去った。');
+	});
+
+	it('does not split at full stops inside an open quotation', () => {
+		const p = '彼は「もう帰る。明日また来る。」と言った。';
+		expect(around(p, '明日')).toBe('彼は「もう帰る。明日また来る。」');
+	});
+
+	it('treats a newline as a boundary (verse, <br> lines)', () => {
+		const p = '一行目の詩\n二行目の詩。';
+		expect(around(p, '一行目')).toBe('一行目の詩');
+		expect(around(p, '二行目')).toBe('二行目の詩。');
 	});
 
 	it('keeps the closing bracket with its sentence between two lines of dialogue', () => {
@@ -49,18 +63,31 @@ describe('sentenceAround', () => {
 		expect(around(p, '次')).toBe('次の日。');
 	});
 
-	it('cuts Chinese at 。 ？ ！ and keeps a quoted sentence with its narration', () => {
+	it('cuts Chinese at 。 ？ ！ and after a closed quotation', () => {
 		const p = '我学习中文。你呢？他说：“我也学。”然后走了！';
 		expect(around(p, '中文')).toBe('我学习中文。');
 		expect(around(p, '你')).toBe('你呢？');
-		expect(around(p, '也')).toBe('他说：“我也学。”然后走了！');
+		expect(around(p, '也')).toBe('他说：“我也学。”');
+		expect(around(p, '走了')).toBe('然后走了！');
+		const q = '“你去吗？”我说。';
+		expect(around(q, '去')).toBe('“你去吗？”');
+		expect(around(q, '说')).toBe('我说。');
 	});
 
 	it('treats a run of terminators as one boundary', () => {
-		const p = '本当？！うそ……行かないで！';
+		const p = '本当？！うそ。行かないで！';
 		expect(around(p, '本当')).toBe('本当？！');
-		expect(around(p, 'うそ')).toBe('うそ……');
+		expect(around(p, 'うそ')).toBe('うそ。');
 		expect(around(p, '行か')).toBe('行かないで！');
+	});
+
+	it('keeps an ellipsis mid-sentence unless a closer, a space or the end follows', () => {
+		expect(around('うそ……行かないで！', '行か')).toBe('うそ……行かないで！');
+		expect(around('他想了想……还是去了。', '还是')).toBe('他想了想……还是去了。');
+		expect(around('「待って……」彼は去った。', '待って')).toBe('「待って……」');
+		expect(around('待って…… 彼は去った。', '去った')).toBe('彼は去った。');
+		expect(around('最後に……', '最後')).toBe('最後に……');
+		expect(around('なぜ？……行こう。', '行こう')).toBe('行こう。');
 	});
 
 	it('cuts Latin text at . ! ? followed by a space (Mr. splits: a known limitation)', () => {

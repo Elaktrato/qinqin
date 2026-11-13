@@ -38,6 +38,8 @@
 	let root = $state<HTMLElement | null>(null);
 	let trigger = $state<HTMLButtonElement | null>(null);
 	let menu = $state<HTMLElement | null>(null);
+	let pill = $state<HTMLElement | null>(null);
+	let addButton = $state<HTMLButtonElement | null>(null);
 
 	const term = $derived(result.term);
 	const disabled = $derived(busy || inStudy !== false);
@@ -126,6 +128,10 @@
 		// A second click while adding, or on a word already studied, is a
 		// no-op; addCard itself dedupes too.
 		if (disabled) return;
+		// Keyboard users keep their place: focus inside these buttons (or
+		// dropped to the page when the menu item they chose disappears)
+		// moves to the "In study" pill, or back to + after a failure.
+		const hadFocus = !!root?.contains(document.activeElement);
 		busy = true;
 		menuOpen = false;
 		note = '';
@@ -161,6 +167,16 @@
 			error = 'Could not add this word to study.';
 		} finally {
 			busy = false;
+			if (hadFocus) await restoreFocus();
+		}
+	}
+
+	async function restoreFocus(): Promise<void> {
+		await tick();
+		const active = document.activeElement;
+		const lost = !active || active === document.body || !active.isConnected;
+		if (lost || !root?.contains(active) || (active as HTMLButtonElement).disabled) {
+			(inStudy ? pill : addButton)?.focus();
 		}
 	}
 
@@ -172,11 +188,12 @@
 
 <div class="study" bind:this={root}>
 	{#if inStudy}
-		<span class="in-study">In study</span>
+		<span class="in-study" tabindex="-1" bind:this={pill}>In study</span>
 	{/if}
 	<button
 		type="button"
 		class="add"
+		bind:this={addButton}
 		aria-label={inStudy ? `${term} is in study` : `Add ${term} to study`}
 		title={inStudy ? 'In study' : 'Add to study (General deck)'}
 		{disabled}
@@ -200,12 +217,20 @@
 	{/if}
 	{#if menuOpen}
 		<div class="menu" role="menu" tabindex="-1" aria-label="Decks" bind:this={menu} onkeydown={menuKey}>
-			<button type="button" role="menuitem" tabindex="-1" onclick={() => void add(GENERAL_DECK_ID)}
-				>General</button
+			<button
+				type="button"
+				role="menuitem"
+				tabindex="-1"
+				onmousedown={keepSelection}
+				onclick={() => void add(GENERAL_DECK_ID)}>General</button
 			>
 			{#each decks as deck (deck.id)}
-				<button type="button" role="menuitem" tabindex="-1" onclick={() => void add(deck.id)}
-					>{deck.name}</button
+				<button
+					type="button"
+					role="menuitem"
+					tabindex="-1"
+					onmousedown={keepSelection}
+					onclick={() => void add(deck.id)}>{deck.name}</button
 				>
 			{/each}
 		</div>
@@ -259,6 +284,11 @@
 		padding: 0 0.4rem;
 		border-radius: 0.6rem;
 		background: color-mix(in srgb, #1b8a5a 22%, transparent);
+	}
+
+	.in-study:focus {
+		outline: 2px solid #0b6bcb;
+		outline-offset: 1px;
 	}
 
 	/* In the flow (not floating): the popup scrolls, a floating menu would be clipped. */

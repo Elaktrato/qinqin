@@ -26,6 +26,8 @@
 	const language = $derived(workspace?.language ?? '');
 
 	let sources = $state<SourceInfo[]>([]);
+	// Set once the user picks a tab: from then on their choice is kept.
+	let userPicked = false;
 	let active = $state('');
 	let sourcesError = $state('');
 	let loadingSources = $state(true);
@@ -67,8 +69,11 @@
 		sourcesError = '';
 		try {
 			sources = await listSources();
-			const lang = language;
-			active = (sources.find((s) => s.languages.includes(lang)) ?? sources[0])?.id ?? '';
+			// A retry keeps the tab the user picked, if that source is still there.
+			if (!userPicked || !sources.some((s) => s.id === active)) {
+				const lang = language;
+				active = (sources.find((s) => s.languages.includes(lang)) ?? sources[0])?.id ?? '';
+			}
 		} catch (err) {
 			sourcesError = apiErrorMessage(err, 'list');
 		} finally {
@@ -81,7 +86,6 @@
 	// Until the user picks a tab, the first source with texts in the
 	// workspace language is shown (the workspace list may load after the
 	// sources, and the header may switch the workspace).
-	let userPicked = false;
 	$effect(() => {
 		const lang = language;
 		if (userPicked || sources.length === 0) return;

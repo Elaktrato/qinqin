@@ -7,25 +7,19 @@
 export const SENTENCE_MAX = 200;
 
 const TERMINATORS = new Set(['。', '！', '？', '．', '!', '?', '…', '‼', '⁇', '⁈', '⁉']);
-// Quote marks: a sentence quoted inside narration ("「行こう。」と言った")
-// stays one sentence with the narration that follows it.
-const QUOTE_OPEN = new Set(['「', '『', '“', '‘', '《', '〈']);
-const QUOTE_CLOSE = new Set(['」', '』', '”', '’', '》', '〉']);
-// Brackets: their content may end with a full stop, and the sentence ends
-// after the bracket.
-const BRACKET_OPEN = new Set(['（', '(', '【', '〔']);
-const BRACKET_CLOSE = new Set(['）', ')', '】', '〕']);
+const ELLIPSIS = '…';
+// Quote marks and brackets: full stops inside them do not end a sentence;
+// the sentence ends after the mark that closes them.
+const OPEN = new Set(['「', '『', '“', '‘', '《', '〈', '（', '(', '【', '〔']);
+const CLOSE = new Set(['」', '』', '”', '’', '》', '〉', '）', ')', '】', '〕']);
 // Straight quotes cannot be told open from close; after a full stop they close.
 const STRAIGHT_QUOTES = new Set(['"', "'"]);
 
 const SPACE = /\s/u;
+const NEWLINE = /[\n\r\u2028\u2029]/u;
 
 function isCloser(ch: string): boolean {
-	return QUOTE_CLOSE.has(ch) || BRACKET_CLOSE.has(ch) || STRAIGHT_QUOTES.has(ch);
-}
-
-function isOpener(ch: string): boolean {
-	return QUOTE_OPEN.has(ch) || BRACKET_OPEN.has(ch);
+	return CLOSE.has(ch) || STRAIGHT_QUOTES.has(ch);
 }
 
 /**
@@ -41,41 +35,47 @@ function isTerminator(cps: string[], i: number): boolean {
 	return next === undefined || SPACE.test(next) || isCloser(next);
 }
 
-/** sentenceEnds returns the code-point offsets where sentences end (the last is the paragraph length). */
+/**
+ * sentenceEnds returns the code-point offsets where sentences end (the
+ * last is the paragraph length). Rules:
+ * - a run of terminators plus the closing marks right after it ends a
+ *   sentence when no quotation or bracket is left open, even if text
+ *   follows ("「行こう。」と言った。" is two sentences);
+ * - terminators inside an open quotation or bracket never split;
+ * - a run made only of ellipses ("……") ends a sentence only before a
+ *   closing mark, whitespace or the end: mid-sentence pauses are common;
+ * - a line break always ends a sentence (and forgets open quotes).
+ */
 function sentenceEnds(cps: string[]): number[] {
 	const ends: number[] = [];
 	let depth = 0; // open quotes and brackets
 	let i = 0;
 	while (i < cps.length) {
 		const ch = cps[i];
-		if (isOpener(ch)) depth++;
-		else if (QUOTE_CLOSE.has(ch) || BRACKET_CLOSE.has(ch)) depth = Math.max(0, depth - 1);
+		if (NEWLINE.test(ch)) {
+			depth = 0;
+			ends.push(i + 1);
+			i++;
+			continue;
+		}
+		if (OPEN.has(ch)) depth++;
+		else if (CLOSE.has(ch)) depth = Math.max(0, depth - 1);
 		if (!isTerminator(cps, i)) {
 			i++;
 			continue;
 		}
-		const quoted = depth > 0;
 		let j = i + 1;
 		while (j < cps.length && isTerminator(cps, j)) j++;
+		const onlyEllipsis = cps.slice(i, j).every((c) => c === ELLIPSIS);
+		const afterRun = cps[j];
 		// Closing marks right after the full stop stay with its sentence.
-		let lastClose = '';
 		while (j < cps.length && isCloser(cps[j])) {
-			lastClose = cps[j];
-			if (!STRAIGHT_QUOTES.has(lastClose)) depth = Math.max(0, depth - 1);
+			if (!STRAIGHT_QUOTES.has(cps[j])) depth = Math.max(0, depth - 1);
 			j++;
 		}
-		const next = cps[j];
-		let boundary: boolean;
-		if (depth > 0) {
-			// Still inside a quotation or bracket: its sentences are one unit.
-			boundary = false;
-		} else if (quoted && QUOTE_CLOSE.has(lastClose)) {
-			// A quotation just closed: narration may continue ("」と言った").
-			boundary = next === undefined || SPACE.test(next) || isOpener(next);
-		} else {
-			boundary = true;
-		}
-		if (boundary) ends.push(j);
+		const pause =
+			onlyEllipsis && afterRun !== undefined && !SPACE.test(afterRun) && !isCloser(afterRun);
+		if (depth === 0 && !pause) ends.push(j);
 		i = j;
 	}
 	if (ends[ends.length - 1] !== cps.length) ends.push(cps.length);
@@ -89,9 +89,9 @@ function clamp(n: number, lo: number, hi: number): number {
 /**
  * sentenceAround returns the sentence of `paragraph` holding the code-point
  * span [start, end): cut at sentence-final punctuation (。！？．!?…, with
- * closing quotes and brackets right after it) and the paragraph edges,
- * never between a full stop and its closing mark, and never inside a
- * quotation that narration continues. A sentence longer than SENTENCE_MAX
+ * closing quotes and brackets right after it), line breaks and the
+ * paragraph edges, never between a full stop and its closing mark and
+ * never inside an open quotation (see sentenceEnds). A sentence longer than SENTENCE_MAX
  * code points is cut to a window of that size around the span. The
  * result is trimmed.
  */
