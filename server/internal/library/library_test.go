@@ -273,6 +273,31 @@ func TestCreateChecksWorkspace(t *testing.T) {
 	}
 }
 
+func TestHasSource(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	graded := newWorkspace(t, f.DB, f.a, "zh", "graded")
+	if _, err := f.Create(ctx, book(f.a, f.wa, "h1"), chapters()); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		user, ws         int64
+		source, sourceID string
+		want             bool
+	}{
+		{f.a, f.wa, "upload", "h1", true},
+		{f.a, graded, "upload", "h1", false}, // another workspace
+		{f.a, f.wa, "aozora", "h1", false},   // another source
+		{f.a, f.wa, "upload", "h2", false},   // another work
+		{f.b, f.wa, "upload", "h1", false},   // not the user's workspace
+	} {
+		got, err := f.HasSource(ctx, tc.user, tc.ws, tc.source, tc.sourceID)
+		if err != nil || got != tc.want {
+			t.Errorf("HasSource(%+v) = %v %v, want %v", tc, got, err, tc.want)
+		}
+	}
+}
+
 func TestWorkspaceLanguage(t *testing.T) {
 	f := setup(t)
 	ctx := context.Background()

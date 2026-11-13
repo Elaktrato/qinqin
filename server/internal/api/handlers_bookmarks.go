@@ -2,12 +2,41 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 )
 
 // maxBookmarkBody caps the body of the bookmark write routes.
 const maxBookmarkBody = 1 << 10
+
+// errTrailingJSON reports data after the JSON body.
+var errTrailingJSON = errors.New("trailing data after the JSON body")
+
+// decodeBookmarkBody reads a bookmark write body into v strictly: at
+// most maxBookmarkBody bytes, no unknown keys, nothing after the value.
+// It answers a failure itself (413 or 400) and reports success.
+func decodeBookmarkBody(w http.ResponseWriter, r *http.Request, v any) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, maxBookmarkBody)
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	err := dec.Decode(v)
+	if err == nil {
+		if extra := dec.Decode(&json.RawMessage{}); extra != io.EOF {
+			err = errTrailingJSON
+			var tooBig *http.MaxBytesError
+			if errors.As(extra, &tooBig) {
+				err = extra
+			}
+		}
+	}
+	if err != nil {
+		badBody(w, err)
+		return false
+	}
+	return true
+}
 
 // bookmarkID reads the {bid} path value; a malformed id is a missing
 // bookmark.
@@ -43,7 +72,7 @@ func (s *server) handleListBookmarks(w http.ResponseWriter, r *http.Request) {
 // the body {"position": string, "label"?: string}: 201 with the new
 // bookmark, or 200 with the one already at that position. An empty
 // position or a label over 120 characters is a 422, the 201st bookmark
-// of a book a 409.
+// of a book a 409. Unknown keys and trailing data are a 400.
 func (s *server) handleAddBookmark(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -53,13 +82,11 @@ func (s *server) handleAddBookmark(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, maxBookmarkBody)
 	var in struct {
 		Position string `json:"position"`
 		Label    string `json:"label"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		badBody(w, err)
+	if !decodeBookmarkBody(w, r, &in) {
 		return
 	}
 	m, created, err := s.library().AddBookmark(r.Context(), u.ID, id, in.Position, in.Label)
@@ -89,14 +116,10 @@ func (s *server) handleRenameBookmark(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, maxBookmarkBody)
 	var in struct {
 		Label *string `json:"label"`
 	}
-	dec := json.NewDecoder(r.Body)
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&in); err != nil {
-		badBody(w, err)
+	if !decodeBookmarkBody(w, r, &in) {
 		return
 	}
 	if in.Label == nil {

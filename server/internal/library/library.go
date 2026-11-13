@@ -229,6 +229,19 @@ func (s Store) WorkspaceLanguage(ctx context.Context, userID, workspaceID int64)
 	return workspaceLanguage(ctx, s.DB, userID, workspaceID)
 }
 
+// HasSource reports whether one of the user's workspaces already holds
+// the work (source, sourceID): one lookup on the dedupe key.
+func (s Store) HasSource(ctx context.Context, userID, workspaceID int64, source, sourceID string) (bool, error) {
+	var has bool
+	err := s.DB.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM library_books
+		WHERE workspace_id = ? AND source = ? AND source_id = ? AND source_id <> '' AND user_id = ?)`,
+		workspaceID, source, sourceID, userID).Scan(&has)
+	if err != nil {
+		return false, fmt.Errorf("library: has source: %w", err)
+	}
+	return has, nil
+}
+
 // List returns the user's books of one workspace, or of all the user's
 // workspaces when workspaceID is 0, oldest first. Another user's
 // workspace lists nothing.

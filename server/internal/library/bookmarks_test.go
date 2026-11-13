@@ -70,7 +70,13 @@ func TestBookmarkLabels(t *testing.T) {
 	ctx := context.Background()
 	bk, _ := f.Create(ctx, book(f.a, f.wa, "h1"), chapters())
 
+	r := func(c rune) string { return string(c) }
 	for i, tc := range []struct{ in, want string }{
+		// bidi embeddings, overrides and isolates are stripped; soft
+		// hyphen, ZWNJ and ZWJ stay
+		{"a" + r(0x202e) + "b" + r(0x202c) + "c", "abc"},
+		{r(0x202a) + r(0x202b) + r(0x202d) + "x" + r(0x2066) + r(0x2067) + r(0x2068) + "y" + r(0x2069), "xy"},
+		{"a" + r(0xad) + "b" + r(0x200c) + "c" + r(0x200d) + "d", "a" + r(0xad) + "b" + r(0x200c) + "c" + r(0x200d) + "d"},
 		{strings.Repeat("字", 120), strings.Repeat("字", 120)},                // runes, not bytes
 		{"  " + strings.Repeat("a", 120) + "\n ", strings.Repeat("a", 120)}, // trimmed before counting
 		{"line one\nline two\t\tend", "line one line two end"},              // whitespace runs collapse

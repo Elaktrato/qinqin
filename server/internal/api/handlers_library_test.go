@@ -168,14 +168,15 @@ func TestLibraryUpload(t *testing.T) {
 	if resp := uploadBook(t, ts.URL, alice, tinyEpub(t, "en"), "", ja); resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("opf en, no form: status = %d, want 422", resp.StatusCode)
 	}
-	// An unsupported OPF language defers to a valid form field.
-	resp = uploadBook(t, ts.URL, alice, tinyEpub(t, "fr"), "ja", ja)
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("opf fr + form ja: status = %d, want 201", resp.StatusCode)
+	// The form field only fills in a missing dc:language: an epub that
+	// declares an unsupported language is refused whatever the form says.
+	for _, opf := range []string{"fr", "en", "en-US"} {
+		if resp := uploadBook(t, ts.URL, alice, tinyEpub(t, opf), "ja", ja); resp.StatusCode != http.StatusUnprocessableEntity {
+			t.Errorf("opf %s + form ja: status = %d, want 422", opf, resp.StatusCode)
+		}
 	}
-	decodeJSON(t, resp, &b)
-	if b.Language != "ja" || b.WorkspaceID != ja {
-		t.Errorf("opf fr + form ja: book = %+v, want ja in the ja workspace", b)
+	if n := len(listBooks(t, ts.URL, alice, ja)); n != 0 {
+		t.Errorf("ja books after refused uploads = %d, want 0", n)
 	}
 	// A valid OPF language wins over the form field.
 	resp = uploadBook(t, ts.URL, alice, tinyEpub(t, "ja"), "zh", ja)

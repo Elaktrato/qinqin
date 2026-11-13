@@ -43,17 +43,30 @@ type rowScanner interface {
 
 // workspaceName trims a requested name and checks it: at most 40 code
 // points, and no control (Cc) or format (Cf) characters, so no
-// newlines, tabs, zero-width or bidi-override characters. A refused
-// name comes back with the reason, for a 422.
+// newlines, tabs, ZWSP, word joiner, BOM, soft hyphen or bidi controls.
+// The format characters that build visible text stay allowed: ZWNJ and
+// ZWJ (scripts that need them, ZWJ emoji) and the tag characters
+// U+E0020-E007F (subdivision flags). A refused name comes back with the
+// reason, for a 422.
 func workspaceName(raw string) (name, problem string) {
 	name = strings.TrimSpace(raw)
 	if utf8.RuneCountInString(name) > maxWorkspaceName {
 		return "", "name is longer than 40 characters"
 	}
-	if strings.ContainsFunc(name, func(r rune) bool { return unicode.In(r, unicode.Cc, unicode.Cf) }) {
+	if strings.ContainsFunc(name, refusedInName) {
 		return "", "name contains control or invisible characters"
 	}
 	return name, ""
+}
+
+// refusedInName reports a control or format character other than ZWNJ,
+// ZWJ and the emoji tag characters.
+func refusedInName(r rune) bool {
+	switch {
+	case r == 0x200c, r == 0x200d, r >= 0xe0020 && r <= 0xe007f:
+		return false
+	}
+	return unicode.In(r, unicode.Cc, unicode.Cf)
 }
 
 // handleCreateWorkspace serves POST /api/workspaces {language, name?}:

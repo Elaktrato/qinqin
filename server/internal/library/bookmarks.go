@@ -50,12 +50,17 @@ func checkPosition(position string) error {
 }
 
 // cleanLabel collapses whitespace runs (newlines included) to single
-// spaces, trims, and drops control characters; format characters such
-// as soft hyphens and zero-width joiners stay, since they occur in book
+// spaces, trims, and drops control characters and the bidi embedding,
+// override and isolate controls (U+202A-202E, U+2066-2069), which could
+// reorder the text around the label; other format characters such as
+// soft hyphens and zero-width joiners stay, since they occur in book
 // text. A result over MaxLabelLen code points is ErrLabelTooLong.
 func cleanLabel(raw string) (string, error) {
 	label := strings.Map(func(r rune) rune {
-		if unicode.IsControl(r) && !unicode.IsSpace(r) {
+		switch {
+		case unicode.IsControl(r) && !unicode.IsSpace(r),
+			r >= 0x202a && r <= 0x202e,
+			r >= 0x2066 && r <= 0x2069:
 			return -1
 		}
 		return r

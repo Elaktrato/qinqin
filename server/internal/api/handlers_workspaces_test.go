@@ -348,11 +348,17 @@ func TestWorkspaceNames(t *testing.T) {
 		t.Errorf("PUT clear name: status = %d, ws = %+v", resp.StatusCode, renamed)
 	}
 
-	// Names with control or format characters (zero-width ones included)
-	// are refused on create and rename; surrounding whitespace is trimmed.
+	// Names with control or format characters are refused on create and
+	// rename: bidi controls, ZWSP, word joiner, BOM, soft hyphen; ZWNJ,
+	// ZWJ and tag characters are allowed (see below). Surrounding
+	// whitespace is trimmed.
+	r := func(cs ...rune) string { return string(cs) }
 	for _, bad := range []string{
 		"a\x00b", "a\nb", "a\tb", "a\x7fb", "a\u0085b", // Cc
-		"a" + string(rune(0x200b)) + "b", "a" + string(rune(0x200d)) + "b", "a" + string(rune(0x200e)) + "b", "a" + string(rune(0x202e)) + "b", string(rune(0xfeff)) + "a", "a" + string(rune(0xad)) + "b", // Cf
+		r('a', 0x200b, 'b'), r('a', 0x2060, 'b'), r(0xfeff, 'a'), r('a', 0xad, 'b'), // ZWSP, WJ, BOM, SHY
+		r('a', 0x200e, 'b'), r('a', 0x200f, 'b'), r('a', 0x061c, 'b'), // LRM, RLM, ALM
+		r('a', 0x202a, 'b'), r('a', 0x202e, 'b'), r('a', 0x2066, 'b'), r('a', 0x2069, 'b'), // embeddings, overrides, isolates
+		r('a', 0xe0001, 'b'), // LANGUAGE TAG, outside the allowed tag range
 	} {
 		if status, _ := create(map[string]string{"language": "zh", "name": bad}); status != http.StatusUnprocessableEntity {
 			t.Errorf("POST name %q: status = %d, want %d", bad, status, http.StatusUnprocessableEntity)
@@ -364,13 +370,26 @@ func TestWorkspaceNames(t *testing.T) {
 	if status, ws := create(map[string]string{"language": "zh", "name": "\n Novels \t"}); status != http.StatusCreated || ws.Name != "Novels" {
 		t.Errorf("POST name with surrounding whitespace: status = %d, ws = %+v", status, ws)
 	}
+	// ZWJ emoji, ZWNJ in words and tag-sequence subdivision flags.
+	for _, good := range []string{
+		r(0x1f469, 0x200d, 0x1f4bb),                                      // 👩‍💻
+		r('m', 0x06cc, 0x200c, 'x'),                                      // ZWNJ
+		r(0x1f3f4, 0xe0067, 0xe0062, 0xe0073, 0xe0063, 0xe0074, 0xe007f), // Scotland flag
+	} {
+		if status, ws := create(map[string]string{"language": "zh", "name": good}); status != http.StatusCreated || ws.Name != good {
+			t.Errorf("POST name %q: status = %d, ws = %+v, want created", good, status, ws)
+		}
+	}
+	if resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"name": "dev " + r(0x1f469, 0x200d, 0x1f4bb)}); resp.StatusCode != http.StatusOK {
+		t.Errorf("PUT ZWJ emoji name: status = %d, want 200", resp.StatusCode)
+	}
 
 	// The list carries the names.
 	list := doJSON(t, http.MethodGet, ts.URL, "/api/workspaces", alice, nil)
 	var all []workspaceBody
 	decodeJSON(t, list, &all)
-	if len(all) != 4 || all[1].Name != "Graded readers" || all[3].Name != "Novels" {
-		t.Errorf("GET workspaces = %+v, want 4 with names", all)
+	if len(all) != 7 || all[1].Name != "Graded readers" || all[3].Name != "Novels" {
+		t.Errorf("GET workspaces = %+v, want 7 with names", all)
 	}
 }
 

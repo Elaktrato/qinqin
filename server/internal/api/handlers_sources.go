@@ -275,16 +275,14 @@ func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 
 	// Skip the download when the work is already in the workspace; the
 	// unique constraint below still decides races.
-	books, err := store.List(ctx, u.ID, in.WorkspaceID)
+	has, err := store.HasSource(ctx, u.ID, in.WorkspaceID, src.ID(), in.SourceID)
 	if err != nil {
 		libraryError(w, err)
 		return
 	}
-	for _, b := range books {
-		if b.Source == src.ID() && b.SourceID == in.SourceID {
-			libraryError(w, library.ErrDuplicate)
-			return
-		}
+	if has {
+		libraryError(w, library.ErrDuplicate)
+		return
 	}
 
 	imp, err := src.Fetch(ctx, in.SourceID)

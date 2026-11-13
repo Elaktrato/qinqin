@@ -87,9 +87,10 @@ func epubLanguage(tag string) string {
 // handleUploadBook serves POST /api/library/upload: the multipart
 // "file" field carries an epub, which is parsed and stored in the
 // library of the caller's workspace named by the "workspace" field
-// (required; 404 when it is not the caller's). The book's language
-// comes from the epub's dc:language, else from the "language" form
-// field, and must be the workspace's (422 otherwise).
+// (required; 404 when it is not the caller's). The book's language is
+// the epub's dc:language, or the "language" form field only when the
+// epub declares none; it must be zh or ja and the workspace's (422
+// otherwise).
 func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -137,14 +138,20 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	// The epub's own language wins when it is supported; otherwise the
-	// form field decides.
+	// The epub's own dc:language decides; the form field only fills in
+	// a missing one. An epub that declares an unsupported language is
+	// refused whatever the form says.
+	declared := strings.TrimSpace(meta.Language) != ""
 	language := epubLanguage(meta.Language)
-	if language == "" {
+	if !declared {
 		language = epubLanguage(r.FormValue("language"))
 	}
 	if language == "" {
-		http.Error(w, "language must be zh or ja", http.StatusUnprocessableEntity)
+		msg := "language must be zh or ja"
+		if declared {
+			msg = "the epub's language must be zh or ja"
+		}
+		http.Error(w, msg, http.StatusUnprocessableEntity)
 		return
 	}
 	title := meta.Title
