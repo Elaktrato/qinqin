@@ -13,7 +13,8 @@
 	import WritingCard from '$lib/plugins/flashcards/cards/WritingCard.svelte';
 	import {
 		cardedSentenceIds,
-		deckSessionItems,
+		deckSessionPlan,
+		dropItem,
 		isEligible,
 		levelSessionItems,
 		pickSentence,
@@ -146,6 +147,9 @@
 	let sessionLanguage = $state('');
 	let cards = $state.raw<StudyCard[]>([]);
 	let queue = $state.raw<FlowItem[]>([]);
+	// Deck-session companions held back beyond the new-card budget; one
+	// replaces each companion dropped as ineligible.
+	let reserve = $state.raw<FlowItem[]>([]);
 	let reviews = $state.raw<ReviewEvent[]>([]);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
@@ -161,6 +165,7 @@
 	let suggested = $state<ReviewGrade | null>(null);
 	let doneMeta = $state.raw<ReviewMeta>({});
 	let shownAt = 0;
+	let doneAt = 0;
 	let resolveSeq = 0;
 	let gradeButtons = $state<(HTMLButtonElement | null)[]>([]);
 
@@ -259,6 +264,7 @@
 		sessionLanguage = language ?? '';
 		cards = [];
 		queue = [];
+		reserve = [];
 		reviews = [];
 		sessionReviews = [];
 		index = 0;
@@ -315,7 +321,7 @@
 					kinds
 				);
 			} else {
-				queue = deckSessionItems({
+				const plan = deckSessionPlan({
 					cards: data.cards,
 					reviews: history,
 					deckIds: config.deckIds,
@@ -325,11 +331,14 @@
 					now,
 					language: language ?? ''
 				});
+				queue = plan.queue;
+				reserve = plan.reserve;
 			}
 			ensureEntry(queue[0]);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			queue = [];
+			reserve = [];
 			if (err instanceof LevelWorkspaceMismatch) {
 				workspaceMismatch = err.message;
 			} else {
@@ -394,9 +403,14 @@
 		}
 	}
 
-	/** dropCurrent removes an ineligible item; nothing is written. */
-	function dropItem(item: FlowItem): void {
-		queue = queue.filter((candidate) => candidate.cardId !== item.cardId);
+	/**
+	 * dropIneligible removes an ineligible item (nothing is written); a
+	 * dropped companion is replaced by the next reserve companion.
+	 */
+	function dropIneligible(item: FlowItem): void {
+		const next = dropItem({ queue, reserve }, item.cardId);
+		queue = next.queue;
+		reserve = next.reserve;
 		ensureEntry(queue[index]);
 	}
 
@@ -419,14 +433,14 @@
 			(result) => {
 				if (seq !== resolveSeq) return;
 				if (result === null) {
-					dropItem(item);
+					dropIneligible(item);
 					return;
 				}
 				shownAt = Date.now();
 				resolved = result;
 			},
 			() => {
-				if (seq === resolveSeq) dropItem(item);
+				if (seq === resolveSeq) dropIneligible(item);
 			}
 		);
 	});
@@ -439,10 +453,16 @@
 		ensureEntry(currentItem);
 	}
 
+	// A grade arriving this soon after the card finished is the tail of
+	// the key that finished it (a held Enter on Check re-activates the
+	// newly focused grade button natively), not a decision.
+	const GRADE_SETTLE_MS = 350;
+
 	/** onCardDone unlocks grading and preselects the card's suggestion. */
 	async function onCardDone(result: CardResult): Promise<void> {
 		if (resolved === null || done) return;
 		done = true;
+		doneAt = Date.now();
 		// Easy is never suggested automatically.
 		suggested = result.suggested === 4 ? 3 : result.suggested;
 		doneMeta = { ...result.meta, durationMs: Math.max(0, Date.now() - shownAt) };
@@ -470,6 +490,7 @@
 		const current = resolved;
 		const workspaceId = sessionWorkspaceId;
 		if (!done || current === null || workspaceId === null || grading) return;
+		if (Date.now() - doneAt < GRADE_SETTLE_MS) return;
 
 		const item = current.item;
 		const meta: ReviewMeta = { ...doneMeta };

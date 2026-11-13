@@ -121,7 +121,12 @@ export async function gradeItem({
 		card = await addCard(item.entryId, {
 			kind,
 			written: entry.written,
-			sentenceId: item.sentenceId ?? entry.sentences?.[0]?.id,
+			// Only vocab (the example on its front) and sentence cards carry a
+			// sentence; writing and tone cards never store one.
+			sentenceId:
+				kind === 'vocab' || kind === 'sentence'
+					? (item.sentenceId ?? entry.sentences?.[0]?.id)
+					: undefined,
 			deckIds: item.deckIds ?? [GENERAL_DECK_ID]
 		});
 	} catch (err) {

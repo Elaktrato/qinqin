@@ -4,6 +4,8 @@ import {
 	captureListeners,
 	cardedSentenceIds,
 	deckSessionItems,
+	deckSessionPlan,
+	dropItem,
 	isChinese,
 	isEligible,
 	levelSessionItems,
@@ -268,6 +270,54 @@ describe('deckSessionItems', () => {
 			'companion:sentence:3'
 		]);
 		expect(items[0]).toMatchObject({ kind: 'sentence', virtual: false, sentenceId: 7 });
+	});
+});
+
+describe('deckSessionPlan and dropItem', () => {
+	const now = new Date('2026-03-01T00:00:00Z');
+	// Words 1 and 2 (oldest) have no sentences; 3 and 4 do.
+	const cards = [1, 2, 3, 4].map((entryId) =>
+		card(`v${entryId}`, 'vocab', entryId, { createdAt: `2026-01-0${entryId}T00:00:00Z` })
+	);
+	const options = {
+		cards,
+		reviews: [] as ReviewEvent[],
+		deckIds: ['general'],
+		kinds: ['sentence'] as StudyCardKind[],
+		newLimit: 2,
+		reviewLimit: 100,
+		now,
+		language: 'zh'
+	};
+
+	it('caps companions in the queue at the budget and keeps the rest in reserve', () => {
+		const plan = deckSessionPlan(options);
+		expect(plan.queue.map((item) => item.entryId)).toEqual([1, 2]);
+		expect(plan.reserve.map((item) => item.entryId)).toEqual([3, 4]);
+		expect(deckSessionItems(options)).toEqual(plan.queue);
+	});
+
+	it('backfills a dropped companion from the reserve so eligible words still come up', () => {
+		let state = deckSessionPlan(options);
+		state = dropItem(state, 'companion:sentence:1');
+		state = dropItem(state, 'companion:sentence:2');
+		expect(state.queue.map((item) => item.entryId)).toEqual([3, 4]);
+		expect(state.reserve).toEqual([]);
+	});
+
+	it('does not backfill when a real card is dropped', () => {
+		const existing = [...cards, card('s9', 'sentence', 9, { sentenceId: 1 })];
+		let state = deckSessionPlan({ ...options, cards: existing, newLimit: 1 });
+		expect(state.queue.map((item) => item.cardId)).toEqual(['s9']);
+		const reserve = state.reserve.length;
+		state = dropItem(state, 's9');
+		expect(state.queue).toEqual([]);
+		expect(state.reserve).toHaveLength(reserve);
+	});
+
+	it('leaves the state alone for an unknown id', () => {
+		const plan = deckSessionPlan(options);
+		expect(dropItem(plan, 'nope')).toEqual(plan);
 	});
 });
 

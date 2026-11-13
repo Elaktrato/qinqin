@@ -145,15 +145,28 @@ export interface DeckSessionOptions {
 	language: string;
 }
 
+/** A deck session: the queue, plus companions held back beyond the budget. */
+export interface DeckSessionPlan {
+	queue: FlowItem[];
+	/**
+	 * Companions planned beyond the new-card budget, in planning order.
+	 * Eligibility is only known once an entry is loaded, so when the runner
+	 * drops an ineligible companion the next reserve item takes its place
+	 * (see dropItem); otherwise sentence-less old words would use up the
+	 * budget in every session and starve the newer ones.
+	 */
+	reserve: FlowItem[];
+}
+
 /**
- * deckSessionItems builds a deck session: the existing cards of the
- * selected kinds (due reviews first, then new cards), followed by virtual
- * companion items for vocab words that lack a card of a selected
- * companion kind. New cards and companions share `newLimit`. Companions
- * that can never be eligible are left out before the budget is applied:
+ * deckSessionPlan builds a deck session: the existing cards of the
+ * selected kinds (due reviews first, then new cards), followed by at most
+ * `newLimit - new cards` virtual companion items for vocab words that
+ * lack a card of a selected companion kind; further companions go to the
+ * reserve. Companions that can never be eligible are left out entirely:
  * writing for words without Han characters, tone outside Chinese.
  */
-export function deckSessionItems({
+export function deckSessionPlan({
 	cards,
 	reviews,
 	deckIds,
@@ -162,9 +175,9 @@ export function deckSessionItems({
 	reviewLimit,
 	now,
 	language
-}: DeckSessionOptions): FlowItem[] {
+}: DeckSessionOptions): DeckSessionPlan {
 	const wanted = sessionKinds(kinds, language);
-	if (wanted.length === 0) return [];
+	if (wanted.length === 0) return { queue: [], reserve: [] };
 
 	const real = buildQueue({ cards, reviews, deckIds, newLimit, reviewLimit, now, kinds: wanted });
 	const reviewed = reviewedIds(reviews);
@@ -172,23 +185,15 @@ export function deckSessionItems({
 	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
 	const budget = Math.max(0, limit - freshCount);
 
-	const companions =
-		budget === 0
-			? []
-			: planCompanions({
-					cards,
-					kinds: wanted,
-					deckIds,
-					// Plan everything, filter the hopeless ones, then apply the
-					// budget so a kana word cannot use up a writing slot.
-					newBudget: cards.length * 3
-				})
-					.filter((item) => item.kind !== 'writing' || writableChars(item.written).length > 0)
-					.slice(0, budget);
-
-	return [
-		...real.map(fromCard),
-		...companions.map(
+	const companions = planCompanions({
+		cards,
+		kinds: wanted,
+		deckIds,
+		// Plan everything, then split at the budget: the rest is the reserve.
+		newBudget: cards.length * 3
+	})
+		.filter((item) => item.kind !== 'writing' || writableChars(item.written).length > 0)
+		.map(
 			(item): FlowItem => ({
 				cardId: item.cardId,
 				kind: item.kind,
@@ -198,8 +203,31 @@ export function deckSessionItems({
 				written: item.written,
 				deckIds: [...item.deckIds]
 			})
-		)
-	];
+		);
+
+	return {
+		queue: [...real.map(fromCard), ...companions.slice(0, budget)],
+		reserve: companions.slice(budget)
+	};
+}
+
+/** deckSessionItems is the queue of deckSessionPlan (no reserve). */
+export function deckSessionItems(options: DeckSessionOptions): FlowItem[] {
+	return deckSessionPlan(options).queue;
+}
+
+/**
+ * dropItem removes an item that turned out to be ineligible. A dropped
+ * companion frees its new-card slot, so the next reserve companion is
+ * appended to the queue; a dropped real card frees nothing.
+ */
+export function dropItem(plan: DeckSessionPlan, cardId: string): DeckSessionPlan {
+	const dropped = plan.queue.find((item) => item.cardId === cardId);
+	if (dropped === undefined) return plan;
+	const queue = plan.queue.filter((item) => item.cardId !== cardId);
+	if (!dropped.virtual || plan.reserve.length === 0) return { queue, reserve: plan.reserve };
+	const [next, ...reserve] = plan.reserve;
+	return { queue: [...queue, next], reserve };
 }
 
 /**

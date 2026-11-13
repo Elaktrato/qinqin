@@ -40,7 +40,7 @@
 	const TYPE_INFO: Record<StudyCardKind, string> = {
 		vocab: 'See the word, recall its meaning, then reveal the answer.',
 		sentence:
-			'Word Salad: rebuild an example sentence from shuffled tiles; words without sentences are skipped.',
+			'Rebuild an example sentence from shuffled tiles; words without sentences are skipped.',
 		writing:
 			'Draw each Han character stroke by stroke; words without Han characters are skipped.',
 		tone: 'Swipe or type the tone of every syllable (Chinese only).'
@@ -313,6 +313,13 @@
 	});
 
 	const deckCounts = $derived({ due: deckPlan.due, fresh: deckPlan.fresh });
+
+	// Planned companions are candidates, not promises: whether a word has
+	// a sentence, stroke data or a clean pinyin reading is only known when
+	// it comes up, and unsuitable words are skipped then.
+	const plannedCompanions = $derived(
+		deckPlan.byKind.sentence + deckPlan.byKind.writing + deckPlan.byKind.tone
+	);
 
 	// Level sessions are vocab-only: without vocab selected they are empty.
 	const levelCounts = $derived.by(() => {
@@ -755,6 +762,12 @@
 					<strong>{counts.fresh}</strong>
 					new
 				</p>
+				{#if plannedCompanions > 0}
+					<p class="hint">
+						Up to {plannedCompanions} of the new cards are Word Salad, writing or tone cards made the first time
+						you study them; words without a sentence, stroke data or pinyin are skipped then.
+					</p>
+				{/if}
 			{/if}
 
 			{#if typeWarnings.length > 0}

@@ -215,6 +215,24 @@ describe('gradeItem', () => {
 		expect(planCompanions({ cards: [vocab, created], ...plan })).toEqual([]);
 	});
 
+	it('never stores a sentence id on writing or tone companions', async () => {
+		const addCard = vi.fn(async () => ({ ...card('real-7', 42, '猫'), kind: 'writing' as const }));
+		await gradeItem({
+			item: item({ cardId: 'companion:writing:42', virtual: true, card: null, kind: 'writing' }),
+			grade: 3,
+			workspaceId: 7,
+			entry: ENTRY,
+			addCard,
+			recordReview: vi.fn(async () => {})
+		});
+		expect(addCard).toHaveBeenCalledWith(42, {
+			kind: 'writing',
+			written: '猫',
+			sentenceId: undefined,
+			deckIds: ['general']
+		});
+	});
+
 	it('creates a companion card in the deck it was planned from', async () => {
 		const vocab = { ...card('v1', 42, '猫'), deckIds: ['deck-a'] };
 		const plan = { kinds: ['tone' as const], deckIds: ['deck-a'], newBudget: 5 };
