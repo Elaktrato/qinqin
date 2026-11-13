@@ -74,4 +74,17 @@ describe('apiErrorMessage', () => {
 			'Could not look this up.'
 		);
 	});
+
+	it('explains the bookmark cap and has bookmark fallbacks', () => {
+		expect(apiErrorMessage(new ApiError(409, 'too many bookmarks'), 'bookmark')).toBe(
+			'This book already has the most bookmarks allowed (200). Delete one to add another.'
+		);
+		expect(apiErrorMessage(new ApiError(404, 'x'), 'bookmark')).toMatch(/bookmark no longer exists/);
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'bookmark')).toBe(
+			'Could not save the bookmark.'
+		);
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'bookmarks')).toBe(
+			'Could not load the bookmarks.'
+		);
+	});
 });

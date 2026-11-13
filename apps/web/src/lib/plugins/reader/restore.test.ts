@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { restoreDecision, restorePlan } from './restore';
+import { jumpPlan, restoreDecision, restorePlan } from './restore';
 
 describe('restorePlan', () => {
 	it('scrolls within the URL chapter when it is the saved one', () => {
@@ -40,5 +40,21 @@ describe('restoreDecision', () => {
 
 	it('skips when the chapter failed to load', () => {
 		expect(restoreDecision({ target, urlChapter: 2, loadedChapter: null, loadFailed: true })).toBe('skip');
+	});
+});
+
+describe('jumpPlan', () => {
+	it('scrolls within the chapter on screen', () => {
+		expect(jumpPlan('3:7', 10, 3)).toEqual({ kind: 'scroll', target: { chapter: 3, paragraph: 7 } });
+	});
+
+	it('navigates to any other chapter, not only from chapter 0', () => {
+		expect(jumpPlan('1:2', 10, 5)).toEqual({ kind: 'navigate', target: { chapter: 1, paragraph: 2 } });
+		expect(jumpPlan('6:0', 10, 0)).toEqual({ kind: 'navigate', target: { chapter: 6, paragraph: 0 } });
+	});
+
+	it('does nothing for a malformed position or a chapter the book no longer has', () => {
+		expect(jumpPlan('x', 10, 0)).toEqual({ kind: 'none' });
+		expect(jumpPlan('10:0', 10, 0)).toEqual({ kind: 'none' });
 	});
 });

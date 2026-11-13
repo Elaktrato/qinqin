@@ -227,6 +227,17 @@ export interface Book {
 	createdAt: string;
 }
 
+// Bookmark is one bookmark of a library book. `position` uses the reading
+// position format ("<chapter>:<paragraph>"); `label` is at most 120 code
+// points (the server cleans whitespace and control characters).
+export interface Bookmark {
+	id: number;
+	bookId: number;
+	position: string;
+	label: string;
+	createdAt: string;
+}
+
 export interface Chapter {
 	title: string;
 	paragraphs: { text: string; ruby?: string }[][];

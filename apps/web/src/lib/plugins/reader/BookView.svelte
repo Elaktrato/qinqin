@@ -1,19 +1,31 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { record as recordEvent } from '$lib/events';
 	import { workspaces } from '$lib/workspaces';
 	import { createReadingTimer } from './readingTimer';
 	import { workspaceForBook } from './readingWorkspace';
-	import { getBook, getChapter, setPosition } from '$lib/api/library';
+	import {
+		addBookmark,
+		deleteBookmark,
+		getBook,
+		getChapter,
+		listBookmarks,
+		renameBookmark,
+		setPosition
+	} from '$lib/api/library';
 	import type { Book, Chapter } from '$lib/api/types';
+	import BookmarksPanel from './BookmarksPanel.svelte';
 	import ChapterText from './ChapterText.svelte';
 	import PopupStackView from './PopupStackView.svelte';
+	import { BookmarkList, bookmarkKey } from './bookmarkList.svelte';
+	import { bookmarkedParagraphs, snippetAt, type Bookmark } from './bookmarks';
 	import { paragraphElement } from './dom';
 	import { apiErrorMessage } from './errors';
-	import { displayRuns } from './paragraphText';
+	import { displayRuns, paragraphString } from './paragraphText';
+	import { inPopup } from './popupPointer.svelte';
 	import { chapterTitle, formatPosition, type Position } from './position';
-	import { restoreDecision, restorePlan } from './restore';
+	import { jumpPlan, restoreDecision, restorePlan } from './restore';
 	import { PositionSaver } from './positionSaver';
 	import { browserStorage, loadPrefs, savePrefs } from './prefs';
 	import { LIBRARY_HREF, bookHref, safeHttpUrl } from './route';
@@ -117,7 +129,12 @@
 		}
 	}
 
-	$effect(() => void loadBook(id));
+	// The props are getters on the page's parsed route, a new object on
+	// every navigation: read through a derived number, the book (and its
+	// bookmarks) reload only when the book changes, not on every chapter
+	// change (which also left position tracking off after the first one).
+	const openBookId = $derived(id);
+	$effect(() => void loadBook(openBookId));
 	$effect(() => void loadChapter(id, chapter));
 
 	// --- reading position ---
@@ -128,10 +145,17 @@
 	// failed, the jump failed) is dropped rather than blocking reading.
 	let restoredBook = 0;
 	let restoreTo = $state<Position | null>(null);
+	// Set with restoreTo by a bookmark jump (not by the automatic restore).
+	let focusAfterRestore = false;
 	// Positions are saved only once the restore settled, so opening a book
 	// never overwrites the saved place with the top of chapter 0.
 	let tracking = $state(false);
 	const saver = new PositionSaver(setPosition, SAVE_DELAY_MS);
+	// The toolbar sticks to the top of the screen while reading (so the
+	// bookmark button is at hand anywhere in a chapter): what it covers
+	// does not count as in view, and restores and jumps scroll paragraphs
+	// below it (scroll-margin-top in ChapterText).
+	let barHeight = $state(0);
 
 	function planRestore(loaded: Book): void {
 		if (restoredBook === loaded.id) return;
@@ -165,12 +189,22 @@
 		});
 		if (decision === 'wait') return;
 		restoreTo = null;
+		const focus = focusAfterRestore;
+		focusAfterRestore = false;
 		if (decision === 'skip') {
 			tracking = true;
 			return;
 		}
 		void tick().then(() => {
-			if (container) paragraphElement(container, target.paragraph)?.scrollIntoView({ block: 'start' });
+			const el = container && paragraphElement(container, target.paragraph);
+			el?.scrollIntoView({ block: 'start' });
+			// A bookmark jump moves keyboard focus to the paragraph, so the
+			// next Tab continues from the text rather than the panel above.
+			if (el && focus) {
+				el.tabIndex = -1;
+				el.addEventListener('blur', () => el.removeAttribute('tabindex'), { once: true });
+				el.focus({ preventScroll: true });
+			}
 			tracking = true;
 		});
 	});
@@ -189,19 +223,138 @@
 		const el = container;
 		const n = content?.n;
 		const bookId = book?.id;
+		// What the sticky toolbar covers is not in view (else every restore,
+		// which lands below the toolbar, would save the paragraph above).
+		const covered = Math.ceil(barHeight);
 		if (!tracking || !el || n === undefined || bookId === undefined) return;
 		const visible = new Set<number>();
-		const observer = new IntersectionObserver((records) => {
-			for (const record of records) {
-				const p = Number((record.target as HTMLElement).dataset.p);
-				if (record.isIntersecting) visible.add(p);
-				else visible.delete(p);
-			}
-			if (visible.size > 0) saver.schedule(bookId, formatPosition(n, Math.min(...visible)));
-		});
+		const observer = new IntersectionObserver(
+			(records) => {
+				for (const record of records) {
+					const p = Number((record.target as HTMLElement).dataset.p);
+					if (record.isIntersecting) visible.add(p);
+					else visible.delete(p);
+				}
+				if (visible.size > 0) saver.schedule(bookId, formatPosition(n, Math.min(...visible)));
+			},
+			{ rootMargin: `-${covered}px 0px 0px 0px` }
+		);
 		for (const p of el.querySelectorAll('[data-p]')) observer.observe(p);
 		return () => observer.disconnect();
 	});
+
+	// --- bookmarks ---
+
+	const bookmarks = new BookmarkList({
+		list: listBookmarks,
+		add: addBookmark,
+		rename: renameBookmark,
+		remove: deleteBookmark
+	});
+	$effect(() => {
+		const current = openBookId;
+		untrack(() => void bookmarks.load(current));
+	});
+
+	// Chapter titles seen in this visit, for the panel (the book itself
+	// only knows how many chapters it has).
+	let chapterTitles = $state<Record<number, string>>({});
+	$effect(() => {
+		void openBookId;
+		chapterTitles = {};
+	});
+	$effect(() => {
+		const loaded = content;
+		if (loaded) untrack(() => (chapterTitles = { ...chapterTitles, [loaded.n]: loaded.data.title }));
+	});
+
+	// The bookmark spot is the reading position: the first paragraph in
+	// view. Watched on its own (also before the restore settled) so the
+	// position saving above stays exactly as it was.
+	let topParagraph = $state<number | null>(null);
+	$effect(() => {
+		const el = container;
+		const n = content?.n;
+		const covered = Math.ceil(barHeight);
+		topParagraph = null;
+		if (!el || n === undefined) return;
+		const visible = new Set<number>();
+		const observer = new IntersectionObserver(
+			(records) => {
+				for (const record of records) {
+					const p = Number((record.target as HTMLElement).dataset.p);
+					if (record.isIntersecting) visible.add(p);
+					else visible.delete(p);
+				}
+				if (visible.size > 0) topParagraph = Math.min(...visible);
+			},
+			{ rootMargin: `-${covered}px 0px 0px 0px` }
+		);
+		for (const p of el.querySelectorAll('[data-p]')) observer.observe(p);
+		return () => observer.disconnect();
+	});
+
+	const here = $derived(
+		content && content.n === chapter && topParagraph !== null && topParagraph < paragraphs.length
+			? { chapter: content.n, paragraph: topParagraph }
+			: null
+	);
+	const herePosition = $derived(here ? formatPosition(here.chapter, here.paragraph) : null);
+	const hereBookmark = $derived(herePosition ? bookmarks.at(herePosition) : null);
+	const canToggle = $derived(herePosition !== null && bookmarks.ready && !bookmarks.saving);
+	const marked = $derived(content ? bookmarkedParagraphs(bookmarks.items, content.n) : new Set<number>());
+
+	function toggleBookmark(): void {
+		if (!canToggle || !here || !herePosition || !content) return;
+		const label =
+			snippetAt(paragraphString(paragraphs[here.paragraph] ?? [])) ||
+			snippetAt(chapterTitle(content.data.title, content.n));
+		void bookmarks.toggle(herePosition, label);
+	}
+
+	function isTyping(target: EventTarget | null): boolean {
+		if (!(target instanceof HTMLElement)) return false;
+		return (
+			target.isContentEditable ||
+			target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null
+		);
+	}
+
+	$effect(() => {
+		const onKey = (e: KeyboardEvent): void => {
+			const popupOpen = lookup.info !== null || inPopup(e.target);
+			if (!bookmarkKey(e, { typing: isTyping(e.target), popupOpen })) return;
+			e.preventDefault();
+			toggleBookmark();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	});
+
+	function jumpToBookmark(b: Bookmark): void {
+		const plan = jumpPlan(b.position, chapterCount, chapter);
+		if (plan.kind === 'none') {
+			bookmarks.error = 'This bookmark points to a place the book does not have.';
+			return;
+		}
+		focusAfterRestore = true;
+		if (plan.kind === 'scroll') {
+			restoreTo = plan.target;
+			return;
+		}
+		// Like the restore on opening: stop saving positions while the other
+		// chapter loads, so its top is not saved on the way to the bookmark.
+		tracking = false;
+		goto(bookHref(id, plan.target.chapter), { noScroll: true })
+			.then(tick)
+			.then(
+				() => (restoreTo = plan.target),
+				() => {
+					focusAfterRestore = false;
+					tracking = true;
+				}
+			);
+	}
 
 	// --- reading time ---
 
@@ -301,7 +454,7 @@
 	</nav>
 {/snippet}
 
-<main class="book">
+<main class="book" style:--reader-bar="{barHeight}px">
 	<p><a href={LIBRARY_HREF}>Back to library</a></p>
 
 	{#if bookError}
@@ -315,7 +468,7 @@
 			{#if book.author}<p class="author" lang={book.language}>{book.author}</p>{/if}
 		</header>
 
-		<div class="toggles">
+		<div class="toggles" bind:offsetHeight={barHeight}>
 			{#if book.language === 'ja' || hasRuby}
 				<label><input type="checkbox" bind:checked={prefs.furigana} /> Furigana</label>
 			{/if}
@@ -330,7 +483,37 @@
 				</label>
 				{#if variantError}<span class="error" role="alert">{variantError}</span>{/if}
 			{/if}
+			<button
+				type="button"
+				class="bookmark-toggle"
+				aria-pressed={hereBookmark !== null}
+				aria-disabled={!canToggle}
+				aria-busy={bookmarks.saving}
+				aria-keyshortcuts="B"
+				title={hereBookmark
+					? 'Remove the bookmark at the top of the screen (B)'
+					: 'Bookmark the paragraph at the top of the screen (B)'}
+				onclick={toggleBookmark}
+			>
+				<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+					<path
+						d="M4 1.75h8a.75.75 0 0 1 .75.75v12l-4.75-3.2-4.75 3.2v-12A.75.75 0 0 1 4 1.75z"
+						fill={hereBookmark ? 'currentColor' : 'none'}
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linejoin="round"
+					/>
+				</svg>
+				Bookmark
+			</button>
 		</div>
+
+		<BookmarksPanel
+			list={bookmarks}
+			lang={textLang}
+			titles={chapterTitles}
+			onjump={jumpToBookmark}
+		/>
 
 		{@render chapterNav('Chapters')}
 
@@ -344,7 +527,14 @@
 				<h2 lang={content.data.title.trim() ? textLang : undefined}>
 					{chapterTitle(content.data.title, content.n)}
 				</h2>
-				<ChapterText {paragraphs} showRuby={prefs.furigana} lang={textLang} {lookup} bind:container />
+				<ChapterText
+					{paragraphs}
+					showRuby={prefs.furigana}
+					lang={textLang}
+					{lookup}
+					{marked}
+					bind:container
+				/>
 			</article>
 			{@render chapterNav('Chapters (end)')}
 		{/if}
@@ -383,6 +573,32 @@
 		gap: 0.75rem 1.25rem;
 		align-items: center;
 		margin: 0.75rem 0;
+	}
+
+	/* Below the lookup popups (z-index 50+). */
+	.toggles {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		padding: 0.4rem 0;
+		background: Canvas;
+		border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+	}
+
+	.bookmark-toggle {
+		display: inline-flex;
+		gap: 0.35rem;
+		align-items: center;
+		font: inherit;
+	}
+
+	.bookmark-toggle[aria-pressed='true'] svg {
+		color: #0b6bcb;
+	}
+
+	.bookmark-toggle[aria-disabled='true'] {
+		opacity: 0.6;
+		cursor: default;
 	}
 
 	.credits {

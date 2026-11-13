@@ -10,7 +10,9 @@ export type ErrorContext =
 	| 'browse'
 	| 'book'
 	| 'chapter'
-	| 'lookup';
+	| 'lookup'
+	| 'bookmark'
+	| 'bookmarks';
 
 const fallbacks: Record<ErrorContext, string> = {
 	upload: 'Could not upload the file.',
@@ -21,13 +23,16 @@ const fallbacks: Record<ErrorContext, string> = {
 	browse: 'Could not load suggestions.',
 	book: 'Could not load this book.',
 	chapter: 'Could not load this chapter.',
-	lookup: 'Could not look this up.'
+	lookup: 'Could not look this up.',
+	bookmark: 'Could not save the bookmark.',
+	bookmarks: 'Could not load the bookmarks.'
 };
 
 const notFound: Partial<Record<ErrorContext, string>> = {
 	import: 'This work is not available from the source.',
 	book: 'This book is not in your library.',
-	chapter: 'This chapter does not exist.'
+	chapter: 'This chapter does not exist.',
+	bookmark: 'This bookmark no longer exists.'
 };
 
 // Server text is shown only when it is short and free of markup.
@@ -49,6 +54,9 @@ export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 		}
 		switch (err.status) {
 			case 409:
+				if (context === 'bookmark') {
+					return 'This book already has the most bookmarks allowed (200). Delete one to add another.';
+				}
 				return 'This book is already in your library.';
 			case 413:
 				return 'This file is too large (max 20 MB).';

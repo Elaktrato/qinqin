@@ -21,6 +21,17 @@ export function restorePlan(stored: string, chapterCount: number, urlChapter: nu
 }
 
 /**
+ * jumpPlan is the plan for an explicit jump (a bookmark): scroll within
+ * the chapter on screen, otherwise navigate to the target chapter first.
+ * Unlike restorePlan, the chapter in the URL never wins.
+ */
+export function jumpPlan(stored: string, chapterCount: number, urlChapter: number): RestorePlan {
+	const target = parsePosition(stored);
+	if (!target || target.chapter >= chapterCount) return { kind: 'none' };
+	return target.chapter === urlChapter ? { kind: 'scroll', target } : { kind: 'navigate', target };
+}
+
+/**
  * restoreDecision says what a pending restore does now: 'restore' once
  * its chapter is loaded, 'wait' while it loads, and 'skip' when the
  * reader went elsewhere or the chapter failed (never block reading).

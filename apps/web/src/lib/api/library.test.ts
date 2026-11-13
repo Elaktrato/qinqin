@@ -7,8 +7,12 @@ vi.mock('$app/navigation', () => ({ goto }));
 import { ApiError } from './client';
 import {
 	BROWSE_LIMIT,
+	addBookmark,
 	browseSource,
 	deleteBook,
+	deleteBookmark,
+	listBookmarks,
+	renameBookmark,
 	getBook,
 	getChapter,
 	importFromSource,
@@ -152,6 +156,53 @@ describe('library client', () => {
 		expect(url.searchParams.has('language')).toBe(false);
 		expect(url.searchParams.has('seed')).toBe(false);
 		expect(url.searchParams.get('limit')).toBe('5');
+	});
+
+	it('listBookmarks GETs the bookmarks of a book', async () => {
+		const list = [{ id: 1, bookId: 3, position: '0:2', label: 'x', createdAt: '2026-11-13T00:00:00Z' }];
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(list));
+		expect(await listBookmarks(3)).toEqual(list);
+		const { url, init } = lastCall();
+		expect(url).toBe('/api/library/books/3/bookmarks');
+		expect(init.method).toBe('GET');
+	});
+
+	it('addBookmark POSTs exactly {position, label} and returns the bookmark (201 or 200)', async () => {
+		const made = { id: 4, bookId: 3, position: '1:7', label: '猫', createdAt: '2026-11-13T00:00:00Z' };
+		for (const status of [201, 200]) {
+			vi.mocked(fetch).mockReset();
+			vi.mocked(fetch).mockResolvedValue(jsonResponse(made, status));
+			expect(await addBookmark(3, '1:7', '猫')).toEqual(made);
+			const { url, init } = lastCall();
+			expect(url).toBe('/api/library/books/3/bookmarks');
+			expect(init.method).toBe('POST');
+			expect(JSON.parse(String(init.body))).toStrictEqual({ position: '1:7', label: '猫' });
+		}
+	});
+
+	it('renameBookmark PUTs exactly {label} and returns the cleaned bookmark', async () => {
+		const renamed = { id: 4, bookId: 3, position: '1:7', label: 'new', createdAt: '2026-11-13T00:00:00Z' };
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(renamed));
+		expect(await renameBookmark(3, 4, ' new ')).toEqual(renamed);
+		const { url, init } = lastCall();
+		expect(url).toBe('/api/library/books/3/bookmarks/4');
+		expect(init.method).toBe('PUT');
+		expect(JSON.parse(String(init.body))).toStrictEqual({ label: ' new ' });
+	});
+
+	it('deleteBookmark DELETEs the bookmark', async () => {
+		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
+		await deleteBookmark(3, 4);
+		const { url, init } = lastCall();
+		expect(url).toBe('/api/library/books/3/bookmarks/4');
+		expect(init.method).toBe('DELETE');
+	});
+
+	it('surfaces the bookmark cap (409) as ApiError', async () => {
+		vi.mocked(fetch).mockResolvedValue(new Response('too many bookmarks', { status: 409 }));
+		const err = await addBookmark(3, '0:0', '').catch((e) => e);
+		expect(err).toBeInstanceOf(ApiError);
+		expect(err.status).toBe(409);
 	});
 
 	it.each([404, 409, 413, 422, 429, 502])('surfaces status %i as ApiError', async (status) => {

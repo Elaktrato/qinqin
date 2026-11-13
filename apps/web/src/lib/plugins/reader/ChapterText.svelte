@@ -12,12 +12,15 @@
 		showRuby,
 		lang,
 		lookup,
+		marked = new Set<number>(),
 		container = $bindable(null)
 	}: {
 		paragraphs: Run[][];
 		showRuby: boolean;
 		lang: string;
 		lookup: LookupController;
+		/** Paragraphs with a bookmark: they get a margin marker. */
+		marked?: ReadonlySet<number>;
 		container?: HTMLElement | null;
 	} = $props();
 
@@ -41,7 +44,7 @@
 
 <div class="chapter-text" {lang} bind:this={container}>
 	{#each paragraphs as runs, p (p)}
-		<p data-p={p}>{#each runs as run, r (r)}{#if run.ruby && showRuby}<ruby data-r={r}>{run.text}<rt>{run.ruby}</rt></ruby>{:else}<span data-r={r}>{run.text}</span>{/if}{/each}</p>
+		<p data-p={p} class:bookmarked={marked.has(p)}>{#each runs as run, r (r)}{#if run.ruby && showRuby}<ruby data-r={r}>{run.text}<rt>{run.ruby}</rt></ruby>{:else}<span data-r={r}>{run.text}</span>{/if}{/each}</p>
 	{/each}
 </div>
 
@@ -52,7 +55,26 @@
 	}
 
 	.chapter-text p {
+		position: relative;
 		margin: 0 0 1em;
+		/* Restores and bookmark jumps land below the sticky reader toolbar. */
+		scroll-margin-top: var(--reader-bar, 0px);
+	}
+
+	/* A bookmarked paragraph's margin marker. Decoration only: a
+	   pseudo-element without text adds no DOM node (the run mapping in
+	   dom.ts stays intact) and nothing for assistive technology; the
+	   bookmarks panel is the accessible path. */
+	.chapter-text p.bookmarked::before {
+		content: '';
+		position: absolute;
+		inset-inline-start: -0.7rem;
+		top: 0.5em;
+		width: 0.25rem;
+		height: 1em;
+		border-radius: 0.125rem;
+		background: #0b6bcb;
+		pointer-events: none;
 	}
 
 	/* Furigana is a reading aid, not part of the text: copying or

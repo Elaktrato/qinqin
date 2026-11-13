@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Book, Chapter, SourceInfo, SourceResult } from './types';
+import type { Book, Bookmark, Chapter, SourceInfo, SourceResult } from './types';
 
 /** listBooks lists the books of one workspace's library. */
 export function listBooks(workspaceId: number): Promise<Book[]> {
@@ -21,6 +21,34 @@ export function setPosition(id: number, position: string): Promise<void> {
 
 export function deleteBook(id: number): Promise<void> {
 	return api<void>(`/api/library/books/${id}`, { method: 'DELETE' });
+}
+
+export function listBookmarks(bookId: number): Promise<Bookmark[]> {
+	return api<Bookmark[]>(`/api/library/books/${bookId}/bookmarks`);
+}
+
+/**
+ * addBookmark sets a bookmark at a reading position. When one already
+ * exists at that position the server returns it (200) instead of a new
+ * one (201); at the cap of 200 per book it answers 409.
+ */
+export function addBookmark(bookId: number, position: string, label: string): Promise<Bookmark> {
+	return api<Bookmark>(`/api/library/books/${bookId}/bookmarks`, {
+		method: 'POST',
+		body: { position, label }
+	});
+}
+
+/** renameBookmark sets the label; the server returns the bookmark with its cleaned label. */
+export function renameBookmark(bookId: number, id: number, label: string): Promise<Bookmark> {
+	return api<Bookmark>(`/api/library/books/${bookId}/bookmarks/${id}`, {
+		method: 'PUT',
+		body: { label }
+	});
+}
+
+export function deleteBookmark(bookId: number, id: number): Promise<void> {
+	return api<void>(`/api/library/books/${bookId}/bookmarks/${id}`, { method: 'DELETE' });
 }
 
 /**
