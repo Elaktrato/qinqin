@@ -114,8 +114,9 @@ workspace shows its language; unnamed workspaces of one language are numbered
 - **Defaults.** A user with no workspace gets one unnamed workspace per installed
   language on their first `GET /api/workspaces`. A user who already has a
   workspace is never touched.
-- **Settings** lives in the footer of every signed-in page, not in the nav. There
-  you rename, create and switch workspaces.
+- **Switching** happens in the workspace picker in the header (it can also create
+  one). **Settings** lives in the footer of every signed-in page, not in the nav;
+  there you manage workspaces (create and rename).
 - **The Map** (`/study/map`, its nav link and the Study page link) exists only in
   zh and ja workspaces; in another workspace the page explains this.
 
@@ -123,6 +124,8 @@ workspace shows its language; unnamed workspaces of one language are numbered
 
 The Reader library belongs to a workspace: the library page lists the current
 workspace's books only, and a book's reading time counts towards its workspace.
+When the current library is empty but other workspaces hold books, the page
+lists them with a button to switch there.
 An upload or import needs a workspace whose language matches the book (a Chinese
 book cannot go into a Japanese workspace; the API answers 422 and the page asks
 you to switch). The same epub may live in several workspaces as separate copies.

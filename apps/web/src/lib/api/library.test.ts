@@ -16,6 +16,7 @@ import {
 	getBook,
 	getChapter,
 	importFromSource,
+	listAllBooks,
 	listBooks,
 	listSources,
 	searchSource,
@@ -46,6 +47,12 @@ describe('library client', () => {
 
 	afterEach(() => {
 		vi.unstubAllGlobals();
+	});
+
+	it('listAllBooks GETs the books of every workspace (no workspace parameter)', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse([]));
+		expect(await listAllBooks()).toEqual([]);
+		expect(lastCall().url).toBe('/api/library/books');
 	});
 
 	it('listBooks GETs the books of one workspace', async () => {

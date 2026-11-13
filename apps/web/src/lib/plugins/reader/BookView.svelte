@@ -18,7 +18,7 @@
 	import BookmarksPanel from './BookmarksPanel.svelte';
 	import ChapterText from './ChapterText.svelte';
 	import PopupStackView from './PopupStackView.svelte';
-	import { BookmarkList, bookmarkKey, isTextEntry } from './bookmarkList.svelte';
+	import { BookmarkList, bookmarkKey, inWidget, isTextEntry } from './bookmarkList.svelte';
 	import { bookmarkedParagraphs, snippetAt, type Bookmark } from './bookmarks';
 	import { paragraphElement } from './dom';
 	import { apiErrorMessage } from './errors';
@@ -322,7 +322,9 @@
 		const onKey = (e: KeyboardEvent): void => {
 			const popupOpen = lookup.info !== null || inPopup(e.target);
 			const target = e.target instanceof HTMLElement ? e.target : null;
-			if (!bookmarkKey(e, { typing: isTextEntry(target), popupOpen })) return;
+			// A focused or open listbox, menu or dialog owns the keys too.
+			const busy = isTextEntry(target) || inWidget(target, document);
+			if (!bookmarkKey(e, { typing: busy, popupOpen })) return;
 			e.preventDefault();
 			toggleBookmark();
 		};

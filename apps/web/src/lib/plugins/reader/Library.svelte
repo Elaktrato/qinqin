@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { deleteBook, listBooks, uploadBook } from '$lib/api/library';
+	import { deleteBook, listAllBooks, listBooks, uploadBook } from '$lib/api/library';
 	import type { Book } from '$lib/api/types';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { workspaces } from '$lib/workspaces';
+	import { select, workspaces } from '$lib/workspaces';
 	import { apiErrorMessage } from './errors';
+	import { workspacesWithBooks } from './libraryElsewhere';
 	import { initialUploadLanguage } from './uploadLanguage';
 	import { savedChapter } from './position';
 	import { SOURCES_HREF, bookHref } from './route';
@@ -27,6 +28,10 @@
 	let uploading = $state(false);
 	let confirmingId = $state<number | null>(null);
 	let deletingId = $state<number | null>(null);
+	// When this library is empty: the user's books in other workspaces
+	// (after the upgrade they may sit in another workspace than this one).
+	let elsewhere = $state<Book[]>([]);
+	const others = $derived(workspacesWithBooks(elsewhere, $workspaces.list, workspaceId ?? undefined));
 
 	// A response for a workspace that is no longer selected is dropped.
 	let loadSeq = 0;
@@ -39,6 +44,12 @@
 			const list = await listBooks(id);
 			if (seq !== loadSeq) return;
 			books = list;
+			if (list.length === 0) {
+				// Only a hint: a failure here leaves the plain empty state.
+				const all = await listAllBooks().catch(() => [] as Book[]);
+				if (seq !== loadSeq) return;
+				elsewhere = all;
+			}
 		} catch (err) {
 			if (seq !== loadSeq) return;
 			books = [];
@@ -51,6 +62,7 @@
 	$effect(() => {
 		const id = workspaceId;
 		books = [];
+		elsewhere = [];
 		actionError = '';
 		status = '';
 		confirmingId = null;
@@ -163,6 +175,23 @@
 			This workspace's library is empty.{#if bookLanguage}
 				Upload an epub or import a text from a source.{/if}
 		</p>
+		{#if others.length > 0}
+			<section class="elsewhere" aria-labelledby="elsewhere-heading">
+				<h2 id="elsewhere-heading">Your books in other workspaces</h2>
+				<ul>
+					{#each others as { workspace: other, count } (other.id)}
+						<li>
+							<span>
+								{count}
+								{count === 1 ? 'book' : 'books'} in
+								<WorkspaceLabel workspace={other} list={$workspaces.list} withLanguage />
+							</span>
+							<button type="button" onclick={() => select(other.id)}>Switch to this workspace</button>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
 	{:else}
 		<ul class="books">
 			{#each books as book (book.id)}
@@ -217,6 +246,23 @@
 	.hint {
 		font-size: 0.9rem;
 		opacity: 0.8;
+	}
+
+	.elsewhere h2 {
+		font-size: 1.05rem;
+	}
+
+	.elsewhere ul {
+		list-style: none;
+		padding: 0;
+	}
+
+	.elsewhere li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+		padding: 0.4rem 0;
 	}
 
 	.row {

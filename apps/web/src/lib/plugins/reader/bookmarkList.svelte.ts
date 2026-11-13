@@ -209,6 +209,26 @@ export function isTextEntry(
 	return !NON_TEXT_INPUTS.has((el.type ?? '').toLowerCase());
 }
 
+/** Focus inside these (or on the trigger of an open one) means a widget owns the keys. */
+export const WIDGET_SELECTOR =
+	'[role="listbox"], [role="menu"], [role="dialog"], [aria-haspopup][aria-expanded="true"]';
+/** These are rendered only while open (workspace picker, deck menu). */
+export const OPEN_WIDGET_SELECTOR = '[role="listbox"], [role="menu"]';
+
+/**
+ * inWidget: a listbox, menu or dialog has focus (the key event's target is
+ * inside one, or is the trigger of an open one), or a listbox or menu is
+ * open anywhere on the page. A plain disclosure (aria-expanded without
+ * aria-haspopup, like the bookmarks panel toggle) does not count.
+ */
+export function inWidget(
+	target: { closest(selector: string): unknown } | null,
+	doc: { querySelector(selector: string): unknown } | null
+): boolean {
+	if (target && target.closest(WIDGET_SELECTOR)) return true;
+	return !!doc && !!doc.querySelector(OPEN_WIDGET_SELECTOR);
+}
+
 export interface KeyLike {
 	key: string;
 	ctrlKey: boolean;

@@ -1,6 +1,11 @@
 import { api } from './client';
 import type { Book, Bookmark, Chapter, SourceInfo, SourceResult } from './types';
 
+/** listAllBooks lists the books of all the caller's workspaces (each carries its workspaceId). */
+export function listAllBooks(): Promise<Book[]> {
+	return api<Book[]>('/api/library/books');
+}
+
 /** listBooks lists the books of one workspace's library. */
 export function listBooks(workspaceId: number): Promise<Book[]> {
 	const query = new URLSearchParams({ workspace: String(workspaceId) });

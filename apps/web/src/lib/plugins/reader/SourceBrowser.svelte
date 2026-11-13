@@ -47,6 +47,8 @@
 	let browsing = $state(false);
 	let browseError = $state('');
 	let browseCounter = 0;
+	// Bumped by Retry: asks for the same assortment again.
+	let browseAttempt = $state(0);
 
 	// Works in a library, by libraryKey (workspace, source, id): the book,
 	// or null when the server said it was already there (409).
@@ -124,6 +126,7 @@
 		const source = active;
 		const lang = language;
 		const s = seed;
+		void browseAttempt;
 		const ok = servesLanguage;
 		const ticket = ++browseCounter;
 		suggestions = [];
@@ -362,6 +365,7 @@
 						</p>
 					{:else if browseError}
 						<p class="error" role="alert">{browseError}</p>
+						<button type="button" onclick={() => browseAttempt++}>Retry</button>
 					{:else if suggestions.length === 0}
 						<p class="hint">
 							No suggestions right now: the catalog may not be available yet. Try searching, or

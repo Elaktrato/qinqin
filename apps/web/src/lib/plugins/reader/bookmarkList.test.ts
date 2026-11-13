@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 import type { Bookmark } from './bookmarks';
-import { BookmarkList, bookmarkKey, isTextEntry, type BookmarkApi } from './bookmarkList.svelte';
+import {
+	BookmarkList,
+	bookmarkKey,
+	inWidget,
+	isTextEntry,
+	type BookmarkApi
+} from './bookmarkList.svelte';
 
 function mark(id: number, position: string, bookId = 1, label = `b${id}`): Bookmark {
 	return { id, bookId, position, label, createdAt: '2026-11-13T10:00:00Z' };
@@ -268,6 +274,42 @@ describe('bookmarkKey', () => {
 		expect(isTextEntry(el('BUTTON'))).toBe(false);
 		expect(isTextEntry(el('P'))).toBe(false);
 		expect(isTextEntry(null)).toBe(false);
+	});
+
+	it('rejects inside a listbox, menu or dialog, or on the trigger of an open one', () => {
+		// A fake element whose closest() matches only the given selector parts.
+		const inside = (part: string) => ({
+			closest: (sel: string) => (sel.split(',').some((s) => s.trim() === part) ? {} : null)
+		});
+		const noDoc = { querySelector: () => null };
+		for (const part of [
+			'[role="listbox"]',
+			'[role="menu"]',
+			'[role="dialog"]',
+			'[aria-haspopup][aria-expanded="true"]'
+		]) {
+			expect(inWidget(inside(part), noDoc), part).toBe(true);
+		}
+		// A plain disclosure (the bookmarks panel toggle) is not a widget.
+		expect(inWidget(inside('[aria-expanded="true"]'), noDoc)).toBe(false);
+		expect(inWidget(inside('main'), noDoc)).toBe(false);
+		expect(inWidget(null, noDoc)).toBe(false);
+	});
+
+	it('rejects while a listbox or menu is open anywhere, wherever focus is', () => {
+		const outside = { closest: () => null };
+		const openMenu = {
+			querySelector: (sel: string) =>
+				sel.split(',').some((s) => s.trim() === '[role="menu"]') ? {} : null
+		};
+		const openListbox = {
+			querySelector: (sel: string) =>
+				sel.split(',').some((s) => s.trim() === '[role="listbox"]') ? {} : null
+		};
+		expect(inWidget(outside, openMenu)).toBe(true);
+		expect(inWidget(null, openListbox)).toBe(true);
+		expect(inWidget(outside, { querySelector: () => null })).toBe(false);
+		expect(inWidget(outside, null)).toBe(false);
 	});
 
 	it('rejects while typing or with a popup open', () => {
