@@ -146,7 +146,12 @@
 		active.cancelQuiz();
 		feedback = `The character is ${chars[position]}.`;
 		const outcome: CharOutcome = { char: chars[position], mistakes, strokes, revealed: true };
-		await active.animateCharacter();
+		// Reduced motion: show the character at once instead of drawing it.
+		if (prefersReducedMotion()) {
+			await active.showCharacter({ duration: 0 });
+		} else {
+			await active.animateCharacter();
+		}
 		if (!alive || writer !== active) return;
 		record(outcome);
 	}
@@ -171,6 +176,10 @@
 						padding: 12,
 						showOutline: false,
 						showCharacter: false,
+						// Only the reveal animation uses these: quick enough not to
+						// keep the learner waiting (the defaults take ~1 s a stroke).
+						delayBetweenStrokes: 150,
+						strokeAnimationSpeed: 2,
 						strokeColor: '#0b6bcb',
 						outlineColor: '#9aa0a6',
 						drawingColor: '#6b7280',

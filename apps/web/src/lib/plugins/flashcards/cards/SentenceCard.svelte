@@ -173,21 +173,21 @@
 			{/each}
 		</ol>
 
-		<ul class="bank" aria-label="Word tiles" lang={language} bind:this={bankList}>
-			{#each available as id (id)}
-				<li>
-					<button
-						type="button"
-						class="token"
-						disabled={done}
-						aria-label={`Place ${bank[id]}`}
-						onclick={(event) => place(id, fromKeyboard(event))}>{bank[id]}</button
-					>
-				</li>
-			{/each}
-		</ul>
-
 		{#if !done}
+			<!-- Hidden once finished: the full sentence is shown below. -->
+			<ul class="bank" aria-label="Word tiles" lang={language} bind:this={bankList}>
+				{#each available as id (id)}
+					<li>
+						<button
+							type="button"
+							class="token"
+							aria-label={`Place ${bank[id]}`}
+							onclick={(event) => place(id, fromKeyboard(event))}>{bank[id]}</button
+						>
+					</li>
+				{/each}
+			</ul>
+
 			<div class="actions">
 				<button type="button" class="secondary" disabled={placed.length === 0} onclick={undo}>
 					Undo
@@ -307,6 +307,14 @@
 
 	.token.placed {
 		background: color-mix(in srgb, #0b6bcb 12%, transparent);
+	}
+
+	/* A finished sentence stays fully legible: locked, not faded. */
+	.token.placed:disabled {
+		opacity: 1;
+		cursor: default;
+		border-style: dashed;
+		border-color: color-mix(in srgb, currentColor 45%, transparent);
 	}
 
 	.token.right {
