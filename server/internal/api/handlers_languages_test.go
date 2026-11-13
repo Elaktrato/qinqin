@@ -108,6 +108,29 @@ func listWorkspaces(t *testing.T, tsURL, token string) []workspaceBody {
 	return ws
 }
 
+// TestDefaultWorkspacesCodePacksFirst pins the order of a new user's
+// defaults: the code-pack languages (ja, zh) get the lowest ids, in code
+// order, and data-only languages (the es demo) come after, even though
+// "es" sorts first. The web app selects the first workspace.
+func TestDefaultWorkspacesCodePacksFirst(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	seedEntries(t, sqlDB) // registers the ja and zh code packs
+	seedSpanish(t, sqlDB)
+	alice := registerUser(t, ts.URL, "alice", "")
+
+	ws := listWorkspaces(t, ts.URL, alice)
+	if got := workspaceLanguages(ws); !reflect.DeepEqual(got, []string{"ja", "zh", "es"}) {
+		t.Fatalf("default workspaces = %v, want [ja zh es]", got)
+	}
+	ids := map[string]int64{}
+	for _, w := range ws {
+		ids[w.Language] = w.ID
+	}
+	if !(ids["ja"] < ids["zh"] && ids["zh"] < ids["es"]) {
+		t.Errorf("default workspace ids = %v, want ja < zh < es", ids)
+	}
+}
+
 func TestDefaultWorkspaces(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	seedEntries(t, sqlDB)
@@ -187,8 +210,8 @@ func TestDefaultWorkspacesConcurrentFirstGet(t *testing.T) {
 		}
 	}
 	got := workspaceLanguages(listWorkspaces(t, ts.URL, alice))
-	if !reflect.DeepEqual(got, []string{"es", "ja", "zh"}) {
-		t.Errorf("workspaces after concurrent first GETs = %v, want one each of [es ja zh]", got)
+	if !reflect.DeepEqual(got, []string{"ja", "zh", "es"}) {
+		t.Errorf("workspaces after concurrent first GETs = %v, want one each of [ja zh es]", got)
 	}
 }
 

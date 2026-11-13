@@ -178,9 +178,20 @@ func (s *server) ensureDefaultWorkspaces(ctx context.Context, userID int64) erro
 	if err != nil || len(langs) == 0 {
 		return err
 	}
-	codes := make([]string, len(langs))
-	for i, l := range langs {
-		codes[i] = l.Code
+	// Code-pack languages (zh, ja) first, then data-only ones (the es
+	// demo), each group in code order: ids follow the array order, and
+	// the web app opens the lowest id, so a new user lands in a language
+	// the reader and lookup fully support.
+	codes := make([]string, 0, len(langs))
+	for _, l := range langs {
+		if lang.Registered(l.Code) {
+			codes = append(codes, l.Code)
+		}
+	}
+	for _, l := range langs {
+		if !lang.Registered(l.Code) {
+			codes = append(codes, l.Code)
+		}
 	}
 	codesJSON, err := json.Marshal(codes)
 	if err != nil {
