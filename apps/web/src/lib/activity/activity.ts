@@ -18,6 +18,8 @@ export interface ActivitySource {
 	label: string;
 	unit: string;
 	points(payload: unknown): number;
+	/** Raw amount in the source's own unit: seconds for reading, 1 per review. */
+	raw(payload: unknown): number;
 }
 
 /**
@@ -34,15 +36,24 @@ export function readingPoints(payload: unknown): number {
 	return Math.min(Math.ceil(seconds / SECONDS_PER_POINT), MAX_READ_POINTS);
 }
 
+// Seconds a read event contributes, clamped like readingPoints (0 under
+// 30 s or when not finite, at most 2 h).
+function readingSeconds(payload: unknown): number {
+	if (readingPoints(payload) === 0) return 0;
+	return Math.min((payload as { seconds: number }).seconds, MAX_READ_POINTS * SECONDS_PER_POINT);
+}
+
 export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
-	{ type: 'review', label: 'Flashcard reviews', unit: 'review(s)', points: () => 1 },
-	{ type: 'read', label: 'Reading', unit: 'min', points: readingPoints }
+	{ type: 'review', label: 'Flashcard reviews', unit: 'review(s)', points: () => 1, raw: () => 1 },
+	{ type: 'read', label: 'Reading', unit: 'min', points: readingPoints, raw: readingSeconds }
 ];
 
 export interface DayActivity {
 	day: string;
 	total: number;
 	bySource: Record<string, number>;
+	/** Per-source raw amount: summed clamped seconds for read, event count for review. */
+	raw: Record<string, number>;
 }
 
 function utcDayStart(ms: number): number {
@@ -74,7 +85,7 @@ export function activityByDay(
 
 	for (let day = start; day <= today; day += DAY_MS) {
 		const key = dayKey(day);
-		result.set(key, { day: key, total: 0, bySource: {} });
+		result.set(key, { day: key, total: 0, bySource: {}, raw: {} });
 	}
 
 	const sources = new Map(ACTIVITY_SOURCES.map((source) => [source.type, source]));
@@ -96,6 +107,7 @@ export function activityByDay(
 		if (!entry) continue;
 		entry.total += points;
 		entry.bySource[source.type] = (entry.bySource[source.type] ?? 0) + points;
+		entry.raw[source.type] = (entry.raw[source.type] ?? 0) + source.raw(event.payload);
 	}
 
 	return result;
@@ -119,7 +131,7 @@ export function dayTooltip(day: DayActivity): string {
 		if (!count) continue;
 		const text = `${count} ${labelFor(source, count)}`;
 		parts.push(
-			source.type === 'read' ? `${text} (${(count * SECONDS_PER_POINT) / 60} ${source.unit})` : text
+			source.type === 'read' ? `${text} (${Math.max(1, Math.round((day.raw[source.type] ?? 0) / 60))} ${source.unit})` : text
 		);
 	}
 
@@ -137,4 +149,19 @@ export function levelFor(count: number, _max: number): 0 | 1 | 2 | 3 | 4 {
 	if (count <= 3) return 2;
 	if (count <= 6) return 3;
 	return 4;
+}
+
+/** Window sums per source (points and raw amount), for aria-labels. */
+export function sourceTotals(
+	map: Map<string, DayActivity>
+): Record<string, { points: number; raw: number }> {
+	const totals: Record<string, { points: number; raw: number }> = {};
+	for (const entry of map.values()) {
+		for (const [type, points] of Object.entries(entry.bySource)) {
+			const t = (totals[type] ??= { points: 0, raw: 0 });
+			t.points += points;
+			t.raw += entry.raw[type] ?? 0;
+		}
+	}
+	return totals;
 }

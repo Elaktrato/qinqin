@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ACTIVITY_SOURCES, activityByDay, dayTooltip, levelFor, readingPoints } from './activity';
+import {
+	ACTIVITY_SOURCES,
+	activityByDay,
+	dayTooltip,
+	levelFor,
+	readingPoints,
+	sourceTotals
+} from './activity';
 
 const NOW = new Date('2026-11-13T12:00:00Z');
 
@@ -47,7 +54,8 @@ describe('activityByDay', () => {
 		expect(map.get('2026-11-13')).toEqual({
 			day: '2026-11-13',
 			total: 5,
-			bySource: { review: 2, read: 3 }
+			bySource: { review: 2, read: 3 },
+			raw: { review: 2, read: 900 }
 		});
 	});
 
@@ -59,7 +67,8 @@ describe('activityByDay', () => {
 		expect(activityByDay([], NOW).get('2026-11-01')).toEqual({
 			day: '2026-11-01',
 			total: 0,
-			bySource: {}
+			bySource: {},
+			raw: {}
 		});
 	});
 
@@ -96,10 +105,15 @@ describe('activityByDay', () => {
 });
 
 describe('dayTooltip', () => {
-	const day = (total: number, bySource: Record<string, number>) => ({
+	const day = (
+		total: number,
+		bySource: Record<string, number>,
+		raw: Record<string, number> = {}
+	) => ({
 		day: '2026-11-13',
 		total,
-		bySource
+		bySource,
+		raw
 	});
 
 	it('reports no activity for zero', () => {
@@ -107,7 +121,7 @@ describe('dayTooltip', () => {
 	});
 
 	it('combines sources with reading minutes', () => {
-		expect(dayTooltip(day(12, { review: 9, read: 3 }))).toBe(
+		expect(dayTooltip(day(12, { review: 9, read: 3 }, { review: 9, read: 900 }))).toBe(
 			'2026-11-13: 12 points — 9 Flashcard reviews, 3 Reading (15 min)'
 		);
 	});
@@ -117,7 +131,63 @@ describe('dayTooltip', () => {
 	});
 
 	it('handles reading only', () => {
-		expect(dayTooltip(day(1, { read: 1 }))).toBe('2026-11-13: 1 point — 1 Reading (5 min)');
+		expect(dayTooltip(day(1, { read: 1 }, { read: 31 }))).toBe(
+			'2026-11-13: 1 point — 1 Reading (1 min)'
+		);
+	});
+});
+
+describe('real reading minutes', () => {
+	const read = (seconds: number, ts = '2026-11-13T01:00:00Z') => ({
+		ts,
+		type: 'read',
+		payload: { seconds }
+	});
+
+	it('a 31 s burst reads as 1 min', () => {
+		const d = activityByDay([read(31)], NOW).get('2026-11-13')!;
+		expect(d.raw.read).toBe(31);
+		expect(dayTooltip(d)).toBe('2026-11-13: 1 point — 1 Reading (1 min)');
+	});
+
+	it('ten 31 s bursts read as 5 min (10 points)', () => {
+		const d = activityByDay(Array.from({ length: 10 }, () => read(31)), NOW).get('2026-11-13')!;
+		expect(d.total).toBe(10);
+		expect(dayTooltip(d)).toBe('2026-11-13: 10 points — 10 Reading (5 min)');
+	});
+
+	it('clamps each event to 2 h and skips sub-30 s events', () => {
+		const d = activityByDay([read(99999), read(10)], NOW).get('2026-11-13')!;
+		expect(d.raw.read).toBe(7200);
+	});
+
+	it('mixed day', () => {
+		const d = activityByDay(
+			[{ ts: '2026-11-13T01:00:00Z', type: 'review' }, read(600)],
+			NOW
+		).get('2026-11-13')!;
+		expect(dayTooltip(d)).toBe('2026-11-13: 3 points — 1 Flashcard review, 2 Reading (10 min)');
+	});
+});
+
+describe('sourceTotals', () => {
+	it('sums points and raw per source over the window', () => {
+		const map = activityByDay(
+			[
+				{ ts: '2026-11-13T01:00:00Z', type: 'review' },
+				{ ts: '2026-11-12T01:00:00Z', type: 'review' },
+				{ ts: '2026-11-12T02:00:00Z', type: 'read', payload: { seconds: 600 } }
+			],
+			NOW
+		);
+		expect(sourceTotals(map)).toEqual({
+			review: { points: 2, raw: 2 },
+			read: { points: 2, raw: 600 }
+		});
+	});
+
+	it('is empty for no activity', () => {
+		expect(sourceTotals(activityByDay([], NOW))).toEqual({});
 	});
 });
 
