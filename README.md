@@ -47,7 +47,7 @@ docker compose up -d
 ```
 
 On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
-frequency list and the level samples), then create the admin account:
+frequency list and the JLPT and HSK 3.0 level lists), then create the admin account:
 
 ```bash
 docker compose exec qinqin qinqin seed
@@ -335,8 +335,8 @@ if you name the roots. A pack is a directory with a `manifest.json` (`"type": "l
 `"language": "zh"`, `"format": "json"`, plus `id`, `name`, `version`, `license`,
 `attribution`) and a `levels.json` like
 `{"unit": "word", "levels": [{"name": "1", "entries": ["你好", "谢谢"]}]}`; `unit` is
-`word` or `character`. See `plugins/data/hsk-mini` for the layout. The bundled
-`hsk-mini` and `jlpt-mini` samples are not offered as map groupings.
+`word` or `character`. See `plugins/samples/hsk-mini` for the layout. The sample
+`hsk-mini` and `jlpt-mini` packs are not seeded by default and not offered as map groupings.
 
 For each workspace, the flashcards home widget shows:
 
@@ -584,7 +584,7 @@ Dockerfile copies that directory into the Go binary before compiling.
 | `apps/web/` | SvelteKit SPA (adapter-static) |
 | `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the JLPT and HSK 3.0 level lists) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
-| `plugins/samples/` | Hand-written sample dictionaries (`zh-mini`, `ja-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
+| `plugins/samples/` | Hand-written samples: dictionaries (`zh-mini`, `ja-mini`) and level packs (`hsk-mini`, `jlpt-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the JLPT and HSK 3.0 level packs from the pinned upstream files (download commands in its header) |

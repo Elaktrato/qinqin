@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -21,9 +22,10 @@ import (
 // to this package's test working directory.
 const committedPacks = "../../../plugins/data"
 
-// samplePacks holds the hand-written dictionary samples (zh-mini,
-// ja-mini): out of the default seed root, since their entries would
-// duplicate CC-CEDICT's and JMdict's.
+// samplePacks holds the hand-written samples, out of the default seed
+// root: the dictionaries zh-mini and ja-mini (their entries would
+// duplicate CC-CEDICT's and JMdict's) and the level packs hsk-mini and
+// jlpt-mini (their badges would duplicate the bundled HSK and JLPT lists).
 const samplePacks = "../../../plugins/samples"
 
 // openTestDB opens a fresh migrated database in a temp data directory
@@ -40,19 +42,17 @@ func openTestDB(t *testing.T) (*sql.DB, string) {
 	return sqlDB, dir
 }
 
-// smallPacks copies the hand-written sample packs (es-demo and the level
-// samples from the committed packs directory, the zh-mini and ja-mini
-// dictionaries from plugins/samples) into a temp dir. Seed tests
-// exercise the committed acceptance paths (zh/ja/es dictionaries plus
-// zh/ja level packs) without importing the full bundled dictionaries,
-// which would add minutes to every run.
+// smallPacks copies the hand-written sample packs (es-demo from the
+// committed packs directory; the zh-mini and ja-mini dictionaries and the
+// hsk-mini and jlpt-mini level packs from plugins/samples) into a temp
+// dir. Seed tests exercise the committed acceptance paths (zh/ja/es
+// dictionaries plus zh/ja level packs) without importing the full bundled
+// dictionaries, which would add minutes to every run.
 func smallPacks(t *testing.T) string {
 	t.Helper()
 	dest := t.TempDir()
-	for _, name := range []string{"es-demo", "hsk-mini", "jlpt-mini"} {
-		copyTree(t, filepath.Join(committedPacks, name), filepath.Join(dest, name))
-	}
-	for _, name := range []string{"ja-mini", "zh-mini"} {
+	copyTree(t, filepath.Join(committedPacks, "es-demo"), filepath.Join(dest, "es-demo"))
+	for _, name := range []string{"ja-mini", "zh-mini", "hsk-mini", "jlpt-mini"} {
 		copyTree(t, filepath.Join(samplePacks, name), filepath.Join(dest, name))
 	}
 	return dest
@@ -72,10 +72,35 @@ func TestDefaultRootHoldsNoDictionarySamples(t *testing.T) {
 			t.Errorf("default root holds the %s sample dictionary %s; it belongs in plugins/samples", p.pack.Language, p.pack.ID)
 		}
 	}
-	for _, name := range []string{"ja-mini", "zh-mini"} {
+	for _, name := range []string{"ja-mini", "zh-mini", "hsk-mini", "jlpt-mini"} {
 		if _, err := os.Stat(filepath.Join(samplePacks, name, "manifest.json")); err != nil {
 			t.Errorf("sample %s: %v", name, err)
 		}
+	}
+}
+
+// TestDefaultRootHoldsNoLevelSamples: with the real JLPT and HSK lists
+// bundled, a hand-written sample level pack would only add a second,
+// duplicate badge ("JLPT N5 mini (sample) N5" next to "JLPT (vocabulary)
+// N5"), so a default seed installs real schemes only.
+func TestDefaultRootHoldsNoLevelSamples(t *testing.T) {
+	packs, err := findPacksIn(committedPacks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var schemes []string
+	for _, p := range packs {
+		if p.pack.Type != "levels" {
+			continue
+		}
+		schemes = append(schemes, p.pack.ID)
+		if strings.HasSuffix(p.pack.ID, "-mini") {
+			t.Errorf("default root holds the sample level pack %s; it belongs in plugins/samples", p.pack.ID)
+		}
+	}
+	slices.Sort(schemes)
+	if want := []string{"hsk30-chars", "hsk30-words", "jlpt-kanji", "jlpt-words"}; !slices.Equal(schemes, want) {
+		t.Errorf("default level packs = %v, want %v", schemes, want)
 	}
 }
 
@@ -139,7 +164,7 @@ func TestSeedIdempotent(t *testing.T) {
 	}
 	for _, pack := range []string{"hsk-mini", "jlpt-mini", "es-demo"} {
 		if !strings.Contains(out.String(), pack) {
-			t.Errorf("seed output does not mention committed pack %s:\n%s", pack, out.String())
+			t.Errorf("seed output does not mention sample pack %s:\n%s", pack, out.String())
 		}
 	}
 

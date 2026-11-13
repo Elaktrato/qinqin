@@ -5,19 +5,20 @@ directory. A pack is a directory with a `manifest.json` (id, name, version,
 `type` dictionary|levels|sentences|frequency, `language`, `license`, `attribution`,
 `format`) plus the data file its format reads.
 
-Committed (small, hand-written, CC0 — samples, not the official lists):
+Committed (small, hand-written, CC0 — a sample):
 
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
-| `hsk-mini` | levels | zh | word levels with derived character levels (not offered as a map grouping) |
-| `jlpt-mini` | levels | ja | an N5 sample (not offered as a map grouping) |
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack) |
 
-The hand-written sample DICTIONARIES `zh-mini` (pinyin → bopomofo,
-traditional variants) and `ja-mini` (kana readings, romaji search) live in
-`plugins/samples/`, outside the default seed root: their entries are keyed by
-written form, so next to CC-CEDICT and JMdict they would add a second,
-part-of-speech-less card for the same words, ranked first. Seed them explicitly
+The other hand-written samples live in `plugins/samples/`, outside the default
+seed root. The DICTIONARIES `zh-mini` (pinyin → bopomofo, traditional
+variants) and `ja-mini` (kana readings, romaji search) are keyed by written
+form, so next to CC-CEDICT and JMdict they would add a second,
+part-of-speech-less card for the same words, ranked first. The LEVEL packs
+`hsk-mini` (word levels with derived character levels) and `jlpt-mini` (an N5
+sample) would add a second, duplicate badge next to the bundled HSK 3.0 and
+JLPT lists; the map hides them even when seeded. Seed them explicitly
 (for a small demo database, or alongside the full bundle) with
 `qinqin seed --packs plugins/samples` (or `--packs plugins/data,plugins/samples`).
 The seed tests use them as small fixtures.

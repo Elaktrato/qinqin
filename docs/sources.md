@@ -153,8 +153,9 @@ it on that basis, under the MIT terms stated upstream, and claims nothing
 beyond them; neither the JLPT nor the HSK packs are official releases, and
 the project is not affiliated with either test.
 
-The bundled samples `hsk-mini` and `jlpt-mini` (hand-written, CC0) stay in the
-default root for the seed tests and are hidden from the map.
+The hand-written CC0 samples `hsk-mini` and `jlpt-mini` live in `plugins/samples/`,
+outside the default seed root (their badges would duplicate the real lists); the
+seed tests use them, and the map hides them when they are seeded explicitly.
 
 ## Local-only data
 
@@ -259,4 +260,5 @@ A levels pack is a directory with a `manifest.json` (`"type": "levels"`, `langua
 `levels.json`: `{"unit": "word" | "character", "levels": [{"name": "1", "entries": [...]}]}`.
 Entries must already exist in an imported dictionary; unknown ones are skipped and
 reported. Put one under `plugins/data-local/` and run `qinqin seed`. The map
-offers every installed scheme except the bundled samples (`hsk-mini`, `jlpt-mini`).
+offers every installed scheme except the samples (`hsk-mini`, `jlpt-mini`, in
+`plugins/samples/`).

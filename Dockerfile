@@ -26,10 +26,11 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/qinqin ./cmd/qinqi
 FROM alpine:3.22
 COPY --from=build /out/qinqin /usr/local/bin/qinqin
 # The bundled seed packs (CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten
-# frequency list, the level samples and es-demo), so a fresh stack can seed
-# itself offline:
+# frequency list, the JLPT and HSK 3.0 level lists and es-demo), so a fresh
+# stack can seed itself offline:
 #   docker compose exec qinqin qinqin seed
-# The sample dictionaries in plugins/samples are not shipped. Packs on the
+# The samples in plugins/samples (dictionaries and level packs) are not
+# shipped. Packs on the
 # host (plugins/data-local) are not in the image: mount them as a volume and
 # name both roots, e.g. --packs /opt/qinqin/packs,/opt/qinqin/local.
 COPY plugins/data /opt/qinqin/packs
