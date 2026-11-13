@@ -7,6 +7,7 @@
 	import { workspaces } from '$lib/workspaces';
 	import type { StudyEvent } from '$lib/events';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
+	import { loadIneligible } from '$lib/study/ineligible';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
 	import {
 		CARD_TYPES,
@@ -307,7 +308,9 @@
 			newLimit: COUNT_CAP,
 			reviewLimit: COUNT_CAP,
 			now: new Date(),
-			language: workspaceLanguage ?? ''
+			language: workspaceLanguage ?? '',
+			// Words this tab already found unsuitable are not counted.
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
 		return sessionCounts(items, reviews);
 	});

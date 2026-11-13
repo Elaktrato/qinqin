@@ -6,12 +6,15 @@ import {
 	deckSessionItems,
 	deckSessionPlan,
 	dropItem,
+	backfillLimit,
 	isChinese,
 	isEligible,
 	levelSessionItems,
 	maskWritten,
 	pickSentence,
 	pinyinReadings,
+	rememberDrop,
+	resolveSentence,
 	reviewCountFor,
 	sessionCounts,
 	shouldIgnoreGrade,
@@ -19,6 +22,7 @@ import {
 	toneVerdict
 } from './cardFlow';
 import { parsePinyin } from './tones';
+import type { FlowItem } from './cardFlow';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 function card(
@@ -444,5 +448,110 @@ describe('shouldIgnoreGrade', () => {
 	it('never guards a card without a suggestion (vocab) or before the focus moved', () => {
 		expect(shouldIgnoreGrade({ ...base, hadSuggestion: false, source: 'activation' })).toBe(false);
 		expect(shouldIgnoreGrade({ ...base, focusedAt: null, source: 'activation' })).toBe(false);
+	});
+});
+
+describe('backfill bound', () => {
+	const now = new Date('2026-03-01T00:00:00Z');
+	const many = Array.from({ length: 40 }, (_, i) =>
+		card(`v${i + 1}`, 'vocab', i + 1, {
+			createdAt: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString()
+		})
+	);
+	const options = {
+		cards: many,
+		reviews: [] as ReviewEvent[],
+		deckIds: ['general'],
+		kinds: ['sentence'] as StudyCardKind[],
+		newLimit: 2,
+		reviewLimit: 100,
+		now,
+		language: 'zh'
+	};
+
+	it('is max(30, 2 x newLimit)', () => {
+		expect(backfillLimit(2)).toBe(30);
+		expect(backfillLimit(20)).toBe(40);
+		expect(backfillLimit(Number.NaN)).toBe(30);
+	});
+
+	it('stops replacing dropped companions after the bound', () => {
+		let state = deckSessionPlan(options);
+		expect(state.backfillLeft).toBe(30);
+		let drops = 0;
+		while (state.queue.length > 0) {
+			state = dropItem(state, state.queue[0].cardId);
+			drops += 1;
+		}
+		// Two in the queue plus thirty replacements, then the session ends.
+		expect(drops).toBe(32);
+		expect(state.backfillLeft).toBe(0);
+		expect(state.reserve.length).toBe(40 - 32);
+	});
+
+	it('skips remembered ineligible companions at planning time', () => {
+		const plan = deckSessionPlan({
+			...options,
+			skip: new Set(['sentence:1', 'sentence:2', 'writing:3'])
+		});
+		expect(plan.queue.map((item) => item.entryId)).toEqual([3, 4]);
+		expect(plan.reserve[0].entryId).toBe(5);
+	});
+});
+
+describe('rememberDrop', () => {
+	const virtual = (kind: StudyCardKind): FlowItem => ({
+		cardId: `companion:${kind}:1`,
+		kind,
+		entryId: 1,
+		virtual: true,
+		card: null
+	});
+
+	it('remembers definitive drops of companions', () => {
+		expect(rememberDrop(virtual('sentence'), '学习')).toBe(true);
+		expect(rememberDrop(virtual('tone'), '学习')).toBe(true);
+		expect(rememberDrop(virtual('writing'), 'ひらがな')).toBe(true);
+	});
+
+	it('does not remember writing drops that may come from a stroke-data network error', () => {
+		expect(rememberDrop(virtual('writing'), '学习')).toBe(false);
+	});
+
+	it('never remembers real cards', () => {
+		const real = { ...virtual('sentence'), virtual: false, cardId: 's1' };
+		expect(rememberDrop(real, '学习')).toBe(false);
+	});
+});
+
+describe('resolveSentence', () => {
+	const sentences = [{ id: 1 }, { id: 2 }, { id: 3 }];
+	const real = (sentenceId?: number): FlowItem => ({
+		cardId: 's',
+		kind: 'sentence',
+		entryId: 1,
+		virtual: false,
+		card: card('s', 'sentence', 1, { sentenceId }),
+		...(sentenceId === undefined ? {} : { sentenceId })
+	});
+
+	it('keeps a real card on its own sentence', () => {
+		expect(resolveSentence(real(2), sentences, new Set([1, 2]))).toEqual({ id: 2 });
+	});
+
+	it('falls back to the first sentence when the stored one is gone', () => {
+		expect(resolveSentence(real(99), sentences, new Set([99]))).toEqual({ id: 1 });
+		expect(resolveSentence(real(99), [], new Set())).toBeNull();
+	});
+
+	it('gives a companion the first sentence without a card', () => {
+		const companion: FlowItem = {
+			...real(),
+			cardId: 'companion:sentence:1',
+			virtual: true,
+			card: null
+		};
+		expect(resolveSentence(companion, sentences, new Set([1]))).toEqual({ id: 2 });
+		expect(resolveSentence(companion, sentences, new Set([1, 2, 3]))).toBeNull();
 	});
 });

@@ -143,6 +143,18 @@ export interface DeckSessionOptions {
 	now: Date;
 	/** The workspace language; tone needs Chinese. */
 	language: string;
+	/** `kind:entryId` of companions already found ineligible; never planned. */
+	skip?: ReadonlySet<string>;
+}
+
+/**
+ * How many dropped companions one session replaces from the reserve. A
+ * deck of mostly unsuitable words would otherwise fetch every entry one
+ * by one before the session could end.
+ */
+export function backfillLimit(newLimit: number): number {
+	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
+	return Math.max(30, 2 * limit);
 }
 
 /** A deck session: the queue, plus companions held back beyond the budget. */
@@ -156,6 +168,8 @@ export interface DeckSessionPlan {
 	 * budget in every session and starve the newer ones.
 	 */
 	reserve: FlowItem[];
+	/** Replacements left this session (see backfillLimit). */
+	backfillLeft: number;
 }
 
 /**
@@ -174,10 +188,12 @@ export function deckSessionPlan({
 	newLimit,
 	reviewLimit,
 	now,
-	language
+	language,
+	skip
 }: DeckSessionOptions): DeckSessionPlan {
+	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
-	if (wanted.length === 0) return { queue: [], reserve: [] };
+	if (wanted.length === 0) return { queue: [], reserve: [], backfillLeft };
 
 	const real = buildQueue({ cards, reviews, deckIds, newLimit, reviewLimit, now, kinds: wanted });
 	const reviewed = reviewedIds(reviews);
@@ -192,6 +208,7 @@ export function deckSessionPlan({
 		// Plan everything, then split at the budget: the rest is the reserve.
 		newBudget: cards.length * 3
 	})
+		.filter((item) => skip === undefined || !skip.has(`${item.kind}:${item.entryId}`))
 		// Without a snapshot (Round 1 cards) writing is decided when shown.
 		.filter(
 			(item) =>
@@ -213,7 +230,8 @@ export function deckSessionPlan({
 
 	return {
 		queue: [...real.map(fromCard), ...companions.slice(0, budget)],
-		reserve: companions.slice(budget)
+		reserve: companions.slice(budget),
+		backfillLeft
 	};
 }
 
@@ -225,15 +243,46 @@ export function deckSessionItems(options: DeckSessionOptions): FlowItem[] {
 /**
  * dropItem removes an item that turned out to be ineligible. A dropped
  * companion frees its new-card slot, so the next reserve companion is
- * appended to the queue; a dropped real card frees nothing.
+ * appended to the queue while the session's backfill bound lasts; a
+ * dropped real card frees nothing.
  */
 export function dropItem(plan: DeckSessionPlan, cardId: string): DeckSessionPlan {
 	const dropped = plan.queue.find((item) => item.cardId === cardId);
 	if (dropped === undefined) return plan;
 	const queue = plan.queue.filter((item) => item.cardId !== cardId);
-	if (!dropped.virtual || plan.reserve.length === 0) return { queue, reserve: plan.reserve };
+	if (!dropped.virtual || plan.reserve.length === 0 || plan.backfillLeft <= 0) {
+		return { ...plan, queue };
+	}
 	const [next, ...reserve] = plan.reserve;
-	return { queue: [...queue, next], reserve };
+	return { queue: [...queue, next], reserve, backfillLeft: plan.backfillLeft - 1 };
+}
+
+/**
+ * rememberDrop decides whether a dropped item's ineligibility is final
+ * enough to remember for later sessions. Only companions are remembered.
+ * A writing drop is remembered only when the word has no Han character at
+ * all: missing stroke data may be a transient network failure.
+ */
+export function rememberDrop(item: FlowItem, written: string): boolean {
+	if (!item.virtual) return false;
+	return item.kind !== 'writing' || writableChars(written).length === 0;
+}
+
+/**
+ * resolveSentence picks the sentence a sentence item shows: a companion
+ * takes the word's first sentence without a card; an existing card keeps
+ * its own sentence, or falls back to the word's first sentence when the
+ * stored one is gone (a pack update retires ids). The fallback is display
+ * only: nothing is written and reviews stay on the same card.
+ */
+export function resolveSentence<T extends { id: number }>(
+	item: FlowItem,
+	sentences: readonly T[],
+	carded: ReadonlySet<number>
+): T | null {
+	if (item.virtual) return pickSentence(sentences, carded);
+	const stored = item.card?.sentenceId ?? item.sentenceId;
+	return sentences.find((sentence) => sentence.id === stored) ?? sentences[0] ?? null;
 }
 
 /**

@@ -17,7 +17,8 @@
 		dropItem,
 		isEligible,
 		levelSessionItems,
-		pickSentence,
+		rememberDrop,
+		resolveSentence,
 		reviewCountFor,
 		shouldIgnoreGrade,
 		tierForCard,
@@ -25,6 +26,7 @@
 		type FlowItem
 	} from '$lib/study/cardFlow';
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
+	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
@@ -154,6 +156,7 @@
 	// Deck-session companions held back beyond the new-card budget; one
 	// replaces each companion dropped as ineligible.
 	let reserve = $state.raw<FlowItem[]>([]);
+	let backfillLeft = 0;
 	let reviews = $state.raw<ReviewEvent[]>([]);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
@@ -276,6 +279,7 @@
 		cards = [];
 		queue = [];
 		reserve = [];
+		backfillLeft = 0;
 		reviews = [];
 		sessionReviews = [];
 		index = 0;
@@ -340,10 +344,13 @@
 					newLimit: config.newLimit,
 					reviewLimit: config.reviewLimit,
 					now,
-					language: language ?? ''
+					language: language ?? '',
+					// Words this tab already found unsuitable are not fetched again.
+					skip: loadIneligible(workspaceId)
 				});
 				queue = plan.queue;
 				reserve = plan.reserve;
+				backfillLeft = plan.backfillLeft;
 			}
 			ensureEntry(queue[0]);
 		} catch (err) {
@@ -384,10 +391,9 @@
 			case 'sentence': {
 				const usable = entry.sentences.filter((sentence) => sentence.hanzi.trim() !== '');
 				// A companion takes the word's first sentence without a card;
-				// an existing card keeps its own sentence.
-				const sentence = item.virtual
-					? pickSentence(usable, cardedSentenceIds(cards, item.entryId))
-					: (usable.find((candidate) => candidate.id === item.card?.sentenceId) ?? null);
+				// an existing card keeps its own sentence, or shows the word's
+				// first one when its sentence is gone.
+				const sentence = resolveSentence(item, usable, cardedSentenceIds(cards, item.entryId));
 				if (!isEligible('sentence', entry, { language, hasSentence: sentence !== null })) {
 					return null;
 				}
@@ -416,12 +422,26 @@
 
 	/**
 	 * dropIneligible removes an ineligible item (nothing is written); a
-	 * dropped companion is replaced by the next reserve companion.
+	 * dropped companion is replaced by the next reserve companion while the
+	 * session's backfill bound lasts. `remember` marks a definitive verdict
+	 * (the entry loaded and lacks what the kind needs): this tab then skips
+	 * the word for that kind in later sessions. Failures that may be
+	 * transient (a rejected resolution, missing stroke data) are not
+	 * remembered.
 	 */
-	function dropIneligible(item: FlowItem): void {
-		const next = dropItem({ queue, reserve }, item.cardId);
+	function dropIneligible(item: FlowItem, entry: Entry | null): void {
+		const workspaceId = sessionWorkspaceId;
+		if (
+			entry !== null &&
+			workspaceId !== null &&
+			rememberDrop(item, item.written ?? entry.written)
+		) {
+			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
+		}
+		const next = dropItem({ queue, reserve, backfillLeft }, item.cardId);
 		queue = next.queue;
 		reserve = next.reserve;
+		backfillLeft = next.backfillLeft;
 		ensureEntry(queue[index]);
 	}
 
@@ -444,14 +464,14 @@
 			(result) => {
 				if (seq !== resolveSeq) return;
 				if (result === null) {
-					dropIneligible(item);
+					dropIneligible(item, entry);
 					return;
 				}
 				shownAt = Date.now();
 				resolved = result;
 			},
 			() => {
-				if (seq === resolveSeq) dropIneligible(item);
+				if (seq === resolveSeq) dropIneligible(item, null);
 			}
 		);
 	});
@@ -543,6 +563,9 @@
 				...sessionReviews,
 				sessionReview(result.card, value, workspaceId, item.kind, meta)
 			];
+			// The focused grade button is disabled for the next card; drop the
+			// focus so Space/Enter reach the window in every browser.
+			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 			index += 1;
 			ensureEntry(queue[index]);
 		} finally {
