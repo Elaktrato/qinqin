@@ -4,16 +4,21 @@
 	import { MAX_LABEL_RUNES, bookmarkName, sortForPanel, type Bookmark } from './bookmarks';
 	import { chapterTitle, parsePosition } from './position';
 
-	// The accessible path to the bookmarks (the margin markers are only
-	// decoration): a disclosure listing every bookmark with its label,
-	// chapter and date, to jump to, rename or delete. Additions and removals,
-	// also those made with the toolbar button or the `b` key, are announced
-	// in a polite live region.
+	// The side rail's Bookmarks tab, and the accessible path to the
+	// bookmarks (the margin markers are only decoration): the add/remove
+	// button for the place at the top of the screen, then every bookmark
+	// with its label, chapter and date, to jump to, rename or delete.
+	// Announcements and alerts live in BookView, outside the rail, so they
+	// are heard also while the rail is collapsed or the drawer is closed.
 	let {
 		list,
 		lang,
 		titles,
-		onjump
+		onjump,
+		here,
+		canToggle,
+		failed,
+		ontoggle
 	}: {
 		list: BookmarkList;
 		/** The lang attribute of the book text (labels are snippets of it). */
@@ -21,9 +26,15 @@
 		/** Chapter titles known so far (chapters opened in this visit). */
 		titles: Record<number, string>;
 		onjump: (bookmark: Bookmark) => void;
+		/** The bookmark at the top of the screen, if there is one. */
+		here: Bookmark | null;
+		/** The add/remove button can act now (a place is known, the list is ready, nothing saving). */
+		canToggle: boolean;
+		/** The list failed to load: the button (and `b`) retries. */
+		failed: boolean;
+		ontoggle: () => void;
 	} = $props();
 
-	let open = $state(false);
 	let editingId = $state<number | null>(null);
 	let draft = $state('');
 	let confirmingId = $state<number | null>(null);
@@ -105,7 +116,7 @@
 	}
 
 	// After a delete, focus goes to the next bookmark (else the previous
-	// one, else the panel's toggle), never to the page top.
+	// one, else the add button), never to the page top.
 	async function confirmDelete(b: Bookmark): Promise<void> {
 		const index = sorted.findIndex((x) => x.id === b.id);
 		const neighbour = sorted[index + 1] ?? sorted[index - 1];
@@ -113,7 +124,7 @@
 		void list.remove(b.id);
 		await tick();
 		const next = neighbour && document.getElementById(`bookmark-jump-${neighbour.id}`);
-		(next || document.getElementById('bookmarks-toggle'))?.focus();
+		(next || document.getElementById('bookmark-here'))?.focus({ preventScroll: true });
 	}
 
 	function confirmKey(event: KeyboardEvent, id: number): void {
@@ -123,127 +134,173 @@
 	}
 </script>
 
-<section class="bookmarks" aria-label="Bookmarks">
+<section class="bookmarks" aria-labelledby="bookmarks-heading">
+	<h2 id="bookmarks-heading">Bookmarks{list.ready ? ` (${list.items.length})` : ''}</h2>
+
 	<button
-		id="bookmarks-toggle"
+		id="bookmark-here"
 		type="button"
-		class="disclosure"
-		aria-expanded={open}
-		aria-controls="bookmarks-body"
-		onclick={() => (open = !open)}
+		class="here"
+		class:remove={here !== null}
+		aria-disabled={!canToggle && !failed}
+		aria-busy={list.saving || list.loading}
+		aria-keyshortcuts="B"
+		aria-describedby={failed ? 'bookmarks-load-error' : 'bookmark-here-hint'}
+		onclick={ontoggle}
 	>
-		<span aria-hidden="true">{open ? '▾' : '▸'}</span>
-		Bookmarks{list.ready ? ` (${list.items.length})` : ''}
+		<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+			<path
+				d="M4 1.75h8a.75.75 0 0 1 .75.75v12l-4.75-3.2-4.75 3.2v-12A.75.75 0 0 1 4 1.75z"
+				fill={here ? 'currentColor' : 'none'}
+				stroke="currentColor"
+				stroke-width="1.5"
+				stroke-linejoin="round"
+			/>
+		</svg>
+		{failed ? 'Load bookmarks again' : here ? 'Remove bookmark' : 'Add bookmark here'}
 	</button>
+	<p id="bookmark-here-hint" class="hint">
+		{here ? 'The paragraph at the top of the screen is bookmarked.' : 'Marks the paragraph at the top of the screen.'}
+		Key: <kbd>B</kbd>
+	</p>
 
-	<p class="visually-hidden" role="status" aria-live="polite">{list.announcement}</p>
-	{#if list.error}<p class="error" role="alert">{list.error}</p>{/if}
-
-	{#if open}
-		<div id="bookmarks-body" class="body">
-			{#if list.loading}
-				<p>Loading bookmarks…</p>
-			{:else if list.loadError}
-				<p class="error">{list.loadError}</p>
-				<button type="button" onclick={() => list.bookId !== null && list.load(list.bookId)}>
-					Retry
-				</button>
-			{:else if sorted.length === 0}
-				<p class="empty">
-					No bookmarks yet. The bookmark button (or the <kbd>B</kbd> key) marks the paragraph at the top
-					of the screen.
-				</p>
-			{:else}
-				<ul>
-					{#each sorted as b (b.id)}
-						<li>
-							{#if editingId === b.id}
-								<form class="rename" onsubmit={(e) => saveRename(e, b)}>
-									<label class="visually-hidden" for="bookmark-rename-{b.id}">Bookmark name</label>
-									<input
-										id="bookmark-rename-{b.id}"
-										{lang}
-										bind:value={draft}
-										onkeydown={(e) => renameKey(e, b.id)}
-										aria-invalid={draftRunes > MAX_LABEL_RUNES}
-										aria-describedby="bookmark-count-{b.id}"
-									/>
-									<span id="bookmark-count-{b.id}" class="count" class:over={draftRunes > MAX_LABEL_RUNES}>
-										{draftRunes}/{MAX_LABEL_RUNES}
-									</span>
-									<button type="submit" disabled={draftRunes > MAX_LABEL_RUNES}>Save</button>
-									<button type="button" onclick={() => cancelRename(b.id)}>Cancel</button>
-								</form>
-							{:else}
-								<button
-									id="bookmark-jump-{b.id}"
-									type="button"
-									class="jump"
-									onclick={() => onjump(b)}
-									disabled={b.id < 0}
-									aria-describedby="bookmark-meta-{b.id}"
-								>
-									<span class="label" lang={b.label ? lang : undefined}>{b.label || 'Untitled bookmark'}</span>
-								</button>
-								<span class="meta" id="bookmark-meta-{b.id}">
-									{chapterOf(b)}{#if dateOf(b)}<span aria-hidden="true">{' · '}</span><span
-											class="visually-hidden">{', added '}</span
-										>{dateOf(b)}{/if}
-								</span>
-								{#if confirmingId === b.id}
-									<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-									<span
-										class="actions"
-										role="group"
-										aria-label="Confirm delete of {actionName(b)}"
-										onkeydown={(e) => confirmKey(e, b.id)}
-									>
-										Delete this bookmark?
-										<button type="button" onclick={() => confirmDelete(b)}>Yes, delete</button>
-										<button id="bookmark-cancel-{b.id}" type="button" onclick={() => cancelDelete(b.id)}
-											>Cancel</button
-										>
-									</span>
-								{:else}
-									<span class="actions">
-										<button
-											id="bookmark-renamebtn-{b.id}"
-											type="button"
-											onclick={() => startRename(b)}
-											disabled={list.busy(b.id)}
-											aria-label="Rename {actionName(b)}"
-										>
-											Rename
-										</button>
-										<button
-											id="bookmark-delete-{b.id}"
-											type="button"
-											onclick={() => askDelete(b)}
-											disabled={list.busy(b.id)}
-											aria-label="Delete {actionName(b)}">Delete</button
-										>
-									</span>
-								{/if}
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
+	{#if failed}
+		<p class="error" id="bookmarks-load-error">
+			{list.loadError}
+			<button type="button" onclick={ontoggle}>Retry</button>
+		</p>
 	{/if}
+	{#if list.error}<p class="error">{list.error}</p>{/if}
+
+	<div class="body">
+		{#if list.loading}
+			<p>Loading bookmarks…</p>
+		{:else if list.loadError}
+			<!-- The error and its Retry are shown next to the button above. -->
+		{:else if sorted.length === 0}
+			<p class="empty">No bookmarks yet.</p>
+		{:else}
+			<ul>
+				{#each sorted as b (b.id)}
+					<li>
+						{#if editingId === b.id}
+							<form class="rename" onsubmit={(e) => saveRename(e, b)}>
+								<label class="visually-hidden" for="bookmark-rename-{b.id}">Bookmark name</label>
+								<input
+									id="bookmark-rename-{b.id}"
+									{lang}
+									bind:value={draft}
+									onkeydown={(e) => renameKey(e, b.id)}
+									aria-invalid={draftRunes > MAX_LABEL_RUNES}
+									aria-describedby="bookmark-count-{b.id}"
+								/>
+								<span id="bookmark-count-{b.id}" class="count" class:over={draftRunes > MAX_LABEL_RUNES}>
+									{draftRunes}/{MAX_LABEL_RUNES}
+								</span>
+								<button type="submit" disabled={draftRunes > MAX_LABEL_RUNES}>Save</button>
+								<button type="button" onclick={() => cancelRename(b.id)}>Cancel</button>
+							</form>
+						{:else}
+							<button
+								id="bookmark-jump-{b.id}"
+								type="button"
+								class="jump"
+								onclick={() => onjump(b)}
+								disabled={b.id < 0}
+								aria-describedby="bookmark-meta-{b.id}"
+							>
+								<span class="label" lang={b.label ? lang : undefined}>{b.label || 'Untitled bookmark'}</span>
+							</button>
+							<span class="meta" id="bookmark-meta-{b.id}">
+								{chapterOf(b)}{#if dateOf(b)}<span aria-hidden="true">{' · '}</span><span
+										class="visually-hidden">{', added '}</span
+									>{dateOf(b)}{/if}
+							</span>
+							{#if confirmingId === b.id}
+								<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+								<span
+									class="actions"
+									role="group"
+									aria-label="Confirm delete of {actionName(b)}"
+									onkeydown={(e) => confirmKey(e, b.id)}
+								>
+									Delete this bookmark?
+									<button type="button" onclick={() => confirmDelete(b)}>Yes, delete</button>
+									<button id="bookmark-cancel-{b.id}" type="button" onclick={() => cancelDelete(b.id)}
+										>Cancel</button
+									>
+								</span>
+							{:else}
+								<span class="actions">
+									<button
+										id="bookmark-renamebtn-{b.id}"
+										type="button"
+										onclick={() => startRename(b)}
+										disabled={list.busy(b.id)}
+										aria-label="Rename {actionName(b)}"
+									>
+										Rename
+									</button>
+									<button
+										id="bookmark-delete-{b.id}"
+										type="button"
+										onclick={() => askDelete(b)}
+										disabled={list.busy(b.id)}
+										aria-label="Delete {actionName(b)}">Delete</button
+									>
+								</span>
+							{/if}
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		</div>
 </section>
 
 <style>
-	.bookmarks {
-		margin: 0.75rem 0;
+	h2 {
+		font-size: 1rem;
+		margin: 0.25rem 0 0.6rem;
 	}
 
-	.disclosure {
+	.here {
+		display: inline-flex;
+		gap: 0.35rem;
+		align-items: center;
 		font: inherit;
 	}
 
+	.here.remove svg {
+		color: #0b6bcb;
+	}
+
+	.here[aria-disabled='true'] {
+		opacity: 0.6;
+		cursor: default;
+	}
+
+	.hint {
+		margin: 0.35rem 0 0;
+		font-size: 0.8rem;
+		opacity: 0.75;
+	}
+
+	.error {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		align-items: center;
+	}
+
 	.body {
-		margin-top: 0.5rem;
+		margin-top: 0.75rem;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.here.remove svg {
+			color: #6cb4ff;
+		}
 	}
 
 	ul {

@@ -18,6 +18,15 @@
 	import BookmarksPanel from './BookmarksPanel.svelte';
 	import ChapterText from './ChapterText.svelte';
 	import PopupStackView from './PopupStackView.svelte';
+	import ReaderRail from './ReaderRail.svelte';
+	import {
+		loadRailState,
+		railMode,
+		saveRailState,
+		topParagraph as firstInView,
+		type VisibilityRecord,
+		type RailTab
+	} from './railState';
 	import { BookmarkList, bookmarkKey, inWidget, isTextEntry } from './bookmarkList.svelte';
 	import { bookmarkedParagraphs, snippetAt, type Bookmark } from './bookmarks';
 	import { paragraphElement } from './dom';
@@ -151,11 +160,6 @@
 	// never overwrites the saved place with the top of chapter 0.
 	let tracking = $state(false);
 	const saver = new PositionSaver(setPosition, SAVE_DELAY_MS);
-	// The toolbar sticks to the top of the screen while reading (so the
-	// bookmark button is at hand anywhere in a chapter): what it covers
-	// does not count as in view, and restores and jumps scroll paragraphs
-	// below it (scroll-margin-top in ChapterText).
-	let barHeight = $state(0);
 
 	function planRestore(loaded: Book): void {
 		if (restoredBook === loaded.id) return;
@@ -223,22 +227,12 @@
 		const el = container;
 		const n = content?.n;
 		const bookId = book?.id;
-		// What the sticky toolbar covers is not in view (else every restore,
-		// which lands below the toolbar, would save the paragraph above).
-		const covered = Math.ceil(barHeight);
 		if (!tracking || !el || n === undefined || bookId === undefined) return;
 		const visible = new Set<number>();
-		const observer = new IntersectionObserver(
-			(records) => {
-				for (const record of records) {
-					const p = Number((record.target as HTMLElement).dataset.p);
-					if (record.isIntersecting) visible.add(p);
-					else visible.delete(p);
-				}
-				if (visible.size > 0) saver.schedule(bookId, formatPosition(n, Math.min(...visible)));
-			},
-			{ rootMargin: `-${covered}px 0px 0px 0px` }
-		);
+		const observer = new IntersectionObserver((records) => {
+			const top = firstInView(visible, records as unknown as VisibilityRecord[]);
+			if (top !== null) saver.schedule(bookId, formatPosition(n, top));
+		});
 		for (const p of el.querySelectorAll('[data-p]')) observer.observe(p);
 		return () => observer.disconnect();
 	});
@@ -275,21 +269,13 @@
 	$effect(() => {
 		const el = container;
 		const n = content?.n;
-		const covered = Math.ceil(barHeight);
 		topParagraph = null;
 		if (!el || n === undefined) return;
 		const visible = new Set<number>();
-		const observer = new IntersectionObserver(
-			(records) => {
-				for (const record of records) {
-					const p = Number((record.target as HTMLElement).dataset.p);
-					if (record.isIntersecting) visible.add(p);
-					else visible.delete(p);
-				}
-				if (visible.size > 0) topParagraph = Math.min(...visible);
-			},
-			{ rootMargin: `-${covered}px 0px 0px 0px` }
-		);
+		const observer = new IntersectionObserver((records) => {
+			const top = firstInView(visible, records as unknown as VisibilityRecord[]);
+			if (top !== null) topParagraph = top;
+		});
 		for (const p of el.querySelectorAll('[data-p]')) observer.observe(p);
 		return () => observer.disconnect();
 	});
@@ -356,6 +342,52 @@
 				}
 			);
 	}
+
+	// --- side rail ---
+
+	// Wide screens: a column beside the text (expanded or collapsed to its
+	// tab strip, remembered). Narrow ones: a drawer that always starts
+	// closed. Either way the rail is sticky or fixed, so using it never
+	// scrolls the text (which a toolbar button at the top of the page did).
+	let railState = $state(loadRailState(browserStorage()));
+	$effect(() => saveRailState(browserStorage(), { open: railState.open, tab: railState.tab }));
+	let viewportWidth = $state(typeof window === 'undefined' ? 0 : window.innerWidth);
+	$effect(() => {
+		const onResize = (): void => void (viewportWidth = window.innerWidth);
+		window.addEventListener('resize', onResize, { passive: true });
+		return () => window.removeEventListener('resize', onResize);
+	});
+	const mode = $derived(railMode(viewportWidth));
+	let drawerOpen = $state(false);
+	// Back to a wide window: the drawer is gone; coming back starts closed.
+	$effect(() => {
+		if (mode === 'column') drawerOpen = false;
+	});
+	const railOpen = $derived(mode === 'column' ? railState.open : drawerOpen);
+
+	function toggleRail(open: boolean): void {
+		if (mode === 'column') railState.open = open;
+		else drawerOpen = open;
+	}
+
+	function selectTab(tab: RailTab): void {
+		railState.tab = tab;
+	}
+
+	// The drawer covers the text: a jump closes it so the bookmark shows
+	// (focus goes to the paragraph, as with every jump).
+	function jumpFromRail(b: Bookmark): void {
+		if (mode === 'drawer') drawerOpen = false;
+		jumpToBookmark(b);
+	}
+
+	const railTabs = $derived([
+		{ id: 'bookmarks' as const, label: 'Bookmarks', alert: bookmarksFailed || bookmarks.error !== '' },
+		{ id: 'highlights' as const, label: 'Highlights' }
+	]);
+	// Heard even while the rail is collapsed or the drawer closed (a `b`
+	// press that failed, a list that could not load).
+	const bookmarkAlert = $derived(bookmarks.error || (bookmarksFailed ? bookmarks.loadError : ''));
 
 	// --- reading time ---
 
@@ -455,120 +487,155 @@
 	</nav>
 {/snippet}
 
-<main class="book" style:--reader-bar="{barHeight}px">
-	<p><a href={LIBRARY_HREF}>Back to library</a></p>
+<main class="book" class:column={book !== null && mode === 'column'} class:rail-open={railOpen}>
+	<div class="reading">
+		<p><a href={LIBRARY_HREF}>Back to library</a></p>
 
-	{#if bookError}
-		<p class="error" role="alert">{bookError}</p>
-		<button type="button" onclick={() => loadBook(id)}>Retry</button>
-	{:else if !book}
-		<p aria-live="polite">Loading book…</p>
-	{:else}
-		<header>
-			<h1 lang={book.language}>{book.title}</h1>
-			{#if book.author}<p class="author" lang={book.language}>{book.author}</p>{/if}
-		</header>
-
-		<div class="toggles" bind:offsetHeight={barHeight}>
-			{#if book.language === 'ja' || hasRuby}
-				<label><input type="checkbox" bind:checked={prefs.furigana} /> Furigana</label>
-			{/if}
-			{#if book.language === 'zh'}
-				<label>
-					Script
-					<select bind:value={prefs.variant}>
-						<option value="original">Original</option>
-						<option value="simplified">Simplified</option>
-						<option value="traditional">Traditional</option>
-					</select>
-				</label>
-				{#if variantError}<span class="error" role="alert">{variantError}</span>{/if}
-			{/if}
-			<button
-				type="button"
-				class="bookmark-toggle"
-				aria-pressed={hereBookmark !== null}
-				aria-disabled={!canToggle && !bookmarksFailed}
-				aria-busy={bookmarks.saving || bookmarks.loading}
-				aria-keyshortcuts="B"
-				aria-describedby={bookmarksFailed ? 'bookmarks-load-error' : undefined}
-				title={bookmarksFailed
-					? 'Bookmarks could not be loaded: press to try again (B)'
-					: hereBookmark
-						? 'Remove the bookmark at the top of the screen (B)'
-						: 'Bookmark the paragraph at the top of the screen (B)'}
-				onclick={toggleBookmark}
-			>
-				<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-					<path
-						d="M4 1.75h8a.75.75 0 0 1 .75.75v12l-4.75-3.2-4.75 3.2v-12A.75.75 0 0 1 4 1.75z"
-						fill={hereBookmark ? 'currentColor' : 'none'}
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linejoin="round"
-					/>
-				</svg>
-				Bookmark
-			</button>
-			{#if bookmarksFailed}
-				<span class="error bookmark-error" id="bookmarks-load-error" role="alert">
-					{bookmarks.loadError}
-					<button type="button" onclick={toggleBookmark}>Retry</button>
-				</span>
-			{/if}
-		</div>
-
-		<BookmarksPanel
-			list={bookmarks}
-			lang={textLang}
-			titles={chapterTitles}
-			onjump={jumpToBookmark}
-		/>
-
-		{@render chapterNav('Chapters')}
-
-		{#if chapterError}
-			<p class="error" role="alert">{chapterError}</p>
-			<button type="button" onclick={() => loadChapter(id, chapter)}>Retry</button>
-		{:else if !content || content.n !== chapter}
-			<p aria-live="polite">Loading chapter…</p>
+		{#if bookError}
+			<p class="error" role="alert">{bookError}</p>
+			<button type="button" onclick={() => loadBook(id)}>Retry</button>
+		{:else if !book}
+			<p aria-live="polite">Loading book…</p>
 		{:else}
-			<article>
-				<h2 lang={content.data.title.trim() ? textLang : undefined}>
-					{chapterTitle(content.data.title, content.n)}
-				</h2>
-				<ChapterText
-					{paragraphs}
-					showRuby={prefs.furigana}
-					lang={textLang}
-					{lookup}
-					{marked}
-					bind:container
-				/>
-			</article>
-			{@render chapterNav('Chapters (end)')}
-		{/if}
+			<header>
+				<h1 lang={book.language}>{book.title}</h1>
+				{#if book.author}<p class="author" lang={book.language}>{book.author}</p>{/if}
+			</header>
 
-		<footer class="credits">
-			{#if book.attribution}<p class="attribution">{book.attribution}</p>{/if}
-			{#if book.licenseNote}<p>{book.licenseNote}</p>{/if}
-			{#if sourceUrl}
-				<p>
-					Source:
-					<a href={sourceUrl} target="_blank" rel="noopener noreferrer">{book.source || sourceUrl}</a>
-				</p>
-			{:else if book.source}
-				<p>Source: {book.source}</p>
+			<div class="toggles">
+				{#if book.language === 'ja' || hasRuby}
+					<label><input type="checkbox" bind:checked={prefs.furigana} /> Furigana</label>
+				{/if}
+				{#if book.language === 'zh'}
+					<label>
+						Script
+						<select bind:value={prefs.variant}>
+							<option value="original">Original</option>
+							<option value="simplified">Simplified</option>
+							<option value="traditional">Traditional</option>
+						</select>
+					</label>
+					{#if variantError}<span class="error" role="alert">{variantError}</span>{/if}
+				{/if}
+			</div>
+
+			{@render chapterNav('Chapters')}
+
+			{#if chapterError}
+				<p class="error" role="alert">{chapterError}</p>
+				<button type="button" onclick={() => loadChapter(id, chapter)}>Retry</button>
+			{:else if !content || content.n !== chapter}
+				<p aria-live="polite">Loading chapter…</p>
+			{:else}
+				<article>
+					<h2 lang={content.data.title.trim() ? textLang : undefined}>
+						{chapterTitle(content.data.title, content.n)}
+					</h2>
+					<ChapterText
+						{paragraphs}
+						showRuby={prefs.furigana}
+						lang={textLang}
+						{lookup}
+						{marked}
+						bind:container
+					/>
+				</article>
+				{@render chapterNav('Chapters (end)')}
 			{/if}
-		</footer>
 
-		<PopupStackView {lookup} {studyWorkspaceId} />
+			<footer class="credits">
+				{#if book.attribution}<p class="attribution">{book.attribution}</p>{/if}
+				{#if book.licenseNote}<p>{book.licenseNote}</p>{/if}
+				{#if sourceUrl}
+					<p>
+						Source:
+						<a href={sourceUrl} target="_blank" rel="noopener noreferrer">{book.source || sourceUrl}</a>
+					</p>
+				{:else if book.source}
+					<p>Source: {book.source}</p>
+				{/if}
+			</footer>
+
+			<PopupStackView {lookup} {studyWorkspaceId} />
+		{/if}
+	</div>
+
+	{#if book}
+		<ReaderRail
+			tabs={railTabs}
+			active={railState.tab}
+			onSelect={selectTab}
+			open={railOpen}
+			onToggle={toggleRail}
+			{mode}
+		>
+			{#snippet panel(tab: RailTab)}
+				{#if tab === 'bookmarks'}
+					<BookmarksPanel
+						list={bookmarks}
+						lang={textLang}
+						titles={chapterTitles}
+						onjump={jumpFromRail}
+						here={hereBookmark}
+						{canToggle}
+						failed={bookmarksFailed}
+						ontoggle={toggleBookmark}
+					/>
+				{:else}
+					<section aria-labelledby="highlights-heading">
+						<h2 id="highlights-heading" class="rail-heading">Highlights</h2>
+						<p class="rail-empty">No highlights yet.</p>
+					</section>
+				{/if}
+			{/snippet}
+		</ReaderRail>
 	{/if}
+
+	<!-- Outside the rail, so they are heard while it is collapsed or closed. -->
+	<p class="visually-hidden" role="status" aria-live="polite">{bookmarks.announcement}</p>
+	<p class="visually-hidden" role="alert">{bookmarkAlert}</p>
 </main>
 
 <style>
 	.book {
 		max-width: 44rem;
+	}
+
+	/* Wide screens: the text column keeps its width (44rem at most) and
+	   the rail sits beside it; collapsed, the rail is just its tab strip. */
+	.book.column {
+		display: flex;
+		gap: 2rem;
+		align-items: flex-start;
+		max-width: calc(44rem + 2rem + 18rem);
+	}
+
+	.book.column:not(.rail-open) {
+		max-width: calc(44rem + 2rem + 2.5rem);
+	}
+
+	.reading {
+		flex: 1 1 auto;
+		min-width: 0;
+		max-width: 44rem;
+	}
+
+	.rail-heading {
+		font-size: 1rem;
+		margin: 0.25rem 0 0.6rem;
+	}
+
+	.rail-empty {
+		opacity: 0.8;
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.author {
@@ -583,45 +650,6 @@
 		gap: 0.75rem 1.25rem;
 		align-items: center;
 		margin: 0.75rem 0;
-	}
-
-	/* Below the lookup popups (z-index 50+). */
-	.toggles {
-		position: sticky;
-		top: 0;
-		z-index: 2;
-		padding: 0.4rem 0;
-		background: Canvas;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-	}
-
-	.bookmark-toggle {
-		display: inline-flex;
-		gap: 0.35rem;
-		align-items: center;
-		font: inherit;
-	}
-
-	.bookmark-toggle[aria-pressed='true'] svg {
-		color: #0b6bcb;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.bookmark-toggle[aria-pressed='true'] svg {
-			color: #6cb4ff;
-		}
-	}
-
-	.bookmark-error {
-		display: inline-flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-		align-items: center;
-	}
-
-	.bookmark-toggle[aria-disabled='true'] {
-		opacity: 0.6;
-		cursor: default;
 	}
 
 	.credits {

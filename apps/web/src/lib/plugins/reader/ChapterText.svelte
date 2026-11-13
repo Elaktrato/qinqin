@@ -57,8 +57,6 @@
 	.chapter-text p {
 		position: relative;
 		margin: 0 0 1em;
-		/* Restores and bookmark jumps land below the sticky reader toolbar. */
-		scroll-margin-top: var(--reader-bar, 0px);
 	}
 
 	/* A bookmarked paragraph's margin marker. Decoration only: a
