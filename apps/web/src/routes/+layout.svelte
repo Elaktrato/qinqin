@@ -5,6 +5,8 @@
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
 	import { APP_NAME, APP_NAME_HANZI } from '$lib/app';
+	import NavIcon from '$lib/components/NavIcon.svelte';
+	import { iconFor } from '$lib/components/navIcons';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
 	import { usesHan } from '$lib/languages';
@@ -115,23 +117,39 @@
 </script>
 
 {#if allowed}
-	<div class="app">
+	<div class="app" class:with-bar={signedIn}>
 		{#if signedIn}
 			<header class="shell">
-				<a class="brand" href="/" lang="zh" aria-label={APP_NAME} title={APP_NAME}>{APP_NAME_HANZI}</a>
+				<!-- The logo is the home link (there is no separate Home tab). -->
+				<a
+					class="brand"
+					href="/"
+					lang="zh"
+					aria-label={APP_NAME}
+					title={APP_NAME}
+					aria-current={path === '/' ? 'page' : undefined}>{APP_NAME_HANZI}</a
+				>
 
-				<nav aria-label="Main">
-					<a href="/" aria-current={path === '/' ? 'page' : undefined}>Home</a>
-					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}>Search</a>
+				<!-- Wide screens: pills in the header. Below 720 px: a fixed
+				     bottom tab bar (see the styles). -->
+				<nav class="main-nav" aria-label="Main">
+					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}
+						><NavIcon name={iconFor('search')} /><span class="label">Search</span></a
+					>
 					{#if showMap}
-						<a href="/study/map" aria-current={path === '/study/map' ? 'page' : undefined}>Map</a>
+						<a href="/study/map" aria-current={path === '/study/map' ? 'page' : undefined}
+							><NavIcon name={iconFor('map')} /><span class="label">Map</span></a
+						>
 					{/if}
 					{#each pluginLinks as link (`${link.slug}:${link.title}`)}
 						<a
 							href={link.href}
 							aria-current={path === link.href || path.startsWith(`${link.href}/`)
 								? 'page'
-								: undefined}>{link.title}</a
+								: undefined}
+							><NavIcon name={iconFor(link.slug, link.title)} /><span class="label"
+								>{link.title}</span
+							></a
 						>
 					{/each}
 				</nav>
@@ -143,7 +161,10 @@
 					{#if $user}
 						<span class="username">{$user.username}</span>
 					{/if}
-					<button type="button" onclick={logout}>Sign out</button>
+					<button type="button" class="sign-out" title="Sign out" onclick={logout}
+						><NavIcon name={iconFor('signout')} size={18} /><span class="label">Sign out</span
+						></button
+					>
 				</div>
 			</header>
 
@@ -170,8 +191,12 @@
 		{#if signedIn}
 			<footer class="footer">
 				<nav class="footer-links" aria-label="Footer">
-					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}>Sources</a>
-					<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>Settings</a>
+					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
+						><NavIcon name={iconFor('sources')} size={16} /><span>Sources</span></a
+					>
+					<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}
+						><NavIcon name={iconFor('settings')} size={16} /><span>Settings</span></a
+					>
 				</nav>
 				<span class="version">
 					<span lang="zh">{APP_NAME_HANZI}</span>
@@ -186,10 +211,25 @@
 
 <style>
 	.app {
+		/* Nav accent: the app's blue, a darker shade for text on its tint. */
+		--nav-accent: #0b6bcb;
+		--nav-accent-text: #0957a6;
+		/* The fixed bottom tab bar's height (0 while there is none). Fixed
+		   elements further down, such as the reader's drawer button, keep
+		   clear of the bar with it. */
+		--bottom-bar-height: 0px;
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
 		min-height: 100dvh;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.app {
+			--nav-accent: #6cb4ff;
+			--nav-accent-text: #8cc4ff;
+		}
 	}
 
 	.content {
@@ -200,31 +240,67 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.75rem 1.5rem;
-		padding: 0.75rem 1.5rem;
+		gap: 0.75rem 1.25rem;
+		padding: 0.6rem 1.5rem;
 		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 	}
 
 	.brand {
+		font-size: 1.15rem;
 		font-weight: 700;
 		text-decoration: none;
+		color: inherit;
+		padding: 0.2rem 0.45rem;
+		border-radius: 0.5rem;
 	}
 
-	nav {
+	.brand:hover {
+		background: color-mix(in srgb, currentColor 8%, transparent);
+	}
+
+	.brand[aria-current='page'] {
+		color: var(--nav-accent-text);
+		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
+	}
+
+	.brand:focus-visible,
+	.main-nav a:focus-visible,
+	.footer a:focus-visible,
+	.account button:focus-visible {
+		outline: 2px solid var(--nav-accent);
+		outline-offset: 2px;
+	}
+
+	.main-nav {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
+		gap: 0.25rem;
 	}
 
-	nav a {
+	.main-nav a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.4rem 0.8rem 0.4rem 0.65rem;
+		border-radius: 999px;
+		color: inherit;
 		text-decoration: none;
-		opacity: 0.8;
+		opacity: 0.85;
+		transition:
+			background-color 0.12s ease,
+			color 0.12s ease;
 	}
 
-	nav a:hover,
-	nav a[aria-current='page'] {
+	.main-nav a:hover {
 		opacity: 1;
-		text-decoration: underline;
+		background: color-mix(in srgb, currentColor 8%, transparent);
+	}
+
+	.main-nav a[aria-current='page'] {
+		opacity: 1;
+		font-weight: 600;
+		color: var(--nav-accent-text);
+		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
 	}
 
 	.workspace {
@@ -247,13 +323,20 @@
 	}
 
 	.account button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
 		font: inherit;
-		padding: 0.25rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
+		padding: 0.3rem 0.65rem 0.3rem 0.5rem;
+		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border-radius: 999px;
 		background: transparent;
 		color: inherit;
 		cursor: pointer;
+	}
+
+	.account button:hover {
+		background: color-mix(in srgb, currentColor 8%, transparent);
 	}
 
 	.workspace-error {
@@ -289,22 +372,137 @@
 	.footer-links {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 1.25rem;
+		gap: 0.25rem 0.5rem;
+		margin-inline-start: -0.55rem;
 	}
 
 	.footer a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.3rem 0.65rem 0.3rem 0.55rem;
+		border-radius: 999px;
+		color: inherit;
 		text-decoration: none;
 		opacity: 0.85;
 	}
 
-	.footer a:hover,
+	.footer a:hover {
+		opacity: 1;
+		background: color-mix(in srgb, currentColor 8%, transparent);
+	}
+
 	.footer a[aria-current='page'] {
 		opacity: 1;
-		text-decoration: underline;
+		font-weight: 600;
+		color: var(--nav-accent-text);
+		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
 	}
 
 	.version {
 		opacity: 0.65;
+	}
+
+	/* Phones and narrow windows: the main nav becomes a fixed bottom tab
+	   bar (icon above label), like a mobile app. The header keeps the
+	   logo, the workspace picker and the account. */
+	@media (max-width: 719.98px) {
+		.app.with-bar {
+			--bottom-bar-height: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+			/* Nothing (the footer included) ends up behind the bar. */
+			padding-bottom: var(--bottom-bar-height);
+		}
+
+		.shell {
+			flex-wrap: nowrap;
+			gap: 0.5rem;
+			padding: 0.5rem 1rem;
+		}
+
+		.workspace {
+			min-width: 0;
+		}
+
+		.main-nav {
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			/* Under the reader drawer (30), its button (25) and lookup
+			   popups (50+). */
+			z-index: 20;
+			box-sizing: border-box;
+			height: var(--bottom-bar-height);
+			flex-wrap: nowrap;
+			justify-content: space-around;
+			gap: 0;
+			padding: 0.3rem 0.5rem env(safe-area-inset-bottom, 0px);
+			overflow-x: auto;
+			background: Canvas;
+			color: CanvasText;
+			border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+			box-shadow: 0 -0.125rem 0.75rem rgb(0 0 0 / 0.08);
+		}
+
+		.main-nav a {
+			flex: 1 1 0;
+			min-width: 3.5rem;
+			max-width: 7rem;
+			flex-direction: column;
+			justify-content: center;
+			gap: 0.15rem;
+			padding: 0.25rem 0.25rem;
+			border-radius: 0.75rem;
+			font-size: 0.72rem;
+			line-height: 1.1;
+		}
+
+		.main-nav a:focus-visible {
+			outline-offset: -2px;
+		}
+
+		.main-nav .label {
+			max-width: 100%;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		/* The tint sits on the icon, like a mobile tab bar. */
+		.main-nav a[aria-current='page'] {
+			background: none;
+		}
+
+		.main-nav a :global(.nav-icon) {
+			box-sizing: content-box;
+			padding: 0.15rem 0.9rem;
+			border-radius: 999px;
+		}
+
+		.main-nav a[aria-current='page'] :global(.nav-icon) {
+			background: color-mix(in srgb, var(--nav-accent) 16%, transparent);
+		}
+
+		.username {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			max-width: 6rem;
+		}
+
+		/* Icon-only on phones; the label stays as the accessible name. */
+		.sign-out {
+			padding: 0.35rem;
+		}
+
+		.sign-out .label {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
 	}
 
 	.booting {

@@ -303,7 +303,7 @@
 	.opener {
 		position: fixed;
 		right: 0;
-		bottom: 1.25rem;
+		bottom: calc(1.25rem + var(--bottom-bar-height, 0px));
 		z-index: 25;
 		display: inline-flex;
 		align-items: center;
