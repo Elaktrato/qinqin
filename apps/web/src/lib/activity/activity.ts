@@ -1,0 +1,140 @@
+// Core activity: one points-per-day view across every learning source
+// (flashcard reviews, reading). Pure functions over the event log; the
+// home heatmap draws its cells straight from `activityByDay`.
+
+import { HEATMAP_DAYS } from './heatmap';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Seconds of reading that make up one point (5 minutes). */
+const SECONDS_PER_POINT = 300;
+/** Reading shorter than this earns nothing. */
+const MIN_READ_SECONDS = 30;
+/** Cap per read event: 24 points = 2 hours. */
+const MAX_READ_POINTS = 24;
+
+export interface ActivitySource {
+	type: string;
+	label: string;
+	unit: string;
+	points(payload: unknown): number;
+}
+
+/**
+ * readingPoints turns a `read` event payload `{seconds}` into points:
+ * under 30 s (or not a finite number) is 0, otherwise one point per
+ * started 5 minutes, capped at 24 per event.
+ */
+export function readingPoints(payload: unknown): number {
+	if (typeof payload !== 'object' || payload === null) return 0;
+	const seconds = (payload as { seconds?: unknown }).seconds;
+	if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < MIN_READ_SECONDS) {
+		return 0;
+	}
+	return Math.min(Math.ceil(seconds / SECONDS_PER_POINT), MAX_READ_POINTS);
+}
+
+export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
+	{ type: 'review', label: 'Flashcard reviews', unit: 'review(s)', points: () => 1 },
+	{ type: 'read', label: 'Reading', unit: 'min', points: readingPoints }
+];
+
+export interface DayActivity {
+	day: string;
+	total: number;
+	bySource: Record<string, number>;
+}
+
+function utcDayStart(ms: number): number {
+	const date = new Date(ms);
+	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+function dayKey(ms: number): string {
+	return new Date(ms).toISOString().slice(0, 10);
+}
+
+/**
+ * activityByDay sums event points per UTC day over the `days` days
+ * ending on `now`'s UTC day, oldest first. Every day appears, empty ones
+ * with total 0. Unknown types, unparsable timestamps, events outside the
+ * window and zero-point events are ignored.
+ */
+export function activityByDay(
+	events: readonly { ts: string; type: string; payload?: unknown }[],
+	now: Date = new Date(),
+	days: number = HEATMAP_DAYS
+): Map<string, DayActivity> {
+	const windowDays = Number.isFinite(days) ? Math.max(0, Math.floor(days)) : HEATMAP_DAYS;
+	const result = new Map<string, DayActivity>();
+	if (windowDays === 0) return result;
+
+	const today = utcDayStart(now.getTime());
+	const start = today - (windowDays - 1) * DAY_MS;
+
+	for (let day = start; day <= today; day += DAY_MS) {
+		const key = dayKey(day);
+		result.set(key, { day: key, total: 0, bySource: {} });
+	}
+
+	const sources = new Map(ACTIVITY_SOURCES.map((source) => [source.type, source]));
+
+	for (const event of events) {
+		const source = sources.get(event.type);
+		if (!source) continue;
+
+		const time = Date.parse(event.ts);
+		if (Number.isNaN(time)) continue;
+
+		const day = utcDayStart(time);
+		if (day < start || day > today) continue;
+
+		const points = source.points(event.payload);
+		if (!(points > 0)) continue;
+
+		const entry = result.get(dayKey(day));
+		if (!entry) continue;
+		entry.total += points;
+		entry.bySource[source.type] = (entry.bySource[source.type] ?? 0) + points;
+	}
+
+	return result;
+}
+
+/** Singularises a plural label such as "Flashcard reviews" for a count of 1. */
+function labelFor(source: ActivitySource, count: number): string {
+	return count === 1 && source.label.endsWith('s') ? source.label.slice(0, -1) : source.label;
+}
+
+/**
+ * dayTooltip describes a day, e.g.
+ * "2026-11-13: 12 points — 9 Flashcard reviews, 3 Reading (15 min)".
+ */
+export function dayTooltip(day: DayActivity): string {
+	if (day.total <= 0) return `${day.day}: no activity`;
+
+	const parts: string[] = [];
+	for (const source of ACTIVITY_SOURCES) {
+		const count = day.bySource[source.type];
+		if (!count) continue;
+		const text = `${count} ${labelFor(source, count)}`;
+		parts.push(
+			source.type === 'read' ? `${text} (${(count * SECONDS_PER_POINT) / 60} ${source.unit})` : text
+		);
+	}
+
+	return `${day.day}: ${day.total} ${day.total === 1 ? 'point' : 'points'} — ${parts.join(', ')}`;
+}
+
+/**
+ * levelFor maps a day's count to a heat level 0..4. This is the home
+ * widget's original absolute rule (0, 1, 2-3, 4-6, 7+), moved unchanged;
+ * `max` is accepted for the call signature but does not affect it.
+ */
+export function levelFor(count: number, _max: number): 0 | 1 | 2 | 3 | 4 {
+	if (count <= 0) return 0;
+	if (count === 1) return 1;
+	if (count <= 3) return 2;
+	if (count <= 6) return 3;
+	return 4;
+}
