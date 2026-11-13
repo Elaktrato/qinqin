@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { record as recordEvent } from '$lib/events';
 	import { workspaces } from '$lib/workspaces';
@@ -205,20 +204,37 @@
 	// the book changes or unmounts, so the flush there always carries the
 	// id of the book that was actually read. flush() mutates synchronously,
 	// so two quick flushes cannot report the same seconds twice.
+	//
+	// The timer only ever holds time read under one workspace: a switch
+	// in the header flushes the running burst to the workspace it was
+	// read in and starts a fresh timer for the new one (a carry under
+	// 30 s is dropped, as on a book switch). Without a workspace nothing
+	// accrues and nothing is posted.
 	$effect(() => {
 		const bookId = book?.id;
 		if (bookId === undefined) return;
-		const workspaceId = get(workspaces).current?.id;
-		if (workspaceId === undefined) return;
 
-		const timer = createReadingTimer();
+		let workspaceId: number | null = null;
+		let timer = createReadingTimer();
 		let lastFeed = -Infinity;
 
 		const send = (): void => {
 			const seconds = timer.flush(Date.now());
-			if (seconds > 0) void recordEvent('read', workspaceId, { bookId, seconds });
+			if (seconds > 0 && workspaceId !== null) {
+				void recordEvent('read', workspaceId, { bookId, seconds });
+			}
 		};
+		// subscribe() calls back at once with the current selection.
+		const unsubscribe = workspaces.subscribe((state) => {
+			const next = state.current?.id ?? null;
+			if (next === workspaceId) return;
+			send();
+			workspaceId = next;
+			timer = createReadingTimer();
+			if (document.visibilityState === 'hidden') timer.hidden(Date.now());
+		});
 		const feed = (): void => {
+			if (workspaceId === null) return;
 			const now = Date.now();
 			if (now - lastFeed < ACTIVITY_THROTTLE_MS) return;
 			lastFeed = now;
@@ -242,6 +258,7 @@
 		window.addEventListener('pagehide', send);
 
 		return () => {
+			unsubscribe();
 			for (const name of events) window.removeEventListener(name, feed, passive);
 			document.removeEventListener('visibilitychange', onVisibility);
 			window.removeEventListener('pagehide', send);
