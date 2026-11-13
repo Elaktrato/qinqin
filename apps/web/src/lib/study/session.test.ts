@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+	CARD_TYPES,
 	DEFAULT_CONFIG,
 	SESSION_CONFIG_KEY,
 	loadConfig,
@@ -232,17 +233,23 @@ describe('validateConfig', () => {
 		expect(validateConfig(config({ newLimit: 999, reviewLimit: 999 }))).toEqual([]);
 	});
 
-	it('requires vocab cards', () => {
+	it('requires at least one known card type, not vocab specifically', () => {
 		expect(validateConfig(config({ cardTypes: [] }))).not.toEqual([]);
-		expect(validateConfig(config({ cardTypes: ['sentence'] }))).not.toEqual([]);
+		expect(validateConfig(config({ cardTypes: ['bogus'] }))).not.toEqual([]);
+		expect(validateConfig(config({ cardTypes: ['tone'] }))).toEqual([]);
 		expect(validateConfig(config({ cardTypes: ['vocab', 'sentence'] }))).toEqual([]);
+	});
+
+	it('offers all four card types', () => {
+		expect(CARD_TYPES.map((type) => type.id)).toEqual(['vocab', 'sentence', 'writing', 'tone']);
+		expect(CARD_TYPES.every((type) => type.available)).toBe(true);
 	});
 
 	it('names the field that failed', () => {
 		expect(validateConfig(config({ deckIds: [] })).join(' ')).toMatch(/deck/i);
 		expect(validateConfig(config({ newLimit: 0 })).join(' ')).toMatch(/new/i);
 		expect(validateConfig(config({ reviewLimit: 0 })).join(' ')).toMatch(/review/i);
-		expect(validateConfig(config({ cardTypes: [] })).join(' ')).toMatch(/vocab/i);
+		expect(validateConfig(config({ cardTypes: [] })).join(' ')).toMatch(/card type/i);
 		expect(
 			validateConfig(config({ mode: 'levels', schemeId: null, levelName: 'N5' })).join(' ')
 		).toMatch(/scheme/i);

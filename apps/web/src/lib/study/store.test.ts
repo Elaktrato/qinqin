@@ -469,6 +469,15 @@ describe('study store', () => {
 			expect(putBodies()).toEqual([]);
 		});
 
+		it('dedupes a legacy vocab card that stored a sentenceId by entry', async () => {
+			const legacy = { ...card('card-1', 42, ['general']), sentenceId: 9 };
+			respondWith([pluginRow('card:card-1', legacy)]);
+
+			await expect(addCard(42)).resolves.toEqual(legacy);
+			await expect(addCard(42, { sentenceId: 10 })).resolves.toEqual(legacy);
+			expect(putBodies()).toEqual([]);
+		});
+
 		it('leaves an existing card unchanged even when another deck is requested', async () => {
 			const existing = card('card-1', 42, ['general']);
 			respondWith([pluginRow('card:card-1', existing)]);

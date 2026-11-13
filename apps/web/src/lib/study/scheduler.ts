@@ -5,7 +5,7 @@
 
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
-import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
+import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 /** The derived schedule of one card. `due` is an RFC 3339 instant. */
 export interface Schedule {
@@ -22,6 +22,8 @@ export interface BuildQueueOptions {
 	newLimit: number;
 	reviewLimit: number;
 	now: Date;
+	/** Card kinds to include; every kind when omitted. */
+	kinds?: readonly StudyCardKind[];
 }
 
 // One scheduler instance is enough: it is stateless between calls.
@@ -130,10 +132,14 @@ export function buildQueue({
 	deckIds,
 	newLimit,
 	reviewLimit,
-	now
+	now,
+	kinds
 }: BuildQueueOptions): StudyCard[] {
 	const wanted = new Set(deckIds);
-	const scoped = cards.filter((card) => card.deckIds.some((id) => wanted.has(id)));
+	const scoped = cards.filter(
+		(card) =>
+			card.deckIds.some((id) => wanted.has(id)) && (kinds === undefined || kinds.includes(card.kind))
+	);
 
 	const historyByCard = new Map<string, ReviewEvent[]>();
 	for (const review of reviews) {

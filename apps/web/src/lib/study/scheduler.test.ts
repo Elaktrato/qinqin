@@ -212,6 +212,38 @@ describe('buildQueue', () => {
 	});
 });
 
+describe('buildQueue kinds', () => {
+	const kindCard = (id: string, kind: StudyCard['kind']): StudyCard => ({
+		...card(id),
+		kind
+	});
+	const cards = [
+		kindCard('v-due', 'vocab'),
+		kindCard('t-due', 'tone'),
+		kindCard('v-new', 'vocab'),
+		kindCard('t-new', 'tone'),
+		kindCard('s-new', 'sentence')
+	];
+	const reviews = [
+		review('v-due', 3, '2026-01-01T00:00:00.000Z', eventId(1)),
+		review('t-due', 3, '2026-01-01T00:00:00.000Z', eventId(2))
+	];
+	const base = { cards, reviews, deckIds: ['general'], newLimit: 10, reviewLimit: 10, now: NOW };
+
+	it('returns only the requested kinds, due and new', () => {
+		const ids = buildQueue({ ...base, kinds: ['tone'] }).map((c) => c.id);
+		expect(ids).toEqual(['t-due', 't-new']);
+	});
+
+	it('defaults to every kind', () => {
+		expect(buildQueue(base)).toHaveLength(5);
+	});
+
+	it('returns nothing for an empty kind list', () => {
+		expect(buildQueue({ ...base, kinds: [] })).toEqual([]);
+	});
+});
+
 describe('xpFromReviews', () => {
 	it('awards 10 plus the grade bonus per review', () => {
 		const reviews = [

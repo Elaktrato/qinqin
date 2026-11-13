@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { gradeItem, type GradeableItem } from './grade';
+import { planCompanions } from './companions';
 import type { ReviewGrade, StudyCard } from './types';
 
 function card(id: string, entryId: number, written?: string): StudyCard {
@@ -183,6 +184,34 @@ describe('gradeItem', () => {
 		});
 		expect(addCard).not.toHaveBeenCalled();
 		expect(recordReview).not.toHaveBeenCalled();
+	});
+
+	it('creates a companion card with its kind and written snapshot and records that mode', async () => {
+		const vocab = card('v1', 42, '猫');
+		const plan = { kinds: ['tone' as const], deckIds: ['general'], newBudget: 5 };
+		const [companion] = planCompanions({ cards: [vocab], ...plan });
+		const created = { ...card('real-9', 42, '猫'), kind: 'tone' as const };
+		const addCard = vi.fn(async () => created);
+		const recordReview = vi.fn(async () => {});
+
+		const result = await gradeItem({
+			item: { ...companion, card: null },
+			grade: 3,
+			workspaceId: 7,
+			entry: { written: companion.written },
+			addCard,
+			recordReview
+		});
+
+		expect(result).toEqual({ ok: true, card: created, created: true });
+		expect(addCard).toHaveBeenCalledWith(42, {
+			kind: 'tone',
+			written: '猫',
+			sentenceId: undefined,
+			deckIds: ['general']
+		});
+		expect(recordReview).toHaveBeenCalledWith(7, 'real-9', 3, 'tone', undefined);
+		expect(planCompanions({ cards: [vocab, created], ...plan })).toEqual([]);
 	});
 
 	it('waits for a still-loading entry instead of creating a card', async () => {
