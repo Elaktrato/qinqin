@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
-	import { APP_NAME, APP_NAME_HANZI, APP_VERSION } from '$lib/app';
+	import { APP_NAME, APP_NAME_HANZI } from '$lib/app';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
 	import { usesHan } from '$lib/languages';
@@ -173,7 +173,7 @@
 				<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>Settings</a>
 				<span class="version">
 					<span lang="zh">{APP_NAME_HANZI}</span>
-					{APP_NAME} v{APP_VERSION}
+					{APP_NAME}
 				</span>
 			</footer>
 		{/if}

@@ -129,7 +129,7 @@
 		}
 	}
 
-	async function startCreate(): Promise<void> {
+	function startCreate(): void {
 		creating = true;
 	}
 

@@ -25,9 +25,9 @@ describe('listboxKey', () => {
 		expect(listboxKey('Enter', -1, 3)).toEqual({ action: 'none', index: -1 });
 	});
 
-	it('closes on Escape and Tab', () => {
+	it('closes on Escape and leaves Tab alone', () => {
 		expect(listboxKey('Escape', 1, 3)).toEqual({ action: 'close', index: 1 });
-		expect(listboxKey('Tab', 1, 3)).toEqual({ action: 'close', index: 1 });
+		expect(listboxKey('Tab', 1, 3)).toEqual({ action: 'none', index: 1 });
 	});
 
 	it('ignores other keys and empty lists', () => {

@@ -12,6 +12,7 @@
 	import Sentences from '$lib/components/Sentences.svelte';
 	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
 	import { record } from '$lib/events';
+	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 
 	let entry = $state<Entry | null>(null);
@@ -132,7 +133,7 @@
 				<h1 class="written">{entry.written}</h1>
 				<div class="chips">
 					<span class="chip">{entry.kind}</span>
-					<span class="chip">{entry.language}</span>
+					<span class="chip" title={entry.language}>{languageLabel(entry.language)}</span>
 				</div>
 				{#if entry.kind === 'character' && entry.language === 'zh'}
 					<StrokePlayer char={entry.written} />

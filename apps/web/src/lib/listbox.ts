@@ -5,14 +5,14 @@ export type ListboxAction = 'move' | 'select' | 'close' | 'none';
  * should happen next. `active` is the highlighted option (-1 for none)
  * and `count` the number of options. Arrows clamp at the ends (no
  * wrapping), Home/End jump, Enter/Space choose the active option, and
- * Escape/Tab close the list.
+ * Escape closes the list. Tab is left to the caller (focus moves on).
  */
 export function listboxKey(
 	key: string,
 	active: number,
 	count: number
 ): { action: ListboxAction; index: number } {
-	if (key === 'Escape' || key === 'Tab') return { action: 'close', index: active };
+	if (key === 'Escape') return { action: 'close', index: active };
 	if (count <= 0) return { action: 'none', index: active };
 	const last = count - 1;
 	switch (key) {

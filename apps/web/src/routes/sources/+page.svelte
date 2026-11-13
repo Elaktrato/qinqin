@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
 	import type { Dictionary, FrequencyPack } from '$lib/api/types';
+	import { languageLabel } from '$lib/languages';
 
 	let dictionaries = $state<Dictionary[]>([]);
 	let loading = $state(true);
@@ -131,7 +132,7 @@
 						{#each frequencyPacks as pack (pack.id)}
 							<tr>
 								<td class="name">{pack.name}</td>
-								<td>{pack.language}</td>
+								<td title={pack.language}>{languageLabel(pack.language)}</td>
 								<td>{pack.version}</td>
 								<td>{pack.license}</td>
 								<td>{pack.attribution}</td>
