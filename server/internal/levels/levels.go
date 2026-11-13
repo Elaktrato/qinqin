@@ -83,7 +83,9 @@ type member struct {
 // that word's level unless it already sits in an equal-or-lower level
 // of the same scheme — levels are processed in pack order, so a
 // character keeps the lowest level whose member words are written with
-// it. Kana and other non-Han characters derive nothing; a Han character
+// it. Whatever the pack lists, an entry ends with one membership of the
+// scheme, at its lowest level (see lowestPerEntry). Kana, other non-Han
+// characters and the iteration mark 々 derive nothing; a Han character
 // without an entry is skipped and reported. Character-unit schemes rank
 // their members directly and derive nothing.
 func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) {
@@ -164,7 +166,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 			}
 		}
 	}
-	ms = preferDirect(ms)
+	ms = lowestPerEntry(ms)
 
 	var result Result
 	for _, mem := range ms {
@@ -677,37 +679,45 @@ func diffMembers(ctx context.Context, tx *sql.Tx, schemeID int64, levelIDs []int
 	return nil
 }
 
-// preferDirect keeps one membership per level and entry, in first-seen
-// order: a direct one when the pack lists the entry itself, even after a
-// word of the same level already derived it (好人 before 好).
-func preferDirect(ms []member) []member {
-	type key struct {
-		level int
-		entry int64
+// lowestPerEntry keeps one membership per entry, in first-seen order:
+// at the entry's lowest level, whatever the pack lists — a word repeated
+// at a higher level (HSK lists senses apart: 好 at 1, 2 and 4) or a
+// character derived low and listed higher (些) carries one badge of the
+// scheme. At that level a direct membership wins over a derived one,
+// even when a word of the level derived it first (好人 before 好).
+func lowestPerEntry(ms []member) []member {
+	best := make(map[int64]member, len(ms))
+	for _, mem := range ms {
+		cur, ok := best[mem.entry]
+		switch {
+		case !ok, mem.level < cur.level:
+			best[mem.entry] = mem
+		case mem.level == cur.level && !mem.derived:
+			cur.derived = false
+			best[mem.entry] = cur
+		}
 	}
-	at := make(map[key]int, len(ms))
 	out := ms[:0]
 	for _, mem := range ms {
-		k := key{mem.level, mem.entry}
-		if j, ok := at[k]; ok {
-			if !mem.derived {
-				out[j].derived = false
-			}
-			continue
+		if b, ok := best[mem.entry]; ok {
+			out = append(out, b)
+			delete(best, mem.entry)
 		}
-		at[k] = len(out)
-		out = append(out, mem)
 	}
 	return out
 }
 
+// iterationMark 々 is Han script but repeats the character before it: it
+// is no character of its own and derives no level.
+const iterationMark = '々'
+
 // distinctHan returns the Han characters of written, each once, in
-// order; kana and other scripts are left out.
+// order; kana, other scripts and the iteration mark 々 are left out.
 func distinctHan(written string) []rune {
 	seen := make(map[rune]bool, len(written))
 	rs := make([]rune, 0, len(written))
 	for _, r := range written {
-		if seen[r] || !unicode.Is(unicode.Han, r) {
+		if seen[r] || r == iterationMark || !unicode.Is(unicode.Han, r) {
 			continue
 		}
 		seen[r] = true

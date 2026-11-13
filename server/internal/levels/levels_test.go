@@ -463,6 +463,45 @@ func TestCharacterResolvesToItsOwnEntry(t *testing.T) {
 	}
 }
 
+// TestOneLevelPerEntry: an entry carries one level of a scheme, its
+// lowest, whatever the pack lists: a word repeated at a higher level
+// (HSK lists senses separately: 好 at 1, 2 and 4) and a character derived
+// low but listed directly higher (些 from 一些 at 1, 些 itself at 4) keep
+// only the lowest.
+func TestOneLevelPerEntry(t *testing.T) {
+	lang.Register(lang.Zh{})
+
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importCedict(t, sqlDB, lineNihao, lineHaoren, lineNi, lineHao, lineRen)
+	nihao := lexID(t, sqlDB, "word", "你好")
+	hao := lexID(t, sqlDB, "character", "好")
+	ren := lexID(t, sqlDB, "character", "人")
+
+	pack := buildPack(t, "lowest-only", `{"unit":"word","levels":[
+		{"name":"1","entries":["你好"]},
+		{"name":"2","entries":["你好","好人"]},
+		{"name":"3","entries":["好","人","你好"]}]}`)
+	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	for _, c := range []struct {
+		name    string
+		id      int64
+		level   string
+		derived bool
+	}{
+		{"你好", nihao, "1", false},
+		{"好", hao, "1", true},
+		{"人", ren, "2", true},
+	} {
+		got, err := levels.ForEntry(ctx, sqlDB, c.id)
+		if err != nil || len(got) != 1 || got[0].LevelName != c.level || got[0].Derived != c.derived {
+			t.Errorf("badges of %s = %+v (err %v), want only level %s (derived %v)", c.name, got, err, c.level, c.derived)
+		}
+	}
+}
+
 func TestSkippedUnknownForms(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})

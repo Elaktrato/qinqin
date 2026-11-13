@@ -236,8 +236,13 @@ function wordForms(row) {
 	return forms;
 }
 
-/** hskWordLevels reads hsk30.csv, grouped by level, variants expanded. */
-function hskWordLevels(text) {
+/**
+ * hskWordLevels reads hsk30.csv, grouped by level, variants expanded. A
+ * form keeps only the lowest level that lists it: the list repeats a word
+ * for each sense or part of speech (好 at 1, 2 and 4), and an entry carries
+ * one level of the scheme.
+ */
+export function hskWordLevels(text) {
 	const rows = records(text, 'hsk30.csv', ['ID', 'Simplified', 'Level', 'Variants']);
 	const byLevel = new Map(HSK_LEVELS.map((level) => [level, { entries: [], seen: new Set() }]));
 	const ids = new Set();
@@ -248,10 +253,20 @@ function hskWordLevels(text) {
 		if (level === undefined) fail(`hsk30.csv: ${row.ID} has unknown level ${row.Level}`);
 		for (const form of wordForms(row)) uniquePush(level.entries, level.seen, form);
 	}
-	return {
-		rows: rows.length,
-		levels: HSK_LEVELS.map((level) => ({ name: hskLevelName(level), entries: byLevel.get(level).entries }))
-	};
+	const lower = new Set();
+	let repeats = 0;
+	const levels = HSK_LEVELS.map((level) => {
+		const entries = byLevel.get(level).entries.filter((form) => {
+			if (lower.has(form)) {
+				repeats++;
+				return false;
+			}
+			return true;
+		});
+		for (const form of entries) lower.add(form);
+		return { name: hskLevelName(level), entries };
+	});
+	return { rows: rows.length, repeats, levels };
 }
 
 // A cleaned JLPT vocabulary form: kana, kanji, 々, ー and ヶ only.
@@ -617,8 +632,10 @@ Conversion (\`scripts/prepare-level-packs.mjs\`): the \`Level\` column picks
 the level. A row with a \`Variants\` list contributes each listed simplified
 variant (爸爸 and 爸; 有点儿 and 有一点儿; 称 for 称1) except the ones upstream
 marks as mere examples of a prefix or suffix (第二 for 第); any other row
-contributes its \`Simplified\` form. A form listed twice in one level is kept
-once. ${words.rows} rows give ${formCount} forms; levels:
+contributes its \`Simplified\` form. A form keeps only the lowest level that
+lists it, once: the list repeats a word per sense or part of speech (好 at
+HSK 1, 2 and 4), and an entry carries one level of the scheme (${words.repeats}
+repeats dropped). ${words.rows} rows give ${formCount} forms; levels:
 ${countsLine(words.levels)}.
 
 Input files (SHA-256):

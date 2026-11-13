@@ -114,6 +114,17 @@ func TestEntryWithReading(t *testing.T) {
 		}
 	}
 
+	// The iteration mark 々 is no character of its own: 時々 derives 時
+	// (skipped here, no KANJIDIC2) and nothing for 々.
+	marks := jaLevelsPack(t, "marks", `{"unit":"word","levels":[{"name":"N5","entries":["時々"]}]}`)
+	res, err = levels.Import(ctx, sqlDB, marks)
+	if err != nil {
+		t.Fatalf("import 時々: %v", err)
+	}
+	if !slices.Equal(res.Skipped, []string{"時"}) {
+		t.Errorf("skipped = %v, want [時] (not 々)", res.Skipped)
+	}
+
 	bad := jaLevelsPack(t, "bad", `{"unit":"word","levels":[{"name":"N5","entries":[{"reading":"かぜ"}]}]}`)
 	if _, err := levels.Import(ctx, sqlDB, bad); err == nil {
 		t.Error("an entry without a form imported, want an invalid-pack error")
