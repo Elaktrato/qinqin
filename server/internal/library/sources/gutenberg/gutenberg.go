@@ -23,6 +23,7 @@ import (
 	"qinqin/internal/library"
 	"qinqin/internal/library/epub"
 	"qinqin/internal/library/sources"
+	"qinqin/internal/pinyin"
 )
 
 const (
@@ -48,6 +49,8 @@ var idPattern = regexp.MustCompile(`^[0-9]{1,10}$`)
 type work struct {
 	id, title, author, language string
 	ntitle, nauthor             string // normalized title and author for search
+	reading                     string // toneless pinyin of a zh title, spaced ("hong lou meng")
+	ptitle, pauthor             string // phonetic keys: pinyin.Plain of the title and author pinyin
 }
 
 type catalog struct {
@@ -69,6 +72,7 @@ type adapter struct {
 	hostSuffix   string // also allowed: any host ending in this (".gutenberg.org")
 	allowHTTP    bool   // production fetches over https only
 	maxEpub      int64
+	phonetics    sources.Phonetics // nil: no pinyin index
 
 	mu        sync.Mutex
 	cat       *catalog
@@ -80,9 +84,13 @@ type adapter struct {
 
 // New returns the Project Gutenberg source. It fetches over https only,
 // from gutenberg.org and its subdomains, and enforces that on every
-// redirect hop too.
-func New(c *sources.HTTPClient) sources.Source {
-	return newAdapter(c, defaultBase, map[string]bool{"gutenberg.org": true}, ".gutenberg.org", false)
+// redirect hop too. ph converts the Chinese titles and authors to pinyin
+// once per catalog load, so they can be searched by pinyin; nil leaves
+// them searchable as written only.
+func New(c *sources.HTTPClient, ph sources.Phonetics) sources.Source {
+	a := newAdapter(c, defaultBase, map[string]bool{"gutenberg.org": true}, ".gutenberg.org", false)
+	a.phonetics = ph
+	return a
 }
 
 func newAdapter(c *sources.HTTPClient, base string, hosts map[string]bool, suffix string, allowHTTP bool) *adapter {
@@ -245,7 +253,24 @@ func (a *adapter) download(ctx context.Context) (*catalog, error) {
 		a.c.Invalidate(u) // do not let a bad body stick for the TTL
 		return nil, err
 	}
+	a.indexPinyin(ctx, cat)
 	return cat, nil
+}
+
+// indexPinyin sets the pinyin reading and phonetic keys of the Chinese
+// works. A title or author that does not convert keeps no key.
+func (a *adapter) indexPinyin(ctx context.Context, cat *catalog) {
+	if a.phonetics == nil {
+		return
+	}
+	for _, w := range cat.works {
+		if w.language != "zh" || ctx.Err() != nil {
+			continue
+		}
+		w.reading = a.phonetics(ctx, w.title)
+		w.ptitle = pinyin.Plain(w.reading)
+		w.pauthor = pinyin.Plain(a.phonetics(ctx, w.author))
+	}
 }
 
 func (a *adapter) Search(ctx context.Context, q string, limit int) ([]sources.Result, error) {
@@ -259,20 +284,60 @@ func (a *adapter) Search(ctx context.Context, q string, limit int) ([]sources.Re
 	if err != nil {
 		return nil, err
 	}
-	return cat.search(normalize(q), limit), nil
+	return cat.search(normalize(q), pinyin.Plain(q), limit), nil
 }
 
-// search returns at most limit works matching the normalized query nq,
-// ranked (exact title, title prefix, author, substring; ties by id)
-// before truncating.
-func (cat *catalog) search(nq string, limit int) []sources.Result {
+// search returns at most limit works matching the normalized query nq
+// on their title or author, or else the toneless pinyin query pq on
+// their pinyin keys, ranked (written matches first: exact title, title
+// prefix, author, substring; then pinyin matches in the same order; ties
+// by id) before truncating. A pinyin match carries the title's pinyin.
+func (cat *catalog) search(nq, pq string, limit int) []sources.Result {
+	rank := func(w *work) (int, bool) {
+		return sources.CombinedRank(nq, w.ntitle, w.nauthor, pq, w.ptitle, w.pauthor)
+	}
 	out := []sources.Result{}
 	for _, w := range sources.TopMatches(cat.works, limit,
-		func(w *work) int { return sources.MatchRank(nq, w.ntitle, w.nauthor) },
+		func(w *work) int { r, _ := rank(w); return r },
 		func(w *work) string { return w.id }) {
-		out = append(out, sources.Result{SourceID: w.id, Title: w.title, Author: w.author, Language: w.language})
+		res := w.result()
+		if _, phonetic := rank(w); phonetic {
+			res.Reading = w.reading
+		}
+		out = append(out, res)
 	}
 	return out
+}
+
+func (w *work) result() sources.Result {
+	return sources.Result{SourceID: w.id, Title: w.title, Author: w.author, Language: w.language}
+}
+
+// Browse returns an assortment of the Chinese or Japanese works (see
+// sources.Browser), seeded by the source id and seed; "" means both. Any
+// other language is an empty list.
+func (a *adapter) Browse(ctx context.Context, language, seed string, limit int) ([]sources.Result, error) {
+	if language != "" && language != "zh" && language != "ja" {
+		return []sources.Result{}, nil
+	}
+	cat, err := a.catalog(ctx)
+	if err != nil {
+		return nil, err
+	}
+	works := cat.works
+	if language != "" {
+		works = nil
+		for _, w := range cat.works {
+			if w.language == language {
+				works = append(works, w)
+			}
+		}
+	}
+	out := []sources.Result{}
+	for _, w := range sources.Assortment(works, a.ID()+":"+seed, min(max(limit, 1), maxLimit)) {
+		out = append(out, w.result())
+	}
+	return out, nil
 }
 
 func (a *adapter) Fetch(ctx context.Context, sourceID string) (sources.Imported, error) {

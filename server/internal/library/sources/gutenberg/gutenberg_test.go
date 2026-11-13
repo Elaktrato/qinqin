@@ -78,21 +78,28 @@ type fixture struct {
 
 func newFixture(t *testing.T, head []string) *fixture {
 	t.Helper()
+	return newFixtureWith(t, head, defaultRows)
+}
+
+var defaultRows = [][]string{
+	{"1", "Text", "1971-12-01", "The Declaration", "en", "Jefferson, Thomas", "", "", ""},
+	{"1982", "Text", "1999-11-01", "羅生門", "ja", "芥川, 龍之介, 1892-1927", "", "", ""},
+	{"4572", "Text", "2003-10-01", "粉妝樓1-10回", "zh", "羅, 貫中", "", "", ""},
+	{"5000", "Text", "2003-10-01", "Bilingual Reader", "en;zh", "Someone, Else", "", "", ""},
+	{"5001", "Sound", "2003-10-01", "Audio 羅生門", "ja", "Reader", "", "", ""},
+	{"5002", "Text", "2003-10-01", "Not Chinese", "zhx;en", "Nobody", "", "", ""},
+	{"5003", "Text", "2003-10-01", "Cantonese", "yue", "Nobody", "", "", ""},
+	{"abc", "Text", "2003-10-01", "Bad id", "zh", "Nobody", "", "", ""},
+	{"5004", "Text", "2003-10-01", "Mixed Case", " JA ; en", "Nobody", "", "", ""},
+}
+
+// newFixtureWith serves a catalog of head and rows.
+func newFixtureWith(t *testing.T, head []string, rows [][]string) *fixture {
+	t.Helper()
 	f := &fixture{mux: http.NewServeMux()}
 	f.epubBody.Store(tinyEpub(t))
 	f.srv = httptest.NewServer(f.mux)
 	t.Cleanup(f.srv.Close)
-	rows := [][]string{
-		{"1", "Text", "1971-12-01", "The Declaration", "en", "Jefferson, Thomas", "", "", ""},
-		{"1982", "Text", "1999-11-01", "羅生門", "ja", "芥川, 龍之介, 1892-1927", "", "", ""},
-		{"4572", "Text", "2003-10-01", "粉妝樓1-10回", "zh", "羅, 貫中", "", "", ""},
-		{"5000", "Text", "2003-10-01", "Bilingual Reader", "en;zh", "Someone, Else", "", "", ""},
-		{"5001", "Sound", "2003-10-01", "Audio 羅生門", "ja", "Reader", "", "", ""},
-		{"5002", "Text", "2003-10-01", "Not Chinese", "zhx;en", "Nobody", "", "", ""},
-		{"5003", "Text", "2003-10-01", "Cantonese", "yue", "Nobody", "", "", ""},
-		{"abc", "Text", "2003-10-01", "Bad id", "zh", "Nobody", "", "", ""},
-		{"5004", "Text", "2003-10-01", "Mixed Case", " JA ; en", "Nobody", "", "", ""},
-	}
 	var cat bytes.Buffer
 	cat.WriteString("\xef\xbb\xbf")
 	w := csv.NewWriter(&cat)
@@ -373,7 +380,7 @@ func TestGutenbergCatalogIsCachedForSevenDays(t *testing.T) {
 }
 
 func TestGutenbergProductionPolicy(t *testing.T) {
-	a := New(sources.NewHTTPClient(t.TempDir(), "ua")).(*adapter)
+	a := New(sources.NewHTTPClient(t.TempDir(), "ua"), nil).(*adapter)
 	for u, want := range map[string]bool{
 		"https://www.gutenberg.org/ebooks/1.epub.noimages": true,
 		"https://gutenberg.org/x":                          true,
@@ -403,13 +410,13 @@ func TestSearchRanksBeforeTruncating(t *testing.T) {
 	add("100", "月", "c")    // exact title
 	add("200", "none", "d") // no match
 	got := []string{}
-	for _, r := range cat.search(normalize("月"), 2) {
+	for _, r := range cat.search(normalize("月"), "", 2) {
 		got = append(got, r.SourceID)
 	}
 	if want := []string{"100", "11"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("search = %v, want %v", got, want)
 	}
-	if n := len(cat.search(normalize("月"), 100)); n != 4 {
+	if n := len(cat.search(normalize("月"), "", 100)); n != 4 {
 		t.Errorf("search all = %d hits, want 4", n)
 	}
 }

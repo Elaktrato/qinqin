@@ -21,6 +21,7 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/db"
 	"qinqin/internal/lang"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/library/sources"
 	"qinqin/internal/library/sources/aozora"
 	"qinqin/internal/library/sources/gutenberg"
@@ -145,7 +146,7 @@ func serveCmd(args []string) error {
 	}
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set
@@ -154,10 +155,24 @@ var version = "dev"
 
 // librarySources builds the public-domain text sources, sharing one
 // HTTP client (rate limits and cache under <data>/cache/sources).
-func librarySources(dataDir string) []sources.Source {
+// Gutenberg's Chinese titles are indexed by pinyin from the lexicon in
+// sqlDB.
+func librarySources(dataDir string, sqlDB *sql.DB) []sources.Source {
 	c := sources.NewHTTPClient(filepath.Join(dataDir, "cache", "sources"),
 		"qinqin/"+version+" (+https://github.com/Elaktrato/qinqin)")
-	return []sources.Source{aozora.New(c), gutenberg.New(c)}
+	return []sources.Source{aozora.New(c), gutenberg.New(c, lexiconPinyin(lexicon.Store{DB: sqlDB}))}
+}
+
+// lexiconPinyin converts text to toneless pinyin through the lexicon; a
+// failed lookup converts to "" (the work stays searchable as written).
+func lexiconPinyin(st lexicon.Store) sources.Phonetics {
+	return func(ctx context.Context, text string) string {
+		p, err := st.Pinyin(ctx, text)
+		if err != nil {
+			return ""
+		}
+		return p
+	}
 }
 
 // rootHandler mounts the API on /api/ and /healthz and the web frontend on

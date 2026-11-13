@@ -21,13 +21,16 @@ import (
 	"qinqin/internal/library"
 )
 
-// Result is one search hit.
+// Result is one search hit. Reading is the title's reading (hiragana
+// for ja, toneless pinyin for zh), set only when the work matched the
+// query phonetically.
 type Result struct {
 	SourceID string `json:"sourceId"`
 	Title    string `json:"title"`
 	Author   string `json:"author"`
 	Language string `json:"language"`
 	Note     string `json:"note"`
+	Reading  string `json:"reading,omitempty"`
 }
 
 // Imported is a fetched work; Meta has title, author, language, source,

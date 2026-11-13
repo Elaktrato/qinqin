@@ -24,6 +24,11 @@ const (
 
 	defaultSearchLimit = 25
 	maxSearchLimit     = 100
+
+	defaultBrowseLimit = 12
+	maxBrowseLimit     = 50
+	maxBrowseSeedLen   = 64
+	maxLanguageLen     = 16
 )
 
 // sourceInfo is how a known source is presented to clients; a source
@@ -100,6 +105,79 @@ func (s *server) handleSearchSource(w http.ResponseWriter, r *http.Request) {
 		results = []sources.Result{}
 	}
 	writeJSON(w, http.StatusOK, results)
+}
+
+// handleBrowseSource serves GET /api/library/sources/{source}/browse
+// ?language=&seed=&limit=: an assortment of the source's works in the
+// language ("" for any), the same for the same seed (default: today's
+// UTC date) and another for another seed. limit defaults to 12 and is
+// clamped to 1..50. A source without an assortment is a 501; a language
+// the source holds no books of is an empty list.
+func (s *server) handleBrowseSource(w http.ResponseWriter, r *http.Request) {
+	if s.requireUser(w, r) == nil {
+		return
+	}
+	src, ok := s.source(w, r)
+	if !ok {
+		return
+	}
+	b, ok := src.(sources.Browser)
+	if !ok {
+		http.Error(w, "this source has no browse assortment", http.StatusNotImplemented)
+		return
+	}
+	q := r.URL.Query()
+	limit := defaultBrowseLimit
+	if q.Has("limit") {
+		n, err := strconv.Atoi(q.Get("limit"))
+		if err != nil {
+			http.Error(w, "limit must be an integer", http.StatusBadRequest)
+			return
+		}
+		limit = min(max(n, 1), maxBrowseLimit)
+	}
+	language := q.Get("language")
+	if !validLanguageParam(language) {
+		http.Error(w, "language must be a language code such as ja or zh", http.StatusBadRequest)
+		return
+	}
+	seed := q.Get("seed")
+	if len(seed) > maxBrowseSeedLen {
+		http.Error(w, "seed too long", http.StatusBadRequest)
+		return
+	}
+	if seed == "" {
+		seed = time.Now().UTC().Format("2006-01-02")
+	}
+	if language != "" && !sourceServes(src.ID(), language) {
+		writeJSON(w, http.StatusOK, []sources.Result{})
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), importTimeout)
+	defer cancel()
+	results, err := b.Browse(ctx, language, seed, limit)
+	if err != nil {
+		sourceError(w, err)
+		return
+	}
+	if results == nil {
+		results = []sources.Result{}
+	}
+	writeJSON(w, http.StatusOK, results)
+}
+
+// validLanguageParam accepts "" or a short code of lowercase letters,
+// digits and hyphens.
+func validLanguageParam(s string) bool {
+	if len(s) > maxLanguageLen {
+		return false
+	}
+	for _, c := range s {
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-') {
+			return false
+		}
+	}
+	return true
 }
 
 // sourceError maps a source failure to a response. Messages are fixed

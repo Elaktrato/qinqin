@@ -129,11 +129,10 @@ type fixture struct {
 
 func newFixture(t *testing.T, head []string) *fixture {
 	t.Helper()
-	f := &fixture{}
-	mux := http.NewServeMux()
-	f.srv = httptest.NewServer(mux)
-	t.Cleanup(f.srv.Close)
-	base := f.srv.URL
+	return newFixtureWith(t, head, defaultRows)
+}
+
+func defaultRows(base string) [][]string {
 	row := func(id, title, workFlag, family, given, role, personFlag, txtURL, htmlURL string) []string {
 		return []string{id, title, workFlag, "2020-04-03", base + "/cards/" + id + "/card" + id + ".html",
 			family, given, role, personFlag, txtURL, htmlURL}
@@ -149,7 +148,19 @@ func newFixture(t *testing.T, head []string) *fixture {
 		row("000007", "外部ホスト", "なし", "夏目", "漱石", "著者", "なし", "http://evil.example.com/a.zip", "http://evil.example.com/a.html"),
 		row("000008", "Sample ＡＢＣ", "なし", "太宰", "治", "著者", "なし", base+"/f/4_ruby.zip", ""),
 	}
-	cat := catalogZip(t, head, rows)
+	return rows
+}
+
+// newFixtureWith serves a catalog of head and the rows built for the
+// fixture server's base URL.
+func newFixtureWith(t *testing.T, head []string, rowsFor func(base string) [][]string) *fixture {
+	t.Helper()
+	f := &fixture{}
+	mux := http.NewServeMux()
+	f.srv = httptest.NewServer(mux)
+	t.Cleanup(f.srv.Close)
+	base := f.srv.URL
+	cat := catalogZip(t, head, rowsFor(base))
 	mux.HandleFunc("/catalog.zip", func(w http.ResponseWriter, r *http.Request) {
 		f.catHits.Add(1)
 		if f.catGate != nil {
@@ -461,13 +472,13 @@ func TestSearchRanksBeforeTruncating(t *testing.T) {
 	add("000004", "月", "c")    // exact title
 	add("000005", "none", "d") // no match
 	got := []string{}
-	for _, r := range cat.search(normalize("月"), 2) {
+	for _, r := range cat.search(normalize("月"), "", 2) {
 		got = append(got, r.SourceID)
 	}
 	if want := []string{"000004", "000003"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("search = %v, want %v", got, want)
 	}
-	if n := len(cat.search(normalize("月"), 100)); n != 4 {
+	if n := len(cat.search(normalize("月"), "", 100)); n != 4 {
 		t.Errorf("search all = %d hits, want 4", n)
 	}
 }

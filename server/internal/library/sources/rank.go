@@ -31,6 +31,29 @@ func MatchRank(q, title, author string) int {
 	return -1
 }
 
+// RankPhonetic is added to the MatchRank of a phonetic match, so every
+// match on the written title or author ranks before every phonetic one.
+const RankPhonetic = RankSubstring + 1
+
+// CombinedRank ranks a work first by its normalized written title and
+// author for the normalized query nq, then — when that does not match —
+// by its phonetic keys ptitle and pauthor for the phonetic query pq
+// (offset by RankPhonetic, phonetic true). An empty pq, or a work
+// without phonetic keys, never matches phonetically. It returns -1 when
+// neither matches.
+func CombinedRank(nq, title, author, pq, ptitle, pauthor string) (rank int, phonetic bool) {
+	if r := MatchRank(nq, title, author); r >= 0 {
+		return r, false
+	}
+	if pq == "" || (ptitle == "" && pauthor == "") {
+		return -1, false
+	}
+	if r := MatchRank(pq, ptitle, pauthor); r >= 0 {
+		return RankPhonetic + r, true
+	}
+	return -1, false
+}
+
 // TopMatches returns at most limit of items that match (rank >= 0), best
 // rank first, ties by id: shorter ids first, then lexically — numeric
 // order for the digit ids the sources use.

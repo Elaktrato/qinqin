@@ -26,6 +26,7 @@ import (
 	"golang.org/x/text/encoding/japanese"
 	"golang.org/x/text/unicode/norm"
 
+	"qinqin/internal/lang"
 	"qinqin/internal/library"
 	"qinqin/internal/library/sources"
 )
@@ -61,6 +62,8 @@ type work struct {
 	id, title, author, published string
 	cardURL, textURL, htmlURL    string
 	ntitle, nauthor              string // normalized title and author for search
+	reading, authorReading       string // 作品名読み and 姓読み+名読み, when the catalog has them
+	ptitle, pauthor              string // phonetic keys of the readings (lang.PhoneticKey)
 	blocked                      bool
 	hasAuthorRole                bool
 }
@@ -167,6 +170,19 @@ var requiredColumns = []string{
 	"役割フラグ", "人物著作権フラグ", "テキストファイルURL", "XHTML/HTMLファイルURL",
 }
 
+// Optional reading columns. Verified against the live
+// list_person_all_extended_utf8.csv on 2026-11-13, whose header carries
+// 作品名読み, ソート用読み, 副題読み, 姓読み, 名読み, 姓読みソート用,
+// 名読みソート用, 姓ローマ字 and 名ローマ字. The readings are hiragana
+// with katakana for loanwords (ウェストミンスターじいん). A catalog
+// without them (an old cache, a fixture) still loads; its works are then
+// matched on their written title and author only.
+const (
+	colTitleReading  = "作品名読み"
+	colFamilyReading = "姓読み"
+	colGivenReading  = "名読み"
+)
+
 func parseCatalog(zipData []byte, usable func(*work) bool) (*catalog, error) {
 	raw, err := readZipEntry(zipData, ".csv", maxCatalogCSV)
 	if err != nil {
@@ -199,7 +215,7 @@ func parseCatalog(zipData []byte, usable func(*work) bool) (*catalog, error) {
 			return nil, fmt.Errorf("aozora: catalog: %w", err)
 		}
 		get := func(name string) string {
-			if i := col[name]; i < len(rec) {
+			if i, ok := col[name]; ok && i < len(rec) {
 				return strings.TrimSpace(rec[i])
 			}
 			return ""
@@ -213,6 +229,7 @@ func parseCatalog(zipData []byte, usable func(*work) bool) (*catalog, error) {
 			w = &work{
 				id: id, title: get("作品名"), published: get("公開日"), cardURL: get("図書カードURL"),
 				textURL: get("テキストファイルURL"), htmlURL: get("XHTML/HTMLファイルURL"),
+				reading: get(colTitleReading),
 			}
 			byID[id] = w
 		}
@@ -220,11 +237,11 @@ func parseCatalog(zipData []byte, usable func(*work) bool) (*catalog, error) {
 		if get("作品著作権フラグ") != noCopyright || get("人物著作権フラグ") != noCopyright {
 			w.blocked = true
 		}
-		name := get("姓") + get("名")
+		name, nameReading := get("姓")+get("名"), get(colFamilyReading)+get(colGivenReading)
 		if role := get("役割フラグ"); role == "著者" && !w.hasAuthorRole {
-			w.author, w.hasAuthorRole = name, true
+			w.author, w.authorReading, w.hasAuthorRole = name, nameReading, true
 		} else if w.author == "" {
-			w.author = name
+			w.author, w.authorReading = name, nameReading
 		}
 	}
 	cat := &catalog{byKey: map[string]*work{}}
@@ -233,6 +250,7 @@ func parseCatalog(zipData []byte, usable func(*work) bool) (*catalog, error) {
 			continue
 		}
 		w.ntitle, w.nauthor = normalize(w.title), normalize(w.author)
+		w.ptitle, w.pauthor = lang.PhoneticKey(w.reading), lang.PhoneticKey(w.authorReading)
 		cat.works = append(cat.works, w)
 	}
 	sort.Slice(cat.works, func(i, j int) bool { return cat.works[i].id < cat.works[j].id })
@@ -328,24 +346,55 @@ func (a *adapter) Search(ctx context.Context, q string, limit int) ([]sources.Re
 	if err != nil {
 		return nil, err
 	}
-	return cat.search(normalize(q), limit), nil
+	return cat.search(normalize(q), lang.PhoneticKey(q), limit), nil
 }
 
-// search returns at most limit works matching the normalized query nq,
-// ranked (exact title, title prefix, author, substring; ties by id)
-// before truncating.
-func (cat *catalog) search(nq string, limit int) []sources.Result {
+// search returns at most limit works matching the normalized query nq
+// on their title or author, or else the phonetic query pq on their
+// readings, ranked (written matches first: exact title, title prefix,
+// author, substring; then phonetic matches in the same order; ties by
+// id) before truncating. A phonetic match carries the title's reading.
+func (cat *catalog) search(nq, pq string, limit int) []sources.Result {
+	rank := func(w *work) (int, bool) {
+		return sources.CombinedRank(nq, w.ntitle, w.nauthor, pq, w.ptitle, w.pauthor)
+	}
 	out := []sources.Result{}
 	for _, w := range sources.TopMatches(cat.works, limit,
-		func(w *work) int { return sources.MatchRank(nq, w.ntitle, w.nauthor) },
+		func(w *work) int { r, _ := rank(w); return r },
 		func(w *work) string { return w.id }) {
-		note := ""
-		if w.published != "" {
-			note = "公開日 " + w.published
+		res := w.result()
+		if _, phonetic := rank(w); phonetic {
+			res.Reading = w.reading
 		}
-		out = append(out, sources.Result{SourceID: w.id, Title: w.title, Author: w.author, Language: "ja", Note: note})
+		out = append(out, res)
 	}
 	return out
+}
+
+func (w *work) result() sources.Result {
+	note := ""
+	if w.published != "" {
+		note = "公開日 " + w.published
+	}
+	return sources.Result{SourceID: w.id, Title: w.title, Author: w.author, Language: "ja", Note: note}
+}
+
+// Browse returns an assortment of the public-domain works (see
+// sources.Browser), seeded by the source id and seed. Aozora holds only
+// Japanese works: any language but "ja" or "" is an empty list.
+func (a *adapter) Browse(ctx context.Context, language, seed string, limit int) ([]sources.Result, error) {
+	if language != "" && language != "ja" {
+		return []sources.Result{}, nil
+	}
+	cat, err := a.catalog(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := []sources.Result{}
+	for _, w := range sources.Assortment(cat.works, a.ID()+":"+seed, min(max(limit, 1), maxLimit)) {
+		out = append(out, w.result())
+	}
+	return out, nil
 }
 
 func (a *adapter) urlAllowed(u *url.URL) bool {
