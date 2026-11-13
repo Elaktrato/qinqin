@@ -1,7 +1,7 @@
 # Flashcards Phase — Design
 
 Date: 2026-11-12
-Status: Round 1 shipped 2026-11-12; Round 2 (level sessions and the mastery map) shipped 2026-11-12; Round 3 pending — [#25](https://github.com/Elaktrato/qinqin/issues/25). Design agreed in conversation; build order fixed (three rounds).
+Status: Round 1 shipped 2026-11-12; Round 2 (level sessions and the mastery map) shipped 2026-11-12; Round 3 shipped 2026-11-13 ([#25](https://github.com/Elaktrato/qinqin/issues/25)). Design agreed in conversation; build order fixed (three rounds).
 
 ## Intent
 
@@ -167,6 +167,44 @@ pinyin readings already stored.
   scope; nothing to license).
 - **Heatmap** stays in the flashcards widget in this round; moving it into core is a
   separate follow-up (it will aggregate reading sessions and other plugins' activity).
+
+### Implementation notes (Round 3 as shipped)
+
+Where the build differs from or refines the decisions above, and the known limits:
+
+- **One sentence card per word.** Planning dedupes companions by `kind:entryId`, and
+  grading uses the word's first sentence that has no card yet, so a deck does not
+  fill up with one card per example sentence. This replaces "one card per example
+  sentence" above; lifting it is a later round.
+- **Tone is Chinese only, with no pitch accent.** The Tone type is hidden in non-Chinese
+  workspaces (a saved selection stays stored but never reaches the queue). Japanese
+  pitch accent is not modelled: there is no pitch data.
+- **Swipe directions as built.** Up or up-left is tone 1. Up-right or right is tone 2.
+  A path that goes down at least 24 px and comes back up at least 24 px is tone 3.
+  Down-right, down, down-left or left is tone 4. A move shorter than 24 px is a tap,
+  which means the neutral tone. Keys 1–5 work too. Any listed reading with the same
+  syllable count is accepted.
+- **Writing needs Han characters and bundled stroke data.** Only characters with a
+  file in `static/hanzi/` are drawn. Kana stay visible as context, and a word with no
+  drawable character is skipped silently. Revealing a character plays the full
+  stroke-order animation, which takes about one second per stroke.
+- **Companions exist in deck sessions only.** Level sessions stay vocab-only, and setup
+  blocks a level session that has no Vocab selected.
+- **Eligibility is decided when a card is shown.** The progress counter ("1 / N")
+  counts planned companions that may still be dropped (no sentence, no stroke data,
+  no pinyin). A dropped companion is replaced from a reserve when one is left. A
+  smaller new-card limit therefore cannot be used up by the oldest ineligible words.
+- **A deleted sentence drops its card.** A sentence card whose sentence was deleted is
+  dropped from every session. It stays due, and nothing cleans it up yet.
+- **The translation reveal counts as a hint** (`meta.hints`). It does not change the
+  Word Salad suggestion, which depends only on wrong checks and giving up.
+- **Mascot art is not bundled.** The placeholder probes `/mascot/<stage>-<mood>.svg`
+  with HEAD and accepts only an `image/*` response, so the SPA fallback's HTML is not
+  mistaken for art.
+- **Heatmap** is still in the flashcards widget.
+- **Setup persistence.** Card-type, deck and limit choices are saved per tab
+  (sessionStorage) when a session starts. Changes made without pressing Start are not
+  kept across a reload.
 
 ## Non-goals
 

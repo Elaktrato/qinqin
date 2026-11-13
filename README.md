@@ -88,14 +88,85 @@ Study is a web feature plugin (`qinqin-flashcards`). To add a word, open any
 character or word entry and press **Add to study** next to its title; the card
 joins the general deck and keeps the entry's first example sentence for context.
 
-`/study` is the session setup: choose the decks to draw from, opt out of card
-types (Round 1 ships vocab repetition; sentence, writing, and tone cards follow
-in Round 3), and set the new-card and review limits. Starting a session shows the
-word, its readings, and the example sentence with the word blanked; **Show
-answer** then adds the meanings. Grade each card **Again**, **Hard**, **Good**,
-or **Easy** (or press 1–4). The grade is appended to the study-event log and
-FSRS derives the next due date from the card's whole review history, so schedules
-are never stored and two devices merge cleanly by event id.
+`/study` is the session setup. Choose the decks to draw from, the card types, and
+the new-card and review limits. At least one type must be selected, and Vocab is
+optional. A session queues only the selected types, so a Tone-only session never
+shows a vocab card. The setup is kept for the browser tab when a session starts.
+
+| Type | What you do | Needs |
+|---|---|---|
+| **Vocab** | See the word, its readings and the example sentence with the word blanked, then **Show answer** for the meanings | any word |
+| **Word Salad** | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, **Check**, or **Show answer** | an example sentence |
+| **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Reveal character** animates it | Han characters with bundled stroke data; kana stay visible |
+| **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
+
+Sentence, writing and tone cards are **companions** of the vocab cards in the
+chosen decks. They are planned as virtual cards that share the new-card limit, and
+each one is created only when you grade it for the first time. Abandoning a
+session therefore creates nothing. A word that does not qualify (no sentence, no
+drawable character, no pinyin) is skipped silently when its turn comes, and the
+next planned companion takes its place. Each word gets at most one sentence card,
+built from its first example sentence. Companions are planned in deck sessions only.
+
+**Word Salad tiers** follow the card's FSRS stability *S*, which is derived and
+never stored:
+
+- **T0** (new, or *S* < 4 days): word tiles, translation shown.
+- **T1** (*S* < 21 days): word tiles, translation hidden behind a reveal. Revealing
+  it counts as a hint.
+- **T2** (*S* ≥ 21 days): every word is split into single characters.
+
+Tiles come from the tokenizer (`POST /api/segment`). If that call fails, each
+character becomes its own tile.
+
+**Tone swipes:**
+
+- up = 1
+- up-right or right = 2
+- down then back up = 3
+- down-right, down, down-left or left = 4
+- a tap = neutral (5)
+
+A polyphone accepts any of its listed readings, so 行 can be háng or xíng.
+
+**Grading.** Grade every card **Again**, **Hard**, **Good** or **Easy** (keys 1–4).
+After a check, the exercise suggests a grade: it highlights and focuses that button,
+but never submits it. Easy is never suggested.
+
+| Type | Good | Hard | Again |
+|---|---|---|---|
+| Word Salad | right on the first check | right after 1–2 wrong checks | 3 or more wrong checks, or **Show answer** |
+| Writing | no mistakes | mistakes on at most 25 % of the strokes | more mistakes, or any revealed character |
+| Tone | all tones right | one tone wrong | two or more wrong |
+
+Writing shows the outline as a hint after 3 misses on one stroke. Each new
+character starts again without the outline.
+
+| Card | Keys |
+|---|---|
+| Vocab | Space or Enter shows the answer, then 1–4 grade |
+| Word Salad | Tap tiles or use Tab/Enter, then **Check**; 1–4 grade only once checked |
+| Writing | Draw with mouse, pen or touch; 1–4 grade once every character is done |
+| Tone | 1–5 set the tone of the highlighted syllable (5 = neutral), ←/→ move, Backspace clears, Enter checks, then 1–4 grade |
+
+Each grade is appended to the study-event log with the card kind as `mode` and
+details in `meta` (Word Salad tier, mistakes, hints, duration). FSRS derives the
+next due date from the card's whole review history. Schedules are never stored,
+so two devices merge cleanly by event id.
+
+**XP, levels and streaks** are derived from the review log per workspace. Each
+review is worth base XP by kind plus a grade bonus:
+
+- Base XP: Vocab 10, Word Salad 15, Writing 20, Tone 8.
+- Grade bonus: Good +5, Easy +10, Again and Hard +0.
+- Daily bonus: +10 for each UTC day with at least one review.
+
+Going from level *L* to *L*+1 costs 100·*L* XP, so level 2 starts at 100 XP,
+level 3 at 300 and level 4 at 600. The streak counts consecutive UTC days with a
+review. The session summary shows XP by type, the level bar and the streak. A
+study-buddy mascot appears in the widget and the summary: its stage grows at levels
+5, 10 and 20, and its mood follows the streak. The art is not bundled. Drop
+`static/mascot/<stage>-<mood>.svg` files in to replace the built-in placeholder.
 
 Sessions can also draw from a level instead of a deck: choose **By level**, pick
 an installed scheme (HSK, JLPT, or a curriculum pack) and one of its levels, and
@@ -113,78 +184,22 @@ that card's schedule has settled, with a year of FSRS stability counting fully;
 characters at 80 or above count as mastered. The map is derived from your cards
 and review events, so nothing schedule-shaped is stored for it either.
 
-The home page widget shows what is due and new, plus a review-driven heatmap,
-daily review counts, and derived EXP/levels per workspace. Studying adds no
-bundled data: decks and cards are workspace plugin data and reviews are events,
-so the dictionaries in `plugins/data/` stay unmodified.
+For each workspace, the home page widget shows:
 
-Round 3 is pending: Word Salad, stroke-checked writing, and tone cards. See the
-[design doc](docs/superpowers/specs/2026-11-12-flashcards-design.md) for the full
-model; [issue #24](https://github.com/Elaktrato/qinqin/issues/24) shipped the
-level sessions and mastery map, and
-[issue #25](https://github.com/Elaktrato/qinqin/issues/25) tracks the rest.
+- what is due and new
+- a review-driven heatmap with daily review counts
+- the level and XP progress
+- the streak
+- the study buddy
 
-## Reading
+Studying adds no bundled data. Decks and cards are workspace plugin data and
+reviews are events, so the dictionaries in `plugins/data/` stay unmodified.
 
-Reader is a web feature plugin (`qinqin-reader`) for reading Chinese and Japanese
-text with dictionary lookup in place. It offers:
-
-- **Hover and selection lookup** — the text under the cursor is looked up on the
-  server (`GET /api/lookup`), which returns every plausible entry, ranked. Japanese
-  forms are deinflected with part-of-speech gating, and words written in kana —
-  する, こと, りんご — are found by their kana readings. Selecting text looks up
-  the selection. Hovering Latin letters, digits or a spot with no dictionary word
-  shows nothing.
-- **Ruby toggle** — furigana in Japanese books can be shown or hidden.
-- **Script conversion** — Chinese books can be shown as original, simplified, or
-  traditional (converted in the browser with `opencc-js`); lookup works on either.
-- **A personal library** — books are stored per user, with the source link and
-  attribution shown for each, and the reading position is remembered per book.
-- **Import** from Aozora Bunko and Project Gutenberg, or **upload** your own epub.
-  Gutenberg books carry the note "Distributed by Project Gutenberg as public domain
-  in the USA; copyright status elsewhere may differ." (its catalog has no rights
-  column, so qinqin claims nothing more).
-
-Open **Reader** in the nav. Import a work from a source (search, then Import) or
-upload an epub; for an upload whose epub declares no supported language you pick
-Chinese or Japanese. Open a book and hover a word.
-
-The popup shows the matching entries as a **stack**, best first, not a single
-guess. Each entry lists its headword and readings, chips for the inflection
-(like "past"), part-of-speech and usage tags, and the **frequency rank** from
-each installed frequency pack, then its senses grouped by dictionary. The first
-3 entries and the first 3 senses of an entry show; "Show N more entries" and
-"Show N more senses" reveal the rest (it is client-side, the server already
-returned up to 30 entries). A kana word can be read by many entries (する: 為る,
-刷る, 擦る...), and a longer match always beats a shorter one; the order is
-described in [the lookup design](docs/superpowers/specs/2026-11-12-yomitan-lookup-design.md).
-Roughly: longest match, then frequency (bundled Jiten list for Japanese), then
-primary-reading match, inflection chain length, exact-match count, dictionary
-order, JMdict priority and usually-kana. Japanese deinflection is gated by part
-of speech, so a candidate whose part of speech does not fit the inflection (話する for 話した) is dropped before ranking, and a kana word that is itself an
-entry still competes with the deinflection: した shows 為る first (frequent), then
-下 and 舌. Without any frequency pack the ranking falls back to the inflection
-chain length and the priority score. Chinese words usually give one merged entry
-that lists all readings (行: xíng, háng).
-
-**Hold Shift and hover** a word inside a popup to open a nested popup for it
-(without Shift nothing opens, so reading a popup never floods the server);
-popups nest up to 4 deep. **Escape** closes the topmost popup only; the last one
-closes the whole stack, and so does a click outside the popups. Select text to
-look it up: a single hanzi or kanji shows the character entry, longer text shows
-the entries for the start of the selection.
-
-Limits you may hit:
-
-- Epub uploads are capped at 20 MB, and malformed or oversized epubs are rejected.
-- One import runs at a time per user; a second one answers "another import is
-  already running". A work already in your library is not imported twice.
-- Only public-domain Aozora works are offered, and only Chinese and Japanese books
-  are supported.
-- A source search shows at most 100 results, best matches first (exact title,
-  title prefix, author, then other matches); refine the search when it says the
-  list is cut off.
-- Webview only for now. Hover needs a mouse; selection lookup also works on touch.
+See the [design doc](docs/superpowers/specs/2026-11-12-flashcards-design.md) for
+the full model and its implementation notes (known limits). Two issues track the
+work: [issue #24](https://github.com/Elaktrato/qinqin/issues/24) shipped the level
+sessions and mastery map, and
+[issue #25](https://github.com/Elaktrato/qinqin/issues/25) the Round 3 exercises.
 
 ### API
 
