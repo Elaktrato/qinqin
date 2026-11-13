@@ -12,7 +12,9 @@ export type ErrorContext =
 	| 'chapter'
 	| 'lookup'
 	| 'bookmark'
-	| 'bookmarks';
+	| 'bookmarks'
+	| 'highlight'
+	| 'highlights';
 
 const fallbacks: Record<ErrorContext, string> = {
 	upload: 'Could not upload the file.',
@@ -25,14 +27,17 @@ const fallbacks: Record<ErrorContext, string> = {
 	chapter: 'Could not load this chapter.',
 	lookup: 'Could not look this up.',
 	bookmark: 'Could not save the bookmark.',
-	bookmarks: 'Could not load the bookmarks.'
+	bookmarks: 'Could not load the bookmarks.',
+	highlight: 'Could not save the highlight.',
+	highlights: 'Could not load the highlights.'
 };
 
 const notFound: Partial<Record<ErrorContext, string>> = {
 	import: 'This work is not available from the source.',
 	book: 'This book is not in your library.',
 	chapter: 'This chapter does not exist.',
-	bookmark: 'This bookmark no longer exists.'
+	bookmark: 'This bookmark no longer exists.',
+	highlight: 'This highlight no longer exists.'
 };
 
 // Server text is shown only when it is short and free of markup.
@@ -56,6 +61,11 @@ export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 			case 409:
 				if (context === 'bookmark') {
 					return 'This book already has the most bookmarks allowed (200). Delete one to add another.';
+				}
+				// An overlap (409 with existingId) is handled by the caller,
+				// which opens the existing highlight; what reaches here is the cap.
+				if (context === 'highlight') {
+					return 'This book already has the most highlights allowed (2000). Delete one to add another.';
 				}
 				return 'This book is already in your library.';
 			case 413:

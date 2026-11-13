@@ -7,10 +7,15 @@ vi.mock('$app/navigation', () => ({ goto }));
 import { ApiError } from './client';
 import {
 	BROWSE_LIMIT,
+	HighlightOverlapError,
 	addBookmark,
+	addHighlight,
 	browseSource,
 	deleteBook,
 	deleteBookmark,
+	deleteHighlight,
+	listHighlights,
+	updateHighlight,
 	listBookmarks,
 	renameBookmark,
 	getBook,
@@ -210,6 +215,110 @@ describe('library client', () => {
 		const err = await addBookmark(3, '0:0', '').catch((e) => e);
 		expect(err).toBeInstanceOf(ApiError);
 		expect(err.status).toBe(409);
+	});
+
+	const highlight = {
+		id: 6,
+		bookId: 3,
+		chapter: 1,
+		paragraph: 2,
+		start: 3,
+		end: 5,
+		text: '漢字',
+		color: 'green',
+		note: '',
+		createdAt: '2026-11-13T00:00:00Z',
+		updatedAt: '2026-11-13T00:00:00Z'
+	};
+
+	it('listHighlights GETs the highlights of a book', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse([highlight]));
+		expect(await listHighlights(3)).toEqual([highlight]);
+		const { url, init } = lastCall();
+		expect(url).toBe('/api/library/books/3/highlights');
+		expect(init.method).toBe('GET');
+	});
+
+	it('addHighlight POSTs exactly the new highlight fields and returns it (201)', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(highlight, 201));
+		const body = { chapter: 1, paragraph: 2, start: 3, end: 5, text: '漢字', color: 'green' as const, note: '' };
+		expect(await addHighlight(3, body)).toEqual(highlight);
+		const { url, init } = lastCall();
+		expect(url).toBe('/api/library/books/3/highlights');
+		expect(init.method).toBe('POST');
+		expect(JSON.parse(String(init.body))).toStrictEqual(body);
+	});
+
+	it('addHighlight does not send fields the server would reject', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(highlight, 201));
+		const extra = { chapter: 1, paragraph: 2, start: 3, end: 5, text: 'x', color: 'blue' as const, id: 9 };
+		await addHighlight(3, extra);
+		expect(JSON.parse(String(lastCall().init.body))).toStrictEqual({
+			chapter: 1,
+			paragraph: 2,
+			start: 3,
+			end: 5,
+			text: 'x',
+			color: 'blue'
+		});
+	});
+
+	it('addHighlight surfaces an overlap (409 with existingId) as HighlightOverlapError', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ error: 'overlaps a highlight', existingId: 12 }, 409));
+		const err = await addHighlight(3, { chapter: 0, paragraph: 0, start: 0, end: 1, text: 'a', color: 'yellow' }).catch(
+			(e) => e
+		);
+		expect(err).toBeInstanceOf(HighlightOverlapError);
+		expect(err).toBeInstanceOf(ApiError);
+		expect(err.status).toBe(409);
+		expect(err.existingId).toBe(12);
+		expect(err.message).toBe('overlaps a highlight');
+	});
+
+	it('addHighlight surfaces the cap (409 without existingId) as a plain ApiError with the server text', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ error: 'too many highlights' }, 409));
+		const err = await addHighlight(3, { chapter: 0, paragraph: 0, start: 0, end: 1, text: 'a', color: 'yellow' }).catch(
+			(e) => e
+		);
+		expect(err).toBeInstanceOf(ApiError);
+		expect(err).not.toBeInstanceOf(HighlightOverlapError);
+		expect(err.status).toBe(409);
+		expect(err.message).toBe('too many highlights');
+	});
+
+	it('addHighlight passes a plain-text 409 and other failures through unchanged', async () => {
+		const body = { chapter: 0, paragraph: 0, start: 0, end: 1, text: 'a', color: 'yellow' as const };
+		vi.mocked(fetch).mockResolvedValue(new Response('conflict', { status: 409 }));
+		const plain = await addHighlight(3, body).catch((e) => e);
+		expect(plain).not.toBeInstanceOf(HighlightOverlapError);
+		expect(plain.message).toBe('conflict');
+		vi.mocked(fetch).mockReset();
+		vi.mocked(fetch).mockResolvedValue(new Response('end out of range', { status: 422 }));
+		const invalid = await addHighlight(3, body).catch((e) => e);
+		expect(invalid).toBeInstanceOf(ApiError);
+		expect(invalid.status).toBe(422);
+		expect(invalid.message).toBe('end out of range');
+	});
+
+	it('updateHighlight PUTs only the given fields', async () => {
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ ...highlight, note: 'n' }));
+		expect(await updateHighlight(3, 6, { note: 'n' })).toEqual({ ...highlight, note: 'n' });
+		const { url, init } = lastCall();
+		expect(url).toBe('/api/library/books/3/highlights/6');
+		expect(init.method).toBe('PUT');
+		expect(JSON.parse(String(init.body))).toStrictEqual({ note: 'n' });
+		vi.mocked(fetch).mockReset();
+		vi.mocked(fetch).mockResolvedValue(jsonResponse(highlight));
+		await updateHighlight(3, 6, { color: 'pink', note: '' });
+		expect(JSON.parse(String(lastCall().init.body))).toStrictEqual({ color: 'pink', note: '' });
+	});
+
+	it('deleteHighlight DELETEs the highlight', async () => {
+		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
+		await deleteHighlight(3, 6);
+		const { url, init } = lastCall();
+		expect(url).toBe('/api/library/books/3/highlights/6');
+		expect(init.method).toBe('DELETE');
 	});
 
 	it.each([404, 409, 413, 422, 429, 502])('surfaces status %i as ApiError', async (status) => {

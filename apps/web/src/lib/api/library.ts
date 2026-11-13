@@ -1,5 +1,5 @@
-import { api } from './client';
-import type { Book, Bookmark, Chapter, SourceInfo, SourceResult } from './types';
+import { ApiError, api } from './client';
+import type { Book, Bookmark, Chapter, Highlight, HighlightColor, SourceInfo, SourceResult } from './types';
 
 /** listAllBooks lists the books of all the caller's workspaces (each carries its workspaceId). */
 export function listAllBooks(): Promise<Book[]> {
@@ -54,6 +54,89 @@ export function renameBookmark(bookId: number, id: number, label: string): Promi
 
 export function deleteBookmark(bookId: number, id: number): Promise<void> {
 	return api<void>(`/api/library/books/${bookId}/bookmarks/${id}`, { method: 'DELETE' });
+}
+
+export function listHighlights(bookId: number): Promise<Highlight[]> {
+	return api<Highlight[]>(`/api/library/books/${bookId}/highlights`);
+}
+
+/** NewHighlight is the body of addHighlight; `note` defaults to empty. */
+export interface NewHighlight {
+	chapter: number;
+	paragraph: number;
+	start: number;
+	end: number;
+	text: string;
+	color: HighlightColor;
+	note?: string;
+}
+
+/**
+ * HighlightOverlapError is addHighlight's 409 for a span that overlaps an
+ * existing highlight: `existingId` is that highlight, so the caller can
+ * open it instead.
+ */
+export class HighlightOverlapError extends ApiError {
+	existingId: number;
+
+	constructor(message: string, existingId: number) {
+		super(409, message);
+		this.name = 'HighlightOverlapError';
+		this.existingId = existingId;
+	}
+}
+
+// The server's JSON 409 body: {error, existingId} on an overlap, {error}
+// at the cap. Anything else is left as it came.
+function conflictOf(err: unknown): ApiError | null {
+	if (!(err instanceof ApiError) || err.status !== 409) return null;
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(err.message);
+	} catch {
+		return null;
+	}
+	if (!parsed || typeof parsed !== 'object') return null;
+	const { error, existingId } = parsed as { error?: unknown; existingId?: unknown };
+	const message = typeof error === 'string' && error.trim() ? error.trim() : 'conflict';
+	if (typeof existingId === 'number' && Number.isInteger(existingId) && existingId > 0) {
+		return new HighlightOverlapError(message, existingId);
+	}
+	return new ApiError(409, message);
+}
+
+/**
+ * addHighlight creates a highlight (201). An overlap with an existing
+ * highlight throws HighlightOverlapError carrying its id; the cap of 2000
+ * per book throws a plain ApiError(409) with the server's text; invalid
+ * spans or values are a 422. Only the known fields are sent: the server
+ * rejects unknown keys.
+ */
+export async function addHighlight(bookId: number, body: NewHighlight): Promise<Highlight> {
+	const { chapter, paragraph, start, end, text, color, note } = body;
+	const payload: NewHighlight = { chapter, paragraph, start, end, text, color };
+	if (note !== undefined) payload.note = note;
+	try {
+		return await api<Highlight>(`/api/library/books/${bookId}/highlights`, { method: 'POST', body: payload });
+	} catch (err) {
+		throw conflictOf(err) ?? err;
+	}
+}
+
+/** updateHighlight changes colour and/or note; only the given fields are sent. */
+export function updateHighlight(
+	bookId: number,
+	id: number,
+	patch: { color?: HighlightColor; note?: string }
+): Promise<Highlight> {
+	const body: { color?: HighlightColor; note?: string } = {};
+	if (patch.color !== undefined) body.color = patch.color;
+	if (patch.note !== undefined) body.note = patch.note;
+	return api<Highlight>(`/api/library/books/${bookId}/highlights/${id}`, { method: 'PUT', body });
+}
+
+export function deleteHighlight(bookId: number, id: number): Promise<void> {
+	return api<void>(`/api/library/books/${bookId}/highlights/${id}`, { method: 'DELETE' });
 }
 
 /**

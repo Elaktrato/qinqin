@@ -87,4 +87,18 @@ describe('apiErrorMessage', () => {
 			'Could not load the bookmarks.'
 		);
 	});
+
+	it('explains the highlight cap and has highlight fallbacks', () => {
+		expect(apiErrorMessage(new ApiError(409, 'too many highlights'), 'highlight')).toBe(
+			'This book already has the most highlights allowed (2000). Delete one to add another.'
+		);
+		expect(apiErrorMessage(new ApiError(404, 'x'), 'highlight')).toBe('This highlight no longer exists.');
+		expect(apiErrorMessage(new ApiError(422, 'note too long'), 'highlight')).toBe('note too long');
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'highlight')).toBe(
+			'Could not save the highlight.'
+		);
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'highlights')).toBe(
+			'Could not load the highlights.'
+		);
+	});
 });
