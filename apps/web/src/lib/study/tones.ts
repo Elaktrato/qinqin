@@ -24,6 +24,11 @@ const TONE_MARKS: Record<string, Tone> = {
 	'̀': 4 // grave
 };
 
+/** Reverse lookup, built once. */
+const MARK_FOR_TONE: Record<number, string> = Object.fromEntries(
+	Object.entries(TONE_MARKS).map(([mark, tone]) => [tone, mark])
+);
+
 /** Apostrophes and whitespace separate syllables. */
 const SEPARATORS = /[\s'’ʼ`]+/;
 
@@ -56,7 +61,7 @@ function markIndex(plain: string): number {
 }
 
 function withMark(plain: string, tone: Tone): string {
-	const mark = Object.keys(TONE_MARKS).find((m) => TONE_MARKS[m] === tone) ?? '';
+	const mark = MARK_FOR_TONE[tone] ?? '';
 	const at = markIndex(plain);
 	return (plain.slice(0, at + 1).normalize('NFD') + mark + plain.slice(at + 1)).normalize('NFC');
 }
@@ -163,8 +168,22 @@ export function suggestToneGrade(wrong: number): ReviewGrade {
 	return wrong === 1 ? 2 : 1;
 }
 
-/** Tone practice needs Chinese and at least one parseable pinyin reading. */
+/** A syllable is clean when it is made of letters only (ü included): no digits or punctuation. */
+function isClean(syllable: Syllable): boolean {
+	return /^\p{L}+$/u.test(syllable.plain);
+}
+
+/**
+ * Parses each reading and keeps only the clean ones (non-empty, every syllable
+ * letters-only). Unconverted "xue2 xi2", "qqq9" or "xué," are dropped. Use this
+ * list as the candidates for checkTones.
+ */
+export function cleanReadings(readings: string[]): Syllable[][] {
+	return readings.map(parsePinyin).filter((syllables) => syllables.length > 0 && syllables.every(isClean));
+}
+
+/** Tone practice needs Chinese and at least one clean pinyin reading. */
 export function eligibleForTone(language: string, pinyinReadings: string[]): boolean {
 	const base = language.toLowerCase().split(/[-_]/)[0];
-	return base === 'zh' && pinyinReadings.some((reading) => parsePinyin(reading).length > 0);
+	return base === 'zh' && cleanReadings(pinyinReadings).length > 0;
 }

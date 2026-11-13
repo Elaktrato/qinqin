@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	checkTones,
+	cleanReadings,
 	eligibleForTone,
 	parsePinyin,
 	suggestToneGrade,
@@ -39,9 +40,15 @@ describe('parsePinyin', () => {
 		expect(tones('dū dú dǔ dù')).toEqual([1, 2, 3, 4]);
 		expect(tones('ǖ ǘ ǚ ǜ')).toEqual([1, 2, 3, 4]);
 		expect(tones('hǎo liú guī')).toEqual([3, 2, 1]);
-		expect(parsePinyin('xué xí')).toEqual(parsePinyin('xué xí'));
-		expect(parsePinyin('nǚ')).toEqual(parsePinyin('nǚ'));
-		expect(parsePinyin('xué')[0].text).toBe('xué');
+		const decomposed = 'xue\u0301 xi\u0301';
+		const precomposed = 'xu\u00e9 x\u00ed';
+		expect(decomposed).not.toBe(precomposed);
+		expect(decomposed.length).toBeGreaterThan(precomposed.length);
+		expect(parsePinyin(decomposed)).toEqual(parsePinyin(precomposed));
+		expect(parsePinyin(decomposed)[0].text).toBe('xu\u00e9');
+		expect(parsePinyin('nu\u0308\u030c')).toEqual(parsePinyin('n\u01da'));
+		expect(parsePinyin('lu\u0308\u0300')).toEqual([{ text: 'l\u01dc', plain: 'l\u00fc', tone: 4 }]);
+		expect(parsePinyin('lu\u0308\u0300')[0].text.normalize('NFC')).toBe('l\u01dc');
 	});
 
 	it('marks without a tone mark are neutral', () => {
@@ -116,6 +123,12 @@ describe('toneFromGesture', () => {
 		expect(toneFromGesture([])).toBe(5);
 	});
 
+	it('classifies the left-hand sectors (documented choice)', () => {
+		expect(toneFromGesture(-80, 0)).toBe(4); // left
+		expect(toneFromGesture(-60, -60)).toBe(1); // up-left
+		expect(toneFromGesture(-60, 60)).toBe(4); // down-left
+	});
+
 	it('ignores a small wobble in a tap path', () => {
 		const wobble = [
 			{ x: 0, y: 0 },
@@ -150,6 +163,15 @@ describe('checkTones', () => {
 	});
 });
 
+describe('cleanReadings', () => {
+	it('keeps letters-only readings and drops digits and punctuation', () => {
+		expect(cleanReadings(['xué xí', 'xue2 xi2', 'qqq9', 'xué,', '', "nǚ'ér"])).toEqual([
+			parsePinyin('xué xí'),
+			parsePinyin("nǚ'ér")
+		]);
+	});
+});
+
 describe('suggestToneGrade', () => {
 	it('maps wrong counts to grades', () => {
 		expect(suggestToneGrade(0)).toBe(3);
@@ -170,5 +192,8 @@ describe('eligibleForTone', () => {
 		expect(eligibleForTone('en', ['xué'])).toBe(false);
 		expect(eligibleForTone('zh', [])).toBe(false);
 		expect(eligibleForTone('zh', ['', '  '])).toBe(false);
+		expect(eligibleForTone('zh', ['xue2 xi2'])).toBe(false);
+		expect(eligibleForTone('zh', ['qqq9'])).toBe(false);
+		expect(eligibleForTone('zh', ['xue2 xi2', 'xué xí'])).toBe(true);
 	});
 });
