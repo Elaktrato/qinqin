@@ -6,7 +6,7 @@ import { api } from './api/client';
 import type { StudyEventBody } from './api/types';
 import { newUlid } from './ulid';
 
-export type EventType = 'session' | 'view' | 'lookup' | 'review';
+export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read';
 
 // StudyEvent is one event as GET /api/events serves it: the row the
 // server stored, with the caller's own timestamp kept verbatim.

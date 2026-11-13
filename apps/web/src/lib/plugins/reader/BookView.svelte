@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
+	import { record as recordEvent } from '$lib/events';
+	import { workspaces } from '$lib/workspaces';
+	import { createReadingTimer } from './readingTimer';
 	import { getBook, getChapter, setPosition } from '$lib/api/library';
 	import type { Book, Chapter } from '$lib/api/types';
 	import ChapterText from './ChapterText.svelte';
@@ -19,6 +23,8 @@
 	let { id, chapter }: { id: number; chapter: number } = $props();
 
 	const SAVE_DELAY_MS = 1000;
+	const ACTIVITY_THROTTLE_MS = 1000;
+	const FLUSH_EVERY_MS = 5 * 60 * 1000;
 
 	let book = $state<Book | null>(null);
 	let bookError = $state('');
@@ -191,6 +197,56 @@
 		});
 		for (const p of el.querySelectorAll('[data-p]')) observer.observe(p);
 		return () => observer.disconnect();
+	});
+
+	// --- reading time ---
+
+	// One timer per opened book. The effect re-runs (cleanup first) when
+	// the book changes or unmounts, so the flush there always carries the
+	// id of the book that was actually read. flush() mutates synchronously,
+	// so two quick flushes cannot report the same seconds twice.
+	$effect(() => {
+		const bookId = book?.id;
+		if (bookId === undefined) return;
+		const workspaceId = get(workspaces).current?.id;
+		if (workspaceId === undefined) return;
+
+		const timer = createReadingTimer();
+		let lastFeed = -Infinity;
+
+		const send = (): void => {
+			const seconds = timer.flush(Date.now());
+			if (seconds > 0) void recordEvent('read', workspaceId, { bookId, seconds });
+		};
+		const feed = (): void => {
+			const now = Date.now();
+			if (now - lastFeed < ACTIVITY_THROTTLE_MS) return;
+			lastFeed = now;
+			timer.activity(now);
+			if (timer.accrued() >= FLUSH_EVERY_MS) send();
+		};
+		const onVisibility = (): void => {
+			if (document.visibilityState === 'hidden') {
+				timer.hidden(Date.now());
+				send();
+			} else {
+				timer.visible(Date.now());
+			}
+		};
+
+		if (document.visibilityState === 'hidden') timer.hidden(Date.now());
+		const passive = { passive: true, capture: true } as const;
+		const events = ['scroll', 'pointermove', 'keydown', 'touchstart'] as const;
+		for (const name of events) window.addEventListener(name, feed, passive);
+		document.addEventListener('visibilitychange', onVisibility);
+		window.addEventListener('pagehide', send);
+
+		return () => {
+			for (const name of events) window.removeEventListener(name, feed, passive);
+			document.removeEventListener('visibilitychange', onVisibility);
+			window.removeEventListener('pagehide', send);
+			send();
+		};
 	});
 
 	function jump(event: Event & { currentTarget: HTMLSelectElement }): void {
