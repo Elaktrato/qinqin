@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
@@ -72,8 +73,10 @@ type member struct {
 // then entry id — and a word no entry has as a written form falls back
 // to the kana-written words (no written form, or usually-kana) whose
 // first kana reading it is, highest priority first (これ, テレビ,
-// する → 為る). A re-import of the same lexicon resolves to the same
-// entries. Unknown
+// する → 為る). A one-character word no word entry has resolves to its
+// character entry (CC-CEDICT gives 好 as a character): that character
+// is then a direct member of the level, not a derived one. A re-import
+// of the same lexicon resolves to the same entries. Unknown
 // forms are skipped and reported, never created. A word-unit scheme
 // also derives character levels: each distinct Han character of a
 // listed form resolves the same way to a character entry and joins
@@ -116,6 +119,11 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 			var e *lexicon.Entry
 			if unit == UnitWord {
 				e, err = store.BestWord(ctx, m.Language, form)
+				if errors.Is(err, lexicon.ErrNotFound) && utf8.RuneCountInString(form) == 1 {
+					// A one-character word (HSK's 好) is a character
+					// entry in CC-CEDICT: the character is the member.
+					e, err = store.Best(ctx, m.Language, UnitCharacter, form)
+				}
 			} else {
 				e, err = store.Best(ctx, m.Language, unit, form)
 			}
@@ -148,10 +156,14 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 					continue // already in an equal-or-lower level: it keeps that one
 				}
 				charLowest[c.ID] = i
+				if c.ID == e.ID {
+					continue // the word is this character: a direct member already
+				}
 				ms = append(ms, member{level: i, entry: c.ID, derived: true})
 			}
 		}
 	}
+	ms = preferDirect(ms)
 
 	var result Result
 	for _, mem := range ms {
@@ -637,6 +649,30 @@ func diffMembers(ctx context.Context, tx *sql.Tx, schemeID int64, levelIDs []int
 		}
 	}
 	return nil
+}
+
+// preferDirect keeps one membership per level and entry, in first-seen
+// order: a direct one when the pack lists the entry itself, even after a
+// word of the same level already derived it (好人 before 好).
+func preferDirect(ms []member) []member {
+	type key struct {
+		level int
+		entry int64
+	}
+	at := make(map[key]int, len(ms))
+	out := ms[:0]
+	for _, mem := range ms {
+		k := key{mem.level, mem.entry}
+		if j, ok := at[k]; ok {
+			if !mem.derived {
+				out[j].derived = false
+			}
+			continue
+		}
+		at[k] = len(out)
+		out = append(out, mem)
+	}
+	return out
 }
 
 // distinctHan returns the Han characters of written, each once, in

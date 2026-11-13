@@ -377,6 +377,55 @@ func TestDerivedLevelKeepsLowest(t *testing.T) {
 	}
 }
 
+// TestSingleCharacterWords: a word list names one-character words (HSK 1
+// lists 好 and 人), which CC-CEDICT gives as character entries, not
+// words. Such a form falls back to its character entry and joins the
+// level directly (not derived), even when a word of the same level
+// listed before it already derived it (好人 before 人); a later word
+// written with it does not add a second, higher badge.
+func TestSingleCharacterWords(t *testing.T) {
+	lang.Register(lang.Zh{})
+
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importCedict(t, sqlDB, lineNihao, lineHaoren, lineNi, lineHao, lineRen)
+	nihao := lexID(t, sqlDB, "word", "你好")
+	haoren := lexID(t, sqlDB, "word", "好人")
+	ni := lexID(t, sqlDB, "character", "你")
+	hao := lexID(t, sqlDB, "character", "好")
+	ren := lexID(t, sqlDB, "character", "人")
+
+	pack := buildPack(t, "single", `{"unit":"word","levels":[
+		{"name":"1","entries":["好","你好"]},
+		{"name":"2","entries":["好人","人","猫"]}]}`)
+	res, err := levels.Import(ctx, sqlDB, pack)
+	if err != nil {
+		t.Fatalf("import scheme: %v", err)
+	}
+	// Direct: 好, 你好, 人, 好人. Derived: 你 only — 好 and 人 are direct
+	// members of the level their own word sits in. 猫 has no entry.
+	if res.Members != 4 || res.Derived != 1 || !slices.Equal(res.Skipped, []string{"猫"}) {
+		t.Errorf("import result = %+v, want 4 members, 1 derived, skipped [猫]", res)
+	}
+	for _, c := range []struct {
+		name    string
+		id      int64
+		level   string
+		derived bool
+	}{
+		{"好", hao, "1", false},
+		{"人", ren, "2", false},
+		{"你", ni, "1", true},
+		{"你好", nihao, "1", false},
+		{"好人", haoren, "2", false},
+	} {
+		got, err := levels.ForEntry(ctx, sqlDB, c.id)
+		if err != nil || len(got) != 1 || got[0].LevelName != c.level || got[0].Derived != c.derived {
+			t.Errorf("badges of %s = %+v (err %v), want only level %s (derived %v)", c.name, got, err, c.level, c.derived)
+		}
+	}
+}
+
 func TestSkippedUnknownForms(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
