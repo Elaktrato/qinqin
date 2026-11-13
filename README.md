@@ -15,8 +15,9 @@ database with a SvelteKit single-page app embedded in the binary.
   provenance.
 - **Level schemes** — HSK, JLPT, or custom packs add badges; word-based schemes
   derive character badges at import time.
-- **Workspaces per language** — keep Chinese and Japanese study separate, with
-  a combined view for cross-language statistics.
+- **Workspaces** — keep Chinese and Japanese study separate, or split one
+  language into several named workspaces; each has its own flag, decks, library
+  and statistics (see [Workspaces](#workspaces)).
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
 - **Yomitan-style lookup** — in the Reader, hovering a word shows a ranked stack
@@ -26,6 +27,9 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Study mode** — add any word from its entry page and review it with Anki-style
   grading; the flashcards plugin derives FSRS schedules and EXP/levels from the
   event log.
+- **Reader library and bookmarks** — each workspace has its own library of
+  imported books, a tabbed importer with daily suggestions, and per-book
+  bookmarks (see [Reader](#reader)).
 - **Activity heatmap** — the home page shows 13 weeks of learning activity per
   workspace, adding up flashcard reviews and reading time in the Reader.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
@@ -64,6 +68,13 @@ dictionary writes no rows; frequency rows are replaced). Run `qinqin seed` while
 one write transaction, JMdict holds the database write lock for about 20 s, and
 the server waits at most 5 s (`busy_timeout`) before a write fails.
 
+> **Upgrading from the earlier reader.** Migrations 018–020 run in place on an
+> existing database and keep all data. 018 rebuilds `workspaces` with an optional
+> `name` and `UNIQUE(user_id, language, name)` (ids unchanged, so events and plugin
+> data still point at their workspace). 019 adds `library_books.workspace_id`: each
+> existing book is linked to its user's oldest workspace of the book's language,
+> and one is created when the user has none. 020 adds `library_bookmarks`.
+
 > **Upgrading a development database.** Entry ids changed with the dictionary
 > rebuild (the lookup rewrite; migration 017 drops the legacy tables). Nothing is
 > published, so there is no upgrade path: **delete the data directory (or at
@@ -83,6 +94,74 @@ an image.
 > Seed and create the admin account **before** exposing the port beyond your
 > LAN: while no user exists, the first registration over the API becomes the
 > admin — whoever makes it.
+
+## Workspaces
+
+A workspace is one study space with its own language, decks, cards, study events
+and reader library. A user can have several workspaces of the same language
+(for example two Chinese ones, "Novels" and "HSK"); the optional name tells them
+apart and is unique per language (at most 40 characters, no control or invisible
+characters; ZWJ, ZWNJ and emoji tag sequences are allowed). Without a name, a
+workspace shows its language; unnamed workspaces of one language are numbered
+("Chinese", "Chinese 2").
+
+- **Flags.** The header picker and Settings show a flag per language: China for
+  `zh`, Japan for `ja`, Spain for `es`, a globe for any other language. A single
+  unnamed workspace shows only its flag.
+- **Creating.** The language list comes from `GET /api/languages`: the languages
+  with at least one installed, live dictionary. Languages already in use stay
+  selectable.
+- **Defaults.** A user with no workspace gets one unnamed workspace per installed
+  language on their first `GET /api/workspaces`. A user who already has a
+  workspace is never touched.
+- **Settings** lives in the footer of every signed-in page, not in the nav. There
+  you rename, create and switch workspaces.
+- **The Map** (`/study/map`, its nav link and the Study page link) exists only in
+  zh and ja workspaces; in another workspace the page explains this.
+
+## Reader
+
+The Reader library belongs to a workspace: the library page lists the current
+workspace's books only, and a book's reading time counts towards its workspace.
+An upload or import needs a workspace whose language matches the book (a Chinese
+book cannot go into a Japanese workspace; the API answers 422 and the page asks
+you to switch). The same epub may live in several workspaces as separate copies.
+
+The importer (**Sources**) has one tab per source. The first source that serves
+the workspace language is selected, so a Chinese workspace opens on Gutenberg and
+a Japanese one on Aozora.
+
+- **Suggestions.** Each tab shows 12 suggested works, seeded by the UTC date so
+  they stay the same all day. **Shuffle** draws another set.
+- **Search** matches the title and author as written, and also by reading:
+  romaji for Aozora (`tokyo`, `Tōkyō` and `toukyou` find 東京), pinyin for
+  Gutenberg Chinese works (`hong lou meng`, `hóng-lóu-mèng`). A matching reading is
+  shown under the hit. A reading query needs at least 3 letters (after folding
+  long vowels, so `tou` is too short); written-form matches always rank first.
+- Known limits: the particle は is read "ha", so `wa` does not find a title
+  written with it; kunrei spellings (`si`, `tu`) are not folded; Gutenberg
+  Japanese titles are not searchable by reading, and neither are Gutenberg
+  Chinese works whose pinyin could not be indexed in time (the index is built
+  when the catalog loads, every 7 days).
+- A result in another language shows "Needs a <language> workspace" instead of
+  Import.
+
+**Add to study from the popup.** Every entry in the Reader's lookup popup has a
+**+** button that adds the word to the General deck of the book's workspace. The
+**⋯** deck menu appears only when the workspace has custom decks. The sentence of
+the book around the word (up to 200 characters, cut at 。！？ and similar
+terminators) is saved as the user's own example sentence on the entry and linked
+to the card; an identical sentence is reused. A sentence that cannot be saved
+leaves the card without one and says so. Example sentences saved by a user are
+private to that user: other users, and anonymous callers, see only the pack's
+sentences.
+
+**Bookmarks.** The toolbar button (or the `b` key) bookmarks the first paragraph
+in view and toggles it off again. The **Bookmarks** panel lists them in book
+order, with jump, inline rename and delete; a bookmarked paragraph gets a marker
+in the left margin. A bookmark stores a position (`<chapter>:<paragraph>`) and a
+label (the paragraph's beginning, at most 120 characters). Each book holds up to
+200 bookmarks. The reading toolbar stays at the top of the screen while you read.
 
 ## Studying
 
@@ -205,8 +284,7 @@ activity points. A flashcard review is one point. Reading in the Reader is one
 point per started 5 minutes; the reader records a `read` event with the active
 seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
 between inputs counts at most 2 minutes, and a hidden tab does not count.
-Reading is credited to the workspace matching the book's language, else to the
-selected one. Hovering a cell shows the day's points per source,
+Reading is credited to the book's workspace. Hovering a cell shows the day's points per source,
 with reading in minutes. Other study events (sessions, views, lookups) do not
 count. Adding a source means emitting a study event with a new type and adding
 one entry to `ACTIVITY_SOURCES` in `apps/web/src/lib/activity/activity.ts`.
@@ -224,7 +302,7 @@ sessions and mastery map, and
 
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,
-`GET /api/entries/{id}`, `GET /api/search` and `GET /api/frequency-packs` are public.
+`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages` and `GET /api/frequency-packs` are public.
 
 | Route | Purpose |
 |---|---|
@@ -233,13 +311,19 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license` and `attribution` (the Sources page lists them) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
-| `GET /api/library/books`, `GET`/`DELETE /api/library/books/{id}` | List, read, delete a book |
+| `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
+| `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one; an over-long or invalid name is 422, a duplicate (language, name) 409 |
+| `PUT /api/workspaces/{id}` `{name?, settings?}` | Rename and/or merge settings; at least one field is required. The body used to be the bare settings object |
+| `GET /api/library/books?workspace=`, `GET`/`DELETE /api/library/books/{id}` | List (without `workspace`: every workspace of the caller), read, delete a book (its bookmarks go with it) |
 | `GET /api/library/books/{id}/chapters/{n}` | One chapter's paragraphs |
 | `PUT /api/library/books/{id}/position` | Store the reading position |
-| `POST /api/library/upload` | Multipart `file` (epub), optional `language` |
+| `POST /api/library/upload` | Multipart `file` (epub) and `workspace` (required); `language` only matters for an epub without `dc:language`. 404 for a foreign workspace, 422 when the book's language differs from the workspace's |
 | `GET /api/library/sources` | Available sources |
 | `GET /api/library/sources/{source}/search?q=&limit=` | Search a source's catalog (limit up to 100) |
-| `POST /api/library/sources/{source}/import` `{sourceId}` | Import one work |
+| `GET /api/library/sources/{source}/browse?language=&seed=&limit=` | A deterministic assortment for the seed (default: today's UTC date; limit 1–50, default 12). 404 for an unknown source, 501 for one without suggestions |
+| `POST /api/library/sources/{source}/import` `{sourceId, workspaceId}` | Import one work into a workspace (both required); a source with no books in the workspace language is refused with 422 before any download, a repeat in the same workspace is 409 |
+| `GET`/`POST /api/library/books/{id}/bookmarks`, `PUT`/`DELETE …/bookmarks/{bid}` | List and add `{position, label?}` (201; 200 when one exists at the position; 409 beyond 200 per book) and rename `{label}` or delete |
+| `POST /api/entries/{id}/sentences` | Add the caller's example sentence; only `hanzi` is required (up to 2000 characters per field, body up to 16 KiB). `GET /api/entries/{id}` returns the pack's sentences plus the caller's own |
 
 `lang` must be a registered language (`zh` or `ja` for the reader), and offsets
 count Unicode code points, not bytes or UTF-16 units. `GET /api/search` ranks hits

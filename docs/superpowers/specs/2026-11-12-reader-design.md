@@ -140,8 +140,9 @@ A generic, language-aware "longest dictionary match" service in core.
   text). Use a core file/blob store under the data directory plus a small metadata
   table (next migration is 012), exposed as generic core endpoints.
 - Source fetching/import is a core generic capability, not plugin-private logic.
-- Imported book content is stored per user or per workspace (builder decides) and
-  is not shared between users.
+- Imported book content is stored per user, and each book belongs to one of the
+  user's workspaces (a workspace of the book's language; migration 019); it is not
+  shared between users.
 - Reading position and library metadata sync like other plugin data where practical.
 - **Hover latency:** the server answers per-offset lookups (target well under 100 ms,
   debounced on the client), and also offers a batch segment call for a whole
