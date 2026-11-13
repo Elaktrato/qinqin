@@ -38,13 +38,6 @@ const RATING: Record<ReviewGrade, Grade> = {
 	4: Rating.Easy
 };
 
-const GRADE_BONUS: Record<ReviewGrade, number> = {
-	1: 0,
-	2: 0,
-	3: 5,
-	4: 10
-};
-
 function instant(ts: string): number {
 	const ms = Date.parse(ts);
 	return Number.isNaN(ms) ? 0 : ms;
@@ -176,17 +169,5 @@ export function buildQueue({
 	];
 }
 
-/**
- * xpFromReviews awards 10 xp per review plus a grade bonus: Again and
- * Hard add nothing, Good 5, Easy 10.
- */
-export function xpFromReviews(reviews: readonly ReviewEvent[]): number {
-	return reviews
-		.filter(isValidReview)
-		.reduce((total, review) => total + 10 + GRADE_BONUS[review.payload.grade], 0);
-}
-
-/** levelFromXp maps 100 xp per level, starting at level 1. */
-export function levelFromXp(xp: number): number {
-	return Math.floor(xp / 100) + 1;
-}
+// XP lives in exp.ts; re-exported so existing imports keep working.
+export { levelFromXp, xpFromReviews } from './exp';

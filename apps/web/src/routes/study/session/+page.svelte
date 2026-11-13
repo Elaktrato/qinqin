@@ -12,7 +12,8 @@
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
 	import { gradeItem } from '$lib/study/grade';
 	import { buildLevelQueue, type LevelQueueItem } from '$lib/study/levelQueue';
-	import { buildQueue, levelFromXp, xpFromReviews } from '$lib/study/scheduler';
+	import { buildQueue } from '$lib/study/scheduler';
+	import { levelFromXp, xpFromReviews } from '$lib/study/exp';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { addCard, loadStudyData } from '$lib/study/store';
 	import type { ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';

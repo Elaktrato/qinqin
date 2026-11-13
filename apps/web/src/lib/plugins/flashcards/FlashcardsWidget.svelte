@@ -3,7 +3,8 @@
 	import { ApiError, api } from '$lib/api/client';
 	import type { StudyEvent } from '$lib/events';
 	import { HEATMAP_DAYS, reviewCountsByDay } from '$lib/study/heatmap';
-	import { buildQueue, levelFromXp, xpFromReviews } from '$lib/study/scheduler';
+	import { buildQueue } from '$lib/study/scheduler';
+	import { levelFromXp, xpFromReviews } from '$lib/study/exp';
 	import { loadConfig } from '$lib/study/session';
 	import { GENERAL_DECK_ID, loadStudyData } from '$lib/study/store';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';

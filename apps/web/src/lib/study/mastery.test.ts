@@ -218,6 +218,30 @@ describe('masteryForChar', () => {
 	});
 });
 
+describe('masteryForChars across card kinds', () => {
+	function kindCard(id: string, kind: StudyCard['kind'], written?: string): StudyCard {
+		return { ...card(id, written), kind };
+	}
+
+	it('counts writing and sentence cards for their written characters', () => {
+		const cards = [kindCard('w1', 'writing', '猫'), kindCard('s1', 'sentence', '我爱猫')];
+		const reviews = [
+			...goodHistory('w1', [0, 1, 11]),
+			...goodHistory('s1', [0, 1, 11])
+		];
+		const map = masteryForChars(['猫', '爱', '狗'], cards, reviews, NOW);
+		expect(map.get('猫')?.reviewedCards).toBe(2);
+		expect(map.get('爱')?.reviewedCards).toBe(1);
+		expect(map.get('狗')?.stage).toBe('unknown');
+	});
+
+	it('ignores a non-vocab card without a snapshot', () => {
+		const cards = [kindCard('w1', 'writing')];
+		const map = masteryForChars(['猫'], cards, goodHistory('w1', [0, 1]), NOW);
+		expect(map.get('猫')?.reviewedCards).toBe(0);
+	});
+});
+
 describe('masteryForChars', () => {
 	it('matches masteryForChar across many characters and cards', () => {
 		// 40 characters, two cards each, with a mix of short and long

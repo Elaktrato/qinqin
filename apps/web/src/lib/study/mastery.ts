@@ -108,7 +108,6 @@ export function masteryForChars(
 		const reviewsByCard = groupReviewsByCard(reviews);
 
 		for (const card of cards) {
-			if (card.kind !== 'vocab') continue;
 			const written = card.written;
 			if (written === undefined || written === '') continue;
 			const history = reviewsByCard.get(card.id);
@@ -144,7 +143,7 @@ export function masteryForChars(
 }
 
 /**
- * masteryForChar scores one character across the reviewed vocab cards
+ * masteryForChar scores one character across the reviewed cards of any kind
  * whose written snapshot contains it. Cards without a snapshot are
  * legacy rows: the map resolver supplies their written forms separately,
  * so they cannot contribute here. A card with no valid review has no

@@ -253,8 +253,9 @@ describe('xpFromReviews', () => {
 			review('c2', 4, '2026-01-04T00:00:00.000Z', eventId(4))
 		];
 
-		// again 10, hard 10, good 15, easy 20
-		expect(xpFromReviews(reviews)).toBe(55);
+		// again 10, hard 10, good 15, easy 20, plus +10 first review of
+		// each of the four distinct UTC days
+		expect(xpFromReviews(reviews)).toBe(95);
 	});
 
 	it('is zero for no reviews', () => {
@@ -263,11 +264,12 @@ describe('xpFromReviews', () => {
 });
 
 describe('levelFromXp', () => {
-	it('maps 100 xp per level starting at 1', () => {
+	it('needs 100 * level xp per level starting at 1', () => {
 		expect(levelFromXp(0)).toBe(1);
 		expect(levelFromXp(99)).toBe(1);
 		expect(levelFromXp(100)).toBe(2);
-		expect(levelFromXp(250)).toBe(3);
+		expect(levelFromXp(250)).toBe(2);
+		expect(levelFromXp(300)).toBe(3);
 	});
 });
 
@@ -277,7 +279,7 @@ describe('malformed review events', () => {
 		const poisoned = malformed('c1', 9, '2026-01-02T00:00:00.000Z');
 
 		expect(scheduleFor('c1', [valid, poisoned], NOW)).toEqual(scheduleFor('c1', [valid], NOW));
-		expect(xpFromReviews([valid, poisoned])).toBe(15);
+		expect(xpFromReviews([valid, poisoned])).toBe(25);
 	});
 
 	it('ignores an invalid timestamp and an empty card id', () => {
