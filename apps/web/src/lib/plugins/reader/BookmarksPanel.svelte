@@ -255,7 +255,7 @@
 				{/each}
 			</ul>
 		{/if}
-		</div>
+	</div>
 </section>
 
 <style>

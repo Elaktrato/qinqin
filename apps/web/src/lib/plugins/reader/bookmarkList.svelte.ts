@@ -219,7 +219,7 @@ export const OPEN_WIDGET_SELECTOR = '[role="listbox"], [role="menu"]';
  * inWidget: a listbox, menu or dialog has focus (the key event's target is
  * inside one, or is the trigger of an open one), or a listbox or menu is
  * open anywhere on the page. A plain disclosure (aria-expanded without
- * aria-haspopup, like the bookmarks panel toggle) does not count.
+ * aria-haspopup, like the reader rail's drawer button) does not count.
  */
 export function inWidget(
 	target: { closest(selector: string): unknown } | null,

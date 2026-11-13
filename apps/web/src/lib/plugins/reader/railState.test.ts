@@ -5,8 +5,8 @@ import {
 	loadRailState,
 	railMode,
 	saveRailState,
-	tabKeyTarget,
-	topParagraph
+	nextFocusIndex,
+	tabKeyTarget
 } from './railState';
 
 function memoryStorage(initial: Record<string, string> = {}) {
@@ -118,29 +118,26 @@ describe('tabKeyTarget (roving tabindex of a vertical tab list)', () => {
 	});
 });
 
-describe('topParagraph (first paragraph in view)', () => {
-	const entry = (p: number, isIntersecting: boolean) => ({
-		isIntersecting,
-		target: { dataset: { p: String(p) } }
+describe('nextFocusIndex (Tab wraps inside the open drawer)', () => {
+	it('moves forward and wraps from the last to the first', () => {
+		expect(nextFocusIndex(3, 0, false)).toBe(1);
+		expect(nextFocusIndex(3, 2, false)).toBe(0);
 	});
 
-	it('tracks the smallest intersecting paragraph across batches', () => {
-		const visible = new Set<number>();
-		expect(topParagraph(visible, [entry(3, true), entry(4, true), entry(5, true)])).toBe(3);
-		expect(topParagraph(visible, [entry(3, false), entry(6, true)])).toBe(4);
-		expect(topParagraph(visible, [entry(2, true)])).toBe(2);
+	it('moves backward with Shift and wraps from the first to the last', () => {
+		expect(nextFocusIndex(3, 2, true)).toBe(1);
+		expect(nextFocusIndex(3, 0, true)).toBe(2);
 	});
 
-	it('returns null while nothing is in view, keeping the last place to the caller', () => {
-		const visible = new Set<number>();
-		expect(topParagraph(visible, [entry(1, true)])).toBe(1);
-		expect(topParagraph(visible, [entry(1, false)])).toBeNull();
+	it('starts at an end when focus is on none of them', () => {
+		expect(nextFocusIndex(3, -1, false)).toBe(0);
+		expect(nextFocusIndex(3, -1, true)).toBe(2);
+		expect(nextFocusIndex(3, 7, false)).toBe(0);
 	});
 
-	it('ignores targets without a paragraph index', () => {
-		const visible = new Set<number>();
-		const stray = { isIntersecting: true, target: { dataset: {} } };
-		expect(topParagraph(visible, [stray, entry(7, true)])).toBe(7);
-		expect(visible.size).toBe(1);
+	it('stays on the only element, and has nothing for an empty drawer', () => {
+		expect(nextFocusIndex(1, 0, false)).toBe(0);
+		expect(nextFocusIndex(1, 0, true)).toBe(0);
+		expect(nextFocusIndex(0, -1, false)).toBeNull();
 	});
 });

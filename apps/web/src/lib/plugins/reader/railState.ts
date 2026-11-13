@@ -72,25 +72,15 @@ export function tabKeyTarget(key: string, index: number, count: number): number 
 	}
 }
 
-export interface VisibilityRecord {
-	isIntersecting: boolean;
-	target: { dataset: { p?: string } };
-}
-
 /**
- * topParagraph folds a batch of IntersectionObserver records for the
- * `<p data-p>` elements into `visible` and returns the first paragraph in
- * view (the reading position), or null while none is. The whole viewport
- * counts: nothing sticky covers the text.
+ * nextFocusIndex: where Tab (or Shift+Tab with `shift`) moves the focus
+ * among the `count` focusable elements of the open drawer, wrapping at
+ * both ends so focus never leaves it for the page hidden underneath.
+ * `current` outside 0..count-1 (focus on none of them) starts at an end.
+ * Null when the drawer has nothing focusable.
  */
-export function topParagraph(visible: Set<number>, records: Iterable<VisibilityRecord>): number | null {
-	for (const record of records) {
-		const raw = record.target.dataset.p;
-		if (raw === undefined || raw === '') continue;
-		const p = Number(raw);
-		if (!Number.isInteger(p)) continue;
-		if (record.isIntersecting) visible.add(p);
-		else visible.delete(p);
-	}
-	return visible.size > 0 ? Math.min(...visible) : null;
+export function nextFocusIndex(count: number, current: number, shift: boolean): number | null {
+	if (count <= 0) return null;
+	if (current < 0 || current >= count) return shift ? count - 1 : 0;
+	return shift ? (current - 1 + count) % count : (current + 1) % count;
 }

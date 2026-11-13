@@ -23,10 +23,9 @@
 		loadRailState,
 		railMode,
 		saveRailState,
-		topParagraph as firstInView,
-		type VisibilityRecord,
 		type RailTab
 	} from './railState';
+	import { topParagraph as firstInView } from './visibility';
 	import { BookmarkList, bookmarkKey, inWidget, isTextEntry } from './bookmarkList.svelte';
 	import { bookmarkedParagraphs, snippetAt, type Bookmark } from './bookmarks';
 	import { paragraphElement } from './dom';
@@ -230,7 +229,7 @@
 		if (!tracking || !el || n === undefined || bookId === undefined) return;
 		const visible = new Set<number>();
 		const observer = new IntersectionObserver((records) => {
-			const top = firstInView(visible, records as unknown as VisibilityRecord[]);
+			const top = firstInView(visible, records);
 			if (top !== null) saver.schedule(bookId, formatPosition(n, top));
 		});
 		for (const p of el.querySelectorAll('[data-p]')) observer.observe(p);
@@ -273,7 +272,7 @@
 		if (!el || n === undefined) return;
 		const visible = new Set<number>();
 		const observer = new IntersectionObserver((records) => {
-			const top = firstInView(visible, records as unknown as VisibilityRecord[]);
+			const top = firstInView(visible, records);
 			if (top !== null) topParagraph = top;
 		});
 		for (const p of el.querySelectorAll('[data-p]')) observer.observe(p);
@@ -487,7 +486,7 @@
 	</nav>
 {/snippet}
 
-<main class="book" class:column={book !== null && mode === 'column'} class:rail-open={railOpen}>
+<main class="book" class:column={book !== null && mode === 'column'}>
 	<div class="reading">
 		<p><a href={LIBRARY_HREF}>Back to library</a></p>
 
@@ -568,6 +567,7 @@
 			open={railOpen}
 			onToggle={toggleRail}
 			{mode}
+			escapeBlocked={() => lookup.info !== null}
 		>
 			{#snippet panel(tab: RailTab)}
 				{#if tab === 'bookmarks'}
@@ -602,16 +602,13 @@
 	}
 
 	/* Wide screens: the text column keeps its width (44rem at most) and
-	   the rail sits beside it; collapsed, the rail is just its tab strip. */
+	   the rail sits beside it. Collapsed, the rail is just its tab strip;
+	   the page keeps its width, so the text does not move sideways. */
 	.book.column {
 		display: flex;
 		gap: 2rem;
 		align-items: flex-start;
 		max-width: calc(44rem + 2rem + 18rem);
-	}
-
-	.book.column:not(.rail-open) {
-		max-width: calc(44rem + 2rem + 2.5rem);
 	}
 
 	.reading {
