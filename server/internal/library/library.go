@@ -326,8 +326,8 @@ func (s Store) SetPosition(ctx context.Context, userID, id int64, position strin
 	return nil
 }
 
-// Delete removes one of the user's books: its row, its bookmarks (in the
-// same transaction) and its content file.
+// Delete removes one of the user's books: its row, its bookmarks and
+// highlights (in the same transaction) and its content file.
 func (s Store) Delete(ctx context.Context, userID, id int64) error {
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -347,6 +347,10 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 	if _, err := tx.ExecContext(ctx,
 		`DELETE FROM library_bookmarks WHERE book_id = ?`, id); err != nil {
 		return fmt.Errorf("library: delete bookmarks %d: %w", id, err)
+	}
+	if _, err := tx.ExecContext(ctx,
+		`DELETE FROM library_highlights WHERE book_id = ?`, id); err != nil {
+		return fmt.Errorf("library: delete highlights %d: %w", id, err)
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("library: delete %d: %w", id, err)

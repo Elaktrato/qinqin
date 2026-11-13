@@ -14,11 +14,17 @@ const maxBookmarkBody = 1 << 10
 // errTrailingJSON reports data after the JSON body.
 var errTrailingJSON = errors.New("trailing data after the JSON body")
 
-// decodeBookmarkBody reads a bookmark write body into v strictly: at
-// most maxBookmarkBody bytes, no unknown keys, nothing after the value.
-// It answers a failure itself (413 or 400) and reports success.
+// decodeBookmarkBody reads a bookmark write body into v strictly (see
+// decodeStrictBody) with the maxBookmarkBody cap.
 func decodeBookmarkBody(w http.ResponseWriter, r *http.Request, v any) bool {
-	r.Body = http.MaxBytesReader(w, r.Body, maxBookmarkBody)
+	return decodeStrictBody(w, r, v, maxBookmarkBody)
+}
+
+// decodeStrictBody reads a JSON body into v strictly: at most limit
+// bytes, no unknown keys, nothing after the value. It answers a failure
+// itself (413 or 400) and reports success.
+func decodeStrictBody(w http.ResponseWriter, r *http.Request, v any, limit int64) bool {
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	err := dec.Decode(v)
