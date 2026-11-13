@@ -21,9 +21,17 @@ export function loadStrokeData(ch: string, fetchFn: typeof fetch = fetch): Promi
 	const hit = cache.get(ch);
 	if (hit) return hit;
 	const pending = (async () => {
+		let response: Response;
 		try {
-			const response = await fetchFn(strokeUrl(ch));
-			if (!response.ok) return null;
+			response = await fetchFn(strokeUrl(ch));
+		} catch {
+			// Transient: do not cache, so the next call retries.
+			cache.delete(ch);
+			return null;
+		}
+		// Definitive negatives (404, invalid JSON) stay cached.
+		if (!response.ok) return null;
+		try {
 			return (await response.json()) as unknown;
 		} catch {
 			return null;

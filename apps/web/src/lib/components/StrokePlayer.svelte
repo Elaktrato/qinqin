@@ -34,8 +34,8 @@
 			try {
 				// The stroke data is copied into static/hanzi by the prebuild
 				// step under codepoint names (U597D.json), so the URL is
-				// computed here and no giant URL map ships with the page.
-					if (symbol.codePointAt(0) === undefined) {
+				// computed (strokeUrl) and no giant URL map ships with the page.
+				if (symbol.codePointAt(0) === undefined) {
 					unavailableFor = symbol;
 					return;
 				}

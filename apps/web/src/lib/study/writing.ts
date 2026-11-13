@@ -1,7 +1,8 @@
 import { loadStrokeData } from './strokeData';
 import type { ReviewGrade } from './types';
 
-const HAN = /^\p{Script=Han}$/u;
+// Script=Han also admits 々 〆 〇; usableChars drops them (no stroke files).
+const HAN =/^\p{Script=Han}$/u;
 
 export function isHan(ch: string): boolean {
 	return HAN.test(ch);

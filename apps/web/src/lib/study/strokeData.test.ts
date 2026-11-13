@@ -31,14 +31,21 @@ describe('loadStrokeData', () => {
 		expect(await loadStrokeData('好', fetchFn as unknown as typeof fetch)).toBeNull();
 		expect(fetchFn).toHaveBeenCalledTimes(1);
 	});
-	it('returns null on network error and invalid JSON', async () => {
+	it('returns null on network error without caching, so a retry succeeds', async () => {
 		resetStrokeDataCache();
 		const boom = vi.fn(async () => {
 			throw new Error('offline');
 		});
 		expect(await loadStrokeData('学', boom as unknown as typeof fetch)).toBeNull();
+		const ok = vi.fn(async () => jsonResponse({ a: 1 }));
+		expect(await loadStrokeData('学', ok as unknown as typeof fetch)).toEqual({ a: 1 });
+	});
+	it('caches invalid JSON as a definitive negative', async () => {
+		resetStrokeDataCache();
 		const bad = vi.fn(async () => new Response('not json', { status: 200 }));
 		expect(await loadStrokeData('好', bad as unknown as typeof fetch)).toBeNull();
+		expect(await loadStrokeData('好', bad as unknown as typeof fetch)).toBeNull();
+		expect(bad).toHaveBeenCalledTimes(1);
 	});
 	it('shares one request between concurrent callers', async () => {
 		resetStrokeDataCache();
