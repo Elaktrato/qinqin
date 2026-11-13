@@ -99,12 +99,14 @@ describe('planCompanions', () => {
 		expect(planCompanions({ ...base, kinds: [] })).toEqual([]);
 	});
 
-	it('skips vocab cards without a written snapshot', () => {
+	it('plans Round 1 vocab cards that have no written snapshot', () => {
 		const items = planCompanions({
 			...base,
 			cards: [card('x', 'vocab', 9, { written: null }), ...cards]
 		});
-		expect(items.map((i) => i.entryId)).toEqual([1, 2, 3]);
+		expect(items.map((i) => i.entryId)).toEqual([1, 9, 2, 3]);
+		expect(items[1].written).toBeUndefined();
+		expect('written' in items[1]).toBe(false);
 	});
 
 	it('does not plan from non-vocab cards', () => {

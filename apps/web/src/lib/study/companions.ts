@@ -16,7 +16,12 @@ export interface CompanionItem {
 	cardId: string;
 	kind: CompanionKind;
 	entryId: number;
-	written: string;
+	/**
+	 * The vocab card's written snapshot. Absent for cards added before
+	 * snapshots existed (Round 1): the runner falls back to the entry, and
+	 * gradeItem snapshots the entry's written form on creation.
+	 */
+	written?: string;
 	deckIds: string[];
 	virtual: true;
 }
@@ -31,8 +36,8 @@ function createdAtMs(card: StudyCard): number {
 }
 
 /**
- * planCompanions returns one virtual item per vocab card (in `deckIds`,
- * with a `written` snapshot) that has no card of the wanted kind yet,
+ * planCompanions returns one virtual item per vocab card in `deckIds`
+ * (with or without a `written` snapshot) that has no card of that kind yet,
  * oldest vocab card first. At most `newBudget` items are returned in
  * total, taking one kind at a time in round-robin order so no kind
  * starves the others.
@@ -57,10 +62,7 @@ export function planCompanions({
 	const sources = cards
 		.filter(
 			(card) =>
-				card.kind === 'vocab' &&
-				typeof card.written === 'string' &&
-				card.written !== '' &&
-				card.deckIds.some((id) => decks.has(id))
+				card.kind === 'vocab' && card.deckIds.some((id) => decks.has(id))
 		)
 		.sort(
 			(a, b) =>
@@ -73,14 +75,15 @@ export function planCompanions({
 		for (const card of sources) {
 			if (have.has(`${kind}:${card.entryId}`) || seen.has(card.entryId)) continue;
 			seen.add(card.entryId);
-			items.push({
+			const item: CompanionItem = {
 				cardId: `${COMPANION_PREFIX}${kind}:${card.entryId}`,
 				kind,
 				entryId: card.entryId,
-				written: card.written as string,
 				deckIds: [...card.deckIds],
 				virtual: true
-			});
+			};
+			if (typeof card.written === 'string' && card.written !== '') item.written = card.written;
+			items.push(item);
 		}
 		return items;
 	});

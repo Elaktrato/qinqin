@@ -192,7 +192,13 @@ export function deckSessionPlan({
 		// Plan everything, then split at the budget: the rest is the reserve.
 		newBudget: cards.length * 3
 	})
-		.filter((item) => item.kind !== 'writing' || writableChars(item.written).length > 0)
+		// Without a snapshot (Round 1 cards) writing is decided when shown.
+		.filter(
+			(item) =>
+				item.kind !== 'writing' ||
+				item.written === undefined ||
+				writableChars(item.written).length > 0
+		)
 		.map(
 			(item): FlowItem => ({
 				cardId: item.cardId,
@@ -200,7 +206,7 @@ export function deckSessionPlan({
 				entryId: item.entryId,
 				virtual: true,
 				card: null,
-				written: item.written,
+				...(item.written === undefined ? {} : { written: item.written }),
 				deckIds: [...item.deckIds]
 			})
 		);

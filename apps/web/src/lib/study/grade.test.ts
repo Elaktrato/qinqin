@@ -199,7 +199,7 @@ describe('gradeItem', () => {
 			item: { ...companion, card: null },
 			grade: 3,
 			workspaceId: 7,
-			entry: { written: companion.written },
+			entry: { written: companion.written ?? '' },
 			addCard,
 			recordReview
 		});
@@ -233,6 +233,33 @@ describe('gradeItem', () => {
 		});
 	});
 
+	it('snapshots the entry written form for a companion planned from a card without one', async () => {
+		const legacy = { ...card('v1', 42, '猫') };
+		delete legacy.written;
+		const [companion] = planCompanions({
+			cards: [legacy],
+			kinds: ['tone'],
+			deckIds: ['general'],
+			newBudget: 5
+		});
+		expect(companion.written).toBeUndefined();
+		const addCard = vi.fn(async () => ({ ...card('real-3', 42, '猫'), kind: 'tone' as const }));
+		await gradeItem({
+			item: { ...companion, card: null },
+			grade: 3,
+			workspaceId: 7,
+			entry: { written: '猫' },
+			addCard,
+			recordReview: vi.fn(async () => {})
+		});
+		expect(addCard).toHaveBeenCalledWith(42, {
+			kind: 'tone',
+			written: '猫',
+			sentenceId: undefined,
+			deckIds: ['general']
+		});
+	});
+
 	it('creates a companion card in the deck it was planned from', async () => {
 		const vocab = { ...card('v1', 42, '猫'), deckIds: ['deck-a'] };
 		const plan = { kinds: ['tone' as const], deckIds: ['deck-a'], newBudget: 5 };
@@ -247,7 +274,7 @@ describe('gradeItem', () => {
 			item: { ...companion, card: null },
 			grade: 3,
 			workspaceId: 7,
-			entry: { written: companion.written },
+			entry: { written: companion.written ?? '' },
 			addCard,
 			recordReview: vi.fn(async () => {})
 		});

@@ -274,6 +274,24 @@ describe('deckSessionItems', () => {
 	});
 });
 
+describe('Round 1 cards without a written snapshot', () => {
+	it('get companions of every kind, writing included (checked when shown)', () => {
+		const legacy: StudyCard = { id: 'old', kind: 'vocab', entryId: 5, deckIds: ['general'], createdAt: '2025-01-01T00:00:00Z' };
+		const items = deckSessionItems({
+			cards: [legacy],
+			reviews: [],
+			deckIds: ['general'],
+			kinds: ['writing', 'tone'],
+			newLimit: 10,
+			reviewLimit: 10,
+			now: new Date('2026-03-01T00:00:00Z'),
+			language: 'zh'
+		});
+		expect(items.map((item) => item.cardId)).toEqual(['companion:writing:5', 'companion:tone:5']);
+		expect(items[0].written).toBeUndefined();
+	});
+});
+
 describe('deckSessionPlan and dropItem', () => {
 	const now = new Date('2026-03-01T00:00:00Z');
 	// Words 1 and 2 (oldest) have no sentences; 3 and 4 do.
