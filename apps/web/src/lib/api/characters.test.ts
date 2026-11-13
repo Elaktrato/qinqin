@@ -94,6 +94,21 @@ describe('fetchCharacters', () => {
 		expect(result).toEqual({ chars: [], count: 0 });
 	});
 
+	it('passes the stale flag through only when the server sets it', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			jsonResponse({ language: 'ja', count: 1, stale: true, chars: [{ i: 1, c: '一', s: 1 }] })
+		);
+		const stale = await fetchCharacters('ja');
+		expect(stale.stale).toBe(true);
+
+		vi.mocked(fetch).mockResolvedValueOnce(
+			jsonResponse({ language: 'zh', count: 0, stale: 'yes', chars: [] })
+		);
+		const odd = await fetchCharacters('zh');
+		expect(odd.stale).toBeUndefined();
+		expect(odd).toEqual({ chars: [], count: 0 });
+	});
+
 	it('maps HTTP errors to ApiError and does not cache them', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(new Response('unsupported language', { status: 400 }));
 		const error = await fetchCharacters('xx').catch((e: unknown) => e);

@@ -6,6 +6,8 @@ export type { CharRow } from './types';
 export interface CharacterList {
 	chars: CharRow[];
 	count: number;
+	/** Set when the database predates the importer that keeps the level fields. */
+	stale?: boolean;
 }
 
 interface Pending {
@@ -43,7 +45,8 @@ function start(language: string): Pending {
 			(body) => {
 				const chars = Array.isArray(body?.chars) ? body.chars : [];
 				const count = typeof body?.count === 'number' ? body.count : chars.length;
-				const list = { chars, count };
+				const list: CharacterList = { chars, count };
+				if (body?.stale === true) list.stale = true;
 				if (inFlight.get(language) === pending) {
 					inFlight.delete(language);
 					loaded.set(language, list);

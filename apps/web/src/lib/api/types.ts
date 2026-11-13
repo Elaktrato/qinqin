@@ -138,6 +138,8 @@ export interface CharactersResponse {
 	language: string;
 	count: number;
 	chars: CharRow[];
+	/** True when the database predates the new importer fields (re-seed needed). */
+	stale?: boolean;
 }
 
 // Dictionary is one element of GET /api/dictionaries: an installed
