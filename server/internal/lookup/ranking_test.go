@@ -414,3 +414,114 @@ func TestShiteiruRanksSuruFirst(t *testing.T) {
 		}
 	}
 }
+
+// shadowWords are nouns in the shape of a godan e-row imperative (届け,
+// 構え, 揺れ, 切れ, 向け, 付け, 建て) with their verbs, and pronouns
+// followed by the particle よ (これよ) with the ichidan verbs よ would
+// make of them.
+const shadowWords = `<entry><ent_seq>1441500</ent_seq><k_ele><keb>届け</keb></k_ele><r_ele><reb>とどけ</reb></r_ele><sense><pos>&n;</pos><gloss>report</gloss></sense></entry>
+<entry><ent_seq>1441490</ent_seq><k_ele><keb>届く</keb></k_ele><r_ele><reb>とどく</reb></r_ele><sense><pos>&v5k;</pos><gloss>to reach</gloss></sense></entry>
+<entry><ent_seq>1279150</ent_seq><k_ele><keb>構え</keb></k_ele><r_ele><reb>かまえ</reb></r_ele><sense><pos>&n;</pos><gloss>posture</gloss></sense></entry>
+<entry><ent_seq>1279130</ent_seq><k_ele><keb>構う</keb></k_ele><r_ele><reb>かまう</reb></r_ele><sense><pos>&v5u;</pos><gloss>to mind</gloss></sense></entry>
+<entry><ent_seq>1546010</ent_seq><k_ele><keb>揺れ</keb></k_ele><r_ele><reb>ゆれ</reb></r_ele><sense><pos>&n;</pos><gloss>shaking</gloss></sense></entry>
+<entry><ent_seq>1546000</ent_seq><k_ele><keb>揺る</keb></k_ele><r_ele><reb>ゆる</reb></r_ele><sense><pos>&v5r;</pos><gloss>to shake</gloss></sense></entry>
+<entry><ent_seq>1385780</ent_seq><k_ele><keb>切れ</keb></k_ele><r_ele><reb>きれ</reb></r_ele><sense><pos>&n;</pos><gloss>piece; expiry</gloss></sense></entry>
+<entry><ent_seq>1385770</ent_seq><k_ele><keb>切る</keb></k_ele><r_ele><reb>きる</reb></r_ele><sense><pos>&v5r;</pos><gloss>to cut</gloss></sense></entry>
+<entry><ent_seq>1525890</ent_seq><k_ele><keb>向け</keb></k_ele><r_ele><reb>むけ</reb></r_ele><sense><pos>&suf;</pos><gloss>intended for</gloss></sense></entry>
+<entry><ent_seq>1525880</ent_seq><k_ele><keb>向く</keb></k_ele><r_ele><reb>むく</reb></r_ele><sense><pos>&v5k;</pos><gloss>to face</gloss></sense></entry>
+<entry><ent_seq>1495770</ent_seq><k_ele><keb>付け</keb></k_ele><r_ele><reb>つけ</reb></r_ele><sense><pos>&n;</pos><gloss>bill</gloss></sense></entry>
+<entry><ent_seq>1495740</ent_seq><k_ele><keb>付く</keb></k_ele><r_ele><reb>つく</reb></r_ele><sense><pos>&v5k;</pos><gloss>to be attached</gloss></sense></entry>
+<entry><ent_seq>1257220</ent_seq><k_ele><keb>建て</keb></k_ele><r_ele><reb>だて</reb></r_ele><sense><pos>&suf;</pos><gloss>-storied</gloss></sense></entry>
+<entry><ent_seq>1257200</ent_seq><k_ele><keb>建つ</keb></k_ele><r_ele><reb>たつ</reb></r_ele><sense><pos>&v5t;</pos><gloss>to be built</gloss></sense></entry>
+<entry><ent_seq>1288810</ent_seq><r_ele><reb>これ</reb></r_ele><sense><pos>&pn;</pos><gloss>this</gloss></sense></entry>
+<entry><ent_seq>1006970</ent_seq><r_ele><reb>それ</reb></r_ele><sense><pos>&pn;</pos><gloss>that</gloss></sense></entry>
+<entry><ent_seq>1483185</ent_seq><k_ele><keb>彼</keb></k_ele><r_ele><reb>あれ</reb></r_ele><sense><pos>&pn;</pos><misc>&uk;</misc><gloss>that over there</gloss></sense></entry>
+<entry><ent_seq>1483070</ent_seq><k_ele><keb>彼</keb></k_ele><r_ele><reb>かれ</reb></r_ele><sense><pos>&pn;</pos><gloss>he</gloss></sense></entry>
+<entry><ent_seq>1420710</ent_seq><k_ele><keb>誰</keb></k_ele><r_ele><reb>だれ</reb></r_ele><sense><pos>&pn;</pos><gloss>who</gloss></sense></entry>
+<entry><ent_seq>1251160</ent_seq><k_ele><keb>凝る</keb></k_ele><r_ele><reb>こる</reb></r_ele><sense><pos>&v5r;</pos><gloss>to be absorbed in</gloss></sense></entry>
+<entry><ent_seq>1590590</ent_seq><k_ele><keb>逸れる</keb></k_ele><r_ele><reb>それる</reb></r_ele><sense><pos>&v1;</pos><gloss>to stray</gloss></sense></entry>
+<entry><ent_seq>1224250</ent_seq><k_ele><keb>枯れる</keb></k_ele><r_ele><reb>かれる</reb></r_ele><sense><pos>&v1;</pos><gloss>to wither</gloss></sense></entry>
+<entry><ent_seq>1009410</ent_seq><k_ele><keb>弛れる</keb></k_ele><r_ele><reb>だれる</reb></r_ele><sense><pos>&v1;</pos><gloss>to slacken</gloss></sense></entry>
+<entry><ent_seq>1259410</ent_seq><k_ele><keb>考える</keb></k_ele><r_ele><reb>かんがえる</reb></r_ele><sense><pos>&v1;</pos><gloss>to think</gloss></sense></entry>
+`
+
+// shadowFreq makes every verb FAR more frequent than its noun or
+// pronoun, so only the rules, not frequency, can keep the nouns first.
+const shadowFreq = `届く,とどく,1
+構う,かまう,2
+揺る,ゆる,3
+切る,きる,4
+向く,むく,5
+付く,つく,6
+建つ,たつ,7
+凝る,こる,8
+逸れる,それる,9
+枯れる,かれる,10
+弛れる,だれる,11
+有る,ある,12
+届け,とどけ,50000
+構え,かまえ,50001
+揺れ,ゆれ,50002
+切れ,きれ,50003
+向け,むけ,50004
+付け,つけ,50005
+建て,だて,50006
+これ,,50007
+それ,,50008
+彼,あれ,50009
+彼,かれ,50010
+誰,だれ,50011
+`
+
+// TestImperativesDoNotShadowNouns: a noun shaped like a godan e-row
+// imperative (届け, 切れ in 期限切れ, 向け in 子供向け) and a pronoun
+// followed by the particle よ (これよ) rank first even when the verb is
+// far more frequent: godan imperatives are not deinflected, and the よ
+// imperative needs a stem with a non-kana character (見よ, 考えよ).
+func TestImperativesDoNotShadowNouns(t *testing.T) {
+	for _, freq := range []string{"", shadowFreq} {
+		s := verbService2(t, freq)
+		for _, c := range []struct {
+			text   string
+			offset int
+			first  string
+		}{
+			{"届けを出す", 0, "届け"},
+			{"構え", 0, "構え"},
+			{"揺れが続く", 0, "揺れ"},
+			{"期限切れ", 2, "切れ"},
+			{"子供向けの本", 2, "向け"},
+			{"付け", 0, "付け"},
+			{"二階建て", 2, "建て"},
+			{"これよ", 0, "これ"},
+			{"それよ", 0, "それ"},
+			{"あれよ", 0, "彼"},
+			{"かれよ", 0, "彼"},
+			{"だれよ", 0, "誰"},
+			{"見ろ", 0, "見る[imperative]"},
+			{"見よ", 0, "見る[imperative]"},
+			{"考えよ", 0, "考える[imperative]"},
+			{"勉強しろ", 0, "勉強[imperative]"},
+		} {
+			rs := run(t, s, "ja", c.text, c.offset)
+			if len(rs) == 0 || terms(rs)[0] != c.first {
+				t.Errorf("freq=%v %s@%d: results = %v, want %s first", freq != "", c.text, c.offset, terms(rs), c.first)
+			}
+		}
+		// Godan imperatives are deliberately not deinflected (yet).
+		if r := find(run(t, s, "ja", "行け", 0), "行く"); r != nil {
+			t.Errorf("freq=%v 行け: 行く = %+v, want godan imperatives not deinflected", freq != "", r)
+		}
+	}
+}
+
+// verbService2 is verbService plus the shadow words.
+func verbService2(t *testing.T, freq string) lookup.Service {
+	t.Helper()
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+altWords+verbWords+shadowWords)
+	if freq != "" {
+		importFreqPack(t, sqlDB, "a", freq)
+	}
+	return service(sqlDB)
+}

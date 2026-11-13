@@ -69,15 +69,19 @@ func TestJaDeinflectDesireIsNotPast(t *testing.T) {
 	}
 }
 
-// The generic imperative and desiderative rules skip a kana-only form
-// whose stem is a single kana: いえ, いろ, あれ, いたい, みたい are far
-// more often 家, 色, 彼, 痛い and the suffix みたい than the imperative
-// or desiderative of 言う, 居る, 有る or 見る. The ichidan よ imperative
-// never follows a te-form: 見てよ is 見て plus the particle よ.
+// The ichidan ろ imperative and たい rules skip a kana-only stem of one
+// code point (いろ, いたい, みたい stay 色, 痛い, みたい). The よ
+// imperative needs a stem with a non-kana character and never follows a
+// te-form (これよ, だれよ, 見てよ are a word plus the particle よ).
+// Godan imperatives are not deinflected at all: 行け, 届け, 構え, 切れ
+// would otherwise shadow the nouns 届け, 構え, 切れ.
 func TestJaDeinflectShortKanaStemsAreNotImperativeOrDesire(t *testing.T) {
 	blocked := map[string]string{
 		"いえ": "いう", "いろ": "いる", "あれ": "ある", "なれ": "なる",
 		"いたい": "いる", "みたい": "みる", "見てよ": "見てる", "してよ": "してる",
+		"これよ": "これる", "それよ": "それる", "だれよ": "だれる", "たべよ": "たべる",
+		"行け": "行く", "届け": "届く", "構え": "構う", "切れ": "切る", "向け": "向く",
+		"建て": "建つ", "しまえ": "しまう", "待て": "待つ",
 	}
 	for surface, form := range blocked {
 		for _, d := range (lang.Ja{}).Deinflect(surface) {
@@ -87,13 +91,14 @@ func TestJaDeinflectShortKanaStemsAreNotImperativeOrDesire(t *testing.T) {
 		}
 	}
 	allowed := []struct{ surface, form, reason string }{
-		{"しまえ", "しまう", "imperative"},
 		{"たべろ", "たべる", "imperative"},
 		{"やめろ", "やめる", "imperative"},
 		{"たべたい", "たべる", "desire"},
 		{"いきたい", "いく", "desire"},
 		{"見ろ", "見る", "imperative"},
 		{"見よ", "見る", "imperative"},
+		{"考えよ", "考える", "imperative"},
+		{"起きよ", "起きる", "imperative"},
 		{"捨てろ", "捨てる", "imperative"},
 		{"しろ", "する", "imperative"},
 		{"こい", "くる", "imperative"},

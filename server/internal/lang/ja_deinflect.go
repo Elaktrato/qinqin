@@ -28,20 +28,23 @@ type jaRule struct {
 	stemOK func(stem string) bool
 }
 
-// longKanaStem is the stem guard of the generic imperative and
+// longKanaStem is the stem guard of the ichidan ろ imperative and たい
 // desiderative rules: a kana-only stem of one code point is refused.
-// いえ, いろ, あれ, いたい, みたい are far more often 家, 色, 彼, 痛い and
-// the suffix みたい than imperatives or desideratives of 言う, 居る, 有る
-// or 見る, and frequency (which outranks the inflection chain) would
-// pick the verb; written with kanji (見ろ, 見たい) they still apply.
+// いろ, いたい, みたい are far more often 色, 痛い and the suffix みたい
+// than forms of 居る or 見る, and frequency (which outranks the
+// inflection chain) would pick the verb; written with kanji (見ろ,
+// 見たい) they still apply.
 func longKanaStem(stem string) bool {
 	return utf8.RuneCountInString(stem) > 1 || !kanaOnly(stem)
 }
 
-// notTeStem guards the ichidan よ imperative: after a te-form (見てよ,
-// してよ) よ is the sentence particle, not the literary imperative.
-func notTeStem(stem string) bool {
-	return longKanaStem(stem) && !strings.HasSuffix(stem, "て") && !strings.HasSuffix(stem, "で")
+// yoStem guards the literary ichidan よ imperative (見よ, 考えよ, 起きよ):
+// the stem must contain a non-kana character — a kana-only stem is a
+// word plus the sentence particle よ (これよ, それよ, だれよ), never
+// 凝る/逸れる/弛れる — and must not end in a te-form (見てよ, してよ:
+// 見て plus よ). 捨てよ is lost with the te-form guard.
+func yoStem(stem string) bool {
+	return stem != "" && !kanaOnly(stem) && !strings.HasSuffix(stem, "て") && !strings.HasSuffix(stem, "で")
 }
 
 // kanaOnly reports whether s is non-empty and all hiragana or katakana.
@@ -196,13 +199,17 @@ func buildJaRules() []jaRule {
 		w("こい", "くる", "imperative", ClassVk, nil),
 		b("来い", "来る", "imperative", ClassVk, nil),
 		guard(r("ろ", "る", "imperative", ClassV1, nil), longKanaStem),
-		guard(r("よ", "る", "imperative", ClassV1, nil), notTeStem),
+		guard(r("よ", "る", "imperative", ClassV1, nil), yoStem),
 	)
+	// Godan imperatives (行け, 待て, 書け, 話せ) are deliberately NOT
+	// deinflected: an e-row ending is far more often a noun in running
+	// text (届け, 構え, 揺れ, 期限切れ, 子供向け, 二階建て), and at equal
+	// matched length frequency, which outranks the inflection chain,
+	// would pick the verb.
 	for _, g := range godan {
 		rules = append(rules,
 			// the godan stem includes the i-row kana (いき for いきたい), so no guard
 			r(g.i+"たい", g.u, "desire", ClassV5, adj),
-			guard(r(g.e, g.u, "imperative", ClassV5, nil), longKanaStem),
 		)
 	}
 	return rules

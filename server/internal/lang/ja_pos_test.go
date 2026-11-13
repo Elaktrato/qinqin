@@ -130,8 +130,6 @@ func TestJaDeinflectClasses(t *testing.T) {
 		// imperative
 		{"見ろ", "見る", lang.ClassV1, []string{"imperative"}},
 		{"見よ", "見る", lang.ClassV1, []string{"imperative"}},
-		{"行け", "行く", lang.ClassV5, []string{"imperative"}},
-		{"飲め", "飲む", lang.ClassV5, []string{"imperative"}},
 		{"しろ", "する", lang.ClassVs, []string{"imperative"}},
 		{"せよ", "する", lang.ClassVs, []string{"imperative"}},
 		{"勉強しろ", "勉強する", lang.ClassVs, []string{"imperative"}},

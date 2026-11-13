@@ -68,7 +68,7 @@ Make dictionary lookup in the reader behave like Yomitan's: hovering a word show
 ## Builder's calls (mine, not agreed — please check)
 
 - Show the first **3 entries** and the first **3 senses** per entry before the "show more" controls; the nested-popup stack is capped at **4** levels.
-- Keep the existing tokenizer endpoints unchanged and add a new lookup endpoint on top of them; the reader switches to the new one.
+- Keep the existing tokenizer endpoints unchanged and add a new lookup endpoint on top of them; the reader switches to the new one. (Superseded by the tokenizer line under decisions below and the Implementation notes: the endpoints keep their wire shape, but their behaviour now comes from the lookup engine.)
 - Dictionary order is fixed in v1 (one Japanese dictionary and one Chinese dictionary installed today); no user settings for ordering or modifier keys.
 - Frequency packs are matched by term + reading when the pack has a reading, by term alone otherwise; for Chinese, Traditional forms are mapped to Simplified before matching a frequency pack that is Simplified-only.
 - No frequency pack for Chinese is bundled; Chinese frequency chips appear only when the user has fetched a local pack.
@@ -119,13 +119,21 @@ te-form: している → して → する, Reasons `[progressive te-form]`; it
 inflections reach ている through the ichidan rules first, so していた is
 `[past progressive te-form]`; contracted てる/でる too), the desiderative (たい
 on the masu stem, inflecting as an i-adjective: 行きたかった → `[past desire]`),
-the imperative (ろ/よ, godan e-row, しろ/せよ, こい/来い) and kana いった/いって
-for 行く. Chains reach depth 4 (していました). Two guards keep frequency from
-turning common words into verbs: the generic imperative and たい rules skip a
-kana-only stem of one code point (いえ, いろ, あれ, いたい, みたい stay 家, 色,
-彼, 痛い, みたい), and the よ imperative never follows a te-form (見てよ is 見て
-plus the particle). Not covered: でした (copula), ちゃう/じゃう, ておく/とく,
-causative-short forms. The bundled sample dictionaries (`zh-mini`, `ja-mini`)
+the imperative (ichidan ろ, literary よ, しろ/せよ, こい/来い) and kana
+いった/いって for 行く. Chains reach depth 4 (していました). Guards keep
+frequency, which outranks the inflection chain, from turning common words into
+verbs: the ろ imperative and the たい rules skip a kana-only stem of one code
+point (いろ, いたい, みたい stay 色, 痛い, みたい); the よ imperative needs a stem
+with a non-kana character and never follows a te-form (見よ, 考えよ; but これよ,
+だれよ and 見てよ are a word plus the particle よ, and 捨てよ is lost); and godan
+imperatives are not deinflected at all, since an e-row ending is far more often
+a noun (届け, 構え, 揺れ, 期限切れ, 子供向け, 二階建て). Not covered: godan
+imperatives (行け, 待て, 書け, 話せ), one-kana-stem imperatives (みろ in
+やってみろ, なれ in 強くなれ), longer imperative chains (しなさい, 食べさせろ via
+causative), でした (copula), ちゃう/じゃう, ておく/とく, causative-short forms.
+A lookup drops an entry whose senses all belonged to uninstalled dictionaries
+(it had senses, none active); this relies on sense tombstones not being purged
+(the tombstone purge is ledgered for later and must keep that rule working). The bundled sample dictionaries (`zh-mini`, `ja-mini`)
 live in `plugins/samples/`, outside the default seed root, since their
 written-form keyed entries would duplicate JMdict's and CC-CEDICT's.
 

@@ -380,7 +380,9 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 // uninstalled dictionary, whose entries survive with tombstoned senses.
 // An entry that never had a sense — a character created only from
 // Unihan's or KANJIDIC2's character data — stays. One query, run only
-// when some entry has no active sense.
+// when some entry has no active sense. It relies on sense tombstones not
+// being purged: a purge of an uninstalled dictionary's senses would make
+// its words look like sense-less characters again.
 func (s Service) dropRetired(ctx context.Context, order []int64, best map[int64]*match) ([]int64, error) {
 	var ids []any
 	for _, id := range order {
