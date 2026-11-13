@@ -126,7 +126,6 @@
 					{#if showMap}
 						<a href="/study/map" aria-current={path === '/study/map' ? 'page' : undefined}>Map</a>
 					{/if}
-					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}>Sources</a>
 					{#each pluginLinks as link (`${link.slug}:${link.title}`)}
 						<a
 							href={link.href}
@@ -170,7 +169,10 @@
 
 		{#if signedIn}
 			<footer class="footer">
-				<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>Settings</a>
+				<nav class="footer-links" aria-label="Footer">
+					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}>Sources</a>
+					<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}>Settings</a>
+				</nav>
 				<span class="version">
 					<span lang="zh">{APP_NAME_HANZI}</span>
 					{APP_NAME}
@@ -282,6 +284,12 @@
 		padding: 1rem 1.5rem;
 		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 		font-size: 0.9rem;
+	}
+
+	.footer-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1.25rem;
 	}
 
 	.footer a {

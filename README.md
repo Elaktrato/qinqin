@@ -115,7 +115,7 @@ workspace shows its language; unnamed workspaces of one language are numbered
   language on their first `GET /api/workspaces`. A user who already has a
   workspace is never touched.
 - **Switching** happens in the workspace picker in the header (it can also create
-  one). **Settings** lives in the footer of every signed-in page, not in the nav;
+  one). **Settings** and **Sources** live in the footer of every signed-in page, not in the nav;
   there you manage workspaces (create and rename).
 - **The Map** (`/study/map`, its nav link and the Study page link) exists only in
   zh and ja workspaces; in another workspace the page explains this.
