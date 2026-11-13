@@ -423,8 +423,8 @@
 	/**
 	 * dropIneligible removes an ineligible item (nothing is written); a
 	 * dropped companion is replaced by the next reserve companion while the
-	 * session's backfill bound lasts. `remember` marks a definitive verdict
-	 * (the entry loaded and lacks what the kind needs): this tab then skips
+	 * session's backfill bound lasts. A non-null `entry` that definitively
+	 * lacks what the kind needs (see `rememberDrop`) is remembered: this tab skips
 	 * the word for that kind in later sessions. Failures that may be
 	 * transient (a rejected resolution, missing stroke data) are not
 	 * remembered.

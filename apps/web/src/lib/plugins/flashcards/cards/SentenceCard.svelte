@@ -317,7 +317,8 @@
 		border-color: color-mix(in srgb, currentColor 45%, transparent);
 	}
 
-	.token.right {
+	.token.right,
+	.token.placed.right:disabled {
 		border-color: #2e7d32;
 	}
 

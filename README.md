@@ -108,7 +108,8 @@ each one is created only when you grade it for the first time. Abandoning a
 session therefore creates nothing. A word that does not qualify (no sentence, no
 drawable character, no pinyin) is skipped silently when its turn comes, and the
 next planned companion takes its place (up to `max(30, 2 × new limit)` times per
-session); the tab remembers such words and skips them in later sessions. Each word
+session); the tab remembers such words (except a Han word whose stroke data is missing or
+failed to load) and skips them in later sessions. Each word
 gets at most one sentence card, built from its first example sentence; if that
 sentence later disappears, the card shows the word's first sentence instead.
 Companions are planned in deck sessions only.
