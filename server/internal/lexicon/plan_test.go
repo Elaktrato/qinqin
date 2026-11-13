@@ -236,7 +236,7 @@ func TestCharacterQueriesUseIndexes(t *testing.T) {
 					"SEARCH e USING INDEX sqlite_autoindex_entries_1 (language=? AND kind=?)",
 					"SEARCH f USING INDEX idx_forms_entry (entry_id=?)",
 					"SEARCH r USING INDEX idx_readings_entry (entry_id=?)",
-					"SEARCH s USING INDEX idx_senses_entry (entry_id=?)",
+					"SEARCH s USING INDEX idx_senses_entry (entry_id=?",
 					"SEARCH l USING INDEX sqlite_autoindex_entry_links_1 (from_id=?)",
 					"SEARCH l USING INDEX idx_entry_links_to (to_id=? AND type=?)",
 				} {

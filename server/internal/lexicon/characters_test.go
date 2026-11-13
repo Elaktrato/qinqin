@@ -191,6 +191,97 @@ func TestCharactersChineseUniverse(t *testing.T) {
 	}
 }
 
+// The first gloss skips CC-CEDICT's surname and cross-reference lines
+// (across all glosses of all live senses, in dictionary then sense
+// order), the first reading skips placeholder and digit pinyin, and the
+// radical blocks and non-letter marks are not cells.
+func TestCharactersMeaningfulFields(t *testing.T) {
+	st := newStore(t)
+	cedict := addDictionary(t, st, "cedict")
+	unihan := addDictionary(t, st, "unihan")
+	zh := func(dict int64, char string, readings []lexicon.Reading, glosses ...[]string) int64 {
+		return putChar(t, st, dict, charFixture{lang: "zh", char: char, attrs: map[string]string{"tghz": "1"},
+			readings: readings, glosses: glosses})
+	}
+	py := []lexicon.Reading{pinyin("x")}
+
+	san := zh(cedict, "三", []lexicon.Reading{pinyin("sān")}, []string{"surname San"}, []string{"three", "3"})
+	zh(unihan, "三", []lexicon.Reading{pinyin("sān")}, []string{"three"})
+	// The real meaning sits after meta glosses inside the same sense.
+	shi := zh(cedict, "世", py, []string{"Surname Shi", "life", "world"})
+	gan := zh(cedict, "干", py, []string{"old variant of 乾|干[gan1]"}, []string{"surname Gan"},
+		[]string{"Variant of 乾"}, []string{"dry", "dried food"})
+	// Every CEDICT line is meta: the next dictionary's meaning wins.
+	ke := zh(cedict, "兙", []lexicon.Reading{pinyin("shi2ke4")}, []string{"(old) contracted variant of 十克[shi2 ke4]"})
+	zh(unihan, "兙", []lexicon.Reading{pinyin("shi2ke4")}, []string{"decagram"})
+	// Only meta glosses: the first one stays.
+	ding := zh(cedict, "丁", py, []string{"see also 丁丁"}, []string{"used in 丁丁[zheng1 zheng1]"})
+	metas := map[string]string{
+		"乚": "archaic variant of 乙", "乛": "also written 乙", "乜": "abbr. for 乜斜",
+		"乞": "CL:个[ge4]", "乡": "Kangxi radical 5", "乢": "see 乞", "乣": "(archaic) variant of 糾",
+	}
+	metaIDs := map[string]int64{}
+	for char, gloss := range metas {
+		metaIDs[char] = zh(cedict, char, py, []string{gloss}, []string{"meaning of " + char})
+	}
+	// Readings: the placeholder and digit forms are skipped.
+	iter := zh(cedict, "々", []lexicon.Reading{pinyin("xx5")}, []string{"iteration mark"})
+	li := zh(cedict, "里", []lexicon.Reading{pinyin("xx5"), pinyin("Li3"), pinyin("lǐ")}, []string{"inside"})
+	// Glyphs: radical-block forms and non-letter marks are not cells;
+	// astral and compatibility ideographs and the Suzhou numerals are.
+	for _, char := range []string{"⺮", "⼀", "〻", "\U00016FE3"} {
+		zh(cedict, char, py, []string{"mark"})
+	}
+	astral := zh(cedict, "𠀀", py, []string{"astral"})
+	compat := zh(cedict, "﨎", py, []string{"compat"})
+	suzhou := zh(cedict, "〢", py, []string{"two"})
+
+	got := map[string]lexicon.CharacterRow{}
+	for _, r := range characters(t, st, "zh", false) {
+		got[r.Char] = r
+	}
+	for _, c := range []struct {
+		char    string
+		id      int64
+		reading string
+		gloss   string
+	}{
+		{"三", san, "sān", "three"},
+		{"世", shi, "x", "life"},
+		{"干", gan, "x", "dry"},
+		{"兙", ke, "", "decagram"},
+		{"丁", ding, "x", "see also 丁丁"},
+		{"々", iter, "", "iteration mark"},
+		{"里", li, "lǐ", "inside"},
+		{"𠀀", astral, "x", "astral"},
+		{"﨎", compat, "x", "compat"},
+		{"〢", suzhou, "x", "two"},
+	} {
+		r, ok := got[c.char]
+		if !ok || r.ID != c.id || r.Reading != c.reading || r.Gloss != c.gloss {
+			t.Errorf("%s = %+v (listed %v), want id %d reading %q gloss %q", c.char, r, ok, c.id, c.reading, c.gloss)
+		}
+	}
+	for char, id := range metaIDs {
+		if r := got[char]; r.ID != id || r.Gloss != "meaning of "+char {
+			t.Errorf("%s gloss = %q, want the meaning after %q", char, r.Gloss, metas[char])
+		}
+	}
+	for _, char := range []string{"⺮", "⼀", "〻", "\U00016FE3"} {
+		if r, ok := got[char]; ok {
+			t.Errorf("%U listed: %+v", []rune(char)[0], r)
+		}
+	}
+
+	// ja takes the same gloss rule.
+	kd2 := addDictionary(t, st, "kd2")
+	ja := putChar(t, st, kd2, charFixture{lang: "ja", char: "丈", attrs: map[string]string{"src": "kd2"},
+		glosses: [][]string{{"see 丈夫", "length"}}})
+	if rows := characters(t, st, "ja", false); len(rows) != 1 || rows[0].ID != ja || rows[0].Gloss != "length" {
+		t.Errorf("ja = %+v, want 丈 with gloss length", rows)
+	}
+}
+
 func TestCharactersOtherLanguages(t *testing.T) {
 	st := newStore(t)
 	d := addDictionary(t, st, "d")

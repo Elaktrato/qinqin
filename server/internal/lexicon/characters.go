@@ -91,9 +91,24 @@ var characterUniverses = map[string]characterUniverse{
 
 // firstReadingOf is e's first live reading of type %s, in reading order:
 // the walk of e's reading index stops at the first match, no sort.
+// CC-CEDICT's placeholder and numbered readings (々 "xx5", 兙 "shi2ke4")
+// are skipped: a cell shows a real reading or none.
 const firstReadingOf = `(SELECT r.value FROM readings r
 	WHERE r.entry_id = e.id AND r.deleted_at IS NULL AND r.type = '%s'
+		AND r.value NOT GLOB '*[0-9]*' AND r.value NOT GLOB 'xx*'
 	ORDER BY r.ord, r.id LIMIT 1)`
+
+// senseSep separates the gloss lists of glossLists; it cannot occur in
+// the JSON text of a list (control characters are escaped).
+const senseSep = "\x1f"
+
+// glossLists is e's live senses of live dictionaries, in dictionary then
+// sense order, as their JSON gloss lists joined by senseSep (NULL when
+// none): one seek on e's sense index. firstMeaning picks the gloss.
+const glossLists = `(SELECT group_concat(s.glosses, char(31) ORDER BY s.dictionary_id, s.ord, s.id)
+	FROM senses s
+	JOIN dictionaries d ON d.id = s.dictionary_id AND d.deleted_at IS NULL
+	WHERE s.entry_id = e.id AND s.deleted_at IS NULL AND s.glosses <> '[]')`
 
 // HasCharacterUniverse reports whether language has a character universe
 // (ja, zh); Characters of any other language is empty.
@@ -126,8 +141,7 @@ func characterMarkerQuery(language string) (string, bool) {
 
 // charactersQuery is the one statement that lists a language's universe
 // (the stale rule when stale), bound to the language: per character its
-// attrs, first form, first reading, first gloss (the first non-empty live
-// sense of a live dictionary, in dictionary then sense order) and its
+// attrs, first form, first reading, gloss lists (glossLists) and its
 // variant partners (links of both directions, live on both ends) as a
 // JSON array of [id, form, hkgrade]. Each per-row value is an index seek
 // on the child table's entry index.
@@ -152,10 +166,7 @@ func charactersQuery(language string, stale bool) (string, bool) {
 			COALESCE(` + fmt.Sprintf(firstFormOf, "e") + `, e.ext_key),
 			e.attrs,
 			` + u.reading + `,
-			(SELECT json_extract(s.glosses, '$[0]') FROM senses s
-				JOIN dictionaries d ON d.id = s.dictionary_id AND d.deleted_at IS NULL
-				WHERE s.entry_id = e.id AND s.deleted_at IS NULL AND json_array_length(s.glosses) > 0
-				ORDER BY s.dictionary_id, s.ord, s.id LIMIT 1),
+			` + glossLists + `,
 			(SELECT json_group_array(json_array(v.id, v.text, v.hk)) FROM (
 				` + partner("from_id", "to_id") + `
 				UNION ALL
@@ -240,7 +251,11 @@ func (s Store) Characters(ctx context.Context, language string) (CharacterSet, e
 			r.Reading = cutRunes(*reading, MaxCharacterReading)
 		}
 		if gloss != nil {
-			r.Gloss = cutRunes(*gloss, MaxCharacterGloss)
+			g, err := firstMeaning(*gloss)
+			if err != nil {
+				return fmt.Errorf("glosses of entry %d: %w", r.ID, err)
+			}
+			r.Gloss = cutRunes(g, MaxCharacterGloss)
 		}
 		if variants != nil && *variants != "[]" {
 			if err := r.addVariants(*variants); err != nil {
@@ -257,6 +272,53 @@ func (s Store) Characters(ctx context.Context, language string) (CharacterSet, e
 		return cmp.Or(strings.Compare(a.Char, b.Char), cmp.Compare(a.ID, b.ID))
 	})
 	return set, nil
+}
+
+// metaGlossPrefixes start a gloss that is a CC-CEDICT surname or
+// cross-reference line rather than a meaning ("surname San", "old variant
+// of 乾", "see 丁丁", "CL:个[ge4]", "Kangxi radical 5"); lower case.
+var metaGlossPrefixes = []string{
+	"surname ",
+	"old variant of", "(old) variant of", "archaic variant of", "(archaic) variant of",
+	"(old) contracted variant of", "variant of",
+	"also written", "used in", "see ", "abbr. for", "cl:", "kangxi radical",
+}
+
+// isMetaGloss reports whether g starts with a metaGlossPrefixes entry,
+// ignoring ASCII case.
+func isMetaGloss(g string) bool {
+	for _, p := range metaGlossPrefixes {
+		if len(g) >= len(p) && strings.EqualFold(g[:len(p)], p) {
+			return true
+		}
+	}
+	return false
+}
+
+// firstMeaning picks the gloss of a glossLists value: over every gloss
+// of every sense in order, the first non-empty one that is not a meta
+// line; when all are meta, the first non-empty one. Most characters stop
+// at the first gloss, so the later lists are decoded only when needed.
+func firstMeaning(lists string) (string, error) {
+	first := ""
+	for list := range strings.SplitSeq(lists, senseSep) {
+		var glosses []string
+		if err := json.Unmarshal([]byte(list), &glosses); err != nil {
+			return "", err
+		}
+		for _, g := range glosses {
+			if g == "" {
+				continue
+			}
+			if !isMetaGloss(g) {
+				return g, nil
+			}
+			if first == "" {
+				first = g
+			}
+		}
+	}
+	return first, nil
 }
 
 // characterAttrs are the attrs keys a CharacterRow reads (decoding into a
@@ -305,13 +367,26 @@ func (r *CharacterRow) addVariants(raw string) error {
 	return nil
 }
 
-// isHan reports whether s is one Han character. CC-CEDICT has a few
-// single-letter lines (A, B, □, ○) that are character entries with a
-// pinyin reading but no place in a Hanzi grid; the ideographic marks
-// 々 and 〇 and the Suzhou numerals are Han and stay.
+// isHan reports whether s is one Han character that belongs in a grid.
+// CC-CEDICT has a few single-letter lines (A, B, □, ○) that are character
+// entries with a pinyin reading, and unicode.Han also holds the radical
+// blocks (⺮, ⼀) and non-letter marks (〻, the Tangut-block Chinese
+// marks): none of them is a cell. The iteration mark 々, 〇, the Suzhou
+// numerals, the astral extensions and the compatibility ideographs stay.
 func isHan(s string) bool {
 	r, size := utf8.DecodeRuneInString(s)
-	return size == len(s) && unicode.Is(unicode.Han, r)
+	if size != len(s) || !unicode.Is(unicode.Han, r) {
+		return false
+	}
+	switch {
+	case r >= 0x2E80 && r <= 0x2FDF: // CJK Radicals Supplement, Kangxi Radicals
+		return false
+	case r == 0x303B: // vertical ideographic iteration mark
+		return false
+	case r >= 0x16FE0 && r <= 0x16FFF: // ideographic symbols and punctuation
+		return false
+	}
+	return true
 }
 
 // positiveInt parses s as a positive decimal integer, or returns 0, so a

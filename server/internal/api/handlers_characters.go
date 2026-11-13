@@ -54,40 +54,66 @@ type charactersPayload struct {
 // charactersCache keeps the last payload per language with a character
 // universe (ja, zh). A payload is reused while lexicon.CharactersVersion
 // is unchanged, so a revalidation or repeat load costs a few index seeks
-// instead of the universe query and the compression. Builds are
-// serialized: concurrent first loads share one.
+// instead of the universe query and the compression. Each language has
+// its own slot and lock: concurrent first loads of a language share one
+// build, and a slow zh build does not hold up ja.
 type charactersCache struct {
-	mu     sync.Mutex
-	byLang map[string]*charactersPayload
+	mu    sync.Mutex // guards slots
+	slots map[string]*charactersSlot
+}
+
+// charactersSlot is one language's cached payload and the lock its
+// builds run under.
+type charactersSlot struct {
+	mu      sync.Mutex
+	payload *charactersPayload
+}
+
+// slot returns language's slot, creating it on first use.
+func (c *charactersCache) slot(language string) *charactersSlot {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.slots == nil {
+		c.slots = make(map[string]*charactersSlot)
+	}
+	s := c.slots[language]
+	if s == nil {
+		s = &charactersSlot{}
+		c.slots[language] = s
+	}
+	return s
 }
 
 // get returns language's payload for the current lexicon version,
 // building it when the cached one is missing or older. Languages without
 // a universe are built (empty) and not cached, so arbitrary codes cannot
-// grow the cache. The version is read before the list: a write in between
+// grow the cache. The version is read under the language's lock, after
+// any build a request waited for, and before the list: a write in between
 // leaves the cached payload under an older version, so the next request
 // rebuilds it.
 func (c *charactersCache) get(ctx context.Context, st lexicon.Store, language string) (*charactersPayload, error) {
+	if !lexicon.HasCharacterUniverse(language) {
+		version, err := st.CharactersVersion(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return buildCharactersPayload(ctx, st, language, version)
+	}
+	s := c.slot(language)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	version, err := st.CharactersVersion(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if !lexicon.HasCharacterUniverse(language) {
-		return buildCharactersPayload(ctx, st, language, version)
-	}
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if p := c.byLang[language]; p != nil && p.version == version {
-		return p, nil
+	if s.payload != nil && s.payload.version == version {
+		return s.payload, nil
 	}
 	p, err := buildCharactersPayload(ctx, st, language, version)
 	if err != nil {
 		return nil, err
 	}
-	if c.byLang == nil {
-		c.byLang = make(map[string]*charactersPayload)
-	}
-	c.byLang[language] = p
+	s.payload = p
 	return p, nil
 }
 
