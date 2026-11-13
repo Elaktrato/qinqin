@@ -92,6 +92,45 @@ func TestGutenbergDirectMatchRanksBeforePinyin(t *testing.T) {
 	}
 }
 
+func TestGutenbergShortPinyinQueriesDoNotMatch(t *testing.T) {
+	f := newFixtureWith(t, header, zhRows)
+	var calls atomic.Int32
+	f.ad.phonetics = fakePhonetics(&calls)
+	ctx := context.Background()
+	for _, q := range []string{"me", "mé", "lo", "s"} {
+		if rs, err := f.ad.Search(ctx, q, 10); err != nil || len(rs) != 0 {
+			t.Errorf("Search(%q) = %v, %v; want nothing", q, ids(rs), err)
+		}
+	}
+	if rs, _ := f.ad.Search(ctx, "meng", 10); !reflect.DeepEqual(ids(rs), []string{"24266", "24264", "24265"}) {
+		t.Errorf("Search(meng) = %v", ids(rs))
+	}
+	if rs, _ := f.ad.Search(ctx, "夢", 10); len(rs) != 3 {
+		t.Errorf("Search(夢) = %v", ids(rs))
+	}
+}
+
+func TestGutenbergBrowseIgnoresCatalogOrder(t *testing.T) {
+	var rows, reversed [][]string
+	for i := 1; i <= 30; i++ {
+		rows = append(rows, []string{fmt.Sprint(i * 7), "Text", "2000-01-01", fmt.Sprintf("Work %d", i), "zh", "A", "", "", ""})
+	}
+	for i := len(rows) - 1; i >= 0; i-- {
+		reversed = append(reversed, rows[i])
+	}
+	a, err := newFixtureWith(t, header, rows).ad.Browse(context.Background(), "zh", "s", 12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := newFixtureWith(t, header, reversed).ad.Browse(context.Background(), "zh", "s", 12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(ids(a), ids(b)) {
+		t.Errorf("browse depends on catalog order: %v vs %v", ids(a), ids(b))
+	}
+}
+
 func TestGutenbergWithoutPhoneticsIsKanjiOnly(t *testing.T) {
 	f := newFixtureWith(t, header, zhRows) // phonetics nil
 	if rs, err := f.ad.Search(context.Background(), "hongloumeng", 10); err != nil || len(rs) != 0 {

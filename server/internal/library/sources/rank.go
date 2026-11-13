@@ -3,6 +3,7 @@ package sources
 import (
 	"slices"
 	"strings"
+	"unicode/utf8"
 )
 
 // Match ranks of a catalog work for a search query, best first. Search
@@ -35,17 +36,24 @@ func MatchRank(q, title, author string) int {
 // match on the written title or author ranks before every phonetic one.
 const RankPhonetic = RankSubstring + 1
 
+// MinPhoneticQuery is the shortest phonetic query key, in letters after
+// the adapter's folding (lang.PhoneticKey collapses "tou" to "to"), that
+// is matched phonetically: shorter keys such as "a" or "ko" occur in
+// most readings of a catalog and would only bury the useful hits.
+const MinPhoneticQuery = 3
+
 // CombinedRank ranks a work first by its normalized written title and
 // author for the normalized query nq, then — when that does not match —
 // by its phonetic keys ptitle and pauthor for the phonetic query pq
-// (offset by RankPhonetic, phonetic true). An empty pq, or a work
-// without phonetic keys, never matches phonetically. It returns -1 when
-// neither matches.
+// (offset by RankPhonetic, phonetic true). A pq shorter than
+// MinPhoneticQuery letters, or a work without phonetic keys, never
+// matches phonetically; written matches have no minimum length. It
+// returns -1 when neither matches.
 func CombinedRank(nq, title, author, pq, ptitle, pauthor string) (rank int, phonetic bool) {
 	if r := MatchRank(nq, title, author); r >= 0 {
 		return r, false
 	}
-	if pq == "" || (ptitle == "" && pauthor == "") {
+	if utf8.RuneCountInString(pq) < MinPhoneticQuery || (ptitle == "" && pauthor == "") {
 		return -1, false
 	}
 	if r := MatchRank(pq, ptitle, pauthor); r >= 0 {

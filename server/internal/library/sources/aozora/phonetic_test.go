@@ -64,6 +64,25 @@ func TestAozoraPhoneticSearch(t *testing.T) {
 	}
 }
 
+func TestAozoraShortPhoneticQueriesDoNotMatch(t *testing.T) {
+	f := newFixtureWith(t, readingHeader, readingRows)
+	ctx := context.Background()
+	for _, q := range []string{"a", "ko", "to", "tou", "とう", "こ", "トー"} {
+		if rs, err := f.ad.Search(ctx, q, 10); err != nil || len(rs) != 0 {
+			t.Errorf("Search(%q) = %v, %v; want nothing", q, ids(rs), err)
+		}
+	}
+	for q, want := range map[string]string{"tokyo": "000011", "soseki": "000012", "kyoto": "000012"} {
+		if rs, _ := f.ad.Search(ctx, q, 10); len(rs) == 0 || rs[0].SourceID != want {
+			t.Errorf("Search(%q) = %v, want %s first", q, ids(rs), want)
+		}
+	}
+	// a one-character written query still matches
+	if rs, _ := f.ad.Search(ctx, "京", 10); len(rs) != 4 {
+		t.Errorf("Search(京) = %v", ids(rs))
+	}
+}
+
 func TestAozoraKanjiMatchRanksBeforePhonetic(t *testing.T) {
 	f := newFixtureWith(t, readingHeader, readingRows)
 	rs, err := f.ad.Search(context.Background(), "京都", 10)

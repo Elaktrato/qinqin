@@ -76,3 +76,23 @@ func TestCombinedRankPutsDirectBeforePhonetic(t *testing.T) {
 		t.Errorf("work without phonetic keys matched: %d", r)
 	}
 }
+
+func TestCombinedRankNeedsAMeaningfulPhoneticQuery(t *testing.T) {
+	// keys shorter than MinPhoneticQuery (a, ko, to — tou collapses to
+	// to) match nothing phonetically
+	for _, pq := range []string{"a", "ko", "to"} {
+		if r, ph := CombinedRank(pq+"!", "東京", "某", pq, "tokyo", "kotoa"); r != -1 || ph {
+			t.Errorf("phonetic query %q matched: %d %v", pq, r, ph)
+		}
+	}
+	if r, ph := CombinedRank("x", "東京", "某", "tok", "tokyo", ""); r != RankPhonetic+RankTitlePrefix || !ph {
+		t.Errorf("3-letter key: %d %v", r, ph)
+	}
+	// written matches are unaffected at any length
+	if r, ph := CombinedRank("東", "東京", "某", "", "tokyo", ""); r != RankTitlePrefix || ph {
+		t.Errorf("one-character written match: %d %v", r, ph)
+	}
+	if MinPhoneticQuery != 3 {
+		t.Errorf("MinPhoneticQuery = %d", MinPhoneticQuery)
+	}
+}

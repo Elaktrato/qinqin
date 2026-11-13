@@ -11,8 +11,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -182,6 +184,14 @@ func parseCatalog(raw []byte) (*catalog, error) {
 		cat.works = append(cat.works, w)
 		cat.byID[id] = w
 	}
+	// Numeric id order, whatever order the upstream file lists: Browse
+	// shuffles this slice, so the same seed gives the same works.
+	slices.SortFunc(cat.works, func(a, b *work) int {
+		if len(a.id) != len(b.id) {
+			return len(a.id) - len(b.id)
+		}
+		return strings.Compare(a.id, b.id)
+	})
 	return cat, nil
 }
 
@@ -263,13 +273,21 @@ func (a *adapter) indexPinyin(ctx context.Context, cat *catalog) {
 	if a.phonetics == nil {
 		return
 	}
+	skipped := 0
 	for _, w := range cat.works {
-		if w.language != "zh" || ctx.Err() != nil {
+		if w.language != "zh" {
+			continue
+		}
+		if ctx.Err() != nil {
+			skipped++
 			continue
 		}
 		w.reading = a.phonetics(ctx, w.title)
 		w.ptitle = pinyin.Plain(w.reading)
 		w.pauthor = pinyin.Plain(a.phonetics(ctx, w.author))
+	}
+	if skipped > 0 {
+		log.Printf("gutenberg: catalog load timed out while indexing pinyin; %d Chinese works have no pinyin until the next load: %v", skipped, ctx.Err())
 	}
 }
 
