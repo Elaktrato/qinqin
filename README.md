@@ -27,9 +27,9 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Study mode** — add any word from its entry page and review it with Anki-style
   grading; the flashcards plugin derives FSRS schedules and EXP/levels from the
   event log.
-- **Reader library and bookmarks** — each workspace has its own library of
-  imported books, a tabbed importer with daily suggestions, and per-book
-  bookmarks (see [Reader](#reader)).
+- **Reader library, bookmarks and highlights** — each workspace has its own
+  library of imported books, a tabbed importer with daily suggestions, and
+  per-book bookmarks, highlights and notes (see [Reader](#reader)).
 - **Activity heatmap** — the home page shows 13 weeks of learning activity per
   workspace, adding up flashcard reviews and reading time in the Reader.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
@@ -68,12 +68,13 @@ dictionary writes no rows; frequency rows are replaced). Run `qinqin seed` while
 one write transaction, JMdict holds the database write lock for about 20 s, and
 the server waits at most 5 s (`busy_timeout`) before a write fails.
 
-> **Upgrading from the earlier reader.** Migrations 018–020 run in place on an
+> **Upgrading from the earlier reader.** Migrations 018–021 run in place on an
 > existing database and keep all data. 018 rebuilds `workspaces` with an optional
 > `name` and `UNIQUE(user_id, language, name)` (ids unchanged, so events and plugin
 > data still point at their workspace). 019 adds `library_books.workspace_id`: each
 > existing book is linked to its user's oldest workspace of the book's language,
-> and one is created when the user has none. 020 adds `library_bookmarks`.
+> and one is created when the user has none. 020 adds `library_bookmarks`. 021 adds
+> `library_highlights`.
 
 > **Upgrading a development database.** Entry ids changed with the dictionary
 > rebuild (the lookup rewrite; migration 017 drops the legacy tables). Nothing is
@@ -116,7 +117,9 @@ workspace shows its language; unnamed workspaces of one language are numbered
   workspace is never touched.
 - **Switching** happens in the workspace picker in the header (it can also create
   one). **Settings** and **Sources** live in the footer of every signed-in page, not in the nav;
-  there you manage workspaces (create and rename).
+  there you manage workspaces (create and rename). The logo is the home link (there
+  is no Home item); every nav item has an icon, and below 720 px the nav becomes a
+  bottom tab bar.
 - **The Map** (`/study/map`, its nav link and the Study page link) exists only in
   zh and ja workspaces; in another workspace the page explains this.
 
@@ -159,12 +162,32 @@ leaves the card without one and says so. Example sentences saved by a user are
 private to that user: other users, and anonymous callers, see only the pack's
 sentences.
 
-**Bookmarks.** The toolbar button (or the `b` key) bookmarks the first paragraph
-in view and toggles it off again. The **Bookmarks** panel lists them in book
-order, with jump, inline rename and delete; a bookmarked paragraph gets a marker
-in the left margin. A bookmark stores a position (`<chapter>:<paragraph>`) and a
-label (the paragraph's beginning, at most 120 characters). Each book holds up to
-200 bookmarks. The reading toolbar stays at the top of the screen while you read.
+**Side rail.** Beside the text sits a rail with two tabs, **Bookmarks** and
+**Highlights**. On screens 1000 px and wider it is a column next to the text that
+can be collapsed to a thin tab strip; below 1000 px it is a drawer on the right
+edge, opened from a floating button and closed by Escape or a click outside. The
+open/closed state and the last tab are remembered in the browser. The reading
+toolbar is a plain strip at the top of the page; it is not sticky.
+
+**Bookmarks.** The rail's **Add bookmark here** button (or the `b` key) bookmarks
+the first paragraph in view and toggles it off again. The Bookmarks tab lists them
+in book order, with jump, inline rename and delete; a bookmarked paragraph gets a
+marker in the left margin. A bookmark stores a position (`<chapter>:<paragraph>`)
+and a label (the paragraph's beginning, at most 120 characters). Each book holds up
+to 200 bookmarks.
+
+**Highlights and notes.** Select text in a paragraph: the popup shows a colour bar
+(yellow, green, blue, pink) and a **Note** button. A colour highlights the
+selection; **Note** highlights it and opens the note editor. The `h` key
+highlights the current selection too, and clicking a highlight opens a small
+editor (colour, note, delete). Highlights are listed in the rail's Highlights tab.
+A highlight stays within one paragraph, cannot overlap another highlight, and
+covers at most 500 characters; a note holds up to 2000 characters, and a book up
+to 2000 highlights. A highlight stores its position and the exact text it covered;
+when the paragraph no longer matches that text (for example after switching
+between simplified and traditional characters) it is marked with a **text changed**
+badge instead of being shown in the wrong place. Highlights and notes are private
+to the user and go with their book.
 
 ## Studying
 
@@ -317,7 +340,7 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
 | `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one; an over-long or invalid name is 422, a duplicate (language, name) 409 |
 | `PUT /api/workspaces/{id}` `{name?, settings?}` | Rename and/or merge settings; at least one field is required. The body used to be the bare settings object |
-| `GET /api/library/books?workspace=`, `GET`/`DELETE /api/library/books/{id}` | List (without `workspace`: every workspace of the caller), read, delete a book (its bookmarks go with it) |
+| `GET /api/library/books?workspace=`, `GET`/`DELETE /api/library/books/{id}` | List (without `workspace`: every workspace of the caller), read, delete a book (its bookmarks and highlights go with it) |
 | `GET /api/library/books/{id}/chapters/{n}` | One chapter's paragraphs |
 | `PUT /api/library/books/{id}/position` | Store the reading position |
 | `POST /api/library/upload` | Multipart `file` (epub) and `workspace` (required); `language` only matters for an epub without `dc:language`. 404 for a foreign workspace, 422 when the book's language differs from the workspace's |
@@ -326,6 +349,7 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/library/sources/{source}/browse?language=&seed=&limit=` | A deterministic assortment for the seed (default: today's UTC date; limit 1–50, default 12). 404 for an unknown source, 501 for one without suggestions |
 | `POST /api/library/sources/{source}/import` `{sourceId, workspaceId}` | Import one work into a workspace (both required); a source with no books in the workspace language is refused with 422 before any download, a repeat in the same workspace is 409 |
 | `GET`/`POST /api/library/books/{id}/bookmarks`, `PUT`/`DELETE …/bookmarks/{bid}` | List and add `{position, label?}` (201; 200 when one exists at the position; 409 beyond 200 per book) and rename `{label}` or delete |
+| `GET`/`POST /api/library/books/{id}/highlights`, `PUT`/`DELETE …/highlights/{hid}` | List and add `{chapter, paragraph, start, end, text, color?, note?}` (201), update `{color?, note?}`, delete. Offsets are code points; `text` must be exactly the paragraph's text in `[start, end)` and at most 500 code points, else 422; a note over 2000 characters is 422. A range overlapping another highlight is 409 `{error, existingId}`, a book with 2000 highlights 409; a body over 16 KiB is 413 `{"error": "highlight too large"}` |
 | `POST /api/entries/{id}/sentences` | Add the caller's example sentence; only `hanzi` is required (up to 2000 characters per field, body up to 16 KiB). `GET /api/entries/{id}` returns the pack's sentences plus the caller's own |
 
 `lang` must be a registered language (`zh` or `ja` for the reader), and offsets
