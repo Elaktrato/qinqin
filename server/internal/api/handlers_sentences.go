@@ -6,10 +6,18 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/sentences"
+)
+
+const (
+	// maxSentenceBody bounds the request body of a sentence POST.
+	maxSentenceBody = 16 << 10
+	// maxSentenceRunes bounds each of hanzi, pinyin and translation.
+	maxSentenceRunes = 2000
 )
 
 // sentenceRequest is the request body of POST /api/entries/{id}/sentences.
@@ -25,7 +33,8 @@ type sentenceRequest struct {
 // sentence. Only the text (hanzi) is required; pinyin and translation
 // are optional (the reader saves book sentences as text only). Unknown
 // and malformed ids are 404, unauthenticated calls 401, malformed bodies
-// and a blank text 400.
+// and a blank text 400, a field over 2000 characters 422 and a body over
+// 16 KiB 413.
 func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -36,14 +45,25 @@ func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "entry not found", http.StatusNotFound)
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxSentenceBody)
 	var req sentenceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		if errors.As(err, new(*http.MaxBytesError)) {
+			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+			return
+		}
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
 	if strings.TrimSpace(req.Hanzi) == "" {
 		http.Error(w, "a sentence needs its text (hanzi)", http.StatusBadRequest)
 		return
+	}
+	for _, field := range []string{req.Hanzi, req.Pinyin, req.Translation} {
+		if utf8.RuneCountInString(field) > maxSentenceRunes {
+			http.Error(w, "sentence fields are limited to 2000 characters", http.StatusUnprocessableEntity)
+			return
+		}
 	}
 	_, err = lexicon.Store{DB: s.db}.Get(r.Context(), id)
 	if errors.Is(err, lexicon.ErrNotFound) {

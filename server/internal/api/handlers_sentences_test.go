@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	"qinqin/internal/dict"
@@ -141,6 +142,36 @@ func TestSentenceRoutes(t *testing.T) {
 	} {
 		if resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, req); resp.StatusCode != http.StatusBadRequest {
 			t.Errorf("POST %s: status = %d, want %d", name, resp.StatusCode, http.StatusBadRequest)
+		}
+	}
+
+	// Over-long fields are 422 (2000 runes each; CJK counts by rune, not
+	// byte), and a body over 16 KiB is 413.
+	long := strings.Repeat("字", 2001)
+	for name, req := range map[string]map[string]string{
+		"long hanzi":       {"hanzi": long},
+		"long pinyin":      {"hanzi": "你好。", "pinyin": strings.Repeat("a", 2001)},
+		"long translation": {"hanzi": "你好。", "translation": strings.Repeat("a", 2001)},
+	} {
+		if resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, req); resp.StatusCode != http.StatusUnprocessableEntity {
+			t.Errorf("POST %s: status = %d, want %d", name, resp.StatusCode, http.StatusUnprocessableEntity)
+		}
+	}
+	if resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, map[string]string{
+		"hanzi": "你好。", "translation": strings.Repeat("a", 17*1024),
+	}); resp.StatusCode != http.StatusRequestEntityTooLarge {
+		t.Errorf("POST oversized body: status = %d, want %d", resp.StatusCode, http.StatusRequestEntityTooLarge)
+	}
+	// Exactly 2000 runes of CJK (6000 bytes) is fine.
+	{
+		resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, map[string]string{"hanzi": strings.Repeat("字", 2000)})
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("POST 2000-rune sentence: status = %d, want %d", resp.StatusCode, http.StatusCreated)
+		}
+		var got model.Sentence
+		decodeJSON(t, resp, &got)
+		if _, err := sqlDB.Exec(`DELETE FROM sentences WHERE id = ?`, got.ID); err != nil {
+			t.Fatalf("remove 2000-rune sentence: %v", err)
 		}
 	}
 
