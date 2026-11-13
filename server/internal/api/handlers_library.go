@@ -25,8 +25,6 @@ const (
 	// maxUploadMemory is how much of the form is held in memory before
 	// the multipart reader spills to temp files.
 	maxUploadMemory = 1 << 20
-	// maxPositionLen caps a stored reading position.
-	maxPositionLen = 1 << 10
 )
 
 func (s *server) library() library.Store {
@@ -45,6 +43,14 @@ func libraryError(w http.ResponseWriter, err error) {
 		http.Error(w, "workspace not found", http.StatusNotFound)
 	case errors.As(err, new(*library.LanguageMismatchError)):
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+	case errors.Is(err, library.ErrPositionTooLong):
+		http.Error(w, "position too long", http.StatusRequestEntityTooLarge)
+	case errors.Is(err, library.ErrPositionEmpty):
+		http.Error(w, "position required", http.StatusUnprocessableEntity)
+	case errors.Is(err, library.ErrLabelTooLong):
+		http.Error(w, "label is longer than 120 characters", http.StatusUnprocessableEntity)
+	case errors.Is(err, library.ErrTooMany):
+		http.Error(w, "this book already has 200 bookmarks", http.StatusConflict)
 	default:
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
@@ -249,7 +255,7 @@ func (s *server) handleSetBookPosition(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 2*maxPositionLen)
+	r.Body = http.MaxBytesReader(w, r.Body, 2*library.MaxPositionLen)
 	var in struct {
 		Position string `json:"position"`
 	}
@@ -257,10 +263,7 @@ func (s *server) handleSetBookPosition(w http.ResponseWriter, r *http.Request) {
 		badBody(w, err)
 		return
 	}
-	if len(in.Position) > maxPositionLen {
-		http.Error(w, "position too long", http.StatusRequestEntityTooLarge)
-		return
-	}
+	// The store refuses a position over the cap (413).
 	if err := s.library().SetPosition(r.Context(), u.ID, id, in.Position); err != nil {
 		libraryError(w, err)
 		return

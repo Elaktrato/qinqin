@@ -294,8 +294,12 @@ func (s Store) Chapter(ctx context.Context, userID, id int64, n int) (Chapter, e
 	return chapters[n], nil
 }
 
-// SetPosition stores the reader's position in one of the user's books.
+// SetPosition stores the reader's position in one of the user's books;
+// a position over MaxPositionLen bytes is ErrPositionTooLong.
 func (s Store) SetPosition(ctx context.Context, userID, id int64, position string) error {
+	if err := checkPosition(position); err != nil {
+		return err
+	}
 	res, err := s.DB.ExecContext(ctx,
 		`UPDATE library_books SET position = ? WHERE user_id = ? AND id = ?`, position, userID, id)
 	if err != nil {
@@ -309,9 +313,15 @@ func (s Store) SetPosition(ctx context.Context, userID, id int64, position strin
 	return nil
 }
 
-// Delete removes one of the user's books: its row and its content file.
+// Delete removes one of the user's books: its row, its bookmarks (in the
+// same transaction) and its content file.
 func (s Store) Delete(ctx context.Context, userID, id int64) error {
-	res, err := s.DB.ExecContext(ctx,
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("library: delete %d: %w", id, err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx,
 		`DELETE FROM library_books WHERE user_id = ? AND id = ?`, userID, id)
 	if err != nil {
 		return fmt.Errorf("library: delete %d: %w", id, err)
@@ -320,6 +330,13 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 		return fmt.Errorf("library: delete %d: %w", id, err)
 	} else if n == 0 {
 		return ErrNotFound
+	}
+	if _, err := tx.ExecContext(ctx,
+		`DELETE FROM library_bookmarks WHERE book_id = ?`, id); err != nil {
+		return fmt.Errorf("library: delete bookmarks %d: %w", id, err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("library: delete %d: %w", id, err)
 	}
 	// A failed file removal after the row delete can leave an orphan file;
 	// a reused id overwrites it.
