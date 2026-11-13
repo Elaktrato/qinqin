@@ -63,7 +63,7 @@ func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 	}
 	// The stored row is read back so the response carries the sentence
 	// exactly as persisted, timestamps included.
-	list, err := sentences.ForEntry(r.Context(), s.db, id)
+	list, err := sentences.ForEntry(r.Context(), s.db, id, u.ID)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

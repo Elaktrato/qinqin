@@ -108,9 +108,10 @@ func entryBases(ctx context.Context, store lexicon.Store, es []lexicon.Entry) ([
 
 // buildEntryResponse assembles the full entry body of e: base fields,
 // forms, senses and sense groups (with their dictionaries' credit
-// lines), variants, badges and sentences. A user's overlay is applied
-// by the caller on the returned EntryBase.
-func buildEntryResponse(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry) (*entryResponse, error) {
+// lines), variants, badges and the sentences viewerID may see (pack
+// sentences plus the viewer's own; 0 for an anonymous caller). A user's
+// overlay is applied by the caller on the returned EntryBase.
+func buildEntryResponse(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry, viewerID int64) (*entryResponse, error) {
 	store := lexicon.Store{DB: sqlDB}
 	bases, err := entryBases(ctx, store, []lexicon.Entry{*e})
 	if err != nil {
@@ -154,7 +155,7 @@ func buildEntryResponse(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry) (*
 	if resp.Badges, err = levels.ForEntry(ctx, sqlDB, e.ID); err != nil {
 		return nil, err
 	}
-	if resp.Sentences, err = sentences.ForEntry(ctx, sqlDB, e.ID); err != nil {
+	if resp.Sentences, err = sentences.ForEntry(ctx, sqlDB, e.ID, viewerID); err != nil {
 		return nil, err
 	}
 	return resp, nil

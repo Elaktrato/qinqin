@@ -241,7 +241,7 @@ func TestSentencePackImport(t *testing.T) {
 			{EntryID: xiexie, SourcePack: "zh-mini", Hanzi: "谢谢你。", Pinyin: "xiè xie nǐ.", Translation: "Thank you."},
 		}},
 	} {
-		got, err := sentences.ForEntry(ctx, sqlDB, tc.entry)
+		got, err := sentences.ForEntry(ctx, sqlDB, tc.entry, 0)
 		if err != nil {
 			t.Fatalf("sentences of entry %d: %v", tc.entry, err)
 		}
@@ -317,9 +317,20 @@ func TestUserSentenceAdded(t *testing.T) {
 		t.Errorf("stored sentence = %+v, want alice's sentence on 你好", stored)
 	}
 
-	// The sentence appears in ForEntry, marked user-owned: it carries
-	// its owner and no source pack.
-	got, err := sentences.ForEntry(ctx, sqlDB, nihao)
+	// Other viewers and anonymous callers never see it.
+	for _, viewer := range []int64{0, uid + 1000} {
+		others, err := sentences.ForEntry(ctx, sqlDB, nihao, viewer)
+		if err != nil {
+			t.Fatalf("sentences of 你好 for viewer %d: %v", viewer, err)
+		}
+		if len(others) != 0 {
+			t.Errorf("sentences of 你好 for viewer %d = %+v, want none of alice's", viewer, others)
+		}
+	}
+
+	// The sentence appears in ForEntry for its owner, marked user-owned:
+	// it carries its owner and no source pack.
+	got, err := sentences.ForEntry(ctx, sqlDB, nihao, uid)
 	if err != nil {
 		t.Fatalf("sentences of 你好: %v", err)
 	}
@@ -375,7 +386,7 @@ func TestReimportKeepsUserSentences(t *testing.T) {
 		t.Errorf("re-import result = %+v, want 1 sentence, nothing skipped", res)
 	}
 
-	got, err := sentences.ForEntry(ctx, sqlDB, nihao)
+	got, err := sentences.ForEntry(ctx, sqlDB, nihao, alice.ID)
 	if err != nil {
 		t.Fatalf("sentences of 你好: %v", err)
 	}
@@ -465,13 +476,13 @@ func TestSharedFormLinksToBestRankedWord(t *testing.T) {
 	if res, err := sentences.ImportPack(ctx, sqlDB, pack); err != nil || res.Sentences != 2 || len(res.Skipped) != 0 {
 		t.Fatalf("import = %+v, %v; want two sentences, nothing skipped", res, err)
 	}
-	if got, err := sentences.ForEntry(ctx, sqlDB, kore); err != nil || len(got) != 1 {
+	if got, err := sentences.ForEntry(ctx, sqlDB, kore, 0); err != nil || len(got) != 1 {
 		t.Errorf("sentences of これ = %+v (err %v), want the pack's sentence", got, err)
 	}
-	if got, err := sentences.ForEntry(ctx, sqlDB, shita); err != nil || len(got) != 1 || got[0].EntryID != shita {
+	if got, err := sentences.ForEntry(ctx, sqlDB, shita, 0); err != nil || len(got) != 1 || got[0].EntryID != shita {
 		t.Errorf("sentences of 下 (した) = %+v (err %v), want the pack's sentence", got, err)
 	}
-	if got, err := sentences.ForEntry(ctx, sqlDB, moto); err != nil || len(got) != 0 {
+	if got, err := sentences.ForEntry(ctx, sqlDB, moto, 0); err != nil || len(got) != 0 {
 		t.Errorf("sentences of 下 (もと) = %+v (err %v), want none", got, err)
 	}
 }

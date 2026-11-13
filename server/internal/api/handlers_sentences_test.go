@@ -91,11 +91,18 @@ func TestSentenceRoutes(t *testing.T) {
 		t.Errorf("stored sentence = %+v, want bob's sentence on 你好", stored)
 	}
 
-	// Word GET carries pack and user rows alike; the user's row is
-	// marked with its owner.
-	body = getEntryBody(t, ts.URL, nihao)
+	// Bob's GET carries the pack rows and his own row, marked with its
+	// owner. Anonymous callers and other users (the admin) see the pack
+	// rows only: user sentences are private to their owner.
+	if anon := getEntryBody(t, ts.URL, nihao); len(anon.Sentences) != 2 {
+		t.Errorf("anonymous sentences of 你好 = %+v, want the pack's two only", anon.Sentences)
+	}
+	if other := getEntryBodyAs(t, ts.URL, nihao, admin); len(other.Sentences) != 2 {
+		t.Errorf("admin's sentences of 你好 = %+v, want the pack's two only", other.Sentences)
+	}
+	body = getEntryBodyAs(t, ts.URL, nihao, bob)
 	if len(body.Sentences) != 3 {
-		t.Fatalf("sentences of 你好 after bob's post = %+v, want three", body.Sentences)
+		t.Fatalf("bob's sentences of 你好 after his post = %+v, want three", body.Sentences)
 	}
 	var bobs *model.Sentence
 	for i := range body.Sentences {
@@ -176,7 +183,7 @@ func TestSentenceRoutes(t *testing.T) {
 	if resp := doJSON(t, http.MethodDelete, ts.URL, packPath, admin, nil); resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("DELETE sentences: status = %d, want %d", resp.StatusCode, http.StatusNoContent)
 	}
-	body = getEntryBody(t, ts.URL, nihao)
+	body = getEntryBodyAs(t, ts.URL, nihao, bob)
 	if len(body.Sentences) != 1 || body.Sentences[0].ID != stored.ID ||
 		body.Sentences[0].UserID == nil || *body.Sentences[0].UserID != bobID {
 		t.Errorf("sentences of 你好 after uninstall = %+v, want only bob's", body.Sentences)
@@ -185,4 +192,16 @@ func TestSentenceRoutes(t *testing.T) {
 	if resp := doJSON(t, http.MethodDelete, ts.URL, packPath, admin, nil); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("DELETE uninstalled pack: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
 	}
+}
+
+// getEntryBodyAs is getEntryBody with the caller's bearer token.
+func getEntryBodyAs(t *testing.T, tsURL string, id int64, token string) entryBody {
+	t.Helper()
+	resp := doJSON(t, http.MethodGet, tsURL, "/api/entries/"+strconv.FormatInt(id, 10), token, nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /api/entries/%d: status = %d, want %d", id, resp.StatusCode, http.StatusOK)
+	}
+	var body entryBody
+	decodeJSON(t, resp, &body)
+	return body
 }

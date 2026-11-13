@@ -114,15 +114,16 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 	return result, nil
 }
 
-// ForEntry returns the entry's active sentences in insertion order:
-// pack-provided ones carrying their source pack, user-added ones their
-// owner.
-func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID int64) ([]model.Sentence, error) {
+// ForEntry returns the entry's active sentences that viewerID may see, in
+// insertion order: pack-provided ones (carrying their source pack) and
+// the viewer's own (carrying their owner). Other users' sentences are
+// private; viewerID 0 (an anonymous caller) sees pack sentences only.
+func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID, viewerID int64) ([]model.Sentence, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at
 		FROM sentences
-		WHERE entry_id = ? AND deleted_at IS NULL
-		ORDER BY id`, entryID)
+		WHERE entry_id = ? AND deleted_at IS NULL AND (user_id IS NULL OR user_id = ?)
+		ORDER BY id`, entryID, viewerID)
 	if err != nil {
 		return nil, fmt.Errorf("sentences of entry %d: %w", entryID, err)
 	}

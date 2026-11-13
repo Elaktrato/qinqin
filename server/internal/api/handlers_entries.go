@@ -23,14 +23,19 @@ func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := buildEntryResponse(r.Context(), s.db, e)
+	// The caller's patch layers on the shared entry and their own example
+	// sentences join the pack's; callers without a valid token — anonymous
+	// or unknown — see the shared entry and pack sentences only.
+	u, err := auth.UserFromRequest(r, s.db)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	// The caller's patch layers on the shared entry; callers without a
-	// valid token — anonymous or unknown — see the shared entry.
-	u, err := auth.UserFromRequest(r, s.db)
+	var viewerID int64
+	if u != nil {
+		viewerID = u.ID
+	}
+	resp, err := buildEntryResponse(r.Context(), s.db, e, viewerID)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -104,7 +109,7 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	resp, err := buildEntryResponse(r.Context(), s.db, e)
+	resp, err := buildEntryResponse(r.Context(), s.db, e, u.ID)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
