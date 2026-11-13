@@ -7,13 +7,18 @@
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import Mascot from './Mascot.svelte';
 	import { loadConfig } from '$lib/study/session';
+	import {
+		effectiveCardTypes,
+		hasTabSetup,
+		loadRememberedTypes
+	} from '$lib/study/cardTypesMemory';
 	import { GENERAL_DECK_ID, loadStudyData } from '$lib/study/store';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
 
-	// The home widget mirrors the tab's study setup only for its limits;
-	// it counts every deck in the workspace, so a saved deck selection
-	// cannot hide cards from the status line.
+	// The home widget mirrors the study setup for its limits and card
+	// types; it counts every deck in the workspace, so a saved deck
+	// selection cannot hide cards from the status line.
 	const config = loadConfig();
 
 	let decks = $state<Deck[]>([]);
@@ -29,8 +34,18 @@
 	const workspaceId = $derived($workspaces.current?.id ?? null);
 	const deckIds = $derived([GENERAL_DECK_ID, ...decks.map((deck) => deck.id)]);
 
-	// Due means a reviewed card whose derived schedule has come due;
-	// fresh cards are counted separately, exactly like the setup page.
+	// The card types a session would study: this tab's setup, else the
+	// types last started in this workspace, else vocab.
+	const kinds = $derived(
+		effectiveCardTypes(
+			hasTabSetup() ? config.cardTypes : null,
+			workspaceId === null ? null : loadRememberedTypes(workspaceId)
+		)
+	);
+
+	// Due means a reviewed card of those types whose derived schedule has
+	// come due; fresh counts existing never-reviewed cards of those types.
+	// Unlike the setup page, companions not created yet are not counted.
 	const queue = $derived.by(() => {
 		if (noWorkspace || cards.length === 0) return { due: 0, fresh: 0 };
 		const now = new Date();
@@ -41,7 +56,8 @@
 				deckIds,
 				newLimit: 0,
 				reviewLimit: config.reviewLimit,
-				now
+				now,
+				kinds
 			}).length,
 			fresh: buildQueue({
 				cards,
@@ -49,7 +65,8 @@
 				deckIds,
 				newLimit: config.newLimit,
 				reviewLimit: 0,
-				now
+				now,
+				kinds
 			}).length
 		};
 	});

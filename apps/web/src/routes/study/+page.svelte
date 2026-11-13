@@ -8,6 +8,7 @@
 	import type { StudyEvent } from '$lib/events';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
+	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
 	import {
 		CARD_TYPES,
@@ -126,6 +127,12 @@
 		schemes = [];
 		workspaceLanguage = language;
 		activeWorkspaceId = workspaceId;
+
+		// A tab without its own setup starts from the types last started in
+		// this workspace (any tab), so opted-in types do not reset to vocab.
+		if (workspaceId !== null && !hasTabSetup()) {
+			cardTypes = [...(loadRememberedTypes(workspaceId) ?? saved.cardTypes)];
+		}
 		schemesLoaded = false;
 		schemeError = '';
 
@@ -538,6 +545,7 @@
 
 		starting = true;
 		saveConfig(config);
+		if (activeWorkspaceId !== null) rememberCardTypes(activeWorkspaceId, config.cardTypes);
 		void goto('/study/session');
 	}
 </script>
