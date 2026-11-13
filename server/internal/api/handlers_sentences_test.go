@@ -128,13 +128,33 @@ func TestSentenceRoutes(t *testing.T) {
 		}
 	}
 	for name, req := range map[string]any{
-		"malformed body": "not-an-object",
-		"empty hanzi":    map[string]any{"hanzi": "", "pinyin": "nǐ hǎo.", "translation": "Hello."},
-		"missing pinyin": map[string]any{"hanzi": "你好。", "translation": "Hello."},
-		"no translation": map[string]any{"hanzi": "你好。", "pinyin": "nǐ hǎo."},
+		"malformed body":   "not-an-object",
+		"empty hanzi":      map[string]any{"hanzi": "", "pinyin": "nǐ hǎo.", "translation": "Hello."},
+		"whitespace hanzi": map[string]any{"hanzi": " 　\n"},
 	} {
 		if resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, req); resp.StatusCode != http.StatusBadRequest {
 			t.Errorf("POST %s: status = %d, want %d", name, resp.StatusCode, http.StatusBadRequest)
+		}
+	}
+
+	// Reading and translation are optional: the reader saves the book
+	// sentence a word was found in with its text only. Those rows are
+	// removed again below so the counts after uninstall stay as before.
+	for name, req := range map[string]map[string]string{
+		"text only":      {"hanzi": "我们学习。"},
+		"no translation": {"hanzi": "你好。", "pinyin": "nǐ hǎo."},
+	} {
+		resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, req)
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("POST %s: status = %d, want %d", name, resp.StatusCode, http.StatusCreated)
+		}
+		var got model.Sentence
+		decodeJSON(t, resp, &got)
+		if got.ID == 0 || got.Hanzi != req["hanzi"] || got.Pinyin != req["pinyin"] || got.Translation != "" {
+			t.Errorf("POST %s: stored = %+v, want the text with empty optional fields", name, got)
+		}
+		if _, err := sqlDB.Exec(`DELETE FROM sentences WHERE id = ?`, got.ID); err != nil {
+			t.Fatalf("remove %s sentence: %v", name, err)
 		}
 	}
 

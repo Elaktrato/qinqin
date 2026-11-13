@@ -22,8 +22,10 @@ type sentenceRequest struct {
 // handleAddSentence serves POST /api/entries/{id}/sentences: it stores
 // the authenticated caller's example sentence on the entry — owned by
 // them, never touched by pack imports — and responds with the stored
-// sentence. Unknown and malformed ids are 404, unauthenticated calls
-// 401, malformed bodies 400.
+// sentence. Only the text (hanzi) is required; pinyin and translation
+// are optional (the reader saves book sentences as text only). Unknown
+// and malformed ids are 404, unauthenticated calls 401, malformed bodies
+// and a blank text 400.
 func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -39,8 +41,8 @@ func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
-	if strings.TrimSpace(req.Hanzi) == "" || strings.TrimSpace(req.Pinyin) == "" || strings.TrimSpace(req.Translation) == "" {
-		http.Error(w, "a sentence needs a hanzi, pinyin, and translation", http.StatusBadRequest)
+	if strings.TrimSpace(req.Hanzi) == "" {
+		http.Error(w, "a sentence needs its text (hanzi)", http.StatusBadRequest)
 		return
 	}
 	_, err = lexicon.Store{DB: s.db}.Get(r.Context(), id)
