@@ -1,4 +1,5 @@
 import { goto } from '$app/navigation';
+import { normalizePath, redirectsOnUnauthorized } from '../routeAccess';
 
 // The bearer token lives in localStorage under this exact key: the
 // static SPA has no server session, so every reload rehydrates from here.
@@ -80,19 +81,16 @@ export function clearToken(): void {
 
 function currentPath(): string {
 	if (typeof window === 'undefined') return '';
-	return window.location.pathname.replace(/\/+$/, '') || '/';
-}
-
-/** True when the browser is on a page where a 401 must not redirect. */
-export function isAuthRoute(path = currentPath()): boolean {
-	return path === '/login' || path === '/register';
+	return normalizePath(window.location.pathname);
 }
 
 /**
  * api performs a same-origin JSON request. A stored token is attached as
  * `Authorization: Bearer` unless `auth` is false. Non-2xx responses throw
- * ApiError; a 401 also clears the token and redirects to /login unless the
- * current page is /login or /register (which would loop).
+ * ApiError; a 401 also clears the token and redirects to /login from a
+ * private page. On /login or /register that would loop, and on an open page
+ * (the Sources page) the user is signed out quietly and stays put
+ * (lib/routeAccess.ts).
  */
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
 	const headers: Record<string, string> = { accept: 'application/json' };
@@ -121,7 +119,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
 		if (response.status === 401) {
 			clearToken();
 			unauthorizedHandler?.();
-			if (!isAuthRoute()) {
+			if (redirectsOnUnauthorized(currentPath())) {
 				void goto('/login');
 			}
 		}
