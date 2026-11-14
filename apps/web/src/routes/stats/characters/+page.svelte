@@ -725,15 +725,6 @@
 			--st-learned-fg: #9fe3b5;
 			--st-learned-bar: #43b56c;
 		}
-
-		.error {
-			color: #ff8a80;
-		}
-
-		.banner {
-			background: #3d3212;
-			border-color: #8a6d1e;
-		}
 	}
 
 	.head h2 {
@@ -1018,6 +1009,19 @@
 		margin: 0;
 		color: #c62828;
 		font-weight: 600;
+	}
+
+	/* After the base rules of .banner and .error: same specificity, so the
+	   later rule wins. */
+	@media (prefers-color-scheme: dark) {
+		.error {
+			color: #ff8a80;
+		}
+
+		.banner {
+			background: #3d3212;
+			border-color: #8a6d1e;
+		}
 	}
 
 	.sr {

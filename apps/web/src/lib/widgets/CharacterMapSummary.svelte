@@ -162,11 +162,6 @@
 			--st-mature-bar: #5aa0e6;
 			--st-learned-bar: #43b56c;
 		}
-
-		.open {
-			border-color: #6cb4ff;
-			color: #6cb4ff;
-		}
 	}
 
 	.open {
@@ -177,6 +172,14 @@
 		color: #0b6bcb;
 		font-weight: 600;
 		text-decoration: none;
+	}
+
+	/* After the base rule: same specificity, so the later rule wins. */
+	@media (prefers-color-scheme: dark) {
+		.open {
+			border-color: #6cb4ff;
+			color: #6cb4ff;
+		}
 	}
 
 	.total {

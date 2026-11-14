@@ -184,6 +184,14 @@
 		text-decoration: none;
 	}
 
+	/* After the base rule: same specificity, so the later rule wins. */
+	@media (prefers-color-scheme: dark) {
+		.study {
+			border-color: #6cb4ff;
+			color: #6cb4ff;
+		}
+	}
+
 	.buddy {
 		display: flex;
 		align-items: center;
