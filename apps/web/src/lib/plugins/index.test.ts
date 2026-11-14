@@ -97,10 +97,12 @@ describe('reader registration', () => {
 		expect(navPages(webPlugins, [state('qinqin-reader', 0, false)])).toEqual([]);
 	});
 
-	it('gives the page-only reader no widgets', () => {
+	it('gives the reader only its reading-time widget', () => {
 		const reader = webPlugins.find((p) => p.manifest.id === 'qinqin-reader');
 
-		expect(reader?.manifest.widgets ?? []).toEqual([]);
+		expect((reader?.manifest.widgets ?? []).map((w) => [w.id, w.owner])).toEqual([
+			['reading-time', 'qinqin-reader']
+		]);
 	});
 });
 

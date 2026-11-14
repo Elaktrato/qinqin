@@ -2,12 +2,24 @@
 // `sources` credits the text sources it fetches from and the conversion
 // library it bundles; the Sources page lists them under "Plugins".
 import type { PluginManifest } from '../index';
+import ReadingTimeWidget from '$lib/widgets/ReadingTimeWidget.svelte';
 
 export const readerManifest: PluginManifest = {
 	id: 'qinqin-reader',
 	name: 'Reader',
 	version: '1.0',
 	surfaces: ['page'],
+	widgets: [
+		{
+			id: 'reading-time',
+			title: 'Reading time',
+			description: 'Tracked reading time: all time, last 7 and 30 days, most read books.',
+			owner: 'qinqin-reader',
+			size: 'normal',
+			surfaces: ['stats', 'home'],
+			component: ReadingTimeWidget
+		}
+	],
 	sources: [
 		{
 			name: 'Aozora Bunko',
