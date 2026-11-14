@@ -136,7 +136,9 @@ type PluginInfo struct {
 }
 
 // PluginState is one user's state for one plugin: whether it is
-// enabled on their home and where it sits in the home order.
+// enabled and its position in the Plugins list (Order, also the order
+// of the nav links). The home layout is the per-user widget layout in
+// the qinqin-core plugin data, not Order.
 type PluginState struct {
 	PluginID  string    `json:"pluginId"`
 	UserID    int64     `json:"userId"`

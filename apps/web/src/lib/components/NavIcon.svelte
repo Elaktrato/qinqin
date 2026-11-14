@@ -44,6 +44,11 @@
 	{:else if name === 'map'}
 		<path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" />
 		<path d="M9 4v13.5M15 6.5V20" />
+	{:else if name === 'chart'}
+		<path d="M3.5 20.5h17" />
+		<rect x="5" y="12" width="3.5" height="6" rx="0.75" />
+		<rect x="10.25" y="7" width="3.5" height="11" rx="0.75" />
+		<rect x="15.5" y="3.5" width="3.5" height="14.5" rx="0.75" />
 	{:else if name === 'cards'}
 		<path d="M8 6.5V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-1.5" />
 		<rect x="3" y="6.5" width="14.5" height="14.5" rx="2" />

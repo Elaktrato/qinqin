@@ -30,11 +30,26 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Reader library, bookmarks and highlights** — each workspace has its own
   library of imported books, a tabbed importer with daily suggestions, and
   per-book bookmarks, highlights and notes (see [Reader](#reader)).
-- **Activity heatmap** — the home page shows 13 weeks of learning activity per
+- **Home widgets** — the home page renders widgets from a per-user layout stored
+  on the server (shared by every device and workspace; by default the activity
+  heatmap, then the flashcards summary). A widget that does not apply to the
+  current language, or whose plugin is disabled, is left out. **Settings → Home**
+  (`/settings?tab=home`) chooses and orders them: an "On the home page" switch
+  per widget, **Move up** / **Move down** buttons (or drag a row by its handle),
+  a preview of the result and **Reset to default**. Changes save at once, to
+  your account, so every device and workspace gets them. A widget whose plugin
+  is disabled keeps its place in the stored layout and returns when the plugin
+  is enabled again; one that does not fit the active workspace's language is
+  marked "Not available for <language>" and can still be placed for the others.
+- **Activity heatmap** — a home widget showing 13 weeks of learning activity per
   workspace, adding up flashcard reviews and reading time in the Reader.
+- **Stats** — a nav item for every workspace (`/stats`) with two tabs:
+  **Overview** shows every widget that applies to the workspace, in a fixed
+  order (core first, then plugins); **Characters** (`/stats/characters`) is the
+  mastery map, for Chinese and Japanese workspaces only.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
-  are installable data packs; home widgets and views are feature plugins that
-  the server registers at startup so Settings can enable and order them.
+  are installable data packs; widgets and views come from feature plugins that
+  the server registers at startup so Settings can enable them.
 
 ## Quick start (Docker Compose / Portainer)
 
@@ -136,9 +151,12 @@ workspace shows its language; unnamed workspaces of one language are numbered
   workspace is never touched.
 - **Switching** happens in the workspace picker in the header (it can also create
   one). **Settings** and **Sources** live in the footer of every signed-in page, not in the nav;
-  in Settings you manage workspaces (create and rename). The logo is the home link (there
+  Settings has three tabs, Workspaces (create, rename, delete), Home (the home
+  page widgets) and Plugins, each with a link of its own (`/settings?tab=home`,
+  `?tab=plugins`). The logo is the home link (there
   is no Home item); every nav item has an icon, and below 720 px the nav becomes a
-  bottom tab bar.
+  bottom tab bar. The nav has **Stats** (bar-chart icon) for every workspace; it
+  replaced the former **Map** item, which showed only in zh and ja workspaces.
 - **Public pages.** The Sources page (`/sources`) is open to everyone, signed in
   or not, so the licence and attribution credits are always reachable. Signed out
   it shows a minimal header (the logo and a **Sign in** link) and the footer, with
@@ -165,8 +183,10 @@ workspace shows its language; unnamed workspaces of one language are numbered
   workspace, the next request that answers "workspace not found" shows a notice
   ("This workspace was deleted — switched to ...") and falls back to your first
   workspace; reviews queued offline for it are dropped with a notice.
-- **The Map** (`/study/map`, its nav link and the Study page link) exists only in
-  zh and ja workspaces; in another workspace the page explains this.
+- **The map** (Stats → Characters, `/stats/characters`, and the Study page link)
+  exists only in zh and ja workspaces: the Characters tab is hidden elsewhere,
+  and a direct visit explains this and links to the Overview. The old URL
+  `/study/map` redirects to `/stats/characters` (the history entry is replaced).
 
 ## Reader
 
@@ -340,7 +360,7 @@ the session queues that level's words. A word that already has a card reuses it;
 the rest get a card in the general deck when you first grade them, so abandoning
 a level session creates nothing.
 
-`/study/map` is the Hanzi/Kanji map for the current workspace language. It lists
+Stats → Characters (`/stats/characters`, formerly `/study/map`) is the Hanzi/Kanji map for the current workspace language. It lists
 every character of the language, studied or not, shaded by mastery.
 
 - **Universe.** Japanese: all 13,108 KANJIDIC2 kanji. Chinese: about 11.1k
@@ -402,23 +422,56 @@ if you name the roots. A pack is a directory with a `manifest.json` (`"type": "l
 `word` or `character`. See `plugins/samples/hsk-mini` for the layout. The sample
 `hsk-mini` and `jlpt-mini` packs are not seeded by default and not offered as map groupings.
 
-For each workspace, the flashcards home widget shows:
+**Home and Stats widgets.** Five widgets ship. Each one shows the current
+workspace. The home page shows the widgets in your layout (Settings → Home; by
+default Activity, then Flashcards). Stats → Overview shows every widget that
+applies to the workspace, in the order of this table:
 
-- what is due and new
-- the level and XP progress
-- the streak
-- the study buddy
+| Id | Widget | Owner | Size | Languages |
+|---|---|---|---|---|
+| `activity-heatmap` | Activity | core | wide | all |
+| `character-map-summary` | Characters | core | normal | Chinese, Japanese |
+| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | all |
+| `word-states` | Words | `qinqin-flashcards` | normal | all |
+| `reading-time` | Reading time | `qinqin-reader` | normal | all |
 
-Above the plugin widgets, the home page has a core activity heatmap for the
-current workspace: one cell per UTC day over the last 13 weeks, coloured by
-activity points. A flashcard review is one point. Reading in the Reader is one
-point per started 5 minutes; the reader records a `read` event with the active
-seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
-between inputs counts at most 2 minutes, and a hidden tab does not count.
-Reading is credited to the book's workspace. Hovering a cell shows the day's points per source,
-with reading in minutes. Other study events (sessions, views, lookups) do not
-count. Adding a source means emitting a study event with a new type and adding
-one entry to `ACTIVITY_SOURCES` in `apps/web/src/lib/activity/activity.ts`.
+A plugin's widgets are shown only while that plugin is enabled.
+
+- **Activity**: one cell per UTC day over the last 13 weeks, coloured by
+  activity points. A flashcard review is one point. Reading in the Reader is one
+  point per started 5 minutes. The reader records a `read` event with the active
+  seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
+  between inputs counts at most 2 minutes, and a hidden tab does not count.
+  Reading is credited to the workspace of the book. Hover a cell to see the
+  day's points per source, with reading in minutes. Other study events
+  (sessions, views, lookups) do not count. To add a source, emit a study event
+  of a new type and add one entry to `ACTIVITY_SOURCES` in
+  `apps/web/src/lib/activity/activity.ts`.
+- **Characters**: "N of M learned" for the language's characters (the same
+  universe and mastery as the map, see below; learned is a mastery of 80/100
+  or more). It also shows the stage bar (Not studied, Fresh, Learning, Mature,
+  Learned) and a link to the full map. Shown only for Chinese and Japanese
+  workspaces.
+- **Flashcards**: what is due and new (with the limits and card types of your
+  study setup), the level and XP progress, the streak and the study buddy.
+- **Words**: how far each word has come, from the flashcard schedule. A word is
+  one vocabulary card. Sentence, writing and tone cards practise a word that is
+  already counted, so they are left out. The states are:
+  - **New**: never reviewed.
+  - **Learning**: in the FSRS learning or relearning state.
+  - **Young**: in review with a stability under 21 days.
+  - **Mature**: in review with a stability of 21 days or more.
+
+  "N new cards waiting" counts every new vocabulary card, without the session's
+  daily new limit. Stats adds a table with one row per deck. A card in several
+  decks counts in each deck's row, but only once in the overall numbers. A card
+  in no existing deck is not counted.
+- **Reading time**: the time tracked by the Reader, from the `read` events of
+  the workspace. It shows the total for all time and for the last 7 and 30 days.
+  The 7 and 30 days are UTC days that end with today. It also lists the five
+  most read books. A reading burst under 30 s is not counted, and one burst
+  counts at most 2 hours (the same clamping as the Activity heatmap). A book
+  that is no longer in any library is listed as "A removed book".
 
 **Card ids and duplicates.** A new card gets a deterministic id,
 `c-<kind>-<entryId>` (for example `c-vocab-42`; a sentence card is
@@ -464,7 +517,7 @@ All library and source routes need a signed-in user, and so does
 | `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user |
 | `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
 | `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
-| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and home position for one plugin |
+| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and (legacy) order for one plugin |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
 | `GET /api/dictionaries` | Public. The installed dictionaries, each with `license`, `attribution` and `notice` (`""` when the manifest has none) |
 | `POST /api/admin/dictionaries`, `DELETE /api/admin/dictionaries/{id}`, `DELETE /api/admin/schemes/{id}`, `DELETE /api/admin/sentences/{pack}`, `POST /api/admin/plugins` | Admin only: install a dictionary pack (multipart zip in `pack`), soft-delete a dictionary, a level scheme or a sentence pack (entries survive), register a plugin manifest |
@@ -557,6 +610,21 @@ is registered on the server (built-in manifests are registered at startup in
 `server/cmd/qinqin/main.go`) and enabled for the user; the shell and the page route
 share one fetch of those states through the `pluginStates` store in
 `apps/web/src/lib/plugins/states.ts`.
+
+A web plugin can also contribute widgets: the optional `widgets` array of its
+manifest (`PluginManifest.widgets`, next to `sources`) lists `WidgetDef`s
+(`apps/web/src/lib/widgets/types.ts`: id, title, description, owner, size
+`normal` or `wide`, optional `appliesTo(language)`, surfaces and a component
+without props). The app's own widgets are in `apps/web/src/lib/widgets/core.ts`.
+A plugin's widgets exist only while the server lists the plugin and it is
+enabled. The home page renders the user's layout, the ordered widget ids in the
+user-global plugin data row `qinqin-core` / `home-layout`
+(`{"version": 1, "widgets": [...]}`, no workspace; a missing row means the
+default layout; a higher version is read leniently, its string ids only, and
+saving writes version 1), through `apps/web/src/lib/widgets/layout.ts`. `qinqin-core` is
+the core app registered as a plugin without surfaces so its data rows are
+accepted and synced; Settings does not list it. The per-plugin `order` in Settings
+no longer affects the home page (legacy: it orders the nav links).
 
 ### Credits and the Sources page
 

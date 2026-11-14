@@ -5,6 +5,8 @@ describe('iconFor', () => {
 	it('maps the shell links to their glyphs', () => {
 		expect(iconFor('search')).toBe('search');
 		expect(iconFor('map')).toBe('map');
+		expect(iconFor('stats')).toBe('chart');
+		expect(iconFor('Stats')).toBe('chart');
 		expect(iconFor('sources')).toBe('books');
 		expect(iconFor('settings')).toBe('gear');
 		expect(iconFor('signout')).toBe('signout');

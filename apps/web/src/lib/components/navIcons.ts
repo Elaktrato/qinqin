@@ -4,6 +4,7 @@
 export type NavIconName =
 	| 'search'
 	| 'map'
+	| 'chart'
 	| 'cards'
 	| 'book'
 	| 'books'
@@ -16,6 +17,7 @@ export type NavIconName =
 const KNOWN = new Map<string, NavIconName>([
 	['search', 'search'],
 	['map', 'map'],
+	['stats', 'chart'],
 	['study', 'cards'],
 	['flashcards', 'cards'],
 	['cards', 'cards'],

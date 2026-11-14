@@ -10,6 +10,7 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
   JMdict/KANJIDIC2 bundling, levels, sentences, overlays, events, plugins, search, sync,
   seed CLI, Docker) and the SvelteKit web app (entry/search/editing, stroke order,
   workspaces, sources).
+<<<<<<< HEAD
 - **On develop after v0.1.0**
   - Flashcards Round 1 (study loop: decks, vocab cards, 4-grade FSRS derived from review
     events, EXP), Round 2 (level sessions, per-character mastery, `/study/map`) and
@@ -22,6 +23,12 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
     character lists and approximate JLPT kanji levels.
   - Workspace deletion, kunrei/particle romaji search, request body limits.
   - Sources page built from pack and plugin manifests, public.
+=======
+- **On develop after v0.1.0** — flashcards Round 1 (study loop: decks, vocab cards,
+  4-grade FSRS derived from review events, review heatmap, EXP) and Round 2 (level
+  sessions, per-character mastery, the map at `/study/map`, since moved to
+  Stats → Characters at `/stats/characters`).
+>>>>>>> feature/stats
 
 ## v0.2.0 — study experience (milestone)
 
@@ -30,13 +37,22 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
 - [#33](https://github.com/Elaktrato/qinqin/issues/33) search filters UI
 - [#26](https://github.com/Elaktrato/qinqin/issues/26) map backfill performance (deferred from R2)
 
-## v0.3.0 — mobile client (milestone)
+Order: web first. Most features ship on web before the Android build starts.
 
-- [#34](https://github.com/Elaktrato/qinqin/issues/34) Flutter scaffold, auth, workspaces
+## v0.3.0 — journal and AI, web (milestone)
+
+- [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (design: `specs/2026-11-12-mcp-journal-design.md`)
+- [#46](https://github.com/Elaktrato/qinqin/issues/46) Journal plugin: AI corrections, overall review, topic suggestions, photo upload with OCR
+
+## v0.4.0 — Android client (milestone)
+
+Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flutter plan.
+
+- [#34](https://github.com/Elaktrato/qinqin/issues/34) Kotlin scaffold, auth, workspaces
 - [#35](https://github.com/Elaktrato/qinqin/issues/35) offline-first store and sync engine
 - [#36](https://github.com/Elaktrato/qinqin/issues/36) core views parity (entry, search, strokes)
-- [#37](https://github.com/Elaktrato/qinqin/issues/37) entry editing on mobile
-- [#38](https://github.com/Elaktrato/qinqin/issues/38) feature-plugin host (Dart) and study widgets
+- [#37](https://github.com/Elaktrato/qinqin/issues/37) entry editing
+- [#38](https://github.com/Elaktrato/qinqin/issues/38) feature-plugin host (Kotlin) and study parity incl. native writing
 
 ## Future (milestone)
 
@@ -46,8 +62,6 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
 - [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs
 - [#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs
 - [#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI
-- [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (design: `specs/2026-11-12-mcp-journal-design.md`)
-- [#46](https://github.com/Elaktrato/qinqin/issues/46) Journal plugin with external-AI corrections via MCP
 - [#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI
 - [#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics (server-side aggregation, filters, contributions);
   the Stats page design on `feature/stats` overlaps it
