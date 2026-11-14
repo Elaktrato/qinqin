@@ -1,0 +1,10 @@
+{
+  "id": "hsk-words",
+  "name": "HSK 3.0 (words)",
+  "version": "2025-11 (effective 2026-07)",
+  "type": "levels",
+  "language": "zh",
+  "license": "No licence stated by the publisher",
+  "attribution": "《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, word list (HSK 词汇大纲), published 2025-11, effective 2026-07, 中外语言交流合作中心 (CLEC), distributed by CTI, https://www.chinesetest.cn — included by the project owner with attribution; copyright status of the list not verified",
+  "format": "json"
+}

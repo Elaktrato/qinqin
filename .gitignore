@@ -5,6 +5,12 @@
 # local-only seed packs (unclear licences; never committed)
 /plugins/data-local/
 
+# official syllabus inputs for scripts/prepare-hsk-syllabus.mjs: never commit
+*.syllabus.pdf
+syllabus*.pdf
+syllabus*.txt
+syllabus*.tsv
+
 # local tooling scratch
 /.superpowers/
 /.claude/worktrees/
