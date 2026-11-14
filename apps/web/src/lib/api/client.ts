@@ -26,6 +26,15 @@ export interface ApiOptions {
 }
 
 let unauthorizedHandler: (() => void) | null = null;
+let workspaceGoneHandler: (() => void) | null = null;
+
+/** The API's 404 text for a workspace that does not exist (any more). */
+export const WORKSPACE_GONE_MESSAGE = 'workspace not found';
+
+/** True for a 404 whose text says the workspace does not exist. */
+export function isWorkspaceGoneResponse(status: number, message: string): boolean {
+	return status === 404 && message.trim().toLowerCase() === WORKSPACE_GONE_MESSAGE;
+}
 
 /**
  * Registers a callback fired when a request comes back 401, so the auth
@@ -34,6 +43,15 @@ let unauthorizedHandler: (() => void) | null = null;
  */
 export function setUnauthorizedHandler(handler: (() => void) | null): void {
 	unauthorizedHandler = handler;
+}
+
+/**
+ * Registers a callback fired when a request comes back 404 "workspace not
+ * found": the workspace was deleted in another tab or on another device,
+ * so the workspace store reloads its list (lib/workspaceGone.ts).
+ */
+export function setWorkspaceGoneHandler(handler: (() => void) | null): void {
+	workspaceGoneHandler = handler;
 }
 
 export function getToken(): string | null {
@@ -107,6 +125,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
 				void goto('/login');
 			}
 		}
+		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
 		throw new ApiError(response.status, message);
 	}
 

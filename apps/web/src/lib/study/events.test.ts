@@ -4,6 +4,8 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
+import { get } from 'svelte/store';
+import { dismissNotice, notice } from '../notices';
 import { PENDING_REVIEWS_KEY, flushPendingReviews, recordReview, startReviewOutbox } from './events';
 
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
@@ -113,6 +115,18 @@ describe('recordReview', () => {
 		expect(queued).toHaveLength(1);
 		expect(queued[0].id).toBe(attempted.id);
 		expect(queued[0]).toMatchObject({ type: 'review', workspaceId: 7 });
+	});
+
+	it('does not queue a review of a deleted workspace, and says so', async () => {
+		dismissNotice();
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		vi.mocked(fetch).mockResolvedValue(new Response('workspace not found', { status: 404 }));
+
+		await expect(recordReview(7, 'card-1', 2)).resolves.toBeUndefined();
+
+		expect(pending()).toEqual([]);
+		expect(get(notice)).toBe('This review was not saved: its workspace was deleted.');
+		warn.mockRestore();
 	});
 
 	it('enqueues on a non-2xx response too', async () => {
@@ -225,6 +239,42 @@ describe('flushPendingReviews', () => {
 
 		expect(pending()).toEqual([]);
 		expect(sentEvents().map((event) => event.id)).toEqual(ids);
+		warn.mockRestore();
+	});
+
+	it('says how many queued reviews were dropped because their workspace was deleted', async () => {
+		vi.mocked(fetch)
+			.mockRejectedValueOnce(new Error('offline'))
+			.mockRejectedValueOnce(new Error('offline'))
+			.mockRejectedValueOnce(new Error('offline'));
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		await recordReview(5, 'card-1', 3);
+		await recordReview(5, 'card-2', 3);
+		await recordReview(9, 'card-3', 4);
+		dismissNotice();
+
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch)
+			.mockResolvedValueOnce(new Response('workspace not found', { status: 404 }))
+			.mockResolvedValueOnce(new Response('workspace not found', { status: 404 }))
+			.mockResolvedValueOnce(jsonResponse({ accepted: 1, duplicates: 0 }));
+		await flushPendingReviews();
+
+		expect(pending()).toEqual([]);
+		expect(get(notice)).toBe('2 queued reviews were not saved: their workspace was deleted.');
+		warn.mockRestore();
+	});
+
+	it('says nothing when no queued review was dropped for a deleted workspace', async () => {
+		vi.mocked(fetch).mockRejectedValueOnce(new Error('offline'));
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		await recordReview(5, 'card-1', 3);
+		dismissNotice();
+
+		vi.mocked(fetch).mockResolvedValueOnce(new Response('bad payload', { status: 400 }));
+		await flushPendingReviews();
+
+		expect(get(notice)).toBeNull();
 		warn.mockRestore();
 	});
 

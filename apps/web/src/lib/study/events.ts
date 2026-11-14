@@ -4,7 +4,8 @@
 // arrives) and is retried on boot and when the browser goes online.
 
 import type { StudyEventBody } from '../api/types';
-import { ApiError } from '../api/client';
+import { ApiError, isWorkspaceGoneResponse } from '../api/client';
+import { showNotice } from '../notices';
 import { postEvents } from '../events';
 import { newUlid } from '../ulid';
 import type {
@@ -97,9 +98,20 @@ export async function recordReview(
 	try {
 		await postEvents([event]);
 	} catch (err) {
+		// The workspace was deleted elsewhere: a retry can never succeed.
+		// The shell reloads the workspaces on the same 404 (workspaceGone.ts).
+		if (isWorkspaceGone(err)) {
+			console.warn('review not recorded; its workspace was deleted', err);
+			showNotice('This review was not saved: its workspace was deleted.');
+			return;
+		}
 		enqueue(event);
 		console.warn('review not recorded; queued for retry', err);
 	}
+}
+
+function isWorkspaceGone(err: unknown): boolean {
+	return err instanceof ApiError && isWorkspaceGoneResponse(err.status, err.message);
 }
 
 // One flush at a time: boot, reconnect, and a session load can all ask
@@ -128,18 +140,28 @@ async function flushOnce(): Promise<void> {
 	const queued = readPending();
 	if (queued.length === 0) return;
 
+	let gone = 0;
 	for (const event of queued) {
 		try {
 			await postEvents([event]);
 			removePending(event.id);
 		} catch (err) {
 			if (isPermanentFailure(err)) {
+				if (isWorkspaceGone(err)) gone++;
 				console.warn(`review event "${event.id}" rejected permanently; dropped`, err);
 				removePending(event.id);
 			} else {
 				console.warn(`review event "${event.id}" not flushed; kept for retry`, err);
 			}
 		}
+	}
+	// Reviews of a workspace deleted elsewhere are lost for good: say so.
+	if (gone > 0) {
+		showNotice(
+			gone === 1
+				? '1 queued review was not saved: its workspace was deleted.'
+				: `${gone} queued reviews were not saved: their workspace was deleted.`
+		);
 	}
 }
 

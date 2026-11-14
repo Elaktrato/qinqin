@@ -14,7 +14,9 @@
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionOnce } from '$lib/events';
+	import { dismissNotice, notice } from '$lib/notices';
 	import { startReviewOutbox } from '$lib/study/events';
+	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import { load as loadWorkspaces, workspaces } from '$lib/workspaces';
 	import '../app.css';
 
@@ -62,6 +64,9 @@
 	}
 
 	onMount(async () => {
+		// A workspace deleted in another tab or on another device: the
+		// first "workspace not found" reloads the list and falls back.
+		watchDeletedWorkspaces();
 		// Drain reviews queued while offline as soon as the shell boots,
 		// on whichever route the user opens. Never blocks the boot.
 		startReviewOutbox();
@@ -83,6 +88,7 @@
 			loadedToken = null;
 			workspacesLoaded = false;
 			resetPluginStates();
+			dismissNotice();
 			workspaces.set({ list: [], current: null });
 			return;
 		}
@@ -172,6 +178,16 @@
 				<p class="workspace-error" role="alert">{workspaceError}</p>
 			{/if}
 		{/if}
+
+		<!-- Always in the DOM, so screen readers announce what arrives. -->
+		<div class="notice-region" role="status">
+			{#if signedIn && $notice}
+				<p class="notice">
+					<span>{$notice}</span>
+					<button type="button" class="notice-dismiss" onclick={dismissNotice}>Dismiss</button>
+				</p>
+			{/if}
+		</div>
 
 		<div class="content">
 			{#if signedIn && noWorkspaces}
@@ -344,6 +360,33 @@
 		padding: 0.5rem 1.5rem;
 		color: #c62828;
 		font-weight: 600;
+	}
+
+	.notice {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+		margin: 0;
+		padding: 0.5rem 1.5rem;
+		background: color-mix(in srgb, var(--nav-accent) 12%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--nav-accent) 30%, transparent);
+	}
+
+	.notice-dismiss {
+		font: inherit;
+		font-size: 0.9rem;
+		padding: 0.2rem 0.6rem;
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border-radius: 999px;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.notice-dismiss:focus-visible {
+		outline: 2px solid var(--nav-accent);
+		outline-offset: 2px;
 	}
 
 	.empty-workspaces {

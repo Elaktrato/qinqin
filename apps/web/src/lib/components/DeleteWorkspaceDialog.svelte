@@ -95,6 +95,14 @@
 		event.preventDefault();
 		if (!deleting) finish(false);
 	}}
+	onclose={() => {
+		// The browser closed the dialog itself (a second Escape while
+		// deleting, or any other native close): tell the opener, so it
+		// unmounts us and its Delete button opens a fresh dialog. A delete
+		// still in flight finishes on its own; its result updates the
+		// workspace list either way.
+		finish(false);
+	}}
 >
 	<form onsubmit={submit}>
 		<h2 id="{uid}-title">Delete the workspace “{label}”?</h2>
@@ -229,5 +237,13 @@
 		margin: 0.5rem 0 0;
 		color: #c62828;
 		font-weight: 600;
+	}
+
+	/* #c62828 is about 3.3:1 on the dark Canvas (#121212); this red is
+	   8.2:1 there (7.3:1 on #1e1e1e). */
+	@media (prefers-color-scheme: dark) {
+		.error {
+			color: #ff8a80;
+		}
 	}
 </style>

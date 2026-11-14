@@ -168,7 +168,7 @@ export class HighlightList {
 			settle(this.#queue.get(temp.id), false);
 			this.#queue.delete(temp.id);
 			if (err instanceof HighlightOverlapError) return this.#overlapResult(bookId, seq, err.existingId);
-			this.error = apiErrorMessage(err, 'highlight');
+			this.error = apiErrorMessage(err, 'highlightAdd');
 			return { ok: false };
 		}
 		if (seq !== this.#seq) return { ok: false };

@@ -12,8 +12,10 @@ export type ErrorContext =
 	| 'chapter'
 	| 'lookup'
 	| 'bookmark'
+	| 'bookmarkAdd'
 	| 'bookmarks'
 	| 'highlight'
+	| 'highlightAdd'
 	| 'highlights';
 
 const fallbacks: Record<ErrorContext, string> = {
@@ -27,18 +29,37 @@ const fallbacks: Record<ErrorContext, string> = {
 	chapter: 'Could not load this chapter.',
 	lookup: 'Could not look this up.',
 	bookmark: 'Could not save the bookmark.',
+	bookmarkAdd: 'Could not save the bookmark.',
 	bookmarks: 'Could not load the bookmarks.',
 	highlight: 'Could not save the highlight.',
+	highlightAdd: 'Could not save the highlight.',
 	highlights: 'Could not load the highlights.'
 };
 
+// A 404 from a book-scoped request whose only id is the book's (opening
+// it, a chapter, the bookmark or highlight lists, adding one) means the
+// book itself is gone: deleted, or its workspace deleted in another tab
+// or on another device. The reader never asks for a chapter out of range.
+const BOOK_GONE = 'This book is no longer available.';
+
 const notFound: Partial<Record<ErrorContext, string>> = {
 	import: 'This work is not available from the source.',
-	book: 'This book is not in your library.',
-	chapter: 'This chapter does not exist.',
+	book: BOOK_GONE,
+	chapter: BOOK_GONE,
+	bookmarks: BOOK_GONE,
+	highlights: BOOK_GONE,
+	bookmarkAdd: BOOK_GONE,
+	highlightAdd: BOOK_GONE,
 	bookmark: 'This bookmark no longer exists.',
 	highlight: 'This highlight no longer exists.'
 };
+
+// Adding is a write of the same kind for the cap and size messages.
+function writeKind(context: ErrorContext): ErrorContext {
+	if (context === 'bookmarkAdd') return 'bookmark';
+	if (context === 'highlightAdd') return 'highlight';
+	return context;
+}
 
 // Server text is shown only when it is short and free of markup.
 function isPlain(text: string): boolean {
@@ -51,6 +72,7 @@ const MISMATCH = /^workspace language is ([a-z0-9-]+), book is ([a-z0-9-]+)$/i;
 /** Turns an API failure into a short, friendly sentence for the UI. */
 export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 	if (err instanceof ApiError) {
+		const kind = writeKind(context);
 		const mismatch = err.status === 422 ? MISMATCH.exec(err.message.trim()) : null;
 		if (mismatch) {
 			const workspace = languageLabel(mismatch[1]);
@@ -59,17 +81,17 @@ export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 		}
 		switch (err.status) {
 			case 409:
-				if (context === 'bookmark') {
+				if (kind === 'bookmark') {
 					return 'This book already has the most bookmarks allowed (200). Delete one to add another.';
 				}
 				// An overlap (409 with existingId) is handled by the caller,
 				// which opens the existing highlight; what reaches here is the cap.
-				if (context === 'highlight') {
+				if (kind === 'highlight') {
 					return 'This book already has the most highlights allowed (2000). Delete one to add another.';
 				}
 				return 'This book is already in your library.';
 			case 413:
-				if (context === 'highlight' || context === 'highlights') {
+				if (kind === 'highlight' || kind === 'highlights') {
 					return 'This highlight or its note is too long to save.';
 				}
 				return 'This file is too large (max 20 MB).';

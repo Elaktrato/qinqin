@@ -324,8 +324,17 @@
 		margin-left: auto;
 	}
 
-	.settings button.delete-button {
+	/* .secondary.delete-button: beats `.settings button.secondary`
+	   (color: inherit), which comes later and used to win. */
+	.settings button.secondary.delete-button {
 		color: #c62828;
+	}
+
+	/* #c62828 is about 3.3:1 on the dark Canvas; this red is 8.2:1. */
+	@media (prefers-color-scheme: dark) {
+		.settings button.secondary.delete-button {
+			color: #ff8a80;
+		}
 	}
 
 	h2[tabindex='-1']:focus {
