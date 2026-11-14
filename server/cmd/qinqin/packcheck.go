@@ -18,7 +18,7 @@ type storedTerms struct{ license, attribution, notice string }
 // frequency pack or level scheme whose stored license, attribution or
 // notice differs from its manifest under roots: the Sources page shows
 // the stored copy, which only `qinqin seed` refreshes. The typical case
-// is an upgrade past migration 024, which adds every notice as ''.
+// is an upgrade past migration 024, which adds every notice empty.
 //
 // It is advisory and read-only: a missing root is silent, an unreadable
 // or invalid pack is skipped with a log line, a failed query is logged,

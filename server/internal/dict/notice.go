@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -20,7 +21,8 @@ var noticeLink = regexp.MustCompile(`\[([^\[\]\n]+)\]\(([^()\s]*)\)`)
 // ValidateNotice reports whether s is a valid manifest notice: plain
 // text of at most MaxNoticeBytes bytes of valid UTF-8, paragraphs
 // separated by a blank line, with links written [text](https://...) and
-// nothing else of markup. Only absolute https:// links with a host are
+// nothing else of markup, and no bidi embedding, override or isolate
+// characters. Only absolute https:// links with a host are
 // allowed: http:, javascript:, data:, relative and malformed links are
 // rejected, so a renderer never has to decide what a link is. The empty
 // notice is valid (the pack has none).
@@ -34,6 +36,9 @@ func ValidateNotice(s string) error {
 	for _, r := range s {
 		if r != '\n' && r != '\t' && (r < 0x20 || r == 0x7f || (r >= 0x80 && r < 0xa0)) {
 			return fmt.Errorf("notice contains the control character %U (only line breaks and tabs are allowed)", r)
+		}
+		if isBidiControl(r) {
+			return fmt.Errorf("notice contains the bidirectional control character %U, which can reorder the displayed text", r)
 		}
 	}
 	for _, m := range noticeLink.FindAllStringSubmatch(s, -1) {
@@ -65,7 +70,21 @@ func validateNoticeURL(raw string) error {
 	if u.User != nil {
 		return errors.New("the URL must not carry user information")
 	}
+	// url.Parse checks only that a port is digits; a browser rejects one
+	// above 65535, so such a link would never render.
+	if p := u.Port(); p != "" {
+		if n, err := strconv.Atoi(p); err != nil || n > 65535 {
+			return fmt.Errorf("the URL port %s is out of range", p)
+		}
+	}
 	return nil
+}
+
+// isBidiControl reports the embedding, override and isolate characters
+// (U+202A–U+202E, U+2066–U+2069), which reorder the text around them.
+// The marks U+200E and U+200F only set a direction and are allowed.
+func isBidiControl(r rune) bool {
+	return r >= 0x202a && r <= 0x202e || r >= 0x2066 && r <= 0x2069
 }
 
 // excerpt returns up to 20 bytes of s on either side of byte offset i,

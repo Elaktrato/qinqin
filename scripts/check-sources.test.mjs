@@ -2,7 +2,7 @@
 //   node --test scripts/check-sources.test.mjs
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
@@ -66,14 +66,17 @@ test('a bundled pack missing from the docs is reported; a sample need not be', (
 });
 
 test('a doc id that matches no pack is reported unless allow-listed', () => {
-	const doc = DOC + '| **Gone** (`ghost-pack`) | x |\n- **L** (`hsk30-words`, local)\n';
+	const doc = DOC + '| Pack | Provides |\n|---|---|\n| **Gone** (`ghost-pack`) | x |\n- **L** (`hsk30-words`, local)\n';
 	const out = checkSources(repo(okPacks(), doc));
 	assert.equal(out.length, 1);
 	assert.match(out[0], /names pack "ghost-pack"/);
 });
 
 test('ids outside table rows and list items are not pack names', () => {
-	assert.deepEqual([...docPackIds('See `some-flag` and `freq-csv`.\n| **A** (`pack-a`) | `other-thing` |\n')], ['pack-a']);
+	assert.deepEqual(
+		[...docPackIds('See `some-flag` and `freq-csv`.\n| Pack | x |\n|---|---|\n| **A** (`pack-a`) | `other-thing` |\n')],
+		['pack-a']
+	);
 });
 
 test('notice rules', () => {
@@ -87,6 +90,36 @@ test('notice rules', () => {
 	assert.match(noticeProblems('[a](https://user@example.org/)')[0], /user information/);
 	assert.match(noticeProblems('[a](https:///path)')[0], /no host|invalid/);
 	assert.match(noticeProblems('a\rb')[0], /control character U\+000D/);
+});
+
+// The vectors are shared with server/internal/dict/notice_vectors_test.go:
+// the server validator and this mirror must agree on each.
+test('noticeProblems agrees with the server on the shared vectors', () => {
+	const vectors = JSON.parse(readFileSync(new URL('./testdata/notice-vectors.json', import.meta.url), 'utf8'));
+	assert.ok(vectors.length > 30);
+	for (const v of vectors) {
+		const problems = noticeProblems(v.notice);
+		assert.equal(problems.length === 0, v.ok, `${v.name}: ${problems.join('; ') || 'no problems'}`);
+	}
+});
+
+test('the mirror explains percent escapes, ports, user information and bidi controls', () => {
+	assert.match(noticeProblems('[a](https://a.com/%zz)')[0], /invalid URL escape "%zz"/);
+	assert.match(noticeProblems('[a](https://a.com:99999/)')[0], /port 99999 is out of range/);
+	assert.match(noticeProblems('[a](https://@a.com/)')[0], /user information/);
+	assert.match(noticeProblems('a\u202eb')[0], /bidirectional control character U\+202E/);
+});
+
+test('a manifest notice with a replacement character (broken encoding) is reported', () => {
+	const p = okPacks();
+	p['plugins/data/pack-b'].notice = 'Broken \ufffd text.';
+	assert.match(checkSources(repo(p)).join(), /U\+FFFD/);
+});
+
+test('a field table naming `notice` in its first cell is not a pack table', () => {
+	const doc = DOC + '\n| Field | Meaning |\n|---|---|\n| `notice` | caveats |\n| `ghost-field` | x |\n';
+	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
+	assert.deepEqual([...docPackIds(doc)].sort(), ['pack-a', 'pack-b']);
 });
 
 test('a bad notice in a manifest is reported with its file', () => {

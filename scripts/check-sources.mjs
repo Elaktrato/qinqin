@@ -9,13 +9,15 @@
 //      manifest.json with a non-empty `license` and `attribution`;
 //   b. every bundled pack (plugins/data) has its manifest `id` mentioned,
 //      in backticks, in docs/sources.md;
-//   c. every pack id docs/sources.md names in a per-pack table row or in a
+//   c. every pack id docs/sources.md names in a "Pack" table row or in a
 //      "- **Name** (`id`" list item exists under plugins/data or
 //      plugins/samples, or is one of the optional local-only packs the docs
 //      describe (LOCAL_ONLY_PACKS);
-//   d. a manifest `notice` follows the server's rules (dict.ValidateNotice):
-//      at most 4,000 bytes, valid UTF-8, no control characters but \n and
-//      \t, links written [text](https://host/...) and nothing else.
+//   d. a manifest `notice` follows the server's rules (dict.ValidateNotice,
+//      after the loader trims it): at most 4,000 bytes, no control
+//      characters but \n and \t, no bidi embedding/override/isolate
+//      characters, links written [text](https://host/...) that Go's
+//      url.Parse accepts, and nothing else; plus no U+FFFD (broken UTF-8).
 //
 // Exit code 0 when everything agrees, 1 with one message per problem.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -26,35 +28,125 @@ import { fileURLToPath } from 'node:url';
 export const LOCAL_ONLY_PACKS = ['jlpt-words', 'hsk30-chars', 'hsk30-words'];
 export const MAX_NOTICE_BYTES = 4000;
 
-const NOTICE_LINK = /\[([^[\]\n]+)\]\(([^()\s]*)\)/g;
+// Go's RE2 `\s` is ASCII whitespace only ([\t\n\f\r ]), so the URL part
+// spells it out: a no-break space in a URL is part of the URL, as on the
+// server.
+const NOTICE_LINK = /\[([^[\]\n]+)\]\(([^()\t\n\f\r ]*)\)/g;
 const PACK_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
-/** noticeProblems mirrors dict.ValidateNotice; returns messages. */
-export function noticeProblems(s) {
+// What Go's strings.TrimSpace removes (unicode.IsSpace): unlike JS trim(),
+// it includes U+0085 and excludes U+FEFF.
+const GO_SPACE = '[\\t\\n\\v\\f\\r \\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]';
+const GO_TRIM = new RegExp(`^${GO_SPACE}+|${GO_SPACE}+$`, 'g');
+
+const isHex = (c) => /^[0-9a-fA-F]$/.test(c ?? '');
+const hexString = (s) => s.slice(0, 3);
+
+/**
+ * goUnescapeProblem mirrors the checks of net/url's unescape: every `%`
+ * starts a two-hex-digit escape; in a host an escape below %80 other
+ * than %25 is refused, and so is any ASCII character Go would escape
+ * there. Returns a message or ''.
+ */
+function goUnescapeProblem(s, host) {
+	for (let i = 0; i < s.length; ) {
+		const c = s[i];
+		if (c === '%') {
+			if (i + 2 >= s.length || !isHex(s[i + 1]) || !isHex(s[i + 2])) {
+				return `invalid URL escape "${hexString(s.slice(i))}"`;
+			}
+			if (host && parseInt(s[i + 1], 16) < 8 && s.slice(i, i + 3) !== '%25') {
+				return `invalid URL escape "${s.slice(i, i + 3)}"`;
+			}
+			i += 3;
+			continue;
+		}
+		if (host && c.charCodeAt(0) < 0x80 && !/[A-Za-z0-9\-_.~!$&'()*+,;=:[\]<>"]/.test(c)) {
+			return `invalid character "${c}" in host name`;
+		}
+		i++;
+	}
+	return '';
+}
+
+/** validOptionalPort mirrors net/url: '' or ':' followed by digits only. */
+const validOptionalPort = (p) => p === '' || /^:[0-9]*$/.test(p);
+
+/**
+ * goURLProblem mirrors dict.validateNoticeURL, which uses Go's url.Parse:
+ * the fragment and path must hold valid escapes (the query is not
+ * checked), the authority must carry no user information, the host
+ * follows Go's host rules, and the host name must not be empty. The
+ * port check (at most 65535) is the server's own. Returns a message or ''.
+ */
+function goURLProblem(raw) {
+	if (!raw.startsWith('https://')) return 'only https:// links are allowed';
+	const hash = raw.indexOf('#');
+	const beforeFragment = hash < 0 ? raw : raw.slice(0, hash);
+	const fragment = hash < 0 ? '' : raw.slice(hash + 1);
+	let rest = beforeFragment.slice('https:'.length);
+	if (!(rest.endsWith('?') && rest.split('?').length === 2)) {
+		const q = rest.indexOf('?');
+		if (q >= 0) rest = rest.slice(0, q);
+	}
+	let authority = rest.slice(2);
+	let path = '';
+	const slash = authority.indexOf('/');
+	if (slash >= 0) [authority, path] = [authority.slice(0, slash), authority.slice(slash)];
+
+	let problem = '';
+	let host = authority;
+	const at = authority.lastIndexOf('@');
+	if (at >= 0) host = authority.slice(at + 1);
+	if (host.startsWith('[')) {
+		const close = host.lastIndexOf(']');
+		if (close < 0) problem = "missing ']' in host";
+		else if (!validOptionalPort(host.slice(close + 1))) problem = `invalid port "${host.slice(close + 1)}" after host`;
+	} else {
+		const colon = host.lastIndexOf(':');
+		if (colon >= 0 && !validOptionalPort(host.slice(colon))) problem = `invalid port "${host.slice(colon)}" after host`;
+	}
+	problem ||= goUnescapeProblem(host, true) || goUnescapeProblem(path, false) || goUnescapeProblem(fragment, false);
+	if (problem) return `invalid URL: ${problem}`;
+	if (at >= 0) return 'the URL must not carry user information';
+
+	// Hostname and Port, as Go splits them.
+	let hostname = host;
+	let port = '';
+	const colon = host.lastIndexOf(':');
+	if (colon >= 0 && validOptionalPort(host.slice(colon))) [hostname, port] = [host.slice(0, colon), host.slice(colon + 1)];
+	if (hostname.startsWith('[') && hostname.endsWith(']')) hostname = hostname.slice(1, -1);
+	if (host === '' || hostname === '') return 'the URL has no host';
+	if (port !== '' && !(Number(port) <= 65535)) return `the URL port ${port} is out of range`;
+	return '';
+}
+
+const isBidiControl = (c) => (c >= 0x202a && c <= 0x202e) || (c >= 0x2066 && c <= 0x2069);
+
+/**
+ * noticeProblems mirrors the server's check of a manifest notice: the
+ * pack loader trims it (strings.TrimSpace) and dict.ValidateNotice then
+ * checks it. The shared vectors in scripts/testdata/notice-vectors.json
+ * hold both to the same answers. Returns messages.
+ */
+export function noticeProblems(raw) {
+	const s = raw.replace(GO_TRIM, '');
 	const out = [];
 	const bytes = Buffer.byteLength(s, 'utf8');
 	if (bytes > MAX_NOTICE_BYTES) out.push(`notice is ${bytes} bytes, at most ${MAX_NOTICE_BYTES} allowed`);
-	if (s.includes('�')) out.push('notice is not valid UTF-8 (contains U+FFFD)');
 	for (const ch of s) {
 		const c = ch.codePointAt(0);
 		if (ch !== '\n' && ch !== '\t' && (c < 0x20 || c === 0x7f || (c >= 0x80 && c < 0xa0))) {
-			out.push(`notice contains the control character U+${c.toString(16).toUpperCase().padStart(4, '0')} (only line breaks and tabs are allowed)`);
+			out.push(`notice contains the control character ${codePoint(c)} (only line breaks and tabs are allowed)`);
+			break;
+		}
+		if (isBidiControl(c)) {
+			out.push(`notice contains the bidirectional control character ${codePoint(c)}, which can reorder the displayed text`);
 			break;
 		}
 	}
 	for (const [, text, url] of s.matchAll(NOTICE_LINK)) {
-		let reason = '';
-		if (!url.startsWith('https://')) reason = 'only https:// links are allowed';
-		else if (url.slice(8).split(/[/?#]/)[0] === '') reason = 'the URL has no host';
-		else {
-			try {
-				const u = new URL(url);
-				if (!u.hostname) reason = 'the URL has no host';
-				else if (u.username || u.password) reason = 'the URL must not carry user information';
-			} catch {
-				reason = 'invalid URL';
-			}
-		}
+		const reason = goURLProblem(url);
 		if (reason) out.push(`notice link [${text}](${url}): ${reason}`);
 	}
 	const rest = s.replace(NOTICE_LINK, '');
@@ -67,6 +159,8 @@ export function noticeProblems(s) {
 	return out;
 }
 
+const codePoint = (c) => `U+${c.toString(16).toUpperCase().padStart(4, '0')}`;
+
 /** packDirs lists the subdirectories of dir (none when dir is missing). */
 function packDirs(dir) {
 	if (!existsSync(dir)) return [];
@@ -75,13 +169,27 @@ function packDirs(dir) {
 		.filter((n) => statSync(join(dir, n)).isDirectory());
 }
 
-/** docPackIds extracts the pack ids docs/sources.md names in per-pack rows. */
+/**
+ * docPackIds extracts the pack ids docs/sources.md names per pack: in the
+ * first cell of a table whose header's first cell is "Pack", and in a
+ * "- **Name** (`id`" list item. Other tables (field lists and the like)
+ * are not about packs.
+ */
 export function docPackIds(text) {
 	const ids = new Set();
+	let packTable = false;
+	let inTable = false;
 	for (const line of text.split('\n')) {
 		let scope = '';
-		if (line.startsWith('|')) scope = line.split('|')[1] ?? '';
-		else scope = line.match(/^\s*- \*\*[^*]+\*\* \((`[^`]+`)/)?.[1] ?? '';
+		if (line.startsWith('|')) {
+			const first = line.split('|')[1] ?? '';
+			if (!inTable) packTable = first.trim() === 'Pack'; // the header row
+			else if (packTable) scope = first;
+			inTable = true;
+		} else {
+			inTable = false;
+			scope = line.match(/^\s*- \*\*[^*]+\*\* \((`[^`]+`)/)?.[1] ?? '';
+		}
 		for (const [, id] of scope.matchAll(/`([^`]+)`/g)) if (PACK_ID.test(id)) ids.add(id);
 	}
 	return ids;
@@ -121,7 +229,14 @@ export function checkSources(root) {
 			}
 			if (m.notice !== undefined) {
 				if (typeof m.notice !== 'string') problems.push(`${rel}/manifest.json: "notice" must be a string`);
-				else for (const p of noticeProblems(m.notice)) problems.push(`${rel}/manifest.json: ${p}`);
+				else {
+					for (const p of noticeProblems(m.notice)) problems.push(`${rel}/manifest.json: ${p}`);
+					// Beyond the server: Go's JSON decoding turns invalid UTF-8 into
+					// U+FFFD silently, so a broken encoding is caught here.
+					if (m.notice.includes('\ufffd')) {
+						problems.push(`${rel}/manifest.json: notice holds U+FFFD; the file is probably not valid UTF-8`);
+					}
+				}
 			}
 		}
 	}
