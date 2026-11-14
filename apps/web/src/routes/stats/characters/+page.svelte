@@ -469,11 +469,13 @@
 <div class="map" onfocusin={trackFocus}>
 	<header class="head">
 		<h2>Mastery map</h2>
-		<p class="hint">
-			Every character of the dictionary, grouped by level and coloured by how firmly its cards
-			have settled into memory. Mastery is derived from review history, so it updates as you
-			study.
-		</p>
+		{#if !notHan}
+			<p class="hint">
+				Every character of the dictionary, grouped by level and coloured by how firmly its cards
+				have settled into memory. Mastery is derived from review history, so it updates as you
+				study.
+			</p>
+		{/if}
 	</header>
 
 	{#if notHan}
