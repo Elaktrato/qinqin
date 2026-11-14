@@ -10,16 +10,34 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
 	PackError,
+	TERMS_NOTICE,
 	charLevelsFromLists,
+	charsNotice,
 	edition,
 	parseCharacterLists,
 	levelsFromRows,
 	parseSyllabusTSV,
 	readingOf,
-	tsvWords
+	tsvWords,
+	wordsNotice
 } from './prepare-hsk-syllabus.mjs';
 
 const script = fileURLToPath(new URL('./prepare-hsk-syllabus.mjs', import.meta.url));
+
+// assertValidNotice mirrors the server's manifest notice rules
+// (dict.ValidateNotice): at most 4,000 bytes, paragraphs separated by a
+// blank line, and every link written [text](https://host...).
+function assertValidNotice(notice) {
+	assert.equal(typeof notice, 'string');
+	assert.ok(notice.length > 0, 'notice is empty');
+	assert.ok(Buffer.byteLength(notice, 'utf8') <= 4000, 'notice is over 4,000 bytes');
+	assert.equal(notice, notice.trim());
+	assert.doesNotMatch(notice, /[\u0000-\u0008\u000b-\u001f\u007f]/);
+	assert.doesNotMatch(notice, /\n{3,}/);
+	const link = /\[([^[\]\n]+)\]\(([^()\s]*)\)/g;
+	for (const [, , url] of notice.matchAll(link)) assert.match(url, /^https:\/\/[^/?#\s]+/);
+	assert.doesNotMatch(notice.replace(link, ''), /\]\(/, 'malformed link');
+}
 const HEAD = 'level\tpage_num\tpar_num\tblock_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext';
 
 // box is one word box (TSV level 5) at page, left, top, with height h.
@@ -242,6 +260,8 @@ test('the CLI writes the pack, with no LICENSE, byte for byte on a re-run', () =
 		assert.equal(chars.license, 'See CTI Legal Notice; no reuse licence granted');
 		assert.match(chars.attribution, /^Source: www\.chinesetest\.cn — reproduced from the Chinese Test Service Website \(CTI\); syllabus published by CLEC/);
 		assert.match(chars.attribution, /汉字大纲, 认读字/);
+		assert.equal(chars.notice, charsNotice({ published: '2025-11', effective: '2026-07' }));
+		assert.deepEqual(Object.keys(chars), ['id', 'name', 'version', 'type', 'language', 'license', 'attribution', 'notice', 'format']);
 		const charLevels = JSON.parse(first[4]);
 		assert.equal(charLevels.unit, 'character');
 		assert.deepEqual(charLevels.levels.map((l) => l.entries.length), [4, 1, 1, 1, 1, 1, 2]);
@@ -257,6 +277,7 @@ test('the CLI writes the pack, with no LICENSE, byte for byte on a re-run', () =
 		assert.match(manifest.attribution, /CLEC \(中外语言交流合作中心\)/);
 		assert.match(manifest.attribution, /legal status not verified/);
 		assert.equal(manifest.version, '2025-11 (effective 2026-07)');
+		assert.equal(manifest.notice, wordsNotice({ published: '2025-11', effective: '2026-07' }));
 
 		const levels = JSON.parse(first[1]);
 		assert.equal(levels.unit, 'word');
@@ -285,4 +306,27 @@ test('the CLI writes the pack, with no LICENSE, byte for byte on a re-run', () =
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}
+});
+
+test('the pack notices state the syllabus scope and the CTI terms', () => {
+	const ed = { published: '2025-11', effective: '2026-07' };
+	const words = wordsNotice(ed);
+	const chars = charsNotice(ed);
+	for (const notice of [words, chars]) {
+		assertValidNotice(notice);
+		const paragraphs = notice.split('\n\n');
+		assert.equal(paragraphs.length, 2);
+		assert.equal(paragraphs[1], TERMS_NOTICE);
+		assert.match(paragraphs[0], /《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, edition published 2025-11 and effective 2026-07\./);
+	}
+	assert.match(words, /^The HSK 3\.0 words are the official word list \(HSK 词汇大纲\)/);
+	assert.match(words, /lowest level of a word written with it\./);
+	assert.match(chars, /^The HSK 3\.0 characters are the official character list \(HSK 汉字大纲, the characters to recognise, 认读字, of each level\)/);
+	assert.match(chars, /characters to write \(书写字\) assign no level here\./);
+	assert.match(TERMS_NOTICE, /^Source: \[www\.chinesetest\.cn\]\(https:\/\/www\.chinesetest\.cn\) — reproduced from the Chinese Test Service Website \(CTI\); syllabus published by CLEC \(中外语言交流合作中心\)\./);
+	assert.match(TERMS_NOTICE, /\[Legal Notice\]\(https:\/\/www\.chinesetest\.cn\/legal-notice\)/);
+	assert.match(TERMS_NOTICE, /copy-protection flag/);
+	assert.match(TERMS_NOTICE, /The project includes only the vocabulary \(word\) list and the list of characters to recognise/);
+	assert.match(TERMS_NOTICE, /none of the syllabus's other content \(grammar points, descriptions, the lists of characters to write, explanatory text\)/);
+	assert.match(TERMS_NOTICE, /the legal status of including these lists has not been verified\.$/);
 });

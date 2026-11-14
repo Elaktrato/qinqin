@@ -57,7 +57,8 @@ fetch "https://api.jiten.moe/api/frequency-list/download?downloadType=yomitan" "
 fetch "$cc_by_sa_4_url" "$tmp/CC-BY-SA-4.0.txt"
 
 manifest "$stage" jiten-frequency "Jiten frequency list" frequency ja "CC BY-SA 4.0" \
-  "Jiten (https://jiten.moe), global frequency list" freq-csv
+  "Jiten (https://jiten.moe), global frequency list" freq-csv \
+  "The bundled Jiten list is [Jiten](https://jiten.moe/frequency-dictionaries)'s global frequency list, licensed CC BY-SA 4.0 by its publisher, with its ranks unmodified and converted to CSV."
 cp "$tmp/CC-BY-SA-4.0.txt" "$stage/LICENSE"
 
 # The zip is read in place (never unpacked) and only parsed as JSON.

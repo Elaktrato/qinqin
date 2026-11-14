@@ -114,6 +114,31 @@ may be public domain: its copyright status is uncertain. qinqin
 redistributes it under the MIT terms the upstream files state and claims
 nothing beyond them.`;
 
+// The manifest notices: the caveat the Sources page shows under each pack
+// (plain text, paragraphs separated by a blank line, links written
+// [text](https://...); the server rejects any other link and anything over
+// 4,000 bytes).
+export const JLPT_KANJI_NOTICE =
+	'The JLPT kanji levels are approximate: the JLPT has published no official kanji lists since 2010. ' +
+	'Most come from [kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev) (MIT), which does not state ' +
+	'where its list comes from. qinqin gives the kanji that list leaves out (mainly jōyō kanji such as 分, ' +
+	'可, 無 and 的) a level estimated from [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) ' +
+	'(CC BY-SA 4.0, EDRDG): its pre-2010 JLPT level where it has one, else the school grade.';
+
+export const JLPT_VOCAB_NOTICE =
+	'The JLPT vocabulary lists on this instance were installed locally by its operator; qinqin does not ' +
+	'bundle them because their licence chain could not be verified. They come from ' +
+	'[open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks) (labelled MIT), which its ' +
+	'README says was taken from chyyran/jlpt-anki-decks, based on the tanos.co.uk lists by Jonathan Waller ' +
+	'(described as Creative Commons Attribution; the page could not be reached, so this is unverified).';
+
+export const HSK30_NOTICE =
+	"This instance's operator also installed older, locally generated HSK 3.0 lists, superseded by the " +
+	'bundled official word and character lists. They come from [ivankra/hsk30](https://github.com/ivankra/hsk30) ' +
+	'(code MIT, data labelled MIT), which derives them from copies of the 2021 Ministry of Education standard. ' +
+	"The ministry's site claims copyright (版权所有：中华人民共和国教育部) and the hsk30 README suggests the " +
+	'list may be public domain, so its copyright status is uncertain.';
+
 const HAN = /^\p{Script=Han}$/u;
 
 /** PackError is a malformed or missing input; main prints it and exits 1. */
@@ -750,6 +775,7 @@ async function mainJlpt(args) {
 				'base list kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter, provenance not stated upstream), ' +
 				'https://github.com/onlyskin/kanjiapi.dev; kanji it omits placed by qinqin (scripts/prepare-level-packs.mjs) ' +
 				'from KANJIDIC2 (CC BY-SA 4.0, © EDRDG) old JLPT level, school grade and frequency rank',
+			notice: JLPT_KANJI_NOTICE,
 			format: 'json'
 		},
 		unit: 'character',
@@ -879,6 +905,7 @@ async function mainJlptVocab(args) {
 				'open-anki-jlpt-decks (MIT, © 2020 Jamie Sinclair), https://github.com/jamsinclair/open-anki-jlpt-decks — ' +
 				'unofficial N5–N1 vocabulary lists; per its README taken from chyyran/jlpt-anki-decks, based on the tanos.co.uk ' +
 				'lists (Jonathan Waller, described as CC BY; unverified, the licence chain of this pack could not be confirmed)',
+			notice: JLPT_VOCAB_NOTICE,
 			format: 'json'
 		},
 		unit: 'word',
@@ -1004,6 +1031,7 @@ an official release.`;
 			language: 'zh',
 			license: 'MIT',
 			attribution: hskAttribution,
+			notice: HSK30_NOTICE,
 			format: 'json'
 		},
 		unit: 'character',
@@ -1038,6 +1066,7 @@ ${sumsBlock(sums, hskFiles)}
 			language: 'zh',
 			license: 'MIT',
 			attribution: hskAttribution,
+			notice: HSK30_NOTICE,
 			format: 'json'
 		},
 		unit: 'word',

@@ -10,6 +10,9 @@ import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import {
 	GRADE_LEVEL_MAX,
+	HSK30_NOTICE,
+	JLPT_KANJI_NOTICE,
+	JLPT_VOCAB_NOTICE,
 	OLD2_N3_MAX_FREQ,
 	PackError,
 	approxJlptLevels,
@@ -23,6 +26,21 @@ import {
 } from './prepare-level-packs.mjs';
 
 const script = fileURLToPath(new URL('./prepare-level-packs.mjs', import.meta.url));
+
+// assertValidNotice mirrors the server's manifest notice rules
+// (dict.ValidateNotice): at most 4,000 bytes, paragraphs separated by a
+// blank line, and every link written [text](https://host...).
+function assertValidNotice(notice) {
+	assert.equal(typeof notice, 'string');
+	assert.ok(notice.length > 0, 'notice is empty');
+	assert.ok(Buffer.byteLength(notice, 'utf8') <= 4000, 'notice is over 4,000 bytes');
+	assert.equal(notice, notice.trim());
+	assert.doesNotMatch(notice, /[\u0000-\u0008\u000b-\u001f\u007f]/);
+	assert.doesNotMatch(notice, /\n{3,}/);
+	const link = /\[([^[\]\n]+)\]\(([^()\s]*)\)/g;
+	for (const [, , url] of notice.matchAll(link)) assert.match(url, /^https:\/\/[^/?#\s]+/);
+	assert.doesNotMatch(notice.replace(link, ''), /\]\(/, 'malformed link');
+}
 
 /** kanjidic2XML builds a minimal KANJIDIC2 file: one <character> per spec. */
 function kanjidic2XML(chars) {
@@ -195,6 +213,8 @@ test('JLPT mode writes the approximate pack deterministically', () => {
 		assert.match(manifest.attribution, /kanjiapi\.dev/);
 		assert.match(manifest.attribution, /KANJIDIC2/);
 		assert.match(manifest.attribution, /approximat/i);
+		assert.equal(manifest.notice, JLPT_KANJI_NOTICE);
+		assert.deepEqual(Object.keys(manifest), ['id', 'name', 'version', 'type', 'language', 'license', 'attribution', 'notice', 'format']);
 		assert.equal(JSON.parse(a[1]).levels.reduce((n, l) => n + l.entries.length, 0), 11);
 		assert.equal(a[2], 'MIT licence text\n');
 		assert.equal(a[3], 'CC BY-SA 4.0 licence text\n');
@@ -298,6 +318,8 @@ test('--hsk writes the local-only packs deterministically', () => {
 		assert.match(a[3], /not bundled/i);
 		assert.match(a[3], /版权所有：中华人民共和国教育部/);
 		assert.match(a[0], /"HSK 3\.0 \(characters\)"/);
+		assert.equal(JSON.parse(a[0]).notice, HSK30_NOTICE);
+		assert.equal(JSON.parse(a[4]).notice, HSK30_NOTICE);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}
@@ -340,6 +362,7 @@ test('--jlpt-vocab writes the local-only pack deterministically', () => {
 		assert.deepEqual(a, b);
 		assert.match(a[0], /NOT BUNDLED, local use only/);
 		assert.match(a[0], /"JLPT \(vocabulary\)"/);
+		assert.equal(JSON.parse(a[0]).notice, JLPT_VOCAB_NOTICE);
 		assert.match(a[3], /not bundled/i);
 		assert.match(a[3], /tanos\.co\.uk/);
 		assert.match(a[3], /could not be (reached|verified)/);
@@ -347,4 +370,20 @@ test('--jlpt-vocab writes the local-only pack deterministically', () => {
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}
+});
+
+test('the pack notices carry the Sources page caveats in the notice mini-markup', () => {
+	for (const notice of [JLPT_KANJI_NOTICE, JLPT_VOCAB_NOTICE, HSK30_NOTICE]) assertValidNotice(notice);
+	assert.match(JLPT_KANJI_NOTICE, /^The JLPT kanji levels are approximate: the JLPT has published no official kanji lists since 2010\./);
+	assert.match(JLPT_KANJI_NOTICE, /\[kanjiapi\.dev\]\(https:\/\/github\.com\/onlyskin\/kanjiapi\.dev\) \(MIT\)/);
+	assert.match(JLPT_KANJI_NOTICE, /\[KANJIDIC2\]\(https:\/\/www\.edrdg\.org\/wiki\/index\.php\/KANJIDIC_Project\)/);
+	assert.match(JLPT_KANJI_NOTICE, /分, 可, 無 and 的/);
+	assert.match(JLPT_VOCAB_NOTICE, /installed locally by its operator/);
+	assert.match(JLPT_VOCAB_NOTICE, /\[open-anki-jlpt-decks\]\(https:\/\/github\.com\/jamsinclair\/open-anki-jlpt-decks\)/);
+	assert.match(JLPT_VOCAB_NOTICE, /unverified\)\.$/);
+	assert.match(HSK30_NOTICE, /superseded by the bundled official word and character lists/);
+	assert.match(HSK30_NOTICE, /\[ivankra\/hsk30\]\(https:\/\/github\.com\/ivankra\/hsk30\)/);
+	assert.match(HSK30_NOTICE, /版权所有：中华人民共和国教育部/);
+	assert.throws(() => assertValidNotice('[x](http://example.com)'));
+	assert.throws(() => assertValidNotice('[x](javascript:alert(1))'));
 });

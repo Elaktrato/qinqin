@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"qinqin/internal/dict"
@@ -23,7 +24,8 @@ const bundledPacks = "../../../plugins/data"
 // with their scheme names, units and levels in easy-to-hard order, carry
 // a licence statement and attribution (with the licence file, or for the
 // HSK syllabus, which grants no reuse licence, the CTI Legal Notice terms
-// in ATTRIBUTION.md), and import cleanly — into an empty lexicon every form
+// in ATTRIBUTION.md), carry the valid manifest notice the Sources page
+// shows (the approximation caveat, the CTI terms), and import cleanly — into an empty lexicon every form
 // is skipped and reported, none fails the import.
 func TestBundledLevelPacks(t *testing.T) {
 	jlpt := []string{"N5", "N4", "N3", "N2", "N1"}
@@ -34,18 +36,22 @@ func TestBundledLevelPacks(t *testing.T) {
 		total                    int      // forms over all levels; 0 = not pinned
 		license                  string   // the manifest's licence
 		files                    []string // files that must sit beside the manifest
+		notice                   []string // substrings the manifest notice must hold
 	}{
 		// kanjiapi.dev's 2,211 kanji plus the 176 it omits that the
 		// KANJIDIC2 gap fill places (scripts/prepare-level-packs.mjs).
 		{"jlpt-kanji", "JLPT kanji (approximate)", "ja", "character", jlpt, 2387,
-			"MIT AND CC BY-SA 4.0", []string{"ATTRIBUTION.md", "LICENSE", "LICENSE-KANJIDIC2"}},
+			"MIT AND CC BY-SA 4.0", []string{"ATTRIBUTION.md", "LICENSE", "LICENSE-KANJIDIC2"},
+			[]string{"The JLPT kanji levels are approximate", "(https://github.com/onlyskin/kanjiapi.dev)", "KANJIDIC2"}},
 		// 11,000 syllabus rows less 41 homographs with the reading of an
 		// easier one (本1, 本2 běn).
 		{"hsk-words", "HSK 3.0 (words)", "zh", "word", hsk, 10959,
-			"See CTI Legal Notice; no reuse licence granted", []string{"ATTRIBUTION.md"}},
+			"See CTI Legal Notice; no reuse licence granted", []string{"ATTRIBUTION.md"},
+			[]string{"official word list (HSK 词汇大纲)", "[Legal Notice](https://www.chinesetest.cn/legal-notice)", "has not been verified"}},
 		// The syllabus's 认读字 lists: 246, 125, 284, 441, 431, 413, 1,148.
 		{"hsk-chars", "HSK 3.0 (characters)", "zh", "character", hsk, 3088,
-			"See CTI Legal Notice; no reuse licence granted", []string{"ATTRIBUTION.md"}},
+			"See CTI Legal Notice; no reuse licence granted", []string{"ATTRIBUTION.md"},
+			[]string{"official character list (HSK 汉字大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)", "has not been verified"}},
 	}
 	for _, c := range cases {
 		t.Run(c.id, func(t *testing.T) {
@@ -60,6 +66,17 @@ func TestBundledLevelPacks(t *testing.T) {
 			}
 			if m.License != c.license || m.Attribution == "" {
 				t.Errorf("license %q, attribution %q; want %q with an attribution", m.License, m.Attribution, c.license)
+			}
+			if m.Notice == "" {
+				t.Error("manifest has no notice")
+			}
+			if err := dict.ValidateNotice(m.Notice); err != nil {
+				t.Errorf("notice: %v", err)
+			}
+			for _, want := range c.notice {
+				if !strings.Contains(m.Notice, want) {
+					t.Errorf("notice lacks %q", want)
+				}
 			}
 			for _, f := range c.files {
 				if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
