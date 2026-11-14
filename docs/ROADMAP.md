@@ -41,8 +41,8 @@ Order: web first. Most features ship on web before the Android build starts.
 
 ## v0.3.0 — journal and AI, web (milestone)
 
-- [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (design: `specs/2026-11-12-mcp-journal-design.md`)
-- [#46](https://github.com/Elaktrato/qinqin/issues/46) Journal plugin: AI corrections, overall review, topic suggestions, photo upload with OCR
+- [#46](https://github.com/Elaktrato/qinqin/issues/46) Journal plugin: AI corrections, overall review, topic suggestions, photo upload with OCR;
+  the app calls the AI with the user's own provider API key
 
 ## v0.4.0 — Android client (milestone)
 
@@ -62,6 +62,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 - [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs
 - [#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs
 - [#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI
+- [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)
 - [#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI
 - [#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics (server-side aggregation, filters, contributions);
   the Stats page design on `feature/stats` overlaps it
