@@ -537,6 +537,39 @@ is registered on the server (built-in manifests are registered at startup in
 share one fetch of those states through the `pluginStates` store in
 `apps/web/src/lib/plugins/states.ts`.
 
+### Credits and the Sources page
+
+The Sources page (`/sources`) is built from data, not hard-coded text:
+
+- **Packs**: each installed pack's manifest `license`, `attribution` and optional
+  `notice`. The notice is plain text: paragraphs separated by a blank line, links
+  only as `[text](https://…)` (https only; anything else stays plain text), at
+  most 4,000 bytes. The server validates it on import
+  (`server/internal/dict/notice.go`), and
+  the page renders it with the parser in `apps/web/src/lib/sources/notice.ts`
+  (no HTML). See [plugins/data/README.md](plugins/data/README.md).
+- **Plugins**: a web plugin lists the third-party material it ships or fetches in
+  the optional `sources` array of its manifest (`PluginManifest.sources` in
+  `apps/web/src/lib/plugins/index.ts`), each a `SourceCredit` with `name` and
+  optional `url`, `license`, `attribution`, `notice`, `licenseTexts` and `lang`
+  (`apps/web/src/lib/sources/credits.ts`); see the Reader's manifest for an
+  example. The page shows them under "Plugins".
+- **Core**: material built into the app itself, shared by several features
+  (stroke-order data, `hanzi-writer`, `ts-fsrs`, ...), is listed in
+  `apps/web/src/lib/sources/coreCredits.ts`. Credit it there once rather than in
+  every plugin that uses it. A licence text that ships with the app goes into
+  `apps/web/static/` and is named in the credit's `licenseTexts`.
+
+To add a credit: for a pack, set `license`/`attribution` (and a `notice` if one
+line is not enough) in its `manifest.json` and add a row to
+[docs/sources.md](docs/sources.md); for a plugin, add an entry to its manifest's
+`sources`; for the app itself, add it to `coreCredits.ts`.
+
+`node scripts/check-sources.mjs` keeps packs and docs honest (every pack has a
+non-empty `license` and `attribution`, every bundled pack is named in
+`docs/sources.md`, every pack the docs name exists, every `notice` is valid). CI
+runs it together with the scripts' tests (`node --test scripts/*.test.mjs`).
+
 ## Dictionary data model
 
 The dictionary is stored as `entries`, `forms`, `readings`, `senses`,
@@ -735,6 +768,7 @@ Dockerfile copies that directory into the Go binary before compiling.
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--jlpt-vocab`, generates the optional local-only JLPT vocabulary pack into `plugins/data-local/` (download commands in its header) |
+| `scripts/check-sources.mjs` | Checks that pack manifests (`license`, `attribution`, `notice`) and `docs/sources.md` agree; run in CI (`node scripts/check-sources.mjs [repo-root]`) |
 | `scripts/prepare-hsk-syllabus.mjs` | Rebuilds the HSK 3.0 packs `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 
 ## Branches

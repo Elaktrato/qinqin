@@ -3,7 +3,24 @@
 `qinqin seed --data <dir> --packs plugins/data` imports every pack under this
 directory. A pack is a directory with a `manifest.json` (id, name, version,
 `type` dictionary|levels|sentences|frequency, `language`, `license`, `attribution`,
-`format`) plus the data file its format reads.
+`format`, and an optional `notice`) plus the data file its format reads.
+
+Manifest fields:
+
+| Field | Required | Meaning |
+|---|---|---|
+| `id`, `name`, `version` | yes | identity of the pack |
+| `type` | yes | `dictionary`, `levels`, `sentences` or `frequency` |
+| `language` | yes | language tag (`ja`, `zh`, `es`, ...) |
+| `format` | yes | how the data file is read |
+| `license` | yes | the licence as the publisher states it |
+| `attribution` | yes | who made it, with a link where there is one |
+| `notice` | no | longer caveats shown on the Sources page: plain text, paragraphs separated by a blank line, links only as `[text](https://…)` (https only), at most 4,000 bytes. The server rejects a pack whose notice breaks these rules, and `node scripts/check-sources.mjs` checks the committed manifests |
+
+`license` and `attribution` are checked for every pack here and in
+`plugins/samples/`, and every pack in this directory must be named in
+`docs/sources.md` (`node scripts/check-sources.mjs`, run in CI). Changing a
+`notice` needs a re-seed (`qinqin seed`) to reach an existing database.
 
 Committed (small, hand-written, CC0 — a sample):
 
