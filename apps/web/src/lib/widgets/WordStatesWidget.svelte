@@ -109,7 +109,9 @@
 		</ul>
 
 		{#if !compact && result !== null && result.decks.length > 0}
-			<div class="table-wrap">
+			<!-- Scrolls sideways when the columns do not fit; focusable so keyboards can scroll it. -->
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+			<div class="table-wrap" tabindex="0" role="region" aria-label="Words per deck">
 				<table>
 					<caption class="sr">Words per deck</caption>
 					<thead>
@@ -231,20 +233,22 @@
 
 	th,
 	td {
-		padding: 0.3rem 0.5rem;
+		padding: 0.3rem 0.35rem;
 		border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
 		text-align: left;
 	}
 
 	thead th {
+		font-size: 0.78rem;
 		font-weight: 600;
 		opacity: 0.8;
 	}
 
 	tbody th {
+		/* Room for a deck name on phones; a long one wraps at word breaks. */
+		min-width: 6.5rem;
 		font-weight: 500;
-		max-width: 12rem;
-		overflow-wrap: anywhere;
+		overflow-wrap: break-word;
 	}
 
 	.num {

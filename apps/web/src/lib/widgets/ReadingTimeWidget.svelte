@@ -154,8 +154,8 @@
 
 	.totals {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.75rem;
+		grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+		gap: 0.6rem 0.75rem;
 		margin: 0.9rem 0 0;
 	}
 
@@ -169,6 +169,7 @@
 		font-size: 1.05rem;
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
 	}
 
 	.sub {
