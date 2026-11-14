@@ -9,6 +9,7 @@
 //
 // Usage:
 //   node scripts/prepare-level-packs.mjs <upstream-dir> [<packs-dir>]
+//   node scripts/prepare-level-packs.mjs --calibrate <upstream-dir> [<packs-dir>]
 //   node scripts/prepare-level-packs.mjs --hsk <hsk-dir> [<local-packs-dir>]
 //   node scripts/prepare-level-packs.mjs --jlpt-vocab <jlpt-vocab-dir> [<local-packs-dir>]
 //
@@ -19,8 +20,12 @@
 //   curl -fsSLo jlpt.tsv              https://raw.githubusercontent.com/onlyskin/kanjiapi.dev/76aa080cdf56aa7587304d925e1435bb93469b79/jlpt.tsv
 //   curl -fsSLo kanjiapi.dev-LICENSE  https://raw.githubusercontent.com/onlyskin/kanjiapi.dev/76aa080cdf56aa7587304d925e1435bb93469b79/LICENSE
 //
-// It (re)writes the pack directory jlpt-kanji under <packs-dir> (default
-// plugins/data).
+// It also reads the bundled KANJIDIC2 (<packs-dir>/kanjidic2/kanjidic2.xml.gz
+// and its LICENSE) and (re)writes the pack directory jlpt-kanji under
+// <packs-dir> (default plugins/data): the approximate scheme "JLPT kanji
+// (approximate)", kanjiapi.dev's levels plus a level derived from KANJIDIC2
+// for the kanji it omits (see gapLevel and the calibration notes there).
+// --calibrate prints the evaluation behind the gap-fill thresholds.
 //
 // JLPT vocabulary mode (optional, local use only, not bundled): <jlpt-vocab-dir>
 // holds the JLPT vocabulary CSVs of open-anki-jlpt-decks and its licence, as
@@ -57,6 +62,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 
 const KANJIAPI_COMMIT = '76aa080cdf56aa7587304d925e1435bb93469b79';
 const HSK30_COMMIT = '4ff9e3915ce87baaecd7ebe263085573a4ea3192';
@@ -218,6 +224,202 @@ function jlptLevels(text) {
 		}
 		return { name: `N${n}`, entries };
 	});
+}
+
+// The gap fill of the approximate JLPT kanji pack: kanji kanjiapi.dev's list
+// leaves out get a level derived from three KANJIDIC2 fields, the old
+// (pre-2010) four-level <jlpt>, the school <grade> (1–6 kyōiku, 8 the rest of
+// the jōyō list, 9–10 jinmeiyō name kanji) and the newspaper <freq> rank
+// (1 = most frequent of 2,500). The thresholds below were calibrated on
+// 2026-11-14 against the reference set itself: the 2,211 kanji of
+// kanjiapi.dev's jlpt.tsv (commit 76aa080), whose level is the target, and
+// KANJIDIC2 2026-11-11. Split: a kanji whose code point is a multiple of 5
+// is held out (449 kanji, 20.3%), the others train (1,762); each constant
+// is the best fit on the training kanji alone, ties to the lowest value.
+// `node scripts/prepare-level-packs.mjs --calibrate <upstream-dir>` prints
+// these numbers again.
+//
+// Old level 2 (739 kanji in KANJIDIC2, 733 of them in the reference list:
+// N4 1, N3 339, N2 349, N1 44) splits by frequency: rank <= the cut → N3,
+// else (or no rank) → N2. Best cut on the 587 training kanji: 521, agreeing
+// on 386 (65.8%; always-N2 would get 281, 47.9%); held out 87 of 146
+// (59.6%). (On all 733 the best cut would be 648, 478 = 65.2%; the 6
+// old-level-2 kanji the gap fill places, 可 身 的 無 畑 坊, land the same
+// under either.) The whole old-level mapping (4→N5, 3→N4, 2→cut, 1→N1)
+// agrees with the reference on train 1,509/1,762 (85.6%: N5 62/62,
+// N4 100/115, N3 156/297, N2 230/298, N1 961/990), held out 373/449 (83.1%:
+// N5 17/17, N4 43/51, N3 28/70, N2 59/69, N1 226/242).
+export const OLD2_N3_MAX_FREQ = 521;
+//
+// Jōyō kanji with no old level: level by school grade, the easiest level
+// whose maximum grade the kanji's grade does not exceed, else N1 (grade 6
+// and the secondary-school grade 8). Fitted on the 1,560 training jōyō
+// kanji (grades 1–8) of the reference list, exhaustively over monotone
+// grade cuts: train 989/1,560 (63.4%: N5 40/62, N4 49/115, N3 125/297,
+// N2 63/298, N1 712/788), held out 253/404 (62.6%: N5 9/17, N4 24/51,
+// N3 44/70, N2 10/69, N1 166/197). Frequency was tried and rejected: the
+// best four frequency-rank cuts (37/67/590/827) reach train 61.2% but held
+// out only 54.2%, frequency within grades 1–6 with grade 8 → N1 held out
+// 57.4%, and for grade 8 (151 of the 157 kanji this rule places) no
+// frequency cut beats "all N1" (train 632/761, held out 158/191). The
+// frequency rank only keeps its guard: a jōyō kanji with neither an old
+// level nor a frequency rank goes to N1.
+export const GRADE_LEVEL_MAX = [
+	['N5', 1],
+	['N4', 2],
+	['N3', 4],
+	['N2', 5]
+];
+
+const OLD_LEVEL_MAP = { 4: 'N5', 3: 'N4', 1: 'N1' };
+
+/**
+ * gapLevel is the level the approximate pack gives a kanji kanjiapi.dev does
+ * not list, from its KANJIDIC2 fields {grade, freq, old} (null when absent),
+ * or null when it stays out of the scheme: rule a, an old <jlpt> level
+ * (4→N5, 3→N4, 1→N1; 2 → N3 at or below OLD2_N3_MAX_FREQ, else N2); rule b,
+ * a jōyō grade 1–8 (GRADE_LEVEL_MAX; N1 without a frequency rank); rule c,
+ * anything else (jinmeiyō, grade-less) is not listed.
+ */
+export function gapLevel({ grade, freq, old }) {
+	if (old !== null) {
+		if (old === 2) return freq !== null && freq <= OLD2_N3_MAX_FREQ ? 'N3' : 'N2';
+		return OLD_LEVEL_MAP[old] ?? fail(`KANJIDIC2: unknown old JLPT level ${old}`);
+	}
+	if (grade === null || grade > 8) return null;
+	if (freq === null) return 'N1';
+	for (const [level, maxGrade] of GRADE_LEVEL_MAX) {
+		if (grade <= maxGrade) return level;
+	}
+	return 'N1';
+}
+
+const KANJIDIC2_CHARACTER = /<character>([\s\S]*?)<\/character>/g;
+
+function xmlInt(block, tag, literal) {
+	const m = new RegExp(`<${tag}>([^<]*)</${tag}>`).exec(block);
+	if (m === null) return null;
+	if (!/^\d+$/.test(m[1])) fail(`KANJIDIC2: ${literal} has a non-numeric <${tag}> ${JSON.stringify(m[1])}`);
+	return Number(m[1]);
+}
+
+/**
+ * parseKanjidic2 reads the fields the gap fill uses from KANJIDIC2 XML: a
+ * Map from each literal, in file order, to {grade, freq, old} (null when
+ * the element is absent; old is the pre-2010 <jlpt> level).
+ */
+export function parseKanjidic2(xml) {
+	const kanji = new Map();
+	for (const [, block] of xml.matchAll(KANJIDIC2_CHARACTER)) {
+		const m = /<literal>([^<]*)<\/literal>/.exec(block);
+		if (m === null || !HAN.test(m[1])) fail(`KANJIDIC2: a <character> without one Han <literal> (${JSON.stringify(m?.[1])})`);
+		const literal = m[1];
+		if (kanji.has(literal)) fail(`KANJIDIC2: ${literal} appears twice`);
+		kanji.set(literal, {
+			grade: xmlInt(block, 'grade', literal),
+			freq: xmlInt(block, 'freq', literal),
+			old: xmlInt(block, 'jlpt', literal)
+		});
+	}
+	if (kanji.size === 0) fail('KANJIDIC2: no <character> elements');
+	return kanji;
+}
+
+/**
+ * approxJlptLevels builds the approximate N5–N1 levels: every kanji of
+ * kanjiapi.dev's jlpt.tsv at its listed level, in file order, then each
+ * kanji it leaves out that gapLevel places, appended to its level by
+ * frequency rank (none last), then code point. added counts the appended
+ * kanji by rule: old (an old <jlpt> level) and grade (the grade rule).
+ */
+export function approxJlptLevels(tsv, kanjidic) {
+	const levels = jlptLevels(tsv);
+	const listed = new Set(levels.flatMap((level) => level.entries));
+	const gap = new Map(levels.map((level) => [level.name, []]));
+	const added = { old: 0, grade: 0 };
+	for (const [ch, info] of kanjidic) {
+		if (listed.has(ch)) continue;
+		const level = gapLevel(info);
+		if (level === null) continue;
+		gap.get(level).push({ ch, freq: info.freq ?? Infinity });
+		added[info.old !== null ? 'old' : 'grade']++;
+	}
+	for (const level of levels) {
+		const extra = gap.get(level.name).sort((a, b) => a.freq - b.freq || a.ch.codePointAt(0) - b.ch.codePointAt(0));
+		level.entries.push(...extra.map((e) => e.ch));
+	}
+	return { levels, added };
+}
+
+/** holdsOut is the calibration split: a code point that is a multiple of 5. */
+const holdsOut = (ch) => ch.codePointAt(0) % 5 === 0;
+
+/**
+ * calibrate refits OLD2_N3_MAX_FREQ and GRADE_LEVEL_MAX on the training
+ * part of the reference list (exhaustive search, ties to the lowest value)
+ * and returns the report lines: the fitted values and the agreement per
+ * level on the training and held-out kanji.
+ */
+export function calibrate(tsv, kanjidic) {
+	const ref = [];
+	for (const level of jlptLevels(tsv)) {
+		for (const ch of level.entries) {
+			const info = kanjidic.get(ch);
+			if (info !== undefined) ref.push({ ch, level: level.name, ...info });
+		}
+	}
+	const train = ref.filter((k) => !holdsOut(k.ch));
+	const held = ref.filter((k) => holdsOut(k.ch));
+	const score = (items, predict) => {
+		const per = ['N5', 'N4', 'N3', 'N2', 'N1'].map((name) => {
+			const of = items.filter((k) => k.level === name);
+			return `${name} ${of.filter((k) => predict(k) === name).length}/${of.length}`;
+		});
+		const ok = items.filter((k) => predict(k) === k.level).length;
+		return `${ok}/${items.length} (${((100 * ok) / items.length).toFixed(1)}%: ${per.join(', ')})`;
+	};
+	const best = (candidates, items, predictWith) => {
+		let top;
+		for (const c of candidates) {
+			const ok = items.filter((k) => predictWith(c)(k) === k.level).length;
+			if (top === undefined || ok > top.ok) top = { c, ok };
+		}
+		return top.c;
+	};
+
+	const old2 = (cut) => (k) => (k.freq !== null && k.freq <= cut ? 'N3' : 'N2');
+	const cut = best(
+		Array.from({ length: 2501 }, (_, i) => i),
+		train.filter((k) => k.old === 2),
+		old2
+	);
+	const oldRule = (k) => (k.old === 2 ? old2(cut)(k) : OLD_LEVEL_MAP[k.old] ?? null);
+
+	const grades = [0, 1, 2, 3, 4, 5, 6, 8];
+	const cuts = [];
+	for (let a = 0; a < grades.length; a++)
+		for (let b = a; b < grades.length; b++)
+			for (let c = b; c < grades.length; c++)
+				for (let d = c; d < grades.length; d++) cuts.push([grades[a], grades[b], grades[c], grades[d]]);
+	const gradeRule = (max) => (k) => {
+		if (k.freq === null) return 'N1';
+		const i = max.findIndex((m) => k.grade <= m);
+		return i === -1 ? 'N1' : ['N5', 'N4', 'N3', 'N2'][i];
+	};
+	const joyo = (k) => k.grade !== null && k.grade <= 8;
+	const gradeMax = best(cuts, train.filter(joyo), gradeRule);
+
+	return [
+		`reference ${ref.length} kanji: train ${train.length}, held out ${held.length} (code point % 5 === 0)`,
+		`old level 2 cut: ${cut} (constant ${OLD2_N3_MAX_FREQ})`,
+		`  old 2 train   ${score(train.filter((k) => k.old === 2), old2(cut))}`,
+		`  old 2 held    ${score(held.filter((k) => k.old === 2), old2(cut))}`,
+		`  old map train ${score(train.filter((k) => k.old !== null), oldRule)}`,
+		`  old map held  ${score(held.filter((k) => k.old !== null), oldRule)}`,
+		`grade cuts N5..N2: ${gradeMax.join('/')} (constant ${GRADE_LEVEL_MAX.map(([, m]) => m).join('/')})`,
+		`  jōyō train    ${score(train.filter(joyo), gradeRule(gradeMax))}`,
+		`  jōyō held     ${score(held.filter(joyo), gradeRule(gradeMax))}`
+	];
 }
 
 /** hskCharLevels reads hsk30-chars.csv, grouped by reading level. */
@@ -424,28 +626,26 @@ function countsLine(levels) {
 	return levels.map((level) => `${level.name} ${level.entries.length}`).join(', ');
 }
 
-async function writePack(dir, { manifest, unit, levels, license, attribution }) {
+async function writePack(dir, { manifest, unit, levels, license, attribution, extraFiles = {} }) {
 	await rm(dir, { recursive: true, force: true });
 	await mkdir(dir, { recursive: true });
 	await writeFile(join(dir, 'manifest.json'), json(manifest));
 	await writeFile(join(dir, 'levels.json'), levelsJSON(unit, levels));
 	await writeFile(join(dir, 'LICENSE'), license);
 	await writeFile(join(dir, 'ATTRIBUTION.md'), attribution);
+	for (const [name, content] of Object.entries(extraFiles)) await writeFile(join(dir, name), content);
 }
 
 function sumsBlock(sums, files) {
 	return files.map((name) => `    ${sums[name]}  ${name}`).join('\n');
 }
 
-async function mainJlpt() {
-	const [upstreamArg, packsArg] = process.argv.slice(2);
-	if (upstreamArg === undefined) {
-		fail('usage: node scripts/prepare-level-packs.mjs <upstream-dir> [<packs-dir>]');
-	}
-	const here = dirname(fileURLToPath(import.meta.url));
-	const upstream = resolve(upstreamArg);
-	const packs = resolve(packsArg ?? join(here, '..', 'plugins', 'data'));
-
+/**
+ * readJlptInputs reads kanjiapi.dev's two files from upstream (warning when
+ * one differs from the pinned sum) and the bundled KANJIDIC2 from
+ * <packs>/kanjidic2; a missing file fails before anything is written.
+ */
+async function readJlptInputs(upstream, packs) {
 	const files = {};
 	const sums = {};
 	for (const name of Object.keys(PINNED_SHA256)) {
@@ -459,56 +659,142 @@ async function mainJlpt() {
 			console.warn(`prepare-level-packs: warning: ${name} differs from the pinned upstream file (sha256 ${sums[name]})`);
 		}
 	}
-	const text = (name) => stripBOM(files[name].toString('utf8'));
+	const kanjidicDir = join(packs, 'kanjidic2');
+	for (const name of ['kanjidic2.xml.gz', 'LICENSE']) {
+		try {
+			files[`kanjidic2/${name}`] = await readFile(join(kanjidicDir, name));
+		} catch (err) {
+			fail(
+				`read ${name} from ${kanjidicDir} (${err.code ?? err.message}): the JLPT kanji gap fill needs the bundled ` +
+					'KANJIDIC2 pack (plugins/data/kanjidic2, refreshed by scripts/fetch-seeds.sh)'
+			);
+		}
+		sums[`kanjidic2/${name}`] = sha256(files[`kanjidic2/${name}`]);
+	}
+	let xml;
+	try {
+		xml = gunzipSync(files['kanjidic2/kanjidic2.xml.gz']).toString('utf8');
+	} catch (err) {
+		fail(`KANJIDIC2: ${join(kanjidicDir, 'kanjidic2.xml.gz')} is not gzip: ${err.message}`);
+	}
+	const created = /<date_of_creation>([^<]*)<\/date_of_creation>/.exec(xml)?.[1] ?? 'unknown date';
+	return {
+		files,
+		sums,
+		tsv: stripBOM(files['jlpt.tsv'].toString('utf8')),
+		kanjidic: parseKanjidic2(xml),
+		kanjidicDate: created
+	};
+}
 
-	const jlpt = jlptLevels(text('jlpt.tsv'));
+function jlptDirs(args, usage) {
+	const [upstreamArg, packsArg] = args;
+	if (upstreamArg === undefined) fail(usage);
+	const here = dirname(fileURLToPath(import.meta.url));
+	return { upstream: resolve(upstreamArg), packs: resolve(packsArg ?? join(here, '..', 'plugins', 'data')) };
+}
+
+/** mainCalibrate prints the evaluation behind the gap-fill constants. */
+async function mainCalibrate(args) {
+	const { upstream, packs } = jlptDirs(args, 'usage: node scripts/prepare-level-packs.mjs --calibrate <upstream-dir> [<packs-dir>]');
+	const { tsv, kanjidic } = await readJlptInputs(upstream, packs);
+	for (const line of calibrate(tsv, kanjidic)) console.log(line);
+}
+
+async function mainJlpt(args) {
+	const { upstream, packs } = jlptDirs(args, 'usage: node scripts/prepare-level-packs.mjs <upstream-dir> [<packs-dir>]');
+	const { files, sums, tsv, kanjidic, kanjidicDate } = await readJlptInputs(upstream, packs);
+
+	const base = jlptLevels(tsv);
+	const listed = new Set(base.flatMap((level) => level.entries));
+	const { levels, added } = approxJlptLevels(tsv, kanjidic);
+	const perLevel = levels.map((level, i) => `${level.name} ${base[i].entries.length} + ${level.entries.length - base[i].entries.length}`).join(', ');
+	const joyo = [...kanjidic].filter(([, k]) => k.grade !== null && k.grade <= 8);
+	const joyoMissing = joyo.filter(([ch]) => !listed.has(ch)).length;
+	const joyoPlaced = new Set(levels.flatMap((level) => level.entries));
+	const joyoLeft = joyo.filter(([ch]) => !joyoPlaced.has(ch)).length;
+	const nameKanji = base[base.length - 1].entries.filter((ch) => (kanjidic.get(ch)?.grade ?? 0) >= 9).length;
+	const total = levels.reduce((n, level) => n + level.entries.length, 0);
 
 	const kanjiapiSource = `https://github.com/onlyskin/kanjiapi.dev (commit ${KANJIAPI_COMMIT})`;
-	const kanjiapiVersion = `kanjiapi.dev@${KANJIAPI_COMMIT.slice(0, 7)}`;
 	await writePack(join(packs, 'jlpt-kanji'), {
 		manifest: {
 			id: 'jlpt-kanji',
-			name: 'JLPT (kanji)',
-			version: kanjiapiVersion,
+			name: 'JLPT kanji (approximate)',
+			version: `kanjiapi.dev@${KANJIAPI_COMMIT.slice(0, 7)}+kanjidic2@${kanjidicDate}`,
 			type: 'levels',
 			language: 'ja',
-			license: 'MIT',
+			license: 'MIT AND CC BY-SA 4.0',
 			attribution:
-				'kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter), https://github.com/onlyskin/kanjiapi.dev — unofficial N5–N1 kanji lists; the JLPT publishes no official kanji list',
+				'An approximation of the JLPT N5–N1 kanji levels (the JLPT publishes no official kanji list since 2010): ' +
+				'base list kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter, provenance not stated upstream), ' +
+				'https://github.com/onlyskin/kanjiapi.dev; kanji it omits placed by qinqin (scripts/prepare-level-packs.mjs) ' +
+				'from KANJIDIC2 (CC BY-SA 4.0, © EDRDG) old JLPT level and school grade',
 			format: 'json'
 		},
 		unit: 'character',
-		levels: jlpt,
+		levels,
 		license: files['kanjiapi.dev-LICENSE'],
-		attribution: `# JLPT kanji levels (N5–N1)
+		extraFiles: { 'LICENSE-KANJIDIC2': files['kanjidic2/LICENSE'] },
+		attribution: `# JLPT kanji levels (N5–N1), approximate
 
-Kanji grouped by the current JLPT levels N5 (easiest) to N1, from \`jlpt.tsv\`
-of kanjiapi.dev, ${kanjiapiSource}.
+Kanji grouped by the current JLPT levels N5 (easiest) to N1. This is an
+approximation: the Japan Foundation and JEES have published no official
+kanji list since the 2010 revision of the test, so every N5–N1 kanji list is
+an unofficial reconstruction, and this pack is one more, built by qinqin
+from two sources.
 
+Base list: \`jlpt.tsv\` of kanjiapi.dev, ${kanjiapiSource}.
 Licence: MIT, Copyright 2023 Iridium Szreter. See LICENSE in this directory
 for the full text, copied verbatim from the upstream repository.
+kanjiapi.dev does not say where \`jlpt.tsv\` comes from. Every kanji it lists
+keeps its level here.
 
-The Japan Foundation and JEES have published no official kanji list since
-the 2010 revision of the test; like every N5–N1 list, this one is an
-unofficial reconstruction. It replaces the pre-2010 four-level scale that
-KANJIDIC2 carries, which qinqin no longer imports.
+Gap fill: KANJIDIC2 (dated ${kanjidicDate}), © Electronic Dictionary Research
+and Development Group (EDRDG), https://www.edrdg.org/wiki/index.php/KANJIDIC_Project,
+licensed under CC BY-SA 4.0 (see LICENSE-KANJIDIC2 in this directory, copied
+from the bundled kanjidic2 pack). The levels of the kanji the base list
+omits are adapted from KANJIDIC2 data and are licensed under CC BY-SA 4.0;
+the base list's levels stay under its MIT licence. Whoever redistributes
+this pack follows both: keep both notices and licence texts, and share
+changes to the derived levels under CC BY-SA 4.0.
 
-kanjiapi.dev does not say where \`jlpt.tsv\` comes from. Compared with
-KANJIDIC2 (checked when this pack was made): 172 of the 2,136 jōyō kanji
-are in no level, among them the common 分, 可, 無 and 的, and N1 holds 247
-jinmeiyō (name) kanji such as 伊, 智, 弘 and 彦.
+Compared with KANJIDIC2, the base list leaves ${joyoMissing} of the
+${joyo.length} jōyō kanji in no level, among them the common 分, 可, 無 and 的,
+and its N1 holds ${nameKanji} jinmeiyō (name) kanji such as 伊, 智, 弘 and 彦.
+\`scripts/prepare-level-packs.mjs\` places each kanji the base list omits,
+in this order:
 
-Conversion (\`scripts/prepare-level-packs.mjs\`): each line \`<n>\\t<kanji>\`
-becomes the level "N<n>", ordered N5, N4, N3, N2, N1, one entry per kanji in
-file order. Nothing is added or removed. Levels: ${countsLine(jlpt)}.
+a. A kanji with a pre-2010 four-level JLPT level in KANJIDIC2 (\`<jlpt>\`):
+   4 → N5, 3 → N4, 1 → N1; 2 → N3 when its newspaper frequency rank
+   (\`<freq>\`) is ${OLD2_N3_MAX_FREQ} or better, else (or with no rank) N2.
+   ${added.old} kanji.
+b. Else a jōyō kanji (\`<grade>\` 1–8), by school grade:
+   ${GRADE_LEVEL_MAX.map(([level, max]) => `grade ≤ ${max} → ${level}`).join(', ')},
+   higher grades (6, and 8 for the secondary-school jōyō kanji) → N1;
+   with no frequency rank → N1. ${added.grade} kanji.
+c. Anything else (jinmeiyō name kanji, kanji with no grade) is not listed.
 
-Input file (SHA-256):
+The thresholds were calibrated against the base list itself (its
+${listed.size} kanji are the reference; 20% held out by code point); the evaluation is recorded
+next to the constants in the script and reproduced by
+\`node scripts/prepare-level-packs.mjs --calibrate <upstream-dir>\`. On the
+held-out kanji the old-level mapping agrees with the base list on about
+four in five kanji and the grade rule on about three in five: treat a
+derived level as a rough guide. ${joyoLeft === 0 ? 'Every jōyō kanji now has a level.' : `${joyoLeft} jōyō kanji still have no level.`}
 
-${sumsBlock(sums, ['jlpt.tsv', 'kanjiapi.dev-LICENSE'])}
+Order: each level lists the base kanji in file order, then the added kanji
+by frequency rank (none last), then code point. ${total} kanji; levels
+(base + added): ${perLevel}.
+
+Input files (SHA-256):
+
+${sumsBlock(sums, ['jlpt.tsv', 'kanjiapi.dev-LICENSE', 'kanjidic2/kanjidic2.xml.gz', 'kanjidic2/LICENSE'])}
 `
 	});
 
-	console.log(`jlpt-kanji: ${countsLine(jlpt)}`);
+	console.log(`jlpt-kanji: ${total} kanji; ${countsLine(levels)}`);
+	console.log(`  base ${listed.size}; added ${added.old} by old JLPT level, ${added.grade} by grade; per level (base + added): ${perLevel}`);
 }
 
 /**
@@ -761,7 +1047,8 @@ async function main() {
 	const args = process.argv.slice(2);
 	if (args[0] === '--hsk') return mainHsk(args.slice(1));
 	if (args[0] === '--jlpt-vocab') return mainJlptVocab(args.slice(1));
-	return mainJlpt();
+	if (args[0] === '--calibrate') return mainCalibrate(args.slice(1));
+	return mainJlpt(args);
 }
 
 // Run only as a script: the tests import the parsing helpers.

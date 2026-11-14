@@ -25,11 +25,15 @@ const bundledPacks = "../../../plugins/data"
 func TestBundledLevelPacks(t *testing.T) {
 	jlpt := []string{"N5", "N4", "N3", "N2", "N1"}
 	cases := []struct {
-		id, name, language, unit string
-		levels                   []string
-		total                    int // forms over all levels; 0 = not pinned
+		id, name, language, unit, license string
+		licenses                          []string // licence texts beside the manifest
+		levels                            []string
+		total                             int // forms over all levels; 0 = not pinned
 	}{
-		{"jlpt-kanji", "JLPT (kanji)", "ja", "character", jlpt, 0},
+		// kanjiapi.dev's 2,211 kanji plus the 176 it omits that the
+		// KANJIDIC2 gap fill places (scripts/prepare-level-packs.mjs).
+		{"jlpt-kanji", "JLPT kanji (approximate)", "ja", "character", "MIT AND CC BY-SA 4.0",
+			[]string{"LICENSE", "LICENSE-KANJIDIC2"}, jlpt, 2387},
 	}
 	for _, c := range cases {
 		t.Run(c.id, func(t *testing.T) {
@@ -42,10 +46,10 @@ func TestBundledLevelPacks(t *testing.T) {
 			if m.ID != c.id || m.Name != c.name || m.Language != c.language || m.Type != dict.TypeLevels {
 				t.Errorf("manifest = %+v, want id %s, name %q, language %s, type levels", m, c.id, c.name, c.language)
 			}
-			if m.License != "MIT" || m.Attribution == "" {
-				t.Errorf("license %q, attribution %q; want MIT with an attribution", m.License, m.Attribution)
+			if m.License != c.license || m.Attribution == "" {
+				t.Errorf("license %q, attribution %q; want %q with an attribution", m.License, m.Attribution, c.license)
 			}
-			for _, f := range []string{"LICENSE", "ATTRIBUTION.md"} {
+			for _, f := range append([]string{"ATTRIBUTION.md"}, c.licenses...) {
 				if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
 					t.Errorf("%s: %v", f, err)
 				}
