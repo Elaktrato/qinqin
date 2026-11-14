@@ -5,6 +5,7 @@
 import { api } from './api/client';
 import type { StudyEventBody } from './api/types';
 import { newUlid } from './ulid';
+import { createWorkspaceCache } from './workspaceCache';
 
 export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read';
 
@@ -34,10 +35,80 @@ function utcDayKey(now: Date): string {
  * can put it in a retry queue.
  */
 export async function postEvents(events: StudyEventBody[]): Promise<void> {
-	await api('/api/events/batch', {
-		method: 'POST',
-		body: { events }
-	});
+	try {
+		await api('/api/events/batch', {
+			method: 'POST',
+			body: { events }
+		});
+	} finally {
+		// A failed POST may still have landed: drop what may be stale either way.
+		logChanged(events);
+	}
+}
+
+// How long a full event log read serves the widgets: one page and a
+// Home -> Stats hop, not more. Joining the read in flight is the main gain.
+export const WORKSPACE_EVENTS_TTL_MS = 8_000;
+
+// Only these event types change what the readers of the full log show
+// (reviews: flashcards, words, characters; read: reading time). The home
+// page posts a `session` event on every load; dropping the cache for it
+// would defeat the cache.
+const LOG_CHANGING_TYPES: ReadonlySet<string> = new Set(['review', 'read']);
+
+function fullLogPath(workspaceId: number): string {
+	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
+}
+
+const eventLog = createWorkspaceCache(
+	async (workspaceId: number): Promise<StudyEvent[]> => {
+		const events = await api<StudyEvent[]>(fullLogPath(workspaceId));
+		return Array.isArray(events) ? events : [];
+	},
+	() => Date.now(),
+	WORKSPACE_EVENTS_TTL_MS
+);
+
+const logListeners = new Set<(workspaceId: number) => void>();
+
+/**
+ * onEventLogChange registers a listener called with the workspace whose
+ * cached log was dropped because a review or read event was posted, so
+ * caches derived from the log can drop theirs; returns the unsubscribe.
+ */
+export function onEventLogChange(listener: (workspaceId: number) => void): () => void {
+	logListeners.add(listener);
+	return () => logListeners.delete(listener);
+}
+
+function logChanged(events: readonly StudyEventBody[]): void {
+	const touched = new Set<number>();
+	for (const event of events) {
+		if (LOG_CHANGING_TYPES.has(event.type)) touched.add(event.workspaceId);
+	}
+	for (const workspaceId of touched) {
+		eventLog.invalidate(workspaceId);
+		for (const listener of logListeners) listener(workspaceId);
+	}
+}
+
+/**
+ * loadWorkspaceEvents reads the whole event log of one workspace through
+ * a short-lived shared cache (see WORKSPACE_EVENTS_TTL_MS): the home and
+ * Stats widgets each need it, and they share one read. `force` skips a
+ * cached copy (a widget's "Try again"). The array is shared: do not
+ * mutate it. Pages that schedule or write study data read uncached.
+ */
+export function loadWorkspaceEvents(
+	workspaceId: number,
+	opts?: { force?: boolean }
+): Promise<StudyEvent[]> {
+	return eventLog.get(workspaceId, opts);
+}
+
+/** invalidateWorkspaceEvents drops the cached log of one workspace, or of all. */
+export function invalidateWorkspaceEvents(workspaceId?: number): void {
+	eventLog.invalidate(workspaceId);
 }
 
 /**

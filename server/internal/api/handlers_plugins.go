@@ -36,8 +36,8 @@ func (s *server) handleRegisterPlugin(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleListPlugins serves GET /api/plugins with the caller's plugins
-// — feature and data — each with the caller's state overlaid, in home
-// order.
+// — feature and data — each with the caller's state overlaid, in the
+// caller's plugin order (the position in the Plugins list).
 func (s *server) handleListPlugins(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -53,7 +53,8 @@ func (s *server) handleListPlugins(w http.ResponseWriter, r *http.Request) {
 
 // handleSetPluginState serves PUT /api/plugins/{id}/state with the
 // body {"enabled": bool, "order": int}: the caller's enable flag and
-// home position for one plugin. The plugin must exist — unknown ids
+// position in the Plugins list for one plugin (the home layout is the
+// per-user widget layout in the qinqin-core plugin data). The plugin must exist — unknown ids
 // are 404 — but state is the caller's alone.
 func (s *server) handleSetPluginState(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)

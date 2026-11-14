@@ -81,8 +81,9 @@ func TestRootMuxKeepsAPI(t *testing.T) {
 }
 
 // TestRegisterBuiltinPlugins proves the serve startup registration puts
-// the shipped flashcards plugin into the server registry: Settings lists
-// it, and with no state row it is enabled at order 0. Running twice must
+// the shipped plugins (flashcards, reader and the core app's own
+// qinqin-core) into the server registry: the list carries them, and
+// with no state row they are enabled at order 0. Running twice must
 // be a no-op upsert, as it happens on every start.
 func TestRegisterBuiltinPlugins(t *testing.T) {
 	sqlDB, err := openData(t.TempDir())
@@ -109,7 +110,7 @@ func TestRegisterBuiltinPlugins(t *testing.T) {
 	}
 	found := map[string]bool{}
 	for _, plugin := range list {
-		if plugin.ID != "qinqin-flashcards" && plugin.ID != "qinqin-reader" {
+		if plugin.ID != "qinqin-flashcards" && plugin.ID != "qinqin-reader" && plugin.ID != "qinqin-core" {
 			continue
 		}
 		found[plugin.ID] = true
@@ -117,7 +118,7 @@ func TestRegisterBuiltinPlugins(t *testing.T) {
 			t.Errorf("%s state = enabled %t, order %d, want enabled, 0", plugin.ID, plugin.Enabled, plugin.Order)
 		}
 	}
-	for _, id := range []string{"qinqin-flashcards", "qinqin-reader"} {
+	for _, id := range []string{"qinqin-flashcards", "qinqin-reader", "qinqin-core"} {
 		if !found[id] {
 			t.Errorf("%s not in plugin list %+v", id, list)
 		}
