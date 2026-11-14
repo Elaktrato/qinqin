@@ -9,6 +9,7 @@
 
 	interface Props {
 		strokes: CharStrokes;
+		/** Largest side in CSS px; the pad shrinks to fit narrower containers. */
 		size: number;
 		onComplete: (outcome: CharOutcome, hints: number) => void;
 		/** Incrementing triggers a reveal of the whole character. */
@@ -44,6 +45,8 @@
 	let ctx: CanvasRenderingContext2D | null = null;
 	let raf = 0;
 	let dpr = 1;
+	// Current side of the pad in CSS px, measured; the canvas backing store follows it.
+	let side = untrack(() => size);
 
 	interface Fade {
 		ink: Pt[];
@@ -79,9 +82,9 @@
 		ctx2.globalAlpha = alpha;
 		ctx2.strokeStyle = color;
 		ctx2.beginPath();
-		ctx2.moveTo(pts[0].x * size, pts[0].y * size);
-		if (pts.length === 1) ctx2.lineTo(pts[0].x * size + 0.01, pts[0].y * size);
-		for (let i = 1; i < pts.length; i++) ctx2.lineTo(pts[i].x * size, pts[i].y * size);
+		ctx2.moveTo(pts[0].x * side, pts[0].y * side);
+		if (pts.length === 1) ctx2.lineTo(pts[0].x * side + 0.01, pts[0].y * side);
+		for (let i = 1; i < pts.length; i++) ctx2.lineTo(pts[i].x * side, pts[i].y * side);
 		ctx2.stroke();
 	}
 
@@ -89,7 +92,7 @@
 		raf = 0;
 		if (ctx === null || canvas === null) return;
 		ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		ctx.clearRect(0, 0, size, size);
+		ctx.clearRect(0, 0, side, side);
 		ctx.lineWidth = 6;
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
@@ -256,11 +259,20 @@
 
 	onMount(() => {
 		if (canvas === null) return;
-		dpr = window.devicePixelRatio || 1;
-		canvas.width = Math.round(size * dpr);
-		canvas.height = Math.round(size * dpr);
 		ctx = canvas.getContext('2d');
+		const fit = () => {
+			if (canvas === null) return;
+			dpr = window.devicePixelRatio || 1;
+			side = canvas.clientWidth || side;
+			canvas.width = Math.round(side * dpr);
+			canvas.height = Math.round(side * dpr);
+			schedule();
+		};
+		fit();
+		const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null;
+		observer?.observe(canvas);
 		return () => {
+			observer?.disconnect();
 			if (raf !== 0) cancelAnimationFrame(raf);
 			for (const id of timers) clearTimeout(id);
 			timers.clear();
@@ -276,8 +288,7 @@
 <div
 	class="pad"
 	data-card-input
-	style:width={`${size}px`}
-	style:height={`${size}px`}
+	style:max-width={`${size}px`}
 	role="img"
 	aria-label={label}
 >
@@ -315,8 +326,6 @@
 	<canvas
 		bind:this={canvas}
 		class="layer ink"
-		style:width={`${size}px`}
-		style:height={`${size}px`}
 		onpointerdown={down}
 		onpointermove={move}
 		onpointerup={up}
@@ -328,7 +337,9 @@
 <style>
 	.pad {
 		position: relative;
-		max-width: 100%;
+		width: 100%;
+		aspect-ratio: 1;
+		box-sizing: border-box;
 		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
 		border-radius: 0.4rem;
 		touch-action: none;

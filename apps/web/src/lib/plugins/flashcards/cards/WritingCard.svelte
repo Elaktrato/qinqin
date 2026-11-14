@@ -192,7 +192,7 @@
 			/>
 		{/key}
 	{:else}
-		<div class="pad-placeholder" style:width={`${SIZE}px`} style:height={`${SIZE}px`} data-card-input></div>
+		<div class="pad-placeholder" style:max-width={`${SIZE}px`} data-card-input></div>
 	{/if}
 </div>
 
@@ -272,7 +272,9 @@
 	}
 
 	.pad-placeholder {
-		max-width: 100%;
+		width: 100%;
+		aspect-ratio: 1;
+		box-sizing: border-box;
 		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
 		border-radius: 0.4rem;
 	}
