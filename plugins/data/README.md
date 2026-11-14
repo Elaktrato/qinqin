@@ -17,7 +17,7 @@ variants) and `ja-mini` (kana readings, romaji search) are keyed by written
 form, so next to CC-CEDICT and JMdict they would add a second,
 part-of-speech-less card for the same words, ranked first. The LEVEL packs
 `hsk-mini` (word levels with derived character levels) and `jlpt-mini` (an N5
-sample) would add a second, duplicate badge next to the bundled HSK 3.0 words and
+sample) would add a second, duplicate badge next to the bundled HSK 3.0 and
 JLPT kanji lists (and a locally installed JLPT vocabulary); the map hides them even when seeded. Seed them explicitly
 (for a small demo database, or alongside the full bundle) with
 `qinqin seed --packs plugins/samples` (or `--packs plugins/data,plugins/samples`).
@@ -40,6 +40,7 @@ upstream `LICENSE` where upstream has one):
 
 | Pack | Type | Language | Scheme | Contents | Licence |
 |------|------|----------|--------|----------|---------|
+| `hsk-chars` | levels | zh | HSK 3.0 (characters) | the official HSK character list, unit `character`: the characters to recognise (认读字) per level, HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413, HSK 7–9 1,148 (3,088, none repeated; the 1,200 characters to write, 书写字, assign no level) | no licence stated by the publisher; included by the project owner with attribution; copyright status not verified (no `LICENSE` file) |
 | `hsk-words` | levels | zh | HSK 3.0 (words) | the official HSK word list, unit `word`, each entry with its pinyin as reading: HSK 1 300, HSK 2 198, HSK 3 497, HSK 4 997, HSK 5 1,591, HSK 6 1,792, HSK 7–9 5,584 (from the syllabus's 11,000 rows: 300/200/500/1,000/1,600/1,800/5,600; 41 homographs repeating an easier row's form and pinyin, 本1/本2 běn, are kept once) | no licence stated by the publisher; included by the project owner with attribution; copyright status not verified (no `LICENSE` file) |
 | `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`, provenance not stated upstream; unofficial, as every N5–N1 list is; omits 172 jōyō kanji such as 分 可 無 的, and its N1 holds 247 jinmeiyō name kanji) | MIT, © 2023 Iridium Szreter |
 
@@ -90,12 +91,14 @@ commit, records the SHA-256 of the input files and says "not bundled, local use
 only"; do not commit or redistribute the output (`plugins/data-local/` is
 gitignored).
 
-HSK 3.0 words (`hsk-words`) come from the official syllabus 《HSK 考试大纲》 /
+HSK 3.0 words (`hsk-words`) and characters (`hsk-chars`) come from the official syllabus 《HSK 考试大纲》 /
 Syllabus for the Chinese Proficiency Test, published 2025-11 and effective
 2026-07, issued by 中外语言交流合作中心 (CLEC) and distributed by CTI at
 https://www.chinesetest.cn; the publisher states no licence (see the pack's
 `ATTRIBUTION.md`). Its part "HSK 词汇大纲" is a table: serial number, level
-(1–6, 7-9), word, pinyin, part of speech. To rebuild the pack, keep the
+(1–6, 7-9), word, pinyin, part of speech; its part "HSK 汉字大纲" numbers
+the characters to recognise (认读字) per level and the characters to write
+(书写字). One command rebuilds both packs; keep the
 inputs OUTSIDE the repository (they are gitignored as well, and must never be
 committed):
 
@@ -115,7 +118,13 @@ duplicate, and fails naming the rows otherwise. A level cell such as
 pinyin becomes the entry's reading (the first of "shéi/shuí"), which the
 importer compares toneless with CC-CEDICT's pinyin. With `--pdf` the PDF's
 SHA-256 goes into `ATTRIBUTION.md`, and a re-run reproduces the pack byte for
-byte. On the map, the word scheme shows the characters its words are written
+byte. For `hsk-chars` it reads the numbered columns ("1. 爱"), checks that
+each list numbers 1..N, drops the watermark by glyph height (汉, 考, 国 and
+际 are also listed characters), gives each character the level of the 认读字
+list that introduces it, and checks that every 书写字 character is recognised
+at or below its level. The 3,088 characters all resolve at seed time, and
+they agree with the levels derived from the words on all but 3 (店, 留, 饺).
+On the map, the word scheme shows the characters its words are written
 with, each at the lowest level of a word that uses it; a one-character word
 (好) links to the character entry, since CC-CEDICT gives single characters as
 characters. Against the bundled CC-CEDICT, 2 of the 10,959 forms do not

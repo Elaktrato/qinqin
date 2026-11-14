@@ -223,6 +223,18 @@
 				character map groups each character at the lowest level of a word written with it.
 			</p>
 		{/if}
+		{#if installedPacks.has('hsk-chars')}
+			<p class="notice">
+				The HSK 3.0 characters are the official character list (HSK 汉字大纲, the characters to
+				recognise, 认读字, of each level) of the same syllabus, edition published 2025-11 and
+				effective 2026-07, issued by 中外语言交流合作中心 (CLEC) and distributed by CTI at
+				<a href="https://www.chinesetest.cn" rel="noreferrer">chinesetest.cn</a>. The publisher
+				states no licence for the list, and its copyright status has not been verified; it is
+				included by the project owner with this attribution. A character's level is the level
+				whose list introduces it; the syllabus's lists of characters to write (书写字) assign no
+				level here.
+			</p>
+		{/if}
 		{#if installedPacks.has('jlpt-kanji')}
 			<p class="notice">
 				The JLPT kanji come from
