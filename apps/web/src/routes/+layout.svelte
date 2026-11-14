@@ -413,6 +413,15 @@
 			padding-bottom: var(--bottom-bar-height);
 		}
 
+		/* Keyboard focus, scrollIntoView and fragment jumps stop above the
+		   bar, not behind it (WCAG 2.4.11): the bar's height (the same
+		   expression as --bottom-bar-height, which lives on .app and so
+		   is not visible on the root) plus a margin. The bar is a width
+		   query, so this also covers desktop browsers at high zoom. */
+		:global(html:has(.app.with-bar)) {
+			scroll-padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px) + 0.75rem);
+		}
+
 		.shell {
 			flex-wrap: nowrap;
 			gap: 0.5rem;
