@@ -1,14 +1,28 @@
+/** BadgeQualifier is a qualifier a badge keeps: shown short, spoken in full. */
+export interface BadgeQualifier {
+	shown: string;
+	spoken: string;
+}
+
+const APPROXIMATE: BadgeQualifier = { shown: '(approx.)', spoken: '(approximate)' };
+
 /**
- * badgeScheme is a scheme name as the muted qualifier of a level badge
+ * badgeSchemeParts is a scheme name as the muted qualifier of a level badge
  * ("N5 · JLPT vocabulary"): a trailing parenthesised qualifier, which the
  * map's Group by list needs ("JLPT (vocabulary)"), reads plainly here. An
- * "(approximate)" qualifier stays a qualifier, shortened, so the badge
- * still says the level is an estimate ("N5 · JLPT kanji (approx.)").
+ * "(approximate)" qualifier stays a qualifier, so the badge still says the
+ * level is an estimate: shown shortened ("(approx.)"), spoken in full.
  */
-export function badgeScheme(name: string): string {
+export function badgeSchemeParts(name: string): { base: string; qualifier: BadgeQualifier | null } {
 	const trimmed = name.trim();
 	const match = /^(.*\S)\s*\(([^()]+)\)$/.exec(trimmed);
-	if (!match) return trimmed;
-	if (match[2].trim().toLowerCase() === 'approximate') return `${match[1]} (approx.)`;
-	return `${match[1]} ${match[2]}`;
+	if (!match) return { base: trimmed, qualifier: null };
+	if (match[2].trim().toLowerCase() === 'approximate') return { base: match[1], qualifier: APPROXIMATE };
+	return { base: `${match[1]} ${match[2]}`, qualifier: null };
+}
+
+/** badgeScheme is badgeSchemeParts as one visible string ("JLPT kanji (approx.)"). */
+export function badgeScheme(name: string): string {
+	const { base, qualifier } = badgeSchemeParts(name);
+	return qualifier ? `${base} ${qualifier.shown}` : base;
 }

@@ -217,8 +217,8 @@
 				The JLPT kanji levels are approximate: the JLPT has published no official kanji lists
 				since 2010. Most come from
 				<a href="https://github.com/onlyskin/kanjiapi.dev" rel="noreferrer">kanjiapi.dev</a>
-				(MIT), which does not state where its list comes from. qinqin gives the jōyō kanji that
-				list leaves out (such as 分, 可, 無 and 的) a level estimated from
+				(MIT), which does not state where its list comes from. qinqin gives the kanji that list
+				leaves out (mainly jōyō kanji such as 分, 可, 無 and 的) a level estimated from
 				<a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" rel="noreferrer"
 					>KANJIDIC2</a
 				>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { badgeScheme } from './badgeText';
+import { badgeScheme, badgeSchemeParts } from './badgeText';
 
 describe('badgeScheme', () => {
 	it('turns a parenthesised qualifier into a plain one', () => {
@@ -18,5 +18,19 @@ describe('badgeScheme', () => {
 		expect(badgeScheme('My curriculum')).toBe('My curriculum');
 		expect(badgeScheme('  Jōyō  ')).toBe('Jōyō');
 		expect(badgeScheme('HSK mini (sample) list')).toBe('HSK mini (sample) list');
+	});
+});
+
+describe('badgeSchemeParts', () => {
+	it('splits off the approximate qualifier, short to see and full to hear', () => {
+		expect(badgeSchemeParts('JLPT kanji (approximate)')).toEqual({
+			base: 'JLPT kanji',
+			qualifier: { shown: '(approx.)', spoken: '(approximate)' }
+		});
+	});
+
+	it('has no qualifier for any other scheme name', () => {
+		expect(badgeSchemeParts('JLPT (vocabulary)')).toEqual({ base: 'JLPT vocabulary', qualifier: null });
+		expect(badgeSchemeParts('My curriculum')).toEqual({ base: 'My curriculum', qualifier: null });
 	});
 });
