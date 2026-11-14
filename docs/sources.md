@@ -66,7 +66,12 @@ Sources page renders them.
 The longer caveats the Sources page shows for a pack (for example the
 approximate JLPT levels, or the HSK terms below) live in that pack's
 `notice` in its `manifest.json`, not in the web app: edit the manifest, and
-re-run `qinqin seed` so the stored copy follows. The notice is plain text
+re-run `qinqin seed` so the stored copy follows. The same holds after
+upgrading past migration 024, which adds every stored notice empty: until
+the next seed the Sources page shows no notes, and `qinqin serve` logs
+`pack <id>: stored license/attribution/notice differs from <manifest>; run
+"qinqin seed" to refresh` for each pack whose stored licence, attribution or
+notice no longer matches its manifest. The notice is plain text
 with blank-line paragraphs and `[text](https://…)` links, at most 4,000
 bytes (see `plugins/data/README.md`). The sections below keep the full
 background; the wording of a licence status (as the publisher states it,

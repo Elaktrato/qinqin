@@ -15,12 +15,14 @@ Manifest fields:
 | `format` | yes | how the data file is read |
 | `license` | yes | the licence as the publisher states it |
 | `attribution` | yes | who made it, with a link where there is one |
-| `notice` | no | longer caveats shown on the Sources page: plain text, paragraphs separated by a blank line, links only as `[text](https://…)` (https only), at most 4,000 bytes. The server rejects a pack whose notice breaks these rules, and `node scripts/check-sources.mjs` checks the committed manifests |
+| `notice` | no | longer caveats shown on the Sources page, for dictionary, frequency and levels packs: plain text, paragraphs separated by a blank line, links only as `[text](https://…)` (https only), no bidi embedding, override or isolate characters, at most 4,000 bytes. The server rejects a pack whose notice breaks these rules, and `node scripts/check-sources.mjs` checks the committed manifests. A sentences pack's notice is validated the same way but not stored or shown anywhere: put sentence-source caveats in its `attribution` or `ATTRIBUTION.md` |
 
 `license` and `attribution` are checked for every pack here and in
 `plugins/samples/`, and every pack in this directory must be named in
 `docs/sources.md` (`node scripts/check-sources.mjs`, run in CI). Changing a
-`notice` needs a re-seed (`qinqin seed`) to reach an existing database.
+`notice` needs a re-seed (`qinqin seed`) to reach an existing database;
+`qinqin serve` logs a warning for each installed pack whose stored licence,
+attribution or notice differs from its manifest.
 
 Committed (small, hand-written, CC0 — a sample):
 
