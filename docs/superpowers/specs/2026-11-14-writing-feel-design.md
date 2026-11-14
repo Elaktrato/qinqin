@@ -21,7 +21,7 @@ so it is built as a small, pure engine with shared test cases.
   Position and size get wide tolerance relative to the character box.
 - **Joined strokes:** one motion may cover the next two or three strokes in
   order where the pen naturally flows on: stroke k ends close to where stroke
-  k+1 starts (了, 乃).
+  k+1 starts (了; 子's first two strokes).
 - **Snap:** an accepted stroke morphs quickly from the learner's ink into the
   clean reference stroke; a rejected one flashes and fades.
 - **Snappy:** ink follows the pointer without lag; no waits between strokes.
@@ -152,7 +152,7 @@ correct pinyin with its tone mark, as the answer line does today.
 
 - Unit tests for geometry and matcher from fixtures built on real stroke data:
   each stroke drawn from its median with noise, offset, scale up/down; joins
-  (了 as one motion, 乃); negatives: a join that would need a retrace (口's
+  (了 as one motion, 子's first two strokes); negatives: a join that would need a retrace (口's
   横折 + 横), reversed strokes, the
   wrong next stroke, strokes out of order, a scribble, a dot for a long stroke,
   a stroke in the wrong quadrant.
