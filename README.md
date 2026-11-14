@@ -422,23 +422,56 @@ if you name the roots. A pack is a directory with a `manifest.json` (`"type": "l
 `word` or `character`. See `plugins/samples/hsk-mini` for the layout. The sample
 `hsk-mini` and `jlpt-mini` packs are not seeded by default and not offered as map groupings.
 
-For each workspace, the flashcards home widget shows:
+**Home and Stats widgets.** Five widgets ship. Each one shows the current
+workspace. The home page shows the widgets in your layout (Settings → Home; by
+default Activity, then Flashcards). Stats → Overview shows every widget that
+applies to the workspace, in the order of this table:
 
-- what is due and new
-- the level and XP progress
-- the streak
-- the study buddy
+| Id | Widget | Owner | Size | Languages |
+|---|---|---|---|---|
+| `activity-heatmap` | Activity | core | wide | all |
+| `character-map-summary` | Characters | core | normal | Chinese, Japanese |
+| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | all |
+| `word-states` | Words | `qinqin-flashcards` | normal | all |
+| `reading-time` | Reading time | `qinqin-reader` | normal | all |
 
-By default the home page shows the core activity heatmap above the flashcards
-widget. The heatmap covers the current workspace: one cell per UTC day over the last 13 weeks, coloured by
-activity points. A flashcard review is one point. Reading in the Reader is one
-point per started 5 minutes; the reader records a `read` event with the active
-seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
-between inputs counts at most 2 minutes, and a hidden tab does not count.
-Reading is credited to the book's workspace. Hovering a cell shows the day's points per source,
-with reading in minutes. Other study events (sessions, views, lookups) do not
-count. Adding a source means emitting a study event with a new type and adding
-one entry to `ACTIVITY_SOURCES` in `apps/web/src/lib/activity/activity.ts`.
+A plugin's widgets are shown only while that plugin is enabled.
+
+- **Activity**: one cell per UTC day over the last 13 weeks, coloured by
+  activity points. A flashcard review is one point. Reading in the Reader is one
+  point per started 5 minutes. The reader records a `read` event with the active
+  seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
+  between inputs counts at most 2 minutes, and a hidden tab does not count.
+  Reading is credited to the workspace of the book. Hover a cell to see the
+  day's points per source, with reading in minutes. Other study events
+  (sessions, views, lookups) do not count. To add a source, emit a study event
+  of a new type and add one entry to `ACTIVITY_SOURCES` in
+  `apps/web/src/lib/activity/activity.ts`.
+- **Characters**: "N of M learned" for the language's characters (the same
+  universe and mastery as the map, see below; learned is a mastery of 80/100
+  or more). It also shows the stage bar (Not studied, Fresh, Learning, Mature,
+  Learned) and a link to the full map. Shown only for Chinese and Japanese
+  workspaces.
+- **Flashcards**: what is due and new (with the limits and card types of your
+  study setup), the level and XP progress, the streak and the study buddy.
+- **Words**: how far each word has come, from the flashcard schedule. A word is
+  one vocabulary card. Sentence, writing and tone cards practise a word that is
+  already counted, so they are left out. The states are:
+  - **New**: never reviewed.
+  - **Learning**: in the FSRS learning or relearning state.
+  - **Young**: in review with a stability under 21 days.
+  - **Mature**: in review with a stability of 21 days or more.
+
+  "N new cards waiting" counts every new vocabulary card, without the session's
+  daily new limit. Stats adds a table with one row per deck. A card in several
+  decks counts in each deck's row, but only once in the overall numbers. A card
+  in no existing deck is not counted.
+- **Reading time**: the time tracked by the Reader, from the `read` events of
+  the workspace. It shows the total for all time and for the last 7 and 30 days.
+  The 7 and 30 days are UTC days that end with today. It also lists the five
+  most read books. A reading burst under 30 s is not counted, and one burst
+  counts at most 2 hours (the same clamping as the Activity heatmap). A book
+  that is no longer in any library is listed as "A removed book".
 
 **Card ids and duplicates.** A new card gets a deterministic id,
 `c-<kind>-<entryId>` (for example `c-vocab-42`; a sentence card is
