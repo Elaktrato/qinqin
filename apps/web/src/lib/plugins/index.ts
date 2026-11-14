@@ -5,6 +5,7 @@
 
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
+import type { SourceCredit } from '$lib/sources/credits';
 import type { PluginStatesValue } from './states';
 import Flashcards from './flashcards/FlashcardsWidget.svelte';
 import { flashcardsManifest } from './flashcards/manifest';
@@ -17,6 +18,12 @@ export interface PluginManifest {
 	version?: string;
 	/** Where the plugin may render: 'home-widget' and/or 'page'. */
 	surfaces: string[];
+	/**
+	 * Third-party material the plugin ships or fetches, credited on the
+	 * Sources page under "Plugins". Material shared with the rest of the
+	 * app is credited once, in lib/sources/coreCredits.ts, instead.
+	 */
+	sources?: SourceCredit[];
 }
 
 export interface PluginPage {

@@ -105,6 +105,8 @@ export interface Scheme {
 	version?: string;
 	license?: string;
 	attribution?: string;
+	/** The pack's notice mini-markup (lib/sources/notice.ts); '' when none. */
+	notice?: string;
 	levels: Level[];
 }
 
@@ -153,6 +155,8 @@ export interface Dictionary {
 	version: string;
 	license: string;
 	attribution: string;
+	/** The pack's notice mini-markup (lib/sources/notice.ts); '' when none. */
+	notice?: string;
 }
 
 // FrequencyPack is one element of GET /api/frequency-packs: an installed
@@ -164,6 +168,8 @@ export interface FrequencyPack {
 	language: string;
 	license: string;
 	attribution: string;
+	/** The pack's notice mini-markup (lib/sources/notice.ts); '' when none. */
+	notice?: string;
 }
 
 export interface Workspace {

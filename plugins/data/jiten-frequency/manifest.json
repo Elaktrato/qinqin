@@ -6,5 +6,6 @@
   "language": "ja",
   "license": "CC BY-SA 4.0",
   "attribution": "Jiten (https://jiten.moe), global frequency list",
+  "notice": "The bundled Jiten list is [Jiten](https://jiten.moe/frequency-dictionaries)'s global frequency list, licensed CC BY-SA 4.0 by its publisher, with its ranks unmodified and converted to CSV.",
   "format": "freq-csv"
 }

@@ -81,6 +81,20 @@ the server waits at most 5 s (`busy_timeout`) before a write fails.
 > All of these migrations are one-way: there is no downgrade, so keep a copy of
 > `qinqin.db` before upgrading if you may want to go back.
 
+> **Upgrading to pack notices (migration 024).** 024 adds a `notice` column to
+> dictionaries, frequency packs and level schemes, empty for every installed
+> pack. The Sources page shows a pack's longer caveats (the HSK lists' CTI terms,
+> the approximate JLPT levels, the Jiten note) from that stored copy, so they
+> stay missing until you re-seed once after upgrading: `qinqin seed`, or under
+> Docker `docker compose exec qinqin qinqin seed`. The re-seed rewrites only the
+> registry rows whose terms changed. At start-up `qinqin serve` compares each
+> installed pack with its manifest under the pack roots (`$QINQIN_PACKS`, or
+> `plugins/data` and `plugins/data-local`) and logs
+> `pack <id>: stored license/attribution/notice differs from <manifest>; run "qinqin seed" to refresh`
+> for every pack whose stored licence, attribution or notice is out of date. It
+> only reads: nothing changes until you seed, and the warning goes away once the
+> stored copies match. A pack it cannot read is skipped with a log line.
+
 > **Upgrading a development database.** Entry ids changed with the dictionary
 > rebuild (the lookup rewrite; migration 017 drops the legacy tables). Nothing is
 > published, so there is no upgrade path: **delete the data directory (or at
@@ -433,7 +447,7 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, forms, readings, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
 | `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates are other readings or entries with the same surface (at most 8 candidates in all). A candidate has `reading: true` when it matched by a kana reading (Japanese) |
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
-| `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license` and `attribution` (the Sources page lists them) |
+| `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
@@ -445,9 +459,9 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
 | `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and home position for one plugin |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
-| `GET /api/dictionaries` | Public. The installed dictionaries |
+| `GET /api/dictionaries` | Public. The installed dictionaries, each with `license`, `attribution` and `notice` (`""` when the manifest has none) |
 | `POST /api/admin/dictionaries`, `DELETE /api/admin/dictionaries/{id}`, `DELETE /api/admin/schemes/{id}`, `DELETE /api/admin/sentences/{pack}`, `POST /api/admin/plugins` | Admin only: install a dictionary pack (multipart zip in `pack`), soft-delete a dictionary, a level scheme or a sentence pack (entries survive), register a plugin manifest |
-| `GET /api/schemes` | Public. Every installed level scheme with its ordered levels |
+| `GET /api/schemes` | Public. Every installed level scheme with its ordered levels, `license`, `attribution` and `notice` (`""` when the manifest has none) |
 | `GET /api/schemes/{id}/entries?level=` | Public. The scheme's member entries (words and derived characters), optionally of one level; 404 for an unknown scheme or level |
 | `GET /api/schemes/{id}/characters` | Public. The compact per-level character sets the map groups by: `{levels: [{id, name, chars}]}`, `chars` being each Han character of the level's words once, in order of first appearance. Gzip when accepted, weak `ETag` and 304 on `If-None-Match` (revalidated on every visit); 404 for an unknown, uninstalled or malformed id |
 | `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one; an over-long or invalid name is 422, a duplicate (language, name) 409 |
@@ -536,6 +550,39 @@ is registered on the server (built-in manifests are registered at startup in
 `server/cmd/qinqin/main.go`) and enabled for the user; the shell and the page route
 share one fetch of those states through the `pluginStates` store in
 `apps/web/src/lib/plugins/states.ts`.
+
+### Credits and the Sources page
+
+The Sources page (`/sources`) is built from data, not hard-coded text:
+
+- **Packs**: each installed pack's manifest `license`, `attribution` and optional
+  `notice`. The notice is plain text: paragraphs separated by a blank line, links
+  only as `[text](https://…)` (https only; anything else stays plain text), at
+  most 4,000 bytes. The server validates it on import
+  (`server/internal/dict/notice.go`), and
+  the page renders it with the parser in `apps/web/src/lib/sources/notice.ts`
+  (no HTML). See [plugins/data/README.md](plugins/data/README.md).
+- **Plugins**: a web plugin lists the third-party material it ships or fetches in
+  the optional `sources` array of its manifest (`PluginManifest.sources` in
+  `apps/web/src/lib/plugins/index.ts`), each a `SourceCredit` with `name` and
+  optional `url`, `license`, `attribution`, `notice`, `licenseTexts` and `lang`
+  (`apps/web/src/lib/sources/credits.ts`); see the Reader's manifest for an
+  example. The page shows them under "Plugins".
+- **Core**: material built into the app itself, shared by several features
+  (stroke-order data, `hanzi-writer`, `ts-fsrs`, ...), is listed in
+  `apps/web/src/lib/sources/coreCredits.ts`. Credit it there once rather than in
+  every plugin that uses it. A licence text that ships with the app goes into
+  `apps/web/static/` and is named in the credit's `licenseTexts`.
+
+To add a credit: for a pack, set `license`/`attribution` (and a `notice` if one
+line is not enough) in its `manifest.json` and add a row to
+[docs/sources.md](docs/sources.md); for a plugin, add an entry to its manifest's
+`sources`; for the app itself, add it to `coreCredits.ts`.
+
+`node scripts/check-sources.mjs` keeps packs and docs honest (every pack has a
+non-empty `license` and `attribution`, every bundled pack is named in
+`docs/sources.md`, every pack the docs name exists, every `notice` is valid). CI
+runs it together with the scripts' tests (`node --test scripts/*.test.mjs`).
 
 ## Dictionary data model
 
@@ -735,6 +782,7 @@ Dockerfile copies that directory into the Go binary before compiling.
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--jlpt-vocab`, generates the optional local-only JLPT vocabulary pack into `plugins/data-local/` (download commands in its header) |
+| `scripts/check-sources.mjs` | Checks that pack manifests (`license`, `attribution`, `notice`) and `docs/sources.md` agree; run in CI (`node scripts/check-sources.mjs [repo-root]`) |
 | `scripts/prepare-hsk-syllabus.mjs` | Rebuilds the HSK 3.0 packs `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 
 ## Branches

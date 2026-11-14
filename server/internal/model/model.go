@@ -48,6 +48,7 @@ type Dictionary struct {
 	Version     string     `json:"version"`
 	License     string     `json:"license"`
 	Attribution string     `json:"attribution"`
+	Notice      string     `json:"notice"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	DeletedAt   *time.Time `json:"deletedAt"`
 }
@@ -79,6 +80,7 @@ type Scheme struct {
 	Version     string     `json:"version"`
 	License     string     `json:"license"`
 	Attribution string     `json:"attribution"`
+	Notice      string     `json:"notice"`
 	Levels      []Level    `json:"levels"`
 	UpdatedAt   time.Time  `json:"updatedAt"`
 	DeletedAt   *time.Time `json:"deletedAt"`

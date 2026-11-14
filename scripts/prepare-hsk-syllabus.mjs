@@ -381,6 +381,43 @@ export const LICENCE_SECTION = [
 	'there is no licence text to copy.'
 ];
 
+// The manifest notices: the caveat the Sources page shows under each pack
+// (plain text, paragraphs separated by a blank line, links written
+// [text](https://...); the server rejects any other link and anything over
+// 4,000 bytes). Both packs end with the same terms paragraph.
+const SYLLABUS_TITLE = '《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test';
+
+export const TERMS_NOTICE =
+	'Source: [www.chinesetest.cn](https://www.chinesetest.cn) — reproduced from the Chinese Test Service ' +
+	'Website (CTI); syllabus published by CLEC (中外语言交流合作中心). No reuse licence is granted: the ' +
+	`site's [Legal Notice](${LEGAL_NOTICE_URL}) says its content is copyrighted by CTI or the content ` +
+	'providers, requires the source to be indicated, and permits reproduction only as reasonable, good-faith ' +
+	'quoting for informative public use. The syllabus PDF carries a copy-protection flag. The project includes ' +
+	'only the vocabulary (word) list and the list of characters to recognise, as plain lists of words and ' +
+	"characters with their levels (and the words' pinyin as lookup readings), and none of the syllabus's other " +
+	'content (grammar points, descriptions, the lists of characters to write, explanatory text). It includes ' +
+	"these lists with this attribution at the project owner's decision; the legal status of including these " +
+	'lists has not been verified.';
+
+export function wordsNotice(ed) {
+	return (
+		`The HSK 3.0 words are the official word list (HSK 词汇大纲) of the ${SYLLABUS_TITLE}, edition ` +
+		`published ${ed.published} and effective ${ed.effective}. Words badge with their level, and the ` +
+		"character map's word grouping puts each character at the lowest level of a word written with it." +
+		`\n\n${TERMS_NOTICE}`
+	);
+}
+
+export function charsNotice(ed) {
+	return (
+		'The HSK 3.0 characters are the official character list (HSK 汉字大纲, the characters to recognise, ' +
+		`认读字, of each level) of the ${SYLLABUS_TITLE}, edition published ${ed.published} and effective ` +
+		`${ed.effective}. A character's level is the level whose list introduces it; the syllabus's lists of ` +
+		'characters to write (书写字) assign no level here.' +
+		`\n\n${TERMS_NOTICE}`
+	);
+}
+
 export function manifest(ed) {
 	return {
 		id: 'hsk-words',
@@ -393,6 +430,7 @@ export function manifest(ed) {
 			`${SOURCE_TEXT} (中外语言交流合作中心). 《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, ` +
 			`word list (HSK 词汇大纲), published ${ed.published}, effective ${ed.effective}; ` +
 			"included with attribution at the project owner's decision, legal status not verified",
+		notice: wordsNotice(ed),
 		format: 'json'
 	};
 }
@@ -598,6 +636,7 @@ export function charsManifest(ed) {
 			`${SOURCE_TEXT} (中外语言交流合作中心). 《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, ` +
 			`character list (HSK 汉字大纲, 认读字), published ${ed.published}, effective ${ed.effective}; ` +
 			"included with attribution at the project owner's decision, legal status not verified",
+		notice: charsNotice(ed),
 		format: 'json'
 	};
 }

@@ -21,6 +21,12 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: apps/web/package-lock.json
+      # Cheap consistency checks first; they use the setup-node Node above and
+      # need no install, network or data download.
+      - name: Check sources and script tests
+        run: |
+          node scripts/check-sources.mjs
+          node --test scripts/*.test.mjs
       - name: Install web dependencies
         working-directory: apps/web
         run: npm ci

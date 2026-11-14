@@ -29,13 +29,14 @@ type dictionaryBody struct {
 	Version     string `json:"version"`
 	License     string `json:"license"`
 	Attribution string `json:"attribution"`
+	Notice      string `json:"notice"`
 }
 
 // handleListDictionaries serves GET /api/dictionaries with every
 // installed dictionary, in install order.
 func (s *server) handleListDictionaries(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT id, name, version, license, attribution FROM dictionaries
+		SELECT id, name, version, license, attribution, notice FROM dictionaries
 		WHERE deleted_at IS NULL
 		ORDER BY id`)
 	if err != nil {
@@ -45,8 +46,8 @@ func (s *server) handleListDictionaries(w http.ResponseWriter, r *http.Request) 
 	defer rows.Close()
 	list := make([]dictionaryBody, 0)
 	for rows.Next() {
-		var d dictionaryBody
-		if err := rows.Scan(&d.ID, &d.Name, &d.Version, &d.License, &d.Attribution); err != nil {
+		d, err := scanDictionary(rows)
+		if err != nil {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
@@ -136,7 +137,7 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	stage = "" // renamed into place; nothing left to clean up
 
 	d, err := scanDictionary(s.db.QueryRowContext(r.Context(), `
-		SELECT id, name, version, license, attribution FROM dictionaries
+		SELECT id, name, version, license, attribution, notice FROM dictionaries
 		WHERE pack_id = ? AND deleted_at IS NULL`, pack.Manifest.ID))
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -180,7 +181,7 @@ func packDir(packsDir string, m dict.Manifest) (string, error) {
 // scanDictionary reads one dictionary row into its response body.
 func scanDictionary(row rowScanner) (dictionaryBody, error) {
 	var d dictionaryBody
-	if err := row.Scan(&d.ID, &d.Name, &d.Version, &d.License, &d.Attribution); err != nil {
+	if err := row.Scan(&d.ID, &d.Name, &d.Version, &d.License, &d.Attribution, &d.Notice); err != nil {
 		return d, err
 	}
 	return d, nil

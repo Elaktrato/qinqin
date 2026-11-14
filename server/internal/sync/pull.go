@@ -106,7 +106,7 @@ func pullSentences(ctx context.Context, sqlDB *sql.DB, userID int64, since, live
 
 func pullDictionaries(ctx context.Context, sqlDB *sql.DB, since, live string) ([]model.Dictionary, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT id, pack_id, name, version, license, attribution, updated_at, deleted_at FROM dictionaries
+		SELECT id, pack_id, name, version, license, attribution, notice, updated_at, deleted_at FROM dictionaries
 		WHERE updated_at >= ?`+live+` ORDER BY id`, since)
 	if err != nil {
 		return nil, fmt.Errorf("sync pull dictionaries: %w", err)
@@ -117,7 +117,7 @@ func pullDictionaries(ctx context.Context, sqlDB *sql.DB, since, live string) ([
 		var d model.Dictionary
 		var updated string
 		var deleted sql.NullString
-		if err := rows.Scan(&d.ID, &d.PackID, &d.Name, &d.Version, &d.License, &d.Attribution, &updated, &deleted); err != nil {
+		if err := rows.Scan(&d.ID, &d.PackID, &d.Name, &d.Version, &d.License, &d.Attribution, &d.Notice, &updated, &deleted); err != nil {
 			return nil, fmt.Errorf("sync pull dictionaries: %w", err)
 		}
 		if d.UpdatedAt, err = parseTS(updated); err != nil {
@@ -136,7 +136,7 @@ func pullDictionaries(ctx context.Context, sqlDB *sql.DB, since, live string) ([
 
 func pullSchemes(ctx context.Context, sqlDB *sql.DB, since, live string) ([]model.Scheme, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT id, pack_id, name, unit, language, version, license, attribution, updated_at, deleted_at FROM schemes
+		SELECT id, pack_id, name, unit, language, version, license, attribution, notice, updated_at, deleted_at FROM schemes
 		WHERE updated_at >= ?`+live+` ORDER BY id`, since)
 	if err != nil {
 		return nil, fmt.Errorf("sync pull schemes: %w", err)
@@ -147,7 +147,7 @@ func pullSchemes(ctx context.Context, sqlDB *sql.DB, since, live string) ([]mode
 		s := model.Scheme{Levels: []model.Level{}}
 		var updated string
 		var deleted sql.NullString
-		if err := rows.Scan(&s.ID, &s.PackID, &s.Name, &s.Unit, &s.Language, &s.Version, &s.License, &s.Attribution, &updated, &deleted); err != nil {
+		if err := rows.Scan(&s.ID, &s.PackID, &s.Name, &s.Unit, &s.Language, &s.Version, &s.License, &s.Attribution, &s.Notice, &updated, &deleted); err != nil {
 			return nil, fmt.Errorf("sync pull schemes: %w", err)
 		}
 		if s.UpdatedAt, err = parseTS(updated); err != nil {

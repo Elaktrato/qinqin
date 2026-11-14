@@ -1,5 +1,24 @@
 # Starter data sources
 
+The app's **Sources page** (`/sources`) is the live source of truth for
+credits. It is built at runtime from three places: the installed packs'
+manifests (`license`, `attribution` and the optional `notice`, served by
+`GET /api/dictionaries`, `/api/frequency-packs` and `/api/schemes`), the
+`sources` that a web plugin declares in its manifest, and the app's own
+credits (`apps/web/src/lib/sources/coreCredits.ts`). This file is the human
+overview of the same material: the per-language tables and the notes on
+licences, provenance and how each pack is made. It is not generated, so keep
+it in step by hand.
+
+`node scripts/check-sources.mjs` (run in CI) checks that the two agree: every
+pack under `plugins/data` and `plugins/samples` has a manifest with a
+non-empty `license` and `attribution`; every bundled pack's `id` appears in
+backticks in this file; every pack id this file names in a table row or a
+"- **Name** (`id`" list item exists (or is one of the optional local-only
+packs listed in the script); and every manifest `notice` follows the server's
+rules. To credit something new, see "Credits and the Sources page" in the
+README.
+
 The repository bundles four upstream dictionaries, one frequency list and
 three level lists (HSK 3.0 characters, HSK 3.0 words, JLPT kanji) under `plugins/data/` so that a fresh clone or Docker image
 seeds offline (`qinqin seed`):
@@ -15,6 +34,12 @@ seeds offline (`qinqin seed`):
 
 Optional, local only (not bundled): **JLPT vocabulary** (`jlpt-words`, from open-anki-jlpt-decks); see "Japanese" under "Level lists".
 
+**Other**
+
+The hand-written CC0 demo dictionary `es-demo` (Spanish–English, in
+`plugins/data/`) shows a runtime-added, data-only language; its data is
+original to the project.
+
 **Chinese**
 
 | Pack | Provides | License | Upstream |
@@ -24,8 +49,8 @@ Optional, local only (not bundled): **JLPT vocabulary** (`jlpt-words`, from open
 | **HSK 3.0 (characters)** (`hsk-chars`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Characters by HSK level (the characters to recognise, 认读字), HSK 1–6 and HSK 7–9 | No reuse licence granted; the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) allows only reasonable, good-faith quoting with the source indicated; included with attribution at the project owner's decision; legal status not verified | https://www.chinesetest.cn |
 | **HSK 3.0 (words)** (`hsk-words`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Words by HSK level, HSK 1–6 and HSK 7–9 | No reuse licence granted; the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) allows only reasonable, good-faith quoting with the source indicated; included with attribution at the project owner's decision; legal status not verified | https://www.chinesetest.cn |
 
-Each pack directory carries its `manifest.json` (including `license` and
-`attribution`), the full license text (`LICENSE`; `jlpt-kanji` also
+Each pack directory carries its `manifest.json` (including `license`,
+`attribution` and, where the pack needs more than a line, a `notice`), the full license text (`LICENSE`; `jlpt-kanji` also
 `LICENSE-KANJIDIC2` for its derived levels), and credits
 (`ATTRIBUTION.md`); `hsk-words` and `hsk-chars` have no `LICENSE`, as no
 reuse licence is granted for them; their `ATTRIBUTION.md` gives the CTI Legal
@@ -34,9 +59,23 @@ the download-and-bundle procedure lives in `scripts/fetch-seeds.sh`. The level
 lists are converted (see "Level lists").
 
 The dictionary licenses apply only to the dictionary data. The
-API exposes each active dictionary's `license` and `attribution` via
-`GET /api/dictionaries`, and the web app surfaces those credits in its
-sources view.
+API exposes each installed pack's `license`, `attribution` and `notice`
+(`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes`), and the
+Sources page renders them.
+
+The longer caveats the Sources page shows for a pack (for example the
+approximate JLPT levels, or the HSK terms below) live in that pack's
+`notice` in its `manifest.json`, not in the web app: edit the manifest, and
+re-run `qinqin seed` so the stored copy follows. The same holds after
+upgrading past migration 024, which adds every stored notice empty: until
+the next seed the Sources page shows no notes, and `qinqin serve` logs
+`pack <id>: stored license/attribution/notice differs from <manifest>; run
+"qinqin seed" to refresh` for each pack whose stored licence, attribution or
+notice no longer matches its manifest. The notice is plain text
+with blank-line paragraphs and `[text](https://…)` links, at most 4,000
+bytes (see `plugins/data/README.md`). The sections below keep the full
+background; the wording of a licence status (as the publisher states it,
+unverified facts marked unverified) must stay the same in both places.
 
 ## Frequency data
 
@@ -214,8 +253,9 @@ byte.
   (`license`: "See CTI Legal Notice; no reuse licence granted"; `attribution`
   starting "Source: www.chinesetest.cn — reproduced from the Chinese Test
   Service Website (CTI); syllabus published by CLEC") and `ATTRIBUTION.md`
-  record the publisher, the edition and these terms. The Sources page and the
-  character map show that attribution wherever the lists are used.
+  record the publisher, the edition and these terms, and each pack's `notice`
+  repeats the terms on the Sources page. The Sources page and the character map
+  show that attribution wherever the lists are used.
 - **Conversion:** `scripts/prepare-hsk-syllabus.mjs` reads the PDF's
   `pdftotext -tsv` word boxes and keeps each row's level, word and pinyin:
   11,000 rows, serial numbers 1–11,000 with none missing or repeated, HSK 1
@@ -329,7 +369,8 @@ terms allow it):
 
 Stroke-order animation data (`hanzi-writer-data`, derived from the
 Make Me a Hanzi dataset) is licensed under the **Arphic Public License**.
-The web frontend bundles it and credits it on its Sources page. The full
+The web frontend bundles it and credits it on its Sources page (a core
+credit in `apps/web/src/lib/sources/coreCredits.ts`). The full
 license text is committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim
 from the `hanzi-writer-data` package) and is served by the app at
 [`/ARPHICPL.TXT`](/ARPHICPL.TXT).
@@ -341,7 +382,9 @@ Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 
 The Reader (see the README) imports public-domain works on user request. Nothing
 from these sources is bundled; each imported book stores its source link,
-attribution, and a licence note, which the Reader shows.
+attribution, and a licence note, which the Reader shows. The Reader plugin
+credits both sources, and `opencc-js` below, on the Sources page through the
+`sources` in its manifest (`apps/web/src/lib/plugins/reader/manifest.ts`).
 
 - **Aozora Bunko** (<https://www.aozora.gr.jp/>) — only works in the public domain
   are listed or importable: the catalog's work copyright flag **and** person
@@ -362,7 +405,8 @@ Traditional/simplified conversion in the Reader runs in the browser with
 the licence as `MIT AND Apache-2.0`: the library code is MIT, and its conversion
 dictionaries are generated from [`opencc-data`](https://github.com/nk2028/opencc-data)
 under the Apache License, Version 2.0. It is bundled in the web build and loaded
-only when a script conversion is selected. The Sources page credits it, and both
+only when a script conversion is selected. The Sources page credits it (a
+`sources` entry of the Reader plugin's manifest), and both
 licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
 `apps/web/static/OPENCC-APACHE-2.0.TXT` (copied verbatim from the `opencc-js`
 package; a web test keeps them identical) and served by the app at
