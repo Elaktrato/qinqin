@@ -104,7 +104,7 @@
 
 {#snippet noteRef(noteId: string | undefined, name: string)}
 	{#if noteId}
-		<a class="note-ref" href={`#${noteId}`}>Note<span class="visually-hidden"> on {name}</span></a>
+		<a class="note-ref" href={`#${noteId}`}>Note<span class="visually-hidden">{` on ${name}`}</span></a>
 	{/if}
 {/snippet}
 
@@ -140,8 +140,9 @@
 		<div class="credit-notice">{@render paragraphs(view.paragraphs, view.lang)}</div>
 		{#if view.licenseTexts.length > 0}
 			<p class="license-texts">
-				{#each view.licenseTexts as licence, i (licence.path)}{#if i > 0}, {/if}<a
-						href={licence.path}>{licence.label}</a
+				{#each view.licenseTexts as licence, i (licence.path)}{#if i > 0}{', '}{/if}<a
+						href={licence.path}
+						data-sveltekit-reload>{licence.label}</a
 					>{/each}
 			</p>
 		{/if}
