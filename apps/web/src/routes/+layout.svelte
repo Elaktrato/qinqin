@@ -156,7 +156,7 @@
 						><NavIcon name={iconFor('search')} /><span class="label">Search</span></a
 					>
 					{#if showMap}
-						<a href="/study/map" aria-current={path === '/study/map' ? 'page' : undefined}
+						<a href="/stats/characters" aria-current={path === '/stats/characters' ? 'page' : undefined}
 							><NavIcon name={iconFor('map')} /><span class="label">Map</span></a
 						>
 					{/if}
