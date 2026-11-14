@@ -380,3 +380,45 @@ func TestConcurrentWorkspaceDeletes(t *testing.T) {
 		t.Errorf("workspaces left = %d, want at least 1", n)
 	}
 }
+
+// TestDeletedBookIdIsNeverReused closes the stale-tab hazard: a book
+// uploaded into workspace A, A deleted, a book uploaded into B. The new
+// book must get a fresh id, so a reader tab still open on A's book gets
+// 404s for its position and bookmark writes instead of writing them into
+// B's unrelated book.
+func TestDeletedBookIdIsNeverReused(t *testing.T) {
+	ts, sqlDB, dataDir := newServerWithDir(t)
+	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
+	alice := registerUser(t, ts.URL, "alice", "")
+	var aliceID int64
+	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'alice'`).Scan(&aliceID)
+	a := createWorkspace(t, ts.URL, alice, "zh", "a")
+	b := createWorkspace(t, ts.URL, alice, "zh", "b")
+	upload := func(wsID int64) int64 {
+		book, err := store.Create(context.Background(), library.Book{
+			UserID: aliceID, WorkspaceID: wsID, Language: "zh", Title: "Upload", Source: "upload",
+		}, []library.Chapter{{Title: "One", Paragraphs: []library.Paragraph{{{Text: "你好"}}}}})
+		if err != nil {
+			t.Fatalf("upload into %d: %v", wsID, err)
+		}
+		return book.ID
+	}
+	old := upload(a)
+	if got := deleteWorkspace(t, ts.URL, alice, a); got != http.StatusNoContent {
+		t.Fatalf("DELETE workspace a: status = %d, want 204", got)
+	}
+	fresh := upload(b)
+	if fresh == old {
+		t.Fatalf("book in workspace b reused deleted id %d", old)
+	}
+	stale := "/api/library/books/" + strconv.FormatInt(old, 10)
+	if resp := doJSON(t, http.MethodPut, ts.URL, stale+"/position", alice, map[string]string{"position": "0:0"}); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("stale tab PUT position: status = %d, want 404", resp.StatusCode)
+	}
+	if resp := doJSON(t, http.MethodPost, ts.URL, stale+"/bookmarks", alice, map[string]string{"position": "0:0", "label": "x"}); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("stale tab POST bookmark: status = %d, want 404", resp.StatusCode)
+	}
+	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM library_bookmarks WHERE book_id = ?`, fresh); n != 0 {
+		t.Errorf("new book carries %d bookmarks of the deleted one", n)
+	}
+}
