@@ -158,6 +158,7 @@ describe('recordReview', () => {
 describe('flushPendingReviews', () => {
 	beforeEach(() => {
 		vi.stubGlobal('localStorage', fakeStorage());
+		localStorage.setItem('qinqin.token', 'secret');
 		vi.stubGlobal('fetch', vi.fn());
 	});
 
@@ -206,6 +207,24 @@ describe('flushPendingReviews', () => {
 		expect(pending()).toEqual([]);
 		expect(sentEvents().map((event) => event.id)).toEqual(ids);
 		expect(warn).toHaveBeenCalled();
+		warn.mockRestore();
+	});
+
+	it('sends nothing and keeps the queue while signed out', async () => {
+		vi.mocked(fetch)
+			.mockRejectedValueOnce(new Error('offline'))
+			.mockRejectedValueOnce(new Error('offline'));
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+		await recordReview(7, 'card-1', 3);
+		await recordReview(7, 'card-2', 4);
+		localStorage.removeItem('qinqin.token');
+
+		vi.mocked(fetch).mockClear();
+		await flushPendingReviews();
+
+		expect(fetch).not.toHaveBeenCalled();
+		expect(pending()).toHaveLength(2);
 		warn.mockRestore();
 	});
 
@@ -384,6 +403,7 @@ describe('startReviewOutbox', () => {
 			])
 		);
 
+		localStorage.setItem('qinqin.token', 'secret');
 		startReviewOutbox();
 		startReviewOutbox();
 		await flushPendingReviews();

@@ -109,6 +109,27 @@ describe('api client', () => {
 		expect(localStorage.getItem('qinqin.token')).toBeNull();
 		expect(goto).not.toHaveBeenCalled();
 	});
+
+	it('signs out quietly on 401 on the open Sources page, without redirecting', async () => {
+		vi.stubGlobal('window', { location: { pathname: '/sources/' } });
+		localStorage.setItem('qinqin.token', 'stale');
+		vi.mocked(fetch).mockResolvedValue(new Response('unauthorized', { status: 401 }));
+
+		await expect(api('/api/auth/me')).rejects.toMatchObject({ status: 401 });
+
+		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		expect(goto).not.toHaveBeenCalled();
+	});
+
+	it('still redirects on 401 on a path that only starts with /sources', async () => {
+		vi.stubGlobal('window', { location: { pathname: '/sourcesx' } });
+		localStorage.setItem('qinqin.token', 'stale');
+		vi.mocked(fetch).mockResolvedValue(new Response('unauthorized', { status: 401 }));
+
+		await expect(api('/api/auth/me')).rejects.toMatchObject({ status: 401 });
+
+		expect(goto).toHaveBeenCalledWith('/login');
+	});
 });
 
 describe('api client FormData bodies and abort signal', () => {
