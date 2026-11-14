@@ -9,7 +9,6 @@
 	import { iconFor } from '$lib/components/navIcons';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
-	import { usesHan } from '$lib/languages';
 	import { auth, loadMe, logout, user } from '$lib/auth';
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
@@ -42,10 +41,9 @@
 	// never flash while a redirect is in flight, auth pages do not show
 	// once signed in, and open pages show either way (lib/routeAccess.ts).
 	const allowed = $derived(routeAllowed(path, signedIn, booted));
-	// The character map only makes sense for Han-script languages.
-	const showMap = $derived(
-		$workspaces.current !== null && usesHan($workspaces.current.language)
-	);
+	// Stats (and its Characters view, the map) is one nav item for
+	// every workspace; the tab itself appears only for Han languages.
+	const inStats = $derived(path === '/stats' || path.startsWith('/stats/'));
 	const noWorkspaces = $derived(
 		workspacesLoaded && !workspaceError && $workspaces.list.length === 0
 	);
@@ -155,11 +153,9 @@
 					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}
 						><NavIcon name={iconFor('search')} /><span class="label">Search</span></a
 					>
-					{#if showMap}
-						<a href="/stats/characters" aria-current={path === '/stats/characters' ? 'page' : undefined}
-							><NavIcon name={iconFor('map')} /><span class="label">Map</span></a
-						>
-					{/if}
+					<a href="/stats" aria-current={inStats ? 'page' : undefined}
+						><NavIcon name={iconFor('stats')} /><span class="label">Stats</span></a
+					>
 					{#each pluginLinks as link (`${link.slug}:${link.title}`)}
 						<a
 							href={link.href}

@@ -36,6 +36,10 @@ database with a SvelteKit single-page app embedded in the binary.
   current language, or whose plugin is disabled, is left out.
 - **Activity heatmap** — a home widget showing 13 weeks of learning activity per
   workspace, adding up flashcard reviews and reading time in the Reader.
+- **Stats** — a nav item for every workspace (`/stats`) with two tabs:
+  **Overview** shows every widget that applies to the workspace, in a fixed
+  order (core first, then plugins); **Characters** (`/stats/characters`) is the
+  mastery map, for Chinese and Japanese workspaces only.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
   are installable data packs; widgets and views come from feature plugins that
   the server registers at startup so Settings can enable them.
@@ -142,7 +146,8 @@ workspace shows its language; unnamed workspaces of one language are numbered
   one). **Settings** and **Sources** live in the footer of every signed-in page, not in the nav;
   in Settings you manage workspaces (create and rename). The logo is the home link (there
   is no Home item); every nav item has an icon, and below 720 px the nav becomes a
-  bottom tab bar.
+  bottom tab bar. The nav has **Stats** (bar-chart icon) for every workspace; it
+  replaced the former **Map** item, which showed only in zh and ja workspaces.
 - **Public pages.** The Sources page (`/sources`) is open to everyone, signed in
   or not, so the licence and attribution credits are always reachable. Signed out
   it shows a minimal header (the logo and a **Sign in** link) and the footer, with
@@ -169,8 +174,10 @@ workspace shows its language; unnamed workspaces of one language are numbered
   workspace, the next request that answers "workspace not found" shows a notice
   ("This workspace was deleted — switched to ...") and falls back to your first
   workspace; reviews queued offline for it are dropped with a notice.
-- **The Map** (`/study/map`, its nav link and the Study page link) exists only in
-  zh and ja workspaces; in another workspace the page explains this.
+- **The map** (Stats → Characters, `/stats/characters`, and the Study page link)
+  exists only in zh and ja workspaces: the Characters tab is hidden elsewhere,
+  and a direct visit explains this and links to the Overview. The old URL
+  `/study/map` redirects to `/stats/characters` (the history entry is replaced).
 
 ## Reader
 
@@ -344,7 +351,7 @@ the session queues that level's words. A word that already has a card reuses it;
 the rest get a card in the general deck when you first grade them, so abandoning
 a level session creates nothing.
 
-`/study/map` is the Hanzi/Kanji map for the current workspace language. It lists
+Stats → Characters (`/stats/characters`, formerly `/study/map`) is the Hanzi/Kanji map for the current workspace language. It lists
 every character of the language, studied or not, shaded by mastery.
 
 - **Universe.** Japanese: all 13,108 KANJIDIC2 kanji. Chinese: about 11.1k

@@ -12,7 +12,8 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
   workspaces, sources).
 - **On develop after v0.1.0** — flashcards Round 1 (study loop: decks, vocab cards,
   4-grade FSRS derived from review events, review heatmap, EXP) and Round 2 (level
-  sessions, per-character mastery, `/study/map`).
+  sessions, per-character mastery, the map at `/study/map`, since moved to
+  Stats → Characters at `/stats/characters`).
 
 ## v0.2.0 — study experience (milestone)
 

@@ -186,7 +186,7 @@
 	}
 
 	// The map is built from Han characters; other languages get a note
-	// instead (the nav hides the link, but the URL can still be visited).
+	// instead (Stats hides the tab, but the URL can still be visited).
 	const notHan = $derived(
 		$workspaces.current !== null && !usesHan($workspaces.current.language)
 	);
@@ -464,22 +464,22 @@
 	const langTag = $derived(language.toLowerCase().startsWith('ja') ? 'ja' : 'zh-Hans');
 </script>
 
-<main class="map" onfocusin={trackFocus}>
+<!-- The Characters view of Stats: the Stats layout gives the page
+     heading and the tablist, so this view's headings start at h2. -->
+<div class="map" onfocusin={trackFocus}>
 	<header class="head">
-		<div>
-			<h1>Mastery map</h1>
-			<p class="hint">
-				Every character of the dictionary, grouped by level and coloured by how firmly its cards
-				have settled into memory. Mastery is derived from review history, so it updates as you
-				study.
-			</p>
-		</div>
-		<a class="back" href="/study">Study</a>
+		<h2>Mastery map</h2>
+		<p class="hint">
+			Every character of the dictionary, grouped by level and coloured by how firmly its cards
+			have settled into memory. Mastery is derived from review history, so it updates as you
+			study.
+		</p>
 	</header>
 
 	{#if notHan}
 		<p class="hint" role="status">
-			The character map is for Chinese and Japanese workspaces. <a href="/study">Back to Study</a>
+			The character map is for Chinese and Japanese workspaces.
+			<a href="/stats">See the Overview</a>
 		</p>
 	{:else if noWorkspace}
 		<p class="hint" role="status">Choose a workspace in the header to see its mastery map.</p>
@@ -626,7 +626,7 @@
 			{#each visibleViews as view, index (view.id)}
 				{@const open = openSet.has(view.id)}
 				<section class="block" class:open aria-labelledby="head-{view.id}">
-					<h2 class="block-head">
+					<h3 class="block-head">
 						<button
 							type="button"
 							id="head-{view.id}"
@@ -645,7 +645,7 @@
 							{/if}
 							<StageBar byStage={view.stats.byStage} decorative />
 						</button>
-					</h2>
+					</h3>
 					<div id="cells-{view.id}">
 						{#if open}
 							<CharGrid
@@ -676,12 +676,10 @@
 	{/if}
 
 	<CellTip {tip} id={TIP_ID} lang={langTag} />
-</main>
+</div>
 
 <style>
 	.map {
-		max-width: 64rem;
-
 		--st-edge: color-mix(in srgb, currentColor 18%, transparent);
 		--st-focus: #0b6bcb;
 		--st-tip-bg: #fff;
@@ -736,21 +734,13 @@
 		}
 	}
 
-	.head {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: start;
-		justify-content: space-between;
-		gap: 1rem;
+	.head h2 {
+		margin: 0 0 0.4rem;
+		font-size: 1.25rem;
 	}
 
-	.head h1 {
-		margin-bottom: 0.4rem;
-	}
-
-	.back {
-		font-weight: 600;
-		white-space: nowrap;
+	.head .hint {
+		margin: 0;
 	}
 
 	.summary {
