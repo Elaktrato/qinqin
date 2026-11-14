@@ -8,6 +8,7 @@ export type NavIconName =
 	| 'book'
 	| 'books'
 	| 'gear'
+	| 'signin'
 	| 'signout'
 	| 'plugin';
 
@@ -22,6 +23,8 @@ const KNOWN = new Map<string, NavIconName>([
 	['library', 'book'],
 	['sources', 'books'],
 	['settings', 'gear'],
+	['signin', 'signin'],
+	['sign in', 'signin'],
 	['signout', 'signout'],
 	['sign out', 'signout'],
 	['logout', 'signout']

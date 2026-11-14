@@ -9,6 +9,8 @@ describe('iconFor', () => {
 		expect(iconFor('settings')).toBe('gear');
 		expect(iconFor('signout')).toBe('signout');
 		expect(iconFor('Sign out')).toBe('signout');
+		expect(iconFor('signin')).toBe('signin');
+		expect(iconFor('Sign in')).toBe('signin');
 	});
 
 	it('maps known plugin slugs', () => {
