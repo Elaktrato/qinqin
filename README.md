@@ -136,11 +136,18 @@ workspace shows its language; unnamed workspaces of one language are numbered
   workspace is never touched.
 - **Switching** happens in the workspace picker in the header (it can also create
   one). **Settings** and **Sources** live in the footer of every signed-in page, not in the nav;
-  there you manage workspaces (create and rename). The logo is the home link (there
+  in Settings you manage workspaces (create and rename). The logo is the home link (there
   is no Home item); every nav item has an icon, and below 720 px the nav becomes a
   bottom tab bar.
-- **Navigation and focus.** The first Tab stop on every signed-in page is a
-  "Skip to content" link, which moves focus to the page content. The logo is
+- **Public pages.** The Sources page (`/sources`) is open to everyone, signed in
+  or not, so the licence and attribution credits are always reachable. Signed out
+  it shows a minimal header (the logo and a **Sign in** link) and the footer, with
+  no nav, workspace picker or other private page; signed in it has the usual
+  shell. A stale token there signs the user out quietly instead of redirecting.
+  `/login` and `/register` are for signed-out visitors only; every other page
+  needs a signed-in user. The rules live in `apps/web/src/lib/routeAccess.ts`.
+- **Navigation and focus.** The first Tab stop on every signed-in page (and on the
+  public Sources page) is a "Skip to content" link, which moves focus to the page content. The logo is
   named "qinqin, home". Below 720 px, while the bottom tab bar is shown, the page
   keeps scroll padding below the focus so a focused control or map cell is not
   hidden behind the bar.
@@ -553,7 +560,11 @@ share one fetch of those states through the `pluginStates` store in
 
 ### Credits and the Sources page
 
-The Sources page (`/sources`) is built from data, not hard-coded text:
+The Sources page (`/sources`) is public: anyone can open it without signing in,
+as the CTI Legal Notice for the bundled HSK lists asks that the source be shown
+where the content is, and every credit should be reachable by anyone. Its API
+calls (`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes`) are
+public too. It is built from data, not hard-coded text:
 
 - **Packs**: each installed pack's manifest `license`, `attribution` and optional
   `notice`. The notice is plain text: paragraphs separated by a blank line, links
