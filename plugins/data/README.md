@@ -35,12 +35,12 @@ directory):
 | `kanjidic2` | dictionary | ja | KANJIDIC2 kanji (`kanjidic2.xml.gz`) |
 | `jiten-frequency` | frequency | ja | Jiten global word frequency ranks, converted to `freq.csv.gz` (`term,reading,rank`, ranks unmodified) |
 
-Committed level list, JLPT kanji only (converted, with the upstream `LICENSE` and an
-`ATTRIBUTION.md`):
+Committed level list, JLPT kanji only (converted, with the upstream `LICENSE`, the
+KANJIDIC2 licence as `LICENSE-KANJIDIC2` and an `ATTRIBUTION.md`):
 
 | Pack | Type | Language | Scheme | Contents | Licence |
 |------|------|----------|--------|----------|---------|
-| `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`, provenance not stated upstream; unofficial, as every N5–N1 list is; omits 172 jōyō kanji such as 分 可 無 的, and its N1 holds 247 jinmeiyō name kanji) | MIT, © 2023 Iridium Szreter |
+| `jlpt-kanji` | levels | ja | JLPT kanji (approximate) | kanji by approximate JLPT level, unit `character`: N5 80, N4 166, N3 377, N2 369, N1 1,395. Base: kanjiapi.dev `jlpt.tsv` (2,211 kanji, levels kept; provenance not stated upstream; unofficial, as every N5–N1 list is; its N1 holds 247 jinmeiyō name kanji). Gap fill: 176 kanji it omits (分 可 無 的 …) placed from KANJIDIC2's old JLPT level (19) or school grade (157), see `docs/sources.md` | MIT, © 2023 Iridium Szreter; derived levels CC BY-SA 4.0, EDRDG |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
 [{"name": "N5", "entries": [...]}]}`, levels easiest first. An entry is a
@@ -126,8 +126,9 @@ the character entry, since CC-CEDICT gives single characters as characters,
 not words.
 
 `scripts/prepare-level-packs.mjs <upstream-dir>` rebuilds the `jlpt-kanji`
-directory byte for byte from the pinned upstream files (the download commands
-are in its header).
+directory byte for byte from the pinned kanjiapi.dev files (the download
+commands are in its header) and the bundled `kanjidic2/kanjidic2.xml.gz`;
+`--calibrate <upstream-dir>` prints the evaluation of its gap-fill thresholds.
 
 The importers read the compressed files directly, so a fresh clone or the
 Docker image seeds with no network and no decompression step. Run
@@ -145,7 +146,8 @@ GB2312 and standard-list attributes for the character map (see
 `docs/sources.md`); a database seeded earlier needs a re-seed to fill them. The
 KANJIDIC2 `<jlpt>` field (the pre-2010 four-level scale) is not imported: a
 re-seed drops it from entries an older import wrote, and JLPT levels come from
-`jlpt-kanji`.
+`jlpt-kanji` (whose generator uses the field only to place kanji kanjiapi.dev
+omits).
 
 A slow test seeds this whole directory and checks lookups against the real
 data; it is opt-in: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v`

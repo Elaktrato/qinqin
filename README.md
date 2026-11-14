@@ -328,7 +328,7 @@ every character of the language, studied or not, shaded by mastery.
   its simplified character's cell: a card written 愛 colours the 爱 cell.
 - **Group by.** The choice is remembered per language; the default is Grade
   (Japanese) or Common (Chinese). Japanese: Grade, Frequency, Strokes, "JLPT
-  (kanji)" (N5–N1, the bundled `jlpt-kanji` pack) and, when you have installed
+  kanji (approximate)" (N5–N1, the bundled `jlpt-kanji` pack) and, when you have installed
   the optional local JLPT vocabulary pack (not bundled, see "Bundled data"),
   "JLPT (vocabulary)" (the N5–N1 word lists of `jlpt-words`). Chinese: Common (GB2312 level 1, level 2,
   other standard, other), HK primary grade, Strokes and, when you have installed
@@ -359,7 +359,10 @@ database seeded before this change needs `qinqin seed` (under Docker,
 "Level data missing" banner and lists the characters in one section.
 
 The JLPT kanji levels are a bundled level pack (see "Bundled data"); a
-database seeded before it was added needs `qinqin seed` to install them. The
+database seeded before it was added needs `qinqin seed` to install them. They
+are approximate: kanjiapi.dev's list, plus a level qinqin derives from
+KANJIDIC2 for the kanji that list omits (see docs/sources.md). A re-seed of
+an older database renames the scheme and updates its levels in place. The
 pre-2010 four-level JLPT scale that KANJIDIC2 carries is no longer imported or
 offered; a re-seed removes it from the character entries. To add another list,
 put a level pack under `plugins/data-local/<id>/` (see [docs/sources.md](docs/sources.md),
@@ -606,7 +609,7 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
-| [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) (`jlpt-kanji`) | Japanese: JLPT N5–N1 kanji levels (an unofficial reconstruction of unstated provenance; the JLPT publishes no kanji list; omits 172 jōyō kanji such as 分 and 的, see docs/sources.md) | MIT (© 2023 Iridium Szreter) |
+| [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) + [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (`jlpt-kanji`) | Japanese: approximate JLPT N5–N1 kanji levels (the JLPT publishes no kanji list): kanjiapi.dev's list, of unstated provenance, plus levels qinqin derives from KANJIDIC2 for the 176 kanji it omits (分, 可, 無, 的 …), see docs/sources.md | MIT (© 2023 Iridium Szreter) and CC BY-SA 4.0 (EDRDG) for the derived levels |
 
 **JLPT vocabulary is not bundled.** Its upstream licence chain could not be
 verified: [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks)
@@ -718,7 +721,7 @@ Dockerfile copies that directory into the Go binary before compiling.
 | `plugins/samples/` | Hand-written samples: dictionaries (`zh-mini`, `ja-mini`) and level packs (`hsk-mini`, `jlpt-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
-| `scripts/prepare-level-packs.mjs` | Rebuilds the JLPT kanji pack from the pinned upstream files; with `--hsk` or `--jlpt-vocab`, generates the optional local-only HSK 3.0 or JLPT vocabulary packs into `plugins/data-local/` (download commands in its header) |
+| `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--hsk` or `--jlpt-vocab`, generates the optional local-only HSK 3.0 or JLPT vocabulary packs into `plugins/data-local/` (download commands in its header) |
 
 ## Branches
 
