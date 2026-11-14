@@ -33,7 +33,14 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Home widgets** — the home page renders widgets from a per-user layout stored
   on the server (shared by every device and workspace; by default the activity
   heatmap, then the flashcards summary). A widget that does not apply to the
-  current language, or whose plugin is disabled, is left out.
+  current language, or whose plugin is disabled, is left out. **Settings → Home**
+  (`/settings?tab=home`) chooses and orders them: an "On the home page" switch
+  per widget, **Move up** / **Move down** buttons (or drag a row by its handle),
+  a preview of the result and **Reset to default**. Changes save at once, to
+  your account, so every device and workspace gets them. A widget whose plugin
+  is disabled keeps its place in the stored layout and returns when the plugin
+  is enabled again; one that does not fit the active workspace's language is
+  marked "Not available for <language>" and can still be placed for the others.
 - **Activity heatmap** — a home widget showing 13 weeks of learning activity per
   workspace, adding up flashcard reviews and reading time in the Reader.
 - **Stats** — a nav item for every workspace (`/stats`) with two tabs:
@@ -144,7 +151,9 @@ workspace shows its language; unnamed workspaces of one language are numbered
   workspace is never touched.
 - **Switching** happens in the workspace picker in the header (it can also create
   one). **Settings** and **Sources** live in the footer of every signed-in page, not in the nav;
-  in Settings you manage workspaces (create and rename). The logo is the home link (there
+  Settings has three tabs, Workspaces (create, rename, delete), Home (the home
+  page widgets) and Plugins, each with a link of its own (`/settings?tab=home`,
+  `?tab=plugins`). The logo is the home link (there
   is no Home item); every nav item has an icon, and below 720 px the nav becomes a
   bottom tab bar. The nav has **Stats** (bar-chart icon) for every workspace; it
   replaced the former **Map** item, which showed only in zh and ja workspaces.
