@@ -3,6 +3,7 @@
 	import { ApiError } from '$lib/api/client';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
+	import { levelAttributionLine } from '$lib/study/levelAttribution';
 	import type { Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
 	import CellTip from '$lib/components/map/CellTip.svelte';
@@ -217,6 +218,11 @@
 
 	const schemeId = $derived(
 		groupKey !== null && groupKey.startsWith('scheme:') ? Number(groupKey.slice(7)) : null
+	);
+
+	// The credit line of the level scheme grouping the map, if any.
+	const attributionLine = $derived(
+		levelAttributionLine(schemeId === null ? null : schemes.find((s) => s.id === schemeId))
 	);
 
 	async function loadMembers(id: number): Promise<void> {
@@ -576,6 +582,11 @@
 				</span>
 			</form>
 		</section>
+		{#if attributionLine}
+			<p class="hint small attribution">
+				{attributionLine} · <a href="/sources">Sources</a>
+			</p>
+		{/if}
 		{#if schemesError}
 			<p class="hint small">{schemesError}</p>
 		{/if}
@@ -985,6 +996,18 @@
 
 	.small {
 		font-size: 0.85rem;
+	}
+
+	.attribution {
+		margin: 0.4rem 0 0;
+		max-width: 100%;
+		overflow-wrap: anywhere;
+		line-height: 1.4;
+	}
+
+	.attribution a {
+		color: inherit;
+		text-decoration: underline;
 	}
 
 	.foot {

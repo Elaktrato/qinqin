@@ -1,0 +1,10 @@
+{
+  "id": "hsk-chars",
+  "name": "HSK 3.0 (characters)",
+  "version": "2025-11 (effective 2026-07)",
+  "type": "levels",
+  "language": "zh",
+  "license": "See CTI Legal Notice; no reuse licence granted",
+  "attribution": "Source: www.chinesetest.cn — reproduced from the Chinese Test Service Website (CTI); syllabus published by CLEC (中外语言交流合作中心). 《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, character list (HSK 汉字大纲, 认读字), published 2025-11, effective 2026-07; included with attribution at the project owner's decision, legal status not verified",
+  "format": "json"
+}

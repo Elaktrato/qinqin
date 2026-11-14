@@ -3,10 +3,12 @@ package levels_test
 import (
 	"context"
 	"database/sql"
+	"slices"
 	"testing"
 
 	"qinqin/internal/dict"
 	"qinqin/internal/levels"
+	"qinqin/internal/model"
 )
 
 const longAgo = "2020-01-01T00:00:00Z"
@@ -114,5 +116,72 @@ func TestReimportTouchesOnlyChangedMembers(t *testing.T) {
 		SELECT COUNT(*) FROM level_members m JOIN levels l ON l.id = m.level_id
 		WHERE l.name = '2' AND m.deleted_at IS NULL`).Scan(&activeMembersL2); err != nil || activeMembersL2 != 0 {
 		t.Errorf("active members of dropped level 2 = %d, %v; want 0", activeMembersL2, err)
+	}
+}
+
+// A re-seed of a changed pack with the same pack id (the bundled
+// jlpt-kanji renamed to "JLPT kanji (approximate)" with kanji added and
+// dropped) updates the scheme in place: same scheme id, the new name and
+// version on the scheme and its badges, added kanji listed, dropped ones
+// gone.
+func TestReimportChangedPackRenamesSchemeAndUpdatesMembers(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	fe := seedFixture(t, sqlDB)
+	importAs := func(name, version, json string) {
+		t.Helper()
+		pack := buildPack(t, "jlpt-kanji", json)
+		pack.Manifest.Name, pack.Manifest.Version = name, version
+		if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+			t.Fatalf("import %s: %v", name, err)
+		}
+	}
+	schemes := func() []model.Scheme {
+		t.Helper()
+		s, err := levels.List(ctx, sqlDB)
+		if err != nil {
+			t.Fatalf("List: %v", err)
+		}
+		return s
+	}
+	members := func(id int64, level string) []int64 {
+		t.Helper()
+		ids, err := levels.EntryIDs(ctx, sqlDB, id, level)
+		if err != nil {
+			t.Fatalf("EntryIDs %s: %v", level, err)
+		}
+		slices.Sort(ids)
+		return ids
+	}
+	sorted := func(ids ...int64) []int64 { slices.Sort(ids); return ids }
+
+	importAs("JLPT (kanji)", "1", `{"unit":"character","levels":[{"name":"N5","entries":["你","好"]},{"name":"N4","entries":["谢"]}]}`)
+	before := schemes()
+	if len(before) != 1 {
+		t.Fatalf("schemes after first import = %+v, want 1", before)
+	}
+
+	// 好 dropped, 银 added to N5, 行 added to N4.
+	importAs("JLPT kanji (approximate)", "2", `{"unit":"character","levels":[{"name":"N5","entries":["你","银"]},{"name":"N4","entries":["谢","行"]}]}`)
+	after := schemes()
+	if len(after) != 1 || after[0].ID != before[0].ID {
+		t.Fatalf("schemes after re-import = %+v, want the same single scheme %d", after, before[0].ID)
+	}
+	if s := after[0]; s.Name != "JLPT kanji (approximate)" || s.Version != "2" || s.PackID != "jlpt-kanji" {
+		t.Errorf("scheme = name %q, version %q, pack %q; want the renamed jlpt-kanji, version 2", s.Name, s.Version, s.PackID)
+	}
+	id := after[0].ID
+	if got, want := members(id, "N5"), sorted(fe.chars["你"], fe.chars["银"]); !slices.Equal(got, want) {
+		t.Errorf("N5 members = %v, want %v (你, 银)", got, want)
+	}
+	if got, want := members(id, "N4"), sorted(fe.chars["谢"], fe.chars["行"]); !slices.Equal(got, want) {
+		t.Errorf("N4 members = %v, want %v (谢, 行)", got, want)
+	}
+	if badges, err := levels.ForEntry(ctx, sqlDB, fe.chars["好"]); err != nil || len(badges) != 0 {
+		t.Errorf("好 badges = %+v, %v; want none (dropped)", badges, err)
+	}
+	badges, err := levels.ForEntry(ctx, sqlDB, fe.chars["银"])
+	if err != nil || len(badges) != 1 || badges[0].SchemeName != "JLPT kanji (approximate)" || badges[0].LevelName != "N5" {
+		t.Errorf("银 badges = %+v, %v; want N5 of JLPT kanji (approximate)", badges, err)
 	}
 }

@@ -122,7 +122,7 @@ func TestMatchQueriesUseTheTextIndexes(t *testing.T) {
 			{"ByReadingKind", fmt.Sprintf(byReadingKindQuery, in), keyArgs(n, "ja", "word"), "SEARCH r USING INDEX idx_readings_plain"},
 			{"Best (character)", bestQuery, []any{"f1", "ja", "character", "character"}, "SEARCH f USING INDEX idx_forms_text"},
 			{"Best (word)", bestQuery, []any{"f1", "ja", "word", "word"}, "SEARCH f USING INDEX idx_forms_text"},
-			{"BestWordReading", bestFormReadingQuery, []any{"f1", "ja", "r1", "r1"}, "SEARCH f USING INDEX idx_forms_text"},
+			{"BestWordReading", bestFormReadingQuery, []any{"f1", "ja", "r1", "r1", "r1"}, "SEARCH f USING INDEX idx_forms_text"},
 			{"BestWord fallback", bestKanaWordQuery, []any{"r1", 1, "ja", "r1"}, "SEARCH r USING INDEX idx_readings_plain"},
 		}
 		for _, tt := range tests {

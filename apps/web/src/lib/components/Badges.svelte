@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Badge } from '$lib/api/types';
-	import { badgeScheme } from './badgeText';
+	import { badgeSchemeParts } from './badgeText';
 
 	let { badges }: { badges: Badge[] } = $props();
 </script>
@@ -10,10 +10,15 @@
 		<h2 id="badges-heading">Badges</h2>
 		<ul>
 			{#each badges as badge (`${badge.schemeId}:${badge.levelName}`)}
+				{@const scheme = badgeSchemeParts(badge.schemeName)}
 				<li class="badge">
 					<span class="level">{badge.levelName}</span>
 					<span class="sep" aria-hidden="true">·</span>
-					<span class="scheme">{badgeScheme(badge.schemeName)}</span>
+					<span class="scheme"
+						>{scheme.base}{#if scheme.qualifier}{' '}<span aria-hidden="true"
+								>{scheme.qualifier.shown}</span
+							><span class="visually-hidden">{scheme.qualifier.spoken}</span>{/if}</span
+					>
 					{#if badge.derived}
 						<span class="derived" title="Derived from a member word’s characters">derived</span>
 					{/if}
@@ -66,6 +71,15 @@
 	.sep,
 	.scheme {
 		opacity: 0.7;
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.derived {
