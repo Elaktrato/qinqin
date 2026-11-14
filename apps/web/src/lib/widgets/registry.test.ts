@@ -97,18 +97,29 @@ describe('allWidgets', () => {
 
 		expect(ids(list)).toEqual([
 			'activity-heatmap',
+			'character-map-summary',
 			'flashcards-summary',
 			'word-states',
 			'reading-time'
 		]);
 		expect(list.map((w) => [w.owner, w.size])).toEqual([
 			['core', 'wide'],
+			['core', 'normal'],
 			['qinqin-flashcards', 'normal'],
 			['qinqin-flashcards', 'normal'],
 			['qinqin-reader', 'normal']
 		]);
 		expect(ids(allWidgets(webPlugins, [state('qinqin-flashcards', false)], 'zh'))).toEqual([
-			'activity-heatmap'
+			'activity-heatmap',
+			'character-map-summary'
 		]);
+	});
+
+	it('shows the character map tile for Han languages only', () => {
+		const states = [state('qinqin-flashcards'), state('qinqin-reader')];
+
+		expect(ids(allWidgets(webPlugins, states, 'ja'))).toContain('character-map-summary');
+		expect(ids(allWidgets(webPlugins, states, 'zh-TW'))).toContain('character-map-summary');
+		expect(ids(allWidgets(webPlugins, states, 'es'))).not.toContain('character-map-summary');
 	});
 });
