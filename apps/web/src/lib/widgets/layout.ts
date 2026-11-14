@@ -19,17 +19,27 @@ export interface StoredLayout {
 }
 
 /**
- * parseLayout reads a stored value. Anything but a version 1 object with
- * a `widgets` array is no layout (null, so the default applies); array
- * entries that are not non-empty strings are dropped.
+ * parseLayout reads a stored value. Anything but an object with an
+ * integer `version` of 1 or more and a `widgets` array is no layout
+ * (null, so the default applies); array entries that are not non-empty
+ * strings are dropped. A newer version (a newer client) is read
+ * leniently: its string ids count, everything else is ignored.
  */
 export function parseLayout(value: unknown): string[] | null {
 	if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
 	const { version, widgets } = value as Record<string, unknown>;
-	if (version !== LAYOUT_VERSION || !Array.isArray(widgets)) return null;
+	if (typeof version !== 'number' || !Number.isInteger(version) || version < LAYOUT_VERSION) {
+		return null;
+	}
+	if (!Array.isArray(widgets)) return null;
 	return widgets.filter((id): id is string => typeof id === 'string' && id !== '');
 }
 
+/**
+ * serializeLayout writes a version 1 value. Saving over a row of a newer
+ * version therefore replaces it with version 1 (only the ids this client
+ * understands survive); a newer client must accept version 1 rows.
+ */
 export function serializeLayout(ids: readonly string[]): StoredLayout {
 	return { version: LAYOUT_VERSION, widgets: [...ids] };
 }
@@ -56,6 +66,20 @@ export function resolveLayout(
 		resolved.push(widget);
 	}
 	return resolved;
+}
+
+/**
+ * homeEmptyReason says why the home page shows no widget: the stored
+ * layout chose none ('none-chosen'), or it chose some that cannot be
+ * shown in this workspace (another language, a disabled plugin:
+ * 'none-available'). Null while at least one widget is shown.
+ */
+export function homeEmptyReason(
+	stored: readonly string[] | null,
+	shownCount: number
+): 'none-chosen' | 'none-available' | null {
+	if (shownCount > 0) return null;
+	return (stored ?? DEFAULT_LAYOUT).length === 0 ? 'none-chosen' : 'none-available';
 }
 
 export interface PlacedWidget {

@@ -7,7 +7,7 @@
 	// right now (lib/widgets/editor.ts). Saves are optimistic: the change
 	// shows at once, a failed save says so and offers Retry.
 	import { onMount, tick } from 'svelte';
-	import { ApiError } from '$lib/api/client';
+	import { errorMessage } from '$lib/stats/errors';
 	import { languageLabel } from '$lib/languages';
 	import { pluginState, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
@@ -87,12 +87,6 @@
 		return typeof name === 'string' && name.trim() ? name : owner;
 	}
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	async function load(): Promise<void> {
 		loadStatus = 'loading';
 		loadError = '';
@@ -101,7 +95,7 @@
 			confirmed = stored;
 			loadStatus = 'ready';
 		} catch (err) {
-			loadError = message(err, 'Could not load your home layout.');
+			loadError = errorMessage(err, 'Could not load your home layout.');
 			loadStatus = 'error';
 		}
 	}
@@ -135,7 +129,7 @@
 			saveStatus = 'saved';
 		} catch (err) {
 			pending = false;
-			saveError = message(err, 'The server did not answer.');
+			saveError = errorMessage(err, 'The server did not answer.');
 			saveStatus = 'error';
 		} finally {
 			inFlight = false;

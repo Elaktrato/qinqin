@@ -4,7 +4,7 @@
 	import { APP_NAME } from '$lib/app';
 	import { webPlugins } from '$lib/plugins';
 	import { pluginStates } from '$lib/plugins/states';
-	import { loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
+	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
 	import { allWidgets } from '$lib/widgets/registry';
 	import { currentLanguage } from '$lib/workspaces';
 
@@ -22,6 +22,7 @@
 	const placed = $derived(
 		placeWidgets(resolveLayout(stored, allWidgets(webPlugins, states, $currentLanguage), 'home'))
 	);
+	const emptyReason = $derived(homeEmptyReason(stored, placed.length));
 	const hasPlugins = $derived($pluginStates.status === 'ready' || $pluginStates.status === 'error');
 
 	onMount(async () => {
@@ -66,7 +67,10 @@
 			</div>
 		{:else if hasPlugins}
 			<p class="empty">
-				Your home page has no widgets. <a href="/settings?tab=home">Choose widgets in Settings</a>.
+				{emptyReason === 'none-chosen'
+					? 'Your home page has no widgets.'
+					: 'None of your home widgets is available in this workspace.'}
+				<a href="/settings?tab=home">Choose widgets in Settings</a>.
 			</p>
 		{/if}
 	{/if}

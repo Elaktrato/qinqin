@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ApiError, api } from '$lib/api/client';
+	import { api } from '$lib/api/client';
+	import { errorMessage } from '$lib/stats/errors';
 	import type { StudyEvent } from '$lib/events';
 	import {
 		HEATMAP_DAYS,
@@ -43,12 +44,6 @@
 		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
 	);
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	async function load(workspace: number | null): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
@@ -74,7 +69,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			events = [];
-			error = message(err, 'Could not load your activity.');
+			error = errorMessage(err, 'Could not load your activity.');
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

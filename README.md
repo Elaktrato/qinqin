@@ -620,7 +620,8 @@ A plugin's widgets exist only while the server lists the plugin and it is
 enabled. The home page renders the user's layout, the ordered widget ids in the
 user-global plugin data row `qinqin-core` / `home-layout`
 (`{"version": 1, "widgets": [...]}`, no workspace; a missing row means the
-default layout), through `apps/web/src/lib/widgets/layout.ts`. `qinqin-core` is
+default layout; a higher version is read leniently, its string ids only, and
+saving writes version 1), through `apps/web/src/lib/widgets/layout.ts`. `qinqin-core` is
 the core app registered as a plugin without surfaces so its data rows are
 accepted and synced; Settings does not list it. The per-plugin `order` in Settings
 no longer affects the home page (legacy: it orders the nav links).

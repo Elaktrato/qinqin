@@ -34,8 +34,10 @@
 
 	async function loadTitles(): Promise<Map<number, string> | null> {
 		try {
-			// Every library, not only this workspace's: a book is read in the
-			// workspace of its language, which need not be the one holding it.
+			// Reading is credited to the workspace whose library holds the book
+			// (readingWorkspace.ts; the language decides only for a book without
+			// one), so this workspace's library would name it. Every library is
+			// a superset kept so a live book is never labelled "A removed book".
 			const books = await listAllBooks();
 			return new Map((Array.isArray(books) ? books : []).map((book) => [book.id, book.title]));
 		} catch {

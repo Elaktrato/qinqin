@@ -14,7 +14,8 @@ import {
 	placeWidgets,
 	resolveLayout,
 	saveLayout,
-	serializeLayout
+	serializeLayout,
+	homeEmptyReason
 } from './layout';
 import type { WidgetDef } from './types';
 
@@ -117,11 +118,21 @@ describe('parseLayout', () => {
 			{},
 			{ version: 1 },
 			{ version: 1, widgets: 'a' },
-			{ version: 2, widgets: ['a'] },
+			{ version: 0, widgets: ['a'] },
+			{ version: 1.5, widgets: ['a'] },
+			{ version: '1', widgets: ['a'] },
+			{ version: 2, widgets: 'a' },
 			{ widgets: ['a'] }
 		]) {
 			expect(parseLayout(value)).toBeNull();
 		}
+	});
+
+	it('reads the widgets of a newer version leniently', () => {
+		expect(parseLayout({ version: 2, widgets: ['a', { id: 'b' }, 'c'], columns: 3 })).toEqual([
+			'a',
+			'c'
+		]);
 	});
 
 	it('round-trips through serializeLayout', () => {
@@ -224,5 +235,21 @@ describe('layout store', () => {
 			version: 1,
 			widgets: ['activity-heatmap']
 		});
+	});
+});
+
+describe('homeEmptyReason', () => {
+	it('is null while a widget is shown', () => {
+		expect(homeEmptyReason(['a'], 1)).toBeNull();
+		expect(homeEmptyReason(null, 2)).toBeNull();
+	});
+
+	it('says no widgets are chosen for an empty stored layout', () => {
+		expect(homeEmptyReason([], 0)).toBe('none-chosen');
+	});
+
+	it('says none is available when chosen widgets cannot be shown here', () => {
+		expect(homeEmptyReason(['character-map-summary'], 0)).toBe('none-available');
+		expect(homeEmptyReason(null, 0)).toBe('none-available');
 	});
 });

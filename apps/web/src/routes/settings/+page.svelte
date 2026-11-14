@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { APP_NAME } from '$lib/app';
 	import { ApiError, api } from '$lib/api/client';
 	import type { PluginInfo, Workspace } from '$lib/api/types';
 	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
@@ -169,6 +170,10 @@
 		}
 	}
 </script>
+
+<svelte:head>
+	<title>{SETTINGS_TAB_LABELS[activeTab]} · Settings · {APP_NAME}</title>
+</svelte:head>
 
 <main class="settings">
 	<h1>Settings</h1>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ApiError } from '$lib/api/client';
+	import { errorMessage } from '$lib/stats/errors';
 	import { buildQueue } from '$lib/study/scheduler';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import Mascot from './Mascot.svelte';
@@ -79,12 +79,6 @@
 		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
 	);
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	async function load(workspace: number | null, force = false): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
@@ -113,7 +107,7 @@
 			decks = [];
 			cards = [];
 			reviews = [];
-			error = message(err, 'Could not load your flashcards.');
+			error = errorMessage(err, 'Could not load your flashcards.');
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

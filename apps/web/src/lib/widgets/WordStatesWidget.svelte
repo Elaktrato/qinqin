@@ -74,6 +74,29 @@
 	$effect(() => {
 		void load(workspaceId);
 	});
+
+	// The per-deck table scrolls sideways on narrow screens: a visible hint
+	// says so while columns are hidden to the right. Screen readers get the
+	// whole table, so the hint is hidden from them.
+	let tableWrap = $state<HTMLDivElement | null>(null);
+	let moreRight = $state(false);
+
+	function measure(): void {
+		const el = tableWrap;
+		moreRight = el !== null && el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+	}
+
+	$effect(() => {
+		const el = tableWrap;
+		if (el === null) return;
+		measure();
+		if (typeof ResizeObserver === 'undefined') return;
+		const observer = new ResizeObserver(measure);
+		observer.observe(el);
+		// The table's own width changes with the deck names and numbers.
+		if (el.firstElementChild) observer.observe(el.firstElementChild);
+		return () => observer.disconnect();
+	});
 </script>
 
 <WidgetCard
@@ -112,7 +135,15 @@
 		{#if !compact && result !== null && result.decks.length > 0}
 			<!-- Scrolls sideways when the columns do not fit; focusable so keyboards can scroll it. -->
 			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<div class="table-wrap" tabindex="0" role="region" aria-label="Words per deck">
+			<div
+				class="table-wrap"
+				class:more-right={moreRight}
+				tabindex="0"
+				role="region"
+				aria-label="Words per deck"
+				bind:this={tableWrap}
+				onscroll={measure}
+			>
 				<table>
 					<caption class="sr">Words per deck</caption>
 					<thead>
@@ -137,6 +168,9 @@
 					</tbody>
 				</table>
 			</div>
+			{#if moreRight}
+				<p class="scroll-hint" aria-hidden="true">Scroll sideways for more columns →</p>
+			{/if}
 		{/if}
 
 		<p class="note">
@@ -224,6 +258,18 @@
 	.table-wrap {
 		margin-top: 0.9rem;
 		overflow-x: auto;
+	}
+
+	/* A soft edge on the right while columns are hidden there. */
+	.table-wrap.more-right {
+		mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+	}
+
+	.scroll-hint {
+		margin: 0.3rem 0 0;
+		font-size: 0.78rem;
+		text-align: right;
+		opacity: 0.75;
 	}
 
 	table {
