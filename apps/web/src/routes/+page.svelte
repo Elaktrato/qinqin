@@ -1,26 +1,36 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { api } from '$lib/api/client';
-	import type { PluginInfo } from '$lib/api/types';
 	import { APP_NAME } from '$lib/app';
-	import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
-	import { homeWidgets, webPlugins } from '$lib/plugins';
+	import { webPlugins } from '$lib/plugins';
+	import { pluginStates } from '$lib/plugins/states';
+	import { loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
+	import { allWidgets } from '$lib/widgets/registry';
+	import { currentLanguage } from '$lib/workspaces';
 
 	let query = $state('');
-	let pluginStates = $state<PluginInfo[]>([]);
 
-	// Only the installed, enabled plugins this build can render get a
-	// slot; unknown or disabled plugins simply do not appear, and the
-	// rest follow the user's Settings order.
-	const plugins = $derived(homeWidgets(webPlugins, pluginStates));
+	// The user's home layout (null = none stored, so the default). Nothing
+	// renders until it is known, so a custom order never flashes as the
+	// default first; a failed load falls back to the default quietly.
+	let stored = $state<string[] | null>(null);
+	let layoutReady = $state(false);
+
+	// Plugin widgets join once the shared plugin states are loaded; until
+	// then, or when they failed, only the core widgets can be shown.
+	const states = $derived($pluginStates.status === 'ready' ? $pluginStates.list : []);
+	const placed = $derived(
+		placeWidgets(resolveLayout(stored, allWidgets(webPlugins, states, $currentLanguage), 'home'))
+	);
+	const hasPlugins = $derived($pluginStates.status === 'ready' || $pluginStates.status === 'error');
 
 	onMount(async () => {
 		try {
-			pluginStates = await api<PluginInfo[]>('/api/plugins');
+			stored = await loadLayout();
 		} catch {
-			// Without server state the registry default — enabled —
-			// keeps the home page useful.
+			stored = null;
+		} finally {
+			layoutReady = true;
 		}
 	});
 
@@ -44,16 +54,22 @@
 		<button type="submit">Search</button>
 	</form>
 
-	<ActivityHeatmap />
-
-	<section class="plugin-slot" data-plugin-slot="home" aria-label="Home widgets">
-		{#each plugins as plugin (plugin.manifest.id)}
-			{@const Widget = plugin.component}
-			{#if Widget}
-				<Widget />
-			{/if}
-		{/each}
-	</section>
+	{#if layoutReady}
+		{#if placed.length > 0}
+			<div class="widgets" data-widget-slot="home">
+				{#each placed as { widget, span } (widget.id)}
+					{@const Widget = widget.homeComponent ?? widget.component}
+					<div class="widget" class:span data-widget={widget.id}>
+						<Widget />
+					</div>
+				{/each}
+			</div>
+		{:else if hasPlugins}
+			<p class="empty">
+				Your home page has no widgets. <a href="/settings?tab=home">Choose widgets in Settings</a>.
+			</p>
+		{/if}
+	{/if}
 </main>
 
 <style>
@@ -88,7 +104,31 @@
 		cursor: pointer;
 	}
 
-	.plugin-slot:empty {
-		display: none;
+	/* One column on phones, two from ~900 px; wide widgets and a normal
+	   one without a partner span the row (placeWidgets). */
+	.widgets {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 2.5rem 1.25rem;
+		margin-top: 2.5rem;
+	}
+
+	@media (min-width: 900px) {
+		.widgets {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.widget.span {
+			grid-column: 1 / -1;
+		}
+	}
+
+	.widget {
+		min-width: 0;
+	}
+
+	.empty {
+		margin-top: 2.5rem;
+		opacity: 0.8;
 	}
 </style>

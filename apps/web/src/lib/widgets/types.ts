@@ -28,3 +28,6 @@ export interface WidgetDef {
 	/** Compact variant for the home page, when the Stats version is large. */
 	homeComponent?: Component;
 }
+
+/** The states a widget passes through; WidgetCard renders all but `ready`. */
+export type WidgetStatus = 'no-workspace' | 'loading' | 'error' | 'empty' | 'ready';

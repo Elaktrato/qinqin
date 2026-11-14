@@ -6,6 +6,7 @@
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
+	import { isCorePlugin } from '$lib/plugins';
 	import { loadPluginStates } from '$lib/plugins/states';
 	import { rename, workspaces } from '$lib/workspaces';
 
@@ -60,7 +61,8 @@
 		pluginsError = '';
 		try {
 			const list = await api<PluginInfo[]>('/api/plugins');
-			plugins = list.map((plugin) => ({
+			// The core app's own registry row is not a switchable plugin.
+			plugins = list.filter((plugin) => !isCorePlugin(plugin.id)).map((plugin) => ({
 				id: plugin.id,
 				name: pluginName(plugin),
 				enabled: plugin.enabled,
@@ -228,8 +230,9 @@
 	<section>
 		<h2>Plugins</h2>
 		<p class="hint">
-			The server registers built-in widgets at startup. Enabled plugins appear on the home page
-			below the activity heatmap, in ascending order.
+			The server registers built-in plugins at startup. A disabled plugin's pages and widgets are
+			hidden everywhere. The order sets the plugins' place in the navigation; the home page
+			follows your widget layout instead.
 		</p>
 
 		{#if pluginsLoading}

@@ -9,6 +9,8 @@
 		windowStart,
 		windowSummary
 	} from '$lib/activity/activity';
+	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
+	import type { WidgetStatus } from '$lib/widgets/types';
 	import { workspaces } from '$lib/workspaces';
 
 	// The core home heatmap: every learning source in ACTIVITY_SOURCES
@@ -37,6 +39,9 @@
 	const windowTotal = $derived(days.reduce((sum, day) => sum + day.total, 0));
 	const summary = $derived(windowSummary(byDay));
 	const weeks = Math.round(HEATMAP_DAYS / 7);
+	const status = $derived<WidgetStatus>(
+		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
+	);
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -82,61 +87,41 @@
 	});
 </script>
 
-<section class="activity" aria-labelledby="activity-heading">
-	<h2 id="activity-heading">Activity</h2>
+<WidgetCard
+	title="Activity"
+	headingId="activity-heading"
+	{status}
+	noWorkspaceText="Choose a workspace in the header to see your activity."
+	loadingText="Loading activity…"
+	{error}
+	onretry={() => void load(workspaceId)}
+>
+	<div class="grid" role="img" aria-label={summary}>
+		{#each cells as cell (cell.day)}
+			<span class="cell level-{cell.level}" title={cell.title}></span>
+		{/each}
+	</div>
 
-	{#if noWorkspace}
-		<p class="hint">Choose a workspace in the header to see your activity.</p>
-	{:else if loading}
-		<p class="hint" aria-live="polite">Loading activity…</p>
-	{:else if error}
-		<p class="hint muted" role="status">
-			{error}
-			<button type="button" class="retry" onclick={() => void load(workspaceId)}>Try again</button>
-		</p>
-	{:else}
-		<div class="grid" role="img" aria-label={summary}>
-			{#each cells as cell (cell.day)}
-				<span class="cell level-{cell.level}" title={cell.title}></span>
+	<footer class="legend">
+		<span>
+			{#if windowTotal === 0}
+				No activity in the last {weeks} weeks yet
+			{:else}
+				{windowTotal}
+				{windowTotal === 1 ? 'point' : 'points'} in the last {weeks} weeks
+			{/if}
+		</span>
+		<span class="scale" aria-hidden="true">
+			Less
+			{#each [0, 1, 2, 3, 4] as level (level)}
+				<span class="cell level-{level}"></span>
 			{/each}
-		</div>
-
-		<footer class="legend">
-			<span>
-				{#if windowTotal === 0}
-					No activity in the last {weeks} weeks yet
-				{:else}
-					{windowTotal}
-					{windowTotal === 1 ? 'point' : 'points'} in the last {weeks} weeks
-				{/if}
-			</span>
-			<span class="scale" aria-hidden="true">
-				Less
-				{#each [0, 1, 2, 3, 4] as level (level)}
-					<span class="cell level-{level}"></span>
-				{/each}
-				More
-			</span>
-		</footer>
-	{/if}
-</section>
+			More
+		</span>
+	</footer>
+</WidgetCard>
 
 <style>
-	.activity {
-		margin-top: 2.5rem;
-		padding: 1rem 1.25rem 1.15rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.5rem;
-	}
-
-	h2 {
-		margin: 0;
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		opacity: 0.7;
-	}
-
 	.grid {
 		display: grid;
 		grid-template-rows: repeat(7, 0.85rem);
@@ -192,27 +177,5 @@
 	.scale .cell {
 		width: 0.65rem;
 		height: 0.65rem;
-	}
-
-	.hint {
-		margin: 0.9rem 0 0;
-		font-size: 0.9rem;
-		opacity: 0.75;
-	}
-
-	.muted {
-		color: color-mix(in srgb, currentColor 70%, transparent);
-	}
-
-	.retry {
-		font: inherit;
-		font-size: 0.8rem;
-		margin-left: 0.35rem;
-		padding: 0.15rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 999px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
 	}
 </style>

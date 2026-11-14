@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
-import { findPlugin, homeWidgets, isCorePlugin, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState, visibleNavPages } from './index';
+import { findPlugin, isCorePlugin, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState, visibleNavPages } from './index';
 import type { WebPlugin } from './index';
 
 function plugin(id: string): WebPlugin {
@@ -95,12 +95,6 @@ describe('reader registration', () => {
 			{ slug: 'reader', title: 'Reader', href: '/p/reader' }
 		]);
 		expect(navPages(webPlugins, [state('qinqin-reader', 0, false)])).toEqual([]);
-	});
-
-	it('keeps page-only plugins out of the home widget slot', () => {
-		const ids = homeWidgets(webPlugins, []).map((p) => p.manifest.id);
-
-		expect(ids).toEqual(['qinqin-flashcards']);
 	});
 
 	it('gives the page-only reader no widgets', () => {

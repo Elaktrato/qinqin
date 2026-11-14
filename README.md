@@ -30,11 +30,15 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Reader library, bookmarks and highlights** — each workspace has its own
   library of imported books, a tabbed importer with daily suggestions, and
   per-book bookmarks, highlights and notes (see [Reader](#reader)).
-- **Activity heatmap** — the home page shows 13 weeks of learning activity per
+- **Home widgets** — the home page renders widgets from a per-user layout stored
+  on the server (shared by every device and workspace; by default the activity
+  heatmap, then the flashcards summary). A widget that does not apply to the
+  current language, or whose plugin is disabled, is left out.
+- **Activity heatmap** — a home widget showing 13 weeks of learning activity per
   workspace, adding up flashcard reviews and reading time in the Reader.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
-  are installable data packs; home widgets and views are feature plugins that
-  the server registers at startup so Settings can enable and order them.
+  are installable data packs; widgets and views come from feature plugins that
+  the server registers at startup so Settings can enable them.
 
 ## Quick start (Docker Compose / Portainer)
 
@@ -409,8 +413,8 @@ For each workspace, the flashcards home widget shows:
 - the streak
 - the study buddy
 
-Above the plugin widgets, the home page has a core activity heatmap for the
-current workspace: one cell per UTC day over the last 13 weeks, coloured by
+By default the home page shows the core activity heatmap above the flashcards
+widget. The heatmap covers the current workspace: one cell per UTC day over the last 13 weeks, coloured by
 activity points. A flashcard review is one point. Reading in the Reader is one
 point per started 5 minutes; the reader records a `read` event with the active
 seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
@@ -464,7 +468,7 @@ All library and source routes need a signed-in user, and so does
 | `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user |
 | `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
 | `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
-| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and home position for one plugin |
+| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and (legacy) order for one plugin |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
 | `GET /api/dictionaries` | Public. The installed dictionaries, each with `license`, `attribution` and `notice` (`""` when the manifest has none) |
 | `POST /api/admin/dictionaries`, `DELETE /api/admin/dictionaries/{id}`, `DELETE /api/admin/schemes/{id}`, `DELETE /api/admin/sentences/{pack}`, `POST /api/admin/plugins` | Admin only: install a dictionary pack (multipart zip in `pack`), soft-delete a dictionary, a level scheme or a sentence pack (entries survive), register a plugin manifest |
@@ -557,6 +561,20 @@ is registered on the server (built-in manifests are registered at startup in
 `server/cmd/qinqin/main.go`) and enabled for the user; the shell and the page route
 share one fetch of those states through the `pluginStates` store in
 `apps/web/src/lib/plugins/states.ts`.
+
+A web plugin can also contribute widgets: the optional `widgets` array of its
+manifest (`PluginManifest.widgets`, next to `sources`) lists `WidgetDef`s
+(`apps/web/src/lib/widgets/types.ts`: id, title, description, owner, size
+`normal` or `wide`, optional `appliesTo(language)`, surfaces and a component
+without props). The app's own widgets are in `apps/web/src/lib/widgets/core.ts`.
+A plugin's widgets exist only while the server lists the plugin and it is
+enabled. The home page renders the user's layout, the ordered widget ids in the
+user-global plugin data row `qinqin-core` / `home-layout`
+(`{"version": 1, "widgets": [...]}`, no workspace; a missing row means the
+default layout), through `apps/web/src/lib/widgets/layout.ts`. `qinqin-core` is
+the core app registered as a plugin without surfaces so its data rows are
+accepted and synced; Settings does not list it. The per-plugin `order` in Settings
+no longer affects the home page (legacy: it orders the nav links).
 
 ### Credits and the Sources page
 
