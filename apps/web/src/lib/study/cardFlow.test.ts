@@ -18,6 +18,7 @@ import {
 	sessionCounts,
 	shouldIgnoreGrade,
 	tierForCard,
+	tonePadLabels,
 	toneVerdict
 } from './cardFlow';
 import { parsePinyin } from './tones';
@@ -510,5 +511,19 @@ describe('resolveSentence', () => {
 		};
 		expect(resolveSentence(companion, sentences, new Set([1]))).toEqual({ id: 2 });
 		expect(resolveSentence(companion, sentences, new Set([1, 2, 3]))).toBeNull();
+	});
+});
+
+describe('tonePadLabels', () => {
+	it('gives one Han character per syllable', () => {
+		expect(tonePadLabels('学生', 2)).toEqual(['学', '生']);
+	});
+
+	it('falls back for erhua, where characters outnumber syllables', () => {
+		expect(tonePadLabels('花儿', 1)).toBeNull();
+	});
+
+	it('falls back when a character is not Han', () => {
+		expect(tonePadLabels('T恤', 2)).toBeNull();
 	});
 });

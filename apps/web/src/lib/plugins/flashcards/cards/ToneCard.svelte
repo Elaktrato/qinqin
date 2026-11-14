@@ -2,6 +2,7 @@
 	import type { Entry } from '$lib/api/types';
 	import {
 		pinyinReadings,
+	tonePadLabels,
 		toneCandidates,
 		toneVerdict,
 		type CardResult,
@@ -40,6 +41,7 @@
 	// The first clean reading decides the syllables shown; any reading
 	// with the same syllable count is accepted when checking.
 	const syllables = $derived(candidates[0] ?? []);
+	const labels = $derived(tonePadLabels(entry.written, syllables.length));
 	const allReadings = $derived(pinyinReadings(entry.readings));
 
 	let chosen = $state<(Tone | null)[]>([]);
@@ -47,6 +49,10 @@
 	let verdict = $state<ToneVerdict | null>(null);
 	let trace = $state<GesturePoint[]>([]);
 	let tracing = $state<number | null>(null);
+	// The tone whose contour is drawing in on a pad, and the pad's drawn tone.
+	let drawing = $state<number | null>(null);
+	const reduceMotion =
+		typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 	let announcement = $state('');
 	let pads = $state<(HTMLElement | null)[]>([]);
 
@@ -107,7 +113,14 @@
 		const path = [...trace, point(event, event.currentTarget as HTMLElement)];
 		tracing = null;
 		trace = [];
-		setTone(index, toneFromGesture(path));
+		const tone = toneFromGesture(path);
+		if (!reduceMotion) {
+			drawing = index;
+			setTimeout(() => {
+				if (drawing === index) drawing = null;
+			}, 120);
+		}
+		setTone(index, tone);
 	}
 
 	function onPointerCancel(): void {
@@ -191,7 +204,7 @@
 				class:wrong={mark === false}
 				bind:this={pads[index]}
 				role="img"
-				aria-label={`Syllable ${index + 1}, ${syllable.plain}: ${tone === null ? 'no tone yet' : nameOf(tone)}`}
+				aria-label={`Syllable ${index + 1}${labels === null ? `, ${syllable.plain}` : ''}: ${tone === null ? 'no tone yet' : nameOf(tone)}`}
 				onpointerdown={(event) => onPointerDown(event, index)}
 				onpointermove={(event) => onPointerMove(event, index)}
 				onpointerup={(event) => onPointerUp(event, index)}
@@ -202,16 +215,16 @@
 						{#if tone === 5}
 							<circle cx="50" cy="56" r="7" />
 						{:else}
-							<path d={CONTOUR[tone]} />
+							<path d={CONTOUR[tone]} class:draw={drawing === index} pathLength="1" />
 						{/if}
 					{/if}
 					{#if tracing === index && trace.length > 1}
 						<polyline class="trace" points={polyline(trace, pads[index] ?? null)} />
 					{/if}
 				</svg>
-				<span class="plain">{syllable.plain}</span>
+				<span class="plain" class:char={labels !== null} lang={labels === null ? undefined : 'zh'}>{labels?.[index] ?? syllable.plain}</span>
 			</div>
-			<div class="tone-buttons" role="group" aria-label={`Tone for ${syllable.plain}`}>
+			<div class="tone-buttons" role="group" aria-label={labels === null ? `Tone for ${syllable.plain}` : `Tone for syllable ${index + 1}`}>
 				{#each TONES as option (option.tone)}
 					<button
 						type="button"
@@ -281,8 +294,8 @@
 
 	.pad {
 		position: relative;
-		width: 7.5rem;
-		height: 7.5rem;
+		width: 10rem;
+		height: 10rem;
 		border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
 		border-radius: 0.6rem;
 		display: grid;
@@ -316,6 +329,29 @@
 		stroke-linecap: round;
 	}
 
+	.contour path {
+		stroke-dasharray: 1;
+	}
+
+	.contour path.draw {
+		animation: draw-in 120ms linear;
+	}
+
+	@keyframes draw-in {
+		from {
+			stroke-dashoffset: 1;
+		}
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.contour path.draw {
+			animation: none;
+		}
+	}
+
 	.contour circle {
 		fill: #0b6bcb;
 		stroke: none;
@@ -331,6 +367,13 @@
 		margin-bottom: 0.35rem;
 		font-size: 1.1rem;
 		font-weight: 600;
+		opacity: 0.55;
+	}
+
+	.plain.char {
+		font-size: 3rem;
+		line-height: 1;
+		opacity: 0.35;
 	}
 
 	.tone-buttons {

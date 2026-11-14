@@ -7,7 +7,7 @@ import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
 import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
 import { tierFor, type SaladTier } from './wordSalad';
-import { writableChars } from './writing';
+import { isHan, writableChars } from './writing';
 import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
 
 /**
@@ -397,6 +397,17 @@ export function toneVerdict(
 		marks: chosen.map((tone, i) => reading[i].tone === tone),
 		best: [...reading]
 	};
+}
+
+/**
+ * The Han characters of `written` when every character is Han and their
+ * count equals the syllable count; otherwise null (erhua such as 花儿,
+ * mixed scripts), and the pads show toneless pinyin instead.
+ */
+export function tonePadLabels(written: string, syllableCount: number): string[] | null {
+	const chars = [...written.trim()];
+	if (chars.length === 0 || chars.length !== syllableCount) return null;
+	return chars.every(isHan) ? chars : null;
 }
 
 /** The tone check candidates of an entry: its clean pinyin readings. */

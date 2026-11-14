@@ -201,11 +201,16 @@ Where the build differs from or refines the decisions above, and the known limit
 - **Tone is Chinese only, with no pitch accent.** The Tone type is hidden in non-Chinese
   workspaces (a saved selection stays stored but never reaches the queue). Japanese
   pitch accent is not modelled: there is no pitch data.
-- **Swipe directions as built.** Up or up-left is tone 1. Up-right or right is tone 2.
-  A path that goes down at least 24 px and comes back up at least 24 px is tone 3.
-  Down-right, down, down-left or left is tone 4. A move shorter than 24 px is a tap,
-  which means the neutral tone. Keys 1–5 work too. Any listed reading with the same
-  syllable count is accepted.
+- **Swipe directions as built.** A swipe draws the tone's shape. A swipe within 25
+  degrees of horizontal, either way, is flat: tone 1. Rising (up-right, up, up-left) is
+  tone 2. A path that goes down at least 24 px and comes back up at least 24 px is
+  tone 3. Falling (down-right, down, down-left) is tone 4. A move shorter than 24 px is
+  a tap, which means the neutral tone. Keys 1–5 work too. Any listed reading with the
+  same syllable count is accepted. After a swipe the recognised contour draws in over
+  120 ms (instantly under reduced motion). Pads show the word's Han characters when
+  every character is Han and the count equals the syllable count (`tonePadLabels`);
+  erhua such as 花儿 and mixed scripts fall back to toneless pinyin. With characters
+  shown, aria-labels never name the pinyin ("Syllable 2: no tone yet").
 - **Writing needs Han characters and bundled stroke data.** Only characters with a
   file in `static/hanzi/` are drawn. Kana stay visible as context, and a word with no
   drawable character is skipped silently. The pad is our own (`WritingPad`, see the

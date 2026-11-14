@@ -84,8 +84,11 @@ describe('toneFromGesture', () => {
 	});
 
 	it('maps directions in screen coordinates (y grows downward)', () => {
-		expect(toneFromGesture(0, -80)).toBe(1);
-		expect(toneFromGesture(5, -80)).toBe(1);
+		expect(toneFromGesture(80, 0)).toBe(1);
+		expect(toneFromGesture(-80, 0)).toBe(1);
+		expect(toneFromGesture(80, -20)).toBe(1);
+		expect(toneFromGesture(0, -80)).toBe(2);
+		expect(toneFromGesture(5, -80)).toBe(2);
 		expect(toneFromGesture(60, -60)).toBe(2);
 		expect(toneFromGesture(60, 60)).toBe(4);
 		expect(toneFromGesture(0, 80)).toBe(4);
@@ -112,7 +115,7 @@ describe('toneFromGesture', () => {
 			{ x: 1, y: -40 },
 			{ x: 2, y: -80 }
 		];
-		expect(toneFromGesture(up)).toBe(1);
+		expect(toneFromGesture(up)).toBe(2);
 		const downRight = [
 			{ x: 0, y: 0 },
 			{ x: 30, y: 30 },
@@ -124,9 +127,26 @@ describe('toneFromGesture', () => {
 	});
 
 	it('classifies the left-hand sectors (documented choice)', () => {
-		expect(toneFromGesture(-80, 0)).toBe(4); // left
-		expect(toneFromGesture(-60, -60)).toBe(1); // up-left
+		expect(toneFromGesture(-80, 0)).toBe(1); // left is flat
+		expect(toneFromGesture(-60, -60)).toBe(2); // up-left rises
 		expect(toneFromGesture(-60, 60)).toBe(4); // down-left
+	});
+
+	it('treats a swipe within 25 degrees of horizontal as flat, either way', () => {
+		const flatRight = [
+			{ x: 0, y: 0 },
+			{ x: 40, y: 3 },
+			{ x: 80, y: 5 }
+		];
+		const flatLeft = [
+			{ x: 80, y: 0 },
+			{ x: 40, y: -3 },
+			{ x: 0, y: 4 }
+		];
+		expect(toneFromGesture(flatRight)).toBe(1);
+		expect(toneFromGesture(flatLeft)).toBe(1);
+		expect(toneFromGesture(80, -40)).toBe(2); // about 27 degrees
+		expect(toneFromGesture(80, 40)).toBe(4);
 	});
 
 	it('ignores a small wobble in a tap path', () => {
