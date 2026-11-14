@@ -21,7 +21,7 @@ so it is built as a small, pure engine with shared test cases.
   Position and size get wide tolerance relative to the character box.
 - **Joined strokes:** one motion may cover the next two or three strokes in
   order where the pen naturally flows on: stroke k ends close to where stroke
-  k+1 starts (了; 子's first two strokes).
+  k+1 starts (了; the first two strokes of 子, 糸 and its radical forms 纟/糹, e.g. in 红).
 - **Snap:** an accepted stroke morphs quickly from the learner's ink into the
   clean reference stroke; a rejected one flashes and fades.
 - **Snappy:** ink follows the pointer without lag; no waits between strokes.
@@ -101,8 +101,8 @@ For a candidate (one stroke or a join):
    at most a fraction of the character box, scale ratio within a range — so a
    stroke drawn in the wrong part of the character, or tiny, is still a miss.
 5. **Joins** use the same rules and are only candidates when each stroke's end
-   lies within a gap limit of the next stroke's start (starting value 0.15 of
-   the box), so a join never needs a retrace or a backwards connector (口's
+   lies within a gap limit of the next stroke's start (starting value 0.2 of
+   the box; 糸/纟/红 measure 0.15–0.17), so a join never needs a retrace or a backwards connector (口's
    横折 + 横 does not join). The corner between joined strokes must be present
    in the ink (the shape distance covers this).
 
@@ -152,7 +152,7 @@ correct pinyin with its tone mark, as the answer line does today.
 
 - Unit tests for geometry and matcher from fixtures built on real stroke data:
   each stroke drawn from its median with noise, offset, scale up/down; joins
-  (了 as one motion, 子's first two strokes); negatives: a join that would need a retrace (口's
+  (了 as one motion, the first two strokes of 子, 糸, 纟 and 红); negatives: a join that would need a retrace (口's
   横折 + 横), reversed strokes, the
   wrong next stroke, strokes out of order, a scribble, a dot for a long stroke,
   a stroke in the wrong quadrant.
