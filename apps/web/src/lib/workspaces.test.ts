@@ -6,7 +6,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import type { Workspace } from './api/types';
-import { create, currentLanguage, load, rename, select, workspaces } from './workspaces';
+import { create, currentLanguage, deleteWorkspace, load, rename, select, workspaces } from './workspaces';
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -187,5 +187,65 @@ describe('workspace store', () => {
 		select(1);
 		expect(localStorage.getItem('qinqin.workspace')).toBe('1');
 		expect(get(workspaces).current).toEqual(first);
+	});
+
+	it('deletes the current workspace, falls back to the first left, and forgets its keys', async () => {
+		const zh = workspace(1, 'zh');
+		const ja = workspace(2, 'ja');
+		const es = workspace(3, 'es');
+		workspaces.set({ list: [zh, ja, es], current: ja });
+		localStorage.setItem('qinqin.workspace', '2');
+		localStorage.setItem('qinqin.session.2.2026-11-14', '1');
+		localStorage.setItem('qinqin.session.1.2026-11-14', '1');
+		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
+
+		await deleteWorkspace(2);
+
+		const calls = vi.mocked(fetch).mock.calls;
+		expect(calls.map(([url]) => String(url))).toEqual(['/api/workspaces/2']);
+		expect(calls[0][1]?.method).toBe('DELETE');
+		expect(get(workspaces)).toEqual({ list: [zh, es], current: zh });
+		expect(localStorage.getItem('qinqin.workspace')).toBe('1');
+		expect(localStorage.getItem('qinqin.session.2.2026-11-14')).toBeNull();
+		expect(localStorage.getItem('qinqin.session.1.2026-11-14')).toBe('1');
+	});
+
+	it('deleting another workspace keeps the current one', async () => {
+		const zh = workspace(1, 'zh');
+		const ja = workspace(2, 'ja');
+		workspaces.set({ list: [zh, ja], current: zh });
+		localStorage.setItem('qinqin.workspace', '1');
+		vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
+
+		await deleteWorkspace(2);
+
+		expect(get(workspaces)).toEqual({ list: [zh], current: zh });
+		expect(localStorage.getItem('qinqin.workspace')).toBe('1');
+	});
+
+	it('treats a workspace already gone (404) as deleted and reloads the list', async () => {
+		const zh = workspace(1, 'zh');
+		const ja = workspace(2, 'ja');
+		workspaces.set({ list: [zh, ja], current: ja });
+		vi.mocked(fetch).mockImplementation(async (_input, init) => {
+			if (init?.method === 'DELETE') return new Response('workspace not found', { status: 404 });
+			return jsonResponse([zh]);
+		});
+
+		await deleteWorkspace(2);
+
+		expect(get(workspaces)).toEqual({ list: [zh], current: zh });
+	});
+
+	it('keeps everything when the server refuses (last workspace)', async () => {
+		const zh = workspace(1, 'zh');
+		workspaces.set({ list: [zh], current: zh });
+		localStorage.setItem('qinqin.session.1.2026-11-14', '1');
+		vi.mocked(fetch).mockResolvedValue(new Response('keep at least one workspace', { status: 409 }));
+
+		await expect(deleteWorkspace(1)).rejects.toMatchObject({ status: 409 });
+
+		expect(get(workspaces)).toEqual({ list: [zh], current: zh });
+		expect(localStorage.getItem('qinqin.session.1.2026-11-14')).toBe('1');
 	});
 });

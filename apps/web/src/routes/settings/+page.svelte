@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
 	import type { PluginInfo, Workspace } from '$lib/api/types';
+	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
@@ -23,6 +24,21 @@
 	let renameDraft = $state('');
 	let renameSaving = $state(false);
 	let renameError = $state('');
+
+	// The workspace whose delete confirmation is open, and where focus
+	// goes when it closes: back to its Delete button, or to the section
+	// heading once the row is gone.
+	let deleting = $state<Workspace | null>(null);
+	const deleteButtons: Record<number, HTMLButtonElement> = {};
+	let workspacesHeading = $state<HTMLHeadingElement | null>(null);
+
+	async function closeDelete(deleted: boolean): Promise<void> {
+		const id = deleting?.id;
+		deleting = null;
+		await tick();
+		if (!deleted && id !== undefined && deleteButtons[id]) deleteButtons[id].focus();
+		else workspacesHeading?.focus();
+	}
 
 	let plugins = $state<PluginRow[]>([]);
 	let pluginsLoading = $state(true);
@@ -122,7 +138,7 @@
 	<h1>Settings</h1>
 
 	<section>
-		<h2>Workspaces</h2>
+		<h2 bind:this={workspacesHeading} tabindex="-1">Workspaces</h2>
 		<p class="hint">
 			Each workspace keeps its own cards, library and progress. You can have several of the same
 			language; give them names to tell them apart. The switcher in the header changes the active
@@ -178,11 +194,31 @@
 								>
 									Rename
 								</button>
+								{#if $workspaces.list.length > 1}
+									<button
+										type="button"
+										class="secondary delete-button"
+										bind:this={deleteButtons[workspace.id]}
+										onclick={() => (deleting = workspace)}
+										aria-label="Delete {languageLabel(workspace.language)}{workspace.name
+											? ` (${workspace.name})`
+											: ''} workspace"
+									>
+										Delete
+									</button>
+								{/if}
 							</div>
 						{/if}
 					</li>
 				{/each}
 			</ul>
+			{#if $workspaces.list.length === 1}
+				<p class="hint">Your only workspace cannot be deleted; create another one first.</p>
+			{/if}
+		{/if}
+
+		{#if deleting}
+			<DeleteWorkspaceDialog workspace={deleting} list={$workspaces.list} onclose={closeDelete} />
 		{/if}
 
 		<h3>New workspace</h3>
@@ -286,6 +322,14 @@
 
 	.rename-button {
 		margin-left: auto;
+	}
+
+	.settings button.delete-button {
+		color: #c62828;
+	}
+
+	h2[tabindex='-1']:focus {
+		outline: none;
 	}
 
 	.rename input {
