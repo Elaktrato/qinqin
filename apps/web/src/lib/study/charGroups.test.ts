@@ -95,11 +95,11 @@ const ALL_FIXED_KEYS: GroupKey[] = ['grade', 'freq', 'strokes', 'common', 'hkgra
 describe('groupOptions', () => {
 	const hsk = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6', 'HSK 7–9'];
 	// The packs of a seeded server: the two samples, the bundled HSK 3.0
-	// words and JLPT kanji, and locally installed packs (an HSK 3.0
-	// character list, JLPT vocabulary; optional, not bundled).
+	// characters and words and JLPT kanji, and a locally installed JLPT
+	// vocabulary (optional, not bundled).
 	const schemes: Scheme[] = [
 		scheme(1, 'HSK mini (sample)', 'zh', 'hsk-mini', ['1', '2']),
-		scheme(2, 'HSK 3.0 (characters)', 'zh', 'hsk30-chars', hsk),
+		scheme(2, 'HSK 3.0 (characters)', 'zh', 'hsk-chars', hsk),
 		scheme(3, 'HSK 3.0 (words)', 'zh', 'hsk-words', hsk),
 		scheme(4, 'JLPT (kanji)', 'ja', 'jlpt-kanji', ['N5', 'N4', 'N3', 'N2', 'N1']),
 		scheme(5, 'JLPT N5 mini (sample)', 'ja', 'jlpt-mini', ['N5']),
@@ -122,7 +122,7 @@ describe('groupOptions', () => {
 		expect(groupOptions('ja', []).map((o) => o.label)).toEqual(['Grade', 'Frequency', 'Strokes']);
 	});
 
-	it('offers common, HK grade, strokes and the non-sample zh schemes (the bundled HSK 3.0 words, a locally installed character list) for zh', () => {
+	it('offers common, HK grade, strokes and the non-sample zh schemes (the bundled HSK 3.0 characters and words) for zh', () => {
 		expect(groupOptions('zh', schemes)).toEqual([
 			{ key: 'common', label: 'Common' },
 			{ key: 'hkgrade', label: 'HK primary grade' },
@@ -139,6 +139,19 @@ describe('groupOptions', () => {
 			'strokes',
 			'scheme:2',
 			'scheme:3'
+		]);
+	});
+
+	it('tells schemes of the same name apart by pack id', () => {
+		const both = [
+			scheme(2, 'HSK 3.0 (characters)', 'zh', 'hsk-chars', hsk),
+			scheme(3, 'HSK 3.0 (words)', 'zh', 'hsk-words', hsk),
+			scheme(14, 'HSK 3.0 (characters)', 'zh', 'hsk30-chars', hsk)
+		];
+		expect(groupOptions('zh', both).slice(3)).toEqual([
+			{ key: 'scheme:2', label: 'HSK 3.0 (characters) · hsk-chars' },
+			{ key: 'scheme:3', label: 'HSK 3.0 (words)' },
+			{ key: 'scheme:14', label: 'HSK 3.0 (characters) · hsk30-chars' }
 		]);
 	});
 

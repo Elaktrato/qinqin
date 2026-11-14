@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Convert the word list of the official HSK syllabus into the qinqin level
-// pack hsk-words ("HSK 3.0 (words)").
+// Convert the word list and the character list of the official HSK syllabus
+// into the qinqin level packs hsk-words ("HSK 3.0 (words)") and hsk-chars
+// ("HSK 3.0 (characters)").
 //
 // Source: 《HSK 考试大纲》 / Syllabus for the Chinese Proficiency Test,
 // published 2025-11, effective 2026-07, issued by 中外语言交流合作中心
@@ -11,11 +12,16 @@
 //   https://hsk.cn-bj.ufileos.com/3.0/%E6%96%B0%E7%89%88HSK%E8%80%83%E8%AF%95%E5%A4%A7%E7%BA%B21219.pdf
 //
 // Its part "HSK 词汇大纲" is a table printed from a spreadsheet: serial
-// number, level (1–6 or 7-9), word, pinyin, part of speech.
+// number, level (1–6 or 7-9), word, pinyin, part of speech. Its part
+// "HSK 汉字大纲" lists characters in numbered columns ("1. 爱"): one
+// 认读字 (characters to recognise) list per level, HSK（一级）认读字 …
+// HSK（七—九级）认读字, then 书写字 (characters to write) lists,
+// HSK（一级）~（二级）书写字, HSK（三级）书写字 … HSK（七—九级）书写字.
 //
 // The publisher states no licence for the syllabus (the site footer reads
 // "Copyright © CTI 2009-2018"). The project owner chose to include the word
-// list with attribution; its copyright status has not been verified. Never
+// and character lists with attribution; their copyright status has not
+// been verified. Never
 // commit the PDF or any text extracted from it (they are gitignored): only
 // the generated pack is committed.
 //
@@ -30,9 +36,9 @@
 // misplaces cells of this table (a row's pinyin lands in the column header
 // line, runs of rows print column by column, and the diagonal 汉考国际
 // watermark interleaves with the rows), while the word boxes keep every
-// cell's coordinates. It (re)writes the pack directory hsk-words under
-// <packs-dir> (default plugins/data): manifest.json, levels.json and
-// ATTRIBUTION.md. With --pdf, ATTRIBUTION.md records the PDF's SHA-256; the
+// cell's coordinates. It (re)writes the pack directories hsk-words and
+// hsk-chars under <packs-dir> (default plugins/data): manifest.json,
+// levels.json and ATTRIBUTION.md each. With --pdf, ATTRIBUTION.md records the PDF's SHA-256; the
 // committed pack was generated with it, so pass --pdf to reproduce it byte
 // for byte. The output depends only on the inputs.
 //
@@ -56,6 +62,20 @@
 // - the serial numbers must run 1..N with no gap or duplicate, and every
 //   row needs a level, a written form of Han characters and a pinyin;
 //   otherwise the conversion fails and names the rows.
+//
+// Character lists (see parseCharacterLists):
+// - the section starts at the first "HSK（…）认读字" heading and ends at the
+//   first page after it with no numbered item; each heading starts a list;
+// - the watermark is dropped by glyph height as above, never by character
+//   value: 汉, 考, 国 and 际 are listed characters too;
+// - an item is a number "N." with the one Han character to its right on the
+//   same line (or both in one box, "169.四"); the page number is dropped,
+//   and any other text on the list pages is an error;
+// - each list must number 1..N with no gap or duplicate;
+// - a character's level is the level of the 认读字 list that lists it (the
+//   lowest one, should one repeat); the 书写字 lists assign no level, their
+//   sizes are reported and they must list only characters recognised at or
+//   below their level.
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -302,12 +322,12 @@ function json(value) {
 
 // levelsJSON writes levels.json with one entry per line: about half the
 // size of fully indented JSON, and a re-run on a new edition diffs by word.
-export function levelsJSON(levels) {
+export function levelsJSON(levels, unit = 'word') {
 	const lvls = levels.map((lv) => {
 		const entries = lv.entries.map((e) => `\t\t\t\t${JSON.stringify(e)}`).join(',\n');
 		return `\t\t{\n\t\t\t"name": ${JSON.stringify(lv.name)},\n\t\t\t"entries": [\n${entries}\n\t\t\t]\n\t\t}`;
 	});
-	return `{\n\t"unit": "word",\n\t"levels": [\n${lvls.join(',\n')}\n\t]\n}\n`;
+	return `{\n\t"unit": ${JSON.stringify(unit)},\n\t"levels": [\n${lvls.join(',\n')}\n\t]\n}\n`;
 }
 
 function sha256(buffer) {
@@ -395,20 +415,242 @@ export function attribution({ ed, rows, levels, stats, pdfSum }) {
 	return lines.join('\n');
 }
 
+
+// The level names in the character list headings: "HSK（一级）认读字",
+// "HSK（七—九级）认读字", "HSK（一级）~（二级）书写字".
+const CN_LEVEL = { 一级: '1', 二级: '2', 三级: '3', 四级: '4', 五级: '5', 六级: '6', '七—九级': '7-9' };
+const LIST_HEADING = /^HSK（(一级|二级|三级|四级|五级|六级|七—九级)）(?:~（(二级)）)?(认读字|书写字)$/;
+const ITEM = /^(\d+)\.(\p{Script=Han}?)$/u;
+const ONE_HAN = /^\p{Script=Han}$/u;
+
+// parseCharacterLists extracts the numbered character lists of the
+// syllabus's 汉字大纲 from its word boxes. It returns { lists, report }:
+// lists in page order, each { kind: '认读字' | '书写字', levels: ['1'] or
+// ['1', '2'], heading, chars, page }, chars in list order.
+export function parseCharacterLists(text) {
+	const words = tsvWords(text);
+	const report = { watermark: 0, pageNumbers: 0, pages: [] };
+	const byPage = new Map();
+	for (const w of words) {
+		if (w.height >= WATERMARK_MIN_HEIGHT) {
+			report.watermark++;
+			continue;
+		}
+		if (!byPage.has(w.page)) byPage.set(w.page, []);
+		byPage.get(w.page).push(w);
+	}
+	const lists = [];
+	const errors = [];
+	let current = null;
+	for (const page of [...byPage.keys()].sort((a, b) => a - b)) {
+		const ws = byPage.get(page);
+		const headings = ws.filter((w) => LIST_HEADING.test(w.text));
+		const items = ws.filter((w) => ITEM.test(w.text));
+		if (!current && headings.length === 0) continue; // before the section
+		if (current && headings.length === 0 && items.length === 0) break; // past it
+		if (headings.length > 1) errors.push(`page ${page}: ${headings.length} list headings`);
+		if (headings.length) {
+			const [, from, to, kind] = LIST_HEADING.exec(headings[0].text);
+			current = {
+				kind,
+				levels: to ? [CN_LEVEL[from], CN_LEVEL[to]] : [CN_LEVEL[from]],
+				heading: headings[0].text,
+				page,
+				items: []
+			};
+			lists.push(current);
+		}
+		report.pages.push(page);
+		const used = new Set([...headings, ...items]);
+		const cy = (w) => w.top + w.height / 2;
+		const byLeft = [...items].sort((a, b) => a.left - b.left);
+		for (const n of byLeft) {
+			const [, num, inline] = ITEM.exec(n.text);
+			let ch = inline;
+			if (!ch) {
+				// The character box to the right on the same line, before the
+				// next column's number.
+				const next = byLeft.find((o) => o.left > n.left + 1 && Math.abs(cy(o) - cy(n)) < 4);
+				const limit = next ? next.left : Infinity;
+				const box = ws
+					.filter((w) => !used.has(w) && ONE_HAN.test(w.text) && w.left > n.left && w.left < limit && Math.abs(cy(w) - cy(n)) < 4)
+					.sort((a, b) => a.left - b.left)[0];
+				if (box) {
+					used.add(box);
+					ch = box.text;
+				}
+			}
+			if (!ch) {
+				errors.push(`page ${page}: item ${num} has no character`);
+				continue;
+			}
+			current.items.push({ n: Number(num), ch });
+		}
+		const lastItem = Math.max(...items.map(cy), 0);
+		for (const w of ws) {
+			if (used.has(w)) continue;
+			if (/^\d+$/.test(w.text) && cy(w) > lastItem) {
+				report.pageNumbers++;
+				continue;
+			}
+			errors.push(`page ${page}: text off the lists: ${JSON.stringify(w.text)}`);
+		}
+	}
+	if (lists.length === 0) fail('input: no character list (HSK（…）认读字) found');
+	for (const l of lists) {
+		const seen = new Map();
+		for (const it of l.items) seen.set(it.n, (seen.get(it.n) ?? 0) + 1);
+		const max = Math.max(...seen.keys());
+		const gaps = [];
+		for (let k = 1; k <= max; k++) if (!seen.has(k)) gaps.push(k);
+		const dups = [...seen].filter(([, c]) => c > 1).map(([k]) => k);
+		if (gaps.length) errors.push(`${l.heading}: missing numbers ${ranges(gaps)}`);
+		if (dups.length) errors.push(`${l.heading}: duplicate numbers ${ranges(dups)}`);
+		l.chars = [...l.items].sort((a, b) => a.n - b.n).map((it) => it.ch);
+		delete l.items;
+	}
+	if (errors.length) {
+		fail(`input: ${errors.length} problem(s) in the character lists:\n  ${errors.slice(0, 40).join('\n  ')}`);
+	}
+	return { lists, report };
+}
+
+// charLevelsFromLists turns the 认读字 lists into the pack's levels, a
+// character at the lowest level that lists it, and checks the 书写字 lists
+// against them. It returns { levels, stats }.
+export function charLevelsFromLists(lists) {
+	const order = new Map(LEVELS.map(([code], i) => [code, i]));
+	const levels = LEVELS.map(([, name]) => ({ name, entries: [] }));
+	const level = new Map(); // character -> level index
+	const stats = { reading: [], writing: [], repeated: [] };
+	const reading = lists.filter((l) => l.kind === '认读字');
+	const codes = reading.map((l) => l.levels[0]);
+	if (codes.join() !== LEVELS.map(([c]) => c).join()) {
+		fail(`input: 认读字 lists for levels ${codes.join(', ')}; want ${LEVELS.map(([c]) => c).join(', ')}`);
+	}
+	for (const l of [...reading].sort((a, b) => order.get(a.levels[0]) - order.get(b.levels[0]))) {
+		const i = order.get(l.levels[0]);
+		stats.reading.push({ heading: l.heading, count: l.chars.length });
+		for (const ch of l.chars) {
+			if (level.has(ch)) {
+				stats.repeated.push(`${ch} (${l.heading})`);
+				continue;
+			}
+			level.set(ch, i);
+			levels[i].entries.push(ch);
+		}
+	}
+	const problems = [];
+	for (const l of lists.filter((x) => x.kind === '书写字')) {
+		const top = Math.max(...l.levels.map((c) => order.get(c)));
+		const above = l.chars.filter((ch) => !(level.get(ch) <= top));
+		stats.writing.push({ heading: l.heading, count: l.chars.length });
+		if (above.length) problems.push(`${l.heading}: ${above.join('')} not recognised at or below its level`);
+	}
+	if (problems.length) fail(`input: ${problems.join('; ')}`);
+	return { levels, stats };
+}
+
+export function charsManifest(ed) {
+	return {
+		id: 'hsk-chars',
+		name: 'HSK 3.0 (characters)',
+		version: `${ed.published} (effective ${ed.effective})`,
+		type: 'levels',
+		language: 'zh',
+		license: LICENSE_TEXT,
+		attribution:
+			`《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, character list (HSK 汉字大纲, 认读字), ` +
+			`published ${ed.published}, effective ${ed.effective}, 中外语言交流合作中心 (CLEC), ` +
+			'distributed by CTI, https://www.chinesetest.cn — included by the project owner with attribution; ' +
+			'copyright status of the list not verified',
+		format: 'json'
+	};
+}
+
+export function charsAttribution({ ed, levels, stats, pdfSum }) {
+	const total = levels.reduce((n, l) => n + l.entries.length, 0);
+	const writingTotal = stats.writing.reduce((n, w) => n + w.count, 0);
+	const lines = [
+		'# HSK 3.0 character levels (HSK 1–6, HSK 7–9)',
+		'',
+		'The characters to recognise (认读字) of the official HSK syllabus, grouped',
+		'by level, easiest first:',
+		'',
+		'- Title: 《HSK 考试大纲》 / Syllabus for the Chinese Proficiency Test,',
+		'  part "HSK 汉字大纲" (character syllabus).',
+		`- Edition: published ${ed.published} (发布), effective ${ed.effective} (实施).`,
+		'- Issued by: 中外语言交流合作中心 (Center for Language Education and',
+		'  Cooperation, CLEC).',
+		'- Distributed by: Chinese Testing International (CTI), https://www.chinesetest.cn',
+		`- File: ${PDF_URL}`,
+		'',
+		'## Licence',
+		'',
+		'No licence stated by the publisher. The CTI website footer reads',
+		'"Copyright © CTI 2009-2018"; neither the site nor the syllabus states terms',
+		'for reusing the list. The project owner decided to include the character',
+		'list with this attribution. The copyright status of the list has not been',
+		'verified. There is no LICENSE file in this directory because there is no',
+		'licence text to copy.',
+		'',
+		'## Conversion',
+		'',
+		'`scripts/prepare-hsk-syllabus.mjs` reads the word boxes of',
+		'`pdftotext -tsv` (poppler) and takes the numbered lists of the character',
+		'syllabus. Each level of this pack is one 认读字 list (HSK（一级）认读字 …',
+		'HSK（七—九级）认读字), in list order; every list numbers 1..N with no gap',
+		'or repeat. Nothing is added or changed.',
+		'',
+		`Characters: ${fmt(total)}, each in one list${stats.repeated.length ? ` (${stats.repeated.length} repeats kept at the lowest level)` : ', none repeated'}.`,
+		'',
+		'| Level | 认读字 |',
+		'|-------|--------|',
+		...levels.map((l) => `| ${l.name} | ${fmt(l.entries.length)} |`),
+		'',
+		`The syllabus also lists ${fmt(writingTotal)} characters to write (书写字), which assign`,
+		'no level here; each is a character to recognise at or below its level:',
+		'',
+		'| List | 书写字 |',
+		'|------|--------|',
+		...stats.writing.map((w) => `| ${w.heading} | ${fmt(w.count)} |`),
+		'',
+		'Input file (SHA-256):',
+		'',
+		pdfSum ? `    ${pdfSum}  syllabus.pdf` : '    (not recorded: run with --pdf <syllabus.pdf>)',
+		''
+	];
+	return lines.join('\n');
+}
+
+async function writePack(dir, files) {
+	await rm(dir, { recursive: true, force: true });
+	await mkdir(dir, { recursive: true });
+	for (const [name, body] of Object.entries(files)) await writeFile(join(dir, name), body);
+}
+
 export async function convert(tsvPath, packsDir, pdfPath) {
 	const text = await readFile(tsvPath, 'utf8');
 	const words = tsvWords(text);
 	const ed = edition(words);
 	const { rows, report } = parseSyllabusTSV(text);
 	const { levels, stats } = levelsFromRows(rows);
+	const chars = parseCharacterLists(text);
+	const charLevels = charLevelsFromLists(chars.lists);
 	const pdfSum = pdfPath ? sha256(await readFile(pdfPath)) : '';
 	const dir = join(packsDir, 'hsk-words');
-	await rm(dir, { recursive: true, force: true });
-	await mkdir(dir, { recursive: true });
-	await writeFile(join(dir, 'manifest.json'), json(manifest(ed)));
-	await writeFile(join(dir, 'levels.json'), levelsJSON(levels));
-	await writeFile(join(dir, 'ATTRIBUTION.md'), attribution({ ed, rows, levels, stats, pdfSum }));
-	return { dir, ed, rows, levels, stats, report };
+	await writePack(dir, {
+		'manifest.json': json(manifest(ed)),
+		'levels.json': levelsJSON(levels),
+		'ATTRIBUTION.md': attribution({ ed, rows, levels, stats, pdfSum })
+	});
+	const charsDir = join(packsDir, 'hsk-chars');
+	await writePack(charsDir, {
+		'manifest.json': json(charsManifest(ed)),
+		'levels.json': levelsJSON(charLevels.levels, 'character'),
+		'ATTRIBUTION.md': charsAttribution({ ed, ...charLevels, pdfSum })
+	});
+	return { dir, charsDir, ed, rows, levels, stats, report, chars, charLevels };
 }
 
 async function main(argv) {
@@ -432,6 +674,10 @@ async function main(argv) {
 	console.log(`${out.rows.length} rows (serials 1–${out.rows.at(-1).serial}); dropped ${out.report.watermark} watermark glyphs, ${out.report.pageNumbers} page numbers`);
 	console.log(`entries: ${counts}`);
 	console.log(`kept once (same form and reading listed again): ${out.stats.repeated.length}${out.stats.repeated.length ? ': ' + out.stats.repeated.join('; ') : ''}`);
+	console.log(`wrote ${out.charsDir}`);
+	console.log(`character lists on pages ${out.chars.report.pages[0]}–${out.chars.report.pages.at(-1)}; dropped ${out.chars.report.pageNumbers} page numbers`);
+	for (const l of out.chars.lists) console.log(`  ${l.heading}: ${l.chars.length}`);
+	console.log(`characters: ${out.charLevels.levels.map((l) => `${l.name} ${l.entries.length}`).join(', ')}; repeated ${out.charLevels.stats.repeated.length}`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {

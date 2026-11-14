@@ -11,7 +11,7 @@ export type Stage = MasteryStage;
 // Re-exported from mastery.ts, the single source of the `learned` edge.
 export { MASTERY_THRESHOLD };
 
-// Level packs (the bundled HSK 3.0 words and JLPT kanji, and any locally
+// Level packs (the bundled HSK 3.0 characters and words and JLPT kanji, and any locally
 // installed scheme such as JLPT vocabulary, which is not bundled) are
 // offered as `scheme:` groupings; a word scheme groups the characters its
 // words are written with (GET /api/schemes/{id}/characters).
@@ -86,16 +86,25 @@ function isSampleScheme(scheme: Scheme): boolean {
 /**
  * groupOptions lists the "Group by" choices for a workspace language:
  * the built-in groupings of ja or zh, then one option per installed level
- * scheme of that language (the bundled samples are hidden). Languages not
- * written with Han characters have none.
+ * scheme of that language, in scheme id order (the bundled samples are
+ * hidden). Schemes sharing a name (the bundled "HSK 3.0 (characters)" and
+ * an older local pack of that name) are told apart by their pack id.
+ * Languages not written with Han characters have none.
  */
 export function groupOptions(language: string, schemes: readonly Scheme[]): GroupOption[] {
 	const lang = primarySubtag(language);
 	const builtIn = lang === 'ja' ? JA_OPTIONS : lang === 'zh' ? ZH_OPTIONS : null;
 	if (builtIn === null) return [];
-	const fromSchemes = schemes
-		.filter((scheme) => primarySubtag(scheme.language) === lang && !isSampleScheme(scheme))
-		.map((scheme): GroupOption => ({ key: `scheme:${scheme.id}`, label: scheme.name }));
+	const shown = schemes.filter((scheme) => primarySubtag(scheme.language) === lang && !isSampleScheme(scheme));
+	const named = new Map<string, number>();
+	for (const scheme of shown) named.set(scheme.name, (named.get(scheme.name) ?? 0) + 1);
+	const fromSchemes = shown.map(
+		(scheme): GroupOption => ({
+			key: `scheme:${scheme.id}`,
+			label:
+				(named.get(scheme.name) ?? 0) > 1 && scheme.packId ? `${scheme.name} · ${scheme.packId}` : scheme.name
+		})
+	);
 	return [...builtIn.map((option) => ({ ...option })), ...fromSchemes];
 }
 

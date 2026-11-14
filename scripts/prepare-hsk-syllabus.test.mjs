@@ -10,7 +10,9 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
 	PackError,
+	charLevelsFromLists,
 	edition,
+	parseCharacterLists,
 	levelsFromRows,
 	parseSyllabusTSV,
 	readingOf,
@@ -39,7 +41,7 @@ const row = (p, y, serial, level, word, pinyin, pos, levelLeft = 161.17) => [
 	...(pos ? [box(p, 440, y, pos)] : [])
 ];
 
-function fixture({ extra = [], drop = 0 } = {}) {
+function fixture({ extra = [], drop = 0, charExtra = {} } = {}) {
 	const page2 = [
 		marker(2), ...header(2),
 		...row(2, 92, '1', '1', '爱', 'ài', '动'),
@@ -57,10 +59,46 @@ function fixture({ extra = [], drop = 0 } = {}) {
 		...row(3, 143, '8', '3', '汉语', 'Hànyǔ', '名'),
 		box(3, 290, 790, '78', 10.8)
 	];
-	// A page of the character syllabus (no vocabulary header) is skipped.
-	const page4 = [marker(4), box(4, 233, 77, 'HSK（一级）认读字'), box(4, 90, 100, '1.爱')];
-	const lines = [HEAD, ...title, ...page2, ...page3, ...page4, ...extra];
+	// The character syllabus (no vocabulary header: the word table skips it).
+	const lines = [HEAD, ...title, ...page2, ...page3, ...charPages(charExtra), ...extra];
 	return lines.slice(0, lines.length - drop).join('\n') + '\n';
+}
+
+// listPage lays out one page of the character syllabus: an optional list
+// heading, then numbered items in a column; an item is [n, ch] (number
+// and character in separate boxes, as most are) or [n, ch, 'inline']
+// (one box "169.四").
+const listPage = (p, heading, items) => [
+	marker(p),
+	...(heading ? [box(p, 233.64, 77.75, heading, 19.42)] : []),
+	...items.flatMap(([n, ch, inline], i) => {
+		const y = 102.78 + 15.6 * i;
+		return inline ? [box(p, 90, y, `${n}.${ch}`, 16.14)] : [box(p, 90, y, `${n}.`, 16.14), box(p, 111.96, y + 2.28, ch, 11.99)];
+	}),
+	box(p, 288.65, 809.7, String(350 + p), 10.8) // page number
+];
+
+// charPages is the character syllabus: one 认读字 list per level (国, 汉,
+// 考 and 际 are listed characters, the tall watermark glyphs are not), the
+// 书写字 lists, and a grammar page after the section. extra.<page> adds
+// boxes to that page.
+function charPages(extra = {}) {
+	const pages = [
+		listPage(4, 'HSK（一级）认读字', [[1, '爱'], [2, '八', 'inline'], [3, '国']]),
+		listPage(5, null, [[4, '汉']]), // a list continues on the next page
+		listPage(6, 'HSK（二级）认读字', [[1, '本']]),
+		listPage(7, 'HSK（三级）认读字', [[1, '考'], [2, '爱']]), // 爱 again: HSK 1 keeps it
+		listPage(8, 'HSK（四级）认读字', [[1, '际']]),
+		listPage(9, 'HSK（五级）认读字', [[1, '书']]),
+		listPage(10, 'HSK（六级）认读字', [[1, '傲']]),
+		listPage(11, 'HSK（七—九级）认读字', [[1, '骄'], [2, '慢']]),
+		listPage(12, 'HSK（一级）~（二级）书写字', [[1, '爱'], [2, '本']]),
+		listPage(13, 'HSK（七—九级）书写字', [[1, '傲']]),
+		[marker(14), box(14, 233, 54, 'HSK（一级）语法', 20.4), box(14, 70, 78, '类别')]
+	];
+	pages[0].push(box(4, 379, 65, '国', 47.95), box(4, 300, 300, '汉', 47.95)); // watermark
+	for (const [p, boxes] of Object.entries(extra)) pages[Number(p) - 4].push(...boxes);
+	return pages.flat();
 }
 
 test('parseSyllabusTSV reads every row with its level, word and pinyin', () => {
@@ -80,7 +118,7 @@ test('parseSyllabusTSV reads every row with its level, word and pinyin', () => {
 	);
 	assert.deepEqual(rows[1].extra, ['4']);
 	assert.deepEqual(rows[5].extra, ['3', '7-9']);
-	assert.deepEqual(report, { watermark: 1, pageNumbers: 2, tablePages: [2, 3] });
+	assert.deepEqual(report, { watermark: 3, pageNumbers: 2, tablePages: [2, 3] }); // 1 glyph on the table, 2 on the lists
 });
 
 test('edition reads the dates of the title page', () => {
@@ -126,6 +164,59 @@ test('parseSyllabusTSV rejects gaps, duplicates and malformed rows', () => {
 	assert.throws(() => parseSyllabusTSV(noTable), /no vocabulary table/);
 });
 
+test('parseCharacterLists reads the numbered lists, keeping 汉考国际 as characters', () => {
+	const { lists, report } = parseCharacterLists(fixture());
+	assert.deepEqual(
+		lists.map((l) => [l.kind, l.levels.join('-'), l.chars.join('')]),
+		[
+			['认读字', '1', '爱八国汉'],
+			['认读字', '2', '本'],
+			['认读字', '3', '考爱'],
+			['认读字', '4', '际'],
+			['认读字', '5', '书'],
+			['认读字', '6', '傲'],
+			['认读字', '7-9', '骄慢'],
+			['书写字', '1-2', '爱本'],
+			['书写字', '7-9', '傲']
+		]
+	);
+	assert.deepEqual(report.pages, [4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+	assert.equal(report.pageNumbers, 10);
+});
+
+test('charLevelsFromLists keeps a character at its lowest 认读字 level', () => {
+	const { levels, stats } = charLevelsFromLists(parseCharacterLists(fixture()).lists);
+	assert.deepEqual(levels.map((l) => [l.name, l.entries.join('')]), [
+		['HSK 1', '爱八国汉'],
+		['HSK 2', '本'],
+		['HSK 3', '考'],
+		['HSK 4', '际'],
+		['HSK 5', '书'],
+		['HSK 6', '傲'],
+		['HSK 7–9', '骄慢']
+	]);
+	assert.deepEqual(stats.repeated, ['爱 (HSK（三级）认读字)']);
+	assert.deepEqual(stats.writing.map((w) => w.count), [2, 1]);
+});
+
+test('the character lists reject gaps, empty items, stray text and unrecognised 书写字', () => {
+	const cases = [
+		[{ 5: [box(5, 90, 300, '6.', 16.14), box(5, 111.96, 302, '水', 11.99)] }, /HSK（一级）认读字: missing numbers 5/],
+		[{ 6: [box(6, 90, 300, '1.', 16.14), box(6, 111.96, 302, '水', 11.99)] }, /HSK（二级）认读字: duplicate numbers 1/],
+		[{ 6: [box(6, 90, 300, '2.', 16.14)] }, /page 6: item 2 has no character/],
+		[{ 7: [box(7, 400, 400, '说明')] }, /page 7: text off the lists: "说明"/],
+		[{ 12: [box(12, 90, 300, '3.', 16.14), box(12, 111.96, 302, '骄', 11.99)] }, /书写字: 骄 not recognised/]
+	];
+	for (const [charExtra, re] of cases) {
+		assert.throws(
+			() => charLevelsFromLists(parseCharacterLists(fixture({ charExtra })).lists),
+			(err) => err instanceof PackError && re.test(err.message),
+			String(re)
+		);
+	}
+	assert.throws(() => parseCharacterLists([HEAD, ...title].join('\n')), /no character list/);
+});
+
 test('the CLI writes the pack, with no LICENSE, byte for byte on a re-run', () => {
 	const dir = mkdtempSync(join(tmpdir(), 'hsk-syllabus-'));
 	try {
@@ -136,11 +227,24 @@ test('the CLI writes the pack, with no LICENSE, byte for byte on a re-run', () =
 		const run = () => {
 			const r = spawnSync(process.execPath, [script, tsv, join(dir, 'packs'), '--pdf', pdf], { encoding: 'utf8' });
 			assert.equal(r.status, 0, r.stderr);
-			return ['manifest.json', 'levels.json', 'ATTRIBUTION.md'].map((f) => readFileSync(join(dir, 'packs', 'hsk-words', f), 'utf8'));
+			return ['hsk-words', 'hsk-chars'].flatMap((pack) =>
+				['manifest.json', 'levels.json', 'ATTRIBUTION.md'].map((f) => readFileSync(join(dir, 'packs', pack, f), 'utf8'))
+			);
 		};
 		const first = run();
 		assert.deepEqual(run(), first);
 		assert.equal(existsSync(join(dir, 'packs', 'hsk-words', 'LICENSE')), false);
+		assert.equal(existsSync(join(dir, 'packs', 'hsk-chars', 'LICENSE')), false);
+
+		const chars = JSON.parse(first[3]);
+		assert.equal(chars.id, 'hsk-chars');
+		assert.equal(chars.name, 'HSK 3.0 (characters)');
+		assert.equal(chars.license, 'No licence stated by the publisher');
+		assert.match(chars.attribution, /汉字大纲, 认读字/);
+		const charLevels = JSON.parse(first[4]);
+		assert.equal(charLevels.unit, 'character');
+		assert.deepEqual(charLevels.levels.map((l) => l.entries.length), [4, 1, 1, 1, 1, 1, 2]);
+		assert.match(first[5], /HSK（一级）~（二级）书写字 \| 2 \|/);
 
 		const manifest = JSON.parse(first[0]);
 		assert.equal(manifest.id, 'hsk-words');
