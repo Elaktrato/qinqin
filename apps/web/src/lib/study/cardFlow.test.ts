@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-	captureListeners,
 	cardedSentenceIds,
 	deckSessionItems,
 	deckSessionPlan,
@@ -384,48 +383,6 @@ describe('sessionCounts', () => {
 			fresh: 3,
 			byKind: { vocab: 2, sentence: 0, writing: 0, tone: 2 }
 		});
-	});
-});
-
-describe('captureListeners', () => {
-	it('records listeners added during the call and removes them on release', () => {
-		const added: [string, unknown][] = [];
-		const removed: [string, unknown][] = [];
-		const target = {
-			addEventListener(type: string, cb: unknown) {
-				added.push([type, cb]);
-			},
-			removeEventListener(type: string, cb: unknown) {
-				removed.push([type, cb]);
-			}
-		};
-		const original = target.addEventListener;
-		const cb = () => {};
-		const { result, release } = captureListeners(target, () => {
-			target.addEventListener('mouseup', cb);
-			return 42;
-		});
-		expect(result).toBe(42);
-		expect(added).toEqual([['mouseup', cb]]);
-		expect(target.addEventListener).toBe(original);
-		release();
-		expect(removed).toEqual([['mouseup', cb]]);
-		release();
-		expect(removed).toHaveLength(1);
-	});
-
-	it('restores the target even when the call throws', () => {
-		const target = {
-			addEventListener() {},
-			removeEventListener() {}
-		};
-		const original = target.addEventListener;
-		expect(() =>
-			captureListeners(target, () => {
-				throw new Error('boom');
-			})
-		).toThrow('boom');
-		expect(target.addEventListener).toBe(original);
 	});
 });
 

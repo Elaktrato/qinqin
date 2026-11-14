@@ -404,52 +404,6 @@ export function toneCandidates(readings: readonly { type: string; value: string 
 	return cleanReadings(pinyinReadings(readings));
 }
 
-export interface ListenerTarget {
-	addEventListener(type: string, listener: unknown, options?: unknown): void;
-	removeEventListener(type: string, listener: unknown, options?: unknown): void;
-}
-
-/**
- * captureListeners runs `fn` while recording every listener it adds to
- * `target`, and returns a release function that removes them again. It
- * exists for hanzi-writer, which adds document-level pointer-end
- * listeners in its constructor and has no destroy(): without this every
- * writing card would leave two listeners on the document.
- */
-export function captureListeners<T>(
-	target: ListenerTarget,
-	fn: () => T
-): { result: T; release: () => void } {
-	const own = Object.prototype.hasOwnProperty.call(target, 'addEventListener');
-	const original = target.addEventListener;
-	const recorded: [string, unknown, unknown][] = [];
-	target.addEventListener = function (type: string, listener: unknown, options?: unknown) {
-		recorded.push([type, listener, options]);
-		return original.call(this, type, listener, options);
-	};
-	let result: T;
-	try {
-		result = fn();
-	} finally {
-		if (own) {
-			target.addEventListener = original;
-		} else {
-			delete (target as { addEventListener?: unknown }).addEventListener;
-		}
-	}
-	let released = false;
-	return {
-		result,
-		release: () => {
-			if (released) return;
-			released = true;
-			for (const [type, listener, options] of recorded) {
-				target.removeEventListener(type, listener, options);
-			}
-		}
-	};
-}
-
 /** How long after the suggestion gains focus a keyboard activation is suspect. */
 export const SUGGESTION_SETTLE_MS = 300;
 

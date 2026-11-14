@@ -208,9 +208,18 @@ Where the build differs from or refines the decisions above, and the known limit
   syllable count is accepted.
 - **Writing needs Han characters and bundled stroke data.** Only characters with a
   file in `static/hanzi/` are drawn. Kana stay visible as context, and a word with no
-  drawable character is skipped silently. Revealing a character plays a quick
-  stroke-order animation (150 ms between strokes, double speed), or shows the
-  character at once under reduced motion.
+  drawable character is skipped silently. The pad is our own (`WritingPad`, see the
+  writing-feel design), no longer hanzi-writer's quiz: a pure matcher judges shape
+  and direction with wide position and size tolerance, one motion may cover up to
+  three flowing strokes (了), an accepted stroke snaps onto the reference outline in
+  about 140 ms and a rejected one flashes red and fades. Order is still enforced; a
+  reversed stroke is a miss. After 3 misses on one stroke it glows with its start
+  marked and the outline stays for that character (one auto hint per character).
+  **Hint** shows the next stroke (one hint per press); **Reveal character** fades the
+  remaining outlines in 150 ms apart (instant under reduced motion) and counts as a
+  failed character. Only the primary pointer draws, so a palm or second finger is
+  ignored; a new stroke may start while the previous snap still animates.
+  `hanzi-writer` remains only for the entry page's stroke-order player.
 - **Companions exist in deck sessions only.** Level sessions stay vocab-only, and setup
   blocks a level session that has no Vocab selected.
 - **Eligibility is decided when a card is shown.** The progress counter ("1 / N")
