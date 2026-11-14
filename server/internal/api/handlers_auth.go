@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -19,8 +20,12 @@ type credentials struct {
 // authentication is required and the new user becomes the instance admin;
 // afterwards a valid admin bearer token is mandatory.
 func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
+	body, ok := readBody(w, r, maxAuthBody)
+	if !ok {
+		return
+	}
 	var req credentials
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
@@ -51,8 +56,12 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 
 // handleLogin verifies credentials and returns a fresh bearer session token.
 func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	body, ok := readBody(w, r, maxAuthBody)
+	if !ok {
+		return
+	}
 	var req credentials
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}

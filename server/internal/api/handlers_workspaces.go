@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -81,11 +82,15 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		return
 	}
+	body, ok := readBody(w, r, maxWorkspaceBody)
+	if !ok {
+		return
+	}
 	var req struct {
 		Language string `json:"language"`
 		Name     string `json:"name"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
@@ -228,7 +233,11 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		Name     *string         `json:"name"`
 		Settings json.RawMessage `json:"settings"`
 	}
-	dec := json.NewDecoder(r.Body)
+	body, ok := readBody(w, r, maxWorkspaceBody)
+	if !ok {
+		return
+	}
+	dec := json.NewDecoder(bytes.NewReader(body))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
@@ -262,17 +271,28 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// json_patch merges the settings object in place (RFC 7396: existing
-	// keys update, new keys are added) while stamping updated_at.
+	// keys update, new keys are added) while stamping updated_at. A patch
+	// whose merged object would outgrow maxWorkspaceSettings changes
+	// nothing; the row then still exists and the answer is a 413.
 	ws, err := scanWorkspace(s.db.QueryRowContext(r.Context(), `
 		UPDATE workspaces
 		SET name = COALESCE(?1, name),
 		    settings = CASE WHEN ?2 IS NULL THEN settings ELSE json_patch(settings, ?2) END,
 		    updated_at = ?3
 		WHERE id = ?4 AND user_id = ?5
+		  AND (?2 IS NULL OR length(CAST(json_patch(settings, ?2) AS BLOB)) <= ?6)
 		RETURNING `+workspaceColumns,
-		name, patch, now(), id, u.ID))
+		name, patch, now(), id, u.ID, maxWorkspaceSettings))
 	if errors.Is(err, sql.ErrNoRows) {
-		http.Error(w, "workspace not found", http.StatusNotFound)
+		owned, oerr := s.workspaceOwned(r.Context(), u.ID, id)
+		switch {
+		case oerr != nil:
+			http.Error(w, "internal error", http.StatusInternalServerError)
+		case owned && patch.Valid:
+			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "workspace settings too large"})
+		default:
+			http.Error(w, "workspace not found", http.StatusNotFound)
+		}
 		return
 	}
 	if isUniqueViolation(err) {

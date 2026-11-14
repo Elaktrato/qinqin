@@ -1,9 +1,9 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -20,9 +20,8 @@ func (s *server) handleRegisterPlugin(w http.ResponseWriter, r *http.Request) {
 	if s.requireAdmin(w, r) == nil {
 		return
 	}
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+	body, ok := readBody(w, r, maxPluginManifestBody)
+	if !ok {
 		return
 	}
 	if err := plugins.Register(r.Context(), s.db, body); err != nil {
@@ -66,7 +65,11 @@ func (s *server) handleSetPluginState(w http.ResponseWriter, r *http.Request) {
 		Enabled *bool `json:"enabled"`
 		Order   *int  `json:"order"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Enabled == nil || req.Order == nil {
+	body, ok := readBody(w, r, maxPluginStateBody)
+	if !ok {
+		return
+	}
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil || req.Enabled == nil || req.Order == nil {
 		http.Error(w, "enabled and order are required", http.StatusBadRequest)
 		return
 	}
@@ -159,9 +162,8 @@ func (s *server) handlePutPluginData(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+	body, ok := readBody(w, r, maxPluginDataValue)
+	if !ok {
 		return
 	}
 	if !json.Valid(body) {

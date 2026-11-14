@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"sync"
 
@@ -95,6 +96,22 @@ const (
 	maxBatchBody = 4 << 20 // POST /api/events/batch
 	maxPushBody  = 8 << 20 // POST /api/sync/push
 
+	// Small JSON bodies. Every route that reads a body caps it, so an
+	// oversized request is a 413 after at most the cap is read, never a
+	// 30 MB read (or a 30 MB row served back on every list and pull).
+	maxAuthBody           = 4 << 10  // POST /api/auth/login and /register: a username and a password
+	maxWorkspaceBody      = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
+	maxWorkspaceSettings  = 64 << 10 // the merged settings object stored per workspace (the web client stores none today)
+	maxPluginManifestBody = 64 << 10 // POST /api/admin/plugins: the bundled manifests are under 0.5 KiB
+	maxPluginStateBody    = 64 << 10 // PUT /api/plugins/{id}/state: {"enabled","order"}, a few dozen bytes
+	maxEntryBody          = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
+	// maxPluginDataValue caps one plugin data value, on PUT
+	// /api/plugins/{id}/data/{key} and per item in a sync push. Real
+	// values are far smaller: a flashcards card or deck row is under
+	// 2 KiB, reader preferences a few hundred bytes; the headroom leaves
+	// room for a plugin that keeps a list in one key.
+	maxPluginDataValue = 256 << 10
+
 	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
 	maxSegmentRunes   = 5000      // POST /api/segment text code points
 	maxSegmentAtRunes = 64        // GET /api/segment/at text code points (the client sends <= 16)
@@ -110,6 +127,29 @@ func badBody(w http.ResponseWriter, err error) {
 		return
 	}
 	http.Error(w, "malformed request body", http.StatusBadRequest)
+}
+
+// writeTooLarge answers 413 with the JSON error body of the limited
+// routes.
+func writeTooLarge(w http.ResponseWriter) {
+	writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
+}
+
+// readBody reads the whole request body, at most limit bytes. Beyond
+// the cap it stops reading, answers 413 itself (writeTooLarge) and
+// reports false; another read failure is a 400.
+func readBody(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool) {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
+	if err != nil {
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			writeTooLarge(w)
+		} else {
+			http.Error(w, "malformed request body", http.StatusBadRequest)
+		}
+		return nil, false
+	}
+	return body, true
 }
 
 func handleHealthz(w http.ResponseWriter, r *http.Request) {
