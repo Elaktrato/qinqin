@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"qinqin/internal/lang"
+	"qinqin/internal/library"
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
@@ -282,6 +284,98 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, ws)
+}
+
+// handleDeleteWorkspace serves DELETE /api/workspaces/{id}: it deletes
+// one of the caller's workspaces and everything scoped to it — its study
+// events, its plugin data rows (user-global rows stay), its library books
+// with their bookmarks and highlights — in one transaction, then removes
+// the books' content files (a failure there is logged, not fatal: the
+// rows are already gone). 204 on success; unknown and foreign ids are
+// 404; the caller's last workspace is a 409, since a user without any
+// would get every installed language back as defaults on the next list.
+// Foreign keys are not enforced in this database, so every child table
+// is deleted from explicitly; user-scoped data (overlays, own sentences,
+// plugin states) is not the workspace's and stays.
+func (s *server) handleDeleteWorkspace(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "workspace not found", http.StatusNotFound)
+		return
+	}
+	books, err := s.deleteWorkspace(r.Context(), u.ID, id)
+	switch {
+	case errors.Is(err, errWorkspaceNotFound):
+		http.Error(w, "workspace not found", http.StatusNotFound)
+		return
+	case errors.Is(err, errLastWorkspace):
+		http.Error(w, "keep at least one workspace", http.StatusConflict)
+		return
+	case err != nil:
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if err := s.library().RemoveContent(u.ID, books); err != nil {
+		log.Printf("delete workspace %d: %v", id, err)
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+var (
+	errWorkspaceNotFound = errors.New("workspace not found")
+	errLastWorkspace     = errors.New("last workspace")
+)
+
+// deleteWorkspace runs the deletion transaction of handleDeleteWorkspace
+// and returns the ids of the deleted books, whose content files the
+// caller removes. The first statement deletes the workspace row only
+// when the user keeps another one: being a write, it takes SQLite's
+// write lock before reading, so concurrent deletes serialize and two of
+// them can never remove a user's last two workspaces together.
+func (s *server) deleteWorkspace(ctx context.Context, userID, id int64) ([]int64, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `
+		DELETE FROM workspaces WHERE id = ?1 AND user_id = ?2
+		AND EXISTS (SELECT 1 FROM workspaces WHERE user_id = ?2 AND id <> ?1)`, id, userID)
+	if err != nil {
+		return nil, err
+	}
+	if n, err := res.RowsAffected(); err != nil {
+		return nil, err
+	} else if n == 0 {
+		var owned bool
+		if err := tx.QueryRowContext(ctx,
+			`SELECT EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND user_id = ?)`, id, userID).Scan(&owned); err != nil {
+			return nil, err
+		}
+		if owned {
+			return nil, errLastWorkspace
+		}
+		return nil, errWorkspaceNotFound
+	}
+	// Every table with a workspace_id column (migrations 009, 010, 019);
+	// bookmarks and highlights hang off the books.
+	for _, table := range []string{"study_events", "plugin_data"} {
+		if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE workspace_id = ?`, id); err != nil {
+			return nil, err
+		}
+	}
+	books, err := library.DeleteWorkspaceBooks(ctx, tx, userID, id)
+	if err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return books, nil
 }
 
 // scanWorkspace reads one workspace row (workspaceColumns), parsing the
