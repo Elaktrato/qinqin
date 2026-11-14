@@ -1,7 +1,13 @@
 package api
 
 import (
+	"bytes"
+	"compress/gzip"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -82,4 +88,76 @@ func (s *server) handleUninstallScheme(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// schemeCharsFormat versions the body of GET /api/schemes/{id}/characters
+// inside its ETag, so a shape change never earns a 304.
+const schemeCharsFormat = 1
+
+// handleSchemeCharacters serves GET /api/schemes/{id}/characters: the
+// scheme's active levels in order, each with its Han characters as one
+// string (see levels.SchemeCharacters), for the mastery map's scheme
+// grouping. It is public like GET /api/schemes; an unknown, uninstalled
+// or malformed scheme id is 404. The body carries a weak ETag over the
+// scheme's level and membership stamps and counts, revalidates each visit
+// (a match is a bodyless 304) and is gzip-compressed when accepted.
+func (s *server) handleSchemeCharacters(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "scheme not found", http.StatusNotFound)
+		return
+	}
+	version, err := levels.SchemeVersion(r.Context(), s.db, id)
+	if errors.Is(err, levels.ErrNotFound) {
+		http.Error(w, "scheme not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	sum := sha256.Sum256([]byte(version))
+	etag := fmt.Sprintf(`W/"schemechars%d-%d-%s"`, schemeCharsFormat, id, hex.EncodeToString(sum[:8]))
+	h := w.Header()
+	h.Set("Cache-Control", "private, max-age=0, must-revalidate")
+	h.Set("Vary", "Accept-Encoding")
+	h.Set("ETag", etag)
+	if etagMatches(r.Header.Get("If-None-Match"), etag) {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	list, err := levels.SchemeCharacters(r.Context(), s.db, id)
+	if errors.Is(err, levels.ErrNotFound) {
+		http.Error(w, "scheme not found", http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	var raw bytes.Buffer
+	enc := json.NewEncoder(&raw)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(struct {
+		Levels []levels.LevelChars `json:"levels"`
+	}{list}); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	body := bytes.TrimSuffix(raw.Bytes(), []byte("\n"))
+	if acceptsGzip(r.Header.Get("Accept-Encoding")) {
+		var gz bytes.Buffer
+		zw := gzip.NewWriter(&gz)
+		if _, err := zw.Write(body); err != nil || zw.Close() != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		h.Set("Content-Encoding", "gzip")
+		body = gz.Bytes()
+	}
+	h.Set("Content-Type", "application/json")
+	h.Set("Content-Length", strconv.Itoa(len(body)))
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
 }

@@ -58,6 +58,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
 	mux.HandleFunc("GET /api/frequency-packs", s.handleListFrequencyPacks)
 	mux.HandleFunc("GET /api/schemes", s.handleListSchemes)
 	mux.HandleFunc("GET /api/schemes/{id}/entries", s.handleSchemeEntries)
+	mux.HandleFunc("GET /api/schemes/{id}/characters", s.handleSchemeCharacters)
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
