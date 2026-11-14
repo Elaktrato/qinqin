@@ -74,9 +74,8 @@
 <main class="sources">
 	<h1>Sources</h1>
 	<p class="lede">
-		Meanings, character data, word frequencies, and stroke diagrams come from upstream open
-		datasets. Their
-		credits and licenses are listed here.
+		Meanings, character data, word frequencies, level lists, and stroke diagrams come from
+		upstream datasets. Their credits and licenses are listed here.
 	</p>
 
 	<section>
@@ -209,9 +208,21 @@
 		{/if}
 
 		<p class="notice">
-			Level lists group the character map and badge entries. Lists installed from packs are
-			third-party compilations, not official releases of the tests they are named after.
+			Level lists group the character map and badge entries. Unless a notice below says
+			otherwise, lists installed from packs are third-party compilations, not official releases
+			of the tests they are named after.
 		</p>
+		{#if installedPacks.has('hsk-words')}
+			<p class="notice">
+				The HSK 3.0 words are the official word list (HSK 词汇大纲) of the
+				《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, edition published 2025-11 and
+				effective 2026-07, issued by 中外语言交流合作中心 (CLEC) and distributed by CTI at
+				<a href="https://www.chinesetest.cn" rel="noreferrer">chinesetest.cn</a>. The publisher
+				states no licence for the list, and its copyright status has not been verified; it is
+				included by the project owner with this attribution. Words badge with their level, and the
+				character map groups each character at the lowest level of a word written with it.
+			</p>
+		{/if}
 		{#if installedPacks.has('jlpt-kanji')}
 			<p class="notice">
 				The JLPT kanji come from
@@ -234,8 +245,8 @@
 		{/if}
 		{#if installedPacks.has('hsk30-chars') || installedPacks.has('hsk30-words')}
 			<p class="notice">
-				The HSK 3.0 lists on this instance were installed locally by its operator; qinqin does not
-				bundle them because their licence status is unclear. They come from
+				This instance's operator also installed older, locally generated HSK 3.0 lists, superseded
+				by the bundled official word list. They come from
 				<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a> (code MIT,
 				data labelled MIT), which derives them from copies of the 2021 Ministry of Education
 				standard. The ministry's site claims copyright (版权所有：中华人民共和国教育部) and the
