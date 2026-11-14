@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { api } from '$lib/api/client';
 	import { listAllBooks } from '$lib/api/library';
-	import type { StudyEvent } from '$lib/events';
+	import { loadWorkspaceEvents } from '$lib/events';
 	import { errorMessage } from '$lib/stats/errors';
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
 	import { workspaces } from '$lib/workspaces';
@@ -45,7 +44,7 @@
 		}
 	}
 
-	async function load(workspace: number | null): Promise<void> {
+	async function load(workspace: number | null, force = false): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
 		error = '';
@@ -60,15 +59,16 @@
 
 		try {
 			// All-time totals need the whole event log of the workspace (every
-			// type: the endpoint has no type filter). This is the same full read
-			// loadStudyData makes for reviews; if logs grow large enough to make
-			// it slow, a server-side summary endpoint is the planned follow-up.
+			// type: the endpoint has no type filter). The read is shared with
+			// the flashcards widgets (events.ts: loadWorkspaceEvents); if logs
+			// grow large enough to make it slow, a server-side summary endpoint
+			// is the planned follow-up.
 			const [events, names] = await Promise.all([
-				api<StudyEvent[]>(`/api/events?since=1970-01-01T00:00:00Z&workspace=${workspace}`),
+				loadWorkspaceEvents(workspace, { force }),
 				loadTitles()
 			]);
 			if (seq !== requestSeq) return;
-			const own = (Array.isArray(events) ? events : []).filter(
+			const own = events.filter(
 				(event) => event.workspaceId === workspace
 			);
 			totals = readingTotals(own, new Date());
@@ -94,7 +94,7 @@
 	noWorkspaceText="Choose a workspace in the header to see your reading time."
 	loadingText="Loading reading time…"
 	{error}
-	onretry={() => void load(workspaceId)}
+	onretry={() => void load(workspaceId, true)}
 	emptyText="No reading tracked yet. Open a book in the Reader to start."
 >
 	{#snippet actions()}

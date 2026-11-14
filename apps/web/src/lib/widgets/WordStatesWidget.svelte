@@ -7,7 +7,7 @@
 		wordStateSummary,
 		type WordStatesResult
 	} from '$lib/stats/wordStates';
-	import { loadStudyData } from '$lib/study/store';
+	import { loadStudyHistory } from '$lib/study/history';
 	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -43,7 +43,7 @@
 						: 'ready'
 	);
 
-	async function load(workspace: number | null): Promise<void> {
+	async function load(workspace: number | null, force = false): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
 		error = '';
@@ -57,8 +57,9 @@
 		}
 
 		try {
-			// Duplicate cards arrive merged, their reviews re-pointed.
-			const data = await loadStudyData(workspace);
+			// Duplicate cards arrive merged, their reviews re-pointed; the
+			// history is shared with the other widgets (history.ts).
+			const data = await loadStudyHistory(workspace, { force });
 			if (seq !== requestSeq) return;
 			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date());
 		} catch (err) {
@@ -82,7 +83,7 @@
 	noWorkspaceText="Choose a workspace in the header to see your words."
 	loadingText="Loading your words…"
 	{error}
-	onretry={() => void load(workspaceId)}
+	onretry={() => void load(workspaceId, true)}
 	emptyText="No flashcards yet. Add words to a deck to see how far each one has come."
 >
 	{#if overall !== null}

@@ -202,10 +202,14 @@ function eventsPath(workspaceId: number): string {
 	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
 }
 
-/** fetchReviews reads the workspace's review history from the event log. */
-async function fetchReviews(workspaceId: number): Promise<ReviewEvent[]> {
+/** fetchEvents reads the workspace's whole event log, uncached. */
+async function fetchEvents(workspaceId: number): Promise<StudyEvent[]> {
 	const events = await api<StudyEvent[]>(eventsPath(workspaceId));
-	if (!Array.isArray(events)) return [];
+	return Array.isArray(events) ? events : [];
+}
+
+/** reviewsOf keeps the workspace's review events of an event log. */
+function reviewsOf(workspaceId: number, events: readonly StudyEvent[]): ReviewEvent[] {
 	return events
 		.map((event) => (event.workspaceId === workspaceId ? parseReview(event) : null))
 		.filter((event): event is ReviewEvent => event !== null);
@@ -217,16 +221,26 @@ async function fetchReviews(workspaceId: number): Promise<ReviewEvent[]> {
  * history, with duplicate cards (one word added on two devices before
  * card ids were deterministic) merged by `canonicalCards` and their
  * reviews re-pointed to the surviving card. Every page and widget goes
- * through it, so no call site can forget the merge. The selected
- * workspace is the default; pass the id the caller captured so cards and
- * reviews come from the same workspace. Writes (addCard, deleteDeck)
- * read the raw rows instead, so they see and rewrite every stored
- * duplicate.
+ * through it (widgets through the cached loadStudyHistory, history.ts),
+ * so no call site can forget the merge. The selected workspace is the
+ * default; pass the id the caller captured so cards and reviews come
+ * from the same workspace. Writes (addCard, deleteDeck) read the raw
+ * rows instead, so they see and rewrite every stored duplicate.
  */
 export async function loadStudyData(workspaceId?: number): Promise<StudyHistory> {
-	const id = workspaceId ?? requireWorkspaceId();
-	const [data, history] = await Promise.all([fetchStudyData(id), fetchReviews(id)]);
-	const { cards, reviews, merged } = canonicalCards(data.cards, history);
+	return loadStudyDataWith(workspaceId ?? requireWorkspaceId(), fetchEvents);
+}
+
+/**
+ * loadStudyDataWith is loadStudyData of one given workspace with the
+ * event log read by `readEvents` (history.ts passes the cached log).
+ */
+export async function loadStudyDataWith(
+	workspaceId: number,
+	readEvents: (workspaceId: number) => Promise<readonly StudyEvent[]>
+): Promise<StudyHistory> {
+	const [data, events] = await Promise.all([fetchStudyData(workspaceId), readEvents(workspaceId)]);
+	const { cards, reviews, merged } = canonicalCards(data.cards, reviewsOf(workspaceId, events));
 	return { decks: data.decks, cards, reviews, merged };
 }
 

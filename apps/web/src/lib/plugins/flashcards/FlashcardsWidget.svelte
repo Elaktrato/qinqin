@@ -9,7 +9,8 @@
 		hasTabSetup,
 		loadRememberedTypes
 	} from '$lib/study/cardTypesMemory';
-	import { GENERAL_DECK_ID, loadStudyData } from '$lib/study/store';
+	import { loadStudyHistory } from '$lib/study/history';
+	import { GENERAL_DECK_ID } from '$lib/study/store';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
@@ -84,7 +85,7 @@
 		return fallback;
 	}
 
-	async function load(workspace: number | null): Promise<void> {
+	async function load(workspace: number | null, force = false): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
 		error = '';
@@ -100,8 +101,9 @@
 		}
 
 		try {
-			// Duplicate cards arrive merged, their reviews re-pointed.
-			const data = await loadStudyData(workspace);
+			// Duplicate cards arrive merged, their reviews re-pointed; the
+			// history is shared with the other widgets (history.ts).
+			const data = await loadStudyHistory(workspace, { force });
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
@@ -131,7 +133,7 @@
 	noWorkspaceText="Choose a workspace in the header to study."
 	loadingText="Loading study data…"
 	{error}
-	onretry={() => void load(workspaceId)}
+	onretry={() => void load(workspaceId, true)}
 >
 	{#snippet actions()}
 		<a class="study" href="/study">Study</a>

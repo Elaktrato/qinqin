@@ -9,7 +9,7 @@ import type { CharRow } from '$lib/api/types';
 import { cellStates, masteryGlyphs, sectionStats, type SectionStats } from '$lib/study/charGroups';
 import { fillMissingWritten } from '$lib/study/entriesCache';
 import { masteryForChars } from '$lib/study/mastery';
-import { loadStudyData } from '$lib/study/store';
+import { loadStudyHistory } from '$lib/study/history';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 
 /** characterSummary counts the characters per mastery stage and those learned. */
@@ -33,13 +33,18 @@ export interface CharacterMapData {
  * loadCharacterMapData reads what the summary needs: the language's
  * character universe (fetchCharacters keeps it in memory for the
  * session, so a second home visit does not download ~13k rows again)
- * and the workspace's merged study data.
+ * and the workspace's merged study data (the widgets' shared cache;
+ * `force` reads it again).
  */
 export async function loadCharacterMapData(
 	workspaceId: number,
-	language: string
+	language: string,
+	opts?: { force?: boolean }
 ): Promise<CharacterMapData> {
-	const [list, data] = await Promise.all([fetchCharacters(language), loadStudyData(workspaceId)]);
+	const [list, data] = await Promise.all([
+		fetchCharacters(language),
+		loadStudyHistory(workspaceId, opts)
+	]);
 	return { list, cards: data.cards, reviews: data.reviews };
 }
 

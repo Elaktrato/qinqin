@@ -40,7 +40,7 @@
 						: 'ready'
 	);
 
-	async function load(id: number | null, lang: string): Promise<void> {
+	async function load(id: number | null, lang: string, force = false): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
 		error = '';
@@ -64,7 +64,7 @@
 		}
 
 		try {
-			const data = await loadCharacterMapData(id, lang);
+			const data = await loadCharacterMapData(id, lang, { force });
 			if (seq !== requestSeq) return;
 			const now = new Date();
 			stats = characterSummary(data.list.chars, data.cards, data.reviews, now);
@@ -101,7 +101,7 @@
 		noWorkspaceText="Choose a workspace in the header to see your characters."
 		loadingText="Loading characters…"
 		{error}
-		onretry={() => void load(workspaceId, language)}
+		onretry={() => void load(workspaceId, language, true)}
 		emptyText={notHan
 			? 'The character map is for Chinese and Japanese.'
 			: 'No characters are installed for this language.'}
