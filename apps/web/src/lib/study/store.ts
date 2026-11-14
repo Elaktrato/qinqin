@@ -7,8 +7,18 @@ import { get } from 'svelte/store';
 import { api } from '../api/client';
 import { newUlid } from '../ulid';
 import { workspaces } from '../workspaces';
-import { cardKey } from './reviewParse';
-import { CARD_KINDS, type Deck, type StudyCard, type StudyCardKind, type StudyData } from './types';
+import type { StudyEvent } from '../events';
+import { canonicalCards, compareCanonical, newCardId } from './canonical';
+import { cardKey, parseReview } from './reviewParse';
+import {
+	CARD_KINDS,
+	type Deck,
+	type ReviewEvent,
+	type StudyCard,
+	type StudyCardKind,
+	type StudyData,
+	type StudyHistory
+} from './types';
 
 export const FLASHCARDS_PLUGIN_ID = 'qinqin-flashcards';
 
@@ -188,17 +198,43 @@ async function deleteData(workspaceId: number, key: string): Promise<void> {
 	}
 }
 
-/**
- * loadStudyData reads the flashcard rows of the current workspace. The
- * result always contains arrays, even when the pull has no plugin data.
- */
-export async function loadStudyData(): Promise<StudyData> {
-	return fetchStudyData(requireWorkspaceId());
+function eventsPath(workspaceId: number): string {
+	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
+}
+
+/** fetchReviews reads the workspace's review history from the event log. */
+async function fetchReviews(workspaceId: number): Promise<ReviewEvent[]> {
+	const events = await api<StudyEvent[]>(eventsPath(workspaceId));
+	if (!Array.isArray(events)) return [];
+	return events
+		.map((event) => (event.workspaceId === workspaceId ? parseReview(event) : null))
+		.filter((event): event is ReviewEvent => event !== null);
 }
 
 /**
- * loadStudyDataFor reads the flashcard rows of one given workspace (one
- * sync pull). studyData.ts caches it; prefer getStudyData there.
+ * loadStudyData is THE read of a workspace's study state for anything
+ * that shows, counts or schedules cards: decks, cards and the review
+ * history, with duplicate cards (one word added on two devices before
+ * card ids were deterministic) merged by `canonicalCards` and their
+ * reviews re-pointed to the surviving card. Every page and widget goes
+ * through it, so no call site can forget the merge. The selected
+ * workspace is the default; pass the id the caller captured so cards and
+ * reviews come from the same workspace. Writes (addCard, deleteDeck)
+ * read the raw rows instead, so they see and rewrite every stored
+ * duplicate.
+ */
+export async function loadStudyData(workspaceId?: number): Promise<StudyHistory> {
+	const id = workspaceId ?? requireWorkspaceId();
+	const [data, history] = await Promise.all([fetchStudyData(id), fetchReviews(id)]);
+	const { cards, reviews, merged } = canonicalCards(data.cards, history);
+	return { decks: data.decks, cards, reviews, merged };
+}
+
+/**
+ * loadStudyDataFor reads the raw flashcard rows of one given workspace
+ * (one sync pull, duplicates included). studyData.ts caches it for
+ * "is this word studied" checks; anything that counts or schedules cards
+ * uses loadStudyData.
  */
 export function loadStudyDataFor(workspaceId: number): Promise<StudyData> {
 	return fetchStudyData(workspaceId);
@@ -261,7 +297,11 @@ export async function deleteDeck(id: string): Promise<void> {
  * default; unknown ids are the caller's choice — the setup page only
  * offers decks that exist). Adding an entry that already has a card is a
  * no-op: the entry page can race a slow pull, and a second card would
- * split its reviews and EXP permanently. `workspaceId` names the
+ * split its reviews and EXP. A new card's id is derived from its kind and
+ * entry (`newCardId`), so two devices that both miss each other's card
+ * write the same key and sync keeps one row (the later write's fields:
+ * decks, snapshot, createdAt; reviews point at the shared id either way).
+ * Older duplicates are merged at read time (loadStudyData). `workspaceId` names the
  * workspace explicitly (the reader adds to the book's workspace); the
  * selected one is the default.
  */
@@ -279,14 +319,15 @@ export async function addCard(
 	const kind = opts.kind ?? 'vocab';
 	const { cards } = await fetchStudyData(workspaceId);
 	const wanted = cardKey(kind, entryId, opts.sentenceId);
-	const existing = cards.find(
-		(card) => cardKey(card.kind, card.entryId, card.sentenceId) === wanted
-	);
+	// Several stored duplicates: answer with the one loadStudyData keeps.
+	const existing = cards
+		.filter((card) => cardKey(card.kind, card.entryId, card.sentenceId) === wanted)
+		.sort(compareCanonical)[0];
 	if (existing !== undefined) return existing;
 	const deckIds = opts.deckIds ?? [GENERAL_DECK_ID];
 	const chosen = [...new Set(deckIds.filter((id) => id !== ''))];
 	const card: StudyCard = {
-		id: newUlid(),
+		id: freshCardId(cards, kind, entryId, opts.sentenceId),
 		kind,
 		entryId,
 		deckIds: chosen.length === 0 ? [GENERAL_DECK_ID] : chosen,
@@ -300,6 +341,29 @@ export async function addCard(
 	}
 	await putData(workspaceId, cardRowKey(card.id), card);
 	return card;
+}
+
+/**
+ * freshCardId picks the id of a new card. The derived id (`newCardId`)
+ * makes two devices adding the same card at once write one key. It can
+ * only be taken by a card with another cardKey for sentence cards (one
+ * per sentence once existed); then the sentence joins the id, and a ULID
+ * is the last resort, so an existing card is never overwritten.
+ */
+function freshCardId(
+	cards: readonly StudyCard[],
+	kind: StudyCardKind,
+	entryId: number,
+	sentenceId?: number
+): string {
+	const taken = new Set(cards.map((card) => card.id));
+	const base = newCardId(kind, entryId);
+	if (!taken.has(base)) return base;
+	if (kind === 'sentence' && sentenceId !== undefined) {
+		const withSentence = `${base}-${sentenceId}`;
+		if (!taken.has(withSentence)) return withSentence;
+	}
+	return newUlid();
 }
 
 /** cardsInDecks keeps the cards that belong to at least one of `deckIds`. */

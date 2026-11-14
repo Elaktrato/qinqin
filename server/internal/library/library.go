@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"time"
 
@@ -361,4 +362,53 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 		return fmt.Errorf("library: delete content %d: %w", id, err)
 	}
 	return nil
+}
+
+// DeleteWorkspaceBooks deletes, inside the caller's transaction, every
+// book of one of userID's workspaces with its bookmarks and highlights,
+// and returns the deleted book ids in id order. The content files stay:
+// the caller removes them with RemoveContent once the transaction has
+// committed, so a rollback never loses a book's text. Another user's
+// workspace deletes nothing.
+func DeleteWorkspaceBooks(ctx context.Context, tx *sql.Tx, userID, workspaceID int64) ([]int64, error) {
+	// Children first, while the book rows still say which books they are.
+	const books = `SELECT id FROM library_books WHERE user_id = ?1 AND workspace_id = ?2`
+	for _, table := range []string{"library_bookmarks", "library_highlights"} {
+		if _, err := tx.ExecContext(ctx,
+			`DELETE FROM `+table+` WHERE book_id IN (`+books+`)`, userID, workspaceID); err != nil {
+			return nil, fmt.Errorf("library: delete workspace %d %s: %w", workspaceID, table, err)
+		}
+	}
+	rows, err := tx.QueryContext(ctx,
+		`DELETE FROM library_books WHERE user_id = ?1 AND workspace_id = ?2 RETURNING id`, userID, workspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("library: delete workspace %d books: %w", workspaceID, err)
+	}
+	defer rows.Close()
+	ids := []int64{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("library: delete workspace %d books: %w", workspaceID, err)
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("library: delete workspace %d books: %w", workspaceID, err)
+	}
+	slices.Sort(ids)
+	return ids, nil
+}
+
+// RemoveContent removes the content files of the user's books ids, the
+// second half of DeleteWorkspaceBooks. A missing file is not an error;
+// every other failure is reported, joined, after trying all of them.
+func (s Store) RemoveContent(userID int64, ids []int64) error {
+	var errs []error
+	for _, id := range ids {
+		if err := os.Remove(s.path(userID, id)); err != nil && !errors.Is(err, os.ErrNotExist) {
+			errs = append(errs, fmt.Errorf("library: remove content %d: %w", id, err))
+		}
+	}
+	return errors.Join(errs...)
 }

@@ -64,8 +64,13 @@ describe('apiErrorMessage', () => {
 	});
 
 	it('explains missing books and chapters in the reading view', () => {
-		expect(apiErrorMessage(new ApiError(404, ''), 'book')).toBe('This book is not in your library.');
-		expect(apiErrorMessage(new ApiError(404, ''), 'chapter')).toBe('This chapter does not exist.');
+		// Book-scoped reads 404 only when the book itself is gone (deleted,
+		// or its workspace was deleted in another tab or on another device).
+		for (const context of ['book', 'chapter', 'bookmarks', 'highlights', 'bookmarkAdd', 'highlightAdd'] as const) {
+			expect(apiErrorMessage(new ApiError(404, 'not found'), context)).toBe(
+				'This book is no longer available.'
+			);
+		}
 		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'book')).toBe('Could not load this book.');
 		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'chapter')).toBe(
 			'Could not load this chapter.'
@@ -80,6 +85,10 @@ describe('apiErrorMessage', () => {
 			'This book already has the most bookmarks allowed (200). Delete one to add another.'
 		);
 		expect(apiErrorMessage(new ApiError(404, 'x'), 'bookmark')).toMatch(/bookmark no longer exists/);
+		expect(apiErrorMessage(new ApiError(409, 'too many bookmarks'), 'bookmarkAdd')).toMatch(/most bookmarks/);
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'bookmarkAdd')).toBe(
+			'Could not save the bookmark.'
+		);
 		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'bookmark')).toBe(
 			'Could not save the bookmark.'
 		);
@@ -93,6 +102,11 @@ describe('apiErrorMessage', () => {
 			'This book already has the most highlights allowed (2000). Delete one to add another.'
 		);
 		expect(apiErrorMessage(new ApiError(404, 'x'), 'highlight')).toBe('This highlight no longer exists.');
+		expect(apiErrorMessage(new ApiError(409, 'too many highlights'), 'highlightAdd')).toMatch(/most highlights/);
+		expect(apiErrorMessage(new ApiError(413, 'highlight too large'), 'highlightAdd')).toMatch(/too long/);
+		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'highlightAdd')).toBe(
+			'Could not save the highlight.'
+		);
 		// A highlight body over the server cap is not a file upload.
 		for (const context of ['highlight', 'highlights'] as const) {
 			expect(apiErrorMessage(new ApiError(413, 'highlight too large'), context)).toBe(

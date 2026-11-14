@@ -14,7 +14,9 @@
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionOnce } from '$lib/events';
+	import { dismissNotice, notice } from '$lib/notices';
 	import { startReviewOutbox } from '$lib/study/events';
+	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import { load as loadWorkspaces, workspaces } from '$lib/workspaces';
 	import '../app.css';
 
@@ -61,7 +63,19 @@
 		}
 	}
 
+	// Focus the content itself (not just scroll to it), so the next Tab
+	// continues from there; the URL keeps no #main-content fragment.
+	function skipToContent(event: MouseEvent): void {
+		const target = document.getElementById('main-content');
+		if (!target) return;
+		event.preventDefault();
+		target.focus();
+	}
+
 	onMount(async () => {
+		// A workspace deleted in another tab or on another device: the
+		// first "workspace not found" reloads the list and falls back.
+		watchDeletedWorkspaces();
 		// Drain reviews queued while offline as soon as the shell boots,
 		// on whichever route the user opens. Never blocks the boot.
 		startReviewOutbox();
@@ -83,6 +97,7 @@
 			loadedToken = null;
 			workspacesLoaded = false;
 			resetPluginStates();
+			dismissNotice();
 			workspaces.set({ list: [], current: null });
 			return;
 		}
@@ -117,6 +132,8 @@
 </script>
 
 {#if allowed}
+	<!-- First focusable element: jumps past the header and its nav. -->
+	<a class="skip-link" href="#main-content" onclick={skipToContent}>Skip to content</a>
 	<div class="app" class:with-bar={signedIn}>
 		{#if signedIn}
 			<header class="shell">
@@ -125,8 +142,8 @@
 					class="brand"
 					href="/"
 					lang="zh"
-					aria-label={APP_NAME}
-					title={APP_NAME}
+					aria-label={`${APP_NAME}, home`}
+					title={`${APP_NAME} – home`}
 					aria-current={path === '/' ? 'page' : undefined}>{APP_NAME_HANZI}</a
 				>
 
@@ -173,7 +190,17 @@
 			{/if}
 		{/if}
 
-		<div class="content">
+		<!-- Always in the DOM, so screen readers announce what arrives. -->
+		<div class="notice-region" role="status">
+			{#if signedIn && $notice}
+				<p class="notice">
+					<span>{$notice}</span>
+					<button type="button" class="notice-dismiss" onclick={dismissNotice}>Dismiss</button>
+				</p>
+			{/if}
+		</div>
+
+		<div class="content" id="main-content" tabindex="-1">
 			{#if signedIn && noWorkspaces}
 				<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
 					<h2 id="empty-workspaces-heading">Create your first workspace</h2>
@@ -234,6 +261,32 @@
 
 	.content {
 		flex: 1 0 auto;
+	}
+
+	/* Focused by the skip link only; a ring around the whole page would
+	   be noise. */
+	.content:focus {
+		outline: none;
+	}
+
+	.skip-link {
+		position: absolute;
+		top: 0.5rem;
+		left: 0.5rem;
+		z-index: 100;
+		padding: 0.5rem 0.9rem;
+		border-radius: 0.5rem;
+		background: Canvas;
+		color: CanvasText;
+		font-weight: 600;
+		box-shadow: 0 0.125rem 0.75rem rgb(0 0 0 / 0.2);
+		transform: translateY(-200%);
+	}
+
+	.skip-link:focus {
+		transform: none;
+		outline: 2px solid #0b6bcb;
+		outline-offset: 2px;
 	}
 
 	.shell {
@@ -346,6 +399,33 @@
 		font-weight: 600;
 	}
 
+	.notice {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 1rem;
+		margin: 0;
+		padding: 0.5rem 1.5rem;
+		background: color-mix(in srgb, var(--nav-accent) 12%, transparent);
+		border-bottom: 1px solid color-mix(in srgb, var(--nav-accent) 30%, transparent);
+	}
+
+	.notice-dismiss {
+		font: inherit;
+		font-size: 0.9rem;
+		padding: 0.2rem 0.6rem;
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border-radius: 999px;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.notice-dismiss:focus-visible {
+		outline: 2px solid var(--nav-accent);
+		outline-offset: 2px;
+	}
+
 	.empty-workspaces {
 		margin: 2rem auto 0;
 		max-width: 28rem;
@@ -411,6 +491,15 @@
 			--bottom-bar-height: calc(3.75rem + env(safe-area-inset-bottom, 0px));
 			/* Nothing (the footer included) ends up behind the bar. */
 			padding-bottom: var(--bottom-bar-height);
+		}
+
+		/* Keyboard focus, scrollIntoView and fragment jumps stop above the
+		   bar, not behind it (WCAG 2.4.11): the bar's height (the same
+		   expression as --bottom-bar-height, which lives on .app and so
+		   is not visible on the root) plus a margin. The bar is a width
+		   query, so this also covers desktop browsers at high zoom. */
+		:global(html:has(.app.with-bar)) {
+			scroll-padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px) + 0.75rem);
 		}
 
 		.shell {

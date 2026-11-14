@@ -59,6 +59,12 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 		badBody(w, err)
 		return
 	}
+	for _, d := range body.PluginData {
+		if len(d.Data) > maxPluginDataValue {
+			writeTooLarge(w) // the per-value cap of PUT /api/plugins/{id}/data/{key}
+			return
+		}
+	}
 	res, err := chinsync.Push(r.Context(), s.db, u.ID, body)
 	switch {
 	case errors.Is(err, chinsync.ErrInvalid):

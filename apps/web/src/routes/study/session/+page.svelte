@@ -1,12 +1,10 @@
 <script lang="ts">
-	import { parseReview } from '$lib/study/reviewParse';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getEntry } from '$lib/api/entries';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
-	import { ApiError, api } from '$lib/api/client';
+	import { ApiError } from '$lib/api/client';
 	import type { Entry, EntryBase, Sentence } from '$lib/api/types';
-	import type { StudyEvent } from '$lib/events';
 	import SentenceCard from '$lib/plugins/flashcards/cards/SentenceCard.svelte';
 	import ToneCard from '$lib/plugins/flashcards/cards/ToneCard.svelte';
 	import VocabCard from '$lib/plugins/flashcards/cards/VocabCard.svelte';
@@ -306,18 +304,14 @@
 			} catch {
 				// The outbox retries on the next boot or reconnect.
 			}
-			const [data, events, schemeEntries] = await Promise.all([
-				loadStudyData(),
-				api<StudyEvent[]>(
-					`/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`
-				),
+			// Duplicate cards arrive merged, their reviews re-pointed.
+			const [data, schemeEntries] = await Promise.all([
+				loadStudyData(workspaceId),
 				levelEntriesRequest(language)
 			]);
 			if (seq !== requestSeq) return;
 
-			const history = events
-				.map((event) => (event.workspaceId === workspaceId ? parseReview(event) : null))
-				.filter((event): event is ReviewEvent => event !== null);
+			const history = data.reviews;
 			reviews = history;
 			cards = data.cards;
 			const now = new Date();
@@ -558,7 +552,10 @@
 			}
 			if (sessionWorkspaceId !== workspaceId) return;
 
-			if (result.created) cards = [...cards, result.card];
+			// addCard may hand back a card this page already holds.
+			if (result.created && !cards.some((card) => card.id === result.card.id)) {
+				cards = [...cards, result.card];
+			}
 			sessionReviews = [
 				...sessionReviews,
 				sessionReview(result.card, value, workspaceId, item.kind, meta)

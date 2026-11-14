@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { tick, untrack } from 'svelte';
-	import { ApiError, api } from '$lib/api/client';
+	import { ApiError } from '$lib/api/client';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
-	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 	import type { Scheme } from '$lib/api/types';
-	import type { StudyEvent } from '$lib/events';
 	import { usesHan } from '$lib/languages';
 	import CellTip from '$lib/components/map/CellTip.svelte';
 	import CharGrid from '$lib/components/map/CharGrid.svelte';
@@ -14,7 +13,6 @@
 		filterCells,
 		groupOptions,
 		masteryGlyphs,
-		schemeCharMembers,
 		sectionStats,
 		type CellState,
 		type GroupKey,
@@ -37,7 +35,6 @@
 		type TipRequest
 	} from '$lib/study/mapGrid';
 	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
-	import { parseReview } from '$lib/study/reviewParse';
 	import { loadStudyData } from '$lib/study/store';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
@@ -81,9 +78,8 @@
 	let tip = $state.raw<TipRequest | null>(null);
 	let announcement = $state('');
 
-	// Level members of installed schemes, loaded only when such a grouping
-	// is chosen and kept for the visit.
-	const memberCache = new Map<number, SchemeLevelMembers[]>();
+	// Level characters of installed schemes, loaded only when such a
+	// grouping is chosen (fetchSchemeCharacters keeps them for the session).
 	let members = $state.raw<{ schemeId: number; levels: SchemeLevelMembers[] } | null>(null);
 	let membersLoading = $state(false);
 	let membersError = $state('');
@@ -163,19 +159,17 @@
 		}
 
 		try {
-			const [list, schemeList, data, events] = await Promise.all([
+			// Duplicate cards arrive merged, their reviews re-pointed.
+			const [list, schemeList, data] = await Promise.all([
 				fetchCharacters(lang),
 				loadSchemeList(),
-				loadStudyData(),
-				api<StudyEvent[]>(`/api/events?since=1970-01-01T00:00:00Z&workspace=${id}`)
+				loadStudyData(id)
 			]);
 			if (seq !== requestSeq) return;
 			universe = list;
 			schemes = schemeList;
 			cards = data.cards;
-			reviews = events
-				.map((event) => (event.workspaceId === id ? parseReview(event) : null))
-				.filter((event): event is ReviewEvent => event !== null);
+			reviews = data.reviews;
 			groupKey = readGroupBy(storage(), lang, groupOptions(lang, schemeList));
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
@@ -226,30 +220,14 @@
 	);
 
 	async function loadMembers(id: number): Promise<void> {
-		const cached = memberCache.get(id);
-		if (cached !== undefined) {
-			members = { schemeId: id, levels: cached };
-			return;
-		}
-		const scheme = schemes.find((item) => item.id === id);
-		if (scheme === undefined) return;
 		const seq = ++membersSeq;
 		membersLoading = true;
 		membersError = '';
 		try {
-			const levels: SchemeLevelMembers[] = [];
-			// One level at a time: an eight-level ladder must not open eight
-			// requests at once.
-			for (const level of [...scheme.levels].sort((a, b) => a.ord - b.ord)) {
-				const entries = await getSchemeEntries(id, level.name);
-				if (seq !== membersSeq) return;
-				levels.push({
-					levelId: level.id,
-					name: level.name,
-					chars: schemeCharMembers(entries, scheme.unit)
-				});
-			}
-			memberCache.set(id, levels);
+			// One request for every level: the server sends each level's
+			// characters as one string, lowest level first.
+			const levels = await fetchSchemeCharacters(id);
+			if (seq !== membersSeq) return;
 			members = { schemeId: id, levels };
 		} catch (err) {
 			if (seq !== membersSeq) return;

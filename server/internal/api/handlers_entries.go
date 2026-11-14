@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -85,8 +86,12 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "entry not found", http.StatusNotFound)
 		return
 	}
+	body, ok := readBody(w, r, maxEntryBody)
+	if !ok {
+		return
+	}
 	var patch model.EntryPatch
-	if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&patch); err != nil {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}

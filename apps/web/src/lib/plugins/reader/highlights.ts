@@ -11,8 +11,6 @@ export type { Highlight, HighlightColor };
 
 export const HIGHLIGHT_COLORS: readonly HighlightColor[] = ['yellow', 'green', 'blue', 'pink'];
 
-/** MAX_HIGHLIGHTS is the server's cap per book. */
-export const MAX_HIGHLIGHTS = 2000;
 /** MAX_NOTE_RUNES is the server's note limit, in code points. */
 export const MAX_NOTE_RUNES = 2000;
 /** MAX_SNAPSHOT_RUNES is the server's limit for the text snapshot, in code points. */
@@ -22,49 +20,8 @@ export function isHighlightColor(value: unknown): value is HighlightColor {
 	return typeof value === 'string' && (HIGHLIGHT_COLORS as readonly string[]).includes(value);
 }
 
-/**
- * nextColor is the colour a new highlight gets: the last one used (the
- * caller remembers it per browser), yellow when there is none or the
- * stored value is not a known colour.
- */
-export function nextColor(last: HighlightColor | null): HighlightColor {
-	return isHighlightColor(last) ? last : 'yellow';
-}
-
 const cpLength = (text: string) => Array.from(text).length;
 const clamp = (n: number, lo: number, hi: number) => Math.min(Math.max(n, lo), hi);
-
-export interface ParagraphSelection {
-	startParagraph: number;
-	startOffset: number;
-	endParagraph: number;
-	endOffset: number;
-}
-
-/**
- * clampToParagraph turns a selection (code-point offsets per paragraph,
- * either direction) into a single-paragraph span: the paragraph where it
- * starts, cut at that paragraph's end (`clamped`). Like the lookup's
- * selectionSpan, a start that selects nothing there (a drag begun after
- * the last character) moves on to the next paragraph it covers. Null when
- * nothing is selected.
- */
-export function clampToParagraph(
-	selection: ParagraphSelection,
-	paragraphLength: (p: number) => number
-): { paragraph: number; start: number; end: number; clamped: boolean } | null {
-	let { startParagraph, startOffset, endParagraph, endOffset } = selection;
-	if (endParagraph < startParagraph || (endParagraph === startParagraph && endOffset < startOffset)) {
-		[startParagraph, startOffset, endParagraph, endOffset] = [endParagraph, endOffset, startParagraph, startOffset];
-	}
-	for (let p = startParagraph; p <= endParagraph; p++) {
-		const length = Math.max(paragraphLength(p), 0);
-		const start = p === startParagraph ? clamp(startOffset, 0, length) : 0;
-		const end = p === endParagraph ? clamp(endOffset, 0, length) : length;
-		if (end > start) return { paragraph: p, start, end, clamped: p < endParagraph };
-	}
-	return null;
-}
 
 // Go's unicode.IsSpace, which the server's strings.TrimSpace check uses
 // (JS \s differs: it includes U+FEFF and lacks U+0085).

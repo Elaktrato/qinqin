@@ -1,12 +1,10 @@
 <script lang="ts">
-	import { parseReview } from '$lib/study/reviewParse';
 	import { goto } from '$app/navigation';
-	import { ApiError, api } from '$lib/api/client';
+	import { ApiError } from '$lib/api/client';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
-	import type { StudyEvent } from '$lib/events';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
 	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
@@ -151,18 +149,12 @@
 		void loadSchemes(seq);
 
 		try {
-			const [data, events] = await Promise.all([
-				loadStudyData(),
-				api<StudyEvent[]>(
-					`/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`
-				)
-			]);
+			// Duplicate cards arrive merged, their reviews re-pointed.
+			const data = await loadStudyData(workspaceId);
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
-			reviews = events
-				.map((event) => (event.workspaceId === workspaceId ? parseReview(event) : null))
-				.filter((event): event is ReviewEvent => event !== null);
+			reviews = data.reviews;
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
 		} catch (err) {
 			if (seq !== requestSeq) return;

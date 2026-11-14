@@ -5,6 +5,8 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import { workspaces } from '../workspaces';
+import { gradeItem } from './grade';
+import type { StudyEvent } from '../events';
 import type { Deck, StudyCard } from './types';
 import {
 	GENERAL_DECK_ID,
@@ -107,6 +109,28 @@ function putBodies(): Array<{ url: string; body: unknown }> {
 		.map(([url, init]) => ({ url: String(url), body: JSON.parse(String(init?.body)) }));
 }
 
+/**
+ * respondPull answers the two reads loadStudyData makes: the sync pull
+ * gets `pull`, the event log gets `events` (none by default).
+ */
+function respondPull(pull: unknown, events: unknown[] = []): void {
+	vi.mocked(fetch).mockImplementation(async (input) => {
+		if (String(input).startsWith('/api/events')) return jsonResponse(events);
+		return jsonResponse(pull);
+	});
+}
+
+function reviewEvent(id: string, cardId: string, workspaceId = WORKSPACE_ID): StudyEvent {
+	return {
+		id,
+		workspaceId,
+		device: 'web',
+		ts: '2026-02-01T00:00:00.000Z',
+		type: 'review',
+		payload: { cardId, mode: 'vocab', grade: 3 }
+	} as StudyEvent;
+}
+
 describe('study store', () => {
 	beforeEach(() => {
 		vi.stubGlobal('localStorage', fakeStorage());
@@ -131,35 +155,33 @@ describe('study store', () => {
 			// A written snapshot of the wrong type is dropped instead of
 			// poisoning the card.
 			const badWritten = { ...card('card-3', 44, ['general']), written: 42 };
-			vi.mocked(fetch).mockResolvedValue(
-				jsonResponse({
-					pluginData: [
-						pluginRow('deck:general', general),
-						pluginRow('deck:deck-1', custom),
-						pluginRow('card:card-1', word),
-						pluginRow('card:card-2', sentenceCard),
-						pluginRow('card:card-3', badWritten),
-						// Another plugin's data is not study data.
-						pluginRow('deck:other-plugin', deck('other-plugin', 'Other'), {
-							pluginId: 'qinqin-heatmap'
-						}),
-						// Another workspace's data never leaks in.
-						pluginRow('deck:other-workspace', deck('other-workspace', 'Elsewhere'), {
-							workspaceId: 8
-						}),
-						// User-global (workspace-less) rows are not study data.
-						pluginRow('deck:global', deck('global', 'Global'), { workspaceId: null }),
-						// Tombstones are deleted rows.
-						pluginRow('deck:gone', deck('gone', 'Gone'), {
-							deletedAt: '2026-01-03T00:00:00Z'
-						}),
-						// Keys the study layer does not own are ignored.
-						pluginRow('settings:study', { newLimit: 20 }),
-						// A malformed payload is skipped rather than crashing.
-						pluginRow('deck:broken', { name: 'No id' })
-					]
-				})
-			);
+			respondPull({
+				pluginData: [
+					pluginRow('deck:general', general),
+					pluginRow('deck:deck-1', custom),
+					pluginRow('card:card-1', word),
+					pluginRow('card:card-2', sentenceCard),
+					pluginRow('card:card-3', badWritten),
+					// Another plugin's data is not study data.
+					pluginRow('deck:other-plugin', deck('other-plugin', 'Other'), {
+						pluginId: 'qinqin-heatmap'
+					}),
+					// Another workspace's data never leaks in.
+					pluginRow('deck:other-workspace', deck('other-workspace', 'Elsewhere'), {
+						workspaceId: 8
+					}),
+					// User-global (workspace-less) rows are not study data.
+					pluginRow('deck:global', deck('global', 'Global'), { workspaceId: null }),
+					// Tombstones are deleted rows.
+					pluginRow('deck:gone', deck('gone', 'Gone'), {
+						deletedAt: '2026-01-03T00:00:00Z'
+					}),
+					// Keys the study layer does not own are ignored.
+					pluginRow('settings:study', { newLimit: 20 }),
+					// A malformed payload is skipped rather than crashing.
+					pluginRow('deck:broken', { name: 'No id' })
+				]
+			});
 
 			const data = await loadStudyData();
 
@@ -167,7 +189,8 @@ describe('study store', () => {
 			expect(data.cards).toEqual([word, sentenceCard, card('card-3', 44, ['general'])]);
 			expect('written' in data.cards[2]!).toBe(false);
 			expect(calls().map(([url]) => String(url))).toEqual([
-				'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates'
+				'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates',
+				`/api/events?since=1970-01-01T00:00:00Z&workspace=${WORKSPACE_ID}`
 			]);
 		});
 
@@ -178,14 +201,12 @@ describe('study store', () => {
 				kind
 			}));
 			const bad = { ...card('card-bad', 50, ['general']), kind: 'bogus' };
-			vi.mocked(fetch).mockResolvedValue(
-				jsonResponse({
-					pluginData: [
-						...good.map((row) => pluginRow(`card:${row.id}`, row)),
-						pluginRow('card:card-bad', bad)
-					]
-				})
-			);
+			respondPull({
+				pluginData: [
+					...good.map((row) => pluginRow(`card:${row.id}`, row)),
+					pluginRow('card:card-bad', bad)
+				]
+			});
 
 			const data = await loadStudyData();
 
@@ -193,17 +214,25 @@ describe('study store', () => {
 		});
 
 		it('returns empty arrays when the pull has no plugin data', async () => {
-			vi.mocked(fetch).mockResolvedValue(jsonResponse({ cursor: '2026-01-01T00:00:00Z' }));
+			respondPull({ cursor: '2026-01-01T00:00:00Z' });
 
-			await expect(loadStudyData()).resolves.toEqual({ decks: [], cards: [] });
+			await expect(loadStudyData()).resolves.toEqual({
+				decks: [],
+				cards: [],
+				reviews: [],
+				merged: 0
+			});
 		});
 
 		it('returns empty arrays when matching rows only hold other keys', async () => {
-			vi.mocked(fetch).mockResolvedValue(
-				jsonResponse({ pluginData: [pluginRow('settings:study', { newLimit: 20 })] })
-			);
+			respondPull({ pluginData: [pluginRow('settings:study', { newLimit: 20 })] });
 
-			await expect(loadStudyData()).resolves.toEqual({ decks: [], cards: [] });
+			await expect(loadStudyData()).resolves.toEqual({
+				decks: [],
+				cards: [],
+				reviews: [],
+				merged: 0
+			});
 		});
 
 		it('fails when no workspace is selected', async () => {
@@ -211,6 +240,58 @@ describe('study store', () => {
 
 			await expect(loadStudyData()).rejects.toThrow(/workspace/i);
 			expect(fetch).not.toHaveBeenCalled();
+		});
+
+		it('reads an explicitly given workspace for both the cards and the reviews', async () => {
+			respondPull(
+				{ pluginData: [pluginRow('card:card-1', card('card-1', 42, ['general']), { workspaceId: 9 })] },
+				[reviewEvent('r1', 'card-1', 9), reviewEvent('r2', 'card-1', 7)]
+			);
+
+			const data = await loadStudyData(9);
+
+			expect(data.cards.map((c) => c.id)).toEqual(['card-1']);
+			expect(data.reviews.map((r) => r.id)).toEqual(['r1']);
+			expect(calls().map(([url]) => String(url))).toContain(
+				'/api/events?since=1970-01-01T00:00:00Z&workspace=9'
+			);
+		});
+
+		it('keeps only well-formed reviews of the workspace', async () => {
+			respondPull({ pluginData: [] }, [
+				reviewEvent('r1', 'card-1'),
+				{ ...reviewEvent('r2', 'card-1'), type: 'view' },
+				{ ...reviewEvent('r3', 'card-1'), payload: { cardId: 'card-1', grade: 9 } }
+			]);
+
+			const data = await loadStudyData();
+
+			expect(data.reviews.map((r) => r.id)).toEqual(['r1']);
+		});
+
+		it('merges duplicate cards and re-points their reviews', async () => {
+			// Two older (ULID) cards for one word, created on two devices,
+			// each with its own review history.
+			const early = card('01JAAAAAAAAAAAAAAAAAAAAAAA', 42, ['general'], '2026-01-01T00:00:00Z');
+			const late = card('01JBBBBBBBBBBBBBBBBBBBBBBB', 42, ['deck-1'], '2026-01-02T00:00:00Z', '猫');
+			respondPull(
+				{
+					pluginData: [
+						pluginRow(`card:${late.id}`, late),
+						pluginRow(`card:${early.id}`, early)
+					]
+				},
+				[reviewEvent('r1', early.id), reviewEvent('r2', late.id)]
+			);
+
+			const data = await loadStudyData();
+
+			expect(data.merged).toBe(1);
+			expect(data.cards).toEqual([{ ...early, deckIds: ['general', 'deck-1'], written: '猫' }]);
+			expect(data.reviews.map((r) => [r.id, r.payload.cardId])).toEqual([
+				['r1', early.id],
+				['r2', early.id]
+			]);
 		});
 	});
 
@@ -303,6 +384,29 @@ describe('study store', () => {
 					url: `/api/plugins/${PLUGIN_ID}/data/card:card-shared?workspace=${WORKSPACE_ID}`,
 					body: { ...shared, deckIds: ['deck-2'] }
 				}
+			]);
+		});
+
+		it('rewrites every stored duplicate of a card, not only the merged one', async () => {
+			const early = card('card-early', 42, ['deck-1'], '2026-01-01T00:00:00Z');
+			const late = card('card-late', 42, ['deck-1'], '2026-01-02T00:00:00Z');
+			vi.mocked(fetch).mockImplementation(async (_input, init) => {
+				if (init?.method === 'DELETE') return new Response(null, { status: 204 });
+				if (init?.method === 'PUT') return jsonResponse({ version: 2 });
+				return jsonResponse({
+					pluginData: [
+						pluginRow('deck:deck-1', deck('deck-1', 'Doomed')),
+						pluginRow('card:card-early', early),
+						pluginRow('card:card-late', late)
+					]
+				});
+			});
+
+			await deleteDeck('deck-1');
+
+			expect(putBodies().map((entry) => entry.url)).toEqual([
+				`/api/plugins/${PLUGIN_ID}/data/card:card-early?workspace=${WORKSPACE_ID}`,
+				`/api/plugins/${PLUGIN_ID}/data/card:card-late?workspace=${WORKSPACE_ID}`
 			]);
 		});
 
@@ -425,7 +529,7 @@ describe('study store', () => {
 
 			const added = await addCard(42);
 
-			expect(added.id).toMatch(ULID);
+			expect(added.id).toBe('c-vocab-42');
 			expect(added.kind).toBe('vocab');
 			expect(added.entryId).toBe(42);
 			expect(added.deckIds).toEqual([GENERAL_DECK_ID]);
@@ -463,6 +567,125 @@ describe('study store', () => {
 			const other = await addCard(42, { kind: 'sentence', sentenceId: 10 });
 			expect(other.id).not.toBe('card-s9');
 			expect(other.sentenceId).toBe(10);
+		});
+
+		it('derives the id of a new card from its kind and entry', async () => {
+			respondWith([]);
+
+			await expect(addCard(42, { kind: 'writing' })).resolves.toMatchObject({ id: 'c-writing-42' });
+			await expect(addCard(42, { kind: 'tone' })).resolves.toMatchObject({ id: 'c-tone-42' });
+			await expect(addCard(42, { kind: 'sentence', sentenceId: 9 })).resolves.toMatchObject({
+				id: 'c-sentence-42'
+			});
+			expect(putBodies().map((entry) => entry.url)).toEqual([
+				`/api/plugins/${PLUGIN_ID}/data/card:c-writing-42?workspace=${WORKSPACE_ID}`,
+				`/api/plugins/${PLUGIN_ID}/data/card:c-tone-42?workspace=${WORKSPACE_ID}`,
+				`/api/plugins/${PLUGIN_ID}/data/card:c-sentence-42?workspace=${WORKSPACE_ID}`
+			]);
+		});
+
+		it('never overwrites another sentence card that holds the derived id', async () => {
+			const s9 = { ...card('c-sentence-42', 42, ['general']), kind: 'sentence', sentenceId: 9 };
+			respondWith([pluginRow('card:c-sentence-42', s9)]);
+
+			const s10 = await addCard(42, { kind: 'sentence', sentenceId: 10 });
+
+			expect(s10.id).toBe('c-sentence-42-10');
+			expect(putBodies().map((entry) => entry.url)).toEqual([
+				`/api/plugins/${PLUGIN_ID}/data/card:c-sentence-42-10?workspace=${WORKSPACE_ID}`
+			]);
+		});
+
+		it('falls back to a ULID when every derived id is taken', async () => {
+			const s9 = { ...card('c-sentence-42', 42, ['general']), kind: 'sentence', sentenceId: 9 };
+			respondWith([pluginRow('card:c-sentence-42', s9)]);
+
+			const bare = await addCard(42, { kind: 'sentence' });
+
+			expect(bare.id).toMatch(ULID);
+		});
+
+		it('returns the earliest of several stored duplicates', async () => {
+			const late = card('card-late', 42, ['general'], '2026-01-03T00:00:00Z');
+			const early = card('card-early', 42, ['general'], '2026-01-01T00:00:00Z');
+			respondWith([pluginRow('card:card-late', late), pluginRow('card:card-early', early)]);
+
+			await expect(addCard(42)).resolves.toEqual(early);
+			expect(putBodies()).toEqual([]);
+		});
+
+		it('lets two devices that add the same word at once converge on one card', async () => {
+			// One server, last write wins per key. Both devices pull before
+			// either writes, so neither sees the other's card.
+			const server = new Map<string, unknown>();
+			vi.mocked(fetch).mockImplementation(async (input, init) => {
+				const url = String(input);
+				if (init?.method === 'PUT') {
+					const key = url.split('/data/')[1]!.split('?')[0]!;
+					server.set(key, JSON.parse(String(init.body)));
+					return jsonResponse({ version: 1 });
+				}
+				if (url.startsWith('/api/events')) {
+					return jsonResponse([reviewEvent('r-a', 'c-vocab-42'), reviewEvent('r-b', 'c-vocab-42')]);
+				}
+				const snapshot = [...server].map(([key, data]) => pluginRow(key, data));
+				return jsonResponse({ pluginData: snapshot });
+			});
+
+			const [deviceA, deviceB] = await Promise.all([
+				addCard(42, { written: '猫' }),
+				addCard(42, { written: '猫', deckIds: ['deck-1'] })
+			]);
+
+			expect(putBodies()).toHaveLength(2);
+			expect(deviceA.id).toBe(deviceB.id);
+			expect([...server.keys()]).toEqual(['card:c-vocab-42']);
+			const data = await loadStudyData();
+			expect(data.cards).toHaveLength(1);
+			expect(data.merged).toBe(0);
+			expect(data.reviews.map((r) => r.payload.cardId)).toEqual(['c-vocab-42', 'c-vocab-42']);
+		});
+
+		it('gives a graded companion the derived id and never rewrites an existing card', async () => {
+			const existing = {
+				...card('c-writing-42', 42, ['general'], '2026-01-01T00:00:00Z', '貓'),
+				kind: 'writing'
+			};
+			respondWith([pluginRow('card:c-writing-42', existing)]);
+			const recordReview = vi.fn(async () => {});
+			const item = {
+				cardId: 'companion:writing:42',
+				entryId: 42,
+				virtual: true,
+				card: null,
+				kind: 'writing' as const
+			};
+
+			const kept = await gradeItem({
+				item,
+				grade: 3,
+				workspaceId: WORKSPACE_ID,
+				entry: { written: '猫' },
+				addCard,
+				recordReview
+			});
+			expect(kept).toMatchObject({ ok: true, card: existing });
+			expect(putBodies()).toEqual([]);
+
+			respondWith([]);
+			const created = await gradeItem({
+				item: { ...item, cardId: 'companion:tone:42', kind: 'tone' as const },
+				grade: 3,
+				workspaceId: WORKSPACE_ID,
+				entry: { written: '猫' },
+				addCard,
+				recordReview
+			});
+			expect(created).toMatchObject({ ok: true, card: { id: 'c-tone-42', written: '猫' } });
+			expect(recordReview.mock.calls.map((call) => (call as unknown[])[1])).toEqual([
+				'c-writing-42',
+				'c-tone-42'
+			]);
 		});
 
 		it('stores the entry written form and the sentence id', async () => {

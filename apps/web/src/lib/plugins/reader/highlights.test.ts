@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	HIGHLIGHT_COLORS,
 	buildHighlightBody,
-	clampToParagraph,
 	isHighlightColor,
-	nextColor,
 	overlaps,
 	splitRunsByHighlights,
 	visibleHighlights,
@@ -29,56 +27,6 @@ function hl(id: number, paragraph: number, start: number, end: number, text = ''
 		...over
 	};
 }
-
-const lengths = (...ls: number[]) => (p: number) => ls[p] ?? 0;
-
-describe('clampToParagraph', () => {
-	it('keeps a selection inside one paragraph', () => {
-		expect(
-			clampToParagraph({ startParagraph: 2, startOffset: 3, endParagraph: 2, endOffset: 7 }, lengths(0, 0, 10))
-		).toEqual({ paragraph: 2, start: 3, end: 7, clamped: false });
-	});
-
-	it('clamps a selection spanning paragraphs to the end of the first', () => {
-		expect(
-			clampToParagraph({ startParagraph: 0, startOffset: 4, endParagraph: 2, endOffset: 1 }, lengths(9, 5, 5))
-		).toEqual({ paragraph: 0, start: 4, end: 9, clamped: true });
-	});
-
-	it('normalises a backward selection', () => {
-		expect(
-			clampToParagraph({ startParagraph: 1, startOffset: 2, endParagraph: 0, endOffset: 3 }, lengths(9, 5))
-		).toEqual({ paragraph: 0, start: 3, end: 9, clamped: true });
-		expect(
-			clampToParagraph({ startParagraph: 0, startOffset: 6, endParagraph: 0, endOffset: 2 }, lengths(9))
-		).toEqual({ paragraph: 0, start: 2, end: 6, clamped: false });
-	});
-
-	it('is null for an empty selection', () => {
-		expect(clampToParagraph({ startParagraph: 0, startOffset: 3, endParagraph: 0, endOffset: 3 }, lengths(9))).toBeNull();
-		expect(clampToParagraph({ startParagraph: 0, startOffset: 0, endParagraph: 0, endOffset: 0 }, lengths(0))).toBeNull();
-	});
-
-	it('clips offsets to the paragraph', () => {
-		expect(
-			clampToParagraph({ startParagraph: 0, startOffset: -2, endParagraph: 0, endOffset: 40 }, lengths(9))
-		).toEqual({ paragraph: 0, start: 0, end: 9, clamped: false });
-	});
-
-	it('skips an empty start at a paragraph end, like the lookup selection does', () => {
-		// The drag began after the last character of paragraph 0.
-		expect(
-			clampToParagraph({ startParagraph: 0, startOffset: 9, endParagraph: 1, endOffset: 3 }, lengths(9, 5))
-		).toEqual({ paragraph: 1, start: 0, end: 3, clamped: false });
-		expect(
-			clampToParagraph({ startParagraph: 0, startOffset: 9, endParagraph: 2, endOffset: 3 }, lengths(9, 5, 5))
-		).toEqual({ paragraph: 1, start: 0, end: 5, clamped: true });
-		// Nothing selectable at all.
-		expect(
-			clampToParagraph({ startParagraph: 0, startOffset: 9, endParagraph: 1, endOffset: 0 }, lengths(9, 5))
-		).toBeNull();
-	});
-});
 
 describe('visibleHighlights', () => {
 	const texts = ['猫が好き', '𠮷野家で食べた', 'abc def'];
@@ -322,14 +270,8 @@ describe('buildHighlightBody', () => {
 	});
 });
 
-describe('nextColor', () => {
-	it('defaults to yellow and keeps the last used colour', () => {
-		expect(nextColor(null)).toBe('yellow');
-		for (const c of HIGHLIGHT_COLORS) expect(nextColor(c)).toBe(c);
-	});
-
-	it('falls back to yellow for an unknown stored value', () => {
-		expect(nextColor('purple' as never)).toBe('yellow');
+describe('isHighlightColor', () => {
+	it('accepts exactly the four colours', () => {
 		expect(isHighlightColor('pink')).toBe(true);
 		expect(isHighlightColor('Pink')).toBe(false);
 		expect(isHighlightColor(3)).toBe(false);

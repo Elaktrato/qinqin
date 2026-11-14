@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { SchemeLevelMembers } from '$lib/study/charGroups';
 import type { EntryBase, Scheme } from './types';
 
 /**
@@ -21,4 +22,73 @@ export function getSchemeEntries(schemeId: number, level?: string): Promise<Entr
 	if (level !== undefined) params.set('level', level);
 	const query = params.toString();
 	return api<EntryBase[]>(`/api/schemes/${schemeId}/entries${query ? `?${query}` : ''}`);
+}
+
+/** The body of GET /api/schemes/{id}/characters, as served. */
+interface SchemeCharactersBody {
+	levels?: unknown;
+}
+
+// A scheme's characters change only when its pack is re-installed, so a
+// loaded scheme stays in memory for the session; revalidation across
+// visits is the browser cache's job (the server sends a weak ETag with
+// `max-age=0, must-revalidate`). Concurrent callers share one request.
+const loadedSchemes = new Map<number, SchemeLevelMembers[]>();
+const pendingSchemes = new Map<number, Promise<SchemeLevelMembers[]>>();
+
+/** clearSchemeCharactersCache forgets every loaded scheme (tests, sign-out). */
+export function clearSchemeCharactersCache(): void {
+	loadedSchemes.clear();
+	pendingSchemes.clear();
+}
+
+function toLevels(body: SchemeCharactersBody | null): SchemeLevelMembers[] {
+	const raw = Array.isArray(body?.levels) ? body.levels : [];
+	const levels: SchemeLevelMembers[] = [];
+	for (const item of raw) {
+		if (item === null || typeof item !== 'object') continue;
+		const { id, name, chars } = item as {
+			id?: unknown;
+			name?: unknown;
+			chars?: unknown;
+		};
+		if (typeof id !== 'number' || typeof name !== 'string') continue;
+		levels.push({
+			levelId: id,
+			name,
+			chars: new Set(typeof chars === 'string' ? Array.from(chars) : [])
+		});
+	}
+	return levels;
+}
+
+/**
+ * fetchSchemeCharacters loads GET /api/schemes/{id}/characters: the
+ * scheme's levels in level order, each with the Han characters that
+ * belong to it (lowest level wins, the rule the server derives badges
+ * by), in the shape `buildSections` takes. A loaded scheme is kept in
+ * memory; concurrent callers share one request; errors are not cached
+ * (HTTP errors arrive as ApiError).
+ */
+export function fetchSchemeCharacters(schemeId: number): Promise<SchemeLevelMembers[]> {
+	const cached = loadedSchemes.get(schemeId);
+	if (cached !== undefined) return Promise.resolve(cached);
+	const inFlight = pendingSchemes.get(schemeId);
+	if (inFlight !== undefined) return inFlight;
+	const promise = api<SchemeCharactersBody | null>(`/api/schemes/${schemeId}/characters`).then(
+		(body) => {
+			const levels = toLevels(body);
+			if (pendingSchemes.get(schemeId) === promise) {
+				pendingSchemes.delete(schemeId);
+				loadedSchemes.set(schemeId, levels);
+			}
+			return levels;
+		},
+		(error: unknown) => {
+			if (pendingSchemes.get(schemeId) === promise) pendingSchemes.delete(schemeId);
+			throw error;
+		}
+	);
+	pendingSchemes.set(schemeId, promise);
+	return promise;
 }

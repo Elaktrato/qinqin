@@ -114,7 +114,7 @@ export class BookmarkList {
 		} catch (err) {
 			if (seq !== this.#seq) return;
 			this.items = this.items.filter((b) => b.id !== temp.id);
-			this.error = apiErrorMessage(err, 'bookmark');
+			this.error = apiErrorMessage(err, 'bookmarkAdd');
 		}
 	}
 

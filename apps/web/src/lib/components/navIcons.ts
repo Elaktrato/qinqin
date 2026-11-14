@@ -1,23 +1,18 @@
 // Which glyph a shell navigation item shows. Pure, so the mapping is
 // tested without rendering; NavIcon.svelte draws the glyphs.
 
-export const NAV_ICONS = [
-	'home',
-	'search',
-	'map',
-	'cards',
-	'book',
-	'books',
-	'gear',
-	'signout',
-	'plugin'
-] as const;
-
-export type NavIconName = (typeof NAV_ICONS)[number];
+export type NavIconName =
+	| 'search'
+	| 'map'
+	| 'cards'
+	| 'book'
+	| 'books'
+	| 'gear'
+	| 'signout'
+	| 'plugin';
 
 // Keys are normalised (lower case, no `qinqin-` pack prefix).
 const KNOWN = new Map<string, NavIconName>([
-	['home', 'home'],
 	['search', 'search'],
 	['map', 'map'],
 	['study', 'cards'],

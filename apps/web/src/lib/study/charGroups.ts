@@ -170,30 +170,6 @@ export interface SchemeLevelMembers {
 	chars: ReadonlySet<string>;
 }
 
-const HAN = /\p{Script=Han}/u;
-
-/**
- * schemeCharMembers turns one level's member entries into its Han
- * characters. A word-unit scheme (HSK lists words) contributes every Han
- * character of every listed entry; a character-unit scheme contributes
- * its character entries. Across levels the lowest wins, because
- * buildSections assigns a glyph to the first level that holds it — the
- * same rule as the server's character derivation.
- */
-export function schemeCharMembers(
-	entries: readonly { written: string; kind: string }[],
-	unit: string
-): Set<string> {
-	const chars = new Set<string>();
-	for (const entry of entries) {
-		if (unit === 'character' && entry.kind !== 'character') continue;
-		for (const glyph of Array.from(entry.written ?? '')) {
-			if (HAN.test(glyph)) chars.add(glyph);
-		}
-	}
-	return chars;
-}
-
 function schemeSlotter(members: readonly SchemeLevelMembers[] | undefined): (row: CharRow) => Slot {
 	const levels = (members ?? []).map((level, index) => ({
 		slot: { id: `level-${level.levelId}`, label: level.name, rank: index } satisfies Slot,
@@ -237,7 +213,7 @@ function slotterFor(
  * grouping's "other" section catches missing or unexpected values — and
  * keeps its input order there. Empty sections are omitted. For a scheme
  * grouping, `schemeMembers` lists the levels in level order with their
- * member glyphs (see `schemeCharMembers`); a glyph in several levels
+ * member glyphs (see `fetchSchemeCharacters`); a glyph in several levels
  * lands in the first.
  */
 export function buildSections(

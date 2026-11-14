@@ -68,3 +68,13 @@ export interface StudyData {
 	decks: Deck[];
 	cards: StudyCard[];
 }
+
+/**
+ * StudyData plus the review history, with duplicate cards merged and
+ * their reviews pointing at the surviving card (see canonical.ts).
+ */
+export interface StudyHistory extends StudyData {
+	reviews: ReviewEvent[];
+	/** How many stored duplicate cards were folded away. */
+	merged: number;
+}

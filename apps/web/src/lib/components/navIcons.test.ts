@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { iconFor, NAV_ICONS } from './navIcons';
+import { iconFor } from './navIcons';
 
 describe('iconFor', () => {
 	it('maps the shell links to their glyphs', () => {
-		expect(iconFor('home')).toBe('home');
 		expect(iconFor('search')).toBe('search');
 		expect(iconFor('map')).toBe('map');
 		expect(iconFor('sources')).toBe('books');
@@ -42,9 +41,4 @@ describe('iconFor', () => {
 		expect(iconFor('__proto__', 'constructor')).toBe('plugin');
 	});
 
-	it('only returns names that have a glyph', () => {
-		for (const key of ['home', 'search', 'map', 'reader', 'study', 'sources', 'settings', 'signout', 'zzz']) {
-			expect(NAV_ICONS).toContain(iconFor(key));
-		}
-	});
 });
