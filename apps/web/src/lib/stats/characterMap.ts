@@ -1,0 +1,61 @@
+// The character map's numbers outside the map page: the same mastery
+// pass the map runs (every glyph and variant scored once, a cell taking
+// the best of its forms), reduced to the totals a summary tile shows.
+// The map page itself keeps its own loading, because it also needs the
+// level schemes and paints progressively.
+
+import { fetchCharacters, type CharacterList } from '$lib/api/characters';
+import type { CharRow } from '$lib/api/types';
+import { cellStates, masteryGlyphs, sectionStats, type SectionStats } from '$lib/study/charGroups';
+import { fillMissingWritten } from '$lib/study/entriesCache';
+import { masteryForChars } from '$lib/study/mastery';
+import { loadStudyHistory } from '$lib/study/history';
+import type { ReviewEvent, StudyCard } from '$lib/study/types';
+
+/** characterSummary counts the characters per mastery stage and those learned. */
+export function characterSummary(
+	chars: readonly CharRow[],
+	cards: readonly StudyCard[],
+	reviews: readonly ReviewEvent[],
+	now: Date
+): SectionStats {
+	const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, now);
+	return sectionStats(cellStates(chars, mastery));
+}
+
+export interface CharacterMapData {
+	list: CharacterList;
+	cards: StudyCard[];
+	reviews: ReviewEvent[];
+}
+
+/**
+ * loadCharacterMapData reads what the summary needs: the language's
+ * character universe (fetchCharacters keeps it in memory for the
+ * session, so a second home visit does not download ~13k rows again)
+ * and the workspace's merged study data (the widgets' shared cache;
+ * `force` reads it again).
+ */
+export async function loadCharacterMapData(
+	workspaceId: number,
+	language: string,
+	opts?: { force?: boolean }
+): Promise<CharacterMapData> {
+	const [list, data] = await Promise.all([
+		fetchCharacters(language),
+		loadStudyHistory(workspaceId, opts)
+	]);
+	return { list, cards: data.cards, reviews: data.reviews };
+}
+
+/**
+ * withLegacyWritten fills the written snapshot of cards added before
+ * cards carried one (entry lookups, cached per entry for the session),
+ * as the map does. Cards that stay unresolved are counted.
+ */
+export async function withLegacyWritten(
+	cards: readonly StudyCard[]
+): Promise<{ cards: StudyCard[]; unresolved: number }> {
+	const filled = await fillMissingWritten(cards);
+	return { cards: filled, unresolved: filled.filter((card) => card.written === undefined).length };
+}

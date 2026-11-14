@@ -38,6 +38,9 @@ describe('routeAccess', () => {
 		expect(routeAccess('/')).toBe('private');
 		expect(routeAccess('/study')).toBe('private');
 		expect(routeAccess('/settings')).toBe('private');
+		expect(routeAccess('/stats')).toBe('private');
+		expect(routeAccess('/stats/characters')).toBe('private');
+		expect(routeAccess('/study/map')).toBe('private');
 		expect(routeAccess('/no-such-page')).toBe('private');
 	});
 });

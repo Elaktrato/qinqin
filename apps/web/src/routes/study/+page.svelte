@@ -547,7 +547,7 @@
 	<h1>Study</h1>
 	<p class="hint">Choose what this session should draw from.</p>
 	{#if $workspaces.current && usesHan($workspaces.current.language)}
-		<p class="hint"><a href="/study/map">View the mastery map →</a></p>
+		<p class="hint"><a href="/stats/characters">View the mastery map →</a></p>
 	{/if}
 
 	{#if loadError}

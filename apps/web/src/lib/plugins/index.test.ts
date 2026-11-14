@@ -1,14 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
-import { findPlugin, homeWidgets, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState, visibleNavPages } from './index';
+import { findPlugin, isCorePlugin, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState, visibleNavPages } from './index';
 import type { WebPlugin } from './index';
 
 function plugin(id: string): WebPlugin {
-	return {
-		manifest: { id, name: id, surfaces: ['home-widget'] },
-		component: null as unknown as Component
-	};
+	return { manifest: { id, name: id, surfaces: ['home-widget'] } };
 }
 
 function state(id: string, order: number, enabled = true): PluginInfo {
@@ -100,10 +97,20 @@ describe('reader registration', () => {
 		expect(navPages(webPlugins, [state('qinqin-reader', 0, false)])).toEqual([]);
 	});
 
-	it('keeps page-only plugins out of the home widget slot', () => {
-		const ids = homeWidgets(webPlugins, []).map((p) => p.manifest.id);
+	it('gives the reader only its reading-time widget', () => {
+		const reader = webPlugins.find((p) => p.manifest.id === 'qinqin-reader');
 
-		expect(ids).toEqual(['qinqin-flashcards']);
+		expect((reader?.manifest.widgets ?? []).map((w) => [w.id, w.owner])).toEqual([
+			['reading-time', 'qinqin-reader']
+		]);
+	});
+});
+
+describe('isCorePlugin', () => {
+	it('recognises only the core app registry row', () => {
+		expect(isCorePlugin('qinqin-core')).toBe(true);
+		expect(isCorePlugin('qinqin-flashcards')).toBe(false);
+		expect(isCorePlugin('core')).toBe(false);
 	});
 });
 

@@ -4,7 +4,16 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { record, recordSessionOnce, sinceDaysAgo } from './events';
+import {
+	WORKSPACE_EVENTS_TTL_MS,
+	invalidateWorkspaceEvents,
+	loadWorkspaceEvents,
+	onEventLogChange,
+	postEvents,
+	record,
+	recordSessionOnce,
+	sinceDaysAgo
+} from './events';
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -176,5 +185,111 @@ describe('sinceDaysAgo', () => {
 
 		expect(sinceDaysAgo(91)).toBe('2025-12-14T12:00:00.000Z');
 		expect(new Date(sinceDaysAgo(0)).toISOString()).toBe('2026-03-15T12:00:00.000Z');
+	});
+});
+
+describe('loadWorkspaceEvents', () => {
+	const log = [{ id: 'e1', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type: 'review', payload: null }];
+
+	function logReads(): string[] {
+		return vi
+			.mocked(fetch)
+			.mock.calls.map(([url]) => String(url))
+			.filter((url) => url.startsWith('/api/events?'));
+	}
+
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async (input: RequestInfo | URL) =>
+				String(input).startsWith('/api/events?')
+					? jsonResponse(log)
+					: jsonResponse({ accepted: 1, duplicates: 0 })
+			)
+		);
+		invalidateWorkspaceEvents();
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.useRealTimers();
+	});
+
+	it('reads the full log of the workspace once for concurrent and repeated callers', async () => {
+		const [a, b] = await Promise.all([loadWorkspaceEvents(7), loadWorkspaceEvents(7)]);
+		await loadWorkspaceEvents(7);
+
+		expect(a).toBe(b);
+		expect(a).toEqual(log);
+		expect(logReads()).toEqual(['/api/events?since=1970-01-01T00:00:00Z&workspace=7']);
+	});
+
+	it('reads again after the TTL', async () => {
+		vi.useFakeTimers({ now: new Date('2026-05-01T00:00:00Z'), toFake: ['Date'] });
+		await loadWorkspaceEvents(7);
+		vi.setSystemTime(Date.now() + WORKSPACE_EVENTS_TTL_MS);
+		await loadWorkspaceEvents(7);
+
+		expect(logReads()).toHaveLength(2);
+	});
+
+	it('force reads again', async () => {
+		await loadWorkspaceEvents(7);
+		await loadWorkspaceEvents(7, { force: true });
+
+		expect(logReads()).toHaveLength(2);
+	});
+
+	it('keeps workspaces apart', async () => {
+		await loadWorkspaceEvents(7);
+		await loadWorkspaceEvents(8);
+		await loadWorkspaceEvents(7);
+
+		expect(logReads()).toEqual([
+			'/api/events?since=1970-01-01T00:00:00Z&workspace=7',
+			'/api/events?since=1970-01-01T00:00:00Z&workspace=8'
+		]);
+	});
+
+	it('does not cache a failed read', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ error: 'down' }, 500));
+		await expect(loadWorkspaceEvents(7)).rejects.toThrow();
+		expect(await loadWorkspaceEvents(7)).toEqual(log);
+		expect(logReads()).toHaveLength(2);
+	});
+
+	it.each(['review', 'read'])('a posted %s event drops the cached log of its workspace', async (type) => {
+		const changed = vi.fn();
+		const off = onEventLogChange(changed);
+		await loadWorkspaceEvents(7);
+		await loadWorkspaceEvents(8);
+		await postEvents([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type, payload: null }]);
+		await loadWorkspaceEvents(7);
+		await loadWorkspaceEvents(8);
+		off();
+
+		expect(logReads()).toHaveLength(3);
+		expect(changed).toHaveBeenCalledWith(7);
+		expect(changed).toHaveBeenCalledTimes(1);
+	});
+
+	it.each(['session', 'view', 'lookup'])('a posted %s event keeps the cached log', async (type) => {
+		await loadWorkspaceEvents(7);
+		await postEvents([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type, payload: null }]);
+		await loadWorkspaceEvents(7);
+
+		expect(logReads()).toHaveLength(1);
+	});
+
+	it('a failed post of a review still drops the cached log (it may have landed)', async () => {
+		await loadWorkspaceEvents(7);
+		vi.mocked(fetch).mockRejectedValueOnce(new TypeError('network'));
+		await expect(
+			postEvents([{ id: 'x', workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type: 'review', payload: null }])
+		).rejects.toThrow();
+		await loadWorkspaceEvents(7);
+
+		expect(logReads()).toHaveLength(2);
 	});
 });

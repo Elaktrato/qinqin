@@ -7,7 +7,8 @@ Status: agreed in conversation, builder check done; awaiting owner approval.
 
 A personal, self-hostable Chinese learning platform that the owner can reshape
 themselves. Three deliverables: a Go backend, a SvelteKit web frontend, and a
-Flutter mobile app (Android + iOS). Pluggability is the core value: dictionaries
+native Android app in Kotlin (2026-11-14 amendment; originally Flutter for
+Android + iOS). Pluggability is the core value: dictionaries
 and other content arrive as user-installable **data plugins**, while widgets,
 views, and behaviors are **feature plugins** the owner maintains personally.
 The owner studies on mobile without reliable connectivity, so the mobile app is
@@ -70,13 +71,13 @@ proves it) and can add a dictionary or a widget without touching core code.
 - Deployment target: Docker image + docker-compose stack for a Portainer
   instance (single service, no external database).
 - Web: SvelteKit in SPA (adapter-static) mode; no SSR/SEO needs.
-- Mobile: Flutter, Android + iOS, SQLite (drift) local store.
+- Mobile: native Android, Kotlin + Jetpack Compose, SQLite (Room) local store; Android only (2026-11-14 amendment).
 - Open data for seeding:
   - CC-CEDICT (~120k word entries, CC BY-SA 4.0) — dictionary seed.
   - Make Me a Hanzi (stroke graphics + medians for ~9k simplified and
     traditional characters, Arphic Public License) — stroke-order animation
-    data; rendered natively on web (Hanzi Writer) and Flutter (CustomPainter
-    or a port).
+    data; rendered natively on web and on Android (own Compose renderer and
+    stroke matcher over the same data).
   - Unihan (kRSUnicode, kTraditionalVariant/kSimplifiedVariant, kDefinition)
     — radical and simp/trad mappings, plus per-character English glosses via
     kDefinition as the built-in character dictionary (CC-CEDICT
@@ -93,6 +94,18 @@ proves it) and can add a dictionary or a widget without touching core code.
 - Licenses require attribution: the app must surface source + license per
   dictionary/scheme (the per-source tagging UI does double duty here).
 
+## Amendment 2026-11-14: Android-only Kotlin client, web first (owner's decision)
+
+- The mobile client is a **native Android app in Kotlin** (Jetpack Compose, Room),
+  replacing Flutter. iOS is out of scope. Approach C below and the iOS-driven
+  arguments in "Mobile feature-plugin loading" are kept for history; the
+  compile-time plugin registry still applies (as Kotlin modules).
+- Accepted consequences: feature plugins are implemented twice (Svelte + Kotlin),
+  as before with Dart; hanzi-writer is JavaScript, so stroke animation and
+  checking are rebuilt natively on Android over the same stroke data, aiming
+  for a more native writing feel.
+- **Web first**: most features ship on web before the Android build starts.
+
 ## Approaches
 
 ### Client stack
@@ -101,7 +114,7 @@ proves it) and can add a dictionary or a widget without touching core code.
   the owner wants best-of-breed native apps.
 - **B. Flutter for mobile *and* web** — one Dart plugin SDK; rejected: Flutter
   web is permanently a second-class web app.
-- **C. Flutter mobile + SvelteKit web (CHOSEN)** — native-grade on both
+- **C. Flutter mobile + SvelteKit web (CHOSEN; superseded by the 2026-11-14 amendment)** — native-grade on both
   surfaces; feature plugins are implemented twice (Svelte + Dart), accepted by
   the owner: AI assistance makes dual maintenance cheap for a small
   personally-maintained plugin set. Mitigation: the plugin **contract** —
@@ -278,7 +291,7 @@ possible because study events carry `workspace_id`.
 - Web (SvelteKit SPA): search (hanzi, pinyin with/without tones, zhuyin,
   meaning, level filters), hanzi/word/radical views, entry editing UI,
   plugin slots on home. Served by the Go binary.
-- Mobile (Flutter): same views, offline-first SQLite store, background sync
+- Mobile (Android, Kotlin): same views, offline-first SQLite store, background sync
   (push study events + plugin-owned data, pull deltas; entry-edit push
   arrives with a later phase), plugin slots on home + per-user plugin
   enable/disable/ordering honored. State management and DI approach =
@@ -289,7 +302,7 @@ possible because study events carry `workspace_id`.
 ```
 server/            Go backend (API + web host)
 apps/web/          SvelteKit SPA
-apps/mobile/       Flutter app
+apps/android/      Kotlin Android app
 plugins/data/      seed packs (cedict, mmah, hsk-2012, hsk-3.0, curriculum)
 plugins/feature/   heatmap (+ future: flashcards)
 docs/
@@ -311,7 +324,8 @@ setup already uses); the app speaks plain HTTP behind it.
    data-plugin ingestion, seed imports (zh + ja), edit overlays, event log.
    Done = seeded API, curl-able.
 2. **Web**: core views, search, editing, plugin host + heatmap.
-3. **Mobile**: offline store, sync, core views, plugin host + heatmap.
+3. **Mobile**: offline store, sync, core views, plugin host + heatmap. Moved
+   after the web features (2026-11-14 amendment).
 4. **Flashcards + hanzi map**: new design round before implementation.
 
 ## My calls (made without asking; reject any)
@@ -344,7 +358,7 @@ setup already uses); the app speaks plain HTTP behind it.
 - Manifest JSON Schemas (data + feature) and the Plugin SDK method surface.
 - Heatmap visual design and its metric definition (what counts as a "day
   studied").
-- Flutter architecture details (state management, sync queue implementation).
-- Stroke-order renderer choice on Flutter (CustomPainter vs existing port).
+- Android architecture details (state management, DI, sync queue implementation).
+- Stroke rendering and matching on Android: a native port of the web writing engine.
 - Test strategy: TDD for sync, import pipeline, and overlay logic; lighter
   UI coverage.

@@ -103,12 +103,14 @@ func Unregister(ctx context.Context, sqlDB *sql.DB, pluginID string) error {
 	return nil
 }
 
-// ListFor returns every plugin the user can put on their home —
-// feature plugins from the registry plus the data plugins registered
-// by pack imports — each with the user's state overlaid: default
-// state, no row in plugin_states, is enabled at order 0. The list is
-// ordered by (order, id), so equal orders stay in a stable, named
-// order.
+// ListFor returns every plugin the user can enable — feature plugins
+// from the registry plus the data plugins registered by pack imports —
+// each with the user's state overlaid: default state, no row in
+// plugin_states, is enabled at order 0. The list is ordered by
+// (order, id), so equal orders stay in a stable, named order. The
+// order is the plugin's position in the Plugins list (Settings) and of
+// its nav links; the home layout is the per-user widget layout in the
+// qinqin-core plugin data, not this order.
 func ListFor(ctx context.Context, sqlDB *sql.DB, userID int64) ([]model.PluginInfo, error) {
 	list := make([]model.PluginInfo, 0)
 	for _, load := range []func(context.Context, *sql.DB) ([]model.PluginInfo, error){
@@ -339,7 +341,9 @@ func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 }
 
 // SetState upserts the user's state for one plugin: whether it is
-// enabled on their home and where it sits in the home order.
+// enabled and its position in the Plugins list (also the order of the
+// nav links). The home layout is the per-user widget layout in the
+// qinqin-core plugin data, not this order.
 func SetState(ctx context.Context, sqlDB *sql.DB, userID int64, pluginID string, enabled bool, order int) error {
 	enabledInt := 0
 	if enabled {

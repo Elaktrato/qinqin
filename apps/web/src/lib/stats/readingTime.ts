@@ -1,0 +1,130 @@
+// Tracked reading time, derived from the reader's `read` events
+// (payload `{ bookId, seconds }`). The reader posts a burst only when it
+// lasted at least 30 s, and each event counts with the same clamping as
+// the heatmap's reading points (lib/activity/activity.ts): nothing under
+// 30 s or when not a finite number, at most 2 hours per event.
+
+import { readingPoints } from '$lib/activity/activity';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** The per-event cap: the 24 points × 5 minutes readingPoints allows. */
+export const MAX_READ_SECONDS = 2 * 60 * 60;
+
+export interface BookTime {
+	/** null when the event carried no usable book id. */
+	bookId: number | null;
+	seconds: number;
+}
+
+export interface ReadingTotals {
+	totalSeconds: number;
+	/** Today (UTC) and the 6 days before. */
+	last7Seconds: number;
+	/** Today (UTC) and the 29 days before. */
+	last30Seconds: number;
+	/** Per book, most read first (ties by book id, unknown last). */
+	books: BookTime[];
+}
+
+export interface TopBook {
+	key: string;
+	title: string;
+	seconds: number;
+	/** The book is no longer in the library (or its id was unusable). */
+	removed: boolean;
+}
+
+/** readSeconds is the seconds one read payload counts, clamped like readingPoints. */
+export function readSeconds(payload: unknown): number {
+	if (readingPoints(payload) === 0) return 0;
+	return Math.min((payload as { seconds: number }).seconds, MAX_READ_SECONDS);
+}
+
+function bookIdOf(payload: unknown): number | null {
+	const id = (payload as { bookId?: unknown } | null)?.bookId;
+	return typeof id === 'number' && Number.isInteger(id) && id > 0 ? id : null;
+}
+
+function utcDayStart(ms: number): number {
+	const date = new Date(ms);
+	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+/**
+ * readingTotals sums the read events: all time, the last 7 and 30 UTC
+ * days (each ending with today), and per book. Other event types,
+ * unparsable timestamps and payloads worth 0 s are ignored. An event
+ * dated after today (a fast device clock) counts in the total only.
+ */
+export function readingTotals(
+	events: readonly { ts: string; type: string; payload?: unknown }[],
+	now: Date
+): ReadingTotals {
+	const today = utcDayStart(now.getTime());
+	const start7 = today - 6 * DAY_MS;
+	const start30 = today - 29 * DAY_MS;
+	const perBook = new Map<number | null, number>();
+	let totalSeconds = 0;
+	let last7Seconds = 0;
+	let last30Seconds = 0;
+
+	for (const event of events) {
+		if (event.type !== 'read') continue;
+		const time = Date.parse(event.ts);
+		if (Number.isNaN(time)) continue;
+		const seconds = readSeconds(event.payload);
+		if (seconds <= 0) continue;
+
+		totalSeconds += seconds;
+		const day = utcDayStart(time);
+		if (day <= today && day >= start30) {
+			last30Seconds += seconds;
+			if (day >= start7) last7Seconds += seconds;
+		}
+		const book = bookIdOf(event.payload);
+		perBook.set(book, (perBook.get(book) ?? 0) + seconds);
+	}
+
+	const books = [...perBook.entries()]
+		.map(([bookId, seconds]) => ({ bookId, seconds }))
+		.sort(
+			(a, b) =>
+				b.seconds - a.seconds ||
+				(a.bookId ?? Number.POSITIVE_INFINITY) - (b.bookId ?? Number.POSITIVE_INFINITY)
+		);
+
+	return { totalSeconds, last7Seconds, last30Seconds, books };
+}
+
+/**
+ * topBooks names the `limit` most read books. `titles` maps book ids to
+ * titles from the library; a book not in it was removed. With `titles`
+ * null (the library could not be loaded) books are numbered instead.
+ */
+export function topBooks(
+	books: readonly BookTime[],
+	titles: ReadonlyMap<number, string> | null,
+	limit = 5
+): TopBook[] {
+	return books.slice(0, limit).map(({ bookId, seconds }) => {
+		const key = bookId === null ? 'unknown' : String(bookId);
+		if (bookId !== null && titles === null) {
+			return { key, title: `Book ${bookId}`, seconds, removed: false };
+		}
+		const title = bookId === null ? undefined : titles?.get(bookId);
+		if (title === undefined) return { key, title: 'A removed book', seconds, removed: true };
+		return { key, title: title.trim() || 'Untitled book', seconds, removed: false };
+	});
+}
+
+/** formatDuration writes seconds as "1 h 05 min", "12 min" or "< 1 min". */
+export function formatDuration(seconds: number): string {
+	const value = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+	if (value === 0) return '0 min';
+	if (value < 60) return '< 1 min';
+	const minutes = Math.floor(value / 60);
+	if (minutes < 60) return `${minutes} min`;
+	const hours = Math.floor(minutes / 60);
+	return `${hours} h ${String(minutes % 60).padStart(2, '0')} min`;
+}
