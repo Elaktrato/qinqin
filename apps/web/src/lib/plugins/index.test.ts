@@ -1,14 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
-import { findPlugin, homeWidgets, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState, visibleNavPages } from './index';
+import { findPlugin, homeWidgets, isCorePlugin, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState, visibleNavPages } from './index';
 import type { WebPlugin } from './index';
 
 function plugin(id: string): WebPlugin {
-	return {
-		manifest: { id, name: id, surfaces: ['home-widget'] },
-		component: null as unknown as Component
-	};
+	return { manifest: { id, name: id, surfaces: ['home-widget'] } };
 }
 
 function state(id: string, order: number, enabled = true): PluginInfo {
@@ -104,6 +101,20 @@ describe('reader registration', () => {
 		const ids = homeWidgets(webPlugins, []).map((p) => p.manifest.id);
 
 		expect(ids).toEqual(['qinqin-flashcards']);
+	});
+
+	it('gives the page-only reader no widgets', () => {
+		const reader = webPlugins.find((p) => p.manifest.id === 'qinqin-reader');
+
+		expect(reader?.manifest.widgets ?? []).toEqual([]);
+	});
+});
+
+describe('isCorePlugin', () => {
+	it('recognises only the core app registry row', () => {
+		expect(isCorePlugin('qinqin-core')).toBe(true);
+		expect(isCorePlugin('qinqin-flashcards')).toBe(false);
+		expect(isCorePlugin('core')).toBe(false);
 	});
 });
 

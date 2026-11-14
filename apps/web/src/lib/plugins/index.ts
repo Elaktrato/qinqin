@@ -1,11 +1,12 @@
 // The web plugin registry: a compile-time list of the feature plugins
 // this build can render. The server registry stays the source of truth
 // for what is installed and enabled; this list says what the SPA has a
-// component for, and home intersects the two.
+// component for (pages, widgets), and the shell intersects the two.
 
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
 import type { SourceCredit } from '$lib/sources/credits';
+import type { WidgetDef } from '$lib/widgets/types';
 import type { PluginStatesValue } from './states';
 import Flashcards from './flashcards/FlashcardsWidget.svelte';
 import { flashcardsManifest } from './flashcards/manifest';
@@ -24,6 +25,11 @@ export interface PluginManifest {
 	 * app is credited once, in lib/sources/coreCredits.ts, instead.
 	 */
 	sources?: SourceCredit[];
+	/**
+	 * Stats and home widgets the plugin supplies. They exist only while
+	 * the plugin is installed and enabled (lib/widgets/registry.ts).
+	 */
+	widgets?: WidgetDef[];
 }
 
 export interface PluginPage {
@@ -58,6 +64,18 @@ export function homeWidgets(plugins: WebPlugin[], states: PluginInfo[]): WebPlug
 }
 
 /**
+ * CORE_PLUGIN_ID is the core app registered as a plugin with no
+ * surfaces, only so its user-global data rows (the home layout) are
+ * accepted. It is not a feature the user can switch off.
+ */
+export const CORE_PLUGIN_ID = 'qinqin-core';
+
+/** isCorePlugin is true for the core app's own registry row. */
+export function isCorePlugin(id: string): boolean {
+	return id === CORE_PLUGIN_ID;
+}
+
+/**
  * pluginState returns the caller's server state for a web manifest id.
  * Feature plugins are registered server-side under the `qinqin-` pack
  * id (`qinqin-flashcards`) while callers may hold the short client id,
@@ -80,7 +98,7 @@ export function pluginEnabled(id: string, states: PluginInfo[]): boolean {
 /**
  * orderPlugins sorts plugins by the server state's order (ascending;
  * absent state counts as order 0) and keeps the registry order for
- * ties, so the home slot matches the Settings order.
+ * ties, so the nav matches the Settings order.
  */
 export function orderPlugins(plugins: WebPlugin[], states: PluginInfo[]): WebPlugin[] {
 	return plugins

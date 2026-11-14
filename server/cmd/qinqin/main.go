@@ -85,6 +85,12 @@ const builtinFlashcardsManifest = `{"id":"qinqin-flashcards","name":"Flashcards"
 // web build serves at /p/reader.
 const builtinReaderManifest = `{"id":"qinqin-reader","name":"Reader","version":"1.0","type":"feature","surfaces":["page"]}`
 
+// builtinCoreManifest registers the core app itself as a plugin with no
+// surfaces. It renders nothing; it exists so the plugin data routes and
+// sync accept the core app's per-user rows, such as the user-global
+// home widget layout under the key `home-layout`.
+const builtinCoreManifest = `{"id":"qinqin-core","name":"Core","version":"1.0","type":"feature","surfaces":[]}`
+
 // retiredHeatmapPlugin is the plugin id earlier builds registered for
 // the generic home heatmap. The flashcards widget replaced it; an
 // upgraded database still carries the old registry row, so startup
@@ -101,6 +107,9 @@ func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
 	}
 	if err := plugins.Register(ctx, sqlDB, []byte(builtinReaderManifest)); err != nil {
 		return fmt.Errorf("register built-in plugin qinqin-reader: %w", err)
+	}
+	if err := plugins.Register(ctx, sqlDB, []byte(builtinCoreManifest)); err != nil {
+		return fmt.Errorf("register built-in plugin qinqin-core: %w", err)
 	}
 	if err := plugins.Unregister(ctx, sqlDB, retiredHeatmapPlugin); err != nil {
 		return fmt.Errorf("unregister retired plugin %s: %w", retiredHeatmapPlugin, err)
