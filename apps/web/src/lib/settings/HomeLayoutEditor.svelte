@@ -432,22 +432,24 @@
 				<span id="widget-switch-label-{id}">On the home page</span>
 			</label>
 			{#if item.on}
-				<button
-					type="button"
-					class="secondary move"
-					id="widget-up-{id}"
-					disabled={item.position === 1}
-					aria-label="Move {item.widget.title} up"
-					onclick={() => move(item, -1)}>Move up</button
-				>
-				<button
-					type="button"
-					class="secondary move"
-					id="widget-down-{id}"
-					disabled={item.position === item.onCount}
-					aria-label="Move {item.widget.title} down"
-					onclick={() => move(item, 1)}>Move down</button
-				>
+				<span class="moves">
+					<button
+						type="button"
+						class="secondary move"
+						id="widget-up-{id}"
+						disabled={item.position === 1}
+						aria-label="Move {item.widget.title} up"
+						onclick={() => move(item, -1)}>Move up</button
+					>
+					<button
+						type="button"
+						class="secondary move"
+						id="widget-down-{id}"
+						disabled={item.position === item.onCount}
+						aria-label="Move {item.widget.title} down"
+						onclick={() => move(item, 1)}>Move down</button
+					>
+				</span>
 			{/if}
 		</div>
 	</li>
@@ -591,6 +593,12 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
+		gap: 0.5rem;
+	}
+
+	/* The two move buttons wrap as a pair. */
+	.moves {
+		display: flex;
 		gap: 0.5rem;
 	}
 
