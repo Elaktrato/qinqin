@@ -13,6 +13,7 @@ import {
 	OLD2_N3_MAX_FREQ,
 	PackError,
 	approxJlptLevels,
+	calibrate,
 	gapLevel,
 	hskWordLevels,
 	parseKanjidic2,
@@ -126,6 +127,21 @@ test('approxJlptLevels orders the added kanji by frequency, then code point', ()
 	);
 	const { levels } = approxJlptLevels('5\t\n4\t\n3\t\n2\t\n1\t\n', kd);
 	assert.deepEqual(levels[4].entries, ['誰', '俺', '宛', '闇']);
+});
+
+test('calibrate reports the split, the fitted values beside the constants and per-level scores', () => {
+	// The fixture's KANJIDIC2 kanji as a reference list: 日 is held out
+	// (U+65E5, a multiple of 5), 語 trains.
+	const kd = parseKanjidic2(kanjidic2XML(FIXTURE_KANJI));
+	const lines = calibrate('5\t日分\n4\t語畑\n3\t的岡\n2\t坊\n1\t吾誰\n', kd);
+	const text = lines.join('\n');
+	assert.match(lines[0], /^reference 9 kanji: train \d+, held out \d+ \(code point % 5 === 0\)$/);
+	assert.match(text, new RegExp(`old level 2 cut: \\d+ \\(constant ${OLD2_N3_MAX_FREQ}\\)`));
+	assert.match(text, new RegExp(`grade cuts N5\\.\\.N2: [\\d/]+ \\(constant ${GRADE_LEVEL_MAX.map(([, m]) => m).join('/')}\\)`));
+	for (const section of ['old 2 train', 'old 2 held', 'old map train', 'old map held', 'jōyō train', 'jōyō held']) {
+		assert.match(text, new RegExp(`${section} +\\d+/\\d+ \\(.*N5 \\d+/\\d+, N4 .*N1 \\d+/\\d+\\)`), section);
+	}
+	assert.doesNotMatch(text, /NaN/);
 });
 
 /** jlptFixture writes the upstream dir and a packs dir with a KANJIDIC2 fixture. */

@@ -123,8 +123,15 @@ byte.
     its kanji; those whose code point is a multiple of 5 held out). On the
     held-out kanji the old-level mapping agrees with kanjiapi.dev on 83% and
     the grade rule on 63% of the jōyō kanji; frequency-rank thresholds were
-    tried for (b) and did worse (54%). A derived level is a rough guide. The
-    numbers are recorded next to the constants in the script, and
+    tried for (b) and did worse (54%). Every kanji of kanjiapi.dev's list also
+    has an old KANJIDIC2 level, so the grade rule was calibrated on kanji
+    with an old level, while it only places kanji without one: 151 of its
+    157 are grade-8 kanji, mostly the 2010 jōyō additions such as 誰, 頃, 俺
+    and 闇, all put at N1. Its accuracy on those is unmeasured (the reference
+    list cannot measure it) and probably lower for the common ones.
+    KANJIDIC2's frequency rank is newspaper data from before 2010 and
+    under-ranks them (74 of the 151 have no rank). A derived level is a rough
+    guide. The numbers are recorded next to the constants in the script, and
     `node scripts/prepare-level-packs.mjs --calibrate <upstream-dir>` prints
     them again.
   - KANJIDIC2's `<jlpt>` field is still not imported as a scheme of its own.

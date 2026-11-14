@@ -264,6 +264,23 @@ export const OLD2_N3_MAX_FREQ = 521;
 // frequency cut beats "all N1" (train 632/761, held out 158/191). The
 // frequency rank only keeps its guard: a jōyō kanji with neither an old
 // level nor a frequency rank goes to N1.
+//
+// What these numbers do NOT say: every reference kanji has an old level,
+// so the rule was fitted and scored on kanji it never places. It only
+// places jōyō kanji WITHOUT an old level: 151 of its 157 are grade 8,
+// mostly the 2010 jōyō additions (誰 頃 俺 闇 謎 鍵 …), all put at N1. Its
+// accuracy on them is unmeasured (the reference set cannot measure it) and
+// probably lower for the common ones. KANJIDIC2's <freq> is newspaper data
+// from before 2010 and under-ranks them: 74 of the 151 have no rank, and the
+// ranked ones have a median rank of 2,156 against 1,466 for the reference
+// list's grade-8 kanji. A modern-corpus rank (the bundled Jiten word list)
+// was tried in review and scored lower on the reference set (jōyō held out
+// 55.2%; on grade 8 below all-N1), though it would put 誰 and 頃 at N3: an
+// owner judgment, not a calibration result, so it is not used.
+//
+// Grade 6 → N1 is the fitted cut (reference grade-6 kanji: N1 88, N2 57,
+// N3 43); it places no kanji today (every grade-6 kanji has an old level or
+// is in the base list) and would matter only after a KANJIDIC2 refresh.
 export const GRADE_LEVEL_MAX = [
 	['N5', 1],
 	['N4', 2],
@@ -376,7 +393,8 @@ export function calibrate(tsv, kanjidic) {
 			return `${name} ${of.filter((k) => predict(k) === name).length}/${of.length}`;
 		});
 		const ok = items.filter((k) => predict(k) === k.level).length;
-		return `${ok}/${items.length} (${((100 * ok) / items.length).toFixed(1)}%: ${per.join(', ')})`;
+		const pct = items.length === 0 ? '–' : `${((100 * ok) / items.length).toFixed(1)}%`;
+		return `${ok}/${items.length} (${pct}: ${per.join(', ')})`;
 	};
 	const best = (candidates, items, predictWith) => {
 		let top;
@@ -713,6 +731,7 @@ async function mainJlpt(args) {
 	const joyoMissing = joyo.filter(([ch]) => !listed.has(ch)).length;
 	const joyoPlaced = new Set(levels.flatMap((level) => level.entries));
 	const joyoLeft = joyo.filter(([ch]) => !joyoPlaced.has(ch)).length;
+	const gradeEight = [...kanjidic].filter(([ch, k]) => !listed.has(ch) && k.old === null && k.grade === 8).length;
 	const nameKanji = base[base.length - 1].entries.filter((ch) => (kanjidic.get(ch)?.grade ?? 0) >= 9).length;
 	const total = levels.reduce((n, level) => n + level.entries.length, 0);
 
@@ -729,7 +748,7 @@ async function mainJlpt(args) {
 				'An approximation of the JLPT N5–N1 kanji levels (the JLPT publishes no official kanji list since 2010): ' +
 				'base list kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter, provenance not stated upstream), ' +
 				'https://github.com/onlyskin/kanjiapi.dev; kanji it omits placed by qinqin (scripts/prepare-level-packs.mjs) ' +
-				'from KANJIDIC2 (CC BY-SA 4.0, © EDRDG) old JLPT level and school grade',
+				'from KANJIDIC2 (CC BY-SA 4.0, © EDRDG) old JLPT level, school grade and frequency rank',
 			format: 'json'
 		},
 		unit: 'character',
@@ -752,8 +771,9 @@ keeps its level here.
 
 Gap fill: KANJIDIC2 (dated ${kanjidicDate}), © Electronic Dictionary Research
 and Development Group (EDRDG), https://www.edrdg.org/wiki/index.php/KANJIDIC_Project,
-licensed under CC BY-SA 4.0 (see LICENSE-KANJIDIC2 in this directory, copied
-from the bundled kanjidic2 pack). The levels of the kanji the base list
+licensed under CC BY-SA 4.0 (EDRDG licence statement:
+https://www.edrdg.org/edrdg/licence.html; see LICENSE-KANJIDIC2 in this
+directory, copied from the bundled kanjidic2 pack). The levels of the kanji the base list
 omits are adapted from KANJIDIC2 data and are licensed under CC BY-SA 4.0;
 the base list's levels stay under its MIT licence. Whoever redistributes
 this pack follows both: keep both notices and licence texts, and share
@@ -778,9 +798,16 @@ c. Anything else (jinmeiyō name kanji, kanji with no grade) is not listed.
 The thresholds were calibrated against the base list itself (its
 ${listed.size} kanji are the reference; 20% held out by code point); the evaluation is recorded
 next to the constants in the script and reproduced by
-\`node scripts/prepare-level-packs.mjs --calibrate <upstream-dir>\`. On the
-held-out kanji the old-level mapping agrees with the base list on about
-four in five kanji and the grade rule on about three in five: treat a
+\`node scripts/prepare-level-packs.mjs --calibrate <upstream-dir>\`. Every
+reference kanji also has an old KANJIDIC2 level, so these are measurements
+on kanji like the ones rule a places, not like the ones rule b places. On
+the held-out kanji the old-level mapping agrees with the base list on about
+four in five. The grade rule agrees on about three in five, but that was
+measured on kanji that have an old level; rule b places only kanji without
+one, ${added.grade - gradeEight === 0 ? 'all' : `${gradeEight} of ${added.grade}`} of them grade 8, mostly the 2010 jōyō additions
+(such as 誰, 頃, 俺 and 闇), all at N1. How well it does on them is
+unmeasured, and probably worse for the common ones: KANJIDIC2's frequency
+rank is newspaper data from before 2010 and under-ranks them. Treat a
 derived level as a rough guide. ${joyoLeft === 0 ? 'Every jōyō kanji now has a level.' : `${joyoLeft} jōyō kanji still have no level.`}
 
 Order: each level lists the base kanji in file order, then the added kanji
