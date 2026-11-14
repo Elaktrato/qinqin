@@ -239,7 +239,8 @@ test('the CLI writes the pack, with no LICENSE, byte for byte on a re-run', () =
 		const chars = JSON.parse(first[3]);
 		assert.equal(chars.id, 'hsk-chars');
 		assert.equal(chars.name, 'HSK 3.0 (characters)');
-		assert.equal(chars.license, 'No licence stated by the publisher');
+		assert.equal(chars.license, 'See CTI Legal Notice; no reuse licence granted');
+		assert.match(chars.attribution, /^Source: www\.chinesetest\.cn — reproduced from the Chinese Test Service Website \(CTI\); syllabus published by CLEC/);
 		assert.match(chars.attribution, /汉字大纲, 认读字/);
 		const charLevels = JSON.parse(first[4]);
 		assert.equal(charLevels.unit, 'character');
@@ -251,15 +252,25 @@ test('the CLI writes the pack, with no LICENSE, byte for byte on a re-run', () =
 		assert.equal(manifest.name, 'HSK 3.0 (words)');
 		assert.equal(manifest.language, 'zh');
 		assert.equal(manifest.type, 'levels');
-		assert.equal(manifest.license, 'No licence stated by the publisher');
-		assert.match(manifest.attribution, /中外语言交流合作中心 \(CLEC\)/);
-		assert.match(manifest.attribution, /copyright status of the list not verified/);
+		assert.equal(manifest.license, 'See CTI Legal Notice; no reuse licence granted');
+		assert.match(manifest.attribution, /^Source: www\.chinesetest\.cn — reproduced from the Chinese Test Service Website \(CTI\); syllabus published by CLEC/);
+		assert.match(manifest.attribution, /CLEC \(中外语言交流合作中心\)/);
+		assert.match(manifest.attribution, /legal status not verified/);
 		assert.equal(manifest.version, '2025-11 (effective 2026-07)');
 
 		const levels = JSON.parse(first[1]);
 		assert.equal(levels.unit, 'word');
 		assert.deepEqual(levels.levels.map((l) => l.entries.length), [4, 1, 1, 0, 0, 0, 1]);
-		assert.match(first[2], /No licence stated by the publisher/);
+		for (const attr of [first[2], first[5]]) {
+			assert.match(attr, /No reuse licence is granted/);
+			assert.match(attr, /https:\/\/www\.chinesetest\.cn\/legal-notice/);
+			assert.match(attr, /copy-protection flag/);
+			assert.match(attr, /no licence or public-domain\nstatus is claimed/);
+			assert.match(attr, /includes only two lists from the syllabus/);
+			assert.match(attr, /It does not include the syllabus's other content/);
+			assert.match(attr, /legal status of including these lists has not been\nverified/);
+			assert.doesNotMatch(attr, /states no terms/);
+		}
 		assert.match(first[2], /[0-9a-f]{64} {2}syllabus\.pdf/);
 
 		const bad = spawnSync(process.execPath, [script], { encoding: 'utf8' });

@@ -40,8 +40,8 @@ upstream `LICENSE` where upstream has one):
 
 | Pack | Type | Language | Scheme | Contents | Licence |
 |------|------|----------|--------|----------|---------|
-| `hsk-chars` | levels | zh | HSK 3.0 (characters) | the official HSK character list, unit `character`: the characters to recognise (认读字) per level, HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413, HSK 7–9 1,148 (3,088, none repeated; the 1,200 characters to write, 书写字, assign no level) | no licence stated by the publisher; included by the project owner with attribution; copyright status not verified (no `LICENSE` file) |
-| `hsk-words` | levels | zh | HSK 3.0 (words) | the official HSK word list, unit `word`, each entry with its pinyin as reading: HSK 1 300, HSK 2 198, HSK 3 497, HSK 4 997, HSK 5 1,591, HSK 6 1,792, HSK 7–9 5,584 (from the syllabus's 11,000 rows: 300/200/500/1,000/1,600/1,800/5,600; 41 homographs repeating an easier row's form and pinyin, 本1/本2 běn, are kept once) | no licence stated by the publisher; included by the project owner with attribution; copyright status not verified (no `LICENSE` file) |
+| `hsk-chars` | levels | zh | HSK 3.0 (characters) | the official HSK character list, unit `character`: the characters to recognise (认读字) per level, HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413, HSK 7–9 1,148 (3,088, none repeated; the 1,200 characters to write, 书写字, assign no level) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
+| `hsk-words` | levels | zh | HSK 3.0 (words) | the official HSK word list, unit `word`, each entry with its pinyin as reading: HSK 1 300, HSK 2 198, HSK 3 497, HSK 4 997, HSK 5 1,591, HSK 6 1,792, HSK 7–9 5,584 (from the syllabus's 11,000 rows: 300/200/500/1,000/1,600/1,800/5,600; 41 homographs repeating an easier row's form and pinyin, 本1/本2 běn, are kept once) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
 | `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`, provenance not stated upstream; unofficial, as every N5–N1 list is; omits 172 jōyō kanji such as 分 可 無 的, and its N1 holds 247 jinmeiyō name kanji) | MIT, © 2023 Iridium Szreter |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
@@ -94,7 +94,17 @@ gitignored).
 HSK 3.0 words (`hsk-words`) and characters (`hsk-chars`) come from the official syllabus 《HSK 考试大纲》 /
 Syllabus for the Chinese Proficiency Test, published 2025-11 and effective
 2026-07, issued by 中外语言交流合作中心 (CLEC) and distributed by CTI at
-https://www.chinesetest.cn; the publisher states no licence (see the pack's
+https://www.chinesetest.cn. No reuse licence is granted: the site's Legal
+Notice (https://www.chinesetest.cn/legal-notice) says its content is
+copyrighted by CTI or the content providers, requires the source to be
+indicated, and permits reproduction only as reasonable, good-faith quoting for
+informative public use; the PDF carries a copy-protection flag. The packs
+hold only the vocabulary (word) list and the list of characters to recognise
+(认读字), as plain lists with levels (and the words' pinyin as lookup
+readings), and none of the syllabus's other content (grammar points,
+descriptions, the lists of characters to write, explanatory text). They are
+included with attribution at the project owner's decision; the legal status
+of including these lists has not been verified (see each pack's
 `ATTRIBUTION.md`). Its part "HSK 词汇大纲" is a table: serial number, level
 (1–6, 7-9), word, pinyin, part of speech; its part "HSK 汉字大纲" numbers
 the characters to recognise (认读字) per level and the characters to write
@@ -122,7 +132,9 @@ byte. For `hsk-chars` it reads the numbered columns ("1. 爱"), checks that
 each list numbers 1..N, drops the watermark by glyph height (汉, 考, 国 and
 际 are also listed characters), gives each character the level of the 认读字
 list that introduces it, and checks that every 书写字 character is recognised
-at or below its level. The 3,088 characters all resolve at seed time, and
+at or below its level. This edition lists 3,088 characters to recognise,
+not the "3,000" (300 per level, 1,200 for HSK 7–9) often quoted from the 2021
+standard. The 3,088 characters all resolve at seed time, and
 they agree with the levels derived from the words on all but 3 (店, 留, 饺).
 On the map, the word scheme shows the characters its words are written
 with, each at the lowest level of a word that uses it; a one-character word
@@ -135,7 +147,8 @@ its lowest level).
 
 The older ivankra/hsk30 packs (`hsk30-chars`, `hsk30-words`), which
 `scripts/prepare-level-packs.mjs --hsk` can still generate into the
-gitignored `plugins/data-local/`, are superseded by this list.
+gitignored `plugins/data-local/`, are superseded by the official word and
+character lists.
 
 `scripts/prepare-level-packs.mjs <upstream-dir>` rebuilds the `jlpt-kanji`
 directory byte for byte from the pinned upstream files (the download commands

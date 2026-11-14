@@ -21,17 +21,18 @@ Optional, local only (not bundled): **JLPT vocabulary** (`jlpt-words`, from open
 |---|---|---|---|
 | **CC-CEDICT** (`cedict`) | Mandarin–English words and meanings | CC BY-SA 4.0 | https://cc-cedict.org |
 | **Unihan** (`unihan`) | Radical-stroke counts, simplified/traditional variant mappings, character definitions | Unicode License v3 | https://www.unicode.org/reports/tr38/ |
-| **HSK 3.0 (characters)** (`hsk-chars`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Characters by HSK level (the characters to recognise, 认读字), HSK 1–6 and HSK 7–9 | No licence stated by the publisher; included by the project owner with attribution; copyright status of the list not verified | https://www.chinesetest.cn |
-| **HSK 3.0 (words)** (`hsk-words`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Words by HSK level, HSK 1–6 and HSK 7–9 | No licence stated by the publisher; included by the project owner with attribution; copyright status of the list not verified | https://www.chinesetest.cn |
+| **HSK 3.0 (characters)** (`hsk-chars`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Characters by HSK level (the characters to recognise, 认读字), HSK 1–6 and HSK 7–9 | No reuse licence granted; the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) allows only reasonable, good-faith quoting with the source indicated; included with attribution at the project owner's decision; legal status not verified | https://www.chinesetest.cn |
+| **HSK 3.0 (words)** (`hsk-words`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Words by HSK level, HSK 1–6 and HSK 7–9 | No reuse licence granted; the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) allows only reasonable, good-faith quoting with the source indicated; included with attribution at the project owner's decision; legal status not verified | https://www.chinesetest.cn |
 
 The older ivankra/hsk30 packs (`hsk30-chars`, `hsk30-words`), still generated
 locally by `scripts/prepare-level-packs.mjs --hsk`, are superseded by the
-official list; see "Chinese: HSK 3.0" under "Level lists".
+official word and character lists; see "Chinese: HSK 3.0" under "Level lists".
 
 Each pack directory carries its `manifest.json` (including `license` and
 `attribution`), the full license text (`LICENSE`), and credits
-(`ATTRIBUTION.md`); `hsk-words` and `hsk-chars` have no `LICENSE`, as their
-publisher states no licence, and their `ATTRIBUTION.md` says so. The dictionary files are redistributed **unmodified**;
+(`ATTRIBUTION.md`); `hsk-words` and `hsk-chars` have no `LICENSE`, as no
+reuse licence is granted for them; their `ATTRIBUTION.md` gives the CTI Legal
+Notice terms instead. The dictionary files are redistributed **unmodified**;
 the download-and-bundle procedure lives in `scripts/fetch-seeds.sh`. The level
 lists are converted (see "Level lists").
 
@@ -169,13 +170,29 @@ byte.
   via https://www.chinesetest.cn (PDF:
   https://hsk.cn-bj.ufileos.com/3.0/%E6%96%B0%E7%89%88HSK%E8%80%83%E8%AF%95%E5%A4%A7%E7%BA%B21219.pdf,
   406 pages).
-- **Licence status:** no licence stated by the publisher. The CTI site footer
-  reads "Copyright © CTI 2009-2018" and states no terms for reuse; the
-  syllabus states none either. The project owner decided to include the word
-  list with attribution; the copyright status of the list has not been
-  verified. The pack therefore has no `LICENSE` file; its `manifest.json`
-  (`license`: "No licence stated by the publisher") and `ATTRIBUTION.md`
-  record the publisher, the edition and this statement.
+- **Licence and terms** (both HSK packs): no reuse licence is granted. The
+  syllabus is published by 中外语言交流合作中心 (CLEC) and distributed by CTI
+  at https://www.chinesetest.cn. The site's
+  [Legal Notice](https://www.chinesetest.cn/legal-notice) says that the
+  site's content is copyrighted by CTI or the content providers, that whoever
+  reproduces it must indicate the source ("Source: www.chinesetest.cn",
+  "reproduced from (or quoted from) the Chinese Test Service Website"), and
+  that reproducing or quoting it is permitted only as reasonable, good-faith
+  quoting for news or informative, free public information. The syllabus PDF
+  carries a copy-protection flag (copy: no, change: no). The project includes
+  only the vocabulary (word) list and the list of characters to recognise
+  (认读字), as plain lists of words and characters with their levels (and the
+  words' pinyin as lookup readings); it does not include the syllabus's other
+  content (grammar points, task and topic descriptions, the lists of
+  characters to write, explanatory text). It includes these lists with
+  attribution at the project owner's decision; the legal status of including
+  these lists has not been verified (this is not a legal opinion), and no
+  licence or public-domain status is claimed. The packs therefore have no `LICENSE` file. Their `manifest.json`
+  (`license`: "See CTI Legal Notice; no reuse licence granted"; `attribution`
+  starting "Source: www.chinesetest.cn — reproduced from the Chinese Test
+  Service Website (CTI); syllabus published by CLEC") and `ATTRIBUTION.md`
+  record the publisher, the edition and these terms. The Sources page and the
+  character map show that attribution wherever the lists are used.
 - **Conversion:** `scripts/prepare-hsk-syllabus.mjs` reads the PDF's
   `pdftotext -tsv` word boxes and keeps each row's level, word and pinyin:
   11,000 rows, serial numbers 1–11,000 with none missing or repeated, HSK 1
@@ -199,14 +216,16 @@ byte.
   精彩纷呈 and 口哨儿.
 
 - **HSK 3.0 (characters)** (`hsk-chars`, unit `character`; bundled): the
-  character list ("HSK 汉字大纲") of the same syllabus and edition, with the
-  same licence status (no licence stated by the publisher; included by the
-  project owner with attribution; copyright status not verified). The section
+  character list ("HSK 汉字大纲") of the same syllabus and edition, under the
+  same terms (see "Licence and terms" above). The section
   (PDF pages 356–384) has one numbered list of characters to recognise
   (认读字) per level and lists of characters to write (书写字). A
   character's level is the level of the 认读字 list that introduces it:
   HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413,
-  HSK 7–9 1,148, 3,088 characters, none listed twice. The 书写字 lists
+  HSK 7–9 1,148, 3,088 characters, none listed twice. This edition lists
+  3,088 characters to recognise, not the "3,000" (300 per level for HSK 1–6,
+  1,200 for HSK 7–9) often quoted from the 2021 standard; the count is the
+  syllabus's own, not an extraction error. The 书写字 lists
   (HSK 1–2 100, HSK 3 150, HSK 4 150, HSK 5 150, HSK 6 150, HSK 7–9 500,
   1,200 in all) assign no level; each lists only characters recognised at or
   below its level. Each list numbers 1..N with no gap or repeat (the
@@ -219,12 +238,13 @@ byte.
   3,088 resolve to character entries at seed time.
 
 The ivankra/hsk30 packs (`hsk30-chars`, `hsk30-words`, an MIT-labelled
-community compilation of the 2021 standard) are superseded by this list;
+community compilation of the 2021 standard) are superseded by the official
+word and character lists;
 `scripts/prepare-level-packs.mjs --hsk` still generates them into the
 gitignored `plugins/data-local/` for local use only.
 
-The JLPT lists are not official releases; the HSK 3.0 word list is the
-official syllabus's. The project is not affiliated with either test.
+The JLPT lists are not official releases; the HSK 3.0 word and character
+lists are the official syllabus's. The project is not affiliated with either test.
 
 The hand-written CC0 samples `hsk-mini` and `jlpt-mini` live in `plugins/samples/`,
 outside the default seed root (their badges would duplicate the real lists); the

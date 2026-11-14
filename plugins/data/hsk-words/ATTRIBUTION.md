@@ -10,14 +10,33 @@ The words of the official HSK syllabus, grouped by level, easiest first:
 - Distributed by: Chinese Testing International (CTI), https://www.chinesetest.cn
 - File: https://hsk.cn-bj.ufileos.com/3.0/%E6%96%B0%E7%89%88HSK%E8%80%83%E8%AF%95%E5%A4%A7%E7%BA%B21219.pdf
 
-## Licence
+## Licence and terms
 
-No licence stated by the publisher. The CTI website footer reads
-"Copyright © CTI 2009-2018"; neither the site nor the syllabus states terms
-for reusing the list. The project owner decided to include the word list
-with this attribution. The copyright status of the list has not been
-verified. There is no LICENSE file in this directory because there is no
-licence text to copy.
+Source: www.chinesetest.cn — reproduced from the Chinese Test Service Website (CTI); syllabus published by CLEC (中外语言交流合作中心).
+
+No reuse licence is granted for the syllabus. It is published by
+中外语言交流合作中心 (CLEC) and distributed by Chinese Testing International
+(CTI) at https://www.chinesetest.cn. The site's Legal Notice,
+https://www.chinesetest.cn/legal-notice, says that the site's content is copyrighted by CTI
+or the content providers; that whoever reproduces it must indicate the
+source ("Source: www.chinesetest.cn", "reproduced from (or quoted from) the
+Chinese Test Service Website"); and that reproducing or quoting it is
+permitted only as reasonable, good-faith quoting for news or informative,
+free public information. The syllabus PDF carries a copy-protection flag
+(copy: no, change: no).
+
+The project includes only two lists from the syllabus: the vocabulary
+(word) list and the list of characters to recognise (认读字), as plain lists
+of words and characters with their levels (and the words' pinyin, used as
+lookup readings). It does not include the syllabus's other content: the
+grammar points, the task and topic descriptions, the lists of characters to
+write (书写字; only their sizes are reported) and the explanatory text.
+
+The project includes these lists with this attribution at the project
+owner's decision. The legal status of including these lists has not been
+verified; this is not a legal opinion, and no licence or public-domain
+status is claimed. There is no LICENSE file in this directory because
+there is no licence text to copy.
 
 ## Conversion
 

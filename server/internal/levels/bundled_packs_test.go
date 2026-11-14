@@ -22,8 +22,8 @@ const bundledPacks = "../../../plugins/data"
 // scripts/prepare-hsk-syllabus.mjs (hsk-words, hsk-chars) load as valid levels packs
 // with their scheme names, units and levels in easy-to-hard order, carry
 // a licence statement and attribution (with the licence file, or for the
-// HSK syllabus, whose publisher states no licence, that statement in
-// ATTRIBUTION.md), and import cleanly — into an empty lexicon every form
+// HSK syllabus, which grants no reuse licence, the CTI Legal Notice terms
+// in ATTRIBUTION.md), and import cleanly — into an empty lexicon every form
 // is skipped and reported, none fails the import.
 func TestBundledLevelPacks(t *testing.T) {
 	jlpt := []string{"N5", "N4", "N3", "N2", "N1"}
@@ -39,10 +39,10 @@ func TestBundledLevelPacks(t *testing.T) {
 		// 11,000 syllabus rows less 41 homographs with the reading of an
 		// easier one (本1, 本2 běn).
 		{"hsk-words", "HSK 3.0 (words)", "zh", "word", hsk, 10959,
-			"No licence stated by the publisher", []string{"ATTRIBUTION.md"}},
+			"See CTI Legal Notice; no reuse licence granted", []string{"ATTRIBUTION.md"}},
 		// The syllabus's 认读字 lists: 246, 125, 284, 441, 431, 413, 1,148.
 		{"hsk-chars", "HSK 3.0 (characters)", "zh", "character", hsk, 3088,
-			"No licence stated by the publisher", []string{"ATTRIBUTION.md"}},
+			"See CTI Legal Notice; no reuse licence granted", []string{"ATTRIBUTION.md"}},
 	}
 	for _, c := range cases {
 		t.Run(c.id, func(t *testing.T) {

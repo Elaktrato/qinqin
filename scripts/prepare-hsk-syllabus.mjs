@@ -18,12 +18,18 @@
 // HSK（七—九级）认读字, then 书写字 (characters to write) lists,
 // HSK（一级）~（二级）书写字, HSK（三级）书写字 … HSK（七—九级）书写字.
 //
-// The publisher states no licence for the syllabus (the site footer reads
-// "Copyright © CTI 2009-2018"). The project owner chose to include the word
-// and character lists with attribution; their copyright status has not
-// been verified. Never
-// commit the PDF or any text extracted from it (they are gitignored): only
-// the generated pack is committed.
+// No reuse licence is granted for the syllabus. The CTI site's Legal Notice
+// (https://www.chinesetest.cn/legal-notice) says its content is copyrighted
+// by CTI or the content providers, requires the source to be indicated, and
+// permits reproduction only as reasonable, good-faith quoting for
+// informative public use; the PDF carries a copy-protection flag. The
+// project includes only the word list and the recognition character list,
+// as plain lists with levels (and pinyin readings), nothing else of the
+// syllabus, with attribution at the project owner's decision; the legal
+// status of including these lists has not been verified (see
+// LICENCE_SECTION). Never commit the PDF or any text
+// extracted from it (they are gitignored): only the generated packs are
+// committed.
 //
 // Usage (a maintainer step; nothing here touches the network):
 //
@@ -336,7 +342,44 @@ function sha256(buffer) {
 
 const fmt = (n) => n.toLocaleString('en-US');
 
-export const LICENSE_TEXT = 'No licence stated by the publisher';
+export const LEGAL_NOTICE_URL = 'https://www.chinesetest.cn/legal-notice';
+export const LICENSE_TEXT = 'See CTI Legal Notice; no reuse licence granted';
+// The source wording the Legal Notice requires (§3, §6), first in every
+// pack's attribution.
+export const SOURCE_TEXT =
+	'Source: www.chinesetest.cn — reproduced from the Chinese Test Service Website (CTI); syllabus published by CLEC';
+
+// LICENCE_SECTION is the "Licence and terms" part of both packs'
+// ATTRIBUTION.md. It states the facts and claims nothing beyond them.
+export const LICENCE_SECTION = [
+	'## Licence and terms',
+	'',
+	`${SOURCE_TEXT} (中外语言交流合作中心).`,
+	'',
+	'No reuse licence is granted for the syllabus. It is published by',
+	'中外语言交流合作中心 (CLEC) and distributed by Chinese Testing International',
+	'(CTI) at https://www.chinesetest.cn. The site\'s Legal Notice,',
+	`${LEGAL_NOTICE_URL}, says that the site's content is copyrighted by CTI`,
+	'or the content providers; that whoever reproduces it must indicate the',
+	'source ("Source: www.chinesetest.cn", "reproduced from (or quoted from) the',
+	'Chinese Test Service Website"); and that reproducing or quoting it is',
+	'permitted only as reasonable, good-faith quoting for news or informative,',
+	'free public information. The syllabus PDF carries a copy-protection flag',
+	'(copy: no, change: no).',
+	'',
+	'The project includes only two lists from the syllabus: the vocabulary',
+	'(word) list and the list of characters to recognise (认读字), as plain lists',
+	'of words and characters with their levels (and the words\' pinyin, used as',
+	'lookup readings). It does not include the syllabus\'s other content: the',
+	'grammar points, the task and topic descriptions, the lists of characters to',
+	'write (书写字; only their sizes are reported) and the explanatory text.',
+	'',
+	'The project includes these lists with this attribution at the project',
+	'owner\'s decision. The legal status of including these lists has not been',
+	'verified; this is not a legal opinion, and no licence or public-domain',
+	'status is claimed. There is no LICENSE file in this directory because',
+	'there is no licence text to copy.'
+];
 
 export function manifest(ed) {
 	return {
@@ -347,10 +390,9 @@ export function manifest(ed) {
 		language: 'zh',
 		license: LICENSE_TEXT,
 		attribution:
-			`《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, word list (HSK 词汇大纲), ` +
-			`published ${ed.published}, effective ${ed.effective}, 中外语言交流合作中心 (CLEC), ` +
-			'distributed by CTI, https://www.chinesetest.cn — included by the project owner with attribution; ' +
-			'copyright status of the list not verified',
+			`${SOURCE_TEXT} (中外语言交流合作中心). 《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, ` +
+			`word list (HSK 词汇大纲), published ${ed.published}, effective ${ed.effective}; ` +
+			"included with attribution at the project owner's decision, legal status not verified",
 		format: 'json'
 	};
 }
@@ -374,14 +416,7 @@ export function attribution({ ed, rows, levels, stats, pdfSum }) {
 		'- Distributed by: Chinese Testing International (CTI), https://www.chinesetest.cn',
 		`- File: ${PDF_URL}`,
 		'',
-		'## Licence',
-		'',
-		'No licence stated by the publisher. The CTI website footer reads',
-		'"Copyright © CTI 2009-2018"; neither the site nor the syllabus states terms',
-		'for reusing the list. The project owner decided to include the word list',
-		'with this attribution. The copyright status of the list has not been',
-		'verified. There is no LICENSE file in this directory because there is no',
-		'licence text to copy.',
+		...LICENCE_SECTION,
 		'',
 		'## Conversion',
 		'',
@@ -560,10 +595,9 @@ export function charsManifest(ed) {
 		language: 'zh',
 		license: LICENSE_TEXT,
 		attribution:
-			`《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, character list (HSK 汉字大纲, 认读字), ` +
-			`published ${ed.published}, effective ${ed.effective}, 中外语言交流合作中心 (CLEC), ` +
-			'distributed by CTI, https://www.chinesetest.cn — included by the project owner with attribution; ' +
-			'copyright status of the list not verified',
+			`${SOURCE_TEXT} (中外语言交流合作中心). 《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, ` +
+			`character list (HSK 汉字大纲, 认读字), published ${ed.published}, effective ${ed.effective}; ` +
+			"included with attribution at the project owner's decision, legal status not verified",
 		format: 'json'
 	};
 }
@@ -585,14 +619,7 @@ export function charsAttribution({ ed, levels, stats, pdfSum }) {
 		'- Distributed by: Chinese Testing International (CTI), https://www.chinesetest.cn',
 		`- File: ${PDF_URL}`,
 		'',
-		'## Licence',
-		'',
-		'No licence stated by the publisher. The CTI website footer reads',
-		'"Copyright © CTI 2009-2018"; neither the site nor the syllabus states terms',
-		'for reusing the list. The project owner decided to include the character',
-		'list with this attribution. The copyright status of the list has not been',
-		'verified. There is no LICENSE file in this directory because there is no',
-		'licence text to copy.',
+		...LICENCE_SECTION,
 		'',
 		'## Conversion',
 		'',

@@ -613,8 +613,8 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
-| [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-chars`) | Chinese: the official HSK 3.0 character list, the characters to recognise (认读字) per level, HSK 1–6 and HSK 7–9 (3,088 characters; same edition) | No licence stated by the publisher; included by the project owner with attribution; copyright status not verified |
-| [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-words`) | Chinese: the official HSK 3.0 word list, HSK 1–6 and HSK 7–9 (11,000 words; edition 2025-11, effective 2026-07; CLEC, distributed by CTI) | No licence stated by the publisher; included by the project owner with attribution; copyright status not verified |
+| [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-chars`) | Chinese: the official HSK 3.0 character list, the characters to recognise (认读字) per level, HSK 1–6 and HSK 7–9 (3,088 characters; same edition) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
+| [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-words`) | Chinese: the official HSK 3.0 word list, HSK 1–6 and HSK 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07; CLEC, distributed by CTI) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
 | [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) (`jlpt-kanji`) | Japanese: JLPT N5–N1 kanji levels (an unofficial reconstruction of unstated provenance; the JLPT publishes no kanji list; omits 172 jōyō kanji such as 分 and 的, see docs/sources.md) | MIT (© 2023 Iridium Szreter) |
 
 **JLPT vocabulary is not bundled.** Its upstream licence chain could not be
@@ -644,17 +644,28 @@ Details: [plugins/data/README.md](plugins/data/README.md).
 **HSK 3.0 characters and words** come from the official syllabus 《HSK 考试大纲》 / Syllabus for
 the Chinese Proficiency Test (published 2025-11, effective 2026-07), issued by
 中外语言交流合作中心 (CLEC) and distributed by Chinese Testing International
-(CTI) at [chinesetest.cn](https://www.chinesetest.cn). The publisher states no
-licence for it (the site footer reads "Copyright © CTI 2009-2018"); the
-project owner included the lists with attribution, and their copyright
-status has not been verified. `scripts/prepare-hsk-syllabus.mjs` converts the
+(CTI) at [chinesetest.cn](https://www.chinesetest.cn). No reuse licence is
+granted: the site's [Legal Notice](https://www.chinesetest.cn/legal-notice)
+says its content is copyrighted by CTI or the content providers, requires
+the source to be indicated ("Source: www.chinesetest.cn", "reproduced from
+the Chinese Test Service Website"), and permits reproduction only as
+reasonable, good-faith quoting for informative public use; the syllabus PDF
+carries a copy-protection flag. The project includes only the vocabulary
+(word) list and the list of characters to recognise (认读字), as plain lists of
+words and characters with their levels (and the words' pinyin as lookup
+readings), and none of the syllabus's other content (grammar points,
+descriptions, the lists of characters to write, explanatory text). It
+includes these lists with attribution at the project owner's decision; the
+legal status of including these lists has not been verified (no legal
+opinion). The
+Sources page and the character map show the required source line. `scripts/prepare-hsk-syllabus.mjs` converts the
 PDF's vocabulary table (11,000 rows, HSK 1 300, HSK 2 200, HSK 3 500, HSK 4
 1,000, HSK 5 1,600, HSK 6 1,800, HSK 7–9 5,600) into `plugins/data/hsk-words`
 and its character lists (认读字: HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441,
 HSK 5 431, HSK 6 413, HSK 7–9 1,148) into `plugins/data/hsk-chars`, in one run;
 the PDF and any text extracted from it are never committed. The older,
 community-compiled ivankra/hsk30 packs that `prepare-level-packs.mjs --hsk`
-generates locally are superseded by it. Details:
+generates locally are superseded by the official lists. Details:
 [plugins/data/README.md](plugins/data/README.md).
 
 The dictionary files are redistributed **unmodified**; the Jiten list is a

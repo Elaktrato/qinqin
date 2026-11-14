@@ -214,25 +214,36 @@
 		</p>
 		{#if installedPacks.has('hsk-words')}
 			<p class="notice">
-				The HSK 3.0 words are the official word list (HSK 词汇大纲) of the
-				《HSK 考试大纲》 Syllabus for the Chinese Proficiency Test, edition published 2025-11 and
-				effective 2026-07, issued by 中外语言交流合作中心 (CLEC) and distributed by CTI at
-				<a href="https://www.chinesetest.cn" rel="noreferrer">chinesetest.cn</a>. The publisher
-				states no licence for the list, and its copyright status has not been verified; it is
-				included by the project owner with this attribution. Words badge with their level, and the
-				character map groups each character at the lowest level of a word written with it.
+				The HSK 3.0 words are the official word list (HSK <span lang="zh-Hans">词汇大纲</span>) of
+				the <span lang="zh-Hans">《HSK 考试大纲》</span> Syllabus for the Chinese Proficiency Test,
+				edition published 2025-11 and effective 2026-07. Words badge with their level, and the
+				character map's word grouping puts each character at the lowest level of a word written
+				with it.
 			</p>
 		{/if}
 		{#if installedPacks.has('hsk-chars')}
 			<p class="notice">
-				The HSK 3.0 characters are the official character list (HSK 汉字大纲, the characters to
-				recognise, 认读字, of each level) of the same syllabus, edition published 2025-11 and
-				effective 2026-07, issued by 中外语言交流合作中心 (CLEC) and distributed by CTI at
-				<a href="https://www.chinesetest.cn" rel="noreferrer">chinesetest.cn</a>. The publisher
-				states no licence for the list, and its copyright status has not been verified; it is
-				included by the project owner with this attribution. A character's level is the level
-				whose list introduces it; the syllabus's lists of characters to write (书写字) assign no
-				level here.
+				The HSK 3.0 characters are the official character list (HSK
+				<span lang="zh-Hans">汉字大纲</span>, the characters to recognise,
+				<span lang="zh-Hans">认读字</span>, of each level) of the same syllabus and edition. A
+				character's level is the level whose list introduces it; the syllabus's lists of
+				characters to write (<span lang="zh-Hans">书写字</span>) assign no level here.
+			</p>
+		{/if}
+		{#if installedPacks.has('hsk-words') || installedPacks.has('hsk-chars')}
+			<p class="notice">
+				Source: <a href="https://www.chinesetest.cn" rel="noreferrer">www.chinesetest.cn</a> —
+				reproduced from the Chinese Test Service Website (CTI); syllabus published by CLEC
+				(<span lang="zh-Hans">中外语言交流合作中心</span>). No reuse licence is granted: the
+				site's <a href="https://www.chinesetest.cn/legal-notice" rel="noreferrer">Legal Notice</a>
+				says its content is copyrighted by CTI or the content providers, requires the source to be
+				indicated, and permits reproduction only as reasonable, good-faith quoting for informative
+				public use. The syllabus PDF carries a copy-protection flag. The project includes only the
+				vocabulary (word) list and the list of characters to recognise, as plain lists of words and
+				characters with their levels (and the words' pinyin as lookup readings), and none of the
+				syllabus's other content (grammar points, descriptions, the lists of characters to write,
+				explanatory text). It includes these lists with this attribution at the project owner's
+				decision; the legal status of including these lists has not been verified.
 			</p>
 		{/if}
 		{#if installedPacks.has('jlpt-kanji')}
@@ -258,10 +269,11 @@
 		{#if installedPacks.has('hsk30-chars') || installedPacks.has('hsk30-words')}
 			<p class="notice">
 				This instance's operator also installed older, locally generated HSK 3.0 lists, superseded
-				by the bundled official word list. They come from
+				by the bundled official word and character lists. They come from
 				<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a> (code MIT,
 				data labelled MIT), which derives them from copies of the 2021 Ministry of Education
-				standard. The ministry's site claims copyright (版权所有：中华人民共和国教育部) and the
+				standard. The ministry's site claims copyright
+				(<span lang="zh-Hans">版权所有：中华人民共和国教育部</span>) and the
 				hsk30 README suggests the list may be public domain, so its copyright status is uncertain.
 			</p>
 		{/if}
