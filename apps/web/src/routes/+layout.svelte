@@ -56,9 +56,12 @@
 		return fallback;
 	}
 
+	// A guard redirect replaces the history entry it leaves: Back from
+	// home after signing in must not land on /login only to be sent home
+	// again (a trap that also swallows the page before /login).
 	async function navigate(target: string): Promise<void> {
 		try {
-			await goto(target);
+			await goto(target, { replaceState: true });
 		} catch {
 			// A redirect from the API layer is already in flight.
 		}
