@@ -9,6 +9,11 @@ describe('badgeScheme', () => {
 		expect(badgeScheme('JLPT (kanji)')).toBe('JLPT kanji');
 	});
 
+	it('keeps an approximate scheme visibly approximate, shortened', () => {
+		expect(badgeScheme('JLPT kanji (approximate)')).toBe('JLPT kanji (approx.)');
+		expect(badgeScheme('JLPT kanji (Approximate) ')).toBe('JLPT kanji (approx.)');
+	});
+
 	it('keeps any other scheme name as it is', () => {
 		expect(badgeScheme('My curriculum')).toBe('My curriculum');
 		expect(badgeScheme('  Jōyō  ')).toBe('Jōyō');

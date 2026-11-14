@@ -82,7 +82,7 @@ func TestDefaultRootHoldsNoDictionarySamples(t *testing.T) {
 // TestDefaultRootHoldsNoLevelSamples: with the real JLPT kanji list bundled
 // (JLPT vocabulary and HSK 3.0 are optional local packs, not bundled), a
 // hand-written sample level pack would only add a second, duplicate badge
-// ("JLPT N5 mini (sample) N5" next to "JLPT (kanji) N5"), so a default seed
+// ("JLPT N5 mini (sample) N5" next to "JLPT kanji (approximate) N5"), so a default seed
 // installs real schemes only.
 func TestDefaultRootHoldsNoLevelSamples(t *testing.T) {
 	packs, err := findPacksIn(committedPacks)
