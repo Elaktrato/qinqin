@@ -10,7 +10,6 @@ import {
 	filterCells,
 	groupOptions,
 	masteryGlyphs,
-	schemeCharMembers,
 	sectionStats,
 	type SchemeLevelMembers,
 	type CellState,
@@ -545,43 +544,11 @@ describe('filterCells', () => {
 	});
 });
 
-describe('schemeCharMembers', () => {
-	it('splits the words of a word-unit level into their Han characters', () => {
-		const set = schemeCharMembers(
-			[
-				{ written: '你好', kind: 'word' },
-				{ written: '食べる', kind: 'word' },
-				{ written: 'OK', kind: 'word' },
-				{ written: '好', kind: 'character' }
-			],
-			'word'
-		);
-		expect([...set]).toEqual(['你', '好', '食']);
-	});
-
-	it('counts astral Han characters as one glyph', () => {
-		expect([...schemeCharMembers([{ written: '𠮷野家', kind: 'word' }], 'word')]).toEqual([
-			'𠮷',
-			'野',
-			'家'
-		]);
-	});
-
-	it('takes the character entries of a character-unit level', () => {
-		const set = schemeCharMembers(
-			[
-				{ written: '学', kind: 'character' },
-				{ written: '学校', kind: 'word' }
-			],
-			'character'
-		);
-		expect([...set]).toEqual(['学']);
-	});
-
+describe('scheme sections', () => {
 	it('the lowest level wins when built into sections', () => {
 		const levels: SchemeLevelMembers[] = [
-			{ levelId: 1, name: '1', chars: schemeCharMembers([{ written: '你好', kind: 'word' }], 'word') },
-			{ levelId: 2, name: '2', chars: schemeCharMembers([{ written: '好看', kind: 'word' }], 'word') }
+			{ levelId: 1, name: '1', chars: new Set(['你', '好']) },
+			{ levelId: 2, name: '2', chars: new Set(['好', '看']) }
 		];
 		const sections = buildSections([row(1, '好'), row(2, '看')], 'scheme:1', levels);
 		expect(sections.map((s) => [s.label, glyphs(s)])).toEqual([
