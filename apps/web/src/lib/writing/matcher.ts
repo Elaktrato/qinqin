@@ -51,7 +51,8 @@ function judge(ink: readonly Pt[], candidate: readonly Pt[]): Judged {
 		if (i === a.length - 1) endErr = d;
 	}
 	// Endpoint anchoring: aligned ink start and end must sit near the candidate's.
-	if (startErr > MATCH.maxEnd * lenB || endErr > MATCH.maxEnd * lenB) return { ok: false, reason: 'shape' };
+	const tol = Math.max(MATCH.maxEnd * lenB, MATCH.minEndTol);
+	if (startErr > tol || endErr > tol) return { ok: false, reason: 'shape' };
 	const score = sum / a.length / (lenB || 1);
 	if (score > MATCH.maxShape) return { ok: false, reason: 'shape' };
 	return { ok: true, score };

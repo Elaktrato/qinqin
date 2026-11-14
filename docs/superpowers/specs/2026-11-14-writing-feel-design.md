@@ -77,7 +77,7 @@ so it is built as a small, pure engine with shared test cases.
   bounding box, centroid, start/end direction vectors, coordinate transform
   from the 1024 data box (y up) to pad pixels.
 - `matcher.ts` — pure:
-  `matchStroke(ink, medians, next, maxJoin = 3) → { matched: number, score } | { miss: reason }`
+  `matchStroke(ink, medians, next) → MatchResult` (`{ kind: 'match', strokes, score } | { kind: 'miss', reason } | { kind: 'ignored' }`; joins up to `maxJoin = 3` strokes)
   compares the learner's ink against the expected stroke `medians[next]`, and
   against the joined candidates `medians[next..next+k-1]` for k = 2..maxJoin
   (consecutive medians concatenated end-to-start). Accept the candidate with the
@@ -109,7 +109,7 @@ For a candidate (one stroke or a join):
 Starting values (to be tuned): 32 resample points, centroid offset ≤ 0.3 of
 the box, scale 0.5–2.0, direction cosine ≥ 0.5, shape distance ≤ 0.2.
 
-**Ruling: endpoint anchoring** — fixes later-stroke/scribble false accepts at starting values — cost if wrong: slightly stricter on sloppy ends; tune `maxEnd` in Task 6. After mapping the ink into the candidate frame, the aligned ink start and end must each lie within `maxEnd` (0.08 x candidate path length) of the candidate's start and end. The ruling started at 0.35; against the fixtures, 0.08 is the loosest value that rejects every wrong-stroke and scribble case while all genuine cases pass (0.06 already rejects genuine noisy strokes).
+**Ruling: endpoint anchoring** — fixes later-stroke/scribble false accepts at starting values — cost if wrong: slightly stricter on sloppy ends; tune `maxEnd` in Task 6. After mapping the ink into the candidate frame, the aligned ink start and end must each lie within `max(maxEnd x candidate path length, minEndTol)` (0.08 and 0.04) of the candidate's start and end. The absolute floor `minEndTol` was added after a whole-branch review: the purely relative tolerance was under a millimetre for short strokes, so a noise model of a hand drawing with +-2% wobble passed only 5% of short strokes; with the floor it passes 100% (long strokes unchanged) and scribble false accepts stay at 0. The ruling started at 0.35; against the fixtures, 0.08 is the loosest value that rejects every wrong-stroke and scribble case while all genuine cases pass (0.06 already rejects genuine noisy strokes).
 Deviation: the direction rule (start nearer start than end) is judged relative to each path's centroid, so a shifted stroke is not mistaken for a reversed one; placement is judged separately.
 
 ### Writing pad (`WritingPad.svelte`, used by `WritingCard`)

@@ -12,7 +12,7 @@ describe('MATCH', () => {
 	it('holds the spec starting values', () => {
 		expect(MATCH).toEqual({
 			resample: 32, maxOffset: 0.3, minScale: 0.5, maxScale: 2.0, minCos: 0.5,
-			maxShape: 0.2, maxEnd: 0.08, maxGap: 0.2, maxJoin: 3, minInk: 0.02
+			maxShape: 0.2, maxEnd: 0.08, minEndTol: 0.04, maxGap: 0.2, maxJoin: 3, minInk: 0.02
 		});
 	});
 });
@@ -27,4 +27,17 @@ describe('matchStroke fixtures', () => {
 		};
 		it(name, run);
 	}
+});
+
+describe('endpoint tolerance floor', () => {
+	const line = [[{ x: 0.4, y: 0.5 }, { x: 0.5, y: 0.5 }]];
+	it('accepts a short stroke whose end overshoots by a hand-sized amount', () => {
+		const ink = [{ x: 0.4, y: 0.5 }, { x: 0.46, y: 0.5 }, { x: 0.5, y: 0.53 }];
+		const r = matchStroke(ink, line, 0);
+		expect(r.kind).toBe('match');
+	});
+	it('still rejects an endpoint far off even for a short stroke', () => {
+		const ink = [{ x: 0.4, y: 0.5 }, { x: 0.5, y: 0.5 }, { x: 0.5, y: 0.62 }];
+		expect(matchStroke(ink, line, 0).kind).toBe('miss');
+	});
 });
