@@ -38,10 +38,7 @@
 	aria-hidden="true"
 	focusable="false"
 >
-	{#if name === 'home'}
-		<path d="M3.5 10.5 12 3.5l8.5 7" />
-		<path d="M5.5 9v11h4.5v-6h4v6h4.5V9" />
-	{:else if name === 'search'}
+	{#if name === 'search'}
 		<circle cx="10.5" cy="10.5" r="6.5" />
 		<path d="M15.5 15.5 20.5 20.5" />
 	{:else if name === 'map'}

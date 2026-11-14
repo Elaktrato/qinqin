@@ -63,6 +63,15 @@
 		}
 	}
 
+	// Focus the content itself (not just scroll to it), so the next Tab
+	// continues from there; the URL keeps no #main-content fragment.
+	function skipToContent(event: MouseEvent): void {
+		const target = document.getElementById('main-content');
+		if (!target) return;
+		event.preventDefault();
+		target.focus();
+	}
+
 	onMount(async () => {
 		// A workspace deleted in another tab or on another device: the
 		// first "workspace not found" reloads the list and falls back.
@@ -123,6 +132,8 @@
 </script>
 
 {#if allowed}
+	<!-- First focusable element: jumps past the header and its nav. -->
+	<a class="skip-link" href="#main-content" onclick={skipToContent}>Skip to content</a>
 	<div class="app" class:with-bar={signedIn}>
 		{#if signedIn}
 			<header class="shell">
@@ -131,8 +142,8 @@
 					class="brand"
 					href="/"
 					lang="zh"
-					aria-label={APP_NAME}
-					title={APP_NAME}
+					aria-label={`${APP_NAME}, home`}
+					title={`${APP_NAME} – home`}
 					aria-current={path === '/' ? 'page' : undefined}>{APP_NAME_HANZI}</a
 				>
 
@@ -189,7 +200,7 @@
 			{/if}
 		</div>
 
-		<div class="content">
+		<div class="content" id="main-content" tabindex="-1">
 			{#if signedIn && noWorkspaces}
 				<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
 					<h2 id="empty-workspaces-heading">Create your first workspace</h2>
@@ -250,6 +261,32 @@
 
 	.content {
 		flex: 1 0 auto;
+	}
+
+	/* Focused by the skip link only; a ring around the whole page would
+	   be noise. */
+	.content:focus {
+		outline: none;
+	}
+
+	.skip-link {
+		position: absolute;
+		top: 0.5rem;
+		left: 0.5rem;
+		z-index: 100;
+		padding: 0.5rem 0.9rem;
+		border-radius: 0.5rem;
+		background: Canvas;
+		color: CanvasText;
+		font-weight: 600;
+		box-shadow: 0 0.125rem 0.75rem rgb(0 0 0 / 0.2);
+		transform: translateY(-200%);
+	}
+
+	.skip-link:focus {
+		transform: none;
+		outline: 2px solid #0b6bcb;
+		outline-offset: 2px;
 	}
 
 	.shell {
