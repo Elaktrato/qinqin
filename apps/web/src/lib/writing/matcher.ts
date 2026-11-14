@@ -75,6 +75,20 @@ export function matchStroke(ink: readonly Pt[], medians: readonly Pt[][], next: 
 		// Ties prefer fewer strokes: only a strictly better score replaces.
 		if (j.ok && (best === null || j.score < best.score)) best = { strokes: idx, score: j.score };
 	}
-	if (best) return { kind: 'match', ...best };
+	if (best) {
+		// Parallel strokes (三, 川, 目, 王): ink that fits a later stroke clearly better
+		// than the expected one was drawn out of order, however well it fits the expected one.
+		const where = centroid(resample(ink, MATCH.resample));
+		const bestPath = joinPaths(best.strokes.map((i) => medians[i]));
+		const away = dist(where, centroid(resample(bestPath, MATCH.resample)));
+		const after = best.strokes[best.strokes.length - 1] + 1;
+		for (let k = after; k <= next + MATCH.lookahead && k < medians.length; k++) {
+			const nearer = dist(where, centroid(resample(medians[k], MATCH.resample)));
+			if (nearer < away * MATCH.laterRatio && away - nearer > MATCH.laterGain && judge(ink, medians[k]).ok) {
+				return { kind: 'miss', reason: 'shape' };
+			}
+		}
+		return { kind: 'match', ...best };
+	}
 	return { kind: 'miss', reason: (single as { reason: 'direction' | 'shape' | 'placement' }).reason };
 }

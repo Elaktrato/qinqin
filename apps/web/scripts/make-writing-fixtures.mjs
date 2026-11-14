@@ -5,7 +5,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const CHARS = ['了', '子', '糸', '纟', '红', '口', '十', '人', '永', '我', '好'];
+const CHARS = ['了', '子', '糸', '纟', '红', '口', '十', '人', '永', '我', '好', '三', '川', '目', '王'];
+// Parallel-stroke characters: a later stroke looks like the expected one, order matters.
+const PARALLEL = ['三', '川', '目', '王'];
 
 const r4 = (v) => Math.round(v * 1e4) / 1e4;
 const pt = (x, y) => ({ x: r4(x), y: r4(y) });
@@ -87,6 +89,15 @@ for (const ch of CHARS) {
 		for (let k = 0; k < 8; k++) zig.push(pt(0.1 + rnd() * 0.8, 0.1 + rnd() * 0.8));
 		add(`${tag} scribble`, ch, i, resample(zig, 24).map((p) => pt(p.x, p.y)), { kind: 'miss' });
 	});
+	if (PARALLEL.includes(ch)) {
+		ms.forEach((m, i) => {
+			const tag = `${ch} #${i}`;
+			add(`${tag} sloppy but correct`, ch, i, draw(m, 0.02), { kind: 'match', strokes: [i] });
+			for (let j = i + 1; j < ms.length; j++) {
+				add(`${tag} later stroke #${j} drawn`, ch, i, draw(ms[j], 0.01), { kind: 'miss' });
+			}
+		});
+	}
 	add(`${ch} tap`, ch, 0, [pt(0.5, 0.5), pt(0.505, 0.5)], { kind: 'ignored' });
 }
 
