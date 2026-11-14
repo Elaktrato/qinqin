@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-	captureListeners,
 	cardedSentenceIds,
 	deckSessionItems,
 	deckSessionPlan,
@@ -19,6 +18,7 @@ import {
 	sessionCounts,
 	shouldIgnoreGrade,
 	tierForCard,
+	tonePadLabels,
 	toneVerdict
 } from './cardFlow';
 import { parsePinyin } from './tones';
@@ -387,48 +387,6 @@ describe('sessionCounts', () => {
 	});
 });
 
-describe('captureListeners', () => {
-	it('records listeners added during the call and removes them on release', () => {
-		const added: [string, unknown][] = [];
-		const removed: [string, unknown][] = [];
-		const target = {
-			addEventListener(type: string, cb: unknown) {
-				added.push([type, cb]);
-			},
-			removeEventListener(type: string, cb: unknown) {
-				removed.push([type, cb]);
-			}
-		};
-		const original = target.addEventListener;
-		const cb = () => {};
-		const { result, release } = captureListeners(target, () => {
-			target.addEventListener('mouseup', cb);
-			return 42;
-		});
-		expect(result).toBe(42);
-		expect(added).toEqual([['mouseup', cb]]);
-		expect(target.addEventListener).toBe(original);
-		release();
-		expect(removed).toEqual([['mouseup', cb]]);
-		release();
-		expect(removed).toHaveLength(1);
-	});
-
-	it('restores the target even when the call throws', () => {
-		const target = {
-			addEventListener() {},
-			removeEventListener() {}
-		};
-		const original = target.addEventListener;
-		expect(() =>
-			captureListeners(target, () => {
-				throw new Error('boom');
-			})
-		).toThrow('boom');
-		expect(target.addEventListener).toBe(original);
-	});
-});
-
 describe('shouldIgnoreGrade', () => {
 	const base = { now: 1_000, focusedAt: 900, hadSuggestion: true };
 
@@ -553,5 +511,19 @@ describe('resolveSentence', () => {
 		};
 		expect(resolveSentence(companion, sentences, new Set([1]))).toEqual({ id: 2 });
 		expect(resolveSentence(companion, sentences, new Set([1, 2, 3]))).toBeNull();
+	});
+});
+
+describe('tonePadLabels', () => {
+	it('gives one Han character per syllable', () => {
+		expect(tonePadLabels('学生', 2)).toEqual(['学', '生']);
+	});
+
+	it('falls back for erhua, where characters outnumber syllables', () => {
+		expect(tonePadLabels('花儿', 1)).toBeNull();
+	});
+
+	it('falls back when a character is not Han', () => {
+		expect(tonePadLabels('T恤', 2)).toBeNull();
 	});
 });
