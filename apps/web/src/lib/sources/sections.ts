@@ -34,6 +34,11 @@ export interface PackNote {
 	/** Language tag for the note's CJK runs. */
 	lang: string;
 	paragraphs: NoticeParagraph[];
+	/**
+	 * Earlier notes in the same table that hold paragraphs this note
+	 * shares word for word; those paragraphs are shown there only.
+	 */
+	sharedWith: { id: string; name: string }[];
 }
 
 export interface PackTable {
@@ -43,14 +48,30 @@ export interface PackTable {
 
 /**
  * packTable builds a table's rows and its "Notes" block. `prefix` keeps
- * note ids unique across the page's tables (`note-levels-3`).
+ * note ids unique across the page's tables (`note-levels-3`). A
+ * paragraph identical to one in an earlier note of the same table (the
+ * CTI terms both HSK packs carry) is shown only in the first note; the
+ * later note points to it instead.
  */
 export function packTable(prefix: string, packs: PackSource[]): PackTable {
 	const rows: PackRow[] = [];
 	const notes: PackNote[] = [];
+	const seen = new Map<string, { id: string; name: string }>();
 	for (const pack of packs) {
-		const paragraphs = parseNotice(pack.notice);
-		const noteId = paragraphs.length > 0 ? `note-${prefix}-${pack.id}` : undefined;
+		const all = parseNotice(pack.notice);
+		const noteId = all.length > 0 ? `note-${prefix}-${pack.id}` : undefined;
+		const paragraphs: NoticeParagraph[] = [];
+		const sharedWith: { id: string; name: string }[] = [];
+		for (const paragraph of all) {
+			const key = JSON.stringify(paragraph.parts);
+			const first = seen.get(key);
+			if (first) {
+				if (!sharedWith.some((note) => note.id === first.id)) sharedWith.push(first);
+			} else {
+				paragraphs.push(paragraph);
+				if (noteId) seen.set(key, { id: noteId, name: pack.name });
+			}
+		}
 		rows.push({
 			key: pack.id,
 			name: pack.name,
@@ -65,7 +86,8 @@ export function packTable(prefix: string, packs: PackSource[]): PackTable {
 				id: noteId,
 				name: pack.name,
 				lang: cjkLang(pack.notice ?? '', pack.language),
-				paragraphs
+				paragraphs,
+				sharedWith
 			});
 		}
 	}

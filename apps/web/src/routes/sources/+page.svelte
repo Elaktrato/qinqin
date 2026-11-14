@@ -113,7 +113,14 @@
 		<dl class="notes" aria-labelledby={headingId}>
 			{#each table.notes as note (note.id)}
 				<dt id={note.id} tabindex="-1">{note.name}</dt>
-				<dd>{@render paragraphs(note.paragraphs, note.lang)}</dd>
+				<dd>
+					{@render paragraphs(note.paragraphs, note.lang)}
+					{#each note.sharedWith as shared (shared.id)}
+						<p class="shared">
+							The note on <a href={`#${shared.id}`}>{shared.name}</a> above also applies.
+						</p>
+					{/each}
+				</dd>
 			{/each}
 		</dl>
 	{/if}
@@ -291,7 +298,7 @@
 		{/if}
 
 		<p class="notice">
-			Level lists group the character map and badge entries. Unless a list's note says
+			Level lists group the character map and badge entries. Unless a notice below says
 			otherwise, lists installed from packs are third-party compilations, not official releases
 			of the tests they are named after.
 		</p>

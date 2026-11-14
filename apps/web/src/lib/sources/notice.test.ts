@@ -129,23 +129,40 @@ describe('cjkLang', () => {
 	it('prefers Japanese when kana is present', () => {
 		expect(cjkLang('かぜ 風', 'zh')).toBe('ja');
 	});
-	it('uses the pack language for CJK languages and und otherwise', () => {
-		expect(cjkLang('汉字大纲', 'zh')).toBe('zh');
+	it('reads a bare zh as simplified and keeps explicit tags', () => {
+		expect(cjkLang('汉字大纲', 'zh')).toBe('zh-Hans');
+		expect(cjkLang('漢字', 'zh-Hant')).toBe('zh-Hant');
 		expect(cjkLang('分, 可', 'ja')).toBe('ja');
+		expect(cjkLang('한국어', 'ko')).toBe('ko');
+	});
+	it('is und when the language is unknown or not CJK', () => {
 		expect(cjkLang('汉字', undefined)).toBe('und');
 		expect(cjkLang('汉字', 'es')).toBe('und');
 	});
 });
 
 describe('scriptRuns', () => {
-	it('tags CJK runs and leaves the rest untagged', () => {
-		expect(scriptRuns('The HSK 汉字大纲 list (认读字).', 'zh')).toEqual([
+	it('tags Han-only runs with the given language and leaves the rest untagged', () => {
+		expect(scriptRuns('The HSK 汉字大纲 list (认读字).', 'zh-Hans')).toEqual([
 			{ text: 'The HSK ' },
-			{ text: '汉字大纲', lang: 'zh' },
+			{ text: '汉字大纲', lang: 'zh-Hans' },
 			{ text: ' list (' },
-			{ text: '认读字', lang: 'zh' },
+			{ text: '认读字', lang: 'zh-Hans' },
 			{ text: ').' }
 		]);
+	});
+	it('tags runs with kana ja and runs with Hangul ko, whatever the Han language', () => {
+		expect(scriptRuns('a 吾輩は猫 b 한국 c 書写', 'zh-Hans')).toEqual([
+			{ text: 'a ' },
+			{ text: '吾輩は猫', lang: 'ja' },
+			{ text: ' b ' },
+			{ text: '한국', lang: 'ko' },
+			{ text: ' c ' },
+			{ text: '書写', lang: 'zh-Hans' }
+		]);
+	});
+	it('keeps CJK punctuation inside a run', () => {
+		expect(scriptRuns('《考试大纲》', 'zh-Hans')).toEqual([{ text: '《考试大纲》', lang: 'zh-Hans' }]);
 	});
 	it('keeps astral Han characters whole', () => {
 		expect(scriptRuns('a𠀋b', 'ja')).toEqual([{ text: 'a' }, { text: '𠀋', lang: 'ja' }, { text: 'b' }]);

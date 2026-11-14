@@ -85,32 +85,44 @@ export interface ScriptRun {
 	lang?: string;
 }
 
-// Han (incl. extensions and compatibility), kana, CJK symbols and
-// punctuation, and full-width forms.
+// Han (incl. extensions and compatibility), kana, Hangul, CJK symbols
+// and punctuation, and full-width forms.
 const CJK =
-	/[⺀-⿟　-〿぀-ヿㇰ-ㇿ㐀-䶿一-鿿豈-﫿＀-￯]|[\u{20000}-\u{3134f}]/u;
+	/[ᄀ-ᇿ⺀-⿟　-〿぀-ヿ㄰-㆏ㇰ-ㇿ㐀-䶿一-鿿가-힯豈-﫿＀-￯]|[\u{20000}-\u{3134f}]/u;
 const KANA = /[぀-ヿㇰ-ㇿｦ-ﾟ]/;
+const HANGUL = /[ᄀ-ᇿ㄰-㆏가-힯]/;
 
 /**
- * cjkLang picks the language tag for the CJK runs of a notice: Japanese
- * when it has kana, else the pack's language, else `und` (undetermined)
+ * cjkLang picks the language tag for Han-only runs of a text: Japanese
+ * when the text has kana, else the pack's language (a bare `zh` reads as
+ * simplified, `zh-Hans`, like the HSK lists), else `und` (undetermined)
  * rather than guessing.
  */
 export function cjkLang(text: string, language?: string): string {
 	if (KANA.test(text)) return 'ja';
-	const primary = (language ?? '').trim().toLowerCase().split(/[-_]/)[0];
-	if (primary === 'ja' || primary === 'zh' || primary === 'ko') return language!.trim();
+	const tag = (language ?? '').trim();
+	const primary = tag.toLowerCase().split(/[-_]/)[0];
+	if (primary === 'zh') return tag.toLowerCase() === 'zh' ? 'zh-Hans' : tag;
+	if (primary === 'ja' || primary === 'ko') return tag;
 	return 'und';
 }
 
-/** scriptRuns splits text into CJK runs (tagged `lang`) and the rest. */
-export function scriptRuns(text: string, lang: string): ScriptRun[] {
+/**
+ * scriptRuns splits text into CJK runs and the rest. A run with kana is
+ * tagged `ja`, one with Hangul `ko`, and a Han-only run `hanLang`.
+ */
+export function scriptRuns(text: string, hanLang: string): ScriptRun[] {
 	const runs: ScriptRun[] = [];
 	for (const char of text) {
 		const cjk = CJK.test(char);
 		const last = runs[runs.length - 1];
 		if (last && (last.lang !== undefined) === cjk) last.text += char;
-		else runs.push(cjk ? { text: char, lang } : { text: char });
+		else runs.push(cjk ? { text: char, lang: hanLang } : { text: char });
+	}
+	for (const run of runs) {
+		if (run.lang === undefined) continue;
+		if (KANA.test(run.text)) run.lang = 'ja';
+		else if (HANGUL.test(run.text)) run.lang = 'ko';
 	}
 	return runs;
 }

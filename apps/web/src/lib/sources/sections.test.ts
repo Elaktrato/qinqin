@@ -49,7 +49,12 @@ describe('packTable', () => {
 			}
 		]);
 		expect(table.notes).toHaveLength(1);
-		expect(table.notes[0]).toMatchObject({ id: 'note-levels-3', name: 'HSK 3.0 (words)', lang: 'zh' });
+		expect(table.notes[0]).toMatchObject({
+			id: 'note-levels-3',
+			name: 'HSK 3.0 (words)',
+			lang: 'zh-Hans',
+			sharedWith: []
+		});
 		expect(table.notes[0].paragraphs).toHaveLength(2);
 		expect(table.notes[0].paragraphs[1].parts[1]).toEqual({
 			type: 'link',
@@ -64,6 +69,35 @@ describe('packTable', () => {
 			{ id: 2, name: 'B', notice: '漢字' }
 		]);
 		expect(table.notes.map((note) => note.lang)).toEqual(['ja', 'und']);
+	});
+
+	it('shows a paragraph shared word for word only in the first note that has it', () => {
+		const terms = 'Source: [CTI](https://www.chinesetest.cn). No reuse licence is granted.';
+		const table = packTable('levels', [
+			{ id: 1, name: 'HSK chars', language: 'zh', notice: `Characters.\n\n${terms}` },
+			{ id: 2, name: 'HSK words', language: 'zh', notice: `Words.\n\n${terms}` },
+			{ id: 3, name: 'Copy', language: 'zh', notice: terms },
+			{ id: 4, name: 'Near copy', language: 'zh', notice: `${terms} ` + 'Extra.' }
+		]);
+		const texts = (i: number) =>
+			table.notes[i].paragraphs.map((p) => p.parts.map((part) => part.text).join(''));
+		expect(texts(0)).toEqual(['Characters.', 'Source: CTI. No reuse licence is granted.']);
+		expect(texts(1)).toEqual(['Words.']);
+		expect(table.notes[1].sharedWith).toEqual([{ id: 'note-levels-1', name: 'HSK chars' }]);
+		// A note made only of shared paragraphs keeps its row link and points back.
+		expect(table.rows[2].noteId).toBe('note-levels-3');
+		expect(texts(2)).toEqual([]);
+		expect(table.notes[2].sharedWith).toEqual([{ id: 'note-levels-1', name: 'HSK chars' }]);
+		// Only identical paragraphs are merged.
+		expect(texts(3)).toHaveLength(1);
+		expect(table.notes[3].sharedWith).toEqual([]);
+	});
+
+	it('does not merge across tables', () => {
+		const a = packTable('levels', [{ id: 1, name: 'A', notice: 'Same.' }]);
+		const b = packTable('frequency', [{ id: 1, name: 'B', notice: 'Same.' }]);
+		expect(a.notes[0].paragraphs).toHaveLength(1);
+		expect(b.notes[0].paragraphs).toHaveLength(1);
 	});
 
 	it('returns empty rows and notes for no packs', () => {
