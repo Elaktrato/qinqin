@@ -15,6 +15,19 @@ export function acceptsPointerDown(e: PointerLike): boolean {
 	return true;
 }
 
+/**
+ * Palm rejection: once a pen has touched the pad, touch is ignored for good (a resting palm
+ * must not draw). Create one gate per pad and call it for every pointerdown.
+ */
+export function createPalmGate(): (e: PointerLike) => boolean {
+	let penSeen = false;
+	return (e) => {
+		if (e.pointerType === 'pen') penSeen = true;
+		if (penSeen && e.pointerType === 'touch') return false;
+		return acceptsPointerDown(e);
+	};
+}
+
 /** Client coordinates to pad-unit coordinates (0..1 across the pad). */
 export function toPadUnit(clientX: number, clientY: number, rect: { left: number; top: number; width: number; height: number }): Pt {
 	return { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height };

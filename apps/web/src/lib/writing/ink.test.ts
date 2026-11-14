@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { acceptsPointerDown, appendInk, morphPath, toPadUnit } from './ink';
+import { acceptsPointerDown, createPalmGate, appendInk, morphPath, toPadUnit } from './ink';
 
 describe('acceptsPointerDown', () => {
 	it('takes the primary pointer', () => {
@@ -11,6 +11,27 @@ describe('acceptsPointerDown', () => {
 	});
 	it('ignores non-main mouse buttons', () => {
 		expect(acceptsPointerDown({ isPrimary: true, pointerType: 'mouse', button: 2 })).toBe(false);
+	});
+});
+
+describe('createPalmGate', () => {
+	const touch = { isPrimary: true, pointerType: 'touch', button: 0 };
+	const pen = { isPrimary: true, pointerType: 'pen', button: 0 };
+	it('accepts touch until a pen has been seen', () => {
+		const gate = createPalmGate();
+		expect(gate(touch)).toBe(true);
+		expect(gate(pen)).toBe(true);
+		expect(gate(touch)).toBe(false);
+		expect(gate(pen)).toBe(true);
+	});
+	it('remembers a pen even when its own down was not primary', () => {
+		const gate = createPalmGate();
+		gate({ ...pen, isPrimary: false });
+		expect(gate(touch)).toBe(false);
+	});
+	it('keeps the plain rules for mouse', () => {
+		const gate = createPalmGate();
+		expect(gate({ isPrimary: true, pointerType: 'mouse', button: 2 })).toBe(false);
 	});
 });
 

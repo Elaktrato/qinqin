@@ -2,7 +2,7 @@
 	import { onMount, untrack } from 'svelte';
 	import type { CharOutcome } from '$lib/study/writing';
 	import { joinPaths } from '$lib/writing/geometry';
-	import { acceptsPointerDown, appendInk, morphPath, toPadUnit } from '$lib/writing/ink';
+	import { appendInk, createPalmGate, morphPath, toPadUnit } from '$lib/writing/ink';
 	import { matchStroke } from '$lib/writing/matcher';
 	import { applyResult, hintsOf, outcomeOf, requestHint, startQuiz } from '$lib/writing/quiz';
 	import type { CharStrokes, Pt } from '$lib/writing/strokes';
@@ -52,6 +52,7 @@
 		duration: number;
 		color: string | null;
 	}
+	const acceptsDown = createPalmGate();
 	let live: Pt[] = [];
 	let activePointer: number | null = null;
 	let fades: Fade[] = [];
@@ -114,9 +115,14 @@
 	}
 
 	function down(e: PointerEvent): void {
-		if (finished || activePointer !== null) return;
-		if (!acceptsPointerDown(e)) return;
-		if (canvas === null) return;
+		if (finished || canvas === null) return;
+		// A pointer whose up/cancel never arrived (failed capture) must not wedge the pad.
+		if (activePointer !== null) {
+			if (e.pointerId !== activePointer) return;
+			activePointer = null;
+			live = [];
+		}
+		if (!acceptsDown(e)) return;
 		e.preventDefault();
 		activePointer = e.pointerId;
 		try {
@@ -315,6 +321,7 @@
 		onpointermove={move}
 		onpointerup={up}
 		onpointercancel={cancel}
+		onlostpointercapture={cancel}
 	></canvas>
 </div>
 
