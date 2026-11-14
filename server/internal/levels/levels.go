@@ -232,7 +232,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
 // install order.
 func List(ctx context.Context, sqlDB *sql.DB) ([]model.Scheme, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT id, pack_id, name, unit, language, version, license, attribution, updated_at
+		SELECT id, pack_id, name, unit, language, version, license, attribution, notice, updated_at
 		FROM schemes WHERE deleted_at IS NULL ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("list schemes: %w", err)
@@ -246,7 +246,7 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]model.Scheme, error) {
 			updatedAt string
 		)
 		if err := rows.Scan(&s.ID, &s.PackID, &s.Name, &s.Unit, &s.Language,
-			&s.Version, &s.License, &s.Attribution, &updatedAt); err != nil {
+			&s.Version, &s.License, &s.Attribution, &s.Notice, &updatedAt); err != nil {
 			return nil, fmt.Errorf("list schemes: %w", err)
 		}
 		updated, err := time.Parse(time.RFC3339, updatedAt)
@@ -501,10 +501,13 @@ func writeScheme(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, unit strin
 	defer tx.Rollback()
 	stamp := now()
 
+	// The scheme row is written only when a manifest field (the notice
+	// included) or the unit changed, or the scheme returns from an
+	// uninstall: an identical re-import does not restamp it.
 	var schemeID int64
-	if err := tx.QueryRowContext(ctx, `
-		INSERT INTO schemes (pack_id, name, unit, language, version, license, attribution, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	err = tx.QueryRowContext(ctx, `
+		INSERT INTO schemes (pack_id, name, unit, language, version, license, attribution, notice, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT (pack_id) DO UPDATE SET
 			name = excluded.name,
 			unit = excluded.unit,
@@ -512,10 +515,21 @@ func writeScheme(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, unit strin
 			version = excluded.version,
 			license = excluded.license,
 			attribution = excluded.attribution,
+			notice = excluded.notice,
 			updated_at = excluded.updated_at,
 			deleted_at = NULL
+		WHERE schemes.name IS NOT excluded.name OR schemes.unit IS NOT excluded.unit
+		   OR schemes.language IS NOT excluded.language OR schemes.version IS NOT excluded.version
+		   OR schemes.license IS NOT excluded.license OR schemes.attribution IS NOT excluded.attribution
+		   OR schemes.notice IS NOT excluded.notice
+		   OR schemes.deleted_at IS NOT NULL
 		RETURNING id`,
-		m.ID, m.Name, unit, m.Language, m.Version, m.License, m.Attribution, stamp).Scan(&schemeID); err != nil {
+		m.ID, m.Name, unit, m.Language, m.Version, m.License, m.Attribution, m.Notice, stamp).Scan(&schemeID)
+	if errors.Is(err, sql.ErrNoRows) {
+		// Unchanged: the conflict update's WHERE skipped the write.
+		err = tx.QueryRowContext(ctx, `SELECT id FROM schemes WHERE pack_id = ?`, m.ID).Scan(&schemeID)
+	}
+	if err != nil {
 		return fmt.Errorf("register scheme %s: %w", m.ID, err)
 	}
 

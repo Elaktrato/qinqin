@@ -22,7 +22,7 @@ func openMigrationDB(t *testing.T) *sql.DB {
 
 // TestMigration024AddsNoticeToPopulatedRegistries runs migration 024 on
 // a database with installed packs: every existing row and column is
-// unchanged and the new notice column reads ''.
+// unchanged and the new notice column is empty.
 func TestMigration024AddsNoticeToPopulatedRegistries(t *testing.T) {
 	sqlDB := openMigrationDB(t)
 	if err := migrateThrough(sqlDB, "023_library_books_autoincrement"); err != nil {
@@ -86,7 +86,7 @@ func TestMigration024AddsNoticeToPopulatedRegistries(t *testing.T) {
 }
 
 // TestMigration024OnEmptyDatabase migrates a fresh database: the column
-// exists, defaults to '' and refuses NULL.
+// exists, defaults to the empty string and refuses NULL.
 func TestMigration024OnEmptyDatabase(t *testing.T) {
 	sqlDB := openMigrationDB(t)
 	if err := migrate(sqlDB); err != nil {

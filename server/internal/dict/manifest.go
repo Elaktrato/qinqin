@@ -58,6 +58,11 @@ var (
 // and attribution, and every content pack a language — importers reject
 // packs without them. A language code without a registered code pack
 // auto-registers as a data-only language when the pack imports.
+//
+// Notice is optional: a caveat the Sources page shows under the pack
+// (what the licence leaves open, how a list was compiled). It is plain
+// text, paragraphs separated by a blank line, links written
+// [text](https://...) and no other markup; see ValidateNotice.
 type Manifest struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -66,12 +71,13 @@ type Manifest struct {
 	Language    string `json:"language"`
 	License     string `json:"license"`
 	Attribution string `json:"attribution"`
+	Notice      string `json:"notice"`
 	Format      string `json:"format"`
 }
 
 // Validate reports whether m is a complete manifest: the identity,
 // language, and license fields are present, and Type and Format are
-// known enum values.
+// known enum values, and the optional notice is valid (ValidateNotice).
 func (m Manifest) Validate() error {
 	switch {
 	case strings.TrimSpace(m.ID) == "":
@@ -91,6 +97,9 @@ func (m Manifest) Validate() error {
 	case !manifestFormats[m.Format]:
 		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, or freq-csv)", m.Format)
 	}
+	if err := ValidateNotice(m.Notice); err != nil {
+		return fmt.Errorf("manifest: %w", err)
+	}
 	return nil
 }
 
@@ -105,5 +114,6 @@ func (m *Manifest) normalize() {
 	m.Language = strings.ToLower(strings.TrimSpace(m.Language))
 	m.License = strings.TrimSpace(m.License)
 	m.Attribution = strings.TrimSpace(m.Attribution)
+	m.Notice = strings.TrimSpace(m.Notice)
 	m.Format = strings.TrimSpace(m.Format)
 }

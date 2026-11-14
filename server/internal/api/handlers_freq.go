@@ -15,6 +15,7 @@ type frequencyPackBody struct {
 	Language    string `json:"language"`
 	License     string `json:"license"`
 	Attribution string `json:"attribution"`
+	Notice      string `json:"notice"`
 }
 
 // handleListFrequencyPacks serves GET /api/frequency-packs with every
@@ -28,7 +29,7 @@ func (s *server) handleListFrequencyPacks(w http.ResponseWriter, r *http.Request
 	list := make([]frequencyPackBody, 0, len(packs))
 	for _, p := range packs {
 		list = append(list, frequencyPackBody{ID: p.ID, Name: p.Name, Version: p.Version,
-			Language: p.Language, License: p.License, Attribution: p.Attribution})
+			Language: p.Language, License: p.License, Attribution: p.Attribution, Notice: p.Notice})
 	}
 	writeJSON(w, http.StatusOK, list)
 }
