@@ -2,7 +2,7 @@
 
 # Web: the SvelteKit SPA. adapter-static emits build/index.html plus hashed
 # assets; the Go builder embeds that directory into the binary.
-FROM node:24-alpine AS web
+FROM node:26-alpine AS web
 WORKDIR /src/apps/web
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci
