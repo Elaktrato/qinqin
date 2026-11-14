@@ -10,10 +10,9 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
   JMdict/KANJIDIC2 bundling, levels, sentences, overlays, events, plugins, search, sync,
   seed CLI, Docker) and the SvelteKit web app (entry/search/editing, stroke order,
   workspaces, sources).
-<<<<<<< HEAD
 - **On develop after v0.1.0**
   - Flashcards Round 1 (study loop: decks, vocab cards, 4-grade FSRS derived from review
-    events, EXP), Round 2 (level sessions, per-character mastery, `/study/map`) and
+    events, EXP), Round 2 (level sessions, per-character mastery, the map, since moved to Stats → Characters at `/stats/characters`) and
     Round 3 (Word Salad, writing quiz, tone swipe, card-type opt-out, XP curve, streaks,
     mascot hooks; [#25](https://github.com/Elaktrato/qinqin/issues/25)). Duplicate-proof card ids across devices.
   - Reader and library plugin (Aozora Bunko and Project Gutenberg import, bookmarks,
@@ -23,12 +22,7 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
     character lists and approximate JLPT kanji levels.
   - Workspace deletion, kunrei/particle romaji search, request body limits.
   - Sources page built from pack and plugin manifests, public.
-=======
-- **On develop after v0.1.0** — flashcards Round 1 (study loop: decks, vocab cards,
-  4-grade FSRS derived from review events, review heatmap, EXP) and Round 2 (level
-  sessions, per-character mastery, the map at `/study/map`, since moved to
-  Stats → Characters at `/stats/characters`).
->>>>>>> feature/stats
+  - Stats page with Overview and Characters, home widgets and a Home layout editor in Settings.
 
 ## v0.2.0 — study experience (milestone)
 
