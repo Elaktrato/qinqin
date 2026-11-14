@@ -276,6 +276,12 @@ test('the CLI writes the pack, with no LICENSE, byte for byte on a re-run', () =
 		const bad = spawnSync(process.execPath, [script], { encoding: 'utf8' });
 		assert.notEqual(bad.status, 0);
 		assert.match(bad.stderr, /usage:/);
+
+		// A missing input is a converter error, not a stack trace.
+		const missing = spawnSync(process.execPath, [script, join(dir, 'nope.tsv'), join(dir, 'packs')], { encoding: 'utf8' });
+		assert.notEqual(missing.status, 0);
+		assert.match(missing.stderr, /^prepare-hsk-syllabus: cannot read .*nope\.tsv: ENOENT/);
+		assert.doesNotMatch(missing.stderr, /\n\s+at /);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}

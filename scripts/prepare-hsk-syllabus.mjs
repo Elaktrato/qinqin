@@ -650,6 +650,16 @@ export function charsAttribution({ ed, levels, stats, pdfSum }) {
 	return lines.join('\n');
 }
 
+// readInput reads an input file, failing with a converter error (not a
+// raw stack) when it cannot.
+async function readInput(path, encoding) {
+	try {
+		return await readFile(path, encoding);
+	} catch (err) {
+		fail(`cannot read ${path}: ${err.code ?? err.message}`);
+	}
+}
+
 async function writePack(dir, files) {
 	await rm(dir, { recursive: true, force: true });
 	await mkdir(dir, { recursive: true });
@@ -657,14 +667,14 @@ async function writePack(dir, files) {
 }
 
 export async function convert(tsvPath, packsDir, pdfPath) {
-	const text = await readFile(tsvPath, 'utf8');
+	const text = await readInput(tsvPath, 'utf8');
 	const words = tsvWords(text);
 	const ed = edition(words);
 	const { rows, report } = parseSyllabusTSV(text);
 	const { levels, stats } = levelsFromRows(rows);
 	const chars = parseCharacterLists(text);
 	const charLevels = charLevelsFromLists(chars.lists);
-	const pdfSum = pdfPath ? sha256(await readFile(pdfPath)) : '';
+	const pdfSum = pdfPath ? sha256(await readInput(pdfPath)) : '';
 	const dir = join(packsDir, 'hsk-words');
 	await writePack(dir, {
 		'manifest.json': json(manifest(ed)),
