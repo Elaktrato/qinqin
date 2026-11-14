@@ -74,9 +74,8 @@
 <main class="sources">
 	<h1>Sources</h1>
 	<p class="lede">
-		Meanings, character data, word frequencies, and stroke diagrams come from upstream open
-		datasets. Their
-		credits and licenses are listed here.
+		Meanings, character data, word frequencies, level lists, and stroke diagrams come from
+		upstream datasets. Their credits and licenses are listed here.
 	</p>
 
 	<section>
@@ -209,15 +208,55 @@
 		{/if}
 
 		<p class="notice">
-			Level lists group the character map and badge entries. Lists installed from packs are
-			third-party compilations, not official releases of the tests they are named after.
+			Level lists group the character map and badge entries. Unless a notice below says
+			otherwise, lists installed from packs are third-party compilations, not official releases
+			of the tests they are named after.
 		</p>
+		{#if installedPacks.has('hsk-words')}
+			<p class="notice">
+				The HSK 3.0 words are the official word list (HSK <span lang="zh-Hans">词汇大纲</span>) of
+				the <span lang="zh-Hans">《HSK 考试大纲》</span> Syllabus for the Chinese Proficiency Test,
+				edition published 2025-11 and effective 2026-07. Words badge with their level, and the
+				character map's word grouping puts each character at the lowest level of a word written
+				with it.
+			</p>
+		{/if}
+		{#if installedPacks.has('hsk-chars')}
+			<p class="notice">
+				The HSK 3.0 characters are the official character list (HSK
+				<span lang="zh-Hans">汉字大纲</span>, the characters to recognise,
+				<span lang="zh-Hans">认读字</span>, of each level) of the same syllabus and edition. A
+				character's level is the level whose list introduces it; the syllabus's lists of
+				characters to write (<span lang="zh-Hans">书写字</span>) assign no level here.
+			</p>
+		{/if}
+		{#if installedPacks.has('hsk-words') || installedPacks.has('hsk-chars')}
+			<p class="notice">
+				Source: <a href="https://www.chinesetest.cn" rel="noreferrer">www.chinesetest.cn</a> —
+				reproduced from the Chinese Test Service Website (CTI); syllabus published by CLEC
+				(<span lang="zh-Hans">中外语言交流合作中心</span>). No reuse licence is granted: the
+				site's <a href="https://www.chinesetest.cn/legal-notice" rel="noreferrer">Legal Notice</a>
+				says its content is copyrighted by CTI or the content providers, requires the source to be
+				indicated, and permits reproduction only as reasonable, good-faith quoting for informative
+				public use. The syllabus PDF carries a copy-protection flag. The project includes only the
+				vocabulary (word) list and the list of characters to recognise, as plain lists of words and
+				characters with their levels (and the words' pinyin as lookup readings), and none of the
+				syllabus's other content (grammar points, descriptions, the lists of characters to write,
+				explanatory text). It includes these lists with this attribution at the project owner's
+				decision; the legal status of including these lists has not been verified.
+			</p>
+		{/if}
 		{#if installedPacks.has('jlpt-kanji')}
 			<p class="notice">
-				The JLPT kanji come from
+				The JLPT kanji levels are approximate: the JLPT has published no official kanji lists
+				since 2010. Most come from
 				<a href="https://github.com/onlyskin/kanjiapi.dev" rel="noreferrer">kanjiapi.dev</a>
-				(MIT), which does not state where its list comes from; the JLPT publishes no official
-				lists.
+				(MIT), which does not state where its list comes from. qinqin gives the kanji that list
+				leaves out (mainly jōyō kanji such as 分, 可, 無 and 的) a level estimated from
+				<a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" rel="noreferrer"
+					>KANJIDIC2</a
+				>
+				(CC BY-SA 4.0, EDRDG): its pre-2010 JLPT level where it has one, else the school grade.
 			</p>
 		{/if}
 		{#if installedPacks.has('jlpt-words')}
@@ -234,11 +273,12 @@
 		{/if}
 		{#if installedPacks.has('hsk30-chars') || installedPacks.has('hsk30-words')}
 			<p class="notice">
-				The HSK 3.0 lists on this instance were installed locally by its operator; qinqin does not
-				bundle them because their licence status is unclear. They come from
+				This instance's operator also installed older, locally generated HSK 3.0 lists, superseded
+				by the bundled official word and character lists. They come from
 				<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a> (code MIT,
 				data labelled MIT), which derives them from copies of the 2021 Ministry of Education
-				standard. The ministry's site claims copyright (版权所有：中华人民共和国教育部) and the
+				standard. The ministry's site claims copyright
+				(<span lang="zh-Hans">版权所有：中华人民共和国教育部</span>) and the
 				hsk30 README suggests the list may be public domain, so its copyright status is uncertain.
 			</p>
 		{/if}

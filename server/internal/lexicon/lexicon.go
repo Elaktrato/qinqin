@@ -401,20 +401,25 @@ const bestFormReadingQuery = `
 	WHERE f.text = ? AND f.deleted_at IS NULL
 	  AND e.language = ? AND e.kind = 'word' AND e.deleted_at IS NULL
 	  AND EXISTS (SELECT 1 FROM readings r
-		WHERE r.entry_id = e.id AND r.deleted_at IS NULL AND (r.plain = ? OR r.value = ?))
+		WHERE r.entry_id = e.id AND r.deleted_at IS NULL AND (r.plain IN (?, ?) OR r.value = ?))
 	ORDER BY (e.uk = 1 AND e.pri > 0) DESC, e.pri DESC, e.id
 	LIMIT 1`
 
 // BestWordReading is BestWord for a written form whose reading is known
 // (a JLPT list gives 風 with かぜ): an entry with both the form and the
 // reading wins first, so the usually-kana 振り (also written 風, read
-// ふり) does not take the level of 風 (かぜ). With an empty reading, or
-// one no entry of that form has, it is BestWord.
+// ふり) does not take the level of 風 (かぜ). The reading compares by its
+// plain form as a kana reading and as a pinyin reading (the language
+// pack folds each type its own way: a zh list's tone-marked "hángrén"
+// is plain "hangren", like CC-CEDICT's "háng rén"; a type the language
+// does not use only lowercases), or as written. With an empty reading,
+// or one no entry of that form has, it is BestWord.
 func (s Store) BestWordReading(ctx context.Context, language, form, reading string) (*Entry, error) {
 	if reading != "" {
-		plain := lang.For(language).NormalizeReading("kana", reading)
+		p := lang.For(language)
+		kana, toneless := p.NormalizeReading("kana", reading), p.NormalizeReading("pinyin", reading)
 		var id int64
-		err := s.DB.QueryRowContext(ctx, bestFormReadingQuery, form, language, plain, reading).Scan(&id)
+		err := s.DB.QueryRowContext(ctx, bestFormReadingQuery, form, language, kana, toneless, reading).Scan(&id)
 		if err == nil {
 			return s.Get(ctx, id)
 		}

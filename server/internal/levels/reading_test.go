@@ -130,3 +130,35 @@ func TestEntryWithReading(t *testing.T) {
 		t.Error("an entry without a form imported, want an invalid-pack error")
 	}
 }
+
+// TestZhEntryWithPinyinReading: a zh list gives its pinyin tone-marked and
+// joined ("hángrén", as the HSK syllabus does), CC-CEDICT stores it per
+// syllable ("háng rén"); the reading still picks the entry that has it,
+// compared toneless. The second line is synthetic: a word keyed 杭人
+// whose traditional form is 行人, so the form 行人 has two entries.
+func TestZhEntryWithPinyinReading(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importCedict(t, sqlDB,
+		"行人 行人 [xing2 ren2] /pedestrian/",
+		"行人 杭人 [hang2 ren2] /test word whose traditional form is 行人/")
+	xingren := lexID(t, sqlDB, "word", "行人")
+	hangren := lexID(t, sqlDB, "word", "杭人")
+
+	pack := buildPack(t, "zh-reading", `{"unit":"word","levels":[
+		{"name":"L1","entries":[{"form":"行人","reading":"hángrén"}]},
+		{"name":"L2","entries":["行人"]}]}`)
+	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	for _, c := range []struct {
+		name  string
+		id    int64
+		level string
+	}{{"杭人 (háng rén)", hangren, "L1"}, {"行人 (xíng rén)", xingren, "L2"}} {
+		got, err := levels.ForEntry(ctx, sqlDB, c.id)
+		if err != nil || len(got) != 1 || got[0].LevelName != c.level {
+			t.Errorf("badges of %s = %+v (err %v), want only %s", c.name, got, err, c.level)
+		}
+	}
+}

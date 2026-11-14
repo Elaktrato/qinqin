@@ -26,15 +26,16 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/qinqin ./cmd/qinqi
 FROM alpine:3.22
 COPY --from=build /out/qinqin /usr/local/bin/qinqin
 # The bundled seed packs (CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten
-# frequency list, the JLPT kanji level list and es-demo), so a fresh
+# frequency list, the HSK 3.0 character and word level lists, the
+# approximate JLPT kanji level list and es-demo), so a fresh
 # stack can seed itself offline:
 #   docker compose exec qinqin qinqin seed
 # The samples in plugins/samples (dictionaries and level packs) are not
 # shipped. Packs on the
 # host (plugins/data-local) are not in the image: mount them as a volume and
 # name both roots, e.g. --packs /opt/qinqin/packs,/opt/qinqin/local. That is
-# how the optional HSK 3.0 and JLPT vocabulary packs (not bundled, licence
-# unclear or unverified) are installed.
+# how the optional JLPT vocabulary pack (not bundled, licence chain
+# unverified) is installed.
 COPY plugins/data /opt/qinqin/packs
 ENV QINQIN_DATA=/data QINQIN_PACKS=/opt/qinqin/packs
 VOLUME /data

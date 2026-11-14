@@ -47,7 +47,7 @@ docker compose up -d
 ```
 
 On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
-frequency list and the JLPT kanji level list), then create the admin account:
+frequency list and the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists), then create the admin account:
 
 ```bash
 docker compose exec qinqin qinqin seed
@@ -328,13 +328,17 @@ every character of the language, studied or not, shaded by mastery.
   its simplified character's cell: a card written 愛 colours the 爱 cell.
 - **Group by.** The choice is remembered per language; the default is Grade
   (Japanese) or Common (Chinese). Japanese: Grade, Frequency, Strokes, "JLPT
-  (kanji)" (N5–N1, the bundled `jlpt-kanji` pack) and, when you have installed
+  kanji (approximate)" (N5–N1, the bundled `jlpt-kanji` pack) and, when you have installed
   the optional local JLPT vocabulary pack (not bundled, see "Bundled data"),
   "JLPT (vocabulary)" (the N5–N1 word lists of `jlpt-words`). Chinese: Common (GB2312 level 1, level 2,
-  other standard, other), HK primary grade, Strokes and, when you have installed
-  the optional local HSK 3.0 packs (not bundled, see "Bundled data"), "HSK 3.0
-  (characters)" and "HSK 3.0 (words)". A word list is shown as the characters its words are written with,
-  each at the lowest level it appears in. Every installed level scheme
+  other standard, other), HK primary grade, Strokes, "HSK 3.0 (characters)" (the
+  bundled `hsk-chars` pack: the official character list of the HSK syllabus,
+  each character at the level whose 认读字 list introduces it) and "HSK 3.0
+  (words)" (the bundled `hsk-words` pack: the official word list), both HSK 1–6
+  and HSK 7–9. A word list is shown as the characters its words are written with,
+  each at the lowest level of a word it appears in (爱 is HSK 1 because 爱 is an
+  HSK 1 word; 傲 is HSK 4 through 骄傲); for the HSK lists the two groupings
+  agree on all but 3 of 3,088 characters. Every installed level scheme
   that is not a sample pack is offered the same way, under its name; characters
   outside it land in "Not in this scheme".
 - **Sections** show learned/total and a stacked stage bar. The stage legend doubles
@@ -358,8 +362,14 @@ database seeded before this change needs `qinqin seed` (under Docker,
 `docker compose exec qinqin qinqin seed`) to fill them; until then the page shows a
 "Level data missing" banner and lists the characters in one section.
 
-The JLPT kanji levels are a bundled level pack (see "Bundled data"); a
-database seeded before it was added needs `qinqin seed` to install them. The
+The JLPT kanji levels and the HSK 3.0 character and word levels are bundled level packs
+(see "Bundled data"); a database seeded before they were added needs
+`qinqin seed` to install them. The JLPT kanji levels are approximate:
+kanjiapi.dev's list, plus a level qinqin derives from KANJIDIC2 for the kanji
+that list omits (see docs/sources.md); a re-seed of an older database renames
+the scheme and updates its levels in place. HSK words carry an "HSK 3.0 (words)" badge
+with their level in lookups and on entries; their characters get the
+lowest level of the words they are written with (derived at import time). The
 pre-2010 four-level JLPT scale that KANJIDIC2 carries is no longer imported or
 offered; a re-seed removes it from the character entries. To add another list,
 put a level pack under `plugins/data-local/<id>/` (see [docs/sources.md](docs/sources.md),
@@ -606,7 +616,9 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
-| [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) (`jlpt-kanji`) | Japanese: JLPT N5–N1 kanji levels (an unofficial reconstruction of unstated provenance; the JLPT publishes no kanji list; omits 172 jōyō kanji such as 分 and 的, see docs/sources.md) | MIT (© 2023 Iridium Szreter) |
+| [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-chars`) | Chinese: the official HSK 3.0 character list, the characters to recognise (认读字) per level, HSK 1–6 and HSK 7–9 (3,088 characters; same edition) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
+| [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-words`) | Chinese: the official HSK 3.0 word list, HSK 1–6 and HSK 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07; CLEC, distributed by CTI) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
+| [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) + [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (`jlpt-kanji`) | Japanese: approximate JLPT N5–N1 kanji levels (the JLPT has published no official kanji list since 2010): kanjiapi.dev's list, of unstated provenance, plus levels qinqin derives from KANJIDIC2 for the 176 kanji it omits (分, 可, 無, 的 …), see docs/sources.md | MIT (© 2023 Iridium Szreter) and CC BY-SA 4.0 (EDRDG) for the derived levels |
 
 **JLPT vocabulary is not bundled.** Its upstream licence chain could not be
 verified: [open-anki-jlpt-decks](https://github.com/jamsinclair/open-anki-jlpt-decks)
@@ -631,34 +643,38 @@ qinqin seed --packs plugins/data,plugins/data-local
 Under Docker, mount `plugins/data-local` as described under "Seeding" and run
 `docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/local`.
 Details: [plugins/data/README.md](plugins/data/README.md).
-**HSK 3.0 is not bundled.** Its licence status is unclear: the
-[ivankra/hsk30](https://github.com/ivankra/hsk30) code (`*.ipynb`) is MIT, the
-data comes from MIT-labelled copies of the PRC Ministry of Education's HSK 3.0
-document, the ministry's site carries a 版权所有 (all rights reserved) notice,
-and the upstream README itself calls the copyright claims "somewhat
-questionable" and says it "might be public domain". So the repository ships no
-HSK 3.0 data; it is an optional pack you generate for local use only (the map's
-"Group by" and the Sources page pick it up once installed). From the repository
-root:
 
-```bash
-mkdir /tmp/hsk30 && cd /tmp/hsk30
-base=https://raw.githubusercontent.com/ivankra/hsk30/4ff9e3915ce87baaecd7ebe263085573a4ea3192
-curl -fsSLo hsk30.csv $base/hsk30.csv
-curl -fsSLo hsk30-chars.csv $base/hsk30-chars.csv
-curl -fsSLo hsk30-LICENSE $base/LICENSE
-cd -
-node scripts/prepare-level-packs.mjs --hsk /tmp/hsk30   # writes plugins/data-local/
-qinqin seed --packs plugins/data,plugins/data-local
-```
-
-Under Docker, mount `plugins/data-local` as described under "Seeding" and run
-`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/local`.
-Details: [plugins/data/README.md](plugins/data/README.md).
+**HSK 3.0 characters and words** come from the official syllabus 《HSK 考试大纲》 / Syllabus for
+the Chinese Proficiency Test (published 2025-11, effective 2026-07), issued by
+中外语言交流合作中心 (CLEC) and distributed by Chinese Testing International
+(CTI) at [chinesetest.cn](https://www.chinesetest.cn). No reuse licence is
+granted: the site's [Legal Notice](https://www.chinesetest.cn/legal-notice)
+says its content is copyrighted by CTI or the content providers, requires
+the source to be indicated ("Source: www.chinesetest.cn", "reproduced from
+the Chinese Test Service Website"), and permits reproduction only as
+reasonable, good-faith quoting for informative public use; the syllabus PDF
+carries a copy-protection flag. The project includes only the vocabulary
+(word) list and the list of characters to recognise (认读字), as plain lists of
+words and characters with their levels (and the words' pinyin as lookup
+readings), and none of the syllabus's other content (grammar points,
+descriptions, the lists of characters to write, explanatory text). It
+includes these lists with attribution at the project owner's decision; the
+legal status of including these lists has not been verified (no legal
+opinion). The
+Sources page and the character map show the required source line. `scripts/prepare-hsk-syllabus.mjs` converts the
+PDF's vocabulary table (11,000 rows, HSK 1 300, HSK 2 200, HSK 3 500, HSK 4
+1,000, HSK 5 1,600, HSK 6 1,800, HSK 7–9 5,600) into `plugins/data/hsk-words`
+and its character lists (认读字: HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441,
+HSK 5 431, HSK 6 413, HSK 7–9 1,148) into `plugins/data/hsk-chars`, in one run;
+the PDF and any text extracted from it are never committed. The older,
+community-compiled ivankra/hsk30 packs that `prepare-level-packs.mjs --hsk`
+generates locally are superseded by the official lists. Details:
+[plugins/data/README.md](plugins/data/README.md).
 
 The dictionary files are redistributed **unmodified**; the Jiten list is a
 conversion of the published file with unmodified ranks; the level lists are
-converted from pinned upstream files by `scripts/prepare-level-packs.mjs`. See
+converted from pinned upstream files by `scripts/prepare-level-packs.mjs` and,
+for HSK, from the official syllabus by `scripts/prepare-hsk-syllabus.mjs`. See
 [docs/sources.md](docs/sources.md) for attributions, upstream links, and the
 redistribution policy. Stroke-order data (`hanzi-writer-data`, derived from the
 Make Me a Hanzi dataset) is licensed under the **Arphic Public License** and is
@@ -713,12 +729,13 @@ Dockerfile copies that directory into the Go binary before compiling.
 |---|---|
 | `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
-| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the JLPT kanji level list) with their licenses and attribution notices |
+| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
 | `plugins/samples/` | Hand-written samples: dictionaries (`zh-mini`, `ja-mini`) and level packs (`hsk-mini`, `jlpt-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
-| `scripts/prepare-level-packs.mjs` | Rebuilds the JLPT kanji pack from the pinned upstream files; with `--hsk` or `--jlpt-vocab`, generates the optional local-only HSK 3.0 or JLPT vocabulary packs into `plugins/data-local/` (download commands in its header) |
+| `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--jlpt-vocab`, generates the optional local-only JLPT vocabulary pack into `plugins/data-local/` (download commands in its header) |
+| `scripts/prepare-hsk-syllabus.mjs` | Rebuilds the HSK 3.0 packs `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 
 ## Branches
 
