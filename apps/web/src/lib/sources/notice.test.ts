@@ -101,6 +101,27 @@ describe('parseNotice', () => {
 		]);
 	});
 
+	it('renders a userinfo link as plain text', () => {
+		expect(parseNotice('[CTI](https://www.chinesetest.cn@evil.com)')).toEqual([
+			{ type: 'p', parts: [{ type: 'text', text: '[CTI](https://www.chinesetest.cn@evil.com)' }] }
+		]);
+	});
+
+	it('drops bidi override and isolate characters, which could reorder the text', () => {
+		const controls = '\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069';
+		expect(parseNotice(`a${controls}b [x\u202e](https://example.org/\u2066)`)).toEqual([
+			{
+				type: 'p',
+				parts: [
+					{ type: 'text', text: 'ab ' },
+					{ type: 'link', text: 'x', href: 'https://example.org/' }
+				]
+			}
+		]);
+		// Marks that only set direction (LRM, RLM) stay.
+		expect(parseNotice('a\u200eb')[0].parts).toEqual([{ type: 'text', text: 'a\u200eb' }]);
+	});
+
 	it('parses very long and hostile input without blowing up', () => {
 		const long = 'word '.repeat(20000) + '[end](https://e.example)';
 		const parts = parseNotice(long)[0].parts;
@@ -122,6 +143,14 @@ describe('safeHref', () => {
 		expect(safeHref(' https://example.com')).toBeNull();
 		expect(safeHref('https:example.com')).toBeNull();
 		expect(safeHref('')).toBeNull();
+	});
+
+	it('rejects URLs carrying user information, like the server', () => {
+		expect(safeHref('https://www.chinesetest.cn@evil.com')).toBeNull();
+		expect(safeHref('https://user:pw@example.com/')).toBeNull();
+		expect(safeHref('https://:pw@example.com/')).toBeNull();
+		expect(safeHref('https://@example.com/')).toBeNull();
+		expect(safeHref('https://example.com/a@b')).toBe('https://example.com/a@b');
 	});
 });
 

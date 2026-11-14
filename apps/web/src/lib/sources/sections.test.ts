@@ -93,6 +93,19 @@ describe('packTable', () => {
 		expect(table.notes[3].sharedWith).toEqual([]);
 	});
 
+	it('renders a paragraph a note repeats itself as written, without pointing at itself', () => {
+		const table = packTable('levels', [
+			{ id: 1, name: 'Twice', language: 'zh', notice: 'Same.\n\nOther.\n\nSame.' },
+			{ id: 2, name: 'Later', language: 'zh', notice: 'Same.' }
+		]);
+		const texts = (i: number) =>
+			table.notes[i].paragraphs.map((p) => p.parts.map((part) => part.text).join(''));
+		expect(texts(0)).toEqual(['Same.', 'Other.', 'Same.']);
+		expect(table.notes[0].sharedWith).toEqual([]);
+		expect(texts(1)).toEqual([]);
+		expect(table.notes[1].sharedWith).toEqual([{ id: 'note-levels-1', name: 'Twice' }]);
+	});
+
 	it('does not merge across tables', () => {
 		const a = packTable('levels', [{ id: 1, name: 'A', notice: 'Same.' }]);
 		const b = packTable('frequency', [{ id: 1, name: 'B', notice: 'Same.' }]);

@@ -101,23 +101,35 @@
 	{/each}
 {/snippet}
 
-{#snippet noteRef(noteId: string | undefined, name: string)}
-	{#if noteId}
-		<a class="note-ref" href={`#${noteId}`}>Note<span class="visually-hidden">{` on ${name}`}</span></a>
+<!-- The note link sits in a cell of its own, so the row header (announced
+     with every cell) holds only the pack name. -->
+{#snippet noteHeader(table: PackTable)}
+	{#if table.notes.length > 0}<th scope="col"><span class="visually-hidden">Note</span></th>{/if}
+{/snippet}
+
+{#snippet noteCell(table: PackTable, noteId: string | undefined, name: string)}
+	{#if table.notes.length > 0}
+		<td class="note-cell">
+			{#if noteId}<a href={`#${noteId}`}>Note<span class="visually-hidden">{` on ${name}`}</span></a
+				>{/if}
+		</td>
 	{/if}
 {/snippet}
 
-{#snippet notes(table: PackTable, headingId: string)}
+<!-- The visible "Notes" heading names the list: a dl has no role that
+     aria-labelledby could reliably name. -->
+{#snippet notes(table: PackTable)}
 	{#if table.notes.length > 0}
-		<h3 class="notes-heading" id={headingId}>Notes</h3>
-		<dl class="notes" aria-labelledby={headingId}>
+		<h3 class="notes-heading">Notes</h3>
+		<dl class="notes">
 			{#each table.notes as note (note.id)}
 				<dt id={note.id} tabindex="-1">{note.name}</dt>
 				<dd>
 					{@render paragraphs(note.paragraphs, note.lang)}
 					{#each note.sharedWith as shared (shared.id)}
 						<p class="shared">
-							The note on <a href={`#${shared.id}`}>{shared.name}</a> above also applies.
+							The source and terms in the note on <a href={`#${shared.id}`}>{shared.name}</a> above
+							also apply.
 						</p>
 					{/each}
 				</dd>
@@ -182,6 +194,7 @@
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
+							{@render noteHeader(dictionaryTable)}
 							<th scope="col">Version</th>
 							<th scope="col">License</th>
 							<th scope="col">Attribution</th>
@@ -190,9 +203,8 @@
 					<tbody>
 						{#each dictionaryTable.rows as row (row.key)}
 							<tr>
-								<th scope="row" class="name"
-									>{@render cell(row.name, row.language)}{@render noteRef(row.noteId, row.name)}</th
-								>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(dictionaryTable, row.noteId, row.name)}
 								<td>{row.version}</td>
 								<td>{@render cell(row.license, row.language)}</td>
 								<td>{@render cell(row.attribution, row.language)}</td>
@@ -201,7 +213,7 @@
 					</tbody>
 				</table>
 			</div>
-			{@render notes(dictionaryTable, 'sources-dictionaries-notes')}
+			{@render notes(dictionaryTable)}
 		{/if}
 
 		<p class="notice">
@@ -227,6 +239,7 @@
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
+							{@render noteHeader(frequencyTable)}
 							<th scope="col">Language</th>
 							<th scope="col">Version</th>
 							<th scope="col">License</th>
@@ -236,9 +249,8 @@
 					<tbody>
 						{#each frequencyTable.rows as row (row.key)}
 							<tr>
-								<th scope="row" class="name"
-									>{@render cell(row.name, row.language)}{@render noteRef(row.noteId, row.name)}</th
-								>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(frequencyTable, row.noteId, row.name)}
 								<td title={row.language}>{languageLabel(row.language)}</td>
 								<td>{row.version}</td>
 								<td>{@render cell(row.license, row.language)}</td>
@@ -248,7 +260,7 @@
 					</tbody>
 				</table>
 			</div>
-			{@render notes(frequencyTable, 'sources-frequency-notes')}
+			{@render notes(frequencyTable)}
 		{/if}
 
 		<p class="notice">
@@ -273,6 +285,7 @@
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
+							{@render noteHeader(levelTable)}
 							<th scope="col">Language</th>
 							<th scope="col">Version</th>
 							<th scope="col">License</th>
@@ -282,9 +295,8 @@
 					<tbody>
 						{#each levelTable.rows as row (row.key)}
 							<tr>
-								<th scope="row" class="name"
-									>{@render cell(row.name, row.language)}{@render noteRef(row.noteId, row.name)}</th
-								>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(levelTable, row.noteId, row.name)}
 								<td title={row.language}>{languageLabel(row.language)}</td>
 								<td>{row.version}</td>
 								<td>{@render cell(row.license, row.language)}</td>
@@ -294,11 +306,11 @@
 					</tbody>
 				</table>
 			</div>
-			{@render notes(levelTable, 'sources-levels-notes')}
+			{@render notes(levelTable)}
 		{/if}
 
 		<p class="notice">
-			Level lists group the character map and badge entries. Unless a notice below says
+			Level lists group the character map and badge entries. Unless a pack's note above says
 			otherwise, lists installed from packs are third-party compilations, not official releases
 			of the tests they are named after.
 		</p>
@@ -400,11 +412,9 @@
 		white-space: nowrap;
 	}
 
-	.note-ref {
-		display: block;
-		margin-top: 0.2rem;
-		font-size: 0.8rem;
-		font-weight: 400;
+	.note-cell {
+		font-size: 0.85rem;
+		white-space: nowrap;
 	}
 
 	.notice {

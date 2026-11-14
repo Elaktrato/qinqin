@@ -65,11 +65,12 @@ export function packTable(prefix: string, packs: PackSource[]): PackTable {
 		for (const paragraph of all) {
 			const key = JSON.stringify(paragraph.parts);
 			const first = seen.get(key);
-			if (first) {
+			// A paragraph this note itself repeats is shown as written.
+			if (first && first.id !== noteId) {
 				if (!sharedWith.some((note) => note.id === first.id)) sharedWith.push(first);
 			} else {
 				paragraphs.push(paragraph);
-				if (noteId) seen.set(key, { id: noteId, name: pack.name });
+				if (noteId && !first) seen.set(key, { id: noteId, name: pack.name });
 			}
 		}
 		rows.push({
