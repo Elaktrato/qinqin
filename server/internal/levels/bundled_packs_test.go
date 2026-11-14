@@ -31,11 +31,14 @@ func TestBundledLevelPacks(t *testing.T) {
 	cases := []struct {
 		id, name, language, unit string
 		levels                   []string
-		total                    int    // forms over all levels; 0 = not pinned
-		license                  string // the manifest's licence
-		files                    []string
+		total                    int      // forms over all levels; 0 = not pinned
+		license                  string   // the manifest's licence
+		files                    []string // files that must sit beside the manifest
 	}{
-		{"jlpt-kanji", "JLPT (kanji)", "ja", "character", jlpt, 0, "MIT", []string{"LICENSE", "ATTRIBUTION.md"}},
+		// kanjiapi.dev's 2,211 kanji plus the 176 it omits that the
+		// KANJIDIC2 gap fill places (scripts/prepare-level-packs.mjs).
+		{"jlpt-kanji", "JLPT kanji (approximate)", "ja", "character", jlpt, 2387,
+			"MIT AND CC BY-SA 4.0", []string{"ATTRIBUTION.md", "LICENSE", "LICENSE-KANJIDIC2"}},
 		// 11,000 syllabus rows less 41 homographs with the reading of an
 		// easier one (本1, 本2 běn).
 		{"hsk-words", "HSK 3.0 (words)", "zh", "word", hsk, 10959,

@@ -1,10 +1,10 @@
 {
   "id": "jlpt-kanji",
-  "name": "JLPT (kanji)",
-  "version": "kanjiapi.dev@76aa080",
+  "name": "JLPT kanji (approximate)",
+  "version": "kanjiapi.dev@76aa080+kanjidic2@2026-11-11",
   "type": "levels",
   "language": "ja",
-  "license": "MIT",
-  "attribution": "kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter), https://github.com/onlyskin/kanjiapi.dev — unofficial N5–N1 kanji lists; the JLPT publishes no official kanji list",
+  "license": "MIT AND CC BY-SA 4.0",
+  "attribution": "An approximation of the JLPT N5–N1 kanji levels (the JLPT publishes no official kanji list since 2010): base list kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter, provenance not stated upstream), https://github.com/onlyskin/kanjiapi.dev; kanji it omits placed by qinqin (scripts/prepare-level-packs.mjs) from KANJIDIC2 (CC BY-SA 4.0, © EDRDG) old JLPT level, school grade and frequency rank",
   "format": "json"
 }

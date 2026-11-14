@@ -101,7 +101,7 @@ describe('groupOptions', () => {
 		scheme(1, 'HSK mini (sample)', 'zh', 'hsk-mini', ['1', '2']),
 		scheme(2, 'HSK 3.0 (characters)', 'zh', 'hsk-chars', hsk),
 		scheme(3, 'HSK 3.0 (words)', 'zh', 'hsk-words', hsk),
-		scheme(4, 'JLPT (kanji)', 'ja', 'jlpt-kanji', ['N5', 'N4', 'N3', 'N2', 'N1']),
+		scheme(4, 'JLPT kanji (approximate)', 'ja', 'jlpt-kanji', ['N5', 'N4', 'N3', 'N2', 'N1']),
 		scheme(5, 'JLPT N5 mini (sample)', 'ja', 'jlpt-mini', ['N5']),
 		scheme(6, 'hsk-mini', 'zh'),
 		scheme(12, 'JLPT mini', 'ja'),
@@ -113,7 +113,7 @@ describe('groupOptions', () => {
 			{ key: 'grade', label: 'Grade' },
 			{ key: 'freq', label: 'Frequency' },
 			{ key: 'strokes', label: 'Strokes' },
-			{ key: 'scheme:4', label: 'JLPT (kanji)' },
+			{ key: 'scheme:4', label: 'JLPT kanji (approximate)' },
 			{ key: 'scheme:13', label: 'JLPT (vocabulary)' }
 		]);
 	});

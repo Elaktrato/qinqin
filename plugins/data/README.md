@@ -36,13 +36,14 @@ directory):
 | `jiten-frequency` | frequency | ja | Jiten global word frequency ranks, converted to `freq.csv.gz` (`term,reading,rank`, ranks unmodified) |
 
 Committed level lists (converted; each with an `ATTRIBUTION.md`, and the
-upstream `LICENSE` where upstream has one):
+upstream `LICENSE` where upstream has one; `jlpt-kanji` also carries the
+KANJIDIC2 licence as `LICENSE-KANJIDIC2`):
 
 | Pack | Type | Language | Scheme | Contents | Licence |
 |------|------|----------|--------|----------|---------|
 | `hsk-chars` | levels | zh | HSK 3.0 (characters) | the official HSK character list, unit `character`: the characters to recognise (认读字) per level, HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413, HSK 7–9 1,148 (3,088, none repeated; the 1,200 characters to write, 书写字, assign no level) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
 | `hsk-words` | levels | zh | HSK 3.0 (words) | the official HSK word list, unit `word`, each entry with its pinyin as reading: HSK 1 300, HSK 2 198, HSK 3 497, HSK 4 997, HSK 5 1,591, HSK 6 1,792, HSK 7–9 5,584 (from the syllabus's 11,000 rows: 300/200/500/1,000/1,600/1,800/5,600; 41 homographs repeating an easier row's form and pinyin, 本1/本2 běn, are kept once) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
-| `jlpt-kanji` | levels | ja | JLPT (kanji) | kanji by JLPT level, unit `character`: N5 79, N4 166, N3 367, N2 367, N1 1,232 (kanjiapi.dev `jlpt.tsv`, provenance not stated upstream; unofficial, as every N5–N1 list is; omits 172 jōyō kanji such as 分 可 無 的, and its N1 holds 247 jinmeiyō name kanji) | MIT, © 2023 Iridium Szreter |
+| `jlpt-kanji` | levels | ja | JLPT kanji (approximate) | kanji by approximate JLPT level, unit `character`: N5 80, N4 166, N3 377, N2 369, N1 1,395. Base: kanjiapi.dev `jlpt.tsv` (2,211 kanji, levels kept; provenance not stated upstream; unofficial, as every N5–N1 list is; its N1 holds 247 jinmeiyō name kanji). Gap fill: 176 kanji it omits (分 可 無 的 …) placed from KANJIDIC2's old JLPT level (19) or school grade (157), see `docs/sources.md` | MIT, © 2023 Iridium Szreter; derived levels CC BY-SA 4.0, EDRDG |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
 [{"name": "N5", "entries": [...]}]}`, levels easiest first. An entry is a
@@ -151,8 +152,9 @@ gitignored `plugins/data-local/`, are superseded by the official word and
 character lists.
 
 `scripts/prepare-level-packs.mjs <upstream-dir>` rebuilds the `jlpt-kanji`
-directory byte for byte from the pinned upstream files (the download commands
-are in its header).
+directory byte for byte from the pinned kanjiapi.dev files (the download
+commands are in its header) and the bundled `kanjidic2/kanjidic2.xml.gz`;
+`--calibrate <upstream-dir>` prints the evaluation of its gap-fill thresholds.
 
 The importers read the compressed files directly, so a fresh clone or the
 Docker image seeds with no network and no decompression step. Run
@@ -170,7 +172,8 @@ GB2312 and standard-list attributes for the character map (see
 `docs/sources.md`); a database seeded earlier needs a re-seed to fill them. The
 KANJIDIC2 `<jlpt>` field (the pre-2010 four-level scale) is not imported: a
 re-seed drops it from entries an older import wrote, and JLPT levels come from
-`jlpt-kanji`.
+`jlpt-kanji` (whose generator uses the field only to place kanji kanjiapi.dev
+omits).
 
 A slow test seeds this whole directory and checks lookups against the real
 data; it is opt-in: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v`
