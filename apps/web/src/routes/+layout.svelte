@@ -15,6 +15,7 @@
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionOnce } from '$lib/events';
 	import { dismissNotice, notice } from '$lib/notices';
+	import { allowed as routeAllowed, normalizePath, redirectTarget, routeAccess } from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import { load as loadWorkspaces, workspaces } from '$lib/workspaces';
@@ -31,16 +32,16 @@
 	// so the empty state never flashes while it is loading.
 	let workspacesLoaded = $state(false);
 
-	const publicPaths = new Set(['/login', '/register']);
-
-	const path = $derived(page.url.pathname.replace(/\/+$/, '') || '/');
+	const path = $derived(normalizePath(page.url.pathname));
 	const pluginLinks = $derived(visibleNavPages(webPlugins, $pluginStates));
-	const isPublic = $derived(publicPaths.has(path));
 	const signedIn = $derived($auth.token !== null);
+	// An open page (the Sources page) seen signed out gets a minimal
+	// shell: the brand, a sign-in link and the footer, nothing private.
+	const openSignedOut = $derived(!signedIn && routeAccess(path) === 'open');
 	// Render a route only when the session matches it: protected pages
-	// never flash while a redirect is in flight, and auth pages do not
-	// show once signed in.
-	const allowed = $derived(booted && (signedIn ? !isPublic : isPublic));
+	// never flash while a redirect is in flight, auth pages do not show
+	// once signed in, and open pages show either way (lib/routeAccess.ts).
+	const allowed = $derived(routeAllowed(path, signedIn, booted));
 	// The character map only makes sense for Han-script languages.
 	const showMap = $derived(
 		$workspaces.current !== null && usesHan($workspaces.current.language)
@@ -55,9 +56,12 @@
 		return fallback;
 	}
 
+	// A guard redirect replaces the history entry it leaves: Back from
+	// home after signing in must not land on /login only to be sent home
+	// again (a trap that also swallows the page before /login).
 	async function navigate(target: string): Promise<void> {
 		try {
-			await goto(target);
+			await goto(target, { replaceState: true });
 		} catch {
 			// A redirect from the API layer is already in flight.
 		}
@@ -76,9 +80,6 @@
 		// A workspace deleted in another tab or on another device: the
 		// first "workspace not found" reloads the list and falls back.
 		watchDeletedWorkspaces();
-		// Drain reviews queued while offline as soon as the shell boots,
-		// on whichever route the user opens. Never blocks the boot.
-		startReviewOutbox();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();
@@ -105,6 +106,9 @@
 		loadedToken = token;
 		workspaceError = '';
 		workspacesLoaded = false;
+		// Drain reviews queued while offline as soon as a session exists,
+		// on whichever route the user opens. Never blocks the boot.
+		startReviewOutbox();
 		void loadPluginStates();
 		void loadWorkspaces()
 			.then(() => {
@@ -121,13 +125,11 @@
 
 	// Re-evaluate on every client-side navigation and auth change, so
 	// logout (or a token expiring) cannot leave a protected page mounted.
+	// Open pages never redirect.
 	$effect(() => {
 		if (!booted) return;
-		if (!signedIn && !isPublic) {
-			void navigate('/login');
-		} else if (signedIn && isPublic) {
-			void navigate('/');
-		}
+		const target = redirectTarget(path, signedIn);
+		if (target !== null) void navigate(target);
 	});
 </script>
 
@@ -188,6 +190,23 @@
 			{#if workspaceError}
 				<p class="workspace-error" role="alert">{workspaceError}</p>
 			{/if}
+		{:else if openSignedOut}
+			<!-- Signed out on an open page: no nav of private pages, no
+			     workspace picker, no account. -->
+			<header class="shell">
+				<a
+					class="brand"
+					href="/login"
+					lang="zh"
+					aria-label={`${APP_NAME}, sign in`}
+					title={`${APP_NAME} – sign in`}>{APP_NAME_HANZI}</a
+				>
+				<div class="account guest">
+					<a class="sign-in" href="/login"
+						><NavIcon name={iconFor('signin')} size={18} /><span>Sign in</span></a
+					>
+				</div>
+			</header>
 		{/if}
 
 		<!-- Always in the DOM, so screen readers announce what arrives. -->
@@ -224,6 +243,19 @@
 					<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}
 						><NavIcon name={iconFor('settings')} size={16} /><span>Settings</span></a
 					>
+				</nav>
+				<span class="version">
+					<span lang="zh">{APP_NAME_HANZI}</span>
+					{APP_NAME}
+				</span>
+			</footer>
+		{:else if openSignedOut}
+			<footer class="footer">
+				<nav class="footer-links" aria-label="Footer">
+					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
+						><NavIcon name={iconFor('sources')} size={16} /><span>Sources</span></a
+					>
+					<a href="/login"><NavIcon name={iconFor('signin')} size={16} /><span>Sign in</span></a>
 				</nav>
 				<span class="version">
 					<span lang="zh">{APP_NAME_HANZI}</span>
@@ -390,6 +422,32 @@
 
 	.account button:hover {
 		background: color-mix(in srgb, currentColor 8%, transparent);
+	}
+
+	/* Signed out: the sign-in link sits where the account would. */
+	.account.guest {
+		margin-left: auto;
+	}
+
+	.sign-in {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.3rem 0.75rem 0.3rem 0.55rem;
+		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border-radius: 999px;
+		color: inherit;
+		text-decoration: none;
+		font-weight: 600;
+	}
+
+	.sign-in:hover {
+		background: color-mix(in srgb, currentColor 8%, transparent);
+	}
+
+	.sign-in:focus-visible {
+		outline: 2px solid var(--nav-accent);
+		outline-offset: 2px;
 	}
 
 	.workspace-error {

@@ -59,6 +59,9 @@
 	{:else if name === 'gear'}
 		<polygon points={gearOutline} />
 		<circle cx="12" cy="12" r="3" />
+	{:else if name === 'signin'}
+		<path d="M11 4h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6" />
+		<path d="M3.5 12H13.5M9.5 8l4 4-4 4" />
 	{:else if name === 'signout'}
 		<path d="M13 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6" />
 		<path d="M10.5 12H20.5M16.5 8l4 4-4 4" />

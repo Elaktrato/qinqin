@@ -4,7 +4,7 @@
 // arrives) and is retried on boot and when the browser goes online.
 
 import type { StudyEventBody } from '../api/types';
-import { ApiError, isWorkspaceGoneResponse } from '../api/client';
+import { ApiError, getToken, isWorkspaceGoneResponse } from '../api/client';
 import { showNotice } from '../notices';
 import { postEvents } from '../events';
 import { newUlid } from '../ulid';
@@ -126,7 +126,8 @@ let outboxStarted = false;
  * 401/408/429, which are worth retrying) drops just that event, while
  * network errors and transient statuses keep it queued. Events keep
  * their original ULIDs, so an ambiguous retry is deduplicated by the
- * server. The function never throws.
+ * server. Signed out it sends nothing and keeps the queue. The function
+ * never throws.
  */
 export function flushPendingReviews(): Promise<void> {
 	if (flushing !== null) return flushing;
@@ -137,6 +138,10 @@ export function flushPendingReviews(): Promise<void> {
 }
 
 async function flushOnce(): Promise<void> {
+	// Signed out (an open page such as /sources, or a reconnect after
+	// logout): every POST would be a 401, so the queue waits for the next
+	// session instead.
+	if (getToken() === null) return;
 	const queued = readPending();
 	if (queued.length === 0) return;
 
