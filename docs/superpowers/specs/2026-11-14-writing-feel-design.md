@@ -56,7 +56,7 @@ so it is built as a small, pure engine with shared test cases.
   review event shape is unchanged, so history and mastery are unaffected.
 - Keyboard isolation as today (drawing must not trigger the runner's 1–4 /
   Space keys); "Show character" and self-grading remain as the accessible path.
-- `prefers-reduced-motion`: snaps are instant, no morph.
+- `prefers-reduced-motion`: snaps are instant, no morph; a missed stroke stays as a static red line for ~250 ms instead of fading. Accepted strokes are announced through a polite live region.
 
 ## Approaches
 
@@ -140,9 +140,10 @@ strokes they covered. Hints are recorded in `meta.hints`.
 ### Tone card
 
 Same feel: all syllable pads stay visible as today, larger; the
-swipe is classified by the existing `toneFromGesture` and the ink **snaps** to
-the clean contour of the recognised tone (~120 ms morph), then focus moves to
-the next syllable. Checking stays per word ("Check", then right/wrong marks)
+swipe is classified by the existing `toneFromGesture`; the raw trace is cleared
+and the clean contour of the recognised tone is drawn in (~120 ms; this is not a
+morph of the trace), then focus moves to the next syllable. Pad aria-labels name
+the character, never the pinyin ("Syllable 1, 学: no tone yet"). Checking stays per word ("Check", then right/wrong marks)
 so a slip can be fixed before checking (swipe the pad again). Buttons and
 keys 1–5 stay.
 

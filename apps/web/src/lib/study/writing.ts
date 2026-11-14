@@ -42,11 +42,3 @@ export async function usableChars(
 	const data = await Promise.all(chars.map((ch) => load(ch)));
 	return chars.filter((_, i) => data[i] !== null);
 }
-
-/**
- * hanzi-writer quiz settings: leniency 1 and drawingWidth 4 are the library
- * defaults; the hint appears after 3 misses on a stroke.
- */
-export function quizOptions(): { showHintAfterMisses: number; leniency: number; drawingWidth: number } {
-	return { showHintAfterMisses: 3, leniency: 1, drawingWidth: 4 };
-}

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
 	isHan,
-	quizOptions,
 	suggestWritingGrade,
 	usableChars,
 	writableChars,
@@ -53,14 +52,5 @@ describe('usableChars', () => {
 	it('drops characters without stroke data', async () => {
 		const load = async (ch: string) => (ch === '习' ? null : {});
 		expect(await usableChars('学习生a', load)).toEqual(['学', '生']);
-	});
-});
-
-describe('quizOptions', () => {
-	it('hints after 3 misses', () => {
-		const q = quizOptions();
-		expect(q.showHintAfterMisses).toBe(3);
-		expect(q.leniency).toBeGreaterThan(0);
-		expect(q.drawingWidth).toBeGreaterThan(0);
 	});
 });

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import { formatReading } from '$lib/format';
 	import { maskWritten, type CardResult, type FlowItem } from '$lib/study/cardFlow';
@@ -27,6 +28,8 @@
 	let busy = $state(true);
 	let failed = $state('');
 	let feedback = $state('');
+	// Polite live region for accepted strokes (misses are announced through `feedback`).
+	let strokeNote = $state('');
 	let current = $state<CharStrokes | null>(null);
 	let revealSignal = $state(0);
 	let hintSignal = $state(0);
@@ -57,6 +60,7 @@
 	async function loadChar(index: number): Promise<void> {
 		busy = true;
 		mistakes = 0;
+		strokeNote = '';
 		current = null;
 		try {
 			const ch = chars[index];
@@ -107,11 +111,14 @@
 		if (changed) feedback = `Not that stroke. Mistakes: ${progress.mistakes}.`;
 		else if (progress.remaining === 0) feedback = 'Character done.';
 		else feedback = '';
+		if (!changed && progress.remaining > 0) {
+			strokeNote = `Stroke accepted, ${progress.remaining} to go.`;
+		}
 	}
 
 	$effect(() => {
 		alive = true;
-		void loadChar(0);
+		untrack(() => void loadChar(0));
 		return () => {
 			alive = false;
 			if (nextTimer !== null) {
@@ -205,6 +212,7 @@
 {/if}
 
 <p class="feedback" role="status" aria-live="polite">{feedback}</p>
+<p class="sr-only" aria-live="polite">{strokeNote}</p>
 
 <style>
 	.written {
@@ -322,6 +330,16 @@
 		min-height: 1.4rem;
 		margin: 0.5rem 0 0;
 		font-weight: 600;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.error {

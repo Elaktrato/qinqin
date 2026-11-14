@@ -54,6 +54,8 @@
 		start: number;
 		duration: number;
 		color: string | null;
+		/** Stay fully visible for the duration instead of fading (reduced motion). */
+		hold?: boolean;
 	}
 	const acceptsDown = createPalmGate();
 	let live: Pt[] = [];
@@ -106,7 +108,7 @@
 				// fades; the outline fades in underneath via CSS.
 				stroke(ctx, morphPath(f.ink, f.target, t), base, 1 - t);
 			} else {
-				stroke(ctx, f.ink, f.color ?? MISS_COLOR, 1 - t);
+				stroke(ctx, f.ink, f.color ?? MISS_COLOR, f.hold ? 1 : 1 - t);
 			}
 		}
 		ctx.globalAlpha = 1;
@@ -187,7 +189,8 @@
 			}
 			if (quiz.complete) finish(false, instant ? 0 : SNAP_MS);
 		} else if ('miss' in effect) {
-			if (!instant) fades.push({ ink, target: null, start: now, duration: MISS_MS, color: MISS_COLOR });
+			// Reduced motion keeps a static red cue instead of a fade.
+			fades.push({ ink, target: null, start: now, duration: MISS_MS, color: MISS_COLOR, hold: instant });
 			if (quiz.outline) scaffold = true;
 			if (effect.glow !== undefined) showGlow(effect.glow);
 		}

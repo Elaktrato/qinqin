@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import {
 		pinyinReadings,
-	tonePadLabels,
+		tonePadLabels,
 		toneCandidates,
 		toneVerdict,
 		type CardResult,
@@ -53,6 +54,10 @@
 	let drawing = $state<number | null>(null);
 	const reduceMotion =
 		typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+	let drawTimer: ReturnType<typeof setTimeout> | null = null;
+	onDestroy(() => {
+		if (drawTimer !== null) clearTimeout(drawTimer);
+	});
 	let announcement = $state('');
 	let pads = $state<(HTMLElement | null)[]>([]);
 
@@ -116,7 +121,9 @@
 		const tone = toneFromGesture(path);
 		if (!reduceMotion) {
 			drawing = index;
-			setTimeout(() => {
+			if (drawTimer !== null) clearTimeout(drawTimer);
+			drawTimer = setTimeout(() => {
+				drawTimer = null;
 				if (drawing === index) drawing = null;
 			}, 120);
 		}
@@ -204,7 +211,7 @@
 				class:wrong={mark === false}
 				bind:this={pads[index]}
 				role="img"
-				aria-label={`Syllable ${index + 1}${labels === null ? `, ${syllable.plain}` : ''}: ${tone === null ? 'no tone yet' : nameOf(tone)}`}
+				aria-label={`Syllable ${index + 1}, ${labels?.[index] ?? syllable.plain}: ${tone === null ? 'no tone yet' : nameOf(tone)}`}
 				onpointerdown={(event) => onPointerDown(event, index)}
 				onpointermove={(event) => onPointerMove(event, index)}
 				onpointerup={(event) => onPointerUp(event, index)}
