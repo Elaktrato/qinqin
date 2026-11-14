@@ -41,10 +41,17 @@ function judge(ink: readonly Pt[], candidate: readonly Pt[]): Judged {
 	// Shape in the candidate frame
 	const s = ra === 0 ? 1 : rb / ra;
 	let sum = 0;
+	let startErr = 0;
+	let endErr = 0;
 	for (let i = 0; i < a.length; i++) {
 		const m = { x: (a[i].x - ca.x) * s + cb.x, y: (a[i].y - ca.y) * s + cb.y };
-		sum += dist(m, b[i]);
+		const d = dist(m, b[i]);
+		sum += d;
+		if (i === 0) startErr = d;
+		if (i === a.length - 1) endErr = d;
 	}
+	// Endpoint anchoring: aligned ink start and end must sit near the candidate's.
+	if (startErr > MATCH.maxEnd * lenB || endErr > MATCH.maxEnd * lenB) return { ok: false, reason: 'shape' };
 	const score = sum / a.length / (lenB || 1);
 	if (score > MATCH.maxShape) return { ok: false, reason: 'shape' };
 	return { ok: true, score };

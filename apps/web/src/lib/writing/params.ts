@@ -6,6 +6,7 @@ export const MATCH = {
 	maxScale: 2.0,
 	minCos: 0.5,
 	maxShape: 0.2,
+	maxEnd: 0.08,
 	maxGap: 0.2,
 	maxJoin: 3,
 	minInk: 0.02

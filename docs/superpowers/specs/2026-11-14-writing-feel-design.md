@@ -109,6 +109,9 @@ For a candidate (one stroke or a join):
 Starting values (to be tuned): 32 resample points, centroid offset ≤ 0.3 of
 the box, scale 0.5–2.0, direction cosine ≥ 0.5, shape distance ≤ 0.2.
 
+**Ruling: endpoint anchoring** — fixes later-stroke/scribble false accepts at starting values — cost if wrong: slightly stricter on sloppy ends; tune `maxEnd` in Task 6. After mapping the ink into the candidate frame, the aligned ink start and end must each lie within `maxEnd` (0.08 x candidate path length) of the candidate's start and end. The ruling started at 0.35; against the fixtures, 0.08 is the loosest value that rejects every wrong-stroke and scribble case while all genuine cases pass (0.06 already rejects genuine noisy strokes).
+Deviation: the direction rule (start nearer start than end) is judged relative to each path's centroid, so a shifted stroke is not mistaken for a reversed one; placement is judged separately.
+
 ### Writing pad (`WritingPad.svelte`, used by `WritingCard`)
 
 - Square pad with a faint guide grid (cross + diagonals), our own styling.
