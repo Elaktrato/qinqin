@@ -19,6 +19,21 @@ import (
 	"qinqin/internal/model"
 )
 
+// RegistryTerms returns the pack id, licence and attribution of the
+// dictionaries row ImportLexicon registers for a dictionary manifest m:
+// its own id and terms, except that kanjidic2 registers the built-in
+// "kanjidic2" dictionary with its fixed terms and unihan the built-in
+// "unihan" dictionary with the manifest's terms.
+func RegistryTerms(m Manifest) (packID, license, attribution string) {
+	switch m.Format {
+	case FormatKanjidic2:
+		return kanjidic2PackID, kanjidic2License, kanjidic2Attribution
+	case FormatUnihan:
+		return unihanPackID, m.License, m.Attribution
+	}
+	return m.ID, m.License, m.Attribution
+}
+
 // ImportLexicon installs the dictionary pack into the lexicon. It
 // dispatches on the pack's format: jmdict, cedict, kanjidic2, unihan and
 // json. The whole pack — the dictionaries row and every entry, link and
@@ -52,7 +67,8 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		packID, license, attribution string
 		write                        func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error)
 	}
-	src := source{packID: m.ID, license: m.License, attribution: m.Attribution}
+	var src source
+	src.packID, src.license, src.attribution = RegistryTerms(m)
 	switch m.Format {
 	case FormatJMdict:
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
@@ -89,7 +105,6 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		if err != nil {
 			return Result{}, err
 		}
-		src.packID, src.license, src.attribution = kanjidic2PackID, kanjidic2License, kanjidic2Attribution
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			return importKanjidic2Lexicon(ctx, tx, store, dictID, m, es)
 		}
@@ -98,7 +113,6 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		if err != nil {
 			return Result{}, err
 		}
-		src.packID = unihanPackID
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			return importUnihanLexicon(ctx, tx, store, dictID, m, data)
 		}
