@@ -21,6 +21,10 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/db"
 	"qinqin/internal/lang"
+	"qinqin/internal/lexicon"
+	"qinqin/internal/library/sources"
+	"qinqin/internal/library/sources/aozora"
+	"qinqin/internal/library/sources/gutenberg"
 	"qinqin/internal/plugins"
 	"qinqin/internal/webdist"
 )
@@ -71,18 +75,35 @@ func defaultData() string {
 	return "./data"
 }
 
-// builtinHeatmapManifest registers the study heatmap the web build
-// ships. The manifest lives here, next to serving, so the server
+// builtinFlashcardsManifest registers the flashcards feature the web
+// build ships. The manifest lives here, next to serving, so the server
 // registry lists the widget in Settings and can carry its per-user
 // enabled/order state; Register upserts by id, so every start is safe.
-const builtinHeatmapManifest = `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature","surfaces":["home-widget"]}`
+const builtinFlashcardsManifest = `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature","surfaces":["home-widget"]}`
+
+// builtinReaderManifest registers the reader, a page-only feature the
+// web build serves at /p/reader.
+const builtinReaderManifest = `{"id":"qinqin-reader","name":"Reader","version":"1.0","type":"feature","surfaces":["page"]}`
+
+// retiredHeatmapPlugin is the plugin id earlier builds registered for
+// the generic home heatmap. The flashcards widget replaced it; an
+// upgraded database still carries the old registry row, so startup
+// unregisters it to keep Settings free of a dead plugin.
+const retiredHeatmapPlugin = "qinqin-heatmap"
 
 // registerBuiltinPlugins puts the feature plugins this build ships a
-// component for into the server registry. It runs at serve startup,
-// after migrations and before the HTTP server accepts requests.
+// component for into the server registry and retires the ones it no
+// longer ships. It runs at serve startup, after migrations and before
+// the HTTP server accepts requests; both steps are idempotent.
 func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
-	if err := plugins.Register(ctx, sqlDB, []byte(builtinHeatmapManifest)); err != nil {
-		return fmt.Errorf("register built-in plugin qinqin-heatmap: %w", err)
+	if err := plugins.Register(ctx, sqlDB, []byte(builtinFlashcardsManifest)); err != nil {
+		return fmt.Errorf("register built-in plugin qinqin-flashcards: %w", err)
+	}
+	if err := plugins.Register(ctx, sqlDB, []byte(builtinReaderManifest)); err != nil {
+		return fmt.Errorf("register built-in plugin qinqin-reader: %w", err)
+	}
+	if err := plugins.Unregister(ctx, sqlDB, retiredHeatmapPlugin); err != nil {
+		return fmt.Errorf("unregister retired plugin %s: %w", retiredHeatmapPlugin, err)
 	}
 	return nil
 }
@@ -125,7 +146,33 @@ func serveCmd(args []string) error {
 	}
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data)))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB))))
+}
+
+// version is sent in the User-Agent of requests to the text sources; set
+// it at build time with -ldflags "-X main.version=1.2.3".
+var version = "dev"
+
+// librarySources builds the public-domain text sources, sharing one
+// HTTP client (rate limits and cache under <data>/cache/sources).
+// Gutenberg's Chinese titles are indexed by pinyin from the lexicon in
+// sqlDB.
+func librarySources(dataDir string, sqlDB *sql.DB) []sources.Source {
+	c := sources.NewHTTPClient(filepath.Join(dataDir, "cache", "sources"),
+		"qinqin/"+version+" (+https://github.com/Elaktrato/qinqin)")
+	return []sources.Source{aozora.New(c), gutenberg.New(c, lexiconPinyin(lexicon.Store{DB: sqlDB}))}
+}
+
+// lexiconPinyin converts text to toneless pinyin through the lexicon; a
+// failed lookup converts to "" (the work stays searchable as written).
+func lexiconPinyin(st lexicon.Store) sources.Phonetics {
+	return func(ctx context.Context, text string) string {
+		p, err := st.Pinyin(ctx, text)
+		if err != nil {
+			return ""
+		}
+		return p
+	}
 }
 
 // rootHandler mounts the API on /api/ and /healthz and the web frontend on

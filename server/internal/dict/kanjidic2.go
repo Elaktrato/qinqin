@@ -35,10 +35,10 @@ type kanjidic2Doc struct {
 
 // kanjidic2Character is one <character> element, carrying only the
 // fields the importer consumes: the literal, the classical radical, the
-// stroke counts, and the readings and meanings of its rmgroup. The
-// nanori a character carries in nam_readings outside the rmgroup stay
-// out — name readings are not dictionary readings — and so do readings
-// in other notations, pinyin among them.
+// stroke counts and levels of its misc, and the readings and meanings of
+// its rmgroup. The nanori a character carries in nam_readings outside the
+// rmgroup stay out — name readings are not dictionary readings — and so
+// do readings in other notations, pinyin among them.
 type kanjidic2Character struct {
 	Literal string           `xml:"literal"`
 	Radical kanjidic2Radical `xml:"radical"`
@@ -59,9 +59,38 @@ type kanjidic2RadValue struct {
 	Value   int    `xml:",chardata"`
 }
 
-// kanjidic2Misc is a character's <misc> element.
+// kanjidic2Misc is a character's <misc> element: its stroke counts (the
+// first is the accepted one), and when it has them its school grade and
+// its rank among the 2,500 most frequent newspaper characters. Its <jlpt>
+// (the pre-2010 four-level scale) is not read: JLPT N5–N1 levels come
+// from the jlpt-kanji level pack.
 type kanjidic2Misc struct {
-	StrokeCounts []int `xml:"stroke_count"`
+	StrokeCounts []int  `xml:"stroke_count"`
+	Grade        string `xml:"grade"`
+	Freq         string `xml:"freq"`
+}
+
+// kanjidic2AttrKeys are the attrs a KANJIDIC2 import owns on a ja
+// character entry: a re-import replaces exactly these and keeps any
+// other key. "src" is "kd2" on every KANJIDIC2 character. "jlpt" (the
+// pre-2010 scale an older import stored) is still owned but never
+// written, so a re-seed drops it.
+var kanjidic2AttrKeys = []string{"strokes", "grade", "jlpt", "freq", "src"}
+
+// kanjidic2Attrs returns the attrs of a character's <misc>: strokes,
+// grade and freq as KANJIDIC2 writes them, each only when present, and
+// src "kd2".
+func kanjidic2Attrs(m kanjidic2Misc) map[string]string {
+	attrs := map[string]string{"src": "kd2"}
+	if len(m.StrokeCounts) > 0 {
+		attrs["strokes"] = strconv.Itoa(m.StrokeCounts[0])
+	}
+	for k, v := range map[string]string{"grade": m.Grade, "freq": m.Freq} {
+		if v = strings.TrimSpace(v); v != "" {
+			attrs[k] = v
+		}
+	}
+	return attrs
 }
 
 // kanjidic2RMGroup is the rmgroup of a character's reading_meaning.
@@ -85,8 +114,8 @@ type kanjidic2Meaning struct {
 
 // ParseKanjidic2 parses a KANJIDIC2 file from r: one raw entry per
 // character — its ON readings typed "on" and its KUN readings "kun" as
-// written, its English meanings as glosses, its first stroke count in
-// Attrs["strokes"], and its classical radical number in Radical. A
+// written, its English meanings as glosses, its level attrs (see
+// kanjidic2Attrs), and its classical radical number in Radical. A
 // character without a literal, or malformed XML, is an error.
 func ParseKanjidic2(r io.Reader) ([]RawEntry, error) {
 	var doc kanjidic2Doc
@@ -98,15 +127,12 @@ func ParseKanjidic2(r io.Reader) ([]RawEntry, error) {
 		if strings.TrimSpace(c.Literal) == "" {
 			return nil, fmt.Errorf("kanjidic2: character %d carries no literal", i+1)
 		}
-		e := RawEntry{Written: c.Literal}
+		e := RawEntry{Written: c.Literal, Attrs: kanjidic2Attrs(c.Misc)}
 		for _, rv := range c.Radical.RadValues {
 			if rv.RadType == "classical" {
 				e.Radical = rv.Value
 				break
 			}
-		}
-		if len(c.Misc.StrokeCounts) > 0 {
-			e.Attrs = map[string]string{"strokes": strconv.Itoa(c.Misc.StrokeCounts[0])}
 		}
 		for _, rd := range c.RMGroup.Readings {
 			switch rd.RType {

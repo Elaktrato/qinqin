@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 )
 
@@ -48,9 +48,14 @@ type sentenceRow struct {
 }
 
 // ImportPack installs the sentences pack: every sentence links to the
-// word entry its group names — resolved by written form, word kind, and
-// the pack's language — and carries the pack's manifest id as its
-// source label. Unknown words are skipped and reported, never created.
+// lexicon word entry its group names — resolved in the pack's language
+// through lexicon.Store.BestWord: by written form, a form shared by
+// several words linking to the BEST-ranked one alone, and for a word no
+// entry has as a written form, by the first kana reading of the
+// kana-written words (no written form, or usually-kana), highest
+// priority first (これ, する → 為る) — and
+// carries the pack's manifest id as its source label. Unknown words are
+// skipped and reported, never created.
 // The pack's previous sentences are replaced wholesale in one
 // transaction — superseded rows are soft-deleted, the new list
 // inserted — scoped to that pack's rows alone: user-owned sentences
@@ -78,14 +83,14 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 	// Resolve every group's word before writing anything: sentence
 	// packs never create entries, so every sentence must attach to an
 	// existing one.
-	store := entries.Store{DB: sqlDB}
+	store := lexicon.Store{DB: sqlDB}
 	var (
 		rows    []sentenceRow
 		skipped []string
 	)
 	for _, g := range groups {
-		e, err := store.GetByWritten(ctx, g.Word, "word", m.Language)
-		if errors.Is(err, entries.ErrNotFound) {
+		e, err := store.BestWord(ctx, m.Language, g.Word)
+		if errors.Is(err, lexicon.ErrNotFound) {
 			skipped = append(skipped, g.Word)
 			continue
 		}
@@ -109,15 +114,16 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 	return result, nil
 }
 
-// ForEntry returns the entry's active sentences in insertion order:
-// pack-provided ones carrying their source pack, user-added ones their
-// owner.
-func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID int64) ([]model.Sentence, error) {
+// ForEntry returns the entry's active sentences that viewerID may see, in
+// insertion order: pack-provided ones (carrying their source pack) and
+// the viewer's own (carrying their owner). Other users' sentences are
+// private; viewerID 0 (an anonymous caller) sees pack sentences only.
+func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID, viewerID int64) ([]model.Sentence, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at
 		FROM sentences
-		WHERE entry_id = ? AND deleted_at IS NULL
-		ORDER BY id`, entryID)
+		WHERE entry_id = ? AND deleted_at IS NULL AND (user_id IS NULL OR user_id = ?)
+		ORDER BY id`, entryID, viewerID)
 	if err != nil {
 		return nil, fmt.Errorf("sentences of entry %d: %w", entryID, err)
 	}

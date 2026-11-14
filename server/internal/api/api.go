@@ -5,7 +5,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"sync"
+
+	"qinqin/internal/library/sources"
 )
 
 // server carries the shared database handle and data directory for all
@@ -13,13 +17,20 @@ import (
 type server struct {
 	db      *sql.DB
 	dataDir string
+	sources []sources.Source
+
+	importMu  sync.Mutex
+	importing map[int64]bool // users with an import in flight
+
+	chars charactersCache // GET /api/characters payloads
 }
 
 // New returns the root HTTP handler with all qinqin routes mounted.
 // Uploaded packs are stored under dataDir/packs/. Domain routes are
-// added to the mux by later tasks, all sharing sqlDB.
-func New(sqlDB *sql.DB, dataDir string) http.Handler {
-	s := &server{db: sqlDB, dataDir: dataDir}
+// added to the mux by later tasks, all sharing sqlDB. srcs are the
+// public-domain text sources the library can search and import from.
+func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
+	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
 	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
@@ -30,21 +41,48 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	mux.HandleFunc("PUT /api/entries/{id}", s.handlePutEntry)
 	mux.HandleFunc("POST /api/entries/{id}/sentences", s.handleAddSentence)
 	mux.HandleFunc("GET /api/search", s.handleSearch)
+	mux.HandleFunc("GET /api/segment/at", s.handleSegmentAt)
+	mux.HandleFunc("POST /api/segment", s.handleSegment)
+	mux.HandleFunc("GET /api/lookup", s.handleLookup)
 	mux.HandleFunc("GET /api/sync/pull", s.handleSyncPull)
 	mux.HandleFunc("POST /api/sync/push", s.handleSyncPush)
 	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
 	mux.HandleFunc("GET /api/workspaces", s.handleListWorkspaces)
 	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
+	mux.HandleFunc("DELETE /api/workspaces/{id}", s.handleDeleteWorkspace)
+	mux.HandleFunc("GET /api/languages", s.handleListLanguages)
+	mux.HandleFunc("GET /api/characters", s.handleListCharacters)
 	mux.HandleFunc("POST /api/events/batch", s.handleEventBatch)
 	mux.HandleFunc("GET /api/events", s.handleListEvents)
 	mux.HandleFunc("GET /api/dictionaries", s.handleListDictionaries)
 	mux.HandleFunc("POST /api/admin/dictionaries", s.handleInstallDictionary)
 	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
+	mux.HandleFunc("GET /api/frequency-packs", s.handleListFrequencyPacks)
 	mux.HandleFunc("GET /api/schemes", s.handleListSchemes)
+	mux.HandleFunc("GET /api/schemes/{id}/entries", s.handleSchemeEntries)
+	mux.HandleFunc("GET /api/schemes/{id}/characters", s.handleSchemeCharacters)
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
 	mux.HandleFunc("GET /api/plugins", s.handleListPlugins)
+	mux.HandleFunc("POST /api/library/upload", s.handleUploadBook)
+	mux.HandleFunc("GET /api/library/books", s.handleListBooks)
+	mux.HandleFunc("GET /api/library/books/{id}", s.handleGetBook)
+	mux.HandleFunc("GET /api/library/books/{id}/chapters/{n}", s.handleGetChapter)
+	mux.HandleFunc("PUT /api/library/books/{id}/position", s.handleSetBookPosition)
+	mux.HandleFunc("DELETE /api/library/books/{id}", s.handleDeleteBook)
+	mux.HandleFunc("GET /api/library/books/{id}/bookmarks", s.handleListBookmarks)
+	mux.HandleFunc("POST /api/library/books/{id}/bookmarks", s.handleAddBookmark)
+	mux.HandleFunc("PUT /api/library/books/{id}/bookmarks/{bid}", s.handleRenameBookmark)
+	mux.HandleFunc("DELETE /api/library/books/{id}/bookmarks/{bid}", s.handleDeleteBookmark)
+	mux.HandleFunc("GET /api/library/books/{id}/highlights", s.handleListHighlights)
+	mux.HandleFunc("POST /api/library/books/{id}/highlights", s.handleAddHighlight)
+	mux.HandleFunc("PUT /api/library/books/{id}/highlights/{hid}", s.handleUpdateHighlight)
+	mux.HandleFunc("DELETE /api/library/books/{id}/highlights/{hid}", s.handleDeleteHighlight)
+	mux.HandleFunc("GET /api/library/sources", s.handleListSources)
+	mux.HandleFunc("GET /api/library/sources/{source}/search", s.handleSearchSource)
+	mux.HandleFunc("GET /api/library/sources/{source}/browse", s.handleBrowseSource)
+	mux.HandleFunc("POST /api/library/sources/{source}/import", s.handleImportSource)
 	mux.HandleFunc("PUT /api/plugins/{id}/state", s.handleSetPluginState)
 	mux.HandleFunc("GET /api/plugins/{id}/data/{key}", s.handleGetPluginData)
 	mux.HandleFunc("PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData)
@@ -52,11 +90,32 @@ func New(sqlDB *sql.DB, dataDir string) http.Handler {
 	return mux
 }
 
-// Request body caps of the two bulk write routes, the largest bodies the
-// API accepts.
+// Request size limits: body caps of the bulk write routes (the largest
+// bodies the API accepts) and the code-point caps on segmented text.
 const (
 	maxBatchBody = 4 << 20 // POST /api/events/batch
 	maxPushBody  = 8 << 20 // POST /api/sync/push
+
+	// Small JSON bodies. Every route that reads a body caps it, so an
+	// oversized request is a 413 after at most the cap is read, never a
+	// 30 MB read (or a 30 MB row served back on every list and pull).
+	maxAuthBody           = 4 << 10  // POST /api/auth/login and /register: a username and a password
+	maxWorkspaceBody      = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
+	maxWorkspaceSettings  = 64 << 10 // the merged settings object stored per workspace (the web client stores none today)
+	maxPluginManifestBody = 64 << 10 // POST /api/admin/plugins: the bundled manifests are under 0.5 KiB
+	maxPluginStateBody    = 64 << 10 // PUT /api/plugins/{id}/state: {"enabled","order"}, a few dozen bytes
+	maxEntryBody          = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)
+	// maxPluginDataValue caps one plugin data value, on PUT
+	// /api/plugins/{id}/data/{key} and per item in a sync push. Real
+	// values are far smaller: a flashcards card or deck row is under
+	// 2 KiB, reader preferences a few hundred bytes; the headroom leaves
+	// room for a plugin that keeps a list in one key.
+	maxPluginDataValue = 256 << 10
+
+	maxSegmentBody    = 256 << 10 // POST /api/segment body bytes
+	maxSegmentRunes   = 5000      // POST /api/segment text code points
+	maxSegmentAtRunes = 64        // GET /api/segment/at text code points (the client sends <= 16)
+	maxLookupRunes    = 64        // GET /api/lookup text code points
 )
 
 // badBody answers a request body that failed to decode: 413 when it
@@ -68,6 +127,29 @@ func badBody(w http.ResponseWriter, err error) {
 		return
 	}
 	http.Error(w, "malformed request body", http.StatusBadRequest)
+}
+
+// writeTooLarge answers 413 with the JSON error body of the limited
+// routes.
+func writeTooLarge(w http.ResponseWriter) {
+	writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
+}
+
+// readBody reads the whole request body, at most limit bytes. Beyond
+// the cap it stops reading, answers 413 itself (writeTooLarge) and
+// reports false; another read failure is a 400.
+func readBody(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool) {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
+	if err != nil {
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			writeTooLarge(w)
+		} else {
+			http.Error(w, "malformed request body", http.StatusBadRequest)
+		}
+		return nil, false
+	}
+	return body, true
 }
 
 func handleHealthz(w http.ResponseWriter, r *http.Request) {

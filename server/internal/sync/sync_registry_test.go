@@ -17,8 +17,8 @@ func TestPullShipsRegistryRows(t *testing.T) {
 	seedWorld(t, sqlDB)
 
 	d := mustPull(t, sqlDB, alice, time.Time{})
-	if len(d.Dictionaries) != 1 || d.Dictionaries[0].PackID != "mkgloss" {
-		t.Errorf("dictionaries = %+v, want mkgloss", d.Dictionaries)
+	if len(d.Dictionaries) != 2 || d.Dictionaries[0].PackID != "mkgloss" || d.Dictionaries[1].PackID != "jm-mini" {
+		t.Errorf("dictionaries = %+v, want mkgloss and jm-mini", d.Dictionaries)
 	}
 	if len(d.Schemes) != 1 || d.Schemes[0].PackID != "hsk-mini" || d.Schemes[0].Unit != "word" {
 		t.Errorf("schemes = %+v, want hsk-mini", d.Schemes)
@@ -55,10 +55,10 @@ func TestPullShipsRegistryRows(t *testing.T) {
 		t.Fatalf("uninstall: %v", err)
 	}
 	inc := mustPull(t, sqlDB, alice, time.Now().UTC().Add(-time.Hour))
-	if len(inc.Dictionaries) != 1 || inc.Dictionaries[0].DeletedAt == nil {
+	if len(inc.Dictionaries) < 1 || inc.Dictionaries[0].PackID != "mkgloss" || inc.Dictionaries[0].DeletedAt == nil {
 		t.Errorf("incremental dictionaries = %+v, want a tombstone", inc.Dictionaries)
 	}
-	if fresh := mustPull(t, sqlDB, alice, time.Time{}); len(fresh.Dictionaries) != 0 {
+	if fresh := mustPull(t, sqlDB, alice, time.Time{}); len(fresh.Dictionaries) != 1 || fresh.Dictionaries[0].PackID != "jm-mini" {
 		t.Errorf("fresh pull shipped uninstalled dictionary %+v", fresh.Dictionaries)
 	}
 }

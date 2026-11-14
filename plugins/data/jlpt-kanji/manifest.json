@@ -1,0 +1,10 @@
+{
+  "id": "jlpt-kanji",
+  "name": "JLPT (kanji)",
+  "version": "kanjiapi.dev@76aa080",
+  "type": "levels",
+  "language": "ja",
+  "license": "MIT",
+  "attribution": "kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter), https://github.com/onlyskin/kanjiapi.dev — unofficial N5–N1 kanji lists; the JLPT publishes no official kanji list",
+  "format": "json"
+}

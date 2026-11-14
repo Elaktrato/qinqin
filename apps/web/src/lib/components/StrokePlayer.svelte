@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type HanziWriter from 'hanzi-writer';
 	import type { CharacterJson } from 'hanzi-writer';
+	import { strokeUrl } from '$lib/study/strokeData';
 
 	interface Props {
 		char: string;
@@ -33,14 +34,12 @@
 			try {
 				// The stroke data is copied into static/hanzi by the prebuild
 				// step under codepoint names (U597D.json), so the URL is
-				// computed here and no giant URL map ships with the page.
-				const codepoint = symbol.codePointAt(0);
-				const url = codepoint === undefined ? null : `/hanzi/U${codepoint.toString(16).toUpperCase()}.json`;
-				if (!url) {
+				// computed (strokeUrl) and no giant URL map ships with the page.
+				if (symbol.codePointAt(0) === undefined) {
 					unavailableFor = symbol;
 					return;
 				}
-				const [module, response] = await Promise.all([import('hanzi-writer'), fetch(url)]);
+				const [module, response] = await Promise.all([import('hanzi-writer'), fetch(strokeUrl(symbol))]);
 				if (cancelled) return;
 				if (!response.ok) throw new Error(`No stroke data for ${symbol}`);
 				const data = (await response.json()) as CharacterJson;

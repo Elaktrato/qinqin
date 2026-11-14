@@ -4,6 +4,7 @@
 	import { ApiError } from '$lib/api/client';
 	import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
 	import type { Entry, EntryBase, EntryDetail } from '$lib/api/types';
+	import AddToStudy from '$lib/components/AddToStudy.svelte';
 	import Badges from '$lib/components/Badges.svelte';
 	import EntryEditor from '$lib/components/EntryEditor.svelte';
 	import Readings from '$lib/components/Readings.svelte';
@@ -11,6 +12,7 @@
 	import Sentences from '$lib/components/Sentences.svelte';
 	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
 	import { record } from '$lib/events';
+	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 
 	let entry = $state<Entry | null>(null);
@@ -131,15 +133,18 @@
 				<h1 class="written">{entry.written}</h1>
 				<div class="chips">
 					<span class="chip">{entry.kind}</span>
-					<span class="chip">{entry.language}</span>
+					<span class="chip" title={entry.language}>{languageLabel(entry.language)}</span>
 				</div>
 				{#if entry.kind === 'character' && entry.language === 'zh'}
 					<StrokePlayer char={entry.written} />
 				{/if}
 			</div>
-			{#if !editing}
-				<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
-			{/if}
+			<div class="actions">
+				<AddToStudy entryId={entry.id} written={entry.written} sentenceId={entry.sentences?.[0]?.id} />
+				{#if !editing}
+					<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
+				{/if}
+			</div>
 		</header>
 
 		{#if editing}
@@ -252,6 +257,13 @@
 		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		border-radius: 999px;
 		opacity: 0.8;
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: 0.6rem;
 	}
 
 	.edit {

@@ -27,6 +27,29 @@ type Pack interface {
 	DeriveReadings(readings []model.Reading) []model.Reading
 }
 
+// Deinflection is one possible dictionary form of an inflected surface.
+type Deinflection struct {
+	Form string
+	// Reason is the inflection chain innermost first, space-joined, e.g.
+	// "causative passive negative past" — Reasons reversed.
+	Reason string
+	// Reasons is the inflection chain in application order: the rule
+	// applied to the surface first, the one producing Form last, e.g.
+	// negative past, passive, causative for 食べさせられなかった.
+	Reasons []string
+	// Class is the word class Form must have to be this deinflection
+	// (ClassV1, ClassV5, …); see ClassMatches. An intermediate form that
+	// is no dictionary form (飲みます) has a class no POS tag matches.
+	Class string
+}
+
+// Deinflector is implemented by packs whose surface forms inflect.
+// Deinflect returns possible dictionary forms for surface (never surface
+// itself), most specific first.
+type Deinflector interface {
+	Deinflect(surface string) []Deinflection
+}
+
 var (
 	mu    sync.RWMutex
 	packs = map[string]Pack{}

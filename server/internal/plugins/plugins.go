@@ -3,7 +3,7 @@
 // plugin, and the plugin-owned data store plugins keep their settings
 // and content in. Feature plugins ship no content of their own, so
 // registering one only stores its manifest; data plugins (dictionary,
-// levels, sentences packs) register themselves through their pack
+// levels, frequency, sentences packs) register themselves through their pack
 // registries and appear in listings without a row here.
 package plugins
 
@@ -77,6 +77,32 @@ func manifestID(manifestJSON []byte) (string, error) {
 	return id, nil
 }
 
+// Unregister removes a feature plugin from the registry together with
+// every user's state for it. It is how a build retires a plugin it no
+// longer ships: an upgraded database keeps the old row otherwise, and
+// Settings would list a dead plugin. Unregistering an id that is not
+// present is a no-op, so it is safe on every start.
+func Unregister(ctx context.Context, sqlDB *sql.DB, pluginID string) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("plugins: unregister %s: %w", pluginID, err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM plugin_states WHERE pack_id = ?`, pluginID); err != nil {
+		return fmt.Errorf("plugins: unregister %s: delete states: %w", pluginID, err)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM plugin_registry WHERE pack_id = ?`, pluginID); err != nil {
+		return fmt.Errorf("plugins: unregister %s: delete registry row: %w", pluginID, err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("plugins: unregister %s: %w", pluginID, err)
+	}
+	return nil
+}
+
 // ListFor returns every plugin the user can put on their home —
 // feature plugins from the registry plus the data plugins registered
 // by pack imports — each with the user's state overlaid: default
@@ -86,7 +112,7 @@ func manifestID(manifestJSON []byte) (string, error) {
 func ListFor(ctx context.Context, sqlDB *sql.DB, userID int64) ([]model.PluginInfo, error) {
 	list := make([]model.PluginInfo, 0)
 	for _, load := range []func(context.Context, *sql.DB) ([]model.PluginInfo, error){
-		featurePlugins, dictionaryPlugins, schemePlugins, sentencePlugins,
+		featurePlugins, dictionaryPlugins, schemePlugins, frequencyPlugins, sentencePlugins,
 	} {
 		found, err := load(ctx, sqlDB)
 		if err != nil {
@@ -195,6 +221,31 @@ func schemePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, erro
 	return list, nil
 }
 
+// frequencyPlugins lists the frequency packs, active only.
+func frequencyPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT pack_id, name, version, language, license, attribution
+		FROM frequency_packs WHERE deleted_at IS NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read frequency packs: %w", err)
+	}
+	defer rows.Close()
+
+	list := make([]model.PluginInfo, 0)
+	for rows.Next() {
+		var m dataManifest
+		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
+			return nil, fmt.Errorf("plugins: scan frequency pack: %w", err)
+		}
+		m.Type = "frequency"
+		list = append(list, dataPlugin(m))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read frequency packs: %w", err)
+	}
+	return list, nil
+}
+
 // sentencePlugins lists the sentences packs by the pack ids their
 // imported sentences carry — the only registry a sentences pack has.
 func sentencePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
@@ -264,7 +315,7 @@ func statesFor(ctx context.Context, sqlDB *sql.DB, userID int64) (map[string]mod
 
 // Exists reports whether pluginID names a plugin the user can have
 // state or data under: a registered feature plugin or an active data
-// plugin (dictionary, levels scheme, or sentences pack).
+// plugin (dictionary, levels scheme, frequency pack, or sentences pack).
 func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 	var one int
 	err := sqlDB.QueryRowContext(ctx, `
@@ -274,8 +325,10 @@ func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 		UNION ALL
 		SELECT 1 FROM schemes WHERE pack_id = ? AND deleted_at IS NULL
 		UNION ALL
+		SELECT 1 FROM frequency_packs WHERE pack_id = ? AND deleted_at IS NULL
+		UNION ALL
 		SELECT 1 FROM sentences WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL
-		LIMIT 1`, pluginID, pluginID, pluginID, pluginID).Scan(&one)
+		LIMIT 1`, pluginID, pluginID, pluginID, pluginID, pluginID).Scan(&one)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}

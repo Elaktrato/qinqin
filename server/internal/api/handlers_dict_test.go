@@ -32,7 +32,7 @@ func newServerWithDir(t *testing.T) (*httptest.Server, *sql.DB, string) {
 		t.Fatalf("db.Open: %v", err)
 	}
 	t.Cleanup(func() { sqlDB.Close() })
-	ts := httptest.NewServer(api.New(sqlDB, dataDir))
+	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB, dataDir
 }
@@ -223,7 +223,7 @@ func TestDictionaryRoutes(t *testing.T) {
 	// The imported entries are served, with derived readings.
 	var nihaoID int64
 	if err := sqlDB.QueryRow(`SELECT id FROM entries
-		WHERE written = '你好' AND kind = 'word' AND language = 'zh'`).Scan(&nihaoID); err != nil {
+		WHERE ext_key = '你好' AND kind = 'word' AND language = 'zh'`).Scan(&nihaoID); err != nil {
 		t.Fatalf("find imported 你好: %v", err)
 	}
 	entryResp := getEntry(t, ts.URL, "/api/entries/"+strconv.FormatInt(nihaoID, 10))
@@ -232,7 +232,7 @@ func TestDictionaryRoutes(t *testing.T) {
 	}
 	var body entryBody
 	decodeJSON(t, entryResp, &body)
-	if bm := findReading(body.Entry, "bopomofo"); bm == nil || bm.Value != "ㄋㄧˇ ㄏㄠˇ" {
+	if bm := findReading(body.EntryBase, "bopomofo"); bm == nil || bm.Value != "ㄋㄧˇ ㄏㄠˇ" {
 		t.Errorf("imported entry readings = %+v, want derived bopomofo ㄋㄧˇ ㄏㄠˇ", body.Readings)
 	}
 

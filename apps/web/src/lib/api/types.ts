@@ -53,18 +53,96 @@ export interface SearchHit extends EntryBase {
 	source: string;
 }
 
+// SenseGroup is one sense of an entry as one dictionary gives it, with
+// its part of speech, tags and cross-references.
+export interface SenseGroup {
+	dictionaryId: number;
+	dictionaryName: string;
+	packId: string;
+	license: string;
+	attribution: string;
+	pos: string[];
+	tags: string[];
+	glosses: string[];
+	xrefs: string[];
+}
+
 // Entry is GET /api/entries/{id}: the shared row plus the caller's
-// senses, scheme badges, variants, and example sentences.
+// senses, scheme badges, variants, and example sentences. senses is one
+// row per gloss; senseGroups one row per sense; forms the written forms
+// (flags such as rK or trad).
 export interface Entry extends EntryBase {
 	badges: Badge[];
 	variants: EntryBase[];
 	sentences: Sentence[];
 	senses: SenseView[];
+	forms?: { text: string; flags: string[]; pri?: number }[];
+	senseGroups?: SenseGroup[];
 }
 
 // EntryDetail is the full entry view returned by GET and PUT
 // /api/entries/{id}: the entry plus the sections above.
 export type EntryDetail = Entry;
+
+// Level is one rung of a scheme's ladder, ordered by ord. GET /api/schemes
+// serves only the fields the web client reads.
+export interface Level {
+	id: number;
+	ord: number;
+	name: string;
+}
+
+// Scheme is GET /api/schemes: an installed levels pack (HSK, JLPT, …) and
+// its ordered levels.
+export interface Scheme {
+	id: number;
+	name: string;
+	unit: string;
+	language: string;
+	/** The manifest id of the pack (`hsk-mini`, …); the server always sends it. */
+	packId?: string;
+	/** The pack's manifest version, licence and credits (Sources page). */
+	version?: string;
+	license?: string;
+	attribution?: string;
+	levels: Level[];
+}
+
+// CharRow is one character of GET /api/characters in its compact form.
+// Every field but the id and glyph is omitted when absent.
+export interface CharRow {
+	/** Entry id. */
+	i: number;
+	/** The written glyph (simplified for zh). */
+	c: string;
+	/** Stroke count. */
+	s?: number;
+	/** ja: KANJIDIC2 grade (1–6, 8, 9, 10). */
+	g?: number;
+	/** ja: KANJIDIC2 newspaper frequency rank. */
+	f?: number;
+	/** zh: 1 when the character is in the 通用规范汉字表. */
+	t?: number;
+	/** zh: GB2312 level (1 or 2). */
+	b?: number;
+	/** zh: Hong Kong primary grade (1–6). */
+	h?: number;
+	/** First reading. */
+	r?: string;
+	/** First gloss. */
+	m?: string;
+	/** Variant forms (zh traditional/simplified partners) sharing the cell. */
+	v?: string[];
+}
+
+// CharactersResponse is GET /api/characters?language=.
+export interface CharactersResponse {
+	language: string;
+	count: number;
+	chars: CharRow[];
+	/** True when the database predates the new importer fields (re-seed needed). */
+	stale?: boolean;
+}
 
 // Dictionary is one element of GET /api/dictionaries: an installed
 // dictionary pack's credit line. The list endpoint does not expose the
@@ -77,11 +155,34 @@ export interface Dictionary {
 	attribution: string;
 }
 
+// FrequencyPack is one element of GET /api/frequency-packs: an installed
+// word-frequency pack's credit line, in priority order.
+export interface FrequencyPack {
+	id: number;
+	name: string;
+	version: string;
+	language: string;
+	license: string;
+	attribution: string;
+}
+
 export interface Workspace {
 	id: number;
 	language: string;
+	/** Optional display name; '' for the first workspace of a language. */
+	name: string;
 	settings: Record<string, unknown>;
 	updatedAt: string;
+}
+
+// Language is one element of GET /api/languages: a language with
+// installed dictionary data. `name` may be a pack title (for example a
+// demo dictionary's name), so the UI labels languages from the code via
+// languageLabel instead of showing it.
+export interface Language {
+	code: string;
+	name: string;
+	installed: boolean;
 }
 
 // PluginInfo is one element of GET /api/plugins: the plugin manifest
@@ -103,4 +204,120 @@ export interface StudyEventBody {
 	ts: string;
 	type: string;
 	payload: unknown;
+}
+
+// LookupResult is one entry of GET /api/lookup. start/end are code-point
+// offsets of `matched` in the text the caller passed to lookupAt.
+export interface LookupResult {
+	entryId: number;
+	kind: 'word' | 'character';
+	term: string;
+	reading: string;
+	forms: { text: string; flags?: string[] }[];
+	readings: { type: string; value: string; plain: string }[];
+	matched: string;
+	start: number;
+	end: number;
+	reasons: string[];
+	tags: string[];
+	frequencies: { packId: number; packName: string; rank: number; display?: string }[];
+	senses: {
+		dictionaryId: number;
+		dictionaryName: string;
+		pos: string[];
+		tags: string[];
+		glosses: string[];
+		xrefs: string[];
+	}[];
+	pri: number;
+}
+
+// SegmentMatch is one dictionary match from /api/segment[/at]; start and
+// end are code-point offsets into the segmented text.
+export interface SegmentMatch {
+	surface: string;
+	start: number;
+	end: number;
+	lemma: string;
+	reason: string;
+	entries: SegmentCandidate[];
+}
+
+// SegmentCandidate is one entry a match resolves to; reading is true when
+// it matched by a kana reading rather than its written form (Japanese).
+export interface SegmentCandidate {
+	id: number;
+	kind: 'character' | 'word';
+	reading?: boolean;
+}
+
+// Book is one library book as served by /api/library/books.
+export interface Book {
+	id: number;
+	/** The workspace whose library holds the book. */
+	workspaceId: number;
+	language: string;
+	title: string;
+	author: string;
+	source: string;
+	sourceId: string;
+	sourceUrl: string;
+	attribution: string;
+	licenseNote: string;
+	chapterCount: number;
+	position: string;
+	createdAt: string;
+}
+
+// Bookmark is one bookmark of a library book. `position` uses the reading
+// position format ("<chapter>:<paragraph>"); `label` is at most 120 code
+// points (the server cleans whitespace and control characters).
+export interface Bookmark {
+	id: number;
+	bookId: number;
+	position: string;
+	label: string;
+	createdAt: string;
+}
+
+export type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink';
+
+// Highlight is one highlighted span of a library book: code points
+// [start,end) of the displayed plain text (ruby excluded) of one
+// paragraph. `text` is exactly that span (no edge whitespace, end - start
+// code points, at most 500), used to notice when the text changed; `note`
+// is optional (at most 2000 code points). Only colour and note can change.
+export interface Highlight {
+	id: number;
+	bookId: number;
+	chapter: number;
+	paragraph: number;
+	start: number;
+	end: number;
+	text: string;
+	color: HighlightColor;
+	note: string;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface Chapter {
+	title: string;
+	paragraphs: { text: string; ruby?: string }[][];
+}
+
+export interface SourceInfo {
+	id: string;
+	name: string;
+	languages: string[];
+}
+
+export interface SourceResult {
+	sourceId: string;
+	title: string;
+	author: string;
+	language: string;
+	note: string;
+	/** The phonetic reading that matched the query (hiragana for ja, toneless pinyin for zh). */
+	reading?: string;
 }

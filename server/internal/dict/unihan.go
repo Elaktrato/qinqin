@@ -2,18 +2,13 @@ package dict
 
 import (
 	"bufio"
-	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
-
-	"qinqin/internal/entries"
 )
 
 // unihanFile is the data file of a format "unihan" dictionary pack: the
@@ -21,17 +16,26 @@ import (
 const unihanFile = "dictionary.txt"
 
 // unihanZipFile is the upstream distribution of the Unihan database. The
-// members below carry every field the importer parses: kRSUnicode lives
-// in the IRG sources file (not the Adobe radical-stroke file, which
-// carries a different field), variants in the variants file, and
-// kDefinition in the readings file.
+// members below carry every field the importer parses: kRSUnicode and
+// kTotalStrokes live in the IRG sources file (not the Adobe radical-stroke
+// file, which carries a different field), variants in the variants file,
+// and kDefinition and kTGHZ2013 in the readings file — these three are
+// required. kGB0 lives in the other-mappings file and kGradeLevel in the
+// dictionary-like-data file; an older archive without them still imports,
+// just without those attrs.
 const unihanZipFile = "Unihan.zip"
 
-var unihanZipMembers = []string{
-	"Unihan_IRGSources.txt",
-	"Unihan_Variants.txt",
-	"Unihan_Readings.txt",
-}
+var (
+	unihanZipMembers = []string{
+		"Unihan_IRGSources.txt",
+		"Unihan_Variants.txt",
+		"Unihan_Readings.txt",
+	}
+	unihanZipOptionalMembers = []string{
+		"Unihan_OtherMappings.txt",
+		"Unihan_DictionaryLikeData.txt",
+	}
+)
 
 // The built-in dictionary a unihan import registers. The Unihan database
 // is one canonical dataset, whatever pack delivered the file, so its row
@@ -41,12 +45,15 @@ var unihanZipMembers = []string{
 const unihanPackID = "unihan"
 
 // UnihanData is what ParseUnihan extracts from a Unihan database file:
-// the four fields the importer consumes, keyed by character.
+// the fields the importer consumes, keyed by character.
 type UnihanData struct {
 	Radicals     map[string]int      // kRSUnicode: character -> Kangxi radical number, left of the "."
 	TradVariants map[string][]string // kTraditionalVariant: character -> its traditional variants
 	SimpVariants map[string][]string // kSimplifiedVariant: character -> its simplified variants
 	Definitions  map[string]string   // kDefinition: character -> its English definition
+	// Attrs holds each character's level and stroke attrs (see
+	// unihanAttrKeys): kTotalStrokes, kTGHZ2013, kGB0 and kGradeLevel.
+	Attrs map[string]map[string]string
 }
 
 // ParseUnihan parses Unihan database lines from r: each data line is a
@@ -64,6 +71,7 @@ func ParseUnihan(r io.Reader) (UnihanData, error) {
 		TradVariants: map[string][]string{},
 		SimpVariants: map[string][]string{},
 		Definitions:  map[string]string{},
+		Attrs:        map[string]map[string]string{},
 	}
 	var lineNo int
 	sc := bufio.NewScanner(r)
@@ -90,6 +98,14 @@ func ParseUnihan(r io.Reader) (UnihanData, error) {
 			data.SimpVariants[ch], err = parseVariants(parts[2])
 		case "kDefinition":
 			data.Definitions[ch], err = parseDefinition(parts[2])
+		case "kTotalStrokes", "kTGHZ2013", "kGB0", "kGradeLevel":
+			var key, value string
+			if key, value, err = parseUnihanAttr(parts[1], parts[2]); err == nil && key != "" {
+				if data.Attrs[ch] == nil {
+					data.Attrs[ch] = map[string]string{}
+				}
+				data.Attrs[ch][key] = value
+			}
 		}
 		if err != nil {
 			return UnihanData{}, fmt.Errorf("unihan: line %d (%q): %w", lineNo, line, err)
@@ -131,6 +147,57 @@ func parseRadicalCount(value string) (int, error) {
 	return n, nil
 }
 
+// unihanAttrKeys are the attrs a Unihan import owns on a zh character
+// entry: a re-import replaces exactly these and keeps any other key.
+var unihanAttrKeys = []string{"strokes", "tghz", "gb", "hkgrade"}
+
+// parseUnihanAttr reads one level or stroke field into its attr:
+//   - kTotalStrokes "6" or "7 9" -> strokes, the first (preferred) count;
+//   - kTGHZ2013 (any value: the character is in the 2013 通用规范汉字表)
+//     -> tghz "1";
+//   - kGB0 "RRCC", the GB2312 row and cell -> gb "1" for rows 16–55 (level
+//     1 hanzi), "2" for rows 56–87 (level 2); any other row is not a hanzi
+//     level and yields no attr (key "");
+//   - kGradeLevel "1".."6", the Hong Kong primary-school grade -> hkgrade.
+//
+// kGB0 and kGradeLevel come from the optional zip members: a malformed
+// value there yields no attr (key "") instead of failing the import, as a
+// missing member does. A malformed kTotalStrokes (a required member) is
+// an error.
+func parseUnihanAttr(field, value string) (key, attr string, err error) {
+	switch field {
+	case "kTotalStrokes":
+		counts := strings.Fields(value)
+		if len(counts) > 0 {
+			if n, err := strconv.Atoi(counts[0]); err == nil && n > 0 {
+				return "strokes", strconv.Itoa(n), nil
+			}
+		}
+		return "", "", fmt.Errorf("kTotalStrokes value %q is not a stroke count", value)
+	case "kTGHZ2013":
+		return "tghz", "1", nil
+	case "kGB0":
+		code, err := strconv.Atoi(value)
+		if err != nil || len(value) != 4 || strings.Trim(value, "0123456789") != "" {
+			return "", "", nil // malformed optional value: no attr
+		}
+		switch row := code / 100; {
+		case row >= 16 && row <= 55:
+			return "gb", "1", nil
+		case row >= 56 && row <= 87:
+			return "gb", "2", nil
+		}
+		return "", "", nil
+	case "kGradeLevel":
+		n, err := strconv.Atoi(value)
+		if err != nil || n < 1 {
+			return "", "", nil // malformed optional value: no attr
+		}
+		return "hkgrade", strconv.Itoa(n), nil
+	}
+	return "", "", nil
+}
+
 // parseVariants reads a kSimplifiedVariant or kTraditionalVariant value:
 // space-separated characters, as U+XXXX codepoints or spelled out.
 func parseVariants(value string) ([]string, error) {
@@ -167,12 +234,12 @@ func parseDefinition(value string) (string, error) {
 // readUnihanPack reads and parses the data of the format "unihan" pack in
 // dir. Two layouts are accepted: the upstream distribution, Unihan.zip,
 // from which the members carrying the parsed fields are concatenated
-// (radical-stroke counts, variants, readings — kDefinition included),
+// (see unihanZipMembers; the optional ones only when present),
 // and a single plain or gzip-compressed dictionary.txt.
 func readUnihanPack(dir string) (UnihanData, error) {
 	zipPath := filepath.Join(dir, unihanZipFile)
 	if _, err := os.Stat(zipPath); err == nil {
-		f, err := openZipMembers(zipPath, unihanZipMembers...)
+		f, err := openZipMembers(zipPath, unihanZipMembers, unihanZipOptionalMembers)
 		if err != nil {
 			return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, unihanZipFile, dir, err)
 		}
@@ -193,105 +260,4 @@ func readUnihanPack(dir string) (UnihanData, error) {
 		return UnihanData{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, unihanFile, dir, err)
 	}
 	return data, nil
-}
-
-// importUnihan installs a format "unihan" pack: character entries for
-// every hanzi the file mentions — a field key or a variant counterpart —
-// variant links across simplified/traditional pairs in both directions
-// (a form may have several counterparts either way), radical
-// classification through the Kangxi table, and the kDefinition strings
-// as the senses of the built-in "unihan" dictionary. Unihan fields carry
-// no pronunciations, so a hanzi entered by another dictionary keeps its
-// readings, and one first seen here gets none.
-func importUnihan(ctx context.Context, sqlDB *sql.DB, m Manifest, data UnihanData) (Result, error) {
-	if err := registerLanguage(ctx, sqlDB, m); err != nil {
-		return Result{}, err
-	}
-	store := entries.Store{DB: sqlDB}
-
-	// Every hanzi the file mentions: a key of any consumed field, or a
-	// character named as a variant counterpart.
-	seen := make(map[string]bool, len(data.Radicals)+len(data.Definitions))
-	for ch := range data.Radicals {
-		seen[ch] = true
-	}
-	for ch := range data.Definitions {
-		seen[ch] = true
-	}
-	for _, field := range []map[string][]string{data.TradVariants, data.SimpVariants} {
-		for ch, variants := range field {
-			seen[ch] = true
-			for _, v := range variants {
-				seen[v] = true
-			}
-		}
-	}
-
-	// Entries in sorted order, so an import is deterministic. charEntry
-	// reuses a hanzi another dictionary already entered — readings and
-	// senses intact — and creates or revives a bare one otherwise.
-	chars := make([]string, 0, len(seen))
-	for ch := range seen {
-		chars = append(chars, ch)
-	}
-	slices.Sort(chars)
-	ids := make(map[string]int64, len(chars))
-	for _, ch := range chars {
-		id, err := charEntry(ctx, store, m.Language, ch)
-		if err != nil {
-			return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-		}
-		ids[ch] = id
-	}
-
-	// Variant pairs from both sides of the mapping: LinkVariant writes
-	// both directions and links an existing pair again as a no-op, so a
-	// pair named by a kSimplifiedVariant and a kTraditionalVariant line
-	// alike links once.
-	for _, field := range []map[string][]string{data.TradVariants, data.SimpVariants} {
-		for ch, variants := range field {
-			for _, v := range variants {
-				if v == ch {
-					continue // a self-pair is not a variant
-				}
-				if err := store.LinkVariant(ctx, ids[ch], ids[v]); err != nil {
-					return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-				}
-			}
-		}
-	}
-
-	// Radical classification: the count left of the dot is a Kangxi
-	// radical number, whose character becomes an entry through the
-	// table, so radicals are fetchable and browsable like any hanzi.
-	for _, ch := range chars {
-		n, ok := data.Radicals[ch]
-		if !ok {
-			continue
-		}
-		radical, ok := kangxiRadicals[n]
-		if !ok {
-			return Result{}, fmt.Errorf("import dictionary %s: %s is under radical %d, outside the Kangxi radicals 1–214", m.ID, ch, n)
-		}
-		radicalID, err := charEntry(ctx, store, m.Language, radical)
-		if err != nil {
-			return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-		}
-		if err := store.SetRadical(ctx, ids[ch], radicalID); err != nil {
-			return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
-		}
-	}
-
-	// The kDefinition strings become the built-in dictionary's senses,
-	// one sense per character.
-	senses := make([]senseRow, 0, len(data.Definitions))
-	for _, ch := range chars {
-		if def, ok := data.Definitions[ch]; ok {
-			senses = append(senses, senseRow{entryID: ids[ch], gloss: def})
-		}
-	}
-	if _, err := replaceSenses(ctx, sqlDB, unihanPackID, m.Name, m.Version, m.License, m.Attribution, senses); err != nil {
-		return Result{}, err
-	}
-	return Result{Entries: len(chars), Senses: len(senses)}, nil
 }

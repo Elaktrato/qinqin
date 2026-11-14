@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 	"qinqin/internal/sentences"
@@ -23,15 +23,9 @@ func TestSentenceRoutes(t *testing.T) {
 
 	ts, sqlDB := newServer(t)
 	ctx := context.Background()
-	st := entries.Store{DB: sqlDB}
-	nihao := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "word", Written: "你好",
-		Readings: []model.Reading{{Type: "pinyin", Value: "nǐ hǎo"}},
-	})
-	ni := mustUpsertEntry(t, st, &model.Entry{
-		Language: "zh", Kind: "character", Written: "你",
-		Readings: []model.Reading{{Type: "pinyin", Value: "nǐ"}},
-	})
+	importSchemeCedict(t, sqlDB)
+	nihao := lexID(t, sqlDB, "zh", "word", "你好")
+	ni := lexID(t, sqlDB, "zh", "character", "你")
 
 	// The admin layer dispatches sentence packs by manifest type; the
 	// fixture imports through the library like the seed CLI does.
@@ -98,11 +92,18 @@ func TestSentenceRoutes(t *testing.T) {
 		t.Errorf("stored sentence = %+v, want bob's sentence on 你好", stored)
 	}
 
-	// Word GET carries pack and user rows alike; the user's row is
-	// marked with its owner.
-	body = getEntryBody(t, ts.URL, nihao)
+	// Bob's GET carries the pack rows and his own row, marked with its
+	// owner. Anonymous callers and other users (the admin) see the pack
+	// rows only: user sentences are private to their owner.
+	if anon := getEntryBody(t, ts.URL, nihao); len(anon.Sentences) != 2 {
+		t.Errorf("anonymous sentences of 你好 = %+v, want the pack's two only", anon.Sentences)
+	}
+	if other := getEntryBodyAs(t, ts.URL, nihao, admin); len(other.Sentences) != 2 {
+		t.Errorf("admin's sentences of 你好 = %+v, want the pack's two only", other.Sentences)
+	}
+	body = getEntryBodyAs(t, ts.URL, nihao, bob)
 	if len(body.Sentences) != 3 {
-		t.Fatalf("sentences of 你好 after bob's post = %+v, want three", body.Sentences)
+		t.Fatalf("bob's sentences of 你好 after his post = %+v, want three", body.Sentences)
 	}
 	var bobs *model.Sentence
 	for i := range body.Sentences {
@@ -135,13 +136,63 @@ func TestSentenceRoutes(t *testing.T) {
 		}
 	}
 	for name, req := range map[string]any{
-		"malformed body": "not-an-object",
-		"empty hanzi":    map[string]any{"hanzi": "", "pinyin": "nǐ hǎo.", "translation": "Hello."},
-		"missing pinyin": map[string]any{"hanzi": "你好。", "translation": "Hello."},
-		"no translation": map[string]any{"hanzi": "你好。", "pinyin": "nǐ hǎo."},
+		"malformed body":   "not-an-object",
+		"empty hanzi":      map[string]any{"hanzi": "", "pinyin": "nǐ hǎo.", "translation": "Hello."},
+		"whitespace hanzi": map[string]any{"hanzi": " 　\n"},
 	} {
 		if resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, req); resp.StatusCode != http.StatusBadRequest {
 			t.Errorf("POST %s: status = %d, want %d", name, resp.StatusCode, http.StatusBadRequest)
+		}
+	}
+
+	// Over-long fields are 422 (2000 runes each; CJK counts by rune, not
+	// byte), and a body over 16 KiB is 413.
+	long := strings.Repeat("字", 2001)
+	for name, req := range map[string]map[string]string{
+		"long hanzi":       {"hanzi": long},
+		"long pinyin":      {"hanzi": "你好。", "pinyin": strings.Repeat("a", 2001)},
+		"long translation": {"hanzi": "你好。", "translation": strings.Repeat("a", 2001)},
+	} {
+		if resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, req); resp.StatusCode != http.StatusUnprocessableEntity {
+			t.Errorf("POST %s: status = %d, want %d", name, resp.StatusCode, http.StatusUnprocessableEntity)
+		}
+	}
+	if resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, map[string]string{
+		"hanzi": "你好。", "translation": strings.Repeat("a", 17*1024),
+	}); resp.StatusCode != http.StatusRequestEntityTooLarge {
+		t.Errorf("POST oversized body: status = %d, want %d", resp.StatusCode, http.StatusRequestEntityTooLarge)
+	}
+	// Exactly 2000 runes of CJK (6000 bytes) is fine.
+	{
+		resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, map[string]string{"hanzi": strings.Repeat("字", 2000)})
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("POST 2000-rune sentence: status = %d, want %d", resp.StatusCode, http.StatusCreated)
+		}
+		var got model.Sentence
+		decodeJSON(t, resp, &got)
+		if _, err := sqlDB.Exec(`DELETE FROM sentences WHERE id = ?`, got.ID); err != nil {
+			t.Fatalf("remove 2000-rune sentence: %v", err)
+		}
+	}
+
+	// Reading and translation are optional: the reader saves the book
+	// sentence a word was found in with its text only. Those rows are
+	// removed again below so the counts after uninstall stay as before.
+	for name, req := range map[string]map[string]string{
+		"text only":      {"hanzi": "我们学习。"},
+		"no translation": {"hanzi": "你好。", "pinyin": "nǐ hǎo."},
+	} {
+		resp := doJSON(t, http.MethodPost, ts.URL, path+"/sentences", bob, req)
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("POST %s: status = %d, want %d", name, resp.StatusCode, http.StatusCreated)
+		}
+		var got model.Sentence
+		decodeJSON(t, resp, &got)
+		if got.ID == 0 || got.Hanzi != req["hanzi"] || got.Pinyin != req["pinyin"] || got.Translation != "" {
+			t.Errorf("POST %s: stored = %+v, want the text with empty optional fields", name, got)
+		}
+		if _, err := sqlDB.Exec(`DELETE FROM sentences WHERE id = ?`, got.ID); err != nil {
+			t.Fatalf("remove %s sentence: %v", name, err)
 		}
 	}
 
@@ -163,7 +214,7 @@ func TestSentenceRoutes(t *testing.T) {
 	if resp := doJSON(t, http.MethodDelete, ts.URL, packPath, admin, nil); resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("DELETE sentences: status = %d, want %d", resp.StatusCode, http.StatusNoContent)
 	}
-	body = getEntryBody(t, ts.URL, nihao)
+	body = getEntryBodyAs(t, ts.URL, nihao, bob)
 	if len(body.Sentences) != 1 || body.Sentences[0].ID != stored.ID ||
 		body.Sentences[0].UserID == nil || *body.Sentences[0].UserID != bobID {
 		t.Errorf("sentences of 你好 after uninstall = %+v, want only bob's", body.Sentences)
@@ -172,4 +223,16 @@ func TestSentenceRoutes(t *testing.T) {
 	if resp := doJSON(t, http.MethodDelete, ts.URL, packPath, admin, nil); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("DELETE uninstalled pack: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
 	}
+}
+
+// getEntryBodyAs is getEntryBody with the caller's bearer token.
+func getEntryBodyAs(t *testing.T, tsURL string, id int64, token string) entryBody {
+	t.Helper()
+	resp := doJSON(t, http.MethodGet, tsURL, "/api/entries/"+strconv.FormatInt(id, 10), token, nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /api/entries/%d: status = %d, want %d", id, resp.StatusCode, http.StatusOK)
+	}
+	var body entryBody
+	decodeJSON(t, resp, &body)
+	return body
 }

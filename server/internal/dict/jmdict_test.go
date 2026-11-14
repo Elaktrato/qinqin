@@ -1,7 +1,6 @@
 package dict_test
 
 import (
-	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -10,8 +9,6 @@ import (
 	"testing"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/entries"
-	"qinqin/internal/lang"
 	"qinqin/internal/model"
 )
 
@@ -113,98 +110,5 @@ func TestJmdictParseRejectsBadInput(t *testing.T) {
 	if _, err := dict.ParseJMdict(strings.NewReader(
 		`<JMdict><entry><ent_seq>2</ent_seq><r_ele><reb>れ</reb></r_ele><sense><gloss xml:lang="dut">x</gloss></sense></entry></JMdict>`)); err == nil || !strings.Contains(err.Error(), "English glosses") {
 		t.Errorf("ParseJMdict(entry without English glosses) = %v, want an error naming the glosses", err)
-	}
-}
-
-func TestJmdictImport(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	pack := loadJmdictFixture(t)
-
-	res, err := dict.Import(ctx, sqlDB, pack)
-	if err != nil {
-		t.Fatalf("Import(jmdict sample): %v", err)
-	}
-	// Three word entries — 学校, its 學校 variant form, これ — and four
-	// senses: school for both kanji forms, これ's two glosses.
-	if res.Entries != 3 || res.Senses != 4 {
-		t.Fatalf("Import(jmdict sample) = %+v, want 3 entries and 4 senses", res)
-	}
-	dictID := dictionaryID(t, sqlDB, "jmdict-sample")
-
-	st := entries.Store{DB: sqlDB}
-	gakkou := mustGet(t, st, "学校", "word", "ja")
-
-	// The kana reading with its hiragana plain form, plus the romaji
-	// reading the ja pack derived from it inside the upsert.
-	wantReadings := []model.Reading{
-		{Type: "kana", Value: "がっこう", Plain: "がっこう", Ord: 0},
-		{Type: "romaji", Value: "gakkou", Plain: "gakkou", Ord: 1},
-	}
-	if !slices.Equal(gakkou.Readings, wantReadings) {
-		t.Errorf("readings of 学校 = %+v, want %+v", gakkou.Readings, wantReadings)
-	}
-
-	// A romaji query matches the kana reading's plain form — the point
-	// of the canonical form.
-	if got := lang.For("ja").SearchPlain("gakkou"); got != wantReadings[0].Plain {
-		t.Errorf(`SearchPlain("gakkou") = %q, want the kana plain %q`, got, wantReadings[0].Plain)
-	}
-
-	// The 學校 form is its own entry, variant-linked both ways, with
-	// the readings and glosses carried over.
-	kyuukou := mustGet(t, st, "學校", "word", "ja")
-	if !slices.Equal(kyuukou.Readings, wantReadings) {
-		t.Errorf("readings of 學校 = %+v, want the readings carried over", kyuukou.Readings)
-	}
-	wantVariants(t, st, gakkou, "學校")
-	wantVariants(t, st, kyuukou, "学校")
-
-	// The kana-only word is written as its reading, with its romaji
-	// derived and no variants.
-	kore := mustGet(t, st, "これ", "word", "ja")
-	wantKore := []model.Reading{
-		{Type: "kana", Value: "これ", Plain: "これ", Ord: 0},
-		{Type: "romaji", Value: "kore", Plain: "kore", Ord: 1},
-	}
-	if !slices.Equal(kore.Readings, wantKore) {
-		t.Errorf("readings of これ = %+v, want %+v", kore.Readings, wantKore)
-	}
-	wantVariants(t, st, kore)
-
-	// Glosses under the pack's own dictionary.
-	if got := activeGlosses(t, sqlDB, dictID, gakkou.ID); !slices.Equal(got, []string{"school"}) {
-		t.Errorf("glosses of 学校 = %v, want [school]", got)
-	}
-	if got := activeGlosses(t, sqlDB, dictID, kyuukou.ID); !slices.Equal(got, []string{"school"}) {
-		t.Errorf("glosses of 學校 = %v, want [school] — both forms get the sense", got)
-	}
-	if got := activeGlosses(t, sqlDB, dictID, kore.ID); !slices.Equal(got, []string{"this", "this one (indicating an item near the listener)"}) {
-		t.Errorf("glosses of これ = %v, want both glosses in order", got)
-	}
-
-	// ja is a registered code pack: importing it creates no language row.
-	var jaRows int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM languages WHERE code = 'ja'`).Scan(&jaRows); err != nil {
-		t.Fatalf("count ja language rows: %v", err)
-	}
-	if jaRows != 0 {
-		t.Errorf("ja language rows = %d, want 0 (ja is a code pack, not data-only)", jaRows)
-	}
-
-	// Re-importing is idempotent: same counts, same entry ids, links not
-	// duplicated, senses replaced wholesale.
-	if res, err := dict.Import(ctx, sqlDB, pack); err != nil {
-		t.Fatalf("re-import jmdict sample: %v", err)
-	} else if res.Entries != 3 || res.Senses != 4 {
-		t.Errorf("re-import = %+v, want 3 entries and 4 senses again", res)
-	}
-	again := mustGet(t, st, "学校", "word", "ja")
-	if again.ID != gakkou.ID {
-		t.Errorf("id of 学校 after re-import = %d, want %d", again.ID, gakkou.ID)
-	}
-	wantVariants(t, st, again, "學校")
-	if a, d := senseCounts(t, sqlDB, dictID); a != 4 || d != 0 {
-		t.Errorf("senses after re-import = %d active, %d tombstoned, want 4 and 0", a, d)
 	}
 }

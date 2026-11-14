@@ -5,28 +5,56 @@
 
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
-import Heatmap from './heatmap/Heatmap.svelte';
-import { heatmapManifest } from './heatmap/manifest';
+import type { PluginStatesValue } from './states';
+import Flashcards from './flashcards/FlashcardsWidget.svelte';
+import { flashcardsManifest } from './flashcards/manifest';
+import ReaderPage from './reader/ReaderPage.svelte';
+import { readerManifest } from './reader/manifest';
 
 export interface PluginManifest {
 	id: string;
 	name: string;
-	/** Where the plugin may render; home widgets today. */
+	version?: string;
+	/** Where the plugin may render: 'home-widget' and/or 'page'. */
 	surfaces: string[];
+}
+
+export interface PluginPage {
+	title: string;
+	/** Show a link in the shell nav. */
+	nav?: boolean;
+	/** Rendered at /p/<slug>/<rest>; routes `rest` internally. */
+	component: Component<{ rest: string }>;
 }
 
 export interface WebPlugin {
 	manifest: PluginManifest;
-	component: Component;
+	/** Home widget; plugins without one are page-only. */
+	component?: Component;
+	pages?: PluginPage[];
 }
 
-export const webPlugins: WebPlugin[] = [{ manifest: heatmapManifest, component: Heatmap }];
+export const webPlugins: WebPlugin[] = [
+	{ manifest: flashcardsManifest, component: Flashcards },
+	{
+		manifest: readerManifest,
+		pages: [{ title: 'Reader', nav: true, component: ReaderPage }]
+	}
+];
+
+/** homeWidgets lists enabled plugins that have a home widget, in the user's order. */
+export function homeWidgets(plugins: WebPlugin[], states: PluginInfo[]): WebPlugin[] {
+	return orderPlugins(
+		plugins.filter((plugin) => plugin.component && pluginEnabled(plugin.manifest.id, states)),
+		states
+	);
+}
 
 /**
  * pluginState returns the caller's server state for a web manifest id.
  * Feature plugins are registered server-side under the `qinqin-` pack
- * id (`qinqin-heatmap`) while the web manifest keeps the short client
- * id, so either form resolves to the same state.
+ * id (`qinqin-flashcards`) while callers may hold the short client id,
+ * so either form resolves to the same state.
  */
 export function pluginState(id: string, states: PluginInfo[]): PluginInfo | undefined {
 	return states.find((plugin) => plugin.id === id || plugin.id === `qinqin-${id}`);
@@ -56,4 +84,50 @@ export function orderPlugins(plugins: WebPlugin[], states: PluginInfo[]): WebPlu
 			return orderA - orderB || a.index - b.index;
 		})
 		.map(({ plugin }) => plugin);
+}
+
+/** pluginSlug is the URL segment for a plugin id: `qinqin-reader` -> `reader`. */
+export function pluginSlug(id: string): string {
+	return id.startsWith('qinqin-') ? id.slice('qinqin-'.length) : id;
+}
+
+/**
+ * navPages lists the shell nav links of enabled plugins that declare a
+ * nav page, in the user's plugin order.
+ */
+export function navPages(
+	plugins: WebPlugin[],
+	states: PluginInfo[]
+): { slug: string; title: string; href: string }[] {
+	const enabled = plugins.filter((plugin) => pluginEnabled(plugin.manifest.id, states));
+	return orderPlugins(enabled, states).flatMap((plugin) => {
+		const slug = pluginSlug(plugin.manifest.id);
+		return (plugin.pages ?? [])
+			.filter((page) => page.nav)
+			.map((page) => ({ slug, title: page.title, href: `/p/${slug}` }));
+	});
+}
+
+/**
+ * visibleNavPages is navPages gated on the loaded plugin states: no
+ * plugin link shows before they are ready or when they failed to load,
+ * so a plugin the user disabled never flashes in the nav.
+ */
+export function visibleNavPages(
+	plugins: WebPlugin[],
+	state: PluginStatesValue
+): { slug: string; title: string; href: string }[] {
+	return state.status === 'ready' ? navPages(plugins, state.list) : [];
+}
+
+/** findPlugin resolves a /p/<slug> segment; disabled or unknown plugins yield undefined. */
+export function findPlugin(
+	slug: string,
+	plugins: WebPlugin[],
+	states: PluginInfo[]
+): WebPlugin | undefined {
+	return plugins.find(
+		(plugin) =>
+			pluginSlug(plugin.manifest.id) === slug && pluginEnabled(plugin.manifest.id, states)
+	);
 }

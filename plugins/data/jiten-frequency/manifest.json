@@ -1,0 +1,10 @@
+{
+  "id": "jiten-frequency",
+  "name": "Jiten frequency list",
+  "version": "2026-11-12",
+  "type": "frequency",
+  "language": "ja",
+  "license": "CC BY-SA 4.0",
+  "attribution": "Jiten (https://jiten.moe), global frequency list",
+  "format": "freq-csv"
+}

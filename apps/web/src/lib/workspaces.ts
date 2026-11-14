@@ -1,6 +1,7 @@
 import { derived, get, writable } from 'svelte/store';
-import { api } from './api/client';
+import { ApiError, api } from './api/client';
 import type { Workspace } from './api/types';
+import { forgetWorkspace } from './workspaceDelete';
 
 // The static SPA has no server session, so the chosen workspace is
 // remembered across reloads in localStorage under this exact key.
@@ -63,16 +64,36 @@ export async function load(): Promise<Workspace[]> {
 
 /**
  * create opens a workspace for `language` (the API lowercases and
- * auto-registers data-only codes), reloads the list, and selects it.
+ * auto-registers data-only codes) with an optional display name,
+ * reloads the list, and selects it. A blank name is not sent; the API
+ * answers 409 when the (language, name) pair already exists.
  */
-export async function create(language: string): Promise<Workspace> {
+export async function create(language: string, name?: string): Promise<Workspace> {
+	const trimmed = name?.trim() ?? '';
 	const created = await api<Workspace>('/api/workspaces', {
 		method: 'POST',
-		body: { language }
+		body: trimmed ? { language, name: trimmed } : { language }
 	});
 	await load();
 	select(created.id);
 	return created;
+}
+
+/**
+ * rename sets a workspace's display name ('' clears it) and replaces
+ * that workspace in the store with the server's copy, keeping the
+ * current selection.
+ */
+export async function rename(id: number, name: string): Promise<Workspace> {
+	const updated = await api<Workspace>(`/api/workspaces/${id}`, {
+		method: 'PUT',
+		body: { name: name.trim() }
+	});
+	workspaces.update((state) => ({
+		list: state.list.map((workspace) => (workspace.id === id ? updated : workspace)),
+		current: state.current?.id === id ? updated : state.current
+	}));
+	return updated;
 }
 
 /** select switches the current workspace and persists the choice. */
@@ -83,4 +104,41 @@ export function select(id: number): void {
 		persistSelection(current.id);
 	}
 	workspaces.set({ ...state, current });
+}
+
+function browserStorage(kind: 'localStorage' | 'sessionStorage'): Storage | null {
+	try {
+		return typeof globalThis[kind] === 'undefined' ? null : globalThis[kind];
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * deleteWorkspace deletes a workspace and everything in it on the
+ * server, drops it from the store (the selection falls back to the first
+ * workspace left when it was the current one) and forgets what this
+ * browser kept for it. A workspace already gone (404, deleted from
+ * another device) counts as deleted and the list is reloaded; any other
+ * refusal, such as the 409 for the last workspace, is thrown and changes
+ * nothing.
+ */
+export async function deleteWorkspace(id: number): Promise<void> {
+	let gone = false;
+	try {
+		await api<void>(`/api/workspaces/${id}`, { method: 'DELETE' });
+	} catch (err) {
+		if (!(err instanceof ApiError && err.status === 404)) throw err;
+		gone = true;
+	}
+	forgetWorkspace(id, browserStorage('localStorage'), browserStorage('sessionStorage'));
+	if (gone) {
+		await load();
+		return;
+	}
+	const state = get(workspaces);
+	const list = state.list.filter((workspace) => workspace.id !== id);
+	const current = state.current?.id === id ? (list[0] ?? null) : state.current;
+	if (state.current?.id === id) persistSelection(current?.id ?? null);
+	workspaces.set({ list, current });
 }

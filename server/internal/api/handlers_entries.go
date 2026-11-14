@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -8,104 +9,68 @@ import (
 	"strings"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/entries"
-	"qinqin/internal/levels"
+	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
-	"qinqin/internal/sentences"
 )
 
-// entryResponse is an entry together with its senses, variants, scheme
-// badges, and example sentences: the body of GET and PUT /api/entries/{id}.
-type entryResponse struct {
-	model.Entry
-	Senses    []model.SenseView `json:"senses"`
-	Variants  []model.Entry     `json:"variants"`
-	Badges    []model.Badge     `json:"badges"`
-	Sentences []model.Sentence  `json:"sentences"`
-}
-
-// handleGetEntry serves GET /api/entries/{id} with the entry, its
-// senses, variants, scheme badges, and example sentences. Unknown and
-// malformed ids are 404. An authenticated caller sees the entry with
-// their own patch applied; everyone else sees the shared entry.
+// handleGetEntry serves GET /api/entries/{id} with the lexicon entry, its
+// forms, senses, variants, scheme badges, and example sentences (see
+// entryResponse). Unknown and malformed ids are 404. An authenticated
+// caller sees the entry with their own patch applied; everyone else sees
+// the shared entry.
 func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.Error(w, "entry not found", http.StatusNotFound)
+	e, ok := s.entryFromPath(w, r)
+	if !ok {
 		return
 	}
-	store := entries.Store{DB: s.db}
-	e, err := store.GetByID(r.Context(), id)
-	if errors.Is(err, entries.ErrNotFound) {
-		http.Error(w, "entry not found", http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	// The caller's patch layers on the shared entry; callers without a
-	// valid token — anonymous or unknown — see the shared entry.
+	// The caller's patch layers on the shared entry and their own example
+	// sentences join the pack's; callers without a valid token — anonymous
+	// or unknown — see the shared entry and pack sentences only.
 	u, err := auth.UserFromRequest(r, s.db)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	var viewerID int64
 	if u != nil {
-		if err := overlay.Apply(r.Context(), s.db, u.ID, e); err != nil {
+		viewerID = u.ID
+	}
+	resp, err := buildEntryResponse(r.Context(), s.db, e, viewerID)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if u != nil {
+		if err := overlay.Apply(r.Context(), s.db, u.ID, &resp.EntryBase); err != nil {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
 	}
-	senses, err := store.Senses(r.Context(), id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	variants, err := store.Variants(r.Context(), id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	badges, err := levels.ForEntry(r.Context(), s.db, id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	entrySentences, err := sentences.ForEntry(r.Context(), s.db, id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Senses: senses, Variants: variants, Badges: badges, Sentences: entrySentences})
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // handleCharsUnderRadical serves GET /api/entries/{id}/chars with the
 // active characters classified under the radical entry {id}, ordered by
-// written form. A radical without characters answers an empty array;
+// headword. A radical without characters answers an empty array;
 // unknown and malformed ids are 404.
 func (s *server) handleCharsUnderRadical(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.Error(w, "entry not found", http.StatusNotFound)
+	e, ok := s.entryFromPath(w, r)
+	if !ok {
 		return
 	}
-	store := entries.Store{DB: s.db}
-	if _, err := store.GetByID(r.Context(), id); err != nil {
-		if errors.Is(err, entries.ErrNotFound) {
-			http.Error(w, "entry not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	chars, err := store.CharsUnder(r.Context(), id)
+	store := lexicon.Store{DB: s.db}
+	chars, err := store.CharsUnder(r.Context(), e.ID)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, chars)
+	list, err := entryBases(r.Context(), store, chars)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, list)
 }
 
 // handlePutEntry serves PUT /api/entries/{id}: it stores the
@@ -117,13 +82,16 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		return
 	}
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
+	if _, err := strconv.ParseInt(r.PathValue("id"), 10, 64); err != nil {
 		http.Error(w, "entry not found", http.StatusNotFound)
 		return
 	}
+	body, ok := readBody(w, r, maxEntryBody)
+	if !ok {
+		return
+	}
 	var patch model.EntryPatch
-	if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
+	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&patch); err != nil {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
@@ -138,43 +106,43 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	store := entries.Store{DB: s.db}
-	e, err := store.GetByID(r.Context(), id)
-	if errors.Is(err, entries.ErrNotFound) {
+	e, ok := s.entryFromPath(w, r)
+	if !ok {
+		return
+	}
+	if err := overlay.Put(r.Context(), s.db, u.ID, e.ID, patch); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	resp, err := buildEntryResponse(r.Context(), s.db, e, u.ID)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if err := overlay.Apply(r.Context(), s.db, u.ID, &resp.EntryBase); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// entryFromPath loads the active lexicon entry named by the {id} path
+// value. It answers 404 for malformed and unknown ids and 500 for other
+// errors, reporting false when it wrote a response.
+func (s *server) entryFromPath(w http.ResponseWriter, r *http.Request) (*lexicon.Entry, bool) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
 		http.Error(w, "entry not found", http.StatusNotFound)
-		return
+		return nil, false
+	}
+	e, err := lexicon.Store{DB: s.db}.Get(r.Context(), id)
+	if errors.Is(err, lexicon.ErrNotFound) {
+		http.Error(w, "entry not found", http.StatusNotFound)
+		return nil, false
 	}
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+		return nil, false
 	}
-	if err := overlay.Put(r.Context(), s.db, u.ID, id, patch); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	if err := overlay.Apply(r.Context(), s.db, u.ID, e); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	senses, err := store.Senses(r.Context(), id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	variants, err := store.Variants(r.Context(), id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	badges, err := levels.ForEntry(r.Context(), s.db, id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	entrySentences, err := sentences.ForEntry(r.Context(), s.db, id)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	writeJSON(w, http.StatusOK, entryResponse{Entry: *e, Senses: senses, Variants: variants, Badges: badges, Sentences: entrySentences})
+	return e, true
 }

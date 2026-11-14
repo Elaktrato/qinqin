@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"testing"
 
-	"qinqin/internal/entries"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 	"qinqin/internal/sentences"
@@ -29,8 +28,7 @@ func TestReimportTouchesOnlyChangedSentences(t *testing.T) {
 	lang.Register(lang.Zh{})
 	ctx := context.Background()
 	sqlDB := newDB(t)
-	st := entries.Store{DB: sqlDB}
-	nihao := mustEntry(t, st, "word", "你好", "nǐ hǎo")
+	nihao, _ := seedWords(t, sqlDB)
 
 	const hello = `{"hanzi":"你好，世界。","pinyin":"nǐ hǎo, shì jiè.","translation":"Hello, world."}`
 	const hi = `{"hanzi":"你好吗？","pinyin":"nǐ hǎo ma?","translation":"How are you?"}`
