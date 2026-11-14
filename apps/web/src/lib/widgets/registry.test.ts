@@ -92,12 +92,13 @@ describe('allWidgets', () => {
 		expect(list[0].owner).toBe('core');
 	});
 
-	it('registers the shipped heatmap (core) and flashcards summary (flashcards plugin)', () => {
+	it('registers the shipped core and plugin widgets', () => {
 		const list = allWidgets(webPlugins, [state('qinqin-flashcards'), state('qinqin-reader')], 'zh');
 
-		expect(ids(list)).toEqual(['activity-heatmap', 'flashcards-summary']);
+		expect(ids(list)).toEqual(['activity-heatmap', 'flashcards-summary', 'word-states']);
 		expect(list.map((w) => [w.owner, w.size])).toEqual([
 			['core', 'wide'],
+			['qinqin-flashcards', 'normal'],
 			['qinqin-flashcards', 'normal']
 		]);
 		expect(ids(allWidgets(webPlugins, [state('qinqin-flashcards', false)], 'zh'))).toEqual([
