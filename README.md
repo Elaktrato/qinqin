@@ -68,13 +68,18 @@ dictionary writes no rows; frequency rows are replaced). Run `qinqin seed` while
 one write transaction, JMdict holds the database write lock for about 20 s, and
 the server waits at most 5 s (`busy_timeout`) before a write fails.
 
-> **Upgrading from the earlier reader.** Migrations 018–021 run in place on an
+> **Upgrading from the earlier reader.** Migrations 018–023 run in place on an
 > existing database and keep all data. 018 rebuilds `workspaces` with an optional
 > `name` and `UNIQUE(user_id, language, name)` (ids unchanged, so events and plugin
 > data still point at their workspace). 019 adds `library_books.workspace_id`: each
 > existing book is linked to its user's oldest workspace of the book's language,
 > and one is created when the user has none. 020 adds `library_bookmarks`. 021 adds
-> `library_highlights`.
+> `library_highlights`. 022 and 023 rebuild `workspaces` and `library_books` with
+> `AUTOINCREMENT`, so the id of a deleted workspace or book is never handed out
+> again (a stale browser tab then gets a 404 instead of silently writing into
+> someone else's new workspace or book). The rebuilds keep every row and id.
+> All of these migrations are one-way: there is no downgrade, so keep a copy of
+> `qinqin.db` before upgrading if you may want to go back.
 
 > **Upgrading a development database.** Entry ids changed with the dictionary
 > rebuild (the lookup rewrite; migration 017 drops the legacy tables). Nothing is
@@ -120,6 +125,25 @@ workspace shows its language; unnamed workspaces of one language are numbered
   there you manage workspaces (create and rename). The logo is the home link (there
   is no Home item); every nav item has an icon, and below 720 px the nav becomes a
   bottom tab bar.
+- **Navigation and focus.** The first Tab stop on every signed-in page is a
+  "Skip to content" link, which moves focus to the page content. The logo is
+  named "qinqin, home". Below 720 px, while the bottom tab bar is shown, the page
+  keeps scroll padding below the focus so a focused control or map cell is not
+  hidden behind the bar.
+- **Deleting.** Settings shows a **Delete** button on each workspace while the
+  user has more than one. A modal dialog lists what goes (books with their
+  bookmarks and highlights, flashcards and decks, recorded reviews and the rest
+  of the study history, as counts) and asks you to type the workspace label to
+  confirm. `DELETE /api/workspaces/{id}` removes the workspace with all
+  its study events, its plugin data (including tombstones) and its library books
+  with their bookmarks, highlights and content files, in one transaction; the
+  response is 204, 404 for an unknown or foreign id, and 409 for the caller's
+  last workspace, which cannot be deleted. Data that belongs to the user rather
+  than a workspace (your edits, your own example sentences, plugin on/off states
+  and user-global plugin data) stays. In another tab that still shows the deleted
+  workspace, the next request that answers "workspace not found" shows a notice
+  ("This workspace was deleted — switched to ...") and falls back to your first
+  workspace; reviews queued offline for it are dropped with a notice.
 - **The Map** (`/study/map`, its nav link and the Study page link) exists only in
   zh and ja workspaces; in another workspace the page explains this.
 
@@ -144,8 +168,16 @@ a Japanese one on Aozora.
   Gutenberg Chinese works (`hong lou meng`, `hóng-lóu-mèng`). A matching reading is
   shown under the hit. A reading query needs at least 3 letters (after folding
   long vowels, so `tou` is too short); written-form matches always rank first.
-- Known limits: the particle は is read "ha", so `wa` does not find a title
-  written with it; kunrei spellings (`si`, `tu`) are not folded; Gutenberg
+- Romaji folding: kunrei-shiki and Nihon-shiki spellings fold to Hepburn
+  (`si`, `tu`, `syu`, `tyuu`, `hu` find the same titles as `shi`, `tsu`, `shu`,
+  `chuu`, `fu`), and `wo` folds to `o`. The particles は and へ are read as
+  `ha` and `he`, so a standalone, space-separated `wa` or `e` is folded to
+  `ha` or `he`, and so are `konnichiwa` and `konbanwa`: `wagahai wa neko de aru`
+  finds 吾輩は猫である. Particles are not recognised inside hyphenated pieces
+  (`watashi-wa` stays `watashiwa` and does not find わたしは) or inside a
+  longer word such as `wagahaiwa`. The minimum of 3 folded characters is
+  unchanged.
+- Known limits: Gutenberg
   Japanese titles are not searchable by reading, and neither are Gutenberg
   Chinese works whose pinyin could not be indexed in time (the index is built
   when the catalog loads, every 7 days).
@@ -357,6 +389,20 @@ with reading in minutes. Other study events (sessions, views, lookups) do not
 count. Adding a source means emitting a study event with a new type and adding
 one entry to `ACTIVITY_SOURCES` in `apps/web/src/lib/activity/activity.ts`.
 
+**Card ids and duplicates.** A new card gets a deterministic id,
+`c-<kind>-<entryId>` (for example `c-vocab-42`; a sentence card is
+`c-sentence-<entryId>`), so two devices that add the same word offline write the
+same plugin-data key and last-write-wins leaves one row. Cards created earlier
+have ULID ids and can still exist twice. Every page reads cards through one
+loader that merges duplicates at read time: per card key (kind and entry) the
+card with the earliest `createdAt` survives, the reviews of the others are
+re-pointed to it in memory, and the survivor's decks are the union of the
+duplicates' decks. Nothing stored is rewritten or deleted by the merge. Caveat: if
+two devices create the same card at the same moment with different ids (the
+older ULID format, or a sentence card whose derived id another sentence already
+holds and so falls back to another id), both rows are stored until a later write
+touches them; only the merged view hides it.
+
 Studying adds no bundled data. Decks and cards are workspace plugin data and
 reviews are events, so the dictionaries in `plugins/data/` stay unmodified.
 
@@ -381,8 +427,22 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
+| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (the first user on an empty database becomes the admin without a token; afterwards an admin token is required), log in for a bearer token, read the current user. Login and register bodies up to 4 KiB |
+| `GET /healthz` | Liveness check |
+| `GET /api/entries/{id}/chars` | Public. The characters classified under a radical entry, ordered by headword; an empty array for a radical without any, 404 for an unknown id |
+| `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user |
+| `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
+| `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
+| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and home position for one plugin |
+| `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
+| `GET /api/dictionaries` | Public. The installed dictionaries |
+| `POST /api/admin/dictionaries`, `DELETE /api/admin/dictionaries/{id}`, `DELETE /api/admin/schemes/{id}`, `DELETE /api/admin/sentences/{pack}`, `POST /api/admin/plugins` | Admin only: install a dictionary pack (multipart zip in `pack`), soft-delete a dictionary, a level scheme or a sentence pack (entries survive), register a plugin manifest |
+| `GET /api/schemes` | Public. Every installed level scheme with its ordered levels |
+| `GET /api/schemes/{id}/entries?level=` | Public. The scheme's member entries (words and derived characters), optionally of one level; 404 for an unknown scheme or level |
+| `GET /api/schemes/{id}/characters` | Public. The compact per-level character sets the map groups by: `{levels: [{id, name, chars}]}`, `chars` being each Han character of the level's words once, in order of first appearance. Gzip when accepted, weak `ETag` and 304 on `If-None-Match` (revalidated on every visit); 404 for an unknown, uninstalled or malformed id |
 | `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one; an over-long or invalid name is 422, a duplicate (language, name) 409 |
 | `PUT /api/workspaces/{id}` `{name?, settings?}` | Rename and/or merge settings; at least one field is required. The body used to be the bare settings object |
+| `DELETE /api/workspaces/{id}` | Delete a workspace and everything scoped to it (see "Workspaces"): 204, 404 for an unknown or foreign id, 409 for the caller's last workspace |
 | `GET /api/library/books?workspace=`, `GET`/`DELETE /api/library/books/{id}` | List (without `workspace`: every workspace of the caller), read, delete a book (its bookmarks and highlights go with it) |
 | `GET /api/library/books/{id}/chapters/{n}` | One chapter's paragraphs |
 | `PUT /api/library/books/{id}/position` | Store the reading position |
@@ -394,6 +454,30 @@ All library and source routes need a signed-in user, and so does
 | `GET`/`POST /api/library/books/{id}/bookmarks`, `PUT`/`DELETE …/bookmarks/{bid}` | List and add `{position, label?}` (201; 200 when one exists at the position; 409 beyond 200 per book) and rename `{label}` or delete |
 | `GET`/`POST /api/library/books/{id}/highlights`, `PUT`/`DELETE …/highlights/{hid}` | List and add `{chapter, paragraph, start, end, text, color?, note?}` (201), update `{color?, note?}`, delete. Offsets are code points; `text` must be exactly the paragraph's text in `[start, end)` and at most 500 code points, else 422; a note over 2000 characters is 422. A range overlapping another highlight is 409 `{error, existingId}`, a book with 2000 highlights 409; a body over 16 KiB is 413 `{"error": "highlight too large"}` |
 | `POST /api/entries/{id}/sentences` | Add the caller's example sentence; only `hanzi` is required (up to 2000 characters per field, body up to 16 KiB). `GET /api/entries/{id}` returns the pack's sentences plus the caller's own |
+
+**Request body limits.** A body over its limit is a 413, usually with a JSON
+`{"error": ...}` (the older routes answer plain text).
+
+| Route | Limit |
+|---|---|
+| `POST /api/auth/login`, `/register` | 4 KiB |
+| `POST /api/workspaces`, `PUT /api/workspaces/{id}` | 16 KiB; the merged workspace settings may total 64 KiB (413 "workspace settings too large") |
+| `POST /api/admin/plugins` (manifest) | 64 KiB |
+| `PUT /api/plugins/{id}/state` | 64 KiB |
+| `PUT /api/plugins/{id}/data/{key}` | 256 KiB per value; the same cap applies to each plugin-data value inside `POST /api/sync/push` |
+| `PUT /api/entries/{id}` | 64 KiB |
+| `POST /api/library/books/{id}/highlights` | 16 KiB |
+| `POST /api/library/books/{id}/bookmarks` | 1 KiB |
+| `POST /api/entries/{id}/sentences` | 16 KiB |
+| `POST /api/library/sources/{source}/import` | 1 KiB |
+| `PUT /api/library/books/{id}/position` | 2 KiB |
+| `POST /api/events/batch` | 4 MiB |
+| `POST /api/sync/push` | 8 MiB in total |
+| `POST /api/segment` | 256 KiB |
+| `POST /api/library/upload` | the epub up to 20 MiB (plus 1 MiB multipart overhead) |
+
+`POST /api/admin/dictionaries` (admin only) has no total cap: uploads beyond
+32 MiB spill to a temporary file, since real packs can be large.
 
 `lang` must be a registered language (`zh` or `ja` for the reader), and offsets
 count Unicode code points, not bytes or UTF-16 units. `GET /api/search` ranks hits
