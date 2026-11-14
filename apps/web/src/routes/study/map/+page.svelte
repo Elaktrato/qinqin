@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { tick, untrack } from 'svelte';
-	import { ApiError, api } from '$lib/api/client';
+	import { ApiError } from '$lib/api/client';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { Scheme } from '$lib/api/types';
-	import type { StudyEvent } from '$lib/events';
 	import { usesHan } from '$lib/languages';
 	import CellTip from '$lib/components/map/CellTip.svelte';
 	import CharGrid from '$lib/components/map/CharGrid.svelte';
@@ -37,7 +36,6 @@
 		type TipRequest
 	} from '$lib/study/mapGrid';
 	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
-	import { parseReview } from '$lib/study/reviewParse';
 	import { loadStudyData } from '$lib/study/store';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
@@ -163,19 +161,17 @@
 		}
 
 		try {
-			const [list, schemeList, data, events] = await Promise.all([
+			// Duplicate cards arrive merged, their reviews re-pointed.
+			const [list, schemeList, data] = await Promise.all([
 				fetchCharacters(lang),
 				loadSchemeList(),
-				loadStudyData(),
-				api<StudyEvent[]>(`/api/events?since=1970-01-01T00:00:00Z&workspace=${id}`)
+				loadStudyData(id)
 			]);
 			if (seq !== requestSeq) return;
 			universe = list;
 			schemes = schemeList;
 			cards = data.cards;
-			reviews = events
-				.map((event) => (event.workspaceId === id ? parseReview(event) : null))
-				.filter((event): event is ReviewEvent => event !== null);
+			reviews = data.reviews;
 			groupKey = readGroupBy(storage(), lang, groupOptions(lang, schemeList));
 			void backfillWritten(data.cards, seq);
 		} catch (err) {

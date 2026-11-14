@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { parseReview } from '$lib/study/reviewParse';
-	import { ApiError, api } from '$lib/api/client';
-	import type { StudyEvent } from '$lib/events';
+	import { ApiError } from '$lib/api/client';
 	import { buildQueue } from '$lib/study/scheduler';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import Mascot from './Mascot.svelte';
@@ -97,18 +95,12 @@
 		}
 
 		try {
-			const [data, events] = await Promise.all([
-				loadStudyData(),
-				api<StudyEvent[]>(
-					`/api/events?since=1970-01-01T00:00:00Z&workspace=${workspace}`
-				)
-			]);
+			// Duplicate cards arrive merged, their reviews re-pointed.
+			const data = await loadStudyData(workspace);
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
-			reviews = events
-				.map((event) => (event.workspaceId === workspace ? parseReview(event) : null))
-				.filter((event): event is ReviewEvent => event !== null);
+			reviews = data.reviews;
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			decks = [];
