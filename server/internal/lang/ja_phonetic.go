@@ -2,7 +2,6 @@ package lang
 
 import (
 	"strings"
-	"unicode"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -24,16 +23,23 @@ import (
 //
 // Heuristics, deliberately narrow: the particles は and へ read ha and he
 // in the catalog, so a query word that is exactly "wa" or "e" (separated
-// by whitespace or a hyphen) folds to ha / he; inside a word, wa and e
-// stay (watashi, kae). The fixed expressions こんにちは and こんばんは,
+// by whitespace) folds to ha / he; inside a word, wa and e stay
+// (watashi, kae), and so do the pieces of a hyphenated word (e-hon is
+// ehon, wa-fuu is wafuu). The fixed expressions こんにちは and こんばんは,
 // whose は is a particle, are matched by the query words konnichiwa and
 // konbanwa. Other words that hide a particle (such as "wagahaiwa") are
 // not recognised, and a lone "wa" or "e" meaning わ or え is read as the
 // particle; the text matcher still finds those by their plain spelling.
 func PhoneticKey(s string) string {
 	var b []byte
-	for _, token := range strings.FieldsFunc(norm.NFKC.String(s), isTokenSep) {
-		b = appendToken(b, strings.ToLower(token))
+	for _, word := range strings.Fields(norm.NFKC.String(s)) {
+		word = strings.ToLower(word)
+		if p, ok := particleTokens[word]; ok {
+			word = p
+		}
+		for _, token := range strings.Split(word, "-") {
+			b = appendToken(b, token)
+		}
 	}
 	var out []byte
 	for _, c := range b {
@@ -45,10 +51,9 @@ func PhoneticKey(s string) string {
 	return string(out)
 }
 
-func isTokenSep(r rune) bool { return r == '-' || unicode.IsSpace(r) }
-
 // particleTokens are the query words that stand for a particle or a fixed
-// expression with one, keyed by the whole lowercase word.
+// expression with one, keyed by the whole lowercase whitespace-separated
+// word.
 var particleTokens = map[string]string{
 	"wa": "ha", "e": "he",
 	"konnichiwa": "konnichiha", "konbanwa": "konbanha",
@@ -56,7 +61,13 @@ var particleTokens = map[string]string{
 
 // hepburn folds kunrei-shiki and Nihon-shiki romaji, and wo, to Hepburn.
 // Longer spellings come first so the replacer meets them before si, ti.
+// It also runs over the Hepburn that kanaToRomaji writes, so the Hepburn
+// syllables that contain a kunrei spelling map to themselves ahead of it:
+// shu and chu hold "hu", which would otherwise fold to sfu and cfu
+// (しゅじん, ちゅうごく). No other Hepburn syllable contains one of the
+// spellings below (shi, chi and tsu hold hi, hi and su, which are not).
 var hepburn = strings.NewReplacer(
+	"shu", "shu", "chu", "chu",
 	"sya", "sha", "syu", "shu", "syo", "sho",
 	"tya", "cha", "tyu", "chu", "tyo", "cho",
 	"zya", "ja", "zyu", "ju", "zyo", "jo",
@@ -66,9 +77,6 @@ var hepburn = strings.NewReplacer(
 
 // appendToken appends the key letters of one lowercase word.
 func appendToken(b []byte, token string) []byte {
-	if p, ok := particleTokens[token]; ok {
-		token = p
-	}
 	token = kanaToRomaji(token)
 	var letters []byte
 	for _, r := range norm.NFKD.String(token) {
