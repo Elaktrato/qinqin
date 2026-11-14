@@ -6,5 +6,6 @@
   "language": "ja",
   "license": "MIT AND CC BY-SA 4.0",
   "attribution": "An approximation of the JLPT N5–N1 kanji levels (the JLPT publishes no official kanji list since 2010): base list kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter, provenance not stated upstream), https://github.com/onlyskin/kanjiapi.dev; kanji it omits placed by qinqin (scripts/prepare-level-packs.mjs) from KANJIDIC2 (CC BY-SA 4.0, © EDRDG) old JLPT level, school grade and frequency rank",
+  "notice": "The JLPT kanji levels are approximate: the JLPT has published no official kanji lists since 2010. Most come from [kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev) (MIT), which does not state where its list comes from. qinqin gives the kanji that list leaves out (mainly jōyō kanji such as 分, 可, 無 and 的) a level estimated from [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (CC BY-SA 4.0, EDRDG): its pre-2010 JLPT level where it has one, else the school grade.",
   "format": "json"
 }

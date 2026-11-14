@@ -3,14 +3,27 @@
 	import { ApiError, api } from '$lib/api/client';
 	import type { Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
 	import { languageLabel } from '$lib/languages';
+	import { webPlugins } from '$lib/plugins';
+	import { coreCredits } from '$lib/sources/coreCredits';
+	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
+	import { creditView, packTable, pluginCredits, type CreditView, type PackTable } from '$lib/sources/sections';
+
+	// Credits declared in code: the app's own, and each web plugin's.
+	const coreViews = coreCredits.map(creditView);
+	const plugins = pluginCredits(
+		webPlugins.map((plugin) => plugin.manifest),
+		coreCredits
+	);
 
 	let dictionaries = $state<Dictionary[]>([]);
 	let loading = $state(true);
 	let error = $state('');
+	const dictionaryTable = $derived(packTable('dictionaries', dictionaries));
 
 	let frequencyPacks = $state<FrequencyPack[]>([]);
 	let frequencyLoading = $state(true);
 	let frequencyError = $state('');
+	const frequencyTable = $derived(packTable('frequency', frequencyPacks));
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -47,9 +60,9 @@
 	}
 
 	let schemes = $state<Scheme[]>([]);
-	const installedPacks = $derived(new Set(schemes.map((scheme) => scheme.packId)));
 	let schemesLoading = $state(true);
 	let schemesError = $state('');
+	const levelTable = $derived(packTable('levels', schemes));
 
 	async function loadSchemes(): Promise<void> {
 		schemesLoading = true;
@@ -70,6 +83,89 @@
 		loadSchemes();
 	});
 </script>
+
+{#snippet text(value: string, lang: string)}{#each scriptRuns(value, lang) as run, i (i)}{#if run.lang}<span
+				lang={run.lang}>{run.text}</span
+			>{:else}{run.text}{/if}{/each}{/snippet}
+
+{#snippet cell(value: string, language: string)}{@render text(value, cjkLang(value, language))}{/snippet}
+
+{#snippet paragraphs(list: NoticeParagraph[], lang: string)}
+	{#each list as paragraph, i (i)}
+		<p>
+			{#each paragraph.parts as part, j (j)}{#if part.type === 'link'}<a
+						href={part.href}
+						rel="noreferrer">{@render text(part.text, lang)}</a
+					>{:else}{@render text(part.text, lang)}{/if}{/each}
+		</p>
+	{/each}
+{/snippet}
+
+<!-- The note link sits in a cell of its own, so the row header (announced
+     with every cell) holds only the pack name. -->
+{#snippet noteHeader(table: PackTable)}
+	{#if table.notes.length > 0}<th scope="col"><span class="visually-hidden">Note</span></th>{/if}
+{/snippet}
+
+{#snippet noteCell(table: PackTable, noteId: string | undefined, name: string)}
+	{#if table.notes.length > 0}
+		<td class="note-cell">
+			{#if noteId}<a href={`#${noteId}`}>Note<span class="visually-hidden">{` on ${name}`}</span></a
+				>{/if}
+		</td>
+	{/if}
+{/snippet}
+
+<!-- The visible "Notes" heading names the list: a dl has no role that
+     aria-labelledby could reliably name. -->
+{#snippet notes(table: PackTable)}
+	{#if table.notes.length > 0}
+		<h3 class="notes-heading">Notes</h3>
+		<dl class="notes">
+			{#each table.notes as note (note.id)}
+				<dt id={note.id} tabindex="-1">{note.name}</dt>
+				<dd>
+					{@render paragraphs(note.paragraphs, note.lang)}
+					{#each note.sharedWith as shared (shared.id)}
+						<p class="shared">
+							The source and terms in the note on <a href={`#${shared.id}`}>{shared.name}</a> above
+							also apply.
+						</p>
+					{/each}
+				</dd>
+			{/each}
+		</dl>
+	{/if}
+{/snippet}
+
+{#snippet credit(view: CreditView, level: 'h3' | 'h4')}
+	<li class="credit">
+		<svelte:element this={level} class="credit-name">
+			{#if view.href}<a href={view.href} rel="noreferrer">{view.name}</a>{:else}{view.name}{/if}
+		</svelte:element>
+		{#if view.license || view.attribution}
+			<dl class="facts">
+				{#if view.license}
+					<dt>License</dt>
+					<dd>{@render text(view.license, view.lang)}</dd>
+				{/if}
+				{#if view.attribution}
+					<dt>Attribution</dt>
+					<dd>{@render text(view.attribution, view.lang)}</dd>
+				{/if}
+			</dl>
+		{/if}
+		<div class="credit-notice">{@render paragraphs(view.paragraphs, view.lang)}</div>
+		{#if view.licenseTexts.length > 0}
+			<p class="license-texts">
+				{#each view.licenseTexts as licence, i (licence.path)}{#if i > 0}{', '}{/if}<a
+						href={licence.path}
+						data-sveltekit-reload>{licence.label}</a
+					>{/each}
+			</p>
+		{/if}
+	</li>
+{/snippet}
 
 <main class="sources">
 	<h1>Sources</h1>
@@ -98,23 +194,26 @@
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
+							{@render noteHeader(dictionaryTable)}
 							<th scope="col">Version</th>
 							<th scope="col">License</th>
 							<th scope="col">Attribution</th>
 						</tr>
 					</thead>
 					<tbody>
-						{#each dictionaries as dictionary (dictionary.id)}
+						{#each dictionaryTable.rows as row (row.key)}
 							<tr>
-								<th scope="row" class="name">{dictionary.name}</th>
-								<td>{dictionary.version}</td>
-								<td>{dictionary.license}</td>
-								<td>{dictionary.attribution}</td>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(dictionaryTable, row.noteId, row.name)}
+								<td>{row.version}</td>
+								<td>{@render cell(row.license, row.language)}</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
 			</div>
+			{@render notes(dictionaryTable)}
 		{/if}
 
 		<p class="notice">
@@ -140,6 +239,7 @@
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
+							{@render noteHeader(frequencyTable)}
 							<th scope="col">Language</th>
 							<th scope="col">Version</th>
 							<th scope="col">License</th>
@@ -147,26 +247,25 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each frequencyPacks as pack (pack.id)}
+						{#each frequencyTable.rows as row (row.key)}
 							<tr>
-								<th scope="row" class="name">{pack.name}</th>
-								<td title={pack.language}>{languageLabel(pack.language)}</td>
-								<td>{pack.version}</td>
-								<td>{pack.license}</td>
-								<td>{pack.attribution}</td>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(frequencyTable, row.noteId, row.name)}
+								<td title={row.language}>{languageLabel(row.language)}</td>
+								<td>{row.version}</td>
+								<td>{@render cell(row.license, row.language)}</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
 			</div>
+			{@render notes(frequencyTable)}
 		{/if}
 
 		<p class="notice">
-			Word frequency ranks order the lookup results. The bundled Jiten list is
-			<a href="https://jiten.moe/frequency-dictionaries" rel="noreferrer">Jiten</a>'s global
-			frequency list, licensed CC BY-SA 4.0 by its publisher, with its ranks unmodified and
-			converted to CSV. Frequency lists with unclear licences are never bundled; an instance may
-			add them locally from <code>plugins/data-local/</code>.
+			Word frequency ranks order the lookup results. Frequency lists with unclear licences are
+			never bundled; an instance may add them locally from <code>plugins/data-local/</code>.
 		</p>
 	</section>
 
@@ -186,6 +285,7 @@
 					<thead>
 						<tr>
 							<th scope="col">Name</th>
+							{@render noteHeader(levelTable)}
 							<th scope="col">Language</th>
 							<th scope="col">Version</th>
 							<th scope="col">License</th>
@@ -193,120 +293,51 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each schemes as scheme (scheme.id)}
+						{#each levelTable.rows as row (row.key)}
 							<tr>
-								<th scope="row" class="name">{scheme.name}</th>
-								<td title={scheme.language}>{languageLabel(scheme.language)}</td>
-								<td>{scheme.version ?? ''}</td>
-								<td>{scheme.license ?? ''}</td>
-								<td>{scheme.attribution ?? ''}</td>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(levelTable, row.noteId, row.name)}
+								<td title={row.language}>{languageLabel(row.language)}</td>
+								<td>{row.version}</td>
+								<td>{@render cell(row.license, row.language)}</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
 			</div>
+			{@render notes(levelTable)}
 		{/if}
 
 		<p class="notice">
-			Level lists group the character map and badge entries. Unless a notice below says
+			Level lists group the character map and badge entries. Unless a pack's note above says
 			otherwise, lists installed from packs are third-party compilations, not official releases
 			of the tests they are named after.
 		</p>
-		{#if installedPacks.has('hsk-words')}
-			<p class="notice">
-				The HSK 3.0 words are the official word list (HSK <span lang="zh-Hans">词汇大纲</span>) of
-				the <span lang="zh-Hans">《HSK 考试大纲》</span> Syllabus for the Chinese Proficiency Test,
-				edition published 2025-11 and effective 2026-07. Words badge with their level, and the
-				character map's word grouping puts each character at the lowest level of a word written
-				with it.
-			</p>
-		{/if}
-		{#if installedPacks.has('hsk-chars')}
-			<p class="notice">
-				The HSK 3.0 characters are the official character list (HSK
-				<span lang="zh-Hans">汉字大纲</span>, the characters to recognise,
-				<span lang="zh-Hans">认读字</span>, of each level) of the same syllabus and edition. A
-				character's level is the level whose list introduces it; the syllabus's lists of
-				characters to write (<span lang="zh-Hans">书写字</span>) assign no level here.
-			</p>
-		{/if}
-		{#if installedPacks.has('hsk-words') || installedPacks.has('hsk-chars')}
-			<p class="notice">
-				Source: <a href="https://www.chinesetest.cn" rel="noreferrer">www.chinesetest.cn</a> —
-				reproduced from the Chinese Test Service Website (CTI); syllabus published by CLEC
-				(<span lang="zh-Hans">中外语言交流合作中心</span>). No reuse licence is granted: the
-				site's <a href="https://www.chinesetest.cn/legal-notice" rel="noreferrer">Legal Notice</a>
-				says its content is copyrighted by CTI or the content providers, requires the source to be
-				indicated, and permits reproduction only as reasonable, good-faith quoting for informative
-				public use. The syllabus PDF carries a copy-protection flag. The project includes only the
-				vocabulary (word) list and the list of characters to recognise, as plain lists of words and
-				characters with their levels (and the words' pinyin as lookup readings), and none of the
-				syllabus's other content (grammar points, descriptions, the lists of characters to write,
-				explanatory text). It includes these lists with this attribution at the project owner's
-				decision; the legal status of including these lists has not been verified.
-			</p>
-		{/if}
-		{#if installedPacks.has('jlpt-kanji')}
-			<p class="notice">
-				The JLPT kanji levels are approximate: the JLPT has published no official kanji lists
-				since 2010. Most come from
-				<a href="https://github.com/onlyskin/kanjiapi.dev" rel="noreferrer">kanjiapi.dev</a>
-				(MIT), which does not state where its list comes from. qinqin gives the kanji that list
-				leaves out (mainly jōyō kanji such as 分, 可, 無 and 的) a level estimated from
-				<a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" rel="noreferrer"
-					>KANJIDIC2</a
-				>
-				(CC BY-SA 4.0, EDRDG): its pre-2010 JLPT level where it has one, else the school grade.
-			</p>
-		{/if}
-		{#if installedPacks.has('jlpt-words')}
-			<p class="notice">
-				The JLPT vocabulary lists on this instance were installed locally by its operator; qinqin
-				does not bundle them because their licence chain could not be verified. They come from
-				<a href="https://github.com/jamsinclair/open-anki-jlpt-decks" rel="noreferrer"
-					>open-anki-jlpt-decks</a
-				>
-				(labelled MIT), which its README says was taken from chyyran/jlpt-anki-decks, based on the
-				tanos.co.uk lists by Jonathan Waller (described as Creative Commons Attribution; the page
-				could not be reached, so this is unverified).
-			</p>
-		{/if}
-		{#if installedPacks.has('hsk30-chars') || installedPacks.has('hsk30-words')}
-			<p class="notice">
-				This instance's operator also installed older, locally generated HSK 3.0 lists, superseded
-				by the bundled official word and character lists. They come from
-				<a href="https://github.com/ivankra/hsk30" rel="noreferrer">ivankra/hsk30</a> (code MIT,
-				data labelled MIT), which derives them from copies of the 2021 Ministry of Education
-				standard. The ministry's site claims copyright
-				(<span lang="zh-Hans">版权所有：中华人民共和国教育部</span>) and the
-				hsk30 README suggests the list may be public domain, so its copyright status is uncertain.
-			</p>
-		{/if}
 	</section>
 
-	<section>
-		<h2>Stroke-order data</h2>
-		<p>
-			Stroke-order animations use
-			<a href="https://www.npmjs.com/package/hanzi-writer-data" rel="noreferrer">hanzi-writer-data</a>,
-			derived from the
-			<a href="https://github.com/skishore/makemeahanzi" rel="noreferrer">Make Me a Hanzi</a>
-			dataset. That data is licensed under the <strong>Arphic Public License</strong> and is used
-			unmodified. The <a href="/ARPHICPL.TXT">full license text</a> ships with this app.
-		</p>
-	</section>
+	{#if plugins.length > 0}
+		<section>
+			<h2 id="sources-plugins">Plugins</h2>
+			<p class="lede">Material that feature plugins bundle or fetch, as each plugin declares it.</p>
+			{#each plugins as plugin (plugin.id)}
+				<h3 class="plugin-name">{plugin.name}</h3>
+				<ul class="credits" aria-label={`${plugin.name} sources`}>
+					{#each plugin.credits as view (view.name)}
+						{@render credit(view, 'h4')}
+					{/each}
+				</ul>
+			{/each}
+		</section>
+	{/if}
 
 	<section>
-		<h2>Script conversion</h2>
-		<p>
-			Traditional/simplified conversion in the Reader uses
-			<a href="https://github.com/nk2028/opencc-js" rel="noreferrer">opencc-js</a>, licensed
-			<strong>MIT AND Apache-2.0</strong>: the library is under the MIT License, and its
-			conversion dictionaries, generated from
-			<a href="https://github.com/nk2028/opencc-data" rel="noreferrer">opencc-data</a>, under the
-			Apache License, Version 2.0. The <a href="/OPENCC-JS-LICENSE.TXT">MIT license text</a> and
-			the <a href="/OPENCC-APACHE-2.0.TXT">Apache-2.0 license text</a> ship with this app.
-		</p>
+		<h2 id="sources-core">Built into the app</h2>
+		<ul class="credits" aria-labelledby="sources-core">
+			{#each coreViews as view (view.name)}
+				{@render credit(view, 'h3')}
+			{/each}
+		</ul>
 	</section>
 
 	<section>
@@ -315,7 +346,7 @@
 			Full license texts and attribution notices for the upstream dictionary packs live in
 			their pack directories under <code>plugins/data/</code>; <code>docs/sources.md</code>
 			indexes the bundled upstream sources. If this instance installs additional packs, their
-			credits appear in the table above once installed.
+			credits appear in the tables above once installed.
 		</p>
 	</section>
 </main>
@@ -332,6 +363,15 @@
 
 	.hint {
 		opacity: 0.75;
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.table-wrap {
@@ -354,7 +394,8 @@
 		border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
 	}
 
-	tbody tr:last-child td {
+	tbody tr:last-child td,
+	tbody tr:last-child th {
 		border-bottom: 0;
 	}
 
@@ -371,10 +412,103 @@
 		white-space: nowrap;
 	}
 
+	.note-cell {
+		font-size: 0.85rem;
+		white-space: nowrap;
+	}
+
 	.notice {
 		margin: 0.9rem 0 0;
 		font-size: 0.9rem;
 		opacity: 0.85;
+	}
+
+	.notes-heading {
+		margin: 1.2rem 0 0.4rem;
+		font-size: 1rem;
+	}
+
+	.notes {
+		margin: 0;
+		font-size: 0.9rem;
+	}
+
+	.notes dt {
+		font-weight: 600;
+		margin-top: 0.8rem;
+		scroll-margin-top: 4rem;
+	}
+
+	.notes dt:first-child {
+		margin-top: 0;
+	}
+
+	.notes dt:focus-visible {
+		outline: 2px solid currentColor;
+		outline-offset: 2px;
+	}
+
+	.notes dd {
+		margin: 0.2rem 0 0;
+		padding-left: 0.8rem;
+		border-left: 3px solid color-mix(in srgb, currentColor 18%, transparent);
+	}
+
+	.notes dd :global(p),
+	.credit-notice :global(p) {
+		margin: 0.4rem 0 0;
+		overflow-wrap: anywhere;
+	}
+
+	.notes dd :global(p:first-child),
+	.credit-notice :global(p:first-child) {
+		margin-top: 0;
+	}
+
+	.plugin-name {
+		margin: 1.4rem 0 0.4rem;
+	}
+
+	.credits {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.8rem;
+	}
+
+	.credit {
+		padding: 0.7rem 0.9rem;
+		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		border-radius: 0.4rem;
+		font-size: 0.95rem;
+	}
+
+	.credit-name {
+		margin: 0 0 0.3rem;
+		font-size: 1rem;
+	}
+
+	.facts {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 0.15rem 0.7rem;
+		margin: 0 0 0.4rem;
+		font-size: 0.9rem;
+	}
+
+	.facts dt {
+		opacity: 0.75;
+	}
+
+	.facts dd {
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.license-texts {
+		margin: 0.4rem 0 0;
+		font-size: 0.9rem;
 	}
 
 	.error {

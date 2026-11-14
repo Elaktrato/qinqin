@@ -115,38 +115,38 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 	defer tx.Rollback()
 
 	var (
-		id                                            int64
-		name, version, language, license, attribution string
-		oldHash                                       string
-		deleted                                       sql.NullString
+		id                                                    int64
+		name, version, language, license, attribution, notice string
+		oldHash                                               string
+		deleted                                               sql.NullString
 	)
 	err = tx.QueryRowContext(ctx, `
-		SELECT id, name, version, language, license, attribution, content_hash, deleted_at
+		SELECT id, name, version, language, license, attribution, notice, content_hash, deleted_at
 		FROM frequency_packs WHERE pack_id = ?`, m.ID).
-		Scan(&id, &name, &version, &language, &license, &attribution, &oldHash, &deleted)
+		Scan(&id, &name, &version, &language, &license, &attribution, &notice, &oldHash, &deleted)
 	result := dict.Result{Entries: len(rows)}
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		stamp := time.Now().UTC().Format(time.RFC3339)
 		if err = tx.QueryRowContext(ctx, `
-			INSERT INTO frequency_packs (pack_id, name, version, language, license, attribution, ord, content_hash, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs), ?, ?)
+			INSERT INTO frequency_packs (pack_id, name, version, language, license, attribution, notice, ord, content_hash, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs), ?, ?)
 			RETURNING id`,
-			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, hash, stamp).Scan(&id); err != nil {
+			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash, stamp).Scan(&id); err != nil {
 			return dict.Result{}, fmt.Errorf("register frequency pack %s: %w", m.ID, err)
 		}
 	case err != nil:
 		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	default:
 		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version &&
-			language == m.Language && license == m.License && attribution == m.Attribution {
+			language == m.Language && license == m.License && attribution == m.Attribution && notice == m.Notice {
 			return result, nil // identical: nothing to write
 		}
 		if _, err = tx.ExecContext(ctx, `
 			UPDATE frequency_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?,
-				content_hash = ?, updated_at = ?, deleted_at = NULL
+				notice = ?, content_hash = ?, updated_at = ?, deleted_at = NULL
 			WHERE id = ?`,
-			m.Name, m.Version, m.Language, m.License, m.Attribution, hash,
+			m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash,
 			time.Now().UTC().Format(time.RFC3339), id); err != nil {
 			return dict.Result{}, fmt.Errorf("update frequency pack %s: %w", m.ID, err)
 		}
@@ -512,16 +512,16 @@ type Hit struct {
 
 // PackInfo describes an installed frequency pack.
 type PackInfo struct {
-	ID                                                    int64
-	PackID, Name, Version, Language, License, Attribution string
-	Ord                                                   int
+	ID                                                            int64
+	PackID, Name, Version, Language, License, Attribution, Notice string
+	Ord                                                           int
 }
 
 // Packs lists the installed packs in priority order (ord): the first pack
 // with data for a term is the one whose frequency ordering applies.
 func (s Store) Packs(ctx context.Context) ([]PackInfo, error) {
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT id, pack_id, name, version, language, license, attribution, ord
+		SELECT id, pack_id, name, version, language, license, attribution, notice, ord
 		FROM frequency_packs WHERE deleted_at IS NULL ORDER BY ord, id`)
 	if err != nil {
 		return nil, err
@@ -530,7 +530,7 @@ func (s Store) Packs(ctx context.Context) ([]PackInfo, error) {
 	var out []PackInfo
 	for rows.Next() {
 		var p PackInfo
-		if err := rows.Scan(&p.ID, &p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Ord); err != nil {
+		if err := rows.Scan(&p.ID, &p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Notice, &p.Ord); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

@@ -144,6 +144,8 @@ func serveCmd(args []string) error {
 	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
 		return err
 	}
+	// The Sources page shows the stored terms; say when seed is due.
+	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
 	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB))))
