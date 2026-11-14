@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { ApiError, api } from '$lib/api/client';
 	import type { PluginInfo, Workspace } from '$lib/api/types';
 	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
@@ -8,6 +10,15 @@
 	import { languageLabel } from '$lib/languages';
 	import { isCorePlugin } from '$lib/plugins';
 	import { loadPluginStates } from '$lib/plugins/states';
+	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
+	import {
+		SETTINGS_TABS,
+		SETTINGS_TAB_LABELS,
+		parseSettingsTab,
+		settingsTabHref,
+		tabKeyTarget,
+		type SettingsTab
+	} from '$lib/settings/tabs';
 	import { rename, workspaces } from '$lib/workspaces';
 
 	interface PluginRow {
@@ -18,6 +29,29 @@
 		saving: boolean;
 		saved: boolean;
 		error: string;
+	}
+
+	// The open tab lives in the URL (`?tab=`), so it can be linked to;
+	// switching replaces the history entry instead of adding one. The
+	// panels stay mounted (only hidden), so drafts survive a tab switch.
+	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab')));
+	const tabButtons: Partial<Record<SettingsTab, HTMLButtonElement>> = {};
+
+	async function selectTab(tab: SettingsTab, focus = false): Promise<void> {
+		if (tab !== activeTab) {
+			await goto(settingsTabHref(tab), { replaceState: true, keepFocus: true, noScroll: true });
+		}
+		if (focus) {
+			await tick();
+			tabButtons[tab]?.focus();
+		}
+	}
+
+	function tabKey(event: KeyboardEvent, index: number): void {
+		const next = tabKeyTarget(event.key, index, SETTINGS_TABS.length);
+		if (next === null) return;
+		event.preventDefault();
+		void selectTab(SETTINGS_TABS[next], true);
 	}
 
 	// The workspace being renamed (one at a time) and its draft name.
@@ -139,7 +173,30 @@
 <main class="settings">
 	<h1>Settings</h1>
 
-	<section>
+	<div class="tabs" role="tablist" aria-label="Settings">
+		{#each SETTINGS_TABS as tab, index (tab)}
+			<button
+				type="button"
+				role="tab"
+				id="settings-tab-{tab}"
+				aria-selected={tab === activeTab}
+				aria-controls="settings-panel-{tab}"
+				tabindex={tab === activeTab ? 0 : -1}
+				bind:this={tabButtons[tab]}
+				onclick={() => selectTab(tab)}
+				onkeydown={(event) => tabKey(event, index)}
+			>
+				{SETTINGS_TAB_LABELS[tab]}
+			</button>
+		{/each}
+	</div>
+
+	<div
+		role="tabpanel"
+		id="settings-panel-workspaces"
+		aria-labelledby="settings-tab-workspaces"
+		hidden={activeTab !== 'workspaces'}
+	>
 		<h2 bind:this={workspacesHeading} tabindex="-1">Workspaces</h2>
 		<p class="hint">
 			Each workspace keeps its own cards, library and progress. You can have several of the same
@@ -225,9 +282,23 @@
 
 		<h3>New workspace</h3>
 		<WorkspaceCreateForm idPrefix="settings-new" />
-	</section>
+	</div>
 
-	<section>
+	<div
+		role="tabpanel"
+		id="settings-panel-home"
+		aria-labelledby="settings-tab-home"
+		hidden={activeTab !== 'home'}
+	>
+		<HomeLayoutEditor />
+	</div>
+
+	<div
+		role="tabpanel"
+		id="settings-panel-plugins"
+		aria-labelledby="settings-tab-plugins"
+		hidden={activeTab !== 'plugins'}
+	>
 		<h2>Plugins</h2>
 		<p class="hint">
 			The server registers built-in plugins at startup. A disabled plugin's pages and widgets are
@@ -287,12 +358,57 @@
 				{/each}
 			</ul>
 		{/if}
-	</section>
+	</div>
 </main>
 
 <style>
-	.settings section {
-		margin-top: 2rem;
+	.settings [role='tabpanel'] {
+		margin-top: 1.5rem;
+	}
+
+	.settings [role='tabpanel'][hidden] {
+		display: none;
+	}
+
+	/* The tab strip: plain text tabs with an underline for the open one;
+	   it scrolls sideways rather than wrapping on a narrow phone. */
+	.tabs {
+		display: flex;
+		gap: 0.25rem;
+		overflow-x: auto;
+		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+	}
+
+	.settings .tabs [role='tab'] {
+		min-height: 2.75rem;
+		padding: 0.5rem 1rem;
+		border: 0;
+		border-bottom: 3px solid transparent;
+		border-radius: 0;
+		margin-bottom: -1px;
+		background: transparent;
+		color: inherit;
+		font-weight: 500;
+		opacity: 0.8;
+		white-space: nowrap;
+	}
+
+	.settings .tabs [role='tab'][aria-selected='true'] {
+		opacity: 1;
+		font-weight: 600;
+		color: #0b6bcb;
+		border-bottom-color: currentColor;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.settings .tabs [role='tab'][aria-selected='true'] {
+			color: #6cb4ff;
+		}
+	}
+
+	.settings .tabs [role='tab']:focus-visible {
+		outline: 2px solid currentColor;
+		outline-offset: -4px;
 	}
 
 	.hint {
