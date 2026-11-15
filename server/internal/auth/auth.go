@@ -144,8 +144,8 @@ func decodeHash(encoded string) (salt, key []byte, p argonParams, err error) {
 func CreateUser(ctx context.Context, sqlDB *sql.DB, username, password string, admin bool) (model.User, error) {
 	created := now()
 	res, err := sqlDB.ExecContext(ctx,
-		`INSERT INTO users (username, hash, admin, updated_at, created_at) VALUES (?, ?, ?, ?, ?)`,
-		username, Hash(password), admin, created, created)
+		`INSERT INTO users (username, hash, admin, updated_at, created_at, username_key) VALUES (?, ?, ?, ?, ?, ?)`,
+		username, Hash(password), admin, created, created, model.UsernameKey(username))
 	if err != nil {
 		if isUniqueViolation(err) {
 			return model.User{}, ErrUsernameTaken
@@ -166,9 +166,9 @@ func CreateUser(ctx context.Context, sqlDB *sql.DB, username, password string, a
 func CreateFirstUser(ctx context.Context, sqlDB *sql.DB, username, password string) (model.User, error) {
 	created := now()
 	res, err := sqlDB.ExecContext(ctx, `
-		INSERT INTO users (username, hash, admin, updated_at, created_at)
-		SELECT ?, ?, 1, ?, ? WHERE NOT EXISTS (SELECT 1 FROM users)`,
-		username, Hash(password), created, created)
+		INSERT INTO users (username, hash, admin, updated_at, created_at, username_key)
+		SELECT ?, ?, 1, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM users)`,
+		username, Hash(password), created, created, model.UsernameKey(username))
 	if err != nil {
 		return model.User{}, fmt.Errorf("insert first user %q: %w", username, err)
 	}

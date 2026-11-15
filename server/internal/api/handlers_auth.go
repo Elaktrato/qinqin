@@ -56,6 +56,7 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
+	req.Username = auth.NormalizeUsername(req.Username)
 	if req.Username == "" || req.Password == "" {
 		writeAuthError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
 		return

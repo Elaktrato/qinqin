@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"golang.org/x/text/unicode/norm"
+	"qinqin/internal/model"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -63,6 +65,26 @@ const (
 	maxUsernameRunes = 32
 )
 
+// NormalizeUsername trims the name and puts it in Unicode NFC, so the same
+// visible name always has the same bytes. Call it before CheckNewUsername
+// and before storing.
+func NormalizeUsername(name string) string {
+	return norm.NFC.String(strings.TrimSpace(name))
+}
+
+// scriptOf names the confusable-prone script of a letter, "" for the rest.
+func scriptOf(r rune) string {
+	switch {
+	case unicode.Is(unicode.Latin, r):
+		return "latin"
+	case unicode.Is(unicode.Cyrillic, r):
+		return "cyrillic"
+	case unicode.Is(unicode.Greek, r):
+		return "greek"
+	}
+	return ""
+}
+
 // CheckNewUsername applies the policy for new usernames: 3-32 runes of
 // letters, digits, ".", "_" and "-" (no "@", so "username or email" fields
 // stay unambiguous), free case-insensitively. Existing usernames are
@@ -72,13 +94,23 @@ func CheckNewUsername(ctx context.Context, sqlDB *sql.DB, name string) error {
 	if n < minUsernameRunes || n > maxUsernameRunes {
 		return &policyError{ErrInvalidUsername, fmt.Sprintf("Use %d to %d characters.", minUsernameRunes, maxUsernameRunes)}
 	}
+	scripts := map[string]bool{}
 	for _, r := range name {
+		if sc := scriptOf(r); sc != "" {
+			scripts[sc] = true
+		}
 		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsMark(r) || r == '.' || r == '_' || r == '-') {
 			return &policyError{ErrInvalidUsername, "Use letters, digits, dots, underscores and hyphens only."}
 		}
 	}
+	if len(scripts) > 1 {
+		return &policyError{ErrInvalidUsername, "Do not mix Latin, Cyrillic and Greek letters in one name."}
+	}
 	var one int
-	err := sqlDB.QueryRowContext(ctx, `SELECT 1 FROM users WHERE username = ? COLLATE NOCASE`, name).Scan(&one)
+	// Taken by key (NFKC + case fold), or by the older ASCII-case rule for
+	// legacy names that have no key.
+	err := sqlDB.QueryRowContext(ctx, `SELECT 1 FROM users WHERE username_key = ? OR username = ? COLLATE NOCASE`,
+		model.UsernameKey(name), name).Scan(&one)
 	if err == nil {
 		return ErrUsernameTaken
 	}
