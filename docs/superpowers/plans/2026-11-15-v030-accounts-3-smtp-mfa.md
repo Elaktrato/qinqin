@@ -294,3 +294,39 @@ Not verified here (handoff for the owner): a real provider over STARTTLS/implici
   `Retry-After` handling; the client never stores challenges beyond the screen.
 - Kotlin: TOTP is entered by the user (no client-side TOTP computation); recovery-code input
   normalisation (case, spaces, dashes) is server-side, the client may strip whitespace.
+
+## Execution record (built on `feature/v030-accounts-3`)
+
+Tasks 1-18 in order, one commit each (task 1 `9319a2f`, 2 `a0f9973`, 3 `937573e`, 4 `6b12181`, 5 `153c969`, 6 `e1a9b0a`,
+7 `b31f655`, 8 `1e60fd5`, 9 `28ba497`, 10 `0253eb2`, 11 `7a4a995`, 12 `64c7584`, 13 `49a120d`, 14 `2626dac`, 15 `c5c1998`,
+16 `cf7e298`, 17 `2a7b4d9`, 18 `10189cd`), plus fixes `e69684d` (recovery file date: local day, the UTC guard) and `ac27902`
+(`QINQIN_SMTP_ALLOW_PRIVATE` in both stacks, found by the full gate). Task 19: full Go gate green (api 246 s), web check/test/build
+exit 0, full vitest under Node 26 green (233 files, 3793 tests), real-app check (built binary, local SMTP sink, Python driver, 30
+checks, all passed, scratch removed).
+
+Rulings and deviations:
+- Ruling: `mail.Configured` = `Store.Configured`; `s.mailConfigured(ctx)` now takes a context. `passwordReset` in the public options is
+  exactly "mail works" (the web reads it as such); `totpAvailable` and the effective `mfaEnforced` joined the options.
+- Ruling: admin SMTP PUT/DELETE do not ask the admin's password (settings, like `settings/auth`); the stored password never follows a new
+  host (re-entry rule) and a draft test is bound by it. MFA reset of another user DOES ask it (plan 2 rule) and refuses oneself (`self_target`).
+- Ruling: a username without a password is refused (`password_required` 422 on the SMTP form). Audit for SMTP: `settings_changed`
+  `{field: "smtp", to: "saved"|"removed"}`; no new audit keys were needed (`scope` carries totp|email for `mfa_enabled/disabled`).
+- Deviation: `ValidAddress` is strict (a bare address; no display-name "reduction").
+- Deviation: `Job.Build` receives the mail Config; the reset link is created on the worker (`created_by` NULL, 1 h).
+- Deviation: error code `password_login_required` (403) instead of `password_required` (already 422 for admin actions); added
+  `method_unavailable`, `email_login_unavailable`, `setup_expired`, `not_enabled`, `email_unverified`, `nothing_to_verify`.
+- Ruling: a PUT /api/account/email in an enrolment session needs no password (plan 3 table), `verification` has a third value `none`.
+- Ruling: recovery codes are looked up by SHA-256 (equality on a hash), TOTP/email codes use `subtle.ConstantTimeCompare` on fixed lengths.
+- Ruling: challenges for an unknown identifier remember the identifier in `email_norm`, so their wrong-code budget is per identifier and
+  equals a known user's. Resend of a sign-in code = start again (`ident` 5/h). Email-code sign-in also works for a must-change account
+  (same trust as a mailed reset link).
+- Ruling: users with must-change + TOTP: second step first. `ForcePasswordChange` unchanged.
+- Deviation: QR drawn as one `<rect>` per horizontal run of dark modules (not per module); `uqr@0.1.3` MIT verified in node_modules and
+  shipped as `static/UQR-LICENSE.TXT` (byte-equal test) with a "Built into the app" credit.
+- Deviation: the reset page sends a user with two-step sign-in to the sign-in page after the password change (no second step UI there).
+- New contract files: `mfa-login.json`, `mfa-setup.json` (exercised by `contract_mfa_test.go`); `me.mfa`, `AdminUser.mfa`, options keys.
+- Added: `qinqin recover --reset-mfa` real (audit `mfa_reset`, actor cli), `RevokeAllExcept` for "sign everyone out now", `secretbox.Rotator`.
+
+Not verified (owner hand-checks): a real provider over STARTTLS / implicit TLS, Microsoft 365 AUTH LOGIN, real authenticator apps
+scanning the QR, mail delivery and spam placement, Admin -> Email and the two-factor pages in a real browser (jsdom only), MFA reset
+button for admins in the Users UI (route exists, no button), upgrade from a v0.2.x release.
