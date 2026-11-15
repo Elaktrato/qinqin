@@ -242,8 +242,8 @@ func TestRestrictedAdminCannotRegisterUsers(t *testing.T) {
 		r.RemoteAddr = "192.0.2.11:1"
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, r)
-		if w.Code != 403 || !strings.Contains(w.Body.String(), "admin_required") {
-			t.Errorf("%s: %d %s, want 403 admin_required", who, w.Code, w.Body.String())
+		if w.Code != 403 || !strings.Contains(w.Body.String(), "registration_closed") {
+			t.Errorf("%s: %d %s, want 403 registration_closed", who, w.Code, w.Body.String())
 		}
 	}
 }

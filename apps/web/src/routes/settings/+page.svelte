@@ -16,6 +16,7 @@
 	import { loadPluginStates } from '$lib/plugins/states';
 	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
 	import AccountSettings from '$lib/settings/AccountSettings.svelte';
+	import AdminSettings from '$lib/settings/AdminSettings.svelte';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
@@ -526,6 +527,15 @@
 				}}
 			/>
 			<LanguageManager refreshKey={languagesKey} />
+		</div>
+		<div
+			role="tabpanel"
+			id="settings-panel-admin"
+			aria-labelledby="settings-tab-admin"
+			hidden={activeTab !== 'admin'}
+		>
+			<h2>Admin</h2>
+			{#if activeTab === 'admin'}<AdminSettings />{/if}
 		</div>
 	{/if}
 </main>

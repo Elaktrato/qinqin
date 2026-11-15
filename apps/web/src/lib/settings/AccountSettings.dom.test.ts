@@ -39,6 +39,7 @@ beforeEach(() => {
 	vi.mocked(api).mockImplementation((async (url: string, opts?: { method?: string }) => {
 		if (url === '/api/account/sessions' && !opts?.method) return list;
 		if (url === '/api/account/password') return { status: 'ok' };
+		if (url === '/api/auth/options') return { emailPolicy: 'off' };
 		if (url.startsWith('/api/account/sessions/') && opts?.method === 'DELETE') return undefined;
 		if (url === '/api/account/sessions/revoke') return { revoked: 1 };
 		throw new Error(`unexpected ${url}`);

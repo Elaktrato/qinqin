@@ -1,12 +1,24 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { pageTitle } from '$lib/pageTitle';
 	import { authErrorMessage } from '$lib/api/authErrors';
+	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
 	import { login } from '$lib/auth';
 
 	let username = $state('');
 	let password = $state('');
 	let error = $state('');
 	let busy = $state(false);
+	let options = $state<AuthOptions | null>(null);
+
+	onMount(() => {
+		// The links below follow the instance's switches; without them the page
+		// still signs in.
+		getAuthOptions().then(
+			(o) => (options = o),
+			() => undefined
+		);
+	});
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
@@ -56,5 +68,16 @@
 		<button type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
 	</form>
 
-	<p class="hint">No account yet? <a href="/register">Create one</a>.</p>
+	{#if options}
+		{#if options.bootstrap || options.registration === 'open'}
+			<p class="hint">No account yet? <a href="/register">Create one</a>.</p>
+		{:else if options.registration === 'invite'}
+			<p class="hint">Have an invite link? Open it to register.</p>
+		{/if}
+		{#if options.passwordReset}
+			<p class="hint"><a href="/reset">Forgot password?</a></p>
+		{:else}
+			<p class="hint">Forgot your password? Ask your administrator for a reset link.</p>
+		{/if}
+	{/if}
 </main>

@@ -4,6 +4,7 @@
 //	qinqin [serve] [--addr :8080] [--data ./data]
 //	qinqin seed    --data <dir> --packs <dir>
 //	qinqin adduser --data <dir> --username <name> [--admin]
+//	qinqin recover --data <dir> --username <name> [--enable] [--admin] [--reset-mfa]
 package main
 
 import (
@@ -51,8 +52,10 @@ func main() {
 		err = seedCmd(args, os.Stdout)
 	case "adduser":
 		err = adduserCmd(args, os.Stdin, os.Stderr)
+	case "recover":
+		err = recoverCmd(args, os.Stdin, os.Stderr)
 	default:
-		err = fmt.Errorf("%w: unknown command %q (want serve, seed, or adduser)", errUsage, cmd)
+		err = fmt.Errorf("%w: unknown command %q (want serve, seed, adduser or recover)", errUsage, cmd)
 	}
 	if errors.Is(err, flag.ErrHelp) {
 		return
@@ -170,6 +173,12 @@ func serveCmd(args []string) error {
 	defer stop()
 	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
 	go auth.RunJanitor(ctx, sqlDB, time.Hour, log.Printf)
+	// Files of users that no longer exist (a deletion whose file removal failed).
+	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, *data); err != nil {
+		log.Printf("startup sweep of orphan user directories: %v", err)
+	} else if n > 0 {
+		log.Printf("startup sweep: removed %d orphan user director%s", n, map[bool]string{true: "y", false: "ies"}[n == 1])
+	}
 	var limiter *ai.Limiter
 	if aiSvc != nil {
 		limiter = aiSvc.Limiter
@@ -224,7 +233,20 @@ func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
 	// answer 200 HTML to a health probe.
 	mux.Handle("/healthz/{$}", http.RedirectHandler("/healthz", http.StatusPermanentRedirect))
 	mux.Handle("/", webdist.Handler(web))
-	return mux
+	return browserHeaders(mux)
+}
+
+// browserHeaders adds the headers every response (API, health and static)
+// carries: no Referer is sent from a page of this app (reset and invite
+// links keep their secret in the fragment, but nothing should leak further),
+// and no other site may frame it. There is deliberately no CSP yet.
+func browserHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("Referrer-Policy", "no-referrer")
+		h.Set("X-Frame-Options", "DENY")
+		next.ServeHTTP(w, r)
+	})
 }
 
 // envOr returns the environment variable key, or def when it is empty.

@@ -23,6 +23,22 @@ func readAccountBody(w http.ResponseWriter, r *http.Request, v any) bool {
 	return true
 }
 
+// readAccountBodyStrict is readAccountBody that refuses unknown keys, so a
+// misspelled setting is a 400 instead of a silent no-op.
+func readAccountBodyStrict(w http.ResponseWriter, r *http.Request, v any) bool {
+	body, ok := readAuthBody(w, r)
+	if !ok {
+		return false
+	}
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(v); err != nil {
+		writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+		return false
+	}
+	return true
+}
+
 // reauth spends one token of the user's re-authentication budget; false
 // means a 429 was written. The returned func gives the token back (call it
 // when the password turned out right).
@@ -199,4 +215,150 @@ func (s *server) handleRevokeSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]int64{"revoked": n})
+}
+
+// handleAccountDeletionPreview serves GET /api/account/deletion-preview.
+func (s *server) handleAccountDeletionPreview(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	s.writePreview(w, r, u.ID)
+}
+
+// handleDeleteAccount serves DELETE /api/account {password, confirm}: the
+// caller deletes themselves after typing their username and re-entering
+// the password (403 wrong_password, counted by the reauth limiter). The
+// last active administrator is refused (409 last_admin): zero users would
+// reopen the first-user bootstrap to anyone who reaches the URL. Plan 3
+// adds the TOTP code to this re-authentication.
+func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	var req struct {
+		Password string `json:"password"`
+		Confirm  string `json:"confirm"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	if req.Confirm != u.Username {
+		writeAuthError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type your username exactly to confirm.")
+		return
+	}
+	if req.Password == "" {
+		writeAuthError(w, http.StatusForbidden, "wrong_password", "The password is wrong.")
+		return
+	}
+	refund, ok := s.reauth(w, u.ID)
+	if !ok {
+		return
+	}
+	var good bool
+	err := s.withHashGate(r.Context(), func() error {
+		var e error
+		good, e = auth.VerifyUserPassword(r.Context(), s.db, u.ID, req.Password)
+		return e
+	})
+	switch {
+	case err != nil && r.Context().Err() != nil:
+		writeClientGone(w)
+		return
+	case errors.Is(err, errHashBusy):
+		refund()
+		writeBusy(w)
+		return
+	case err != nil:
+		refund()
+		writeInternal(w, r)
+		return
+	case !good:
+		writeAuthError(w, http.StatusForbidden, "wrong_password", "The password is wrong.")
+		return
+	}
+	refund()
+	if err := s.users.DeleteUser(r.Context(), u.ID, u.ID, s.dataDir); err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// handlePutEmail serves PUT /api/account/email {email: string|null,
+// currentPassword}: the caller sets or clears their own address under the
+// instance policy (off refuses an address, required refuses clearing). The
+// password is asked again (403 wrong_password, reauth limiter): an address
+// is a recovery channel. The address stays unverified until plan 3's code
+// check.
+func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
+	// A full session only: a restricted session must not probe addresses.
+	p := s.requirePrincipal(w, r)
+	if p == nil {
+		return
+	}
+	var req struct {
+		Email           *string `json:"email"`
+		CurrentPassword string  `json:"currentPassword"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	set, err := auth.LoadSettings(r.Context(), s.db)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	var nu auth.NewUser
+	// Format and policy only: whether an address is taken is told after the
+	// password, so nobody can probe addresses without proving who they are.
+	if !s.applyEmailFormat(w, r, set.EmailPolicy, req.Email, &nu) {
+		return
+	}
+	if req.CurrentPassword == "" {
+		writeAuthError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
+		return
+	}
+	refund, ok := s.reauth(w, p.User.ID)
+	if !ok {
+		return
+	}
+	var good bool
+	err = s.withHashGate(r.Context(), func() error {
+		var e error
+		good, e = auth.VerifyUserPassword(r.Context(), s.db, p.User.ID, req.CurrentPassword)
+		return e
+	})
+	switch {
+	case err != nil && r.Context().Err() != nil:
+		writeClientGone(w)
+		return
+	case errors.Is(err, errHashBusy):
+		refund()
+		writeBusy(w)
+		return
+	case err != nil:
+		refund()
+		writeInternal(w, r)
+		return
+	case !good:
+		writeAuthError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
+		return
+	}
+	refund()
+	if err := auth.SetOwnEmail(r.Context(), s.db, p.User.ID, nu.Email, nu.EmailNorm); err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	u, err := auth.LoadUser(r.Context(), s.db, p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"email": u.Email, "emailVerified": u.EmailVerified})
 }
