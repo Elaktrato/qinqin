@@ -192,7 +192,7 @@ func TestAIKeyUndecryptable(t *testing.T) {
 func TestAIKeyInvalidInput(t *testing.T) {
 	ts, _, tok := aiServer(t, ai.SecretOK)
 	for name, body := range map[string]map[string]string{
-		"model":    {"key": aiGoodKey, "model": "gpt-4"},
+		"model":    {"key": aiGoodKey, "model": "gpt 4"},
 		"short":    {"key": "sk-short"},
 		"spaces":   {"key": "sk-fake good key 00000001"},
 		"provider": {"key": aiGoodKey, "provider": "openai"},

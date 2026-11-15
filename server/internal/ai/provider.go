@@ -22,16 +22,6 @@ var Models = []ModelInfo{
 	{"claude-haiku-5-5", "Claude Haiku 5.5"},
 }
 
-// ValidModel reports whether id is one of Models.
-func ValidModel(id string) bool {
-	for _, m := range Models {
-		if m.ID == id {
-			return true
-		}
-	}
-	return false
-}
-
 // Usage counts the tokens of one provider call.
 type Usage struct{ InputTokens, OutputTokens, CacheReadTokens int64 }
 

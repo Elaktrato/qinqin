@@ -73,7 +73,7 @@ func (s *server) runAI(r *http.Request, userID int64, kind string, call func(ctx
 	}
 	defer release()
 	// Only a call that may run decrypts the key and stamps last_used_at.
-	creds, err := s.ai.Keys.Credentials(r.Context(), userID)
+	creds, err := s.ai.Keys.Credentials(r.Context(), userID, "anthropic") // Task 7 dispatches on the selection
 	if err != nil {
 		return ai.Credentials{}, err
 	}

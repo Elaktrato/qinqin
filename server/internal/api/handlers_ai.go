@@ -145,7 +145,7 @@ func (s *server) handleGetAIKey(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		return
 	}
-	info, err := s.rawKeys().Info(r.Context(), u.ID)
+	info, err := s.rawKeys().Info(r.Context(), u.ID, "anthropic")
 	if errors.Is(err, ai.ErrNoKey) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no_key", "message": aiMessages["no_key"]})
 		return
@@ -198,7 +198,7 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 		writeAIError(w, errInvalidProv)
 		return
 	}
-	if req.Model != "" && !ai.ValidModel(req.Model) {
+	if req.Model != "" && !ai.ValidModelID(req.Model) {
 		writeAIError(w, errInvalidModel)
 		return
 	}
@@ -208,7 +208,7 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 			writeAIError(w, errInvalidModel)
 			return
 		}
-		if err := s.ai.Keys.SetModel(ctx, u.ID, req.Model); err != nil {
+		if err := s.ai.Keys.SetModel(ctx, u.ID, "anthropic", req.Model); err != nil {
 			writeAIError(w, err)
 			return
 		}
@@ -223,7 +223,7 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 	model := req.Model
 	if model == "" {
 		model = ai.DefaultModel
-		if info, err := s.ai.Keys.Info(ctx, u.ID); err == nil && ai.ValidModel(info.Model) {
+		if info, err := s.ai.Keys.Info(ctx, u.ID, "anthropic"); err == nil && ai.ValidModelID(info.Model) {
 			model = info.Model // a new key keeps the model the learner chose
 		}
 	}
@@ -243,7 +243,7 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 		writeAIError(w, verr)
 		return
 	}
-	if err := s.ai.Keys.Put(ctx, u.ID, req.Provider, key, model); err != nil {
+	if err := s.ai.Keys.Put(ctx, u.ID, req.Provider, key, model, ai.PutOptions{}); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}

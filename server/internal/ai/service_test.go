@@ -40,7 +40,7 @@ func TestServiceStatusReasons(t *testing.T) {
 	check("no provider", &Service{Secret: SecretOK, Keys: keys, Limiter: lim}, "no_provider", false)
 	check("no key", svc, "no_key", false)
 
-	if err := newStore(sqlDB, 9, 0).Put(ctx, 1, "anthropic", testKey, ""); err != nil {
+	if err := newStore(sqlDB, 9, 0).Put(ctx, 1, "anthropic", testKey, "", PutOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	st = check("other secret", svc, "key_undecryptable", false)
@@ -48,7 +48,7 @@ func TestServiceStatusReasons(t *testing.T) {
 		t.Errorf("key = %+v", st.Key)
 	}
 
-	if err := keys.Put(ctx, 1, "anthropic", testKey, ""); err != nil {
+	if err := keys.Put(ctx, 1, "anthropic", testKey, "", PutOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	_ = lim.Record(ctx, Call{UserID: 1, Kind: "review", Model: DefaultModel, OK: true, Usage: Usage{InputTokens: 12, OutputTokens: 34}})

@@ -62,7 +62,7 @@ func (s *Service) Status(ctx context.Context, userID int64) (Status, error) {
 		st.Reason = "no_provider"
 		return st, nil
 	}
-	info, err := s.Keys.Info(ctx, userID)
+	info, err := s.Keys.Info(ctx, userID, "anthropic")
 	switch {
 	case errors.Is(err, ErrNoKey):
 		st.Reason = "no_key"

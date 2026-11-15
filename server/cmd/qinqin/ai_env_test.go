@@ -89,13 +89,13 @@ func TestAIFromEnvRotates(t *testing.T) {
 	ctx := context.Background()
 	a, _ := ai.ParseSecret(b64(1))
 	old := &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(a)}
-	if err := old.Put(ctx, 1, "anthropic", "sk-ant-rotate-1234", ""); err != nil {
+	if err := old.Put(ctx, 1, "anthropic", "sk-ant-rotate-1234", "", ai.PutOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	var logs strings.Builder
 	env := map[string]string{"QINQIN_SECRET": b64(2), "QINQIN_SECRET_PREVIOUS": b64(1)}
 	svc := aiFromEnv(sqlDB, func(k string) string { return env[k] }, func(f string, a ...any) { fmt.Fprintf(&logs, f+"\n", a...) })
-	c, err := svc.Keys.Credentials(ctx, 1)
+	c, err := svc.Keys.Credentials(ctx, 1, "anthropic")
 	if err != nil || c.APIKey != "sk-ant-rotate-1234" {
 		t.Fatalf("credentials after rotation: %v", err)
 	}
