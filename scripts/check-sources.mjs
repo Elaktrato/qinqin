@@ -25,7 +25,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Optional packs the docs describe that are never in the repository. */
-export const LOCAL_ONLY_PACKS = ['jlpt-words', 'hsk30-chars', 'hsk30-words'];
+export const LOCAL_ONLY_PACKS = ['jlpt-words', 'hsk30-chars', 'hsk30-words', 'tbcl-words', 'tbcl-chars', 'cn-curriculum-chars'];
 export const MAX_NOTICE_BYTES = 4000;
 
 // Go's RE2 `\s` is ASCII whitespace only ([\t\n\f\r ]), so the URL part

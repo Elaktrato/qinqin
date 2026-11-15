@@ -55,7 +55,10 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 - [#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK (permissions, behavior hooks, data API; page surfaces exist)
 - [#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI
 - [#41](https://github.com/Elaktrato/qinqin/issues/41) language and workspace management UI (rename/delete exist)
-- [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs
+- [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs: bundled `joyo-grades` (KANJIDIC2) and
+  `tgh-chars` (通用规范汉字表, Unihan `kTGH`); TBCL and curriculum lists are local-only via
+  `scripts/prepare-local-levels.mjs`; the old TOCFL 8000 list is rejected (withdrawn).
+  Open: level sessions draw words only, so character-unit packs give no study cards
 - [#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs
 - ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done on `feature/fsrs-optimizer` (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
 - [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)

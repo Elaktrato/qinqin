@@ -62,6 +62,8 @@ KANJIDIC2 licence as `LICENSE-KANJIDIC2`):
 |------|------|----------|--------|----------|---------|
 | `hsk-chars` | levels | zh | HSK 3.0 (characters) | the official HSK character list, unit `character`: the characters to recognise (认读字) per level, HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413, HSK 7–9 1,148 (3,088, none repeated; the 1,200 characters to write, 书写字, assign no level) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
 | `hsk-words` | levels | zh | HSK 3.0 (words) | the official HSK word list, unit `word`, each entry with its pinyin as reading: HSK 1 300, HSK 2 198, HSK 3 497, HSK 4 997, HSK 5 1,591, HSK 6 1,792, HSK 7–9 5,584 (from the syllabus's 11,000 rows: 300/200/500/1,000/1,600/1,800/5,600; 41 homographs repeating an easier row's form and pinyin, 本1/本2 běn, are kept once) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
+| `joyo-grades` | levels | ja | Jōyō kanji by school grade | the 2,136 jōyō kanji by KANJIDIC2 grade, unit `character`: Grade 1 80, Grade 2 160, Grade 3 200, Grade 4 202, Grade 5 193, Grade 6 191, Secondary 1,110; jinmeiyō excluded; derived by `scripts/prepare-standard-levels.mjs` (the map's Group-by hides it, the built-in Grade covers it) | CC BY-SA 4.0, EDRDG (derived) |
+| `tgh-chars` | levels | zh | 通用规范汉字表 (2013) levels | the 8,105 characters of the State Council table by `kTGH` serial, unit `character`: Level 1 3,500, Level 2 3,000, Level 3 1,605; derived by `scripts/prepare-standard-levels.mjs` | Unicode License v3 (derived from Unihan) |
 | `jlpt-kanji` | levels | ja | JLPT kanji (approximate) | kanji by approximate JLPT level, unit `character`: N5 80, N4 166, N3 377, N2 369, N1 1,395. Base: kanjiapi.dev `jlpt.tsv` (2,211 kanji, levels kept; provenance not stated upstream; unofficial, as every N5–N1 list is; its N1 holds 247 jinmeiyō name kanji). Gap fill: 176 kanji it omits (分 可 無 的 …) placed from KANJIDIC2's old JLPT level (19) or school grade (157), see `docs/sources.md` | MIT, © 2023 Iridium Szreter; derived levels CC BY-SA 4.0, EDRDG |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
@@ -169,6 +171,9 @@ The older ivankra/hsk30 packs (`hsk30-chars`, `hsk30-words`), which
 `scripts/prepare-level-packs.mjs --hsk` can still generate into the
 gitignored `plugins/data-local/`, are superseded by the official word and
 character lists.
+
+`scripts/prepare-standard-levels.mjs` rebuilds `joyo-grades` and `tgh-chars` byte for byte
+from the bundled `kanjidic2` and `unihan` packs alone (no network).
 
 `scripts/prepare-level-packs.mjs <upstream-dir>` rebuilds the `jlpt-kanji`
 directory byte for byte from the pinned kanjiapi.dev files (the download
