@@ -223,6 +223,7 @@ Each reads "Ruling: what — why — cost if wrong". Decision rule: licensing fi
 
 - [ ] **Step 1: Tests** — rows ordered active first; undecryptable row shows "Enter the key again"; `addable` excludes configured ids; `privacyNote('DeepSeek')` exact text; vision badge false for `deepseek-v4-pro`; banner texts for `no_secret`/`invalid_secret`/`no_provider` unchanged; `no_selection` banner "Choose which provider to use."
 - [ ] **Step 2–4:** `npm --prefix <wt>/apps/web test` FAIL, implement, PASS; `run check` 0. **Step 5: Commit** `feat(web): AI provider client and settings view model`.
+- Ruling: `aiSettingsView(status, providers)` takes the whole `ProvidersResponse`, returns `addable` as `{builtin, custom}`, adds `stateText`/`adminLine` per row and `aiBanner(status)` for pages without a registry (the journal page); a key of a provider the server turned off is a row with state `disabled` named from a small built-in-names table since the listing omits disabled providers; the Task 10 commit alone does not pass `svelte-check` (the old `AiSettings.svelte` still calls the removed single-key client) — the Task 11 commit restores it, so only the pair is gated — cost if wrong: a bisect landing between them sees a type error.
 
 ### Task 11: Settings → AI UI
 
@@ -232,6 +233,7 @@ Each reads "Ruling: what — why — cost if wrong". Decision rule: licensing fi
 
 - [ ] **Step 1: jsdom tests** (mock `$lib/api/ai`): `renders configured rows with Active first`, `adding a key calls saveAiKey with the selected provider and clears the field`, `key field is password and never prefilled`, `Make active calls setActiveProvider and moves the badge`, `Remove asks for confirmation; Escape cancels and returns focus`, `custom endpoint form hidden for non-admins`, `endpoint_blocked message is linked to the URL field`, `privacy note names the chosen provider`, `keyless custom endpoint allows an empty key`, `custom endpoint key form shows the admin and host line`, `disabled provider row offers Remove only`.
 - [ ] **Step 2–4:** FAIL, implement, PASS; all three web gates 0. **Step 5: Commit** `feat(web): choose and manage AI providers in Settings`.
+- Ruling: Settings → AI shows the add form only after a provider is chosen (a select with `Built in` / `Added by your admin` groups); the key field is optional only for keyless custom endpoints (with the visible hint "Optional: this endpoint may not need a key."); the key is cleared after every save attempt; one `role="status"` line carries messages and `role="alert"` the errors (the banner is plain text so a page has one status element); `endpoint_blocked` is shown under the URL field and linked by `aria-describedby`; the admin form can also edit (default model, photos, structured mode) and remove an endpoint with a confirm group; the new custom endpoint form defaults to JSON mode (the safe default) — cost if wrong: none.
 
 ### Task 12: Journal UI — who answered, no-vision photos
 

@@ -1,36 +1,37 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { deleteAiKey, getAiStatus, saveAiKey, setAiModel, type AiStatus } from '$lib/api/ai';
+	import {
+		deleteAiKey,
+		getAiProviders,
+		getAiStatus,
+		saveAiKey,
+		setActiveProvider,
+		setAiModel,
+		testAiKey,
+		type AiStatus,
+		type ProvidersResponse
+	} from '$lib/api/ai';
 	import { aiErrorView } from '$lib/plugins/journal/aiErrors';
-	import { aiSettingsView } from './aiSettingsView';
-
-	const DEFAULT_MODEL = 'claude-opus-5-5';
+	import AiCustomEndpoints from './AiCustomEndpoints.svelte';
+	import AiProviderForm from './AiProviderForm.svelte';
+	import { aiSettingsView, modelSuggestions } from './aiSettingsView';
 
 	let status = $state<AiStatus | null>(null);
+	let registry = $state<ProvidersResponse | null>(null);
 	let loadError = $state('');
-	let key = $state('');
-	let model = $state(DEFAULT_MODEL);
 	let busy = $state(false);
 	let message = $state('');
 	let error = $state('');
-	let confirmingRemove = $state(false);
-	let removeButton = $state<HTMLButtonElement>();
-	let keyInput = $state<HTMLInputElement>();
+	let confirmingRemove = $state<string | null>(null);
+	let editingModel = $state<string | null>(null);
+	let modelDraft = $state('');
 
-	const view = $derived(status ? aiSettingsView(status) : null);
-	const storedModel = $derived(status?.key?.model ?? null);
-	const modelChanged = $derived(storedModel !== null && model !== storedModel);
-	const canSave = $derived(!busy && (key.trim() !== '' || modelChanged));
-
-	function adopt(next: AiStatus): void {
-		status = next;
-		model = next.key?.model ?? model;
-	}
+	const view = $derived(status && registry ? aiSettingsView(status, registry) : null);
 
 	async function load(): Promise<void> {
 		loadError = '';
 		try {
-			adopt(await getAiStatus());
+			[status, registry] = await Promise.all([getAiStatus(), getAiProviders()]);
 		} catch {
 			loadError = 'Could not load the AI settings. Try again.';
 		}
@@ -40,74 +41,73 @@
 		void load();
 	});
 
-	async function save(event: SubmitEvent): Promise<void> {
-		event.preventDefault();
-		if (!canSave) return;
+	/** Runs one action: a busy flag, the message on success and the error text on failure. */
+	async function act(done: string, run: () => Promise<AiStatus | void>): Promise<boolean> {
 		busy = true;
 		error = '';
-		message = key.trim() !== '' ? 'Checking the key…' : 'Saving…';
+		message = '';
 		try {
-			const next = key.trim() !== '' ? await saveAiKey(key.trim(), model) : await setAiModel(model);
-			// Only the status is kept: the key is cleared and never read back.
-			key = '';
-			adopt(next);
-			message = 'Saved';
+			const next = await run();
+			if (next) status = next;
+			message = done;
+			return true;
 		} catch (err) {
-			message = '';
 			error = aiErrorView(err, 'review').text;
+			return false;
 		} finally {
 			busy = false;
 		}
 	}
 
-	async function remove(): Promise<void> {
-		busy = true;
-		error = '';
-		try {
-			await deleteAiKey();
-			confirmingRemove = false;
-			adopt(await getAiStatus());
-			message = 'Key removed';
-			keyInput?.focus();
-		} catch (err) {
-			error = aiErrorView(err, 'review').text;
-		} finally {
-			busy = false;
-		}
+	async function addKey(provider: string, key: string, model: string): Promise<void> {
+		message = key !== '' ? 'Checking the key…' : 'Saving…';
+		await act('Saved', () => saveAiKey(provider, key, model));
 	}
 
-	function askRemove(): void {
-		confirmingRemove = true;
+	async function makeActive(id: string): Promise<void> {
+		await act('Active provider changed', () => setActiveProvider(id));
 	}
 
-	async function cancelRemove(): Promise<void> {
-		confirmingRemove = false;
+	async function testKey(id: string): Promise<void> {
+		message = 'Testing the key…';
+		await act('The key works', () => testAiKey(id));
+	}
+
+	async function remove(id: string): Promise<void> {
+		const ok = await act('Key removed', async () => {
+			await deleteAiKey(id);
+			return getAiStatus();
+		});
+		if (ok) confirmingRemove = null;
+	}
+
+	function removeButton(id: string): HTMLElement | null {
+		return document.getElementById(`remove-${id}`);
+	}
+
+	async function cancelRemove(id: string): Promise<void> {
+		confirmingRemove = null;
 		await tick();
-		removeButton?.focus();
+		removeButton(id)?.focus();
 	}
-</script>
 
-{#snippet removeControls()}
-	{#if confirmingRemove}
-		<span class="confirm" role="group" aria-label="Remove the saved key?">
-			Remove the saved key?
-			<button type="button" class="secondary danger" onclick={remove} disabled={busy}>
-				Yes, remove
-			</button>
-			<button type="button" class="secondary" onclick={cancelRemove}>Cancel</button>
-		</span>
-	{:else}
-		<button
-			type="button"
-			class="secondary danger"
-			bind:this={removeButton}
-			onclick={askRemove}
-			disabled={busy}
-		>
-			Remove key
-		</button>
-	{/if}
-{/snippet}
+	function startModel(id: string, model: string): void {
+		editingModel = id;
+		modelDraft = model;
+	}
+
+	async function saveModel(event: SubmitEvent, id: string): Promise<void> {
+		event.preventDefault();
+		const ok = await act('Model saved', () => setAiModel(id, modelDraft.trim()));
+		if (ok) editingModel = null;
+	}
+
+	async function reloadRegistry(): Promise<void> {
+		[status, registry] = await Promise.all([getAiStatus(), getAiProviders()]);
+	}
+
+	const customEndpoints = $derived(registry ? registry.providers.filter((p) => p.custom) : []);
+</script>
 
 <section class="ai" aria-labelledby="ai-heading">
 	<h2 id="ai-heading">AI</h2>
@@ -115,62 +115,136 @@
 	{#if loadError}
 		<p class="error" role="alert">{loadError}</p>
 		<button type="button" class="secondary" onclick={load}>Retry</button>
-	{:else if !status || !view}
+	{:else if !status || !registry || !view}
 		<p>Loading…</p>
 	{:else}
 		{#if view.testProvider}
 			<p><span class="badge">Test provider — no real AI</span></p>
 		{/if}
 		{#if view.banner}
-			<p class="banner" role="status">{view.banner}</p>
+			<p class="banner">{view.banner}</p>
 		{/if}
 
-		{#if view.keyLine}
-			<p class="keyline">{view.keyLine}</p>
+		{#if view.rows.length > 0}
+			<h3>Your providers</h3>
+			<ul class="rows" aria-label="Your providers">
+				{#each view.rows as row (row.id)}
+					<li class:active={row.active}>
+						<div class="head">
+							<strong>{row.name}</strong>
+							{#if row.active}<span class="badge active-badge">Active</span>{/if}
+							<span class="muted">key {row.hint}</span>
+						</div>
+						{#if row.adminLine}<p class="muted">{row.adminLine}</p>{/if}
+						{#if row.state === 'disabled'}
+							<p class="warn">{row.stateText}</p>
+						{:else}
+							<p class="muted">
+								<span>{row.modelLabel}</span>
+								{#if row.vision}<span class="badge">Reads photos</span>{/if}
+								{#if row.structuredLabel}<span class="badge">{row.structuredLabel}</span>{/if}
+							</p>
+							{#if row.stateText}<p class="warn">{row.stateText}</p>{/if}
+						{/if}
+
+						{#if editingModel === row.id}
+							{@const prov = registry.providers.find((p) => p.id === row.id)}
+							<form class="modelform" onsubmit={(e) => saveModel(e, row.id)}>
+								<label>
+									<span>Model for {row.name}</span>
+									<input
+										list={`models-${row.id}`}
+										bind:value={modelDraft}
+										autocomplete="off"
+										spellcheck="false"
+									/>
+								</label>
+								<datalist id={`models-${row.id}`}>
+									{#each modelSuggestions(prov) as m (m.id)}<option value={m.id}>{m.label}</option>{/each}
+								</datalist>
+								<div class="actions">
+									<button type="submit" disabled={busy || modelDraft.trim() === ''}>Save model</button>
+									<button type="button" class="secondary" onclick={() => (editingModel = null)}>Cancel</button>
+								</div>
+							</form>
+						{:else if confirmingRemove === row.id}
+							<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+							<span
+								class="confirm"
+								role="group"
+								aria-label={`Remove the ${row.name} key?`}
+								tabindex="-1"
+								onkeydown={(e) => e.key === 'Escape' && cancelRemove(row.id)}
+							>
+								Remove the {row.name} key?
+								<button type="button" class="secondary danger" onclick={() => remove(row.id)} disabled={busy}>
+									Yes, remove
+								</button>
+								<button type="button" class="secondary" onclick={() => cancelRemove(row.id)}>Cancel</button>
+							</span>
+						{:else}
+							<div class="actions">
+								{#if row.state !== 'disabled'}
+									{#if !row.active && row.state === 'ok'}
+										<button type="button" class="secondary" aria-label={`Make ${row.name} active`} disabled={busy} onclick={() => makeActive(row.id)}>
+											Make active
+										</button>
+									{/if}
+									{#if row.state === 'ok'}
+										<button type="button" class="secondary" aria-label={`Test ${row.name} key`} disabled={busy} onclick={() => testKey(row.id)}>
+											Test key
+										</button>
+									{/if}
+									<button type="button" class="secondary" aria-label={`Change ${row.name} model`} disabled={busy} onclick={() => startModel(row.id, row.model)}>
+										Change model
+									</button>
+								{/if}
+								<button
+									type="button"
+									id={`remove-${row.id}`}
+									class="secondary danger"
+									aria-label={`Remove ${row.name} key`}
+									disabled={busy}
+									onclick={() => (confirmingRemove = row.id)}
+								>
+									Remove
+								</button>
+							</div>
+						{/if}
+					</li>
+				{/each}
+			</ul>
 		{/if}
-		<p class="usage">{view.usageLine}</p>
 
 		{#if view.canAddKey}
-			<form class="keyform" onsubmit={save}>
-				<label>
-					<span>{status.key ? 'Replace the API key' : 'Anthropic API key'}</span>
-					<input
-						bind:this={keyInput}
-						type="password"
-						autocomplete="off"
-						autocapitalize="off"
-						spellcheck="false"
-						bind:value={key}
-						placeholder={status.key ? 'Leave empty to keep the saved key' : 'sk-ant-…'}
-					/>
-				</label>
-				<label>
-					<span>Model</span>
-					<select bind:value={model}>
-						{#each status.models as m (m.id)}
-							<option value={m.id}>{m.label}</option>
-						{/each}
-					</select>
-				</label>
-				<div class="actions">
-					<button type="submit" disabled={!canSave}>{busy ? 'Working…' : 'Save'}</button>
-					{#if view.canRemoveKey}{@render removeControls()}{/if}
-				</div>
-			</form>
-		{:else if view.canRemoveKey}
-			<div class="actions">{@render removeControls()}</div>
+			<AiProviderForm
+				builtin={view.addable.builtin}
+				custom={view.addable.custom}
+				{busy}
+				onsave={addKey}
+			/>
 		{/if}
 
-		<div class="live" aria-live="polite">{message}</div>
+		<p class="usage">{view.usageLine}</p>
+		<div class="live" role="status">{message}</div>
 		{#if error}
 			<p class="error" role="alert">{error}</p>
 		{/if}
 
+		{#if view.canManageCustom}
+			<AiCustomEndpoints
+				endpoints={customEndpoints}
+				privateAllowed={registry.privateAllowed}
+				onchanged={reloadRegistry}
+			/>
+		{/if}
+
 		<p class="note">
-			Your key stays on this server, encrypted. qinqin sends text to Anthropic only when you press
-			Review, Ideas or Read with AI: the entry text and your correction guidance for Review; the
-			words you studied in the last 30 days and the titles and opening lines of your last 10 entries
-			for Ideas; the photo for Read with AI. Anthropic bills these calls to your key.
+			Your keys stay on this server, encrypted. qinqin sends text to the provider you made active
+			only when you press Review, Ideas or Read with AI: the entry text and your correction
+			guidance for Review; the words you studied in the last 30 days and the titles and opening
+			lines of your last 10 entries for Ideas; the photo for Read with AI. The provider bills these
+			calls to your key.
 		</p>
 		<p>
 			<a href="/p/journal/settings">Journal settings (correction guidance, explanation language) →</a>
@@ -179,21 +253,52 @@
 </section>
 
 <style>
-	.keyform {
-		display: grid;
-		gap: 0.9rem;
-		max-width: 28rem;
-		margin: 1rem 0;
+	h3 {
+		margin: 1rem 0 0.5rem;
 	}
 
-	.keyform label {
+	.rows {
+		list-style: none;
+		padding: 0;
+		display: grid;
+		gap: 0.75rem;
+		max-width: 36rem;
+	}
+
+	.rows li {
+		padding: 0.6rem 0.75rem;
+		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+		border-radius: 0.5rem;
+	}
+
+	.rows li.active {
+		border-color: currentColor;
+	}
+
+	.rows p {
+		margin: 0.3rem 0;
+	}
+
+	.head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.25rem 0.6rem;
+	}
+
+	.modelform {
+		display: grid;
+		gap: 0.6rem;
+		margin-top: 0.5rem;
+	}
+
+	.modelform label {
 		display: grid;
 		gap: 0.3rem;
 		font-weight: 600;
 	}
 
-	.keyform input,
-	.keyform select {
+	.modelform input {
 		font: inherit;
 		font-weight: 400;
 		min-height: 2.75rem;
@@ -212,6 +317,7 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem 0.75rem;
+		margin-top: 0.4rem;
 	}
 
 	.ai button {
@@ -232,11 +338,11 @@
 
 	.badge {
 		display: inline-block;
-		padding: 0.15rem 0.6rem;
+		padding: 0.1rem 0.55rem;
 		border: 1px solid currentColor;
 		border-radius: 999px;
 		font-weight: 600;
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 	}
 
 	.banner {
@@ -246,14 +352,15 @@
 		border-radius: 0.4rem;
 	}
 
-	.keyline {
+	.warn {
 		font-weight: 600;
-		margin-bottom: 0.25rem;
+		color: #b26a00;
 	}
 
+	.muted,
 	.usage,
 	.note {
-		opacity: 0.8;
+		opacity: 0.85;
 	}
 
 	.live {
@@ -273,6 +380,10 @@
 
 		.banner {
 			border-left-color: #ffb74d;
+		}
+
+		.warn {
+			color: #ffb74d;
 		}
 	}
 </style>
