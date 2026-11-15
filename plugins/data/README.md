@@ -37,8 +37,9 @@ lookups; the files under `<data>/packs/` stay.
 
 The zip holds `manifest.json` and the pack's data files at its top, or in
 one folder (what "Compress folder" produces). Limits: 128 MiB per upload,
-2,000 files and 512 MiB unpacked, three staged uploads at a time, each
-discarded after 30 minutes; larger packs install with `qinqin seed` from a
+2,000 files and 512 MiB unpacked, three unfinished uploads (uploading, awaiting
+confirmation or importing) at a time, each staged pack discarded after 30
+minutes; larger packs install with `qinqin seed` from a
 directory. A reverse proxy in front of qinqin may cap request bodies lower
 (nginx defaults to 1 MiB: raise `client_max_body_size`) and time out a long
 import; the import itself keeps running on the server, and the list shows

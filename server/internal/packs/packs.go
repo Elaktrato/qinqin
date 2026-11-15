@@ -49,6 +49,12 @@ var typeOrder = map[string]int{
 	dict.TypeGrammar:    4,
 }
 
+// Supported reports whether typ is a pack type this package manages.
+func Supported(typ string) bool {
+	_, ok := typeOrder[typ]
+	return ok
+}
+
 // Import installs pack by its manifest type and returns the one-line
 // summary the seed CLI prints.
 func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, error) {

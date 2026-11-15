@@ -135,6 +135,9 @@ func ExtractZipAt(r io.ReaderAt, size int64, dir string, lim ZipLimits) error {
 	}
 	remaining := lim.MaxBytes
 	for _, f := range zr.File {
+		if isOSMetadata(f.Name) {
+			continue
+		}
 		target, err := zipTarget(dir, f.Name)
 		if err != nil {
 			return err
@@ -164,9 +167,15 @@ func PackRoot(dir string) (string, error) {
 	if _, err := os.Stat(filepath.Join(dir, manifestFile)); err == nil {
 		return dir, nil
 	}
-	entries, err := os.ReadDir(dir)
+	all, err := os.ReadDir(dir)
 	if err != nil {
 		return "", fmt.Errorf("read pack directory: %w", err)
+	}
+	var entries []os.DirEntry
+	for _, en := range all {
+		if !isOSMetadata(en.Name()) {
+			entries = append(entries, en)
+		}
 	}
 	if len(entries) == 1 && entries[0].IsDir() {
 		sub := filepath.Join(dir, entries[0].Name())
@@ -222,4 +231,19 @@ func mib(limit int64) int64 {
 		return m
 	}
 	return 1
+}
+
+// isOSMetadata reports zip entries file managers add that belong to no
+// pack: the __MACOSX resource-fork folder, .DS_Store, AppleDouble "._"
+// files, Thumbs.db and desktop.ini, at any depth. They are skipped when
+// extracting and ignored when looking for the single folder of a zip.
+func isOSMetadata(name string) bool {
+	for _, part := range strings.Split(filepath.ToSlash(name), "/") {
+		switch {
+		case part == "__MACOSX", part == ".DS_Store", part == "Thumbs.db", part == "desktop.ini",
+			strings.HasPrefix(part, "._"):
+			return true
+		}
+	}
+	return false
 }

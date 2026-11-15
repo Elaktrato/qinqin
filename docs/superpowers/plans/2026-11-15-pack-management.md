@@ -254,6 +254,18 @@
 - Ruling: the "Uploaded, checking the pack…" state is the interval between the last upload byte and the server's answer; it was observed in the real app with a 438 KB zip that unpacks to 450 MB (a 60 MB random zip answers too quickly to see it).
 - Note from the real-app check: the Data tab shows the attribution the importer stored, which for KANJIDIC2 is the shorter string the importer derives from the file, not the manifest's; licences matched every bundled manifest verbatim.
 
+## Rulings from the security review fix wave
+
+- Ruling: only staged (unexpired) and importing stages, plus uploads in flight, occupy the three slots; done and failed ones stay readable for 30 minutes without blocking new uploads.
+- Ruling: install directories are `<data>/packs/<type>/<id>/<version>`, nested so no two packs can collide (`es-test`/`1.0` vs `es`/`test-1.0`, or a frequency and a levels pack with the same id and version). Nothing read the old flat `<id>-<version>` directories (the files are never used after import), so existing ones are left where they are and not migrated; a reinstall writes the new layout. A replacement renames the old directory aside and deletes it only after the new one is in place.
+- Ruling: the background job recovers from panics (status "failed", generic text, logged), always releases the pack mutex and removes the stage directory. After the database commit a failed move of the files or read-back is a `warning` on a `done` status ("Installed, but the pack files could not be moved into place"), never "failed": the pack is installed and listed.
+- Ruling: staging and the licence echo use `dict.RegistryTerms` for dictionaries, so a KANJIDIC2 or Unihan pack shows (and must echo) the licence and registry id the import will actually store, and "replaces" looks up that registry row.
+- Ruling: a slot is reserved before the request body is read; the zip is streamed to `<packs>/.stage-<token>.zip` (not through `ParseMultipartForm`'s temp files, so no 128 MiB in the OS temp dir or memory), extracted, and the file removed. A client that disconnected during extraction does not get a stage. The legacy dictionary route keeps `ParseMultipartForm` (admin-only, one pack at a time).
+- Ruling: a janitor (`WithStageSweeper`, started by `serve` with the server context, every 5 minutes) removes expired stages and stale stage files.
+- Ruling: `__MACOSX/`, `.DS_Store`, `._*`, `Thumbs.db` and `desktop.ini` are skipped when extracting and ignored when looking for the single folder.
+- Ruling: staging answers 422 "unsupported pack type" for a manifest type `packs` does not manage (a future audio pack until its branch wires `packs.Import`; today `Manifest.Validate` already answers 400 for it).
+- Ruling: path scrubbing in error text replaces the data and stage directories only as whole path prefixes; non-pack unpack errors answer 500 "could not unpack the pack — see the server log".
+
 ## Risks and notes for the owner
 
 - A reverse proxy in front of qinqin may cap request bodies below 128 MiB (nginx defaults to 1 MiB) or time out a long JMdict import; the UI shows the proxy's error. Documented in `plugins/data/README.md`.

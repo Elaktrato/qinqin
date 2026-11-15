@@ -107,14 +107,38 @@ func packErrorText(err error, paths ...string) string {
 	}
 	msg := err.Error()
 	for _, p := range paths {
-		if p != "" {
-			msg = strings.ReplaceAll(msg, p, "pack")
-		}
+		msg = replacePathPrefix(msg, p)
 	}
 	if i := strings.Index(msg, "invalid pack: "); i >= 0 {
 		msg = msg[i+len("invalid pack: "):]
 	}
 	return "invalid pack: " + msg
+}
+
+// replacePathPrefix replaces each occurrence of path in msg that is a
+// whole path prefix (followed by a separator, space, colon or the end,
+// and not the tail of a longer name) with "pack".
+func replacePathPrefix(msg, path string) string {
+	if path == "" {
+		return msg
+	}
+	var out strings.Builder
+	for {
+		i := strings.Index(msg, path)
+		if i < 0 {
+			out.WriteString(msg)
+			return out.String()
+		}
+		end := i + len(path)
+		boundaryAfter := end == len(msg) || strings.ContainsRune("/ :;,)\"'", rune(msg[end]))
+		if boundaryAfter {
+			out.WriteString(msg[:i])
+			out.WriteString("pack")
+		} else {
+			out.WriteString(msg[:end])
+		}
+		msg = msg[end:]
+	}
 }
 
 // stagedManifest is the manifest as the server parsed it.
@@ -150,9 +174,11 @@ type stagedResponse struct {
 const tooLargeMessage = "pack zip larger than 128 MiB — use qinqin seed for larger packs"
 
 // handleStagePack serves POST /api/admin/packs: the multipart "pack" zip
-// is extracted and validated into a stage directory and described back
-// (manifest as parsed, what it would replace) so the admin can review the
-// licence before anything is imported.
+// is streamed to disk, extracted and validated into a stage directory and
+// described back (manifest as parsed, what it would replace) so the admin
+// can review the licence before anything is imported. A stage slot is
+// reserved before the body is read, so concurrent uploads cannot each
+// spool a full-size pack.
 func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	u := s.requireAdmin(w, r)
 	if u == nil {
@@ -165,37 +191,16 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	}
 	s.sweepStages(packsDir)
 	ss := s.stages()
-	if ss.live(s.now()) >= maxStages {
+	if !ss.reserve(s.now()) {
 		http.Error(w, "finish or discard a staged pack first", http.StatusTooManyRequests)
 		return
 	}
-
-	r.Body = http.MaxBytesReader(w, r.Body, maxPackUpload+1<<20)
-	if err := r.ParseMultipartForm(maxPackMemory); err != nil {
-		var tooBig *http.MaxBytesError
-		if errors.As(err, &tooBig) {
-			http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge)
-			return
+	reserved := true
+	defer func() {
+		if reserved {
+			ss.release()
 		}
-		http.Error(w, "multipart form with a pack zip required", http.StatusBadRequest)
-		return
-	}
-	defer r.MultipartForm.RemoveAll()
-	file, header, err := r.FormFile("pack")
-	if err != nil {
-		http.Error(w, `multipart field "pack" with the pack zip required`, http.StatusBadRequest)
-		return
-	}
-	defer file.Close()
-	if header.Size > maxPackUpload {
-		http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge)
-		return
-	}
-	ra, ok := file.(io.ReaderAt)
-	if !ok {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
+	}()
 
 	token, err := newToken()
 	if err != nil {
@@ -203,19 +208,41 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	dir := filepath.Join(packsDir, ".stage-"+token)
-	if err := os.Mkdir(dir, 0o755); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
+	zipPath := dir + ".zip"
 	staged := false
 	defer func() {
+		os.Remove(zipPath)
 		if !staged {
 			os.RemoveAll(dir)
 		}
 	}()
-	if err := dict.ExtractZipAt(ra, header.Size, dir, dict.DefaultZipLimits); err != nil {
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxPackUpload+1<<20)
+	size, ok := s.receivePackZip(w, r, zipPath)
+	if !ok {
+		return
+	}
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	zf, err := os.Open(zipPath)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	defer zf.Close()
+	if err := dict.ExtractZipAt(zf, size, dir, dict.DefaultZipLimits); err != nil {
+		if !errors.Is(err, dict.ErrInvalidPack) {
+			log.Printf("pack: unpack upload: %v", err)
+			http.Error(w, "could not unpack the pack — see the server log", http.StatusInternalServerError)
+			return
+		}
 		http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
 		return
+	}
+	if r.Context().Err() != nil {
+		return // the client went away: do not hold a slot for nobody
 	}
 	pack, err := dict.LoadExtracted(dir)
 	if err != nil {
@@ -223,13 +250,24 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m := pack.Manifest
+	if !packs.Supported(m.Type) {
+		http.Error(w, "unsupported pack type: "+m.Type, http.StatusUnprocessableEntity)
+		return
+	}
 	if _, err := packDir(packsDir, m); err != nil {
 		http.Error(w, "invalid pack: the id and version must be plain names", http.StatusBadRequest)
 		return
 	}
+	// The registry row a pack's import writes can differ from its manifest
+	// (KANJIDIC2 stores its fixed terms under a fixed id): review and echo
+	// what will actually be stored.
+	registryID, license, attribution := m.ID, m.License, m.Attribution
+	if m.Type == dict.TypeDictionary {
+		registryID, license, attribution = dict.RegistryTerms(m)
+	}
 	resp := stagedResponse{Token: token, Manifest: stagedManifest{ID: m.ID, Name: m.Name, Version: m.Version,
-		Type: m.Type, Language: m.Language, License: m.License, Attribution: m.Attribution, Notice: m.Notice, Format: m.Format}}
-	switch old, err := packs.Find(r.Context(), s.db, m.Type, m.ID); {
+		Type: m.Type, Language: m.Language, License: license, Attribution: attribution, Notice: m.Notice, Format: m.Format}}
+	switch old, err := packs.Find(r.Context(), s.db, m.Type, registryID); {
 	case err == nil:
 		resp.Replaces = &stagedReplaces{Version: old.Version, License: old.License, Attribution: old.Attribution}
 	case !errors.Is(err, packs.ErrNotFound):
@@ -246,14 +284,64 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	now := s.now()
-	st := &stagedPack{token: token, dir: dir, root: pack.Dir, userID: u.ID, pack: pack, expires: now.Add(stageTTL), status: stageStaged}
-	if !ss.put(st, now) {
-		http.Error(w, "finish or discard a staged pack first", http.StatusTooManyRequests)
-		return
-	}
+	st := &stagedPack{token: token, dir: dir, root: pack.Dir, userID: u.ID, pack: pack, expires: now.Add(stageTTL),
+		status: stageStaged, license: license, registryID: registryID}
+	ss.put(st) // converts the reservation into a stage
+	reserved = false
 	staged = true
 	resp.ExpiresAt = st.expires.UTC().Format(time.RFC3339)
 	writeJSON(w, http.StatusCreated, resp)
+}
+
+// receivePackZip streams the multipart "pack" part of the request into
+// path and returns its size. It answers the error itself and reports
+// false on any problem; the 413 covers both the body cap and the zip cap.
+func (s *server) receivePackZip(w http.ResponseWriter, r *http.Request, path string) (int64, bool) {
+	tooLarge := func() { http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge) }
+	mr, err := r.MultipartReader()
+	if err != nil {
+		http.Error(w, "multipart form with a pack zip required", http.StatusBadRequest)
+		return 0, false
+	}
+	for {
+		part, err := mr.NextPart()
+		if err == io.EOF {
+			http.Error(w, `multipart field "pack" with the pack zip required`, http.StatusBadRequest)
+			return 0, false
+		}
+		if err != nil {
+			var big *http.MaxBytesError
+			if errors.As(err, &big) {
+				tooLarge()
+			} else {
+				http.Error(w, "multipart form with a pack zip required", http.StatusBadRequest)
+			}
+			return 0, false
+		}
+		if part.FormName() != "pack" || part.FileName() == "" {
+			continue
+		}
+		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return 0, false
+		}
+		n, err := io.Copy(f, io.LimitReader(part, maxPackUpload+1))
+		cerr := f.Close()
+		var big *http.MaxBytesError
+		switch {
+		case errors.As(err, &big) || n > maxPackUpload:
+			tooLarge()
+			return 0, false
+		case err != nil:
+			http.Error(w, "the upload was interrupted", http.StatusBadRequest)
+			return 0, false
+		case cerr != nil:
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return 0, false
+		}
+		return n, true
+	}
 }
 
 // handleDiscardStaged serves DELETE /api/admin/packs/staged/{token}.

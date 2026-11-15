@@ -1,6 +1,12 @@
 package api
 
-import "time"
+import (
+	"context"
+	"database/sql"
+	"time"
+
+	"qinqin/internal/dict"
+)
 
 // Test hooks: the clock the stage store reads, the channel a finished
 // import job reports its token on, and the pack mutex (so a test can
@@ -15,4 +21,9 @@ func WithPackLock(lock, unlock *func()) Option {
 		*lock = s.packMu.Lock
 		*unlock = s.packMu.Unlock
 	}
+}
+
+// WithImporter replaces packs.Import in background import jobs.
+func WithImporter(f func(context.Context, *sql.DB, dict.Pack) (string, error)) Option {
+	return func(s *server) { s.importPack = f }
 }

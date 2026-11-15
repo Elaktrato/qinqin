@@ -169,7 +169,7 @@ func serveCmd(args []string) error {
 	}
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithOCR(tess))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set

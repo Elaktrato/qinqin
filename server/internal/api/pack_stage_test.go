@@ -38,9 +38,14 @@ func (e *packEnv) advance(d time.Duration) {
 	e.mu.Unlock()
 }
 
-func newPackEnv(t *testing.T) *packEnv {
+func newPackEnv(t *testing.T, opts ...api.Option) *packEnv {
 	t.Helper()
-	e := &packEnv{now: time.Now(), done: make(chan string, 8), dataDir: t.TempDir()}
+	return newPackEnvWith(t, make(chan string, 8), opts...)
+}
+
+func newPackEnvWith(t *testing.T, done chan string, opts ...api.Option) *packEnv {
+	t.Helper()
+	e := &packEnv{now: time.Now(), done: done, dataDir: t.TempDir()}
 	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -48,8 +53,8 @@ func newPackEnv(t *testing.T) *packEnv {
 	t.Cleanup(func() { sqlDB.Close() })
 	e.db = sqlDB
 	clock := func() time.Time { e.mu.Lock(); defer e.mu.Unlock(); return e.now }
-	e.ts = httptest.NewServer(api.New(sqlDB, e.dataDir, nil, api.WithClock(clock),
-		api.WithImportDone(e.done), api.WithPackLock(&e.lock, &e.unlock)))
+	opts = append([]api.Option{api.WithClock(clock), api.WithImportDone(e.done), api.WithPackLock(&e.lock, &e.unlock)}, opts...)
+	e.ts = httptest.NewServer(api.New(sqlDB, e.dataDir, nil, opts...))
 	t.Cleanup(e.ts.Close)
 	e.admin = registerUser(t, e.ts.URL, "admin", "")
 	return e

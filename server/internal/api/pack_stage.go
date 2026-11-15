@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,16 +43,21 @@ type stagedPack struct {
 	pack    dict.Pack
 	expires time.Time
 
+	license    string // the licence the import will store; the install request must echo it
+	registryID string // pack id of the registry row the import writes
+
 	status  string
 	result  *packs.Installed
 	summary string
 	errMsg  string
+	warning string
 }
 
 // stageStore is the in-memory registry of staged packs, keyed by token.
 type stageStore struct {
-	mu sync.Mutex
-	m  map[string]*stagedPack
+	mu      sync.Mutex
+	m       map[string]*stagedPack
+	pending int // uploads in flight that reserved a slot but are not staged yet
 }
 
 func newStageStore() *stageStore { return &stageStore{m: map[string]*stagedPack{}} }
@@ -64,21 +71,38 @@ func newToken() (string, error) {
 	return hex.EncodeToString(b[:]), nil
 }
 
-// put registers st unless maxStages are already live at now.
-func (ss *stageStore) put(st *stagedPack, now time.Time) bool {
+// reserve takes a slot for an upload about to be read, unless maxStages
+// slots are taken at now. Only staged (not expired) and importing stages
+// and reserved uploads occupy slots: finished and failed ones do not.
+func (ss *stageStore) reserve(now time.Time) bool {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
-	if ss.liveLocked(now) >= maxStages {
+	if ss.liveLocked(now)+ss.pending >= maxStages {
 		return false
 	}
-	ss.m[st.token] = st
+	ss.pending++
 	return true
+}
+
+// release gives back a reservation that did not become a stage.
+func (ss *stageStore) release() {
+	ss.mu.Lock()
+	defer ss.mu.Unlock()
+	ss.pending--
+}
+
+// put turns a reservation into the stage st.
+func (ss *stageStore) put(st *stagedPack) {
+	ss.mu.Lock()
+	defer ss.mu.Unlock()
+	ss.pending--
+	ss.m[st.token] = st
 }
 
 func (ss *stageStore) liveLocked(now time.Time) int {
 	n := 0
 	for _, st := range ss.m {
-		if st.status == stageImporting || st.expires.After(now) {
+		if st.status == stageImporting || (st.status == stageStaged && st.expires.After(now)) {
 			n++
 		}
 	}
@@ -89,7 +113,7 @@ func (ss *stageStore) liveLocked(now time.Time) int {
 func (ss *stageStore) live(now time.Time) int {
 	ss.mu.Lock()
 	defer ss.mu.Unlock()
-	return ss.liveLocked(now)
+	return ss.liveLocked(now) + ss.pending
 }
 
 // with runs f on the live stage token belongs to userID, under the store's
@@ -173,14 +197,41 @@ func (s *server) sweepStages(packsDir string) {
 		return
 	}
 	for _, en := range entries {
-		if !en.IsDir() || !strings.HasPrefix(en.Name(), ".stage-") {
+		if !strings.HasPrefix(en.Name(), ".stage-") {
 			continue
 		}
-		dir := filepath.Join(packsDir, en.Name())
+		dir := filepath.Join(packsDir, strings.TrimSuffix(en.Name(), ".zip"))
 		info, err := en.Info()
 		if err != nil || ss.known(dir) || s.now().Sub(info.ModTime()) < staleStageAge {
 			continue
 		}
-		os.RemoveAll(dir)
+		os.RemoveAll(filepath.Join(packsDir, en.Name()))
+	}
+}
+
+// WithStageSweeper starts a janitor that, every interval until ctx ends,
+// drops expired stages and stale stage directories, so an abandoned
+// upload does not wait for the next upload to be cleaned up.
+func WithStageSweeper(ctx context.Context, interval time.Duration) Option {
+	return func(s *server) { s.sweepCtx, s.sweepEvery = ctx, interval }
+}
+
+// runStageSweeper is the janitor goroutine; a panic in it is logged, not fatal.
+func (s *server) runStageSweeper() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("pack stage sweeper stopped: %v", r)
+		}
+	}()
+	t := time.NewTicker(s.sweepEvery)
+	defer t.Stop()
+	packsDir := filepath.Join(s.dataDir, "packs")
+	for {
+		select {
+		case <-s.sweepCtx.Done():
+			return
+		case <-t.C:
+			s.sweepStages(packsDir)
+		}
 	}
 }

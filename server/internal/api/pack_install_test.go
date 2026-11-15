@@ -19,6 +19,7 @@ type statusBody struct {
 	Pack    *packs.Installed `json:"pack"`
 	Summary string           `json:"summary"`
 	Error   string           `json:"error"`
+	Warning string           `json:"warning"`
 }
 
 func (e *packEnv) status(t *testing.T, token string) (int, statusBody) {
@@ -83,7 +84,7 @@ func TestStagedInstallRequiresExactLicence(t *testing.T) {
 	if len(list) != 1 || list[0].PackID != "es-test" {
 		t.Errorf("list = %+v", list)
 	}
-	if _, err := os.Stat(filepath.Join(e.dataDir, "packs", "es-test-1.0", "manifest.json")); err != nil {
+	if _, err := os.Stat(filepath.Join(e.dataDir, "packs", "dictionary", "es-test", "1.0", "manifest.json")); err != nil {
 		t.Errorf("pack not moved into place: %v", err)
 	}
 	if d := stageDirs(t, e.dataDir); len(d) != 0 {
@@ -182,9 +183,9 @@ func TestStagedInstallsSerialize(t *testing.T) {
 	if len(list) != 1 {
 		t.Errorf("list = %+v, want one row", list)
 	}
-	entries, _ := os.ReadDir(filepath.Join(e.dataDir, "packs"))
-	if len(entries) != 1 || entries[0].Name() != "es-test-1.0" {
-		t.Errorf("packs dir = %v, want only es-test-1.0", entries)
+	entries, _ := os.ReadDir(filepath.Join(e.dataDir, "packs", "dictionary", "es-test"))
+	if len(entries) != 1 || entries[0].Name() != "1.0" {
+		t.Errorf("pack dir = %v, want only 1.0", entries)
 	}
 }
 

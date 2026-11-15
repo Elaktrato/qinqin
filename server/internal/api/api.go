@@ -2,6 +2,7 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/dict"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
 )
@@ -35,8 +37,11 @@ type server struct {
 
 	stageOnce  sync.Once
 	stageStore *stageStore
-	clock      func() time.Time // nil: time.Now (tests set it)
-	importDone chan string      // test hook: receives a stage token when its import job ends
+	clock      func() time.Time                                          // nil: time.Now (tests set it)
+	importDone chan string                                               // test hook: receives a stage token when its import job ends
+	importPack func(context.Context, *sql.DB, dict.Pack) (string, error) // nil: packs.Import
+	sweepCtx   context.Context
+	sweepEvery time.Duration
 
 	chars charactersCache // GET /api/characters payloads
 }
@@ -60,6 +65,9 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs}
 	for _, o := range opts {
 		o(s)
+	}
+	if s.sweepCtx != nil && s.sweepEvery > 0 {
+		go s.runStageSweeper()
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)

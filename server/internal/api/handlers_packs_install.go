@@ -3,9 +3,11 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	"qinqin/internal/packs"
 )
@@ -42,7 +44,7 @@ func (s *server) handleInstallStaged(w http.ResponseWriter, r *http.Request) {
 			if st.status != stageImporting {
 				msg = "already processed"
 			}
-		case req.License != st.pack.License:
+		case req.License != st.license:
 			code, msg = http.StatusConflict, "confirm the pack's licence"
 		default:
 			st.status = stageImporting
@@ -62,37 +64,63 @@ func (s *server) handleInstallStaged(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// filesWarning is shown when the import was committed but its files
+// could not be moved into place.
+const filesWarning = "Installed, but the pack files could not be moved into place — see the server log"
+
 // runStagedImport imports the staged pack under the pack mutex, moves its
-// files into <data>/packs/<id>-<version>/ and records the outcome.
+// files into <data>/packs/<type>/<id>/<version>/ and records the outcome.
+// Whatever happens — an error, a panic — the pack mutex is released, the
+// stage directory removed, the status set and the done hook told.
 func (s *server) runStagedImport(ctx context.Context, token string, userID int64) {
 	var st stagedPack
 	s.stages().with(token, userID, s.now(), func(p *stagedPack) { st = *p })
 
-	s.packMu.Lock()
-	summary, err := packs.Import(ctx, s.db, st.pack)
-	var installed packs.Installed
-	if err == nil {
-		packsDir := filepath.Join(s.dataDir, "packs")
-		var dest string
-		if dest, err = packDir(packsDir, st.pack.Manifest); err == nil {
-			if err = os.RemoveAll(dest); err == nil {
-				err = os.Rename(st.root, dest)
+	var (
+		summary, warning, errMsg string
+		installed                *packs.Installed
+	)
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("pack import of %s panicked: %v\n%s", st.pack.ID, r, debug.Stack())
+				errMsg, installed, summary, warning = "import failed — see the server log", nil, "", ""
 			}
+		}()
+		s.packMu.Lock()
+		defer s.packMu.Unlock()
+		importer := s.importPack
+		if importer == nil {
+			importer = packs.Import
 		}
-		if err == nil {
-			installed, err = packs.Find(ctx, s.db, st.pack.Type, st.pack.ID)
+		var err error
+		if summary, err = importer(ctx, s.db, st.pack); err != nil {
+			errMsg = packErrorText(err, st.dir, s.dataDir)
+			return
 		}
-	}
-	s.packMu.Unlock()
+		// The import is committed. From here a problem is a warning, not a
+		// failure: the pack is installed.
+		if err := placePack(filepath.Join(s.dataDir, "packs"), st.pack.Manifest, st.root, token); err != nil {
+			log.Printf("pack %s: move files into place: %v", st.pack.ID, err)
+			warning = filesWarning
+		}
+		found, err := packs.Find(ctx, s.db, st.pack.Type, st.registryID)
+		if err != nil {
+			log.Printf("pack %s: read back registry row: %v", st.pack.ID, err)
+			warning = filesWarning
+			return
+		}
+		installed = &found
+	}()
 	os.RemoveAll(st.dir)
 
 	s.stages().with(token, userID, s.now(), func(p *stagedPack) {
 		p.expires = s.now().Add(stageTTL)
-		if err != nil {
-			p.status, p.errMsg = stageFailed, packErrorText(err, st.dir, s.dataDir)
+		if errMsg != "" {
+			p.status, p.errMsg = stageFailed, errMsg
 			return
 		}
-		p.status, p.summary, p.result = stageDone, summary, &installed
+		p.status, p.summary, p.result, p.warning = stageDone, summary, installed, warning
 	})
 	if s.importDone != nil {
 		s.importDone <- token
@@ -110,9 +138,10 @@ func (s *server) handleStagedStatus(w http.ResponseWriter, r *http.Request) {
 		Pack    *packs.Installed `json:"pack,omitempty"`
 		Summary string           `json:"summary,omitempty"`
 		Error   string           `json:"error,omitempty"`
+		Warning string           `json:"warning,omitempty"`
 	}
 	found := s.stages().with(r.PathValue("token"), u.ID, s.now(), func(st *stagedPack) {
-		out.Status, out.Pack, out.Summary, out.Error = st.status, st.result, st.summary, st.errMsg
+		out.Status, out.Pack, out.Summary, out.Error, out.Warning = st.status, st.result, st.summary, st.errMsg, st.warning
 	})
 	if !found {
 		http.Error(w, "staged pack not found", http.StatusNotFound)
