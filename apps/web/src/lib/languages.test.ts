@@ -7,7 +7,7 @@ function ws(id: number, language: string, name = ''): Workspace {
 }
 
 function lang(code: string, name = code): Language {
-	return { code, name, installed: true };
+	return { code, name, installed: true, kind: 'data' };
 }
 
 describe('languageLabel', () => {
@@ -121,17 +121,36 @@ describe('languageOptions', () => {
 			[ws(1, 'zh'), ws(2, 'jp')]
 		);
 		expect(options).toEqual([
-			{ code: 'zh', label: 'Chinese' },
-			{ code: 'ja', label: 'Japanese' },
-			{ code: 'jp', label: 'jp' },
-			{ code: 'es', label: 'Spanish' }
+			{ code: 'zh', label: 'Chinese', hasDictionary: true },
+			{ code: 'ja', label: 'Japanese', hasDictionary: true },
+			{ code: 'jp', label: 'jp', hasDictionary: false },
+			{ code: 'es', label: 'Spanish', hasDictionary: true }
 		]);
 	});
 
 	it('deduplicates case-insensitively and works with nothing installed', () => {
 		expect(languageOptions([], [ws(1, 'ZH'), ws(2, 'zh', 'x')])).toEqual([
-			{ code: 'zh', label: 'Chinese' }
+			{ code: 'zh', label: 'Chinese', hasDictionary: false }
 		]);
 		expect(languageOptions([], [])).toEqual([]);
+	});
+
+	it('flags languages without installed dictionary data', () => {
+		const options = languageOptions(
+			[
+				{ code: 'zh', name: 'zh', installed: true, kind: 'code' },
+				{ code: 'pt', name: 'pt', installed: false, kind: 'data' }
+			],
+			[]
+		);
+		expect(options).toEqual([
+			{ code: 'zh', label: 'Chinese', hasDictionary: true },
+			{ code: 'pt', label: 'Portuguese', hasDictionary: false }
+		]);
+	});
+
+	it('does not let a workspace entry hide an installed flag', () => {
+		const options = languageOptions([lang('zh')], [ws(1, 'zh')]);
+		expect(options).toEqual([{ code: 'zh', label: 'Chinese', hasDictionary: true }]);
 	});
 });

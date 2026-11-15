@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+
+	"qinqin/internal/lang"
 )
 
 // languageBody mirrors one element of GET /api/languages.
@@ -13,6 +15,7 @@ type languageBody struct {
 	Code      string `json:"code"`
 	Name      string `json:"name"`
 	Installed bool   `json:"installed"`
+	Kind      string `json:"kind"`
 }
 
 // seedDeadLanguage adds a data-only language (ko) whose only dictionary
@@ -54,17 +57,23 @@ func seedSpanish(t *testing.T, sqlDB *sql.DB) {
 }
 
 func TestListLanguages(t *testing.T) {
+	lang.Register(lang.Ja{})
+	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
 
-	// No dictionaries: no installed language, an empty array.
+	// No dictionaries: only the code packs, not installed.
 	resp := doJSON(t, http.MethodGet, ts.URL, "/api/languages", "", nil)
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("GET /api/languages: status = %d, want %d", resp.StatusCode, http.StatusOK)
 	}
 	var empty []languageBody
 	decodeJSON(t, resp, &empty)
-	if empty == nil || len(empty) != 0 {
-		t.Errorf("languages on an empty database = %#v, want []", empty)
+	wantEmpty := []languageBody{
+		{Code: "ja", Name: "ja", Kind: "code"},
+		{Code: "zh", Name: "zh", Kind: "code"},
+	}
+	if !reflect.DeepEqual(empty, wantEmpty) {
+		t.Errorf("languages on an empty database = %#v, want %#v", empty, wantEmpty)
 	}
 
 	seedEntries(t, sqlDB)
@@ -78,9 +87,11 @@ func TestListLanguages(t *testing.T) {
 	var got []languageBody
 	decodeJSON(t, resp, &got)
 	want := []languageBody{
-		{Code: "es", Name: "Spanish", Installed: true},
-		{Code: "ja", Name: "ja", Installed: true},
-		{Code: "zh", Name: "zh", Installed: true},
+		{Code: "es", Name: "Spanish", Installed: true, Kind: "data"},
+		{Code: "fr", Name: "French", Kind: "data"},
+		{Code: "ja", Name: "ja", Installed: true, Kind: "code"},
+		{Code: "ko", Name: "Korean", Kind: "data"},
+		{Code: "zh", Name: "zh", Installed: true, Kind: "code"},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("languages = %+v, want %+v", got, want)
@@ -220,5 +231,38 @@ func TestNoDefaultsWithoutInstalledLanguages(t *testing.T) {
 	alice := registerUser(t, ts.URL, "alice", "")
 	if ws := listWorkspaces(t, ts.URL, alice); len(ws) != 0 {
 		t.Errorf("workspaces without installed languages = %+v, want none", ws)
+	}
+}
+
+func TestListLanguagesBareRowAndUninstall(t *testing.T) {
+	lang.Register(lang.Ja{})
+	lang.Register(lang.Zh{})
+	ts, sqlDB := newServer(t)
+	if _, err := sqlDB.Exec(`INSERT INTO languages (code, name, updated_at) VALUES ('pt', 'pt', 't')`); err != nil {
+		t.Fatal(err)
+	}
+	find := func(code string) (languageBody, bool) {
+		resp := doJSON(t, http.MethodGet, ts.URL, "/api/languages", "", nil)
+		var got []languageBody
+		decodeJSON(t, resp, &got)
+		for _, l := range got {
+			if l.Code == code {
+				return l, true
+			}
+		}
+		return languageBody{}, false
+	}
+	if l, ok := find("pt"); !ok || l.Installed || l.Kind != "data" {
+		t.Errorf("bare pt = %+v (%v), want data, not installed", l, ok)
+	}
+	seedSpanish(t, sqlDB)
+	if l, ok := find("es"); !ok || !l.Installed || l.Kind != "data" {
+		t.Errorf("es = %+v (%v), want data, installed", l, ok)
+	}
+	if _, err := sqlDB.Exec(`UPDATE dictionaries SET deleted_at = 't' WHERE id = 903`); err != nil {
+		t.Fatal(err)
+	}
+	if l, ok := find("es"); !ok || l.Installed {
+		t.Errorf("es after uninstall = %+v (%v), want listed, not installed", l, ok)
 	}
 }

@@ -1,7 +1,25 @@
 <script lang="ts">
 	import type { SenseView } from '$lib/api/types';
+	import { tick } from 'svelte';
+	import { hiddenDictionaries, partitionSenses } from '$lib/dictionaryVisibility';
+	import { workspaces } from '$lib/workspaces';
 
 	let { senses }: { senses: SenseView[] } = $props();
+
+	// Dictionaries the current workspace hides collapse behind a button.
+	const partition = $derived(
+		partitionSenses(senses, hiddenDictionaries($workspaces.current))
+	);
+	let revealed = $state(false);
+	let heading = $state<HTMLHeadingElement | null>(null);
+
+	// The button vanishes once pressed: keep keyboard focus in the section.
+	async function reveal(): Promise<void> {
+		revealed = true;
+		await tick();
+		heading?.focus();
+	}
+	const visibleSenses = $derived(revealed ? senses : partition.shown);
 
 	interface SenseGroup {
 		dictionaryId: number;
@@ -15,7 +33,7 @@
 	// preserved rather than resorted by name or id.
 	const groups = $derived.by((): SenseGroup[] => {
 		const byDictionary = new Map<number, SenseGroup>();
-		for (const sense of senses) {
+		for (const sense of visibleSenses) {
 			let group = byDictionary.get(sense.dictionaryId);
 			if (!group) {
 				group = {
@@ -49,7 +67,7 @@
 
 {#if groups.length > 0}
 	<section class="senses" aria-labelledby="senses-heading">
-		<h2 id="senses-heading">Senses</h2>
+		<h2 id="senses-heading" bind:this={heading} tabindex="-1">Senses</h2>
 		{#each groups as group (group.dictionaryId)}
 			<article class="dictionary">
 				<h3>{group.dictionaryName}</h3>
@@ -73,6 +91,13 @@
 				{/if}
 			</article>
 		{/each}
+		{#if partition.allHidden}
+			<p class="hidden-note">Shown although its dictionaries are hidden in this workspace</p>
+		{:else if !revealed && partition.hidden.length > 0}
+			<button type="button" class="reveal" onclick={reveal}>
+				Show {partition.hidden.length} from hidden dictionaries
+			</button>
+		{/if}
 	</section>
 {/if}
 
@@ -117,6 +142,25 @@
 
 	.separator {
 		margin: 0 0.25rem;
+	}
+
+	.hidden-note {
+		margin: 0.75rem 0 0;
+		font-size: 0.8rem;
+		opacity: 0.7;
+	}
+
+	.reveal {
+		min-height: 44px;
+		margin-top: 0.5rem;
+		padding: 0;
+		border: none;
+		background: none;
+		color: LinkText;
+		font: inherit;
+		font-size: 0.85rem;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 
 	.source a {

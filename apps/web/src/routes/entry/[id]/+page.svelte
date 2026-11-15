@@ -230,7 +230,9 @@
 			{/if}
 		{/if}
 		<Badges badges={entry.badges} />
-		<Senses senses={entry.senses} />
+		{#key entry.id}
+			<Senses senses={entry.senses} />
+		{/key}
 
 		{#if entry.variants.length > 0}
 			<section class="variants" aria-labelledby="variants-heading">
