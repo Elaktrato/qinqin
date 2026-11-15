@@ -68,6 +68,35 @@ func sentencesPack(t *testing.T) dict.Pack {
 		map[string]string{"sentences.json": `{"entries":[{"word":"hola","sentences":[{"hanzi":"Hola, amigo.","pinyin":"hola","translation":"Hello, friend."}]}]}`})
 }
 
+func grammarPack(t *testing.T) dict.Pack {
+	return buildPack(t, "grammar", "es-grammar", "Grammar", "CC0-1.0", "json", map[string]string{"lessons.json": `{
+  "levels": [{"id": "a1", "name": "A1"}],
+  "lessons": [{"id": "ser", "level": "a1", "title": "ser", "summary": "To be.", "pattern": ["A + ser + B"], "body": ["ser links nouns."],
+    "examples": [{"id": "ser-1", "text": "Soy estudiante.", "translation": "I am a student."}]}]}`})
+}
+
+func TestGrammarPacks(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	got, err := packs.Import(ctx, sqlDB, grammarPack(t))
+	if err != nil || got != "1 lessons" {
+		t.Fatalf("Import = %q, %v", got, err)
+	}
+	list, _ := packs.List(ctx, sqlDB)
+	if len(list) != 1 || list[0].Type != "grammar" || list[0].License != "CC0-1.0" || list[0].Name != "Grammar" || list[0].UpdatedAt == "" {
+		t.Fatalf("list = %+v", list)
+	}
+	if err := packs.Uninstall(ctx, sqlDB, "grammar", "es-grammar"); err != nil {
+		t.Fatal(err)
+	}
+	if err := packs.Uninstall(ctx, sqlDB, "grammar", "es-grammar"); !errors.Is(err, packs.ErrNotFound) {
+		t.Errorf("second uninstall = %v", err)
+	}
+	if list, _ := packs.List(ctx, sqlDB); len(list) != 0 {
+		t.Errorf("list after uninstall = %+v", list)
+	}
+}
+
 func TestImportDispatchesByType(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()

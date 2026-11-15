@@ -14,6 +14,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
+	"qinqin/internal/grammar"
 	"qinqin/internal/levels"
 	"qinqin/internal/sentences"
 )
@@ -45,6 +46,7 @@ var typeOrder = map[string]int{
 	dict.TypeFrequency:  1,
 	dict.TypeLevels:     2,
 	dict.TypeSentences:  3,
+	dict.TypeGrammar:    4,
 }
 
 // Import installs pack by its manifest type and returns the one-line
@@ -79,6 +81,12 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, error) 
 			return "", err
 		}
 		return fmt.Sprintf("%d unknown words skipped", len(r.Skipped)), nil
+	case dict.TypeGrammar:
+		r, err := grammar.Import(ctx, sqlDB, pack)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d lessons", r.Lessons), nil
 	}
 	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 }
@@ -105,10 +113,12 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string) error {
 		}
 	case dict.TypeSentences:
 		err = sentences.Uninstall(ctx, sqlDB, packID)
+	case dict.TypeGrammar:
+		err = grammar.Uninstall(ctx, sqlDB, packID)
 	default:
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
-	if errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
+	if errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
 		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) {
 		return ErrNotFound
 	}
@@ -142,7 +152,7 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 }
 
 // List returns every live pack of every type, ordered by type
-// (dictionary, frequency, levels, sentences), then name, then pack id.
+// (dictionary, frequency, levels, sentences, grammar), then name, then pack id.
 // Sentence packs imported before the registry existed list with only
 // their type and id, after the registered ones: their licence is not
 // recorded, and the list must not make them look like known packs.
@@ -157,6 +167,8 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 			FROM schemes WHERE deleted_at IS NULL`},
 		{dict.TypeSentences, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
 			FROM sentence_packs WHERE deleted_at IS NULL`},
+		{dict.TypeGrammar, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
+			FROM grammar_packs WHERE deleted_at IS NULL`},
 	} {
 		rows, err := sqlDB.QueryContext(ctx, q.query)
 		if err != nil {

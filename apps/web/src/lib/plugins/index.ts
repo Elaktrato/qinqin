@@ -11,6 +11,8 @@ import type { ContractManifest } from './contract';
 import { CORE_PLUGIN_ID } from './core/manifest';
 import type { PluginStatesValue } from './states';
 import { flashcardsManifest } from './flashcards/manifest';
+import GrammarPage from './grammar/GrammarPage.svelte';
+import { grammarManifest } from './grammar/manifest';
 import JournalPage from './journal/JournalPage.svelte';
 import { journalManifest } from './journal/manifest';
 import ReaderPage from './reader/ReaderPage.svelte';
@@ -56,6 +58,10 @@ export const webPlugins: WebPlugin[] = [
 	{
 		manifest: journalManifest,
 		pages: [{ title: 'Journal', nav: true, component: JournalPage }]
+	},
+	{
+		manifest: grammarManifest,
+		pages: [{ title: 'Grammar', nav: true, component: GrammarPage }]
 	}
 ];
 

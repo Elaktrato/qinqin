@@ -16,6 +16,7 @@ const (
 	TypeLevels     = "levels"
 	TypeSentences  = "sentences"
 	TypeFrequency  = "frequency"
+	TypeGrammar    = "grammar"
 )
 
 // Pack formats: how a dictionary pack's data files are encoded.
@@ -40,6 +41,7 @@ var (
 		TypeLevels:     true,
 		TypeSentences:  true,
 		TypeFrequency:  true,
+		TypeGrammar:    true,
 	}
 	manifestFormats = map[string]bool{
 		FormatJSON:      true,
@@ -93,7 +95,7 @@ func (m Manifest) Validate() error {
 	case strings.TrimSpace(m.Attribution) == "":
 		return errors.New("manifest: attribution is required — packs without attribution are rejected")
 	case !manifestTypes[m.Type]:
-		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, or frequency)", m.Type)
+		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, frequency, or grammar)", m.Type)
 	case !manifestFormats[m.Format]:
 		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, or freq-csv)", m.Format)
 	}

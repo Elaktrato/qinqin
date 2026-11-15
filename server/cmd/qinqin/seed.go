@@ -89,12 +89,14 @@ type seedPack struct {
 // character data of cedict, unihan, kanjidic2, and jmdict — come first:
 // frequency, level and sentence packs refer to existing entries and skip
 // the unknown ones, so they must follow. Frequency packs come right after
-// the dictionaries; sentences come last.
+// the dictionaries; sentences follow; grammar packs, which refer to no
+// entries, come last.
 var importOrder = map[string]int{
 	dict.TypeDictionary: 0,
 	dict.TypeFrequency:  1,
 	dict.TypeLevels:     2,
 	dict.TypeSentences:  3,
+	dict.TypeGrammar:    4,
 }
 
 // seed imports every pack under the roots into sqlDB through

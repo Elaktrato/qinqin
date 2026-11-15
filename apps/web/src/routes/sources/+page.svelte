@@ -4,6 +4,8 @@
 	import type { Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
 	import { languageLabel } from '$lib/languages';
 	import { webPlugins } from '$lib/plugins';
+	import { listGrammar } from '$lib/plugins/grammar/api';
+	import type { PackInfo } from '$lib/plugins/grammar/types';
 	import { coreCredits } from '$lib/sources/coreCredits';
 	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
 	import { creditView, packTable, pluginCredits, type CreditView, type PackTable } from '$lib/sources/sections';
@@ -77,7 +79,31 @@
 		}
 	}
 
+	let grammarPacks = $state<PackInfo[]>([]);
+	let grammarLoading = $state(true);
+	let grammarError = $state('');
+	const grammarTable = $derived(
+		packTable(
+			'grammar',
+			grammarPacks.map((pack, id) => ({ ...pack, id, name: pack.name }))
+		)
+	);
+
+	async function loadGrammar(): Promise<void> {
+		grammarLoading = true;
+		grammarError = '';
+		try {
+			grammarPacks = await listGrammar();
+		} catch (err) {
+			grammarPacks = [];
+			grammarError = message(err, 'Could not load grammar lesson credits.');
+		} finally {
+			grammarLoading = false;
+		}
+	}
+
 	onMount(() => {
+		loadGrammar();
 		load();
 		loadFrequency();
 		loadSchemes();
@@ -313,6 +339,53 @@
 			Level lists group the character map and badge entries. Unless a pack's note above says
 			otherwise, lists installed from packs are third-party compilations, not official releases
 			of the tests they are named after.
+		</p>
+	</section>
+
+	<section>
+		<h2 id="sources-grammar">Grammar lessons</h2>
+
+		{#if grammarLoading}
+			<p>Loading grammar lesson credits…</p>
+		{:else if grammarError}
+			<p class="error" role="alert">{grammarError}</p>
+			<button type="button" onclick={loadGrammar}>Retry</button>
+		{:else if grammarPacks.length === 0}
+			<p>No grammar lessons are installed.</p>
+		{:else}
+			<div class="table-wrap">
+				<table aria-labelledby="sources-grammar">
+					<thead>
+						<tr>
+							<th scope="col">Name</th>
+							{@render noteHeader(grammarTable)}
+							<th scope="col">Language</th>
+							<th scope="col">Version</th>
+							<th scope="col">License</th>
+							<th scope="col">Attribution</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each grammarTable.rows as row (row.key)}
+							<tr>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(grammarTable, row.noteId, row.name)}
+								<td title={row.language}>{languageLabel(row.language)}</td>
+								<td>{row.version}</td>
+								<td>{@render cell(row.license, row.language)}</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			{@render notes(grammarTable)}
+		{/if}
+
+		<p class="notice">
+			Grammar lessons are written by the pack's author; the explanations and examples are not
+			taken from a syllabus. Read each pack's note for who wrote it and whether a native speaker
+			has reviewed it.
 		</p>
 	</section>
 
