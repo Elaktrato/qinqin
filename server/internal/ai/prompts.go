@@ -103,3 +103,34 @@ func suggestUserMessage(r SuggestRequest, nonce string) string {
 func transcribeUserMessage(r TranscribeRequest) string {
 	return fmt.Sprintf("Transcribe this page. The page is written in %s.", LanguageName(r.Language))
 }
+
+// systemPrompt returns the system prompt of a task ("review", "suggest" or
+// "transcribe"). The base constants are byte-identical for every adapter; the
+// modes without a schema parameter append the schema as a constant suffix.
+func systemPrompt(task string, mode Structured) string {
+	base, schema := "", ""
+	switch task {
+	case "review":
+		base, schema = reviewSystemPrompt, reviewSchema
+	case "suggest":
+		base, schema = suggestSystemPrompt, suggestSchema
+	case "transcribe":
+		base, schema = transcribeSystemPrompt, transcribeSchema
+	default:
+		panic("ai: unknown task " + task)
+	}
+	if mode == StructuredObject || mode == StructuredPrompt {
+		return base + "\n\nReply with one JSON object (json) that matches this JSON Schema, with no other text:\n" + schema
+	}
+	return base
+}
+
+func taskSchema(task string) string {
+	switch task {
+	case "review":
+		return reviewSchema
+	case "suggest":
+		return suggestSchema
+	}
+	return transcribeSchema
+}

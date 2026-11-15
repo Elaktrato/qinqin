@@ -31,7 +31,7 @@ type StoredKey struct {
 // Credentials carry a decrypted key to a provider call. No json tags and a
 // redacting String, Format, MarshalJSON and MarshalText, so formatting or
 // encoding it by accident leaks nothing (BaseURL may carry a token too).
-type Credentials struct{ APIKey, Model, BaseURL string }
+type Credentials struct{ APIKey, Model, BaseURL, Provider string }
 
 const redactedCredentials = "ai.Credentials{redacted}"
 

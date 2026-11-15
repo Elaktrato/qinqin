@@ -38,12 +38,22 @@ type Overall struct {
 // ReviewRequest asks for a review; languages are codes such as "zh" or "en".
 type ReviewRequest struct{ Language, ExplanationLanguage, Guidance, Text string }
 
+// CallUsage is one provider call an action made: Kind is the action ("review")
+// or its repair ("review-repair"). Adapters that make more than one call
+// list every call so each gets its own ai_calls row; Usage on the reply is
+// their sum.
+type CallUsage struct {
+	Kind  string
+	Usage Usage
+}
+
 // ReviewReply is the unvalidated answer.
 type ReviewReply struct {
 	Annotations []RawAnnotation
 	Overall     Overall
 	Model       string
 	Usage       Usage
+	Calls       []CallUsage
 }
 
 // EntrySummary is what a suggestion request sends about a past entry.
@@ -68,6 +78,7 @@ type SuggestReply struct {
 	Items []SuggestionItem
 	Model string
 	Usage Usage
+	Calls []CallUsage
 }
 
 // TranscribeRequest sends one photo; MediaType is "image/jpeg" after the
@@ -84,6 +95,7 @@ type TranscribeReply struct {
 	Unreadable bool
 	Model      string
 	Usage      Usage
+	Calls      []CallUsage
 }
 
 // Provider is an AI backend; Claude is the only real implementation.
@@ -134,6 +146,14 @@ func Code(err error) string {
 		return "bad_reply"
 	case errors.Is(err, ErrBadRequest):
 		return "bad_request"
+	case errors.Is(err, ErrEndpointBlocked):
+		return "endpoint_blocked"
+	case errors.Is(err, ErrUnknownProvider):
+		return "unknown_provider"
+	case errors.Is(err, ErrProviderDisabled):
+		return "provider_disabled"
+	case errors.Is(err, ErrNoSelection):
+		return "no_selection"
 	case errors.As(err, &rl):
 		return "rate_limited"
 	case errors.Is(err, ErrInFlight):
