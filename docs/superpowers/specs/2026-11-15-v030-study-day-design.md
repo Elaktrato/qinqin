@@ -69,7 +69,7 @@ midnight of `D` (`wall(t) = t + offset(Z, t) ≥ UTC(D)`), found without assumin
 monotone (it is not around a clock that goes back across midnight). Let `lo = UTC(D) − 15 h`,
 `hi = UTC(D) + 13 h` (every offset lies in −12:00…+14:00, so the interval brackets it), `oLo = offset(lo)`,
 `oHi = offset(hi)`. If `oLo = oHi` the answer is `UTC(D) − oLo`. Otherwise there is exactly one
-transition `T` in the interval (tzdb since 1970 never has two offset changes within 7 days): `T` is the
+transition `T` in the interval (no two UTC-offset changes in tzdb lie within the 28 hour bracket: the smallest gap between consecutive offset changes of any zone from 1970 to 2037 is 167 h, America/Boa_Vista, America/Noronha and America/Recife in October 2000): `T` is the
 first second in `(lo, hi]` with `offset = oHi` (bisection); with `c = UTC(D) − oLo` the answer is `c` when
 `c < T`, else `max(T, UTC(D) − oHi)`. This handles midnight DST gaps (America/Santiago starts 2024-09-08
 at 01:00 local), dates a zone skipped (Pacific/Apia 2011-12-30) and repeated midnights without relying on
@@ -88,6 +88,8 @@ any length around a zone change, and empty for a skipped date (which then simply
 
 **Today.** `today = dayOf(now)`. "Yesterday", "the last 7 days" and every streak count civil dates
 backwards from `today`.
+
+**Retroactive first zone.** The FIRST zone a user ever sets (the web's `ifUnset` browser default or the first choice in Settings) applies to the whole existing log, not only to events after it; only later changes take effect from their instant.
 
 **Events with no zone yet.** None exist conceptually: events before the first change belong to
 segment 0, whose zone is either the first zone the user set (from = null) or UTC while the user has set

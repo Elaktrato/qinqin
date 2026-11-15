@@ -1,9 +1,11 @@
 package api_test
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -191,13 +193,21 @@ func TestTimeZoneRejectsUnknownKeysAndTrailingData(t *testing.T) {
 	}
 }
 
-func TestTimeZoneNeverLoggedInErrors(t *testing.T) {
-	// error bodies never echo the submitted name
+// A submitted zone name is neither echoed in error bodies nor written to the log.
+func TestTimeZoneNotEchoedOrLogged(t *testing.T) {
+	var logs bytes.Buffer
+	log.SetOutput(&logs)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
 	ts, _ := timeZoneServer(t, tzNow)
 	tok := registerUser(t, ts.URL, "alice", "")
 	resp := doRaw(t, http.MethodPut, ts.URL, "/api/me/time-zone", tok, `{"zone":"Secret/Place"}`)
 	b, _ := io.ReadAll(resp.Body)
 	if strings.Contains(string(b), "Secret") {
 		t.Errorf("echoed: %s", b)
+	}
+	doRaw(t, http.MethodPut, ts.URL, "/api/me/time-zone", tok, `{"zone":"Asia/Tokyo"}`)
+	doRaw(t, http.MethodGet, ts.URL, "/api/me/time-zone", tok, "")
+	if out := logs.String(); strings.Contains(out, "Secret") || strings.Contains(out, "Tokyo") {
+		t.Errorf("zone names in the log: %q", out)
 	}
 }

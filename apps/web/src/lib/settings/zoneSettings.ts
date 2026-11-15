@@ -39,7 +39,8 @@ export function zoneOptions(
 ): string[] {
 	if (!supported) return [current];
 	const q = words(query.trim());
-	const rest = supported.filter((zone) => zone !== current && (q === '' || words(zone).includes(q)));
+	const all = supported.includes('UTC') ? supported : [...supported, 'UTC'];
+	const rest = all.filter((zone) => zone !== current && (q === '' || words(zone).includes(q)));
 	return [current, ...rest];
 }
 

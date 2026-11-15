@@ -16,7 +16,9 @@ const PATTERNS: [string, RegExp][] = [
 	['24 * 60 * 60 * 1000)', /24 \* 60 \* 60 \* 1000\)/],
 	['getUTCDate(', /getUTCDate\(/],
 	['getUTCFullYear(', /getUTCFullYear\(/],
-	['Date.UTC(', /Date\.UTC\(/]
+	['Date.UTC(', /Date\.UTC\(/],
+	["split('T')", /split\(['"]T['"]\)/],
+	['/ DAY', /\/ (?:MS_PER_)?DAY(?:_MS)?\b/]
 ];
 
 // file -> pattern -> reason
@@ -24,7 +26,11 @@ const ALLOWED: Record<string, Record<string, string>> = {
 	'/src/lib/time/studyDay.ts': {
 		'getUTCDate(': 'the rule itself: civil date arithmetic on UTC-anchored dates',
 		'getUTCFullYear(': 'the rule itself: civil date arithmetic on UTC-anchored dates',
-		'Date.UTC(': 'the rule itself: civil date arithmetic and wall-clock offsets'
+		'Date.UTC(': 'the rule itself: civil date arithmetic and wall-clock offsets',
+		'/ DAY': 'daysBetweenDates divides a difference of UTC-anchored civil dates (always whole days)'
+	},
+	'/src/lib/study/fsrs/preview.ts': {
+		'/ DAY': 'FSRS elapsed-time arithmetic stays as ts-fsrs computes it (a non-goal of the study day)'
 	},
 	'/src/lib/study/fsrs/dataset.ts': {
 		'/ 86_400_000)': 'real UTC day numbers for the optimizer holdout split, not a learner day'
@@ -55,7 +61,9 @@ describe('no UTC day arithmetic outside the allow-list', () => {
 			'Date.now() - n * 24 * 60 * 60 * 1000)',
 			'd.getUTCDate()',
 			'd.getUTCFullYear()',
-			'Date.UTC(y, m, d)'
+			'Date.UTC(y, m, d)',
+			"iso.split('T')[0]",
+			'Math.floor(at / DAY_MS)'
 		];
 		samples.forEach((sample, i) => expect(PATTERNS[i][1].test(sample)).toBe(true));
 	});

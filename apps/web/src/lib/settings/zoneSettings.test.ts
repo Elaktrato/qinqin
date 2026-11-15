@@ -30,7 +30,7 @@ describe('zoneOptions', () => {
 	it('lists everything for an empty query with the current zone first', () => {
 		const out = zoneOptions(supported, 'Asia/Tokyo', '');
 		expect(out[0]).toBe('Asia/Tokyo');
-		expect(out).toHaveLength(supported.length);
+		expect(out).toHaveLength(supported.length + 1); // plus UTC
 	});
 	it('filters case-insensitively and treats / and _ as spaces', () => {
 		expect(zoneOptions(supported, 'Europe/Berlin', 'new york')).toEqual(['Europe/Berlin', 'America/New_York']);
@@ -44,6 +44,14 @@ describe('zoneOptions', () => {
 		expect(zoneOptions(undefined, 'Europe/Berlin', '')).toEqual(['Europe/Berlin']);
 		expect(zoneOptions(undefined, 'Europe/Berlin', 'tokyo')).toEqual(['Europe/Berlin']);
 	});
+	it('always offers UTC (V8 does not list it) so a user can return to it', () => {
+		expect(zoneOptions(supported, 'Asia/Tokyo', '')).toContain('UTC');
+		expect(zoneOptions(supported, 'Asia/Tokyo', 'utc')).toEqual(['Asia/Tokyo', 'UTC']);
+		expect(zoneOptions([...supported, 'UTC'], 'Asia/Tokyo', '').filter((z) => z === 'UTC')).toHaveLength(1);
+		expect(zoneOptions(supported, 'UTC', '')[0]).toBe('UTC');
+		expect(zoneOptions(supported, 'UTC', '').filter((z) => z === 'UTC')).toHaveLength(1);
+	});
+
 	it('lists no duplicate of the current zone', () => {
 		const out = zoneOptions(supported, 'Asia/Tokyo', 'tokyo');
 		expect(out).toEqual(['Asia/Tokyo']);

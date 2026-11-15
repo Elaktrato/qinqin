@@ -73,6 +73,10 @@ the Compose plugin required) run:
 docker compose up -d
 ```
 
+No reverse proxy in front? Set `QINQIN_TRUSTED_PROXIES=none` (uncomment it in
+`docker-compose.yml`): the default trusts private-network peers' `X-Forwarded-For`,
+which a LAN client could forge to dodge the per-client sign-in limits.
+
 On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
 frequency list and the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists), then create the admin account:
 
@@ -193,8 +197,11 @@ uploads), so a read-only root filesystem is not enabled.
    `QINQIN_AI_PROVIDERS` limits which AI providers users may choose
    (default: all; see [Journal and AI](#journal-and-ai)),
    `QINQIN_AI_ALLOW_PRIVATE=1` lets an admin register AI endpoints on private
-   addresses, and `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the
-   stack.
+   addresses, `QINQIN_TRUSTED_PROXIES` sets which proxies' `X-Forwarded-For`
+   is believed (default: private networks; **set `none` if nothing
+   reverse-proxies to qinqin**, otherwise a LAN client can forge the header;
+   see [Reverse proxy and HTTPS](#reverse-proxy-and-https)), and
+   `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the stack.
 4. **First run, before exposing the port beyond your LAN** (until a user
    exists, the first registration over the API becomes admin). Portainer:
    Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
@@ -258,11 +265,34 @@ the pre-upgrade backup. After an upgrade the log may say
 
 The app speaks plain HTTP on 8080. Browser features that need a secure context
 may not work over plain HTTP from other devices, so serve it over HTTPS. No
-WebSocket is used. The server does not read client IPs or
-`X-Forwarded-*` headers anywhere (no per-IP limits; limits are per user), so
-no trusted-proxy setting exists. Pack uploads go up to 128 MiB and an AI
+WebSocket is used. Pack uploads go up to 128 MiB and an AI
 review can take up to 170 s, so the proxy needs a body limit of at least
 130 MB and a read timeout of at least 180 s.
+
+**Client addresses and sign-in throttling.** Sign-in and registration are
+limited per client address (see [Sign-in throttling](#sign-in-throttling)), so
+the server must see the real address. It believes `X-Forwarded-For` only when
+the TCP peer is a trusted proxy: by default the private networks a Docker or
+LAN proxy connects from (127.0.0.0/8, ::1, 10/8, 172.16/12, 192.168/16,
+100.64/10, 169.254/16, fc00::/7, fe80::/10). Set `QINQIN_TRUSTED_PROXIES` to a
+comma list of CIDRs or addresses to replace that set (for example a CDN's
+ranges in front of your proxy), or to `none` to ignore the header. A bad value
+stops the server at startup.
+
+> **Warning: the default is spoofable without a proxy.** Private-network peers
+> are trusted by default, so on an install with **no** reverse proxy any client
+> on your LAN (or any peer the network layer makes look private) can send a
+> forged `X-Forwarded-For` and get a fresh per-client limit for every request.
+> The same happens when the proxy layer rewrites the source address: Docker's
+> userland proxy for IPv6, rootless Docker or Podman, Docker Desktop, or router
+> port forwarding that masquerades connections can all make every client look
+> like a private address. The per-username limit and the hash gate still hold,
+> but **set `QINQIN_TRUSTED_PROXIES=none` whenever nothing reverse-proxies to
+> qinqin**, and list your proxy's address when you do run one. The first time a
+> forwarded header is honoured the server logs one line,
+> `auth: honouring X-Forwarded-For from a trusted proxy; set
+> QINQIN_TRUSTED_PROXIES=none if you have no reverse proxy`, so you can tell. Addresses are used only as in-memory limiter
+keys (hashed with a per-process secret): never stored, never logged.
 
 Caddy (defaults are fine: no body limit, 0 response timeout):
 
@@ -294,6 +324,7 @@ location / {
     proxy_pass http://127.0.0.1:8080;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     client_max_body_size 130m;
     proxy_read_timeout 180s;
     proxy_send_timeout 180s;
@@ -301,6 +332,27 @@ location / {
     # proxy_request_buffering off;
 }
 ```
+
+### Sign-in throttling
+
+`POST /api/auth/login` and `/register` hash passwords with argon2id (64 MiB
+each), so they are limited. The limits live in memory (a restart clears them):
+
+| Layer | Key | Rule |
+|---|---|---|
+| Client | address (IPv6 per /64) | burst 10, one more every 6 s; every attempt costs one |
+| Pair | client and username | 5 failures free, then a lock of 60 s, doubling to 15 min; a success clears it and marks the pair known-good for 30 days |
+| Username | username, any client | burst 20 failures, one more per minute; a known-good pair is exempt |
+| Hash gate | the server | at most min(4, CPUs) hashes at once, 3 s wait, then 503 |
+
+Known-good marks live in their own table (also capped at 65,536), so a flood of
+new failing keys cannot erase them. A locked key is refused (429, `Retry-After`) before the password is checked,
+unknown usernames behave exactly like known ones, and an administrator creating
+users is not throttled. Errors of both routes are JSON `{"error","message"}`
+(`rate_limited`, `busy`, `bad_credentials`, `admin_required`,
+`username_taken`, `bad_request`, `too_large`); see `docs/contracts/auth/`.
+A distributed attack can keep an account refused for new devices and networks
+while it lasts; the owner's usual device keeps signing in.
 
 ### AI journal
 
@@ -514,6 +566,7 @@ app agree.
 - **Where it is set:** Settings → **Study**. The first time you sign in after upgrading, the web app
   sends your browser's zone as the default (only if the account has none). If the device zone later
   differs, Settings offers "Use <zone> from now on"; nothing changes on its own.
+- **The first zone applies to your whole history:** the first zone an account ever gets (the browser default sent after the upgrade, or your first choice in Settings) is used for every past day too, so the heatmap and streaks are re-read once in that zone. Only later changes apply from now on.
 - **From now on:** a change takes effect when you save it. Past days never move, a date never repeats
   (moving west makes the current day longer) and a skipped date simply has no activity. Daylight saving
   days are 23 or 25 hours long and still one day.
@@ -798,6 +851,7 @@ All library and source routes need a signed-in user, and so does
 | `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user; an unknown or malformed id is 404 (checked before the body, so a bad body on a missing entry is still 404) |
 | `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; each event needs a `workspaceId` of 1 or more, else 400; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
 | `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
+| `GET /api/me/time-zone`, `PUT /api/me/time-zone` | The caller's learner time zone: `{zone, history:[{zone, from}]}` (`zone` null while none is set). `PUT {"zone":"Asia/Tokyo"[,"ifUnset":true]}` records a change effective from the server's now (the very first zone has `from: null` and applies to the whole log); IANA names only, body up to 1 KiB; errors are JSON `{error, message}`: `unknown_time_zone` (400), `bad_request` (400), `too_large` (413), `too_many_changes` (409) |
 | `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by learner day (their time zone, see "Study day and time zone"), workspace and type for the plugins' activity rules: `{from, to, timeZone, sources, cells}`. `from`/`to` are learner dates `YYYY-MM-DD` (default: today and the 90 days before; at most 366 days, else 400); a foreign workspace is 404. `sources` lists every rule (also those without cells) |
 | `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state (`hidden: true` marks the app's own surface-less built-ins such as `qinqin-core`; clients leave those out of plugin lists), and the caller's enable flag and (legacy) order for one plugin |
 | `GET /api/plugins/{id}/data?workspace=&prefix=` | The caller's live rows of a plugin whose key starts with `prefix`, scoped like the single-row routes, ordered by key, `[]` when none; an unknown plugin or foreign workspace is 404 |
@@ -1068,6 +1122,7 @@ Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot b
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
+| `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks (see [Reverse proxy and HTTPS](#reverse-proxy-and-https)). Set `none` when no reverse proxy sits in front |
 | `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |
 | `QINQIN_AI_ALLOW_PRIVATE` | `1` or `true` lets admins register custom endpoints on loopback and private addresses (Ollama on the same host). Off by default; the admin's endpoints can then reach your LAN, so enable it only if you trust every admin |
 | `QINQIN_AI_PROVIDER` | Legacy. Unset: real providers, all allowed. `anthropic` (set explicitly) means `QINQIN_AI_PROVIDERS=anthropic`. `fake` is for testing only: a deterministic provider that replaces every adapter, never leaves the server, and is shown in the app as a "Test provider" badge. Anything else disables AI |

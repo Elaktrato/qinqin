@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
-	import { ApiError } from '$lib/api/client';
+	import { authErrorMessage } from '$lib/api/authErrors';
 	import { register } from '$lib/auth';
 
 	let username = $state('');
@@ -18,13 +18,7 @@
 			await register(username.trim(), password);
 			// The layout guard moves a signed-in session off this page.
 		} catch (err) {
-			if (err instanceof ApiError && err.status === 409) {
-				error = 'That username is already taken.';
-			} else if (err instanceof ApiError && err.status === 403) {
-				error = 'Only an administrator can create more accounts.';
-			} else {
-				error = err instanceof Error ? err.message : 'Registration failed.';
-			}
+			error = authErrorMessage(err, 'Registration failed.');
 		} finally {
 			busy = false;
 		}

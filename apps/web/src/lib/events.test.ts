@@ -12,6 +12,7 @@ import {
 	postEvents,
 	record,
 	recordSessionOnce,
+	recordSessionWhenSettled,
 	sinceDaysAgo
 } from './events';
 import { studyDay } from './time/studyDay';
@@ -185,6 +186,38 @@ describe('recordSessionOnce', () => {
 		recordSessionOnce(5);
 
 		expect(fetch).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('recordSessionWhenSettled', () => {
+	it("keys the receipt by the loaded zone, not the provisional browser zone", async () => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		localStorage.setItem('qinqin.token', 'tok');
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date('2026-03-15T22:30:00Z')); // 23:30 on the 15th in Berlin, 07:30 on the 16th in Tokyo
+		vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+			timeZone: 'Europe/Berlin'
+		} as Intl.ResolvedDateTimeFormatOptions);
+		let release!: (r: Response) => void;
+		const fetchMock = vi.fn((url: string) =>
+			String(url).includes('time-zone')
+				? new Promise<Response>((r) => (release = r))
+				: Promise.resolve(new Response('{}'))
+		);
+		vi.stubGlobal('fetch', fetchMock);
+		const { syncStudyDayUser, clearStudyDay } = await import('./time/zone');
+		clearStudyDay();
+		void syncStudyDayUser(9);
+		const done = recordSessionWhenSettled(5);
+		await Promise.resolve();
+		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBeNull();
+		release(new Response(JSON.stringify({ zone: 'Asia/Tokyo', history: [{ zone: 'Asia/Tokyo', from: null }] })));
+		await done;
+		expect(localStorage.getItem('qinqin.session.5.2026-03-16')).toBe('1');
+		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBeNull();
+		clearStudyDay();
+		vi.restoreAllMocks();
+		vi.useRealTimers();
 	});
 });
 

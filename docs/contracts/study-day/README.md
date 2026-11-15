@@ -29,7 +29,7 @@ midnight of `D` (`wall(t) = t + offset(Z, t) ≥ UTC(D)`), found without assumin
 monotone (it is not around a clock that goes back across midnight). Let `lo = UTC(D) − 15 h`,
 `hi = UTC(D) + 13 h` (every offset lies in −12:00…+14:00, so the interval brackets it), `oLo = offset(lo)`,
 `oHi = offset(hi)`. If `oLo = oHi` the answer is `UTC(D) − oLo`. Otherwise there is exactly one
-transition `T` in the interval (tzdb since 1970 never has two offset changes within 7 days): `T` is the
+transition `T` in the interval (no two UTC-offset changes in tzdb lie within the 28 hour bracket: the smallest gap between consecutive offset changes of any zone from 1970 to 2037 is 167 h, America/Boa_Vista, America/Noronha and America/Recife in October 2000): `T` is the
 first second in `(lo, hi]` with `offset = oHi` (bisection); with `c = UTC(D) − oLo` the answer is `c` when
 `c < T`, else `max(T, UTC(D) − oHi)`. This handles midnight DST gaps (America/Santiago starts 2024-09-08
 at 01:00 local), dates a zone skipped (Pacific/Apia 2011-12-30) and repeated midnights without relying on
@@ -48,6 +48,8 @@ any length around a zone change, and empty for a skipped date (which then simply
 
 **Today.** `today = dayOf(now)`. "Yesterday", "the last 7 days" and every streak count civil dates
 backwards from `today`.
+
+**Retroactive first zone.** The FIRST zone a user ever sets (the web's `ifUnset` browser default or the first choice in Settings) applies to the whole existing log, not only to events after it; only later changes take effect from their instant.
 
 **Events with no zone yet.** None exist conceptually: events before the first change belong to
 segment 0, whose zone is either the first zone the user set (from = null) or UTC while the user has set
@@ -90,12 +92,12 @@ All files are `{"version": 1, "rule": "...", "cases": [...]}`. Instants are RFC 
 seconds (`2026-11-15T15:30:00Z`); days are `YYYY-MM-DD`. A `history` is the list of
 `{"zone": "<IANA name>", "from": "<instant>" | null}` in effect order; `[]` means UTC. Every `note` says
 how the value was derived. All values were derived from tzdb (Python `zoneinfo`, with an independent
-brute-force implementation of the rule) and are past dates with settled rules.
+brute-force implementation of the rule) and use only past instants with settled rules: `day-of-transitions.json` stops at 2026-11-16 (rows that depended on future tz rules were dropped).
 
 | File | Case fields | Meaning |
 | --- | --- | --- |
 | `day-of.json` | `name, note, history, ts, day` | `dayOf(ts) == day` |
-| `day-of-transitions.json` | `[zone, ts, day]` rows | single-zone `dayOf` one second before every UTC offset change 2010-2030, at it, and 24 h later |
+| `day-of-transitions.json` | `[zone, ts, day]` rows | single-zone `dayOf` one second before every UTC offset change 2010 to 2026-11-16, at it, and 24 h later |
 | `day-start.json` | `name, note, history, day, start` | `dayStart(day) == start` (an empty window has `dayStart(D) == dayStart(D + 1)`) |
 | `activity-days.json` | `history, events, from, to, cells` | `GET /api/stats/activity` cells for a given history (server test) |
 | `time-zone-api.json` | `name, request, status, body, setup?` | `GET`/`PUT /api/me/time-zone`; `"<server now>"` matches any instant |

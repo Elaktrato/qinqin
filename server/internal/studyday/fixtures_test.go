@@ -86,7 +86,11 @@ func TestFixturesDayOfTransitions(t *testing.T) {
 	for _, c := range f.Cases {
 		h, ok := byZone[c[0]]
 		if !ok {
-			h, _ = New([]Change{{Zone: c[0]}})
+			var err error
+			h, err = New([]Change{{Zone: c[0]}})
+			if err != nil {
+				t.Fatalf("zone %s: %v", c[0], err)
+			}
 			byZone[c[0]] = h
 		}
 		if got := h.DayOf(mustTime(t, c[1])).String(); got != c[2] {

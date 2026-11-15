@@ -13,8 +13,8 @@
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
-	import { recordSessionOnce } from '$lib/events';
-	import { ensureStudyDay } from '$lib/time/zone';
+	import { recordSessionWhenSettled } from '$lib/events';
+	import { syncStudyDayUser } from '$lib/time/zone';
 	import { dismissNotice, notice } from '$lib/notices';
 	import { allowed as routeAllowed, normalizePath, redirectTarget, routeAccess } from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
@@ -132,12 +132,10 @@
 
 	// The learner's time zone history (and, once per account, the browser
 	// zone as its default) loads right after sign-in; every "day" follows it.
-	let studyDayUser: number | null = null;
+	// Signing out forgets it, so signing in again (same user, no reload)
+	// loads it again instead of falling back to the browser zone.
 	$effect(() => {
-		const id = $user?.id ?? null;
-		if (id === null || id === studyDayUser) return;
-		studyDayUser = id;
-		void ensureStudyDay(id);
+		void syncStudyDayUser($user?.id ?? null);
 	});
 
 	// One session event per workspace per UTC day, recorded for whichever
@@ -145,7 +143,8 @@
 	// the user switches to or creates later (receipts keep it once a day).
 	$effect(() => {
 		const id = $workspacesLoaded ? ($workspaces.current?.id ?? null) : null;
-		if (id !== null) recordSessionOnce(id);
+		// The receipt is keyed by the learner day, so wait for the zone to settle.
+		if (id !== null) void recordSessionWhenSettled(id);
 	});
 
 	// Re-evaluate on every client-side navigation and auth change, so

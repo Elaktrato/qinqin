@@ -140,7 +140,7 @@ func TestSetInvalidNames(t *testing.T) {
 	for i := 0; i < 65; i++ {
 		long += "A"
 	}
-	for _, name := range []string{"", "Mars/Base", "Local", "Factory", "posixrules", "posix/Europe/Berlin", "right/Europe/Berlin", long, "Europe/Berlin\n", "../etc/passwd", "Europe/Berlin ", "europe/berlin", "Europe/"} {
+	for _, name := range []string{"", "Mars/Base", "Local", "Factory", "posixrules", "posix/Europe/Berlin", "right/Europe/Berlin", long, "Europe/Berlin\n", "../etc/passwd", "Europe/Berlin ", "europe/berlin", "asia/tokyo", "Asia/tokyo", "ASIA/TOKYO", "utc", "europe/Berlin", "Europe/berlin", "etc/GMT-9", "Etc/gmt-9", "Europe/"} {
 		if _, err := Set(context.Background(), sqlDB, 1, name, false, t0); !errors.Is(err, ErrUnknownZone) {
 			t.Errorf("%q: %v", name, err)
 		}
