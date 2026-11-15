@@ -205,3 +205,7 @@
 - **Ruling: `scheduler.ts` also exports `sortedReviews`** next to `isValidReview`, so the dataset sorts exactly as replay does — cost if wrong: none.
 - **Ruling: `Tape` also has `value(v)`** (used by `tapeNum`) — cost if wrong: none.
 - **Ruling: the stability floor after a lapse follows ts-fsrs (`min(max(S/e^{w17·w18}, 0.001), S'_fail)`)** — equals the spec's formula, written as ts-fsrs computes it — cost if wrong: none.
+
+## Builder rulings (tasks 6–10, unattended)
+
+- **Ruling: training schedule changed (`BATCH_ITEMS` 512 → 64, `EPOCHS` 5 → 10; LR, GAMMA, seed unchanged) — optimizer fell short of the 2% target at 25 Adam steps** — measured on `wTrue` histories (log loss ratio to `wTrue`; 600 cards seeds 1/2/7/9, 2000 cards seed 7): before 1.0170/1.0206/1.0249/1.0268/1.0182, after 0.9986/1.0116/1.0107/1.0041/1.0125; cost if wrong: more compute (25–140 ms in Node per fit, 3,231 items in 42 ms). The test file asserts all five cases.
