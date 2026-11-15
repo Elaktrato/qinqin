@@ -48,6 +48,8 @@ export interface BuildLevelQueueOptions {
 	studyDay?: StudyDay;
 	/** How many extra new items to keep as reserve; defaults to backfillLimit(newLimit). */
 	reserve?: number;
+	/** `kind:entryId` keys of virtual items already found ineligible (never planned). */
+	skip?: ReadonlySet<string>;
 }
 
 /** A level session: the queue plus new items held back for dropped ones. */
@@ -212,6 +214,7 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 				if (first === undefined || day.dayOf(first) >= today) continue;
 			}
 			if (card === undefined) {
+				if (options.skip?.has(`${kind}:${entry.id}`)) continue;
 				target.push({
 					cardId: virtualLevelId(kind, entry.id),
 					entryId: entry.id,

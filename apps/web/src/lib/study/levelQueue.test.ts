@@ -405,3 +405,21 @@ describe('level setup helpers', () => {
 		expect(levelEntryCount(entries, 'character')).toBe(1);
 	});
 });
+
+describe('character level skip set', () => {
+	it('never plans a virtual item found ineligible, and refills from the rest', () => {
+		const plan = buildLevelPlan({
+			w: DEFAULT_W,
+			unit: 'character',
+			kinds: ['writing'],
+			entries: [entry(1, 'character'), entry(2, 'character'), entry(3, 'character')],
+			cards: [],
+			reviews: [],
+			newLimit: 2,
+			reviewLimit: 10,
+			now: NOW,
+			skip: new Set(['writing:1'])
+		});
+		expect(plan.queue.map((i) => i.cardId)).toEqual(['level:writing:2', 'level:writing:3']);
+	});
+});
