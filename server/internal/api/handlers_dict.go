@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -71,11 +72,18 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	if u == nil {
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxPackUpload+1<<20)
 	if err := r.ParseMultipartForm(maxPackMemory); err != nil {
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge)
+			return
+		}
 		http.Error(w, "multipart form with a pack zip required", http.StatusBadRequest)
 		return
 	}
-	file, _, err := r.FormFile("pack")
+	defer r.MultipartForm.RemoveAll()
+	file, header, err := r.FormFile("pack")
 	if err != nil {
 		http.Error(w, `multipart field "pack" with the pack zip required`, http.StatusBadRequest)
 		return
@@ -99,11 +107,16 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 			os.RemoveAll(stage)
 		}
 	}()
-	if err := dict.ExtractZip(file, stage); err != nil {
+	ra, ok := file.(io.ReaderAt)
+	if !ok || header.Size > maxPackUpload {
+		http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge)
+		return
+	}
+	if err := dict.ExtractZipAt(ra, header.Size, stage, dict.DefaultZipLimits); err != nil {
 		http.Error(w, "invalid pack zip", http.StatusBadRequest)
 		return
 	}
-	pack, err := dict.LoadPack(stage)
+	pack, err := dict.LoadExtracted(stage)
 	if err != nil {
 		http.Error(w, "invalid pack", http.StatusBadRequest)
 		return
@@ -132,11 +145,12 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	if err := os.Rename(stage, dest); err != nil {
+	if err := os.Rename(pack.Dir, dest); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	stage = "" // renamed into place; nothing left to clean up
+	// pack.Dir is the stage itself or the one folder inside it; the
+	// deferred cleanup removes what is left of the stage.
 
 	d, err := scanDictionary(s.db.QueryRowContext(r.Context(), `
 		SELECT id, name, version, license, attribution, notice FROM dictionaries

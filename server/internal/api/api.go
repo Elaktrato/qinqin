@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"qinqin/internal/ai"
 	"qinqin/internal/journal"
@@ -31,6 +32,11 @@ type server struct {
 	// packMu serializes pack imports and uninstalls of every type, the
 	// legacy per-type routes included.
 	packMu sync.Mutex
+
+	stageOnce  sync.Once
+	stageStore *stageStore
+	clock      func() time.Time // nil: time.Now (tests set it)
+	importDone chan string      // test hook: receives a stage token when its import job ends
 
 	chars charactersCache // GET /api/characters payloads
 }
@@ -90,6 +96,8 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	mux.HandleFunc("GET /api/admin/packs", s.handleListPacks)
+	mux.HandleFunc("POST /api/admin/packs", s.handleStagePack)
+	mux.HandleFunc("DELETE /api/admin/packs/staged/{token}", s.handleDiscardStaged)
 	mux.HandleFunc("DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack)
 	mux.HandleFunc("GET /api/sentence-packs", s.handleListSentencePacks)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)

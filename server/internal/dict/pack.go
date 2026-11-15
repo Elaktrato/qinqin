@@ -44,6 +44,17 @@ func LoadPack(path string) (Pack, error) {
 	return loadDir(path)
 }
 
+// LoadExtracted loads the pack from dir, a directory a zip was extracted
+// into: the pack is dir itself or the one folder inside it (see
+// PackRoot). Pack.Dir is the directory holding manifest.json.
+func LoadExtracted(dir string) (Pack, error) {
+	root, err := PackRoot(dir)
+	if err != nil {
+		return Pack{}, err
+	}
+	return loadDir(root)
+}
+
 // loadZip extracts the zip at path into a fresh temp directory and
 // loads the pack from there, removing the extraction again when the
 // pack does not load.
