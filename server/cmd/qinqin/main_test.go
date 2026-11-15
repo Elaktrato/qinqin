@@ -233,9 +233,13 @@ func TestRegisterBuiltinOverLegacyDB(t *testing.T) {
 		if err := sqlDB.QueryRowContext(ctx, `SELECT manifest_json FROM plugin_registry WHERE pack_id = ?`, id).Scan(&raw); err != nil {
 			t.Fatalf("%s row: %v", id, err)
 		}
+		want := "1.1"
+		if id == "qinqin-flashcards" {
+			want = "1.2" // gained the decks page surface
+		}
 		m, err := plugins.ParseManifest([]byte(raw))
-		if err != nil || m.SDK != 1 || m.Version != "1.1" {
-			t.Errorf("%s = %s (err %v), want sdk 1, version 1.1", id, raw, err)
+		if err != nil || m.SDK != 1 || m.Version != want {
+			t.Errorf("%s = %s (err %v), want sdk 1, version %s", id, raw, err, want)
 		}
 	}
 	var n int

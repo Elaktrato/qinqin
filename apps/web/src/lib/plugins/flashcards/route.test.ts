@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flashcardsHref, parseFlashcardsRoute, type FlashcardsRoute } from './route';
+import { flashcardsHref, parseDecodedFlashcardsRoute, parseFlashcardsRoute, type FlashcardsRoute } from './route';
 
 const ROUTES: FlashcardsRoute[] = [
 	{ view: 'list' },
@@ -40,5 +40,23 @@ describe('flashcards route', () => {
 			'/p/flashcards/system/level/hsk-words/HSK%207%E2%80%939'
 		);
 		expect(flashcardsHref({ view: 'list' })).toBe('/p/flashcards');
+	});
+});
+
+describe('parseDecodedFlashcardsRoute', () => {
+	// SvelteKit hands the page a rest parameter that is already decoded.
+	it('reads a decoded rest without decoding it twice', () => {
+		expect(parseDecodedFlashcardsRoute('system/level/hsk-words/N5 100%')).toEqual({
+			view: 'system-level',
+			packId: 'hsk-words',
+			level: 'N5 100%'
+		});
+		expect(parseDecodedFlashcardsRoute('system/level/hsk-words/HSK 7–9')).toEqual({
+			view: 'system-level',
+			packId: 'hsk-words',
+			level: 'HSK 7–9'
+		});
+		expect(parseDecodedFlashcardsRoute('deck/01JABC/settings')).toEqual({ view: 'settings', deckId: '01JABC' });
+		expect(parseDecodedFlashcardsRoute('')).toEqual({ view: 'list' });
 	});
 });

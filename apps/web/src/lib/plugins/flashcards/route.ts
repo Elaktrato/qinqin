@@ -33,6 +33,19 @@ export function parseFlashcardsRoute(rest: string): FlashcardsRoute {
 	return LIST;
 }
 
+/**
+ * The page receives SvelteKit's rest parameter, which is already percent-decoded:
+ * encode its segments again so a name containing '%' is not decoded twice.
+ */
+export function parseDecodedFlashcardsRoute(rest: string): FlashcardsRoute {
+	return parseFlashcardsRoute(
+		rest
+			.split('/')
+			.map((segment) => encodeURIComponent(segment))
+			.join('/')
+	);
+}
+
 const enc = encodeURIComponent;
 
 export function flashcardsHref(route: FlashcardsRoute): string {

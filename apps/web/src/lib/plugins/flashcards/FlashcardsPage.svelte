@@ -4,11 +4,11 @@
 	import DeckSettingsView from './decks/DeckSettingsView.svelte';
 	import SystemDeckDetail from './decks/SystemDeckDetail.svelte';
 	import DeckList from './decks/DeckList.svelte';
-	import { parseFlashcardsRoute } from './route';
+	import { parseDecodedFlashcardsRoute } from './route';
 
 	let { rest }: { rest: string } = $props();
 
-	const route = $derived(parseFlashcardsRoute(rest));
+	const route = $derived(parseDecodedFlashcardsRoute(rest));
 </script>
 
 <svelte:head>
