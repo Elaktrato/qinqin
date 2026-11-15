@@ -533,3 +533,33 @@ func MarkEmailVerified(ctx context.Context, sqlDB *sql.DB, userID int64, norm st
 	}
 	return tx.Commit()
 }
+
+// MailTarget is who a login identifier (username, or an address when it
+// holds "@") points at, for the mails that go out without a session. UserID
+// 0: nobody. Eligible: enabled and the address is verified.
+type MailTarget struct {
+	UserID   int64
+	Email    string
+	Eligible bool
+}
+
+// FindMailTarget looks the identifier up in exactly one query, found or not.
+func FindMailTarget(ctx context.Context, sqlDB *sql.DB, login string) (MailTarget, error) {
+	col, arg := "username", login
+	if strings.Contains(login, "@") {
+		col, arg = "email_norm", strings.ToLower(login)
+	}
+	var t MailTarget
+	var email, verified, disabled sql.NullString
+	err := sqlDB.QueryRowContext(ctx, `SELECT id, email, email_verified_at, disabled_at FROM users WHERE `+col+` = ?`, arg).
+		Scan(&t.UserID, &email, &verified, &disabled)
+	if errors.Is(err, sql.ErrNoRows) {
+		return MailTarget{}, nil
+	}
+	if err != nil {
+		return MailTarget{}, fmt.Errorf("find mail target: %w", err)
+	}
+	t.Email = email.String
+	t.Eligible = email.Valid && verified.Valid && !disabled.Valid
+	return t, nil
+}

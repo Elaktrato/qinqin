@@ -63,8 +63,13 @@ func DefaultAuthPolicy() AuthPolicy {
 			// Test mails an administrator may send: 10 per hour.
 			// Code mails per user (verification, sign-in, second step): 5 per
 			// hour; beyond that the mail is silently not sent.
-			"mailcode":  {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
-			"smtp-test": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
+			"mailcode": {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
+			// Reset requests and sign-in code requests per identifier (the
+			// same for known and unknown identifiers): 5 per hour.
+			"ident": {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
+			// Reset mails per user: 3 per hour, beyond that silently skipped.
+			"reset-mail": {Burst: 3, Every: 20 * time.Minute, MaxKeys: authTableCap},
+			"smtp-test":  {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 		},
 	}
 }

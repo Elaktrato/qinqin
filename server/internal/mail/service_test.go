@@ -144,11 +144,11 @@ func TestBuildHookRunsOnTheWorkerAndMaySkip(t *testing.T) {
 	defer cancel()
 	go s.Run(ctx)
 	var ran sql.NullBool
-	s.Enqueue(Job{Kind: KindReset, UserID: 1, To: "bob@example.com", Build: func(context.Context) (TemplateData, bool) {
+	s.Enqueue(Job{Kind: KindReset, UserID: 1, To: "bob@example.com", Build: func(context.Context, Config) (TemplateData, bool) {
 		ran = sql.NullBool{Bool: true, Valid: true}
 		return TemplateData{}, false
 	}})
-	s.Enqueue(Job{Kind: KindReset, UserID: 2, To: "bob@example.com", Build: func(context.Context) (TemplateData, bool) {
+	s.Enqueue(Job{Kind: KindReset, UserID: 2, To: "bob@example.com", Build: func(context.Context, Config) (TemplateData, bool) {
 		return TemplateData{Link: "https://words.example.org/reset#t=abc"}, true
 	}})
 	wait(t, func() bool { return len(fake.Messages()) == 1 })

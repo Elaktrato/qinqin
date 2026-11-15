@@ -167,6 +167,7 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/users/{id}/reset-link", s.handleAdminRevokeResetLink, accAdmin, nil},
 		{"POST /api/auth/reset/check", s.handleResetCheck, accPublic, nil},
 		{"POST /api/auth/reset", s.handleReset, accPublic, nil},
+		{"POST /api/auth/reset-request", s.handleResetRequest, accPublic, nil},
 		{"GET /api/admin/users/{id}/deletion-preview", s.handleAdminDeletionPreview, accAdmin, nil},
 		{"DELETE /api/admin/users/{id}", s.handleAdminDeleteUser, accAdmin, nil},
 		{"PUT /api/account/email", s.handlePutEmail, accSession, []string{restrictionMFAEnrollment}},

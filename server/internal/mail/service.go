@@ -61,7 +61,7 @@ type Job struct {
 	UserID int64
 	To     string
 	Data   TemplateData
-	Build  func(ctx context.Context) (TemplateData, bool)
+	Build  func(ctx context.Context, cfg Config) (TemplateData, bool)
 }
 
 const (
@@ -164,7 +164,7 @@ func (s *Service) deliver(ctx context.Context, j Job) {
 	data := j.Data
 	if j.Build != nil {
 		var ok bool
-		if data, ok = j.Build(ctx); !ok {
+		if data, ok = j.Build(ctx, *cfg); !ok {
 			return
 		}
 	}
