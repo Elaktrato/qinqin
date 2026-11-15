@@ -58,3 +58,15 @@ export function rmsRadius(points: readonly Pt[], c: Pt = centroid(points)): numb
 export function joinPaths(paths: readonly (readonly Pt[])[]): Pt[] {
 	return paths.flatMap((p) => [...p]);
 }
+
+/** Turning angle in degrees at b on the way a → b → c (0 = straight on, 180 = straight back). */
+export function turnDeg(a: Pt, b: Pt, c: Pt): number {
+	const ux = b.x - a.x;
+	const uy = b.y - a.y;
+	const vx = c.x - b.x;
+	const vy = c.y - b.y;
+	const n = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+	if (n === 0) return 0;
+	const cos = Math.max(-1, Math.min(1, (ux * vx + uy * vy) / n));
+	return (Math.acos(cos) * 180) / Math.PI;
+}
