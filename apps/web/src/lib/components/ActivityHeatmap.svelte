@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { errorMessage } from '$lib/stats/errors';
 	import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
 	import {
@@ -7,27 +8,46 @@
 		dayTooltip,
 		foldActivity,
 		levelFor,
+		sourcePoints,
 		windowStart,
 		windowSummary
 	} from '$lib/activity/activity';
+	import { activityViewFor, effectiveScope, toggleHidden } from '$lib/activity/heatmapState';
+	import {
+		DEFAULT_ACTIVITY_VIEW,
+		loadActivityView,
+		saveActivityView,
+		type StoredActivityView
+	} from '$lib/activity/viewPrefs';
+	import { onEventLogChange } from '$lib/events';
 	import { workspaceDisplay } from '$lib/languages';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { workspaces } from '$lib/workspaces';
 
-	// The core home heatmap: the server-aggregated activity of the active
-	// workspace, one cell per UTC day over the last 13 weeks. (Provisional
-	// view until the scope switch and chips land.)
+	// The core home heatmap: the server-aggregated activity (one request
+	// for every workspace and type), folded here per scope and filter, one
+	// cell per UTC day over the last 13 weeks. The view (scope, hidden
+	// types) is remembered per user.
+	//
+	// A failed request shows a clear message with "Try again"; once data
+	// is on screen a failed background refresh keeps it. There is no
+	// client-side scoring fallback: the rules live in plugin manifests.
 
-	let response = $state<ActivityResponse>({ from: '', to: '', sources: [], cells: [] });
+	let response = $state<ActivityResponse | null>(null);
+	let stored = $state<StoredActivityView>({ ...DEFAULT_ACTIVITY_VIEW, hidden: [] });
 	let loading = $state(true);
 	let error = $state('');
-	let noWorkspace = $state(false);
 
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const scope = $derived(effectiveScope(stored.scope, workspaceId !== null));
+	const view = $derived(activityViewFor(stored, workspaceId));
+	const sources = $derived(response?.sources ?? []);
+
+	// A workspace no longer in the store still counts, under a fallback name.
 	function workspaceName(id: number): string {
 		const ws = $workspaces.list.find((w) => w.id === id);
 		if (!ws) return `Workspace ${id}`;
@@ -35,34 +55,32 @@
 		return display.showName ? display.name : display.label;
 	}
 
-	const byDay = $derived(foldActivity(response, { workspace: workspaceId, hidden: [] }, new Date()));
+	const empty = { from: '', to: '', sources: [], cells: [] } satisfies ActivityResponse;
+	const byDay = $derived(foldActivity(response ?? empty, view, new Date()));
+	// Chip counts ignore the filter, so a hidden type shows what it would add.
+	const chipPoints = $derived(
+		sourcePoints(foldActivity(response ?? empty, { ...view, hidden: [] }, new Date()))
+	);
 	const days = $derived([...byDay.values()]);
 	const cells = $derived(
 		days.map((day) => ({
 			day: day.day,
-			title: dayTooltip(day, response.sources, workspaceName),
+			title: dayTooltip(day, sources, workspaceName),
 			level: levelFor(day.total)
 		}))
 	);
 	const windowTotal = $derived(days.reduce((sum, day) => sum + day.total, 0));
-	const summary = $derived(windowSummary(byDay, response.sources, 'workspace'));
+	const summary = $derived(windowSummary(byDay, sources, scope));
+	const allHidden = $derived(sources.length > 0 && sources.every((s) => stored.hidden.includes(s.type)));
 	const weeks = Math.round(HEATMAP_DAYS / 7);
 	const status = $derived<WidgetStatus>(
-		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
+		response === null ? (loading ? 'loading' : 'error') : 'ready'
 	);
 
-	async function load(workspace: number | null): Promise<void> {
+	async function load(): Promise<void> {
 		const seq = ++requestSeq;
-		loading = true;
 		error = '';
-		noWorkspace = false;
-
-		if (workspace === null) {
-			noWorkspace = true;
-			loading = false;
-			return;
-		}
-
+		if (response === null) loading = true;
 		try {
 			const now = new Date();
 			const next = await fetchActivity(dayKey(windowStart(now)), dayKey(now));
@@ -70,16 +88,22 @@
 			response = next;
 		} catch (err) {
 			if (seq !== requestSeq) return;
-			error = errorMessage(err, 'Could not load your activity.');
+			if (response === null) error = errorMessage(err, 'Could not load your activity.');
+			else console.warn('activity refresh failed', err);
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
 	}
 
-	// Refetch when the active workspace changes; the header switcher makes
-	// that possible without leaving home.
-	$effect(() => {
-		void load(workspaceId);
+	function remember(next: StoredActivityView): void {
+		stored = next;
+		saveActivityView(next).catch((err: unknown) => console.warn('activity view not saved', err));
+	}
+
+	onMount(() => {
+		void load();
+		void loadActivityView().then((view) => (stored = view));
+		return onEventLogChange(() => void load());
 	});
 </script>
 
@@ -87,11 +111,53 @@
 	title="Activity"
 	headingId="activity-heading"
 	{status}
-	noWorkspaceText="Choose a workspace in the header to see your activity."
 	loadingText="Loading activity…"
 	{error}
-	onretry={() => void load(workspaceId)}
+	onretry={() => void load()}
 >
+	{#snippet actions()}
+		<fieldset class="scope">
+			<legend class="sr-only">Show activity for</legend>
+			<label class:disabled={workspaceId === null}>
+				<input
+					type="radio"
+					name="activity-scope"
+					value="workspace"
+					checked={scope === 'workspace'}
+					disabled={workspaceId === null}
+					onchange={() => remember({ ...stored, scope: 'workspace' })}
+				/>
+				This workspace
+			</label>
+			<label>
+				<input
+					type="radio"
+					name="activity-scope"
+					value="all"
+					checked={scope === 'all'}
+					onchange={() => remember({ ...stored, scope: 'all' })}
+				/>
+				All workspaces
+			</label>
+		</fieldset>
+	{/snippet}
+
+	{#if sources.length > 0}
+		<div class="chips" role="group" aria-label="Activity types">
+			{#each sources as source (source.type)}
+				<button
+					type="button"
+					class="chip"
+					aria-pressed={!stored.hidden.includes(source.type)}
+					onclick={() => remember({ ...stored, hidden: toggleHidden(stored.hidden, source.type) })}
+				>
+					{source.label}
+					<span class="count">{chipPoints[source.type] ?? 0}</span>
+				</button>
+			{/each}
+		</div>
+	{/if}
+
 	<div class="grid" role="img" aria-label={summary}>
 		{#each cells as cell (cell.day)}
 			<span class="cell level-{cell.level}" title={cell.title}></span>
@@ -100,7 +166,9 @@
 
 	<footer class="legend">
 		<span>
-			{#if windowTotal === 0}
+			{#if allHidden}
+				All activity types are hidden.
+			{:else if windowTotal === 0}
 				No activity in the last {weeks} weeks yet
 			{:else}
 				{windowTotal}
@@ -118,6 +186,75 @@
 </WidgetCard>
 
 <style>
+	.scope {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 0.9rem;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		font-size: 0.85rem;
+	}
+
+	.scope label {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-height: 2.75rem;
+		cursor: pointer;
+	}
+
+	.scope label.disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin-top: 0.6rem;
+	}
+
+	.chip {
+		font: inherit;
+		font-size: 0.85rem;
+		min-height: 2.75rem;
+		padding: 0.3rem 0.85rem;
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border-radius: 999px;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.chip[aria-pressed='true'] {
+		background: #0b6bcb;
+		border-color: #0b6bcb;
+		color: #fff;
+	}
+
+	.chip:focus-visible,
+	.scope input:focus-visible {
+		outline: 2px solid #0b6bcb;
+		outline-offset: 2px;
+	}
+
+	.count {
+		margin-left: 0.3rem;
+		opacity: 0.8;
+		font-variant-numeric: tabular-nums;
+	}
+
 	.grid {
 		display: grid;
 		grid-template-rows: repeat(7, 0.85rem);
