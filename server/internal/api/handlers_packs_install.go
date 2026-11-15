@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
+	"qinqin/internal/dict"
 	"qinqin/internal/packs"
 )
 
@@ -91,7 +93,10 @@ func (s *server) runStagedImport(ctx context.Context, token string, userID int64
 		defer s.packMu.Unlock()
 		importer := s.importPack
 		if importer == nil {
-			importer = packs.Import
+			// Uploads never carry audio packs (the stage handler refuses them), so no store directory.
+			importer = func(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (string, error) {
+				return packs.Import(ctx, sqlDB, p)
+			}
 		}
 		var err error
 		if summary, err = importer(ctx, s.db, st.pack); err != nil {

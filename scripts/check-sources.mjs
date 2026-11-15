@@ -12,7 +12,7 @@
 //   c. every pack id docs/sources.md names in a "Pack" table row or in a
 //      "- **Name** (`id`" list item exists under plugins/data or
 //      plugins/samples, or is one of the optional local-only packs the docs
-//      describe (LOCAL_ONLY_PACKS);
+//      describe (LOCAL_ONLY_PACKS) or a fetched, redistributable pack (FETCHED_PACKS);
 //   d. a manifest `notice` follows the server's rules (dict.ValidateNotice,
 //      after the loader trims it): at most 4,000 bytes, no control
 //      characters but \n and \t, no bidi embedding/override/isolate
@@ -25,7 +25,22 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Optional packs the docs describe that are never in the repository. */
-export const LOCAL_ONLY_PACKS = ['jlpt-words', 'hsk30-chars', 'hsk30-words', 'tbcl-words', 'tbcl-chars', 'cn-curriculum-chars'];
+export const LOCAL_ONLY_PACKS = [
+	'jlpt-words',
+	'hsk30-chars',
+	'hsk30-words',
+	'tbcl-words',
+	'tbcl-chars',
+	'cn-curriculum-chars',
+	'commons-audio-zh',
+	'commons-audio-ja'
+];
+/**
+ * Packs with a clear, redistributable licence that are fetched by a script
+ * (and baked into the Docker image) instead of being committed, because of
+ * their size: the docs may name them like a bundled pack.
+ */
+export const FETCHED_PACKS = ['kanjialive-audio'];
 export const MAX_NOTICE_BYTES = 4000;
 
 // Go's RE2 `\s` is ASCII whitespace only ([\t\n\f\r ]), so the URL part
@@ -199,7 +214,7 @@ export function docPackIds(text) {
 export function checkSources(root) {
 	const problems = [];
 	const bundled = new Map(); // manifest id -> dir (plugins/data)
-	const known = new Set(LOCAL_ONLY_PACKS);
+	const known = new Set([...LOCAL_ONLY_PACKS, ...FETCHED_PACKS]);
 
 	for (const base of ['plugins/data', 'plugins/samples']) {
 		for (const name of packDirs(join(root, base))) {

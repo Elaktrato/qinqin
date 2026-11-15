@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onDestroy, untrack } from 'svelte';
 	import ImportExport from '$lib/plugins/flashcards/scheduling/ImportExport.svelte';
 	import OptimizePanel from '$lib/plugins/flashcards/scheduling/OptimizePanel.svelte';
@@ -354,6 +355,10 @@
 				}`
 	);
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Scheduling', 'Study')}</title>
+</svelte:head>
 
 <main class="page">
 	<p><a href="/study">Back to study setup</a></p>

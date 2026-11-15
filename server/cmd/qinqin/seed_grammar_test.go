@@ -22,7 +22,7 @@ func TestSeedImportsGrammarAfterSentences(t *testing.T) {
 	copyTree(t, "../../internal/sentences/testdata/zh-mini", filepath.Join(root, "sent-mini"))
 
 	var out strings.Builder
-	if err := seed(context.Background(), sqlDB, []string{root}, &out); err != nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{root}, &out); err != nil {
 		t.Fatalf("seed: %v\n%s", err, out.String())
 	}
 	var n int
@@ -41,7 +41,7 @@ func TestSeedImportsGrammarAfterSentences(t *testing.T) {
 		t.Errorf("importOrder[grammar] = %d, want 4, after sentences %d", importOrder[dict.TypeGrammar], importOrder[dict.TypeSentences])
 	}
 	// Seeding again is safe.
-	if err := seed(context.Background(), sqlDB, []string{root}, &strings.Builder{}); err != nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{root}, &strings.Builder{}); err != nil {
 		t.Fatalf("second seed: %v", err)
 	}
 }
@@ -50,7 +50,7 @@ func TestStalePackTermsWarnsOnGrammarNotice(t *testing.T) {
 	sqlDB, _ := openTestDB(t)
 	root := t.TempDir()
 	copyTree(t, grammarFixture, filepath.Join(root, "zh-grammar-mini"))
-	if err := seed(context.Background(), sqlDB, []string{root}, &strings.Builder{}); err != nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{root}, &strings.Builder{}); err != nil {
 		t.Fatal(err)
 	}
 	var rec logRecorder

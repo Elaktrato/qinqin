@@ -1,6 +1,9 @@
 package pinyin
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestBopomofoTable(t *testing.T) {
 	cases := []struct {
@@ -95,5 +98,64 @@ func TestInvalidSyllableErrors(t *testing.T) {
 		if _, err := ToMarked(in); err == nil {
 			t.Errorf("ToMarked(%q) expected error", in)
 		}
+	}
+}
+
+func TestToNumbered(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"nǐ hǎo", "ni3 hao3"},
+		{"lǜ", "lv4"},
+		{"ma", "ma5"},
+		{"nǚ'ér", "nv3 er2"},
+		{"Xī'ān", "xi1 an1"},
+		{"zhōngguó", "zhong1 guo2"},
+		{"xian", "xian5"},
+		{"ni3hao3", "ni3 hao3"},
+		{"jǜ", "ju4"},
+		{"xv2", "xu2"},
+	}
+	for _, c := range cases {
+		got, err := ToNumbered(c.in)
+		if err != nil {
+			t.Errorf("ToNumbered(%q): %v", c.in, err)
+			continue
+		}
+		if s := strings.Join(got, " "); s != c.want {
+			t.Errorf("ToNumbered(%q) = %q, want %q", c.in, s, c.want)
+		}
+	}
+	if _, err := ToNumbered("xyz"); err == nil {
+		t.Error("ToNumbered(xyz) succeeded, want error")
+	}
+	if _, err := ToNumbered("  "); err == nil {
+		t.Error("ToNumbered(blank) succeeded, want error")
+	}
+}
+
+func TestToNumberedErhua(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"yi1 dian3 r5", "yi1 dian3 er5"}, // CC-CEDICT writes the suffix as its own token
+		{"diǎnr", "dian3 er5"},
+		{"huàr", "hua4 er5"},
+		{"hua4r", "hua4 er5"},
+		{"zhe4r", "zhe4 er5"},
+		{"wánr", "wan2 er5"},
+		{"r5", "er5"},
+		{"yī diǎnr", "yi1 dian3 er5"},
+		{"rén", "ren2"}, // an initial r is not erhua
+		{"er2", "er2"},
+	}
+	for _, c := range cases {
+		got, err := ToNumbered(c.in)
+		if err != nil {
+			t.Errorf("ToNumbered(%q): %v", c.in, err)
+			continue
+		}
+		if s := strings.Join(got, " "); s != c.want {
+			t.Errorf("ToNumbered(%q) = %q, want %q", c.in, s, c.want)
+		}
+	}
+	if _, err := ToNumbered("xyzr"); err == nil {
+		t.Error("ToNumbered(xyzr) succeeded, want error")
 	}
 }

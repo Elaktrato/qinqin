@@ -1,8 +1,8 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { APP_NAME } from '$lib/app';
 	import { ApiError, api } from '$lib/api/client';
 	import type { PluginInfo, Workspace } from '$lib/api/types';
 	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
@@ -10,9 +10,10 @@
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
 	import { isCorePlugin, webPlugins } from '$lib/plugins';
-	import { pluginRowInfo } from '$lib/settings/pluginRows';
+	import { pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
+	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
@@ -25,7 +26,7 @@
 		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
-	import { rename, workspaces } from '$lib/workspaces';
+	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 
 	interface PluginRow {
 		id: string;
@@ -160,7 +161,7 @@
 	}
 
 	async function savePlugin(row: PluginRow): Promise<void> {
-		if (row.saving) return;
+		if (row.saving || !validOrder(row.order)) return;
 
 		row.saving = true;
 		row.saved = false;
@@ -182,7 +183,7 @@
 </script>
 
 <svelte:head>
-	<title>{SETTINGS_TAB_LABELS[activeTab]} · Settings · {APP_NAME}</title>
+	<title>{pageTitle(SETTINGS_TAB_LABELS[activeTab], 'Settings')}</title>
 </svelte:head>
 
 <main class="settings">
@@ -219,7 +220,20 @@
 			one.
 		</p>
 
-		{#if $workspaces.list.length === 0}
+		{#if $workspaces.list.length === 0 && !$workspacesLoaded && $workspacesLoadError}
+			<p class="error" role="alert">{$workspacesLoadError}</p>
+			<button
+				type="button"
+				onclick={() => {
+					workspacesLoadError.set('');
+					loadWorkspaces().catch((err) =>
+						workspacesLoadError.set(message(err, 'Could not load workspaces.'))
+					);
+				}}>Try again</button
+			>
+		{:else if $workspaces.list.length === 0 && !$workspacesLoaded}
+			<p class="hint" aria-live="polite">Loading workspaces…</p>
+		{:else if $workspaces.list.length === 0}
 			<p>No workspaces yet.</p>
 		{:else}
 			<ul class="workspaces">
@@ -295,6 +309,21 @@
 			<DeleteWorkspaceDialog workspace={deleting} list={$workspaces.list} onclose={closeDelete} />
 		{/if}
 
+		{#if $workspaces.current}
+			{@const active = $workspaces.current}
+			<h3>Audio for this workspace</h3>
+			<p class="hint">
+				Pronunciation buttons appear on entries and, after the answer, on study cards. These two
+				options belong to the current workspace.
+			</p>
+			<AudioSettings
+				settings={active.settings}
+				onChange={async (patch) => {
+					await setWorkspaceSettings(active.id, patch);
+				}}
+			/>
+		{/if}
+
 		<h3>New workspace</h3>
 		<WorkspaceCreateForm idPrefix="settings-new" />
 	</div>
@@ -365,9 +394,16 @@
 								/>
 							</label>
 
-							<button type="button" onclick={() => savePlugin(plugin)} disabled={plugin.saving}>
+							<button
+								type="button"
+								onclick={() => savePlugin(plugin)}
+								disabled={plugin.saving || !validOrder(plugin.order)}
+							>
 								{plugin.saving ? 'Saving…' : 'Save'}
 							</button>
+							{#if !validOrder(plugin.order)}
+								<span class="error" role="alert">Enter a whole number of 0 or more.</span>
+							{/if}
 
 							{#if plugin.saved}
 								<span class="saved">Saved</span>

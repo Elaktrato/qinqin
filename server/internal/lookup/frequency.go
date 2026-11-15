@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"qinqin/internal/freq"
+	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 )
 
@@ -63,7 +64,7 @@ func freqGroups(language string, e lexicon.Entry) []freqGroup {
 // variants is a reading's value in raw, hiragana, katakana and plain
 // form, sorted and deduplicated.
 func variants(r lexicon.Reading) []string {
-	out := []string{r.Value, toHiragana(r.Value), toKatakana(r.Value), r.Plain}
+	out := []string{r.Value, lang.ToHiragana(r.Value), toKatakana(r.Value), r.Plain}
 	slices.Sort(out)
 	return slices.Compact(out)
 }
@@ -149,18 +150,8 @@ func (s Service) frequencies(ctx context.Context, language string, es []lexicon.
 // Hiragana ぁ..ゖ and katakana ァ..ヶ are 0x60 apart.
 const (
 	hiraganaLo, hiraganaHi = 0x3041, 0x3096
-	katakanaLo, katakanaHi = 0x30A1, 0x30F6
-	kanaShift              = katakanaLo - hiraganaLo
+	kanaShift              = 0x60
 )
-
-func toHiragana(s string) string {
-	return strings.Map(func(r rune) rune {
-		if r >= katakanaLo && r <= katakanaHi {
-			return r - kanaShift
-		}
-		return r
-	}, s)
-}
 
 func toKatakana(s string) string {
 	return strings.Map(func(r rune) rune {

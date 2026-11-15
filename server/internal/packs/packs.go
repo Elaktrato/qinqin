@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"sort"
 
+	"qinqin/internal/audio"
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/grammar"
@@ -47,6 +48,7 @@ var typeOrder = map[string]int{
 	dict.TypeLevels:     2,
 	dict.TypeSentences:  3,
 	dict.TypeGrammar:    4,
+	dict.TypeAudio:      5,
 }
 
 // Supported reports whether typ is a pack type this package manages.
@@ -55,9 +57,39 @@ func Supported(typ string) bool {
 	return ok
 }
 
+// Installable reports whether a pack of type typ may be installed by an
+// upload through the admin API. Audio packs may not: a pack of thousands of
+// clips exceeds the upload's file and size limits and keeps its files under
+// <data>/audio, so they are installed with scripts/fetch-audio-*.sh or
+// `qinqin seed`; listing and uninstalling them work as for any pack.
+func Installable(typ string) bool {
+	return Supported(typ) && typ != dict.TypeAudio
+}
+
+// Option configures Import and Uninstall.
+type Option func(*options)
+
+type options struct{ audioStore string }
+
+// WithAudioStore names the directory audio clips live in (<data>/audio);
+// importing or uninstalling an audio pack needs it.
+func WithAudioStore(dir string) Option { return func(o *options) { o.audioStore = dir } }
+
+func collect(opts []Option) options {
+	var o options
+	for _, f := range opts {
+		f(&o)
+	}
+	return o
+}
+
+// errNoAudioStore reports an audio pack handled without WithAudioStore.
+var errNoAudioStore = errors.New("packs: audio packs need an audio store directory (WithAudioStore)")
+
 // Import installs pack by its manifest type and returns the one-line
 // summary the seed CLI prints.
-func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) (string, error) {
+	o := collect(opts)
 	switch pack.Type {
 	case dict.TypeDictionary:
 		r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
@@ -93,6 +125,19 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, error) 
 			return "", err
 		}
 		return fmt.Sprintf("%d lessons", r.Lessons), nil
+	case dict.TypeAudio:
+		if o.audioStore == "" {
+			return "", errNoAudioStore
+		}
+		r, err := audio.Import(ctx, sqlDB, pack, o.audioStore)
+		if err != nil {
+			return "", err
+		}
+		line := fmt.Sprintf("%d clips", r.Clips)
+		if r.Skipped > 0 {
+			line += fmt.Sprintf(" (skipped %d with no usable reading)", r.Skipped)
+		}
+		return line, nil
 	}
 	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 }
@@ -100,7 +145,8 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, error) 
 // Uninstall removes the live pack of type typ with manifest id packID.
 // Unknown types return ErrUnknownType, packs that are not installed
 // ErrNotFound.
-func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string) error {
+func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...Option) error {
+	o := collect(opts)
 	var err error
 	switch typ {
 	case dict.TypeDictionary:
@@ -121,11 +167,16 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string) error {
 		err = sentences.Uninstall(ctx, sqlDB, packID)
 	case dict.TypeGrammar:
 		err = grammar.Uninstall(ctx, sqlDB, packID)
+	case dict.TypeAudio:
+		if o.audioStore == "" {
+			return errNoAudioStore
+		}
+		_, err = audio.Uninstall(ctx, sqlDB, packID, o.audioStore)
 	default:
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
 	if errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
-		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) {
+		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) || errors.Is(err, audio.ErrPackNotFound) {
 		return ErrNotFound
 	}
 	return err
@@ -158,7 +209,7 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 }
 
 // List returns every live pack of every type, ordered by type
-// (dictionary, frequency, levels, sentences, grammar), then name, then pack id.
+// (dictionary, frequency, levels, sentences, grammar, audio), then name, then pack id.
 // Sentence packs imported before the registry existed list with only
 // their type and id, after the registered ones: their licence is not
 // recorded, and the list must not make them look like known packs.
@@ -175,6 +226,8 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 			FROM sentence_packs WHERE deleted_at IS NULL`},
 		{dict.TypeGrammar, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
 			FROM grammar_packs WHERE deleted_at IS NULL`},
+		{dict.TypeAudio, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
+			FROM audio_packs WHERE deleted_at IS NULL`},
 	} {
 		rows, err := sqlDB.QueryContext(ctx, q.query)
 		if err != nil {

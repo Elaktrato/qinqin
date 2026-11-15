@@ -112,7 +112,8 @@ func TestAdminPackListAndUninstall(t *testing.T) {
 		path, msg string
 	}{
 		{"/api/admin/packs/dictionary/es-test", "pack not found"},
-		{"/api/admin/packs/audio/x", "unknown pack type"},
+		{"/api/admin/packs/audio/x", "pack not found"},
+		{"/api/admin/packs/bogus/x", "unknown pack type"},
 	} {
 		resp := doJSON(t, http.MethodDelete, ts.URL, tc.path, admin, nil)
 		body, _ := io.ReadAll(resp.Body)
@@ -163,4 +164,57 @@ func TestPublicSentencePacksEmptyIsArray(t *testing.T) {
 	if strings.TrimSpace(string(body)) != "[]" {
 		t.Errorf("empty list body = %q, want []", body)
 	}
+}
+
+// Audio packs are listed and uninstalled through the same admin routes (the
+// Data tab), and the uninstall frees their blobs under <data>/audio.
+func TestAdminAudioPackListAndUninstall(t *testing.T) {
+	ts, sqlDB, dataDir := newServerWithDir(t)
+	admin := registerUser(t, ts.URL, "admin", "")
+	store := filepath.Join(dataDir, "audio")
+	pdir := t.TempDir()
+	for name, body := range map[string]string{
+		"manifest.json": `{"id":"audio-test","name":"Audio test","version":"1","type":"audio","language":"ja","license":"CC0","attribution":"Tester","format":"audio-index"}`,
+		"index.tsv":     "kind\tform\treading\tfile\tlicense\tattribution\tsource\nterm\t風\tかぜ\taudio/a.opus\t\t\t\n",
+		"audio/a.opus":  "OggS-one",
+	} {
+		p := filepath.Join(pdir, name)
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	pack, err := dict.LoadPack(pdir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := packs.Import(context.Background(), sqlDB, pack, packs.WithAudioStore(store)); err != nil {
+		t.Fatal(err)
+	}
+
+	resp := doJSON(t, http.MethodGet, ts.URL, "/api/admin/packs", admin, nil)
+	var got []packs.Installed
+	if err := json.NewDecoder(resp.Body).Decode(&got); err != nil || len(got) != 1 || got[0].Type != "audio" || got[0].PackID != "audio-test" {
+		t.Fatalf("list = %+v, %v", got, err)
+	}
+	resp = doJSON(t, http.MethodDelete, ts.URL, "/api/admin/packs/audio/audio-test", admin, nil)
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("delete = %d", resp.StatusCode)
+	}
+	if entries, _ := os.ReadDir(store); countFiles(store) != 0 {
+		t.Errorf("blobs left under %s: %v", store, entries)
+	}
+}
+
+func countFiles(root string) int {
+	n := 0
+	_ = filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			n++
+		}
+		return nil
+	})
+	return n
 }

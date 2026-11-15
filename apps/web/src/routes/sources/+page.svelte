@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
 	import type { Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
+	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
 	import { webPlugins } from '$lib/plugins';
 	import { listGrammar } from '$lib/plugins/grammar/api';
@@ -48,6 +50,21 @@
 	let frequencyLoading = $state(true);
 	let frequencyError = $state('');
 	const frequencyTable = $derived(packTable('frequency', frequencyPacks));
+
+	// The Audio section exists only while an audio pack is installed.
+	let audioPacks = $state<AudioPackInfo[]>([]);
+	let audioError = $state('');
+	const audio = $derived(audioSection(audioPacks));
+
+	async function loadAudio(): Promise<void> {
+		audioError = '';
+		try {
+			audioPacks = await api<AudioPackInfo[]>('/api/audio-packs', { auth: false });
+		} catch (err) {
+			audioPacks = [];
+			audioError = message(err, 'Could not load audio credits.');
+		}
+	}
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -129,9 +146,14 @@
 		load();
 		loadFrequency();
 		loadSentences();
+		loadAudio();
 		loadSchemes();
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Sources')}</title>
+</svelte:head>
 
 {#snippet text(value: string, lang: string)}{#each scriptRuns(value, lang) as run, i (i)}{#if run.lang}<span
 				lang={run.lang}>{run.text}</span
@@ -355,6 +377,60 @@
 			</div>
 			{@render notes(sentencesTable)}
 		</section>
+	{/if}
+
+	{#if audio}
+		<section>
+			<h2 id="sources-audio">Audio</h2>
+
+			<div class="table-wrap">
+				<table aria-labelledby="sources-audio">
+					<thead>
+						<tr>
+							<th scope="col">Name</th>
+							{@render noteHeader(audio.table)}
+							<th scope="col">Language</th>
+							<th scope="col">Version</th>
+							<th scope="col">License</th>
+							<th scope="col">Attribution</th>
+							<th scope="col">Credits</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each audio.table.rows as row (row.key)}
+							<tr>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(audio.table, row.noteId, row.name)}
+								<td title={row.language}>{languageLabel(row.language)}</td>
+								<td>{row.version}</td>
+								<td>
+									{#if audio.licenseHref[row.key]}
+										<a href={audio.licenseHref[row.key]} rel="noopener">{row.license}</a>
+									{:else}
+										{@render cell(row.license, row.language)}
+									{/if}
+								</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
+								<td>
+									{#each audio.creditsPages[row.key] ?? [] as link (link.href)}
+										<a href={link.href}>{link.label}</a>{' '}
+									{/each}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			{@render notes(audio.table)}
+
+			<p class="notice">
+				Pronunciation recordings play from the entry page and after the answer in study. Each
+				recording is credited next to its play button. Recordings with unclear licences are never
+				bundled; an instance may add them locally from <code>plugins/data-local/</code>.
+			</p>
+		</section>
+	{:else if audioError}
+		<p class="error" role="alert">{audioError}</p>
 	{/if}
 
 	<section>

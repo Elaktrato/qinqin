@@ -1,6 +1,6 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { page } from '$app/state';
-	import { APP_NAME } from '$lib/app';
 	import { activeStatsTab, statsTabs, tabKeyTarget } from '$lib/statsTabs';
 	import { currentLanguage } from '$lib/workspaces';
 
@@ -36,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>{panelLabel} · Stats · {APP_NAME}</title>
+	<title>{pageTitle(panelLabel, 'Stats')}</title>
 </svelte:head>
 
 <main class="stats">

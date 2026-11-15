@@ -43,7 +43,8 @@ func (s *server) handleUninstallPack(w http.ResponseWriter, r *http.Request) {
 	}
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
-	err := packs.Uninstall(r.Context(), s.db, r.PathValue("type"), r.PathValue("packId"))
+	err := packs.Uninstall(r.Context(), s.db, r.PathValue("type"), r.PathValue("packId"),
+		packs.WithAudioStore(filepath.Join(s.dataDir, "audio")))
 	switch {
 	case errors.Is(err, packs.ErrUnknownType):
 		http.Error(w, "unknown pack type", http.StatusNotFound)
@@ -250,7 +251,11 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m := pack.Manifest
-	if !packs.Supported(m.Type) {
+	if m.Type == dict.TypeAudio {
+		http.Error(w, "audio packs cannot be uploaded: install them with scripts/fetch-audio-kanjialive.sh (or the Commons tool) and `qinqin seed`", http.StatusUnprocessableEntity)
+		return
+	}
+	if !packs.Installable(m.Type) {
 		http.Error(w, "unsupported pack type: "+m.Type, http.StatusUnprocessableEntity)
 		return
 	}

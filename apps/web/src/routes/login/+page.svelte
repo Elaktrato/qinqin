@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { pageTitle } from '$lib/pageTitle';
 	import { ApiError } from '$lib/api/client';
 	import { login } from '$lib/auth';
 
@@ -16,7 +16,7 @@
 		busy = true;
 		try {
 			await login(username.trim(), password);
-			await goto('/');
+			// The layout guard moves a signed-in session off this page.
 		} catch (err) {
 			error =
 				err instanceof ApiError && err.status === 401
@@ -29,6 +29,10 @@
 		}
 	}
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Sign in')}</title>
+</svelte:head>
 
 <main class="auth">
 	<h1>Sign in</h1>
