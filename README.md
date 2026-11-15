@@ -936,7 +936,7 @@ go run ./cmd/qinqin seed --packs ../plugins/data
 go run ./cmd/qinqin adduser --admin --username you
 ```
 
-In a second terminal, run the web app with hot reload. Vite proxies `/api` to
+To work on the web app, start its hot-reload dev server in another terminal. Vite proxies `/api` to
 the Go server on `127.0.0.1:8080`:
 
 ```bash

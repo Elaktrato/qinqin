@@ -244,8 +244,8 @@
 
 		<p class="notice">
 			Bundled dictionaries are redistributed as unmodified upstream files. The upstream
-			dictionary packs under <code>plugins/data/</code> carry their <code>LICENSE</code> and
-			<code>ATTRIBUTION.md</code>; the full index is in <code>docs/sources.md</code>.
+			dictionary packs ship with their <code>LICENSE</code> and <code>ATTRIBUTION.md</code>; the
+			project repository indexes them in <code>docs/sources.md</code>.
 		</p>
 	</section>
 
@@ -291,7 +291,7 @@
 
 		<p class="notice">
 			Word frequency ranks order the lookup results. Frequency lists with unclear licences are
-			never bundled; an instance may add them locally from <code>plugins/data-local/</code>.
+			never bundled; an instance may add them locally as a separate pack directory.
 		</p>
 	</section>
 
@@ -416,9 +416,9 @@
 	<section>
 		<h2>More</h2>
 		<p>
-			Full license texts and attribution notices for the upstream dictionary packs live in
-			their pack directories under <code>plugins/data/</code>; <code>docs/sources.md</code>
-			indexes the bundled upstream sources. If this instance installs additional packs, their
+			Full license texts and attribution notices for the upstream dictionary packs ship with
+			each pack; the project repository indexes the bundled upstream sources in
+			<code>docs/sources.md</code>. If this instance installs additional packs, their
 			credits appear in the tables above once installed.
 		</p>
 	</section>
