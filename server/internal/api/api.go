@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/netip"
 	"sync"
 	"time"
 
@@ -48,6 +49,8 @@ type server struct {
 	sweepEvery time.Duration
 
 	chars charactersCache // GET /api/characters payloads
+
+	trusted []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
 }
 
 // Option configures optional parts of the server.

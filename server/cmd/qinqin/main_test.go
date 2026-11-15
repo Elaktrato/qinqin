@@ -266,3 +266,13 @@ func TestRegisterBuiltinPluginsLogsConflict(t *testing.T) {
 		t.Errorf("log = %q", buf.String())
 	}
 }
+
+// A bad QINQIN_TRUSTED_PROXIES stops startup before anything is opened
+// or listened on.
+func TestServeRejectsBadTrustedProxies(t *testing.T) {
+	t.Setenv("QINQIN_TRUSTED_PROXIES", "10.0.0.0/33")
+	err := serveCmd([]string{"--addr", "127.0.0.1:0", "--data", t.TempDir()})
+	if err == nil || !strings.Contains(err.Error(), "QINQIN_TRUSTED_PROXIES") || !strings.Contains(err.Error(), "10.0.0.0/33") {
+		t.Fatalf("serveCmd error = %v, want one naming QINQIN_TRUSTED_PROXIES and the item", err)
+	}
+}
