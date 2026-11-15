@@ -25,6 +25,8 @@ export interface User {
 	createdAt: string;
 	/** Only `GET /api/auth/me` sends it: "" or a Restriction. */
 	restriction?: '' | Restriction;
+	/** Only `me`: whether the change-password form must ask for the current password. */
+	needsCurrentPassword?: boolean;
 }
 
 export interface AuthState {

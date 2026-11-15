@@ -243,7 +243,11 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, struct {
 		model.User
 		Restriction string `json:"restriction"`
-	}{p.User, p.Restriction()})
+		// NeedsCurrentPassword tells the change-password form whether to ask
+		// for the current password up front (everything but the session born
+		// from the temporary-password login).
+		NeedsCurrentPassword bool `json:"needsCurrentPassword"`
+	}{p.User, p.Restriction(), !p.TemporarySession})
 }
 
 // The access gate. Every handler reaches a session through one of the

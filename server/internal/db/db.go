@@ -68,6 +68,17 @@ func migrate(sqlDB *sql.DB) error {
 // lookup joins users); enabling the pragma would mean reworking every
 // table-rebuilding migration.
 func migrateThrough(sqlDB *sql.DB, last string) error {
+	// secure_delete zeroes the pages a migration frees, so the plaintext
+	// session tokens of the pre-032 table do not linger in the file. It is
+	// per connection, so the pool is held to one connection while migrating
+	// and the pragma is switched off again afterwards (a pack uninstall or an
+	// import must not pay for it).
+	sqlDB.SetMaxOpenConns(1)
+	defer sqlDB.SetMaxOpenConns(0)
+	if _, err := sqlDB.Exec(`PRAGMA secure_delete = ON`); err != nil {
+		return fmt.Errorf("secure_delete on: %w", err)
+	}
+	defer sqlDB.Exec(`PRAGMA secure_delete = OFF`)
 	if _, err := sqlDB.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
 		version TEXT PRIMARY KEY,
 		updated_at TEXT NOT NULL

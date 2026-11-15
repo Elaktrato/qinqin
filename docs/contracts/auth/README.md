@@ -55,8 +55,10 @@ New passwords: 10-256 characters, not equal to the username (any letter case), n
 
 ## Change password (`POST /api/account/password`)
 `{currentPassword, newPassword, signOutOthers?}` (`signOutOthers` defaults to true). A full session
-must give the current password. A `password_change` session born from the login with the temporary
-password may omit it; a session older than the administrator's flag may not. A forced change always
+must give the current password; `me.needsCurrentPassword` says whether to ask for it up front. An
+empty one is `403 current_password_required` (nothing counted). Only the session born from the login
+with the temporary password may omit it (a forced change deletes every other session of the user, and
+the temporary session is recognised by a session-id watermark, not a timestamp). A forced change always
 signs the other sessions out. Wrong current password: 403 `wrong_password`; repeated wrong ones:
 429 (5 per 15 minutes, a right password gives its token back).
 

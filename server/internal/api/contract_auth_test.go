@@ -140,7 +140,7 @@ func TestAuthContractFixturesMatchTheServer(t *testing.T) {
 	registerUser(t, ts.URL, "bobby", bobbyAdmin)
 	registerUser(t, ts.URL, "dora", bobbyAdmin)
 	sqlDB.Exec(`UPDATE users SET disabled_at = '2026-01-01T00:00:00Z' WHERE username = 'dora'`)
-	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_set_at = '2000-01-01T00:00:00Z' WHERE username = 'bobby'`)
+	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_after = 0 WHERE username = 'bobby'`)
 	pwc := login(t, ts.URL, "bobby")
 	other := login(t, ts.URL, "alice")
 	var otherID int64

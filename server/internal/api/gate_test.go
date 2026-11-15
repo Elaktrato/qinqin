@@ -39,8 +39,8 @@ func newGateServerFresh(t *testing.T) (*server, http.Handler, func() gateActors,
 	s := newServer(sqlDB, t.TempDir(), nil)
 	ids := map[string]int64{}
 	user := func(name string, admin, mustChange bool) {
-		res, err := sqlDB.Exec(`INSERT INTO users (username, hash, admin, updated_at, created_at, must_change_password, must_change_set_at)
-			VALUES (?, 'x', ?, 't', 't', ?, '2000-01-01T00:00:00Z')`, name, admin, mustChange)
+		res, err := sqlDB.Exec(`INSERT INTO users (username, hash, admin, updated_at, created_at, must_change_password, must_change_after)
+			VALUES (?, 'x', ?, 't', 't', ?, 0)`, name, admin, mustChange)
 		if err != nil {
 			t.Fatal(err)
 		}

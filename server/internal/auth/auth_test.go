@@ -464,7 +464,7 @@ func TestLoginStatusesAndDevice(t *testing.T) {
 	}
 
 	// A forced change still signs in, with its own status word.
-	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_set_at = '2000-01-01T00:00:00Z' WHERE username = 'alice'`)
+	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_after = 0 WHERE username = 'alice'`)
 	code, out = rawLogin(t, ts, "", map[string]any{"username": "alice", "password": "secret-pass-1"})
 	user, _ = out["user"].(map[string]any)
 	if code != 200 || out["status"] != "password_change_required" || out["token"] == "" || user["mustChangePassword"] != true {

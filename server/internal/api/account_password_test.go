@@ -103,7 +103,7 @@ func TestForcedChangeNeedsNoCurrentPasswordFromTheTemporaryLogin(t *testing.T) {
 	_ = bob
 	// The admin forces a change (flag + the moment it was set); bobby's
 	// next login is the one with the temporary password.
-	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_set_at = '2000-01-01T00:00:00Z' WHERE username = 'bobby'`)
+	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_after = 0 WHERE username = 'bobby'`)
 	pwcToken := login(t, ts.URL, "bobby")
 	otherToken := login(t, ts.URL, "bobby")
 
@@ -134,11 +134,15 @@ func TestSessionOlderThanTheFlagMustGiveTheCurrentPassword(t *testing.T) {
 	admin := registerUser(t, ts.URL, "admin1", "")
 	registerUser(t, ts.URL, "bobby", admin)
 	old := login(t, ts.URL, "bobby") // a stolen, older session
-	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_set_at = '2999-01-01T00:00:00Z' WHERE username = 'bobby'`)
+	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_after = 999999 WHERE username = 'bobby'`)
 
 	code, e, _ := pwChange(t, ts, old, map[string]any{"newPassword": "attackers-new-password"})
+	if code != 403 || e.Error != "current_password_required" {
+		t.Errorf("old session without current = %d %+v, want 403 current_password_required", code, e)
+	}
+	code, e, _ = pwChange(t, ts, old, map[string]any{"currentPassword": "attackers-guess-1", "newPassword": "attackers-new-password"})
 	if code != 403 || e.Error != "wrong_password" {
-		t.Errorf("old session without current = %d %+v, want 403 wrong_password", code, e)
+		t.Errorf("old session with a wrong current = %d %+v, want 403 wrong_password", code, e)
 	}
 	if loginStatus(t, ts, "bobby", "attackers-new-password") == 200 {
 		t.Fatal("the account was taken over")
@@ -224,5 +228,34 @@ func TestChangePasswordHashesBeforeTheTransaction(t *testing.T) {
 	}
 	if !probed || probeErr != nil {
 		t.Errorf("hash step probed=%v, a write inside it failed: %v", probed, probeErr)
+	}
+}
+
+// An empty current password is refused before it spends a re-auth token or
+// a hash, and `me` says up front whether the form must ask for it.
+func TestEmptyCurrentPasswordCostsNothing(t *testing.T) {
+	ts, sqlDB := newPolicyServer(t, reauthPolicy(1))
+	alice := registerUser(t, ts.URL, "alice", "")
+	for i := 0; i < 3; i++ {
+		if code, e, _ := pwChange(t, ts, alice, map[string]any{"newPassword": "a-new-long-password"}); code != 403 || e.Error != "current_password_required" {
+			t.Fatalf("empty current %d = %d %+v", i, code, e)
+		}
+	}
+	// The single reauth token is still there: one wrong guess is a plain 403.
+	if code, e, _ := pwChange(t, ts, alice, map[string]any{"currentPassword": "not-the-one-here", "newPassword": "a-new-long-password"}); code != 403 || e.Error != "wrong_password" {
+		t.Errorf("first real guess = %d %+v, want 403 wrong_password", code, e)
+	}
+	var me struct {
+		NeedsCurrentPassword bool `json:"needsCurrentPassword"`
+	}
+	decodeJSON(t, doJSON(t, http.MethodGet, ts.URL, "/api/auth/me", alice, nil), &me)
+	if !me.NeedsCurrentPassword {
+		t.Error("a full session must be told to ask for the current password")
+	}
+	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_after = 0`)
+	pwc := login(t, ts.URL, "alice")
+	decodeJSON(t, doJSON(t, http.MethodGet, ts.URL, "/api/auth/me", pwc, nil), &me)
+	if me.NeedsCurrentPassword {
+		t.Error("the temporary-password session needs no current password")
 	}
 }

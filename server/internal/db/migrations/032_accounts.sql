@@ -19,9 +19,15 @@ CREATE TABLE users_new (
     email_verified_at TEXT,
     disabled_at TEXT,
     must_change_password INTEGER NOT NULL DEFAULT 0,
-    must_change_set_at TEXT,
+    -- Session-id watermark: sessions with an id above it were created after the
+    -- forced change was set (the temporary-password login). Ids only grow, so no
+    -- clock precision or step-back can confuse it. NULL: unknown, ask for the password.
+    must_change_after INTEGER,
     created_at TEXT NOT NULL DEFAULT '',
-    password_changed_at TEXT
+    password_changed_at TEXT,
+    -- NFKC + case fold of username; unique. NULL only for a legacy name that
+    -- collided (the Go step of this migration fills it in).
+    username_key TEXT
 );
 
 INSERT INTO users_new (id, username, hash, admin, updated_at, created_at)
@@ -30,6 +36,7 @@ SELECT id, username, hash, admin, updated_at, updated_at FROM users;
 DROP TABLE users;
 ALTER TABLE users_new RENAME TO users;
 
+CREATE UNIQUE INDEX idx_users_username_key ON users (username_key) WHERE username_key IS NOT NULL;
 CREATE UNIQUE INDEX idx_users_email_norm ON users (email_norm) WHERE email_norm IS NOT NULL;
 
 CREATE TABLE sessions_new (
@@ -42,9 +49,14 @@ CREATE TABLE sessions_new (
     last_used_at TEXT NOT NULL
 );
 
--- token_hash holds the plaintext token until the Go step hashes it.
+-- token_hash holds the plaintext token until the Go step hashes it. The
+-- upgrade moment counts as the last use, so a session idle before the upgrade
+-- is not cut off 90 days after it (the old table had no use column).
 INSERT INTO sessions_new (token_hash, user_id, created_at, last_used_at, device)
-SELECT token, user_id, updated_at, updated_at, '' FROM sessions;
+SELECT token, user_id, updated_at,
+       CASE WHEN updated_at > strftime('%Y-%m-%dT%H:%M:%SZ','now') THEN updated_at
+            ELSE strftime('%Y-%m-%dT%H:%M:%SZ','now') END, ''
+FROM sessions;
 
 DROP TABLE sessions;
 ALTER TABLE sessions_new RENAME TO sessions;

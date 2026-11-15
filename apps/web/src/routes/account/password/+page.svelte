@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { api, apiErrorBody } from '$lib/api/client';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
+	import { get } from 'svelte/store';
 	import { loadMe, user } from '$lib/auth';
 	import { pageTitle } from '$lib/pageTitle';
 
@@ -10,7 +11,8 @@
 	let next = $state('');
 	let confirm = $state('');
 	let error = $state('');
-	let needCurrent = $state(false);
+	// Ask for it up front when `me` says this session must give it.
+	let needCurrent = $state(get(user)?.needsCurrentPassword ?? false);
 	let busy = $state(false);
 	let heading: HTMLHeadingElement | undefined = $state();
 
@@ -42,12 +44,13 @@
 			await goto('/', { replaceState: true });
 		} catch (err) {
 			const body = apiErrorBody(err);
-			if (body?.error === 'wrong_password') {
+			if (body?.error === 'wrong_password' || body?.error === 'current_password_required') {
 				// The session predates the forced change: the server wants the
 				// current password as well.
-				error = needCurrent
-					? 'The current password is wrong.'
-					: 'Enter your current password to continue.';
+				error =
+					needCurrent && body.error === 'wrong_password'
+						? 'The current password is wrong.'
+						: 'Enter your current password to continue.';
 				needCurrent = true;
 			} else {
 				error = body?.message || (err instanceof Error ? err.message : '') || 'Could not change the password.';

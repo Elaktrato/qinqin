@@ -9,11 +9,12 @@ type Principal struct {
 	SessionID int64
 	Level     string // "full" or "enroll"
 
-	// SessionCreated and MustChangeSetAt (RFC 3339, "" when unset) let the
-	// change-password route tell a session born from the temporary password
-	// from one that existed before an admin set the flag.
-	SessionCreated  string
-	MustChangeSetAt string
+	// TemporarySession is true when the user must change the password and
+	// this session was created after the change was forced (its id is above
+	// the user's watermark): it came from the login with the temporary
+	// password, so it may skip the current one. A session that existed
+	// before the flag, or a flag with no watermark, is not.
+	TemporarySession bool
 }
 
 // Restriction names why the session may not use the whole API: "" (no

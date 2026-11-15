@@ -107,4 +107,25 @@ describe('forced password change page', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
 		expect((await screen.findByRole('alert')).textContent).toBe('Nope, too weak.');
 	});
+
+	it('asks for the current password up front when me says so, and sends it', async () => {
+		auth.set({ token: 'tok', user: { ...restricted, needsCurrentPassword: true } });
+		vi.mocked(api).mockImplementation((async (url: string) => {
+			if (url === '/api/account/password') return { status: 'ok' };
+			return { ...restricted, mustChangePassword: false, restriction: '' };
+		}) as never);
+		render(Page);
+		await fireEvent.input(screen.getByLabelText('Current password'), { target: { value: 'temp-secret-1' } });
+		await fill('a-long-password-1', 'a-long-password-1');
+		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
+		await waitFor(() => expect(goto).toHaveBeenCalled());
+		const call = vi.mocked(api).mock.calls.find(([u]) => u === '/api/account/password');
+		expect(call?.[1]).toMatchObject({ body: { currentPassword: 'temp-secret-1' } });
+	});
+
+	it('shows no current-password field for the temporary-password session', () => {
+		auth.set({ token: 'tok', user: { ...restricted, needsCurrentPassword: false } });
+		render(Page);
+		expect(screen.queryByLabelText('Current password')).toBeNull();
+	});
 });

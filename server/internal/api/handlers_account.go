@@ -51,9 +51,9 @@ type passwordChangeBody struct {
 // handleChangePassword changes the caller's password. A full session must
 // give the current password (wrong: 403 wrong_password, never 401, which
 // the web client treats as "session gone"). A password_change session may
-// skip it only when the session was created after the flag was set, i.e. it
-// came from the login with the temporary password; a session that predates
-// the flag must still prove it knows the current one. Other sessions are
+// skip it only when it is the session born from the login with the temporary
+// password (its id is above the watermark set when the change was forced); a
+// session that predates the flag must still prove it knows the current one. Other sessions are
 // signed out by default and always after a forced change.
 func (s *server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	p := s.requirePrincipal(w, r, restrictionPasswordChange)
@@ -68,10 +68,14 @@ func (s *server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
 		return
 	}
-	forced := p.User.MustChangePassword
-	// Unknown set time (flag set by hand) counts as "older": ask for it.
-	bornFromTemporary := forced && p.MustChangeSetAt != "" && p.SessionCreated >= p.MustChangeSetAt
-	if !bornFromTemporary {
+	// Only the session born from the temporary-password login skips the
+	// current password (a flag with no watermark never does).
+	if !p.TemporarySession {
+		// An empty one is refused before it spends a re-auth token or a hash.
+		if req.CurrentPassword == "" {
+			writeAuthError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
+			return
+		}
 		refund, ok := s.reauth(w, p.User.ID)
 		if !ok {
 			return

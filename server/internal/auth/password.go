@@ -39,7 +39,7 @@ func ChangePassword(ctx context.Context, sqlDB *sql.DB, userID int64, newHash st
 	}
 	at := now()
 	if _, err := tx.ExecContext(ctx, `
-		UPDATE users SET hash = ?, must_change_password = 0, must_change_set_at = NULL,
+		UPDATE users SET hash = ?, must_change_password = 0, must_change_after = NULL,
 		       password_changed_at = ?, updated_at = ? WHERE id = ?`, newHash, at, at, userID); err != nil {
 		return fmt.Errorf("update password: %w", err)
 	}
@@ -57,4 +57,38 @@ func ChangePassword(ctx context.Context, sqlDB *sql.DB, userID int64, newHash st
 		return fmt.Errorf("commit change password: %w", err)
 	}
 	return nil
+}
+
+// ForcePasswordChange makes the user choose a new password at the next
+// sign-in: it sets the flag, records the session-id watermark, and deletes
+// ALL of the user's sessions, in one transaction. Every flow that forces a
+// change or hands out a temporary password must go through here (or do the
+// same three things): a session that survived would otherwise be one clock
+// tick away from passing as the temporary-password session. Ids only grow,
+// so any session created afterwards is above the watermark.
+func ForcePasswordChange(ctx context.Context, sqlDB *sql.DB, userID, actorID int64) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin force change: %w", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `
+		UPDATE users SET must_change_password = 1, updated_at = ?,
+		       must_change_after = COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'sessions'), 0)
+		WHERE id = ?`, now(), userID)
+	if err != nil {
+		return fmt.Errorf("flag user: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return sql.ErrNoRows
+	}
+	revoked, err := revokeSessions(ctx, tx, userID, 0)
+	if err != nil {
+		return err
+	}
+	if err := Audit(ctx, tx, AuditEvent{Action: "password_change_forced", ActorID: actorID, TargetID: &userID,
+		Detail: map[string]any{"signedOutOthers": revoked}}); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

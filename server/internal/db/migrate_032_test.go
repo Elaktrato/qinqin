@@ -1,13 +1,16 @@
 package db_test
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"qinqin/internal/db"
 )
@@ -40,6 +43,7 @@ func seed031(t *testing.T) *sql.DB {
 
 func TestMigrate032HashesSessionsAndRebuildsUsers(t *testing.T) {
 	sqlDB := seed031(t)
+	upgradeStart := time.Now().UTC().Add(-2 * time.Second).Format(time.RFC3339)
 	if err := db.Migrate(sqlDB); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
@@ -62,7 +66,7 @@ func TestMigrate032HashesSessionsAndRebuildsUsers(t *testing.T) {
 		if strings.Contains(hash, "plain") {
 			t.Errorf("row %d still holds the plaintext token", i)
 		}
-		if level != "full" || device != "" || created != want[i].updated || last != want[i].updated {
+		if level != "full" || device != "" || created != want[i].updated || last < upgradeStart {
 			t.Errorf("row %d = level %q device %q created %q last %q", i, level, device, created, last)
 		}
 		i++
@@ -154,5 +158,91 @@ func TestFailingGoStepRollsBackItsSQL(t *testing.T) {
 	}
 	if _, err := sqlDB.Exec(`SELECT 1 FROM auth_settings`); err == nil {
 		t.Error("auth_settings survived the rollback")
+	}
+}
+
+// Sessions get the upgrade time as their last use, so nobody is logged out
+// 90 days after an upgrade just because the old table had no use column.
+func TestMigrate032OldSessionsSurviveTheUpgrade(t *testing.T) {
+	sqlDB := seed031(t)
+	old := time.Now().UTC().Add(-200 * 24 * time.Hour).Format(time.RFC3339)
+	sqlDB.Exec(`UPDATE sessions SET updated_at = ?`, old)
+	if err := db.Migrate(sqlDB); err != nil {
+		t.Fatal(err)
+	}
+	var created, last string
+	sqlDB.QueryRow(`SELECT created_at, last_used_at FROM sessions ORDER BY id LIMIT 1`).Scan(&created, &last)
+	cutoff := time.Now().UTC().Add(-90 * 24 * time.Hour).Format(time.RFC3339)
+	if created != old || last <= cutoff {
+		t.Errorf("created %s last_used %s: want created kept, last use inside the idle window", created, last)
+	}
+}
+
+func TestMigrate032UsernameKeys(t *testing.T) {
+	sqlDB := seed031(t)
+	sqlDB.Exec(`INSERT INTO users (id, username, hash, admin, updated_at) VALUES (8, 'Bob', 'h', 0, 't')`)
+	sqlDB.Exec(`INSERT INTO users (id, username, hash, admin, updated_at) VALUES (9, 'Ｃarl', 'h', 0, 't')`) // fullwidth C
+	if err := db.Migrate(sqlDB); err != nil {
+		t.Fatal(err)
+	}
+	keys := map[string]*string{}
+	rows, _ := sqlDB.Query(`SELECT username, username_key FROM users`)
+	for rows.Next() {
+		var n string
+		var k *string
+		rows.Scan(&n, &k)
+		keys[n] = k
+	}
+	rows.Close()
+	if k := keys["alice"]; k == nil || *k != "alice" {
+		t.Errorf("alice key = %v", k)
+	}
+	if k := keys["bob"]; k == nil || *k != "bob" {
+		t.Errorf("bob (lowest id) key = %v", k)
+	}
+	if k := keys["Bob"]; k != nil {
+		t.Errorf("Bob collides with bob: key must stay NULL, got %q", *k)
+	}
+	if k := keys["Ｃarl"]; k == nil || *k != "carl" {
+		t.Errorf("fullwidth name key = %v, want NFKC+fold carl", k)
+	}
+	if _, err := sqlDB.Exec(`INSERT INTO users (username, hash, admin, updated_at, created_at, username_key) VALUES ('x', 'h', 0, 't', 't', 'alice')`); err == nil {
+		t.Error("duplicate username_key accepted")
+	}
+}
+
+// The legacy plaintext tokens must not stay behind in the database file or
+// its WAL after the upgrade (secure_delete zeroes the freed pages).
+func TestMigrate032LeavesNoPlaintextTokenInTheFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "m.db")
+	const marker = "PLAINTEXT-TOKEN-MARKER-0123456789abcdef0123456789abcdef0123456789ab"
+	open := func() *sql.DB {
+		d, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return d
+	}
+	d := open()
+	if err := db.MigrateThrough(d, "031_ai_custom_name_key"); err != nil {
+		t.Fatal(err)
+	}
+	d.Exec(`INSERT INTO users (id, username, hash, admin, updated_at) VALUES (1, 'alice', 'h', 1, 't')`)
+	d.Exec(`INSERT INTO sessions (token, user_id, updated_at) VALUES (?, 1, 't')`, marker)
+	d.Close()
+	d = open()
+	if err := db.Migrate(d); err != nil {
+		t.Fatal(err)
+	}
+	d.Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
+	d.Close()
+	for _, f := range []string{path, path + "-wal"} {
+		b, err := os.ReadFile(f)
+		if err != nil {
+			continue
+		}
+		if bytes.Contains(b, []byte(marker)) {
+			t.Errorf("%s still contains the legacy plaintext token", f)
+		}
 	}
 }

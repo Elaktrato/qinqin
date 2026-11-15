@@ -70,16 +70,17 @@ func Authenticate(r *http.Request, sqlDB *sql.DB) (*Principal, error) {
 	at := nowFunc().UTC()
 	var p Principal
 	var admin, must int
-	var email, verified, mustAt sql.NullString
+	var email, verified sql.NullString
+	var mustAfter sql.NullInt64
 	err := sqlDB.QueryRowContext(r.Context(), `
 		SELECT users.id, users.username, users.admin, users.email, users.email_verified_at,
-		       users.must_change_password, users.must_change_set_at, users.created_at,
-		       sessions.id, sessions.level, sessions.created_at
+		       users.must_change_password, users.must_change_after, users.created_at,
+		       sessions.id, sessions.level
 		FROM sessions JOIN users ON users.id = sessions.user_id
 		WHERE sessions.token_hash = ? AND users.disabled_at IS NULL AND sessions.last_used_at > ?`,
 		hashToken(token), at.Add(-SessionIdle).Format(time.RFC3339)).Scan(
-		&p.User.ID, &p.User.Username, &admin, &email, &verified, &must, &mustAt, &p.User.CreatedAt,
-		&p.SessionID, &p.Level, &p.SessionCreated)
+		&p.User.ID, &p.User.Username, &admin, &email, &verified, &must, &mustAfter, &p.User.CreatedAt,
+		&p.SessionID, &p.Level)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -92,7 +93,7 @@ func Authenticate(r *http.Request, sqlDB *sql.DB) (*Principal, error) {
 	if email.Valid {
 		p.User.Email = &email.String
 	}
-	p.MustChangeSetAt = mustAt.String
+	p.TemporarySession = p.User.MustChangePassword && mustAfter.Valid && p.SessionID > mustAfter.Int64
 	if _, err := sqlDB.ExecContext(r.Context(),
 		`UPDATE sessions SET last_used_at = ? WHERE id = ? AND last_used_at < ?`,
 		at.Format(time.RFC3339), p.SessionID, at.Add(-lastUsedEvery).Format(time.RFC3339)); err != nil {
