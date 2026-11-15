@@ -98,10 +98,20 @@ export function planAddToDeck(input: AddInput): AddPlan {
 	return { deck, writes, created, joined, skipped };
 }
 
-/** The rows to push for a plan: the deck row first, then the cards. */
-export function addPlanRows(plan: AddPlan): { key: string; data: unknown }[] {
+/**
+ * The rows to push for a plan: the deck row first, then the cards. `knownAt` (from
+ * loadRawStudyData) lets the writer stamp each row after what the server holds.
+ */
+export function addPlanRows(
+	plan: AddPlan,
+	knownAt?: ReadonlyMap<string, string>
+): { key: string; data: unknown; knownAt?: string }[] {
+	const row = (key: string, data: unknown) => {
+		const known = knownAt?.get(key);
+		return known === undefined ? { key, data } : { key, data, knownAt: known };
+	};
 	return [
-		...(plan.deck === null ? [] : [{ key: studyRowKey.deck(plan.deck.id), data: plan.deck }]),
-		...plan.writes.map((card) => ({ key: studyRowKey.card(card.id), data: card }))
+		...(plan.deck === null ? [] : [row(studyRowKey.deck(plan.deck.id), plan.deck)]),
+		...plan.writes.map((card) => row(studyRowKey.card(card.id), card))
 	];
 }

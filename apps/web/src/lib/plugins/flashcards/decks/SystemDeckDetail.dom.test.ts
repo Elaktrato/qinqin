@@ -42,6 +42,7 @@ let decks: Deck[];
 let cards: StudyCard[];
 let reviews: ReviewEvent[];
 let failAfter: number | null;
+let knownAt: Map<string, string>;
 
 function apply(rows: readonly { key: string; data: unknown }[]): void {
 	for (const row of rows) {
@@ -66,6 +67,7 @@ beforeEach(() => {
 		{ id: 'r1', workspaceId: 1, device: 'd', ts: '2026-01-01T09:00:00.000Z', type: 'review', payload: { cardId: 'c-vocab-1', mode: 'vocab', grade: 3 } }
 	];
 	failAfter = null;
+	knownAt = new Map();
 	vi.mocked(getSchemes).mockResolvedValue([SCHEME]);
 	vi.mocked(getSchemeEntries).mockResolvedValue(ITEMS);
 	vi.mocked(loadStudyHistory).mockImplementation(async () => ({
@@ -76,7 +78,8 @@ beforeEach(() => {
 	}));
 	vi.mocked(loadRawStudyData).mockImplementation(async () => ({
 		decks: structuredClone(decks),
-		cards: structuredClone(cards)
+		cards: structuredClone(cards),
+		knownAt: new Map(knownAt)
 	}));
 	vi.mocked(pushStudyRows).mockImplementation(async (_ws, rows, opts) => {
 		if (failAfter !== null) {
@@ -165,13 +168,58 @@ describe('SystemDeckDetail', () => {
 		expect(retryRows).toEqual(['card:c-vocab-2', 'card:c-vocab-3']);
 	});
 
-	it('a push the server partly refused names the count and offers a reload', async () => {
-		vi.mocked(pushStudyRows).mockRejectedValueOnce(new PartialPushError('2 rows were not written because the server holds newer data for them. Reload and try again.', 1, 2));
+	it('a push the server partly refused offers one retry that re-plans from a fresh pull', async () => {
+		const partly = new PartialPushError('2 rows were not written because the server holds newer data for them. Try again.', 1, 2);
+		vi.mocked(pushStudyRows).mockRejectedValueOnce(partly);
 		await open();
 		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
 		const alert = await screen.findByRole('alert');
 		expect(alert.textContent).toContain('2 rows were not written');
-		expect(screen.getByRole('button', { name: 'Reload' })).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+		await screen.findByText('Added 3 words to HSK words · HSK 1');
+		expect(loadRawStudyData).toHaveBeenCalledTimes(2);
+	});
+
+	it('when the retry is skipped again it stops offering one that cannot help', async () => {
+		const partly = new PartialPushError('2 rows were not written because the server holds newer data for them. Try again.', 1, 2);
+		vi.mocked(pushStudyRows).mockRejectedValue(partly);
+		await open();
+		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
+		await fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+		await waitFor(() => expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull());
+		expect(screen.getByRole('alert').textContent).toContain('keeps newer data');
+	});
+
+	it('hands the known server times of the rows to the writer', async () => {
+		knownAt.set('card:c-vocab-1', '2026-03-10T12:00:09.000Z');
+		await open();
+		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
+		await screen.findByText('Added 3 words to HSK words · HSK 1');
+		const rows = vi.mocked(pushStudyRows).mock.calls[0][1];
+		expect(rows.find((r) => r.key === 'card:c-vocab-1')?.knownAt).toBe('2026-03-10T12:00:09.000Z');
+		expect(rows.find((r) => r.key === 'card:c-vocab-2')?.knownAt).toBeUndefined();
+	});
+
+	it('refuses a target deck another tab removed, and never writes a deck row for it', async () => {
+		await open();
+		await fireEvent.change(await screen.findByLabelText('Add to'), { target: { value: 'd1' } });
+		decks = []; // removed meanwhile
+		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
+		expect((await screen.findByRole('alert')).textContent).toContain('That deck was removed — pick another');
+		expect(pushStudyRows).not.toHaveBeenCalled();
+		expect((screen.getByLabelText('Add to') as HTMLSelectElement).value).toBe('new');
+	});
+
+	it('names an existing, maybe renamed, copy in the option and in the result', async () => {
+		decks = [verbs, { id: DECK_ID, name: 'My HSK 1', createdAt: '2026-02-01T00:00:00.000Z' }];
+		await open();
+		const option = await screen.findByRole('option', { name: 'Existing copy: My HSK 1' });
+		expect(option).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
+		await screen.findByText('Added 3 words to My HSK 1');
+		const keys = vi.mocked(pushStudyRows).mock.calls[0][1].map((r) => r.key);
+		expect(keys.some((k) => k.startsWith('deck:'))).toBe(false);
+		expect(decks.find((d) => d.id === DECK_ID)?.name).toBe('My HSK 1');
 	});
 
 	it('shows progress while adding', async () => {

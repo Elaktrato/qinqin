@@ -71,12 +71,18 @@
 	}
 
 	const newName = $derived(deck ? `${deck.schemeName} · ${deck.level}` : '');
+	const ownedId = $derived(deck ? ownedLevelDeckId(deck.packId, deck.level) : '');
+	// The owned copy of this level, if there already is one (it may have been renamed).
+	const existingCopy = $derived(data?.decks.find((d) => d.id === ownedId) ?? null);
 	let targetChoice = $state('new');
 	let busy = $state(false);
 	let progress = $state<{ done: number; total: number } | null>(null);
 	let result = $state('');
 	let error = $state('');
-	let reloadable = $state(false);
+	// A push the server partly skipped may be retried once from a fresh pull; the same
+	// skip again means a newer row is out of reach, and a third try cannot help.
+	let retryable = $state(true);
+	let skippedBefore = false;
 
 	function study(): void {
 		if (deck === null || deck === undefined) return;
@@ -94,23 +100,35 @@
 		busy = true;
 		result = '';
 		error = '';
-		reloadable = false;
+		retryable = true;
+		const retrying = skippedBefore;
 		progress = null;
 		let deckRows = 0;
 		try {
 			// Planned from the stored rows right now, so a retry adds only the rest.
 			const raw = await loadRawStudyData(workspaceId);
-			const isNew = targetChoice === 'new';
-			const target = isNew
-				? {
-						id: ownedLevelDeckId(deck.packId, deck.level),
-						name: newName,
-						source: { type: 'level' as const, packId: deck.packId, level: deck.level }
-					}
-				: {
-						id: targetChoice,
-						name: targetChoice === GENERAL_DECK_ID ? 'General' : (raw.decks.find((d) => d.id === targetChoice)?.name ?? targetChoice)
-					};
+			const id = ownedLevelDeckId(deck.packId, deck.level);
+			let target: { id: string; name: string; source?: { type: 'level'; packId: string; level: string } };
+			if (targetChoice === 'new') {
+				// An existing copy keeps the name the learner gave it.
+				target = {
+					id,
+					name: raw.decks.find((d) => d.id === id)?.name ?? newName,
+					source: { type: 'level', packId: deck.packId, level: deck.level }
+				};
+			} else if (targetChoice === GENERAL_DECK_ID) {
+				target = { id: GENERAL_DECK_ID, name: 'General' };
+			} else {
+				const chosen = raw.decks.find((d) => d.id === targetChoice);
+				if (chosen === undefined) {
+					// Another tab deleted it: never write a deck row named only by an id.
+					error = 'That deck was removed — pick another';
+					targetChoice = 'new';
+					retryable = false;
+					return;
+				}
+				target = { id: chosen.id, name: chosen.name };
+			}
 			const plan = planAddToDeck({
 				items: items.map((e) => ({
 					entryId: e.id,
@@ -122,7 +140,7 @@
 				rawCards: raw.cards,
 				now: new Date()
 			});
-			const rows = addPlanRows(plan);
+			const rows = addPlanRows(plan, raw.knownAt);
 			if (rows.length === 0) {
 				result = `Nothing new to add to ${target.name}`;
 				return;
@@ -134,14 +152,21 @@
 				onProgress: (done) => (progress = { done: Math.max(0, done - deckRows), total })
 			});
 			result = `Added ${words(plan.created + plan.joined)} to ${target.name}`;
+			skippedBefore = false;
 		} catch (err) {
 			if (err instanceof PartialPushError) {
-				reloadable = err.skipped > 0;
-				error =
-					err.skipped > 0
-						? err.message
-						: `Added ${Math.max(0, err.done - deckRows)}; try again to add the rest`;
+				if (err.skipped > 0) {
+					skippedBefore = true;
+					retryable = !retrying;
+					error = retrying
+						? `The server keeps newer data for ${err.skipped} ${err.skipped === 1 ? 'row' : 'rows'}. Open the deck on your other device, then try again later.`
+						: err.message;
+				} else {
+					skippedBefore = false;
+					error = `Added ${Math.max(0, err.done - deckRows)}; try again to add the rest`;
+				}
 			} else {
+				skippedBefore = false;
 				error = errorMessage(err, 'Could not add the words.');
 			}
 		} finally {
@@ -151,11 +176,6 @@
 		}
 	}
 
-	function reload(): void {
-		error = '';
-		reloadable = false;
-		void store.load(workspaceId, true);
-	}
 </script>
 
 {#if loadError}
@@ -178,7 +198,9 @@
 			<label>
 				Add to
 				<select bind:value={targetChoice} disabled={busy}>
-					<option value="new">New deck: {newName}</option>
+					<option value="new"
+						>{existingCopy === null ? `New deck: ${newName}` : `Existing copy: ${existingCopy.name}`}</option
+					>
 					<option value={GENERAL_DECK_ID}>General</option>
 					{#each data?.decks ?? [] as d (d.id)}
 						<option value={d.id}>{d.name}</option>
@@ -195,9 +217,7 @@
 		{/if}
 		{#if error}
 			<p class="error" role="alert">{error}</p>
-			{#if reloadable}
-				<button type="button" onclick={reload}>Reload</button>
-			{:else}
+			{#if retryable}
 				<button type="button" disabled={busy} onclick={add}>Try again</button>
 			{/if}
 		{/if}
