@@ -32,8 +32,8 @@ per-sentence cloze card, cloze in level sessions (level sessions stay vocab-only
   for this word; see Card management). Absent = nothing skipped. `canonicalCards` merges it as a union.
 - Per-deck switch: plugin-data key **`deckcfg:<deckId>`** → `{deckId, cardTypes: OptInKind[], updatedAt}`,
   workspace-scoped like `deck:`. Works for `general` (which has no `deck:` row). Absent or unparsable
-  = `cardTypes: []`. Writers read-modify-write and **keep unknown fields** (item 4b may add `limits`
-  to the same row; see the decks-view spec).
+  = `cardTypes: []`. Writers read-modify-write and **keep unknown fields** (forward compatibility;
+  item 4b stores per-deck limits in its own `limits:deck:<deckId>` rows, see its spec).
 - Ruling: settings in their own `deckcfg:` row, not inside `deck:<id>` — General has no deck row,
   and the current `parseDeck`/`renameDeck` drop unknown fields, so an older open tab renaming a deck
   would silently switch its card types off — cost if wrong: one extra key per configured deck.
@@ -83,14 +83,20 @@ reverse/cloze cards (the decks view says so).
   its `deckcfg` `cardTypes`, (c) `V.skipKinds` does not contain it, (d) the entry is not in this
   tab's ineligible memory, (e) V's entry has **no real item in this session's queue and was not
   answered today** (it would be buried anyway; see Burying), and (f) at most one opt-in virtual item
-  per entry. Entry kind and sentences are checked when the item is shown (they need the entry).
+  per entry and session — **reverse is preferred**; cloze is planned when the word's reverse card
+  exists, is skipped, not enabled, or remembered as ineligible (so an unsuitable kind never blocks the
+  other for more than one session). Entry kind and sentences are checked when the item is shown.
+- Filtering happens **before** the limits are applied: cards that are not allowed (switch off,
+  skipped) or buried are removed from the input of `buildQueue` / excluded from `buildLevelQueue`, so
+  they never use up a slot. Legacy virtual companions (sentence, writing, tone) of an entry are
+  dropped too when that entry's reverse or cloze card was answered today.
 - A real reverse/cloze card is queued only if some deck in `card.deckIds ∩ session decks` enables its
   kind and its vocab sibling does not skip it. Turning a type **off** keeps the cards and their
   history; they simply stop being queued and come back if it is turned on again.
 - Eligibility when shown (`isEligible`): reverse needs `entry.kind === 'word'` and at least one gloss
   (direction: words only); cloze needs an eligible sentence (above). Both are remembered as
-  ineligible per tab like other companions (`rememberDrop` returns true for both: the facts are not
-  transient, except a failed segment request, which drops without remembering).
+  ineligible per tab like other companions (`rememberDrop` returns true for both, except when the
+  drop came from a failed segment request, which the runner marks transient and does not remember).
 
 ## Burying (contract)
 
@@ -109,10 +115,11 @@ with `S.entryId === C.entryId` has a recorded review R with `day(R.ts) === day(n
 - Applies in deck **and** level sessions, and to every due count (home widget, setup summary, decks
   view): `due` excludes buried cards. Ruling: counts show what can be studied now — cost if wrong: a
   learner sees fewer due cards than FSRS says until tomorrow.
-- Session builder: (1) `buriedKeys(cards, reviews, now, day)` → set of buried card ids and of
-  `kind:entryId` (for virtual items); `deckSessionPlan` and `levelSessionItems` drop those before
-  slicing to the limits; (2) after each **recorded** grade, `buryAfterAnswer(plan, answered)` removes
-  later queue items that the answer buries; a removed virtual item frees its new-card slot and the
+- Session builder: (1) `buriedNow({cards, reviews, now, dayOf})` → buried card ids and
+  `kind:entryId` keys (for virtual items); deck and level sessions exclude those **before** the limits
+  are applied; (2) after each **recorded** grade, `buryAfterAnswer(plan, index, answered)` (on the
+  queue as returned by `applyGrade`, `index` = the answered position) removes later items that the
+  answer buries; a removed virtual item frees its new-card slot and the
   next reserve item takes it (the `dropItem` backfill rule); a removed real card frees nothing.
   The runner announces "1 related card is buried until tomorrow" in its status line.
 - Ruling: two real cards of one word that are both due are not pruned at plan time; the second is
@@ -128,7 +135,9 @@ with `S.entryId === C.entryId` has a recorded review R with `day(R.ts) === day(n
   moving a word deletes or moves its reverse and cloze cards too**, undoable through `restoreCards`.
 - New: **remove one sibling kind of one word** (`dropSiblingCards(ids)`): tombstones the given
   non-vocab cards and adds their kinds to the word's vocab `skipKinds`, so lazy creation does not
-  bring them back; undo restores both rows. Turning a kind back on for the word removes it from
+  bring them back; undo restores both rows (`restoreCards` without `onlyLive`). A kind whose card does
+  not exist yet can be switched off for the word too (`skipKind(entryId, kind)`: only the vocab row is
+  written). A stray sibling without a vocab card is simply tombstoned (nothing would recreate it). Turning a kind back on for the word removes it from
   `skipKinds`; the next first grade revives the tombstoned id with its history (same deterministic id,
   like re-adding a word today). Works for all non-vocab kinds, not only the new two.
 - Moving a single sibling to another deck is not offered: siblings follow their word.
@@ -168,11 +177,16 @@ always shown as context (issue), its reading hidden until the answer. Two answer
 derived stability (`tierFor` from `wordSalad.ts`): **choose** at tier 0 (new, or stability under 4
 days), the answer equals `written` or a form (not inflected) and 3 distractors exist; else
 **type**. Choose reuses the grammar plugin's `ClozeChoice.svelte` (moved to `lib/components/`,
-grammar imports it from there), with distractors = the `written` snapshots of other vocab cards in
+grammar imports it from there; it gains an optional parts form of `before`/`after` so every extra gap
+renders as a real gap element with its hidden label — plain strings keep working for grammar), with distractors = the `written` snapshots of other vocab cards in
 the session's decks, same code-point length preferred, never a string that occurs in the sentence,
 shuffled with `shuffleTokens(seed = cardId:reviewCount)`. Type: one field, accepted = the surface,
 plus (when the surface is `written` or a form) the other forms and variants. **Show answer** gives up.
-Suggested: correct → Good; wrong or gave up → Again; never Easy (house rule).
+Suggested: correct → Good; wrong or gave up → Again; never Easy (house rule). An Again re-show of a
+cloze card keeps the sentence and the answer mode of its first showing (stored on the queue item like
+the Word Salad `tier`); the rotation only advances with recorded reviews. Segmenting costs one
+`POST /api/segment` per candidate sentence (at most the first 8 of an entry), cached per sentence for
+the session and prefetched with the next item.
 
 **A11y:** each gap renders a visually hidden "blank" label; right/wrong are text plus colour;
 feedback is `role="status"`; `lang` on every target-language string; 44 px targets; the runner's key
@@ -188,7 +202,11 @@ picks and grades. Focus moves to the field when a typing card appears.
   in this workspace (remembered beside `cardTypesMemory`). Ruling: the deck switch is the opt-in; the
   session checkbox is only a per-session opt-out — cost if wrong: one more click for learners who
   want them off by default.
-- `validateConfig` accepts the six kinds. Level sessions stay vocab-only.
+- `validateConfig` accepts the six kinds. Level sessions stay vocab-only (plus writing for
+  character-unit levels, item 1's #57).
+- **Effective kinds** (one function, `effectiveKinds`, used by the setup page, the home widget and the
+  decks view): the remembered existing kinds (`cardTypesMemory`, opt-in entries in it ignored) plus
+  each opt-in kind that a deck in scope enables and the learner has not unchecked in this workspace.
 
 ## Testing
 

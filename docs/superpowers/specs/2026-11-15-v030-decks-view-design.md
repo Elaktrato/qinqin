@@ -3,8 +3,9 @@
 Status: Draft (2026-11-15), written unattended; calls are **Ruling: what — why — cost if wrong**.
 Nothing is built. **Built after item 3** (`2026-11-15-v030-reverse-cloze-cards-design.md`, which defines
 `deckcfg:<deckId>`, the new kinds, burying and `skipKinds`). **Per-deck daily limits (item 4b, #89)** are
-designed in `2026-11-15-v030-vacation-and-limits-design.md` (not yet written when this was drafted);
-this view reserves their place and wires them when 4b lands. Days are the learner's day (item 1,
+designed in `2026-11-15-v030-vacation-and-limits-design.md` (rows `limits:workspace` and
+`limits:deck:<deckId>`, the shared "due today" predicate `isDueToday`, and admission `admit`); this
+view reserves their place and wires them when 4b lands. Days are the learner's day (item 1,
 #84, `2026-11-15-v030-study-day-design.md`), used only through an injected `dayOf(ms)` and `today`
 from `StudyDay` (`lib/time/studyDay.ts`); "the last 30 days" counts civil dates back from `today`.
 
@@ -37,14 +38,15 @@ wrong: add it with 4b), new mastery definitions, a server-side deck model, movin
 Anything else renders the list. The builtin manifest `server/internal/plugins/builtin/flashcards.json`
 gains surface `page` (version 1.2) and `webPlugins` gets `pages: [{ title: 'Decks', nav: true,
 component: FlashcardsPage }]`. Components stay thin: `FlashcardsPage.svelte` (router), `DeckList`,
-`DeckDetail`, `DeckSettings`, `SystemDeckDetail`, `DeckStatsPanel`; logic lives in pure modules:
+`DeckDetail`, `DeckSettingsView`, `SystemDeckDetail`, `DeckStatsPanel`; logic lives in pure modules:
 `deckStats.ts`, `deckRows.ts`, `systemDecks.ts`, `addToDeck.ts`, `deckSettings.ts` (from item 3),
 `cardActions.ts` (the card-management controller extracted from `CardManager.svelte`).
 
 ## Numbers (existing definitions; file references are the source of truth)
 
 One `scheduleIndex(cards, reviews, w)` pass replays each reviewed card once
-(`scheduleFor`, `lib/study/scheduler.ts`) and is shared by every deck on the page.
+(`scheduleFor`, `lib/study/scheduler.ts`) and is shared by every deck on the page — including the due
+counts: `buildQueue` gains an optional `scheduleOf(cardId)` lookup (default: replay as today).
 
 - **Words** of a deck = its vocab cards; **cards** = all its live cards of every kind.
 - **Item state** = `classifySchedule` of the vocab card (`lib/stats/wordStates.ts`): New (never
@@ -61,9 +63,10 @@ One `scheduleIndex(cards, reviews, w)` pass replays each reviewed card once
   0–100 score whose threshold the learner can move; Mature (21 days) stays visible as a state —
   cost if wrong: switch "mastered" to Mature in one function.
 - Reverse and cloze cards never change studied/mastered/state (item 3: mastery counts only vocab here).
-- **Due** = real cards a session started now would review: due ≤ now, of the kinds in effect
-  (remembered session kinds; reverse/cloze only where the deck enables them and the word does not
-  skip them), **minus buried** (item 3). **New** = real cards never reviewed, same kinds. Not-yet-created
+- **Due** = real cards a session started now would review — whatever due rule `buildQueue` applies
+  (due ≤ now today; 4b's `isDueToday` once it lands) — of the effective kinds (item 3's
+  `effectiveKinds`; reverse/cloze only where the deck enables them and the word does not skip them),
+  **minus buried** (item 3), uncapped. **New** = real cards never reviewed, same kinds. Not-yet-created
   reverse/cloze cards are not counted; the deck row says "+ reverse/cloze cards as you study".
 - **Reviews (30 days)** = recorded reviews of the deck's cards (all kinds) with
   `dayOf(ts)` within the 30 learner dates ending today (`addDays(today, -29)` … `today`).
@@ -93,12 +96,15 @@ shown "off"), next due. Search (written form, readings, entry id; folded like th
 bulk **Move** and **Delete** with the single-slot **Undo** reuse `cardActions.ts` — the controller
 extracted from `CardManager.svelte` (serialized write chain, `PartialCardsError` handling, 10 s undo
 that pauses while busy, focus return), so both places behave identically. Expanding a row offers
-per-kind **Remove** / **Turn back on** (`dropSiblingCards` / un-skip, item 3). The word opens
+per-kind **Remove** / **Turn back on** for every opt-in kind the deck enables, created or not
+(`dropSiblingCards`, `skipKind`, `unskipKind`, item 3). The word opens
 `/entry/<id>`. Rendering is batched: 100 rows, then "Show 100 more".
 
 **Entry bases.** New route `POST /api/entries/bases` `{ids: number[]}` (1–500 ids) → `EntryBase[]`
 in request order, unknown ids omitted, authenticated (401 otherwise, 400 on a bad body). It serves
-the same shared rows as `GET /api/schemes/{id}/entries` (`entryBases`), nothing user-specific. The
+the `entryBases` rows of `GET /api/schemes/{id}/entries` **with the caller's own entry overlay applied**
+(`overlay.Apply`, as `GET /api/entries/{id}` does), so the deck list and the entry page agree; one
+user's overlay never shows to another. The
 client loads bases for the visible rows first, then the rest in chunks of 500 (concurrency 2), cached
 for the session. Ruling: a batch read instead of one `GET /api/entries/{id}` per row — a 3,000-word
 deck would otherwise be 3,000 requests before search by reading works — cost if wrong: one small route.
@@ -106,15 +112,16 @@ deck would otherwise be 3,000 requests before search by reading works — cost i
 ## Deck settings
 
 Rename (`renameDeck`), Delete (confirm: "Its N cards move to <their other decks or General>"; uses
-`deleteDeck`, which moves cards out first, then tombstones `deckcfg:<id>`), **Card types**: Reverse and
+`deleteDeck`, which moves cards out first, then tombstones `deckcfg:<id>` and, once 4b lands,
+`limits:deck:<id>`), **Card types**: Reverse and
 Cloze switches writing `deckcfg:<id>.cardTypes` (item 3), and a **Daily limits** slot. General can be
 configured but not renamed or deleted.
 
-**4b integration point.** `DeckSettings` renders `<DeckLimitsSlot deckId workspaceId />`; until 4b
-lands the slot module exports nothing and the section is hidden. 4b provides the editor and
-`limitsLeftToday(deckId) -> { new: number | null; reviews: number | null }` (null = unlimited), which
-the list and detail show as "x left today" next to Due/New. Per-deck limits may live in the same
-`deckcfg:` row: `deckSettings.ts` keeps unknown fields on every write.
+**4b integration point.** `DeckSettingsView` renders the slot module's editor; until 4b lands the
+slot exports `null` and the section is hidden. 4b provides the per-deck limit control (its spec puts
+it on this page and, until then, on the `/study` deck list — it moves here) and the remaining counts
+(`effectiveLimits` + `dayCounts`), shown as "x left today" next to Due/New. Burying is applied before
+4b's admission, so a buried card never uses up a daily limit.
 
 ## System and plugin decks
 
@@ -123,13 +130,15 @@ workspace language, level) from `GET /api/schemes`; its items are `GET /api/sche
 filtered by the scheme unit (`word` schemes keep `kind === 'word'`, `character` schemes keep
 characters). Nothing to sync or migrate, a pack update shows at once, and the read-only rule holds by
 construction — cost if wrong: the list needs the API (it is public and cached by the browser).
-Plugin decks come from an optional web-registry provider `WebPlugin.decks?: () =>
-Promise<SystemDeckDef[]>` (`{key, title, language, entryIds}`); no plugin ships one in v0.3.0
-(starter decks, #75, will).
+Plugin decks come from a provider list `pluginDeckProviders` in
+`lib/plugins/flashcards/decks/providers.ts` (`{pluginId, load(): Promise<SystemDeckDef[]>}`,
+`SystemDeckDef = {key, title, language, entryIds}`; a separate module so the page never imports the
+plugin registry that imports the page); no plugin ships one in v0.3.0 (starter decks, #75, will).
 
 The section groups decks by scheme, collapsed; expanding loads each level's items (concurrency 2,
 cached) and shows "x of y in your decks". A system deck detail lists its items with the learner's
-state (or "not studied"), **Study** (a level session for that level: the existing `mode: 'levels'`),
+state (or "not studied"), **Study** (a level session for that level: the existing `mode: 'levels'`,
+with vocab in its kinds; character-unit levels study through item 1's #57 unit-aware level queue),
 and **Add to my decks**.
 
 **Add to my decks** (`addToDeck.ts`, pure plan + one writer):
@@ -145,9 +154,11 @@ and **Add to my decks**.
   `createdAt = base + i ms` so new cards come in level order; a live vocab card not in the target →
   **join**: append the target to its and its siblings' `deckIds` (siblings follow their word); already
   in the target → skip. Re-adding therefore only adds what is new, and running it on two devices
-  writes the same keys.
+  writes the same keys (identical rows when planned with the same `now`).
 - Writes go through `POST /api/sync/push` (`pluginData`, last-write-wins, `updatedAt` = now) in chunks
-  of 200 rows, deck row first; a progress line ("Adding 200 of 300…") and on failure "Added 200;
+  of 200 rows, deck row first; a chunk whose result reports `dataSkipped` or `dataRefused` > 0 (a
+  newer row on the server, e.g. a later tombstone) is an error that names the count and offers a
+  reload, never a silent success; a progress line ("Adding 200 of 300…") and on failure "Added 200;
   try again to add the rest" (the plan is idempotent, so retry is safe). Ruling: batch push instead
   of one PUT per card — a 1,000-word level is five requests, not 1,000 — cost if wrong: none; the
   route already exists and enforces workspace ownership and `owns-data`.

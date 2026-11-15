@@ -10,8 +10,8 @@ mastery rules for them, with contract fixtures for Android.
 
 **Spec:** `docs/superpowers/specs/2026-11-15-v030-reverse-cloze-cards-design.md` (read it first; its
 rulings are binding). **Order:** this item is built **before** the decks view
-(`2026-11-15-v030-decks-view.md`), and **after item 1 (#84) is merged into `feature/v0.3.0`** (it uses
-`lib/time/studyDay.ts` / `lib/time/zone.ts`). If item 1 is not merged when Task 5 starts, stop and
+(`2026-11-15-v030-decks-view.md`), and **after item 1 (#84 study day, #57 character level sessions) is merged into `feature/v0.3.0`**
+(it uses `lib/time/studyDay.ts` / `lib/time/zone.ts`, `readContract`, and #57's `buildLevelQueue`). If item 1 is not merged when Task 5 starts, stop and
 report: do not invent a day function.
 
 **Architecture:** web only, no migration, no new route. Pure modules in `apps/web/src/lib/study/`
@@ -78,14 +78,15 @@ from the then-current tip. Run `npm --prefix <wt>/apps/web ci` once.
   `apps/web/src/lib/study/cardFlow.ts` (`sessionCounts` zero record), `apps/web/src/routes/study/+page.svelte`
   and `apps/web/src/routes/study/session/+page.svelte` (the `Record<StudyCardKind, string>` label maps:
   "Reverse", "Cloze"; key hints from the spec)
-- Create: `apps/web/src/lib/testing/contracts.ts`, `docs/contracts/cards/card-ids.json`,
-  `docs/contracts/cards/README.md`, `apps/web/src/lib/study/cardIds.contract.test.ts`
+- Create: `docs/contracts/cards/card-ids.json`, `docs/contracts/cards/README.md`,
+  `apps/web/src/lib/study/cardIds.contract.test.ts`
+- Modify: `docs/contracts/README.md` (item 1's index: one line for `cards/`), the hard-coded
+  `STUDY_KINDS` list in `routes/study/session/+page.svelte` (the type checker does not flag it)
 
 **Interfaces:**
-- `contracts.ts`: `export function loadContract<T>(relativePath: string): T` — reads
-  `docs/contracts/<relativePath>` with `node:fs` relative to the repo root
-  (`new URL('../../../../../docs/contracts/', import.meta.url)`), `JSON.parse`, throws with the path on failure.
-- `card-ids.json`: `{ "cases": [ { "kind", "entryId", "sentenceId"?, "id", "cardKey", "virtualId"? } ] }`
+- Fixtures are read with item 1's `readContract(path)` from `apps/web/src/lib/testing/contracts.ts`
+  (do not create a second loader) and use item 1's format `{"version":1,"rule":"…","cases":[…]}`.
+- `card-ids.json`: `{"version":1,"rule":"card-ids","cases":[ { "kind", "entryId", "sentenceId"?, "id", "cardKey", "virtualId"? } ]}`
   covering vocab 1201 → `c-vocab-1201` / `vocab:1201`; sentence 1201 s 77 → `c-sentence-1201` /
   `sentence:1201:77`; reverse 1201 → `c-reverse-1201` / `reverse:1201` / `companion:reverse:1201`;
   cloze 1201 with sentenceId 77 → `c-cloze-1201` / `cloze:1201` (sentence ignored) /
@@ -130,7 +131,7 @@ export function enabledKinds(settings: Record<string, DeckSettings> | undefined,
 // store.ts
 export async function saveDeckCardTypes(deckId: string, cardTypes: readonly OptInKind[]): Promise<DeckSettings>;
 ```
-- `extra` holds every unknown field verbatim (item 4b may store `limits` there); `cardTypes` keeps known
+- `extra` holds every unknown field verbatim (forward compatibility; 4b's limits use their own `limits:deck:` rows); `cardTypes` keeps known
   opt-in kinds only, in kind order. `saveDeckCardTypes` re-reads the row, keeps `extra`, PUTs.
 
 - [ ] **Step 1: Failing tests:** parse/serialize round-trip keeps `{"limits":{"new":5}}`; a key/deckId
@@ -157,7 +158,8 @@ before (the per-character mean still rounds once at the end — do not round per
 ### Task 5: Burying (`siblings.ts`) and its fixture
 
 **Files:** Create `apps/web/src/lib/study/siblings.ts`, `apps/web/src/lib/study/siblings.test.ts`,
-`docs/contracts/cards/burying.json`; append the format to `docs/contracts/cards/README.md`.
+`docs/contracts/cards/burying.json`; modify `cardFlow.ts`, `cardFlow.test.ts` (`buryAfterAnswer`); append
+the format to `docs/contracts/cards/README.md`.
 
 **Interfaces:**
 ```ts
@@ -166,15 +168,20 @@ export interface Buried { cardIds: Set<string>; keys: Set<string> } // keys = `$
 export function buriedNow(input: { cards: readonly StudyCard[]; reviews: readonly ReviewEvent[]; now: Date;
   dayOf: (ms: number) => string }): Buried;
 export function answeredEntriesToday(...same input): Map<number, StudyCardKind[]>; // entry -> kinds answered today
+// in cardFlow.ts, next to dropItem (siblings.ts must not import cardFlow: no cycle):
 export function buryAfterAnswer(plan: DeckSessionPlan, index: number, answered: { kind: StudyCardKind; entryId: number; cardId: string }): { plan: DeckSessionPlan; buried: number };
 ```
+- `siblings.ts` imports only `types.ts`; `buryAfterAnswer` lives in `cardFlow.ts` (it needs
+  `DeckSessionPlan` and the `dropItem` backfill) and is tested in `cardFlow.test.ts`.
+- `buryAfterAnswer` runs on the queue `applyGrade` returned (a re-show may have been inserted) with
+  `index` = the answered position (`step.index - 1`).
 - `buriedNow`: only reviews whose card is in `cards` (deleted cards do not bury); a card is never buried by
   its own reviews; for every entry with answers today, every other card / kind of that entry with
   `buries(answeredKind, kind)` is buried.
 - `buryAfterAnswer`: removes items after `index` with the same entry, another `cardId`, `reshow === undefined`
   and `buries(answered.kind, item.kind)`; each removed virtual item is backfilled exactly like `dropItem`
   (next reserve item appended while `backfillLeft > 0`). Items before `index + 1` are untouched.
-- `burying.json`: `{ "cases": [ { "name", "now", "today", "cards": [...], "reviews": [{"cardId","ts","day","grade"}], "buriedCardIds": [...], "buriedKeys": [...] } ] }`.
+- `burying.json`: `{"version":1,"rule":"burying","cases": [ { "name", "now", "today", "cards": [...], "reviews": [{"cardId","ts","day","grade"}], "buriedCardIds": [...], "buriedKeys": [...] } ]}`.
   The test's `dayOf` maps each review `ts` to its `day` and `now` to `today` (time-zone rules belong
   to `docs/contracts/study-day/`). Cases: vocab answered today buries reverse+cloze, not writing;
   writing answered buries reverse; reverse answered buries vocab, sentence, writing, tone, cloze;
@@ -190,23 +197,31 @@ export function buryAfterAnswer(plan: DeckSessionPlan, index: number, answered: 
 
 **Files:** Modify `apps/web/src/lib/study/companions.ts` (`CompanionKind` gains reverse/cloze; new
 options), `apps/web/src/lib/study/cardFlow.ts` (`DeckSessionOptions` gains `deckSettings?`, `dayOf?`;
-`levelSessionItems` gains an optional `buried?: Buried`), `apps/web/src/lib/study/scheduler.ts` (no change
-to `buildQueue`; filtering happens in `deckSessionPlan`); tests in `companions.test.ts`, `cardFlow.test.ts`.
+`allowedReal`), `apps/web/src/lib/study/levelQueue.ts` (`BuildLevelQueueOptions.excludeEntries?: ReadonlySet<number>`:
+entries skipped entirely — neither their card nor a virtual item; build on item 1's #57 unit-aware version);
+tests in `companions.test.ts`, `cardFlow.test.ts`, `levelQueue.test.ts`.
 
 **Interfaces:**
 ```ts
 planCompanions({ cards, kinds, deckIds, newBudget, deckSettings?, exclude? }): CompanionItem[]
 // deckSettings: reverse/cloze planned only for vocab cards with an enabling deck in deckIds ∩ card.deckIds;
 // skipKinds honoured for every companion kind; exclude: Set<number> of entry ids (in queue or answered today)
-// that get no opt-in item; at most one opt-in item (reverse or cloze) per entry.
+// that get no opt-in item; at most one opt-in item per entry, reverse preferred (cloze when reverse
+// exists, is skipped, not enabled or in `skip`); `skip` (the ineligible memory) is honoured for all kinds.
+// Also raise the internal plan size in deckSessionPlan from `cards.length * 3` to `cards.length * 5`
+// (five companion kinds), or the reserve tail is cut.
 export function allowedReal(card: StudyCard, ctx: { sessionDecks: readonly string[];
   deckSettings?: Record<string, DeckSettings>; skipByEntry: Map<number, Set<StudyCardKind>> }): boolean;
 ```
-- `deckSessionPlan`: `buildQueue` as today, then drop real cards that fail `allowedReal` or are buried
-  (`buriedNow` when `dayOf` is given), then plan companions with `exclude` = the entries of every remaining
+- `deckSessionPlan`: **pre-filter `cards`** (drop real cards that fail `allowedReal` or are buried —
+  `buriedNow` when `dayOf` is given) and call `buildQueue` on the rest, so nothing disallowed uses a
+  limit slot and `freshCount` is computed from what is really queued; then plan companions with `exclude` = the entries of every remaining
   real queue item plus the entries answered today (an opt-in item conflicts with any sibling); legacy
-  companions keep their current rules. The budget arithmetic stays as today. Without `deckSettings`
-  nothing opt-in is planned or queued.
+  companions keep their current rules except that a virtual companion whose `kind:entryId` is in
+  `Buried.keys` is dropped. The budget arithmetic stays as today. Without `deckSettings` nothing
+  opt-in is planned or queued.
+- Level sessions: the runner passes `excludeEntries` = entries with a buried vocab card (computed by
+  `buriedNow`), applied inside `buildLevelQueue` before its limits.
 - `levelSessionItems`: drops items whose card id or `vocab:<entryId>` key is buried.
 
 - [ ] **Step 1: Failing tests:** (a) **equivalence**: for every existing `cardFlow.test.ts` scenario,
@@ -216,7 +231,10 @@ export function allowedReal(card: StudyCard, ctx: { sessionDecks: readonly strin
   due in this queue gets no virtual reverse; (e) answered today → no opt-in item, real reverse dropped;
   (f) reverse and cloze both enabled → one opt-in item per entry, round-robin across entries;
   (g) a real reverse card in a deck with reverse switched off is not queued, but its history is kept;
-  (h) level session: vocab card buried by a reverse answered today is dropped.
+  (h) level session: vocab card buried by a reverse answered today is neither queued nor turned into a
+  virtual `level:` item, and the next level word takes its slot; (i) a disallowed real reverse card does
+  not use a `reviewLimit` slot (limit 1, one disallowed + one allowed due card → the allowed one is
+  queued); (j) reverse answered today drops the word's virtual writing companion.
 - [ ] **Step 2: Implement. Step 3: Gates;** commit `feat(study): plan reverse and cloze per deck with burying`.
 
 ### Task 7: Cloze logic (`cloze.ts`) and its fixture
@@ -231,8 +249,8 @@ export function blankSpans(text: string, entry: { id: number; written: string; f
   matches: readonly { start: number; end: number; entries: readonly { id: number }[] }[]): Span[];
 export function eligibleSentences<S extends { id: number; hanzi: string }>(sentences: readonly S[], spansOf: (s: S) => Span[]): S[];
 export function sentenceForShowing<S>(eligible: readonly S[], recordedReviews: number): S | null; // eligible[n mod len]
-export interface ClozePrompt { before: string; after: string; answer: string } // other spans replaced by GAP
-export const GAP = '＿＿';
+export type ClozePart = string | { gap: true };            // a string run, or an extra (non-answer) gap
+export interface ClozePrompt { before: ClozePart[]; after: ClozePart[]; answer: string }
 export function clozePrompt(text: string, spans: readonly Span[]): ClozePrompt;
 export type ClozeMode = 'choose' | 'type';
 export function clozeMode(input: { tier: SaladTier; answer: string; entryForms: readonly string[]; distractors: readonly string[] }): ClozeMode;
@@ -241,8 +259,9 @@ export function acceptedClozeAnswers(answer: string, entry: { written: string; f
 export function normalizeAnswer(text: string): string; // NFC, trim, remove all whitespace
 export function suggestClozeGrade(r: { correct: boolean; gaveUp: boolean }): ReviewGrade; // Good or Again
 ```
-- `cloze.json`: `{ "cases": [ { "name", "entry", "sentences": [{"id","hanzi"}], "matchesBySentence": {"<id>": [...]}, "reviews": n, "eligibleIds": [...], "shownId", "spans": [[s,e]...], "before", "after", "answer" } ] }`.
-  Cases: 喜欢 (1201) in 我喜欢喝茶，他也喜欢。 — spans [[1,3],[8,10]], before 我, after 喝茶，他也＿＿。;
+- `cloze.json`: `{"version":1,"rule":"cloze","cases": [ { "name", "entry", "sentences": [{"id","hanzi"}], "matchesBySentence": {"<id>": [...]}, "reviews": n, "eligibleIds": [...], "shownId", "spans": [[s,e]...], "before", "after", "answer" } ]}` (`before`/`after` as `ClozePart` arrays).
+  Cases: 喜欢 (1201) in 我喜欢喝茶，他也喜欢。 — spans [[1,3],[8,10]], before `["我"]`, after
+  `["喝茶，他也", {"gap":true}, "。"]`;
   食べる (5001) in パンを食べました。 with a segmenter match [3,8] → answer 食べました, mode type;
   no segmenter match → literal fallback; a sentence without the word is not eligible; rotation with
   eligible [11,12,15]: reviews 0 → 11, 1 → 12, 4 → 12; after 12 is retired eligible [11,15], reviews 1 → 15
@@ -255,8 +274,8 @@ export function suggestClozeGrade(r: { correct: boolean; gaveUp: boolean }): Rev
 
 ### Task 8: Reverse logic (`reverse.ts`) and faces
 
-**Files:** Create `apps/web/src/lib/study/reverse.ts`, `reverse.test.ts`; modify
-`apps/web/src/lib/study/cardView.ts` (`buildReverseFront(entry)`), `cardView.test.ts`.
+**Files:** Create `apps/web/src/lib/study/reverse.ts`, `reverse.test.ts` (`buildReverseFront` lives
+here; the back reuses `cardView.buildVocabFaces` unchanged).
 
 **Interfaces:**
 ```ts
@@ -271,12 +290,15 @@ export function suggestReverseGrade(r: { typed: string; accepted: Set<string>; r
 
 ### Task 9: Eligibility
 
-**Files:** Modify `apps/web/src/lib/study/cardFlow.ts` (`EligibilityContext` gains `hasCloze?: boolean`;
-`isEligible('reverse')` = `entry.kind === 'word'` and a gloss exists — extend `EntryLike` with `kind` and
-`glossCount`; `isEligible('cloze')` = `ctx.hasCloze`; `rememberDrop` true for both), `cardFlow.test.ts`.
+**Files:** Modify `apps/web/src/lib/study/cardFlow.ts` (`EligibilityContext` gains optional `hasCloze?`;
+`EntryLike` gains **optional** `kind?` and `glossCount?` so existing call sites and tests compile;
+`isEligible('reverse')` = `entry.kind === 'word'` and `glossCount > 0`; `isEligible('cloze')` = `ctx.hasCloze === true`;
+`rememberDrop(item, written, opts?: { transient?: boolean })` returns false when `transient`), `cardFlow.test.ts`.
 
-- [ ] **Step 1: Failing tests:** a character entry → reverse ineligible; a word without glosses →
-  ineligible; cloze without an eligible sentence → ineligible; `rememberDrop` for a virtual reverse is true.
+- [ ] **Step 1: Failing tests** (positive cases fail first; the negative ones already pass through
+  `default: false` and stay as regression tests): a word entry with glosses → reverse eligible; cloze with
+  `hasCloze: true` → eligible; a character entry → reverse ineligible; `rememberDrop(…, {transient: true})`
+  for a virtual cloze is false.
 - [ ] **Step 2: Implement. Step 3: Gates;** commit `feat(study): eligibility of reverse and cloze cards`.
 
 ### Task 10: Shared `ClozeChoice`
@@ -284,9 +306,12 @@ export function suggestReverseGrade(r: { typed: string; accepted: Set<string>; r
 **Files:** Move `apps/web/src/lib/plugins/grammar/ClozeChoice.svelte` and `clozeKeys.ts` (+ test) to
 `apps/web/src/lib/components/ClozeChoice.svelte`, `apps/web/src/lib/components/clozeKeys.ts`; update the
 grammar imports (`PracticeRun.svelte`); create `apps/web/src/lib/components/ClozeChoice.dom.test.ts`.
-Add an optional `gapLabel` prop (visually hidden text inside the gap, default "blank").
+Add an optional `gapLabel` prop (visually hidden text inside each gap, default "blank") and accept
+`before`/`after` as `string | ClozePart[]` (grammar keeps passing strings; parts render extra gaps as
+gap elements with the hidden label).
 
-- [ ] **Step 1: Failing jsdom test:** renders before/gap/after with `lang`; key `2` picks the second choice,
+- [ ] **Step 1: Failing jsdom test:** renders before/gap/after with `lang`; parts with an extra gap
+  render two gap elements, each with the hidden label; key `2` picks the second choice,
   calls `onResult` once and the keydown event is `defaultPrevented`; a second key does nothing; the gap
   has the hidden "blank" text; feedback is in `role="status"`. **Step 2: Move and implement.**
   **Step 3: Gates** (grammar tests still green); commit `refactor(web): share the cloze choice component`.
@@ -322,8 +347,13 @@ cases `reverse` (eligibility) and `cloze` (segment each candidate sentence once 
 `eligibleSentences`, `sentenceForShowing(reviewCountFor(...))`, `clozePrompt`, distractors from the
 session's vocab cards' `written`); after a **recorded** grade call `buryAfterAnswer` and, when it removed
 items, set the status line "N related card(s) buried until tomorrow"; render `ReverseCard`/`ClozeCard`;
-audio for reverse after the reveal like vocab). Extract any new decision into `cardFlow.ts` with a unit
-test first (e.g. `clozeDistractorPool(cards, deckIds, entryId)`).
+audio for reverse after the reveal like vocab; `onKeydown` and `revealVocab` handle Space/Enter before
+`done` for reverse as for vocab, via a helper `revealsOnKey(kind)`; a cloze item stores its sentence id and
+mode on the `FlowItem` (`clozeSentenceId`, `clozeMode`, like `tier`) so an Again re-show shows the same
+sentence; segment results are cached per sentence id for the session, at most 8 sentences per entry;
+a failed segment request drops the item with `rememberDrop(…, {transient: true})`). Extract any new
+decision into `cardFlow.ts` with a unit test first (e.g. `clozeDistractorPool(cards, deckIds, entryId)`,
+`revealsOnKey`, `clozeReshowState`).
 
 - [ ] **Step 1: Failing unit tests** for each extracted helper. **Step 2: Implement** the wiring.
 - [ ] **Step 3: Gates;** commit `feat(study): run reverse and cloze cards in sessions`.
@@ -338,9 +368,13 @@ export async function dropSiblingCards(ids: readonly string[]): Promise<StudyCar
 // non-vocab ids only (vocab ids → Error); tombstones each row and its duplicates, then rewrites the
 // entry's vocab row(s) with the kinds added to skipKinds; returns the previous rows (vocab rows
 // included) for restoreCards; PartialCardsError like deleteCards.
+export async function skipKind(entryId: number, kind: StudyCardKind): Promise<StudyCard[]>;
+// adds the kind to the vocab row(s) without any card existing; returns previous rows for undo.
 export async function unskipKind(entryId: number, kind: StudyCardKind): Promise<StudyCard[]>;
 // removes the kind from the vocab row(s); returns previous rows for undo.
 ```
+- Undo of all three is `restoreCards(rows)` **without** `onlyLive` (the sibling row is a tombstone).
+- A stray sibling with no vocab row: `dropSiblingCards` only tombstones it.
 - [ ] **Step 1: Failing tests:** dropping `c-reverse-7` tombstones it and writes `c-vocab-7` with
   `skipKinds: ['reverse']`; `restoreCards(result)` brings both back; deleting the word `c-vocab-7`
   (existing `deleteCards`) also tombstones `c-reverse-7` and `c-cloze-7`; moving it moves them;
@@ -352,7 +386,7 @@ export async function unskipKind(entryId: number, kind: StudyCardKind): Promise<
 **Files:**
 - Create: `apps/web/src/lib/study/DeckCardTypes.svelte` (Reverse/Cloze switches for one deck; calls
   `saveDeckCardTypes`), `DeckCardTypes.dom.test.ts`, `apps/web/src/lib/study/dueCounts.ts`, `dueCounts.test.ts`
-- Modify: `apps/web/src/lib/study/session.ts` (`CARD_TYPES` + reverse/cloze; `validateConfig` accepts them),
+- Modify: `apps/web/src/lib/study/scheduler.ts` (`BuildQueueOptions.scheduleOf?`), `apps/web/src/lib/study/session.ts` (`CARD_TYPES` + reverse/cloze; `validateConfig` already accepts them through `CARD_KINDS`),
   `apps/web/src/lib/study/cardTypesMemory.ts` (`extraTypeChoices` per workspace:
   `parseExtraChoices/withExtraChoice/loadExtraChoices/rememberExtraChoice`, and
   `defaultExtraTypes(enabled: Set<OptInKind>, choices) -> OptInKind[]`), `apps/web/src/routes/study/+page.svelte`
@@ -360,11 +394,21 @@ export async function unskipKind(entryId: number, kind: StudyCardKind): Promise<
   defaulting from `defaultExtraTypes`; unchecking records the choice), `FlashcardsWidget.svelte`
   (counts through `dueCounts`)
 
-**Interfaces:** `export function dueCounts(input: { cards; reviews; deckIds; kinds; deckSettings?; now; w; dayOf? }): { due: number; fresh: number }`
-— `buildQueue` with unlimited limits, then the same `allowedReal` and burying filters as the planner.
-The widget and the setup summary both use it.
+**Interfaces:**
+`export function dueCounts(input: { cards; reviews; deckIds; kinds; deckSettings?; now; w; dayOf?; newLimit?: number; reviewLimit?: number; scheduleOf?: (cardId: string) => Schedule | null }): { due: number; fresh: number }`
+— the planner's pre-filter (`allowedReal`, burying), then `buildQueue` with the given limits (default
+unlimited). The **home widget** switches to it, passing its current caps (`config.reviewLimit`,
+`config.newLimit`) so its numbers stay identical without config. The **setup summary keeps**
+`deckSessionItems` + `sessionCounts` (it counts virtual companions; that stays). `scheduleOf` is
+passed through to `buildQueue` (an optional lookup added there in this task, default = replay as today),
+so the decks view can reuse one schedule index.
+`export function effectiveKinds(remembered: StudyCardKind[] | null, enabled: Set<OptInKind>, choices: ExtraChoices): StudyCardKind[]`
+(in `cardTypesMemory.ts`): the remembered existing kinds (opt-in entries ignored; vocab when none) plus each
+enabled opt-in kind not unchecked in `choices`. Widget, setup page and (3b) decks view all use it.
 
-- [ ] **Step 1: Failing tests:** `dueCounts` equals the old widget numbers without config; a buried
+- [ ] **Step 1: Failing tests:** `dueCounts` with the widget's caps equals the old widget computation
+  without config (table test over the widget's scenarios); `buildQueue` with a `scheduleOf` lookup gives
+  the same queue as without; `effectiveKinds` cases; a buried
   reverse is not due; checkboxes appear only for enabled kinds and start checked unless the stored
   choice says off; `DeckCardTypes` toggling writes `cardTypes` and shows an error inline on failure.
 - [ ] **Step 2: Implement. Step 3: Gates;** commit `feat(study): deck switches and session choice for reverse and cloze`.
@@ -402,6 +446,10 @@ Running list for item 7 (`docs/contracts/`); every file below is created by this
   zone rules live in `docs/contracts/study-day/`.
 - `docs/contracts/cards/cloze.json` — eligible sentences, blank spans (code points), rotation, prompt
   text (Task 7).
+- Interaction with item 4b (`docs/superpowers/specs/2026-11-15-v030-vacation-and-limits-design.md`): burying
+  removes cards **before** 4b's admission (`admit`), so a buried card never consumes a daily limit and
+  is not counted as due; 4b's `isDueToday` replaces "due ≤ now" inside `buildQueue`, which this plan's
+  pre-filter feeds unchanged. Fixtures of both must agree on that order (note for item 7).
 - `docs/contracts/cards/README.md` — the rules: one cloze card per entry, sentence-independent ids,
   `deckcfg:<deckId>` row `{deckId, cardTypes, updatedAt, …unknown fields kept}`, `skipKinds` on vocab
   rows, mastery kinds (`vocab, sentence, writing, tone`), XP values, "old clients read unknown review
@@ -417,3 +465,22 @@ Running list for item 7 (`docs/contracts/`); every file below is created by this
 - Ruling: no runner-level jsdom test for the 1,100-line session page; its new decisions are extracted
   into tested helpers and the cards have their own jsdom tests — cost if wrong: wiring bugs surface in
   review or the owner's hand check (listed in the handoff).
+
+## Rulings added after the builder check
+
+- Ruling: filters (switch off, skipped, buried) run **before** `buildQueue`/`buildLevelQueue` apply their
+  limits — otherwise a disallowed card uses a slot and the session comes out short — cost if wrong: none.
+- Ruling: one opt-in item per entry and session, reverse preferred, cloze when reverse cannot be
+  planned — deterministic and never blocks a kind for more than a session — cost if wrong: cloze cards
+  of words that also have reverse start a day later.
+- Ruling: the home widget keeps its caps through `dueCounts(newLimit, reviewLimit)` and the setup summary
+  keeps counting virtual companions — existing numbers stay identical — cost if wrong: none.
+- Ruling: one `effectiveKinds` function decides which kinds count everywhere (remembered existing kinds +
+  enabled, not unchecked opt-in kinds) — two memories would make the widget and the decks view disagree —
+  cost if wrong: one function.
+- Ruling: an Again re-show of a cloze card keeps its sentence and answer mode; the rotation advances only
+  with recorded reviews — cost if wrong: none.
+- Ruling: a failed segment request is transient (not remembered as ineligible) — cost if wrong: the word
+  is checked again next session.
+- Ruling: fixtures use item 1's loader and format (`readContract`, `{"version":1,"rule","cases"}`) —
+  one contract convention for Android — cost if wrong: none.
