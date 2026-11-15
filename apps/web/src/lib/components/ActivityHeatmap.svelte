@@ -178,11 +178,19 @@
 		</div>
 	{/if}
 
-	<div class="grid" role="img" aria-label={summary}>
+	<!-- The coloured grid is for sighted users (tooltips via title); assistive
+	     tech gets the window summary and one list item per day with activity. -->
+	<div class="grid" aria-hidden="true">
 		{#each cells as cell (cell.day)}
 			<span class="cell level-{cell.level}" title={cell.title}></span>
 		{/each}
 	</div>
+	<p class="visually-hidden">{summary}</p>
+	<ul class="visually-hidden" aria-label="Daily activity">
+		{#each cells.filter((cell) => cell.level > 0) as cell (cell.day)}
+			<li>{cell.title}</li>
+		{/each}
+	</ul>
 
 	<footer class="legend">
 		<span>

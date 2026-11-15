@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import BookView from './BookView.svelte';
 	import Library from './Library.svelte';
 	import SourceBrowser from './SourceBrowser.svelte';
@@ -8,6 +9,10 @@
 
 	const route = $derived(parseRoute(rest));
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Reader')}</title>
+</svelte:head>
 
 {#if route.view === 'sources'}
 	<SourceBrowser />

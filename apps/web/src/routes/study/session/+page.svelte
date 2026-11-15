@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getEntry } from '$lib/api/entries';
@@ -664,6 +665,10 @@
 		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Session', 'Study')}</title>
+</svelte:head>
 
 <svelte:window onkeydown={onKeydown} />
 

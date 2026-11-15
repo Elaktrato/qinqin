@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
@@ -114,6 +115,10 @@
 		void record('view', workspace, { entryId: viewed });
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle(notFound ? 'Entry not found' : (entry?.written ?? ''))}</title>
+</svelte:head>
 
 <main class="entry-page">
 	{#if loading}

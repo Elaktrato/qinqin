@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -96,6 +97,14 @@
 		void record('lookup', workspace.id, { query: q });
 	}
 
+	// What a screen reader hears once a search settles; empty while it runs
+	// or when there is nothing to say (the visible hint covers those).
+	const announcement = $derived.by(() => {
+		if (loading || error || !searched) return '';
+		if (hits.length === 0) return `No results for “${activeQuery}”.`;
+		return `${hits.length} ${hits.length === 1 ? 'result' : 'results'} for “${activeQuery}”.`;
+	});
+
 	function sourceLabel(source: string): string {
 		return source === 'written' ? 'written form' : source;
 	}
@@ -159,6 +168,10 @@
 		recordLookup(q, language);
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Search')}</title>
+</svelte:head>
 
 <main class="search-page">
 	<h1>Search</h1>
@@ -230,6 +243,9 @@
 			</button>
 		</div>
 	{/if}
+
+	<!-- Always mounted so assistive tech announces changes to its text. -->
+	<p class="visually-hidden" role="status" aria-live="polite">{announcement}</p>
 
 	{#if lang === null}
 		<p class="hint">

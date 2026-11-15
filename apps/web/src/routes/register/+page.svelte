@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
 	import { register } from '$lib/auth';
@@ -30,6 +31,10 @@
 		}
 	}
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Create account')}</title>
+</svelte:head>
 
 <main class="auth">
 	<h1>Create account</h1>

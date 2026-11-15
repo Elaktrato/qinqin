@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import GrammarBrowse from './GrammarBrowse.svelte';
 	import LessonPage from './LessonView.svelte';
 	import PracticeRun from './PracticeRun.svelte';
@@ -8,6 +9,10 @@
 
 	const route = $derived(parseGrammarRoute(rest));
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Grammar')}</title>
+</svelte:head>
 
 <!-- A new route is a fresh view: no state leaks between lessons. -->
 {#key rest}

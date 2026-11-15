@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
 	import { login } from '$lib/auth';
@@ -29,6 +30,10 @@
 		}
 	}
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Sign in')}</title>
+</svelte:head>
 
 <main class="auth">
 	<h1>Sign in</h1>

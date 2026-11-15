@@ -80,4 +80,24 @@ describe('search page', () => {
 		expect(screen.queryByText('OLD')).toBeNull();
 		expect(screen.getByText('NEW')).toBeTruthy();
 	});
+
+	it('announces the result count in a polite live region', async () => {
+		searchMock.mockResolvedValue([hit(1, 'a'), hit(2, 'b')]);
+		setUrl('/search?q=x');
+		render(Page);
+		const status = await screen.findByRole('status');
+		await waitFor(() => expect(status.textContent).toBe('2 results for “x”.'));
+		expect(status.getAttribute('aria-live')).toBe('polite');
+	});
+
+	it('announces an empty result and a single result', async () => {
+		searchMock.mockResolvedValueOnce([hit(1, 'a')]);
+		setUrl('/search?q=x');
+		render(Page);
+		const status = await screen.findByRole('status');
+		await waitFor(() => expect(status.textContent).toBe('1 result for “x”.'));
+		searchMock.mockResolvedValueOnce([]);
+		setUrl('/search?q=y');
+		await waitFor(() => expect(status.textContent).toBe('No results for “y”.'));
+	});
 });

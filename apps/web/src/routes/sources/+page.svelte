@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
 	import type { Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
@@ -109,6 +110,10 @@
 		loadSchemes();
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Sources')}</title>
+</svelte:head>
 
 {#snippet text(value: string, lang: string)}{#each scriptRuns(value, lang) as run, i (i)}{#if run.lang}<span
 				lang={run.lang}>{run.text}</span
