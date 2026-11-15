@@ -31,6 +31,12 @@
 		return buildVocabFaces(entry, sentence, entry.language);
 	});
 
+	// A character shows its readings only after the reveal; a word has them on
+	// the front already.
+	const showsBackReadings = $derived(
+		faces.front.readings.length === 0 && faces.back.readings.length > 0
+	);
+
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 
 	function reveal(): void {
@@ -59,7 +65,7 @@
 {#if revealed}
 	<section class="answer" aria-labelledby="answer-heading">
 		<h2 id="answer-heading">Answer</h2>
-		{#if faces.front.readings.length === 0 && faces.back.readings.length > 0}
+		{#if showsBackReadings}
 			<ul class="readings back-readings" aria-label="Readings">
 				{#each faces.back.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
 					<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
@@ -91,7 +97,7 @@
 					</ol>
 				</article>
 			{/each}
-		{:else if faces.back.readings.length === 0}
+		{:else if !showsBackReadings}
 			<p class="hint">No glosses for this word yet.</p>
 		{/if}
 	</section>

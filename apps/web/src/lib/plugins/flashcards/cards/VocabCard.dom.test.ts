@@ -61,4 +61,15 @@ describe('VocabCard for a character', () => {
 		expect(screen.queryByText(/No glosses/)).toBeNull();
 		expect(document.querySelector('.dictionary')).toBeNull();
 	});
+
+	it('keeps the no-glosses hint for a word with readings but no senses', () => {
+		const word = kanji({
+			kind: 'word',
+			written: '学校',
+			senses: [],
+			sentences: []
+		});
+		render(VocabCard, { item, entry: word, revealed: true, onDone: vi.fn() });
+		expect(screen.getByText(/No glosses for this word yet/)).toBeTruthy();
+	});
 });
