@@ -121,12 +121,30 @@ export function parseWeightString(s: string): Checked {
 	}
 	const checked = checkWeights(tokens.map(Number));
 	if (!checked.ok) return checked;
-	// The weights ts-fsrs fills in for an older list (w19 is 0, below the
-	// FSRS-6 range) were not typed by the user: they are clipped into range
-	// so the stored set reads back; the typed ones were checked above.
-	const migrated = migrateParameters(checked.w);
+	const raw = checked.w;
+	const migrated = migrateParameters(raw);
 	const ranges = CLAMP_PARAMETERS(2, true);
-	for (let i = checked.w.length; i < migrated.length; i++) {
+	// ts-fsrs converts w4..w6 of a 17-number list on purpose; every other
+	// typed weight must come back unchanged (migrateParameters clips silently).
+	const converted = raw.length === 17 ? [4, 5, 6] : [];
+	for (let i = 0; i < raw.length; i++) {
+		if (converted.includes(i)) continue;
+		if (migrated[i] !== raw[i]) {
+			return { ok: false, error: `Weight ${i + 1} could not be read as given.` };
+		}
+	}
+	for (const i of converted) {
+		const [min, max] = ranges[i];
+		if (!(migrated[i] >= min && migrated[i] <= max)) {
+			return {
+				ok: false,
+				error: `Weight ${i + 1} is outside ${min}–${max} after converting from 17 numbers.`
+			};
+		}
+	}
+	// The weights ts-fsrs fills in (w19 is 0, below the FSRS-6 range) were
+	// not typed by the user: they are clipped into range so the set reads back.
+	for (let i = raw.length; i < migrated.length; i++) {
 		migrated[i] = Math.min(Math.max(migrated[i], ranges[i][0]), ranges[i][1]);
 	}
 	return { ok: true, w: migrated };

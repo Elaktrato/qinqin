@@ -95,6 +95,42 @@ describe('parseWeightString', () => {
 		}
 	});
 
+	it('round-trips 17, 19 and 21 numbers through a stored set', () => {
+		const w17 = '0.4, 0.6, 2.4, 5.8, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.29, 2.61';
+		const w19 = numbers.slice(0, 19).join(', ');
+		const w21 = formatWeights(DEFAULT_W);
+		for (const text of [w17, w19, w21]) {
+			const r = parseWeightString(text);
+			expect(r.ok, text).toBe(true);
+			if (!r.ok) continue;
+			expect(r.w).toHaveLength(21);
+			const row = { id: 'X', w: r.w, createdAt: 'c', source: 'imported' };
+			const set = parseParamSet('fsrs:set:X', JSON.parse(JSON.stringify(row)));
+			expect(set?.w).toEqual(r.w);
+			expect(resolveState(set ? [set] : [], { setId: 'X' }).w).toEqual(r.w);
+		}
+	});
+
+	it('keeps the typed numbers of a 19-number import exactly', () => {
+		const r = parseWeightString(numbers.slice(0, 19).join(', '));
+		expect(r.ok && r.w.slice(0, 19)).toEqual(numbers.slice(0, 19).map(Number));
+	});
+
+	it('rejects a 17-number import whose converted weights leave the allowed range', () => {
+		const base = '0.4, 0.6, 2.4, 5.8, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.29, 2.61'.split(', ').map(Number);
+		const high4 = [...base];
+		high4[4] = 9;
+		high4[5] = 1;
+		const r1 = parseWeightString(high4.join(', '));
+		expect(r1.ok).toBe(false);
+		expect(!r1.ok && r1.error).toMatch(/^Weight 5 is outside 1.10 after converting from 17 numbers/);
+		const high6 = [...base];
+		high6[6] = 3.8;
+		const r2 = parseWeightString(high6.join(', '));
+		expect(r2.ok).toBe(false);
+		expect(!r2.ok && r2.error).toMatch(/^Weight 7 is outside .* after converting from 17 numbers/);
+	});
+
 	it('rejects a non-number', () => {
 		expect(parseWeightString('abc')).toEqual({ ok: false, error: 'Not a list of numbers.' });
 		expect(parseWeightString('')).toEqual({ ok: false, error: 'Not a list of numbers.' });
