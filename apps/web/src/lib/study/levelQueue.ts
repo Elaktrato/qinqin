@@ -6,7 +6,8 @@
 
 import { compareCanonical } from './canonical';
 import { backfillLimit } from './cardFlow';
-import { isValidReview, scheduleFor, sortedReviews } from './scheduler';
+import { existingDecksOf, isValidReview, limitsOf, scheduleFor, sortedReviews } from './scheduler';
+import { admit, dayCountsCached, type Candidate } from './limits';
 import { isDueNow, type StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
@@ -117,7 +118,7 @@ function reserveSize(options: BuildLevelQueueOptions): number {
 }
 
 function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
-	const { entries, cards, reviews, newLimit, reviewLimit, now, w } = options;
+	const { entries, cards, reviews, now, w } = options;
 	if (options.kinds !== undefined && !options.kinds.includes('vocab')) {
 		return { queue: [], reserve: [] };
 	}
@@ -168,14 +169,51 @@ function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
 	due.sort((a, b) => a.at - b.at || a.item.entryId - b.item.entryId);
 	fresh.sort((a, b) => a.entryId - b.entryId);
 
-	const fresher = [...fresh, ...virtual];
-	const limit = cap(newLimit);
+	return admitPlan(
+		options,
+		due.map((entry) => entry.item),
+		[...fresh, ...virtual]
+	);
+}
+
+/**
+ * admitPlan applies the session caps and the daily limits (limits.ts) to the
+ * due items and the new ones, in order. Existing cards count against their
+ * own decks, virtual items against `general`. New items the daily limits
+ * still allow beyond the session cap are the reserve.
+ */
+function admitPlan(
+	options: BuildLevelQueueOptions,
+	due: readonly LevelQueueItem[],
+	fresher: readonly LevelQueueItem[]
+): LevelPlan {
+	const { ctx, cards, reviews, now } = options;
+	if (ctx.vacationToday) return { queue: [], reserve: [] };
+	const counts = dayCountsCached(cards, reviews, ctx, now);
+	const decksOf = new Map(cards.map((card) => [card.id, card.deckIds]));
+	const candidate = (item: LevelQueueItem, bucket: Candidate['bucket']): Candidate => ({
+		cardId: item.cardId,
+		deckIds: item.virtual ? ['general'] : (decksOf.get(item.cardId) ?? ['general']),
+		bucket
+	});
+	const candidates = [
+		...due.map((item) =>
+			candidate(item, counts.reviewedToday.has(item.cardId) ? 'continuing' : 'review')
+		),
+		...fresher.map((item) => candidate(item, 'new'))
+	];
+	const caps = { newLimit: cap(options.newLimit), reviewLimit: cap(options.reviewLimit) };
+	const limitsFor = (deckId: string) => limitsOf(ctx, deckId);
+	const existing = existingDecksOf(ctx, candidates);
+	const inSession = new Set(admit(candidates, limitsFor, counts, caps, existing).admitted);
+	const inAllowance = new Set(
+		admit(candidates, limitsFor, counts, { ...caps, newLimit: Infinity }, existing).admitted
+	);
 	return {
-		queue: [
-			...due.slice(0, cap(reviewLimit)).map((entry) => entry.item),
-			...fresher.slice(0, limit)
-		],
-		reserve: fresher.slice(limit, limit + reserveSize(options))
+		queue: [...due, ...fresher].filter((item) => inSession.has(item.cardId)),
+		reserve: fresher
+			.filter((item) => inAllowance.has(item.cardId) && !inSession.has(item.cardId))
+			.slice(0, reserveSize(options))
 	};
 }
 
@@ -185,7 +223,7 @@ function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
  * card was first reviewed on an earlier learner day.
  */
 function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
-	const { entries, cards, reviews, newLimit, reviewLimit, now, w } = options;
+	const { entries, cards, reviews, now, w } = options;
 	const wanted = CHARACTER_KINDS.filter((kind) => (options.kinds ?? ['vocab']).includes(kind));
 	if (wanted.length === 0) return { queue: [], reserve: [] };
 	const day = options.ctx.day;
@@ -253,15 +291,11 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 	}
 
 	due.sort((a, b) => a.at - b.at);
-	const fresh = [...freshWriting, ...freshVocab];
-	const limit = cap(newLimit);
-	return {
-		queue: [
-			...due.slice(0, cap(reviewLimit)).map((entry) => entry.item),
-			...fresh.slice(0, limit)
-		],
-		reserve: fresh.slice(limit, limit + reserveSize(options))
-	};
+	return admitPlan(
+		options,
+		due.map((entry) => entry.item),
+		[...freshWriting, ...freshVocab]
+	);
 }
 
 /** What the setup page shows for one level and kind selection. */

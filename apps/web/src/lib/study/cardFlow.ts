@@ -6,7 +6,8 @@ import type { StudyContext } from './studyContext';
 import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
-import { buildQueue, scheduleFor } from './scheduler';
+import { buildQueue, existingDecksOf, limitsOf, scheduleFor } from './scheduler';
+import { admit, dayCountsCached, type Candidate } from './limits';
 import type { ClozeMode } from './cloze';
 import { enabledKinds, type DeckSettings } from './deckSettings';
 import { buriedNow, buries, type Buried } from './siblings';
@@ -308,9 +309,6 @@ export function deckSessionPlan({
 		ctx
 	});
 	const reviewed = reviewedIds(reviews);
-	const freshCount = real.filter((card) => !reviewed.has(card.id)).length;
-	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
-	const budget = Math.max(0, limit - freshCount);
 
 	const companions = planCompanions({
 		cards,
@@ -347,9 +345,36 @@ export function deckSessionPlan({
 			})
 		);
 
+	// Companions are new cards: they share the new allowance (the session
+	// limit and each deck's daily limit) with the real new cards. The ones
+	// the daily limits still allow beyond the session limit are the reserve.
+	const counts = dayCountsCached(cards, reviews, ctx, now);
+	const caps = {
+		newLimit: Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0,
+		reviewLimit: Number.isFinite(reviewLimit) ? Math.max(0, Math.floor(reviewLimit)) : 0
+	};
+	const asCandidates: Candidate[] = [
+		...real.map((card) => ({
+			cardId: card.id,
+			deckIds: card.deckIds,
+			bucket: counts.reviewedToday.has(card.id)
+				? ('continuing' as const)
+				: reviewed.has(card.id)
+					? ('review' as const)
+					: ('new' as const)
+		})),
+		...companions.map((item) => ({ cardId: item.cardId, deckIds: item.deckIds ?? [], bucket: 'new' as const }))
+	];
+	const limitsFor = (deckId: string) => limitsOf(ctx, deckId);
+	const existing = existingDecksOf(ctx, asCandidates);
+	const inSession = new Set(admit(asCandidates, limitsFor, counts, caps, existing).admitted);
+	const inAllowance = new Set(
+		admit(asCandidates, limitsFor, counts, { ...caps, newLimit: Infinity }, existing).admitted
+	);
+
 	return {
-		queue: [...real.map(fromCard), ...companions.slice(0, budget)],
-		reserve: companions.slice(budget),
+		queue: [...real.map(fromCard), ...companions.filter((item) => inSession.has(item.cardId))],
+		reserve: companions.filter((item) => inAllowance.has(item.cardId) && !inSession.has(item.cardId)),
 		backfillLeft
 	};
 }

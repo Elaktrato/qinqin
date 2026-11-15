@@ -1,4 +1,4 @@
-import { contextFor, UTC_CONTEXT } from '$lib/study/studyContext';
+import { contextFor, UTC_CONTEXT, type StudyContext } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
@@ -452,8 +452,42 @@ describe('stroke-less glyphs and the new-card budget', () => {
 	});
 
 	it('counts no droppable writing item as new on the setup page', () => {
-		const counts = levelPlanCounts(base);
+		// Unlimited daily limits: this is about which items are new, not the allowance.
+		const counts = levelPlanCounts({
+			...base,
+			ctx: { ...UTC_CONTEXT, limits: { workspace: { new: null, reviews: null }, decks: {}, existingDecks: null } }
+		});
 		// 60 locked-in stroke-less writing items are not new; only the 30 fresh recognitions.
 		expect(counts.fresh).toBe(30);
+	});
+});
+
+describe('level sessions and daily limits', () => {
+	const NOW2 = new Date('2026-03-10T12:00:00Z');
+	const entries = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, kind: 'word' }));
+	const withLimits = (rows: Partial<{ new: number | null; reviews: number | null }>, decks = {}): StudyContext => ({
+		...UTC_CONTEXT,
+		limits: { workspace: rows, decks, existingDecks: null }
+	});
+	const base = { entries, cards: [] as StudyCard[], reviews: [] as ReviewEvent[], newLimit: 50, reviewLimit: 50, now: NOW2, w: DEFAULT_W };
+
+	it('virtual items count against general: 4 new allowed gives 4 virtual items and a reserve', () => {
+		const plan = buildLevelPlan({ ...base, newLimit: 3, ctx: withLimits({ new: 4 }) });
+		expect(plan.queue).toHaveLength(3);
+		expect(plan.reserve).toHaveLength(1);
+	});
+
+	it('an existing card counts against its own deck, not general', () => {
+		const cards: StudyCard[] = [
+			{ id: 'c1', kind: 'vocab', entryId: 1, deckIds: ['full'], createdAt: '2026-01-01T00:00:00Z' }
+		];
+		const ctx = withLimits({}, { full: { new: 0 } });
+		const queue = buildLevelPlan({ ...base, cards, ctx }).queue;
+		expect(queue.some((item) => item.cardId === 'c1')).toBe(false);
+		expect(queue.filter((item) => item.virtual)).toHaveLength(9);
+	});
+
+	it('is empty on a vacation day', () => {
+		expect(buildLevelPlan({ ...base, ctx: { ...UTC_CONTEXT, vacationToday: true } }).queue).toEqual([]);
 	});
 });

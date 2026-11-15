@@ -1,5 +1,5 @@
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
-import { UTC_CONTEXT } from '$lib/study/studyContext';
+import { UTC_CONTEXT, type StudyContext } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
@@ -455,8 +455,9 @@ describe('backfill bound', () => {
 			createdAt: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString()
 		})
 	);
+	// Unlimited daily limits: this block tests the backfill bound, not the allowance.
 	const options = {
-		ctx: UTC_CONTEXT,
+		ctx: { ...UTC_CONTEXT, limits: { workspace: { new: null, reviews: null }, decks: {}, existingDecks: null } },
 		cards: many,
 		reviews: [] as ReviewEvent[],
 		deckIds: ['general'],
@@ -716,5 +717,68 @@ describe('runner helpers for reverse and cloze', () => {
 		];
 		expect(clozeDistractorPool(cards, ['general'], 1)).toEqual(['朋友']);
 		expect(clozeDistractorPool(cards, ['general', 'other'], 1).sort()).toEqual(['学习', '朋友']);
+	});
+});
+
+describe('deckSessionPlan with daily limits', () => {
+	const now = new Date('2026-03-01T12:00:00Z');
+	const vocab = [1, 2, 3, 4, 5].map((entryId) =>
+		card(`v${entryId}`, 'vocab', entryId, { written: '学习', createdAt: `2026-01-0${entryId}T00:00:00Z` })
+	);
+	const opts = {
+		cards: vocab,
+		reviews: [] as ReviewEvent[],
+		deckIds: ['general'],
+		kinds: ['vocab', 'sentence'] as StudyCardKind[],
+		newLimit: 50,
+		reviewLimit: 100,
+		now,
+		w: DEFAULT_W,
+		language: 'zh'
+	};
+	const ctxNew = (n: number | null): StudyContext => ({
+		...UTC_CONTEXT,
+		limits: { workspace: { new: n }, decks: {}, existingDecks: null }
+	});
+
+	it('counts companions as new: the allowance is shared with the real new cards', () => {
+		const plan = deckSessionPlan({ ...opts, ctx: ctxNew(7) });
+		expect(plan.queue).toHaveLength(7);
+		expect(plan.queue.filter((item) => item.virtual)).toHaveLength(2);
+		expect(plan.reserve).toHaveLength(0);
+	});
+
+	it('the session limit stays the cap and the allowance beyond it is the reserve', () => {
+		const plan = deckSessionPlan({ ...opts, newLimit: 6, ctx: ctxNew(8) });
+		expect(plan.queue).toHaveLength(6);
+		expect(plan.reserve).toHaveLength(2);
+	});
+
+	it('a dropped companion is replaced from the reserve only while the allowance holds', () => {
+		let plan = deckSessionPlan({ ...opts, newLimit: 6, ctx: ctxNew(8) });
+		const dropped = plan.queue.find((item) => item.virtual)!;
+		plan = dropItem(plan, dropped.cardId);
+		expect(plan.queue).toHaveLength(6);
+		expect(plan.reserve).toHaveLength(1);
+	});
+
+	it('a companion whose word sits in a full deck is skipped, the next one is admitted', () => {
+		const cards = [
+			card('v1', 'vocab', 1, { written: '学习', deckIds: ['full'], createdAt: '2026-01-01T00:00:00Z' }),
+			card('v2', 'vocab', 2, { written: '学习', deckIds: ['general'], createdAt: '2026-01-02T00:00:00Z' })
+		];
+		const ctx: StudyContext = { ...UTC_CONTEXT, limits: { workspace: null, decks: { full: { new: 0 } }, existingDecks: null } };
+		const plan = deckSessionPlan({ ...opts, cards, deckIds: ['full', 'general'], kinds: ['sentence'], ctx });
+		expect(plan.queue.map((item) => item.entryId)).toEqual([2]);
+	});
+
+	it('is empty on a vacation day', () => {
+		const plan = deckSessionPlan({ ...opts, ctx: { ...UTC_CONTEXT, vacationToday: true } });
+		expect(plan.queue).toEqual([]);
+	});
+
+	it('with no limit rows and fewer cards than 20 nothing changes', () => {
+		const plan = deckSessionPlan({ ...opts, ctx: UTC_CONTEXT });
+		expect(plan.queue).toHaveLength(10);
 	});
 });

@@ -4,7 +4,7 @@
 
 import type { ReviewEvent, StudyCard } from '../types';
 import { clockFromRuns, type ClockRun } from '../studyClock';
-import type { StudyContext } from '../studyContext';
+import { NO_LIMIT_ROWS, type StudyContext } from '../studyContext';
 import { studyDay, type ZoneChange } from '../../time/studyDay';
 import type { Dataset } from './dataset';
 import { optimize } from './optimize';
@@ -46,6 +46,7 @@ self.onmessage = (event: MessageEvent<In>) => {
 					clock: clockFromRuns(m.runs),
 					vacationToday: m.vacationToday,
 					vacation: [],
+					limits: NO_LIMIT_ROWS,
 					history: m.history
 				} satisfies StudyContext
 			});

@@ -1,4 +1,3 @@
-import { UTC_CONTEXT } from '$lib/study/studyContext';
 import { studyDay } from '../time/studyDay';
 import { describe, expect, it } from 'vitest';
 
@@ -8,6 +7,7 @@ import { createEmptyCard, fsrs, Rating, type Grade } from 'ts-fsrs';
 import vacationSchedule from '../../../../../docs/contracts/scheduler/vacation-schedule.json';
 import { DEFAULT_W } from './fsrs/params';
 import { clockFromRuns, IDENTITY_CLOCK } from './studyClock';
+import { UTC_CONTEXT, type StudyContext } from './studyContext';
 import {
 	buildQueue,
 	isDue,
@@ -441,5 +441,57 @@ describe('identity clock golden', () => {
 			expect(got?.stability).toBe(plain.stability);
 			expect(got?.difficulty).toBe(plain.difficulty);
 		}
+	});
+});
+
+describe('buildQueue with daily limits', () => {
+	const many = Array.from({ length: 30 }, (_, i) => card(`n${i}`, ['general'], `2026-01-${String(i + 1).padStart(2, '0')}T00:00:00.000Z`));
+	const base = { reviews: [] as ReviewEvent[], deckIds: ['general'], newLimit: 50, reviewLimit: 50, now: new Date('2026-06-10T12:00:00Z'), w: DEFAULT_W };
+	const ctxWith = (limits: Partial<{ new: number | null; reviews: number | null }> | null): StudyContext => ({
+		...UTC_CONTEXT,
+		limits: { workspace: limits, decks: {}, existingDecks: null }
+	});
+
+	it('applies the default 20 new a day over a larger session limit', () => {
+		expect(buildQueue({ ...base, cards: many, ctx: UTC_CONTEXT })).toHaveLength(20);
+	});
+
+	it('counts what was started today: 3 new left give 3 new', () => {
+		const started = many.slice(0, 17).map((c, i) => review(c.id, 3, '2026-06-10T08:00:00.000Z', eventId(100 + i)));
+		const queue = buildQueue({ ...base, cards: many, reviews: started, ctx: UTC_CONTEXT });
+		// 17 started today are learning (due in minutes: still due at 12:00), 3 new more.
+		expect(queue.filter((c) => !started.some((r) => r.payload.cardId === c.id))).toHaveLength(3);
+	});
+
+	it('a deck limit of 0 new hides new cards of that deck only', () => {
+		const ctx: StudyContext = { ...UTC_CONTEXT, limits: { workspace: null, decks: { d1: { new: 0 } }, existingDecks: null } };
+		const cards = [card('a', ['d1']), card('b', ['general'])];
+		expect(buildQueue({ ...base, deckIds: ['d1', 'general'], cards, ctx }).map((c) => c.id)).toEqual(['b']);
+	});
+
+	it('an earlier review is capped by the review allowance and a refused card does not stop later ones', () => {
+		const old = [card('x', ['full']), card('y', ['general'])];
+		const reviews = old.map((c, i) => review(c.id, 3, '2026-01-01T00:00:00.000Z', eventId(200 + i)));
+		const ctx: StudyContext = { ...UTC_CONTEXT, limits: { workspace: null, decks: { full: { reviews: 0 } }, existingDecks: null } };
+		expect(buildQueue({ ...base, deckIds: ['full', 'general'], cards: old, reviews, ctx }).map((c) => c.id)).toEqual(['y']);
+	});
+
+	it('continuing cards (reviewed today, due again) ignore the allowance but not the session cap', () => {
+		const cards = [card('l1', ['general']), card('l2', ['general'])];
+		const reviews = cards.map((c, i) => review(c.id, 1, '2026-06-10T11:00:00.000Z', eventId(300 + i)));
+		const ctx = ctxWith({ new: 0, reviews: 0 });
+		expect(buildQueue({ ...base, cards, reviews, ctx })).toHaveLength(2);
+		expect(buildQueue({ ...base, cards, reviews, ctx, reviewLimit: 1 })).toHaveLength(1);
+	});
+
+	it('re-shows change nothing: only recorded reviews count', () => {
+		const started = many.slice(0, 3).map((c, i) => review(c.id, 3, '2026-06-10T08:00:00.000Z', eventId(400 + i)));
+		const a = buildQueue({ ...base, cards: many, reviews: started, ctx: UTC_CONTEXT });
+		const b = buildQueue({ ...base, cards: many, reviews: started, ctx: UTC_CONTEXT });
+		expect(a.map((c) => c.id)).toEqual(b.map((c) => c.id));
+	});
+
+	it('is unlimited with null limits', () => {
+		expect(buildQueue({ ...base, cards: many, ctx: ctxWith({ new: null }) })).toHaveLength(30);
 	});
 });

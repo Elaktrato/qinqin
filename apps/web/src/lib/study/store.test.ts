@@ -35,6 +35,8 @@ import {
   studyRowKey,
   saveVacation,
   deleteVacation,
+  saveWorkspaceLimits,
+  saveDeckLimits,
   ALL_WORKSPACES,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
@@ -1705,5 +1707,64 @@ describe("vacation rows", () => {
     const del = calls().find(([, init]) => init?.method === "DELETE");
     expect(String(del?.[0])).toBe(`/api/plugins/${PLUGIN_ID}/data/vacation:A`);
     expect(seen).toEqual([ALL_WORKSPACES, ALL_WORKSPACES]);
+  });
+});
+
+describe("limit rows", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(WORKSPACE_ID);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+  const url = (key: string) => `/api/plugins/${PLUGIN_ID}/data/${key}?workspace=${WORKSPACE_ID}`;
+
+  it("reads limits:workspace and limits:deck rows of the workspace only", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      if (String(input).startsWith("/api/events")) return jsonResponse([]);
+      return jsonResponse({
+        pluginData: [
+          pluginRow("limits:workspace", { version: 1, new: 10, reviews: null }),
+          pluginRow("limits:deck:d1", { version: 1, new: 0 }),
+          pluginRow("limits:deck:d2", { version: 2, new: 5 }),
+          pluginRow("limits:deck:d3", { version: 1, new: 5 }, { workspaceId: 99 }),
+          pluginRow("limits:deck:d4", { version: 1, new: 5 }, { deletedAt: "2026-01-02T00:00:00Z" }),
+        ],
+      });
+    });
+    const data = await loadStudyData(WORKSPACE_ID);
+    expect(data.limits).toEqual({ workspace: { new: 10, reviews: null }, decks: { d1: { new: 0 } } });
+  });
+
+  it("saves the workspace row and a deck row, and deletes a deck row when nothing is left to say", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    await saveWorkspaceLimits({ new: 15, reviews: null });
+    await saveDeckLimits("d1", { reviews: null });
+    await saveDeckLimits("d2", {});
+    expect(putBodies()).toEqual([
+      { url: url("limits:workspace"), body: { version: 1, new: 15, reviews: null } },
+      { url: url("limits:deck:d1"), body: { version: 1, reviews: null } },
+    ]);
+    const del = calls().filter(([, init]) => init?.method === "DELETE");
+    expect(del.map(([u]) => String(u))).toEqual([url("limits:deck:d2")]);
+  });
+
+  it("deleteDeck tombstones the deck's limits row; a 404 is fine", async () => {
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (init?.method === "DELETE") {
+        return String(input).includes("limits:") ? new Response(null, { status: 404 }) : new Response(null, { status: 204 });
+      }
+      return jsonResponse({
+        pluginData: [pluginRow("deck:d1", deck("d1", "Doomed")), pluginRow("limits:deck:d1", { version: 1, new: 1 })],
+      });
+    });
+    await deleteDeck("d1");
+    expect(calls().filter(([, init]) => init?.method === "DELETE").map(([u]) => String(u))).toEqual([
+      url("deck:d1"),
+      url("limits:deck:d1"),
+    ]);
   });
 });

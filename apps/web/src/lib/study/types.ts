@@ -5,6 +5,7 @@
 
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrs/params';
+import type { LimitPair } from './limits';
 import type { VacationPeriod } from './vacation';
 
 /** Where an owned copy of a system deck came from (decks view, "Add to my decks"). */
@@ -94,6 +95,12 @@ export interface StudyCard {
 	createdAt: string;
 }
 
+/** The parsed `limits:*` rows of one workspace. */
+export interface StudyLimits {
+	workspace: Partial<LimitPair> | null;
+	decks: Record<string, Partial<LimitPair>>;
+}
+
 /** Everything a study page needs: the decks and the cards in them. */
 export interface StudyData {
 	decks: Deck[];
@@ -104,6 +111,8 @@ export interface StudyData {
 	deckSettings?: Record<string, DeckSettings>;
 	/** The user's vacation periods (user-global rows), absent when there are none. */
 	vacations?: VacationPeriod[];
+	/** The workspace's daily limit rows; absent without any. */
+	limits?: StudyLimits;
 }
 
 /**

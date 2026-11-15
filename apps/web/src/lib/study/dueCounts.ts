@@ -10,10 +10,24 @@ import { allowedReal, skipKindsByEntry, vocabEntryIds } from './cardFlow';
 import type { DeckSettings } from './deckSettings';
 import { buriedNow } from './siblings';
 import { buildQueue, type Schedule } from './scheduler';
-import type { StudyContext } from './studyContext';
+import type { LimitRows, StudyContext } from './studyContext';
+import { dayCountsCached, type DayCounts } from './limits';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 const UNLIMITED = 1_000_000;
+
+/** Limits that never refuse anything. */
+const NO_DAILY_LIMITS: LimitRows = {
+	workspace: { new: null, reviews: null },
+	decks: {},
+	existingDecks: null
+};
+const EMPTY_COUNTS: DayCounts = {
+	newDone: new Map(),
+	reviewDone: new Map(),
+	reviewedToday: new Set(),
+	firstDay: new Map()
+};
 
 export function dueCounts(input: {
 	cards: readonly StudyCard[];
@@ -27,6 +41,14 @@ export function dueCounts(input: {
 	newLimit?: number;
 	reviewLimit?: number;
 	scheduleOf?: (cardId: string) => Schedule | null;
+	/**
+	 * Apply the daily limits (the home widget's and the study start's "left
+	 * today"). Off by default: the decks view shows what is due and new, with
+	 * the allowance beside it (limitsLeft.ts).
+	 */
+	applyDailyLimits?: boolean;
+	/** What today already used, shared by many counts (limits.ts). */
+	counts?: DayCounts;
 }): { due: number; fresh: number } {
 	const { cards, reviews, deckIds, kinds, deckSettings, now, w, scheduleOf } = input;
 	const buried = buriedNow({ cards, reviews, now, studyDay: input.ctx.day });
@@ -37,7 +59,10 @@ export function dueCounts(input: {
 			!buried.cardIds.has(card.id) &&
 			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry, vocabEntries })
 	);
-	const base = { cards: allowed, reviews, deckIds, now, kinds, w, scheduleOf, ctx: input.ctx };
+	// Counting uses every card (all kinds), not only the ones shown.
+	const used = input.applyDailyLimits === true ? (input.counts ?? dayCountsCached(cards, reviews, input.ctx, now)) : undefined;
+	const ctx = input.applyDailyLimits === true ? input.ctx : { ...input.ctx, limits: NO_DAILY_LIMITS };
+	const base = { cards: allowed, reviews, deckIds, now, kinds, w, scheduleOf, ctx, counts: used ?? EMPTY_COUNTS };
 	return {
 		due: buildQueue({
 			...base,

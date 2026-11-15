@@ -5,22 +5,34 @@
 
 import { addDays } from '../time/studyDay';
 import { currentStudyDay, currentStudyHistory, onStudyDayChange } from '../time/zone';
-import { contextFor, type StudyContext } from './studyContext';
+import { contextFor, type LimitRows, type StudyContext } from './studyContext';
+import type { StudyLimits } from './types';
+
+const GENERAL = 'general';
 import { vacationRuns, type Run, type VacationPeriod } from './vacation';
 
 /** currentContext builds a context for explicit runs (no vacation rows read). */
-export function currentContext(runs: readonly Run[] = [], now: number = Date.now()): StudyContext {
-	return contextFor(currentStudyDay(), runs, now, currentStudyHistory());
+export function currentContext(
+	runs: readonly Run[] = [],
+	now: number = Date.now(),
+	limits?: LimitRows
+): StudyContext {
+	return contextFor(currentStudyDay(), runs, now, currentStudyHistory(), limits);
 }
 
 /** contextForData builds the context of `workspaceId` from loaded study data. */
 export function contextForData(
-	data: { vacations?: readonly VacationPeriod[] },
+	data: { vacations?: readonly VacationPeriod[]; limits?: StudyLimits; decks?: readonly { id: string }[] },
 	workspaceId: number,
 	now: number = Date.now()
 ): StudyContext {
 	const today = currentStudyDay().today(now);
-	return currentContext(vacationRuns(data.vacations ?? [], workspaceId, today), now);
+	const limits: LimitRows = {
+		workspace: data.limits?.workspace ?? null,
+		decks: data.limits?.decks ?? {},
+		existingDecks: data.decks === undefined ? null : new Set([GENERAL, ...data.decks.map((d) => d.id)])
+	};
+	return currentContext(vacationRuns(data.vacations ?? [], workspaceId, today), now, limits);
 }
 
 const MAX_TIMER = 2_147_483_647;

@@ -7,7 +7,18 @@ import { IDENTITY_CLOCK, type StudyClock } from './studyClock';
 import { studyDay, type StudyDay, type ZoneChange } from '../time/studyDay';
 import type { Schedule } from './scheduler';
 import { studyClock } from './studyClock';
+import type { LimitPair } from './limits';
 import { isVacationDay, type Run } from './vacation';
+
+/** The workspace's limit rows and which decks exist (docs/contracts/scheduler/). */
+export interface LimitRows {
+	workspace: Partial<LimitPair> | null;
+	decks: Readonly<Record<string, Partial<LimitPair>>>;
+	/** The ids of the decks that exist (general included); null: every deck id counts as existing. */
+	existingDecks: ReadonlySet<string> | null;
+}
+
+export const NO_LIMIT_ROWS: LimitRows = { workspace: null, decks: {}, existingDecks: null };
 
 export interface StudyContext {
 	day: StudyDay;
@@ -15,6 +26,8 @@ export interface StudyContext {
 	vacationToday: boolean;
 	/** The workspace's vacation runs (learner dates), for streaks and marks. */
 	vacation: readonly Run[];
+	/** Daily limit rows; the defaults apply to a workspace without them. */
+	limits: LimitRows;
 	/** The zone history `day` was built from (a worker rebuilds the context from it). */
 	history: readonly ZoneChange[];
 }
@@ -25,6 +38,7 @@ export const UTC_CONTEXT: StudyContext = {
 	clock: IDENTITY_CLOCK,
 	vacationToday: false,
 	vacation: [],
+	limits: NO_LIMIT_ROWS,
 	history: []
 };
 
@@ -42,13 +56,15 @@ export function contextFor(
 	day: StudyDay,
 	runs: readonly Run[] = [],
 	now: number = Date.now(),
-	history: readonly ZoneChange[] = []
+	history: readonly ZoneChange[] = [],
+	limits: LimitRows = NO_LIMIT_ROWS
 ): StudyContext {
 	return {
 		history,
 		day,
 		clock: studyClock(runs, day),
 		vacationToday: isVacationDay(runs, day.today(now)),
-		vacation: runs
+		vacation: runs,
+		limits
 	};
 }

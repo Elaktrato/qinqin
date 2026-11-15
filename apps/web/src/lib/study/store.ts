@@ -31,6 +31,13 @@ import {
 import { cardKey, parseReview } from "./reviewParse";
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
 import {
+  LIMITS_DECK_PREFIX,
+  LIMITS_WORKSPACE_KEY,
+  limitsDeckKey,
+  parseLimitRow,
+  type LimitPair,
+} from "./limits";
+import {
   CARD_KINDS,
   type Deck,
   type DeckSource,
@@ -211,6 +218,8 @@ async function fetchStudyData(
   const sets: ParamSet[] = [];
   const deckSettings: Record<string, DeckSettings> = {};
   const vacations: VacationPeriod[] = [];
+  let limitsWorkspace: Partial<LimitPair> | null = null;
+  const limitsDecks: Record<string, Partial<LimitPair>> = {};
   let activeRaw: unknown = null;
 
   for (const value of rows) {
@@ -247,6 +256,11 @@ async function fetchStudyData(
     } else if (row.key.startsWith(SET_PREFIX)) {
       const set = parseParamSet(row.key, data);
       if (set !== null) sets.push(set);
+    } else if (row.key === LIMITS_WORKSPACE_KEY) {
+      limitsWorkspace = parseLimitRow(row.key, data);
+    } else if (row.key.startsWith(LIMITS_DECK_PREFIX)) {
+      const parsed = parseLimitRow(row.key, data);
+      if (parsed !== null) limitsDecks[row.key.slice(LIMITS_DECK_PREFIX.length)] = parsed;
     } else if (row.key === ACTIVE_KEY) {
       activeRaw = data;
     }
@@ -260,6 +274,9 @@ async function fetchStudyData(
     fsrs: resolveState(sets, activeRaw),
     ...(Object.keys(deckSettings).length > 0 ? { deckSettings } : {}),
     ...(vacations.length > 0 ? { vacations } : {}),
+    ...(limitsWorkspace !== null || Object.keys(limitsDecks).length > 0
+      ? { limits: { workspace: limitsWorkspace, decks: limitsDecks } }
+      : {}),
   };
 }
 
@@ -472,6 +489,7 @@ export async function loadStudyDataWith(
     fsrs: data.fsrs,
     ...(data.deckSettings === undefined ? {} : { deckSettings: data.deckSettings }),
     ...(data.vacations === undefined ? {} : { vacations: data.vacations }),
+    ...(data.limits === undefined ? {} : { limits: data.limits }),
     reviews,
     merged,
   };
@@ -571,7 +589,7 @@ export async function deleteDeck(id: string): Promise<void> {
     throw new Error("the general deck cannot be deleted");
   }
   const knownAt = new Map<string, string>();
-  const { cards, deckSettings } = await fetchStudyData(workspaceId, knownAt);
+  const { cards, deckSettings, limits } = await fetchStudyData(workspaceId, knownAt);
   // One batch (chunks of 200) instead of a request per card: a big copied
   // deck is a handful of requests. A failure throws before the tombstone.
   const rows = cards
@@ -592,6 +610,14 @@ export async function deleteDeck(id: string): Promise<void> {
   if (deckSettings?.[id] !== undefined) {
     try {
       await deleteData(workspaceId, deckSettingsKey(id));
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
+  }
+  // So do its daily limits.
+  if (limits?.decks[id] !== undefined) {
+    try {
+      await deleteData(workspaceId, limitsDeckKey(id));
     } catch (err) {
       if (!(err instanceof ApiError && err.status === 404)) throw err;
     }
@@ -1053,4 +1079,26 @@ export async function deleteVacation(id: string): Promise<void> {
   } finally {
     notifyWrite(ALL_WORKSPACES);
   }
+}
+
+/** saveWorkspaceLimits stores the workspace's daily limits (`null` = unlimited). */
+export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<void> {
+  await putData(requireWorkspaceId(), LIMITS_WORKSPACE_KEY, { version: 1, ...limits });
+}
+
+/**
+ * saveDeckLimits stores one deck's overrides (General included). A field
+ * left out follows the workspace; an empty object removes the row.
+ */
+export async function saveDeckLimits(deckId: string, limits: Partial<LimitPair>): Promise<void> {
+  const workspaceId = requireWorkspaceId();
+  if (Object.keys(limits).length === 0) {
+    try {
+      await deleteData(workspaceId, limitsDeckKey(deckId));
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
+    return;
+  }
+  await putData(workspaceId, limitsDeckKey(deckId), { version: 1, ...limits });
 }

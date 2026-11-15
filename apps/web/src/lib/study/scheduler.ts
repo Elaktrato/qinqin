@@ -8,6 +8,14 @@ import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 import { weightsKey } from './fsrs/params';
 import { feedInstants, type StudyClock } from './studyClock';
 import { isDueNow, type StudyContext } from './studyContext';
+import {
+	admit,
+	dayCountsCached,
+	effectiveLimits,
+	type Candidate,
+	type DayCounts,
+	type LimitPair
+} from './limits';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 /** The derived schedule of one card. `due` is an RFC 3339 instant. */
@@ -36,6 +44,11 @@ export interface BuildQueueOptions {
 	 * counts). Absent: each card's history is replayed. null = never reviewed.
 	 */
 	scheduleOf?: (cardId: string) => Schedule | null;
+	/**
+	 * What today already used (limits.ts). Absent: counted from `cards` and
+	 * `reviews`; the decks view passes one shared count for many queues.
+	 */
+	counts?: DayCounts;
 }
 
 // One scheduler instance per weight set: instances are stateless between
@@ -172,7 +185,8 @@ export function buildQueue({
 	ctx,
 	kinds,
 	w,
-	scheduleOf
+	scheduleOf,
+	counts
 }: BuildQueueOptions): StudyCard[] {
 	if (ctx.vacationToday) return [];
 	const wanted = new Set(deckIds);
@@ -215,10 +229,38 @@ export function buildQueue({
 	due.sort((a, b) => a.at - b.at || byId(a.card, b.card));
 	fresh.sort((a, b) => instant(a.createdAt) - instant(b.createdAt) || byId(a, b));
 
-	return [
-		...due.slice(0, cap(reviewLimit)).map((entry) => entry.card),
-		...fresh.slice(0, cap(newLimit))
+	const dayUsed = counts ?? dayCountsCached(cards, reviews, ctx, now);
+	const candidates: Candidate[] = [
+		...due.map(({ card }) => ({
+			cardId: card.id,
+			deckIds: card.deckIds,
+			bucket: dayUsed.reviewedToday.has(card.id) ? ('continuing' as const) : ('review' as const)
+		})),
+		...fresh.map((card) => ({ cardId: card.id, deckIds: card.deckIds, bucket: 'new' as const }))
 	];
+	const cardById = new Map([...due.map((e) => e.card), ...fresh].map((card) => [card.id, card]));
+	const { admitted } = admit(
+		candidates,
+		(deckId) => limitsOf(ctx, deckId),
+		dayUsed,
+		{ newLimit: cap(newLimit), reviewLimit: cap(reviewLimit) },
+		existingDecksOf(ctx, candidates)
+	);
+	return admitted.map((id) => cardById.get(id) as StudyCard);
+}
+
+/** The limits of one deck in a context: its row over the workspace's over the defaults. */
+export function limitsOf(ctx: StudyContext, deckId: string): LimitPair {
+	return effectiveLimits(ctx.limits.workspace, ctx.limits.decks[deckId] ?? null);
+}
+
+/** The decks that exist: the context's list, else every deck the candidates name. */
+export function existingDecksOf(
+	ctx: StudyContext,
+	candidates: readonly { deckIds: readonly string[] }[]
+): ReadonlySet<string> {
+	if (ctx.limits.existingDecks !== null) return ctx.limits.existingDecks;
+	return new Set(candidates.flatMap((candidate) => candidate.deckIds));
 }
 
 // XP lives in exp.ts; re-exported so existing imports keep working.

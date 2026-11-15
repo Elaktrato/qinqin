@@ -205,3 +205,23 @@ export function admit(
 		left: { reviews: free.reviews, new: free.fresh, unlimited, limitedOut: free.limitedOut }
 	};
 }
+
+// Many queues of one workspace (the decks view builds one per deck) share one
+// count: remembered for the last cards/reviews arrays and learner day.
+let memo: { cards: readonly StudyCard[]; reviews: readonly ReviewEvent[]; today: string; counts: DayCounts } | null = null;
+
+/** dayCountsCached is dayCounts, reused while the same arrays and learner day are asked again. */
+export function dayCountsCached(
+	cards: readonly StudyCard[],
+	reviews: readonly ReviewEvent[],
+	ctx: StudyContext,
+	now: Date
+): DayCounts {
+	const today = ctx.day.dayOf(now.getTime());
+	if (memo !== null && memo.cards === cards && memo.reviews === reviews && memo.today === today) {
+		return memo.counts;
+	}
+	const counts = dayCounts(cards, reviews, ctx, now);
+	memo = { cards, reviews, today, counts };
+	return counts;
+}
