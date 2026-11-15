@@ -1,7 +1,10 @@
 # Sign-in throttling (contract)
 
 Applies to `POST /api/auth/login` and `POST /api/auth/register`. Examples:
-`throttle-responses.json`. Reconcile with `errors.json` of the accounts work when both exist.
+`throttle-responses.json`. The catalogue of every auth error code is `errors.json` (see `README.md`);
+a test checks both files agree on each code and status. Login also answers `200` with a status word
+and `403 account_disabled` (`login-responses.json`); register also answers `422 weak_password` and
+`422 invalid_username`.
 
 ## Order of checks
 1. Read the body (cap 4 KiB; larger: 413 `too_large`, free).
@@ -16,7 +19,8 @@ Applies to `POST /api/auth/login` and `POST /api/auth/register`. Examples:
 Register: an administrator's bearer token is checked first and then skips step 2 entirely (bulk creation is
 never throttled); every other call passes 2 and 5. Its 429 says "Too many attempts." (login: "Too many sign-in
 attempts."). A request whose client has gone (cancelled context) is dropped with status 499, no body, no log.
-Closed registration for others: 403 `admin_required`; duplicate: 409 `username_taken`.
+Closed registration for others: 403 `admin_required` (before any username or password check, so an
+anonymous caller learns nothing about existing names); duplicate: 409 `username_taken`.
 
 ## Statuses and bodies
 Every error is JSON `{"error": "<code>", "message": "<English sentence>"}`, `Content-Type: application/json`.

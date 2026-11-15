@@ -1,0 +1,42 @@
+{
+  "list": {
+    "request": {"method": "GET", "path": "/api/account/sessions"},
+    "status": 200,
+    "body": {"sessions": [{"id": 7, "device": "Firefox on Linux", "createdAt": "2026-11-15T12:00:00Z", "lastUsedAt": "2026-11-15T12:30:00Z", "current": true}]}
+  },
+  "revoke_scope": {
+    "request": {"method": "POST", "path": "/api/account/sessions/revoke", "body": {"scope": "others"}},
+    "status": 200,
+    "body": {"revoked": 2}
+  },
+  "revoke_one": {
+    "request": {"method": "DELETE", "path": "/api/account/sessions/{id}"},
+    "status": 204,
+    "body": null
+  },
+  "logout": {
+    "request": {"method": "POST", "path": "/api/auth/logout"},
+    "status": 204,
+    "body": null
+  },
+  "change_password": {
+    "request": {"method": "POST", "path": "/api/account/password", "body": {"currentPassword": "<current>", "newPassword": "<new>", "signOutOthers": true}},
+    "status": 200,
+    "body": {"status": "ok"}
+  },
+  "wrong_password": {
+    "request": {"method": "POST", "path": "/api/account/password", "body": {"currentPassword": "<wrong>", "newPassword": "<new>"}},
+    "status": 403,
+    "body": {"error": "wrong_password", "message": "The current password is wrong."}
+  },
+  "weak_password": {
+    "request": {"method": "POST", "path": "/api/account/password", "body": {"currentPassword": "<current>", "newPassword": "short"}},
+    "status": 422,
+    "body": {"error": "weak_password", "message": "Use at least 10 characters."}
+  },
+  "restricted": {
+    "request": {"method": "GET", "path": "/api/workspaces"},
+    "status": 403,
+    "body": {"error": "password_change_required", "message": "You must choose a new password before you continue."}
+  }
+}
