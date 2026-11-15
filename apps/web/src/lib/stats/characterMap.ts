@@ -9,6 +9,7 @@ import type { CharRow } from '$lib/api/types';
 import { cellStates, masteryGlyphs, sectionStats, type SectionStats } from '$lib/study/charGroups';
 import { fillMissingWritten } from '$lib/study/entriesCache';
 import { masteryForChars } from '$lib/study/mastery';
+import type { StudyClock } from '$lib/study/studyClock';
 import { loadStudyHistory } from '$lib/study/history';
 import { activeWeights } from '$lib/study/store';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
@@ -19,9 +20,10 @@ export function characterSummary(
 	cards: readonly StudyCard[],
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	w: readonly number[]
+	w: readonly number[],
+	clock: StudyClock
 ): SectionStats {
-	const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, now, w);
+	const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, now, w, clock);
 	return sectionStats(cellStates(chars, mastery));
 }
 

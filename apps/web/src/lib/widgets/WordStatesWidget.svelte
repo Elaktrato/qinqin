@@ -7,6 +7,7 @@
 		wordStateSummary,
 		type WordStatesResult
 	} from '$lib/stats/wordStates';
+	import { currentContext } from '$lib/study/currentContext';
 	import { loadStudyHistory } from '$lib/study/history';
 	import { activeWeights } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
@@ -63,7 +64,7 @@
 			// history is shared with the other widgets (history.ts).
 			const data = await loadStudyHistory(workspace, { force });
 			if (seq !== requestSeq) return;
-			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data));
+			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), currentContext().clock);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			result = null;

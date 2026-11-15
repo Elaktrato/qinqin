@@ -2,7 +2,8 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
-import { studyDay as utcStudyDay, type StudyDay } from '../time/studyDay';
+import type { StudyContext } from './studyContext';
+import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
@@ -182,8 +183,8 @@ export interface DeckSessionOptions {
 	skip?: ReadonlySet<string>;
 	/** The workspace's active FSRS weights. */
 	w: readonly number[];
-	/** The learner's day, for the character writing unlock and burying; UTC when absent. */
-	studyDay?: StudyDay;
+	/** The learner's day (writing unlock, burying), the study clock and vacation state. */
+	ctx: StudyContext;
 	/** Per-deck card type switches; without them no reverse or cloze card is queued. */
 	deckSettings?: Record<string, DeckSettings>;
 }
@@ -278,16 +279,16 @@ export function deckSessionPlan({
 	language,
 	skip,
 	w,
-	studyDay,
+	ctx,
 	deckSettings
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
-	if (wanted.length === 0) return { queue: [], reserve: [], backfillLeft };
+	if (wanted.length === 0 || ctx.vacationToday) return { queue: [], reserve: [], backfillLeft };
 
 	// Cards that may not be shown (switch off, skipped, buried) leave before
 	// the limits apply, so they never use up a slot.
-	const buried = buriedNow({ cards, reviews, now, studyDay: studyDay ?? utcStudyDay([]) });
+	const buried = buriedNow({ cards, reviews, now, studyDay: ctx.day });
 	const skipByEntry = skipKindsByEntry(cards);
 	const vocabEntries = vocabEntryIds(cards);
 	const allowed = cards.filter(
@@ -303,7 +304,8 @@ export function deckSessionPlan({
 		reviewLimit,
 		now,
 		kinds: wanted,
-		w
+		w,
+		ctx
 	});
 	const reviewed = reviewedIds(reviews);
 	const freshCount = real.filter((card) => !reviewed.has(card.id)).length;
@@ -318,7 +320,7 @@ export function deckSessionPlan({
 		newBudget: cards.length * 5,
 		reviews,
 		now: now.getTime(),
-		studyDay,
+		studyDay: ctx.day,
 		deckSettings,
 		exclude: new Set(real.map((card) => card.entryId)),
 		skip
@@ -512,10 +514,11 @@ export function tierForCard(
 	cardId: string | null,
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	w: readonly number[]
+	w: readonly number[],
+	clock: StudyClock
 ): SaladTier {
 	if (cardId === null) return 0;
-	return tierFor(scheduleFor(cardId, reviews, now, w)?.stability ?? null);
+	return tierFor(scheduleFor(cardId, reviews, now, w, clock)?.stability ?? null);
 }
 
 /**

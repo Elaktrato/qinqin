@@ -1,3 +1,4 @@
+import { UTC_CONTEXT } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import { buildLevelQueue, levelPlanCounts } from './levelQueue';
@@ -43,6 +44,7 @@ function cfg(deckId: string, ...cardTypes: OptInKind[]): Record<string, DeckSett
 }
 
 const base = {
+	ctx: UTC_CONTEXT,
 	reviews: [] as ReviewEvent[],
 	deckIds: ['general'],
 	kinds: ['reverse'] as StudyCardKind[],
@@ -73,7 +75,7 @@ describe('existing decks are unchanged', () => {
 				reviews,
 				...scenario,
 				deckSettings: {},
-				studyDay: studyDay([])
+				ctx: UTC_CONTEXT
 			});
 			expect(withCfg).toEqual(plain);
 		});
@@ -245,7 +247,7 @@ describe('burying in level sessions', () => {
 		const excludeEntries = buriedLevelEntries(buried, cards);
 		expect([...excludeEntries]).toEqual([1]);
 		const entries = [1, 2, 3].map((id) => ({ id, kind: 'word' }));
-		const queue = buildLevelQueue({
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT,
 			entries,
 			cards,
 			reviews,
@@ -257,7 +259,7 @@ describe('burying in level sessions', () => {
 		});
 		expect(queue.map((item) => item.entryId)).toEqual([2, 3]);
 		// levelSessionItems also drops anything buried that slipped in.
-		const plain = buildLevelQueue({ entries, cards, reviews, newLimit: 3, reviewLimit: 10, now: NOW, w: DEFAULT_W });
+		const plain = buildLevelQueue({ ctx: UTC_CONTEXT, entries, cards, reviews, newLimit: 3, reviewLimit: 10, now: NOW, w: DEFAULT_W });
 		expect(
 			levelSessionItems(plain, cards, ['vocab'], buried).map((item) => item.entryId)
 		).toEqual([2, 3]);
@@ -298,7 +300,7 @@ describe('orphan opt-in cards', () => {
 describe('level counts leave buried words out', () => {
 	it('levelPlanCounts honours excludeEntries', () => {
 		const entries = [1, 2, 3].map((id) => ({ id, kind: 'word' }));
-		const options = { entries, cards: [], reviews: [], now: NOW, w: DEFAULT_W };
+		const options = { ctx: UTC_CONTEXT, entries, cards: [], reviews: [], now: NOW, w: DEFAULT_W };
 		expect(levelPlanCounts(options).items).toBe(3);
 		expect(levelPlanCounts({ ...options, excludeEntries: new Set([2]) }).items).toBe(2);
 	});

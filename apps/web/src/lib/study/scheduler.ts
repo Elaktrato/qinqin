@@ -6,6 +6,8 @@
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
 import { weightsKey } from './fsrs/params';
+import { feedInstants, type StudyClock } from './studyClock';
+import { isDueNow, type StudyContext } from './studyContext';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 /** The derived schedule of one card. `due` is an RFC 3339 instant. */
@@ -23,6 +25,8 @@ export interface BuildQueueOptions {
 	newLimit: number;
 	reviewLimit: number;
 	now: Date;
+	/** The study clock and vacation state of the workspace. */
+	ctx: StudyContext;
 	/** Card kinds to include; every kind when omitted. */
 	kinds?: readonly StudyCardKind[];
 	/** The workspace's active FSRS weights (`activeWeights(history)`). */
@@ -107,12 +111,15 @@ export function sortedReviews(reviews: readonly ReviewEvent[]): ReviewEvent[] {
  * its derived schedule. `null` means the card has never been reviewed.
  * `now` is accepted for a stable "as of" API; the result depends only
  * on the history, so two calls with the same events agree exactly.
+ * Reviews are fed to ts-fsrs on the study clock (vacation days removed)
+ * and the due is mapped back (docs/contracts/scheduler/).
  */
 export function scheduleFor(
 	cardId: string,
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	w: readonly number[]
+	w: readonly number[],
+	clock: StudyClock
 ): Schedule | null {
 	void now;
 	const scheduler = schedulerFor(w);
@@ -122,13 +129,17 @@ export function scheduleFor(
 	);
 	if (history.length === 0) return null;
 
-	let card: Card = createEmptyCard(new Date(history[0].ts));
-	for (const review of history) {
-		card = scheduler.next(card, new Date(review.ts), RATING[review.payload.grade]).card;
-	}
+	const fed = feedInstants(
+		history.map((review) => instant(review.ts)),
+		clock
+	);
+	let card: Card = createEmptyCard(new Date(fed[0]));
+	history.forEach((review, i) => {
+		card = scheduler.next(card, new Date(fed[i]), RATING[review.payload.grade]).card;
+	});
 
 	return {
-		due: card.due.toISOString(),
+		due: new Date(clock.inverse(card.due.getTime())).toISOString(),
 		stability: card.stability,
 		difficulty: card.difficulty,
 		state: card.state as number
@@ -158,10 +169,12 @@ export function buildQueue({
 	newLimit,
 	reviewLimit,
 	now,
+	ctx,
 	kinds,
 	w,
 	scheduleOf
 }: BuildQueueOptions): StudyCard[] {
+	if (ctx.vacationToday) return [];
 	const wanted = new Set(deckIds);
 	const scoped = cards.filter(
 		(card) =>
@@ -189,12 +202,12 @@ export function buildQueue({
 			continue;
 		}
 		const schedule =
-			scheduleOf === undefined ? scheduleFor(card.id, history ?? [], now, w) : scheduleOf(card.id);
+			scheduleOf === undefined ? scheduleFor(card.id, history ?? [], now, w, ctx.clock) : scheduleOf(card.id);
 		if (scheduleOf !== undefined && schedule === null) {
 			fresh.push(card);
 			continue;
 		}
-		if (schedule !== null && isDue(schedule, now)) {
+		if (schedule !== null && isDueNow(schedule, now, ctx)) {
 			due.push({ card, at: instant(schedule.due) });
 		}
 	}

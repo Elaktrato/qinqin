@@ -9,6 +9,7 @@
 
 import { GENERAL_DECK_ID } from '$lib/study/store';
 import { scheduleFor, type Schedule } from '$lib/study/scheduler';
+import type { StudyClock } from '$lib/study/studyClock';
 import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
 
 export type WordState = 'new' | 'learning' | 'young' | 'mature';
@@ -55,7 +56,7 @@ export function classifySchedule(schedule: Pick<Schedule, 'state' | 'stability'>
 }
 
 type ScheduleFn = (cardId: string, history: readonly ReviewEvent[], now: Date,
-	w: readonly number[]
+	w: readonly number[], clock: StudyClock
 ) => Schedule | null;
 
 function reviewsByCard(reviews: readonly ReviewEvent[]): Map<string, ReviewEvent[]> {
@@ -84,6 +85,7 @@ export function wordStateCounts(
 	decks: readonly Deck[],
 	now: Date,
 	w: readonly number[],
+	clock: StudyClock,
 	schedule: ScheduleFn = scheduleFor
 ): WordStatesResult {
 	const rows: DeckWordStates[] = [
@@ -103,7 +105,7 @@ export function wordStateCounts(
 			.filter((row): row is DeckWordStates => row !== undefined);
 		if (inRows.length === 0) continue;
 
-		const state = classifySchedule(schedule(card.id, history.get(card.id) ?? [], now, w));
+		const state = classifySchedule(schedule(card.id, history.get(card.id) ?? [], now, w, clock));
 		overall[state] += 1;
 		overall.total += 1;
 		for (const row of inRows) {

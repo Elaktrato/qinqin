@@ -4,10 +4,10 @@
 // runner creates the card. The queue is therefore a mix of real card ids
 // and stable virtual ids, never duplicate entries.
 
-import { studyDay as utcStudyDay, type StudyDay } from '../time/studyDay';
 import { compareCanonical } from './canonical';
 import { backfillLimit } from './cardFlow';
-import { isDue, isValidReview, scheduleFor, sortedReviews } from './scheduler';
+import { isValidReview, scheduleFor, sortedReviews } from './scheduler';
+import { isDueNow, type StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 export type LevelUnit = 'word' | 'character';
@@ -47,8 +47,8 @@ export interface BuildLevelQueueOptions {
 	unit?: LevelUnit;
 	/** Selected card kinds; vocab only by default. Word levels ignore all but vocab. */
 	kinds?: readonly StudyCardKind[];
-	/** The learner's day for the writing unlock; UTC when absent (callers pass currentStudyDay()). */
-	studyDay?: StudyDay;
+	/** The learner's day (writing unlock), the study clock and vacation state. */
+	ctx: StudyContext;
 	/** How many extra new items to keep as reserve; defaults to backfillLimit(newLimit). */
 	reserve?: number;
 	/** `kind:entryId` keys of virtual items already found ineligible (never planned). */
@@ -151,14 +151,14 @@ function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
 			continue;
 		}
 
-		const schedule = scheduleFor(card.id, reviews, now, w);
+		const schedule = scheduleFor(card.id, reviews, now, w, options.ctx.clock);
 		if (schedule === null) {
 			// A card that was added to study but never graded is new, just
 			// like in a deck session; keep its real id.
 			fresh.push({ cardId: card.id, entryId: entry.id, virtual: false, kind: 'vocab' });
 			continue;
 		}
-		if (!isDue(schedule, now)) continue;
+		if (!isDueNow(schedule, now, options.ctx)) continue;
 		due.push({
 			item: { cardId: card.id, entryId: entry.id, virtual: false, kind: 'vocab' },
 			at: instant(schedule.due)
@@ -188,7 +188,7 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 	const { entries, cards, reviews, newLimit, reviewLimit, now, w } = options;
 	const wanted = CHARACTER_KINDS.filter((kind) => (options.kinds ?? ['vocab']).includes(kind));
 	if (wanted.length === 0) return { queue: [], reserve: [] };
-	const day = options.studyDay ?? utcStudyDay([]);
+	const day = options.ctx.day;
 	const today = day.today(now.getTime());
 	const gated = wanted.includes('vocab') && wanted.includes('writing');
 
@@ -239,12 +239,12 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 				});
 				continue;
 			}
-			const schedule = scheduleFor(card.id, reviews, now, w);
+			const schedule = scheduleFor(card.id, reviews, now, w, options.ctx.clock);
 			if (schedule === null) {
 				target.push({ cardId: card.id, entryId: entry.id, virtual: false, kind });
 				continue;
 			}
-			if (!isDue(schedule, now)) continue;
+			if (!isDueNow(schedule, now, options.ctx)) continue;
 			due.push({
 				item: { cardId: card.id, entryId: entry.id, virtual: false, kind },
 				at: instant(schedule.due)

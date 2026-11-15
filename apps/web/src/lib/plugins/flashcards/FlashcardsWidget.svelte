@@ -2,6 +2,7 @@
 	import { errorMessage } from '$lib/stats/errors';
 	import { dueCounts } from '$lib/study/dueCounts';
 	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { currentContext } from '$lib/study/currentContext';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
@@ -70,7 +71,7 @@
 			deckSettings,
 			now: new Date(),
 			w: weights,
-			studyDay,
+			ctx: currentContext(),
 			newLimit: config.newLimit,
 			reviewLimit: config.reviewLimit
 		});

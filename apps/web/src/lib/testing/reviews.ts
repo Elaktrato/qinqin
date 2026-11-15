@@ -3,6 +3,7 @@
 
 import { DEFAULT_W } from '$lib/study/fsrs/params';
 import { scheduleFor } from '$lib/study/scheduler';
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import type { ReviewEvent } from '$lib/study/types';
 
 export function strongReviews(cardId: string, start = '2025-01-01T00:00:00.000Z', n = 8): ReviewEvent[] {
@@ -17,7 +18,7 @@ export function strongReviews(cardId: string, start = '2025-01-01T00:00:00.000Z'
 			type: 'review',
 			payload: { cardId, mode: 'vocab', grade: 4 }
 		});
-		const schedule = scheduleFor(cardId, events, new Date(ts), DEFAULT_W);
+		const schedule = scheduleFor(cardId, events, new Date(ts), DEFAULT_W, IDENTITY_CLOCK);
 		ts = schedule?.due ?? ts;
 	}
 	return events;

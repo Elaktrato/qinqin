@@ -266,7 +266,7 @@
 
 	function dueText(row: DeckRow): string {
 		if (row.nextDue === null || data === null) return '—';
-		return data.day.dayOf(Date.parse(row.nextDue));
+		return data.ctx.day.dayOf(Date.parse(row.nextDue));
 	}
 </script>
 

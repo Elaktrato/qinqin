@@ -36,6 +36,7 @@
 		writeGroupBy,
 		type TipRequest
 	} from '$lib/study/mapGrid';
+import { currentContext } from '$lib/study/currentContext';
 	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { activeWeights, loadStudyData } from '$lib/study/store';
@@ -212,7 +213,7 @@
 	// One mastery pass over every glyph and variant; a cell takes the best
 	// of its forms (a card written 愛 lights 爱).
 	const cellByRow = $derived.by(() => {
-		const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, new Date(), weights);
+		const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, new Date(), weights, currentContext().clock);
 		const map = new Map<(typeof chars)[number], CellState>();
 		for (const cell of cellStates(chars, mastery)) map.set(cell.char, cell);
 		return map;

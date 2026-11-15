@@ -16,6 +16,7 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 vi.mock('$lib/components/CardManager.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
+	currentStudyHistory: vi.fn(() => []),
 	onStudyDayChange: vi.fn(() => () => {})
 }));
 

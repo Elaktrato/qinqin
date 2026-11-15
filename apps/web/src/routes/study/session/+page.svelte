@@ -49,6 +49,7 @@
 		type ClozePrompt
 	} from '$lib/study/cloze';
 	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
+import { currentContext } from '$lib/study/currentContext';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
@@ -397,7 +398,8 @@
 				// data) is replaced from the reserve, as in a deck session.
 				// A word answered today through reverse or cloze is buried: left out
 				// before the limits, so the next word takes its slot.
-				const day = currentStudyDay();
+				const ctx = currentContext();
+				const day = ctx.day;
 				const buried = buriedNow({ cards: data.cards, reviews: history, now, studyDay: day });
 				const plan = buildLevelPlan({
 					entries: levelRequest.entries,
@@ -409,7 +411,7 @@
 					w,
 					unit: levelRequest.unit,
 					kinds,
-					studyDay: day,
+					ctx,
 					hasStrokes: hasStrokeData,
 					skip: loadIneligible(workspaceId),
 					excludeEntries: buriedLevelEntries(buried, data.cards)
@@ -427,7 +429,7 @@
 					reviewLimit: config.reviewLimit,
 					now,
 					w,
-					studyDay: currentStudyDay(),
+					ctx: currentContext(),
 					deckSettings: data.deckSettings,
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
@@ -488,7 +490,7 @@
 					...base,
 					item: item.virtual ? { ...item, sentenceId: sentence?.id } : item,
 					sentence,
-					tier: item.tier ?? tierForCard(cardId, history, now, weights),
+					tier: item.tier ?? tierForCard(cardId, history, now, weights, currentContext().clock),
 					seed: `${item.card?.id ?? item.cardId}:${reviewCountFor(cardId, history)}`
 				};
 			}
@@ -567,7 +569,7 @@
 		const mode =
 			item.clozeMode ??
 			clozeMode({
-				tier: tierForCard(cardId, history, now, weights),
+				tier: tierForCard(cardId, history, now, weights, currentContext().clock),
 				answer: prompt.answer,
 				entryForms: forms,
 				distractors

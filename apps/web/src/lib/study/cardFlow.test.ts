@@ -1,3 +1,5 @@
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { UTC_CONTEXT } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
@@ -161,8 +163,8 @@ describe('helpers', () => {
 
 	it('tierForCard is T0 for new or virtual cards and rises with stability', () => {
 		const now = new Date('2027-06-01T00:00:00Z');
-		expect(tierForCard(null, [], now, DEFAULT_W)).toBe(0);
-		expect(tierForCard('a', [], now, DEFAULT_W)).toBe(0);
+		expect(tierForCard(null, [], now, DEFAULT_W, IDENTITY_CLOCK)).toBe(0);
+		expect(tierForCard('a', [], now, DEFAULT_W, IDENTITY_CLOCK)).toBe(0);
 		// A long run of Good reviews spaced far apart builds large stability.
 		const reviews = [
 			review('a', '2026-01-01T00:00:00Z', 4),
@@ -170,7 +172,7 @@ describe('helpers', () => {
 			review('a', '2026-05-01T00:00:00Z', 4),
 			review('a', '2026-12-01T00:00:00Z', 4)
 		];
-		expect(tierForCard('a', reviews, now, DEFAULT_W)).toBe(2);
+		expect(tierForCard('a', reviews, now, DEFAULT_W, IDENTITY_CLOCK)).toBe(2);
 	});
 
 	it('maskWritten hides the usable characters not yet written', () => {
@@ -218,6 +220,7 @@ describe('deckSessionItems', () => {
 		card('v3', 'vocab', 3, { written: '中文', createdAt: '2026-01-03T00:00:00Z' })
 	];
 	const base = {
+		ctx: UTC_CONTEXT,
 		cards,
 		reviews: [] as ReviewEvent[],
 		deckIds: ['general'],
@@ -287,7 +290,7 @@ describe('deckSessionItems', () => {
 describe('Round 1 cards without a written snapshot', () => {
 	it('get companions of every kind, writing included (checked when shown)', () => {
 		const legacy: StudyCard = { id: 'old', kind: 'vocab', entryId: 5, deckIds: ['general'], createdAt: '2025-01-01T00:00:00Z' };
-		const items = deckSessionItems({ w: DEFAULT_W,
+		const items = deckSessionItems({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			cards: [legacy],
 			reviews: [],
 			deckIds: ['general'],
@@ -309,6 +312,7 @@ describe('deckSessionPlan and dropItem', () => {
 		card(`v${entryId}`, 'vocab', entryId, { createdAt: `2026-01-0${entryId}T00:00:00Z` })
 	);
 	const options = {
+		ctx: UTC_CONTEXT,
 		cards,
 		reviews: [] as ReviewEvent[],
 		deckIds: ['general'],
@@ -404,7 +408,7 @@ describe('sessionCounts', () => {
 		const now = new Date('2026-03-01T00:00:00Z');
 		const cards = [card('v1', 'vocab', 1), card('v2', 'vocab', 2)];
 		const reviews = [review('v1', '2026-01-05T00:00:00Z', 1)];
-		const items = deckSessionItems({ w: DEFAULT_W,
+		const items = deckSessionItems({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			cards,
 			reviews,
 			deckIds: ['general'],
@@ -452,6 +456,7 @@ describe('backfill bound', () => {
 		})
 	);
 	const options = {
+		ctx: UTC_CONTEXT,
 		cards: many,
 		reviews: [] as ReviewEvent[],
 		deckIds: ['general'],

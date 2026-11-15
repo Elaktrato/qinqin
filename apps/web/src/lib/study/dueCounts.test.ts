@@ -1,3 +1,5 @@
+import { UTC_CONTEXT } from '$lib/study/studyContext';
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
 import { dueCounts } from './dueCounts';
@@ -44,7 +46,7 @@ describe('dueCounts equals the old widget computation without deck settings', ()
 	];
 	for (const limits of scenarios) {
 		it(`limits ${JSON.stringify(limits)}`, () => {
-			const base = { cards, reviews, deckIds: ['general'], now: NOW, kinds: ['vocab'] as StudyCardKind[], w: DEFAULT_W };
+			const base = { ctx: UTC_CONTEXT, cards, reviews, deckIds: ['general'], now: NOW, kinds: ['vocab'] as StudyCardKind[], w: DEFAULT_W };
 			const old = {
 				due: buildQueue({ ...base, newLimit: 0, reviewLimit: limits.reviewLimit }).length,
 				fresh: buildQueue({ ...base, newLimit: limits.newLimit, reviewLimit: 0 }).length
@@ -54,7 +56,7 @@ describe('dueCounts equals the old widget computation without deck settings', ()
 	}
 
 	it('is unlimited by default', () => {
-		const out = dueCounts({ cards, reviews, deckIds: ['general'], now: NOW, kinds: ['vocab'], w: DEFAULT_W });
+		const out = dueCounts({ ctx: UTC_CONTEXT, cards, reviews, deckIds: ['general'], now: NOW, kinds: ['vocab'], w: DEFAULT_W });
 		expect(out).toEqual({ due: 2, fresh: 2 });
 	});
 });
@@ -69,7 +71,7 @@ describe('dueCounts with reverse and cloze', () => {
 		card('c-vocab-2', 'vocab', 2),
 		card('c-reverse-2', 'reverse', 2)
 	];
-	const base = { cards, reviews: [] as ReviewEvent[], deckIds: ['general'], now: NOW, kinds: ['vocab', 'reverse'] as StudyCardKind[], w: DEFAULT_W };
+	const base = { ctx: UTC_CONTEXT, cards, reviews: [] as ReviewEvent[], deckIds: ['general'], now: NOW, kinds: ['vocab', 'reverse'] as StudyCardKind[], w: DEFAULT_W };
 
 	it('counts a real reverse card only where its deck enables it', () => {
 		expect(dueCounts({ ...base, deckSettings: settings }).fresh).toBe(4);
@@ -90,7 +92,7 @@ describe('dueCounts with reverse and cloze', () => {
 			...base,
 			reviews,
 			deckSettings: settings,
-			scheduleOf: (id) => scheduleFor(id, reviews, NOW, DEFAULT_W)
+			scheduleOf: (id) => scheduleFor(id, reviews, NOW, DEFAULT_W, IDENTITY_CLOCK)
 		});
 		expect(withLookup).toEqual(dueCounts({ ...base, reviews, deckSettings: settings }));
 	});

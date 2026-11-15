@@ -5,6 +5,7 @@
 	import OptimizePanel from '$lib/plugins/flashcards/scheduling/OptimizePanel.svelte';
 	import PreviewPanel from '$lib/plugins/flashcards/scheduling/PreviewPanel.svelte';
 	import SavedSets from '$lib/plugins/flashcards/scheduling/SavedSets.svelte';
+import { currentContext } from '$lib/study/currentContext';
 	import { buildDataset, type Dataset } from '$lib/study/fsrs/dataset';
 	import { evaluate, type Fit } from '$lib/study/fsrs/evaluate';
 	import type { HeldOut, OptimizeResult } from '$lib/study/fsrs/optimize';
@@ -193,7 +194,7 @@
 		previewPending = true;
 		const ctl = new AbortController();
 		runPreview(
-			{ ...data, from: c.fromW, to: c.w, now: new Date() },
+			{ ...data, from: c.fromW, to: c.w, now: new Date(), ctx: currentContext() },
 			{ signal: ctl.signal }
 		)
 			.then((p) => {

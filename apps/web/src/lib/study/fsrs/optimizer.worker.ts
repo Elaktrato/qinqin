@@ -3,6 +3,9 @@
 // reviews, from, to, now}; out: progress, result, preview or error.
 
 import type { ReviewEvent, StudyCard } from '../types';
+import { clockFromRuns, type ClockRun } from '../studyClock';
+import type { StudyContext } from '../studyContext';
+import { studyDay, type ZoneChange } from '../../time/studyDay';
 import type { Dataset } from './dataset';
 import { optimize } from './optimize';
 import { previewChange } from './preview';
@@ -16,6 +19,10 @@ type In =
 			from: number[];
 			to: number[];
 			now: number;
+			/** The serialisable parts of the StudyContext (the worker rebuilds it). */
+			history: ZoneChange[];
+			runs: ClockRun[];
+			vacationToday: boolean;
 	  };
 
 self.onmessage = (event: MessageEvent<In>) => {
@@ -33,7 +40,13 @@ self.onmessage = (event: MessageEvent<In>) => {
 				reviews: m.reviews,
 				from: m.from,
 				to: m.to,
-				now: new Date(m.now)
+				now: new Date(m.now),
+				ctx: {
+					day: studyDay(m.history),
+					clock: clockFromRuns(m.runs),
+					vacationToday: m.vacationToday,
+					history: m.history
+				} satisfies StudyContext
 			});
 			self.postMessage({ type: 'preview', preview });
 		}

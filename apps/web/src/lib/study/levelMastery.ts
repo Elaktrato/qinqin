@@ -12,6 +12,7 @@ import {
 	type SchemeLevelMembers
 } from './charGroups';
 import { masteryForChars } from './mastery';
+import type { StudyClock } from './studyClock';
 import type { ReviewEvent, StudyCard } from './types';
 
 export interface LevelMasteryCount {
@@ -30,9 +31,10 @@ export function levelMastery(
 	cards: readonly StudyCard[],
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	w: readonly number[]
+	w: readonly number[],
+	clock: StudyClock
 ): Map<string, LevelMasteryCount> {
-	const mastery = masteryForChars(masteryGlyphs(rows), cards, reviews, now, w);
+	const mastery = masteryForChars(masteryGlyphs(rows), cards, reviews, now, w, clock);
 	const sections = buildSections(rows, 'scheme:0', levels);
 	const bySection = new Map(sections.map((section) => [section.id, section]));
 	const result = new Map<string, LevelMasteryCount>();

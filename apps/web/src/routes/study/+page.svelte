@@ -33,6 +33,7 @@
 		levelUsable,
 		type LevelUnit
 	} from '$lib/study/levelQueue';
+import { currentContext } from '$lib/study/currentContext';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import {
@@ -375,7 +376,7 @@
 		);
 	});
 
-	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights));
+	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights, currentContext().clock));
 
 	function levelOptionLabel(name: string): string {
 		const count = levelLearned.get(name);
@@ -437,7 +438,7 @@
 			w: weights,
 			language: workspaceLanguage ?? '',
 			deckSettings,
-			studyDay: currentStudyDay(),
+			ctx: currentContext(),
 			// Words this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
@@ -477,11 +478,11 @@
 			w: weights,
 			unit: levelUnit,
 			kinds: levelKinds,
-			studyDay: currentStudyDay(),
+			ctx: currentContext(),
 			hasStrokes: hasStrokeData,
 			// A word buried by a reverse or cloze answer today is left out, as in the session.
 			excludeEntries: buriedLevelEntries(
-				buriedNow({ cards, reviews, now: new Date(), studyDay: currentStudyDay() }),
+				buriedNow({ cards, reviews, now: new Date(), studyDay: currentContext().day }),
 				cards
 			),
 			// Items this tab already found unsuitable are not counted.
