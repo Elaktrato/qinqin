@@ -1,0 +1,618 @@
+{
+  "levels": [
+    {
+      "id": "a1-1",
+      "name": "A1 · Part 1",
+      "schemeLevels": [
+        {
+          "scheme": "hsk-words",
+          "level": "HSK 1"
+        }
+      ]
+    },
+    {
+      "id": "a1-2",
+      "name": "A1 · Part 2",
+      "schemeLevels": [
+        {
+          "scheme": "hsk-words",
+          "level": "HSK 1"
+        }
+      ]
+    }
+  ],
+  "lessons": [
+    {
+      "id": "shi",
+      "level": "a1-1",
+      "title": "是: A is B",
+      "summary": "Link two nouns.",
+      "pattern": [
+        "A + 是 + B"
+      ],
+      "body": [
+        "是 (shì) links two nouns: “A is B”. It is not used before adjectives; for those see the lesson on 很.",
+        "To say “is not”, put 不 before it: 不是 (bú shì)."
+      ],
+      "examples": [
+        {
+          "id": "shi-1",
+          "text": "我是学生。",
+          "reading": "wǒ shì xuéshēng.",
+          "translation": "I am a student.",
+          "focus": "是",
+          "distractors": [
+            "很",
+            "在"
+          ]
+        },
+        {
+          "id": "shi-2",
+          "text": "他是老师。",
+          "reading": "tā shì lǎoshī.",
+          "translation": "He is a teacher.",
+          "focus": "是",
+          "distractors": [
+            "很",
+            "在"
+          ]
+        },
+        {
+          "id": "shi-3",
+          "text": "这是我的书。",
+          "reading": "zhè shì wǒ de shū.",
+          "translation": "This is my book.",
+          "focus": "是",
+          "distractors": [
+            "很",
+            "吗"
+          ]
+        },
+        {
+          "id": "shi-4",
+          "text": "她不是医生。",
+          "reading": "tā bú shì yīshēng.",
+          "translation": "She is not a doctor.",
+          "focus": "是",
+          "distractors": [
+            "很",
+            "在"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bu",
+      "level": "a1-1",
+      "title": "不: not",
+      "summary": "Negate verbs and adjectives.",
+      "pattern": [
+        "Subject + 不 + Verb / Adjective"
+      ],
+      "body": [
+        "不 (bù) goes directly before the verb or adjective it negates. Before a fourth-tone syllable it is said bú: 不是 bú shì, 不去 bú qù.",
+        "For 有 (to have) use 没 instead: 没有."
+      ],
+      "examples": [
+        {
+          "id": "bu-1",
+          "text": "我不喝咖啡。",
+          "reading": "wǒ bù hē kāfēi.",
+          "translation": "I don't drink coffee.",
+          "focus": "不",
+          "distractors": [
+            "吗",
+            "的"
+          ]
+        },
+        {
+          "id": "bu-2",
+          "text": "他不去学校。",
+          "reading": "tā bú qù xuéxiào.",
+          "translation": "He isn't going to school.",
+          "focus": "不",
+          "distractors": [
+            "吗",
+            "的"
+          ]
+        },
+        {
+          "id": "bu-3",
+          "text": "今天不冷。",
+          "reading": "jīntiān bù lěng.",
+          "translation": "It isn't cold today.",
+          "focus": "不",
+          "distractors": [
+            "吗",
+            "在"
+          ]
+        },
+        {
+          "id": "bu-4",
+          "text": "我们不吃肉。",
+          "reading": "wǒmen bù chī ròu.",
+          "translation": "We don't eat meat.",
+          "focus": "不",
+          "distractors": [
+            "吗",
+            "的"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ma",
+      "level": "a1-1",
+      "title": "吗: yes/no questions",
+      "summary": "Turn a statement into a question.",
+      "pattern": [
+        "Statement + 吗？"
+      ],
+      "body": [
+        "Add 吗 (ma) to the end of a statement to turn it into a yes/no question. The word order does not change.",
+        "Answer by repeating the verb: 是 or 不是, 喝 or 不喝."
+      ],
+      "examples": [
+        {
+          "id": "ma-1",
+          "text": "你是学生吗？",
+          "reading": "nǐ shì xuéshēng ma?",
+          "translation": "Are you a student?",
+          "focus": "吗",
+          "distractors": [
+            "很",
+            "也"
+          ]
+        },
+        {
+          "id": "ma-2",
+          "text": "你喝茶吗？",
+          "reading": "nǐ hē chá ma?",
+          "translation": "Do you drink tea?",
+          "focus": "吗",
+          "distractors": [
+            "很",
+            "也"
+          ]
+        },
+        {
+          "id": "ma-3",
+          "text": "他是中国人吗？",
+          "reading": "tā shì Zhōngguó rén ma?",
+          "translation": "Is he Chinese?",
+          "focus": "吗",
+          "distractors": [
+            "很",
+            "也"
+          ]
+        },
+        {
+          "id": "ma-4",
+          "text": "你忙吗？",
+          "reading": "nǐ máng ma?",
+          "translation": "Are you busy?",
+          "focus": "吗",
+          "distractors": [
+            "很",
+            "也"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "hen",
+      "level": "a1-1",
+      "title": "很 + adjective",
+      "summary": "Describe things without 是.",
+      "pattern": [
+        "Subject + 很 + Adjective"
+      ],
+      "body": [
+        "Adjectives work as predicates on their own, without 是. A bare adjective sounds like a comparison, so 很 (hěn) is added; here it often just means “is” rather than “very”.",
+        "To negate, use 不 and drop 很: 我不忙."
+      ],
+      "examples": [
+        {
+          "id": "hen-1",
+          "text": "我很好。",
+          "reading": "wǒ hěn hǎo.",
+          "translation": "I'm fine.",
+          "focus": "很",
+          "distractors": [
+            "吗",
+            "在"
+          ]
+        },
+        {
+          "id": "hen-2",
+          "text": "今天很热。",
+          "reading": "jīntiān hěn rè.",
+          "translation": "It's hot today.",
+          "focus": "很",
+          "distractors": [
+            "吗",
+            "在"
+          ]
+        },
+        {
+          "id": "hen-3",
+          "text": "这个苹果很大。",
+          "reading": "zhège píngguǒ hěn dà.",
+          "translation": "This apple is big.",
+          "focus": "很",
+          "distractors": [
+            "吗",
+            "在"
+          ]
+        },
+        {
+          "id": "hen-4",
+          "text": "中文很有意思。",
+          "reading": "Zhōngwén hěn yǒu yìsi.",
+          "translation": "Chinese is interesting.",
+          "focus": "很",
+          "distractors": [
+            "吗",
+            "在"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "de",
+      "level": "a1-1",
+      "title": "的: possession",
+      "summary": "Say whose something is.",
+      "pattern": [
+        "Owner + 的 + Thing"
+      ],
+      "body": [
+        "的 (de) joins an owner to what it owns, like English ’s.",
+        "With close people and groups it is often left out: 我妈妈, 我们学校."
+      ],
+      "examples": [
+        {
+          "id": "de-1",
+          "text": "这是我的手机。",
+          "reading": "zhè shì wǒ de shǒujī.",
+          "translation": "This is my phone.",
+          "focus": "的",
+          "distractors": [
+            "很",
+            "吗"
+          ]
+        },
+        {
+          "id": "de-2",
+          "text": "那是老师的车。",
+          "reading": "nà shì lǎoshī de chē.",
+          "translation": "That is the teacher's car.",
+          "focus": "的",
+          "distractors": [
+            "很",
+            "吗"
+          ]
+        },
+        {
+          "id": "de-3",
+          "text": "你的名字很好听。",
+          "reading": "nǐ de míngzi hěn hǎotīng.",
+          "translation": "Your name sounds nice.",
+          "focus": "的",
+          "distractors": [
+            "很",
+            "吗"
+          ]
+        },
+        {
+          "id": "de-4",
+          "text": "他的朋友是医生。",
+          "reading": "tā de péngyou shì yīshēng.",
+          "translation": "His friend is a doctor.",
+          "focus": "的",
+          "distractors": [
+            "很",
+            "吗"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ye-dou",
+      "level": "a1-2",
+      "title": "也 and 都: also, all",
+      "summary": "Adverbs before the verb.",
+      "pattern": [
+        "Subject + 也 / 都 + Verb"
+      ],
+      "body": [
+        "也 (yě, also) and 都 (dōu, all, both) are adverbs: they stand after the subject and before the verb, never at the end of the sentence.",
+        "When both are used, 也 comes first: 我们也都去."
+      ],
+      "examples": [
+        {
+          "id": "ye-dou-1",
+          "text": "我也是学生。",
+          "reading": "wǒ yě shì xuéshēng.",
+          "translation": "I am a student too.",
+          "focus": "也",
+          "distractors": [
+            "吗",
+            "在"
+          ]
+        },
+        {
+          "id": "ye-dou-2",
+          "text": "他们都喜欢猫。",
+          "reading": "tāmen dōu xǐhuan māo.",
+          "translation": "They all like cats.",
+          "focus": "都",
+          "distractors": [
+            "吗",
+            "的"
+          ]
+        },
+        {
+          "id": "ye-dou-3",
+          "text": "我们都很忙。",
+          "reading": "wǒmen dōu hěn máng.",
+          "translation": "We are all busy.",
+          "focus": "都",
+          "distractors": [
+            "吗",
+            "在"
+          ]
+        },
+        {
+          "id": "ye-dou-4",
+          "text": "她也不喝酒。",
+          "reading": "tā yě bù hē jiǔ.",
+          "translation": "She doesn't drink alcohol either.",
+          "focus": "也",
+          "distractors": [
+            "吗",
+            "的"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ge",
+      "level": "a1-2",
+      "title": "个: counting things",
+      "summary": "Numbers need a measure word.",
+      "pattern": [
+        "Number / 这 / 那 + 个 + Noun"
+      ],
+      "body": [
+        "Between a number (or 这, 那, 几) and a noun, Chinese needs a measure word. 个 (ge) is the most common one and works with many nouns, especially people.",
+        "“Two” before a measure word is 两, not 二: 两个人."
+      ],
+      "examples": [
+        {
+          "id": "ge-1",
+          "text": "我有一个哥哥。",
+          "reading": "wǒ yǒu yí ge gēge.",
+          "translation": "I have an older brother.",
+          "focus": "个",
+          "distractors": [
+            "的",
+            "很"
+          ]
+        },
+        {
+          "id": "ge-2",
+          "text": "这个人是谁？",
+          "reading": "zhège rén shì shéi?",
+          "translation": "Who is this person?",
+          "focus": "个",
+          "distractors": [
+            "吗",
+            "很"
+          ]
+        },
+        {
+          "id": "ge-3",
+          "text": "我们班有十个学生。",
+          "reading": "wǒmen bān yǒu shí ge xuéshēng.",
+          "translation": "Our class has ten students.",
+          "focus": "个",
+          "distractors": [
+            "的",
+            "很"
+          ]
+        },
+        {
+          "id": "ge-4",
+          "text": "我想买两个包子。",
+          "reading": "wǒ xiǎng mǎi liǎng ge bāozi.",
+          "translation": "I'd like to buy two steamed buns.",
+          "focus": "个",
+          "distractors": [
+            "的",
+            "很"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "zai",
+      "level": "a1-2",
+      "title": "在: where something is",
+      "summary": "Say where someone is or does something.",
+      "pattern": [
+        "Subject + 在 + Place",
+        "Subject + 在 + Place + Verb"
+      ],
+      "body": [
+        "在 (zài) says where someone or something is: 我在家. No 是 is needed.",
+        "The place comes before the action: 我在家吃饭 (I eat at home)."
+      ],
+      "examples": [
+        {
+          "id": "zai-1",
+          "text": "我在家。",
+          "reading": "wǒ zài jiā.",
+          "translation": "I'm at home.",
+          "focus": "在",
+          "distractors": [
+            "是",
+            "很"
+          ]
+        },
+        {
+          "id": "zai-2",
+          "text": "老师在学校。",
+          "reading": "lǎoshī zài xuéxiào.",
+          "translation": "The teacher is at school.",
+          "focus": "在",
+          "distractors": [
+            "吗",
+            "很"
+          ]
+        },
+        {
+          "id": "zai-3",
+          "text": "他在图书馆看书。",
+          "reading": "tā zài túshūguǎn kàn shū.",
+          "translation": "He reads in the library.",
+          "focus": "在",
+          "distractors": [
+            "吗",
+            "很"
+          ]
+        },
+        {
+          "id": "zai-4",
+          "text": "我们在饭馆吃饭。",
+          "reading": "wǒmen zài fànguǎn chī fàn.",
+          "translation": "We eat at a restaurant.",
+          "focus": "在",
+          "distractors": [
+            "吗",
+            "很"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "you",
+      "level": "a1-2",
+      "title": "有 and 没有: to have",
+      "summary": "Having and “there is”.",
+      "pattern": [
+        "Subject + 有 + Thing",
+        "Subject + 没有 + Thing"
+      ],
+      "body": [
+        "有 (yǒu) means “to have”, and also “there is”: 这里有一个商店.",
+        "Its negative is 没有 (méiyǒu), never 不有."
+      ],
+      "examples": [
+        {
+          "id": "you-1",
+          "text": "我有一只猫。",
+          "reading": "wǒ yǒu yì zhī māo.",
+          "translation": "I have a cat.",
+          "focus": "有",
+          "distractors": [
+            "在",
+            "很"
+          ]
+        },
+        {
+          "id": "you-2",
+          "text": "他没有车。",
+          "reading": "tā méiyǒu chē.",
+          "translation": "He doesn't have a car.",
+          "focus": "没有",
+          "distractors": [
+            "不有",
+            "很"
+          ]
+        },
+        {
+          "id": "you-3",
+          "text": "这里有一个商店。",
+          "reading": "zhèlǐ yǒu yí ge shāngdiàn.",
+          "translation": "There is a shop here.",
+          "focus": "有",
+          "distractors": [
+            "很",
+            "吗"
+          ]
+        },
+        {
+          "id": "you-4",
+          "text": "我没有时间。",
+          "reading": "wǒ méiyǒu shíjiān.",
+          "translation": "I don't have time.",
+          "focus": "没有",
+          "distractors": [
+            "不有",
+            "很"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "le",
+      "level": "a1-2",
+      "title": "了: it happened",
+      "summary": "Mark a completed action.",
+      "pattern": [
+        "Subject + Verb + 了 + (Object)"
+      ],
+      "body": [
+        "了 (le) after a verb marks that the action happened or is complete.",
+        "To say it did not happen, use 没 (or 没有) and drop 了: 我没吃."
+      ],
+      "examples": [
+        {
+          "id": "le-1",
+          "text": "我吃了。",
+          "reading": "wǒ chī le.",
+          "translation": "I've eaten.",
+          "focus": "了",
+          "distractors": [
+            "很",
+            "是"
+          ]
+        },
+        {
+          "id": "le-2",
+          "text": "他买了一本书。",
+          "reading": "tā mǎi le yì běn shū.",
+          "translation": "He bought a book.",
+          "focus": "了",
+          "distractors": [
+            "很",
+            "是"
+          ]
+        },
+        {
+          "id": "le-3",
+          "text": "我们看了一个电影。",
+          "reading": "wǒmen kàn le yí ge diànyǐng.",
+          "translation": "We watched a film.",
+          "focus": "了",
+          "distractors": [
+            "很",
+            "是"
+          ]
+        },
+        {
+          "id": "le-4",
+          "text": "她去了北京。",
+          "reading": "tā qù le Běijīng.",
+          "translation": "She went to Beijing.",
+          "focus": "了",
+          "distractors": [
+            "很",
+            "是"
+          ]
+        }
+      ]
+    }
+  ]
+}

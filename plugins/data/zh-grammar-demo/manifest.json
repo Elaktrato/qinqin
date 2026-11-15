@@ -1,0 +1,11 @@
+{
+  "id": "zh-grammar-demo",
+  "name": "Chinese grammar demo (A1)",
+  "version": "1.0",
+  "type": "grammar",
+  "language": "zh",
+  "license": "CC0-1.0",
+  "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+  "format": "json",
+  "notice": "Demo content: ten short lessons for beginners, written for qinqin. The explanations and all example sentences are original and released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). The levels (A1, roughly HSK 1) are the author's own estimates and are not taken from any syllabus. The content has not been reviewed by a native speaker."
+}
