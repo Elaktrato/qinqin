@@ -126,6 +126,25 @@ describe('createPlayer with a source resolver', () => {
 	});
 });
 
+describe('createPlayer with a ready source (iOS: play inside the tap)', () => {
+	it('calls play() synchronously when the clip is already loaded', () => {
+		const el = new FakeAudio();
+		const p = createPlayer(() => el as unknown as HTMLAudioElement, null, () => Promise.reject(new Error('not needed')), (url) => `blob:${url}`);
+		void p.play([clip('a')]);
+		// No await in between: a user-activation-gated play() must happen in the same tick.
+		expect(el.log).toEqual(['play blob:/c/a.opus']);
+	});
+
+	it('falls back to the async path when the clip is not loaded yet', async () => {
+		const el = new FakeAudio();
+		const p = createPlayer(() => el as unknown as HTMLAudioElement, null, (u) => Promise.resolve(`blob:${u}`), () => null);
+		void p.play([clip('a')]);
+		expect(el.log).toEqual([]);
+		await tick();
+		expect(el.log).toEqual(['play blob:/c/a.opus']);
+	});
+});
+
 describe('speak end callback', () => {
 	it('calls onEnd when the utterance ends or fails', () => {
 		const utterances: { onend?: () => void; onerror?: () => void }[] = [];

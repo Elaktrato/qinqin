@@ -8,7 +8,8 @@
 		readings,
 		audioFor,
 		lang = '',
-		deviceVoice = false
+		deviceVoice = false,
+		word = ''
 	}: {
 		readings: Reading[];
 		/**
@@ -18,6 +19,8 @@
 		audioFor?: (reading: Reading, index: number) => AudioClip[] | null;
 		lang?: string;
 		deviceVoice?: boolean;
+		/** The headword, for the play buttons' accessible names. */
+		word?: string;
 	} = $props();
 
 	// The API orders readings, but ord is the contract: sort a copy so a
@@ -33,7 +36,12 @@
 				<li data-type={reading.type}>
 					{formatReading(reading.type, reading.value)}
 					{#if audioFor && reading.type === 'pinyin'}
-						<PlayButton clips={audioFor(reading, index) ?? []} {lang} {deviceVoice} />
+						<PlayButton
+							clips={audioFor(reading, index) ?? []}
+							{lang}
+							{deviceVoice}
+							label={word ? `${word} (${reading.value})` : reading.value}
+						/>
 					{/if}
 				</li>
 			{/each}

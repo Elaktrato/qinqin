@@ -1,3 +1,5 @@
+import { clearAudioCache } from './api/audio';
+import { clearClipCache } from './audio/source';
 import { goto } from '$app/navigation';
 import { derived, writable } from 'svelte/store';
 import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from './api/client';
@@ -85,6 +87,9 @@ export async function register(username: string, password: string): Promise<User
  */
 export function logout(): void {
 	clearToken();
+	// Recordings fetched for this user must not outlive the session.
+	clearClipCache();
+	clearAudioCache();
 	auth.set({ token: null, user: null });
 	void goto('/login');
 }

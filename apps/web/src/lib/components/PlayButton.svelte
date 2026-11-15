@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
 	import type { AudioClip } from '$lib/api/audio';
-	import { activate, buttonState } from '$lib/audio/button';
+	import { activate, buttonState, playLabel } from '$lib/audio/button';
+	import { clipObjectUrl } from '$lib/audio/source';
 	import { getPlayer } from '$lib/audio/shared';
 	import { deviceVoiceFor } from '$lib/audio/player';
 
@@ -9,8 +10,16 @@
 		clips,
 		speakText,
 		lang,
-		deviceVoice
-	}: { clips: AudioClip[]; speakText?: string; lang: string; deviceVoice: boolean } = $props();
+		deviceVoice,
+		label
+	}: {
+		clips: AudioClip[];
+		speakText?: string;
+		lang: string;
+		deviceVoice: boolean;
+		/** What this button pronounces, for its accessible name ("行 (xíng)"). */
+		label?: string;
+	} = $props();
 
 	// Voices load asynchronously and only exist in the browser, so the
 	// device-voice button appears once one is known.
@@ -19,6 +28,13 @@
 	let mine = false;
 
 	const view = $derived(buttonState({ clips, speakText, deviceVoice, voiceAvailable }));
+
+	// Fetch the clip as soon as the button exists, so a tap can start the audio in
+	// the same tick (iOS Safari only plays inside the user's tap); until it has
+	// arrived the tap takes the slower path and plays when the clip is ready.
+	$effect(() => {
+		for (const clip of clips) void clipObjectUrl(clip.url).catch(() => {});
+	});
 
 	onMount(() => {
 		if (typeof speechSynthesis === 'undefined') return;
@@ -54,7 +70,7 @@
 	<button
 		type="button"
 		class="play"
-		aria-label="Play pronunciation"
+		aria-label={playLabel(label)}
 		aria-pressed={playing}
 		title={view.title}
 		onclick={toggle}

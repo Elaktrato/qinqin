@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { AudioClip, AudioResolution } from '../api/audio';
 import type { Reading } from '../api/types';
-import { activate, buttonState, creditLine, headwordClips, readingClips } from './button';
+import { activate, buttonState, canSound, creditLine, headwordClips, playLabel, readingClips } from './button';
 import type { Player } from './player';
 
 const clip = (n: string, attribution = 'Kanji alive', license = 'CC BY 4.0'): AudioClip => ({
@@ -105,5 +105,29 @@ describe('entry audio helpers', () => {
 		expect(readingClips(res({ syllables: [[clip('x')], [clip('y')]] }), readings)).toBeNull();
 		expect(readingClips(res({ syllables: null }), readings)).toBeNull();
 		expect(readingClips(null, readings)).toBeNull();
+	});
+});
+
+describe('playLabel', () => {
+	it('names what is pronounced', () => {
+		expect(playLabel('行 (xíng)')).toBe('Play pronunciation of 行 (xíng)');
+		expect(playLabel('')).toBe('Play pronunciation');
+		expect(playLabel(undefined)).toBe('Play pronunciation');
+	});
+});
+
+describe('canSound', () => {
+	const audio = (over = {}) => ({ clips: [] as AudioClip[], speakText: '風', lang: 'ja', deviceVoice: true, ...over });
+	const voice = (lang: string) => ({ lang }) as SpeechSynthesisVoice;
+	it('is true with a clip, or with a usable device voice', () => {
+		expect(canSound(audio({ clips: [clip('a')], deviceVoice: false }), [])).toBe(true);
+		expect(canSound(audio(), [voice('ja-JP')])).toBe(true);
+	});
+	it('is false with no clip and no voice, or with the device voice off', () => {
+		expect(canSound(audio(), [voice('en-US')])).toBe(false);
+		expect(canSound(audio(), [])).toBe(false);
+		expect(canSound(audio({ deviceVoice: false }), [voice('ja-JP')])).toBe(false);
+		expect(canSound(audio({ speakText: '' }), [voice('ja-JP')])).toBe(false);
+		expect(canSound(null, [voice('ja-JP')])).toBe(false);
 	});
 });

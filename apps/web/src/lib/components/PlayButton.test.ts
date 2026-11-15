@@ -24,6 +24,13 @@ describe('PlayButton', () => {
 	});
 });
 
+describe('PlayButton accessible name', () => {
+	it('names the word or reading when it is given', () => {
+		const { body } = render(PlayButton, { props: { clips: [clip('a')], lang: 'zh', deviceVoice: true, label: '行 (xíng)' } });
+		expect(html(body)).toContain('aria-label="Play pronunciation of 行 (xíng)"');
+	});
+});
+
 describe('Readings with audio', () => {
 	const readings: Reading[] = [
 		{ type: 'pinyin', value: 'xíng', plain: 'xing2', ord: 0 },
@@ -32,9 +39,11 @@ describe('Readings with audio', () => {
 	];
 	it('has a play button for each pinyin reading that has clips, and none without audioFor', () => {
 		const withAudio = render(Readings, {
-			props: { readings, lang: 'zh', deviceVoice: false, audioFor: (r: Reading, i: number) => (i === 0 || i === 1 ? [clip(`s${i}`)] : null) }
+			props: { readings, word: '行', lang: 'zh', deviceVoice: false, audioFor: (r: Reading, i: number) => (i === 0 || i === 1 ? [clip(`s${i}`)] : null) }
 		});
-		expect(html(withAudio.body).match(/aria-label="Play pronunciation"/g)).toHaveLength(2);
+		expect(html(withAudio.body).match(/aria-label="Play pronunciation of 行 \(/g)).toHaveLength(2);
+		expect(html(withAudio.body)).toContain('aria-label="Play pronunciation of 行 (xíng)"');
+		expect(html(withAudio.body)).toContain('aria-label="Play pronunciation of 行 (háng)"');
 		const without = render(Readings, { props: { readings } });
 		expect(html(without.body)).not.toContain('Play pronunciation');
 	});
@@ -42,6 +51,6 @@ describe('Readings with audio', () => {
 		const { body } = render(Readings, {
 			props: { readings, lang: 'zh', deviceVoice: false, audioFor: (_r: Reading, i: number) => (i === 1 ? [clip('h')] : null) }
 		});
-		expect(html(body).match(/aria-label="Play pronunciation"/g)).toHaveLength(1);
+		expect(html(body).match(/aria-label="Play pronunciation/g)).toHaveLength(1);
 	});
 });

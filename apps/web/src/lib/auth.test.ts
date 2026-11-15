@@ -3,7 +3,11 @@ import { get } from 'svelte/store';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
+const { clearClipCache, clearAudioCache } = vi.hoisted(() => ({ clearClipCache: vi.fn(), clearAudioCache: vi.fn() }));
+
 vi.mock('$app/navigation', () => ({ goto }));
+vi.mock('./audio/source', () => ({ clearClipCache }));
+vi.mock('./api/audio', () => ({ clearAudioCache }));
 
 import { auth, loadMe, login, logout, register } from './auth';
 
@@ -108,5 +112,11 @@ describe('auth store', () => {
 		expect(localStorage.getItem('qinqin.token')).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
 		expect(goto).toHaveBeenCalledWith('/login');
+	});
+
+	it('logout forgets the audio caches (blob URLs and resolutions of the signed-out user)', () => {
+		logout();
+		expect(clearClipCache).toHaveBeenCalled();
+		expect(clearAudioCache).toHaveBeenCalled();
 	});
 });

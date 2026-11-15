@@ -12,6 +12,23 @@ interface Slot {
 }
 const cache = new Map<string, Slot>();
 
+// trim keeps the MAX_CLIPS most recently used clips that have finished loading:
+// a clip still being fetched is never dropped, so no object URL is created for
+// an entry that is already gone (it would leak), and none is revoked in use.
+function trim(): void {
+	for (const [key, slot] of cache) {
+		if (cache.size <= MAX_CLIPS) return;
+		if (slot.url === undefined) continue;
+		cache.delete(key);
+		URL.revokeObjectURL(slot.url);
+	}
+}
+
+/** readyClipUrl is the object URL of a clip that has already been fetched, else null; it never waits. */
+export function readyClipUrl(clipUrl: string): string | null {
+	return cache.get(clipUrl)?.url ?? null;
+}
+
 /** clipObjectUrl returns a playable object URL for a clip URL, fetching it once. */
 export function clipObjectUrl(clipUrl: string): Promise<string> {
 	const hit = cache.get(clipUrl);
@@ -24,6 +41,7 @@ export function clipObjectUrl(clipUrl: string): Promise<string> {
 	const slot: Slot = {
 		promise: apiBlob(clipUrl).then((blob) => {
 			slot.url = URL.createObjectURL(blob);
+			trim();
 			return slot.url;
 		})
 	};
@@ -31,11 +49,7 @@ export function clipObjectUrl(clipUrl: string): Promise<string> {
 		if (cache.get(clipUrl) === slot) cache.delete(clipUrl);
 	});
 	cache.set(clipUrl, slot);
-	while (cache.size > MAX_CLIPS) {
-		const [oldest, old] = cache.entries().next().value as [string, Slot];
-		cache.delete(oldest);
-		if (old.url) URL.revokeObjectURL(old.url);
-	}
+	trim();
 	return slot.promise;
 }
 

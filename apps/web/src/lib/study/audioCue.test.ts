@@ -19,13 +19,20 @@ describe('cardAudio', () => {
 
 describe('autoplayDue', () => {
 	it('plays once on reveal, only when the setting is on', () => {
-		expect(autoplayDue({ done: true, autoplay: true, playedFor: null, key: '3' })).toBe(true);
-		expect(autoplayDue({ done: true, autoplay: true, playedFor: '3', key: '3' })).toBe(false);
-		expect(autoplayDue({ done: true, autoplay: true, playedFor: '2', key: '3' })).toBe(true);
+		expect(autoplayDue({ done: true, autoplay: true, ready: true, playedFor: null, key: '3' })).toBe(true);
+		expect(autoplayDue({ done: true, autoplay: true, ready: true, playedFor: '3', key: '3' })).toBe(false);
+		expect(autoplayDue({ done: true, autoplay: true, ready: true, playedFor: '2', key: '3' })).toBe(true);
 	});
 	it('never plays before the reveal or with autoplay off', () => {
-		expect(autoplayDue({ done: false, autoplay: true, playedFor: null, key: '3' })).toBe(false);
-		expect(autoplayDue({ done: true, autoplay: false, playedFor: null, key: '3' })).toBe(false);
+		expect(autoplayDue({ done: false, autoplay: true, ready: true, playedFor: null, key: '3' })).toBe(false);
+		expect(autoplayDue({ done: true, autoplay: false, ready: true, playedFor: null, key: '3' })).toBe(false);
+	});
+});
+
+describe('autoplayDue waits for the recordings', () => {
+	it('is not due while the clips are still being resolved, and is due once they arrive', () => {
+		expect(autoplayDue({ done: true, autoplay: true, ready: false, playedFor: null, key: '3' })).toBe(false);
+		expect(autoplayDue({ done: true, autoplay: true, ready: true, playedFor: null, key: '3' })).toBe(true);
 	});
 });
 

@@ -166,6 +166,7 @@
 						speakText={entry.written}
 						lang={entry.language}
 						deviceVoice={audioSettings.deviceVoice}
+						label={entry.written}
 					/>
 				</div>
 				<div class="chips">
@@ -192,6 +193,7 @@
 			<Readings
 				readings={entry.readings}
 				audioFor={audioFor ?? undefined}
+				word={entry.written}
 				lang={entry.language}
 				deviceVoice={audioSettings.deviceVoice}
 			/>

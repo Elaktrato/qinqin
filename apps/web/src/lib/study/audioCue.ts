@@ -23,8 +23,15 @@ export function cardAudio(entry: Entry, res: AudioResolution | null | undefined,
  * the answer is revealed, only when the workspace setting is on, and once
  * per card (`playedFor` is the key of the card already played).
  */
-export function autoplayDue(i: { done: boolean; autoplay: boolean; playedFor: string | null; key: string }): boolean {
-	return i.done && i.autoplay && i.playedFor !== i.key;
+export function autoplayDue(i: {
+	done: boolean;
+	autoplay: boolean;
+	/** The session's recordings have been resolved (or will never be). */
+	ready: boolean;
+	playedFor: string | null;
+	key: string;
+}): boolean {
+	return i.done && i.autoplay && i.ready && i.playedFor !== i.key;
 }
 
 /** isPlayKey is the study key `p` (the session only honours it after the reveal). */

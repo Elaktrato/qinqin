@@ -1,6 +1,7 @@
 import type { AudioClip, AudioResolution } from '../api/audio';
 import type { Reading } from '../api/types';
-import type { Player } from './player';
+import { deviceVoiceFor, type Player } from './player';
+import type { CardAudio } from '../study/audioCue';
 
 export interface ButtonInput {
 	clips: AudioClip[];
@@ -92,4 +93,23 @@ export function readingClips(
 		const slot = pinyin.indexOf(reading);
 		return slot >= 0 ? (slots[slot] ?? null) : null;
 	};
+}
+
+/** playLabel is the accessible name of a play button: it says what it pronounces. */
+export function playLabel(what: string | undefined): string {
+	return what ? `Play pronunciation of ${what}` : 'Play pronunciation';
+}
+
+/**
+ * canSound says whether pressing play on a card would make a sound: a clip, or
+ * the device voice switched on with text to speak and a voice for the language.
+ * `voices` defaults to the browser's.
+ */
+export function canSound(
+	audio: CardAudio | null | undefined,
+	voices: SpeechSynthesisVoice[] = typeof speechSynthesis === 'undefined' ? [] : speechSynthesis.getVoices()
+): boolean {
+	if (!audio) return false;
+	if (audio.clips.length > 0) return true;
+	return audio.deviceVoice && audio.speakText !== '' && deviceVoiceFor(audio.lang, voices) !== null;
 }

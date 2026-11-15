@@ -336,12 +336,18 @@
 								{@render noteCell(audio.table, row.noteId, row.name)}
 								<td title={row.language}>{languageLabel(row.language)}</td>
 								<td>{row.version}</td>
-								<td>{@render cell(row.license, row.language)}</td>
+								<td>
+									{#if audio.licenseHref[row.key]}
+										<a href={audio.licenseHref[row.key]} rel="noopener">{row.license}</a>
+									{:else}
+										{@render cell(row.license, row.language)}
+									{/if}
+								</td>
 								<td>{@render cell(row.attribution, row.language)}</td>
 								<td>
-									{#if audio.creditsHref[row.key]}
-										<a href={audio.creditsHref[row.key]}>Per-recording credits</a>
-									{/if}
+									{#each audio.creditsPages[row.key] ?? [] as link (link.href)}
+										<a href={link.href}>{link.label}</a>{' '}
+									{/each}
 								</td>
 							</tr>
 						{/each}

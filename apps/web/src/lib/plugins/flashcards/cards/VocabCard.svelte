@@ -2,6 +2,7 @@
 	import type { Entry } from '$lib/api/types';
 	import { formatReading } from '$lib/format';
 	import PlayButton from '$lib/components/PlayButton.svelte';
+	import { creditLine } from '$lib/audio/button';
 	import type { CardAudio } from '$lib/study/audioCue';
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
 	import { buildVocabFaces } from '$lib/study/cardView';
@@ -30,6 +31,8 @@
 		return buildVocabFaces(entry, sentence, entry.language);
 	});
 
+	const credit = $derived(audio ? creditLine(audio.clips) : '');
+
 	function reveal(): void {
 		onDone({ suggested: null, meta: {} });
 	}
@@ -55,12 +58,21 @@
 
 {#if revealed}
 	<section class="answer" aria-labelledby="answer-heading">
-		<h2 id="answer-heading">
-			Answer
-			{#if audio}
-				<PlayButton clips={audio.clips} speakText={audio.speakText} lang={audio.lang} deviceVoice={audio.deviceVoice} />
-			{/if}
-		</h2>
+		<h2 id="answer-heading">Answer</h2>
+		{#if audio}
+			<div class="sound">
+				<PlayButton
+					clips={audio.clips}
+					speakText={audio.speakText}
+					lang={audio.lang}
+					deviceVoice={audio.deviceVoice}
+					label={entry.written}
+				/>
+				{#if credit}
+					<p class="credit">{credit}</p>
+				{/if}
+			</div>
+		{/if}
 		{#if faces.back.glosses.length > 0}
 			{#each faces.back.glosses as group (group.dictionaryName)}
 				<article class="dictionary">
@@ -111,6 +123,20 @@
 
 	.hint {
 		opacity: 0.75;
+	}
+
+	.sound {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+		margin: 0 0 0.75rem;
+	}
+
+	.credit {
+		margin: 0;
+		font-size: 0.8rem;
+		opacity: 0.7;
 	}
 
 	.reveal {

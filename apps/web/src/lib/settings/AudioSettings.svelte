@@ -13,15 +13,21 @@
 	const current = $derived(readAudioSettings(settings));
 	let error = $state('');
 	let saving = $state(false);
+	// The value shown while a save is in flight; dropped on failure, so the box
+	// goes back to the stored setting instead of showing a change that never saved.
+	let pending = $state<Record<string, boolean>>({});
 
 	async function change(key: string, value: boolean) {
 		error = '';
 		saving = true;
+		pending = { ...pending, [key]: value };
 		try {
 			await onChange({ [key]: value });
 		} catch (err) {
 			error = err instanceof Error && err.message ? err.message : 'Could not save this setting.';
 		} finally {
+			const { [key]: _done, ...rest } = pending;
+			pending = rest;
 			saving = false;
 		}
 	}
@@ -32,7 +38,7 @@
 	<label>
 		<input
 			type="checkbox"
-			checked={current.autoplay}
+			checked={pending[AUDIO_AUTOPLAY_KEY] ?? current.autoplay}
 			onchange={(event) => change(AUDIO_AUTOPLAY_KEY, event.currentTarget.checked)}
 		/>
 		Play audio on reveal
@@ -40,7 +46,7 @@
 	<label>
 		<input
 			type="checkbox"
-			checked={current.deviceVoice}
+			checked={pending[AUDIO_DEVICE_VOICE_KEY] ?? current.deviceVoice}
 			onchange={(event) => change(AUDIO_DEVICE_VOICE_KEY, event.currentTarget.checked)}
 		/>
 		Use device voice when no recording exists

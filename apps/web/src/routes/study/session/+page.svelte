@@ -4,7 +4,7 @@
 	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
 	import { token } from '$lib/auth';
-	import { activate, headwordClips } from '$lib/audio/button';
+	import { activate, canSound, headwordClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
 	import { getPlayer } from '$lib/audio/shared';
 	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
@@ -173,6 +173,9 @@
 	let entries = $state.raw<Record<number, Entry>>({});
 	// The recordings of every entry in the queue, resolved once per session.
 	let audioMap = $state.raw<Record<string, AudioResolution>>({});
+	// True once the resolution has finished (found, failed or not needed): autoplay
+	// waits for it so a recording that arrives late still plays on its card.
+	let audioSettled = $state(false);
 	let entryError = $state('');
 	let gradeError = $state('');
 	let grading = $state(false);
@@ -299,6 +302,7 @@
 		reshown = 0;
 		entries = {};
 		audioMap = {};
+		audioSettled = false;
 		entryError = '';
 		gradeError = '';
 		grading = false;
@@ -473,11 +477,15 @@
 	 * card never waits on it.
 	 */
 	function prefetchAudio(seq: number): void {
-		if (!$token) return;
 		const ids = [...queue, ...reserve].filter((i) => i.kind === 'vocab' || i.kind === 'tone').map((i) => i.entryId);
-		if (ids.length === 0) return;
+		if (!$token || ids.length === 0) {
+			audioSettled = true;
+			return;
+		}
 		void resolveAudio(ids).then((found) => {
-			if (seq === requestSeq) audioMap = found;
+			if (seq !== requestSeq) return;
+			audioMap = found;
+			audioSettled = true;
 		});
 	}
 
@@ -491,7 +499,7 @@
 	let autoplayedFor: string | null = null;
 
 	function playCurrent(): void {
-		if (currentAudio === null) return;
+		if (!canSound(currentAudio) || currentAudio === null) return;
 		void activate(getPlayer(), currentAudio, currentAudio.lang).catch(() => {});
 	}
 
@@ -499,8 +507,15 @@
 	// setting is on (it is off by default).
 	$effect(() => {
 		const key = resolved === null ? '' : `${index}:${resolved.item.cardId}`;
-		const due = autoplayDue({ done, autoplay: audioSettings.autoplay, playedFor: autoplayedFor, key });
+		const due = autoplayDue({
+			done,
+			autoplay: audioSettings.autoplay,
+			ready: audioSettled,
+			playedFor: autoplayedFor,
+			key
+		});
 		if (!due || key === '') return;
+		// Decided: it plays now (the recordings are in), or there is nothing to play.
 		autoplayedFor = key;
 		untrack(playCurrent);
 	});
@@ -701,7 +716,7 @@
 		}
 
 		if (blocksGradeKeys(event.target)) return;
-		if (isPlayKey(event) && currentAudio !== null) {
+		if (isPlayKey(event) && canSound(currentAudio)) {
 			// Only after the reveal: this branch is past the `!done` return.
 			event.preventDefault();
 			playCurrent();
@@ -908,7 +923,7 @@
 						</button>
 					{/each}
 				</div>
-				<p class="keys">{KEY_HINTS[current.item.kind]}{#if done && currentAudio !== null} · P plays{/if}</p>
+				<p class="keys">{KEY_HINTS[current.item.kind]}{#if done && canSound(currentAudio)} · P plays{/if}</p>
 			</article>
 		{/if}
 	{/if}

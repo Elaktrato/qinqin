@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { clearClipCache, clipObjectUrl } from './source';
+import { clearClipCache, clipObjectUrl, readyClipUrl } from './source';
 
 const blobResponse = (text: string) => new Response(new Blob([text], { type: 'audio/ogg' }), { status: 200 });
 
@@ -48,5 +48,25 @@ describe('clipObjectUrl', () => {
 		expect(revoked).toEqual(['blob:clip-1']);
 		await clipObjectUrl('/c/0.opus'); // evicted: fetched again
 		expect(fetch).toHaveBeenCalledTimes(42);
+	});
+
+	it('readyClipUrl is null until the clip is fetched, then the object URL, synchronously', async () => {
+		expect(readyClipUrl('/c/r.opus')).toBeNull();
+		const p = clipObjectUrl('/c/r.opus');
+		expect(readyClipUrl('/c/r.opus')).toBeNull(); // still in flight
+		const url = await p;
+		expect(readyClipUrl('/c/r.opus')).toBe(url);
+	});
+
+	it('never revokes a clip that is still being fetched, and trims once the fetches settle', async () => {
+		const gates: (() => void)[] = [];
+		vi.mocked(fetch).mockImplementation(() => new Promise((resolve) => gates.push(() => resolve(blobResponse('OggS')))));
+		const pending = Array.from({ length: 41 }, (_, i) => clipObjectUrl(`/c/p${i}.opus`));
+		expect(revoked).toEqual([]);
+		gates.forEach((g) => g());
+		const urls = await Promise.all(pending);
+		expect(urls).toHaveLength(41);
+		expect(revoked).toHaveLength(1); // trimmed to 40 after they settled
+		expect(revoked[0]).toBe(urls[0]);
 	});
 });
