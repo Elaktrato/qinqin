@@ -10,8 +10,9 @@
 	let {
 		entryId,
 		written,
-		sentenceId
-	}: { entryId: number; written: string; sentenceId?: number } = $props();
+		sentenceId,
+		kind
+	}: { entryId: number; written: string; sentenceId?: number; kind?: string } = $props();
 
 	// Whether this entry already has a card in the current workspace.
 	// `null` means "not known yet": the check is still running, so the
@@ -91,9 +92,12 @@
 			// review front can show the word in context. An existing card is
 			// returned unchanged, so the chosen deck is only used for a
 			// genuinely new card.
+			// A character card has no sentence and carries the entryKind
+			// snapshot, the same row a level session creates.
+			const isCharacter = kind === 'character';
 			await addCard(entryId, {
 				written,
-				sentenceId,
+				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
 				deckIds: [selectedDeckId]
 			});
 			inDeck = true;
