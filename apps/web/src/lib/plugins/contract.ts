@@ -24,10 +24,19 @@ export type Surface = (typeof SURFACES)[number];
 export type Permission = (typeof PERMISSIONS)[number];
 export type Hook = (typeof HOOKS)[number];
 
+/** How an event type counts as heatmap activity (mirrors plugins.ActivityRule). */
+export interface ActivityRule {
+	label: string;
+	describe: { one: string; other: string };
+	measure?: { field: string; unit: 'seconds'; min: number; max: number };
+	pointsPer?: number;
+	distinctBy?: string;
+}
+
 /** One event type a plugin emits; `activity` is the optional counting rule. */
 export interface EventDecl {
 	type: string;
-	activity?: Record<string, unknown>;
+	activity?: ActivityRule;
 }
 
 /** ContractManifest mirrors the manifest JSON the server stores and serves. */
