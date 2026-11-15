@@ -195,6 +195,41 @@ describe('auth store', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 
+	it('logout asks the server to end the session, then clears local state', async () => {
+		localStorage.setItem('qinqin.token', 'stored');
+		auth.set({ token: 'stored', user });
+		vi.mocked(fetch).mockImplementation(async () => new Response(null, { status: 204 }));
+
+		logout();
+
+		// State is cleared at once, without waiting for the request.
+		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+		const [url, init] = vi.mocked(fetch).mock.calls[0];
+		expect(String(url)).toBe('/api/auth/logout');
+		expect(init?.method).toBe('POST');
+		// The token was read before it was cleared.
+		expect((init?.headers as Record<string, string>).authorization).toBe('Bearer stored');
+	});
+
+	it('logout clears local state even when the request fails', async () => {
+		localStorage.setItem('qinqin.token', 'stored');
+		auth.set({ token: 'stored', user });
+		vi.mocked(fetch).mockRejectedValue(new TypeError('offline'));
+
+		expect(() => logout()).not.toThrow();
+
+		expect(get(auth)).toEqual({ token: null, user: null });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(get(auth)).toEqual({ token: null, user: null });
+	});
+
+	it('logout without a token sends nothing', () => {
+		logout();
+		expect(fetch).not.toHaveBeenCalled();
+	});
+
 	it('logout forgets the audio caches (blob URLs and resolutions of the signed-out user)', () => {
 		logout();
 		expect(clearClipCache).toHaveBeenCalled();

@@ -218,6 +218,20 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleLogout deletes the session the request came in on (204). A
+// restricted session may log out: it is the way out of a forced change.
+func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	p := s.requirePrincipal(w, r, restrictionPasswordChange, restrictionMFAEnrollment)
+	if p == nil {
+		return
+	}
+	if _, err := auth.RevokeSession(r.Context(), s.db, p.User.ID, p.SessionID); err != nil {
+		writeInternal(w, r)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // handleMe returns the authenticated user.
 func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 	p := s.requirePrincipal(w, r, restrictionPasswordChange, restrictionMFAEnrollment)

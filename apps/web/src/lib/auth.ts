@@ -105,11 +105,18 @@ export async function register(username: string, password: string): Promise<User
 }
 
 /**
- * logout forgets the token and the in-memory user. The layout guard
+ * logout ends the session on the server (best effort), then forgets the
+ * token and the in-memory user. The layout guard
  * notices the signed-out session and leaves any protected page, so there
  * is no navigation here to fail or double up.
  */
 export function logout(): void {
+	// Best effort: the server drops the session row, but signing out never
+	// waits for it or fails because of it. The request carries the token, so
+	// it is sent before the token is cleared.
+	if (getToken() !== null) {
+		api('/api/auth/logout', { method: 'POST', body: {} }).catch(() => undefined);
+	}
 	clearToken();
 	// Recordings fetched for this user must not outlive the session.
 	clearClipCache();

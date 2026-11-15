@@ -21,7 +21,15 @@ type gateActors struct {
 	anon, user, admin, pwc, pwcAdmin, enr, enrAdmin string
 }
 
+// newGateServer returns the server and a first set of actors; fresh() makes
+// new sessions for the same users, so a route that ends a session (logout)
+// cannot spoil the next route of the walk.
 func newGateServer(t *testing.T) (*server, http.Handler, gateActors, *sql.DB) {
+	s, h, _, a, sqlDB := newGateServerFresh(t)
+	return s, h, a, sqlDB
+}
+
+func newGateServerFresh(t *testing.T) (*server, http.Handler, func() gateActors, gateActors, *sql.DB) {
 	t.Helper()
 	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "gate.db"))
 	if err != nil {
@@ -29,28 +37,39 @@ func newGateServer(t *testing.T) (*server, http.Handler, gateActors, *sql.DB) {
 	}
 	t.Cleanup(func() { sqlDB.Close() })
 	s := newServer(sqlDB, t.TempDir(), nil)
-	add := func(name string, admin, mustChange bool, level string) string {
+	ids := map[string]int64{}
+	user := func(name string, admin, mustChange bool) {
 		res, err := sqlDB.Exec(`INSERT INTO users (username, hash, admin, updated_at, created_at, must_change_password, must_change_set_at)
 			VALUES (?, 'x', ?, 't', 't', ?, '2000-01-01T00:00:00Z')`, name, admin, mustChange)
 		if err != nil {
 			t.Fatal(err)
 		}
-		id, _ := res.LastInsertId()
-		tok, err := auth.NewSession(context.Background(), sqlDB, id, auth.LoginOptions{Level: level})
+		ids[name], _ = res.LastInsertId()
+	}
+	user("gate-user", false, false)
+	user("gate-admin", true, false)
+	user("gate-pwc", false, true)
+	user("gate-pwc-admin", true, true)
+	user("gate-enr", false, false)
+	user("gate-enr-admin", true, false)
+	session := func(name, level string) string {
+		tok, err := auth.NewSession(context.Background(), sqlDB, ids[name], auth.LoginOptions{Level: level})
 		if err != nil {
 			t.Fatal(err)
 		}
 		return tok
 	}
-	a := gateActors{
-		user:     add("gate-user", false, false, "full"),
-		admin:    add("gate-admin", true, false, "full"),
-		pwc:      add("gate-pwc", false, true, "full"),
-		pwcAdmin: add("gate-pwc-admin", true, true, "full"),
-		enr:      add("gate-enr", false, false, "enroll"),
-		enrAdmin: add("gate-enr-admin", true, false, "enroll"),
+	fresh := func() gateActors {
+		return gateActors{
+			user:     session("gate-user", "full"),
+			admin:    session("gate-admin", "full"),
+			pwc:      session("gate-pwc", "full"),
+			pwcAdmin: session("gate-pwc-admin", "full"),
+			enr:      session("gate-enr", "enroll"),
+			enrAdmin: session("gate-enr-admin", "enroll"),
+		}
 	}
-	return s, s.handler(), a, sqlDB
+	return s, s.handler(), fresh, fresh(), sqlDB
 }
 
 var pathVar = regexp.MustCompile(`\{[^}]+\}`)
@@ -100,7 +119,7 @@ func isGateCode(code string) bool {
 // a handler that does not enforce the policy it declares, so a new route
 // cannot reach the mux without an access decision that actually holds.
 func TestRouteWalkMatchesDeclaredAccess(t *testing.T) {
-	s, h, a, _ := newGateServer(t)
+	s, h, fresh, _, _ := newGateServerFresh(t)
 	routes := s.routes()
 	if len(routes) < 80 {
 		t.Fatalf("routes() has %d entries; the table lost routes", len(routes))
@@ -111,6 +130,7 @@ func TestRouteWalkMatchesDeclaredAccess(t *testing.T) {
 			t.Errorf("%s is declared twice", rt.pattern)
 		}
 		seen[rt.pattern] = true
+		a := fresh()
 		check := func(who, token string, wantStatus int, wantCode string) {
 			t.Helper()
 			status, code := gateRequest(t, h, rt.pattern, token)

@@ -569,3 +569,42 @@ func TestMeReturnsTheWholeUser(t *testing.T) {
 		t.Errorf("unknown token = %d", resp.StatusCode)
 	}
 }
+
+func TestLogoutEndsOnlyTheCurrentSession(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
+	phone := loginToken(t, ts, "alice", "secret-pass-1")
+	laptop := loginToken(t, ts, "alice", "secret-pass-1")
+
+	if resp := post(t, ts.URL+"/api/auth/logout", "", struct{}{}); resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("anonymous logout = %d, want 401", resp.StatusCode)
+	}
+	resp := post(t, ts.URL+"/api/auth/logout", phone, struct{}{})
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("logout = %d, want 204", resp.StatusCode)
+	}
+	if got := me(t, ts, phone).StatusCode; got != http.StatusUnauthorized {
+		t.Errorf("token after logout: me = %d, want 401", got)
+	}
+	if got := me(t, ts, laptop).StatusCode; got != http.StatusOK {
+		t.Errorf("other session after logout: me = %d, want 200", got)
+	}
+	var n int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM sessions`).Scan(&n)
+	if n != 1 {
+		t.Errorf("sessions left = %d, want 1", n)
+	}
+}
+
+func TestLogoutWorksForRestrictedSessions(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
+	sqlDB.Exec(`UPDATE users SET must_change_password = 1`)
+	tok := loginToken(t, ts, "alice", "secret-pass-1")
+	if resp := post(t, ts.URL+"/api/auth/logout", tok, struct{}{}); resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("logout of a restricted session = %d, want 204 (it is the way out)", resp.StatusCode)
+	}
+	if got := me(t, ts, tok).StatusCode; got != http.StatusUnauthorized {
+		t.Errorf("me after logout = %d", got)
+	}
+}

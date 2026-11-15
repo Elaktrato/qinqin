@@ -134,6 +134,7 @@ func (s *server) routes() []route {
 		{"GET /healthz", handleHealthz, accPublic, nil},
 		{"POST /api/auth/register", s.handleRegister, accPublic, nil},
 		{"POST /api/auth/login", s.handleLogin, accPublic, nil},
+		{"POST /api/auth/logout", s.handleLogout, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
 		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},
