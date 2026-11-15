@@ -11,6 +11,7 @@
   "invalid_email": {"status": 422, "meaning": "Not a usable email address (one @, a dotted domain, at most 254 bytes)."},
   "email_taken": {"status": 409, "meaning": "Another account already uses that email address (compared case-insensitively)."},
   "mail_unavailable": {"status": 409, "meaning": "The setting needs a working mail server and none is configured."},
+  "invalid_invite": {"status": 422, "meaning": "An invite parameter is out of range (uses 1-100, expiry 1-90 days, note at most 100 characters)."},
   "invalid_setting": {"status": 422, "meaning": "A settings value outside its vocabulary."},
   "account_disabled": {"status": 403, "meaning": "Right password, but an administrator disabled the account."},
   "password_change_required": {"status": 403, "meaning": "The session must choose a new password before anything else; the token stays valid."},
