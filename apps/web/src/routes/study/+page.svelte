@@ -9,6 +9,7 @@
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
 	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
+	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
 	import {
 		CARD_TYPES,
@@ -22,6 +23,7 @@
 		GENERAL_DECK_ID,
 		cardsInDecks,
 		createDeck,
+		activeWeights,
 		deleteDeck,
 		loadStudyData,
 		renameDeck
@@ -33,6 +35,12 @@
 		type StudyCard,
 		type StudyCardKind
 	} from '$lib/study/types';
+
+	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
+		const active = data.fsrs?.active;
+		if (active === null || active === undefined) return 'default parameters';
+		return `${active.source === 'optimized' ? 'optimised' : 'imported'} on ${active.createdAt.slice(0, 10)}`;
+	}
 
 	// Counts only need to distinguish "none" from "some"; the actual
 	// session limits are applied by the session page.
@@ -55,6 +63,8 @@
 	let decks = $state<Deck[]>([]);
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
+	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	let schedulingLabel = $state('default parameters');
 	let loading = $state(true);
 	let loadError = $state('');
 	let noWorkspace = $state(false);
@@ -156,6 +166,8 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			weights = activeWeights(data);
+			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
 		} catch (err) {
 			if (seq !== requestSeq) return;
@@ -182,6 +194,8 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			weights = activeWeights(data);
+			schedulingLabel = describeScheduling(data);
 		} catch (err) {
 			if (seq === requestSeq) deckError = message(err, 'Could not reload your cards.');
 		}
@@ -328,6 +342,7 @@
 			newLimit: COUNT_CAP,
 			reviewLimit: COUNT_CAP,
 			now: new Date(),
+			w: weights,
 			language: workspaceLanguage ?? '',
 			// Words this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
@@ -360,7 +375,8 @@
 			reviews,
 			newLimit: 0,
 			reviewLimit: COUNT_CAP,
-			now
+			now,
+			w: weights
 		}).length;
 		const fresh = buildLevelQueue({
 			entries: levelEntries,
@@ -368,7 +384,8 @@
 			reviews,
 			newLimit: COUNT_CAP,
 			reviewLimit: 0,
-			now
+			now,
+			w: weights
 		}).length;
 		return { due, fresh };
 	});
@@ -742,6 +759,9 @@
 					<input type="number" min="1" max="999" step="1" bind:value={reviewLimit} />
 				</label>
 			</div>
+			<p class="hint">
+				<a href="/study/scheduling">Scheduling: {schedulingLabel}</a>
+			</p>
 		</section>
 
 		<section aria-labelledby="types-heading">

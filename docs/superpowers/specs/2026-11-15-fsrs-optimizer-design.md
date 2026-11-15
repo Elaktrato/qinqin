@@ -109,7 +109,9 @@ on plain numbers (evaluation, preview) and on tape variables (gradients).
   β 0.9/0.999, 5 epochs, batches of whole cards ≈ 512 labelled items, seeded shuffle `PRNG(1)`),
   clamped to `CLAMP_PARAMETERS(2, true)` after every step.
 - **Ruling: deterministic training** (fixed seed, card order by id before the seeded shuffle) —
-  the same history gives the same weights on every device — cost if wrong: none.
+  the same history gives the same weights on the same JS engine (floating-point results can differ
+  between engines); the stored set is what syncs, nothing is recomputed on another device — cost if
+  wrong: none.
 - **Thresholds:** fewer than **400** labelled items → the button is disabled with "N more reviews
   needed". 400–999 → allowed, with a "little data: the fit may move a lot later" note.
 - **Ruling: 400 labelled items** (Anki's documented floor) — cost if wrong: a threshold constant.

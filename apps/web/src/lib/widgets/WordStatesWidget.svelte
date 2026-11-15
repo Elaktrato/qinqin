@@ -8,6 +8,7 @@
 		type WordStatesResult
 	} from '$lib/stats/wordStates';
 	import { loadStudyHistory } from '$lib/study/history';
+	import { activeWeights } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -61,7 +62,7 @@
 			// history is shared with the other widgets (history.ts).
 			const data = await loadStudyHistory(workspace, { force });
 			if (seq !== requestSeq) return;
-			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date());
+			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data));
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			result = null;

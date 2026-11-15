@@ -97,7 +97,8 @@ export function masteryForChars(
 	chars: readonly string[],
 	cards: readonly StudyCard[],
 	reviews: readonly ReviewEvent[],
-	now: Date
+	now: Date,
+	w: readonly number[]
 ): Map<string, CharMastery> {
 	const wanted = new Set(chars.filter((char) => char.length > 0));
 	const totals = new Map<string, { sum: number; count: number }>();
@@ -115,7 +116,7 @@ export function masteryForChars(
 			// No history means no schedule; skipping avoids a replay that
 			// would only return null.
 			if (history === undefined) continue;
-			const schedule = scheduleFor(card.id, history, now);
+			const schedule = scheduleFor(card.id, history, now, w);
 			if (schedule === null) continue;
 
 			const strength = cardStrength(schedule.stability);

@@ -1,0 +1,11 @@
+{
+  "id": "tgh-chars",
+  "name": "通用规范汉字表 (2013) levels",
+  "version": "unihan@18.0.0",
+  "type": "levels",
+  "language": "zh",
+  "license": "Unicode License v3",
+  "attribution": "Levels of the 通用规范汉字表 (State Council, 2013) from the kTGH field of the Unicode Unihan database (Unicode License v3), https://www.unicode.org/reports/tr38/; converted by qinqin",
+  "notice": "The 通用规范汉字表 (State Council, 2013, 国发〔2013〕23号) is a state document. qinqin takes only the serial number of each character from the kTGH field of the [Unicode Unihan database](https://www.unicode.org/reports/tr38/) (Unicode License v3) and splits it at 3,500 and 6,500: Level 1 (一级) is serial 1 to 3,500, Level 2 (二级) 3,501 to 6,500, Level 3 (三级) 6,501 to 8,105.",
+  "format": "json"
+}

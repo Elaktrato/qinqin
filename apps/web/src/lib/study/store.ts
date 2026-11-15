@@ -9,6 +9,14 @@ import { newUlid } from "../ulid";
 import { workspaces } from "../workspaces";
 import type { StudyEvent } from "../events";
 import { canonicalCards, compareCanonical, newCardId } from "./canonical";
+import {
+  ACTIVE_KEY,
+  DEFAULT_W,
+  SET_PREFIX,
+  parseParamSet,
+  resolveState,
+  type ParamSet,
+} from "./fsrs/params";
 import { cardKey, parseReview } from "./reviewParse";
 import {
   CARD_KINDS,
@@ -153,6 +161,8 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
   const rows = Array.isArray(delta?.pluginData) ? delta.pluginData : [];
   const decks: Deck[] = [];
   const cards: StudyCard[] = [];
+  const sets: ParamSet[] = [];
+  let activeRaw: unknown = null;
 
   for (const value of rows) {
     const row = asPluginDataRow(value);
@@ -168,10 +178,15 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
     } else if (row.key.startsWith(CARD_PREFIX)) {
       const card = parseCard(row.key, data);
       if (card !== null) cards.push(card);
+    } else if (row.key.startsWith(SET_PREFIX)) {
+      const set = parseParamSet(row.key, data);
+      if (set !== null) sets.push(set);
+    } else if (row.key === ACTIVE_KEY) {
+      activeRaw = data;
     }
   }
 
-  return { decks, cards };
+  return { decks, cards, fsrs: resolveState(sets, activeRaw) };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -267,7 +282,7 @@ export async function loadStudyDataWith(
     data.cards,
     reviewsOf(workspaceId, events),
   );
-  return { decks: data.decks, cards, reviews, merged };
+  return { decks: data.decks, cards, fsrs: data.fsrs, reviews, merged };
 }
 
 /**
@@ -278,6 +293,48 @@ export async function loadStudyDataWith(
  */
 export function loadStudyDataFor(workspaceId: number): Promise<StudyData> {
   return fetchStudyData(workspaceId);
+}
+
+/** activeWeights is the workspace's FSRS weights; the defaults without a set. */
+export function activeWeights(data: Pick<StudyData, "fsrs">): readonly number[] {
+  return data.fsrs?.w ?? DEFAULT_W;
+}
+
+/** saveParamSet stores a new ULID-keyed parameter set; it never makes it active. */
+export async function saveParamSet(
+  workspaceId: number,
+  set: Omit<ParamSet, "id" | "createdAt">,
+): Promise<ParamSet> {
+  const saved: ParamSet = {
+    ...set,
+    id: newUlid(),
+    createdAt: new Date().toISOString(),
+  };
+  await putData(workspaceId, `${SET_PREFIX}${saved.id}`, saved);
+  return saved;
+}
+
+/** setActiveSet points the workspace at a set; null means the defaults. */
+export async function setActiveSet(
+  workspaceId: number,
+  setId: string | null,
+): Promise<void> {
+  await putData(workspaceId, ACTIVE_KEY, {
+    setId,
+    changedAt: new Date().toISOString(),
+  });
+}
+
+/** deleteParamSet tombstones a set; the active one cannot be deleted. */
+export async function deleteParamSet(
+  workspaceId: number,
+  id: string,
+): Promise<void> {
+  const { fsrs } = await fetchStudyData(workspaceId);
+  if (fsrs?.active?.id === id) {
+    throw new Error("Cannot delete the active parameters.");
+  }
+  await deleteData(workspaceId, `${SET_PREFIX}${id}`);
 }
 
 /** createDeck stores a new ULID-keyed deck and returns it. */

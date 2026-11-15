@@ -16,6 +16,8 @@ import (
 func TestCommittedPackNotices(t *testing.T) {
 	needNotice := map[string][]string{
 		"jiten-frequency": {"[Jiten](https://jiten.moe/frequency-dictionaries)", "CC BY-SA 4.0", "ranks unmodified"},
+		"joyo-grades":     {"KANJIDIC2", "Jinmeiyō"},
+		"tgh-chars":       {"国发〔2013〕23号", "kTGH"},
 		"jlpt-kanji":      {"approximate", "[kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev)"},
 		"hsk-words":       {"HSK 词汇大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)"},
 		"hsk-chars":       {"HSK 汉字大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)"},

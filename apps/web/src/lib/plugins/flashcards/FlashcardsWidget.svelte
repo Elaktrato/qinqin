@@ -10,6 +10,8 @@
 		loadRememberedTypes
 	} from '$lib/study/cardTypesMemory';
 	import { loadStudyHistory } from '$lib/study/history';
+	import { activeWeights } from '$lib/study/store';
+	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { GENERAL_DECK_ID } from '$lib/study/store';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
@@ -24,6 +26,7 @@
 	let decks = $state<Deck[]>([]);
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
+	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	let loading = $state(true);
 	let error = $state('');
 	let noWorkspace = $state(false);
@@ -57,7 +60,8 @@
 				newLimit: 0,
 				reviewLimit: config.reviewLimit,
 				now,
-				kinds
+				kinds,
+				w: weights
 			}).length,
 			fresh: buildQueue({
 				cards,
@@ -66,7 +70,8 @@
 				newLimit: config.newLimit,
 				reviewLimit: 0,
 				now,
-				kinds
+				kinds,
+				w: weights
 			}).length
 		};
 	});
@@ -102,6 +107,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			weights = activeWeights(data);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			decks = [];
