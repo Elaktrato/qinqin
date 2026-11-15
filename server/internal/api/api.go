@@ -74,6 +74,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("GET /api/characters", s.handleListCharacters)
 	mux.HandleFunc("POST /api/events/batch", s.handleEventBatch)
 	mux.HandleFunc("GET /api/events", s.handleListEvents)
+	mux.HandleFunc("GET /api/stats/activity", s.handleActivity)
 	mux.HandleFunc("GET /api/dictionaries", s.handleListDictionaries)
 	mux.HandleFunc("POST /api/admin/dictionaries", s.handleInstallDictionary)
 	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
