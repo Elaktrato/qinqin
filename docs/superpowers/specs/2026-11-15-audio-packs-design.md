@@ -108,7 +108,7 @@ plugins/data-audio/kanjialive-audio/
 
 ## Server
 
-- Migration `026_audio.sql`: `audio_packs(id, pack_id UNIQUE, language, name,
+- Migration `029_audio.sql`: `audio_packs(id, pack_id UNIQUE, language, name,
   version, license, attribution, notice, created_at)` and `audio_clips(id,
   pack_id, kind, form, reading_key, sha256, ext, bytes, license, attribution,
   source)` with index `(kind, form, reading_key)` and `(sha256)`.

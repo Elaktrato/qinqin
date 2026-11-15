@@ -61,14 +61,16 @@
 - [ ] **Step 2: Run** — FAIL. **Step 3: Implement.** **Step 4: Run** — PASS.
 - [ ] **Step 5: Commit** `feat(audio): audio pack manifest type and index parser`.
 
-### Task 3: Migration 026 and `audio.Import`
+### Task 3: Migration 029 and `audio.Import`
 
-**Files:** Create `server/internal/db/migrations/026_audio.sql`, `server/internal/audio/import.go`, `import_test.go`, `store.go`.
+**Files:** Create `server/internal/db/migrations/029_audio.sql`, `server/internal/audio/import.go`, `import_test.go`, `store.go`.
 
 **Interfaces:**
 - Consumes: `ParseIndex`, `ReadingKey` (Task 2); the import stores `reading_key`.
 - Produces: `audio.Import(ctx context.Context, db *sql.DB, pack dict.Pack, storeDir string) (ImportResult, error)` with `ImportResult{Clips, Skipped int}`; `audio.BlobPath(storeDir, sha, ext string) string` = `<store>/<sha[:2]>/<sha>.<ext>`; tables per the spec.
 
+- Ruling: the migration is **029**, not 026: grammar took 026 on develop and the sibling worktrees hold 027 (pack-management) and 028 (core-stats). Whichever branch merges later renumbers its file (and `audio_packs` carries `deleted_at`/`updated_at` like `grammar_packs`, so the plugin listing code treats it the same way). The spec's "026_audio.sql" reads 029 accordingly.
+- Ruling: `ImportResult.Skipped` counts term rows whose reading yields no key (an unparsable zh pinyin reading); a missing, oversize or wrong-magic file fails the whole import.
 - [ ] **Step 1: Failing tests** (temp DB via the existing test helper, temp store): import of a 2-row pack copies 2 blobs, rows carry sha/bytes/licence; same file twice → one blob; magic mismatch (`.ogg` holding `ID3`) → error, nothing written; file > 2 MiB → error; re-import with one row removed deletes that blob; two packs sharing a blob, removing it from one keeps the blob (Review Focus 2); blobs are written via temp + rename (no partial file left after an injected copy error).
 - [ ] **Step 2: Run** — FAIL. **Step 3: Implement** (transaction per pack; GC after commit: blobs of this pack's old hashes not referenced by any row).
 - [ ] **Step 4: Run** with race — PASS. **Step 5: Commit** `feat(audio): import audio packs into a content-addressed store`.
@@ -86,7 +88,7 @@
 
 **Files:** Modify `server/cmd/qinqin/seed.go`, `seed_test.go`, `packcheck.go` (audio packs: `audio_packs` table).
 
-**Interfaces:** `importOrder[dict.TypeAudio] = 4`; default roots `plugins/data`, then `plugins/data-audio` if it exists, then `plugins/data-local` if it exists; signatures become `seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, out io.Writer) error` and `importPack(ctx, sqlDB, dataDir string, pack dict.Pack)`; update every caller (the seed command and all `seed_*_test.go`); `importPack` calls `audio.Import(ctx, sqlDB, pack, filepath.Join(dataDir, "audio"))` and prints `N clips`.
+**Interfaces:** `importOrder[dict.TypeAudio] = 5` (Ruling: grammar already holds 4; audio refers to entries only at resolve time, any order after dictionaries works); default roots `plugins/data`, then `plugins/data-audio` if it exists, then `plugins/data-local` if it exists; signatures become `seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, out io.Writer) error` and `importPack(ctx, sqlDB, dataDir string, pack dict.Pack)`; update every caller (the seed command and all `seed_*_test.go`); `importPack` calls `audio.Import(ctx, sqlDB, pack, filepath.Join(dataDir, "audio"))` and prints `N clips`.
 
 - [ ] **Step 0:** add `/plugins/data-audio/` to `.gitignore`, and `plugins/data-local` and `plugins/data-audio` to `.dockerignore` (restricted data never enters a build context; the image fetches its own copy in Task 7).
 - [ ] **Step 1: Failing tests:** seed over a temp root with a generated audio pack prints `<id> audio 2 clips`; default-roots test includes `data-audio` when present; packcheck warns on a changed audio manifest licence.
