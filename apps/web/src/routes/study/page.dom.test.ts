@@ -238,3 +238,22 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		expect(box(/cloze/)!.checked).toBe(false);
 	});
 });
+
+describe('study setup on a vacation day', () => {
+	it('shows the vacation banner and no start button', async () => {
+		setup(charScheme, ['vocab']);
+		const today = studyDay([]).today();
+		const end = new Date(Date.parse(`${today}T00:00:00Z`) + 5 * 86_400_000).toISOString().slice(0, 10);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [],
+			cards: [],
+			reviews: [],
+			merged: 0,
+			vacations: [{ version: 1, id: 'V', start: today, end, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
+		});
+		render(Page);
+		const banner = await screen.findByText(/Vacation until/);
+		expect(banner.textContent).toMatch(/^Vacation until \d+ \w+/);
+		expect(screen.queryByRole('button', { name: /start studying/i })).toBeNull();
+	});
+});

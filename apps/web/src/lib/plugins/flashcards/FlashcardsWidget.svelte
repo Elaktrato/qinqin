@@ -4,6 +4,8 @@
 	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 	import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
 	import type { StudyContext } from '$lib/study/studyContext';
+	import type { VacationPeriod } from '$lib/study/vacation';
+	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
@@ -36,6 +38,7 @@
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	// Vacation days and the study clock of this workspace (rebuilt at midnight).
 	let ctx = $state.raw<StudyContext>(currentContext());
+	let vacations = $state.raw<VacationPeriod[]>([]);
 	let loading = $state(true);
 	let error = $state('');
 	let noWorkspace = $state(false);
@@ -85,6 +88,11 @@
 	$effect(() => onStudyDayChange((next) => (studyDay = next)));
 
 	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf));
+	const vacationText = $derived(
+		workspaceId === null
+			? null
+			: vacationLine(vacationStatus(vacations, workspaceId, studyDay.today()), studyDay.today())
+	);
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
 	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation));
@@ -118,6 +126,7 @@
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 			ctx = contextForData(data, workspace);
+			vacations = data.vacations ?? [];
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			decks = [];
@@ -154,9 +163,14 @@
 		<Mascot {level} streak={streak.current} todayDone={streak.todayDone} />
 		<div class="progress">
 			<p class="stats">
-				<strong>{queue.due}</strong>
-				{queue.due === 1 ? 'card' : 'cards'} due ·
-				<strong>{queue.fresh}</strong> new · Level <strong>{level}</strong> ·
+				{#if vacationText !== null}
+					{vacationText} ·
+				{:else}
+					<strong>{queue.due}</strong>
+					{queue.due === 1 ? 'card' : 'cards'} due ·
+					<strong>{queue.fresh}</strong> new ·
+				{/if}
+				Level <strong>{level}</strong> ·
 				{xp} XP
 			</p>
 			<div

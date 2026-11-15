@@ -35,6 +35,8 @@
 	} from '$lib/study/levelQueue';
 import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
 import type { StudyContext } from '$lib/study/studyContext';
+import type { VacationPeriod } from '$lib/study/vacation';
+import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import {
@@ -96,6 +98,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	// Vacation days and the study clock of the active workspace.
 	let ctx = $state.raw<StudyContext>(currentContext());
+	let vacations = $state.raw<VacationPeriod[]>([]);
 	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	let extraChoices = $state.raw<ExtraChoices>({});
@@ -211,6 +214,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 			ctx = contextForData(data, workspaceId);
+			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
 		} catch (err) {
@@ -241,6 +245,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 			ctx = contextForData(data, activeWorkspaceId);
+			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
 			if (seq === requestSeq) deckError = message(err, 'Could not reload your cards.');
@@ -519,6 +524,16 @@ import type { StudyContext } from '$lib/study/studyContext';
 			: levelEntryTotal === 1 ? 'word' : 'words'
 	);
 
+	// "Vacation until 3 Jan": nothing is due and no new card is offered today.
+	const vacationText = $derived(
+		activeWorkspaceId === null || !ctx.vacationToday
+			? null
+			: vacationBanner(
+					vacationStatus(vacations, activeWorkspaceId, ctx.day.today()),
+					ctx.day.today()
+				)
+	);
+
 	const guidance = $derived.by(() => {
 		if (noWorkspace) return 'Choose a workspace in the header to set up a study session.';
 		if (loading) return 'Loading your study data…';
@@ -707,6 +722,10 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 <main class="setup">
 	<h1>Study</h1>
+
+	{#if vacationText !== null}
+		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">Change</a></p>
+	{/if}
 	<p class="hint">Choose what this session should draw from.</p>
 	{#if $workspaces.current && usesHan($workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">View the mastery map →</a></p>
@@ -967,11 +986,13 @@ import type { StudyContext } from '$lib/study/studyContext';
 				</ul>
 			{/if}
 
-			<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
-				{starting ? 'Starting…' : 'Start studying'}
-			</button>
+			{#if vacationText === null}
+				<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
+					{starting ? 'Starting…' : 'Start studying'}
+				</button>
+			{/if}
 
-			{#if guidance}
+			{#if guidance && vacationText === null}
 				<p class="hint" role="status">{guidance}</p>
 			{/if}
 		</section>
