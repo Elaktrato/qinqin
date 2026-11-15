@@ -197,3 +197,11 @@
 - [ ] **Step 2: Run** all gates — PASS.
 - [ ] **Step 3: Real-app check.** Start the server and `npm --prefix <wt>/apps/web run dev`; create a fresh workspace; with a throwaway script in the session scratchpad (never committed) create 300 `card:` rows and post ~3,000 review events generated with the `simulate()` logic through `PUT /api/plugins/qinqin-flashcards/data/card:<id>?workspace=<id>` and `POST /api/events/batch`. Verify: the page shows the review count; Optimise completes with progress and the page stays responsive; metrics and preview appear; Apply changes the home widget's due count; Undo and "Use defaults" restore it; import of `formatWeights(DEFAULT_W)` shows an empty preview; a workspace with 50 reviews shows the disabled button and the missing count; keyboard-only run-through works.
 - [ ] **Step 4: Commit** `feat(study): scheduling page with FSRS optimiser, preview and revert`.
+
+## Builder rulings (tasks 1–5, unattended)
+
+- **Ruling: `checkWeights` returns the raw numbers; `validWeights` and `parseWeightString` return the migrated 21** — an import is stored as 21 weights, one shape in plugin data — cost if wrong: none. Stored rows must have exactly 21 weights.
+- **Ruling: `deleteParamSet` reads the pull to find the active set, then refuses before any DELETE** — the active id lives only in the data — cost if wrong: one extra read.
+- **Ruling: `scheduler.ts` also exports `sortedReviews`** next to `isValidReview`, so the dataset sorts exactly as replay does — cost if wrong: none.
+- **Ruling: `Tape` also has `value(v)`** (used by `tapeNum`) — cost if wrong: none.
+- **Ruling: the stability floor after a lapse follows ts-fsrs (`min(max(S/e^{w17·w18}, 0.001), S'_fail)`)** — equals the spec's formula, written as ts-fsrs computes it — cost if wrong: none.
