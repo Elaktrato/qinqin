@@ -26,18 +26,18 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
 
 ## v0.2.0 — study experience (milestone)
 
-- [#30](https://github.com/Elaktrato/qinqin/issues/30) card management (delete, move between decks; dedupe is done)
-- [#31](https://github.com/Elaktrato/qinqin/issues/31) re-show Again cards within a session
-- [#33](https://github.com/Elaktrato/qinqin/issues/33) search filters UI
-- [#26](https://github.com/Elaktrato/qinqin/issues/26) map backfill performance (deferred from R2)
+- ~~[#30](https://github.com/Elaktrato/qinqin/issues/30) card management~~ — done (develop)
+- ~~[#31](https://github.com/Elaktrato/qinqin/issues/31) re-show Again cards within a session~~ — done (develop)
+- ~~[#33](https://github.com/Elaktrato/qinqin/issues/33) search filters UI~~ — done (develop)
+- ~~[#26](https://github.com/Elaktrato/qinqin/issues/26) map backfill performance~~ — done (develop)
 
 Order: web first. Most features ship on web before the Android build starts.
 
 ## v0.3.0 — journal and AI, web (milestone)
 
 - [#46](https://github.com/Elaktrato/qinqin/issues/46) Journal plugin: AI corrections, overall review, topic suggestions, photo upload with OCR;
-  the app calls the AI with the user's own provider API key. In progress on `feature/journal`:
-  implemented and checked against the fake provider; not yet merged, and never run against the real API.
+  the app calls the AI with the user's own provider API key. Merged to develop; implemented and
+  checked against the fake provider, never run against the real API (owner tests with a real key; set `QINQIN_SECRET`).
   Pending: a check with a real key, vertical Japanese OCR (no `jpn_vert` on Alpine), Android parity (v0.4.0).
 
 ## v0.4.0 — Android client (milestone)
