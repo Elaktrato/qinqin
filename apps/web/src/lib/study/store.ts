@@ -29,6 +29,7 @@ import { cardKey, parseReview } from "./reviewParse";
 import {
   CARD_KINDS,
   type Deck,
+  type DeckSource,
   type OptInKind,
   type ReviewEvent,
   type StudyCard,
@@ -127,7 +128,29 @@ function parseDeck(key: string, raw: unknown): Deck | null {
   // The key and the payload must agree: a write updates `deck:<id>`
   // and a mismatched row would make renames target the wrong key.
   if (key !== deckKey(id)) return null;
-  return { id, name, createdAt };
+  const result: Deck = { id, name, createdAt };
+  const source = parseSource(raw.source);
+  if (source !== undefined) result.source = source;
+  return result;
+}
+
+function parseSource(raw: unknown): DeckSource | undefined {
+  if (!isRecord(raw)) return undefined;
+  if (
+    raw.type === "level" &&
+    typeof raw.packId === "string" &&
+    typeof raw.level === "string"
+  ) {
+    return { type: "level", packId: raw.packId, level: raw.level };
+  }
+  if (
+    raw.type === "plugin" &&
+    typeof raw.pluginId === "string" &&
+    typeof raw.key === "string"
+  ) {
+    return { type: "plugin", pluginId: raw.pluginId, key: raw.key };
+  }
+  return undefined;
 }
 
 function parseCard(key: string, raw: unknown): StudyCard | null {
@@ -216,6 +239,25 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
   };
 }
 
+/** The row keys of the study data, for callers that write rows in batches. */
+export const studyRowKey = {
+  deck: (id: string): string => deckKey(id),
+  card: (id: string): string => cardRowKey(id),
+};
+
+/**
+ * loadRawStudyData reads the live decks and cards of a workspace as stored:
+ * duplicate cards are NOT merged, so a writer sees every row it must keep
+ * consistent (the decks view's add-to-deck plan). Pages that show or
+ * schedule cards use loadStudyData instead.
+ */
+export async function loadRawStudyData(
+  workspaceId: number,
+): Promise<{ decks: Deck[]; cards: StudyCard[] }> {
+  const { decks, cards } = await fetchStudyData(workspaceId);
+  return { decks, cards };
+}
+
 // Called after every write with the workspace it touched, so caches of
 // study data (studyData.ts) can drop what is now stale.
 const writeListeners = new Set<(workspaceId: number) => void>();
@@ -242,6 +284,80 @@ async function putData(
   } finally {
     // A failed write may still have landed: stale caches are dropped either way.
     notifyWrite(workspaceId);
+  }
+}
+
+/**
+ * PartialPushError: a batch write stopped. `done` rows were written; `skipped`
+ * is how many the server did not apply because it holds a newer row for the key
+ * (e.g. a later tombstone) or refused them. Re-planning and trying again writes
+ * only what is still missing.
+ */
+export class PartialPushError extends Error {
+  done: number;
+  skipped: number;
+
+  constructor(message: string, done: number, skipped = 0) {
+    super(message);
+    this.name = "PartialPushError";
+    this.done = done;
+    this.skipped = skipped;
+  }
+}
+
+interface PushResult {
+  dataAccepted?: number;
+  dataSkipped?: number;
+  dataRefused?: number;
+}
+
+/**
+ * pushStudyRows writes plugin-data rows through POST /api/sync/push in
+ * sequential chunks (last write wins on `updatedAt` = now). One request
+ * replaces hundreds of single PUTs. A chunk the server only partly applied
+ * (a newer row won, or the plugin may not own data) is an error: callers
+ * must never report success for it. Listeners are notified after each chunk.
+ */
+export async function pushStudyRows(
+  workspaceId: number,
+  rows: readonly { key: string; data: unknown }[],
+  opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
+): Promise<void> {
+  const size = Math.max(1, opts.chunk ?? 200);
+  let done = 0;
+  for (let i = 0; i < rows.length; i += size) {
+    const part = rows.slice(i, i + size);
+    const updatedAt = new Date().toISOString();
+    let result: PushResult;
+    try {
+      result = await api<PushResult>("/api/sync/push", {
+        method: "POST",
+        body: {
+          pluginData: part.map((row) => ({
+            pluginId: FLASHCARDS_PLUGIN_ID,
+            key: row.key,
+            workspaceId,
+            data: row.data,
+            updatedAt,
+          })),
+        },
+      });
+    } catch (err) {
+      throw new PartialPushError(errorMessage(err, "Could not write the cards."), done);
+    } finally {
+      // A failed write may still have landed: stale caches are dropped either way.
+      notifyWrite(workspaceId);
+    }
+    const skipped = (result?.dataSkipped ?? 0) + (result?.dataRefused ?? 0);
+    done += result?.dataAccepted ?? part.length - skipped;
+    if (skipped > 0) {
+      throw new PartialPushError(
+        `${skipped} ${skipped === 1 ? "row was" : "rows were"} not written because the server holds newer data for ${skipped === 1 ? "it" : "them"}. Reload and try again.`,
+        done,
+        skipped,
+      );
+    }
+    opts.onProgress?.(done, rows.length);
   }
 }
 

@@ -29,6 +29,10 @@ import {
   setActiveSet,
   deleteParamSet,
   activeWeights,
+  loadRawStudyData,
+  pushStudyRows,
+  PartialPushError,
+  studyRowKey,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
 
@@ -1472,6 +1476,112 @@ describe("study store", () => {
       expect(String(deletes[0][0])).toBe(
         `/api/plugins/${PLUGIN_ID}/data/fsrs:set:A?workspace=${WORKSPACE_ID}`,
       );
+    });
+  });
+
+  describe("copied decks and batch writes", () => {
+    it("keeps the source of a copied deck", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deck:d-lvl-hsk-words-b06fd2ac", {
+            id: "d-lvl-hsk-words-b06fd2ac",
+            name: "HSK words · HSK 1",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "level", packId: "hsk-words", level: "HSK 1" },
+          }),
+          pluginRow("deck:plain", { id: "plain", name: "Plain", createdAt: "2026-01-01T00:00:00Z", source: { type: 7 } }),
+        ],
+      });
+      const { decks } = await loadStudyData(WORKSPACE_ID);
+      expect(decks.find((d) => d.id === "d-lvl-hsk-words-b06fd2ac")?.source).toEqual({
+        type: "level",
+        packId: "hsk-words",
+        level: "HSK 1",
+      });
+      // An unknown source shape is dropped, the deck stays.
+      expect(decks.find((d) => d.id === "plain")?.source).toBeUndefined();
+    });
+
+    it("loadRawStudyData keeps stored duplicates the merged read folds away", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("card:c-vocab-1", { id: "c-vocab-1", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }),
+          pluginRow("card:01JDUP", { id: "01JDUP", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-02T00:00:00Z" }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.cards.map((c) => c.id).sort()).toEqual(["01JDUP", "c-vocab-1"]);
+    });
+
+    function pushRows(n: number) {
+      return Array.from({ length: n }, (_, i) => ({ key: `card:c-vocab-${i}`, data: { id: `c-vocab-${i}` } }));
+    }
+    function pushBodies(): Array<{ pluginData: Array<Record<string, unknown>> }> {
+      return calls()
+        .filter(([url]) => String(url) === "/api/sync/push")
+        .map(([, init]) => JSON.parse(String(init?.body)));
+    }
+
+    it("pushes rows in sequential chunks of 200 with the workspace and an updatedAt", async () => {
+      vi.mocked(fetch).mockImplementation(async (_url, init) =>
+        jsonResponse({
+          eventsAccepted: 0,
+          eventDuplicates: 0,
+          dataAccepted: JSON.parse(String(init?.body)).pluginData.length,
+          dataSkipped: 0,
+          dataRefused: 0,
+        }),
+      );
+      const progress: Array<[number, number]> = [];
+      const written: number[] = [];
+      const off = onStudyWrite((id) => written.push(id));
+      await pushStudyRows(WORKSPACE_ID, pushRows(450), { onProgress: (d, t) => progress.push([d, t]) });
+      off();
+      const bodies = pushBodies();
+      expect(bodies.map((b) => b.pluginData.length)).toEqual([200, 200, 50]);
+      expect(bodies[0].pluginData[0]).toMatchObject({
+        pluginId: PLUGIN_ID,
+        key: "card:c-vocab-0",
+        workspaceId: WORKSPACE_ID,
+        data: { id: "c-vocab-0" },
+      });
+      expect(Number.isNaN(Date.parse(String(bodies[0].pluginData[0].updatedAt)))).toBe(false);
+      expect(progress).toEqual([[200, 450], [400, 450], [450, 450]]);
+      expect(written).toEqual([WORKSPACE_ID, WORKSPACE_ID, WORKSPACE_ID]);
+    });
+
+    it("pushes nothing for no rows", async () => {
+      await pushStudyRows(WORKSPACE_ID, []);
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("reports how many rows landed when a later chunk fails", async () => {
+      let n = 0;
+      vi.mocked(fetch).mockImplementation(async () =>
+        ++n === 1
+          ? jsonResponse({ dataAccepted: 200, dataSkipped: 0, dataRefused: 0 })
+          : new Response("boom", { status: 500 }),
+      );
+      const error = await pushStudyRows(WORKSPACE_ID, pushRows(450)).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(PartialPushError);
+      expect((error as PartialPushError).done).toBe(200);
+      expect((error as PartialPushError).skipped).toBe(0);
+    });
+
+    it("a chunk with skipped or refused rows is an error, never a silent success", async () => {
+      vi.mocked(fetch).mockImplementation(async () =>
+        jsonResponse({ dataAccepted: 198, dataSkipped: 1, dataRefused: 1 }),
+      );
+      const error = await pushStudyRows(WORKSPACE_ID, pushRows(200)).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(PartialPushError);
+      expect((error as PartialPushError).done).toBe(198);
+      expect((error as PartialPushError).skipped).toBe(2);
+      expect((error as PartialPushError).message).toMatch(/2 rows/);
+    });
+
+    it("exposes the row keys the planner needs", () => {
+      expect(studyRowKey.deck("d1")).toBe("deck:d1");
+      expect(studyRowKey.card("c-vocab-1")).toBe("card:c-vocab-1");
     });
   });
 });
