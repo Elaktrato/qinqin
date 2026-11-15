@@ -61,8 +61,18 @@ const ZH_OPTIONS: GroupOption[] = [
 	{ key: 'strokes', label: 'Strokes' }
 ];
 
-// The bundled level packs are hand-written samples, not real lists.
+// The bundled level packs that are hand-written samples, not real lists.
 const SAMPLE_PACK_IDS = new Set(['hsk-mini', 'jlpt-mini']);
+
+/**
+ * Bundled packs the map does not offer as a "Group by" choice because a
+ * built-in grouping already shows the same sections: `joyo-grades` is the
+ * built-in "Grade" (KANJIDIC2 grades 1–6 and 8). Badges, level sessions and
+ * search filters still use them. Other bundled schemes (HSK, JLPT kanji,
+ * `tgh-chars`) and a user's own pack are offered; removing an id here
+ * re-adds its option.
+ */
+export const HIDDEN_GROUPING_PACK_IDS: ReadonlySet<string> = new Set(['joyo-grades']);
 
 function primarySubtag(code: string): string {
 	return code.trim().toLowerCase().split(/[-_]/)[0] ?? '';
@@ -83,11 +93,15 @@ function isSampleScheme(scheme: Scheme): boolean {
 	return /^(hsk|jlpt)(-n\d)?-mini(-sample)?$/.test(slug);
 }
 
+function isHiddenScheme(scheme: Scheme): boolean {
+	return scheme.packId !== undefined && HIDDEN_GROUPING_PACK_IDS.has(scheme.packId);
+}
+
 /**
  * groupOptions lists the "Group by" choices for a workspace language:
  * the built-in groupings of ja or zh, then one option per installed level
- * scheme of that language, in scheme id order (the bundled samples are
- * hidden). Schemes sharing a name (the bundled "HSK 3.0 (characters)" and
+ * scheme of that language, in scheme id order (the bundled samples and
+ * HIDDEN_GROUPING_PACK_IDS are hidden). Schemes sharing a name (the bundled "HSK 3.0 (characters)" and
  * an older local pack of that name) are told apart by their pack id.
  * Languages not written with Han characters have none.
  */
@@ -95,7 +109,7 @@ export function groupOptions(language: string, schemes: readonly Scheme[]): Grou
 	const lang = primarySubtag(language);
 	const builtIn = lang === 'ja' ? JA_OPTIONS : lang === 'zh' ? ZH_OPTIONS : null;
 	if (builtIn === null) return [];
-	const shown = schemes.filter((scheme) => primarySubtag(scheme.language) === lang && !isSampleScheme(scheme));
+	const shown = schemes.filter((scheme) => primarySubtag(scheme.language) === lang && !isSampleScheme(scheme) && !isHiddenScheme(scheme));
 	const named = new Map<string, number>();
 	for (const scheme of shown) named.set(scheme.name, (named.get(scheme.name) ?? 0) + 1);
 	const fromSchemes = shown.map(

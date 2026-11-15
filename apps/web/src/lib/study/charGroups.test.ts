@@ -9,6 +9,7 @@ import {
 	dataGap,
 	filterCells,
 	groupOptions,
+	HIDDEN_GROUPING_PACK_IDS,
 	masteryGlyphs,
 	sectionStats,
 	type SchemeLevelMembers,
@@ -165,6 +166,21 @@ describe('groupOptions', () => {
 		const renamed = [scheme(7, 'My list', 'zh', 'hsk-mini'), scheme(8, 'Other list', 'ja', 'jlpt-mini')];
 		expect(groupOptions('zh', renamed).some((o) => o.key === 'scheme:7')).toBe(false);
 		expect(groupOptions('ja', renamed).some((o) => o.key === 'scheme:8')).toBe(false);
+	});
+
+	it('hides the bundled joyo-grades pack (the built-in Grade covers it) but not a user pack named like it', () => {
+		const ja = [
+			scheme(20, 'Jōyō kanji by school grade', 'ja', 'joyo-grades', ['Grade 1', 'Secondary']),
+			scheme(21, 'JLPT kanji (approximate)', 'ja', 'jlpt-kanji', ['N5']),
+			scheme(22, 'Jōyō kanji by school grade', 'ja', 'my-joyo', ['A'])
+		];
+		expect(groupOptions('ja', ja).map((o) => o.key)).toEqual(['grade', 'freq', 'strokes', 'scheme:21', 'scheme:22']);
+		expect(HIDDEN_GROUPING_PACK_IDS.has('joyo-grades')).toBe(true);
+	});
+
+	it('offers the bundled tgh-chars pack for zh', () => {
+		const zh = [scheme(30, '通用规范汉字表 (2013) levels', 'zh', 'tgh-chars', ['Level 1', 'Level 2', 'Level 3'])];
+		expect(groupOptions('zh', zh).map((o) => o.key)).toContain('scheme:30');
 	});
 
 	it('offers nothing for a non-Han language', () => {
