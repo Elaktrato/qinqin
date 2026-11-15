@@ -1,0 +1,7 @@
+Someone asked to reset the password of your {{.Site}} account.
+
+Open this link within {{.Hours}} hour to choose a new password:
+
+{{.Link}}
+
+If this was not you, ignore this message: nothing changes until the link is used.
