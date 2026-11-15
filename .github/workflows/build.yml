@@ -27,6 +27,9 @@ jobs:
         run: |
           node scripts/check-sources.mjs
           node --test scripts/*.test.mjs
+      # Committed seed archives are readable and match the checksum manifest.
+      - name: Check seed archives
+        run: scripts/check-archives.sh
       - name: Install web dependencies
         working-directory: apps/web
         run: npm ci
@@ -53,6 +56,11 @@ jobs:
       - name: Build web
         working-directory: apps/web
         run: npm run build
+      # The unit tests serve fstest.MapFS; this builds the real binary with the
+      # real SPA embedded (as the Dockerfile does) and asserts through HTTP:
+      # index, deep link, hashed asset, stroke data, licence text, headers.
+      - name: Embed smoke test
+        run: scripts/smoke-embed.sh
 
   image:
     needs: test
