@@ -35,16 +35,16 @@ func TestParseIndexRejects(t *testing.T) {
 	cases := map[string]struct {
 		lang, license, body, want string
 	}{
-		"header":        {"ja", "CC0", "kind\tform\n", "header"},
-		"kind":          {"ja", "CC0", "word\t風\tかぜ\taudio/a.opus\t\t\t\n", "kind"},
-		"syl form":      {"zh", "CC0", "syllable\tx\tni3\taudio/a.opus\t\t\t\n", "syllable"},
-		"syl key":       {"zh", "CC0", "syllable\t\tni6\taudio/a.opus\t\t\t\n", "ni6"},
-		"syl in ja":     {"ja", "CC0", "syllable\t\tni3\taudio/a.opus\t\t\t\n", "syllable"},
-		"traversal":     {"ja", "CC0", "term\t風\tかぜ\taudio/../a.opus\t\t\t\n", "file"},
-		"outside dir":   {"ja", "CC0", "term\t風\tかぜ\tother/a.opus\t\t\t\n", "file"},
-		"extension":     {"ja", "CC0", "term\t風\tかぜ\taudio/a.wav\t\t\t\n", "file"},
-		"per file":      {"ja", "per file", "term\t風\tかぜ\taudio/a.opus\t\t\t\n", "line 2"},
-		"empty reading": {"ja", "CC0", "term\t風\t\taudio/a.opus\t\t\t\n", "reading"},
+		"header":      {"ja", "CC0", "kind\tform\n", "header"},
+		"kind":        {"ja", "CC0", "word\t風\tかぜ\taudio/a.opus\t\t\t\n", "kind"},
+		"syl form":    {"zh", "CC0", "syllable\tx\tni3\taudio/a.opus\t\t\t\n", "syllable"},
+		"syl key":     {"zh", "CC0", "syllable\t\tni6\taudio/a.opus\t\t\t\n", "ni6"},
+		"syl in ja":   {"ja", "CC0", "syllable\t\tni3\taudio/a.opus\t\t\t\n", "syllable"},
+		"traversal":   {"ja", "CC0", "term\t風\tかぜ\taudio/../a.opus\t\t\t\n", "file"},
+		"outside dir": {"ja", "CC0", "term\t風\tかぜ\tother/a.opus\t\t\t\n", "file"},
+		"extension":   {"ja", "CC0", "term\t風\tかぜ\taudio/a.wav\t\t\t\n", "file"},
+		"per file":    {"ja", "per file", "term\t風\tかぜ\taudio/a.opus\t\t\t\n", "line 2"},
+		"empty form":  {"ja", "CC0", "term\t\tかぜ\taudio/a.opus\t\t\t\n", "form"},
 	}
 	for name, c := range cases {
 		body := c.body
@@ -71,5 +71,12 @@ func TestReadingKey(t *testing.T) {
 		if got := ReadingKey(c.lang, c.in); got != c.want {
 			t.Errorf("ReadingKey(%s,%q) = %q, want %q", c.lang, c.in, got, c.want)
 		}
+	}
+}
+
+func TestParseIndexAcceptsTermWithoutReading(t *testing.T) {
+	rows, err := ParseIndex(strings.NewReader(header+"term\t块钱\t\taudio/a.ogg\t\t\t\n"), manifest("zh", "CC0"))
+	if err != nil || len(rows) != 1 || rows[0].Reading != "" {
+		t.Errorf("rows = %+v, %v; want a term row with no reading", rows, err)
 	}
 }

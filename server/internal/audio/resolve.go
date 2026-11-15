@@ -27,15 +27,17 @@ type Resolution struct {
 // a syllable sequence per reading.
 func Resolve(ctx context.Context, sqlDB *sql.DB, language, written string, readings []string) (Resolution, error) {
 	var res Resolution
+	// Rows without a reading match under any; with no readable first reading
+	// only those match.
+	key := ""
 	if len(readings) > 0 {
-		if key := ReadingKey(language, readings[0]); key != "" {
-			rows, err := query(ctx, sqlDB, KindTerm, written, key)
-			if err != nil {
-				return Resolution{}, err
-			}
-			res.Terms = rows
-		}
+		key = ReadingKey(language, readings[0])
 	}
+	terms, err := query(ctx, sqlDB, KindTerm, written, key)
+	if err != nil {
+		return Resolution{}, err
+	}
+	res.Terms = terms
 	if language != "zh" {
 		return res, nil
 	}
@@ -62,14 +64,14 @@ func Resolve(ctx context.Context, sqlDB *sql.DB, language, written string, readi
 	return res, nil
 }
 
-// query returns the clips of a kind, form and reading key, packs in
-// import order.
+// query returns the clips of a kind, form and reading key, those matching
+// the key exactly before reading-less ones, each group in pack import order.
 func query(ctx context.Context, sqlDB *sql.DB, kind, form, key string) ([]Clip, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT c.sha256, c.ext, p.pack_id, c.license, c.attribution, c.source
 		FROM audio_clips c JOIN audio_packs p ON p.id = c.pack_id
-		WHERE c.kind = ? AND c.form = ? AND c.reading_key = ? AND p.deleted_at IS NULL
-		ORDER BY p.id, c.id`, kind, form, key)
+		WHERE c.kind = ? AND c.form = ? AND c.reading_key IN (?, '') AND p.deleted_at IS NULL
+		ORDER BY (c.reading_key = ''), p.id, c.id`, kind, form, key)
 	if err != nil {
 		return nil, fmt.Errorf("audio: resolve %s %q: %w", kind, form, err)
 	}

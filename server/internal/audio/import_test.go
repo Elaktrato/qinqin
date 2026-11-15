@@ -142,3 +142,12 @@ func TestImportSkipsUnkeyableZhTerm(t *testing.T) {
 		t.Errorf("Import = %+v, %v", res, err)
 	}
 }
+
+func TestImportKeepsTermWithoutReading(t *testing.T) {
+	ctx, sqlDB := context.Background(), newDB(t)
+	p := makePack(t, "z", "zh", "CC0", []string{"term\t块钱\t\taudio/a.ogg\t\t\t"}, []clipFile{{"a.ogg", oggClip("a")}})
+	res, err := audio.Import(ctx, sqlDB, p, t.TempDir())
+	if err != nil || res.Clips != 1 || res.Skipped != 0 {
+		t.Errorf("Import = %+v, %v", res, err)
+	}
+}

@@ -52,7 +52,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string)
 	)
 	for i, r := range rows {
 		key := ReadingKey(m.Language, r.Reading)
-		if key == "" && r.Kind == KindTerm {
+		if key == "" && r.Kind == KindTerm && strings.TrimSpace(r.Reading) != "" {
 			res.Skipped++
 			continue
 		}

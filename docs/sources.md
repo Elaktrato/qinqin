@@ -431,6 +431,25 @@ day are marked unverified):
   suffix order differs from the list order; `exampleRows` in
   `scripts/prepare-audio-kanjialive.mjs` is the one place to change.
 
+### Wikimedia Commons and Lingua Libre (`commons-audio-zh`, `commons-audio-ja`, local-only)
+
+Never bundled: the licence is per file, coverage is uneven and the set keeps
+changing. `node scripts/fetch-audio-commons.mjs --lang zh --category <Commons
+category>` (or `--lang ja`) builds the pack under `plugins/data-local/` from the
+public Commons API, at most one request per second with a User-Agent naming the
+tool, and `qinqin seed` imports it next to the others. It keeps a file only when
+its Commons `LicenseShortName` is CC0, public domain, CC BY or CC BY-SA 2.0 to
+4.0 (national ports such as `CC BY 2.0 fr` included); every other licence
+(non-commercial, no-derivatives, GFDL, unknown) is skipped and counted. Each kept
+clip's licence, credit (the `Artist` field with its HTML removed) and file page
+go into the index, and are shown with the play button and under "Per-recording
+credits" on the Sources page. `Zh-<pinyin>.ogg` files become syllable clips;
+Lingua Libre recordings become word clips without a reading (they match the word
+under any reading), and a recording whose title contains digits or Latin letters
+is skipped, because it does not say the bare word. Several of these files carry
+a note that the speaker is not a native Mandarin speaker; the credit shows the
+Commons description, not a quality judgement.
+
 ## Local-only data
 
 Data whose licence is unclear or restrictive is never committed. It can live

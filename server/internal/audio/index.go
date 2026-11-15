@@ -81,8 +81,10 @@ func checkRow(r Row, m dict.Manifest) error {
 	}
 	switch r.Kind {
 	case KindTerm:
-		if strings.TrimSpace(r.Form) == "" || strings.TrimSpace(r.Reading) == "" {
-			return fmt.Errorf("term needs a form and a reading")
+		// A term without a reading (a recording that knows only its word)
+		// matches the form under any reading.
+		if strings.TrimSpace(r.Form) == "" {
+			return fmt.Errorf("term needs a form")
 		}
 	case KindSyllable:
 		if m.Language != "zh" {

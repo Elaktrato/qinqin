@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"qinqin/internal/audio"
+	"qinqin/internal/dict"
 )
 
 func TestResolveJapaneseTermByKatakanaReading(t *testing.T) {
@@ -91,5 +92,30 @@ func TestResolveKeepsPackImportOrder(t *testing.T) {
 	r, _ := audio.Resolve(ctx, sqlDB, "ja", "風", []string{"かぜ"})
 	if len(r.Terms) != 2 || r.Terms[0].PackID != "zz-first" || r.Terms[1].PackID != "aa-second" {
 		t.Errorf("order = %+v", r.Terms)
+	}
+}
+
+// A term row without a reading (a Lingua Libre recording knows only its
+// word) matches the form under any reading, after exact-reading rows.
+func TestResolveTermWithoutReadingMatchesAnyReading(t *testing.T) {
+	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	loose := makePack(t, "loose", "zh", "CC0", []string{"term\t你好\t\taudio/a.ogg\t\t\t"}, []clipFile{{"a.ogg", oggClip("loose")}})
+	exact := makePack(t, "exact", "zh", "CC0", []string{"term\t你好\tnǐ hǎo\taudio/b.ogg\t\t\t"}, []clipFile{{"b.ogg", oggClip("exact")}})
+	for _, p := range []dict.Pack{loose, exact} {
+		if _, err := audio.Import(ctx, sqlDB, p, store); err != nil {
+			t.Fatal(err)
+		}
+	}
+	r, _ := audio.Resolve(ctx, sqlDB, "zh", "你好", []string{"nǐ hǎo"})
+	if len(r.Terms) != 2 || r.Terms[0].PackID != "exact" || r.Terms[1].PackID != "loose" {
+		t.Errorf("terms = %+v, want exact first, then the reading-less clip", r.Terms)
+	}
+	r, _ = audio.Resolve(ctx, sqlDB, "zh", "你好", []string{"nì hào"})
+	if len(r.Terms) != 1 || r.Terms[0].PackID != "loose" {
+		t.Errorf("other reading = %+v, want the reading-less clip only", r.Terms)
+	}
+	r, _ = audio.Resolve(ctx, sqlDB, "zh", "你好", nil)
+	if len(r.Terms) != 1 || r.Terms[0].PackID != "loose" {
+		t.Errorf("no readings = %+v, want the reading-less clip", r.Terms)
 	}
 }

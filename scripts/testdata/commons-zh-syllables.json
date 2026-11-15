@@ -1,0 +1,73 @@
+{
+  "batchcomplete": "",
+  "query": {
+    "pages": {
+      "1001": {
+        "pageid": 1001, "ns": 6, "title": "File:Zh-nǐ.ogg",
+        "imageinfo": [{
+          "size": 15096, "mime": "application/ogg",
+          "url": "https://upload.example.test/commons/7/73/Zh-n%C7%90.ogg",
+          "descriptionurl": "https://commons.example.test/wiki/File:Zh-n%C7%90.ogg",
+          "extmetadata": {
+            "Artist": {"value": "Test Speaker One, Test Speaker Two"},
+            "LicenseShortName": {"value": "CC BY 2.0 fr"}
+          }
+        }]
+      },
+      "1002": {
+        "pageid": 1002, "ns": 6, "title": "File:Zh-shi4.ogg",
+        "imageinfo": [{
+          "size": 9000, "mime": "application/ogg",
+          "url": "https://upload.example.test/commons/a/ab/Zh-shi4.ogg",
+          "descriptionurl": "https://commons.example.test/wiki/File:Zh-shi4.ogg",
+          "extmetadata": {
+            "Artist": {"value": "<a href=\"//commons.example.test/wiki/User:Someone\" title=\"User:Someone\">Someone</a>"},
+            "LicenseShortName": {"value": "CC BY-SA 2.0 uk"}
+          }
+        }]
+      },
+      "1003": {
+        "pageid": 1003, "ns": 6, "title": "File:Zh-ma1.ogg",
+        "imageinfo": [{
+          "size": 8000, "mime": "application/ogg",
+          "url": "https://upload.example.test/commons/c/cd/Zh-ma1.ogg",
+          "descriptionurl": "https://commons.example.test/wiki/File:Zh-ma1.ogg",
+          "extmetadata": {
+            "Artist": {"value": "Nobody"},
+            "LicenseShortName": {"value": "CC BY-NC-SA 4.0"}
+          }
+        }]
+      },
+      "1004": {
+        "pageid": 1004, "ns": 6, "title": "File:Zh-lǜ.ogg",
+        "imageinfo": [{
+          "size": 7000, "mime": "application/ogg",
+          "url": "https://upload.example.test/commons/d/de/Zh-l%C7%9C.ogg",
+          "descriptionurl": "https://commons.example.test/wiki/File:Zh-l%C7%9C.ogg",
+          "extmetadata": {
+            "Artist": {"value": "Another"},
+            "LicenseShortName": {"value": "CC0"}
+          }
+        }]
+      },
+      "1005": {
+        "pageid": 1005, "ns": 6, "title": "File:Zh-xyzzy.ogg",
+        "imageinfo": [{
+          "size": 7000, "mime": "application/ogg",
+          "url": "https://upload.example.test/commons/e/ef/Zh-xyzzy.ogg",
+          "descriptionurl": "https://commons.example.test/wiki/File:Zh-xyzzy.ogg",
+          "extmetadata": {"Artist": {"value": "X"}, "LicenseShortName": {"value": "CC0"}}
+        }]
+      },
+      "1006": {
+        "pageid": 1006, "ns": 6, "title": "File:Zh-gfdl.ogg",
+        "imageinfo": [{
+          "size": 7000, "mime": "application/ogg",
+          "url": "https://upload.example.test/commons/f/f0/Zh-gfdl.ogg",
+          "descriptionurl": "https://commons.example.test/wiki/File:Zh-gfdl.ogg",
+          "extmetadata": {"Artist": {"value": "Y"}, "LicenseShortName": {"value": "GFDL"}}
+        }]
+      }
+    }
+  }
+}

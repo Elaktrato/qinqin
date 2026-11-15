@@ -127,6 +127,9 @@ Fetch inputs (all pinned in the script; SHA-256 recorded on the first maintainer
 
 **Interfaces:** exports `allowedLicence(shortName: string) -> boolean`; `rowFromFile(info, lang) -> Row | null` (form/reading from Lingua Libre `LL-Q… (cmn)-User-词.wav` titles and `Zh-<pinyin>.ogg` syllable titles); CLI `--lang zh|ja --category <name> [--limit N] [<out>]` (default `plugins/data-local/commons-audio-<lang>`), ≤ 1 request/s, `User-Agent: qinqin-audio-fetch (local tool)`.
 
+- Ruling: a `term` row may have an empty reading (Lingua Libre titles carry only the word), so `ParseIndex` accepts it, `Import` stores key `''` and `Resolve` matches such rows under any reading of the form, after rows whose reading matches exactly (Go tests added in this task's commit). A zh term row with a non-empty but unparsable reading is still skipped.
+- Ruling: `LL-Q… (cmn)-User-102 块钱.wav` yields no row (the plan sketched `块钱`): the recording says "102 块钱", so a form with digits, Latin letters or spaces is skipped. Files in another language or another transcode are dropped by title; Lingua Libre `.wav` files are fetched as their Commons `ogg` (else `mp3`) transcode, `Zh-` originals as they are.
+- Ruling: the syllable list inside the tool is generated from the server's pinyin package (438 toneless syllables), so no row can fail `ParseIndex`.
 - [ ] **Step 1: Failing tests:** allow-list cases from Global Constraints true; `CC BY-NC-SA 4.0`, `GFDL`, empty → false; `Zh-nǐ.ogg` → syllable `ni3`; `LL-Q9192 (cmn)-Luilui6666-102 块钱.wav` → term `块钱`, empty reading; attribution from `Artist` with HTML stripped; refuses an out dir not under `data-local`.
 - [ ] **Step 2–4:** FAIL → implement (network only in the CLI path; tests never fetch) → PASS.
 - [ ] **Step 5: Commit** `feat(scripts): local-only Commons/Lingua Libre audio fetcher with licence allow-list`.
