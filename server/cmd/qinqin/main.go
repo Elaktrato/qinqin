@@ -4,6 +4,7 @@
 //	qinqin [serve] [--addr :8080] [--data ./data]
 //	qinqin seed    --data <dir> --packs <dir>
 //	qinqin adduser --data <dir> --username <name> [--admin]
+//	qinqin recover --data <dir> --username <name> [--enable] [--admin] [--reset-mfa]
 package main
 
 import (
@@ -51,8 +52,10 @@ func main() {
 		err = seedCmd(args, os.Stdout)
 	case "adduser":
 		err = adduserCmd(args, os.Stdin, os.Stderr)
+	case "recover":
+		err = recoverCmd(args, os.Stdin, os.Stderr)
 	default:
-		err = fmt.Errorf("%w: unknown command %q (want serve, seed, or adduser)", errUsage, cmd)
+		err = fmt.Errorf("%w: unknown command %q (want serve, seed, adduser or recover)", errUsage, cmd)
 	}
 	if errors.Is(err, flag.ErrHelp) {
 		return

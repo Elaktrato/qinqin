@@ -14,10 +14,11 @@ var ErrAuditDetail = errors.New("audit detail may hold a secret")
 // action); TargetID nil means no target. The names are copied from users
 // when the row is written, so they survive the user's deletion.
 type AuditEvent struct {
-	Action   string
-	ActorID  int64
-	TargetID *int64
-	Detail   map[string]any // small, non-secret facts: scope, field, count
+	Action    string
+	ActorName string // label for a system action (ActorID 0), such as "cli"
+	ActorID   int64
+	TargetID  *int64
+	Detail    map[string]any // small, non-secret facts: scope, field, count
 }
 
 // auditKeys is the whole vocabulary of audit detail. A key outside it is
@@ -26,6 +27,7 @@ type AuditEvent struct {
 var auditKeys = map[string]bool{
 	"scope": true, "revoked": true, "forced": true, "signedOutOthers": true,
 	"field": true, "to": true, "maxUses": true, "uses": true, "count": true, "enabled": true,
+	"admin": true,
 }
 
 // maxAuditValue caps a string detail value (in bytes).
@@ -73,9 +75,9 @@ func Audit(ctx context.Context, ex execer, e AuditEvent) error {
 	}
 	_, err := ex.ExecContext(ctx, `
 		INSERT INTO auth_audit (at, action, actor_id, actor_name, target_id, target_name, detail)
-		VALUES (?, ?, ?, COALESCE((SELECT username FROM users WHERE id = ?), ''),
+		VALUES (?, ?, ?, COALESCE((SELECT username FROM users WHERE id = ?), ?),
 		        ?, COALESCE((SELECT username FROM users WHERE id = ?), ''), ?)`,
-		now(), e.Action, actor, actor, target, target, detail)
+		now(), e.Action, actor, actor, e.ActorName, target, target, detail)
 	if err != nil {
 		return fmt.Errorf("write audit %s: %w", e.Action, err)
 	}
