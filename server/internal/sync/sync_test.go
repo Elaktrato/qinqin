@@ -263,6 +263,9 @@ func registerAndLogin(t *testing.T, tsURL string) string {
 		t.Fatalf("register: %v", err)
 	}
 	resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("register status = %d, want 201", resp.StatusCode)
+	}
 	resp, err = http.Post(tsURL+"/api/auth/login", "application/json", bytes.NewReader(creds))
 	if err != nil {
 		t.Fatalf("login: %v", err)

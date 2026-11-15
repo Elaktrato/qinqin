@@ -23,6 +23,7 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
+	"qinqin/internal/model"
 	"qinqin/internal/ratelimit"
 )
 
@@ -401,5 +402,98 @@ func TestAuthLimitNamedLimiter(t *testing.T) {
 	}
 	if ok, _ := probe("whatever", "k"); ok {
 		t.Fatal("unknown-name policy has no limit")
+	}
+}
+
+// registerAs posts a registration with an optional bearer token.
+func registerAs(t *testing.T, ts *httptest.Server, xff, bearer, user string) authResp {
+	t.Helper()
+	b, _ := json.Marshal(map[string]string{"username": user, "password": "pw-" + user})
+	return authRaw(t, ts, "/api/auth/register", xff, bearer, bytes.NewReader(b))
+}
+
+func TestAuthLimitRegisterBootstrapGated(t *testing.T) {
+	var firsts atomic.Int64
+	hook := func(ctx context.Context, d *sql.DB, user, pass string) (model.User, error) {
+		firsts.Add(1)
+		return auth.CreateFirstUser(ctx, d, user, pass)
+	}
+	ts, _, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{CreateFirstUser: hook}))
+	if r := registerAs(t, ts, "198.51.100.1", "", "owner"); r.Status != 201 {
+		t.Fatalf("bootstrap = %+v", r)
+	}
+	if firsts.Load() != 1 {
+		t.Fatalf("bootstrap hash ran %d times", firsts.Load())
+	}
+}
+
+func TestAuthLimitRegisterAnonymousThrottled(t *testing.T) {
+	var creates atomic.Int64
+	hook := func(ctx context.Context, d *sql.DB, user, pass string, admin bool) (model.User, error) {
+		creates.Add(1)
+		return auth.CreateUser(ctx, d, user, pass, admin)
+	}
+	ts, sqlDB, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{CreateUser: hook}))
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 10; i++ {
+		if r := registerAs(t, ts, "198.51.100.1", "", fmt.Sprintf("u%d", i)); r.Status != 403 || r.Err != "admin_required" {
+			t.Fatalf("anonymous %d = %+v, want 403 admin_required", i+1, r)
+		}
+	}
+	if r := registerAs(t, ts, "198.51.100.1", "", "u11"); r.Status != 429 || r.Err != "rate_limited" {
+		t.Fatalf("11th anonymous = %+v, want 429", r)
+	}
+	if creates.Load() != 0 {
+		t.Fatal("an anonymous register hashed")
+	}
+	// a non-admin token is no admin
+	if r := registerAs(t, ts, "198.51.100.2", "not-a-token", "x"); r.Status != 403 {
+		t.Fatalf("bad token = %d", r.Status)
+	}
+}
+
+func TestAuthLimitRegisterAdminBulkNotThrottled(t *testing.T) {
+	ts, sqlDB, _ := newLimitServer(t)
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+		t.Fatal(err)
+	}
+	token, err := auth.Login(context.Background(), sqlDB, "owner", "pw-owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 15; i++ {
+		if r := registerAs(t, ts, "198.51.100.1", token, fmt.Sprintf("bulk%d", i)); r.Status != 201 {
+			t.Fatalf("admin create %d = %+v, want 201", i+1, r)
+		}
+	}
+	if r := registerAs(t, ts, "198.51.100.1", token, "bulk0"); r.Status != 409 || r.Err != "username_taken" {
+		t.Fatalf("duplicate = %+v", r)
+	}
+	if r := authRaw(t, ts, "/api/auth/register", "198.51.100.1", token, strings.NewReader("{")); r.Status != 400 || r.Err != "bad_request" {
+		t.Fatalf("malformed = %+v", r)
+	}
+}
+
+func TestAuthLimitRegisterGateBusy(t *testing.T) {
+	entered, release := make(chan struct{}), make(chan struct{})
+	hook := func(ctx context.Context, d *sql.DB, user, pass string) (model.User, error) {
+		entered <- struct{}{}
+		<-release
+		return auth.CreateFirstUser(ctx, d, user, pass)
+	}
+	p := api.DefaultAuthPolicy()
+	p.Hashes, p.HashWait = 1, 50*time.Millisecond
+	ts, _, _ := newLimitServer(t, api.WithAuthPolicy(p), api.WithAuthHooks(api.AuthHooks{CreateFirstUser: hook}))
+	done := make(chan authResp)
+	go func() { done <- registerAs(t, ts, "198.51.100.1", "", "owner") }()
+	<-entered
+	if r := registerAs(t, ts, "198.51.100.2", "", "other"); r.Status != 503 || r.Err != "busy" {
+		t.Fatalf("second register = %+v, want 503", r)
+	}
+	close(release)
+	if r := <-done; r.Status != 201 {
+		t.Fatalf("first = %+v", r)
 	}
 }
