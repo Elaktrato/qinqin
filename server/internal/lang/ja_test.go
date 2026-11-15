@@ -48,7 +48,7 @@ func TestJaSearchPlain(t *testing.T) {
 	for _, tc := range []struct{ query, want string }{
 		{"gakkou", "がっこう"},
 		{"kitte", "きって"},
-		{"konnichiwa", "こんにちわ"},
+		{"konnichiwa", "こんにちは"},
 		{"shinbun", "しんぶん"},
 		{"kyou", "きょう"},
 		{"toukyou", "とうきょう"},
@@ -177,5 +177,73 @@ func TestJaPackRomaji(t *testing.T) {
 	kana := p.NormalizeReading("kana", "がっこう")
 	if got := p.SearchPlain("gakkou"); got != kana {
 		t.Errorf(`SearchPlain("gakkou") = %q, want the kana plain %q`, got, kana)
+	}
+}
+
+// The derived romaji of a reading with ん before a vowel or y writes the
+// apostrophe, so it converts back to the kana it came from.
+func TestJaDerivedRomajiApostropheRoundTrips(t *testing.T) {
+	p := lang.For("ja")
+	for _, tc := range []struct{ kana, romaji string }{
+		{"しんや", "shin'ya"},
+		{"しんゃ", "shin'ya"},
+		{"きんよう", "kin'you"},
+		{"ほんい", "hon'i"},
+		{"れんあい", "ren'ai"},
+		{"しんにゅう", "shinnyuu"}, // ん+にゅ needs no apostrophe: nn is unambiguous
+	} {
+		out := p.DeriveReadings([]model.Reading{{Type: "kana", Value: tc.kana}})
+		if got := out[1].Value; got != tc.romaji {
+			t.Errorf("derive(%s) = %q, want %q", tc.kana, got, tc.romaji)
+		}
+	}
+	for _, kana := range []string{"しんや", "きんよう", "ほんい", "れんあい", "しんにゅう"} {
+		out := p.DeriveReadings([]model.Reading{{Type: "kana", Value: kana}})
+		if got := p.SearchPlain(out[1].Value); got != kana {
+			t.Errorf("SearchPlain(%q) = %q, want %q", out[1].Value, got, kana)
+		}
+	}
+}
+
+func TestJaSearchPlainParticleGreetings(t *testing.T) {
+	p := lang.For("ja")
+	for _, tc := range []struct{ query, want string }{
+		{"konnichiwa", "こんにちは"},
+		{"Konnichiwa", "こんにちは"},
+		{"konbanwa", "こんばんは"},
+		{"konnichiha", "こんにちは"},
+		{"watashiwa", "わたしわ"}, // only the fixed greetings read は
+	} {
+		if got := p.SearchPlain(tc.query); got != tc.want {
+			t.Errorf("SearchPlain(%q) = %q, want %q", tc.query, got, tc.want)
+		}
+	}
+}
+
+func TestJaSearchPlainHepburnMBeforeLabials(t *testing.T) {
+	p := lang.For("ja")
+	for _, tc := range []struct{ query, want string }{
+		{"sampo", "さんぽ"},
+		{"shimbun", "しんぶん"},
+		{"kammuri", "かんむり"},
+		{"gamma", "がんま"},
+		{"mama", "まま"},
+		{"onna", "おんな"},
+	} {
+		if got := p.SearchPlain(tc.query); got != tc.want {
+			t.Errorf("SearchPlain(%q) = %q, want %q", tc.query, got, tc.want)
+		}
+	}
+}
+
+func TestJaProlongedMarkAfterEveryRow(t *testing.T) {
+	p := lang.For("ja")
+	for in, want := range map[string]string{
+		"かー": "かあ", "きー": "きい", "くー": "くう", "けー": "けえ", "こー": "こお",
+		"しゃー": "しゃあ", "ふぁー": "ふぁあ", "んー": "ん", "ー": "", "っー": "っ",
+	} {
+		if got := p.NormalizeReading("kana", in); got != want {
+			t.Errorf("plain(%q) = %q, want %q", in, got, want)
+		}
 	}
 }
