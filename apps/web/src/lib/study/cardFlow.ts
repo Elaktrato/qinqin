@@ -6,6 +6,7 @@ import { studyDay as utcStudyDay, type StudyDay } from '../time/studyDay';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
+import type { ClozeMode } from './cloze';
 import { enabledKinds, type DeckSettings } from './deckSettings';
 import { buriedNow, buries, type Buried } from './siblings';
 import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
@@ -51,6 +52,9 @@ export interface FlowItem {
 	reshow?: number;
 	/** Word Salad tier the first showing used; a re-show keeps it. */
 	tier?: SaladTier;
+	/** Cloze: the sentence and answer mode of the first showing; a re-show keeps them. */
+	clozeSentenceId?: number;
+	clozeMode?: ClozeMode;
 }
 
 /** The entry fields eligibility needs. */
@@ -573,6 +577,30 @@ export function tonePadLabels(written: string, syllableCount: number): string[] 
 /** The tone check candidates of an entry: its clean pinyin readings. */
 export function toneCandidates(readings: readonly { type: string; value: string }[]): Syllable[][] {
 	return cleanReadings(pinyinReadings(readings));
+}
+
+/** Whether Space/Enter outside a field reveals the answer of this kind of card. */
+export function revealsOnKey(kind: StudyCardKind): boolean {
+	return kind === 'vocab' || kind === 'reverse';
+}
+
+/**
+ * The `written` snapshots of the session decks' other vocab cards: where a
+ * cloze card's wrong choices come from.
+ */
+export function clozeDistractorPool(
+	cards: readonly StudyCard[],
+	deckIds: readonly string[],
+	entryId: number
+): string[] {
+	const decks = new Set(deckIds);
+	const out = new Set<string>();
+	for (const card of cards) {
+		if (card.kind !== 'vocab' || card.entryId === entryId) continue;
+		if (!card.deckIds.some((id) => decks.has(id))) continue;
+		if (typeof card.written === 'string' && card.written !== '') out.add(card.written);
+	}
+	return [...out];
 }
 
 /** How long after the suggestion gains focus a keyboard activation is suspect. */

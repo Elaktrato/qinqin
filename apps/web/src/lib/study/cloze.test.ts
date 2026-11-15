@@ -9,6 +9,7 @@ import {
 	eligibleSentences,
 	normalizeAnswer,
 	pickDistractors,
+	resolveClozeShowing,
 	sentenceForShowing,
 	suggestClozeGrade,
 	type ClozePart
@@ -126,5 +127,32 @@ describe('suggestClozeGrade', () => {
 describe('sentenceForShowing', () => {
 	it('is null without eligible sentences', () => {
 		expect(sentenceForShowing([], 3)).toBeNull();
+	});
+});
+
+describe('resolveClozeShowing', () => {
+	const entry = { id: 1, written: '喜欢' };
+	const sentences = [
+		{ id: 11, hanzi: '我喜欢茶。' },
+		{ id: 12, hanzi: '今天很好。' },
+		{ id: 15, hanzi: '他喜欢猫。' }
+	];
+	const input = { entry, sentences, matchesOf: () => [] };
+
+	it('rotates by recorded reviews over the eligible sentences', () => {
+		expect(resolveClozeShowing({ ...input, recorded: 0 })?.sentence.id).toBe(11);
+		expect(resolveClozeShowing({ ...input, recorded: 1 })?.sentence.id).toBe(15);
+		expect(resolveClozeShowing({ ...input, recorded: 2 })?.sentence.id).toBe(11);
+	});
+
+	it('a fixed sentence (an Again re-show) wins while it is still eligible', () => {
+		expect(resolveClozeShowing({ ...input, recorded: 0, fixedSentenceId: 15 })?.sentence.id).toBe(15);
+		expect(resolveClozeShowing({ ...input, recorded: 1, fixedSentenceId: 12 })?.sentence.id).toBe(15);
+	});
+
+	it('returns the prompt and null when nothing is eligible', () => {
+		const shown = resolveClozeShowing({ ...input, recorded: 0 })!;
+		expect(shown.prompt).toEqual({ before: ['我'], after: ['茶。'], answer: '喜欢' });
+		expect(resolveClozeShowing({ ...input, sentences: [sentences[1]], recorded: 0 })).toBeNull();
 	});
 });

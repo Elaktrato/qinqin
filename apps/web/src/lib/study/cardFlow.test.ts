@@ -8,6 +8,8 @@ import {
 	dropItem,
 	backfillLimit,
 	buryAfterAnswer,
+	clozeDistractorPool,
+	revealsOnKey,
 	isChinese,
 	isEligible,
 	levelSessionItems,
@@ -686,5 +688,28 @@ describe('eligibility of reverse and cloze', () => {
 		expect(rememberDrop(item, '学习')).toBe(true);
 		expect(rememberDrop(item, '学习', undefined, { transient: true })).toBe(false);
 		expect(rememberDrop({ ...item, kind: 'reverse' }, '学习')).toBe(true);
+	});
+});
+
+describe('runner helpers for reverse and cloze', () => {
+	it('revealsOnKey: vocab and reverse reveal on Space/Enter, the others own their keys', () => {
+		expect(revealsOnKey('vocab')).toBe(true);
+		expect(revealsOnKey('reverse')).toBe(true);
+		for (const kind of ['sentence', 'writing', 'tone', 'cloze'] as const) {
+			expect(revealsOnKey(kind)).toBe(false);
+		}
+	});
+
+	it('clozeDistractorPool: written snapshots of other vocab cards in the session decks', () => {
+		const cards = [
+			card('v1', 'vocab', 1, { written: '喜欢' }),
+			card('v2', 'vocab', 2, { written: '朋友' }),
+			card('v3', 'vocab', 3, { written: '学习', deckIds: ['other'] }),
+			card('v4', 'vocab', 4, { written: '' }),
+			card('w2', 'writing', 5, { written: '工作' }),
+			card('v6', 'vocab', 6, { written: '朋友' })
+		];
+		expect(clozeDistractorPool(cards, ['general'], 1)).toEqual(['朋友']);
+		expect(clozeDistractorPool(cards, ['general', 'other'], 1).sort()).toEqual(['学习', '朋友']);
 	});
 });

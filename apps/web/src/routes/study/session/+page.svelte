@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
+	import { segmentBatch } from '$lib/api/segment';
 	import { token } from '$lib/auth';
 	import { activate, canSound, headwordClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
@@ -11,20 +12,25 @@
 	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { ApiError } from '$lib/api/client';
-	import type { Entry, EntryBase, Sentence } from '$lib/api/types';
+	import type { Entry, EntryBase, SegmentMatch, Sentence } from '$lib/api/types';
+	import ClozeCard from '$lib/plugins/flashcards/cards/ClozeCard.svelte';
+	import ReverseCard from '$lib/plugins/flashcards/cards/ReverseCard.svelte';
 	import SentenceCard from '$lib/plugins/flashcards/cards/SentenceCard.svelte';
 	import ToneCard from '$lib/plugins/flashcards/cards/ToneCard.svelte';
 	import VocabCard from '$lib/plugins/flashcards/cards/VocabCard.svelte';
 	import WritingCard from '$lib/plugins/flashcards/cards/WritingCard.svelte';
 	import {
 		backfillLimit,
+		buryAfterAnswer,
 		cardedSentenceIds,
+		clozeDistractorPool,
 		deckSessionPlan,
 		dropItem,
 		isEligible,
 		levelSessionItems,
 		rememberDrop,
 		resolveSentence,
+		revealsOnKey,
 		reviewCountFor,
 		shouldIgnoreGrade,
 		tierForCard,
@@ -33,6 +39,15 @@
 	} from '$lib/study/cardFlow';
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
 	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
+	import {
+		acceptedClozeAnswers,
+		clozeMode,
+		pickDistractors,
+		resolveClozeShowing,
+		type ClozeMode,
+		type ClozePrompt
+	} from '$lib/study/cloze';
+	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
@@ -50,7 +65,7 @@
 		type StudyCard,
 		type StudyCardKind
 	} from '$lib/study/types';
-	import type { SaladTier } from '$lib/study/wordSalad';
+	import { shuffleTokens, type SaladTier } from '$lib/study/wordSalad';
 	import { usableChars } from '$lib/study/writing';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { newUlid } from '$lib/ulid';
@@ -108,6 +123,14 @@
 		chars: string[];
 		tier: SaladTier;
 		seed: string;
+		/** Cloze: the shown sentence, its prompt, answer mode, choices and accepted answers. */
+		cloze?: {
+			sentence: Sentence;
+			prompt: ClozePrompt;
+			mode: ClozeMode;
+			choices: string[];
+			accepted: Set<string>;
+		};
 	}
 
 	/**
@@ -188,6 +211,10 @@
 	let index = $state(0);
 	// Re-shows answered this session; practice only, never recorded.
 	let reshown = $state(0);
+	// Said once a graded answer buried related cards; cleared by the next grade.
+	let buryNote = $state('');
+	// Segmenter results per sentence id for this session (cloze blanks).
+	let segmentCache = new Map<number, Promise<SegmentMatch[]>>();
 	let entries = $state.raw<Record<number, Entry>>({});
 	// The recordings of every entry in the queue, resolved once per session.
 	let audioMap = $state.raw<Record<string, AudioResolution>>({});
@@ -322,6 +349,8 @@
 		sessionReviews = [];
 		index = 0;
 		reshown = 0;
+		buryNote = '';
+		segmentCache = new Map();
 		entries = {};
 		audioMap = {};
 		audioSettled = false;
@@ -364,6 +393,10 @@
 				// Character levels study recognition and writing; word levels vocab
 				// only. Companions are deck-only. A dropped virtual item (no stroke
 				// data) is replaced from the reserve, as in a deck session.
+				// A word answered today through reverse or cloze is buried: left out
+				// before the limits, so the next word takes its slot.
+				const day = currentStudyDay();
+				const buried = buriedNow({ cards: data.cards, reviews: history, now, studyDay: day });
 				const plan = buildLevelPlan({
 					entries: levelRequest.entries,
 					cards: data.cards,
@@ -374,12 +407,13 @@
 					w,
 					unit: levelRequest.unit,
 					kinds,
-					studyDay: currentStudyDay(),
+					studyDay: day,
 					hasStrokes: hasStrokeData,
-					skip: loadIneligible(workspaceId)
+					skip: loadIneligible(workspaceId),
+					excludeEntries: buriedLevelEntries(buried, data.cards)
 				});
-				queue = levelSessionItems(plan.queue, data.cards, kinds);
-				reserve = levelSessionItems(plan.reserve, data.cards, kinds);
+				queue = levelSessionItems(plan.queue, data.cards, kinds, buried);
+				reserve = levelSessionItems(plan.reserve, data.cards, kinds, buried);
 				backfillLeft = backfillLimit(config.newLimit);
 			} else {
 				const plan = deckSessionPlan({
@@ -392,6 +426,7 @@
 					now,
 					w,
 					studyDay: currentStudyDay(),
+					deckSettings: data.deckSettings,
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
 					skip: loadIneligible(workspaceId)
@@ -464,9 +499,94 @@
 			}
 			case 'tone':
 				return isEligible('tone', entry, { language, hasSentence: false }) ? base : null;
+			case 'reverse':
+				return isEligible('reverse', entry, { language, hasSentence: false }) ? base : null;
+			case 'cloze':
+				return resolveCloze(item, entry, language, history, now, base);
 			default:
 				return null;
 		}
+	}
+
+	/** segmentOf caches one sentence's segmenter matches for the session. */
+	function segmentOf(language: string, sentence: Sentence): Promise<SegmentMatch[]> {
+		let found = segmentCache.get(sentence.id);
+		if (found === undefined) {
+			found = segmentBatch(language, sentence.hanzi);
+			// A failed request is not cached: the next showing asks again.
+			found.catch(() => segmentCache.delete(sentence.id));
+			segmentCache.set(sentence.id, found);
+		}
+		return found;
+	}
+
+	/** Candidate sentences per word: the first few, to bound the segmenter calls. */
+	const CLOZE_CANDIDATES = 8;
+
+	/**
+	 * resolveCloze picks the sentence and blanks of a cloze showing. A failed
+	 * segment request rejects: the item is dropped without being remembered
+	 * as ineligible (the word is checked again next session).
+	 */
+	async function resolveCloze(
+		item: FlowItem,
+		entry: Entry,
+		language: string,
+		history: readonly ReviewEvent[],
+		now: Date,
+		base: Resolved
+	): Promise<Resolved | null> {
+		const candidates = entry.sentences
+			.filter((sentence) => sentence.hanzi.trim() !== '')
+			.slice(0, CLOZE_CANDIDATES);
+		const matches = new Map<number, SegmentMatch[]>();
+		await Promise.all(
+			candidates.map(async (sentence) => {
+				matches.set(sentence.id, await segmentOf(language, sentence));
+			})
+		);
+		const cardId = item.virtual ? null : item.cardId;
+		const recorded = reviewCountFor(cardId, history);
+		const showing = resolveClozeShowing({
+			entry,
+			sentences: candidates,
+			matchesOf: (sentence) => matches.get(sentence.id) ?? [],
+			recorded,
+			fixedSentenceId: item.clozeSentenceId
+		});
+		if (!isEligible('cloze', entry, { language, hasSentence: false, hasCloze: showing !== null })) {
+			return null;
+		}
+		if (showing === null) return null;
+		const { prompt, sentence } = showing;
+		const seed = `${item.card?.id ?? item.cardId}:${recorded}`;
+		const forms = [entry.written, ...(entry.forms ?? []).map((form) => form.text)];
+		const distractors = pickDistractors({
+			answer: prompt.answer,
+			sentence: sentence.hanzi,
+			candidates: clozeDistractorPool(cards, config.deckIds, item.entryId),
+			seed
+		});
+		const mode =
+			item.clozeMode ??
+			clozeMode({
+				tier: tierForCard(cardId, history, now, weights),
+				answer: prompt.answer,
+				entryForms: forms,
+				distractors
+			});
+		return {
+			...base,
+			item: { ...item, clozeSentenceId: sentence.id, clozeMode: mode },
+			seed,
+			cloze: {
+				sentence,
+				prompt,
+				mode,
+				choices: mode === 'choose' ? shuffleTokens([prompt.answer, ...distractors], seed) : [],
+				accepted: acceptedClozeAnswers(prompt.answer, entry)
+			}
+		};
 	}
 
 	/**
@@ -506,7 +626,7 @@
 	 * card never waits on it.
 	 */
 	function prefetchAudio(seq: number): void {
-		const ids = [...queue, ...reserve].filter((i) => i.kind === 'vocab' || i.kind === 'tone').map((i) => i.entryId);
+		const ids = [...queue, ...reserve].filter(hasWordAudio).map((i) => i.entryId);
 		if (!$token || ids.length === 0) {
 			audioSettled = true;
 			return;
@@ -518,10 +638,14 @@
 		});
 	}
 
+	// Vocab, tone and reverse cards pronounce their word (reverse only after the reveal).
+	function hasWordAudio(item: FlowItem): boolean {
+		return item.kind === 'vocab' || item.kind === 'tone' || item.kind === 'reverse';
+	}
+
 	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
-	// Only vocab and tone cards pronounce their word.
 	const currentAudio = $derived(
-		resolved !== null && (resolved.item.kind === 'vocab' || resolved.item.kind === 'tone')
+		resolved !== null && hasWordAudio(resolved.item)
 			? cardAudio(resolved.entry, audioMap[String(resolved.item.entryId)], audioSettings)
 			: null
 	);
@@ -553,7 +677,7 @@
 	$effect(() => {
 		const next = queue[index + 1];
 		const res = next === undefined ? undefined : audioMap[String(next.entryId)];
-		if (res !== undefined && (next?.kind === 'vocab' || next?.kind === 'tone')) {
+		if (res !== undefined && next !== undefined && hasWordAudio(next)) {
 			preloadClips({ clips: headwordClips(res), speakText: '', lang: '', deviceVoice: false });
 		}
 	});
@@ -618,8 +742,8 @@
 		}
 	}
 
-	function revealVocab(): void {
-		if (resolved?.item.kind !== 'vocab') return;
+	function revealByKey(): void {
+		if (resolved === null || !revealsOnKey(resolved.item.kind)) return;
 		void onCardDone({ suggested: null, meta: {} });
 	}
 
@@ -659,6 +783,10 @@
 				index,
 				grade: value,
 				tier: current.tier,
+				cloze:
+					item.kind === 'cloze' && item.clozeSentenceId !== undefined && item.clozeMode !== undefined
+						? { sentenceId: item.clozeSentenceId, mode: item.clozeMode }
+						: undefined,
 				record: () =>
 					gradeItem({
 						item,
@@ -696,7 +824,23 @@
 			// The focused grade button is disabled for the next card; drop the
 			// focus so Space/Enter reach the window in every browser.
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-			queue = step.queue;
+			buryNote = '';
+			if (result !== null) {
+				// The answer may bury the word's other cards until tomorrow.
+				const next = buryAfterAnswer({ queue: step.queue, reserve, backfillLeft }, index, {
+					kind: item.kind,
+					entryId: item.entryId,
+					cardId: item.cardId
+				});
+				if (next.buried > 0) {
+					buryNote = `${next.buried} related ${next.buried === 1 ? 'card is' : 'cards are'} buried until tomorrow`;
+				}
+				queue = next.plan.queue;
+				reserve = next.plan.reserve;
+				backfillLeft = next.plan.backfillLeft;
+			} else {
+				queue = step.queue;
+			}
 			index = step.index;
 			ensureEntry(queue[index]);
 		} finally {
@@ -725,7 +869,7 @@
 	}
 
 	/**
-	 * Key map: vocab — Space/Enter reveal, then 1–4 grade. Other kinds own
+	 * Key map: vocab and reverse — Space/Enter reveal, then 1–4 grade. Other kinds own
 	 * their keys until the learner finishes the card (tone uses 1–5 for
 	 * tones), then 1–4 grade. The runner never handles a key before then.
 	 */
@@ -736,10 +880,10 @@
 		if (current === null || complete) return;
 
 		if (!done) {
-			if (current.item.kind !== 'vocab' || isInteractive(event.target)) return;
+			if (!revealsOnKey(current.item.kind) || isInteractive(event.target)) return;
 			if (event.key === ' ' || event.key === 'Enter') {
 				event.preventDefault();
-				revealVocab();
+				revealByKey();
 			}
 			return;
 		}
@@ -865,6 +1009,10 @@
 			<a href="/study">End session</a>
 		</header>
 
+		{#if buryNote}
+			<p class="hint" role="status">{buryNote}</p>
+		{/if}
+
 		{#if entryError}
 			<section class="state">
 				<p class="error" role="alert">{entryError}</p>
@@ -915,6 +1063,28 @@
 							item={current.item}
 							entry={current.entry}
 							chars={current.chars}
+							{done}
+							onDone={onCardDone}
+						/>
+					{:else if current.item.kind === 'reverse'}
+						<ReverseCard
+							item={current.item}
+							entry={current.entry}
+							revealed={done}
+							language={sessionLanguage || current.entry.language}
+							onDone={onCardDone}
+							audio={currentAudio ?? undefined}
+						/>
+					{:else if current.item.kind === 'cloze' && current.cloze !== undefined}
+						<ClozeCard
+							item={current.item}
+							entry={current.entry}
+							sentence={current.cloze.sentence}
+							prompt={current.cloze.prompt}
+							mode={current.cloze.mode}
+							choices={current.cloze.choices}
+							accepted={current.cloze.accepted}
+							language={sessionLanguage || current.entry.language}
 							{done}
 							onDone={onCardDone}
 						/>

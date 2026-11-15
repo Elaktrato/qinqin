@@ -97,6 +97,37 @@ export function sentenceForShowing<S>(eligible: readonly S[], recordedReviews: n
 	return eligible[n % eligible.length];
 }
 
+export interface ClozeShowing<S> {
+	sentence: S;
+	spans: Span[];
+	prompt: ClozePrompt;
+}
+
+/**
+ * resolveClozeShowing picks what one showing of the card displays: the
+ * sentence (the `fixedSentenceId` of an Again re-show while it is still
+ * eligible, else the rotation over `recorded` reviews), its blanks and
+ * its prompt. Null when no sentence has a blank.
+ */
+export function resolveClozeShowing<S extends { id: number; hanzi: string }>(input: {
+	entry: { id: number; written: string; forms?: readonly { text: string }[] };
+	sentences: readonly S[];
+	matchesOf: (sentence: S) => readonly SegmentLike[];
+	recorded: number;
+	fixedSentenceId?: number;
+}): ClozeShowing<S> | null {
+	const spansOf = (sentence: S) => blankSpans(sentence.hanzi, input.entry, input.matchesOf(sentence));
+	const eligible = eligibleSentences(input.sentences, spansOf);
+	const fixed =
+		input.fixedSentenceId === undefined
+			? undefined
+			: eligible.find((sentence) => sentence.id === input.fixedSentenceId);
+	const sentence = fixed ?? sentenceForShowing(eligible, input.recorded);
+	if (sentence === null) return null;
+	const spans = spansOf(sentence);
+	return { sentence, spans, prompt: clozePrompt(sentence.hanzi, spans) };
+}
+
 /** The prompt around the first span; later spans become extra gaps. */
 export function clozePrompt(text: string, spans: readonly Span[]): ClozePrompt {
 	const chars = [...text];
