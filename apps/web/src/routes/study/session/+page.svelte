@@ -29,6 +29,7 @@
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
+	import { progressOf, removeAt, requeueAfterGrade, reviewRecorded } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { addCard, loadStudyData } from '$lib/study/store';
 	import {
@@ -158,6 +159,8 @@
 	let reviews = $state.raw<ReviewEvent[]>([]);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
+	// Re-shows answered this session; practice only, never recorded.
+	let reshown = $state(0);
 	let entries = $state.raw<Record<number, Entry>>({});
 	let entryError = $state('');
 	let gradeError = $state('');
@@ -212,6 +215,7 @@
 	}
 
 	const currentItem = $derived(queue[index]);
+	const queueProgress = $derived(progressOf(queue, index));
 	const currentEntry = $derived(
 		currentItem === undefined ? undefined : entries[currentItem.entryId]
 	);
@@ -281,6 +285,7 @@
 		reviews = [];
 		sessionReviews = [];
 		index = 0;
+		reshown = 0;
 		entries = {};
 		entryError = '';
 		gradeError = '';
@@ -432,6 +437,12 @@
 		) {
 			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
 		}
+		if (item.reshow !== undefined) {
+			// A re-show that cannot be shown again is just skipped.
+			queue = removeAt(queue, index);
+			ensureEntry(queue[index]);
+			return;
+		}
 		const next = dropItem({ queue, reserve, backfillLeft }, item.cardId);
 		queue = next.queue;
 		reserve = next.reserve;
@@ -533,6 +544,16 @@
 		const meta: ReviewMeta = { ...doneMeta };
 
 		gradeError = '';
+		if (!reviewRecorded(item)) {
+			// A re-show is practice: no review event, so FSRS, XP, streak and
+			// the log count the card once. Again may queue it once more.
+			reshown += 1;
+			queue = requeueAfterGrade(queue, index, value);
+			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+			index += 1;
+			ensureEntry(queue[index]);
+			return;
+		}
 		grading = true;
 		try {
 			const result = await gradeItem({
@@ -563,6 +584,7 @@
 			// The focused grade button is disabled for the next card; drop the
 			// focus so Space/Enter reach the window in every browser.
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+			queue = requeueAfterGrade(queue, index, value, result.card);
 			index += 1;
 			ensureEntry(queue[index]);
 		} finally {
@@ -671,6 +693,11 @@
 				<strong>{sessionReviews.length}</strong>
 				{sessionReviews.length === 1 ? 'review' : 'reviews'}
 			</p>
+			{#if reshown > 0}
+				<p class="stat">
+					<strong>{reshown}</strong> re-{reshown === 1 ? 'show' : 'shows'} (practice, not counted)
+				</p>
+			{/if}
 			<p class="stat"><strong>+{sessionXp}</strong> XP this session</p>
 			<ul class="breakdown" aria-label="XP by card type">
 				{#each STUDY_KINDS as kind (kind)}
@@ -709,7 +736,10 @@
 	{:else}
 		<header class="top">
 			<h1>Study</h1>
-			<p class="progress" aria-live="polite">{index + 1} / {queue.length}</p>
+			<p class="progress" aria-live="polite">
+					{queueProgress.position} / {queueProgress.total}{#if queueProgress.pending > 0}
+						· {queueProgress.pending} to repeat{/if}
+				</p>
 			<a href="/study">End session</a>
 		</header>
 
@@ -728,12 +758,15 @@
 					{#if current.item.kind === 'sentence'}
 						<span class="badge">{TIER_LABELS[current.tier]}</span>
 					{/if}
+					{#if current.item.reshow !== undefined}
+						<span class="badge badge-again">Again · second look</span>
+					{/if}
 					{#if current.item.virtual && current.item.kind !== 'vocab'}
 						<span class="badge">new</span>
 					{/if}
 				</p>
 
-				{#key current.item.cardId}
+				{#key index}
 					{#if current.item.kind === 'vocab'}
 						<VocabCard
 							item={current.item}
@@ -879,6 +912,12 @@
 		border-radius: 999px;
 		padding: 0.05rem 0.55rem;
 		opacity: 0.85;
+	}
+
+	.badge.badge-again {
+		border-color: #c62828;
+		color: #c62828;
+		opacity: 1;
 	}
 
 	.badge.kind-sentence {

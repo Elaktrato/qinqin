@@ -36,6 +36,8 @@ export interface FlowItem {
 	sentenceId?: number;
 	/** Decks a virtual item's card joins. */
 	deckIds?: string[];
+	/** Set on an in-session re-show of an Again card: how many so far. */
+	reshow?: number;
 }
 
 /** The entry fields eligibility needs. */
