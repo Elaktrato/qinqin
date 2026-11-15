@@ -9,7 +9,7 @@ export const coreWidgets: WidgetDef[] = [
 	{
 		id: 'activity-heatmap',
 		title: 'Activity',
-		description: 'Learning activity per day over the last 13 weeks.',
+		description: 'Learning activity per day over the last 13 weeks, per workspace or across all.',
 		owner: 'core',
 		size: 'wide',
 		surfaces: ['stats', 'home'],

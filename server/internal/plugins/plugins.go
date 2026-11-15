@@ -467,6 +467,34 @@ func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 	return true, nil
 }
 
+// UnparsableRows lists, by id, the registry rows whose manifest no
+// longer passes ParseManifest (rows registered before the contract, or
+// with a malformed activity rule). Such a row is still writable
+// (CanWriteData allows it as before) but does not take part in event
+// ownership or activity rules; startup logs them so an operator can
+// re-register or remove them.
+func UnparsableRows(ctx context.Context, sqlDB *sql.DB) ([]string, error) {
+	rows, err := sqlDB.QueryContext(ctx, `SELECT pack_id, manifest_json FROM plugin_registry ORDER BY pack_id`)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	defer rows.Close()
+	ids := []string{}
+	for rows.Next() {
+		var id, raw string
+		if err := rows.Scan(&id, &raw); err != nil {
+			return nil, fmt.Errorf("plugins: scan registry: %w", err)
+		}
+		if _, err := ParseManifest([]byte(raw)); err != nil {
+			ids = append(ids, id)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	return ids, nil
+}
+
 // CanWriteData reports whether pluginID exists and whether its data may
 // be written (PUT/DELETE of plugin data, sync push). Data plugins and
 // registry rows that predate the contract (no sdk, or a manifest that
