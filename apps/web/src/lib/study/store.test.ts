@@ -21,7 +21,12 @@ import {
   restoreCards,
   onStudyWrite,
   renameDeck,
+  saveParamSet,
+  setActiveSet,
+  deleteParamSet,
+  activeWeights,
 } from "./store";
+import { DEFAULT_W, type ParamSet } from "./fsrs/params";
 
 const PLUGIN_ID = "qinqin-flashcards";
 const WORKSPACE_ID = 7;
@@ -258,6 +263,7 @@ describe("study store", () => {
       await expect(loadStudyData()).resolves.toEqual({
         decks: [],
         cards: [],
+        fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
         reviews: [],
         merged: 0,
       });
@@ -271,6 +277,7 @@ describe("study store", () => {
       await expect(loadStudyData()).resolves.toEqual({
         decks: [],
         cards: [],
+        fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
         reviews: [],
         merged: 0,
       });
@@ -1109,6 +1116,118 @@ describe("study store", () => {
         cardsInDecks([general, custom, both], ["deck-1", "deck-2"]),
       ).toEqual([custom, both]);
       expect(cardsInDecks([general, custom, both], [])).toEqual([]);
+    });
+  });
+
+  describe("FSRS parameter sets", () => {
+    function wWith(i: number, v: number): number[] {
+      const w = [...DEFAULT_W];
+      w[i] = v;
+      return w;
+    }
+    function setRow(id: string, w: number[], overrides = {}) {
+      const data: ParamSet = {
+        id,
+        w,
+        createdAt: id === "A" ? "2026-01-01T00:00:00Z" : "2026-02-01T00:00:00Z",
+        source: "optimized",
+      };
+      return pluginRow(`fsrs:set:${id}`, data, overrides);
+    }
+
+    it("resolves the active pointer from the pull", async () => {
+      respondPull({
+        pluginData: [
+          setRow("A", wWith(8, 1.5)),
+          setRow("B", wWith(8, 2.5)),
+          pluginRow("fsrs:active", { setId: "B", changedAt: "x" }),
+        ],
+      });
+      const data = await loadStudyData();
+      expect(data.fsrs?.active?.id).toBe("B");
+      expect(data.fsrs?.w).toEqual(wWith(8, 2.5));
+      expect(data.fsrs?.sets.map((s) => s.id)).toEqual(["B", "A"]);
+      expect(activeWeights(data)).toEqual(wWith(8, 2.5));
+    });
+
+    it("uses the defaults for a tombstoned active row and without fsrs", async () => {
+      respondPull({
+        pluginData: [
+          setRow("A", wWith(8, 1.5)),
+          pluginRow("fsrs:active", { setId: "A", changedAt: "x" }, {
+            deletedAt: "2026-03-01T00:00:00Z",
+          }),
+        ],
+      });
+      const data = await loadStudyData();
+      expect(data.fsrs?.active).toBeNull();
+      expect(activeWeights(data)).toEqual(DEFAULT_W);
+      expect(activeWeights({})).toEqual(DEFAULT_W);
+    });
+
+    it("ignores rows of another workspace and invalid sets", async () => {
+      respondPull({
+        pluginData: [
+          setRow("A", wWith(8, 1.5), { workspaceId: 8 }),
+          setRow("B", wWith(4, 11)),
+          pluginRow("fsrs:active", { setId: "A", changedAt: "x" }, { workspaceId: 8 }),
+        ],
+      });
+      const data = await loadStudyData();
+      expect(data.fsrs?.sets).toEqual([]);
+      expect(data.fsrs?.w).toEqual(DEFAULT_W);
+    });
+
+    it("saves a set under a ULID key and notifies listeners", async () => {
+      vi.mocked(fetch).mockResolvedValue(jsonResponse({ version: 1 }));
+      const listener = vi.fn();
+      onStudyWrite(listener);
+      const saved = await saveParamSet(WORKSPACE_ID, {
+        w: [...DEFAULT_W],
+        source: "imported",
+      });
+      expect(saved.id).toMatch(ULID);
+      expect(Number.isNaN(Date.parse(saved.createdAt))).toBe(false);
+      const [put] = putBodies();
+      expect(put.url).toBe(
+        `/api/plugins/${PLUGIN_ID}/data/fsrs:set:${saved.id}?workspace=${WORKSPACE_ID}`,
+      );
+      expect(put.body).toEqual(saved);
+      expect(listener).toHaveBeenCalledWith(WORKSPACE_ID);
+    });
+
+    it("writes the active pointer, null meaning the defaults", async () => {
+      vi.mocked(fetch).mockImplementation(async () =>
+        jsonResponse({ version: 1 }),
+      );
+      await setActiveSet(WORKSPACE_ID, null);
+      await setActiveSet(WORKSPACE_ID, "A");
+      const [first, second] = putBodies();
+      expect(first.url).toBe(
+        `/api/plugins/${PLUGIN_ID}/data/fsrs:active?workspace=${WORKSPACE_ID}`,
+      );
+      expect(first.body).toEqual({ setId: null, changedAt: expect.any(String) });
+      expect(second.body).toEqual({ setId: "A", changedAt: expect.any(String) });
+    });
+
+    it("refuses to delete the active set and deletes another", async () => {
+      respondPull({
+        pluginData: [
+          setRow("A", wWith(8, 1.5)),
+          setRow("B", wWith(8, 2.5)),
+          pluginRow("fsrs:active", { setId: "B", changedAt: "x" }),
+        ],
+      });
+      await expect(deleteParamSet(WORKSPACE_ID, "B")).rejects.toThrow(
+        "Cannot delete the active parameters.",
+      );
+      expect(calls().some(([, init]) => init?.method === "DELETE")).toBe(false);
+      await deleteParamSet(WORKSPACE_ID, "A");
+      const deletes = calls().filter(([, init]) => init?.method === "DELETE");
+      expect(deletes).toHaveLength(1);
+      expect(String(deletes[0][0])).toBe(
+        `/api/plugins/${PLUGIN_ID}/data/fsrs:set:A?workspace=${WORKSPACE_ID}`,
+      );
     });
   });
 });

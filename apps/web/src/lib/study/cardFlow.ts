@@ -149,6 +149,8 @@ export interface DeckSessionOptions {
 	language: string;
 	/** `kind:entryId` of companions already found ineligible; never planned. */
 	skip?: ReadonlySet<string>;
+	/** The workspace's active FSRS weights. */
+	w: readonly number[];
 }
 
 /**
@@ -193,13 +195,14 @@ export function deckSessionPlan({
 	reviewLimit,
 	now,
 	language,
-	skip
+	skip,
+	w
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
 	if (wanted.length === 0) return { queue: [], reserve: [], backfillLeft };
 
-	const real = buildQueue({ cards, reviews, deckIds, newLimit, reviewLimit, now, kinds: wanted });
+	const real = buildQueue({ cards, reviews, deckIds, newLimit, reviewLimit, now, kinds: wanted, w });
 	const reviewed = reviewedIds(reviews);
 	const freshCount = real.filter((card) => !reviewed.has(card.id)).length;
 	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
@@ -343,10 +346,11 @@ export function reviewCountFor(cardId: string | null, reviews: readonly ReviewEv
 export function tierForCard(
 	cardId: string | null,
 	reviews: readonly ReviewEvent[],
-	now: Date
+	now: Date,
+	w: readonly number[]
 ): SaladTier {
 	if (cardId === null) return 0;
-	return tierFor(scheduleFor(cardId, reviews, now)?.stability ?? null);
+	return tierFor(scheduleFor(cardId, reviews, now, w)?.stability ?? null);
 }
 
 /**

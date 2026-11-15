@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_W } from './fsrs/params';
 import { masteryForChars, stageOf, type CharMastery } from './mastery';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 
@@ -10,7 +11,7 @@ function masteryForChar(
 	reviews: readonly ReviewEvent[],
 	now: Date
 ): CharMastery {
-	return masteryForChars([char], cards, reviews, now).get(char)!;
+	return masteryForChars([char], cards, reviews, now, DEFAULT_W).get(char)!;
 }
 
 const DAY = 86_400_000;
@@ -233,7 +234,7 @@ describe('masteryForChars across card kinds', () => {
 			...goodHistory('w1', [0, 1, 11]),
 			...goodHistory('s1', [0, 1, 11])
 		];
-		const map = masteryForChars(['猫', '爱', '狗'], cards, reviews, NOW);
+		const map = masteryForChars(['猫', '爱', '狗'], cards, reviews, NOW, DEFAULT_W);
 		expect(map.get('猫')?.reviewedCards).toBe(2);
 		expect(map.get('爱')?.reviewedCards).toBe(1);
 		expect(map.get('狗')?.stage).toBe('unknown');
@@ -241,7 +242,7 @@ describe('masteryForChars across card kinds', () => {
 
 	it('ignores a non-vocab card without a snapshot', () => {
 		const cards = [kindCard('w1', 'writing')];
-		const map = masteryForChars(['猫'], cards, goodHistory('w1', [0, 1]), NOW);
+		const map = masteryForChars(['猫'], cards, goodHistory('w1', [0, 1]), NOW, DEFAULT_W);
 		expect(map.get('猫')?.reviewedCards).toBe(0);
 	});
 });
@@ -273,7 +274,7 @@ describe('masteryForChars', () => {
 		cards.push(card('legacy'));
 		const requested = [...chars, '龍'];
 
-		const map = masteryForChars(requested, cards, reviews, NOW);
+		const map = masteryForChars(requested, cards, reviews, NOW, DEFAULT_W);
 
 		for (const char of requested) {
 			expect(map.get(char), char).toEqual(masteryForChar(char, cards, reviews, NOW));
@@ -284,7 +285,7 @@ describe('masteryForChars', () => {
 		const cards = [card('c1', '猫')];
 		const history = goodHistory('c1', [0, 1, 11, 41]);
 
-		expect(masteryForChars([''], cards, history, NOW).get('')).toEqual({
+		expect(masteryForChars([''], cards, history, NOW, DEFAULT_W).get('')).toEqual({
 			score: 0,
 			stage: 'unknown',
 			reviewedCards: 0
@@ -297,7 +298,7 @@ describe('masteryForChars', () => {
 	});
 
 	it('includes every requested character, even without a reviewed card', () => {
-		const map = masteryForChars(['猫', '狗'], [card('c1', '猫')], goodHistory('c1', [0]), NOW);
+		const map = masteryForChars(['猫', '狗'], [card('c1', '猫')], goodHistory('c1', [0]), NOW, DEFAULT_W);
 
 		expect(map.size).toBe(2);
 		expect(map.get('狗')).toEqual({ score: 0, stage: 'unknown', reviewedCards: 0 });
@@ -313,7 +314,7 @@ describe('masteryForChars', () => {
 	});
 
 	it('returns an empty map for no characters', () => {
-		expect(masteryForChars([], [card('c1', '猫')], goodHistory('c1', [0]), NOW).size).toBe(0);
+		expect(masteryForChars([], [card('c1', '猫')], goodHistory('c1', [0]), NOW, DEFAULT_W).size).toBe(0);
 	});
 });
 

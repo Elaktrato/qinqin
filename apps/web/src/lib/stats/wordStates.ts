@@ -54,7 +54,9 @@ export function classifySchedule(schedule: Pick<Schedule, 'state' | 'stability'>
 	return schedule.stability >= MATURE_STABILITY_DAYS ? 'mature' : 'young';
 }
 
-type ScheduleFn = (cardId: string, history: readonly ReviewEvent[], now: Date) => Schedule | null;
+type ScheduleFn = (cardId: string, history: readonly ReviewEvent[], now: Date,
+	w: readonly number[]
+) => Schedule | null;
 
 function reviewsByCard(reviews: readonly ReviewEvent[]): Map<string, ReviewEvent[]> {
 	const byCard = new Map<string, ReviewEvent[]>();
@@ -81,6 +83,7 @@ export function wordStateCounts(
 	reviews: readonly ReviewEvent[],
 	decks: readonly Deck[],
 	now: Date,
+	w: readonly number[],
 	schedule: ScheduleFn = scheduleFor
 ): WordStatesResult {
 	const rows: DeckWordStates[] = [
@@ -100,7 +103,7 @@ export function wordStateCounts(
 			.filter((row): row is DeckWordStates => row !== undefined);
 		if (inRows.length === 0) continue;
 
-		const state = classifySchedule(schedule(card.id, history.get(card.id) ?? [], now));
+		const state = classifySchedule(schedule(card.id, history.get(card.id) ?? [], now, w));
 		overall[state] += 1;
 		overall.total += 1;
 		for (const row of inRows) {
