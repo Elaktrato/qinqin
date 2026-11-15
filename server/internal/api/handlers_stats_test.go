@@ -82,13 +82,22 @@ func getActivity(t *testing.T, url, token, query string) (*http.Response, activi
 
 func TestStatsActivityDefaults(t *testing.T) {
 	url, token, _ := statsServer(t)
+	// The handler reads the clock itself: accept the UTC day before or
+	// after the request, so a run across midnight cannot flake.
+	before := time.Now().UTC()
 	resp, body := getActivity(t, url, token, "")
+	after := time.Now().UTC()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d", resp.StatusCode)
 	}
-	today := time.Now().UTC()
-	if body.To != today.Format("2006-01-02") || body.From != today.AddDate(0, 0, -90).Format("2006-01-02") {
-		t.Errorf("window = %s..%s", body.From, body.To)
+	ok := false
+	for _, day := range []time.Time{before, after} {
+		if body.To == day.Format("2006-01-02") && body.From == day.AddDate(0, 0, -90).Format("2006-01-02") {
+			ok = true
+		}
+	}
+	if !ok {
+		t.Errorf("window = %s..%s, want today (UTC) and the 90 days before", body.From, body.To)
 	}
 	if body.Cells == nil || len(body.Cells) != 0 {
 		t.Errorf("cells = %#v, want empty non-nil", body.Cells)

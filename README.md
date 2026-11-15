@@ -631,6 +631,12 @@ plugin whose manifest has an `sdk` but not that permission (a row registered bef
 the contract has no `sdk` and keeps writing; Settings marks it "legacy"). In a sync
 push such a row is skipped, not fatal: the events and every other row still apply,
 and the result's `dataRefused` counts the skipped rows next to `dataSkipped`.
+A registry row whose manifest no longer parses (for example one registered before
+the strict `activity` rule validation of the activity statistics, or with a
+malformed rule) keeps writing like a legacy row, but neither claims event types nor
+contributes activity; startup logs "plugin registry rows that do not parse as
+manifests" with their ids once. This only concerns development databases: re-register
+or remove those rows.
 SDK data keys may not be empty, `.` or `..`. A plain string value round-trips
 (`put('k', 'hello')` reads back `'hello'`); a string that is itself valid JSON text
 (`'123'`) reads back decoded, so store objects instead of such strings.

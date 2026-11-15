@@ -71,7 +71,9 @@ func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, from, to time.Ti
 // field, ?7 min, ?8 max, ?9 pointsPer. Field names come from validated
 // rules and are bound, never concatenated into SQL.
 //
-// INDEXED BY pins the type index: with a workspace filter the planner
+// INDEXED BY pins the type index (renaming or dropping
+// idx_study_events_user_type_ts in a migration needs a matching change
+// here, or every activity query fails with "no such index"): with a workspace filter the planner
 // otherwise prefers idx_study_events_workspace_ts (which ignores the
 // type) on a table it has no statistics for.
 const window = `FROM study_events INDEXED BY idx_study_events_user_type_ts WHERE user_id = ?1 AND type = ?2 AND ts >= ?3 AND ts < ?4`

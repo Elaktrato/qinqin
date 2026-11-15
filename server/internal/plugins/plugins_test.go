@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
@@ -682,5 +683,31 @@ func TestCanWriteDataGrandfathered(t *testing.T) {
 		if err != nil || !exists || !allowed {
 			t.Errorf("CanWriteData(%s) = %t, %t, %v; want grandfathered", id, exists, allowed, err)
 		}
+	}
+}
+
+func TestUnparsableRegistryRows(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	for _, raw := range plugins.Builtin() {
+		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for id, raw := range map[string]string{
+		"zz-old":    `{"id":"zz-old","name":"Old","events":"x"}`,
+		"aa-broken": `not json`,
+		"mm-fine":   `{"id":"mm-fine","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]}`,
+	} {
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES (?, ?, '2026-01-01T00:00:00Z')`, id, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := plugins.UnparsableRows(ctx, sqlDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"aa-broken", "zz-old"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("UnparsableRows = %v, want %v", got, want)
 	}
 }
