@@ -47,9 +47,17 @@
 	// unambiguous.
 	let baseline = $state<EntryDetail | null>(null);
 	let baselineError = $state('');
+	// Bumped by "Try again" to re-run the baseline fetch below.
+	let baselineAttempt = $state(0);
+
+	// What is stored for the caller right now: the entry as loaded, then the
+	// last PUT response. Save is for changes against this, not against the
+	// shared entry, so a saved draft is clean and a revert is a change.
+	let current = $state.raw(untrack(() => entry));
 
 	$effect(() => {
 		const id = entry.id;
+		void baselineAttempt;
 		if (baseline?.id === id) return;
 		let cancelled = false;
 		baseline = null;
@@ -71,7 +79,35 @@
 		readings: rows.map(({ type, value }) => ({ type, value }))
 	});
 	const patch = $derived(baseline === null ? {} : buildPatch(baseline, draft));
-	const hasChanges = $derived(baseline !== null && Object.keys(patch).length > 0);
+	// The patch that reproduces what is stored now; equal patches mean no change.
+	const storedPatch = $derived(baseline === null ? {} : buildPatch(baseline, toDraft(current)));
+	const hasChanges = $derived(
+		baseline !== null && JSON.stringify(patch) !== JSON.stringify(storedPatch)
+	);
+	// Rows the server would refuse (400): both fields are required.
+	const blankReading = $derived(
+		rows.some((row) => row.type.trim() === '' || row.value.trim() === '')
+	);
+	// Anything the caller has (stored or in the draft) that differs from shared.
+	const differsFromShared = $derived(Object.keys(patch).length > 0 || Object.keys(storedPatch).length > 0);
+
+	function toDraft(source: EntryDetail) {
+		return {
+			written: source.written,
+			readings: [...source.readings]
+				.sort((a, b) => a.ord - b.ord)
+				.map(({ type, value }) => ({ type, value }))
+		};
+	}
+
+	// Reset every field to the shared entry. Saving then sends an empty patch,
+	// which the server stores as "no overlay": the shared values show again.
+	function revertToShared(): void {
+		if (baseline === null) return;
+		clearMessages();
+		written = baseline.written;
+		rows = toRows(baseline);
+	}
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -96,7 +132,7 @@
 
 	async function save(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
-		if (saving || baseline === null || !hasChanges) return;
+		if (saving || baseline === null || !hasChanges || blankReading) return;
 
 		saving = true;
 		saved = '';
@@ -107,6 +143,7 @@
 			// draft in sync with it also picks up any server-side ordering.
 			written = updated.written;
 			rows = toRows(updated);
+			current = updated;
 			saved = 'Saved.';
 			onSaved(updated);
 		} catch (err) {
@@ -122,6 +159,7 @@
 
 	{#if baselineError}
 		<p class="error" role="alert">{baselineError}</p>
+		<button type="button" class="retry" onclick={() => baselineAttempt++}>Try again</button>
 	{:else if baseline === null}
 		<p class="hint" aria-live="polite">Preparing editor…</p>
 	{/if}
@@ -165,12 +203,20 @@
 			{/each}
 		</ul>
 		<button type="button" class="add" onclick={addRow}>Add reading</button>
+		{#if blankReading}
+			<p class="hint" role="status">Every reading needs a type and a value.</p>
+		{/if}
 	</fieldset>
 
 	<div class="actions">
-		<button type="submit" class="save" disabled={saving || !hasChanges}>
+		<button type="submit" class="save" disabled={saving || !hasChanges || blankReading}>
 			{saving ? 'Saving…' : 'Save'}
 		</button>
+		{#if differsFromShared}
+			<button type="button" class="revert" onclick={revertToShared} disabled={saving}>
+				Revert to shared
+			</button>
+		{/if}
 		<button type="button" class="cancel" onclick={onCancel} disabled={saving}>Cancel</button>
 	</div>
 
@@ -264,6 +310,8 @@
 	.add,
 	.remove,
 	.save,
+	.revert,
+	.retry,
 	.cancel {
 		font: inherit;
 		font-size: 0.9rem;
