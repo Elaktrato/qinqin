@@ -147,6 +147,10 @@ func serveCmd(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	trusted, err := api.ParseTrustedProxies(os.Getenv("QINQIN_TRUSTED_PROXIES"))
+	if err != nil {
+		return fmt.Errorf("QINQIN_TRUSTED_PROXIES: %w", err)
+	}
 	registerLanguages()
 	sqlDB, err := openData(*data)
 	if err != nil {
@@ -178,7 +182,7 @@ func serveCmd(args []string) error {
 	}
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set

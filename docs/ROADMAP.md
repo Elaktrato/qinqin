@@ -83,7 +83,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 - [#64](https://github.com/Elaktrato/qinqin/issues/64) accounts: change password, admin user management, password reset, session control
 - [#83](https://github.com/Elaktrato/qinqin/issues/83) accounts: personal access tokens for scripts and integrations
 - [#61](https://github.com/Elaktrato/qinqin/issues/61) backup: export and restore your own data, plus server backup
-- [#86](https://github.com/Elaktrato/qinqin/issues/86) auth: login/register rate limiting
+- [#86](https://github.com/Elaktrato/qinqin/issues/86) auth: login/register rate limiting (done: per-client, per-pair and per-username limits, hash gate, trusted proxies)
 
 **Study**
 
@@ -122,7 +122,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 
 Engineering debt (#1–#22) was worked through in themed batches (backend hardening, web polish, CI and serving);
 what remains open is listed in the handoff `docs/superpowers/handoffs/2026-11-15-web-build-handoff.md`
-(#12, #17, #18 leftovers, #55 zombie CI runs, #86 login rate limiting).
+(#12, #17, #18 leftovers, #55 zombie CI runs; #86 login rate limiting is done on the v0.3.0 branch).
 
 Note: the Android client (v0.4.0) does not read the `fsrs:*` plugin data yet, so once a set is active on the web its due counts differ from Android's until the Kotlin scheduler reads the same rows.
 

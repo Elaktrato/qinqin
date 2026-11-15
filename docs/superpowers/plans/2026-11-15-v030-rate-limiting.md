@@ -248,3 +248,51 @@ reconciles); create `docs/contracts/auth/throttling.md`, `docs/contracts/auth/th
 - `docs/contracts/auth/throttle-responses.json` — 429 `rate_limited`, 503 `busy`, 401 `bad_credentials`,
   403 `admin_required` (all JSON) (Task 8). Reconcile with #64's `docs/contracts/auth/errors.json` at merge.
 - Android: branch on `error`, honour `Retry-After`, show `message`, never retry 429/503 automatically.
+
+## Execution log and rulings (implementer, 2026-11-15)
+
+- Ruling: `Backoff.Begin` lets at most `Free+1` attempts be in flight from a clean state (the 6th may lock);
+  after a lock expired one attempt at a time runs; a refused in-flight attempt reports `Retry-After` 1 s —
+  keeps "in flight counts as failure" without a second counter — cost: none known.
+- Ruling: a failure arriving while a lock is still active (a straggler that began earlier) does not
+  double it — only a failure after expiry doubles — cost: none.
+- Ruling: login also answers 400 `bad_request` for empty username or password (spec order step 3) —
+  before it hashed against the dummy — cost: a script sending an empty password sees 400 instead of 401.
+- Ruling: `Named` defaults are empty; every name incl. `reauth` falls back to the client policy until
+  #64 adds its own entries — YAGNI — cost: #64 plan 1 must put its numbers into `DefaultAuthPolicy().Named`.
+- Ruling: the commit trailer follows AGENT-RULES (`Claude Opus 5.5`).
+- Deviation: Task 4's `trusted` option lives in `api.go`; `WithLimiterProbe` (export_test) replaced the
+  planned `authLimiter` access from `api_test`; hooks are typed (`AuthHooks` fields are not `any`).
+- Deviation: real-app memory check — 30 parallel logins that all pass the limits reach VmHWM about 470-535 MiB
+  (a 150 MiB baseline after one login, 4 gate slots of 64 MiB, plus Go heap garbage), not under 400 MiB; the
+  unbounded figure would be above 2 GiB. The gate holds; the threshold in step 1(d) is read as "below 600 MiB".
+- Full Go gate ran once after Task 7; Task 8 only added a fixture test and docs (targeted run).
+
+## Real-app check result (built binary, curl-equivalent Python, loopback)
+
+(a) 6 wrong -> 401 `bad_credentials`, 7th with right password -> 429, `Retry-After: 60`, JSON; (b) `nobody`
+identical statuses and bodies; (c) 11 parallel one client -> ten 401, one 429 (`Retry-After` 6); anonymous
+register after the first user -> ten 403 then 429; (d) 30 parallel with own `X-Forwarded-For` -> only 401/429
+(20 hashed by L3), VmHWM 473-535 MiB; (e) `QINQIN_TRUSTED_PROXIES=none` -> header ignored (429 by the 10th/11th);
+default trust -> distinct addresses are distinct clients; bad value stops startup naming the item; (f) log has
+only `auth: sign-in throttled (layer ...)` lines, no address, username or password.
+
+## Fix wave after the security review
+
+- Ruling: known-good marks in a separate capped table (65 536, sampled-oldest eviction) — a flood of failing
+  pairs evicted marks before — cost: a second table of at most 65 536 small entries.
+- Ruling: eviction samples the first 8 entries of Go's map iteration (random start, no `rand.IntN` skip walk)
+  — O(8) per insert instead of O(n) — cost: the sample is clustered, not uniform; a test pins the cost.
+- Ruling: the default trusted set stays "private networks", now loudly documented as spoofable without a
+  proxy (README, Portainer stack, compose), with `QINQIN_TRUSTED_PROXIES=none` recommended there, and one log
+  line the first time a forwarded header is honoured — cost: an install without proxy that ignores the docs is
+  still spoofable on the per-client layers (per-username limit and hash gate hold).
+- Ruling: `QINQIN_TRUSTED_PROXIES` and `QINQIN_TESSERACT` are passed by the Portainer stack and offered in
+  docker-compose.yml; a test (`cmd/qinqin/deploy_env_test.go`) requires every variable of the README's
+  environment table to be in both files.
+- Ruling: IPv4-mapped prefixes in `QINQIN_TRUSTED_PROXIES` are converted (`::ffff:10.0.0.0/104` is `10.0.0.0/8`);
+  shorter than /96 is a startup error.
+- Ruling: register 429 reads "Too many attempts."; an administrator's valid bearer skips the client bucket
+  (checked before it, a plain token lookup) — cost: an invalid or non-admin bearer still pays.
+- Ruling: a cancelled request is answered 499 with no body and no log, nothing counted.
+- Forwarded entries with a port or brackets parse.
