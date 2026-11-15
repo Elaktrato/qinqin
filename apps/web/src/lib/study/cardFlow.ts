@@ -2,15 +2,24 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
-import type { StudyDay } from '../time/studyDay';
+import { studyDay as utcStudyDay, type StudyDay } from '../time/studyDay';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
-import { buries } from './siblings';
+import { enabledKinds, type DeckSettings } from './deckSettings';
+import { buriedNow, buries, type Buried } from './siblings';
 import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
 import { tierFor, type SaladTier } from './wordSalad';
 import { isHan, writableChars } from './writing';
-import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
+import {
+	OPT_IN_KINDS,
+	type OptInKind,
+	type ReviewEvent,
+	type ReviewGrade,
+	type ReviewMeta,
+	type StudyCard,
+	type StudyCardKind
+} from './types';
 
 /**
  * What a card component reports when the learner has finished it: the
@@ -162,8 +171,10 @@ export interface DeckSessionOptions {
 	skip?: ReadonlySet<string>;
 	/** The workspace's active FSRS weights. */
 	w: readonly number[];
-	/** The learner's day, for the character writing unlock; UTC when absent. */
+	/** The learner's day, for the character writing unlock and burying; UTC when absent. */
 	studyDay?: StudyDay;
+	/** Per-deck card type switches; without them no reverse or cloze card is queued. */
+	deckSettings?: Record<string, DeckSettings>;
 }
 
 /**
@@ -191,6 +202,44 @@ export interface DeckSessionPlan {
 	backfillLeft: number;
 }
 
+/** Non-vocab kinds each word's vocab row says to skip. */
+export function skipKindsByEntry(cards: readonly StudyCard[]): Map<number, Set<StudyCardKind>> {
+	const out = new Map<number, Set<StudyCardKind>>();
+	for (const card of cards) {
+		if (card.kind !== 'vocab' || card.skipKinds === undefined) continue;
+		const set = out.get(card.entryId) ?? new Set<StudyCardKind>();
+		for (const kind of card.skipKinds) set.add(kind);
+		out.set(card.entryId, set);
+	}
+	return out;
+}
+
+/**
+ * allowedReal says whether a stored card may be queued: a reverse or
+ * cloze card needs a deck of the session that switches its kind on, and
+ * no kind the word's vocab row skips is queued. Turning a kind off only
+ * stops queuing; the cards and their history stay.
+ */
+export function allowedReal(
+	card: StudyCard,
+	ctx: {
+		sessionDecks: readonly string[];
+		deckSettings?: Record<string, DeckSettings>;
+		skipByEntry: Map<number, Set<StudyCardKind>>;
+	}
+): boolean {
+	if (card.kind !== 'vocab' && ctx.skipByEntry.get(card.entryId)?.has(card.kind)) return false;
+	if (OPT_IN_KINDS.includes(card.kind as OptInKind)) {
+		const decks = new Set(ctx.sessionDecks);
+		const enabled = enabledKinds(
+			ctx.deckSettings,
+			card.deckIds.filter((id) => decks.has(id))
+		);
+		return enabled.has(card.kind as OptInKind);
+	}
+	return true;
+}
+
 /**
  * deckSessionPlan builds a deck session: the existing cards of the
  * selected kinds (due reviews first, then new cards), followed by at most
@@ -210,13 +259,32 @@ export function deckSessionPlan({
 	language,
 	skip,
 	w,
-	studyDay
+	studyDay,
+	deckSettings
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
 	if (wanted.length === 0) return { queue: [], reserve: [], backfillLeft };
 
-	const real = buildQueue({ cards, reviews, deckIds, newLimit, reviewLimit, now, kinds: wanted, w });
+	// Cards that may not be shown (switch off, skipped, buried) leave before
+	// the limits apply, so they never use up a slot.
+	const buried = buriedNow({ cards, reviews, now, studyDay: studyDay ?? utcStudyDay([]) });
+	const skipByEntry = skipKindsByEntry(cards);
+	const allowed = cards.filter(
+		(card) =>
+			!buried.cardIds.has(card.id) &&
+			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry })
+	);
+	const real = buildQueue({
+		cards: allowed,
+		reviews,
+		deckIds,
+		newLimit,
+		reviewLimit,
+		now,
+		kinds: wanted,
+		w
+	});
 	const reviewed = reviewedIds(reviews);
 	const freshCount = real.filter((card) => !reviewed.has(card.id)).length;
 	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
@@ -227,12 +295,17 @@ export function deckSessionPlan({
 		kinds: wanted,
 		deckIds,
 		// Plan everything, then split at the budget: the rest is the reserve.
-		newBudget: cards.length * 3,
+		newBudget: cards.length * 5,
 		reviews,
 		now: now.getTime(),
-		studyDay
+		studyDay,
+		deckSettings,
+		exclude: new Set(real.map((card) => card.entryId)),
+		skip
 	})
 		.filter((item) => skip === undefined || !skip.has(`${item.kind}:${item.entryId}`))
+		// A word answered today already buried these (see siblings.ts).
+		.filter((item) => !buried.keys.has(`${item.kind}:${item.entryId}`))
 		// Without a snapshot (Round 1 cards) writing is decided when shown.
 		.filter(
 			(item) =>
@@ -353,12 +426,14 @@ export function resolveSentence<T extends { id: number }>(
 export function levelSessionItems(
 	items: readonly LevelQueueItem[],
 	cards: readonly StudyCard[],
-	kinds: readonly StudyCardKind[]
+	kinds: readonly StudyCardKind[],
+	buried?: Buried
 ): FlowItem[] {
 	const byId = new Map(cards.map((card) => [card.id, card]));
 	const out: FlowItem[] = [];
 	for (const item of items) {
 		if (!kinds.includes(item.kind)) continue;
+		if (buried?.cardIds.has(item.cardId) || buried?.keys.has(`${item.kind}:${item.entryId}`)) continue;
 		const card = item.virtual ? undefined : byId.get(item.cardId);
 		if (card !== undefined) {
 			out.push(fromCard(card));

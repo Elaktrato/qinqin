@@ -88,3 +88,21 @@ export function buriedNow(input: BuryInput): Buried {
 	}
 	return { cardIds, keys };
 }
+
+/**
+ * The entries of a level session that must be skipped: some card of the
+ * word that a level session studies (vocab, writing) is buried. A reverse
+ * or cloze answer buries all of a word's kinds at once, so skipping the
+ * whole entry is exact.
+ */
+export function buriedLevelEntries(buried: Buried, cards: readonly StudyCard[]): Set<number> {
+	const out = new Set<number>();
+	for (const card of cards) {
+		if (buried.cardIds.has(card.id)) out.add(card.entryId);
+	}
+	for (const key of buried.keys) {
+		const [kind, entry] = key.split(':');
+		if (kind === 'vocab' || kind === 'writing') out.add(Number(entry));
+	}
+	return out;
+}
