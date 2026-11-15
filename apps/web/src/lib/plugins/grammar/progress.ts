@@ -52,10 +52,29 @@ export async function saveProgress(
 ): Promise<Progress> {
 	const next: Progress = {
 		completedAt: new Date().toISOString(),
-		best: Math.max(score, previous?.best ?? 0),
+		// Scores of a lesson with a different number of exercises (a re-import,
+		// a script conversion that dropped a cloze) are not comparable: start over.
+		best: Math.max(score, previous && previous.total === total ? previous.best : 0),
 		total
 	};
 	const key = progressKey(packId, lessonId);
 	await sdk.data.workspace(workspaceId).put(key, next);
 	return next;
+}
+
+/**
+ * recordRun stores a finished run: it reads the stored row first and
+ * keeps the best score. When that read fails nothing is written (a
+ * lower score must never replace a better one); the error is thrown for
+ * the caller to show and retry.
+ */
+export async function recordRun(
+	workspaceId: number,
+	packId: string,
+	lessonId: string,
+	score: number,
+	total: number
+): Promise<Progress> {
+	const stored = await sdk.data.workspace(workspaceId).get(progressKey(packId, lessonId));
+	return saveProgress(workspaceId, packId, lessonId, score, total, parseProgress(stored));
 }

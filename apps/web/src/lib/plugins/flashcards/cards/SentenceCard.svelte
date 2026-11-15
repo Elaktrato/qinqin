@@ -121,6 +121,11 @@
 		cursor: pointer;
 	}
 
+	.cloze:focus-visible {
+		outline: 2px solid #0b6bcb;
+		outline-offset: 2px;
+	}
+
 	.blur {
 		filter: blur(6px);
 		user-select: none;

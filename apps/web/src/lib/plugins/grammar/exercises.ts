@@ -47,6 +47,11 @@ export function buildExercises(lesson: Lesson, seed: string): Exercise[] {
 		kind: 'order',
 		example
 	}));
+	// The word order of the sentence just practised as a cloze would be a free answer.
+	const last = clozes.at(-1);
+	if (last && orders.length > 1 && orders[0].example.id === last.example.id) {
+		[orders[0], orders[1]] = [orders[1], orders[0]];
+	}
 	return [...clozes, ...orders];
 }
 

@@ -7,9 +7,10 @@
 	import ClozeChoice from './ClozeChoice.svelte';
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
-	import { loadProgress, progressKey, saveProgress } from './progress';
+	import { recordRun } from './progress';
 	import { grammarHref } from './route';
 	import type { Progress } from './types';
+	// (attempt 0 keeps the plain lesson seed; a retry shuffles anew)
 
 	let { pack, lessonId }: { pack: string; lessonId: string } = $props();
 
@@ -36,14 +37,16 @@
 
 	const language = $derived(data?.view.pack.language ?? '');
 	const textLang = $derived(data?.textLang ?? '');
-	const exercises = $derived<Exercise[]>(data ? buildExercises(data.lesson, data.lesson.id) : []);
-
 	let attempt = $state(0);
+	const exercises = $derived<Exercise[]>(
+		data ? buildExercises(data.lesson, attempt === 0 ? data.lesson.id : `${data.lesson.id}:${attempt}`) : []
+	);
 	let index = $state(0);
 	// Per exercise: null while open, then right on the first try or not.
 	let results = $state<(boolean | null)[]>([]);
 	let tokens = $state<string[] | null>(null);
 	let nextButton = $state<HTMLButtonElement | null>(null);
+	let instruction = $state<HTMLElement | null>(null);
 	let saved = $state<Progress | null>(null);
 	let saveError = $state('');
 
@@ -79,7 +82,13 @@
 
 	async function advance(): Promise<void> {
 		index += 1;
-		if (index >= exercises.length) await saveResult();
+		if (index >= exercises.length) {
+			await saveResult();
+			return;
+		}
+		// The button that was pressed is gone: hand focus to the new exercise.
+		await tick();
+		instruction?.focus();
 	}
 
 	async function saveResult(): Promise<void> {
@@ -87,14 +96,12 @@
 		saveError = '';
 		const ws = $workspaces.current;
 		if (ws === null || data === null) return;
-		const total = exercises.length;
 		try {
-			const previous = (await loadProgress(ws.id).catch(() => null))?.get(
-				progressKey(pack, lessonId)
-			);
-			saved = await saveProgress(ws.id, pack, lessonId, score, total, previous ?? null);
+			saved = await recordRun(ws.id, pack, lessonId, score, exercises.length);
 		} catch {
-			saveError = 'Could not save your progress. Your score is shown below.';
+			// Nothing was written: a score that could not be compared with the
+			// stored best must never replace it.
+			saveError = 'Could not save your progress, so nothing was changed.';
 		}
 	}
 
@@ -130,7 +137,10 @@
 			{#if saved}
 				<p>Best so far: {saved.best}/{saved.total}</p>
 			{/if}
-			{#if saveError}<p class="error" role="alert">{saveError}</p>{/if}
+			{#if saveError}
+				<p class="error" role="alert">{saveError}</p>
+				<button type="button" class="secondary" onclick={() => void saveResult()}>Try saving again</button>
+			{/if}
 			<div class="actions">
 				<button type="button" class="primary" onclick={retry}>Retry</button>
 				<a class="secondary" href={grammarHref({ view: 'lesson', pack, lesson: lessonId })}>Back to lesson</a>
@@ -147,7 +157,7 @@
 
 		{#key `${attempt}:${index}`}
 			{#if current.kind === 'cloze' && parts}
-				<p class="instruction">Choose the word that fits the gap.</p>
+				<p class="instruction" tabindex="-1" bind:this={instruction}>Choose the word that fits the gap.</p>
 				<p class="translation">{current.example.translation}</p>
 				<ClozeChoice
 					before={parts.before}
@@ -158,7 +168,7 @@
 					onResult={(r) => void record(r.correct)}
 				/>
 			{:else if current.kind === 'order'}
-				<p class="instruction">Put the words in order.</p>
+				<p class="instruction" tabindex="-1" bind:this={instruction}>Put the words in order.</p>
 				<p class="translation">{current.example.translation}</p>
 				{#if tokens === null}
 					<p role="status">Preparing the sentence…</p>
@@ -206,6 +216,10 @@
 	.progress,
 	.reading {
 		opacity: 0.75;
+	}
+
+	.instruction:focus {
+		outline: none;
 	}
 
 	.instruction {

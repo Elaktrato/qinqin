@@ -110,3 +110,19 @@ describe('firstTry', () => {
 		expect(firstTry({ wrongChecks: 0, gaveUp: true })).toBe(false);
 	});
 });
+
+describe('buildExercises order', () => {
+	it('never puts the word order of an example right after its own cloze', () => {
+		const l = lesson([1, 2, 3, 4].map((n) => example(`shi-${n}`)));
+		for (let i = 0; i < 40; i++) {
+			const ex = buildExercises(l, `seed${i}`);
+			const lastCloze = ex[3].example.id;
+			expect(ex[4].kind).toBe('order');
+			expect(ex[4].example.id).not.toBe(lastCloze);
+			expect(ex.slice(4).map((e) => e.example.id).sort()).toEqual(['shi-1', 'shi-2', 'shi-3', 'shi-4']);
+		}
+	});
+	it('keeps a single-example lesson working', () => {
+		expect(buildExercises(lesson([example('a')]), 's')).toHaveLength(2);
+	});
+});

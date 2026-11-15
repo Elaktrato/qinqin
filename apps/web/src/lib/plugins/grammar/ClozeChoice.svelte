@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { choiceForKey } from './clozeKeys';
+	import { choiceForKeyEvent } from './clozeKeys';
 
 	interface Props {
 		before: string;
@@ -26,8 +26,17 @@
 	}
 
 	function onKeydown(event: KeyboardEvent): void {
-		if (event.ctrlKey || event.metaKey || event.altKey) return;
-		const index = choiceForKey(event.key, choices.length);
+		const index = choiceForKeyEvent(
+			{
+				key: event.key,
+				ctrlKey: event.ctrlKey,
+				metaKey: event.metaKey,
+				altKey: event.altKey,
+				isComposing: event.isComposing,
+				target: event.target instanceof HTMLElement ? event.target : null
+			},
+			choices.length
+		);
 		if (index === null) return;
 		event.preventDefault();
 		pick(choices[index]);
