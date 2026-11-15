@@ -1,16 +1,23 @@
 <script lang="ts">
+	import type { ClozePart } from '$lib/study/cloze';
 	import { choiceForKeyEvent } from './clozeKeys';
 
 	interface Props {
-		before: string;
-		after: string;
+		/** A plain string, or parts where `{ gap: true }` is an extra gap. */
+		before: string | ClozePart[];
+		after: string | ClozePart[];
 		choices: string[];
 		answer: string;
 		onResult: (r: { correct: boolean }) => void;
 		language?: string;
+		/** The visually hidden text inside each gap. */
+		gapLabel?: string;
 	}
 
-	let { before, after, choices, answer, onResult, language }: Props = $props();
+	let { before, after, choices, answer, onResult, language, gapLabel = 'blank' }: Props = $props();
+
+	const beforeParts = $derived(typeof before === 'string' ? [before] : before);
+	const afterParts = $derived(typeof after === 'string' ? [after] : after);
 
 	// The picked choice, or null while the question is open. Choosing
 	// finishes the question; a wrong pick is marked and the answer revealed.
@@ -45,11 +52,20 @@
 
 <svelte:window onkeydown={onKeydown} />
 
+{#snippet gap()}
+	<span class="gap extra" class:right={finished && correct} class:wrong={finished && !correct}
+		><span class="sr-only">{gapLabel}</span>{finished ? answer : '＿＿'}</span
+	>
+{/snippet}
+
 <div class="cloze">
 	<p class="sentence" lang={language}>
-		{before}<span class="gap" class:right={finished && correct} class:wrong={finished && !correct}
-			>{finished ? answer : '＿＿'}</span
-		>{after}
+		{#each beforeParts as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap()}{/if}{/each}<span
+			class="gap"
+			class:right={finished && correct}
+			class:wrong={finished && !correct}
+			><span class="sr-only">{gapLabel}</span>{finished ? answer : '＿＿'}</span
+		>{#each afterParts as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap()}{/if}{/each}
 	</p>
 
 	<ul class="choices" aria-label="Choices">
@@ -95,11 +111,24 @@
 	}
 
 	.gap {
+		position: relative;
 		display: inline-block;
 		min-width: 2rem;
 		margin: 0 0.15rem;
 		border-bottom: 2px solid color-mix(in srgb, currentColor 50%, transparent);
 		text-align: center;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
 	}
 
 	.gap.right {
