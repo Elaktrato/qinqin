@@ -4,6 +4,7 @@
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
+	import CardManager from '$lib/components/CardManager.svelte';
 	import { workspaces } from '$lib/workspaces';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
@@ -164,6 +165,25 @@
 			loadError = message(err, 'Could not load your decks.');
 		} finally {
 			if (seq === requestSeq) loading = false;
+		}
+	}
+
+	/**
+	 * refreshData re-reads decks, cards and reviews after a card change
+	 * without the page-wide loading state, so counts and the queue preview
+	 * follow the write.
+	 */
+	async function refreshData(): Promise<void> {
+		if (activeWorkspaceId === null) return;
+		const seq = requestSeq;
+		try {
+			const data = await loadStudyData(activeWorkspaceId);
+			if (seq !== requestSeq) return;
+			decks = data.decks;
+			cards = data.cards;
+			reviews = data.reviews;
+		} catch (err) {
+			if (seq === requestSeq) deckError = message(err, 'Could not reload your cards.');
 		}
 	}
 
@@ -664,6 +684,8 @@
 					<p class="error" role="alert">{deckError}</p>
 				{/if}
 			</section>
+
+			<CardManager {cards} decks={allDecks} onchanged={refreshData} />
 		{:else}
 			<section aria-labelledby="levels-heading">
 				<h2 id="levels-heading">Level</h2>
