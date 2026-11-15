@@ -12,9 +12,19 @@
 		windowStart,
 		windowSummary
 	} from '$lib/activity/activity';
-	import { activityViewFor, effectiveScope, toggleHidden } from '$lib/activity/heatmapState';
 	import {
-		DEFAULT_ACTIVITY_VIEW,
+		activityViewFor,
+		chipLabel,
+		createSaveQueue,
+		createSequencer,
+		effectiveScope,
+		heatmapStatus,
+		initialPrefs,
+		prefsChanged,
+		prefsLoaded,
+		toggleHidden
+	} from '$lib/activity/heatmapState';
+	import {
 		loadActivityView,
 		saveActivityView,
 		type StoredActivityView
@@ -35,12 +45,18 @@
 	// client-side scoring fallback: the rules live in plugin manifests.
 
 	let response = $state<ActivityResponse | null>(null);
-	let stored = $state<StoredActivityView>({ ...DEFAULT_ACTIVITY_VIEW, hidden: [] });
+	let prefs = $state(initialPrefs());
 	let loading = $state(true);
 	let error = $state('');
 
 	// Guards against a slow earlier request overwriting a newer view.
-	let requestSeq = 0;
+	const requests = createSequencer();
+	// Saves run one at a time; the last change wins.
+	const saves = createSaveQueue(saveActivityView, (err) =>
+		console.warn('activity view not saved', err)
+	);
+
+	const stored = $derived(prefs.stored);
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
 	const scope = $derived(effectiveScope(stored.scope, workspaceId !== null));
@@ -61,48 +77,49 @@
 	const chipPoints = $derived(
 		sourcePoints(foldActivity(response ?? empty, { ...view, hidden: [] }, new Date()))
 	);
+	const allHidden = $derived(sources.length > 0 && sources.every((s) => stored.hidden.includes(s.type)));
 	const days = $derived([...byDay.values()]);
 	const cells = $derived(
 		days.map((day) => ({
 			day: day.day,
-			title: dayTooltip(day, sources, workspaceName),
+			title: dayTooltip(day, sources, workspaceName, allHidden),
 			level: levelFor(day.total)
 		}))
 	);
 	const windowTotal = $derived(days.reduce((sum, day) => sum + day.total, 0));
 	const summary = $derived(windowSummary(byDay, sources, scope));
-	const allHidden = $derived(sources.length > 0 && sources.every((s) => stored.hidden.includes(s.type)));
 	const weeks = Math.round(HEATMAP_DAYS / 7);
+	// Content (and the scope switch) appears only once data and view are both in.
 	const status = $derived<WidgetStatus>(
-		response === null ? (loading ? 'loading' : 'error') : 'ready'
+		heatmapStatus({ hasData: response !== null, loading, prefsLoaded: prefs.loaded })
 	);
 
 	async function load(): Promise<void> {
-		const seq = ++requestSeq;
+		const seq = requests.next();
 		error = '';
 		if (response === null) loading = true;
 		try {
 			const now = new Date();
 			const next = await fetchActivity(dayKey(windowStart(now)), dayKey(now));
-			if (seq !== requestSeq) return;
+			if (!requests.isCurrent(seq)) return;
 			response = next;
 		} catch (err) {
-			if (seq !== requestSeq) return;
+			if (!requests.isCurrent(seq)) return;
 			if (response === null) error = errorMessage(err, 'Could not load your activity.');
 			else console.warn('activity refresh failed', err);
 		} finally {
-			if (seq === requestSeq) loading = false;
+			if (requests.isCurrent(seq)) loading = false;
 		}
 	}
 
 	function remember(next: StoredActivityView): void {
-		stored = next;
-		saveActivityView(next).catch((err: unknown) => console.warn('activity view not saved', err));
+		prefs = prefsChanged(prefs, next);
+		void saves.push(next);
 	}
 
 	onMount(() => {
 		void load();
-		void loadActivityView().then((view) => (stored = view));
+		void loadActivityView().then((view) => (prefs = prefsLoaded(prefs, view)));
 		return onEventLogChange(() => void load());
 	});
 </script>
@@ -116,6 +133,7 @@
 	onretry={() => void load()}
 >
 	{#snippet actions()}
+		{#if status === 'ready'}
 		<fieldset class="scope">
 			<legend class="sr-only">Show activity for</legend>
 			<label class:disabled={workspaceId === null}>
@@ -140,6 +158,7 @@
 				All workspaces
 			</label>
 		</fieldset>
+		{/if}
 	{/snippet}
 
 	{#if sources.length > 0}
@@ -149,6 +168,7 @@
 					type="button"
 					class="chip"
 					aria-pressed={!stored.hidden.includes(source.type)}
+					aria-label={chipLabel(source.label, chipPoints[source.type] ?? 0)}
 					onclick={() => remember({ ...stored, hidden: toggleHidden(stored.hidden, source.type) })}
 				>
 					{source.label}
@@ -205,7 +225,7 @@
 	}
 
 	.scope label.disabled {
-		opacity: 0.5;
+		color: color-mix(in srgb, currentColor 70%, transparent);
 		cursor: default;
 	}
 

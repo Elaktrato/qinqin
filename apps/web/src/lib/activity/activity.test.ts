@@ -179,6 +179,11 @@ describe('dayTooltip', () => {
 		);
 	});
 
+	it('says hidden, not no activity, when every type is hidden', () => {
+		const day = foldActivity(resp([]), ALL, NOW).get('2026-11-13')!;
+		expect(dayTooltip(day, SOURCES, names, true)).toBe('2026-11-13: all activity types hidden');
+	});
+
 	it('reports an empty day', () => {
 		const day = foldActivity(resp([]), ALL, NOW).get('2026-11-13')!;
 		expect(dayTooltip(day, SOURCES, names)).toBe('2026-11-13: no activity');

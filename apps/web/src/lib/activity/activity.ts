@@ -126,8 +126,10 @@ export function sourcePoints(map: Map<string, DayActivity>): Record<string, numb
 export function dayTooltip(
 	day: DayActivity,
 	sources: readonly ActivitySource[],
-	workspaceName: (id: number) => string
+	workspaceName: (id: number) => string,
+	allHidden = false
 ): string {
+	if (allHidden) return `${day.day}: all activity types hidden`;
 	if (day.total <= 0) return `${day.day}: no activity`;
 	const parts: string[] = [];
 	for (const source of sources) {
