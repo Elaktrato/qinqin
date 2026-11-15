@@ -17,6 +17,9 @@ import {
   deleteCards,
   deleteDeck,
   saveDeckCardTypes,
+  dropSiblingCards,
+  skipKind,
+  unskipKind,
   loadStudyData,
   moveCards,
   restoreCards,
@@ -522,6 +525,128 @@ describe("study store", () => {
         `/api/plugins/${PLUGIN_ID}/data/deck:d1?workspace=${WORKSPACE_ID}`,
         cfgUrl("d1"),
       ]);
+    });
+  });
+
+  describe("sibling kinds of a word", () => {
+    const rowUrl = (id: string) =>
+      `/api/plugins/${PLUGIN_ID}/data/card:${id}?workspace=${WORKSPACE_ID}`;
+    const typed = (id: string, kind: string, entryId: number): StudyCard => ({
+      ...card(id, entryId, ["general"]),
+      kind,
+    }) as StudyCard;
+
+    function stub(rows: StudyCard[]): void {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "DELETE") return new Response(null, { status: 204 });
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: rows.map((row) => pluginRow(`card:${row.id}`, row)),
+        });
+      });
+    }
+    const deletes = () =>
+      calls()
+        .filter(([, init]) => init?.method === "DELETE")
+        .map(([url]) => String(url));
+
+    it("dropSiblingCards tombstones the sibling and adds its kind to the vocab row", async () => {
+      const vocab = typed("c-vocab-7", "vocab", 7);
+      const reverse = typed("c-reverse-7", "reverse", 7);
+      const cloze = typed("c-cloze-7", "cloze", 7);
+      stub([vocab, reverse, cloze]);
+
+      const previous = await dropSiblingCards(["c-reverse-7"]);
+
+      expect(deletes()).toEqual([rowUrl("c-reverse-7")]);
+      expect(putBodies()).toEqual([
+        { url: rowUrl("c-vocab-7"), body: { ...vocab, skipKinds: ["reverse"] } },
+      ]);
+      expect(previous.map((row) => row.id).sort()).toEqual(["c-reverse-7", "c-vocab-7"]);
+    });
+
+    it("undo through restoreCards brings back the vocab row and the sibling", async () => {
+      const vocab = typed("c-vocab-7", "vocab", 7);
+      const reverse = typed("c-reverse-7", "reverse", 7);
+      stub([vocab, reverse]);
+      const previous = await dropSiblingCards(["c-reverse-7"]);
+      vi.mocked(fetch).mockClear();
+      stub([vocab]);
+      await restoreCards(previous);
+      const bodies = putBodies();
+      expect(bodies.map((b) => b.url).sort()).toEqual(
+        [rowUrl("c-reverse-7"), rowUrl("c-vocab-7")].sort(),
+      );
+      const restoredVocab = bodies.find((b) => b.url === rowUrl("c-vocab-7"))!.body as StudyCard;
+      expect("skipKinds" in restoredVocab).toBe(false);
+    });
+
+    it("a stray sibling without a vocab row is only tombstoned", async () => {
+      stub([typed("c-cloze-9", "cloze", 9)]);
+      await dropSiblingCards(["c-cloze-9"]);
+      expect(deletes()).toEqual([rowUrl("c-cloze-9")]);
+      expect(putBodies()).toEqual([]);
+    });
+
+    it("refuses a vocab id", async () => {
+      stub([typed("c-vocab-7", "vocab", 7)]);
+      await expect(dropSiblingCards(["c-vocab-7"])).rejects.toThrow();
+      expect(deletes()).toEqual([]);
+    });
+
+    it("skipKind and unskipKind write only the vocab rows", async () => {
+      const vocab = typed("c-vocab-7", "vocab", 7);
+      stub([vocab]);
+      const before = await skipKind(7, "cloze");
+      expect(before).toEqual([vocab]);
+      expect(putBodies()[0]!.body).toEqual({ ...vocab, skipKinds: ["cloze"] });
+
+      vi.mocked(fetch).mockClear();
+      const skipped = { ...vocab, skipKinds: ["reverse", "cloze"] } as StudyCard;
+      stub([skipped]);
+      const prev = await unskipKind(7, "cloze");
+      expect(prev).toEqual([skipped]);
+      expect(putBodies()[0]!.body).toEqual({ ...vocab, skipKinds: ["reverse"] });
+    });
+
+    it("unskipKind drops the field when the list empties; no vocab row is an error", async () => {
+      const skipped = { ...typed("c-vocab-7", "vocab", 7), skipKinds: ["reverse"] } as StudyCard;
+      stub([skipped]);
+      await unskipKind(7, "reverse");
+      expect("skipKinds" in (putBodies()[0]!.body as object)).toBe(false);
+      stub([]);
+      await expect(skipKind(8, "reverse")).rejects.toThrow();
+    });
+
+    it("deleting the word also tombstones its reverse and cloze cards", async () => {
+      stub([
+        typed("c-vocab-7", "vocab", 7),
+        typed("c-reverse-7", "reverse", 7),
+        typed("c-cloze-7", "cloze", 7),
+      ]);
+      await deleteCards(["c-vocab-7"]);
+      expect(deletes().sort()).toEqual(
+        [rowUrl("c-vocab-7"), rowUrl("c-reverse-7"), rowUrl("c-cloze-7")].sort(),
+      );
+    });
+
+    it("moving the word moves its reverse and cloze cards", async () => {
+      vi.mocked(fetch).mockImplementation(async (_i, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deck:d2", deck("d2", "Two")),
+            ...["c-vocab-7:vocab", "c-reverse-7:reverse", "c-cloze-7:cloze"].map((spec) => {
+              const [id, kind] = spec.split(":");
+              return pluginRow(`card:${id}`, typed(id!, kind!, 7));
+            }),
+          ],
+        });
+      });
+      await moveCards(["c-vocab-7"], "d2");
+      expect(putBodies().map((b) => b.url).sort()).toEqual(
+        [rowUrl("c-vocab-7"), rowUrl("c-reverse-7"), rowUrl("c-cloze-7")].sort(),
+      );
     });
   });
 

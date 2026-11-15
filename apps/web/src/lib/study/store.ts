@@ -712,6 +712,150 @@ export async function moveCards(
   return moved;
 }
 
+/**
+ * vocabRowsOf: every stored vocab row (duplicates included) of an entry.
+ * skipKinds lives on them, so all of them are rewritten together.
+ */
+function vocabRowsOf(all: readonly StudyCard[], entryId: number): StudyCard[] {
+  return all.filter((card) => card.kind === "vocab" && card.entryId === entryId);
+}
+
+function withSkip(row: StudyCard, skipKinds: readonly StudyCardKind[]): StudyCard {
+  const { skipKinds: _old, ...rest } = row;
+  void _old;
+  const clean = cleanSkipKinds(skipKinds);
+  return clean.length === 0 ? rest : { ...rest, skipKinds: clean };
+}
+
+/** Writes new skipKinds to the entry's vocab rows; returns their previous state. */
+async function rewriteSkips(
+  workspaceId: number,
+  rows: readonly StudyCard[],
+  next: (row: StudyCard) => StudyCardKind[],
+): Promise<StudyCard[]> {
+  const changed: StudyCard[] = [];
+  for (const row of rows) {
+    const updated = withSkip(row, next(row));
+    if (JSON.stringify(updated.skipKinds ?? []) === JSON.stringify(row.skipKinds ?? [])) continue;
+    try {
+      await putData(workspaceId, cardRowKey(row.id), updated);
+      changed.push(row);
+    } catch (err) {
+      throw new PartialCardsError(
+        errorMessage(err, "Could not update the word."),
+        changed,
+        err,
+      );
+    }
+  }
+  return changed;
+}
+
+function assertSkippable(kind: StudyCardKind): void {
+  if (kind === "vocab") throw new Error("the vocab card of a word cannot be skipped");
+}
+
+/**
+ * skipKind switches one non-vocab kind off for a word (even before its
+ * card exists): the kind joins `skipKinds` on the word's vocab row(s), so
+ * lazy creation does not bring the card back. Returns the previous vocab
+ * rows for undo through restoreCards. A word without a vocab card has
+ * nowhere to keep the switch: that is an error.
+ */
+export async function skipKind(
+  entryId: number,
+  kind: StudyCardKind,
+): Promise<StudyCard[]> {
+  assertSkippable(kind);
+  const workspaceId = requireWorkspaceId();
+  const { cards } = await fetchStudyData(workspaceId);
+  const rows = vocabRowsOf(cards, entryId);
+  if (rows.length === 0) throw new Error("this word has no vocab card to hold the setting");
+  return rewriteSkips(workspaceId, rows, (row) => [...(row.skipKinds ?? []), kind]);
+}
+
+/** unskipKind removes a kind from the word's `skipKinds`; returns the previous rows for undo. */
+export async function unskipKind(
+  entryId: number,
+  kind: StudyCardKind,
+): Promise<StudyCard[]> {
+  assertSkippable(kind);
+  const workspaceId = requireWorkspaceId();
+  const { cards } = await fetchStudyData(workspaceId);
+  const rows = vocabRowsOf(cards, entryId);
+  if (rows.length === 0) throw new Error("this word has no vocab card to hold the setting");
+  return rewriteSkips(workspaceId, rows, (row) =>
+    (row.skipKinds ?? []).filter((skipped) => skipped !== kind),
+  );
+}
+
+/**
+ * dropSiblingCards removes one non-vocab card (and its stored duplicates)
+ * of a word without removing the word: the kinds join the word's vocab
+ * `skipKinds` first, then the rows are tombstoned. Returns the previous
+ * rows (vocab rows and siblings) for restoreCards, which brings both
+ * back; a sibling with no vocab row is just tombstoned (nothing would
+ * recreate it). A vocab id is an error (use deleteCards). A failure
+ * throws PartialCardsError with the rows that did change.
+ */
+export async function dropSiblingCards(
+  ids: readonly string[],
+): Promise<StudyCard[]> {
+  const workspaceId = requireWorkspaceId();
+  if (ids.length === 0) return [];
+  const { cards } = await fetchStudyData(workspaceId);
+  const asked = cards.filter((card) => ids.includes(card.id));
+  if (asked.some((card) => card.kind === "vocab")) {
+    throw new Error("only the other cards of a word can be removed on their own");
+  }
+  const keys = new Set(
+    asked.map((card) => cardKey(card.kind, card.entryId, card.sentenceId)),
+  );
+  const siblings = cards.filter(
+    (card) =>
+      card.kind !== "vocab" &&
+      keys.has(cardKey(card.kind, card.entryId, card.sentenceId)),
+  );
+  const kindsByEntry = new Map<number, StudyCardKind[]>();
+  for (const sibling of siblings) {
+    kindsByEntry.set(sibling.entryId, [
+      ...(kindsByEntry.get(sibling.entryId) ?? []),
+      sibling.kind,
+    ]);
+  }
+  const previous: StudyCard[] = [];
+  for (const [entryId, kinds] of kindsByEntry) {
+    const rows = vocabRowsOf(cards, entryId);
+    try {
+      previous.push(
+        ...(await rewriteSkips(workspaceId, rows, (row) => [
+          ...(row.skipKinds ?? []),
+          ...kinds,
+        ])),
+      );
+    } catch (err) {
+      if (err instanceof PartialCardsError) {
+        throw new PartialCardsError(err.message, [...previous, ...err.rows], err.cause);
+      }
+      throw err;
+    }
+  }
+  for (const row of siblings) {
+    try {
+      await deleteData(workspaceId, cardRowKey(row.id));
+      previous.push(row);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) continue;
+      throw new PartialCardsError(
+        errorMessage(err, "Could not remove the cards."),
+        previous,
+        err,
+      );
+    }
+  }
+  return previous;
+}
+
 /** cardsInDecks keeps the cards that belong to at least one of `deckIds`. */
 export function cardsInDecks(
   cards: readonly StudyCard[],
