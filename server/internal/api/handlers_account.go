@@ -23,6 +23,22 @@ func readAccountBody(w http.ResponseWriter, r *http.Request, v any) bool {
 	return true
 }
 
+// readAccountBodyStrict is readAccountBody that refuses unknown keys, so a
+// misspelled setting is a 400 instead of a silent no-op.
+func readAccountBodyStrict(w http.ResponseWriter, r *http.Request, v any) bool {
+	body, ok := readAuthBody(w, r)
+	if !ok {
+		return false
+	}
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(v); err != nil {
+		writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+		return false
+	}
+	return true
+}
+
 // reauth spends one token of the user's re-authentication budget; false
 // means a 429 was written. The returned func gives the token back (call it
 // when the password turned out right).

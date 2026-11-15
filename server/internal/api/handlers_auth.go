@@ -215,8 +215,46 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		if res.User.MustChangePassword {
 			status = "password_change_required"
 		}
+		s.hideEmailWhenOff(r, &res.User)
 		writeJSON(w, http.StatusOK, map[string]any{"status": status, "token": res.Token, "user": res.User})
 	}
+}
+
+// hideEmailWhenOff blanks a stored email in the user object while the
+// instance email policy is off: nothing personal is shown for a feature
+// that is switched off (the address is kept and returns with the policy).
+func (s *server) hideEmailWhenOff(r *http.Request, u *model.User) {
+	if u.Email == nil {
+		return
+	}
+	if set, err := auth.LoadSettings(r.Context(), s.db); err == nil && set.EmailPolicy == "off" {
+		u.Email, u.EmailVerified = nil, false
+	}
+}
+
+// handleAuthOptions serves GET /api/auth/options: the instance-level
+// switches the sign-in and register pages (and the Kotlin client) need
+// before anyone is signed in. Public, never cached.
+func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
+	set, err := auth.LoadSettings(r.Context(), s.db)
+	var count int
+	if err == nil {
+		err = s.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&count)
+	}
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	mail := s.mailConfigured()
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, map[string]any{
+		"bootstrap":         count == 0,
+		"registration":      set.Registration,
+		"emailPolicy":       set.EmailPolicy,
+		"passwordReset":     mail,
+		"emailCodeLogin":    mail && set.EmailCodeLogin,
+		"passwordMinLength": auth.MinPasswordRunes,
+	})
 }
 
 // handleLogout deletes the session the request came in on (204). A
@@ -239,6 +277,7 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 	if p == nil {
 		return
 	}
+	s.hideEmailWhenOff(r, &p.User)
 	// me is the user object plus what the session may do: "restriction" is
 	// "", "password_change" or "mfa_enrollment".
 	writeJSON(w, http.StatusOK, struct {
