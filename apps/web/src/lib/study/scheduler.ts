@@ -49,7 +49,7 @@ function instant(ts: string): number {
  * anything; ts-fsrs throws on unknown grades and would otherwise break
  * every queue build.
  */
-function isValidReview(review: ReviewEvent): boolean {
+export function isValidReview(review: ReviewEvent): boolean {
 	if (review === null || typeof review !== 'object') return false;
 	if (typeof review.ts !== 'string' || Number.isNaN(Date.parse(review.ts))) return false;
 	const payload: unknown = review.payload;
@@ -68,7 +68,7 @@ function byId(a: { id: string }, b: { id: string }): number {
  * two events written in the same millisecond still replay in the same
  * order on every device.
  */
-function sortedReviews(reviews: readonly ReviewEvent[]): ReviewEvent[] {
+export function sortedReviews(reviews: readonly ReviewEvent[]): ReviewEvent[] {
 	return [...reviews].sort((a, b) => instant(a.ts) - instant(b.ts) || byId(a, b));
 }
 
