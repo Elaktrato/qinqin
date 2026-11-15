@@ -60,6 +60,8 @@ func DefaultAuthPolicy() AuthPolicy {
 			// Reset-link check and use, per client: 10 burst, one more per
 			// 30 s. The tokens are 256-bit; the budget only bounds noise.
 			"reset": {Burst: 10, Every: 30 * time.Second, MaxKeys: authTableCap},
+			// Test mails an administrator may send: 10 per hour.
+			"smtp-test": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 		},
 	}
 }
@@ -265,3 +267,6 @@ func (s *server) clientTake(w http.ResponseWriter, r *http.Request, subject stri
 	}
 	return k, true
 }
+
+// int64Key is the limiter key of a user id.
+func int64Key(id int64) string { return strconv.FormatInt(id, 10) }

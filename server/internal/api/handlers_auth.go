@@ -349,7 +349,7 @@ func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
-	mail := s.mailConfigured()
+	mail := s.mailConfigured(r.Context())
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, http.StatusOK, map[string]any{
 		"bootstrap":         count == 0,

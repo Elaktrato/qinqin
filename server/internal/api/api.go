@@ -17,6 +17,7 @@ import (
 	"qinqin/internal/dict"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
+	"qinqin/internal/mail"
 )
 
 // server carries the shared database handle and data directory for all
@@ -54,10 +55,11 @@ type server struct {
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
 
-	authPolicy *AuthPolicy // nil: DefaultAuthPolicy
-	limits     *authLimits // sign-in throttling state, built by New
-	hash       hashers     // password hashing entry points (tests swap them)
-	users      *auth.Users // admin changes of the users table (last-admin rule, deletion)
+	authPolicy *AuthPolicy   // nil: DefaultAuthPolicy
+	limits     *authLimits   // sign-in throttling state, built by New
+	hash       hashers       // password hashing entry points (tests swap them)
+	mail       *mail.Service // nil: mail is not configured and cannot be
+	users      *auth.Users   // admin changes of the users table (last-admin rule, deletion)
 }
 
 // Option configures optional parts of the server.
@@ -66,6 +68,10 @@ type Option func(*server)
 // WithAI mounts the AI service the /api/ai routes use; without it they
 // report AI as disabled.
 func WithAI(svc *ai.Service) Option { return func(s *server) { s.ai = svc } }
+
+// WithMail mounts the mail service (SMTP settings, queue); without it every
+// mail-dependent feature is hidden.
+func WithMail(svc *mail.Service) Option { return func(s *server) { s.mail = svc } }
 
 // WithOCR mounts the offline reader the transcribe route and the
 // capabilities use; without it offline reading is unavailable.
@@ -144,6 +150,10 @@ func (s *server) routes() []route {
 		{"GET /api/auth/options", s.handleAuthOptions, accPublic, nil},
 		{"GET /api/admin/settings/auth", s.handleGetAuthSettings, accAdmin, nil},
 		{"PATCH /api/admin/settings/auth", s.handlePatchAuthSettings, accAdmin, nil},
+		{"GET /api/admin/settings/smtp", s.handleGetSMTP, accAdmin, nil},
+		{"PUT /api/admin/settings/smtp", s.handlePutSMTP, accAdmin, nil},
+		{"DELETE /api/admin/settings/smtp", s.handleDeleteSMTP, accAdmin, nil},
+		{"POST /api/admin/settings/smtp/test", s.handleTestSMTP, accAdmin, nil},
 		{"POST /api/auth/invite/check", s.handleCheckInvite, accPublic, nil},
 		{"POST /api/admin/invites", s.handleCreateInvite, accAdmin, nil},
 		{"GET /api/admin/invites", s.handleListInvites, accAdmin, nil},
