@@ -1,11 +1,18 @@
 <script lang="ts">
-	import { deleteCards, moveCards, restoreCards } from '$lib/study/store';
+	import { onDestroy, tick } from 'svelte';
+	import {
+		PartialCardsError,
+		deleteCards,
+		moveCards,
+		restoreCards
+	} from '$lib/study/store';
 	import { rangeIds, toggleId, wordsOfCards } from '$lib/study/cardSelection';
 	import type { Deck, StudyCard } from '$lib/study/types';
 
 	// Lists the words (vocab cards) of the workspace so they can be moved
 	// between decks or deleted, one or many at once. Every change can be
 	// undone from the toast; `onchanged` tells the page to reload.
+	// Only the newest change is undoable: a new one replaces the toast.
 	let {
 		cards,
 		decks,
@@ -18,15 +25,27 @@
 
 	const UNDO_MS = 10000;
 
+	interface UndoSlot {
+		text: string;
+		rows: StudyCard[];
+		// A move-undo must not revive a card another tab deleted since.
+		onlyLive: boolean;
+	}
+
+	let root: HTMLDetailsElement | undefined = $state();
 	let filter = $state('all');
 	let selected = $state<string[]>([]);
 	let target = $state('');
-	let busy = $state(false);
+	let pending = $state(0);
 	let error = $state('');
 	let confirming = $state(false);
 	let anchor = $state<string | null>(null);
-	let undo = $state<{ text: string; run: () => Promise<void> } | null>(null);
+	let undo = $state<UndoSlot | null>(null);
 	let undoTimer: ReturnType<typeof setTimeout> | undefined;
+	// Writes run one after another, so an old undo can never overlap or
+	// follow a newer delete it would resurrect.
+	let chain: Promise<unknown> = Promise.resolve();
+	const busy = $derived(pending > 0);
 
 	const deckName = $derived(new Map(decks.map((deck) => [deck.id, deck.name])));
 	const words = $derived(wordsOfCards(cards));
@@ -38,6 +57,15 @@
 	const chosen = $derived(selected.filter((id) => visibleIds.includes(id)));
 	const allChosen = $derived(visible.length > 0 && chosen.length === visible.length);
 
+	// The confirmation belongs to the selection it was opened for.
+	$effect(() => {
+		void chosen.length;
+		void filter;
+		confirming = false;
+	});
+
+	onDestroy(() => clearTimeout(undoTimer));
+
 	function label(card: StudyCard): string {
 		return card.written ?? `Entry ${card.entryId}`;
 	}
@@ -46,27 +74,43 @@
 		return card.deckIds.map((id) => deckName.get(id) ?? id).join(', ');
 	}
 
-	function offerUndo(text: string, run: () => Promise<void>): void {
+	function startTimer(): void {
 		clearTimeout(undoTimer);
-		undo = { text, run };
-		undoTimer = setTimeout(() => (undo = null), UNDO_MS);
+		undoTimer = setTimeout(() => {
+			// Never expire under a running write or a hovering pointer.
+			if (busy) startTimer();
+			else undo = null;
+		}, UNDO_MS);
 	}
 
-	async function run(action: () => Promise<void>): Promise<void> {
-		busy = true;
-		error = '';
-		try {
-			await action();
-		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : 'That did not work.';
-		} finally {
-			// A failed write may still have landed: always show the stored state.
-			await onchanged();
-			busy = false;
-		}
+	function offerUndo(slot: UndoSlot): void {
+		undo = slot;
+		startTimer();
+	}
+
+	function run(action: () => Promise<void>): Promise<void> {
+		const task = chain.then(async () => {
+			pending += 1;
+			error = '';
+			try {
+				await action();
+			} catch (err) {
+				error = err instanceof Error && err.message ? err.message : 'That did not work.';
+			} finally {
+				// A failed write may still have landed: always show the stored state.
+				try {
+					await onchanged();
+				} finally {
+					pending -= 1;
+				}
+			}
+		});
+		chain = task.catch(() => undefined);
+		return task;
 	}
 
 	function pick(card: StudyCard, event: MouseEvent): void {
+		const input = event.currentTarget as HTMLInputElement;
 		if (event.shiftKey && anchor !== null) {
 			const range = rangeIds(visibleIds, anchor, card.id);
 			selected = [...new Set([...selected, ...range])];
@@ -74,24 +118,50 @@
 			selected = toggleId(selected, card.id);
 		}
 		anchor = card.id;
+		// State drives the checkbox; the native toggle of a shift-click on
+		// an already selected row must not leave it out of step.
+		void tick().then(() => (input.checked = chosen.includes(card.id)));
 	}
 
 	function toggleAll(): void {
 		selected = allChosen ? [] : [...visibleIds];
 	}
 
+	async function focusRow(index: number): Promise<void> {
+		await tick();
+		const inputs = root?.querySelectorAll<HTMLInputElement>('.rows .pick input');
+		if (inputs !== undefined && inputs.length > 0) {
+			inputs[Math.min(index, inputs.length - 1)].focus();
+		} else {
+			root?.querySelector<HTMLElement>('summary')?.focus();
+		}
+	}
+
 	async function remove(ids: string[]): Promise<void> {
 		confirming = false;
+		const index = Math.min(...ids.map((id) => visibleIds.indexOf(id)).filter((i) => i >= 0));
 		await run(async () => {
-			const removed = await deleteCards(ids);
+			let removed: StudyCard[];
+			let failure: unknown = null;
+			try {
+				removed = await deleteCards(ids);
+			} catch (err) {
+				if (!(err instanceof PartialCardsError)) throw err;
+				// Part of it landed: that part stays undoable.
+				removed = err.rows;
+				failure = err;
+			}
 			selected = selected.filter((id) => !ids.includes(id));
-			offerUndo(
-				ids.length === 1 ? 'Card deleted.' : `${ids.length} cards deleted.`,
-				async () => {
-					await restoreCards(removed);
-				}
-			);
+			if (removed.length > 0) {
+				offerUndo({
+					text: ids.length === 1 ? 'Card deleted.' : `${ids.length} cards deleted.`,
+					rows: removed,
+					onlyLive: false
+				});
+			}
+			if (failure !== null) throw failure;
 		});
+		await focusRow(Number.isFinite(index) ? index : 0);
 	}
 
 	async function move(): Promise<void> {
@@ -99,34 +169,67 @@
 		const ids = [...chosen];
 		const name = deckName.get(target) ?? target;
 		await run(async () => {
-			const before = await moveCards(ids, target);
+			let before: StudyCard[];
+			let failure: unknown = null;
+			try {
+				before = await moveCards(ids, target);
+			} catch (err) {
+				if (!(err instanceof PartialCardsError)) throw err;
+				before = err.rows;
+				failure = err;
+			}
 			selected = [];
-			offerUndo(
-				ids.length === 1 ? `Moved to ${name}.` : `Moved ${ids.length} cards to ${name}.`,
-				async () => {
-					await restoreCards(before);
-				}
-			);
+			if (before.length > 0) {
+				offerUndo({
+					text: ids.length === 1 ? `Moved to ${name}.` : `Moved ${ids.length} cards to ${name}.`,
+					rows: before,
+					onlyLive: true
+				});
+			}
+			if (failure !== null) throw failure;
 		});
 	}
 
 	async function undoLast(): Promise<void> {
-		const current = undo;
-		if (current === null) return;
+		if (undo === null || busy) return;
 		clearTimeout(undoTimer);
-		undo = null;
-		await run(current.run);
+		await run(async () => {
+			const slot = undo;
+			if (slot === null) return;
+			try {
+				await restoreCards(slot.rows, { onlyLive: slot.onlyLive });
+				// Cleared only after it worked, so a failed undo can be retried.
+				undo = null;
+			} catch (err) {
+				if (err instanceof PartialCardsError) undo = { ...slot, rows: err.rows };
+				startTimer();
+				throw err;
+			}
+		});
 	}
 
 	function rowKey(event: KeyboardEvent, card: StudyCard): void {
-		if (event.key === 'Delete' && !busy) {
+		if ((event.key === 'Delete' || event.key === 'Backspace') && !busy) {
 			event.preventDefault();
 			void remove([card.id]);
 		}
 	}
+
+	function openConfirm(): void {
+		confirming = true;
+		void tick().then(() => root?.querySelector<HTMLElement>('.confirm .secondary')?.focus());
+	}
+
+	function confirmKey(event: KeyboardEvent): void {
+		if (event.key === 'Escape') {
+			event.stopPropagation();
+			confirming = false;
+			root?.querySelector<HTMLElement>('.actions .danger')?.focus();
+		}
+	}
 </script>
 
-<details class="manager">
+<details class="manager" bind:this={root}>
 	<summary>Manage cards ({words.length})</summary>
 
 	{#if words.length === 0}
@@ -148,6 +251,11 @@
 			</label>
 		</div>
 
+		<p class="hint">
+			Deleting a word removes it from every deck, together with its sentence, writing and tone
+			cards. Moving a word puts it and those cards in the chosen deck only.
+		</p>
+
 		<div class="bar actions" role="group" aria-label="Selected cards">
 			<span>{chosen.length} selected</span>
 			<label>
@@ -166,15 +274,24 @@
 				type="button"
 				class="danger"
 				disabled={chosen.length === 0 || busy}
-				onclick={() => (chosen.length > 1 ? (confirming = true) : remove([...chosen]))}
+				onclick={() => (chosen.length > 1 ? openConfirm() : remove([...chosen]))}
 			>
 				Delete
 			</button>
 		</div>
 
-		{#if confirming}
-			<div class="confirm" role="alertdialog" aria-label="Confirm delete">
-				<p>Delete {chosen.length} cards? You can undo this right after.</p>
+		{#if confirming && chosen.length > 1}
+			<div
+				class="confirm"
+				role="alertdialog"
+				aria-label="Confirm delete"
+				tabindex="-1"
+				onkeydown={confirmKey}
+			>
+				<p>
+					Delete {chosen.length} words from every deck, with their other cards? You can undo
+					this right after.
+				</p>
 				<button type="button" class="danger" onclick={() => remove([...chosen])}>
 					Delete {chosen.length} cards
 				</button>
@@ -221,9 +338,16 @@
 
 <div class="toast-region" role="status" aria-live="polite">
 	{#if undo}
-		<div class="toast">
+		<div
+			class="toast"
+			role="presentation"
+			onmouseenter={() => clearTimeout(undoTimer)}
+			onmouseleave={startTimer}
+			onfocusin={() => clearTimeout(undoTimer)}
+			onfocusout={startTimer}
+		>
 			<span>{undo.text}</span>
-			<button type="button" onclick={undoLast}>Undo</button>
+			<button type="button" disabled={busy} onclick={undoLast}>Undo</button>
 		</div>
 	{/if}
 </div>
@@ -318,7 +442,8 @@
 	}
 
 	button {
-		min-height: 2.5rem;
+		min-height: 2.75rem;
+		min-width: 2.75rem;
 	}
 
 	.error {
@@ -327,7 +452,7 @@
 
 	.toast-region {
 		position: fixed;
-		inset: auto 0 4.5rem 0;
+		inset: auto 0 calc(1rem + var(--bottom-bar-height, 0px)) 0;
 		display: flex;
 		justify-content: center;
 		pointer-events: none;

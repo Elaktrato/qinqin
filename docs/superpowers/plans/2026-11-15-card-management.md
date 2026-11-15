@@ -14,8 +14,8 @@ Goal: delete cards (single and bulk, undoable) and move cards between decks, wit
 
 ## UI (study setup page, new `CardManager.svelte`)
 - Section "Cards" below Decks: filter by deck, list of vocab cards (written form or entry id, deck chips), row checkboxes, select-all, shift-click range.
-- Selection bar: "Move to..." deck select + button, "Delete" button. Single delete is immediate with an Undo toast (8 s, focusable button, `role="status"`); bulk delete (more than one card) asks for confirmation first, then also offers Undo.
-- Keyboard: checkboxes and buttons are native; Delete key on a focused row deletes it. Touch: row height of at least 44 px.
+- Selection bar: "Move to..." deck select + button, "Delete" button. Single delete is immediate with an Undo toast (10 s, paused while hovered or focused or while a write runs; focusable button, `role="status"`); bulk delete (more than one card) asks for confirmation first, then also offers Undo.
+- Keyboard: checkboxes and buttons are native; Delete or Backspace on a focused row deletes it; after a delete focus moves to the next row (or the summary when the list is empty). The bulk confirm takes focus (Cancel), Escape cancels, and it closes when the selection or filter changes. Touch: rows and buttons at least 44 px.
 - After every write the page reloads data, so counts and the queue preview update.
 
 ## Rulings
@@ -28,6 +28,17 @@ Goal: delete cards (single and bulk, undoable) and move cards between decks, wit
 - Ruling: re-adding a deleted word revives its old history (same deterministic id) — keeps progress, no duplicate — cost if wrong: a user wanting a clean slate cannot get one.
 - Ruling: no server change and no new API — see Findings — cost if wrong: none.
 - Ruling: bulk delete confirms with `window.confirm`, as deck delete does — consistent with the page — cost if wrong: a custom dialog later.
+
+## Rulings added after review
+- Ruling: deleteCards tombstones companions and duplicates first and the requested vocab row last, treats 404 as already gone, and on failure throws `PartialCardsError` carrying the rows that landed — a half delete never hides the visible card behind live leftovers and the landed part stays undoable — cost if wrong: a failure may still leave leftover companions live (they are only reachable through their word, so they stay harmless).
+- Ruling: undo is retryable — the slot is cleared only after `restoreCards` succeeds and keeps just the unrestored rows on a partial failure — a transient error must not lose the undo — cost if wrong: none.
+- Ruling: writes are serialized through one promise chain and Undo is disabled while a write runs — an old undo can never revive a card deleted afterwards — cost if wrong: a click during a slow write is ignored.
+- Ruling: undoing a move re-checks liveness (`restoreCards(..., {onlyLive: true})`) and skips cards another tab deleted since — a move-undo must not resurrect them; a delete-undo deliberately revives (that is its job) — cost if wrong: a card deleted elsewhere and then undone here after a move simply stays deleted.
+- Ruling: only the newest change is undoable; a new delete or move replaces the toast — one slot is predictable and keeps every undo valid against current state — cost if wrong: an older change cannot be undone from the toast (cards can be moved back by hand; deleted words re-added from the entry page).
+- Ruling: the undo timer is 10 s everywhere, pauses on hover and focus and while a write runs, and is cleared on destroy — long enough to read and reach — cost if wrong: a stale toast lingers.
+- Ruling: the checkbox state is driven by the selection (re-synced after every click), so a shift-click cannot desync it — cost if wrong: none.
+- Ruling: the copy says deleting removes the word from every deck with its other cards, and that a move puts the word and its companions in the chosen deck only — matches what the store does — cost if wrong: none.
+- Caveat: re-adding a deleted word revives its old history only when the card has a deterministic id (`c-<kind>-<entry>`); a legacy ULID-id card re-added gets a new id and starts fresh, its old reviews are orphaned (still counted for EXP).
 
 ## Tasks (test first)
 1. Store tests + `deleteCards`, `restoreCards`, `moveCards` (+ tombstone respected by `loadStudyData`, counts, map input).
