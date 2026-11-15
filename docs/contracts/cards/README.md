@@ -40,3 +40,19 @@ any limit is applied. For virtual items the same rule yields keys `<kind>:<entry
 Case: `{name, now, today, cards: [{id, kind, entryId}], reviews: [{cardId, ts, day, grade}],
 buriedCardIds, buriedKeys}`. `day` is precomputed so the fixture does not depend on zone rules.
 Lists are compared as sets.
+
+## Cloze (`cloze.json`)
+
+One cloze card per entry (`c-cloze-<entryId>`). Per showing, nothing stored:
+
+1. Eligible sentences = the entry's sentences in server order whose text has at least one blank span.
+2. Blank spans (code-point offsets, half-open) = the segmenter matches (`POST /api/segment`) whose
+   `entries[].id` contains the entry id; if none, the non-overlapping leftmost occurrences of the written
+   form and of every form text, longest first. All spans are blanked; the first span is the answer slot,
+   the others show the same gap marker.
+3. Shown sentence = `eligible[n mod len]`, n = the card's number of recorded reviews.
+4. Answer = the code points of the first span.
+
+Case: `{name, cardId, entry: {id, written, forms?: [{text}]}, sentences: [{id, hanzi}],
+matchesBySentence: {"<id>": [{start, end, entries: [{id}]}]}, reviews: n, eligibleIds, shownId (null),
+spans: [[s, e]], before, after, answer}`; `before`/`after` are arrays of strings and `{"gap": true}`.
