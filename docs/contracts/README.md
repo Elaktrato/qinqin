@@ -10,4 +10,4 @@ never to match an implementation.
 
 | Folder | Rule |
 | --- | --- |
-| [`study-day/`](study-day/README.md) | The learner's day: per-user zone history, `dayOf`, `dayStart`, `GET/PUT /api/me/time-zone` |
+| [`study-day/`](study-day/README.md) | The learner's day: per-user zone history, `dayOf`, `dayStart`, `GET/PUT /api/me/time-zone`. Fixtures: `day-of.json`, `day-of-transitions.json`, `day-start.json`, `activity-days.json`, `time-zone-api.json` (Go: `studyday`, `stats`, `api`; web: `lib/time/studyDay.test.ts`) |
