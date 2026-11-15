@@ -153,9 +153,31 @@ workspace shows its language; unnamed workspaces of one language are numbered
 - **Flags.** The header picker and Settings show a flag per language: China for
   `zh`, Japan for `ja`, Spain for `es`, a globe for any other language. A single
   unnamed workspace shows only its flag.
-- **Creating.** The language list comes from `GET /api/languages`: the languages
-  with at least one installed, live dictionary. Languages already in use stay
-  selectable.
+- **Creating.** The language list comes from `GET /api/languages`, which lists
+  every known language: the code packs (`zh`, `ja`), the languages an admin
+  registered and the ones with installed data, as `{code, name, installed, kind}`
+  (`kind` is `code` or `data`; `installed` is true only with live dictionary
+  data). The create form marks those without a dictionary "(no dictionary
+  installed)". Android clients should list the same union, flag or filter on
+  `installed`, and label languages from the code, not from `name`.
+  `POST /api/workspaces` answers `422` "language must be a code like es or
+  pt-br" for a malformed code, and, for a non-admin, `422` "unknown language —
+  ask the administrator to add it" for a code that is not known (a code pack, a
+  registered language, installed data or any live pack of that language); only an
+  admin's request registers a new code. A code that exactly matches a stored one
+  keeps its spelling.
+- **Hidden dictionaries.** A workspace can hide dictionaries of its language from
+  entries and lookups: `settings.hiddenDictionaries` is an array of dictionary ids
+  (`GET /api/dictionaries`); malformed values are ignored. The web filters in the
+  browser, the server does not.
+- **Language administration** (admin token; `403` otherwise):
+  `POST /api/admin/languages {code}` registers a data-only language (`201`, or
+  `200` if present; `422` for a malformed code; `409` "<code> is built in" for a
+  code pack). `DELETE /api/admin/languages/{code}` removes an unused one (`204`;
+  `404` unknown; `409` for a code pack or "still used by: <kinds>" naming what
+  uses it, never who). `GET /api/admin/languages/usage` returns
+  `[{code, workspaces}]`, workspace counts per language across all users
+  (aggregate only).
 - **Defaults.** A user with no workspace gets one unnamed workspace per installed
   language on their first `GET /api/workspaces`. A user who already has a
   workspace is never touched.
