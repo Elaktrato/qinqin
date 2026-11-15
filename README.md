@@ -522,6 +522,9 @@ All library and source routes need a signed-in user, and so does
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
 | `GET /api/ai/status` | The AI state for the caller: `secret` (`ok`, `missing`, `invalid`), `provider`, the stored key (hint, model, state, never the key), the selectable `models`, this hour's `usage`, `available` and, when not, a `reason` (`no_secret`, `invalid_secret`, `no_key`, `key_undecryptable`, `no_provider`) |
 | `GET`/`PUT`/`DELETE /api/ai/key` | Read, store and remove the caller's API key. `PUT {provider?, key?, model?}` checks a new key with the provider (one call toward the hourly limit) before storing it and answers the status; without `key` it changes only the model. Errors are JSON `{error, message}` and never HTTP 401: 409 (`ai_disabled`, `no_key`, `key_undecryptable`, `in_flight`), 422 (`key_rejected`, `quota`, `invalid_key`, `invalid_model`, `model_unavailable`, `bad_request`, ...), 429 `rate_limited` and 503 `busy` with `Retry-After` |
+| `POST /api/journal/review` | `{workspaceId, entryId}`: asks the AI to review one journal entry of the caller's workspace and stores `review:<entryId>` (annotations validated and anchored by the server, then the overall review); answers the stored review. Needs a stored key. Up to 5,000 characters (413 `too_long`, 422 `empty`), 404 for a foreign workspace or an unknown entry, the same AI errors as above. The call finishes and is stored even if the client disconnects |
+| `POST /api/journal/suggestions` | `{workspaceId}`: asks the AI for topic ideas from the workspace's recently reviewed words (at most 60) and the titles and openings (200 characters) of the last 10 entries; stores and answers the `suggestions` document |
+| `GET /api/journal/capabilities?workspace=` | `{ai: <status>, ocr: {available, languageReady, language}}` for one workspace |
 | `GET /api/dictionaries` | Public. The installed dictionaries, each with `license`, `attribution` and `notice` (`""` when the manifest has none) |
 | `POST /api/admin/dictionaries`, `DELETE /api/admin/dictionaries/{id}`, `DELETE /api/admin/schemes/{id}`, `DELETE /api/admin/sentences/{pack}`, `POST /api/admin/plugins` | Admin only: install a dictionary pack (multipart zip in `pack`), soft-delete a dictionary, a level scheme or a sentence pack (entries survive), register a plugin manifest |
 | `GET /api/schemes` | Public. Every installed level scheme with its ordered levels, `license`, `attribution` and `notice` (`""` when the manifest has none) |
@@ -552,7 +555,7 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/admin/plugins` (manifest) | 64 KiB |
 | `PUT /api/plugins/{id}/state` | 64 KiB |
 | `PUT /api/plugins/{id}/data/{key}` | 256 KiB per value; the same cap applies to each plugin-data value inside `POST /api/sync/push` |
-| `PUT /api/ai/key` | 4 KiB |
+| `PUT /api/ai/key`, `POST /api/journal/review`, `POST /api/journal/suggestions` | 4 KiB |
 | `PUT /api/entries/{id}` | 64 KiB |
 | `POST /api/library/books/{id}/highlights` | 16 KiB |
 | `POST /api/library/books/{id}/bookmarks` | 1 KiB |
