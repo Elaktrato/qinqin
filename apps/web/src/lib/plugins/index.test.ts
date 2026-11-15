@@ -94,7 +94,9 @@ describe('reader registration', () => {
 		expect(navPages(webPlugins, []).filter((link) => link.href === '/p/reader')).toEqual([
 			{ slug: 'reader', title: 'Reader', href: '/p/reader' }
 		]);
-		expect(navPages(webPlugins, [state('qinqin-reader', 0, false)])).toEqual([]);
+		expect(
+			navPages(webPlugins, [state('qinqin-reader', 0, false)]).filter((link) => link.slug === 'reader')
+		).toEqual([]);
 	});
 
 	it('gives the reader only its reading-time widget', () => {

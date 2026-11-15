@@ -162,11 +162,16 @@ describe('pluginCredits', () => {
 			webPlugins.map((plugin) => plugin.manifest),
 			coreCredits
 		);
-		expect(result.map((plugin) => plugin.id)).toEqual(['qinqin-reader']);
+		expect(result.map((plugin) => plugin.id)).toEqual(['qinqin-reader', 'qinqin-journal']);
 		expect(result[0].credits.map((credit) => credit.name)).toEqual([
 			'Aozora Bunko',
 			'Project Gutenberg',
 			'opencc-js'
+		]);
+		expect(result[1].credits.map((credit) => credit.name)).toEqual([
+			'Tesseract OCR',
+			'Leptonica',
+			'Anthropic Go SDK'
 		]);
 	});
 });
@@ -191,7 +196,14 @@ describe('declared credits', () => {
 		const shipped = import.meta.glob('../../../static/*', { query: '?url', import: 'default' });
 		const names = new Set(Object.keys(shipped).map((path) => `/${path.split('/').pop()}`));
 		const paths = all.flatMap((credit) => (credit.licenseTexts ?? []).map((text) => text.path));
-		expect(paths.sort()).toEqual(['/ARPHICPL.TXT', '/OPENCC-APACHE-2.0.TXT', '/OPENCC-JS-LICENSE.TXT']);
+		expect(paths.sort()).toEqual([
+			'/ANTHROPIC-SDK-GO-LICENSE.TXT',
+			'/ARPHICPL.TXT',
+			'/LEPTONICA-LICENSE.TXT',
+			'/OPENCC-APACHE-2.0.TXT',
+			'/OPENCC-JS-LICENSE.TXT',
+			'/TESSERACT-APACHE-2.0.TXT'
+		]);
 		for (const path of paths) {
 			expect(localLicensePath(path)).toBe(path);
 			expect(names.has(path), path).toBe(true);
