@@ -106,7 +106,16 @@ describe('auth store', () => {
 			return new Response('boom', { status: 500 });
 		});
 
-		await expect(login('ada', 'pw')).rejects.toMatchObject({ status: 500 });
+		const seen: Array<string | null> = [];
+		const stop = auth.subscribe((state) => seen.push(state.token));
+		try {
+			await expect(login('ada', 'pw')).rejects.toMatchObject({ status: 500 });
+		} finally {
+			stop();
+		}
+		// The store never claimed a session, so the guard cannot bounce the
+		// login page away before it shows the error.
+		expect(seen.every((t) => t === null)).toBe(true);
 
 		expect(localStorage.getItem('qinqin.token')).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
@@ -132,6 +141,12 @@ describe('auth store', () => {
 
 		expect(calls).toEqual(['Bearer token-1']);
 		expect(get(auth)).toEqual({ token: 'token-1', user });
+	});
+
+	it('logout forgets the persisted workspace selection', () => {
+		localStorage.setItem('qinqin.workspace', '3');
+		logout();
+		expect(localStorage.getItem('qinqin.workspace')).toBeNull();
 	});
 
 	it('logout clears storage and the store; the layout guard does the navigation', async () => {

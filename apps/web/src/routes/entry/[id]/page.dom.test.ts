@@ -47,7 +47,11 @@ describe('entry page robustness', () => {
 		vi.mocked(getCharsUnderRadical).mockRejectedValue(new Error('chars down'));
 		render(Page);
 		expect(await screen.findByRole('heading', { name: '你' })).toBeTruthy();
+		// Let the failing optional request settle before asserting nothing broke.
+		await waitFor(() => expect(getCharsUnderRadical).toHaveBeenCalled());
+		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('alert')).toBeNull();
+		expect(screen.getByRole('heading', { name: '你' })).toBeTruthy();
 	});
 
 	it('does not request /chars for a word', async () => {

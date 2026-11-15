@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
-	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
 	import { register } from '$lib/auth';
 
@@ -17,7 +16,7 @@
 		busy = true;
 		try {
 			await register(username.trim(), password);
-			await goto('/');
+			// The layout guard moves a signed-in session off this page.
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409) {
 				error = 'That username is already taken.';

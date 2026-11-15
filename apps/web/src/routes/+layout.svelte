@@ -19,9 +19,9 @@
 	import { startReviewOutbox } from '$lib/study/events';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import {
-		clearSelection,
 		load as loadWorkspaces,
 		workspaces,
+		workspacesLoadError,
 		workspacesLoaded
 	} from '$lib/workspaces';
 	import '../app.css';
@@ -32,7 +32,7 @@
 	// The token whose workspaces are loaded; guards the effect below
 	// against refetching on unrelated re-runs.
 	let loadedToken = $state<string | null>(null);
-	let workspaceError = $state('');
+	const workspaceError = $derived($workspacesLoadError);
 
 	const path = $derived(normalizePath(page.url.pathname));
 	const pluginLinks = $derived(visibleNavPages(webPlugins, $pluginStates));
@@ -84,11 +84,11 @@
 	// Loads the workspace list; a failure shows a message with "Try again"
 	// (the session's token stays, so a transient error is recoverable).
 	async function loadShellWorkspaces(): Promise<void> {
-		workspaceError = '';
+		workspacesLoadError.set('');
 		try {
 			await loadWorkspaces();
 		} catch (err) {
-			workspaceError = message(err, 'Could not load workspaces.');
+			workspacesLoadError.set(message(err, 'Could not load workspaces.'));
 		}
 	}
 
@@ -113,11 +113,10 @@
 		if (token === null) {
 			loadedToken = null;
 			workspacesLoaded.set(false);
+			workspacesLoadError.set('');
 			resetPluginStates();
 			dismissNotice();
 			workspaces.set({ list: [], current: null });
-			// Workspace ids are global: the next user must not inherit this choice.
-			clearSelection();
 			return;
 		}
 		if (token === loadedToken) return;

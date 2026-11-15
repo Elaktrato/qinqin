@@ -12,7 +12,7 @@ vi.mock('$lib/events', () => ({ record: vi.fn() }));
 import { goto } from '$app/navigation';
 import { search } from '$lib/api/search';
 import { setUrl } from '$lib/testing/appState.svelte';
-import { workspaces } from '$lib/workspaces';
+import { workspaces, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
 
 const searchMock = vi.mocked(search);
@@ -142,9 +142,22 @@ describe('search page', () => {
 		expect(await screen.findByText(/Showing the first 50 results/)).toBeTruthy();
 	});
 
+	it('says workspaces are loading, not that none is selected, while they load', async () => {
+		workspaces.set({ list: [], current: null });
+		workspacesLoaded.set(false);
+		render(Page);
+		expect((screen.getByLabelText('Search entries') as HTMLInputElement).placeholder).toBe(
+			'Loading workspaces…'
+		);
+	});
+
 	it('disables the search input and says why when there is no workspace', async () => {
 		workspaces.set({ list: [], current: null });
+		workspacesLoaded.set(true);
 		render(Page);
+		expect((screen.getByLabelText('Search entries') as HTMLInputElement).placeholder).toBe(
+			'Select a workspace to search'
+		);
 		expect((screen.getByLabelText('Search entries') as HTMLInputElement).disabled).toBe(true);
 		expect((screen.getByRole('button', { name: 'Search' }) as HTMLButtonElement).disabled).toBe(true);
 	});

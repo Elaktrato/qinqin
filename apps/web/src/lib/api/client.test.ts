@@ -4,7 +4,16 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { ApiError, api, apiBlob, apiErrorBody, setUnauthorizedHandler } from './client';
+import {
+	ApiError,
+	api,
+	apiBlob,
+	apiErrorBody,
+	clearToken,
+	getToken,
+	setToken,
+	setUnauthorizedHandler
+} from './client';
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -129,6 +138,27 @@ describe('api client', () => {
 		await expect(api('/api/auth/me')).rejects.toMatchObject({ status: 401 });
 
 		expect(goto).not.toHaveBeenCalled();
+	});
+});
+
+describe('token storage fallbacks', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		clearToken();
+	});
+
+	it('prefers the in-memory token over an older stored one when storage refuses writes', () => {
+		const data = new Map<string, string>([['qinqin.token', 'old']]);
+		vi.stubGlobal('localStorage', {
+			getItem: (k: string) => data.get(k) ?? null,
+			setItem: () => {
+				throw new DOMException('quota', 'QuotaExceededError');
+			},
+			removeItem: (k: string) => void data.delete(k)
+		});
+		setToken('new');
+		expect(getToken()).toBe('new');
+		expect(data.has('qinqin.token')).toBe(false);
 	});
 });
 

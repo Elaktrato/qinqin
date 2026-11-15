@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Grammar')}</title>
+	<title>{pageTitle(route.view === 'practice' ? 'Practice' : route.view === 'lesson' ? 'Lesson' : '', 'Grammar')}</title>
 </svelte:head>
 
 <!-- A new route is a fresh view: no state leaks between lessons. -->

@@ -75,7 +75,7 @@
 	});
 
 	const draft = $derived({
-		written,
+		written: written.trim(),
 		readings: rows.map(({ type, value }) => ({ type, value }))
 	});
 	const patch = $derived(baseline === null ? {} : buildPatch(baseline, draft));
@@ -84,6 +84,9 @@
 	const hasChanges = $derived(
 		baseline !== null && JSON.stringify(patch) !== JSON.stringify(storedPatch)
 	);
+	// buildPatch drops a blank written form, which would silently turn into
+	// "remove the overlay": block it instead.
+	const blankWritten = $derived(written.trim() === '');
 	// Rows the server would refuse (400): both fields are required.
 	const blankReading = $derived(
 		rows.some((row) => row.type.trim() === '' || row.value.trim() === '')
@@ -132,7 +135,7 @@
 
 	async function save(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
-		if (saving || baseline === null || !hasChanges || blankReading) return;
+		if (saving || baseline === null || !hasChanges || blankReading || blankWritten) return;
 
 		saving = true;
 		saved = '';
@@ -167,6 +170,9 @@
 	<label class="written-field">
 		<span>Written form</span>
 		<input bind:value={written} name="written" autocomplete="off" required />
+		{#if blankWritten}
+			<span class="hint" role="status">The written form must not be empty.</span>
+		{/if}
 	</label>
 
 	<fieldset class="readings">
@@ -209,7 +215,7 @@
 	</fieldset>
 
 	<div class="actions">
-		<button type="submit" class="save" disabled={saving || !hasChanges || blankReading}>
+		<button type="submit" class="save" disabled={saving || !hasChanges || blankReading || blankWritten}>
 			{saving ? 'Saving…' : 'Save'}
 		</button>
 		{#if differsFromShared}

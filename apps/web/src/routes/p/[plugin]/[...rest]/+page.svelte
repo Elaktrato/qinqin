@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { findPlugin, webPlugins } from '$lib/plugins';
@@ -15,6 +16,10 @@
 		if ($pluginStates.status === 'idle') void loadPluginStates();
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle(view ? '' : 'Plugin')}</title>
+</svelte:head>
 
 {#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
 	<main><p>Loading…</p></main>

@@ -121,7 +121,7 @@
 		></div>
 		{#if !ready && failedFor !== char}
 			<!-- Holds the space and says what is happening, so the page does not jump. -->
-			<p class="note" role="status" aria-live="polite" style:width={`${size}px`}>
+			<p class="note" style:width={`${size}px`}>
 				Loading stroke order…
 			</p>
 		{/if}

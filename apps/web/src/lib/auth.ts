@@ -1,4 +1,5 @@
 import { derived, writable } from 'svelte/store';
+import { clearSelection } from './workspaces';
 import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from './api/client';
 
 export interface User {
@@ -35,9 +36,12 @@ export async function loadMe(known?: string): Promise<User | null> {
 		return null;
 	}
 
-	// Hydrate the token before the round-trip so a transient network
-	// failure does not bounce a signed-in user back to /login.
-	auth.set({ token: stored, user: null });
+	// Boot: hydrate the token before the round-trip so a transient network
+	// failure does not bounce a signed-in user back to /login. A token the
+	// caller just received (login) is not announced until /me has answered,
+	// so a failing /me cannot flip the guard away from the page that shows
+	// the error.
+	if (known === undefined) auth.set({ token: stored, user: null });
 
 	const me = await api<User>('/api/auth/me');
 	auth.set({ token: stored, user: me });
@@ -91,5 +95,8 @@ export async function register(username: string, password: string): Promise<User
  */
 export function logout(): void {
 	clearToken();
+	// Workspace ids are global: the next user must not inherit this choice.
+	// Only an explicit sign-out clears it; a mid-session 401 keeps it.
+	clearSelection();
 	auth.set({ token: null, user: null });
 }

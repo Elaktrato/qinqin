@@ -125,4 +125,41 @@ describe('EntryEditor baseline and overlay', () => {
 		expect(screen.getByText('Every reading needs a type and a value.')).toBeTruthy();
 		expect(saveButton().disabled).toBe(true);
 	});
+
+	it('blocks a whitespace-only written form instead of silently deleting the overlay', async () => {
+		await ready(entry({ written: '發' }), entry());
+		await fireEvent.input(screen.getByLabelText('Written form'), { target: { value: '   ' } });
+		expect(screen.getByText('The written form must not be empty.')).toBeTruthy();
+		expect(saveButton().disabled).toBe(true);
+		await fireEvent.submit(screen.getByRole('form', { name: 'Edit entry' }));
+		expect(updateEntry).not.toHaveBeenCalled();
+	});
+
+	it('blocks a blank written form when only readings are overlaid', async () => {
+		await ready(
+			entry(),
+			entry({ readings: [{ type: 'pinyin', value: 'fa1', plain: 'fa', ord: 0 }] })
+		);
+		await fireEvent.input(screen.getByLabelText('Written form'), { target: { value: ' ' } });
+		expect(saveButton().disabled).toBe(true);
+	});
+
+	it('saves the trimmed written form', async () => {
+		await ready(entry({ written: '發' }), entry({ written: '發' }));
+		vi.mocked(updateEntry).mockResolvedValue(entry());
+		await fireEvent.input(screen.getByLabelText('Written form'), { target: { value: ' 发 ' } });
+		await fireEvent.submit(screen.getByRole('form', { name: 'Edit entry' }));
+		await waitFor(() => expect(updateEntry).toHaveBeenCalled());
+		expect(vi.mocked(updateEntry).mock.calls[0][1].written).toBe('发');
+	});
+
+	it('Revert to shared restores the readings too', async () => {
+		await ready(
+			entry({ readings: [{ type: 'pinyin', value: 'fā', plain: 'fa', ord: 0 }] }),
+			entry({ readings: [{ type: 'pinyin', value: 'fa1', plain: 'fa', ord: 0 }] })
+		);
+		expect((screen.getByLabelText('Reading 1 value') as HTMLInputElement).value).toBe('fa1');
+		await fireEvent.click(screen.getByRole('button', { name: 'Revert to shared' }));
+		expect((screen.getByLabelText('Reading 1 value') as HTMLInputElement).value).toBe('fā');
+	});
 });

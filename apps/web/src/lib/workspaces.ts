@@ -22,6 +22,10 @@ export const workspaces = writable<WorkspacesState>({ list: [], current: null })
 // "still loading" from "really none". Reset by the shell on sign-out.
 export const workspacesLoaded = writable(false);
 
+// The message of the last failed workspace-list load (the shell sets it and
+// clears it), so pages can offer Try again instead of waiting forever.
+export const workspacesLoadError = writable('');
+
 export const currentLanguage = derived(
 	workspaces,
 	($workspaces) => $workspaces.current?.language ?? null
@@ -77,6 +81,7 @@ export async function load(): Promise<Workspace[]> {
 	persistSelection(current?.id ?? null);
 	workspaces.set({ list, current });
 	workspacesLoaded.set(true);
+	workspacesLoadError.set('');
 	return list;
 }
 

@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Reader')}</title>
+	<title>{pageTitle(route.view === 'book' ? 'Book' : route.view === 'sources' ? 'Sources' : '', 'Reader')}</title>
 </svelte:head>
 
 {#if route.view === 'sources'}

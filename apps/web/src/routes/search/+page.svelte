@@ -7,7 +7,7 @@
 	import { search } from '$lib/api/search';
 	import type { SearchHit } from '$lib/api/types';
 	import { record } from '$lib/events';
-	import { currentLanguage, workspaces } from '$lib/workspaces';
+	import { currentLanguage, workspaces, workspacesLoaded } from '$lib/workspaces';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { Scheme } from '$lib/api/types';
 	import {
@@ -195,7 +195,11 @@
 			type="search"
 			bind:value={query}
 			aria-label="Search entries"
-			placeholder={lang === null ? 'Select a workspace to search' : 'Search entries…'}
+			placeholder={lang !== null
+				? 'Search entries…'
+				: $workspacesLoaded
+					? 'Select a workspace to search'
+					: 'Loading workspaces…'}
 			disabled={lang === null}
 		/>
 		<button type="submit" disabled={lang === null}>Search</button>
@@ -261,7 +265,7 @@
 	<!-- Always mounted so assistive tech announces changes to its text. -->
 	<p class="visually-hidden" role="status" aria-live="polite">{announcement}</p>
 
-	{#if lang === null}
+	{#if lang === null && $workspacesLoaded}
 		<p class="hint">
 			No workspace selected. Create or select a workspace in the header to search.
 			<a href="/settings">Open settings</a>

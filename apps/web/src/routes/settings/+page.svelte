@@ -25,7 +25,7 @@
 		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
-	import { rename, workspaces, workspacesLoaded } from '$lib/workspaces';
+	import { load as loadWorkspaces, rename, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 
 	interface PluginRow {
 		id: string;
@@ -219,7 +219,18 @@
 			one.
 		</p>
 
-		{#if $workspaces.list.length === 0 && !$workspacesLoaded}
+		{#if $workspaces.list.length === 0 && !$workspacesLoaded && $workspacesLoadError}
+			<p class="error" role="alert">{$workspacesLoadError}</p>
+			<button
+				type="button"
+				onclick={() => {
+					workspacesLoadError.set('');
+					loadWorkspaces().catch((err) =>
+						workspacesLoadError.set(message(err, 'Could not load workspaces.'))
+					);
+				}}>Try again</button
+			>
+		{:else if $workspaces.list.length === 0 && !$workspacesLoaded}
 			<p class="hint" aria-live="polite">Loading workspaces…</p>
 		{:else if $workspaces.list.length === 0}
 			<p>No workspaces yet.</p>
