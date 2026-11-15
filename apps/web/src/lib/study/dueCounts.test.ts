@@ -63,20 +63,25 @@ describe('dueCounts with reverse and cloze', () => {
 	const settings: Record<string, DeckSettings> = {
 		general: { deckId: 'general', cardTypes: ['reverse'], extra: {} }
 	};
-	const cards = [card('c-vocab-1', 'vocab', 1), card('c-reverse-1', 'reverse', 1), card('c-reverse-2', 'reverse', 2)];
+	const cards = [
+		card('c-vocab-1', 'vocab', 1),
+		card('c-reverse-1', 'reverse', 1),
+		card('c-vocab-2', 'vocab', 2),
+		card('c-reverse-2', 'reverse', 2)
+	];
 	const base = { cards, reviews: [] as ReviewEvent[], deckIds: ['general'], now: NOW, kinds: ['vocab', 'reverse'] as StudyCardKind[], w: DEFAULT_W };
 
 	it('counts a real reverse card only where its deck enables it', () => {
-		expect(dueCounts({ ...base, deckSettings: settings }).fresh).toBe(3);
-		expect(dueCounts({ ...base, deckSettings: {} }).fresh).toBe(1);
+		expect(dueCounts({ ...base, deckSettings: settings }).fresh).toBe(4);
+		expect(dueCounts({ ...base, deckSettings: {} }).fresh).toBe(2);
 	});
 
 	it('a buried reverse card is not due', () => {
 		const reviews = [review('c-vocab-1', '2026-03-01T08:00:00Z', 3)];
 		const out = dueCounts({ ...base, reviews, deckSettings: settings });
 		// vocab 1 is answered and its first learning step is already due again;
-		// its reverse card is buried (not counted as new); reverse 2 is new.
-		expect(out).toEqual({ due: 1, fresh: 1 });
+		// its reverse card is buried (not counted as new); vocab 2 and reverse 2 are new.
+		expect(out).toEqual({ due: 1, fresh: 2 });
 	});
 
 	it('passes a schedule lookup through', () => {

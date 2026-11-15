@@ -6,7 +6,7 @@
 // companions that do not exist yet are not counted (the setup summary
 // counts them through deckSessionItems).
 
-import { allowedReal, skipKindsByEntry } from './cardFlow';
+import { allowedReal, skipKindsByEntry, vocabEntryIds } from './cardFlow';
 import type { DeckSettings } from './deckSettings';
 import { buriedNow } from './siblings';
 import { buildQueue, type Schedule } from './scheduler';
@@ -31,10 +31,11 @@ export function dueCounts(input: {
 	const { cards, reviews, deckIds, kinds, deckSettings, now, w, scheduleOf } = input;
 	const buried = buriedNow({ cards, reviews, now, studyDay: input.studyDay ?? utcStudyDay([]) });
 	const skipByEntry = skipKindsByEntry(cards);
+	const vocabEntries = vocabEntryIds(cards);
 	const allowed = cards.filter(
 		(card) =>
 			!buried.cardIds.has(card.id) &&
-			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry })
+			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry, vocabEntries })
 	);
 	const base = { cards: allowed, reviews, deckIds, now, kinds, w, scheduleOf };
 	return {

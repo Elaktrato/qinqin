@@ -225,6 +225,11 @@ export function skipKindsByEntry(cards: readonly StudyCard[]): Map<number, Set<S
 	return out;
 }
 
+/** The entries that have a stored vocab card. */
+export function vocabEntryIds(cards: readonly StudyCard[]): Set<number> {
+	return new Set(cards.filter((card) => card.kind === 'vocab').map((card) => card.entryId));
+}
+
 /**
  * allowedReal says whether a stored card may be queued: a reverse or
  * cloze card needs a deck of the session that switches its kind on, and
@@ -237,10 +242,13 @@ export function allowedReal(
 		sessionDecks: readonly string[];
 		deckSettings?: Record<string, DeckSettings>;
 		skipByEntry: Map<number, Set<StudyCardKind>>;
+		/** Entries that have a live vocab row; an opt-in card without one is an orphan. */
+		vocabEntries?: ReadonlySet<number>;
 	}
 ): boolean {
 	if (card.kind !== 'vocab' && ctx.skipByEntry.get(card.entryId)?.has(card.kind)) return false;
 	if (OPT_IN_KINDS.includes(card.kind as OptInKind)) {
+		if (ctx.vocabEntries !== undefined && !ctx.vocabEntries.has(card.entryId)) return false;
 		const decks = new Set(ctx.sessionDecks);
 		const enabled = enabledKinds(
 			ctx.deckSettings,
@@ -281,10 +289,11 @@ export function deckSessionPlan({
 	// the limits apply, so they never use up a slot.
 	const buried = buriedNow({ cards, reviews, now, studyDay: studyDay ?? utcStudyDay([]) });
 	const skipByEntry = skipKindsByEntry(cards);
+	const vocabEntries = vocabEntryIds(cards);
 	const allowed = cards.filter(
 		(card) =>
 			!buried.cardIds.has(card.id) &&
-			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry })
+			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry, vocabEntries })
 	);
 	const real = buildQueue({
 		cards: allowed,

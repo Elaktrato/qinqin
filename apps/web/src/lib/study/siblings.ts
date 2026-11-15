@@ -98,7 +98,12 @@ export function buriedNow(input: BuryInput): Buried {
 export function buriedLevelEntries(buried: Buried, cards: readonly StudyCard[]): Set<number> {
 	const out = new Set<number>();
 	for (const card of cards) {
-		if (buried.cardIds.has(card.id)) out.add(card.entryId);
+		// Only the kinds a level session studies count: a buried reverse or
+		// cloze card of a word whose vocab card was answered must not hide
+		// the word from a level session.
+		if (buried.cardIds.has(card.id) && (card.kind === 'vocab' || card.kind === 'writing')) {
+			out.add(card.entryId);
+		}
 	}
 	for (const key of buried.keys) {
 		const [kind, entry] = key.split(':');

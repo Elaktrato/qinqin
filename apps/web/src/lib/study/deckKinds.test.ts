@@ -263,3 +263,34 @@ describe('burying in level sessions', () => {
 		).toEqual([2, 3]);
 	});
 });
+
+describe('level exclusion only follows vocab and writing', () => {
+	for (const sibling of ['reverse', 'cloze'] as const) {
+		it(`answering vocab while a ${sibling} card exists does not hide the word from a level session`, () => {
+			const cards = [card('c-vocab-5', 'vocab', 5), card(`c-${sibling}-5`, sibling, 5)];
+			const reviews = [review('c-vocab-5', '2026-03-01T08:00:00Z', 3)];
+			const buried = buriedNow({ cards, reviews, now: NOW, studyDay: studyDay([]) });
+			expect(buried.cardIds.has(`c-${sibling}-5`)).toBe(true);
+			expect([...buriedLevelEntries(buried, cards)]).toEqual([]);
+		});
+	}
+
+	it('answering a reverse card hides the word (its vocab card is buried)', () => {
+		const cards = [card('c-vocab-5', 'vocab', 5), card('c-reverse-5', 'reverse', 5)];
+		const reviews = [review('c-reverse-5', '2026-03-01T08:00:00Z', 3, 'reverse')];
+		const buried = buriedNow({ cards, reviews, now: NOW, studyDay: studyDay([]) });
+		expect([...buriedLevelEntries(buried, cards)]).toEqual([5]);
+	});
+});
+
+describe('orphan opt-in cards', () => {
+	it('a reverse card without a live vocab row of its word is not queued', () => {
+		const cards = [card('c-reverse-1', 'reverse', 1), card('c-vocab-2', 'vocab', 2), card('c-reverse-2', 'reverse', 2)];
+		const items = deckSessionItems({
+			...base,
+			cards,
+			deckSettings: cfg('general', 'reverse')
+		});
+		expect(ids(items)).toEqual(['c-reverse-2']);
+	});
+});
