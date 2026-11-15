@@ -23,6 +23,10 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
   - Workspace deletion, kunrei/particle romaji search, request body limits.
   - Sources page built from pack and plugin manifests, public.
   - Stats page with Overview and Characters, home widgets and a Home layout editor in Settings.
+  - Writing and tone card feel (own forgiving stroke matcher, snapping tone contours), card management,
+    Again re-shows, search filters, Journal with AI review and photo OCR, plugin SDK, FSRS optimizer,
+    grammar lessons, core activity statistics, pack and language management, audio packs, Jōyō/通用规范汉字表
+    level packs, and the engineering-debt batches above.
 
 ## v0.2.0 — study experience (milestone)
 
@@ -52,21 +56,22 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 
 ## Future (milestone)
 
-- [#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK (permissions, behavior hooks, data API; page surfaces exist) — in progress on `feature/plugin-sdk`
-- [#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI — in progress on `feature/pack-management` (Settings → Data: list, upload with licence review, uninstall)
-- [#41](https://github.com/Elaktrato/qinqin/issues/41) language and workspace management UI — in progress on `feature/language-management` (Settings → Data → Languages, per-workspace hidden dictionaries, coverage hints, code validation)
+- ~~[#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK~~ — done (strict manifest contract, permissions, embedded built-in manifests, web SDK, study-event hook; design `docs/superpowers/specs/2026-11-15-plugin-sdk-design.md`). Follow-up: [#85](https://github.com/Elaktrato/qinqin/issues/85) move flashcards and reader onto the SDK
+- ~~[#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI~~ — done (Settings → Data: staged upload with licence review, list, uninstall; design `docs/superpowers/specs/2026-11-15-pack-management-design.md`)
+- ~~[#41](https://github.com/Elaktrato/qinqin/issues/41) language and workspace management UI~~ — done (Settings → Data → Languages, per-workspace hidden dictionaries, coverage hints, code validation; design `docs/superpowers/specs/2026-11-15-language-management-design.md`)
 - [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs: bundled `joyo-grades` (KANJIDIC2) and
   `tgh-chars` (通用规范汉字表, Unihan `kTGH`); TBCL and curriculum lists are local-only via
   `scripts/prepare-local-levels.mjs`; the old TOCFL 8000 list is rejected (withdrawn).
   Open: level sessions draw words only, so character-unit packs give no study cards
-- ~~[#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs~~ — on `feature/audio-packs` (design `docs/superpowers/specs/2026-11-15-audio-packs-design.md`; `audio` pack type, play buttons on entries and after the reveal in study, Kanji alive pack fetched into the image, local Commons/Lingua Libre tool; owner to-do: listen to ~10 Kanji alive clips against `index.tsv`, no Mandarin recordings out of the box)
-- ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done on `feature/fsrs-optimizer` (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
+- ~~[#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs~~ — done (design `docs/superpowers/specs/2026-11-15-audio-packs-design.md`; `audio` pack type, play buttons on entries and after the reveal in study, Kanji alive pack fetched into the image, local Commons/Lingua Libre tool). Owner to-do: listen to ~10 Kanji alive clips against `index.tsv`; no Mandarin recordings out of the box (device voice fallback)
+- ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
 - [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)
-- ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — on `feature/grammar-lessons` (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`, demo pack `zh-grammar-demo`; native-speaker review of the demo sentences open)
-- ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done on `feature/core-stats`, in review (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view); the Stats page design on `feature/stats` overlaps it
+- ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — done (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`, demo pack `zh-grammar-demo`; native-speaker review of the demo sentences open)
+- ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: [#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days
 
-Engineering debt and review follow-ups carry the `deferred` label (issues #1–#22 and
-#26); triage them before cutting a release.
+Engineering debt (#1–#22) was worked through in themed batches (backend hardening, web polish, CI and serving);
+what remains open is listed in the handoff `docs/superpowers/handoffs/2026-11-15-web-build-handoff.md`
+(#12, #17, #18 leftovers, #55 zombie CI runs, #86 login rate limiting).
 
 Note: the Android client (v0.4.0) does not read the `fsrs:*` plugin data yet, so once a set is active on the web its due counts differ from Android's until the Kotlin scheduler reads the same rows.
 
