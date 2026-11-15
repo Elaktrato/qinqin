@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+// HourlyLimit is the number of provider calls a user may make per rolling
+// hour, key validation included.
+const HourlyLimit = 30
+
 // RateLimitedError is returned when the user used up the hourly calls.
 type RateLimitedError struct{ RetryAfter time.Duration }
 

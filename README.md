@@ -520,6 +520,8 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and (legacy) order for one plugin |
 | `GET /api/plugins/{id}/data?workspace=&prefix=` | The caller's live rows of a plugin whose key starts with `prefix`, scoped like the single-row routes, ordered by key, `[]` when none; an unknown plugin or foreign workspace is 404 |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
+| `GET /api/ai/status` | The AI state for the caller: `secret` (`ok`, `missing`, `invalid`), `provider`, the stored key (hint, model, state, never the key), the selectable `models`, this hour's `usage`, `available` and, when not, a `reason` (`no_secret`, `invalid_secret`, `no_key`, `key_undecryptable`, `no_provider`) |
+| `GET`/`PUT`/`DELETE /api/ai/key` | Read, store and remove the caller's API key. `PUT {provider?, key?, model?}` checks a new key with the provider (one call toward the hourly limit) before storing it and answers the status; without `key` it changes only the model. Errors are JSON `{error, message}` and never HTTP 401: 409 (`ai_disabled`, `no_key`, `key_undecryptable`, `in_flight`), 422 (`key_rejected`, `quota`, `invalid_key`, `invalid_model`, `model_unavailable`, `bad_request`, ...), 429 `rate_limited` and 503 `busy` with `Retry-After` |
 | `GET /api/dictionaries` | Public. The installed dictionaries, each with `license`, `attribution` and `notice` (`""` when the manifest has none) |
 | `POST /api/admin/dictionaries`, `DELETE /api/admin/dictionaries/{id}`, `DELETE /api/admin/schemes/{id}`, `DELETE /api/admin/sentences/{pack}`, `POST /api/admin/plugins` | Admin only: install a dictionary pack (multipart zip in `pack`), soft-delete a dictionary, a level scheme or a sentence pack (entries survive), register a plugin manifest |
 | `GET /api/schemes` | Public. Every installed level scheme with its ordered levels, `license`, `attribution` and `notice` (`""` when the manifest has none) |
@@ -550,6 +552,7 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/admin/plugins` (manifest) | 64 KiB |
 | `PUT /api/plugins/{id}/state` | 64 KiB |
 | `PUT /api/plugins/{id}/data/{key}` | 256 KiB per value; the same cap applies to each plugin-data value inside `POST /api/sync/push` |
+| `PUT /api/ai/key` | 4 KiB |
 | `PUT /api/entries/{id}` | 64 KiB |
 | `POST /api/library/books/{id}/highlights` | 16 KiB |
 | `POST /api/library/books/{id}/bookmarks` | 1 KiB |
@@ -663,6 +666,34 @@ line is not enough) in its `manifest.json` and add a row to
 non-empty `license` and `attribution`, every bundled pack is named in
 `docs/sources.md`, every pack the docs name exists, every `notice` is valid). CI
 runs it together with the scripts' tests (`node --test scripts/*.test.mjs`).
+
+## Journal and AI
+
+The Journal is a page plugin (`qinqin-journal`) where you write dated entries per workspace. The AI features (a review with underlined corrections, topic ideas, and turning a photo of a page into an entry) are optional and use **your own Anthropic API key**; qinqin ships no key and sends nothing to any provider on its own.
+
+- **What is sent, and when.** Only when you press a button: the entry text (up to 5,000 characters) and your guidance for a review, a list of recently studied words and the openings of your last entries for topic ideas, or one re-encoded photo for a transcription. Nothing is sent when you merely open the page or pick a photo. Photos are stripped of metadata (including GPS) and shrunk before they leave the server, are never sent twice, and are deleted when you save or discard the draft (a janitor sweeps forgotten ones within about an hour).
+- **Key storage.** Each user stores their own key in Settings → AI. It is encrypted at rest (AES-256-GCM, bound to the user) with `QINQIN_SECRET` and is never returned by the API, written to logs, or included in sync or backups in plain text. Only the last four characters are shown as a hint.
+- **Models.** `claude-opus-5-5` (default), `claude-sonnet-5-5` and `claude-haiku-5-5`, chosen per user. On Opus and Sonnet a safety refusal is retried by the provider's default fallback model, which can answer from another model on your key; the review says which model answered.
+- **Limits.** 30 provider calls per user per rolling hour (checking a key counts as one), one AI call in flight per user, 5,000 characters per review, 10 MiB and 50 megapixels per photo, at most 10 pending photos per user. Settings → AI shows the calls and tokens used this hour.
+- **Offline OCR.** The image bundles Tesseract (with Chinese Simplified and Traditional, Japanese and English data) for reading a photo without any AI; without the `tesseract` binary it shows as unavailable.
+
+### Server secret
+
+Set `QINQIN_SECRET` to 32 random bytes, base64 encoded, to allow storing keys:
+
+```sh
+head -c 32 /dev/urandom | base64
+```
+
+Without a valid secret the server still starts, AI shows as disabled with the reason (not set, or not 32 bytes of base64), and no key can be stored.
+
+Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot be read and users must enter them again; it is never written to `/data`. Rotate it by moving the old value to `QINQIN_SECRET_PREVIOUS` for one restart: on startup the keys sealed with the previous secret are re-encrypted with the new one, after which the previous value can be removed. A key sealed with a secret the server no longer knows shows as "re-enter your key" instead of failing.
+
+| Variable | Meaning |
+|---|---|
+| `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
+| `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
+| `QINQIN_AI_PROVIDER` | `anthropic` (default). `fake` is for testing only: a deterministic provider that never leaves the server, shown in the app as a "Test provider" badge. Anything else disables AI |
 
 ## Dictionary data model
 

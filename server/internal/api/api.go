@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sync"
 
+	"qinqin/internal/ai"
 	"qinqin/internal/library/sources"
 )
 
@@ -18,6 +19,7 @@ type server struct {
 	db      *sql.DB
 	dataDir string
 	sources []sources.Source
+	ai      *ai.Service // nil: AI is off (status reads "no_secret")
 
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
@@ -25,12 +27,22 @@ type server struct {
 	chars charactersCache // GET /api/characters payloads
 }
 
+// Option configures optional parts of the server.
+type Option func(*server)
+
+// WithAI mounts the AI service the /api/ai routes use; without it they
+// report AI as disabled.
+func WithAI(svc *ai.Service) Option { return func(s *server) { s.ai = svc } }
+
 // New returns the root HTTP handler with all qinqin routes mounted.
 // Uploaded packs are stored under dataDir/packs/. Domain routes are
 // added to the mux by later tasks, all sharing sqlDB. srcs are the
 // public-domain text sources the library can search and import from.
-func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
+func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) http.Handler {
 	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs}
+	for _, o := range opts {
+		o(s)
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
 	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
@@ -64,6 +76,10 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
+	mux.HandleFunc("GET /api/ai/status", s.handleAIStatus)
+	mux.HandleFunc("GET /api/ai/key", s.handleGetAIKey)
+	mux.HandleFunc("PUT /api/ai/key", s.handlePutAIKey)
+	mux.HandleFunc("DELETE /api/ai/key", s.handleDeleteAIKey)
 	mux.HandleFunc("GET /api/plugins", s.handleListPlugins)
 	mux.HandleFunc("POST /api/library/upload", s.handleUploadBook)
 	mux.HandleFunc("GET /api/library/books", s.handleListBooks)

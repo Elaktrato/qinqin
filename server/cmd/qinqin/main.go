@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"qinqin/internal/api"
 	"qinqin/internal/db"
@@ -85,6 +86,11 @@ const builtinFlashcardsManifest = `{"id":"qinqin-flashcards","name":"Flashcards"
 // web build serves at /p/reader.
 const builtinReaderManifest = `{"id":"qinqin-reader","name":"Reader","version":"1.0","type":"feature","surfaces":["page"]}`
 
+// builtinJournalManifest registers the journal, a page-only feature whose
+// documents are workspace plugin data and whose AI part runs through
+// /api/ai.
+const builtinJournalManifest = `{"id":"qinqin-journal","name":"Journal","version":"1.0","type":"feature","surfaces":["page"]}`
+
 // builtinCoreManifest registers the core app itself as a plugin with no
 // surfaces. It renders nothing; it exists so the plugin data routes and
 // sync accept the core app's per-user rows, such as the user-global
@@ -107,6 +113,9 @@ func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
 	}
 	if err := plugins.Register(ctx, sqlDB, []byte(builtinReaderManifest)); err != nil {
 		return fmt.Errorf("register built-in plugin qinqin-reader: %w", err)
+	}
+	if err := plugins.Register(ctx, sqlDB, []byte(builtinJournalManifest)); err != nil {
+		return fmt.Errorf("register built-in plugin qinqin-journal: %w", err)
 	}
 	if err := plugins.Register(ctx, sqlDB, []byte(builtinCoreManifest)); err != nil {
 		return fmt.Errorf("register built-in plugin qinqin-core: %w", err)
@@ -156,8 +165,13 @@ func serveCmd(args []string) error {
 	// The Sources page shows the stored terms; say when seed is due.
 	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)
 
+	aiSvc := aiFromEnv(sqlDB, os.Getenv, log.Printf)
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
+	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
+
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set
