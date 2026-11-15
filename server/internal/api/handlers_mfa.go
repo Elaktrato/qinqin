@@ -22,7 +22,17 @@ func (s *server) mfaEnforcedEffective(ctx context.Context, set auth.Settings) bo
 // written. The returned func gives both tokens back after a right code, so
 // only wrong guesses use the budget.
 func (s *server) codeBudget(w http.ResponseWriter, userID int64) (refund func(), ok bool) {
-	key := int64Key(userID)
+	return s.codeBudgetKey(w, int64Key(userID), "", false)
+}
+
+// codeBudgetKey is codeBudget with the key chosen by the caller: the sign-in
+// by emailed code keys an unknown identifier's challenge by the identifier
+// (unknown = true), so a known and an unknown identifier hit the limit alike.
+func (s *server) codeBudgetKey(w http.ResponseWriter, userKey, otherKey string, unknown bool) (refund func(), ok bool) {
+	key := userKey
+	if unknown {
+		key = otherKey
+	}
 	m, d := s.authLimiter("mfa"), s.authLimiter("mfa-day")
 	if ok, retry := m.Allow(key); !ok {
 		s.logThrottled("mfa")

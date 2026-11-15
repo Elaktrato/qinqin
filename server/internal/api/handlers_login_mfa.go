@@ -303,3 +303,161 @@ func (s *server) handleLoginMFA(w http.ResponseWriter, r *http.Request) {
 	}
 	s.respondSignIn(w, r, u, signInPlan{}, token, ch.Device)
 }
+
+// emailLoginAvailable: mail works and the administrator turned the switch on.
+func (s *server) emailLoginAvailable(w http.ResponseWriter, r *http.Request) bool {
+	set, err := auth.LoadSettings(r.Context(), s.db)
+	if err != nil {
+		writeInternal(w, r)
+		return false
+	}
+	if !set.EmailCodeLogin || !s.mailConfigured(r.Context()) {
+		writeAuthError(w, http.StatusConflict, "email_login_unavailable", "Signing in with an emailed code is not turned on here.")
+		return false
+	}
+	return true
+}
+
+// handleEmailLoginStart serves POST /api/auth/email-login/start {login,
+// deviceName?}: always 202 {challenge, resendAfter, expiresAt}, whether or
+// not the identifier is a known, enabled user with a verified address. An
+// unknown (or ineligible) identifier gets a real challenge row without a user
+// and a code nobody receives, after the same lookups, limiter work and
+// storage as a known one; only the mail is not queued, and that is
+// asynchronous. The 5-per-hour identifier limit applies to both alike.
+func (s *server) handleEmailLoginStart(w http.ResponseWriter, r *http.Request) {
+	if !s.emailLoginAvailable(w, r) {
+		return
+	}
+	if _, ok := s.clientTake(w, r, "attempts"); !ok {
+		return
+	}
+	var req struct {
+		Login      string `json:"login"`
+		DeviceName string `json:"deviceName"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	login := strings.TrimSpace(req.Login)
+	if login == "" || len(login) > 320 {
+		writeAuthError(w, http.StatusBadRequest, "bad_request", "Enter your username or email address.")
+		return
+	}
+	if ok, retry := s.authLimiter("ident").Allow(identKey(login)); !ok {
+		s.logThrottled("ident")
+		writeRateLimitedAs(w, retry, "requests")
+		return
+	}
+	target, err := auth.FindMailTarget(r.Context(), s.db, login)
+	set, serr := auth.LoadSettings(r.Context(), s.db)
+	if err != nil || serr != nil {
+		writeInternal(w, r)
+		return
+	}
+	eligible := target.UserID != 0 && target.Eligible && set.EmailPolicy != "off"
+	device := req.DeviceName
+	if device == "" {
+		device = auth.DeviceLabel(r.UserAgent())
+	}
+	var uid *int64
+	ident := identKey(login) // unknown challenges remember it, so their wrong-code budget is per identifier
+	if eligible {
+		uid, ident = &target.UserID, ""
+	}
+	token, ch, err := auth.NewChallenge(r.Context(), s.db, auth.ChallengeEmailLogin, uid, ident, device)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	code, err := auth.SetCode(r.Context(), s.db, ch.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	// The same mail-budget work for every identifier (a dummy key when unknown).
+	key := "none"
+	if eligible {
+		key = int64Key(target.UserID)
+	}
+	if allowed, _ := s.authLimiter("mailcode").Allow(key); eligible && allowed {
+		s.mail.Enqueue(mail.Job{Kind: mail.KindLoginCode, UserID: target.UserID, To: target.Email, Data: mail.TemplateData{Code: code}})
+	}
+	writeJSON(w, http.StatusAccepted, map[string]any{"challenge": token, "resendAfter": int(auth.ResendEvery.Seconds()),
+		"expiresAt": ch.ExpiresAt.UTC().Format(time.RFC3339)})
+}
+
+// handleEmailLoginVerify serves POST /api/auth/email-login/verify
+// {challenge, code}. Success answers like a login: ok, password_change_required,
+// or mfa_required (totp, recovery) for a user with an authenticator; under
+// enforcement a user without one gets 403 password_required.
+func (s *server) handleEmailLoginVerify(w http.ResponseWriter, r *http.Request) {
+	if !s.emailLoginAvailable(w, r) {
+		return
+	}
+	if _, ok := s.clientTake(w, r, "attempts"); !ok {
+		return
+	}
+	var req struct {
+		Challenge string `json:"challenge"`
+		Code      string `json:"code"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	ch, err := auth.LoadChallenge(r.Context(), s.db, req.Challenge)
+	if err == nil && ch.Kind != auth.ChallengeEmailLogin {
+		err = auth.ErrChallengeInvalid
+	}
+	if err != nil {
+		if errors.Is(err, auth.ErrChallengeInvalid) {
+			writeCodeError(w, err, false)
+		} else {
+			writeInternal(w, r)
+		}
+		return
+	}
+	budgetKey := ch.UserID
+	refund, ok := s.codeBudgetKey(w, int64Key(budgetKey), "u:"+ch.EmailNorm, ch.UserID == 0)
+	if !ok {
+		return
+	}
+	if _, err := auth.VerifyCode(r.Context(), s.db, req.Challenge, req.Code); err != nil {
+		if !writeCodeError(w, err, false) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	if ch.UserID == 0 {
+		// A challenge for an unknown identifier can never sign anyone in.
+		writeJSON(w, http.StatusUnauthorized, map[string]any{"error": "code_invalid", "message": "That code is not right.", "attemptsLeft": 0})
+		return
+	}
+	refund()
+	u, err := auth.LoadUser(r.Context(), s.db, ch.UserID)
+	var disabled int
+	if err == nil {
+		err = s.db.QueryRowContext(r.Context(), `SELECT disabled_at IS NOT NULL FROM users WHERE id = ?`, ch.UserID).Scan(&disabled)
+	}
+	if err != nil || disabled != 0 {
+		writeCodeError(w, auth.ErrChallengeInvalid, false)
+		return
+	}
+	plan, err := s.planSignIn(r.Context(), u, true)
+	if errors.Is(err, errPasswordRequired) {
+		writeAuthError(w, http.StatusForbidden, "password_required", "Two-step sign-in is required here: sign in with your password.")
+		return
+	}
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	token := ""
+	if !plan.challenge() {
+		if token, err = auth.NewSession(r.Context(), s.db, u.ID, auth.LoginOptions{Device: ch.Device}); err != nil {
+			writeInternal(w, r)
+			return
+		}
+	}
+	s.respondSignIn(w, r, u, plan, token, ch.Device)
+}
