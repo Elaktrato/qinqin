@@ -31,6 +31,7 @@ export interface ApiOptions {
 
 let unauthorizedHandler: (() => void) | null = null;
 let workspaceGoneHandler: (() => void) | null = null;
+let restrictedHandler: (() => void) | null = null;
 
 /** The API's 404 text for a workspace that does not exist (any more). */
 export const WORKSPACE_GONE_MESSAGE = 'workspace not found';
@@ -48,6 +49,21 @@ export function isWorkspaceGoneResponse(status: number, message: string): boolea
 export function setUnauthorizedHandler(handler: (() => void) | null): void {
 	unauthorizedHandler = handler;
 }
+
+/**
+ * Registers a callback fired when a request is refused with 403
+ * `password_change_required` or `mfa_enrollment_required`: the session is
+ * restricted, so the auth store reloads `me` and the layout guard moves it
+ * to the page it may use. The token stays; this is not a 401.
+ */
+export function setRestrictedHandler(handler: (() => void) | null): void {
+	restrictedHandler = handler;
+}
+
+const RESTRICTION_CODES: ReadonlySet<string> = new Set([
+	'password_change_required',
+	'mfa_enrollment_required'
+]);
 
 /**
  * Registers a callback fired when a request comes back 404 "workspace not
@@ -148,6 +164,14 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 		const message = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
 		if (response.status === 401) notifyUnauthorized();
 		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
+		if (response.status === 403 && restrictedHandler) {
+			try {
+				const code = (JSON.parse(message) as { error?: unknown }).error;
+				if (typeof code === 'string' && RESTRICTION_CODES.has(code)) restrictedHandler();
+			} catch {
+				// Not a JSON body: an ordinary 403.
+			}
+		}
 		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
 		throw new ApiError(response.status, message, Number.isFinite(retry) && retry > 0 ? retry : undefined);
 	}

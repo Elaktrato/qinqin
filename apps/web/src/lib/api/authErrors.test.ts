@@ -23,6 +23,19 @@ describe("authErrorMessage", () => {
       authErrorMessage(new ApiError(401, json("bad_credentials", "x")), "f"),
     ).toBe("Wrong username or password.");
   });
+  it("words account_disabled", () => {
+    expect(
+      authErrorMessage(new ApiError(403, json("account_disabled", "x")), "f"),
+    ).toBe("This account is disabled. Ask an administrator to enable it.");
+  });
+  it("shows the server's sentence for a weak password", () => {
+    expect(
+      authErrorMessage(
+        new ApiError(422, json("weak_password", "Use at least 10 characters.")),
+        "f",
+      ),
+    ).toBe("Use at least 10 characters.");
+  });
   it("words 429 from Retry-After", () => {
     expect(
       authErrorMessage(

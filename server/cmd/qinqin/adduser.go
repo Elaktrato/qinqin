@@ -43,12 +43,21 @@ func adduserCmd(args []string, stdin io.Reader, stderr io.Writer) error {
 		return errors.New("adduser: password must not be empty")
 	}
 
+	if err := auth.CheckPassword(*username, password); err != nil {
+		return fmt.Errorf("adduser: %s", auth.PolicyReason(err))
+	}
 	registerLanguages()
 	sqlDB, err := openData(*data)
 	if err != nil {
 		return err
 	}
 	defer sqlDB.Close()
+	if err := auth.CheckNewUsername(context.Background(), sqlDB, *username); err != nil {
+		if errors.Is(err, auth.ErrUsernameTaken) {
+			return fmt.Errorf("adduser: username %q is taken", *username)
+		}
+		return fmt.Errorf("adduser: %s", auth.PolicyReason(err))
+	}
 	u, err := auth.CreateUser(context.Background(), sqlDB, *username, password, *admin)
 	if errors.Is(err, auth.ErrUsernameTaken) {
 		return fmt.Errorf("adduser: username %q is taken", *username)

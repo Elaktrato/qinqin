@@ -47,6 +47,24 @@ describe('the Study tab', () => {
 	});
 });
 
+describe('account tab', () => {
+	it('is visible to everyone, between AI and Data', () => {
+		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'study', 'plugins', 'ai', 'account']);
+		expect(visibleSettingsTabs(true)).toEqual([
+			'workspaces',
+			'home',
+			'study',
+			'plugins',
+			'ai',
+			'account',
+			'data'
+		]);
+		expect(SETTINGS_TAB_LABELS.account).toBe('Account');
+		expect(parseSettingsTab('account')).toBe('account');
+		expect(settingsTabHref('account')).toBe('/settings?tab=account');
+	});
+});
+
 describe('settingsTabHref', () => {
 	it('keeps the default tab out of the URL', () => {
 		expect(settingsTabHref('workspaces')).toBe('/settings');

@@ -11,6 +11,7 @@ import {
 	apiErrorBody,
 	clearToken,
 	getToken,
+	setRestrictedHandler,
 	setToken,
 	setUnauthorizedHandler
 } from './client';
@@ -138,6 +139,56 @@ describe('api client', () => {
 		await expect(api('/api/auth/me')).rejects.toMatchObject({ status: 401 });
 
 		expect(goto).not.toHaveBeenCalled();
+	});
+});
+
+describe('restricted sessions', () => {
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn());
+	});
+	afterEach(() => {
+		setRestrictedHandler(null);
+		vi.unstubAllGlobals();
+	});
+
+	it.each(['password_change_required', 'mfa_enrollment_required'])(
+		'a 403 %s tells the handler and keeps the token',
+		async (code) => {
+			localStorage.setItem('qinqin.token', 'tok');
+			const handler = vi.fn();
+			setRestrictedHandler(handler);
+			vi.mocked(fetch).mockResolvedValue(
+				new Response(JSON.stringify({ error: code, message: 'm' }), { status: 403 })
+			);
+			await expect(api('/api/workspaces')).rejects.toMatchObject({ status: 403 });
+			expect(handler).toHaveBeenCalledTimes(1);
+			expect(localStorage.getItem('qinqin.token')).toBe('tok');
+		}
+	);
+
+	it.each([
+		['wrong_password', 403],
+		['forbidden', 403],
+		['password_change_required', 409]
+	])('a %s (%i) is not a restriction', async (code, status) => {
+		const handler = vi.fn();
+		setRestrictedHandler(handler);
+		vi.mocked(fetch).mockResolvedValue(
+			new Response(JSON.stringify({ error: code, message: 'm' }), { status })
+		);
+		await expect(api('/api/account/password', { method: 'POST', body: {} })).rejects.toBeInstanceOf(
+			ApiError
+		);
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it('a plain-text 403 is not a restriction', async () => {
+		const handler = vi.fn();
+		setRestrictedHandler(handler);
+		vi.mocked(fetch).mockResolvedValue(new Response('admin token required', { status: 403 }));
+		await expect(api('/api/admin/packs')).rejects.toBeInstanceOf(ApiError);
+		expect(handler).not.toHaveBeenCalled();
 	});
 });
 

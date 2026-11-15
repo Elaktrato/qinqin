@@ -35,8 +35,15 @@
 	<form onsubmit={submit}>
 		<label>
 			Username
-			<input name="username" autocomplete="username" bind:value={username} required />
+			<input
+				name="username"
+				autocomplete="username"
+				aria-describedby="username-rules"
+				bind:value={username}
+				required
+			/>
 		</label>
+		<p class="hint" id="username-rules">3 to 32 letters, digits, dots, underscores or hyphens.</p>
 
 		<label>
 			Password
@@ -44,10 +51,12 @@
 				name="password"
 				type="password"
 				autocomplete="new-password"
+				aria-describedby="password-rules"
 				bind:value={password}
 				required
 			/>
 		</label>
+		<p class="hint" id="password-rules">At least 10 characters. No other rules.</p>
 
 		{#if error}
 			<p class="error" role="alert">{error}</p>

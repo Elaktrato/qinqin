@@ -22,7 +22,7 @@ INSERT INTO auth_settings (id, updated_at) VALUES (1, strftime('%Y-%m-%dT%H:%M:%
 `users` gains `email TEXT`, `email_norm TEXT` (lower-cased, unique where not null),
 `email_verified_at TEXT`, `disabled_at TEXT`, `must_change_password INTEGER NOT NULL DEFAULT 0`,
 `created_at TEXT NOT NULL DEFAULT ''` (back-filled from `updated_at`), `password_changed_at TEXT`,
-`must_change_set_at TEXT` (users spec §3). 032 rebuilds `users` with `AUTOINCREMENT` (overview).
+`must_change_after INTEGER` (session-id watermark, users spec §3). 032 rebuilds `users` with `AUTOINCREMENT` (overview).
 `me` returns `email: null` while the policy is `off` (stored emails are hidden, §5).
 
 - `GET /api/admin/settings/auth` → `{registration, emailPolicy, mfaEnforced, emailCodeLogin,

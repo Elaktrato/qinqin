@@ -136,7 +136,7 @@ the server waits at most 5 s (`busy_timeout`) before a write fails.
 > `qinqin seed` prints a `WARNING` line whenever the database holds user edits or
 > flashcards.
 
-The `adduser` command prompts for a password. Then open
+The `adduser` command prompts for a password (10 to 256 characters, not the username). Then open
 <http://localhost:8080>.
 
 The SQLite database and installed packs live in `./data` next to the compose
@@ -254,7 +254,8 @@ separately.
 
 ### Upgrading
 
-Back up first. Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
+Back up first (a backup taken before upgrading to a release with migration 032 still holds the old
+plaintext session tokens: store it like the database and delete it after the upgrade). Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
 redeploy with *Pull latest image* enabled. Migrations are embedded in the
 binary and applied automatically at start (`server/internal/db`); they are
 one-way. **Downgrading is not supported**: going back to an older image needs
@@ -353,6 +354,35 @@ users is not throttled. Errors of both routes are JSON `{"error","message"}`
 `username_taken`, `bad_request`, `too_large`); see `docs/contracts/auth/`.
 A distributed attack can keep an account refused for new devices and networks
 while it lasts; the owner's usual device keeps signing in.
+
+### Accounts and sign-in
+
+Bearer tokens are 64 random hex characters, shown once at login; the database keeps only their
+SHA-256, so a copied database file or backup hands out no live session. A session unused for 90
+days stops working and is pruned (an hourly janitor also drops audit rows older than 180 days).
+Logging out in the web app now ends the session on the server, and Settings, Account lists the
+signed-in devices (a coarse label such as "Firefox on Linux", never the raw User-Agent, never an
+address), revokes one, "Log out everywhere else", "Log out everywhere", and changes the password
+(other sessions are signed out by default).
+
+New passwords need 10 to 256 characters and may not equal the username; there are no other rules.
+New usernames are 3 to 32 letters, digits, dots, underscores or hyphens, stored in Unicode NFC, and
+unique by their NFKC form with case folded (so `Bob`, `bob` and a fullwidth `Ｂob` are one name; a name that mixes Latin with
+Cyrillic or Greek letters is refused). Older accounts whose names collide under that rule keep working, login still matches
+the exact name, but their names cannot be taken again. Existing accounts keep working unchanged on upgrade: their sessions are hashed in
+place by migration 032, existing passwords are grandfathered. A session whose user must change the
+password (an administrator's temporary password) is restricted: it can only change the password,
+read `me`, log out and open the Sources page, and the web app sends it to the change page. The
+rules for clients are in `docs/contracts/auth/README.md`.
+
+Security notes. (1) Migration 032 stores only hashes of the session tokens and zeroes the database pages that
+held the old plaintext ones (including the write-ahead log once it is checkpointed), but **a backup taken before the
+upgrade still contains the plaintext tokens of that moment**: keep it as private as the database itself, and delete
+it once the upgrade is confirmed. Sessions that were idle count as used at the upgrade time, so nobody is signed out
+because of it. (2) Signing in to a disabled account with the right password answers `account_disabled` (so a person
+knows why), and a wrong password still answers the usual 401; this tells someone who already holds the password that
+the account exists and is disabled, which was judged better than a mystery refusal. (3) Forcing a password change
+signs the user out everywhere.
 
 ### AI journal
 
@@ -845,7 +875,10 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
-| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (the first user on an empty database becomes the admin without a token; afterwards an admin token is required), log in for a bearer token, read the current user. Login and register bodies up to 4 KiB |
+| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (the first user on an empty database becomes the admin without a token; afterwards an admin token is required; username and password follow the policy below), log in (`{username, password, deviceName?}` answers `{status: "ok" \| "password_change_required", token, user}`), read the current user and the session's `restriction`. Login and register bodies up to 4 KiB |
+| `POST /api/auth/logout` | Ends the session the request came in on (204); allowed for a restricted session |
+| `POST /api/account/password` `{currentPassword, newPassword, signOutOthers?}` | Change the caller's password; wrong current password is 403 `wrong_password`, a policy failure 422; other sessions are signed out unless `signOutOthers` is false (always after a forced change) |
+| `GET /api/account/sessions`, `DELETE /api/account/sessions/{id}`, `POST /api/account/sessions/revoke` `{scope: "others" \| "all"}` | The caller's signed-in devices (no tokens), end one (204; another user's id is 404), end the others or all |
 | `GET /healthz` | Liveness check |
 | `GET /api/entries/{id}/chars` | Public. The characters classified under a radical entry, ordered by headword; an empty array for a radical without any, 404 for an unknown id |
 | `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user; an unknown or malformed id is 404 (checked before the body, so a bad body on a missing entry is still 404) |

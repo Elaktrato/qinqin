@@ -6,7 +6,7 @@
 
 Specs: `docs/superpowers/specs/2026-11-15-v030-accounts-design.md` (shared rules, authorization
 matrix) and `…-accounts-users-sessions-design.md` §1–§3, §8. Issue #64 (owner comments win).
-Branch: `git worktree add -b feature/v030-accounts-sessions .claude/worktrees/v030-accounts-sessions feature/v0.3.0`.
+Branch as built: `feature/v030-accounts-1` (worktree `.claude/worktrees/v030-accounts-1`), cut from `feature/v0.3.0` at `1914ed9`, then merged with the later tip (`8c3e8f8`).
 Migration: `032_accounts.sql` (provisional number; renumber at merge if taken).
 Rules: `/home/user/qinqin-v030/AGENT-RULES.md`. One commit per task, conventional, trailer
 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
@@ -183,7 +183,7 @@ not drop the token: status ≠ 401); weak → 422; success → old password fail
 `must_change_password` cleared, other sessions gone when `signOutOthers` true/absent and kept when
 false; PwC session: no current password needed, always revokes others, the same token then
 reaches `GET /api/workspaces`; a session created **before** an admin set the flag (set
-`must_change_set_at` after it) must give the current password (403 without it); Enr session →
+`must_change_after` watermark above it) must give the current password (403 without it); Enr session →
 403 `mfa_enrollment_required`; the new hash is computed before `BeginTx`; an audit row
 `password_changed` without any password text (`detail` checked); limiter seam: a fake limiter
 refusing `reauth:<id>` → 429 with `Retry-After`.
@@ -287,3 +287,110 @@ Kill both processes, remove `$SP/acct1-*` (root-owned files via an alpine contai
 - `me.json`, `sessions.json`. Rule for clients: send `deviceName`; treat the token as opaque; 401
   = drop the token and show sign-in; 403 with a restriction code = show that screen; never log the
   token.
+
+## Execution record (rulings and deviations made while building)
+
+Built unattended on 2026-11-15; #86 was already merged, so its seam is used as is.
+
+- Ruling: the access policy is declared in the route table. `routes()` returns `route{pattern, handler,
+  access, allow}` (`accPublic`, `accUser`, `accAdmin`, `accAdminSignedIn`, `accSession`); `New` mounts
+  only that table. `gate_test.go` walks every row as anonymous, user, admin, password-change (user and
+  admin) and enrolment (user and admin) callers and checks the handler really enforces what the row
+  declares; a row without an access, a handler that skips the gate, a direct `auth.Authenticate`
+  outside `handlers_auth.go` and a mux registration outside the table each fail (all five verified by
+  deliberate mutation). Cost if wrong: a new route needs one extra word.
+- Ruling: `accAdminSignedIn` exists for the AI custom-endpoint routes, which answer anonymous callers 401
+  and non-admins 403 (an existing behaviour with tests).
+- Ruling: no `autherr.go`; `writeAuthError` and the limiter seam already exist in `authlimit.go` (#86).
+  The seam is real: `authLimiter("reauth")` with `DefaultAuthPolicy().Named["reauth"]` = burst 5, one
+  token per 3 minutes (5 wrong passwords per 15 minutes), the token is refunded when the password was
+  right (`namedLimiter.Refund`). Change password also runs behind the hash gate.
+- Ruling: the JSON-vs-plain-text conflict is moot (#86 already made login/register JSON). One catalogue:
+  `docs/contracts/auth/errors.json`; `contract_auth_test.go` checks that `throttle-responses.json` and
+  every literal `writeAuthError` call site agree with it on code and status. `go test` does not track
+  files outside the module, so run the contract tests with `-count=1` after editing fixtures.
+- Ruling: `requireUser`/`requireAdmin` now answer JSON (`unauthorized`, `forbidden`); `internal` errors are
+  JSON too. `requireAdmin` checks the restriction before the admin bit.
+- Ruling: `GET /api/auth/me` returns the user object plus `restriction` (`""`, `password_change`,
+  `mfa_enrollment`); the web `restriction` store is derived from `user.restriction` instead of a new
+  `AuthState` field (no change to the many tests that build `AuthState`).
+- Ruling: `Login` keeps its signature as a wrapper; `LoginWith(…, LoginOptions)` returns the user too;
+  `ErrAccountDisabled` is returned only after the password verified; the throttle treats it as a success
+  (the password was right), not a failure. Unknown, wrong and disabled all cost exactly one argon2 run.
+- Ruling: `ChangePassword(ctx, db, userID, newHash, keepSessionID, revokeOthers)` takes the digest, because
+  the hash gate lives in `api`; `VerifyUserPassword` is the matching check. A forced change (flag set)
+  always revokes the other sessions. `must_change_set_at` NULL (flag set by hand) counts as "session older
+  than the flag": the current password is required.
+- Ruling: register answers 403 `admin_required` to an anonymous caller before any username or password
+  check once users exist, so a closed instance cannot be probed for usernames (409) or policy; the legacy
+  admin-bearer path ignores a restricted admin. Username uniqueness is case-insensitive for ASCII only
+  (SQLite `COLLATE NOCASE`); non-ASCII letters compare exactly.
+- Ruling: `Audit` refuses detail keys that look like secrets (password, token, secret, code, email, host,
+  hash, ip, address); single-session revoke is audited as `sessions_revoked` with scope `one`.
+- Ruling: logout is allowed for restricted sessions (it is the way out of a forced change).
+- Ruling: `optionalUser` treats an authentication error as anonymous (the entry still renders; the error
+  would also surface in the entry query).
+- Ruling: the web client sends no `deviceName` (the server derives the label from the User-Agent);
+  `sessionsView` formats dates with `Intl` (the #84 `utcGuard` forbids UTC day arithmetic).
+- Deviation: Task 1 also switched `Login`/session lookup in `auth.go` to `token_hash`, so every commit
+  builds and passes; Task 2 then added the session store proper.
+- Deviation: the test password convention is `secret-pass-<name>` (`"pw-"+name` became
+  `"secret-pass-"+name`); direct `auth.CreateUser` calls in tests keep short passwords (the policy is
+  applied by the API and the CLI, not by `CreateUser`).
+- Merge: `feature/v0.3.0` (with #84 and #57) was merged into the topic branch before the final gates;
+  conflicts were `api.go` (the two `/api/me/time-zone` routes became `accUser` rows), `auth.ts`,
+  `tabs.ts`/`tabs.test.ts` (tab order is now `workspaces, home, study, plugins, ai, account, data`) and
+  `docs/contracts/README.md`. Migration numbers: this branch has 032; #84 holds 035; 033/034 stay free
+  for plans 2 and 3.
+
+### What plans 2 and 3 build on
+
+- Gate helpers (`handlers_auth.go`): `requirePrincipal(w, r, allow...)`, `requireUser`, `requireAdmin`,
+  `optionalUser`, `authenticate`; restrictions are the constants `restrictionPasswordChange` and
+  `restrictionMFAEnrollment`. A new route is one `route{}` row with an access; plan 3's account/MFA routes
+  use `accSession` with `allow` listing `mfa_enrollment` (and the walk then proves it). Admin routes
+  (`/api/admin/users…`, settings, audit) are `accAdmin`.
+- Session store (`auth/session.go`): `NewSession(ctx, db, uid, LoginOptions{Device, Level})` (`Level`
+  `LevelEnroll` makes an enrolment session), `Authenticate`, `RevokeSession(s)`, `ListSessions`, `Principal`
+  (`SessionID`, `Level`, `SessionCreated`, `MustChangeSetAt`, `Restriction()`). Disabling a user: set
+  `users.disabled_at` and delete their sessions in the same transaction (`Authenticate` already refuses
+  disabled users).
+- Audit: `auth.Audit(ctx, execer, AuditEvent{Action, ActorID, TargetID, Detail})`, usable on a `*sql.Tx`;
+  names are copied at write time; the janitor prunes rows after 180 days.
+- Limiter: `s.authLimiter(name)` plus `refunder`; named policies live in `DefaultAuthPolicy().Named`
+  (`reauth` exists; add `ident`, `reset-mail`, `smtp-test`, `mfa`, `mfa-day`, `mailcode` there). Hash work
+  goes through `s.withHashGate`; hashing for new passwords through `s.hash.hash`.
+- There is no `userTables` registry yet: plan 2 creates the delete list and the schema-walking guard
+  (users spec section 6). Tables with a user reference today (verify with the guard): `workspaces`,
+  `study_events`, `plugin_states`, `plugin_data`, `user_edits`, `sentences.user_id`, `library_books`,
+  `library_bookmarks`, `library_highlights`, `journal_photos`, `ai_keys`, `ai_selection`, `ai_calls`,
+  `ai_custom_providers.created_by`, `sessions`, `auth_audit.actor_id/target_id` (kept, names replaced),
+  `auth_settings.updated_by`, and from #84 `user_time_zones.user_id` (migration 035: add it to the delete
+  list).
+- Fixtures: plans 2 and 3 add rows to `errors.json` (the catalogue test fails on an uncatalogued code) and
+  new files under `docs/contracts/auth/`.
+
+### Review fix wave (security review of this branch)
+
+- Ruling: `secure_delete` is ON only while migrations run (the pool is held to one connection and the pragma is
+  switched off afterwards); an always-on pragma would make pack uninstalls and imports write zeroes for nothing.
+  Test: a 031 file database with a marker token, migrated, checkpointed (TRUNCATE) and closed: the marker is absent
+  from the db and wal bytes. Backups taken before the upgrade keep the plaintext tokens (README, Upgrading).
+  Cost if wrong: later deletes of other secrets are not zeroed.
+- Ruling: the forced-change test is a session-id watermark (`users.must_change_after`, the AUTOINCREMENT high-water
+  mark), not a timestamp: strict, immune to clock step-back and equal seconds. `auth.ForcePasswordChange` sets the flag,
+  the watermark and deletes ALL of the user's sessions in one transaction (requirement for plan 2). A NULL watermark
+  means "ask for the current password". Replaces `must_change_set_at`, `Principal.SessionCreated/MustChangeSetAt`
+  (now `Principal.TemporarySession`). Migration 032 was edited in place (not released, not merged).
+- Ruling: `me.needsCurrentPassword` plus 403 `current_password_required` (refused before a re-auth token or a hash is
+  spent) so the first empty submit of the forced page costs nothing.
+- Ruling: migrated sessions get `last_used_at = max(updated_at, upgrade time)`; `created_at` stays the old value.
+- Ruling: `users.username_key` = NFKC(fold(NFKC(name))) with a partial UNIQUE index, filled by the 032 Go step (lowest id
+  wins a legacy collision; the later user keeps NULL and a count is logged; login stays exact). New names are NFC,
+  trimmed, 3-32 letters/digits/`._-`, no Latin+Cyrillic/Greek mix; format characters were already outside the allowed
+  classes (tested). `x/text` was already a dependency. Case folding of NFKC compatibility forms is by `x/text/cases`.
+- Ruling: audit detail is an allowlist of keys (`scope revoked forced signedOutOthers field to maxUses uses count enabled`),
+  scalar values only, strings at most 64 bytes. Session revokes and their audit row are one transaction
+  (`RevokeSessionAudited`, `RevokeOthersAudited`). `CleanDevice` drops Unicode Cf as well as control characters.
+- Test: the gate guard also forbids `.authenticate(` calls and an aliased import of the auth package outside
+  `handlers_auth.go` (both mutation-verified).

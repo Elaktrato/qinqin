@@ -44,4 +44,15 @@ describe('login page throttling', () => {
 		await submit();
 		expect((await screen.findByRole('alert')).textContent).toBe('Wrong username or password.');
 	});
+
+	it('shows the disabled-account sentence for 403 account_disabled', async () => {
+		vi.mocked(login).mockRejectedValue(
+			new ApiError(403, JSON.stringify({ error: 'account_disabled', message: 'x' }))
+		);
+		render(Page);
+		await submit();
+		expect((await screen.findByRole('alert')).textContent).toBe(
+			'This account is disabled. Ask an administrator to enable it.'
+		);
+	});
 });

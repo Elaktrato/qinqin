@@ -15,6 +15,7 @@
 	import { pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
 	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
+	import AccountSettings from '$lib/settings/AccountSettings.svelte';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
@@ -499,6 +500,15 @@
 		hidden={activeTab !== 'ai'}
 	>
 		<AiSettings />
+	</div>
+
+	<div
+		role="tabpanel"
+		id="settings-panel-account"
+		aria-labelledby="settings-tab-account"
+		hidden={activeTab !== 'account'}
+	>
+		<AccountSettings />
 	</div>
 
 	{#if admin}

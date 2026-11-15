@@ -229,6 +229,19 @@ Full gates. Real-app check (curl only, free port, fresh data dir in `$SP/acct2`)
    no password or token text (grep the body for the test passwords and token prefixes).
 Kill, remove `$SP/acct2`.
 
+## Requirements carried over from plan 1's review (each needs a test)
+
+- **Force-change revokes ALL sessions**: admin create (temporary password), `PATCH mustChangePassword:true`,
+  reset-link use and CLI `recover` call `auth.ForcePasswordChange` (flag + watermark + delete every session of
+  the user + audit, one transaction; it exists since plan 1). Test: user with 3 sessions, force, all gone, the
+  next login is `password_change_required` and its token may change the password without the current one.
+- **Disable deletes sessions in the same transaction** as `disabled_at`; **re-enable never resurrects** an
+  old session (enable, then the earlier token is 401). Same for CLI `--enable`.
+- Admin create uses `auth.CheckNewUsername` after `auth.NormalizeUsername`, and `CreateUser` fills `username_key`
+  (unique, NFKC + case fold).
+- Audit details only use the keys in `auth.auditKeys`; extend that list deliberately (invite and settings actions).
+- Deleting a user also deletes from `user_time_zones` (migration 035) and every table the schema guard names.
+
 ## Review Focus
 
 - **Last-admin races**: guarded statements are the first write; `usersMu` held; `-race` test.

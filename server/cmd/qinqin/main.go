@@ -22,6 +22,7 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/api"
+	"qinqin/internal/auth"
 	"qinqin/internal/db"
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
@@ -168,6 +169,7 @@ func serveCmd(args []string) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
+	go auth.RunJanitor(ctx, sqlDB, time.Hour, log.Printf)
 	var limiter *ai.Limiter
 	if aiSvc != nil {
 		limiter = aiSvc.Limiter
