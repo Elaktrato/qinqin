@@ -58,6 +58,7 @@ overlay applied. 401 without a session, 400 `ids must be 1 to 500 entry ids`, 41
   for any other.
 - System decks are never written. Their level names are the identity of a copy: a pack update that renames a
   level makes a later add create a second deck, the old one keeps working.
+- Concurrency: two devices joining the same word to different decks at the same moment is last-write-wins at row level (one deck may lose the word; there are never duplicate cards). A writer stamps each row `max(its clock, newest known updatedAt or tombstone time of that row + 1 ms)`, so a clock behind the server's does not lose to a fresh tombstone.
 - Daily limits (#89) and vacation (#88) are not part of these numbers yet; when they land, `due` and `fresh`
   here stay uncapped and "left today" is shown beside them.
 

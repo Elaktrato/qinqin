@@ -252,12 +252,21 @@ describe('scheduleIndex', () => {
 		expect(index.size).toBe(2500);
 
 		const decks = Array.from({ length: 20 }, (_, i) => deck(`d${i}`));
-		const before = calls.length;
-		const sample = reviews.slice(0, 2000);
-		for (const d of decks) {
-			deckNumbers({ deckId: d.id, cards, decks, reviews: sample, index, kinds: ['vocab'], now: NOW, w: DEFAULT_W, day: utcDay, addDays });
-		}
-		expect(calls.length).toBe(before);
+		const run = (idx: ScheduleIndex) =>
+			decks.map((d) =>
+				deckNumbers({ deckId: d.id, cards, decks, reviews, index: idx, kinds: ['vocab'], now: NOW, w: DEFAULT_W, day: utcDay, addDays })
+			);
+		// Premise: with the real schedules the reviewed cards are due (reviews are in January).
+		expect(run(index).reduce((sum, n) => sum + n.due, 0)).toBeGreaterThan(0);
+		// If any deck replayed the history instead of reading the index, these far-future
+		// schedules would not hold: nothing reviewed may be due, only the never-reviewed are new.
+		const far: ScheduleIndex = new Map(
+			[...index.keys()].map((id) => [id, { state: 2, stability: 50, difficulty: 5, due: '2100-01-01T00:00:00.000Z' }])
+		);
+		const poisoned = run(far);
+		expect(poisoned.reduce((sum, n) => sum + n.due, 0)).toBe(0);
+		expect(poisoned.reduce((sum, n) => sum + n.fresh, 0)).toBe(2500);
+		expect(calls.length).toBe(2500);
 	});
 
 	it('numbers follow the index, not a replay', () => {
