@@ -675,10 +675,10 @@ runs it together with the scripts' tests (`node --test scripts/*.test.mjs`).
 
 The Journal is a page plugin (`qinqin-journal`) where you write dated entries per workspace. The AI features (a review with underlined corrections, topic ideas, and turning a photo of a page into an entry) are optional and use **your own Anthropic API key**; qinqin ships no key and sends nothing to any provider on its own.
 
-- **What is sent, and when.** Only when you press a button: the entry text (up to 5,000 characters) and your guidance for a review, a list of recently studied words and the openings of your last entries for topic ideas, or one re-encoded photo for a transcription. Nothing is sent when you merely open the page or pick a photo. Photos are stripped of metadata (including GPS) and shrunk before they leave the server, are never sent twice, and are deleted when you save or discard the draft (a janitor sweeps forgotten ones within about an hour).
+- **What is sent, and when.** Only when you press a button: the entry text (up to 5,000 characters) and your guidance for a review, a list of recently studied words and the openings of your last entries for topic ideas, or one re-encoded photo for a transcription. Nothing is sent when you merely open the page or pick a photo. Photos are stripped of metadata (including GPS) and shrunk before they leave the server, are sent only when you press a transcription button, and are deleted when you save or discard the draft (a janitor sweeps forgotten ones within about an hour).
 - **Key storage.** Each user stores their own key in Settings → AI. It is encrypted at rest (AES-256-GCM, bound to the user) with `QINQIN_SECRET` and is never returned by the API, written to logs, or included in sync or backups in plain text. Only the last four characters are shown as a hint.
 - **Models.** `claude-opus-5-5` (default), `claude-sonnet-5-5` and `claude-haiku-5-5`, chosen per user. On Opus and Sonnet a safety refusal is retried by the provider's default fallback model, which can answer from another model on your key; the review says which model answered.
-- **Limits.** 30 provider calls per user per rolling hour (checking a key counts as one), one AI call in flight per user, 5,000 characters per review, 10 MiB and 50 megapixels per photo, at most 10 pending photos per user. Settings → AI shows the calls and tokens used this hour.
+- **Limits.** 30 provider calls per user per rolling hour (checking a key counts as one), one AI call in flight per user, 5,000 characters per review, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour. Settings → AI shows the calls and tokens used this hour.
 - **Offline OCR.** The image bundles Tesseract 5 (with Chinese Simplified and Traditional, Japanese and English data) for reading a photo without any AI; without the `tesseract` binary it shows as unavailable.
 
 ### Photo routes
@@ -687,7 +687,7 @@ All need a bearer token; a foreign workspace or photo is a 404.
 
 | Route | Meaning |
 |---|---|
-| `POST /api/journal/photos` | multipart `file` and `workspace`; JPEG, PNG or WebP (sniffed), up to 10 MiB and 50 megapixels. Re-encoded to JPEG (EXIF rotation applied, GPS and all metadata dropped, long edge at most 2576 px). 201 `{photoId}`; 413 `photo_too_large`, 415 `unsupported_image`, 422 `image_too_large`, 409 `too_many_photos` (10 pending per user) |
+| `POST /api/journal/photos` | multipart `file` and `workspace`; JPEG, PNG or WebP (sniffed), up to 10 MiB and 25 megapixels. Re-encoded to JPEG (EXIF rotation applied, GPS and all metadata dropped, long edge at most 2576 px, at most 3.75 MB so it stays under the API's 5 MB after base64). 201 `{photoId}`; 413 `photo_too_large`, 415 `unsupported_image`, 422 `image_too_large`, 409 `too_many_photos` (10 pending per user), 429 `rate_limited` (30 uploads per user and hour) |
 | `GET /api/journal/photos/{id}` | the stored JPEG (`no-store`) |
 | `PUT /api/journal/photos/{id}/keepalive` | 204; keeps an open draft's photo alive |
 | `DELETE /api/journal/photos/{id}` | 204 |

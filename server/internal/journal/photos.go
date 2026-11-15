@@ -88,6 +88,13 @@ func (p Photos) Create(ctx context.Context, userID, workspaceID int64, jpegData 
 	return Photo{ID: id, UserID: userID, WorkspaceID: workspaceID, CreatedAt: now, LastSeenAt: now}, nil
 }
 
+// Count is the number of photo drafts the user has open.
+func (p Photos) Count(ctx context.Context, userID int64) (int, error) {
+	var n int
+	err := p.DB.QueryRowContext(ctx, `SELECT COUNT(*) FROM journal_photos WHERE user_id = ?`, userID).Scan(&n)
+	return n, err
+}
+
 // Get returns the owner's photo and its bytes, and bumps last_seen_at.
 func (p Photos) Get(ctx context.Context, userID int64, id string) (Photo, []byte, error) {
 	ph, err := p.row(ctx, userID, id)

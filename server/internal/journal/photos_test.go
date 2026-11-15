@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -211,5 +213,34 @@ func TestRunJanitorSweepsAtStart(t *testing.T) {
 	<-done
 	if exists(fileOf(p, 1, ph.ID)) {
 		t.Fatal("the janitor did not sweep at start")
+	}
+}
+
+func TestPhotosPendingCapParallel(t *testing.T) {
+	now := time.Now()
+	p := newPhotos(t, &now)
+	var wg sync.WaitGroup
+	var ok, full atomic.Int32
+	for i := 0; i < 40; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := p.Create(context.Background(), 1, 5, []byte("x"))
+			switch {
+			case err == nil:
+				ok.Add(1)
+			case errors.Is(err, ErrTooManyPhotos):
+				full.Add(1)
+			default:
+				t.Errorf("create: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
+	if ok.Load() != MaxPendingPhotos || full.Load() != 40-MaxPendingPhotos {
+		t.Fatalf("created %d, refused %d; want %d and %d", ok.Load(), full.Load(), MaxPendingPhotos, 40-MaxPendingPhotos)
+	}
+	if n, _ := p.Count(context.Background(), 1); n != MaxPendingPhotos {
+		t.Fatalf("Count = %d", n)
 	}
 }

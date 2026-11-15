@@ -221,3 +221,19 @@ func TestCapabilitiesOCR(t *testing.T) {
 	}
 	_ = os.Stderr
 }
+
+func TestTranscribeOfflineBusyDoesNotCount(t *testing.T) {
+	ocr := newOCR()
+	ocr.err = journal.ErrOCRBusy
+	e := newJournalEnvOpts(t, ai.Fake{}, false, api.WithOCR(ocr))
+	photo := e.uploadOK(t, e.token, e.ws)
+	for i := 0; i < 70; i++ {
+		if status, _ := e.transcribe(t, e.token, e.ws, photo, "offline"); status != 503 {
+			t.Fatalf("busy read %d: %d", i, status)
+		}
+	}
+	ocr.err = nil
+	if status, _ := e.transcribe(t, e.token, e.ws, photo, "offline"); status != 200 {
+		t.Fatalf("read after busy answers: %d", status)
+	}
+}

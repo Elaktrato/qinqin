@@ -67,15 +67,16 @@ func (s *server) runAI(r *http.Request, userID int64, kind string, call func(ctx
 	if err := s.aiUsable(); err != nil {
 		return ai.Credentials{}, err
 	}
-	creds, err := s.ai.Keys.Credentials(r.Context(), userID)
-	if err != nil {
-		return ai.Credentials{}, err
-	}
 	release, err := s.ai.Limiter.Acquire(r.Context(), userID)
 	if err != nil {
 		return ai.Credentials{}, err
 	}
 	defer release()
+	// Only a call that may run decrypts the key and stamps last_used_at.
+	creds, err := s.ai.Keys.Credentials(r.Context(), userID)
+	if err != nil {
+		return ai.Credentials{}, err
+	}
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), aiProviderTimeout)
 	defer cancel()
 	_, usage, err := call(ctx, creds)
@@ -173,6 +174,16 @@ func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 		rev.FallbackFrom = creds.Model
 	}
 	wctx := context.WithoutCancel(r.Context())
+	// The entry may have been deleted while the provider worked: do not leave
+	// an orphaned review behind. (A delete in the instant between this check
+	// and the write is rare and harmless: the review is swept with its entry.)
+	if _, err := plugins.GetData(wctx, s.db, u.ID, &t.ws, journal.PluginID, journal.EntryKey(entry.ID)); errors.Is(err, plugins.ErrNotFound) {
+		http.Error(w, "entry not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	if err := s.putJournalDoc(wctx, u.ID, t.ws, journal.ReviewKey(entry.ID), rev); err != nil {
 		log.Printf("journal: store review: %v", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)

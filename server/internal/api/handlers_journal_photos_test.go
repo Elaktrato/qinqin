@@ -137,3 +137,47 @@ func TestPhotoUploadErrors(t *testing.T) {
 	}
 	_ = os.Stderr
 }
+
+func TestPhotoPendingCapIsCheckedBeforeDecoding(t *testing.T) {
+	env := newJournalEnv(t, ai.Fake{}, false)
+	for i := 0; i < 10; i++ {
+		if r := uploadPhoto(t, env, env.token, env.ws, testJPEG(t, 10, 10)); r.StatusCode != 201 {
+			t.Fatalf("photo %d: %d", i, r.StatusCode)
+		}
+	}
+	// Garbage would be a 415 if it were decoded; at the cap it is a 409.
+	var e struct {
+		Error string `json:"error"`
+	}
+	r := uploadPhoto(t, env, env.token, env.ws, []byte("GIF89a not a photo"))
+	decodeJSON(t, r, &e)
+	if r.StatusCode != 409 || e.Error != "too_many_photos" {
+		t.Fatalf("at the cap: %d %q", r.StatusCode, e.Error)
+	}
+}
+
+func TestPhotoUploadRateLimit(t *testing.T) {
+	env := newJournalEnv(t, ai.Fake{}, false)
+	for i := 0; i < 30; i++ {
+		r := uploadPhoto(t, env, env.token, env.ws, testJPEG(t, 10, 10))
+		if r.StatusCode != 201 {
+			t.Fatalf("upload %d: %d", i, r.StatusCode)
+		}
+		var c struct {
+			PhotoID string `json:"photoId"`
+		}
+		decodeJSON(t, r, &c)
+		doJSON(t, http.MethodDelete, env.url, "/api/journal/photos/"+c.PhotoID, env.token, nil)
+	}
+	r := uploadPhoto(t, env, env.token, env.ws, testJPEG(t, 10, 10))
+	if r.StatusCode != 429 || r.Header.Get("Retry-After") == "" {
+		t.Fatalf("31st upload: %d %v", r.StatusCode, r.Header)
+	}
+}
+
+func TestPhotoUploadLimitIs25Megapixels(t *testing.T) {
+	env := newJournalEnv(t, ai.Fake{}, false)
+	if r := uploadPhoto(t, env, env.token, env.ws, testJPEG(t, 5100, 5100)); r.StatusCode != 422 {
+		t.Fatalf("26 MP: %d", r.StatusCode)
+	}
+}

@@ -23,9 +23,21 @@ const (
 	maxPhotoFormMemory = 1 << 20
 )
 
-// photoWork bounds the photos decoded at once: a 50 MP decode takes a few
-// hundred MiB.
+// photoWork bounds the photos decoded at once: a 25 MP decode takes a
+// couple of hundred MiB.
 var photoWork = make(chan struct{}, 2)
+
+// normalizeBounded waits for a decode slot, normalises the photo and always
+// gives the slot back.
+func normalizeBounded(ctx context.Context, data []byte) ([]byte, error) {
+	select {
+	case photoWork <- struct{}{}:
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+	defer func() { <-photoWork }()
+	return journal.NormalizePhoto(data)
+}
 
 func (s *server) photos() journal.Photos {
 	return journal.Photos{DB: s.db, Dir: filepath.Join(s.dataDir, "journal")}
@@ -63,6 +75,17 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.journalTarget(w, r, u.ID, wsID); !ok {
 		return
 	}
+	// Cheap refusals first: the pending cap and the hourly limit come before
+	// any pixel is decoded. Create still enforces the cap atomically.
+	if n, err := s.photos().Count(r.Context(), u.ID); err == nil && n >= journal.MaxPendingPhotos {
+		writeJournalError(w, http.StatusConflict, "too_many_photos", "You have 10 photo drafts open. Finish or discard one first.")
+		return
+	}
+	if ok, wait := s.uploadUse.take(u.ID, time.Now(), photoUploadsHour); !ok {
+		w.Header().Set("Retry-After", strconv.Itoa(secondsCeil(wait)))
+		writeJournalError(w, http.StatusTooManyRequests, "rate_limited", "You have uploaded "+strconv.Itoa(photoUploadsHour)+" photos this hour. Try again later.")
+		return
+	}
 	file, _, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, `multipart field "file" with the photo required`, http.StatusBadRequest)
@@ -78,19 +101,16 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		tooBig()
 		return
 	}
-	select {
-	case photoWork <- struct{}{}:
-	case <-r.Context().Done():
-		return
-	}
-	jpegData, err := journal.NormalizePhoto(data)
-	<-photoWork
+	jpegData, err := normalizeBounded(r.Context(), data)
 	switch {
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+		return
+
 	case errors.Is(err, journal.ErrUnsupportedImage):
 		writeJournalError(w, http.StatusUnsupportedMediaType, "unsupported_image", "Choose a JPEG, PNG or WebP photo.")
 		return
 	case errors.Is(err, journal.ErrImageTooLarge):
-		writeJournalError(w, http.StatusUnprocessableEntity, "image_too_large", "That photo is larger than 50 megapixels.")
+		writeJournalError(w, http.StatusUnprocessableEntity, "image_too_large", "That photo is larger than 25 megapixels.")
 		return
 	case err != nil:
 		log.Printf("journal: normalise photo: %v", err)
@@ -165,34 +185,58 @@ func (s *server) handleDeletePhoto(w http.ResponseWriter, r *http.Request) {
 const (
 	maxTranscribeBody = 4 << 10
 	offlineReadsHour  = 60
+	photoUploadsHour  = 30
 )
 
-// offlineUse counts offline reads per user over a rolling hour, in memory.
-type offlineUse struct {
-	mu sync.Mutex
-	at map[int64][]time.Time
+// hourlyUse counts actions per user over a rolling hour, in memory.
+type hourlyUse struct {
+	mu        sync.Mutex
+	at        map[int64][]time.Time
+	lastSweep time.Time
 }
 
-// take records a read, or reports how long until one is free.
-func (o *offlineUse) take(userID int64, now time.Time) (ok bool, wait time.Duration) {
+// take records an action, or reports how long until one is free. Users who
+// have been quiet for an hour are dropped from the map now and then.
+func (o *hourlyUse) take(userID int64, now time.Time, limit int) (ok bool, wait time.Duration) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	if o.at == nil {
 		o.at = map[int64][]time.Time{}
 	}
 	cutoff := now.Add(-time.Hour)
+	if now.Sub(o.lastSweep) >= time.Minute {
+		o.lastSweep = now
+		for id, ts := range o.at {
+			if len(ts) == 0 || !ts[len(ts)-1].After(cutoff) {
+				delete(o.at, id)
+			}
+		}
+	}
 	kept := o.at[userID][:0]
 	for _, t := range o.at[userID] {
 		if t.After(cutoff) {
 			kept = append(kept, t)
 		}
 	}
-	if len(kept) >= offlineReadsHour {
+	if len(kept) >= limit {
 		o.at[userID] = kept
 		return false, kept[0].Add(time.Hour).Sub(now)
 	}
 	o.at[userID] = append(kept, now)
 	return true, 0
+}
+
+// refund gives back the action taken at now (a read that never ran).
+func (o *hourlyUse) refund(userID int64, now time.Time) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	ts := o.at[userID]
+	for i := len(ts) - 1; i >= 0; i-- {
+		if ts[i].Equal(now) {
+			o.at[userID] = append(ts[:i], ts[i+1:]...)
+			return
+		}
+	}
 }
 
 func (s *server) ocrAvailable() bool { return s.ocr != nil && s.ocr.Available() }
@@ -255,7 +299,8 @@ func (s *server) handleJournalTranscribe(w http.ResponseWriter, r *http.Request)
 		writeJournalError(w, http.StatusConflict, "ocr_language_missing", "Offline reading has no model for "+ai.LanguageName(t.language)+".")
 		return
 	}
-	if ok, wait := s.ocrUse.take(u.ID, time.Now()); !ok {
+	usedAt := time.Now()
+	if ok, wait := s.ocrUse.take(u.ID, usedAt, offlineReadsHour); !ok {
 		w.Header().Set("Retry-After", strconv.Itoa(secondsCeil(wait)))
 		writeJournalError(w, http.StatusTooManyRequests, "rate_limited", "You have used "+strconv.Itoa(offlineReadsHour)+" offline reads this hour. Try again later.")
 		return
@@ -263,6 +308,7 @@ func (s *server) handleJournalTranscribe(w http.ResponseWriter, r *http.Request)
 	text, err := s.ocr.Recognize(r.Context(), jpegData, langs)
 	switch {
 	case errors.Is(err, journal.ErrOCRBusy):
+		s.ocrUse.refund(u.ID, usedAt) // the read never ran
 		w.Header().Set("Retry-After", "10")
 		writeJournalError(w, http.StatusServiceUnavailable, "busy", "Offline reading is busy. Try again in a moment.")
 		return

@@ -17,12 +17,13 @@ import (
 // server carries the shared database handle and data directory for all
 // route handlers.
 type server struct {
-	db      *sql.DB
-	dataDir string
-	sources []sources.Source
-	ai      *ai.Service // nil: AI is off (status reads "no_secret")
-	ocr     journal.OCR // nil: offline reading is not installed
-	ocrUse  offlineUse  // offline reads per user and hour
+	db        *sql.DB
+	dataDir   string
+	sources   []sources.Source
+	ai        *ai.Service // nil: AI is off (status reads "no_secret")
+	ocr       journal.OCR // nil: offline reading is not installed
+	ocrUse    hourlyUse   // offline reads per user and hour
+	uploadUse hourlyUse   // photo uploads per user and hour
 
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
