@@ -10,6 +10,7 @@ import { cellStates, masteryGlyphs, sectionStats, type SectionStats } from '$lib
 import { fillMissingWritten } from '$lib/study/entriesCache';
 import { masteryForChars } from '$lib/study/mastery';
 import { loadStudyHistory } from '$lib/study/history';
+import { activeWeights } from '$lib/study/store';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 
 /** characterSummary counts the characters per mastery stage and those learned. */
@@ -17,9 +18,10 @@ export function characterSummary(
 	chars: readonly CharRow[],
 	cards: readonly StudyCard[],
 	reviews: readonly ReviewEvent[],
-	now: Date
+	now: Date,
+	w: readonly number[]
 ): SectionStats {
-	const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, now);
+	const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, now, w);
 	return sectionStats(cellStates(chars, mastery));
 }
 
@@ -27,6 +29,8 @@ export interface CharacterMapData {
 	list: CharacterList;
 	cards: StudyCard[];
 	reviews: ReviewEvent[];
+	/** The workspace's active FSRS weights. */
+	w: readonly number[];
 }
 
 /**
@@ -45,7 +49,7 @@ export async function loadCharacterMapData(
 		fetchCharacters(language),
 		loadStudyHistory(workspaceId, opts)
 	]);
-	return { list, cards: data.cards, reviews: data.reviews };
+	return { list, cards: data.cards, reviews: data.reviews, w: activeWeights(data) };
 }
 
 /**

@@ -5,6 +5,7 @@
 
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
+import { weightsKey } from './fsrs/params';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 /** The derived schedule of one card. `due` is an RFC 3339 instant. */
@@ -24,10 +25,34 @@ export interface BuildQueueOptions {
 	now: Date;
 	/** Card kinds to include; every kind when omitted. */
 	kinds?: readonly StudyCardKind[];
+	/** The workspace's active FSRS weights (`activeWeights(history)`). */
+	w: readonly number[];
 }
 
-// One scheduler instance is enough: it is stateless between calls.
-const scheduler = fsrs();
+// One scheduler instance per weight set: instances are stateless between
+// calls, so equal weights share one. Every other option stays the
+// ts-fsrs default (fuzz off, short-term on).
+const MAX_SCHEDULERS = 16;
+const schedulers = new Map<string, ReturnType<typeof fsrs>>();
+
+function schedulerFor(w: readonly number[]): ReturnType<typeof fsrs> {
+	const key = weightsKey(w);
+	let instance = schedulers.get(key);
+	if (instance === undefined) {
+		if (schedulers.size >= MAX_SCHEDULERS) {
+			const oldest = schedulers.keys().next().value;
+			if (oldest !== undefined) schedulers.delete(oldest);
+		}
+		instance = fsrs({ w: [...w] });
+		schedulers.set(key, instance);
+	}
+	return instance;
+}
+
+/** schedulerCacheSize is the number of memoised instances (for tests). */
+export function schedulerCacheSize(): number {
+	return schedulers.size;
+}
 
 // Map the Anki grades explicitly instead of relying on numeric parity:
 // 1 Again, 2 Hard, 3 Good, 4 Easy.
@@ -81,9 +106,11 @@ export function sortedReviews(reviews: readonly ReviewEvent[]): ReviewEvent[] {
 export function scheduleFor(
 	cardId: string,
 	reviews: readonly ReviewEvent[],
-	now: Date
+	now: Date,
+	w: readonly number[]
 ): Schedule | null {
 	void now;
+	const scheduler = schedulerFor(w);
 
 	const history = sortedReviews(
 		reviews.filter((review) => isValidReview(review) && review.payload.cardId === cardId)
@@ -126,7 +153,8 @@ export function buildQueue({
 	newLimit,
 	reviewLimit,
 	now,
-	kinds
+	kinds,
+	w
 }: BuildQueueOptions): StudyCard[] {
 	const wanted = new Set(deckIds);
 	const scoped = cards.filter(
@@ -154,7 +182,7 @@ export function buildQueue({
 			fresh.push(card);
 			continue;
 		}
-		const schedule = scheduleFor(card.id, history, now);
+		const schedule = scheduleFor(card.id, history, now, w);
 		if (schedule !== null && isDue(schedule, now)) {
 			due.push({ card, at: instant(schedule.due) });
 		}

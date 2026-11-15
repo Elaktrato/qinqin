@@ -28,10 +28,11 @@
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
+	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
-	import { addCard, loadStudyData } from '$lib/study/store';
+	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -157,6 +158,8 @@
 	let reserve = $state.raw<FlowItem[]>([]);
 	let backfillLeft = 0;
 	let reviews = $state.raw<ReviewEvent[]>([]);
+	// The weights loaded with this session; a change elsewhere waits for the next load.
+	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
 	// Re-shows answered this session; practice only, never recorded.
@@ -318,6 +321,8 @@
 
 			const history = data.reviews;
 			reviews = history;
+			weights = activeWeights(data);
+			const w = weights;
 			cards = data.cards;
 			const now = new Date();
 			if (config.mode === 'levels') {
@@ -329,7 +334,8 @@
 						reviews: history,
 						newLimit: config.newLimit,
 						reviewLimit: config.reviewLimit,
-						now
+						now,
+						w
 					}),
 					data.cards,
 					kinds
@@ -343,6 +349,7 @@
 					newLimit: config.newLimit,
 					reviewLimit: config.reviewLimit,
 					now,
+					w,
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
 					skip: loadIneligible(workspaceId)
@@ -401,7 +408,7 @@
 					...base,
 					item: item.virtual ? { ...item, sentenceId: sentence?.id } : item,
 					sentence,
-					tier: item.tier ?? tierForCard(cardId, history, now),
+					tier: item.tier ?? tierForCard(cardId, history, now, weights),
 					seed: `${item.card?.id ?? item.cardId}:${reviewCountFor(cardId, history)}`
 				};
 			}

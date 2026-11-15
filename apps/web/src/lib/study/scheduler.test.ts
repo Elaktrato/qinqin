@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
-import { buildQueue, isDue, levelFromXp, scheduleFor, xpFromReviews } from './scheduler';
+import { createEmptyCard, fsrs, Rating, type Grade } from 'ts-fsrs';
+
+import { DEFAULT_W } from './fsrs/params';
+import {
+	buildQueue,
+	isDue,
+	levelFromXp,
+	scheduleFor,
+	schedulerCacheSize,
+	xpFromReviews
+} from './scheduler';
 
 // ULIDs are lexicographically sortable: same-instant reviews break ties
 // on the id, exactly like the server's own ordering.
@@ -46,8 +56,8 @@ const NOW = new Date('2026-06-01T00:00:00.000Z');
 
 describe('scheduleFor', () => {
 	it('returns null when the card has no reviews', () => {
-		expect(scheduleFor('missing', [], NOW)).toBeNull();
-		expect(scheduleFor('missing', [review('other', 3, '2026-01-01T00:00:00.000Z')], NOW)).toBeNull();
+		expect(scheduleFor('missing', [], NOW, DEFAULT_W)).toBeNull();
+		expect(scheduleFor('missing', [review('other', 3, '2026-01-01T00:00:00.000Z')], NOW, DEFAULT_W)).toBeNull();
 	});
 
 	it('replays the same events to the same schedule', () => {
@@ -57,8 +67,8 @@ describe('scheduleFor', () => {
 			review('c1', 3, '2026-02-01T00:00:00.000Z', eventId(3))
 		];
 
-		const first = scheduleFor('c1', reviews, NOW);
-		const second = scheduleFor('c1', [...reviews].reverse(), NOW);
+		const first = scheduleFor('c1', reviews, NOW, DEFAULT_W);
+		const second = scheduleFor('c1', [...reviews].reverse(), NOW, DEFAULT_W);
 
 		expect(first).not.toBeNull();
 		expect(second).toEqual(first);
@@ -69,7 +79,7 @@ describe('scheduleFor', () => {
 		const b = review('c1', 1, '2026-01-02T00:00:00.000Z', eventId(2));
 
 		// Same instant: the id decides which grade is applied last.
-		expect(scheduleFor('c1', [a, b], NOW)).toEqual(scheduleFor('c1', [b, a], NOW));
+		expect(scheduleFor('c1', [a, b], NOW, DEFAULT_W)).toEqual(scheduleFor('c1', [b, a], NOW, DEFAULT_W));
 	});
 
 	it('ignores reviews of other cards', () => {
@@ -80,7 +90,7 @@ describe('scheduleFor', () => {
 			review('c2', 1, '2026-01-02T00:00:00.000Z', eventId(3))
 		];
 
-		expect(scheduleFor('c1', other, NOW)).toEqual(scheduleFor('c1', own, NOW));
+		expect(scheduleFor('c1', other, NOW, DEFAULT_W)).toEqual(scheduleFor('c1', own, NOW, DEFAULT_W));
 	});
 
 	it('makes Again due earlier than Good for the same history', () => {
@@ -89,12 +99,12 @@ describe('scheduleFor', () => {
 			'c1',
 			[...history, review('c1', 1, '2026-01-02T00:00:00.000Z', eventId(2))],
 			NOW
-		);
+		, DEFAULT_W);
 		const good = scheduleFor(
 			'c1',
 			[...history, review('c1', 3, '2026-01-02T00:00:00.000Z', eventId(2))],
 			NOW
-		);
+		, DEFAULT_W);
 
 		expect(again).not.toBeNull();
 		expect(good).not.toBeNull();
@@ -106,7 +116,7 @@ describe('scheduleFor', () => {
 			'c1',
 			[review('c1', 3, '2026-01-01T00:00:00.000Z', eventId(1))],
 			NOW
-		);
+		, DEFAULT_W);
 
 		expect(schedule).not.toBeNull();
 		expect(new Date(schedule!.due).toISOString()).toBe(schedule!.due);
@@ -146,7 +156,7 @@ describe('buildQueue', () => {
 	];
 
 	it('puts due reviews first, ordered by due, then new cards', () => {
-		const queue = buildQueue({
+		const queue = buildQueue({ w: DEFAULT_W,
 			cards,
 			reviews,
 			deckIds: ['general'],
@@ -159,7 +169,7 @@ describe('buildQueue', () => {
 	});
 
 	it('caps reviews and new cards independently', () => {
-		const queue = buildQueue({
+		const queue = buildQueue({ w: DEFAULT_W,
 			cards,
 			reviews,
 			deckIds: ['general'],
@@ -172,7 +182,7 @@ describe('buildQueue', () => {
 	});
 
 	it('never treats a reviewed card as new, even when it is not due', () => {
-		const queue = buildQueue({
+		const queue = buildQueue({ w: DEFAULT_W,
 			cards,
 			reviews,
 			deckIds: ['general'],
@@ -185,7 +195,7 @@ describe('buildQueue', () => {
 	});
 
 	it('only keeps cards that belong to one of the selected decks', () => {
-		const queue = buildQueue({
+		const queue = buildQueue({ w: DEFAULT_W,
 			cards,
 			reviews,
 			deckIds: ['other'],
@@ -199,7 +209,7 @@ describe('buildQueue', () => {
 
 	it('includes a card shared with a selected deck', () => {
 		const shared = card('c7', ['general', 'deck-a'], '2026-01-04T00:00:00.000Z');
-		const queue = buildQueue({
+		const queue = buildQueue({ w: DEFAULT_W,
 			cards: [...cards, shared],
 			reviews,
 			deckIds: ['deck-a'],
@@ -228,7 +238,7 @@ describe('buildQueue kinds', () => {
 		review('v-due', 3, '2026-01-01T00:00:00.000Z', eventId(1)),
 		review('t-due', 3, '2026-01-01T00:00:00.000Z', eventId(2))
 	];
-	const base = { cards, reviews, deckIds: ['general'], newLimit: 10, reviewLimit: 10, now: NOW };
+	const base = { cards, reviews, deckIds: ['general'], newLimit: 10, reviewLimit: 10, now: NOW, w: DEFAULT_W };
 
 	it('returns only the requested kinds, due and new', () => {
 		const ids = buildQueue({ ...base, kinds: ['tone'] }).map((c) => c.id);
@@ -278,13 +288,13 @@ describe('malformed review events', () => {
 		const valid = review('c1', 3, '2026-01-01T00:00:00.000Z', eventId(1));
 		const poisoned = malformed('c1', 9, '2026-01-02T00:00:00.000Z');
 
-		expect(scheduleFor('c1', [valid, poisoned], NOW)).toEqual(scheduleFor('c1', [valid], NOW));
+		expect(scheduleFor('c1', [valid, poisoned], NOW, DEFAULT_W)).toEqual(scheduleFor('c1', [valid], NOW, DEFAULT_W));
 		expect(xpFromReviews([valid, poisoned])).toBe(25);
 	});
 
 	it('ignores an invalid timestamp and an empty card id', () => {
-		expect(scheduleFor('c1', [malformed('c1', 3, 'not-a-timestamp')], NOW)).toBeNull();
-		expect(scheduleFor('c1', [malformed('', 3, '2026-01-01T00:00:00.000Z')], NOW)).toBeNull();
+		expect(scheduleFor('c1', [malformed('c1', 3, 'not-a-timestamp')], NOW, DEFAULT_W)).toBeNull();
+		expect(scheduleFor('c1', [malformed('', 3, '2026-01-01T00:00:00.000Z')], NOW, DEFAULT_W)).toBeNull();
 	});
 
 	it('does not throw while building a queue and treats cleaned cards as new', () => {
@@ -299,7 +309,7 @@ describe('malformed review events', () => {
 
 		let queue: StudyCard[] = [];
 		expect(() => {
-			queue = buildQueue({
+			queue = buildQueue({ w: DEFAULT_W,
 				cards,
 				reviews,
 				deckIds: ['general'],
@@ -309,5 +319,43 @@ describe('malformed review events', () => {
 			});
 		}).not.toThrow();
 		expect(queue.map((item) => item.id)).toEqual(['c1', 'c2']);
+	});
+});
+
+describe('scheduleFor weights', () => {
+	const reviews = [
+		review('w1', 3, '2026-01-01T00:00:00.000Z', eventId(1)),
+		review('w1', 3, '2026-01-04T00:00:00.000Z', eventId(2)),
+		review('w1', 4, '2026-01-12T00:00:00.000Z', eventId(3))
+	];
+
+	it('with the default weights equals a plain ts-fsrs replay', () => {
+		const plain = fsrs();
+		let c = createEmptyCard(new Date(reviews[0].ts));
+		const grades: Grade[] = [Rating.Good, Rating.Good, Rating.Easy];
+		reviews.forEach((r, i) => {
+			c = plain.next(c, new Date(r.ts), grades[i]).card;
+		});
+		const got = scheduleFor('w1', reviews, NOW, DEFAULT_W);
+		expect(got?.due).toBe(c.due.toISOString());
+		expect(got?.stability).toBe(c.stability);
+		expect(got?.difficulty).toBe(c.difficulty);
+	});
+
+	it('a doubled w8 makes the due date later', () => {
+		const w = [...DEFAULT_W];
+		w[8] *= 2;
+		const base = scheduleFor('w1', reviews, NOW, DEFAULT_W);
+		const changed = scheduleFor('w1', reviews, NOW, w);
+		expect(Date.parse(changed?.due ?? '')).toBeGreaterThan(Date.parse(base?.due ?? ''));
+	});
+
+	it('equal weight arrays share one scheduler instance', () => {
+		const w = [...DEFAULT_W];
+		w[3] = 7.77;
+		scheduleFor('w1', reviews, NOW, w);
+		const size = schedulerCacheSize();
+		scheduleFor('w1', reviews, NOW, [...w]);
+		expect(schedulerCacheSize()).toBe(size);
 	});
 });

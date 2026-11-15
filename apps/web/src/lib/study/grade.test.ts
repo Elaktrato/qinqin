@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { DEFAULT_W } from './fsrs/params';
 import { gradeItem, type GradeableItem } from './grade';
 import { planCompanions } from './companions';
 import { buildQueue } from './scheduler';
@@ -281,7 +282,7 @@ describe('gradeItem', () => {
 
 		expect(addCard.mock.calls[0][1].deckIds).toEqual(['deck-a']);
 		if (!result.ok) throw new Error('expected ok');
-		const queue = buildQueue({
+		const queue = buildQueue({ w: DEFAULT_W,
 			cards: [vocab, result.card],
 			reviews: [],
 			deckIds: ['deck-a'],

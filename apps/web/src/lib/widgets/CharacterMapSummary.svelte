@@ -67,7 +67,7 @@
 			const data = await loadCharacterMapData(id, lang, { force });
 			if (seq !== requestSeq) return;
 			const now = new Date();
-			stats = characterSummary(data.list.chars, data.cards, data.reviews, now);
+			stats = characterSummary(data.list.chars, data.cards, data.reviews, now, data.w);
 			stale = data.list.stale === true;
 			loading = false;
 
@@ -76,7 +76,7 @@
 			if (data.cards.some((card) => card.written === undefined)) {
 				const filled = await withLegacyWritten(data.cards);
 				if (seq !== requestSeq) return;
-				stats = characterSummary(data.list.chars, filled.cards, data.reviews, now);
+				stats = characterSummary(data.list.chars, filled.cards, data.reviews, now, data.w);
 				unresolved = filled.unresolved;
 			}
 		} catch (err) {

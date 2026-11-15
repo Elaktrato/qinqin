@@ -30,6 +30,8 @@ export interface BuildLevelQueueOptions {
 	newLimit: number;
 	reviewLimit: number;
 	now: Date;
+	/** The workspace's active FSRS weights. */
+	w: readonly number[];
 }
 
 function instant(ts: string): number {
@@ -60,7 +62,8 @@ export function buildLevelQueue({
 	reviews,
 	newLimit,
 	reviewLimit,
-	now
+	now,
+	w
 }: BuildLevelQueueOptions): LevelQueueItem[] {
 	// One card per entry is the store's invariant; if legacy data has
 	// several, the smallest id keeps the queue stable across loads.
@@ -90,7 +93,7 @@ export function buildLevelQueue({
 			continue;
 		}
 
-		const schedule = scheduleFor(card.id, reviews, now);
+		const schedule = scheduleFor(card.id, reviews, now, w);
 		if (schedule === null) {
 			// A card that was added to study but never graded is new, just
 			// like in a deck session; keep its real id.

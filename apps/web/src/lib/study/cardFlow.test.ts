@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_W } from './fsrs/params';
 import {
 	cardedSentenceIds,
 	deckSessionItems,
@@ -156,8 +157,8 @@ describe('helpers', () => {
 
 	it('tierForCard is T0 for new or virtual cards and rises with stability', () => {
 		const now = new Date('2027-06-01T00:00:00Z');
-		expect(tierForCard(null, [], now)).toBe(0);
-		expect(tierForCard('a', [], now)).toBe(0);
+		expect(tierForCard(null, [], now, DEFAULT_W)).toBe(0);
+		expect(tierForCard('a', [], now, DEFAULT_W)).toBe(0);
 		// A long run of Good reviews spaced far apart builds large stability.
 		const reviews = [
 			review('a', '2026-01-01T00:00:00Z', 4),
@@ -165,7 +166,7 @@ describe('helpers', () => {
 			review('a', '2026-05-01T00:00:00Z', 4),
 			review('a', '2026-12-01T00:00:00Z', 4)
 		];
-		expect(tierForCard('a', reviews, now)).toBe(2);
+		expect(tierForCard('a', reviews, now, DEFAULT_W)).toBe(2);
 	});
 
 	it('maskWritten hides the usable characters not yet written', () => {
@@ -219,6 +220,7 @@ describe('deckSessionItems', () => {
 		newLimit: 20,
 		reviewLimit: 100,
 		now,
+		w: DEFAULT_W,
 		language: 'zh'
 	};
 
@@ -281,7 +283,7 @@ describe('deckSessionItems', () => {
 describe('Round 1 cards without a written snapshot', () => {
 	it('get companions of every kind, writing included (checked when shown)', () => {
 		const legacy: StudyCard = { id: 'old', kind: 'vocab', entryId: 5, deckIds: ['general'], createdAt: '2025-01-01T00:00:00Z' };
-		const items = deckSessionItems({
+		const items = deckSessionItems({ w: DEFAULT_W,
 			cards: [legacy],
 			reviews: [],
 			deckIds: ['general'],
@@ -310,6 +312,7 @@ describe('deckSessionPlan and dropItem', () => {
 		newLimit: 2,
 		reviewLimit: 100,
 		now,
+		w: DEFAULT_W,
 		language: 'zh'
 	};
 
@@ -369,7 +372,7 @@ describe('sessionCounts', () => {
 		const now = new Date('2026-03-01T00:00:00Z');
 		const cards = [card('v1', 'vocab', 1), card('v2', 'vocab', 2)];
 		const reviews = [review('v1', '2026-01-05T00:00:00Z', 1)];
-		const items = deckSessionItems({
+		const items = deckSessionItems({ w: DEFAULT_W,
 			cards,
 			reviews,
 			deckIds: ['general'],
@@ -424,6 +427,7 @@ describe('backfill bound', () => {
 		newLimit: 2,
 		reviewLimit: 100,
 		now,
+		w: DEFAULT_W,
 		language: 'zh'
 	};
 
