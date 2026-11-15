@@ -9,15 +9,21 @@ import (
 	"net/http"
 	"sync"
 
+	"qinqin/internal/ai"
+	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
 )
 
 // server carries the shared database handle and data directory for all
 // route handlers.
 type server struct {
-	db      *sql.DB
-	dataDir string
-	sources []sources.Source
+	db        *sql.DB
+	dataDir   string
+	sources   []sources.Source
+	ai        *ai.Service // nil: AI is off (status reads "no_secret")
+	ocr       journal.OCR // nil: offline reading is not installed
+	ocrUse    hourlyUse   // offline reads per user and hour
+	uploadUse hourlyUse   // photo uploads per user and hour
 
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
@@ -25,12 +31,26 @@ type server struct {
 	chars charactersCache // GET /api/characters payloads
 }
 
+// Option configures optional parts of the server.
+type Option func(*server)
+
+// WithAI mounts the AI service the /api/ai routes use; without it they
+// report AI as disabled.
+func WithAI(svc *ai.Service) Option { return func(s *server) { s.ai = svc } }
+
+// WithOCR mounts the offline reader the transcribe route and the
+// capabilities use; without it offline reading is unavailable.
+func WithOCR(o journal.OCR) Option { return func(s *server) { s.ocr = o } }
+
 // New returns the root HTTP handler with all qinqin routes mounted.
 // Uploaded packs are stored under dataDir/packs/. Domain routes are
 // added to the mux by later tasks, all sharing sqlDB. srcs are the
 // public-domain text sources the library can search and import from.
-func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
+func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) http.Handler {
 	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs}
+	for _, o := range opts {
+		o(s)
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
 	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
@@ -64,6 +84,18 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
+	mux.HandleFunc("GET /api/ai/status", s.handleAIStatus)
+	mux.HandleFunc("GET /api/ai/key", s.handleGetAIKey)
+	mux.HandleFunc("PUT /api/ai/key", s.handlePutAIKey)
+	mux.HandleFunc("DELETE /api/ai/key", s.handleDeleteAIKey)
+	mux.HandleFunc("POST /api/journal/review", s.handleJournalReview)
+	mux.HandleFunc("POST /api/journal/suggestions", s.handleJournalSuggestions)
+	mux.HandleFunc("GET /api/journal/capabilities", s.handleJournalCapabilities)
+	mux.HandleFunc("POST /api/journal/transcribe", s.handleJournalTranscribe)
+	mux.HandleFunc("POST /api/journal/photos", s.handleUploadPhoto)
+	mux.HandleFunc("GET /api/journal/photos/{id}", s.handleGetPhoto)
+	mux.HandleFunc("PUT /api/journal/photos/{id}/keepalive", s.handlePhotoKeepalive)
+	mux.HandleFunc("DELETE /api/journal/photos/{id}", s.handleDeletePhoto)
 	mux.HandleFunc("GET /api/plugins", s.handleListPlugins)
 	mux.HandleFunc("POST /api/library/upload", s.handleUploadBook)
 	mux.HandleFunc("GET /api/library/books", s.handleListBooks)
@@ -84,6 +116,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
 	mux.HandleFunc("GET /api/library/sources/{source}/browse", s.handleBrowseSource)
 	mux.HandleFunc("POST /api/library/sources/{source}/import", s.handleImportSource)
 	mux.HandleFunc("PUT /api/plugins/{id}/state", s.handleSetPluginState)
+	mux.HandleFunc("GET /api/plugins/{id}/data", s.handleListPluginData)
 	mux.HandleFunc("GET /api/plugins/{id}/data/{key}", s.handleGetPluginData)
 	mux.HandleFunc("PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData)
 	mux.HandleFunc("DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData)

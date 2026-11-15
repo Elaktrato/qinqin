@@ -39,8 +39,14 @@ jobs:
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
+      # The journal's offline OCR test must run for real in CI: with
+      # QINQIN_REQUIRE_TESSERACT=1 a missing binary fails it instead of skipping.
+      - name: Install Tesseract
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr
       - name: Vet and test Go
         working-directory: server
+        env:
+          QINQIN_REQUIRE_TESSERACT: "1"
         run: |
           go vet ./...
           go test ./...

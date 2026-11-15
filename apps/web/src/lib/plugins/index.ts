@@ -9,6 +9,8 @@ import type { SourceCredit } from '$lib/sources/credits';
 import type { WidgetDef } from '$lib/widgets/types';
 import type { PluginStatesValue } from './states';
 import { flashcardsManifest } from './flashcards/manifest';
+import JournalPage from './journal/JournalPage.svelte';
+import { journalManifest } from './journal/manifest';
 import ReaderPage from './reader/ReaderPage.svelte';
 import { readerManifest } from './reader/manifest';
 
@@ -49,6 +51,10 @@ export const webPlugins: WebPlugin[] = [
 	{
 		manifest: readerManifest,
 		pages: [{ title: 'Reader', nav: true, component: ReaderPage }]
+	},
+	{
+		manifest: journalManifest,
+		pages: [{ title: 'Journal', nav: true, component: JournalPage }]
 	}
 ];
 

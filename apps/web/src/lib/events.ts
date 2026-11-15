@@ -7,7 +7,7 @@ import type { StudyEventBody } from './api/types';
 import { newUlid } from './ulid';
 import { createWorkspaceCache } from './workspaceCache';
 
-export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read';
+export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal';
 
 // StudyEvent is one event as GET /api/events serves it: the row the
 // server stored, with the caller's own timestamp kept verbatim.
@@ -51,10 +51,11 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 export const WORKSPACE_EVENTS_TTL_MS = 8_000;
 
 // Only these event types change what the readers of the full log show
-// (reviews: flashcards, words, characters; read: reading time). The home
+// (reviews: flashcards, words, characters; read: reading time; journal:
+// the heatmap's journal entries). The home
 // page posts a `session` event on every load; dropping the cache for it
 // would defeat the cache.
-const LOG_CHANGING_TYPES: ReadonlySet<string> = new Set(['review', 'read']);
+const LOG_CHANGING_TYPES: ReadonlySet<string> = new Set(['review', 'read', 'journal']);
 
 function fullLogPath(workspaceId: number): string {
 	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;

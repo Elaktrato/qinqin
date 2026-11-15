@@ -519,3 +519,73 @@ func TestPluginDataWorkspaceScoped(t *testing.T) {
 		t.Errorf("pulled rows = %+v, want one user-global and one workspace row", pulled)
 	}
 }
+
+func TestListDataPrefixScopeAndTombstones(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	bob := newUser(t, sqlDB, "bob")
+	mkWS := func(user int64, name string) *int64 {
+		var id int64
+		if err := sqlDB.QueryRowContext(ctx, `INSERT INTO workspaces (user_id, language, name, settings, updated_at)
+			VALUES (?, 'zh', ?, '{}', ?) RETURNING id`, user, name, time.Now().UTC().Format(time.RFC3339)).Scan(&id); err != nil {
+			t.Fatalf("seed workspace: %v", err)
+		}
+		return &id
+	}
+	w, v := mkWS(alice, "W"), mkWS(alice, "V")
+	put := func(user int64, ws *int64, key string) {
+		t.Helper()
+		if _, err := plugins.PutData(ctx, sqlDB, user, ws, "qinqin-journal", key, json.RawMessage(`{"k":"`+key+`"}`)); err != nil {
+			t.Fatalf("put %s: %v", key, err)
+		}
+	}
+	for _, k := range []string{"entry:2", "entry:1", "review:1", "entry:3"} {
+		put(alice, w, k)
+	}
+	put(alice, v, "entry:9")
+	put(bob, w, "entry:1") // another user's row under the same workspace id
+	put(alice, nil, "entry:7")
+	if err := plugins.DeleteData(ctx, sqlDB, alice, w, "qinqin-journal", "entry:3"); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+
+	keys := func(rows []model.PluginData, err error) []string {
+		t.Helper()
+		if err != nil {
+			t.Fatalf("ListData: %v", err)
+		}
+		out := []string{}
+		for _, r := range rows {
+			out = append(out, r.Key)
+		}
+		return out
+	}
+	eq := func(got []string, want ...string) {
+		t.Helper()
+		if len(got) != len(want) {
+			t.Fatalf("keys = %v, want %v", got, want)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Fatalf("keys = %v, want %v", got, want)
+			}
+		}
+	}
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "entry:")), "entry:1", "entry:2")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "review:")), "review:1")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "")), "entry:1", "entry:2", "review:1")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, v, "qinqin-journal", "entry:")), "entry:9")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, nil, "qinqin-journal", "entry:")), "entry:7")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "en%")))
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "ent_y:")))
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "other-plugin", "entry:")))
+	rows, _ := plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "review:")
+	if rows == nil || string(rows[0].Data) != `{"k":"review:1"}` {
+		t.Fatalf("rows = %+v", rows)
+	}
+	empty, err := plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "zzz")
+	if err != nil || empty == nil || len(empty) != 0 {
+		t.Fatalf("empty = %#v %v, want a non-nil empty slice", empty, err)
+	}
+}

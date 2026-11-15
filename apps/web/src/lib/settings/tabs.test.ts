@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { SETTINGS_TABS, parseSettingsTab, settingsTabHref, tabKeyTarget } from './tabs';
+import { SETTINGS_TABS, SETTINGS_TAB_LABELS, parseSettingsTab, settingsTabHref, tabKeyTarget } from './tabs';
 
 describe('parseSettingsTab', () => {
 	it('defaults to workspaces', () => {
 		expect(parseSettingsTab(null)).toBe('workspaces');
 		expect(parseSettingsTab('')).toBe('workspaces');
+	});
+
+	it('knows the AI tab', () => {
+		expect(parseSettingsTab('ai')).toBe('ai');
+		expect(SETTINGS_TAB_LABELS.ai).toBe('AI');
 	});
 
 	it('accepts every tab id', () => {
@@ -23,6 +28,7 @@ describe('settingsTabHref', () => {
 		expect(settingsTabHref('workspaces')).toBe('/settings');
 		expect(settingsTabHref('home')).toBe('/settings?tab=home');
 		expect(settingsTabHref('plugins')).toBe('/settings?tab=plugins');
+		expect(settingsTabHref('ai')).toBe('/settings?tab=ai');
 	});
 });
 

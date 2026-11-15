@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -289,4 +290,58 @@ func TestPluginDataRoute(t *testing.T) {
 	if resp := doJSON(t, http.MethodGet, ts.URL, global, "", nil); resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("GET data without token: status = %d, want %d", resp.StatusCode, http.StatusUnauthorized)
 	}
+}
+
+func TestListPluginDataRoute(t *testing.T) {
+	ts, _ := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	alice := registerUser(t, ts.URL, "alice", admin)
+	bob := registerUser(t, ts.URL, "bob", admin)
+	registerPlugin(t, ts.URL, admin, `{"id":"qinqin-journal","name":"Journal","version":"1.0","type":"feature"}`)
+
+	var ws workspaceBody
+	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
+	decodeJSON(t, resp, &ws)
+	w := "?workspace=" + strconv.FormatInt(ws.ID, 10)
+	for _, k := range []string{"entry:2", "entry:1", "review:1"} {
+		if r := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-journal/data/"+k+w, alice, `{"k":"`+k+`"}`); r.StatusCode != http.StatusOK {
+			t.Fatalf("PUT %s: %d", k, r.StatusCode)
+		}
+	}
+
+	resp = doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w+"&prefix=entry:", alice, nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("list: status = %d", resp.StatusCode)
+	}
+	var rows []pluginDataBody
+	decodeJSON(t, resp, &rows)
+	if len(rows) != 2 || rows[0].Key != "entry:1" || rows[1].Key != "entry:2" || string(rows[0].Data) != `{"k":"entry:1"}` {
+		t.Fatalf("rows = %+v", rows)
+	}
+
+	// An empty result is [] not null.
+	resp = doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w+"&prefix=none:", alice, nil)
+	if body := readAll(t, resp); strings.TrimSpace(body) != "[]" {
+		t.Errorf("empty list body = %q, want []", body)
+	}
+
+	// A foreign workspace is 404, as is an unknown plugin; no token is 401.
+	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w, bob, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("foreign workspace: status = %d, want 404", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/ghost/data"+w, alice, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("unknown plugin: status = %d, want 404", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w, "", nil); r.StatusCode != http.StatusUnauthorized {
+		t.Errorf("no token: status = %d, want 401", r.StatusCode)
+	}
+}
+
+func readAll(t *testing.T, resp *http.Response) string {
+	t.Helper()
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
 }

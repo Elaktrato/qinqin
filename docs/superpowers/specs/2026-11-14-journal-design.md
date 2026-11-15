@@ -55,7 +55,7 @@ journal still works, and photos are read by an offline OCR engine.
   `library` server package and book files under the data dir).
 - Licence-first rule: Tesseract (Apache 2.0) and its `chi_sim`, `chi_tra`,
   `jpn` models (Apache 2.0) are bundled in the Docker image and credited on the
-  Sources page through the plugin's `sources`. The Anthropic Go SDK (MIT) is a
+  Sources page through the plugin's `sources`. The Anthropic Go SDK (Apache-2.0) is a
   new server dependency.
 - Server secret: encrypting keys needs a new env var `QINQIN_SECRET` (32 random
   bytes, base64). Without it the AI key settings are disabled with a clear

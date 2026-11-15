@@ -24,6 +24,16 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/qinqin ./cmd/qinqi
 
 # Runtime: alpine, not scratch — the compose healthcheck needs busybox wget.
 FROM alpine:3.22
+# Offline OCR for the journal's photo import: Tesseract 5 and the models for
+# Chinese (simplified and traditional), Japanese and English. The tesseract
+# package does not pull `eng`, so it is listed for Latin-script workspaces.
+# All of these packages are Apache-2.0 (Leptonica, which Tesseract links, is
+# BSD-2-Clause); they are credited on the Sources page through the journal
+# plugin. Unpinned on purpose: apk pins break whenever the repository moves on.
+# The server also runs without them, offline reading is then unavailable.
+# They add about 193 MB; build with --build-arg WITH_OCR=0 to leave them out.
+ARG WITH_OCR=1
+RUN if [ "$WITH_OCR" = "1" ]; then apk add --no-cache tesseract-ocr tesseract-ocr-data-eng tesseract-ocr-data-chi_sim tesseract-ocr-data-chi_tra tesseract-ocr-data-jpn; fi
 COPY --from=build /out/qinqin /usr/local/bin/qinqin
 # The bundled seed packs (CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten
 # frequency list, the HSK 3.0 character and word level lists, the

@@ -21,6 +21,11 @@ export interface ActivitySource {
 	points(payload: unknown): number;
 	/** Raw amount in the source's own unit: seconds for reading, 1 per review. */
 	raw(payload: unknown): number;
+	/**
+	 * Optional dedupe key: an event whose key was already seen on the same UTC
+	 * day adds nothing, and a null key counts 0 points.
+	 */
+	distinctKey?(payload: unknown): string | null;
 	/** Window total in words for the heatmap's aria-label, e.g. "95 minutes of reading". */
 	describe(raw: number): string;
 }
@@ -74,6 +79,18 @@ export const ACTIVITY_SOURCES: readonly ActivitySource[] = [
 		points: readingPoints,
 		raw: readingSeconds,
 		describe: (seconds) => `${plural(minutes(seconds), 'minute', 'minutes')} of reading`
+	},
+	{
+		type: 'journal',
+		label: 'Journal entries',
+		unit: 'entry(s)',
+		points: () => 1,
+		raw: () => 1,
+		distinctKey: (payload) => {
+			const id = (payload as { entryId?: unknown } | null)?.entryId;
+			return typeof id === 'string' ? id : null;
+		},
+		describe: (count) => plural(count, 'journal entry', 'journal entries')
 	}
 ];
 
@@ -133,6 +150,7 @@ export function activityByDay(
 	}
 
 	const sources = new Map(ACTIVITY_SOURCES.map((source) => [source.type, source]));
+	const seen = new Set<string>();
 
 	for (const event of events) {
 		const source = sources.get(event.type);
@@ -143,6 +161,14 @@ export function activityByDay(
 
 		const day = utcDayStart(time);
 		if (day < start || day > today) continue;
+
+		if (source.distinctKey) {
+			const key = source.distinctKey(event.payload);
+			if (key === null) continue;
+			const seenKey = `${source.type}\u0000${day}\u0000${key}`;
+			if (seen.has(seenKey)) continue;
+			seen.add(seenKey);
+		}
 
 		const points = source.points(event.payload);
 		if (!(points > 0)) continue;
@@ -159,7 +185,9 @@ export function activityByDay(
 
 /** Singularises a plural label such as "Flashcard reviews" for a count of 1. */
 function labelFor(source: ActivitySource, count: number): string {
-	return count === 1 && source.label.endsWith('s') ? source.label.slice(0, -1) : source.label;
+	if (count !== 1) return source.label;
+	if (source.label.endsWith('ies')) return `${source.label.slice(0, -3)}y`;
+	return source.label.endsWith('s') ? source.label.slice(0, -1) : source.label;
 }
 
 /**

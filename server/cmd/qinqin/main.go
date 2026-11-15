@@ -17,9 +17,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
+	"qinqin/internal/ai"
 	"qinqin/internal/api"
 	"qinqin/internal/db"
+	"qinqin/internal/journal"
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/library/sources"
@@ -85,6 +89,11 @@ const builtinFlashcardsManifest = `{"id":"qinqin-flashcards","name":"Flashcards"
 // web build serves at /p/reader.
 const builtinReaderManifest = `{"id":"qinqin-reader","name":"Reader","version":"1.0","type":"feature","surfaces":["page"]}`
 
+// builtinJournalManifest registers the journal, a page-only feature whose
+// documents are workspace plugin data and whose AI part runs through
+// /api/ai.
+const builtinJournalManifest = `{"id":"qinqin-journal","name":"Journal","version":"1.0","type":"feature","surfaces":["page"]}`
+
 // builtinCoreManifest registers the core app itself as a plugin with no
 // surfaces. It renders nothing; it exists so the plugin data routes and
 // sync accept the core app's per-user rows, such as the user-global
@@ -107,6 +116,9 @@ func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
 	}
 	if err := plugins.Register(ctx, sqlDB, []byte(builtinReaderManifest)); err != nil {
 		return fmt.Errorf("register built-in plugin qinqin-reader: %w", err)
+	}
+	if err := plugins.Register(ctx, sqlDB, []byte(builtinJournalManifest)); err != nil {
+		return fmt.Errorf("register built-in plugin qinqin-journal: %w", err)
 	}
 	if err := plugins.Register(ctx, sqlDB, []byte(builtinCoreManifest)); err != nil {
 		return fmt.Errorf("register built-in plugin qinqin-core: %w", err)
@@ -156,8 +168,25 @@ func serveCmd(args []string) error {
 	// The Sources page shows the stored terms; say when seed is due.
 	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)
 
+	aiSvc := aiFromEnv(sqlDB, os.Getenv, log.Printf)
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
+	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
+	var limiter *ai.Limiter
+	if aiSvc != nil {
+		limiter = aiSvc.Limiter
+	}
+	go journal.RunJanitor(ctx, journal.Photos{DB: sqlDB, Dir: filepath.Join(*data, "journal")}, limiter, 15*time.Minute, log.Printf)
+
+	tess := journal.DetectTesseract(ctx, envOr("QINQIN_TESSERACT", "tesseract"))
+	if tess.Available() {
+		log.Printf("offline OCR: tesseract 5.x, languages: %s", strings.Join(tess.Languages(), ", "))
+	} else {
+		log.Printf("offline OCR: not available (tesseract not found)")
+	}
+
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithOCR(tess))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set
@@ -195,4 +224,12 @@ func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
 	mux.Handle("/healthz", apiHandler)
 	mux.Handle("/", webdist.Handler(web))
 	return mux
+}
+
+// envOr returns the environment variable key, or def when it is empty.
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

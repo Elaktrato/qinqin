@@ -36,7 +36,9 @@ Order: web first. Most features ship on web before the Android build starts.
 ## v0.3.0 — journal and AI, web (milestone)
 
 - [#46](https://github.com/Elaktrato/qinqin/issues/46) Journal plugin: AI corrections, overall review, topic suggestions, photo upload with OCR;
-  the app calls the AI with the user's own provider API key
+  the app calls the AI with the user's own provider API key. In progress on `feature/journal`:
+  implemented and checked against the fake provider; not yet merged, and never run against the real API.
+  Pending: a check with a real key, vertical Japanese OCR (no `jpn_vert` on Alpine), Android parity (v0.4.0).
 
 ## v0.4.0 — Android client (milestone)
 
