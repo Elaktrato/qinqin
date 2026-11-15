@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"qinqin/internal/model"
 )
@@ -369,4 +370,12 @@ func (u *Users) RevokeAllSessions(ctx context.Context, actorID, id int64) (int64
 		return 0, err
 	}
 	return n, tx.Commit()
+}
+
+// IssueReset issues an admin reset link (see IssueReset), under the users
+// mutex like every administrative change.
+func (u *Users) IssueReset(ctx context.Context, actorID, id int64, ttl time.Duration) (string, time.Time, error) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	return IssueReset(ctx, u.DB, actorID, id, ttl)
 }

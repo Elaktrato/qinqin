@@ -57,6 +57,9 @@ func DefaultAuthPolicy() AuthPolicy {
 			// (change password, email change, MFA changes, delete): 5 per
 			// 15 minutes per user. A right password refunds its token.
 			"reauth": {Burst: 5, Every: 3 * time.Minute, MaxKeys: authTableCap},
+			// Reset-link check and use, per client: 10 burst, one more per
+			// 30 s. The tokens are 256-bit; the budget only bounds noise.
+			"reset": {Burst: 10, Every: 30 * time.Second, MaxKeys: authTableCap},
 		},
 	}
 }
