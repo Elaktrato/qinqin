@@ -8,7 +8,7 @@ import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
 import { workspaces } from "../workspaces";
 import type { StudyEvent } from "../events";
-import { canonicalCards, compareCanonical, newCardId } from "./canonical";
+import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
 import {
   ACTIVE_KEY,
   DEFAULT_W,
@@ -123,7 +123,7 @@ function parseDeck(key: string, raw: unknown): Deck | null {
 
 function parseCard(key: string, raw: unknown): StudyCard | null {
   if (!isRecord(raw)) return null;
-  const { id, kind, entryId, sentenceId, deckIds, createdAt, written, entryKind } = raw;
+  const { id, kind, entryId, sentenceId, deckIds, createdAt, written, entryKind, skipKinds } = raw;
   if (typeof id !== "string" || typeof entryId !== "number") return null;
   if (!CARD_KINDS.includes(kind as StudyCardKind)) return null;
   if (typeof createdAt !== "string") return null;
@@ -149,6 +149,10 @@ function parseCard(key: string, raw: unknown): StudyCard | null {
   }
   if (typeof sentenceId === "number") {
     card.sentenceId = sentenceId;
+  }
+  if (kind === "vocab" && Array.isArray(skipKinds)) {
+    const skipped = cleanSkipKinds(skipKinds);
+    if (skipped.length > 0) card.skipKinds = skipped;
   }
   return card;
 }

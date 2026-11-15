@@ -76,6 +76,11 @@ export interface StudyCard {
 	// sentence or tone companions, writing unlocks a learner day later.
 	entryKind?: 'character';
 	sentenceId?: number;
+	/**
+	 * Vocab rows only: non-vocab kinds the learner removed for this word, so
+	 * lazy creation does not bring them back. Absent = nothing skipped.
+	 */
+	skipKinds?: StudyCardKind[];
 	deckIds: string[];
 	createdAt: string;
 }

@@ -257,6 +257,28 @@ describe("study store", () => {
       expect(data.cards).toEqual(good);
     });
 
+    it("keeps a clean skipKinds list on a vocab row and drops bad entries", async () => {
+      const row = {
+        ...card("c-vocab-1", 1, ["general"]),
+        skipKinds: ["reverse", "reverse", "bogus", "vocab"],
+      };
+      const plain = card("c-vocab-2", 2, ["general"]);
+      const empty = { ...card("c-vocab-3", 3, ["general"]), skipKinds: ["bogus"] };
+      respondPull({
+        pluginData: [
+          pluginRow("card:c-vocab-1", row),
+          pluginRow("card:c-vocab-2", plain),
+          pluginRow("card:c-vocab-3", empty),
+        ],
+      });
+
+      const data = await loadStudyData();
+
+      expect(data.cards[0]!.skipKinds).toEqual(["reverse"]);
+      expect("skipKinds" in data.cards[1]!).toBe(false);
+      expect("skipKinds" in data.cards[2]!).toBe(false);
+    });
+
     it("returns empty arrays when the pull has no plugin data", async () => {
       respondPull({ cursor: "2026-01-01T00:00:00Z" });
 
