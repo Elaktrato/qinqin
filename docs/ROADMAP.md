@@ -59,7 +59,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
   `tgh-chars` (通用规范汉字表, Unihan `kTGH`); TBCL and curriculum lists are local-only via
   `scripts/prepare-local-levels.mjs`; the old TOCFL 8000 list is rejected (withdrawn).
   Open: level sessions draw words only, so character-unit packs give no study cards
-- [#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs
+- ~~[#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs~~ — on `feature/audio-packs` (design `docs/superpowers/specs/2026-11-15-audio-packs-design.md`; `audio` pack type, play buttons on entries and after the reveal in study, Kanji alive pack fetched into the image, local Commons/Lingua Libre tool; owner to-do: listen to ~10 Kanji alive clips against `index.tsv`, no Mandarin recordings out of the box)
 - ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done on `feature/fsrs-optimizer` (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
 - [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)
 - ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — on `feature/grammar-lessons` (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`, demo pack `zh-grammar-demo`; native-speaker review of the demo sentences open)
