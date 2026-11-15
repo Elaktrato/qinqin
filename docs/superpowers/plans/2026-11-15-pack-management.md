@@ -244,6 +244,16 @@
 
 ---
 
+## Rulings made while building
+
+- Ruling: grammar packs (added to develop by grammar-lessons) are a fifth pack type everywhere: `packs.Import/List/Uninstall`, `grammar.Uninstall` (soft-deletes the pack and its lessons; a reinstall revives both), the web `PackType`, the Data tab group "Grammar lessons" and `isDataPackPlugin` — cost if wrong: one more group in the list.
+- Ruling: the stage store takes an injectable clock and the server an `importDone` hook through `export_test.go` options (`WithClock`, `WithImportDone`, `WithPackLock`), so expiry, sweeping and background jobs are tested without sleeping — cost if wrong: none in production code paths (nil defaults).
+- Ruling: a staged pack that is importing cannot be discarded (`409 already importing`); a finished stage cannot be installed again (`409 already processed`) — cost if wrong: an admin re-uploads.
+- Ruling: zip errors shown to the admin keep the reason and replace the stage and data paths with `pack`; errors that are not the pack's fault read "import failed — see the server log" and are logged — cost if wrong: less detail in the browser.
+- Ruling: `LoadExtracted` (PackRoot + manifest) is exported from `dict` for the stage and the legacy dictionary route; the legacy route also gets the 128 MiB body cap and the extraction limits.
+- Ruling: the "Uploaded, checking the pack…" state is the interval between the last upload byte and the server's answer; it was observed in the real app with a 438 KB zip that unpacks to 450 MB (a 60 MB random zip answers too quickly to see it).
+- Note from the real-app check: the Data tab shows the attribution the importer stored, which for KANJIDIC2 is the shorter string the importer derives from the file, not the manifest's; licences matched every bundled manifest verbatim.
+
 ## Risks and notes for the owner
 
 - A reverse proxy in front of qinqin may cap request bodies below 128 MiB (nginx defaults to 1 MiB) or time out a long JMdict import; the UI shows the proxy's error. Documented in `plugins/data/README.md`.

@@ -24,6 +24,26 @@ Manifest fields:
 `qinqin serve` logs a warning for each installed pack whose stored licence,
 attribution or notice differs from its manifest.
 
+## Installing from the web app
+
+An admin can add and remove packs of every type in **Settings → Data**
+without the seed CLI: choose a pack zip and upload it, check the review
+card (the manifest exactly as the server parsed it, including the licence
+and attribution the pack states, and what it replaces), tick the licence
+confirmation and install. The licence is always shown "as stated by the
+pack"; qinqin does not check it, and a caution line only flags licence
+words that suggest restricted use. Uninstalling removes a pack's data from
+lookups; the files under `<data>/packs/` stay.
+
+The zip holds `manifest.json` and the pack's data files at its top, or in
+one folder (what "Compress folder" produces). Limits: 128 MiB per upload,
+2,000 files and 512 MiB unpacked, three staged uploads at a time, each
+discarded after 30 minutes; larger packs install with `qinqin seed` from a
+directory. A reverse proxy in front of qinqin may cap request bodies lower
+(nginx defaults to 1 MiB: raise `client_max_body_size`) and time out a long
+import; the import itself keeps running on the server, and the list shows
+the pack once it is done.
+
 Committed (small, hand-written, CC0 — a sample):
 
 | Pack | Type | Language | Shows |
