@@ -91,7 +91,7 @@ func TestPushLWWUsesClientEditTime(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
-	if err := plugins.Register(ctx, sqlDB, []byte(`{"id":"flashcards","name":"Flashcards","version":"1.0","type":"feature"}`)); err != nil {
+	if err := plugins.Register(ctx, sqlDB, []byte(validManifest("flashcards", ""))); err != nil {
 		t.Fatalf("register plugin: %v", err)
 	}
 	now := time.Now().UTC()

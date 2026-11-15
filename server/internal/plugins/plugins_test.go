@@ -71,7 +71,18 @@ func find(t *testing.T, list []model.PluginInfo, id string) model.PluginInfo {
 
 // heatmapManifest is a feature-plugin manifest: the admin-registered
 // kind, identified by its id, shipping no content of its own.
-const heatmapManifest = `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature","language":"zh"}`
+var heatmapManifest = validManifest("qinqin-heatmap", `"name":"Study heatmap"`)
+
+// validManifest is a feature manifest that passes ParseManifest: sdk 1,
+// owns-data, no surfaces or events. extra is a comma-free list of JSON
+// members appended last, so a repeated key overrides the default (the
+// decoder keeps the last).
+func validManifest(id, extra string) string {
+	if extra != "" {
+		extra = "," + extra
+	}
+	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
+}
 
 func TestRegisterListState(t *testing.T) {
 	sqlDB := newDB(t)
@@ -117,7 +128,7 @@ func TestRegisterListState(t *testing.T) {
 	}
 
 	// Re-registering the same id replaces the manifest.
-	mustRegister(t, sqlDB, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.1","type":"feature","language":"zh"}`)
+	mustRegister(t, sqlDB, validManifest("qinqin-heatmap", `"name":"Study heatmap","version":"1.1"`))
 	list, err = plugins.ListFor(ctx, sqlDB, bob)
 	if err != nil {
 		t.Fatalf("ListFor after re-register: %v", err)
@@ -177,7 +188,7 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 	exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
 		VALUES ((SELECT id FROM entries WHERE ext_key = '你好'), 'zh-mini', NULL, '你好。', 'nǐ hǎo.', 'Hello.', ?)`, stamp)
 
-	mustRegister(t, sqlDB, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)
+	mustRegister(t, sqlDB, heatmapManifest)
 
 	list, err := plugins.ListFor(ctx, sqlDB, alice)
 	if err != nil {

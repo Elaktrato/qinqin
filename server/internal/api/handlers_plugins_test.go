@@ -63,6 +63,16 @@ func registerPlugin(t *testing.T, tsURL, adminToken, manifest string) *http.Resp
 	return doRaw(t, http.MethodPost, tsURL, "/api/admin/plugins", adminToken, manifest)
 }
 
+// validManifest is a feature manifest that passes plugins.ParseManifest:
+// sdk 1, owns-data, no surfaces or events. extra is a list of JSON members
+// appended last, so a repeated key overrides the default.
+func validManifest(id, extra string) string {
+	if extra != "" {
+		extra = "," + extra
+	}
+	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
+}
+
 // listPlugins fetches GET /api/plugins with the caller's token.
 func listPlugins(t *testing.T, tsURL, token string) []pluginInfoBody {
 	t.Helper()
@@ -82,7 +92,7 @@ func TestPluginRegistrationRoute(t *testing.T) {
 
 	// Registering a feature plugin is admin-gated: unauthenticated and
 	// non-admin callers alike are refused.
-	manifest := `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`
+	manifest := validManifest("qinqin-heatmap", `"name":"Study heatmap"`)
 	if resp := registerPlugin(t, ts.URL, "", manifest); resp.StatusCode != http.StatusForbidden {
 		t.Errorf("register without token: status = %d, want %d", resp.StatusCode, http.StatusForbidden)
 	}
@@ -101,8 +111,18 @@ func TestPluginRegistrationRoute(t *testing.T) {
 		}
 	}
 
+	// The contract is checked and the 400 body names the problem.
+	resp := registerPlugin(t, ts.URL, admin, `{"id":"x","name":"X","version":"1","type":"feature","sdk":1,"surfaces":[],"permissions":[]}`)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("register bad version: status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	}
+	if body, _ := io.ReadAll(resp.Body); !strings.Contains(string(body), `version "1" must look like`) {
+		t.Errorf("400 body = %q, want the version problem", body)
+	}
+	resp.Body.Close()
+
 	// The admin registers the heatmap manifest; it lists enabled by default.
-	resp := registerPlugin(t, ts.URL, admin, manifest)
+	resp = registerPlugin(t, ts.URL, admin, manifest)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("register heatmap: status = %d, want %d", resp.StatusCode, http.StatusCreated)
 	}
@@ -133,7 +153,7 @@ func TestPluginStateRoute(t *testing.T) {
 	ts, _ := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
-	registerPlugin(t, ts.URL, admin, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)
+	registerPlugin(t, ts.URL, admin, validManifest("qinqin-heatmap", `"name":"Study heatmap"`))
 
 	// The plugin routes require a user.
 	if resp := doJSON(t, http.MethodGet, ts.URL, "/api/plugins", "", nil); resp.StatusCode != http.StatusUnauthorized {
@@ -178,7 +198,7 @@ func TestPluginDataRoute(t *testing.T) {
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
 	bob := registerUser(t, ts.URL, "bob", admin)
-	registerPlugin(t, ts.URL, admin, `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature"}`)
+	registerPlugin(t, ts.URL, admin, validManifest("qinqin-flashcards", ""))
 
 	// Alice opens a zh workspace to scope a deck to.
 	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
@@ -297,7 +317,7 @@ func TestListPluginDataRoute(t *testing.T) {
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
 	bob := registerUser(t, ts.URL, "bob", admin)
-	registerPlugin(t, ts.URL, admin, `{"id":"qinqin-journal","name":"Journal","version":"1.0","type":"feature"}`)
+	registerPlugin(t, ts.URL, admin, validManifest("qinqin-journal", ""))
 
 	var ws workspaceBody
 	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})

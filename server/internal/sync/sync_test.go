@@ -30,6 +30,16 @@ func init() {
 	lang.Register(lang.Ja{})
 }
 
+// validManifest is a feature manifest that passes plugins.ParseManifest:
+// sdk 1, owns-data, no surfaces or events. extra is a list of JSON members
+// appended last, so a repeated key overrides the default.
+func validManifest(id, extra string) string {
+	if extra != "" {
+		extra = "," + extra
+	}
+	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
+}
+
 // newDB opens a fresh migrated database.
 func newDB(t *testing.T) *sql.DB {
 	t.Helper()
@@ -78,7 +88,7 @@ func TestPushEventsAndLWW(t *testing.T) {
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
-	if err := plugins.Register(ctx, sqlDB, []byte(`{"id":"flashcards","name":"Flashcards","version":"1.0","type":"feature"}`)); err != nil {
+	if err := plugins.Register(ctx, sqlDB, []byte(validManifest("flashcards", ""))); err != nil {
 		t.Fatalf("register plugin: %v", err)
 	}
 

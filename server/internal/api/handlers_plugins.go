@@ -13,9 +13,10 @@ import (
 )
 
 // handleRegisterPlugin serves POST /api/admin/plugins: an admin
-// registers a feature-plugin manifest — any JSON object carrying a
-// non-empty id — which is stored verbatim and keyed by that id;
-// re-registering an id replaces its manifest.
+// registers a feature-plugin manifest, which must pass the SDK contract
+// (plugins.ParseManifest) and is then stored verbatim and keyed by its
+// id; re-registering an id replaces its manifest. A refused manifest
+// answers 400 with the reasons.
 func (s *server) handleRegisterPlugin(w http.ResponseWriter, r *http.Request) {
 	if s.requireAdmin(w, r) == nil {
 		return
@@ -26,7 +27,7 @@ func (s *server) handleRegisterPlugin(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := plugins.Register(r.Context(), s.db, body); err != nil {
 		if errors.Is(err, plugins.ErrInvalidManifest) {
-			http.Error(w, `manifest must be a JSON object with a non-empty "id"`, http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		http.Error(w, "internal error", http.StatusInternalServerError)

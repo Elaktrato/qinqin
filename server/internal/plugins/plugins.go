@@ -14,7 +14,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"qinqin/internal/model"
@@ -41,15 +40,76 @@ type dataManifest struct {
 	Attribution string `json:"attribution,omitempty"`
 }
 
-// Register upserts a feature-plugin manifest into the registry, keyed
-// by the manifest's id; re-registering an id replaces its manifest.
-// The manifest is stored verbatim — only its id is read here.
+// Register validates a feature-plugin manifest against the SDK
+// contract (ParseManifest) and upserts it into the registry, keyed by
+// the manifest's id; re-registering an id replaces its manifest. An
+// event type already owned by another registered plugin is refused.
+// The manifest is stored verbatim. Registry rows that do not parse
+// (admin-registered before the contract) are ignored for ownership.
 func Register(ctx context.Context, sqlDB *sql.DB, manifestJSON []byte) error {
-	id, err := manifestID(manifestJSON)
+	m, err := ParseManifest(manifestJSON)
 	if err != nil {
 		return err
 	}
-	if _, err := sqlDB.ExecContext(ctx, `
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("plugins: register %s: %w", m.ID, err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+	owners, err := eventOwners(ctx, tx, m.ID)
+	if err != nil {
+		return err
+	}
+	for _, e := range m.Events {
+		if owner, ok := owners[e.Type]; ok {
+			return fmt.Errorf("%w: event type %q is already owned by %s", ErrInvalidManifest, e.Type, owner)
+		}
+	}
+	if err := upsert(ctx, tx, m.ID, manifestJSON); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("plugins: register %s: %w", m.ID, err)
+	}
+	return nil
+}
+
+// eventOwners maps every event type declared by a parsable registry
+// row other than selfID to the id of the plugin declaring it.
+func eventOwners(ctx context.Context, tx *sql.Tx, selfID string) (map[string]string, error) {
+	rows, err := tx.QueryContext(ctx, `
+		SELECT pack_id, manifest_json FROM plugin_registry WHERE pack_id <> ? ORDER BY pack_id`, selfID)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	defer rows.Close()
+	owners := map[string]string{}
+	for rows.Next() {
+		var id, raw string
+		if err := rows.Scan(&id, &raw); err != nil {
+			return nil, fmt.Errorf("plugins: scan registry: %w", err)
+		}
+		other, err := ParseManifest([]byte(raw))
+		if err != nil {
+			continue
+		}
+		for _, e := range other.Events {
+			if _, taken := owners[e.Type]; !taken {
+				owners[e.Type] = id
+			}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	return owners, nil
+}
+
+// upsert stores one manifest row verbatim.
+func upsert(ctx context.Context, tx *sql.Tx, id string, manifestJSON []byte) error {
+	if _, err := tx.ExecContext(ctx, `
 		INSERT INTO plugin_registry (pack_id, manifest_json, updated_at)
 		VALUES (?, ?, ?)
 		ON CONFLICT (pack_id) DO UPDATE SET
@@ -59,22 +119,6 @@ func Register(ctx context.Context, sqlDB *sql.DB, manifestJSON []byte) error {
 		return fmt.Errorf("plugins: register %s: %w", id, err)
 	}
 	return nil
-}
-
-// manifestID extracts the id a manifest keys on: the manifest must be
-// a JSON object with a non-empty id.
-func manifestID(manifestJSON []byte) (string, error) {
-	var m struct {
-		ID string `json:"id"`
-	}
-	if err := json.Unmarshal(manifestJSON, &m); err != nil {
-		return "", fmt.Errorf("%w: %v", ErrInvalidManifest, err)
-	}
-	id := strings.TrimSpace(m.ID)
-	if id == "" {
-		return "", ErrInvalidManifest
-	}
-	return id, nil
 }
 
 // Unregister removes a feature plugin from the registry together with

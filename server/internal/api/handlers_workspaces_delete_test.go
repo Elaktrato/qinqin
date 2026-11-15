@@ -17,7 +17,7 @@ import (
 	"qinqin/internal/library"
 )
 
-const deleteTestPlugin = `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature"}`
+var deleteTestPlugin = validManifest("qinqin-flashcards", "")
 
 // eventID returns a valid, distinct ULID for test events.
 func eventID(n int) string {
