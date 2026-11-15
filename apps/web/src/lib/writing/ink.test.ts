@@ -39,6 +39,11 @@ describe('toPadUnit', () => {
 	it('maps client coordinates into the unit square', () => {
 		expect(toPadUnit(150, 70, { left: 100, top: 20, width: 100, height: 100 })).toEqual({ x: 0.5, y: 0.5 });
 	});
+	it('gives null for a pad without size instead of Infinity or NaN', () => {
+		expect(toPadUnit(150, 70, { left: 100, top: 20, width: 0, height: 100 })).toBeNull();
+		expect(toPadUnit(150, 70, { left: 100, top: 20, width: 100, height: 0 })).toBeNull();
+		expect(toPadUnit(NaN, 70, { left: 100, top: 20, width: 100, height: 100 })).toBeNull();
+	});
 });
 
 describe('appendInk', () => {
@@ -46,6 +51,8 @@ describe('appendInk', () => {
 		const ink = [{ x: 0, y: 0 }];
 		expect(appendInk(ink, { x: 0, y: 0 })).toBe(false);
 		expect(appendInk(ink, { x: 1, y: 0 })).toBe(true);
+		expect(appendInk(ink, null)).toBe(false);
+		expect(appendInk(ink, { x: Infinity, y: 0 })).toBe(false);
 		expect(ink).toHaveLength(2);
 	});
 });

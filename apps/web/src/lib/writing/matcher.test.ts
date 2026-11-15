@@ -1,36 +1,105 @@
+import dengRaw from '../../../node_modules/hanzi-writer-data/等.json?raw';
+import yiRaw from '../../../node_modules/hanzi-writer-data/一.json?raw';
 import { describe, expect, it } from 'vitest';
 import fixtures from './fixtures/strokes.json';
 import { matchStroke } from './matcher';
-import { MATCH } from './params';
-import type { Pt } from './strokes';
+import { parseStrokeData, type Pt } from './strokes';
 
+// Fixture format: see scripts/make-writing-fixtures.mjs (flat integer arrays x scale).
 type Expect = { kind: string; strokes?: number[]; reason?: string };
-const chars = fixtures.chars as Record<string, Pt[][]>;
-const cases = fixtures.cases as { name: string; char: string; next: number; ink: Pt[]; expect: Expect }[];
-
-describe('MATCH', () => {
-	it('holds the spec starting values', () => {
-		expect(MATCH).toEqual({
-			resample: 32, minInk: 0.02,
-			minCos: 0.5, minChord: 0.25, minHalfCos: 0.3, maxShape: 0.24, shapeFloor: 0.18, shapeCap: 0.4, maxDev: 0.22,
-			maxOffset: 0.3, minScale: 0.45, maxScale: 2.2,
-			headMax: 0.12, headTurn: 35, tailMax: 0.25, inkTailMax: 0.5, tailTurn: 50, cutBody: 0.15, cutStraight: 30,
-			minHook: 0.02, minHookShare: 0.04, minHookCos: 0.35, trimPenalty: 0.02,
-			offsetWeight: 0.5, scaleWeight: 0.1, rankMargin: 0.03, maxGap: 0.2, maxJoin: 3
-		});
-	});
-});
+const unflat = (a: readonly number[]): Pt[] => {
+	const out: Pt[] = [];
+	for (let i = 0; i + 1 < a.length; i += 2) out.push({ x: a[i] / fixtures.scale, y: a[i + 1] / fixtures.scale });
+	return out;
+};
+const chars: Record<string, Pt[][]> = Object.fromEntries(
+	Object.entries(fixtures.chars as Record<string, number[][]>).map(([ch, ms]) => [ch, ms.map(unflat)])
+);
+const cases = (fixtures.cases as { name: string; char: string; next: number; ink: number[]; expect: Expect }[]).map((c) => ({
+	...c,
+	ink: unflat(c.ink)
+}));
 
 describe('matchStroke fixtures', () => {
 	for (const { name, char, next, ink, expect: e } of cases) {
-		const run = () => {
+		it(name, () => {
 			const r = matchStroke(ink, chars[char], next);
 			expect(r.kind).toBe(e.kind);
-			if (e.strokes && r.kind === 'match') expect(r.strokes).toEqual(e.strokes);
-			if (e.reason && r.kind === 'miss') expect(r.reason).toBe(e.reason);
-		};
-		it(name, run);
+			if (e.strokes) expect(r.kind === 'match' && r.strokes).toEqual(e.strokes);
+			if (e.reason) expect(r.kind === 'miss' && r.reason).toBe(e.reason);
+		});
 	}
+});
+
+describe('joins', () => {
+	const deng = parseStrokeData('等', JSON.parse(dengRaw))!.medians;
+	it('a single stroke drawn on its own is never credited as a join', () => {
+		for (const ch of ['通', '张', '东', '新', '别', '回']) {
+			chars[ch]?.forEach((m, i) => expect(matchStroke(m, chars[ch], i)).toMatchObject({ kind: 'match', strokes: [i] }));
+		}
+	});
+	it('a stroke drawn backwards does not pass as a join running the other way (等)', () => {
+		for (let i = 0; i < deng.length; i++) expect(matchStroke([...deng[i]].reverse(), deng, i).kind).toBe('miss');
+	});
+	it('the next stroke drawn alone is not credited as a join of the expected stroke and it', () => {
+		for (const ch of ['第', '高', '却']) {
+			const ms = chars[ch];
+			for (let i = 0; i + 1 < ms.length; i++) {
+				const r = matchStroke(ms[i + 1], ms, i);
+				expect(r.kind === 'match' && r.strokes.length > 1).toBe(false);
+			}
+		}
+	});
+	it('a join pays for its extra stroke: a stroke followed by a tiny one is matched alone', () => {
+		const a = [{ x: 0.2, y: 0.5 }, { x: 0.8, y: 0.5 }];
+		const tiny = [{ x: 0.81, y: 0.5 }, { x: 0.83, y: 0.52 }];
+		expect(matchStroke(a, [a, tiny], 0)).toMatchObject({ kind: 'match', strokes: [0] });
+	});
+});
+
+describe('ink that cannot be judged', () => {
+	const yi = parseStrokeData('一', JSON.parse(yiRaw))!.medians;
+	it('is ignored when any point is not finite', () => {
+		expect(matchStroke([{ x: NaN, y: NaN }, { x: 0.5, y: 0.5 }, { x: 0.8, y: 0.5 }], yi, 0).kind).toBe('ignored');
+		expect(matchStroke([{ x: Infinity, y: 0.5 }, { x: Infinity, y: 0.6 }], yi, 0).kind).toBe('ignored');
+	});
+	it('is ignored as a tap, or for a stroke index outside the character', () => {
+		expect(matchStroke([{ x: 0.5, y: 0.5 }, { x: 0.505, y: 0.5 }], yi, 0).kind).toBe('ignored');
+		expect(matchStroke(yi[0], yi, 1).kind).toBe('ignored');
+	});
+});
+
+describe('single-stroke character (一)', () => {
+	const yi = parseStrokeData('一', JSON.parse(yiRaw))!.medians;
+	it('matches the stroke, a shifted copy and a straight line; misses it reversed or upright', () => {
+		expect(matchStroke(yi[0], yi, 0)).toMatchObject({ kind: 'match', strokes: [0] });
+		expect(matchStroke(yi[0].map((p) => ({ x: p.x, y: p.y + 0.15 })), yi, 0)).toMatchObject({ kind: 'match', strokes: [0] });
+		expect(matchStroke([{ x: 0.15, y: 0.5 }, { x: 0.85, y: 0.47 }], yi, 0)).toMatchObject({ kind: 'match', strokes: [0] });
+		expect(matchStroke([...yi[0]].reverse(), yi, 0)).toMatchObject({ kind: 'miss', reason: 'direction' });
+		expect(matchStroke([{ x: 0.5, y: 0.15 }, { x: 0.5, y: 0.85 }], yi, 0)).toMatchObject({ kind: 'miss', reason: 'direction' });
+	});
+});
+
+describe('ties', () => {
+	const a = [{ x: 0.2, y: 0.5 }, { x: 0.8, y: 0.5 }];
+	it('go to the expected stroke when another stroke fits exactly as well', () => {
+		expect(matchStroke(a, [a, a.map((p) => ({ ...p }))], 0)).toMatchObject({ kind: 'match', strokes: [0] });
+		expect(matchStroke(a, [a, a.map((p) => ({ ...p }))], 1)).toMatchObject({ kind: 'match', strokes: [1] });
+	});
+});
+
+describe('hands', () => {
+	const yi = parseStrokeData('一', JSON.parse(yiRaw))!.medians;
+	it('a dot drawn much smaller than shown still counts (size floor)', () => {
+		const yong = chars['永'];
+		const [s, e] = [yong[0][0], yong[0].at(-1)!];
+		const small = [s, { x: s.x + (e.x - s.x) * 0.2, y: s.y + (e.y - s.y) * 0.2 }];
+		expect(matchStroke(small, yong, 0)).toMatchObject({ kind: 'match', strokes: [0] });
+	});
+	it('a tiny flick back at the end of a stroke (pen-lift recoil) is forgiven', () => {
+		const ink = [...yi[0], { x: yi[0].at(-1)!.x - 0.02, y: yi[0].at(-1)!.y + 0.01 }];
+		expect(matchStroke(ink, yi, 0)).toMatchObject({ kind: 'match', strokes: [0] });
+	});
 });
 
 describe('short strokes', () => {
