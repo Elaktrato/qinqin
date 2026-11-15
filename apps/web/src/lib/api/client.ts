@@ -201,14 +201,16 @@ export async function apiBlob(path: string, options: ApiOptions = {}): Promise<B
  * apiErrorBody parses the `{error, message}` JSON the AI and journal
  * routes answer with; null for any other error or a plain-text body.
  */
-export function apiErrorBody(err: unknown): { error: string; message: string } | null {
+export function apiErrorBody(err: unknown): { error: string; message: string; attemptsLeft?: number } | null {
 	if (!(err instanceof ApiError)) return null;
 	try {
 		const body = JSON.parse(err.message) as unknown;
 		if (typeof body !== 'object' || body === null) return null;
-		const { error, message } = body as { error?: unknown; message?: unknown };
+		const { error, message, attemptsLeft } = body as { error?: unknown; message?: unknown; attemptsLeft?: unknown };
 		if (typeof error !== 'string') return null;
-		return { error, message: typeof message === 'string' ? message : '' };
+		const out: { error: string; message: string; attemptsLeft?: number } = { error, message: typeof message === 'string' ? message : '' };
+		if (typeof attemptsLeft === 'number') out.attemptsLeft = attemptsLeft;
+		return out;
 	} catch {
 		return null;
 	}

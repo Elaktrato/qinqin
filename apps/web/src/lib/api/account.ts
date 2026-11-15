@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { SessionDto } from '$lib/account/sessionsView';
+import type { LoginBody } from './mfa';
 
 export interface ChangePasswordBody {
 	currentPassword?: string;
@@ -31,6 +32,10 @@ export interface AuthOptions {
 	passwordReset: boolean;
 	emailCodeLogin: boolean;
 	passwordMinLength: number;
+	/** False when the server has no usable QINQIN_SECRET: authenticator apps cannot be set up. */
+	totpAvailable?: boolean;
+	/** Effective: two-step sign-in is required of everyone (false while mail is not set up). */
+	mfaEnforced?: boolean;
 }
 
 /** The public instance switches the sign-in pages need before anyone is signed in. */
@@ -46,12 +51,20 @@ export function checkReset(token: string): Promise<{ username: string; expiresAt
 	return api('/api/auth/reset/check', { method: 'POST', body: { token }, auth: false });
 }
 
-export function useReset(token: string, password: string): Promise<{ status: string; token: string }> {
+export function useReset(token: string, password: string): Promise<LoginBody> {
 	return api('/api/auth/reset', { method: 'POST', body: { token, password }, auth: false });
 }
 
-export function putEmail(email: string | null, currentPassword: string): Promise<{ email: string | null; emailVerified: boolean }> {
-	return api('/api/account/email', { method: 'PUT', body: { email, currentPassword } });
+export interface PutEmailResult {
+	email: string | null;
+	emailVerified: boolean;
+	/** `sent`: a code was mailed; `unavailable`: no mail server; `none`: nothing to verify. */
+	verification: 'sent' | 'unavailable' | 'none';
+}
+
+/** An enrolment session sends no password (the server skips it there). */
+export function putEmail(email: string | null, currentPassword?: string): Promise<PutEmailResult> {
+	return api('/api/account/email', { method: 'PUT', body: { email, ...(currentPassword ? { currentPassword } : {}) } });
 }
 
 export interface SelfDeletionPreview {
@@ -70,6 +83,6 @@ export function accountDeletionPreview(): Promise<SelfDeletionPreview> {
 	return api('/api/account/deletion-preview');
 }
 
-export function deleteAccount(password: string, confirm: string): Promise<void> {
-	return api('/api/account', { method: 'DELETE', body: { password, confirm } });
+export function deleteAccount(password: string, confirm: string, code?: string): Promise<void> {
+	return api('/api/account', { method: 'DELETE', body: { password, confirm, ...(code ? { code } : {}) } });
 }

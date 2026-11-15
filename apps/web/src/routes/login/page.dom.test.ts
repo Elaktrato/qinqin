@@ -2,10 +2,11 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/sv
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
-vi.mock('$lib/auth', () => ({ login: vi.fn() }));
+vi.mock('$lib/auth', () => ({ signIn: vi.fn(), completeMfa: vi.fn(), completeEmailLogin: vi.fn() }));
 vi.mock('$lib/api/account', () => ({ getAuthOptions: vi.fn() }));
+vi.mock('$lib/api/mfa', () => ({ mfaSendEmail: vi.fn(), emailLoginStart: vi.fn() }));
 
-import { login } from '$lib/auth';
+import { signIn as login } from '$lib/auth';
 import { getAuthOptions } from '$lib/api/account';
 import Page from './+page.svelte';
 

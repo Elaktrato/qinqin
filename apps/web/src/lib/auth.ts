@@ -2,7 +2,8 @@ import { clearAudioCache } from './api/audio';
 import { clearClipCache } from './audio/source';
 import { derived, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
-import { hasSession, stepFor } from './account/loginFlow';
+import { hasSession, stepFor, type LoginStep, type MfaChallenge } from './account/loginFlow';
+import { emailLoginVerify, mfaStep, type LoginBody } from './api/mfa';
 import { clearStudyDay } from './time/zone';
 import {
 	api,
@@ -28,6 +29,8 @@ export interface User {
 	restriction?: '' | Restriction;
 	/** Only `me`: whether the change-password form must ask for the current password. */
 	needsCurrentPassword?: boolean;
+	/** Only `me`: which second factors the account has. */
+	mfa?: { totp: boolean; email: boolean; recoveryCodesLeft: number };
 }
 
 export interface AuthState {
@@ -78,22 +81,50 @@ export async function loadMe(known?: string): Promise<User | null> {
 	return me;
 }
 
+/** What a sign-in attempt came to: a session, or a second step to answer first. */
+export type SignInResult =
+	| { kind: 'session'; user: User; step: LoginStep }
+	| { kind: 'mfa'; mfa: MfaChallenge };
+
+/** Turns a login-shaped answer into a stored session or a second step. */
+async function settle(response: LoginBody): Promise<SignInResult> {
+	const step = stepFor(response.status, response);
+	// A status this client does not know must not store a session.
+	if (step.kind === 'mfa') return { kind: 'mfa', mfa: step.mfa };
+	if (!hasSession(step) || !response.token) throw new Error('This sign-in step is not supported by this app version.');
+	return { kind: 'session', user: await signInWithToken(response.token), step };
+}
+
 /**
- * login exchanges credentials for a bearer token, persists it under
- * `qinqin.token`, and loads the user it belongs to. Status
- * `password_change_required` is a signed-in session too: the token is kept
- * and `me` reports the restriction, so the layout guard sends the user to
- * the forced change page.
+ * signIn exchanges credentials for a bearer token (stored under
+ * `qinqin.token`) and loads its user, or, for a user with a second factor,
+ * returns the challenge to answer: no token exists before that step. Status
+ * `password_change_required` and `mfa_enrollment_required` are signed-in
+ * sessions too: `me` reports the restriction and the layout guard sends the
+ * user to the page they may use.
+ */
+export async function signIn(username: string, password: string): Promise<SignInResult> {
+	return settle(await api<LoginBody>('/api/auth/login', { method: 'POST', body: { username, password } }));
+}
+
+/** completeMfa answers the second step; the result may itself be a session only. */
+export async function completeMfa(challenge: string, method: string, code: string): Promise<SignInResult> {
+	return settle(await mfaStep(challenge, method, code));
+}
+
+/** completeEmailLogin answers an emailed sign-in code (may lead to a second step). */
+export async function completeEmailLogin(challenge: string, code: string): Promise<SignInResult> {
+	return settle(await emailLoginVerify(challenge, code));
+}
+
+/**
+ * login is signIn for callers that cannot show a second step (the first
+ * sign-in right after registering): a challenge is an error there.
  */
 export async function login(username: string, password: string): Promise<User> {
-	const response = await api<{ status: string; token: string }>('/api/auth/login', {
-		method: 'POST',
-		body: { username, password }
-	});
-
-	// A status this client does not know must not store a session.
-	if (!hasSession(stepFor(response.status))) throw new Error('This sign-in step is not supported by this app version.');
-	return signInWithToken(response.token);
+	const result = await signIn(username, password);
+	if (result.kind === 'mfa') throw new Error('This account needs a second step: use the sign-in page.');
+	return result.user;
 }
 
 /**
