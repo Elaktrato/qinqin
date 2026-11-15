@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 
 	"qinqin/internal/auth"
 	"qinqin/internal/model"
@@ -37,12 +38,13 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 		writeAuthError(w, http.StatusInternalServerError, "internal", "Internal error.")
 	}
-	caller, cerr := auth.UserFromRequest(r, s.db)
+	caller, cerr := s.authenticate(r)
 	if cerr != nil {
 		internal()
 		return
 	}
-	isAdmin := caller != nil && caller.Admin
+	// A restricted admin session (forced password change) is no admin here.
+	isAdmin := caller != nil && caller.User.Admin && caller.Restriction() == ""
 	if !isAdmin {
 		if _, ok := s.clientTake(w, r, "attempts"); !ok {
 			return
@@ -204,40 +206,108 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 // handleMe returns the authenticated user.
 func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
-	u := s.requireUser(w, r)
-	if u == nil {
+	p := s.requirePrincipal(w, r, restrictionPasswordChange, restrictionMFAEnrollment)
+	if p == nil {
 		return
 	}
-	writeJSON(w, http.StatusOK, u)
+	writeJSON(w, http.StatusOK, p.User)
 }
 
-// requireUser resolves the user behind the request's bearer token, writing
-// 401 and returning nil when the request is unauthenticated.
+// The access gate. Every handler reaches a session through one of the
+// helpers below; handlers_auth.go is the only file allowed to call
+// auth.Authenticate (gate_static_test.go enforces it). A session restricted
+// by a forced password change or an MFA enrolment is refused by default:
+// only routes that list the restriction in requirePrincipal accept it.
+
+const (
+	restrictionPasswordChange = "password_change"
+	restrictionMFAEnrollment  = "mfa_enrollment"
+)
+
+// restrictionError maps a restriction to its 403 code and sentence.
+func restrictionError(restriction string) (code, message string) {
+	if restriction == restrictionPasswordChange {
+		return "password_change_required", "You must choose a new password before you continue."
+	}
+	return "mfa_enrollment_required", "You must set up two-factor authentication before you continue."
+}
+
+func writeInternal(w http.ResponseWriter, r *http.Request) {
+	if r.Context().Err() != nil {
+		writeClientGone(w)
+		return
+	}
+	writeAuthError(w, http.StatusInternalServerError, "internal", "Internal error.")
+}
+
+// authenticate resolves the session of r: nil with no error is anonymous.
+func (s *server) authenticate(r *http.Request) (*auth.Principal, error) {
+	return auth.Authenticate(r, s.db)
+}
+
+// requirePrincipal resolves the session behind r, writing 401 for an
+// anonymous caller and 403 password_change_required / mfa_enrollment_required
+// for a restricted session whose restriction is not in allow. It returns nil
+// after writing.
+func (s *server) requirePrincipal(w http.ResponseWriter, r *http.Request, allow ...string) *auth.Principal {
+	p, err := s.authenticate(r)
+	if err != nil {
+		writeInternal(w, r)
+		return nil
+	}
+	if p == nil {
+		writeAuthError(w, http.StatusUnauthorized, "unauthorized", "Sign in to continue.")
+		return nil
+	}
+	if res := p.Restriction(); res != "" && !slices.Contains(allow, res) {
+		code, msg := restrictionError(res)
+		writeAuthError(w, http.StatusForbidden, code, msg)
+		return nil
+	}
+	return p
+}
+
+// requireUser resolves the user behind the request's bearer token for a
+// full session, writing 401 for an anonymous caller and 403 for a restricted
+// one. It returns nil after writing.
 func (s *server) requireUser(w http.ResponseWriter, r *http.Request) *model.User {
-	u, err := auth.UserFromRequest(r, s.db)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+	p := s.requirePrincipal(w, r)
+	if p == nil {
 		return nil
 	}
-	if u == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return nil
-	}
-	return u
+	return &p.User
 }
 
-// requireAdmin resolves the user behind the request's bearer token, writing
-// 403 and returning nil for unauthenticated and non-admin callers alike:
-// either way the caller may not act as admin.
+// requireAdmin resolves an administrator's full session. Anonymous and
+// non-admin callers get 403 forbidden (either way the caller may not act as
+// admin); a restricted session gets its restriction code, checked before the
+// admin bit.
 func (s *server) requireAdmin(w http.ResponseWriter, r *http.Request) *model.User {
-	u, err := auth.UserFromRequest(r, s.db)
+	p, err := s.authenticate(r)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return nil
 	}
-	if u == nil || !u.Admin {
-		http.Error(w, "admin token required", http.StatusForbidden)
+	if p != nil {
+		if res := p.Restriction(); res != "" {
+			code, msg := restrictionError(res)
+			writeAuthError(w, http.StatusForbidden, code, msg)
+			return nil
+		}
+	}
+	if p == nil || !p.User.Admin {
+		writeAuthError(w, http.StatusForbidden, "forbidden", "Administrator access is required.")
 		return nil
 	}
-	return u
+	return &p.User
+}
+
+// optionalUser is the signed-in user of a full session, nil for anonymous
+// callers and for restricted sessions (they see what anyone sees).
+func (s *server) optionalUser(r *http.Request) *model.User {
+	p, err := s.authenticate(r)
+	if err != nil || p == nil || p.Restriction() != "" {
+		return nil
+	}
+	return &p.User
 }

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"qinqin/internal/auth"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
@@ -27,11 +26,7 @@ func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 	// The caller's patch layers on the shared entry and their own example
 	// sentences join the pack's; callers without a valid token — anonymous
 	// or unknown — see the shared entry and pack sentences only.
-	u, err := auth.UserFromRequest(r, s.db)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
+	u := s.optionalUser(r)
 	var viewerID int64
 	if u != nil {
 		viewerID = u.ID

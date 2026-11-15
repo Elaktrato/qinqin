@@ -205,17 +205,6 @@ func Login(ctx context.Context, sqlDB *sql.DB, username, password string) (strin
 	return NewSession(ctx, sqlDB, id, LoginOptions{})
 }
 
-// UserFromRequest resolves the bearer token in r to its user. A nil user
-// with a nil error means the request is not authenticated. It ignores the
-// session's restriction; the api package uses Authenticate and the gate.
-func UserFromRequest(r *http.Request, sqlDB *sql.DB) (*model.User, error) {
-	p, err := Authenticate(r, sqlDB)
-	if err != nil || p == nil {
-		return nil, err
-	}
-	return &p.User, nil
-}
-
 // hashToken is the stored form of a bearer token: hex SHA-256. Lookup is
 // equality on this value, which an attacker cannot choose, so no
 // constant-time compare is needed.
