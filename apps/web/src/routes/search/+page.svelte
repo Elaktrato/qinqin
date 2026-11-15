@@ -25,6 +25,9 @@
 	} from '$lib/searchFilters';
 	import { onMount } from 'svelte';
 
+	// The server's default result cap (lexicon.defaultSearchLimit).
+	const RESULT_CAP = 50;
+
 	let query = $state('');
 	let hits = $state<SearchHit[]>([]);
 	let loading = $state(false);
@@ -60,7 +63,7 @@
 	// Chips act on the committed search (the URL query), not on text still
 	// being typed: a chip never silently submits a half-typed query.
 	function applyFilters(next: SearchFilters): void {
-		void goto(searchHref(urlQuery.trim(), next), { keepFocus: true, noScroll: true });
+		goto(searchHref(urlQuery.trim(), next), { keepFocus: true, noScroll: true }).catch(() => {});
 	}
 
 	// After a workspace/language switch, a scheme or level of another
@@ -69,11 +72,11 @@
 		if (!schemesLoaded || lang === null) return;
 		const next = reconcileFilters(filters, schemes);
 		if (next !== filters) {
-			void goto(searchHref(urlQuery.trim(), next), {
+			goto(searchHref(urlQuery.trim(), next), {
 				replaceState: true,
 				keepFocus: true,
 				noScroll: true
-			});
+			}).catch(() => {});
 		}
 	});
 
@@ -135,9 +138,19 @@
 	function submit(event: SubmitEvent): void {
 		event.preventDefault();
 		const q = query.trim();
+		// Show the query that is searched, not the untrimmed text typed.
+		query = q;
+		const href = searchHref(q, filters);
+		// The same search again does not change the URL, so the effect below
+		// would not run: treat it as a refresh instead of a silent no-op.
+		if (q && lang && q === urlQuery.trim() && href === searchHref(urlQuery.trim(), filters)) {
+			void runSearch(q, lang, filters);
+			return;
+		}
 		// The URL effect below runs the query and records the lookup, so
-		// submitting only navigates.
-		void goto(searchHref(q, filters));
+		// submitting only navigates. A navigation superseded by a newer one
+		// may reject; that is not an error for the user.
+		goto(href).catch(() => {});
 	}
 
 	function retry(): void {
@@ -182,9 +195,10 @@
 			type="search"
 			bind:value={query}
 			aria-label="Search entries"
-			placeholder="Search entries…"
+			placeholder={lang === null ? 'Select a workspace to search' : 'Search entries…'}
+			disabled={lang === null}
 		/>
-		<button type="submit">Search</button>
+		<button type="submit" disabled={lang === null}>Search</button>
 	</form>
 
 	{#if lang !== null}
@@ -262,6 +276,11 @@
 			No results for “{activeQuery}”{hasFilters(filters) ? ' with these filters' : ''}.
 		</p>
 	{:else if hits.length > 0}
+		{#if hits.length >= RESULT_CAP}
+			<p class="note">
+				Showing the first {RESULT_CAP} results. Add more of the word or a filter to narrow them.
+			</p>
+		{/if}
 		<ul class="results" aria-label="Search results">
 			{#each hits as hit (hit.id)}
 				<li class="result">

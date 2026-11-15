@@ -100,4 +100,52 @@ describe('search page', () => {
 		setUrl('/search?q=y');
 		await waitFor(() => expect(status.textContent).toBe('No results for “y”.'));
 	});
+
+	it('submitting the same query again searches again (a refresh)', async () => {
+		searchMock.mockResolvedValue([hit(1, 'a')]);
+		setUrl('/search?q=ni');
+		render(Page);
+		await screen.findByText('a');
+		expect(searchMock).toHaveBeenCalledTimes(1);
+		const input = screen.getByLabelText('Search entries');
+		await fireEvent.submit(input.closest('form')!);
+		await waitFor(() => expect(searchMock).toHaveBeenCalledTimes(2));
+		expect(goto).not.toHaveBeenCalled();
+	});
+
+	it('puts the trimmed query back into the input on submit', async () => {
+		searchMock.mockResolvedValue([]);
+		setUrl('/search?q=ni');
+		render(Page);
+		const input = screen.getByLabelText('Search entries') as HTMLInputElement;
+		await waitFor(() => expect(input.value).toBe('ni'));
+		await fireEvent.input(input, { target: { value: '  ni  ' } });
+		await fireEvent.submit(input.closest('form')!);
+		await waitFor(() => expect(input.value).toBe('ni'));
+	});
+
+	it('handles a rejected navigation on submit (no unhandled rejection)', async () => {
+		const rejected = Promise.reject(new Error('superseded'));
+		const handled = vi.spyOn(rejected, 'catch');
+		vi.mocked(goto).mockReturnValueOnce(rejected as never);
+		render(Page);
+		const input = screen.getByLabelText('Search entries');
+		await fireEvent.input(input, { target: { value: 'ni' } });
+		await fireEvent.submit(input.closest('form')!);
+		expect(handled).toHaveBeenCalled();
+	});
+
+	it('says when the result list is capped at 50', async () => {
+		searchMock.mockResolvedValue(Array.from({ length: 50 }, (_, i) => hit(i + 1, `w${i}`)));
+		setUrl('/search?q=x');
+		render(Page);
+		expect(await screen.findByText(/Showing the first 50 results/)).toBeTruthy();
+	});
+
+	it('disables the search input and says why when there is no workspace', async () => {
+		workspaces.set({ list: [], current: null });
+		render(Page);
+		expect((screen.getByLabelText('Search entries') as HTMLInputElement).disabled).toBe(true);
+		expect((screen.getByRole('button', { name: 'Search' }) as HTMLButtonElement).disabled).toBe(true);
+	});
 });
