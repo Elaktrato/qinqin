@@ -35,6 +35,10 @@ type server struct {
 	// legacy per-type routes included.
 	packMu sync.Mutex
 
+	// langMu serializes workspace creation that may register a language
+	// with admin language removal.
+	langMu sync.Mutex
+
 	stageOnce  sync.Once
 	stageStore *stageStore
 	clock      func() time.Time                                          // nil: time.Now (tests set it)

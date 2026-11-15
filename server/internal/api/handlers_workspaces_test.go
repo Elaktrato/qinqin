@@ -437,3 +437,51 @@ func TestWorkspaceLanguageCodes(t *testing.T) {
 		t.Errorf("learner code pack zh = %d, want 201", st)
 	}
 }
+
+// A legacy code stored with an underscore (or any odd shape) stays usable
+// by its exact spelling: it must not be split into pt-br.
+func TestWorkspaceLegacyStoredCodes(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "admin", "")
+	bob := registerUser(t, ts.URL, "bob", admin)
+	mustExec(t, sqlDB,
+		`INSERT INTO languages (code, name, updated_at) VALUES ('pt_br', 'pt_br', 't'), ('klingon', 'k', 't')`,
+		`INSERT INTO dictionaries (id, pack_id, name, version, license, attribution, language, updated_at) VALUES (904, 'pt-demo', 'pt', '1', 'l', 'a', 'pt_br', 't')`,
+		`INSERT INTO entries (id, language, kind, ext_key, updated_at) VALUES (9004, 'pt_br', 'word', 'ola', 't')`,
+		`INSERT INTO senses (entry_id, dictionary_id, ord, updated_at) VALUES (9004, 904, 0, 't')`)
+	for _, tok := range []string{bob, admin} {
+		for _, code := range []string{"pt_br", "PT_BR", "klingon"} {
+			resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", tok, map[string]string{"language": code, "name": "n" + code})
+			var ws workspaceBody
+			if resp.StatusCode != http.StatusCreated {
+				t.Fatalf("POST %q = %d, want 201", code, resp.StatusCode)
+			}
+			decodeJSON(t, resp, &ws)
+			if want := strings.ToLower(code); ws.Language != want {
+				t.Errorf("POST %q stored %q, want %q", code, ws.Language, want)
+			}
+		}
+	}
+	var n int
+	_ = sqlDB.QueryRow(`SELECT COUNT(*) FROM languages WHERE code = 'pt-br'`).Scan(&n)
+	if n != 0 {
+		t.Errorf("pt-br row created = %d, want 0 (no split)", n)
+	}
+}
+
+// A language known only through a live pack (a level list, no dictionary
+// and no languages row) counts as known; dead packs do not.
+func TestWorkspaceKnownThroughLivePacks(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "admin", "")
+	bob := registerUser(t, ts.URL, "bob", admin)
+	mustExec(t, sqlDB,
+		`INSERT INTO schemes (id, pack_id, name, unit, version, language, license, attribution, updated_at) VALUES (1, 's', 'n', 'word', '1', 'ko', 'l', 'a', 't')`,
+		`INSERT INTO schemes (id, pack_id, name, unit, version, language, license, attribution, updated_at, deleted_at) VALUES (2, 'd', 'n', 'word', '1', 'fr', 'l', 'a', 't', 't')`)
+	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", bob, map[string]string{"language": "ko"}); resp.StatusCode != http.StatusCreated {
+		t.Errorf("ko via live scheme = %d, want 201", resp.StatusCode)
+	}
+	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", bob, map[string]string{"language": "fr"}); resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("fr via dead scheme = %d, want 422", resp.StatusCode)
+	}
+}

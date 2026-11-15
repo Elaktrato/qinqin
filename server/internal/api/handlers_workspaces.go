@@ -95,13 +95,9 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
-	if strings.TrimSpace(req.Language) == "" {
+	rawLanguage := strings.ToLower(strings.TrimSpace(req.Language))
+	if rawLanguage == "" {
 		http.Error(w, "language is required", http.StatusBadRequest)
-		return
-	}
-	language, valid := lang.ValidCode(req.Language)
-	if !valid {
-		http.Error(w, "language must be a code like es or pt-br", http.StatusUnprocessableEntity)
 		return
 	}
 	name, problem := workspaceName(req.Name)
@@ -109,19 +105,46 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, problem, http.StatusUnprocessableEntity)
 		return
 	}
-	if !lang.Registered(language) {
-		// Only an administrator opens a new language; everyone else
-		// picks from the known ones.
-		if !u.Admin {
-			known, err := s.languageKnown(r.Context(), language)
-			if err != nil {
+
+	// Serialized with admin language removal: the known check, the
+	// languages row and the workspace cannot interleave with a delete. (A
+	// deferred SQLite transaction would fail with SQLITE_BUSY when it
+	// upgrades from read to write under concurrent writers.)
+	s.langMu.Lock()
+	defer s.langMu.Unlock()
+
+	// A code that exactly matches a stored row or installed data keeps its
+	// spelling (a legacy pt_br is not split into pt-br); anything else
+	// must be a well-formed code.
+	language := rawLanguage
+	exact, err := languageKnown(r.Context(), s.db, rawLanguage)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	known := exact || lang.Registered(rawLanguage)
+	if !exact {
+		code, valid := lang.ValidCode(req.Language)
+		if !valid {
+			http.Error(w, "language must be a code like es or pt-br", http.StatusUnprocessableEntity)
+			return
+		}
+		language = code
+		if !lang.Registered(code) {
+			if known, err = languageKnown(r.Context(), s.db, code); err != nil {
 				http.Error(w, "internal error", http.StatusInternalServerError)
 				return
 			}
-			if !known {
-				http.Error(w, "unknown language — ask the administrator to add it", http.StatusUnprocessableEntity)
-				return
-			}
+		} else {
+			known = true
+		}
+	}
+	if !lang.Registered(language) {
+		// Only an administrator opens a new language; everyone else
+		// picks from the known ones.
+		if !known && !u.Admin {
+			http.Error(w, "unknown language — ask the administrator to add it", http.StatusUnprocessableEntity)
+			return
 		}
 		if _, err := s.db.ExecContext(r.Context(), `
 			INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
@@ -146,17 +169,26 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, ws)
 }
 
-// languageKnown reports whether a data-only code has a languages row or
-// installed dictionary data.
-func (s *server) languageKnown(ctx context.Context, code string) (bool, error) {
-	var n int
-	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM languages WHERE code = ?`, code).Scan(&n); err != nil {
-		return false, err
+// languageKnown reports whether code (compared exactly) is known: a
+// languages row, installed dictionary data, or any live level, frequency,
+// sentence, grammar or audio pack of that language.
+func languageKnown(ctx context.Context, db interface {
+	queryer
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}, code string) (bool, error) {
+	var known bool
+	err := db.QueryRowContext(ctx, `
+		SELECT EXISTS (SELECT 1 FROM languages WHERE code = ?1)
+			OR EXISTS (SELECT 1 FROM dictionaries WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM schemes WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM frequency_packs WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM sentence_packs WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM grammar_packs WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM audio_packs WHERE language = ?1 AND deleted_at IS NULL)`, code).Scan(&known)
+	if err != nil || known {
+		return known, err
 	}
-	if n > 0 {
-		return true, nil
-	}
-	installed, err := installedLanguages(ctx, s.db)
+	installed, err := installedLanguages(ctx, db)
 	if err != nil {
 		return false, err
 	}
@@ -405,7 +437,7 @@ func (s *server) deleteWorkspace(ctx context.Context, userID, id int64) ([]int64
 		return nil, nil, err
 	}
 	defer tx.Rollback()
-	res, err := tx.ExecContext(ctx, `
+	res, err := s.db.ExecContext(ctx, `
 		DELETE FROM workspaces WHERE id = ?1 AND user_id = ?2
 		AND EXISTS (SELECT 1 FROM workspaces WHERE user_id = ?2 AND id <> ?1)`, id, userID)
 	if err != nil {
@@ -427,7 +459,7 @@ func (s *server) deleteWorkspace(ctx context.Context, userID, id int64) ([]int64
 	// Every table with a workspace_id column (migrations 009, 010, 019);
 	// bookmarks and highlights hang off the books.
 	for _, table := range []string{"study_events", "plugin_data"} {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE workspace_id = ?`, id); err != nil {
+		if _, err := s.db.ExecContext(ctx, `DELETE FROM `+table+` WHERE workspace_id = ?`, id); err != nil {
 			return nil, nil, err
 		}
 	}
