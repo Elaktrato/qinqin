@@ -413,3 +413,159 @@ func TestRegisterAppliesPolicy(t *testing.T) {
 		t.Errorf("case-variant duplicate: %d, want 409", resp.StatusCode)
 	}
 }
+
+// rawLogin posts a login body and decodes the answer.
+func rawLogin(t *testing.T, ts *httptest.Server, ua string, body map[string]any) (int, map[string]any) {
+	t.Helper()
+	b, _ := json.Marshal(body)
+	req, _ := http.NewRequest(http.MethodPost, ts.URL+"/api/auth/login", bytes.NewReader(b))
+	if ua != "" {
+		req.Header.Set("User-Agent", ua)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if ct := resp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
+		t.Errorf("login answer content type %q, want JSON", ct)
+	}
+	var out map[string]any
+	json.NewDecoder(resp.Body).Decode(&out)
+	return resp.StatusCode, out
+}
+
+func TestLoginStatusesAndDevice(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
+
+	code, out := rawLogin(t, ts, "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+		map[string]any{"username": "alice", "password": "secret-pass-1"})
+	user, _ := out["user"].(map[string]any)
+	if code != 200 || out["status"] != "ok" || len(out["token"].(string)) != 64 || user["username"] != "alice" {
+		t.Fatalf("login = %d %v", code, out)
+	}
+	if user["mustChangePassword"] != false || user["emailVerified"] != false || user["email"] != nil || user["createdAt"] == "" {
+		t.Errorf("user object = %v", user)
+	}
+	var device string
+	sqlDB.QueryRow(`SELECT device FROM sessions ORDER BY id DESC LIMIT 1`).Scan(&device)
+	if device != "Firefox on Linux" {
+		t.Errorf("device from User-Agent = %q", device)
+	}
+
+	code, out = rawLogin(t, ts, "curl/8", map[string]any{"username": "alice", "password": "secret-pass-1", "deviceName": "qinqin Android \x07· Pixel 8"})
+	if code != 200 {
+		t.Fatalf("login with deviceName = %d", code)
+	}
+	sqlDB.QueryRow(`SELECT device FROM sessions ORDER BY id DESC LIMIT 1`).Scan(&device)
+	if device != "qinqin Android · Pixel 8" {
+		t.Errorf("device from deviceName = %q", device)
+	}
+
+	// A forced change still signs in, with its own status word.
+	sqlDB.Exec(`UPDATE users SET must_change_password = 1, must_change_set_at = '2000-01-01T00:00:00Z' WHERE username = 'alice'`)
+	code, out = rawLogin(t, ts, "", map[string]any{"username": "alice", "password": "secret-pass-1"})
+	user, _ = out["user"].(map[string]any)
+	if code != 200 || out["status"] != "password_change_required" || out["token"] == "" || user["mustChangePassword"] != true {
+		t.Errorf("forced-change login = %d %v", code, out)
+	}
+}
+
+func TestLoginDisabledAnswersOnlyAfterTheCorrectPassword(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
+	sqlDB.Exec(`UPDATE users SET disabled_at = '2026-01-01T00:00:00Z'`)
+
+	code, out := rawLogin(t, ts, "", map[string]any{"username": "alice", "password": "wrong-password"})
+	if code != 401 || out["error"] != "bad_credentials" {
+		t.Errorf("disabled + wrong password = %d %v, want 401 bad_credentials", code, out)
+	}
+	code, out = rawLogin(t, ts, "", map[string]any{"username": "alice", "password": "secret-pass-1"})
+	if code != 403 || out["error"] != "account_disabled" || out["message"] == "" || out["token"] != nil {
+		t.Errorf("disabled + right password = %d %v, want 403 account_disabled and no token", code, out)
+	}
+	var n int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM sessions`).Scan(&n)
+	if n != 0 {
+		t.Errorf("a disabled login created %d sessions", n)
+	}
+}
+
+func TestLoginRunsExactlyOneArgon2ForEveryOutcome(t *testing.T) {
+	_, sqlDB := newServer(t)
+	ctx := context.Background()
+	if _, err := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := auth.CreateUser(ctx, sqlDB, "dora", "secret-pass-1", false); err != nil {
+		t.Fatal(err)
+	}
+	sqlDB.Exec(`UPDATE users SET disabled_at = 't' WHERE username = 'dora'`)
+	calls := 0
+	restore := auth.SetVerifierForTest(func(h, p string) bool { calls++; return auth.Verify(h, p) })
+	defer restore()
+	cases := []struct {
+		user, pw string
+		want     error
+	}{
+		{"nobody", "whatever-pw", auth.ErrBadCredentials},
+		{"alice", "wrong-pw-here", auth.ErrBadCredentials},
+		{"dora", "wrong-pw-here", auth.ErrBadCredentials},
+		{"dora", "secret-pass-1", auth.ErrAccountDisabled},
+		{"alice", "secret-pass-1", nil},
+	}
+	for _, c := range cases {
+		calls = 0
+		_, err := auth.LoginWith(ctx, sqlDB, c.user, c.pw, auth.LoginOptions{})
+		if !errors.Is(err, c.want) || (c.want == nil && err != nil) {
+			t.Errorf("%s/%s: err = %v, want %v", c.user, c.pw, err, c.want)
+		}
+		if calls != 1 {
+			t.Errorf("%s/%s: %d verifications, want exactly 1", c.user, c.pw, calls)
+		}
+	}
+}
+
+func TestRegisterAndLoginErrorsAreJSON(t *testing.T) {
+	ts, _ := newServer(t)
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
+	for name, c := range map[string]struct {
+		path string
+		body string
+	}{
+		"login bad json":     {"/api/auth/login", "{"},
+		"login empty":        {"/api/auth/login", `{"username":"","password":""}`},
+		"login wrong":        {"/api/auth/login", `{"username":"alice","password":"nope-nope-1"}`},
+		"register bad json":  {"/api/auth/register", "{"},
+		"register anonymous": {"/api/auth/register", `{"username":"bob1","password":"secret-pass-2"}`},
+	} {
+		resp, err := http.Post(ts.URL+c.path, "application/json", strings.NewReader(c.body))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var e struct{ Error, Message string }
+		json.NewDecoder(resp.Body).Decode(&e)
+		resp.Body.Close()
+		if !strings.HasPrefix(resp.Header.Get("Content-Type"), "application/json") || e.Error == "" || e.Message == "" {
+			t.Errorf("%s: %d %q %+v, want a JSON {error,message}", name, resp.StatusCode, resp.Header.Get("Content-Type"), e)
+		}
+	}
+}
+
+func TestMeReturnsTheWholeUser(t *testing.T) {
+	ts, _ := newServer(t)
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
+	token := loginToken(t, ts, "alice", "secret-pass-1")
+	resp := me(t, ts, token)
+	var u map[string]any
+	json.NewDecoder(resp.Body).Decode(&u)
+	for _, k := range []string{"id", "username", "admin", "email", "emailVerified", "mustChangePassword", "createdAt", "restriction"} {
+		if _, ok := u[k]; !ok {
+			t.Errorf("me lacks %q: %v", k, u)
+		}
+	}
+	if resp := me(t, ts, "no-such-token"); resp.StatusCode != 401 {
+		t.Errorf("unknown token = %d", resp.StatusCode)
+	}
+}

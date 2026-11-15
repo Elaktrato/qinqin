@@ -9,9 +9,17 @@ vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('./audio/source', () => ({ clearClipCache }));
 vi.mock('./api/audio', () => ({ clearAudioCache }));
 
-import { auth, loadMe, login, logout, register } from './auth';
+import { auth, loadMe, login, logout, register, restriction } from './auth';
 
-const user = { id: 1, username: 'ada', admin: true };
+const user = {
+	id: 1,
+	username: 'ada',
+	admin: true,
+	email: null,
+	emailVerified: false,
+	mustChangePassword: false,
+	createdAt: '2026-01-01T00:00:00Z'
+};
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -64,6 +72,29 @@ describe('auth store', () => {
 			'/api/auth/login',
 			'/api/auth/me'
 		]);
+	});
+
+	it('login keeps the token for a forced password change and exposes the restriction', async () => {
+		const restricted = { ...user, mustChangePassword: true, restriction: 'password_change' };
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url === '/api/auth/login') {
+				return jsonResponse({ status: 'password_change_required', token: 'token-2', user: restricted });
+			}
+			if (url === '/api/auth/me') return jsonResponse(restricted);
+			return new Response('not found', { status: 404 });
+		});
+
+		await login('ada', 'pw');
+
+		expect(localStorage.getItem('qinqin.token')).toBe('token-2');
+		expect(get(auth).token).toBe('token-2');
+		expect(get(restriction)).toBe('password_change');
+	});
+
+	it('a full session has no restriction', async () => {
+		await login('ada', 'pw');
+		expect(get(restriction)).toBeNull();
 	});
 
 	it('registers and then auto-logs-in', async () => {

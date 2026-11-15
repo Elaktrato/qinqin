@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"qinqin/internal/auth"
 	"qinqin/internal/dict"
 	"qinqin/internal/model"
 )
@@ -40,7 +41,10 @@ type AuthHooks struct {
 func WithAuthHooks(h AuthHooks) Option {
 	return func(s *server) {
 		if h.Login != nil {
-			s.hash.login = h.Login
+			s.hash.login = func(ctx context.Context, d *sql.DB, user, pass string, _ auth.LoginOptions) (auth.LoginResult, error) {
+				tok, err := h.Login(ctx, d, user, pass)
+				return auth.LoginResult{Token: tok, User: model.User{Username: user}}, err
+			}
 		}
 		if h.CreateFirstUser != nil {
 			s.hash.createFirstUser = h.CreateFirstUser

@@ -38,6 +38,9 @@ const (
 // ErrBadCredentials reports an unknown username or wrong password from Login.
 var ErrBadCredentials = errors.New("bad credentials")
 
+// ErrAccountDisabled reports a correct password on a disabled account.
+var ErrAccountDisabled = errors.New("account disabled")
+
 // ErrUsernameTaken reports a CreateUser attempt on an existing username.
 var ErrUsernameTaken = errors.New("username taken")
 
@@ -183,26 +186,58 @@ func CreateFirstUser(ctx context.Context, sqlDB *sql.DB, username, password stri
 	return model.User{ID: id, Username: username, Admin: true, CreatedAt: created}, nil
 }
 
+// LoginResult is a successful sign-in: the bearer token (shown once) and
+// the user it belongs to.
+type LoginResult struct {
+	Token string
+	User  model.User
+}
+
 // Login verifies username and password, creates a session, and returns its
 // 32-byte hex bearer token. ErrBadCredentials marks any mismatch.
 func Login(ctx context.Context, sqlDB *sql.DB, username, password string) (string, error) {
-	var id int64
+	res, err := LoginWith(ctx, sqlDB, username, password, LoginOptions{})
+	return res.Token, err
+}
+
+// LoginWith is Login with session options and the user in the result. A
+// disabled user is told so (ErrAccountDisabled) only after the password was
+// right; unknown, wrong and disabled all cost exactly one argon2 run.
+func LoginWith(ctx context.Context, sqlDB *sql.DB, username, password string, o LoginOptions) (LoginResult, error) {
+	var u model.User
 	var hash string
-	err := sqlDB.QueryRowContext(ctx,
-		`SELECT id, hash FROM users WHERE username = ?`, username).Scan(&id, &hash)
+	var admin, must int
+	var email, verified, disabled sql.NullString
+	err := sqlDB.QueryRowContext(ctx, `
+		SELECT id, hash, admin, email, email_verified_at, disabled_at, must_change_password, created_at
+		FROM users WHERE username = ?`, username).Scan(&u.ID, &hash, &admin, &email, &verified, &disabled, &must, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		// Spend the same argon2 run a wrong password costs, so response
 		// time does not reveal whether the username exists.
 		verifyPassword(dummyHash(), password)
-		return "", ErrBadCredentials
+		return LoginResult{}, ErrBadCredentials
 	}
 	if err != nil {
-		return "", fmt.Errorf("select user %q: %w", username, err)
+		return LoginResult{}, fmt.Errorf("select user %q: %w", username, err)
 	}
 	if !verifyPassword(hash, password) {
-		return "", ErrBadCredentials
+		return LoginResult{}, ErrBadCredentials
 	}
-	return NewSession(ctx, sqlDB, id, LoginOptions{})
+	if disabled.Valid {
+		return LoginResult{}, ErrAccountDisabled
+	}
+	u.Username = username
+	u.Admin = admin != 0
+	u.MustChangePassword = must != 0
+	u.EmailVerified = verified.Valid
+	if email.Valid {
+		u.Email = &email.String
+	}
+	token, err := NewSession(ctx, sqlDB, u.ID, o)
+	if err != nil {
+		return LoginResult{}, err
+	}
+	return LoginResult{Token: token, User: u}, nil
 }
 
 // hashToken is the stored form of a bearer token: hex SHA-256. Lookup is

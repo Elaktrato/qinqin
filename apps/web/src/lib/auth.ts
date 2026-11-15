@@ -4,10 +4,19 @@ import { derived, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
 import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from './api/client';
 
+/** Why a session may not use the whole app yet; null for a full session. */
+export type Restriction = 'password_change' | 'mfa_enrollment';
+
 export interface User {
 	id: number;
 	username: string;
 	admin: boolean;
+	email: string | null;
+	emailVerified: boolean;
+	mustChangePassword: boolean;
+	createdAt: string;
+	/** Only `GET /api/auth/me` sends it: "" or a Restriction. */
+	restriction?: '' | Restriction;
 }
 
 export interface AuthState {
@@ -21,6 +30,8 @@ export const auth = writable<AuthState>({ token: null, user: null });
 
 export const token = derived(auth, ($auth) => $auth.token);
 export const user = derived(auth, ($auth) => $auth.user);
+/** The restriction of the current session (from `me`), or null. */
+export const restriction = derived(auth, ($auth): Restriction | null => $auth.user?.restriction || null);
 
 // A 401 anywhere clears the token in the client; mirror that in the store.
 setUnauthorizedHandler(() => auth.set({ token: null, user: null }));
@@ -52,10 +63,13 @@ export async function loadMe(known?: string): Promise<User | null> {
 
 /**
  * login exchanges credentials for a bearer token, persists it under
- * `qinqin.token`, and loads the user it belongs to.
+ * `qinqin.token`, and loads the user it belongs to. Status
+ * `password_change_required` is a signed-in session too: the token is kept
+ * and `me` reports the restriction, so the layout guard sends the user to
+ * the forced change page.
  */
 export async function login(username: string, password: string): Promise<User> {
-	const response = await api<{ token: string }>('/api/auth/login', {
+	const response = await api<{ status: string; token: string }>('/api/auth/login', {
 		method: 'POST',
 		body: { username, password }
 	});

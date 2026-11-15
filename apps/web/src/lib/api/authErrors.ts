@@ -2,6 +2,7 @@ import { ApiError, apiErrorBody } from "$lib/api/client";
 
 const WRONG = "Wrong username or password.";
 const TAKEN = "That username is already taken.";
+const DISABLED = "This account is disabled. Ask an administrator to enable it.";
 const ADMIN_ONLY = "Only an administrator can create more accounts.";
 
 /** "6 seconds", "1 minute", "15 minutes": whole units, rounded up like the server. */
@@ -25,6 +26,8 @@ export function authErrorMessage(err: unknown, fallback: string): string {
         return WRONG;
       case "username_taken":
         return TAKEN;
+      case "account_disabled":
+        return DISABLED;
       case "admin_required":
         return ADMIN_ONLY;
       case "rate_limited":

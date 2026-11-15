@@ -13,8 +13,9 @@ import (
 
 // credentials is the request body of /api/auth/register and /api/auth/login.
 type credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	DeviceName string `json:"deviceName"` // login only; a client's own label for the session
 }
 
 // handleRegister creates a user. On a fresh database with zero users no
@@ -175,13 +176,22 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			l.account.Refund(account, s.now())
 		}
 	}
-	var token string
+	device := req.DeviceName
+	if device == "" {
+		device = auth.DeviceLabel(r.UserAgent())
+	}
+	var res auth.LoginResult
 	err := s.withHashGate(r.Context(), func() error {
 		var err error
-		token, err = s.hash.login(r.Context(), s.db, req.Username, req.Password)
+		res, err = s.hash.login(r.Context(), s.db, req.Username, req.Password, auth.LoginOptions{Device: device})
 		return err
 	})
 	switch {
+	case errors.Is(err, auth.ErrAccountDisabled):
+		// The password was right, so this is not a failure to count.
+		l.pair.Succeed(pair, s.now())
+		refund()
+		writeAuthError(w, http.StatusForbidden, "account_disabled", "This account has been disabled. Ask an administrator.")
 	case errors.Is(err, auth.ErrBadCredentials):
 		l.pair.Fail(pair, s.now()) // the account token stays spent
 		writeAuthError(w, http.StatusUnauthorized, "bad_credentials", "Wrong username or password.")
@@ -200,7 +210,11 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	default:
 		l.pair.Succeed(pair, s.now())
 		refund()
-		writeJSON(w, http.StatusOK, map[string]string{"token": token})
+		status := "ok"
+		if res.User.MustChangePassword {
+			status = "password_change_required"
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"status": status, "token": res.Token, "user": res.User})
 	}
 }
 
@@ -210,7 +224,12 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 	if p == nil {
 		return
 	}
-	writeJSON(w, http.StatusOK, p.User)
+	// me is the user object plus what the session may do: "restriction" is
+	// "", "password_change" or "mfa_enrollment".
+	writeJSON(w, http.StatusOK, struct {
+		model.User
+		Restriction string `json:"restriction"`
+	}{p.User, p.Restriction()})
 }
 
 // The access gate. Every handler reaches a session through one of the
