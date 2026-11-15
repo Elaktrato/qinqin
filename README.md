@@ -616,6 +616,18 @@ to a plugin while it is enabled. Permissions are a contract that catches mistake
 and tells the user what a plugin does, not a sandbox: all plugin code ships in one
 bundle. The journal and the home layout use the SDK.
 
+Server side, `POST /api/admin/plugins` answers 400 with every reason when a manifest
+breaks the contract (unknown fields, trailing data and event types another plugin
+owns included) and 409 for the id of a built-in plugin. `PUT`/`DELETE
+/api/plugins/{id}/data/{key}` answer 403 `plugin does not declare owns-data` for a
+plugin whose manifest has an `sdk` but not that permission (a row registered before
+the contract has no `sdk` and keeps writing; Settings marks it "legacy"). In a sync
+push such a row is skipped, not fatal: the events and every other row still apply,
+and the result's `dataRefused` counts the skipped rows next to `dataSkipped`.
+SDK data keys may not be empty, `.` or `..`. A plain string value round-trips
+(`put('k', 'hello')` reads back `'hello'`); a string that is itself valid JSON text
+(`'123'`) reads back decoded, so store objects instead of such strings.
+
 ### Extending: plugin pages
 
 A web plugin can contribute pages. Declare the `page` surface and a `pages` list in
