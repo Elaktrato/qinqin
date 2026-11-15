@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { recoveryClipboard, recoveryFileName, recoveryText } from './recoveryCodes';
 
 const codes = ['AAAA-BBBB-CCCC-DDDD', 'EEEE-FFFF-GGGG-HHHH'];
-const day = new Date('2026-11-15T12:00:00Z');
+const day = new Date(2026, 10, 15, 12);
 
 describe('recoveryCodes', () => {
 	it('writes one code per line under the instructions', () => {
