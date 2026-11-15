@@ -57,9 +57,15 @@ func allZoneNames(t *testing.T) []string {
 		if f.FileInfo().IsDir() || strings.HasPrefix(path.Base(f.Name), ".") {
 			continue
 		}
-		if ValidZone(f.Name) {
-			names = append(names, f.Name)
+		switch f.Name {
+		case "Factory", "posixrules", "Local":
+			continue
 		}
+		if !ValidZone(f.Name) {
+			t.Errorf("database zone %q is rejected by ValidZone", f.Name)
+			continue
+		}
+		names = append(names, f.Name)
 	}
 	sort.Strings(names)
 	return names
