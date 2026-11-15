@@ -358,4 +358,23 @@ describe('scheduleFor weights', () => {
 		scheduleFor('w1', reviews, NOW, [...w]);
 		expect(schedulerCacheSize()).toBe(size);
 	});
+
+	it('keeps at most 16 instances and drops the oldest first', () => {
+		for (let i = 0; i < 20; i++) {
+			const w = [...DEFAULT_W];
+			w[3] = 5 + i * 0.01;
+			scheduleFor('w1', reviews, NOW, w);
+		}
+		expect(schedulerCacheSize()).toBeLessThanOrEqual(16);
+		expect(schedulerCacheSize()).toBe(16);
+		const size = schedulerCacheSize();
+		const newest = [...DEFAULT_W];
+		newest[3] = 5 + 19 * 0.01;
+		scheduleFor('w1', reviews, NOW, newest);
+		expect(schedulerCacheSize()).toBe(size);
+		const oldest = [...DEFAULT_W];
+		oldest[3] = 5;
+		scheduleFor('w1', reviews, NOW, oldest);
+		expect(schedulerCacheSize()).toBe(16);
+	});
 });

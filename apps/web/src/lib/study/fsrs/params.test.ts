@@ -200,6 +200,13 @@ describe('resolveState', () => {
 		expect(state.w).toEqual(a.w);
 	});
 
+	it('remembers the pointer even when its set cannot be read', () => {
+		expect(resolveState([a, b], { setId: 'Z' }).pointer).toBe('Z');
+		expect(resolveState([a, b], { setId: 'A' }).pointer).toBe('A');
+		expect(resolveState([a, b], { setId: null }).pointer).toBeNull();
+		expect(resolveState([a, b], undefined).pointer).toBeNull();
+	});
+
 	it('falls back to the defaults for a missing pointer, an unknown id or null', () => {
 		for (const raw of [undefined, null, { setId: 'Z' }, { setId: null }, 'junk', { setId: 3 }]) {
 			const state = resolveState([a, b], raw);

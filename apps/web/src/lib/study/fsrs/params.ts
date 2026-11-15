@@ -24,6 +24,8 @@ export interface FsrsState {
 	sets: ParamSet[];
 	active: ParamSet | null;
 	w: readonly number[];
+	/** The set id `fsrs:active` names, even when that set cannot be read. */
+	pointer?: string | null;
 }
 
 type Checked = { ok: true; w: number[] } | { ok: false; error: string };
@@ -105,7 +107,12 @@ export function resolveState(sets: ParamSet[], activeRaw: unknown): FsrsState {
 	const sorted = [...sets].sort(newestFirst);
 	const setId = isRecord(activeRaw) ? activeRaw.setId : null;
 	const active = typeof setId === 'string' ? (sorted.find((s) => s.id === setId) ?? null) : null;
-	return { sets: sorted, active, w: active === null ? DEFAULT_W : active.w };
+	return {
+		sets: sorted,
+		active,
+		w: active === null ? DEFAULT_W : active.w,
+		pointer: typeof setId === 'string' ? setId : null
+	};
 }
 
 const NUMBER = /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i;

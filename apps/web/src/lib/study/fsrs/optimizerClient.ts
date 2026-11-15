@@ -2,6 +2,8 @@
 
 import type { Dataset } from './dataset';
 import type { OptimizeResult } from './optimize';
+import type { Preview } from './preview';
+import type { ReviewEvent, StudyCard } from '../types';
 
 export interface RunOptions {
 	onProgress?: (fraction: number) => void;
@@ -63,6 +65,70 @@ export function runOptimizer(data: Dataset, opts: RunOptions = {}): Promise<Opti
 		} catch {
 			finish();
 			reject(new Error('The optimizer could not start in this browser.'));
+		}
+	});
+}
+
+export interface PreviewInput {
+	cards: readonly StudyCard[];
+	reviews: readonly ReviewEvent[];
+	from: readonly number[];
+	to: readonly number[];
+	now: Date;
+}
+
+/** runPreview computes previewChange in a worker so a long log never blocks the page. */
+export function runPreview(
+	input: PreviewInput,
+	opts: { signal?: AbortSignal; createWorker?: () => Worker } = {}
+): Promise<Preview> {
+	return new Promise((resolve, reject) => {
+		let worker: Worker;
+		try {
+			worker = (opts.createWorker ?? defaultWorker)();
+		} catch {
+			reject(new Error('The preview could not start in this browser.'));
+			return;
+		}
+		const finish = (): void => {
+			opts.signal?.removeEventListener('abort', onAbort);
+			worker.terminate();
+		};
+		const onAbort = (): void => {
+			finish();
+			reject(new Error('The preview was cancelled.'));
+		};
+		worker.onmessage = (event: MessageEvent<{ type: string; preview?: Preview; message?: string }>) => {
+			const m = event.data;
+			if (m.type === 'preview' && m.preview !== undefined) {
+				finish();
+				resolve(m.preview);
+			} else if (m.type === 'error') {
+				finish();
+				reject(new Error(m.message ?? 'The preview failed.'));
+			}
+		};
+		worker.onerror = () => {
+			finish();
+			reject(new Error('The preview stopped unexpectedly.'));
+		};
+		if (opts.signal?.aborted === true) {
+			onAbort();
+			return;
+		}
+		opts.signal?.addEventListener('abort', onAbort, { once: true });
+		try {
+			worker.postMessage({
+				type: 'preview',
+				cards: input.cards,
+				reviews: input.reviews,
+				from: input.from,
+				to: input.to,
+				now: input.now.getTime()
+			});
+		} catch {
+			finish();
+			reject(new Error('The preview could not start in this browser.'));
 		}
 	});
 }

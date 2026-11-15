@@ -66,5 +66,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 Engineering debt and review follow-ups carry the `deferred` label (issues #1–#22 and
 #26); triage them before cutting a release.
 
+Note: the Android client (v0.4.0) does not read the `fsrs:*` plugin data yet, so once a set is active on the web its due counts differ from Android's until the Kotlin scheduler reads the same rows.
+
 Design documents: `docs/superpowers/specs/`; plans: `docs/superpowers/plans/`.
 Branching and releases: `docs/git-flow.md`.

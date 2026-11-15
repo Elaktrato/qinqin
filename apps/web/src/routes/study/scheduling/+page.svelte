@@ -7,9 +7,10 @@
 	import { buildDataset, type Dataset } from '$lib/study/fsrs/dataset';
 	import { evaluate, type Fit } from '$lib/study/fsrs/evaluate';
 	import type { HeldOut, OptimizeResult } from '$lib/study/fsrs/optimize';
-	import { runOptimizer } from '$lib/study/fsrs/optimizerClient';
+	import { runOptimizer, runPreview } from '$lib/study/fsrs/optimizerClient';
+	import { activeProblem, sameWeights, shouldRestorePointer } from '$lib/study/fsrs/guard';
 	import { DEFAULT_W, type FsrsState } from '$lib/study/fsrs/params';
-	import { canApply, previewChange } from '$lib/study/fsrs/preview';
+	import { canApply, type Preview } from '$lib/study/fsrs/preview';
 	import {
 		deleteParamSet,
 		loadStudyData,
@@ -26,7 +27,11 @@
 		labelled?: number;
 		logLoss?: number;
 		heldOut?: HeldOut | null;
+		/** The weights the gate and the preview compare with. */
+		fromW: readonly number[];
 		baselineLogLoss: number;
+		/** Fit of the candidate on the whole log, for imports and the preview. */
+		fit: Fit;
 	}
 
 	const UNDO_MS = 10000;
@@ -52,8 +57,19 @@
 	let controller: AbortController | null = null;
 	let seq = 0;
 
-	let undo = $state<{ text: string; previousId: string | null; workspaceId: number } | null>(null);
+	let undo = $state<{
+		text: string;
+		previousId: string | null;
+		wrote: string | null;
+		workspaceId: number;
+	} | null>(null);
 	let undoTimer: ReturnType<typeof setTimeout> | undefined;
+	let undoLeft = UNDO_MS;
+	let undoStarted = 0;
+
+	// While a run is going nothing else may change the weights it compares with.
+	const locked = $derived(busy || running);
+	const problem = $derived(activeProblem(fsrs));
 
 	onDestroy(() => {
 		controller?.abort();
@@ -106,16 +122,21 @@
 		result = null;
 		candidate = null;
 		optimiseError = '';
-		const baseline = activeFit.logLoss;
+		const startW = [...fsrs.w];
 		try {
 			const r = await runOptimizer(dataset, {
-				current: [...fsrs.w],
+				current: startW,
 				signal: controller.signal,
 				onProgress: (f) => (progress = f)
 			});
 			if (mine !== seq) return;
+			if (!sameWeights(startW, fsrs.w)) {
+				optimiseError = 'Your active parameters changed while optimising. Optimise again.';
+				return;
+			}
 			result = r;
 			if (r.ok) {
+				const fromW = [...fsrs.w];
 				candidate = {
 					workspaceId: started,
 					w: r.w,
@@ -123,7 +144,9 @@
 					labelled: r.labelled,
 					logLoss: r.logLoss,
 					heldOut: r.heldOut,
-					baselineLogLoss: baseline
+					fromW,
+					baselineLogLoss: evaluate(fromW, dataset).logLoss,
+					fit: { logLoss: r.logLoss, rmseBins: r.rmseBins, items: r.labelled }
 				};
 			}
 		} catch (err) {
@@ -141,19 +164,48 @@
 	function importWeights(w: number[]): void {
 		if (workspaceId === null) return;
 		result = null;
+		const fromW = [...fsrs.w];
 		candidate = {
 			workspaceId,
 			w,
 			source: 'imported',
-			baselineLogLoss: activeFit.logLoss
+			fromW,
+			baselineLogLoss: evaluate(fromW, dataset).logLoss,
+			fit: evaluate(w, dataset)
 		};
 	}
 
-	const preview = $derived(
-		candidate === null
-			? null
-			: previewChange({ cards, reviews, from: fsrs.w, to: candidate.w, now: new Date() })
-	);
+	let preview = $state.raw<Preview | null>(null);
+	let previewError = $state('');
+	let previewPending = $state(false);
+
+	// The preview replays every reviewed card twice; it runs in a worker.
+	$effect(() => {
+		const c = candidate;
+		const data = { cards, reviews };
+		preview = null;
+		previewError = '';
+		if (c === null) {
+			previewPending = false;
+			return;
+		}
+		previewPending = true;
+		const ctl = new AbortController();
+		runPreview(
+			{ ...data, from: c.fromW, to: c.w, now: new Date() },
+			{ signal: ctl.signal }
+		)
+			.then((p) => {
+				preview = p;
+				previewPending = false;
+			})
+			.catch((err: unknown) => {
+				if (ctl.signal.aborted) return;
+				previewError = err instanceof Error ? err.message : 'The preview failed.';
+				previewPending = false;
+			});
+		return () => ctl.abort();
+	});
 	const check = $derived(
 		candidate === null
 			? ({ ok: false, reason: '' } as const)
@@ -169,27 +221,50 @@
 				})
 	);
 
-	function offerUndo(text: string, previousId: string | null, id: number): void {
-		undo = { text, previousId, workspaceId: id };
+	function startUndoTimer(): void {
 		clearTimeout(undoTimer);
-		undoTimer = setTimeout(() => (undo = null), UNDO_MS);
+		undoStarted = Date.now();
+		undoTimer = setTimeout(() => (undo = null), undoLeft);
 	}
 
-	/** change runs one write, reloads, and offers Undo for a pointer change. */
+	function pauseUndoTimer(): void {
+		if (undo === null) return;
+		clearTimeout(undoTimer);
+		undoLeft = Math.max(1000, undoLeft - (Date.now() - undoStarted));
+	}
+
+	function offerUndo(text: string, previousId: string | null, wrote: string | null, id: number): void {
+		undo = { text, previousId, wrote, workspaceId: id };
+		undoLeft = UNDO_MS;
+		startUndoTimer();
+	}
+
+	/**
+	 * change runs one write that returns the pointer it wrote (or undefined
+	 * for a write that does not move it), reloads, drops any open candidate
+	 * and offers Undo for a pointer change. `verify` may report a problem
+	 * found in the reloaded state.
+	 */
 	async function change(
-		write: (id: number) => Promise<void>,
-		text: string | null
+		write: (id: number) => Promise<string | null | undefined>,
+		text: string | null,
+		verify?: (before: string | null) => string | null
 	): Promise<void> {
-		if (workspaceId === null || busy) return;
+		if (workspaceId === null || locked) return;
 		const id = workspaceId;
 		const previousId = fsrs.active?.id ?? null;
+		const pointerBefore = fsrs.pointer ?? null;
 		busy = true;
 		actionError = '';
 		try {
-			await write(id);
+			const wrote = await write(id);
 			if (id !== workspaceId) return;
+			candidate = null;
+			result = null;
 			await reloadData(id);
-			if (text !== null) offerUndo(text, previousId, id);
+			if (text !== null && wrote !== undefined) offerUndo(text, previousId, wrote, id);
+			const problemText = verify?.(pointerBefore) ?? null;
+			if (problemText !== null) actionError = problemText;
 		} catch (err) {
 			actionError = err instanceof Error ? err.message : 'Could not save.';
 		} finally {
@@ -217,8 +292,7 @@
 				baselineLogLoss: c.source === 'optimized' ? c.baselineLogLoss : undefined
 			});
 			await setActiveSet(id, saved.id);
-			candidate = null;
-			result = null;
+			return saved.id;
 		}, 'Parameters changed.');
 	}
 
@@ -228,21 +302,42 @@
 	}
 
 	function use(setId: string | null): Promise<void> {
-		return change((id) => setActiveSet(id, setId), 'Parameters changed.');
+		return change(async (id) => {
+			await setActiveSet(id, setId);
+			return setId;
+		}, 'Parameters changed.');
 	}
 
 	function remove(setId: string): Promise<void> {
-		return change((id) => deleteParamSet(id, setId), null);
+		return change(
+			async (id) => {
+				await deleteParamSet(id, setId);
+				return undefined;
+			},
+			null,
+			(before) =>
+				(fsrs.pointer ?? null) !== before
+					? 'The active parameters changed on another device while this set was deleted. Check which set is active.'
+					: null
+		);
 	}
 
 	async function undoLast(): Promise<void> {
 		const slot = undo;
-		if (slot === null || busy || slot.workspaceId !== workspaceId) return;
+		if (slot === null || locked || slot.workspaceId !== workspaceId) return;
 		clearTimeout(undoTimer);
 		busy = true;
 		try {
+			// Read the stored pointer again: another device may have moved it.
+			await reloadData(slot.workspaceId);
+			if (!shouldRestorePointer(fsrs.pointer ?? null, slot.wrote)) {
+				actionError = 'The parameters were changed elsewhere in the meantime, so Undo did nothing.';
+				undo = null;
+				return;
+			}
 			await setActiveSet(slot.workspaceId, slot.previousId);
 			undo = null;
+			candidate = null;
 			await reloadData(slot.workspaceId);
 		} catch (err) {
 			actionError = err instanceof Error ? err.message : 'Could not undo.';
@@ -272,10 +367,13 @@
 		<p class="error" role="alert">{loadError}</p>
 		<button type="button" onclick={() => load(workspaceId)}>Try again</button>
 	{:else}
+		{#if problem}
+			<p class="error" role="alert">{problem}</p>
+		{/if}
 		<p>
 			Active: {activeLabel}
 			{#if fsrs.active !== null}
-				<button type="button" disabled={busy} onclick={() => use(null)}>Use defaults</button>
+				<button type="button" disabled={locked} onclick={() => use(null)}>Use defaults</button>
 			{/if}
 		</p>
 
@@ -290,20 +388,30 @@
 			onCancel={cancel}
 		/>
 
-		{#if candidate !== null && preview !== null}
-			<PreviewPanel {preview} {check} {busy} onApply={apply} onDiscard={discard} />
+		{#if candidate !== null}
+			<PreviewPanel
+				{preview}
+				pending={previewPending}
+				error={previewError}
+				{check}
+				busy={locked}
+				fit={{ current: activeFit, candidate: candidate.fit }}
+				source={candidate.source}
+				onApply={apply}
+				onDiscard={discard}
+			/>
 		{/if}
 
 		<SavedSets
 			sets={fsrs.sets}
 			activeId={fsrs.active?.id ?? null}
-			{busy}
+			busy={locked}
 			onUse={(id) => use(id)}
 			onDelete={(id) => remove(id)}
 			onDefaults={() => use(null)}
 		/>
 
-		<ImportExport activeW={fsrs.w} {busy} onImport={importWeights} />
+		<ImportExport activeW={fsrs.w} busy={locked} onImport={importWeights} />
 
 		{#if actionError}
 			<p class="error" role="alert">{actionError}</p>
@@ -316,11 +424,13 @@
 		<div
 			class="toast"
 			role="presentation"
-			onmouseenter={() => clearTimeout(undoTimer)}
-			onfocusin={() => clearTimeout(undoTimer)}
+			onmouseenter={pauseUndoTimer}
+			onmouseleave={startUndoTimer}
+			onfocusin={pauseUndoTimer}
+			onfocusout={startUndoTimer}
 		>
 			<span>{undo.text}</span>
-			<button type="button" disabled={busy} onclick={undoLast}>Undo</button>
+			<button type="button" disabled={locked} onclick={undoLast}>Undo</button>
 		</div>
 	{/if}
 </div>

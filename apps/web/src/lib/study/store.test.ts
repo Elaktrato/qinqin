@@ -263,7 +263,7 @@ describe("study store", () => {
       await expect(loadStudyData()).resolves.toEqual({
         decks: [],
         cards: [],
-        fsrs: { sets: [], active: null, w: DEFAULT_W },
+        fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
         reviews: [],
         merged: 0,
       });
@@ -277,7 +277,7 @@ describe("study store", () => {
       await expect(loadStudyData()).resolves.toEqual({
         decks: [],
         cards: [],
-        fsrs: { sets: [], active: null, w: DEFAULT_W },
+        fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
         reviews: [],
         merged: 0,
       });
