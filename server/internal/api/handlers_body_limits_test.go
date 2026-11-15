@@ -154,7 +154,10 @@ func TestPluginBodyLimits(t *testing.T) {
 }
 
 func TestEntryBodyLimit(t *testing.T) {
-	ts, _ := newServer(t)
+	ts, sqlDB := newServer(t)
+	seedEntries(t, sqlDB)
 	token := registerUser(t, ts.URL, "owner", "")
-	wantTooLarge(t, "PUT entry", doRaw(t, http.MethodPut, ts.URL, "/api/entries/1", token, padded(`"written":"x"`, 64<<10)))
+	// The entry must exist: an unknown id is 404 before the body is read.
+	id := strconv.FormatInt(lexID(t, sqlDB, "zh", "character", "发"), 10)
+	wantTooLarge(t, "PUT entry", doRaw(t, http.MethodPut, ts.URL, "/api/entries/"+id, token, padded(`"written":"x"`, 64<<10)))
 }

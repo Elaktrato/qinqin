@@ -157,9 +157,8 @@ func TestCharactersChineseUniverse(t *testing.T) {
 		t.Fatal(err)
 	}
 	mustExec(t, st, `UPDATE entries SET deleted_at = '2026-01-02T00:00:00Z' WHERE id = ?`, xueGone)
-	if err := st.Link(context.Background(), xue, xue, lexicon.LinkVariant); err != nil {
-		t.Fatal(err)
-	}
+	// A self-link cannot come through Link any more; legacy rows can exist.
+	mustExec(t, st, `INSERT INTO entry_links (from_id, to_id, type, updated_at) VALUES (?, ?, 'variant', '2026-01-01T00:00:00Z')`, xue, xue)
 	// A radical link is not a variant.
 	if err := st.Link(context.Background(), xue, tghzOnly, lexicon.LinkRadical); err != nil {
 		t.Fatal(err)

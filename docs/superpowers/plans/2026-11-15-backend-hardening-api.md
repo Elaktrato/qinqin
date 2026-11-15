@@ -23,7 +23,7 @@ current code; struck/obsolete items from the issue notes stay out.
   that discards it.
 
 ## Task 2 - #3 entries/links/overlay (`lexicon/lexicon.go`, `api/handlers_entries.go`, `api/handlers_workspaces.go`, `overlay`)
-- `LinkTx`: reject self-links (any type) and links whose ids do not both
+- `LinkTx`: reject self-variant links (a radical self-link is real data: 一 is its own radical, found when dict tests failed) and links whose ids do not both
   exist; `Link` inherits. (`LinkWordChar`/`SetRadical` no longer exist; `Link`/`LinkTx` is the one writer.)
 - Language codes: `lexicon.put` lowercases `e.Language` (lowercase only, no
   trim; existing rows untouched). Language-management validation stays in its

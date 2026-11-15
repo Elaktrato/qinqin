@@ -402,3 +402,27 @@ func parseSettings(t *testing.T, raw json.RawMessage) map[string]string {
 	}
 	return m
 }
+
+// TestWorkspaceSettingsNullDeletesKey pins the merge semantics of the
+// settings PUT: RFC 7396 JSON Merge Patch, so a null value removes that key
+// and an absent key is kept.
+func TestWorkspaceSettingsNullDeletesKey(t *testing.T) {
+	lang.Register(lang.Zh{})
+	ts, _ := newServer(t)
+	alice := registerUser(t, ts.URL, "alice", "")
+	var ws workspaceBody
+	decodeJSON(t, doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"}), &ws)
+	path := "/api/workspaces/" + strconv.FormatInt(ws.ID, 10)
+
+	doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"settings": map[string]string{"theme": "dark", "font": "serif"}})
+	resp := doJSON(t, http.MethodPut, ts.URL, path, alice, map[string]any{"settings": map[string]any{"theme": nil}})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("PUT null: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var updated workspaceBody
+	decodeJSON(t, resp, &updated)
+	got := parseSettings(t, updated.Settings)
+	if _, has := got["theme"]; has || got["font"] != "serif" {
+		t.Errorf("settings after null = %v, want theme removed and font kept", got)
+	}
+}
