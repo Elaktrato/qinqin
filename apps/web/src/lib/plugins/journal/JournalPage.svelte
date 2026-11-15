@@ -110,6 +110,26 @@
 		min-height: 2.75rem;
 	}
 
+	/* The shape of every journal button except the inline underlines. */
+	.journal :global(button:where(:not(.annot))) {
+		padding: 0 1rem;
+		border: 1px solid transparent;
+		border-radius: 0.4rem;
+		font: inherit;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.journal :global(button:where(:not(.annot, .secondary))) {
+		background: #0b6bcb;
+		color: #fff;
+	}
+
+	.journal :global(button:disabled) {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
 	.journal :global(.secondary) {
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 		background: transparent;
