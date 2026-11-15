@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"qinqin/internal/journal"
 	"qinqin/internal/library"
@@ -454,5 +455,40 @@ func TestDeleteWorkspaceRemovesPhotos(t *testing.T) {
 	}
 	if _, _, err := photos.Get(ctx, aliceID, keep.ID); err != nil {
 		t.Errorf("the other workspace's photo is gone: %v", err)
+	}
+}
+
+// TestDeleteWorkspaceFailureRollsBack makes the library step of the
+// deletion fail and requires the workspace, its events and its plugin data
+// to survive: every statement runs on the one transaction.
+func TestDeleteWorkspaceFailureRollsBack(t *testing.T) {
+	ts, sqlDB, dataDir := newServerWithDir(t)
+	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
+	alice := registerUser(t, ts.URL, "alice", "")
+	seedBuiltin(t, sqlDB, deleteTestPlugin)
+	var aliceID int64
+	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'alice'`).Scan(&aliceID)
+	gone := createWorkspace(t, ts.URL, alice, "zh", "throwaway")
+	createWorkspace(t, ts.URL, alice, "zh", "")
+	populateWorkspace(t, ts.URL, alice, store, aliceID, gone, 1)
+	if _, err := sqlDB.Exec(`CREATE TRIGGER boom BEFORE DELETE ON library_books BEGIN SELECT RAISE(ABORT,'boom'); END`); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, http.MethodDelete, ts.URL+"/api/workspaces/"+strconv.FormatInt(gone, 10), nil)
+	req.Header.Set("Authorization", "Bearer "+alice)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("status = %d, want 500", resp.StatusCode)
+	}
+	for table, n := range workspaceRows(t, sqlDB, gone) {
+		if n != 1 {
+			t.Errorf("%s: %d rows after the failed delete, want 1", table, n)
+		}
 	}
 }
