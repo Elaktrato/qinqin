@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { loadStrokeData, resetStrokeDataCache, strokeUrl } from './strokeData';
+import { fetchStrokeData, loadStrokeData, resetStrokeDataCache, strokeUrl } from './strokeData';
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status });
@@ -56,5 +56,37 @@ describe('loadStrokeData', () => {
 		]);
 		expect(a).toEqual(b);
 		expect(fetchFn).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('fetchStrokeData', () => {
+	const as = (fn: unknown) => fn as typeof fetch;
+
+	it('tells a missing character (404) from a transient failure', async () => {
+		resetStrokeDataCache();
+		expect(await fetchStrokeData('好', as(vi.fn(async () => jsonResponse({}, 404))))).toEqual({
+			kind: 'missing'
+		});
+		resetStrokeDataCache();
+		expect(
+			await fetchStrokeData('学', as(vi.fn(async () => { throw new Error('offline'); })))
+		).toEqual({ kind: 'error' });
+		resetStrokeDataCache();
+		expect(await fetchStrokeData('学', as(vi.fn(async () => jsonResponse({}, 503))))).toEqual({
+			kind: 'error'
+		});
+	});
+
+	it('does not cache a server error, so a retry can succeed', async () => {
+		resetStrokeDataCache();
+		await fetchStrokeData('学', as(vi.fn(async () => jsonResponse({}, 500))));
+		const ok = vi.fn(async () => jsonResponse({ a: 1 }));
+		expect(await fetchStrokeData('学', as(ok))).toEqual({ kind: 'ok', data: { a: 1 } });
+		expect(ok).toHaveBeenCalledTimes(1);
+	});
+
+	it('loadStrokeData stays null for every non-ok result', async () => {
+		resetStrokeDataCache();
+		expect(await loadStrokeData('学', as(vi.fn(async () => jsonResponse({}, 500))))).toBeNull();
 	});
 });

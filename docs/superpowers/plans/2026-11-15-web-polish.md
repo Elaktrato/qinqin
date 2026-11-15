@@ -21,3 +21,12 @@ Each bullet is re-verified against current code before it is acted on.
 9. #53 Distinct terms for word states vs character stages.
 
 Gates before each commit: `npm run check`, `npm test`, `npm run build` in apps/web (Go gate when Go is touched). Final: real-app check in headless Chromium on a scratch copy.
+
+## Rulings made while executing
+
+- Ruling: stroke data stays in the bundle (47 MB in 9,575 files, ~13 MB gzipped as an archive) — browsers fetch only the one ~5 KB file per character shown, so the cost is binary and image size, not page weight; serving it from outside the embed needs a server data pack and a download path (a larger change touching licensing attribution and the Dockerfile) — cost if wrong: a bigger binary until a data-pack change lands (tracked on #18).
+- Ruling: login/logout/401 no longer call `goto`; the layout guard is the single redirect owner — removes the duplicate redirect and the unhandled-rejection sources at once — cost if wrong: a 401 with no layout mounted would not navigate (the layout is always mounted).
+- Ruling: revert-to-shared needs no server change — PUT already stores an omitted field as "no overlay" (overlay.Put), so the editor reverts by sending a smaller or empty patch — cost if wrong: none, the server contract is covered by overlay tests.
+- Ruling: the heatmap exposes only days with activity in its hidden list (plus the window summary) — 91 "no activity" items would be noise — cost if wrong: empty days are not individually readable.
+- Ruling: licence text on the entry page stays plain — mapping free-text licence names to URLs risks a wrong or misleading link — cost if wrong: one extra click for readers.
+- Ruling: the home flashcards flash (#15) is already gone — widgets render only for plugins whose state is loaded and enabled (`allWidgets`), no change needed.
