@@ -5,12 +5,13 @@
 // here touches the network.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { allowedLicence, plan, rowFromFile, stripHtml, writeIndexFiles } from './fetch-audio-commons.mjs';
+import { realpathSync } from 'node:fs';
+import { GENERATED_MARKER, allowedLicence, checkReplaceable, plan, resolveOutput, rowFromFile, stripHtml, writeIndexFiles } from './fetch-audio-commons.mjs';
 
 const script = fileURLToPath(new URL('./fetch-audio-commons.mjs', import.meta.url));
 const fixture = (name) => JSON.parse(readFileSync(new URL(`./testdata/${name}`, import.meta.url), 'utf8'));
@@ -97,4 +98,69 @@ test('the CLI refuses an output directory outside plugins/data-local and a bad l
 	assert.notEqual(lang.status, 0);
 	assert.match(lang.stderr, /--lang/);
 	assert.equal(existsSync(join(tmpdir(), 'out', 'manifest.json')), false);
+});
+
+// ---- output guard: only a strict child of <repo>/plugins/data-local
+function fakeRepo() {
+	const repo = mkdtempSync(join(tmpdir(), 'commons-repo-'));
+	mkdirSync(join(repo, 'plugins', 'data-local'), { recursive: true });
+	mkdirSync(join(repo, 'plugins', 'data', 'data-local'), { recursive: true });
+	return repo;
+}
+
+test('resolveOutput accepts a strict child of plugins/data-local, new or existing', () => {
+	const repo = fakeRepo();
+	const dl = join(repo, 'plugins', 'data-local');
+	assert.equal(resolveOutput(join(dl, 'commons-audio-zh'), repo), join(realpathSync(dl), 'commons-audio-zh'));
+	mkdirSync(join(dl, 'made'));
+	assert.equal(resolveOutput(join(dl, 'made'), repo), join(realpathSync(dl), 'made'));
+	assert.equal(resolveOutput(join(dl, 'a', 'b', 'c'), repo), join(realpathSync(dl), 'a', 'b', 'c'));
+	rmSync(repo, { recursive: true });
+});
+
+test('resolveOutput refuses the root itself, other places and traversal', () => {
+	const repo = fakeRepo();
+	const dl = join(repo, 'plugins', 'data-local');
+	for (const bad of [dl, dl + '/', join(dl, '.'), join(dl, '..', 'data'), join(repo, 'plugins', 'data', 'data-local', 'x'), join(repo, 'plugins', 'data-local-evil', 'x'), tmpdir(), join(tmpdir(), 'data-local', 'x'), '/']) {
+		assert.throws(() => resolveOutput(bad, repo), /data-local/, bad);
+	}
+	rmSync(repo, { recursive: true });
+});
+
+test('resolveOutput refuses symlinks that lead out of data-local, and a symlinked root', () => {
+	const repo = fakeRepo();
+	const dl = join(repo, 'plugins', 'data-local');
+	const elsewhere = mkdtempSync(join(tmpdir(), 'elsewhere-'));
+	symlinkSync(elsewhere, join(dl, 'link'));
+	assert.throws(() => resolveOutput(join(dl, 'link'), repo), /symbolic link|data-local/);
+	assert.throws(() => resolveOutput(join(dl, 'link', 'child'), repo), /data-local/);
+	const repo2 = mkdtempSync(join(tmpdir(), 'commons-repo-'));
+	mkdirSync(join(repo2, 'plugins'));
+	symlinkSync(elsewhere, join(repo2, 'plugins', 'data-local'));
+	assert.throws(() => resolveOutput(join(repo2, 'plugins', 'data-local', 'x'), repo2), /symbolic link|data-local/);
+	for (const d of [repo, repo2, elsewhere]) rmSync(d, { recursive: true });
+});
+
+test('checkReplaceable only lets the tool replace a directory it generated', () => {
+	const repo = fakeRepo();
+	const dl = join(repo, 'plugins', 'data-local');
+	checkReplaceable(join(dl, 'nothing-yet'));
+	mkdirSync(join(dl, 'empty'));
+	checkReplaceable(join(dl, 'empty'));
+	mkdirSync(join(dl, 'mine'));
+	writeFileSync(join(dl, 'mine', GENERATED_MARKER), 'x');
+	checkReplaceable(join(dl, 'mine'));
+	mkdirSync(join(dl, 'theirs'));
+	writeFileSync(join(dl, 'theirs', 'notes.txt'), 'precious');
+	assert.throws(() => checkReplaceable(join(dl, 'theirs')), /not written by/);
+	writeFileSync(join(dl, 'afile'), 'x');
+	assert.throws(() => checkReplaceable(join(dl, 'afile')), /not a directory/);
+	rmSync(repo, { recursive: true });
+});
+
+test('writeIndexFiles marks its output as generated', () => {
+	const dir = mkdtempSync(join(tmpdir(), 'commons-'));
+	writeIndexFiles(join(dir, 'p'), 'zh', [], { licences: {}, dropped: { licence: 0, title: 0 } }, '2026-11-15');
+	assert.ok(existsSync(join(dir, 'p', GENERATED_MARKER)));
+	rmSync(dir, { recursive: true });
 });

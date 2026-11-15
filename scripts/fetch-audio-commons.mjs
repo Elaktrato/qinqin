@@ -15,9 +15,13 @@
 //
 // Politeness: at most one request per second, with a User-Agent naming this
 // tool. Needs Node 24 or newer (global fetch).
-import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+/** Written into every pack this tool generates; only such a directory is ever replaced. */
+export const GENERATED_MARKER = '.qinqin-generated';
 
 const API = 'https://commons.wikimedia.org/w/api.php';
 const USER_AGENT = 'qinqin-audio-fetch (local tool)';
@@ -52,6 +56,76 @@ const SYLLABLES = new Set(
 const TONE_MARKS = {};
 for (const [base, forms] of Object.entries({ a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', v: 'ǖǘǚǜ' })) {
 	[...forms].forEach((c, i) => (TONE_MARKS[c] = [base, i + 1]));
+}
+
+
+/** realish is the real path of p, which may not exist yet: the real path of its nearest existing ancestor plus the rest. */
+function realish(p) {
+	let cur = p;
+	const rest = [];
+	for (;;) {
+		try {
+			lstatSync(cur);
+			break;
+		} catch {
+			rest.unshift(basename(cur));
+			cur = dirname(cur);
+		}
+	}
+	return join(realpathSync(cur), ...rest);
+}
+
+/**
+ * dataLocalRoot is the real path of <repo>/plugins/data-local, which may not exist
+ * yet. A symbolic link there is refused: the recordings must stay inside the
+ * repository's gitignored local directory.
+ */
+export function dataLocalRoot(repo = REPO) {
+	const dl = join(resolve(repo), 'plugins', 'data-local');
+	try {
+		if (lstatSync(dl).isSymbolicLink()) throw new Error(`${dl} is a symbolic link; plugins/data-local must be a real directory`);
+	} catch (e) {
+		if (e.code !== 'ENOENT') throw e;
+	}
+	return realish(dl);
+}
+
+/**
+ * resolveOutput returns the real path of out after checking it is a strict
+ * child of <repo>/plugins/data-local: not the root itself, nothing outside it
+ * (including plugins/data/data-local/x and ../ tricks) and no symbolic link on
+ * the way in or at the end. Throws an Error naming data-local otherwise.
+ */
+export function resolveOutput(out, repo = REPO) {
+	const root = dataLocalRoot(repo);
+	const abs = resolve(out);
+	const refuse = (why) => {
+		throw new Error(`output ${abs} is refused: ${why}; it must be a directory inside plugins/data-local (never committed or bundled)`);
+	};
+	try {
+		if (lstatSync(abs).isSymbolicLink()) refuse('it is a symbolic link');
+	} catch (e) {
+		if (e.code !== 'ENOENT' && e.code !== 'ENOTDIR') throw e;
+	}
+	let real;
+	try {
+		real = realish(abs);
+	} catch {
+		refuse('it cannot be resolved');
+	}
+	const rel = relative(root, real);
+	if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) refuse(rel === '' ? 'it is the data-local root itself' : 'it is outside data-local');
+	return real;
+}
+
+/** checkReplaceable throws unless dir is missing, empty or a directory this tool generated (it holds the marker). */
+export function checkReplaceable(dir) {
+	if (!existsSync(dir)) return;
+	if (!statSync(dir).isDirectory()) throw new Error(`refusing to replace ${dir}: it is not a directory`);
+	if (readdirSync(dir).length === 0) return;
+	if (!existsSync(join(dir, GENERATED_MARKER))) {
+		throw new Error(`refusing to replace ${dir}: it was not written by this tool (no ${GENERATED_MARKER}); move or delete it yourself`);
+	}
 }
 
 /** allowedLicence reports whether a Commons LicenseShortName may be kept. */
@@ -181,6 +255,7 @@ export function writeIndexFiles(out, lang, rows, res, date) {
 	const clean = (s) => String(s).replace(/[\t\r\n]+/g, ' ').trim();
 	const lines = ['kind\tform\treading\tfile\tlicense\tattribution\tsource'];
 	for (const r of rows) lines.push([r.kind, r.form, r.reading, r.file, r.license, r.attribution, r.source].map(clean).join('\t'));
+	writeFileSync(join(out, GENERATED_MARKER), 'written by scripts/fetch-audio-commons.mjs; safe to regenerate\n');
 	writeFileSync(join(out, 'index.tsv'), lines.join('\n') + '\n');
 	const manifest = {
 		id: `commons-audio-${lang}`,
@@ -252,14 +327,16 @@ async function main(argv) {
 	if (!opt.category) usage('--category is required');
 	const limit = opt.limit ? Number.parseInt(opt.limit, 10) : 500;
 	if (!(limit > 0)) usage('--limit must be a positive number');
-	const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-	const out = resolve(pos[0] ?? join(repo, 'plugins', 'data-local', `commons-audio-${opt.lang}`));
-	if (!out.split(sep).includes('data-local')) usage('the output directory must be under plugins/data-local (the recordings are never committed or bundled)');
+	const out = resolveOutput(pos[0] ?? join(REPO, 'plugins', 'data-local', `commons-audio-${opt.lang}`));
+	checkReplaceable(out);
 
 	const res = plan(await listPages(opt.category, limit), opt.lang);
 	console.log(`${res.rows.length} usable recordings; skipped ${res.dropped.licence} by licence, ${res.dropped.title} by title`);
-	mkdirSync(dirname(out), { recursive: true });
-	const stage = mkdtempSync(join(dirname(out), '.stage-'));
+	// Staging lives inside data-local too, so the final rename never crosses a device
+	// or leaves anything outside the ignored directory.
+	const root = dataLocalRoot();
+	mkdirSync(root, { recursive: true });
+	const stage = mkdtempSync(join(root, '.stage-'));
 	try {
 		mkdirSync(join(stage, 'audio'), { recursive: true });
 		const kept = [];
@@ -277,7 +354,9 @@ async function main(argv) {
 		for (const r of kept) kres.licences[r.license] = (kres.licences[r.license] ?? 0) + 1;
 		kres.dropped = res.dropped;
 		writeIndexFiles(stage, opt.lang, kept, kres, new Date().toISOString().slice(0, 10));
-		rmSync(out, { recursive: true, force: true });
+		checkReplaceable(out);
+		mkdirSync(dirname(out), { recursive: true });
+		if (existsSync(out)) rmSync(out, { recursive: true });
 		renameSync(stage, out);
 		console.log(`wrote ${kept.length} clips to ${out}`);
 	} catch (e) {
