@@ -378,7 +378,7 @@ day are marked unverified):
 
 | Source | Evidence | Verdict |
 |---|---|---|
-| **Kanji alive** example-word audio (ja; 10,187 clips, male/female native speakers, 6–12 words per kanji for 1,235 kanji) | https://github.com/kanjialive/kanji-data-media `LICENSE.md` at e1e24d3: "This work by Kanji alive is licensed under a Creative Commons Attribution 4.0 International License"; the README names only two fonts as exceptions. Audio: https://media.kanjialive.com/examples_audio/audio-opus.zip (68,687,036 bytes, Last-Modified 2026-09-04). Word ↔ file mapping in `language-data/ka_data.csv` (`kname`, `examples`). | **BUNDLE-eligible** (licence); not committed to git (size), see Rulings |
+| **Kanji alive** example-word audio (ja; 10,156 clips in the zip, 10,187 claimed by the README; male/female native speakers, 6–12 words per kanji for 1,235 kanji) | https://github.com/kanjialive/kanji-data-media `LICENSE.md` at e1e24d3: "This work by Kanji alive is licensed under a Creative Commons Attribution 4.0 International License"; the README names only two fonts as exceptions. Audio: https://media.kanjialive.com/examples_audio/audio-opus.zip (68,687,036 bytes, Last-Modified 2026-09-04). Word ↔ file mapping in `language-data/ka_data.csv` (`kname`, `examples`). | **BUNDLE-eligible** (licence); not committed to git (size), see Rulings |
 | **Wikimedia Commons** pronunciation files (zh, ja) | Licence per file, machine-readable through the API (`prop=imageinfo&iiprop=extmetadata`: `LicenseShortName`, `LicenseUrl`, `Artist`). Samples: `File:Zh-nǐ.ogg` "CC BY 2.0 fr" (Wei Gao, Vion Nicolas); `File:Zh-shi4.ogg` "CC BY-SA 2.0 uk", noted "not a native Mandarin speaker"; `File:Zh-ma1.ogg` missing. | **LOCAL-ONLY** tool with a per-file licence allow-list (see Rulings) |
 | **Lingua Libre** (cmn 4,108, jpn 5,616 files on Commons) | Files carry CC BY-SA 4.0, CC BY 4.0 or CC0 per Commons metadata; the default "CC BY-SA 4.0" comes from a snippet of the RecordWizard manual (site 503, unverified). | **LOCAL-ONLY** through the same Commons tool |
 | **hugolpz/audio-cmn** (1,707 syllables, ~8k HSK words) | README: "CC-by-sa. See table upper for authors."; no version; refers to an unreachable Shtooka readme; GitHub shows no licence. | **LOCAL-ONLY** (version unverified) |
@@ -409,13 +409,29 @@ day are marked unverified):
   (`language-data/ka_data.csv`), the licence file and `audio-opus.zip`
   (68,687,036 bytes) from the pinned sources, refuses on any SHA-256 mismatch and
   writes `plugins/data-audio/kanjialive-audio`. It needs `curl`, `sha256sum`,
-  `unzip` and Node 24 or newer. Nothing it fetches is committed.
+  `unzip` and Node 22 or newer (the Docker stage runs Alpine's Node 22). Nothing it fetches is committed.
 - **Docker:** the image builds the pack in its own stage (`--build-arg WITH_AUDIO=1`,
-  the default, the same way as `WITH_OCR`), so **every default or release image
-  build downloads about 69 MB from `media.kanjialive.com` and adds about 70 MB to
-  the image**, and fails if the pinned checksum no longer matches. Build with
-  `--build-arg WITH_AUDIO=0` for an image without it (an empty audio directory
-  remains, so `qinqin seed` still works).
+  the default, the same way as `WITH_OCR`). Any build that has to run that stage
+  downloads about 69 MB from `media.kanjialive.com` and the data repository, and
+  the image grows by about 70 MB; a warm Docker layer cache skips the download until
+  the Dockerfile, the scripts or the build args change, but CI without a cache (and
+  every fresh release build) fetches each time. The build fails if a pinned checksum
+  no longer matches, so a moved or changed upstream file stops it instead of
+  shipping something unchecked. To see such a break early, the `audio-stage`
+  workflow builds only that stage (`docker build --target audio`, no push) on pull
+  requests that touch the Dockerfile, the workflows or the audio scripts, and every
+  Monday.
+- **When it fails (offline, upstream gone, pin moved):** build with
+  `--build-arg WITH_AUDIO=0`. The image then has an empty `/opt/qinqin/audio`,
+  `qinqin seed` still works and Japanese entries fall back to the device voice.
+  To adopt a new upstream snapshot after reading its licence again, pass the new
+  pins as build args (`KANJIALIVE_COMMIT`, `KANJIALIVE_CSV_SHA256`,
+  `KANJIALIVE_LICENSE_SHA256`, `KANJIALIVE_ZIP_SHA256`, `KANJIALIVE_ZIP_BYTES`,
+  `KANJIALIVE_EXPECTED_CLIPS`, `KANJIALIVE_SNAPSHOT`) and then update the defaults in
+  `scripts/fetch-audio-kanjialive.sh`. Idea, not built: a maintainer-run mirror of
+  the zip (set `KANJIALIVE_ZIP_URL`; the checksum still has to match) would take
+  release builds off `media.kanjialive.com`; it would have to carry the CC BY 4.0
+  attribution and licence text with the file.
 - **How the file mapping was checked (2026-11-15):** the README of the data
   repository does not state the file naming. In the downloaded data the n-th
   example word of a kanji (column `examples`, a JSON list) is the file

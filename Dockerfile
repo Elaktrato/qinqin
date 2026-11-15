@@ -30,6 +30,16 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/qinqin ./cmd/qinqi
 # runtime stage always has an /opt/qinqin/audio root for `qinqin seed`.
 FROM alpine:3.22 AS audio
 ARG WITH_AUDIO=1
+# Optional overrides of the pins in scripts/fetch-audio-kanjialive.sh (empty =
+# the script's own value); a new upstream snapshot needs them, or a mirror.
+ARG KANJIALIVE_COMMIT=
+ARG KANJIALIVE_CSV_SHA256=
+ARG KANJIALIVE_LICENSE_SHA256=
+ARG KANJIALIVE_ZIP_SHA256=
+ARG KANJIALIVE_ZIP_BYTES=
+ARG KANJIALIVE_EXPECTED_CLIPS=
+ARG KANJIALIVE_SNAPSHOT=
+ARG KANJIALIVE_ZIP_URL=
 RUN apk add --no-cache curl unzip nodejs
 COPY scripts/fetch-audio-kanjialive.sh scripts/prepare-audio-kanjialive.mjs /src/scripts/
 RUN mkdir -p /out && if [ "$WITH_AUDIO" = "1" ]; then sh /src/scripts/fetch-audio-kanjialive.sh /out; fi

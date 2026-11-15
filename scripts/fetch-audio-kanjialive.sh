@@ -20,19 +20,26 @@
 # kanji is <kname>_06_<a..l>.opus) is checked by the build: every example must
 # find its file, and the count must equal EXPECTED_CLIPS.
 #
-# Needs curl, sha256sum, unzip and node (24 or newer). About 69 MB downloaded.
+# Every pin can be overridden from the environment (the Dockerfile exposes them as
+# build args): KANJIALIVE_COMMIT, KANJIALIVE_CSV_SHA256, KANJIALIVE_LICENSE_SHA256,
+# KANJIALIVE_ZIP_SHA256, KANJIALIVE_ZIP_BYTES, KANJIALIVE_EXPECTED_CLIPS,
+# KANJIALIVE_SNAPSHOT and KANJIALIVE_ZIP_URL (a mirror; the checksum still has to
+# match). An empty value means the default.
+#
+# Needs curl, sha256sum, unzip and node (22 or newer: only basic APIs are used).
+# About 69 MB downloaded.
 set -eu
 
-COMMIT=e1e24d39fc43e839948a8c7e99743b0994dedad5
+COMMIT=${KANJIALIVE_COMMIT:-e1e24d39fc43e839948a8c7e99743b0994dedad5}
 RAW=https://raw.githubusercontent.com/kanjialive/kanji-data-media/$COMMIT
-ZIP_URL=https://media.kanjialive.com/examples_audio/audio-opus.zip
+ZIP_URL=${KANJIALIVE_ZIP_URL:-https://media.kanjialive.com/examples_audio/audio-opus.zip}
 LEGAL_URL=https://creativecommons.org/licenses/by/4.0/legalcode.txt
-CSV_SHA256=7b463876a0837bfb1f754a4e1bec43617b62f92b9839bbdf060d6ad0d8dbaf65
-LICENSE_SHA256=80602b5a0e7b85dff1da4a91f1ab7d19012436335bfcde97bac6dc066ded33bd
+CSV_SHA256=${KANJIALIVE_CSV_SHA256:-7b463876a0837bfb1f754a4e1bec43617b62f92b9839bbdf060d6ad0d8dbaf65}
+LICENSE_SHA256=${KANJIALIVE_LICENSE_SHA256:-80602b5a0e7b85dff1da4a91f1ab7d19012436335bfcde97bac6dc066ded33bd}
 ZIP_SHA256=${KANJIALIVE_ZIP_SHA256:-b3ee4c740d73fa3e97bef85fe3346b30687699e97d36868d5939b6f4ee6338ef}
-ZIP_BYTES=68687036
-EXPECTED_CLIPS=10156
-SNAPSHOT=2026-09-04
+ZIP_BYTES=${KANJIALIVE_ZIP_BYTES:-68687036}
+EXPECTED_CLIPS=${KANJIALIVE_EXPECTED_CLIPS:-10156}
+SNAPSHOT=${KANJIALIVE_SNAPSHOT:-2026-09-04}
 
 here=$(cd "$(dirname "$0")" && pwd)
 repo=$(dirname "$here")
