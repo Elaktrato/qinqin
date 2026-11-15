@@ -84,7 +84,7 @@ func newJournalEnvOpts(t *testing.T, p ai.Provider, withKey bool, opts ...api.Op
 		t.Fatal(err)
 	}
 	if withKey {
-		if r := doJSON(t, http.MethodPut, ts.URL, "/api/ai/key", tok, map[string]string{"key": aiGoodKey}); r.StatusCode != 200 {
+		if r := doJSON(t, http.MethodPut, ts.URL, "/api/ai/keys/anthropic", tok, map[string]string{"key": aiGoodKey}); r.StatusCode != 200 {
 			t.Fatalf("PUT key: %d", r.StatusCode)
 		}
 	}

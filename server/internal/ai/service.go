@@ -71,6 +71,20 @@ func (s *Service) Lookup(ctx context.Context, id string) (ProviderSpec, error) {
 	return s.registry().Lookup(ctx, id)
 }
 
+// AllProviders lists the providers the operator allows (nil service: none).
+func (s *Service) AllProviders(ctx context.Context) ([]ProviderSpec, error) {
+	return s.registry().All(ctx)
+}
+
+// CustomEnabled reports whether admins may register custom endpoints.
+func (s *Service) CustomEnabled() bool { return s.registry().IsEnabled(customIDPrefix) }
+
+// PrivateAllowed reports QINQIN_AI_ALLOW_PRIVATE for custom endpoints.
+func (s *Service) PrivateAllowed() bool {
+	r := s.registry()
+	return r.Custom != nil && r.Custom.Policy.AllowPrivate
+}
+
 // HasProviders reports whether any adapter is configured.
 func (s *Service) HasProviders() bool { return s != nil && (s.Fake || len(s.Adapters) > 0) }
 
@@ -121,6 +135,28 @@ func (s *Service) For(ctx context.Context, userID int64) (Provider, ProviderSpec
 	}
 	creds.BaseURL, creds.Provider = spec.BaseURL, spec.ID
 	return adapter, spec, creds, nil
+}
+
+// ActiveSpec returns the user's active provider and the model of its stored
+// key without decrypting anything or touching the limiter. Errors are the
+// ones For returns before the decryption step.
+func (s *Service) ActiveSpec(ctx context.Context, userID int64) (ProviderSpec, string, error) {
+	if s == nil || s.Selection == nil || s.Keys == nil {
+		return ProviderSpec{}, "", ErrNoKey
+	}
+	id, err := s.Selection.Active(ctx, userID)
+	if err != nil {
+		return ProviderSpec{}, "", err
+	}
+	spec, err := s.registry().Lookup(ctx, id)
+	if err != nil {
+		return ProviderSpec{}, "", err
+	}
+	info, err := s.Keys.Info(ctx, userID, id)
+	if err != nil {
+		return ProviderSpec{}, "", err
+	}
+	return spec, info.Model, nil
 }
 
 // Status reports whether the user can use the AI and why not. A nil Service
