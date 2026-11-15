@@ -11,7 +11,7 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 }));
 vi.mock('$lib/events', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/events')>()),
-	recordSessionOnce: vi.fn(),
+	recordSessionWhenSettled: vi.fn(),
 	record: vi.fn()
 }));
 vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
@@ -19,7 +19,7 @@ vi.mock('$lib/workspaceGone', () => ({ watchDeletedWorkspaces: vi.fn() }));
 
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
-import { recordSessionOnce } from '$lib/events';
+import { recordSessionWhenSettled as recordSessionOnce } from '$lib/events';
 import { select, workspaces } from '$lib/workspaces';
 import { api } from '$lib/api/client';
 import { auth } from '$lib/auth';

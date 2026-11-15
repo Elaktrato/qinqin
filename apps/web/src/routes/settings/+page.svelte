@@ -19,6 +19,7 @@
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
+	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
@@ -399,6 +400,15 @@
 		hidden={activeTab !== 'home'}
 	>
 		<HomeLayoutEditor />
+	</div>
+
+	<div
+		role="tabpanel"
+		id="settings-panel-study"
+		aria-labelledby="settings-tab-study"
+		hidden={activeTab !== 'study'}
+	>
+		<StudyDaySettings />
 	</div>
 
 	<div

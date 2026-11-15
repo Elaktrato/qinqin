@@ -22,3 +22,4 @@ syllabus*.tsv
 # generated web build copied into the embed dir (Docker/CI)
 /server/internal/webdist/dist/*
 !/server/internal/webdist/dist/.gitkeep
+.svelte-kit/

@@ -34,7 +34,7 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
 - ~~[#31](https://github.com/Elaktrato/qinqin/issues/31) re-show Again cards within a session~~ — done (develop)
 - ~~[#33](https://github.com/Elaktrato/qinqin/issues/33) search filters UI~~ — done (develop)
 - ~~[#56](https://github.com/Elaktrato/qinqin/issues/56) forgiving writing pad and snapping tone card feel~~ — done (develop)
-- [#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character-unit schemes (JLPT kanji, Jōyō grades, 通用规范汉字表)
+- ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character-unit schemes (JLPT kanji, Jōyō grades, 通用规范汉字表)~~ — done (v0.3.0; recognition and writing cards, writing unlocks the next learner day; `docs/contracts/levels/`)
 - ~~[#26](https://github.com/Elaktrato/qinqin/issues/26) map backfill performance~~ — done (develop)
 
 Order: web first. Most features ship on web before the Android build starts.
@@ -68,11 +68,11 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 - [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs: bundled `joyo-grades` (KANJIDIC2) and
   `tgh-chars` (通用规范汉字表, Unihan `kTGH`); TBCL and curriculum lists are local-only via
   `scripts/prepare-local-levels.mjs`; the old TOCFL 8000 list is rejected (withdrawn).
-  Open: level sessions draw words only, so character-unit packs give no study cards
+  Level sessions of character-unit packs: done with #57.
 - ~~[#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs~~ — done (design `docs/superpowers/specs/2026-11-15-audio-packs-design.md`; `audio` pack type, play buttons on entries and after the reveal in study, Kanji alive pack fetched into the image, local Commons/Lingua Libre tool). Owner to-do: listen to ~10 Kanji alive clips against `index.tsv`; no Mandarin recordings out of the box (device voice fallback)
 - ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
 - ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — done (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`, demo pack `zh-grammar-demo`; native-speaker review of the demo sentences open)
-- ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: [#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days
+- ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days~~ — done in v0.3.0 (design `docs/superpowers/specs/2026-11-15-v030-study-day-design.md`; per-user zone history, Settings → Study, `docs/contracts/study-day/`)
 
 ### Ideas, not scheduled (Future)
 

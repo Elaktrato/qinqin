@@ -54,6 +54,9 @@ function mergeInto(survivor: StudyCard, others: readonly StudyCard[]): StudyCard
 		if (merged.written === undefined && other.written !== undefined) {
 			merged.written = other.written;
 		}
+		if (merged.entryKind === undefined && other.entryKind !== undefined) {
+			merged.entryKind = other.entryKind;
+		}
 		if (merged.sentenceId === undefined && other.sentenceId !== undefined) {
 			merged.sentenceId = other.sentenceId;
 		}

@@ -37,12 +37,23 @@ describe('parseSettingsTab', () => {
 	});
 });
 
+describe('the Study tab', () => {
+	it('is visible to every user and parsed from ?tab=study', () => {
+		expect(visibleSettingsTabs(false)).toContain('study');
+		expect(visibleSettingsTabs(true)).toContain('study');
+		expect(parseSettingsTab('study')).toBe('study');
+		expect(SETTINGS_TAB_LABELS.study).toBe('Study');
+		expect(settingsTabHref('study')).toBe('/settings?tab=study');
+	});
+});
+
 describe('account tab', () => {
 	it('is visible to everyone, between AI and Data', () => {
-		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'plugins', 'ai', 'account']);
+		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'study', 'plugins', 'ai', 'account']);
 		expect(visibleSettingsTabs(true)).toEqual([
 			'workspaces',
 			'home',
+			'study',
 			'plugins',
 			'ai',
 			'account',

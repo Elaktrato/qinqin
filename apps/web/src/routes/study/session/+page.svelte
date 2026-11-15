@@ -17,6 +17,7 @@
 	import VocabCard from '$lib/plugins/flashcards/cards/VocabCard.svelte';
 	import WritingCard from '$lib/plugins/flashcards/cards/WritingCard.svelte';
 	import {
+		backfillLimit,
 		cardedSentenceIds,
 		deckSessionPlan,
 		dropItem,
@@ -33,10 +34,11 @@
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
 	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
+	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { buildLevelQueue } from '$lib/study/levelQueue';
+	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
@@ -50,6 +52,7 @@
 	} from '$lib/study/types';
 	import type { SaladTier } from '$lib/study/wordSalad';
 	import { usableChars } from '$lib/study/writing';
+	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { newUlid } from '$lib/ulid';
 	import { workspaces } from '$lib/workspaces';
 
@@ -111,9 +114,15 @@
 	 */
 	class LevelWorkspaceMismatch extends Error {}
 
+	/** The configured level's entries and the unit of its scheme. */
+	interface LevelRequest {
+		entries: EntryBase[];
+		unit: LevelUnit;
+	}
+
 	/** levelEntriesRequest loads the configured level, or nothing in decks mode. */
-	async function levelEntriesRequest(language: string | null): Promise<EntryBase[]> {
-		if (config.mode !== 'levels') return [];
+	async function levelEntriesRequest(language: string | null): Promise<LevelRequest> {
+		if (config.mode !== 'levels') return { entries: [], unit: 'word' };
 		if (config.schemeId === null || config.levelName === null) {
 			return Promise.reject(new Error('This level session is missing its scheme or level.'));
 		}
@@ -132,7 +141,10 @@
 				`The level “${config.levelName}” no longer exists in ${scheme.name}. Start a new session from the study setup.`
 			);
 		}
-		return getSchemeEntries(config.schemeId, config.levelName);
+		return {
+			entries: await getSchemeEntries(config.schemeId, config.levelName),
+			unit: scheme.unit === 'character' ? 'character' : 'word'
+		};
 	}
 
 	/**
@@ -245,11 +257,15 @@
 
 	// XP is the difference the session made to the whole log, so the
 	// daily bonus is only counted when this session earned it.
-	const historyXp = $derived(xpFromReviews(reviews));
-	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews]));
+	// The learner's day rule; a zone change recomputes XP and the streak.
+	let studyDay = $state.raw(currentStudyDay());
+	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+
+	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf));
+	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf));
 	const sessionXp = $derived(totalXp - historyXp);
 	const progress = $derived(levelProgress(totalXp));
-	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now()));
+	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay));
 	// Per-kind XP of this session; whatever the kinds do not explain is
 	// the daily bonus.
 	const kindXp = $derived(xpByKind(sessionReviews));
@@ -327,7 +343,7 @@
 				// The outbox retries on the next boot or reconnect.
 			}
 			// Duplicate cards arrive merged, their reviews re-pointed.
-			const [data, schemeEntries] = await Promise.all([
+			const [data, levelRequest] = await Promise.all([
 				loadStudyData(workspaceId),
 				levelEntriesRequest(language)
 			]);
@@ -340,20 +356,26 @@
 			cards = data.cards;
 			const now = new Date();
 			if (config.mode === 'levels') {
-				// Level sessions stay vocab-only; companions are deck-only.
-				queue = levelSessionItems(
-					buildLevelQueue({
-						entries: schemeEntries,
-						cards: data.cards,
-						reviews: history,
-						newLimit: config.newLimit,
-						reviewLimit: config.reviewLimit,
-						now,
-						w
-					}),
-					data.cards,
-					kinds
-				);
+				// Character levels study recognition and writing; word levels vocab
+				// only. Companions are deck-only. A dropped virtual item (no stroke
+				// data) is replaced from the reserve, as in a deck session.
+				const plan = buildLevelPlan({
+					entries: levelRequest.entries,
+					cards: data.cards,
+					reviews: history,
+					newLimit: config.newLimit,
+					reviewLimit: config.reviewLimit,
+					now,
+					w,
+					unit: levelRequest.unit,
+					kinds,
+					studyDay: currentStudyDay(),
+					hasStrokes: hasStrokeData,
+					skip: loadIneligible(workspaceId)
+				});
+				queue = levelSessionItems(plan.queue, data.cards, kinds);
+				reserve = levelSessionItems(plan.reserve, data.cards, kinds);
+				backfillLeft = backfillLimit(config.newLimit);
 			} else {
 				const plan = deckSessionPlan({
 					cards: data.cards,
@@ -364,6 +386,7 @@
 					reviewLimit: config.reviewLimit,
 					now,
 					w,
+					studyDay: currentStudyDay(),
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
 					skip: loadIneligible(workspaceId)
@@ -455,7 +478,7 @@
 		if (
 			entry !== null &&
 			workspaceId !== null &&
-			rememberDrop(item, item.written ?? entry.written)
+			rememberDrop(item, item.written ?? entry.written, entry)
 		) {
 			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
 		}

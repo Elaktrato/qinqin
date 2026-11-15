@@ -1,11 +1,20 @@
 // The Settings page's tabs and their `?tab=` deep links.
 
-export const SETTINGS_TABS = ['workspaces', 'home', 'plugins', 'ai', 'account', 'data'] as const;
+export const SETTINGS_TABS = [
+	'workspaces',
+	'home',
+	'study',
+	'plugins',
+	'ai',
+	'account',
+	'data'
+] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 export const SETTINGS_TAB_LABELS: Record<SettingsTab, string> = {
 	workspaces: 'Workspaces',
 	home: 'Home',
+	study: 'Study',
 	plugins: 'Plugins',
 	ai: 'AI',
 	account: 'Account',

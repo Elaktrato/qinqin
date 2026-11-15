@@ -627,6 +627,22 @@ describe("study store", () => {
       expect(JSON.parse(String(call[1]?.body))).toEqual(added);
     });
 
+    it("keeps the entry kind snapshot of a character card across a round trip", async () => {
+      respondWith([]);
+      const added = await addCard(11, {
+        kind: "writing",
+        written: "学",
+        entryKind: "character",
+      });
+      expect(added.entryKind).toBe("character");
+      const [put] = calls().filter(([, init]) => init?.method === "PUT");
+      const body = JSON.parse(String(put[1]?.body));
+      expect(body.entryKind).toBe("character");
+      respondWith([pluginRow(`card:${added.id}`, body)]);
+      const { cards } = await loadStudyData();
+      expect(cards[0].entryKind).toBe("character");
+    });
+
     it("writes the requested kind and does not collide with the vocab card", async () => {
       const vocab = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", vocab)]);

@@ -139,6 +139,8 @@ func (s *server) routes() []route {
 		{"GET /api/account/sessions", s.handleListSessions, accUser, nil},
 		{"DELETE /api/account/sessions/{id}", s.handleRevokeSession, accUser, nil},
 		{"POST /api/account/sessions/revoke", s.handleRevokeSessions, accUser, nil},
+		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil},
+		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil},
 		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},

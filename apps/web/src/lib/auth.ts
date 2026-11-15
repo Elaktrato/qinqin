@@ -2,6 +2,7 @@ import { clearAudioCache } from './api/audio';
 import { clearClipCache } from './audio/source';
 import { derived, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
+import { clearStudyDay } from './time/zone';
 import {
 	api,
 	clearToken,
@@ -137,5 +138,7 @@ export function logout(): void {
 	// Workspace ids are global: the next user must not inherit this choice.
 	// Only an explicit sign-out clears it; a mid-session 401 keeps it.
 	clearSelection();
+	// The learner's zone history belongs to the account that just left.
+	clearStudyDay();
 	auth.set({ token: null, user: null });
 }

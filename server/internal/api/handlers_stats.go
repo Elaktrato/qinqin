@@ -3,10 +3,10 @@ package api
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
+	"qinqin/internal/studyday"
 )
 
 // maxActivitySpanDays bounds one request's cost: the window may cover
@@ -26,15 +26,18 @@ type sourceJSON struct {
 
 // activityResponse is the body of GET /api/stats/activity.
 type activityResponse struct {
-	From    string       `json:"from"`
-	To      string       `json:"to"`
-	Sources []sourceJSON `json:"sources"`
-	Cells   []stats.Cell `json:"cells"`
+	From     string       `json:"from"`
+	To       string       `json:"to"`
+	TimeZone string       `json:"timeZone"`
+	Sources  []sourceJSON `json:"sources"`
+	Cells    []stats.Cell `json:"cells"`
 }
 
 // handleActivity serves GET /api/stats/activity: the caller's activity
-// by UTC day, workspace and type over from..to (UTC dates, inclusive;
-// default the last 91 days) for the rules of the registered plugins.
+// by learner day (the caller's time zone history, see studyday),
+// workspace and type over from..to (learner dates, inclusive; default
+// today and the 90 days before) for the rules of the registered plugins;
+// timeZone is the caller's current zone (UTC while none is set).
 // An optional workspace restricts the cells; unknown and foreign ones
 // are 404. Every rule is listed in sources, also those without cells.
 func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
@@ -42,31 +45,35 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		return
 	}
-	const dayLayout = "2006-01-02"
+	hist, _, err := studyday.Load(r.Context(), s.db, u.ID)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	q := r.URL.Query()
-	to := time.Now().UTC().Truncate(24 * time.Hour)
+	to := hist.DayOf(s.now())
 	if raw := q.Get("to"); raw != "" {
-		t, err := time.Parse(dayLayout, raw)
+		d, err := studyday.ParseDate(raw)
 		if err != nil {
 			http.Error(w, "to must be YYYY-MM-DD", http.StatusBadRequest)
 			return
 		}
-		to = t
+		to = d
 	}
-	from := to.AddDate(0, 0, -90)
+	from := to.AddDays(-90)
 	if raw := q.Get("from"); raw != "" {
-		t, err := time.Parse(dayLayout, raw)
+		d, err := studyday.ParseDate(raw)
 		if err != nil {
 			http.Error(w, "from must be YYYY-MM-DD", http.StatusBadRequest)
 			return
 		}
-		from = t
+		from = d
 	}
-	if from.After(to) {
+	if to.Before(from) {
 		http.Error(w, "from must not be after to", http.StatusBadRequest)
 		return
 	}
-	if int(to.Sub(from).Hours()/24)+1 > maxActivitySpanDays {
+	if from.DaysUntil(to)+1 > maxActivitySpanDays {
 		http.Error(w, "the window may cover at most 366 days", http.StatusBadRequest)
 		return
 	}
@@ -93,7 +100,7 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	cells, err := stats.Activity(r.Context(), s.db, u.ID, from, to, workspace, rules)
+	cells, err := stats.Activity(r.Context(), s.db, u.ID, hist.Windows(from, to), workspace, rules)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -110,6 +117,6 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	writeJSON(w, http.StatusOK, activityResponse{
-		From: from.Format(dayLayout), To: to.Format(dayLayout), Sources: sources, Cells: cells,
+		From: from.String(), To: to.String(), TimeZone: hist.Zone(), Sources: sources, Cells: cells,
 	})
 }

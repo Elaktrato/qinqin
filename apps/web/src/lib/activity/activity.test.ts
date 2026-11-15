@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { ActivityResponse, ActivitySource } from '../api/stats';
 import {
 	HEATMAP_DAYS,
-	dayKey,
 	dayTooltip,
 	describe as describeActivity,
 	foldActivity,
@@ -11,8 +10,17 @@ import {
 	windowStart,
 	windowSummary
 } from './activity';
+import { studyDay } from '../time/studyDay';
 
 const NOW = new Date('2026-11-13T12:00:00Z');
+const UTC = studyDay([]);
+const TOKYO = studyDay([{ zone: 'Asia/Tokyo', from: null }]);
+const fold = (
+	r: ActivityResponse,
+	v: { workspace: number | null; hidden: readonly string[] },
+	now: Date = NOW,
+	days?: number
+) => foldActivity(r, v, UTC, now, days);
 
 const SOURCES: ActivitySource[] = [
 	{
@@ -39,7 +47,7 @@ const SOURCES: ActivitySource[] = [
 ];
 
 function resp(cells: ActivityResponse['cells']): ActivityResponse {
-	return { from: '2026-08-15', to: '2026-11-13', sources: SOURCES, cells };
+	return { from: '2026-08-15', to: '2026-11-13', timeZone: 'UTC', sources: SOURCES, cells };
 }
 
 const cell = (day: string, workspace: number, type: string, points: number, raw = points) => ({
@@ -61,7 +69,7 @@ describe('foldActivity', () => {
 	];
 
 	it('lists 91 days oldest first, empty days zero', () => {
-		const map = foldActivity(resp([]), ALL, NOW);
+		const map = fold(resp([]), ALL, NOW);
 		const keys = [...map.keys()];
 		expect(keys).toHaveLength(HEATMAP_DAYS);
 		expect(keys[0]).toBe('2026-08-15');
@@ -76,16 +84,16 @@ describe('foldActivity', () => {
 	});
 
 	it('keeps only one workspace for a workspace scope', () => {
-		const day = foldActivity(resp(cells), { workspace: 3, hidden: [] }, NOW).get('2026-11-13')!;
+		const day = fold(resp(cells), { workspace: 3, hidden: [] }, NOW).get('2026-11-13')!;
 		expect(day.total).toBe(12);
 		expect(day.bySource).toEqual({ review: 9, read: 3 });
 		expect(day.raw).toEqual({ review: 9, read: 900 });
 		expect(day.byWorkspace).toEqual({});
-		expect(foldActivity(resp(cells), { workspace: 3, hidden: [] }, NOW).get('2026-11-12')!.total).toBe(0);
+		expect(fold(resp(cells), { workspace: 3, hidden: [] }, NOW).get('2026-11-12')!.total).toBe(0);
 	});
 
 	it('sums all workspaces and fills byWorkspace', () => {
-		const map = foldActivity(resp(cells), ALL, NOW);
+		const map = fold(resp(cells), ALL, NOW);
 		const day = map.get('2026-11-13')!;
 		expect(day.total).toBe(14);
 		expect(day.bySource).toEqual({ review: 11, read: 3 });
@@ -94,7 +102,7 @@ describe('foldActivity', () => {
 	});
 
 	it('removes hidden types from totals and bySource', () => {
-		const day = foldActivity(resp(cells), { workspace: null, hidden: ['read'] }, NOW).get('2026-11-13')!;
+		const day = fold(resp(cells), { workspace: null, hidden: ['read'] }, NOW).get('2026-11-13')!;
 		expect(day.total).toBe(11);
 		expect(day.bySource).toEqual({ review: 11 });
 		expect(day.raw).toEqual({ review: 11 });
@@ -102,7 +110,7 @@ describe('foldActivity', () => {
 	});
 
 	it('ignores unknown types and cells outside the window', () => {
-		const map = foldActivity(
+		const map = fold(
 			resp([
 				cell('2026-11-13', 3, 'mystery', 5),
 				cell('2026-08-14', 3, 'review', 5),
@@ -134,7 +142,7 @@ describe('describe', () => {
 
 describe('sourcePoints', () => {
 	it('sums the window per type', () => {
-		const map = foldActivity(
+		const map = fold(
 			resp([cell('2026-11-13', 3, 'review', 9), cell('2026-11-12', 3, 'review', 2)]),
 			ALL,
 			NOW
@@ -147,7 +155,7 @@ describe('dayTooltip', () => {
 	const names = (id: number) => (id === 3 ? '中文' : id === 4 ? '日本語' : `Workspace ${id}`);
 
 	it('uses the rules own wording', () => {
-		const day = foldActivity(
+		const day = fold(
 			resp([cell('2026-11-13', 3, 'review', 9), cell('2026-11-13', 3, 'read', 3, 900)]),
 			{ workspace: 3, hidden: [] },
 			NOW
@@ -158,7 +166,7 @@ describe('dayTooltip', () => {
 	});
 
 	it('adds the workspaces in the combined view', () => {
-		const day = foldActivity(
+		const day = fold(
 			resp([
 				cell('2026-11-13', 3, 'review', 8),
 				cell('2026-11-13', 4, 'review', 1),
@@ -173,25 +181,25 @@ describe('dayTooltip', () => {
 	});
 
 	it('uses a fallback name verbatim', () => {
-		const day = foldActivity(resp([cell('2026-11-13', 7, 'review', 1)]), ALL, NOW).get('2026-11-13')!;
+		const day = fold(resp([cell('2026-11-13', 7, 'review', 1)]), ALL, NOW).get('2026-11-13')!;
 		expect(dayTooltip(day, SOURCES, names)).toBe(
 			'2026-11-13: 1 point — 1 flashcard review · Workspace 7 1'
 		);
 	});
 
 	it('says hidden, not no activity, when every type is hidden', () => {
-		const day = foldActivity(resp([]), ALL, NOW).get('2026-11-13')!;
+		const day = fold(resp([]), ALL, NOW).get('2026-11-13')!;
 		expect(dayTooltip(day, SOURCES, names, true)).toBe('2026-11-13: all activity types hidden');
 	});
 
 	it('reports an empty day', () => {
-		const day = foldActivity(resp([]), ALL, NOW).get('2026-11-13')!;
+		const day = fold(resp([]), ALL, NOW).get('2026-11-13')!;
 		expect(dayTooltip(day, SOURCES, names)).toBe('2026-11-13: no activity');
 	});
 });
 
 describe('windowSummary', () => {
-	const map = foldActivity(
+	const map = fold(
 		resp([cell('2026-11-13', 3, 'review', 2), cell('2026-11-12', 3, 'read', 19, 5700)]),
 		ALL,
 		NOW
@@ -205,21 +213,61 @@ describe('windowSummary', () => {
 	});
 
 	it('says so when there is no activity', () => {
-		expect(windowSummary(foldActivity(resp([]), ALL, NOW), SOURCES, 'workspace')).toBe(
+		expect(windowSummary(fold(resp([]), ALL, NOW), SOURCES, 'workspace')).toBe(
 			'Learning activity in this workspace for the last 13 weeks: no activity yet'
 		);
 	});
 });
 
-describe('windowStart and dayKey', () => {
-	it("is UTC midnight of the window's first day", () => {
-		expect(windowStart(NOW).toISOString()).toBe('2026-08-15T00:00:00.000Z');
-		expect(windowStart(NOW, 7).toISOString()).toBe('2026-11-07T00:00:00.000Z');
+describe('windowStart', () => {
+	it("is the window's first learner day", () => {
+		expect(windowStart(UTC, NOW)).toBe('2026-08-15');
+		expect(windowStart(UTC, NOW, 7)).toBe('2026-11-07');
+		expect(windowStart(UTC, NOW, 0)).toBe('2026-11-13');
+		expect(windowStart(UTC, NOW)).toBe([...fold(resp([]), ALL).keys()][0]);
 	});
 
-	it('formats a UTC day', () => {
-		expect(dayKey(new Date('2026-11-13T23:59:59Z'))).toBe('2026-11-13');
-		expect(dayKey(windowStart(NOW))).toBe([...foldActivity(resp([]), ALL, NOW).keys()][0]);
+	it('follows the learner zone: 15:30Z is already tomorrow in Tokyo', () => {
+		const late = new Date('2026-11-13T15:30:00Z');
+		expect(windowStart(TOKYO, late, 7)).toBe('2026-11-08');
+		expect([...foldActivity(resp([]), ALL, TOKYO, late, 7).keys()].at(-1)).toBe('2026-11-14');
+		expect([...foldActivity(resp([]), ALL, UTC, late, 7).keys()].at(-1)).toBe('2026-11-13');
+	});
+});
+
+describe('foldActivity by learner day', () => {
+	it('puts cells on the learner days the server named', () => {
+		const late = new Date('2026-11-13T15:30:00Z');
+		const map = foldActivity(
+			resp([cell('2026-11-14', 3, 'review', 2), cell('2026-11-13', 3, 'review', 1)]),
+			ALL,
+			TOKYO,
+			late,
+			3
+		);
+		expect([...map.keys()]).toEqual(['2026-11-12', '2026-11-13', '2026-11-14']);
+		expect(map.get('2026-11-14')!.total).toBe(2);
+	});
+
+	it('has exactly 91 civil days across the Berlin spring-forward change', () => {
+		const berlin = studyDay([{ zone: 'Europe/Berlin', from: null }]);
+		const map = foldActivity(resp([]), ALL, berlin, new Date('2025-04-10T12:00:00Z'));
+		const keys = [...map.keys()];
+		expect(keys).toHaveLength(HEATMAP_DAYS);
+		expect(keys).toContain('2025-03-30');
+		expect(new Set(keys).size).toBe(HEATMAP_DAYS);
+		expect(keys[0]).toBe('2025-01-10');
+		expect(keys.at(-1)).toBe('2025-04-10');
+	});
+
+	it('has 91 days across the autumn 25 hour day and a westward zone change', () => {
+		const trip = studyDay([
+			{ zone: 'Asia/Tokyo', from: null },
+			{ zone: 'America/Los_Angeles', from: '2026-11-10T16:00:00Z' }
+		]);
+		const map = foldActivity(resp([]), ALL, trip, new Date('2026-11-12T07:59:59Z'));
+		expect(map.size).toBe(HEATMAP_DAYS);
+		expect([...map.keys()].at(-1)).toBe('2026-11-11');
 	});
 });
 

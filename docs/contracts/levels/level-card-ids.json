@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "rule": "levels/levelCardIds",
+  "cases": [
+    {
+      "virtualId": "level:11",
+      "kind": "vocab",
+      "entryId": 11,
+      "cardId": "c-vocab-11"
+    },
+    {
+      "virtualId": "level:12345",
+      "kind": "vocab",
+      "entryId": 12345,
+      "cardId": "c-vocab-12345"
+    },
+    {
+      "virtualId": "level:writing:11",
+      "kind": "writing",
+      "entryId": 11,
+      "cardId": "c-writing-11"
+    },
+    {
+      "virtualId": "level:writing:12345",
+      "kind": "writing",
+      "entryId": 12345,
+      "cardId": "c-writing-12345"
+    }
+  ]
+}

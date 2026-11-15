@@ -148,7 +148,8 @@
 				// addCard reads again and reports a real failure.
 			}
 			let sentenceId: number | undefined;
-			const text = paragraph ? bookSentence(paragraph, result.start, result.end) : '';
+			const isCharacter = result.kind === 'character';
+			const text = paragraph && !isCharacter ? bookSentence(paragraph, result.start, result.end) : '';
 			if (text) {
 				const saved = await resolveBookSentence({ getEntry, addSentence }, entryId, text);
 				sentenceId = saved.sentenceId;
@@ -156,7 +157,7 @@
 			}
 			await addCard(entryId, {
 				written: popupWritten(result),
-				sentenceId,
+				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
 				deckIds: [deckId],
 				workspaceId: ws
 			});

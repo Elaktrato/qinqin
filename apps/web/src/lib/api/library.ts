@@ -178,7 +178,7 @@ export const BROWSE_LIMIT = 12;
 
 /**
  * browseSource fetches an assortment of a source's works in `language`:
- * the same for the same seed (the server defaults to today's UTC date).
+ * the same for the same seed (the server defaults to the caller's learner date).
  * An empty list means the catalog is empty or not available yet; a 501
  * means the source has no assortment.
  */

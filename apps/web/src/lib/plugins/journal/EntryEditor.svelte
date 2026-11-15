@@ -34,6 +34,7 @@
 	} from './editorLogic';
 	import { pollForReview } from './reviewPoll';
 	import { journalHref, newEntryHref } from './route';
+	import { currentStudyDay } from '$lib/time/zone';
 	import { deleteEntry, getEntry, getReview, newEntry, recordJournalEvent, saveEntry } from './store';
 	import type { JournalEntry, Review } from './types';
 
@@ -159,7 +160,7 @@
 
 	async function recordEvent(id: string): Promise<void> {
 		const now = new Date();
-		if (!journalEventDue(id, true, now, sentEvents)) return;
+		if (!journalEventDue(id, true, now, sentEvents, currentStudyDay().dayOf)) return;
 		try {
 			await recordJournalEvent(ws, id, now);
 		} catch {
@@ -183,7 +184,7 @@
 		gone = false;
 		originals = {};
 		if (id === null) {
-			const fresh = newEntry('typed');
+			const fresh = newEntry('typed', currentStudyDay());
 			entry = fresh;
 			title = initialTitle;
 			text = '';

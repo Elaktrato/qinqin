@@ -1,3 +1,4 @@
+import { studyDay } from '../time/studyDay';
 import { describe, expect, it } from 'vitest';
 
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
@@ -254,6 +255,8 @@ describe('buildQueue kinds', () => {
 	});
 });
 
+const UTC_DAY = studyDay([]);
+
 describe('xpFromReviews', () => {
 	it('awards 10 plus the grade bonus per review', () => {
 		const reviews = [
@@ -265,11 +268,11 @@ describe('xpFromReviews', () => {
 
 		// again 10, hard 10, good 15, easy 20, plus +10 first review of
 		// each of the four distinct UTC days
-		expect(xpFromReviews(reviews)).toBe(95);
+		expect(xpFromReviews(reviews, UTC_DAY.dayOf)).toBe(95);
 	});
 
 	it('is zero for no reviews', () => {
-		expect(xpFromReviews([])).toBe(0);
+		expect(xpFromReviews([], UTC_DAY.dayOf)).toBe(0);
 	});
 });
 
@@ -289,7 +292,7 @@ describe('malformed review events', () => {
 		const poisoned = malformed('c1', 9, '2026-01-02T00:00:00.000Z');
 
 		expect(scheduleFor('c1', [valid, poisoned], NOW, DEFAULT_W)).toEqual(scheduleFor('c1', [valid], NOW, DEFAULT_W));
-		expect(xpFromReviews([valid, poisoned])).toBe(25);
+		expect(xpFromReviews([valid, poisoned], UTC_DAY.dayOf)).toBe(25);
 	});
 
 	it('ignores an invalid timestamp and an empty card id', () => {
