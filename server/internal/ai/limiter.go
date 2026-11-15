@@ -24,6 +24,7 @@ var ErrInFlight = errors.New("ai: a call is already running")
 type Call struct {
 	UserID      int64
 	Kind, Model string
+	Provider    string // empty keeps the column default (anthropic)
 	OK          bool
 	Usage       Usage
 }
@@ -89,8 +90,11 @@ func (l *Limiter) Record(ctx context.Context, c Call) error {
 	if c.OK {
 		ok = 1
 	}
-	_, err := l.DB.ExecContext(ctx, `INSERT INTO ai_calls (user_id, kind, model, ok, input_tokens, output_tokens, at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)`, c.UserID, c.Kind, c.Model, ok, c.Usage.InputTokens, c.Usage.OutputTokens, stamp(l.now()))
+	if c.Provider == "" {
+		c.Provider = "anthropic"
+	}
+	_, err := l.DB.ExecContext(ctx, `INSERT INTO ai_calls (user_id, kind, model, provider, ok, input_tokens, output_tokens, at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, c.UserID, c.Kind, c.Model, c.Provider, ok, c.Usage.InputTokens, c.Usage.OutputTokens, stamp(l.now()))
 	return err
 }
 

@@ -93,6 +93,9 @@ func TestFakeReviewMarkers(t *testing.T) {
 	if r.Model != "claude-opus-5" {
 		t.Errorf("fallback model = %q", r.Model)
 	}
+	if r.FallbackFrom != fakeCreds.Model {
+		t.Errorf("FallbackFrom = %q, want %q", r.FallbackFrom, fakeCreds.Model)
+	}
 }
 
 func TestFakeSlowHonoursContext(t *testing.T) {

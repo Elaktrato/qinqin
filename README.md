@@ -54,7 +54,9 @@ database with a SvelteKit single-page app embedded in the binary.
   order (core first, then plugins); **Characters** (`/stats/characters`) is the
   mastery map, for Chinese and Japanese workspaces only.
 - **Journal and AI** — write dated entries per workspace; with your own
-  Anthropic API key, get a review with underlined corrections, topic ideas, and
+  key for the AI provider you choose (Anthropic, OpenAI, Google Gemini,
+  DeepSeek, Mistral, xAI, Groq, OpenRouter or a custom OpenAI-compatible
+  endpoint), get a review with underlined corrections, topic ideas, and
   photo import with offline (Tesseract) or AI transcription (see
   [Journal and AI](#journal-and-ai)).
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
@@ -175,7 +177,11 @@ uploads), so a read-only root filesystem is not enabled.
    host path (e.g. `/srv/qinqin/data`) to bind-mount a directory instead of the
    named volume; the directory must exist and be writable by root.
    `QINQIN_SECRET_PREVIOUS` only while rotating the secret.
-   `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the stack.
+   `QINQIN_AI_PROVIDERS` limits which AI providers users may choose
+   (default: all; see [Journal and AI](#journal-and-ai)),
+   `QINQIN_AI_ALLOW_PRIVATE=1` lets an admin register AI endpoints on private
+   addresses, and `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the
+   stack.
 4. **First run, before exposing the port beyond your LAN** (until a user
    exists, the first registration over the API becomes admin). Portainer:
    Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
@@ -285,15 +291,25 @@ location / {
 
 ### AI journal
 
-Each user opens Settings, AI and enters their own Anthropic API key; qinqin
-ships none. Journal text (up to 5,000 characters), study history snippets and
-photos **leave the server for the provider** when a user presses an AI button.
-The default model is `claude-opus-5-5`, the most expensive of the three: tell
-users to pick Sonnet or Haiku in Settings if cost matters (calls are limited to
-30 per user and hour). The settings `QINQIN_AI_PROVIDERS` and
-`QINQIN_AI_ALLOW_PRIVATE` (other providers, private endpoints) are coming with
-the multi-provider AI work and do nothing yet. Without a valid
-`QINQIN_SECRET`, AI shows as disabled with the reason.
+Each user opens Settings, AI, picks a provider and enters their own API key for
+it; qinqin ships none. Journal text (up to 5,000 characters), study history
+snippets and photos **leave the server for the provider the user made active**
+when they press an AI button. Models differ a lot in price: the defaults are
+`claude-opus-5-5` for Anthropic and the providers' flagship models elsewhere,
+the most expensive choices, so tell users to pick a cheaper model in Settings if
+cost matters (calls are limited to 30 per user and hour across all providers).
+
+- `QINQIN_AI_PROVIDERS` is a comma list of the built-in ids (`anthropic`,
+  `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and
+  `custom`; only those can be chosen. Unset means all. If you pinned
+  `QINQIN_AI_PROVIDER=anthropic` before, that now means
+  `QINQIN_AI_PROVIDERS=anthropic` (a log line says so), so an upgrade never
+  sends text to a provider you did not allow.
+- Admins can register OpenAI-compatible endpoints (Ollama, LM Studio, vLLM, a
+  company gateway) in Settings, AI. Addresses on a private network are refused
+  unless you set `QINQIN_AI_ALLOW_PRIVATE=1`; link-local, cloud-metadata and
+  multicast addresses are never allowed. See [Custom endpoints](#custom-ai-endpoints).
+- Without a valid `QINQIN_SECRET`, AI shows as disabled with the reason.
 
 ### Checklist after deploying
 
@@ -303,7 +319,8 @@ the multi-provider AI work and do nothing yet. Without a valid
 - Search `好`: results appear (the seed ran).
 - Create a deck/flashcard.
 - Journal: with the fake provider off (`QINQIN_AI_PROVIDER` unset), Settings,
-  AI shows the key as storable; save a key and run a review.
+  AI lists the providers and shows a key as storable; save a key (it becomes
+  the active provider) and run a review.
 - The container log shows `AI: QINQIN_SECRET ok`.
 
 ### Troubleshooting
@@ -742,9 +759,14 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state (`hidden: true` marks the app's own surface-less built-ins such as `qinqin-core`; clients leave those out of plugin lists), and the caller's enable flag and (legacy) order for one plugin |
 | `GET /api/plugins/{id}/data?workspace=&prefix=` | The caller's live rows of a plugin whose key starts with `prefix`, scoped like the single-row routes, ordered by key, `[]` when none; an unknown plugin or foreign workspace is 404 |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
-| `GET /api/ai/status` | The AI state for the caller: `secret` (`ok`, `missing`, `invalid`), `provider`, the stored key (hint, model, state, never the key), the selectable `models`, this hour's `usage`, `available` and, when not, a `reason` (`no_secret`, `invalid_secret`, `no_key`, `key_undecryptable`, `no_provider`) |
-| `GET`/`PUT`/`DELETE /api/ai/key` | Read, store and remove the caller's API key. `PUT {provider?, key?, model?}` checks a new key with the provider (one call toward the hourly limit) before storing it and answers the status; without `key` it changes only the model. Errors are JSON `{error, message}` and never HTTP 401: 409 (`ai_disabled`, `no_key`, `key_undecryptable`, `in_flight`), 422 (`key_rejected`, `quota`, `invalid_key`, `invalid_model`, `model_unavailable`, `bad_request`, ...), 429 `rate_limited` and 503 `busy` with `Retry-After` |
-| `POST /api/journal/review` | `{workspaceId, entryId}`: asks the AI to review one journal entry of the caller's workspace and stores `review:<entryId>` (annotations validated and anchored by the server, then the overall review); answers the stored review. Needs a stored key. Up to 5,000 characters (413 `too_long`, 422 `empty`), 404 for a foreign workspace or an unknown entry, the same AI errors as above. The call finishes and is stored even if the client disconnects |
+| `GET /api/ai/status` | The AI state for the caller: `secret` (`ok`, `missing`, `invalid`), `provider` (the active id, `fake` under the test switch), `fake`, `active` (`{provider, name, model, vision, structured}`), the active provider's key and all stored `keys` (hint, model, state, never the key), the active provider's suggested `models`, this hour's `usage`, `available` and, when not, a `reason` (`no_secret`, `invalid_secret`, `no_provider`, `no_key`, `no_selection`, `provider_disabled`, `key_undecryptable`), plus `disabledProviders` for stored keys of providers the server turned off |
+| `GET /api/ai/providers` | The providers the server allows: id, name, kind, key page, default model, suggested models, structured mode, photo reading; custom endpoints with their `host` (admins also get `baseUrl`), `canManageCustom` and `privateAllowed` |
+| `PUT /api/ai/keys/{provider}` | `{key?, model?}`: checks a new key with the provider (one call toward the hourly limit), stores it for the caller and answers the status; the first stored key becomes active. Without `key` only the model changes. A model id is 1 to 200 characters of `[A-Za-z0-9._:/@-]` |
+| `POST /api/ai/keys/{provider}/test` | Re-checks the stored key (one counted call) |
+| `DELETE /api/ai/keys/{provider}` | Removes the caller's key; if it was the active one the selection is cleared, never moved to another provider |
+| `PUT /api/ai/active` | `{provider}`: makes a provider with a stored key the active one (409 `no_key` otherwise) |
+| `POST /api/ai/custom-providers`, `PATCH`/`DELETE /api/ai/custom-providers/{id}` | Admin only (403 `forbidden`): register, change (default model, photos, structured mode, token cap) and remove an OpenAI-compatible endpoint; removing deletes every user's key for it. 422 `endpoint_blocked` (with the rule), 422 `invalid_endpoint`, 409 `provider_disabled` when `custom` is not in `QINQIN_AI_PROVIDERS`. Errors of all `/api/ai` routes are JSON `{error, message}` and never HTTP 401: 404 `unknown_provider`, 409 (`ai_disabled`, `no_key`, `no_selection`, `no_vision`, `provider_disabled`, `key_undecryptable`, `in_flight`), 422 (`key_rejected`, `quota`, `invalid_key`, `invalid_model`, `model_unavailable`, `bad_request`, ...), 429 `rate_limited` and 503 `busy` with `Retry-After` |
+| `POST /api/journal/review` | `{workspaceId, entryId}`: asks the AI to review one journal entry of the caller's workspace and stores `review:<entryId>` (annotations validated and anchored by the server, then the overall review); answers the stored review. Needs an active provider with a stored key. Up to 5,000 characters (413 `too_long`, 422 `empty`), 404 for a foreign workspace or an unknown entry, the same AI errors as above. The call finishes and is stored even if the client disconnects |
 | `POST /api/journal/suggestions` | `{workspaceId}`: asks the AI for topic ideas from the workspace's recently reviewed words (at most 60) and the titles and openings (200 characters) of the last 10 entries; stores and answers the `suggestions` document |
 | `GET /api/journal/capabilities?workspace=` | `{ai: <status>, ocr: {available, languageReady, language}}` for one workspace |
 | `GET /api/dictionaries` | Public. The installed dictionaries, each with `license`, `attribution` and `notice` (`""` when the manifest has none) |
@@ -777,7 +799,7 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/admin/plugins` (manifest) | 64 KiB |
 | `PUT /api/plugins/{id}/state` | 64 KiB |
 | `PUT /api/plugins/{id}/data/{key}` | 256 KiB per value; the same cap applies to each plugin-data value inside `POST /api/sync/push` |
-| `PUT /api/ai/key`, `POST /api/journal/review`, `POST /api/journal/suggestions` | 4 KiB |
+| `PUT /api/ai/keys/{provider}`, `PUT /api/ai/active`, `POST /api/ai/custom-providers`, `POST /api/journal/review`, `POST /api/journal/suggestions` | 4 KiB |
 | `PUT /api/entries/{id}` | 64 KiB |
 | `POST /api/library/books/{id}/highlights` | 16 KiB |
 | `POST /api/library/books/{id}/bookmarks` | 1 KiB |
@@ -931,15 +953,38 @@ runs it together with the scripts' tests (`node --test scripts/*.test.mjs`).
 
 ## Journal and AI
 
-The Journal is a page plugin (`qinqin-journal`) where you write dated entries per workspace. The AI features (a review with underlined corrections, topic ideas, and turning a photo of a page into an entry) are optional and use **your own Anthropic API key**; qinqin ships no key and sends nothing to any provider on its own.
+The Journal is a page plugin (`qinqin-journal`) where you write dated entries per workspace. The AI features (a review with underlined corrections, topic ideas, and turning a photo of a page into an entry) are optional and use **your own API key for the provider you choose**; qinqin ships no key and sends nothing to any provider on its own.
 
-- **What is sent, and when.** Only when you press a button: the entry text (up to 5,000 characters) and your guidance for a review, a list of recently studied words and the openings of your last entries for topic ideas, or one re-encoded photo for a transcription. Nothing is sent when you merely open the page or pick a photo. Photos are stripped of metadata (including GPS) and shrunk before they leave the server, are sent only when you press a transcription button, and are deleted when you save or discard the draft (a janitor sweeps forgotten ones within about an hour).
-- **Key storage.** Each user stores their own key in Settings → AI. It is encrypted at rest (AES-256-GCM, bound to the user) with `QINQIN_SECRET` and is never returned by the API, written to logs, or included in sync or backups in plain text. Only the last four characters are shown as a hint.
-- **Models.** `claude-opus-5-5` (default), `claude-sonnet-5-5` and `claude-haiku-5-5`, chosen per user. On Opus and Sonnet a safety refusal is retried by the provider's default fallback model, which can answer from another model on your key; the review says which model answered.
-- **Limits.** 30 provider calls per user per rolling hour (checking a key counts as one), one AI call in flight per user, 5,000 characters per review, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour. Settings → AI shows the calls and tokens used this hour.
+- **What is sent, and when.** Only when you press a button, and only to the provider you made active in Settings → AI: the entry text (up to 5,000 characters) and your guidance for a review, a list of recently studied words and the openings of your last entries for topic ideas, or one re-encoded photo for a transcription. Nothing is sent when you merely open the page or pick a photo. Photos are stripped of metadata (including GPS) and shrunk before they leave the server, are sent only when you press a transcription button, and are deleted when you save or discard the draft (a janitor sweeps forgotten ones within about an hour). Settings → AI shows, wherever you type a key, "Your journal text, guidance and the photos you choose to read with AI are sent to <provider> when you press a button. <provider>'s terms apply."
+- **Key storage.** Each user stores one key per provider in Settings → AI and makes one of them active. Keys are encrypted at rest (AES-256-GCM, bound to the user and the provider) with `QINQIN_SECRET` and are never returned by the API, written to logs, or included in sync or backups in plain text. Only the last four characters are shown as a hint. A key opens only for the provider it was stored for; a custom endpoint's key is also bound to the endpoint's address.
+- **Providers.** Pick any of these (the learner may type any model id; the registry only suggests):
+
+| Provider | Base URL | Default model (also suggested) | Reads photos | Structured replies |
+|---|---|---|---|---|
+| Anthropic | `https://api.anthropic.com` | `claude-opus-5-5` (`claude-sonnet-5-5`, `claude-haiku-5-5`) | yes | JSON schema |
+| OpenAI | `https://api.openai.com/v1` | `gpt-6-astra` (`gpt-6-luna`) | yes | JSON schema (strict) |
+| Google Gemini | `https://generativelanguage.googleapis.com/v1beta` | `gemini-3.8-flash` (`gemini-3.5-flash-lite`) | yes | JSON schema |
+| DeepSeek | `https://api.deepseek.com` | `deepseek-flash` (`deepseek-v4-pro`: no photos) | `deepseek-flash` only | JSON mode |
+| Mistral | `https://api.mistral.ai/v1` | `mistral-large-latest` (`mistral-small-latest`) | yes | JSON schema |
+| xAI | `https://api.x.ai/v1` | `grok-4.7` | yes | JSON schema (strict) |
+| Groq | `https://api.groq.com/openai/v1` | `openai/gpt-oss-120b` | no | JSON schema |
+| OpenRouter | `https://openrouter.ai/api/v1` | `openrouter/auto` | depends on the routed model | JSON schema |
+| Custom (admin) | the admin's address | the admin's choice | the admin's choice | JSON mode by default |
+
+  A model that cannot read photos makes Read with AI unavailable ("<model> can't read photos") and the page offers offline reading instead. If a reply is not valid JSON in the expected shape the server asks once more (a second counted call) and otherwise answers "bad reply"; nothing from a malformed reply reaches the page.
+- **Models and fallback.** On Anthropic's Opus and Sonnet a safety refusal is retried by the provider's default fallback model, which can answer from another model on your key; the review says which model and provider answered and marks "(fallback)". Other providers have no fallback.
+- **Limits.** 30 provider calls per user per rolling hour across all providers (checking a key and a repair request count), one AI call in flight per user, 5,000 characters per review, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour, provider replies capped at 8 MiB, 150 s per call. Settings → AI shows the calls and tokens used this hour.
 - **Offline OCR.** The image bundles Tesseract 5 (with Chinese Simplified and Traditional, Japanese and English data) for reading a photo without any AI; without the `tesseract` binary it shows as unavailable.
 - **Image size.** The OCR packages add about 193 MB to the Docker image (Tesseract plus the `chi_sim`, `chi_tra`, `jpn` and `eng` standard models from Alpine's tessdata). The standard models were chosen over the smaller `tessdata_fast` ones for accuracy on handwriting and small print, at the cost of size. To leave them out, build with `docker build --build-arg WITH_OCR=0 .`: the server starts normally, offline reading shows as unavailable and AI reading is unaffected. CI and the published image use the full build.
 - **Audio in the image.** The default image build (`WITH_AUDIO=1`) also bakes in the Kanji alive example-word recordings (CC BY 4.0, 10,156 Japanese clips): a build stage runs `scripts/fetch-audio-kanjialive.sh`, which downloads about 69 MB from `media.kanjialive.com` and the data repository (a warm layer cache skips it; a fresh build does not), checks pinned SHA-256 sums and fails the build on a mismatch. The image grows by about 70 MB, and builds that run the stage need that site reachable; the `audio-stage` workflow builds only the stage on pull requests and weekly so a break shows early. Build with `docker build --build-arg WITH_AUDIO=0 .` to leave it out (also the fallback when the download is unavailable): `/opt/qinqin/audio` is then empty and `qinqin seed` still works. See `docs/sources.md`, "Audio".
+
+### Custom AI endpoints
+
+An admin can register an OpenAI-compatible endpoint (Ollama, LM Studio, vLLM, Together, a company gateway, Azure-style gateways, Cohere's compatibility API) in Settings → AI; everyone on the server can then store their own key for it. Because any user can trigger calls to it, the server treats the address as a threat: the address must be `https` (plain `http` only with `QINQIN_AI_ALLOW_PRIVATE=1`, and then only if it resolves to a loopback or private address, for example `http://ollama:11434/v1` on a Docker network), without a user name, query or fragment; the address actually dialled is checked after DNS (so a hostname that resolves to a blocked address is refused, rebinding included); link-local, cloud-metadata, multicast and unspecified addresses are never allowed; redirects are not followed, so a key never travels to another host. The name, address and "needs a key" setting cannot be changed later (remove and re-add), and a name may not look like a built-in provider, so an endpoint cannot pose as "OpenAI" to collect keys. Users see "Added by your admin · <host>" wherever they type a key for it. Custom endpoints never use an HTTP proxy (the check needs the dialled address); the built-in providers honour `HTTPS_PROXY`, and follow no redirects either.
+
+Proton's Lumo has no public API today (their roadmap only announces one), so it is not built in; if Proton ships an OpenAI-compatible API an admin can add it as a custom endpoint.
+
+**The owner's real-key checklist** is in `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`. These items were not confirmed against the providers' own documentation or a real call and are marked `UNVERIFIED 2026-11-15` in `server/internal/ai/registry.go`: the model ids `gpt-6-luna`, `mistral-large-latest` and `mistral-small-latest` (`grok-4.7` is the id xAI's documentation names; what is unconfirmed for xAI, Mistral and OpenRouter is whether their models read photos), base64 image data URLs for OpenAI itself, DeepSeek's `/models` listing, and the REST field name Gemini uses for the JSON schema (`generationConfig.responseJsonSchema`).
 
 ### Photo routes
 
@@ -980,7 +1025,9 @@ Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot b
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
-| `QINQIN_AI_PROVIDER` | `anthropic` (default). `fake` is for testing only: a deterministic provider that never leaves the server, shown in the app as a "Test provider" badge. Anything else disables AI |
+| `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |
+| `QINQIN_AI_ALLOW_PRIVATE` | `1` or `true` lets admins register custom endpoints on loopback and private addresses (Ollama on the same host). Off by default; the admin's endpoints can then reach your LAN, so enable it only if you trust every admin |
+| `QINQIN_AI_PROVIDER` | Legacy. Unset: real providers, all allowed. `anthropic` (set explicitly) means `QINQIN_AI_PROVIDERS=anthropic`. `fake` is for testing only: a deterministic provider that replaces every adapter, never leaves the server, and is shown in the app as a "Test provider" badge. Anything else disables AI |
 
 ## Dictionary data model
 

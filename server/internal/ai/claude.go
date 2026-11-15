@@ -7,7 +7,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/anthropics/anthropic-sdk-go/v2"
@@ -67,6 +66,9 @@ func (c *Claude) Review(ctx context.Context, cr Credentials, r ReviewRequest) (R
 		return ReviewReply{}, ErrBadReply
 	}
 	rep := ReviewReply{Overall: out.Overall, Model: model, Usage: usage}
+	if (cr.Model == "claude-opus-5-5" || cr.Model == "claude-sonnet-5-5") && model != "" && model != cr.Model {
+		rep.FallbackFrom = cr.Model
+	}
 	for _, a := range out.Annotations {
 		rep.Annotations = append(rep.Annotations, RawAnnotation{Quote: a.Quote, ContextBefore: a.ContextBefore, Correction: a.Correction, Explanation: a.Explanation, Category: a.Category})
 	}
@@ -191,9 +193,7 @@ func mapError(kind string, err error) error {
 
 func retryAfter(resp *http.Response) time.Duration {
 	if resp != nil {
-		if n, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil && n > 0 {
-			return time.Duration(n) * time.Second
-		}
+		return retryAfterHeader(resp.Header)
 	}
 	return defaultRetryAfter
 }

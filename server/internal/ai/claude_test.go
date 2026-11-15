@@ -160,6 +160,42 @@ func TestClaudeReviewFallbackUsesLastTextBlock(t *testing.T) {
 	if r.Model != "claude-opus-5" || len(r.Annotations) != 2 {
 		t.Fatalf("model=%q annotations=%d", r.Model, len(r.Annotations))
 	}
+	if r.FallbackFrom != "claude-opus-5-5" {
+		t.Errorf("FallbackFrom = %q, want the requested model", r.FallbackFrom)
+	}
+}
+
+func TestClaudeNoFallbackFromWhenSameModel(t *testing.T) {
+	c, _, _ := serve(t, 200, "review_ok", nil)
+	r, err := c.Review(context.Background(), creds("claude-opus-5-5"), ReviewRequest{Language: "zh", ExplanationLanguage: "en", Text: "x"})
+	if err != nil || r.FallbackFrom != "" {
+		t.Errorf("FallbackFrom = %q, %v", r.FallbackFrom, err)
+	}
+}
+
+// TestClaudeUsesBuiltinClient: with the guarded built-in client a 302 is not
+// followed, so the key header never reaches the second server.
+func TestClaudeUsesBuiltinClient(t *testing.T) {
+	var second atomic.Int32
+	b := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		second.Add(1)
+		if r.Header.Get("x-api-key") != "" {
+			t.Errorf("x-api-key crossed hosts")
+		}
+	}))
+	t.Cleanup(b.Close)
+	a := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, b.URL+"/steal", http.StatusTemporaryRedirect)
+	}))
+	t.Cleanup(a.Close)
+	c := NewClaude(option.WithBaseURL(a.URL), option.WithHTTPClient(NewBuiltinClient(nil)))
+	_, err := c.Review(context.Background(), creds("claude-opus-5-5"), ReviewRequest{Language: "zh", ExplanationLanguage: "en", Text: "x"})
+	if err == nil {
+		t.Error("a redirect must not read as success")
+	}
+	if second.Load() != 0 {
+		t.Errorf("redirect target received %d requests", second.Load())
+	}
 }
 
 func TestClaudeRefusalAndTruncation(t *testing.T) {

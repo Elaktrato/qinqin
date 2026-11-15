@@ -14,7 +14,15 @@
 #                    /srv/qinqin/data: Docker then bind-mounts it (it must exist
 #                    and be writable by root, the user the image runs as).
 #   QINQIN_SECRET_PREVIOUS  only while rotating: the OLD secret, for one restart.
+#   QINQIN_AI_PROVIDERS     comma list of the AI providers users may choose:
+#                    anthropic, openai, gemini, deepseek, mistral, xai, groq,
+#                    openrouter and "custom" (admin-registered endpoints).
+#                    Empty = all.
+#   QINQIN_AI_ALLOW_PRIVATE "1" lets admin-registered AI endpoints reach
+#                    loopback and private addresses (Ollama on your LAN). Off
+#                    by default; enable only if you trust every admin.
 #   QINQIN_AI_PROVIDER      "fake" for testing only; never contacts an AI service.
+#                    "anthropic" (legacy) means QINQIN_AI_PROVIDERS=anthropic.
 services:
   qinqin:
     image: ${QINQIN_IMAGE:-ghcr.io/elaktrato/qinqin:latest}
@@ -27,6 +35,8 @@ services:
       QINQIN_DATA: /data
       QINQIN_SECRET: ${QINQIN_SECRET:?set QINQIN_SECRET (head -c 32 /dev/urandom | base64)}
       QINQIN_SECRET_PREVIOUS: ${QINQIN_SECRET_PREVIOUS:-}
+      QINQIN_AI_PROVIDERS: ${QINQIN_AI_PROVIDERS:-}
+      QINQIN_AI_ALLOW_PRIVATE: ${QINQIN_AI_ALLOW_PRIVATE:-}
       QINQIN_AI_PROVIDER: ${QINQIN_AI_PROVIDER:-}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]

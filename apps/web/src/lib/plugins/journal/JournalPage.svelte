@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { getAiStatus } from '$lib/api/ai';
 	import { workspaces } from '$lib/workspaces';
-	import { aiSettingsView } from '$lib/settings/aiSettingsView';
+	import { aiBanner as bannerOf } from '$lib/settings/aiSettingsView';
 	import { aiButtonGate } from './editorLogic';
 	import EntryEditor from './EntryEditor.svelte';
 	import EntryList from './EntryList.svelte';
@@ -24,7 +24,7 @@
 	let capError = $state(false);
 
 	const aiAvailable = $derived(capabilities ? capabilities.ai.available : capError ? false : null);
-	const aiBanner = $derived(capabilities ? aiSettingsView(capabilities.ai).banner : null);
+	const aiBanner = $derived(capabilities ? bannerOf(capabilities.ai) : null);
 	const ideasGate = $derived(
 		aiButtonGate({ available: aiAvailable, banner: aiBanner, chars: 1, forReview: false })
 	);

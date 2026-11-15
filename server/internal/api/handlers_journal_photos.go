@@ -276,11 +276,17 @@ func (s *server) handleJournalTranscribe(w http.ResponseWriter, r *http.Request)
 	}
 
 	if req.Engine == "ai" {
+		// A model that cannot see photos is refused before any provider call
+		// (a bad selection or key surfaces from runAI as usual).
+		if spec, model, err := s.ai.ActiveSpec(r.Context(), u.ID); err == nil && !spec.VisionFor(model) {
+			writeAIError(w, errNoVision(model, spec.Name))
+			return
+		}
 		var reply ai.TranscribeReply
-		_, err := s.runAI(r, u.ID, "transcribe", func(ctx context.Context, c ai.Credentials) (string, ai.Usage, error) {
+		_, err := s.runAI(r, u.ID, "transcribe", func(ctx context.Context, p ai.Provider, _ ai.ProviderSpec, c ai.Credentials) (ai.CallResult, error) {
 			var err error
-			reply, err = s.ai.Provider.Transcribe(ctx, c, ai.TranscribeRequest{Language: t.language, Image: jpegData, MediaType: "image/jpeg"})
-			return reply.Model, reply.Usage, err
+			reply, err = p.Transcribe(ctx, c, ai.TranscribeRequest{Language: t.language, Image: jpegData, MediaType: "image/jpeg"})
+			return ai.CallResult{Model: reply.Model, Usage: reply.Usage, Calls: reply.Calls}, err
 		})
 		if err != nil {
 			writeAIError(w, err)

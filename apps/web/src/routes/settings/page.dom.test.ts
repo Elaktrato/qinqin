@@ -22,7 +22,8 @@ beforeEach(() => {
 	workspacesLoadError.set('');
 	vi.mocked(api).mockImplementation((async (url: string) => {
 		if (url === '/api/plugins') return [plugin];
-		if (url.startsWith('/api/ai')) return { key: null, models: [], available: false, reason: '', usage: { callsLastHour: 0, limitPerHour: 10, inputTokens: 0, outputTokens: 0 } };
+		if (url.startsWith('/api/ai/providers')) return { providers: [], canManageCustom: false, privateAllowed: false };
+		if (url.startsWith('/api/ai')) return { key: null, keys: [], active: null, fake: false, models: [], available: false, reason: '', usage: { callsLastHour: 0, limitPerHour: 10, inputTokens: 0, outputTokens: 0 } };
 		return [];
 	}) as never);
 });

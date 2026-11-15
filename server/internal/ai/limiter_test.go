@@ -141,3 +141,32 @@ func TestLimiterCallsLastHourAndPrune(t *testing.T) {
 		t.Errorf("rows after prune = %d (%v), want 3", rows, err)
 	}
 }
+
+func TestRecordStoresProviderAndCountsAcrossProviders(t *testing.T) {
+	sqlDB, _ := openTestDB(t)
+	l := &Limiter{DB: sqlDB, PerHour: 3}
+	ctx := context.Background()
+	for _, p := range []string{"anthropic", "openai", ""} {
+		if err := l.Record(ctx, Call{UserID: 1, Kind: "review", Model: "m", Provider: p, OK: true}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	rows, err := sqlDB.Query(`SELECT provider FROM ai_calls ORDER BY id`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for rows.Next() {
+		var p string
+		_ = rows.Scan(&p)
+		got = append(got, p)
+	}
+	rows.Close()
+	if len(got) != 3 || got[0] != "anthropic" || got[1] != "openai" || got[2] != "anthropic" {
+		t.Errorf("providers = %v (an empty provider keeps the column default)", got)
+	}
+	// 30/h counts every provider together: three calls to three providers hit PerHour 3.
+	if _, err := l.Acquire(ctx, 1); err == nil {
+		t.Error("limit not applied across providers")
+	}
+}
