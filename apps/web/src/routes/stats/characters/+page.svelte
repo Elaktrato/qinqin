@@ -48,7 +48,7 @@
 	const FILTERS: { value: StageFilter; label: string; stages: Stage[] }[] = [
 		{ value: 'all', label: 'All', stages: [] },
 		{ value: 'not-started', label: 'Not studied', stages: ['unknown'] },
-		{ value: 'learning', label: 'Learning', stages: ['fresh', 'learning', 'mature'] },
+		{ value: 'learning', label: 'In progress', stages: ['fresh', 'learning', 'mature'] },
 		{ value: 'learned', label: 'Learned', stages: ['learned'] }
 	];
 
