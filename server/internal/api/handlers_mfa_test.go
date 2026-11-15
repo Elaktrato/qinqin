@@ -282,3 +282,58 @@ func TestAdminUserListShowsWhichFactorsNotSecrets(t *testing.T) {
 		t.Errorf("admin list = %s", body)
 	}
 }
+
+func TestAdminResetsAUsersTwoFactor(t *testing.T) {
+	e := newMailEnv(t, mailOpts{configure: true})
+	bob := registerUser(t, e.ts.URL, "bobby", e.owner)
+	secret, _ := e.enrolTOTP(t, bob, "secret-pass-bobby")
+	e.db.Exec(`UPDATE users SET mfa_email = 1 WHERE username = 'bobby'`)
+	id := userIDOf(t, e, "bobby")
+	path := "/api/admin/users/" + id + "/mfa/reset"
+	// the admin's own password is needed; a user is refused
+	var eb errBody
+	r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 422 || eb.Error != "password_required" {
+		t.Fatalf("without a password = %d %s", r.StatusCode, eb.Error)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "wrong-password-x"}); r.StatusCode != 403 {
+		t.Fatalf("wrong password = %d", r.StatusCode)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, path, bob, map[string]any{"currentPassword": "secret-pass-bobby"}); r.StatusCode != 403 {
+		t.Fatalf("as a user = %d", r.StatusCode)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, path, "", map[string]any{}); r.StatusCode != 403 {
+		t.Fatalf("anonymous = %d", r.StatusCode)
+	}
+	// self is refused
+	if r := doJSON(t, "POST", e.ts.URL, "/api/admin/users/"+userIDOf(t, e, "owner")+"/mfa/reset", e.owner, map[string]any{"currentPassword": "secret-pass-owner"}); r.StatusCode != 409 {
+		t.Fatalf("self = %d", r.StatusCode)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner"}); r.StatusCode != 204 {
+		t.Fatalf("reset = %d", r.StatusCode)
+	}
+	var totp, codes, flag int
+	e.db.QueryRow(`SELECT COUNT(*) FROM mfa_totp`).Scan(&totp)
+	e.db.QueryRow(`SELECT COUNT(*) FROM mfa_recovery_codes`).Scan(&codes)
+	e.db.QueryRow(`SELECT mfa_email FROM users WHERE username = 'bobby'`).Scan(&flag)
+	if totp != 0 || codes != 0 || flag != 0 || e.sessionCount(t, "bobby") != 0 {
+		t.Errorf("after reset: totp=%d codes=%d mfa_email=%d sessions=%d", totp, codes, flag, e.sessionCount(t, "bobby"))
+	}
+	var n int
+	e.db.QueryRow(`SELECT COUNT(*) FROM auth_audit WHERE action = 'mfa_reset'`).Scan(&n)
+	if n != 1 {
+		t.Errorf("audit rows = %d", n)
+	}
+	// the old token and the old secret are worthless; a plain password login works
+	if r := doJSON(t, "GET", e.ts.URL, "/api/auth/me", bob, nil); r.StatusCode != 401 {
+		t.Errorf("old session = %d", r.StatusCode)
+	}
+	if st, body := e.loginAs(t, "bobby"); st != 200 || body["status"] != "ok" {
+		t.Errorf("login after reset = %d %v", st, body)
+	}
+	_ = secret
+	if r := doJSON(t, "POST", e.ts.URL, "/api/admin/users/9999/mfa/reset", e.owner, map[string]any{"currentPassword": "secret-pass-owner"}); r.StatusCode != 404 {
+		t.Errorf("unknown user = %d", r.StatusCode)
+	}
+}

@@ -573,3 +573,30 @@ func FindMailTarget(ctx context.Context, sqlDB *sql.DB, login string) (MailTarge
 	t.Eligible = email.Valid && verified.Valid && !disabled.Valid
 	return t, nil
 }
+
+// ResetUserMFA removes every second factor of user id and signs them out
+// everywhere (so a stolen session cannot outlive the reset), audited with the
+// administrator as actor. The user then signs in with the password alone, or
+// is sent to enrolment again when the instance requires two-step sign-in.
+func (u *Users) ResetUserMFA(ctx context.Context, actorID, id int64) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	tx, err := u.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin reset mfa: %w", err)
+	}
+	defer tx.Rollback()
+	var exists int
+	if err := tx.QueryRowContext(ctx, `SELECT 1 FROM users WHERE id = ?`, id).Scan(&exists); errors.Is(err, sql.ErrNoRows) {
+		return ErrUserNotFound
+	} else if err != nil {
+		return fmt.Errorf("read user: %w", err)
+	}
+	if err := ResetMFA(ctx, tx, id); err != nil {
+		return err
+	}
+	if err := Audit(ctx, tx, AuditEvent{Action: "mfa_reset", ActorID: actorID, TargetID: &id}); err != nil {
+		return err
+	}
+	return tx.Commit()
+}

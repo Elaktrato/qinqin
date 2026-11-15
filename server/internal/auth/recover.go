@@ -17,6 +17,7 @@ type RecoverOptions struct {
 	Hash     string // argon2id digest of the new password, computed by the caller
 	Enable   bool   // clear disabled_at
 	Admin    bool   // grant the admin bit
+	ResetMFA bool   // remove the authenticator, recovery codes and the email method
 }
 
 // RecoverAccount is the lockout recovery for an instance whose only admin
@@ -56,6 +57,14 @@ func RecoverAccount(ctx context.Context, sqlDB *sql.DB, o RecoverOptions) (int64
 	}
 	if err := dropPendingResets(ctx, tx, id); err != nil {
 		return 0, err
+	}
+	if o.ResetMFA {
+		if err := ResetMFA(ctx, tx, id); err != nil {
+			return 0, err
+		}
+		if err := Audit(ctx, tx, AuditEvent{Action: "mfa_reset", ActorName: "cli", TargetID: &id}); err != nil {
+			return 0, err
+		}
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "password_change_forced", ActorName: "cli", TargetID: &id,
 		Detail: map[string]any{"signedOutOthers": revoked, "enabled": o.Enable, "admin": o.Admin}}); err != nil {

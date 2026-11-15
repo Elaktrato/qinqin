@@ -58,7 +58,7 @@ func recoverCmd(args []string, stdin io.Reader, stderr io.Writer) error {
 	}
 	defer sqlDB.Close()
 	id, err := auth.RecoverAccount(context.Background(), sqlDB, auth.RecoverOptions{
-		Username: *username, Hash: auth.Hash(password), Enable: *enable, Admin: *admin})
+		Username: *username, Hash: auth.Hash(password), Enable: *enable, Admin: *admin, ResetMFA: *resetMFA})
 	if errors.Is(err, auth.ErrRecoverDisabledAdmin) {
 		return fmt.Errorf("recover: %q is disabled; --admin would make an administrator who cannot sign in. Add --enable (nothing was changed)", *username)
 	}
@@ -76,8 +76,7 @@ func recoverCmd(args []string, stdin io.Reader, stderr io.Writer) error {
 		}
 	}
 	if *resetMFA {
-		// Plan 3 wires the removal of TOTP and recovery codes here.
-		fmt.Fprintln(stderr, "--reset-mfa: no two-factor data to remove in this version")
+		fmt.Fprintf(stderr, "--reset-mfa: the authenticator, recovery codes and email codes of %s were removed\n", *username)
 	}
 	return nil
 }

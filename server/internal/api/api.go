@@ -177,6 +177,7 @@ func (s *server) routes() []route {
 		{"GET /api/admin/users/{id}", s.handleAdminGetUser, accAdmin, nil},
 		{"PATCH /api/admin/users/{id}", s.handleAdminPatchUser, accAdmin, nil},
 		{"POST /api/admin/users/{id}/sessions/revoke", s.handleAdminRevokeSessions, accAdmin, nil},
+		{"POST /api/admin/users/{id}/mfa/reset", s.handleAdminResetMFA, accAdmin, nil},
 		{"POST /api/admin/users/{id}/reset-link", s.handleAdminResetLink, accAdmin, nil},
 		{"DELETE /api/admin/users/{id}/reset-link", s.handleAdminRevokeResetLink, accAdmin, nil},
 		{"POST /api/auth/reset/check", s.handleResetCheck, accPublic, nil},
