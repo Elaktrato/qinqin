@@ -113,7 +113,7 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	nu := auth.NewUser{Username: req.Username, EmailVerified: isAdmin}
-	if !s.applyEmail(w, r, set.EmailPolicy, req.Email, &nu) {
+	if !s.applyEmail(w, r, set.EmailPolicy, req.Email, &nu, 0) {
 		return
 	}
 	var u model.User
@@ -174,7 +174,7 @@ const (
 
 // applyEmail validates the request's email against the policy and fills
 // nu; false means an error response was written.
-func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy string, email *string, nu *auth.NewUser) bool {
+func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy string, email *string, nu *auth.NewUser, exceptID int64) bool {
 	disp, norm, err := auth.ApplyEmailPolicy(policy, email)
 	switch {
 	case errors.Is(err, auth.ErrEmailRequired):
@@ -191,7 +191,7 @@ func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy strin
 		return false
 	}
 	if norm != nil {
-		taken, err := auth.EmailTaken(r.Context(), s.db, *norm, 0)
+		taken, err := auth.EmailTaken(r.Context(), s.db, *norm, exceptID)
 		if err != nil {
 			writeInternal(w, r)
 			return false
