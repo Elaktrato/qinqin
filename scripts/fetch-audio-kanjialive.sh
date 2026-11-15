@@ -17,12 +17,13 @@
 # commit pins below) after checking the file by eye. The CC BY 4.0 legal code
 # is not hash-pinned (Creative Commons may fix typos); its title is checked and
 # its SHA-256 is printed. The word-to-file mapping (the n-th example word of a
-# kanji is <kname>_06_<a..l>.opus) is checked by the build: every example must
+# kanji is <kname>_06_<a..l>.opus, as examples-audio/README.md of the data
+# repository documents; that file is pinned too) is checked by the build: every example must
 # find its file, and the count must equal EXPECTED_CLIPS.
 #
 # Every pin can be overridden from the environment (the Dockerfile exposes them as
 # build args): KANJIALIVE_COMMIT, KANJIALIVE_CSV_SHA256, KANJIALIVE_LICENSE_SHA256,
-# KANJIALIVE_ZIP_SHA256, KANJIALIVE_ZIP_BYTES, KANJIALIVE_EXPECTED_CLIPS,
+# KANJIALIVE_EXAMPLES_README_SHA256, KANJIALIVE_ZIP_SHA256, KANJIALIVE_ZIP_BYTES, KANJIALIVE_EXPECTED_CLIPS,
 # KANJIALIVE_SNAPSHOT and KANJIALIVE_ZIP_URL (a mirror; the checksum still has to
 # match). An empty value means the default.
 #
@@ -35,6 +36,7 @@ RAW=https://raw.githubusercontent.com/kanjialive/kanji-data-media/$COMMIT
 ZIP_URL=${KANJIALIVE_ZIP_URL:-https://media.kanjialive.com/examples_audio/audio-opus.zip}
 LEGAL_URL=https://creativecommons.org/licenses/by/4.0/legalcode.txt
 CSV_SHA256=${KANJIALIVE_CSV_SHA256:-7b463876a0837bfb1f754a4e1bec43617b62f92b9839bbdf060d6ad0d8dbaf65}
+README_SHA256=${KANJIALIVE_EXAMPLES_README_SHA256:-eaa6768284e2ba74cde8691d81712753e22aa305ed4b7f5bcb320a0d83bea1d1}
 LICENSE_SHA256=${KANJIALIVE_LICENSE_SHA256:-80602b5a0e7b85dff1da4a91f1ab7d19012436335bfcde97bac6dc066ded33bd}
 ZIP_SHA256=${KANJIALIVE_ZIP_SHA256:-b3ee4c740d73fa3e97bef85fe3346b30687699e97d36868d5939b6f4ee6338ef}
 ZIP_BYTES=${KANJIALIVE_ZIP_BYTES:-68687036}
@@ -60,7 +62,12 @@ check() { # file expected-sha256 label
 echo "fetching ka_data.csv and LICENSE.md at $COMMIT"
 fetch "$RAW/language-data/ka_data.csv" "$work/ka_data.csv"
 fetch "$RAW/LICENSE.md" "$work/LICENSE.md"
+fetch "$RAW/examples-audio/README.md" "$work/examples-audio-README.md"
 check "$work/ka_data.csv" "$CSV_SHA256" ka_data.csv
+check "$work/examples-audio-README.md" "$README_SHA256" examples-audio/README.md
+# The publisher's own statement of the word-to-file mapping (suffix a..l in the order
+# of the examples column): pinned as evidence, and checked again by the clip count.
+grep -q "suffix 'a' to 'l'" "$work/examples-audio-README.md" || die "examples-audio/README.md no longer documents the a..l suffix mapping"
 check "$work/LICENSE.md" "$LICENSE_SHA256" LICENSE.md
 grep -q 'Creative Commons Attribution 4.0 International License' "$work/LICENSE.md" || die "LICENSE.md no longer names CC BY 4.0"
 

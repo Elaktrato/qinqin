@@ -62,7 +62,7 @@ test('buildPack writes the manifest, index, clips and attribution; missing clips
 	assert.equal(manifest.format, 'audio-index');
 	assert.equal(manifest.language, 'ja');
 	assert.equal(manifest.license, 'CC BY 4.0');
-	assert.equal(manifest.attribution, 'Kanji alive (https://kanjialive.com), CC BY 4.0');
+	assert.equal(manifest.attribution, 'Kanji alive, Harumi Hibino Lory & Arno Bosse (https://kanjialive.com/credits), CC BY 4.0');
 	assert.equal(manifest.version, '2026-09-04');
 	const lines = readFileSync(join(out, 'index.tsv'), 'utf8').trimEnd().split('\n');
 	assert.equal(lines[0], 'kind\tform\treading\tfile\tlicense\tattribution\tsource');
@@ -70,7 +70,14 @@ test('buildPack writes the manifest, index, clips and attribution; missing clips
 	assert.equal(lines.length, 5);
 	assert.deepEqual(readdirSync(join(out, 'audio')).sort(), ['ichi_06_a.opus', 'ichi_06_b.opus', 'jutsu-no(beru)_06_a.opus', 'jutsu-no(beru)_06_b.opus']);
 	assert.equal(readFileSync(join(out, 'LICENSE'), 'utf8'), 'legal code text\n');
-	assert.match(readFileSync(join(out, 'ATTRIBUTION.md'), 'utf8'), /Kanji alive/);
+	const attribution = readFileSync(join(out, 'ATTRIBUTION.md'), 'utf8');
+	assert.match(attribution, /Kanji alive/);
+	assert.match(attribution, /Harumi Hibino Lory/);
+	assert.match(attribution, /Arno Bosse/);
+	assert.match(attribution, /https:\/\/creativecommons\.org\/licenses\/by\/4\.0\//);
+	assert.match(attribution, /index\.tsv is derived from ka_data\.csv/);
+	assert.match(attribution, /unchanged copies/);
+	assert.match(manifest.notice, /creativecommons\.org\/licenses\/by\/4\.0/);
 	rmSync(f.dir, { recursive: true });
 });
 

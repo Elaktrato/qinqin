@@ -432,14 +432,23 @@ day are marked unverified):
   the zip (set `KANJIALIVE_ZIP_URL`; the checksum still has to match) would take
   release builds off `media.kanjialive.com`; it would have to carry the CC BY 4.0
   attribution and licence text with the file.
-- **How the file mapping was checked (2026-11-15):** the README of the data
-  repository does not state the file naming. In the downloaded data the n-th
-  example word of a kanji (column `examples`, a JSON list) is the file
-  `<kname>_06_<a..l>.opus`: all 1,235 kanji have exactly as many files as example
-  words (10,156 of 10,156 found, none left over), and the file size follows the
-  length of the word's reading (correlation 0.78 over all clips, 0.21 when each
-  kanji's files are rotated by one position, about 0 for a random pairing). This
-  is evidence from the data, not from listening.
+- **File mapping:** the data repository's `examples-audio/README.md` (pinned by
+  SHA-256 in the fetch script) documents it: the files are named by the kanji's
+  `kname` prefix plus a suffix `a` to `l` "in alphabetical order" matching the
+  readings listed in the `examples` column, and `_06_` is the same in every name.
+  The top-level README does not say this. The build also checks it against the data
+  it downloads: 10,156 example words and 10,156 files, every kanji has exactly as
+  many files as examples, and the file size follows the length of the word's reading
+  (correlation 0.78 over all clips, 0.21 when each kanji's files are rotated by one
+  position, about 0 for a random pairing). This is evidence from the documentation
+  and the data, not from listening.
+- **Credit and changes:** the licence text, a link to
+  https://creativecommons.org/licenses/by/4.0/ and the names Harumi Hibino Lory and
+  Arno Bosse (the Kanji alive credits page lists them as director and assistant of
+  the project; the repository's licence file names only "Kanji alive") appear in the
+  pack's `ATTRIBUTION.md`, its manifest, on the Sources page and, per recording, as
+  a credit line next to the play button. `index.tsv` is marked there as derived from
+  `ka_data.csv`; the audio files are unchanged copies.
 - **Owner to-do:** nobody has listened to the clips yet. Before relying on the
   mapping, play about ten clips from different kanji and check each against the
   word and reading in `index.tsv` (for example the first rows for `述`, file
