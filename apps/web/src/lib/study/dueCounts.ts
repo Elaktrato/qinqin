@@ -23,7 +23,7 @@ export function dueCounts(input: {
 	deckSettings?: Record<string, DeckSettings>;
 	now: Date;
 	w: readonly number[];
-	studyDay?: StudyDay;
+	studyDay?: Pick<StudyDay, 'dayOf'>;
 	newLimit?: number;
 	reviewLimit?: number;
 	scheduleOf?: (cardId: string) => Schedule | null;
