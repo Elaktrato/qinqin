@@ -32,13 +32,15 @@ type dictionaryBody struct {
 	License     string `json:"license"`
 	Attribution string `json:"attribution"`
 	Notice      string `json:"notice"`
+	PackID      string `json:"packId"`
+	Language    string `json:"language"`
 }
 
 // handleListDictionaries serves GET /api/dictionaries with every
 // installed dictionary, in install order.
 func (s *server) handleListDictionaries(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT id, name, version, license, attribution, notice FROM dictionaries
+		SELECT id, name, version, license, attribution, notice, pack_id, language FROM dictionaries
 		WHERE deleted_at IS NULL
 		ORDER BY id`)
 	if err != nil {
@@ -150,7 +152,7 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	// deferred cleanup removes what is left of the stage.
 
 	d, err := scanDictionary(s.db.QueryRowContext(r.Context(), `
-		SELECT id, name, version, license, attribution, notice FROM dictionaries
+		SELECT id, name, version, license, attribution, notice, pack_id, language FROM dictionaries
 		WHERE pack_id = ? AND deleted_at IS NULL`, pack.Manifest.ID))
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -234,7 +236,7 @@ func placePack(packsDir string, m dict.Manifest, src, token string) error {
 // scanDictionary reads one dictionary row into its response body.
 func scanDictionary(row rowScanner) (dictionaryBody, error) {
 	var d dictionaryBody
-	if err := row.Scan(&d.ID, &d.Name, &d.Version, &d.License, &d.Attribution, &d.Notice); err != nil {
+	if err := row.Scan(&d.ID, &d.Name, &d.Version, &d.License, &d.Attribution, &d.Notice, &d.PackID, &d.Language); err != nil {
 		return d, err
 	}
 	return d, nil
