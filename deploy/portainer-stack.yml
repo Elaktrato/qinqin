@@ -21,6 +21,8 @@
 #   QINQIN_AI_ALLOW_PRIVATE "1" lets admin-registered AI endpoints reach
 #                    loopback and private addresses (Ollama on your LAN). Off
 #                    by default; enable only if you trust every admin.
+#   QINQIN_SMTP_ALLOW_PRIVATE "1" lets the mail server be on loopback or a
+#                    private network (a relay container, a LAN host).
 #   QINQIN_TRUSTED_PROXIES  which peers may tell the server a client's address
 #                    through X-Forwarded-For (sign-in limits are per client).
 #                    Empty = private networks (right behind a reverse proxy on
@@ -46,6 +48,7 @@ services:
       QINQIN_SECRET_PREVIOUS: ${QINQIN_SECRET_PREVIOUS:-}
       QINQIN_AI_PROVIDERS: ${QINQIN_AI_PROVIDERS:-}
       QINQIN_AI_ALLOW_PRIVATE: ${QINQIN_AI_ALLOW_PRIVATE:-}
+      QINQIN_SMTP_ALLOW_PRIVATE: ${QINQIN_SMTP_ALLOW_PRIVATE:-}
       QINQIN_AI_PROVIDER: ${QINQIN_AI_PROVIDER:-}
       QINQIN_TRUSTED_PROXIES: ${QINQIN_TRUSTED_PROXIES:-}
       QINQIN_TESSERACT: ${QINQIN_TESSERACT:-}
