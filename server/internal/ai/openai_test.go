@@ -333,6 +333,9 @@ func TestOpenAIErrorMapping(t *testing.T) {
 		{"402", 402, `{"error":{"message":"Insufficient Balance"}}`, nil, ErrQuota, 0},
 		{"429 quota", 429, `{"error":{"code":"insufficient_quota","type":"insufficient_quota"}}`, nil, ErrQuota, 0},
 		{"429 other", 429, `{"error":{"code":"rate_limit_exceeded"}}`, map[string]string{"Retry-After": "12"}, ErrBusy, 12 * time.Second},
+		{"429 huge Retry-After is capped", 429, `{}`, map[string]string{"Retry-After": "999999"}, ErrBusy, time.Hour},
+		{"403 insufficient_permissions", 403, `{"error":{"code":"insufficient_permissions","message":"x"}}`, nil, ErrNoAccess, 0},
+		{"403 model_not_found", 403, `{"error":{"code":"model_not_found"}}`, nil, ErrModelUnavailable, 0},
 		{"429 no header", 429, `{}`, nil, ErrBusy, defaultRetryAfter},
 		{"404", 404, `{"error":{"code":"model_not_found"}}`, nil, ErrModelUnavailable, 0},
 		{"500", 500, `oops`, nil, ErrBusy, defaultRetryAfter},
@@ -616,4 +619,76 @@ func TestPromptsProviderNeutral(t *testing.T) {
 			t.Errorf("claude.go does not use %s", c)
 		}
 	}
+}
+
+func TestRepairTurnIsTextOnly(t *testing.T) {
+	rig := newOARig(t, func(n int, w http.ResponseWriter, _ *http.Request, _ seenReq) {
+		if n == 1 {
+			writeJSON200(w, chatJSON(`{"text":"a"}`, "stop"))
+			return
+		}
+		writeJSON200(w, chatJSON(goodTrans, "stop"))
+	})
+	ad, sp := oaAdapter(rig, nil)
+	img := []byte("\xff\xd8IMAGEBYTES-MARKER")
+	if _, err := ad.Transcribe(context.Background(), oaCreds(sp, ""), TranscribeRequest{Language: "zh", Image: img, MediaType: "image/jpeg"}); err != nil {
+		t.Fatal(err)
+	}
+	rq := rig.requests()
+	if len(rq) != 2 {
+		t.Fatalf("%d requests", len(rq))
+	}
+	if !strings.Contains(string(rq[0].Raw), "image_url") {
+		t.Error("first request lacks the photo")
+	}
+	if strings.Contains(string(rq[1].Raw), "image_url") || strings.Contains(string(rq[1].Raw), "base64") {
+		t.Errorf("the repair request resends the photo: %s", rq[1].Raw)
+	}
+	msgs := rq[1].Body["messages"].([]any)
+	if len(msgs) != 4 {
+		t.Fatalf("repair messages = %d", len(msgs))
+	}
+	if _, ok := msgs[1].(map[string]any)["content"].(string); !ok {
+		t.Errorf("user turn is not plain text: %v", msgs[1])
+	}
+}
+
+type countedProvider struct {
+	Fake
+	calls int
+}
+
+func (c *countedProvider) ValidateCounted(context.Context, Credentials) (int, error) {
+	return c.calls, nil
+}
+
+func TestValidateCountedReportsTheFallbackCall(t *testing.T) {
+	rig := newOARig(t, func(_ int, w http.ResponseWriter, r *http.Request, _ seenReq) {
+		if r.URL.Path == "/models" {
+			w.WriteHeader(404)
+			return
+		}
+		writeJSON200(w, chatJSON("pong", "length"))
+	})
+	ad, sp := oaAdapterFor(rig, "custom-aaaaaaaaaa", nil)
+	n, err := ad.ValidateCounted(context.Background(), oaCreds(sp, ""))
+	if err != nil || n != 2 {
+		t.Errorf("calls = %d, %v, want 2 (models 404, then chat)", n, err)
+	}
+	rig2 := newOARig(t, func(_ int, w http.ResponseWriter, r *http.Request, _ seenReq) {
+		writeJSON200(w, string(mustRead(t, "testdata/openai/models.json")))
+	})
+	ad2, sp2 := oaAdapter(rig2, nil)
+	if n, err := ad2.ValidateCounted(context.Background(), oaCreds(sp2, "gpt-6-luna")); err != nil || n != 1 {
+		t.Errorf("calls = %d, %v, want 1", n, err)
+	}
+}
+
+func mustRead(t *testing.T, p string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
 }

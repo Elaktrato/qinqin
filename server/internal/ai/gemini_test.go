@@ -288,3 +288,33 @@ func TestGeminiNoKeyInErrors(t *testing.T) {
 		t.Errorf("logs lack the provider id:\n%s", logs.String())
 	}
 }
+
+func TestGeminiRepairTurnIsTextOnly(t *testing.T) {
+	g, rig, cr := gemRig(t, func(n int, w http.ResponseWriter, _ *http.Request, _ seenReq) {
+		if n == 1 {
+			writeJSON200(w, gemReply(`{"text":"a"}`, "STOP"))
+			return
+		}
+		writeJSON200(w, gemReply(goodTrans, "STOP"))
+	})
+	if _, err := g.Transcribe(context.Background(), cr, TranscribeRequest{Language: "zh", Image: []byte("\xff\xd8IMG"), MediaType: "image/jpeg"}); err != nil {
+		t.Fatal(err)
+	}
+	rq := rig.requests()
+	if len(rq) != 2 || !strings.Contains(string(rq[0].Raw), "inlineData") {
+		t.Fatalf("requests = %d", len(rq))
+	}
+	if strings.Contains(string(rq[1].Raw), "inlineData") {
+		t.Errorf("the repair request resends the photo: %s", rq[1].Raw)
+	}
+}
+
+func TestRetryAfterIsCapped(t *testing.T) {
+	h := http.Header{"Retry-After": {"999999"}}
+	if got := retryAfterHeader(h); got != time.Hour {
+		t.Errorf("retryAfterHeader = %v", got)
+	}
+	if got := retryAfter(&http.Response{Header: h}); got != time.Hour {
+		t.Errorf("retryAfter = %v", got)
+	}
+}

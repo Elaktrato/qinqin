@@ -116,6 +116,13 @@ type Provider interface {
 	Transcribe(ctx context.Context, c Credentials, r TranscribeRequest) (TranscribeReply, error)
 }
 
+// CallCounter is implemented by adapters whose key check may take more than
+// one provider call (a custom endpoint without /models falls back to a chat
+// call), so the limiter can count each.
+type CallCounter interface {
+	ValidateCounted(ctx context.Context, c Credentials) (calls int, err error)
+}
+
 // Provider errors. Wrap them with %w; Code maps them to the API code.
 var (
 	ErrKeyRejected      = errors.New("ai: the provider rejected the key")
@@ -126,6 +133,7 @@ var (
 	ErrTruncated        = errors.New("ai: the reply was cut off")
 	ErrBadReply         = errors.New("ai: the reply could not be read")
 	ErrBadRequest       = errors.New("ai: the provider rejected the request")
+	ErrNoAccess         = errors.New("ai: the key has no access to this model or action")
 )
 
 // BusyError is ErrBusy with the wait the provider asked for.
@@ -148,6 +156,8 @@ func Code(err error) string {
 		return "busy"
 	case errors.Is(err, ErrModelUnavailable):
 		return "model_unavailable"
+	case errors.Is(err, ErrNoAccess):
+		return "no_access"
 	case errors.Is(err, ErrRefused):
 		return "refused"
 	case errors.Is(err, ErrTruncated):

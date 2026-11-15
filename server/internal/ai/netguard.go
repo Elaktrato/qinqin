@@ -228,6 +228,8 @@ func newClient(proxy func(*http.Request) (*url.URL, error), p GuardPolicy, resol
 			TLSHandshakeTimeout:   tlsHandshakeTimeout,
 			ResponseHeaderTimeout: responseHeaderTimeout,
 			ForceAttemptHTTP2:     true,
+			IdleConnTimeout:       90 * time.Second,
+			MaxIdleConnsPerHost:   2,
 		},
 		CheckRedirect: noRedirect,
 	}

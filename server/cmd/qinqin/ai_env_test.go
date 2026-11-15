@@ -128,7 +128,7 @@ func TestAIEnvAllowPrivate(t *testing.T) {
 			t.Errorf("%q: log has hint = %v", val, has)
 		}
 		// The switch decides what an admin may register.
-		_, err := svc.Registry.Custom.Create(context.Background(), 1, ai.CustomInput{Name: "Ollama", BaseURL: "http://127.0.0.1:11434/v1", DefaultModel: "m"})
+		_, err := svc.Registry.Custom.Create(context.Background(), 1, ai.CustomInput{Name: "Local llama", BaseURL: "http://127.0.0.1:11434/v1", DefaultModel: "m"})
 		if (err == nil) != want {
 			t.Errorf("%q: create loopback endpoint err = %v", val, err)
 		}

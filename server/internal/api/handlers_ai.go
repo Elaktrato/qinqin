@@ -27,7 +27,7 @@ func (e *apiError) Error() string { return e.code }
 
 var (
 	errTooLong      = &apiError{"too_long", "The text is longer than 5,000 characters."}
-	errInvalidModel = &apiError{"invalid_model", "Choose one of the listed models."}
+	errInvalidModel = &apiError{"invalid_model", "That model id is not valid. Use letters, digits and . _ : / @ -, up to 200 characters."}
 	errInvalidKey   = &apiError{"invalid_key", "That does not look like an API key."}
 	errForbidden    = &apiError{"forbidden", "Only an admin can do that."}
 )
@@ -58,6 +58,7 @@ var aiMessages = map[string]string{
 	"quota":             "Your provider account is out of credit or over its quota.",
 	"busy":              "The provider is busy. Try again in a moment.",
 	"model_unavailable": "This model is not available for your key.",
+	"no_access":         "Your key has no access to this model or action. Check the key's permissions with the provider.",
 	"refused":           "The AI declined to answer this request.",
 	"truncated":         "The answer was cut off. Try a shorter text.",
 	"bad_reply":         "The AI answer could not be read. Try again.",
@@ -236,8 +237,18 @@ func (s *server) validateAIKey(ctx context.Context, userID int64, spec ai.Provid
 	}
 	vctx, cancel := context.WithTimeout(ctx, aiProviderTimeout)
 	defer cancel()
-	verr := adapter.Validate(vctx, ai.Credentials{APIKey: apiKey, Model: model, BaseURL: spec.BaseURL, Provider: spec.ID})
-	_ = s.ai.Limiter.Record(ctx, ai.Call{UserID: userID, Kind: "validate", Model: model, Provider: spec.ID, OK: verr == nil})
+	creds := ai.Credentials{APIKey: apiKey, Model: model, BaseURL: spec.BaseURL, Provider: spec.ID}
+	calls, verr := 1, error(nil)
+	if cc, ok := adapter.(ai.CallCounter); ok {
+		calls, verr = cc.ValidateCounted(vctx, creds)
+	} else {
+		verr = adapter.Validate(vctx, creds)
+	}
+	// One row per provider call: a fallback to a second call counts twice.
+	for i := 1; i <= max(calls, 1); i++ {
+		ok := verr == nil || i < calls
+		_ = s.ai.Limiter.Record(ctx, ai.Call{UserID: userID, Kind: "validate", Model: model, Provider: spec.ID, OK: ok})
+	}
 	if verr != nil {
 		log.Printf("ai validate failed: provider=%s code=%q", spec.ID, ai.Code(verr))
 	}

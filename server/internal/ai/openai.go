@@ -102,6 +102,10 @@ func mapOpenAIError(kind, provider string, status int, body []byte, h http.Heade
 	code, _ := parsed.Error.Code.(string)
 	var err error
 	switch {
+	case (status == 403 || status == 404) && code == "model_not_found":
+		err = ErrModelUnavailable
+	case status == 403 && (code == "insufficient_permissions" || code == "permission_denied" || code == "access_terminated"):
+		err = ErrNoAccess // the key is fine; it may not use this model or action
 	case status == 401 || status == 403:
 		err = ErrKeyRejected
 	case status == 402:
@@ -119,9 +123,12 @@ func mapOpenAIError(kind, provider string, status int, body []byte, h http.Heade
 	return err
 }
 
+// maxRetryAfter caps what a provider may ask us to tell the learner to wait.
+const maxRetryAfter = time.Hour
+
 func retryAfterHeader(h http.Header) time.Duration {
 	if n, err := strconv.Atoi(h.Get("Retry-After")); err == nil && n > 0 {
-		return time.Duration(n) * time.Second
+		return min(time.Duration(n)*time.Second, maxRetryAfter)
 	}
 	return defaultRetryAfter
 }
@@ -215,7 +222,7 @@ func (u *Usage) add(o Usage) {
 // run performs one task: a request, strict decoding of the text into dst and,
 // when decoding fails, exactly one repair request. calls lists every call
 // made (also on failure) so each gets a row.
-func (o *OpenAICompat) run(ctx context.Context, task string, cr Credentials, user any, budget int, dst any, required []string) (model string, total Usage, calls []CallUsage, err error) {
+func (o *OpenAICompat) run(ctx context.Context, task string, cr Credentials, user any, userText string, budget int, dst any, required []string) (model string, total Usage, calls []CallUsage, err error) {
 	spec, err := o.Spec(ctx, cr.Provider)
 	if err != nil {
 		return "", Usage{}, nil, err
@@ -234,7 +241,8 @@ func (o *OpenAICompat) run(ctx context.Context, task string, cr Credentials, use
 		return model, total, calls, nil
 	}
 	repairKind := task + "-repair"
-	msgs = append(msgs, chatMessage{"assistant", text}, chatMessage{"user", repairMessage(text, derr)})
+	// The repair turn is text only: the photo is not sent a second time.
+	msgs = []chatMessage{msgs[0], {"user", userText}, {"assistant", text}, {"user", repairMessage(text, derr)}}
 	text, m2, usage, err := o.chatOnce(ctx, repairKind, spec, cr, task, msgs, budget)
 	total.add(usage)
 	calls = append(calls, CallUsage{Kind: repairKind, Usage: usage})
@@ -253,7 +261,8 @@ func (o *OpenAICompat) run(ctx context.Context, task string, cr Credentials, use
 
 func (o *OpenAICompat) Review(ctx context.Context, cr Credentials, r ReviewRequest) (ReviewReply, error) {
 	var out reviewWire
-	model, usage, calls, err := o.run(ctx, "review", cr, reviewUserMessage(r, newNonce()), 16000, &out, []string{"annotations", "overall"})
+	msgR := reviewUserMessage(r, newNonce())
+	model, usage, calls, err := o.run(ctx, "review", cr, msgR, msgR, 16000, &out, []string{"annotations", "overall"})
 	rep := ReviewReply{Overall: out.Overall, Model: model, Usage: usage, Calls: calls}
 	if err != nil {
 		return rep, err
@@ -266,7 +275,8 @@ func (o *OpenAICompat) Review(ctx context.Context, cr Credentials, r ReviewReque
 
 func (o *OpenAICompat) Suggest(ctx context.Context, cr Credentials, r SuggestRequest) (SuggestReply, error) {
 	var out suggestWire
-	model, usage, calls, err := o.run(ctx, "suggest", cr, suggestUserMessage(r, newNonce()), 4000, &out, []string{"items"})
+	msgS := suggestUserMessage(r, newNonce())
+	model, usage, calls, err := o.run(ctx, "suggest", cr, msgS, msgS, 4000, &out, []string{"items"})
 	return SuggestReply{Items: out.Items, Model: model, Usage: usage, Calls: calls}, err
 }
 
@@ -279,29 +289,36 @@ func (o *OpenAICompat) Transcribe(ctx context.Context, cr Credentials, r Transcr
 		map[string]any{"type": "text", "text": transcribeUserMessage(r)},
 	}
 	var out transcribeWire
-	model, usage, calls, err := o.run(ctx, "transcribe", cr, user, 8000, &out, []string{"text", "unreadable"})
+	model, usage, calls, err := o.run(ctx, "transcribe", cr, user, transcribeUserMessage(r), 8000, &out, []string{"text", "unreadable"})
 	return TranscribeReply{Text: out.Text, Unreadable: out.Unreadable, Model: model, Usage: usage, Calls: calls}, err
 }
 
 // Validate checks the key (and the model) without a paid call where the
 // provider allows it; see ProviderSpec.ValidateBy.
 func (o *OpenAICompat) Validate(ctx context.Context, cr Credentials) error {
+	_, err := o.ValidateCounted(ctx, cr)
+	return err
+}
+
+// ValidateCounted is Validate that also reports how many provider calls it
+// made (a custom endpoint without /models falls back to a chat call).
+func (o *OpenAICompat) ValidateCounted(ctx context.Context, cr Credentials) (int, error) {
 	spec, err := o.Spec(ctx, cr.Provider)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if spec.ValidateBy == "chat" {
-		return o.validateChat(ctx, spec, cr)
+		return 1, o.validateChat(ctx, spec, cr)
 	}
 	raw, status, err := o.do(ctx, "validate", spec, cr, http.MethodGet, "/models", nil)
 	if err != nil {
 		if spec.Custom && status == http.StatusNotFound {
-			return o.validateChat(ctx, spec, cr)
+			return 2, o.validateChat(ctx, spec, cr)
 		}
-		return err
+		return 1, err
 	}
 	if spec.Custom {
-		return nil // gateways list models unreliably; the key is accepted
+		return 1, nil // gateways list models unreliably; the key is accepted
 	}
 	var list struct {
 		Data []struct {
@@ -309,16 +326,15 @@ func (o *OpenAICompat) Validate(ctx context.Context, cr Credentials) error {
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(raw, &list); err != nil {
-		return ErrBadReply
+		return 1, ErrBadReply
 	}
 	for _, m := range list.Data {
 		if m.ID == cr.Model {
-			return nil
+			return 1, nil
 		}
 	}
-	return ErrModelUnavailable
+	return 1, ErrModelUnavailable
 }
-
 func (o *OpenAICompat) validateChat(ctx context.Context, spec ProviderSpec, cr Credentials) error {
 	body := map[string]any{"model": cr.Model, "messages": []chatMessage{{"user", "ping"}}}
 	field := spec.TokenField

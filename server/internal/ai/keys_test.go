@@ -466,3 +466,36 @@ func TestCredentialsNeverFormatted(t *testing.T) {
 		}
 	}
 }
+
+// The endpoint is deleted between sealing and inserting: no orphan key row
+// may be left behind.
+func TestPutRechecksProviderAfterInsert(t *testing.T) {
+	sqlDB, _ := openTestDB(t)
+	ks := newStore(sqlDB, 1, 0)
+	calls := 0
+	ks.AADFor = func(userID int64, provider string) (string, error) {
+		calls++
+		if calls > 1 {
+			return "", ErrUnknownProvider // deleted meanwhile
+		}
+		return KeyAADCustom(userID, provider, "https://a.example/v1"), nil
+	}
+	err := ks.Put(context.Background(), 1, "custom-abcdefghij", "sk-fake-custom-key-0001", "m", PutOptions{})
+	if err == nil {
+		t.Fatal("Put succeeded for a provider deleted meanwhile")
+	}
+	var n int
+	_ = sqlDB.QueryRow(`SELECT COUNT(*) FROM ai_keys`).Scan(&n)
+	if n != 0 {
+		t.Errorf("%d orphan rows", n)
+	}
+	// A changed base URL between sealing and inserting is refused too.
+	calls = 0
+	ks.AADFor = func(userID int64, provider string) (string, error) {
+		calls++
+		return KeyAADCustom(userID, provider, "https://b"+string(rune('0'+calls))+".example/v1"), nil
+	}
+	if err := ks.Put(context.Background(), 1, "custom-abcdefghij", "sk-fake-custom-key-0001", "m", PutOptions{}); err == nil {
+		t.Error("Put succeeded although the endpoint changed")
+	}
+}

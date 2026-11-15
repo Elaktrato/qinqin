@@ -715,3 +715,35 @@ func TestTranscribeNoVision(t *testing.T) {
 		t.Errorf("deepseek-flash: %d %v", status, out)
 	}
 }
+
+// counting is an adapter whose key check needed a second call (a custom
+// endpoint without /models falls back to a chat call).
+type counting struct {
+	ai.Fake
+	calls int
+}
+
+func (c counting) ValidateCounted(context.Context, ai.Credentials) (int, error) { return c.calls, nil }
+
+func TestValidateFallbackRecordsEveryCall(t *testing.T) {
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	svc := testAIService(sqlDB, counting{calls: 2}, ai.SecretOK, 7)
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	t.Cleanup(ts.Close)
+	tok := registerUser(t, ts.URL, "root", "")
+	if r := putKey(t, ts, tok, "openai", map[string]string{"key": aiGoodKey}); r.StatusCode != 200 {
+		t.Fatalf("PUT: %d", r.StatusCode)
+	}
+	var n int
+	_ = sqlDB.QueryRow(`SELECT COUNT(*) FROM ai_calls WHERE kind = 'validate' AND provider = 'openai'`).Scan(&n)
+	if n != 2 {
+		t.Errorf("validate rows = %d, want 2 (the limiter must stay honest)", n)
+	}
+	if got := statusOf(t, ts, tok).Usage.CallsLastHour; got != 2 {
+		t.Errorf("calls last hour = %d", got)
+	}
+}

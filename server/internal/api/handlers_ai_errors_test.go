@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -40,6 +41,7 @@ func TestWriteAIErrorTable(t *testing.T) {
 		{ai.ErrBadReply, 422, "bad_reply", ""},
 		{ai.ErrBadRequest, 422, "bad_request", ""},
 		{ai.ErrModelUnavailable, 422, "model_unavailable", ""},
+		{ai.ErrNoAccess, 422, "no_access", ""},
 		{errInvalidModel, 422, "invalid_model", ""},
 		{errors.New("boom"), 500, "", ""},
 	}
@@ -58,5 +60,15 @@ func TestWriteAIErrorTable(t *testing.T) {
 				t.Errorf("%v: body %s", tc.err, rec.Body.String())
 			}
 		}
+	}
+}
+
+func TestInvalidModelMessageIsNotAboutAList(t *testing.T) {
+	rec := httptest.NewRecorder()
+	writeAIError(rec, errInvalidModel)
+	var b struct{ Message string }
+	_ = json.Unmarshal(rec.Body.Bytes(), &b)
+	if b.Message == "" || strings.Contains(b.Message, "listed") {
+		t.Errorf("message = %q: any valid model id is accepted now", b.Message)
 	}
 }

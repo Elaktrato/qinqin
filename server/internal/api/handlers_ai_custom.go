@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -141,8 +142,10 @@ func (s *server) handlePatchCustomProvider(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
+	clear := string(bytes.TrimSpace(fields["maxOutputTokens"])) == "null" // a JSON null removes the cap
 	sp, err := s.ai.Registry.Custom.Update(context.WithoutCancel(r.Context()), r.PathValue("id"), ai.CustomPatch{
-		DefaultModel: req.DefaultModel, Vision: req.Vision, Structured: req.Structured, MaxOutputTokens: req.MaxOutputTokens})
+		DefaultModel: req.DefaultModel, Vision: req.Vision, Structured: req.Structured, MaxOutputTokens: req.MaxOutputTokens,
+		ClearMaxOutputTokens: clear})
 	if err != nil {
 		writeCustomError(w, err)
 		return

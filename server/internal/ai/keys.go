@@ -128,13 +128,27 @@ func (k *KeyStore) Put(ctx context.Context, userID int64, provider, apiKey, mode
 	if err != nil {
 		return err
 	}
-	_, err = k.DB.ExecContext(ctx, `INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at)
+	tx, err := k.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, `INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 		ON CONFLICT(user_id, provider) DO UPDATE SET ciphertext = excluded.ciphertext,
 			nonce = excluded.nonce, secret_fp = excluded.secret_fp, hint = excluded.hint,
 			model = excluded.model, created_at = excluded.created_at, last_used_at = NULL`,
-		userID, provider, ct, nonce, k.Current.Fingerprint(), hintOf(apiKey), model, stamp(k.now()))
-	return err
+		userID, provider, ct, nonce, k.Current.Fingerprint(), hintOf(apiKey), model, stamp(k.now())); err != nil {
+		return err
+	}
+	// The write lock is held now: if the endpoint was deleted (or changed its
+	// address) since the key was sealed, an orphan or a wrongly bound row must
+	// not survive. A delete that commits later removes this row itself.
+	again, err := k.aad(userID, provider)
+	if err != nil || again != aad {
+		return fmt.Errorf("ai: provider %q changed while the key was stored", provider)
+	}
+	return tx.Commit()
 }
 
 // SetModel changes only the model of one stored key.

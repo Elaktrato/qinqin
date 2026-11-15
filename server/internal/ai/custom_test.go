@@ -95,13 +95,13 @@ func TestCustomNameRules(t *testing.T) {
 	if err := create(strings.Repeat("ä", 40)); err != nil {
 		t.Errorf("40 runes rejected: %v", err)
 	}
-	if err := create("OpenAI (EU gateway)"); err != nil {
-		t.Errorf("distinct name rejected: %v", err)
+	if err := create("Local Ollama"); !errors.Is(err, ErrInvalidEndpoint) {
+		t.Errorf("a name containing a brand was accepted: %v", err)
 	}
-	if err := create("Local Ollama"); err != nil {
+	if err := create("Local Llama box"); err != nil {
 		t.Fatal(err)
 	}
-	if err := create("local ollama"); !errors.Is(err, ErrInvalidEndpoint) {
+	if err := create("local llama BOX"); !errors.Is(err, ErrInvalidEndpoint) {
 		t.Errorf("duplicate name (case-insensitive) = %v", err)
 	}
 }
@@ -141,7 +141,7 @@ func TestCustomInputRules(t *testing.T) {
 	// With the switch, a loopback endpoint is fine (Ollama).
 	cs.Policy = GuardPolicy{AllowPrivate: true}
 	in := validInput()
-	in.Name, in.BaseURL, in.KeyRequired = "Ollama", "http://127.0.0.1:11434/v1", false
+	in.Name, in.BaseURL, in.KeyRequired = "Local llama", "http://127.0.0.1:11434/v1", false
 	if sp, err := cs.Create(ctx, 1, in); err != nil || sp.KeyRequired {
 		t.Errorf("ollama = %+v, %v", sp, err)
 	}
@@ -201,5 +201,110 @@ func TestCustomDelete(t *testing.T) {
 	}
 	if list, _ := cs.List(ctx); len(list) != 0 {
 		t.Errorf("List = %+v", list)
+	}
+}
+
+// Names that look like a built-in provider or brand (also with homoglyphs,
+// fullwidth forms or the brand inside a longer name) and names with odd
+// characters are refused.
+func TestCustomNameLookalikesAndCharacters(t *testing.T) {
+	cs, _ := newCustom(t)
+	ctx := context.Background()
+	create := func(name string) error {
+		in := validInput()
+		in.Name = name
+		_, err := cs.Create(ctx, 1, in)
+		return err
+	}
+	for _, name := range []string{
+		"OpenAI (EU)", "Open AI Proxy", "My Claude gateway", "ChatGPT gateway", "Google proxy", "Gemini-lite",
+		"Ollama", "Local Ollama", "DeepSeek mirror", "Mistral EU", "xAI relay", "Groq fast", "OpenRouter2", "Anthropic proxy",
+		"\u041epenai", "\u039fpenai", "Op\u0435nAI", "\u0430nthropic", "\u0261roq", "\uff2f\uff50\uff45\uff4e\uff21\uff29",
+		"\u1d0fpenai", "O\u200bpenAI", "Op\u0435n\u0391I", "Claud\u0435",
+	} {
+		if err := create(name); !errors.Is(err, ErrInvalidEndpoint) {
+			t.Errorf("look-alike %q accepted (err %v)", name, err)
+		}
+	}
+	for _, name := range []string{"Name!", "a/b", "x@y", "(Local)", "emoji \U0001F600", "semi;colon", "a<b>"} {
+		if err := create(name); !errors.Is(err, ErrInvalidEndpoint) {
+			t.Errorf("name with odd characters %q accepted (err %v)", name, err)
+		}
+	}
+	for _, name := range []string{"Company gateway", "Lab-GPU_01", "Home.box", "Büro 2", "Meta"} {
+		if err := create(name); err != nil {
+			t.Errorf("plain name %q rejected: %v", name, err)
+		}
+	}
+}
+
+func TestCustomNameUniqueUnderNormalisation(t *testing.T) {
+	cs, _ := newCustom(t)
+	ctx := context.Background()
+	in := validInput()
+	in.Name = "Lab Box"
+	if _, err := cs.Create(ctx, 1, in); err != nil {
+		t.Fatal(err)
+	}
+	for _, dup := range []string{"lab box", "LAB BOX", "Ｌab Box", "Lab  Box"} {
+		in.Name = dup
+		if _, err := cs.Create(ctx, 1, in); !errors.Is(err, ErrInvalidEndpoint) {
+			t.Errorf("duplicate %q accepted: %v", dup, err)
+		}
+	}
+}
+
+// Two admins creating the same name at once: exactly one wins, the database
+// (a unique index), not a read-then-insert check, decides.
+func TestCustomConcurrentCreateSameName(t *testing.T) {
+	cs, sqlDB := newCustom(t)
+	ctx := context.Background()
+	const n = 12
+	errs := make(chan error, n)
+	start := make(chan struct{})
+	for i := 0; i < n; i++ {
+		go func() {
+			<-start
+			in := validInput()
+			in.Name = "Shared Box"
+			_, err := cs.Create(ctx, 1, in)
+			errs <- err
+		}()
+	}
+	close(start)
+	ok := 0
+	for i := 0; i < n; i++ {
+		err := <-errs
+		switch {
+		case err == nil:
+			ok++
+		case !errors.Is(err, ErrInvalidEndpoint):
+			t.Errorf("unexpected error: %v", err)
+		}
+	}
+	var rows int
+	_ = sqlDB.QueryRow(`SELECT COUNT(*) FROM ai_custom_providers`).Scan(&rows)
+	if ok != 1 || rows != 1 {
+		t.Errorf("successes = %d, rows = %d, want 1 and 1", ok, rows)
+	}
+}
+
+func TestCustomPatchClearsMaxOutputTokens(t *testing.T) {
+	cs, _ := newCustom(t)
+	ctx := context.Background()
+	max := 4096
+	in := validInput()
+	in.MaxOutputTokens = &max
+	sp, err := cs.Create(ctx, 1, in)
+	if err != nil || sp.MaxOutputTokens != 4096 {
+		t.Fatalf("create = %+v, %v", sp, err)
+	}
+	up, err := cs.Update(ctx, sp.ID, CustomPatch{ClearMaxOutputTokens: true})
+	if err != nil || up.MaxOutputTokens != 0 {
+		t.Fatalf("clear = %+v, %v", up, err)
+	}
+	got, _ := cs.Get(ctx, sp.ID)
+	if got.MaxOutputTokens != 0 {
+		t.Errorf("stored = %d", got.MaxOutputTokens)
 	}
 }

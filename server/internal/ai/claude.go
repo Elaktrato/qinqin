@@ -7,7 +7,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/anthropics/anthropic-sdk-go/v2"
@@ -194,9 +193,7 @@ func mapError(kind string, err error) error {
 
 func retryAfter(resp *http.Response) time.Duration {
 	if resp != nil {
-		if n, err := strconv.Atoi(resp.Header.Get("Retry-After")); err == nil && n > 0 {
-			return time.Duration(n) * time.Second
-		}
+		return retryAfterHeader(resp.Header)
 	}
 	return defaultRetryAfter
 }

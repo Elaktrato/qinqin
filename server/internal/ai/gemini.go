@@ -194,7 +194,7 @@ func (g *Gemini) generate(ctx context.Context, kind, task string, cr Credentials
 	return sb.String(), rep.ModelVersion, usage, nil
 }
 
-func (g *Gemini) run(ctx context.Context, task string, cr Credentials, first []any, budget int, dst any, required []string) (string, Usage, []CallUsage, error) {
+func (g *Gemini) run(ctx context.Context, task string, cr Credentials, first []any, userText string, budget int, dst any, required []string) (string, Usage, []CallUsage, error) {
 	mp, ok := modelPath(cr.Model)
 	if !ok {
 		return "", Usage{}, nil, ErrBadRequest
@@ -213,7 +213,8 @@ func (g *Gemini) run(ctx context.Context, task string, cr Credentials, first []a
 	if derr == nil {
 		return model, total, calls, nil
 	}
-	contents = append(contents, gemTurn{Role: "model", Parts: []any{gemText(text)}}, gemTurn{Role: "user", Parts: []any{gemText(repairMessage(text, derr))}})
+	// The repair turn is text only: the photo is not sent a second time.
+	contents = []gemTurn{{Role: "user", Parts: []any{gemText(userText)}}, {Role: "model", Parts: []any{gemText(text)}}, {Role: "user", Parts: []any{gemText(repairMessage(text, derr))}}}
 	text, m2, usage, err := g.generate(ctx, task+"-repair", task, cr, mp, contents, budget)
 	total.add(usage)
 	calls = append(calls, CallUsage{Kind: task + "-repair", Usage: usage})
@@ -232,7 +233,8 @@ func (g *Gemini) run(ctx context.Context, task string, cr Credentials, first []a
 
 func (g *Gemini) Review(ctx context.Context, cr Credentials, r ReviewRequest) (ReviewReply, error) {
 	var out reviewWire
-	model, usage, calls, err := g.run(ctx, "review", cr, []any{gemText(reviewUserMessage(r, newNonce()))}, 16000, &out, []string{"annotations", "overall"})
+	msgR := reviewUserMessage(r, newNonce())
+	model, usage, calls, err := g.run(ctx, "review", cr, []any{gemText(msgR)}, msgR, 16000, &out, []string{"annotations", "overall"})
 	rep := ReviewReply{Overall: out.Overall, Model: model, Usage: usage, Calls: calls}
 	if err != nil {
 		return rep, err
@@ -245,7 +247,8 @@ func (g *Gemini) Review(ctx context.Context, cr Credentials, r ReviewRequest) (R
 
 func (g *Gemini) Suggest(ctx context.Context, cr Credentials, r SuggestRequest) (SuggestReply, error) {
 	var out suggestWire
-	model, usage, calls, err := g.run(ctx, "suggest", cr, []any{gemText(suggestUserMessage(r, newNonce()))}, 4000, &out, []string{"items"})
+	msgS := suggestUserMessage(r, newNonce())
+	model, usage, calls, err := g.run(ctx, "suggest", cr, []any{gemText(msgS)}, msgS, 4000, &out, []string{"items"})
 	return SuggestReply{Items: out.Items, Model: model, Usage: usage, Calls: calls}, err
 }
 
@@ -258,7 +261,7 @@ func (g *Gemini) Transcribe(ctx context.Context, cr Credentials, r TranscribeReq
 		gemText(transcribeUserMessage(r)),
 	}
 	var out transcribeWire
-	model, usage, calls, err := g.run(ctx, "transcribe", cr, parts, 8000, &out, []string{"text", "unreadable"})
+	model, usage, calls, err := g.run(ctx, "transcribe", cr, parts, transcribeUserMessage(r), 8000, &out, []string{"text", "unreadable"})
 	return TranscribeReply{Text: out.Text, Unreadable: out.Unreadable, Model: model, Usage: usage, Calls: calls}, err
 }
 

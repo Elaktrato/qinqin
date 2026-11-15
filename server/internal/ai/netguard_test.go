@@ -397,6 +397,12 @@ func TestBuiltinClientNoRedirect(t *testing.T) {
 func TestClientTimeouts(t *testing.T) {
 	for name, c := range map[string]*http.Client{"builtin": NewBuiltinClient(nil), "guarded": NewGuardedClient(GuardPolicy{}, nil)} {
 		tr := transportOf(t, c)
+		if tr.IdleConnTimeout != 90*time.Second || tr.MaxIdleConnsPerHost != 2 {
+			t.Errorf("%s: idle settings = %v / %d", name, tr.IdleConnTimeout, tr.MaxIdleConnsPerHost)
+		}
+		if st, ok := c.Transport.(*schemeTransport); ok && (st.plain.IdleConnTimeout != 90*time.Second || st.plain.MaxIdleConnsPerHost != 2) {
+			t.Errorf("%s: plain transport idle settings = %v / %d", name, st.plain.IdleConnTimeout, st.plain.MaxIdleConnsPerHost)
+		}
 		if tr.TLSHandshakeTimeout != 10*time.Second || tr.ResponseHeaderTimeout != 150*time.Second || !tr.ForceAttemptHTTP2 {
 			t.Errorf("%s transport = %v / %v / %v", name, tr.TLSHandshakeTimeout, tr.ResponseHeaderTimeout, tr.ForceAttemptHTTP2)
 		}

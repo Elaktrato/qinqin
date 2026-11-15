@@ -365,3 +365,26 @@ func statusOfTok(t *testing.T, url, tok string) ai.Status {
 	decodeJSON(t, doJSON(t, http.MethodGet, url, "/api/ai/status", tok, nil), &st)
 	return st
 }
+
+func TestCustomPatchNullClearsMaxOutputTokens(t *testing.T) {
+	e := newCustomEnv(t, false, nil)
+	body := validCustom()
+	body["maxOutputTokens"] = 2048
+	var sp ai.ProviderSpec
+	decodeJSON(t, e.create(t, e.admin, body), &sp)
+	if sp.MaxOutputTokens != 2048 {
+		t.Fatalf("created = %+v", sp)
+	}
+	resp := doRaw(t, http.MethodPatch, e.ts.URL, "/api/ai/custom-providers/"+sp.ID, e.admin, `{"maxOutputTokens": null}`)
+	var up ai.ProviderSpec
+	decodeJSON(t, resp, &up)
+	if resp.StatusCode != 200 || up.MaxOutputTokens != 0 {
+		t.Errorf("PATCH null = %d %+v", resp.StatusCode, up)
+	}
+	// An absent field changes nothing.
+	resp = doJSON(t, http.MethodPatch, e.ts.URL, "/api/ai/custom-providers/"+sp.ID, e.admin, map[string]any{"vision": true})
+	decodeJSON(t, resp, &up)
+	if !up.Vision {
+		t.Errorf("vision not set: %+v", up)
+	}
+}
