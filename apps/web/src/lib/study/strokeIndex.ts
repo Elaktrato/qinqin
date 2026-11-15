@@ -5,7 +5,7 @@
 
 import index from './strokeIndex.json';
 
-const RANGES = index.ranges as readonly (readonly [number, number])[];
+const RANGES = index.ranges as unknown as readonly (readonly [number, number])[];
 
 /** hasStrokeData: the first code point of `glyph` has a stroke file. */
 export function hasStrokeData(glyph: string): boolean {

@@ -1,5 +1,3 @@
-import { readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { hasStrokeData, strokeIndexCount } from './strokeIndex';
@@ -20,10 +18,11 @@ describe('hasStrokeData', () => {
 	});
 
 	it('matches hanzi-writer-data exactly (regenerate with node scripts/prepare-stroke-index.mjs)', () => {
-		const dir = join(process.cwd(), 'node_modules', 'hanzi-writer-data');
-		const chars = readdirSync(dir)
-			.filter((n) => n.endsWith('.json') && n !== 'package.json')
-			.map((n) => [...n.slice(0, -5)][0]);
+		const files = Object.keys(import.meta.glob('/node_modules/hanzi-writer-data/*.json'));
+		const chars = files
+			.map((path) => path.slice(path.lastIndexOf('/') + 1, -'.json'.length))
+			.filter((name) => name !== 'package')
+			.map((name) => [...name][0]);
 		for (const ch of chars) expect(hasStrokeData(ch), ch).toBe(true);
 		expect(chars.filter((ch) => !hasStrokeData(ch))).toEqual([]);
 		expect(strokeIndexCount()).toBe(new Set(chars).size);
