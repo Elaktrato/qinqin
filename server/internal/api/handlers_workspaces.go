@@ -95,9 +95,13 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
-	language := strings.ToLower(strings.TrimSpace(req.Language))
-	if language == "" {
+	if strings.TrimSpace(req.Language) == "" {
 		http.Error(w, "language is required", http.StatusBadRequest)
+		return
+	}
+	language, valid := lang.ValidCode(req.Language)
+	if !valid {
+		http.Error(w, "language must be a code like es or pt-br", http.StatusUnprocessableEntity)
 		return
 	}
 	name, problem := workspaceName(req.Name)
@@ -106,6 +110,19 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !lang.Registered(language) {
+		// Only an administrator opens a new language; everyone else
+		// picks from the known ones.
+		if !u.Admin {
+			known, err := s.languageKnown(r.Context(), language)
+			if err != nil {
+				http.Error(w, "internal error", http.StatusInternalServerError)
+				return
+			}
+			if !known {
+				http.Error(w, "unknown language — ask the administrator to add it", http.StatusUnprocessableEntity)
+				return
+			}
+		}
 		if _, err := s.db.ExecContext(r.Context(), `
 			INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
 			ON CONFLICT (code) DO NOTHING`, language, language, now()); err != nil {
@@ -127,6 +144,28 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, ws)
+}
+
+// languageKnown reports whether a data-only code has a languages row or
+// installed dictionary data.
+func (s *server) languageKnown(ctx context.Context, code string) (bool, error) {
+	var n int
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM languages WHERE code = ?`, code).Scan(&n); err != nil {
+		return false, err
+	}
+	if n > 0 {
+		return true, nil
+	}
+	installed, err := installedLanguages(ctx, s.db)
+	if err != nil {
+		return false, err
+	}
+	for _, li := range installed {
+		if li.Code == code {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // handleListWorkspaces serves GET /api/workspaces with the caller's
