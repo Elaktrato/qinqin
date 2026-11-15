@@ -16,10 +16,10 @@ import (
 var builtinFS embed.FS
 
 // builtinFiles is the fixed registration order of the built-ins.
-var builtinFiles = []string{"core", "flashcards", "reader", "journal"}
+var builtinFiles = []string{"core", "flashcards", "reader", "journal", "grammar"}
 
 // Builtin returns the embedded manifests in a fixed order: core,
-// flashcards, reader, journal.
+// flashcards, reader, journal, grammar.
 func Builtin() [][]byte {
 	out := make([][]byte, 0, len(builtinFiles))
 	for _, name := range builtinFiles {
