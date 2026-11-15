@@ -13,6 +13,7 @@ import (
 	"sync"
 	"testing"
 
+	"qinqin/internal/journal"
 	"qinqin/internal/library"
 )
 
@@ -420,5 +421,42 @@ func TestDeletedBookIdIsNeverReused(t *testing.T) {
 	}
 	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM library_bookmarks WHERE book_id = ?`, fresh); n != 0 {
 		t.Errorf("new book carries %d bookmarks of the deleted one", n)
+	}
+}
+
+func TestDeleteWorkspaceRemovesPhotos(t *testing.T) {
+	ts, sqlDB, dataDir := newServerWithDir(t)
+	alice := registerUser(t, ts.URL, "alice", "")
+	var aliceID int64
+	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'alice'`).Scan(&aliceID)
+	w := createWorkspace(t, ts.URL, alice, "zh", "w")
+	v := createWorkspace(t, ts.URL, alice, "zh", "v")
+	photos := journal.Photos{DB: sqlDB, Dir: filepath.Join(dataDir, "journal")}
+	ctx := context.Background()
+	var wIDs []string
+	for i := 0; i < 2; i++ {
+		ph, err := photos.Create(ctx, aliceID, w, []byte("jpeg"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		wIDs = append(wIDs, ph.ID)
+	}
+	keep, err := photos.Create(ctx, aliceID, v, []byte("jpeg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := deleteWorkspace(t, ts.URL, alice, w); got != http.StatusNoContent {
+		t.Fatalf("DELETE: status = %d", got)
+	}
+	for _, id := range wIDs {
+		if _, err := os.Stat(filepath.Join(photos.Dir, strconv.FormatInt(aliceID, 10), id+".jpg")); !os.IsNotExist(err) {
+			t.Errorf("photo file %s survived the workspace", id)
+		}
+	}
+	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM journal_photos WHERE workspace_id = ?`, w); n != 0 {
+		t.Errorf("%d photo rows survived", n)
+	}
+	if _, _, err := photos.Get(ctx, aliceID, keep.ID); err != nil {
+		t.Errorf("the other workspace's photo is gone: %v", err)
 	}
 }

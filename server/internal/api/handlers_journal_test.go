@@ -3,6 +3,7 @@ package api_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -51,6 +52,8 @@ func (p *spyProvider) Suggest(ctx context.Context, c ai.Credentials, r ai.Sugges
 type journalEnv struct {
 	url, token string
 	ws, other  int64
+	dataDir    string
+	db         *sql.DB
 }
 
 func newJournalEnv(t *testing.T, p ai.Provider, withKey bool) journalEnv {
@@ -62,10 +65,11 @@ func newJournalEnv(t *testing.T, p ai.Provider, withKey bool) journalEnv {
 	t.Cleanup(func() { sqlDB.Close() })
 	svc := &ai.Service{Provider: p, ProviderName: "fake", Secret: ai.SecretOK, Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30},
 		Keys: &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(bytes.Repeat([]byte{7}, 32))}}
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	dataDir := t.TempDir()
+	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, api.WithAI(svc)))
 	t.Cleanup(ts.Close)
 	tok := registerUser(t, ts.URL, "root", "")
-	env := journalEnv{url: ts.URL, token: tok,
+	env := journalEnv{url: ts.URL, token: tok, dataDir: dataDir, db: sqlDB,
 		ws:    createWorkspace(t, ts.URL, tok, "zh", ""),
 		other: createWorkspace(t, ts.URL, tok, "zh", "v")}
 	if err := plugins.Register(context.Background(), sqlDB, []byte(`{"id":"qinqin-journal","name":"Journal","version":"1.0","type":"feature","surfaces":["page"]}`)); err != nil {

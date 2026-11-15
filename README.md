@@ -585,7 +585,8 @@ where `<version>` is `dev` unless the binary is built with
 for a connection and 15 s for the response headers; a download itself is bounded
 only by the import's own deadline. Requests are limited to one per second per host, and are cached under `<data>/cache/sources`
 (catalogs for 7 days, works for 1 day). Books live under `<data>/books/<user id>/`,
-with their metadata and reading position in the SQLite database.
+with their metadata and reading position in the SQLite database. Photos live
+under `<data>/journal/<user id>/` only while a draft is open.
 
 The source client only fetches `https` URLs from a host allow-list (Aozora Bunko,
 Gutenberg), checks every redirect hop, and refuses
@@ -679,6 +680,19 @@ The Journal is a page plugin (`qinqin-journal`) where you write dated entries pe
 - **Models.** `claude-opus-5-5` (default), `claude-sonnet-5-5` and `claude-haiku-5-5`, chosen per user. On Opus and Sonnet a safety refusal is retried by the provider's default fallback model, which can answer from another model on your key; the review says which model answered.
 - **Limits.** 30 provider calls per user per rolling hour (checking a key counts as one), one AI call in flight per user, 5,000 characters per review, 10 MiB and 50 megapixels per photo, at most 10 pending photos per user. Settings → AI shows the calls and tokens used this hour.
 - **Offline OCR.** The image bundles Tesseract (with Chinese Simplified and Traditional, Japanese and English data) for reading a photo without any AI; without the `tesseract` binary it shows as unavailable.
+
+### Photo routes
+
+All need a bearer token; a foreign workspace or photo is a 404.
+
+| Route | Meaning |
+|---|---|
+| `POST /api/journal/photos` | multipart `file` and `workspace`; JPEG, PNG or WebP (sniffed), up to 10 MiB and 50 megapixels. Re-encoded to JPEG (EXIF rotation applied, GPS and all metadata dropped, long edge at most 2576 px). 201 `{photoId}`; 413 `photo_too_large`, 415 `unsupported_image`, 422 `image_too_large`, 409 `too_many_photos` (10 pending per user) |
+| `GET /api/journal/photos/{id}` | the stored JPEG (`no-store`) |
+| `PUT /api/journal/photos/{id}/keepalive` | 204; keeps an open draft's photo alive |
+| `DELETE /api/journal/photos/{id}` | 204 |
+
+A photo is deleted when its draft is saved or discarded, when its workspace is deleted, and by a janitor (at startup and every 15 minutes) when it was not seen for an hour or is over 24 hours old. The janitor also removes files without a row and rows without a file.
 
 ### Server secret
 

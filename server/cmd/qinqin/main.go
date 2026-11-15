@@ -19,8 +19,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"qinqin/internal/ai"
 	"qinqin/internal/api"
 	"qinqin/internal/db"
+	"qinqin/internal/journal"
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/library/sources"
@@ -169,6 +171,11 @@ func serveCmd(args []string) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
+	var limiter *ai.Limiter
+	if aiSvc != nil {
+		limiter = aiSvc.Limiter
+	}
+	go journal.RunJanitor(ctx, journal.Photos{DB: sqlDB, Dir: filepath.Join(*data, "journal")}, limiter, 15*time.Minute, log.Printf)
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
 	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc))))
