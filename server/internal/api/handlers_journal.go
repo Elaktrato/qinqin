@@ -255,7 +255,11 @@ func (s *server) handleJournalCapabilities(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ai":  st,
-		"ocr": map[string]any{"available": false, "languageReady": false, "language": t.language},
+		"ai": st,
+		"ocr": map[string]any{
+			"available":     s.ocrAvailable(),
+			"languageReady": s.ocrAvailable() && s.ocr.HasLanguages(journal.OCRLanguages(t.language)),
+			"language":      t.language,
+		},
 	})
 }

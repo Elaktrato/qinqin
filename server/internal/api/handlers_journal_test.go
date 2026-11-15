@@ -58,6 +58,11 @@ type journalEnv struct {
 
 func newJournalEnv(t *testing.T, p ai.Provider, withKey bool) journalEnv {
 	t.Helper()
+	return newJournalEnvOpts(t, p, withKey)
+}
+
+func newJournalEnvOpts(t *testing.T, p ai.Provider, withKey bool, opts ...api.Option) journalEnv {
+	t.Helper()
 	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +71,7 @@ func newJournalEnv(t *testing.T, p ai.Provider, withKey bool) journalEnv {
 	svc := &ai.Service{Provider: p, ProviderName: "fake", Secret: ai.SecretOK, Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30},
 		Keys: &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(bytes.Repeat([]byte{7}, 32))}}
 	dataDir := t.TempDir()
-	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, api.WithAI(svc)))
+	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, append([]api.Option{api.WithAI(svc)}, opts...)...))
 	t.Cleanup(ts.Close)
 	tok := registerUser(t, ts.URL, "root", "")
 	env := journalEnv{url: ts.URL, token: tok, dataDir: dataDir, db: sqlDB,

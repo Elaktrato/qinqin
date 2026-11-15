@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
 )
 
@@ -20,6 +21,8 @@ type server struct {
 	dataDir string
 	sources []sources.Source
 	ai      *ai.Service // nil: AI is off (status reads "no_secret")
+	ocr     journal.OCR // nil: offline reading is not installed
+	ocrUse  offlineUse  // offline reads per user and hour
 
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
@@ -33,6 +36,10 @@ type Option func(*server)
 // WithAI mounts the AI service the /api/ai routes use; without it they
 // report AI as disabled.
 func WithAI(svc *ai.Service) Option { return func(s *server) { s.ai = svc } }
+
+// WithOCR mounts the offline reader the transcribe route and the
+// capabilities use; without it offline reading is unavailable.
+func WithOCR(o journal.OCR) Option { return func(s *server) { s.ocr = o } }
 
 // New returns the root HTTP handler with all qinqin routes mounted.
 // Uploaded packs are stored under dataDir/packs/. Domain routes are
@@ -83,6 +90,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("POST /api/journal/review", s.handleJournalReview)
 	mux.HandleFunc("POST /api/journal/suggestions", s.handleJournalSuggestions)
 	mux.HandleFunc("GET /api/journal/capabilities", s.handleJournalCapabilities)
+	mux.HandleFunc("POST /api/journal/transcribe", s.handleJournalTranscribe)
 	mux.HandleFunc("POST /api/journal/photos", s.handleUploadPhoto)
 	mux.HandleFunc("GET /api/journal/photos/{id}", s.handleGetPhoto)
 	mux.HandleFunc("PUT /api/journal/photos/{id}/keepalive", s.handlePhotoKeepalive)

@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"qinqin/internal/ai"
@@ -177,8 +178,15 @@ func serveCmd(args []string) error {
 	}
 	go journal.RunJanitor(ctx, journal.Photos{DB: sqlDB, Dir: filepath.Join(*data, "journal")}, limiter, 15*time.Minute, log.Printf)
 
+	tess := journal.DetectTesseract(ctx, envOr("QINQIN_TESSERACT", "tesseract"))
+	if tess.Available() {
+		log.Printf("offline OCR: tesseract 5.x, languages: %s", strings.Join(tess.Languages(), ", "))
+	} else {
+		log.Printf("offline OCR: not available (tesseract not found)")
+	}
+
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithOCR(tess))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set
@@ -216,4 +224,12 @@ func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
 	mux.Handle("/healthz", apiHandler)
 	mux.Handle("/", webdist.Handler(web))
 	return mux
+}
+
+// envOr returns the environment variable key, or def when it is empty.
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

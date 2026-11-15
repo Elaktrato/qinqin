@@ -1,12 +1,19 @@
 package api
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"log"
 	"net/http"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 
+	"qinqin/internal/ai"
 	"qinqin/internal/journal"
 )
 
@@ -153,4 +160,125 @@ func (s *server) handleDeletePhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+const (
+	maxTranscribeBody = 4 << 10
+	offlineReadsHour  = 60
+)
+
+// offlineUse counts offline reads per user over a rolling hour, in memory.
+type offlineUse struct {
+	mu sync.Mutex
+	at map[int64][]time.Time
+}
+
+// take records a read, or reports how long until one is free.
+func (o *offlineUse) take(userID int64, now time.Time) (ok bool, wait time.Duration) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	if o.at == nil {
+		o.at = map[int64][]time.Time{}
+	}
+	cutoff := now.Add(-time.Hour)
+	kept := o.at[userID][:0]
+	for _, t := range o.at[userID] {
+		if t.After(cutoff) {
+			kept = append(kept, t)
+		}
+	}
+	if len(kept) >= offlineReadsHour {
+		o.at[userID] = kept
+		return false, kept[0].Add(time.Hour).Sub(now)
+	}
+	o.at[userID] = append(kept, now)
+	return true, 0
+}
+
+func (s *server) ocrAvailable() bool { return s.ocr != nil && s.ocr.Available() }
+
+// handleJournalTranscribe serves POST /api/journal/transcribe. Neither engine
+// writes anything but the photo's last_seen_at, and there is no fallback from
+// one engine to the other: the learner picks.
+func (s *server) handleJournalTranscribe(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	body, ok := readBody(w, r, maxTranscribeBody)
+	if !ok {
+		return
+	}
+	var req struct {
+		WorkspaceID int64  `json:"workspaceId"`
+		PhotoID     string `json:"photoId"`
+		Engine      string `json:"engine"`
+	}
+	if json.Unmarshal(body, &req) != nil || req.PhotoID == "" || len(req.PhotoID) > 64 || (req.Engine != "ai" && req.Engine != "offline") {
+		http.Error(w, "malformed request body", http.StatusBadRequest)
+		return
+	}
+	t, ok := s.journalTarget(w, r, u.ID, req.WorkspaceID)
+	if !ok {
+		return
+	}
+	ph, jpegData, err := s.photos().Get(r.Context(), u.ID, req.PhotoID)
+	if err == nil && ph.WorkspaceID != t.ws {
+		err = journal.ErrPhotoNotFound
+	}
+	if err != nil {
+		photoNotFound(w, err)
+		return
+	}
+
+	if req.Engine == "ai" {
+		var reply ai.TranscribeReply
+		_, err := s.runAI(r, u.ID, "transcribe", func(ctx context.Context, c ai.Credentials) (string, ai.Usage, error) {
+			var err error
+			reply, err = s.ai.Provider.Transcribe(ctx, c, ai.TranscribeRequest{Language: t.language, Image: jpegData, MediaType: "image/jpeg"})
+			return reply.Model, reply.Usage, err
+		})
+		if err != nil {
+			writeAIError(w, err)
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"text": reply.Text, "engine": "ai", "unreadable": reply.Unreadable})
+		return
+	}
+
+	if !s.ocrAvailable() {
+		writeJournalError(w, http.StatusConflict, "ocr_unavailable", "Offline reading is not installed on this server.")
+		return
+	}
+	langs := journal.OCRLanguages(t.language)
+	if !s.ocr.HasLanguages(langs) {
+		writeJournalError(w, http.StatusConflict, "ocr_language_missing", "Offline reading has no model for "+ai.LanguageName(t.language)+".")
+		return
+	}
+	if ok, wait := s.ocrUse.take(u.ID, time.Now()); !ok {
+		w.Header().Set("Retry-After", strconv.Itoa(secondsCeil(wait)))
+		writeJournalError(w, http.StatusTooManyRequests, "rate_limited", "You have used "+strconv.Itoa(offlineReadsHour)+" offline reads this hour. Try again later.")
+		return
+	}
+	text, err := s.ocr.Recognize(r.Context(), jpegData, langs)
+	switch {
+	case errors.Is(err, journal.ErrOCRBusy):
+		w.Header().Set("Retry-After", "10")
+		writeJournalError(w, http.StatusServiceUnavailable, "busy", "Offline reading is busy. Try again in a moment.")
+		return
+	case errors.Is(err, journal.ErrOCRUnavailable):
+		writeJournalError(w, http.StatusConflict, "ocr_unavailable", "Offline reading is not installed on this server.")
+		return
+	case errors.Is(err, journal.ErrOCRLanguageMissing):
+		writeJournalError(w, http.StatusConflict, "ocr_language_missing", "Offline reading has no model for "+ai.LanguageName(t.language)+".")
+		return
+	case err != nil:
+		if r.Context().Err() == nil {
+			log.Printf("journal: offline OCR failed")
+		}
+		writeJournalError(w, http.StatusUnprocessableEntity, "ocr_failed", "Offline reading failed on this photo.")
+		return
+	}
+	text = strings.TrimSpace(text)
+	writeJSON(w, http.StatusOK, map[string]any{"text": text, "engine": "offline", "unreadable": text == ""})
 }

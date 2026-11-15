@@ -679,7 +679,7 @@ The Journal is a page plugin (`qinqin-journal`) where you write dated entries pe
 - **Key storage.** Each user stores their own key in Settings → AI. It is encrypted at rest (AES-256-GCM, bound to the user) with `QINQIN_SECRET` and is never returned by the API, written to logs, or included in sync or backups in plain text. Only the last four characters are shown as a hint.
 - **Models.** `claude-opus-5-5` (default), `claude-sonnet-5-5` and `claude-haiku-5-5`, chosen per user. On Opus and Sonnet a safety refusal is retried by the provider's default fallback model, which can answer from another model on your key; the review says which model answered.
 - **Limits.** 30 provider calls per user per rolling hour (checking a key counts as one), one AI call in flight per user, 5,000 characters per review, 10 MiB and 50 megapixels per photo, at most 10 pending photos per user. Settings → AI shows the calls and tokens used this hour.
-- **Offline OCR.** The image bundles Tesseract (with Chinese Simplified and Traditional, Japanese and English data) for reading a photo without any AI; without the `tesseract` binary it shows as unavailable.
+- **Offline OCR.** The image bundles Tesseract 5 (with Chinese Simplified and Traditional, Japanese and English data) for reading a photo without any AI; without the `tesseract` binary it shows as unavailable.
 
 ### Photo routes
 
@@ -693,6 +693,15 @@ All need a bearer token; a foreign workspace or photo is a 404.
 | `DELETE /api/journal/photos/{id}` | 204 |
 
 A photo is deleted when its draft is saved or discarded, when its workspace is deleted, and by a janitor (at startup and every 15 minutes) when it was not seen for an hour or is over 24 hours old. The janitor also removes files without a row and rows without a file.
+
+### Offline OCR
+
+`POST /api/journal/transcribe` with `{workspaceId, photoId, engine: "ai"|"offline"}` returns `{text, engine, unreadable}`. The `ai` engine sends the stored photo to the provider with the learner's key (it counts toward the 30 calls per hour); `offline` runs Tesseract on the server and sends nothing anywhere. There is no automatic fallback from one to the other. Neither engine stores anything beyond refreshing the photo's last-seen time.
+
+- **Models.** Chinese uses `chi_sim+chi_tra`, Japanese `jpn`, and the Latin-script workspace languages `eng`. Other languages have no offline reading (409 `ocr_language_missing`). The Alpine packages ship no vertical Japanese model (`jpn_vert`), so vertical text is read poorly.
+- **Limits.** Tesseract runs with fixed arguments and no shell, 60 s at most per photo, at most 2 processes at once server-wide (a third request waits 5 s, then gets 503 `busy`), and at most 60 offline reads per user per hour (429 `rate_limited`).
+- **Without Tesseract.** The server starts and logs `offline OCR: not available (tesseract not found)`; the route answers 409 `ocr_unavailable` and the page shows "Read offline" as unavailable. This is the normal state in local development unless you install `tesseract` (and the `tessdata` models) yourself. `QINQIN_TESSERACT` points to another binary; `TESSDATA_PREFIX` is passed through.
+- **CI.** The test job installs `tesseract-ocr` and sets `QINQIN_REQUIRE_TESSERACT=1`, so the OCR test fails instead of skipping when the binary is missing.
 
 ### Server secret
 
@@ -710,6 +719,7 @@ Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot b
 |---|---|
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
+| `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
 | `QINQIN_AI_PROVIDER` | `anthropic` (default). `fake` is for testing only: a deterministic provider that never leaves the server, shown in the app as a "Test provider" badge. Anything else disables AI |
 
 ## Dictionary data model
