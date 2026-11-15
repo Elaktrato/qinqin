@@ -11,6 +11,10 @@ export type Exercise =
 export function convertLesson(lesson: Lesson, convert: (s: string) => string): Lesson {
 	return {
 		...lesson,
+		title: convert(lesson.title),
+		summary: convert(lesson.summary),
+		pattern: lesson.pattern.map(convert),
+		body: lesson.body.map(convert),
 		examples: lesson.examples.map((e) => ({
 			...e,
 			text: convert(e.text),
@@ -44,4 +48,9 @@ export function buildExercises(lesson: Lesson, seed: string): Exercise[] {
 		example
 	}));
 	return [...clozes, ...orders];
+}
+
+/** firstTry: a word-order exercise counts when solved with no wrong check and no give-up. */
+export function firstTry(r: { wrongChecks: number; gaveUp: boolean }): boolean {
+	return r.wrongChecks === 0 && !r.gaveUp;
 }

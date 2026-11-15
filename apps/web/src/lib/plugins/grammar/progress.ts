@@ -1,14 +1,15 @@
-// Lesson progress as workspace-scoped plugin data of `qinqin-grammar`.
-// Reads come from one sync pull (like study/store.ts); a write is one PUT.
+// Lesson progress as workspace-scoped plugin data of `qinqin-grammar`, read
+// and written through the plugin SDK (the manifest declares owns-data).
 
-import { api } from '$lib/api/client';
+import { createPluginSdk } from '../sdk';
+import { grammarManifest } from './manifest';
 import type { Progress } from './types';
 
-export const GRAMMAR_PLUGIN_ID = 'qinqin-grammar';
+export const GRAMMAR_PLUGIN_ID = grammarManifest.id;
+
+const sdk = createPluginSdk(grammarManifest);
 
 const PREFIX = 'lesson:';
-const SYNC_PULL_PATH =
-	'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates';
 
 export function progressKey(packId: string, lessonId: string): string {
 	return `${PREFIX}${packId}:${lessonId}`;
@@ -29,26 +30,12 @@ export function parseProgress(raw: unknown): Progress | null {
 	return { completedAt, best: b, total: t };
 }
 
-function decode(data: unknown): unknown {
-	if (typeof data !== 'string') return data;
-	try {
-		return JSON.parse(data) as unknown;
-	} catch {
-		return null;
-	}
-}
-
-/** loadProgress reads the workspace's live lesson rows; malformed ones are skipped. */
+/** loadProgress reads the workspace's lesson rows; malformed ones are skipped. */
 export async function loadProgress(workspaceId: number): Promise<Map<string, Progress>> {
-	const delta = await api<{ pluginData?: unknown }>(SYNC_PULL_PATH);
-	const rows = Array.isArray(delta?.pluginData) ? delta.pluginData : [];
+	const rows = await sdk.data.workspace(workspaceId).list(PREFIX);
 	const out = new Map<string, Progress>();
 	for (const row of rows) {
-		if (!isRecord(row)) continue;
-		if (row.pluginId !== GRAMMAR_PLUGIN_ID || row.workspaceId !== workspaceId) continue;
-		if (row.deletedAt != null) continue;
-		if (typeof row.key !== 'string' || !row.key.startsWith(PREFIX)) continue;
-		const progress = parseProgress(decode(row.data));
+		const progress = parseProgress(row.data);
 		if (progress !== null) out.set(row.key, progress);
 	}
 	return out;
@@ -69,9 +56,6 @@ export async function saveProgress(
 		total
 	};
 	const key = progressKey(packId, lessonId);
-	await api(`/api/plugins/${GRAMMAR_PLUGIN_ID}/data/${key}?workspace=${workspaceId}`, {
-		method: 'PUT',
-		body: next
-	});
+	await sdk.data.workspace(workspaceId).put(key, next);
 	return next;
 }

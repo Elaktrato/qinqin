@@ -181,6 +181,8 @@
 	}
 
 	.token {
+		min-height: 44px;
+		min-width: 44px;
 		padding: 0.4rem 0.7rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 		border-radius: 0.4rem;
@@ -215,6 +217,7 @@
 	}
 
 	.actions button {
+		min-height: 44px;
 		padding: 0.45rem 0.9rem;
 		border-radius: 0.4rem;
 		font: inherit;

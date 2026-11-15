@@ -62,7 +62,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 - [#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs
 - ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done on `feature/fsrs-optimizer` (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
 - [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)
-- [#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI
+- ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — on `feature/grammar-lessons` (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`, demo pack `zh-grammar-demo`; native-speaker review of the demo sentences open)
 - [#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics (server-side aggregation, filters, contributions);
   the Stats page design on `feature/stats` overlaps it
 

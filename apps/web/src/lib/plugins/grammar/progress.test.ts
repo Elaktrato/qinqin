@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { api } = vi.hoisted(() => ({ api: vi.fn() }));
-vi.mock('$lib/api/client', () => ({ api }));
+vi.mock('$lib/api/client', async (original) => ({
+	...(await original<typeof import('$lib/api/client')>()),
+	api
+}));
 
 import {
 	GRAMMAR_PLUGIN_ID,
@@ -31,22 +34,17 @@ describe('progress', () => {
 		expect(parseProgress({ completedAt: 'x', best: -1, total: 8 })).toBeNull();
 	});
 
-	it('loads this plugin and workspace only, skipping tombstones and junk', () => {
+	it('loads the workspace rows by prefix, skipping junk', async () => {
 		const good = { completedAt: 'x', best: 2, total: 4 };
-		api.mockResolvedValue({
-			pluginData: [
-				{ pluginId: 'qinqin-grammar', key: 'lesson:p:a', workspaceId: 7, data: good },
-				{ pluginId: 'qinqin-grammar', key: 'lesson:p:b', workspaceId: 8, data: good },
-				{ pluginId: 'other', key: 'lesson:p:c', workspaceId: 7, data: good },
-				{ pluginId: 'qinqin-grammar', key: 'lesson:p:d', workspaceId: 7, data: good, deletedAt: 'y' },
-				{ pluginId: 'qinqin-grammar', key: 'lesson:p:e', workspaceId: 7, data: JSON.stringify(good) },
-				{ pluginId: 'qinqin-grammar', key: 'lesson:p:f', workspaceId: 7, data: 'nope' },
-				{ pluginId: 'qinqin-grammar', key: 'misc', workspaceId: 7, data: good }
-			]
-		});
-		return loadProgress(7).then((map) => {
-			expect([...map.keys()].sort()).toEqual(['lesson:p:a', 'lesson:p:e']);
-		});
+		api.mockResolvedValue([
+			{ key: 'lesson:p:a', data: good, version: 1, updatedAt: 'y' },
+			{ key: 'lesson:p:e', data: JSON.stringify(good), version: 1, updatedAt: 'y' },
+			{ key: 'lesson:p:f', data: 'nope', version: 1, updatedAt: 'y' },
+			{ key: 'lesson:p:g', data: { best: 1 }, version: 1, updatedAt: 'y' }
+		]);
+		const map = await loadProgress(7);
+		expect([...map.keys()].sort()).toEqual(['lesson:p:a', 'lesson:p:e']);
+		expect(api.mock.calls[0][0]).toBe('/api/plugins/qinqin-grammar/data?workspace=7&prefix=lesson%3A');
 	});
 
 	it('keeps the best score', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildExercises, clozeParts, convertLesson } from './exercises';
+import { buildExercises, clozeParts, convertLesson, firstTry } from './exercises';
 import type { Example, Lesson } from './types';
 
 function example(id: string, over: Partial<Example> = {}): Example {
@@ -89,5 +89,24 @@ describe('convertLesson', () => {
 	it('leaves the reading alone', () => {
 		const l = lesson([example('a', { reading: 'wǒ shì' })]);
 		expect(convertLesson(l, () => 'X').examples[0].reading).toBe('wǒ shì');
+	});
+});
+
+describe('convertLesson text', () => {
+	it('converts title, summary, pattern and body too', () => {
+		const l = { ...lesson([example('a')]), title: '个', summary: '个s', pattern: ['A + 个'], body: ['个 text'] };
+		const out = convertLesson(l, (s) => s.replaceAll('个', '個'));
+		expect(out.title).toBe('個');
+		expect(out.summary).toBe('個s');
+		expect(out.pattern).toEqual(['A + 個']);
+		expect(out.body).toEqual(['個 text']);
+	});
+});
+
+describe('firstTry', () => {
+	it('is right only without wrong checks or giving up', () => {
+		expect(firstTry({ wrongChecks: 0, gaveUp: false })).toBe(true);
+		expect(firstTry({ wrongChecks: 1, gaveUp: false })).toBe(false);
+		expect(firstTry({ wrongChecks: 0, gaveUp: true })).toBe(false);
 	});
 });
