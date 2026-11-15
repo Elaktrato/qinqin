@@ -737,7 +737,7 @@
 		<header class="top">
 			<h1>Study</h1>
 			<p class="progress" aria-live="polite">
-					{queueProgress.position} / {queueProgress.total}{#if queueProgress.pending > 0}
+					{queueProgress.position} / {queueProgress.total}{#if queueProgress.pending > 0}{' '}
 						· {queueProgress.pending} to repeat{/if}
 				</p>
 			<a href="/study">End session</a>
