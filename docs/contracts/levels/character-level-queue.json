@@ -258,7 +258,7 @@
       "reserve": []
     },
     {
-      "name": "legacy duplicate cards: smallest id wins",
+      "name": "legacy duplicate cards with the same createdAt: smallest id wins",
       "unit": "character",
       "kinds": [
         "vocab",
@@ -540,7 +540,7 @@
       "reserve": []
     },
     {
-      "name": "a character without stroke data stays in the queue",
+      "name": "a character without stroke data never gets a writing item",
       "unit": "character",
       "kinds": [
         "writing"
@@ -555,11 +555,13 @@
       "entries": [
         {
           "id": 11,
-          "kind": "character"
+          "kind": "character",
+          "written": "日"
         },
         {
           "id": 12,
           "kind": "character",
+          "written": "気",
           "strokeData": false
         }
       ],
@@ -574,13 +576,159 @@
           "kind": "writing",
           "entryId": 11,
           "virtual": true
+        }
+      ],
+      "reserve": []
+    },
+    {
+      "name": "older duplicate card with the larger id wins (createdAt first)",
+      "unit": "character",
+      "kinds": [
+        "vocab",
+        "writing"
+      ],
+      "history": [],
+      "now": "2026-11-16T03:00:00Z",
+      "entries": [
+        {
+          "id": 11,
+          "kind": "character"
         },
         {
-          "cardId": "level:writing:12",
-          "kind": "writing",
+          "id": 12,
+          "kind": "character"
+        }
+      ],
+      "cards": [
+        {
+          "id": "c-vocab-11",
+          "kind": "vocab",
+          "entryId": 11,
+          "createdAt": "2026-10-01T00:00:00Z"
+        },
+        {
+          "id": "01J0NEWER0000000000000000",
+          "kind": "vocab",
+          "entryId": 11,
+          "createdAt": "2026-11-01T00:00:00Z"
+        }
+      ],
+      "reviews": [],
+      "newLimit": 5,
+      "reviewLimit": 100,
+      "weights": "default",
+      "queue": [
+        {
+          "cardId": "c-vocab-11",
+          "kind": "vocab",
+          "entryId": 11,
+          "virtual": false
+        },
+        {
+          "cardId": "level:12",
+          "kind": "vocab",
           "entryId": 12,
-          "virtual": true,
-          "dropInSession": true
+          "virtual": true
+        }
+      ],
+      "reserve": []
+    },
+    {
+      "name": "glyphs without stroke data do not take new-card slots",
+      "unit": "character",
+      "kinds": [
+        "vocab",
+        "writing"
+      ],
+      "history": [],
+      "now": "2026-11-16T03:00:00Z",
+      "entries": [
+        {
+          "id": 11,
+          "kind": "character",
+          "written": "日"
+        },
+        {
+          "id": 12,
+          "kind": "character",
+          "written": "気",
+          "strokeData": false
+        },
+        {
+          "id": 13,
+          "kind": "character",
+          "written": "毎",
+          "strokeData": false
+        },
+        {
+          "id": 14,
+          "kind": "character",
+          "written": "月"
+        },
+        {
+          "id": 15,
+          "kind": "character",
+          "written": "火"
+        }
+      ],
+      "cards": [
+        {
+          "id": "c-vocab-11",
+          "kind": "vocab",
+          "entryId": 11,
+          "createdAt": "2026-11-01T00:00:00Z"
+        },
+        {
+          "id": "c-vocab-12",
+          "kind": "vocab",
+          "entryId": 12,
+          "createdAt": "2026-11-01T00:00:00Z"
+        },
+        {
+          "id": "c-vocab-13",
+          "kind": "vocab",
+          "entryId": 13,
+          "createdAt": "2026-11-01T00:00:00Z"
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-vocab-11",
+          "grade": 4,
+          "ts": "2026-11-10T00:00:00Z"
+        },
+        {
+          "cardId": "c-vocab-12",
+          "grade": 4,
+          "ts": "2026-11-10T00:00:00Z"
+        },
+        {
+          "cardId": "c-vocab-13",
+          "grade": 4,
+          "ts": "2026-11-10T00:00:00Z"
+        }
+      ],
+      "newLimit": 3,
+      "reviewLimit": 100,
+      "weights": "default",
+      "queue": [
+        {
+          "cardId": "level:writing:11",
+          "kind": "writing",
+          "entryId": 11,
+          "virtual": true
+        },
+        {
+          "cardId": "level:14",
+          "kind": "vocab",
+          "entryId": 14,
+          "virtual": true
+        },
+        {
+          "cardId": "level:15",
+          "kind": "vocab",
+          "entryId": 15,
+          "virtual": true
         }
       ],
       "reserve": []

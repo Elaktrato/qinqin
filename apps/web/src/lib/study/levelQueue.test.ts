@@ -285,7 +285,7 @@ interface FixtureCase {
 	kinds: StudyCardKind[];
 	history: ZoneChange[];
 	now: string;
-	entries: { id: number; kind: string }[];
+	entries: { id: number; kind: string; written?: string; strokeData?: boolean }[];
 	cards: { id: string; kind: StudyCardKind; entryId: number; createdAt: string }[];
 	reviews: { cardId: string; grade: ReviewGrade; ts: string }[];
 	newLimit: number;
@@ -294,18 +294,11 @@ interface FixtureCase {
 	reserve: Record<string, unknown>[];
 }
 
-function strip(items: Record<string, unknown>[]): Record<string, unknown>[] {
-	return items.map(({ dropInSession, ...rest }) => {
-		void dropInSession;
-		return rest;
-	});
-}
-
 describe('character level queue fixtures', () => {
 	const cases = (fixtures as { cases: FixtureCase[] }).cases;
 
 	it('has the spec case list', () => {
-		expect(cases.map((c) => c.name)).toHaveLength(11);
+		expect(cases.map((c) => c.name)).toHaveLength(13);
 	});
 
 	for (const c of cases) {
@@ -323,6 +316,8 @@ describe('character level queue fixtures', () => {
 				kinds: c.kinds,
 				studyDay: studyDay(c.history),
 				entries: c.entries,
+				hasStrokes: (glyph: string) =>
+					!c.entries.some((e) => e.written === glyph && e.strokeData === false),
 				cards: c.cards.map((k) => ({ ...k, deckIds: ['general'] })),
 				reviews,
 				newLimit: c.newLimit,
@@ -330,8 +325,9 @@ describe('character level queue fixtures', () => {
 				now: new Date(c.now),
 				w: DEFAULT_W
 			});
-			expect(plan.queue).toEqual(strip(c.queue));
-			expect(plan.reserve).toEqual(strip(c.reserve));
+			expect(plan.queue).toEqual(c.queue);
+			expect(plan.reserve).toEqual(c.reserve);
+			expect(JSON.stringify(c)).not.toContain('dropInSession');
 		});
 	}
 });
@@ -421,5 +417,41 @@ describe('character level skip set', () => {
 			skip: new Set(['writing:1'])
 		});
 		expect(plan.queue.map((i) => i.cardId)).toEqual(['level:writing:2', 'level:writing:3']);
+	});
+});
+
+describe('stroke-less glyphs and the new-card budget', () => {
+	// 60 unlocked kanji without stroke data followed by 30 fresh ones.
+	const stroked = (n: number) => entry(n, 'character');
+	const entries = [
+		...Array.from({ length: 60 }, (_, i) => ({ ...stroked(100 + i), written: `X${i}` })),
+		...Array.from({ length: 30 }, (_, i) => ({ ...stroked(200 + i), written: `日${i}` }))
+	];
+	const cards = Array.from({ length: 60 }, (_, i) => card(`c-vocab-${100 + i}`, 100 + i));
+	const reviews = Array.from({ length: 60 }, (_, i) =>
+		review(`c-vocab-${100 + i}`, 4, '2026-05-31T12:00:00.000Z', eventId(i + 1))
+	);
+	const base = {
+		w: DEFAULT_W,
+		unit: 'character' as const,
+		kinds: ['vocab', 'writing'] as const,
+		entries,
+		cards,
+		reviews,
+		now: NOW,
+		hasStrokes: (glyph: string) => !glyph.startsWith('X')
+	};
+
+	it('still yields newLimit new recognition cards', () => {
+		const plan = buildLevelPlan({ ...base, newLimit: 10, reviewLimit: 100 });
+		expect(plan.queue).toHaveLength(10);
+		expect(plan.queue.every((i) => i.kind === 'vocab' && i.entryId >= 200)).toBe(true);
+		expect(plan.queue.filter((i) => i.kind === 'writing')).toHaveLength(0);
+	});
+
+	it('counts no droppable writing item as new on the setup page', () => {
+		const counts = levelPlanCounts(base);
+		// 60 locked-in stroke-less writing items are not new; only the 30 fresh recognitions.
+		expect(counts.fresh).toBe(30);
 	});
 });

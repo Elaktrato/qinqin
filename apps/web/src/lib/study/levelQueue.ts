@@ -5,6 +5,7 @@
 // and stable virtual ids, never duplicate entries.
 
 import { studyDay as utcStudyDay, type StudyDay } from '../time/studyDay';
+import { compareCanonical } from './canonical';
 import { backfillLimit } from './cardFlow';
 import { isDue, isValidReview, scheduleFor, sortedReviews } from './scheduler';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
@@ -18,6 +19,8 @@ export const CHARACTER_KINDS: readonly StudyCardKind[] = ['vocab', 'writing'];
 export interface LevelEntry {
 	id: number;
 	kind: string;
+	/** The glyph; lets a character level check stroke data. */
+	written?: string;
 }
 
 /**
@@ -50,6 +53,12 @@ export interface BuildLevelQueueOptions {
 	reserve?: number;
 	/** `kind:entryId` keys of virtual items already found ineligible (never planned). */
 	skip?: ReadonlySet<string>;
+	/**
+	 * Whether a glyph has stroke data (`hasStrokeData`). A character level
+	 * plans no writing item for a glyph where it is false; recognition is
+	 * unaffected. Absent: every glyph qualifies.
+	 */
+	hasStrokes?: (glyph: string) => boolean;
 }
 
 /** A level session: the queue plus new items held back for dropped ones. */
@@ -164,14 +173,6 @@ function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
 	};
 }
 
-function sameCardOrder(a: StudyCard, b: StudyCard): number {
-	const ta = Date.parse(a.createdAt);
-	const tb = Date.parse(b.createdAt);
-	const byTime = (Number.isNaN(ta) ? Infinity : ta) - (Number.isNaN(tb) ? Infinity : tb);
-	if (byTime !== 0 && !Number.isNaN(byTime)) return byTime;
-	return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-}
-
 /**
  * Character levels: recognition (`vocab`) and writing cards per character.
  * Writing, when both kinds are selected, is new only once the recognition
@@ -186,7 +187,7 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 	const gated = wanted.includes('vocab') && wanted.includes('writing');
 
 	const cardByKey = new Map<string, StudyCard>();
-	for (const card of [...cards].sort(sameCardOrder)) {
+	for (const card of [...cards].sort(compareCanonical)) {
 		const key = `${card.kind}:${card.entryId}`;
 		if (!cardByKey.has(key)) cardByKey.set(key, card);
 	}
@@ -206,6 +207,14 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 		seen.add(entry.id);
 
 		for (const kind of wanted) {
+			if (
+				kind === 'writing' &&
+				entry.written !== undefined &&
+				options.hasStrokes !== undefined &&
+				!options.hasStrokes(entry.written)
+			) {
+				continue;
+			}
 			const card = cardByKey.get(`${kind}:${entry.id}`);
 			const target = kind === 'writing' ? freshWriting : freshVocab;
 			if (kind === 'writing' && gated && !(card !== undefined && firstReviewMs.has(card.id))) {

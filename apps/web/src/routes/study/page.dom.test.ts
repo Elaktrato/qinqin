@@ -147,4 +147,28 @@ describe('study setup, level sessions', () => {
 		expect(await screen.findByRole('option', { name: 'N5 — 2 of 4 learned' })).toBeTruthy();
 		expect(screen.getByRole('option', { name: 'N4 — 0 of 1 learned' })).toBeTruthy();
 	});
+
+	it('disables a writing-only session when no glyph of the level has stroke data', async () => {
+		setup(charScheme, ['writing']);
+		vi.mocked(getSchemeEntries).mockResolvedValue([
+			{ id: 11, kind: 'character', written: '気' },
+			{ id: 12, kind: 'character', written: '毎' }
+		] as never);
+		render(Page);
+		await screen.findByText(/characters in/);
+		const start = screen.getByRole('button', { name: /start/i }) as HTMLButtonElement;
+		expect(start.disabled).toBe(true);
+		expect(screen.getByText(/Nothing to write here/)).toBeTruthy();
+	});
+
+	it('does not count stroke-less glyphs as new writing items but keeps recognition', async () => {
+		setup(charScheme, ['vocab']);
+		vi.mocked(getSchemeEntries).mockResolvedValue([
+			{ id: 11, kind: 'character', written: '気' }
+		] as never);
+		render(Page);
+		await screen.findByText(/characters in/);
+		const start = screen.getByRole('button', { name: /start/i }) as HTMLButtonElement;
+		expect(start.disabled).toBe(false);
+	});
 });

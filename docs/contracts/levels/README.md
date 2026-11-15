@@ -34,8 +34,7 @@ real id, never duplicated. Fixture: `level-card-ids.json`.
 4. Writing unlock: only when both `vocab` and `writing` are selected, a new writing item for an entry is
    included only if the entry's recognition card has a valid review whose learner day (`dayOf`, zone
    history) is before today's learner day. With `writing` alone there is no gating.
-5. `dropInSession: true` marks queue items the session drops after loading the entry (no stroke data); the
-   queue itself still contains them.
+5. `strokeData: false` on an entry means its glyph has no stroke data: it never gets a writing item (recognition is unaffected and still takes its slot).
 
 Inputs use `history` (zone changes, see `study-day/`), `now`, `entries`, `cards`, `reviews`
 (`cardId`, `grade`, `ts`), `newLimit`, `reviewLimit`; `weights: "default"` means the FSRS default weights.

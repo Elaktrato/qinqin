@@ -21,6 +21,7 @@
 		type LevelUnit
 	} from '$lib/study/levelQueue';
 	import { currentStudyDay } from '$lib/time/zone';
+	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import {
 		CARD_TYPES,
 		loadConfig,
@@ -415,7 +416,10 @@
 			w: weights,
 			unit: levelUnit,
 			kinds: selectedKinds,
-			studyDay: currentStudyDay()
+			studyDay: currentStudyDay(),
+			hasStrokes: hasStrokeData,
+			// Items this tab already found unsuitable are not counted.
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
 	});
 
@@ -465,6 +469,9 @@
 					: 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
 			}
 			if (counts.due + counts.fresh === 0) {
+				if (levelUnit === 'character' && !selectedKinds.includes('vocab')) {
+					return 'Nothing to write here: writing cards need stroke data and the characters of this level have none left to study. Select Vocab to practise recognition.';
+				}
 				return 'Nothing is due and no new cards are left in this level.';
 			}
 			return '';

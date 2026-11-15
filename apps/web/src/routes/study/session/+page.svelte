@@ -52,6 +52,7 @@
 	} from '$lib/study/types';
 	import type { SaladTier } from '$lib/study/wordSalad';
 	import { usableChars } from '$lib/study/writing';
+	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { newUlid } from '$lib/ulid';
 	import { workspaces } from '$lib/workspaces';
 
@@ -369,6 +370,7 @@
 					unit: levelRequest.unit,
 					kinds,
 					studyDay: currentStudyDay(),
+					hasStrokes: hasStrokeData,
 					skip: loadIneligible(workspaceId)
 				});
 				queue = levelSessionItems(plan.queue, data.cards, kinds);
