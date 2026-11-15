@@ -74,6 +74,7 @@ func TestReadDataRules(t *testing.T) {
 		{"empty distractor", `["很", "在"]`, `["很", ""]`, "lessons[0].examples[0].distractors[1]"},
 		{"duplicate distractor", `["很", "在"]`, `["很", "很"]`, "lessons[0].examples[0].distractors[1]"},
 		{"distractor equals focus", `["很", "在"]`, `["很", "吗"]`, "lessons[0].examples[0].distractors[1]"},
+		{"distractor long", `["很", "在"]`, `["很", "` + long(121) + `"]`, "lessons[0].examples[0].distractors[1]"},
 		{"unknown field", `"title": "T"`, `"title": "T", "extra": 1`, "extra"},
 	}
 	for _, c := range cases {
@@ -137,5 +138,25 @@ func TestManifestAcceptsGrammar(t *testing.T) {
 		License: "CC0-1.0", Attribution: "me", Format: "json"}
 	if err := m.Validate(); err != nil {
 		t.Errorf("Validate = %v", err)
+	}
+}
+
+func TestReadDataRejectsTrailingJSON(t *testing.T) {
+	for _, tail := range []string{" {}", "\n[1]", " garbage"} {
+		_, err := grammar.ReadData(write(t, validJSON+tail))
+		if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "trailing") {
+			t.Errorf("tail %q: err = %v, want a trailing-data ErrInvalidPack", tail, err)
+		}
+	}
+	if _, err := grammar.ReadData(write(t, validJSON+"\n\n")); err != nil {
+		t.Errorf("trailing whitespace rejected: %v", err)
+	}
+}
+
+func TestReadDataSizeCap(t *testing.T) {
+	big := validJSON + strings.Repeat(" ", 4<<20)
+	_, err := grammar.ReadData(write(t, big))
+	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "too large") {
+		t.Errorf("err = %v, want a too-large ErrInvalidPack", err)
 	}
 }

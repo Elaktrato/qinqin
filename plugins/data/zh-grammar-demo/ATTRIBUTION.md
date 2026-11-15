@@ -15,4 +15,9 @@ with 40 example sentences, readings, translations and exercise answers.
   are possible and corrections are welcome.
 - Pinyin: tone marks as in the HSK word list pack (`hsk-words`): 不 and 一 are
   written as they are spoken (bú shì, yí ge), third-tone sandhi is not marked
-  (nǐ hǎo), neutral tones are unmarked.
+  (nǐ hǎo), neutral tones are unmarked. Readings are lower case; only
+  proper nouns (Zhōngguó) start with a capital, and the sentence-final
+  punctuation is kept.
+- Vocabulary: the example sentences use words of the HSK 1 word list
+  (`hsk-words`) so that the "≈ HSK 1" badge is honest; the lessons teach
+  patterns, they do not copy the syllabus.

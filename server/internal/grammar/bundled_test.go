@@ -48,9 +48,33 @@ func TestBundledGrammarDemo(t *testing.T) {
 	if examples != 40 {
 		t.Errorf("examples = %d, want 40", examples)
 	}
-	// Import and read back through the store.
+	// Import and read everything back through the store, as the API does.
 	sqlDB := newDB(t)
-	if _, err := grammar.Import(t.Context(), sqlDB, pack); err != nil {
+	ctx := t.Context()
+	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
 		t.Fatal(err)
+	}
+	packs, err := grammar.ListPacks(ctx, sqlDB, "zh")
+	if err != nil || len(packs) != 1 || packs[0].PackID != "zh-grammar-demo" {
+		t.Fatalf("ListPacks = %+v, %v", packs, err)
+	}
+	if got := len(packs[0].Lessons); got != 10 {
+		t.Fatalf("stored lessons = %d, want 10", got)
+	}
+	stored := 0
+	for _, summary := range packs[0].Lessons {
+		view, err := grammar.LessonByID(ctx, sqlDB, "zh-grammar-demo", summary.ID)
+		if err != nil {
+			t.Fatalf("LessonByID(%s): %v", summary.ID, err)
+		}
+		for _, e := range view.Lesson.Examples {
+			stored++
+			if n := strings.Count(e.Text, e.Focus); n != 1 {
+				t.Errorf("%s: focus %q occurs %d times in %q, want exactly once (the gap and the answer check rely on it)", e.ID, e.Focus, n, e.Text)
+			}
+		}
+	}
+	if stored != 40 {
+		t.Errorf("stored examples = %d, want 40", stored)
 	}
 }

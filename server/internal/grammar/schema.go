@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -76,6 +77,8 @@ const (
 	maxExamples     = 20
 	maxExampleText  = 500
 	maxDistractors  = 4
+	maxDistractor   = 120
+	maxFileBytes    = 4 << 20
 )
 
 var idPattern = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
@@ -88,11 +91,19 @@ func ReadData(dir string) (Data, error) {
 	if err != nil {
 		return Data{}, fmt.Errorf("%w: read %s of %s: %v", dict.ErrInvalidPack, lessonsFile, dir, err)
 	}
+	if len(raw) > maxFileBytes {
+		return Data{}, fmt.Errorf("%w: %s of %s is too large (%d bytes, at most %d)", dict.ErrInvalidPack, lessonsFile, dir, len(raw), maxFileBytes)
+	}
 	var d Data
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&d); err != nil {
 		return Data{}, fmt.Errorf("%w: parse %s of %s: %v", dict.ErrInvalidPack, lessonsFile, dir, err)
+	}
+	// Anything but whitespace after the document is a mistake (two
+	// concatenated files, a stray brace), not something to ignore.
+	if _, err := dec.Token(); err != io.EOF {
+		return Data{}, fmt.Errorf("%w: parse %s of %s: trailing data after the JSON document", dict.ErrInvalidPack, lessonsFile, dir)
 	}
 	if err := d.validate(); err != nil {
 		return Data{}, fmt.Errorf("%w: %s of %s: %v", dict.ErrInvalidPack, lessonsFile, dir, err)
@@ -254,6 +265,8 @@ func (e Example) validate(p string, exampleIDs map[string]bool) error {
 		switch {
 		case strings.TrimSpace(s) == "":
 			return fmt.Errorf("%s: must not be empty", q)
+		case runes(s) > maxDistractor:
+			return fmt.Errorf("%s: %d characters, at most %d", q, runes(s), maxDistractor)
 		case s == e.Focus:
 			return fmt.Errorf("%s: %q equals focus", q, s)
 		case seen[s]:

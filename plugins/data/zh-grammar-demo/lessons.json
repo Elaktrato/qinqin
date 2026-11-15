@@ -96,9 +96,9 @@
       "examples": [
         {
           "id": "bu-1",
-          "text": "我不喝咖啡。",
-          "reading": "wǒ bù hē kāfēi.",
-          "translation": "I don't drink coffee.",
+          "text": "我不喝牛奶。",
+          "reading": "wǒ bù hē niúnǎi.",
+          "translation": "I don't drink milk.",
           "focus": "不",
           "distractors": [
             "吗",
@@ -129,9 +129,9 @@
         },
         {
           "id": "bu-4",
-          "text": "我们不吃肉。",
-          "reading": "wǒmen bù chī ròu.",
-          "translation": "We don't eat meat.",
+          "text": "我们不吃米饭。",
+          "reading": "wǒmen bù chī mǐfàn.",
+          "translation": "We don't eat rice.",
           "focus": "不",
           "distractors": [
             "吗",
@@ -178,7 +178,7 @@
         {
           "id": "ma-3",
           "text": "他是中国人吗？",
-          "reading": "tā shì Zhōngguó rén ma?",
+          "reading": "tā shì Zhōngguórén ma?",
           "translation": "Is he Chinese?",
           "focus": "吗",
           "distractors": [
@@ -247,9 +247,9 @@
         },
         {
           "id": "hen-4",
-          "text": "中文很有意思。",
-          "reading": "Zhōngwén hěn yǒu yìsi.",
-          "translation": "Chinese is interesting.",
+          "text": "米饭很好吃。",
+          "reading": "mǐfàn hěn hǎochī.",
+          "translation": "The rice is tasty.",
           "focus": "很",
           "distractors": [
             "吗",
@@ -306,9 +306,9 @@
         },
         {
           "id": "de-4",
-          "text": "他的朋友是医生。",
-          "reading": "tā de péngyou shì yīshēng.",
-          "translation": "His friend is a doctor.",
+          "text": "这是他的朋友。",
+          "reading": "zhè shì tā de péngyou.",
+          "translation": "This is his friend.",
           "focus": "的",
           "distractors": [
             "很",
@@ -365,9 +365,9 @@
         },
         {
           "id": "ye-dou-4",
-          "text": "她也不喝酒。",
-          "reading": "tā yě bù hē jiǔ.",
-          "translation": "She doesn't drink alcohol either.",
+          "text": "她也不喝牛奶。",
+          "reading": "tā yě bù hē niúnǎi.",
+          "translation": "She doesn't drink milk either.",
           "focus": "也",
           "distractors": [
             "吗",
@@ -402,20 +402,20 @@
         },
         {
           "id": "ge-2",
-          "text": "这个人是谁？",
-          "reading": "zhège rén shì shéi?",
-          "translation": "Who is this person?",
+          "text": "这个人很好。",
+          "reading": "zhège rén hěn hǎo.",
+          "translation": "This person is nice.",
           "focus": "个",
           "distractors": [
             "吗",
-            "很"
+            "在"
           ]
         },
         {
           "id": "ge-3",
-          "text": "我们班有十个学生。",
-          "reading": "wǒmen bān yǒu shí ge xuéshēng.",
-          "translation": "Our class has ten students.",
+          "text": "这里有十个学生。",
+          "reading": "zhèlǐ yǒu shí ge xuéshēng.",
+          "translation": "There are ten students here.",
           "focus": "个",
           "distractors": [
             "的",
@@ -473,9 +473,9 @@
         },
         {
           "id": "zai-3",
-          "text": "他在图书馆看书。",
-          "reading": "tā zài túshūguǎn kàn shū.",
-          "translation": "He reads in the library.",
+          "text": "他在书店看书。",
+          "reading": "tā zài shūdiàn kàn shū.",
+          "translation": "He reads in the bookshop.",
           "focus": "在",
           "distractors": [
             "吗",
@@ -484,8 +484,8 @@
         },
         {
           "id": "zai-4",
-          "text": "我们在饭馆吃饭。",
-          "reading": "wǒmen zài fànguǎn chī fàn.",
+          "text": "我们在饭店吃饭。",
+          "reading": "wǒmen zài fàndiàn chī fàn.",
           "translation": "We eat at a restaurant.",
           "focus": "在",
           "distractors": [
@@ -561,11 +561,13 @@
       "title": "了: it happened",
       "summary": "Mark a completed action.",
       "pattern": [
-        "Subject + Verb + 了 + (Object)"
+        "Subject + Verb + 了 + (Object)",
+        "Subject + Verb + Object + 了"
       ],
       "body": [
         "了 (le) after a verb marks that the action happened or is complete.",
-        "To say it did not happen, use 没 (or 没有) and drop 了: 我没吃."
+        "To say it did not happen, use 没 (or 没有) and drop 了: 我没吃.",
+        "At the end of the sentence 了 can mark that the situation has now come about: 她去商店了 (she has gone to the shop)."
       ],
       "examples": [
         {
@@ -603,9 +605,9 @@
         },
         {
           "id": "le-4",
-          "text": "她去了北京。",
-          "reading": "tā qù le Běijīng.",
-          "translation": "She went to Beijing.",
+          "text": "她去商店了。",
+          "reading": "tā qù shāngdiàn le.",
+          "translation": "She went to the shop.",
           "focus": "了",
           "distractors": [
             "很",
