@@ -2,16 +2,15 @@
 // with. Feature plugins are admin-installed server-side; this manifest
 // lets the app render the plugin's widgets without asking the server
 // for them.
+import flashcards from '$builtin/flashcards.json';
+import type { ContractManifest } from '../contract';
 import type { PluginManifest } from '../index';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
 import WordStatesHome from '$lib/widgets/WordStatesHome.svelte';
 import WordStatesWidget from '$lib/widgets/WordStatesWidget.svelte';
 
 export const flashcardsManifest: PluginManifest = {
-	id: 'qinqin-flashcards',
-	name: 'Flashcards',
-	version: '1.0',
-	surfaces: ['home-widget'],
+	...(flashcards as unknown as ContractManifest),
 	widgets: [
 		{
 			id: 'flashcards-summary',

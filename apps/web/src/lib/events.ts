@@ -3,6 +3,7 @@
 // failed POST must never break the page the user is on.
 
 import { api } from './api/client';
+import { logChangingTypes } from './plugins/contract';
 import type { StudyEventBody } from './api/types';
 import { newUlid } from './ulid';
 import { createWorkspaceCache } from './workspaceCache';
@@ -50,13 +51,6 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 // Home -> Stats hop, not more. Joining the read in flight is the main gain.
 export const WORKSPACE_EVENTS_TTL_MS = 8_000;
 
-// Only these event types change what the readers of the full log show
-// (reviews: flashcards, words, characters; read: reading time; journal:
-// the heatmap's journal entries). The home
-// page posts a `session` event on every load; dropping the cache for it
-// would defeat the cache.
-const LOG_CHANGING_TYPES: ReadonlySet<string> = new Set(['review', 'read', 'journal']);
-
 function fullLogPath(workspaceId: number): string {
 	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
 }
@@ -85,7 +79,7 @@ export function onEventLogChange(listener: (workspaceId: number) => void): () =>
 function logChanged(events: readonly StudyEventBody[]): void {
 	const touched = new Set<number>();
 	for (const event of events) {
-		if (LOG_CHANGING_TYPES.has(event.type)) touched.add(event.workspaceId);
+		if (logChangingTypes().has(event.type)) touched.add(event.workspaceId);
 	}
 	for (const workspaceId of touched) {
 		eventLog.invalidate(workspaceId);
