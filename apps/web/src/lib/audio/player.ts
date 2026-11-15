@@ -31,10 +31,14 @@ export function deviceVoiceFor(lang: string, voices: SpeechSynthesisVoice[]): Sp
  * createPlayer makes the shared player: one audio element, so two sounds can
  * never overlap. `make` builds the element (tests pass a fake), `synth` is the
  * speech synthesis to use (default the browser's, null for none).
+ * `resolveSrc` turns a clip URL into what the element plays (the app fetches
+ * the clip with the bearer token and passes an object URL; the default is
+ * the URL itself).
  */
 export function createPlayer(
 	make: () => HTMLAudioElement = () => new Audio(),
-	synth: SpeechSynthesis | null | undefined = typeof speechSynthesis === 'undefined' ? null : speechSynthesis
+	synth: SpeechSynthesis | null | undefined = typeof speechSynthesis === 'undefined' ? null : speechSynthesis,
+	resolveSrc: (clipUrl: string) => Promise<string> = (url) => Promise.resolve(url)
 ): Player {
 	let el: HTMLAudioElement | null = null;
 	let abort: (() => void) | null = null;
@@ -92,8 +96,9 @@ export function createPlayer(
 			current = mine;
 			try {
 				for (const clip of clips) {
+					const src = await resolveSrc(clip.url);
 					if (current !== mine) return;
-					audio.src = clip.url;
+					audio.src = src;
 					const ended = waitFor(audio);
 					try {
 						await audio.play();

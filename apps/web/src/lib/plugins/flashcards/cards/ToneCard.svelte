@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import type { Entry } from '$lib/api/types';
+	import PlayButton from '$lib/components/PlayButton.svelte';
+	import type { CardAudio } from '$lib/study/audioCue';
 	import {
 		pinyinReadings,
 		tonePadLabels,
@@ -17,9 +19,11 @@
 		entry: Entry;
 		done: boolean;
 		onDone: (result: CardResult) => void;
+		/** Pronunciation; its button shows only once the card is done. */
+		audio?: CardAudio;
 	}
 
-	let { item, entry, done, onDone }: Props = $props();
+	let { item, entry, done, onDone, audio }: Props = $props();
 
 	const TONES: { tone: Tone; glyph: string; name: string }[] = [
 		{ tone: 1, glyph: 'ˉ', name: 'first tone, high level' },
@@ -268,6 +272,9 @@
 {#if done}
 	<p class="readings">
 		Pinyin: <strong>{allReadings.join(' / ')}</strong>
+		{#if audio}
+			<PlayButton clips={audio.clips} speakText={audio.speakText} lang={audio.lang} deviceVoice={audio.deviceVoice} />
+		{/if}
 	</p>
 {/if}
 

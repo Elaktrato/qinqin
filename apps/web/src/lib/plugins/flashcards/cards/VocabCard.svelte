@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { Entry } from '$lib/api/types';
 	import { formatReading } from '$lib/format';
+	import PlayButton from '$lib/components/PlayButton.svelte';
+	import type { CardAudio } from '$lib/study/audioCue';
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
 	import { buildVocabFaces } from '$lib/study/cardView';
 
@@ -10,9 +12,11 @@
 		/** The runner owns the reveal so Space/Enter can trigger it too. */
 		revealed: boolean;
 		onDone: (result: CardResult) => void;
+		/** Pronunciation; its button shows only after the reveal. */
+		audio?: CardAudio;
 	}
 
-	let { item, entry, revealed, onDone }: Props = $props();
+	let { item, entry, revealed, onDone, audio }: Props = $props();
 
 	// A sentence id that no longer resolves is passed as null so the card
 	// simply has no sentence block. A virtual level card previews the
@@ -51,7 +55,12 @@
 
 {#if revealed}
 	<section class="answer" aria-labelledby="answer-heading">
-		<h2 id="answer-heading">Answer</h2>
+		<h2 id="answer-heading">
+			Answer
+			{#if audio}
+				<PlayButton clips={audio.clips} speakText={audio.speakText} lang={audio.lang} deviceVoice={audio.deviceVoice} />
+			{/if}
+		</h2>
 		{#if faces.back.glosses.length > 0}
 			{#each faces.back.glosses as group (group.dictionaryName)}
 				<article class="dictionary">

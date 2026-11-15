@@ -1,0 +1,46 @@
+import { apiBlob } from '../api/client';
+
+// The clip route needs the bearer token, which an <audio src> cannot send,
+// so clips are fetched with the API client and played from object URLs. The
+// most recent clips stay in memory (a study session replays a few); older
+// ones are revoked.
+const MAX_CLIPS = 40;
+
+interface Slot {
+	promise: Promise<string>;
+	url?: string;
+}
+const cache = new Map<string, Slot>();
+
+/** clipObjectUrl returns a playable object URL for a clip URL, fetching it once. */
+export function clipObjectUrl(clipUrl: string): Promise<string> {
+	const hit = cache.get(clipUrl);
+	if (hit) {
+		// Refresh its place so the least recently used goes first.
+		cache.delete(clipUrl);
+		cache.set(clipUrl, hit);
+		return hit.promise;
+	}
+	const slot: Slot = {
+		promise: apiBlob(clipUrl).then((blob) => {
+			slot.url = URL.createObjectURL(blob);
+			return slot.url;
+		})
+	};
+	slot.promise.catch(() => {
+		if (cache.get(clipUrl) === slot) cache.delete(clipUrl);
+	});
+	cache.set(clipUrl, slot);
+	while (cache.size > MAX_CLIPS) {
+		const [oldest, old] = cache.entries().next().value as [string, Slot];
+		cache.delete(oldest);
+		if (old.url) URL.revokeObjectURL(old.url);
+	}
+	return slot.promise;
+}
+
+/** clearClipCache revokes and forgets every clip (sign-out, tests). */
+export function clearClipCache(): void {
+	for (const slot of cache.values()) if (slot.url) URL.revokeObjectURL(slot.url);
+	cache.clear();
+}

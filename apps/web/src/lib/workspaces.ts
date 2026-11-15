@@ -96,6 +96,23 @@ export async function rename(id: number, name: string): Promise<Workspace> {
 	return updated;
 }
 
+/**
+ * setSettings merges a settings patch into a workspace (PUT, which merges
+ * server-side) and replaces that workspace in the store with the server's
+ * copy, keeping the current selection.
+ */
+export async function setSettings(id: number, patch: Record<string, unknown>): Promise<Workspace> {
+	const updated = await api<Workspace>(`/api/workspaces/${id}`, {
+		method: 'PUT',
+		body: { settings: patch }
+	});
+	workspaces.update((state) => ({
+		list: state.list.map((workspace) => (workspace.id === id ? updated : workspace)),
+		current: state.current?.id === id ? updated : state.current
+	}));
+	return updated;
+}
+
 /** select switches the current workspace and persists the choice. */
 export function select(id: number): void {
 	const state = get(workspaces);

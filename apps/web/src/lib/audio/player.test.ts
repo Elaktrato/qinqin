@@ -102,6 +102,30 @@ describe('createPlayer', () => {
 	});
 });
 
+describe('createPlayer with a source resolver', () => {
+	it('plays the resolved source, and a play superseded while resolving never starts', async () => {
+		const el = new FakeAudio();
+		const gates: Record<string, () => void> = {};
+		const resolveSrc = (url: string) => new Promise<string>((r) => (gates[url] = () => r(`blob:${url}`)));
+		const p = createPlayer(() => el as unknown as HTMLAudioElement, null, resolveSrc);
+		const first = p.play([clip('a')]);
+		const second = p.play([clip('b')]);
+		gates['/c/a.opus']();
+		gates['/c/b.opus']();
+		await tick();
+		await first;
+		expect(el.log.filter((l) => l.startsWith('play'))).toEqual(['play blob:/c/b.opus']);
+		el.fire('ended');
+		await second;
+	});
+
+	it('rejects when the source cannot be resolved', async () => {
+		const p = createPlayer(() => new FakeAudio() as unknown as HTMLAudioElement, null, () => Promise.reject(new Error('401')));
+		await expect(p.play([clip('a')])).rejects.toThrow('401');
+		expect(p.playing).toBe(false);
+	});
+});
+
 describe('speak end callback', () => {
 	it('calls onEnd when the utterance ends or fails', () => {
 		const utterances: { onend?: () => void; onerror?: () => void }[] = [];
