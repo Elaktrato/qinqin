@@ -171,6 +171,8 @@
 
 	.controls {
 		display: flex;
+		align-items: center;
+		min-height: 2rem;
 		gap: 0.5rem;
 	}
 
