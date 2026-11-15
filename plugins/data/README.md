@@ -10,7 +10,7 @@ Manifest fields:
 | Field | Required | Meaning |
 |---|---|---|
 | `id`, `name`, `version` | yes | identity of the pack |
-| `type` | yes | `dictionary`, `levels`, `sentences` or `frequency` |
+| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency` or `grammar` |
 | `language` | yes | language tag (`ja`, `zh`, `es`, ...) |
 | `format` | yes | how the data file is read |
 | `license` | yes | the licence as the publisher states it |
@@ -29,6 +29,15 @@ Committed (small, hand-written, CC0 — a sample):
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack) |
+| `zh-grammar-demo` | grammar | zh | ten A1 lessons with 40 exercises, written for qinqin, CC0; demo content not reviewed by a native speaker |
+
+Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",
+"name", "schemeLevels": [{"scheme": "<levels pack id>", "level": "<level name>"}]}],
+"lessons": [{"id", "level", "title", "summary", "pattern": [...], "body": [...],
+"examples": [{"id", "text", "reading", "translation", "focus", "distractors": [...]}]}]}`.
+Lesson text is plain text. `focus` (a part of `text`) and at least two
+`distractors` that are wrong in that sentence give a fill-the-gap exercise.
+The full limits are enforced by `server/internal/grammar/schema.go`.
 
 The other hand-written samples live in `plugins/samples/`, outside the default
 seed root. The DICTIONARIES `zh-mini` (pinyin → bopomofo, traditional

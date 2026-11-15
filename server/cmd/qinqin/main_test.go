@@ -113,7 +113,7 @@ func TestRegisterBuiltinPlugins(t *testing.T) {
 	}
 	found := map[string]bool{}
 	for _, plugin := range list {
-		if plugin.ID != "qinqin-flashcards" && plugin.ID != "qinqin-reader" && plugin.ID != "qinqin-core" {
+		if plugin.ID != "qinqin-flashcards" && plugin.ID != "qinqin-reader" && plugin.ID != "qinqin-core" && plugin.ID != "qinqin-grammar" {
 			continue
 		}
 		found[plugin.ID] = true
@@ -121,7 +121,7 @@ func TestRegisterBuiltinPlugins(t *testing.T) {
 			t.Errorf("%s state = enabled %t, order %d, want enabled, 0", plugin.ID, plugin.Enabled, plugin.Order)
 		}
 	}
-	for _, id := range []string{"qinqin-flashcards", "qinqin-reader", "qinqin-core"} {
+	for _, id := range []string{"qinqin-flashcards", "qinqin-reader", "qinqin-core", "qinqin-grammar"} {
 		if !found[id] {
 			t.Errorf("%s not in plugin list %+v", id, list)
 		}

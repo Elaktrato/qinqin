@@ -21,6 +21,7 @@ func TestBuiltinManifestsValid(t *testing.T) {
 		{"qinqin-flashcards", []string{"home-widget"}, []string{"owns-data", "read:entries", "read:study-events", "write:study-events"}, []string{"review"}},
 		{"qinqin-reader", []string{"page", "home-widget"}, []string{"read:entries", "read:study-events", "write:study-events"}, []string{"read"}},
 		{"qinqin-journal", []string{"page"}, []string{"owns-data", "write:study-events"}, []string{"journal"}},
+		{"qinqin-grammar", []string{"page"}, []string{"owns-data"}, nil},
 	}
 	raws := plugins.Builtin()
 	if len(raws) != len(want) {

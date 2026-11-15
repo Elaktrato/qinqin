@@ -79,6 +79,17 @@ bytes (see `plugins/data/README.md`). The sections below keep the full
 background; the wording of a licence status (as the publisher states it,
 unverified facts marked unverified) must stay the same in both places.
 
+## Grammar lessons
+
+- **Chinese grammar demo (A1)** (`zh-grammar-demo`, type `grammar`; bundled):
+  ten short beginner lessons with 40 example sentences, readings,
+  translations and exercise answers, **written for qinqin by the project and
+  released under CC0 1.0** (`plugins/data/zh-grammar-demo`, with `LICENSE` and
+  `ATTRIBUTION.md`). Nothing is taken from a textbook, a syllabus or another
+  grammar resource; the A1 levels are the author's own estimates (the link to
+  "HSK 1" is a rough orientation only). It is **demo content that has not been
+  reviewed by a native speaker**; errors are possible.
+
 ## Frequency data
 
 **Jiten** (<https://jiten.moe>, published by Jitensoft) builds word

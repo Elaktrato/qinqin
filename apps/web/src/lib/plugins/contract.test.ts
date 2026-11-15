@@ -28,13 +28,14 @@ describe('logChangingTypes', () => {
 });
 
 describe('builtinManifests', () => {
-	it('lists core, flashcards, reader, journal, all on the supported sdk', () => {
+	it('lists core, flashcards, reader, journal, grammar, all on the supported sdk', () => {
 		const list = builtinManifests();
 		expect(list.map((m) => m.id)).toEqual([
 			'qinqin-core',
 			'qinqin-flashcards',
 			'qinqin-reader',
-			'qinqin-journal'
+			'qinqin-journal',
+			'qinqin-grammar'
 		]);
 		expect(list.every((m) => sdkSupported(m))).toBe(true);
 	});
