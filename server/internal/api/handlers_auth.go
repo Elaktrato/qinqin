@@ -358,6 +358,8 @@ func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 		"passwordReset":     mail,
 		"emailCodeLogin":    mail && set.EmailCodeLogin,
 		"passwordMinLength": auth.MinPasswordRunes,
+		"totpAvailable":     s.mfa.Available(),
+		"mfaEnforced":       mail && set.MFAEnforced,
 	})
 }
 
@@ -384,14 +386,20 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 	s.hideEmailWhenOff(r, &p.User)
 	// me is the user object plus what the session may do: "restriction" is
 	// "", "password_change" or "mfa_enrollment".
+	st, err := auth.LoadMFAState(r.Context(), s.db, p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
 	writeJSON(w, http.StatusOK, struct {
 		model.User
-		Restriction string `json:"restriction"`
+		MFA         auth.MFAState `json:"mfa"`
+		Restriction string        `json:"restriction"`
 		// NeedsCurrentPassword tells the change-password form whether to ask
 		// for the current password up front (everything but the session born
 		// from the temporary-password login).
 		NeedsCurrentPassword bool `json:"needsCurrentPassword"`
-	}{p.User, p.Restriction(), !p.TemporarySession})
+	}{p.User, st, p.Restriction(), !p.TemporarySession})
 }
 
 // The access gate. Every handler reaches a session through one of the

@@ -290,3 +290,60 @@ func RecoveryCodesLeft(ctx context.Context, ex querier, userID int64) (int, erro
 	err := ex.QueryRowContext(ctx, `SELECT COUNT(*) FROM mfa_recovery_codes WHERE user_id = ? AND used_at IS NULL`, userID).Scan(&n)
 	return n, err
 }
+
+// MFAState is what the user's two-factor setup looks like.
+type MFAState struct {
+	TOTP              bool `json:"totp"`
+	Email             bool `json:"email"`
+	RecoveryCodesLeft int  `json:"recoveryCodesLeft"`
+}
+
+// LoadMFAState reads the user's methods. Email counts only as the flag; the
+// caller decides whether the address is verified and mail is configured.
+func LoadMFAState(ctx context.Context, ex querier, userID int64) (MFAState, error) {
+	var st MFAState
+	var email int
+	if err := ex.QueryRowContext(ctx, `SELECT mfa_email FROM users WHERE id = ?`, userID).Scan(&email); err != nil {
+		return st, fmt.Errorf("load mfa flag: %w", err)
+	}
+	st.Email = email != 0
+	var err error
+	if st.TOTP, err = HasTOTP(ctx, ex, userID); err != nil {
+		return st, fmt.Errorf("load totp: %w", err)
+	}
+	if st.TOTP {
+		if st.RecoveryCodesLeft, err = RecoveryCodesLeft(ctx, ex, userID); err != nil {
+			return st, fmt.Errorf("count recovery codes: %w", err)
+		}
+	}
+	return st, nil
+}
+
+// SetMFAEmail turns the email method on or off for the user.
+func SetMFAEmail(ctx context.Context, ex execer, userID int64, on bool) error {
+	v := 0
+	if on {
+		v = 1
+	}
+	if _, err := ex.ExecContext(ctx, `UPDATE users SET mfa_email = ? WHERE id = ?`, v, userID); err != nil {
+		return fmt.Errorf("set mfa email: %w", err)
+	}
+	return nil
+}
+
+// ResetMFA removes every second factor of the user (authenticator, recovery
+// codes, the email method flag) and deletes their sessions, in the caller's
+// transaction.
+func ResetMFA(ctx context.Context, ex execer, userID int64) error {
+	if err := RemoveTOTP(ctx, ex, userID); err != nil {
+		return err
+	}
+	if err := SetMFAEmail(ctx, ex, userID, false); err != nil {
+		return err
+	}
+	if _, err := ex.ExecContext(ctx, `DELETE FROM auth_challenges WHERE user_id = ? AND kind = 'mfa'`, userID); err != nil {
+		return fmt.Errorf("drop mfa challenges: %w", err)
+	}
+	_, err := revokeSessions(ctx, ex, userID, 0)
+	return err
+}

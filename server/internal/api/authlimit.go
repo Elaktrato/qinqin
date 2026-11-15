@@ -69,7 +69,11 @@ func DefaultAuthPolicy() AuthPolicy {
 			"ident": {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
 			// Reset mails per user: 3 per hour, beyond that silently skipped.
 			"reset-mail": {Burst: 3, Every: 20 * time.Minute, MaxKeys: authTableCap},
-			"smtp-test":  {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
+			// Wrong one-time codes per user across challenges: 10 per 15
+			// minutes and 30 per day (MFA, email-code sign-in, setup).
+			"mfa":       {Burst: 10, Every: 90 * time.Second, MaxKeys: authTableCap},
+			"mfa-day":   {Burst: 30, Every: 48 * time.Minute, MaxKeys: authTableCap},
+			"smtp-test": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 		},
 	}
 }

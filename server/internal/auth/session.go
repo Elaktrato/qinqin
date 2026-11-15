@@ -200,3 +200,12 @@ func RevokeOthersAudited(ctx context.Context, sqlDB *sql.DB, userID, exceptSessi
 	}
 	return n, tx.Commit()
 }
+
+// PromoteSession turns an enrolment session into a full one (the user has
+// just enrolled a second factor).
+func PromoteSession(ctx context.Context, sqlDB *sql.DB, userID, sessionID int64) error {
+	if _, err := sqlDB.ExecContext(ctx, `UPDATE sessions SET level = 'full' WHERE id = ? AND user_id = ?`, sessionID, userID); err != nil {
+		return fmt.Errorf("promote session: %w", err)
+	}
+	return nil
+}

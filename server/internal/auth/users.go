@@ -111,20 +111,29 @@ var (
 
 // AdminUser is a user as an administrator sees it.
 type AdminUser struct {
-	ID                 int64   `json:"id"`
-	Username           string  `json:"username"`
-	Email              *string `json:"email"`
-	EmailVerified      bool    `json:"emailVerified"`
-	Admin              bool    `json:"admin"`
-	Disabled           bool    `json:"disabled"`
-	MustChangePassword bool    `json:"mustChangePassword"`
-	CreatedAt          string  `json:"createdAt"`
-	LastSeenAt         *string `json:"lastSeenAt"`
+	ID                 int64    `json:"id"`
+	Username           string   `json:"username"`
+	Email              *string  `json:"email"`
+	EmailVerified      bool     `json:"emailVerified"`
+	Admin              bool     `json:"admin"`
+	Disabled           bool     `json:"disabled"`
+	MustChangePassword bool     `json:"mustChangePassword"`
+	CreatedAt          string   `json:"createdAt"`
+	LastSeenAt         *string  `json:"lastSeenAt"`
+	MFA                AdminMFA `json:"mfa"`
+}
+
+// AdminMFA tells an administrator which second factors a user has (never a
+// secret).
+type AdminMFA struct {
+	TOTP  bool `json:"totp"`
+	Email bool `json:"email"`
 }
 
 const adminUserSelect = `
 	SELECT u.id, u.username, u.email, u.email_verified_at, u.admin, u.disabled_at, u.must_change_password, u.created_at,
-	       (SELECT MAX(s.last_used_at) FROM sessions s WHERE s.user_id = u.id)
+	       (SELECT MAX(s.last_used_at) FROM sessions s WHERE s.user_id = u.id),
+	       EXISTS (SELECT 1 FROM mfa_totp t WHERE t.user_id = u.id AND t.confirmed_at IS NOT NULL), u.mfa_email
 	FROM users u`
 
 type rowScanner interface{ Scan(dest ...any) error }
@@ -132,10 +141,11 @@ type rowScanner interface{ Scan(dest ...any) error }
 func scanAdminUser(r rowScanner) (AdminUser, error) {
 	var a AdminUser
 	var email, verified, disabled, seen sql.NullString
-	var admin, must int
-	if err := r.Scan(&a.ID, &a.Username, &email, &verified, &admin, &disabled, &must, &a.CreatedAt, &seen); err != nil {
+	var admin, must, totp, mfaEmail int
+	if err := r.Scan(&a.ID, &a.Username, &email, &verified, &admin, &disabled, &must, &a.CreatedAt, &seen, &totp, &mfaEmail); err != nil {
 		return AdminUser{}, err
 	}
+	a.MFA = AdminMFA{TOTP: totp != 0, Email: mfaEmail != 0}
 	a.Admin, a.MustChangePassword = admin != 0, must != 0
 	a.Disabled, a.EmailVerified = disabled.Valid, verified.Valid
 	if email.Valid {

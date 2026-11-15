@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -28,6 +29,20 @@ type mailEnv struct {
 	smtp  *mailtest.Server
 	owner string
 	svc   *mail.Service
+	clk   *testClock
+}
+
+// testClock is the server's clock; tests move it to cross TOTP steps.
+type testClock struct {
+	mu sync.Mutex
+	t  time.Time
+}
+
+func (c *testClock) now() time.Time { c.mu.Lock(); defer c.mu.Unlock(); return c.t }
+func (c *testClock) advance(d time.Duration) {
+	c.mu.Lock()
+	c.t = c.t.Add(d)
+	c.mu.Unlock()
 }
 
 const testSMTPPassword = "smtp-pass-sentinel-1"
@@ -74,7 +89,11 @@ func newMailEnv(t *testing.T, o mailOpts) *mailEnv {
 	workerCtx, stopWorker := context.WithCancel(context.Background())
 	go svc.Run(workerCtx)
 	t.Cleanup(stopWorker)
-	opts := append([]api.Option{api.WithMail(svc)}, o.apiOpts...)
+	clk := &testClock{t: time.Now()}
+	opts := append([]api.Option{api.WithMail(svc), api.WithClock(clk.now)}, o.apiOpts...)
+	if !o.noSecret {
+		opts = append(opts, api.WithSecrets(testSealer(), nil))
+	}
 	pol := api.DefaultAuthPolicy()
 	pol.Client.Burst = 5000
 	if o.authPolicy != nil {
@@ -83,7 +102,7 @@ func newMailEnv(t *testing.T, o mailOpts) *mailEnv {
 	opts = append(opts, api.WithAuthPolicy(pol))
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, opts...))
 	t.Cleanup(ts.Close)
-	e := &mailEnv{ts: ts, db: sqlDB, smtp: fake, svc: svc}
+	e := &mailEnv{ts: ts, db: sqlDB, smtp: fake, svc: svc, clk: clk}
 	e.owner = registerUser(t, ts.URL, "owner", "")
 	if o.configure {
 		e.configure(t)
