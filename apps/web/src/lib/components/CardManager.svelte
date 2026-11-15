@@ -327,7 +327,7 @@
 
 	.toast-region {
 		position: fixed;
-		inset: auto 0 1rem 0;
+		inset: auto 0 4.5rem 0;
 		display: flex;
 		justify-content: center;
 		pointer-events: none;
