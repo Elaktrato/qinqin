@@ -38,8 +38,11 @@ services:
       - no-new-privileges:true
     # No `user:` and no `read_only:`: the image has no USER (runs as root) and
     # OCR, pack uploads and pack staging write temp files under /tmp.
-    mem_limit: 1g
-    cpus: 2.0
+    # Optional resource caps. Deliberately off: the first-run seed (JMdict,
+    # CEDICT, Unihan) and OCR can need more than a guessed limit, and an
+    # out-of-memory kill during setup is worse than none. Measure first.
+    # mem_limit: 2g
+    # cpus: 2.0
     logging:
       driver: json-file
       options:
