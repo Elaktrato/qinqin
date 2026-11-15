@@ -464,7 +464,6 @@
 		<p class="error" role="alert">
 			{failure.text}
 			{#if failure.settingsLink}<a href="/settings?tab=ai">Open Settings → AI</a>{/if}
-			{#if failure.retryAfterSeconds}Try again in {failure.retryAfterSeconds} s.{/if}
 		</p>
 	{/if}
 	{#if deleteError}<p class="error" role="alert">{deleteError}</p>{/if}

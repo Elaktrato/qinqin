@@ -47,4 +47,16 @@ describe('aiErrorView', () => {
 		expect(aiErrorView(new Error('boom'), 'review').text).toBe('Something went wrong. Try again.');
 		expect(aiErrorView(err(500, 'weird_code'), 'review').text).toBe('Something went wrong. Try again.');
 	});
+
+	it('says how long to wait once, in a unit a person reads', () => {
+		const busy = aiErrorView(err(503, 'busy', 'The provider is busy. Try again in a moment.', 30), 'review');
+		expect(busy.text).toBe('The provider is busy. Try again in 30 s.');
+		const limited = aiErrorView(
+			err(429, 'rate_limited', 'You have used 30 AI calls this hour. Try again in 53 minutes.', 3138),
+			'review'
+		);
+		expect(limited.text).toBe('You have used 30 AI calls this hour. Try again in 53 minutes.');
+		const plain = aiErrorView(err(429, 'rate_limited', 'Wait.', 120), 'ideas');
+		expect(plain.text).toBe('Wait. Try again in 2 minutes.');
+	});
 });

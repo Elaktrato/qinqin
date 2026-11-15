@@ -65,11 +65,27 @@ export function aiErrorView(err: unknown, context: 'review' | 'ideas' | 'transcr
 	const text = body.message || fallback;
 	if (!text) return { ...base, text: GENERIC };
 
+	const retry = err.retryAfterSeconds;
 	return {
 		...base,
-		text,
+		text: retry ? withRetry(text, retry) : text,
 		settingsLink: SETTINGS_CODES.has(body.error),
 		offlineInstead: context === 'transcribe',
 		...(err.retryAfterSeconds !== undefined ? { retryAfterSeconds: err.retryAfterSeconds } : {})
 	};
+}
+
+function waitText(seconds: number): string {
+	if (seconds < 90) return `${Math.max(1, Math.round(seconds))} s`;
+	const minutes = Math.ceil(seconds / 60);
+	return minutes === 1 ? '1 minute' : `${minutes} minutes`;
+}
+
+/** Adds "Try again in …" once: a message that already says when keeps its words. */
+function withRetry(text: string, seconds: number): string {
+	if (/Try again in \d/.test(text)) return text;
+	const hint = `Try again in ${waitText(seconds)}.`;
+	return text.includes('Try again in a moment.')
+		? text.replace('Try again in a moment.', hint)
+		: `${text} ${hint}`;
 }
