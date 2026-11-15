@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
 	KEEPALIVE_MS,
+	keepaliveTarget,
+	offlineButtonLabel,
 	defaultEngine,
 	needsDownscale,
 	photoReducer,
@@ -114,4 +116,58 @@ describe('scaledSize', () => {
 		expect(scaledSize(3000, 9000)).toEqual({ width: 1000, height: 3000 });
 	});
 	it('never enlarges', () => expect(scaledSize(800, 600)).toEqual({ width: 800, height: 600 }));
+});
+
+describe('keepaliveTarget', () => {
+	const draft = (text: string): PhotoState => ({
+		step: 'draft',
+		photoId: 'p1',
+		text,
+		engine: 'ai',
+		unreadable: false
+	});
+
+	it('is the same value across edits, so the timer is not reset per keystroke', () => {
+		expect(keepaliveTarget(draft('a'))).toBe('p1');
+		expect(keepaliveTarget(draft('ab'))).toBe(keepaliveTarget(draft('a')));
+	});
+
+	it('is null without a photo, when done, and after the photo expired', () => {
+		expect(keepaliveTarget({ step: 'pick' })).toBeNull();
+		expect(keepaliveTarget({ step: 'done' })).toBeNull();
+		expect(keepaliveTarget({ step: 'error', photoId: null, view })).toBeNull();
+		expect(keepaliveTarget({ ...(draft('a') as object), expired: true } as PhotoState)).toBeNull();
+	});
+});
+
+describe('photoExpired', () => {
+	it('keeps the text of a draft and only marks the photo expired', () => {
+		const s = photoReducer(
+			{ step: 'draft', photoId: 'p1', text: 'mine', engine: 'ai', unreadable: false },
+			{ type: 'photoExpired', view }
+		);
+		expect(s).toMatchObject({ step: 'draft', text: 'mine', expired: true });
+	});
+
+	it('before a draft it drops back to picking again', () => {
+		const s = photoReducer({ step: 'choose', photoId: 'p1' }, { type: 'photoExpired', view });
+		expect(s).toEqual({ step: 'error', photoId: null, view });
+	});
+
+	it('still deletes the photo id on save of an expired draft (a 404 is fine)', () => {
+		const expired = photoReducer(
+			{ step: 'draft', photoId: 'p1', text: 'x', engine: 'ai', unreadable: false },
+			{ type: 'photoExpired', view }
+		);
+		expect(photoToDelete(expired, photoReducer(expired, { type: 'saved' }))).toBe('p1');
+	});
+});
+
+describe('offlineButtonLabel', () => {
+	it('says "instead" only after an AI read failed', () => {
+		expect(offlineButtonLabel({ failedEngine: 'ai', offlineInstead: true })).toBe('Read offline instead');
+		expect(offlineButtonLabel({ failedEngine: 'offline', offlineInstead: true })).toBe('Read offline');
+		expect(offlineButtonLabel({ failedEngine: null, offlineInstead: false })).toBe('Read offline');
+		expect(offlineButtonLabel({ failedEngine: 'ai', offlineInstead: false })).toBe('Read offline');
+	});
 });

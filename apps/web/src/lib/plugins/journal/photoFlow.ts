@@ -10,7 +10,7 @@ export type PhotoState =
 	| { step: 'uploading' }
 	| { step: 'choose'; photoId: string }
 	| { step: 'reading'; photoId: string; engine: Engine }
-	| { step: 'draft'; photoId: string; text: string; engine: Engine; unreadable: boolean }
+	| { step: 'draft'; photoId: string; text: string; engine: Engine; unreadable: boolean; expired?: boolean }
 	| { step: 'error'; photoId: string | null; view: AiErrorView }
 	| { step: 'done' };
 
@@ -20,6 +20,7 @@ export type PhotoEvent =
 	| { type: 'read'; engine: Engine }
 	| { type: 'readDone'; text: string; unreadable: boolean }
 	| { type: 'failed'; view: AiErrorView }
+	| { type: 'photoExpired'; view: AiErrorView }
 	| { type: 'edit'; text: string }
 	| { type: 'saved' }
 	| { type: 'discarded' };
@@ -57,6 +58,10 @@ export function photoReducer(state: PhotoState, event: PhotoEvent): PhotoState {
 			const photoId = 'photoId' in state ? state.photoId : null;
 			return { step: 'error', photoId, view: event.view };
 		}
+		case 'photoExpired':
+			if (state.step === 'draft') return { ...state, expired: true };
+			if (state.step === 'done' || state.step === 'pick') return state;
+			return { step: 'error', photoId: null, view: event.view };
 		case 'edit':
 			return state.step === 'draft' ? { ...state, text: event.text } : state;
 		case 'saved':
@@ -64,6 +69,17 @@ export function photoReducer(state: PhotoState, event: PhotoEvent): PhotoState {
 		case 'discarded':
 			return state.step === 'done' ? state : { step: 'done' };
 	}
+}
+
+/**
+ * The photo id the keepalive timer pings, or null when there is nothing to
+ * keep alive. A string, so an effect depending on it does not re-run when
+ * only the draft text changes.
+ */
+export function keepaliveTarget(state: PhotoState): string | null {
+	if (state.step === 'draft' && state.expired) return null;
+	if (state.step === 'done' || !('photoId' in state)) return null;
+	return state.photoId;
 }
 
 /** The photo to delete when a transition ends the draft (saved or discarded). */
@@ -98,4 +114,12 @@ export function scaledSize(width: number, height: number, edge = DOWNSCALE_EDGE)
 	if (long <= edge) return { width, height };
 	const k = edge / long;
 	return { width: Math.max(1, Math.round(width * k)), height: Math.max(1, Math.round(height * k)) };
+}
+
+/** The label of the offline button: "instead" only when the AI read just failed. */
+export function offlineButtonLabel(input: {
+	failedEngine: Engine | null;
+	offlineInstead: boolean;
+}): string {
+	return input.failedEngine === 'ai' && input.offlineInstead ? 'Read offline instead' : 'Read offline';
 }

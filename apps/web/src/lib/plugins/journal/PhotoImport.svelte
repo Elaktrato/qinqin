@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
 	import { postEvents } from '$lib/events';
@@ -10,8 +10,10 @@
 	import {
 		DOWNSCALE_EDGE,
 		KEEPALIVE_MS,
+		keepaliveTarget,
 		defaultEngine,
 		needsDownscale,
+		offlineButtonLabel,
 		offlineBlockReason,
 		photoReducer,
 		photoToDelete,
@@ -30,7 +32,13 @@
 		capabilities
 	}: { workspaceId: number; language: string; capabilities: Capabilities | null } = $props();
 
+	// The workspace this instance works in, fixed at creation: a late save,
+	// poll or read must never land in a workspace picked afterwards.
+	const ws = untrack(() => workspaceId);
+
 	let flow = $state<PhotoState>({ step: 'pick' });
+	let lastEngine = $state<Engine | null>(null);
+	let destroyed = false;
 	let photoUrl = $state<string | null>(null);
 	let showPhoto = $state(true);
 	let pickError = $state('');
@@ -52,6 +60,8 @@
 	});
 
 	const photoId = $derived('photoId' in flow ? flow.photoId : null);
+	// A string: it only changes with the photo, not with every keystroke.
+	const keepId = $derived(keepaliveTarget(flow));
 
 	function dispatch(event: PhotoEvent): void {
 		const prev = flow;
@@ -73,8 +83,13 @@
 
 	async function showPhotoFor(id: string): Promise<boolean> {
 		try {
+			const url = await photoObjectUrl(id);
+			if (destroyed) {
+				URL.revokeObjectURL(url);
+				return false;
+			}
 			releaseUrl();
-			photoUrl = await photoObjectUrl(id);
+			photoUrl = url;
 			return true;
 		} catch {
 			return false;
@@ -82,7 +97,7 @@
 	}
 
 	onMount(async () => {
-		const draft = loadDraft(workspaceId);
+		const draft = loadDraft(ws);
 		if (!draft) return;
 		if (await showPhotoFor(draft.photoId)) {
 			resumed = true;
@@ -102,14 +117,14 @@
 	// Keep an open draft alive; the janitor drops photos not seen for an hour.
 	$effect(() => {
 		clearInterval(keepTimer);
-		const id = photoId;
-		if (!id || flow.step === 'done') return;
+		const id = keepId;
+		if (!id) return;
 		keepTimer = setInterval(() => {
 			keepPhotoAlive(id).catch((err) => {
 				if (err instanceof ApiError && err.status === 404) {
-					clearDraft();
+					// A draft keeps its text; only the photo is gone.
 					dispatch({
-						type: 'failed',
+						type: 'photoExpired',
 						view: {
 							text: 'This photo draft expired. Choose the photo again.',
 							settingsLink: false,
@@ -126,7 +141,7 @@
 	// Debounced copy of the draft text for a reload.
 	$effect(() => {
 		if (flow.step !== 'draft') return;
-		const d = { photoId: flow.photoId, workspaceId, text: flow.text, engine: flow.engine };
+		const d = { photoId: flow.photoId, workspaceId: ws, text: flow.text, engine: flow.engine };
 		clearTimeout(saveTimer);
 		saveTimer = setTimeout(() => saveDraft(d), 500);
 		return () => clearTimeout(saveTimer);
@@ -145,6 +160,7 @@
 	});
 
 	onDestroy(() => {
+		destroyed = true;
 		clearInterval(keepTimer);
 		clearTimeout(saveTimer);
 		releaseUrl();
@@ -182,7 +198,7 @@
 		}
 		dispatch({ type: 'picked' });
 		try {
-			const { photoId: id } = await uploadPhoto(workspaceId, body);
+			const { photoId: id } = await uploadPhoto(ws, body);
 			dispatch({ type: 'uploaded', photoId: id });
 			await showPhotoFor(id);
 		} catch (err) {
@@ -194,9 +210,10 @@
 		const id = photoId;
 		if (!id) return;
 		engine = which;
+		lastEngine = which;
 		dispatch({ type: 'read', engine: which });
 		try {
-			const res = await transcribe(workspaceId, id, which);
+			const res = await transcribe(ws, id, which);
 			originalText = res.text;
 			dispatch({ type: 'readDone', text: res.text, unreadable: res.unreadable });
 		} catch (err) {
@@ -212,10 +229,11 @@
 		try {
 			const entry = newEntry('photo');
 			entry.text = flow.text;
-			const saved = await saveEntry(workspaceId, entry);
+			const saved = await saveEntry(ws, entry);
 			const now = new Date();
-			await postEvents([journalEvent(workspaceId, saved.id, now)]).catch(() => undefined);
+			await postEvents([journalEvent(ws, saved.id, now)]).catch(() => undefined);
 			dispatch({ type: 'saved' });
+			if (destroyed) return;
 			await goto(journalHref({ view: 'entry', id: saved.id }), { replaceState: true });
 		} catch {
 			saveError = 'Could not save the entry. Your draft is still here; try again.';
@@ -265,7 +283,7 @@
 	{:else}
 		{#if flow.step === 'error'}
 			<p class="error" role="alert">{flow.view.text}</p>
-			{#if flow.view.settingsLink}<p><a href="/settings">Open Settings → AI</a></p>{/if}
+			{#if flow.view.settingsLink}<p><a href="/settings?tab=ai">Open Settings → AI</a></p>{/if}
 		{/if}
 		<fieldset>
 			<legend>Read it with</legend>
@@ -285,7 +303,10 @@
 				onclick={() => read('offline')}
 				aria-describedby="offline-note"
 			>
-				{flow.step === 'error' && flow.view.offlineInstead ? 'Read offline instead' : 'Read offline'}
+				{offlineButtonLabel({
+					failedEngine: lastEngine,
+					offlineInstead: flow.step === 'error' && flow.view.offlineInstead
+				})}
 			</button>
 			<p id="ai-note" class="hint">
 				{#if capabilities === null}Checking what this server can do…
@@ -300,6 +321,11 @@
 	{/if}
 {:else if flow.step === 'draft'}
 	<p class="notice" role="note">Draft: check it against the photo before saving.</p>
+	{#if flow.expired}
+		<p class="error" role="alert">
+			The photo expired on the server. Your text is kept: save it as an entry.
+		</p>
+	{/if}
 	{#if resumed}<p class="hint">Resumed your photo draft.</p>{/if}
 	{#if flow.unreadable}<p class="hint" role="status">No text found on this photo.</p>{/if}
 	<div class="side">
@@ -328,9 +354,34 @@
 {/if}
 
 <style>
+	.pick {
+		display: inline-block;
+	}
+
+	.pick .button {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.75rem;
+		padding: 0 1rem;
+		border-radius: 0.4rem;
+		background: #0b6bcb;
+		color: #fff;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	/* The native input stays reachable for keyboards and screen readers. */
 	.pick input {
-		display: block;
-		margin-top: 0.5rem;
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+		overflow: hidden;
+	}
+
+	.pick:focus-within .button {
+		outline: 2px solid currentColor;
+		outline-offset: 2px;
 	}
 
 	.preview {
