@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import DeckList from './decks/DeckList.svelte';
 	import { parseFlashcardsRoute } from './route';
 
 	let { rest }: { rest: string } = $props();
@@ -20,6 +21,6 @@
 	{:else if route.view === 'system-level' || route.view === 'system-plugin'}
 		<div data-testid="view-system"></div>
 	{:else}
-		<h1>Decks</h1>
+		<DeckList />
 	{/if}
 {/key}

@@ -1,5 +1,8 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
+vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn(async () => ({ decks: [], cards: [], reviews: [], merged: 0 })) }));
 import FlashcardsPage from './FlashcardsPage.svelte';
 
 afterEach(cleanup);
