@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import fixture from '../../../../../docs/contracts/cards/burying.json';
+import { studyDay } from '../time/studyDay';
 import { answeredEntriesToday, buriedNow, buries } from './siblings';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
@@ -76,5 +77,21 @@ describe('answeredEntriesToday', () => {
 			studyDay: { dayOf: (ms) => new Date(ms).toISOString().slice(0, 10) }
 		});
 		expect(out.get(1)).toEqual(['reverse']);
+	});
+});
+
+describe('burying with a real non-UTC learner day', () => {
+	it('uses the learner day: 23:30 UTC is already tomorrow in Tokyo', () => {
+		const tokyo = studyDay([{ zone: 'Asia/Tokyo', from: null }]);
+		const cards = toCards([
+			{ id: 'c-vocab-1', kind: 'vocab', entryId: 1 },
+			{ id: 'c-reverse-1', kind: 'reverse', entryId: 1 }
+		]);
+		// 2026-03-09T23:30Z = 2026-03-10 08:30 in Tokyo; now = 2026-03-10T01:00Z = 10:00 in Tokyo.
+		const reviews = toReviews([{ cardId: 'c-vocab-1', ts: '2026-03-09T23:30:00Z', day: '', grade: 3 }]);
+		const now = new Date('2026-03-10T01:00:00Z');
+		expect(buriedNow({ cards, reviews, now, studyDay: tokyo }).cardIds.has('c-reverse-1')).toBe(true);
+		// In UTC the review belongs to yesterday: nothing is buried.
+		expect(buriedNow({ cards, reviews, now, studyDay: studyDay([]) }).cardIds.size).toBe(0);
 	});
 });

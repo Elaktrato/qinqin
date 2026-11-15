@@ -116,3 +116,15 @@ describe('ReverseCard', () => {
 		expect(screen.getAllByText('to like').length).toBeGreaterThan(0);
 	});
 });
+
+describe('ReverseCard.finish (the runner key path)', () => {
+	it('records the typed answer and the hint, like the Show answer button', async () => {
+		const { onDone, component } = setup();
+		await fireEvent.click(screen.getByRole('button', { name: 'Show reading' }));
+		await fireEvent.input(screen.getByLabelText('Type the word'), { target: { value: '喜欢' } });
+		(component as unknown as { finish: () => void }).finish();
+		expect(onDone).toHaveBeenCalledTimes(1);
+		expect(onDone.mock.calls[0][0].suggested).toBe(2);
+		expect(onDone.mock.calls[0][0].meta.hints).toBe(1);
+	});
+});

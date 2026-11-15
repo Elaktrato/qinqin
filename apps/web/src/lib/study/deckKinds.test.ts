@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLevelQueue } from './levelQueue';
+import { buildLevelQueue, levelPlanCounts } from './levelQueue';
 import { deckSessionItems, deckSessionPlan, levelSessionItems } from './cardFlow';
 import type { DeckSettings } from './deckSettings';
 import { DEFAULT_W } from './fsrs/params';
@@ -292,5 +292,14 @@ describe('orphan opt-in cards', () => {
 			deckSettings: cfg('general', 'reverse')
 		});
 		expect(ids(items)).toEqual(['c-reverse-2']);
+	});
+});
+
+describe('level counts leave buried words out', () => {
+	it('levelPlanCounts honours excludeEntries', () => {
+		const entries = [1, 2, 3].map((id) => ({ id, kind: 'word' }));
+		const options = { entries, cards: [], reviews: [], now: NOW, w: DEFAULT_W };
+		expect(levelPlanCounts(options).items).toBe(3);
+		expect(levelPlanCounts({ ...options, excludeEntries: new Set([2]) }).items).toBe(2);
 	});
 });

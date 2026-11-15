@@ -24,6 +24,7 @@
 	} from '$lib/study/cardTypesMemory';
 	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
 	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import {
 		levelEntryCount,
@@ -456,12 +457,16 @@
 			deckPlan.byKind.cloze
 	);
 
+	// Level sessions never plan reverse or cloze: they do not count towards the
+	// level's usable kinds or its "vocab only" warning.
+	const levelKinds = $derived(selectedKinds.filter((kind) => !isOptIn(kind)));
+
 	// A character scheme studies recognition and writing cards; every
 	// other scheme is a word scheme (vocab only).
 	const levelUnit = $derived<LevelUnit>(selectedScheme?.unit === 'character' ? 'character' : 'word');
 
 	const levelCounts = $derived.by(() => {
-		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, selectedKinds)) {
+		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, levelKinds)) {
 			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
 		}
 		return levelPlanCounts({
@@ -471,9 +476,14 @@
 			now: new Date(),
 			w: weights,
 			unit: levelUnit,
-			kinds: selectedKinds,
+			kinds: levelKinds,
 			studyDay: currentStudyDay(),
 			hasStrokes: hasStrokeData,
+			// A word buried by a reverse or cloze answer today is left out, as in the session.
+			excludeEntries: buriedLevelEntries(
+				buriedNow({ cards, reviews, now: new Date(), studyDay: currentStudyDay() }),
+				cards
+			),
 			// Items this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
@@ -482,7 +492,7 @@
 	// Selected types that have nothing to study: a warning, not a block,
 	// as long as another selected type has cards.
 	const typeWarnings = $derived.by((): string[] => {
-		if (mode === 'levels') return levelTypeWarnings(levelUnit, selectedKinds);
+		if (mode === 'levels') return levelTypeWarnings(levelUnit, levelKinds);
 		if (selectedCards.length === 0) return [];
 		return selectedKinds
 			.filter((kind) => deckPlan.byKind[kind] === 0)
@@ -519,7 +529,7 @@
 			if (levelEntries.length === 0) {
 				return `This level has no ${levelUnit === 'character' ? 'characters' : 'words'} yet.`;
 			}
-			if (!levelUsable(levelUnit, selectedKinds)) {
+			if (!levelUsable(levelUnit, levelKinds)) {
 				return levelUnit === 'character'
 					? 'Character levels study Vocab (recognition) and Writing cards. Select one of them, or switch to My decks.'
 					: 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';

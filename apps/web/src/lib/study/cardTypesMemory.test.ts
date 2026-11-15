@@ -81,6 +81,8 @@ describe('effectiveKinds', () => {
 	it('ignores opt-in entries of the remembered list and falls back to vocab', () => {
 		expect(effectiveKinds(['vocab', 'reverse', 'cloze'], new Set(), {})).toEqual(['vocab']);
 		expect(effectiveKinds(null, new Set(), {})).toEqual(['vocab']);
-		expect(effectiveKinds(['reverse'], new Set(['cloze'] as const), {})).toEqual(['vocab', 'cloze']);
+		// A setup that only had opt-in kinds never falls back to counting vocab.
+		expect(effectiveKinds(['reverse'], new Set(['cloze'] as const), {})).toEqual(['cloze']);
+		expect(effectiveKinds(['reverse'], new Set(), {})).toEqual([]);
 	});
 });

@@ -153,7 +153,10 @@ export function effectiveKinds(
 	choices: ExtraChoices
 ): StudyCardKind[] {
 	const base = (remembered ?? []).filter((kind) => !OPT_IN_KINDS.includes(kind as OptInKind));
-	const existing = base.length > 0 ? base : (['vocab'] as StudyCardKind[]);
+	// Vocab is the fallback only when nothing was remembered; a setup that held
+	// opt-in kinds alone never silently counts vocab.
+	const hadAny = remembered !== null && remembered.length > 0;
+	const existing = base.length > 0 ? base : hadAny ? [] : (['vocab'] as StudyCardKind[]);
 	return CARD_KINDS.filter(
 		(kind) =>
 			existing.includes(kind) || defaultExtraTypes(enabled, choices).includes(kind as OptInKind)

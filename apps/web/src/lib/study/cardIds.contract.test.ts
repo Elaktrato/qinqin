@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import fixture from '../../../../../docs/contracts/cards/card-ids.json';
 import { newCardId } from './canonical';
+import { COMPANION_PREFIX } from './companions';
 import { BASE_XP } from './exp';
 import { cardKey, parseReview } from './reviewParse';
 import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind } from './types';
@@ -20,6 +21,9 @@ describe('card ids contract', () => {
 		it(`${c.kind} ${c.entryId}`, () => {
 			expect(newCardId(c.kind, c.entryId)).toBe(c.id);
 			expect(cardKey(c.kind, c.entryId, c.sentenceId)).toBe(c.cardKey);
+			if (c.virtualId !== undefined) {
+				expect(`${COMPANION_PREFIX}${c.kind}:${c.entryId}`).toBe(c.virtualId);
+			}
 		});
 	}
 

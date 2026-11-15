@@ -104,7 +104,7 @@
 		writing: 'Draw each character stroke by stroke · keys 1–4 grade when finished',
 		tone: 'Keys: 1–5 set the highlighted syllable’s tone (5 = neutral) · ←/→ move · Backspace clears · Enter checks · then 1–4 grade',
 		reverse:
-			'Keys: Space or Enter shows the answer · type to check yourself · 1–4 grade',
+			'Keys: type the word and press Enter to check · Space or Enter outside the field shows the answer · 1–4 grade',
 		cloze: 'Keys: 1–4 pick a choice or type the word, Enter checks · then 1–4 grade'
 	};
 
@@ -228,6 +228,7 @@
 
 	// The card being shown and how far the learner got with it. `done`
 	// unlocks the grade buttons; `suggested` is preselected on them.
+	let reverseCard = $state<ReverseCard | null>(null);
 	let resolved = $state.raw<Resolved | null>(null);
 	let done = $state(false);
 	let suggested = $state<ReviewGrade | null>(null);
@@ -740,6 +741,12 @@
 
 	function revealByKey(): void {
 		if (resolved === null || !revealsOnKey(resolved.item.kind)) return;
+		// A reverse card finishes through its own path, so what was typed and the
+		// shown reading count (suggestion and hint) like the Show answer button.
+		if (resolved.item.kind === 'reverse' && reverseCard !== null) {
+			reverseCard.finish();
+			return;
+		}
 		void onCardDone({ suggested: null, meta: {} });
 	}
 
@@ -1064,6 +1071,7 @@
 						/>
 					{:else if current.item.kind === 'reverse'}
 						<ReverseCard
+							bind:this={reverseCard}
 							item={current.item}
 							entry={current.entry}
 							revealed={done}

@@ -41,7 +41,9 @@
 
 	onMount(() => field?.focus());
 
-	function finish(): void {
+	/** Finishes the card with what was typed; the runner's Space/Enter calls it too. */
+	export function finish(): void {
+		if (revealed) return;
 		const suggested = suggestReverseGrade({ typed, accepted, readingShown });
 		const meta: ReviewMeta = {};
 		if (readingShown) meta.hints = 1;
