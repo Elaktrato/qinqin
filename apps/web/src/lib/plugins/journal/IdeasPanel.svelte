@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 	import { aiErrorView, type AiErrorView } from './aiErrors';
 	import { requestSuggestions } from './api';
 	import type { AiGate } from './editorLogic';
@@ -13,13 +13,17 @@
 		onstart
 	}: { workspaceId: number; gate: AiGate; onstart: (title: string) => void } = $props();
 
+	const ws = untrack(() => workspaceId);
+	const aborter = new AbortController();
+	onDestroy(() => aborter.abort());
+
 	let suggestions = $state<Suggestions | null>(null);
 	let busy = $state(false);
 	let status = $state('');
 	let failure = $state<AiErrorView | null>(null);
 
 	onMount(() => {
-		getSuggestions(workspaceId).then(
+		getSuggestions(ws).then(
 			(s) => (suggestions = s),
 			() => {}
 		);
@@ -32,13 +36,17 @@
 		status = 'Looking for ideas… (this can take a minute)';
 		const since = suggestions?.createdAt ?? '';
 		try {
-			suggestions = await requestSuggestions(workspaceId);
+			suggestions = await requestSuggestions(ws, aborter.signal);
 			status = 'Ideas ready.';
 		} catch (err) {
+			if (aborter.signal.aborted) return;
 			const view = aiErrorView(err, 'ideas');
 			if (view.poll) {
 				status = 'Still waiting for the answer…';
-				const late = await pollForReview(() => getSuggestions(workspaceId), since);
+				const late = await pollForReview(() => getSuggestions(ws), since, {
+					signal: aborter.signal
+				});
+				if (aborter.signal.aborted) return;
 				if (late) {
 					suggestions = late;
 					status = 'Ideas ready.';

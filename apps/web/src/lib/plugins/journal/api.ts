@@ -12,8 +12,8 @@ export function requestReview(
 	return api<Review>('/api/journal/review', { body: { workspaceId, entryId }, signal });
 }
 
-export function requestSuggestions(workspaceId: number): Promise<Suggestions> {
-	return api<Suggestions>('/api/journal/suggestions', { body: { workspaceId } });
+export function requestSuggestions(workspaceId: number, signal?: AbortSignal): Promise<Suggestions> {
+	return api<Suggestions>('/api/journal/suggestions', { body: { workspaceId }, signal });
 }
 
 export function getCapabilities(workspaceId: number): Promise<Capabilities> {

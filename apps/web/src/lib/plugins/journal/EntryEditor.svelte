@@ -12,7 +12,7 @@
 	import OverallReview from './OverallReview.svelte';
 	import ReviewText from './ReviewText.svelte';
 	import { aiErrorView, type AiErrorView } from './aiErrors';
-	import { anchorAnnotations, isOutdated } from './anchor';
+	import { anchorAnnotations, isOutdated, originalCounts } from './anchor';
 	import { requestReview } from './api';
 	import {
 		AUTOSAVE_MS,
@@ -22,8 +22,13 @@
 		journalEventDue
 	} from './entryDraft';
 	import {
+		ENTRY_MAX_CHARS,
 		aiButtonGate,
+		canGotoAfterFirstSave,
 		editorTarget,
+		isEntryGone,
+		navigationPlan,
+		tooLongHint,
 		listedAnnotations,
 		reviewAnnouncement,
 		saveStatusText,
@@ -48,7 +53,16 @@
 		aiBanner: string | null;
 	} = $props();
 
+	// The workspace this editor works in, fixed at creation. A save, review
+	// or delete that finishes late must never reach a workspace chosen later.
+	const ws = untrack(() => workspaceId);
+	const aborter = new AbortController();
+	let destroyed = false;
+	let internalNav = false; // our own address change after the first save
+	let gone = false; // the entry was deleted: stop saving it
+
 	let entry = $state<JournalEntry | null>(null);
+	let originals = $state<Record<string, number>>({});
 	let loadState = $state<'loading' | 'ready' | 'notfound' | 'error'>('loading');
 	let title = $state('');
 	let text = $state('');
@@ -84,7 +98,7 @@
 	const ideasGate = $derived(
 		aiButtonGate({ available: aiAvailable, banner: aiBanner, chars, forReview: false })
 	);
-	const anchoring = $derived(review ? anchorAnnotations(text, review.annotations) : null);
+	const anchoring = $derived(review ? anchorAnnotations(text, review.annotations, originals) : null);
 	const outdated = $derived(review ? isOutdated(text, review) : false);
 	const listed = $derived(
 		review && anchoring ? listedAnnotations(review.annotations, anchoring) : []
@@ -98,14 +112,14 @@
 	}
 
 	/** Saves now if there is anything unsaved; resolves false when the save failed. */
-	function flush(): Promise<boolean> {
+	function flush(opts: { keepalive?: boolean } = {}): Promise<boolean> {
 		clearTimeout(timer);
-		saveChain = saveChain.then(doSave);
+		saveChain = saveChain.then(() => doSave(opts));
 		return saveChain;
 	}
 
-	async function doSave(): Promise<boolean> {
-		if (!entry || !dirty) return true;
+	async function doSave(opts: { keepalive?: boolean } = {}): Promise<boolean> {
+		if (!entry || !dirty || gone) return true;
 		// Nothing typed yet: an untouched new entry is never created.
 		if (!persisted && title.trim() === '' && text.trim() === '') {
 			dirty = false;
@@ -117,20 +131,25 @@
 		const snapshot: JournalEntry = { ...entry, title, text, date: date || entry.date };
 		const textChanged = snapshot.text !== savedText;
 		try {
-			const saved = await saveEntry(workspaceId, snapshot);
+			const saved = await saveEntry(ws, snapshot, opts);
 			entry = saved;
 			savedText = saved.text;
 			const firstSave = !persisted;
 			persisted = true;
 			if (textChanged) void recordEvent(saved.id);
 			saveState = dirty ? 'dirty' : 'saved';
-			if (firstSave) {
+			if (firstSave && canGotoAfterFirstSave({ destroyed, routeEntryId: entryId })) {
 				// The address now names the entry, so a reload comes back to it.
-				await goto(journalHref({ view: 'entry', id: saved.id }), {
-					replaceState: true,
-					keepFocus: true,
-					noScroll: true
-				});
+				internalNav = true;
+				try {
+					await goto(journalHref({ view: 'entry', id: saved.id }), {
+						replaceState: true,
+						keepFocus: true,
+						noScroll: true
+					});
+				} finally {
+					internalNav = false;
+				}
 			}
 			return true;
 		} catch {
@@ -144,7 +163,7 @@
 		const now = new Date();
 		if (!journalEventDue(id, true, now, sentEvents)) return;
 		try {
-			await postEvents([journalEvent(workspaceId, id, now)]);
+			await postEvents([journalEvent(ws, id, now)]);
 		} catch {
 			// Telemetry only; allow another try on the next save.
 			sentEvents.delete(id);
@@ -163,6 +182,8 @@
 		deleteError = '';
 		saveState = 'idle';
 		dirty = false;
+		gone = false;
+		originals = {};
 		if (id === null) {
 			const fresh = newEntry('typed');
 			entry = fresh;
@@ -178,7 +199,7 @@
 		}
 		loadState = 'loading';
 		try {
-			const found = await getEntry(workspaceId, id);
+			const found = await getEntry(ws, id);
 			if (!found) {
 				entry = null;
 				loadState = 'notfound';
@@ -191,9 +212,12 @@
 			persisted = true;
 			savedText = found.text;
 			loadState = 'ready';
-			getReview(workspaceId, id).then(
+			getReview(ws, id).then(
 				(r) => {
-					if (entry?.id === id) review = r;
+					if (entry?.id !== id) return;
+					review = r;
+					// The reviewed text is only known while the text is unchanged.
+					originals = r && !isOutdated(text, r) ? originalCounts(text, r.annotations) : {};
 				},
 				() => {}
 			);
@@ -218,7 +242,8 @@
 	function setReview(r: Review): void {
 		review = r;
 		mode = 'review';
-		const a = anchorAnnotations(text, r.annotations);
+		originals = isOutdated(text, r) ? {} : originalCounts(text, r.annotations);
+		const a = anchorAnnotations(text, r.annotations, originals);
 		reviewStatus = reviewAnnouncement(a.placed.length + a.listOnly.length, a.missing.length);
 		void tick().then(() => reviewHeading?.focus());
 	}
@@ -241,13 +266,18 @@
 		reviewStatus = 'Reviewing… (this can take a minute)';
 		const since = review?.createdAt ?? '';
 		try {
-			const r = await requestReview(workspaceId, id);
+			const r = await requestReview(ws, id, aborter.signal);
 			if (entry?.id === id) setReview(r);
 		} catch (err) {
+			if (destroyed) return;
 			const view = aiErrorView(err, 'review');
+			if (isEntryGone(err) && view.text === 'This entry was deleted.') markGone();
 			if (view.poll) {
 				reviewStatus = 'Still waiting for the review… (checking every few seconds)';
-				const late = await pollForReview(() => getReview(workspaceId, id), since);
+				const late = await pollForReview(() => getReview(ws, id), since, {
+					signal: aborter.signal
+				});
+				if (destroyed) return;
 				if (late) {
 					if (entry?.id === id) setReview(late);
 					return;
@@ -258,6 +288,14 @@
 		} finally {
 			reviewing = false;
 		}
+	}
+
+	/** The entry no longer exists on the server: keep the text on screen, but stop saving. */
+	function markGone(): void {
+		gone = true;
+		dirty = false;
+		clearTimeout(timer);
+		saveState = 'idle';
 	}
 
 	async function backToEdit(): Promise<void> {
@@ -294,25 +332,46 @@
 		dirty = false;
 		deleting = true;
 		deleteError = '';
+		gone = true;
 		try {
-			if (persisted) await deleteEntry(workspaceId, entry.id);
+			// A save that is already on its way must land before the delete, not after.
+			await saveChain.catch(() => false);
+			if (persisted) await deleteEntry(ws, entry.id);
 			await goto(journalHref({ view: 'list' }));
 		} catch {
+			gone = false;
 			deleteError = 'Could not delete the entry. Try again.';
 			deleting = false;
 		}
 	}
 
-	beforeNavigate(() => {
-		void flush();
+	let leaving = false;
+	beforeNavigate((nav) => {
+		// Closing the tab or reloading cannot wait; pagehide sends a keepalive save.
+		if (nav.type === 'leave' || leaving || internalNav || deleting || navigationPlan(saveState) === 'proceed') {
+			void flush();
+			return;
+		}
+		// Moving inside the app: finish the save first, and ask if it fails.
+		const target = nav.to?.url;
+		nav.cancel();
+		leaving = true;
+		void flush().then(async (ok) => {
+			if (ok || confirm('This entry could not be saved. Leave anyway and lose the unsaved changes?')) {
+				if (target) await goto(target);
+			}
+			leaving = false;
+		});
 	});
 
 	onDestroy(() => {
+		destroyed = true;
+		aborter.abort();
 		void flush();
 	});
 
 	function onVisibility(): void {
-		if (document.visibilityState === 'hidden') void flush();
+		if (document.visibilityState === 'hidden') void flush({ keepalive: true });
 	}
 
 	function pickAnnotation(id: string): void {
@@ -321,7 +380,7 @@
 </script>
 
 <svelte:document onvisibilitychange={onVisibility} />
-<svelte:window onpagehide={() => void flush()} />
+<svelte:window onpagehide={() => void flush({ keepalive: true })} />
 
 <p><a href={journalHref({ view: 'list' })}>← Journal</a></p>
 
@@ -361,6 +420,7 @@
 					bind:this={textarea}
 					bind:value={text}
 					rows="14"
+					maxlength={ENTRY_MAX_CHARS}
 					aria-describedby="entry-count"
 					oninput={touch}
 					onblur={() => void flush()}
@@ -369,6 +429,12 @@
 			<p id="entry-count" class="count" class:over={chars > MAX_REVIEW_CHARS}>
 				{chars.toLocaleString('en')} / {MAX_REVIEW_CHARS.toLocaleString('en')} for review
 			</p>
+			{#if chars > MAX_REVIEW_CHARS}
+				<p class="count over">{tooLongHint(chars)}</p>
+			{/if}
+			{#if text.length >= ENTRY_MAX_CHARS}
+				<p class="count over">This is the longest an entry can be. Split it into two entries.</p>
+			{/if}
 		</form>
 		<div class="save-status" aria-live="polite">{saveStatusText(saveState)}</div>
 		{#if saveState === 'error'}
@@ -469,7 +535,7 @@
 	{#if deleteError}<p class="error" role="alert">{deleteError}</p>{/if}
 
 	{#if showIdeas && mode === 'edit'}
-		<IdeasPanel {workspaceId} gate={ideasGate} onstart={startFromIdea} />
+		<IdeasPanel workspaceId={ws} gate={ideasGate} onstart={startFromIdea} />
 	{/if}
 {/if}
 

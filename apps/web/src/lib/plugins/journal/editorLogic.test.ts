@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { ApiError } from '$lib/api/client';
 import {
+	ENTRY_MAX_CHARS,
+	canGotoAfterFirstSave,
+	isEntryGone,
+	navigationPlan,
+	tooLongHint,
 	aiButtonGate,
 	annotationCategory,
 	editorTarget,
@@ -109,5 +115,45 @@ describe('editorTarget', () => {
 	it('differs between new entries with different pre-filled titles', () => {
 		expect(editorTarget(null, '')).not.toBe(editorTarget(null, 'Topic 1'));
 		expect(editorTarget(null, 'Topic 1')).toBe(editorTarget(null, 'Topic 1'));
+	});
+});
+
+describe('canGotoAfterFirstSave', () => {
+	it('only while alive and still on the new-entry route', () => {
+		expect(canGotoAfterFirstSave({ destroyed: false, routeEntryId: null })).toBe(true);
+		expect(canGotoAfterFirstSave({ destroyed: true, routeEntryId: null })).toBe(false);
+		expect(canGotoAfterFirstSave({ destroyed: false, routeEntryId: 'e1' })).toBe(false);
+	});
+});
+
+describe('navigationPlan', () => {
+	it('lets a clean editor go and saves a dirty or saving one first', () => {
+		expect(navigationPlan('saved')).toBe('proceed');
+		expect(navigationPlan('idle')).toBe('proceed');
+		expect(navigationPlan('dirty')).toBe('save-first');
+		expect(navigationPlan('saving')).toBe('save-first');
+		expect(navigationPlan('error')).toBe('save-first');
+	});
+});
+
+describe('isEntryGone', () => {
+	it('is true for a 404 only', () => {
+		expect(isEntryGone(new ApiError(404, 'not found'))).toBe(true);
+		expect(isEntryGone(new ApiError(500, 'x'))).toBe(false);
+		expect(isEntryGone(new Error('x'))).toBe(false);
+	});
+});
+
+describe('tooLongHint', () => {
+	it('is empty under the review cap and a hint above it', () => {
+		expect(tooLongHint(5000)).toBe('');
+		expect(tooLongHint(5001)).toMatch(/shorten|review/i);
+	});
+});
+
+describe('entryByteCap', () => {
+	it('keeps the text under the 256 KiB plugin data cap with room for the other fields', () => {
+		expect(ENTRY_MAX_CHARS).toBeLessThan(256 * 1024);
+		expect(ENTRY_MAX_CHARS).toBeGreaterThan(5000);
 	});
 });

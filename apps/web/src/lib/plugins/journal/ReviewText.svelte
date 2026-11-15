@@ -26,6 +26,8 @@
 		if (!buttons[id]) {
 			// Overlapping or missing: nothing to focus in the text.
 			openId = id;
+			await tick();
+			popover?.focus();
 			return;
 		}
 		openId = id;
@@ -55,7 +57,7 @@
 	<p class="text">{#each runs as run, i (i)}{#if run.annotationId}{@const id = run.annotationId}{@const a = annotations.find((x) => x.id === id)}<button type="button" class="annot {annotationCategory(a?.category ?? '')}" bind:this={buttons[id]} aria-expanded={openId === id} aria-controls={openId === id ? 'annotation-popover' : undefined} onclick={() => toggle(id)}>{run.text}</button>{:else}{run.text}{/if}{/each}</p>
 
 	{#if open}
-		<div class="popover" id="annotation-popover" bind:this={popover} role="group" aria-label="Correction">
+		<div class="popover" id="annotation-popover" bind:this={popover} tabindex="-1" role="group" aria-label="Correction">
 			<p class="cat">{open.category}</p>
 			<p><span class="label">You wrote</span> <span class="quote">{open.quote}</span></p>
 			<p><span class="label">Correction</span> <strong class="fix">{open.correction}</strong></p>

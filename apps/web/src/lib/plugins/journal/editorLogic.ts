@@ -1,5 +1,6 @@
 // Pure helpers behind the journal editor and review views.
 
+import { ApiError } from '$lib/api/client';
 import { MAX_REVIEW_CHARS } from './entryDraft';
 import type { Anchoring } from './anchor';
 import type { Annotation } from './types';
@@ -92,4 +93,32 @@ export function saveStatusText(state: SaveState): string {
  */
 export function editorTarget(entryId: string | null, initialTitle: string): string {
 	return entryId === null ? `new:${initialTitle}` : `entry:${entryId}`;
+}
+
+/**
+ * Cap on the entry textarea (UTF-16 units). The plugin data cap is 256 KiB
+ * of JSON; at up to 3 bytes per unit this stays below it with room for the
+ * other fields.
+ */
+export const ENTRY_MAX_CHARS = 80000;
+
+/** The first save of a new entry moves the address; not after the editor is gone or the route changed. */
+export function canGotoAfterFirstSave(input: { destroyed: boolean; routeEntryId: string | null }): boolean {
+	return !input.destroyed && input.routeEntryId === null;
+}
+
+/** What an in-app navigation does: leave now, or save first. */
+export function navigationPlan(state: SaveState): 'proceed' | 'save-first' {
+	return state === 'idle' || state === 'saved' ? 'proceed' : 'save-first';
+}
+
+/** A 404 from the entry or review route means the entry was deleted elsewhere. */
+export function isEntryGone(err: unknown): boolean {
+	return err instanceof ApiError && err.status === 404;
+}
+
+export function tooLongHint(chars: number): string {
+	return chars > MAX_REVIEW_CHARS
+		? `Longer than ${MAX_REVIEW_CHARS.toLocaleString('en')} characters: you can save it, but shorten it to get a review.`
+		: '';
 }
