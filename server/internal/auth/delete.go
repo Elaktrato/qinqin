@@ -48,8 +48,6 @@ const (
 )
 
 // userTables lists every table whose rows are REMOVED with the user.
-// The 034 tables of plan 3 (auth_challenges, mfa_totp, mfa_recovery_codes)
-// join it with their migration; the schema guard test enforces that.
 var userTables = []UserTable{
 	{Name: "workspaces", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM workspaces WHERE user_id = ?1`},
 		PreviewKey: "workspaces", Count: `SELECT COUNT(*) FROM workspaces WHERE user_id = ?1`, Export: ExportRows},
@@ -83,6 +81,13 @@ var userTables = []UserTable{
 	// Invites the user handed out go with them (a pending link stops working).
 	{Name: "invites", Columns: []string{"created_by"}, Statements: []string{`DELETE FROM invites WHERE created_by = ?1`},
 		Export: ExportSkip, ExportReason: skipSecurity},
+	// Two-factor data and pending one-time-code challenges: secrets, never exported.
+	{Name: "mfa_totp", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM mfa_totp WHERE user_id = ?1`},
+		Export: ExportSkip, ExportReason: skipSecurity},
+	{Name: "mfa_recovery_codes", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM mfa_recovery_codes WHERE user_id = ?1`},
+		Export: ExportSkip, ExportReason: skipSecurity},
+	{Name: "auth_challenges", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM auth_challenges WHERE user_id = ?1`},
+		Export: ExportSkip, ExportReason: skipSecurity},
 }
 
 // keptTables lists the tables that reference a user but outlive them,
@@ -93,6 +98,8 @@ var keptTables = []UserTable{
 	{Name: "ai_custom_providers", Columns: []string{"created_by"}, Statements: []string{`UPDATE ai_custom_providers SET created_by = 0 WHERE created_by = ?1`},
 		Export: ExportSkip, ExportReason: "shared by every user"},
 	{Name: "auth_settings", Columns: []string{"updated_by"}, Statements: []string{`UPDATE auth_settings SET updated_by = NULL WHERE updated_by = ?1`},
+		Export: ExportSkip, ExportReason: "instance settings"},
+	{Name: "smtp_settings", Columns: []string{"updated_by"}, Statements: []string{`UPDATE smtp_settings SET updated_by = NULL WHERE updated_by = ?1`},
 		Export: ExportSkip, ExportReason: "instance settings"},
 	// The audit log keeps its rows; the user's name in them is replaced
 	// (see DeleteUser).
