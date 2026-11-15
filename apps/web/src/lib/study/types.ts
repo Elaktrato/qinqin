@@ -3,6 +3,7 @@
 // `card:<id>`; review history and scheduling are separate (events, never
 // stored schedules).
 
+import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrs/params';
 
 /** One user-created deck. The implicit `general` deck has no stored row. */
@@ -91,6 +92,8 @@ export interface StudyData {
 	cards: StudyCard[];
 	/** The workspace's FSRS parameter sets; always set by the store. */
 	fsrs?: FsrsState;
+	/** Per-deck card type switches (`deckcfg:` rows), by deck id. */
+	deckSettings?: Record<string, DeckSettings>;
 }
 
 /**

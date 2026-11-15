@@ -16,6 +16,7 @@ import {
   PartialCardsError,
   deleteCards,
   deleteDeck,
+  saveDeckCardTypes,
   loadStudyData,
   moveCards,
   restoreCards,
@@ -441,6 +442,86 @@ describe("study store", () => {
 
       await expect(renameDeck("missing", "New name")).rejects.toThrow(/deck/i);
       expect(putBodies()).toEqual([]);
+    });
+  });
+
+  describe("deck card type settings", () => {
+    const cfgUrl = (id: string) =>
+      `/api/plugins/${PLUGIN_ID}/data/deckcfg:${id}?workspace=${WORKSPACE_ID}`;
+
+    it("loads deckcfg rows into deckSettings", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deckcfg:general", {
+            deckId: "general",
+            cardTypes: ["reverse"],
+            updatedAt: "2026-01-01T00:00:00Z",
+          }),
+          pluginRow("deckcfg:bad", { deckId: "other", cardTypes: ["cloze"] }),
+        ],
+      });
+      const data = await loadStudyData();
+      expect(Object.keys(data.deckSettings ?? {})).toEqual(["general"]);
+      expect(data.deckSettings?.general?.cardTypes).toEqual(["reverse"]);
+    });
+
+    it("saveDeckCardTypes keeps unknown fields of the stored row", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:general", {
+              deckId: "general",
+              cardTypes: [],
+              updatedAt: "2026-01-01T00:00:00Z",
+              limits: { new: 5 },
+            }),
+          ],
+        });
+      });
+      const saved = await saveDeckCardTypes("general", ["cloze", "reverse"]);
+      expect(saved.cardTypes).toEqual(["reverse", "cloze"]);
+      expect(putBodies()).toHaveLength(1);
+      expect(putBodies()[0]!.url).toBe(cfgUrl("general"));
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "general",
+        cardTypes: ["reverse", "cloze"],
+        limits: { new: 5 },
+      });
+    });
+
+    it("saveDeckCardTypes creates the row when none exists", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 1 });
+        return jsonResponse({ pluginData: [] });
+      });
+      await saveDeckCardTypes("d9", ["reverse"]);
+      expect(putBodies()[0]!.body).toMatchObject({ deckId: "d9", cardTypes: ["reverse"] });
+    });
+
+    it("deleteDeck tombstones the deck's deckcfg row after the deck row; a 404 is fine", async () => {
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (init?.method === "DELETE") {
+          return String(input).includes("deckcfg:")
+            ? new Response(null, { status: 404 })
+            : new Response(null, { status: 204 });
+        }
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deck:d1", deck("d1", "Doomed")),
+            pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: ["reverse"] }),
+          ],
+        });
+      });
+      await deleteDeck("d1");
+      expect(
+        calls()
+          .filter(([, init]) => init?.method === "DELETE")
+          .map(([url]) => String(url)),
+      ).toEqual([
+        `/api/plugins/${PLUGIN_ID}/data/deck:d1?workspace=${WORKSPACE_ID}`,
+        cfgUrl("d1"),
+      ]);
     });
   });
 

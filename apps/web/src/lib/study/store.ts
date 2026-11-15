@@ -17,10 +17,19 @@ import {
   resolveState,
   type ParamSet,
 } from "./fsrs/params";
+import {
+  DECKCFG_PREFIX,
+  deckSettingsKey,
+  parseDeckSettings,
+  serializeDeckSettings,
+  cleanCardTypes,
+  type DeckSettings,
+} from "./deckSettings";
 import { cardKey, parseReview } from "./reviewParse";
 import {
   CARD_KINDS,
   type Deck,
+  type OptInKind,
   type ReviewEvent,
   type StudyCard,
   type StudyCardKind,
@@ -169,6 +178,7 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
   const decks: Deck[] = [];
   const cards: StudyCard[] = [];
   const sets: ParamSet[] = [];
+  const deckSettings: Record<string, DeckSettings> = {};
   let activeRaw: unknown = null;
 
   for (const value of rows) {
@@ -185,6 +195,9 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
     } else if (row.key.startsWith(CARD_PREFIX)) {
       const card = parseCard(row.key, data);
       if (card !== null) cards.push(card);
+    } else if (row.key.startsWith(DECKCFG_PREFIX)) {
+      const settings = parseDeckSettings(row.key, data);
+      if (settings !== null) deckSettings[settings.deckId] = settings;
     } else if (row.key.startsWith(SET_PREFIX)) {
       const set = parseParamSet(row.key, data);
       if (set !== null) sets.push(set);
@@ -193,7 +206,14 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
     }
   }
 
-  return { decks, cards, fsrs: resolveState(sets, activeRaw) };
+  // Absent (not empty) without any deckcfg row: workspaces that never
+  // configured a deck read exactly as before.
+  return {
+    decks,
+    cards,
+    fsrs: resolveState(sets, activeRaw),
+    ...(Object.keys(deckSettings).length > 0 ? { deckSettings } : {}),
+  };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -289,7 +309,14 @@ export async function loadStudyDataWith(
     data.cards,
     reviewsOf(workspaceId, events),
   );
-  return { decks: data.decks, cards, fsrs: data.fsrs, reviews, merged };
+  return {
+    decks: data.decks,
+    cards,
+    fsrs: data.fsrs,
+    ...(data.deckSettings === undefined ? {} : { deckSettings: data.deckSettings }),
+    reviews,
+    merged,
+  };
 }
 
 /**
@@ -385,7 +412,7 @@ export async function deleteDeck(id: string): Promise<void> {
     // The implicit deck has no stored row to tombstone and must survive.
     throw new Error("the general deck cannot be deleted");
   }
-  const { cards } = await fetchStudyData(workspaceId);
+  const { cards, deckSettings } = await fetchStudyData(workspaceId);
   for (const card of cards) {
     if (!card.deckIds.includes(id)) continue;
     const remaining = card.deckIds.filter((deckId) => deckId !== id);
@@ -393,6 +420,39 @@ export async function deleteDeck(id: string): Promise<void> {
     await putData(workspaceId, cardRowKey(card.id), { ...card, deckIds });
   }
   await deleteData(workspaceId, deckKey(id));
+  // The deck's card type switches go with it; another tab may have
+  // removed the row already.
+  if (deckSettings?.[id] !== undefined) {
+    try {
+      await deleteData(workspaceId, deckSettingsKey(id));
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
+  }
+}
+
+/**
+ * saveDeckCardTypes switches the opt-in card kinds of one deck (General
+ * included) by rewriting its `deckcfg:` row. The stored row is re-read so
+ * fields this version does not know survive.
+ */
+export async function saveDeckCardTypes(
+  deckId: string,
+  cardTypes: readonly OptInKind[],
+): Promise<DeckSettings> {
+  const workspaceId = requireWorkspaceId();
+  const { deckSettings } = await fetchStudyData(workspaceId);
+  const next: DeckSettings = {
+    deckId,
+    cardTypes: cleanCardTypes(cardTypes),
+    extra: deckSettings?.[deckId]?.extra ?? {},
+  };
+  await putData(
+    workspaceId,
+    deckSettingsKey(deckId),
+    serializeDeckSettings(next, new Date().toISOString()),
+  );
+  return next;
 }
 
 /**
