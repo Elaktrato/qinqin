@@ -196,7 +196,9 @@ func TestAuthContractFixturesMatchTheServer(t *testing.T) {
 	// Order matters for the stateful ones in sessions.json: run the
 	// non-destructive cases first, change_password and logout last.
 	order := []string{"list", "restricted", "wrong_password", "weak_password", "revoke_one", "revoke_scope", "change_password", "logout"}
-	for file, byName := range cases {
+	// Fixed order: sessions.json changes alice's password and ends her session.
+	for _, file := range []string{"login-responses.json", "me.json", "sessions.json"} {
+		byName := cases[file]
 		fx := readFixture(t, file)
 		names := []string{}
 		if file == "sessions.json" {
@@ -228,14 +230,15 @@ func TestAuthContractFixturesMatchTheServer(t *testing.T) {
 				continue
 			}
 			sameShape(t, file+"/"+name, c.Body, body)
-			if m, ok := c.Body.(map[string]any); ok {
+			got, isMap := body.(map[string]any)
+			if m, ok := c.Body.(map[string]any); ok && isMap {
 				if want, ok := m["error"]; ok {
-					if got := body.(map[string]any)["error"]; got != want {
+					if got := got["error"]; got != want {
 						t.Errorf("%s/%s: error code %v, fixture says %v", file, name, got, want)
 					}
 				}
 				if want, ok := m["status"]; ok {
-					if got := body.(map[string]any)["status"]; got != want {
+					if got := got["status"]; got != want {
 						t.Errorf("%s/%s: status word %v, fixture says %v", file, name, got, want)
 					}
 				}
