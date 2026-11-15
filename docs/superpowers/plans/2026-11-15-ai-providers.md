@@ -173,6 +173,7 @@ Each reads "Ruling: what — why — cost if wrong". Decision rule: licensing fi
 
 - [ ] **Step 1: Tests** — `TestGeminiRequestShape` (path, header, no key in the URL query, `responseJsonSchema` equals our schema, image part present only for transcribe), `TestGeminiReplyMapping` (`finishReason` MAX_TOKENS → truncated; SAFETY, RECITATION, BLOCKLIST, PROHIBITED_CONTENT, SPII, IMAGE_SAFETY → refused; `promptFeedback.blockReason` → refused; no candidates → bad_reply), `TestGeminiErrorMapping` (400 with `details[].reason` `API_KEY_INVALID` → key_rejected; 403 PERMISSION_DENIED → key_rejected; 404 → model_unavailable; 429 RESOURCE_EXHAUSTED → busy; 500/503 → busy; plain 400 → bad_request), `TestGeminiModelPathEscape` (`../x` rejected before any request), `TestGeminiNoKeyInErrors`.
 - [ ] **Step 2–4:** FAIL, implement, PASS. **Step 5: Commit** `feat(ai): native Gemini adapter`.
+- Ruling: the Gemini model segment accepts one optional leading `models/` and then a `ValidModelID` without `/` or `..` (anything else is `ErrBadRequest` before a request); `thoughtsTokenCount` counts as output tokens; a `PERMISSION_DENIED` status or `API_KEY_INVALID` reason is `key_rejected` whatever the HTTP status; `aitest.Gemini` is the native-API fake (`[[fake:…]]` markers, key containing `bad` → 400 `API_KEY_INVALID`) — cost if wrong: none.
 
 ### Task 7: Service dispatch, Anthropic fallback field, env wiring
 

@@ -47,6 +47,9 @@ func newOARig(t *testing.T, h func(n int, w http.ResponseWriter, r *http.Request
 	rig.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		raw, _ := io.ReadAll(r.Body)
 		rec := seenReq{Method: r.Method, Path: r.URL.Path, Auth: r.Header.Get("Authorization"), Raw: raw}
+		if rec.Auth == "" {
+			rec.Auth = r.Header.Get("x-goog-api-key")
+		}
 		_ = json.Unmarshal(raw, &rec.Body)
 		rig.mu.Lock()
 		rig.seen = append(rig.seen, rec)
