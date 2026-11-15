@@ -60,3 +60,27 @@ describe('aiErrorView', () => {
 		expect(plain.text).toBe('Wait. Try again in 2 minutes.');
 	});
 });
+
+describe('plain-text 404', () => {
+	const plain = new ApiError(404, 'not found');
+
+	it('names the entry for a review', () => {
+		expect(aiErrorView(plain, 'review').text).toBe('This entry was deleted.');
+	});
+
+	it('names the photo draft for a transcription', () => {
+		const v = aiErrorView(plain, 'transcribe');
+		expect(v.text).toBe('This photo draft expired. Choose the photo again.');
+		expect(v.offlineInstead).toBe(false);
+	});
+
+	it('stays generic for ideas', () => {
+		expect(aiErrorView(plain, 'ideas').text).toBe('Something went wrong. Try again.');
+	});
+
+	it('says the workspace is gone for the workspace 404', () => {
+		expect(aiErrorView(new ApiError(404, 'workspace not found'), 'review').text).toBe(
+			'This workspace no longer exists.'
+		);
+	});
+});

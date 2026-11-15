@@ -1,7 +1,7 @@
 // Turns an AI or journal route error into what the page shows. Messages
 // come from the server when present; they never contain the API key.
 
-import { ApiError, apiErrorBody } from '$lib/api/client';
+import { ApiError, apiErrorBody, isWorkspaceGoneResponse } from '$lib/api/client';
 
 export interface AiErrorView {
 	text: string;
@@ -60,6 +60,7 @@ export function aiErrorView(err: unknown, context: 'review' | 'ideas' | 'transcr
 	}
 
 	const body = apiErrorBody(err);
+	if (!body && err.status === 404) return { ...base, text: notFoundText(err, context) };
 	if (!body) return { ...base, text: GENERIC };
 	const fallback = FALLBACKS[body.error];
 	const text = body.message || fallback;
@@ -73,6 +74,13 @@ export function aiErrorView(err: unknown, context: 'review' | 'ideas' | 'transcr
 		offlineInstead: context === 'transcribe',
 		...(err.retryAfterSeconds !== undefined ? { retryAfterSeconds: err.retryAfterSeconds } : {})
 	};
+}
+
+function notFoundText(err: ApiError, context: 'review' | 'ideas' | 'transcribe'): string {
+	if (isWorkspaceGoneResponse(err.status, err.message)) return 'This workspace no longer exists.';
+	if (context === 'review') return 'This entry was deleted.';
+	if (context === 'transcribe') return 'This photo draft expired. Choose the photo again.';
+	return GENERIC;
 }
 
 function waitText(seconds: number): string {
