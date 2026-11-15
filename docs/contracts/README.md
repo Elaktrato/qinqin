@@ -1,0 +1,13 @@
+# Contracts
+
+Rules every qinqin client (Go server, web, future Android/Kotlin) must implement identically. Each rule
+has a folder with a README (the rule) and JSON fixtures that all implementations run.
+
+Fixture format: `{"version": 1, "rule": "<name>", "cases": [ ... ]}`. Go tests read the files with
+`os.ReadFile` (relative to the test's package), web tests import the JSON directly
+(`resolveJsonModule`). A fixture is only changed after re-deriving the value from its source of truth;
+never to match an implementation.
+
+| Folder | Rule |
+| --- | --- |
+| [`study-day/`](study-day/README.md) | The learner's day: per-user zone history, `dayOf`, `dayStart`, `GET/PUT /api/me/time-zone` |

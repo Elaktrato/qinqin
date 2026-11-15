@@ -57,17 +57,26 @@ clock of zone `Z` (tzdb rules).
 **Floors.** `floor₀ = −∞`; for k ≥ 1, `floorₖ = max(floorₖ₋₁, localDate(Zₖ₋₁, fromₖ))`: the day it
 already was, in the old zone, when the change happened.
 
-**dayOf(t).** Let `k` be the last segment with `fromₖ ≤ t` (segment 0 when `t` precedes every change).
-`dayOf(t) = max(localDate(Zₖ, t), floorₖ)`. It is monotone: moving east may skip dates (today ends early),
-moving west makes the current day longer; **a date never repeats**.
+**dayOf(t).** Let `k` be the last segment with `fromₖ ≤ t` (segment 0 when `t` precedes every change) and
+`d = max(localDate(Zₖ, t), floorₖ)`. While `startOfDay(Zₖ, d + 1) ≤ t`, `d` becomes `d + 1` (at most one
+step in tzdb since 1970). `dayOf(t) = d`. It is monotone: moving east may skip dates (today ends early),
+moving west makes the current day longer, and a clock that goes back across midnight (a DST end shortly
+after 00:00, e.g. America/St_Johns until 2010, Antarctica/Casey 2010) keeps the new date; **a date never
+repeats**. Equivalently `dayOf(t)` is the greatest `D` with `dayStart(D) ≤ t`.
 
-**startOfDay(Z, D)** is the earliest whole second `t` with `localDate(Z, t) ≥ D`, found by binary search
-over `[UTC(D) − 15 h, UTC(D) + 13 h]` (every offset lies in −12:00…+14:00, so the search interval
-brackets it, and `localDate` is monotone inside it). **Domain:** the rule is defined for instants and
-dates from 1970-01-01 on (local mean time offsets before ~1900 and in-zone date-line moves such as
-Alaska 1867 break the bracket and the monotonicity); earlier instants are clamped to 1970-01-01T00:00:00Z. This handles midnight DST gaps (America/Santiago
-starts 2024-09-08 at 01:00 local) and dates a zone skipped (Pacific/Apia 2011-12-30) without relying on
-how a platform resolves non-existent local times.
+**startOfDay(Z, D)** is the earliest whole second `t ≥ epoch` whose wall clock in `Z` has reached the
+midnight of `D` (`wall(t) = t + offset(Z, t) ≥ UTC(D)`), found without assuming that `localDate` is
+monotone (it is not around a clock that goes back across midnight). Let `lo = UTC(D) − 15 h`,
+`hi = UTC(D) + 13 h` (every offset lies in −12:00…+14:00, so the interval brackets it), `oLo = offset(lo)`,
+`oHi = offset(hi)`. If `oLo = oHi` the answer is `UTC(D) − oLo`. Otherwise there is exactly one
+transition `T` in the interval (tzdb since 1970 never has two offset changes within 7 days): `T` is the
+first second in `(lo, hi]` with `offset = oHi` (bisection); with `c = UTC(D) − oLo` the answer is `c` when
+`c < T`, else `max(T, UTC(D) − oHi)`. This handles midnight DST gaps (America/Santiago starts 2024-09-08
+at 01:00 local), dates a zone skipped (Pacific/Apia 2011-12-30) and repeated midnights without relying on
+how a platform resolves non-existent local times. **Domain:** the rule is defined for instants and dates
+from 1970-01-01 on (local mean time offsets before ~1900 and in-zone date-line moves such as Alaska 1867
+break the bracket); earlier instants are clamped to 1970-01-01T00:00:00Z and a `startOfDay` before the
+epoch is the epoch.
 
 **dayStart(D)** is the earliest instant with `dayOf(t) ≥ D`. For each segment `k` in order with
 `[lo, hi) = [fromₖ, fromₖ₊₁)` (−∞ / +∞ at the ends): if `k ≥ 1` and `floorₖ ≥ D`, return `lo`; else
@@ -88,6 +97,13 @@ once, in the learner's real zone; that is the fix #84 asks for, not a moved day.
 **Unusable zones.** A client whose time-zone database does not know a stored zone (an older ICU or
 Android without `America/Ciudad_Juarez`) computes that segment in UTC and shows a warning in Settings;
 it never throws. The server validates against Go's embedded tzdata only.
+
+Ruling: a date never repeats inside a zone either (a clock that goes back across midnight keeps the new
+date) and `startOfDay` is computed from offsets, not by bisecting `localDate` — an independent check of every
+UTC offset transition 2010-2030 found `America/St_Johns` 2010-11-07 (and Antarctica/Casey) where raw
+`localDate` is not monotone and a bisection returns the wrong start; the day windows the SQL join uses and
+`dayOf` must agree on every instant — cost: for one hour a clock may show the previous date while the day
+is already the next (zones affected: St_Johns/Moncton/Goose_Bay until 2010, Casey 2010).
 
 Ruling: zone history per user, recomputed at read time (Approach 3) — one source of truth, no event
 format change, offline-safe — cost if wrong: every client must load the (tiny) history before it
