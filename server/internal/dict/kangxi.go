@@ -1,12 +1,14 @@
 package dict
 
 // kangxiRadicals maps each Kangxi radical number, 1–214, to its
-// character — the form the Unicode "Kangxi Radicals" block encodes, so
-// radical N is the character at U+2F00+N-1: 38 is 女, 149 言, 214 龠. A
-// kRSUnicode count (the number left of the ".") classifies every Han
-// character under one of these; a radical character that a pack mentions
-// nowhere else still becomes an entry through this table, so radicals
-// are fetchable and browsable like any other hanzi.
+// character — the unified (everyday) form of the radical, such as 女 for
+// 38, 言 for 149 and 龠 for 214, not the codepoint of the Unicode "Kangxi
+// Radicals" block (U+2F00…), which holds compatibility look-alikes that
+// would not match the characters dictionaries use. A kRSUnicode count
+// (the number left of the ".") classifies every Han character under one
+// of these; a radical character that a pack mentions nowhere else still
+// becomes an entry through this table, so radicals are fetchable and
+// browsable like any other hanzi.
 var kangxiRadicals = map[int]string{
 	1: "一", 2: "丨", 3: "丶", 4: "丿", 5: "乙", 6: "亅",
 	7: "二", 8: "亠", 9: "人", 10: "儿", 11: "入", 12: "八",
