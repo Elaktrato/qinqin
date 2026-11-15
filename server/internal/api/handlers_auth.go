@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"slices"
 
@@ -130,6 +131,13 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 			writeAuthError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
 			return
 		}
+		if err == nil && nu.Email != nil {
+			// The validated address of the first account (policy required or
+			// optional): stored unverified like any self-entered one.
+			if err = auth.SetOwnEmail(r.Context(), s.db, u.ID, nu.Email, nu.EmailNorm); err == nil {
+				u.Email = nu.Email
+			}
+		}
 	case isAdmin && req.Email == nil:
 		err = s.withHashGate(r.Context(), func() error {
 			var e error
@@ -163,6 +171,14 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		internal()
 	default:
+		if isAdmin && count != 0 {
+			// The legacy administrator path creates users too: it is audited
+			// like the admin route (the row follows the insert).
+			if aerr := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: "user_created", ActorID: caller.User.ID,
+				TargetID: &u.ID, Detail: map[string]any{"forced": false}}); aerr != nil {
+				log.Printf("auth: audit of a created user failed: %v", aerr)
+			}
+		}
 		writeJSON(w, http.StatusCreated, u)
 	}
 }

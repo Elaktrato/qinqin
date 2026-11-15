@@ -274,3 +274,38 @@ func tokHash(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
 }
+
+func TestLegacyAdminRegisterIsAudited(t *testing.T) {
+	ts, sqlDB := newLooseServer(t)
+	owner := registerUser(t, ts.URL, "owner", "")
+	setAuthSetting(t, sqlDB, "email_policy", "optional")
+	for _, body := range []map[string]any{
+		{"username": "legacy1", "password": "long-enough-pw"},
+		{"username": "legacy2", "password": "long-enough-pw", "email": "l2@example.org"},
+	} {
+		if st, code := regCode(t, ts, owner, body); st != 201 {
+			t.Fatalf("legacy register %v = %d %s", body["username"], st, code)
+		}
+	}
+	var n int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM auth_audit WHERE action = 'user_created' AND actor_name = 'owner'`).Scan(&n)
+	if n != 2 {
+		t.Errorf("user_created rows = %d, want 2 (both legacy branches)", n)
+	}
+}
+
+func TestBootstrapStoresTheValidatedEmail(t *testing.T) {
+	ts, sqlDB := newLooseServer(t)
+	setAuthSetting(t, sqlDB, "email_policy", "required")
+	if st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw"}); st != 422 || code != "email_required" {
+		t.Fatalf("bootstrap without the required email = %d %s", st, code)
+	}
+	if st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw", "email": "First@Example.org"}); st != 201 {
+		t.Fatalf("bootstrap = %d %s", st, code)
+	}
+	var email, norm string
+	sqlDB.QueryRow(`SELECT email, email_norm FROM users WHERE username = 'firstone'`).Scan(&email, &norm)
+	if email != "First@Example.org" || norm != "first@example.org" {
+		t.Errorf("stored %q / %q", email, norm)
+	}
+}
