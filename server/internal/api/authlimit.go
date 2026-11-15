@@ -52,6 +52,12 @@ func DefaultAuthPolicy() AuthPolicy {
 		Account:  ratelimit.BucketPolicy{Burst: 20, Every: time.Minute, MaxKeys: authTableCap},
 		Hashes:   min(4, max(1, runtime.GOMAXPROCS(0))),
 		HashWait: 3 * time.Second,
+		Named: map[string]ratelimit.BucketPolicy{
+			// Wrong passwords on routes that re-ask for the password
+			// (change password, email change, MFA changes, delete): 5 per
+			// 15 minutes per user. A right password refunds its token.
+			"reauth": {Burst: 5, Every: 3 * time.Minute, MaxKeys: authTableCap},
+		},
 	}
 }
 
@@ -93,13 +99,14 @@ func newAuthLimits(p AuthPolicy) *authLimits {
 // hashers are the password-hashing entry points a handler calls; tests
 // swap them through WithAuthHooks to block or count hashes.
 type hashers struct {
+	hash            func(password string) string // a new password's digest (change password)
 	login           func(ctx context.Context, db *sql.DB, user, pass string, o auth.LoginOptions) (auth.LoginResult, error)
 	createFirstUser func(ctx context.Context, db *sql.DB, user, pass string) (model.User, error)
 	createUser      func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
 }
 
 func defaultHashers() hashers {
-	return hashers{login: auth.LoginWith, createFirstUser: auth.CreateFirstUser, createUser: auth.CreateUser}
+	return hashers{hash: auth.Hash, login: auth.LoginWith, createFirstUser: auth.CreateFirstUser, createUser: auth.CreateUser}
 }
 
 // namedLimiter adapts a Buckets table to the limiter seam.
@@ -112,6 +119,16 @@ type namedLimiter struct {
 func (l namedLimiter) Allow(key string) (bool, time.Duration) {
 	return l.b.Take(l.s.limits.keyer.Key(l.name, key), l.s.now())
 }
+
+// Refund gives one spent token of key back; a route spends a token before
+// it checks a password and refunds it when the password was right, so only
+// wrong guesses use the budget.
+func (l namedLimiter) Refund(key string) {
+	l.b.Refund(l.s.limits.keyer.Key(l.name, key), l.s.now())
+}
+
+// refunder is implemented by limiters that can give a token back.
+type refunder interface{ Refund(key string) }
 
 // authLimiter returns the token-bucket limiter of the given name; an
 // unknown name gets the client (login) policy.

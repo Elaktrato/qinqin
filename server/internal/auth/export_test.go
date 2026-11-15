@@ -7,3 +7,6 @@ func SetVerifierForTest(f func(hash, password string) bool) (restore func()) {
 	verifyPassword = f
 	return func() { verifyPassword = orig }
 }
+
+// HashTokenForTest exposes the stored form of a token.
+func HashTokenForTest(token string) string { return hashToken(token) }

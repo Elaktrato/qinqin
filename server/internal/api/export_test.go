@@ -36,6 +36,7 @@ type AuthHooks struct {
 	Login           func(ctx context.Context, db *sql.DB, user, pass string) (string, error)
 	CreateFirstUser func(ctx context.Context, db *sql.DB, user, pass string) (model.User, error)
 	CreateUser      func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
+	Hash            func(password string) string
 }
 
 func WithAuthHooks(h AuthHooks) Option {
@@ -48,6 +49,9 @@ func WithAuthHooks(h AuthHooks) Option {
 		}
 		if h.CreateFirstUser != nil {
 			s.hash.createFirstUser = h.CreateFirstUser
+		}
+		if h.Hash != nil {
+			s.hash.hash = h.Hash
 		}
 		if h.CreateUser != nil {
 			s.hash.createUser = h.CreateUser
