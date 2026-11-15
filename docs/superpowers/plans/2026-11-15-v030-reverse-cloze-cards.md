@@ -528,3 +528,23 @@ Running list for item 7 (`docs/contracts/`); every file below is created by this
   `unskipKind` (`store.ts`; undo = `restoreCards(rows)` without `onlyLive`); `buriedNow`,
   `answeredEntriesToday`, `buries` (`siblings.ts`); `MASTERY_KINDS`, `cardScore` (`mastery.ts`);
   `allowedReal`, `skipKindsByEntry` (`cardFlow.ts`).
+
+## Review fix wave
+
+- Ruling: `buriedLevelEntries` adds an entry only for a buried vocab or writing card (or key); a buried reverse
+  or cloze card of a word whose vocab card was answered does not hide the word from a level session — cost if
+  wrong: none (test: vocab answered with a stored reverse/cloze card, then a level session).
+- Ruling: the cloze candidate cap (first 8 non-blank sentences, `CLOZE_CANDIDATES`/`clozeCandidates`) lives in
+  the pure module, is part of the contract README and has fixture cases with more than 8 sentences — cost if
+  wrong: a client considering more sentences picks another sentence.
+- Ruling: a literal fallback occurrence inside a strictly longer segmenter match (中国 in 中国人) is not blanked;
+  an equal-length match of another entry (homograph) does not block it — cost if wrong: fewer clozes.
+- Ruling: extra gaps carry their own surface (`{gap: true, answer}`), shown after answering — cost if wrong: none.
+- Ruling: the reverse card's Space/Enter reveal from the runner goes through `ReverseCard.finish()` (typed answer
+  and hint recorded); Enter in an empty field still does nothing and the key hint says so — cost if wrong: none.
+- Ruling: `allowedReal` requires a live vocab row for opt-in kinds (orphans of old clients are never queued);
+  `effectiveKinds` falls back to vocab only when nothing was remembered; level counts exclude buried words and
+  ignore opt-in kinds; `forgetWorkspace` clears `qinqin.study.extraTypes`.
+- Known limits (not fixed, review items 13-15): see the review; a session builds its queue once, so a card
+  answered in another tab mid-session is only buried at the next plan; the first cloze showing waits for its
+  segmenter calls; level sessions still pass opt-in kinds in their config to the runner, where they are ignored.
