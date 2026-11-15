@@ -53,7 +53,7 @@ func TestRegisterRejectsOwnedEventType(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
 	flashcards := plugins.Builtin()[1]
-	if err := plugins.Register(ctx, sqlDB, flashcards); err != nil {
+	if _, err := plugins.RegisterBuiltin(ctx, sqlDB, flashcards); err != nil {
 		t.Fatalf("register flashcards: %v", err)
 	}
 	other := validManifest("qinqin-other", `"permissions":["write:study-events"],"events":[{"type":"review"}]`)
@@ -61,7 +61,7 @@ func TestRegisterRejectsOwnedEventType(t *testing.T) {
 	if !errors.Is(err, plugins.ErrInvalidManifest) || !strings.Contains(err.Error(), `event type "review" is already owned by qinqin-flashcards`) {
 		t.Errorf("err = %v", err)
 	}
-	if err := plugins.Register(ctx, sqlDB, flashcards); err != nil {
+	if _, err := plugins.RegisterBuiltin(ctx, sqlDB, flashcards); err != nil {
 		t.Errorf("re-register flashcards: %v", err)
 	}
 }
@@ -71,7 +71,7 @@ func TestRegisterIgnoresUnparsableRowsForOwnership(t *testing.T) {
 	if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES ('legacy', '{"id":"legacy","events":"x"}', '2026-01-01T00:00:00Z')`); err != nil {
 		t.Fatal(err)
 	}
-	if err := plugins.Register(context.Background(), sqlDB, plugins.Builtin()[1]); err != nil {
+	if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, plugins.Builtin()[1]); err != nil {
 		t.Errorf("register flashcards beside a legacy row: %v", err)
 	}
 }

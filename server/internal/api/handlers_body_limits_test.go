@@ -131,11 +131,9 @@ func TestWorkspaceBodyLimits(t *testing.T) {
 }
 
 func TestPluginBodyLimits(t *testing.T) {
-	ts, _ := newServer(t)
+	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "admin", "")
-	if resp := registerPlugin(t, ts.URL, admin, deleteTestPlugin); resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register plugin: status = %d", resp.StatusCode)
-	}
+	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	wantTooLarge(t, "register plugin", doRaw(t, http.MethodPost, ts.URL, "/api/admin/plugins", admin,
 		padded(`"id":"big","name":"Big","version":"1","type":"feature"`, 64<<10)))
 	wantTooLarge(t, "plugin state", doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/state", admin,

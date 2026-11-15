@@ -1,12 +1,16 @@
 package api_test
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
+
+	"qinqin/internal/plugins"
 )
 
 // pluginInfoBody mirrors one element of GET /api/plugins.
@@ -61,6 +65,15 @@ func doRaw(t *testing.T, method, tsURL, path, token, body string) *http.Response
 func registerPlugin(t *testing.T, tsURL, adminToken, manifest string) *http.Response {
 	t.Helper()
 	return doRaw(t, http.MethodPost, tsURL, "/api/admin/plugins", adminToken, manifest)
+}
+
+// seedBuiltin stores a manifest under a built-in plugin id the way server
+// start-up does (Register refuses those ids on the admin route).
+func seedBuiltin(t *testing.T, sqlDB *sql.DB, manifest string) {
+	t.Helper()
+	if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, []byte(manifest)); err != nil {
+		t.Fatalf("seed built-in: %v", err)
+	}
 }
 
 // validManifest is a feature manifest that passes plugins.ParseManifest:
@@ -194,11 +207,11 @@ func TestPluginStateRoute(t *testing.T) {
 }
 
 func TestPluginDataRoute(t *testing.T) {
-	ts, _ := newServer(t)
+	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
 	bob := registerUser(t, ts.URL, "bob", admin)
-	registerPlugin(t, ts.URL, admin, validManifest("qinqin-flashcards", ""))
+	seedBuiltin(t, sqlDB, validManifest("qinqin-flashcards", ""))
 
 	// Alice opens a zh workspace to scope a deck to.
 	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
@@ -313,11 +326,11 @@ func TestPluginDataRoute(t *testing.T) {
 }
 
 func TestListPluginDataRoute(t *testing.T) {
-	ts, _ := newServer(t)
+	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
 	bob := registerUser(t, ts.URL, "bob", admin)
-	registerPlugin(t, ts.URL, admin, validManifest("qinqin-journal", ""))
+	seedBuiltin(t, sqlDB, validManifest("qinqin-journal", ""))
 
 	var ws workspaceBody
 	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
@@ -369,12 +382,10 @@ func readAll(t *testing.T, resp *http.Response) string {
 // TestPluginDataWriteNeedsOwnsData: PUT and DELETE are refused for an
 // sdk-1 plugin that does not declare owns-data; reads stay as before.
 func TestPluginDataWriteNeedsOwnsData(t *testing.T) {
-	ts, _ := newServer(t)
+	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	reader := validManifest("qinqin-reader", `"permissions":["read:entries"]`)
-	if resp := registerPlugin(t, ts.URL, admin, reader); resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register reader: status = %d", resp.StatusCode)
-	}
+	seedBuiltin(t, sqlDB, reader)
 	path := "/api/plugins/qinqin-reader/data/k"
 	for _, method := range []string{http.MethodPut, http.MethodDelete} {
 		resp := doRaw(t, method, ts.URL, path, admin, `{"a":1}`)
@@ -395,5 +406,34 @@ func TestPluginDataWriteNeedsOwnsData(t *testing.T) {
 	}
 	if resp := doJSON(t, http.MethodDelete, ts.URL, "/api/plugins/nobody/data/k", admin, nil); resp.StatusCode != http.StatusNotFound {
 		t.Errorf("DELETE unknown plugin: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+}
+
+func TestPluginRegistrationRefusesBuiltinID(t *testing.T) {
+	ts, _ := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	resp := registerPlugin(t, ts.URL, admin, validManifest("qinqin-journal", ""))
+	if resp.StatusCode != http.StatusConflict {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusConflict)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "qinqin-journal") {
+		t.Errorf("body %q does not name the id", body)
+	}
+}
+
+func TestPluginRegistrationRefusesTrailingData(t *testing.T) {
+	ts, _ := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	resp := registerPlugin(t, ts.URL, admin, validManifest("trail-x", "")+" garbage")
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	}
+	if got := listPlugins(t, ts.URL, admin); len(got) != 0 {
+		for _, p := range got {
+			if p.ID == "trail-x" {
+				t.Errorf("trailing-data manifest was stored")
+			}
+		}
 	}
 }

@@ -285,7 +285,7 @@ func TestPushSkipsUndeclaredWriter(t *testing.T) {
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
 	for _, i := range []int{1, 2} { // flashcards, reader
-		if err := plugins.Register(ctx, sqlDB, plugins.Builtin()[i]); err != nil {
+		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, plugins.Builtin()[i]); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -318,7 +318,7 @@ func TestPushAcceptsBuiltinWriters(t *testing.T) {
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	for _, raw := range plugins.Builtin() {
-		if err := plugins.Register(ctx, sqlDB, raw); err != nil {
+		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, raw); err != nil {
 			t.Fatal(err)
 		}
 	}

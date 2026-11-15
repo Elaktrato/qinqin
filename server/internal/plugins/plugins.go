@@ -13,6 +13,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"slices"
 	"sort"
 	"time"
 
@@ -26,6 +28,9 @@ var ErrNotFound = errors.New("plugins: not found")
 // ErrInvalidManifest reports a feature-plugin manifest that fails the
 // contract (see ParseManifest).
 var ErrInvalidManifest = errors.New("plugins: invalid manifest")
+
+// ErrBuiltinID reports a registration under the id of a built-in plugin.
+var ErrBuiltinID = errors.New("plugins: id belongs to a built-in plugin")
 
 // dataManifest is the manifest of a data plugin as ListFor serves it,
 // synthesized from the pack registry row its import left: the fields
@@ -51,14 +56,18 @@ func Register(ctx context.Context, sqlDB *sql.DB, manifestJSON []byte) error {
 	if err != nil {
 		return err
 	}
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	if slices.Contains(BuiltinIDs(), m.ID) {
+		return fmt.Errorf("%w: %q is reserved", ErrBuiltinID, m.ID)
+	}
+	// BEGIN IMMEDIATE takes the write lock before the ownership read, so
+	// two concurrent registrations serialize (the busy timeout makes the
+	// second wait) and the loser sees the winner's event types.
+	tx, err := beginImmediate(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("plugins: register %s: %w", m.ID, err)
 	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
-	owners, err := eventOwners(ctx, tx, m.ID)
+	defer tx.rollback()
+	owners, err := eventOwners(ctx, tx.conn, m.ID)
 	if err != nil {
 		return err
 	}
@@ -67,18 +76,59 @@ func Register(ctx context.Context, sqlDB *sql.DB, manifestJSON []byte) error {
 			return fmt.Errorf("%w: event type %q is already owned by %s", ErrInvalidManifest, e.Type, owner)
 		}
 	}
-	if err := upsert(ctx, tx, m.ID, manifestJSON); err != nil {
+	if err := upsert(ctx, tx.conn, m.ID, manifestJSON); err != nil {
 		return err
 	}
-	if err := tx.Commit(); err != nil {
+	if err := tx.commit(ctx); err != nil {
 		return fmt.Errorf("plugins: register %s: %w", m.ID, err)
 	}
 	return nil
 }
 
+// querier is what the registry helpers need of a connection.
+type querier interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+// immediateTx is a SQLite transaction started with BEGIN IMMEDIATE on a
+// dedicated connection.
+type immediateTx struct {
+	conn *sql.Conn
+	done bool
+}
+
+func beginImmediate(ctx context.Context, sqlDB *sql.DB) (*immediateTx, error) {
+	conn, err := sqlDB.Conn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := conn.ExecContext(ctx, "BEGIN IMMEDIATE"); err != nil {
+		_ = conn.Close()
+		return nil, err
+	}
+	return &immediateTx{conn: conn}, nil
+}
+
+func (t *immediateTx) commit(ctx context.Context) error {
+	if _, err := t.conn.ExecContext(ctx, "COMMIT"); err != nil {
+		return err
+	}
+	t.done = true
+	return nil
+}
+
+// rollback undoes an uncommitted transaction and releases the connection.
+func (t *immediateTx) rollback() {
+	if !t.done {
+		_, _ = t.conn.ExecContext(context.Background(), "ROLLBACK")
+	}
+	_ = t.conn.Close()
+}
+
 // eventOwners maps every event type declared by a parsable registry
 // row other than selfID to the id of the plugin declaring it.
-func eventOwners(ctx context.Context, tx *sql.Tx, selfID string) (map[string]string, error) {
+func eventOwners(ctx context.Context, tx querier, selfID string) (map[string]string, error) {
 	rows, err := tx.QueryContext(ctx, `
 		SELECT pack_id, manifest_json FROM plugin_registry WHERE pack_id <> ? ORDER BY pack_id`, selfID)
 	if err != nil {
@@ -108,7 +158,7 @@ func eventOwners(ctx context.Context, tx *sql.Tx, selfID string) (map[string]str
 }
 
 // upsert stores one manifest row verbatim.
-func upsert(ctx context.Context, tx *sql.Tx, id string, manifestJSON []byte) error {
+func upsert(ctx context.Context, tx querier, id string, manifestJSON []byte) error {
 	if _, err := tx.ExecContext(ctx, `
 		INSERT INTO plugin_registry (pack_id, manifest_json, updated_at)
 		VALUES (?, ?, ?)
@@ -204,6 +254,12 @@ func featurePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, err
 		)
 		if err := rows.Scan(&info.ID, &manifest); err != nil {
 			return nil, fmt.Errorf("plugins: scan feature plugin: %w", err)
+		}
+		if !json.Valid([]byte(manifest)) {
+			// A row that is not JSON would make the whole listing fail to
+			// marshal; skip it rather than lock everyone out of Settings.
+			log.Printf("plugins: skipping registry row %q: manifest is not valid JSON", info.ID)
+			continue
 		}
 		info.Manifest = json.RawMessage(manifest)
 		info.Enabled = true

@@ -81,7 +81,7 @@ func newJournalEnvOpts(t *testing.T, p ai.Provider, withKey bool, opts ...api.Op
 	env := journalEnv{url: ts.URL, token: tok, dataDir: dataDir, db: sqlDB,
 		ws:    createWorkspace(t, ts.URL, tok, "zh", ""),
 		other: createWorkspace(t, ts.URL, tok, "zh", "v")}
-	if err := plugins.Register(context.Background(), sqlDB, []byte(validManifest("qinqin-journal", `"surfaces":["page"]`))); err != nil {
+	if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, []byte(validManifest("qinqin-journal", `"surfaces":["page"]`))); err != nil {
 		t.Fatal(err)
 	}
 	if withKey {

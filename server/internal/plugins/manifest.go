@@ -3,7 +3,9 @@ package plugins
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"slices"
 	"strings"
@@ -67,6 +69,12 @@ func ParseManifest(raw []byte) (Manifest, error) {
 		}
 		return Manifest{}, fmt.Errorf("%w: %s", ErrInvalidManifest, msg)
 	}
+	// One object only: the registry stores the bytes verbatim and
+	// GET /api/plugins serves them as JSON, so anything after the object
+	// (garbage, a second object) would corrupt that response.
+	if _, err := dec.Token(); !errors.Is(err, io.EOF) {
+		return Manifest{}, fmt.Errorf("%w: unexpected data after the manifest object", ErrInvalidManifest)
+	}
 
 	var problems []string
 	add := func(format string, args ...any) { problems = append(problems, fmt.Sprintf(format, args...)) }
@@ -127,7 +135,7 @@ func ParseManifest(raw []byte) (Manifest, error) {
 			add("events[%d].type %q is repeated", i, e.Type)
 		}
 		seenEvents[e.Type] = true
-		if len(e.Activity) > 0 && !isJSONObject(e.Activity) {
+		if len(e.Activity) > 0 && !isNull(e.Activity) && !isJSONObject(e.Activity) {
 			add("events[%d].activity must be an object", i)
 		}
 	}
@@ -144,4 +152,10 @@ func ParseManifest(raw []byte) (Manifest, error) {
 // isJSONObject reports whether raw is a JSON object (not null).
 func isJSONObject(raw json.RawMessage) bool {
 	return len(bytes.TrimSpace(raw)) > 0 && bytes.TrimSpace(raw)[0] == '{'
+}
+
+// isNull reports whether raw is the JSON literal null, which counts as
+// an absent activity rule.
+func isNull(raw json.RawMessage) bool {
+	return string(bytes.TrimSpace(raw)) == "null"
 }

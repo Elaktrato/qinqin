@@ -57,14 +57,12 @@ func RegisterBuiltin(ctx context.Context, sqlDB *sql.DB, raw []byte) (conflicts 
 	if err != nil {
 		return nil, err
 	}
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := beginImmediate(ctx, sqlDB)
 	if err != nil {
 		return nil, fmt.Errorf("plugins: register %s: %w", m.ID, err)
 	}
-	defer func() {
-		_ = tx.Rollback()
-	}()
-	owners, err := eventOwners(ctx, tx, m.ID)
+	defer tx.rollback()
+	owners, err := eventOwners(ctx, tx.conn, m.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,10 +74,10 @@ func RegisterBuiltin(ctx context.Context, sqlDB *sql.DB, raw []byte) (conflicts 
 		}
 	}
 	sort.Strings(conflicts)
-	if err := upsert(ctx, tx, m.ID, raw); err != nil {
+	if err := upsert(ctx, tx.conn, m.ID, raw); err != nil {
 		return nil, err
 	}
-	if err := tx.Commit(); err != nil {
+	if err := tx.commit(ctx); err != nil {
 		return nil, fmt.Errorf("plugins: register %s: %w", m.ID, err)
 	}
 	return conflicts, nil

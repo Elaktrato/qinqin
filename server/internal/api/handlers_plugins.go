@@ -16,7 +16,7 @@ import (
 // registers a feature-plugin manifest, which must pass the SDK contract
 // (plugins.ParseManifest) and is then stored verbatim and keyed by its
 // id; re-registering an id replaces its manifest. A refused manifest
-// answers 400 with the reasons.
+// answers 400 with the reasons, and the id of a built-in plugin 409.
 func (s *server) handleRegisterPlugin(w http.ResponseWriter, r *http.Request) {
 	if s.requireAdmin(w, r) == nil {
 		return
@@ -26,6 +26,10 @@ func (s *server) handleRegisterPlugin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := plugins.Register(r.Context(), s.db, body); err != nil {
+		if errors.Is(err, plugins.ErrBuiltinID) {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
 		if errors.Is(err, plugins.ErrInvalidManifest) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
