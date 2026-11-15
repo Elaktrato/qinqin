@@ -4,6 +4,8 @@
 // log see each card exactly once per original review.
 
 import type { FlowItem } from './cardFlow';
+import type { SaladTier } from './wordSalad';
+import type { GradeItemResult } from './grade';
 import type { ReviewGrade, StudyCard } from './types';
 
 /** Other cards shown between an Again and its re-show. */
@@ -24,7 +26,8 @@ export function requeueAfterGrade(
 	queue: readonly FlowItem[],
 	index: number,
 	grade: ReviewGrade,
-	card?: StudyCard
+	card?: StudyCard,
+	tier?: SaladTier
 ): FlowItem[] {
 	const current = queue[index];
 	if (grade !== 1 || current === undefined) return queue as FlowItem[];
@@ -32,11 +35,19 @@ export function requeueAfterGrade(
 	if (count >= MAX_RESHOWS) return queue as FlowItem[];
 	if (queue.slice(index + 1).some((other) => other.cardId === current.cardId)) return queue as FlowItem[];
 
+	// Ruling: a failed last card is not repeated back to back; the re-show
+	// needs at least one other card between, unless it is the only card.
+	const last = index + 1 >= queue.length;
+	if (last && queue.some((other) => other.cardId !== current.cardId)) return queue as FlowItem[];
+
+	const realCard = card ?? current.card;
 	const again: FlowItem = {
 		...current,
+		cardId: realCard?.id ?? current.cardId,
 		virtual: false,
-		card: card ?? current.card,
-		reshow: count + 1
+		card: realCard,
+		reshow: count + 1,
+		...(tier === undefined ? {} : { tier })
 	};
 	let at = Math.min(index + 1 + REQUEUE_GAP, queue.length);
 	// First in, first out among re-shows that land on the same spot.
@@ -79,4 +90,48 @@ export function progressOf(queue: readonly FlowItem[], index: number): QueueProg
 /** removeAt drops one position, leaving earlier items of the same card. */
 export function removeAt(queue: readonly FlowItem[], index: number): FlowItem[] {
 	return queue.filter((_, i) => i !== index);
+}
+
+export type GradeStep =
+	| { ok: false; error: string }
+	| {
+			ok: true;
+			queue: FlowItem[];
+			index: number;
+			/** The gradeItem result when a review was recorded, null for a re-show. */
+			recorded: Extract<GradeItemResult, { ok: true }> | null;
+	  };
+
+/**
+ * applyGrade decides one grade: a first-pass item goes through `record`
+ * (the injected gradeItem call, which writes the review) and may queue a
+ * re-show; a re-show writes nothing and may queue another. A failed record
+ * leaves queue and index untouched. The caller applies the returned state.
+ */
+export async function applyGrade(input: {
+	queue: readonly FlowItem[];
+	index: number;
+	grade: ReviewGrade;
+	tier?: SaladTier;
+	record: () => Promise<GradeItemResult>;
+}): Promise<GradeStep> {
+	const { queue, index, grade, tier, record } = input;
+	const item = queue[index];
+	if (item === undefined) return { ok: false, error: 'This card is no longer available.' };
+	if (!reviewRecorded(item)) {
+		return {
+			ok: true,
+			queue: requeueAfterGrade(queue, index, grade, undefined, tier),
+			index: index + 1,
+			recorded: null
+		};
+	}
+	const result = await record();
+	if (!result.ok) return { ok: false, error: result.error };
+	return {
+		ok: true,
+		queue: requeueAfterGrade(queue, index, grade, result.card, tier),
+		index: index + 1,
+		recorded: result
+	};
 }

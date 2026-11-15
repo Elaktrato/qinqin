@@ -29,7 +29,7 @@
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
-	import { progressOf, removeAt, requeueAfterGrade, reviewRecorded } from '$lib/study/requeue';
+	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { addCard, loadStudyData } from '$lib/study/store';
 	import {
@@ -401,7 +401,7 @@
 					...base,
 					item: item.virtual ? { ...item, sentenceId: sentence?.id } : item,
 					sentence,
-					tier: tierForCard(cardId, history, now),
+					tier: item.tier ?? tierForCard(cardId, history, now),
 					seed: `${item.card?.id ?? item.cardId}:${reviewCountFor(cardId, history)}`
 				};
 			}
@@ -544,48 +544,52 @@
 		const meta: ReviewMeta = { ...doneMeta };
 
 		gradeError = '';
-		if (!reviewRecorded(item)) {
-			// A re-show is practice: no review event, so FSRS, XP, streak and
-			// the log count the card once. Again may queue it once more.
-			reshown += 1;
-			queue = requeueAfterGrade(queue, index, value);
-			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-			index += 1;
-			ensureEntry(queue[index]);
-			return;
-		}
 		grading = true;
 		try {
-			const result = await gradeItem({
-				item,
+			const step = await applyGrade({
+				queue,
+				index,
 				grade: value,
-				workspaceId,
-				mode: item.kind,
-				meta,
-				currentWorkspaceId: $workspaces.current?.id ?? null,
-				entry: current.entry,
-				addCard,
-				recordReview
+				tier: current.tier,
+				record: () =>
+					gradeItem({
+						item,
+						grade: value,
+						workspaceId,
+						mode: item.kind,
+						meta,
+						currentWorkspaceId: $workspaces.current?.id ?? null,
+						entry: current.entry,
+						addCard,
+						recordReview
+					})
 			});
-			if (!result.ok) {
-				if (sessionWorkspaceId === workspaceId) gradeError = result.error;
+			if (!step.ok) {
+				if (sessionWorkspaceId === workspaceId) gradeError = step.error;
 				return;
 			}
 			if (sessionWorkspaceId !== workspaceId) return;
 
-			// addCard may hand back a card this page already holds.
-			if (result.created && !cards.some((card) => card.id === result.card.id)) {
-				cards = [...cards, result.card];
+			const result = step.recorded;
+			if (result === null) {
+				// A re-show is practice: no review event, so FSRS, XP, streak and
+				// the log count the card once.
+				reshown += 1;
+			} else {
+				// addCard may hand back a card this page already holds.
+				if (result.created && !cards.some((card) => card.id === result.card.id)) {
+					cards = [...cards, result.card];
+				}
+				sessionReviews = [
+					...sessionReviews,
+					sessionReview(result.card, value, workspaceId, item.kind, meta)
+				];
 			}
-			sessionReviews = [
-				...sessionReviews,
-				sessionReview(result.card, value, workspaceId, item.kind, meta)
-			];
 			// The focused grade button is disabled for the next card; drop the
 			// focus so Space/Enter reach the window in every browser.
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-			queue = requeueAfterGrade(queue, index, value, result.card);
-			index += 1;
+			queue = step.queue;
+			index = step.index;
 			ensureEntry(queue[index]);
 		} finally {
 			grading = false;
@@ -737,8 +741,8 @@
 		<header class="top">
 			<h1>Study</h1>
 			<p class="progress" aria-live="polite">
-					{queueProgress.position} / {queueProgress.total}{#if queueProgress.pending > 0}{' '}
-						· {queueProgress.pending} to repeat{/if}
+					{queueProgress.position} / {queueProgress.total}{#if queueProgress.pending > 0}, {queueProgress.pending}
+						to repeat{/if}
 				</p>
 			<a href="/study">End session</a>
 		</header>
@@ -759,7 +763,9 @@
 						<span class="badge">{TIER_LABELS[current.tier]}</span>
 					{/if}
 					{#if current.item.reshow !== undefined}
-						<span class="badge badge-again">Again · second look</span>
+						<span class="badge badge-again"
+							>Again, look {current.item.reshow + 1} of {MAX_RESHOWS + 1}</span
+						>
 					{/if}
 					{#if current.item.virtual && current.item.kind !== 'vocab'}
 						<span class="badge">new</span>
@@ -918,6 +924,13 @@
 		border-color: #c62828;
 		color: #c62828;
 		opacity: 1;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.badge.badge-again {
+			border-color: #ff8a80;
+			color: #ff8a80;
+		}
 	}
 
 	.badge.kind-sentence {

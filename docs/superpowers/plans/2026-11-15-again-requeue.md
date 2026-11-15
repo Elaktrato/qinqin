@@ -14,6 +14,11 @@ Goal: a card graded Again comes back later in the same session, Anki learning-st
 - Ruling: no persistence; the runner is in-memory today and a reload rebuilds the session from the log, where the Again card is now a reviewed card — adding storage for a few minutes of state is not worth it — cost: a reload forgets pending re-shows.
 - Ruling: the summary keeps counting recorded reviews (= unique cards) and adds a "re-shown" line — cost: none.
 
+- Ruling: a failed card that is the last one is not repeated back to back; the re-show needs at least one other card in between, unless it is the only card of the session — an immediate repeat is an echo, not spaced practice, and the original Again already scheduled it via FSRS — cost: a failed last card gets no in-session second look.
+- Ruling: a re-show keeps the first showing's Word Salad tier (carried on the item) and points at the real card id — the exercise must stay the one that was failed — cost: none.
+- Ruling: the grade decision lives in the pure `applyGrade` (gradeItem injected), so record-or-not and the next queue/index are unit-tested with spies — cost: none.
+- Ruling: the Again badge is "Again, look N of 4" (from the re-show count) with a lighter red in dark mode (#ff8a80); the header separates with a comma so screen readers do not say "dot" — cost: none.
+
 ## Tasks
 
 1. `lib/study/requeue.ts` + tests (pure): requeueAfterGrade, removeAt, progressOf. Ordering rules pinned.
