@@ -93,6 +93,7 @@
 - [ ] **Step 3: Implement.** `Register`: `ParseManifest`, then in one `BeginTx`: read every other registry row, `ParseManifest` each (skip errors), conflict check on `Events[].Type`, then the existing upsert. Update the listed test fixtures to valid sdk-1 manifests (add a test helper `validManifest(id string, extra string) string` per package where it is used more than twice). The `language` field in the `plugins_test.go` heatmap fixture goes.
 - [ ] **Step 4: Run the Go gate and the race gate**: PASS.
 - [ ] **Step 5: Commit** `feat(plugins): embedded built-in manifests, checked registration and event-type ownership`.
+- Ruling: the one-line `description` of each built-in is plain user-facing prose (core: "The core app: home layout and study session, view and lookup activity."); the `validManifest(id, extra)` helper repeats a key to override a default (Go's decoder keeps the last), so a fixture states only what differs. `handlers_body_limits_test.go` needs no change: its manifest is oversized and refused with 413 before parsing. No migration is needed by tasks 1-4 (the "next free number" note applies to the sibling plans; develop ends at 025).
 
 ### Task 3: `owns-data` enforced on plugin-data writes
 
@@ -108,6 +109,7 @@
 - [ ] **Step 3: Implement** `CanWriteData` (reuse `Exists` for data plugins; read `manifest_json` for registry rows). Handlers: 404 when `!exists` (unchanged text), 403 when `!allowed`. `Push`: replace the `Exists` call with `CanWriteData`; `!exists` keeps `ErrNotFound` (whole push fails, as today); `!allowed` marks the plugin refused: its rows are not applied and are counted in the new `PushResult.DataRefused int` (`json:"dataRefused"`), while events and other rows apply.
 - [ ] **Step 4: Run the Go gate and the race gate**: PASS.
 - [ ] **Step 5: Commit** `feat(plugins): plugin-data writes need owns-data`.
+- Ruling: `DELETE /api/plugins/{id}/data/{key}` for an unknown plugin answers 404 with its old text `plugin data not found` (PUT keeps `plugin not found`); `GET` is unchanged. A registry row whose manifest does not parse for any reason (not only a missing `sdk`) counts as grandfathered, so a malformed legacy row never locks its owner out of data.
 
 ### Task 4: Web contract, `$builtin` manifests, Docker and dev wiring
 
@@ -140,6 +142,7 @@
 - [ ] **Step 5: Dev check:** `npm --prefix <wt>/apps/web run dev -- --port 5199 --host 127.0.0.1` in the background, `curl -s http://127.0.0.1:5199/src/lib/plugins/journal/manifest.ts | head -5` returns JS (no 403 "outside of Vite serving allow list"); stop it.
 - [ ] **Step 6: Docker check:** `docker build -t qinqin:plugin-sdk --build-arg WITH_OCR=0 <wt>` succeeds.
 - [ ] **Step 7: Commit** `feat(web): plugin contract and manifests from the server's built-in JSON`.
+- Ruling: `server.fs.allow` uses `searchForWorkspaceRoot('.')` (not `process.cwd()`), because the web package has no `@types/node` and svelte-check rejects `process`; vite runs from `apps/web`, so the result is the same. Test files that built a `PluginManifest` literal use a new `lib/plugins/fixtures.ts` `fixtureManifest()` instead of repeating the six contract fields. JSON imports are cast `as unknown as ContractManifest` because TypeScript infers `string`/`string[]` for the literal unions.
 
 ### Task 5: The SDK and the `study-event` hook
 

@@ -384,6 +384,32 @@ func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 	return true, nil
 }
 
+// CanWriteData reports whether pluginID exists and whether its data may
+// be written (PUT/DELETE of plugin data, sync push). Data plugins and
+// registry rows that predate the contract (no sdk, or a manifest that
+// does not parse) are allowed as before; a row that parses as an sdk
+// manifest is allowed only when it declares owns-data. An unknown
+// plugin is (false, false).
+func CanWriteData(ctx context.Context, sqlDB *sql.DB, pluginID string) (exists, allowed bool, err error) {
+	var raw string
+	err = sqlDB.QueryRowContext(ctx, `SELECT manifest_json FROM plugin_registry WHERE pack_id = ?`, pluginID).Scan(&raw)
+	if err == nil {
+		m, perr := ParseManifest([]byte(raw))
+		if perr != nil {
+			return true, true, nil
+		}
+		return true, m.Has("owns-data"), nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return false, false, fmt.Errorf("plugins: check plugin %s: %w", pluginID, err)
+	}
+	exists, err = Exists(ctx, sqlDB, pluginID)
+	if err != nil {
+		return false, false, err
+	}
+	return exists, exists, nil
+}
+
 // SetState upserts the user's state for one plugin: whether it is
 // enabled and its position in the Plugins list (also the order of the
 // nav links). The home layout is the per-user widget layout in the

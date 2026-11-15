@@ -600,3 +600,48 @@ func TestListDataPrefixScopeAndTombstones(t *testing.T) {
 		t.Fatalf("empty = %#v %v, want a non-nil empty slice", empty, err)
 	}
 }
+
+func TestCanWriteData(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	mustRegister(t, sqlDB, validManifest("with-data", ""))
+	mustRegister(t, sqlDB, validManifest("without-data", `"permissions":[]`))
+	if _, err := sqlDB.Exec(`INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
+		VALUES ('mkgloss', 'mkgloss', '1.0', 'MIT', 'test', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatalf("seed dictionary: %v", err)
+	}
+	for _, tc := range []struct {
+		id              string
+		exists, allowed bool
+	}{
+		{"with-data", true, true},
+		{"without-data", true, false},
+		{"mkgloss", true, true},
+		{"nobody", false, false},
+	} {
+		exists, allowed, err := plugins.CanWriteData(ctx, sqlDB, tc.id)
+		if err != nil || exists != tc.exists || allowed != tc.allowed {
+			t.Errorf("CanWriteData(%s) = %t, %t, %v; want %t, %t", tc.id, exists, allowed, err, tc.exists, tc.allowed)
+		}
+	}
+}
+
+// TestCanWriteDataGrandfathered: a registry row from before the contract
+// (no sdk, or not even parsable) keeps writing data as before.
+func TestCanWriteDataGrandfathered(t *testing.T) {
+	sqlDB := newDB(t)
+	for id, raw := range map[string]string{
+		"legacy":   `{"id":"legacy","name":"L"}`,
+		"garbled":  `{"id":"garbled","events":"x"}`,
+		"notjson":  `nope`,
+		"sdkempty": `{"id":"sdkempty","sdk":0}`,
+	} {
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES (?, ?, '2026-01-01T00:00:00Z')`, id, raw); err != nil {
+			t.Fatal(err)
+		}
+		exists, allowed, err := plugins.CanWriteData(context.Background(), sqlDB, id)
+		if err != nil || !exists || !allowed {
+			t.Errorf("CanWriteData(%s) = %t, %t, %v; want grandfathered", id, exists, allowed, err)
+		}
+	}
+}

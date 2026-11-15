@@ -276,3 +276,59 @@ func registerAndLogin(t *testing.T, tsURL string) string {
 	}
 	return out.Token
 }
+
+// TestPushSkipsUndeclaredWriter: a row for a plugin without owns-data is
+// refused on its own; the events and the other rows of the push land.
+func TestPushSkipsUndeclaredWriter(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	ws := newWorkspace(t, sqlDB, alice)
+	for _, i := range []int{1, 2} { // flashcards, reader
+		if err := plugins.Register(ctx, sqlDB, plugins.Builtin()[i]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	at := time.Now().UTC().Add(-time.Minute)
+	evt := func(id, typ string) model.StudyEvent {
+		return model.StudyEvent{ID: id, WorkspaceID: ws, Device: "phone", TS: time.Now().UTC(), Type: typ, Payload: json.RawMessage(`{}`)}
+	}
+	res, err := chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{
+		Events: []model.StudyEvent{evt("01J00000000000000000000011", "review"), evt("01J00000000000000000000012", "read")},
+		PluginData: []model.PluginData{
+			{PluginID: "qinqin-reader", Key: "x", Data: json.RawMessage(`1`), UpdatedAt: at},
+			{PluginID: "qinqin-flashcards", Key: "x", Data: json.RawMessage(`2`), UpdatedAt: at},
+		},
+	})
+	if err != nil || res.EventsAccepted != 2 || res.DataAccepted != 1 || res.DataRefused != 1 {
+		t.Fatalf("push = %+v, %v; want 2 events, 1 accepted, 1 refused", res, err)
+	}
+	if _, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-reader", "x"); !errors.Is(err, plugins.ErrNotFound) {
+		t.Errorf("refused reader row present: %v", err)
+	}
+	if _, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "x"); err != nil {
+		t.Errorf("flashcards row: %v", err)
+	}
+}
+
+// TestPushAcceptsBuiltinWriters: every plugin id the web writes under is
+// accepted by the built-in manifests.
+func TestPushAcceptsBuiltinWriters(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	for _, raw := range plugins.Builtin() {
+		if err := plugins.Register(ctx, sqlDB, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	at := time.Now().UTC().Add(-time.Minute)
+	var rows []model.PluginData
+	for _, id := range []string{"qinqin-flashcards", "qinqin-journal", "qinqin-core"} {
+		rows = append(rows, model.PluginData{PluginID: id, Key: "k", Data: json.RawMessage(`{}`), UpdatedAt: at})
+	}
+	res, err := chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{PluginData: rows})
+	if err != nil || res.DataAccepted != 3 || res.DataRefused != 0 {
+		t.Fatalf("push = %+v, %v; want 3 accepted", res, err)
+	}
+}

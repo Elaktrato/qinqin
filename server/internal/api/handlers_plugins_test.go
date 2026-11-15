@@ -365,3 +365,35 @@ func readAll(t *testing.T, resp *http.Response) string {
 	}
 	return string(b)
 }
+
+// TestPluginDataWriteNeedsOwnsData: PUT and DELETE are refused for an
+// sdk-1 plugin that does not declare owns-data; reads stay as before.
+func TestPluginDataWriteNeedsOwnsData(t *testing.T) {
+	ts, _ := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	reader := validManifest("qinqin-reader", `"permissions":["read:entries"]`)
+	if resp := registerPlugin(t, ts.URL, admin, reader); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("register reader: status = %d", resp.StatusCode)
+	}
+	path := "/api/plugins/qinqin-reader/data/k"
+	for _, method := range []string{http.MethodPut, http.MethodDelete} {
+		resp := doRaw(t, method, ts.URL, path, admin, `{"a":1}`)
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusForbidden || !strings.Contains(string(body), "plugin does not declare owns-data") {
+			t.Errorf("%s: status = %d body %q, want 403 plugin does not declare owns-data", method, resp.StatusCode, body)
+		}
+	}
+	if resp := doJSON(t, http.MethodGet, ts.URL, path, admin, nil); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("GET: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+	if resp := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-reader/data", admin, nil); resp.StatusCode != http.StatusOK {
+		t.Errorf("list: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/nobody/data/k", admin, `{}`); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("PUT unknown plugin: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+	if resp := doJSON(t, http.MethodDelete, ts.URL, "/api/plugins/nobody/data/k", admin, nil); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("DELETE unknown plugin: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+}
