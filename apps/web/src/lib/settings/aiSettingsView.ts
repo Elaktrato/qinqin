@@ -4,6 +4,7 @@ import type { AiStatus } from '$lib/api/ai';
 export interface AiSettingsView {
 	banner: string | null;
 	canAddKey: boolean;
+	canRemoveKey: boolean;
 	keyLine: string | null;
 	usageLine: string;
 	testProvider: boolean;
@@ -31,6 +32,7 @@ export function aiSettingsView(status: AiStatus): AiSettingsView {
 	return {
 		banner: BANNERS[status.reason] ?? null,
 		canAddKey: !NO_KEY_STORE.has(status.reason),
+		canRemoveKey: key !== null,
 		keyLine: key ? `Anthropic key ${key.hint} · ${label}` : null,
 		usageLine: `${n(callsLastHour)} of ${n(limitPerHour)} AI calls this hour · ${n(inputTokens)} tokens in, ${n(outputTokens)} out`,
 		testProvider: status.provider === 'fake'

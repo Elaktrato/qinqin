@@ -87,6 +87,28 @@
 	}
 </script>
 
+{#snippet removeControls()}
+	{#if confirmingRemove}
+		<span class="confirm" role="group" aria-label="Remove the saved key?">
+			Remove the saved key?
+			<button type="button" class="secondary danger" onclick={remove} disabled={busy}>
+				Yes, remove
+			</button>
+			<button type="button" class="secondary" onclick={cancelRemove}>Cancel</button>
+		</span>
+	{:else}
+		<button
+			type="button"
+			class="secondary danger"
+			bind:this={removeButton}
+			onclick={askRemove}
+			disabled={busy}
+		>
+			Remove key
+		</button>
+	{/if}
+{/snippet}
+
 <section class="ai" aria-labelledby="ai-heading">
 	<h2 id="ai-heading">AI</h2>
 
@@ -132,29 +154,11 @@
 				</label>
 				<div class="actions">
 					<button type="submit" disabled={!canSave}>{busy ? 'Working…' : 'Save'}</button>
-					{#if status.key}
-						{#if confirmingRemove}
-							<span class="confirm" role="group" aria-label="Remove the saved key?">
-								Remove the saved key?
-								<button type="button" class="secondary danger" onclick={remove} disabled={busy}>
-									Yes, remove
-								</button>
-								<button type="button" class="secondary" onclick={cancelRemove}>Cancel</button>
-							</span>
-						{:else}
-							<button
-								type="button"
-								class="secondary danger"
-								bind:this={removeButton}
-								onclick={askRemove}
-								disabled={busy}
-							>
-								Remove key
-							</button>
-						{/if}
-					{/if}
+					{#if view.canRemoveKey}{@render removeControls()}{/if}
 				</div>
 			</form>
+		{:else if view.canRemoveKey}
+			<div class="actions">{@render removeControls()}</div>
 		{/if}
 
 		<div class="live" aria-live="polite">{message}</div>

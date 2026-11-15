@@ -96,3 +96,18 @@ describe('aiSettingsView lines', () => {
 		expect(aiSettingsView(status()).testProvider).toBe(false);
 	});
 });
+
+describe('aiSettingsView canRemoveKey', () => {
+	const key = { hint: '…abcd', model: 'claude-opus-5-5' } as AiStatus['key'];
+
+	it('is offered whenever a key is stored, even when adding is not', () => {
+		for (const reason of ['', 'no_secret', 'invalid_secret', 'no_provider', 'key_undecryptable']) {
+			expect(aiSettingsView(status({ key }, reason)).canRemoveKey).toBe(true);
+		}
+		expect(aiSettingsView(status({ key }, 'no_secret')).canAddKey).toBe(false);
+	});
+
+	it('is not offered without a key', () => {
+		expect(aiSettingsView(status()).canRemoveKey).toBe(false);
+	});
+});
