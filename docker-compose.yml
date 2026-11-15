@@ -1,5 +1,6 @@
-# Portainer stack for qinqin. The database and installed packs live in
-# ./data next to this file.
+# Quick start for plain `docker compose`. The database and installed packs live
+# in ./data next to this file. For Portainer (named volume, required
+# QINQIN_SECRET, limits) use deploy/portainer-stack.yml instead.
 #
 # First run — seed the sample packs and create the admin user:
 #   docker compose exec qinqin qinqin seed
@@ -26,6 +27,13 @@ services:
       # QINQIN_SECRET_PREVIOUS: ${QINQIN_SECRET_PREVIOUS}
       # Testing only: a fake provider that never contacts any AI service.
       # QINQIN_AI_PROVIDER: fake
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 30s
