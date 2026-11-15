@@ -17,7 +17,7 @@ import (
 	"qinqin/internal/library"
 )
 
-const deleteTestPlugin = `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature"}`
+var deleteTestPlugin = validManifest("qinqin-flashcards", "")
 
 // eventID returns a valid, distinct ULID for test events.
 func eventID(n int) string {
@@ -104,9 +104,7 @@ func TestDeleteWorkspaceCascades(t *testing.T) {
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bob", alice)
-	if resp := registerPlugin(t, ts.URL, alice, deleteTestPlugin); resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register plugin: status = %d", resp.StatusCode)
-	}
+	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	var aliceID, bobID int64
 	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'alice'`).Scan(&aliceID)
 	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'bob'`).Scan(&bobID)
@@ -230,9 +228,7 @@ func TestDeleteLastWorkspaceRefused(t *testing.T) {
 func TestDeletedWorkspaceSync(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	alice := registerUser(t, ts.URL, "alice", "")
-	if resp := registerPlugin(t, ts.URL, alice, deleteTestPlugin); resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register plugin: status = %d", resp.StatusCode)
-	}
+	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	gone := createWorkspace(t, ts.URL, alice, "zh", "throwaway")
 	kept := createWorkspace(t, ts.URL, alice, "zh", "")
 	for _, ws := range []int64{gone, kept} {

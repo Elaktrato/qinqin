@@ -9,7 +9,8 @@
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { isCorePlugin } from '$lib/plugins';
+	import { isCorePlugin, webPlugins } from '$lib/plugins';
+	import { pluginRowInfo } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
@@ -28,6 +29,8 @@
 		name: string;
 		enabled: boolean;
 		order: number;
+		permissions: string;
+		notice: 'app-update' | 'legacy' | null;
 		saving: boolean;
 		saved: boolean;
 		error: string;
@@ -103,6 +106,7 @@
 				name: pluginName(plugin),
 				enabled: plugin.enabled,
 				order: plugin.order,
+				...pluginRowInfo(plugin, webPlugins),
 				saving: false,
 				saved: false,
 				error: ''
@@ -325,7 +329,15 @@
 						<div class="plugin-head">
 							<strong>{plugin.name}</strong>
 							<code>{plugin.id}</code>
+							{#if plugin.notice === 'app-update'}
+								<span class="needs-update">Needs an app update</span>
+							{:else if plugin.notice === 'legacy'}
+								<span class="needs-update">Plugin has no SDK declaration (legacy)</span>
+							{/if}
 						</div>
+						{#if plugin.permissions}
+							<p class="plugin-permissions"><span class="plugin-permissions-label">Permissions:</span> {plugin.permissions}</p>
+						{/if}
 
 						<div class="plugin-controls">
 							<label class="inline">
@@ -506,6 +518,22 @@
 	}
 
 	.current {
+		font-size: 0.8rem;
+		border: 1px solid currentColor;
+		border-radius: 999px;
+		padding: 0.05rem 0.5rem;
+	}
+
+	.plugin-permissions {
+		margin: 0.25rem 0 0;
+		font-size: 0.9rem;
+	}
+
+	.plugin-permissions-label {
+		font-weight: 600;
+	}
+
+	.needs-update {
 		font-size: 0.8rem;
 		border: 1px solid currentColor;
 		border-radius: 999px;

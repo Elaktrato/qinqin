@@ -1,0 +1,12 @@
+{
+	"id": "qinqin-core",
+	"name": "Core",
+	"version": "1.1",
+	"type": "feature",
+	"sdk": 1,
+	"description": "The core app: home layout and study session, view and lookup activity.",
+	"surfaces": [],
+	"permissions": ["owns-data", "write:study-events"],
+	"hooks": [],
+	"events": [{ "type": "session" }, { "type": "view" }, { "type": "lookup" }]
+}

@@ -1,12 +1,11 @@
 // The journal plugin's manifest: a page-only plugin at /p/journal.
 // `sources` credits what the server image ships for it.
+import journal from '$builtin/journal.json';
+import type { ContractManifest } from '../contract';
 import type { PluginManifest } from '../index';
 
 export const journalManifest: PluginManifest = {
-	id: 'qinqin-journal',
-	name: 'Journal',
-	version: '1.0',
-	surfaces: ['page'],
+	...(journal as unknown as ContractManifest),
 	sources: [
 		{
 			name: 'Tesseract OCR',

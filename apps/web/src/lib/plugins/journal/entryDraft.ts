@@ -1,9 +1,6 @@
 // Editor helpers: autosave timing, the review size limit and the
 // once-per-day `journal` study event.
 
-import type { StudyEventBody } from '../../api/types';
-import { newUlid } from '../../ulid';
-
 export const AUTOSAVE_MS = 1500;
 export const MAX_REVIEW_CHARS = 5000;
 
@@ -29,15 +26,4 @@ export function journalEventDue(
 	if (sent.get(entryId) === day) return false;
 	sent.set(entryId, day);
 	return true;
-}
-
-export function journalEvent(workspaceId: number, entryId: string, now: Date): StudyEventBody {
-	return {
-		id: newUlid(now.getTime()),
-		workspaceId,
-		device: 'web',
-		ts: now.toISOString(),
-		type: 'journal',
-		payload: { entryId }
-	};
 }

@@ -11,6 +11,7 @@
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
 	import { auth, loadMe, logout, user } from '$lib/auth';
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
+	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionOnce } from '$lib/events';
 	import { dismissNotice, notice } from '$lib/notices';
@@ -33,6 +34,10 @@
 
 	const path = $derived(normalizePath(page.url.pathname));
 	const pluginLinks = $derived(visibleNavPages(webPlugins, $pluginStates));
+	// The study-event hook delivers only to plugins the user enabled.
+	$effect(() => {
+		setHookStates($pluginStates.status === 'ready' ? $pluginStates.list : []);
+	});
 	const signedIn = $derived($auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
 	// shell: the brand, a sign-in link and the footer, nothing private.

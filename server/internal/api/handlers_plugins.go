@@ -13,9 +13,10 @@ import (
 )
 
 // handleRegisterPlugin serves POST /api/admin/plugins: an admin
-// registers a feature-plugin manifest — any JSON object carrying a
-// non-empty id — which is stored verbatim and keyed by that id;
-// re-registering an id replaces its manifest.
+// registers a feature-plugin manifest, which must pass the SDK contract
+// (plugins.ParseManifest) and is then stored verbatim and keyed by its
+// id; re-registering an id replaces its manifest. A refused manifest
+// answers 400 with the reasons, and the id of a built-in plugin 409.
 func (s *server) handleRegisterPlugin(w http.ResponseWriter, r *http.Request) {
 	if s.requireAdmin(w, r) == nil {
 		return
@@ -25,8 +26,12 @@ func (s *server) handleRegisterPlugin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := plugins.Register(r.Context(), s.db, body); err != nil {
+		if errors.Is(err, plugins.ErrBuiltinID) {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
 		if errors.Is(err, plugins.ErrInvalidManifest) {
-			http.Error(w, `manifest must be a JSON object with a non-empty "id"`, http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -181,7 +186,8 @@ func (s *server) handleListPluginData(w http.ResponseWriter, r *http.Request) {
 // value for that key, versioning the row up and reviving a tombstone.
 // The row is scoped to the caller's workspace named by ?workspace=, or
 // user-global without it; the plugin must exist — unknown ids are 404
-// — so data never keys to a plugin nothing registered.
+// — so data never keys to a plugin nothing registered — and an sdk-1
+// plugin must declare owns-data (403 otherwise).
 func (s *server) handlePutPluginData(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -201,13 +207,17 @@ func (s *server) handlePutPluginData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "data must be valid JSON", http.StatusBadRequest)
 		return
 	}
-	exists, err := plugins.Exists(r.Context(), s.db, pluginID)
+	exists, allowed, err := plugins.CanWriteData(r.Context(), s.db, pluginID)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 	if !exists {
 		http.Error(w, "plugin not found", http.StatusNotFound)
+		return
+	}
+	if !allowed {
+		http.Error(w, "plugin does not declare owns-data", http.StatusForbidden)
 		return
 	}
 	if _, err := plugins.PutData(r.Context(), s.db, u.ID, workspaceID, pluginID, key, json.RawMessage(body)); err != nil {
@@ -225,7 +235,7 @@ func (s *server) handlePutPluginData(w http.ResponseWriter, r *http.Request) {
 // handleDeletePluginData serves DELETE /api/plugins/{id}/data/{key}:
 // the caller's value for that key is tombstoned, stamped so a sync
 // pull since before the delete sees it. Missing and already-deleted
-// keys alike are 404.
+// keys alike are 404; a plugin that does not declare owns-data is 403.
 func (s *server) handleDeletePluginData(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -235,7 +245,21 @@ func (s *server) handleDeletePluginData(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-	err := plugins.DeleteData(r.Context(), s.db, u.ID, workspaceID, r.PathValue("id"), r.PathValue("key"))
+	pluginID := r.PathValue("id")
+	exists, allowed, err := plugins.CanWriteData(r.Context(), s.db, pluginID)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		http.Error(w, "plugin data not found", http.StatusNotFound)
+		return
+	}
+	if !allowed {
+		http.Error(w, "plugin does not declare owns-data", http.StatusForbidden)
+		return
+	}
+	err = plugins.DeleteData(r.Context(), s.db, u.ID, workspaceID, pluginID, r.PathValue("key"))
 	if errors.Is(err, plugins.ErrNotFound) {
 		http.Error(w, "plugin data not found", http.StatusNotFound)
 		return

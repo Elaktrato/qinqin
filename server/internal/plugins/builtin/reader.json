@@ -1,0 +1,12 @@
+{
+	"id": "qinqin-reader",
+	"name": "Reader",
+	"version": "1.1",
+	"type": "feature",
+	"sdk": 1,
+	"description": "Read books and articles with tap-to-look-up.",
+	"surfaces": ["page", "home-widget"],
+	"permissions": ["read:entries", "read:study-events", "write:study-events"],
+	"hooks": [],
+	"events": [{ "type": "read" }]
+}

@@ -599,6 +599,35 @@ loopback, private, and other non-public addresses. Environment proxies
 bypass that check. A self-hoster behind a mandatory outbound proxy therefore
 cannot import from the sources; epub uploads still work.
 
+### Feature plugins
+
+Every built-in feature plugin has one manifest, a JSON file in
+`server/internal/plugins/builtin/` that the Go server embeds and validates at
+start-up (`plugins.ParseManifest`; unknown fields are rejected) and the web build
+imports through the `$builtin` alias. It declares `sdk` (the contract version, 1),
+`surfaces` (`home-widget`, `page`, `hook`), `permissions`, `hooks` (`study-event`)
+and the study-event types it emits. The four permissions are `owns-data` (keep
+plugin data rows; the server refuses data writes without it), `read:entries`,
+`read:study-events` and `write:study-events`; Settings shows them for each plugin.
+`apps/web/src/lib/plugins/sdk.ts` (`createPluginSdk(manifest)`) wraps plugin data
+(per user or per workspace) and study events and throws a `PermissionError` for
+anything the manifest did not declare; `sdk.onStudyEvent` delivers posted events
+to a plugin while it is enabled. Permissions are a contract that catches mistakes
+and tells the user what a plugin does, not a sandbox: all plugin code ships in one
+bundle. The journal and the home layout use the SDK.
+
+Server side, `POST /api/admin/plugins` answers 400 with every reason when a manifest
+breaks the contract (unknown fields, trailing data and event types another plugin
+owns included) and 409 for the id of a built-in plugin. `PUT`/`DELETE
+/api/plugins/{id}/data/{key}` answer 403 `plugin does not declare owns-data` for a
+plugin whose manifest has an `sdk` but not that permission (a row registered before
+the contract has no `sdk` and keeps writing; Settings marks it "legacy"). In a sync
+push such a row is skipped, not fatal: the events and every other row still apply,
+and the result's `dataRefused` counts the skipped rows next to `dataSkipped`.
+SDK data keys may not be empty, `.` or `..`. A plain string value round-trips
+(`put('k', 'hello')` reads back `'hello'`); a string that is itself valid JSON text
+(`'123'`) reads back decoded, so store objects instead of such strings.
+
 ### Extending: plugin pages
 
 A web plugin can contribute pages. Declare the `page` surface and a `pages` list in

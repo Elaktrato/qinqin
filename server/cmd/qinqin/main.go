@@ -79,49 +79,32 @@ func defaultData() string {
 	return "./data"
 }
 
-// builtinFlashcardsManifest registers the flashcards feature the web
-// build ships. The manifest lives here, next to serving, so the server
-// registry lists the widget in Settings and can carry its per-user
-// enabled/order state; Register upserts by id, so every start is safe.
-const builtinFlashcardsManifest = `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature","surfaces":["home-widget"]}`
-
-// builtinReaderManifest registers the reader, a page-only feature the
-// web build serves at /p/reader.
-const builtinReaderManifest = `{"id":"qinqin-reader","name":"Reader","version":"1.0","type":"feature","surfaces":["page"]}`
-
-// builtinJournalManifest registers the journal, a page-only feature whose
-// documents are workspace plugin data and whose AI part runs through
-// /api/ai.
-const builtinJournalManifest = `{"id":"qinqin-journal","name":"Journal","version":"1.0","type":"feature","surfaces":["page"]}`
-
-// builtinCoreManifest registers the core app itself as a plugin with no
-// surfaces. It renders nothing; it exists so the plugin data routes and
-// sync accept the core app's per-user rows, such as the user-global
-// home widget layout under the key `home-layout`.
-const builtinCoreManifest = `{"id":"qinqin-core","name":"Core","version":"1.0","type":"feature","surfaces":[]}`
-
 // retiredHeatmapPlugin is the plugin id earlier builds registered for
 // the generic home heatmap. The flashcards widget replaced it; an
 // upgraded database still carries the old registry row, so startup
 // unregisters it to keep Settings free of a dead plugin.
 const retiredHeatmapPlugin = "qinqin-heatmap"
 
-// registerBuiltinPlugins puts the feature plugins this build ships a
-// component for into the server registry and retires the ones it no
+// registerBuiltinPlugins puts the feature plugins this build ships (the
+// embedded manifests of internal/plugins/builtin, the same files the web
+// build imports) into the server registry and retires the ones it no
 // longer ships. It runs at serve startup, after migrations and before
-// the HTTP server accepts requests; both steps are idempotent.
+// the HTTP server accepts requests; both steps are idempotent. A built-in
+// wins an event-type conflict with an admin-registered plugin; the
+// conflict is logged, never fatal.
 func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
-	if err := plugins.Register(ctx, sqlDB, []byte(builtinFlashcardsManifest)); err != nil {
-		return fmt.Errorf("register built-in plugin qinqin-flashcards: %w", err)
-	}
-	if err := plugins.Register(ctx, sqlDB, []byte(builtinReaderManifest)); err != nil {
-		return fmt.Errorf("register built-in plugin qinqin-reader: %w", err)
-	}
-	if err := plugins.Register(ctx, sqlDB, []byte(builtinJournalManifest)); err != nil {
-		return fmt.Errorf("register built-in plugin qinqin-journal: %w", err)
-	}
-	if err := plugins.Register(ctx, sqlDB, []byte(builtinCoreManifest)); err != nil {
-		return fmt.Errorf("register built-in plugin qinqin-core: %w", err)
+	for _, raw := range plugins.Builtin() {
+		m, err := plugins.ParseManifest(raw)
+		if err != nil {
+			return fmt.Errorf("built-in plugin manifest: %w", err)
+		}
+		conflicts, err := plugins.RegisterBuiltin(ctx, sqlDB, raw)
+		if err != nil {
+			return fmt.Errorf("register built-in plugin %s: %w", m.ID, err)
+		}
+		for _, other := range conflicts {
+			log.Printf("plugin %s also claims event types of %s; the built-in wins", other, m.ID)
+		}
 	}
 	if err := plugins.Unregister(ctx, sqlDB, retiredHeatmapPlugin); err != nil {
 		return fmt.Errorf("unregister retired plugin %s: %w", retiredHeatmapPlugin, err)

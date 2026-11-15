@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -141,7 +144,7 @@ func TestRegisterBuiltinPluginsRetiresHeatmap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create user: %v", err)
 	}
-	if err := plugins.Register(ctx, sqlDB, []byte(`{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)); err != nil {
+	if err := plugins.Register(ctx, sqlDB, []byte(legacyHeatmapManifest)); err != nil {
 		t.Fatalf("register old heatmap: %v", err)
 	}
 	if err := plugins.SetState(ctx, sqlDB, user.ID, "qinqin-heatmap", false, 4); err != nil {
@@ -178,5 +181,72 @@ func TestRegisterBuiltinPluginsRetiresHeatmap(t *testing.T) {
 	}
 	if states != 0 {
 		t.Errorf("heatmap state rows = %d, want 0", states)
+	}
+}
+
+// legacyHeatmapManifest is a sdk-1 manifest for the retired heatmap id.
+const legacyHeatmapManifest = `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":[],"hooks":[],"events":[]}`
+
+// TestRegisterBuiltinOverLegacyDB is the upgrade path: a database
+// holding the old 1.0 rows of all four built-ins (no sdk) and a legacy
+// heatmap row starts, carries sdk 1 afterwards, and drops the heatmap.
+func TestRegisterBuiltinOverLegacyDB(t *testing.T) {
+	sqlDB, err := openData(t.TempDir())
+	if err != nil {
+		t.Fatalf("openData: %v", err)
+	}
+	defer sqlDB.Close()
+	ctx := context.Background()
+	legacy := map[string]string{
+		"qinqin-flashcards": `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature","surfaces":["home-widget"]}`,
+		"qinqin-reader":     `{"id":"qinqin-reader","name":"Reader","version":"1.0","type":"feature","surfaces":["page"]}`,
+		"qinqin-journal":    `{"id":"qinqin-journal","name":"Journal","version":"1.0","type":"feature","surfaces":["page"]}`,
+		"qinqin-core":       `{"id":"qinqin-core","name":"Core","version":"1.0","type":"feature","surfaces":[]}`,
+		"qinqin-heatmap":    `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`,
+	}
+	for id, raw := range legacy {
+		if _, err := sqlDB.ExecContext(ctx, `INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES (?, ?, '2026-01-01T00:00:00Z')`, id, raw); err != nil {
+			t.Fatalf("seed %s: %v", id, err)
+		}
+	}
+	if err := registerBuiltinPlugins(ctx, sqlDB); err != nil {
+		t.Fatalf("registerBuiltinPlugins: %v", err)
+	}
+	for _, id := range plugins.BuiltinIDs() {
+		var raw string
+		if err := sqlDB.QueryRowContext(ctx, `SELECT manifest_json FROM plugin_registry WHERE pack_id = ?`, id).Scan(&raw); err != nil {
+			t.Fatalf("%s row: %v", id, err)
+		}
+		m, err := plugins.ParseManifest([]byte(raw))
+		if err != nil || m.SDK != 1 || m.Version != "1.1" {
+			t.Errorf("%s = %s (err %v), want sdk 1, version 1.1", id, raw, err)
+		}
+	}
+	var n int
+	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM plugin_registry WHERE pack_id = 'qinqin-heatmap'`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("heatmap rows = %d (err %v), want 0", n, err)
+	}
+}
+
+// TestRegisterBuiltinPluginsLogsConflict: an admin plugin claiming a
+// built-in's event type never stops the start; the log names it.
+func TestRegisterBuiltinPluginsLogsConflict(t *testing.T) {
+	sqlDB, err := openData(t.TempDir())
+	if err != nil {
+		t.Fatalf("openData: %v", err)
+	}
+	defer sqlDB.Close()
+	other := `{"id":"qinqin-other","name":"Other","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["write:study-events"],"hooks":[],"events":[{"type":"read"}]}`
+	if err := plugins.Register(context.Background(), sqlDB, []byte(other)); err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(os.Stderr)
+	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
+		t.Fatalf("registerBuiltinPlugins: %v", err)
+	}
+	if !strings.Contains(buf.String(), "plugin qinqin-other also claims event types of qinqin-reader; the built-in wins") {
+		t.Errorf("log = %q", buf.String())
 	}
 }

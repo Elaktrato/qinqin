@@ -7,6 +7,8 @@ import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
 import type { SourceCredit } from '$lib/sources/credits';
 import type { WidgetDef } from '$lib/widgets/types';
+import type { ContractManifest } from './contract';
+import { CORE_PLUGIN_ID } from './core/manifest';
 import type { PluginStatesValue } from './states';
 import { flashcardsManifest } from './flashcards/manifest';
 import JournalPage from './journal/JournalPage.svelte';
@@ -14,12 +16,11 @@ import { journalManifest } from './journal/manifest';
 import ReaderPage from './reader/ReaderPage.svelte';
 import { readerManifest } from './reader/manifest';
 
-export interface PluginManifest {
-	id: string;
-	name: string;
-	version?: string;
-	/** Where the plugin may render: 'home-widget' and/or 'page'. */
-	surfaces: string[];
+/**
+ * PluginManifest is the checked contract (ContractManifest, the server's
+ * JSON) plus what only the web build knows: credits and widgets.
+ */
+export type PluginManifest = ContractManifest & {
 	/**
 	 * Third-party material the plugin ships or fetches, credited on the
 	 * Sources page under "Plugins". Material shared with the rest of the
@@ -31,7 +32,7 @@ export interface PluginManifest {
 	 * the plugin is installed and enabled (lib/widgets/registry.ts).
 	 */
 	widgets?: WidgetDef[];
-}
+};
 
 export interface PluginPage {
 	title: string;
@@ -58,12 +59,7 @@ export const webPlugins: WebPlugin[] = [
 	}
 ];
 
-/**
- * CORE_PLUGIN_ID is the core app registered as a plugin with no
- * surfaces, only so its user-global data rows (the home layout) are
- * accepted. It is not a feature the user can switch off.
- */
-export const CORE_PLUGIN_ID = 'qinqin-core';
+export { CORE_PLUGIN_ID };
 
 /** isCorePlugin is true for the core app's own registry row. */
 export function isCorePlugin(id: string): boolean {
