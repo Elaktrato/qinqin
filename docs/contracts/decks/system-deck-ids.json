@@ -1,0 +1,63 @@
+{
+ "version": 1,
+ "rule": "decks/system-deck-ids",
+ "fnv1a32Empty": "811c9dc5",
+ "cases": [
+  {
+   "kind": "level",
+   "packId": "hsk-words",
+   "level": "HSK 1",
+   "fnv1a32": "b06fd2ac",
+   "id": "d-lvl-hsk-words-b06fd2ac"
+  },
+  {
+   "kind": "level",
+   "packId": "hsk-words",
+   "level": "HSK 7–9",
+   "fnv1a32": "19f1a7e4",
+   "id": "d-lvl-hsk-words-19f1a7e4"
+  },
+  {
+   "kind": "level",
+   "packId": "jlpt-kanji",
+   "level": "N5",
+   "fnv1a32": "62c91d56",
+   "id": "d-lvl-jlpt-kanji-62c91d56"
+  },
+  {
+   "kind": "level",
+   "packId": "joyo-grades",
+   "level": "Grade 1",
+   "fnv1a32": "75436249",
+   "id": "d-lvl-joyo-grades-75436249"
+  },
+  {
+   "kind": "level",
+   "packId": "tgh-chars",
+   "level": "Level 1",
+   "fnv1a32": "16bc3691",
+   "id": "d-lvl-tgh-chars-16bc3691"
+  },
+  {
+   "kind": "level",
+   "packId": "My Pack_2",
+   "level": "Ünï",
+   "fnv1a32": "71cc27e0",
+   "id": "d-lvl-my-pack-2-71cc27e0"
+  },
+  {
+   "kind": "plugin",
+   "pluginId": "qinqin-starter",
+   "key": "basics 1",
+   "fnv1a32": "a996bcad",
+   "id": "d-plg-qinqin-starter-a996bcad"
+  },
+  {
+   "kind": "level",
+   "packId": "p😀q",
+   "level": "x",
+   "fnv1a32": "f0bd604d",
+   "id": "d-lvl-p-q-f0bd604d"
+  }
+ ]
+}
