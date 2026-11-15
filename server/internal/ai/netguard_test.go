@@ -57,7 +57,9 @@ func TestCheckEndpointURL(t *testing.T) {
 		{"localhost http no switch", "http://localhost:11434/v1", none, "scheme"},
 		{"localhost https no switch", "https://localhost/v1", none, "address"},
 		{"foo.localhost switch", "http://ollama.localhost:11434/", priv, ""},
-		{"http public name", "http://llm.example.com/v1", priv, "scheme"},
+		{"http public name without switch", "http://llm.example.com/v1", none, "scheme"},
+		{"http hostname with switch (docker service name)", "http://ollama:11434/v1", priv, ""},
+		{"http hostname, no switch", "http://ollama:11434/v1", none, "scheme"},
 		{"http public ip", "http://203.0.113.5/v1", priv, "scheme"},
 		{"userinfo", "https://u:p@x.example/", none, "userinfo"},
 		{"user only", "https://u@x.example/", none, "userinfo"},
@@ -274,7 +276,7 @@ func TestRebindingSecondAnswerChecked(t *testing.T) {
 		return []netip.Addr{netip.MustParseAddr("127.0.0.1")}
 	})
 	c := NewGuardedClient(GuardPolicy{}, dns.resolver())
-	url := "http://rebind.test:" + portOf(srv) + "/"
+	url := "https://rebind.test:" + portOf(srv) + "/" // https: plain http would refuse the public first answer itself
 
 	ctx, cancel := context1(300 * time.Millisecond)
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
@@ -329,13 +331,23 @@ func TestRedirectNotFollowed(t *testing.T) {
 	}
 }
 
+// transportOf returns the https transport of a client (the guarded client
+// picks a transport by scheme).
+func transportOf(t *testing.T, c *http.Client) *http.Transport {
+	t.Helper()
+	switch tr := c.Transport.(type) {
+	case *http.Transport:
+		return tr
+	case *schemeTransport:
+		return tr.secure
+	}
+	t.Fatalf("transport is %T", c.Transport)
+	return nil
+}
+
 func proxyOf(t *testing.T, c *http.Client) func(*http.Request) (*url.URL, error) {
 	t.Helper()
-	tr, ok := c.Transport.(*http.Transport)
-	if !ok {
-		t.Fatalf("transport is %T", c.Transport)
-	}
-	return tr.Proxy
+	return transportOf(t, c).Proxy
 }
 
 func TestNoProxyFromEnv(t *testing.T) {
@@ -371,7 +383,7 @@ func TestBuiltinClientNoRedirect(t *testing.T) {
 
 func TestClientTimeouts(t *testing.T) {
 	for name, c := range map[string]*http.Client{"builtin": NewBuiltinClient(nil), "guarded": NewGuardedClient(GuardPolicy{}, nil)} {
-		tr := c.Transport.(*http.Transport)
+		tr := transportOf(t, c)
 		if tr.TLSHandshakeTimeout != 10*time.Second || tr.ResponseHeaderTimeout != 150*time.Second || !tr.ForceAttemptHTTP2 {
 			t.Errorf("%s transport = %v / %v / %v", name, tr.TLSHandshakeTimeout, tr.ResponseHeaderTimeout, tr.ForceAttemptHTTP2)
 		}
@@ -442,5 +454,30 @@ func TestGuardErrorsHaveNoQuery(t *testing.T) {
 	}
 	if inner := ue.Err.Error(); strings.Contains(inner, "QSECRET") || strings.Contains(inner, "token") {
 		t.Errorf("guard error %q leaks the query", inner)
+	}
+}
+
+// An http endpoint is only ever dialled at private addresses, whatever its
+// hostname resolves to: a key must not travel in clear text over the internet.
+func TestPlainHTTPOnlyDialsPrivateAddresses(t *testing.T) {
+	srv, hits := countingServer(t, nil)
+	pub := newDNS(t, fixed("203.0.113.5"))
+	c := NewGuardedClient(GuardPolicy{AllowPrivate: true}, pub.resolver())
+	resp, err := c.Get("http://ollama.test:" + portOf(srv) + "/v1/models")
+	if resp != nil {
+		resp.Body.Close()
+	}
+	if !errors.Is(err, ErrEndpointBlocked) {
+		t.Fatalf("http to a public address: err = %v, want ErrEndpointBlocked", err)
+	}
+	loop := newDNS(t, fixed("127.0.0.1"))
+	c = NewGuardedClient(GuardPolicy{AllowPrivate: true}, loop.resolver())
+	resp, err = c.Get("http://ollama.test:" + portOf(srv) + "/v1/models")
+	if err != nil {
+		t.Fatalf("http to a private address: %v", err)
+	}
+	resp.Body.Close()
+	if hits.Load() != 1 {
+		t.Errorf("hits = %d", hits.Load())
 	}
 }

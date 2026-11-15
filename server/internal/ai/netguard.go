@@ -124,7 +124,10 @@ func CheckEndpointURL(raw string, p GuardPolicy) (*url.URL, error) {
 		return nil, blocked("address")
 	}
 	if u.Scheme == "http" {
-		local := localName(host) || (isIP && privateClass(addr))
+		// A hostname is accepted too (a Docker service name, a LAN host): the
+		// guarded client dials plain http only at private addresses, so the
+		// key cannot travel in clear text over the internet.
+		local := localName(host) || !isIP || privateClass(addr)
 		if !p.AllowPrivate || !local {
 			return nil, blocked("scheme")
 		}
@@ -179,11 +182,45 @@ func NewBuiltinClient(resolver *net.Resolver) *http.Client {
 	return newClient(http.ProxyFromEnvironment, GuardPolicy{AllowPrivate: true}, resolver)
 }
 
+// schemeTransport sends https through a transport that allows what p allows
+// and plain http through one that dials private addresses only.
+type schemeTransport struct{ secure, plain *http.Transport }
+
+func (s *schemeTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	if r.URL.Scheme == "http" {
+		return s.plain.RoundTrip(r)
+	}
+	return s.secure.RoundTrip(r)
+}
+
 // NewGuardedClient is for admin-registered endpoints: no proxy (through one
-// the dialled IP would be the proxy's and the check blind), no redirects, and
-// the dialled IP checked against p.
+// the dialled IP would be the proxy's and the check blind), no redirects, the
+// dialled IP checked against p, and plain http dialled at private addresses
+// only.
 func NewGuardedClient(p GuardPolicy, resolver *net.Resolver) *http.Client {
-	return newClient(nil, p, resolver)
+	secure := newClient(nil, p, resolver)
+	plain := newClient(nil, p, resolver).Transport.(*http.Transport)
+	plain.DialContext = privateOnlyDialer(p, resolver).DialContext
+	secure.Transport = &schemeTransport{secure: secure.Transport.(*http.Transport), plain: plain}
+	return secure
+}
+
+// privateOnlyDialer refuses every address p refuses and every address that is
+// not loopback, private or CGNAT.
+func privateOnlyDialer(p GuardPolicy, resolver *net.Resolver) *net.Dialer {
+	d := guardedDialer(p, resolver)
+	inner := d.Control
+	d.Control = func(network, address string, c syscall.RawConn) error {
+		if err := inner(network, address, c); err != nil {
+			return err
+		}
+		ap, _ := netip.ParseAddrPort(address)
+		if !privateClass(ap.Addr().Unmap()) {
+			return blocked("address " + ap.Addr().Unmap().String())
+		}
+		return nil
+	}
+	return d
 }
 
 // readCapped reads at most n bytes; a longer body is ErrBadReply.
