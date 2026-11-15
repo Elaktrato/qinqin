@@ -82,13 +82,18 @@ describe('groupPacks', () => {
 		]);
 		expect(groups[0].packs.map((p) => p.packId)).toEqual(['b', 'a']);
 	});
+	it('lists audio packs last', () => {
+		const groups = groupPacks([pack('audio', 'k', 'K'), pack('grammar', 'g', 'G'), pack('dictionary', 'd', 'D')]);
+		expect(groups.map((g) => g.type)).toEqual(['dictionary', 'grammar', 'audio']);
+	});
 	it('labels every type', () => {
 		expect(PACK_TYPE_LABELS).toMatchObject({
 			dictionary: 'Dictionaries',
 			frequency: 'Frequency lists',
 			levels: 'Level lists',
 			sentences: 'Sentences',
-			grammar: 'Grammar lessons'
+			grammar: 'Grammar lessons',
+			audio: 'Audio'
 		});
 	});
 });
@@ -142,6 +147,15 @@ describe('uninstallWarning', () => {
 	});
 	it('has a warning for every type', () => {
 		for (const t of Object.keys(PACK_TYPE_LABELS) as PackType[]) expect(uninstallWarning(t).length).toBeGreaterThan(20);
+	});
+});
+
+describe('uninstallWarning for audio', () => {
+	it('says the recordings are removed from the data directory and the Docker image copy is not', () => {
+		const w = uninstallWarning('audio');
+		expect(w).toMatch(/recordings/i);
+		expect(w).toMatch(/play buttons/i);
+		expect(w).toMatch(/seed|fetch/i);
 	});
 });
 

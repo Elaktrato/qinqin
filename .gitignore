@@ -4,6 +4,7 @@
 
 # local-only seed packs (unclear licences; never committed)
 /plugins/data-local/
+/plugins/data-audio/
 
 # official syllabus inputs for scripts/prepare-hsk-syllabus.mjs: never commit
 *.syllabus.pdf

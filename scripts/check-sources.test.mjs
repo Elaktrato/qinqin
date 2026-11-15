@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { checkSources, docPackIds, noticeProblems } from './check-sources.mjs';
+import { FETCHED_PACKS, LOCAL_ONLY_PACKS, checkSources, docPackIds, noticeProblems } from './check-sources.mjs';
 
 const script = fileURLToPath(new URL('./check-sources.mjs', import.meta.url));
 const dirs = [];
@@ -70,6 +70,13 @@ test('a doc id that matches no pack is reported unless allow-listed', () => {
 	const out = checkSources(repo(okPacks(), doc));
 	assert.equal(out.length, 1);
 	assert.match(out[0], /names pack "ghost-pack"/);
+});
+
+test('fetched and local-only audio packs the docs name are accepted', () => {
+	assert.ok(FETCHED_PACKS.includes('kanjialive-audio'));
+	assert.ok(LOCAL_ONLY_PACKS.includes('commons-audio-zh') && LOCAL_ONLY_PACKS.includes('commons-audio-ja'));
+	const doc = DOC + '| Pack | Provides |\n|---|---|\n| **K** (`kanjialive-audio`) | x |\n- **C** (`commons-audio-zh`, local)\n- **D** (`commons-audio-ja`, local)\n';
+	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
 });
 
 test('ids outside table rows and list items are not pack names', () => {

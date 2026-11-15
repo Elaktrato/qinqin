@@ -16,10 +16,11 @@ export const PACK_TYPE_LABELS: Record<PackType, string> = {
 	frequency: 'Frequency lists',
 	levels: 'Level lists',
 	sentences: 'Sentences',
-	grammar: 'Grammar lessons'
+	grammar: 'Grammar lessons',
+	audio: 'Audio'
 };
 
-const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar'];
+const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio'];
 
 /** groupPacks groups the server's list (already ordered) by type; empty groups are dropped. */
 export function groupPacks(list: InstalledPack[]): { type: PackType; label: string; packs: InstalledPack[] }[] {
@@ -93,5 +94,7 @@ export function uninstallWarning(type: PackType): string {
 			return `Its example sentences disappear. Sentences you added yourself stay. ${RESEED}`;
 		case 'grammar':
 			return `Its grammar lessons disappear. ${RESEED}`;
+		case 'audio':
+			return `Its recordings are deleted from the data directory and the play buttons that used them fall back to the device voice. Install it again with the fetch script and \`qinqin seed\`; audio packs cannot be uploaded here.`;
 	}
 }

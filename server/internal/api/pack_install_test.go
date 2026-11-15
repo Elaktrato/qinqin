@@ -229,3 +229,18 @@ func TestStagedInstallSurvivesCancelledRequest(t *testing.T) {
 		t.Errorf("status = %+v, want done despite the cancelled request", b)
 	}
 }
+
+// Audio packs are installed by the fetch script and `qinqin seed`, not by
+// upload: a 10,000-clip pack exceeds the upload's file and size limits, and its
+// clips live under <data>/audio, not <data>/packs. The refusal is a clear 422.
+func TestAudioPackUploadIsRefused(t *testing.T) {
+	e := newPackEnv(t)
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(`{"id":"a1","name":"A","version":"1","type":"audio","language":"ja","license":"CC0","attribution":"x","format":"audio-index"}`), 0o644)
+	os.WriteFile(filepath.Join(dir, "index.tsv"), []byte("kind\tform\treading\tfile\tlicense\tattribution\tsource\n"), 0o644)
+	resp := uploadZip(t, e, e.admin, zipDirToBytes(t, dir))
+	body := bodyText(resp)
+	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "audio packs") || !strings.Contains(body, "qinqin seed") {
+		t.Errorf("audio upload = %d %q, want 422 naming the fetch script and seed", resp.StatusCode, body)
+	}
+}

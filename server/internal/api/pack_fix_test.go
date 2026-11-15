@@ -275,7 +275,8 @@ func TestStageRejectsUnsupportedTypeWithClientError(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest && resp.StatusCode != http.StatusUnprocessableEntity {
 		t.Errorf("audio manifest = %d %q, want a 4xx", resp.StatusCode, text)
 	}
-	if packs.Supported("audio") || !packs.Supported("dictionary") || !packs.Supported("grammar") {
-		t.Error("packs.Supported disagrees with the managed types")
+	// Audio packs are managed (listed, uninstalled) but never installable by upload.
+	if packs.Installable("audio") || !packs.Supported("audio") || packs.Supported("bogus") || !packs.Installable("dictionary") || !packs.Installable("grammar") {
+		t.Error("packs.Supported / Installable disagree with the managed types")
 	}
 }

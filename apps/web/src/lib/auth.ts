@@ -1,3 +1,5 @@
+import { clearAudioCache } from './api/audio';
+import { clearClipCache } from './audio/source';
 import { derived, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
 import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from './api/client';
@@ -95,6 +97,9 @@ export async function register(username: string, password: string): Promise<User
  */
 export function logout(): void {
 	clearToken();
+	// Recordings fetched for this user must not outlive the session.
+	clearClipCache();
+	clearAudioCache();
 	// Workspace ids are global: the next user must not inherit this choice.
 	// Only an explicit sign-out clears it; a mid-session 401 keeps it.
 	clearSelection();

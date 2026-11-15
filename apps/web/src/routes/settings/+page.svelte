@@ -13,6 +13,7 @@
 	import { pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
+	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
@@ -25,7 +26,7 @@
 		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
-	import { load as loadWorkspaces, rename, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
+	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 
 	interface PluginRow {
 		id: string;
@@ -306,6 +307,21 @@
 
 		{#if deleting}
 			<DeleteWorkspaceDialog workspace={deleting} list={$workspaces.list} onclose={closeDelete} />
+		{/if}
+
+		{#if $workspaces.current}
+			{@const active = $workspaces.current}
+			<h3>Audio for this workspace</h3>
+			<p class="hint">
+				Pronunciation buttons appear on entries and, after the answer, on study cards. These two
+				options belong to the current workspace.
+			</p>
+			<AudioSettings
+				settings={active.settings}
+				onChange={async (patch) => {
+					await setWorkspaceSettings(active.id, patch);
+				}}
+			/>
 		{/if}
 
 		<h3>New workspace</h3>

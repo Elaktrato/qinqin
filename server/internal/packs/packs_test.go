@@ -115,7 +115,7 @@ func TestImportDispatchesByType(t *testing.T) {
 		}
 	}
 	bad := dictPack(t)
-	bad.Type = "audio"
+	bad.Type = "bogus"
 	if _, err := packs.Import(ctx, sqlDB, bad); !errors.Is(err, packs.ErrUnknownType) {
 		t.Errorf("unknown type err = %v", err)
 	}
@@ -220,7 +220,7 @@ func TestUninstallEachType(t *testing.T) {
 	if got, _ := packs.List(ctx, sqlDB); len(got) != 0 {
 		t.Errorf("list after uninstalling all = %+v", got)
 	}
-	if err := packs.Uninstall(ctx, sqlDB, "audio", "x"); !errors.Is(err, packs.ErrUnknownType) {
+	if err := packs.Uninstall(ctx, sqlDB, "bogus", "x"); !errors.Is(err, packs.ErrUnknownType) {
 		t.Errorf("unknown type err = %v", err)
 	}
 	if err := packs.Uninstall(ctx, sqlDB, "dictionary", "missing"); !errors.Is(err, packs.ErrNotFound) {
@@ -235,7 +235,7 @@ func TestFind(t *testing.T) {
 	if err != nil || p.Name != "Levels" || p.License != "CC BY 4.0" {
 		t.Errorf("Find = %+v, %v", p, err)
 	}
-	if _, err := packs.Find(context.Background(), sqlDB, "audio", "x"); !errors.Is(err, packs.ErrUnknownType) {
+	if _, err := packs.Find(context.Background(), sqlDB, "bogus", "x"); !errors.Is(err, packs.ErrUnknownType) {
 		t.Errorf("unknown type err = %v", err)
 	}
 }

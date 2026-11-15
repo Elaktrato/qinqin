@@ -24,7 +24,7 @@ func seededPacks(t *testing.T) (*sql.DB, string) {
 	t.Helper()
 	sqlDB, _ := openTestDB(t)
 	root := smallPacks(t)
-	if err := seed(context.Background(), sqlDB, []string{root}, &strings.Builder{}); err != nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{root}, &strings.Builder{}); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	return sqlDB, root

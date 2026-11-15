@@ -2,7 +2,13 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
+	import { token } from '$lib/auth';
+	import { activate, canSound, headwordClips } from '$lib/audio/button';
+	import { readAudioSettings } from '$lib/audio/settings';
+	import { getPlayer } from '$lib/audio/shared';
+	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { ApiError } from '$lib/api/client';
 	import type { Entry, EntryBase, Sentence } from '$lib/api/types';
@@ -166,6 +172,11 @@
 	// Re-shows answered this session; practice only, never recorded.
 	let reshown = $state(0);
 	let entries = $state.raw<Record<number, Entry>>({});
+	// The recordings of every entry in the queue, resolved once per session.
+	let audioMap = $state.raw<Record<string, AudioResolution>>({});
+	// True once the resolution has finished (found, failed or not needed): autoplay
+	// waits for it so a recording that arrives late still plays on its card.
+	let audioSettled = $state(false);
 	let entryError = $state('');
 	let gradeError = $state('');
 	let grading = $state(false);
@@ -291,6 +302,8 @@
 		index = 0;
 		reshown = 0;
 		entries = {};
+		audioMap = {};
+		audioSettled = false;
 		entryError = '';
 		gradeError = '';
 		grading = false;
@@ -360,6 +373,7 @@
 				backfillLeft = plan.backfillLeft;
 			}
 			ensureEntry(queue[0]);
+			prefetchAudio(seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			queue = [];
@@ -457,6 +471,64 @@
 		backfillLeft = next.backfillLeft;
 		ensureEntry(queue[index]);
 	}
+
+	/**
+	 * Resolve the recordings of the whole queue once, for signed-in users:
+	 * one request per 200 entries. A failure only means no recordings; a
+	 * card never waits on it.
+	 */
+	function prefetchAudio(seq: number): void {
+		const ids = [...queue, ...reserve].filter((i) => i.kind === 'vocab' || i.kind === 'tone').map((i) => i.entryId);
+		if (!$token || ids.length === 0) {
+			audioSettled = true;
+			return;
+		}
+		void resolveAudio(ids).then((found) => {
+			if (seq !== requestSeq) return;
+			audioMap = found;
+			audioSettled = true;
+		});
+	}
+
+	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
+	// Only vocab and tone cards pronounce their word.
+	const currentAudio = $derived(
+		resolved !== null && (resolved.item.kind === 'vocab' || resolved.item.kind === 'tone')
+			? cardAudio(resolved.entry, audioMap[String(resolved.item.entryId)], audioSettings)
+			: null
+	);
+	let autoplayedFor: string | null = null;
+
+	function playCurrent(): void {
+		if (!canSound(currentAudio) || currentAudio === null) return;
+		void activate(getPlayer(), currentAudio, currentAudio.lang).catch(() => {});
+	}
+
+	// Autoplay: once per card, right after the reveal, only when the workspace
+	// setting is on (it is off by default).
+	$effect(() => {
+		const key = resolved === null ? '' : `${index}:${resolved.item.cardId}`;
+		const due = autoplayDue({
+			done,
+			autoplay: audioSettings.autoplay,
+			ready: audioSettled,
+			playedFor: autoplayedFor,
+			key
+		});
+		if (!due || key === '') return;
+		// Decided: it plays now (the recordings are in), or there is nothing to play.
+		autoplayedFor = key;
+		untrack(playCurrent);
+	});
+
+	// Warm the next card's recording while this one is on screen.
+	$effect(() => {
+		const next = queue[index + 1];
+		const res = next === undefined ? undefined : audioMap[String(next.entryId)];
+		if (res !== undefined && (next?.kind === 'vocab' || next?.kind === 'tone')) {
+			preloadClips({ clips: headwordClips(res), speakText: '', lang: '', deviceVoice: false });
+		}
+	});
 
 	// Resolve the current item whenever it (or its entry) changes. The
 	// card state resets with it, so a new card always starts unanswered.
@@ -645,6 +717,12 @@
 		}
 
 		if (blocksGradeKeys(event.target)) return;
+		if (isPlayKey(event) && canSound(currentAudio)) {
+			// Only after the reveal: this branch is past the `!done` return.
+			event.preventDefault();
+			playCurrent();
+			return;
+		}
 		const value = GRADE_KEYS[event.key];
 		if (value !== undefined) {
 			event.preventDefault();
@@ -791,6 +869,7 @@
 							entry={current.entry}
 							revealed={done}
 							onDone={onCardDone}
+							audio={currentAudio ?? undefined}
 						/>
 					{:else if current.item.kind === 'sentence' && current.sentence !== null}
 						<SentenceCard
@@ -812,7 +891,13 @@
 							onDone={onCardDone}
 						/>
 					{:else if current.item.kind === 'tone'}
-						<ToneCard item={current.item} entry={current.entry} {done} onDone={onCardDone} />
+						<ToneCard
+							item={current.item}
+							entry={current.entry}
+							{done}
+							onDone={onCardDone}
+							audio={currentAudio ?? undefined}
+						/>
 					{/if}
 				{/key}
 
@@ -843,7 +928,7 @@
 						</button>
 					{/each}
 				</div>
-				<p class="keys">{KEY_HINTS[current.item.kind]}</p>
+				<p class="keys">{KEY_HINTS[current.item.kind]}{#if done && canSound(currentAudio)} · P plays{/if}</p>
 			</article>
 		{/if}
 	{/if}

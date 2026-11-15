@@ -362,6 +362,121 @@ The hand-written CC0 samples `hsk-mini` and `jlpt-mini` live in `plugins/samples
 outside the default seed root (their badges would duplicate the real lists); the
 seed tests use them, and the map hides them when they are seeded explicitly.
 
+## Audio
+
+Pronunciation audio is an `audio` pack: an `index.tsv` (word, reading, file,
+licence and credit per recording) plus the clip files, imported by
+`qinqin seed` into content-addressed files under `<data>/audio/` and shown on
+the entry page and after the reveal in study. Every recording is credited on the
+Sources page and next to the play button. Without any pack, or without a device
+voice, the app shows no play button and works as before.
+
+The licence rule applies unchanged. No audio file, and no index built from a
+third party's data, is ever committed: packs live in the gitignored
+`plugins/data-audio/` (clear licence, fetched by script, also baked into the
+Docker image) or `plugins/data-local/` (unclear or restrictive, never
+distributed). Evidence, checked 2026-11-15 (sites that were unreachable that
+day are marked unverified):
+
+| Source | Evidence | Verdict |
+|---|---|---|
+| **Kanji alive** example-word audio (ja; 10,156 clips in the zip, 10,187 claimed by the README; male/female native speakers, 6–12 words per kanji for 1,235 kanji) | https://github.com/kanjialive/kanji-data-media `LICENSE.md` at e1e24d3: "This work by Kanji alive is licensed under a Creative Commons Attribution 4.0 International License"; the README names only two fonts as exceptions. Audio: https://media.kanjialive.com/examples_audio/audio-opus.zip (68,687,036 bytes, Last-Modified 2026-09-04). Word ↔ file mapping in `language-data/ka_data.csv` (`kname`, `examples`). | **BUNDLE-eligible** (licence); not committed to git (size), see Rulings |
+| **Wikimedia Commons** pronunciation files (zh, ja) | Licence per file, machine-readable through the API (`prop=imageinfo&iiprop=extmetadata`: `LicenseShortName`, `LicenseUrl`, `Artist`). Samples: `File:Zh-nǐ.ogg` "CC BY 2.0 fr" (Wei Gao, Vion Nicolas); `File:Zh-shi4.ogg` "CC BY-SA 2.0 uk", noted "not a native Mandarin speaker"; `File:Zh-ma1.ogg` missing. | **LOCAL-ONLY** tool with a per-file licence allow-list (see Rulings) |
+| **Lingua Libre** (cmn 4,108, jpn 5,616 files on Commons) | Files carry CC BY-SA 4.0, CC BY 4.0 or CC0 per Commons metadata; the default "CC BY-SA 4.0" comes from a snippet of the RecordWizard manual (site 503, unverified). | **LOCAL-ONLY** through the same Commons tool |
+| **hugolpz/audio-cmn** (1,707 syllables, ~8k HSK words) | README: "CC-by-sa. See table upper for authors."; no version; refers to an unreachable Shtooka readme; GitHub shows no licence. | **LOCAL-ONLY** (version unverified) |
+| **cjhoward/cedict-tts** | Audio "CC0 1.0 Universal", but "Baidu Speech-generated TTS MP3s"; Baidu's output terms unchecked. | **LOCAL-ONLY** |
+| **Tatoeba** audio | https://tatoeba.org/en/downloads: "If the license field is empty, you may not reuse the audio outside the Tatoeba project"; others vary (incl. NC/ND). Sentences, not words. | Out of scope (sentences); LOCAL-ONLY if ever |
+| **Forvo** | Proprietary licence since 2019 (https://en.wikipedia.org/wiki/Forvo); API non-profit plan "No commercial use" (https://api.forvo.com/). | **REJECT** |
+| **JapanesePod101** (Yomitan's default) | No public licence found. | **REJECT** |
+| davinfifield/mp3-chinese-pinyin-sound | Unlicense, but no speaker or source named. | **REJECT** (provenance) |
+| Tone Perfect (MSU) | "© Michigan State University", access on request. | **REJECT** |
+| **eSpeak NG** (engine GPL-3.0+) | Output not addressed by the project; poor Mandarin/Japanese quality. | **REJECT** for packs (quality) |
+| **Piper** voices: zh_CN-huayan (dataset licence "unknown" in MODEL_CARD), ja_JP-hi_fi_captain ("by-nc-sa/4.0") | huggingface.co/rhasspy/piper-voices MODEL_CARDs. | **REJECT** |
+| **Coqui XTTS-v2** | "Coqui Public Model License" (non-commercial). | **REJECT** |
+| **Kokoro-82M** | "Apache-licensed model"; trained partly on synthetic audio from closed TTS providers; Mandarin voices graded D, Japanese C. | **REJECT** for v1 (quality, provenance caveat) |
+| Browser / OS speech (Web Speech API, Android TextToSpeech) | Nothing is distributed: the user's own device voices speak at runtime. | **USE** as fallback |
+
+### Kanji alive (`kanjialive-audio`)
+
+- **Provides:** 10,156 Opus clips of common example words (6-12 per kanji, 1,235
+  kanji, male and female native Japanese speakers) with their readings; Japanese
+  entries whose written form and reading match one play it.
+- **Licence:** Creative Commons Attribution 4.0 International. The repository's
+  `LICENSE.md` (pinned commit `e1e24d39fc43e839948a8c7e99743b0994dedad5`) says
+  "This work by Kanji alive is licensed under a Creative Commons Attribution 4.0
+  International License"; its only exceptions are two fonts, not the audio. The
+  pack ships the CC BY 4.0 legal code as `LICENSE` and credits Kanji alive in
+  `ATTRIBUTION.md`, its manifest and, per recording, on the entry page.
+- **Obtaining it:** `scripts/fetch-audio-kanjialive.sh` downloads the list
+  (`language-data/ka_data.csv`), the licence file and `audio-opus.zip`
+  (68,687,036 bytes) from the pinned sources, refuses on any SHA-256 mismatch and
+  writes `plugins/data-audio/kanjialive-audio`. It needs `curl`, `sha256sum`,
+  `unzip` and Node 22 or newer (the Docker stage runs Alpine's Node 22). Nothing it fetches is committed.
+- **Docker:** the image builds the pack in its own stage (`--build-arg WITH_AUDIO=1`,
+  the default, the same way as `WITH_OCR`). Any build that has to run that stage
+  downloads about 69 MB from `media.kanjialive.com` and the data repository, and
+  the image grows by about 70 MB; a warm Docker layer cache skips the download until
+  the Dockerfile, the scripts or the build args change, but CI without a cache (and
+  every fresh release build) fetches each time. The build fails if a pinned checksum
+  no longer matches, so a moved or changed upstream file stops it instead of
+  shipping something unchecked. To see such a break early, the `audio-stage`
+  workflow builds only that stage (`docker build --target audio`, no push) on pull
+  requests that touch the Dockerfile, the workflows or the audio scripts, and every
+  Monday.
+- **When it fails (offline, upstream gone, pin moved):** build with
+  `--build-arg WITH_AUDIO=0`. The image then has an empty `/opt/qinqin/audio`,
+  `qinqin seed` still works and Japanese entries fall back to the device voice.
+  To adopt a new upstream snapshot after reading its licence again, pass the new
+  pins as build args (`KANJIALIVE_COMMIT`, `KANJIALIVE_CSV_SHA256`,
+  `KANJIALIVE_LICENSE_SHA256`, `KANJIALIVE_ZIP_SHA256`, `KANJIALIVE_ZIP_BYTES`,
+  `KANJIALIVE_EXPECTED_CLIPS`, `KANJIALIVE_SNAPSHOT`) and then update the defaults in
+  `scripts/fetch-audio-kanjialive.sh`. Idea, not built: a maintainer-run mirror of
+  the zip (set `KANJIALIVE_ZIP_URL`; the checksum still has to match) would take
+  release builds off `media.kanjialive.com`; it would have to carry the CC BY 4.0
+  attribution and licence text with the file.
+- **File mapping:** the data repository's `examples-audio/README.md` (pinned by
+  SHA-256 in the fetch script) documents it: the files are named by the kanji's
+  `kname` prefix plus a suffix `a` to `l` "in alphabetical order" matching the
+  readings listed in the `examples` column, and `_06_` is the same in every name.
+  The top-level README does not say this. The build also checks it against the data
+  it downloads: 10,156 example words and 10,156 files, every kanji has exactly as
+  many files as examples, and the file size follows the length of the word's reading
+  (correlation 0.78 over all clips, 0.21 when each kanji's files are rotated by one
+  position, about 0 for a random pairing). This is evidence from the documentation
+  and the data, not from listening.
+- **Credit and changes:** the licence text, a link to
+  https://creativecommons.org/licenses/by/4.0/ and the names Harumi Hibino Lory and
+  Arno Bosse (the Kanji alive credits page lists them as director and assistant of
+  the project; the repository's licence file names only "Kanji alive") appear in the
+  pack's `ATTRIBUTION.md`, its manifest, on the Sources page and, per recording, as
+  a credit line next to the play button. `index.tsv` is marked there as derived from
+  `ka_data.csv`; the audio files are unchanged copies.
+- **Owner to-do:** nobody has listened to the clips yet. Before relying on the
+  mapping, play about ten clips from different kanji and check each against the
+  word and reading in `index.tsv` (for example the first rows for `述`, file
+  `jutsu-no(beru)_06_a.opus` should say 述語, じゅつご). A mismatch means the
+  suffix order differs from the list order; `exampleRows` in
+  `scripts/prepare-audio-kanjialive.mjs` is the one place to change.
+
+### Wikimedia Commons and Lingua Libre (`commons-audio-zh`, `commons-audio-ja`, local-only)
+
+Never bundled: the licence is per file, coverage is uneven and the set keeps
+changing. `node scripts/fetch-audio-commons.mjs --lang zh --category <Commons
+category>` (or `--lang ja`) builds the pack under `plugins/data-local/` from the
+public Commons API, at most one request per second with a User-Agent naming the
+tool, and `qinqin seed` imports it next to the others. It keeps a file only when
+its Commons `LicenseShortName` is CC0, public domain, CC BY or CC BY-SA 2.0 to
+4.0 (national ports such as `CC BY 2.0 fr` included); every other licence
+(non-commercial, no-derivatives, GFDL, unknown) is skipped and counted. Each kept
+clip's licence, credit (the `Artist` field with its HTML removed) and file page
+go into the index, and are shown with the play button and under "Per-recording
+credits" on the Sources page. `Zh-<pinyin>.ogg` files become syllable clips;
+Lingua Libre recordings become word clips without a reading (they match the word
+under any reading), and a recording whose title contains digits or Latin letters
+is skipped, because it does not say the bare word. Several of these files carry
+a note that the speaker is not a native Mandarin speaker; the credit shows the
+Commons description, not a quality judgement.
+
 ## Local-only data
 
 Data whose licence is unclear or restrictive is never committed. It can live

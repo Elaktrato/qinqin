@@ -35,7 +35,7 @@ func TestSeedImportsFrequencyAfterDictionariesBeforeLevels(t *testing.T) {
 	// put it after the dictionaries.
 	writeFreqPack(t, root, "aaa-freq", "猫,,3\n犬,,4\n")
 	var out bytes.Buffer
-	if err := seed(context.Background(), sqlDB, []string{root}, &out); err != nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{root}, &out); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
@@ -73,7 +73,7 @@ func TestSeedFrequencyPackOrderFollowsImportOrder(t *testing.T) {
 	root := t.TempDir()
 	writeFreqPack(t, root, "b-second", "猫,,1\n")
 	writeFreqPack(t, root, "a-first", "猫,,2\n")
-	if err := seed(context.Background(), sqlDB, []string{root}, io.Discard); err != nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{root}, io.Discard); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	packs, err := freq.Store{DB: sqlDB}.Packs(context.Background())
@@ -88,7 +88,7 @@ func TestSeedWalksEveryRoot(t *testing.T) {
 	writeFreqPack(t, public, "public-freq", "猫,,1\n")
 	writeFreqPack(t, local, "local-freq", "犬,,2\n")
 	var out bytes.Buffer
-	if err := seed(context.Background(), sqlDB, []string{public, local}, &out); err != nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{public, local}, &out); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	for _, id := range []string{"public-freq", "local-freq"} {
@@ -96,7 +96,7 @@ func TestSeedWalksEveryRoot(t *testing.T) {
 			t.Errorf("pack %s from one of the roots was not imported:\n%s", id, out.String())
 		}
 	}
-	if err := seed(context.Background(), sqlDB, []string{public, filepath.Join(local, "missing")}, io.Discard); err == nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{public, filepath.Join(local, "missing")}, io.Discard); err == nil {
 		t.Error("seed with a missing explicit root succeeded, want an error")
 	}
 }

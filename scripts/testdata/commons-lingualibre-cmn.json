@@ -1,0 +1,65 @@
+{
+  "batchcomplete": "",
+  "query": {
+    "pages": {
+      "2001": {
+        "pageid": 2001, "ns": 6, "title": "File:LL-Q9192 (cmn)-Testspeaker-你好.wav",
+        "imageinfo": [{
+          "size": 166700, "mime": "audio/wav",
+          "url": "https://upload.example.test/commons/d/d2/LL-Q9192_%28cmn%29-Testspeaker-%E4%BD%A0%E5%A5%BD.wav",
+          "descriptionurl": "https://commons.example.test/wiki/File:LL-Q9192_(cmn)-Testspeaker-%E4%BD%A0%E5%A5%BD.wav",
+          "extmetadata": {
+            "Artist": {"value": "<ul><li>Speaker: <a href=\"//lingualibre.example.test/wiki/Q1\" title=\"lingualibre:Q1\">Testspeaker</a></li>\n<li>Recorder: <a href=\"//commons.example.test/wiki/User:Testspeaker\">Testspeaker</a></li></ul>"},
+            "LicenseShortName": {"value": "CC BY-SA 4.0"}
+          }
+        }],
+        "videoinfo": [{
+          "derivatives": [
+            {"src": "https://upload.example.test/commons/transcoded/d/d2/x.wav/x.wav.mp3", "type": "audio/mpeg", "transcodekey": "mp3"},
+            {"src": "https://upload.example.test/commons/transcoded/d/d2/x.wav/x.wav.ogg", "type": "audio/ogg; codecs=\"vorbis\"", "transcodekey": "ogg"}
+          ]
+        }]
+      },
+      "2002": {
+        "pageid": 2002, "ns": 6, "title": "File:LL-Q9192 (cmn)-Testspeaker-102 块钱.wav",
+        "imageinfo": [{
+          "size": 166700, "mime": "audio/wav",
+          "url": "https://upload.example.test/commons/d/d3/y.wav",
+          "descriptionurl": "https://commons.example.test/wiki/File:y.wav",
+          "extmetadata": {"Artist": {"value": "Testspeaker"}, "LicenseShortName": {"value": "CC BY-SA 4.0"}}
+        }],
+        "videoinfo": [{"derivatives": [{"src": "https://upload.example.test/commons/transcoded/d/d3/y.wav/y.wav.ogg", "type": "audio/ogg", "transcodekey": "ogg"}]}]
+      },
+      "2003": {
+        "pageid": 2003, "ns": 6, "title": "File:LL-Q9192 (cmn)-Testspeaker-谢谢.wav",
+        "imageinfo": [{
+          "size": 1000, "mime": "audio/wav",
+          "url": "https://upload.example.test/commons/d/d4/z.wav",
+          "descriptionurl": "https://commons.example.test/wiki/File:z.wav",
+          "extmetadata": {"Artist": {"value": "Testspeaker"}, "LicenseShortName": {"value": "CC BY-SA 4.0"}}
+        }],
+        "videoinfo": [{"derivatives": [{"src": "https://upload.example.test/commons/transcoded/d/d4/z.wav/z.wav.mp3", "type": "audio/mpeg", "transcodekey": "mp3"}]}]
+      },
+      "2004": {
+        "pageid": 2004, "ns": 6, "title": "File:LL-Q9192 (cmn)-Other-再见.wav",
+        "imageinfo": [{
+          "size": 1000, "mime": "audio/wav",
+          "url": "https://upload.example.test/commons/d/d5/w.wav",
+          "descriptionurl": "https://commons.example.test/wiki/File:w.wav",
+          "extmetadata": {"Artist": {"value": "Other"}, "LicenseShortName": {"value": "CC BY-NC 4.0"}}
+        }],
+        "videoinfo": [{"derivatives": [{"src": "https://upload.example.test/commons/transcoded/d/d5/w.wav/w.wav.ogg", "type": "audio/ogg", "transcodekey": "ogg"}]}]
+      },
+      "2005": {
+        "pageid": 2005, "ns": 6, "title": "File:LL-Q188 (deu)-Testspeaker-Hallo.wav",
+        "imageinfo": [{
+          "size": 1000, "mime": "audio/wav",
+          "url": "https://upload.example.test/commons/d/d6/v.wav",
+          "descriptionurl": "https://commons.example.test/wiki/File:v.wav",
+          "extmetadata": {"Artist": {"value": "Testspeaker"}, "LicenseShortName": {"value": "CC0"}}
+        }],
+        "videoinfo": [{"derivatives": [{"src": "https://upload.example.test/commons/transcoded/d/d6/v.wav/v.wav.ogg", "type": "audio/ogg", "transcodekey": "ogg"}]}]
+      }
+    }
+  }
+}

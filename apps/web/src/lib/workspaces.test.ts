@@ -6,7 +6,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import type { Workspace } from './api/types';
-import { clearSelection, create, currentLanguage, deleteWorkspace, load, rename, select, workspaces } from './workspaces';
+import { clearSelection, create, currentLanguage, deleteWorkspace, load, rename, select, setSettings, workspaces } from './workspaces';
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -272,5 +272,23 @@ describe('workspace store', () => {
 
 		expect(get(workspaces)).toEqual({ list: [zh], current: zh });
 		expect(localStorage.getItem('qinqin.session.1.2026-11-14')).toBe('1');
+	});
+
+	it('merges a settings patch through PUT and replaces the workspace in the store', async () => {
+		const zh = workspace(1, 'zh');
+		const ja = workspace(2, 'ja');
+		workspaces.set({ list: [zh, ja], current: ja });
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ ...ja, settings: { audioAutoplay: true } }));
+
+		const updated = await setSettings(2, { audioAutoplay: true });
+
+		const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+		expect(url).toBe('/api/workspaces/2');
+		expect(init.method).toBe('PUT');
+		expect(JSON.parse(String(init.body))).toEqual({ settings: { audioAutoplay: true } });
+		expect(updated.settings).toEqual({ audioAutoplay: true });
+		expect(get(workspaces).current?.settings).toEqual({ audioAutoplay: true });
+		expect(get(workspaces).list[1].settings).toEqual({ audioAutoplay: true });
+		expect(get(workspaces).list[0]).toBe(zh);
 	});
 });

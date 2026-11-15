@@ -80,7 +80,7 @@ func TestSeedRealPacksRanksWithJiten(t *testing.T) {
 	ctx := context.Background()
 	sqlDB, _ := openTestDB(t)
 	var out bytes.Buffer
-	if err := seed(ctx, sqlDB, []string{committedPacks}, &out); err != nil {
+	if err := seed(ctx, sqlDB, t.TempDir(), []string{committedPacks}, &out); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 
