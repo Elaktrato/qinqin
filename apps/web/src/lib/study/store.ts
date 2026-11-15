@@ -380,6 +380,80 @@ function freshCardId(
 	return newUlid();
 }
 
+/**
+ * rowsOfCards expands card ids to every stored row they stand for: the
+ * unmerged duplicates of the card (same `cardKey`) and, for a vocab card,
+ * its stored companion cards (sentence, writing, tone of the same word).
+ * Deleting or moving only the merged survivor would let a duplicate or a
+ * companion resurface in the old place.
+ */
+function rowsOfCards(all: readonly StudyCard[], ids: readonly string[]): StudyCard[] {
+	const wanted = new Set(ids);
+	const picked = all.filter((card) => wanted.has(card.id));
+	const keys = new Set(picked.map((card) => cardKey(card.kind, card.entryId, card.sentenceId)));
+	const vocabEntries = new Set(
+		picked.filter((card) => card.kind === 'vocab').map((card) => card.entryId)
+	);
+	return all.filter(
+		(card) =>
+			wanted.has(card.id) ||
+			keys.has(cardKey(card.kind, card.entryId, card.sentenceId)) ||
+			(card.kind !== 'vocab' && vocabEntries.has(card.entryId))
+	);
+}
+
+/**
+ * deleteCards tombstones the given cards (see rowsOfCards for what that
+ * includes) and returns the removed rows, which restoreCards takes to
+ * undo it. Review events are not touched: reviews of a missing card are
+ * ignored by scheduling and mastery, while EXP and streaks keep counting.
+ */
+export async function deleteCards(ids: readonly string[]): Promise<StudyCard[]> {
+	const workspaceId = requireWorkspaceId();
+	if (ids.length === 0) return [];
+	const { cards } = await fetchStudyData(workspaceId);
+	const rows = rowsOfCards(cards, ids);
+	for (const row of rows) {
+		await deleteData(workspaceId, cardRowKey(row.id));
+	}
+	return rows;
+}
+
+/**
+ * restoreCards writes removed rows back; the server revives a tombstoned
+ * key on PUT, so the card, its id and its reviews are all back.
+ */
+export async function restoreCards(rows: readonly StudyCard[]): Promise<void> {
+	const workspaceId = requireWorkspaceId();
+	for (const row of rows) {
+		await putData(workspaceId, cardRowKey(row.id), row);
+	}
+}
+
+/**
+ * moveCards makes `deckId` the only deck of the given cards (their
+ * duplicates and companions follow). Rows already only in that deck are
+ * not rewritten. Returns the rows as they were before, for undo through
+ * restoreCards. The deck must be General or a stored deck.
+ */
+export async function moveCards(ids: readonly string[], deckId: string): Promise<StudyCard[]> {
+	const workspaceId = requireWorkspaceId();
+	if (deckId === '') throw new Error('choose a deck to move the cards to');
+	if (ids.length === 0) return [];
+	const { cards, decks } = await fetchStudyData(workspaceId);
+	if (deckId !== GENERAL_DECK_ID && !decks.some((deck) => deck.id === deckId)) {
+		// Only the general deck is implicit: any other target must exist.
+		throw new Error(`deck "${deckId}" not found`);
+	}
+	const changed = rowsOfCards(cards, ids).filter(
+		(row) => row.deckIds.length !== 1 || row.deckIds[0] !== deckId
+	);
+	for (const row of changed) {
+		await putData(workspaceId, cardRowKey(row.id), { ...row, deckIds: [deckId] });
+	}
+	return changed;
+}
+
 /** cardsInDecks keeps the cards that belong to at least one of `deckIds`. */
 export function cardsInDecks(cards: readonly StudyCard[], deckIds: readonly string[]): StudyCard[] {
 	const wanted = new Set(deckIds);

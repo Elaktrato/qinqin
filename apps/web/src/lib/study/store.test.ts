@@ -13,8 +13,11 @@ import {
 	addCard,
 	cardsInDecks,
 	createDeck,
+	deleteCards,
 	deleteDeck,
 	loadStudyData,
+	moveCards,
+	restoreCards,
 	onStudyWrite,
 	renameDeck
 } from './store';
@@ -748,6 +751,125 @@ describe('study store', () => {
 
 			await expect(addCard(42, { written: '猫' })).resolves.toEqual(existing);
 			expect(putBodies()).toEqual([]);
+		});
+	});
+
+	describe('card management', () => {
+		const vocab = card('c-vocab-42', 42, ['deck-1'], '2026-01-01T00:00:00Z', '你好');
+		const companion: StudyCard = {
+			id: 'c-writing-42',
+			kind: 'writing',
+			entryId: 42,
+			deckIds: ['deck-1'],
+			createdAt: '2026-01-03T00:00:00Z'
+		};
+		const dupe = card('01DUPE', 42, ['deck-2'], '2026-01-02T00:00:00Z');
+		const other = card('c-vocab-43', 43, ['deck-1']);
+
+		function serve(rows: StudyCard[]): void {
+			vi.mocked(fetch).mockImplementation(async (_input, init) => {
+				if (init?.method === 'DELETE') return new Response(null, { status: 204 });
+				if (init?.method === 'PUT') return jsonResponse({ version: 2 });
+				return jsonResponse({
+					pluginData: [
+						...['deck-1', 'deck-2', 'deck-3'].map((id) => pluginRow(`deck:${id}`, deck(id, id))),
+						...rows.map((row) => pluginRow(`card:${row.id}`, row))
+					]
+				});
+			});
+		}
+
+		function deletedKeys(): string[] {
+			return calls()
+				.filter(([, init]) => init?.method === 'DELETE')
+				.map(([url]) => String(url).split('/data/')[1].split('?')[0]);
+		}
+
+		it('tombstones the card, its stored duplicates and its companion cards', async () => {
+			serve([vocab, companion, dupe, other]);
+			const removed = await deleteCards(['c-vocab-42']);
+			expect(deletedKeys().sort()).toEqual(
+				['card:01DUPE', 'card:c-vocab-42', 'card:c-writing-42'].sort()
+			);
+			expect(removed.map((row) => row.id).sort()).toEqual(['01DUPE', 'c-vocab-42', 'c-writing-42']);
+		});
+
+		it('deleting a non-vocab card leaves the vocab card alone', async () => {
+			serve([vocab, companion]);
+			await deleteCards(['c-writing-42']);
+			expect(deletedKeys()).toEqual(['card:c-writing-42']);
+		});
+
+		it('ignores unknown ids and writes nothing for an empty list', async () => {
+			serve([vocab]);
+			expect(await deleteCards(['nope'])).toEqual([]);
+			expect(await deleteCards([])).toEqual([]);
+			expect(deletedKeys()).toEqual([]);
+		});
+
+		it('restoreCards puts the removed rows back unchanged', async () => {
+			serve([]);
+			await restoreCards([vocab, companion]);
+			expect(putBodies()).toEqual([
+				{
+					url: `/api/plugins/${PLUGIN_ID}/data/card:c-vocab-42?workspace=${WORKSPACE_ID}`,
+					body: vocab
+				},
+				{
+					url: `/api/plugins/${PLUGIN_ID}/data/card:c-writing-42?workspace=${WORKSPACE_ID}`,
+					body: companion
+				}
+			]);
+		});
+
+		it('moves cards (and their duplicates and companions) into the target deck', async () => {
+			serve([vocab, companion, dupe, other]);
+			await moveCards(['c-vocab-42'], 'deck-3');
+			const bodies = putBodies();
+			expect(bodies.map((entry) => entry.url.split('/data/')[1].split('?')[0]).sort()).toEqual([
+				'card:01DUPE',
+				'card:c-vocab-42',
+				'card:c-writing-42'
+			]);
+			for (const entry of bodies) expect((entry.body as StudyCard).deckIds).toEqual(['deck-3']);
+		});
+
+		it('skips rows already only in the target deck', async () => {
+			serve([vocab, other]);
+			await moveCards(['c-vocab-42', 'c-vocab-43'], 'deck-1');
+			expect(putBodies()).toEqual([]);
+		});
+
+		it('rejects a deck that does not exist', async () => {
+			serve([vocab]);
+			await expect(moveCards(['c-vocab-42'], 'ghost')).rejects.toThrow(/not found/);
+			expect(putBodies()).toEqual([]);
+		});
+
+		it('moves into the implicit general deck', async () => {
+			serve([vocab]);
+			await moveCards(['c-vocab-42'], GENERAL_DECK_ID);
+			expect(putBodies()).toHaveLength(1);
+		});
+
+		it('rejects an empty target and the move leaves the store untouched', async () => {
+			serve([vocab]);
+			await expect(moveCards(['c-vocab-42'], '')).rejects.toThrow(/deck/i);
+			expect(putBodies()).toEqual([]);
+		});
+
+		it('a tombstoned card no longer loads', async () => {
+			vi.mocked(fetch).mockImplementation(async () =>
+				jsonResponse({
+					pluginData: [
+						pluginRow('card:c-vocab-42', vocab, { deletedAt: '2026-02-01T00:00:00Z' }),
+						pluginRow('card:c-vocab-43', other)
+					],
+					events: []
+				})
+			);
+			const data = await loadStudyData();
+			expect(data.cards.map((c) => c.id)).toEqual(['c-vocab-43']);
 		});
 	});
 
