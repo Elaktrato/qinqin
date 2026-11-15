@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -145,8 +146,9 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	}
 	legacyToken, _ := newToken()
 	if err := placePack(packsDir, pack.Manifest, pack.Dir, legacyToken); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+		// The import is committed: the dictionary is installed. The files
+		// are only a re-install copy, so a failed move is logged, not a 500.
+		log.Printf("dictionary %s: move files into place: %v", pack.Manifest.ID, err)
 	}
 	// pack.Dir is the stage itself or the one folder inside it; the
 	// deferred cleanup removes what is left of the stage.

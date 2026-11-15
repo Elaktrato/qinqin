@@ -34,11 +34,24 @@ func (Ja) NormalizeReading(readType, value string) string {
 // query that does not convert stays as written — search normalization
 // never fails.
 func (Ja) SearchPlain(query string) string {
-	q := strings.ToLower(query)
+	q := strings.ToLower(strings.TrimSpace(query))
+	if kana, ok := particleGreetings[q]; ok {
+		return kana
+	}
 	if containsKana(q) {
 		return kanaPlain(q)
 	}
 	return romajiToKana(q)
+}
+
+// particleGreetings are the fixed greetings whose は is the particle
+// pronounced wa. A beginner types konnichiwa for こんにちは, which
+// dictionaries store with は, so the whole query reads that way. Any other
+// wa stays わ: watashiwa is わたしわ, and the mechanical konnichiha still
+// converts to は.
+var particleGreetings = map[string]string{
+	"konnichiwa": "こんにちは",
+	"konbanwa":   "こんばんは",
 }
 
 // DeriveReadings appends a romaji reading converted from each kana
@@ -113,20 +126,21 @@ func kanaPlain(s string) string {
 // lengthens after kana — こ is followed by お, ひ by い. A mark after
 // anything that carries no vowel drops.
 func prolongedVowel(kana rune) rune {
-	switch lastVowel([]byte(kanaRomaji[kana])) {
-	case 'a':
-		return 'あ'
-	case 'e':
-		return 'え'
-	case 'i':
-		return 'い'
-	case 'o':
-		return 'お'
-	case 'u':
-		return 'う'
-	}
-	return 0
+	return prolongedVowels[kana]
 }
+
+// prolongedVowels maps each kana to the vowel kana its prolonged mark
+// writes, built once from kanaRomaji. Kana without a vowel (ん) are absent.
+var prolongedVowels = func() map[rune]rune {
+	vowelKana := map[byte]rune{'a': 'あ', 'e': 'え', 'i': 'い', 'o': 'お', 'u': 'う'}
+	m := make(map[rune]rune, len(kanaRomaji))
+	for kana, romaji := range kanaRomaji {
+		if v, ok := vowelKana[lastVowel([]byte(romaji))]; ok {
+			m[kana] = v
+		}
+	}
+	return m
+}()
 
 // containsKana reports whether s carries any kana — hiragana or
 // katakana, small kana included. A query that does is treated as kana;
@@ -255,11 +269,22 @@ func kanaToRomaji(s string) string {
 		}
 		if romaji, ok := kanaRomaji[r]; ok {
 			b = append(b, romaji...)
+			if r == 'ん' && i+1 < len(rs) && startsWithVowelOrY(rs[i+1]) {
+				// ん before a vowel or y writes its apostrophe (shin'ya,
+				// hon'i): without it the n would join the next syllable.
+				b = append(b, '\'')
+			}
 			continue
 		}
 		b = append(b, string(r)...)
 	}
 	return string(b)
+}
+
+// startsWithVowelOrY reports whether the kana r is read with a vowel or y
+// onset: the vowel kana, や ゆ よ, and the small forms of both.
+func startsWithVowelOrY(r rune) bool {
+	return strings.ContainsRune("あいうえおぁぃぅぇぉやゆよゃゅょ", r)
 }
 
 // unitRomaji returns the romaji of the kana unit at position i — a kana
@@ -346,8 +371,14 @@ func romajiToKana(s string) string {
 	for i < len(s) {
 		// A doubled consonant other than n is the small tsu: one of
 		// the pair is consumed, the other starts the next syllable.
-		if i+1 < len(s) && s[i] == s[i+1] && s[i] != 'n' && isConsonant(s[i]) {
+		if i+1 < len(s) && s[i] == s[i+1] && s[i] != 'n' && s[i] != 'm' && isConsonant(s[i]) {
 			b.WriteString("っ")
+			i++
+			continue
+		}
+		// Hepburn writes ん as m before b, p and m (sampo, kammuri).
+		if s[i] == 'm' && i+1 < len(s) && strings.IndexByte("bpm", s[i+1]) >= 0 {
+			b.WriteString("ん")
 			i++
 			continue
 		}

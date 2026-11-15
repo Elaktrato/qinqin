@@ -30,7 +30,8 @@ type sentenceRequest struct {
 // handleAddSentence serves POST /api/entries/{id}/sentences: it stores
 // the authenticated caller's example sentence on the entry — owned by
 // them, never touched by pack imports — and responds with the stored
-// sentence. Only the text (hanzi) is required; pinyin and translation
+// sentence. The entry may be of any kind (word, character, ...): the
+// word-only rule binds pack sentences, not a user's own. Only the text (hanzi) is required; pinyin and translation
 // are optional (the reader saves book sentences as text only). Unknown
 // and malformed ids are 404, unauthenticated calls 401, malformed bodies
 // and a blank text 400, a field over 2000 characters 422 and a body over
@@ -81,20 +82,14 @@ func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	// The stored row is read back so the response carries the sentence
-	// exactly as persisted, timestamps included.
-	list, err := sentences.ForEntry(r.Context(), s.db, id, u.ID)
+	// The stored row is read back by id so the response carries the
+	// sentence exactly as persisted, timestamps included.
+	stored, err := sentences.Get(r.Context(), s.db, sid, u.ID)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	for _, stored := range list {
-		if stored.ID == sid {
-			writeJSON(w, http.StatusCreated, stored)
-			return
-		}
-	}
-	http.Error(w, "internal error", http.StatusInternalServerError)
+	writeJSON(w, http.StatusCreated, stored)
 }
 
 // handleUninstallSentences serves DELETE /api/admin/sentences/{pack}:

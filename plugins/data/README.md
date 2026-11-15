@@ -191,7 +191,7 @@ they agree with the levels derived from the words on all but 3 (店, 留, 饺).
 On the map, the word scheme shows the characters its words are written
 with, each at the lowest level of a word that uses it; a one-character word
 (好) links to the character entry, since CC-CEDICT gives single characters as
-characters. Against the bundled CC-CEDICT, 2 of the 10,959 forms do not
+characters. Against the bundled CC-CEDICT, 2 of the 10,959 listed forms (each unknown form is reported once) do not
 resolve and are skipped at seed time ("unknown forms skipped"): 精彩纷呈 and
 口哨儿 (HSK 7–9); the words' 3,088 distinct characters all resolve (HSK 1 248,
 HSK 2 123, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413, HSK 7–9 1,148, each at
@@ -247,3 +247,10 @@ counted; a file where more than 5% of entry lines are malformed is rejected as
 the wrong file. Pinyin that cannot be converted is kept as written and counted
 (no bopomofo is derived for it). Homograph lines for one written form
 (行 xíng / háng) merge into one entry with all their readings and senses.
+Comment lines may be indented. Only a Han character is a `character` entry:
+CC-CEDICT's single Latin letters and symbols (A, B, P, Q, T, w, □, ○ ...) import
+as words, so a database seeded before this rule keeps them as characters until
+they are removed (uninstall the dictionary, or delete the nine entries by hand);
+a re-import writes the words next to them.
+The pinyin plain form now also folds the syllabic nasals and ê (ń, ǹg, ế), so
+the stored search keys of such readings change: re-seed to refresh them.

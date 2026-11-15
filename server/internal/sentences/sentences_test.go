@@ -510,6 +510,8 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 		"no pinyin":      `{"entries":[{"word":"你好","sentences":[{"hanzi":"你好！","translation":"Hi!"}]}]}`,
 		"no translation": `{"entries":[{"word":"你好","sentences":[{"hanzi":"你好！","pinyin":"nǐ hǎo!"}]}]}`,
 		"malformed json": `{"entries":`,
+		"empty array":    `{"entries":[{"word":"你好","sentences":[]}]}`,
+		"no sentences":   `{"entries":[{"word":"你好"}]}`,
 	} {
 		if _, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "invalid-"+name, sentencesJSON)); !errors.Is(err, dict.ErrInvalidPack) {
 			t.Errorf("import %s err = %v, want ErrInvalidPack", name, err)
@@ -522,5 +524,74 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 	}
 	if _, err := sentences.ImportPack(ctx, sqlDB, buildPackFormat(t, "cedict-format", "cedict", `{"entries":[]}`)); !errors.Is(err, dict.ErrInvalidPack) {
 		t.Errorf("import cedict-format sentences pack err = %v, want ErrInvalidPack", err)
+	}
+}
+
+const dupPack = `{"entries":[
+ {"word":"你好","sentences":[
+  {"hanzi":"你好！","pinyin":"nǐ hǎo!","translation":"Hi!"},
+  {"hanzi":"你好！","pinyin":"nǐ hǎo!","translation":"Hi!"}]},
+ {"word":"你好","sentences":[{"hanzi":"你好！","pinyin":"nǐ hǎo!","translation":"Hi!"},
+  {"hanzi":"你好吗？","pinyin":"nǐ hǎo ma?","translation":"How are you?"}]}]}`
+
+func TestResultCountsDistinctSentences(t *testing.T) {
+	sqlDB := newDB(t)
+	nihao, _ := seedWords(t, sqlDB)
+	res, err := sentences.ImportPack(context.Background(), sqlDB, buildPack(t, "dups", dupPack))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Sentences != 2 {
+		t.Errorf("Result.Sentences = %d, want 2 distinct sentences written", res.Sentences)
+	}
+	list, err := sentences.ForEntry(context.Background(), sqlDB, nihao, 0)
+	if err != nil || len(list) != 2 {
+		t.Errorf("ForEntry = %d sentences, %v; want 2", len(list), err)
+	}
+}
+
+func TestForEntryListsPackSentencesBeforeUserOnes(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	nihao, _ := seedWords(t, sqlDB)
+	uid := int64(1)
+	if _, err := sqlDB.Exec(`INSERT INTO users (id, username, hash, updated_at) VALUES (1, 'u', 'x', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sentences.AddUser(ctx, sqlDB, uid, nihao, model.Sentence{Hanzi: "mine"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "late", dupPack)); err != nil {
+		t.Fatal(err)
+	}
+	list, err := sentences.ForEntry(ctx, sqlDB, nihao, uid)
+	if err != nil || len(list) != 3 {
+		t.Fatalf("ForEntry = %d, %v; want 3", len(list), err)
+	}
+	if list[0].SourcePack == "" || list[1].SourcePack == "" || list[2].UserID == nil {
+		t.Errorf("order = %+v, want both pack sentences first, then the user's own", list)
+	}
+}
+
+func TestGetReturnsOneVisibleSentence(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	nihao, _ := seedWords(t, sqlDB)
+	if _, err := sqlDB.Exec(`INSERT INTO users (id, username, hash, updated_at) VALUES (1, 'u', 'x', '2026-01-01T00:00:00Z'), (2, 'v', 'x', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	id, err := sentences.AddUser(ctx, sqlDB, 1, nihao, model.Sentence{Hanzi: "mine", Pinyin: "p", Translation: "t"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := sentences.Get(ctx, sqlDB, id, 1)
+	if err != nil || got.ID != id || got.Hanzi != "mine" || got.UserID == nil || *got.UserID != 1 {
+		t.Errorf("Get(owner) = %+v, %v", got, err)
+	}
+	if _, err := sentences.Get(ctx, sqlDB, id, 2); !errors.Is(err, sentences.ErrSentenceNotFound) {
+		t.Errorf("Get(other user) err = %v, want ErrNotFound", err)
+	}
+	if _, err := sentences.Get(ctx, sqlDB, 9999, 1); !errors.Is(err, sentences.ErrSentenceNotFound) {
+		t.Errorf("Get(unknown) err = %v, want ErrNotFound", err)
 	}
 }

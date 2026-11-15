@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"qinqin/internal/pinyin"
@@ -70,7 +71,7 @@ func parseCedictLenient(r io.Reader) (cedictParse, error) {
 	for sc.Scan() {
 		lineNo++
 		line := strings.TrimRight(sc.Text(), " \t")
-		if line == "" || strings.HasPrefix(line, "#") {
+		if trimmed := strings.TrimSpace(line); trimmed == "" || strings.HasPrefix(trimmed, "#") {
 			continue
 		}
 		m := cedictLine.FindStringSubmatch(line)
@@ -152,10 +153,11 @@ func markedPinyin(r RawEntry, stats *cedictStats) string {
 	return r.Pinyin
 }
 
-// cedictKind classifies a CC-CEDICT written form: one hanzi is a
-// character entry, several hanzi a word.
+// cedictKind classifies a CC-CEDICT written form: one Han character is a
+// character entry; anything else — several runes, or a single letter or
+// digit of another script — is a word.
 func cedictKind(written string) string {
-	if utf8.RuneCountInString(written) == 1 {
+	if r, size := utf8.DecodeRuneInString(written); size == len(written) && unicode.Is(unicode.Han, r) {
 		return "character"
 	}
 	return "word"
