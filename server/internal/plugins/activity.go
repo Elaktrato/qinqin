@@ -2,9 +2,13 @@ package plugins
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
+	"sort"
 	"strings"
 )
 
@@ -128,4 +132,69 @@ func (r ActivityRule) validate(at string) []string {
 		}
 	}
 	return out
+}
+
+// RuleOf is one activity rule with the plugin and event type it belongs to.
+type RuleOf struct {
+	Plugin string
+	Type   string
+	Rule   ActivityRule
+}
+
+// ActivityRules lists the activity rules of every registered feature
+// plugin whose manifest parses: built-ins first in Builtin() order, then
+// the other plugins by id, each in manifest order. An event type is
+// listed once, for the first plugin in that order. Order and inclusion
+// do not depend on any user's plugin state.
+func ActivityRules(ctx context.Context, sqlDB *sql.DB) ([]RuleOf, error) {
+	rows, err := sqlDB.QueryContext(ctx, `SELECT pack_id, manifest_json FROM plugin_registry`)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	defer rows.Close()
+	byID := map[string]Manifest{}
+	for rows.Next() {
+		var id, raw string
+		if err := rows.Scan(&id, &raw); err != nil {
+			return nil, fmt.Errorf("plugins: scan registry: %w", err)
+		}
+		m, err := ParseManifest([]byte(raw))
+		if err != nil {
+			continue
+		}
+		byID[id] = m
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+
+	order := BuiltinIDs()
+	var rest []string
+	for id := range byID {
+		if !slices.Contains(order, id) {
+			rest = append(rest, id)
+		}
+	}
+	sort.Strings(rest)
+	order = append(order, rest...)
+
+	out := []RuleOf{}
+	seen := map[string]bool{}
+	for _, id := range order {
+		m, ok := byID[id]
+		if !ok {
+			continue
+		}
+		for _, e := range m.Events {
+			if seen[e.Type] {
+				continue
+			}
+			seen[e.Type] = true
+			if e.Activity == nil {
+				continue
+			}
+			out = append(out, RuleOf{Plugin: id, Type: e.Type, Rule: *e.Activity})
+		}
+	}
+	return out, nil
 }

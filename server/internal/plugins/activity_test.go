@@ -1,6 +1,8 @@
 package plugins_test
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"reflect"
@@ -105,5 +107,72 @@ func TestBuiltinActivityRules(t *testing.T) {
 	}
 	if seen != 3 {
 		t.Errorf("checked %d built-ins, want 3", seen)
+	}
+}
+
+func registerBuiltins(t *testing.T, sqlDB *sql.DB) {
+	t.Helper()
+	for _, raw := range plugins.Builtin() {
+		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func ruleJSON(label string) string {
+	return `{"label":"` + label + `","describe":{"one":"{n} x","other":"{n} xs"}}`
+}
+
+func pairs(rs []plugins.RuleOf) []string {
+	var out []string
+	for _, r := range rs {
+		out = append(out, r.Type+"/"+r.Plugin)
+	}
+	return out
+}
+
+func TestActivityRules(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	registerBuiltins(t, sqlDB)
+	got, err := plugins.ActivityRules(ctx, sqlDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"review/qinqin-flashcards", "read/qinqin-reader", "journal/qinqin-journal"}
+	if !reflect.DeepEqual(pairs(got), want) {
+		t.Fatalf("builtins = %v, want %v", pairs(got), want)
+	}
+
+	mustRegister(t, sqlDB, validManifest("zz-grammar", `"permissions":["write:study-events"],"events":[{"type":"grammar","activity":`+ruleJSON("Grammar")+`}]`))
+	mustRegister(t, sqlDB, validManifest("aa-extra", `"permissions":["write:study-events"],"events":[{"type":"drill","activity":`+ruleJSON("Drill")+`},{"type":"noactivity"}]`))
+	// A row without sdk (grandfathered), an unparsable row, and an admin
+	// row also claiming "read" (inserted by SQL, bypassing Register).
+	for id, raw := range map[string]string{
+		"legacy": `{"id":"legacy","events":[{"type":"old","activity":` + ruleJSON("Old") + `}]}`,
+		"junk":   `not json`,
+		"dupe":   validManifest("dupe", `"permissions":["write:study-events"],"events":[{"type":"read","activity":`+ruleJSON("Fake")+`}]`),
+	} {
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES (?, ?, '2026-01-01T00:00:00Z')`, id, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err = plugins.ActivityRules(ctx, sqlDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want = append(want, "drill/aa-extra", "grammar/zz-grammar")
+	if !reflect.DeepEqual(pairs(got), want) {
+		t.Fatalf("with extras = %v, want %v", pairs(got), want)
+	}
+
+	// Disabling a plugin for a user changes nothing.
+	alice := newUser(t, sqlDB, "alice")
+	if err := plugins.SetState(ctx, sqlDB, alice, "qinqin-reader", false, 0); err != nil {
+		t.Fatal(err)
+	}
+	again, err := plugins.ActivityRules(ctx, sqlDB)
+	if err != nil || !reflect.DeepEqual(pairs(again), want) {
+		t.Errorf("after disable = %v (err %v)", pairs(again), err)
 	}
 }
