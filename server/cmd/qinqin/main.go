@@ -173,6 +173,12 @@ func serveCmd(args []string) error {
 	defer stop()
 	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
 	go auth.RunJanitor(ctx, sqlDB, time.Hour, log.Printf)
+	// Files of users that no longer exist (a deletion whose file removal failed).
+	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, *data); err != nil {
+		log.Printf("startup sweep of orphan user directories: %v", err)
+	} else if n > 0 {
+		log.Printf("startup sweep: removed %d orphan user director%s", n, map[bool]string{true: "y", false: "ies"}[n == 1])
+	}
 	var limiter *ai.Limiter
 	if aiSvc != nil {
 		limiter = aiSvc.Limiter

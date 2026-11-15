@@ -260,3 +260,34 @@ func TestDeleteUserRollsBackOnFailure(t *testing.T) {
 		t.Error("sessions removed by a failed delete")
 	}
 }
+
+func TestSweepOrphanUserDirs(t *testing.T) {
+	sqlDB, _ := usersFixture(t)
+	live := mkUser(t, sqlDB, "alice", true)
+	data := t.TempDir()
+	mk := func(dir, name string) string {
+		p := filepath.Join(data, dir, name)
+		os.MkdirAll(p, 0o755)
+		os.WriteFile(filepath.Join(p, "f"), []byte("x"), 0o644)
+		return p
+	}
+	keep := []string{mk("books", strconv.FormatInt(live, 10)), mk("journal", strconv.FormatInt(live, 10)), mk("books", "notanumber"), mk("books", "007")}
+	gone := []string{mk("books", "9999"), mk("journal", "9998")}
+	n, err := auth.SweepOrphanUserDirs(context.Background(), sqlDB, data)
+	if err != nil || n != 2 {
+		t.Fatalf("removed %d (%v), want 2", n, err)
+	}
+	for _, p := range keep {
+		if _, err := os.Stat(p); err != nil {
+			t.Errorf("%s was removed", p)
+		}
+	}
+	for _, p := range gone {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			t.Errorf("%s survived", p)
+		}
+	}
+	if n, err := auth.SweepOrphanUserDirs(context.Background(), sqlDB, t.TempDir()); err != nil || n != 0 {
+		t.Errorf("empty data dir: %d %v", n, err)
+	}
+}

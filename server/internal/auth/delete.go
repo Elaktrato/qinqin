@@ -213,3 +213,40 @@ func (u *Users) DeleteUser(ctx context.Context, actorID, id int64, dataDir strin
 	}
 	return nil
 }
+
+// SweepOrphanUserDirs removes the per-user directories (UserDirs) of user
+// ids that no longer exist: a deletion whose file removal failed, or a
+// request that wrote a file just after the commit, leaves one behind. Names
+// that are not plain numbers are left alone. It returns how many it removed.
+func SweepOrphanUserDirs(ctx context.Context, sqlDB *sql.DB, dataDir string) (int, error) {
+	removed := 0
+	for _, dir := range UserDirs {
+		entries, err := os.ReadDir(filepath.Join(dataDir, dir))
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return removed, fmt.Errorf("list %s: %w", dir, err)
+		}
+		for _, e := range entries {
+			id, perr := strconv.ParseInt(e.Name(), 10, 64)
+			if perr != nil || !e.IsDir() || strconv.FormatInt(id, 10) != e.Name() {
+				continue
+			}
+			var one int
+			err := sqlDB.QueryRowContext(ctx, `SELECT 1 FROM users WHERE id = ?`, id).Scan(&one)
+			if err == nil {
+				continue
+			}
+			if !errors.Is(err, sql.ErrNoRows) {
+				return removed, fmt.Errorf("check user %d: %w", id, err)
+			}
+			if err := os.RemoveAll(filepath.Join(dataDir, dir, e.Name())); err != nil {
+				log.Printf("sweep: remove %s/%s: %v", dir, e.Name(), err)
+				continue
+			}
+			removed++
+		}
+	}
+	return removed, nil
+}
