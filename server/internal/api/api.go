@@ -79,6 +79,8 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("POST /api/admin/dictionaries", s.handleInstallDictionary)
 	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
 	mux.HandleFunc("GET /api/frequency-packs", s.handleListFrequencyPacks)
+	mux.HandleFunc("GET /api/grammar", s.handleListGrammar)
+	mux.HandleFunc("GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson)
 	mux.HandleFunc("GET /api/schemes", s.handleListSchemes)
 	mux.HandleFunc("GET /api/schemes/{id}/entries", s.handleSchemeEntries)
 	mux.HandleFunc("GET /api/schemes/{id}/characters", s.handleSchemeCharacters)

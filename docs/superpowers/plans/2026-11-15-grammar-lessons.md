@@ -26,7 +26,7 @@
 - Lesson text is plain text everywhere: no `{@html}`, no Markdown.
 - A cloze exists only for an example with `focus` and ≥ 2 distractors; choices are `[focus, …distractors]`, keys 1–5.
 - Progress key `lesson:<packId>:<lessonId>` → `{completedAt: string, best: number, total: number}`, plugin `qinqin-grammar`, workspace-scoped; `best` never decreases.
-- Migration file `026_grammar.sql`. Seed `importOrder[dict.TypeGrammar] = 4`.
+- Migration file `026_grammar.sql`. **Ruling:** at build time 026 was the next free number on `develop` (it ends at 025). Sibling plans (core stats, pack management, audio) also want 026: whichever branch merges second renumbers its migration to the next free number (rename the file; nothing else references the number). Seed `importOrder[dict.TypeGrammar] = 4`.
 - Web style: tabs, single quotes; Svelte 5 runes; touch targets ≥ 44 px; everything works by keyboard.
 
 ## Review Focus
@@ -52,6 +52,7 @@
 - [ ] **Step 2: Run** the Go gate with `go test ./internal/grammar/... ./internal/dict/...` — FAIL.
 - [ ] **Step 3: Implement.**
 - [ ] **Step 4: Run** — PASS; full Go gate.
+- Ruling: absent `pattern`, `distractors` and `schemeLevels` normalize to empty arrays after validation, and the JSON tags carry no `omitempty`, so the stored JSON and the API never contain `null` and the web types can treat them as always present.
 - [ ] **Step 5: Commit** `feat(grammar): grammar pack type and lessons.json validation`.
 
 ### Task 2: Storage and import
@@ -65,6 +66,8 @@
 
 - [ ] **Step 1: Failing tests**: import zh-mini → 3 lessons, `ListPacks("zh")` order and counts; re-import of identical data changes no `updated_at`; re-import without one lesson soft-deletes it and `LessonByID` → `ErrNotFound`; a pack that used to exist and is re-imported revives; `ListPacks("ja")` empty; wrong manifest type → `ErrNotGrammar`; the import is one transaction (an invalid second pack leaves the first untouched).
 - [ ] **Step 2–4:** FAIL → implement (store each lesson's full JSON in `content_json`, `levels_json` on the pack) → PASS; Go gate (the migration tests in `internal/db` must still pass).
+- Ruling: the fixture directory is `testdata/zh-mini` but its manifest id is `zh-grammar-mini`: pack ids share one plugin namespace (settings, plugin data), and the sample dictionary `plugins/samples/zh-mini` already owns `zh-mini`. Later task tests say `zh-mini` for the fixture pack; read it as `zh-grammar-mini`.
+- Ruling: `LessonView.Pack` is a `PackInfo` whose `lessons` is omitted (`omitempty`); `ListPacks` returns a non-nil empty slice for a language without packs. Lesson order (list and prev/next) is the pack's level order, then array order inside a level. A re-import diff compares the pack's fields and each lesson's level, order, title, summary and content JSON; there is no uninstall route in this task, so pack revival is covered by clearing `deleted_at` in the test.
 - [ ] **Step 5: Commit** `feat(grammar): store and import grammar packs`.
 
 ### Task 3: Seed, API, plugin listing, credits check
@@ -79,6 +82,8 @@
 
 - [ ] **Step 1: Failing tests**: seed of a root with a dictionary and zh-mini grammar imports both, grammar after sentences; both routes without a session → 200; unknown lesson → 404; `language` filter; plugin list contains `zh-mini` with type `grammar`; registry contains `qinqin-grammar`; stale-terms warning fires for a changed grammar manifest notice.
 - [ ] **Step 2–4:** FAIL → implement → PASS; Go gate.
+- Ruling: the `qinqin-grammar` built-in feature manifest (`builtinGrammarManifest` in `main.go`, registry test) is NOT part of this commit. `feature/plugin-sdk` replaces that constant pattern with embedded `server/internal/plugins/builtin/*.json` and a strict `ParseManifest` (sdk 1, permissions such as owns-data). When it has merged into develop, merge develop here and add `builtin/grammar.json` (sdk 1, page surface, owns-data for the progress rows) and append it to `builtinFiles`, with the registry test. Until then plugin progress rows have no registered plugin id.
+- Ruling: `plugins.Exists` also accepts an active grammar pack id, so a pack's enable/disable state can be stored.
 - [ ] **Step 5: Commit** `feat(grammar): seed, API and plugin listing for grammar packs`.
 
 ### Task 4: Web data and exercise logic

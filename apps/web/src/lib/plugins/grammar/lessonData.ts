@@ -1,0 +1,41 @@
+// Loads a lesson ready for display: fetched, then converted to the
+// reader's script setting (Chinese only) before tiles are cut or a gap
+// is found.
+
+import { prepareVariant, convertText, type Variant } from '../reader/variants';
+import { browserStorage, loadPrefs } from '../reader/prefs';
+import { loadLesson } from './api';
+import { convertLesson } from './exercises';
+import type { Lesson, LessonView } from './types';
+
+export interface DisplayLesson {
+	view: LessonView;
+	lesson: Lesson;
+	/** The lang attribute for the lesson's target-language text. */
+	textLang: string;
+}
+
+/** loadDisplayLesson is null for a lesson that does not exist (any more). */
+export async function loadDisplayLesson(pack: string, id: string): Promise<DisplayLesson | null> {
+	const view = await loadLesson(pack, id);
+	if (view === null) return null;
+	const language = view.pack.language;
+	let variant: Variant = language === 'zh' ? loadPrefs(browserStorage()).variant : 'original';
+	try {
+		await prepareVariant(variant);
+	} catch {
+		// The converter could not load: show the text as the pack wrote it.
+		variant = 'original';
+	}
+	const lesson =
+		variant === 'original'
+			? view.lesson
+			: convertLesson(view.lesson, (s) => convertText(s, variant));
+	const textLang =
+		language === 'zh' && variant !== 'original'
+			? variant === 'simplified'
+				? 'zh-Hans'
+				: 'zh-Hant'
+			: language;
+	return { view, lesson, textLang };
+}

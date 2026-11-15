@@ -21,6 +21,7 @@ func TestCommittedPackNotices(t *testing.T) {
 		"jlpt-kanji":      {"approximate", "[kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev)"},
 		"hsk-words":       {"HSK 词汇大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)"},
 		"hsk-chars":       {"HSK 汉字大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)"},
+		"zh-grammar-demo": {"CC0 1.0", "not been reviewed by a native speaker"},
 	}
 	noNotice := []string{"cedict", "es-demo", "jmdict", "kanjidic2", "unihan"}
 

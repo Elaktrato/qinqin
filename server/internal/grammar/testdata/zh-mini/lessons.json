@@ -1,0 +1,20 @@
+{
+  "levels": [
+    {"id": "a1-1", "name": "A1 · Part 1", "schemeLevels": [{"scheme": "hsk-words", "level": "HSK 1"}]},
+    {"id": "a1-2", "name": "A1 · Part 2"}
+  ],
+  "lessons": [
+    {"id": "shi", "level": "a1-1", "title": "是: A is B", "summary": "Link two nouns.",
+     "pattern": ["A + 是 + B"], "body": ["是 links two nouns."],
+     "examples": [
+       {"id": "shi-1", "text": "我是学生。", "reading": "wǒ shì xuéshēng.", "translation": "I am a student.", "focus": "是", "distractors": ["很", "在"]},
+       {"id": "shi-2", "text": "他是老师。", "translation": "He is a teacher."}
+     ]},
+    {"id": "bu", "level": "a1-1", "title": "不: not", "summary": "Negate verbs.",
+     "body": ["不 goes before the verb."],
+     "examples": [{"id": "bu-1", "text": "我不喝咖啡。", "reading": "wǒ bù hē kāfēi.", "translation": "I don't drink coffee.", "focus": "不", "distractors": ["吗", "的"]}]},
+    {"id": "ge", "level": "a1-2", "title": "个: counting", "summary": "Measure word.",
+     "body": ["个 is the common measure word."],
+     "examples": [{"id": "ge-1", "text": "我有一个哥哥。", "translation": "I have an older brother."}]}
+  ]
+}

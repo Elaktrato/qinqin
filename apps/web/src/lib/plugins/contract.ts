@@ -5,6 +5,7 @@
 
 import core from '$builtin/core.json';
 import flashcards from '$builtin/flashcards.json';
+import grammar from '$builtin/grammar.json';
 import journal from '$builtin/journal.json';
 import reader from '$builtin/reader.json';
 
@@ -67,9 +68,9 @@ export function sdkSupported(manifest: unknown): boolean {
 	return (manifest as { sdk?: unknown }).sdk === SDK_VERSION;
 }
 
-const BUILTINS = [core, flashcards, reader, journal] as unknown as ContractManifest[];
+const BUILTINS = [core, flashcards, reader, journal, grammar] as unknown as ContractManifest[];
 
-/** builtinManifests lists core, flashcards, reader, journal, in the server's order. */
+/** builtinManifests lists core, flashcards, reader, journal, grammar, in the server's order. */
 export function builtinManifests(): ContractManifest[] {
 	return BUILTINS;
 }

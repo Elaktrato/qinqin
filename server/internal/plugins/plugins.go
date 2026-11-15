@@ -208,7 +208,7 @@ func Unregister(ctx context.Context, sqlDB *sql.DB, pluginID string) error {
 func ListFor(ctx context.Context, sqlDB *sql.DB, userID int64) ([]model.PluginInfo, error) {
 	list := make([]model.PluginInfo, 0)
 	for _, load := range []func(context.Context, *sql.DB) ([]model.PluginInfo, error){
-		featurePlugins, dictionaryPlugins, schemePlugins, frequencyPlugins, sentencePlugins,
+		featurePlugins, dictionaryPlugins, schemePlugins, frequencyPlugins, sentencePlugins, grammarPlugins,
 	} {
 		found, err := load(ctx, sqlDB)
 		if err != nil {
@@ -373,6 +373,31 @@ func sentencePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, er
 	return list, nil
 }
 
+// grammarPlugins lists the grammar packs, active only.
+func grammarPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT pack_id, name, version, language, license, attribution
+		FROM grammar_packs WHERE deleted_at IS NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read grammar packs: %w", err)
+	}
+	defer rows.Close()
+
+	list := make([]model.PluginInfo, 0)
+	for rows.Next() {
+		var m dataManifest
+		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
+			return nil, fmt.Errorf("plugins: scan grammar pack: %w", err)
+		}
+		m.Type = "grammar"
+		list = append(list, dataPlugin(m))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read grammar packs: %w", err)
+	}
+	return list, nil
+}
+
 // dataPlugin turns one data-plugin manifest into its listed form:
 // enabled by default, ordered 0 until the user moves it.
 func dataPlugin(m dataManifest) model.PluginInfo {
@@ -417,7 +442,7 @@ func statesFor(ctx context.Context, sqlDB *sql.DB, userID int64) (map[string]mod
 
 // Exists reports whether pluginID names a plugin the user can have
 // state or data under: a registered feature plugin or an active data
-// plugin (dictionary, levels scheme, frequency pack, or sentences pack).
+// plugin (dictionary, levels scheme, frequency pack, sentences pack, or grammar pack).
 func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 	var one int
 	err := sqlDB.QueryRowContext(ctx, `
@@ -430,7 +455,9 @@ func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 		SELECT 1 FROM frequency_packs WHERE pack_id = ? AND deleted_at IS NULL
 		UNION ALL
 		SELECT 1 FROM sentences WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL
-		LIMIT 1`, pluginID, pluginID, pluginID, pluginID, pluginID).Scan(&one)
+		UNION ALL
+		SELECT 1 FROM grammar_packs WHERE pack_id = ? AND deleted_at IS NULL
+		LIMIT 1`, pluginID, pluginID, pluginID, pluginID, pluginID, pluginID).Scan(&one)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
