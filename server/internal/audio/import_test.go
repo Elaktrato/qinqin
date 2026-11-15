@@ -3,6 +3,8 @@ package audio_test
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strings"
@@ -149,5 +151,41 @@ func TestImportKeepsTermWithoutReading(t *testing.T) {
 	res, err := audio.Import(ctx, sqlDB, p, t.TempDir())
 	if err != nil || res.Clips != 1 || res.Skipped != 0 {
 		t.Errorf("Import = %+v, %v", res, err)
+	}
+}
+
+// The blob is hashed while it is copied: a file that changed after it was
+// inspected must not be stored under the old hash.
+func TestStoreBlobVerifiesWhatItCopied(t *testing.T) {
+	dir, store := t.TempDir(), t.TempDir()
+	path := dir + "/a.ogg"
+	write(t, path, oggClip("v1"))
+	sum := sha256.Sum256(oggClip("v1"))
+	sha := hex.EncodeToString(sum[:])
+	if err := audio.StoreBlobForTest(store, path, sha, "ogg", int64(len(oggClip("v1")))); err != nil {
+		t.Fatalf("good blob: %v", err)
+	}
+	if got := blobs(t, store); len(got) != 1 {
+		t.Fatalf("blobs = %v", got)
+	}
+
+	// Changed after inspection: same size, other bytes.
+	store2 := t.TempDir()
+	write(t, path, oggClip("v2"))
+	if err := audio.StoreBlobForTest(store2, path, sha, "ogg", int64(len(oggClip("v2")))); err == nil {
+		t.Error("a changed file was stored under the old hash")
+	}
+	// Truncated after inspection.
+	if err := audio.StoreBlobForTest(store2, path, sha, "ogg", 999); err == nil {
+		t.Error("a file of another size was stored")
+	}
+	// Magic gone after inspection.
+	write(t, path, []byte("XXXXjunk"))
+	other := sha256.Sum256([]byte("XXXXjunk"))
+	if err := audio.StoreBlobForTest(store2, path, hex.EncodeToString(other[:]), "ogg", 8); err == nil {
+		t.Error("a file without the Ogg magic was stored")
+	}
+	if got := blobs(t, store2); len(got) != 0 {
+		t.Errorf("left %v", got)
 	}
 }

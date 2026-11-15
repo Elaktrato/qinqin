@@ -80,6 +80,16 @@ func inspect(path, ext string) (clipFile, error) {
 	return clipFile{path: path, sha: hex.EncodeToString(h.Sum(nil)), ext: ext, size: info.Size()}, nil
 }
 
+// headWriter keeps the first bytes written to it, for the magic check.
+type headWriter struct{ b []byte }
+
+func (w *headWriter) Write(p []byte) (int, error) {
+	if room := 4 - len(w.b); room > 0 {
+		w.b = append(w.b, p[:min(room, len(p))]...)
+	}
+	return len(p), nil
+}
+
 // storeBlob copies the clip into the store unless it is already there:
 // written to a temp file in the target directory, then renamed.
 func storeBlob(storeDir string, c clipFile) error {
@@ -100,10 +110,22 @@ func storeBlob(storeDir string, c clipFile) error {
 		tmp.Close()
 		return err
 	}
-	_, err = io.Copy(tmp, src)
+	// Hash what is actually copied: the file may have changed since inspect.
+	h := sha256.New()
+	head := &headWriter{}
+	n, err := io.Copy(io.MultiWriter(tmp, h, head), src)
 	src.Close()
 	if cerr := tmp.Close(); err == nil {
 		err = cerr
+	}
+	if err == nil && n != c.size {
+		err = fmt.Errorf("%s changed while importing: copied %d bytes, expected %d", c.path, n, c.size)
+	}
+	if err == nil && hex.EncodeToString(h.Sum(nil)) != c.sha {
+		err = fmt.Errorf("%s changed while importing: its content no longer matches the hash taken before", c.path)
+	}
+	if err == nil && !hasMagic(c.ext, head.b) {
+		err = fmt.Errorf("%s changed while importing: content does not look like .%s audio", c.path, c.ext)
 	}
 	if err == nil && blobFault != nil {
 		err = blobFault()

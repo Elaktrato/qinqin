@@ -8,6 +8,9 @@ import (
 	"qinqin/internal/pinyin"
 )
 
+// maxSyllableQueries bounds the distinct syllable lookups of one Resolve call.
+const maxSyllableQueries = 64
+
 // Clip is one stored recording with its credit.
 type Clip struct {
 	SHA, Ext, PackID, License, Attribution, Source string
@@ -42,6 +45,30 @@ func Resolve(ctx context.Context, sqlDB *sql.DB, language, written string, readi
 		return res, nil
 	}
 	res.Syllables = make([][]Clip, len(readings))
+	// A request may name many readings (the batch route takes 200 entries): each
+	// distinct syllable is looked up once, and at most maxSyllableQueries of them,
+	// the rest of the readings simply get no sequence.
+	lookups := map[string]*Clip{}
+	budget := maxSyllableQueries
+	lookup := func(syl string) (*Clip, bool, error) {
+		if c, ok := lookups[syl]; ok {
+			return c, true, nil
+		}
+		if budget == 0 {
+			return nil, false, nil
+		}
+		budget--
+		found, err := query(ctx, sqlDB, KindSyllable, "", syl)
+		if err != nil {
+			return nil, false, err
+		}
+		var c *Clip
+		if len(found) > 0 {
+			c = &found[0]
+		}
+		lookups[syl] = c
+		return c, true, nil
+	}
 	for i, reading := range readings {
 		syls, err := pinyin.ToNumbered(reading)
 		if err != nil {
@@ -49,15 +76,15 @@ func Resolve(ctx context.Context, sqlDB *sql.DB, language, written string, readi
 		}
 		seq := make([]Clip, 0, len(syls))
 		for _, syl := range syls {
-			found, err := query(ctx, sqlDB, KindSyllable, "", syl)
+			c, ok, err := lookup(syl)
 			if err != nil {
 				return Resolution{}, err
 			}
-			if len(found) == 0 {
+			if !ok || c == nil {
 				seq = nil
 				break
 			}
-			seq = append(seq, found[0])
+			seq = append(seq, *c)
 		}
 		res.Syllables[i] = seq
 	}

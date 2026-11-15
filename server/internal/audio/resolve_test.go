@@ -119,3 +119,50 @@ func TestResolveTermWithoutReadingMatchesAnyReading(t *testing.T) {
 		t.Errorf("no readings = %+v, want the reading-less clip", r.Terms)
 	}
 }
+
+// One request cannot trigger an unbounded number of syllable lookups.
+func TestResolveCapsSyllableQueries(t *testing.T) {
+	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	var rows []string
+	var readings []string
+	for _, ini := range []string{"b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h", "zh", "ch", "sh", "z", "c", "s"} {
+		for tone := 1; tone <= 4; tone++ {
+			syl := ini + "a" + string(rune('0'+tone))
+			rows = append(rows, "syllable\t\t"+syl+"\taudio/a.ogg\t\t\t")
+			readings = append(readings, syl)
+		}
+	}
+	if len(readings) <= audio.MaxSyllableQueries {
+		t.Fatalf("fixture has %d readings, need more than the cap %d", len(readings), audio.MaxSyllableQueries)
+	}
+	p := makePack(t, "z", "zh", "CC0", rows, []clipFile{{"a.ogg", oggClip("a")}})
+	if _, err := audio.Import(ctx, sqlDB, p, store); err != nil {
+		t.Fatal(err)
+	}
+	r, err := audio.Resolve(ctx, sqlDB, "zh", "x", readings)
+	if err != nil || len(r.Syllables) != len(readings) {
+		t.Fatalf("Resolve = %d slots, %v", len(r.Syllables), err)
+	}
+	found := 0
+	for i, seq := range r.Syllables {
+		if seq != nil {
+			found++
+		} else if i < audio.MaxSyllableQueries {
+			t.Errorf("slot %d inside the cap is nil", i)
+		}
+	}
+	if found != audio.MaxSyllableQueries {
+		t.Errorf("%d slots resolved, want exactly the cap %d", found, audio.MaxSyllableQueries)
+	}
+	// Repeating a syllable costs one lookup, not one per use.
+	same := make([]string, 200)
+	for i := range same {
+		same[i] = "ba1"
+	}
+	r, _ = audio.Resolve(ctx, sqlDB, "zh", "x", same)
+	for i, seq := range r.Syllables {
+		if seq == nil {
+			t.Fatalf("repeated syllable: slot %d is nil", i)
+		}
+	}
+}
