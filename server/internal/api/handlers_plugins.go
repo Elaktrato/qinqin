@@ -146,6 +146,36 @@ func (s *server) handleGetPluginData(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, d)
 }
 
+// handleListPluginData serves GET /api/plugins/{id}/data?workspace=&prefix=:
+// the caller's live rows of the plugin whose key starts with prefix, scoped
+// like the single-row routes. Unknown plugins are 404.
+func (s *server) handleListPluginData(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	workspaceID, ok := s.pluginWorkspace(w, r, u.ID)
+	if !ok {
+		return
+	}
+	pluginID := r.PathValue("id")
+	exists, err := plugins.Exists(r.Context(), s.db, pluginID)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		http.Error(w, "plugin not found", http.StatusNotFound)
+		return
+	}
+	list, err := plugins.ListData(r.Context(), s.db, u.ID, workspaceID, pluginID, r.URL.Query().Get("prefix"))
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, list)
+}
+
 // handlePutPluginData serves PUT /api/plugins/{id}/data/{key} with the
 // value — any JSON document — as the request body: the caller's stored
 // value for that key, versioning the row up and reviving a tombstone.

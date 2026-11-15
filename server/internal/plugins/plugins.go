@@ -434,6 +434,40 @@ func GetData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int6
 	return d, nil
 }
 
+// ListData returns the user's live rows of one plugin whose key starts with
+// prefix, ordered by key. A nil workspaceID lists the user-global rows only;
+// otherwise only that workspace's. Tombstones are left out. The prefix is
+// compared literally (no LIKE wildcards), and the result is never nil.
+func ListData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, prefix string) ([]model.PluginData, error) {
+	query := dataSelect + `
+		WHERE pack_id = ? AND user_id = ? AND deleted_at IS NULL AND substr(key, 1, ?) = ?`
+	args := []any{pluginID, userID, len([]rune(prefix)), prefix}
+	if workspaceID == nil {
+		query += ` AND workspace_id IS NULL`
+	} else {
+		query += ` AND workspace_id = ?`
+		args = append(args, *workspaceID)
+	}
+	rows, err := sqlDB.QueryContext(ctx, query+` ORDER BY key ASC`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: list data %s for user %d: %w", pluginID, userID, err)
+	}
+	defer rows.Close()
+
+	list := make([]model.PluginData, 0)
+	for rows.Next() {
+		d, err := scanData(rows)
+		if err != nil {
+			return nil, fmt.Errorf("plugins: scan data %s for user %d: %w", pluginID, userID, err)
+		}
+		list = append(list, *d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: list data %s for user %d: %w", pluginID, userID, err)
+	}
+	return list, nil
+}
+
 // PullData returns the user's plugin data rows changed since since
 // (inclusive), tombstones included, each carrying its workspace_id —
 // the sync read clients use to catch up. Rows are ordered by recency

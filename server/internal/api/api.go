@@ -84,6 +84,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source) http.Handler {
 	mux.HandleFunc("GET /api/library/sources/{source}/browse", s.handleBrowseSource)
 	mux.HandleFunc("POST /api/library/sources/{source}/import", s.handleImportSource)
 	mux.HandleFunc("PUT /api/plugins/{id}/state", s.handleSetPluginState)
+	mux.HandleFunc("GET /api/plugins/{id}/data", s.handleListPluginData)
 	mux.HandleFunc("GET /api/plugins/{id}/data/{key}", s.handleGetPluginData)
 	mux.HandleFunc("PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData)
 	mux.HandleFunc("DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData)
