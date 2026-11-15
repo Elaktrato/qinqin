@@ -1,3 +1,4 @@
+import { studyDay } from '../../time/studyDay';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
@@ -83,8 +84,15 @@ describe('journal store', () => {
 		expect(JSON.parse(init?.body as string)).toEqual(saved);
 	});
 
-	it('creates entries with a ULID and the local date', () => {
-		const e = newEntry('photo', new Date(2026, 10, 5, 23, 30));
+	it("dates a new entry by the learner's day, not the browser's", () => {
+		const tokyo = studyDay([{ zone: 'Asia/Tokyo', from: null }]);
+		expect(newEntry('typed', tokyo, new Date('2026-11-05T15:30:00Z')).date).toBe('2026-11-06');
+		expect(newEntry('typed', tokyo, new Date('2026-11-05T14:30:00Z')).date).toBe('2026-11-05');
+		expect(newEntry('typed', studyDay([]), new Date('2026-11-05T23:30:00Z')).date).toBe('2026-11-05');
+	});
+
+	it('creates entries with a ULID and the learner date', () => {
+		const e = newEntry('photo', studyDay([]), new Date('2026-11-05T23:30:00Z'));
 		expect(e.id).toMatch(/^[0-9A-Z]{26}$/);
 		expect(e.date).toBe('2026-11-05');
 		expect(e.source).toBe('photo');
@@ -134,11 +142,11 @@ describe('journal store', () => {
 
 	it('saves with keepalive for a small entry when asked, and without for a large one', async () => {
 		vi.mocked(fetch).mockImplementation(async () => json({}));
-		await saveEntry(3, { ...newEntry('typed'), text: 'short' }, { keepalive: true });
+		await saveEntry(3, { ...newEntry('typed', studyDay([])), text: 'short' }, { keepalive: true });
 		expect(vi.mocked(fetch).mock.calls[0][1]?.keepalive).toBe(true);
-		await saveEntry(3, { ...newEntry('typed'), text: 'x'.repeat(70000) }, { keepalive: true });
+		await saveEntry(3, { ...newEntry('typed', studyDay([])), text: 'x'.repeat(70000) }, { keepalive: true });
 		expect(vi.mocked(fetch).mock.calls[1][1]?.keepalive).toBeFalsy();
-		await saveEntry(3, newEntry('typed'));
+		await saveEntry(3, newEntry('typed', studyDay([])));
 		expect(vi.mocked(fetch).mock.calls[2][1]?.keepalive).toBeFalsy();
 	});
 });

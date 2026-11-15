@@ -13,6 +13,7 @@
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
+	import { currentStudyDay } from '$lib/time/zone';
 	import { browseSeed, shuffleSeed } from './browse';
 	import { apiErrorMessage } from './errors';
 	import { libraryKey } from './libraryKey';
@@ -42,7 +43,7 @@
 	let requestCounter = 0;
 
 	// The browse assortment of the active source: today's, until Shuffle.
-	let seed = $state(browseSeed());
+	let seed = $state(browseSeed(new Date(), currentStudyDay()));
 	let suggestions = $state<SourceResult[]>([]);
 	let browsing = $state(false);
 	let browseError = $state('');
@@ -94,7 +95,7 @@
 		const match = sources.find((s) => s.languages.includes(lang));
 		if (match && match.id !== active) {
 			active = match.id;
-			seed = browseSeed();
+			seed = browseSeed(new Date(), currentStudyDay());
 			clearSearch();
 		}
 	});
@@ -162,7 +163,7 @@
 		userPicked = true;
 		if (id === active) return;
 		active = id;
-		seed = browseSeed();
+		seed = browseSeed(new Date(), currentStudyDay());
 		importError = '';
 		clearSearch();
 	}

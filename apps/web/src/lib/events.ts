@@ -6,6 +6,8 @@ import { api } from './api/client';
 import { logChangingTypes } from './plugins/contract';
 import { emitStudyEvents } from './plugins/hooks';
 import type { StudyEventBody } from './api/types';
+import { currentStudyDay } from './time/zone';
+import type { StudyDay } from './time/studyDay';
 import { newUlid } from './ulid';
 import { createWorkspaceCache } from './workspaceCache';
 
@@ -24,12 +26,6 @@ export interface StudyEvent {
 
 // The client id the server records for every event this app creates.
 const DEVICE = 'web';
-
-// UTC day keys sort the once-per-day session receipts: `YYYY-MM-DD` is
-// the same boundary the heatmap buckets events by.
-function utcDayKey(now: Date): string {
-	return now.toISOString().slice(0, 10);
-}
 
 /**
  * postEvents sends a batch of already-built events. Unlike `record` it
@@ -139,14 +135,18 @@ function sessionKey(workspaceId: number, day: string): string {
 }
 
 /**
- * recordSessionOnce records one `session` event per workspace per UTC
- * day. The receipt is written to localStorage before the POST so two
+ * recordSessionOnce records one `session` event per workspace per learner
+ * day (the same boundary the heatmap buckets events by). The receipt is written to localStorage before the POST so two
  * mounts in the same page (or a reload) cannot double-count the day;
  * with storage unavailable the session is recorded every time, which
  * is the safe direction.
  */
-export function recordSessionOnce(workspaceId: number): void {
-	const key = sessionKey(workspaceId, utcDayKey(new Date()));
+export function recordSessionOnce(
+	workspaceId: number,
+	day: StudyDay = currentStudyDay(),
+	now: number = Date.now()
+): void {
+	const key = sessionKey(workspaceId, day.today(now));
 	try {
 		if (typeof localStorage !== 'undefined') {
 			if (localStorage.getItem(key) !== null) return;

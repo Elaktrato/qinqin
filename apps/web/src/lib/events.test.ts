@@ -14,6 +14,7 @@ import {
 	recordSessionOnce,
 	sinceDaysAgo
 } from './events';
+import { studyDay } from './time/studyDay';
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -138,6 +139,19 @@ describe('recordSessionOnce', () => {
 		expect(fetch).toHaveBeenCalledTimes(1);
 		expect(lastBatch().events[0]).toMatchObject({ type: 'session', workspaceId: 5 });
 		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBe('1');
+	});
+
+	it('keys the receipt by the learner day: 15:30Z is already the next day in Tokyo', () => {
+		const tokyo = studyDay([{ zone: 'Asia/Tokyo', from: null }]);
+		vi.setSystemTime(new Date('2026-03-15T14:00:00Z')); // 23:00 on the 15th in Tokyo
+		recordSessionOnce(5, tokyo);
+		vi.setSystemTime(new Date('2026-03-15T15:30:00Z')); // 00:30 on the 16th
+		recordSessionOnce(5, tokyo);
+		expect(fetch).toHaveBeenCalledTimes(2);
+		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBe('1');
+		expect(localStorage.getItem('qinqin.session.5.2026-03-16')).toBe('1');
+		recordSessionOnce(5, tokyo); // same learner day: no third event
+		expect(fetch).toHaveBeenCalledTimes(2);
 	});
 
 	it('treats workspaces independently', () => {

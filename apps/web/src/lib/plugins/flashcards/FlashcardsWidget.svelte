@@ -2,6 +2,7 @@
 	import { errorMessage } from '$lib/stats/errors';
 	import { buildQueue } from '$lib/study/scheduler';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
+	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
 	import { loadConfig } from '$lib/study/session';
 	import {
@@ -76,10 +77,14 @@
 		};
 	});
 
-	const xp = $derived(xpFromReviews(reviews));
+	// The learner's day rule; a zone change recomputes XP and the streak.
+	let studyDay = $state.raw(currentStudyDay());
+	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+
+	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf));
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
-	const streak = $derived(dailyStreak(reviews, Date.now()));
+	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay));
 	const status = $derived<WidgetStatus>(
 		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
 	);

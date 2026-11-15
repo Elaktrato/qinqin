@@ -3,7 +3,7 @@
 	import { loadWorkspaceEvents } from '$lib/events';
 	import { errorMessage } from '$lib/stats/errors';
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
-	import { currentStudyDay } from '$lib/time/zone';
+	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -88,6 +88,9 @@
 	$effect(() => {
 		void load(workspaceId);
 	});
+
+	// A zone change moves the 7 and 30 day windows.
+	$effect(() => onStudyDayChange(() => void load(workspaceId)));
 </script>
 
 <WidgetCard

@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest';
+import { studyDay } from '../../time/studyDay';
 import { browseSeed, popupWritten, shuffleSeed } from './browse';
 
 describe('browseSeed', () => {
-	it('is the UTC date', () => {
-		expect(browseSeed(new Date('2026-11-13T08:00:00Z'))).toBe('2026-11-13');
+	const UTC = studyDay([]);
+	const TOKYO = studyDay([{ zone: 'Asia/Tokyo', from: null }]);
+
+	it('is the learner date', () => {
+		expect(browseSeed(new Date('2026-11-13T08:00:00Z'), UTC)).toBe('2026-11-13');
+		expect(browseSeed(new Date('2026-11-13T08:00:00Z'), TOKYO)).toBe('2026-11-13');
 	});
 
-	it('follows UTC, not the local day', () => {
+	it('follows the learner zone, not the device clock zone', () => {
+		expect(browseSeed(new Date('2026-11-13T15:30:00Z'), TOKYO)).toBe('2026-11-14');
+		expect(browseSeed(new Date('2026-11-13T15:30:00Z'), UTC)).toBe('2026-11-13');
 		// 23:30 in UTC-5 is already the next day in UTC.
-		expect(browseSeed(new Date('2026-11-13T23:30:00-05:00'))).toBe('2026-11-14');
-		expect(browseSeed(new Date('2026-11-14T00:30:00+02:00'))).toBe('2026-11-13');
-	});
-
-	it('defaults to now', () => {
-		expect(browseSeed()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+		expect(browseSeed(new Date('2026-11-13T23:30:00-05:00'), UTC)).toBe('2026-11-14');
 	});
 });
 
