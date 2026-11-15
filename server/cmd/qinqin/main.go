@@ -214,6 +214,9 @@ func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/api/", apiHandler)
 	mux.Handle("/healthz", apiHandler)
+	// The trailing-slash form would otherwise fall through to the SPA and
+	// answer 200 HTML to a health probe.
+	mux.Handle("/healthz/{$}", http.RedirectHandler("/healthz", http.StatusPermanentRedirect))
 	mux.Handle("/", webdist.Handler(web))
 	return mux
 }
