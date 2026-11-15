@@ -70,6 +70,8 @@ export interface EligibilityContext {
 	usableChars?: string[];
 	/** Whether a sentence resolved for this item (sentence only). */
 	hasSentence: boolean;
+	/** Whether an eligible cloze sentence resolved (cloze only). */
+	hasCloze?: boolean;
 }
 
 /** zh and its regional tags (zh-Hant, zh_TW, ...). */
@@ -126,6 +128,11 @@ export function isEligible(
 			return (ctx.usableChars?.length ?? 0) > 0;
 		case 'tone':
 			return eligibleForTone(ctx.language, pinyinReadings(entry.readings));
+		case 'reverse':
+			// Words only (a character's meaning does not name one word), with a gloss.
+			return entry.kind === 'word' && (entry.senses?.length ?? 0) > 0;
+		case 'cloze':
+			return ctx.hasCloze === true;
 		default:
 			return false;
 	}
@@ -392,9 +399,12 @@ export function buryAfterAnswer(
 export function rememberDrop(
 	item: FlowItem,
 	written: string,
-	entry?: { kind?: string; senses?: readonly unknown[] }
+	entry?: { kind?: string; senses?: readonly unknown[] },
+	opts: { transient?: boolean } = {}
 ): boolean {
 	if (!item.virtual) return false;
+	// A failed request says nothing about the word: check it again next session.
+	if (opts.transient === true) return false;
 	if (item.kind === 'writing' && entry !== undefined && lacksGlosses(entry)) return true;
 	return item.kind !== 'writing' || writableChars(written).length === 0;
 }

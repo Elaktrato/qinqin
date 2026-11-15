@@ -658,3 +658,33 @@ describe('buryAfterAnswer', () => {
 		expect(out.plan.queue.map((i) => i.cardId)).toEqual(['c-reverse-1', 'companion:tone:9']);
 	});
 });
+
+describe('eligibility of reverse and cloze', () => {
+	const ctx = { language: 'zh', hasSentence: false };
+	const word = { ...zhEntry, kind: 'word', senses: [{}] };
+
+	it('reverse needs a word entry with a gloss', () => {
+		expect(isEligible('reverse', word, ctx)).toBe(true);
+		expect(isEligible('reverse', { ...zhEntry, kind: 'character', senses: [{}] }, ctx)).toBe(false);
+		expect(isEligible('reverse', { ...word, senses: [] }, ctx)).toBe(false);
+		expect(isEligible('reverse', zhEntry, ctx)).toBe(false);
+	});
+
+	it('cloze needs a resolved eligible sentence', () => {
+		expect(isEligible('cloze', word, { ...ctx, hasCloze: true })).toBe(true);
+		expect(isEligible('cloze', word, ctx)).toBe(false);
+	});
+
+	it('a transient drop is never remembered', () => {
+		const item = {
+			cardId: 'companion:cloze:1',
+			kind: 'cloze',
+			entryId: 1,
+			virtual: true,
+			card: null
+		} as FlowItem;
+		expect(rememberDrop(item, '学习')).toBe(true);
+		expect(rememberDrop(item, '学习', undefined, { transient: true })).toBe(false);
+		expect(rememberDrop({ ...item, kind: 'reverse' }, '学习')).toBe(true);
+	});
+});
