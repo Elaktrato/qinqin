@@ -1,5 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { searchForWorkspaceRoot } from 'vite';
+import { svelteTesting } from '@testing-library/svelte/vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -23,6 +24,28 @@ export default defineConfig({
 		}
 	},
 	test: {
-		include: ['src/**/*.test.ts']
+		// Two projects: the pure-logic tests run in plain node, untouched;
+		// component tests (`*.dom.test.ts`) get jsdom plus the browser resolve
+		// condition and auto-cleanup from svelteTesting (which would break the
+		// node tests if applied globally: esm-env's BROWSER flips to true).
+		projects: [
+			{
+				extends: true,
+				test: {
+					name: 'unit',
+					include: ['src/**/*.test.ts'],
+					exclude: ['src/**/*.dom.test.ts', '**/node_modules/**']
+				}
+			},
+			{
+				extends: true,
+				plugins: [svelteTesting()],
+				test: {
+					name: 'dom',
+					environment: 'jsdom',
+					include: ['src/**/*.dom.test.ts']
+				}
+			}
+		]
 	}
 });
