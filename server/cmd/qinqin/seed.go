@@ -14,6 +14,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
+	"qinqin/internal/grammar"
 	"qinqin/internal/levels"
 	"qinqin/internal/sentences"
 )
@@ -91,18 +92,20 @@ type seedPack struct {
 // character data of cedict, unihan, kanjidic2, and jmdict — come first:
 // frequency, level and sentence packs refer to existing entries and skip
 // the unknown ones, so they must follow. Frequency packs come right after
-// the dictionaries; sentences come last.
+// the dictionaries; sentences follow; grammar packs, which refer to no
+// entries, come last.
 var importOrder = map[string]int{
 	dict.TypeDictionary: 0,
 	dict.TypeFrequency:  1,
 	dict.TypeLevels:     2,
 	dict.TypeSentences:  3,
+	dict.TypeGrammar:    4,
 }
 
 // seed imports every pack under the roots into sqlDB, dispatching on each
 // manifest's type: dictionary to dict.ImportLexicon, frequency to
 // freq.Import, levels to levels.Import, sentences to
-// sentences.ImportPack. A pack is
+// sentences.ImportPack, grammar to grammar.Import. A pack is
 // any directory holding a manifest.json; the walk does not descend into
 // one. Packs import dictionaries first, then frequency packs, levels and
 // sentences, each group in path order — so a frequency pack's priority
@@ -237,6 +240,12 @@ func importPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, err
 			return "", err
 		}
 		return fmt.Sprintf("%d unknown words skipped", len(r.Skipped)), nil
+	case dict.TypeGrammar:
+		r, err := grammar.Import(ctx, sqlDB, pack)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d lessons", r.Lessons), nil
 	}
 	return "", fmt.Errorf("unsupported pack type %q", pack.Type)
 }

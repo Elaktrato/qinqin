@@ -14,6 +14,8 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
+	"qinqin/internal/dict"
+	"qinqin/internal/grammar"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 )
@@ -587,5 +589,42 @@ func TestListDataPrefixScopeAndTombstones(t *testing.T) {
 	empty, err := plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "zzz")
 	if err != nil || empty == nil || len(empty) != 0 {
 		t.Fatalf("empty = %#v %v, want a non-nil empty slice", empty, err)
+	}
+}
+
+func TestListForIncludesGrammarPacks(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	pack, err := dict.LoadPack("../grammar/testdata/zh-mini")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatal(err)
+	}
+	list, err := plugins.ListFor(ctx, sqlDB, alice)
+	if err != nil {
+		t.Fatalf("ListFor: %v", err)
+	}
+	p := find(t, list, "zh-grammar-mini")
+	m := manifestObject(t, p.Manifest)
+	if m["type"] != "grammar" || m["language"] != "zh" || m["license"] != "CC0-1.0" || m["name"] != "Chinese grammar mini" || !p.Enabled {
+		t.Errorf("manifest = %v enabled %t, want the grammar registry fields", m, p.Enabled)
+	}
+	if ok, err := plugins.Exists(ctx, sqlDB, "zh-grammar-mini"); err != nil || !ok {
+		t.Errorf("Exists = %t, %v, want true", ok, err)
+	}
+	if _, err := sqlDB.Exec(`UPDATE grammar_packs SET deleted_at = '2026-01-01T00:00:00Z'`); err != nil {
+		t.Fatal(err)
+	}
+	if ok, _ := plugins.Exists(ctx, sqlDB, "zh-grammar-mini"); ok {
+		t.Error("Exists after removal = true, want false")
+	}
+	list, _ = plugins.ListFor(ctx, sqlDB, alice)
+	for _, p := range list {
+		if p.ID == "zh-grammar-mini" {
+			t.Error("removed grammar pack still listed")
+		}
 	}
 }

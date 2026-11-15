@@ -82,6 +82,8 @@
 
 - [ ] **Step 1: Failing tests**: seed of a root with a dictionary and zh-mini grammar imports both, grammar after sentences; both routes without a session → 200; unknown lesson → 404; `language` filter; plugin list contains `zh-mini` with type `grammar`; registry contains `qinqin-grammar`; stale-terms warning fires for a changed grammar manifest notice.
 - [ ] **Step 2–4:** FAIL → implement → PASS; Go gate.
+- Ruling: the `qinqin-grammar` built-in feature manifest (`builtinGrammarManifest` in `main.go`, registry test) is NOT part of this commit. `feature/plugin-sdk` replaces that constant pattern with embedded `server/internal/plugins/builtin/*.json` and a strict `ParseManifest` (sdk 1, permissions such as owns-data). When it has merged into develop, merge develop here and add `builtin/grammar.json` (sdk 1, page surface, owns-data for the progress rows) and append it to `builtinFiles`, with the registry test. Until then plugin progress rows have no registered plugin id.
+- Ruling: `plugins.Exists` also accepts an active grammar pack id, so a pack's enable/disable state can be stored.
 - [ ] **Step 5: Commit** `feat(grammar): seed, API and plugin listing for grammar packs`.
 
 ### Task 4: Web data and exercise logic
