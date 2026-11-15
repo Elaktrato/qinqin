@@ -3,6 +3,7 @@
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { loadEntryBases } from '$lib/api/entryBases';
 	import type { EntryBase } from '$lib/api/types';
+	import type { Deck } from '$lib/study/types';
 	import { WORD_STATES, type WordState } from '$lib/stats/wordStates';
 	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
 	import { enabledKinds } from '$lib/study/deckSettings';
@@ -53,7 +54,7 @@
 		data === null
 			? null
 			: deckId === GENERAL_DECK_ID
-				? { id: GENERAL_DECK_ID, name: 'General' }
+				? ({ id: GENERAL_DECK_ID, name: 'General' } as Deck)
 				: (data.decks.find((d) => d.id === deckId) ?? null)
 	);
 	const enabled = $derived(data === null ? new Set<never>() : enabledKinds(data.deckSettings, [deckId]));
@@ -133,6 +134,7 @@
 	let selected = $state<number[]>([]);
 	let target = $state('');
 	let confirming = $state(false);
+	let confirmingMove = $state(false);
 	let expanded = $state<number[]>([]);
 	let root: HTMLElement | undefined = $state();
 
@@ -141,6 +143,7 @@
 	$effect(() => {
 		void chosen.length;
 		confirming = false;
+		confirmingMove = false;
 	});
 
 	const actions = createCardActions({
@@ -160,9 +163,9 @@
 		clearTimeout(searchTimer);
 	});
 
-	/** The card a row's delete/move acts on: its word, or its first card when the word is gone. */
-	function repId(row: DeckRow): string {
-		return (row.vocab ?? row.siblings[0]).id;
+	/** The cards a row's delete/move acts on: its word, or every remaining card when the word is gone. */
+	function rowIds(row: DeckRow): string[] {
+		return row.vocab !== null ? [row.vocab.id] : row.siblings.map((card) => card.id);
 	}
 
 	const moveTargets = $derived(
@@ -172,7 +175,7 @@
 	);
 
 	function idsOf(entryIds: number[]): string[] {
-		return rows.filter((row) => entryIds.includes(row.entryId)).map(repId);
+		return rows.filter((row) => entryIds.includes(row.entryId)).flatMap(rowIds);
 	}
 
 	function toggleAll(): void {
@@ -195,15 +198,27 @@
 		await focusRow(Number.isFinite(index) ? index : 0);
 	}
 
+	const targetName = $derived(moveTargets.find((d) => d.id === target)?.name ?? target);
+
+	function openMoveConfirm(): void {
+		if (target === '' || chosen.length === 0) return;
+		confirming = false;
+		confirmingMove = true;
+		void tick().then(() => root?.querySelector<HTMLElement>('.confirm-move .secondary')?.focus());
+	}
+
 	async function move(): Promise<void> {
 		if (target === '' || chosen.length === 0) return;
 		const entries = [...chosen];
-		const name = moveTargets.find((d) => d.id === target)?.name ?? target;
-		await actions.move(idsOf(entries), target, name);
+		const index = Math.min(...entries.map((id) => filtered.findIndex((r) => r.entryId === id)).filter((i) => i >= 0));
+		confirmingMove = false;
+		await actions.move(idsOf(entries), target, targetName);
 		selected = [];
+		await focusRow(Number.isFinite(index) ? index : 0);
 	}
 
 	function openConfirm(): void {
+		confirmingMove = false;
 		confirming = true;
 		void tick().then(() => root?.querySelector<HTMLElement>('.confirm .secondary')?.focus());
 	}
@@ -212,6 +227,7 @@
 		if (event.key === 'Escape') {
 			event.stopPropagation();
 			confirming = false;
+			confirmingMove = false;
 		}
 	}
 
@@ -241,6 +257,9 @@
 		return list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
 	}
 
+	const MOVE_NOTE =
+		'Moves the word out of every other deck too, with its other cards. You can undo this right after.';
+
 	function plural(n: number, one: string): string {
 		return `${n} ${n === 1 ? one : `${one}s`}`;
 	}
@@ -265,6 +284,13 @@
 	{:else}
 		<p class="back"><a href={flashcardsHref({ view: 'list' })}>‹ Decks</a></p>
 		<h1 tabindex="-1">{deck.name}</h1>
+		{#if deck.source !== undefined}
+			<p class="source">
+				Copied from {deck.source.type === 'level'
+					? `${deck.source.packId} · ${deck.source.level}`
+					: `${deck.source.pluginId} · ${deck.source.key}`}
+			</p>
+		{/if}
 		<section class="numbers" aria-label={`${deck.name} numbers`}>
 			<p>
 				{plural(numbers.words, 'word')} · {plural(numbers.cards, 'card')} · {numbers.due} due ·
@@ -344,7 +370,7 @@
 						{/each}
 					</select>
 				</label>
-				<button type="button" disabled={chosen.length === 0 || target === '' || controller.busy} onclick={move}>
+				<button type="button" disabled={chosen.length === 0 || target === '' || controller.busy} onclick={openMoveConfirm}>
 					Move
 				</button>
 				<button
@@ -354,6 +380,23 @@
 					onclick={openConfirm}>Delete</button
 				>
 			</div>
+
+			{#if confirmingMove && chosen.length > 0}
+				<div
+					class="confirm confirm-move"
+					role="alertdialog"
+					aria-label="Confirm move"
+					tabindex="-1"
+					onkeydown={confirmKey}
+				>
+					<p>
+						Move {plural(chosen.length, 'word')} to {targetName}?
+						{MOVE_NOTE}
+					</p>
+					<button type="button" onclick={move}>Move {plural(chosen.length, 'word')}</button>
+					<button type="button" class="secondary" onclick={() => (confirmingMove = false)}>Cancel</button>
+				</div>
+			{/if}
 
 			{#if confirming && chosen.length > 0}
 				<div class="confirm" role="alertdialog" aria-label="Confirm delete" tabindex="-1" onkeydown={confirmKey}>
@@ -513,6 +556,12 @@
 
 	.danger {
 		color: #c62828;
+	}
+
+	.source {
+		margin: 0.1rem 0;
+		font-size: 0.85rem;
+		opacity: 0.8;
 	}
 
 	.count {

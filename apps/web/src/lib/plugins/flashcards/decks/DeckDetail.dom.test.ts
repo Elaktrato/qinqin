@@ -194,11 +194,68 @@ describe('DeckDetail', () => {
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 喜欢' }));
 		await fireEvent.change(screen.getByLabelText('Move to'), { target: { value: 'd2' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Move' }));
+		const dialog = screen.getByRole('alertdialog', { name: 'Confirm move' });
+		expect(dialog.textContent).toContain('Move 2 words to Nouns?');
+		expect(dialog.textContent).toContain('Moves the word out of every other deck too');
+		expect(moveCards).not.toHaveBeenCalled();
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Move 2 words' }));
 		await waitFor(() => expect(written()).toEqual(['3']));
+		// Focus returns to a row, like after a delete.
+		await waitFor(() => expect(document.activeElement?.classList.contains('pick')).toBe(true));
 		expect(moveCards).toHaveBeenCalledWith(['c-vocab-1', 'c-vocab-2'], 'd2');
 		await fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
 		await waitFor(() => expect(written()).toEqual(['1', '2', '3']));
 		expect(vi.mocked(restoreCards).mock.calls[0][1]).toEqual({ onlyLive: true });
+	});
+
+	it('Cancel on the move dialog moves nothing', async () => {
+		await open();
+		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 好' }));
+		await fireEvent.change(screen.getByLabelText('Move to'), { target: { value: 'd2' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Move' }));
+		await fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancel' }));
+		expect(screen.queryByRole('alertdialog')).toBeNull();
+		expect(moveCards).not.toHaveBeenCalled();
+	});
+
+	it('a word-less row acts on all its remaining cards when deleted or moved', async () => {
+		const stray = (kind: 'reverse' | 'cloze'): StudyCard => ({
+			id: `c-${kind}-9`,
+			kind,
+			entryId: 9,
+			written: '走',
+			deckIds: ['d1'],
+			createdAt: '2026-01-09T00:00:00.000Z'
+		});
+		cards = [...cards, stray('reverse'), stray('cloze')];
+		await open();
+		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 走' }));
+		await fireEvent.change(screen.getByLabelText('Move to'), { target: { value: 'd2' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Move' }));
+		await fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Move 1 word' }));
+		await waitFor(() => expect(moveCards).toHaveBeenCalledWith(['c-reverse-9', 'c-cloze-9'], 'd2'));
+		await fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+		await waitFor(() => expect(document.querySelector('li[data-entry="9"]')).not.toBeNull());
+		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 走' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+		await fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete 1 word' }));
+		await waitFor(() => expect(deleteCards).toHaveBeenCalledWith(['c-reverse-9', 'c-cloze-9']));
+	});
+
+	it('shows where a copied deck came from', async () => {
+		vi.mocked(loadStudyHistory).mockImplementation(async () => ({
+			decks: [
+				{ id: 'cp', name: 'My HSK', createdAt: '2026-01-01T00:00:00.000Z', source: { type: 'level', packId: 'hsk-words', level: 'HSK 1' } },
+				verbs,
+				nouns
+			],
+			cards: structuredClone(cards).map((c) => ({ ...c, deckIds: ['cp'] })),
+			reviews: [],
+			merged: 0,
+			deckSettings: settings as never
+		}));
+		render(DeckDetail, { deckId: 'cp' });
+		expect(await screen.findByText('Copied from hsk-words · HSK 1')).toBeTruthy();
 	});
 
 	it('deletes after a confirmation and undoes it', async () => {
