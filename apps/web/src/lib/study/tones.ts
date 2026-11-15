@@ -94,22 +94,20 @@ export function parsePinyin(value: string): Syllable[] {
 }
 
 const DEFAULT_MIN_DISTANCE = 24;
+const FLAT_DEGREES = 25;
 
 /**
- * Maps a swipe to a tone. Coordinates are screen coordinates: x grows to the
- * right and y grows DOWNWARD, so "up" is a negative dy.
+ * Maps a swipe to the tone whose shape it draws. Coordinates are screen
+ * coordinates: x grows to the right and y grows DOWNWARD.
  *
- * Overload 1, `(dx, dy, minDistance?)`: a single vector.
  *  - shorter than `minDistance` (px, default 24): tap, neutral (5)
- *  - up and up-left (67.5 to 157.5 degrees from the x axis, y flipped): 1
- *  - up-right and right (-22.5 to 67.5 degrees): 2
- *  - down-right, down, down-left, left: 4
- * A dip (tone 3) cannot be told from one vector.
+ *  - a dip (down by at least `minDistance`, then up by at least that, the
+ *    lowest point strictly inside the path): 3
+ *  - otherwise by the start-to-end vector: within 25 degrees of horizontal,
+ *    either direction: flat, 1; rising: 2; falling: 4
  *
- * Overload 2, `(path, minDistance?)`: the sampled pointer path. A path that
- * first goes down by at least `minDistance` and then comes back up by at least
- * `minDistance` (the lowest point, largest y, lies strictly inside the path)
- * is a dip: 3. Any other path is classified by its start-to-end vector.
+ * Overload 1, `(dx, dy, minDistance?)`, takes one vector (no dip possible);
+ * overload 2, `(path, minDistance?)`, takes the sampled pointer path.
  */
 export function toneFromGesture(dx: number, dy: number, minDistance?: number): Tone;
 export function toneFromGesture(path: readonly GesturePoint[], minDistance?: number): Tone;
@@ -134,10 +132,9 @@ export function toneFromGesture(
 
 function vectorTone(dx: number, dy: number, min: number): Tone {
 	if (Math.hypot(dx, dy) < min) return 5;
-	const angle = (Math.atan2(-dy, dx) * 180) / Math.PI; // 0 = right, 90 = up
-	if (angle >= 67.5 && angle <= 157.5) return 1;
-	if (angle >= -22.5 && angle < 67.5) return 2;
-	return 4;
+	const fromHorizontal = (Math.atan2(Math.abs(dy), Math.abs(dx)) * 180) / Math.PI;
+	if (fromHorizontal <= FLAT_DEGREES) return 1;
+	return dy < 0 ? 2 : 4;
 }
 
 /**

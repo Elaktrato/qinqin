@@ -1,10 +1,31 @@
 // Tracked reading time, derived from the reader's `read` events
 // (payload `{ bookId, seconds }`). The reader posts a burst only when it
 // lasted at least 30 s, and each event counts with the same clamping as
-// the heatmap's reading points (lib/activity/activity.ts): nothing under
+// the heatmap's reading points (readingPoints below): nothing under
 // 30 s or when not a finite number, at most 2 hours per event.
 
-import { readingPoints } from '$lib/activity/activity';
+/** Seconds of reading that make up one point (5 minutes). */
+const SECONDS_PER_POINT = 300;
+/** Reading shorter than this earns nothing. */
+const MIN_READ_SECONDS = 30;
+/** Cap per read event: 24 points = 2 hours. */
+const MAX_READ_POINTS = 24;
+
+/**
+ * readingPoints turns a `read` event payload `{seconds}` into points:
+ * under 30 s (or not a finite number) is 0, otherwise one point per
+ * started 5 minutes, capped at 24 per event. The server scores the
+ * heatmap with the same rule (the reader manifest's activity rule);
+ * this copy only clamps the reading-time totals.
+ */
+export function readingPoints(payload: unknown): number {
+	if (typeof payload !== 'object' || payload === null) return 0;
+	const seconds = (payload as { seconds?: unknown }).seconds;
+	if (typeof seconds !== 'number' || !Number.isFinite(seconds) || seconds < MIN_READ_SECONDS) {
+		return 0;
+	}
+	return Math.min(Math.ceil(seconds / SECONDS_PER_POINT), MAX_READ_POINTS);
+}
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

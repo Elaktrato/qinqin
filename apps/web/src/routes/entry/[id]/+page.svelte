@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
+	import { getEntryAudio, type AudioResolution } from '$lib/api/audio';
 	import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
 	import type { Entry, EntryBase, EntryDetail } from '$lib/api/types';
 	import AddToStudy from '$lib/components/AddToStudy.svelte';
@@ -11,18 +13,28 @@
 	import Senses from '$lib/components/Senses.svelte';
 	import Sentences from '$lib/components/Sentences.svelte';
 	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
+	import { token } from '$lib/auth';
+	import { creditLine, headwordClips, readingClips } from '$lib/audio/button';
+	import { readAudioSettings } from '$lib/audio/settings';
+	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { record } from '$lib/events';
+	import { formatReading } from '$lib/format';
 	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
+	// The radical's written form, once fetched; empty shows the id instead.
+	let radicalWritten = $state('');
 	let loading = $state(true);
 	let notFound = $state(false);
 	let error = $state('');
 	// The entry a view event was already recorded for, so a re-render
 	// or a workspace arriving late never double-counts one visit.
 	let viewedEntry = $state<number | null>(null);
+
+	// The entry's recordings (signed-in users only; the device voice needs none).
+	let audio = $state<AudioResolution | null>(null);
 
 	// Guards against a slow earlier request overwriting a newer entry.
 	let requestSeq = 0;
@@ -46,14 +58,14 @@
 		error = '';
 		entry = null;
 		chars = [];
+		radicalWritten = '';
 		try {
-			const [loaded, underRadical] = await Promise.all([
-				getEntry(id),
-				getCharsUnderRadical(id)
-			]);
+			const loaded = await getEntry(id);
 			if (seq !== requestSeq) return;
 			entry = loaded;
-			chars = underRadical;
+			// The optional sections must never blank the page: they load after
+			// the entry is on screen and fall back to nothing on failure.
+			void loadExtras(loaded, seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			if (err instanceof ApiError && err.status === 404) {
@@ -64,6 +76,25 @@
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
+	}
+
+	async function loadExtras(loaded: Entry, seq: number): Promise<void> {
+		// Words have no characters under them: skip the always-empty query.
+		const under =
+			loaded.kind === 'word'
+				? Promise.resolve([] as EntryBase[])
+				: getCharsUnderRadical(loaded.id).catch(() => [] as EntryBase[]);
+		const radical =
+			loaded.radicalId === null
+				? Promise.resolve('')
+				: getEntry(loaded.radicalId).then(
+						(r) => r.written,
+						() => ''
+					);
+		const [list, written] = await Promise.all([under, radical]);
+		if (seq !== requestSeq) return;
+		chars = list;
+		radicalWritten = written;
 	}
 
 	function retry(): void {
@@ -96,12 +127,34 @@
 			requestSeq++;
 			entry = null;
 			chars = [];
+			radicalWritten = '';
 			loading = false;
 			error = '';
 			notFound = true;
 			return;
 		}
 		void load(id);
+	});
+
+	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
+	const headClips = $derived(headwordClips(audio));
+	const audioFor = $derived(entry ? readingClips(audio, entry.readings) : null);
+	// The credit of every recording this page can play.
+	const credit = $derived(
+		creditLine([...headClips, ...(audio?.syllables ?? []).flatMap((slot) => slot ?? [])])
+	);
+
+	// Load the recordings once the entry is known; a failure just means no audio.
+	$effect(() => {
+		const id = entry?.id ?? null;
+		audio = null;
+		if (id === null || !$token) return;
+		void getEntryAudio(id).then(
+			(r) => {
+				if (entry?.id === id) audio = r;
+			},
+			() => {}
+		);
 	});
 
 	// Record the visit once the entry and the workspace are both known:
@@ -114,6 +167,10 @@
 		void record('view', workspace, { entryId: viewed });
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle(notFound ? 'Entry not found' : (entry?.written ?? ''))}</title>
+</svelte:head>
 
 <main class="entry-page">
 	{#if loading}
@@ -130,7 +187,16 @@
 	{:else if entry}
 		<header class="head">
 			<div>
-				<h1 class="written">{entry.written}</h1>
+				<div class="headword">
+					<h1 class="written">{entry.written}</h1>
+					<PlayButton
+						clips={headClips}
+						speakText={entry.written}
+						lang={entry.language}
+						deviceVoice={audioSettings.deviceVoice}
+						label={entry.written}
+					/>
+				</div>
 				<div class="chips">
 					<span class="chip">{entry.kind}</span>
 					<span class="chip" title={entry.language}>{languageLabel(entry.language)}</span>
@@ -152,10 +218,21 @@
 				<EntryEditor entry={entry} onSaved={handleSaved} onCancel={closeEditor} />
 			{/key}
 		{:else}
-			<Readings readings={entry.readings} />
+			<Readings
+				readings={entry.readings}
+				audioFor={audioFor ?? undefined}
+				word={entry.written}
+				lang={entry.language}
+				deviceVoice={audioSettings.deviceVoice}
+			/>
+			{#if credit}
+				<p class="credit">{credit}</p>
+			{/if}
 		{/if}
 		<Badges badges={entry.badges} />
-		<Senses senses={entry.senses} />
+		{#key entry.id}
+			<Senses senses={entry.senses} />
+		{/key}
 
 		{#if entry.variants.length > 0}
 			<section class="variants" aria-labelledby="variants-heading">
@@ -165,7 +242,7 @@
 						<li>
 							<a href={`/entry/${variant.id}`}>{variant.written}</a>
 							{#if variant.readings.length > 0}
-								<span class="reading">{variant.readings[0].value}</span>
+								<span class="reading">{formatReading(variant.readings[0].type, variant.readings[0].value)}</span>
 							{/if}
 						</li>
 					{/each}
@@ -176,7 +253,11 @@
 		{#if entry.radicalId !== null}
 			<section class="radical" aria-labelledby="radical-heading">
 				<h2 id="radical-heading">Radical</h2>
-				<p><a href={`/entry/${entry.radicalId}`}>Radical entry #{entry.radicalId}</a></p>
+				<p>
+					<a href={`/entry/${entry.radicalId}`}>
+						{radicalWritten || `Radical entry #${entry.radicalId}`}
+					</a>
+				</p>
 			</section>
 		{/if}
 
@@ -188,7 +269,7 @@
 						<li>
 							<a href={`/entry/${char.id}`}>{char.written}</a>
 							{#if char.readings.length > 0}
-								<span class="reading">{char.readings[0].value}</span>
+								<span class="reading">{formatReading(char.readings[0].type, char.readings[0].value)}</span>
 							{/if}
 						</li>
 					{/each}
@@ -232,6 +313,19 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 1rem;
+	}
+
+	.headword {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.credit {
+		margin: 0.5rem 0 0;
+		font-size: 0.8rem;
+		opacity: 0.7;
 	}
 
 	.written {

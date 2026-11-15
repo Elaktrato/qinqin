@@ -101,7 +101,7 @@ func TestDefaultRootHoldsNoLevelSamples(t *testing.T) {
 		}
 	}
 	slices.Sort(schemes)
-	if want := []string{"hsk-chars", "hsk-words", "jlpt-kanji"}; !slices.Equal(schemes, want) {
+	if want := []string{"hsk-chars", "hsk-words", "jlpt-kanji", "joyo-grades", "tgh-chars"}; !slices.Equal(schemes, want) {
 		t.Errorf("default level packs = %v, want %v", schemes, want)
 	}
 }
@@ -157,7 +157,7 @@ func TestSeedIdempotent(t *testing.T) {
 
 	var out bytes.Buffer
 	packs := smallPacks(t)
-	if err := seed(ctx, sqlDB, []string{packs}, &out); err != nil {
+	if err := seed(ctx, sqlDB, t.TempDir(), []string{packs}, &out); err != nil {
 		t.Fatalf("first seed: %v", err)
 	}
 	first := countRows(t, sqlDB)
@@ -170,7 +170,7 @@ func TestSeedIdempotent(t *testing.T) {
 		}
 	}
 
-	if err := seed(ctx, sqlDB, []string{packs}, io.Discard); err != nil {
+	if err := seed(ctx, sqlDB, t.TempDir(), []string{packs}, io.Discard); err != nil {
 		t.Fatalf("second seed: %v", err)
 	}
 	if second := countRows(t, sqlDB); second != first {
@@ -188,7 +188,7 @@ func TestSeedWarnsAboutUserDataOnEntryIDs(t *testing.T) {
 	seedOut := func(sqlDB *sql.DB) string {
 		t.Helper()
 		var out bytes.Buffer
-		if err := seed(ctx, sqlDB, []string{packs}, &out); err != nil {
+		if err := seed(ctx, sqlDB, t.TempDir(), []string{packs}, &out); err != nil {
 			t.Fatalf("seed: %v", err)
 		}
 		return out.String()
@@ -234,7 +234,7 @@ func TestSeedWarnsAboutUserDataOnEntryIDs(t *testing.T) {
 func TestSeedPrintsEachPackOnce(t *testing.T) {
 	sqlDB, _ := openTestDB(t)
 	var out bytes.Buffer
-	if err := seed(context.Background(), sqlDB, []string{smallPacks(t)}, &out); err != nil {
+	if err := seed(context.Background(), sqlDB, t.TempDir(), []string{smallPacks(t)}, &out); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
@@ -265,7 +265,7 @@ func TestSeedPrintsEachPackOnce(t *testing.T) {
 func TestSeedCommittedPacksEndToEnd(t *testing.T) {
 	ctx := context.Background()
 	sqlDB, _ := openTestDB(t)
-	if err := seed(ctx, sqlDB, []string{smallPacks(t)}, io.Discard); err != nil {
+	if err := seed(ctx, sqlDB, t.TempDir(), []string{smallPacks(t)}, io.Discard); err != nil {
 		t.Fatalf("seed: %v", err)
 	}
 	// Every dictionary pack fills the lexicon.
@@ -318,7 +318,7 @@ func TestSeedNamesTheBadPack(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(bad, "manifest.json"), []byte(manifest), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	err := seed(context.Background(), sqlDB, []string{packs}, io.Discard)
+	err := seed(context.Background(), sqlDB, t.TempDir(), []string{packs}, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "no-license") {
 		t.Fatalf("seed(bad pack) err = %v, want an error naming no-license", err)
 	}

@@ -196,24 +196,33 @@ describe('layout store', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('reads the user-global qinqin-core home-layout row', async () => {
+	it('reads the user-global qinqin-core home-layout row through the list route', async () => {
 		expect(LAYOUT_PLUGIN_ID).toBe('qinqin-core');
 		expect(LAYOUT_KEY).toBe('home-layout');
 		vi.mocked(fetch).mockResolvedValue(
-			jsonResponse({ data: { version: 1, widgets: ['flashcards-summary'] }, workspaceId: null })
+			jsonResponse([
+				{ key: 'home-layout-old', data: { version: 1, widgets: ['nope'] }, version: 1, updatedAt: '' },
+				{ key: 'home-layout', data: { version: 1, widgets: ['flashcards-summary'] }, version: 2, updatedAt: '' }
+			])
 		);
 
 		expect(await loadLayout()).toEqual(['flashcards-summary']);
+		expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
 		expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(
-			'/api/plugins/qinqin-core/data/home-layout'
+			'/api/plugins/qinqin-core/data?prefix=home-layout'
 		);
 	});
 
-	it('loads no layout when the row is missing or corrupt', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(new Response('not found', { status: 404 }));
+	it('loads no layout, without a 404 request, when the row is missing', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse([]));
 		expect(await loadLayout()).toBeNull();
+		expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+	});
 
-		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ data: { widgets: 'nope' } }));
+	it('loads no layout when the row is corrupt', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(
+			jsonResponse([{ key: 'home-layout', data: { widgets: 'nope' }, version: 1, updatedAt: '' }])
+		);
 		expect(await loadLayout()).toBeNull();
 	});
 

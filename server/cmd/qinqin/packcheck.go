@@ -15,7 +15,7 @@ import (
 type storedTerms struct{ license, attribution, notice string }
 
 // warnStalePackTerms logs one warning per installed dictionary,
-// frequency pack or level scheme whose stored license, attribution or
+// frequency pack, level scheme, grammar pack or audio pack whose stored license, attribution or
 // notice differs from its manifest under roots: the Sources page shows
 // the stored copy, which only `qinqin seed` refreshes. The typical case
 // is an upgrade past migration 024, which adds every notice empty.
@@ -31,6 +31,8 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 		dict.TypeDictionary: "dictionaries",
 		dict.TypeFrequency:  "frequency_packs",
 		dict.TypeLevels:     "schemes",
+		dict.TypeGrammar:    "grammar_packs",
+		dict.TypeAudio:      "audio_packs",
 	} {
 		rows, err := loadStoredTerms(ctx, sqlDB, table)
 		if err != nil {

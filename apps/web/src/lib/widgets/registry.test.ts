@@ -3,6 +3,7 @@ import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
 import type { WebPlugin } from '$lib/plugins';
 import { webPlugins } from '$lib/plugins';
+import { fixtureManifest } from '$lib/plugins/fixtures';
 import { allWidgets } from './registry';
 import type { WidgetDef } from './types';
 
@@ -22,7 +23,7 @@ function widget(id: string, owner: string, extra: Partial<WidgetDef> = {}): Widg
 }
 
 function plugin(id: string, widgets: WidgetDef[]): WebPlugin {
-	return { manifest: { id, name: id, surfaces: [], widgets } };
+	return { manifest: fixtureManifest({ id, name: id, widgets }) };
 }
 
 function state(id: string, enabled = true): PluginInfo {

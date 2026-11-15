@@ -7,7 +7,7 @@ import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
 import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
 import { tierFor, type SaladTier } from './wordSalad';
-import { writableChars } from './writing';
+import { isHan, writableChars } from './writing';
 import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
 
 /**
@@ -36,6 +36,10 @@ export interface FlowItem {
 	sentenceId?: number;
 	/** Decks a virtual item's card joins. */
 	deckIds?: string[];
+	/** Set on an in-session re-show of an Again card: how many so far. */
+	reshow?: number;
+	/** Word Salad tier the first showing used; a re-show keeps it. */
+	tier?: SaladTier;
 }
 
 /** The entry fields eligibility needs. */
@@ -145,6 +149,8 @@ export interface DeckSessionOptions {
 	language: string;
 	/** `kind:entryId` of companions already found ineligible; never planned. */
 	skip?: ReadonlySet<string>;
+	/** The workspace's active FSRS weights. */
+	w: readonly number[];
 }
 
 /**
@@ -189,13 +195,14 @@ export function deckSessionPlan({
 	reviewLimit,
 	now,
 	language,
-	skip
+	skip,
+	w
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
 	if (wanted.length === 0) return { queue: [], reserve: [], backfillLeft };
 
-	const real = buildQueue({ cards, reviews, deckIds, newLimit, reviewLimit, now, kinds: wanted });
+	const real = buildQueue({ cards, reviews, deckIds, newLimit, reviewLimit, now, kinds: wanted, w });
 	const reviewed = reviewedIds(reviews);
 	const freshCount = real.filter((card) => !reviewed.has(card.id)).length;
 	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
@@ -339,10 +346,11 @@ export function reviewCountFor(cardId: string | null, reviews: readonly ReviewEv
 export function tierForCard(
 	cardId: string | null,
 	reviews: readonly ReviewEvent[],
-	now: Date
+	now: Date,
+	w: readonly number[]
 ): SaladTier {
 	if (cardId === null) return 0;
-	return tierFor(scheduleFor(cardId, reviews, now)?.stability ?? null);
+	return tierFor(scheduleFor(cardId, reviews, now, w)?.stability ?? null);
 }
 
 /**
@@ -399,55 +407,20 @@ export function toneVerdict(
 	};
 }
 
+/**
+ * The Han characters of `written` when every character is Han and their
+ * count equals the syllable count; otherwise null (erhua such as 花儿,
+ * mixed scripts), and the pads show toneless pinyin instead.
+ */
+export function tonePadLabels(written: string, syllableCount: number): string[] | null {
+	const chars = [...written.trim()];
+	if (chars.length === 0 || chars.length !== syllableCount) return null;
+	return chars.every(isHan) ? chars : null;
+}
+
 /** The tone check candidates of an entry: its clean pinyin readings. */
 export function toneCandidates(readings: readonly { type: string; value: string }[]): Syllable[][] {
 	return cleanReadings(pinyinReadings(readings));
-}
-
-export interface ListenerTarget {
-	addEventListener(type: string, listener: unknown, options?: unknown): void;
-	removeEventListener(type: string, listener: unknown, options?: unknown): void;
-}
-
-/**
- * captureListeners runs `fn` while recording every listener it adds to
- * `target`, and returns a release function that removes them again. It
- * exists for hanzi-writer, which adds document-level pointer-end
- * listeners in its constructor and has no destroy(): without this every
- * writing card would leave two listeners on the document.
- */
-export function captureListeners<T>(
-	target: ListenerTarget,
-	fn: () => T
-): { result: T; release: () => void } {
-	const own = Object.prototype.hasOwnProperty.call(target, 'addEventListener');
-	const original = target.addEventListener;
-	const recorded: [string, unknown, unknown][] = [];
-	target.addEventListener = function (type: string, listener: unknown, options?: unknown) {
-		recorded.push([type, listener, options]);
-		return original.call(this, type, listener, options);
-	};
-	let result: T;
-	try {
-		result = fn();
-	} finally {
-		if (own) {
-			target.addEventListener = original;
-		} else {
-			delete (target as { addEventListener?: unknown }).addEventListener;
-		}
-	}
-	let released = false;
-	return {
-		result,
-		release: () => {
-			if (released) return;
-			released = true;
-			for (const [type, listener, options] of recorded) {
-				target.removeEventListener(type, listener, options);
-			}
-		}
-	};
 }
 
 /** How long after the suggestion gains focus a keyboard activation is suspect. */

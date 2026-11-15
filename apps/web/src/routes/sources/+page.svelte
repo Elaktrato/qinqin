@@ -1,12 +1,24 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
 	import type { Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
+	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
 	import { webPlugins } from '$lib/plugins';
+	import { listGrammar } from '$lib/plugins/grammar/api';
+	import type { PackInfo } from '$lib/plugins/grammar/types';
 	import { coreCredits } from '$lib/sources/coreCredits';
 	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
-	import { creditView, packTable, pluginCredits, type CreditView, type PackTable } from '$lib/sources/sections';
+	import { listSentencePacks, type SentencePack } from '$lib/api/packs';
+	import {
+		creditView,
+		packTable,
+		pluginCredits,
+		sentencePackSources,
+		type CreditView,
+		type PackTable
+	} from '$lib/sources/sections';
 
 	// Credits declared in code: the app's own, and each web plugin's.
 	const coreViews = coreCredits.map(creditView);
@@ -20,10 +32,39 @@
 	let error = $state('');
 	const dictionaryTable = $derived(packTable('dictionaries', dictionaries));
 
+	let sentencePacks = $state<SentencePack[]>([]);
+	let sentencesError = $state('');
+	const sentencesTable = $derived(packTable('sentences', sentencePackSources(sentencePacks)));
+
+	async function loadSentences(): Promise<void> {
+		sentencesError = '';
+		try {
+			sentencePacks = await listSentencePacks();
+		} catch (err) {
+			sentencePacks = [];
+			sentencesError = message(err, 'Could not load sentence pack credits.');
+		}
+	}
+
 	let frequencyPacks = $state<FrequencyPack[]>([]);
 	let frequencyLoading = $state(true);
 	let frequencyError = $state('');
 	const frequencyTable = $derived(packTable('frequency', frequencyPacks));
+
+	// The Audio section exists only while an audio pack is installed.
+	let audioPacks = $state<AudioPackInfo[]>([]);
+	let audioError = $state('');
+	const audio = $derived(audioSection(audioPacks));
+
+	async function loadAudio(): Promise<void> {
+		audioError = '';
+		try {
+			audioPacks = await api<AudioPackInfo[]>('/api/audio-packs', { auth: false });
+		} catch (err) {
+			audioPacks = [];
+			audioError = message(err, 'Could not load audio credits.');
+		}
+	}
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -77,12 +118,42 @@
 		}
 	}
 
+	let grammarPacks = $state<PackInfo[]>([]);
+	let grammarLoading = $state(true);
+	let grammarError = $state('');
+	const grammarTable = $derived(
+		packTable(
+			'grammar',
+			grammarPacks.map((pack, id) => ({ ...pack, id, name: pack.name }))
+		)
+	);
+
+	async function loadGrammar(): Promise<void> {
+		grammarLoading = true;
+		grammarError = '';
+		try {
+			grammarPacks = await listGrammar();
+		} catch (err) {
+			grammarPacks = [];
+			grammarError = message(err, 'Could not load grammar lesson credits.');
+		} finally {
+			grammarLoading = false;
+		}
+	}
+
 	onMount(() => {
+		loadGrammar();
 		load();
 		loadFrequency();
+		loadSentences();
+		loadAudio();
 		loadSchemes();
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Sources')}</title>
+</svelte:head>
 
 {#snippet text(value: string, lang: string)}{#each scriptRuns(value, lang) as run, i (i)}{#if run.lang}<span
 				lang={run.lang}>{run.text}</span
@@ -218,8 +289,8 @@
 
 		<p class="notice">
 			Bundled dictionaries are redistributed as unmodified upstream files. The upstream
-			dictionary packs under <code>plugins/data/</code> carry their <code>LICENSE</code> and
-			<code>ATTRIBUTION.md</code>; the full index is in <code>docs/sources.md</code>.
+			dictionary packs ship with their <code>LICENSE</code> and <code>ATTRIBUTION.md</code>; the
+			project repository indexes them in <code>docs/sources.md</code>.
 		</p>
 	</section>
 
@@ -265,9 +336,102 @@
 
 		<p class="notice">
 			Word frequency ranks order the lookup results. Frequency lists with unclear licences are
-			never bundled; an instance may add them locally from <code>plugins/data-local/</code>.
+			never bundled; an instance may add them locally as a separate pack directory.
 		</p>
 	</section>
+
+	{#if sentencesError}
+		<section>
+			<h2 id="sources-sentences">Sentences</h2>
+			<p class="error" role="alert">{sentencesError}</p>
+			<button type="button" onclick={loadSentences}>Retry</button>
+		</section>
+	{:else if sentencePacks.length > 0}
+		<section>
+			<h2 id="sources-sentences">Sentences</h2>
+			<div class="table-wrap">
+				<table aria-labelledby="sources-sentences">
+					<thead>
+						<tr>
+							<th scope="col">Name</th>
+							{@render noteHeader(sentencesTable)}
+							<th scope="col">Language</th>
+							<th scope="col">Version</th>
+							<th scope="col">License</th>
+							<th scope="col">Attribution</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each sentencesTable.rows as row (row.key)}
+							<tr>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(sentencesTable, row.noteId, row.name)}
+								<td title={row.language}>{languageLabel(row.language)}</td>
+								<td>{row.version}</td>
+								<td>{@render cell(row.license, row.language)}</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			{@render notes(sentencesTable)}
+		</section>
+	{/if}
+
+	{#if audio}
+		<section>
+			<h2 id="sources-audio">Audio</h2>
+
+			<div class="table-wrap">
+				<table aria-labelledby="sources-audio">
+					<thead>
+						<tr>
+							<th scope="col">Name</th>
+							{@render noteHeader(audio.table)}
+							<th scope="col">Language</th>
+							<th scope="col">Version</th>
+							<th scope="col">License</th>
+							<th scope="col">Attribution</th>
+							<th scope="col">Credits</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each audio.table.rows as row (row.key)}
+							<tr>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(audio.table, row.noteId, row.name)}
+								<td title={row.language}>{languageLabel(row.language)}</td>
+								<td>{row.version}</td>
+								<td>
+									{#if audio.licenseHref[row.key]}
+										<a href={audio.licenseHref[row.key]} rel="noopener">{row.license}</a>
+									{:else}
+										{@render cell(row.license, row.language)}
+									{/if}
+								</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
+								<td>
+									{#each audio.creditsPages[row.key] ?? [] as link (link.href)}
+										<a href={link.href}>{link.label}</a>{' '}
+									{/each}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			{@render notes(audio.table)}
+
+			<p class="notice">
+				Pronunciation recordings play from the entry page and after the answer in study. Each
+				recording is credited next to its play button. Recordings with unclear licences are never
+				bundled; an instance may add them locally from <code>plugins/data-local/</code>.
+			</p>
+		</section>
+	{:else if audioError}
+		<p class="error" role="alert">{audioError}</p>
+	{/if}
 
 	<section>
 		<h2 id="sources-levels">Level lists</h2>
@@ -316,6 +480,53 @@
 		</p>
 	</section>
 
+	<section>
+		<h2 id="sources-grammar">Grammar lessons</h2>
+
+		{#if grammarLoading}
+			<p>Loading grammar lesson credits…</p>
+		{:else if grammarError}
+			<p class="error" role="alert">{grammarError}</p>
+			<button type="button" onclick={loadGrammar}>Retry</button>
+		{:else if grammarPacks.length === 0}
+			<p>No grammar lessons are installed.</p>
+		{:else}
+			<div class="table-wrap">
+				<table aria-labelledby="sources-grammar">
+					<thead>
+						<tr>
+							<th scope="col">Name</th>
+							{@render noteHeader(grammarTable)}
+							<th scope="col">Language</th>
+							<th scope="col">Version</th>
+							<th scope="col">License</th>
+							<th scope="col">Attribution</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each grammarTable.rows as row (row.key)}
+							<tr>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(grammarTable, row.noteId, row.name)}
+								<td title={row.language}>{languageLabel(row.language)}</td>
+								<td>{row.version}</td>
+								<td>{@render cell(row.license, row.language)}</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			{@render notes(grammarTable)}
+		{/if}
+
+		<p class="notice">
+			Grammar lessons are written by the pack's author; the explanations and examples are not
+			taken from a syllabus. Read each pack's note for who wrote it and whether a native speaker
+			has reviewed it.
+		</p>
+	</section>
+
 	{#if plugins.length > 0}
 		<section>
 			<h2 id="sources-plugins">Plugins</h2>
@@ -343,9 +554,9 @@
 	<section>
 		<h2>More</h2>
 		<p>
-			Full license texts and attribution notices for the upstream dictionary packs live in
-			their pack directories under <code>plugins/data/</code>; <code>docs/sources.md</code>
-			indexes the bundled upstream sources. If this instance installs additional packs, their
+			Full license texts and attribution notices for the upstream dictionary packs ship with
+			each pack; the project repository indexes the bundled upstream sources in
+			<code>docs/sources.md</code>. If this instance installs additional packs, their
 			credits appear in the tables above once installed.
 		</p>
 	</section>

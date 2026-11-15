@@ -9,11 +9,14 @@ import (
 	"encoding/json"
 	"errors"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
 
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
+	"qinqin/internal/dict"
+	"qinqin/internal/grammar"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 )
@@ -71,7 +74,18 @@ func find(t *testing.T, list []model.PluginInfo, id string) model.PluginInfo {
 
 // heatmapManifest is a feature-plugin manifest: the admin-registered
 // kind, identified by its id, shipping no content of its own.
-const heatmapManifest = `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature","language":"zh"}`
+var heatmapManifest = validManifest("qinqin-heatmap", `"name":"Study heatmap"`)
+
+// validManifest is a feature manifest that passes ParseManifest: sdk 1,
+// owns-data, no surfaces or events. extra is a comma-free list of JSON
+// members appended last, so a repeated key overrides the default (the
+// decoder keeps the last).
+func validManifest(id, extra string) string {
+	if extra != "" {
+		extra = "," + extra
+	}
+	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
+}
 
 func TestRegisterListState(t *testing.T) {
 	sqlDB := newDB(t)
@@ -117,7 +131,7 @@ func TestRegisterListState(t *testing.T) {
 	}
 
 	// Re-registering the same id replaces the manifest.
-	mustRegister(t, sqlDB, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.1","type":"feature","language":"zh"}`)
+	mustRegister(t, sqlDB, validManifest("qinqin-heatmap", `"name":"Study heatmap","version":"1.1"`))
 	list, err = plugins.ListFor(ctx, sqlDB, bob)
 	if err != nil {
 		t.Fatalf("ListFor after re-register: %v", err)
@@ -177,7 +191,7 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 	exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
 		VALUES ((SELECT id FROM entries WHERE ext_key = '你好'), 'zh-mini', NULL, '你好。', 'nǐ hǎo.', 'Hello.', ?)`, stamp)
 
-	mustRegister(t, sqlDB, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)
+	mustRegister(t, sqlDB, heatmapManifest)
 
 	list, err := plugins.ListFor(ctx, sqlDB, alice)
 	if err != nil {
@@ -517,5 +531,210 @@ func TestPluginDataWorkspaceScoped(t *testing.T) {
 	}
 	if !sawGlobal || !sawWorkspace {
 		t.Errorf("pulled rows = %+v, want one user-global and one workspace row", pulled)
+	}
+}
+
+func TestListDataPrefixScopeAndTombstones(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	bob := newUser(t, sqlDB, "bob")
+	mkWS := func(user int64, name string) *int64 {
+		var id int64
+		if err := sqlDB.QueryRowContext(ctx, `INSERT INTO workspaces (user_id, language, name, settings, updated_at)
+			VALUES (?, 'zh', ?, '{}', ?) RETURNING id`, user, name, time.Now().UTC().Format(time.RFC3339)).Scan(&id); err != nil {
+			t.Fatalf("seed workspace: %v", err)
+		}
+		return &id
+	}
+	w, v := mkWS(alice, "W"), mkWS(alice, "V")
+	put := func(user int64, ws *int64, key string) {
+		t.Helper()
+		if _, err := plugins.PutData(ctx, sqlDB, user, ws, "qinqin-journal", key, json.RawMessage(`{"k":"`+key+`"}`)); err != nil {
+			t.Fatalf("put %s: %v", key, err)
+		}
+	}
+	for _, k := range []string{"entry:2", "entry:1", "review:1", "entry:3"} {
+		put(alice, w, k)
+	}
+	put(alice, v, "entry:9")
+	put(bob, w, "entry:1") // another user's row under the same workspace id
+	put(alice, nil, "entry:7")
+	if err := plugins.DeleteData(ctx, sqlDB, alice, w, "qinqin-journal", "entry:3"); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+
+	keys := func(rows []model.PluginData, err error) []string {
+		t.Helper()
+		if err != nil {
+			t.Fatalf("ListData: %v", err)
+		}
+		out := []string{}
+		for _, r := range rows {
+			out = append(out, r.Key)
+		}
+		return out
+	}
+	eq := func(got []string, want ...string) {
+		t.Helper()
+		if len(got) != len(want) {
+			t.Fatalf("keys = %v, want %v", got, want)
+		}
+		for i := range want {
+			if got[i] != want[i] {
+				t.Fatalf("keys = %v, want %v", got, want)
+			}
+		}
+	}
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "entry:")), "entry:1", "entry:2")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "review:")), "review:1")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "")), "entry:1", "entry:2", "review:1")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, v, "qinqin-journal", "entry:")), "entry:9")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, nil, "qinqin-journal", "entry:")), "entry:7")
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "en%")))
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "ent_y:")))
+	eq(keys(plugins.ListData(ctx, sqlDB, alice, w, "other-plugin", "entry:")))
+	rows, _ := plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "review:")
+	if rows == nil || string(rows[0].Data) != `{"k":"review:1"}` {
+		t.Fatalf("rows = %+v", rows)
+	}
+	empty, err := plugins.ListData(ctx, sqlDB, alice, w, "qinqin-journal", "zzz")
+	if err != nil || empty == nil || len(empty) != 0 {
+		t.Fatalf("empty = %#v %v, want a non-nil empty slice", empty, err)
+	}
+}
+
+func TestListForIncludesGrammarPacks(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	pack, err := dict.LoadPack("../grammar/testdata/zh-mini")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatal(err)
+	}
+	list, err := plugins.ListFor(ctx, sqlDB, alice)
+	if err != nil {
+		t.Fatalf("ListFor: %v", err)
+	}
+	p := find(t, list, "zh-grammar-mini")
+	m := manifestObject(t, p.Manifest)
+	if m["type"] != "grammar" || m["language"] != "zh" || m["license"] != "CC0-1.0" || m["name"] != "Chinese grammar mini" || !p.Enabled {
+		t.Errorf("manifest = %v enabled %t, want the grammar registry fields", m, p.Enabled)
+	}
+	if ok, err := plugins.Exists(ctx, sqlDB, "zh-grammar-mini"); err != nil || !ok {
+		t.Errorf("Exists = %t, %v, want true", ok, err)
+	}
+	if _, err := sqlDB.Exec(`UPDATE grammar_packs SET deleted_at = '2026-01-01T00:00:00Z'`); err != nil {
+		t.Fatal(err)
+	}
+	if ok, _ := plugins.Exists(ctx, sqlDB, "zh-grammar-mini"); ok {
+		t.Error("Exists after removal = true, want false")
+	}
+	list, _ = plugins.ListFor(ctx, sqlDB, alice)
+	for _, p := range list {
+		if p.ID == "zh-grammar-mini" {
+			t.Error("removed grammar pack still listed")
+		}
+	}
+}
+
+func TestCanWriteData(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	mustRegister(t, sqlDB, validManifest("with-data", ""))
+	mustRegister(t, sqlDB, validManifest("without-data", `"permissions":[]`))
+	if _, err := sqlDB.Exec(`INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
+		VALUES ('mkgloss', 'mkgloss', '1.0', 'MIT', 'test', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatalf("seed dictionary: %v", err)
+	}
+	for _, tc := range []struct {
+		id              string
+		exists, allowed bool
+	}{
+		{"with-data", true, true},
+		{"without-data", true, false},
+		{"mkgloss", true, true},
+		{"nobody", false, false},
+	} {
+		exists, allowed, err := plugins.CanWriteData(ctx, sqlDB, tc.id)
+		if err != nil || exists != tc.exists || allowed != tc.allowed {
+			t.Errorf("CanWriteData(%s) = %t, %t, %v; want %t, %t", tc.id, exists, allowed, err, tc.exists, tc.allowed)
+		}
+	}
+}
+
+// TestCanWriteDataGrandfathered: a registry row from before the contract
+// (no sdk, or not even parsable) keeps writing data as before.
+func TestCanWriteDataGrandfathered(t *testing.T) {
+	sqlDB := newDB(t)
+	for id, raw := range map[string]string{
+		"legacy":   `{"id":"legacy","name":"L"}`,
+		"garbled":  `{"id":"garbled","events":"x"}`,
+		"notjson":  `nope`,
+		"sdkempty": `{"id":"sdkempty","sdk":0}`,
+	} {
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES (?, ?, '2026-01-01T00:00:00Z')`, id, raw); err != nil {
+			t.Fatal(err)
+		}
+		exists, allowed, err := plugins.CanWriteData(context.Background(), sqlDB, id)
+		if err != nil || !exists || !allowed {
+			t.Errorf("CanWriteData(%s) = %t, %t, %v; want grandfathered", id, exists, allowed, err)
+		}
+	}
+}
+
+func TestListForIncludesAudioPacks(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	if _, err := sqlDB.Exec(`INSERT INTO audio_packs (pack_id, language, name, version, license, attribution, created_at, updated_at)
+		VALUES ('ja-audio', 'ja', 'Japanese audio', '1', 'CC BY 4.0', 'Kanji alive', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	list, err := plugins.ListFor(ctx, sqlDB, newUser(t, sqlDB, "alice"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := find(t, list, "ja-audio")
+	m := manifestObject(t, p.Manifest)
+	if m["type"] != "audio" || m["language"] != "ja" || m["license"] != "CC BY 4.0" || !p.Enabled {
+		t.Errorf("manifest = %v enabled %t, want the audio registry fields", m, p.Enabled)
+	}
+	if ok, err := plugins.Exists(ctx, sqlDB, "ja-audio"); err != nil || !ok {
+		t.Errorf("Exists = %v, %v; want true", ok, err)
+	}
+	if _, err := sqlDB.Exec(`UPDATE audio_packs SET deleted_at = '2026-01-01T00:00:00Z'`); err != nil {
+		t.Fatal(err)
+	}
+	if ok, _ := plugins.Exists(ctx, sqlDB, "ja-audio"); ok {
+		t.Error("Exists true after the pack was removed")
+	}
+}
+
+func TestUnparsableRegistryRows(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	for _, raw := range plugins.Builtin() {
+		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for id, raw := range map[string]string{
+		"zz-old":    `{"id":"zz-old","name":"Old","events":"x"}`,
+		"aa-broken": `not json`,
+		"mm-fine":   `{"id":"mm-fine","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]}`,
+	} {
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES (?, ?, '2026-01-01T00:00:00Z')`, id, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := plugins.UnparsableRows(ctx, sqlDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"aa-broken", "zz-old"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("UnparsableRows = %v, want %v", got, want)
 	}
 }

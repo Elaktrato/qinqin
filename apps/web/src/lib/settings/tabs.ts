@@ -1,17 +1,27 @@
 // The Settings page's tabs and their `?tab=` deep links.
 
-export const SETTINGS_TABS = ['workspaces', 'home', 'plugins'] as const;
+export const SETTINGS_TABS = ['workspaces', 'home', 'plugins', 'ai', 'data'] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 export const SETTINGS_TAB_LABELS: Record<SettingsTab, string> = {
 	workspaces: 'Workspaces',
 	home: 'Home',
-	plugins: 'Plugins'
+	plugins: 'Plugins',
+	ai: 'AI',
+	data: 'Data'
 };
 
-/** parseSettingsTab reads `?tab=`; a missing or unknown value is the first tab. */
-export function parseSettingsTab(value: string | null): SettingsTab {
-	return (SETTINGS_TABS as readonly string[]).includes(value ?? '')
+/** visibleSettingsTabs: the Data tab (pack management) is for admins only. */
+export function visibleSettingsTabs(admin: boolean): SettingsTab[] {
+	return SETTINGS_TABS.filter((tab) => tab !== 'data' || admin);
+}
+
+/**
+ * parseSettingsTab reads `?tab=`; a missing or unknown value, or a tab
+ * the viewer may not see, is the first tab.
+ */
+export function parseSettingsTab(value: string | null, admin = false): SettingsTab {
+	return (visibleSettingsTabs(admin) as readonly string[]).includes(value ?? '')
 		? (value as SettingsTab)
 		: 'workspaces';
 }

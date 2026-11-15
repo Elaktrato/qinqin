@@ -2,6 +2,7 @@
 // notes from the API, the plugin credits from the web plugin manifests,
 // and the app's own credits. The page only renders what this returns.
 
+import type { SentencePack } from '$lib/api/packs';
 import type { PluginManifest } from '$lib/plugins';
 import { localLicensePath, type LicenseText, type SourceCredit } from './credits';
 import { cjkLang, parseNotice, safeHref, type NoticeParagraph } from './notice';
@@ -15,6 +16,19 @@ export interface PackSource {
 	license?: string;
 	attribution?: string;
 	notice?: string;
+}
+
+/** sentencePackSources adapts GET /api/sentence-packs rows (string ids) to PackSource. */
+export function sentencePackSources(list: SentencePack[]): PackSource[] {
+	return list.map((p, i) => ({
+		id: i,
+		name: p.name,
+		language: p.language,
+		version: p.version,
+		license: p.license,
+		attribution: p.attribution,
+		notice: p.notice
+	}));
 }
 
 export interface PackRow {

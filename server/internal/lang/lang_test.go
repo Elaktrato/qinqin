@@ -11,6 +11,7 @@ import (
 // for the server.
 func init() {
 	lang.Register(lang.Zh{})
+	lang.Register(lang.Ja{})
 }
 
 func TestForReturnsRegisteredPack(t *testing.T) {
@@ -115,5 +116,26 @@ func TestZhDeriveReadings(t *testing.T) {
 	out = p.DeriveReadings([]model.Reading{{Type: "pinyin", Value: "xyz"}})
 	if len(out) != 1 {
 		t.Errorf("DeriveReadings(xyz) = %+v, want the input unchanged", out)
+	}
+}
+
+func TestValidCode(t *testing.T) {
+	ok := map[string]string{"ES": "es", " pt_BR ": "pt-br", "zh-hant-tw": "zh-hant-tw", "es": "es"}
+	for in, want := range ok {
+		if got, valid := lang.ValidCode(in); !valid || got != want {
+			t.Errorf("ValidCode(%q) = %q, %v; want %q, true", in, got, valid, want)
+		}
+	}
+	for _, in := range []string{"e", "spanish", "es-", "es-x-very-long-tag", "", "Hello!"} {
+		if got, valid := lang.ValidCode(in); valid {
+			t.Errorf("ValidCode(%q) = %q, true; want invalid", in, got)
+		}
+	}
+}
+
+func TestCodes(t *testing.T) {
+	got := lang.Codes()
+	if len(got) != 2 || got[0] != "ja" || got[1] != "zh" {
+		t.Errorf("Codes() = %v, want [ja zh]", got)
 	}
 }

@@ -15,12 +15,17 @@ import {
 	type Stage
 } from './charGroups';
 
-/** The five stages in legend order, with their visible names. */
+/**
+ * The five stages in legend order, with their visible names. The names are
+ * deliberately not the word states' (New/Learning/Young/Mature, see
+ * lib/stats/wordStates.ts): a word's schedule state and a character's mastery
+ * band are different things. The stage ids stay as they are in code.
+ */
 export const STAGE_INFO: readonly { stage: Stage; label: string }[] = [
 	{ stage: 'unknown', label: 'Not studied' },
-	{ stage: 'fresh', label: 'Fresh' },
-	{ stage: 'learning', label: 'Learning' },
-	{ stage: 'mature', label: 'Mature' },
+	{ stage: 'fresh', label: 'Started' },
+	{ stage: 'learning', label: 'Growing' },
+	{ stage: 'mature', label: 'Solid' },
 	{ stage: 'learned', label: 'Learned' }
 ];
 

@@ -23,20 +23,32 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
   - Workspace deletion, kunrei/particle romaji search, request body limits.
   - Sources page built from pack and plugin manifests, public.
   - Stats page with Overview and Characters, home widgets and a Home layout editor in Settings.
+  - Writing and tone card feel (own forgiving stroke matcher, snapping tone contours), card management,
+    Again re-shows, search filters, Journal with AI review and photo OCR, plugin SDK, FSRS optimizer,
+    grammar lessons, core activity statistics, pack and language management, audio packs, Jōyō/通用规范汉字表
+    level packs, and the engineering-debt batches above.
 
 ## v0.2.0 — study experience (milestone)
 
-- [#30](https://github.com/Elaktrato/qinqin/issues/30) card management (delete, move between decks; dedupe is done)
-- [#31](https://github.com/Elaktrato/qinqin/issues/31) re-show Again cards within a session
-- [#33](https://github.com/Elaktrato/qinqin/issues/33) search filters UI
-- [#26](https://github.com/Elaktrato/qinqin/issues/26) map backfill performance (deferred from R2)
+- ~~[#30](https://github.com/Elaktrato/qinqin/issues/30) card management~~ — done (develop)
+- ~~[#31](https://github.com/Elaktrato/qinqin/issues/31) re-show Again cards within a session~~ — done (develop)
+- ~~[#33](https://github.com/Elaktrato/qinqin/issues/33) search filters UI~~ — done (develop)
+- ~~[#56](https://github.com/Elaktrato/qinqin/issues/56) forgiving writing pad and snapping tone card feel~~ — done (develop)
+- [#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character-unit schemes (JLPT kanji, Jōyō grades, 通用规范汉字表)
+- ~~[#26](https://github.com/Elaktrato/qinqin/issues/26) map backfill performance~~ — done (develop)
 
 Order: web first. Most features ship on web before the Android build starts.
 
 ## v0.3.0 — journal and AI, web (milestone)
 
 - [#46](https://github.com/Elaktrato/qinqin/issues/46) Journal plugin: AI corrections, overall review, topic suggestions, photo upload with OCR;
-  the app calls the AI with the user's own provider API key
+  the app calls the AI with the user's own provider API key. Merged to develop; implemented and
+  checked against the fake provider, never run against the real API (owner tests with a real key; set `QINQIN_SECRET`).
+  Pending: a check with a real key, vertical Japanese OCR (no `jpn_vert` on Alpine), Android parity (v0.4.0).
+- [#87](https://github.com/Elaktrato/qinqin/issues/87) Choose any AI provider: Anthropic, OpenAI, Google Gemini, DeepSeek,
+  Mistral, xAI, Groq, OpenRouter and admin-registered OpenAI-compatible endpoints (SSRF-guarded), one key per provider and an
+  active selection per user. On `feature/ai-providers`; implemented and checked against fake servers only, never against a
+  real provider (owner checklist: `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`). Lumo has no public API yet.
 
 ## v0.4.0 — Android client (milestone)
 
@@ -50,19 +62,69 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 
 ## Future (milestone)
 
-- [#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK (permissions, behavior hooks, data API; page surfaces exist)
-- [#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI
-- [#41](https://github.com/Elaktrato/qinqin/issues/41) language and workspace management UI (rename/delete exist)
-- [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs
-- [#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs
-- [#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI
-- [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)
-- [#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI
-- [#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics (server-side aggregation, filters, contributions);
-  the Stats page design on `feature/stats` overlaps it
+- ~~[#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK~~ — done (strict manifest contract, permissions, embedded built-in manifests, web SDK, study-event hook; design `docs/superpowers/specs/2026-11-15-plugin-sdk-design.md`). Follow-up: [#85](https://github.com/Elaktrato/qinqin/issues/85) move flashcards and reader onto the SDK
+- ~~[#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI~~ — done (Settings → Data: staged upload with licence review, list, uninstall; design `docs/superpowers/specs/2026-11-15-pack-management-design.md`)
+- ~~[#41](https://github.com/Elaktrato/qinqin/issues/41) language and workspace management UI~~ — done (Settings → Data → Languages, per-workspace hidden dictionaries, coverage hints, code validation; design `docs/superpowers/specs/2026-11-15-language-management-design.md`)
+- [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs: bundled `joyo-grades` (KANJIDIC2) and
+  `tgh-chars` (通用规范汉字表, Unihan `kTGH`); TBCL and curriculum lists are local-only via
+  `scripts/prepare-local-levels.mjs`; the old TOCFL 8000 list is rejected (withdrawn).
+  Open: level sessions draw words only, so character-unit packs give no study cards
+- ~~[#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs~~ — done (design `docs/superpowers/specs/2026-11-15-audio-packs-design.md`; `audio` pack type, play buttons on entries and after the reveal in study, Kanji alive pack fetched into the image, local Commons/Lingua Libre tool). Owner to-do: listen to ~10 Kanji alive clips against `index.tsv`; no Mandarin recordings out of the box (device voice fallback)
+- ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
+- ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — done (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`, demo pack `zh-grammar-demo`; native-speaker review of the demo sentences open)
+- ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: [#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days
 
-Engineering debt and review follow-ups carry the `deferred` label (issues #1–#22 and
-#26); triage them before cutting a release.
+### Ideas, not scheduled (Future)
+
+Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
+
+**Accounts and data**
+
+- [#64](https://github.com/Elaktrato/qinqin/issues/64) accounts: change password, admin user management, password reset, session control
+- [#83](https://github.com/Elaktrato/qinqin/issues/83) accounts: personal access tokens for scripts and integrations
+- [#61](https://github.com/Elaktrato/qinqin/issues/61) backup: export and restore your own data, plus server backup
+- [#86](https://github.com/Elaktrato/qinqin/issues/86) auth: login/register rate limiting
+
+**Study**
+
+- [#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards
+- [#66](https://github.com/Elaktrato/qinqin/issues/66) leech handling with a per-user policy
+- [#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals
+- [#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks
+- [#76](https://github.com/Elaktrato/qinqin/issues/76) focus sessions from weak characters and leeches
+- [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test and "I already know this"
+- [#60](https://github.com/Elaktrato/qinqin/issues/60) Anki import
+- [#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary and milestones
+- [#82](https://github.com/Elaktrato/qinqin/issues/82) level check (experimental)
+
+**Japanese**
+
+- [#62](https://github.com/Elaktrato/qinqin/issues/62) stroke order data from KanjiVG (licence CC BY-SA 3.0; check before bundling)
+- [#63](https://github.com/Elaktrato/qinqin/issues/63) kana study, separate from flashcards
+
+**Reader and lookup**
+
+- [#68](https://github.com/Elaktrato/qinqin/issues/68) highlight unknown words, text coverage
+- [#69](https://github.com/Elaktrato/qinqin/issues/69) import your own text (paste, txt, epub, subtitles)
+- [#70](https://github.com/Elaktrato/qinqin/issues/70) handwriting lookup
+- [#71](https://github.com/Elaktrato/qinqin/issues/71) radical and component lookup
+- [#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history with add-to-deck
+- [#77](https://github.com/Elaktrato/qinqin/issues/77) personal notes and mnemonics
+- [#78](https://github.com/Elaktrato/qinqin/issues/78) reading display settings, smart hiding of well-known readings
+
+**Journal and platform**
+
+- [#59](https://github.com/Elaktrato/qinqin/issues/59) journal sharing with comments and peer corrections
+- [#58](https://github.com/Elaktrato/qinqin/issues/58) browser add-on, reader-like lookup on any site (after the first Android build)
+- [#79](https://github.com/Elaktrato/qinqin/issues/79) installable PWA with offline study
+- [#73](https://github.com/Elaktrato/qinqin/issues/73) UI languages
+- [#80](https://github.com/Elaktrato/qinqin/issues/80) user and API documentation as the GitHub wiki
+
+Engineering debt (#1–#22) was worked through in themed batches (backend hardening, web polish, CI and serving);
+what remains open is listed in the handoff `docs/superpowers/handoffs/2026-11-15-web-build-handoff.md`
+(#12, #17, #18 leftovers, #55 zombie CI runs, #86 login rate limiting).
+
+Note: the Android client (v0.4.0) does not read the `fsrs:*` plugin data yet, so once a set is active on the web its due counts differ from Android's until the Kotlin scheduler reads the same rows.
 
 Design documents: `docs/superpowers/specs/`; plans: `docs/superpowers/plans/`.
 Branching and releases: `docs/git-flow.md`.

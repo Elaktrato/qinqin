@@ -1,0 +1,34 @@
+name: audio-stage
+
+# Builds only the Dockerfile's `audio` stage (the Kanji alive download, checksum
+# checks and pack generation; no push) so a broken pin, a moved upstream file or
+# an unreachable media.kanjialive.com shows up on a pull request or in the weekly
+# run instead of on release day. Fallback for a release while it is red: build with
+# `--build-arg WITH_AUDIO=0` (the image then has no recordings, nothing else changes).
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .github/**
+      - scripts/fetch-audio-*
+      - scripts/prepare-audio-*
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audio-stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the audio stage
+        run: docker build --target audio -t qinqin-audio-stage .
+      - name: Check the pack it produced
+        run: |
+          docker run --rm --entrypoint sh qinqin-audio-stage -c \
+            'test -s /out/kanjialive-audio/manifest.json && test -s /out/kanjialive-audio/index.tsv && ls /out/kanjialive-audio/audio | wc -l'

@@ -43,7 +43,7 @@ git push origin main develop --tags
 
 ## CI/CD mapping
 
-- Every push to `develop` and every PR into `develop`/`main`: vet + tests.
+- Every push to `develop` and every PR into `develop`/`main`: source and archive checks, web check/tests, Go vet + tests, web build and the embed smoke test (`scripts/smoke-embed.sh`).
 - Pushes to `main` and `v*` tags: tests, then build and push the Docker image to GHCR
   (`latest` from `main`, version tags from releases).
 - `develop` pushes never publish images.

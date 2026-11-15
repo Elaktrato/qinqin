@@ -1,0 +1,12 @@
+{
+	"id": "qinqin-flashcards",
+	"name": "Flashcards",
+	"version": "1.1",
+	"type": "feature",
+	"sdk": 1,
+	"description": "Spaced-repetition review of the words you save.",
+	"surfaces": ["home-widget"],
+	"permissions": ["owns-data", "read:entries", "read:study-events", "write:study-events"],
+	"hooks": [],
+	"events": [{ "type": "review", "activity": { "label": "Flashcard reviews", "describe": { "one": "{n} flashcard review", "other": "{n} flashcard reviews" } } }]
+}

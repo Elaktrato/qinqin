@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { hiddenFor } from '$lib/dictionaryVisibility';
+	import { workspaces } from '$lib/workspaces';
 	import EntryCard from './EntryCard.svelte';
 	import HighlightBar from './HighlightBar.svelte';
 	import type { HighlightActions } from './highlightUi';
@@ -41,6 +43,9 @@
 	const results = $derived(frame.results ?? []);
 	const visible = $derived(visibleCount(results.length, 0, shown));
 	const hidden = $derived(results.length - visible);
+	// The book's workspace decides which dictionaries are hidden, which may
+	// differ from the header's current workspace.
+	const hiddenIds = $derived(hiddenFor($workspaces.list, studyWorkspaceId, $workspaces.current));
 	const isRoot = $derived(frame.depth === 1);
 	const hold = (on: boolean) => lookup.hold(on);
 	// Result offsets of the root popup are in the paragraph; nested popups
@@ -105,7 +110,7 @@
 				<p class="hint">No dictionary entry found for <span lang={info.textLang}>{frame.text}</span>.</p>
 			{:else}
 				{#each results.slice(0, visible) as result, i (`${result.entryId}:${result.kind}:${i}`)}
-					<EntryCard {result} lang={info.lang} textLang={info.textLang} {study} />
+					<EntryCard {result} lang={info.lang} textLang={info.textLang} {study} hidden={hiddenIds} />
 				{/each}
 				{#if hidden > 0}
 					<button type="button" class="more" onclick={() => (shown = visibleCount(results.length, shown))}>

@@ -41,19 +41,31 @@ database with a SvelteKit single-page app embedded in the binary.
   is disabled keeps its place in the stored layout and returns when the plugin
   is enabled again; one that does not fit the active workspace's language is
   marked "Not available for <language>" and can still be placed for the others.
-- **Activity heatmap** — a home widget showing 13 weeks of learning activity per
-  workspace, adding up flashcard reviews and reading time in the Reader.
+- **Activity heatmap** — a home widget showing 13 weeks of learning activity,
+  adding up flashcard reviews, reading time in the Reader and journal entries.
+  It shows the active workspace by default; "All workspaces" switches to the
+  combined view (tooltips then name each workspace), and a chip per activity
+  type hides or shows that type. The choice is remembered per user on every
+  device. Plugins contribute activity through an `events[].activity` rule in
+  their manifest (`label`, `describe`, and optionally `measure` + `pointsPer`
+  or `distinctBy`); the server scores it, no core change is needed.
 - **Stats** — a nav item for every workspace (`/stats`) with two tabs:
   **Overview** shows every widget that applies to the workspace, in a fixed
   order (core first, then plugins); **Characters** (`/stats/characters`) is the
   mastery map, for Chinese and Japanese workspaces only.
+- **Journal and AI** — write dated entries per workspace; with your own
+  key for the AI provider you choose (Anthropic, OpenAI, Google Gemini,
+  DeepSeek, Mistral, xAI, Groq, OpenRouter or a custom OpenAI-compatible
+  endpoint), get a review with underlined corrections, topic ideas, and
+  photo import with offline (Tesseract) or AI transcription (see
+  [Journal and AI](#journal-and-ai)).
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
   are installable data packs; widgets and views come from feature plugins that
   the server registers at startup so Settings can enable them.
 
 ## Quick start (Docker Compose / Portainer)
 
-The stack is a single service. In Portainer, create a stack from
+The stack is a single service. For a production deployment on Portainer see [Deploying with Portainer](#deploying-with-portainer). In Portainer, create a stack from
 [`docker-compose.yml`](docker-compose.yml); or from this repository (Docker with
 the Compose plugin required) run:
 
@@ -110,10 +122,11 @@ the server waits at most 5 s (`busy_timeout`) before a write fails.
 > only reads: nothing changes until you seed, and the warning goes away once the
 > stored copies match. A pack it cannot read is skipped with a log line.
 
-> **Upgrading a development database.** Entry ids changed with the dictionary
-> rebuild (the lookup rewrite; migration 017 drops the legacy tables). Nothing is
-> published, so there is no upgrade path: **delete the data directory (or at
-> least `qinqin.db`) and seed again.** On an old database the restart and re-seed
+> **Upgrading from v0.1.0 or an older development database.** Entry ids changed with
+> the dictionary rebuild (the lookup rewrite; migration 017 drops the legacy tables
+> and moves no data). There is no upgrade path for entry data, including v0.1.0
+> databases: **start from a fresh data directory (or at least delete `qinqin.db`)
+> and seed again.** On an old database the restart and re-seed
 > succeed without an error, but user edits and flashcards created before this
 > change keep their old entry ids and now point at different entries.
 > `qinqin seed` prints a `WARNING` line whenever the database holds user edits or
@@ -130,6 +143,201 @@ an image.
 > LAN: while no user exists, the first registration over the API becomes the
 > admin — whoever makes it.
 
+## Release images and versions
+
+CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags
+(`develop` pushes only run tests). Tags: `latest` (the newest `main` build),
+`v<version>` for a release tag, and `sha-<commit>`. For production pin a `v*`
+tag in `QINQIN_IMAGE` rather than `latest`, so a redeploy never changes the
+version by surprise. The published image is the full build: Tesseract OCR
+(about +193 MB) and the Kanji alive audio (about +70 MB). Self-builds can drop
+them with `--build-arg WITH_OCR=0` / `WITH_AUDIO=0`.
+
+## Deploying with Portainer
+
+[`deploy/portainer-stack.yml`](deploy/portainer-stack.yml) differs from the
+quick-start `docker-compose.yml`: a named volume instead of `./data`
+(relative bind mounts depend on where Portainer checks the stack out), a
+required `QINQIN_SECRET` (the deployment fails if it is unset), memory/CPU
+limits (1 GiB, 2 CPUs), log rotation (3 x 10 MB) and `no-new-privileges`.
+It does not set `user:` or `read_only:`: the image has no `USER` (it runs as
+root) and the server writes temporary files to `/tmp` (OCR input, pack
+uploads), so a read-only root filesystem is not enabled.
+
+1. **Generate the secret** and store it in your password manager:
+   `head -c 32 /dev/urandom | base64`. It encrypts the users' AI API keys.
+   Back it up **separately** from the data volume; it is never written to
+   `/data`. Lose it and users must enter their keys again.
+2. **Add the stack.** Portainer: Stacks, Add stack. Either *Web editor* and
+   paste `deploy/portainer-stack.yml`, or *Repository* with URL
+   `https://github.com/Elaktrato/qinqin`, reference `refs/heads/main` (or a
+   tag) and compose path `deploy/portainer-stack.yml`.
+3. **Environment variables** (stack form): `QINQIN_SECRET` (required),
+   `QINQIN_IMAGE` (e.g. `ghcr.io/elaktrato/qinqin:v1.2.3`), `QINQIN_PORT`
+   (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute
+   host path (e.g. `/srv/qinqin/data`) to bind-mount a directory instead of the
+   named volume; the directory must exist and be writable by root.
+   `QINQIN_SECRET_PREVIOUS` only while rotating the secret.
+   `QINQIN_AI_PROVIDERS` limits which AI providers users may choose
+   (default: all; see [Journal and AI](#journal-and-ai)),
+   `QINQIN_AI_ALLOW_PRIVATE=1` lets an admin register AI endpoints on private
+   addresses, and `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the
+   stack.
+4. **First run, before exposing the port beyond your LAN** (until a user
+   exists, the first registration over the API becomes admin). Portainer:
+   Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
+
+   ```sh
+   qinqin seed
+   qinqin adduser --username <name> --admin
+   ```
+
+   `adduser` prompts for the password and needs a TTY; Portainer's console
+   provides one (the typed password is echoed). `seed` installs the bundled
+   packs from the image (CC-CEDICT, Unihan, JMdict, KANJIDIC2, Jiten
+   frequencies, HSK 3.0 and JLPT kanji level lists, es-demo, and the Kanji
+   alive audio when present) into the database; it takes under a minute
+   (about 45 s measured) and is idempotent. Run it while nobody uses the app.
+5. Put a reverse proxy with HTTPS in front (below), then run the checklist.
+
+### Data directory
+
+Everything lives in `/data` (the volume):
+
+| Path | Content |
+|---|---|
+| `qinqin.db` (+ `-wal`, `-shm`) | SQLite database: users, entries, dictionaries, flashcards, journal, plugin data |
+| `packs/` | packs installed by an admin through the UI |
+| `audio/` | audio blobs imported by seed or packs |
+| `books/<user id>/` | uploaded and imported library books |
+| `journal/<user id>/` | draft photos, deleted when the draft ends |
+| `cache/sources/` | cache of the Aozora/Gutenberg imports; safe to delete |
+
+The bundled packs themselves stay in the image (`/opt/qinqin/packs`,
+`/opt/qinqin/audio`).
+
+### Backup
+
+The app has no backup command or endpoint yet (open issue
+[#61](https://github.com/Elaktrato/qinqin/issues/61)). Copying the live
+database can miss the WAL, so: stop the stack's container in Portainer, copy the
+whole volume, start it again. For a named volume, with the container stopped:
+
+```sh
+docker run --rm -v <stack>_qinqin-data:/data:ro -v "$PWD":/out alpine \
+  tar czf /out/qinqin-data-$(date +%F).tgz -C /data .
+```
+
+(`docker volume ls` shows the real name; Portainer prefixes the stack name.)
+With a host path, copy that directory. Restore by extracting into an empty
+volume while the container is stopped. Keep `QINQIN_SECRET` backed up
+separately.
+
+### Upgrading
+
+Back up first. Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
+redeploy with *Pull latest image* enabled. Migrations are embedded in the
+binary and applied automatically at start (`server/internal/db`); they are
+one-way. **Downgrading is not supported**: going back to an older image needs
+the pre-upgrade backup. After an upgrade the log may say
+`pack <id>: stored ... differs`; run `qinqin seed` in the console to refresh.
+
+### Reverse proxy and HTTPS
+
+The app speaks plain HTTP on 8080. Browser features that need a secure context
+may not work over plain HTTP from other devices, so serve it over HTTPS. No
+WebSocket is used. The server does not read client IPs or
+`X-Forwarded-*` headers anywhere (no per-IP limits; limits are per user), so
+no trusted-proxy setting exists. Pack uploads go up to 128 MiB and an AI
+review can take up to 170 s, so the proxy needs a body limit of at least
+130 MB and a read timeout of at least 180 s.
+
+Caddy (defaults are fine: no body limit, 0 response timeout):
+
+```
+qinqin.example.com {
+    reverse_proxy qinqin:8080
+}
+```
+
+Traefik labels (container on the proxy's network; no default body limit):
+
+```yaml
+labels:
+  - traefik.enable=true
+  - traefik.http.routers.qinqin.rule=Host(`qinqin.example.com`)
+  - traefik.http.routers.qinqin.entrypoints=websecure
+  - traefik.http.routers.qinqin.tls.certresolver=letsencrypt
+  - traefik.http.services.qinqin.loadbalancer.server.port=8080
+```
+
+(Raise Traefik's `respondingTimeouts.readTimeout`/`writeTimeout` on the
+entrypoint if you set them below 180 s.) Add `networks:` to the stack to join
+the proxy's network; the file does not.
+
+nginx:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    client_max_body_size 130m;
+    proxy_read_timeout 180s;
+    proxy_send_timeout 180s;
+    # Optional: stream uploads instead of buffering them to disk first.
+    # proxy_request_buffering off;
+}
+```
+
+### AI journal
+
+Each user opens Settings, AI, picks a provider and enters their own API key for
+it; qinqin ships none. Journal text (up to 5,000 characters), study history
+snippets and photos **leave the server for the provider the user made active**
+when they press an AI button. Models differ a lot in price: the defaults are
+`claude-opus-5-5` for Anthropic and the providers' flagship models elsewhere,
+the most expensive choices, so tell users to pick a cheaper model in Settings if
+cost matters (calls are limited to 30 per user and hour across all providers).
+
+- `QINQIN_AI_PROVIDERS` is a comma list of the built-in ids (`anthropic`,
+  `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and
+  `custom`; only those can be chosen. Unset means all. If you pinned
+  `QINQIN_AI_PROVIDER=anthropic` before, that now means
+  `QINQIN_AI_PROVIDERS=anthropic` (a log line says so), so an upgrade never
+  sends text to a provider you did not allow.
+- Admins can register OpenAI-compatible endpoints (Ollama, LM Studio, vLLM, a
+  company gateway) in Settings, AI. Addresses on a private network are refused
+  unless you set `QINQIN_AI_ALLOW_PRIVATE=1`; link-local, cloud-metadata and
+  multicast addresses are never allowed. See [Custom endpoints](#custom-ai-endpoints).
+- Without a valid `QINQIN_SECRET`, AI shows as disabled with the reason.
+
+### Checklist after deploying
+
+- `curl http://<host>:<port>/healthz` returns `ok`; Portainer shows the
+  container `healthy`.
+- Log in as the admin created in step 4.
+- Search `好`: results appear (the seed ran).
+- Create a deck/flashcard.
+- Journal: with the fake provider off (`QINQIN_AI_PROVIDER` unset), Settings,
+  AI lists the providers and shows a key as storable; save a key (it becomes
+  the active provider) and run a review.
+- The container log shows `AI: QINQIN_SECRET ok`.
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| Stack will not deploy: "required variable QINQIN_SECRET is missing" | Set it in the stack's environment variables |
+| Container restarting | Read its log. Bad host path in `QINQIN_DATA_VOLUME` or no write permission (`create data directory ...`); fix ownership (the image runs as root) |
+| Log: `QINQIN_SECRET ... not 32 bytes of base64` / AI disabled | Regenerate with `head -c 32 /dev/urandom | base64`; without it AI stays off, the app still works |
+| AI settings say there is no secret | `QINQIN_SECRET` unset or invalid when the container started; fix and redeploy |
+| 413 on upload (pack, book, photo) | Proxy body limit: `client_max_body_size 130m` |
+| 502/504 on an AI review | Proxy timeout below 180 s |
+| "port is already allocated" | Change `QINQIN_PORT` |
+| Unhealthy | `wget` against `127.0.0.1:8080/healthz` inside the container; see the log; a slow first start can exceed the 15 s start period on a slow disk |
+| "database is locked" during seed | Seed while the app is idle (5 s busy timeout) |
+
 ## Workspaces
 
 A workspace is one study space with its own language, decks, cards, study events
@@ -143,9 +351,31 @@ workspace shows its language; unnamed workspaces of one language are numbered
 - **Flags.** The header picker and Settings show a flag per language: China for
   `zh`, Japan for `ja`, Spain for `es`, a globe for any other language. A single
   unnamed workspace shows only its flag.
-- **Creating.** The language list comes from `GET /api/languages`: the languages
-  with at least one installed, live dictionary. Languages already in use stay
-  selectable.
+- **Creating.** The language list comes from `GET /api/languages`, which lists
+  every known language: the code packs (`zh`, `ja`), the languages an admin
+  registered and the ones with installed data, as `{code, name, installed, kind}`
+  (`kind` is `code` or `data`; `installed` is true only with live dictionary
+  data). The create form marks those without a dictionary "(no dictionary
+  installed)". Android clients should list the same union, flag or filter on
+  `installed`, and label languages from the code, not from `name`.
+  `POST /api/workspaces` answers `422` "language must be a code like es or
+  pt-br" for a malformed code, and, for a non-admin, `422` "unknown language —
+  ask the administrator to add it" for a code that is not known (a code pack, a
+  registered language, installed data or any live pack of that language); only an
+  admin's request registers a new code. A code that exactly matches a stored one
+  keeps its spelling.
+- **Hidden dictionaries.** A workspace can hide dictionaries of its language from
+  entries and lookups: `settings.hiddenDictionaries` is an array of dictionary ids
+  (`GET /api/dictionaries`); malformed values are ignored. The web filters in the
+  browser, the server does not.
+- **Language administration** (admin token; `403` otherwise):
+  `POST /api/admin/languages {code}` registers a data-only language (`201`, or
+  `200` if present; `422` for a malformed code; `409` "<code> is built in" for a
+  code pack). `DELETE /api/admin/languages/{code}` removes an unused one (`204`;
+  `404` unknown; `409` for a code pack or "still used by: <kinds>" naming what
+  uses it, never who). `GET /api/admin/languages/usage` returns
+  `[{code, workspaces}]`, workspace counts per language across all users
+  (aggregate only).
 - **Defaults.** A user with no workspace gets one unnamed workspace per installed
   language on their first `GET /api/workspaces`. A user who already has a
   workspace is never touched.
@@ -383,11 +613,11 @@ every character of the language, studied or not, shaded by mastery.
   that is not a sample pack is offered the same way, under its name; characters
   outside it land in "Not in this scheme".
 - **Sections** show learned/total and a stacked stage bar. The stage legend doubles
-  as a filter (All, Not studied, Learning, Learned). Search matches the glyph,
+  as a filter (All, Not studied, In progress, Learned). Search matches the glyph,
   the reading (toneless pinyin works), the meaning, and hiragana or katakana.
   Jump to character opens its section and focuses the cell.
 - **Cells.** Colour is the character's mastery band: grey for not studied, then
-  red, amber, blue, and green for fresh, learning, mature, and learned. Non-colour
+  red, amber, blue, and green for started, growing, solid, and learned. Non-colour
   markers back this up: a tick for learned, a dashed outline for unseen. A popover
   shows reading, meaning, variants, stage, score and card count (hover, focus, or
   first tap on touch). The grid is keyboard-navigable: arrows, Home/End, Ctrl+Home/End;
@@ -449,7 +679,7 @@ A plugin's widgets are shown only while that plugin is enabled.
   `apps/web/src/lib/activity/activity.ts`.
 - **Characters**: "N of M learned" for the language's characters (the same
   universe and mastery as the map, see below; learned is a mastery of 80/100
-  or more). It also shows the stage bar (Not studied, Fresh, Learning, Mature,
+  or more). It also shows the stage bar (Not studied, Started, Growing, Solid,
   Learned) and a link to the full map. Shown only for Chinese and Japanese
   workspaces.
 - **Flashcards**: what is due and new (with the limits and card types of your
@@ -461,6 +691,10 @@ A plugin's widgets are shown only while that plugin is enabled.
   - **Learning**: in the FSRS learning or relearning state.
   - **Young**: in review with a stability under 21 days.
   - **Mature**: in review with a stability of 21 days or more.
+
+  These word states are not the character map's stages (Started, Growing, Solid,
+  Learned): a word's state follows its flashcard schedule, a character's stage its
+  mastery score.
 
   "N new cards waiting" counts every new vocabulary card, without the session's
   daily new limit. Stats adds a table with one row per deck. A card in several
@@ -500,13 +734,18 @@ sessions and mastery map, and
 
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,
-`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages` and `GET /api/frequency-packs` are public.
+`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.
 
 | Route | Purpose |
 |---|---|
 | `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, forms, readings, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
 | `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates are other readings or entries with the same surface (at most 8 candidates in all). A candidate has `reading: true` when it matched by a kana reading (Japanese) |
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
+| `GET /api/audio/entries/{id}` | Signed-in. The pronunciation clips of one entry: `{terms: [Clip], syllables: [[Clip]\|null]\|null}`. `terms` are recordings of the whole word (matched on written form and first reading); `syllables` (zh entries only, else `null`) has one slot per pinyin reading in the entry's order, each the clips to play in sequence or `null` when a syllable has no recording. `Clip` is `{url, packId, license, attribution, source}`; 404 for an unknown entry |
+| `POST /api/audio/resolve` `{entryIds}` | Signed-in. The same resolution for up to 200 entries, keyed by id (unknown ids are left out); more is 422, a body over 16 KiB 413 |
+| `GET /api/audio/clips/{file}` | Signed-in. One stored clip, `file` being `<sha256>.<opus\|ogg\|mp3>` exactly as in a clip's `url`; Range and conditional requests work, served `private, max-age=31536000, immutable` with `nosniff`. Any other name, or a clip no installed pack references under that extension, is 404 |
+| `GET /api/audio-packs` | The installed audio packs with `license`, `attribution`, `notice`, `language` and `clipCount` (the Sources page lists them) |
+| `GET /api/audio-packs/{id}/credits?offset=&limit=` | The per-recording credits of a pack (`{total, offset, limit, clips: [{kind, form, reading, license, attribution, source}]}` (`reading` is the stored match key: hiragana for Japanese, numbered pinyin such as `ni3hao3` for Chinese; empty for a word clip without a reading), text only, `limit` up to 500, default 100); unknown pack 404 |
 | `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
@@ -514,11 +753,23 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (the first user on an empty database becomes the admin without a token; afterwards an admin token is required), log in for a bearer token, read the current user. Login and register bodies up to 4 KiB |
 | `GET /healthz` | Liveness check |
 | `GET /api/entries/{id}/chars` | Public. The characters classified under a radical entry, ordered by headword; an empty array for a radical without any, 404 for an unknown id |
-| `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user |
-| `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
+| `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user; an unknown or malformed id is 404 (checked before the body, so a bad body on a missing entry is still 404) |
+| `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; each event needs a `workspaceId` of 1 or more, else 400; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
 | `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
-| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and (legacy) order for one plugin |
+| `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by UTC day, workspace and type for the plugins' activity rules: `{from, to, sources, cells}`. `from`/`to` are `YYYY-MM-DD` (default: today and the 90 days before; at most 366 days, else 400); a foreign workspace is 404. `sources` lists every rule (also those without cells) |
+| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state (`hidden: true` marks the app's own surface-less built-ins such as `qinqin-core`; clients leave those out of plugin lists), and the caller's enable flag and (legacy) order for one plugin |
+| `GET /api/plugins/{id}/data?workspace=&prefix=` | The caller's live rows of a plugin whose key starts with `prefix`, scoped like the single-row routes, ordered by key, `[]` when none; an unknown plugin or foreign workspace is 404 |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
+| `GET /api/ai/status` | The AI state for the caller: `secret` (`ok`, `missing`, `invalid`), `provider` (the active id, `fake` under the test switch), `fake`, `active` (`{provider, name, model, vision, structured}`), the active provider's key and all stored `keys` (hint, model, state, never the key), the active provider's suggested `models`, this hour's `usage`, `available` and, when not, a `reason` (`no_secret`, `invalid_secret`, `no_provider`, `no_key`, `no_selection`, `provider_disabled`, `key_undecryptable`), plus `disabledProviders` for stored keys of providers the server turned off |
+| `GET /api/ai/providers` | The providers the server allows: id, name, kind, key page, default model, suggested models, structured mode, photo reading; custom endpoints with their `host` (admins also get `baseUrl`), `canManageCustom` and `privateAllowed` |
+| `PUT /api/ai/keys/{provider}` | `{key?, model?}`: checks a new key with the provider (one call toward the hourly limit), stores it for the caller and answers the status; the first stored key becomes active. Without `key` only the model changes. A model id is 1 to 200 characters of `[A-Za-z0-9._:/@-]` |
+| `POST /api/ai/keys/{provider}/test` | Re-checks the stored key (one counted call) |
+| `DELETE /api/ai/keys/{provider}` | Removes the caller's key; if it was the active one the selection is cleared, never moved to another provider |
+| `PUT /api/ai/active` | `{provider}`: makes a provider with a stored key the active one (409 `no_key` otherwise) |
+| `POST /api/ai/custom-providers`, `PATCH`/`DELETE /api/ai/custom-providers/{id}` | Admin only (403 `forbidden`): register, change (default model, photos, structured mode, token cap) and remove an OpenAI-compatible endpoint; removing deletes every user's key for it. 422 `endpoint_blocked` (with the rule), 422 `invalid_endpoint`, 409 `provider_disabled` when `custom` is not in `QINQIN_AI_PROVIDERS`. Errors of all `/api/ai` routes are JSON `{error, message}` and never HTTP 401: 404 `unknown_provider`, 409 (`ai_disabled`, `no_key`, `no_selection`, `no_vision`, `provider_disabled`, `key_undecryptable`, `in_flight`), 422 (`key_rejected`, `quota`, `invalid_key`, `invalid_model`, `model_unavailable`, `bad_request`, ...), 429 `rate_limited` and 503 `busy` with `Retry-After` |
+| `POST /api/journal/review` | `{workspaceId, entryId}`: asks the AI to review one journal entry of the caller's workspace and stores `review:<entryId>` (annotations validated and anchored by the server, then the overall review); answers the stored review. Needs an active provider with a stored key. Up to 5,000 characters (413 `too_long`, 422 `empty`), 404 for a foreign workspace or an unknown entry, the same AI errors as above. The call finishes and is stored even if the client disconnects |
+| `POST /api/journal/suggestions` | `{workspaceId}`: asks the AI for topic ideas from the workspace's recently reviewed words (at most 60) and the titles and openings (200 characters) of the last 10 entries; stores and answers the `suggestions` document |
+| `GET /api/journal/capabilities?workspace=` | `{ai: <status>, ocr: {available, languageReady, language}}` for one workspace |
 | `GET /api/dictionaries` | Public. The installed dictionaries, each with `license`, `attribution` and `notice` (`""` when the manifest has none) |
 | `POST /api/admin/dictionaries`, `DELETE /api/admin/dictionaries/{id}`, `DELETE /api/admin/schemes/{id}`, `DELETE /api/admin/sentences/{pack}`, `POST /api/admin/plugins` | Admin only: install a dictionary pack (multipart zip in `pack`), soft-delete a dictionary, a level scheme or a sentence pack (entries survive), register a plugin manifest |
 | `GET /api/schemes` | Public. Every installed level scheme with its ordered levels, `license`, `attribution` and `notice` (`""` when the manifest has none) |
@@ -549,10 +800,12 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/admin/plugins` (manifest) | 64 KiB |
 | `PUT /api/plugins/{id}/state` | 64 KiB |
 | `PUT /api/plugins/{id}/data/{key}` | 256 KiB per value; the same cap applies to each plugin-data value inside `POST /api/sync/push` |
+| `PUT /api/ai/keys/{provider}`, `PUT /api/ai/active`, `POST /api/ai/custom-providers`, `POST /api/journal/review`, `POST /api/journal/suggestions` | 4 KiB |
 | `PUT /api/entries/{id}` | 64 KiB |
 | `POST /api/library/books/{id}/highlights` | 16 KiB |
 | `POST /api/library/books/{id}/bookmarks` | 1 KiB |
 | `POST /api/entries/{id}/sentences` | 16 KiB |
+| `POST /api/audio/resolve` | 16 KiB (413; more than 200 ids is 422) |
 | `POST /api/library/sources/{source}/import` | 1 KiB |
 | `PUT /api/library/books/{id}/position` | 2 KiB |
 | `POST /api/events/batch` | 4 MiB |
@@ -578,7 +831,8 @@ where `<version>` is `dev` unless the binary is built with
 for a connection and 15 s for the response headers; a download itself is bounded
 only by the import's own deadline. Requests are limited to one per second per host, and are cached under `<data>/cache/sources`
 (catalogs for 7 days, works for 1 day). Books live under `<data>/books/<user id>/`,
-with their metadata and reading position in the SQLite database.
+with their metadata and reading position in the SQLite database. Photos live
+under `<data>/journal/<user id>/` only while a draft is open.
 
 The source client only fetches `https` URLs from a host allow-list (Aozora Bunko,
 Gutenberg), checks every redirect hop, and refuses
@@ -586,6 +840,41 @@ loopback, private, and other non-public addresses. Environment proxies
 (`HTTP_PROXY`, `HTTPS_PROXY`) are intentionally **not** used, because a proxy would
 bypass that check. A self-hoster behind a mandatory outbound proxy therefore
 cannot import from the sources; epub uploads still work.
+
+### Feature plugins
+
+Every built-in feature plugin has one manifest, a JSON file in
+`server/internal/plugins/builtin/` that the Go server embeds and validates at
+start-up (`plugins.ParseManifest`; unknown fields are rejected) and the web build
+imports through the `$builtin` alias. It declares `sdk` (the contract version, 1),
+`surfaces` (`home-widget`, `page`, `hook`), `permissions`, `hooks` (`study-event`)
+and the study-event types it emits. The four permissions are `owns-data` (keep
+plugin data rows; the server refuses data writes without it), `read:entries`,
+`read:study-events` and `write:study-events`; Settings shows them for each plugin.
+`apps/web/src/lib/plugins/sdk.ts` (`createPluginSdk(manifest)`) wraps plugin data
+(per user or per workspace) and study events and throws a `PermissionError` for
+anything the manifest did not declare; `sdk.onStudyEvent` delivers posted events
+to a plugin while it is enabled. Permissions are a contract that catches mistakes
+and tells the user what a plugin does, not a sandbox: all plugin code ships in one
+bundle. The journal and the home layout use the SDK.
+
+Server side, `POST /api/admin/plugins` answers 400 with every reason when a manifest
+breaks the contract (unknown fields, trailing data and event types another plugin
+owns included) and 409 for the id of a built-in plugin. `PUT`/`DELETE
+/api/plugins/{id}/data/{key}` answer 403 `plugin does not declare owns-data` for a
+plugin whose manifest has an `sdk` but not that permission (a row registered before
+the contract has no `sdk` and keeps writing; Settings marks it "legacy"). In a sync
+push such a row is skipped, not fatal: the events and every other row still apply,
+and the result's `dataRefused` counts the skipped rows next to `dataSkipped`.
+A registry row whose manifest no longer parses (for example one registered before
+the strict `activity` rule validation of the activity statistics, or with a
+malformed rule) keeps writing like a legacy row, but neither claims event types nor
+contributes activity; startup logs "plugin registry rows that do not parse as
+manifests" with their ids once. This only concerns development databases: re-register
+or remove those rows.
+SDK data keys may not be empty, `.` or `..`. A plain string value round-trips
+(`put('k', 'hello')` reads back `'hello'`); a string that is itself valid JSON text
+(`'123'`) reads back decoded, so store objects instead of such strings.
 
 ### Extending: plugin pages
 
@@ -662,6 +951,84 @@ line is not enough) in its `manifest.json` and add a row to
 non-empty `license` and `attribution`, every bundled pack is named in
 `docs/sources.md`, every pack the docs name exists, every `notice` is valid). CI
 runs it together with the scripts' tests (`node --test scripts/*.test.mjs`).
+
+## Journal and AI
+
+The Journal is a page plugin (`qinqin-journal`) where you write dated entries per workspace. The AI features (a review with underlined corrections, topic ideas, and turning a photo of a page into an entry) are optional and use **your own API key for the provider you choose**; qinqin ships no key and sends nothing to any provider on its own.
+
+- **What is sent, and when.** Only when you press a button, and only to the provider you made active in Settings → AI: the entry text (up to 5,000 characters) and your guidance for a review, a list of recently studied words and the openings of your last entries for topic ideas, or one re-encoded photo for a transcription. Nothing is sent when you merely open the page or pick a photo. Photos are stripped of metadata (including GPS) and shrunk before they leave the server, are sent only when you press a transcription button, and are deleted when you save or discard the draft (a janitor sweeps forgotten ones within about an hour). Settings → AI shows, wherever you type a key, "Your journal text, guidance and the photos you choose to read with AI are sent to <provider> when you press a button. <provider>'s terms apply."
+- **Key storage.** Each user stores one key per provider in Settings → AI and makes one of them active. Keys are encrypted at rest (AES-256-GCM, bound to the user and the provider) with `QINQIN_SECRET` and are never returned by the API, written to logs, or included in sync or backups in plain text. Only the last four characters are shown as a hint. A key opens only for the provider it was stored for; a custom endpoint's key is also bound to the endpoint's address.
+- **Providers.** Pick any of these (the learner may type any model id; the registry only suggests):
+
+| Provider | Base URL | Default model (also suggested) | Reads photos | Structured replies |
+|---|---|---|---|---|
+| Anthropic | `https://api.anthropic.com` | `claude-opus-5-5` (`claude-sonnet-5-5`, `claude-haiku-5-5`) | yes | JSON schema |
+| OpenAI | `https://api.openai.com/v1` | `gpt-6-astra` (`gpt-6-luna`) | yes | JSON schema (strict) |
+| Google Gemini | `https://generativelanguage.googleapis.com/v1beta` | `gemini-3.8-flash` (`gemini-3.5-flash-lite`) | yes | JSON schema |
+| DeepSeek | `https://api.deepseek.com` | `deepseek-flash` (`deepseek-v4-pro`: no photos) | `deepseek-flash` only | JSON mode |
+| Mistral | `https://api.mistral.ai/v1` | `mistral-large-latest` (`mistral-small-latest`) | yes | JSON schema |
+| xAI | `https://api.x.ai/v1` | `grok-4.7` | yes | JSON schema (strict) |
+| Groq | `https://api.groq.com/openai/v1` | `openai/gpt-oss-120b` | no | JSON schema |
+| OpenRouter | `https://openrouter.ai/api/v1` | `openrouter/auto` | depends on the routed model | JSON schema |
+| Custom (admin) | the admin's address | the admin's choice | the admin's choice | JSON mode by default |
+
+  A model that cannot read photos makes Read with AI unavailable ("<model> can't read photos") and the page offers offline reading instead. If a reply is not valid JSON in the expected shape the server asks once more (a second counted call) and otherwise answers "bad reply"; nothing from a malformed reply reaches the page.
+- **Models and fallback.** On Anthropic's Opus and Sonnet a safety refusal is retried by the provider's default fallback model, which can answer from another model on your key; the review says which model and provider answered and marks "(fallback)". Other providers have no fallback.
+- **Limits.** 30 provider calls per user per rolling hour across all providers (checking a key and a repair request count), one AI call in flight per user, 5,000 characters per review, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour, provider replies capped at 8 MiB, 150 s per call. Settings → AI shows the calls and tokens used this hour.
+- **Offline OCR.** The image bundles Tesseract 5 (with Chinese Simplified and Traditional, Japanese and English data) for reading a photo without any AI; without the `tesseract` binary it shows as unavailable.
+- **Image size.** The OCR packages add about 193 MB to the Docker image (Tesseract plus the `chi_sim`, `chi_tra`, `jpn` and `eng` standard models from Alpine's tessdata). The standard models were chosen over the smaller `tessdata_fast` ones for accuracy on handwriting and small print, at the cost of size. To leave them out, build with `docker build --build-arg WITH_OCR=0 .`: the server starts normally, offline reading shows as unavailable and AI reading is unaffected. CI and the published image use the full build.
+- **Audio in the image.** The default image build (`WITH_AUDIO=1`) also bakes in the Kanji alive example-word recordings (CC BY 4.0, 10,156 Japanese clips): a build stage runs `scripts/fetch-audio-kanjialive.sh`, which downloads about 69 MB from `media.kanjialive.com` and the data repository (a warm layer cache skips it; a fresh build does not), checks pinned SHA-256 sums and fails the build on a mismatch. The image grows by about 70 MB, and builds that run the stage need that site reachable; the `audio-stage` workflow builds only the stage on pull requests and weekly so a break shows early. Build with `docker build --build-arg WITH_AUDIO=0 .` to leave it out (also the fallback when the download is unavailable): `/opt/qinqin/audio` is then empty and `qinqin seed` still works. See `docs/sources.md`, "Audio".
+
+### Custom AI endpoints
+
+An admin can register an OpenAI-compatible endpoint (Ollama, LM Studio, vLLM, Together, a company gateway, Azure-style gateways, Cohere's compatibility API) in Settings → AI; everyone on the server can then store their own key for it. Because any user can trigger calls to it, the server treats the address as a threat: the address must be `https` (plain `http` only with `QINQIN_AI_ALLOW_PRIVATE=1`, and then only if it resolves to a loopback or private address, for example `http://ollama:11434/v1` on a Docker network), without a user name, query or fragment; the address actually dialled is checked after DNS (so a hostname that resolves to a blocked address is refused, rebinding included); link-local, cloud-metadata, multicast and unspecified addresses are never allowed; redirects are not followed, so a key never travels to another host. The name, address and "needs a key" setting cannot be changed later (remove and re-add), and a name may not look like a built-in provider, so an endpoint cannot pose as "OpenAI" to collect keys. Users see "Added by your admin · <host>" wherever they type a key for it. Custom endpoints never use an HTTP proxy (the check needs the dialled address); the built-in providers honour `HTTPS_PROXY`, and follow no redirects either.
+
+Proton's Lumo has no public API today (their roadmap only announces one), so it is not built in; if Proton ships an OpenAI-compatible API an admin can add it as a custom endpoint.
+
+**The owner's real-key checklist** is in `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`. These items were not confirmed against the providers' own documentation or a real call and are marked `UNVERIFIED 2026-11-15` in `server/internal/ai/registry.go`: the model ids `gpt-6-luna`, `mistral-large-latest` and `mistral-small-latest` (`grok-4.7` is the id xAI's documentation names; what is unconfirmed for xAI, Mistral and OpenRouter is whether their models read photos), base64 image data URLs for OpenAI itself, DeepSeek's `/models` listing, and the REST field name Gemini uses for the JSON schema (`generationConfig.responseJsonSchema`).
+
+### Photo routes
+
+All need a bearer token; a foreign workspace or photo is a 404.
+
+| Route | Meaning |
+|---|---|
+| `POST /api/journal/photos` | multipart `file` and `workspace`; JPEG, PNG or WebP (sniffed), up to 10 MiB and 25 megapixels. Re-encoded to JPEG (EXIF rotation applied, GPS and all metadata dropped, long edge at most 2576 px, at most 3.75 MB so it stays under the API's 5 MB after base64). 201 `{photoId}`; 413 `photo_too_large`, 415 `unsupported_image`, 422 `image_too_large`, 409 `too_many_photos` (10 pending per user), 429 `rate_limited` (30 uploads per user and hour) |
+| `GET /api/journal/photos/{id}` | the stored JPEG (`no-store`) |
+| `PUT /api/journal/photos/{id}/keepalive` | 204; keeps an open draft's photo alive |
+| `DELETE /api/journal/photos/{id}` | 204 |
+
+A photo is deleted when its draft is saved or discarded, when its workspace is deleted, and by a janitor (at startup and every 15 minutes) when it was not seen for an hour or is over 24 hours old. The janitor also removes files without a row and rows without a file.
+
+### Offline OCR
+
+`POST /api/journal/transcribe` with `{workspaceId, photoId, engine: "ai"|"offline"}` returns `{text, engine, unreadable}`. The `ai` engine sends the stored photo to the provider with the learner's key (it counts toward the 30 calls per hour); `offline` runs Tesseract on the server and sends nothing anywhere. There is no automatic fallback from one to the other. Neither engine stores anything beyond refreshing the photo's last-seen time.
+
+- **Models.** Chinese uses `chi_sim+chi_tra`, Japanese `jpn`, and the Latin-script workspace languages `eng`. Other languages have no offline reading (409 `ocr_language_missing`). The Alpine packages ship no vertical Japanese model (`jpn_vert`), so vertical text is read poorly.
+- **Limits.** Tesseract runs with fixed arguments and no shell, 60 s at most per photo, at most 2 processes at once server-wide (a third request waits 5 s, then gets 503 `busy`), and at most 60 offline reads per user per hour (429 `rate_limited`).
+- **Without Tesseract.** The server starts and logs `offline OCR: not available (tesseract not found)`; the route answers 409 `ocr_unavailable` and the page shows "Read offline" as unavailable. This is the normal state in local development unless you install `tesseract` (and the `tessdata` models) yourself. `QINQIN_TESSERACT` points to another binary; `TESSDATA_PREFIX` is passed through.
+- **CI.** The test job installs `tesseract-ocr` and sets `QINQIN_REQUIRE_TESSERACT=1`, so the OCR test fails instead of skipping when the binary is missing.
+
+### Server secret
+
+Set `QINQIN_SECRET` to 32 random bytes, base64 encoded, to allow storing keys:
+
+```sh
+head -c 32 /dev/urandom | base64
+```
+
+Without a valid secret the server still starts, AI shows as disabled with the reason (not set, or not 32 bytes of base64), and no key can be stored.
+
+Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot be read and users must enter them again; it is never written to `/data`. Rotate it by moving the old value to `QINQIN_SECRET_PREVIOUS` for one restart: on startup the keys sealed with the previous secret are re-encrypted with the new one, after which the previous value can be removed. A key sealed with a secret the server no longer knows shows as "re-enter your key" instead of failing.
+
+| Variable | Meaning |
+|---|---|
+| `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
+| `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
+| `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
+| `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |
+| `QINQIN_AI_ALLOW_PRIVATE` | `1` or `true` lets admins register custom endpoints on loopback and private addresses (Ollama on the same host). Off by default; the admin's endpoints can then reach your LAN, so enable it only if you trust every admin |
+| `QINQIN_AI_PROVIDER` | Legacy. Unset: real providers, all allowed. `anthropic` (set explicitly) means `QINQIN_AI_PROVIDERS=anthropic`. `fake` is for testing only: a deterministic provider that replaces every adapter, never leaves the server, and is shown in the app as a "Test provider" badge. Anything else disables AI |
 
 ## Dictionary data model
 
@@ -744,6 +1111,8 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
 | [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-chars`) | Chinese: the official HSK 3.0 character list, the characters to recognise (认读字) per level, HSK 1–6 and HSK 7–9 (3,088 characters; same edition) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
 | [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-words`) | Chinese: the official HSK 3.0 word list, HSK 1–6 and HSK 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07; CLEC, distributed by CTI) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
+| [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (`joyo-grades`) | Japanese: the 2,136 jōyō kanji by school grade (Grade 1–6, Secondary), derived from the grades recorded in KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
+| [Unihan](https://www.unicode.org/reports/tr38/) (`tgh-chars`) | Chinese: the 通用规范汉字表 (2013) in three levels (3,500 / 3,000 / 1,605), derived from Unihan's `kTGH` serials | Unicode License v3 |
 | [kanjiapi.dev `jlpt.tsv`](https://github.com/onlyskin/kanjiapi.dev) + [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (`jlpt-kanji`) | Japanese: approximate JLPT N5–N1 kanji levels (the JLPT has published no official kanji list since 2010): kanjiapi.dev's list, of unstated provenance, plus levels qinqin derives from KANJIDIC2 for the 176 kanji it omits (分, 可, 無, 的 …), see docs/sources.md | MIT (© 2023 Iridium Szreter) and CC BY-SA 4.0 (EDRDG) for the derived levels |
 
 **JLPT vocabulary is not bundled.** Its upstream licence chain could not be
@@ -828,7 +1197,7 @@ go run ./cmd/qinqin seed --packs ../plugins/data
 go run ./cmd/qinqin adduser --admin --username you
 ```
 
-In a second terminal, run the web app with hot reload. Vite proxies `/api` to
+To work on the web app, start its hot-reload dev server in another terminal. Vite proxies `/api` to
 the Go server on `127.0.0.1:8080`:
 
 ```bash
@@ -861,6 +1230,8 @@ Dockerfile copies that directory into the Go binary before compiling.
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--jlpt-vocab`, generates the optional local-only JLPT vocabulary pack into `plugins/data-local/` (download commands in its header) |
+| `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
+| `scripts/prepare-local-levels.mjs` | Converts a TSV you prepared (TBCL, curriculum tables, any private list) into a local-only level pack under `plugins/data-local/`; writes no `LICENSE`, refuses other directories |
 | `scripts/check-sources.mjs` | Checks that pack manifests (`license`, `attribution`, `notice`) and `docs/sources.md` agree; run in CI (`node scripts/check-sources.mjs [repo-root]`) |
 | `scripts/prepare-hsk-syllabus.mjs` | Rebuilds the HSK 3.0 packs `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 

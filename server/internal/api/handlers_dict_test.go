@@ -44,6 +44,8 @@ type dictionaryBody struct {
 	Version     string `json:"version"`
 	License     string `json:"license"`
 	Attribution string `json:"attribution"`
+	PackID      string `json:"packId"`
+	Language    string `json:"language"`
 }
 
 // buildPackDir writes manifest.json and dictionary.json into a fresh temp
@@ -211,8 +213,12 @@ func TestDictionaryRoutes(t *testing.T) {
 	}
 
 	// The pack persists under <data>/packs/<id>-<version>/.
-	if _, err := os.Stat(filepath.Join(dataDir, "packs", "mkgloss-1.0", "manifest.json")); err != nil {
+	if _, err := os.Stat(filepath.Join(dataDir, "packs", "dictionary", "mkgloss", "1.0", "manifest.json")); err != nil {
 		t.Errorf("installed pack files: %v (want manifest.json under packs/mkgloss-1.0/)", err)
+	}
+
+	if installed.PackID != "mkgloss" || installed.Language == "" {
+		t.Errorf("installed dictionary packId/language = %q/%q, want mkgloss and a language", installed.PackID, installed.Language)
 	}
 
 	// The registry lists it.

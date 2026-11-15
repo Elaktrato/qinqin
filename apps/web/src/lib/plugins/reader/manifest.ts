@@ -1,14 +1,13 @@
 // The reader plugin's manifest: a page-only plugin, reachable at /p/reader.
 // `sources` credits the text sources it fetches from and the conversion
 // library it bundles; the Sources page lists them under "Plugins".
+import reader from '$builtin/reader.json';
+import type { ContractManifest } from '../contract';
 import type { PluginManifest } from '../index';
 import ReadingTimeWidget from '$lib/widgets/ReadingTimeWidget.svelte';
 
 export const readerManifest: PluginManifest = {
-	id: 'qinqin-reader',
-	name: 'Reader',
-	version: '1.0',
-	surfaces: ['page'],
+	...(reader as unknown as ContractManifest),
 	widgets: [
 		{
 			id: 'reading-time',

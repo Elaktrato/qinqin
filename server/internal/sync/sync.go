@@ -15,6 +15,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"qinqin/internal/events"
@@ -99,6 +100,9 @@ type PushResult struct {
 	EventDuplicates int `json:"eventDuplicates"`
 	DataAccepted    int `json:"dataAccepted"`
 	DataSkipped     int `json:"dataSkipped"`
+	// DataRefused counts rows of plugins that do not declare owns-data;
+	// they are not applied, the rest of the push is.
+	DataRefused int `json:"dataRefused"`
 }
 
 // Push applies body for userID. It validates the whole body first —
@@ -111,7 +115,9 @@ type PushResult struct {
 // written through the plugin store — so the server stamps its own
 // updated_at and bumps the version — or tombstoned when the incoming row
 // is a deletion. A newer server row, and a deletion of a row that is
-// absent or already deleted, count as skipped.
+// absent or already deleted, count as skipped. A row of a plugin that
+// does not declare owns-data is refused alone (DataRefused): the events
+// and every other row still apply.
 func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (PushResult, error) {
 	owned := map[int64]bool{}
 	checkWorkspace := func(id int64) error {
@@ -138,11 +144,16 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		if !events.ValidID(ev.ID) || ev.TS.IsZero() {
 			return PushResult{}, fmt.Errorf("%w: event %d needs a ULID id and a ts", ErrInvalid, i)
 		}
+		if ev.WorkspaceID <= 0 {
+			// The same validation error as POST /api/events/batch.
+			return PushResult{}, fmt.Errorf("%w: event %d needs a workspaceId", ErrInvalid, i)
+		}
 		if err := checkWorkspace(ev.WorkspaceID); err != nil {
 			return PushResult{}, err
 		}
 		ev.UserID = userID
 	}
+	// knownPlugin caches the per-plugin answer: whether it may be written.
 	knownPlugin := map[string]bool{}
 	for i, row := range body.PluginData {
 		if row.PluginID == "" || row.Key == "" {
@@ -156,15 +167,15 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 				return PushResult{}, err
 			}
 		}
-		if !knownPlugin[row.PluginID] {
-			ok, err := plugins.Exists(ctx, sqlDB, row.PluginID)
+		if _, seen := knownPlugin[row.PluginID]; !seen {
+			exists, allowed, err := plugins.CanWriteData(ctx, sqlDB, row.PluginID)
 			if err != nil {
 				return PushResult{}, fmt.Errorf("sync push: %w", err)
 			}
-			if !ok {
+			if !exists {
 				return PushResult{}, fmt.Errorf("%w: plugin %q", ErrNotFound, row.PluginID)
 			}
-			knownPlugin[row.PluginID] = true
+			knownPlugin[row.PluginID] = allowed
 		}
 	}
 
@@ -177,6 +188,10 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		res.EventsAccepted, res.EventDuplicates = accepted, dups
 	}
 	for _, row := range body.PluginData {
+		if !knownPlugin[row.PluginID] {
+			res.DataRefused++
+			continue
+		}
 		applied, err := applyData(ctx, sqlDB, userID, row)
 		if err != nil {
 			return res, err
@@ -220,7 +235,7 @@ func applyData(ctx context.Context, sqlDB *sql.DB, userID int64, row model.Plugi
 	var serverDeleted sql.NullString
 	err := sqlDB.QueryRowContext(ctx, `
 		SELECT COALESCE(modified_at, updated_at), deleted_at FROM plugin_data
-		WHERE pack_id = ? AND user_id = ? AND IFNULL(workspace_id, 0) = IFNULL(?, 0) AND key = ?`,
+		WHERE pack_id = ? AND user_id = ? AND `+plugins.UniqueKeyWorkspace+` = IFNULL(?, `+strconv.Itoa(plugins.NoWorkspace)+`) AND key = ?`,
 		row.PluginID, userID, workspace, row.Key).Scan(&serverUpdated, &serverDeleted)
 	exists := !errors.Is(err, sql.ErrNoRows)
 	if err != nil && exists {

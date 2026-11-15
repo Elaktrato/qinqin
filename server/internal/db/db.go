@@ -62,6 +62,11 @@ func migrate(sqlDB *sql.DB) error {
 // SQLite's default foreign_keys=OFF (the DSN never enables it), which
 // is what lets a migration rebuild a referenced table (create, copy,
 // drop, rename) without the drop cascading into its children.
+//
+// Decision (#1): foreign keys stay declarative at runtime too. No path
+// deletes users, and an orphaned session row is inert (the session
+// lookup joins users); enabling the pragma would mean reworking every
+// table-rebuilding migration.
 func migrateThrough(sqlDB *sql.DB, last string) error {
 	if _, err := sqlDB.Exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
 		version TEXT PRIMARY KEY,

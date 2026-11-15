@@ -14,6 +14,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"qinqin/internal/journal"
 	"qinqin/internal/lang"
 	"qinqin/internal/library"
 
@@ -94,8 +95,8 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "malformed request body", http.StatusBadRequest)
 		return
 	}
-	language := strings.ToLower(strings.TrimSpace(req.Language))
-	if language == "" {
+	rawLanguage := strings.ToLower(strings.TrimSpace(req.Language))
+	if rawLanguage == "" {
 		http.Error(w, "language is required", http.StatusBadRequest)
 		return
 	}
@@ -104,7 +105,47 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, problem, http.StatusUnprocessableEntity)
 		return
 	}
+
+	// Serialized with admin language removal: the known check, the
+	// languages row and the workspace cannot interleave with a delete. (A
+	// deferred SQLite transaction would fail with SQLITE_BUSY when it
+	// upgrades from read to write under concurrent writers.)
+	s.langMu.Lock()
+	defer s.langMu.Unlock()
+
+	// A code that exactly matches a stored row or installed data keeps its
+	// spelling (a legacy pt_br is not split into pt-br); anything else
+	// must be a well-formed code.
+	language := rawLanguage
+	exact, err := languageKnown(r.Context(), s.db, rawLanguage)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	known := exact || lang.Registered(rawLanguage)
+	if !exact {
+		code, valid := lang.ValidCode(req.Language)
+		if !valid {
+			http.Error(w, "language must be a code like es or pt-br", http.StatusUnprocessableEntity)
+			return
+		}
+		language = code
+		if !lang.Registered(code) {
+			if known, err = languageKnown(r.Context(), s.db, code); err != nil {
+				http.Error(w, "internal error", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			known = true
+		}
+	}
 	if !lang.Registered(language) {
+		// Only an administrator opens a new language; everyone else
+		// picks from the known ones.
+		if !known && !u.Admin {
+			http.Error(w, "unknown language — ask the administrator to add it", http.StatusUnprocessableEntity)
+			return
+		}
 		if _, err := s.db.ExecContext(r.Context(), `
 			INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
 			ON CONFLICT (code) DO NOTHING`, language, language, now()); err != nil {
@@ -126,6 +167,37 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, ws)
+}
+
+// languageKnown reports whether code (compared exactly) is known: a
+// languages row, installed dictionary data, or any live level, frequency,
+// sentence, grammar or audio pack of that language.
+func languageKnown(ctx context.Context, db interface {
+	queryer
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}, code string) (bool, error) {
+	var known bool
+	err := db.QueryRowContext(ctx, `
+		SELECT EXISTS (SELECT 1 FROM languages WHERE code = ?1)
+			OR EXISTS (SELECT 1 FROM dictionaries WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM schemes WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM frequency_packs WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM sentence_packs WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM grammar_packs WHERE language = ?1 AND deleted_at IS NULL)
+			OR EXISTS (SELECT 1 FROM audio_packs WHERE language = ?1 AND deleted_at IS NULL)`, code).Scan(&known)
+	if err != nil || known {
+		return known, err
+	}
+	installed, err := installedLanguages(ctx, db)
+	if err != nil {
+		return false, err
+	}
+	for _, li := range installed {
+		if li.Code == code {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // handleListWorkspaces serves GET /api/workspaces with the caller's
@@ -271,7 +343,7 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// json_patch merges the settings object in place (RFC 7396: existing
-	// keys update, new keys are added) while stamping updated_at. A patch
+	// keys update, new keys are added, a null value deletes its key) while stamping updated_at. A patch
 	// whose merged object would outgrow maxWorkspaceSettings changes
 	// nothing; the row then still exists and the answer is a 413.
 	ws, err := scanWorkspace(s.db.QueryRowContext(r.Context(), `
@@ -327,7 +399,7 @@ func (s *server) handleDeleteWorkspace(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "workspace not found", http.StatusNotFound)
 		return
 	}
-	books, err := s.deleteWorkspace(r.Context(), u.ID, id)
+	books, photoIDs, err := s.deleteWorkspace(r.Context(), u.ID, id)
 	switch {
 	case errors.Is(err, errWorkspaceNotFound):
 		http.Error(w, "workspace not found", http.StatusNotFound)
@@ -342,6 +414,9 @@ func (s *server) handleDeleteWorkspace(w http.ResponseWriter, r *http.Request) {
 	if err := s.library().RemoveContent(u.ID, books); err != nil {
 		log.Printf("delete workspace %d: %v", id, err)
 	}
+	if err := s.photos().RemoveFiles(u.ID, photoIDs); err != nil {
+		log.Printf("delete workspace %d: %v", id, err)
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -351,51 +426,55 @@ var (
 )
 
 // deleteWorkspace runs the deletion transaction of handleDeleteWorkspace
-// and returns the ids of the deleted books, whose content files the
+// and returns the ids of the deleted books and photos, whose files the
 // caller removes. The first statement deletes the workspace row only
 // when the user keeps another one: being a write, it takes SQLite's
 // write lock before reading, so concurrent deletes serialize and two of
 // them can never remove a user's last two workspaces together.
-func (s *server) deleteWorkspace(ctx context.Context, userID, id int64) ([]int64, error) {
+func (s *server) deleteWorkspace(ctx context.Context, userID, id int64) ([]int64, []string, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	defer tx.Rollback()
-	res, err := tx.ExecContext(ctx, `
+	res, err := s.db.ExecContext(ctx, `
 		DELETE FROM workspaces WHERE id = ?1 AND user_id = ?2
 		AND EXISTS (SELECT 1 FROM workspaces WHERE user_id = ?2 AND id <> ?1)`, id, userID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if n, err := res.RowsAffected(); err != nil {
-		return nil, err
+		return nil, nil, err
 	} else if n == 0 {
 		var owned bool
 		if err := tx.QueryRowContext(ctx,
 			`SELECT EXISTS (SELECT 1 FROM workspaces WHERE id = ? AND user_id = ?)`, id, userID).Scan(&owned); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if owned {
-			return nil, errLastWorkspace
+			return nil, nil, errLastWorkspace
 		}
-		return nil, errWorkspaceNotFound
+		return nil, nil, errWorkspaceNotFound
 	}
 	// Every table with a workspace_id column (migrations 009, 010, 019);
 	// bookmarks and highlights hang off the books.
 	for _, table := range []string{"study_events", "plugin_data"} {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE workspace_id = ?`, id); err != nil {
-			return nil, err
+		if _, err := s.db.ExecContext(ctx, `DELETE FROM `+table+` WHERE workspace_id = ?`, id); err != nil {
+			return nil, nil, err
 		}
 	}
 	books, err := library.DeleteWorkspaceBooks(ctx, tx, userID, id)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	photoIDs, err := journal.DeleteWorkspacePhotosTx(ctx, tx, userID, id)
+	if err != nil {
+		return nil, nil, err
 	}
 	if err := tx.Commit(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return books, nil
+	return books, photoIDs, nil
 }
 
 // scanWorkspace reads one workspace row (workspaceColumns), parsing the

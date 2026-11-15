@@ -13,9 +13,7 @@ import (
 	"strings"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/freq"
-	"qinqin/internal/levels"
-	"qinqin/internal/sentences"
+	"qinqin/internal/packs"
 )
 
 // seedCmd runs `qinqin seed --data <dir> --packs <dir>[,<dir>...]`.
@@ -23,7 +21,7 @@ func seedCmd(args []string, out io.Writer) error {
 	fset := flag.NewFlagSet("seed", flag.ContinueOnError)
 	data := fset.String("data", defaultData(), "data directory holding the SQLite database (default $QINQIN_DATA or ./data)")
 	packs := rootsFlag{roots: defaultPacks()}
-	fset.Var(&packs, "packs", "directories of seed packs to import: comma-separated and/or repeated (default $QINQIN_PACKS, or plugins/data plus plugins/data-local when that exists)")
+	fset.Var(&packs, "packs", "directories of seed packs to import: comma-separated and/or repeated (default $QINQIN_PACKS, or plugins/data, plugins/data-audio and plugins/data-local when those exist)")
 	if err := fset.Parse(args); err != nil {
 		return err
 	}
@@ -33,23 +31,30 @@ func seedCmd(args []string, out io.Writer) error {
 		return err
 	}
 	defer sqlDB.Close()
-	return seed(context.Background(), sqlDB, packs.roots, out)
+	return seed(context.Background(), sqlDB, *data, packs.roots, out)
 }
 
 // localPacks is the second default pack root, for packs that stay out of
 // the repo (the root .gitignore lists it); it is used only when it exists.
 const localPacks = "plugins/data-local"
 
+// audioPacks is the default root of redistributable audio fetched by the
+// maintainer scripts (gitignored for size); it is used only when it exists.
+const audioPacks = "plugins/data-audio"
+
 // defaultPacks is the --packs default: $QINQIN_PACKS (comma-separated; the
 // image sets it to the sample packs it ships), or the repo's plugins/data
-// followed by plugins/data-local when that directory exists.
+// followed by plugins/data-audio, then plugins/data-local, when those
+// directories exist.
 func defaultPacks() []string {
 	if p := os.Getenv("QINQIN_PACKS"); p != "" {
 		return splitRoots(p)
 	}
 	roots := []string{"plugins/data"}
-	if info, err := os.Stat(localPacks); err == nil && info.IsDir() {
-		roots = append(roots, localPacks)
+	for _, extra := range []string{audioPacks, localPacks} {
+		if info, err := os.Stat(extra); err == nil && info.IsDir() {
+			roots = append(roots, extra)
+		}
 	}
 	return roots
 }
@@ -91,18 +96,20 @@ type seedPack struct {
 // character data of cedict, unihan, kanjidic2, and jmdict — come first:
 // frequency, level and sentence packs refer to existing entries and skip
 // the unknown ones, so they must follow. Frequency packs come right after
-// the dictionaries; sentences come last.
+// the dictionaries; sentences follow; grammar and audio packs, which refer to no
+// entries at import time, come last.
 var importOrder = map[string]int{
 	dict.TypeDictionary: 0,
 	dict.TypeFrequency:  1,
 	dict.TypeLevels:     2,
 	dict.TypeSentences:  3,
+	dict.TypeGrammar:    4,
+	dict.TypeAudio:      5,
 }
 
-// seed imports every pack under the roots into sqlDB, dispatching on each
-// manifest's type: dictionary to dict.ImportLexicon, frequency to
-// freq.Import, levels to levels.Import, sentences to
-// sentences.ImportPack. A pack is
+// seed imports every pack under the roots into sqlDB through
+// packs.Import, which dispatches on each manifest's type (audio clips go to
+// <dataDir>/audio). A pack is
 // any directory holding a manifest.json; the walk does not descend into
 // one. Packs import dictionaries first, then frequency packs, levels and
 // sentences, each group in path order — so a frequency pack's priority
@@ -110,7 +117,7 @@ var importOrder = map[string]int{
 // rows and touch nothing else, so seeding again is safe and leaves the
 // counts unchanged. The first failing pack stops the seed, named in the
 // error.
-func seed(ctx context.Context, sqlDB *sql.DB, roots []string, out io.Writer) error {
+func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, out io.Writer) error {
 	found, err := findPacks(roots)
 	if err != nil {
 		return err
@@ -130,7 +137,7 @@ func seed(ctx context.Context, sqlDB *sql.DB, roots []string, out io.Writer) err
 	})
 
 	for _, p := range found {
-		line, err := importPack(ctx, sqlDB, p.pack)
+		line, err := packs.Import(ctx, sqlDB, p.pack, packs.WithAudioStore(filepath.Join(dataDir, "audio")))
 		if err != nil {
 			return fmt.Errorf("seed pack %s (%s): %w", p.pack.ID, p.dir, err)
 		}
@@ -203,40 +210,4 @@ func findPacksIn(root string) ([]seedPack, error) {
 		return nil, fmt.Errorf("seed: walk %s: %w", root, err)
 	}
 	return found, nil
-}
-
-// importPack dispatches one pack on its manifest type and returns its
-// one-line summary.
-func importPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, error) {
-	switch pack.Type {
-	case dict.TypeDictionary:
-		r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
-		if err != nil {
-			return "", err
-		}
-		line := fmt.Sprintf("%d entries, %d senses", r.Entries, r.Senses)
-		if r.Skipped > 0 || r.Unconverted > 0 {
-			line += fmt.Sprintf(" (skipped %d malformed lines, %d pinyin unconverted)", r.Skipped, r.Unconverted)
-		}
-		return line, nil
-	case dict.TypeFrequency:
-		r, err := freq.Import(ctx, sqlDB, &pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d rows", r.Entries), nil
-	case dict.TypeLevels:
-		r, err := levels.Import(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d unknown forms skipped", len(r.Skipped)), nil
-	case dict.TypeSentences:
-		r, err := sentences.ImportPack(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d unknown words skipped", len(r.Skipped)), nil
-	}
-	return "", fmt.Errorf("unsupported pack type %q", pack.Type)
 }

@@ -139,21 +139,27 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 	if err := registerLanguage(ctx, sqlDB, m); err != nil {
 		return Result{}, err
 	}
+	// Errors name the registry key; a built-in dictionary (unihan,
+	// kanjidic2) also names the pack that delivered it.
+	label := src.packID
+	if label != m.ID {
+		label = fmt.Sprintf("%s (pack %s)", src.packID, m.ID)
+	}
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
-		return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import dictionary %s: %w", label, err)
 	}
 	defer tx.Rollback()
-	dictID, err := upsertDictionary(ctx, tx, src.packID, m.Name, m.Version, src.license, src.attribution, m.Notice, now())
+	dictID, err := upsertDictionary(ctx, tx, src.packID, m.Name, m.Version, m.Language, src.license, src.attribution, m.Notice, now())
 	if err != nil {
 		return Result{}, err
 	}
 	result, err := src.write(ctx, tx, lexicon.Store{DB: sqlDB}, dictID)
 	if err != nil {
-		return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import dictionary %s: %w", label, err)
 	}
 	if err := tx.Commit(); err != nil {
-		return Result{}, fmt.Errorf("import dictionary %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import dictionary %s: %w", label, err)
 	}
 	return result, nil
 }
@@ -439,15 +445,24 @@ func unionReadings(base, add []lexicon.Reading) []lexicon.Reading {
 	return base
 }
 
+// checkRadical reports a radical number outside the Kangxi radicals
+// 1–214; who names the character classified under it.
+func checkRadical(who string, n int) error {
+	if _, ok := kangxiRadicals[n]; !ok {
+		return fmt.Errorf("%s is under radical %d, outside the Kangxi radicals 1–214", who, n)
+	}
+	return nil
+}
+
 // radicalEntryID returns the id of the character entry of the Kangxi
 // radical n in language, creating a bare one when the lexicon has none;
 // an existing entry is used as it is. who names the character classified
 // under it for the error of a number outside 1-214.
 func radicalEntryID(ctx context.Context, tx *sql.Tx, store lexicon.Store, language, who string, n int, cache map[string]int64) (int64, error) {
-	radical, ok := kangxiRadicals[n]
-	if !ok {
-		return 0, fmt.Errorf("%s is under radical %d, outside the Kangxi radicals 1–214", who, n)
+	if err := checkRadical(who, n); err != nil {
+		return 0, err
 	}
+	radical := kangxiRadicals[n]
 	if id, ok := cache[radical]; ok {
 		return id, nil
 	}
@@ -488,6 +503,13 @@ func kanjidic2LexiconEntry(e entry, language string) *lexicon.Entry {
 // (a bare one is created when missing). It owns the kanjidic2AttrKeys of
 // a character's attrs; other keys stay (see putOwningAttrs).
 func importKanjidic2Lexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m Manifest, es []entry) (Result, error) {
+	for _, e := range es {
+		if e.Radical != 0 {
+			if err := checkRadical(e.Written, e.Radical); err != nil {
+				return Result{}, err
+			}
+		}
+	}
 	var (
 		result Result
 		cache  = map[string]int64{}
@@ -524,6 +546,13 @@ func importKanjidic2Lexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store
 // counterparts link as variants (both directions) and each character
 // links to its Kangxi radical.
 func importUnihanLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m Manifest, data UnihanData) (Result, error) {
+	// Radical numbers are known from the parse: check them all before
+	// anything is written.
+	for _, ch := range slices.Sorted(maps.Keys(data.Radicals)) {
+		if err := checkRadical(ch, data.Radicals[ch]); err != nil {
+			return Result{}, err
+		}
+	}
 	seen := make(map[string]bool, len(data.Radicals)+len(data.Definitions))
 	for ch := range data.Radicals {
 		seen[ch] = true
@@ -615,7 +644,14 @@ func jsonLexiconEntries(es []entry, language string) []*lexicon.Entry {
 		m := out[i]
 		m.Forms = unionForms(m.Forms, le.Forms)
 		m.Readings = unionReadings(m.Readings, le.Readings)
-		m.Senses = append(m.Senses, le.Senses...)
+		for _, sense := range le.Senses {
+			// An identical line says nothing new: one sense, not two.
+			if !slices.ContainsFunc(m.Senses, func(have lexicon.Sense) bool {
+				return slices.Equal(have.Glosses, sense.Glosses)
+			}) {
+				m.Senses = append(m.Senses, sense)
+			}
+		}
 	}
 	return out
 }

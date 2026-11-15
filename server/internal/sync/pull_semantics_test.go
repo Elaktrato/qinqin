@@ -198,3 +198,27 @@ func TestPullSenseChangeSparesOtherDictionary(t *testing.T) {
 		t.Errorf("live %+v tombstones %+v, want only mkgloss's replaced sense", live, dead)
 	}
 }
+
+// A write stamped in the same whole second as the cursor is delivered: pulls
+// compare updated_at >= cursor, because updated_at is second-truncated and a
+// cursor captured just before the write can share its second. The price is a
+// harmless redelivery of rows stamped exactly at the cursor.
+func TestPullDeliversSameSecondWrite(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	row, err := plugins.PutDataRow(ctx, sqlDB, alice, nil, "heatmap", "settings", json.RawMessage(`{"a":1}`), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stamp := row.UpdatedAt.UTC()
+
+	// Cursor in the same second as the write (captured just before it).
+	if d := mustPull(t, sqlDB, alice, stamp); len(d.PluginData) != 1 {
+		t.Errorf("pull at the write's own second: pluginData = %+v, want the row", d.PluginData)
+	}
+	// A cursor one second later has seen it.
+	if d := mustPull(t, sqlDB, alice, stamp.Add(time.Second)); len(d.PluginData) != 0 {
+		t.Errorf("pull a second after the write: pluginData = %+v, want none", d.PluginData)
+	}
+}

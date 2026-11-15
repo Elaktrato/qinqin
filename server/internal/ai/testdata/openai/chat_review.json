@@ -1,0 +1,21 @@
+{
+  "id": "chatcmpl-fake-1",
+  "object": "chat.completion",
+  "model": "gpt-6-astra-2026-11-01",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\"annotations\":[{\"quote\":\"你好\",\"context_before\":\"\",\"correction\":\"您好\",\"explanation\":\"More polite.\",\"category\":\"word choice\"}],\"overall\":{\"summary\":\"Good.\",\"strengths\":[\"clear\"],\"focus\":[\"politeness\"]}}",
+        "refusal": null
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 120,
+    "completion_tokens": 40,
+    "prompt_tokens_details": {"cached_tokens": 100}
+  }
+}

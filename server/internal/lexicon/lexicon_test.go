@@ -547,3 +547,48 @@ func TestLinkVariantsSymmetricAndIdempotent(t *testing.T) {
 		}
 	}
 }
+
+func TestLinkRejectsSelfAndDanglingIDs(t *testing.T) {
+	st := newStore(t)
+	ctx := context.Background()
+	dict := addDictionary(t, st, "unihan")
+	a := mustPut(t, st, &lexicon.Entry{Language: "zh", Kind: "character", Key: "说", Forms: []lexicon.Form{{Text: "说"}}}, dict)
+
+	if err := st.Link(ctx, a, a, lexicon.LinkVariant); err == nil {
+		t.Error("Link(a, a, variant) succeeded, want self-variant rejected")
+	}
+	for _, typ := range []string{lexicon.LinkVariant, lexicon.LinkRadical} {
+		if err := st.Link(ctx, a, 99999, typ); err == nil {
+			t.Errorf("Link(a, missing, %s) succeeded, want dangling target rejected", typ)
+		}
+		if err := st.Link(ctx, 99999, a, typ); err == nil {
+			t.Errorf("Link(missing, a, %s) succeeded, want dangling source rejected", typ)
+		}
+	}
+	var n int
+	if err := st.DB.QueryRow(`SELECT COUNT(*) FROM entry_links`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("entry_links rows = %d (err %v), want none", n, err)
+	}
+	// A character that is its own radical stays linkable.
+	if err := st.Link(ctx, a, a, lexicon.LinkRadical); err != nil {
+		t.Errorf("Link(a, a, radical) = %v, want accepted", err)
+	}
+}
+
+func TestPutLowercasesLanguage(t *testing.T) {
+	st := newStore(t)
+	dict := addDictionary(t, st, "cedict")
+	upper := &lexicon.Entry{Language: "ZH", Kind: "word", Key: "你好", Forms: []lexicon.Form{{Text: "你好"}}}
+	idUpper := mustPut(t, st, upper, dict)
+	if upper.Language != "zh" {
+		t.Errorf("entry language after Put = %q, want zh", upper.Language)
+	}
+	idLower := mustPut(t, st, &lexicon.Entry{Language: "zh", Kind: "word", Key: "你好", Forms: []lexicon.Form{{Text: "你好"}}}, dict)
+	if idUpper != idLower {
+		t.Errorf("ZH and zh puts made entries %d and %d, want one", idUpper, idLower)
+	}
+	var lang string
+	if err := st.DB.QueryRow(`SELECT language FROM entries WHERE id = ?`, idUpper).Scan(&lang); err != nil || lang != "zh" {
+		t.Errorf("stored language = %q (err %v), want zh", lang, err)
+	}
+}

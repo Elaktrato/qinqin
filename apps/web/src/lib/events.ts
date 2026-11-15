@@ -3,11 +3,13 @@
 // failed POST must never break the page the user is on.
 
 import { api } from './api/client';
+import { logChangingTypes } from './plugins/contract';
+import { emitStudyEvents } from './plugins/hooks';
 import type { StudyEventBody } from './api/types';
 import { newUlid } from './ulid';
 import { createWorkspaceCache } from './workspaceCache';
 
-export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read';
+export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal';
 
 // StudyEvent is one event as GET /api/events serves it: the row the
 // server stored, with the caller's own timestamp kept verbatim.
@@ -40,6 +42,7 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 			method: 'POST',
 			body: { events }
 		});
+		emitStudyEvents(events);
 	} finally {
 		// A failed POST may still have landed: drop what may be stale either way.
 		logChanged(events);
@@ -49,12 +52,6 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 // How long a full event log read serves the widgets: one page and a
 // Home -> Stats hop, not more. Joining the read in flight is the main gain.
 export const WORKSPACE_EVENTS_TTL_MS = 8_000;
-
-// Only these event types change what the readers of the full log show
-// (reviews: flashcards, words, characters; read: reading time). The home
-// page posts a `session` event on every load; dropping the cache for it
-// would defeat the cache.
-const LOG_CHANGING_TYPES: ReadonlySet<string> = new Set(['review', 'read']);
 
 function fullLogPath(workspaceId: number): string {
 	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
@@ -84,7 +81,7 @@ export function onEventLogChange(listener: (workspaceId: number) => void): () =>
 function logChanged(events: readonly StudyEventBody[]): void {
 	const touched = new Set<number>();
 	for (const event of events) {
-		if (LOG_CHANGING_TYPES.has(event.type)) touched.add(event.workspaceId);
+		if (logChangingTypes().has(event.type)) touched.add(event.workspaceId);
 	}
 	for (const workspaceId of touched) {
 		eventLog.invalidate(workspaceId);

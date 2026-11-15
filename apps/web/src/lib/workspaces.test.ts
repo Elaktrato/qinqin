@@ -6,7 +6,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import type { Workspace } from './api/types';
-import { create, currentLanguage, deleteWorkspace, load, rename, select, workspaces } from './workspaces';
+import { clearSelection, create, currentLanguage, deleteWorkspace, load, rename, select, setSettings, workspaces } from './workspaces';
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -105,6 +105,31 @@ describe('workspace store', () => {
 		expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ language: 'es' });
 		expect(get(workspaces).current).toEqual(es);
 		expect(localStorage.getItem('qinqin.workspace')).toBe('3');
+	});
+
+	it('clearSelection forgets the persisted workspace (a later user must not inherit it)', () => {
+		localStorage.setItem('qinqin.workspace', '2');
+		clearSelection();
+		expect(localStorage.getItem('qinqin.workspace')).toBeNull();
+	});
+
+	it('a load that started earlier and finishes later does not overwrite a newer one', async () => {
+		const zh = workspace(1, 'zh');
+		const ja = workspace(2, 'ja');
+		let releaseFirst!: (r: Response) => void;
+		vi.mocked(fetch)
+			.mockImplementationOnce(() => new Promise<Response>((res) => (releaseFirst = res)))
+			.mockResolvedValueOnce(jsonResponse([zh, ja]));
+
+		const first = load();
+		await load();
+		select(2);
+		releaseFirst(jsonResponse([zh]));
+		await first;
+
+		expect(get(workspaces).current?.id).toBe(2);
+		expect(get(workspaces).list).toHaveLength(2);
+		expect(localStorage.getItem('qinqin.workspace')).toBe('2');
 	});
 
 	it('persists an explicit selection', () => {
@@ -247,5 +272,23 @@ describe('workspace store', () => {
 
 		expect(get(workspaces)).toEqual({ list: [zh], current: zh });
 		expect(localStorage.getItem('qinqin.session.1.2026-11-14')).toBe('1');
+	});
+
+	it('merges a settings patch through PUT and replaces the workspace in the store', async () => {
+		const zh = workspace(1, 'zh');
+		const ja = workspace(2, 'ja');
+		workspaces.set({ list: [zh, ja], current: ja });
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ ...ja, settings: { audioAutoplay: true } }));
+
+		const updated = await setSettings(2, { audioAutoplay: true });
+
+		const [url, init] = vi.mocked(fetch).mock.calls[0] as [string, RequestInit];
+		expect(url).toBe('/api/workspaces/2');
+		expect(init.method).toBe('PUT');
+		expect(JSON.parse(String(init.body))).toEqual({ settings: { audioAutoplay: true } });
+		expect(updated.settings).toEqual({ audioAutoplay: true });
+		expect(get(workspaces).current?.settings).toEqual({ audioAutoplay: true });
+		expect(get(workspaces).list[1].settings).toEqual({ audioAutoplay: true });
+		expect(get(workspaces).list[0]).toBe(zh);
 	});
 });

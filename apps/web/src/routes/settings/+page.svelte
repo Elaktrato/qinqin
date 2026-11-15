@@ -1,32 +1,44 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { APP_NAME } from '$lib/app';
 	import { ApiError, api } from '$lib/api/client';
-	import type { PluginInfo, Workspace } from '$lib/api/types';
+	import { getSchemes } from '$lib/api/schemes';
+	import type { Dictionary, PluginInfo, Scheme, Workspace } from '$lib/api/types';
+	import { coverage, dictionaryHint, levelsHint } from '$lib/coverage';
 	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { isCorePlugin } from '$lib/plugins';
+	import { isCorePlugin, webPlugins } from '$lib/plugins';
+	import { pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
+	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
+	import AiSettings from '$lib/settings/AiSettings.svelte';
+	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
+	import LanguageManager from '$lib/settings/LanguageManager.svelte';
+	import PackManager from '$lib/settings/PackManager.svelte';
+	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
+	import { user } from '$lib/auth';
 	import {
-		SETTINGS_TABS,
 		SETTINGS_TAB_LABELS,
 		parseSettingsTab,
 		settingsTabHref,
 		tabKeyTarget,
+		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
-	import { rename, workspaces } from '$lib/workspaces';
+	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 
 	interface PluginRow {
 		id: string;
 		name: string;
 		enabled: boolean;
 		order: number;
+		permissions: string;
+		notice: 'app-update' | 'legacy' | null;
 		saving: boolean;
 		saved: boolean;
 		error: string;
@@ -35,7 +47,9 @@
 	// The open tab lives in the URL (`?tab=`), so it can be linked to;
 	// switching replaces the history entry instead of adding one. The
 	// panels stay mounted (only hidden), so drafts survive a tab switch.
-	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab')));
+	const admin = $derived($user?.admin === true);
+	const tabs = $derived(visibleSettingsTabs(admin));
+	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab'), admin));
 	const tabButtons: Partial<Record<SettingsTab, HTMLButtonElement>> = {};
 
 	async function selectTab(tab: SettingsTab, focus = false): Promise<void> {
@@ -49,10 +63,10 @@
 	}
 
 	function tabKey(event: KeyboardEvent, index: number): void {
-		const next = tabKeyTarget(event.key, index, SETTINGS_TABS.length);
+		const next = tabKeyTarget(event.key, index, tabs.length);
 		if (next === null) return;
 		event.preventDefault();
-		void selectTab(SETTINGS_TABS[next], true);
+		void selectTab(tabs[next], true);
 	}
 
 	// The workspace being renamed (one at a time) and its draft name.
@@ -95,13 +109,15 @@
 		pluginsLoading = true;
 		pluginsError = '';
 		try {
-			const list = await api<PluginInfo[]>('/api/plugins');
-			// The core app's own registry row is not a switchable plugin.
-			plugins = list.filter((plugin) => !isCorePlugin(plugin.id)).map((plugin) => ({
+			const list = (await api<PluginInfo[]>('/api/plugins')).filter((p) => !isDataPackPlugin(p));
+			// The server flags the app's own surface-less built-ins (the core
+			// registry row); the id check keeps an older server working.
+			plugins = list.filter((plugin) => !plugin.hidden && !isCorePlugin(plugin.id)).map((plugin) => ({
 				id: plugin.id,
 				name: pluginName(plugin),
 				enabled: plugin.enabled,
 				order: plugin.order,
+				...pluginRowInfo(plugin, webPlugins),
 				saving: false,
 				saved: false,
 				error: ''
@@ -114,6 +130,38 @@
 	}
 
 	onMount(loadPlugins);
+
+	// Bumped when the Packs section changes, so Languages reloads.
+	let languagesKey = $state(0);
+
+	// Coverage hints and the Dictionaries panel read the installed
+	// dictionaries and level schemes once; a failure only drops the hints.
+	let allDictionaries = $state<Dictionary[] | null>(null);
+	let allSchemes = $state<Scheme[] | null>(null);
+	function loadCoverage(): void {
+		api<Dictionary[]>('/api/dictionaries', { auth: false }).then(
+			(list) => (allDictionaries = list),
+			() => {}
+		);
+		getSchemes().then(
+			(list) => (allSchemes = list),
+			() => {}
+		);
+	}
+	onMount(loadCoverage);
+	// The workspace whose Dictionaries panel is open, and its button.
+	let dictionariesOpenId = $state<number | null>(null);
+	const dictionaryButtons: Record<number, HTMLButtonElement | undefined> = {};
+
+	function coverageOf(workspace: Workspace) {
+		return coverage(workspace.language, allDictionaries ?? [], allSchemes ?? []);
+	}
+
+	async function closeDictionaries(id: number): Promise<void> {
+		dictionariesOpenId = null;
+		await tick();
+		dictionaryButtons[id]?.focus();
+	}
 
 	function startRename(workspace: Workspace): void {
 		renamingId = workspace.id;
@@ -150,7 +198,7 @@
 	}
 
 	async function savePlugin(row: PluginRow): Promise<void> {
-		if (row.saving) return;
+		if (row.saving || !validOrder(row.order)) return;
 
 		row.saving = true;
 		row.saved = false;
@@ -172,14 +220,14 @@
 </script>
 
 <svelte:head>
-	<title>{SETTINGS_TAB_LABELS[activeTab]} · Settings · {APP_NAME}</title>
+	<title>{pageTitle(SETTINGS_TAB_LABELS[activeTab], 'Settings')}</title>
 </svelte:head>
 
 <main class="settings">
 	<h1>Settings</h1>
 
 	<div class="tabs" role="tablist" aria-label="Settings">
-		{#each SETTINGS_TABS as tab, index (tab)}
+		{#each tabs as tab, index (tab)}
 			<button
 				type="button"
 				role="tab"
@@ -209,7 +257,20 @@
 			one.
 		</p>
 
-		{#if $workspaces.list.length === 0}
+		{#if $workspaces.list.length === 0 && !$workspacesLoaded && $workspacesLoadError}
+			<p class="error" role="alert">{$workspacesLoadError}</p>
+			<button
+				type="button"
+				onclick={() => {
+					workspacesLoadError.set('');
+					loadWorkspaces().catch((err) =>
+						workspacesLoadError.set(message(err, 'Could not load workspaces.'))
+					);
+				}}>Try again</button
+			>
+		{:else if $workspaces.list.length === 0 && !$workspacesLoaded}
+			<p class="hint" aria-live="polite">Loading workspaces…</p>
+		{:else if $workspaces.list.length === 0}
 			<p>No workspaces yet.</p>
 		{:else}
 			<ul class="workspaces">
@@ -248,6 +309,24 @@
 								{#if $workspaces.current?.id === workspace.id}
 									<span class="current">current</span>
 								{/if}
+								{#if allDictionaries !== null && coverageOf(workspace).dictionaries.length === 0}
+									<span class="chip" title={dictionaryHint(languageLabel(workspace.language), admin)}>No dictionary</span>
+								{/if}
+								{#if allSchemes !== null && coverageOf(workspace).levels === 0}
+									<span class="chip" title={levelsHint(languageLabel(workspace.language))}>No level lists</span>
+								{/if}
+								<button
+									type="button"
+									class="secondary dictionaries-button"
+									bind:this={dictionaryButtons[workspace.id]}
+									onclick={() => (dictionariesOpenId = dictionariesOpenId === workspace.id ? null : workspace.id)}
+									aria-expanded={dictionariesOpenId === workspace.id}
+									aria-label="Dictionaries of {languageLabel(workspace.language)}{workspace.name
+										? ` (${workspace.name})`
+										: ''} workspace"
+								>
+									Dictionaries
+								</button>
 								<button
 									type="button"
 									class="secondary rename-button"
@@ -272,6 +351,14 @@
 									</button>
 								{/if}
 							</div>
+							{#if dictionariesOpenId === workspace.id}
+								<WorkspaceDictionaries
+									{workspace}
+									dictionaries={coverageOf(workspace).dictionaries}
+									{admin}
+									onclose={() => closeDictionaries(workspace.id)}
+								/>
+							{/if}
 						{/if}
 					</li>
 				{/each}
@@ -283,6 +370,21 @@
 
 		{#if deleting}
 			<DeleteWorkspaceDialog workspace={deleting} list={$workspaces.list} onclose={closeDelete} />
+		{/if}
+
+		{#if $workspaces.current}
+			{@const active = $workspaces.current}
+			<h3>Audio for this workspace</h3>
+			<p class="hint">
+				Pronunciation buttons appear on entries and, after the answer, on study cards. These two
+				options belong to the current workspace.
+			</p>
+			<AudioSettings
+				settings={active.settings}
+				onChange={async (patch) => {
+					await setWorkspaceSettings(active.id, patch);
+				}}
+			/>
 		{/if}
 
 		<h3>New workspace</h3>
@@ -324,7 +426,15 @@
 						<div class="plugin-head">
 							<strong>{plugin.name}</strong>
 							<code>{plugin.id}</code>
+							{#if plugin.notice === 'app-update'}
+								<span class="needs-update">Needs an app update</span>
+							{:else if plugin.notice === 'legacy'}
+								<span class="needs-update">Plugin has no SDK declaration (legacy)</span>
+							{/if}
 						</div>
+						{#if plugin.permissions}
+							<p class="plugin-permissions"><span class="plugin-permissions-label">Permissions:</span> {plugin.permissions}</p>
+						{/if}
 
 						<div class="plugin-controls">
 							<label class="inline">
@@ -347,9 +457,16 @@
 								/>
 							</label>
 
-							<button type="button" onclick={() => savePlugin(plugin)} disabled={plugin.saving}>
+							<button
+								type="button"
+								onclick={() => savePlugin(plugin)}
+								disabled={plugin.saving || !validOrder(plugin.order)}
+							>
 								{plugin.saving ? 'Saving…' : 'Save'}
 							</button>
+							{#if !validOrder(plugin.order)}
+								<span class="error" role="alert">Enter a whole number of 0 or more.</span>
+							{/if}
 
 							{#if plugin.saved}
 								<span class="saved">Saved</span>
@@ -364,6 +481,33 @@
 			</ul>
 		{/if}
 	</div>
+
+	<div
+		role="tabpanel"
+		id="settings-panel-ai"
+		aria-labelledby="settings-tab-ai"
+		hidden={activeTab !== 'ai'}
+	>
+		<AiSettings />
+	</div>
+
+	{#if admin}
+		<div
+			role="tabpanel"
+			id="settings-panel-data"
+			aria-labelledby="settings-tab-data"
+			hidden={activeTab !== 'data'}
+		>
+			<h2>Data</h2>
+			<PackManager
+				onchange={() => {
+					languagesKey += 1;
+					loadCoverage();
+				}}
+			/>
+			<LanguageManager refreshKey={languagesKey} />
+		</div>
+	{/if}
 </main>
 
 <style>
@@ -495,7 +639,34 @@
 		border: 0;
 	}
 
+	.chip {
+		font-size: 0.8rem;
+		border-radius: 999px;
+		padding: 0.05rem 0.5rem;
+		background: color-mix(in srgb, currentColor 12%, transparent);
+	}
+
+	.dictionaries-button {
+		min-height: 44px;
+	}
+
 	.current {
+		font-size: 0.8rem;
+		border: 1px solid currentColor;
+		border-radius: 999px;
+		padding: 0.05rem 0.5rem;
+	}
+
+	.plugin-permissions {
+		margin: 0.25rem 0 0;
+		font-size: 0.9rem;
+	}
+
+	.plugin-permissions-label {
+		font-weight: 600;
+	}
+
+	.needs-update {
 		font-size: 0.8rem;
 		border: 1px solid currentColor;
 		border-radius: 999px;

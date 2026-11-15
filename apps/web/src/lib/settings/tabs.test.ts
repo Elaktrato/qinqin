@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { SETTINGS_TABS, parseSettingsTab, settingsTabHref, tabKeyTarget } from './tabs';
+import {
+	SETTINGS_TABS,
+	SETTINGS_TAB_LABELS,
+	parseSettingsTab,
+	settingsTabHref,
+	tabKeyTarget,
+	visibleSettingsTabs
+} from './tabs';
 
 describe('parseSettingsTab', () => {
 	it('defaults to workspaces', () => {
@@ -7,8 +14,20 @@ describe('parseSettingsTab', () => {
 		expect(parseSettingsTab('')).toBe('workspaces');
 	});
 
-	it('accepts every tab id', () => {
-		for (const tab of SETTINGS_TABS) expect(parseSettingsTab(tab)).toBe(tab);
+	it('knows the AI tab', () => {
+		expect(parseSettingsTab('ai')).toBe('ai');
+		expect(SETTINGS_TAB_LABELS.ai).toBe('AI');
+	});
+
+	it('accepts every tab id for an admin', () => {
+		for (const tab of SETTINGS_TABS) expect(parseSettingsTab(tab, true)).toBe(tab);
+	});
+
+	it('hides the Data tab from everyone else', () => {
+		expect(parseSettingsTab('data', false)).toBe('workspaces');
+		expect(parseSettingsTab('data')).toBe('workspaces');
+		expect(parseSettingsTab('data', true)).toBe('data');
+		expect(SETTINGS_TAB_LABELS.data).toBe('Data');
 	});
 
 	it('falls back for unknown values', () => {
@@ -23,6 +42,8 @@ describe('settingsTabHref', () => {
 		expect(settingsTabHref('workspaces')).toBe('/settings');
 		expect(settingsTabHref('home')).toBe('/settings?tab=home');
 		expect(settingsTabHref('plugins')).toBe('/settings?tab=plugins');
+		expect(settingsTabHref('ai')).toBe('/settings?tab=ai');
+		expect(settingsTabHref('data')).toBe('/settings?tab=data');
 	});
 });
 
@@ -43,5 +64,14 @@ describe('tabKeyTarget', () => {
 		expect(tabKeyTarget('Enter', 1, 3)).toBeNull();
 		expect(tabKeyTarget('ArrowDown', 1, 3)).toBeNull();
 		expect(tabKeyTarget('a', 1, 3)).toBeNull();
+	});
+});
+
+describe('visibleSettingsTabs', () => {
+	it('shows the Data tab to admins only, last', () => {
+		expect(visibleSettingsTabs(false)).not.toContain('data');
+		const admin = visibleSettingsTabs(true);
+		expect(admin[admin.length - 1]).toBe('data');
+		expect(admin).toEqual(SETTINGS_TABS);
 	});
 });

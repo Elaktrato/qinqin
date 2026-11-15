@@ -13,8 +13,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"slices"
 	"sort"
-	"strings"
 	"time"
 
 	"qinqin/internal/model"
@@ -24,9 +25,12 @@ import (
 // never stored, or one already tombstoned.
 var ErrNotFound = errors.New("plugins: not found")
 
-// ErrInvalidManifest reports a feature-plugin manifest that is not a
-// JSON object carrying a non-empty id.
-var ErrInvalidManifest = errors.New(`plugins: manifest must be a JSON object with a non-empty "id"`)
+// ErrInvalidManifest reports a feature-plugin manifest that fails the
+// contract (see ParseManifest).
+var ErrInvalidManifest = errors.New("plugins: invalid manifest")
+
+// ErrBuiltinID reports a registration under the id of a built-in plugin.
+var ErrBuiltinID = errors.New("plugins: id belongs to a built-in plugin")
 
 // dataManifest is the manifest of a data plugin as ListFor serves it,
 // synthesized from the pack registry row its import left: the fields
@@ -41,15 +45,121 @@ type dataManifest struct {
 	Attribution string `json:"attribution,omitempty"`
 }
 
-// Register upserts a feature-plugin manifest into the registry, keyed
-// by the manifest's id; re-registering an id replaces its manifest.
-// The manifest is stored verbatim — only its id is read here.
+// Register validates a feature-plugin manifest against the SDK
+// contract (ParseManifest) and upserts it into the registry, keyed by
+// the manifest's id; re-registering an id replaces its manifest. An
+// event type already owned by another registered plugin is refused.
+// The manifest is stored verbatim. Registry rows that do not parse
+// (admin-registered before the contract) are ignored for ownership.
 func Register(ctx context.Context, sqlDB *sql.DB, manifestJSON []byte) error {
-	id, err := manifestID(manifestJSON)
+	m, err := ParseManifest(manifestJSON)
 	if err != nil {
 		return err
 	}
-	if _, err := sqlDB.ExecContext(ctx, `
+	if slices.Contains(BuiltinIDs(), m.ID) {
+		return fmt.Errorf("%w: %q is reserved", ErrBuiltinID, m.ID)
+	}
+	// BEGIN IMMEDIATE takes the write lock before the ownership read, so
+	// two concurrent registrations serialize (the busy timeout makes the
+	// second wait) and the loser sees the winner's event types.
+	tx, err := beginImmediate(ctx, sqlDB)
+	if err != nil {
+		return fmt.Errorf("plugins: register %s: %w", m.ID, err)
+	}
+	defer tx.rollback()
+	owners, err := eventOwners(ctx, tx.conn, m.ID)
+	if err != nil {
+		return err
+	}
+	for _, e := range m.Events {
+		if owner, ok := owners[e.Type]; ok {
+			return fmt.Errorf("%w: event type %q is already owned by %s", ErrInvalidManifest, e.Type, owner)
+		}
+	}
+	if err := upsert(ctx, tx.conn, m.ID, manifestJSON); err != nil {
+		return err
+	}
+	if err := tx.commit(ctx); err != nil {
+		return fmt.Errorf("plugins: register %s: %w", m.ID, err)
+	}
+	return nil
+}
+
+// querier is what the registry helpers need of a connection.
+type querier interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+// immediateTx is a SQLite transaction started with BEGIN IMMEDIATE on a
+// dedicated connection.
+type immediateTx struct {
+	conn *sql.Conn
+	done bool
+}
+
+func beginImmediate(ctx context.Context, sqlDB *sql.DB) (*immediateTx, error) {
+	conn, err := sqlDB.Conn(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := conn.ExecContext(ctx, "BEGIN IMMEDIATE"); err != nil {
+		_ = conn.Close()
+		return nil, err
+	}
+	return &immediateTx{conn: conn}, nil
+}
+
+func (t *immediateTx) commit(ctx context.Context) error {
+	if _, err := t.conn.ExecContext(ctx, "COMMIT"); err != nil {
+		return err
+	}
+	t.done = true
+	return nil
+}
+
+// rollback undoes an uncommitted transaction and releases the connection.
+func (t *immediateTx) rollback() {
+	if !t.done {
+		_, _ = t.conn.ExecContext(context.Background(), "ROLLBACK")
+	}
+	_ = t.conn.Close()
+}
+
+// eventOwners maps every event type declared by a parsable registry
+// row other than selfID to the id of the plugin declaring it.
+func eventOwners(ctx context.Context, tx querier, selfID string) (map[string]string, error) {
+	rows, err := tx.QueryContext(ctx, `
+		SELECT pack_id, manifest_json FROM plugin_registry WHERE pack_id <> ? ORDER BY pack_id`, selfID)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	defer rows.Close()
+	owners := map[string]string{}
+	for rows.Next() {
+		var id, raw string
+		if err := rows.Scan(&id, &raw); err != nil {
+			return nil, fmt.Errorf("plugins: scan registry: %w", err)
+		}
+		other, err := ParseManifest([]byte(raw))
+		if err != nil {
+			continue
+		}
+		for _, e := range other.Events {
+			if _, taken := owners[e.Type]; !taken {
+				owners[e.Type] = id
+			}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	return owners, nil
+}
+
+// upsert stores one manifest row verbatim.
+func upsert(ctx context.Context, tx querier, id string, manifestJSON []byte) error {
+	if _, err := tx.ExecContext(ctx, `
 		INSERT INTO plugin_registry (pack_id, manifest_json, updated_at)
 		VALUES (?, ?, ?)
 		ON CONFLICT (pack_id) DO UPDATE SET
@@ -59,22 +169,6 @@ func Register(ctx context.Context, sqlDB *sql.DB, manifestJSON []byte) error {
 		return fmt.Errorf("plugins: register %s: %w", id, err)
 	}
 	return nil
-}
-
-// manifestID extracts the id a manifest keys on: the manifest must be
-// a JSON object with a non-empty id.
-func manifestID(manifestJSON []byte) (string, error) {
-	var m struct {
-		ID string `json:"id"`
-	}
-	if err := json.Unmarshal(manifestJSON, &m); err != nil {
-		return "", fmt.Errorf("%w: %v", ErrInvalidManifest, err)
-	}
-	id := strings.TrimSpace(m.ID)
-	if id == "" {
-		return "", ErrInvalidManifest
-	}
-	return id, nil
 }
 
 // Unregister removes a feature plugin from the registry together with
@@ -114,7 +208,7 @@ func Unregister(ctx context.Context, sqlDB *sql.DB, pluginID string) error {
 func ListFor(ctx context.Context, sqlDB *sql.DB, userID int64) ([]model.PluginInfo, error) {
 	list := make([]model.PluginInfo, 0)
 	for _, load := range []func(context.Context, *sql.DB) ([]model.PluginInfo, error){
-		featurePlugins, dictionaryPlugins, schemePlugins, frequencyPlugins, sentencePlugins,
+		featurePlugins, dictionaryPlugins, schemePlugins, frequencyPlugins, sentencePlugins, grammarPlugins, audioPlugins,
 	} {
 		found, err := load(ctx, sqlDB)
 		if err != nil {
@@ -161,14 +255,34 @@ func featurePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, err
 		if err := rows.Scan(&info.ID, &manifest); err != nil {
 			return nil, fmt.Errorf("plugins: scan feature plugin: %w", err)
 		}
+		if !json.Valid([]byte(manifest)) {
+			// A row that is not JSON would make the whole listing fail to
+			// marshal; skip it rather than lock everyone out of Settings.
+			log.Printf("plugins: skipping registry row %q: manifest is not valid JSON", info.ID)
+			continue
+		}
 		info.Manifest = json.RawMessage(manifest)
 		info.Enabled = true
+		info.Hidden = isHiddenBuiltin(info.ID, manifest)
 		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read feature plugins: %w", err)
 	}
 	return list, nil
+}
+
+// isHiddenBuiltin reports whether a registry row is one of the built-in
+// plugins and declares no surface: nothing a user can switch or visit.
+// Admin-registered plugins are never hidden, whatever they declare.
+func isHiddenBuiltin(id, manifest string) bool {
+	if !slices.Contains(BuiltinIDs(), id) {
+		return false
+	}
+	var m struct {
+		Surfaces []string `json:"surfaces"`
+	}
+	return json.Unmarshal([]byte(manifest), &m) == nil && len(m.Surfaces) == 0
 }
 
 // dictionaryPlugins lists the dictionary packs, active only — an
@@ -190,7 +304,11 @@ func dictionaryPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, 
 			return nil, fmt.Errorf("plugins: scan dictionary: %w", err)
 		}
 		m.Type = "dictionary"
-		list = append(list, dataPlugin(m))
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read dictionaries: %w", err)
@@ -215,7 +333,11 @@ func schemePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, erro
 			return nil, fmt.Errorf("plugins: scan scheme: %w", err)
 		}
 		m.Type = "levels"
-		list = append(list, dataPlugin(m))
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read schemes: %w", err)
@@ -240,7 +362,11 @@ func frequencyPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, e
 			return nil, fmt.Errorf("plugins: scan frequency pack: %w", err)
 		}
 		m.Type = "frequency"
-		list = append(list, dataPlugin(m))
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read frequency packs: %w", err)
@@ -265,7 +391,11 @@ func sentencePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, er
 		if err := rows.Scan(&pack); err != nil {
 			return nil, fmt.Errorf("plugins: scan sentence pack: %w", err)
 		}
-		list = append(list, dataPlugin(dataManifest{ID: pack, Type: "sentences"}))
+		info, err := dataPlugin(dataManifest{ID: pack, Type: "sentences"})
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read sentence packs: %w", err)
@@ -273,20 +403,81 @@ func sentencePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, er
 	return list, nil
 }
 
+// grammarPlugins lists the grammar packs, active only.
+func grammarPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT pack_id, name, version, language, license, attribution
+		FROM grammar_packs WHERE deleted_at IS NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read grammar packs: %w", err)
+	}
+	defer rows.Close()
+
+	list := make([]model.PluginInfo, 0)
+	for rows.Next() {
+		var m dataManifest
+		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
+			return nil, fmt.Errorf("plugins: scan grammar pack: %w", err)
+		}
+		m.Type = "grammar"
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read grammar packs: %w", err)
+	}
+	return list, nil
+}
+
+// audioPlugins lists the audio packs, active only.
+func audioPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
+	rows, err := sqlDB.QueryContext(ctx, `
+		SELECT pack_id, name, version, language, license, attribution
+		FROM audio_packs WHERE deleted_at IS NULL`)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read audio packs: %w", err)
+	}
+	defer rows.Close()
+
+	list := make([]model.PluginInfo, 0)
+	for rows.Next() {
+		var m dataManifest
+		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
+			return nil, fmt.Errorf("plugins: scan audio pack: %w", err)
+		}
+		m.Type = "audio"
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read audio packs: %w", err)
+	}
+	return list, nil
+}
+
 // dataPlugin turns one data-plugin manifest into its listed form:
 // enabled by default, ordered 0 until the user moves it.
-func dataPlugin(m dataManifest) model.PluginInfo {
-	manifest, err := json.Marshal(m)
+func dataPlugin(m dataManifest) (model.PluginInfo, error) {
+	manifest, err := marshalManifest(m)
 	if err != nil {
-		// dataManifest is a struct of strings; marshaling it cannot fail.
-		panic(fmt.Sprintf("plugins: marshal data manifest: %v", err))
+		return model.PluginInfo{}, fmt.Errorf("plugins: marshal data manifest %s: %w", m.ID, err)
 	}
 	return model.PluginInfo{
 		ID:       m.ID,
 		Manifest: manifest,
 		Enabled:  true,
-	}
+	}, nil
 }
+
+// marshalManifest encodes a data manifest; a variable only so a test can
+// make the (practically unreachable) failure happen.
+var marshalManifest = func(v any) ([]byte, error) { return json.Marshal(v) }
 
 // statesFor returns the user's plugin states keyed by plugin id.
 func statesFor(ctx context.Context, sqlDB *sql.DB, userID int64) (map[string]model.PluginState, error) {
@@ -317,7 +508,7 @@ func statesFor(ctx context.Context, sqlDB *sql.DB, userID int64) (map[string]mod
 
 // Exists reports whether pluginID names a plugin the user can have
 // state or data under: a registered feature plugin or an active data
-// plugin (dictionary, levels scheme, frequency pack, or sentences pack).
+// plugin (dictionary, levels scheme, frequency pack, sentences pack, grammar pack, or audio pack).
 func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 	var one int
 	err := sqlDB.QueryRowContext(ctx, `
@@ -330,7 +521,11 @@ func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 		SELECT 1 FROM frequency_packs WHERE pack_id = ? AND deleted_at IS NULL
 		UNION ALL
 		SELECT 1 FROM sentences WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL
-		LIMIT 1`, pluginID, pluginID, pluginID, pluginID, pluginID).Scan(&one)
+		UNION ALL
+		SELECT 1 FROM grammar_packs WHERE pack_id = ? AND deleted_at IS NULL
+		UNION ALL
+		SELECT 1 FROM audio_packs WHERE pack_id = ? AND deleted_at IS NULL
+		LIMIT 1`, pluginID, pluginID, pluginID, pluginID, pluginID, pluginID, pluginID).Scan(&one)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
@@ -340,27 +535,103 @@ func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
 	return true, nil
 }
 
+// UnparsableRows lists, by id, the registry rows whose manifest no
+// longer passes ParseManifest (rows registered before the contract, or
+// with a malformed activity rule). Such a row is still writable
+// (CanWriteData allows it as before) but does not take part in event
+// ownership or activity rules; startup logs them so an operator can
+// re-register or remove them.
+func UnparsableRows(ctx context.Context, sqlDB *sql.DB) ([]string, error) {
+	rows, err := sqlDB.QueryContext(ctx, `SELECT pack_id, manifest_json FROM plugin_registry ORDER BY pack_id`)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	defer rows.Close()
+	ids := []string{}
+	for rows.Next() {
+		var id, raw string
+		if err := rows.Scan(&id, &raw); err != nil {
+			return nil, fmt.Errorf("plugins: scan registry: %w", err)
+		}
+		if _, err := ParseManifest([]byte(raw)); err != nil {
+			ids = append(ids, id)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: read registry: %w", err)
+	}
+	return ids, nil
+}
+
+// CanWriteData reports whether pluginID exists and whether its data may
+// be written (PUT/DELETE of plugin data, sync push). Data plugins and
+// registry rows that predate the contract (no sdk, or a manifest that
+// does not parse) are allowed as before; a row that parses as an sdk
+// manifest is allowed only when it declares owns-data. An unknown
+// plugin is (false, false).
+func CanWriteData(ctx context.Context, sqlDB *sql.DB, pluginID string) (exists, allowed bool, err error) {
+	var raw string
+	err = sqlDB.QueryRowContext(ctx, `SELECT manifest_json FROM plugin_registry WHERE pack_id = ?`, pluginID).Scan(&raw)
+	if err == nil {
+		m, perr := ParseManifest([]byte(raw))
+		if perr != nil {
+			return true, true, nil
+		}
+		return true, m.Has("owns-data"), nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return false, false, fmt.Errorf("plugins: check plugin %s: %w", pluginID, err)
+	}
+	exists, err = Exists(ctx, sqlDB, pluginID)
+	if err != nil {
+		return false, false, err
+	}
+	return exists, exists, nil
+}
+
 // SetState upserts the user's state for one plugin: whether it is
 // enabled and its position in the Plugins list (also the order of the
 // nav links). The home layout is the per-user widget layout in the
 // qinqin-core plugin data, not this order.
 func SetState(ctx context.Context, sqlDB *sql.DB, userID int64, pluginID string, enabled bool, order int) error {
+	_, err := SetStateRow(ctx, sqlDB, userID, pluginID, enabled, order)
+	return err
+}
+
+// SetStateRow is SetState returning the stored state, so a response
+// carries exactly what the row holds (updated_at is second-truncated).
+func SetStateRow(ctx context.Context, sqlDB *sql.DB, userID int64, pluginID string, enabled bool, order int) (model.PluginState, error) {
 	enabledInt := 0
 	if enabled {
 		enabledInt = 1
 	}
-	if _, err := sqlDB.ExecContext(ctx, `
+	var updated string
+	if err := sqlDB.QueryRowContext(ctx, `
 		INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at)
 		VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT (pack_id, user_id) DO UPDATE SET
 			enabled = excluded.enabled,
 			ord = excluded.ord,
-			updated_at = excluded.updated_at`,
-		userID, pluginID, enabledInt, order, now()); err != nil {
-		return fmt.Errorf("plugins: set state of %s for user %d: %w", pluginID, userID, err)
+			updated_at = excluded.updated_at
+		RETURNING updated_at`,
+		userID, pluginID, enabledInt, order, now()).Scan(&updated); err != nil {
+		return model.PluginState{}, fmt.Errorf("plugins: set state of %s for user %d: %w", pluginID, userID, err)
 	}
-	return nil
+	at, err := time.Parse(time.RFC3339, updated)
+	if err != nil {
+		return model.PluginState{}, fmt.Errorf("plugins: parse updated_at %q of state %s: %w", updated, pluginID, err)
+	}
+	return model.PluginState{PluginID: pluginID, UserID: userID, Enabled: enabled, Order: order, UpdatedAt: at}, nil
 }
+
+// NoWorkspace is the value the plugin_data unique key (idx_plugin_data_key,
+// migration 010) gives a NULL workspace_id: IFNULL(workspace_id, 0). It is
+// why no real workspace id may be 0 (PutDataRow refuses ids below 1), and
+// why queries that must hit that index spell the same literal.
+const NoWorkspace = 0
+
+// UniqueKeyWorkspace is the index expression, built from NoWorkspace.
+var UniqueKeyWorkspace = fmt.Sprintf("IFNULL(workspace_id, %d)", NoWorkspace)
 
 // dataSelect is the shared column list of the plugin_data reads.
 const dataSelect = `
@@ -380,34 +651,48 @@ func PutData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int6
 // compares — while updated_at still takes the server's write stamp. The
 // zero time means "now". Callers clamp modifiedAt to the server clock.
 func PutDataAt(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, key string, val json.RawMessage, modifiedAt time.Time) (int, error) {
+	row, err := PutDataRow(ctx, sqlDB, userID, workspaceID, pluginID, key, val, &modifiedAt)
+	if err != nil {
+		return 0, err
+	}
+	return row.Version, nil
+}
+
+// PutDataRow is PutDataAt returning the row this very statement wrote,
+// so a response never shows a later concurrent write. A nil modifiedAt
+// (or the zero time) means "now".
+func PutDataRow(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, key string, val json.RawMessage, modifiedAt *time.Time) (*model.PluginData, error) {
 	stamp := now()
 	modified := stamp
-	if !modifiedAt.IsZero() {
+	if modifiedAt != nil && !modifiedAt.IsZero() {
 		modified = modifiedAt.UTC().Format(time.RFC3339)
 	}
 	var workspace any
 	if workspaceID != nil {
+		if *workspaceID <= NoWorkspace {
+			// The unique key stores a NULL workspace as NoWorkspace, so that is no workspace id.
+			return nil, fmt.Errorf("plugins: put data %s/%s: invalid workspace id %d", pluginID, key, *workspaceID)
+		}
 		workspace = *workspaceID
 	}
-	var version int
-	// The conflict target coalesces a NULL workspace to 0, matching the
-	// table's unique key: the user-global row and every workspace's row
-	// are distinct rows for the same key.
-	err := sqlDB.QueryRowContext(ctx, `
+	// The conflict target coalesces a NULL workspace to NoWorkspace
+	// (0, see the idx_plugin_data_key unique index): the user-global row
+	// and every workspace's row are distinct rows for the same key.
+	d, err := scanData(sqlDB.QueryRowContext(ctx, `
 		INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
 		VALUES (?, ?, ?, ?, ?, 1, ?, ?)
-		ON CONFLICT (pack_id, user_id, IFNULL(workspace_id, 0), key) DO UPDATE SET
+		ON CONFLICT (pack_id, user_id, `+UniqueKeyWorkspace+`, key) DO UPDATE SET
 			data = excluded.data,
 			version = plugin_data.version + 1,
 			updated_at = excluded.updated_at,
 			modified_at = excluded.modified_at,
 			deleted_at = NULL
-		RETURNING version`,
-		pluginID, userID, workspace, key, dataOf(val), stamp, modified).Scan(&version)
+		RETURNING pack_id, user_id, workspace_id, key, data, version, updated_at, deleted_at`,
+		pluginID, userID, workspace, key, dataOf(val), stamp, modified))
 	if err != nil {
-		return 0, fmt.Errorf("plugins: put data %s/%s for user %d: %w", pluginID, key, userID, err)
+		return nil, fmt.Errorf("plugins: put data %s/%s for user %d: %w", pluginID, key, userID, err)
 	}
-	return version, nil
+	return d, nil
 }
 
 // GetData returns the user's stored value for one key of one plugin,
@@ -432,6 +717,40 @@ func GetData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int6
 		return nil, fmt.Errorf("plugins: get data %s/%s for user %d: %w", pluginID, key, userID, err)
 	}
 	return d, nil
+}
+
+// ListData returns the user's live rows of one plugin whose key starts with
+// prefix, ordered by key. A nil workspaceID lists the user-global rows only;
+// otherwise only that workspace's. Tombstones are left out. The prefix is
+// compared literally (no LIKE wildcards), and the result is never nil.
+func ListData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, prefix string) ([]model.PluginData, error) {
+	query := dataSelect + `
+		WHERE pack_id = ? AND user_id = ? AND deleted_at IS NULL AND substr(key, 1, ?) = ?`
+	args := []any{pluginID, userID, len([]rune(prefix)), prefix}
+	if workspaceID == nil {
+		query += ` AND workspace_id IS NULL`
+	} else {
+		query += ` AND workspace_id = ?`
+		args = append(args, *workspaceID)
+	}
+	rows, err := sqlDB.QueryContext(ctx, query+` ORDER BY key ASC`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("plugins: list data %s for user %d: %w", pluginID, userID, err)
+	}
+	defer rows.Close()
+
+	list := make([]model.PluginData, 0)
+	for rows.Next() {
+		d, err := scanData(rows)
+		if err != nil {
+			return nil, fmt.Errorf("plugins: scan data %s for user %d: %w", pluginID, userID, err)
+		}
+		list = append(list, *d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("plugins: list data %s for user %d: %w", pluginID, userID, err)
+	}
+	return list, nil
 }
 
 // PullData returns the user's plugin data rows changed since since

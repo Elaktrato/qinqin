@@ -10,12 +10,12 @@ Manifest fields:
 | Field | Required | Meaning |
 |---|---|---|
 | `id`, `name`, `version` | yes | identity of the pack |
-| `type` | yes | `dictionary`, `levels`, `sentences` or `frequency` |
+| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency` or `grammar` |
 | `language` | yes | language tag (`ja`, `zh`, `es`, ...) |
 | `format` | yes | how the data file is read |
 | `license` | yes | the licence as the publisher states it |
 | `attribution` | yes | who made it, with a link where there is one |
-| `notice` | no | longer caveats shown on the Sources page, for dictionary, frequency and levels packs: plain text, paragraphs separated by a blank line, links only as `[text](https://…)` (https only), no bidi embedding, override or isolate characters, at most 4,000 bytes. The server rejects a pack whose notice breaks these rules, and `node scripts/check-sources.mjs` checks the committed manifests. A sentences pack's notice is validated the same way but not stored or shown anywhere: put sentence-source caveats in its `attribution` or `ATTRIBUTION.md` |
+| `notice` | no | longer caveats shown on the Sources page, for dictionary, frequency, levels and sentences packs: plain text, paragraphs separated by a blank line, links only as `[text](https://…)` (https only), no bidi embedding, override or isolate characters, at most 4,000 bytes. The server rejects a pack whose notice breaks these rules, and `node scripts/check-sources.mjs` checks the committed manifests. A sentences pack's notice is validated the same way, stored with the pack's registry row (migration 027) and shown in the Sources page's Sentences section |
 
 `license` and `attribution` are checked for every pack here and in
 `plugins/samples/`, and every pack in this directory must be named in
@@ -24,11 +24,41 @@ Manifest fields:
 `qinqin serve` logs a warning for each installed pack whose stored licence,
 attribution or notice differs from its manifest.
 
+## Installing from the web app
+
+An admin can add and remove packs of every type in **Settings → Data**
+without the seed CLI: choose a pack zip and upload it, check the review
+card (the manifest exactly as the server parsed it, including the licence
+and attribution the pack states, and what it replaces), tick the licence
+confirmation and install. The licence is always shown "as stated by the
+pack"; qinqin does not check it, and a caution line only flags licence
+words that suggest restricted use. Uninstalling removes a pack's data from
+lookups; the files under `<data>/packs/` stay.
+
+The zip holds `manifest.json` and the pack's data files at its top, or in
+one folder (what "Compress folder" produces). Limits: 128 MiB per upload,
+2,000 files and 512 MiB unpacked, three unfinished uploads (uploading, awaiting
+confirmation or importing) at a time, each staged pack discarded after 30
+minutes; larger packs install with `qinqin seed` from a
+directory. A reverse proxy in front of qinqin may cap request bodies lower
+(nginx defaults to 1 MiB: raise `client_max_body_size`) and time out a long
+import; the import itself keeps running on the server, and the list shows
+the pack once it is done.
+
 Committed (small, hand-written, CC0 — a sample):
 
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
-| `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack) |
+| `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack); install it from Settings → Data to try a data-only language |
+| `zh-grammar-demo` | grammar | zh | ten A1 lessons with 40 exercises, written for qinqin, CC0; demo content not reviewed by a native speaker |
+
+Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",
+"name", "schemeLevels": [{"scheme": "<levels pack id>", "level": "<level name>"}]}],
+"lessons": [{"id", "level", "title", "summary", "pattern": [...], "body": [...],
+"examples": [{"id", "text", "reading", "translation", "focus", "distractors": [...]}]}]}`.
+Lesson text is plain text. `focus` (a part of `text`) and at least two
+`distractors` that are wrong in that sentence give a fill-the-gap exercise.
+The full limits are enforced by `server/internal/grammar/schema.go`.
 
 The other hand-written samples live in `plugins/samples/`, outside the default
 seed root. The DICTIONARIES `zh-mini` (pinyin → bopomofo, traditional
@@ -62,6 +92,8 @@ KANJIDIC2 licence as `LICENSE-KANJIDIC2`):
 |------|------|----------|--------|----------|---------|
 | `hsk-chars` | levels | zh | HSK 3.0 (characters) | the official HSK character list, unit `character`: the characters to recognise (认读字) per level, HSK 1 246, HSK 2 125, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413, HSK 7–9 1,148 (3,088, none repeated; the 1,200 characters to write, 书写字, assign no level) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
 | `hsk-words` | levels | zh | HSK 3.0 (words) | the official HSK word list, unit `word`, each entry with its pinyin as reading: HSK 1 300, HSK 2 198, HSK 3 497, HSK 4 997, HSK 5 1,591, HSK 6 1,792, HSK 7–9 5,584 (from the syllabus's 11,000 rows: 300/200/500/1,000/1,600/1,800/5,600; 41 homographs repeating an easier row's form and pinyin, 本1/本2 běn, are kept once) | no reuse licence granted (CTI Legal Notice: source must be indicated, reasonable good-faith quoting only); included with attribution at the project owner's decision; legal status not verified (no `LICENSE` file) |
+| `joyo-grades` | levels | ja | Jōyō kanji by school grade | the 2,136 jōyō kanji by KANJIDIC2 grade, unit `character`: Grade 1 80, Grade 2 160, Grade 3 200, Grade 4 202, Grade 5 193, Grade 6 191, Secondary 1,110; jinmeiyō excluded; derived by `scripts/prepare-standard-levels.mjs` (the map's Group-by hides it, the built-in Grade covers it) | CC BY-SA 4.0, EDRDG (derived) |
+| `tgh-chars` | levels | zh | 通用规范汉字表 (2013) levels | the 8,105 characters of the State Council table by `kTGH` serial, unit `character`: Level 1 3,500, Level 2 3,000, Level 3 1,605; derived by `scripts/prepare-standard-levels.mjs` | Unicode License v3 (derived from Unihan) |
 | `jlpt-kanji` | levels | ja | JLPT kanji (approximate) | kanji by approximate JLPT level, unit `character`: N5 80, N4 166, N3 377, N2 369, N1 1,395. Base: kanjiapi.dev `jlpt.tsv` (2,211 kanji, levels kept; provenance not stated upstream; unofficial, as every N5–N1 list is; its N1 holds 247 jinmeiyō name kanji). Gap fill: 176 kanji it omits (分 可 無 的 …) placed from KANJIDIC2's old JLPT level (19) or school grade (157), see `docs/sources.md` | MIT, © 2023 Iridium Szreter; derived levels CC BY-SA 4.0, EDRDG |
 
 Level pack format: `levels.json` is `{"unit": "word" | "character", "levels":
@@ -159,7 +191,7 @@ they agree with the levels derived from the words on all but 3 (店, 留, 饺).
 On the map, the word scheme shows the characters its words are written
 with, each at the lowest level of a word that uses it; a one-character word
 (好) links to the character entry, since CC-CEDICT gives single characters as
-characters. Against the bundled CC-CEDICT, 2 of the 10,959 forms do not
+characters. Against the bundled CC-CEDICT, 2 of the 10,959 listed forms (each unknown form is reported once) do not
 resolve and are skipped at seed time ("unknown forms skipped"): 精彩纷呈 and
 口哨儿 (HSK 7–9); the words' 3,088 distinct characters all resolve (HSK 1 248,
 HSK 2 123, HSK 3 284, HSK 4 441, HSK 5 431, HSK 6 413, HSK 7–9 1,148, each at
@@ -169,6 +201,9 @@ The older ivankra/hsk30 packs (`hsk30-chars`, `hsk30-words`), which
 `scripts/prepare-level-packs.mjs --hsk` can still generate into the
 gitignored `plugins/data-local/`, are superseded by the official word and
 character lists.
+
+`scripts/prepare-standard-levels.mjs` rebuilds `joyo-grades` and `tgh-chars` byte for byte
+from the bundled `kanjidic2` and `unihan` packs alone (no network).
 
 `scripts/prepare-level-packs.mjs <upstream-dir>` rebuilds the `jlpt-kanji`
 directory byte for byte from the pinned kanjiapi.dev files (the download
@@ -212,3 +247,10 @@ counted; a file where more than 5% of entry lines are malformed is rejected as
 the wrong file. Pinyin that cannot be converted is kept as written and counted
 (no bopomofo is derived for it). Homograph lines for one written form
 (行 xíng / háng) merge into one entry with all their readings and senses.
+Comment lines may be indented. Only a Han character is a `character` entry:
+CC-CEDICT's single Latin letters and symbols (A, B, P, Q, T, w, □, ○ ...) import
+as words, so a database seeded before this rule keeps them as characters until
+they are removed (uninstall the dictionary, or delete the nine entries by hand);
+a re-import writes the words next to them.
+The pinyin plain form now also folds the syllabic nasals and ê (ń, ǹg, ế), so
+the stored search keys of such readings change: re-seed to refresh them.

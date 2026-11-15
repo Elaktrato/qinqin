@@ -30,6 +30,7 @@ seeds offline (`qinqin seed`):
 | **KANJIDIC2** (`kanjidic2`) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/wiki/index.php/KANJIDIC_Project |
 | **JMdict** (`jmdict`) | Japanese–English words and meanings; its priority and usually-kana tags rank homophones in the Reader | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/ |
 | **Jiten frequency list** (`jiten-frequency`) | Japanese word frequency ranks that order lookup results | CC BY-SA 4.0 (Jitensoft) | https://jiten.moe/frequency-dictionaries |
+| **Jōyō kanji by school grade** (`joyo-grades`), derived from KANJIDIC2 | The 2,136 jōyō kanji by school grade (Grade 1–6, Secondary) | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/wiki/index.php/KANJIDIC_Project |
 | **JLPT kanji (approximate)** (`jlpt-kanji`), from kanjiapi.dev and KANJIDIC2 | Kanji by approximate JLPT level N5–N1 | MIT (© 2023 Iridium Szreter); derived levels CC BY-SA 4.0 (EDRDG) | https://github.com/onlyskin/kanjiapi.dev |
 
 Optional, local only (not bundled): **JLPT vocabulary** (`jlpt-words`, from open-anki-jlpt-decks); see "Japanese" under "Level lists".
@@ -46,13 +47,16 @@ original to the project.
 |---|---|---|---|
 | **CC-CEDICT** (`cedict`) | Mandarin–English words and meanings | CC BY-SA 4.0 | https://cc-cedict.org |
 | **Unihan** (`unihan`) | Radical-stroke counts, simplified/traditional variant mappings, character definitions | Unicode License v3 | https://www.unicode.org/reports/tr38/ |
+| **通用规范汉字表 (2013) levels** (`tgh-chars`), derived from the `kTGH` field of Unihan | The 8,105 characters of the State Council's table in three levels (一级 3,500, 二级 3,000, 三级 1,605) | Unicode License v3 | https://www.unicode.org/reports/tr38/ |
 | **HSK 3.0 (characters)** (`hsk-chars`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Characters by HSK level (the characters to recognise, 认读字), HSK 1–6 and HSK 7–9 | No reuse licence granted; the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) allows only reasonable, good-faith quoting with the source indicated; included with attribution at the project owner's decision; legal status not verified | https://www.chinesetest.cn |
 | **HSK 3.0 (words)** (`hsk-words`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Words by HSK level, HSK 1–6 and HSK 7–9 | No reuse licence granted; the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) allows only reasonable, good-faith quoting with the source indicated; included with attribution at the project owner's decision; legal status not verified | https://www.chinesetest.cn |
 
-Each pack directory carries its `manifest.json` (including `license`,
+Each bundled upstream pack directory carries its `manifest.json` (including `license`,
 `attribution` and, where the pack needs more than a line, a `notice`), the full license text (`LICENSE`; `jlpt-kanji` also
 `LICENSE-KANJIDIC2` for its derived levels), and credits
-(`ATTRIBUTION.md`); `hsk-words` and `hsk-chars` have no `LICENSE`, as no
+(`ATTRIBUTION.md`); `es-demo` is an exception: it has only its
+`manifest.json` and `dictionary.json` (a tiny demo dictionary written for this
+project; its licence and attribution are in the manifest); `joyo-grades` and `tgh-chars` carry copies of the KANJIDIC2 and Unihan licences; `hsk-words` and `hsk-chars` have no `LICENSE`, as no
 reuse licence is granted for them; their `ATTRIBUTION.md` gives the CTI Legal
 Notice terms instead. The dictionary files are redistributed **unmodified**;
 the download-and-bundle procedure lives in `scripts/fetch-seeds.sh`. The level
@@ -76,6 +80,17 @@ with blank-line paragraphs and `[text](https://…)` links, at most 4,000
 bytes (see `plugins/data/README.md`). The sections below keep the full
 background; the wording of a licence status (as the publisher states it,
 unverified facts marked unverified) must stay the same in both places.
+
+## Grammar lessons
+
+- **Chinese grammar demo (A1)** (`zh-grammar-demo`, type `grammar`; bundled):
+  ten short beginner lessons with 40 example sentences, readings,
+  translations and exercise answers, **written for qinqin by the project and
+  released under CC0 1.0** (`plugins/data/zh-grammar-demo`, with `LICENSE` and
+  `ATTRIBUTION.md`). Nothing is taken from a textbook, a syllabus or another
+  grammar resource; the A1 levels are the author's own estimates (the link to
+  "HSK 1" is a rough orientation only). It is **demo content that has not been
+  reviewed by a native speaker**; errors are possible.
 
 ## Frequency data
 
@@ -131,7 +146,7 @@ replaces them on re-seed; CC-CEDICT owns none.
 
 The character map groups by, and entries carry badges from, installed level
 schemes (the map reads each scheme's per-level characters from
-`GET /api/schemes/{id}/characters`). Three are bundled: HSK 3.0 characters and
+`GET /api/schemes/{id}/characters`). Five are bundled: two derived from bundled dictionaries (below) and HSK 3.0 characters and
 words, generated by `scripts/prepare-hsk-syllabus.mjs` from the official syllabus (see "Chinese:
 HSK 3.0" below), and the approximate JLPT kanji, generated by `scripts/prepare-level-packs.mjs` from
 upstream files pinned by commit and the bundled KANJIDIC2 (the download commands are in the script's
@@ -141,6 +156,22 @@ byte.
 
 ### Japanese
 
+- **Jōyō kanji by school grade** (`joyo-grades`, unit `character`; bundled):
+  Grade 1 80, Grade 2 160, Grade 3 200, Grade 4 202, Grade 5 193, Grade 6 191
+  and Secondary (KANJIDIC2 grade 8) 1,110, 2,136 kanji in all, generated by
+  `scripts/prepare-standard-levels.mjs` from the bundled KANJIDIC2 (CC BY-SA
+  4.0, EDRDG; the pack is a derived work under the same licence, its `LICENSE`
+  is KANJIDIC2's). Jinmeiyō kanji (grades 9 and 10: 651 and 212) are left out.
+  Within a level kanji follow KANJIDIC2's newspaper frequency (none last), then
+  code point. A test checks the set against Unihan `kJoyoKanji` (2,136 rows
+  with the value `2010`, UAX #38). The map's "Group by" does not offer this
+  pack: the built-in "Grade" grouping covers it; badges and search filters use
+  it (level sessions do not support character packs yet, issue #57). Evidence (checked 2026-11-15): the
+  KANJIDIC2 grade counts above (2020 学年別漢字配当表); the 常用漢字表 and
+  学習指導要領 are government notices, outside copyright under Japanese
+  Copyright Act art. 13 (2), which supports the derived pack but is not needed
+  as a source. Wikipedia's tables (CC BY-SA 4.0) were not used: editor-compiled
+  and redundant with KANJIDIC2.
 - **JLPT kanji (approximate)** (`jlpt-kanji`, unit `character`): an
   approximation built by qinqin. The Japan Foundation and JEES have published
   no kanji list since the 2010 revision of the test, so every N5–N1 list is an
@@ -221,6 +252,24 @@ byte.
   states "not bundled, local use only". Under Docker, mount `plugins/data-local`
   and seed both roots as described in "Local-only data". The map's "Group by"
   and the Sources page pick it up like any installed scheme.
+
+### Chinese: 通用规范汉字表 levels
+
+- **通用规范汉字表 (2013) levels** (`tgh-chars`, unit `character`; bundled):
+  Level 1 (一级) serial 1–3,500, Level 2 (二级) 3,501–6,500, Level 3 (三级)
+  6,501–8,105 (3,500 / 3,000 / 1,605), in table order, generated by
+  `scripts/prepare-standard-levels.mjs` from the `kTGH` field (`2013:<n>`) of
+  `Unihan_OtherMappings.txt` in the bundled Unihan (Unicode License v3; its
+  `LICENSE` is Unihan's). The serials run 1–8,105 without a gap. The table is a
+  State Council document (国发〔2013〕23号,
+  https://www.gov.cn/zwgk/2013-08/19/content_2469793.htm); PRC Copyright Law
+  art. 5 (https://www.ncac.gov.cn/xxfb/flfg/flfg_532/202103/t20210309_50530.html) excludes "法律、法规，国家机关的决议、决定、命令和其他具有立法、行政、
+  司法性质的文件". On the map a section's count also includes variant forms of listed characters (shown as "incl. N variant forms"). The map keeps its built-in "Common" grouping (GB2312 rows), a
+  different split. No 小学/初中/高中 split is bundled (see "Local-only data").
+  Evidence checked 2026-11-15. All 8,105 characters resolve to character
+  entries at seed time (the seed line reports 0 unknown forms); that check is the
+  opt-in real-pack Go test (`QINQIN_REAL_DATA_TESTS=1`, about 4 minutes), not part
+  of the default test run.
 
 ### Chinese: HSK 3.0
 
@@ -313,6 +362,121 @@ The hand-written CC0 samples `hsk-mini` and `jlpt-mini` live in `plugins/samples
 outside the default seed root (their badges would duplicate the real lists); the
 seed tests use them, and the map hides them when they are seeded explicitly.
 
+## Audio
+
+Pronunciation audio is an `audio` pack: an `index.tsv` (word, reading, file,
+licence and credit per recording) plus the clip files, imported by
+`qinqin seed` into content-addressed files under `<data>/audio/` and shown on
+the entry page and after the reveal in study. Every recording is credited on the
+Sources page and next to the play button. Without any pack, or without a device
+voice, the app shows no play button and works as before.
+
+The licence rule applies unchanged. No audio file, and no index built from a
+third party's data, is ever committed: packs live in the gitignored
+`plugins/data-audio/` (clear licence, fetched by script, also baked into the
+Docker image) or `plugins/data-local/` (unclear or restrictive, never
+distributed). Evidence, checked 2026-11-15 (sites that were unreachable that
+day are marked unverified):
+
+| Source | Evidence | Verdict |
+|---|---|---|
+| **Kanji alive** example-word audio (ja; 10,156 clips in the zip, 10,187 claimed by the README; male/female native speakers, 6–12 words per kanji for 1,235 kanji) | https://github.com/kanjialive/kanji-data-media `LICENSE.md` at e1e24d3: "This work by Kanji alive is licensed under a Creative Commons Attribution 4.0 International License"; the README names only two fonts as exceptions. Audio: https://media.kanjialive.com/examples_audio/audio-opus.zip (68,687,036 bytes, Last-Modified 2026-09-04). Word ↔ file mapping in `language-data/ka_data.csv` (`kname`, `examples`). | **BUNDLE-eligible** (licence); not committed to git (size), see Rulings |
+| **Wikimedia Commons** pronunciation files (zh, ja) | Licence per file, machine-readable through the API (`prop=imageinfo&iiprop=extmetadata`: `LicenseShortName`, `LicenseUrl`, `Artist`). Samples: `File:Zh-nǐ.ogg` "CC BY 2.0 fr" (Wei Gao, Vion Nicolas); `File:Zh-shi4.ogg` "CC BY-SA 2.0 uk", noted "not a native Mandarin speaker"; `File:Zh-ma1.ogg` missing. | **LOCAL-ONLY** tool with a per-file licence allow-list (see Rulings) |
+| **Lingua Libre** (cmn 4,108, jpn 5,616 files on Commons) | Files carry CC BY-SA 4.0, CC BY 4.0 or CC0 per Commons metadata; the default "CC BY-SA 4.0" comes from a snippet of the RecordWizard manual (site 503, unverified). | **LOCAL-ONLY** through the same Commons tool |
+| **hugolpz/audio-cmn** (1,707 syllables, ~8k HSK words) | README: "CC-by-sa. See table upper for authors."; no version; refers to an unreachable Shtooka readme; GitHub shows no licence. | **LOCAL-ONLY** (version unverified) |
+| **cjhoward/cedict-tts** | Audio "CC0 1.0 Universal", but "Baidu Speech-generated TTS MP3s"; Baidu's output terms unchecked. | **LOCAL-ONLY** |
+| **Tatoeba** audio | https://tatoeba.org/en/downloads: "If the license field is empty, you may not reuse the audio outside the Tatoeba project"; others vary (incl. NC/ND). Sentences, not words. | Out of scope (sentences); LOCAL-ONLY if ever |
+| **Forvo** | Proprietary licence since 2019 (https://en.wikipedia.org/wiki/Forvo); API non-profit plan "No commercial use" (https://api.forvo.com/). | **REJECT** |
+| **JapanesePod101** (Yomitan's default) | No public licence found. | **REJECT** |
+| davinfifield/mp3-chinese-pinyin-sound | Unlicense, but no speaker or source named. | **REJECT** (provenance) |
+| Tone Perfect (MSU) | "© Michigan State University", access on request. | **REJECT** |
+| **eSpeak NG** (engine GPL-3.0+) | Output not addressed by the project; poor Mandarin/Japanese quality. | **REJECT** for packs (quality) |
+| **Piper** voices: zh_CN-huayan (dataset licence "unknown" in MODEL_CARD), ja_JP-hi_fi_captain ("by-nc-sa/4.0") | huggingface.co/rhasspy/piper-voices MODEL_CARDs. | **REJECT** |
+| **Coqui XTTS-v2** | "Coqui Public Model License" (non-commercial). | **REJECT** |
+| **Kokoro-82M** | "Apache-licensed model"; trained partly on synthetic audio from closed TTS providers; Mandarin voices graded D, Japanese C. | **REJECT** for v1 (quality, provenance caveat) |
+| Browser / OS speech (Web Speech API, Android TextToSpeech) | Nothing is distributed: the user's own device voices speak at runtime. | **USE** as fallback |
+
+### Kanji alive (`kanjialive-audio`)
+
+- **Provides:** 10,156 Opus clips of common example words (6-12 per kanji, 1,235
+  kanji, male and female native Japanese speakers) with their readings; Japanese
+  entries whose written form and reading match one play it.
+- **Licence:** Creative Commons Attribution 4.0 International. The repository's
+  `LICENSE.md` (pinned commit `e1e24d39fc43e839948a8c7e99743b0994dedad5`) says
+  "This work by Kanji alive is licensed under a Creative Commons Attribution 4.0
+  International License"; its only exceptions are two fonts, not the audio. The
+  pack ships the CC BY 4.0 legal code as `LICENSE` and credits Kanji alive in
+  `ATTRIBUTION.md`, its manifest and, per recording, on the entry page.
+- **Obtaining it:** `scripts/fetch-audio-kanjialive.sh` downloads the list
+  (`language-data/ka_data.csv`), the licence file and `audio-opus.zip`
+  (68,687,036 bytes) from the pinned sources, refuses on any SHA-256 mismatch and
+  writes `plugins/data-audio/kanjialive-audio`. It needs `curl`, `sha256sum`,
+  `unzip` and Node 22 or newer (the Docker stage runs Alpine's Node 22). Nothing it fetches is committed.
+- **Docker:** the image builds the pack in its own stage (`--build-arg WITH_AUDIO=1`,
+  the default, the same way as `WITH_OCR`). Any build that has to run that stage
+  downloads about 69 MB from `media.kanjialive.com` and the data repository, and
+  the image grows by about 70 MB; a warm Docker layer cache skips the download until
+  the Dockerfile, the scripts or the build args change, but CI without a cache (and
+  every fresh release build) fetches each time. The build fails if a pinned checksum
+  no longer matches, so a moved or changed upstream file stops it instead of
+  shipping something unchecked. To see such a break early, the `audio-stage`
+  workflow builds only that stage (`docker build --target audio`, no push) on pull
+  requests that touch the Dockerfile, the workflows or the audio scripts, and every
+  Monday.
+- **When it fails (offline, upstream gone, pin moved):** build with
+  `--build-arg WITH_AUDIO=0`. The image then has an empty `/opt/qinqin/audio`,
+  `qinqin seed` still works and Japanese entries fall back to the device voice.
+  To adopt a new upstream snapshot after reading its licence again, pass the new
+  pins as build args (`KANJIALIVE_COMMIT`, `KANJIALIVE_CSV_SHA256`,
+  `KANJIALIVE_LICENSE_SHA256`, `KANJIALIVE_ZIP_SHA256`, `KANJIALIVE_ZIP_BYTES`,
+  `KANJIALIVE_EXPECTED_CLIPS`, `KANJIALIVE_SNAPSHOT`) and then update the defaults in
+  `scripts/fetch-audio-kanjialive.sh`. Idea, not built: a maintainer-run mirror of
+  the zip (set `KANJIALIVE_ZIP_URL`; the checksum still has to match) would take
+  release builds off `media.kanjialive.com`; it would have to carry the CC BY 4.0
+  attribution and licence text with the file.
+- **File mapping:** the data repository's `examples-audio/README.md` (pinned by
+  SHA-256 in the fetch script) documents it: the files are named by the kanji's
+  `kname` prefix plus a suffix `a` to `l` "in alphabetical order" matching the
+  readings listed in the `examples` column, and `_06_` is the same in every name.
+  The top-level README does not say this. The build also checks it against the data
+  it downloads: 10,156 example words and 10,156 files, every kanji has exactly as
+  many files as examples, and the file size follows the length of the word's reading
+  (correlation 0.78 over all clips, 0.21 when each kanji's files are rotated by one
+  position, about 0 for a random pairing). This is evidence from the documentation
+  and the data, not from listening.
+- **Credit and changes:** the licence text, a link to
+  https://creativecommons.org/licenses/by/4.0/ and the names Harumi Hibino Lory and
+  Arno Bosse (the Kanji alive credits page lists them as director and assistant of
+  the project; the repository's licence file names only "Kanji alive") appear in the
+  pack's `ATTRIBUTION.md`, its manifest, on the Sources page and, per recording, as
+  a credit line next to the play button. `index.tsv` is marked there as derived from
+  `ka_data.csv`; the audio files are unchanged copies.
+- **Owner to-do:** nobody has listened to the clips yet. Before relying on the
+  mapping, play about ten clips from different kanji and check each against the
+  word and reading in `index.tsv` (for example the first rows for `述`, file
+  `jutsu-no(beru)_06_a.opus` should say 述語, じゅつご). A mismatch means the
+  suffix order differs from the list order; `exampleRows` in
+  `scripts/prepare-audio-kanjialive.mjs` is the one place to change.
+
+### Wikimedia Commons and Lingua Libre (`commons-audio-zh`, `commons-audio-ja`, local-only)
+
+Never bundled: the licence is per file, coverage is uneven and the set keeps
+changing. `node scripts/fetch-audio-commons.mjs --lang zh --category <Commons
+category>` (or `--lang ja`) builds the pack under `plugins/data-local/` from the
+public Commons API, at most one request per second with a User-Agent naming the
+tool, and `qinqin seed` imports it next to the others. It keeps a file only when
+its Commons `LicenseShortName` is CC0, public domain, CC BY or CC BY-SA 2.0 to
+4.0 (national ports such as `CC BY 2.0 fr` included); every other licence
+(non-commercial, no-derivatives, GFDL, unknown) is skipped and counted. Each kept
+clip's licence, credit (the `Artist` field with its HTML removed) and file page
+go into the index, and are shown with the play button and under "Per-recording
+credits" on the Sources page. `Zh-<pinyin>.ogg` files become syllable clips;
+Lingua Libre recordings become word clips without a reading (they match the word
+under any reading), and a recording whose title contains digits or Latin letters
+is skipped, because it does not say the bare word. Several of these files carry
+a note that the speaker is not a native Mandarin speaker; the credit shows the
+Commons description, not a quality judgement.
+
 ## Local-only data
 
 Data whose licence is unclear or restrictive is never committed. It can live
@@ -365,6 +529,37 @@ terms allow it):
 - **wordfreq** (zh) and **jieba** word counts: provenance of the underlying
   counts unclear.
 
+### Local level lists (TBCL, curriculum tables)
+
+`scripts/prepare-local-levels.mjs` turns a TSV you prepared yourself into a
+levels pack under `plugins/data-local/<id>/` (it refuses any other directory
+unless `--force-dir`, writes no `LICENSE`, and records the input's SHA-256 in
+`ATTRIBUTION.md`). Input: UTF-8, header `level<TAB>form[<TAB>reading]`; levels
+are ordered by first appearance and a form repeated keeps its first level;
+a pinyin or kana reading is kept, a zhuyin reading is dropped with a warning
+(the importer matches toneless pinyin). Nothing from these sources is ever
+committed or used as a test fixture.
+
+- **TBCL words** (`tbcl-words`) and **TBCL characters** (`tbcl-chars`): the
+  臺灣華語文能力基準 of 國家教育研究院 (NAER), the basis of the TOCFL levels
+  (3,100 characters, 14,425 words), https://bcoct.naer.edu.tw/TBCL/ . Footer
+  "Copyright © 2019 國家教育研究院 版權所有"; no licence or 授權 text, and not on
+  data.gov.tw (checked 2026-11-15); local only. Download the 詞語表 / 漢字表
+  from the site, export it to TSV with LibreOffice, keep the columns 等級,
+  詞語 (or 漢字), 漢語拼音, rename the header to `level`, `form`, `reading`,
+  then:
+  `node scripts/prepare-local-levels.mjs --id tbcl-words --name "TBCL words" --language zh --unit word --license "NAER, all rights reserved; local use" --attribution "國家教育研究院 臺灣華語文能力基準, https://bcoct.naer.edu.tw/TBCL/" tbcl-words.tsv`
+  (`--unit character` for `tbcl-chars`). Re-check the terms before any
+  bundling.
+- **Mainland curriculum characters** (`cn-curriculum-chars`): the 识字写字教学基本字表
+  and 常用字表 of the 义务教育语文课程标准 (2022), published as a book by 北京师范大学出版社;
+  no reuse licence found, and whether PRC Copyright Law art. 5 covers a 课程标准 is
+  unverified; local only. Type or paste the appendix lists into a TSV with one level per row
+  group (`level<TAB>form`, `--unit character`).
+- **Rejected:** the old TOCFL 華語八千詞 list (withdrawn by TOCFL on 2021-06-30, no
+  licence ever stated, https://tocfl.edu.tw/assets/files/8000zhuyin_recall.pdf) and
+  grade splits copied from textbooks (publisher copyright).
+
 ## Stroke-order data
 
 Stroke-order animation data (`hanzi-writer-data`, derived from the
@@ -372,8 +567,8 @@ Make Me a Hanzi dataset) is licensed under the **Arphic Public License**.
 The web frontend bundles it and credits it on its Sources page (a core
 credit in `apps/web/src/lib/sources/coreCredits.ts`). The full
 license text is committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim
-from the `hanzi-writer-data` package) and is served by the app at
-[`/ARPHICPL.TXT`](/ARPHICPL.TXT).
+from the `hanzi-writer-data` package) and is served by the running app at
+`/ARPHICPL.TXT` (the file in `apps/web/static/`).
 
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).
@@ -409,9 +604,8 @@ only when a script conversion is selected. The Sources page credits it (a
 `sources` entry of the Reader plugin's manifest), and both
 licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
 `apps/web/static/OPENCC-APACHE-2.0.TXT` (copied verbatim from the `opencc-js`
-package; a web test keeps them identical) and served by the app at
-[`/OPENCC-JS-LICENSE.TXT`](/OPENCC-JS-LICENSE.TXT) and
-[`/OPENCC-APACHE-2.0.TXT`](/OPENCC-APACHE-2.0.TXT).
+package; a web test keeps them identical) and served by the running app at
+`/OPENCC-JS-LICENSE.TXT` and `/OPENCC-APACHE-2.0.TXT`.
 
 ## Level packs
 

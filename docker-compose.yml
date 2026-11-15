@@ -1,5 +1,6 @@
-# Portainer stack for qinqin. The database and installed packs live in
-# ./data next to this file.
+# Quick start for plain `docker compose`. The database and installed packs live
+# in ./data next to this file. For Portainer (named volume, required
+# QINQIN_SECRET, limits) use deploy/portainer-stack.yml instead.
 #
 # First run — seed the sample packs and create the admin user:
 #   docker compose exec qinqin qinqin seed
@@ -16,6 +17,31 @@ services:
       - ./data:/data
     environment:
       QINQIN_DATA: /data
+      # AI features (journal review, ideas, photo transcription) store each
+      # user's own API key encrypted with this secret. Back it up separately
+      # from ./data: without it stored keys cannot be read. It is never
+      # written to /data. Leave it unset to keep AI off.
+      # QINQIN_SECRET: ${QINQIN_SECRET}  # 32 random bytes, base64: head -c 32 /dev/urandom | base64
+      # To rotate: set QINQIN_SECRET to the new value and this to the old one
+      # for one restart, then remove it.
+      # QINQIN_SECRET_PREVIOUS: ${QINQIN_SECRET_PREVIOUS}
+      # Which AI providers users may choose (comma list; default: all):
+      # anthropic, openai, gemini, deepseek, mistral, xai, groq, openrouter,
+      # and "custom" for endpoints an admin registers in Settings, AI.
+      # QINQIN_AI_PROVIDERS: anthropic,openai,gemini,custom
+      # WARNING: lets admin-registered AI endpoints reach loopback and your
+      # LAN (Ollama on this host or network). Enable only if you trust every
+      # admin. Link-local and cloud-metadata addresses stay blocked.
+      # QINQIN_AI_ALLOW_PRIVATE: "1"
+      # Testing only: a fake provider that never contacts any AI service.
+      # QINQIN_AI_PROVIDER: fake
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 30s

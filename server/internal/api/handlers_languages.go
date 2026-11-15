@@ -4,6 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"sort"
+
+	"qinqin/internal/lang"
 )
 
 // languageInfo is one installed language as served by GET
@@ -12,6 +15,8 @@ type languageInfo struct {
 	Code      string `json:"code"`
 	Name      string `json:"name"`
 	Installed bool   `json:"installed"`
+	// Kind is "code" for a language with a code pack, else "data".
+	Kind string `json:"kind"`
 }
 
 // installedLanguagesSQL lists the languages with at least one live sense
@@ -63,10 +68,57 @@ func installedLanguages(ctx context.Context, db queryer) ([]languageInfo, error)
 	return list, rows.Err()
 }
 
-// handleListLanguages serves GET /api/languages: the installed
-// languages. Like GET /api/dictionaries it is public.
+// knownLanguages returns every known language sorted by code: the code
+// packs, the languages rows and the installed languages. Installed is
+// true only for languages with live dictionary data.
+func knownLanguages(ctx context.Context, db queryer) ([]languageInfo, error) {
+	byCode := map[string]*languageInfo{}
+	for _, code := range lang.Codes() {
+		byCode[code] = &languageInfo{Code: code, Name: code, Kind: "code"}
+	}
+	rows, err := db.QueryContext(ctx, `SELECT code, name FROM languages`)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var code, name string
+		if err := rows.Scan(&code, &name); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		if _, ok := byCode[code]; !ok {
+			byCode[code] = &languageInfo{Code: code, Name: name, Kind: "data"}
+		}
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	rows.Close()
+	installed, err := installedLanguages(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	for _, li := range installed {
+		if cur, ok := byCode[li.Code]; ok {
+			cur.Installed = true
+			continue
+		}
+		li.Kind = "data"
+		byCode[li.Code] = &li
+	}
+	list := make([]languageInfo, 0, len(byCode))
+	for _, li := range byCode {
+		list = append(list, *li)
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].Code < list[j].Code })
+	return list, nil
+}
+
+// handleListLanguages serves GET /api/languages: every known language,
+// installed or not. Like GET /api/dictionaries it is public.
 func (s *server) handleListLanguages(w http.ResponseWriter, r *http.Request) {
-	list, err := installedLanguages(r.Context(), s.db)
+	list, err := knownLanguages(r.Context(), s.db)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

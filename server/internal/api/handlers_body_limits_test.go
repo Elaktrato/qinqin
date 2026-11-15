@@ -131,11 +131,9 @@ func TestWorkspaceBodyLimits(t *testing.T) {
 }
 
 func TestPluginBodyLimits(t *testing.T) {
-	ts, _ := newServer(t)
+	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "admin", "")
-	if resp := registerPlugin(t, ts.URL, admin, deleteTestPlugin); resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register plugin: status = %d", resp.StatusCode)
-	}
+	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	wantTooLarge(t, "register plugin", doRaw(t, http.MethodPost, ts.URL, "/api/admin/plugins", admin,
 		padded(`"id":"big","name":"Big","version":"1","type":"feature"`, 64<<10)))
 	wantTooLarge(t, "plugin state", doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/state", admin,
@@ -156,7 +154,10 @@ func TestPluginBodyLimits(t *testing.T) {
 }
 
 func TestEntryBodyLimit(t *testing.T) {
-	ts, _ := newServer(t)
+	ts, sqlDB := newServer(t)
+	seedEntries(t, sqlDB)
 	token := registerUser(t, ts.URL, "owner", "")
-	wantTooLarge(t, "PUT entry", doRaw(t, http.MethodPut, ts.URL, "/api/entries/1", token, padded(`"written":"x"`, 64<<10)))
+	// The entry must exist: an unknown id is 404 before the body is read.
+	id := strconv.FormatInt(lexID(t, sqlDB, "zh", "character", "发"), 10)
+	wantTooLarge(t, "PUT entry", doRaw(t, http.MethodPut, ts.URL, "/api/entries/"+id, token, padded(`"written":"x"`, 64<<10)))
 }

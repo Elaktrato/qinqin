@@ -157,6 +157,10 @@ export interface Dictionary {
 	attribution: string;
 	/** The pack's notice mini-markup (lib/sources/notice.ts); '' when none. */
 	notice?: string;
+	/** The pack id the dictionary was installed from. */
+	packId: string;
+	/** The language the dictionary covers ('' for rows from before pack management). */
+	language: string;
 }
 
 // FrequencyPack is one element of GET /api/frequency-packs: an installed
@@ -181,14 +185,16 @@ export interface Workspace {
 	updatedAt: string;
 }
 
-// Language is one element of GET /api/languages: a language with
-// installed dictionary data. `name` may be a pack title (for example a
+// Language is one element of GET /api/languages: a known language,
+// with `installed` telling whether it has dictionary data. `name` may be a pack title (for example a
 // demo dictionary's name), so the UI labels languages from the code via
 // languageLabel instead of showing it.
 export interface Language {
 	code: string;
 	name: string;
 	installed: boolean;
+	/** 'code' for a built-in code pack (zh, ja), 'data' for a data-only language. */
+	kind: 'code' | 'data';
 }
 
 // PluginInfo is one element of GET /api/plugins: the plugin manifest
@@ -199,6 +205,8 @@ export interface PluginInfo {
 	manifest: { name?: unknown; [key: string]: unknown };
 	enabled: boolean;
 	order: number;
+	/** True for the app's own surface-less built-ins (qinqin-core): not listed in Settings. */
+	hidden?: boolean;
 }
 
 // StudyEventBody is one event in POST /api/events/batch. The server

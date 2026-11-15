@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"qinqin/internal/lang"
 )
 
 // Manifest types: the import pipeline a pack flows through.
@@ -16,6 +18,8 @@ const (
 	TypeLevels     = "levels"
 	TypeSentences  = "sentences"
 	TypeFrequency  = "frequency"
+	TypeGrammar    = "grammar"
+	TypeAudio      = "audio"
 )
 
 // Pack formats: how a dictionary pack's data files are encoded.
@@ -30,6 +34,9 @@ const (
 	// term_meta_bank files) and a term,reading,rank CSV.
 	FormatYomitanFreq = "yomitan-freq"
 	FormatFreqCSV     = "freq-csv"
+
+	// FormatAudioIndex is an audio pack: index.tsv plus clip files.
+	FormatAudioIndex = "audio-index"
 )
 
 // manifestTypes and manifestFormats are the valid enum values of a
@@ -40,6 +47,8 @@ var (
 		TypeLevels:     true,
 		TypeSentences:  true,
 		TypeFrequency:  true,
+		TypeGrammar:    true,
+		TypeAudio:      true,
 	}
 	manifestFormats = map[string]bool{
 		FormatJSON:      true,
@@ -50,6 +59,8 @@ var (
 
 		FormatYomitanFreq: true,
 		FormatFreqCSV:     true,
+
+		FormatAudioIndex: true,
 	}
 )
 
@@ -88,19 +99,28 @@ func (m Manifest) Validate() error {
 		return errors.New("manifest: version is required")
 	case strings.TrimSpace(m.Language) == "":
 		return errors.New("manifest: language is required")
+	case !validLanguage(m.Language):
+		return fmt.Errorf("manifest: language %q must be a code like es or pt-br", m.Language)
 	case strings.TrimSpace(m.License) == "":
 		return errors.New("manifest: license is required — packs without license terms are rejected")
 	case strings.TrimSpace(m.Attribution) == "":
 		return errors.New("manifest: attribution is required — packs without attribution are rejected")
 	case !manifestTypes[m.Type]:
-		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, or frequency)", m.Type)
+		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, frequency, grammar, or audio)", m.Type)
 	case !manifestFormats[m.Format]:
-		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, or freq-csv)", m.Format)
+		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, or audio-index)", m.Format)
 	}
 	if err := ValidateNotice(m.Notice); err != nil {
 		return fmt.Errorf("manifest: %w", err)
 	}
 	return nil
+}
+
+// validLanguage reports whether code is already in the normalized
+// language code form (lowercase, "-" separators, e.g. es or pt-br).
+func validLanguage(code string) bool {
+	norm, ok := lang.ValidCode(code)
+	return ok && norm == strings.ToLower(strings.TrimSpace(code))
 }
 
 // normalize trims every field and lowercases the language code, so one

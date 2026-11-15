@@ -2,12 +2,16 @@ package auth_test
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"qinqin/internal/api"
@@ -157,7 +161,9 @@ func TestSecondRegisterRejectedWithoutAdmin(t *testing.T) {
 
 	// A non-admin token is forbidden too.
 	aliceToken := loginToken(t, ts, "alice", "secret")
-	register(t, ts, aliceToken, "bob", "secret")
+	if resp := register(t, ts, aliceToken, "bob", "secret"); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("admin register bob: status = %d, want %d", resp.StatusCode, http.StatusCreated)
+	}
 	bobToken := loginToken(t, ts, "bob", "secret")
 	resp = register(t, ts, bobToken, "carol", "secret")
 	if resp.StatusCode != http.StatusForbidden {
@@ -245,5 +251,109 @@ func TestHashVerify(t *testing.T) {
 	}
 	if auth.Verify("$argon2id$v=19$m=65536,t=0,p=4$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "secret") {
 		t.Error("Verify(hash with zero rounds) = true, want false")
+	}
+}
+
+func TestRegisterDuplicateUsername(t *testing.T) {
+	ts, sqlDB := newServer(t)
+
+	if resp := register(t, ts, "", "alice", "secret"); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("register alice: status = %d, want %d", resp.StatusCode, http.StatusCreated)
+	}
+	token := loginToken(t, ts, "alice", "secret")
+	resp := register(t, ts, token, "alice", "other")
+	if resp.StatusCode != http.StatusConflict {
+		t.Fatalf("duplicate username: status = %d, want %d", resp.StatusCode, http.StatusConflict)
+	}
+	var count int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count); err != nil || count != 1 {
+		t.Errorf("users = %d (err %v) after duplicate, want 1", count, err)
+	}
+}
+
+func TestCreateFirstUserOnlyWhenEmpty(t *testing.T) {
+	_, sqlDB := newServer(t)
+	ctx := context.Background()
+
+	u, err := auth.CreateFirstUser(ctx, sqlDB, "alice", "secret")
+	if err != nil || !u.Admin || u.Username != "alice" {
+		t.Fatalf("first CreateFirstUser = %+v, %v; want admin alice", u, err)
+	}
+	if _, err := auth.CreateFirstUser(ctx, sqlDB, "bob", "secret"); !errors.Is(err, auth.ErrNotFirst) {
+		t.Errorf("second CreateFirstUser err = %v, want ErrNotFirst", err)
+	}
+	var count int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count); err != nil || count != 1 {
+		t.Errorf("users = %d (err %v), want 1", count, err)
+	}
+}
+
+// TestConcurrentFirstRegisterCreatesOneAdmin races first-ever
+// registrations: exactly one wins and becomes the only admin.
+func TestConcurrentFirstRegisterCreatesOneAdmin(t *testing.T) {
+	ts, sqlDB := newServer(t)
+
+	const racers = 8
+	statuses := make([]int, racers)
+	var wg sync.WaitGroup
+	for i := 0; i < racers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			encoded, _ := json.Marshal(credentials{Username: fmt.Sprintf("user%d", i), Password: "secret"})
+			resp, err := http.Post(ts.URL+"/api/auth/register", "application/json", bytes.NewReader(encoded))
+			if err != nil {
+				return
+			}
+			resp.Body.Close()
+			statuses[i] = resp.StatusCode
+		}()
+	}
+	wg.Wait()
+
+	created := 0
+	for _, s := range statuses {
+		if s == http.StatusCreated {
+			created++
+		} else if s != http.StatusForbidden {
+			t.Errorf("racer status = %d, want 201 or 403", s)
+		}
+	}
+	if created != 1 {
+		t.Errorf("%d registrations created users, want exactly 1 (statuses %v)", created, statuses)
+	}
+	var users, admins int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*), COALESCE(SUM(admin), 0) FROM users`).Scan(&users, &admins); err != nil {
+		t.Fatalf("count users: %v", err)
+	}
+	if users != 1 || admins != 1 {
+		t.Errorf("users = %d, admins = %d, want 1 and 1", users, admins)
+	}
+}
+
+// TestLoginUnknownUserStillVerifies pins the timing equalisation at its
+// seam instead of measuring time: an unknown username must run the password
+// verifier once, against a well-formed hash, exactly like a wrong password.
+func TestLoginUnknownUserStillVerifies(t *testing.T) {
+	_, sqlDB := newServer(t)
+	ctx := context.Background()
+	if _, err := auth.CreateUser(ctx, sqlDB, "alice", "secret", true); err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+	var hashes []string
+	restore := auth.SetVerifierForTest(func(hash, password string) bool {
+		hashes = append(hashes, hash)
+		return auth.Verify(hash, password)
+	})
+	defer restore()
+
+	for _, username := range []string{"alice", "nobody"} {
+		hashes = nil
+		if _, err := auth.Login(ctx, sqlDB, username, "wrong"); !errors.Is(err, auth.ErrBadCredentials) {
+			t.Fatalf("login %q err = %v, want ErrBadCredentials", username, err)
+		}
+		if len(hashes) != 1 || !strings.HasPrefix(hashes[0], "$argon2id$") {
+			t.Errorf("login %q verified %v, want exactly one argon2id hash", username, hashes)
+		}
 	}
 }

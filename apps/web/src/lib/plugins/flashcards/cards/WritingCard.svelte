@@ -1,11 +1,12 @@
 <script lang="ts">
-	import type HanziWriter from 'hanzi-writer';
-	import type { CharacterJson, StrokeData } from 'hanzi-writer';
+	import { untrack } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import { formatReading } from '$lib/format';
-	import { captureListeners, maskWritten, type CardResult, type FlowItem } from '$lib/study/cardFlow';
+	import { maskWritten, type CardResult, type FlowItem } from '$lib/study/cardFlow';
 	import { loadStrokeData } from '$lib/study/strokeData';
-	import { quizOptions, suggestWritingGrade, type CharOutcome } from '$lib/study/writing';
+	import { suggestWritingGrade, type CharOutcome } from '$lib/study/writing';
+	import { parseStrokeData, type CharStrokes } from '$lib/writing/strokes';
+	import WritingPad from './WritingPad.svelte';
 
 	interface Props {
 		item: FlowItem;
@@ -18,30 +19,25 @@
 
 	let { item, entry, chars, done, onDone }: Props = $props();
 
-	const SIZE = 260;
+	const SIZE = 280;
 
-	let host = $state<HTMLDivElement | null>(null);
 	let position = $state(0);
 	let outcomes = $state<CharOutcome[]>([]);
 	let mistakes = $state(0);
-	let outlineShown = $state(false);
 	let hintCount = $state(0);
 	let busy = $state(true);
 	let failed = $state('');
 	let feedback = $state('');
+	// Polite live region for accepted strokes (misses are announced through `feedback`).
+	let strokeNote = $state('');
+	let current = $state<CharStrokes | null>(null);
+	let revealSignal = $state(0);
+	let hintSignal = $state(0);
 
-	// Not reactive: the writer is driven imperatively.
-	let writer: HanziWriter | null = null;
-	let strokes = 0;
-	let alive = true;
-	// Set by hanzi-writer's load-error callback; startChar turns it into
-	// the visible failure path instead of a stuck pad.
-	let loadFailed = false;
-
-	// Long enough to see the finished character (and hanzi-writer's
-	// completion flash) before the pad clears for the next one.
+	// Long enough to see the finished character before the pad clears.
 	const NEXT_CHAR_DELAY_MS = 600;
 	let nextTimer: ReturnType<typeof setTimeout> | null = null;
+	let alive = true;
 
 	function prefersReducedMotion(): boolean {
 		try {
@@ -61,18 +57,34 @@
 	const masked = $derived(maskWritten(written, chars, done ? chars.length : position));
 	const glosses = $derived(entry.senses.slice(0, 3).map((sense) => sense.gloss));
 
-	async function strokeCount(ch: string): Promise<number> {
-		const data = (await loadStrokeData(ch)) as { strokes?: unknown[] } | null;
-		return Array.isArray(data?.strokes) ? data.strokes.length : 0;
+	async function loadChar(index: number): Promise<void> {
+		busy = true;
+		mistakes = 0;
+		strokeNote = '';
+		current = null;
+		try {
+			const ch = chars[index];
+			const parsed = parseStrokeData(ch, await loadStrokeData(ch));
+			if (!alive) return;
+			if (parsed === null) throw new Error(`No stroke data for ${ch}`);
+			current = parsed;
+			busy = false;
+			// Warm the cache for the next character of the word.
+			if (index + 1 < chars.length) void loadStrokeData(chars[index + 1]);
+		} catch {
+			fail();
+		}
 	}
 
-	function record(outcome: CharOutcome, pause = false): void {
+	function onComplete(outcome: CharOutcome, hints: number): void {
+		if (!alive) return;
 		outcomes = [...outcomes, outcome];
+		hintCount += hints;
+		busy = true;
 		const next = position + 1;
 		if (next >= chars.length) {
 			position = chars.length;
-			busy = false;
-			writer?.cancelQuiz();
+			feedback = outcome.revealed ? `The character is ${outcome.char}.` : 'Character done.';
 			onDone({
 				suggested: suggestWritingGrade(outcomes),
 				meta: {
@@ -82,145 +94,50 @@
 			});
 			return;
 		}
+		feedback = outcome.revealed ? `The character is ${outcome.char}.` : '';
 		const advance = () => {
+			nextTimer = null;
 			if (!alive) return;
 			position = next;
-			startChar(next).catch(fail);
+			void loadChar(next);
 		};
-		if (pause && !prefersReducedMotion()) {
-			busy = true;
-			nextTimer = setTimeout(() => {
-				nextTimer = null;
-				advance();
-			}, NEXT_CHAR_DELAY_MS);
-		} else {
-			advance();
-		}
+		if (prefersReducedMotion()) advance();
+		else nextTimer = setTimeout(advance, NEXT_CHAR_DELAY_MS);
 	}
 
-	async function startChar(index: number): Promise<void> {
-		const active = writer;
-		if (active === null || !alive) return;
-		const ch = chars[index];
-		busy = true;
-		mistakes = 0;
-		outlineShown = false;
-		strokes = await strokeCount(ch);
-		if (!alive || writer !== active) return;
-		// showOutline() persists in the writer's options and setCharacter
-		// reads them, so reset it: every character starts as pure recall.
-		await active.hideOutline({ duration: 0 });
-		loadFailed = false;
-		await active.setCharacter(ch);
-		if (!alive || writer !== active) return;
-		if (loadFailed) throw new Error(`No stroke data for ${ch}`);
-		busy = false;
-		void active.quiz({
-			...quizOptions(),
-			onMistake: (data: StrokeData) => {
-				mistakes = data.totalMistakes;
-				feedback = `Not that stroke. Mistakes: ${data.totalMistakes}.`;
-				// Recall first; after the first hint streak the outline
-				// appears as a scaffold for the rest of the character.
-				if (!outlineShown && data.mistakesOnStroke >= quizOptions().showHintAfterMisses) {
-					outlineShown = true;
-					hintCount += 1;
-					void active.showOutline();
-				}
-			},
-			onCorrectStroke: (data: StrokeData) => {
-				mistakes = data.totalMistakes;
-				feedback = data.strokesRemaining > 0 ? '' : 'Character done.';
-			},
-			onComplete: (summary) => {
-				if (!alive || writer !== active) return;
-				record({ char: ch, mistakes: summary.totalMistakes, strokes, revealed: false }, true);
-			}
-		});
-	}
-
-	async function reveal(): Promise<void> {
-		const active = writer;
-		if (active === null || busy || done || position >= chars.length) return;
-		busy = true;
-		active.cancelQuiz();
-		feedback = `The character is ${chars[position]}.`;
-		const outcome: CharOutcome = { char: chars[position], mistakes, strokes, revealed: true };
-		// Reduced motion: show the character at once instead of drawing it.
-		if (prefersReducedMotion()) {
-			await active.showCharacter({ duration: 0 });
-		} else {
-			await active.animateCharacter();
+	function onChange(progress: { mistakes: number; remaining: number }): void {
+		const changed = progress.mistakes !== mistakes;
+		mistakes = progress.mistakes;
+		if (changed) feedback = `Not that stroke. Mistakes: ${progress.mistakes}.`;
+		else if (progress.remaining === 0) feedback = 'Character done.';
+		else feedback = '';
+		if (!changed && progress.remaining > 0) {
+			strokeNote = `Stroke accepted, ${progress.remaining} to go.`;
 		}
-		if (!alive || writer !== active) return;
-		record(outcome);
 	}
 
 	$effect(() => {
-		const node = host;
-		if (node === null) return;
 		alive = true;
-		let cancelled = false;
-		let release: (() => void) | null = null;
-
-		void (async () => {
-			try {
-				const module = await import('hanzi-writer');
-				if (cancelled) return;
-				// hanzi-writer adds document listeners in its constructor and
-				// has no destroy(); capture them so unmount removes them.
-				const captured = captureListeners(document, () =>
-					module.default.create(node, chars[0], {
-						width: SIZE,
-						height: SIZE,
-						padding: 12,
-						showOutline: false,
-						showCharacter: false,
-						// Only the reveal animation uses these: quick enough not to
-						// keep the learner waiting (the defaults take ~1 s a stroke).
-						delayBetweenStrokes: 150,
-						strokeAnimationSpeed: 2,
-						strokeColor: '#0b6bcb',
-						outlineColor: '#9aa0a6',
-						drawingColor: '#6b7280',
-						charDataLoader: (ch, onLoad, onError) => {
-							void loadStrokeData(ch)
-								.then((data) => (data ? onLoad(data as CharacterJson) : onError()))
-								.catch(() => onError());
-						},
-						onLoadCharDataError: () => {
-							loadFailed = true;
-						}
-					})
-				);
-				release = captured.release;
-				writer = captured.result;
-				await startChar(0);
-			} catch {
-				if (!cancelled) {
-					failed = 'The writing pad could not start. Continue and grade this card yourself.';
-					busy = false;
-				}
-			}
-		})();
-
+		untrack(() => void loadChar(0));
 		return () => {
-			cancelled = true;
+			alive = false;
 			if (nextTimer !== null) {
 				clearTimeout(nextTimer);
 				nextTimer = null;
 			}
-			alive = false;
-			const active = writer;
-			writer = null;
-			if (active !== null) {
-				active.cancelQuiz();
-				void active.pauseAnimation().catch(() => {});
-			}
-			release?.();
-			node.replaceChildren();
 		};
 	});
+
+	function reveal(): void {
+		if (busy || done || current === null) return;
+		busy = true;
+		revealSignal += 1;
+	}
+
+	function hint(): void {
+		if (busy || done || current === null) return;
+		hintSignal += 1;
+	}
 
 	function giveUpOnError(): void {
 		onDone({ suggested: 1, meta: { mistakes: 0, hints: chars.length } });
@@ -267,29 +184,35 @@
 {/if}
 
 <div class="pad-wrap" class:hidden={failed !== ''}>
-	<div
-		class="pad"
-		bind:this={host}
-		data-card-input
-		style:width={`${SIZE}px`}
-		style:height={`${SIZE}px`}
-		role="img"
-		aria-label={done
-			? `Written: ${written}`
-			: `Draw character ${Math.min(position + 1, chars.length)} of ${chars.length}, stroke by stroke`}
-	></div>
+	{#if current !== null}
+		{#key current}
+			<WritingPad
+				strokes={current}
+				size={SIZE}
+				{onComplete}
+				{onChange}
+				{revealSignal}
+				{hintSignal}
+				label={done
+					? `Written: ${written}`
+					: `Draw character ${Math.min(position + 1, chars.length)} of ${chars.length}, stroke by stroke`}
+			/>
+		{/key}
+	{:else}
+		<div class="pad-placeholder" style:max-width={`${SIZE}px`} data-card-input></div>
+	{/if}
 </div>
 
 {#if !done && !failed}
 	<div class="actions">
-		<button type="button" class="secondary" disabled={busy} onclick={() => void reveal()}>
-			Reveal character
-		</button>
+		<button type="button" class="secondary" disabled={busy} onclick={hint}>Hint</button>
+		<button type="button" class="secondary" disabled={busy} onclick={reveal}>Reveal character</button>
 		<span class="count" aria-hidden="true">Mistakes: {mistakes}</span>
 	</div>
 {/if}
 
 <p class="feedback" role="status" aria-live="polite">{feedback}</p>
+<p class="sr-only" aria-live="polite">{strokeNote}</p>
 
 <style>
 	.written {
@@ -356,23 +279,17 @@
 		display: none;
 	}
 
-	.pad {
-		max-width: 100%;
+	.pad-placeholder {
+		width: 100%;
+		aspect-ratio: 1;
+		box-sizing: border-box;
 		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
 		border-radius: 0.4rem;
-		/* Grid guide: a centre cross, like practice paper. */
-		background:
-			linear-gradient(color-mix(in srgb, currentColor 10%, transparent), color-mix(in srgb, currentColor 10%, transparent))
-				center / 1px 100% no-repeat,
-			linear-gradient(color-mix(in srgb, currentColor 10%, transparent), color-mix(in srgb, currentColor 10%, transparent))
-				center / 100% 1px no-repeat;
-		/* The pad owns every pointer gesture: no scrolling or zooming. */
-		touch-action: none;
-		user-select: none;
 	}
 
 	.actions {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 1rem;
 		margin-top: 0.75rem;
@@ -414,6 +331,16 @@
 		min-height: 1.4rem;
 		margin: 0.5rem 0 0;
 		font-weight: 600;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.error {

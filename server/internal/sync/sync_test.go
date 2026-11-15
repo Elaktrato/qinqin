@@ -30,6 +30,16 @@ func init() {
 	lang.Register(lang.Ja{})
 }
 
+// validManifest is a feature manifest that passes plugins.ParseManifest:
+// sdk 1, owns-data, no surfaces or events. extra is a list of JSON members
+// appended last, so a repeated key overrides the default.
+func validManifest(id, extra string) string {
+	if extra != "" {
+		extra = "," + extra
+	}
+	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
+}
+
 // newDB opens a fresh migrated database.
 func newDB(t *testing.T) *sql.DB {
 	t.Helper()
@@ -78,7 +88,7 @@ func TestPushEventsAndLWW(t *testing.T) {
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
-	if err := plugins.Register(ctx, sqlDB, []byte(`{"id":"flashcards","name":"Flashcards","version":"1.0","type":"feature"}`)); err != nil {
+	if err := plugins.Register(ctx, sqlDB, []byte(validManifest("flashcards", ""))); err != nil {
 		t.Fatalf("register plugin: %v", err)
 	}
 
@@ -265,4 +275,71 @@ func registerAndLogin(t *testing.T, tsURL string) string {
 		t.Fatalf("login body: %v token=%q", err, out.Token)
 	}
 	return out.Token
+}
+
+// TestPushSkipsUndeclaredWriter: a row for a plugin without owns-data is
+// refused on its own; the events and the other rows of the push land.
+func TestPushSkipsUndeclaredWriter(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	ws := newWorkspace(t, sqlDB, alice)
+	for _, i := range []int{1, 2} { // flashcards, reader
+		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, plugins.Builtin()[i]); err != nil {
+			t.Fatal(err)
+		}
+	}
+	at := time.Now().UTC().Add(-time.Minute)
+	evt := func(id, typ string) model.StudyEvent {
+		return model.StudyEvent{ID: id, WorkspaceID: ws, Device: "phone", TS: time.Now().UTC(), Type: typ, Payload: json.RawMessage(`{}`)}
+	}
+	res, err := chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{
+		Events: []model.StudyEvent{evt("01J00000000000000000000011", "review"), evt("01J00000000000000000000012", "read")},
+		PluginData: []model.PluginData{
+			{PluginID: "qinqin-reader", Key: "x", Data: json.RawMessage(`1`), UpdatedAt: at},
+			{PluginID: "qinqin-flashcards", Key: "x", Data: json.RawMessage(`2`), UpdatedAt: at},
+		},
+	})
+	if err != nil || res.EventsAccepted != 2 || res.DataAccepted != 1 || res.DataRefused != 1 {
+		t.Fatalf("push = %+v, %v; want 2 events, 1 accepted, 1 refused", res, err)
+	}
+	if _, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-reader", "x"); !errors.Is(err, plugins.ErrNotFound) {
+		t.Errorf("refused reader row present: %v", err)
+	}
+	if _, err := plugins.GetData(ctx, sqlDB, alice, nil, "qinqin-flashcards", "x"); err != nil {
+		t.Errorf("flashcards row: %v", err)
+	}
+}
+
+// TestPushAcceptsBuiltinWriters: every plugin id the web writes under is
+// accepted by the built-in manifests.
+func TestPushAcceptsBuiltinWriters(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	alice := newUser(t, sqlDB, "alice")
+	for _, raw := range plugins.Builtin() {
+		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	at := time.Now().UTC().Add(-time.Minute)
+	var rows []model.PluginData
+	for _, id := range []string{"qinqin-flashcards", "qinqin-journal", "qinqin-core"} {
+		rows = append(rows, model.PluginData{PluginID: id, Key: "k", Data: json.RawMessage(`{}`), UpdatedAt: at})
+	}
+	res, err := chinsync.Push(ctx, sqlDB, alice, chinsync.PushBody{PluginData: rows})
+	if err != nil || res.DataAccepted != 3 || res.DataRefused != 0 {
+		t.Fatalf("push = %+v, %v; want 3 accepted", res, err)
+	}
+}
+
+// An event without a workspace (0) is invalid, as in POST /api/events/batch.
+func TestPushRejectsEventWithoutWorkspace(t *testing.T) {
+	sqlDB := newDB(t)
+	alice := newUser(t, sqlDB, "alice")
+	_, err := chinsync.Push(context.Background(), sqlDB, alice, chinsync.PushBody{Events: []model.StudyEvent{
+		{ID: "01J00000000000000000000008", TS: time.Now().UTC(), Type: "review", Payload: json.RawMessage(`{}`)}}})
+	if !errors.Is(err, chinsync.ErrInvalid) {
+		t.Errorf("event without workspace err = %v, want ErrInvalid", err)
+	}
 }

@@ -15,6 +15,7 @@
 		groupOptions,
 		masteryGlyphs,
 		sectionStats,
+		variantFormCount,
 		type CellState,
 		type GroupKey,
 		type SchemeLevelMembers,
@@ -36,7 +37,8 @@
 		type TipRequest
 	} from '$lib/study/mapGrid';
 	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
-	import { loadStudyData } from '$lib/study/store';
+	import { DEFAULT_W } from '$lib/study/fsrs/params';
+	import { activeWeights, loadStudyData } from '$lib/study/store';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
 
@@ -46,7 +48,7 @@
 	const FILTERS: { value: StageFilter; label: string; stages: Stage[] }[] = [
 		{ value: 'all', label: 'All', stages: [] },
 		{ value: 'not-started', label: 'Not studied', stages: ['unknown'] },
-		{ value: 'learning', label: 'Learning', stages: ['fresh', 'learning', 'mature'] },
+		{ value: 'learning', label: 'In progress', stages: ['fresh', 'learning', 'mature'] },
 		{ value: 'learned', label: 'Learned', stages: ['learned'] }
 	];
 
@@ -61,6 +63,7 @@
 	let schemesError = $state('');
 	let cards = $state.raw<StudyCard[]>([]);
 	let reviews = $state.raw<ReviewEvent[]>([]);
+	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	// Cards whose legacy written snapshot could not be resolved on this
 	// visit. Reported so the map never silently under-reports.
 	let unresolvedCards = $state(0);
@@ -171,6 +174,7 @@
 			schemes = schemeList;
 			cards = data.cards;
 			reviews = data.reviews;
+			weights = activeWeights(data);
 			groupKey = readGroupBy(storage(), lang, groupOptions(lang, schemeList));
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
@@ -208,7 +212,7 @@
 	// One mastery pass over every glyph and variant; a cell takes the best
 	// of its forms (a card written 愛 lights 爱).
 	const cellByRow = $derived.by(() => {
-		const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, new Date());
+		const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, new Date(), weights);
 		const map = new Map<(typeof chars)[number], CellState>();
 		for (const cell of cellStates(chars, mastery)) map.set(cell.char, cell);
 		return map;
@@ -269,7 +273,9 @@
 		return grouping.sections.map((section) => {
 			const cells = section.chars.map((row) => cellByRow.get(row)!);
 			const shown = filtering ? filterCells(cells, stageFilter, query) : cells;
-			return { id: section.id, label: section.label, cells, shown, stats: sectionStats(cells) };
+			const level = members?.levels.find((l) => `level-${l.levelId}` === section.id);
+			const variants = schemeId === null ? 0 : variantFormCount(section.chars, level?.chars);
+			return { id: section.id, label: section.label, cells, shown, stats: sectionStats(cells), variants };
 		});
 	});
 
@@ -454,10 +460,11 @@
 
 	/** headerName is a section button's name: "Grade 2, 0 of 160 learned". */
 	function headerName(
-		view: { label: string; stats: { learned: number; total: number }; shown: unknown[] },
+		view: { label: string; stats: { learned: number; total: number }; shown: unknown[]; variants: number },
 		filtered: boolean
 	): string {
-		const base = `${view.label}, ${formatCount(view.stats.learned)} of ${formatCount(view.stats.total)} learned`;
+		const extra = view.variants > 0 ? `, including ${formatCount(view.variants)} variant forms` : '';
+		const base = `${view.label}, ${formatCount(view.stats.learned)} of ${formatCount(view.stats.total)} learned${extra}`;
 		return filtered ? `${base}, ${formatCount(view.shown.length)} shown` : base;
 	}
 
@@ -639,8 +646,15 @@
 						>
 							<span class="chev" aria-hidden="true"></span>
 							<span class="label">{view.label}</span>
-							<span class="count" aria-hidden="true">
-								<strong>{formatCount(view.stats.learned)}</strong>/{formatCount(view.stats.total)}
+							<span
+								class="count"
+								aria-hidden="true"
+								title={view.variants > 0
+									? `${formatCount(view.stats.total)} includes ${formatCount(view.variants)} variant forms of listed characters`
+									: undefined}
+							>
+								<strong>{formatCount(view.stats.learned)}</strong>/{formatCount(view.stats.total)}{#if view.variants > 0}
+									<small>(incl. {formatCount(view.variants)} variant forms)</small>{/if}
 							</span>
 							{#if filtering}
 								<span class="shown" aria-hidden="true">{formatCount(view.shown.length)} shown</span>
@@ -957,6 +971,11 @@
 	.count {
 		font-variant-numeric: tabular-nums;
 		font-weight: 400;
+	}
+
+	.count small {
+		font-size: 0.8rem;
+		opacity: 0.75;
 	}
 
 	.shown {

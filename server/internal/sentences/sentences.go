@@ -25,6 +25,10 @@ import (
 // uninstalled — sentence pack.
 var ErrNotFound = errors.New("sentence pack not found")
 
+// ErrSentenceNotFound reports a sentence that does not exist or that the
+// viewer may not see.
+var ErrSentenceNotFound = errors.New("sentence not found")
+
 // ErrNotSentences reports an ImportPack of a pack whose manifest type is
 // not "sentences". Pack dispatch happens in the seed CLI and admin
 // layer, which route packs by manifest type; this guards a misrouted
@@ -36,7 +40,7 @@ const sentencesFile = "sentences.json"
 
 // Result counts what one pack import wrote.
 type Result struct {
-	Sentences int      // sentences linked to their word entries
+	Sentences int      // distinct sentences linked to their word entries (a repeated one counts once)
 	Skipped   []string // words with no matching entry; no sentence is written for them
 }
 
@@ -87,6 +91,7 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 	var (
 		rows    []sentenceRow
 		skipped []string
+		written = map[sentenceRow]bool{}
 	)
 	for _, g := range groups {
 		e, err := store.BestWord(ctx, m.Language, g.Word)
@@ -98,7 +103,12 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 			return Result{}, fmt.Errorf("import sentences %s: %w", m.ID, err)
 		}
 		for _, s := range g.Sentences {
-			rows = append(rows, sentenceRow{entryID: e.ID, sentence: s})
+			// The same sentence listed twice for an entry is one row.
+			k := sentenceRow{entryID: e.ID, sentence: s}
+			if !written[k] {
+				written[k] = true
+				rows = append(rows, k)
+			}
 		}
 	}
 
@@ -114,16 +124,45 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 	return result, nil
 }
 
-// ForEntry returns the entry's active sentences that viewerID may see, in
-// insertion order: pack-provided ones (carrying their source pack) and
-// the viewer's own (carrying their owner). Other users' sentences are
+// sentenceColumns is the column list every sentence read selects, in the
+// order scanSentence expects.
+const sentenceColumns = `id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at`
+
+// scanSentence reads one row of sentenceColumns.
+func scanSentence(row interface{ Scan(...any) error }) (model.Sentence, error) {
+	var (
+		s         model.Sentence
+		userID    sql.NullInt64
+		updatedAt string
+	)
+	if err := row.Scan(&s.ID, &s.EntryID, &s.SourcePack, &userID,
+		&s.Hanzi, &s.Pinyin, &s.Translation, &updatedAt); err != nil {
+		return s, err
+	}
+	updated, err := time.Parse(time.RFC3339, updatedAt)
+	if err != nil {
+		return s, fmt.Errorf("parse updated_at %q of sentence %d: %w", updatedAt, s.ID, err)
+	}
+	s.UpdatedAt = updated
+	if userID.Valid {
+		id := userID.Int64
+		s.UserID = &id
+	}
+	return s, nil
+}
+
+// ForEntry returns the entry's active sentences that viewerID may see:
+// pack-provided ones first (carrying their source pack), then the
+// viewer's own (carrying their owner), each group in insertion order.
+// Pack examples are the curated ones, so a re-import never pushes them
+// behind notes the user wrote earlier. Other users' sentences are
 // private; viewerID 0 (an anonymous caller) sees pack sentences only.
 func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID, viewerID int64) ([]model.Sentence, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at
+		SELECT `+sentenceColumns+`
 		FROM sentences
 		WHERE entry_id = ? AND deleted_at IS NULL AND (user_id IS NULL OR user_id = ?)
-		ORDER BY id`, entryID, viewerID)
+		ORDER BY user_id IS NOT NULL, id`, entryID, viewerID)
 	if err != nil {
 		return nil, fmt.Errorf("sentences of entry %d: %w", entryID, err)
 	}
@@ -131,23 +170,9 @@ func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID, viewerID int64) ([]mo
 
 	list := make([]model.Sentence, 0)
 	for rows.Next() {
-		var (
-			s         model.Sentence
-			userID    sql.NullInt64
-			updatedAt string
-		)
-		if err := rows.Scan(&s.ID, &s.EntryID, &s.SourcePack, &userID,
-			&s.Hanzi, &s.Pinyin, &s.Translation, &updatedAt); err != nil {
-			return nil, fmt.Errorf("sentences of entry %d: %w", entryID, err)
-		}
-		updated, err := time.Parse(time.RFC3339, updatedAt)
+		s, err := scanSentence(rows)
 		if err != nil {
-			return nil, fmt.Errorf("parse updated_at %q of sentence %d: %w", updatedAt, s.ID, err)
-		}
-		s.UpdatedAt = updated
-		if userID.Valid {
-			id := userID.Int64
-			s.UserID = &id
+			return nil, fmt.Errorf("sentences of entry %d: %w", entryID, err)
 		}
 		list = append(list, s)
 	}
@@ -157,8 +182,26 @@ func ForEntry(ctx context.Context, sqlDB *sql.DB, entryID, viewerID int64) ([]mo
 	return list, nil
 }
 
+// Get returns the active sentence id when viewerID may see it (a pack
+// sentence, or the viewer's own); anything else is ErrSentenceNotFound.
+func Get(ctx context.Context, sqlDB *sql.DB, id, viewerID int64) (model.Sentence, error) {
+	s, err := scanSentence(sqlDB.QueryRowContext(ctx, `
+		SELECT `+sentenceColumns+`
+		FROM sentences
+		WHERE id = ? AND deleted_at IS NULL AND (user_id IS NULL OR user_id = ?)`, id, viewerID))
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Sentence{}, ErrSentenceNotFound
+	}
+	if err != nil {
+		return model.Sentence{}, fmt.Errorf("sentence %d: %w", id, err)
+	}
+	return s, nil
+}
+
 // AddUser stores s as user userID's sentence on entry entryID and
-// returns its id. The row carries its owner and no source pack, so
+// returns its id. The entry may be of any kind: only pack sentences are
+// bound to word entries, while a user also saves sentences on characters
+// and phrases (the reader saves book sentences on whatever was looked up). The row carries its owner and no source pack, so
 // pack imports and uninstalls never touch it.
 func AddUser(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, s model.Sentence) (int64, error) {
 	res, err := sqlDB.ExecContext(ctx, `
@@ -180,7 +223,12 @@ func AddUser(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, s model.
 // unknown or already-uninstalled pack returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, pack string) error {
 	stamp := now()
-	res, err := sqlDB.ExecContext(ctx, `
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("uninstall sentences of pack %s: %w", pack, err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `
 		UPDATE sentences SET deleted_at = ?, updated_at = ?
 		WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL`,
 		stamp, stamp, pack)
@@ -191,8 +239,49 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, pack string) error {
 	if err != nil {
 		return fmt.Errorf("uninstall sentences of pack %s: %w", pack, err)
 	}
-	if n == 0 {
+	// A registered pack with no live sentences (all skipped) still
+	// uninstalls: the registry row is what the admin sees.
+	reg, err := tx.ExecContext(ctx, `
+		UPDATE sentence_packs SET deleted_at = ?, updated_at = ?
+		WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, pack)
+	if err != nil {
+		return fmt.Errorf("uninstall sentence pack %s: %w", pack, err)
+	}
+	regN, err := reg.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("uninstall sentence pack %s: %w", pack, err)
+	}
+	if n == 0 && regN == 0 {
 		return ErrNotFound
+	}
+	return tx.Commit()
+}
+
+// upsertRegistry records the pack's manifest in sentence_packs inside
+// tx, reviving an uninstalled row. An unchanged live row is not
+// restamped, so an identical re-import writes nothing.
+func upsertRegistry(ctx context.Context, tx *sql.Tx, m dict.Manifest, stamp string) error {
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO sentence_packs (pack_id, name, version, language, license, attribution, notice, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT (pack_id) DO UPDATE SET
+			name = excluded.name,
+			version = excluded.version,
+			language = excluded.language,
+			license = excluded.license,
+			attribution = excluded.attribution,
+			notice = excluded.notice,
+			updated_at = excluded.updated_at,
+			deleted_at = NULL
+		WHERE sentence_packs.name IS NOT excluded.name
+		   OR sentence_packs.version IS NOT excluded.version
+		   OR sentence_packs.language IS NOT excluded.language
+		   OR sentence_packs.license IS NOT excluded.license
+		   OR sentence_packs.attribution IS NOT excluded.attribution
+		   OR sentence_packs.notice IS NOT excluded.notice
+		   OR sentence_packs.deleted_at IS NOT NULL`,
+		m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, stamp); err != nil {
+		return fmt.Errorf("register sentence pack %s: %w", m.ID, err)
 	}
 	return nil
 }
@@ -234,6 +323,9 @@ func readPack(dir string) ([]packEntry, error) {
 		if strings.TrimSpace(g.Word) == "" {
 			return nil, fmt.Errorf("%w: %s of %s: entry %d needs a word", dict.ErrInvalidPack, sentencesFile, dir, i)
 		}
+		if len(g.Sentences) == 0 {
+			return nil, fmt.Errorf("%w: %s of %s: entry %d (%s) lists no sentences", dict.ErrInvalidPack, sentencesFile, dir, i, g.Word)
+		}
 		for j, s := range g.Sentences {
 			if strings.TrimSpace(s.Hanzi) == "" || strings.TrimSpace(s.Pinyin) == "" || strings.TrimSpace(s.Translation) == "" {
 				return nil, fmt.Errorf("%w: %s of %s: sentence %d of %s needs a hanzi, pinyin, and translation",
@@ -256,6 +348,9 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, rows []sente
 	}
 	defer tx.Rollback()
 	stamp := now()
+	if err := upsertRegistry(ctx, tx, m, stamp); err != nil {
+		return err
+	}
 
 	// Diff against the pack's stored sentences — identified by entry and
 	// text — and write only the difference: an unchanged sentence keeps

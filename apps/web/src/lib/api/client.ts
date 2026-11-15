@@ -1,5 +1,3 @@
-import { goto } from '$app/navigation';
-import { normalizePath, redirectsOnUnauthorized } from '../routeAccess';
 
 // The bearer token lives in localStorage under this exact key: the
 // static SPA has no server session, so every reload rehydrates from here.
@@ -9,11 +7,14 @@ export const TOKEN_KEY = 'qinqin.token';
 // API sends for 4xx/5xx responses.
 export class ApiError extends Error {
 	status: number;
+	/** Seconds from a Retry-After header, when the server sent one. */
+	retryAfterSeconds?: number;
 
-	constructor(status: number, message: string) {
+	constructor(status: number, message: string, retryAfterSeconds?: number) {
 		super(message);
 		this.name = 'ApiError';
 		this.status = status;
+		if (retryAfterSeconds !== undefined) this.retryAfterSeconds = retryAfterSeconds;
 	}
 }
 
@@ -24,6 +25,8 @@ export interface ApiOptions {
 	auth?: boolean;
 	/** Aborts the request. */
 	signal?: AbortSignal;
+	/** Lets the request outlive the page (a save on pagehide). Bodies over 64 KiB cannot use it. */
+	keepalive?: boolean;
 }
 
 let unauthorizedHandler: (() => void) | null = null;
@@ -55,23 +58,37 @@ export function setWorkspaceGoneHandler(handler: (() => void) | null): void {
 	workspaceGoneHandler = handler;
 }
 
+// Only used when storage refuses the write (blocked or private mode): the
+// session then lasts until the tab is closed instead of failing at once.
+let memoryToken: string | null = null;
+
 export function getToken(): string | null {
 	try {
+		// A token held in memory (storage refused it) is newer than anything stored.
+		if (memoryToken !== null) return memoryToken;
 		return typeof localStorage === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
 	} catch {
-		return null;
+		return memoryToken;
 	}
 }
 
 export function setToken(token: string): void {
 	try {
 		localStorage.setItem(TOKEN_KEY, token);
+		memoryToken = null;
 	} catch {
-		// Storage unavailable (private mode): the in-memory store still works.
+		memoryToken = token;
+		// Do not leave an older stored token behind to be sent or reloaded.
+		try {
+			localStorage.removeItem(TOKEN_KEY);
+		} catch {
+			// Storage is unusable; memory holds the session.
+		}
 	}
 }
 
 export function clearToken(): void {
+	memoryToken = null;
 	try {
 		localStorage.removeItem(TOKEN_KEY);
 	} catch {
@@ -79,23 +96,35 @@ export function clearToken(): void {
 	}
 }
 
-function currentPath(): string {
-	if (typeof window === 'undefined') return '';
-	return normalizePath(window.location.pathname);
+// The bearer token goes only to this app's own API: a same-origin absolute
+// path. An absolute URL or a protocol-relative `//host/...` would send the
+// token to another origin.
+export function isOwnApiPath(path: string): boolean {
+	return path.startsWith('/') && !path.startsWith('//') && !path.includes('\\');
+}
+
+/**
+ * notifyUnauthorized is what any 401 does: drop the token and tell the auth
+ * store. It never navigates: the layout guard (lib/routeAccess.ts) is the
+ * single owner of the redirect to /login. api() and the XHR upload helper
+ * share it, so a session that drops mid-upload logs out too.
+ */
+export function notifyUnauthorized(): void {
+	clearToken();
+	unauthorizedHandler?.();
 }
 
 /**
  * api performs a same-origin JSON request. A stored token is attached as
  * `Authorization: Bearer` unless `auth` is false. Non-2xx responses throw
- * ApiError; a 401 also clears the token and redirects to /login from a
- * private page. On /login or /register that would loop, and on an open page
- * (the Sources page) the user is signed out quietly and stays put
- * (lib/routeAccess.ts).
+ * ApiError; a 401 also clears the token and tells the auth store, and the
+ * layout guard (lib/routeAccess.ts) is the one place that navigates to
+ * /login — on an auth or open page the user simply stays put.
  */
-export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+async function request(path: string, options: ApiOptions): Promise<Response> {
 	const headers: Record<string, string> = { accept: 'application/json' };
 	const token = getToken();
-	if (options.auth !== false && token) {
+	if (options.auth !== false && token && isOwnApiPath(path)) {
 		headers.authorization = `Bearer ${token}`;
 	}
 
@@ -111,26 +140,52 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
 		method: options.method ?? (hasBody ? 'POST' : 'GET'),
 		headers,
 		body: hasBody ? (isForm ? (options.body as FormData) : JSON.stringify(options.body)) : undefined,
-		signal: options.signal
+		signal: options.signal,
+		...(options.keepalive ? { keepalive: true } : {})
 	});
 
 	if (!response.ok) {
 		const message = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
-		if (response.status === 401) {
-			clearToken();
-			unauthorizedHandler?.();
-			if (redirectsOnUnauthorized(currentPath())) {
-				void goto('/login');
-			}
-		}
+		if (response.status === 401) notifyUnauthorized();
 		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
-		throw new ApiError(response.status, message);
+		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
+		throw new ApiError(response.status, message, Number.isFinite(retry) && retry > 0 ? retry : undefined);
 	}
+	return response;
+}
 
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+	const response = await request(path, options);
 	if (response.status === 204) {
 		return undefined as T;
 	}
 
 	const text = await response.text();
 	return (text ? JSON.parse(text) : undefined) as T;
+}
+
+/**
+ * apiBlob is api() for a binary body (a photo): the same bearer token,
+ * 401 and workspace-gone handling, but the response comes back as a Blob.
+ */
+export async function apiBlob(path: string, options: ApiOptions = {}): Promise<Blob> {
+	const response = await request(path, options);
+	return response.blob();
+}
+
+/**
+ * apiErrorBody parses the `{error, message}` JSON the AI and journal
+ * routes answer with; null for any other error or a plain-text body.
+ */
+export function apiErrorBody(err: unknown): { error: string; message: string } | null {
+	if (!(err instanceof ApiError)) return null;
+	try {
+		const body = JSON.parse(err.message) as unknown;
+		if (typeof body !== 'object' || body === null) return null;
+		const { error, message } = body as { error?: unknown; message?: unknown };
+		if (typeof error !== 'string') return null;
+		return { error, message: typeof message === 'string' ? message : '' };
+	} catch {
+		return null;
+	}
 }

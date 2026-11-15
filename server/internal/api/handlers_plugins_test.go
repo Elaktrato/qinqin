@@ -1,11 +1,16 @@
 package api_test
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
+
+	"qinqin/internal/plugins"
 )
 
 // pluginInfoBody mirrors one element of GET /api/plugins.
@@ -62,6 +67,25 @@ func registerPlugin(t *testing.T, tsURL, adminToken, manifest string) *http.Resp
 	return doRaw(t, http.MethodPost, tsURL, "/api/admin/plugins", adminToken, manifest)
 }
 
+// seedBuiltin stores a manifest under a built-in plugin id the way server
+// start-up does (Register refuses those ids on the admin route).
+func seedBuiltin(t *testing.T, sqlDB *sql.DB, manifest string) {
+	t.Helper()
+	if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, []byte(manifest)); err != nil {
+		t.Fatalf("seed built-in: %v", err)
+	}
+}
+
+// validManifest is a feature manifest that passes plugins.ParseManifest:
+// sdk 1, owns-data, no surfaces or events. extra is a list of JSON members
+// appended last, so a repeated key overrides the default.
+func validManifest(id, extra string) string {
+	if extra != "" {
+		extra = "," + extra
+	}
+	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
+}
+
 // listPlugins fetches GET /api/plugins with the caller's token.
 func listPlugins(t *testing.T, tsURL, token string) []pluginInfoBody {
 	t.Helper()
@@ -81,7 +105,7 @@ func TestPluginRegistrationRoute(t *testing.T) {
 
 	// Registering a feature plugin is admin-gated: unauthenticated and
 	// non-admin callers alike are refused.
-	manifest := `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`
+	manifest := validManifest("qinqin-heatmap", `"name":"Study heatmap"`)
 	if resp := registerPlugin(t, ts.URL, "", manifest); resp.StatusCode != http.StatusForbidden {
 		t.Errorf("register without token: status = %d, want %d", resp.StatusCode, http.StatusForbidden)
 	}
@@ -100,8 +124,18 @@ func TestPluginRegistrationRoute(t *testing.T) {
 		}
 	}
 
+	// The contract is checked and the 400 body names the problem.
+	resp := registerPlugin(t, ts.URL, admin, `{"id":"x","name":"X","version":"1","type":"feature","sdk":1,"surfaces":[],"permissions":[]}`)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("register bad version: status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	}
+	if body, _ := io.ReadAll(resp.Body); !strings.Contains(string(body), `version "1" must look like`) {
+		t.Errorf("400 body = %q, want the version problem", body)
+	}
+	resp.Body.Close()
+
 	// The admin registers the heatmap manifest; it lists enabled by default.
-	resp := registerPlugin(t, ts.URL, admin, manifest)
+	resp = registerPlugin(t, ts.URL, admin, manifest)
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("register heatmap: status = %d, want %d", resp.StatusCode, http.StatusCreated)
 	}
@@ -132,7 +166,7 @@ func TestPluginStateRoute(t *testing.T) {
 	ts, _ := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
-	registerPlugin(t, ts.URL, admin, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)
+	registerPlugin(t, ts.URL, admin, validManifest("qinqin-heatmap", `"name":"Study heatmap"`))
 
 	// The plugin routes require a user.
 	if resp := doJSON(t, http.MethodGet, ts.URL, "/api/plugins", "", nil); resp.StatusCode != http.StatusUnauthorized {
@@ -173,11 +207,11 @@ func TestPluginStateRoute(t *testing.T) {
 }
 
 func TestPluginDataRoute(t *testing.T) {
-	ts, _ := newServer(t)
+	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
 	bob := registerUser(t, ts.URL, "bob", admin)
-	registerPlugin(t, ts.URL, admin, `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature"}`)
+	seedBuiltin(t, sqlDB, validManifest("qinqin-flashcards", ""))
 
 	// Alice opens a zh workspace to scope a deck to.
 	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
@@ -288,5 +322,118 @@ func TestPluginDataRoute(t *testing.T) {
 	}
 	if resp := doJSON(t, http.MethodGet, ts.URL, global, "", nil); resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("GET data without token: status = %d, want %d", resp.StatusCode, http.StatusUnauthorized)
+	}
+}
+
+func TestListPluginDataRoute(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	alice := registerUser(t, ts.URL, "alice", admin)
+	bob := registerUser(t, ts.URL, "bob", admin)
+	seedBuiltin(t, sqlDB, validManifest("qinqin-journal", ""))
+
+	var ws workspaceBody
+	resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", alice, map[string]string{"language": "zh"})
+	decodeJSON(t, resp, &ws)
+	w := "?workspace=" + strconv.FormatInt(ws.ID, 10)
+	for _, k := range []string{"entry:2", "entry:1", "review:1"} {
+		if r := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-journal/data/"+k+w, alice, `{"k":"`+k+`"}`); r.StatusCode != http.StatusOK {
+			t.Fatalf("PUT %s: %d", k, r.StatusCode)
+		}
+	}
+
+	resp = doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w+"&prefix=entry:", alice, nil)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("list: status = %d", resp.StatusCode)
+	}
+	var rows []pluginDataBody
+	decodeJSON(t, resp, &rows)
+	if len(rows) != 2 || rows[0].Key != "entry:1" || rows[1].Key != "entry:2" || string(rows[0].Data) != `{"k":"entry:1"}` {
+		t.Fatalf("rows = %+v", rows)
+	}
+
+	// An empty result is [] not null.
+	resp = doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w+"&prefix=none:", alice, nil)
+	if body := readAll(t, resp); strings.TrimSpace(body) != "[]" {
+		t.Errorf("empty list body = %q, want []", body)
+	}
+
+	// A foreign workspace is 404, as is an unknown plugin; no token is 401.
+	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w, bob, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("foreign workspace: status = %d, want 404", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/ghost/data"+w, alice, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("unknown plugin: status = %d, want 404", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-journal/data"+w, "", nil); r.StatusCode != http.StatusUnauthorized {
+		t.Errorf("no token: status = %d, want 401", r.StatusCode)
+	}
+}
+
+func readAll(t *testing.T, resp *http.Response) string {
+	t.Helper()
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
+
+// TestPluginDataWriteNeedsOwnsData: PUT and DELETE are refused for an
+// sdk-1 plugin that does not declare owns-data; reads stay as before.
+func TestPluginDataWriteNeedsOwnsData(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	reader := validManifest("qinqin-reader", `"permissions":["read:entries"]`)
+	seedBuiltin(t, sqlDB, reader)
+	path := "/api/plugins/qinqin-reader/data/k"
+	for _, method := range []string{http.MethodPut, http.MethodDelete} {
+		resp := doRaw(t, method, ts.URL, path, admin, `{"a":1}`)
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusForbidden || !strings.Contains(string(body), "plugin does not declare owns-data") {
+			t.Errorf("%s: status = %d body %q, want 403 plugin does not declare owns-data", method, resp.StatusCode, body)
+		}
+	}
+	if resp := doJSON(t, http.MethodGet, ts.URL, path, admin, nil); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("GET: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+	if resp := doJSON(t, http.MethodGet, ts.URL, "/api/plugins/qinqin-reader/data", admin, nil); resp.StatusCode != http.StatusOK {
+		t.Errorf("list: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/nobody/data/k", admin, `{}`); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("PUT unknown plugin: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+	if resp := doJSON(t, http.MethodDelete, ts.URL, "/api/plugins/nobody/data/k", admin, nil); resp.StatusCode != http.StatusNotFound {
+		t.Errorf("DELETE unknown plugin: status = %d, want %d", resp.StatusCode, http.StatusNotFound)
+	}
+}
+
+func TestPluginRegistrationRefusesBuiltinID(t *testing.T) {
+	ts, _ := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	resp := registerPlugin(t, ts.URL, admin, validManifest("qinqin-journal", ""))
+	if resp.StatusCode != http.StatusConflict {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusConflict)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "qinqin-journal") {
+		t.Errorf("body %q does not name the id", body)
+	}
+}
+
+func TestPluginRegistrationRefusesTrailingData(t *testing.T) {
+	ts, _ := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	resp := registerPlugin(t, ts.URL, admin, validManifest("trail-x", "")+" garbage")
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	}
+	if got := listPlugins(t, ts.URL, admin); len(got) != 0 {
+		for _, p := range got {
+			if p.ID == "trail-x" {
+				t.Errorf("trailing-data manifest was stored")
+			}
+		}
 	}
 }

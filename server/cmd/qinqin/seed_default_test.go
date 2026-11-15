@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -79,8 +80,17 @@ func TestSeedRealPacksRanksWithJiten(t *testing.T) {
 	ctx := context.Background()
 	sqlDB, _ := openTestDB(t)
 	var out bytes.Buffer
-	if err := seed(ctx, sqlDB, []string{committedPacks}, &out); err != nil {
+	if err := seed(ctx, sqlDB, t.TempDir(), []string{committedPacks}, &out); err != nil {
 		t.Fatalf("seed: %v", err)
+	}
+
+	// The derived level packs resolve every character against the bundled
+	// KANJIDIC2 / Unihan entries: no unknown forms may be skipped.
+	for _, id := range []string{"joyo-grades", "tgh-chars"} {
+		re := regexp.MustCompile(`(?m)^` + id + `\s+levels\s+0 unknown forms skipped$`)
+		if !re.MatchString(out.String()) {
+			t.Errorf("seed output lacks %q with 0 unknown forms skipped:\n%s", id, out.String())
+		}
 	}
 
 	rows := csvGzRows(t, jiten)

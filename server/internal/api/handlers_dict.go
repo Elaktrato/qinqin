@@ -3,11 +3,14 @@ package api
 import (
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"qinqin/internal/dict"
 )
@@ -30,13 +33,15 @@ type dictionaryBody struct {
 	License     string `json:"license"`
 	Attribution string `json:"attribution"`
 	Notice      string `json:"notice"`
+	PackID      string `json:"packId"`
+	Language    string `json:"language"`
 }
 
 // handleListDictionaries serves GET /api/dictionaries with every
 // installed dictionary, in install order.
 func (s *server) handleListDictionaries(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT id, name, version, license, attribution, notice FROM dictionaries
+		SELECT id, name, version, license, attribution, notice, pack_id, language FROM dictionaries
 		WHERE deleted_at IS NULL
 		ORDER BY id`)
 	if err != nil {
@@ -71,11 +76,18 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	if u == nil {
 		return
 	}
+	r.Body = http.MaxBytesReader(w, r.Body, maxPackUpload+1<<20)
 	if err := r.ParseMultipartForm(maxPackMemory); err != nil {
+		var tooBig *http.MaxBytesError
+		if errors.As(err, &tooBig) {
+			http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge)
+			return
+		}
 		http.Error(w, "multipart form with a pack zip required", http.StatusBadRequest)
 		return
 	}
-	file, _, err := r.FormFile("pack")
+	defer r.MultipartForm.RemoveAll()
+	file, header, err := r.FormFile("pack")
 	if err != nil {
 		http.Error(w, `multipart field "pack" with the pack zip required`, http.StatusBadRequest)
 		return
@@ -99,11 +111,16 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 			os.RemoveAll(stage)
 		}
 	}()
-	if err := dict.ExtractZip(file, stage); err != nil {
+	ra, ok := file.(io.ReaderAt)
+	if !ok || header.Size > maxPackUpload {
+		http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge)
+		return
+	}
+	if err := dict.ExtractZipAt(ra, header.Size, stage, dict.DefaultZipLimits); err != nil {
 		http.Error(w, "invalid pack zip", http.StatusBadRequest)
 		return
 	}
-	pack, err := dict.LoadPack(stage)
+	pack, err := dict.LoadExtracted(stage)
 	if err != nil {
 		http.Error(w, "invalid pack", http.StatusBadRequest)
 		return
@@ -112,11 +129,12 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "only dictionary packs install here", http.StatusBadRequest)
 		return
 	}
-	dest, err := packDir(packsDir, pack.Manifest)
-	if err != nil {
+	if _, err := packDir(packsDir, pack.Manifest); err != nil {
 		http.Error(w, "invalid pack", http.StatusBadRequest)
 		return
 	}
+	s.packMu.Lock()
+	defer s.packMu.Unlock()
 	// One transaction: a failed import leaves nothing behind.
 	if _, err := dict.ImportLexicon(r.Context(), s.db, &pack); err != nil {
 		if errors.Is(err, dict.ErrInvalidPack) {
@@ -126,18 +144,17 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	if err := os.RemoveAll(dest); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+	legacyToken, _ := newToken()
+	if err := placePack(packsDir, pack.Manifest, pack.Dir, legacyToken); err != nil {
+		// The import is committed: the dictionary is installed. The files
+		// are only a re-install copy, so a failed move is logged, not a 500.
+		log.Printf("dictionary %s: move files into place: %v", pack.Manifest.ID, err)
 	}
-	if err := os.Rename(stage, dest); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	stage = "" // renamed into place; nothing left to clean up
+	// pack.Dir is the stage itself or the one folder inside it; the
+	// deferred cleanup removes what is left of the stage.
 
 	d, err := scanDictionary(s.db.QueryRowContext(r.Context(), `
-		SELECT id, name, version, license, attribution, notice FROM dictionaries
+		SELECT id, name, version, license, attribution, notice, pack_id, language FROM dictionaries
 		WHERE pack_id = ? AND deleted_at IS NULL`, pack.Manifest.ID))
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -158,6 +175,8 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "dictionary not found", http.StatusNotFound)
 		return
 	}
+	s.packMu.Lock()
+	defer s.packMu.Unlock()
 	if err := dict.Uninstall(r.Context(), s.db, id); err != nil {
 		if errors.Is(err, dict.ErrNotFound) {
 			http.Error(w, "dictionary not found", http.StatusNotFound)
@@ -169,19 +188,57 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// packDir returns the pack's install directory under packsDir,
-// rejecting manifest ids and versions unusable as a path component.
+// packDir returns the pack's install directory: <packs>/<type>/<id>/<version>.
+// Nesting by type and id means no two packs can share a directory whatever
+// characters their ids and versions contain (a flat <id>-<version> name made
+// es-test/1.0 and es/test-1.0 the same directory). Ids and versions must be
+// plain names, and the result is checked to lie inside packsDir.
 func packDir(packsDir string, m dict.Manifest) (string, error) {
-	if !packSlug.MatchString(m.ID) || !packSlug.MatchString(m.Version) {
+	if !packSlug.MatchString(m.ID) || !packSlug.MatchString(m.Version) || !packSlug.MatchString(m.Type) {
 		return "", fmt.Errorf("manifest id %q or version %q is not a safe directory name", m.ID, m.Version)
 	}
-	return filepath.Join(packsDir, m.ID+"-"+m.Version), nil
+	dest := filepath.Join(packsDir, m.Type, m.ID, m.Version)
+	rel, err := filepath.Rel(packsDir, dest)
+	if err != nil || rel == "." || strings.HasPrefix(rel, "..") || strings.Count(rel, string(filepath.Separator)) != 2 {
+		return "", fmt.Errorf("pack directory for %q escapes the packs directory", m.ID)
+	}
+	return dest, nil
+}
+
+// placePack moves the extracted pack at src into its install directory.
+// An installed copy is renamed aside first and removed only once the new
+// files are in place, so a failed move leaves the old files as they were.
+func placePack(packsDir string, m dict.Manifest, src, token string) error {
+	dest, err := packDir(packsDir, m)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		return err
+	}
+	aside := ""
+	if _, err := os.Lstat(dest); err == nil {
+		aside = dest + ".old-" + token
+		if err := os.Rename(dest, aside); err != nil {
+			return err
+		}
+	}
+	if err := os.Rename(src, dest); err != nil {
+		if aside != "" {
+			os.Rename(aside, dest)
+		}
+		return err
+	}
+	if aside != "" {
+		os.RemoveAll(aside)
+	}
+	return nil
 }
 
 // scanDictionary reads one dictionary row into its response body.
 func scanDictionary(row rowScanner) (dictionaryBody, error) {
 	var d dictionaryBody
-	if err := row.Scan(&d.ID, &d.Name, &d.Version, &d.License, &d.Attribution, &d.Notice); err != nil {
+	if err := row.Scan(&d.ID, &d.Name, &d.Version, &d.License, &d.Attribution, &d.Notice, &d.PackID, &d.Language); err != nil {
 		return d, err
 	}
 	return d, nil

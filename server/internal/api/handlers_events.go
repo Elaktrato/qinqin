@@ -54,6 +54,10 @@ func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "event ts is required", http.StatusBadRequest)
 			return
 		}
+		if ev.WorkspaceID <= 0 {
+			http.Error(w, "event workspaceId is required", http.StatusBadRequest)
+			return
+		}
 		if !owned[ev.WorkspaceID] {
 			ok, err := s.workspaceOwned(r.Context(), u.ID, ev.WorkspaceID)
 			if err != nil {

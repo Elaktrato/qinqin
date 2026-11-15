@@ -13,10 +13,11 @@ import (
 	"sync"
 	"testing"
 
+	"qinqin/internal/journal"
 	"qinqin/internal/library"
 )
 
-const deleteTestPlugin = `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.0","type":"feature"}`
+var deleteTestPlugin = validManifest("qinqin-flashcards", "")
 
 // eventID returns a valid, distinct ULID for test events.
 func eventID(n int) string {
@@ -103,9 +104,7 @@ func TestDeleteWorkspaceCascades(t *testing.T) {
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
 	alice := registerUser(t, ts.URL, "alice", "")
 	bob := registerUser(t, ts.URL, "bob", alice)
-	if resp := registerPlugin(t, ts.URL, alice, deleteTestPlugin); resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register plugin: status = %d", resp.StatusCode)
-	}
+	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	var aliceID, bobID int64
 	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'alice'`).Scan(&aliceID)
 	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'bob'`).Scan(&bobID)
@@ -229,9 +228,7 @@ func TestDeleteLastWorkspaceRefused(t *testing.T) {
 func TestDeletedWorkspaceSync(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	alice := registerUser(t, ts.URL, "alice", "")
-	if resp := registerPlugin(t, ts.URL, alice, deleteTestPlugin); resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register plugin: status = %d", resp.StatusCode)
-	}
+	seedBuiltin(t, sqlDB, deleteTestPlugin)
 	gone := createWorkspace(t, ts.URL, alice, "zh", "throwaway")
 	kept := createWorkspace(t, ts.URL, alice, "zh", "")
 	for _, ws := range []int64{gone, kept} {
@@ -420,5 +417,42 @@ func TestDeletedBookIdIsNeverReused(t *testing.T) {
 	}
 	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM library_bookmarks WHERE book_id = ?`, fresh); n != 0 {
 		t.Errorf("new book carries %d bookmarks of the deleted one", n)
+	}
+}
+
+func TestDeleteWorkspaceRemovesPhotos(t *testing.T) {
+	ts, sqlDB, dataDir := newServerWithDir(t)
+	alice := registerUser(t, ts.URL, "alice", "")
+	var aliceID int64
+	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'alice'`).Scan(&aliceID)
+	w := createWorkspace(t, ts.URL, alice, "zh", "w")
+	v := createWorkspace(t, ts.URL, alice, "zh", "v")
+	photos := journal.Photos{DB: sqlDB, Dir: filepath.Join(dataDir, "journal")}
+	ctx := context.Background()
+	var wIDs []string
+	for i := 0; i < 2; i++ {
+		ph, err := photos.Create(ctx, aliceID, w, []byte("jpeg"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		wIDs = append(wIDs, ph.ID)
+	}
+	keep, err := photos.Create(ctx, aliceID, v, []byte("jpeg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := deleteWorkspace(t, ts.URL, alice, w); got != http.StatusNoContent {
+		t.Fatalf("DELETE: status = %d", got)
+	}
+	for _, id := range wIDs {
+		if _, err := os.Stat(filepath.Join(photos.Dir, strconv.FormatInt(aliceID, 10), id+".jpg")); !os.IsNotExist(err) {
+			t.Errorf("photo file %s survived the workspace", id)
+		}
+	}
+	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM journal_photos WHERE workspace_id = ?`, w); n != 0 {
+		t.Errorf("%d photo rows survived", n)
+	}
+	if _, _, err := photos.Get(ctx, aliceID, keep.ID); err != nil {
+		t.Errorf("the other workspace's photo is gone: %v", err)
 	}
 }

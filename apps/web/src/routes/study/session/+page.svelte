@@ -1,7 +1,14 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
+	import { token } from '$lib/auth';
+	import { activate, canSound, headwordClips } from '$lib/audio/button';
+	import { readAudioSettings } from '$lib/audio/settings';
+	import { getPlayer } from '$lib/audio/shared';
+	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { ApiError } from '$lib/api/client';
 	import type { Entry, EntryBase, Sentence } from '$lib/api/types';
@@ -28,9 +35,11 @@
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
+	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { buildLevelQueue } from '$lib/study/levelQueue';
+	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
-	import { addCard, loadStudyData } from '$lib/study/store';
+	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -156,9 +165,18 @@
 	let reserve = $state.raw<FlowItem[]>([]);
 	let backfillLeft = 0;
 	let reviews = $state.raw<ReviewEvent[]>([]);
+	// The weights loaded with this session; a change elsewhere waits for the next load.
+	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
+	// Re-shows answered this session; practice only, never recorded.
+	let reshown = $state(0);
 	let entries = $state.raw<Record<number, Entry>>({});
+	// The recordings of every entry in the queue, resolved once per session.
+	let audioMap = $state.raw<Record<string, AudioResolution>>({});
+	// True once the resolution has finished (found, failed or not needed): autoplay
+	// waits for it so a recording that arrives late still plays on its card.
+	let audioSettled = $state(false);
 	let entryError = $state('');
 	let gradeError = $state('');
 	let grading = $state(false);
@@ -212,6 +230,7 @@
 	}
 
 	const currentItem = $derived(queue[index]);
+	const queueProgress = $derived(progressOf(queue, index));
 	const currentEntry = $derived(
 		currentItem === undefined ? undefined : entries[currentItem.entryId]
 	);
@@ -281,7 +300,10 @@
 		reviews = [];
 		sessionReviews = [];
 		index = 0;
+		reshown = 0;
 		entries = {};
+		audioMap = {};
+		audioSettled = false;
 		entryError = '';
 		gradeError = '';
 		grading = false;
@@ -313,6 +335,8 @@
 
 			const history = data.reviews;
 			reviews = history;
+			weights = activeWeights(data);
+			const w = weights;
 			cards = data.cards;
 			const now = new Date();
 			if (config.mode === 'levels') {
@@ -324,7 +348,8 @@
 						reviews: history,
 						newLimit: config.newLimit,
 						reviewLimit: config.reviewLimit,
-						now
+						now,
+						w
 					}),
 					data.cards,
 					kinds
@@ -338,6 +363,7 @@
 					newLimit: config.newLimit,
 					reviewLimit: config.reviewLimit,
 					now,
+					w,
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
 					skip: loadIneligible(workspaceId)
@@ -347,6 +373,7 @@
 				backfillLeft = plan.backfillLeft;
 			}
 			ensureEntry(queue[0]);
+			prefetchAudio(seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			queue = [];
@@ -396,7 +423,7 @@
 					...base,
 					item: item.virtual ? { ...item, sentenceId: sentence?.id } : item,
 					sentence,
-					tier: tierForCard(cardId, history, now),
+					tier: item.tier ?? tierForCard(cardId, history, now, weights),
 					seed: `${item.card?.id ?? item.cardId}:${reviewCountFor(cardId, history)}`
 				};
 			}
@@ -432,12 +459,76 @@
 		) {
 			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
 		}
+		if (item.reshow !== undefined) {
+			// A re-show that cannot be shown again is just skipped.
+			queue = removeAt(queue, index);
+			ensureEntry(queue[index]);
+			return;
+		}
 		const next = dropItem({ queue, reserve, backfillLeft }, item.cardId);
 		queue = next.queue;
 		reserve = next.reserve;
 		backfillLeft = next.backfillLeft;
 		ensureEntry(queue[index]);
 	}
+
+	/**
+	 * Resolve the recordings of the whole queue once, for signed-in users:
+	 * one request per 200 entries. A failure only means no recordings; a
+	 * card never waits on it.
+	 */
+	function prefetchAudio(seq: number): void {
+		const ids = [...queue, ...reserve].filter((i) => i.kind === 'vocab' || i.kind === 'tone').map((i) => i.entryId);
+		if (!$token || ids.length === 0) {
+			audioSettled = true;
+			return;
+		}
+		void resolveAudio(ids).then((found) => {
+			if (seq !== requestSeq) return;
+			audioMap = found;
+			audioSettled = true;
+		});
+	}
+
+	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
+	// Only vocab and tone cards pronounce their word.
+	const currentAudio = $derived(
+		resolved !== null && (resolved.item.kind === 'vocab' || resolved.item.kind === 'tone')
+			? cardAudio(resolved.entry, audioMap[String(resolved.item.entryId)], audioSettings)
+			: null
+	);
+	let autoplayedFor: string | null = null;
+
+	function playCurrent(): void {
+		if (!canSound(currentAudio) || currentAudio === null) return;
+		void activate(getPlayer(), currentAudio, currentAudio.lang).catch(() => {});
+	}
+
+	// Autoplay: once per card, right after the reveal, only when the workspace
+	// setting is on (it is off by default).
+	$effect(() => {
+		const key = resolved === null ? '' : `${index}:${resolved.item.cardId}`;
+		const due = autoplayDue({
+			done,
+			autoplay: audioSettings.autoplay,
+			ready: audioSettled,
+			playedFor: autoplayedFor,
+			key
+		});
+		if (!due || key === '') return;
+		// Decided: it plays now (the recordings are in), or there is nothing to play.
+		autoplayedFor = key;
+		untrack(playCurrent);
+	});
+
+	// Warm the next card's recording while this one is on screen.
+	$effect(() => {
+		const next = queue[index + 1];
+		const res = next === undefined ? undefined : audioMap[String(next.entryId)];
+		if (res !== undefined && (next?.kind === 'vocab' || next?.kind === 'tone')) {
+			preloadClips({ clips: headwordClips(res), speakText: '', lang: '', deviceVoice: false });
+		}
+	});
 
 	// Resolve the current item whenever it (or its entry) changes. The
 	// card state resets with it, so a new card always starts unanswered.
@@ -535,35 +626,50 @@
 		gradeError = '';
 		grading = true;
 		try {
-			const result = await gradeItem({
-				item,
+			const step = await applyGrade({
+				queue,
+				index,
 				grade: value,
-				workspaceId,
-				mode: item.kind,
-				meta,
-				currentWorkspaceId: $workspaces.current?.id ?? null,
-				entry: current.entry,
-				addCard,
-				recordReview
+				tier: current.tier,
+				record: () =>
+					gradeItem({
+						item,
+						grade: value,
+						workspaceId,
+						mode: item.kind,
+						meta,
+						currentWorkspaceId: $workspaces.current?.id ?? null,
+						entry: current.entry,
+						addCard,
+						recordReview
+					})
 			});
-			if (!result.ok) {
-				if (sessionWorkspaceId === workspaceId) gradeError = result.error;
+			if (!step.ok) {
+				if (sessionWorkspaceId === workspaceId) gradeError = step.error;
 				return;
 			}
 			if (sessionWorkspaceId !== workspaceId) return;
 
-			// addCard may hand back a card this page already holds.
-			if (result.created && !cards.some((card) => card.id === result.card.id)) {
-				cards = [...cards, result.card];
+			const result = step.recorded;
+			if (result === null) {
+				// A re-show is practice: no review event, so FSRS, XP, streak and
+				// the log count the card once.
+				reshown += 1;
+			} else {
+				// addCard may hand back a card this page already holds.
+				if (result.created && !cards.some((card) => card.id === result.card.id)) {
+					cards = [...cards, result.card];
+				}
+				sessionReviews = [
+					...sessionReviews,
+					sessionReview(result.card, value, workspaceId, item.kind, meta)
+				];
 			}
-			sessionReviews = [
-				...sessionReviews,
-				sessionReview(result.card, value, workspaceId, item.kind, meta)
-			];
 			// The focused grade button is disabled for the next card; drop the
 			// focus so Space/Enter reach the window in every browser.
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-			index += 1;
+			queue = step.queue;
+			index = step.index;
 			ensureEntry(queue[index]);
 		} finally {
 			grading = false;
@@ -611,6 +717,12 @@
 		}
 
 		if (blocksGradeKeys(event.target)) return;
+		if (isPlayKey(event) && canSound(currentAudio)) {
+			// Only after the reveal: this branch is past the `!done` return.
+			event.preventDefault();
+			playCurrent();
+			return;
+		}
 		const value = GRADE_KEYS[event.key];
 		if (value !== undefined) {
 			event.preventDefault();
@@ -631,6 +743,10 @@
 		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Session', 'Study')}</title>
+</svelte:head>
 
 <svelte:window onkeydown={onKeydown} />
 
@@ -671,6 +787,11 @@
 				<strong>{sessionReviews.length}</strong>
 				{sessionReviews.length === 1 ? 'review' : 'reviews'}
 			</p>
+			{#if reshown > 0}
+				<p class="stat">
+					<strong>{reshown}</strong> re-{reshown === 1 ? 'show' : 'shows'} (practice, not counted)
+				</p>
+			{/if}
 			<p class="stat"><strong>+{sessionXp}</strong> XP this session</p>
 			<ul class="breakdown" aria-label="XP by card type">
 				{#each STUDY_KINDS as kind (kind)}
@@ -709,7 +830,10 @@
 	{:else}
 		<header class="top">
 			<h1>Study</h1>
-			<p class="progress" aria-live="polite">{index + 1} / {queue.length}</p>
+			<p class="progress" aria-live="polite">
+					{queueProgress.position} / {queueProgress.total}{#if queueProgress.pending > 0}, {queueProgress.pending}
+						to repeat{/if}
+				</p>
 			<a href="/study">End session</a>
 		</header>
 
@@ -728,18 +852,24 @@
 					{#if current.item.kind === 'sentence'}
 						<span class="badge">{TIER_LABELS[current.tier]}</span>
 					{/if}
+					{#if current.item.reshow !== undefined}
+						<span class="badge badge-again"
+							>Again, look {current.item.reshow + 1} of {MAX_RESHOWS + 1}</span
+						>
+					{/if}
 					{#if current.item.virtual && current.item.kind !== 'vocab'}
 						<span class="badge">new</span>
 					{/if}
 				</p>
 
-				{#key current.item.cardId}
+				{#key index}
 					{#if current.item.kind === 'vocab'}
 						<VocabCard
 							item={current.item}
 							entry={current.entry}
 							revealed={done}
 							onDone={onCardDone}
+							audio={currentAudio ?? undefined}
 						/>
 					{:else if current.item.kind === 'sentence' && current.sentence !== null}
 						<SentenceCard
@@ -761,7 +891,13 @@
 							onDone={onCardDone}
 						/>
 					{:else if current.item.kind === 'tone'}
-						<ToneCard item={current.item} entry={current.entry} {done} onDone={onCardDone} />
+						<ToneCard
+							item={current.item}
+							entry={current.entry}
+							{done}
+							onDone={onCardDone}
+							audio={currentAudio ?? undefined}
+						/>
 					{/if}
 				{/key}
 
@@ -792,7 +928,7 @@
 						</button>
 					{/each}
 				</div>
-				<p class="keys">{KEY_HINTS[current.item.kind]}</p>
+				<p class="keys">{KEY_HINTS[current.item.kind]}{#if done && canSound(currentAudio)} · P plays{/if}</p>
 			</article>
 		{/if}
 	{/if}
@@ -879,6 +1015,19 @@
 		border-radius: 999px;
 		padding: 0.05rem 0.55rem;
 		opacity: 0.85;
+	}
+
+	.badge.badge-again {
+		border-color: #c62828;
+		color: #c62828;
+		opacity: 1;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.badge.badge-again {
+			border-color: #ff8a80;
+			color: #ff8a80;
+		}
 	}
 
 	.badge.kind-sentence {

@@ -114,7 +114,14 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 		ms         []member
 		skipped    []string
 		charLowest = map[int64]int{} // a derived character's entry id -> its lowest level so far
+		skippedSet = map[string]bool{}
 	)
+	skip := func(form string) { // each unknown form is reported once, in first-seen order
+		if !skippedSet[form] {
+			skippedSet[form] = true
+			skipped = append(skipped, form)
+		}
+	}
 	for i, lv := range lvls {
 		seen := map[int64]bool{}
 		for _, pe := range lv.Entries {
@@ -131,7 +138,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 				e, err = store.Best(ctx, m.Language, unit, form)
 			}
 			if errors.Is(err, lexicon.ErrNotFound) {
-				skipped = append(skipped, form)
+				skip(form)
 				continue
 			}
 			if err != nil {
@@ -149,7 +156,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 			for _, r := range distinctHan(form) {
 				c, err := store.Best(ctx, m.Language, UnitCharacter, string(r))
 				if errors.Is(err, lexicon.ErrNotFound) {
-					skipped = append(skipped, string(r))
+					skip(string(r))
 					continue
 				}
 				if err != nil {
@@ -466,14 +473,22 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 	case "hanzi", UnitCharacter:
 		unit = UnitCharacter
 	default:
-		return "", nil, fmt.Errorf("%w: %s of %s: unit %q must be word or hanzi", dict.ErrInvalidPack, levelsFile, dir, p.Unit)
+		return "", nil, fmt.Errorf("%w: %s of %s: unit %q must be word, hanzi or character", dict.ErrInvalidPack, levelsFile, dir, p.Unit)
 	}
 	if len(p.Levels) == 0 {
 		return "", nil, fmt.Errorf("%w: %s of %s: at least one level is required", dict.ErrInvalidPack, levelsFile, dir)
 	}
+	// Names, forms and readings are stored and compared trimmed, so
+	// "1" and " 1" are one level name and " 你好" finds 你好.
 	names := make(map[string]bool, len(p.Levels))
-	for i, lv := range p.Levels {
-		if strings.TrimSpace(lv.Name) == "" {
+	for i := range p.Levels {
+		lv := &p.Levels[i]
+		lv.Name = strings.TrimSpace(lv.Name)
+		for j := range lv.Entries {
+			lv.Entries[j].Form = strings.TrimSpace(lv.Entries[j].Form)
+			lv.Entries[j].Reading = strings.TrimSpace(lv.Entries[j].Reading)
+		}
+		if lv.Name == "" {
 			return "", nil, fmt.Errorf("%w: %s of %s: level %d needs a name", dict.ErrInvalidPack, levelsFile, dir, i)
 		}
 		if names[lv.Name] {

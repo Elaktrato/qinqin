@@ -18,7 +18,10 @@ import (
 // Put upserts user userID's patch of lexicon entry entryID, replacing any
 // previous patch wholesale and stamping updated_at with the server
 // clock — the LWW timestamp. Nil fields store NULL, which Apply reads
-// as untouched: that field shows its shared value.
+// as untouched: that field shows its shared value. An all-nil patch is a
+// revert and deliberately keeps its row with a fresh updated_at: sync
+// ships user_edits rows, so that row is how other devices learn to drop
+// their copy of the old patch.
 func Put(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, patch model.EntryPatch) error {
 	var written, readings any // nil args bind as NULL: the untouched case
 	if patch.Written != nil {

@@ -1,0 +1,65 @@
+# qinqin as a Portainer stack (web editor, or Repository with compose path
+# deploy/portainer-stack.yml). Step by step: README, "Deploying with Portainer".
+#
+# Variables (Portainer: Environment variables section of the stack):
+#   QINQIN_SECRET    REQUIRED. 32 random bytes, base64. Generate with
+#                      head -c 32 /dev/urandom | base64
+#                    Back it up separately from the data volume; it is never
+#                    written to /data. The deployment fails while it is unset.
+#   QINQIN_IMAGE     default ghcr.io/elaktrato/qinqin:latest. Pin a release,
+#                    e.g. ghcr.io/elaktrato/qinqin:v1.2.3 (tags: latest, v*, sha).
+#   QINQIN_PORT      published host port, default 8080.
+#   QINQIN_DATA_VOLUME  default "qinqin-data" (a named volume). To use a host
+#                    directory instead, set it to an absolute path such as
+#                    /srv/qinqin/data: Docker then bind-mounts it (it must exist
+#                    and be writable by root, the user the image runs as).
+#   QINQIN_SECRET_PREVIOUS  only while rotating: the OLD secret, for one restart.
+#   QINQIN_AI_PROVIDERS     comma list of the AI providers users may choose:
+#                    anthropic, openai, gemini, deepseek, mistral, xai, groq,
+#                    openrouter and "custom" (admin-registered endpoints).
+#                    Empty = all.
+#   QINQIN_AI_ALLOW_PRIVATE "1" lets admin-registered AI endpoints reach
+#                    loopback and private addresses (Ollama on your LAN). Off
+#                    by default; enable only if you trust every admin.
+#   QINQIN_AI_PROVIDER      "fake" for testing only; never contacts an AI service.
+#                    "anthropic" (legacy) means QINQIN_AI_PROVIDERS=anthropic.
+services:
+  qinqin:
+    image: ${QINQIN_IMAGE:-ghcr.io/elaktrato/qinqin:latest}
+    restart: unless-stopped
+    ports:
+      - "${QINQIN_PORT:-8080}:8080"
+    volumes:
+      - ${QINQIN_DATA_VOLUME:-qinqin-data}:/data
+    environment:
+      QINQIN_DATA: /data
+      QINQIN_SECRET: ${QINQIN_SECRET:?set QINQIN_SECRET (head -c 32 /dev/urandom | base64)}
+      QINQIN_SECRET_PREVIOUS: ${QINQIN_SECRET_PREVIOUS:-}
+      QINQIN_AI_PROVIDERS: ${QINQIN_AI_PROVIDERS:-}
+      QINQIN_AI_ALLOW_PRIVATE: ${QINQIN_AI_ALLOW_PRIVATE:-}
+      QINQIN_AI_PROVIDER: ${QINQIN_AI_PROVIDER:-}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    # No `user:` and no `read_only:`: the image has no USER (runs as root) and
+    # OCR, pack uploads and pack staging write temp files under /tmp.
+    # Optional resource caps. Deliberately off: the first-run seed (JMdict,
+    # CEDICT, Unihan) and OCR can need more than a guessed limit, and an
+    # out-of-memory kill during setup is worse than none. Measure first.
+    # mem_limit: 2g
+    # cpus: 2.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# With QINQIN_DATA_VOLUME set to a path, Docker treats it as a bind mount and
+# the named volume below stays unused (harmless).
+volumes:
+  qinqin-data:
