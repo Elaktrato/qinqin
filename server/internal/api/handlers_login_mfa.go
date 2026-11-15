@@ -445,7 +445,7 @@ func (s *server) handleEmailLoginVerify(w http.ResponseWriter, r *http.Request) 
 	}
 	plan, err := s.planSignIn(r.Context(), u, true)
 	if errors.Is(err, errPasswordRequired) {
-		writeAuthError(w, http.StatusForbidden, "password_required", "Two-step sign-in is required here: sign in with your password.")
+		writeAuthError(w, http.StatusForbidden, "password_login_required", "Two-step sign-in is required here: sign in with your password.")
 		return
 	}
 	if err != nil {

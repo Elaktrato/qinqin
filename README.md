@@ -413,8 +413,8 @@ AI usage records, time-zone history, sessions, reset links, invites the account 
 AI endpoints (their creator becomes nobody), installed packs, languages, plugins and dictionaries, and the audit log
 (the name in it becomes `deleted user #id`). The last active administrator cannot delete themselves. **Locked out?**
 `qinqin recover --username NAME [--enable] [--admin]` (new password from `QINQIN_PASSWORD` or stdin; a terminal echoes what is typed, so prefer the variable or a pipe; `--admin` on a disabled account needs `--enable`; it must be
-changed at the next sign-in; every session of that account ends; `--reset-mfa` is accepted and does nothing until
-two-factor authentication exists).
+changed at the next sign-in; every session of that account ends; `--reset-mfa` also removes the account's
+authenticator app, recovery codes and email-code method).
 
 Security notes. (1) Migration 032 stores only hashes of the session tokens and zeroes the database pages that
 held the old plaintext ones (including the write-ahead log once it is checkpointed), but **a backup taken before the
@@ -424,6 +424,37 @@ because of it. (2) Signing in to a disabled account with the right password answ
 knows why), and a wrong password still answers the usual 401; this tells someone who already holds the password that
 the account exists and is disabled, which was judged better than a mystery refusal. (3) Forcing a password change
 signs the user out everywhere.
+
+#### Email (SMTP)
+
+Email is optional and lives in the server itself: **Settings, Admin, Email**. Fields: server, connection
+security (`STARTTLS` on port 587, the default and required to succeed, never silently downgraded; `TLS` on 465;
+`None`, plain text, allowed only without a user name and password), user name and password, sender address and
+name, and the address people use to reach the site (it goes into reset links). Certificates are always verified.
+The password is encrypted with `QINQIN_SECRET` and never shown again or logged: the form says "A password is
+saved" and offers Replace and Remove; changing the server, port, security or user name makes you type the password
+again, so a session cannot send it somewhere else. **Send test mail** reports a category (`connect`, `blocked`, `tls`,
+`auth`, `sender`, `recipient`, `timeout`, `protocol`) and the SMTP reply code, never the server's own text. Mail goes
+out in the background (one queue, at most 200 mails an hour for the whole server, never an address or code in the log).
+By default the server may not connect to loopback or private addresses; set `QINQIN_SMTP_ALLOW_PRIVATE=1` for a relay in
+your LAN or a container (cloud metadata and link-local addresses are never allowed). Docker example: a relay service
+`smtp` in the same stack, host `smtp`, port 25, security None, and `QINQIN_SMTP_ALLOW_PRIVATE=1` on qinqin. To try it
+without a provider run `python3 scripts/smtp-sink.py --port 2525 --dir ./mail` (stores each message as `.eml`, prints
+the subject only) and use host `127.0.0.1` (or the container name), port 2525, security None.
+Without email these features are hidden, not broken: forgot-password by mail, address confirmation, emailed codes,
+required two-step sign-in and sign-in by code. Removing the email setup switches them off again.
+
+#### Two-step sign-in
+
+Everyone may add an **authenticator app** (TOTP, RFC 6238, 6 digits, 30 s) in Settings, Account, with 10 single-use
+recovery codes; it needs `QINQIN_SECRET`, not email. Where email works, an **emailed code** is a second method. Each
+code can be tried 5 times and lives 10 minutes; at most 10 wrong codes per account per 15 minutes count across all
+sign-ins. An authenticator code works once (replay is refused). The administrator can require two-step sign-in for
+everyone (**Admin, Security**; needs email): it applies at each person's next sign-in, optionally signing everyone else
+out now. A person without an address is sent to a setup page first. **Sign in with an emailed code** (another switch)
+adds a password-free route; an account with an authenticator still asks for it, and while two steps are required an
+account without one must use the password. A password reset or reset link never removes two-step sign-in. Locked out:
+a recovery code, an administrator (Admin, Users: reset two-factor) or `qinqin recover --username NAME --reset-mfa`.
 
 ### AI journal
 
@@ -471,6 +502,9 @@ cost matters (calls are limited to 30 per user and hour across all providers).
 | 502/504 on an AI review | Proxy timeout below 180 s |
 | "port is already allocated" | Change `QINQIN_PORT` |
 | Unhealthy | `wget` against `127.0.0.1:8080/healthz` inside the container; see the log; a slow first start can exceed the 15 s start period on a slow disk |
+| Test mail fails with `tls` | The server needs STARTTLS (587), implicit TLS (465), or choose None only on a private relay; the certificate must match the host name |
+| Test mail fails with `blocked` | The address is private: set `QINQIN_SMTP_ALLOW_PRIVATE=1` (metadata and link-local are never allowed) |
+| Test mail fails with `auth` | Wrong user name or password; Microsoft 365 needs an app password or SMTP AUTH enabled |
 | "database is locked" during seed | Seed while the app is idle (5 s busy timeout) |
 
 ## Workspaces
@@ -1216,12 +1250,13 @@ head -c 32 /dev/urandom | base64
 
 Without a valid secret the server still starts, AI shows as disabled with the reason (not set, or not 32 bytes of base64), and no key can be stored.
 
-Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot be read and users must enter them again; it is never written to `/data`. Rotate it by moving the old value to `QINQIN_SECRET_PREVIOUS` for one restart: on startup the keys sealed with the previous secret are re-encrypted with the new one, after which the previous value can be removed. A key sealed with a secret the server no longer knows shows as "re-enter your key" instead of failing.
+`QINQIN_SECRET` also seals the mail password and the authenticator secrets (a mail password cannot be stored without it, and authenticator apps are unavailable; recovery codes still work). Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot be read and users must enter them again; it is never written to `/data`. Rotate it by moving the old value to `QINQIN_SECRET_PREVIOUS` for one restart: on startup the keys sealed with the previous secret are re-encrypted with the new one, after which the previous value can be removed. A key sealed with a secret the server no longer knows shows as "re-enter your key" instead of failing.
 
 | Variable | Meaning |
 |---|---|
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
+| `QINQIN_SMTP_ALLOW_PRIVATE` | `1` or `true` lets the mail server be on loopback or a private network (a relay container, a LAN host). Off by default |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
 | `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks (see [Reverse proxy and HTTPS](#reverse-proxy-and-https)). Set `none` when no reverse proxy sits in front |
 | `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |

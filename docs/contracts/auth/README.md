@@ -16,6 +16,8 @@ examples of its throttling subset and a test checks that both agree on every cod
 | `options.json` | `GET /api/auth/options` in the four states (bootstrap, closed, invite, open) |
 | `invites.json` | Invite create (the token is shown once), list, revoke, check |
 | `admin-users.json` | `AdminUser`, create / patch, last-admin and self-target refusals, reset link, deletion preview and delete |
+| `mfa-login.json` | `mfa_required`, the second step, `mfa_enrollment_required`, sign-in by emailed code |
+| `mfa-setup.json` | Authenticator setup and confirm (secret and recovery codes shown once) |
 | `reset.json` | Reset link check and use (a login-shaped answer) |
 
 ## Tokens
@@ -107,3 +109,32 @@ exact list is in the project README, "Registration, invites and user management"
 ## Client rules
 Send `deviceName`; treat the token as opaque; on 401 drop the token and show sign-in; on a 403 with a
 restriction code show that screen; never retry a 429 or 503 automatically; never log tokens or passwords.
+
+
+## Two-step sign-in and email codes (state machine)
+credentials -> [mfa] -> [password change] -> [enrolment] -> full.
+- `POST /api/auth/login` answers `mfa_required` (no token) when the account has an authenticator or
+  the email method, or when the administrator requires two steps and the address is verified (then
+  `methods` is `["email"]`). Answer with `POST /api/auth/login/mfa {challenge, method, code}`;
+  `method` is `totp`, `recovery` (any case, spaces and dashes are ignored by the server) or `email`
+  (ask for the mail first with `POST /api/auth/login/mfa/email`, 202 `{resendAfter: 60}`).
+- Limits: 5 wrong codes per challenge (all methods together; resends do not reset them), challenge
+  10 minutes, at most 3 mails per challenge 60 s apart, and per user 10 wrong codes / 15 min and 30 / day
+  across fresh challenges (`429 rate_limited` with `Retry-After`). The steps are anonymous: bad
+  codes are 401 (`code_invalid` + `attemptsLeft`, `challenge_expired`).
+- Must-change-password comes after the second step: the second-step answer is
+  `password_change_required` with a token. With two-step sign-in required and no verified address
+  the login answer is `mfa_enrollment_required` WITH a token of a restricted session (`me.restriction`
+  is `mfa_enrollment`); finish with `POST /api/account/mfa/totp/setup` + `confirm` or the email method.
+- Sign in by emailed code (when `options.emailCodeLogin`): `POST /api/auth/email-login/start {login}`
+  is always 202 with the same keys for any identifier; `verify {challenge, code}` answers like a login
+  (`mfa_required` with `totp`/`recovery` for a user with an authenticator; `403 password_login_required`
+  under enforcement without one). Resend = start again.
+- Password reset by mail: `POST /api/auth/reset-request {login}` is always 202 `{}`;
+  `409 mail_unavailable` when the server has no mail. Using a reset link for an account with two-step
+  sign-in answers `mfa_required` (no session): sign in with the new password.
+- `options.passwordReset` is true exactly when the server can send mail; `totpAvailable` is false
+  without a usable `QINQIN_SECRET`; `mfaEnforced` is the effective switch.
+- Email verification: `PUT /api/account/email` answers `verification`: `sent`, `unavailable` or
+  `none`; `POST /api/account/email/verify {code}` (403 `code_invalid` / `challenge_expired`).
+- The client never computes TOTP and never stores a challenge beyond its screen.

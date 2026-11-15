@@ -337,3 +337,5 @@ func TestAdminResetsAUsersTwoFactor(t *testing.T) {
 		t.Errorf("unknown user = %d", r.StatusCode)
 	}
 }
+
+func totpAt(secret string, at time.Time) (string, error) { return auth.TOTPCode(secret, at) }

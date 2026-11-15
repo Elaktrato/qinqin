@@ -127,7 +127,7 @@ func TestEmailLoginUnderEnforcementNeedsThePasswordWithoutTOTP(t *testing.T) {
 	_, start := e.emailStart(t, "bobby")
 	m := e.waitMails(t, 1)[0]
 	st, body := e.emailVerify(t, start["challenge"].(string), codeIn(t, m))
-	if st != 403 || body["error"] != "password_required" || body["token"] != nil {
+	if st != 403 || body["error"] != "password_login_required" || body["token"] != nil {
 		t.Fatalf("verify = %d %v", st, body)
 	}
 }
