@@ -84,28 +84,26 @@ export interface BackfillResult {
 /** Options of the progressive resolver. */
 export interface BackfillOptions {
 	/**
-	 * Runs `cb` on the next animation frame. Injectable so tests can step
-	 * frames by hand; the default is requestAnimationFrame, or a 16 ms
-	 * timer where there is none.
+	 * Minimum time between two publishes of fetch results, in ms. The
+	 * first resolution publishes at once, later ones are batched into one
+	 * trailing publish per interval. Defaults to 250.
 	 */
-	schedule?: (cb: () => void) => void;
+	intervalMs?: number;
 }
 
-function defaultSchedule(cb: () => void): void {
-	if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => cb());
-	else setTimeout(cb, 16);
-}
+const PUBLISH_INTERVAL_MS = 250;
 
 /**
  * fillMissingWrittenProgressively resolves legacy snapshots in the
  * background. Fetches run with a small concurrency limit. Every publish
  * makes the page re-derive mastery over all cards, so publishes are
- * coalesced: entries already in the cache are folded in with a single
- * `onProgress` up front (and are not refetched), fetch resolutions are
- * published at most once per animation frame, and the complete result is
- * published before the returned promise settles. Failures are swallowed
- * (and not cached) so the map still renders; their count is returned for
- * the caller to surface.
+ * throttled by time, not by frame (a frame would flush after almost
+ * every resolution): entries already in the cache are folded in with a
+ * single `onProgress` up front (and are not refetched), fetch results
+ * are published at most once per interval, and the complete result is
+ * published before the promise settles; no timer outlives the run.
+ * Failures are swallowed (and not cached) so the map still renders;
+ * their count is returned for the caller to surface.
  */
 export async function fillMissingWrittenProgressively(
 	cards: readonly StudyCard[],
@@ -114,7 +112,7 @@ export async function fillMissingWrittenProgressively(
 ): Promise<BackfillResult> {
 	const ids = missingWrittenEntryIds(cards);
 	if (ids.length === 0) return { unresolvedCards: 0 };
-	const schedule = options.schedule ?? defaultSchedule;
+	const interval = options.intervalMs ?? PUBLISH_INTERVAL_MS;
 
 	const resolved = new Map<number, string | null>();
 	const toFetch: number[] = [];
@@ -122,18 +120,31 @@ export async function fillMissingWrittenProgressively(
 		if (writtenByEntry.has(id)) resolved.set(id, writtenByEntry.get(id) ?? null);
 		else toFetch.push(id);
 	}
-	if (resolved.size > 0) onProgress(withWritten(cards, resolved));
+	// A cached "no written form" changes no card, so it needs no publish.
+	if ([...resolved.values()].some((w) => w !== null)) {
+		onProgress(withWritten(cards, resolved));
+	}
 
 	let next = 0;
 	let dirty = false;
-	let framePending = false;
 	let finished = false;
+	let lastPublish = -Infinity;
+	let timer: ReturnType<typeof setTimeout> | null = null;
 
 	function flush(): void {
-		framePending = false;
+		timer = null;
 		if (finished || !dirty) return;
 		dirty = false;
+		lastPublish = Date.now();
 		onProgress(withWritten(cards, resolved));
+	}
+
+	function markDirty(): void {
+		dirty = true;
+		if (timer !== null) return;
+		const wait = lastPublish + interval - Date.now();
+		if (wait <= 0) flush();
+		else timer = setTimeout(flush, wait);
 	}
 
 	async function worker(): Promise<void> {
@@ -143,11 +154,7 @@ export async function fillMissingWrittenProgressively(
 			const result = await fetchWritten(entryId);
 			if (!result.ok) continue;
 			resolved.set(entryId, result.written);
-			dirty = true;
-			if (!framePending) {
-				framePending = true;
-				schedule(flush);
-			}
+			if (result.written !== null) markDirty();
 		}
 	}
 
@@ -158,6 +165,8 @@ export async function fillMissingWrittenProgressively(
 	await Promise.all(workers);
 
 	finished = true;
+	if (timer !== null) clearTimeout(timer);
+	timer = null;
 	const finalCards = withWritten(cards, resolved);
 	if (dirty) onProgress(finalCards);
 	return {

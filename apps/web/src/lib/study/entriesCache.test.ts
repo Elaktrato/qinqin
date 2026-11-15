@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getEntry } from '../api/entries';
 import type { Entry } from '../api/types';
@@ -148,86 +148,64 @@ describe('backfill coalescing', () => {
 		return Array.from({ length: n }, (_, i) => card(`c${i}`, i + 1));
 	}
 
-	// A frame scheduler the test steps by hand.
-	function manualFrames() {
-		let pending: (() => void) | null = null;
-		return {
-			schedule: (cb: () => void) => {
-				pending = cb;
-			},
-			hasPending: () => pending !== null,
-			frame: () => {
-				const cb = pending;
-				pending = null;
-				cb?.();
-			}
-		};
-	}
+	afterEach(() => {
+		vi.useRealTimers();
+	});
 
-	it('publishes a 500-card backfill a handful of times, not 500', async () => {
-		getEntryMock.mockImplementation(async (id) => entry(`字${id}`));
-		const frames = manualFrames();
+	it('publishes a 500-card backfill about once per interval, not 500 times', async () => {
+		vi.useFakeTimers();
+		// Realistic latency: 50 ms per fetch, 4 in flight -> 500 entries
+		// take 500 / 4 * 50 = 6250 ms.
+		getEntryMock.mockImplementation(
+			(id) => new Promise<Entry>((resolve) => setTimeout(() => resolve(entry(`字${id}`)), 50))
+		);
 		let publishes = 0;
 		let last: StudyCard[] = [];
+		const run = fillMissingWrittenProgressively(legacyDeck(500), (next) => {
+			publishes += 1;
+			last = next;
+		});
+		await vi.advanceTimersByTimeAsync(10_000);
+		const result = await run;
 
-		const result = await fillMissingWrittenProgressively(
-			legacyDeck(500),
-			(next) => {
-				publishes += 1;
-				last = next;
-			},
-			{ schedule: frames.schedule }
-		);
-
-		// Before coalescing this was 500 (one mastery pass each).
-		expect(publishes).toBeLessThanOrEqual(2);
+		// Before throttling this was 500 (one mastery pass each).
+		const durationMs = 6250;
+		expect(publishes).toBeLessThanOrEqual(durationMs / 250 + 2);
+		expect(publishes).toBeGreaterThan(1);
 		expect(last.every((c) => c.written !== undefined)).toBe(true);
 		expect(result.unresolvedCards).toBe(0);
+		expect(vi.getTimerCount()).toBe(0);
 	});
 
-	it('publishes at most once per frame while entries keep resolving', async () => {
-		let release: Array<() => void> = [];
+	it('publishes the first resolution at once and the rest as one trailing batch', async () => {
+		vi.useFakeTimers();
 		getEntryMock.mockImplementation(
-			(id) =>
-				new Promise<Entry>((resolve) => {
-					release.push(() => resolve(entry(`字${id}`)));
-				})
+			(id) => new Promise<Entry>((resolve) => setTimeout(() => resolve(entry(`字${id}`)), 10 * id))
 		);
-		const frames = manualFrames();
 		const snapshots: number[] = [];
 		const run = fillMissingWrittenProgressively(
-			legacyDeck(8),
-			(next) => snapshots.push(next.filter((c) => c.written !== undefined).length),
-			{ schedule: frames.schedule }
+			legacyDeck(4),
+			(next) => snapshots.push(next.filter((c) => c.written !== undefined).length)
 		);
-
-		// Resolve the first four in flight, then let a frame pass.
-		await vi.waitFor(() => expect(release).toHaveLength(4));
-		const first = release;
-		release = [];
-		first.forEach((r) => r());
-		await vi.waitFor(() => expect(release).toHaveLength(4));
-		expect(snapshots).toEqual([]);
-		expect(frames.hasPending()).toBe(true);
-		frames.frame();
-		expect(snapshots).toEqual([4]);
-
-		release.forEach((r) => r());
+		await vi.advanceTimersByTimeAsync(11);
+		expect(snapshots).toEqual([1]);
+		await vi.advanceTimersByTimeAsync(100);
 		await run;
-		expect(snapshots.at(-1)).toBe(8);
-		expect(snapshots.length).toBeLessThanOrEqual(3);
+		expect(snapshots).toEqual([1, 4]);
 	});
 
-	it('does not publish after the run resolves', async () => {
+	it('does not publish or leave a timer after the run resolves', async () => {
+		vi.useFakeTimers();
 		getEntryMock.mockResolvedValue(entry('猫'));
-		const frames = manualFrames();
 		let publishes = 0;
-		await fillMissingWrittenProgressively([card('a', 1)], () => (publishes += 1), {
-			schedule: frames.schedule
-		});
+		await fillMissingWrittenProgressively(
+			[card('a', 1), card('b', 2)],
+			() => (publishes += 1)
+		);
 		const before = publishes;
-		frames.frame();
+		await vi.advanceTimersByTimeAsync(1000);
 		expect(publishes).toBe(before);
+		expect(vi.getTimerCount()).toBe(0);
 	});
 
 	it('publishes cached resolutions once and does not refetch them', async () => {
@@ -236,12 +214,17 @@ describe('backfill coalescing', () => {
 		getEntryMock.mockClear();
 
 		let publishes = 0;
-		const frames = manualFrames();
-		await fillMissingWrittenProgressively(legacyDeck(50), () => (publishes += 1), {
-			schedule: frames.schedule
-		});
+		await fillMissingWrittenProgressively(legacyDeck(50), () => (publishes += 1));
 
 		expect(publishes).toBe(1);
 		expect(getEntryMock).not.toHaveBeenCalled();
+	});
+
+	it('does not publish when every cached resolution has no written form', async () => {
+		getEntryMock.mockResolvedValue(entry(''));
+		await fillMissingWritten([card('a', 1)]);
+		let publishes = 0;
+		await fillMissingWrittenProgressively([card('a', 1)], () => (publishes += 1));
+		expect(publishes).toBe(0);
 	});
 });
