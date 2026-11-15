@@ -13,6 +13,9 @@
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import { emailSection } from '$lib/account/emailView';
 	import DeleteAccountDialog from './DeleteAccountDialog.svelte';
+	import TwoFactorManage from '$lib/account/TwoFactorManage.svelte';
+	import EmailVerify from '$lib/account/EmailVerify.svelte';
+	import { mailAvailable } from '$lib/account/mfaView';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
 	import {
 		LOGOUT_EVERYWHERE_CONFIRM,
@@ -60,6 +63,8 @@
 	let emailError = $state('');
 	let emailDone = $state('');
 	let emailBusy = $state(false);
+	let optionsAll = $state<AuthOptions | null>(null);
+	let verifying = $state(false);
 	let deleting = $state(false);
 	const emailView = $derived(emailSection(emailPolicy, $user?.email ?? null));
 
@@ -68,8 +73,9 @@
 		emailError = emailDone = '';
 		emailBusy = true;
 		try {
-			await putEmail(next, emailPassword);
-			emailDone = next === null ? 'Email address removed.' : 'Email address saved.';
+			const res = await putEmail(next, emailPassword);
+			verifying = res.verification === 'sent';
+			emailDone = next === null ? 'Email address removed.' : verifying ? 'Email address saved. Enter the code we sent to confirm it.' : 'Email address saved.';
 			emailPassword = emailDraft = '';
 			await loadMe();
 		} catch (err) {
@@ -84,7 +90,7 @@
 	onMount(() => {
 		void loadSessions();
 		getAuthOptions().then(
-			(o) => (emailPolicy = o.emailPolicy),
+			(o) => ((emailPolicy = o.emailPolicy), (optionsAll = o)),
 			() => undefined
 		);
 	});
@@ -197,8 +203,18 @@
 				{/if}
 			</div>
 		</form>
+		{#if $user?.email && !$user.emailVerified && mailAvailable(optionsAll)}
+			{#if verifying}
+				<EmailVerify address={$user.email} onverified={async () => { verifying = false; await loadMe(); }} />
+			{:else}
+				<p class="hint">This address is not confirmed yet.
+					<button type="button" class="link" onclick={() => (verifying = true)}>Confirm it</button></p>
+			{/if}
+		{/if}
 	{/if}
 </section>
+
+<TwoFactorManage options={optionsAll} />
 
 <section aria-labelledby="account-password-heading" class="block">
 	<h2 id="account-password-heading">Password</h2>
