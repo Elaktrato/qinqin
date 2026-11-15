@@ -113,7 +113,7 @@ plugins/data-audio/kanjialive-audio/
   - `ReadingKey(lang, reading string) string`: ja → hiragana, no spaces; zh →
     numbered pinyin, lowercase, no spaces (`pinyin.ToNumbered`, new in
     `internal/pinyin`).
-  - `Resolve(ctx, db, entry) (Resolution, error)`: term clips matching the
+  - `Resolve(ctx, db, lang, written string, readings []string) (Resolution, error)`: term clips matching the
     entry's written form and first reading (all packs, pack order); else, zh
     only, the syllable sequence when complete.
 - `seed`: `importOrder[TypeAudio] = 4`; the default roots gain
