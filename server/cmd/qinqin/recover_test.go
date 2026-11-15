@@ -69,3 +69,35 @@ func TestRecoverResetsPasswordAndSessions(t *testing.T) {
 		t.Error("recover without --enable re-enabled the account")
 	}
 }
+
+func TestRecoverAdminOnDisabledNeedsEnable(t *testing.T) {
+	dir := t.TempDir()
+	sqlDB, _ := db.Open(filepath.Join(dir, "qinqin.db"))
+	ctx := context.Background()
+	u, _ := auth.CreateUser(ctx, sqlDB, "alice", "old-password-123", false)
+	sqlDB.Exec(`UPDATE users SET disabled_at = '2020-01-01T00:00:00Z' WHERE id = ?`, u.ID)
+	sqlDB.Close()
+	var out bytes.Buffer
+	err := recoverCmd([]string{"--data", dir, "--username", "alice", "--admin"}, strings.NewReader("brand-new-temp-1\n"), &out)
+	if err == nil || !strings.Contains(err.Error(), "--enable") {
+		t.Fatalf("err = %v, want a refusal naming --enable", err)
+	}
+	sqlDB, _ = db.Open(filepath.Join(dir, "qinqin.db"))
+	var admin int
+	sqlDB.QueryRow(`SELECT admin FROM users WHERE id = ?`, u.ID).Scan(&admin)
+	sqlDB.Close()
+	if admin != 0 {
+		t.Error("the refused run changed the account")
+	}
+	// without --admin a still-disabled account is recovered with a note
+	out.Reset()
+	if err := recoverCmd([]string{"--data", dir, "--username", "alice"}, strings.NewReader("brand-new-temp-1\n"), &out); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "still disabled") {
+		t.Errorf("output %q lacks the still-disabled note", out.String())
+	}
+	if isTerminal(strings.NewReader("")) {
+		t.Error("a string reader is no terminal")
+	}
+}

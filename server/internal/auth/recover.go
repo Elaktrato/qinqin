@@ -7,6 +7,10 @@ import (
 	"fmt"
 )
 
+// ErrRecoverDisabledAdmin refuses --admin on a disabled account without
+// --enable: the account would be an administrator that cannot sign in.
+var ErrRecoverDisabledAdmin = errors.New("account is disabled: --admin needs --enable")
+
 // RecoverOptions describe `qinqin recover`.
 type RecoverOptions struct {
 	Username string
@@ -27,6 +31,12 @@ func RecoverAccount(ctx context.Context, sqlDB *sql.DB, o RecoverOptions) (int64
 		return 0, fmt.Errorf("begin recover: %w", err)
 	}
 	defer tx.Rollback()
+	if o.Admin && !o.Enable {
+		var off sql.NullString
+		if err := tx.QueryRowContext(ctx, `SELECT disabled_at FROM users WHERE username = ?`, o.Username).Scan(&off); err == nil && off.Valid {
+			return 0, ErrRecoverDisabledAdmin
+		}
+	}
 	var id int64
 	err = tx.QueryRowContext(ctx, `
 		UPDATE users SET hash = ?1, must_change_password = 1, updated_at = ?2,

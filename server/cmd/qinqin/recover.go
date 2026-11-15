@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
@@ -33,6 +34,11 @@ func recoverCmd(args []string, stdin io.Reader, stderr io.Writer) error {
 	}
 	password := os.Getenv("QINQIN_PASSWORD")
 	if password == "" {
+		if isTerminal(stdin) {
+			// golang.org/x/term is not a dependency of this module, so a
+			// typed password is echoed (adduser has the same limit): say so.
+			fmt.Fprintln(stderr, "Warning: this terminal echoes what you type. Set QINQIN_PASSWORD or pipe the password in to keep it off the screen.")
+		}
 		fmt.Fprintf(stderr, "New temporary password for %s: ", *username)
 		line, err := bufio.NewReader(stdin).ReadString('\n')
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -53,6 +59,9 @@ func recoverCmd(args []string, stdin io.Reader, stderr io.Writer) error {
 	defer sqlDB.Close()
 	id, err := auth.RecoverAccount(context.Background(), sqlDB, auth.RecoverOptions{
 		Username: *username, Hash: auth.Hash(password), Enable: *enable, Admin: *admin})
+	if errors.Is(err, auth.ErrRecoverDisabledAdmin) {
+		return fmt.Errorf("recover: %q is disabled; --admin would make an administrator who cannot sign in. Add --enable (nothing was changed)", *username)
+	}
 	if errors.Is(err, auth.ErrUserNotFound) {
 		return fmt.Errorf("recover: no user named %q", *username)
 	}
@@ -60,9 +69,26 @@ func recoverCmd(args []string, stdin io.Reader, stderr io.Writer) error {
 		return err
 	}
 	fmt.Fprintf(stderr, "recovered %s (id %d): new temporary password set, signed out everywhere, must change it at the next sign-in\n", *username, id)
+	if !*enable {
+		var off sql.NullString
+		if sqlDB.QueryRow(`SELECT disabled_at FROM users WHERE username = ?`, *username).Scan(&off) == nil && off.Valid {
+			fmt.Fprintf(stderr, "note: %s is still disabled and cannot sign in; run again with --enable to allow it\n", *username)
+		}
+	}
 	if *resetMFA {
 		// Plan 3 wires the removal of TOTP and recovery codes here.
 		fmt.Fprintln(stderr, "--reset-mfa: no two-factor data to remove in this version")
 	}
 	return nil
+}
+
+// isTerminal reports whether r is an interactive terminal (a character
+// device), as opposed to a pipe or a file.
+func isTerminal(r io.Reader) bool {
+	f, ok := r.(*os.File)
+	if !ok {
+		return false
+	}
+	st, err := f.Stat()
+	return err == nil && st.Mode()&os.ModeCharDevice != 0
 }
