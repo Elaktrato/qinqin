@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/argon2"
@@ -37,6 +38,14 @@ var ErrBadCredentials = errors.New("bad credentials")
 
 // ErrUsernameTaken reports a CreateUser attempt on an existing username.
 var ErrUsernameTaken = errors.New("username taken")
+
+// ErrNotFirst reports a CreateFirstUser attempt on a database that
+// already has users.
+var ErrNotFirst = errors.New("users already exist")
+
+// dummyHash is a valid hash of an unguessable password, computed once, that
+// Login verifies against for unknown usernames.
+var dummyHash = sync.OnceValue(func() string { return Hash(hex.EncodeToString(randomBytes(16))) })
 
 // Hash returns the argon2id digest of password as a PHC-format string
 // ($argon2id$v=19$m=…,t=…,p=…$salt$key) with a fresh random salt, so stored
@@ -119,6 +128,32 @@ func CreateUser(ctx context.Context, sqlDB *sql.DB, username, password string, a
 	return model.User{ID: id, Username: username, Admin: admin}, nil
 }
 
+// CreateFirstUser inserts the instance admin, but only while the users
+// table is empty: the emptiness check and the insert are one statement,
+// so two concurrent first registrations cannot both win. A non-empty
+// table yields ErrNotFirst and writes nothing.
+func CreateFirstUser(ctx context.Context, sqlDB *sql.DB, username, password string) (model.User, error) {
+	res, err := sqlDB.ExecContext(ctx, `
+		INSERT INTO users (username, hash, admin, updated_at)
+		SELECT ?, ?, 1, ? WHERE NOT EXISTS (SELECT 1 FROM users)`,
+		username, Hash(password), now())
+	if err != nil {
+		return model.User{}, fmt.Errorf("insert first user %q: %w", username, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return model.User{}, fmt.Errorf("insert first user %q: rows affected: %w", username, err)
+	}
+	if n == 0 {
+		return model.User{}, ErrNotFirst
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return model.User{}, fmt.Errorf("insert first user %q: last insert id: %w", username, err)
+	}
+	return model.User{ID: id, Username: username, Admin: true}, nil
+}
+
 // Login verifies username and password, creates a session, and returns its
 // 32-byte hex bearer token. ErrBadCredentials marks any mismatch.
 func Login(ctx context.Context, sqlDB *sql.DB, username, password string) (string, error) {
@@ -127,6 +162,9 @@ func Login(ctx context.Context, sqlDB *sql.DB, username, password string) (strin
 	err := sqlDB.QueryRowContext(ctx,
 		`SELECT id, hash FROM users WHERE username = ?`, username).Scan(&id, &hash)
 	if errors.Is(err, sql.ErrNoRows) {
+		// Spend the same argon2 run a wrong password costs, so response
+		// time does not reveal whether the username exists.
+		Verify(dummyHash(), password)
 		return "", ErrBadCredentials
 	}
 	if err != nil {

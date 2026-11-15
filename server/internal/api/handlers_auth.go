@@ -38,11 +38,25 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	firstUser := count == 0
-	if !firstUser && s.requireAdmin(w, r) == nil {
-		return
+	var (
+		u   model.User
+		err error
+	)
+	if count == 0 {
+		// The bootstrap insert re-checks emptiness atomically; losing a
+		// race to another first registration falls through to the
+		// admin-required path.
+		u, err = auth.CreateFirstUser(r.Context(), s.db, req.Username, req.Password)
+		if errors.Is(err, auth.ErrNotFirst) {
+			count = 1
+		}
 	}
-	u, err := auth.CreateUser(r.Context(), s.db, req.Username, req.Password, firstUser)
+	if count != 0 {
+		if s.requireAdmin(w, r) == nil {
+			return
+		}
+		u, err = auth.CreateUser(r.Context(), s.db, req.Username, req.Password, false)
+	}
 	if errors.Is(err, auth.ErrUsernameTaken) {
 		http.Error(w, "username taken", http.StatusConflict)
 		return
