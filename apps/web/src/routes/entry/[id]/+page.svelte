@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
@@ -17,11 +18,14 @@
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { record } from '$lib/events';
+	import { formatReading } from '$lib/format';
 	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
+	// The radical's written form, once fetched; empty shows the id instead.
+	let radicalWritten = $state('');
 	let loading = $state(true);
 	let notFound = $state(false);
 	let error = $state('');
@@ -54,14 +58,14 @@
 		error = '';
 		entry = null;
 		chars = [];
+		radicalWritten = '';
 		try {
-			const [loaded, underRadical] = await Promise.all([
-				getEntry(id),
-				getCharsUnderRadical(id)
-			]);
+			const loaded = await getEntry(id);
 			if (seq !== requestSeq) return;
 			entry = loaded;
-			chars = underRadical;
+			// The optional sections must never blank the page: they load after
+			// the entry is on screen and fall back to nothing on failure.
+			void loadExtras(loaded, seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			if (err instanceof ApiError && err.status === 404) {
@@ -72,6 +76,25 @@
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
+	}
+
+	async function loadExtras(loaded: Entry, seq: number): Promise<void> {
+		// Words have no characters under them: skip the always-empty query.
+		const under =
+			loaded.kind === 'word'
+				? Promise.resolve([] as EntryBase[])
+				: getCharsUnderRadical(loaded.id).catch(() => [] as EntryBase[]);
+		const radical =
+			loaded.radicalId === null
+				? Promise.resolve('')
+				: getEntry(loaded.radicalId).then(
+						(r) => r.written,
+						() => ''
+					);
+		const [list, written] = await Promise.all([under, radical]);
+		if (seq !== requestSeq) return;
+		chars = list;
+		radicalWritten = written;
 	}
 
 	function retry(): void {
@@ -104,6 +127,7 @@
 			requestSeq++;
 			entry = null;
 			chars = [];
+			radicalWritten = '';
 			loading = false;
 			error = '';
 			notFound = true;
@@ -143,6 +167,10 @@
 		void record('view', workspace, { entryId: viewed });
 	});
 </script>
+
+<svelte:head>
+	<title>{pageTitle(notFound ? 'Entry not found' : (entry?.written ?? ''))}</title>
+</svelte:head>
 
 <main class="entry-page">
 	{#if loading}
@@ -212,7 +240,7 @@
 						<li>
 							<a href={`/entry/${variant.id}`}>{variant.written}</a>
 							{#if variant.readings.length > 0}
-								<span class="reading">{variant.readings[0].value}</span>
+								<span class="reading">{formatReading(variant.readings[0].type, variant.readings[0].value)}</span>
 							{/if}
 						</li>
 					{/each}
@@ -223,7 +251,11 @@
 		{#if entry.radicalId !== null}
 			<section class="radical" aria-labelledby="radical-heading">
 				<h2 id="radical-heading">Radical</h2>
-				<p><a href={`/entry/${entry.radicalId}`}>Radical entry #{entry.radicalId}</a></p>
+				<p>
+					<a href={`/entry/${entry.radicalId}`}>
+						{radicalWritten || `Radical entry #${entry.radicalId}`}
+					</a>
+				</p>
 			</section>
 		{/if}
 
@@ -235,7 +267,7 @@
 						<li>
 							<a href={`/entry/${char.id}`}>{char.written}</a>
 							{#if char.readings.length > 0}
-								<span class="reading">{char.readings[0].value}</span>
+								<span class="reading">{formatReading(char.readings[0].type, char.readings[0].value)}</span>
 							{/if}
 						</li>
 					{/each}

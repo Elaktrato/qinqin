@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { getAiStatus } from '$lib/api/ai';
@@ -68,7 +69,7 @@
 </script>
 
 <svelte:head>
-	<title>Journal</title>
+	<title>{pageTitle('Journal')}</title>
 </svelte:head>
 
 <main class="journal">

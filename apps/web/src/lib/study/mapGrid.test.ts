@@ -309,3 +309,23 @@ describe('nextBatchOwner', () => {
 		expect(nextBatchOwner([])).toBe(-1);
 	});
 });
+
+describe('stage names versus word-state names', () => {
+	it('share no visible term, so Stats and the home tiles never use one word for two things', async () => {
+		const { WORD_STATES } = await import('$lib/stats/wordStates');
+		const wordTerms = WORD_STATES.map((s) => s.label.toLowerCase());
+		for (const { label } of STAGE_INFO) {
+			expect(wordTerms).not.toContain(label.toLowerCase());
+		}
+	});
+
+	it('names the stages Not studied, Started, Growing, Solid, Learned', () => {
+		expect(STAGE_INFO.map((s) => s.label)).toEqual([
+			'Not studied',
+			'Started',
+			'Growing',
+			'Solid',
+			'Learned'
+		]);
+	});
+});

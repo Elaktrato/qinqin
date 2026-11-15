@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -6,7 +7,7 @@
 	import { search } from '$lib/api/search';
 	import type { SearchHit } from '$lib/api/types';
 	import { record } from '$lib/events';
-	import { currentLanguage, workspaces } from '$lib/workspaces';
+	import { currentLanguage, workspaces, workspacesLoaded } from '$lib/workspaces';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { Scheme } from '$lib/api/types';
 	import {
@@ -23,6 +24,9 @@
 		type SearchFilters
 	} from '$lib/searchFilters';
 	import { onMount } from 'svelte';
+
+	// The server's default result cap (lexicon.defaultSearchLimit).
+	const RESULT_CAP = 50;
 
 	let query = $state('');
 	let hits = $state<SearchHit[]>([]);
@@ -59,7 +63,7 @@
 	// Chips act on the committed search (the URL query), not on text still
 	// being typed: a chip never silently submits a half-typed query.
 	function applyFilters(next: SearchFilters): void {
-		void goto(searchHref(urlQuery.trim(), next), { keepFocus: true, noScroll: true });
+		goto(searchHref(urlQuery.trim(), next), { keepFocus: true, noScroll: true }).catch(() => {});
 	}
 
 	// After a workspace/language switch, a scheme or level of another
@@ -68,11 +72,11 @@
 		if (!schemesLoaded || lang === null) return;
 		const next = reconcileFilters(filters, schemes);
 		if (next !== filters) {
-			void goto(searchHref(urlQuery.trim(), next), {
+			goto(searchHref(urlQuery.trim(), next), {
 				replaceState: true,
 				keepFocus: true,
 				noScroll: true
-			});
+			}).catch(() => {});
 		}
 	});
 
@@ -95,6 +99,14 @@
 		recordedLookups.add(key);
 		void record('lookup', workspace.id, { query: q });
 	}
+
+	// What a screen reader hears once a search settles; empty while it runs
+	// or when there is nothing to say (the visible hint covers those).
+	const announcement = $derived.by(() => {
+		if (loading || error || !searched) return '';
+		if (hits.length === 0) return `No results for “${activeQuery}”.`;
+		return `${hits.length} ${hits.length === 1 ? 'result' : 'results'} for “${activeQuery}”.`;
+	});
 
 	function sourceLabel(source: string): string {
 		return source === 'written' ? 'written form' : source;
@@ -126,9 +138,19 @@
 	function submit(event: SubmitEvent): void {
 		event.preventDefault();
 		const q = query.trim();
+		// Show the query that is searched, not the untrimmed text typed.
+		query = q;
+		const href = searchHref(q, filters);
+		// The same search again does not change the URL, so the effect below
+		// would not run: treat it as a refresh instead of a silent no-op.
+		if (q && lang && q === urlQuery.trim() && href === searchHref(urlQuery.trim(), filters)) {
+			void runSearch(q, lang, filters);
+			return;
+		}
 		// The URL effect below runs the query and records the lookup, so
-		// submitting only navigates.
-		void goto(searchHref(q, filters));
+		// submitting only navigates. A navigation superseded by a newer one
+		// may reject; that is not an error for the user.
+		goto(href).catch(() => {});
 	}
 
 	function retry(): void {
@@ -160,6 +182,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>{pageTitle('Search')}</title>
+</svelte:head>
+
 <main class="search-page">
 	<h1>Search</h1>
 
@@ -169,9 +195,14 @@
 			type="search"
 			bind:value={query}
 			aria-label="Search entries"
-			placeholder="Search entries…"
+			placeholder={lang !== null
+				? 'Search entries…'
+				: $workspacesLoaded
+					? 'Select a workspace to search'
+					: 'Loading workspaces…'}
+			disabled={lang === null}
 		/>
-		<button type="submit">Search</button>
+		<button type="submit" disabled={lang === null}>Search</button>
 	</form>
 
 	{#if lang !== null}
@@ -231,7 +262,10 @@
 		</div>
 	{/if}
 
-	{#if lang === null}
+	<!-- Always mounted so assistive tech announces changes to its text. -->
+	<p class="visually-hidden" role="status" aria-live="polite">{announcement}</p>
+
+	{#if lang === null && $workspacesLoaded}
 		<p class="hint">
 			No workspace selected. Create or select a workspace in the header to search.
 			<a href="/settings">Open settings</a>
@@ -246,6 +280,11 @@
 			No results for “{activeQuery}”{hasFilters(filters) ? ' with these filters' : ''}.
 		</p>
 	{:else if hits.length > 0}
+		{#if hits.length >= RESULT_CAP}
+			<p class="note">
+				Showing the first {RESULT_CAP} results. Add more of the word or a filter to narrow them.
+			</p>
+		{/if}
 		<ul class="results" aria-label="Search results">
 			{#each hits as hit (hit.id)}
 				<li class="result">

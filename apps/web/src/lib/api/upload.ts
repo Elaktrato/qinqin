@@ -1,4 +1,4 @@
-import { ApiError, getToken, notifyUnauthorized } from './client';
+import { ApiError, getToken, isOwnApiPath, notifyUnauthorized } from './client';
 
 export interface UploadProgress {
 	loaded: number;
@@ -47,7 +47,7 @@ export function uploadWithProgress<T>(path: string, form: FormData, opts: Upload
 		xhr.open('POST', path);
 		xhr.setRequestHeader('accept', 'application/json');
 		const token = getToken();
-		if (token) xhr.setRequestHeader('authorization', `Bearer ${token}`);
+		if (token && isOwnApiPath(path)) xhr.setRequestHeader('authorization', `Bearer ${token}`);
 		xhr.upload.onprogress = (e) => {
 			if (e.lengthComputable) onProgress?.({ loaded: e.loaded, total: e.total });
 		};

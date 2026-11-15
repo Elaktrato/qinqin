@@ -18,7 +18,12 @@
 	import { allowed as routeAllowed, normalizePath, redirectTarget, routeAccess } from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
-	import { load as loadWorkspaces, workspaces } from '$lib/workspaces';
+	import {
+		load as loadWorkspaces,
+		workspaces,
+		workspacesLoadError,
+		workspacesLoaded
+	} from '$lib/workspaces';
 	import '../app.css';
 
 	let { children } = $props();
@@ -27,10 +32,7 @@
 	// The token whose workspaces are loaded; guards the effect below
 	// against refetching on unrelated re-runs.
 	let loadedToken = $state<string | null>(null);
-	let workspaceError = $state('');
-	// True once the workspace list for the current session has arrived,
-	// so the empty state never flashes while it is loading.
-	let workspacesLoaded = $state(false);
+	const workspaceError = $derived($workspacesLoadError);
 
 	const path = $derived(normalizePath(page.url.pathname));
 	const pluginLinks = $derived(visibleNavPages(webPlugins, $pluginStates));
@@ -50,7 +52,7 @@
 	// every workspace; the tab itself appears only for Han languages.
 	const inStats = $derived(path === '/stats' || path.startsWith('/stats/'));
 	const noWorkspaces = $derived(
-		workspacesLoaded && !workspaceError && $workspaces.list.length === 0
+		$workspacesLoaded && !workspaceError && $workspaces.list.length === 0
 	);
 
 	function message(err: unknown, fallback: string): string {
@@ -79,6 +81,17 @@
 		target.focus();
 	}
 
+	// Loads the workspace list; a failure shows a message with "Try again"
+	// (the session's token stays, so a transient error is recoverable).
+	async function loadShellWorkspaces(): Promise<void> {
+		workspacesLoadError.set('');
+		try {
+			await loadWorkspaces();
+		} catch (err) {
+			workspacesLoadError.set(message(err, 'Could not load workspaces.'));
+		}
+	}
+
 	onMount(async () => {
 		// A workspace deleted in another tab or on another device: the
 		// first "workspace not found" reloads the list and falls back.
@@ -99,7 +112,8 @@
 		const token = $auth.token;
 		if (token === null) {
 			loadedToken = null;
-			workspacesLoaded = false;
+			workspacesLoaded.set(false);
+			workspacesLoadError.set('');
 			resetPluginStates();
 			dismissNotice();
 			workspaces.set({ list: [], current: null });
@@ -107,23 +121,20 @@
 		}
 		if (token === loadedToken) return;
 		loadedToken = token;
-		workspaceError = '';
-		workspacesLoaded = false;
+		workspacesLoaded.set(false);
 		// Drain reviews queued while offline as soon as a session exists,
 		// on whichever route the user opens. Never blocks the boot.
 		startReviewOutbox();
 		void loadPluginStates();
-		void loadWorkspaces()
-			.then(() => {
-				workspacesLoaded = true;
-				// One session event per workspace per UTC day, recorded
-				// once the shell knows which workspace is active.
-				const current = get(workspaces).current;
-				if (current) recordSessionOnce(current.id);
-			})
-			.catch((err) => {
-				workspaceError = message(err, 'Could not load workspaces.');
-			});
+		void loadShellWorkspaces();
+	});
+
+	// One session event per workspace per UTC day, recorded for whichever
+	// workspace is active once the list is in: the first one at load and any
+	// the user switches to or creates later (receipts keep it once a day).
+	$effect(() => {
+		const id = $workspacesLoaded ? ($workspaces.current?.id ?? null) : null;
+		if (id !== null) recordSessionOnce(id);
 	});
 
 	// Re-evaluate on every client-side navigation and auth change, so
@@ -189,7 +200,12 @@
 			</header>
 
 			{#if workspaceError}
-				<p class="workspace-error" role="alert">{workspaceError}</p>
+				<p class="workspace-error" role="alert">
+					{workspaceError}
+					<button type="button" class="retry" onclick={() => void loadShellWorkspaces()}>
+						Try again
+					</button>
+				</p>
 			{/if}
 		{:else if openSignedOut}
 			<!-- Signed out on an open page: no nav of private pages, no
@@ -456,6 +472,18 @@
 		padding: 0.5rem 1.5rem;
 		color: #c62828;
 		font-weight: 600;
+	}
+
+	.workspace-error .retry {
+		margin-left: 0.75rem;
+		font: inherit;
+		font-weight: 500;
+		padding: 0.15rem 0.6rem;
+		border: 1px solid currentColor;
+		border-radius: 999px;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
 	}
 
 	.notice {
