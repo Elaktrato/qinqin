@@ -137,7 +137,7 @@ var finalsByInitial = map[string]string{
 	"f":     "a o ei ou an en ang eng u",
 	"d":     "a e ai ei ao ou an en ang eng ong i ia ie iao iou ian ing u uo uei uan uen",
 	"t":     "a e ai ei ao ou an ang eng ong i ie iao ian ing u uo uei uan uen",
-	"n":     "a e ai ei ao ou an en ang eng ong i ie iao iou ian in iang ing u uo uan ü üe",
+	"n":     "a e ai ei ao ou an en ang eng ong i ie iao iou ian in iang ing u uo uan uen ü üe",
 	"l":     "a e o ai ei ao ou an ang eng ong i ia ie iao iou ian in iang ing u uo uan uen ü üe",
 	"g h":   "a e ai ei ao ou an en ang eng ong u ua uo uai uei uan uen uang",
 	"k":     "a e ai ei ao ou an en ang eng ong u ua uo uai uei uan uen uang",
@@ -219,6 +219,11 @@ func markSpecial(letter rune, tone int) string {
 	return string([]rune{letter, combiningTone[tone-1]})
 }
 
+// wholeOnly are real but rare syllables the splitter takes only as a whole
+// piece: nun (黁) would otherwise swallow the start of nǔ-nà in an unspaced
+// "nǔnàwǔtè". Written apart, or alone, they parse as usual.
+var wholeOnly = map[string]bool{"nun": true}
+
 var toneBopomofo = [6]string{"", "", "ˊ", "ˇ", "ˋ", ""}
 
 // syllable is one parsed pinyin syllable.
@@ -296,7 +301,9 @@ func parseSyllable(token string, allowSpecial bool) (syllable, error) {
 		spelled = "ê"
 	}
 	if _, ok := specials[spelled]; ok {
-		if !allowSpecial {
+		// Specials are written in lower case only: an upper-case M or NG is
+		// an abbreviation, not the syllable (CC-CEDICT keeps "M jin1" apart).
+		if !allowSpecial || token != strings.ToLower(token) {
 			return syllable{}, invalid
 		}
 		return syllable{final: spelled, spelled: spelled, tone: tone, special: true}, nil
@@ -472,6 +479,10 @@ const maxSyllableRunes = 7
 func splitSyllables(token string) []string {
 	var out []string
 	for _, piece := range strings.FieldsFunc(token, func(r rune) bool { return r == '\'' || r == '’' }) {
+		if syl, err := parse(piece); err == nil && syl.special {
+			out = append(out, piece) // a special is only ever a whole piece
+			continue
+		}
 		parts, ok := splitPiece([]rune(piece))
 		if !ok {
 			return []string{token}
@@ -499,7 +510,8 @@ func splitPiece(r []rune) ([]string, bool) {
 		return []string{string(r)}, true
 	}
 	for n := min(len(r), maxSyllableRunes); n >= 1; n-- {
-		if _, err := parseSyllable(string(r[:n]), n == len(r)); err != nil {
+		syl, err := parseSyllable(string(r[:n]), false)
+		if err != nil || (n < len(r) && wholeOnly[syl.spelled]) {
 			continue
 		}
 		if rest, ok := splitPiece(r[n:]); ok {

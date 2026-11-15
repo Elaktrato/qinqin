@@ -1,6 +1,7 @@
 package pinyin
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -91,12 +92,17 @@ func TestRealSyllablesAccepted(t *testing.T) {
 }
 
 func TestInvalidSyllableErrors(t *testing.T) {
-	for _, in := range []string{"hello", "hi", "fai", "duang", "gi", "ki", "bou", "chei", "len", "nun", "xiann", "yio"} {
+	for _, in := range []string{"hello", "hi", "fai", "duang", "gi", "ki", "bou", "chei", "len", "xiann", "yio"} {
 		if _, err := ToBopomofo(in); err == nil {
 			t.Errorf("ToBopomofo(%q) expected error", in)
 		}
 		if _, err := ToMarked(in); err == nil {
 			t.Errorf("ToMarked(%q) expected error", in)
+		}
+		// ToNumbered splits unspaced runs, so fai, duang, bou, chei and yio
+		// come out as valid syllable pairs; the rest cannot split.
+		if _, err := ToNumbered(in); err == nil && !strings.Contains(" fai duang bou chei yio ", " "+in+" ") {
+			t.Errorf("ToNumbered(%q) expected error", in)
 		}
 	}
 }
@@ -161,7 +167,7 @@ func TestToNumberedErhua(t *testing.T) {
 }
 
 func TestSyllableTableCorrections(t *testing.T) {
-	for _, in := range []string{"pou", "zhei", "nen", "lun", "tun", "zei", "sen"} {
+	for _, in := range []string{"pou", "zhei", "nen", "lun", "tun", "zei", "sen", "nun", "nun2"} { // 黁 [nun2] is attested in CC-CEDICT
 		if _, err := ToBopomofo(in); err != nil {
 			t.Errorf("ToBopomofo(%q) unexpected error: %v", in, err)
 		}
@@ -264,6 +270,74 @@ func TestInitialsDeriveFromBopomofoTable(t *testing.T) {
 		}
 		if i > 0 && len(initials[i-1]) < len(ini) {
 			t.Errorf("initials not ordered longest first at %q", ini)
+		}
+	}
+}
+
+// The specials must never leak into the splitting of an unspaced token:
+// the longest-first split would otherwise end a run on n, ng or m.
+func TestToNumberedSpecialsOnlyAsWholeTokens(t *testing.T) {
+	for _, in := range []string{"xiann", "hǎom", "dianm", "nǐhǎom", "xianng"} {
+		if got, err := ToNumbered(in); err == nil {
+			t.Errorf("ToNumbered(%q) = %v, want an error", in, got)
+		}
+	}
+	cases := []struct{ in, want string }{
+		{"réngōng", "ren2 gong1"},
+		{"bàngōng", "ban4 gong1"},
+		{"fēngōng", "fen1 gong1"},
+		{"jìngōng", "jin4 gong1"},
+		{"jīběngōng", "ji1 ben3 gong1"},
+		{"nóngmíngōng", "nong2 min2 gong1"},
+		{"zhǔréngōng", "zhu3 ren2 gong1"},
+		{"jíēn", "ji2 en1"},
+		{"ren2gong1", "ren2 gong1"},
+		{"nǔnàwǔtè", "nu3 na4 wu3 te4"},
+		{"gélènuò", "ge2 le4 nuo4"},
+		{"nun2", "nun2"},
+		{"n2", "n2"},
+		{"ng3 hm4", "ng3 hm4"},
+		{"ê2 yo1", "eh2 yo1"},
+	}
+	for _, c := range cases {
+		got, err := ToNumbered(c.in)
+		if err != nil || strings.Join(got, " ") != c.want {
+			t.Errorf("ToNumbered(%q) = %v, %v; want %q", c.in, got, err, c.want)
+		}
+	}
+	// Upper-case M and NG are abbreviations, not the syllables.
+	for _, in := range []string{"M", "NG", "N2", "Hm"} {
+		if _, err := ToMarked(in); err == nil {
+			t.Errorf("ToMarked(%q) succeeded, want an error", in)
+		}
+	}
+}
+
+// The audio fetch script lists the syllables it will write into an index;
+// every one must parse here, or an index row could fail the import.
+func TestFetchScriptSyllablesAreInTheTable(t *testing.T) {
+	data, err := os.ReadFile("../../../scripts/fetch-audio-commons.mjs")
+	if err != nil {
+		t.Skipf("script not available: %v", err)
+	}
+	src := string(data)
+	start := strings.Index(src, "const SYLLABLES")
+	end := strings.Index(src[start:], ").split(' ')")
+	if start < 0 || end < 0 {
+		t.Fatal("cannot find the SYLLABLES list in the script")
+	}
+	var words []string
+	for _, line := range strings.Split(src[start:start+end], "\n") {
+		if i, j := strings.Index(line, "'"), strings.LastIndex(line, "'"); i >= 0 && j > i {
+			words = append(words, strings.Fields(line[i+1:j])...)
+		}
+	}
+	if len(words) < 400 {
+		t.Fatalf("parsed only %d syllables from the script", len(words))
+	}
+	for _, w := range words {
+		if _, err := parse(w + "1"); err != nil {
+			t.Errorf("script syllable %q is not accepted by the pinyin table", w)
 		}
 	}
 }

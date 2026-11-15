@@ -65,3 +65,7 @@ Remaining:
 
 ## Gates
 Go vet/test in docker, `-race` on touched packages, opt-in `RealPacks` test once at the end, `node scripts/check-sources.mjs .`, `git status` / `find -user root`.
+
+## Fix wave (review)
+
+Differential harness (old develop pinyin vs new) over CEDICT readings (numbered, marked, unspaced, unspaced-marked), HSK readings and all 1-4 letter strings x tones. Intended differences only: specials newly accepted (yo, n, ng, m, hm, hng, ê/eh) as whole tokens; bou, chei, len removed; unspaced-marked splits improved (nǔnàwǔtè, gélènuò, dìlèníānhǎi, shàngleniánjì...); `nun` kept (黁 [nun2] is attested) but taken only as a whole piece by the splitter; HSK `ǹg` Plain "g" -> "ng". Specials are lower-case only ("M jin1" stays unconverted). The audio fetch script's SYLLABLES list is checked against the table by a Go test.
