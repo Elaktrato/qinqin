@@ -4,10 +4,11 @@
 import type { Dataset } from './dataset';
 import { optimize } from './optimize';
 
-self.onmessage = (event: MessageEvent<{ type: 'run'; data: Dataset }>) => {
+self.onmessage = (event: MessageEvent<{ type: 'run'; data: Dataset; current?: number[] }>) => {
 	if (event.data.type !== 'run') return;
 	try {
 		const result = optimize(event.data.data, {
+			current: event.data.current,
 			onProgress: (done, total) => self.postMessage({ type: 'progress', done, total })
 		});
 		self.postMessage({ type: 'result', result });

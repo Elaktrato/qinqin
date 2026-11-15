@@ -6,7 +6,8 @@ import type { ReviewEvent } from '../types';
 import { daysBetween, type Step } from './model';
 
 export interface Dataset {
-	cards: { cardId: string; steps: Step[] }[];
+	/** `days` is each step's UTC day number (days since 1970-01-01), when known. */
+	cards: { cardId: string; steps: Step[]; days?: number[] }[];
 	/** Reviews after a card's first with at least one day since the previous. */
 	labelled: number;
 }
@@ -33,7 +34,8 @@ export function buildDataset(reviews: readonly ReviewEvent[]): Dataset {
 			g: review.payload.grade
 		}));
 		for (let i = 1; i < steps.length; i++) if (steps[i].t >= 1) labelled++;
-		cards.push({ cardId, steps });
+		const days = history.map((review) => Math.floor(Date.parse(review.ts) / 86_400_000));
+		cards.push({ cardId, steps, days });
 	}
 	return { cards, labelled };
 }

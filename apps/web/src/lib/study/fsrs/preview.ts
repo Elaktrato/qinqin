@@ -1,6 +1,7 @@
 // What a weight change would do to the schedule, computed before it is
 // applied, and the gate that decides whether it may be applied.
 
+import type { HeldOut } from './optimize';
 import { isValidReview, scheduleFor, sortedReviews } from '../scheduler';
 import type { ReviewEvent, StudyCard } from '../types';
 
@@ -81,8 +82,17 @@ export function previewChange(o: {
 
 export type ApplyCheck = { ok: true } | { ok: false; reason: string };
 
+/** A large log may lose this much per item on its latest reviews and still apply. */
+const LARGE_LOG_TOLERANCE = 1e-3;
+
+/**
+ * canApply is the apply gate. An optimised candidate must fit the whole
+ * log better than the current weights. Its held-out check (fitted on the
+ * earlier reviews, scored on the latest) must be better for a small log
+ * and not noticeably worse for a large one. Imports are exempt.
+ */
 export function canApply(o: {
-	candidate: { logLoss: number } | null;
+	candidate: { logLoss: number; heldOut?: HeldOut | null } | null;
 	activeLogLoss: number;
 	startedWorkspace: number;
 	currentWorkspace: number | null;
@@ -95,6 +105,20 @@ export function canApply(o: {
 	if (o.candidate === null) return { ok: false, reason: 'There is nothing to apply.' };
 	if (!(o.candidate.logLoss < o.activeLogLoss)) {
 		return { ok: false, reason: 'Your current parameters already fit better.' };
+	}
+	const held = o.candidate.heldOut;
+	if (held !== null && held !== undefined) {
+		// A small log must show a gain more than twice its own noise; a large
+		// one must not be noticeably worse on its latest reviews.
+		const worse = held.small ? !(held.gain > 2 * held.se) : held.gain < -LARGE_LOG_TOLERANCE;
+		if (worse) {
+			return {
+				ok: false,
+				reason: held.small
+					? 'On your most recent reviews, which were not used for fitting, the new parameters were not clearly better. They are not offered.'
+					: 'The new parameters fit your most recent reviews worse, so they are not offered.'
+			};
+		}
 	}
 	return { ok: true };
 }

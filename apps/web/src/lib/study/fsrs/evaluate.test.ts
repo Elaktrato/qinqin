@@ -73,6 +73,30 @@ describe('evaluate', () => {
 	});
 
 	it('returns zeros without labelled items', () => {
-		expect(evaluate(DEFAULT_W, { cards: [], labelled: 0 })).toEqual({ logLoss: 0, rmseBins: 0 });
+		expect(evaluate(DEFAULT_W, { cards: [], labelled: 0 })).toEqual({ logLoss: 0, rmseBins: 0, items: 0 });
+	});
+
+	it('counts only items on or after sinceDay but replays the whole history', () => {
+		const w = [...DEFAULT_W];
+		const data: Dataset = {
+			cards: [
+				{
+					cardId: 'a',
+					steps: [
+						{ t: 0, g: 3 },
+						{ t: 3, g: 3 },
+						{ t: 5, g: 1 }
+					],
+					days: [100, 103, 108]
+				}
+			],
+			labelled: 2
+		};
+		const all = evaluate(w, data);
+		const tail = evaluate(w, data, { sinceDay: 105 });
+		const items = evaluate(w, { ...data, cards: [{ ...data.cards[0], steps: data.cards[0].steps.slice(0, 2), days: [100, 103] }] });
+		expect(tail.items).toBe(1);
+		expect(all.items).toBe(2);
+		expect(tail.logLoss).not.toBeCloseTo(items.logLoss, 6);
 	});
 });

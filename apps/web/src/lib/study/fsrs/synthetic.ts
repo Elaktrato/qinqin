@@ -37,7 +37,9 @@ export function simulate(opts: SimulateOptions): Dataset {
 	const cards: Dataset['cards'] = [];
 	let labelled = 0;
 	for (let c = 0; c < opts.cards; c++) {
-		let day = Math.floor(rand() * opts.days);
+		const start = Math.floor(rand() * opts.days);
+		let day = start;
+		const days: number[] = [day];
 		const steps: Step[] = [{ t: 0, g: firstGrade(rand) }];
 		for (;;) {
 			const { s } = replay(numberNum, w, steps);
@@ -51,9 +53,10 @@ export function simulate(opts: SimulateOptions): Dataset {
 				g = x < 0.15 ? 2 : x < 0.9 ? 3 : 4;
 			}
 			steps.push({ t: interval, g });
+			days.push(day);
 			labelled++;
 		}
-		cards.push({ cardId: `c${String(c).padStart(5, '0')}`, steps });
+		cards.push({ cardId: `c${String(c).padStart(5, '0')}`, steps, days });
 	}
 	return { cards, labelled };
 }

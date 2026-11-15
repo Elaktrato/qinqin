@@ -56,10 +56,28 @@
 	{#if result !== null}
 		<div role="status">
 			{#if result.ok}
-				<p>
-					Log loss {activeFit.logLoss.toFixed(3)} → {result.logLoss.toFixed(3)} · RMSE
-					{pct(activeFit.rmseBins)} → {pct(result.rmseBins)}
-				</p>
+				{#if result.heldOut?.small}
+					<p>
+						On your most recent reviews ({result.heldOut.items.toLocaleString()}), which were not
+						used for fitting: log loss {result.heldOut.current.toFixed(3)} → {result.heldOut.candidate.toFixed(3)}.
+					</p>
+					<p class="hint">
+						Little data, so this is the number to trust. On your earlier reviews, which were used
+						for fitting: log loss {activeFit.logLoss.toFixed(3)} → {result.logLoss.toFixed(3)}.
+					</p>
+				{:else}
+					<p>
+						On your earlier reviews, which were used for fitting: log loss
+						{activeFit.logLoss.toFixed(3)} → {result.logLoss.toFixed(3)} · RMSE
+						{pct(activeFit.rmseBins)} → {pct(result.rmseBins)}
+					</p>
+					{#if result.heldOut}
+						<p class="hint">
+							On your most recent reviews ({result.heldOut.items.toLocaleString()}), not used for the
+							check: log loss {result.heldOut.current.toFixed(3)} → {result.heldOut.candidate.toFixed(3)}.
+						</p>
+					{/if}
+				{/if}
 			{:else if result.reason === 'too-few'}
 				<p>Not enough reviews yet.</p>
 			{:else}

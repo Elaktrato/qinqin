@@ -36,6 +36,12 @@ describe('runOptimizer', () => {
 		expect(w.terminated).toBe(true);
 	});
 
+	it('sends the weights to compare with', () => {
+		const w = new FakeWorker();
+		void runOptimizer(data, { createWorker: make(w), current: [1, 2, 3] });
+		expect(w.posted).toEqual([{ type: 'run', data, current: [1, 2, 3] }]);
+	});
+
 	it('rejects on an error message', async () => {
 		const w = new FakeWorker();
 		const p = runOptimizer(data, { createWorker: make(w) });

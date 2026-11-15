@@ -20,7 +20,9 @@ describe('buildDataset', () => {
 	it('gives a once-reviewed card no labelled item', () => {
 		const data = buildDataset([review('a', 3, '2026-01-01T10:00:00Z')]);
 		expect(data.labelled).toBe(0);
-		expect(data.cards).toEqual([{ cardId: 'a', steps: [{ t: 0, g: 3 }] }]);
+		expect(data.cards).toEqual([
+			{ cardId: 'a', steps: [{ t: 0, g: 3 }], days: [Date.UTC(2026, 0, 1) / 86_400_000] }
+		]);
 	});
 
 	it('labels one item for Good, Good (same day), Again on day 3', () => {
@@ -44,7 +46,9 @@ describe('buildDataset', () => {
 			review('a', 3, 'not a date'),
 			review('', 3, '2026-01-02T08:00:00Z')
 		]);
-		expect(data.cards).toEqual([{ cardId: 'a', steps: [{ t: 0, g: 3 }] }]);
+		expect(data.cards).toEqual([
+			{ cardId: 'a', steps: [{ t: 0, g: 3 }], days: [Date.UTC(2026, 0, 1) / 86_400_000] }
+		]);
 		expect(data.labelled).toBe(0);
 	});
 

@@ -1,7 +1,16 @@
 // Fits the FSRS-6 weights to a review history: pretrain the four initial
 // stabilities, then Adam on the other seventeen weights against the
 // binary cross-entropy of the predicted recall plus a pull towards the
-// defaults. Deterministic: fixed seed, cards ordered before shuffling.
+// defaults. Deterministic for one engine: fixed seed, cards ordered before
+// shuffling (the stored result is what syncs, nothing is recomputed on
+// another device).
+//
+// Gate protocol: the log is split by time. The candidate is first fitted
+// on the earlier 80 % of the labelled items and compared with the current
+// weights on the most recent 20 %, which that fit never saw (`heldOut`);
+// then the final candidate is fitted on all the data. canApply (preview.ts)
+// uses both: a small log is judged on the held-out tail, a large one on
+// the in-sample fit and must not be worse on the tail.
 
 import { CLAMP_PARAMETERS } from 'ts-fsrs';
 
@@ -20,12 +29,35 @@ const EPOCHS = 10;
 const BATCH_ITEMS = 64;
 const GAMMA = 1;
 const SEED = 1;
-const PRETRAIN_MIN_CARDS = 8;
+const PRETRAIN_MIN_CARDS = 15;
+/** Pseudo-cards of default behaviour each initial stability is pulled towards. */
+const PRETRAIN_PRIOR = 16;
+/** Below this many labelled items the held-out numbers are the headline. */
+export const SMALL_LOG = 2000;
+const HOLDOUT_FRACTION = 0.2;
+const HOLDOUT_MIN_ITEMS = 40;
+const HEAD_MIN_ITEMS = 200;
 const S0_RANGE: [number, number] = [0.1, 100];
 const BETA1 = 0.9;
 const BETA2 = 0.999;
 const ADAM_EPS = 1e-8;
 const P_EPS = 1e-6;
+
+/** The candidate fitted on the earlier reviews, scored on the latest ones. */
+export interface HeldOut {
+	/** Labelled items in the held-out tail. */
+	items: number;
+	/** Log loss of the head-fitted candidate on the tail. */
+	candidate: number;
+	/** Log loss of the current weights on the same tail. */
+	current: number;
+	/** Mean per-item log loss saved by the candidate (current minus candidate). */
+	gain: number;
+	/** Standard error of `gain` over the held-out items. */
+	se: number;
+	/** The log is small: the held-out numbers are the ones to show. */
+	small: boolean;
+}
 
 export type OptimizeResult =
 	| {
@@ -35,18 +67,15 @@ export type OptimizeResult =
 			rmseBins: number;
 			labelled: number;
 			lowData: boolean;
+			heldOut: HeldOut | null;
 	  }
 	| { ok: false; reason: 'too-few' | 'stopped'; labelled: number; needed?: number };
 
 export interface OptimizeOptions {
+	/** The weights the candidate is compared with; the defaults when omitted. */
+	current?: readonly number[];
 	onProgress?: (done: number, total: number) => void;
 	shouldStop?: () => boolean;
-}
-
-function labelledOf(steps: readonly Step[]): number {
-	let n = 0;
-	for (let i = 1; i < steps.length; i++) if (steps[i].t >= 1) n++;
-	return n;
 }
 
 /** Golden-section minimum of a unimodal function on [lo, hi]. */
@@ -76,9 +105,15 @@ function goldenSection(f: (x: number) => number, lo: number, hi: number): number
 	return (a + b) / 2;
 }
 
-/** pretrain fits w0..w3 from each first grade's second reviews. */
+/**
+ * pretrain fits w0..w3 from each first grade's second reviews. Each fit
+ * is pulled towards the default in log space by PRETRAIN_PRIOR
+ * pseudo-cards (so a handful of cards cannot push it to the range edge),
+ * then the four are made non-decreasing by pooling neighbours.
+ */
 function pretrain(data: Dataset, w: number[]): void {
 	const ranges = CLAMP_PARAMETERS(2, true);
+	const weight = [1, 1, 1, 1];
 	for (let g = 1; g <= 4; g++) {
 		const seconds = data.cards
 			.filter((c) => c.steps[0].g === g && c.steps.length > 1 && c.steps[1].t >= 1)
@@ -93,16 +128,74 @@ function pretrain(data: Dataset, w: number[]): void {
 			}
 			return sum;
 		};
-		const s0 = goldenSection(loss, S0_RANGE[0], S0_RANGE[1]);
-		w[g - 1] = Math.min(Math.max(s0, ranges[g - 1][0]), ranges[g - 1][1]);
+		const fitted = goldenSection(loss, S0_RANGE[0], S0_RANGE[1]);
+		const n = seconds.length;
+		const smooth = Math.exp(
+			(n * Math.log(fitted) + PRETRAIN_PRIOR * Math.log(DEFAULT_W[g - 1])) / (n + PRETRAIN_PRIOR)
+		);
+		w[g - 1] = smooth;
+		weight[g - 1] = n + PRETRAIN_PRIOR;
+	}
+	// Pool adjacent violators on log stability so w0 <= w1 <= w2 <= w3.
+	const blocks: { log: number; weight: number; count: number }[] = [];
+	for (let i = 0; i < 4; i++) {
+		blocks.push({ log: Math.log(w[i]), weight: weight[i], count: 1 });
+		while (blocks.length > 1 && blocks[blocks.length - 2].log > blocks[blocks.length - 1].log) {
+			const b = blocks.pop()!;
+			const a = blocks.pop()!;
+			const total = a.weight + b.weight;
+			blocks.push({
+				log: (a.log * a.weight + b.log * b.weight) / total,
+				weight: total,
+				count: a.count + b.count
+			});
+		}
+	}
+	let at = 0;
+	for (const block of blocks) {
+		for (let k = 0; k < block.count; k++, at++) {
+			w[at] = Math.min(Math.max(Math.exp(block.log), ranges[at][0]), ranges[at][1]);
+		}
 	}
 }
 
-export function optimize(data: Dataset, opts: OptimizeOptions = {}): OptimizeResult {
-	const labelled = data.labelled;
-	if (labelled < MIN_LABELLED) {
-		return { ok: false, reason: 'too-few', labelled, needed: MIN_LABELLED - labelled };
+/** itemLosses lists the per-item log loss of `w` over the items on or after `sinceDay`. */
+function itemLosses(w: readonly number[], data: Dataset, sinceDay: number): number[] {
+	const out: number[] = [];
+	const weights = [...w];
+	for (const card of data.cards) {
+		replay(numberNum, weights, card.steps, (r, y, index) => {
+			if ((card.days?.[index] ?? -Infinity) < sinceDay) return;
+			const p = Math.min(Math.max(r, P_EPS), 1 - P_EPS);
+			out.push(-(y === 1 ? Math.log(p) : Math.log(1 - p)));
+		});
 	}
+	return out;
+}
+
+/** pairedGain is the mean of a - b over the items, with its standard error. */
+function pairedGain(a: number[], b: number[]): { gain: number; se: number } {
+	const n = a.length;
+	let mean = 0;
+	for (let i = 0; i < n; i++) mean += a[i] - b[i];
+	mean /= n;
+	let ss = 0;
+	for (let i = 0; i < n; i++) ss += (a[i] - b[i] - mean) ** 2;
+	return { gain: mean, se: Math.sqrt(ss / Math.max(1, n - 1) / n) };
+}
+
+function labelledOf(steps: readonly Step[]): number {
+	let n = 0;
+	for (let i = 1; i < steps.length; i++) if (steps[i].t >= 1) n++;
+	return n;
+}
+
+/**
+ * fit trains the weights on `data`. `onBatch(fraction)` runs after every
+ * batch; it returns true to stop, and fit then returns null.
+ */
+function fit(data: Dataset, onBatch: (fraction: number) => boolean): number[] | null {
+	const labelled = data.labelled;
 	const ranges = CLAMP_PARAMETERS(2, true);
 	const w = [...DEFAULT_W];
 	pretrain(data, w);
@@ -176,19 +269,81 @@ export function optimize(data: Dataset, opts: OptimizeOptions = {}): OptimizeRes
 				}
 			}
 			done++;
-			opts.onProgress?.(done, total);
-			if (opts.shouldStop?.() === true) {
-				return { ok: false, reason: 'stopped', labelled };
-			}
+			if (onBatch(done / total)) return null;
 		}
 	}
-	const fit = evaluate(w, data);
+	return w;
+}
+
+/**
+ * splitByTime cuts the log at the UTC day where the latest 20 % of the
+ * labelled items begin. `head` keeps every review before that day.
+ */
+function splitByTime(data: Dataset): { head: Dataset; sinceDay: number; tail: number } | null {
+	const days: number[] = [];
+	for (const card of data.cards) {
+		if (card.days === undefined || card.days.length !== card.steps.length) return null;
+		for (let i = 1; i < card.steps.length; i++) if (card.steps[i].t >= 1) days.push(card.days[i]);
+	}
+	if (days.length === 0) return null;
+	days.sort((a, b) => a - b);
+	const sinceDay = days[Math.floor(days.length * (1 - HOLDOUT_FRACTION))];
+	const tail = days.filter((d) => d >= sinceDay).length;
+	const cards: Dataset['cards'] = [];
+	let labelled = 0;
+	for (const card of data.cards) {
+		const keep = card.days!.filter((d) => d < sinceDay).length;
+		if (keep === 0) continue;
+		const steps = card.steps.slice(0, keep);
+		cards.push({ cardId: card.cardId, steps, days: card.days!.slice(0, keep) });
+		labelled += labelledOf(steps);
+	}
+	if (tail < HOLDOUT_MIN_ITEMS || labelled < HEAD_MIN_ITEMS) return null;
+	return { head: { cards, labelled }, sinceDay, tail };
+}
+
+export function optimize(data: Dataset, opts: OptimizeOptions = {}): OptimizeResult {
+	const labelled = data.labelled;
+	if (labelled < MIN_LABELLED) {
+		return { ok: false, reason: 'too-few', labelled, needed: MIN_LABELLED - labelled };
+	}
+	const current = opts.current ?? DEFAULT_W;
+	const split = splitByTime(data);
+	// Two fits when a held-out tail exists: 0..0.4 earlier reviews, 0.4..1 all.
+	const SCALE = 1000;
+	const report = (fraction: number): boolean => {
+		opts.onProgress?.(Math.round(fraction * SCALE), SCALE);
+		return opts.shouldStop?.() === true;
+	};
+
+	let heldOut: HeldOut | null = null;
+	if (split !== null) {
+		const headW = fit(split.head, (f) => report(f * 0.4));
+		if (headW === null) return { ok: false, reason: 'stopped', labelled };
+		const mine = itemLosses(headW, data, split.sinceDay);
+		const theirs = itemLosses(current, data, split.sinceDay);
+		const { gain, se } = pairedGain(theirs, mine);
+		heldOut = {
+			items: split.tail,
+			candidate: mine.reduce((x, y) => x + y, 0) / mine.length,
+			current: theirs.reduce((x, y) => x + y, 0) / theirs.length,
+			gain,
+			se,
+			small: labelled < SMALL_LOG
+		};
+	}
+	const base = split === null ? 0 : 0.4;
+	const w = fit(data, (f) => report(base + f * (1 - base)));
+	if (w === null) return { ok: false, reason: 'stopped', labelled };
+	opts.onProgress?.(SCALE, SCALE);
+	const final = evaluate(w, data);
 	return {
 		ok: true,
 		w,
-		logLoss: fit.logLoss,
-		rmseBins: fit.rmseBins,
+		logLoss: final.logLoss,
+		rmseBins: final.rmseBins,
 		labelled,
-		lowData: labelled < LOW_DATA_LABELLED
+		lowData: labelled < LOW_DATA_LABELLED,
+		heldOut
 	};
 }

@@ -7,6 +7,8 @@ export interface RunOptions {
 	onProgress?: (fraction: number) => void;
 	signal?: AbortSignal;
 	createWorker?: () => Worker;
+	/** The weights the candidate is compared with; the defaults when omitted. */
+	current?: readonly number[];
 }
 
 type Message =
@@ -57,7 +59,7 @@ export function runOptimizer(data: Dataset, opts: RunOptions = {}): Promise<Opti
 		}
 		opts.signal?.addEventListener('abort', onAbort, { once: true });
 		try {
-			worker.postMessage({ type: 'run', data });
+			worker.postMessage({ type: 'run', data, current: opts.current });
 		} catch {
 			finish();
 			reject(new Error('The optimizer could not start in this browser.'));

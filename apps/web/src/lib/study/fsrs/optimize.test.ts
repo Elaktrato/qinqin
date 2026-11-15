@@ -5,6 +5,7 @@ import type { Dataset } from './dataset';
 import { evaluate } from './evaluate';
 import { optimize } from './optimize';
 import { DEFAULT_W } from './params';
+import { canApply } from './preview';
 import { simulate } from './synthetic';
 
 function trueWeights(): number[] {
@@ -107,5 +108,74 @@ describe('optimize', () => {
 		expect(small.labelled).toBeLessThan(1000);
 		const low = optimize(small);
 		expect(low.ok && low.lowData).toBe(true);
+	});
+
+	describe('small logs', () => {
+		const wTrue = (() => {
+			const w = [...DEFAULT_W];
+			w[8] = 1.4;
+			w[10] = 1.2;
+			w[11] = 1.0;
+			return w;
+		})();
+
+		it.each([3, 4, 5, 6, 7])('seed %i: ordered initial stabilities, none at the range edge', (seed) => {
+			const train = simulate({ w: wTrue, cards: 90, days: 200, seed });
+			const r = optimize(train);
+			if (!r.ok) return;
+			const s0 = r.w.slice(0, 4);
+			expect(s0[0]).toBeLessThanOrEqual(s0[1]);
+			expect(s0[1]).toBeLessThanOrEqual(s0[2]);
+			expect(s0[2]).toBeLessThanOrEqual(s0[3]);
+			for (const x of s0) {
+				expect(x).toBeGreaterThan(0.11);
+				expect(x).toBeLessThan(99);
+			}
+		});
+
+		it.each([3, 4, 5, 6, 7])('seed %i: an applicable fit is not worse on new reviews', (seed) => {
+			const train = simulate({ w: wTrue, cards: 90, days: 200, seed });
+			const test = simulate({ w: wTrue, cards: 3000, days: 200, seed: seed + 100 });
+			const r = optimize(train);
+			if (!r.ok) return;
+			expect(r.heldOut).not.toBeNull();
+			const check = canApply({
+				candidate: r,
+				activeLogLoss: evaluate(DEFAULT_W, train).logLoss,
+				startedWorkspace: 1,
+				currentWorkspace: 1,
+				source: 'optimized'
+			});
+			const held = evaluate(r.w, test).logLoss;
+			const base = evaluate(DEFAULT_W, test).logLoss;
+			console.info(
+				`seed ${seed}: ${train.labelled} labelled, new-data loss ${held.toFixed(4)} vs defaults ${base.toFixed(4)}, apply ${check.ok}`
+			);
+			if (check.ok) expect(held).toBeLessThanOrEqual(base + 0.003);
+		});
+
+		it('still offers a fit that is clearly better on a small log', () => {
+			const strong = [...DEFAULT_W];
+			strong[8] = 0.8;
+			strong[9] = 0.5;
+			strong[10] = 2.2;
+			strong[11] = 0.5;
+			strong[14] = 0.5;
+			const train = simulate({ w: strong, cards: 150, days: 250, seed: 4 });
+			const test = simulate({ w: strong, cards: 3000, days: 250, seed: 104 });
+			const r = optimize(train);
+			expect(r.ok).toBe(true);
+			if (!r.ok) return;
+			expect(r.heldOut?.small).toBe(true);
+			const check = canApply({
+				candidate: r,
+				activeLogLoss: evaluate(DEFAULT_W, train).logLoss,
+				startedWorkspace: 1,
+				currentWorkspace: 1,
+				source: 'optimized'
+			});
+			expect(check).toEqual({ ok: true });
+			expect(evaluate(r.w, test).logLoss).toBeLessThan(evaluate(DEFAULT_W, test).logLoss);
+		});
 	});
 });

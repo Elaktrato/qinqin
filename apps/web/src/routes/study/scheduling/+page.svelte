@@ -6,7 +6,7 @@
 	import SavedSets from '$lib/plugins/flashcards/scheduling/SavedSets.svelte';
 	import { buildDataset, type Dataset } from '$lib/study/fsrs/dataset';
 	import { evaluate, type Fit } from '$lib/study/fsrs/evaluate';
-	import type { OptimizeResult } from '$lib/study/fsrs/optimize';
+	import type { HeldOut, OptimizeResult } from '$lib/study/fsrs/optimize';
 	import { runOptimizer } from '$lib/study/fsrs/optimizerClient';
 	import { DEFAULT_W, type FsrsState } from '$lib/study/fsrs/params';
 	import { canApply, previewChange } from '$lib/study/fsrs/preview';
@@ -25,11 +25,12 @@
 		source: 'optimized' | 'imported';
 		labelled?: number;
 		logLoss?: number;
+		heldOut?: HeldOut | null;
 		baselineLogLoss: number;
 	}
 
 	const UNDO_MS = 10000;
-	const EMPTY_FIT: Fit = { logLoss: 0, rmseBins: 0 };
+	const EMPTY_FIT: Fit = { logLoss: 0, rmseBins: 0, items: 0 };
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
 
@@ -108,6 +109,7 @@
 		const baseline = activeFit.logLoss;
 		try {
 			const r = await runOptimizer(dataset, {
+				current: [...fsrs.w],
 				signal: controller.signal,
 				onProgress: (f) => (progress = f)
 			});
@@ -120,6 +122,7 @@
 					source: 'optimized',
 					labelled: r.labelled,
 					logLoss: r.logLoss,
+					heldOut: r.heldOut,
 					baselineLogLoss: baseline
 				};
 			}
@@ -155,7 +158,10 @@
 		candidate === null
 			? ({ ok: false, reason: '' } as const)
 			: canApply({
-					candidate: candidate.logLoss === undefined ? null : { logLoss: candidate.logLoss },
+					candidate:
+						candidate.logLoss === undefined
+							? null
+							: { logLoss: candidate.logLoss, heldOut: candidate.heldOut },
 					activeLogLoss: candidate.baselineLogLoss,
 					startedWorkspace: candidate.workspaceId,
 					currentWorkspace: workspaceId,

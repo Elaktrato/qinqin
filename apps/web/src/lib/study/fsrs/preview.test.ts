@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ReviewEvent, StudyCard } from '../types';
 import { DEFAULT_W } from './params';
+import type { HeldOut } from './optimize';
 import { canApply, isSurge, previewChange } from './preview';
 
 const NOW = new Date('2026-06-01T00:00:00.000Z');
@@ -93,5 +94,30 @@ describe('canApply', () => {
 
 	it('refuses an optimised result that is missing', () => {
 		expect(canApply({ ...base, candidate: null, source: 'optimized' }).ok).toBe(false);
+	});
+});
+
+describe('canApply held-out gate', () => {
+	const base = { startedWorkspace: 1, currentWorkspace: 1, activeLogLoss: 0.4, source: 'optimized' as const };
+	const held = (o: Partial<HeldOut>): HeldOut => ({
+		items: 100,
+		candidate: 0.3,
+		current: 0.31,
+		gain: 0.01,
+		se: 0.004,
+		small: true,
+		...o
+	});
+
+	it('offers a small log only when the gain is more than twice its noise', () => {
+		expect(canApply({ ...base, candidate: { logLoss: 0.3, heldOut: held({ gain: 0.01, se: 0.004 }) } })).toEqual({ ok: true });
+		const r = canApply({ ...base, candidate: { logLoss: 0.3, heldOut: held({ gain: 0.01, se: 0.006 }) } });
+		expect(r.ok).toBe(false);
+		expect(!r.ok && r.reason).toMatch(/most recent reviews/);
+	});
+
+	it('lets a large log through unless it is clearly worse on its latest reviews', () => {
+		expect(canApply({ ...base, candidate: { logLoss: 0.3, heldOut: held({ small: false, gain: -0.0005 }) } }).ok).toBe(true);
+		expect(canApply({ ...base, candidate: { logLoss: 0.3, heldOut: held({ small: false, gain: -0.01 }) } }).ok).toBe(false);
 	});
 });
