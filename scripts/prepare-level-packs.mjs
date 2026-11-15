@@ -59,6 +59,7 @@
 //
 // Level order is easiest first, which is how the importer reads a pack (a
 // character derived from words keeps the lowest level it appears in).
+import { existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
@@ -670,9 +671,30 @@ function countsLine(levels) {
 	return levels.map((level) => `${level.name} ${level.entries.length}`).join(', ');
 }
 
-export async function writePack(dir, { manifest, unit, levels, license, attribution, extraFiles = {} }) {
+/** The marker file the standalone generators leave in a pack they wrote. */
+export const GENERATED_MARKER = '.qinqin-generated';
+
+/**
+ * assertWritable refuses to replace an existing directory that was not
+ * written by a generator (no marker file) or, unless allowLicense, that
+ * holds a LICENSE file: an upstream licence text must never be wiped by a
+ * mistyped --id or output directory. A missing or empty directory is fine.
+ */
+export function assertWritable(dir, { allowLicense }) {
+	if (!existsSync(dir)) return;
+	if (readdirSync(dir).length === 0) return;
+	if (!existsSync(join(dir, GENERATED_MARKER))) {
+		fail(`refusing to replace ${dir}: it was not written by a qinqin generator (no ${GENERATED_MARKER}); move or delete it yourself`);
+	}
+	if (!allowLicense && existsSync(join(dir, 'LICENSE'))) {
+		fail(`refusing to replace ${dir}: it holds a LICENSE file, so it is not a local-only pack`);
+	}
+}
+
+export async function writePack(dir, { manifest, unit, levels, license, attribution, extraFiles = {}, marker = false }) {
 	await rm(dir, { recursive: true, force: true });
 	await mkdir(dir, { recursive: true });
+	if (marker) await writeFile(join(dir, GENERATED_MARKER), 'written by scripts/prepare-*-levels.mjs; safe to regenerate\n');
 	await writeFile(join(dir, 'manifest.json'), json(manifest));
 	await writeFile(join(dir, 'levels.json'), levelsJSON(unit, levels));
 	// No licence text (a local-only pack) means no LICENSE file: none was granted.

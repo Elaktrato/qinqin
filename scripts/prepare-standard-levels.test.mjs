@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { crc32, gzipSync } from 'node:zlib';
-import { PackError, writePack } from './prepare-level-packs.mjs';
+import { GENERATED_MARKER, PackError, writePack } from './prepare-level-packs.mjs';
 import { JOYO_NOTICE, TGH_NOTICE, joyoLevels, parseJoyoSet, parseTgh, tghLevels } from './prepare-standard-levels.mjs';
 
 const script = fileURLToPath(new URL('./prepare-standard-levels.mjs', import.meta.url));
@@ -249,6 +249,48 @@ test('real data: 2,136 jōyō kanji equal Unihan kJoyoKanji 2010; tgh 3,500 / 3,
 			tgh.map((l) => l.entries.length),
 			[3500, 3000, 1605]
 		);
+	} finally {
+		rmSync(out, { recursive: true, force: true });
+	}
+});
+
+test('CLI refuses to wipe a pack directory it did not write', () => {
+	const dir = fixturePacks();
+	try {
+		mkdirSync(join(dir, 'joyo-grades'));
+		writeFileSync(join(dir, 'joyo-grades', 'precious.txt'), 'x');
+		const r = spawnSync('node', [script, dir], { encoding: 'utf8' });
+		assert.notEqual(r.status, 0);
+		assert.match(r.stderr, /not written by/);
+		assert.equal(existsSync(join(dir, 'joyo-grades', 'precious.txt')), true);
+		assert.equal(existsSync(join(dir, 'tgh-chars')), false, 'nothing is written after a refusal');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('the committed packs are byte-identical to a fresh generation from the bundled inputs', { skip: !existsSync(join(repoPacks, 'joyo-grades')) }, () => {
+	const out = mkdtempSync(join(tmpdir(), 'qq-cmp-'));
+	try {
+		for (const [d, f] of [
+			['kanjidic2', 'kanjidic2.xml.gz'],
+			['kanjidic2', 'LICENSE'],
+			['unihan', 'Unihan.zip'],
+			['unihan', 'LICENSE']
+		]) {
+			mkdirSync(join(out, d), { recursive: true });
+			writeFileSync(join(out, d, f), readFileSync(join(repoPacks, d, f)));
+		}
+		const r = spawnSync('node', [script, out], { encoding: 'utf8' });
+		assert.equal(r.status, 0, r.stderr);
+		for (const id of ['joyo-grades', 'tgh-chars']) {
+			for (const name of ['manifest.json', 'levels.json', 'LICENSE', 'ATTRIBUTION.md', GENERATED_MARKER]) {
+				assert.ok(
+					readFileSync(join(out, id, name)).equals(readFileSync(join(repoPacks, id, name))),
+					`${id}/${name} differs: run node scripts/prepare-standard-levels.mjs and commit`
+				);
+			}
+		}
 	} finally {
 		rmSync(out, { recursive: true, force: true });
 	}

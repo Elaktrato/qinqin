@@ -5,7 +5,8 @@ Grade 1 to Grade 6, then Secondary (the rest of the jōyō table).
 
 Source: KANJIDIC2 (database version 2026-315), © Electronic Dictionary
 Research and Development Group (EDRDG), licensed CC BY-SA 4.0,
-https://www.edrdg.org/wiki/index.php/KANJIDIC_Project. The grade and
+https://www.edrdg.org/wiki/index.php/KANJIDIC_Project (licence:
+https://www.edrdg.org/edrdg/licence.html). The grade and
 frequency rank of each kanji are taken from its `<grade>` and `<freq>`
 elements; jinmeiyō kanji (grades 9 and 10) are left out. See LICENSE in this
 directory (a copy of the KANJIDIC2 licence). This pack is a derived work and

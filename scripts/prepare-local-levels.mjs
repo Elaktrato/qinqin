@@ -7,17 +7,19 @@
 // Usage:
 //   node scripts/prepare-local-levels.mjs --id tbcl-words --name "TBCL words" \
 //     --language zh --unit word --license "NAER, all rights reserved; local use" \
-//     --attribution "國家教育研究院 臺灣華語文能力基準, https://coct.naer.edu.tw" \
+//     --attribution "國家教育研究院 臺灣華語文能力基準, https://bcoct.naer.edu.tw/TBCL/" \
 //     [--version <v>] [--force-dir] <list.tsv> [<local-packs-dir>]
 //
 // <local-packs-dir> defaults to plugins/data-local and must be a directory
 // named data-local unless --force-dir is given (so a typo cannot write into
-// plugins/data). Input: UTF-8 TSV, header `level<TAB>form[<TAB>reading]`.
+// plugins/data; --force-dir never allows plugins/data itself, and an existing
+// pack directory is replaced only if this script wrote it and it holds no
+// LICENSE). Input: UTF-8 TSV, header `level<TAB>form[<TAB>reading]`.
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { PackError, writePack } from './prepare-level-packs.mjs';
+import { PackError, assertWritable, writePack } from './prepare-level-packs.mjs';
 
 function fail(message) {
 	throw new PackError(message);
@@ -35,6 +37,7 @@ export function parseLevelTsv(text, unit) {
 	if (unit !== 'word' && unit !== 'character') fail(`unit must be word or character, not ${JSON.stringify(unit)}`);
 	const lines = (text.charCodeAt(0) === 0xfeff ? text.slice(1) : text).split(/\r\n|\n|\r/);
 	const header = lines[0].split('\t').map((c) => c.trim());
+	while (header.length > 2 && header[header.length - 1] === '') header.pop();
 	if (header[0] !== 'level' || header[1] !== 'form' || (header.length > 2 && (header.length !== 3 || header[2] !== 'reading'))) {
 		fail(`header must be "level<TAB>form" or "level<TAB>form<TAB>reading", got ${JSON.stringify(lines[0])}`);
 	}
@@ -45,21 +48,28 @@ export function parseLevelTsv(text, unit) {
 		const line = lines[i];
 		if (line.trim() === '') continue;
 		const cells = line.split('\t').map((c) => c.trim());
+		while (cells.length > 2 && cells[cells.length - 1] === '') cells.pop();
+		const quoted = cells.find((c) => /^["'“”‘’「『].*["'“”‘’」』]$/.test(c));
+		if (quoted !== undefined) fail(`line ${i + 1}: quoted cell ${quoted}; export the sheet as plain tab-separated text without quotes`);
 		if (cells.length < 2 || cells.length > header.length) fail(`line ${i + 1}: expected ${header.length} tab-separated columns, got ${cells.length}`);
 		const [level, form, reading = ''] = cells;
 		if (level === '') fail(`line ${i + 1}: empty level`);
 		if (form === '') fail(`line ${i + 1}: empty form`);
 		if (unit === 'character' && [...form].length !== 1) fail(`line ${i + 1}: unit character needs exactly one character, got ${JSON.stringify(form)}`);
-		let kept = reading;
-		if (ZHUYIN.test(reading)) {
-			kept = '';
-			droppedZhuyin++;
-		}
-		const key = `${form}\t${kept}`;
+		// Several readings in one cell (hǎo/hào) become one entry each.
+		const readings = reading === '' ? [''] : reading.split(/\s*[/／、,;；]\s*/).filter((r) => r !== '');
 		if (!levels.has(level)) levels.set(level, []);
-		if (seen.has(key)) continue;
-		seen.add(key);
-		levels.get(level).push(kept === '' ? form : { form, reading: kept });
+		for (const one of readings.length === 0 ? [''] : readings) {
+			let kept = one;
+			if (ZHUYIN.test(one)) {
+				kept = '';
+				droppedZhuyin++;
+			}
+			const key = `${form}\t${kept}`;
+			if (seen.has(key)) continue;
+			seen.add(key);
+			levels.get(level).push(kept === '' ? form : { form, reading: kept });
+		}
 	}
 	// A level whose every row was a repeat still exists in order; drop empty ones.
 	const result = [...levels].filter(([, entries]) => entries.length > 0).map(([name, entries]) => ({ name, entries }));
@@ -100,6 +110,12 @@ async function main() {
 		fail(`refusing to write into ${out}: local-only packs go in a directory named data-local (pass --force-dir to override)`);
 	}
 
+	const bundled = join(here, '..', 'plugins', 'data');
+	if (out === bundled || out.startsWith(bundled + sep)) {
+		fail(`refusing to write into ${out}: plugins/data holds the bundled packs; local-only packs never go there`);
+	}
+	assertWritable(join(out, opts.id), { allowLicense: false });
+
 	let buffer;
 	try {
 		buffer = await readFile(positional[0]);
@@ -124,6 +140,7 @@ async function main() {
 			format: 'json'
 		},
 		unit: opts.unit,
+		marker: true,
 		levels,
 		license: undefined,
 		attribution: `# ${opts.name}

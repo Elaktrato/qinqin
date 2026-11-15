@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { PackError } from './prepare-level-packs.mjs';
+import { GENERATED_MARKER } from './prepare-level-packs.mjs';
 import { parseLevelTsv } from './prepare-local-levels.mjs';
 
 const script = fileURLToPath(new URL('./prepare-local-levels.mjs', import.meta.url));
@@ -148,6 +149,76 @@ test('CLI rejects an id that could escape the output directory', () => {
 		const r = run([...args, tsv, out]);
 		assert.notEqual(r.status, 0);
 		assert.equal(existsSync(join(dir, 'evil')), false);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('trailing empty cells are ignored', () => {
+	assert.deepEqual(parseLevelTsv('level\tform\treading\t\nA\t山\t\t\n', 'character').levels, [{ name: 'A', entries: ['山'] }]);
+});
+
+test('a quoted cell is rejected with a clear message', () => {
+	assert.throws(() => parseLevelTsv('level\tform\nA\t"詞"\n', 'word'), (e) => e instanceof PackError && /line 2/.test(e.message) && /quot/.test(e.message));
+	assert.throws(() => parseLevelTsv('level\tform\n"A"\t詞\n', 'word'), (e) => /quot/.test(e.message));
+});
+
+test('a cell with several readings becomes one entry per reading', () => {
+	const { levels } = parseLevelTsv('level\tform\treading\nA\t好\thǎo/hào\nA\t行\txíng、háng\n', 'word');
+	assert.deepEqual(levels[0].entries, [
+		{ form: '好', reading: 'hǎo' },
+		{ form: '好', reading: 'hào' },
+		{ form: '行', reading: 'xíng' },
+		{ form: '行', reading: 'háng' }
+	]);
+});
+
+function localSetup() {
+	const dir = mkdtempSync(join(tmpdir(), 'qq-loc-'));
+	const tsv = join(dir, 'mini.tsv');
+	writeFileSync(tsv, 'level\tform\nL1\t你好\n');
+	return { dir, tsv, out: join(dir, 'data-local') };
+}
+
+test('CLI marks its pack and overwrites only packs it wrote', () => {
+	const { dir, tsv, out } = localSetup();
+	try {
+		assert.equal(run([...FLAGS(), tsv, out]).status, 0);
+		assert.equal(existsSync(join(out, 'my-list', GENERATED_MARKER)), true);
+		assert.equal(run([...FLAGS(), tsv, out]).status, 0, 'rewrites its own pack');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('CLI refuses to wipe a directory it did not write, or one holding a LICENSE', () => {
+	const { dir, tsv, out } = localSetup();
+	try {
+		mkdirSync(join(out, 'my-list'), { recursive: true });
+		writeFileSync(join(out, 'my-list', 'precious.txt'), 'x');
+		const r = run([...FLAGS(), tsv, out]);
+		assert.notEqual(r.status, 0);
+		assert.match(r.stderr, /not written by/);
+		assert.equal(existsSync(join(out, 'my-list', 'precious.txt')), true);
+		writeFileSync(join(out, 'my-list', GENERATED_MARKER), 'x');
+		writeFileSync(join(out, 'my-list', 'LICENSE'), 'MIT');
+		const r2 = run([...FLAGS(), tsv, out]);
+		assert.notEqual(r2.status, 0);
+		assert.match(r2.stderr, /LICENSE/);
+		assert.equal(readFileSync(join(out, 'my-list', 'LICENSE'), 'utf8'), 'MIT');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('--force-dir cannot target the repository plugins/data', () => {
+	const { dir, tsv } = localSetup();
+	const bundled = fileURLToPath(new URL('../plugins/data', import.meta.url));
+	try {
+		const r = run([...FLAGS(['--force-dir']), tsv, bundled]);
+		assert.notEqual(r.status, 0);
+		assert.match(r.stderr, /plugins\/data/);
+		assert.equal(existsSync(join(bundled, 'my-list')), false);
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}
