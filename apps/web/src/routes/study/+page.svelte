@@ -66,7 +66,9 @@
 			'Rebuild an example sentence from shuffled tiles; words without sentences are skipped.',
 		writing:
 			'Draw each Han character stroke by stroke; words without Han characters are skipped.',
-		tone: 'Swipe or type the tone of every syllable (Chinese only).'
+		tone: 'Swipe or type the tone of every syllable (Chinese only).',
+		reverse: 'See the meaning, recall the word (words only; switched on per deck).',
+		cloze: 'Fill the gap in an example sentence (switched on per deck).'
 	};
 
 	// Restore this tab's setup before the first render: on an SPA the
@@ -381,7 +383,7 @@
 	// the companion cards a deck session would plan. Cards reviewed but
 	// not due yet belong to neither bucket.
 	const deckPlan = $derived.by(() => {
-		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0 } };
+		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
 		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
 		const items = deckSessionItems({
 			cards,

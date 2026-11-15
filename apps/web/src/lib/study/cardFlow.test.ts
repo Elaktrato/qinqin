@@ -414,7 +414,7 @@ describe('sessionCounts', () => {
 		expect(sessionCounts(items, reviews)).toEqual({
 			due: 1,
 			fresh: 3,
-			byKind: { vocab: 2, sentence: 0, writing: 0, tone: 2 }
+			byKind: { vocab: 2, sentence: 0, writing: 0, tone: 2, reverse: 0, cloze: 0 }
 		});
 	});
 });

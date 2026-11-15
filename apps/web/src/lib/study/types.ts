@@ -12,9 +12,21 @@ export interface Deck {
 	createdAt: string;
 }
 
-export type StudyCardKind = 'vocab' | 'sentence' | 'writing' | 'tone';
+export type StudyCardKind = 'vocab' | 'sentence' | 'writing' | 'tone' | 'reverse' | 'cloze';
 
-export const CARD_KINDS: readonly StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
+export const CARD_KINDS: readonly StudyCardKind[] = [
+	'vocab',
+	'sentence',
+	'writing',
+	'tone',
+	'reverse',
+	'cloze'
+];
+
+/** Kinds a deck must switch on (deckcfg:) before they are planned. */
+export type OptInKind = 'reverse' | 'cloze';
+
+export const OPT_IN_KINDS: readonly OptInKind[] = ['reverse', 'cloze'];
 
 /** Anki-style grades: 1 Again, 2 Hard, 3 Good, 4 Easy. */
 export type ReviewGrade = 1 | 2 | 3 | 4;

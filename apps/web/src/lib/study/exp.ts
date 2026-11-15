@@ -10,7 +10,9 @@ export const BASE_XP: Record<StudyCardKind, number> = {
 	vocab: 10,
 	sentence: 15,
 	writing: 20,
-	tone: 8
+	tone: 8,
+	reverse: 10,
+	cloze: 15
 };
 
 const GRADE_BONUS: Record<ReviewGrade, number> = { 1: 0, 2: 0, 3: 5, 4: 10 };
@@ -77,7 +79,14 @@ export function xpFromReviews(
  * it as xpFromReviews minus the sum of these.
  */
 export function xpByKind(reviews: readonly ReviewEvent[]): Record<StudyCardKind, number> {
-	const out: Record<StudyCardKind, number> = { vocab: 0, sentence: 0, writing: 0, tone: 0 };
+	const out: Record<StudyCardKind, number> = {
+		vocab: 0,
+		sentence: 0,
+		writing: 0,
+		tone: 0,
+		reverse: 0,
+		cloze: 0
+	};
 	for (const review of validReviews(reviews)) {
 		out[review.mode] += BASE_XP[review.mode] + GRADE_BONUS[review.grade];
 	}

@@ -68,10 +68,12 @@
 		vocab: 'Vocab',
 		sentence: 'Word Salad',
 		writing: 'Writing',
-		tone: 'Tone'
+		tone: 'Tone',
+		reverse: 'Reverse',
+		cloze: 'Cloze'
 	};
 
-	const STUDY_KINDS: StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
+	const STUDY_KINDS: readonly StudyCardKind[] = CARD_KINDS;
 
 	const TIER_LABELS: Record<SaladTier, string> = {
 		0: 'Tier 0 · words, translation shown',
@@ -84,7 +86,10 @@
 		vocab: 'Keys: Space or Enter shows the answer · 1–4 grade',
 		sentence: 'Tap the tiles in order, then Check · keys 1–4 grade once checked',
 		writing: 'Draw each character stroke by stroke · keys 1–4 grade when finished',
-		tone: 'Keys: 1–5 set the highlighted syllable’s tone (5 = neutral) · ←/→ move · Backspace clears · Enter checks · then 1–4 grade'
+		tone: 'Keys: 1–5 set the highlighted syllable’s tone (5 = neutral) · ←/→ move · Backspace clears · Enter checks · then 1–4 grade',
+		reverse:
+			'Keys: Space or Enter shows the answer · type to check yourself · 1–4 grade',
+		cloze: 'Keys: 1–4 pick a choice or type the word, Enter checks · then 1–4 grade'
 	};
 
 	// The SPA has no SSR, so the tab's setup is readable during init.

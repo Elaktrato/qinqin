@@ -352,7 +352,14 @@ export function sessionCounts(
 	reviews: readonly ReviewEvent[]
 ): { due: number; fresh: number; byKind: Record<StudyCardKind, number> } {
 	const reviewed = reviewedIds(reviews);
-	const byKind: Record<StudyCardKind, number> = { vocab: 0, sentence: 0, writing: 0, tone: 0 };
+	const byKind: Record<StudyCardKind, number> = {
+		vocab: 0,
+		sentence: 0,
+		writing: 0,
+		tone: 0,
+		reverse: 0,
+		cloze: 0
+	};
 	let due = 0;
 	for (const item of items) {
 		byKind[item.kind] += 1;
