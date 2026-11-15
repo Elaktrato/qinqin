@@ -1,0 +1,18 @@
+{
+  "_doc": "Admin-issued reset links. check -> reset -> a login-shaped answer. Using a link deletes EVERY session of the user and clears a forced password change. One 400 token_invalid for an unknown, expired, used or disabled-user token. Plan 3 adds the two-factor branch: a user with MFA gets mfa_required instead of a session.",
+  "check": {
+    "request": {"method": "POST", "path": "/api/auth/reset/check", "body": {"token": "<token>"}},
+    "status": 200,
+    "body": {"username": "carla", "expiresAt": "2026-11-16T12:00:00Z"}
+  },
+  "use": {
+    "request": {"method": "POST", "path": "/api/auth/reset", "body": {"token": "<token>", "password": "<new password>", "deviceName": "optional"}},
+    "status": 200,
+    "body": {"status": "ok", "token": "tok_example", "user": {"id": 3, "username": "carla", "admin": false, "email": null, "emailVerified": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z"}}
+  },
+  "token_invalid": {
+    "request": {"method": "POST", "path": "/api/auth/reset", "body": {"token": "<token>", "password": "<new password>"}},
+    "status": 400,
+    "body": {"error": "token_invalid", "message": "This link is not valid any more. Ask for a new one."}
+  }
+}

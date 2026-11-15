@@ -1,0 +1,53 @@
+{
+  "_doc": "Administrator routes for users (web only in v0.4.0; the Kotlin client does not show them). AdminUser is the object of the list, create and patch answers. lastSeenAt is null until a session was used. Every route answers 403 forbidden to a non-admin and 403 password_change_required to a restricted admin.",
+  "list": {
+    "request": {"method": "GET", "path": "/api/admin/users"},
+    "status": 200,
+    "body": {"users": [{"id": 1, "username": "alice", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": "2026-11-15T12:30:00Z"}]}
+  },
+  "create": {
+    "request": {"method": "POST", "path": "/api/admin/users", "body": {"username": "carla", "password": "<temporary password>", "email": "optional", "admin": false}},
+    "status": 201,
+    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": false, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null}
+  },
+  "patch": {
+    "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": true}},
+    "status": 200,
+    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null}
+  },
+  "last_admin": {
+    "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": false}},
+    "status": 409,
+    "body": {"error": "last_admin", "message": "The last administrator cannot be removed. Make someone else an administrator first."}
+  },
+  "self_target": {
+    "request": {"method": "PATCH", "path": "/api/admin/users/{own id}", "body": {"disabled": true}},
+    "status": 409,
+    "body": {"error": "self_target", "message": "You cannot disable your own account."}
+  },
+  "reset_link": {
+    "request": {"method": "POST", "path": "/api/admin/users/{id}/reset-link", "body": {"expiresInHours": 24}},
+    "status": 201,
+    "body": {"path": "/reset#t=<token>", "expiresAt": "2026-11-16T12:00:00Z"}
+  },
+  "sessions_revoke": {
+    "request": {"method": "POST", "path": "/api/admin/users/{id}/sessions/revoke"},
+    "status": 200,
+    "body": {"revoked": 2}
+  },
+  "deletion_preview": {
+    "request": {"method": "GET", "path": "/api/admin/users/{id}/deletion-preview"},
+    "status": 200,
+    "body": {"workspaces": 1, "studyEvents": 120, "pluginData": 8, "books": 0, "journalPhotos": 0, "aiKeys": 0, "sessions": 1, "overlays": 0, "sentences": 0}
+  },
+  "delete": {
+    "request": {"method": "DELETE", "path": "/api/admin/users/{id}", "body": {"confirm": "<the username>"}},
+    "status": 204,
+    "body": null
+  },
+  "confirm_mismatch": {
+    "request": {"method": "DELETE", "path": "/api/admin/users/{id}", "body": {"confirm": "<wrong>"}},
+    "status": 422,
+    "body": {"error": "confirm_mismatch", "message": "Type the username exactly to confirm."}
+  }
+}

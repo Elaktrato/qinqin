@@ -13,6 +13,10 @@ examples of its throttling subset and a test checks that both agree on every cod
 | `login-responses.json` | The three answers of `POST /api/auth/login` that carry no throttle code |
 | `me.json` | `GET /api/auth/me`: the user plus the session's `restriction` |
 | `sessions.json` | Logout, change password, the session list and revoke routes, and the restricted answer |
+| `options.json` | `GET /api/auth/options` in the four states (bootstrap, closed, invite, open) |
+| `invites.json` | Invite create (the token is shown once), list, revoke, check |
+| `admin-users.json` | `AdminUser`, create / patch, last-admin and self-target refusals, reset link, deletion preview and delete |
+| `reset.json` | Reset link check and use (a login-shaped answer) |
 
 ## Tokens
 - A bearer token is 64 hex characters, returned once by login. Treat it as opaque; never log it,
@@ -67,6 +71,35 @@ signs the other sessions out. Wrong current password: 403 `wrong_password`; repe
 first, never a token or hash. `DELETE /api/account/sessions/{id}` (204; another user's id is 404),
 `POST /api/account/sessions/revoke {scope:"others"|"all"}` -> `{"revoked":n}`; `all` ends the caller
 too, so clear local state afterwards.
+
+## Registration (`POST /api/auth/register`)
+Read `GET /api/auth/options` first (public, uncached): `bootstrap`, `registration` (`closed` | `invite` |
+`open`), `emailPolicy` (`off` | `optional` | `required`), `passwordReset`, `emailCodeLogin` (the last two
+are false while the server has no mail), `passwordMinLength`. Body `{username, password, email?, invite?}`
+answers `201` with the user; then sign in as usual. `403 registration_closed` (mode closed),
+`403 invite_invalid` (one code and one body for an unknown, expired, used up or revoked invite, and for a
+missing one in invite mode), `422 email_required | email_disabled | invalid_email`, `409 email_taken |
+username_taken`, `422 weak_password | invalid_username`. An invite supplied in `open` mode is spent too and
+must be valid. The first user on an empty instance registers in every mode and becomes administrator.
+An invite arrives as a link `https://host/register#invite=<token>`: the Kotlin client opens it as a deep
+link, calls `POST /api/auth/invite/check {invite}` (200 `{expiresAt, emailPolicy}` or 403) and registers with
+the token. The token is in the fragment so it never reaches a server log.
+
+## Reset links
+An administrator issues one (`POST /api/admin/users/{id}/reset-link`, link `https://host/reset#t=<token>`,
+valid 1 to 168 hours, default 24, one live link per user). The holder calls `POST /api/auth/reset/check
+{token}` (`200 {username, expiresAt}` or `400 token_invalid`) and then `POST /api/auth/reset {token, password,
+deviceName?}`: the password is set, a forced change is cleared, **every** session of the user is deleted, and
+the answer is login-shaped (`{"status":"ok","token","user"}`). A weak password is `422 weak_password` and the
+link stays usable. Plan 3 adds the two-factor branch (`mfa_required` instead of a session): a client must treat
+an unknown `status` as "not signed in".
+
+## Administration (web only in v0.4.0)
+`/api/admin/users`, `/api/admin/invites`, `/api/admin/settings/auth`, `/api/admin/audit` are used by the web
+admin screens only; the Kotlin client needs just the routes above, `PUT /api/account/email`,
+`GET /api/account/deletion-preview` and `DELETE /api/account` (self deletion: `{password, confirm}`; 409
+`last_admin` for the last active administrator). Deleting an account removes its data in one transaction (the
+exact list is in the project README, "Registration, invites and user management").
 
 ## Client rules
 Send `deviceName`; treat the token as opaque; on 401 drop the token and show sign-in; on a 403 with a
