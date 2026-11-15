@@ -343,7 +343,7 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// json_patch merges the settings object in place (RFC 7396: existing
-	// keys update, new keys are added) while stamping updated_at. A patch
+	// keys update, new keys are added, a null value deletes its key) while stamping updated_at. A patch
 	// whose merged object would outgrow maxWorkspaceSettings changes
 	// nothing; the row then still exists and the answer is a 413.
 	ws, err := scanWorkspace(s.db.QueryRowContext(r.Context(), `

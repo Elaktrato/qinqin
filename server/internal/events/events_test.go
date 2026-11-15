@@ -555,3 +555,40 @@ func idsOfBodies(evs []eventBody) []string {
 	}
 	return ids
 }
+
+// TestEventBatchWorkspaceRequiredAndInBatchDuplicates pins two edges: an
+// event without a workspaceId is a validation error (400, not a
+// "workspace not found" 404), and one id repeated inside a single batch
+// counts once as accepted and once as a duplicate.
+func TestEventBatchWorkspaceRequiredAndInBatchDuplicates(t *testing.T) {
+	lang.Register(lang.Zh{})
+	ts, sqlDB := newServer(t)
+	_, alice := registerFirstUser(t, ts.URL, "alice")
+	zhWS := createWorkspace(t, ts.URL, alice, "zh")
+	ts0 := time.Date(2026, 11, 1, 9, 0, 0, 0, time.UTC).Format(time.RFC3339)
+
+	missing := map[string]any{"events": []map[string]any{
+		{"id": newEventID(t), "device": "phone", "ts": ts0, "type": "review"},
+	}}
+	if resp := doJSON(t, http.MethodPost, ts.URL, "/api/events/batch", alice, missing); resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("POST without workspaceId: status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
+	}
+	if rows := eventRows(t, sqlDB); rows != 0 {
+		t.Errorf("study_events rows after rejected batch = %d, want 0", rows)
+	}
+
+	id := newEventID(t)
+	ev := map[string]any{"id": id, "workspaceId": zhWS, "device": "phone", "ts": ts0, "type": "review"}
+	resp := doJSON(t, http.MethodPost, ts.URL, "/api/events/batch", alice, map[string]any{"events": []map[string]any{ev, ev}})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("POST batch with repeated id: status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	var out batchResult
+	decodeJSON(t, resp, &out)
+	if out.Accepted != 1 || out.Duplicates != 1 {
+		t.Errorf("batch with repeated id = accepted %d, duplicates %d, want 1, 1", out.Accepted, out.Duplicates)
+	}
+	if rows := eventRows(t, sqlDB); rows != 1 {
+		t.Errorf("study_events rows = %d, want 1", rows)
+	}
+}

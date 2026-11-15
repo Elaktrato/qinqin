@@ -76,14 +76,17 @@ func (s *server) handleCharsUnderRadical(w http.ResponseWriter, r *http.Request)
 // handlePutEntry serves PUT /api/entries/{id}: it stores the
 // authenticated caller's patch of the entry — nil fields revert that
 // field to the shared value — and responds with the caller's patched
-// view. Unknown and malformed ids are 404, unauthenticated calls 401.
+// view. Unknown and malformed ids are 404 (checked before the body, which
+// is then 400 when invalid), unauthenticated calls 401.
 func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
 		return
 	}
-	if _, err := strconv.ParseInt(r.PathValue("id"), 10, 64); err != nil {
-		http.Error(w, "entry not found", http.StatusNotFound)
+	// The entry is checked first: an unknown id is 404 even when the
+	// body would also be rejected (404 before 400).
+	e, ok := s.entryFromPath(w, r)
+	if !ok {
 		return
 	}
 	body, ok := readBody(w, r, maxEntryBody)
@@ -106,10 +109,6 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	e, ok := s.entryFromPath(w, r)
-	if !ok {
-		return
-	}
 	if err := overlay.Put(r.Context(), s.db, u.ID, e.ID, patch); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

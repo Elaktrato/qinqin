@@ -332,3 +332,14 @@ func TestPushAcceptsBuiltinWriters(t *testing.T) {
 		t.Fatalf("push = %+v, %v; want 3 accepted", res, err)
 	}
 }
+
+// An event without a workspace (0) is invalid, as in POST /api/events/batch.
+func TestPushRejectsEventWithoutWorkspace(t *testing.T) {
+	sqlDB := newDB(t)
+	alice := newUser(t, sqlDB, "alice")
+	_, err := chinsync.Push(context.Background(), sqlDB, alice, chinsync.PushBody{Events: []model.StudyEvent{
+		{ID: "01J00000000000000000000008", TS: time.Now().UTC(), Type: "review", Payload: json.RawMessage(`{}`)}}})
+	if !errors.Is(err, chinsync.ErrInvalid) {
+		t.Errorf("event without workspace err = %v, want ErrInvalid", err)
+	}
+}

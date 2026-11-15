@@ -111,6 +111,10 @@ func (s Store) PutTx(ctx context.Context, tx *sql.Tx, e *Entry, dictionaryID int
 }
 
 func (s Store) put(ctx context.Context, tx *sql.Tx, e *Entry, dictionaryID int64) (int64, error) {
+	// Language codes are stored lowercase (the workspace handler does the
+	// same), so "ZH" and "zh" are one entry. Lowercase only: validation
+	// of the code itself belongs to the language handlers.
+	e.Language = strings.ToLower(e.Language)
 	attrs, err := encodeAttrs(e.Attrs)
 	if err != nil {
 		return 0, err
@@ -458,6 +462,28 @@ func (s Store) Link(ctx context.Context, fromID, toID int64, typ string) error {
 func (s Store) LinkTx(ctx context.Context, tx *sql.Tx, fromID, toID int64, typ string) error {
 	if typ != LinkVariant && typ != LinkRadical {
 		return fmt.Errorf("link %d->%d: unknown link type %q", fromID, toID, typ)
+	}
+	// Only a variant link is meaningless on one entry; a radical link of a
+	// character to itself is real data (the radical 一 is its own radical).
+	if fromID == toID && typ == LinkVariant {
+		return fmt.Errorf("link %d->%d (%s): an entry cannot be its own variant", fromID, toID, typ)
+	}
+	// Existence means a row in entries, soft-deleted or not: linking to a
+	// tombstoned entry is allowed (the link revives with it).
+	// The foreign keys are declarative only (see db.migrateThrough), so
+	// check here that both ends exist: no dangling link is representable
+	// through the store.
+	want := 2
+	if fromID == toID {
+		want = 1
+	}
+	var found int
+	if err := tx.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM entries WHERE id IN (?, ?)`, fromID, toID).Scan(&found); err != nil {
+		return fmt.Errorf("link %d->%d (%s): %w", fromID, toID, typ, err)
+	}
+	if found != want {
+		return fmt.Errorf("link %d->%d (%s): an entry does not exist", fromID, toID, typ)
 	}
 	stamp := now()
 	pairs := [][2]int64{{fromID, toID}}

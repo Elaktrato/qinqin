@@ -56,19 +56,22 @@ describe('view store', () => {
 	it('reads the user-global qinqin-core activity-view row', async () => {
 		expect(ACTIVITY_VIEW_KEY).toBe('activity-view');
 		vi.mocked(fetch).mockResolvedValue(
-			new Response(JSON.stringify({ data: { version: 1, scope: 'all', hidden: ['journal'] } }), {
+			new Response(JSON.stringify([{ key: 'activity-view', data: { version: 1, scope: 'all', hidden: ['journal'] } }]), {
 				headers: { 'content-type': 'application/json' }
 			})
 		);
 		expect(await loadActivityView()).toEqual({ scope: 'all', hidden: ['journal'] });
 		expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(
-			'/api/plugins/qinqin-core/data/activity-view'
+			'/api/plugins/qinqin-core/data?prefix=activity-view'
 		);
 	});
 
 	it('loads the default when the row is missing or the server fails', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(new Response('not found', { status: 404 }));
+		vi.mocked(fetch).mockResolvedValueOnce(
+			new Response('[]', { headers: { 'content-type': 'application/json' } })
+		);
 		expect(await loadActivityView()).toEqual(DEFAULT_ACTIVITY_VIEW);
+		expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1); // an empty list, no 404 request
 		vi.mocked(fetch).mockResolvedValueOnce(new Response('boom', { status: 500 }));
 		expect(await loadActivityView()).toEqual(DEFAULT_ACTIVITY_VIEW);
 		vi.mocked(fetch).mockRejectedValueOnce(new TypeError('offline'));

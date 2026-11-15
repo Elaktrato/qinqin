@@ -102,19 +102,19 @@ export async function deleteEntry(workspaceId: number, id: string): Promise<void
 }
 
 export async function getReview(workspaceId: number, entryId: string): Promise<Review | null> {
-	const v = await docs(workspaceId).get(REVIEW_PREFIX + entryId);
+	const v = await docs(workspaceId).find(REVIEW_PREFIX + entryId);
 	return isRecord(v) && typeof v.entryId === 'string' ? (v as unknown as Review) : null;
 }
 
 export async function getSuggestions(workspaceId: number): Promise<Suggestions | null> {
-	const v = await docs(workspaceId).get(SUGGESTIONS_KEY);
+	const v = await docs(workspaceId).find(SUGGESTIONS_KEY);
 	return isRecord(v) && Array.isArray(v.items) ? (v as unknown as Suggestions) : null;
 }
 
 const DEFAULT_SETTINGS: JournalSettings = { guidance: '', explanationLanguage: 'en' };
 
 export async function getJournalSettings(workspaceId: number): Promise<JournalSettings> {
-	const v = await docs(workspaceId).get(SETTINGS_KEY);
+	const v = await docs(workspaceId).find(SETTINGS_KEY);
 	if (!isRecord(v)) return { ...DEFAULT_SETTINGS };
 	const language = str(v.explanationLanguage);
 	return {

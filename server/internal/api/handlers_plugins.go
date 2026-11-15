@@ -6,9 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
-	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 )
 
@@ -88,17 +86,12 @@ func (s *server) handleSetPluginState(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "plugin not found", http.StatusNotFound)
 		return
 	}
-	if err := plugins.SetState(r.Context(), s.db, u.ID, pluginID, *req.Enabled, *req.Order); err != nil {
+	state, err := plugins.SetStateRow(r.Context(), s.db, u.ID, pluginID, *req.Enabled, *req.Order)
+	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
-	writeJSON(w, http.StatusOK, model.PluginState{
-		PluginID:  pluginID,
-		UserID:    u.ID,
-		Enabled:   *req.Enabled,
-		Order:     *req.Order,
-		UpdatedAt: time.Now().UTC(),
-	})
+	writeJSON(w, http.StatusOK, state)
 }
 
 // pluginWorkspace resolves the ?workspace= query parameter the plugin
@@ -220,11 +213,7 @@ func (s *server) handlePutPluginData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "plugin does not declare owns-data", http.StatusForbidden)
 		return
 	}
-	if _, err := plugins.PutData(r.Context(), s.db, u.ID, workspaceID, pluginID, key, json.RawMessage(body)); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	d, err := plugins.GetData(r.Context(), s.db, u.ID, workspaceID, pluginID, key)
+	d, err := plugins.PutDataRow(r.Context(), s.db, u.ID, workspaceID, pluginID, key, json.RawMessage(body), nil)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

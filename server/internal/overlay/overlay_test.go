@@ -304,3 +304,33 @@ func TestReimportPreservesOverlay(t *testing.T) {
 		t.Errorf("shared readings after re-import = %+v, want derived bopomofo ㄈㄚ", shared.Readings)
 	}
 }
+
+// TestAllNilPatchRevertsAndKeepsMarker pins the all-nil PUT: it reverts the
+// user's view to the shared entry but keeps the row, because sync ships
+// user_edits rows and the all-nil row is what tells other devices to drop
+// their copy of the patch.
+func TestAllNilPatchRevertsAndKeepsMarker(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	importPack(t, ctx, sqlDB, overlayManifest, faJSON("to issue"))
+	fa := entryID(t, sqlDB, "发")
+	alice := createUser(t, sqlDB, "alice")
+
+	written := "發"
+	if err := overlay.Put(ctx, sqlDB, alice.ID, fa, model.EntryPatch{Written: &written}); err != nil {
+		t.Fatalf("Put patch: %v", err)
+	}
+	if err := overlay.Put(ctx, sqlDB, alice.ID, fa, model.EntryPatch{}); err != nil {
+		t.Fatalf("Put all-nil patch: %v", err)
+	}
+	if got := view(t, sqlDB, alice.ID, fa); got.Written != "发" {
+		t.Errorf("written after all-nil patch = %q, want the shared 发", got.Written)
+	}
+	var w, r sql.NullString
+	if err := sqlDB.QueryRow(`SELECT written, readings FROM user_edits WHERE user_id = ? AND entry_id = ?`, alice.ID, fa).Scan(&w, &r); err != nil {
+		t.Fatalf("marker row missing after all-nil patch: %v", err)
+	}
+	if w.Valid || r.Valid {
+		t.Errorf("marker row = %v %v, want NULL fields", w, r)
+	}
+}

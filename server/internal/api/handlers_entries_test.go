@@ -451,3 +451,20 @@ func TestCharsUnderRadical(t *testing.T) {
 		}
 	}
 }
+
+// TestPutEntryUnknownIDBeatsBadBody pins the precedence: a missing entry is
+// 404 even when the body would also be rejected (404 before 400).
+func TestPutEntryUnknownIDBeatsBadBody(t *testing.T) {
+	ts, _ := newServer(t)
+	alice := registerUser(t, ts.URL, "alice", "")
+
+	for name, body := range map[string]map[string]any{
+		"empty written": {"written": ""},
+		"bad reading":   {"readings": []map[string]string{{"type": "", "value": ""}}},
+	} {
+		resp := doJSON(t, http.MethodPut, ts.URL, "/api/entries/999999", alice, body)
+		if resp.StatusCode != http.StatusNotFound {
+			t.Errorf("PUT unknown entry with %s: status = %d, want %d", name, resp.StatusCode, http.StatusNotFound)
+		}
+	}
+}
