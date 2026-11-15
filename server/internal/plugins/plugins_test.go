@@ -73,7 +73,18 @@ func find(t *testing.T, list []model.PluginInfo, id string) model.PluginInfo {
 
 // heatmapManifest is a feature-plugin manifest: the admin-registered
 // kind, identified by its id, shipping no content of its own.
-const heatmapManifest = `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature","language":"zh"}`
+var heatmapManifest = validManifest("qinqin-heatmap", `"name":"Study heatmap"`)
+
+// validManifest is a feature manifest that passes ParseManifest: sdk 1,
+// owns-data, no surfaces or events. extra is a comma-free list of JSON
+// members appended last, so a repeated key overrides the default (the
+// decoder keeps the last).
+func validManifest(id, extra string) string {
+	if extra != "" {
+		extra = "," + extra
+	}
+	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
+}
 
 func TestRegisterListState(t *testing.T) {
 	sqlDB := newDB(t)
@@ -119,7 +130,7 @@ func TestRegisterListState(t *testing.T) {
 	}
 
 	// Re-registering the same id replaces the manifest.
-	mustRegister(t, sqlDB, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.1","type":"feature","language":"zh"}`)
+	mustRegister(t, sqlDB, validManifest("qinqin-heatmap", `"name":"Study heatmap","version":"1.1"`))
 	list, err = plugins.ListFor(ctx, sqlDB, bob)
 	if err != nil {
 		t.Fatalf("ListFor after re-register: %v", err)
@@ -179,7 +190,7 @@ func TestListForIncludesDataPlugins(t *testing.T) {
 	exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
 		VALUES ((SELECT id FROM entries WHERE ext_key = '你好'), 'zh-mini', NULL, '你好。', 'nǐ hǎo.', 'Hello.', ?)`, stamp)
 
-	mustRegister(t, sqlDB, `{"id":"qinqin-heatmap","name":"Study heatmap","version":"1.0","type":"feature"}`)
+	mustRegister(t, sqlDB, heatmapManifest)
 
 	list, err := plugins.ListFor(ctx, sqlDB, alice)
 	if err != nil {
@@ -625,6 +636,51 @@ func TestListForIncludesGrammarPacks(t *testing.T) {
 	for _, p := range list {
 		if p.ID == "zh-grammar-mini" {
 			t.Error("removed grammar pack still listed")
+		}
+	}
+}
+
+func TestCanWriteData(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	mustRegister(t, sqlDB, validManifest("with-data", ""))
+	mustRegister(t, sqlDB, validManifest("without-data", `"permissions":[]`))
+	if _, err := sqlDB.Exec(`INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
+		VALUES ('mkgloss', 'mkgloss', '1.0', 'MIT', 'test', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatalf("seed dictionary: %v", err)
+	}
+	for _, tc := range []struct {
+		id              string
+		exists, allowed bool
+	}{
+		{"with-data", true, true},
+		{"without-data", true, false},
+		{"mkgloss", true, true},
+		{"nobody", false, false},
+	} {
+		exists, allowed, err := plugins.CanWriteData(ctx, sqlDB, tc.id)
+		if err != nil || exists != tc.exists || allowed != tc.allowed {
+			t.Errorf("CanWriteData(%s) = %t, %t, %v; want %t, %t", tc.id, exists, allowed, err, tc.exists, tc.allowed)
+		}
+	}
+}
+
+// TestCanWriteDataGrandfathered: a registry row from before the contract
+// (no sdk, or not even parsable) keeps writing data as before.
+func TestCanWriteDataGrandfathered(t *testing.T) {
+	sqlDB := newDB(t)
+	for id, raw := range map[string]string{
+		"legacy":   `{"id":"legacy","name":"L"}`,
+		"garbled":  `{"id":"garbled","events":"x"}`,
+		"notjson":  `nope`,
+		"sdkempty": `{"id":"sdkempty","sdk":0}`,
+	} {
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES (?, ?, '2026-01-01T00:00:00Z')`, id, raw); err != nil {
+			t.Fatal(err)
+		}
+		exists, allowed, err := plugins.CanWriteData(context.Background(), sqlDB, id)
+		if err != nil || !exists || !allowed {
+			t.Errorf("CanWriteData(%s) = %t, %t, %v; want grandfathered", id, exists, allowed, err)
 		}
 	}
 }

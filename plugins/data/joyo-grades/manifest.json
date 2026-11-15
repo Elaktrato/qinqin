@@ -1,0 +1,11 @@
+{
+  "id": "joyo-grades",
+  "name": "Jōyō kanji by school grade",
+  "version": "kanjidic2@2026-315",
+  "type": "levels",
+  "language": "ja",
+  "license": "CC BY-SA 4.0",
+  "attribution": "School grades (学年別漢字配当表 2020 and the jōyō table) as recorded in KANJIDIC2 (CC BY-SA 4.0, © EDRDG), https://www.edrdg.org/wiki/index.php/KANJIDIC_Project; converted by qinqin",
+  "notice": "The school grade of each jōyō kanji (Grade 1 to Grade 6, then Secondary for the rest of the 2,136 jōyō kanji) is the one recorded in [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (CC BY-SA 4.0, EDRDG), which follows the 2020 学年別漢字配当表 and the 2010 常用漢字表. Jinmeiyō kanji are not included. Within a level, kanji are ordered by newspaper frequency, then by code point.",
+  "format": "json"
+}

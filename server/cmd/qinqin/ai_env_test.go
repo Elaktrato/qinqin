@@ -12,6 +12,7 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/db"
+	"qinqin/internal/plugins"
 )
 
 func b64(b byte) string { return base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{b}, 32)) }
@@ -160,7 +161,8 @@ func TestBuiltinJournalManifest(t *testing.T) {
 	if err := sqlDB.QueryRow(`SELECT manifest_json FROM plugin_registry WHERE pack_id = 'qinqin-journal'`).Scan(&m); err != nil {
 		t.Fatalf("journal not registered: %v", err)
 	}
-	if !strings.Contains(m, `"surfaces":["page"]`) || !strings.Contains(m, `"name":"Journal"`) {
-		t.Errorf("manifest = %s", m)
+	parsed, err := plugins.ParseManifest([]byte(m))
+	if err != nil || parsed.Name != "Journal" || len(parsed.Surfaces) != 1 || parsed.Surfaces[0] != "page" {
+		t.Errorf("manifest = %s (err %v)", m, err)
 	}
 }

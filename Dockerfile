@@ -7,6 +7,8 @@ WORKDIR /src/apps/web
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci
 COPY apps/web/ ./
+# The built-in plugin manifests ($builtin alias) live next to the server.
+COPY server/internal/plugins/builtin /src/server/internal/plugins/builtin
 RUN npm run build
 
 # Builder: Go >= 1.26 is required (modernc.org/sqlite floor). Pure Go, no CGO,

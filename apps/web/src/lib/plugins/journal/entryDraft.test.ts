@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUTOSAVE_MS, MAX_REVIEW_CHARS, codePoints, journalEvent, journalEventDue } from './entryDraft';
+import { AUTOSAVE_MS, MAX_REVIEW_CHARS, codePoints, journalEventDue } from './entryDraft';
 
 describe('journalEventDue', () => {
 	const day1 = new Date('2026-11-13T10:00:00Z');
@@ -27,21 +27,6 @@ describe('journalEventDue', () => {
 		const sent = new Map<string, string>();
 		journalEventDue('A', true, day1, sent);
 		expect(journalEventDue('B', true, day1, sent)).toBe(true);
-	});
-});
-
-describe('journalEvent', () => {
-	it('builds a journal study event', () => {
-		const now = new Date('2026-11-13T10:00:00Z');
-		const e = journalEvent(7, 'A', now);
-		expect(e).toMatchObject({
-			workspaceId: 7,
-			device: 'web',
-			ts: now.toISOString(),
-			type: 'journal',
-			payload: { entryId: 'A' }
-		});
-		expect(e.id).toMatch(/^[0-9A-Z]{26}$/);
 	});
 });
 

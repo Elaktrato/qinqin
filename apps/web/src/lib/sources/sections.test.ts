@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { webPlugins } from '$lib/plugins';
+import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
 import { creditView, packTable, pluginCredits } from './sections';
@@ -146,9 +147,9 @@ describe('pluginCredits', () => {
 	it('lists plugins that declare sources, skipping core duplicates and empty plugins', () => {
 		const result = pluginCredits(
 			[
-				{ id: 'a', name: 'A', surfaces: [] },
-				{ id: 'b', name: 'B', surfaces: [], sources: [{ name: 'Hanzi-Writer ' }] },
-				{ id: 'c', name: 'C', surfaces: [], sources: [{ name: 'lib' }, { name: 'hanzi-writer' }] }
+				fixtureManifest({ id: 'a', name: 'A' }),
+				fixtureManifest({ id: 'b', name: 'B', sources: [{ name: 'Hanzi-Writer ' }] }),
+				fixtureManifest({ id: 'c', name: 'C', sources: [{ name: 'lib' }, { name: 'hanzi-writer' }] })
 			],
 			[{ name: 'hanzi-writer' }]
 		);

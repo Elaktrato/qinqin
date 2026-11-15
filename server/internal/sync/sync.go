@@ -99,6 +99,9 @@ type PushResult struct {
 	EventDuplicates int `json:"eventDuplicates"`
 	DataAccepted    int `json:"dataAccepted"`
 	DataSkipped     int `json:"dataSkipped"`
+	// DataRefused counts rows of plugins that do not declare owns-data;
+	// they are not applied, the rest of the push is.
+	DataRefused int `json:"dataRefused"`
 }
 
 // Push applies body for userID. It validates the whole body first —
@@ -111,7 +114,9 @@ type PushResult struct {
 // written through the plugin store — so the server stamps its own
 // updated_at and bumps the version — or tombstoned when the incoming row
 // is a deletion. A newer server row, and a deletion of a row that is
-// absent or already deleted, count as skipped.
+// absent or already deleted, count as skipped. A row of a plugin that
+// does not declare owns-data is refused alone (DataRefused): the events
+// and every other row still apply.
 func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (PushResult, error) {
 	owned := map[int64]bool{}
 	checkWorkspace := func(id int64) error {
@@ -143,6 +148,7 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		}
 		ev.UserID = userID
 	}
+	// knownPlugin caches the per-plugin answer: whether it may be written.
 	knownPlugin := map[string]bool{}
 	for i, row := range body.PluginData {
 		if row.PluginID == "" || row.Key == "" {
@@ -156,15 +162,15 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 				return PushResult{}, err
 			}
 		}
-		if !knownPlugin[row.PluginID] {
-			ok, err := plugins.Exists(ctx, sqlDB, row.PluginID)
+		if _, seen := knownPlugin[row.PluginID]; !seen {
+			exists, allowed, err := plugins.CanWriteData(ctx, sqlDB, row.PluginID)
 			if err != nil {
 				return PushResult{}, fmt.Errorf("sync push: %w", err)
 			}
-			if !ok {
+			if !exists {
 				return PushResult{}, fmt.Errorf("%w: plugin %q", ErrNotFound, row.PluginID)
 			}
-			knownPlugin[row.PluginID] = true
+			knownPlugin[row.PluginID] = allowed
 		}
 	}
 
@@ -177,6 +183,10 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		res.EventsAccepted, res.EventDuplicates = accepted, dups
 	}
 	for _, row := range body.PluginData {
+		if !knownPlugin[row.PluginID] {
+			res.DataRefused++
+			continue
+		}
 		applied, err := applyData(ctx, sqlDB, userID, row)
 		if err != nil {
 			return res, err

@@ -73,7 +73,7 @@
 ### Task 3: Seed, API, plugin listing, credits check
 
 **Files:**
-- Modify: `server/cmd/qinqin/seed.go` (dispatch + `importOrder`), `server/cmd/qinqin/packcheck.go` (`grammar_packs` in `warnStalePackTerms`), `server/cmd/qinqin/main.go` (`builtinGrammarManifest = {"id":"qinqin-grammar","name":"Grammar","version":"1.0","type":"feature","surfaces":["page"]}` registered with the others), `server/internal/plugins/plugins.go` (`grammarPlugins`, type `grammar`), `server/internal/api/api.go` + new `server/internal/api/handlers_grammar.go`
+- Modify: `server/cmd/qinqin/seed.go` (dispatch + `importOrder`), `server/cmd/qinqin/packcheck.go` (`grammar_packs` in `warnStalePackTerms`), `server/internal/plugins/builtin/grammar.json` (new; sdk 1, id `qinqin-grammar`, name `Grammar`, version `1.1`, type `feature`, surfaces `["page"]`, empty permissions, hooks and events), appended to `builtinFiles` in `server/internal/plugins/builtin.go` so `registerBuiltinPlugins` registers it with the others, `server/internal/plugins/plugins.go` (`grammarPlugins`, type `grammar`), `server/internal/api/api.go` + new `server/internal/api/handlers_grammar.go`
 - Test: `server/internal/api/handlers_grammar_test.go`, `server/cmd/qinqin/seed_test.go`, `server/internal/plugins/plugins_test.go`
 
 **Interfaces:**

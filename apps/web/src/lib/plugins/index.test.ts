@@ -3,9 +3,10 @@ import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
 import { findPlugin, isCorePlugin, navPages, webPlugins, orderPlugins, pluginEnabled, pluginSlug, pluginState, visibleNavPages } from './index';
 import type { WebPlugin } from './index';
+import { fixtureManifest } from './fixtures';
 
 function plugin(id: string): WebPlugin {
-	return { manifest: { id, name: id, surfaces: ['home-widget'] } };
+	return { manifest: fixtureManifest({ id, name: id, surfaces: ['home-widget'] }) };
 }
 
 function state(id: string, order: number, enabled = true): PluginInfo {

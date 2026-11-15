@@ -2,10 +2,8 @@
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
-	import { postEvents } from '$lib/events';
 	import { aiErrorView } from './aiErrors';
 	import { deletePhoto, keepPhotoAlive, photoObjectUrl, transcribe, uploadPhoto } from './api';
-	import { journalEvent } from './entryDraft';
 	import { clearDraft, loadDraft, saveDraft } from './photoDraftStore';
 	import {
 		DOWNSCALE_EDGE,
@@ -23,7 +21,7 @@
 		type PhotoState
 	} from './photoFlow';
 	import { journalHref } from './route';
-	import { newEntry, saveEntry } from './store';
+	import { newEntry, recordJournalEvent, saveEntry } from './store';
 	import type { Capabilities } from './types';
 
 	let {
@@ -231,7 +229,7 @@
 			entry.text = flow.text;
 			const saved = await saveEntry(ws, entry);
 			const now = new Date();
-			await postEvents([journalEvent(ws, saved.id, now)]).catch(() => undefined);
+			await recordJournalEvent(ws, saved.id, now).catch(() => undefined);
 			dispatch({ type: 'saved' });
 			if (destroyed) return;
 			await goto(journalHref({ view: 'entry', id: saved.id }), { replaceState: true });

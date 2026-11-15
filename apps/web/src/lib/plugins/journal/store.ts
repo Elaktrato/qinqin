@@ -2,12 +2,19 @@
 // entry:<id>, review:<id>, suggestions and settings. Reads of the list go
 // through the prefix route, so the journal never pulls every plugin row.
 
-import { ApiError, api } from '../../api/client';
 import { newUlid } from '../../ulid';
+import { createPluginSdk, type DataScope } from '../sdk';
+import { journalManifest } from './manifest';
 import { EXPLANATION_LANGUAGES } from './languages';
 import type { JournalEntry, JournalSettings, Review, Suggestions } from './types';
 
-export const JOURNAL_PLUGIN_ID = 'qinqin-journal';
+export const JOURNAL_PLUGIN_ID = journalManifest.id;
+
+const sdk = createPluginSdk(journalManifest);
+
+function docs(workspaceId: number): DataScope {
+	return sdk.data.workspace(workspaceId);
+}
 
 const ENTRY_PREFIX = 'entry:';
 const REVIEW_PREFIX = 'review:';
@@ -15,36 +22,15 @@ const SUGGESTIONS_KEY = 'suggestions';
 const SETTINGS_KEY = 'settings';
 const MAX_GUIDANCE = 2000;
 
-interface Row {
-	key?: unknown;
-	data?: unknown;
-}
-
-function dataPath(key: string, workspaceId: number): string {
-	return `/api/plugins/${JOURNAL_PLUGIN_ID}/data/${key}?workspace=${workspaceId}`;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-// The API serves data as JSON; a row may still carry a string. An
-// unparsable string is treated as absent.
-function decodeData(data: unknown): unknown {
-	if (typeof data !== 'string') return data;
-	try {
-		return JSON.parse(data) as unknown;
-	} catch {
-		return null;
-	}
 }
 
 function str(value: unknown, fallback = ''): string {
 	return typeof value === 'string' ? value : fallback;
 }
 
-function parseEntry(key: string, data: unknown): JournalEntry | null {
-	const v = decodeData(data);
+function parseEntry(key: string, v: unknown): JournalEntry | null {
 	if (!isRecord(v) || typeof v.id !== 'string' || v.id === '' || typeof v.text !== 'string') return null;
 	if (key !== ENTRY_PREFIX + v.id) return null;
 	return {
@@ -58,22 +44,11 @@ function parseEntry(key: string, data: unknown): JournalEntry | null {
 	};
 }
 
-async function readRow(key: string, workspaceId: number): Promise<Row | null> {
-	try {
-		const row = await api<Row | undefined>(dataPath(key, workspaceId));
-		return row ?? null;
-	} catch (err) {
-		if (err instanceof ApiError && err.status === 404) return null;
-		throw err;
-	}
-}
-
 export async function listEntries(workspaceId: number): Promise<JournalEntry[]> {
-	const query = `workspace=${workspaceId}&prefix=${encodeURIComponent(ENTRY_PREFIX)}`;
-	const rows = await api<Row[] | undefined>(`/api/plugins/${JOURNAL_PLUGIN_ID}/data?${query}`);
+	const rows = await docs(workspaceId).list(ENTRY_PREFIX);
 	const entries: JournalEntry[] = [];
-	for (const row of Array.isArray(rows) ? rows : []) {
-		const entry = typeof row?.key === 'string' ? parseEntry(row.key, row.data) : null;
+	for (const row of rows) {
+		const entry = parseEntry(row.key, row.data);
 		if (entry) entries.push(entry);
 	}
 	return entries.sort(
@@ -83,8 +58,7 @@ export async function listEntries(workspaceId: number): Promise<JournalEntry[]> 
 
 export async function getEntry(workspaceId: number, id: string): Promise<JournalEntry | null> {
 	const key = ENTRY_PREFIX + id;
-	const row = await readRow(key, workspaceId);
-	return row ? parseEntry(key, row.data) : null;
+	return parseEntry(key, await docs(workspaceId).get(key));
 }
 
 // A keepalive request body may not exceed 64 KiB; a bigger entry goes without.
@@ -98,11 +72,7 @@ export async function saveEntry(
 	const saved = { ...entry, updatedAt: new Date().toISOString() };
 	const keepalive =
 		opts.keepalive === true && new Blob([JSON.stringify(saved)]).size <= KEEPALIVE_MAX_BYTES;
-	await api(dataPath(ENTRY_PREFIX + saved.id, workspaceId), {
-		method: 'PUT',
-		body: saved,
-		...(keepalive ? { keepalive: true } : {})
-	});
+	await docs(workspaceId).put(ENTRY_PREFIX + saved.id, saved, keepalive ? { keepalive: true } : {});
 	return saved;
 }
 
@@ -125,38 +95,26 @@ export function newEntry(source: 'typed' | 'photo', today: Date = new Date()): J
 	};
 }
 
-async function deleteKey(key: string, workspaceId: number): Promise<void> {
-	try {
-		await api(dataPath(key, workspaceId), { method: 'DELETE' });
-	} catch (err) {
-		if (err instanceof ApiError && err.status === 404) return;
-		throw err;
-	}
-}
-
 /** Deletes the entry, then its review; a missing document is fine. */
 export async function deleteEntry(workspaceId: number, id: string): Promise<void> {
-	await deleteKey(ENTRY_PREFIX + id, workspaceId);
-	await deleteKey(REVIEW_PREFIX + id, workspaceId);
+	await docs(workspaceId).delete(ENTRY_PREFIX + id);
+	await docs(workspaceId).delete(REVIEW_PREFIX + id);
 }
 
 export async function getReview(workspaceId: number, entryId: string): Promise<Review | null> {
-	const row = await readRow(REVIEW_PREFIX + entryId, workspaceId);
-	const v = row ? decodeData(row.data) : null;
+	const v = await docs(workspaceId).get(REVIEW_PREFIX + entryId);
 	return isRecord(v) && typeof v.entryId === 'string' ? (v as unknown as Review) : null;
 }
 
 export async function getSuggestions(workspaceId: number): Promise<Suggestions | null> {
-	const row = await readRow(SUGGESTIONS_KEY, workspaceId);
-	const v = row ? decodeData(row.data) : null;
+	const v = await docs(workspaceId).get(SUGGESTIONS_KEY);
 	return isRecord(v) && Array.isArray(v.items) ? (v as unknown as Suggestions) : null;
 }
 
 const DEFAULT_SETTINGS: JournalSettings = { guidance: '', explanationLanguage: 'en' };
 
 export async function getJournalSettings(workspaceId: number): Promise<JournalSettings> {
-	const row = await readRow(SETTINGS_KEY, workspaceId);
-	const v = row ? decodeData(row.data) : null;
+	const v = await docs(workspaceId).get(SETTINGS_KEY);
 	if (!isRecord(v)) return { ...DEFAULT_SETTINGS };
 	const language = str(v.explanationLanguage);
 	return {
@@ -166,5 +124,10 @@ export async function getJournalSettings(workspaceId: number): Promise<JournalSe
 }
 
 export async function saveJournalSettings(workspaceId: number, s: JournalSettings): Promise<void> {
-	await api(dataPath(SETTINGS_KEY, workspaceId), { method: 'PUT', body: s });
+	await docs(workspaceId).put(SETTINGS_KEY, s);
+}
+
+/** Records the once-per-day `journal` study event for an entry; rejects on failure. */
+export function recordJournalEvent(workspaceId: number, entryId: string, now: Date): Promise<void> {
+	return sdk.events.record('journal', workspaceId, { entryId }, now);
 }
