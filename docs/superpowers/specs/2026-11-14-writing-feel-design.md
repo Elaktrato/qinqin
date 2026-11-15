@@ -88,31 +88,99 @@ so it is built as a small, pure engine with shared test cases.
 
 ### Matching rules
 
-For a candidate (one stroke or a join):
+Revised 2026-11-15 after the owner's touch and mouse test of the first build ("too strict":
+好's 撇 took many tries with a vague down-left line; 子's corner stroke and the 竖钩 could not
+be drawn in one motion; an exaggerated hook was rejected). The absolute endpoint and
+later-stroke thresholds were replaced by the structure below; see the rulings.
 
-1. Resample ink and candidate to the same number of points.
-2. **Direction:** the ink's start must be nearer the candidate's start than its
-   end, and the overall direction vectors must agree (cosine above a threshold).
-   A reversed stroke is a miss.
-3. **Shape:** align the ink to the candidate by translation and uniform scale
-   (no rotation); shape distance = mean point distance after alignment, divided
-   by the candidate's length. This is what makes position and size forgiving.
-4. **Placement tolerance:** the alignment itself is bounded — centroid offset
-   at most a fraction of the character box, scale ratio within a range — so a
-   stroke drawn in the wrong part of the character, or tiny, is still a miss.
-5. **Joins** use the same rules and are only candidates when each stroke's end
-   lies within a gap limit of the next stroke's start (starting value 0.2 of
-   the box; 糸/纟/红 measure 0.15–0.17), so a join never needs a retrace or a backwards connector (口's
-   横折 + 横 does not join). The corner between joined strokes must be present
-   in the ink (the shape distance covers this).
+The ink and every candidate (one stroke, or a join of consecutive strokes) are resampled
+by arc length. Each is also prepared in its **forgiving forms**: the stroke's short brush
+entry tick cut off (`body`), and, when it ends in a **hook** (a piece of at most `tailMax`
+= 25 % of the length that turns off a straight body by at least 50°), the hook cut off
+(`hookless`). The ink's own hook may be up to half its length (an exaggerated hook).
+The ink is compared with a candidate in these pairings, and the best that passes counts:
 
-Starting values (to be tuned): 32 resample points, centroid offset ≤ 0.3 of
-the box, scale 0.5–2.0, direction cosine ≥ 0.5, shape distance ≤ 0.2.
+- whole ink against the whole stroke, and against the stroke without its entry tick;
+- hook strokes only: whole ink against the stroke without its hook (hook left off), and the
+  ink without its hook against the stroke without its hook, when the ink's hook points the
+  stroke hook's way within about ±70° (hook exaggerated or overshot). Both add a small
+  `trimPenalty` to the cost.
 
-**Ruling: endpoint anchoring** — fixes later-stroke/scribble false accepts at starting values — cost if wrong: slightly stricter on sloppy ends; tune `maxEnd` in Task 6. After mapping the ink into the candidate frame, the aligned ink start and end must each lie within `max(maxEnd x candidate path length, minEndTol)` (0.08 and 0.04) of the candidate's start and end. The absolute floor `minEndTol` was added after a whole-branch review: the purely relative tolerance was under a millimetre for short strokes, so a noise model of a hand drawing with +-2% wobble passed only 5% of short strokes; with the floor it passes 100% (long strokes unchanged) and scribble false accepts stay at 0. The ruling started at 0.35; against the fixtures, 0.08 is the loosest value that rejects every wrong-stroke and scribble case while all genuine cases pass (0.06 already rejects genuine noisy strokes).
+One pairing passes when all of these generous ceilings hold:
 
-**Ruling: out-of-order parallel strokes** — fixes ~8% of next-but-one strokes accepted on 三/川/目/王 etc. (shape is judged centroid-relative, so parallel strokes score alike) — cost if wrong: a correct stroke drawn far from its place and nearer a later one is rejected. After a candidate matches, the next `lookahead` (3) later strokes are checked: if the ink also fits one of them and its centroid is closer to it than to the matched candidate by `laterRatio` (0.3) and at least `laterGain` (0.05), the result is a miss. Measured over the 234-character sweep the wrong-stroke false accepts went from 130/1340 to 0, correct-stroke pass rates unchanged; 0.6 wrongly rejected 纟's first stroke shifted by 0.15.
-Deviation: the direction rule (start nearer start than end) is judged relative to each path's centroid, so a shifted stroke is not mistaken for a reversed one; placement is judged separately.
+1. **Direction:** the overall start→end chords agree within ±60° (cosine ≥ 0.5), and so do
+   the chords of each half within about ±72° (cosine ≥ 0.3). Reversed strokes fail here;
+   loops (chord under a quarter of the length) skip the chord test and rely on shape.
+2. **Placement:** centroid offset ≤ 0.3 of the box, size ratio 0.45–2.2.
+3. **Shape:** after removing translation and uniform scale (no rotation), the mean point
+   distance over the stroke length clamped to 0.18–0.4 is ≤ 0.24 (a hand's absolute wobble is
+   not magnified on a dot, and a long stroke is not judged loosely in absolute terms); and the
+   farthest point of either path from the other polyline, over the length (at least 0.18), is
+   ≤ 0.22, so a leg added or left out fails even when the mean is small.
+
+**Cost** of a passing pairing = shape + 0.5 × centroid offset + 0.1 × |ln size ratio| (+ penalty).
+
+**Acceptance is by rank:** the expected candidates are the stroke `next` and the joins that
+start at it. The best passing one is accepted unless some other stroke or join of the
+character, earlier or later, also passes and costs less by more than `rankMargin` (0.03);
+then the result is a miss with reason `order`. Ties go to the expected stroke, and among the
+expected candidates to the fewest strokes.
+
+**Joins** are candidates only when each stroke's end lies within `maxGap` (0.2 of the box)
+of the next stroke's start (糸/纟/红 measure 0.15–0.17), so a join never needs a retrace or
+a backwards connector (口's 横折 + 横 does not join). The corner between joined strokes
+must be present in the ink.
+
+All thresholds live in `params.ts` with a comment each.
+
+**Ruling: rank-based acceptance replaces endpoint anchoring and the later-stroke ratio** —
+fixes the owner's "too strict" — cost if wrong: a correct stroke drawn in the wrong place
+right on top of another stroke of the same shape is a miss (it is then genuinely ambiguous).
+The old rules (aligned endpoints within `max(0.08 × length, 0.04)`; a later stroke within the
+next 3 rejecting only when the ink sat at under 0.3 of the distance) judged each candidate
+alone against tight absolute limits, so ordinary hands failed: on the hand model below the
+old matcher accepted 46 % of 好's 竖钩 and 68 % of its 撇. Ranking against every other
+stroke lets the absolute ceilings be generous while order stays enforced: a later stroke
+drawn cleanly fits itself better than the expected one, so it misses by construction.
+Earlier strokes are rivals too (drawing an already drawn stroke again was accepted 3.9 % of
+the time before, 0.1 % now). `rankMargin` 0.03: 0 rejected 5 % of correct strokes shifted by
+0.1 towards a neighbour; 0.06 let 0.7 % of next strokes and 0.9 % of earlier strokes through.
+
+**Ruling: hooks and entry ticks are optional** — fixes hook strokes accepted only in a narrow
+form (hook left off, exaggerated or overshot: about 5 % before) — cost if wrong: a 竖 drawn
+for a 竖钩 is accepted. A short end piece after a sharp turn is cut by finding the sharpest
+turn between the body chord (15 % of the length, itself straight within 30°) and the chord to
+the end; the straight-body condition stops a long leg after a corner (了's and 子's 横撇, 纟's
+撇折) from being taken for a hook, so drawing only the 横 of a 横撇 still misses (corner leg
+left out: 1.1 % accepted). `tailMax` 0.25: 0.3 let 6 % of first-leg-only drawings through.
+
+**Ruling: farthest-point limit instead of a corner detector** — a windowed turning-angle
+corner test was tried first; on wobbly ink it rejected 13 % of mid-length correct strokes.
+The farthest-point limit (0.22) rejects 98.6 % of strokes longer than 0.3 drawn with an extra
+perpendicular leg of half their length while keeping simplified straight lines of curved
+strokes (大's long 撇). On dots and ticks under 0.15 such a flick is accepted about one time
+in five: deliberate leniency, a flick on a dot is not a different stroke for a learner.
+
+**Ruling: no path-length (stretch) limit** — pointer jitter inflates the length of slowly
+drawn short strokes; the shape, farthest-point and half-direction rules already reject
+zigzags and retraces (scribbles 0.3 %).
+
+Measured with the hand model (`scripts/writing-ink-model.mjs`; per stroke: the stroke as a
+straight line where it has no corner, smooth wobble 0.03 with ends over/undershot by up to
+15 % and rotation up to ±10°, pointer jitter, hook left off / exaggerated ×2.2 / overshot ×3,
+corners rounded, shifted by 0.1 and scaled ×0.7/×1.4), before → after:
+
+| | before | after |
+|---|---|---|
+| 好 strokes 1–6 | 82 / 68 / 92 / 79 / 46 / 84 % | 100 % each |
+| 234-character sweep, correct strokes | 85.1 % | 99.5 % |
+| hook left off / exaggerated / overshot | 5 / 5 / 3 % | 97 / 98 / 93 % |
+| next stroke drawn cleanly (false accept) | 0.4 % | 0 |
+| any later stroke, clean / hand-drawn | 0.5 / 1.0 % | 0 / 0.1 % |
+| earlier stroke drawn again | 3.9 % | 0.1 % |
+| reversed, hand-drawn / scribble | 0 / 0.1 % | 0.1 / 0.3 % |
+
+A harsher hand (wobble 0.04, ends ±20 %, ±15°) passes 95 % (before: 55 %).
 
 ### Writing pad (`WritingPad.svelte`, used by `WritingCard`)
 
@@ -156,6 +224,11 @@ correct pinyin with its tone mark, as the answer line does today.
 
 ## Testing
 
+- Hand-model fixtures (`scripts/writing-ink-model.mjs`, emitted by
+  `make-writing-fixtures.mjs`) for 好 女 子 了 我 永 红 口 十 人: every stroke drawn as a
+  simplified straight line, with wobble/over- and undershoot/rotation, pointer jitter, hooks
+  left off and exaggerated, rounded corners, shifted and scaled — all must match; the same hand
+  drawing the stroke reversed, a later stroke, or the previous stroke again must miss.
 - Unit tests for geometry and matcher from fixtures built on real stroke data:
   each stroke drawn from its median with noise, offset, scale up/down; joins
   (了 as one motion, the first two strokes of 子, 糸, 纟 and 红); negatives: a join that would need a retrace (口's
@@ -171,10 +244,13 @@ correct pinyin with its tone mark, as the answer line does today.
 
 - Order stays enforced; joins only cover consecutive strokes in order, at most 3,
   and only where the strokes flow into each other (gap limit).
-- No rotation tolerance (a rotated stroke is a different stroke).
+- No rotation in the alignment (a rotated stroke is a different stroke); the generous
+  direction and shape ceilings absorb the ±10° a hand rotates.
 - Hint after 3 misses keeps today's behaviour (brief glow of the next stroke,
   then the outline stays for that character); a manual Hint button adds
-  one hint per press.
+  one hint per press. Re-checked with the forgiving matcher (2026-11-15): kept — with
+  correct strokes now accepted in nearly any hand, three misses on one stroke mean the
+  learner does not know it, which is exactly when the glow helps.
 - Tone pads keep today's layout (all syllables visible), just larger.
 - Tone checking stays per word, not per syllable.
 - Guide grid on the writing pad.
