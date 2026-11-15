@@ -47,6 +47,10 @@ database with a SvelteKit single-page app embedded in the binary.
   **Overview** shows every widget that applies to the workspace, in a fixed
   order (core first, then plugins); **Characters** (`/stats/characters`) is the
   mastery map, for Chinese and Japanese workspaces only.
+- **Journal and AI** — write dated entries per workspace; with your own
+  Anthropic API key, get a review with underlined corrections, topic ideas, and
+  photo import with offline (Tesseract) or AI transcription (see
+  [Journal and AI](#journal-and-ai)).
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
   are installable data packs; widgets and views come from feature plugins that
   the server registers at startup so Settings can enable them.
