@@ -67,8 +67,9 @@ const SAMPLE_PACK_IDS = new Set(['hsk-mini', 'jlpt-mini']);
 /**
  * Bundled packs the map does not offer as a "Group by" choice because a
  * built-in grouping already shows the same sections: `joyo-grades` is the
- * built-in "Grade" (KANJIDIC2 grades 1–6 and 8). Badges, level sessions and
- * search filters still use them. Other bundled schemes (HSK, JLPT kanji,
+ * built-in "Grade" (KANJIDIC2 grades 1–6 and 8). Badges and search
+ * filters still use them (level sessions do not support character packs yet,
+ * issue #57). Other bundled schemes (HSK, JLPT kanji,
  * `tgh-chars`) and a user's own pack are offered; removing an id here
  * re-adds its option.
  */
@@ -192,6 +193,19 @@ export interface SchemeLevelMembers {
 	levelId: number;
 	name: string;
 	chars: ReadonlySet<string>;
+}
+
+/**
+ * variantFormCount counts the rows of a scheme section whose own glyph is
+ * not a member of the level: they sit there through a variant form (a
+ * traditional form of a listed simplified character), so the section is
+ * larger than the level's list.
+ */
+export function variantFormCount(chars: readonly CharRow[], levelChars: ReadonlySet<string> | undefined): number {
+	if (levelChars === undefined) return 0;
+	let n = 0;
+	for (const row of chars) if (!levelChars.has(row.c)) n += 1;
+	return n;
 }
 
 function schemeSlotter(members: readonly SchemeLevelMembers[] | undefined): (row: CharRow) => Slot {

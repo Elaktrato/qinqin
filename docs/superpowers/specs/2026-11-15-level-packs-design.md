@@ -5,7 +5,7 @@ questions); every decision is a "Ruling" below so the owner can undo it.
 
 ## Goal
 
-Badges, map groupings and level sessions for three more scheme families, under
+Badges, map groupings and (for word packs) level sessions for three more scheme families, under
 the project's licence rule: data with an unclear or restrictive licence is
 fetched locally, gitignored (`plugins/data-local/`) and never bundled; the app
 works without it. Bundle only what a publisher licenses as CC BY-SA 4.0 or more
@@ -14,7 +14,7 @@ permissively, with the licence text and attribution beside it.
 The level machinery already exists and is generic: a `levels` pack
 (`manifest.json` + `levels.json`) imported by `qinqin seed` gets badges
 (`Badges.svelte`), a "Group by" option on the character map
-(`lib/study/charGroups.ts`), level sessions on `/study`, search filters and a
+(`lib/study/charGroups.ts`), level sessions on `/study` (word packs only, issue #57), search filters and a
 Sources-page credit. So #42 is data and tooling, plus two small UI rulings.
 
 Note: the repository has no `LICENSE` file of its own. Compatibility below is
@@ -31,7 +31,7 @@ not against a project licence.
 | Wikipedia jōyō / grade tables | CC BY-SA 4.0, but compiled by editors and redundant with KANJIDIC2. | Not used |
 | **TOCFL 華語八千詞** (old official list) | Withdrawn: TOCFL (SC-TOP) stopped providing it on 2021-06-30; TOCFL levels now follow NAER's TBCL (https://tocfl.edu.tw/assets/files/8000zhuyin_recall.pdf). No licence was ever stated. | **REJECT** |
 | **TBCL 臺灣華語文能力基準** (NAER, the current TOCFL basis: 3,100 characters, 14,425 words) | https://bcoct.naer.edu.tw/TBCL/ footer: "Copyright © 2019 國家教育研究院 版權所有"; no licence or 授權 text; not on data.gov.tw (NAER's data.gov.tw sets are other topics under the Open Government Data License, which does not cover TBCL). `/standsys/` returned 403. | **LOCAL-ONLY** |
-| **通用规范汉字表** (2013) levels, from the bundled **Unihan** `kTGH` | Unihan (Unicode License v3) `kTGH`: "…the Tōngyòng Guīfàn Hànzìbiǎo (通用规范汉字表) table in which the ideograph appears, … its one- to four-digit index number in that list" (UAX #38). Bundled file: 8,105 values, serials 1–8,105 without gaps; 一级 1–3,500, 二级 3,501–6,500, 三级 6,501–8,105 (3,500 / 3,000 / 1,605). The table itself is a State Council document (国发〔2013〕23号, https://www.gov.cn/zwgk/2013-08/19/content_2469793.htm); PRC Copyright Law art. 5: "本法不适用于：（一）法律、法规，国家机关的决议、决定、命令和其他具有立法、行政、司法性质的文件…" (via https://www.12371.cn/2020/06/22/ARTI1592755505338467.shtml). | **BUNDLE** (derived pack, Unicode License v3) |
+| **通用规范汉字表** (2013) levels, from the bundled **Unihan** `kTGH` | Unihan (Unicode License v3) `kTGH`: "…the Tōngyòng Guīfàn Hànzìbiǎo (通用规范汉字表) table in which the ideograph appears, … its one- to four-digit index number in that list" (UAX #38). Bundled file: 8,105 values, serials 1–8,105 without gaps; 一级 1–3,500, 二级 3,501–6,500, 三级 6,501–8,105 (3,500 / 3,000 / 1,605). The table itself is a State Council document (国发〔2013〕23号, https://www.gov.cn/zwgk/2013-08/19/content_2469793.htm); PRC Copyright Law art. 5: "本法不适用于：（一）法律、法规，国家机关的决议、决定、命令和其他具有立法、行政、司法性质的文件…" (via https://www.ncac.gov.cn/xxfb/flfg/flfg_532/202103/t20210309_50530.html (National Copyright Administration)). | **BUNDLE** (derived pack, Unicode License v3) |
 | 义务教育语文课程标准（2022年版）字表 (识字写字教学基本字表 300, 常用字表 2,500/3,500) | Issued by 教育部 but published as a book by 北京师范大学出版社; no reuse licence found; whether art. 5 covers a 课程标准 is unverified. | **LOCAL-ONLY** |
 | 小学/初中/高中 grade splits from textbooks (人教版 etc.) | Publisher copyright, no licence. | **REJECT** |
 
@@ -53,10 +53,10 @@ not against a project licence.
   wrong: a KANJIDIC2 error carries into badges; a test cross-checks the set
   against Unihan `kJoyoKanji`.
 - Ruling: hide `joyo-grades` from the map's "Group by" — the built-in "Grade"
-  grouping already shows exactly these sections, and the owner decided on
+  grouping already covers these sections, and the owner decided on
   2026-11-14 that grade lists stay in the core — cost if wrong: one option
-  missing; removing the id from a set re-adds it. Badges, level sessions and
-  search filters still use it.
+  missing; removing the id from a set re-adds it. Badges and search filters
+  still use it; level sessions do not support character packs yet (issue #57).
 
 ### Bundled pack `tgh-chars` (Chinese, unit `character`)
 
@@ -87,7 +87,7 @@ privately.
 ```
 node scripts/prepare-local-levels.mjs --id tbcl-words --name "TBCL words" \
   --language zh --unit word --license "NAER, all rights reserved; local use" \
-  --attribution "國家教育研究院 臺灣華語文能力基準, https://coct.naer.edu.tw" \
+  --attribution "國家教育研究院 臺灣華語文能力基準, https://bcoct.naer.edu.tw/TBCL/" \
   <list.tsv> [<local-packs-dir>]
 ```
 
@@ -100,7 +100,7 @@ node scripts/prepare-local-levels.mjs --id tbcl-words --name "TBCL words" \
   use only", the input's SHA-256). No `LICENSE` (none granted).
 - Refuses a target outside a directory named `data-local` unless `--force-dir`
   is given, so a typo cannot write into `plugins/data/`.
-- `docs/sources.md` gets steps per source: TBCL (download from coct.naer.edu.tw,
+- `docs/sources.md` gets steps per source: TBCL (download from bcoct.naer.edu.tw,
   export the 詞語表/漢字表 to TSV with LibreOffice, keep columns 等級, 詞語,
   漢語拼音), curriculum tables (type or paste the appendix lists per level).
 - Ruling: a generic TSV converter instead of per-source parsers — we cannot pin

@@ -152,8 +152,8 @@ byte.
   Within a level kanji follow KANJIDIC2's newspaper frequency (none last), then
   code point. A test checks the set against Unihan `kJoyoKanji` (2,136 rows
   with the value `2010`, UAX #38). The map's "Group by" does not offer this
-  pack: the built-in "Grade" grouping shows the same sections; badges, level
-  sessions and search filters use it. Evidence (checked 2026-11-15): the
+  pack: the built-in "Grade" grouping covers it; badges and search filters use
+  it (level sessions do not support character packs yet, issue #57). Evidence (checked 2026-11-15): the
   KANJIDIC2 grade counts above (2020 学年別漢字配当表); the 常用漢字表 and
   学習指導要領 are government notices, outside copyright under Japanese
   Copyright Act art. 13 (2), which supports the derived pack but is not needed
@@ -250,11 +250,13 @@ byte.
   `LICENSE` is Unihan's). The serials run 1–8,105 without a gap. The table is a
   State Council document (国发〔2013〕23号,
   https://www.gov.cn/zwgk/2013-08/19/content_2469793.htm); PRC Copyright Law
-  art. 5 excludes "法律、法规，国家机关的决议、决定、命令和其他具有立法、行政、
-  司法性质的文件". The map keeps its built-in "Common" grouping (GB2312 rows), a
+  art. 5 (https://www.ncac.gov.cn/xxfb/flfg/flfg_532/202103/t20210309_50530.html) excludes "法律、法规，国家机关的决议、决定、命令和其他具有立法、行政、
+  司法性质的文件". On the map a section's count also includes variant forms of listed characters (shown as "incl. N variant forms"). The map keeps its built-in "Common" grouping (GB2312 rows), a
   different split. No 小学/初中/高中 split is bundled (see "Local-only data").
   Evidence checked 2026-11-15. All 8,105 characters resolve to character
-  entries at seed time (the seed line reports 0 unknown forms).
+  entries at seed time (the seed line reports 0 unknown forms); that check is the
+  opt-in real-pack Go test (`QINQIN_REAL_DATA_TESTS=1`, about 4 minutes), not part
+  of the default test run.
 
 ### Chinese: HSK 3.0
 
