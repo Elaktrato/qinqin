@@ -624,6 +624,15 @@ func SetStateRow(ctx context.Context, sqlDB *sql.DB, userID int64, pluginID stri
 	return model.PluginState{PluginID: pluginID, UserID: userID, Enabled: enabled, Order: order, UpdatedAt: at}, nil
 }
 
+// NoWorkspace is the value the plugin_data unique key (idx_plugin_data_key,
+// migration 010) gives a NULL workspace_id: IFNULL(workspace_id, 0). It is
+// why no real workspace id may be 0 (PutDataRow refuses ids below 1), and
+// why queries that must hit that index spell the same literal.
+const NoWorkspace = 0
+
+// UniqueKeyWorkspace is the index expression, built from NoWorkspace.
+var UniqueKeyWorkspace = fmt.Sprintf("IFNULL(workspace_id, %d)", NoWorkspace)
+
 // dataSelect is the shared column list of the plugin_data reads.
 const dataSelect = `
 	SELECT pack_id, user_id, workspace_id, key, data, version, updated_at, deleted_at
@@ -660,19 +669,19 @@ func PutDataRow(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *i
 	}
 	var workspace any
 	if workspaceID != nil {
-		if *workspaceID < 1 {
-			// The unique key stores a NULL workspace as 0 (idx_plugin_data_key), so 0 is no workspace id.
+		if *workspaceID <= NoWorkspace {
+			// The unique key stores a NULL workspace as NoWorkspace, so that is no workspace id.
 			return nil, fmt.Errorf("plugins: put data %s/%s: invalid workspace id %d", pluginID, key, *workspaceID)
 		}
 		workspace = *workspaceID
 	}
-	// The conflict target coalesces a NULL workspace to 0
+	// The conflict target coalesces a NULL workspace to NoWorkspace
 	// (0, see the idx_plugin_data_key unique index): the user-global row
 	// and every workspace's row are distinct rows for the same key.
 	d, err := scanData(sqlDB.QueryRowContext(ctx, `
 		INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
 		VALUES (?, ?, ?, ?, ?, 1, ?, ?)
-		ON CONFLICT (pack_id, user_id, IFNULL(workspace_id, 0), key) DO UPDATE SET
+		ON CONFLICT (pack_id, user_id, `+UniqueKeyWorkspace+`, key) DO UPDATE SET
 			data = excluded.data,
 			version = plugin_data.version + 1,
 			updated_at = excluded.updated_at,

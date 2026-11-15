@@ -47,7 +47,7 @@ current code; struck/obsolete items from the issue notes stay out.
   `PluginState` via `RETURNING updated_at`), second-truncated like storage.
 - PUT data returns the row written by the same statement (`RETURNING`), no
   write-then-read; new `PutDataRow`, `PutData*` wrap it.
-- IFNULL sentinel: named constant + `PutDataAt` rejects workspace id <= 0.
+- IFNULL sentinel: named constant `plugins.NoWorkspace` (also used by the sync push query) + `PutDataRow` rejects workspace id <= 0.
 - `dataPlugin` returns an error instead of panicking; callers propagate.
 
 ## Task 5 - #11 sync (`sync/`)
@@ -67,3 +67,6 @@ current code; struck/obsolete items from the issue notes stay out.
   state/data routes look unknown to a client that reads the list; a flag keeps
   one source of truth for every client. Web settings filters on `hidden`.
   Cost if wrong: Android must read one more field.
+
+## Follow-up wave
+Merged develop; #51 finished for activity-view and journal reads via `DataScope.find`; README; sync push event workspace 0 is `ErrInvalid` (400) like REST; `LinkTx` existence counts tombstoned entries (commented).

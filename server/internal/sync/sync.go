@@ -15,6 +15,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"qinqin/internal/events"
@@ -143,6 +144,10 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		if !events.ValidID(ev.ID) || ev.TS.IsZero() {
 			return PushResult{}, fmt.Errorf("%w: event %d needs a ULID id and a ts", ErrInvalid, i)
 		}
+		if ev.WorkspaceID <= 0 {
+			// The same validation error as POST /api/events/batch.
+			return PushResult{}, fmt.Errorf("%w: event %d needs a workspaceId", ErrInvalid, i)
+		}
 		if err := checkWorkspace(ev.WorkspaceID); err != nil {
 			return PushResult{}, err
 		}
@@ -230,7 +235,7 @@ func applyData(ctx context.Context, sqlDB *sql.DB, userID int64, row model.Plugi
 	var serverDeleted sql.NullString
 	err := sqlDB.QueryRowContext(ctx, `
 		SELECT COALESCE(modified_at, updated_at), deleted_at FROM plugin_data
-		WHERE pack_id = ? AND user_id = ? AND IFNULL(workspace_id, 0) = IFNULL(?, 0) AND key = ?`,
+		WHERE pack_id = ? AND user_id = ? AND `+plugins.UniqueKeyWorkspace+` = IFNULL(?, `+strconv.Itoa(plugins.NoWorkspace)+`) AND key = ?`,
 		row.PluginID, userID, workspace, row.Key).Scan(&serverUpdated, &serverDeleted)
 	exists := !errors.Is(err, sql.ErrNoRows)
 	if err != nil && exists {

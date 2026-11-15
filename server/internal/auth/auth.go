@@ -59,6 +59,10 @@ func Hash(password string) string {
 		base64.RawStdEncoding.EncodeToString(key))
 }
 
+// verifyPassword is Verify as Login calls it; a variable only so a test
+// can observe the call.
+var verifyPassword = Verify
+
 // Verify reports whether password matches a PHC-format argon2id hash from
 // Hash. Malformed or unsupported hashes verify as false; the key comparison
 // is constant-time.
@@ -164,13 +168,13 @@ func Login(ctx context.Context, sqlDB *sql.DB, username, password string) (strin
 	if errors.Is(err, sql.ErrNoRows) {
 		// Spend the same argon2 run a wrong password costs, so response
 		// time does not reveal whether the username exists.
-		Verify(dummyHash(), password)
+		verifyPassword(dummyHash(), password)
 		return "", ErrBadCredentials
 	}
 	if err != nil {
 		return "", fmt.Errorf("select user %q: %w", username, err)
 	}
-	if !Verify(hash, password) {
+	if !verifyPassword(hash, password) {
 		return "", ErrBadCredentials
 	}
 	token := hex.EncodeToString(randomBytes(32))

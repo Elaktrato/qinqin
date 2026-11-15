@@ -468,6 +468,8 @@ func (s Store) LinkTx(ctx context.Context, tx *sql.Tx, fromID, toID int64, typ s
 	if fromID == toID && typ == LinkVariant {
 		return fmt.Errorf("link %d->%d (%s): an entry cannot be its own variant", fromID, toID, typ)
 	}
+	// Existence means a row in entries, soft-deleted or not: linking to a
+	// tombstoned entry is allowed (the link revives with it).
 	// The foreign keys are declarative only (see db.migrateThrough), so
 	// check here that both ends exist: no dangling link is representable
 	// through the store.

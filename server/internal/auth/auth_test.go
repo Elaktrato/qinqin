@@ -13,7 +13,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
@@ -332,29 +331,29 @@ func TestConcurrentFirstRegisterCreatesOneAdmin(t *testing.T) {
 	}
 }
 
-// TestLoginUnknownUserCostsAnArgonRun pins the timing equalisation: an
-// unknown username must spend about as long as a wrong password.
-func TestLoginUnknownUserCostsAnArgonRun(t *testing.T) {
+// TestLoginUnknownUserStillVerifies pins the timing equalisation at its
+// seam instead of measuring time: an unknown username must run the password
+// verifier once, against a well-formed hash, exactly like a wrong password.
+func TestLoginUnknownUserStillVerifies(t *testing.T) {
 	_, sqlDB := newServer(t)
 	ctx := context.Background()
 	if _, err := auth.CreateUser(ctx, sqlDB, "alice", "secret", true); err != nil {
 		t.Fatalf("create user: %v", err)
 	}
-	fastest := func(username string) time.Duration {
-		best := time.Hour
-		for i := 0; i < 3; i++ {
-			start := time.Now()
-			if _, err := auth.Login(ctx, sqlDB, username, "wrong"); !errors.Is(err, auth.ErrBadCredentials) {
-				t.Fatalf("login %q err = %v, want ErrBadCredentials", username, err)
-			}
-			if d := time.Since(start); d < best {
-				best = d
-			}
+	var hashes []string
+	restore := auth.SetVerifierForTest(func(hash, password string) bool {
+		hashes = append(hashes, hash)
+		return auth.Verify(hash, password)
+	})
+	defer restore()
+
+	for _, username := range []string{"alice", "nobody"} {
+		hashes = nil
+		if _, err := auth.Login(ctx, sqlDB, username, "wrong"); !errors.Is(err, auth.ErrBadCredentials) {
+			t.Fatalf("login %q err = %v, want ErrBadCredentials", username, err)
 		}
-		return best
-	}
-	known, unknown := fastest("alice"), fastest("nobody")
-	if unknown < known/2 {
-		t.Errorf("unknown-user login took %v vs %v for a wrong password: username enumeration by timing", unknown, known)
+		if len(hashes) != 1 || !strings.HasPrefix(hashes[0], "$argon2id$") {
+			t.Errorf("login %q verified %v, want exactly one argon2id hash", username, hashes)
+		}
 	}
 }

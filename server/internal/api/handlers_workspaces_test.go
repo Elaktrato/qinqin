@@ -424,6 +424,8 @@ func TestWorkspaceSettingsNullDeletesKey(t *testing.T) {
 	got := parseSettings(t, updated.Settings)
 	if _, has := got["theme"]; has || got["font"] != "serif" {
 		t.Errorf("settings after null = %v, want theme removed and font kept", got)
+	}
+}
 
 func TestWorkspaceLanguageCodes(t *testing.T) {
 	lang.Register(lang.Zh{})
