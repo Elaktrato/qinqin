@@ -490,6 +490,30 @@ describe('backfill bound', () => {
 	});
 });
 
+describe('writing needs glosses for character entries', () => {
+	const kanji = { language: 'ja', written: '学', readings: [], kind: 'character' };
+	const ctx = { language: 'ja', hasSentence: false, usableChars: ['学'] };
+
+	it('is ineligible without senses, eligible with them, and unaffected for words', () => {
+		expect(isEligible('writing', { ...kanji, senses: [] }, ctx)).toBe(false);
+		expect(isEligible('writing', { ...kanji, senses: [{}] }, ctx)).toBe(true);
+		expect(isEligible('writing', { ...kanji, kind: 'word', senses: [] }, ctx)).toBe(true);
+		expect(isEligible('vocab', { ...kanji, senses: [] }, ctx)).toBe(true);
+	});
+
+	it('remembers that drop', () => {
+		const item: FlowItem = {
+			cardId: 'level:writing:1',
+			kind: 'writing',
+			entryId: 1,
+			virtual: true,
+			card: null
+		};
+		expect(rememberDrop(item, '学', { kind: 'character', senses: [] })).toBe(true);
+		expect(rememberDrop(item, '学', { kind: 'character', senses: [{}] })).toBe(false);
+	});
+});
+
 describe('rememberDrop', () => {
 	const virtual = (kind: StudyCardKind): FlowItem => ({
 		cardId: `companion:${kind}:1`,

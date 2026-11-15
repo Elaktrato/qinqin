@@ -478,7 +478,7 @@
 		if (
 			entry !== null &&
 			workspaceId !== null &&
-			rememberDrop(item, item.written ?? entry.written)
+			rememberDrop(item, item.written ?? entry.written, entry)
 		) {
 			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
 		}

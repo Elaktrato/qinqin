@@ -48,6 +48,9 @@ export interface EntryLike {
 	language: string;
 	written: string;
 	readings: readonly { type: string; value: string }[];
+	/** Entry kind and glosses; a character without glosses gets no writing card. */
+	kind?: string;
+	senses?: readonly unknown[];
 }
 
 export interface EligibilityContext {
@@ -88,6 +91,11 @@ export function cardedSentenceIds(cards: readonly StudyCard[], entryId: number):
 	return ids;
 }
 
+/** A character entry with no senses: a pinyin-only prompt matches many homophones. */
+function lacksGlosses(entry: { kind?: string; senses?: readonly unknown[] }): boolean {
+	return entry.kind === 'character' && entry.senses !== undefined && entry.senses.length === 0;
+}
+
 /**
  * isEligible decides, when an item is about to be shown, whether its kind
  * can be studied for this word. Ineligible companions are dropped from the
@@ -104,6 +112,7 @@ export function isEligible(
 		case 'sentence':
 			return ctx.hasSentence;
 		case 'writing':
+			if (lacksGlosses(entry)) return false;
 			return (ctx.usableChars?.length ?? 0) > 0;
 		case 'tone':
 			return eligibleForTone(ctx.language, pinyinReadings(entry.readings));
@@ -277,8 +286,13 @@ export function dropItem(plan: DeckSessionPlan, cardId: string): DeckSessionPlan
  * A writing drop is remembered only when the word has no Han character at
  * all: missing stroke data may be a transient network failure.
  */
-export function rememberDrop(item: FlowItem, written: string): boolean {
+export function rememberDrop(
+	item: FlowItem,
+	written: string,
+	entry?: { kind?: string; senses?: readonly unknown[] }
+): boolean {
 	if (!item.virtual) return false;
+	if (item.kind === 'writing' && entry !== undefined && lacksGlosses(entry)) return true;
 	return item.kind !== 'writing' || writableChars(written).length === 0;
 }
 

@@ -190,4 +190,17 @@ describe('character level session', () => {
 		render(Page);
 		expect(await screen.findByLabelText('Writing card')).toBeTruthy();
 	});
+
+	it('drops a character without glosses from a writing session and remembers it', async () => {
+		configure(['writing'], 1);
+		vi.mocked(getEntry).mockImplementation(async (id: number) => ({
+			...kanji(id, GLYPHS[id] ?? '?'),
+			senses: id === 11 ? [] : kanji(id, '?').senses
+		}));
+		render(Page);
+		expect(await screen.findByLabelText('Writing card')).toBeTruthy();
+		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(12));
+		expect(addCard).not.toHaveBeenCalled();
+		expect(sessionStorage.getItem('qinqin.study.ineligible') ?? '').toContain('writing:11');
+	});
 });
