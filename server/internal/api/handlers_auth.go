@@ -199,6 +199,9 @@ func (s *server) applyEmailFormat(w http.ResponseWriter, r *http.Request, policy
 	case errors.Is(err, auth.ErrEmailDisabled):
 		writeAuthError(w, http.StatusUnprocessableEntity, "email_disabled", "This instance does not use email addresses.")
 		return false
+	case errors.Is(err, auth.ErrEmailLocalNotASCII):
+		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_email", "Use an address whose part before the @ has only ASCII letters, digits and symbols (internationalised mailbox names are not supported yet).")
+		return false
 	case errors.Is(err, auth.ErrInvalidEmail):
 		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_email", "Enter a valid email address.")
 		return false

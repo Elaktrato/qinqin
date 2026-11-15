@@ -209,8 +209,8 @@ func TestRegistrationEmailPolicy(t *testing.T) {
 	var email string
 	var verified sql.NullString
 	sqlDB.QueryRow(`SELECT email, email_verified_at FROM users WHERE username = 'mailer1'`).Scan(&email, &verified)
-	if email != "Mixed.Case@Example.org" || verified.Valid {
-		t.Errorf("stored %q verified %v: the display form is kept and a self-entered address is unverified", email, verified)
+	if email != "Mixed.Case@example.org" || verified.Valid {
+		t.Errorf("stored %q verified %v: the local part keeps its case, the domain is ASCII lower case and a self-entered address is unverified", email, verified)
 	}
 }
 
@@ -305,7 +305,7 @@ func TestBootstrapStoresTheValidatedEmail(t *testing.T) {
 	}
 	var email, norm string
 	sqlDB.QueryRow(`SELECT email, email_norm FROM users WHERE username = 'firstone'`).Scan(&email, &norm)
-	if email != "First@Example.org" || norm != "first@example.org" {
+	if email != "First@example.org" || norm != "first@example.org" {
 		t.Errorf("stored %q / %q", email, norm)
 	}
 }

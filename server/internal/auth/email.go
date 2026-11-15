@@ -2,9 +2,12 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"net/mail"
 	"strings"
 	"unicode"
+
+	"golang.org/x/net/idna"
 )
 
 // Email policy errors, mapped to 422/409 by the API.
@@ -13,6 +16,11 @@ var (
 	ErrEmailDisabled = errors.New("email disabled")
 	ErrInvalidEmail  = errors.New("invalid email")
 	ErrEmailTaken    = errors.New("email taken")
+
+	// ErrEmailLocalNotASCII is an invalid address whose part before the @
+	// has non-ASCII letters: SMTPUTF8 mailboxes are not supported until the
+	// mail work of plan 3 decides on them.
+	ErrEmailLocalNotASCII = fmt.Errorf("%w: the part before the @ must be ASCII (internationalised mailboxes are not supported)", ErrInvalidEmail)
 )
 
 const maxEmailBytes = 254
@@ -31,15 +39,32 @@ func NormalizeEmail(raw string) (display, norm string, err error) {
 			return "", "", ErrInvalidEmail
 		}
 	}
-	addr, perr := mail.ParseAddress(raw)
-	if perr != nil || addr.Address != raw || strings.Count(raw, "@") != 1 {
+	local, domain, ok := strings.Cut(raw, "@")
+	if !ok || local == "" || strings.Contains(domain, "@") {
 		return "", "", ErrInvalidEmail
 	}
-	_, domain, _ := strings.Cut(raw, "@")
-	if !strings.Contains(domain, ".") || strings.HasPrefix(domain, ".") || strings.HasSuffix(domain, ".") || strings.Contains(domain, "..") {
+	for _, r := range local {
+		if r > unicode.MaxASCII {
+			return "", "", ErrEmailLocalNotASCII
+		}
+	}
+	// The domain is stored in its ASCII (punycode) form, so "bücher.de" and
+	// "xn--bcher-kva.de" are one address; the mail path is ASCII only.
+	for _, r := range domain {
+		if unicode.Is(unicode.Cf, r) { // zero-width and direction marks would be mapped away silently
+			return "", "", ErrInvalidEmail
+		}
+	}
+	ascii, ierr := idna.Lookup.ToASCII(domain)
+	if ierr != nil || !strings.Contains(ascii, ".") || strings.HasPrefix(ascii, ".") || strings.HasSuffix(ascii, ".") || strings.Contains(ascii, "..") {
 		return "", "", ErrInvalidEmail
 	}
-	return raw, strings.ToLower(raw), nil
+	joined := local + "@" + ascii
+	addr, perr := mail.ParseAddress(joined)
+	if perr != nil || addr.Address != joined || len(joined) > maxEmailBytes {
+		return "", "", ErrInvalidEmail
+	}
+	return joined, strings.ToLower(joined), nil
 }
 
 // ApplyEmailPolicy checks an optional email against the instance policy
