@@ -3,7 +3,9 @@
 
 import { isValidReview, sortedReviews } from '../scheduler';
 import type { ReviewEvent } from '../types';
-import { daysBetween, type Step } from './model';
+import { dateDiffInDays } from 'ts-fsrs';
+import { feedInstants, type StudyClock } from '../studyClock';
+import type { Step } from './model';
 
 export interface Dataset {
 	/** `days` is each step's UTC day number (days since 1970-01-01), when known. */
@@ -15,9 +17,11 @@ export interface Dataset {
 /**
  * buildDataset groups the valid reviews per card (sorted as the
  * scheduler sorts them) and orders the cards by id, so the same log
- * gives the same dataset on every device.
+ * gives the same dataset on every device. Steps are measured on the
+ * study clock (vacation days removed), exactly as the replay feeds ts-fsrs;
+ * `days` stay real UTC day numbers (the holdout split is by real time).
  */
-export function buildDataset(reviews: readonly ReviewEvent[]): Dataset {
+export function buildDataset(reviews: readonly ReviewEvent[], clock: StudyClock): Dataset {
 	const byCard = new Map<string, ReviewEvent[]>();
 	for (const review of reviews) {
 		if (!isValidReview(review)) continue;
@@ -29,8 +33,12 @@ export function buildDataset(reviews: readonly ReviewEvent[]): Dataset {
 	let labelled = 0;
 	for (const cardId of [...byCard.keys()].sort()) {
 		const history = sortedReviews(byCard.get(cardId) ?? []);
+		const fed = feedInstants(
+			history.map((review) => Date.parse(review.ts)),
+			clock
+		);
 		const steps: Step[] = history.map((review, i) => ({
-			t: i === 0 ? 0 : daysBetween(history[i - 1].ts, review.ts),
+			t: i === 0 ? 0 : dateDiffInDays(new Date(fed[i - 1]), new Date(fed[i])),
 			g: review.payload.grade
 		}));
 		for (let i = 1; i < steps.length; i++) if (steps[i].t >= 1) labelled++;

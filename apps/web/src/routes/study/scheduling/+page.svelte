@@ -98,7 +98,7 @@ import { currentContext } from '$lib/study/currentContext';
 			if (mine !== seq) return;
 			cards = data.cards;
 			reviews = data.reviews;
-			dataset = buildDataset(data.reviews);
+			dataset = buildDataset(data.reviews, currentContext().clock);
 			fsrs = data.fsrs ?? { sets: [], active: null, w: DEFAULT_W };
 			activeFit = evaluate(fsrs.w, dataset);
 		} catch (err) {
