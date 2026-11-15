@@ -6,6 +6,8 @@
 package lang
 
 import (
+	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -71,6 +73,29 @@ func Registered(code string) bool {
 	defer mu.RUnlock()
 	_, ok := packs[strings.ToLower(code)]
 	return ok
+}
+
+// codePattern is the shape of a language code: a 2-3 letter primary tag
+// and up to two subtags, e.g. es, pt-br, zh-hant-tw.
+var codePattern = regexp.MustCompile(`^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$`)
+
+// ValidCode normalizes raw (trim, lowercase, "_" to "-") and reports
+// whether the result is a well-formed language code.
+func ValidCode(raw string) (string, bool) {
+	code := strings.ReplaceAll(strings.ToLower(strings.TrimSpace(raw)), "_", "-")
+	return code, codePattern.MatchString(code)
+}
+
+// Codes returns the codes of the registered code packs, sorted.
+func Codes() []string {
+	mu.RLock()
+	defer mu.RUnlock()
+	codes := make([]string, 0, len(packs))
+	for c := range packs {
+		codes = append(codes, c)
+	}
+	sort.Strings(codes)
+	return codes
 }
 
 // For returns the pack registered under code, matched case-insensitively.

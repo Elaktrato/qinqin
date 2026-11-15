@@ -35,6 +35,10 @@ type server struct {
 	// legacy per-type routes included.
 	packMu sync.Mutex
 
+	// langMu serializes workspace creation that may register a language
+	// with admin language removal.
+	langMu sync.Mutex
+
 	stageOnce  sync.Once
 	stageStore *stageStore
 	clock      func() time.Time                                          // nil: time.Now (tests set it)
@@ -89,6 +93,9 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
 	mux.HandleFunc("DELETE /api/workspaces/{id}", s.handleDeleteWorkspace)
 	mux.HandleFunc("GET /api/languages", s.handleListLanguages)
+	mux.HandleFunc("POST /api/admin/languages", s.handleRegisterLanguage)
+	mux.HandleFunc("DELETE /api/admin/languages/{code}", s.handleDeleteLanguage)
+	mux.HandleFunc("GET /api/admin/languages/usage", s.handleLanguageUsage)
 	mux.HandleFunc("GET /api/characters", s.handleListCharacters)
 	mux.HandleFunc("POST /api/events/batch", s.handleEventBatch)
 	mux.HandleFunc("GET /api/events", s.handleListEvents)

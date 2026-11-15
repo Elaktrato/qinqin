@@ -91,8 +91,11 @@ lookup ranking; a server filter can be added later behind the same setting.
   string, ok bool)`: trim, lowercase, `_`→`-`, must match
   `^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$`. `POST /api/workspaces` answers `422`
   "language must be a code like es or pt-br" for invalid codes. A **non-admin**
-  may only create a workspace for a known code (code pack, `languages` row, or
-  installed); an unknown valid code is `422` "unknown language — ask the
+  may only create a workspace for a known code (code pack, `languages` row,
+  installed, or any live level, frequency, sentence, grammar or audio pack). A
+  request code that exactly matches (lowercased, before the `_`→`-` rewrite) a
+  stored row or installed code keeps its spelling, so a legacy `pt_br` is not
+  split into `pt-br`. Manifest languages must be normalized codes at import; an unknown valid code is `422` "unknown language — ask the
   administrator to add it". Only an admin's workspace creation still
   auto-registers a new code (as today), so registration is admin-only in fact.
 - Existing rows are left as stored (no migration). The Languages view lists a
@@ -107,12 +110,14 @@ lookup ranking; a server filter can be added later behind the same setting.
 - `POST /api/admin/languages {code}`: invalid `422`; a code pack `409` "zh is
   built in"; existing row `200`; new row `201` (name = code). Body cap 4 KiB.
 - `DELETE /api/admin/languages/{code}`: code pack `409`; unknown `404`; `409`
-  "still used by packs or workspaces" when the language is *installed* (a live
-  sense in a live dictionary on a live entry — the `installedLanguagesSQL` rule;
-  entries orphaned by an uninstall do not count), or a live scheme or frequency
-  pack has it, or a live `sentence_packs` row has it, or a legacy pack's live
-  sentence sits on an entry of that language, or any user's workspace uses it;
-  else `204`. Entries left behind by uninstalled packs stay (they carry no
+  "still used by: <kinds>" (for example "2 workspaces, a sentence pack"; kinds
+  only, never users) when the language is *installed* (a live sense in a live
+  dictionary on a live entry — entries orphaned by an uninstall do not count), or
+  a live scheme (level list), frequency, sentence, grammar or audio pack has it,
+  or a legacy pack's live sentence sits on an entry of that language, or any
+  user's workspace uses it; else `204`. The row is deleted by one statement that
+  re-checks all of these, and the stored code is matched by the exact path value
+  first, then lowercased. Entries left behind by uninstalled packs stay (they carry no
   glosses and are invisible without senses).
 - `GET /api/admin/languages/usage` → `[{code, workspaces}]` (count of workspaces of
   all users per language) for the Languages view; admin-only.

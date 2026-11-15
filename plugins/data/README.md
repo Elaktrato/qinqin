@@ -49,7 +49,7 @@ Committed (small, hand-written, CC0 — a sample):
 
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
-| `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack) |
+| `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack); install it from Settings → Data to try a data-only language |
 | `zh-grammar-demo` | grammar | zh | ten A1 lessons with 40 exercises, written for qinqin, CC0; demo content not reviewed by a native speaker |
 
 Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",

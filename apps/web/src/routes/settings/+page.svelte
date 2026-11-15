@@ -4,7 +4,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError, api } from '$lib/api/client';
-	import type { PluginInfo, Workspace } from '$lib/api/types';
+	import { getSchemes } from '$lib/api/schemes';
+	import type { Dictionary, PluginInfo, Scheme, Workspace } from '$lib/api/types';
+	import { coverage, dictionaryHint, levelsHint } from '$lib/coverage';
 	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
@@ -12,9 +14,11 @@
 	import { isCorePlugin, webPlugins } from '$lib/plugins';
 	import { pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
+	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
+	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
 	import { user } from '$lib/auth';
@@ -125,6 +129,38 @@
 	}
 
 	onMount(loadPlugins);
+
+	// Bumped when the Packs section changes, so Languages reloads.
+	let languagesKey = $state(0);
+
+	// Coverage hints and the Dictionaries panel read the installed
+	// dictionaries and level schemes once; a failure only drops the hints.
+	let allDictionaries = $state<Dictionary[] | null>(null);
+	let allSchemes = $state<Scheme[] | null>(null);
+	function loadCoverage(): void {
+		api<Dictionary[]>('/api/dictionaries', { auth: false }).then(
+			(list) => (allDictionaries = list),
+			() => {}
+		);
+		getSchemes().then(
+			(list) => (allSchemes = list),
+			() => {}
+		);
+	}
+	onMount(loadCoverage);
+	// The workspace whose Dictionaries panel is open, and its button.
+	let dictionariesOpenId = $state<number | null>(null);
+	const dictionaryButtons: Record<number, HTMLButtonElement | undefined> = {};
+
+	function coverageOf(workspace: Workspace) {
+		return coverage(workspace.language, allDictionaries ?? [], allSchemes ?? []);
+	}
+
+	async function closeDictionaries(id: number): Promise<void> {
+		dictionariesOpenId = null;
+		await tick();
+		dictionaryButtons[id]?.focus();
+	}
 
 	function startRename(workspace: Workspace): void {
 		renamingId = workspace.id;
@@ -272,6 +308,24 @@
 								{#if $workspaces.current?.id === workspace.id}
 									<span class="current">current</span>
 								{/if}
+								{#if allDictionaries !== null && coverageOf(workspace).dictionaries.length === 0}
+									<span class="chip" title={dictionaryHint(languageLabel(workspace.language), admin)}>No dictionary</span>
+								{/if}
+								{#if allSchemes !== null && coverageOf(workspace).levels === 0}
+									<span class="chip" title={levelsHint(languageLabel(workspace.language))}>No level lists</span>
+								{/if}
+								<button
+									type="button"
+									class="secondary dictionaries-button"
+									bind:this={dictionaryButtons[workspace.id]}
+									onclick={() => (dictionariesOpenId = dictionariesOpenId === workspace.id ? null : workspace.id)}
+									aria-expanded={dictionariesOpenId === workspace.id}
+									aria-label="Dictionaries of {languageLabel(workspace.language)}{workspace.name
+										? ` (${workspace.name})`
+										: ''} workspace"
+								>
+									Dictionaries
+								</button>
 								<button
 									type="button"
 									class="secondary rename-button"
@@ -296,6 +350,14 @@
 									</button>
 								{/if}
 							</div>
+							{#if dictionariesOpenId === workspace.id}
+								<WorkspaceDictionaries
+									{workspace}
+									dictionaries={coverageOf(workspace).dictionaries}
+									{admin}
+									onclose={() => closeDictionaries(workspace.id)}
+								/>
+							{/if}
 						{/if}
 					</li>
 				{/each}
@@ -436,8 +498,13 @@
 			hidden={activeTab !== 'data'}
 		>
 			<h2>Data</h2>
-			<PackManager />
-			<!-- languages -->
+			<PackManager
+				onchange={() => {
+					languagesKey += 1;
+					loadCoverage();
+				}}
+			/>
+			<LanguageManager refreshKey={languagesKey} />
 		</div>
 	{/if}
 </main>
@@ -569,6 +636,17 @@
 		clip: rect(0 0 0 0);
 		white-space: nowrap;
 		border: 0;
+	}
+
+	.chip {
+		font-size: 0.8rem;
+		border-radius: 999px;
+		padding: 0.05rem 0.5rem;
+		background: color-mix(in srgb, currentColor 12%, transparent);
+	}
+
+	.dictionaries-button {
+		min-height: 44px;
 	}
 
 	.current {
