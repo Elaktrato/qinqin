@@ -1,3 +1,4 @@
+import { studyDay } from '../time/studyDay';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -33,9 +34,12 @@ describe('readSeconds', () => {
 	});
 });
 
+const UTC = studyDay([]);
+const TOKYO = studyDay([{ zone: 'Asia/Tokyo', from: null }]);
+
 describe('readingTotals', () => {
 	it('is zero for no events', () => {
-		expect(readingTotals([], NOW)).toEqual({
+		expect(readingTotals([], NOW, UTC)).toEqual({
 			totalSeconds: 0,
 			last7Seconds: 0,
 			last30Seconds: 0,
@@ -49,7 +53,7 @@ describe('readingTotals', () => {
 			{ ts: '2026-11-14T08:00:00.000Z', type: 'review', payload: { seconds: 600 } },
 			read('not a date', 600)
 		];
-		expect(readingTotals(events, NOW).totalSeconds).toBe(600);
+		expect(readingTotals(events, NOW, UTC).totalSeconds).toBe(600);
 	});
 
 	it('windows by UTC day: 7 days = today and the 6 days before', () => {
@@ -60,14 +64,14 @@ describe('readingTotals', () => {
 			read('2026-10-16T00:00:00.000Z', 480), // 29 days back: in 30
 			read('2026-10-15T23:59:59.999Z', 960) // 30 days back: out
 		];
-		const totals = readingTotals(events, NOW);
+		const totals = readingTotals(events, NOW, UTC);
 		expect(totals.last7Seconds).toBe(180);
 		expect(totals.last30Seconds).toBe(900);
 		expect(totals.totalSeconds).toBe(1860);
 	});
 
 	it('keeps an event of a later UTC day out of the windows but in the total', () => {
-		const totals = readingTotals([read('2026-11-15T00:00:00.000Z', 60)], NOW);
+		const totals = readingTotals([read('2026-11-15T00:00:00.000Z', 60)], NOW, UTC);
 		expect(totals.last7Seconds).toBe(0);
 		expect(totals.totalSeconds).toBe(60);
 	});
@@ -80,16 +84,40 @@ describe('readingTotals', () => {
 			read('2026-11-03T00:00:00.000Z', 40, 'x'),
 			read('2026-11-03T00:00:00.000Z', 10, 3) // under 30 s: not counted at all
 		];
-		expect(readingTotals(events, NOW).books).toEqual([
+		expect(readingTotals(events, NOW, UTC).books).toEqual([
 			{ bookId: 2, seconds: 300 },
 			{ bookId: 1, seconds: 250 },
 			{ bookId: null, seconds: 40 }
 		]);
 	});
 
+	it("puts a 23:30Z read on Tokyo's next day", () => {
+		const now = new Date('2026-11-15T15:30:00Z'); // 00:30 on the 16th in Tokyo
+		const events = [
+			read('2026-11-15T14:00:00.000Z', 60), // 23:00 on the 15th: yesterday in Tokyo
+			read('2026-11-15T15:10:00.000Z', 120) // 00:10 on the 16th: today
+		];
+		expect(readingTotals(events, now, TOKYO).last7Seconds).toBe(180);
+		const noon = new Date('2026-11-15T12:00:00Z'); // still the 15th in Tokyo
+		expect(readingTotals(events, noon, TOKYO).last7Seconds).toBe(60);
+		expect(readingTotals(events, noon, TOKYO).totalSeconds).toBe(180);
+	});
+
+	it('counts the 7 and 30 days as civil days across a DST change', () => {
+		const berlin = studyDay([{ zone: 'Europe/Berlin', from: null }]);
+		const now = new Date('2025-04-02T10:00:00Z');
+		const events = [
+			read('2025-03-27T00:30:00.000Z', 60), // 6 civil days back (the 27th, before the change): in
+			read('2025-03-26T22:30:00.000Z', 120) // 23:30 CET on the 26th: 7 days back, out
+		];
+		const totals = readingTotals(events, now, berlin);
+		expect(totals.last7Seconds).toBe(60);
+		expect(totals.last30Seconds).toBe(180);
+	});
+
 	it('breaks per-book ties by book id', () => {
 		const events = [read('2026-11-01T00:00:00.000Z', 60, 9), read('2026-11-01T00:00:00.000Z', 60, 4)];
-		expect(readingTotals(events, NOW).books.map((b) => b.bookId)).toEqual([4, 9]);
+		expect(readingTotals(events, NOW, UTC).books.map((b) => b.bookId)).toEqual([4, 9]);
 	});
 });
 

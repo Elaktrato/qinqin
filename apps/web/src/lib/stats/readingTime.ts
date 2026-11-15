@@ -4,6 +4,8 @@
 // the heatmap's reading points (readingPoints below): nothing under
 // 30 s or when not a finite number, at most 2 hours per event.
 
+import { addDays, type StudyDay } from '../time/studyDay';
+
 /** Seconds of reading that make up one point (5 minutes). */
 const SECONDS_PER_POINT = 300;
 /** Reading shorter than this earns nothing. */
@@ -27,8 +29,6 @@ export function readingPoints(payload: unknown): number {
 	return Math.min(Math.ceil(seconds / SECONDS_PER_POINT), MAX_READ_POINTS);
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 /** The per-event cap: the 24 points × 5 minutes readingPoints allows. */
 export const MAX_READ_SECONDS = 2 * 60 * 60;
 
@@ -40,9 +40,9 @@ export interface BookTime {
 
 export interface ReadingTotals {
 	totalSeconds: number;
-	/** Today (UTC) and the 6 days before. */
+	/** Today (the learner's day) and the 6 days before. */
 	last7Seconds: number;
-	/** Today (UTC) and the 29 days before. */
+	/** Today (the learner's day) and the 29 days before. */
 	last30Seconds: number;
 	/** Per book, most read first (ties by book id, unknown last). */
 	books: BookTime[];
@@ -67,24 +67,20 @@ function bookIdOf(payload: unknown): number | null {
 	return typeof id === 'number' && Number.isInteger(id) && id > 0 ? id : null;
 }
 
-function utcDayStart(ms: number): number {
-	const date = new Date(ms);
-	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-}
-
 /**
- * readingTotals sums the read events: all time, the last 7 and 30 UTC
- * days (each ending with today), and per book. Other event types,
+ * readingTotals sums the read events: all time, the last 7 and 30
+ * learner days (each ending with today, `day.today(now)`), and per book. Other event types,
  * unparsable timestamps and payloads worth 0 s are ignored. An event
  * dated after today (a fast device clock) counts in the total only.
  */
 export function readingTotals(
 	events: readonly { ts: string; type: string; payload?: unknown }[],
-	now: Date
+	now: Date,
+	day: StudyDay
 ): ReadingTotals {
-	const today = utcDayStart(now.getTime());
-	const start7 = today - 6 * DAY_MS;
-	const start30 = today - 29 * DAY_MS;
+	const today = day.today(now.getTime());
+	const start7 = addDays(today, -6);
+	const start30 = addDays(today, -29);
 	const perBook = new Map<number | null, number>();
 	let totalSeconds = 0;
 	let last7Seconds = 0;
@@ -98,10 +94,10 @@ export function readingTotals(
 		if (seconds <= 0) continue;
 
 		totalSeconds += seconds;
-		const day = utcDayStart(time);
-		if (day <= today && day >= start30) {
+		const eventDay = day.dayOf(time);
+		if (eventDay <= today && eventDay >= start30) {
 			last30Seconds += seconds;
-			if (day >= start7) last7Seconds += seconds;
+			if (eventDay >= start7) last7Seconds += seconds;
 		}
 		const book = bookIdOf(event.payload);
 		perBook.set(book, (perBook.get(book) ?? 0) + seconds);

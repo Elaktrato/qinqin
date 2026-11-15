@@ -9,7 +9,7 @@ export interface ActivitySource {
 	describe: { one: string; other: string };
 }
 
-/** One UTC day of one workspace and activity type. */
+/** One learner day (the user's time zone, lib/time/studyDay.ts) of one workspace and activity type. */
 export interface ActivityCell {
 	day: string;
 	workspace: number;
@@ -21,11 +21,13 @@ export interface ActivityCell {
 export interface ActivityResponse {
 	from: string;
 	to: string;
+	/** The user's current zone (UTC while none is set). */
+	timeZone: string;
 	sources: ActivitySource[];
 	cells: ActivityCell[];
 }
 
-/** fetchActivity reads the combined cells of the UTC days from..to (YYYY-MM-DD, inclusive). */
+/** fetchActivity reads the combined cells of the learner days from..to (YYYY-MM-DD, inclusive). */
 export function fetchActivity(from: string, to: string): Promise<ActivityResponse> {
 	return api<ActivityResponse>(
 		`/api/stats/activity?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
