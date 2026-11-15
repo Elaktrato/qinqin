@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import DeckDetail from './decks/DeckDetail.svelte';
 	import DeckList from './decks/DeckList.svelte';
 	import { parseFlashcardsRoute } from './route';
 
@@ -15,7 +16,7 @@
 <!-- A new route is a fresh view: no state leaks between decks. -->
 {#key rest}
 	{#if route.view === 'deck'}
-		<div data-testid="view-deck"></div>
+		<DeckDetail deckId={route.deckId} />
 	{:else if route.view === 'settings'}
 		<div data-testid="view-settings"></div>
 	{:else if route.view === 'system-level' || route.view === 'system-plugin'}

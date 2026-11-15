@@ -3,6 +3,7 @@
 // every number on the page agrees. Shared by the list, the detail and the
 // settings view; each calls `load` for the selected workspace.
 
+import { untrack } from 'svelte';
 import { errorMessage } from '$lib/stats/errors';
 import { DEFAULT_W } from '$lib/study/fsrs/params';
 import type { DeckSettings } from '$lib/study/deckSettings';
@@ -43,7 +44,9 @@ export function createDecksData() {
 			return;
 		}
 		// A reload after a write keeps the old view on screen until the new one arrives.
-		if (snapshot === null || snapshot.workspaceId !== workspaceId) status = 'loading';
+		// Untracked: a component calls load from an effect, which must not depend on the snapshot.
+		const current = untrack(() => snapshot);
+		if (current === null || current.workspaceId !== workspaceId) status = 'loading';
 		error = '';
 		try {
 			const data = await loadStudyHistory(workspaceId, { force });

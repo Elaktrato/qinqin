@@ -72,6 +72,13 @@ describe('DeckList', () => {
 		expect(panel.textContent).toContain('3');
 	});
 
+	it('loads the history once, not on every render (the load must not retrigger its own effect)', async () => {
+		render(DeckList);
+		await screen.findByRole('link', { name: 'Verbs' });
+		await new Promise((resolve) => setTimeout(resolve, 30));
+		expect(loadStudyHistory).toHaveBeenCalledTimes(1);
+	});
+
 	it('gives each bar a text alternative', async () => {
 		render(DeckList);
 		await screen.findByRole('link', { name: 'Verbs' });

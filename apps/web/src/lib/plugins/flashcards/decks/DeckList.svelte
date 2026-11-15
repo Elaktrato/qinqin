@@ -2,13 +2,12 @@
 	import { goto } from '$app/navigation';
 	import { loadConfig, saveConfig } from '$lib/study/session';
 	import { createDeck } from '$lib/study/store';
-	import { hasTabSetup, loadExtraChoices, loadRememberedTypes } from '$lib/study/cardTypesMemory';
 	import { workspaces } from '$lib/workspaces';
 	import { summarizeDecks } from './deckSummaries';
 	import { progressShares, progressSummary } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
 	import DeckStatsPanel from './DeckStatsPanel.svelte';
-	import { deckKinds, deckSessionConfig } from './studyStart';
+	import { deckSessionConfig, sessionKinds } from './studyStart';
 	import { flashcardsHref } from '../route';
 
 	const store = createDecksData();
@@ -21,13 +20,10 @@
 	const summary = $derived.by(() => {
 		const data = store.data;
 		if (data === null) return null;
-		const tab = hasTabSetup() ? loadConfig().cardTypes : null;
-		const remembered = loadRememberedTypes(data.workspaceId);
-		const choices = loadExtraChoices(data.workspaceId);
 		return summarizeDecks({
 			...data,
 			w: data.weights,
-			kindsFor: (ids) => deckKinds(ids, data.deckSettings, tab, remembered, choices)
+			kindsFor: (ids) => sessionKinds(data.workspaceId, ids, data.deckSettings)
 		});
 	});
 

@@ -1,9 +1,16 @@
 // Starting a study session from the decks view: the same setup the /study
 // page writes (sessionStorage), prepared for one deck or one level.
 
-import { effectiveCardTypes, effectiveKinds, type ExtraChoices } from '$lib/study/cardTypesMemory';
+import {
+	effectiveCardTypes,
+	effectiveKinds,
+	hasTabSetup,
+	loadExtraChoices,
+	loadRememberedTypes,
+	type ExtraChoices
+} from '$lib/study/cardTypesMemory';
 import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-import type { StudySessionConfig } from '$lib/study/session';
+import { loadConfig, type StudySessionConfig } from '$lib/study/session';
 import { OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
 
 /** A session over this deck only: the saved limits and the deck's effective kinds. */
@@ -48,4 +55,19 @@ export function deckKinds(
 	choices: ExtraChoices
 ): StudyCardKind[] {
 	return effectiveKinds(effectiveCardTypes(tabTypes, remembered), enabledKinds(settings, deckIds), choices);
+}
+
+/** deckKinds with this tab's setup and this workspace's remembered choices read from storage. */
+export function sessionKinds(
+	workspaceId: number,
+	deckIds: readonly string[],
+	settings: Record<string, DeckSettings> | undefined
+): StudyCardKind[] {
+	return deckKinds(
+		deckIds,
+		settings,
+		hasTabSetup() ? loadConfig().cardTypes : null,
+		loadRememberedTypes(workspaceId),
+		loadExtraChoices(workspaceId)
+	);
 }
