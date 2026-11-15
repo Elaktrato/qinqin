@@ -41,8 +41,14 @@ database with a SvelteKit single-page app embedded in the binary.
   is disabled keeps its place in the stored layout and returns when the plugin
   is enabled again; one that does not fit the active workspace's language is
   marked "Not available for <language>" and can still be placed for the others.
-- **Activity heatmap** — a home widget showing 13 weeks of learning activity per
-  workspace, adding up flashcard reviews and reading time in the Reader.
+- **Activity heatmap** — a home widget showing 13 weeks of learning activity,
+  adding up flashcard reviews, reading time in the Reader and journal entries.
+  It shows the active workspace by default; "All workspaces" switches to the
+  combined view (tooltips then name each workspace), and a chip per activity
+  type hides or shows that type. The choice is remembered per user on every
+  device. Plugins contribute activity through an `events[].activity` rule in
+  their manifest (`label`, `describe`, and optionally `measure` + `pointsPer`
+  or `distinctBy`); the server scores it, no core change is needed.
 - **Stats** — a nav item for every workspace (`/stats`) with two tabs:
   **Overview** shows every widget that applies to the workspace, in a fixed
   order (core first, then plugins); **Characters** (`/stats/characters`) is the
@@ -521,6 +527,7 @@ All library and source routes need a signed-in user, and so does
 | `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user |
 | `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
 | `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
+| `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by UTC day, workspace and type for the plugins' activity rules: `{from, to, sources, cells}`. `from`/`to` are `YYYY-MM-DD` (default: today and the 90 days before; at most 366 days, else 400); a foreign workspace is 404. `sources` lists every rule (also those without cells) |
 | `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state, and the caller's enable flag and (legacy) order for one plugin |
 | `GET /api/plugins/{id}/data?workspace=&prefix=` | The caller's live rows of a plugin whose key starts with `prefix`, scoped like the single-row routes, ordered by key, `[]` when none; an unknown plugin or foreign workspace is 404 |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |

@@ -63,8 +63,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 - ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done on `feature/fsrs-optimizer` (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
 - [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)
 - [#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI
-- [#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics (server-side aggregation, filters, contributions);
-  the Stats page design on `feature/stats` overlaps it
+- [#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics (server-side aggregation, filters, contributions) — in progress on `feature/core-stats` (on top of `feature/plugin-sdk`); the Stats page design on `feature/stats` overlaps it
 
 Engineering debt and review follow-ups carry the `deferred` label (issues #1–#22 and
 #26); triage them before cutting a release.
