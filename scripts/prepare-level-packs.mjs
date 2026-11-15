@@ -670,12 +670,13 @@ function countsLine(levels) {
 	return levels.map((level) => `${level.name} ${level.entries.length}`).join(', ');
 }
 
-async function writePack(dir, { manifest, unit, levels, license, attribution, extraFiles = {} }) {
+export async function writePack(dir, { manifest, unit, levels, license, attribution, extraFiles = {} }) {
 	await rm(dir, { recursive: true, force: true });
 	await mkdir(dir, { recursive: true });
 	await writeFile(join(dir, 'manifest.json'), json(manifest));
 	await writeFile(join(dir, 'levels.json'), levelsJSON(unit, levels));
-	await writeFile(join(dir, 'LICENSE'), license);
+	// No licence text (a local-only pack) means no LICENSE file: none was granted.
+	if (license !== undefined) await writeFile(join(dir, 'LICENSE'), license);
 	await writeFile(join(dir, 'ATTRIBUTION.md'), attribution);
 	for (const [name, content] of Object.entries(extraFiles)) await writeFile(join(dir, name), content);
 }
