@@ -61,6 +61,9 @@ func DefaultAuthPolicy() AuthPolicy {
 			// 30 s. The tokens are 256-bit; the budget only bounds noise.
 			"reset": {Burst: 10, Every: 30 * time.Second, MaxKeys: authTableCap},
 			// Test mails an administrator may send: 10 per hour.
+			// Code mails per user (verification, sign-in, second step): 5 per
+			// hour; beyond that the mail is silently not sent.
+			"mailcode":  {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
 			"smtp-test": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 		},
 	}

@@ -2,12 +2,14 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/mail"
 )
 
 // readAccountBody reads a small JSON body (4 KiB cap) into v, answering 413/400 itself.
@@ -290,13 +292,15 @@ func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 // handlePutEmail serves PUT /api/account/email {email: string|null,
 // currentPassword}: the caller sets or clears their own address under the
-// instance policy (off refuses an address, required refuses clearing). The
-// password is asked again (403 wrong_password, reauth limiter): an address
-// is a recovery channel. The address stays unverified until plan 3's code
-// check.
+// instance policy (off refuses an address, required refuses clearing). A
+// full session re-asks the password (403 wrong_password, reauth limiter): an
+// address is a recovery channel; an enrolment session (the user just proved
+// the password at sign-in and needs an address for email codes) does not. A
+// changed address is unverified; with mail configured a six-digit code goes
+// to it ("verification": "sent"), otherwise "unavailable"; "none" when there
+// is nothing to verify (cleared, or the same verified address).
 func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
-	// A full session only: a restricted session must not probe addresses.
-	p := s.requirePrincipal(w, r)
+	p := s.requirePrincipal(w, r, restrictionMFAEnrollment)
 	if p == nil {
 		return
 	}
@@ -318,37 +322,9 @@ func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
 	if !s.applyEmailFormat(w, r, set.EmailPolicy, req.Email, &nu) {
 		return
 	}
-	if req.CurrentPassword == "" {
-		writeAuthError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
+	if p.Restriction() == "" && !s.verifyOwnPassword(w, r, p.User.ID, req.CurrentPassword) {
 		return
 	}
-	refund, ok := s.reauth(w, p.User.ID)
-	if !ok {
-		return
-	}
-	var good bool
-	err = s.withHashGate(r.Context(), func() error {
-		var e error
-		good, e = auth.VerifyUserPassword(r.Context(), s.db, p.User.ID, req.CurrentPassword)
-		return e
-	})
-	switch {
-	case err != nil && r.Context().Err() != nil:
-		writeClientGone(w)
-		return
-	case errors.Is(err, errHashBusy):
-		refund()
-		writeBusy(w)
-		return
-	case err != nil:
-		refund()
-		writeInternal(w, r)
-		return
-	case !good:
-		writeAuthError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
-		return
-	}
-	refund()
 	if err := auth.SetOwnEmail(r.Context(), s.db, p.User.ID, nu.Email, nu.EmailNorm); err != nil {
 		if !writeUserError(w, err) {
 			writeInternal(w, r)
@@ -360,5 +336,190 @@ func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"email": u.Email, "emailVerified": u.EmailVerified})
+	verification := "none"
+	if u.Email != nil && !u.EmailVerified {
+		verification = "unavailable"
+		if s.mailConfigured(r.Context()) {
+			if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, nu.EmailNorm); err != nil {
+				writeInternal(w, r)
+				return
+			}
+			verification = "sent"
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"email": u.Email, "emailVerified": u.EmailVerified, "verification": verification})
+}
+
+// verifyOwnPassword re-asks the caller's password for a sensitive change:
+// an empty one is refused before anything is counted (403
+// current_password_required), a wrong one is 403 wrong_password through the
+// reauth limiter, which a right password refunds. False: a response was written.
+func (s *server) verifyOwnPassword(w http.ResponseWriter, r *http.Request, userID int64, password string) bool {
+	if password == "" {
+		writeAuthError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
+		return false
+	}
+	refund, ok := s.reauth(w, userID)
+	if !ok {
+		return false
+	}
+	var good bool
+	err := s.withHashGate(r.Context(), func() error {
+		var e error
+		good, e = auth.VerifyUserPassword(r.Context(), s.db, userID, password)
+		return e
+	})
+	switch {
+	case err != nil && r.Context().Err() != nil:
+		writeClientGone(w)
+		return false
+	case errors.Is(err, errHashBusy):
+		refund()
+		writeBusy(w)
+		return false
+	case err != nil:
+		refund()
+		writeInternal(w, r)
+		return false
+	case !good:
+		writeAuthError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
+		return false
+	}
+	refund()
+	return true
+}
+
+// startEmailVerification replaces the user's verification challenge with a
+// new one and mails its first code.
+func (s *server) startEmailVerification(ctx context.Context, userID int64, email string, norm *string) error {
+	if err := auth.DropUserChallenges(ctx, s.db, userID, auth.ChallengeEmailVerify); err != nil {
+		return err
+	}
+	n := ""
+	if norm != nil {
+		n = *norm
+	}
+	_, ch, err := auth.NewChallenge(ctx, s.db, auth.ChallengeEmailVerify, &userID, n, "")
+	if err != nil {
+		return err
+	}
+	code, err := auth.SetCode(ctx, s.db, ch.ID)
+	if err != nil {
+		return err
+	}
+	s.mailCode(userID, mail.KindVerifyEmail, email, code)
+	return nil
+}
+
+// mailCode queues a code mail unless the user's hourly budget of code mails
+// is spent (silently: the answer to the request must not depend on it).
+func (s *server) mailCode(userID int64, kind mail.Kind, to, code string) {
+	if ok, _ := s.authLimiter("mailcode").Allow(int64Key(userID)); !ok {
+		s.logThrottled("mailcode")
+		return
+	}
+	s.mail.Enqueue(mail.Job{Kind: kind, UserID: userID, To: to, Data: mail.TemplateData{Code: code}})
+}
+
+// writeCodeError answers a refused one-time code. authenticated routes
+// (a session exists) answer 403 and never 401, which the web client reads as
+// "session gone"; the anonymous sign-in steps answer 401.
+func writeCodeError(w http.ResponseWriter, err error, authenticated bool) bool {
+	status := http.StatusUnauthorized
+	if authenticated {
+		status = http.StatusForbidden
+	}
+	var ce *auth.CodeError
+	switch {
+	case errors.As(err, &ce) && errors.Is(err, auth.ErrCodeWrong):
+		writeJSON(w, status, map[string]any{"error": "code_invalid", "message": "That code is not right.", "attemptsLeft": ce.AttemptsLeft})
+	case errors.Is(err, auth.ErrChallengeInvalid):
+		writeAuthError(w, status, "challenge_expired", "This code has expired or was tried too often. Ask for a new one.")
+	default:
+		return false
+	}
+	return true
+}
+
+// handleEmailVerify serves POST /api/account/email/verify {code}.
+func (s *server) handleEmailVerify(w http.ResponseWriter, r *http.Request) {
+	p := s.requirePrincipal(w, r, restrictionMFAEnrollment)
+	if p == nil {
+		return
+	}
+	var req struct {
+		Code string `json:"code"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	ch, err := auth.VerifyUserCode(r.Context(), s.db, p.User.ID, auth.ChallengeEmailVerify, req.Code)
+	if err != nil {
+		if !writeCodeError(w, err, true) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	if err := auth.MarkEmailVerified(r.Context(), s.db, p.User.ID, ch.EmailNorm); err != nil {
+		writeInternal(w, r)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"emailVerified": true})
+}
+
+// handleEmailResend serves POST /api/account/email/resend: a new code for
+// the pending verification (at most three per challenge, 60 s apart).
+func (s *server) handleEmailResend(w http.ResponseWriter, r *http.Request) {
+	p := s.requirePrincipal(w, r, restrictionMFAEnrollment)
+	if p == nil {
+		return
+	}
+	if !s.mailConfigured(r.Context()) {
+		writeAuthError(w, http.StatusConflict, "mail_unavailable", "Email is not set up on this server.")
+		return
+	}
+	u, err := auth.LoadUser(r.Context(), s.db, p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	if u.Email == nil || u.EmailVerified {
+		writeAuthError(w, http.StatusConflict, "nothing_to_verify", "There is no unverified email address on this account.")
+		return
+	}
+	_, norm, nerr := auth.NormalizeEmail(*u.Email)
+	if nerr != nil {
+		writeInternal(w, r)
+		return
+	}
+	ch, err := auth.LoadUserChallenge(r.Context(), s.db, p.User.ID, auth.ChallengeEmailVerify)
+	if errors.Is(err, auth.ErrChallengeInvalid) {
+		if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, &norm); err != nil {
+			writeInternal(w, r)
+			return
+		}
+		writeJSON(w, http.StatusAccepted, map[string]int{"resendAfter": int(auth.ResendEvery.Seconds())})
+		return
+	}
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	code, err := auth.SetCode(r.Context(), s.db, ch.ID)
+	var ce *auth.CodeError
+	switch {
+	case errors.As(err, &ce):
+		writeRateLimitedAs(w, ce.Retry, "code requests")
+	case errors.Is(err, auth.ErrChallengeInvalid):
+		if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, &norm); err != nil {
+			writeInternal(w, r)
+			return
+		}
+		writeJSON(w, http.StatusAccepted, map[string]int{"resendAfter": int(auth.ResendEvery.Seconds())})
+	case err != nil:
+		writeInternal(w, r)
+	default:
+		s.mailCode(u.ID, mail.KindVerifyEmail, *u.Email, code)
+		writeJSON(w, http.StatusAccepted, map[string]int{"resendAfter": int(auth.ResendEvery.Seconds())})
+	}
 }

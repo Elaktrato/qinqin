@@ -3,8 +3,13 @@ package api_test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"io"
+	"mime/quotedprintable"
 	"net/http/httptest"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -70,9 +75,12 @@ func newMailEnv(t *testing.T, o mailOpts) *mailEnv {
 	go svc.Run(workerCtx)
 	t.Cleanup(stopWorker)
 	opts := append([]api.Option{api.WithMail(svc)}, o.apiOpts...)
+	pol := api.DefaultAuthPolicy()
+	pol.Client.Burst = 5000
 	if o.authPolicy != nil {
-		opts = append(opts, api.WithAuthPolicy(*o.authPolicy))
+		pol = *o.authPolicy
 	}
+	opts = append(opts, api.WithAuthPolicy(pol))
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, opts...))
 	t.Cleanup(ts.Close)
 	e := &mailEnv{ts: ts, db: sqlDB, smtp: fake, svc: svc}
@@ -104,4 +112,66 @@ func smtpWith(f func(*mailtest.Options)) mailtest.Options {
 	o := mailtest.Options{User: "mailer", Pass: testSMTPPassword}
 	f(&o)
 	return o
+}
+
+// inbox helpers: the fake server keeps raw messages; these decode them.
+
+type inboxMail struct{ To, Subject, Body string }
+
+func (e *mailEnv) inbox() []inboxMail {
+	var out []inboxMail
+	for _, m := range e.smtp.Messages() {
+		head, body, _ := strings.Cut(m.Data, "\r\n\r\n")
+		dec, _ := io.ReadAll(quotedprintable.NewReader(strings.NewReader(body)))
+		subj := ""
+		for _, l := range strings.Split(head, "\r\n") {
+			if strings.HasPrefix(l, "Subject: ") {
+				subj = strings.TrimPrefix(l, "Subject: ")
+			}
+		}
+		out = append(out, inboxMail{To: m.To[0], Subject: subj, Body: string(dec)})
+	}
+	return out
+}
+
+// waitMails waits until the inbox holds n messages and returns them.
+func (e *mailEnv) waitMails(t *testing.T, n int) []inboxMail {
+	t.Helper()
+	for i := 0; i < 300; i++ {
+		if got := e.inbox(); len(got) >= n {
+			return got
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("inbox has %d mails, want %d", len(e.inbox()), n)
+	return nil
+}
+
+// noMoreMails fails when the inbox grows beyond n within a short grace.
+func (e *mailEnv) noMoreMails(t *testing.T, n int) {
+	t.Helper()
+	time.Sleep(150 * time.Millisecond)
+	if got := len(e.inbox()); got != n {
+		t.Fatalf("inbox has %d mails, want %d", got, n)
+	}
+}
+
+var sixDigits = regexp.MustCompile(`\b(\d{6})\b`)
+
+func codeIn(t *testing.T, m inboxMail) string {
+	t.Helper()
+	g := sixDigits.FindStringSubmatch(m.Body)
+	if g == nil {
+		t.Fatalf("no code in %q", m.Body)
+	}
+	return g[1]
+}
+
+var resetLink = regexp.MustCompile(`https?://\S+/reset#t=(\S+)`)
+
+func decodeString(t *testing.T, s string, v any) {
+	t.Helper()
+	if err := json.Unmarshal([]byte(s), v); err != nil {
+		t.Fatalf("decode %q: %v", s, err)
+	}
 }

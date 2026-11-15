@@ -513,3 +513,23 @@ func (u *Users) Patch(ctx context.Context, actorID, id int64, p UserPatch) error
 	}
 	return tx.Commit()
 }
+
+// MarkEmailVerified records that the user proved they can read mail sent to
+// norm. It is a no-op when the address changed in the meantime.
+func MarkEmailVerified(ctx context.Context, sqlDB *sql.DB, userID int64, norm string) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin verify email: %w", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `UPDATE users SET email_verified_at = ?1, updated_at = ?1 WHERE id = ?2 AND email_norm = ?3 AND email_verified_at IS NULL`, now(), userID, norm)
+	if err != nil {
+		return fmt.Errorf("mark email verified: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 1 {
+		if err := Audit(ctx, tx, AuditEvent{Action: "email_verified", ActorID: userID, TargetID: &userID}); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
