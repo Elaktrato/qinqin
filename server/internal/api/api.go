@@ -78,6 +78,8 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
 	mux.HandleFunc("POST /api/auth/login", s.handleLogin)
 	mux.HandleFunc("GET /api/auth/me", s.handleMe)
+	mux.HandleFunc("GET /api/me/time-zone", s.handleGetTimeZone)
+	mux.HandleFunc("PUT /api/me/time-zone", s.handlePutTimeZone)
 	mux.HandleFunc("GET /api/entries/{id}", s.handleGetEntry)
 	mux.HandleFunc("GET /api/entries/{id}/chars", s.handleCharsUnderRadical)
 	mux.HandleFunc("PUT /api/entries/{id}", s.handlePutEntry)
