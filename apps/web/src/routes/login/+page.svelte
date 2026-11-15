@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
-	import { ApiError } from '$lib/api/client';
+	import { authErrorMessage } from '$lib/api/authErrors';
 	import { login } from '$lib/auth';
 
 	let username = $state('');
@@ -18,12 +18,7 @@
 			await login(username.trim(), password);
 			// The layout guard moves a signed-in session off this page.
 		} catch (err) {
-			error =
-				err instanceof ApiError && err.status === 401
-					? 'Wrong username or password.'
-					: err instanceof Error
-						? err.message
-						: 'Login failed.';
+			error = authErrorMessage(err, 'Login failed.');
 		} finally {
 			busy = false;
 		}
