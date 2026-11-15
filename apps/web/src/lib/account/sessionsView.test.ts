@@ -15,7 +15,7 @@ describe('relativeTime', () => {
 		['2026-09-01T12:00:00Z', '1 September 2026'],
 		['2026-11-15T12:00:30Z', 'just now'],
 		['not a date', '']
-	])('%s -> %s', (iso, want) => expect(relativeTime(iso, now)).toBe(want));
+	])('%s -> %s', (iso, want) => expect(relativeTime(iso, now, 'UTC')).toBe(want));
 });
 
 describe('sessionRows', () => {
@@ -25,7 +25,7 @@ describe('sessionRows', () => {
 	];
 
 	it('labels the current device and hides its revoke button', () => {
-		const rows = sessionRows(list, now);
+		const rows = sessionRows(list, now, 'UTC');
 		expect(rows[0]).toMatchObject({ id: 5, current: true, canRevoke: false, deviceLabel: 'Firefox on Linux', badge: 'This device' });
 		expect(rows[0].lastActive).toBe('just now');
 		expect(rows[1]).toMatchObject({ id: 3, current: false, canRevoke: true, badge: null });
@@ -34,11 +34,11 @@ describe('sessionRows', () => {
 	});
 
 	it('keeps the server order', () => {
-		expect(sessionRows(list, now).map((r) => r.id)).toEqual([5, 3]);
+		expect(sessionRows(list, now, 'UTC').map((r) => r.id)).toEqual([5, 3]);
 	});
 
 	it('offers "others" only when another session exists', () => {
-		expect(sessionRows(list.slice(0, 1), now).some((r) => r.canRevoke)).toBe(false);
+		expect(sessionRows(list.slice(0, 1), now, 'UTC').some((r) => r.canRevoke)).toBe(false);
 	});
 
 	it('states the confirmation for logging out everywhere', () => {
