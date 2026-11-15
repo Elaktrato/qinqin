@@ -29,6 +29,10 @@ import {
   setActiveSet,
   deleteParamSet,
   activeWeights,
+  loadRawStudyData,
+  pushStudyRows,
+  PartialPushError,
+  studyRowKey,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
 
@@ -135,6 +139,13 @@ function putBodies(): Array<{ url: string; body: unknown }> {
       url: String(url),
       body: JSON.parse(String(init?.body)),
     }));
+}
+
+/** The rows batch-written through POST /api/sync/push, in order. */
+function pushedRows(): Array<{ key: string; data: unknown; updatedAt: string }> {
+  return calls()
+    .filter(([url]) => String(url) === "/api/sync/push")
+    .flatMap(([, init]) => JSON.parse(String(init?.body)).pluginData);
 }
 
 /**
@@ -683,15 +694,11 @@ describe("study store", () => {
           expect.objectContaining({ method: "DELETE" }),
         ],
       ]);
-      expect(putBodies()).toEqual([
-        {
-          url: `/api/plugins/${PLUGIN_ID}/data/card:card-orphan?workspace=${WORKSPACE_ID}`,
-          body: { ...orphan, deckIds: [GENERAL_DECK_ID] },
-        },
-        {
-          url: `/api/plugins/${PLUGIN_ID}/data/card:card-shared?workspace=${WORKSPACE_ID}`,
-          body: { ...shared, deckIds: ["deck-2"] },
-        },
+      // The cards go out as one batch, before the tombstone.
+      expect(putBodies()).toEqual([]);
+      expect(pushedRows().map(({ key, data }) => ({ key, data }))).toEqual([
+        { key: "card:card-orphan", data: { ...orphan, deckIds: [GENERAL_DECK_ID] } },
+        { key: "card:card-shared", data: { ...shared, deckIds: ["deck-2"] } },
       ]);
     });
 
@@ -713,10 +720,7 @@ describe("study store", () => {
 
       await deleteDeck("deck-1");
 
-      expect(putBodies().map((entry) => entry.url)).toEqual([
-        `/api/plugins/${PLUGIN_ID}/data/card:card-early?workspace=${WORKSPACE_ID}`,
-        `/api/plugins/${PLUGIN_ID}/data/card:card-late?workspace=${WORKSPACE_ID}`,
-      ]);
+      expect(pushedRows().map((row) => row.key)).toEqual(["card:card-early", "card:card-late"]);
     });
 
     it("refuses to delete the implicit general deck without touching the server", async () => {
@@ -741,11 +745,8 @@ describe("study store", () => {
 
       await deleteDeck("deck-1");
 
-      expect(putBodies()).toEqual([
-        {
-          url: `/api/plugins/${PLUGIN_ID}/data/card:card-shared?workspace=${WORKSPACE_ID}`,
-          body: { ...shared, deckIds: ["deck-2"] },
-        },
+      expect(pushedRows().map(({ key, data }) => ({ key, data }))).toEqual([
+        { key: "card:card-shared", data: { ...shared, deckIds: ["deck-2"] } },
       ]);
       expect(calls().some(([, init]) => init?.method === "DELETE")).toBe(true);
     });
@@ -763,11 +764,10 @@ describe("study store", () => {
         return path.split("?")[0];
       };
       vi.mocked(fetch).mockImplementation(async (input, init) => {
-        if (init?.method === "PUT") {
-          const key = keyOf(input);
-          const body = JSON.parse(String(init.body)) as StudyCard;
-          cards.set(key, body);
-          return jsonResponse({ version: 2 });
+        if (String(input) === "/api/sync/push") {
+          const rows = JSON.parse(String(init?.body)).pluginData as Array<{ key: string; data: StudyCard }>;
+          for (const row of rows) cards.set(row.key, row.data);
+          return jsonResponse({ dataAccepted: rows.length, dataSkipped: 0, dataRefused: 0 });
         }
         if (init?.method === "DELETE") {
           decks.delete(keyOf(input));
@@ -785,9 +785,10 @@ describe("study store", () => {
       await deleteDeck("deck-2");
 
       expect(cards.get("card:card-1")?.deckIds).toEqual([GENERAL_DECK_ID]);
-      expect(
-        putBodies().map((entry) => (entry.body as StudyCard).deckIds),
-      ).toEqual([["deck-2"], [GENERAL_DECK_ID]]);
+      expect(pushedRows().map((row) => (row.data as StudyCard).deckIds)).toEqual([
+        ["deck-2"],
+        [GENERAL_DECK_ID],
+      ]);
     });
   });
 
@@ -1472,6 +1473,185 @@ describe("study store", () => {
       expect(String(deletes[0][0])).toBe(
         `/api/plugins/${PLUGIN_ID}/data/fsrs:set:A?workspace=${WORKSPACE_ID}`,
       );
+    });
+  });
+
+  describe("deleting a big deck and clock skew", () => {
+    it("deleteDeck rewrites 450 cards in 3 requests, then tombstones the deck", async () => {
+      const cards = Array.from({ length: 450 }, (_, i) => card(`card-${i}`, i, ["deck-1"]));
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (String(input) === "/api/sync/push") {
+          const n = JSON.parse(String(init?.body)).pluginData.length;
+          return jsonResponse({ dataAccepted: n, dataSkipped: 0, dataRefused: 0 });
+        }
+        if (init?.method === "DELETE") return new Response(null, { status: 204 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deck:deck-1", deck("deck-1", "Big")),
+            ...cards.map((c) => pluginRow(`card:${c.id}`, c)),
+          ],
+        });
+      });
+      await deleteDeck("deck-1");
+      const order = calls().map(([url, init]) => (String(url) === "/api/sync/push" ? "push" : String(init?.method ?? "GET")));
+      expect(order.filter((o) => o === "push")).toHaveLength(3);
+      expect(order.indexOf("DELETE")).toBeGreaterThan(order.lastIndexOf("push"));
+      expect(putBodies()).toEqual([]);
+    });
+
+    it("deleteDeck stops before the tombstone when a chunk fails", async () => {
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (String(input) === "/api/sync/push") return new Response("boom", { status: 500 });
+        if (init?.method === "DELETE") return new Response(null, { status: 204 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deck:deck-1", deck("deck-1", "Doomed")),
+            pluginRow("card:card-1", card("card-1", 1, ["deck-1"])),
+          ],
+        });
+      });
+      await expect(deleteDeck("deck-1")).rejects.toThrow();
+      expect(calls().some(([, init]) => init?.method === "DELETE")).toBe(false);
+    });
+
+    it("stamps a row after the newest time the client knows of it, even with a clock behind the server", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-03-10T12:00:00.000Z"));
+      try {
+        vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 2, dataSkipped: 0, dataRefused: 0 }));
+        await pushStudyRows(WORKSPACE_ID, [
+          { key: "card:a", data: {}, knownAt: "2026-03-10T12:00:05.250Z" }, // server tombstone is ahead
+          { key: "card:b", data: {}, knownAt: "2026-03-09T00:00:00.000Z" }, // known time is older: now wins
+          { key: "card:c", data: {} },
+        ]);
+        const stamps = pushedRows().map((r) => [r.key, r.updatedAt]);
+        expect(stamps).toEqual([
+          ["card:a", "2026-03-10T12:00:05.251Z"],
+          ["card:b", "2026-03-10T12:00:00.000Z"],
+          ["card:c", "2026-03-10T12:00:00.000Z"],
+        ]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("loadRawStudyData reports the newest known time of every row, tombstones included", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("card:live", { id: "live", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }, { updatedAt: "2026-02-01T00:00:00Z" }),
+          pluginRow("card:gone", { id: "gone" }, { updatedAt: "2026-02-02T00:00:00Z", deletedAt: "2026-02-03T00:00:00Z" }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.knownAt.get("card:live")).toBe("2026-02-01T00:00:00Z");
+      expect(raw.knownAt.get("card:gone")).toBe("2026-02-03T00:00:00Z");
+      expect(raw.cards.map((c) => c.id)).toEqual(["live"]);
+    });
+  });
+
+  describe("copied decks and batch writes", () => {
+    it("keeps the source of a copied deck", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deck:d-lvl-hsk-words-b06fd2ac", {
+            id: "d-lvl-hsk-words-b06fd2ac",
+            name: "HSK words · HSK 1",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "level", packId: "hsk-words", level: "HSK 1" },
+          }),
+          pluginRow("deck:plain", { id: "plain", name: "Plain", createdAt: "2026-01-01T00:00:00Z", source: { type: 7 } }),
+        ],
+      });
+      const { decks } = await loadStudyData(WORKSPACE_ID);
+      expect(decks.find((d) => d.id === "d-lvl-hsk-words-b06fd2ac")?.source).toEqual({
+        type: "level",
+        packId: "hsk-words",
+        level: "HSK 1",
+      });
+      // An unknown source shape is dropped, the deck stays.
+      expect(decks.find((d) => d.id === "plain")?.source).toBeUndefined();
+    });
+
+    it("loadRawStudyData keeps stored duplicates the merged read folds away", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("card:c-vocab-1", { id: "c-vocab-1", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }),
+          pluginRow("card:01JDUP", { id: "01JDUP", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-02T00:00:00Z" }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.cards.map((c) => c.id).sort()).toEqual(["01JDUP", "c-vocab-1"]);
+    });
+
+    function pushRows(n: number) {
+      return Array.from({ length: n }, (_, i) => ({ key: `card:c-vocab-${i}`, data: { id: `c-vocab-${i}` } }));
+    }
+    function pushBodies(): Array<{ pluginData: Array<Record<string, unknown>> }> {
+      return calls()
+        .filter(([url]) => String(url) === "/api/sync/push")
+        .map(([, init]) => JSON.parse(String(init?.body)));
+    }
+
+    it("pushes rows in sequential chunks of 200 with the workspace and an updatedAt", async () => {
+      vi.mocked(fetch).mockImplementation(async (_url, init) =>
+        jsonResponse({
+          eventsAccepted: 0,
+          eventDuplicates: 0,
+          dataAccepted: JSON.parse(String(init?.body)).pluginData.length,
+          dataSkipped: 0,
+          dataRefused: 0,
+        }),
+      );
+      const progress: Array<[number, number]> = [];
+      const written: number[] = [];
+      const off = onStudyWrite((id) => written.push(id));
+      await pushStudyRows(WORKSPACE_ID, pushRows(450), { onProgress: (d, t) => progress.push([d, t]) });
+      off();
+      const bodies = pushBodies();
+      expect(bodies.map((b) => b.pluginData.length)).toEqual([200, 200, 50]);
+      expect(bodies[0].pluginData[0]).toMatchObject({
+        pluginId: PLUGIN_ID,
+        key: "card:c-vocab-0",
+        workspaceId: WORKSPACE_ID,
+        data: { id: "c-vocab-0" },
+      });
+      expect(Number.isNaN(Date.parse(String(bodies[0].pluginData[0].updatedAt)))).toBe(false);
+      expect(progress).toEqual([[200, 450], [400, 450], [450, 450]]);
+      expect(written).toEqual([WORKSPACE_ID, WORKSPACE_ID, WORKSPACE_ID]);
+    });
+
+    it("pushes nothing for no rows", async () => {
+      await pushStudyRows(WORKSPACE_ID, []);
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("reports how many rows landed when a later chunk fails", async () => {
+      let n = 0;
+      vi.mocked(fetch).mockImplementation(async () =>
+        ++n === 1
+          ? jsonResponse({ dataAccepted: 200, dataSkipped: 0, dataRefused: 0 })
+          : new Response("boom", { status: 500 }),
+      );
+      const error = await pushStudyRows(WORKSPACE_ID, pushRows(450)).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(PartialPushError);
+      expect((error as PartialPushError).done).toBe(200);
+      expect((error as PartialPushError).skipped).toBe(0);
+    });
+
+    it("a chunk with skipped or refused rows is an error, never a silent success", async () => {
+      vi.mocked(fetch).mockImplementation(async () =>
+        jsonResponse({ dataAccepted: 198, dataSkipped: 1, dataRefused: 1 }),
+      );
+      const error = await pushStudyRows(WORKSPACE_ID, pushRows(200)).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(PartialPushError);
+      expect((error as PartialPushError).done).toBe(198);
+      expect((error as PartialPushError).skipped).toBe(2);
+      expect((error as PartialPushError).message).toMatch(/2 rows/);
+    });
+
+    it("exposes the row keys the planner needs", () => {
+      expect(studyRowKey.deck("d1")).toBe("deck:d1");
+      expect(studyRowKey.card("c-vocab-1")).toBe("card:c-vocab-1");
     });
   });
 });

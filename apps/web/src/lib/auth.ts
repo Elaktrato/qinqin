@@ -1,4 +1,5 @@
 import { clearAudioCache } from './api/audio';
+import { clearEntryBasesCache } from './api/entryBases';
 import { clearClipCache } from './audio/source';
 import { derived, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
@@ -189,5 +190,7 @@ export function logout(): void {
 	clearSelection();
 	// The learner's zone history belongs to the account that just left.
 	clearStudyDay();
+	// Entry bases carry this user's own edits.
+	clearEntryBasesCache();
 	auth.set({ token: null, user: null });
 }
