@@ -50,6 +50,15 @@ Order: web first. Most features ship on web before the Android build starts.
   active selection per user. On `feature/ai-providers`; implemented and checked against fake servers only, never against a
   real provider (owner checklist: `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`). Lumo has no public API yet.
 
+## v0.3.0 — shared-data rules for the Android client (in progress)
+
+Direction: `docs/superpowers/directions/2026-11-15-v0.3.0-web-build.md`. Collection branch `feature/v0.3.0`.
+
+- ~~[#86](https://github.com/Elaktrato/qinqin/issues/86) login rate limiting and lockout~~ — done (develop)
+- ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) the learner's local day~~ — done (develop)
+- ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character schemes~~ — done (develop)
+- In progress or next: accounts (#64), reverse and cloze cards (#65), decks view (#90), vacation mode (#88), daily limits (#89), backup (#61), PWA (#79), reader display settings (#78), `docs/contracts/` for Android; stretch list in the direction document.
+
 ## v0.4.0 — Android client (milestone)
 
 Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flutter plan.
