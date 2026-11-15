@@ -191,18 +191,31 @@ func (d *dnsServer) reply(q []byte) []byte {
 	qtype := int(q[i])<<8 | int(q[i+1])
 	question := q[12 : i+4]
 	var addrs []netip.Addr
-	if qtype == 1 {
+	if qtype == 1 || qtype == 28 {
 		d.mu.Lock()
-		d.n++
-		addrs = d.answer(d.n)
+		if qtype == 1 {
+			d.n++
+		}
+		all := d.answer(d.n)
 		d.mu.Unlock()
+		for _, a := range all {
+			if (qtype == 1 && a.Is4()) || (qtype == 28 && a.Is6()) {
+				addrs = append(addrs, a)
+			}
+		}
 	}
 	resp := []byte{q[0], q[1], 0x81, 0x80, 0, 1, 0, byte(len(addrs)), 0, 0, 0, 0}
 	resp = append(resp, question...)
 	for _, a := range addrs {
-		ip := a.As4()
-		resp = append(resp, 0xC0, 0x0C, 0, 1, 0, 1, 0, 0, 0, 0, 0, 4)
-		resp = append(resp, ip[:]...)
+		if a.Is4() {
+			ip := a.As4()
+			resp = append(resp, 0xC0, 0x0C, 0, 1, 0, 1, 0, 0, 0, 0, 0, 4)
+			resp = append(resp, ip[:]...)
+		} else {
+			ip := a.As16()
+			resp = append(resp, 0xC0, 0x0C, 0, 28, 0, 1, 0, 0, 0, 0, 0, 16)
+			resp = append(resp, ip[:]...)
+		}
 	}
 	return resp
 }
@@ -480,4 +493,159 @@ func TestPlainHTTPOnlyDialsPrivateAddresses(t *testing.T) {
 	if hits.Load() != 1 {
 		t.Errorf("hits = %d", hits.Load())
 	}
+}
+
+// Transitional and reserved address forms that embed or alias an IPv4
+// address: they must be judged by the address inside, or refused outright.
+var embeddedForms = []struct {
+	addr       string
+	none, priv bool // allowed without / with QINQIN_AI_ALLOW_PRIVATE
+}{
+	{"::7f00:1", false, true},            // IPv4-compatible loopback
+	{"::a9fe:a9fe", false, false},        // IPv4-compatible metadata
+	{"::cb00:7105", true, true},          // IPv4-compatible public (203.0.113.5)
+	{"64:ff9b::7f00:1", false, true},     // NAT64 loopback
+	{"64:ff9b::a9fe:a9fe", false, false}, // NAT64 metadata
+	{"64:ff9b::a00:1", false, true},      // NAT64 10.0.0.1
+	{"64:ff9b::cb00:7105", true, true},   // NAT64 public
+	{"64:ff9b:1::1", false, false},       // local-use NAT64: embedding varies, refused
+	{"64:ff9b:1:ffff::a9fe:a9fe", false, false},
+	{"2002:7f00:1::", false, true},                // 6to4 loopback
+	{"2002:a9fe:a9fe::1", false, false},           // 6to4 metadata
+	{"2002:a00:1::1", false, true},                // 6to4 10.0.0.1
+	{"2002:cb00:7105::1", true, true},             // 6to4 public
+	{"2001:0:a9fe:a9fe::1", false, false},         // Teredo server = metadata
+	{"2001:0:cb00:7105::34ff:8efa", true, true},   // Teredo, public server and (obfuscated) client
+	{"2001:0:cb00:7105::ffff:ffff", false, false}, // Teredo client 0.0.0.0
+	{"fec0::1", false, false},                     // deprecated site-local
+	{"febf::1", false, false},                     // link-local range edge
+	{"192.0.0.192", false, false},                 // IETF protocol assignments (Oracle metadata)
+	{"192.0.0.1", false, false},
+	{"198.18.0.1", false, false}, // benchmarking
+	{"198.19.255.255", false, false},
+	{"240.0.0.1", false, false}, // reserved
+	{"255.255.255.254", false, false},
+	{"::ffff:192.0.0.192", false, false},
+	{"::ffff:198.18.0.1", false, false},
+}
+
+func TestAllowedAddrEmbeddedAndReservedForms(t *testing.T) {
+	for _, c := range embeddedForms {
+		a := netip.MustParseAddr(c.addr)
+		if got := allowedAddr(a, GuardPolicy{}); got != c.none {
+			t.Errorf("allowedAddr(%s, none) = %v, want %v", c.addr, got, c.none)
+		}
+		if got := allowedAddr(a, GuardPolicy{AllowPrivate: true}); got != c.priv {
+			t.Errorf("allowedAddr(%s, private) = %v, want %v", c.addr, got, c.priv)
+		}
+	}
+}
+
+func TestCheckEndpointURLEmbeddedForms(t *testing.T) {
+	for _, c := range embeddedForms {
+		if !strings.Contains(c.addr, ":") {
+			continue
+		}
+		raw := "https://[" + c.addr + "]/v1"
+		_, err := CheckEndpointURL(raw, GuardPolicy{})
+		if (err == nil) != c.none {
+			t.Errorf("CheckEndpointURL(%s, none) = %v, allowed want %v", raw, err, c.none)
+		}
+		_, err = CheckEndpointURL(raw, GuardPolicy{AllowPrivate: true})
+		if (err == nil) != c.priv {
+			t.Errorf("CheckEndpointURL(%s, private) = %v, allowed want %v", raw, err, c.priv)
+		}
+	}
+	for _, raw := range []string{"https://192.0.0.192/", "https://198.18.0.1/", "https://240.0.0.1/"} {
+		if _, err := CheckEndpointURL(raw, GuardPolicy{AllowPrivate: true}); !errors.Is(err, ErrEndpointBlocked) {
+			t.Errorf("%s = %v", raw, err)
+		}
+	}
+}
+
+// The dial-time check (Dialer.Control) judges the same forms.
+func TestDialerControlEmbeddedForms(t *testing.T) {
+	for _, c := range embeddedForms {
+		for _, p := range []struct {
+			pol  GuardPolicy
+			want bool
+		}{{GuardPolicy{}, c.none}, {GuardPolicy{AllowPrivate: true}, c.priv}} {
+			network, addr := "tcp6", "["+c.addr+"]:443"
+			if !strings.Contains(c.addr, ":") {
+				network, addr = "tcp4", c.addr+":443"
+			}
+			err := guardedDialer(p.pol, nil).Control(network, addr, nil)
+			if (err == nil) != p.want {
+				t.Errorf("Control(%s, %+v) = %v, allowed want %v", c.addr, p.pol, err, p.want)
+			}
+			if err != nil && !errors.Is(err, ErrEndpointBlocked) {
+				t.Errorf("Control(%s) error %v is not ErrEndpointBlocked", c.addr, err)
+			}
+		}
+	}
+}
+
+// A hostname whose AAAA record is a transitional form of a blocked address is
+// refused when dialled; so is the IPv4-mapped form.
+func TestHostnameResolvingToEmbeddedFormIsRefused(t *testing.T) {
+	srv, hits := countingServer(t, nil)
+	for _, addr := range []string{"::7f00:1", "64:ff9b::a9fe:a9fe", "2002:7f00:1::1", "2002:a9fe:a9fe::1", "fec0::1", "64:ff9b:1::1"} {
+		dns := newDNS(t, fixed(addr))
+		c := NewGuardedClient(GuardPolicy{}, dns.resolver())
+		resp, err := c.Get("https://v6.test:" + portOf(srv) + "/")
+		if resp != nil {
+			resp.Body.Close()
+		}
+		if !errors.Is(err, ErrEndpointBlocked) {
+			t.Errorf("%s: err = %v, want ErrEndpointBlocked", addr, err)
+		}
+		cb := NewBuiltinClient(dns.resolver())
+		if strings.HasPrefix(addr, "64:ff9b::a9fe") || strings.HasPrefix(addr, "2002:a9fe") || strings.HasPrefix(addr, "fec0") || strings.HasPrefix(addr, "64:ff9b:1") {
+			resp, err = cb.Get("https://v6.test:" + portOf(srv) + "/")
+			if resp != nil {
+				resp.Body.Close()
+			}
+			if !errors.Is(err, ErrEndpointBlocked) {
+				t.Errorf("built-in client %s: err = %v, want ErrEndpointBlocked", addr, err)
+			}
+		}
+	}
+	if hits.Load() != 0 {
+		t.Errorf("server saw %d requests", hits.Load())
+	}
+}
+
+// Plain http to a hostname with a public and a private answer: the public
+// address is refused at dial time, so no clear-text key goes to it; the
+// private one is used.
+func TestPlainHTTPHostnamePublicAndPrivateAnswers(t *testing.T) {
+	srv, hits := countingServer(t, nil)
+	dns := newDNS(t, fixed("203.0.113.5", "127.0.0.1"))
+	c := NewGuardedClient(GuardPolicy{AllowPrivate: true}, dns.resolver())
+	tr := c.Transport.(*schemeTransport).plain
+	var dialed []string
+	inner := tr.DialContext
+	tr.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
+		conn, err := inner(ctx, network, address)
+		dialed = append(dialed, address)
+		return conn, err
+	}
+	resp, err := c.Get("http://mixed.test:" + portOf(srv) + "/v1/models")
+	if err != nil {
+		t.Fatalf("private answer should win: %v", err)
+	}
+	resp.Body.Close()
+	if hits.Load() != 1 {
+		t.Errorf("hits = %d", hits.Load())
+	}
+	// Only a public answer: refused.
+	dns2 := newDNS(t, fixed("203.0.113.5"))
+	c2 := NewGuardedClient(GuardPolicy{AllowPrivate: true}, dns2.resolver())
+	if resp, err := c2.Get("http://pub.test:" + portOf(srv) + "/"); !errors.Is(err, ErrEndpointBlocked) {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		t.Errorf("public-only http: %v", err)
+	}
+	_ = dialed
 }

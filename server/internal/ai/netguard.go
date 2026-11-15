@@ -35,18 +35,61 @@ type GuardPolicy struct{ AllowPrivate bool }
 func blocked(reason string) error { return fmt.Errorf("%w: %s", ErrEndpointBlocked, reason) }
 
 var (
-	cgnat       = netip.MustParsePrefix("100.64.0.0/10")
-	thisNetwork = netip.MustParsePrefix("0.0.0.0/8")
+	cgnat = netip.MustParsePrefix("100.64.0.0/10")
+	// Never connectable, whatever the policy: "this network", IETF protocol
+	// assignments (192.0.0.0/24, which holds Oracle's metadata address),
+	// benchmarking (198.18.0.0/15), reserved and broadcast (240.0.0.0/4),
+	// deprecated site-local IPv6 and the local-use NAT64 prefix (whose embedded
+	// address position varies).
+	alwaysBlockPrefixes = []netip.Prefix{
+		netip.MustParsePrefix("0.0.0.0/8"),
+		netip.MustParsePrefix("192.0.0.0/24"),
+		netip.MustParsePrefix("198.18.0.0/15"),
+		netip.MustParsePrefix("240.0.0.0/4"),
+		netip.MustParsePrefix("fec0::/10"),
+		netip.MustParsePrefix("64:ff9b:1::/48"),
+	}
 	alwaysBlock = []netip.Addr{
-		netip.MustParseAddr("255.255.255.255"),
 		netip.MustParseAddr("100.100.100.200"), // Alibaba metadata
 		netip.MustParseAddr("fd00:ec2::254"),   // AWS IPv6 metadata
 	}
+	nat64     = netip.MustParsePrefix("64:ff9b::/96")
+	sixToFour = netip.MustParsePrefix("2002::/16")
+	teredo    = netip.MustParsePrefix("2001::/32")
+	v4Compat  = netip.MustParsePrefix("::/96")
 )
 
-func alwaysBlocked(a netip.Addr) bool {
-	if !a.IsValid() || a.IsUnspecified() || a.IsLinkLocalUnicast() || a.IsLinkLocalMulticast() || a.IsMulticast() || thisNetwork.Contains(a) {
+// effective returns the addresses a connection to a really goes to: a itself
+// and, for IPv4-mapped, IPv4-compatible, NAT64, 6to4 and Teredo addresses,
+// the IPv4 address(es) inside, so the IPv4 policy applies to them too.
+func effective(a netip.Addr) []netip.Addr {
+	a = a.Unmap()
+	out := []netip.Addr{a}
+	if !a.Is6() {
+		return out
+	}
+	b := a.As16()
+	v4 := func(x []byte) netip.Addr { return netip.AddrFrom4([4]byte{x[0], x[1], x[2], x[3]}) }
+	switch {
+	case nat64.Contains(a), v4Compat.Contains(a) && !a.IsLoopback() && !a.IsUnspecified():
+		out = append(out, v4(b[12:16]))
+	case sixToFour.Contains(a):
+		out = append(out, v4(b[2:6]))
+	case teredo.Contains(a):
+		client := []byte{^b[12], ^b[13], ^b[14], ^b[15]}
+		out = append(out, v4(b[4:8]), v4(client))
+	}
+	return out
+}
+
+func ownAlwaysBlocked(a netip.Addr) bool {
+	if !a.IsValid() || a.IsUnspecified() || a.IsLinkLocalUnicast() || a.IsLinkLocalMulticast() || a.IsMulticast() {
 		return true
+	}
+	for _, p := range alwaysBlockPrefixes {
+		if p.Contains(a) {
+			return true
+		}
 	}
 	for _, b := range alwaysBlock {
 		if a == b {
@@ -56,11 +99,26 @@ func alwaysBlocked(a netip.Addr) bool {
 	return false
 }
 
-func privateClass(a netip.Addr) bool { return a.IsLoopback() || a.IsPrivate() || cgnat.Contains(a) }
+func alwaysBlocked(a netip.Addr) bool {
+	for _, e := range effective(a) {
+		if ownAlwaysBlocked(e) {
+			return true
+		}
+	}
+	return false
+}
+
+func privateClass(a netip.Addr) bool {
+	for _, e := range effective(a) {
+		if e.IsLoopback() || e.IsPrivate() || cgnat.Contains(e) {
+			return true
+		}
+	}
+	return false
+}
 
 // allowedAddr reports whether a connection to a may be made under p.
 func allowedAddr(a netip.Addr, p GuardPolicy) bool {
-	a = a.Unmap()
 	if alwaysBlocked(a) {
 		return false
 	}
