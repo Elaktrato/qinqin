@@ -7,6 +7,21 @@
 	import type { SearchHit } from '$lib/api/types';
 	import { record } from '$lib/events';
 	import { currentLanguage, workspaces } from '$lib/workspaces';
+	import { getSchemes } from '$lib/api/schemes';
+	import type { Scheme } from '$lib/api/types';
+	import {
+		KINDS,
+		clearFilters,
+		filtersFromParams,
+		hasFilters,
+		schemesForLanguage,
+		searchHref,
+		setKind,
+		setLevel,
+		setScheme,
+		type SearchFilters
+	} from '$lib/searchFilters';
+	import { onMount } from 'svelte';
 
 	let query = $state('');
 	let hits = $state<SearchHit[]>([]);
@@ -22,6 +37,24 @@
 
 	// Guards against a slow earlier request overwriting a newer result.
 	let requestSeq = 0;
+
+	let allSchemes = $state<Scheme[]>([]);
+	let schemesFailed = $state(false);
+	const filters = $derived(filtersFromParams(page.url.searchParams));
+	const schemes = $derived(schemesForLanguage(allSchemes, lang));
+	const activeScheme = $derived(schemes.find((s) => s.packId === filters.scheme));
+	const filtersKey = $derived(`${filters.kind}\u0000${filters.scheme}\u0000${filters.level}`);
+
+	onMount(() => {
+		getSchemes().then(
+			(list) => (allSchemes = list),
+			() => (schemesFailed = true)
+		);
+	});
+
+	function applyFilters(next: SearchFilters): void {
+		void goto(searchHref(urlQuery.trim(), next));
+	}
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -47,14 +80,18 @@
 		return source === 'written' ? 'written form' : source;
 	}
 
-	async function runSearch(q: string, language: string): Promise<void> {
+	async function runSearch(q: string, language: string, f: SearchFilters): Promise<void> {
 		const seq = ++requestSeq;
 		activeQuery = q;
 		searched = true;
 		loading = true;
 		error = '';
 		try {
-			const list = await search(language, q);
+			const list = await search(language, q, {
+				kind: f.kind || undefined,
+				scheme: f.scheme || undefined,
+				level: f.level || undefined
+			});
 			if (seq !== requestSeq) return;
 			hits = list;
 		} catch (err) {
@@ -71,11 +108,11 @@
 		const q = query.trim();
 		// The URL effect below runs the query and records the lookup, so
 		// submitting only navigates.
-		void goto(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+		void goto(searchHref(q, filters));
 	}
 
 	function retry(): void {
-		if (lang && activeQuery) void runSearch(activeQuery, lang);
+		if (lang && activeQuery) void runSearch(activeQuery, lang, filters);
 	}
 
 	// The URL is the source of truth for the query: the input mirrors it
@@ -88,6 +125,8 @@
 	$effect(() => {
 		const q = urlQuery.trim();
 		const language = lang;
+		const f = filtersFromParams(page.url.searchParams);
+		void filtersKey;
 		if (!q || !language) {
 			requestSeq++;
 			hits = [];
@@ -97,7 +136,7 @@
 			searched = false;
 			return;
 		}
-		void runSearch(q, language);
+		void runSearch(q, language, f);
 		recordLookup(q, language);
 	});
 </script>
@@ -116,6 +155,58 @@
 		<button type="submit">Search</button>
 	</form>
 
+	{#if lang !== null}
+		<div class="filters" role="group" aria-label="Search filters">
+			<div class="chips" role="group" aria-label="Kind">
+				{#each KINDS as kind (kind)}
+					<button
+						type="button"
+						class="chip"
+						aria-pressed={filters.kind === kind}
+						onclick={() => applyFilters(setKind(filters, kind))}
+					>
+						{kind === 'character' ? 'Characters' : 'Words'}
+					</button>
+				{/each}
+			</div>
+			{#if schemes.length > 0}
+				<div class="chips" role="group" aria-label="Scheme">
+					{#each schemes as scheme (scheme.id)}
+						<button
+							type="button"
+							class="chip"
+							aria-pressed={filters.scheme === scheme.packId}
+							onclick={() => applyFilters(setScheme(filters, scheme.packId ?? ''))}
+						>
+							{scheme.name}
+						</button>
+					{/each}
+				</div>
+			{:else if schemesFailed}
+				<p class="note">Level filters are unavailable right now.</p>
+			{/if}
+			{#if activeScheme}
+				<div class="chips" role="group" aria-label="Level">
+					{#each activeScheme.levels as level (level.id)}
+						<button
+							type="button"
+							class="chip"
+							aria-pressed={filters.level === level.name}
+							onclick={() => applyFilters(setLevel(filters, level.name))}
+						>
+							{level.name}
+						</button>
+					{/each}
+				</div>
+			{/if}
+			{#if hasFilters(filters)}
+				<button type="button" class="clear" onclick={() => applyFilters(clearFilters())}>
+					Clear filters
+				</button>
+			{/if}
+		</div>
+	{/if}
+
 	{#if lang === null}
 		<p class="hint">
 			No workspace selected. Create or select a workspace in the header to search.
@@ -127,7 +218,9 @@
 		<p class="error" role="alert">{error}</p>
 		<button type="button" class="retry" onclick={retry}>Try again</button>
 	{:else if searched && hits.length === 0}
-		<p class="hint">No results for “{activeQuery}”.</p>
+		<p class="hint">
+			No results for “{activeQuery}”{hasFilters(filters) ? ' with these filters' : ''}.
+		</p>
 	{:else if hits.length > 0}
 		<ul class="results" aria-label="Search results">
 			{#each hits as hit (hit.id)}
@@ -148,11 +241,60 @@
 			{/each}
 		</ul>
 	{:else}
-		<p class="hint">Enter a query to search entries.</p>
+		<p class="hint">Enter a query to search entries{hasFilters(filters) ? ' within the filters' : ''}.</p>
 	{/if}
 </main>
 
 <style>
+	.filters {
+		display: grid;
+		gap: 0.6rem;
+		margin-top: 1rem;
+		max-width: 40rem;
+	}
+
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+
+	.chip,
+	.clear {
+		font: inherit;
+		font-size: 0.9rem;
+		min-height: 2.5rem;
+		padding: 0.3rem 0.85rem;
+		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border-radius: 999px;
+		background: transparent;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.chip[aria-pressed='true'] {
+		background: #0b6bcb;
+		border-color: #0b6bcb;
+		color: #fff;
+	}
+
+	.chip:focus-visible,
+	.clear:focus-visible {
+		outline: 2px solid #0b6bcb;
+		outline-offset: 2px;
+	}
+
+	.clear {
+		justify-self: start;
+		border-style: dashed;
+	}
+
+	.note {
+		margin: 0;
+		font-size: 0.85rem;
+		opacity: 0.75;
+	}
+
 	.search {
 		display: flex;
 		gap: 0.5rem;
