@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
-import { buildLevelQueue, type LevelEntry } from './levelQueue';
+import { studyDay, type ZoneChange } from '../time/studyDay';
+import fixtures from '../../../../../docs/contracts/levels/character-level-queue.json';
+import idFixtures from '../../../../../docs/contracts/levels/level-card-ids.json';
+import { newCardId } from './canonical';
+import {
+	buildLevelPlan,
+	buildLevelQueue,
+	virtualLevelId,
+	type LevelEntry,
+	type LevelUnit
+} from './levelQueue';
+import type { StudyCardKind } from './types';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 
 function eventId(n: number): string {
@@ -58,7 +69,7 @@ describe('buildLevelQueue', () => {
 			now: NOW
 		});
 
-		expect(queue).toEqual([{ cardId: 'c1', entryId: 1, virtual: false }]);
+		expect(queue).toEqual([{ cardId: 'c1', entryId: 1, virtual: false, kind: 'vocab' }]);
 	});
 
 	it('creates stable virtual ids in level entry order', () => {
@@ -72,9 +83,9 @@ describe('buildLevelQueue', () => {
 		});
 
 		expect(queue).toEqual([
-			{ cardId: 'level:7', entryId: 7, virtual: true },
-			{ cardId: 'level:3', entryId: 3, virtual: true },
-			{ cardId: 'level:12', entryId: 12, virtual: true }
+			{ cardId: 'level:7', entryId: 7, virtual: true, kind: 'vocab' },
+			{ cardId: 'level:3', entryId: 3, virtual: true, kind: 'vocab' },
+			{ cardId: 'level:12', entryId: 12, virtual: true, kind: 'vocab' }
 		]);
 	});
 
@@ -139,8 +150,8 @@ describe('buildLevelQueue', () => {
 		});
 
 		expect(queue).toEqual([
-			{ cardId: 'c1', entryId: 1, virtual: false },
-			{ cardId: 'level:2', entryId: 2, virtual: true }
+			{ cardId: 'c1', entryId: 1, virtual: false, kind: 'vocab' },
+			{ cardId: 'level:2', entryId: 2, virtual: true, kind: 'vocab' }
 		]);
 	});
 
@@ -157,8 +168,8 @@ describe('buildLevelQueue', () => {
 		// Existing never-reviewed cards sort by entry id and consume the
 		// cap first; entry 1 and 4 stay out this session.
 		expect(queue).toEqual([
-			{ cardId: 'c2', entryId: 2, virtual: false },
-			{ cardId: 'c3', entryId: 3, virtual: false }
+			{ cardId: 'c2', entryId: 2, virtual: false, kind: 'vocab' },
+			{ cardId: 'c3', entryId: 3, virtual: false, kind: 'vocab' }
 		]);
 	});
 
@@ -189,8 +200,8 @@ describe('buildLevelQueue', () => {
 		});
 
 		expect(queue).toEqual([
-			{ cardId: 'c1', entryId: 1, virtual: false },
-			{ cardId: 'level:3', entryId: 3, virtual: true }
+			{ cardId: 'c1', entryId: 1, virtual: false, kind: 'vocab' },
+			{ cardId: 'level:3', entryId: 3, virtual: true, kind: 'vocab' }
 		]);
 	});
 
@@ -204,7 +215,7 @@ describe('buildLevelQueue', () => {
 			now: NOW
 		});
 
-		expect(queue).toEqual([{ cardId: 'level:2', entryId: 2, virtual: true }]);
+		expect(queue).toEqual([{ cardId: 'level:2', entryId: 2, virtual: true, kind: 'vocab' }]);
 	});
 
 	it('skips non-word entries', () => {
@@ -217,7 +228,7 @@ describe('buildLevelQueue', () => {
 			now: NOW
 		});
 
-		expect(queue).toEqual([{ cardId: 'level:2', entryId: 2, virtual: true }]);
+		expect(queue).toEqual([{ cardId: 'level:2', entryId: 2, virtual: true, kind: 'vocab' }]);
 	});
 
 	it('skips a non-word entry even when a card matches it', () => {
@@ -244,8 +255,8 @@ describe('buildLevelQueue', () => {
 		});
 
 		expect(queue).toEqual([
-			{ cardId: 'level:5', entryId: 5, virtual: true },
-			{ cardId: 'level:3', entryId: 3, virtual: true }
+			{ cardId: 'level:5', entryId: 5, virtual: true, kind: 'vocab' },
+			{ cardId: 'level:3', entryId: 3, virtual: true, kind: 'vocab' }
 		]);
 	});
 
@@ -260,6 +271,72 @@ describe('buildLevelQueue', () => {
 		});
 
 		// Still unreviewed as far as its own history goes, so it is new.
-		expect(queue).toEqual([{ cardId: 'c1', entryId: 1, virtual: false }]);
+		expect(queue).toEqual([{ cardId: 'c1', entryId: 1, virtual: false, kind: 'vocab' }]);
 	});
+});
+
+interface FixtureCase {
+	name: string;
+	unit: LevelUnit;
+	kinds: StudyCardKind[];
+	history: ZoneChange[];
+	now: string;
+	entries: { id: number; kind: string }[];
+	cards: { id: string; kind: StudyCardKind; entryId: number; createdAt: string }[];
+	reviews: { cardId: string; grade: ReviewGrade; ts: string }[];
+	newLimit: number;
+	reviewLimit: number;
+	queue: Record<string, unknown>[];
+	reserve: Record<string, unknown>[];
+}
+
+function strip(items: Record<string, unknown>[]): Record<string, unknown>[] {
+	return items.map(({ dropInSession, ...rest }) => {
+		void dropInSession;
+		return rest;
+	});
+}
+
+describe('character level queue fixtures', () => {
+	const cases = (fixtures as { cases: FixtureCase[] }).cases;
+
+	it('has the spec case list', () => {
+		expect(cases.map((c) => c.name)).toHaveLength(11);
+	});
+
+	for (const c of cases) {
+		it(c.name, () => {
+			const reviews = c.reviews.map((r, i) => ({
+				...review(r.cardId, r.grade, r.ts, eventId(i + 1)),
+				payload: {
+					cardId: r.cardId,
+					mode: c.cards.find((k) => k.id === r.cardId)?.kind ?? 'vocab',
+					grade: r.grade
+				}
+			}));
+			const plan = buildLevelPlan({
+				unit: c.unit,
+				kinds: c.kinds,
+				studyDay: studyDay(c.history),
+				entries: c.entries,
+				cards: c.cards.map((k) => ({ ...k, deckIds: ['general'] })),
+				reviews,
+				newLimit: c.newLimit,
+				reviewLimit: c.reviewLimit,
+				now: new Date(c.now),
+				w: DEFAULT_W
+			});
+			expect(plan.queue).toEqual(strip(c.queue));
+			expect(plan.reserve).toEqual(strip(c.reserve));
+		});
+	}
+});
+
+describe('level card ids', () => {
+	for (const c of (idFixtures as { cases: { virtualId: string; kind: StudyCardKind; entryId: number; cardId: string }[] }).cases) {
+		it(c.virtualId, () => {
+			expect(virtualLevelId(c.kind, c.entryId)).toBe(c.virtualId);
+			expect(newCardId(c.kind, c.entryId)).toBe(c.cardId);
+		});
+	}
 });

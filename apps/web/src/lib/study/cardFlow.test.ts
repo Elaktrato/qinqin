@@ -24,6 +24,7 @@ import {
 } from './cardFlow';
 import { parsePinyin } from './tones';
 import type { FlowItem } from './cardFlow';
+import type { LevelQueueItem } from './levelQueue';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 function card(
@@ -349,9 +350,9 @@ describe('deckSessionPlan and dropItem', () => {
 
 describe('levelSessionItems', () => {
 	const cards = [card('v1', 'vocab', 1)];
-	const queue = [
-		{ cardId: 'v1', entryId: 1, virtual: false },
-		{ cardId: 'level:2', entryId: 2, virtual: true }
+	const queue: LevelQueueItem[] = [
+		{ cardId: 'v1', entryId: 1, virtual: false, kind: 'vocab' },
+		{ cardId: 'level:2', entryId: 2, virtual: true, kind: 'vocab' }
 	];
 
 	it('maps level items to vocab flow items', () => {
