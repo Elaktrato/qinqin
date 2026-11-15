@@ -44,6 +44,7 @@
 	let pending = $state<InstalledPack | null>(null);
 	let uninstalling = $state(false);
 	let dialog = $state<HTMLDialogElement>();
+	let listHeading = $state<HTMLHeadingElement>();
 
 	const groups = $derived(groupPacks(packs));
 	const checking = $derived(phase === 'uploading' && progress.total > 0 && progress.loaded >= progress.total);
@@ -145,6 +146,7 @@
 			const result = await waitForImport(token, { signal: poll.signal });
 			if (result.status === 'done') {
 				notice = `Installed ${manifest.name}: ${result.summary ?? 'done'}.`;
+				if (result.warning) error = result.warning;
 				await load();
 			} else {
 				error = result.error ?? 'The import failed.';
@@ -186,6 +188,9 @@
 		} finally {
 			uninstalling = false;
 			closeDialog();
+			// The uninstalled row's button is gone: keep keyboard focus on the list.
+			await tick();
+			listHeading?.focus();
 		}
 	}
 
@@ -196,7 +201,7 @@
 </script>
 
 <section class="packs" aria-labelledby="packs-heading">
-	<h2 id="packs-heading">Packs</h2>
+	<h2 id="packs-heading" tabindex="-1" bind:this={listHeading}>Packs</h2>
 	<p class="hint">
 		Dictionaries, frequency lists, level lists, sentences and grammar lessons installed on this
 		server. Licences are shown as each pack states them; qinqin does not check them.
@@ -230,7 +235,7 @@
 	{/if}
 
 	{#if staged && (phase === 'review' || phase === 'importing')}
-		<div class="review" aria-labelledby="review-heading">
+		<div class="review" role="region" aria-labelledby="review-heading">
 			<h3 id="review-heading">Review before installing</h3>
 			<p class="hint">This is what the server read from the pack. Nothing is installed yet.</p>
 			<dl>

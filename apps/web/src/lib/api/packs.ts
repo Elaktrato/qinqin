@@ -1,4 +1,4 @@
-import { api } from './client';
+import { ApiError, api } from './client';
 import { uploadWithProgress, type UploadProgress } from './upload';
 
 export type PackType = 'dictionary' | 'frequency' | 'levels' | 'sentences' | 'grammar';
@@ -34,11 +34,16 @@ export interface StagedPack {
 	bytes: number;
 }
 
+/** The server's upload cap; a bigger zip is refused before it is sent. */
+export const MAX_PACK_UPLOAD = 128 * 1024 * 1024;
+
 export interface StagedStatus {
 	status: 'staged' | 'importing' | 'done' | 'failed';
 	pack?: InstalledPack;
 	summary?: string;
 	error?: string;
+	/** Set on a done import whose files could not be moved into place. */
+	warning?: string;
 }
 
 export interface SentencePack {
@@ -61,6 +66,11 @@ export function stagePack(
 	file: File,
 	opts: { onProgress?: (p: UploadProgress) => void; signal?: AbortSignal } = {}
 ): Promise<StagedPack> {
+	if (file.size > MAX_PACK_UPLOAD) {
+		return Promise.reject(
+			new ApiError(413, 'pack zip larger than 128 MiB — use qinqin seed for larger packs')
+		);
+	}
 	const form = new FormData();
 	form.append('pack', file, file.name);
 	return uploadWithProgress<StagedPack>('/api/admin/packs', form, opts);
