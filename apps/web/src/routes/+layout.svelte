@@ -169,9 +169,6 @@
 					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}
 						><NavIcon name={iconFor('search')} /><span class="label">Search</span></a
 					>
-					<a href="/stats" aria-current={inStats ? 'page' : undefined}
-						><NavIcon name={iconFor('stats')} /><span class="label">Stats</span></a
-					>
 					{#each pluginLinks as link (`${link.slug}:${link.title}`)}
 						<a
 							href={link.href}
@@ -254,6 +251,9 @@
 		{#if signedIn}
 			<footer class="footer">
 				<nav class="footer-links" aria-label="Footer">
+					<a href="/stats" aria-current={inStats ? 'page' : undefined}
+						><NavIcon name={iconFor('stats')} size={16} /><span>Stats</span></a
+					>
 					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
 						><NavIcon name={iconFor('sources')} size={16} /><span>Sources</span></a
 					>
