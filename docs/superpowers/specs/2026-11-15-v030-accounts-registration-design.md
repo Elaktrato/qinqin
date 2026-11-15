@@ -68,7 +68,7 @@ links must revoke them (the UI says so).
 Errors: 409 `username_taken`, 409 `email_taken`, 422 `weak_password`, 422 `invalid_username`,
 422 `email_required`, 422 `invalid_email`, 422 `email_disabled` (policy off and an email was sent).
 Username and email collisions are disclosed — unavoidable for registration — and rate-limited
-(#86 limiter, key `register`).
+(#86 per-client bucket, the same one login uses; there is no separate `register` key).
 
 ## 3. Invites
 

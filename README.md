@@ -203,7 +203,9 @@ uploads), so a read-only root filesystem is not enabled.
    see [Reverse proxy and HTTPS](#reverse-proxy-and-https)), and
    `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the stack.
 4. **First run, before exposing the port beyond your LAN** (until a user
-   exists, the first registration over the API becomes admin). Portainer:
+   exists, the first registration over the API becomes admin in every
+   registration mode; afterwards the default mode `closed` refuses everyone
+   but an administrator). Portainer:
    Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
 
    ```sh
@@ -350,7 +352,7 @@ Known-good marks live in their own table (also capped at 65,536), so a flood of
 new failing keys cannot erase them. A locked key is refused (429, `Retry-After`) before the password is checked,
 unknown usernames behave exactly like known ones, and an administrator creating
 users is not throttled. Errors of both routes are JSON `{"error","message"}`
-(`rate_limited`, `busy`, `bad_credentials`, `admin_required`,
+(`rate_limited`, `busy`, `bad_credentials`, `registration_closed`,
 `username_taken`, `bad_request`, `too_large`); see `docs/contracts/auth/`.
 A distributed attack can keep an account refused for new devices and networks
 while it lasts; the owner's usual device keeps signing in.
@@ -374,6 +376,45 @@ place by migration 032, existing passwords are grandfathered. A session whose us
 password (an administrator's temporary password) is restricted: it can only change the password,
 read `me`, log out and open the Sources page, and the web app sends it to the change page. The
 rules for clients are in `docs/contracts/auth/README.md`.
+
+#### Registration, invites and user management
+
+Who may create an account is an instance setting, **Settings, Admin, Security**: `closed` (the
+default: nobody registers, administrators create accounts), `invite` (only people holding an invite
+link) or `open` (anyone who reaches the server). The very first registration on an empty database always
+works and becomes the administrator, in every mode. An email policy decides whether addresses are
+collected: `off` (default: nothing personal is asked or shown), `optional` or `required` (new accounts
+need one; existing accounts are only asked, never locked out).
+
+**Invite links** (Admin, Invites): uses 1 to 100, expiry 1, 7, 30 or 90 days or none, an optional note.
+The link `https://your-server/register#invite=...` is shown once, when it is created; the server keeps
+only a hash, and the token sits in the URL fragment, which browsers never send to a server. Revoke a link
+at any time. While registration is `closed` invites are kept but inactive; an expired, used up, revoked or
+unknown link all get the same answer. **Administrator-created users** (Admin, Users) get a temporary
+password and must choose their own at the first sign-in; their sessions can do nothing else until then.
+**Reset links** (a row action) are shown once, last 24 hours by default (1 to 168) and may be used once: using
+one sets the password, signs the person out of every device and signs them in on this one. Disabling an
+account deletes its sessions and re-enabling never brings one back. The last active administrator cannot be
+demoted, disabled or deleted (the Admin tab says why; the server enforces it even when two admins act at the
+same moment). Pending reset links die with every containment action (a password change, a forced change, disabling, signing out
+everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. Deleting another user,
+issuing a reset link and making someone an administrator ask the acting administrator for their own password again.
+Email addresses are stored with the domain in its ASCII (punycode) form, so `bücher.de` and `xn--bcher-kva.de` are one
+address; a part before the `@` with non-ASCII letters is refused until internationalised mailboxes are supported. Every
+response carries `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`; at startup the server removes the book and
+photo folders of users that no longer exist. The audit log (Admin, Security) lists who did what, never a password,
+token or address.
+
+**Deleting an account** (an administrator, or you yourself in Settings, Account with your password and your
+username typed): the account and these are removed in one step: workspaces, study events, plugin data
+(flashcards, journal entries, reader settings), edited dictionary entries, sentences you added, library books
+with their bookmarks and highlights and their files, journal photo drafts and their files, AI keys and selection,
+AI usage records, time-zone history, sessions, reset links, invites the account created. **Kept**: admin-registered
+AI endpoints (their creator becomes nobody), installed packs, languages, plugins and dictionaries, and the audit log
+(the name in it becomes `deleted user #id`). The last active administrator cannot delete themselves. **Locked out?**
+`qinqin recover --username NAME [--enable] [--admin]` (new password from `QINQIN_PASSWORD` or stdin; a terminal echoes what is typed, so prefer the variable or a pipe; `--admin` on a disabled account needs `--enable`; it must be
+changed at the next sign-in; every session of that account ends; `--reset-mfa` is accepted and does nothing until
+two-factor authentication exists).
 
 Security notes. (1) Migration 032 stores only hashes of the session tokens and zeroes the database pages that
 held the old plaintext ones (including the write-ahead log once it is checkpointed), but **a backup taken before the
@@ -895,7 +936,14 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
-| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (the first user on an empty database becomes the admin without a token; afterwards an admin token is required; username and password follow the policy below), log in (`{username, password, deviceName?}` answers `{status: "ok" \| "password_change_required", token, user}`), read the current user and the session's `restriction`. Login and register bodies up to 4 KiB |
+| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (`{username, password, email?, invite?}`: the first user on an empty database becomes the admin without a token; afterwards the registration mode decides: `closed` 403 `registration_closed`, `invite` needs a valid invite (403 `invite_invalid`), `open` takes anyone; an admin token still creates a plain user; username, password and email follow the policies), log in (`{username, password, deviceName?}` answers `{status: "ok" \| "password_change_required", token, user}`), read the current user and the session's `restriction`. Login and register bodies up to 4 KiB |
+| `GET /api/auth/options` | Public: `{bootstrap, registration, emailPolicy, passwordReset, emailCodeLogin, passwordMinLength}`, never cached |
+| `POST /api/auth/invite/check` `{invite}`, `POST /api/auth/reset/check` `{token}`, `POST /api/auth/reset` `{token, password, deviceName?}` | Public: is this invite usable (403 `invite_invalid`); whose reset link is this (400 `token_invalid`); spend a reset link (login-shaped answer) |
+| `GET`/`PATCH /api/admin/settings/auth` | Admin: registration mode, email policy (and, once mail exists, MFA / email-code switches; 409 `mail_unavailable` before) |
+| `GET`/`POST /api/admin/invites`, `DELETE /api/admin/invites/{id}` | Admin: list (never a token), create (`{maxUses, expiresInDays, note}`; the token and `path` only in the 201), revoke |
+| `GET`/`POST /api/admin/users`, `GET`/`PATCH /api/admin/users/{id}`, `POST …/{id}/sessions/revoke`, `POST …/{id}/reset-link`, `GET …/{id}/deletion-preview`, `DELETE …/{id}` `{confirm}` | Admin user management (409 `last_admin`, 409 `self_target`, 422 `confirm_mismatch`) |
+| `GET /api/admin/audit?before&limit` | Admin: audit events, newest first, `next` id for the following page |
+| `PUT /api/account/email` `{email, currentPassword}`, `GET /api/account/deletion-preview`, `DELETE /api/account` `{password, confirm}` | Set or clear your own address under the email policy; what deleting your account removes; delete it |
 | `POST /api/auth/logout` | Ends the session the request came in on (204); allowed for a restricted session |
 | `POST /api/account/password` `{currentPassword, newPassword, signOutOthers?}` | Change the caller's password; wrong current password is 403 `wrong_password`, a policy failure 422; other sessions are signed out unless `signOutOthers` is false (always after a forced change) |
 | `GET /api/account/sessions`, `DELETE /api/account/sessions/{id}`, `POST /api/account/sessions/revoke` `{scope: "others" \| "all"}` | The caller's signed-in devices (no tokens), end one (204; another user's id is 404), end the others or all |
@@ -1372,7 +1420,7 @@ Dockerfile copies that directory into the Go binary before compiling.
 
 | Path | Contents |
 |---|---|
-| `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`) |
+| `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`, `recover`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
 | `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |

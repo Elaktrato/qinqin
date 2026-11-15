@@ -1,14 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
-	import { changePassword, listSessions, revokeSession, revokeSessions } from '$lib/api/account';
+	import {
+		changePassword,
+		getAuthOptions,
+		listSessions,
+		putEmail,
+		revokeSession,
+		revokeSessions,
+		type AuthOptions
+	} from '$lib/api/account';
+	import EmailBanner from '$lib/account/EmailBanner.svelte';
+	import { emailSection } from '$lib/account/emailView';
+	import DeleteAccountDialog from './DeleteAccountDialog.svelte';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
 	import {
 		LOGOUT_EVERYWHERE_CONFIRM,
 		sessionRows,
 		type SessionDto
 	} from '$lib/account/sessionsView';
-	import { logout, user } from '$lib/auth';
+	import { loadMe, logout, user } from '$lib/auth';
 
 	let current = $state('');
 	let next = $state('');
@@ -42,7 +53,41 @@
 		}
 	}
 
-	onMount(() => void loadSessions());
+	// Profile: the email field follows the instance policy.
+	let emailPolicy = $state<AuthOptions['emailPolicy'] | null>(null);
+	let emailDraft = $state('');
+	let emailPassword = $state('');
+	let emailError = $state('');
+	let emailDone = $state('');
+	let emailBusy = $state(false);
+	let deleting = $state(false);
+	const emailView = $derived(emailSection(emailPolicy, $user?.email ?? null));
+
+	async function saveEmail(next: string | null): Promise<void> {
+		if (emailBusy) return;
+		emailError = emailDone = '';
+		emailBusy = true;
+		try {
+			await putEmail(next, emailPassword);
+			emailDone = next === null ? 'Email address removed.' : 'Email address saved.';
+			emailPassword = emailDraft = '';
+			await loadMe();
+		} catch (err) {
+			const body = apiErrorBody(err);
+			emailError =
+				body?.error === 'wrong_password' ? 'The password is wrong.' : message(err, 'Could not save the email address.');
+		} finally {
+			emailBusy = false;
+		}
+	}
+
+	onMount(() => {
+		void loadSessions();
+		getAuthOptions().then(
+			(o) => (emailPolicy = o.emailPolicy),
+			() => undefined
+		);
+	});
 
 	async function submitPassword(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
@@ -117,6 +162,43 @@
 		}
 	}
 </script>
+
+<section aria-labelledby="account-profile-heading" class="block">
+	<h2 id="account-profile-heading">Profile</h2>
+	<p>Username: <strong>{$user?.username}</strong></p>
+	<EmailBanner link={false} />
+	{#if emailView.visible}
+		<form
+			onsubmit={(event) => {
+				event.preventDefault();
+				void saveEmail(emailDraft.trim() === '' ? null : emailDraft.trim());
+			}}
+			class="stack"
+		>
+			<p class="hint">
+				{#if $user?.email}Current address: {$user.email}{:else}No address saved.{/if}
+			</p>
+			<label>
+				{emailView.label}
+				<input type="email" autocomplete="email" bind:value={emailDraft} />
+			</label>
+			<label>
+				Your password
+				<input type="password" autocomplete="current-password" bind:value={emailPassword} required />
+			</label>
+			{#if emailError}<p class="error" role="alert">{emailError}</p>{/if}
+			<p class="ok" role="status">{emailDone}</p>
+			<div class="actions">
+				<button type="submit" disabled={emailBusy || emailDraft.trim() === ''}>Save email</button>
+				{#if emailView.canClear}
+					<button type="button" disabled={emailBusy || emailPassword === ''} onclick={() => saveEmail(null)}
+						>Remove email</button
+					>
+				{/if}
+			</div>
+		</form>
+	{/if}
+</section>
 
 <section aria-labelledby="account-password-heading" class="block">
 	<h2 id="account-password-heading">Password</h2>
@@ -204,6 +286,23 @@
 		</div>
 	{/if}
 </section>
+
+<section aria-labelledby="account-delete-heading" class="block">
+	<h2 id="account-delete-heading">Delete account</h2>
+	<p class="hint">Permanently deletes your account and everything in it.</p>
+	<button type="button" onclick={() => (deleting = true)}>Delete my account…</button>
+</section>
+
+{#if deleting && $user}
+	<DeleteAccountDialog
+		username={$user.username}
+		onclose={() => (deleting = false)}
+		ondone={() => {
+			deleting = false;
+			logout();
+		}}
+	/>
+{/if}
 
 <style>
 	.block {

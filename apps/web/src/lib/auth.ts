@@ -2,6 +2,7 @@ import { clearAudioCache } from './api/audio';
 import { clearClipCache } from './audio/source';
 import { derived, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
+import { hasSession, stepFor } from './account/loginFlow';
 import { clearStudyDay } from './time/zone';
 import {
 	api,
@@ -90,12 +91,23 @@ export async function login(username: string, password: string): Promise<User> {
 		body: { username, password }
 	});
 
-	setToken(response.token);
+	// A status this client does not know must not store a session.
+	if (!hasSession(stepFor(response.status))) throw new Error('This sign-in step is not supported by this app version.');
+	return signInWithToken(response.token);
+}
+
+/**
+ * signInWithToken stores a token the server just issued (login, reset link)
+ * and loads its user. A token without a user is no session: when /me fails
+ * the token is forgotten so the page can show the error.
+ */
+export async function signInWithToken(token: string): Promise<User> {
+	setToken(token);
 
 	// A token without a user is no session: when /me fails, forget the token
 	// (a 401 already did) so the sign-in page can show the error.
 	try {
-		const me = await loadMe(response.token);
+		const me = await loadMe(token);
 		if (!me) throw new Error('login did not return a user');
 		return me;
 	} catch (err) {
@@ -110,11 +122,15 @@ export async function login(username: string, password: string): Promise<User> {
  * fresh instance becomes admin; afterwards the API requires an admin
  * token, so callers on the register page are unauthenticated.
  */
-export async function register(username: string, password: string): Promise<User> {
-	const created = await api<User>('/api/auth/register', {
-		method: 'POST',
-		body: { username, password }
-	});
+export async function register(
+	username: string,
+	password: string,
+	extra: { email?: string; invite?: string } = {}
+): Promise<User> {
+	const body: Record<string, string> = { username, password };
+	if (extra.email) body.email = extra.email;
+	if (extra.invite) body.invite = extra.invite;
+	const created = await api<User>('/api/auth/register', { method: 'POST', body });
 
 	await login(username, password);
 	return created;

@@ -276,3 +276,28 @@ func TestServeRejectsBadTrustedProxies(t *testing.T) {
 		t.Fatalf("serveCmd error = %v, want one naming QINQIN_TRUSTED_PROXIES and the item", err)
 	}
 }
+
+// Every response, API or static, tells browsers not to send a Referer and
+// not to be framed.
+func TestRootHandlerSetsBrowserHeaders(t *testing.T) {
+	web := fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("<!doctype html>")}}
+	stub := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, "api") })
+	srv := httptest.NewServer(rootHandler(web, stub))
+	defer srv.Close()
+	for _, path := range []string{"/", "/register", "/api/auth/options", "/healthz", "/missing.js"} {
+		resp, err := http.Get(srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if got := resp.Header.Get("Referrer-Policy"); got != "no-referrer" {
+			t.Errorf("%s: Referrer-Policy = %q", path, got)
+		}
+		if got := resp.Header.Get("X-Frame-Options"); got != "DENY" {
+			t.Errorf("%s: X-Frame-Options = %q", path, got)
+		}
+		if got := resp.Header.Get("Content-Security-Policy"); got != "" {
+			t.Errorf("%s: unexpected CSP %q", path, got)
+		}
+	}
+}

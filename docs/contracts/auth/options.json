@@ -1,0 +1,23 @@
+{
+  "_doc": "GET /api/auth/options is public and never cached. Read it before showing sign-in or register. bootstrap is true while no user exists (the first registration always works and becomes the administrator). passwordReset and emailCodeLogin are the EFFECTIVE values: false while no mail server is configured.",
+  "bootstrap": {
+    "request": {"method": "GET", "path": "/api/auth/options"},
+    "status": 200,
+    "body": {"bootstrap": true, "registration": "closed", "emailPolicy": "off", "passwordReset": false, "emailCodeLogin": false, "passwordMinLength": 10}
+  },
+  "closed": {
+    "request": {"method": "GET", "path": "/api/auth/options"},
+    "status": 200,
+    "body": {"bootstrap": false, "registration": "closed", "emailPolicy": "off", "passwordReset": false, "emailCodeLogin": false, "passwordMinLength": 10}
+  },
+  "invite": {
+    "request": {"method": "GET", "path": "/api/auth/options"},
+    "status": 200,
+    "body": {"bootstrap": false, "registration": "invite", "emailPolicy": "optional", "passwordReset": false, "emailCodeLogin": false, "passwordMinLength": 10}
+  },
+  "open": {
+    "request": {"method": "GET", "path": "/api/auth/options"},
+    "status": 200,
+    "body": {"bootstrap": false, "registration": "open", "emailPolicy": "required", "passwordReset": false, "emailCodeLogin": false, "passwordMinLength": 10}
+  }
+}

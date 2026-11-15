@@ -191,6 +191,9 @@ func RevokeOthersAudited(ctx context.Context, sqlDB *sql.DB, userID, exceptSessi
 	if err != nil {
 		return 0, err
 	}
+	if err := dropPendingResets(ctx, tx, userID); err != nil {
+		return 0, err
+	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: userID, TargetID: &userID,
 		Detail: map[string]any{"scope": scope, "revoked": n}}); err != nil {
 		return 0, err

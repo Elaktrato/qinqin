@@ -49,6 +49,9 @@ func ChangePassword(ctx context.Context, sqlDB *sql.DB, userID int64, newHash st
 			return err
 		}
 	}
+	if err := dropPendingResets(ctx, tx, userID); err != nil {
+		return err
+	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "password_changed", ActorID: userID, TargetID: &userID,
 		Detail: map[string]any{"forced": forced != 0, "signedOutOthers": revoked}}); err != nil {
 		return err
@@ -72,6 +75,14 @@ func ForcePasswordChange(ctx context.Context, sqlDB *sql.DB, userID, actorID int
 		return fmt.Errorf("begin force change: %w", err)
 	}
 	defer tx.Rollback()
+	if err := forceChangeTx(ctx, tx, userID, actorID); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// forceChangeTx is ForcePasswordChange inside the caller's transaction.
+func forceChangeTx(ctx context.Context, tx *sql.Tx, userID, actorID int64) error {
 	res, err := tx.ExecContext(ctx, `
 		UPDATE users SET must_change_password = 1, updated_at = ?,
 		       must_change_after = COALESCE((SELECT seq FROM sqlite_sequence WHERE name = 'sessions'), 0)
@@ -86,9 +97,9 @@ func ForcePasswordChange(ctx context.Context, sqlDB *sql.DB, userID, actorID int
 	if err != nil {
 		return err
 	}
-	if err := Audit(ctx, tx, AuditEvent{Action: "password_change_forced", ActorID: actorID, TargetID: &userID,
-		Detail: map[string]any{"signedOutOthers": revoked}}); err != nil {
+	if err := dropPendingResets(ctx, tx, userID); err != nil {
 		return err
 	}
-	return tx.Commit()
+	return Audit(ctx, tx, AuditEvent{Action: "password_change_forced", ActorID: actorID, TargetID: &userID,
+		Detail: map[string]any{"signedOutOthers": revoked}})
 }

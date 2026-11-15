@@ -111,3 +111,14 @@ describe("authErrorMessage", () => {
     expect(authErrorMessage("weird", "Login failed.")).toBe("Login failed.");
   });
 });
+
+describe('registration errors', () => {
+	const sentence = (code: string) => authErrorMessage(new ApiError(403, json(code, 'x')), 'f');
+	it('words every registration code', () => {
+		expect(sentence('registration_closed')).toContain('Registration is closed');
+		expect(sentence('invite_invalid')).toBe('This invite link is no longer valid.');
+		expect(sentence('email_required')).toBe('An email address is required.');
+		expect(sentence('email_taken')).toBe('That email address is already in use.');
+		expect(sentence('token_invalid')).toContain('not valid any more');
+	});
+});

@@ -57,6 +57,7 @@ type server struct {
 	authPolicy *AuthPolicy // nil: DefaultAuthPolicy
 	limits     *authLimits // sign-in throttling state, built by New
 	hash       hashers     // password hashing entry points (tests swap them)
+	users      *auth.Users // admin changes of the users table (last-admin rule, deletion)
 }
 
 // Option configures optional parts of the server.
@@ -89,6 +90,7 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 		policy = *s.authPolicy
 	}
 	s.limits = newAuthLimits(policy)
+	s.users = auth.NewUsers(sqlDB)
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
 		go s.runStageSweeper()
@@ -139,6 +141,28 @@ func (s *server) routes() []route {
 		{"GET /api/account/sessions", s.handleListSessions, accUser, nil},
 		{"DELETE /api/account/sessions/{id}", s.handleRevokeSession, accUser, nil},
 		{"POST /api/account/sessions/revoke", s.handleRevokeSessions, accUser, nil},
+		{"GET /api/auth/options", s.handleAuthOptions, accPublic, nil},
+		{"GET /api/admin/settings/auth", s.handleGetAuthSettings, accAdmin, nil},
+		{"PATCH /api/admin/settings/auth", s.handlePatchAuthSettings, accAdmin, nil},
+		{"POST /api/auth/invite/check", s.handleCheckInvite, accPublic, nil},
+		{"POST /api/admin/invites", s.handleCreateInvite, accAdmin, nil},
+		{"GET /api/admin/invites", s.handleListInvites, accAdmin, nil},
+		{"DELETE /api/admin/invites/{id}", s.handleRevokeInvite, accAdmin, nil},
+		{"GET /api/admin/users", s.handleAdminListUsers, accAdmin, nil},
+		{"POST /api/admin/users", s.handleAdminCreateUser, accAdmin, nil},
+		{"GET /api/admin/users/{id}", s.handleAdminGetUser, accAdmin, nil},
+		{"PATCH /api/admin/users/{id}", s.handleAdminPatchUser, accAdmin, nil},
+		{"POST /api/admin/users/{id}/sessions/revoke", s.handleAdminRevokeSessions, accAdmin, nil},
+		{"POST /api/admin/users/{id}/reset-link", s.handleAdminResetLink, accAdmin, nil},
+		{"DELETE /api/admin/users/{id}/reset-link", s.handleAdminRevokeResetLink, accAdmin, nil},
+		{"POST /api/auth/reset/check", s.handleResetCheck, accPublic, nil},
+		{"POST /api/auth/reset", s.handleReset, accPublic, nil},
+		{"GET /api/admin/users/{id}/deletion-preview", s.handleAdminDeletionPreview, accAdmin, nil},
+		{"DELETE /api/admin/users/{id}", s.handleAdminDeleteUser, accAdmin, nil},
+		{"PUT /api/account/email", s.handlePutEmail, accUser, nil},
+		{"GET /api/account/deletion-preview", s.handleAccountDeletionPreview, accUser, nil},
+		{"DELETE /api/account", s.handleDeleteAccount, accUser, nil},
+		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil},
 		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil},
 		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil},
 		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},

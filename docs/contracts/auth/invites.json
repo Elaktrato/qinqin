@@ -1,0 +1,32 @@
+{
+  "_doc": "Invite links. The token appears only in the create response and in the link fragment (/register#invite=<token>), which is never sent to a server. The list never carries a token. state is active | expired | used_up | revoked | inactive (inactive: registration is closed). One answer (403 invite_invalid) for every kind of bad token.",
+  "create": {
+    "request": {"method": "POST", "path": "/api/admin/invites", "body": {"maxUses": 5, "expiresInDays": 7, "note": "class of 2026"}},
+    "status": 201,
+    "body": {
+      "invite": {"id": 1, "note": "class of 2026", "maxUses": 5, "uses": 0, "expiresAt": "2026-11-22T12:00:00Z", "createdAt": "2026-11-15T12:00:00Z", "createdBy": {"id": 1, "name": "alice"}, "state": "active"},
+      "token": "tok_example",
+      "path": "/register#invite=<token>"
+    }
+  },
+  "list": {
+    "request": {"method": "GET", "path": "/api/admin/invites"},
+    "status": 200,
+    "body": {"invites": [{"id": 1, "note": "class of 2026", "maxUses": 5, "uses": 2, "expiresAt": null, "createdAt": "2026-11-15T12:00:00Z", "createdBy": {"id": 1, "name": "alice"}, "state": "active"}]}
+  },
+  "revoke": {
+    "request": {"method": "DELETE", "path": "/api/admin/invites/{id}"},
+    "status": 204,
+    "body": null
+  },
+  "check_ok": {
+    "request": {"method": "POST", "path": "/api/auth/invite/check", "body": {"invite": "<token>"}},
+    "status": 200,
+    "body": {"expiresAt": "2026-11-22T12:00:00Z", "emailPolicy": "off"}
+  },
+  "check_invalid": {
+    "request": {"method": "POST", "path": "/api/auth/invite/check", "body": {"invite": "<token>"}},
+    "status": 403,
+    "body": {"error": "invite_invalid", "message": "This invite link is no longer valid."}
+  }
+}
