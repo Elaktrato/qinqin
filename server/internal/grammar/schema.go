@@ -31,7 +31,7 @@ type SchemeLevel struct {
 type Level struct {
 	ID           string        `json:"id"`
 	Name         string        `json:"name"`
-	SchemeLevels []SchemeLevel `json:"schemeLevels,omitempty"`
+	SchemeLevels []SchemeLevel `json:"schemeLevels"`
 }
 
 // Example is one example sentence of a lesson. Focus is the grammar word
@@ -40,10 +40,10 @@ type Level struct {
 type Example struct {
 	ID          string   `json:"id"`
 	Text        string   `json:"text"`
-	Reading     string   `json:"reading,omitempty"`
+	Reading     string   `json:"reading"`
 	Translation string   `json:"translation"`
-	Focus       string   `json:"focus,omitempty"`
-	Distractors []string `json:"distractors,omitempty"`
+	Focus       string   `json:"focus"`
+	Distractors []string `json:"distractors"`
 }
 
 // Lesson is one grammar lesson. All text is plain text.
@@ -52,7 +52,7 @@ type Lesson struct {
 	Level    string    `json:"level"`
 	Title    string    `json:"title"`
 	Summary  string    `json:"summary"`
-	Pattern  []string  `json:"pattern,omitempty"`
+	Pattern  []string  `json:"pattern"`
 	Body     []string  `json:"body"`
 	Examples []Example `json:"examples"`
 }
@@ -97,7 +97,29 @@ func ReadData(dir string) (Data, error) {
 	if err := d.validate(); err != nil {
 		return Data{}, fmt.Errorf("%w: %s of %s: %v", dict.ErrInvalidPack, lessonsFile, dir, err)
 	}
+	d.normalize()
 	return d, nil
+}
+
+// normalize turns absent lists into empty ones, so every consumer (the
+// stored JSON and the API) sees arrays, never null.
+func (d *Data) normalize() {
+	for i := range d.Levels {
+		if d.Levels[i].SchemeLevels == nil {
+			d.Levels[i].SchemeLevels = []SchemeLevel{}
+		}
+	}
+	for i := range d.Lessons {
+		l := &d.Lessons[i]
+		if l.Pattern == nil {
+			l.Pattern = []string{}
+		}
+		for j := range l.Examples {
+			if l.Examples[j].Distractors == nil {
+				l.Examples[j].Distractors = []string{}
+			}
+		}
+	}
 }
 
 func runes(s string) int { return utf8.RuneCountInString(s) }
