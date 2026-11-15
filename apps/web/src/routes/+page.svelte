@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { APP_NAME } from '$lib/app';
+	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import { webPlugins } from '$lib/plugins';
 	import { pluginStates } from '$lib/plugins/states';
 	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
@@ -48,6 +49,8 @@
 
 <main class="home">
 	<h1>{APP_NAME}</h1>
+
+	<EmailBanner />
 
 	<form class="search" role="search" onsubmit={search}>
 		<input

@@ -287,3 +287,75 @@ func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
+
+// handlePutEmail serves PUT /api/account/email {email: string|null,
+// currentPassword}: the caller sets or clears their own address under the
+// instance policy (off refuses an address, required refuses clearing). The
+// password is asked again (403 wrong_password, reauth limiter): an address
+// is a recovery channel. The address stays unverified until plan 3's code
+// check.
+func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
+	p := s.requirePrincipal(w, r, restrictionMFAEnrollment)
+	if p == nil {
+		return
+	}
+	var req struct {
+		Email           *string `json:"email"`
+		CurrentPassword string  `json:"currentPassword"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	set, err := auth.LoadSettings(r.Context(), s.db)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	var nu auth.NewUser
+	if !s.applyEmail(w, r, set.EmailPolicy, req.Email, &nu, p.User.ID) {
+		return
+	}
+	if req.CurrentPassword == "" {
+		writeAuthError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
+		return
+	}
+	refund, ok := s.reauth(w, p.User.ID)
+	if !ok {
+		return
+	}
+	var good bool
+	err = s.withHashGate(r.Context(), func() error {
+		var e error
+		good, e = auth.VerifyUserPassword(r.Context(), s.db, p.User.ID, req.CurrentPassword)
+		return e
+	})
+	switch {
+	case err != nil && r.Context().Err() != nil:
+		writeClientGone(w)
+		return
+	case errors.Is(err, errHashBusy):
+		refund()
+		writeBusy(w)
+		return
+	case err != nil:
+		refund()
+		writeInternal(w, r)
+		return
+	case !good:
+		writeAuthError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
+		return
+	}
+	refund()
+	if err := auth.SetOwnEmail(r.Context(), s.db, p.User.ID, nu.Email, nu.EmailNorm); err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	u, err := auth.LoadUser(r.Context(), s.db, p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"email": u.Email, "emailVerified": u.EmailVerified})
+}

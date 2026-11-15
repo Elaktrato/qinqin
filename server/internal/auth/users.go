@@ -379,3 +379,34 @@ func (u *Users) IssueReset(ctx context.Context, actorID, id int64, ttl time.Dura
 	defer u.mu.Unlock()
 	return IssueReset(ctx, u.DB, actorID, id, ttl)
 }
+
+// SetOwnEmail stores (or, with nil, clears) the user's own address. A
+// self-entered address is unverified; re-saving the same address (any
+// letter case) keeps its verification. ErrEmailTaken when another account
+// has it.
+func SetOwnEmail(ctx context.Context, sqlDB *sql.DB, userID int64, email, norm *string) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin set email: %w", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `
+		UPDATE users SET
+		  email_verified_at = CASE WHEN ?2 IS NOT NULL AND email_norm IS ?2 THEN email_verified_at ELSE NULL END,
+		  email = ?1, email_norm = ?2, updated_at = ?3
+		WHERE id = ?4`, email, norm, now(), userID)
+	if err != nil {
+		if isUniqueViolation(err) {
+			return ErrEmailTaken
+		}
+		return fmt.Errorf("set email: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrUserNotFound
+	}
+	if err := Audit(ctx, tx, AuditEvent{Action: "settings_changed", ActorID: userID, TargetID: &userID,
+		Detail: map[string]any{"field": "email", "to": email != nil}}); err != nil {
+		return err
+	}
+	return tx.Commit()
+}

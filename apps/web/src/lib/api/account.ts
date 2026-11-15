@@ -49,3 +49,27 @@ export function checkReset(token: string): Promise<{ username: string; expiresAt
 export function useReset(token: string, password: string): Promise<{ status: string; token: string }> {
 	return api('/api/auth/reset', { method: 'POST', body: { token, password }, auth: false });
 }
+
+export function putEmail(email: string | null, currentPassword: string): Promise<{ email: string | null; emailVerified: boolean }> {
+	return api('/api/account/email', { method: 'PUT', body: { email, currentPassword } });
+}
+
+export interface SelfDeletionPreview {
+	workspaces: number;
+	studyEvents: number;
+	pluginData: number;
+	books: number;
+	journalPhotos: number;
+	aiKeys: number;
+	sessions: number;
+	overlays: number;
+	sentences: number;
+}
+
+export function accountDeletionPreview(): Promise<SelfDeletionPreview> {
+	return api('/api/account/deletion-preview');
+}
+
+export function deleteAccount(password: string, confirm: string): Promise<void> {
+	return api('/api/account', { method: 'DELETE', body: { password, confirm } });
+}
