@@ -179,3 +179,61 @@ describe('study setup, level sessions', () => {
 		expect(start.disabled).toBe(false);
 	});
 });
+
+describe('study setup, reverse and cloze checkboxes', () => {
+	function deckSetup(): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({
+				mode: 'decks',
+				schemeId: null,
+				levelName: null,
+				deckIds: ['general'],
+				newLimit: 20,
+				reviewLimit: 100,
+				cardTypes: ['vocab']
+			})
+		);
+		vi.mocked(getSchemes).mockResolvedValue([]);
+	}
+
+	function withSettings(cardTypes: string[]): void {
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [],
+			cards: [],
+			reviews: [],
+			merged: 0,
+			deckSettings: { general: { deckId: 'general', cardTypes, extra: {} } }
+		} as never);
+	}
+
+	const box = (name: RegExp) =>
+		document.querySelector(`.types input[aria-describedby="type-${name.source}-info"]`) as HTMLInputElement | null;
+
+	it('shows no Reverse or Cloze checkbox when no selected deck enables them', async () => {
+		deckSetup();
+		render(Page);
+		await screen.findByText(/This session/);
+		expect(box(/reverse/)).toBeNull();
+		expect(box(/cloze/)).toBeNull();
+	});
+
+	it('shows the enabled kinds, checked by default', async () => {
+		deckSetup();
+		withSettings(['reverse']);
+		render(Page);
+		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
+		expect(box(/reverse/)!.checked).toBe(true);
+		expect(box(/cloze/)).toBeNull();
+	});
+
+	it('starts unchecked after the learner unchecked it before in this workspace', async () => {
+		deckSetup();
+		withSettings(['reverse', 'cloze']);
+		localStorage.setItem('qinqin.study.extraTypes', JSON.stringify({ '1': { cloze: false } }));
+		render(Page);
+		await waitFor(() => expect(box(/cloze/)).not.toBeNull());
+		expect(box(/reverse/)!.checked).toBe(true);
+		expect(box(/cloze/)!.checked).toBe(false);
+	});
+});

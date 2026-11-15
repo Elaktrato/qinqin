@@ -5,7 +5,7 @@
 
 import type { Workspace } from './api/types';
 import { workspaceDisplay } from './languages';
-import { LAST_CARD_TYPES_KEY } from './study/cardTypesMemory';
+import { EXTRA_TYPES_KEY, LAST_CARD_TYPES_KEY } from './study/cardTypesMemory';
 import { PENDING_REVIEWS_KEY } from './study/events';
 import { INELIGIBLE_KEY } from './study/ineligible';
 
@@ -83,6 +83,7 @@ export function forgetWorkspace(id: number, local: Storage | null, session: Stor
 			for (const key of doomed) local.removeItem(key);
 		});
 		attempt(() => dropEntry(local, LAST_CARD_TYPES_KEY, id));
+		attempt(() => dropEntry(local, EXTRA_TYPES_KEY, id));
 		attempt(() => dropPending(local, id));
 	}
 	if (session !== null) {

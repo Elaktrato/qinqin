@@ -629,6 +629,26 @@ workspace (the home widget counts the same types).
 | **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Reveal character** animates it | Han characters with bundled stroke data; kana stay visible |
 | **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
 
+**Reverse and cloze cards** are opt-in per deck. Each deck row on `/study` has a
+Reverse and a Cloze switch (stored per deck, General included); a deck that never
+turns them on behaves exactly as before. In a session, their checkboxes appear
+when a selected deck enables the kind and start checked unless you unchecked that
+kind before in this workspace.
+
+| Type | What you do | Needs |
+|---|---|---|
+| **Reverse** | See the meaning, recall the word; optionally **Show reading** (a hint) and type the word, then **Show answer** | a word (not a character) with a gloss |
+| **Cloze** | Fill the gap in an example sentence of the word (choose at first, type once it is learned); the translation is shown, the reading after the answer | a word with an example sentence that contains it |
+
+Both are created the first time you grade them, like the other companions, with
+one reverse or cloze card at most per word and session (reverse first). A word's
+other cards are **buried until your next learner day** once a reverse or cloze
+card of it is answered (and the other way round); vocab, sentence, writing and
+tone cards do not bury each other. Buried cards stay due and are left out of the
+queue and the due counts. Reverse and cloze reviews give XP and count for streaks
+and the heatmap, but not for character mastery. Rules and fixtures for other
+clients: `docs/contracts/cards/`.
+
 Sentence, writing and tone cards are **companions** of the vocab cards in the
 chosen decks. They are planned as virtual cards that share the new-card limit, and
 each one is created only when you grade it for the first time. Abandoning a

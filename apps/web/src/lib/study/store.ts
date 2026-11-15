@@ -8,7 +8,7 @@ import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
 import { workspaces } from "../workspaces";
 import type { StudyEvent } from "../events";
-import { canonicalCards, compareCanonical, newCardId } from "./canonical";
+import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
 import {
   ACTIVE_KEY,
   DEFAULT_W,
@@ -17,10 +17,19 @@ import {
   resolveState,
   type ParamSet,
 } from "./fsrs/params";
+import {
+  DECKCFG_PREFIX,
+  deckSettingsKey,
+  parseDeckSettings,
+  serializeDeckSettings,
+  cleanCardTypes,
+  type DeckSettings,
+} from "./deckSettings";
 import { cardKey, parseReview } from "./reviewParse";
 import {
   CARD_KINDS,
   type Deck,
+  type OptInKind,
   type ReviewEvent,
   type StudyCard,
   type StudyCardKind,
@@ -123,7 +132,7 @@ function parseDeck(key: string, raw: unknown): Deck | null {
 
 function parseCard(key: string, raw: unknown): StudyCard | null {
   if (!isRecord(raw)) return null;
-  const { id, kind, entryId, sentenceId, deckIds, createdAt, written, entryKind } = raw;
+  const { id, kind, entryId, sentenceId, deckIds, createdAt, written, entryKind, skipKinds } = raw;
   if (typeof id !== "string" || typeof entryId !== "number") return null;
   if (!CARD_KINDS.includes(kind as StudyCardKind)) return null;
   if (typeof createdAt !== "string") return null;
@@ -150,6 +159,10 @@ function parseCard(key: string, raw: unknown): StudyCard | null {
   if (typeof sentenceId === "number") {
     card.sentenceId = sentenceId;
   }
+  if (kind === "vocab" && Array.isArray(skipKinds)) {
+    const skipped = cleanSkipKinds(skipKinds);
+    if (skipped.length > 0) card.skipKinds = skipped;
+  }
   return card;
 }
 
@@ -165,6 +178,7 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
   const decks: Deck[] = [];
   const cards: StudyCard[] = [];
   const sets: ParamSet[] = [];
+  const deckSettings: Record<string, DeckSettings> = {};
   let activeRaw: unknown = null;
 
   for (const value of rows) {
@@ -181,6 +195,9 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
     } else if (row.key.startsWith(CARD_PREFIX)) {
       const card = parseCard(row.key, data);
       if (card !== null) cards.push(card);
+    } else if (row.key.startsWith(DECKCFG_PREFIX)) {
+      const settings = parseDeckSettings(row.key, data);
+      if (settings !== null) deckSettings[settings.deckId] = settings;
     } else if (row.key.startsWith(SET_PREFIX)) {
       const set = parseParamSet(row.key, data);
       if (set !== null) sets.push(set);
@@ -189,7 +206,14 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
     }
   }
 
-  return { decks, cards, fsrs: resolveState(sets, activeRaw) };
+  // Absent (not empty) without any deckcfg row: workspaces that never
+  // configured a deck read exactly as before.
+  return {
+    decks,
+    cards,
+    fsrs: resolveState(sets, activeRaw),
+    ...(Object.keys(deckSettings).length > 0 ? { deckSettings } : {}),
+  };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -285,7 +309,14 @@ export async function loadStudyDataWith(
     data.cards,
     reviewsOf(workspaceId, events),
   );
-  return { decks: data.decks, cards, fsrs: data.fsrs, reviews, merged };
+  return {
+    decks: data.decks,
+    cards,
+    fsrs: data.fsrs,
+    ...(data.deckSettings === undefined ? {} : { deckSettings: data.deckSettings }),
+    reviews,
+    merged,
+  };
 }
 
 /**
@@ -381,7 +412,7 @@ export async function deleteDeck(id: string): Promise<void> {
     // The implicit deck has no stored row to tombstone and must survive.
     throw new Error("the general deck cannot be deleted");
   }
-  const { cards } = await fetchStudyData(workspaceId);
+  const { cards, deckSettings } = await fetchStudyData(workspaceId);
   for (const card of cards) {
     if (!card.deckIds.includes(id)) continue;
     const remaining = card.deckIds.filter((deckId) => deckId !== id);
@@ -389,6 +420,39 @@ export async function deleteDeck(id: string): Promise<void> {
     await putData(workspaceId, cardRowKey(card.id), { ...card, deckIds });
   }
   await deleteData(workspaceId, deckKey(id));
+  // The deck's card type switches go with it; another tab may have
+  // removed the row already.
+  if (deckSettings?.[id] !== undefined) {
+    try {
+      await deleteData(workspaceId, deckSettingsKey(id));
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
+  }
+}
+
+/**
+ * saveDeckCardTypes switches the opt-in card kinds of one deck (General
+ * included) by rewriting its `deckcfg:` row. The stored row is re-read so
+ * fields this version does not know survive.
+ */
+export async function saveDeckCardTypes(
+  deckId: string,
+  cardTypes: readonly OptInKind[],
+): Promise<DeckSettings> {
+  const workspaceId = requireWorkspaceId();
+  const { deckSettings } = await fetchStudyData(workspaceId);
+  const next: DeckSettings = {
+    deckId,
+    cardTypes: cleanCardTypes(cardTypes),
+    extra: deckSettings?.[deckId]?.extra ?? {},
+  };
+  await putData(
+    workspaceId,
+    deckSettingsKey(deckId),
+    serializeDeckSettings(next, new Date().toISOString()),
+  );
+  return next;
 }
 
 /**
@@ -646,6 +710,150 @@ export async function moveCards(
     }
   }
   return moved;
+}
+
+/**
+ * vocabRowsOf: every stored vocab row (duplicates included) of an entry.
+ * skipKinds lives on them, so all of them are rewritten together.
+ */
+function vocabRowsOf(all: readonly StudyCard[], entryId: number): StudyCard[] {
+  return all.filter((card) => card.kind === "vocab" && card.entryId === entryId);
+}
+
+function withSkip(row: StudyCard, skipKinds: readonly StudyCardKind[]): StudyCard {
+  const { skipKinds: _old, ...rest } = row;
+  void _old;
+  const clean = cleanSkipKinds(skipKinds);
+  return clean.length === 0 ? rest : { ...rest, skipKinds: clean };
+}
+
+/** Writes new skipKinds to the entry's vocab rows; returns their previous state. */
+async function rewriteSkips(
+  workspaceId: number,
+  rows: readonly StudyCard[],
+  next: (row: StudyCard) => StudyCardKind[],
+): Promise<StudyCard[]> {
+  const changed: StudyCard[] = [];
+  for (const row of rows) {
+    const updated = withSkip(row, next(row));
+    if (JSON.stringify(updated.skipKinds ?? []) === JSON.stringify(row.skipKinds ?? [])) continue;
+    try {
+      await putData(workspaceId, cardRowKey(row.id), updated);
+      changed.push(row);
+    } catch (err) {
+      throw new PartialCardsError(
+        errorMessage(err, "Could not update the word."),
+        changed,
+        err,
+      );
+    }
+  }
+  return changed;
+}
+
+function assertSkippable(kind: StudyCardKind): void {
+  if (kind === "vocab") throw new Error("the vocab card of a word cannot be skipped");
+}
+
+/**
+ * skipKind switches one non-vocab kind off for a word (even before its
+ * card exists): the kind joins `skipKinds` on the word's vocab row(s), so
+ * lazy creation does not bring the card back. Returns the previous vocab
+ * rows for undo through restoreCards. A word without a vocab card has
+ * nowhere to keep the switch: that is an error.
+ */
+export async function skipKind(
+  entryId: number,
+  kind: StudyCardKind,
+): Promise<StudyCard[]> {
+  assertSkippable(kind);
+  const workspaceId = requireWorkspaceId();
+  const { cards } = await fetchStudyData(workspaceId);
+  const rows = vocabRowsOf(cards, entryId);
+  if (rows.length === 0) throw new Error("this word has no vocab card to hold the setting");
+  return rewriteSkips(workspaceId, rows, (row) => [...(row.skipKinds ?? []), kind]);
+}
+
+/** unskipKind removes a kind from the word's `skipKinds`; returns the previous rows for undo. */
+export async function unskipKind(
+  entryId: number,
+  kind: StudyCardKind,
+): Promise<StudyCard[]> {
+  assertSkippable(kind);
+  const workspaceId = requireWorkspaceId();
+  const { cards } = await fetchStudyData(workspaceId);
+  const rows = vocabRowsOf(cards, entryId);
+  if (rows.length === 0) throw new Error("this word has no vocab card to hold the setting");
+  return rewriteSkips(workspaceId, rows, (row) =>
+    (row.skipKinds ?? []).filter((skipped) => skipped !== kind),
+  );
+}
+
+/**
+ * dropSiblingCards removes one non-vocab card (and its stored duplicates)
+ * of a word without removing the word: the kinds join the word's vocab
+ * `skipKinds` first, then the rows are tombstoned. Returns the previous
+ * rows (vocab rows and siblings) for restoreCards, which brings both
+ * back; a sibling with no vocab row is just tombstoned (nothing would
+ * recreate it). A vocab id is an error (use deleteCards). A failure
+ * throws PartialCardsError with the rows that did change.
+ */
+export async function dropSiblingCards(
+  ids: readonly string[],
+): Promise<StudyCard[]> {
+  const workspaceId = requireWorkspaceId();
+  if (ids.length === 0) return [];
+  const { cards } = await fetchStudyData(workspaceId);
+  const asked = cards.filter((card) => ids.includes(card.id));
+  if (asked.some((card) => card.kind === "vocab")) {
+    throw new Error("only the other cards of a word can be removed on their own");
+  }
+  const keys = new Set(
+    asked.map((card) => cardKey(card.kind, card.entryId, card.sentenceId)),
+  );
+  const siblings = cards.filter(
+    (card) =>
+      card.kind !== "vocab" &&
+      keys.has(cardKey(card.kind, card.entryId, card.sentenceId)),
+  );
+  const kindsByEntry = new Map<number, StudyCardKind[]>();
+  for (const sibling of siblings) {
+    kindsByEntry.set(sibling.entryId, [
+      ...(kindsByEntry.get(sibling.entryId) ?? []),
+      sibling.kind,
+    ]);
+  }
+  const previous: StudyCard[] = [];
+  for (const [entryId, kinds] of kindsByEntry) {
+    const rows = vocabRowsOf(cards, entryId);
+    try {
+      previous.push(
+        ...(await rewriteSkips(workspaceId, rows, (row) => [
+          ...(row.skipKinds ?? []),
+          ...kinds,
+        ])),
+      );
+    } catch (err) {
+      if (err instanceof PartialCardsError) {
+        throw new PartialCardsError(err.message, [...previous, ...err.rows], err.cause);
+      }
+      throw err;
+    }
+  }
+  for (const row of siblings) {
+    try {
+      await deleteData(workspaceId, cardRowKey(row.id));
+      previous.push(row);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 404) continue;
+      throw new PartialCardsError(
+        errorMessage(err, "Could not remove the cards."),
+        previous,
+        err,
+      );
+    }
+  }
+  return previous;
 }
 
 /** cardsInDecks keeps the cards that belong to at least one of `deckIds`. */

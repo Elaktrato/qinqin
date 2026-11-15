@@ -4,7 +4,7 @@
 // review history that schedules cards also feeds the map.
 
 import { scheduleFor } from './scheduler';
-import type { ReviewEvent, StudyCard } from './types';
+import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 /** The five bands the mastery map colours. */
 export type MasteryStage = 'unknown' | 'fresh' | 'learning' | 'mature' | 'learned';
@@ -39,6 +39,18 @@ function clamp01(value: number): number {
 function cardStrength(stability: number): number {
 	if (!Number.isFinite(stability)) return 0;
 	return clamp01(Math.log2(1 + Math.max(0, stability)) / MAX_LOG);
+}
+
+/**
+ * The kinds whose reviews feed character mastery. Reverse and cloze cards
+ * re-test links the others already cover, so enabling them never moves
+ * the map (docs/contracts/cards/README.md).
+ */
+export const MASTERY_KINDS: readonly StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
+
+/** A card's own 0-100 score from its FSRS stability. */
+export function cardScore(stability: number): number {
+	return Math.round(100 * cardStrength(stability));
 }
 
 /**
@@ -110,6 +122,7 @@ export function masteryForChars(
 		const reviewsByCard = groupReviewsByCard(reviews);
 
 		for (const card of cards) {
+			if (!MASTERY_KINDS.includes(card.kind)) continue;
 			const written = card.written;
 			if (written === undefined || written === '') continue;
 			const history = reviewsByCard.get(card.id);

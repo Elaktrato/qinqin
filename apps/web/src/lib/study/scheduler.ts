@@ -27,6 +27,11 @@ export interface BuildQueueOptions {
 	kinds?: readonly StudyCardKind[];
 	/** The workspace's active FSRS weights (`activeWeights(history)`). */
 	w: readonly number[];
+	/**
+	 * A ready schedule lookup (the decks view builds one index for many
+	 * counts). Absent: each card's history is replayed. null = never reviewed.
+	 */
+	scheduleOf?: (cardId: string) => Schedule | null;
 }
 
 // One scheduler instance per weight set: instances are stateless between
@@ -154,7 +159,8 @@ export function buildQueue({
 	reviewLimit,
 	now,
 	kinds,
-	w
+	w,
+	scheduleOf
 }: BuildQueueOptions): StudyCard[] {
 	const wanted = new Set(deckIds);
 	const scoped = cards.filter(
@@ -178,11 +184,16 @@ export function buildQueue({
 
 	for (const card of scoped) {
 		const history = historyByCard.get(card.id);
-		if (history === undefined) {
+		if (scheduleOf === undefined && history === undefined) {
 			fresh.push(card);
 			continue;
 		}
-		const schedule = scheduleFor(card.id, history, now, w);
+		const schedule =
+			scheduleOf === undefined ? scheduleFor(card.id, history ?? [], now, w) : scheduleOf(card.id);
+		if (scheduleOf !== undefined && schedule === null) {
+			fresh.push(card);
+			continue;
+		}
 		if (schedule !== null && isDue(schedule, now)) {
 			due.push({ card, at: instant(schedule.due) });
 		}

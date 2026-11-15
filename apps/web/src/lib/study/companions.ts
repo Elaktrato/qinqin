@@ -4,14 +4,16 @@
 // gradeItem). Planning is pure; it never writes.
 
 import { studyDay as utcDay, type StudyDay } from '../time/studyDay';
+import { enabledKinds, type DeckSettings } from './deckSettings';
 import { isValidReview, sortedReviews } from './scheduler';
-import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
+import { OPT_IN_KINDS, type OptInKind, type ReviewEvent, type StudyCard, type StudyCardKind } from './types';
 
 export const COMPANION_PREFIX = 'companion:';
 
-export type CompanionKind = 'sentence' | 'writing' | 'tone';
+export type CompanionKind = 'sentence' | 'writing' | 'tone' | OptInKind;
 
-const COMPANION_KINDS: readonly CompanionKind[] = ['sentence', 'writing', 'tone'];
+/** Kind order; the opt-in kinds come last (reverse is preferred over cloze). */
+const COMPANION_KINDS: readonly CompanionKind[] = ['sentence', 'writing', 'tone', 'reverse', 'cloze'];
 
 /** A not-yet-created card of `kind` for a vocab card's entry. */
 export interface CompanionItem {
@@ -43,6 +45,13 @@ function createdAtMs(card: StudyCard): number {
  * oldest vocab card first. At most `newBudget` items are returned in
  * total, taking one kind at a time in round-robin order so no kind
  * starves the others.
+ *
+ * Reverse and cloze are opt-in: they are planned only for vocab cards
+ * with a deck in `deckIds` whose `deckSettings` enable the kind, never
+ * when the word's `skipKinds` list it, never for words in `exclude`
+ * (they have a real queued item), at most one of them per word (reverse
+ * preferred; cloze when reverse cannot be planned), and never for kinds
+ * remembered ineligible in `skip` (`kind:entryId`).
  */
 export function planCompanions({
 	cards,
@@ -51,7 +60,10 @@ export function planCompanions({
 	newBudget,
 	reviews = [],
 	now = Date.now(),
-	studyDay
+	studyDay,
+	deckSettings,
+	exclude,
+	skip
 }: {
 	cards: readonly StudyCard[];
 	kinds: readonly StudyCardKind[];
@@ -63,6 +75,12 @@ export function planCompanions({
 	now?: number;
 	/** The learner's day; UTC when absent. */
 	studyDay?: StudyDay;
+	/** Per-deck card type switches; without them no opt-in item is planned. */
+	deckSettings?: Record<string, DeckSettings>;
+	/** Entry ids that get no opt-in item (a real item of the word is queued). */
+	exclude?: ReadonlySet<number>;
+	/** `kind:entryId` of items already found ineligible. */
+	skip?: ReadonlySet<string>;
 }): CompanionItem[] {
 	const budget = Number.isFinite(newBudget) ? Math.max(0, Math.floor(newBudget)) : 0;
 	const wantedKinds = COMPANION_KINDS.filter((kind) => kinds.includes(kind));
@@ -92,11 +110,29 @@ export function planCompanions({
 		}
 	}
 	const isPlannable = (card: StudyCard, kind: CompanionKind): boolean => {
+		if (card.skipKinds?.includes(kind)) return false;
 		if (card.entryKind !== 'character') return true;
 		if (kind !== 'writing') return false;
 		const first = firstReview.get(card.id);
 		return first !== undefined && day.dayOf(first) < today;
 	};
+
+	// Opt-in kinds: which one a word gets (at most one, reverse first).
+	const optInFor = (card: StudyCard): OptInKind | null => {
+		if (deckSettings === undefined || exclude?.has(card.entryId)) return null;
+		const enabled = enabledKinds(
+			deckSettings,
+			card.deckIds.filter((id) => decks.has(id))
+		);
+		for (const kind of OPT_IN_KINDS) {
+			if (!wantedKinds.includes(kind) || !enabled.has(kind)) continue;
+			if (have.has(`${kind}:${card.entryId}`) || skip?.has(`${kind}:${card.entryId}`)) continue;
+			if (!isPlannable(card, kind)) continue;
+			return kind;
+		}
+		return null;
+	};
+	const optIn = new Map<string, OptInKind | null>();
 
 	const perKind = wantedKinds.map((kind) => {
 		const seen = new Set<number>();
@@ -104,6 +140,10 @@ export function planCompanions({
 		for (const card of sources) {
 			if (have.has(`${kind}:${card.entryId}`) || seen.has(card.entryId)) continue;
 			if (!isPlannable(card, kind)) continue;
+			if (OPT_IN_KINDS.includes(kind as OptInKind)) {
+				if (!optIn.has(card.id)) optIn.set(card.id, optInFor(card));
+				if (optIn.get(card.id) !== kind) continue;
+			}
 			seen.add(card.entryId);
 			const item: CompanionItem = {
 				cardId: `${COMPANION_PREFIX}${kind}:${card.entryId}`,
