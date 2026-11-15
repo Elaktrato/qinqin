@@ -2,7 +2,11 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
-	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import { fetchCharacters } from '$lib/api/characters';
+	import type { CharRow } from '$lib/api/types';
+	import type { SchemeLevelMembers } from '$lib/study/charGroups';
+	import { levelMastery } from '$lib/study/levelMastery';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
 	import CardManager from '$lib/components/CardManager.svelte';
@@ -11,7 +15,15 @@
 	import { loadIneligible } from '$lib/study/ineligible';
 	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { buildLevelQueue } from '$lib/study/levelQueue';
+	import {
+		levelEntryCount,
+		levelPlanCounts,
+		levelTypeWarnings,
+		levelUsable,
+		type LevelUnit
+	} from '$lib/study/levelQueue';
+	import { currentStudyDay } from '$lib/time/zone';
+	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import {
 		CARD_TYPES,
 		loadConfig,
@@ -92,6 +104,12 @@
 	let levelEntriesLoading = $state(false);
 	let levelEntriesError = $state('');
 	let levelEntriesSeq = 0;
+	// The scheme's characters per level (for "L of N learned"); optional
+	// decoration, so a failed load only hides the counts.
+	let schemeCharacters = $state.raw<SchemeLevelMembers[]>([]);
+	let schemeCharactersSeq = 0;
+	// The language's character rows (variants), the Stats map's universe.
+	let universeRows = $state.raw<CharRow[]>([]);
 
 	let deckName = $state('');
 	let creating = $state(false);
@@ -315,6 +333,36 @@
 		void loadLevelEntries(selection.schemeId, selection.levelName);
 	});
 
+	$effect(() => {
+		const scheme = mode === 'levels' && schemesLoaded ? selectedScheme : null;
+		const seq = ++schemeCharactersSeq;
+		if (scheme === null) {
+			schemeCharacters = [];
+			return;
+		}
+		Promise.all([fetchSchemeCharacters(scheme.id), fetchCharacters(scheme.language)]).then(
+			([levels, list]) => {
+				if (seq !== schemeCharactersSeq) return;
+				schemeCharacters = levels;
+				universeRows = list.chars;
+			},
+			() => {
+				if (seq !== schemeCharactersSeq) return;
+				schemeCharacters = [];
+				universeRows = [];
+			}
+		);
+	});
+
+	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights));
+
+	function levelOptionLabel(name: string): string {
+		const count = levelLearned.get(name);
+		return count === undefined || count.total === 0
+			? name
+			: `${name} — ${count.learned} of ${count.total} learned`;
+	}
+
 	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
 	// hidden type stays in the saved setup (switching back restores it)
 	// but never counts or reaches a session.
@@ -360,45 +408,33 @@
 		deckPlan.byKind.sentence + deckPlan.byKind.writing + deckPlan.byKind.tone
 	);
 
-	// Level sessions are vocab-only: without vocab selected they are empty.
+	// A character scheme studies recognition and writing cards; every
+	// other scheme is a word scheme (vocab only).
+	const levelUnit = $derived<LevelUnit>(selectedScheme?.unit === 'character' ? 'character' : 'word');
+
 	const levelCounts = $derived.by(() => {
-		if (
-			levelSelection === null ||
-			levelEntries.length === 0 ||
-			!selectedKinds.includes('vocab')
-		) {
-			return { due: 0, fresh: 0 };
+		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, selectedKinds)) {
+			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
 		}
-		const now = new Date();
-		const due = buildLevelQueue({
+		return levelPlanCounts({
 			entries: levelEntries,
 			cards,
 			reviews,
-			newLimit: 0,
-			reviewLimit: COUNT_CAP,
-			now,
-			w: weights
-		}).length;
-		const fresh = buildLevelQueue({
-			entries: levelEntries,
-			cards,
-			reviews,
-			newLimit: COUNT_CAP,
-			reviewLimit: 0,
-			now,
-			w: weights
-		}).length;
-		return { due, fresh };
+			now: new Date(),
+			w: weights,
+			unit: levelUnit,
+			kinds: selectedKinds,
+			studyDay: currentStudyDay(),
+			hasStrokes: hasStrokeData,
+			// Items this tab already found unsuitable are not counted.
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
+		});
 	});
 
 	// Selected types that have nothing to study: a warning, not a block,
 	// as long as another selected type has cards.
 	const typeWarnings = $derived.by((): string[] => {
-		if (mode === 'levels') {
-			return selectedKinds.some((kind) => kind !== 'vocab')
-				? ['Level sessions study vocab cards only; the other types apply to deck sessions.']
-				: [];
-		}
+		if (mode === 'levels') return levelTypeWarnings(levelUnit, selectedKinds);
 		if (selectedCards.length === 0) return [];
 		return selectedKinds
 			.filter((kind) => deckPlan.byKind[kind] === 0)
@@ -409,8 +445,11 @@
 	});
 
 	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
-	const levelWordCount = $derived(
-		levelEntries.filter((entry) => entry.kind === 'word').length
+	const levelEntryTotal = $derived(levelEntryCount(levelEntries, levelUnit));
+	const levelNoun = $derived(
+		levelUnit === 'character'
+			? levelEntryTotal === 1 ? 'character' : 'characters'
+			: levelEntryTotal === 1 ? 'word' : 'words'
 	);
 
 	const guidance = $derived.by(() => {
@@ -429,11 +468,18 @@
 			}
 			if (levelEntriesError) return levelEntriesError;
 			if (levelEntriesLoading) return 'Loading this level…';
-			if (levelEntries.length === 0) return 'This level has no words yet.';
-			if (!selectedKinds.includes('vocab')) {
-				return 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
+			if (levelEntries.length === 0) {
+				return `This level has no ${levelUnit === 'character' ? 'characters' : 'words'} yet.`;
+			}
+			if (!levelUsable(levelUnit, selectedKinds)) {
+				return levelUnit === 'character'
+					? 'Character levels study Vocab (recognition) and Writing cards. Select one of them, or switch to My decks.'
+					: 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
 			}
 			if (counts.due + counts.fresh === 0) {
+				if (levelUnit === 'character' && !selectedKinds.includes('vocab')) {
+					return 'Nothing to write here: writing cards need stroke data and the characters of this level have none left to study. Select Vocab to practise recognition.';
+				}
 				return 'Nothing is due and no new cards are left in this level.';
 			}
 			return '';
@@ -711,7 +757,7 @@
 		{:else}
 			<section aria-labelledby="levels-heading">
 				<h2 id="levels-heading">Level</h2>
-				<p class="hint">Draw words from one level of an installed scheme.</p>
+				<p class="hint">Draw words or characters from one level of an installed scheme.</p>
 
 				{#if schemeError}
 					<p class="error" role="alert">{schemeError}</p>
@@ -735,7 +781,7 @@
 							Level
 							<select bind:value={levelName}>
 								{#each schemeLevels as level (level.id)}
-									<option value={level.name}>{level.name}</option>
+									<option value={level.name}>{levelOptionLabel(level.name)}</option>
 								{/each}
 							</select>
 						</label>
@@ -795,8 +841,8 @@
 			<h2 id="summary-heading">This session</h2>
 			{#if mode === 'levels'}
 				<p class="stats">
-					<strong>{levelWordCount}</strong>
-					{levelWordCount === 1 ? 'word' : 'words'} in
+					<strong>{levelEntryTotal}</strong>
+					{levelNoun} in
 					<strong>{selectedScheme?.name ?? 'this scheme'}</strong>
 					{levelSelection?.levelName ?? ''} ·
 					<strong>{counts.due}</strong>

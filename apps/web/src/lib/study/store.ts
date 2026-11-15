@@ -123,7 +123,7 @@ function parseDeck(key: string, raw: unknown): Deck | null {
 
 function parseCard(key: string, raw: unknown): StudyCard | null {
   if (!isRecord(raw)) return null;
-  const { id, kind, entryId, sentenceId, deckIds, createdAt, written } = raw;
+  const { id, kind, entryId, sentenceId, deckIds, createdAt, written, entryKind } = raw;
   if (typeof id !== "string" || typeof entryId !== "number") return null;
   if (!CARD_KINDS.includes(kind as StudyCardKind)) return null;
   if (typeof createdAt !== "string") return null;
@@ -143,6 +143,9 @@ function parseCard(key: string, raw: unknown): StudyCard | null {
   };
   if (typeof written === "string") {
     card.written = written;
+  }
+  if (entryKind === "character") {
+    card.entryKind = "character";
   }
   if (typeof sentenceId === "number") {
     card.sentenceId = sentenceId;
@@ -411,6 +414,7 @@ export async function addCard(
   opts: {
     kind?: StudyCardKind;
     written?: string;
+    entryKind?: "character";
     sentenceId?: number;
     deckIds?: string[];
     workspaceId?: number;
@@ -438,6 +442,9 @@ export async function addCard(
   };
   if (typeof opts.written === "string") {
     card.written = opts.written;
+  }
+  if (opts.entryKind === "character") {
+    card.entryKind = "character";
   }
   if (opts.sentenceId !== undefined) {
     card.sentenceId = opts.sentenceId;

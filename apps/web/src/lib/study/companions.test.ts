@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { COMPANION_PREFIX, isCompanionId, planCompanions } from './companions';
+import { studyDay } from '../time/studyDay';
 import type { StudyCard, StudyCardKind } from './types';
 
 function card(
@@ -119,5 +120,55 @@ describe('isCompanionId', () => {
 		expect(COMPANION_PREFIX).toBe('companion:');
 		expect(isCompanionId('companion:tone:5')).toBe(true);
 		expect(isCompanionId('01JABC')).toBe(false);
+	});
+});
+
+describe('planCompanions for character cards', () => {
+	const chars: StudyCard[] = [{ ...card('a', 'vocab', 1), entryKind: 'character' }];
+	const base = {
+		cards: chars,
+		kinds: ['sentence', 'writing', 'tone'] as StudyCardKind[],
+		deckIds: ['general'],
+		newBudget: 10
+	};
+	const day = studyDay([]);
+	const rev = (ts: string) => ({
+		id: ts,
+		workspaceId: 1,
+		device: 'd',
+		ts,
+		type: 'review' as const,
+		payload: { cardId: 'a', mode: 'vocab' as const, grade: 4 as const }
+	});
+
+	it('plans neither sentence nor tone, and no writing before an earlier-day review', () => {
+		expect(planCompanions(base)).toEqual([]);
+		expect(
+			planCompanions({
+				...base,
+				studyDay: day,
+				now: Date.parse('2026-03-01T10:00:00Z'),
+				reviews: [rev('2026-03-01T08:00:00Z')]
+			})
+		).toEqual([]);
+	});
+
+	it('plans writing once the vocab card was first reviewed on an earlier day', () => {
+		const items = planCompanions({
+			...base,
+			studyDay: day,
+			now: Date.parse('2026-03-02T00:10:00Z'),
+			reviews: [rev('2026-03-01T23:30:00Z')]
+		});
+		expect(items.map((i) => i.cardId)).toEqual(['companion:writing:1']);
+	});
+
+	it('leaves cards without the snapshot as before', () => {
+		const old = [card('b', 'vocab', 2)];
+		expect(planCompanions({ ...base, cards: old }).map((i) => i.kind)).toEqual([
+			'sentence',
+			'writing',
+			'tone'
+		]);
 	});
 });

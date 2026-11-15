@@ -30,6 +30,47 @@ function item(overrides: Partial<GradeableItem> = {}): GradeableItem {
 
 const ENTRY = { written: '猫', sentences: [{ id: 9 }] };
 
+describe('gradeItem for character entries', () => {
+	const CHAR = { written: '学', kind: 'character', sentences: [{ id: 9 }] };
+
+	it('creates a writing card with the entry kind and no sentence', async () => {
+		const addCard = vi.fn(async () => ({ ...card('c-writing-11', 11, '学'), kind: 'writing' as const }));
+		const recordReview = vi.fn(async () => {});
+		const result = await gradeItem({
+			item: item({ cardId: 'level:writing:11', entryId: 11, virtual: true, card: null, kind: 'writing' }),
+			grade: 3,
+			workspaceId: 7,
+			entry: CHAR,
+			addCard,
+			recordReview
+		});
+		expect(result.ok).toBe(true);
+		expect(addCard).toHaveBeenCalledWith(11, {
+			kind: 'writing',
+			written: '学',
+			entryKind: 'character',
+			deckIds: ['general'],
+			sentenceId: undefined
+		});
+		expect(recordReview).toHaveBeenCalledWith(7, 'c-writing-11', 3, 'writing', undefined);
+	});
+
+	it('stores no sentence on a character recognition card', async () => {
+		const addCard = vi.fn(async () => card('c-vocab-11', 11, '学'));
+		await gradeItem({
+			item: item({ cardId: 'level:11', entryId: 11, virtual: true, card: null }),
+			grade: 3,
+			workspaceId: 7,
+			entry: CHAR,
+			addCard,
+			recordReview: vi.fn(async () => {})
+		});
+		const opts = (addCard.mock.calls[0] as unknown as [number, { sentenceId?: number }])[1];
+		expect(opts.sentenceId).toBeUndefined();
+		expect(opts).toMatchObject({ entryKind: 'character' });
+	});
+});
+
 describe('gradeItem', () => {
 	it('creates the card before recording the review for a virtual item', async () => {
 		const calls: string[] = [];

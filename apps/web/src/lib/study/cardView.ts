@@ -72,6 +72,12 @@ function groupGlosses(senses: readonly SenseView[]): VocabGlossGroup[] {
 	return groups;
 }
 
+/** groupReadings keeps the API order but gathers readings of one type (on, kun, pinyin). */
+function groupReadings(readings: readonly VocabReading[]): VocabReading[] {
+	const types = [...new Set(readings.map((reading) => reading.type))];
+	return types.flatMap((type) => readings.filter((reading) => reading.type === type));
+}
+
 /**
  * buildVocabFaces turns one resolved entry and its optional example
  * sentence into the two card faces. `language` is accepted so callers do
@@ -85,12 +91,26 @@ export function buildVocabFaces(
 ): VocabFaces {
 	void language;
 
-	const lines = sentenceLines(entry, sentence);
 	const readings = entry.readings.map(({ type, value }): VocabReading => ({ type, value }));
+	if (entry.kind === 'character') {
+		// A character's readings (on/kun, several pinyin) would give the
+		// answer away and a blanked sentence would show half of it: the
+		// front is the glyph alone, the readings appear after the reveal.
+		return {
+			front: { written: entry.written, readings: [], sentenceLines: [] },
+			back: {
+				written: entry.written,
+				readings: groupReadings(readings),
+				sentenceLines: [],
+				glosses: groupGlosses(entry.senses)
+			}
+		};
+	}
+
 	const front: VocabFace = {
 		written: entry.written,
 		readings,
-		sentenceLines: lines
+		sentenceLines: sentenceLines(entry, sentence)
 	};
 
 	return {

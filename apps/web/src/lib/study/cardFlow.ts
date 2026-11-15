@@ -2,6 +2,7 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
+import type { StudyDay } from '../time/studyDay';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
@@ -47,6 +48,9 @@ export interface EntryLike {
 	language: string;
 	written: string;
 	readings: readonly { type: string; value: string }[];
+	/** Entry kind and glosses; a character without glosses gets no writing card. */
+	kind?: string;
+	senses?: readonly unknown[];
 }
 
 export interface EligibilityContext {
@@ -87,6 +91,11 @@ export function cardedSentenceIds(cards: readonly StudyCard[], entryId: number):
 	return ids;
 }
 
+/** A character entry with no senses: a pinyin-only prompt matches many homophones. */
+function lacksGlosses(entry: { kind?: string; senses?: readonly unknown[] }): boolean {
+	return entry.kind === 'character' && entry.senses !== undefined && entry.senses.length === 0;
+}
+
 /**
  * isEligible decides, when an item is about to be shown, whether its kind
  * can be studied for this word. Ineligible companions are dropped from the
@@ -103,6 +112,7 @@ export function isEligible(
 		case 'sentence':
 			return ctx.hasSentence;
 		case 'writing':
+			if (lacksGlosses(entry)) return false;
 			return (ctx.usableChars?.length ?? 0) > 0;
 		case 'tone':
 			return eligibleForTone(ctx.language, pinyinReadings(entry.readings));
@@ -151,6 +161,8 @@ export interface DeckSessionOptions {
 	skip?: ReadonlySet<string>;
 	/** The workspace's active FSRS weights. */
 	w: readonly number[];
+	/** The learner's day, for the character writing unlock; UTC when absent. */
+	studyDay?: StudyDay;
 }
 
 /**
@@ -196,7 +208,8 @@ export function deckSessionPlan({
 	now,
 	language,
 	skip,
-	w
+	w,
+	studyDay
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
@@ -213,7 +226,10 @@ export function deckSessionPlan({
 		kinds: wanted,
 		deckIds,
 		// Plan everything, then split at the budget: the rest is the reserve.
-		newBudget: cards.length * 3
+		newBudget: cards.length * 3,
+		reviews,
+		now: now.getTime(),
+		studyDay
 	})
 		.filter((item) => skip === undefined || !skip.has(`${item.kind}:${item.entryId}`))
 		// Without a snapshot (Round 1 cards) writing is decided when shown.
@@ -270,8 +286,13 @@ export function dropItem(plan: DeckSessionPlan, cardId: string): DeckSessionPlan
  * A writing drop is remembered only when the word has no Han character at
  * all: missing stroke data may be a transient network failure.
  */
-export function rememberDrop(item: FlowItem, written: string): boolean {
+export function rememberDrop(
+	item: FlowItem,
+	written: string,
+	entry?: { kind?: string; senses?: readonly unknown[] }
+): boolean {
 	if (!item.virtual) return false;
+	if (item.kind === 'writing' && entry !== undefined && lacksGlosses(entry)) return true;
 	return item.kind !== 'writing' || writableChars(written).length === 0;
 }
 
@@ -293,27 +314,36 @@ export function resolveSentence<T extends { id: number }>(
 }
 
 /**
- * levelSessionItems maps a level queue to flow items. Level sessions stay
- * vocab-only, so a setup without vocab yields an empty session.
+ * levelSessionItems maps a level queue to flow items, each with its own
+ * kind. Items whose kind is not selected are dropped, so a setup with no
+ * applicable kind yields an empty session. A virtual recognition item
+ * carries no deck (gradeItem defaults to General, as it always did); a
+ * virtual writing item names General explicitly.
  */
 export function levelSessionItems(
 	items: readonly LevelQueueItem[],
 	cards: readonly StudyCard[],
 	kinds: readonly StudyCardKind[]
 ): FlowItem[] {
-	if (!kinds.includes('vocab')) return [];
 	const byId = new Map(cards.map((card) => [card.id, card]));
-	return items.map((item): FlowItem => {
+	const out: FlowItem[] = [];
+	for (const item of items) {
+		if (!kinds.includes(item.kind)) continue;
 		const card = item.virtual ? undefined : byId.get(item.cardId);
-		if (card !== undefined) return fromCard(card);
-		return {
+		if (card !== undefined) {
+			out.push(fromCard(card));
+			continue;
+		}
+		out.push({
 			cardId: item.cardId,
-			kind: 'vocab',
+			kind: item.kind,
 			entryId: item.entryId,
 			virtual: item.virtual,
-			card: null
-		};
-	});
+			card: null,
+			...(item.kind === 'vocab' ? {} : { deckIds: ['general'] })
+		});
+	}
+	return out;
 }
 
 /** Due reviews, new items, and items per kind of one planned session. */

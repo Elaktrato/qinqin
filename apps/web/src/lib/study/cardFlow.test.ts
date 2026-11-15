@@ -24,6 +24,7 @@ import {
 } from './cardFlow';
 import { parsePinyin } from './tones';
 import type { FlowItem } from './cardFlow';
+import type { LevelQueueItem } from './levelQueue';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 function card(
@@ -349,9 +350,9 @@ describe('deckSessionPlan and dropItem', () => {
 
 describe('levelSessionItems', () => {
 	const cards = [card('v1', 'vocab', 1)];
-	const queue = [
-		{ cardId: 'v1', entryId: 1, virtual: false },
-		{ cardId: 'level:2', entryId: 2, virtual: true }
+	const queue: LevelQueueItem[] = [
+		{ cardId: 'v1', entryId: 1, virtual: false, kind: 'vocab' },
+		{ cardId: 'level:2', entryId: 2, virtual: true, kind: 'vocab' }
 	];
 
 	it('maps level items to vocab flow items', () => {
@@ -362,8 +363,36 @@ describe('levelSessionItems', () => {
 		]);
 	});
 
-	it('is empty when vocab is not selected', () => {
+	it('is empty when no selected kind applies', () => {
 		expect(levelSessionItems(queue, cards, ['tone'])).toEqual([]);
+	});
+
+	it('maps a virtual writing item to a writing flow item', () => {
+		const items = levelSessionItems(
+			[{ cardId: 'level:writing:11', entryId: 11, virtual: true, kind: 'writing' }],
+			[],
+			['vocab', 'writing']
+		);
+		expect(items).toEqual([
+			{
+				cardId: 'level:writing:11',
+				kind: 'writing',
+				entryId: 11,
+				virtual: true,
+				card: null,
+				deckIds: ['general']
+			}
+		]);
+	});
+
+	it('drops items whose kind is not selected', () => {
+		const mixed: LevelQueueItem[] = [
+			{ cardId: 'level:writing:11', entryId: 11, virtual: true, kind: 'writing' },
+			{ cardId: 'level:12', entryId: 12, virtual: true, kind: 'vocab' }
+		];
+		expect(levelSessionItems(mixed, [], ['writing']).map((i) => i.cardId)).toEqual([
+			'level:writing:11'
+		]);
 	});
 });
 
@@ -458,6 +487,30 @@ describe('backfill bound', () => {
 		});
 		expect(plan.queue.map((item) => item.entryId)).toEqual([3, 4]);
 		expect(plan.reserve[0].entryId).toBe(5);
+	});
+});
+
+describe('writing needs glosses for character entries', () => {
+	const kanji = { language: 'ja', written: '学', readings: [], kind: 'character' };
+	const ctx = { language: 'ja', hasSentence: false, usableChars: ['学'] };
+
+	it('is ineligible without senses, eligible with them, and unaffected for words', () => {
+		expect(isEligible('writing', { ...kanji, senses: [] }, ctx)).toBe(false);
+		expect(isEligible('writing', { ...kanji, senses: [{}] }, ctx)).toBe(true);
+		expect(isEligible('writing', { ...kanji, kind: 'word', senses: [] }, ctx)).toBe(true);
+		expect(isEligible('vocab', { ...kanji, senses: [] }, ctx)).toBe(true);
+	});
+
+	it('remembers that drop', () => {
+		const item: FlowItem = {
+			cardId: 'level:writing:1',
+			kind: 'writing',
+			entryId: 1,
+			virtual: true,
+			card: null
+		};
+		expect(rememberDrop(item, '学', { kind: 'character', senses: [] })).toBe(true);
+		expect(rememberDrop(item, '学', { kind: 'character', senses: [{}] })).toBe(false);
 	});
 });
 

@@ -163,3 +163,26 @@ count moves slowly (80 points needs months of stability).
   missing and shared code points can differ in stroke order; such characters get recognition cards only.
 - Big levels (Jōyō grade S, 1,100+ characters) make `masteryForChars` run per level in the picker;
   it is one pass over cards, cached per history load, as on the map page.
+
+## Review fixes (fix wave)
+
+Ruling: the planner takes `hasStrokes(glyph)` and never plans a writing item for a glyph without stroke data
+— hanzi-writer-data is Chinese-based and lacks about 11% of jlpt-kanji (e.g. 気 毎 読 歩 駅), which otherwise
+filled the new-card budget with items the session then dropped; a committed index
+(`lib/study/strokeIndex.json`, built by `scripts/prepare-stroke-index.mjs`, drift-tested against
+node_modules) answers synchronously, and the setup counts and Start use the same predicate — cost: the index
+must be regenerated when hanzi-writer-data is bumped (a test fails otherwise). The contract fixtures mark such
+entries `strokeData: false` and expect no writing item (the old `dropInSession` flag is gone).
+
+Ruling: a character entry without glosses gets no writing card (dropped at show time and remembered per tab)
+— the glosses are not in the level listing, so the setup count can still include such an item until the entry
+has been seen — cost: a slightly high "new" count for Unihan-only characters.
+
+Ruling: `entryKind` is also set by the entry page and the reader popup for character entries (one row shape
+whichever path created the card, no sentence). Older clients that do not know the field drop it when they
+re-save the row; the card then behaves as before the field existed (companions are planned as for a word), and
+the next write by a current client restores it.
+
+Ruling: the level picker's "L of N learned" is computed with the Stats pipeline (`buildSections`,
+`masteryGlyphs`, `cellStates`) over the language's character rows, so counts equal the map's cells, variants
+included — cost: it loads the language's character list (shared cache with Stats).
