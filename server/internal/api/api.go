@@ -50,7 +50,8 @@ type server struct {
 
 	chars charactersCache // GET /api/characters payloads
 
-	trusted []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
+	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
+	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
 
 	authPolicy *AuthPolicy // nil: DefaultAuthPolicy
 	limits     *authLimits // sign-in throttling state, built by New

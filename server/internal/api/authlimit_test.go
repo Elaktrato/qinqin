@@ -543,11 +543,135 @@ func TestAuthLimitContractFixtures(t *testing.T) {
 		last = login1(t, ts, "198.51.100.4", fmt.Sprintf("u%d", i), "wrong")
 	}
 	same("rate_limited", last)
+	var reg authResp
+	for i := 0; i < 11; i++ {
+		reg = registerAs(t, ts, "198.51.100.6", "", "x")
+	}
+	same("register_rate_limited", reg)
 	// pair lock of 15 minutes words as minutes
 	for i := 0; i < 6; i++ {
 		login1(t, ts, "198.51.100.5", "owner", "wrong")
 	}
 	if r := login1(t, ts, "198.51.100.5", "owner", "wrong"); r.Err != "rate_limited" || r.Msg != "Too many sign-in attempts. Try again in 1 minute." {
 		t.Errorf("minute wording: %+v", r)
+	}
+}
+
+func TestAuthLimitForwardedLoggedOnce(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	h := &fastLogin{}
+	ts, _, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{Login: h.login}))
+	login1(t, ts, "", "a", "wrong") // no header: nothing to note
+	if strings.Contains(buf.String(), "X-Forwarded-For") {
+		t.Fatalf("logged without a forwarded header: %q", buf.String())
+	}
+	for i := 0; i < 3; i++ {
+		login1(t, ts, "198.51.100.9", "a", "wrong")
+	}
+	out := buf.String()
+	want := "auth: honouring X-Forwarded-For from a trusted proxy; set QINQIN_TRUSTED_PROXIES=none if you have no reverse proxy"
+	if strings.Count(out, "honouring X-Forwarded-For") != 1 || !strings.Contains(out, want) {
+		t.Fatalf("log = %q, want the line exactly once", out)
+	}
+	for _, secret := range []string{"198.51.100.9", "127.0.0.1"} {
+		if strings.Contains(out, secret) {
+			t.Fatalf("log contains %q", secret)
+		}
+	}
+}
+
+func TestAuthLimitRegisterWording(t *testing.T) {
+	ts, sqlDB, _ := newLimitServer(t)
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+		t.Fatal(err)
+	}
+	var last authResp
+	for i := 0; i < 11; i++ {
+		last = registerAs(t, ts, "198.51.100.1", "", fmt.Sprintf("u%d", i))
+	}
+	if last.Status != 429 || last.Msg != "Too many attempts. Try again in 6 seconds." {
+		t.Fatalf("register 429 = %+v, want the generic wording", last)
+	}
+	// login keeps its own
+	h := &fastLogin{}
+	ts2, _, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{Login: h.login}))
+	for i := 0; i < 11; i++ {
+		last = login1(t, ts2, "198.51.100.1", fmt.Sprintf("u%d", i), "wrong")
+	}
+	if !strings.HasPrefix(last.Msg, "Too many sign-in attempts.") {
+		t.Fatalf("login 429 = %+v", last)
+	}
+}
+
+// An administrator is never counted against the anonymous bucket, not
+// even by 20 parallel creations.
+func TestAuthLimitAdminParallelCreates(t *testing.T) {
+	ts, sqlDB, _ := newLimitServer(t)
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+		t.Fatal(err)
+	}
+	token, _ := auth.Login(context.Background(), sqlDB, "owner", "pw-owner")
+	var wg sync.WaitGroup
+	statuses := make([]int, 20)
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			statuses[i] = registerAs(t, ts, "198.51.100.1", token, fmt.Sprintf("par%d", i)).Status
+		}()
+	}
+	wg.Wait()
+	for i, s := range statuses {
+		if s != 201 {
+			t.Fatalf("admin create %d = %d, want 201 (all: %v)", i, s, statuses)
+		}
+	}
+	// anonymous callers still pay
+	for i := 0; i < 10; i++ {
+		registerAs(t, ts, "198.51.100.2", "", "x")
+	}
+	if r := registerAs(t, ts, "198.51.100.2", "", "x"); r.Status != 429 {
+		t.Fatalf("anonymous 11th = %d", r.Status)
+	}
+}
+
+// A request whose client has gone is dropped quietly: no hash, no
+// failure counted, no log line, no 500.
+func TestAuthLimitCancelledRequest(t *testing.T) {
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	t.Cleanup(func() { log.SetOutput(os.Stderr) })
+	h := &fastLogin{}
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	handler := api.New(sqlDB, t.TempDir(), nil, api.WithAuthHooks(api.AuthHooks{Login: h.login}))
+	for _, path := range []string{"/api/auth/login", "/api/auth/register"} {
+		for i := 0; i < 4; i++ {
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+			r := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{"username":"owner","password":"right"}`)).WithContext(ctx)
+			w := httptest.NewRecorder()
+			handler.ServeHTTP(w, r)
+			if w.Code != 499 || w.Body.Len() != 0 {
+				t.Fatalf("%s cancelled = %d %q, want 499 and no body", path, w.Code, w.Body.String())
+			}
+		}
+	}
+	if h.calls.Load() != 0 {
+		t.Fatal("a cancelled request hashed")
+	}
+	if buf.Len() != 0 {
+		t.Fatalf("cancelled requests logged %q", buf.String())
+	}
+	r := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(`{"username":"owner","password":"right"}`))
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, r)
+	if w.Code == 429 {
+		t.Fatal("cancelled requests spent the limits")
 	}
 }

@@ -39,6 +39,9 @@ func TestClientIP(t *testing.T) {
 		{"zoned peer", &server{}, req("[fe80::1%eth0]:80", "203.0.113.9"), "203.0.113.9", nil},
 		{"none ignores header", &server{trusted: []netip.Prefix{}}, req("10.0.0.2:5000", "203.0.113.9"), "10.0.0.2", nil},
 		{"custom set", &server{trusted: mustPrefixes("203.0.113.0/24")}, req("203.0.113.5:1", "198.51.100.1"), "198.51.100.1", nil},
+		{"entry with port", &server{}, req("10.0.0.2:5000", "1.2.3.4:5678"), "1.2.3.4", nil},
+		{"v6 entry with port", &server{}, req("10.0.0.2:5000", "[2001:db8::1]:443"), "2001:db8::1", nil},
+		{"v6 entry in brackets", &server{}, req("10.0.0.2:5000", "[2001:db8::2]"), "2001:db8::2", nil},
 		{"bare peer without port", &server{}, req("198.51.100.7"), "198.51.100.7", nil},
 	}
 	for _, c := range cases {
@@ -94,5 +97,19 @@ func TestParseTrustedProxies(t *testing.T) {
 	}
 	if _, err := ParseTrustedProxies("10.0.0.0/8,nonsense"); err == nil || !strings.Contains(err.Error(), "nonsense") {
 		t.Fatalf("error does not name the item: %v", err)
+	}
+}
+
+func TestParseTrustedProxiesMapped(t *testing.T) {
+	p, err := ParseTrustedProxies("::ffff:10.0.0.0/104")
+	if err != nil || len(p) != 1 || p[0].String() != "10.0.0.0/8" {
+		t.Fatalf("mapped prefix = %v %v, want 10.0.0.0/8", p, err)
+	}
+	p, err = ParseTrustedProxies("::ffff:203.0.113.5")
+	if err != nil || len(p) != 1 || p[0].String() != "203.0.113.5/32" {
+		t.Fatalf("mapped address = %v %v", p, err)
+	}
+	if _, err := ParseTrustedProxies("::ffff:0.0.0.0/80"); err == nil || !strings.Contains(err.Error(), "::ffff:0.0.0.0/80") {
+		t.Fatalf("a prefix shorter than the mapped range must be rejected naming the item: %v", err)
 	}
 }

@@ -171,13 +171,24 @@ func writeAuthError(w http.ResponseWriter, status int, code, message string) {
 	writeJSON(w, status, map[string]string{"error": code, "message": message})
 }
 
-// writeRateLimited answers 429 rate_limited with Retry-After.
+// writeRateLimited answers 429 rate_limited with Retry-After, worded for
+// sign-in attempts.
 func writeRateLimited(w http.ResponseWriter, retry time.Duration) {
+	writeRateLimitedAs(w, retry, "sign-in attempts")
+}
+
+// writeRateLimitedAs words the 429 for another kind of attempt
+// ("attempts" for registration).
+func writeRateLimitedAs(w http.ResponseWriter, retry time.Duration, subject string) {
 	sec := retrySeconds(retry)
 	w.Header().Set("Retry-After", strconv.Itoa(sec))
 	writeAuthError(w, http.StatusTooManyRequests, "rate_limited",
-		fmt.Sprintf("Too many sign-in attempts. Try again in %s.", waitText(sec)))
+		fmt.Sprintf("Too many %s. Try again in %s.", subject, waitText(sec)))
 }
+
+// writeClientGone ends a request whose client has already gone (its
+// context is done): nginx's 499, no body, nothing logged.
+func writeClientGone(w http.ResponseWriter) { w.WriteHeader(499) }
 
 // writeBusy answers 503 busy with Retry-After: 2.
 func writeBusy(w http.ResponseWriter) {
@@ -224,12 +235,12 @@ func readAuthBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 
 // clientTake spends one L1 token of the request's client; false means a
 // 429 was written. The returned key lets a caller refund it.
-func (s *server) clientTake(w http.ResponseWriter, r *http.Request) (ratelimit.Key, bool) {
+func (s *server) clientTake(w http.ResponseWriter, r *http.Request, subject string) (ratelimit.Key, bool) {
 	l := s.limits
 	k := l.keyer.Key("client", clientKeyString(s.clientIP(r)))
 	if ok, retry := l.client.Take(k, s.now()); !ok {
 		s.logThrottled("client")
-		writeRateLimited(w, retry)
+		writeRateLimitedAs(w, retry, subject)
 		return k, false
 	}
 	return k, true

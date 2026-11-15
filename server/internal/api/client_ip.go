@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/netip"
@@ -45,6 +46,14 @@ func ParseTrustedProxies(v string) ([]netip.Prefix, error) {
 			continue
 		}
 		if p, err := netip.ParsePrefix(item); err == nil {
+			if p.Addr().Is4In6() {
+				// An IPv4-mapped prefix means the IPv4 network (the
+				// server unmaps peer addresses before matching).
+				if p.Bits() < 96 {
+					return nil, fmt.Errorf("trusted proxies: bad item %q: an IPv4-mapped prefix must be at least /96", item)
+				}
+				p = netip.PrefixFrom(p.Addr().Unmap(), p.Bits()-96)
+			}
 			out = append(out, p.Masked())
 			continue
 		}
@@ -109,9 +118,14 @@ func (s *server) clientIP(r *http.Request) netip.Addr {
 	for _, line := range r.Header.Values("X-Forwarded-For") {
 		hops = append(hops, strings.Split(line, ",")...)
 	}
+	if len(hops) > 0 {
+		s.forwardedOnce.Do(func() {
+			log.Printf("auth: honouring X-Forwarded-For from a trusted proxy; set QINQIN_TRUSTED_PROXIES=none if you have no reverse proxy")
+		})
+	}
 	for i, walked := len(hops)-1, 0; i >= 0 && walked < maxForwardedHops; i, walked = i-1, walked+1 {
-		a, err := netip.ParseAddr(strings.TrimSpace(hops[i]))
-		if err != nil {
+		a, ok := parseHop(hops[i])
+		if !ok {
 			return cur
 		}
 		cur = normAddr(a)
@@ -120,6 +134,24 @@ func (s *server) clientIP(r *http.Request) netip.Addr {
 		}
 	}
 	return cur
+}
+
+// parseHop reads one X-Forwarded-For entry: an address, an address with
+// a port (1.2.3.4:5678, [2001:db8::1]:443) or a bracketed IPv6 address.
+func parseHop(h string) (netip.Addr, bool) {
+	h = strings.TrimSpace(h)
+	if a, err := netip.ParseAddr(h); err == nil {
+		return a, true
+	}
+	if ap, err := netip.ParseAddrPort(h); err == nil {
+		return ap.Addr(), true
+	}
+	if len(h) > 2 && h[0] == '[' && h[len(h)-1] == ']' {
+		if a, err := netip.ParseAddr(h[1 : len(h)-1]); err == nil {
+			return a, true
+		}
+	}
+	return netip.Addr{}, false
 }
 
 // clientKeyString is the text a client address is keyed by: IPv4 as is,

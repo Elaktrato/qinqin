@@ -27,9 +27,26 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	clientKey, ok := s.clientTake(w, r)
-	if !ok {
+	// An administrator's token is checked first (an equality lookup, no
+	// hash): bulk creation is then never counted against the client
+	// bucket, however many run in parallel. Everyone else pays one token.
+	internal := func() {
+		if r.Context().Err() != nil {
+			writeClientGone(w)
+			return
+		}
+		writeAuthError(w, http.StatusInternalServerError, "internal", "Internal error.")
+	}
+	caller, cerr := auth.UserFromRequest(r, s.db)
+	if cerr != nil {
+		internal()
 		return
+	}
+	isAdmin := caller != nil && caller.Admin
+	if !isAdmin {
+		if _, ok := s.clientTake(w, r, "attempts"); !ok {
+			return
+		}
 	}
 	var req credentials
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
@@ -39,9 +56,6 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	if req.Username == "" || req.Password == "" {
 		writeAuthError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
 		return
-	}
-	internal := func() {
-		writeAuthError(w, http.StatusInternalServerError, "internal", "Internal error.")
 	}
 	var count int
 	if err := s.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
@@ -66,16 +80,10 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if count != 0 {
-		caller, cerr := auth.UserFromRequest(r, s.db)
-		if cerr != nil {
-			internal()
-			return
-		}
-		if caller == nil || !caller.Admin {
+		if !isAdmin {
 			writeAuthError(w, http.StatusForbidden, "admin_required", "Registration needs an administrator.")
 			return
 		}
-		s.limits.client.Refund(clientKey, s.now()) // bulk user creation is not throttled
 		err = s.withHashGate(r.Context(), func() error {
 			var e error
 			u, e = s.hash.createUser(r.Context(), s.db, req.Username, req.Password, false)
@@ -83,6 +91,8 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	switch {
+	case err != nil && r.Context().Err() != nil:
+		writeClientGone(w)
 	case errors.Is(err, auth.ErrUsernameTaken):
 		writeAuthError(w, http.StatusConflict, "username_taken", "That username is taken.")
 	case errors.Is(err, errHashBusy):
@@ -107,7 +117,7 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	l := s.limits
 	client := clientKeyString(s.clientIP(r))
-	if _, ok := s.clientTake(w, r); !ok {
+	if _, ok := s.clientTake(w, r, "sign-in attempts"); !ok {
 		return
 	}
 	var req credentials
@@ -152,6 +162,10 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, auth.ErrBadCredentials):
 		l.pair.Fail(pair, s.now()) // the account token stays spent
 		writeAuthError(w, http.StatusUnauthorized, "bad_credentials", "Wrong username or password.")
+	case err != nil && r.Context().Err() != nil:
+		l.pair.Abort(pair) // the client went away: nothing to count, nothing to say
+		refund()
+		writeClientGone(w)
 	case errors.Is(err, errHashBusy):
 		l.pair.Abort(pair)
 		refund()
