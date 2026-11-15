@@ -45,6 +45,10 @@ Order: web first. Most features ship on web before the Android build starts.
   the app calls the AI with the user's own provider API key. Merged to develop; implemented and
   checked against the fake provider, never run against the real API (owner tests with a real key; set `QINQIN_SECRET`).
   Pending: a check with a real key, vertical Japanese OCR (no `jpn_vert` on Alpine), Android parity (v0.4.0).
+- [#87](https://github.com/Elaktrato/qinqin/issues/87) Choose any AI provider: Anthropic, OpenAI, Google Gemini, DeepSeek,
+  Mistral, xAI, Groq, OpenRouter and admin-registered OpenAI-compatible endpoints (SSRF-guarded), one key per provider and an
+  active selection per user. On `feature/ai-providers`; implemented and checked against fake servers only, never against a
+  real provider (owner checklist: `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`). Lumo has no public API yet.
 
 ## v0.4.0 — Android client (milestone)
 
