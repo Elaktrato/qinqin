@@ -9,11 +9,14 @@ export const TOKEN_KEY = 'qinqin.token';
 // API sends for 4xx/5xx responses.
 export class ApiError extends Error {
 	status: number;
+	/** Seconds from a Retry-After header, when the server sent one. */
+	retryAfterSeconds?: number;
 
-	constructor(status: number, message: string) {
+	constructor(status: number, message: string, retryAfterSeconds?: number) {
 		super(message);
 		this.name = 'ApiError';
 		this.status = status;
+		if (retryAfterSeconds !== undefined) this.retryAfterSeconds = retryAfterSeconds;
 	}
 }
 
@@ -92,7 +95,7 @@ function currentPath(): string {
  * (the Sources page) the user is signed out quietly and stays put
  * (lib/routeAccess.ts).
  */
-export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+async function request(path: string, options: ApiOptions): Promise<Response> {
 	const headers: Record<string, string> = { accept: 'application/json' };
 	const token = getToken();
 	if (options.auth !== false && token) {
@@ -124,13 +127,44 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
 			}
 		}
 		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
-		throw new ApiError(response.status, message);
+		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
+		throw new ApiError(response.status, message, Number.isFinite(retry) && retry > 0 ? retry : undefined);
 	}
+	return response;
+}
 
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+	const response = await request(path, options);
 	if (response.status === 204) {
 		return undefined as T;
 	}
 
 	const text = await response.text();
 	return (text ? JSON.parse(text) : undefined) as T;
+}
+
+/**
+ * apiBlob is api() for a binary body (a photo): the same bearer token,
+ * 401 and workspace-gone handling, but the response comes back as a Blob.
+ */
+export async function apiBlob(path: string, options: ApiOptions = {}): Promise<Blob> {
+	const response = await request(path, options);
+	return response.blob();
+}
+
+/**
+ * apiErrorBody parses the `{error, message}` JSON the AI and journal
+ * routes answer with; null for any other error or a plain-text body.
+ */
+export function apiErrorBody(err: unknown): { error: string; message: string } | null {
+	if (!(err instanceof ApiError)) return null;
+	try {
+		const body = JSON.parse(err.message) as unknown;
+		if (typeof body !== 'object' || body === null) return null;
+		const { error, message } = body as { error?: unknown; message?: unknown };
+		if (typeof error !== 'string') return null;
+		return { error, message: typeof message === 'string' ? message : '' };
+	} catch {
+		return null;
+	}
 }

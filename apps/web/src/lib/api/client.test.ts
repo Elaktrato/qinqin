@@ -4,7 +4,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { ApiError, api } from './client';
+import { ApiError, api, apiBlob, apiErrorBody, setUnauthorizedHandler } from './client';
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -161,5 +161,56 @@ describe('api client FormData bodies and abort signal', () => {
 		await api('/x', { signal: controller.signal });
 
 		expect(vi.mocked(fetch).mock.calls[0][1]?.signal).toBe(controller.signal);
+	});
+});
+
+describe('apiBlob and apiErrorBody', () => {
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn());
+		goto.mockReset();
+	});
+
+	afterEach(() => {
+		setUnauthorizedHandler(null);
+		vi.unstubAllGlobals();
+	});
+
+	it('apiBlob sends the bearer and returns the blob', async () => {
+		localStorage.setItem('qinqin.token', 'tok');
+		vi.mocked(fetch).mockResolvedValue(new Response('IMG', { status: 200 }));
+
+		const blob = await apiBlob('/api/journal/photos/p1');
+
+		expect(await blob.text()).toBe('IMG');
+		const [url, init] = vi.mocked(fetch).mock.calls[0];
+		expect(url).toBe('/api/journal/photos/p1');
+		expect(new Headers(init?.headers).get('authorization')).toBe('Bearer tok');
+	});
+
+	it('apiBlob runs the unauthorized handler on 401', async () => {
+		const handler = vi.fn();
+		setUnauthorizedHandler(handler);
+		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 401 }));
+
+		await expect(apiBlob('/x')).rejects.toMatchObject({ status: 401 });
+		expect(handler).toHaveBeenCalledOnce();
+	});
+
+	it('api records Retry-After on the error', async () => {
+		vi.mocked(fetch).mockResolvedValue(
+			new Response('{}', { status: 429, headers: { 'retry-after': '90' } })
+		);
+		await expect(api('/x')).rejects.toMatchObject({ status: 429, retryAfterSeconds: 90 });
+	});
+
+	it('apiErrorBody parses the JSON body and returns null for plain text', () => {
+		expect(apiErrorBody(new ApiError(409, '{"error":"no_key","message":"Add a key."}'))).toEqual({
+			error: 'no_key',
+			message: 'Add a key.'
+		});
+		expect(apiErrorBody(new ApiError(500, 'internal error'))).toBeNull();
+		expect(apiErrorBody(new Error('x'))).toBeNull();
+		expect(apiErrorBody(new ApiError(400, '{"foo":1}'))).toBeNull();
 	});
 });
