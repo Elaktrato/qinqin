@@ -262,6 +262,6 @@ Where the build differs from or refines the decisions above, and the known limit
 ## Non-goals
 
 - No server-side scheduler; no authoritative scheduling state.
-- No FSRS parameter optimization UI (defaults only).
+- No FSRS parameter optimization UI in v1 (defaults only); it is designed separately in `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`.
 - No mobile implementation in these rounds (the phase-3 mobile client later).
 - No media/audio, no sharing decks between users.

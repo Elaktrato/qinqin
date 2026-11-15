@@ -36,6 +36,12 @@
 		type StudyCardKind
 	} from '$lib/study/types';
 
+	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
+		const active = data.fsrs?.active;
+		if (active === null || active === undefined) return 'default parameters';
+		return `${active.source === 'optimized' ? 'optimised' : 'imported'} on ${active.createdAt.slice(0, 10)}`;
+	}
+
 	// Counts only need to distinguish "none" from "some"; the actual
 	// session limits are applied by the session page.
 	const COUNT_CAP = 999;
@@ -58,6 +64,7 @@
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	let schedulingLabel = $state('default parameters');
 	let loading = $state(true);
 	let loadError = $state('');
 	let noWorkspace = $state(false);
@@ -160,6 +167,7 @@
 			cards = data.cards;
 			reviews = data.reviews;
 			weights = activeWeights(data);
+			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
 		} catch (err) {
 			if (seq !== requestSeq) return;
@@ -187,6 +195,7 @@
 			cards = data.cards;
 			reviews = data.reviews;
 			weights = activeWeights(data);
+			schedulingLabel = describeScheduling(data);
 		} catch (err) {
 			if (seq === requestSeq) deckError = message(err, 'Could not reload your cards.');
 		}
@@ -750,6 +759,9 @@
 					<input type="number" min="1" max="999" step="1" bind:value={reviewLimit} />
 				</label>
 			</div>
+			<p class="hint">
+				<a href="/study/scheduling">Scheduling: {schedulingLabel}</a>
+			</p>
 		</section>
 
 		<section aria-labelledby="types-heading">
