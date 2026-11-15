@@ -684,3 +684,30 @@ func TestCanWriteDataGrandfathered(t *testing.T) {
 		}
 	}
 }
+
+func TestListForIncludesAudioPacks(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	if _, err := sqlDB.Exec(`INSERT INTO audio_packs (pack_id, language, name, version, license, attribution, created_at, updated_at)
+		VALUES ('ja-audio', 'ja', 'Japanese audio', '1', 'CC BY 4.0', 'Kanji alive', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	list, err := plugins.ListFor(ctx, sqlDB, newUser(t, sqlDB, "alice"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := find(t, list, "ja-audio")
+	m := manifestObject(t, p.Manifest)
+	if m["type"] != "audio" || m["language"] != "ja" || m["license"] != "CC BY 4.0" || !p.Enabled {
+		t.Errorf("manifest = %v enabled %t, want the audio registry fields", m, p.Enabled)
+	}
+	if ok, err := plugins.Exists(ctx, sqlDB, "ja-audio"); err != nil || !ok {
+		t.Errorf("Exists = %v, %v; want true", ok, err)
+	}
+	if _, err := sqlDB.Exec(`UPDATE audio_packs SET deleted_at = '2026-01-01T00:00:00Z'`); err != nil {
+		t.Fatal(err)
+	}
+	if ok, _ := plugins.Exists(ctx, sqlDB, "ja-audio"); ok {
+		t.Error("Exists true after the pack was removed")
+	}
+}

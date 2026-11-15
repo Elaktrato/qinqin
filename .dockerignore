@@ -8,3 +8,5 @@ apps/web/build
 apps/web/.svelte-kit
 data/
 server/data/
+plugins/data-local
+plugins/data-audio
