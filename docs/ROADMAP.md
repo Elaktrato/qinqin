@@ -33,6 +33,8 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
 - ~~[#30](https://github.com/Elaktrato/qinqin/issues/30) card management~~ — done (develop)
 - ~~[#31](https://github.com/Elaktrato/qinqin/issues/31) re-show Again cards within a session~~ — done (develop)
 - ~~[#33](https://github.com/Elaktrato/qinqin/issues/33) search filters UI~~ — done (develop)
+- ~~[#56](https://github.com/Elaktrato/qinqin/issues/56) forgiving writing pad and snapping tone card feel~~ — done (develop)
+- [#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character-unit schemes (JLPT kanji, Jōyō grades, 通用规范汉字表)
 - ~~[#26](https://github.com/Elaktrato/qinqin/issues/26) map backfill performance~~ — done (develop)
 
 Order: web first. Most features ship on web before the Android build starts.
@@ -68,6 +70,52 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 - [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)
 - ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — done (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`, demo pack `zh-grammar-demo`; native-speaker review of the demo sentences open)
 - ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: [#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days
+
+### Ideas, not scheduled (Future)
+
+Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
+
+**Accounts and data**
+
+- [#64](https://github.com/Elaktrato/qinqin/issues/64) accounts: change password, admin user management, password reset, session control
+- [#83](https://github.com/Elaktrato/qinqin/issues/83) accounts: personal access tokens for scripts and integrations
+- [#61](https://github.com/Elaktrato/qinqin/issues/61) backup: export and restore your own data, plus server backup
+- [#86](https://github.com/Elaktrato/qinqin/issues/86) auth: login/register rate limiting
+
+**Study**
+
+- [#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards
+- [#66](https://github.com/Elaktrato/qinqin/issues/66) leech handling with a per-user policy
+- [#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals
+- [#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks
+- [#76](https://github.com/Elaktrato/qinqin/issues/76) focus sessions from weak characters and leeches
+- [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test and "I already know this"
+- [#60](https://github.com/Elaktrato/qinqin/issues/60) Anki import
+- [#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary and milestones
+- [#82](https://github.com/Elaktrato/qinqin/issues/82) level check (experimental)
+
+**Japanese**
+
+- [#62](https://github.com/Elaktrato/qinqin/issues/62) stroke order data from KanjiVG (licence CC BY-SA 3.0; check before bundling)
+- [#63](https://github.com/Elaktrato/qinqin/issues/63) kana study, separate from flashcards
+
+**Reader and lookup**
+
+- [#68](https://github.com/Elaktrato/qinqin/issues/68) highlight unknown words, text coverage
+- [#69](https://github.com/Elaktrato/qinqin/issues/69) import your own text (paste, txt, epub, subtitles)
+- [#70](https://github.com/Elaktrato/qinqin/issues/70) handwriting lookup
+- [#71](https://github.com/Elaktrato/qinqin/issues/71) radical and component lookup
+- [#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history with add-to-deck
+- [#77](https://github.com/Elaktrato/qinqin/issues/77) personal notes and mnemonics
+- [#78](https://github.com/Elaktrato/qinqin/issues/78) reading display settings, smart hiding of well-known readings
+
+**Journal and platform**
+
+- [#59](https://github.com/Elaktrato/qinqin/issues/59) journal sharing with comments and peer corrections
+- [#58](https://github.com/Elaktrato/qinqin/issues/58) browser add-on, reader-like lookup on any site (after the first Android build)
+- [#79](https://github.com/Elaktrato/qinqin/issues/79) installable PWA with offline study
+- [#73](https://github.com/Elaktrato/qinqin/issues/73) UI languages
+- [#80](https://github.com/Elaktrato/qinqin/issues/80) user and API documentation as the GitHub wiki
 
 Engineering debt (#1–#22) was worked through in themed batches (backend hardening, web polish, CI and serving);
 what remains open is listed in the handoff `docs/superpowers/handoffs/2026-11-15-web-build-handoff.md`
