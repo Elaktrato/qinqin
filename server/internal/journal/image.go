@@ -14,16 +14,20 @@ import (
 
 var (
 	ErrUnsupportedImage = errors.New("journal: not a JPEG, PNG or WebP image")
-	ErrImageTooLarge    = errors.New("journal: image over 50 megapixels")
+	ErrImageTooLarge    = errors.New("journal: image over 25 megapixels")
 )
 
 const (
-	maxMegapixels  = 50
-	maxLongEdge    = 2576
-	jpegQuality    = 85
-	jpegQualityBig = 70
-	bigResult      = 7 << 19 // 3.5 MiB
+	maxMegapixels = 25
+	maxLongEdge   = 2576
+	minLongEdge   = 600
 )
+
+// maxResult is the largest JPEG we keep: 3.75 MB raw is 5 MB as base64, the
+// API's image limit. A variable so tests can force the shrinking loop.
+var maxResult = 3_750_000
+
+var jpegQualities = []int{85, 70, 55, 40}
 
 func sniffImage(b []byte) (jpegFile bool, ok bool) {
 	switch {
@@ -39,7 +43,7 @@ func sniffImage(b []byte) (jpegFile bool, ok bool) {
 
 // NormalizePhoto turns an uploaded JPEG, PNG or WebP into the JPEG the app
 // keeps and sends: type sniffed from the content, size checked from the
-// header before any pixel is decoded, long edge at most 2576 px, EXIF
+// header before any pixel is decoded, long edge at most 2576 px, at most 3.75 MB (so 5 MB as base64), EXIF
 // orientation applied and every metadata segment (GPS included) dropped by
 // re-encoding, transparency flattened onto white.
 func NormalizePhoto(data []byte) ([]byte, error) {
@@ -61,31 +65,45 @@ func NormalizePhoto(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, ErrUnsupportedImage
 	}
-	w, h := cfg.Width, cfg.Height
-	if long := max(w, h); long > maxLongEdge {
-		w, h = max(1, w*maxLongEdge/long), max(1, h*maxLongEdge/long)
-	}
-	dst := image.NewRGBA(image.Rect(0, 0, w, h))
-	xdraw.Draw(dst, dst.Bounds(), image.NewUniform(color.White), image.Point{}, xdraw.Src)
-	if w == cfg.Width && h == cfg.Height {
-		xdraw.Draw(dst, dst.Bounds(), src, src.Bounds().Min, xdraw.Over)
-	} else {
-		xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), xdraw.Over, nil)
-	}
-	var out image.Image = dst
+	orientation := 1
 	if isJPEG {
-		out = orient(dst, exifOrientation(data))
+		orientation = exifOrientation(data)
 	}
-	for _, q := range []int{jpegQuality, jpegQualityBig} {
-		var b bytes.Buffer
-		if err := jpeg.Encode(&b, out, &jpeg.Options{Quality: q}); err != nil {
-			return nil, err
+	// The API takes at most 5 MB after base64, so the JPEG must fit maxResult
+	// raw bytes: step the quality down, then the long edge, until it does.
+	edge := min(max(cfg.Width, cfg.Height), maxLongEdge)
+	var last []byte
+	for {
+		w, h := cfg.Width, cfg.Height
+		if long := max(w, h); long > edge {
+			w, h = max(1, w*edge/long), max(1, h*edge/long)
 		}
-		if b.Len() <= bigResult || q == jpegQualityBig {
-			return b.Bytes(), nil
+		dst := image.NewRGBA(image.Rect(0, 0, w, h))
+		xdraw.Draw(dst, dst.Bounds(), image.NewUniform(color.White), image.Point{}, xdraw.Src)
+		if w == cfg.Width && h == cfg.Height {
+			xdraw.Draw(dst, dst.Bounds(), src, src.Bounds().Min, xdraw.Over)
+		} else {
+			xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), xdraw.Over, nil)
 		}
+		var out image.Image = dst
+		if isJPEG {
+			out = orient(dst, orientation)
+		}
+		for _, q := range jpegQualities {
+			var b bytes.Buffer
+			if err := jpeg.Encode(&b, out, &jpeg.Options{Quality: q}); err != nil {
+				return nil, err
+			}
+			last = b.Bytes()
+			if len(last) <= maxResult {
+				return last, nil
+			}
+		}
+		if edge <= minLongEdge {
+			return last, nil
+		}
+		edge = max(minLongEdge, edge*4/5)
 	}
-	panic("unreachable")
 }
 
 // orient applies an EXIF orientation (2..8) to img.

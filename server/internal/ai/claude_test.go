@@ -81,7 +81,7 @@ func TestClaudeReviewRequestShape(t *testing.T) {
 	if got.method != "POST" || !strings.HasSuffix(got.path, "/v1/messages") {
 		t.Fatalf("request %s %s", got.method, got.path)
 	}
-	if b["model"] != "claude-opus-5-5" || b["max_tokens"] != float64(16000) {
+	if b["model"] != "claude-opus-5-5" || b["max_tokens"] != float64(24000) {
 		t.Fatalf("model/max_tokens: %v %v", b["model"], b["max_tokens"])
 	}
 	oc := sub(t, b, "output_config")
@@ -256,7 +256,7 @@ func TestClaudeTranscribeSendsImage(t *testing.T) {
 	if r.Text != "今天天气很好。" || r.Unreadable {
 		t.Fatalf("reply = %+v", r)
 	}
-	if got.body["max_tokens"] != float64(8000) || sub(t, got.body, "output_config")["effort"] != "medium" {
+	if got.body["max_tokens"] != float64(16000) || sub(t, got.body, "output_config")["effort"] != "medium" {
 		t.Fatalf("max_tokens/effort: %v", got.body)
 	}
 	content := got.body["messages"].([]any)[0].(map[string]any)["content"].([]any)
@@ -281,7 +281,33 @@ func TestClaudeSuggestEffortLow(t *testing.T) {
 	if len(r.Items) != 1 || r.Items[0].Title != "我的周末" || r.Items[0].Words[0] != "周末" {
 		t.Fatalf("items = %+v", r.Items)
 	}
-	if got.body["max_tokens"] != float64(4000) || sub(t, got.body, "output_config")["effort"] != "low" {
+	if got.body["max_tokens"] != float64(8000) || sub(t, got.body, "output_config")["effort"] != "low" {
 		t.Fatalf("max_tokens/effort: %v", got.body)
+	}
+}
+
+func TestClaudeIgnoresServerEnvironment(t *testing.T) {
+	evil := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("request reached the ANTHROPIC_BASE_URL host")
+	}))
+	t.Cleanup(evil.Close)
+	t.Setenv("ANTHROPIC_BASE_URL", evil.URL)
+	t.Setenv("ANTHROPIC_CUSTOM_HEADERS", "X-Env-Header: leaked")
+	t.Setenv("ANTHROPIC_AUTH_TOKEN", "env-token")
+	// No WithBaseURL: only the environment could point the client anywhere.
+	var seen http.Header
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = r.Header.Clone()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	t.Cleanup(srv.Close)
+	c := NewClaude(option.WithBaseURL(srv.URL))
+	_ = c.Validate(context.Background(), creds("claude-opus-5-5"))
+	if seen == nil {
+		t.Fatal("no request reached the test server")
+	}
+	if seen.Get("X-Env-Header") != "" || strings.Contains(seen.Get("Authorization"), "env-token") {
+		t.Errorf("environment leaked into the request: %v", seen)
 	}
 }

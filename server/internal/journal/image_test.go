@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"image/jpeg"
 	"image/png"
+	"math/rand"
 	"os"
 	"testing"
 )
@@ -83,8 +84,8 @@ func TestNormalizePhotoRejectsBomb(t *testing.T) {
 		return b.Bytes()
 	}
 	ihdr := make([]byte, 13)
-	binary.BigEndian.PutUint32(ihdr[0:], 10000)
-	binary.BigEndian.PutUint32(ihdr[4:], 10000)
+	binary.BigEndian.PutUint32(ihdr[0:], 5100)
+	binary.BigEndian.PutUint32(ihdr[4:], 5100) // 26 MP
 	ihdr[8], ihdr[9] = 8, 2
 	var b bytes.Buffer
 	b.WriteString("\x89PNG\r\n\x1a\n")
@@ -164,5 +165,44 @@ func TestNormalizePhotoOrientationPixels(t *testing.T) {
 	r, g, _, _ := dec.At(12, 12).RGBA()
 	if r>>8 < 200 || g>>8 > 80 {
 		t.Fatalf("bottom-right pixel is not red: %d %d", r>>8, g>>8)
+	}
+}
+
+func TestNormalizePhotoFitsTheAPILimit(t *testing.T) {
+	rng := rand.New(rand.NewSource(1))
+	img := image.NewRGBA(image.Rect(0, 0, 3000, 2250))
+	for i := 0; i < len(img.Pix); i += 4 {
+		img.Pix[i], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = byte(rng.Intn(256)), byte(rng.Intn(256)), byte(rng.Intn(256)), 255
+	}
+	var in bytes.Buffer
+	if err := png.Encode(&in, img); err != nil {
+		t.Fatal(err)
+	}
+	out, err := NormalizePhoto(in.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(out) > 3_750_000 {
+		t.Fatalf("output is %d bytes, over the 3.75 MB that fits 5 MB as base64", len(out))
+	}
+	dims(t, out)
+}
+
+func TestNormalizePhotoShrinksUntilItFits(t *testing.T) {
+	old := maxResult
+	maxResult = 300_000
+	t.Cleanup(func() { maxResult = old })
+	rng := rand.New(rand.NewSource(2))
+	img := image.NewRGBA(image.Rect(0, 0, 2000, 1500))
+	for i := 0; i < len(img.Pix); i += 4 {
+		img.Pix[i], img.Pix[i+1], img.Pix[i+2], img.Pix[i+3] = byte(rng.Intn(256)), byte(rng.Intn(256)), byte(rng.Intn(256)), 255
+	}
+	out, err := NormalizePhoto(jpegBytes(t, img))
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, _ := dims(t, out)
+	if len(out) > maxResult || w >= 2000 {
+		t.Fatalf("output %d bytes, width %d: not shrunk to fit", len(out), w)
 	}
 }

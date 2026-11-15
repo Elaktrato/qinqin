@@ -28,6 +28,9 @@ func NewClaude(extra ...option.RequestOption) *Claude { return &Claude{extra: ex
 
 func (c *Claude) client(cr Credentials) anthropic.Client {
 	opts := append([]option.RequestOption{
+		// The server's own ANTHROPIC_BASE_URL, CUSTOM_HEADERS and tokens must
+		// never shape a learner's request.
+		option.WithoutEnvironmentDefaults(),
 		option.WithAPIKey(cr.APIKey),
 		option.WithMaxRetries(1),
 		option.WithRequestTimeout(requestTimeout),
@@ -45,7 +48,7 @@ func (c *Claude) Validate(ctx context.Context, cr Credentials) error {
 
 func (c *Claude) Review(ctx context.Context, cr Credentials, r ReviewRequest) (ReviewReply, error) {
 	nonce := newNonce()
-	text, model, usage, err := c.call(ctx, "review", cr, reviewSystemPrompt, reviewSchema, 16000, anthropic.BetaOutputConfigEffortMedium,
+	text, model, usage, err := c.call(ctx, "review", cr, reviewSystemPrompt, reviewSchema, 24000, anthropic.BetaOutputConfigEffortMedium,
 		[]anthropic.BetaContentBlockParamUnion{anthropic.NewBetaTextBlock(reviewUserMessage(r, nonce))})
 	if err != nil {
 		return ReviewReply{}, err
@@ -71,7 +74,7 @@ func (c *Claude) Review(ctx context.Context, cr Credentials, r ReviewRequest) (R
 }
 
 func (c *Claude) Suggest(ctx context.Context, cr Credentials, r SuggestRequest) (SuggestReply, error) {
-	text, model, usage, err := c.call(ctx, "suggest", cr, suggestSystemPrompt, suggestSchema, 4000, anthropic.BetaOutputConfigEffortLow,
+	text, model, usage, err := c.call(ctx, "suggest", cr, suggestSystemPrompt, suggestSchema, 8000, anthropic.BetaOutputConfigEffortLow,
 		[]anthropic.BetaContentBlockParamUnion{anthropic.NewBetaTextBlock(suggestUserMessage(r, newNonce()))})
 	if err != nil {
 		return SuggestReply{}, err
@@ -93,7 +96,7 @@ func (c *Claude) Transcribe(ctx context.Context, cr Credentials, r TranscribeReq
 		Data:      base64.StdEncoding.EncodeToString(r.Image),
 		MediaType: anthropic.BetaBase64ImageSourceMediaTypeImageJPEG,
 	})
-	text, model, usage, err := c.call(ctx, "transcribe", cr, transcribeSystemPrompt, transcribeSchema, 8000, anthropic.BetaOutputConfigEffortMedium,
+	text, model, usage, err := c.call(ctx, "transcribe", cr, transcribeSystemPrompt, transcribeSchema, 16000, anthropic.BetaOutputConfigEffortMedium,
 		[]anthropic.BetaContentBlockParamUnion{img, anthropic.NewBetaTextBlock(transcribeUserMessage(r))})
 	if err != nil {
 		return TranscribeReply{}, err
@@ -107,6 +110,9 @@ func (c *Claude) Transcribe(ctx context.Context, cr Credentials, r TranscribeReq
 	}
 	return TranscribeReply{Text: out.Text, Unreadable: out.Unreadable, Model: model, Usage: usage}, nil
 }
+
+// Thinking tokens count toward max_tokens on these models, so the limits
+// leave room for them above the structured reply.
 
 // call sends one structured-output request and returns the JSON text of the
 // last text block (a fallback boundary can precede it), the model that
