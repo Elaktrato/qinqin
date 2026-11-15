@@ -4,7 +4,7 @@ Date: 2026-11-15
 Status: written autonomously (decision rule: licensing first, then best UX even at higher
 development cost); not yet reviewed by the owner. Issue: #41.
 Depends on: `2026-11-15-pack-management-design.md` (#40) — its Data tab, its
-`GET /api/admin/packs` list and migration 026 (`dictionaries.language`).
+`GET /api/admin/packs` list and migration 027 (`dictionaries.language`).
 
 ## Intent and why
 
@@ -103,7 +103,7 @@ lookup ranking; a server filter can be added later behind the same setting.
   rows and installed languages: `{code, name, installed, kind: "code"|"data"}`,
   sorted by code. `installed` keeps its meaning (live dictionary data).
   `ensureDefaultWorkspaces` keeps using installed languages only.
-- `GET /api/dictionaries` rows gain `packId` and `language` (from migration 026).
+- `GET /api/dictionaries` rows gain `packId` and `language` (from migration 027).
 - `POST /api/admin/languages {code}`: invalid `422`; a code pack `409` "zh is
   built in"; existing row `200`; new row `201` (name = code). Body cap 4 KiB.
 - `DELETE /api/admin/languages/{code}`: code pack `409`; unknown `404`; `409`
@@ -161,7 +161,7 @@ Workspaces
 
 ## Constraints
 
-- Builds on the #40 branch (migration 026, Data tab, packs list); no migration of
+- Builds on the #40 branch (migration 027, Data tab, packs list); no migration of
   its own. Go 1.26, no new deps; Svelte 5 runes, no new npm deps.
 - `hiddenDictionaries` lives in workspace settings, so it syncs with the workspace
   row; the Android client may ignore it.

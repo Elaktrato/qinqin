@@ -8,7 +8,15 @@
 	import type { PackInfo } from '$lib/plugins/grammar/types';
 	import { coreCredits } from '$lib/sources/coreCredits';
 	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
-	import { creditView, packTable, pluginCredits, type CreditView, type PackTable } from '$lib/sources/sections';
+	import { listSentencePacks, type SentencePack } from '$lib/api/packs';
+	import {
+		creditView,
+		packTable,
+		pluginCredits,
+		sentencePackSources,
+		type CreditView,
+		type PackTable
+	} from '$lib/sources/sections';
 
 	// Credits declared in code: the app's own, and each web plugin's.
 	const coreViews = coreCredits.map(creditView);
@@ -21,6 +29,20 @@
 	let loading = $state(true);
 	let error = $state('');
 	const dictionaryTable = $derived(packTable('dictionaries', dictionaries));
+
+	let sentencePacks = $state<SentencePack[]>([]);
+	let sentencesError = $state('');
+	const sentencesTable = $derived(packTable('sentences', sentencePackSources(sentencePacks)));
+
+	async function loadSentences(): Promise<void> {
+		sentencesError = '';
+		try {
+			sentencePacks = await listSentencePacks();
+		} catch (err) {
+			sentencePacks = [];
+			sentencesError = message(err, 'Could not load sentence pack credits.');
+		}
+	}
 
 	let frequencyPacks = $state<FrequencyPack[]>([]);
 	let frequencyLoading = $state(true);
@@ -106,6 +128,7 @@
 		loadGrammar();
 		load();
 		loadFrequency();
+		loadSentences();
 		loadSchemes();
 	});
 </script>
@@ -294,6 +317,45 @@
 			never bundled; an instance may add them locally as a separate pack directory.
 		</p>
 	</section>
+
+	{#if sentencesError}
+		<section>
+			<h2 id="sources-sentences">Sentences</h2>
+			<p class="error" role="alert">{sentencesError}</p>
+			<button type="button" onclick={loadSentences}>Retry</button>
+		</section>
+	{:else if sentencePacks.length > 0}
+		<section>
+			<h2 id="sources-sentences">Sentences</h2>
+			<div class="table-wrap">
+				<table aria-labelledby="sources-sentences">
+					<thead>
+						<tr>
+							<th scope="col">Name</th>
+							{@render noteHeader(sentencesTable)}
+							<th scope="col">Language</th>
+							<th scope="col">Version</th>
+							<th scope="col">License</th>
+							<th scope="col">Attribution</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each sentencesTable.rows as row (row.key)}
+							<tr>
+								<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+								{@render noteCell(sentencesTable, row.noteId, row.name)}
+								<td title={row.language}>{languageLabel(row.language)}</td>
+								<td>{row.version}</td>
+								<td>{@render cell(row.license, row.language)}</td>
+								<td>{@render cell(row.attribution, row.language)}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			{@render notes(sentencesTable)}
+		</section>
+	{/if}
 
 	<section>
 		<h2 id="sources-levels">Level lists</h2>

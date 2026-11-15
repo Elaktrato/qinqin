@@ -13,10 +13,7 @@ import (
 	"strings"
 
 	"qinqin/internal/dict"
-	"qinqin/internal/freq"
-	"qinqin/internal/grammar"
-	"qinqin/internal/levels"
-	"qinqin/internal/sentences"
+	"qinqin/internal/packs"
 )
 
 // seedCmd runs `qinqin seed --data <dir> --packs <dir>[,<dir>...]`.
@@ -102,10 +99,8 @@ var importOrder = map[string]int{
 	dict.TypeGrammar:    4,
 }
 
-// seed imports every pack under the roots into sqlDB, dispatching on each
-// manifest's type: dictionary to dict.ImportLexicon, frequency to
-// freq.Import, levels to levels.Import, sentences to
-// sentences.ImportPack, grammar to grammar.Import. A pack is
+// seed imports every pack under the roots into sqlDB through
+// packs.Import, which dispatches on each manifest's type. A pack is
 // any directory holding a manifest.json; the walk does not descend into
 // one. Packs import dictionaries first, then frequency packs, levels and
 // sentences, each group in path order — so a frequency pack's priority
@@ -133,7 +128,7 @@ func seed(ctx context.Context, sqlDB *sql.DB, roots []string, out io.Writer) err
 	})
 
 	for _, p := range found {
-		line, err := importPack(ctx, sqlDB, p.pack)
+		line, err := packs.Import(ctx, sqlDB, p.pack)
 		if err != nil {
 			return fmt.Errorf("seed pack %s (%s): %w", p.pack.ID, p.dir, err)
 		}
@@ -206,46 +201,4 @@ func findPacksIn(root string) ([]seedPack, error) {
 		return nil, fmt.Errorf("seed: walk %s: %w", root, err)
 	}
 	return found, nil
-}
-
-// importPack dispatches one pack on its manifest type and returns its
-// one-line summary.
-func importPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (string, error) {
-	switch pack.Type {
-	case dict.TypeDictionary:
-		r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
-		if err != nil {
-			return "", err
-		}
-		line := fmt.Sprintf("%d entries, %d senses", r.Entries, r.Senses)
-		if r.Skipped > 0 || r.Unconverted > 0 {
-			line += fmt.Sprintf(" (skipped %d malformed lines, %d pinyin unconverted)", r.Skipped, r.Unconverted)
-		}
-		return line, nil
-	case dict.TypeFrequency:
-		r, err := freq.Import(ctx, sqlDB, &pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d rows", r.Entries), nil
-	case dict.TypeLevels:
-		r, err := levels.Import(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d unknown forms skipped", len(r.Skipped)), nil
-	case dict.TypeSentences:
-		r, err := sentences.ImportPack(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d unknown words skipped", len(r.Skipped)), nil
-	case dict.TypeGrammar:
-		r, err := grammar.Import(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d lessons", r.Lessons), nil
-	}
-	return "", fmt.Errorf("unsupported pack type %q", pack.Type)
 }

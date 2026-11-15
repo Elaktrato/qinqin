@@ -14,12 +14,15 @@
 	import { loadPluginStates } from '$lib/plugins/states';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
+	import PackManager from '$lib/settings/PackManager.svelte';
+	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
+	import { user } from '$lib/auth';
 	import {
-		SETTINGS_TABS,
 		SETTINGS_TAB_LABELS,
 		parseSettingsTab,
 		settingsTabHref,
 		tabKeyTarget,
+		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
 	import { rename, workspaces } from '$lib/workspaces';
@@ -39,7 +42,9 @@
 	// The open tab lives in the URL (`?tab=`), so it can be linked to;
 	// switching replaces the history entry instead of adding one. The
 	// panels stay mounted (only hidden), so drafts survive a tab switch.
-	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab')));
+	const admin = $derived($user?.admin === true);
+	const tabs = $derived(visibleSettingsTabs(admin));
+	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab'), admin));
 	const tabButtons: Partial<Record<SettingsTab, HTMLButtonElement>> = {};
 
 	async function selectTab(tab: SettingsTab, focus = false): Promise<void> {
@@ -53,10 +58,10 @@
 	}
 
 	function tabKey(event: KeyboardEvent, index: number): void {
-		const next = tabKeyTarget(event.key, index, SETTINGS_TABS.length);
+		const next = tabKeyTarget(event.key, index, tabs.length);
 		if (next === null) return;
 		event.preventDefault();
-		void selectTab(SETTINGS_TABS[next], true);
+		void selectTab(tabs[next], true);
 	}
 
 	// The workspace being renamed (one at a time) and its draft name.
@@ -99,7 +104,7 @@
 		pluginsLoading = true;
 		pluginsError = '';
 		try {
-			const list = await api<PluginInfo[]>('/api/plugins');
+			const list = (await api<PluginInfo[]>('/api/plugins')).filter((p) => !isDataPackPlugin(p));
 			// The core app's own registry row is not a switchable plugin.
 			plugins = list.filter((plugin) => !isCorePlugin(plugin.id)).map((plugin) => ({
 				id: plugin.id,
@@ -184,7 +189,7 @@
 	<h1>Settings</h1>
 
 	<div class="tabs" role="tablist" aria-label="Settings">
-		{#each SETTINGS_TABS as tab, index (tab)}
+		{#each tabs as tab, index (tab)}
 			<button
 				type="button"
 				role="tab"
@@ -386,6 +391,19 @@
 	>
 		<AiSettings />
 	</div>
+
+	{#if admin}
+		<div
+			role="tabpanel"
+			id="settings-panel-data"
+			aria-labelledby="settings-tab-data"
+			hidden={activeTab !== 'data'}
+		>
+			<h2>Data</h2>
+			<PackManager />
+			<!-- languages -->
+		</div>
+	{/if}
 </main>
 
 <style>

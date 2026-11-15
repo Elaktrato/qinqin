@@ -84,6 +84,19 @@ export function clearToken(): void {
 	}
 }
 
+/**
+ * notifyUnauthorized is what any 401 does: drop the token, tell the auth
+ * store, and leave a private page for /login. api() and the XHR upload
+ * helper share it, so a session that drops mid-upload logs out too.
+ */
+export function notifyUnauthorized(): void {
+	clearToken();
+	unauthorizedHandler?.();
+	if (redirectsOnUnauthorized(currentPath())) {
+		void goto('/login');
+	}
+}
+
 function currentPath(): string {
 	if (typeof window === 'undefined') return '';
 	return normalizePath(window.location.pathname);
@@ -122,13 +135,7 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 
 	if (!response.ok) {
 		const message = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
-		if (response.status === 401) {
-			clearToken();
-			unauthorizedHandler?.();
-			if (redirectsOnUnauthorized(currentPath())) {
-				void goto('/login');
-			}
-		}
+		if (response.status === 401) notifyUnauthorized();
 		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
 		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
 		throw new ApiError(response.status, message, Number.isFinite(retry) && retry > 0 ? retry : undefined);
