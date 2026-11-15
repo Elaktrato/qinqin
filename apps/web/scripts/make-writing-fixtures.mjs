@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import * as ink from './writing-ink-model.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const CHARS = ['了', '子', '糸', '纟', '红', '口', '十', '人', '永', '我', '好', '三', '川', '目', '王'];
@@ -107,6 +108,41 @@ for (const ch of ['子', '糸', '纟', '红']) {
 	add(`${ch} 0+1 in one motion`, ch, 0, joined(ch, 0, 1), { kind: 'match', strokes: [0, 1] });
 }
 add('口 1+2 do not join', '口', 1, joined('口', 1, 2), { kind: 'miss' });
+
+// Hand-model cases (writing-ink-model.mjs): how real hands draw, so the forgiving rules stay
+// pinned — simplified straight lines, smooth wobble with over/undershoot and rotation, pointer
+// jitter, hooks left off or exaggerated, rounded corners, shifted and scaled strokes. Wrong
+// strokes drawn by the same hand must still miss.
+const HAND = ['好', '女', '子', '了', '我', '永', '红', '口', '十', '人'];
+const handChars = {};
+for (const ch of HAND) {
+	if (!chars[ch]) {
+		const data = JSON.parse(readFileSync(join(root, 'node_modules/hanzi-writer-data', `${ch}.json`), 'utf8'));
+		chars[ch] = data.medians.map((m) => m.map(([x, y]) => pt(x / 1024, (900 - y) / 1024)));
+	}
+	handChars[ch] = chars[ch];
+}
+const hr = ink.mulberry32(20261115);
+const round = (ps) => ps.map((p) => pt(p.x, p.y));
+for (const ch of HAND) {
+	const ms = handChars[ch];
+	ms.forEach((m, i) => {
+		const tag = `${ch} #${i} hand`;
+		for (const [label, drawn] of ink.correctVariants(m, hr, 2)) {
+			add(`${tag}: ${label}`, ch, i, round(drawn), { kind: 'match', strokes: [i] });
+		}
+		add(`${tag}: reversed`, ch, i, round(ink.hand(m, hr).reverse()), { kind: 'miss' });
+		for (let j = i + 1; j < ms.length; j++) {
+			add(`${tag}: later stroke #${j} drawn`, ch, i, round(ink.hand(ms[j], hr)), { kind: 'miss' });
+		}
+		if (i > 0) add(`${tag}: earlier stroke #${i - 1} drawn again`, ch, i, round(ink.hand(ms[i - 1], hr)), { kind: 'miss' });
+	});
+}
+const hz = handChars['好'];
+add('好 #3+#4 hand: 子 top joined in one motion', '好', 3, round(ink.hand([...hz[3], ...hz[4]], hr, { amp: 0.02, endFrac: 0.08, rotDeg: 5 })), {
+	kind: 'match',
+	strokes: [3, 4]
+});
 
 writeFileSync(join(root, 'src/lib/writing/fixtures/strokes.json'), JSON.stringify({ chars, cases }) + '\n');
 console.log(`wrote ${cases.length} cases`);

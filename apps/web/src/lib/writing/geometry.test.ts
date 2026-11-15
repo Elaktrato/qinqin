@@ -1,6 +1,6 @@
 import liaoRaw from '../../../node_modules/hanzi-writer-data/了.json?raw';
 import { describe, expect, it } from 'vitest';
-import { centroid, dist, joinPaths, pathLength, resample, rmsRadius } from './geometry';
+import { centroid, dist, joinPaths, pathLength, resample, rmsRadius, turnDeg } from './geometry';
 import { parseStrokeData } from './strokes';
 
 describe('geometry', () => {
@@ -34,5 +34,12 @@ describe('geometry', () => {
 		const joined = joinPaths(s.medians);
 		expect(pathLength(joined)).toBeCloseTo(pathLength(a) + pathLength(b) + dist(a[a.length - 1], b[0]), 5);
 		expect(dist(a[a.length - 1], b[0])).toBeCloseTo(0.05, 1);
+	});
+	it('turnDeg measures how far the path turns', () => {
+		const o = { x: 0, y: 0 };
+		expect(turnDeg({ x: -1, y: 0 }, o, { x: 1, y: 0 })).toBeCloseTo(0);
+		expect(turnDeg({ x: -1, y: 0 }, o, { x: 0, y: 1 })).toBeCloseTo(90);
+		expect(turnDeg({ x: -1, y: 0 }, o, { x: -1, y: 0 })).toBeCloseTo(180);
+		expect(turnDeg(o, o, { x: 1, y: 0 })).toBe(0);
 	});
 });
