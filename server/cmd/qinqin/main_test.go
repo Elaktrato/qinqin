@@ -12,7 +12,6 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"qinqin/internal/api"
 	"qinqin/internal/auth"
 	"qinqin/internal/plugins"
 )
@@ -25,42 +24,59 @@ func TestRootMuxKeepsAPI(t *testing.T) {
 			Data: []byte("<!doctype html><title>qinqin spa</title>"),
 		},
 	}
-	// The API handler is real; an empty POST body fails decoding before it
-	// ever touches the (nil) database.
-	h := rootHandler(web, api.New(nil, t.TempDir(), nil))
+	// A stub stands in for the API: it names the route it was given, so a
+	// precedence regression fails with a readable message instead of a nil
+	// database panic, and no API validation order can change the outcome.
+	stub := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Stub-API", "1")
+		io.WriteString(w, "stub-api "+r.Method+" "+r.URL.Path)
+	})
+	h := rootHandler(web, stub)
 	srv := httptest.NewServer(h)
 	defer srv.Close()
 
-	t.Run("login reaches the API", func(t *testing.T) {
-		resp, err := http.Post(srv.URL+"/api/auth/login", "application/json", strings.NewReader(""))
+	reach := func(t *testing.T, method, path string) (*http.Response, string) {
+		t.Helper()
+		req, err := http.NewRequest(method, srv.URL+path, strings.NewReader(""))
 		if err != nil {
-			t.Fatalf("POST /api/auth/login: %v", err)
+			t.Fatal(err)
+		}
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("%s %s: %v", method, path, err)
 		}
 		defer resp.Body.Close()
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			t.Fatalf("read body: %v", err)
 		}
-		if resp.StatusCode != http.StatusBadRequest {
-			t.Errorf("status = %d, want %d (the API's malformed-body answer)", resp.StatusCode, http.StatusBadRequest)
-		}
-		if strings.Contains(string(body), "web build not bundled") || strings.Contains(string(body), "<!doctype html>") {
-			t.Errorf("body = %q, got the SPA instead of the API", body)
+		return resp, string(body)
+	}
+
+	t.Run("api routes reach the API", func(t *testing.T) {
+		for _, c := range []struct{ method, path string }{
+			{"POST", "/api/auth/login"}, {"GET", "/api/entries/5"}, {"GET", "/healthz"},
+		} {
+			resp, body := reach(t, c.method, c.path)
+			if resp.Header.Get("X-Stub-API") != "1" || body != "stub-api "+c.method+" "+c.path {
+				t.Errorf("%s %s = %d %q, want the API handler", c.method, c.path, resp.StatusCode, body)
+			}
 		}
 	})
 
-	t.Run("healthz reaches the API", func(t *testing.T) {
-		resp, err := http.Get(srv.URL + "/healthz")
+	t.Run("healthz with a trailing slash redirects to the API route", func(t *testing.T) {
+		client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+		resp, err := client.Get(srv.URL + "/healthz/")
 		if err != nil {
-			t.Fatalf("GET /healthz: %v", err)
+			t.Fatal(err)
 		}
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			t.Fatalf("read body: %v", err)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusPermanentRedirect || resp.Header.Get("Location") != "/healthz" {
+			t.Errorf("GET /healthz/ = %d Location %q, want 308 /healthz", resp.StatusCode, resp.Header.Get("Location"))
 		}
-		if resp.StatusCode != http.StatusOK || string(body) != "ok" {
-			t.Errorf("GET /healthz = %d %q, want 200 %q", resp.StatusCode, body, "ok")
+		resp, body := reach(t, "GET", "/healthz/")
+		if resp.Header.Get("X-Stub-API") != "1" || body != "stub-api GET /healthz" {
+			t.Errorf("following the redirect = %d %q, want the API handler", resp.StatusCode, body)
 		}
 	})
 

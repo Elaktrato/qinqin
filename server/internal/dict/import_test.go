@@ -451,3 +451,25 @@ func TestImportRejectsMissingDataFile(t *testing.T) {
 		t.Errorf("dictionary rows = %d, want 0 — rejected packs import nothing", dictRows)
 	}
 }
+
+// TestImportSetsDictionaryLanguage pins that the registry row records the
+// manifest's language (migration 027), for a code-pack language and a
+// data-only one.
+func TestImportSetsDictionaryLanguage(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importFixture(t, ctx, sqlDB)
+	es, err := dict.LoadPack("../../../plugins/data/es-demo")
+	if err != nil {
+		t.Fatalf("load es-demo: %v", err)
+	}
+	if _, err := dict.ImportLexicon(ctx, sqlDB, &es); err != nil {
+		t.Fatalf("import es-demo: %v", err)
+	}
+	for packID, want := range map[string]string{"mkgloss": "zh", "es-demo": "es"} {
+		var got string
+		if err := sqlDB.QueryRow(`SELECT language FROM dictionaries WHERE pack_id = ?`, packID).Scan(&got); err != nil || got != want {
+			t.Errorf("%s language = %q (err %v), want %q", packID, got, err, want)
+		}
+	}
+}

@@ -2,14 +2,17 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/dict"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
 )
@@ -27,6 +30,18 @@ type server struct {
 
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
+
+	// packMu serializes pack imports and uninstalls of every type, the
+	// legacy per-type routes included.
+	packMu sync.Mutex
+
+	stageOnce  sync.Once
+	stageStore *stageStore
+	clock      func() time.Time                                          // nil: time.Now (tests set it)
+	importDone chan string                                               // test hook: receives a stage token when its import job ends
+	importPack func(context.Context, *sql.DB, dict.Pack) (string, error) // nil: packs.Import
+	sweepCtx   context.Context
+	sweepEvery time.Duration
 
 	chars charactersCache // GET /api/characters payloads
 }
@@ -50,6 +65,9 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs}
 	for _, o := range opts {
 		o(s)
+	}
+	if s.sweepCtx != nil && s.sweepEvery > 0 {
+		go s.runStageSweeper()
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", handleHealthz)
@@ -86,6 +104,13 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("GET /api/schemes/{id}/characters", s.handleSchemeCharacters)
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
+	mux.HandleFunc("GET /api/admin/packs", s.handleListPacks)
+	mux.HandleFunc("POST /api/admin/packs", s.handleStagePack)
+	mux.HandleFunc("POST /api/admin/packs/staged/{token}", s.handleInstallStaged)
+	mux.HandleFunc("GET /api/admin/packs/staged/{token}", s.handleStagedStatus)
+	mux.HandleFunc("DELETE /api/admin/packs/staged/{token}", s.handleDiscardStaged)
+	mux.HandleFunc("DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack)
+	mux.HandleFunc("GET /api/sentence-packs", s.handleListSentencePacks)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
 	mux.HandleFunc("GET /api/ai/status", s.handleAIStatus)
 	mux.HandleFunc("GET /api/ai/key", s.handleGetAIKey)

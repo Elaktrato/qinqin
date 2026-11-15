@@ -498,6 +498,40 @@ func denseRanks(rows []row) {
 	}
 }
 
+// ErrNotFound reports an uninstall of an unknown or already uninstalled
+// frequency pack.
+var ErrNotFound = errors.New("freq: pack not found")
+
+// Uninstall soft-deletes the pack with manifest id packID and removes its
+// frequency rows (they carry no tombstone; a reinstall rewrites them), in
+// one transaction. The pack keeps its priority (ord), so a reinstall takes
+// its old place. An unknown or already uninstalled pack returns ErrNotFound.
+func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
+	}
+	defer tx.Rollback()
+	var id int64
+	err = tx.QueryRowContext(ctx, `
+		SELECT id FROM frequency_packs WHERE pack_id = ? AND deleted_at IS NULL`, packID).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
+	}
+	stamp := time.Now().UTC().Format(time.RFC3339)
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE frequency_packs SET deleted_at = ?, updated_at = ? WHERE id = ?`, stamp, stamp, id); err != nil {
+		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM frequency WHERE pack_id = ?`, id); err != nil {
+		return fmt.Errorf("uninstall frequency rows of %s: %w", packID, err)
+	}
+	return tx.Commit()
+}
+
 // Store reads frequency data.
 type Store struct{ DB *sql.DB }
 

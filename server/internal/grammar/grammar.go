@@ -169,6 +169,35 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) 
 	return Result{Lessons: len(data.Lessons)}, nil
 }
 
+// Uninstall soft-deletes the pack with manifest id packID and its
+// lessons in one transaction; a reinstall revives both (see Import). An
+// unknown or already uninstalled pack returns ErrNotFound.
+func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("uninstall grammar pack %s: %w", packID, err)
+	}
+	defer tx.Rollback()
+	var id int64
+	err = tx.QueryRowContext(ctx, `SELECT id FROM grammar_packs WHERE pack_id = ? AND deleted_at IS NULL`, packID).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return fmt.Errorf("uninstall grammar pack %s: %w", packID, err)
+	}
+	stamp := now()
+	if _, err := tx.ExecContext(ctx, `
+		UPDATE grammar_lessons SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`,
+		stamp, stamp, id); err != nil {
+		return fmt.Errorf("uninstall grammar lessons of %s: %w", packID, err)
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE grammar_packs SET deleted_at = ?, updated_at = ? WHERE id = ?`, stamp, stamp, id); err != nil {
+		return fmt.Errorf("uninstall grammar pack %s: %w", packID, err)
+	}
+	return tx.Commit()
+}
+
 // upsertPack inserts or updates the pack row, writing only when a stored
 // field differs (or the pack was deleted), and returns its row id.
 func upsertPack(ctx context.Context, tx *sql.Tx, m dict.Manifest, levelsJSON, stamp string) (int64, error) {

@@ -117,10 +117,10 @@ wrong: about a day more server work (staging, expiry) than A.
 - **Shared pack service** `internal/packs`: `Import(ctx, db, dict.Pack)
   (summary string, err)` moved from `seed.go` (seed calls it), `Uninstall(ctx, db,
   type, packID)`, `List(ctx, db)`. New `freq.Uninstall(ctx, db, packID)`.
-- **Sentence-pack registry:** migration `026_pack_registry.sql` adds table
+- **Sentence-pack registry:** migration `027_pack_registry.sql` adds table
   `sentence_packs (pack_id PK, name, version, language, license, attribution,
   notice, updated_at, deleted_at)`, written by `sentences.ImportPack` and soft-deleted by
-  `sentences.Uninstall`. Sentence packs imported before 026 have no row; the list
+  `sentences.Uninstall`. Sentence packs imported before 027 have no row; the list
   shows them with empty name/licence (UI: "Licence not recorded — reinstall the
   pack to record it"). The same migration adds `dictionaries.language TEXT NOT
   NULL DEFAULT ''`, backfilled from one live sense's entry language, and written
@@ -207,7 +207,7 @@ Data
 
 ## Constraints
 
-- Migration number `026_pack_registry.sql`. Go 1.26, stdlib mux, no new Go deps.
+- Migration number `027_pack_registry.sql`. Go 1.26, stdlib mux, no new Go deps.
 - No new npm dependency. Svelte 5 runes, tabs + single quotes, 44 px targets.
 - The web client logs out on any 401; these routes use 403 for "not admin".
 - Never commit a third-party pack or extraction for tests; fixtures are built in
@@ -225,7 +225,7 @@ Data
   shows as approved — the server cannot judge licences; a positive badge would
   imply clearance — cost if wrong: an odd licence string slips through unflagged,
   which is the status quo.
-- Ruling: add a `sentence_packs` registry (migration 026) rather than list sentence
+- Ruling: add a `sentence_packs` registry (migration 027) rather than list sentence
   packs without terms — licensing first: a pack we cannot credit should not look
   like one we can — cost if wrong: one table nobody reads if sentence packs never
   ship.

@@ -64,8 +64,9 @@ let memoryToken: string | null = null;
 
 export function getToken(): string | null {
 	try {
-		const stored = typeof localStorage === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
-		return stored ?? memoryToken;
+		// A token held in memory (storage refused it) is newer than anything stored.
+		if (memoryToken !== null) return memoryToken;
+		return typeof localStorage === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
 	} catch {
 		return memoryToken;
 	}
@@ -77,6 +78,12 @@ export function setToken(token: string): void {
 		memoryToken = null;
 	} catch {
 		memoryToken = token;
+		// Do not leave an older stored token behind to be sent or reloaded.
+		try {
+			localStorage.removeItem(TOKEN_KEY);
+		} catch {
+			// Storage is unusable; memory holds the session.
+		}
 	}
 }
 
@@ -92,8 +99,19 @@ export function clearToken(): void {
 // The bearer token goes only to this app's own API: a same-origin absolute
 // path. An absolute URL or a protocol-relative `//host/...` would send the
 // token to another origin.
-function isOwnApiPath(path: string): boolean {
+export function isOwnApiPath(path: string): boolean {
 	return path.startsWith('/') && !path.startsWith('//') && !path.includes('\\');
+}
+
+/**
+ * notifyUnauthorized is what any 401 does: drop the token and tell the auth
+ * store. It never navigates: the layout guard (lib/routeAccess.ts) is the
+ * single owner of the redirect to /login. api() and the XHR upload helper
+ * share it, so a session that drops mid-upload logs out too.
+ */
+export function notifyUnauthorized(): void {
+	clearToken();
+	unauthorizedHandler?.();
 }
 
 /**
@@ -128,10 +146,7 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 
 	if (!response.ok) {
 		const message = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
-		if (response.status === 401) {
-			clearToken();
-			unauthorizedHandler?.();
-		}
+		if (response.status === 401) notifyUnauthorized();
 		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
 		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
 		throw new ApiError(response.status, message, Number.isFinite(retry) && retry > 0 ? retry : undefined);
