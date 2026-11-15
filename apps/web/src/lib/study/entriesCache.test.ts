@@ -142,3 +142,106 @@ describe('fillMissingWrittenProgressively', () => {
 		expect(getEntryMock).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe('backfill coalescing', () => {
+	function legacyDeck(n: number): StudyCard[] {
+		return Array.from({ length: n }, (_, i) => card(`c${i}`, i + 1));
+	}
+
+	// A frame scheduler the test steps by hand.
+	function manualFrames() {
+		let pending: (() => void) | null = null;
+		return {
+			schedule: (cb: () => void) => {
+				pending = cb;
+			},
+			hasPending: () => pending !== null,
+			frame: () => {
+				const cb = pending;
+				pending = null;
+				cb?.();
+			}
+		};
+	}
+
+	it('publishes a 500-card backfill a handful of times, not 500', async () => {
+		getEntryMock.mockImplementation(async (id) => entry(`字${id}`));
+		const frames = manualFrames();
+		let publishes = 0;
+		let last: StudyCard[] = [];
+
+		const result = await fillMissingWrittenProgressively(
+			legacyDeck(500),
+			(next) => {
+				publishes += 1;
+				last = next;
+			},
+			{ schedule: frames.schedule }
+		);
+
+		// Before coalescing this was 500 (one mastery pass each).
+		expect(publishes).toBeLessThanOrEqual(2);
+		expect(last.every((c) => c.written !== undefined)).toBe(true);
+		expect(result.unresolvedCards).toBe(0);
+	});
+
+	it('publishes at most once per frame while entries keep resolving', async () => {
+		let release: Array<() => void> = [];
+		getEntryMock.mockImplementation(
+			(id) =>
+				new Promise<Entry>((resolve) => {
+					release.push(() => resolve(entry(`字${id}`)));
+				})
+		);
+		const frames = manualFrames();
+		const snapshots: number[] = [];
+		const run = fillMissingWrittenProgressively(
+			legacyDeck(8),
+			(next) => snapshots.push(next.filter((c) => c.written !== undefined).length),
+			{ schedule: frames.schedule }
+		);
+
+		// Resolve the first four in flight, then let a frame pass.
+		await vi.waitFor(() => expect(release).toHaveLength(4));
+		const first = release;
+		release = [];
+		first.forEach((r) => r());
+		await vi.waitFor(() => expect(release).toHaveLength(4));
+		expect(snapshots).toEqual([]);
+		expect(frames.hasPending()).toBe(true);
+		frames.frame();
+		expect(snapshots).toEqual([4]);
+
+		release.forEach((r) => r());
+		await run;
+		expect(snapshots.at(-1)).toBe(8);
+		expect(snapshots.length).toBeLessThanOrEqual(3);
+	});
+
+	it('does not publish after the run resolves', async () => {
+		getEntryMock.mockResolvedValue(entry('猫'));
+		const frames = manualFrames();
+		let publishes = 0;
+		await fillMissingWrittenProgressively([card('a', 1)], () => (publishes += 1), {
+			schedule: frames.schedule
+		});
+		const before = publishes;
+		frames.frame();
+		expect(publishes).toBe(before);
+	});
+
+	it('publishes cached resolutions once and does not refetch them', async () => {
+		getEntryMock.mockImplementation(async (id) => entry(`字${id}`));
+		await fillMissingWritten(legacyDeck(50));
+		getEntryMock.mockClear();
+
+		let publishes = 0;
+		const frames = manualFrames();
+		await fillMissingWrittenProgressively(legacyDeck(50), () => (publishes += 1), {
+			schedule: frames.schedule
+		});
+
+		expect(publishes).toBe(1);
+		expect(getEntryMock).not.toHaveBeenCalled();
+	});
+});

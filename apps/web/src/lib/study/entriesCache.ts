@@ -81,42 +81,85 @@ export interface BackfillResult {
 	unresolvedCards: number;
 }
 
+/** Options of the progressive resolver. */
+export interface BackfillOptions {
+	/**
+	 * Runs `cb` on the next animation frame. Injectable so tests can step
+	 * frames by hand; the default is requestAnimationFrame, or a 16 ms
+	 * timer where there is none.
+	 */
+	schedule?: (cb: () => void) => void;
+}
+
+function defaultSchedule(cb: () => void): void {
+	if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => cb());
+	else setTimeout(cb, 16);
+}
+
 /**
  * fillMissingWrittenProgressively resolves legacy snapshots in the
- * background. Fetches run with a small concurrency limit, and
- * `onProgress` receives a fresh card list after every resolution, so
- * the page can paint the cards it already understands and fold in the
- * rest as they arrive. Failures are swallowed (and not cached) so the
- * map still renders; their count is returned for the caller to surface.
+ * background. Fetches run with a small concurrency limit. Every publish
+ * makes the page re-derive mastery over all cards, so publishes are
+ * coalesced: entries already in the cache are folded in with a single
+ * `onProgress` up front (and are not refetched), fetch resolutions are
+ * published at most once per animation frame, and the complete result is
+ * published before the returned promise settles. Failures are swallowed
+ * (and not cached) so the map still renders; their count is returned for
+ * the caller to surface.
  */
 export async function fillMissingWrittenProgressively(
 	cards: readonly StudyCard[],
-	onProgress: (cards: StudyCard[]) => void
+	onProgress: (cards: StudyCard[]) => void,
+	options: BackfillOptions = {}
 ): Promise<BackfillResult> {
 	const ids = missingWrittenEntryIds(cards);
 	if (ids.length === 0) return { unresolvedCards: 0 };
+	const schedule = options.schedule ?? defaultSchedule;
 
 	const resolved = new Map<number, string | null>();
+	const toFetch: number[] = [];
+	for (const id of ids) {
+		if (writtenByEntry.has(id)) resolved.set(id, writtenByEntry.get(id) ?? null);
+		else toFetch.push(id);
+	}
+	if (resolved.size > 0) onProgress(withWritten(cards, resolved));
+
 	let next = 0;
+	let dirty = false;
+	let framePending = false;
+	let finished = false;
+
+	function flush(): void {
+		framePending = false;
+		if (finished || !dirty) return;
+		dirty = false;
+		onProgress(withWritten(cards, resolved));
+	}
 
 	async function worker(): Promise<void> {
-		while (next < ids.length) {
-			const entryId = ids[next];
+		while (next < toFetch.length) {
+			const entryId = toFetch[next];
 			next += 1;
 			const result = await fetchWritten(entryId);
 			if (!result.ok) continue;
 			resolved.set(entryId, result.written);
-			onProgress(withWritten(cards, resolved));
+			dirty = true;
+			if (!framePending) {
+				framePending = true;
+				schedule(flush);
+			}
 		}
 	}
 
 	const workers = Array.from(
-		{ length: Math.min(FETCH_CONCURRENCY, ids.length) },
+		{ length: Math.min(FETCH_CONCURRENCY, toFetch.length) },
 		() => worker()
 	);
 	await Promise.all(workers);
 
+	finished = true;
 	const finalCards = withWritten(cards, resolved);
+	if (dirty) onProgress(finalCards);
 	return {
 		unresolvedCards: finalCards.filter((card) => card.written === undefined).length
 	};
