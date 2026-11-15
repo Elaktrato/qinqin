@@ -99,7 +99,42 @@ describe('auth store', () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
-	it('logout clears storage, the store, and navigates to /login', async () => {
+	it('login drops the token again when the user cannot be loaded (non-401 failure)', async () => {
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+			return new Response('boom', { status: 500 });
+		});
+
+		await expect(login('ada', 'pw')).rejects.toMatchObject({ status: 500 });
+
+		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		expect(get(auth)).toEqual({ token: null, user: null });
+	});
+
+	it('login works when storage is blocked: the known token is used for /me', async () => {
+		vi.stubGlobal('localStorage', {
+			getItem: () => null,
+			setItem: () => {
+				throw new DOMException('blocked', 'SecurityError');
+			},
+			removeItem: () => undefined
+		});
+		const calls: Array<string | undefined> = [];
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+			const url = String(input);
+			if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+			calls.push((init?.headers as Record<string, string>).authorization);
+			return jsonResponse(user);
+		});
+
+		await login('ada', 'pw');
+
+		expect(calls).toEqual(['Bearer token-1']);
+		expect(get(auth)).toEqual({ token: 'token-1', user });
+	});
+
+	it('logout clears storage and the store; the layout guard does the navigation', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
 		auth.set({ token: 'stored', user });
 
@@ -107,6 +142,6 @@ describe('auth store', () => {
 
 		expect(localStorage.getItem('qinqin.token')).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
-		expect(goto).toHaveBeenCalledWith('/login');
+		expect(goto).not.toHaveBeenCalled();
 	});
 });

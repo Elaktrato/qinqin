@@ -18,7 +18,7 @@
 	import { allowed as routeAllowed, normalizePath, redirectTarget, routeAccess } from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
-	import { load as loadWorkspaces, workspaces } from '$lib/workspaces';
+	import { clearSelection, load as loadWorkspaces, workspaces } from '$lib/workspaces';
 	import '../app.css';
 
 	let { children } = $props();
@@ -103,6 +103,8 @@
 			resetPluginStates();
 			dismissNotice();
 			workspaces.set({ list: [], current: null });
+			// Workspace ids are global: the next user must not inherit this choice.
+			clearSelection();
 			return;
 		}
 		if (token === loadedToken) return;

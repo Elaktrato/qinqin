@@ -89,14 +89,14 @@ describe('api client', () => {
 		await expect(failure).rejects.toMatchObject({ status: 404, message: 'entry not found' });
 	});
 
-	it('clears the token and redirects to /login on 401', async () => {
+	it('clears the token on 401 and leaves the redirect to the layout guard', async () => {
 		localStorage.setItem('qinqin.token', 'stale');
 		vi.mocked(fetch).mockResolvedValue(new Response('unauthorized', { status: 401 }));
 
 		await expect(api('/api/auth/me')).rejects.toMatchObject({ status: 401, message: 'unauthorized' });
 
 		expect(localStorage.getItem('qinqin.token')).toBeNull();
-		expect(goto).toHaveBeenCalledWith('/login');
+		expect(goto).not.toHaveBeenCalled();
 	});
 
 	it('does not redirect on 401 while already on the login page', async () => {
@@ -121,14 +121,44 @@ describe('api client', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 
-	it('still redirects on 401 on a path that only starts with /sources', async () => {
+	it('never navigates itself on 401, even on a path that only starts with /sources', async () => {
 		vi.stubGlobal('window', { location: { pathname: '/sourcesx' } });
 		localStorage.setItem('qinqin.token', 'stale');
 		vi.mocked(fetch).mockResolvedValue(new Response('unauthorized', { status: 401 }));
 
 		await expect(api('/api/auth/me')).rejects.toMatchObject({ status: 401 });
 
-		expect(goto).toHaveBeenCalledWith('/login');
+		expect(goto).not.toHaveBeenCalled();
+	});
+});
+
+describe('api client token scope', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	for (const target of ['https://evil.example/api/x', '//evil.example/api/x', 'http://localhost/api/x']) {
+		it(`does not attach the bearer token to ${target}`, async () => {
+			vi.stubGlobal('localStorage', fakeStorage());
+			localStorage.setItem('qinqin.token', 'secret');
+			vi.stubGlobal('fetch', vi.fn(async () => new Response('{}')));
+
+			await api(target);
+
+			const headers = vi.mocked(fetch).mock.calls[0][1]?.headers as Record<string, string>;
+			expect(headers.authorization).toBeUndefined();
+		});
+	}
+
+	it('still attaches it to a same-origin absolute path', async () => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		localStorage.setItem('qinqin.token', 'secret');
+		vi.stubGlobal('fetch', vi.fn(async () => new Response('{}')));
+
+		await api('/api/auth/me');
+
+		const headers = vi.mocked(fetch).mock.calls[0][1]?.headers as Record<string, string>;
+		expect(headers.authorization).toBe('Bearer secret');
 	});
 });
 

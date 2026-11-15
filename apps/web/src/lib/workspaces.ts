@@ -23,6 +23,9 @@ export const currentLanguage = derived(
 	($workspaces) => $workspaces.current?.language ?? null
 );
 
+// Counts load() calls so only the most recently started one applies.
+let loadSeq = 0;
+
 function readSelection(): number | null {
 	try {
 		if (typeof localStorage === 'undefined') return null;
@@ -47,6 +50,11 @@ function persistSelection(id: number | null): void {
 	}
 }
 
+/** clearSelection forgets the persisted workspace, e.g. on sign-out. */
+export function clearSelection(): void {
+	persistSelection(null);
+}
+
 /**
  * load fetches the caller's workspaces. The persisted selection wins
  * when it still exists, otherwise the first workspace is selected; an
@@ -54,7 +62,12 @@ function persistSelection(id: number | null): void {
  * brought back in sync.
  */
 export async function load(): Promise<Workspace[]> {
+	const seq = ++loadSeq;
 	const list = await api<Workspace[]>('/api/workspaces');
+	// A newer load has started since (e.g. create() reloading while the
+	// shell's first load was in flight): its answer is fresher, this one
+	// must not overwrite the list or the selection.
+	if (seq !== loadSeq) return list;
 	const persisted = readSelection();
 	const current = list.find((workspace) => workspace.id === persisted) ?? list[0] ?? null;
 	persistSelection(current?.id ?? null);

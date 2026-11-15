@@ -1,5 +1,3 @@
-import { goto } from '$app/navigation';
-import { normalizePath, redirectsOnUnauthorized } from '../routeAccess';
 
 // The bearer token lives in localStorage under this exact key: the
 // static SPA has no server session, so every reload rehydrates from here.
@@ -60,23 +58,30 @@ export function setWorkspaceGoneHandler(handler: (() => void) | null): void {
 	workspaceGoneHandler = handler;
 }
 
+// Only used when storage refuses the write (blocked or private mode): the
+// session then lasts until the tab is closed instead of failing at once.
+let memoryToken: string | null = null;
+
 export function getToken(): string | null {
 	try {
-		return typeof localStorage === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
+		const stored = typeof localStorage === 'undefined' ? null : localStorage.getItem(TOKEN_KEY);
+		return stored ?? memoryToken;
 	} catch {
-		return null;
+		return memoryToken;
 	}
 }
 
 export function setToken(token: string): void {
 	try {
 		localStorage.setItem(TOKEN_KEY, token);
+		memoryToken = null;
 	} catch {
-		// Storage unavailable (private mode): the in-memory store still works.
+		memoryToken = token;
 	}
 }
 
 export function clearToken(): void {
+	memoryToken = null;
 	try {
 		localStorage.removeItem(TOKEN_KEY);
 	} catch {
@@ -84,23 +89,24 @@ export function clearToken(): void {
 	}
 }
 
-function currentPath(): string {
-	if (typeof window === 'undefined') return '';
-	return normalizePath(window.location.pathname);
+// The bearer token goes only to this app's own API: a same-origin absolute
+// path. An absolute URL or a protocol-relative `//host/...` would send the
+// token to another origin.
+function isOwnApiPath(path: string): boolean {
+	return path.startsWith('/') && !path.startsWith('//') && !path.includes('\\');
 }
 
 /**
  * api performs a same-origin JSON request. A stored token is attached as
  * `Authorization: Bearer` unless `auth` is false. Non-2xx responses throw
- * ApiError; a 401 also clears the token and redirects to /login from a
- * private page. On /login or /register that would loop, and on an open page
- * (the Sources page) the user is signed out quietly and stays put
- * (lib/routeAccess.ts).
+ * ApiError; a 401 also clears the token and tells the auth store, and the
+ * layout guard (lib/routeAccess.ts) is the one place that navigates to
+ * /login — on an auth or open page the user simply stays put.
  */
 async function request(path: string, options: ApiOptions): Promise<Response> {
 	const headers: Record<string, string> = { accept: 'application/json' };
 	const token = getToken();
-	if (options.auth !== false && token) {
+	if (options.auth !== false && token && isOwnApiPath(path)) {
 		headers.authorization = `Bearer ${token}`;
 	}
 
@@ -125,9 +131,6 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 		if (response.status === 401) {
 			clearToken();
 			unauthorizedHandler?.();
-			if (redirectsOnUnauthorized(currentPath())) {
-				void goto('/login');
-			}
 		}
 		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
 		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);

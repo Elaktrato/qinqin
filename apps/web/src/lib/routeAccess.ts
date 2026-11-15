@@ -58,12 +58,3 @@ export function redirectTarget(path: string, signedIn: boolean): '/' | '/login' 
 			return signedIn ? null : '/login';
 	}
 }
-
-/**
- * redirectsOnUnauthorized is true when a 401 on this path must send the
- * user to /login. On the auth pages that would loop; on an open page the
- * user is quietly signed out and stays where they are.
- */
-export function redirectsOnUnauthorized(path: string): boolean {
-	return routeAccess(path) === 'private';
-}
