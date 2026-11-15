@@ -51,6 +51,7 @@
 	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 import { contextForData } from '$lib/study/currentContext';
 import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
+import type { Run } from '$lib/study/vacation';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
@@ -212,6 +213,7 @@ import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	// The study clock of the session's workspace (set when the session loads).
 	let sessionClock = $state.raw<StudyClock>(IDENTITY_CLOCK);
+	let sessionVacation = $state.raw<readonly Run[]>([]);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
 	// Re-shows answered this session; practice only, never recorded.
@@ -303,7 +305,7 @@ import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
 	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf));
 	const sessionXp = $derived(totalXp - historyXp);
 	const progress = $derived(levelProgress(totalXp));
-	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay));
+	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay, sessionVacation));
 	// Per-kind XP of this session; whatever the kinds do not explain is
 	// the daily bonus.
 	const kindXp = $derived(xpByKind(sessionReviews));
@@ -392,7 +394,9 @@ import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
 			const history = data.reviews;
 			reviews = history;
 			weights = activeWeights(data);
-			sessionClock = contextForData(data, workspaceId).clock;
+			const loaded = contextForData(data, workspaceId);
+			sessionClock = loaded.clock;
+			sessionVacation = loaded.vacation;
 			const w = weights;
 			cards = data.cards;
 			const now = new Date();

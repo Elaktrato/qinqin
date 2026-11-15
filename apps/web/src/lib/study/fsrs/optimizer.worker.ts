@@ -45,6 +45,7 @@ self.onmessage = (event: MessageEvent<In>) => {
 					day: studyDay(m.history),
 					clock: clockFromRuns(m.runs),
 					vacationToday: m.vacationToday,
+					vacation: [],
 					history: m.history
 				} satisfies StudyContext
 			});

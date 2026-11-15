@@ -87,7 +87,7 @@
 	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf));
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
-	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay));
+	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation));
 	const status = $derived<WidgetStatus>(
 		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
 	);

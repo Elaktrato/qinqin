@@ -13,6 +13,8 @@ export interface StudyContext {
 	day: StudyDay;
 	clock: StudyClock;
 	vacationToday: boolean;
+	/** The workspace's vacation runs (learner dates), for streaks and marks. */
+	vacation: readonly Run[];
 	/** The zone history `day` was built from (a worker rebuilds the context from it). */
 	history: readonly ZoneChange[];
 }
@@ -22,6 +24,7 @@ export const UTC_CONTEXT: StudyContext = {
 	day: studyDay([]),
 	clock: IDENTITY_CLOCK,
 	vacationToday: false,
+	vacation: [],
 	history: []
 };
 
@@ -45,6 +48,7 @@ export function contextFor(
 		history,
 		day,
 		clock: studyClock(runs, day),
-		vacationToday: isVacationDay(runs, day.today(now))
+		vacationToday: isVacationDay(runs, day.today(now)),
+		vacation: runs
 	};
 }
