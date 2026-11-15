@@ -100,6 +100,7 @@ Each reads "Ruling: what — why — cost if wrong". Decision rule: licensing fi
 - [ ] **Step 2: Run** the Go gate for `./internal/db/...` → FAIL (no migration).
 - [ ] **Step 3: Write the migration**: `CREATE TABLE ai_keys_new (…, PRIMARY KEY (user_id, provider))`, `INSERT INTO ai_keys_new SELECT user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at, last_used_at FROM ai_keys`, `DROP TABLE ai_keys`, `ALTER TABLE ai_keys_new RENAME TO ai_keys`; `INSERT INTO ai_selection SELECT user_id, provider, created_at FROM ai_keys`; the two new tables; `ALTER TABLE ai_calls ADD COLUMN provider …`. Header comment says why the copy keeps ciphertexts valid (AAD is user+provider, both unchanged).
 - [ ] **Step 4: Run** → PASS. **Step 5: Commit** `feat(db): AI keys per provider, active selection, custom providers`.
+- Ruling: the migration test lives in external package `db_test` (with `export_test.go` exposing `Migrate`/`MigrateThrough`) because `ai` imports `db` and an in-package test importing `ai` would be an import cycle; the 029-era row is sealed with `ai.NewSealer` + `ai.KeyAAD` exactly as `KeyStore.Put` does, since `Put` on a 029 schema cannot run once its upsert targets `(user_id, provider)` — cost if wrong: none. The `Put` upsert conflict target moves to `(user_id, provider)` in this task so the tree stays green until Task 2 rewrites the store.
 
 ### Task 2: Key store per provider and the active selection
 

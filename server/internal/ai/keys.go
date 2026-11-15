@@ -95,7 +95,7 @@ func (k *KeyStore) Put(ctx context.Context, userID int64, provider, apiKey, mode
 	}
 	_, err = k.DB.ExecContext(ctx, `INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(user_id) DO UPDATE SET provider = excluded.provider, ciphertext = excluded.ciphertext,
+		ON CONFLICT(user_id, provider) DO UPDATE SET ciphertext = excluded.ciphertext,
 			nonce = excluded.nonce, secret_fp = excluded.secret_fp, hint = excluded.hint,
 			model = excluded.model, created_at = excluded.created_at, last_used_at = NULL`,
 		userID, provider, ct, nonce, k.Current.Fingerprint(), hint, model, stamp(k.now()))
