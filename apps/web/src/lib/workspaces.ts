@@ -18,6 +18,10 @@ export interface WorkspacesState {
 // `select`.
 export const workspaces = writable<WorkspacesState>({ list: [], current: null });
 
+// True once a workspace list has arrived for this session, so pages can tell
+// "still loading" from "really none". Reset by the shell on sign-out.
+export const workspacesLoaded = writable(false);
+
 export const currentLanguage = derived(
 	workspaces,
 	($workspaces) => $workspaces.current?.language ?? null
@@ -72,6 +76,7 @@ export async function load(): Promise<Workspace[]> {
 	const current = list.find((workspace) => workspace.id === persisted) ?? list[0] ?? null;
 	persistSelection(current?.id ?? null);
 	workspaces.set({ list, current });
+	workspacesLoaded.set(true);
 	return list;
 }
 

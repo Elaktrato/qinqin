@@ -10,7 +10,7 @@
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
 	import { isCorePlugin, webPlugins } from '$lib/plugins';
-	import { pluginRowInfo } from '$lib/settings/pluginRows';
+	import { pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
@@ -22,7 +22,7 @@
 		tabKeyTarget,
 		type SettingsTab
 	} from '$lib/settings/tabs';
-	import { rename, workspaces } from '$lib/workspaces';
+	import { rename, workspaces, workspacesLoaded } from '$lib/workspaces';
 
 	interface PluginRow {
 		id: string;
@@ -155,7 +155,7 @@
 	}
 
 	async function savePlugin(row: PluginRow): Promise<void> {
-		if (row.saving) return;
+		if (row.saving || !validOrder(row.order)) return;
 
 		row.saving = true;
 		row.saved = false;
@@ -214,7 +214,9 @@
 			one.
 		</p>
 
-		{#if $workspaces.list.length === 0}
+		{#if $workspaces.list.length === 0 && !$workspacesLoaded}
+			<p class="hint" aria-live="polite">Loading workspaces…</p>
+		{:else if $workspaces.list.length === 0}
 			<p>No workspaces yet.</p>
 		{:else}
 			<ul class="workspaces">
@@ -360,9 +362,16 @@
 								/>
 							</label>
 
-							<button type="button" onclick={() => savePlugin(plugin)} disabled={plugin.saving}>
+							<button
+								type="button"
+								onclick={() => savePlugin(plugin)}
+								disabled={plugin.saving || !validOrder(plugin.order)}
+							>
 								{plugin.saving ? 'Saving…' : 'Save'}
 							</button>
+							{#if !validOrder(plugin.order)}
+								<span class="error" role="alert">Enter a whole number of 0 or more.</span>
+							{/if}
 
 							{#if plugin.saved}
 								<span class="saved">Saved</span>

@@ -1,5 +1,6 @@
 import { cleanup, render, waitFor } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
+import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
@@ -17,6 +18,9 @@ vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
 vi.mock('$lib/workspaceGone', () => ({ watchDeletedWorkspaces: vi.fn() }));
 
 import { goto } from '$app/navigation';
+import { fireEvent } from '@testing-library/svelte';
+import { recordSessionOnce } from '$lib/events';
+import { select, workspaces } from '$lib/workspaces';
 import { api } from '$lib/api/client';
 import { auth } from '$lib/auth';
 import { setUrl } from '$lib/testing/appState.svelte';
@@ -35,7 +39,10 @@ function mountAt(path: string, token: string | null) {
 	return render(Layout, { children });
 }
 
-beforeEach(() => auth.set({ token: null, user: null }));
+beforeEach(() => {
+	auth.set({ token: null, user: null });
+	workspaces.set({ list: [], current: null });
+});
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
@@ -72,5 +79,45 @@ describe('layout auth guard', () => {
 		auth.set({ token: null, user: null });
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/login', { replaceState: true }));
 		await waitFor(() => expect(queryByText('page body')).toBeNull());
+	});
+});
+
+describe('layout workspaces', () => {
+	const ws = (id: number) => ({ id, language: 'zh', name: `w${id}`, settings: {}, updatedAt: '' });
+
+	it('offers Try again after a failed workspaces load and recovers', async () => {
+		let fail = true;
+		setUrl('/search');
+		localStorage.clear();
+		localStorage.setItem('qinqin.token', 'tok');
+		vi.mocked(api).mockImplementation((async (url: string) => {
+			if (url === '/api/auth/me') return { id: 1, username: 'u', admin: false };
+			if (url === '/api/workspaces') {
+				if (fail) throw new Error('offline');
+				return [ws(1)];
+			}
+			return [];
+		}) as never);
+		const view = render(Layout, { children });
+		await view.findByText('offline');
+		fail = false;
+		await fireEvent.click(view.getByRole('button', { name: 'Try again' }));
+		await waitFor(() => expect(view.queryByText('offline')).toBeNull());
+		await waitFor(() => expect(get(workspaces).current?.id).toBe(1));
+	});
+
+	it('records a session for a workspace selected mid-session', async () => {
+		setUrl('/search');
+		localStorage.clear();
+		localStorage.setItem('qinqin.token', 'tok');
+		vi.mocked(api).mockImplementation((async (url: string) => {
+			if (url === '/api/auth/me') return { id: 1, username: 'u', admin: false };
+			if (url === '/api/workspaces') return [ws(1), ws(2)];
+			return [];
+		}) as never);
+		render(Layout, { children });
+		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(1));
+		select(2);
+		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(2));
 	});
 });

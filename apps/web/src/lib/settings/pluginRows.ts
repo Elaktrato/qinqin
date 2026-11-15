@@ -31,3 +31,12 @@ export function pluginRowInfo(plugin: PluginInfo, web: WebPlugin[]): PluginRowIn
 	if (!declaresSdk) return { permissions, notice: 'legacy' };
 	return { permissions, notice: !hasModule || !sdkSupported(plugin.manifest) ? 'app-update' : null };
 }
+
+/**
+ * validOrder is true for an order the server accepts: a whole number of
+ * 0 or more. A cleared number input reads as null/undefined/NaN, which the
+ * server answers with a 400, so the row blocks saving instead.
+ */
+export function validOrder(order: unknown): order is number {
+	return typeof order === 'number' && Number.isInteger(order) && order >= 0;
+}
