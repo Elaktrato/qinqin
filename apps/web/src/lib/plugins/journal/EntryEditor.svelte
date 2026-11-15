@@ -23,6 +23,7 @@
 	} from './entryDraft';
 	import {
 		aiButtonGate,
+		editorTarget,
 		listedAnnotations,
 		reviewAnnouncement,
 		saveStatusText,
@@ -206,6 +207,8 @@
 	// of a new entry changes the address to its own id, which is a no-op.
 	$effect(() => {
 		const id = entryId;
+		// Read so that a new title (Ideas → Start an entry) re-runs the effect.
+		void editorTarget(entryId, initialTitle);
 		untrack(() => {
 			if (id !== null && id === entry?.id) return;
 			void load(id);

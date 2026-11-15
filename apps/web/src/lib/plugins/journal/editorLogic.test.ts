@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	aiButtonGate,
 	annotationCategory,
+	editorTarget,
 	listedAnnotations,
 	reviewAnnouncement,
 	saveStatusText
@@ -98,5 +99,15 @@ describe('saveStatusText', () => {
 		expect(saveStatusText('saving')).toBe('Saving…');
 		expect(saveStatusText('saved')).toBe('Saved');
 		expect(saveStatusText('error')).toBe('Not saved. Retrying when you keep typing, or press Save.');
+	});
+});
+
+describe('editorTarget', () => {
+	it('is the entry id for a saved entry, whatever the title', () => {
+		expect(editorTarget('abc', 'Topic')).toBe('entry:abc');
+	});
+	it('differs between new entries with different pre-filled titles', () => {
+		expect(editorTarget(null, '')).not.toBe(editorTarget(null, 'Topic 1'));
+		expect(editorTarget(null, 'Topic 1')).toBe(editorTarget(null, 'Topic 1'));
 	});
 });

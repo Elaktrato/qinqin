@@ -84,3 +84,12 @@ export function saveStatusText(state: SaveState): string {
 			return '';
 	}
 }
+
+/**
+ * What the editor shows, as one comparable value: a saved entry, or a new one
+ * with its pre-filled title. Starting an entry from an idea while a new, still
+ * unsaved entry is open changes only the title, and must reload the editor.
+ */
+export function editorTarget(entryId: string | null, initialTitle: string): string {
+	return entryId === null ? `new:${initialTitle}` : `entry:${entryId}`;
+}
