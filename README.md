@@ -684,6 +684,7 @@ The Journal is a page plugin (`qinqin-journal`) where you write dated entries pe
 - **Models.** `claude-opus-5-5` (default), `claude-sonnet-5-5` and `claude-haiku-5-5`, chosen per user. On Opus and Sonnet a safety refusal is retried by the provider's default fallback model, which can answer from another model on your key; the review says which model answered.
 - **Limits.** 30 provider calls per user per rolling hour (checking a key counts as one), one AI call in flight per user, 5,000 characters per review, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour. Settings → AI shows the calls and tokens used this hour.
 - **Offline OCR.** The image bundles Tesseract 5 (with Chinese Simplified and Traditional, Japanese and English data) for reading a photo without any AI; without the `tesseract` binary it shows as unavailable.
+- **Image size.** The OCR packages add about 193 MB to the Docker image (Tesseract plus the `chi_sim`, `chi_tra`, `jpn` and `eng` standard models from Alpine's tessdata). The standard models were chosen over the smaller `tessdata_fast` ones for accuracy on handwriting and small print, at the cost of size. To leave them out, build with `docker build --build-arg WITH_OCR=0 .`: the server starts normally, offline reading shows as unavailable and AI reading is unaffected. CI and the published image use the full build.
 
 ### Photo routes
 

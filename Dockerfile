@@ -31,7 +31,9 @@ FROM alpine:3.22
 # BSD-2-Clause); they are credited on the Sources page through the journal
 # plugin. Unpinned on purpose: apk pins break whenever the repository moves on.
 # The server also runs without them, offline reading is then unavailable.
-RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-eng tesseract-ocr-data-chi_sim tesseract-ocr-data-chi_tra tesseract-ocr-data-jpn
+# They add about 193 MB; build with --build-arg WITH_OCR=0 to leave them out.
+ARG WITH_OCR=1
+RUN if [ "$WITH_OCR" = "1" ]; then apk add --no-cache tesseract-ocr tesseract-ocr-data-eng tesseract-ocr-data-chi_sim tesseract-ocr-data-chi_tra tesseract-ocr-data-jpn; fi
 COPY --from=build /out/qinqin /usr/local/bin/qinqin
 # The bundled seed packs (CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten
 # frequency list, the HSK 3.0 character and word level lists, the
