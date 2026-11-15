@@ -15,6 +15,7 @@
   "self_target": {"status": 409, "meaning": "An administrator tried to disable or delete their own account through the admin routes."},
   "invalid_request": {"status": 422, "meaning": "A well-formed request the server will not do (for example cancelling a forced password change)."},
   "token_invalid": {"status": 400, "meaning": "A reset link is unknown, expired, already used or belongs to a disabled account (one code and one body for all of them)."},
+  "confirm_mismatch": {"status": 422, "meaning": "The typed confirmation (the username) does not match the account being deleted."},
   "invalid_invite": {"status": 422, "meaning": "An invite parameter is out of range (uses 1-100, expiry 1-90 days, note at most 100 characters)."},
   "invalid_setting": {"status": 422, "meaning": "A settings value outside its vocabulary."},
   "account_disabled": {"status": 403, "meaning": "Right password, but an administrator disabled the account."},

@@ -216,3 +216,74 @@ func (s *server) handleRevokeSessions(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]int64{"revoked": n})
 }
+
+// handleAccountDeletionPreview serves GET /api/account/deletion-preview.
+func (s *server) handleAccountDeletionPreview(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	s.writePreview(w, r, u.ID)
+}
+
+// handleDeleteAccount serves DELETE /api/account {password, confirm}: the
+// caller deletes themselves after typing their username and re-entering
+// the password (403 wrong_password, counted by the reauth limiter). The
+// last active administrator is refused (409 last_admin): zero users would
+// reopen the first-user bootstrap to anyone who reaches the URL. Plan 3
+// adds the TOTP code to this re-authentication.
+func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	var req struct {
+		Password string `json:"password"`
+		Confirm  string `json:"confirm"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	if req.Confirm != u.Username {
+		writeAuthError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type your username exactly to confirm.")
+		return
+	}
+	if req.Password == "" {
+		writeAuthError(w, http.StatusForbidden, "wrong_password", "The password is wrong.")
+		return
+	}
+	refund, ok := s.reauth(w, u.ID)
+	if !ok {
+		return
+	}
+	var good bool
+	err := s.withHashGate(r.Context(), func() error {
+		var e error
+		good, e = auth.VerifyUserPassword(r.Context(), s.db, u.ID, req.Password)
+		return e
+	})
+	switch {
+	case err != nil && r.Context().Err() != nil:
+		writeClientGone(w)
+		return
+	case errors.Is(err, errHashBusy):
+		refund()
+		writeBusy(w)
+		return
+	case err != nil:
+		refund()
+		writeInternal(w, r)
+		return
+	case !good:
+		writeAuthError(w, http.StatusForbidden, "wrong_password", "The password is wrong.")
+		return
+	}
+	refund()
+	if err := s.users.DeleteUser(r.Context(), u.ID, u.ID, s.dataDir); err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

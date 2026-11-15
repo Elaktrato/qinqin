@@ -260,3 +260,68 @@ func (s *server) handleAdminRevokeSessions(w http.ResponseWriter, r *http.Reques
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"revoked": n})
 }
+
+// handleAdminDeletionPreview serves GET /api/admin/users/{id}/deletion-preview.
+func (s *server) handleAdminDeletionPreview(w http.ResponseWriter, r *http.Request) {
+	if s.requireAdmin(w, r) == nil {
+		return
+	}
+	id, ok := userTarget(w, r)
+	if !ok {
+		return
+	}
+	s.writePreview(w, r, id)
+}
+
+func (s *server) writePreview(w http.ResponseWriter, r *http.Request, id int64) {
+	p, err := auth.DeletionPreview(r.Context(), s.db, id)
+	if err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	writeJSON(w, http.StatusOK, p)
+}
+
+// handleAdminDeleteUser serves DELETE /api/admin/users/{id} {confirm: the
+// username}. An administrator cannot delete themselves here (409
+// self_target: Settings -> Account does that, with re-authentication).
+func (s *server) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
+	admin := s.requireAdmin(w, r)
+	if admin == nil {
+		return
+	}
+	id, ok := userTarget(w, r)
+	if !ok {
+		return
+	}
+	var req struct {
+		Confirm string `json:"confirm"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	target, err := s.users.GetUser(r.Context(), id, false)
+	if err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	if id == admin.ID {
+		writeAuthError(w, http.StatusConflict, "self_target", "You cannot delete your own account here. Use Settings, Account.")
+		return
+	}
+	if req.Confirm != target.Username {
+		writeAuthError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type the username exactly to confirm.")
+		return
+	}
+	if err := s.users.DeleteUser(r.Context(), admin.ID, id, s.dataDir); err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
