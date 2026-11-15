@@ -1,3 +1,4 @@
+import type { AiStatus } from '$lib/api/ai';
 // The photo import flow as a pure state machine. The component performs
 // the side effects (upload, read, delete) and feeds results back as events.
 
@@ -92,6 +93,17 @@ export function photoToDelete(prev: PhotoState, next: PhotoState): string | null
 export function needsDownscale(file: { size: number; type: string }): boolean {
 	if (file.size > MAX_UPLOAD_BYTES) return true;
 	return !['image/jpeg', 'image/png', 'image/webp'].includes(file.type);
+}
+
+/** Whether Read with AI can work: the AI is usable and the active model reads photos. */
+export function aiReadable(ai: AiStatus | null): boolean {
+	return ai !== null && ai.available && ai.active !== null && ai.active.vision;
+}
+
+/** "<model> can't read photos." when the AI works but the active model cannot see; else null. */
+export function noVisionText(ai: AiStatus | null): string | null {
+	if (!ai || !ai.available || !ai.active || ai.active.vision) return null;
+	return `${ai.active.model} can't read photos.`;
 }
 
 export function defaultEngine(aiAvailable: boolean): Engine {

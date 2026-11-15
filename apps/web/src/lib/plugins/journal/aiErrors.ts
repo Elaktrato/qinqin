@@ -19,11 +19,20 @@ const SETTINGS_CODES = new Set([
 	'key_undecryptable',
 	'ai_disabled',
 	'quota',
-	'model_unavailable'
+	'model_unavailable',
+	'no_selection',
+	'provider_disabled'
 ]);
 
 const FALLBACKS: Record<string, string> = {
 	no_key: 'Add an API key in Settings → AI first.',
+	no_selection: 'Choose which provider to use in Settings → AI.',
+	provider_disabled: 'This provider is turned off on this server. Choose another one in Settings → AI.',
+	no_vision: "This model can't read photos. Read it offline instead.",
+	unknown_provider: 'That provider does not exist.',
+	endpoint_blocked: 'That address is not allowed.',
+	forbidden: 'Only an admin can do that.',
+	invalid_endpoint: 'That endpoint is not valid.',
 	key_rejected: 'The provider rejected the API key.',
 	key_undecryptable: 'Your key can no longer be read. Enter it again in Settings → AI.',
 	ai_disabled: 'AI is not set up on this server.',

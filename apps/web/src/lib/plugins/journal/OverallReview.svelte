@@ -1,7 +1,19 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { answeredBy } from './answeredBy';
+	import { loadProviderNames } from './providerNames';
 	import type { Review } from './types';
 
 	let { review }: { review: Review } = $props();
+
+	// null while the names load: the line then names the model alone.
+	let names = $state<Map<string, string> | null>(null);
+	onMount(() => {
+		void loadProviderNames().then((m) => (names = m));
+	});
+	const providerName = $derived(
+		review.provider && names ? (names.get(review.provider) ?? review.provider) : undefined
+	);
 </script>
 
 <section class="overall" aria-labelledby="overall-heading">
@@ -20,11 +32,7 @@
 		</ul>
 	{/if}
 	<p class="meta">
-		{#if review.fallbackFrom}
-			Answered by {review.model} (fallback)
-		{:else}
-			Answered by {review.model}
-		{/if}
+		{answeredBy(review.model, providerName, review.fallbackFrom)}
 	</p>
 </section>
 

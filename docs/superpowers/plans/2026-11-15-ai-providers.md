@@ -243,6 +243,7 @@ Each reads "Ruling: what — why — cost if wrong". Decision rule: licensing fi
 
 - [ ] **Step 1: Tests** — `answeredBy` table; `aiReadable` false for no-vision; jsdom `OverallReview shows provider name`; `aiErrorView` for `no_vision` sets `offlineInstead`.
 - [ ] **Step 2–4:** FAIL, implement, PASS; web gates 0. **Step 5: Commit** `feat(journal): show the answering provider; offline reading for models without vision`.
+- Ruling: provider display names come from `getAiProviders()` through a once-per-page cache (`providerNames.ts`; a failed fetch is retried next time and shows ids); the line is the model alone until the names arrive (no flicker of ids); Ideas gets the same "· Answered by …" suffix on its "From <date>" line; `answeredBy` lives in its own module rather than `types.ts`; with a non-vision active model the Read with AI button is replaced by "<model> can't read photos." and the hint points to Settings → AI or offline reading, with offline preselected by `defaultEngine`; `no_selection`/`provider_disabled` link to settings, `no_vision` does not — cost if wrong: none.
 
 ### Task 13: Docs, fake server tool, real-app check
 

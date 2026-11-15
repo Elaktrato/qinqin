@@ -36,6 +36,7 @@ export interface Review {
 	annotations: Annotation[];
 	overall: { summary: string; strengths: string[]; focus: string[] };
 	model: string;
+	provider?: string;
 	fallbackFrom?: string;
 	dropped: DropCounts;
 	createdAt: string;
@@ -50,6 +51,7 @@ export interface SuggestionItem {
 export interface Suggestions {
 	items: SuggestionItem[];
 	model: string;
+	provider?: string;
 	createdAt: string;
 }
 

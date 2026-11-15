@@ -9,7 +9,9 @@
 		DOWNSCALE_EDGE,
 		KEEPALIVE_MS,
 		keepaliveTarget,
-		defaultEngine,
+		aiReadable,
+	defaultEngine,
+	noVisionText,
 		needsDownscale,
 		offlineButtonLabel,
 		offlineBlockReason,
@@ -48,7 +50,8 @@
 	let keepTimer: ReturnType<typeof setInterval> | undefined;
 	let saveTimer: ReturnType<typeof setTimeout> | undefined;
 
-	const aiAvailable = $derived(capabilities?.ai.available === true);
+	const aiAvailable = $derived(aiReadable(capabilities?.ai ?? null));
+	const noVision = $derived(noVisionText(capabilities?.ai ?? null));
 	const offlineReason = $derived(
 		capabilities ? offlineBlockReason(capabilities.ocr, language) : 'Checking what this server can do…'
 	);
@@ -285,15 +288,19 @@
 		{/if}
 		<fieldset>
 			<legend>Read it with</legend>
-			<button
-				type="button"
-				class="primary"
-				disabled={!aiAvailable}
-				onclick={() => read('ai')}
-				aria-describedby="ai-note"
-			>
-				Read with AI
-			</button>
+			{#if noVision}
+				<p id="ai-novision" class="hint">{noVision}</p>
+			{:else}
+				<button
+					type="button"
+					class="primary"
+					disabled={!aiAvailable}
+					onclick={() => read('ai')}
+					aria-describedby="ai-note"
+				>
+					Read with AI
+				</button>
+			{/if}
 			<button
 				type="button"
 				class="secondary"
@@ -308,6 +315,7 @@
 			</button>
 			<p id="ai-note" class="hint">
 				{#if capabilities === null}Checking what this server can do…
+				{:else if noVision}Pick a model that reads photos in Settings → AI, or read it offline.
 				{:else if aiAvailable}Sends this photo to your AI provider with your own key.
 				{:else}AI is not available. Set it up in Settings → AI.{/if}
 			</p>

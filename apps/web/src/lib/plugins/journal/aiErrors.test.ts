@@ -6,6 +6,32 @@ function err(status: number, error: string, message = '', retry?: number): ApiEr
 	return new ApiError(status, JSON.stringify({ error, message }), retry);
 }
 
+describe('aiErrorView with several providers', () => {
+	it('no_vision offers offline reading and does not send the learner to settings', () => {
+		const v = aiErrorView(err(409, 'no_vision', 'deepseek-v4-pro on DeepSeek can\'t read photos. Read it offline instead.'), 'transcribe');
+		expect(v.offlineInstead).toBe(true);
+		expect(v.settingsLink).toBe(false);
+		expect(v.text).toContain("can't read photos");
+	});
+
+	it.each(['no_selection', 'provider_disabled'])('%s links to settings', (code) => {
+		const v = aiErrorView(err(409, code), 'review');
+		expect(v.settingsLink).toBe(true);
+		expect(v.text.length).toBeGreaterThan(10);
+	});
+
+	it.each(['no_vision', 'unknown_provider', 'endpoint_blocked', 'forbidden', 'invalid_endpoint'])(
+		'%s has a fallback text when the server sends none',
+		(code) => {
+			expect(aiErrorView(err(422, code), 'review').text).not.toBe('Something went wrong. Try again.');
+		}
+	);
+
+	it('no_selection reads as the choose-a-provider message', () => {
+		expect(aiErrorView(err(409, 'no_selection'), 'ideas').text).toBe('Choose which provider to use in Settings → AI.');
+	});
+});
+
 describe('aiErrorView', () => {
 	it.each(['no_key', 'key_rejected', 'key_undecryptable', 'ai_disabled', 'quota', 'model_unavailable'])(
 		'%s links to settings',

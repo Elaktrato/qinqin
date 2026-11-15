@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { aiErrorView, type AiErrorView } from './aiErrors';
+	import { answeredBy } from './answeredBy';
 	import { requestSuggestions } from './api';
 	import type { AiGate } from './editorLogic';
+	import { loadProviderNames } from './providerNames';
 	import { pollForReview } from './reviewPoll';
 	import { getSuggestions } from './store';
 	import type { Suggestions } from './types';
@@ -22,7 +24,13 @@
 	let status = $state('');
 	let failure = $state<AiErrorView | null>(null);
 
+	let names = $state<Map<string, string> | null>(null);
+	const providerName = $derived(
+		suggestions?.provider && names ? (names.get(suggestions.provider) ?? suggestions.provider) : undefined
+	);
+
 	onMount(() => {
+		void loadProviderNames().then((m) => (names = m));
 		getSuggestions(ws).then(
 			(s) => (suggestions = s),
 			() => {}
@@ -89,7 +97,10 @@
 	{/if}
 
 	{#if suggestions && suggestions.items.length > 0}
-		<p class="hint">From {when(suggestions.createdAt)}</p>
+		<p class="hint">
+			From {when(suggestions.createdAt)}{#if suggestions.model}
+				· {answeredBy(suggestions.model, providerName)}{/if}
+		</p>
 		<ul>
 			{#each suggestions.items as item, i (i)}
 				<li>

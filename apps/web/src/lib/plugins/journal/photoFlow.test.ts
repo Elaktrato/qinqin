@@ -3,7 +3,9 @@ import {
 	KEEPALIVE_MS,
 	keepaliveTarget,
 	offlineButtonLabel,
+	aiReadable,
 	defaultEngine,
+	noVisionText,
 	needsDownscale,
 	photoReducer,
 	photoToDelete,
@@ -99,6 +101,23 @@ describe('needsDownscale', () => {
 	it('is false for a small JPEG, PNG or WebP', () => {
 		expect(needsDownscale({ size: 2 * MIB, type: 'image/png' })).toBe(false);
 		expect(needsDownscale({ size: 10 * MIB, type: 'image/webp' })).toBe(false);
+	});
+});
+
+describe('aiReadable', () => {
+	const st = (over: Record<string, unknown>) => ({ available: true, active: { vision: true, model: 'm' }, ...over }) as never;
+	it('needs a working AI that can see photos', () => {
+		expect(aiReadable(st({}))).toBe(true);
+		expect(aiReadable(st({ active: { vision: false, model: 'deepseek-v4-pro' } }))).toBe(false);
+		expect(aiReadable(st({ available: false }))).toBe(false);
+		expect(aiReadable(st({ active: null }))).toBe(false);
+		expect(aiReadable(null)).toBe(false);
+	});
+	it('says which model cannot read photos', () => {
+		expect(noVisionText(st({ active: { vision: false, model: 'deepseek-v4-pro' } }))).toBe("deepseek-v4-pro can't read photos.");
+		expect(noVisionText(st({}))).toBeNull();
+		expect(noVisionText(st({ available: false, active: { vision: false, model: 'x' } }))).toBeNull();
+		expect(noVisionText(null)).toBeNull();
 	});
 });
 
