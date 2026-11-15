@@ -159,18 +159,13 @@ func (s *server) handleRevokeSession(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusNotFound, "not_found", "No such session.")
 		return
 	}
-	ok, err := auth.RevokeSession(r.Context(), s.db, p.User.ID, id)
+	ok, err := auth.RevokeSessionAudited(r.Context(), s.db, p.User.ID, id)
 	if err != nil {
 		writeInternal(w, r)
 		return
 	}
 	if !ok {
 		writeAuthError(w, http.StatusNotFound, "not_found", "No such session.")
-		return
-	}
-	if err := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: "sessions_revoked", ActorID: p.User.ID,
-		TargetID: &p.User.ID, Detail: map[string]any{"scope": "one", "revoked": 1}}); err != nil {
-		writeInternal(w, r)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -198,13 +193,8 @@ func (s *server) handleRevokeSessions(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusBadRequest, "bad_request", `scope must be "others" or "all".`)
 		return
 	}
-	n, err := auth.RevokeSessions(r.Context(), s.db, p.User.ID, except)
+	n, err := auth.RevokeOthersAudited(r.Context(), s.db, p.User.ID, except, req.Scope)
 	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	if err := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: "sessions_revoked", ActorID: p.User.ID,
-		TargetID: &p.User.ID, Detail: map[string]any{"scope": req.Scope, "revoked": n}}); err != nil {
 		writeInternal(w, r)
 		return
 	}

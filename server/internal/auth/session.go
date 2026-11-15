@@ -155,3 +155,45 @@ func ListSessions(ctx context.Context, sqlDB *sql.DB, userID int64) ([]SessionIn
 	}
 	return out, rows.Err()
 }
+
+// RevokeSessionAudited is RevokeSession plus its audit row in one
+// transaction: either both happen or neither.
+func RevokeSessionAudited(ctx context.Context, sqlDB *sql.DB, userID, sessionID int64) (bool, error) {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return false, fmt.Errorf("begin revoke: %w", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE id = ? AND user_id = ?`, sessionID, userID)
+	if err != nil {
+		return false, fmt.Errorf("revoke session: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return false, nil
+	}
+	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: userID, TargetID: &userID,
+		Detail: map[string]any{"scope": "one", "revoked": 1}}); err != nil {
+		return false, err
+	}
+	return true, tx.Commit()
+}
+
+// RevokeOthersAudited deletes every session of userID except exceptSessionID
+// (0: all) and writes the audit row (scope names the request: "others" or
+// "all"), in one transaction.
+func RevokeOthersAudited(ctx context.Context, sqlDB *sql.DB, userID, exceptSessionID int64, scope string) (int64, error) {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin revoke: %w", err)
+	}
+	defer tx.Rollback()
+	n, err := revokeSessions(ctx, tx, userID, exceptSessionID)
+	if err != nil {
+		return 0, err
+	}
+	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: userID, TargetID: &userID,
+		Detail: map[string]any{"scope": scope, "revoked": n}}); err != nil {
+		return 0, err
+	}
+	return n, tx.Commit()
+}

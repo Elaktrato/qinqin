@@ -14,7 +14,9 @@ func CleanDevice(s string) string {
 	var b strings.Builder
 	n := 0
 	for _, r := range s {
-		if unicode.IsControl(r) {
+		// Control and format characters (bidi overrides, zero-width marks)
+		// could make a label read differently from what it is.
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
 			continue
 		}
 		if n == maxDeviceRunes {

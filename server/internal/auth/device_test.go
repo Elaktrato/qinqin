@@ -30,3 +30,10 @@ func TestDeviceLabel(t *testing.T) {
 		t.Errorf("garbage label too long: %d", len([]rune(got)))
 	}
 }
+
+func TestCleanDeviceStripsFormatAndControlCharacters(t *testing.T) {
+	got := auth.CleanDevice("Pixel \u202e8\u200b\u2066 x\u0007")
+	if got != "Pixel 8 x" {
+		t.Errorf("CleanDevice = %q, want bidi/zero-width/control characters removed", got)
+	}
+}

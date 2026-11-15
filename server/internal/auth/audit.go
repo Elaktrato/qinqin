@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 )
 
 // ErrAuditDetail marks an audit event whose detail could hold a secret.
@@ -21,20 +20,30 @@ type AuditEvent struct {
 	Detail   map[string]any // small, non-secret facts: scope, field, count
 }
 
-// secretWords make Audit refuse a detail key: an audit row never holds a
-// password, token, code, address, host or hash, whatever a caller means.
-var secretWords = []string{"password", "token", "secret", "code", "email", "host", "hash"}
+// auditKeys is the whole vocabulary of audit detail. A key outside it is
+// refused, so a secret (password, token, code, address, host) cannot reach
+// the log by naming; add a key here on purpose when a new action needs one.
+var auditKeys = map[string]bool{
+	"scope": true, "revoked": true, "forced": true, "signedOutOthers": true,
+	"field": true, "to": true, "maxUses": true, "uses": true, "count": true, "enabled": true,
+}
+
+// maxAuditValue caps a string detail value (in bytes).
+const maxAuditValue = 64
 
 func checkAuditDetail(d map[string]any) error {
-	for k := range d {
-		lk := strings.ToLower(k)
-		if lk == "ip" || lk == "clientip" || lk == "addr" || lk == "address" {
-			return fmt.Errorf("%w: key %q", ErrAuditDetail, k)
+	for k, v := range d {
+		if !auditKeys[k] {
+			return fmt.Errorf("%w: key %q is not allowed", ErrAuditDetail, k)
 		}
-		for _, w := range secretWords {
-			if strings.Contains(lk, w) {
-				return fmt.Errorf("%w: key %q", ErrAuditDetail, k)
+		switch x := v.(type) {
+		case bool, int, int32, int64, uint, uint32, uint64, float64:
+		case string:
+			if len(x) > maxAuditValue {
+				return fmt.Errorf("%w: value of %q is too long", ErrAuditDetail, k)
 			}
+		default:
+			return fmt.Errorf("%w: value of %q must be a short string, number or boolean", ErrAuditDetail, k)
 		}
 	}
 	return nil

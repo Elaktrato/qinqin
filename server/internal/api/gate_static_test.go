@@ -36,13 +36,36 @@ func apiSources(t *testing.T) map[string]*ast.File {
 	return out
 }
 
+const authImport = "qinqin/internal/auth"
+
+// authLocalName is how a file refers to the auth package ("" if it does not
+// import it); an alias is reported by the caller.
+func authLocalName(f *ast.File) (name string, aliased bool) {
+	for _, imp := range f.Imports {
+		if strings.Trim(imp.Path.Value, `"`) != authImport {
+			continue
+		}
+		if imp.Name != nil {
+			return imp.Name.Name, true
+		}
+		return "auth", false
+	}
+	return "", false
+}
+
 // No handler may resolve a session itself: auth.Authenticate is called from
-// handlers_auth.go only, where the gate helpers wrap it. A direct call
-// anywhere else would skip the restriction check.
+// handlers_auth.go only, where the gate helpers wrap it, and the wrapper
+// s.authenticate is called there only too. A direct call anywhere else would
+// skip the restriction check. Aliasing the auth import (which would hide the
+// call from a name match) is refused outside handlers_auth.go.
 func TestOnlyTheGateAuthenticates(t *testing.T) {
 	for name, f := range apiSources(t) {
 		if name == "handlers_auth.go" {
 			continue
+		}
+		local, aliased := authLocalName(f)
+		if aliased {
+			t.Errorf("%s imports the auth package as %q: do not alias it", name, local)
 		}
 		ast.Inspect(f, func(n ast.Node) bool {
 			call, ok := n.(*ast.CallExpr)
@@ -53,7 +76,10 @@ func TestOnlyTheGateAuthenticates(t *testing.T) {
 			if !ok {
 				return true
 			}
-			if id, ok := sel.X.(*ast.Ident); ok && id.Name == "auth" && (sel.Sel.Name == "Authenticate" || sel.Sel.Name == "UserFromRequest") {
+			if sel.Sel.Name == "authenticate" {
+				t.Errorf("%s calls .authenticate: use requireUser, requireAdmin, requirePrincipal or optionalUser", name)
+			}
+			if id, ok := sel.X.(*ast.Ident); ok && local != "" && id.Name == local && (sel.Sel.Name == "Authenticate" || sel.Sel.Name == "UserFromRequest") {
 				t.Errorf("%s calls auth.%s: use requireUser, requireAdmin, requirePrincipal or optionalUser", name, sel.Sel.Name)
 			}
 			return true

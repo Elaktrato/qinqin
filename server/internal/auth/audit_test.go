@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"qinqin/internal/auth"
@@ -39,16 +40,24 @@ func TestAuditCopiesNamesAndKeepsThemAfterDeletion(t *testing.T) {
 	}
 }
 
-func TestAuditRefusesSecretLookingDetail(t *testing.T) {
+func TestAuditAllowsOnlyListedKeysAndSmallScalars(t *testing.T) {
 	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer sqlDB.Close()
-	for _, key := range []string{"password", "newPassword", "token", "resetToken", "code", "secret", "email", "smtpHost", "ip", "hash"} {
-		err := auth.Audit(context.Background(), sqlDB, auth.AuditEvent{Action: "x", Detail: map[string]any{key: "v"}})
-		if !errors.Is(err, auth.ErrAuditDetail) {
-			t.Errorf("detail key %q accepted (err %v)", key, err)
+	ctx := context.Background()
+	bad := []map[string]any{
+		{"password": "v"}, {"newPassword": "v"}, {"token": "v"}, {"code": "v"}, {"email": "a@b.example"},
+		{"smtpHost": "mail.example"}, {"ip": "1.2.3.4"}, {"note": "free text"}, {"Scope": "others"},
+		{"scope": strings.Repeat("x", 65)},
+		{"scope": map[string]any{"a": 1}},
+		{"scope": []string{"a"}},
+		{"scope": nil},
+	}
+	for _, d := range bad {
+		if err := auth.Audit(ctx, sqlDB, auth.AuditEvent{Action: "x", Detail: d}); !errors.Is(err, auth.ErrAuditDetail) {
+			t.Errorf("detail %v accepted (err %v)", d, err)
 		}
 	}
 	var n int
@@ -56,7 +65,12 @@ func TestAuditRefusesSecretLookingDetail(t *testing.T) {
 	if n != 0 {
 		t.Errorf("%d rows written for refused events", n)
 	}
-	if err := auth.Audit(context.Background(), sqlDB, auth.AuditEvent{Action: "settings_changed", Detail: map[string]any{"field": "registration", "to": "invite", "maxUses": 5}}); err != nil {
-		t.Errorf("ordinary detail refused: %v", err)
+	for _, d := range []map[string]any{
+		{"scope": "others", "revoked": 3}, {"forced": true, "signedOutOthers": int64(2)},
+		{"field": "registration", "to": "invite", "maxUses": 5}, nil,
+	} {
+		if err := auth.Audit(ctx, sqlDB, auth.AuditEvent{Action: "settings_changed", Detail: d}); err != nil {
+			t.Errorf("detail %v refused: %v", d, err)
+		}
 	}
 }

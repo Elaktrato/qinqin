@@ -108,3 +108,37 @@ func TestRevokeAndList(t *testing.T) {
 		t.Errorf("bob's sessions = %d, want 1", len(rest))
 	}
 }
+
+// The revoke and its audit row are one transaction: when the audit write
+// fails nothing is revoked.
+func TestRevokeAndAuditAreAtomic(t *testing.T) {
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sqlDB.Close()
+	ctx := context.Background()
+	a, _ := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", false)
+	for i := 0; i < 3; i++ {
+		auth.NewSession(ctx, sqlDB, a.ID, auth.LoginOptions{})
+	}
+	list, _ := auth.ListSessions(ctx, sqlDB, a.ID)
+	if n, err := auth.RevokeOthersAudited(ctx, sqlDB, a.ID, list[0].ID, "others"); err != nil || n != 2 {
+		t.Fatalf("others = %d, %v", n, err)
+	}
+	var rows int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM auth_audit WHERE action = 'sessions_revoked'`).Scan(&rows)
+	if rows != 1 {
+		t.Errorf("audit rows = %d, want 1", rows)
+	}
+	sqlDB.Exec(`DROP TABLE auth_audit`)
+	if _, err := auth.RevokeOthersAudited(ctx, sqlDB, a.ID, 0, "all"); err == nil {
+		t.Fatal("revoke succeeded although the audit write failed")
+	}
+	if ok, err := auth.RevokeSessionAudited(ctx, sqlDB, a.ID, list[0].ID); err == nil || ok {
+		t.Errorf("single revoke = %v, %v; want an error", ok, err)
+	}
+	if left, _ := auth.ListSessions(ctx, sqlDB, a.ID); len(left) != 1 {
+		t.Errorf("sessions left = %d, want the one that was never revoked", len(left))
+	}
+}
