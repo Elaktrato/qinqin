@@ -15,7 +15,7 @@ Manifest fields:
 | `format` | yes | how the data file is read |
 | `license` | yes | the licence as the publisher states it |
 | `attribution` | yes | who made it, with a link where there is one |
-| `notice` | no | longer caveats shown on the Sources page, for dictionary, frequency and levels packs: plain text, paragraphs separated by a blank line, links only as `[text](https://…)` (https only), no bidi embedding, override or isolate characters, at most 4,000 bytes. The server rejects a pack whose notice breaks these rules, and `node scripts/check-sources.mjs` checks the committed manifests. A sentences pack's notice is validated the same way but not stored or shown anywhere: put sentence-source caveats in its `attribution` or `ATTRIBUTION.md` |
+| `notice` | no | longer caveats shown on the Sources page, for dictionary, frequency, levels and sentences packs: plain text, paragraphs separated by a blank line, links only as `[text](https://…)` (https only), no bidi embedding, override or isolate characters, at most 4,000 bytes. The server rejects a pack whose notice breaks these rules, and `node scripts/check-sources.mjs` checks the committed manifests. A sentences pack's notice is validated the same way, stored with the pack's registry row (migration 027) and shown in the Sources page's Sentences section |
 
 `license` and `attribution` are checked for every pack here and in
 `plugins/samples/`, and every pack in this directory must be named in

@@ -3,7 +3,7 @@ import { webPlugins } from '$lib/plugins';
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
-import { creditView, packTable, pluginCredits } from './sections';
+import { creditView, packTable, pluginCredits, sentencePackSources } from './sections';
 
 describe('packTable', () => {
 	it('builds rows and a note per pack with a notice, with unique ids', () => {
@@ -214,5 +214,25 @@ describe('declared credits', () => {
 	it('credit each piece of material once', () => {
 		const names = all.map((credit) => credit.name.toLowerCase());
 		expect(new Set(names).size).toBe(names.length);
+	});
+});
+
+describe('sentencePackSources', () => {
+	it('turns the public list into pack rows with the stated credits', () => {
+		const rows = packTable(
+			'sentences',
+			sentencePackSources([
+				{ packId: 'a', name: 'A', version: '1', language: 'es', license: 'CC BY 4.0', attribution: 'X', notice: 'Careful.' },
+				{ packId: 'b', name: 'B', version: '2', language: 'es', license: 'MIT', attribution: 'Y', notice: '' }
+			])
+		);
+		expect(rows.rows.map((r) => [r.key, r.name, r.license, r.attribution])).toEqual([
+			[0, 'A', 'CC BY 4.0', 'X'],
+			[1, 'B', 'MIT', 'Y']
+		]);
+		expect(rows.notes.map((n) => n.id)).toEqual(['note-sentences-0']);
+	});
+	it('is empty for no packs', () => {
+		expect(sentencePackSources([])).toEqual([]);
 	});
 });
