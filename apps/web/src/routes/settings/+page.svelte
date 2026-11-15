@@ -18,6 +18,7 @@
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
+	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
 	import { user } from '$lib/auth';
@@ -128,6 +129,9 @@
 	}
 
 	onMount(loadPlugins);
+
+	// Bumped when the Packs section changes, so Languages reloads.
+	let languagesKey = $state(0);
 
 	// Coverage hints and the Dictionaries panel read the installed
 	// dictionaries and level schemes once; a failure only drops the hints.
@@ -493,8 +497,8 @@
 			hidden={activeTab !== 'data'}
 		>
 			<h2>Data</h2>
-			<PackManager />
-			<!-- languages -->
+			<PackManager onchange={() => (languagesKey += 1)} />
+			<LanguageManager refreshKey={languagesKey} />
 		</div>
 	{/if}
 </main>
