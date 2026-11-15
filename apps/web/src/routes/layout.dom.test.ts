@@ -67,6 +67,23 @@ describe('layout auth guard', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 
+	it('puts Stats in the footer links, not in the main navigation', async () => {
+		const { findByText, getByRole } = mountAt('/search', 'tok');
+		await findByText('page body');
+		const footer = getByRole('navigation', { name: 'Footer' });
+		const main = getByRole('navigation', { name: 'Main' });
+		expect(footer.querySelector('a[href="/stats"]')).not.toBeNull();
+		expect(main.querySelector('a[href="/stats"]')).toBeNull();
+		expect(main.querySelector('a[href="/search"]')).not.toBeNull();
+	});
+
+	it('marks the footer Stats link current on stats pages', async () => {
+		const { findByText, getByRole } = mountAt('/stats/characters', 'tok');
+		await findByText('page body');
+		const link = getByRole('navigation', { name: 'Footer' }).querySelector('a[href="/stats"]');
+		expect(link?.getAttribute('aria-current')).toBe('page');
+	});
+
 	it('leaves the open Sources page alone when signed out', async () => {
 		const { findByText } = mountAt('/sources', null);
 		await findByText('page body');
