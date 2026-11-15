@@ -13,6 +13,7 @@ import {
 	addCard,
 	cardsInDecks,
 	createDeck,
+	PartialCardsError,
 	deleteCards,
 	deleteDeck,
 	loadStudyData,
@@ -794,6 +795,80 @@ describe('study store', () => {
 			expect(removed.map((row) => row.id).sort()).toEqual(['01DUPE', 'c-vocab-42', 'c-writing-42']);
 		});
 
+		it('tombstones companions and duplicates before the vocab row it was asked for', async () => {
+			serve([vocab, companion, dupe]);
+			await deleteCards(['c-vocab-42']);
+			const order = deletedKeys();
+			expect(order[order.length - 1]).toBe('card:c-vocab-42');
+			expect(order.indexOf('card:c-writing-42')).toBeLessThan(order.indexOf('card:c-vocab-42'));
+		});
+
+		it('treats a 404 as already gone and does not report it as removed', async () => {
+			vi.mocked(fetch).mockImplementation(async (input, init) => {
+				if (init?.method === 'DELETE') {
+					return String(input).includes('c-writing-42')
+						? jsonResponse({ error: 'not found' }, 404)
+						: new Response(null, { status: 204 });
+				}
+				return jsonResponse({
+					pluginData: [vocab, companion].map((row) => pluginRow(`card:${row.id}`, row))
+				});
+			});
+			const removed = await deleteCards(['c-vocab-42']);
+			expect(removed.map((row) => row.id)).toEqual(['c-vocab-42']);
+		});
+
+		it('a failed delete reports the rows that did land so they can be undone', async () => {
+			vi.mocked(fetch).mockImplementation(async (input, init) => {
+				if (init?.method === 'DELETE') {
+					return String(input).includes('c-vocab-42')
+						? jsonResponse({ error: 'boom' }, 500)
+						: new Response(null, { status: 204 });
+				}
+				return jsonResponse({
+					pluginData: [vocab, companion].map((row) => pluginRow(`card:${row.id}`, row))
+				});
+			});
+			const err = await deleteCards(['c-vocab-42']).catch((e: unknown) => e);
+			expect(err).toBeInstanceOf(PartialCardsError);
+			expect((err as PartialCardsError).rows.map((row) => row.id)).toEqual(['c-writing-42']);
+		});
+
+		it('a failed restore keeps the rows that were not written', async () => {
+			let puts = 0;
+			vi.mocked(fetch).mockImplementation(async (_input, init) => {
+				if (init?.method === 'PUT') {
+					puts += 1;
+					return puts === 2 ? jsonResponse({ error: 'boom' }, 500) : jsonResponse({ version: 2 });
+				}
+				return jsonResponse({ pluginData: [] });
+			});
+			const err = await restoreCards([vocab, companion, other]).catch((e: unknown) => e);
+			expect(err).toBeInstanceOf(PartialCardsError);
+			expect((err as PartialCardsError).rows.map((row) => row.id)).toEqual([
+				'c-vocab-42',
+				'c-writing-42'
+			]);
+		});
+
+		it('restore with onlyLive skips cards another tab deleted since', async () => {
+			serve([other]);
+			await restoreCards([vocab, other], { onlyLive: true });
+			expect(putBodies().map((entry) => (entry.body as StudyCard).id)).toEqual(['c-vocab-43']);
+		});
+
+		it('undoing a move puts every row back into its old decks', async () => {
+			serve([vocab, companion, dupe]);
+			const before = await moveCards(['c-vocab-42'], 'deck-3');
+			vi.mocked(fetch).mockClear();
+			serve([vocab, companion, dupe]);
+			await restoreCards(before, { onlyLive: true });
+			const byId = new Map(putBodies().map((entry) => [(entry.body as StudyCard).id, entry.body]));
+			expect(byId.get('c-vocab-42')).toEqual(vocab);
+			expect(byId.get('c-writing-42')).toEqual(companion);
+			expect(byId.get('01DUPE')).toEqual(dupe);
+		});
+
 		it('deleting a non-vocab card leaves the vocab card alone', async () => {
 			serve([vocab, companion]);
 			await deleteCards(['c-writing-42']);
@@ -809,7 +884,8 @@ describe('study store', () => {
 
 		it('restoreCards puts the removed rows back unchanged', async () => {
 			serve([]);
-			await restoreCards([vocab, companion]);
+			// Deletion order is companions first, so undo writes the word first.
+			await restoreCards([companion, vocab]);
 			expect(putBodies()).toEqual([
 				{
 					url: `/api/plugins/${PLUGIN_ID}/data/card:c-vocab-42?workspace=${WORKSPACE_ID}`,

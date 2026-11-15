@@ -4,7 +4,7 @@
 // data must never fall back to user-global or another workspace's rows.
 
 import { get } from 'svelte/store';
-import { api } from '../api/client';
+import { ApiError, api } from '../api/client';
 import { newUlid } from '../ulid';
 import { workspaces } from '../workspaces';
 import type { StudyEvent } from '../events';
@@ -403,30 +403,90 @@ function rowsOfCards(all: readonly StudyCard[], ids: readonly string[]): StudyCa
 }
 
 /**
+ * PartialCardsError is thrown when a multi-row write stops half way.
+ * `rows` are what the caller needs to carry on: after deleteCards and
+ * moveCards the rows that DID change (their previous state, for undo);
+ * after restoreCards the rows still NOT written (for a retry).
+ */
+export class PartialCardsError extends Error {
+	rows: StudyCard[];
+	cause: unknown;
+
+	constructor(message: string, rows: StudyCard[], cause: unknown) {
+		super(message);
+		this.name = 'PartialCardsError';
+		this.rows = rows;
+		this.cause = cause;
+	}
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+	return err instanceof Error && err.message ? err.message : fallback;
+}
+
+/**
  * deleteCards tombstones the given cards (see rowsOfCards for what that
  * includes) and returns the removed rows, which restoreCards takes to
- * undo it. Review events are not touched: reviews of a missing card are
+ * undo it. Companions and duplicates go first and the requested rows
+ * last, so a failure half way leaves the card the user sees still
+ * listed instead of hiding it behind live leftovers. A 404 means the row
+ * is already gone (another tab): it is skipped and not reported as
+ * removed. A failure throws PartialCardsError with the rows that did
+ * land. Review events are not touched: reviews of a missing card are
  * ignored by scheduling and mastery, while EXP and streaks keep counting.
  */
 export async function deleteCards(ids: readonly string[]): Promise<StudyCard[]> {
 	const workspaceId = requireWorkspaceId();
 	if (ids.length === 0) return [];
 	const { cards } = await fetchStudyData(workspaceId);
+	const asked = new Set(ids);
 	const rows = rowsOfCards(cards, ids);
-	for (const row of rows) {
-		await deleteData(workspaceId, cardRowKey(row.id));
+	const ordered = [
+		...rows.filter((row) => !asked.has(row.id)),
+		...rows.filter((row) => asked.has(row.id))
+	];
+	const removed: StudyCard[] = [];
+	for (const row of ordered) {
+		try {
+			await deleteData(workspaceId, cardRowKey(row.id));
+			removed.push(row);
+		} catch (err) {
+			if (err instanceof ApiError && err.status === 404) continue;
+			throw new PartialCardsError(errorMessage(err, 'Could not delete the cards.'), removed, err);
+		}
 	}
-	return rows;
+	return removed;
 }
 
 /**
- * restoreCards writes removed rows back; the server revives a tombstoned
- * key on PUT, so the card, its id and its reviews are all back.
+ * restoreCards writes removed (or moved) rows back; the server revives a
+ * tombstoned key on PUT, so the card, its id and its reviews are all
+ * back. Rows go in reverse of deletion order (the word before its
+ * companions). With `onlyLive` a row whose card is no longer stored
+ * (another tab deleted it since) is skipped instead of revived: undoing
+ * a move must not resurrect a card deleted afterwards. A failure throws
+ * PartialCardsError whose `rows` are the ones still to restore.
  */
-export async function restoreCards(rows: readonly StudyCard[]): Promise<void> {
+export async function restoreCards(
+	rows: readonly StudyCard[],
+	opts: { onlyLive?: boolean } = {}
+): Promise<void> {
 	const workspaceId = requireWorkspaceId();
-	for (const row of rows) {
-		await putData(workspaceId, cardRowKey(row.id), row);
+	let todo = [...rows].reverse();
+	try {
+		if (opts.onlyLive === true) {
+			const live = new Set((await fetchStudyData(workspaceId)).cards.map((card) => card.id));
+			todo = todo.filter((row) => live.has(row.id));
+		}
+	} catch (err) {
+		throw new PartialCardsError(errorMessage(err, 'Could not undo.'), [...rows], err);
+	}
+	for (let i = 0; i < todo.length; i++) {
+		try {
+			await putData(workspaceId, cardRowKey(todo[i].id), todo[i]);
+		} catch (err) {
+			throw new PartialCardsError(errorMessage(err, 'Could not undo.'), todo.slice(i).reverse(), err);
+		}
 	}
 }
 
@@ -434,7 +494,8 @@ export async function restoreCards(rows: readonly StudyCard[]): Promise<void> {
  * moveCards makes `deckId` the only deck of the given cards (their
  * duplicates and companions follow). Rows already only in that deck are
  * not rewritten. Returns the rows as they were before, for undo through
- * restoreCards. The deck must be General or a stored deck.
+ * restoreCards (with `onlyLive`); a failure throws PartialCardsError with
+ * the rows already moved. The deck must be General or a stored deck.
  */
 export async function moveCards(ids: readonly string[], deckId: string): Promise<StudyCard[]> {
 	const workspaceId = requireWorkspaceId();
@@ -448,10 +509,16 @@ export async function moveCards(ids: readonly string[], deckId: string): Promise
 	const changed = rowsOfCards(cards, ids).filter(
 		(row) => row.deckIds.length !== 1 || row.deckIds[0] !== deckId
 	);
+	const moved: StudyCard[] = [];
 	for (const row of changed) {
-		await putData(workspaceId, cardRowKey(row.id), { ...row, deckIds: [deckId] });
+		try {
+			await putData(workspaceId, cardRowKey(row.id), { ...row, deckIds: [deckId] });
+			moved.push(row);
+		} catch (err) {
+			throw new PartialCardsError(errorMessage(err, 'Could not move the cards.'), moved, err);
+		}
 	}
-	return changed;
+	return moved;
 }
 
 /** cardsInDecks keeps the cards that belong to at least one of `deckIds`. */
