@@ -153,6 +153,18 @@ version by surprise. The published image is the full build: Tesseract OCR
 (about +193 MB) and the Kanji alive audio (about +70 MB). Self-builds can drop
 them with `--build-arg WITH_OCR=0` / `WITH_AUDIO=0`.
 
+**The package is private until you change it.** GitHub creates a new container
+package as private, so a `docker pull` or Portainer deployment fails with
+`unauthorized` until you do one of these:
+
+- make the package public: GitHub profile, Packages, `qinqin`, Package settings,
+  Change visibility, Public; or
+- keep it private and give Portainer a login: Registries, Add registry, GitHub
+  Container Registry, your GitHub username and a personal access token with only
+  the `read:packages` scope; then select that registry when you create the stack.
+
+Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.2.0`.
+
 ## Deploying with Portainer
 
 [`deploy/portainer-stack.yml`](deploy/portainer-stack.yml) differs from the
