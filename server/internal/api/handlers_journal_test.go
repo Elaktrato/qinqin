@@ -67,12 +67,18 @@ func newJournalEnv(t *testing.T, p ai.Provider, withKey bool) journalEnv {
 
 func newJournalEnvOpts(t *testing.T, p ai.Provider, withKey bool, opts ...api.Option) journalEnv {
 	t.Helper()
+	return newJournalEnvSvc(t, func(sqlDB *sql.DB) *ai.Service { return testAIService(sqlDB, p, ai.SecretOK, 7) }, withKey, opts...)
+}
+
+// newJournalEnvSvc is newJournalEnvOpts with the AI service built by the test.
+func newJournalEnvSvc(t *testing.T, mk func(*sql.DB) *ai.Service, withKey bool, opts ...api.Option) journalEnv {
+	t.Helper()
 	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { sqlDB.Close() })
-	svc := testAIService(sqlDB, p, ai.SecretOK, 7)
+	svc := mk(sqlDB)
 	dataDir := t.TempDir()
 	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, append([]api.Option{api.WithAI(svc)}, opts...)...))
 	t.Cleanup(ts.Close)
