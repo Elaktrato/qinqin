@@ -119,7 +119,7 @@ func TestAdminPatchUsersLastAdminAndDisable(t *testing.T) {
 		t.Errorf("old token after re-enable = %d, want 401", r.StatusCode)
 	}
 	// make bob admin, then owner can be demoted, then the last one cannot
-	if r := doJSON(t, "PATCH", ts.URL, path(bobID), owner, map[string]any{"admin": true}); r.StatusCode != 200 {
+	if r := doJSON(t, "PATCH", ts.URL, path(bobID), owner, map[string]any{"admin": true, "currentPassword": "secret-pass-owner"}); r.StatusCode != 200 {
 		t.Fatalf("promote = %d", r.StatusCode)
 	}
 	if r := doJSON(t, "PATCH", ts.URL, path(ownerID), owner, map[string]any{"admin": false}); r.StatusCode != 200 {

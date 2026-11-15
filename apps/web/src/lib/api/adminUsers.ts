@@ -40,7 +40,14 @@ export function createUser(body: {
 
 export function patchUser(
 	id: number,
-	body: { admin?: boolean; disabled?: boolean; mustChangePassword?: true; email?: string | null }
+	body: {
+		admin?: boolean;
+		disabled?: boolean;
+		mustChangePassword?: true;
+		email?: string | null;
+		/** The acting administrator's own password; needed to grant admin. */
+		currentPassword?: string;
+	}
 ): Promise<AdminUserDto> {
 	return api(`/api/admin/users/${id}`, { method: 'PATCH', body });
 }
@@ -49,17 +56,25 @@ export function revokeUserSessions(id: number): Promise<{ revoked: number }> {
 	return api(`/api/admin/users/${id}/sessions/revoke`, { method: 'POST', body: {} });
 }
 
-export function issueResetLink(id: number, expiresInHours?: number): Promise<{ path: string; expiresAt: string }> {
+export function issueResetLink(
+	id: number,
+	currentPassword: string,
+	expiresInHours?: number
+): Promise<{ path: string; expiresAt: string }> {
 	return api(`/api/admin/users/${id}/reset-link`, {
 		method: 'POST',
-		body: expiresInHours === undefined ? {} : { expiresInHours }
+		body: expiresInHours === undefined ? { currentPassword } : { currentPassword, expiresInHours }
 	});
+}
+
+export function revokeResetLink(id: number): Promise<void> {
+	return api(`/api/admin/users/${id}/reset-link`, { method: 'DELETE' });
 }
 
 export function deletionPreview(id: number): Promise<DeletionPreview> {
 	return api(`/api/admin/users/${id}/deletion-preview`);
 }
 
-export function deleteUser(id: number, confirm: string): Promise<void> {
-	return api(`/api/admin/users/${id}`, { method: 'DELETE', body: { confirm } });
+export function deleteUser(id: number, confirm: string, currentPassword: string): Promise<void> {
+	return api(`/api/admin/users/${id}`, { method: 'DELETE', body: { confirm, currentPassword } });
 }

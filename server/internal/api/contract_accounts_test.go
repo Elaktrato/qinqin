@@ -130,7 +130,7 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 	var aliceID = userID(t, sqlDB, "alice")
 	id := func() string { return strconv.FormatInt(carlaID, 10) }
 	var resetToken string
-	runCases(t, "admin-users.json", []string{"list", "create", "patch", "last_admin", "self_target", "reset_link", "sessions_revoke", "deletion_preview", "confirm_mismatch", "delete"}, map[string]func() (int, any){
+	runCases(t, "admin-users.json", []string{"list", "create", "patch", "last_admin", "self_target", "reset_link", "sessions_revoke", "deletion_preview", "confirm_mismatch", "password_required", "delete"}, map[string]func() (int, any){
 		"list": func() (int, any) {
 			st, body := callJSON(t, ts, "GET", "/api/admin/users", alice, nil)
 			if m, ok := body.(map[string]any); ok {
@@ -147,7 +147,7 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 			return st, body
 		},
 		"patch": func() (int, any) {
-			return callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": true})
+			return callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": true, "currentPassword": "secret-pass-alice"})
 		},
 		"last_admin": func() (int, any) {
 			// alice and carla are admins now: demote carla, then alice alone is last
@@ -158,7 +158,7 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 			return callJSON(t, ts, "PATCH", "/api/admin/users/"+strconv.FormatInt(aliceID, 10), alice, map[string]any{"disabled": true})
 		},
 		"reset_link": func() (int, any) {
-			st, body := callJSON(t, ts, "POST", "/api/admin/users/"+id()+"/reset-link", alice, map[string]any{"expiresInHours": 24})
+			st, body := callJSON(t, ts, "POST", "/api/admin/users/"+id()+"/reset-link", alice, map[string]any{"expiresInHours": 24, "currentPassword": "secret-pass-alice"})
 			if m, ok := body.(map[string]any); ok {
 				resetToken = strings.TrimPrefix(m["path"].(string), "/reset#t=")
 			}
@@ -173,8 +173,11 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 		"confirm_mismatch": func() (int, any) {
 			return callJSON(t, ts, "DELETE", "/api/admin/users/"+id(), alice, map[string]any{"confirm": "nope"})
 		},
-		"delete": func() (int, any) {
+		"password_required": func() (int, any) {
 			return callJSON(t, ts, "DELETE", "/api/admin/users/"+id(), alice, map[string]any{"confirm": "carla"})
+		},
+		"delete": func() (int, any) {
+			return callJSON(t, ts, "DELETE", "/api/admin/users/"+id(), alice, map[string]any{"confirm": "carla", "currentPassword": "secret-pass-alice"})
 		},
 	}, false)
 	_ = resetToken
@@ -182,7 +185,7 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 	// reset: a fresh link for bobby
 	var tok string
 	issue := func() {
-		_, body := callJSON(t, ts, "POST", "/api/admin/users/"+strconv.FormatInt(userID(t, sqlDB, "bobby"), 10)+"/reset-link", alice, map[string]any{})
+		_, body := callJSON(t, ts, "POST", "/api/admin/users/"+strconv.FormatInt(userID(t, sqlDB, "bobby"), 10)+"/reset-link", alice, map[string]any{"currentPassword": "secret-pass-alice"})
 		tok = strings.TrimPrefix(body.(map[string]any)["path"].(string), "/reset#t=")
 	}
 	runCases(t, "reset.json", []string{"check", "use", "token_invalid"}, map[string]func() (int, any){

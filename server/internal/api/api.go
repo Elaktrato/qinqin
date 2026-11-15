@@ -154,6 +154,7 @@ func (s *server) routes() []route {
 		{"PATCH /api/admin/users/{id}", s.handleAdminPatchUser, accAdmin, nil},
 		{"POST /api/admin/users/{id}/sessions/revoke", s.handleAdminRevokeSessions, accAdmin, nil},
 		{"POST /api/admin/users/{id}/reset-link", s.handleAdminResetLink, accAdmin, nil},
+		{"DELETE /api/admin/users/{id}/reset-link", s.handleAdminRevokeResetLink, accAdmin, nil},
 		{"POST /api/auth/reset/check", s.handleResetCheck, accPublic, nil},
 		{"POST /api/auth/reset", s.handleReset, accPublic, nil},
 		{"GET /api/admin/users/{id}/deletion-preview", s.handleAdminDeletionPreview, accAdmin, nil},

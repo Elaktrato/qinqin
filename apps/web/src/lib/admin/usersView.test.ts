@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AdminUserDto } from '$lib/api/adminUsers';
-import { LAST_ADMIN_REASON, generateTempPassword, lastSeenLabel, userRows } from './usersView';
+import { LAST_ADMIN_REASON, NEEDS_PASSWORD, generateTempPassword, lastSeenLabel, userRows } from './usersView';
 
 const u = (id: number, o: Partial<AdminUserDto> = {}): AdminUserDto => ({
 	id,
@@ -81,5 +81,13 @@ describe('generateTempPassword', () => {
 			return b;
 		});
 		expect(pw).toBe('ABABABABABABABAB');
+	});
+});
+
+describe('password-gated actions', () => {
+	it('names exactly the sensitive ones and offers revoking a pending link', () => {
+		expect([...NEEDS_PASSWORD].sort()).toEqual(['delete', 'makeAdmin', 'resetLink']);
+		const rows = userRows([u(1, { admin: true }), u(2)], 1, now);
+		expect(rows[1].actions.map((a) => a.id)).toContain('revokeResetLink');
 	});
 });

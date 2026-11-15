@@ -207,14 +207,8 @@ func (u *Users) Create(ctx context.Context, actorID int64, nu NewUser) (model.Us
 // SetAdmin grants or removes the admin bit. Removing it is one guarded
 // statement that refuses to leave the instance without an active admin
 // (ErrLastAdmin); granting or removing nothing is a no-op.
-func (u *Users) SetAdmin(ctx context.Context, actorID, id int64, admin bool) error {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	tx, err := u.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin set admin: %w", err)
-	}
-	defer tx.Rollback()
+func setAdminTx(ctx context.Context, tx *sql.Tx, actorID, id int64, admin bool) error {
+	var err error
 	var res sql.Result
 	if admin {
 		res, err = tx.ExecContext(ctx, `UPDATE users SET admin = 1, updated_at = ?2 WHERE id = ?1 AND admin = 0`, id, now())
@@ -247,6 +241,20 @@ func (u *Users) SetAdmin(ctx context.Context, actorID, id int64, admin bool) err
 	if err := Audit(ctx, tx, AuditEvent{Action: action, ActorID: actorID, TargetID: &id}); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (u *Users) SetAdmin(ctx context.Context, actorID, id int64, admin bool) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	tx, err := u.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin SetAdmin: %w", err)
+	}
+	defer tx.Rollback()
+	if err := setAdminTx(ctx, tx, actorID, id, admin); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -255,14 +263,8 @@ func (u *Users) SetAdmin(ctx context.Context, actorID, id int64, admin bool) err
 // never authenticates, and a re-enabled one starts with no session, so an
 // old token can never come back). Disabling the last active admin is
 // refused with ErrLastAdmin by the guarded statement.
-func (u *Users) SetDisabled(ctx context.Context, actorID, id int64, disabled bool) error {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	tx, err := u.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin set disabled: %w", err)
-	}
-	defer tx.Rollback()
+func setDisabledTx(ctx context.Context, tx *sql.Tx, actorID, id int64, disabled bool) error {
+	var err error
 	var res sql.Result
 	if disabled {
 		res, err = tx.ExecContext(ctx, `
@@ -290,6 +292,9 @@ func (u *Users) SetDisabled(ctx context.Context, actorID, id int64, disabled boo
 	if err != nil {
 		return err
 	}
+	if err := dropPendingResets(ctx, tx, id); err != nil {
+		return err
+	}
 	action := "user_enabled"
 	if disabled {
 		action = "user_disabled"
@@ -297,19 +302,27 @@ func (u *Users) SetDisabled(ctx context.Context, actorID, id int64, disabled boo
 	if err := Audit(ctx, tx, AuditEvent{Action: action, ActorID: actorID, TargetID: &id, Detail: map[string]any{"revoked": revoked}}); err != nil {
 		return err
 	}
+	return nil
+}
+
+func (u *Users) SetDisabled(ctx context.Context, actorID, id int64, disabled bool) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	tx, err := u.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin SetDisabled: %w", err)
+	}
+	defer tx.Rollback()
+	if err := setDisabledTx(ctx, tx, actorID, id, disabled); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
 // SetEmail stores an address an administrator entered (verified) or clears
 // it (norm nil). ErrEmailTaken when another account has it.
-func (u *Users) SetEmail(ctx context.Context, actorID, id int64, email, norm *string) error {
-	u.mu.Lock()
-	defer u.mu.Unlock()
-	tx, err := u.DB.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin set email: %w", err)
-	}
-	defer tx.Rollback()
+func setEmailTx(ctx context.Context, tx *sql.Tx, actorID, id int64, email, norm *string) error {
+	var err error
 	var verified any
 	if email != nil {
 		verified = now()
@@ -328,6 +341,20 @@ func (u *Users) SetEmail(ctx context.Context, actorID, id int64, email, norm *st
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "settings_changed", ActorID: actorID, TargetID: &id,
 		Detail: map[string]any{"field": "email", "to": email != nil}}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *Users) SetEmail(ctx context.Context, actorID, id int64, email, norm *string) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	tx, err := u.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin SetEmail: %w", err)
+	}
+	defer tx.Rollback()
+	if err := setEmailTx(ctx, tx, actorID, id, email, norm); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -363,6 +390,9 @@ func (u *Users) RevokeAllSessions(ctx context.Context, actorID, id int64) (int64
 	}
 	n, err := revokeSessions(ctx, tx, id, 0)
 	if err != nil {
+		return 0, err
+	}
+	if err := dropPendingResets(ctx, tx, id); err != nil {
 		return 0, err
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: actorID, TargetID: &id,
@@ -407,6 +437,79 @@ func SetOwnEmail(ctx context.Context, sqlDB *sql.DB, userID int64, email, norm *
 	if err := Audit(ctx, tx, AuditEvent{Action: "settings_changed", ActorID: userID, TargetID: &userID,
 		Detail: map[string]any{"field": "email", "to": email != nil}}); err != nil {
 		return err
+	}
+	return tx.Commit()
+}
+
+// RevokePendingResets deletes the user's unused reset links (an admin
+// taking back a link they issued) and audits it.
+func (u *Users) RevokePendingResets(ctx context.Context, actorID, id int64) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	tx, err := u.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin revoke resets: %w", err)
+	}
+	defer tx.Rollback()
+	var one int
+	if err := tx.QueryRowContext(ctx, `SELECT 1 FROM users WHERE id = ?`, id).Scan(&one); errors.Is(err, sql.ErrNoRows) {
+		return ErrUserNotFound
+	} else if err != nil {
+		return fmt.Errorf("read user: %w", err)
+	}
+	res, err := tx.ExecContext(ctx, `DELETE FROM password_resets WHERE user_id = ? AND used_at IS NULL`, id)
+	if err != nil {
+		return fmt.Errorf("revoke resets: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	if err := Audit(ctx, tx, AuditEvent{Action: "reset_link_revoked", ActorID: actorID, TargetID: &id, Detail: map[string]any{"revoked": n}}); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// UserPatch is a set of changes to one user, applied together.
+type UserPatch struct {
+	Admin      *bool
+	Disabled   *bool
+	SetEmail   bool // Email/EmailNorm are written (nil clears)
+	Email      *string
+	EmailNorm  *string
+	ForceReset bool // require a password change
+}
+
+// Patch applies every change of p in ONE transaction: a refusal (the
+// last-admin guard, a taken address) leaves the user exactly as it was.
+func (u *Users) Patch(ctx context.Context, actorID, id int64, p UserPatch) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	tx, err := u.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin patch: %w", err)
+	}
+	defer tx.Rollback()
+	if p.Admin != nil {
+		if err := setAdminTx(ctx, tx, actorID, id, *p.Admin); err != nil {
+			return err
+		}
+	}
+	if p.Disabled != nil {
+		if err := setDisabledTx(ctx, tx, actorID, id, *p.Disabled); err != nil {
+			return err
+		}
+	}
+	if p.SetEmail {
+		if err := setEmailTx(ctx, tx, actorID, id, p.Email, p.EmailNorm); err != nil {
+			return err
+		}
+	}
+	if p.ForceReset {
+		if err := forceChangeTx(ctx, tx, id, actorID); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return ErrUserNotFound
+			}
+			return err
+		}
 	}
 	return tx.Commit()
 }

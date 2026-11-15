@@ -36,7 +36,8 @@ func (s *server) handleAdminResetLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		ExpiresInHours *int `json:"expiresInHours"`
+		ExpiresInHours  *int   `json:"expiresInHours"`
+		CurrentPassword string `json:"currentPassword"`
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -44,6 +45,13 @@ func (s *server) handleAdminResetLink(w http.ResponseWriter, r *http.Request) {
 	ttl := auth.DefaultResetTTL
 	if req.ExpiresInHours != nil {
 		ttl = time.Duration(*req.ExpiresInHours) * time.Hour
+	}
+	if ttl < time.Hour || ttl > auth.MaxResetTTL {
+		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_request", "The link may last 1 to 168 hours.")
+		return
+	}
+	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
+		return
 	}
 	token, expires, err := s.users.IssueReset(r.Context(), admin.ID, id, ttl)
 	switch {
@@ -143,4 +151,25 @@ func (s *server) handleReset(w http.ResponseWriter, r *http.Request) {
 		s.hideEmailWhenOff(r, &u)
 		writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "token": token, "user": u})
 	}
+}
+
+// handleAdminRevokeResetLink serves DELETE /api/admin/users/{id}/reset-link:
+// take back the user's pending reset link (no password needed: it only
+// removes a way in).
+func (s *server) handleAdminRevokeResetLink(w http.ResponseWriter, r *http.Request) {
+	admin := s.requireAdmin(w, r)
+	if admin == nil {
+		return
+	}
+	id, ok := userTarget(w, r)
+	if !ok {
+		return
+	}
+	if err := s.users.RevokePendingResets(r.Context(), admin.ID, id); err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

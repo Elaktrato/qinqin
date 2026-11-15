@@ -1,5 +1,8 @@
 import type { AdminUserDto } from '$lib/api/adminUsers';
 
+/** Actions that ask the acting administrator for their own password first. */
+export const NEEDS_PASSWORD: ReadonlySet<UserActionId> = new Set(['makeAdmin', 'resetLink', 'delete']);
+
 export const LAST_ADMIN_REASON = 'The last administrator cannot be removed.';
 
 export type UserActionId =
@@ -9,6 +12,7 @@ export type UserActionId =
 	| 'enable'
 	| 'requirePasswordChange'
 	| 'resetLink'
+	| 'revokeResetLink'
 	| 'signOutEverywhere'
 	| 'delete';
 
@@ -75,6 +79,7 @@ export function userRows(users: readonly AdminUserDto[], selfId: number, now: Da
 		actions.push(
 			{ id: 'requirePasswordChange', label: 'Require password change', disabled: false },
 			{ id: 'resetLink', label: 'Reset link', disabled: false },
+			{ id: 'revokeResetLink', label: 'Revoke reset link', disabled: false },
 			{ id: 'signOutEverywhere', label: 'Sign out everywhere', disabled: false }
 		);
 		if (!self) actions.push(guard('delete', 'Delete'));

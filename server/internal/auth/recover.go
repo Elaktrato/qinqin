@@ -44,6 +44,9 @@ func RecoverAccount(ctx context.Context, sqlDB *sql.DB, o RecoverOptions) (int64
 	if err != nil {
 		return 0, err
 	}
+	if err := dropPendingResets(ctx, tx, id); err != nil {
+		return 0, err
+	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "password_change_forced", ActorName: "cli", TargetID: &id,
 		Detail: map[string]any{"signedOutOthers": revoked, "enabled": o.Enable, "admin": o.Admin}}); err != nil {
 		return 0, err

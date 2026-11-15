@@ -36,6 +36,47 @@ func writeUserError(w http.ResponseWriter, err error) bool {
 	return true
 }
 
+// requireAdminPassword asks the acting administrator for their current
+// password before a sensitive action (deleting another user, issuing a reset
+// link, granting admin): a stolen admin session alone cannot do these. Empty:
+// 422 password_required (nothing counted); wrong: 403 wrong_password through
+// the reauth limiter, which a right password refunds. False: a response was
+// written.
+func (s *server) requireAdminPassword(w http.ResponseWriter, r *http.Request, adminID int64, password string) bool {
+	if password == "" {
+		writeAuthError(w, http.StatusUnprocessableEntity, "password_required", "Enter your own password to confirm this action.")
+		return false
+	}
+	refund, ok := s.reauth(w, adminID)
+	if !ok {
+		return false
+	}
+	var good bool
+	err := s.withHashGate(r.Context(), func() error {
+		var e error
+		good, e = auth.VerifyUserPassword(r.Context(), s.db, adminID, password)
+		return e
+	})
+	switch {
+	case err != nil && r.Context().Err() != nil:
+		writeClientGone(w)
+		return false
+	case errors.Is(err, errHashBusy):
+		refund()
+		writeBusy(w)
+		return false
+	case err != nil:
+		refund()
+		writeInternal(w, r)
+		return false
+	case !good:
+		writeAuthError(w, http.StatusForbidden, "wrong_password", "Your password is wrong.")
+		return false
+	}
+	refund()
+	return true
+}
+
 func (s *server) hideStoredEmail(r *http.Request) bool {
 	set, err := auth.LoadSettings(r.Context(), s.db)
 	return err == nil && set.EmailPolicy == "off"
@@ -163,6 +204,7 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 		Disabled           *bool           `json:"disabled"`
 		Email              json.RawMessage `json:"email"`
 		MustChangePassword *bool           `json:"mustChangePassword"`
+		CurrentPassword    string          `json:"currentPassword"`
 	}
 	if !readAccountBodyStrict(w, r, &req) {
 		return
@@ -209,29 +251,15 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 			writeInternal(w, r)
 		}
 	}
-	if setEmail {
-		if err := s.users.SetEmail(ctx, admin.ID, id, email, emailNorm); err != nil {
-			fail(err)
-			return
-		}
+	if req.Admin != nil && *req.Admin && !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
+		return
 	}
-	if req.Admin != nil {
-		if err := s.users.SetAdmin(ctx, admin.ID, id, *req.Admin); err != nil {
-			fail(err)
-			return
-		}
-	}
-	if req.Disabled != nil {
-		if err := s.users.SetDisabled(ctx, admin.ID, id, *req.Disabled); err != nil {
-			fail(err)
-			return
-		}
-	}
-	if req.MustChangePassword != nil {
-		if err := s.users.ForcePasswordChange(ctx, admin.ID, id); err != nil {
-			fail(err)
-			return
-		}
+	// Every field in one transaction: a refusal changes nothing.
+	if err := s.users.Patch(ctx, admin.ID, id, auth.UserPatch{
+		Admin: req.Admin, Disabled: req.Disabled, SetEmail: setEmail, Email: email, EmailNorm: emailNorm,
+		ForceReset: req.MustChangePassword != nil && *req.MustChangePassword}); err != nil {
+		fail(err)
+		return
 	}
 	u, err := s.users.GetUser(ctx, id, s.hideStoredEmail(r))
 	if err != nil {
@@ -297,7 +325,8 @@ func (s *server) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
-		Confirm string `json:"confirm"`
+		Confirm         string `json:"confirm"`
+		CurrentPassword string `json:"currentPassword"`
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -315,6 +344,9 @@ func (s *server) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 	if req.Confirm != target.Username {
 		writeAuthError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type the username exactly to confirm.")
+		return
+	}
+	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
 		return
 	}
 	if err := s.users.DeleteUser(r.Context(), admin.ID, id, s.dataDir); err != nil {

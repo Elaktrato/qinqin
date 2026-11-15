@@ -5,6 +5,7 @@
 	import {
 		createUser,
 		issueResetLink,
+		revokeResetLink,
 		listUsers,
 		patchUser,
 		revokeUserSessions,
@@ -13,7 +14,7 @@
 	import { passwordHint } from '$lib/account/passwordRules';
 	import { user as me } from '$lib/auth';
 	import DeleteUserDialog from './DeleteUserDialog.svelte';
-	import { generateTempPassword, userRows, type UserActionId } from './usersView';
+	import { NEEDS_PASSWORD, generateTempPassword, userRows, type UserActionId } from './usersView';
 
 	let users = $state<AdminUserDto[]>([]);
 	let loaded = $state(false);
@@ -32,6 +33,9 @@
 	let resetLink = $state<{ username: string; url: string; expiresAt: string } | null>(null);
 	let copied = $state(false);
 	let deleting = $state<{ id: number; username: string } | null>(null);
+	// An action waiting for the acting administrator's own password.
+	let askPassword = $state<{ id: number; username: string; action: UserActionId } | null>(null);
+	let ownPassword = $state('');
 	let heading = $state<HTMLHeadingElement | null>(null);
 
 	const rows = $derived(userRows(users, $me?.id ?? 0, new Date()));
@@ -82,18 +86,24 @@
 		}
 	}
 
-	async function run(row: { id: number; username: string }, id: UserActionId): Promise<void> {
+	async function run(row: { id: number; username: string }, id: UserActionId, password = ''): Promise<void> {
 		if (busy) return;
 		if (id === 'delete') {
 			deleting = { id: row.id, username: row.username };
 			return;
 		}
+		if (NEEDS_PASSWORD.has(id) && !password) {
+			askPassword = { id: row.id, username: row.username, action: id };
+			ownPassword = '';
+			return;
+		}
+		askPassword = null;
 		busy = true;
 		error = notice = '';
 		try {
 			switch (id) {
 				case 'makeAdmin':
-					await patchUser(row.id, { admin: true });
+					await patchUser(row.id, { admin: true, currentPassword: password });
 					break;
 				case 'removeAdmin':
 					await patchUser(row.id, { admin: false });
@@ -113,8 +123,12 @@
 					notice = `${row.username} was signed out of ${out.revoked} session${out.revoked === 1 ? '' : 's'}.`;
 					break;
 				}
+				case 'revokeResetLink':
+					await revokeResetLink(row.id);
+					notice = `Any pending reset link of ${row.username} was revoked.`;
+					break;
 				case 'resetLink': {
-					const out = await issueResetLink(row.id);
+					const out = await issueResetLink(row.id, password);
 					resetLink = { username: row.username, url: location.origin + out.path, expiresAt: out.expiresAt };
 					copied = false;
 					break;
@@ -150,6 +164,25 @@
 	<h2 id="admin-users-heading" tabindex="-1" bind:this={heading}>Users</h2>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{notice}</p>
+
+	{#if askPassword}
+		<form
+			class="link"
+			aria-label="Confirm with your password"
+			onsubmit={(event) => {
+				event.preventDefault();
+				const a = askPassword;
+				if (a) void run({ id: a.id, username: a.username }, a.action, ownPassword);
+			}}
+		>
+			<label>
+				Your own password, to confirm this for {askPassword.username}
+				<input type="password" autocomplete="current-password" bind:value={ownPassword} required />
+			</label>
+			<button type="submit" disabled={busy || ownPassword === ''}>Confirm</button>
+			<button type="button" onclick={() => (askPassword = null)}>Cancel</button>
+		</form>
+	{/if}
 
 	{#if resetLink}
 		<div class="link" role="group" aria-label="Reset link">

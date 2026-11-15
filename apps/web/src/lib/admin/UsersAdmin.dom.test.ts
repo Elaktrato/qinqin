@@ -7,6 +7,7 @@ vi.mock('$lib/api/adminUsers', () => ({
 	patchUser: vi.fn(),
 	revokeUserSessions: vi.fn(),
 	issueResetLink: vi.fn(),
+	revokeResetLink: vi.fn(),
 	deletionPreview: vi.fn(),
 	deleteUser: vi.fn()
 }));
@@ -44,6 +45,29 @@ afterEach(() => {
 });
 
 describe('UsersAdmin', () => {
+	it('revokes a pending reset link without asking for a password', async () => {
+		vi.mocked(adminUsers.revokeResetLink).mockResolvedValue(undefined as never);
+		render(UsersAdmin);
+		await screen.findByRole('table', { name: 'Users' });
+		const row = screen.getByRole('row', { name: /user2/ });
+		await fireEvent.click(within(row).getByText('Actions for user2'));
+		await fireEvent.click(within(row).getByRole('button', { name: 'Revoke reset link' }));
+		await waitFor(() => expect(adminUsers.revokeResetLink).toHaveBeenCalledWith(2));
+	});
+
+	it('asks for the password before making someone admin', async () => {
+		vi.mocked(adminUsers.patchUser).mockResolvedValue(dto(2) as never);
+		render(UsersAdmin);
+		await screen.findByRole('table', { name: 'Users' });
+		const row = screen.getByRole('row', { name: /user2/ });
+		await fireEvent.click(within(row).getByText('Actions for user2'));
+		await fireEvent.click(within(row).getByRole('button', { name: 'Make admin' }));
+		expect(adminUsers.patchUser).not.toHaveBeenCalled();
+		await fireEvent.input(await screen.findByLabelText(/Your own password, to confirm/), { target: { value: 'pw-pw-pw-pw' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+		await waitFor(() => expect(adminUsers.patchUser).toHaveBeenCalledWith(2, { admin: true, currentPassword: 'pw-pw-pw-pw' }));
+	});
+
 	it('creates a user with a generated password and shows the must-change note', async () => {
 		const getRandomValues = vi.spyOn(crypto, 'getRandomValues').mockImplementation(((b: Uint8Array) => {
 			b.fill(3); // 'D' every time
@@ -76,7 +100,10 @@ describe('UsersAdmin', () => {
 		const row = screen.getByRole('row', { name: /user2/ });
 		await fireEvent.click(within(row).getByText('Actions for user2'));
 		await fireEvent.click(within(row).getByRole('button', { name: 'Reset link' }));
+		await fireEvent.input(await screen.findByLabelText(/Your own password, to confirm/), { target: { value: 'my-own-password' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 		const link = (await screen.findByLabelText('Reset link address')) as HTMLInputElement;
+		expect(adminUsers.issueResetLink).toHaveBeenCalledWith(2, 'my-own-password');
 		expect(link.value).toBe(`${location.origin}/reset#t=abc123`);
 		expect(screen.getByText(/shown once/)).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
@@ -112,8 +139,10 @@ describe('UsersAdmin', () => {
 		await fireEvent.input(within(dialog).getByLabelText(/Type/), { target: { value: 'user' } });
 		expect(del.disabled).toBe(true);
 		await fireEvent.input(within(dialog).getByLabelText(/Type/), { target: { value: 'user2' } });
+		expect(del.disabled).toBe(true); // the administrator's own password is needed too
+		await fireEvent.input(within(dialog).getByLabelText('Your own password'), { target: { value: 'my-own-password' } });
 		expect(del.disabled).toBe(false);
 		await fireEvent.click(del);
-		await waitFor(() => expect(adminUsers.deleteUser).toHaveBeenCalledWith(2, 'user2'));
+		await waitFor(() => expect(adminUsers.deleteUser).toHaveBeenCalledWith(2, 'user2', 'my-own-password'));
 	});
 });

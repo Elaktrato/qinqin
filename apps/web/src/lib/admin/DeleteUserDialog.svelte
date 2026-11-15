@@ -18,13 +18,14 @@
 	let dialog = $state<HTMLDialogElement | null>(null);
 	let input = $state<HTMLInputElement | null>(null);
 	let typed = $state('');
+	let password = $state('');
 	let preview = $state<DeletionPreview | null>(null);
 	let previewFailed = $state(false);
 	let busy = $state(false);
 	let error = $state('');
 	let closed = false;
 
-	const ready = $derived(typed === username && !busy);
+	const ready = $derived(typed === username && password !== '' && !busy);
 
 	function finish(deleted: boolean): void {
 		if (closed) return;
@@ -39,7 +40,7 @@
 		busy = true;
 		error = '';
 		try {
-			await deleteUser(id, typed);
+			await deleteUser(id, typed, password);
 			finish(true);
 		} catch (err) {
 			error = apiErrorBody(err)?.message || 'Could not delete the account.';
@@ -88,6 +89,10 @@
 		<label>
 			Type <strong>{username}</strong> to confirm
 			<input bind:this={input} bind:value={typed} autocomplete="off" />
+		</label>
+		<label>
+			Your own password
+			<input type="password" autocomplete="current-password" bind:value={password} />
 		</label>
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 		<div class="buttons">

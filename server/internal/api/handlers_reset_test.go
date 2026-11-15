@@ -14,6 +14,9 @@ type resetIssued struct {
 
 func issueReset(t *testing.T, url, adminTok string, id int64, body map[string]any) (int, resetIssued, string) {
 	t.Helper()
+	if _, ok := body["currentPassword"]; !ok {
+		body["currentPassword"] = "secret-pass-owner" // the acting admin re-enters their password
+	}
 	resp := doJSON(t, "POST", url, "/api/admin/users/"+itoa(id)+"/reset-link", adminTok, body)
 	var out resetIssued
 	var e errBody

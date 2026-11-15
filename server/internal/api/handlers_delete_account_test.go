@@ -35,7 +35,7 @@ func TestAdminDeletesUserEverythingGoes(t *testing.T) {
 	if r := doJSON(t, "DELETE", ts.URL, "/api/admin/users/"+itoa(ownerID), owner, map[string]string{"confirm": "owner"}); r.StatusCode != 409 {
 		t.Errorf("admin deleting self via admin route = %d, want 409", r.StatusCode)
 	}
-	if r := doJSON(t, "DELETE", ts.URL, path, owner, map[string]string{"confirm": "bobby"}); r.StatusCode != 204 {
+	if r := doJSON(t, "DELETE", ts.URL, path, owner, map[string]string{"confirm": "bobby", "currentPassword": "secret-pass-owner"}); r.StatusCode != 204 {
 		t.Fatalf("delete = %d", r.StatusCode)
 	}
 	if r := doJSON(t, "GET", ts.URL, "/api/auth/me", bob, nil); r.StatusCode != 401 {

@@ -111,6 +111,9 @@ func UseReset(ctx context.Context, sqlDB *sql.DB, token, newHash string) (model.
 	if err != nil {
 		return model.User{}, err
 	}
+	if err := dropPendingResets(ctx, tx, userID); err != nil {
+		return model.User{}, err
+	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "password_reset", ActorID: userID, TargetID: &userID,
 		Detail: map[string]any{"signedOutOthers": revoked}}); err != nil {
 		return model.User{}, err
@@ -144,4 +147,15 @@ func LoadUser(ctx context.Context, ex querier, id int64) (model.User, error) {
 		u.Email = &email.String
 	}
 	return u, nil
+}
+
+// dropPendingResets deletes the user's unused reset links. Every action
+// that contains an account runs it in the same transaction: a link issued
+// before the containment (by an attacker with admin access, or one that
+// leaked) must not open the account again afterwards.
+func dropPendingResets(ctx context.Context, ex execer, userID int64) error {
+	if _, err := ex.ExecContext(ctx, `DELETE FROM password_resets WHERE user_id = ? AND used_at IS NULL`, userID); err != nil {
+		return fmt.Errorf("drop pending resets: %w", err)
+	}
+	return nil
 }
