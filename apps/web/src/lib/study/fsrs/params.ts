@@ -121,7 +121,15 @@ export function parseWeightString(s: string): Checked {
 	}
 	const checked = checkWeights(tokens.map(Number));
 	if (!checked.ok) return checked;
-	return { ok: true, w: migrateParameters(checked.w) };
+	// The weights ts-fsrs fills in for an older list (w19 is 0, below the
+	// FSRS-6 range) were not typed by the user: they are clipped into range
+	// so the stored set reads back; the typed ones were checked above.
+	const migrated = migrateParameters(checked.w);
+	const ranges = CLAMP_PARAMETERS(2, true);
+	for (let i = checked.w.length; i < migrated.length; i++) {
+		migrated[i] = Math.min(Math.max(migrated[i], ranges[i][0]), ranges[i][1]);
+	}
+	return { ok: true, w: migrated };
 }
 
 /** formatWeights writes the list as Anki shows it: four decimals. */

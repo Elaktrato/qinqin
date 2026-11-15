@@ -83,6 +83,18 @@ describe('parseWeightString', () => {
 		}
 	});
 
+	it('keeps a migrated import valid, so it can be stored and read back', () => {
+		for (const n of [19, 17]) {
+			const r = parseWeightString(numbers.slice(0, n).join(', '));
+			expect(r.ok).toBe(true);
+			if (!r.ok) continue;
+			expect(validWeights(r.w)).toEqual(r.w);
+			expect(
+				parseParamSet('fsrs:set:X', { id: 'X', w: r.w, createdAt: 'c', source: 'imported' })
+			).not.toBeNull();
+		}
+	});
+
 	it('rejects a non-number', () => {
 		expect(parseWeightString('abc')).toEqual({ ok: false, error: 'Not a list of numbers.' });
 		expect(parseWeightString('')).toEqual({ ok: false, error: 'Not a list of numbers.' });
