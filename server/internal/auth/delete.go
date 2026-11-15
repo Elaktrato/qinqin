@@ -28,7 +28,7 @@ const (
 type UserTable struct {
 	Name string
 	// Columns are the user-reference columns of the table (user_id,
-	// created_by, updated_by, actor_id, target_id): the guard test requires
+	// created_by, updated_by, actor_id, target_id, workspace_id): the guard test requires
 	// every such column of every table to be named by exactly one entry.
 	Columns []string
 	// Statements run in order inside the deletion transaction; ?1 is the
@@ -53,21 +53,21 @@ const (
 var userTables = []UserTable{
 	{Name: "workspaces", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM workspaces WHERE user_id = ?1`},
 		PreviewKey: "workspaces", Count: `SELECT COUNT(*) FROM workspaces WHERE user_id = ?1`, Export: ExportRows},
-	{Name: "study_events", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM study_events WHERE user_id = ?1`},
+	{Name: "study_events", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM study_events WHERE user_id = ?1`},
 		PreviewKey: "studyEvents", Count: `SELECT COUNT(*) FROM study_events WHERE user_id = ?1`, Export: ExportRows},
 	{Name: "plugin_states", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM plugin_states WHERE user_id = ?1`}, Export: ExportRows},
-	{Name: "plugin_data", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM plugin_data WHERE user_id = ?1`},
+	{Name: "plugin_data", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM plugin_data WHERE user_id = ?1`},
 		PreviewKey: "pluginData", Count: `SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows},
 	{Name: "user_edits", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_edits WHERE user_id = ?1`},
 		PreviewKey: "overlays", Count: `SELECT COUNT(*) FROM user_edits WHERE user_id = ?1`, Export: ExportRows},
 	{Name: "sentences", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM sentences WHERE user_id = ?1`},
 		PreviewKey: "sentences", Count: `SELECT COUNT(*) FROM sentences WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows},
-	{Name: "library_books", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_books WHERE user_id = ?1`},
+	{Name: "library_books", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM library_books WHERE user_id = ?1`},
 		PreviewKey: "books", Count: `SELECT COUNT(*) FROM library_books WHERE user_id = ?1`, Export: ExportRows},
 	{Name: "library_bookmarks", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_bookmarks WHERE user_id = ?1`}, Export: ExportRows},
 	{Name: "library_highlights", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_highlights WHERE user_id = ?1`}, Export: ExportRows},
 	{Name: "user_time_zones", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_time_zones WHERE user_id = ?1`}, Export: ExportRows},
-	{Name: "journal_photos", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM journal_photos WHERE user_id = ?1`},
+	{Name: "journal_photos", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_photos WHERE user_id = ?1`},
 		PreviewKey: "journalPhotos", Count: `SELECT COUNT(*) FROM journal_photos WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipDraft},
 	{Name: "ai_keys", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_keys WHERE user_id = ?1`},
 		PreviewKey: "aiKeys", Count: `SELECT COUNT(*) FROM ai_keys WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipSecurity},

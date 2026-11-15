@@ -38,7 +38,7 @@ var seedSQL = map[string][]string{
 
 // refColumns are the columns that point at a user; a table with one of
 // them must be in the deletion or the kept registry.
-var refColumns = []string{"user_id", "created_by", "updated_by", "actor_id", "target_id"}
+var refColumns = []string{"user_id", "created_by", "updated_by", "actor_id", "target_id", "workspace_id"}
 
 func TestSchemaGuardEveryUserTableIsListed(t *testing.T) {
 	sqlDB, _ := usersFixture(t)
