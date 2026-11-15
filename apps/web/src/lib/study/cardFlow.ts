@@ -36,6 +36,10 @@ export interface FlowItem {
 	sentenceId?: number;
 	/** Decks a virtual item's card joins. */
 	deckIds?: string[];
+	/** Set on an in-session re-show of an Again card: how many so far. */
+	reshow?: number;
+	/** Word Salad tier the first showing used; a re-show keeps it. */
+	tier?: SaladTier;
 }
 
 /** The entry fields eligibility needs. */
