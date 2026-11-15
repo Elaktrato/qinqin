@@ -303,6 +303,7 @@
 
 	.search input {
 		flex: 1;
+		min-width: 0;
 		font: inherit;
 		padding: 0.55rem 0.7rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
