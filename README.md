@@ -624,6 +624,14 @@ the session queues that level's words. A word that already has a card reuses it;
 the rest get a card in the general deck when you first grade them, so abandoning
 a level session creates nothing.
 
+Character schemes (JLPT kanji, Jōyō grades, 通用规范汉字表) work the same way, with two cards per
+character: **Vocab** (recognition: the glyph alone, then readings and meanings) and **Writing**
+(readings and meanings, then write the glyph). The writing card of a character only joins a session
+the day after its recognition card was first reviewed (your learner's day, see Settings); a
+writing-only session has no such wait. Characters without stroke data or meanings get no writing
+card. The level picker shows "3 of 80 learned" per level, using the same definition as Stats →
+Characters. The new-card limit counts cards, not characters.
+
 Stats → Characters (`/stats/characters`, formerly `/study/map`) is the Hanzi/Kanji map for the current workspace language. It lists
 every character of the language, studied or not, shaded by mastery.
 
