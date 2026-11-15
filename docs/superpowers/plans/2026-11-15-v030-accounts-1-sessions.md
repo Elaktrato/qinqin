@@ -183,7 +183,7 @@ not drop the token: status ≠ 401); weak → 422; success → old password fail
 `must_change_password` cleared, other sessions gone when `signOutOthers` true/absent and kept when
 false; PwC session: no current password needed, always revokes others, the same token then
 reaches `GET /api/workspaces`; a session created **before** an admin set the flag (set
-`must_change_set_at` after it) must give the current password (403 without it); Enr session →
+`must_change_after` watermark above it) must give the current password (403 without it); Enr session →
 403 `mfa_enrollment_required`; the new hash is computed before `BeginTx`; an audit row
 `password_changed` without any password text (`detail` checked); limiter seam: a fake limiter
 refusing `reauth:<id>` → 429 with `Retry-After`.
@@ -369,3 +369,28 @@ Built unattended on 2026-11-15; #86 was already merged, so its seam is used as i
   list).
 - Fixtures: plans 2 and 3 add rows to `errors.json` (the catalogue test fails on an uncatalogued code) and
   new files under `docs/contracts/auth/`.
+
+### Review fix wave (security review of this branch)
+
+- Ruling: `secure_delete` is ON only while migrations run (the pool is held to one connection and the pragma is
+  switched off afterwards); an always-on pragma would make pack uninstalls and imports write zeroes for nothing.
+  Test: a 031 file database with a marker token, migrated, checkpointed (TRUNCATE) and closed: the marker is absent
+  from the db and wal bytes. Backups taken before the upgrade keep the plaintext tokens (README, Upgrading).
+  Cost if wrong: later deletes of other secrets are not zeroed.
+- Ruling: the forced-change test is a session-id watermark (`users.must_change_after`, the AUTOINCREMENT high-water
+  mark), not a timestamp: strict, immune to clock step-back and equal seconds. `auth.ForcePasswordChange` sets the flag,
+  the watermark and deletes ALL of the user's sessions in one transaction (requirement for plan 2). A NULL watermark
+  means "ask for the current password". Replaces `must_change_set_at`, `Principal.SessionCreated/MustChangeSetAt`
+  (now `Principal.TemporarySession`). Migration 032 was edited in place (not released, not merged).
+- Ruling: `me.needsCurrentPassword` plus 403 `current_password_required` (refused before a re-auth token or a hash is
+  spent) so the first empty submit of the forced page costs nothing.
+- Ruling: migrated sessions get `last_used_at = max(updated_at, upgrade time)`; `created_at` stays the old value.
+- Ruling: `users.username_key` = NFKC(fold(NFKC(name))) with a partial UNIQUE index, filled by the 032 Go step (lowest id
+  wins a legacy collision; the later user keeps NULL and a count is logged; login stays exact). New names are NFC,
+  trimmed, 3-32 letters/digits/`._-`, no Latin+Cyrillic/Greek mix; format characters were already outside the allowed
+  classes (tested). `x/text` was already a dependency. Case folding of NFKC compatibility forms is by `x/text/cases`.
+- Ruling: audit detail is an allowlist of keys (`scope revoked forced signedOutOthers field to maxUses uses count enabled`),
+  scalar values only, strings at most 64 bytes. Session revokes and their audit row are one transaction
+  (`RevokeSessionAudited`, `RevokeOthersAudited`). `CleanDevice` drops Unicode Cf as well as control characters.
+- Test: the gate guard also forbids `.authenticate(` calls and an aliased import of the auth package outside
+  `handlers_auth.go` (both mutation-verified).

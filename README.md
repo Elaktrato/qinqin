@@ -254,7 +254,8 @@ separately.
 
 ### Upgrading
 
-Back up first. Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
+Back up first (a backup taken before upgrading to a release with migration 032 still holds the old
+plaintext session tokens: store it like the database and delete it after the upgrade). Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
 redeploy with *Pull latest image* enabled. Migrations are embedded in the
 binary and applied automatically at start (`server/internal/db`); they are
 one-way. **Downgrading is not supported**: going back to an older image needs
@@ -365,12 +366,23 @@ address), revokes one, "Log out everywhere else", "Log out everywhere", and chan
 (other sessions are signed out by default).
 
 New passwords need 10 to 256 characters and may not equal the username; there are no other rules.
-New usernames are 3 to 32 letters, digits, dots, underscores or hyphens, unique regardless of
-letter case. Existing accounts keep working unchanged on upgrade: their sessions are hashed in
+New usernames are 3 to 32 letters, digits, dots, underscores or hyphens, stored in Unicode NFC, and
+unique by their NFKC form with case folded (so `Bob`, `bob` and a fullwidth `Ｂob` are one name; a name that mixes Latin with
+Cyrillic or Greek letters is refused). Older accounts whose names collide under that rule keep working, login still matches
+the exact name, but their names cannot be taken again. Existing accounts keep working unchanged on upgrade: their sessions are hashed in
 place by migration 032, existing passwords are grandfathered. A session whose user must change the
 password (an administrator's temporary password) is restricted: it can only change the password,
 read `me`, log out and open the Sources page, and the web app sends it to the change page. The
 rules for clients are in `docs/contracts/auth/README.md`.
+
+Security notes. (1) Migration 032 stores only hashes of the session tokens and zeroes the database pages that
+held the old plaintext ones (including the write-ahead log once it is checkpointed), but **a backup taken before the
+upgrade still contains the plaintext tokens of that moment**: keep it as private as the database itself, and delete
+it once the upgrade is confirmed. Sessions that were idle count as used at the upgrade time, so nobody is signed out
+because of it. (2) Signing in to a disabled account with the right password answers `account_disabled` (so a person
+knows why), and a wrong password still answers the usual 401; this tells someone who already holds the password that
+the account exists and is disabled, which was judged better than a mystery refusal. (3) Forcing a password change
+signs the user out everywhere.
 
 ### AI journal
 
