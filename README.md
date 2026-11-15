@@ -122,10 +122,11 @@ the server waits at most 5 s (`busy_timeout`) before a write fails.
 > only reads: nothing changes until you seed, and the warning goes away once the
 > stored copies match. A pack it cannot read is skipped with a log line.
 
-> **Upgrading a development database.** Entry ids changed with the dictionary
-> rebuild (the lookup rewrite; migration 017 drops the legacy tables). Nothing is
-> published, so there is no upgrade path: **delete the data directory (or at
-> least `qinqin.db`) and seed again.** On an old database the restart and re-seed
+> **Upgrading from v0.1.0 or an older development database.** Entry ids changed with
+> the dictionary rebuild (the lookup rewrite; migration 017 drops the legacy tables
+> and moves no data). There is no upgrade path for entry data, including v0.1.0
+> databases: **start from a fresh data directory (or at least delete `qinqin.db`)
+> and seed again.** On an old database the restart and re-seed
 > succeed without an error, but user edits and flashcards created before this
 > change keep their old entry ids and now point at different entries.
 > `qinqin seed` prints a `WARNING` line whenever the database holds user edits or
