@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
-import { masteryForChars, stageOf, type CharMastery } from './mastery';
+import { cardScore, masteryForChars, MASTERY_KINDS, stageOf, type CharMastery } from './mastery';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 
 /** One character scored on its own: the per-character view of the batch API. */
@@ -335,5 +335,40 @@ describe('stageOf', () => {
 		for (const [score, stage] of cases) {
 			expect(stageOf(score), String(score)).toBe(stage);
 		}
+	});
+});
+
+describe('reverse and cloze cards never move mastery', () => {
+	it('leaves every character equal to the result without them', () => {
+		const base = card('c-vocab-1', '喜欢');
+		const reverse: StudyCard = { ...card('c-reverse-1', '喜欢'), kind: 'reverse' };
+		const cloze: StudyCard = { ...card('c-cloze-1', '喜欢'), kind: 'cloze' };
+		const vocabReviews = [review('c-vocab-1', 3, '2026-05-01T00:00:00.000Z', eventId(1))];
+		const easy = [1, 2, 3, 4, 5, 6].map((n) =>
+			review(`c-${n % 2 === 0 ? 'reverse' : 'cloze'}-1`, 4, `2026-0${n}-01T00:00:00.000Z`, eventId(10 + n))
+		);
+		const without = masteryForChars(['喜', '欢'], [base], vocabReviews, NOW, DEFAULT_W);
+		const withNew = masteryForChars(
+			['喜', '欢'],
+			[base, reverse, cloze],
+			[...vocabReviews, ...easy],
+			NOW,
+			DEFAULT_W
+		);
+		expect([...withNew]).toEqual([...without]);
+	});
+
+	it('MASTERY_KINDS lists only the four existing kinds', () => {
+		expect([...MASTERY_KINDS]).toEqual(['vocab', 'sentence', 'writing', 'tone']);
+	});
+});
+
+describe('cardScore', () => {
+	it('maps stability to 0-100 on the log scale', () => {
+		expect(cardScore(0)).toBe(0);
+		expect(cardScore(365)).toBe(100);
+		expect(cardScore(109)).toBe(80);
+		expect(cardScore(108)).toBe(79);
+		expect(cardScore(21)).toBe(52);
 	});
 });
