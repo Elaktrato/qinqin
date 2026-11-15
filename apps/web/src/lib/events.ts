@@ -4,6 +4,7 @@
 
 import { api } from './api/client';
 import { logChangingTypes } from './plugins/contract';
+import { emitStudyEvents } from './plugins/hooks';
 import type { StudyEventBody } from './api/types';
 import { newUlid } from './ulid';
 import { createWorkspaceCache } from './workspaceCache';
@@ -41,6 +42,7 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 			method: 'POST',
 			body: { events }
 		});
+		emitStudyEvents(events);
 	} finally {
 		// A failed POST may still have landed: drop what may be stale either way.
 		logChanged(events);
