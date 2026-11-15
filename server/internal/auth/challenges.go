@@ -272,3 +272,24 @@ func PruneChallenges(ctx context.Context, sqlDB *sql.DB, at time.Time) error {
 	}
 	return nil
 }
+
+// SpendAttempt counts one attempt against the challenge behind token for a
+// check that is not an emailed code (an authenticator or recovery code):
+// the same five attempts as the emailed codes, all methods together. It
+// returns the challenge as it is after counting; the fifth attempt deletes
+// it. ErrChallengeInvalid when it is gone, expired or exhausted.
+func SpendAttempt(ctx context.Context, sqlDB *sql.DB, token, kind string) (Challenge, error) {
+	c, _, err := scanChallenge(sqlDB.QueryRowContext(ctx, `
+		UPDATE auth_challenges SET attempts = attempts + 1
+		WHERE token_hash = ? AND kind = ? AND expires_at > ? AND attempts < ?
+		RETURNING `+challengeColumns, hashToken(token), kind, now(), MaxAttempts))
+	return c, err
+}
+
+// ExhaustIfSpent deletes the challenge when its attempts are used up.
+func ExhaustIfSpent(ctx context.Context, sqlDB *sql.DB, c Challenge) error {
+	if c.Attempts >= MaxAttempts {
+		return DeleteChallenge(ctx, sqlDB, c.ID)
+	}
+	return nil
+}

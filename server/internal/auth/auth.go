@@ -191,6 +191,9 @@ func CreateFirstUser(ctx context.Context, sqlDB *sql.DB, username, password stri
 type LoginResult struct {
 	Token string
 	User  model.User
+	// Deferred: the password was right but a Gate asked for a second step;
+	// no session exists and Token is empty.
+	Deferred bool
 }
 
 // Login verifies username and password, creates a session, and returns its
@@ -232,6 +235,16 @@ func LoginWith(ctx context.Context, sqlDB *sql.DB, username, password string, o 
 	u.EmailVerified = verified.Valid
 	if email.Valid {
 		u.Email = &email.String
+	}
+	if o.Gate != nil {
+		plan, err := o.Gate(ctx, u)
+		if err != nil {
+			return LoginResult{}, err
+		}
+		if plan.Defer {
+			return LoginResult{User: u, Deferred: true}, nil
+		}
+		o.Level = plan.Level
 	}
 	token, err := NewSession(ctx, sqlDB, u.ID, o)
 	if err != nil {

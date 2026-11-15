@@ -232,8 +232,8 @@ func (s *server) handleAccountDeletionPreview(w http.ResponseWriter, r *http.Req
 // caller deletes themselves after typing their username and re-entering
 // the password (403 wrong_password, counted by the reauth limiter). The
 // last active administrator is refused (409 last_admin): zero users would
-// reopen the first-user bootstrap to anyone who reaches the URL. Plan 3
-// adds the TOTP code to this re-authentication.
+// reopen the first-user bootstrap to anyone who reaches the URL. A user with
+// an authenticator must also send a current code (403 code_invalid).
 func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -242,6 +242,7 @@ func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Password string `json:"password"`
 		Confirm  string `json:"confirm"`
+		Code     string `json:"code"` // authenticator or recovery code, for users who have one
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -281,6 +282,12 @@ func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	refund()
+	if has, herr := auth.HasTOTP(r.Context(), s.db, u.ID); herr != nil {
+		writeInternal(w, r)
+		return
+	} else if has && !s.secondFactorOK(w, r, u.ID, req.Code) {
+		return
+	}
 	if err := s.users.DeleteUser(r.Context(), u.ID, u.ID, s.dataDir); err != nil {
 		if !writeUserError(w, err) {
 			writeInternal(w, r)

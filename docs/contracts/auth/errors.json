@@ -28,6 +28,7 @@
   "not_enabled": {"status": 409, "meaning": "The method the request changes is not on (disable or regenerate without an authenticator)."},
   "email_unverified": {"status": 409, "meaning": "The email method needs a verified address: confirm it first."},
   "mfa_required": {"status": 409, "meaning": "On an account route: turning this method off would leave the account without a second step while the administrator requires one. (On the sign-in route the same code is a 200 status word, see login-responses.json.)"},
+  "method_unavailable": {"status": 409, "meaning": "The second-step method asked for (an emailed code) is not available for this account or instance."},
   "last_admin": {"status": 409, "meaning": "The change would leave the instance without an active administrator."},
   "self_target": {"status": 409, "meaning": "An administrator tried to disable or delete their own account through the admin routes."},
   "invalid_request": {"status": 422, "meaning": "A well-formed request the server will not do (for example cancelling a forced password change)."},

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -286,9 +287,15 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		device = auth.DeviceLabel(r.UserAgent())
 	}
 	var res auth.LoginResult
+	var plan signInPlan
 	err := s.withHashGate(r.Context(), func() error {
 		var err error
-		res, err = s.hash.login(r.Context(), s.db, req.Username, req.Password, auth.LoginOptions{Device: device})
+		res, err = s.hash.login(r.Context(), s.db, req.Username, req.Password, auth.LoginOptions{Device: device,
+			Gate: func(ctx context.Context, u model.User) (auth.SessionPlan, error) {
+				var perr error
+				plan, perr = s.planSignIn(ctx, u, false)
+				return plan.sessionPlan(), perr
+			}})
 		return err
 	})
 	switch {
@@ -315,12 +322,7 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	default:
 		l.pair.Succeed(pair, s.now())
 		refund()
-		status := "ok"
-		if res.User.MustChangePassword {
-			status = "password_change_required"
-		}
-		s.hideEmailWhenOff(r, &res.User)
-		writeJSON(w, http.StatusOK, map[string]any{"status": status, "token": res.Token, "user": res.User})
+		s.respondSignIn(w, r, res.User, plan, res.Token, device)
 	}
 }
 
@@ -472,6 +474,16 @@ func (s *server) requireUser(w http.ResponseWriter, r *http.Request) *model.User
 // admin); a restricted session gets its restriction code, checked before the
 // admin bit.
 func (s *server) requireAdmin(w http.ResponseWriter, r *http.Request) *model.User {
+	p := s.requireAdminPrincipal(w, r)
+	if p == nil {
+		return nil
+	}
+	return &p.User
+}
+
+// requireAdminPrincipal is requireAdmin that also returns the session (the
+// acting administrator's current session is spared by "sign everyone out").
+func (s *server) requireAdminPrincipal(w http.ResponseWriter, r *http.Request) *auth.Principal {
 	p, err := s.authenticate(r)
 	if err != nil {
 		writeInternal(w, r)
@@ -488,7 +500,7 @@ func (s *server) requireAdmin(w http.ResponseWriter, r *http.Request) *model.Use
 		writeAuthError(w, http.StatusForbidden, "forbidden", "Administrator access is required.")
 		return nil
 	}
-	return &p.User
+	return p
 }
 
 // optionalUser is the signed-in user of a full session, nil for anonymous

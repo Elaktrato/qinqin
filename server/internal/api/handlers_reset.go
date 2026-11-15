@@ -143,16 +143,22 @@ func (s *server) handleReset(w http.ResponseWriter, r *http.Request) {
 		if device == "" {
 			device = auth.DeviceLabel(r.UserAgent())
 		}
-		// Plan 3 branches here: a user with two-factor authentication
-		// answers mfa_required instead of getting a session (a reset must
-		// not remove MFA).
-		token, err := auth.NewSession(r.Context(), s.db, u.ID, auth.LoginOptions{Device: device})
+		// A reset must not remove two-factor authentication: the same plan
+		// as a password sign-in decides between a session, the second step
+		// and enrolment.
+		plan, err := s.planSignIn(r.Context(), u, false)
 		if err != nil {
 			writeInternal(w, r)
 			return
 		}
-		s.hideEmailWhenOff(r, &u)
-		writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "token": token, "user": u})
+		token := ""
+		if !plan.challenge() {
+			if token, err = auth.NewSession(r.Context(), s.db, u.ID, auth.LoginOptions{Device: device, Level: plan.sessionPlan().Level}); err != nil {
+				writeInternal(w, r)
+				return
+			}
+		}
+		s.respondSignIn(w, r, u, plan, token, device)
 	}
 }
 
