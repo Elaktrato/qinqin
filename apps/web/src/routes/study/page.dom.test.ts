@@ -23,6 +23,7 @@ import { loadStudyData } from '$lib/study/store';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
+import { strongReviews } from '$lib/testing/reviews';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import Page from './+page.svelte';
 
@@ -119,5 +120,31 @@ describe('study setup, level sessions', () => {
 		await waitFor(() => expect(screen.getByText(/Level sessions study vocab cards only/)).toBeTruthy());
 		const start = screen.getByRole('button', { name: /start/i }) as HTMLButtonElement;
 		expect(start.disabled).toBe(true);
+	});
+
+	it('shows "L of N learned" per level in the picker', async () => {
+		setup(charScheme, ['vocab']);
+		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
+			{ levelId: 31, name: 'N5', chars: new Set(['日', '月', '火', '水']) },
+			{ levelId: 32, name: 'N4', chars: new Set(['木']) }
+		]);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [],
+			cards: [
+				{
+					id: 'c-vocab-11',
+					kind: 'vocab',
+					entryId: 11,
+					written: '日月',
+					deckIds: ['general'],
+					createdAt: '2025-01-01T00:00:00Z'
+				}
+			],
+			reviews: strongReviews('c-vocab-11'),
+			merged: 0
+		});
+		render(Page);
+		expect(await screen.findByRole('option', { name: 'N5 — 2 of 4 learned' })).toBeTruthy();
+		expect(screen.getByRole('option', { name: 'N4 — 0 of 1 learned' })).toBeTruthy();
 	});
 });

@@ -2,7 +2,9 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
-	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import type { SchemeLevelMembers } from '$lib/study/charGroups';
+	import { levelMastery } from '$lib/study/levelMastery';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
 	import CardManager from '$lib/components/CardManager.svelte';
@@ -99,6 +101,10 @@
 	let levelEntriesLoading = $state(false);
 	let levelEntriesError = $state('');
 	let levelEntriesSeq = 0;
+	// The scheme's characters per level (for "L of N learned"); optional
+	// decoration, so a failed load only hides the counts.
+	let schemeCharacters = $state.raw<SchemeLevelMembers[]>([]);
+	let schemeCharactersSeq = 0;
 
 	let deckName = $state('');
 	let creating = $state(false);
@@ -321,6 +327,32 @@
 		}
 		void loadLevelEntries(selection.schemeId, selection.levelName);
 	});
+
+	$effect(() => {
+		const scheme = mode === 'levels' && schemesLoaded ? selectedScheme : null;
+		const seq = ++schemeCharactersSeq;
+		if (scheme === null) {
+			schemeCharacters = [];
+			return;
+		}
+		fetchSchemeCharacters(scheme.id).then(
+			(levels) => {
+				if (seq === schemeCharactersSeq) schemeCharacters = levels;
+			},
+			() => {
+				if (seq === schemeCharactersSeq) schemeCharacters = [];
+			}
+		);
+	});
+
+	const levelLearned = $derived(levelMastery(schemeCharacters, cards, reviews, new Date(), weights));
+
+	function levelOptionLabel(name: string): string {
+		const count = levelLearned.get(name);
+		return count === undefined || count.total === 0
+			? name
+			: `${name} — ${count.learned} of ${count.total} learned`;
+	}
 
 	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
 	// hidden type stays in the saved setup (switching back restores it)
@@ -734,7 +766,7 @@
 							Level
 							<select bind:value={levelName}>
 								{#each schemeLevels as level (level.id)}
-									<option value={level.name}>{level.name}</option>
+									<option value={level.name}>{levelOptionLabel(level.name)}</option>
 								{/each}
 							</select>
 						</label>
