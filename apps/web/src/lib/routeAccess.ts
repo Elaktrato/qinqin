@@ -58,3 +58,28 @@ export function redirectTarget(path: string, signedIn: boolean): '/' | '/login' 
 			return signedIn ? null : '/login';
 	}
 }
+
+// Restricted sessions. A session that must change its password, or must
+// enrol a second factor, may use exactly its own page and the open Sources
+// page (credits must stay reachable); every other path sends it there. The
+// server refuses everything else with 403 as well: this is only the
+// friendly half of the gate.
+
+export type SessionRestriction = 'password_change' | 'mfa_enrollment';
+
+const RESTRICTED_HOME: Readonly<Record<SessionRestriction, string>> = {
+	password_change: '/account/password',
+	mfa_enrollment: '/account/two-factor-setup'
+};
+
+/**
+ * restrictedTarget is where a restricted session must go from this path, or
+ * null to stay (no restriction, its own page, or an open page).
+ */
+export function restrictedTarget(path: string, restriction: SessionRestriction | null): string | null {
+	if (restriction === null) return null;
+	const home = RESTRICTED_HOME[restriction];
+	const normalized = normalizePath(path);
+	if (normalized === home || routeAccess(normalized) === 'open') return null;
+	return home;
+}

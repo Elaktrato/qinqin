@@ -2,7 +2,14 @@ import { clearAudioCache } from './api/audio';
 import { clearClipCache } from './audio/source';
 import { derived, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
-import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from './api/client';
+import {
+	api,
+	clearToken,
+	getToken,
+	setRestrictedHandler,
+	setToken,
+	setUnauthorizedHandler
+} from './api/client';
 
 /** Why a session may not use the whole app yet; null for a full session. */
 export type Restriction = 'password_change' | 'mfa_enrollment';
@@ -35,6 +42,12 @@ export const restriction = derived(auth, ($auth): Restriction | null => $auth.us
 
 // A 401 anywhere clears the token in the client; mirror that in the store.
 setUnauthorizedHandler(() => auth.set({ token: null, user: null }));
+
+// A 403 that names a restriction means the session changed under us (an admin
+// forced a password change): reload `me` so the layout guard moves it.
+setRestrictedHandler(() => {
+	void loadMe().catch(() => undefined);
+});
 
 /**
  * loadMe hydrates the user for the stored token (or `known`, a token the

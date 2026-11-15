@@ -1,0 +1,27 @@
+// Client mirror of the server's password policy (server/internal/auth/policy.go):
+// 10 to 256 characters, not the username in any letter case, no composition
+// rules. The server decides; this only gives inline feedback.
+
+export const MIN_PASSWORD = 10;
+export const MAX_PASSWORD = 256;
+
+export function passwordHint(): string {
+	return `At least ${MIN_PASSWORD} characters. No other rules.`;
+}
+
+/** The sentence for a password the policy rejects, or null when it passes. */
+export function passwordProblem(username: string, password: string): string | null {
+	const length = [...password].length;
+	if (length < MIN_PASSWORD) return `Use at least ${MIN_PASSWORD} characters.`;
+	if (length > MAX_PASSWORD) return `Use at most ${MAX_PASSWORD} characters.`;
+	if (password.toLowerCase() === username.toLowerCase()) {
+		return 'The password must differ from the username.';
+	}
+	return null;
+}
+
+/** The sentence for a confirmation that differs; silent until one is typed. */
+export function confirmProblem(password: string, confirm: string): string | null {
+	if (confirm === '') return null;
+	return password === confirm ? null : 'The two passwords do not match.';
+}

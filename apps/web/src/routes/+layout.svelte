@@ -9,13 +9,19 @@
 	import { iconFor } from '$lib/components/navIcons';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
-	import { auth, loadMe, logout, user } from '$lib/auth';
+	import { auth, loadMe, logout, restriction, user } from '$lib/auth';
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionOnce } from '$lib/events';
 	import { dismissNotice, notice } from '$lib/notices';
-	import { allowed as routeAllowed, normalizePath, redirectTarget, routeAccess } from '$lib/routeAccess';
+	import {
+		allowed as routeAllowed,
+		normalizePath,
+		redirectTarget,
+		restrictedTarget,
+		routeAccess
+	} from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import {
@@ -47,7 +53,12 @@
 	// Render a route only when the session matches it: protected pages
 	// never flash while a redirect is in flight, auth pages do not show
 	// once signed in, and open pages show either way (lib/routeAccess.ts).
-	const allowed = $derived(routeAllowed(path, signedIn, booted));
+	// A restricted session (forced password change, MFA enrolment) sees only
+	// its own page and the open Sources page, and loads nothing of the app.
+	const restricted = $derived(signedIn && $restriction !== null);
+	const allowed = $derived(
+		routeAllowed(path, signedIn, booted) && restrictedTarget(path, $restriction) === null
+	);
 	// Stats (and its Characters view, the map) is one nav item for
 	// every workspace; the tab itself appears only for Han languages.
 	const inStats = $derived(path === '/stats' || path.startsWith('/stats/'));
@@ -119,6 +130,9 @@
 			workspaces.set({ list: [], current: null });
 			return;
 		}
+		// Nothing of the app loads for a restricted session; the effect runs
+		// again when the restriction clears.
+		if ($restriction !== null) return;
 		if (token === loadedToken) return;
 		loadedToken = token;
 		workspacesLoaded.set(false);
@@ -142,6 +156,11 @@
 	// Open pages never redirect.
 	$effect(() => {
 		if (!booted) return;
+		const restrictedTo = restrictedTarget(path, $restriction);
+		if (restrictedTo !== null) {
+			void navigate(restrictedTo);
+			return;
+		}
 		const target = redirectTarget(path, signedIn);
 		if (target !== null) void navigate(target);
 	});
@@ -165,6 +184,7 @@
 
 				<!-- Wide screens: pills in the header. Below 720 px: a fixed
 				     bottom tab bar (see the styles). -->
+				{#if !restricted}
 				<nav class="main-nav" aria-label="Main">
 					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}
 						><NavIcon name={iconFor('search')} /><span class="label">Search</span></a
@@ -185,6 +205,7 @@
 				<div class="workspace">
 					<WorkspacePicker />
 				</div>
+				{/if}
 				<div class="account">
 					{#if $user}
 						<span class="username">{$user.username}</span>
@@ -196,7 +217,7 @@
 				</div>
 			</header>
 
-			{#if workspaceError}
+			{#if workspaceError && !restricted}
 				<p class="workspace-error" role="alert">
 					{workspaceError}
 					<button type="button" class="retry" onclick={() => void loadShellWorkspaces()}>
@@ -234,7 +255,7 @@
 		</div>
 
 		<div class="content" id="main-content" tabindex="-1">
-			{#if signedIn && noWorkspaces}
+			{#if signedIn && !restricted && noWorkspaces}
 				<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
 					<h2 id="empty-workspaces-heading">Create your first workspace</h2>
 					<p>
@@ -251,15 +272,19 @@
 		{#if signedIn}
 			<footer class="footer">
 				<nav class="footer-links" aria-label="Footer">
-					<a href="/stats" aria-current={inStats ? 'page' : undefined}
-						><NavIcon name={iconFor('stats')} size={16} /><span>Stats</span></a
-					>
+					{#if !restricted}
+						<a href="/stats" aria-current={inStats ? 'page' : undefined}
+							><NavIcon name={iconFor('stats')} size={16} /><span>Stats</span></a
+						>
+					{/if}
 					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
 						><NavIcon name={iconFor('sources')} size={16} /><span>Sources</span></a
 					>
-					<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}
-						><NavIcon name={iconFor('settings')} size={16} /><span>Settings</span></a
-					>
+					{#if !restricted}
+						<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}
+							><NavIcon name={iconFor('settings')} size={16} /><span>Settings</span></a
+						>
+					{/if}
 				</nav>
 				<span class="version">
 					<span lang="zh">{APP_NAME_HANZI}</span>

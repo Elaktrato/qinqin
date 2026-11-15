@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	allowed,
 	normalizePath,
+	restrictedTarget,
 	redirectTarget,
 	routeAccess
 } from './routeAccess';
@@ -85,5 +86,42 @@ describe('redirectTarget', () => {
 		expect(redirectTarget('/unknown/path', false)).toBe('/login');
 		expect(redirectTarget('/sources/extra', false)).toBe('/login');
 		expect(redirectTarget('/study', true)).toBeNull();
+	});
+});
+
+describe('restrictedTarget', () => {
+	it('lets a full session go anywhere', () => {
+		for (const path of ['/', '/study', '/login', '/sources', '/account/password', '/settings'])
+			expect(restrictedTarget(path, null)).toBeNull();
+	});
+
+	it.each([
+		['private page', '/study'],
+		['home', '/'],
+		['settings', '/settings'],
+		['auth-only page (signed in)', '/login'],
+		['register', '/register'],
+		['unknown page', '/no-such-page'],
+		['the other restriction\'s page', '/account/two-factor-setup'],
+		['a subpath of the allowed page', '/account/password/extra']
+	])('sends a password-change session from the %s to the change page', (_name, path) => {
+		expect(restrictedTarget(path, 'password_change')).toBe('/account/password');
+	});
+
+	it.each([
+		['private page', '/study'],
+		['home', '/'],
+		['auth-only page', '/login'],
+		['the other restriction\'s page', '/account/password']
+	])('sends an enrolment session from the %s to the setup page', (_name, path) => {
+		expect(restrictedTarget(path, 'mfa_enrollment')).toBe('/account/two-factor-setup');
+	});
+
+	it('stays put on the allowed pages: its own page and the open Sources page', () => {
+		expect(restrictedTarget('/account/password', 'password_change')).toBeNull();
+		expect(restrictedTarget('/account/password/', 'password_change')).toBeNull();
+		expect(restrictedTarget('/sources', 'password_change')).toBeNull();
+		expect(restrictedTarget('/account/two-factor-setup', 'mfa_enrollment')).toBeNull();
+		expect(restrictedTarget('/sources/', 'mfa_enrollment')).toBeNull();
 	});
 });
