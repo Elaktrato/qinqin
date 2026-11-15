@@ -78,6 +78,9 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=ref,event=tag
             type=sha
+      # The default build includes the Kanji alive audio pack (WITH_AUDIO=1): each
+      # release build downloads about 69 MB from media.kanjialive.com and the image
+      # grows by about 70 MB. Add `build-args: WITH_AUDIO=0` to leave it out.
       - uses: docker/build-push-action@v6
         with:
           context: .

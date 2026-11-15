@@ -24,6 +24,16 @@ RUN rm -rf ./internal/webdist/dist
 COPY --from=web /src/apps/web/build ./internal/webdist/dist
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/qinqin ./cmd/qinqin
 
+# Audio: the Kanji alive example-word pack (CC BY 4.0, about 69 MB), fetched
+# and built here rather than committed (see docs/sources.md, "Audio").
+# --build-arg WITH_AUDIO=0 skips the download; /out then stays empty, so the
+# runtime stage always has an /opt/qinqin/audio root for `qinqin seed`.
+FROM alpine:3.22 AS audio
+ARG WITH_AUDIO=1
+RUN apk add --no-cache curl unzip nodejs
+COPY scripts/fetch-audio-kanjialive.sh scripts/prepare-audio-kanjialive.mjs /src/scripts/
+RUN mkdir -p /out && if [ "$WITH_AUDIO" = "1" ]; then sh /src/scripts/fetch-audio-kanjialive.sh /out; fi
+
 # Runtime: alpine, not scratch — the compose healthcheck needs busybox wget.
 FROM alpine:3.22
 # Offline OCR for the journal's photo import: Tesseract 5 and the models for
@@ -49,7 +59,10 @@ COPY --from=build /out/qinqin /usr/local/bin/qinqin
 # how the optional JLPT vocabulary pack (not bundled, licence chain
 # unverified) is installed.
 COPY plugins/data /opt/qinqin/packs
-ENV QINQIN_DATA=/data QINQIN_PACKS=/opt/qinqin/packs
+# The Kanji alive audio pack, when built with WITH_AUDIO=1 (the default); an
+# empty directory otherwise.
+COPY --from=audio /out /opt/qinqin/audio
+ENV QINQIN_DATA=/data QINQIN_PACKS=/opt/qinqin/packs,/opt/qinqin/audio
 VOLUME /data
 EXPOSE 8080
 ENTRYPOINT ["qinqin"]
