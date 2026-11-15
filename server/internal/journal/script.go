@@ -11,7 +11,12 @@ var latinLanguages = map[string]bool{"en": true, "de": true, "fr": true, "es": t
 // workspace language's script: zh needs a Han rune, ja Han, Hiragana or
 // Katakana, ko Hangul, the Latin-script languages a Latin letter. Other
 // languages pass. This catches an AI that answers in the wrong language.
+// A correction with no letters at all (a deletion or a punctuation fix) fits
+// every language: only letters in the wrong script are rejected.
 func CorrectionFitsLanguage(lang, correction string) bool {
+	if strings.IndexFunc(correction, unicode.IsLetter) < 0 {
+		return true
+	}
 	has := func(f func(rune) bool) bool { return strings.IndexFunc(correction, f) >= 0 }
 	switch {
 	case lang == "zh":

@@ -28,11 +28,17 @@ type StoredKey struct {
 }
 
 // Credentials carry a decrypted key to a provider call. No json tags and a
-// redacting String, so formatting or encoding it by accident leaks nothing.
+// redacting String, Format, MarshalJSON and MarshalText, so formatting or
+// encoding it by accident leaks nothing.
 type Credentials struct{ APIKey, Model string }
 
-func (Credentials) String() string     { return "ai.Credentials{redacted}" }
-func (c Credentials) GoString() string { return c.String() }
+const redactedCredentials = "ai.Credentials{redacted}"
+
+func (Credentials) String() string               { return redactedCredentials }
+func (Credentials) GoString() string             { return redactedCredentials }
+func (Credentials) MarshalText() ([]byte, error) { return []byte(redactedCredentials), nil }
+func (Credentials) MarshalJSON() ([]byte, error) { return []byte(`"` + redactedCredentials + `"`), nil }
+func (Credentials) Format(f fmt.State, _ rune)   { _, _ = f.Write([]byte(redactedCredentials)) }
 
 var (
 	ErrNoKey            = errors.New("ai: no key stored")

@@ -15,6 +15,8 @@ func TestCorrectionFitsLanguage(t *testing.T) {
 		{"ja", "行きました", true}, {"ja", "ikimashita", false},
 		{"es", "fuimos", true}, {"es", "去了", false},
 		{"ko", "갔어요", true}, {"ko", "went", false},
+		{"zh", "", true}, {"zh", "。", true}, {"en", ";", true}, {"en", "", true}, {"ja", "、", true},
+		{"zh", "了 !", true}, {"zh", "A。", false}, {"en", "去了,", false},
 		{"xx", "anything", true}, {"xx", "去了", true},
 	}
 	for _, c := range cases {

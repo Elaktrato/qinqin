@@ -280,3 +280,36 @@ func TestAIServiceNilIsDisabled(t *testing.T) {
 		t.Fatalf("PUT without service: %d", resp.StatusCode)
 	}
 }
+
+func TestAIKeyDeleteAndGetWithoutSecret(t *testing.T) {
+	ts, sqlDB, tok := aiServer(t, ai.SecretOK)
+	doJSON(t, http.MethodPut, ts.URL, "/api/ai/key", tok, map[string]string{"key": aiGoodKey})
+	// The server restarts without a usable secret: no key store at all.
+	for _, secret := range []ai.SecretState{ai.SecretMissing, ai.SecretInvalid} {
+		svc := &ai.Service{Provider: ai.Fake{}, ProviderName: "fake", Secret: secret, Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30}}
+		ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+		t.Cleanup(ts2.Close)
+		resp := doJSON(t, http.MethodGet, ts2.URL, "/api/ai/key", tok, nil)
+		var k struct{ Hint, State string }
+		body := aiBodyOf(t, resp)
+		_ = json.Unmarshal([]byte(body), &k)
+		if resp.StatusCode != http.StatusOK || k.State != "undecryptable" || k.Hint != "…0001" {
+			t.Fatalf("%s: GET key: %d %s", secret, resp.StatusCode, body)
+		}
+	}
+	svc := &ai.Service{Provider: ai.Fake{}, ProviderName: "fake", Secret: ai.SecretMissing, Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30}}
+	ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
+	t.Cleanup(ts2.Close)
+	if resp := doJSON(t, http.MethodDelete, ts2.URL, "/api/ai/key", tok, nil); resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("DELETE: %d", resp.StatusCode)
+	}
+	var n int
+	_ = sqlDB.QueryRow(`SELECT COUNT(*) FROM ai_keys`).Scan(&n)
+	if n != 0 {
+		t.Fatalf("ai_keys rows after DELETE = %d", n)
+	}
+	resp := doJSON(t, http.MethodGet, ts2.URL, "/api/ai/key", tok, nil)
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("GET after delete: %d", resp.StatusCode)
+	}
+}

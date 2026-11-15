@@ -40,10 +40,26 @@ func TestResolveAnnotations(t *testing.T) {
 			t.Errorf("prefix %q suffix %q", got[0].Prefix, got[0].Suffix)
 		}
 	})
-	t.Run("unhelpful context falls back to first", func(t *testing.T) {
-		got, _ := journal.ResolveAnnotations(resolveText, "zh", []ai.RawAnnotation{raw("去学校", "不对", "到学校")})
-		if len(got) != 1 || got[0].Prefix != "我昨天" {
-			t.Errorf("got %+v", got)
+	t.Run("context matching no occurrence drops the annotation", func(t *testing.T) {
+		got, drop := journal.ResolveAnnotations(resolveText, "zh", []ai.RawAnnotation{raw("去学校", "不对", "到学校")})
+		if len(got) != 0 || drop.NotFound != 1 {
+			t.Errorf("got %+v drop %+v", got, drop)
+		}
+	})
+	t.Run("context is trimmed like the quote", func(t *testing.T) {
+		got, drop := journal.ResolveAnnotations(resolveText, "zh", []ai.RawAnnotation{raw(" 去学校 ", " 。我 ", "到学校")})
+		if len(got) != 1 || got[0].Prefix != "我昨天去学校。我" || drop.Total() != 0 {
+			t.Errorf("got %+v drop %+v", got, drop)
+		}
+	})
+	t.Run("deletion and punctuation fixes are kept", func(t *testing.T) {
+		got, drop := journal.ResolveAnnotations("我去学校了，好。", "zh", []ai.RawAnnotation{raw("了", "", ""), raw("，", "", "。")})
+		if len(got) != 2 || drop.Total() != 0 || got[0].Correction != "" || got[1].Correction != "。" {
+			t.Errorf("zh got %+v drop %+v", got, drop)
+		}
+		got, drop = journal.ResolveAnnotations("I went, to school", "en", []ai.RawAnnotation{raw(",", "", ";")})
+		if len(got) != 1 || drop.Total() != 0 {
+			t.Errorf("en got %+v drop %+v", got, drop)
 		}
 	})
 	t.Run("drops", func(t *testing.T) {

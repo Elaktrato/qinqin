@@ -3,6 +3,7 @@ package journal
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	"qinqin/internal/ai"
 )
@@ -17,7 +18,8 @@ type span struct{ start, end int } // rune offsets
 
 // ResolveAnnotations validates the model's annotations against the text the
 // server sent. Prefix and Suffix are computed here from the actual text; the
-// model's ContextBefore only picks the occurrence of a repeated quote. An
+// model's ContextBefore only picks the occurrence of a repeated quote; a
+// context that fits none of them drops the annotation. An
 // annotation that cannot be placed truthfully is dropped and counted.
 func ResolveAnnotations(text, lang string, raw []ai.RawAnnotation) ([]Annotation, DropCounts) {
 	var drop DropCounts
@@ -46,12 +48,17 @@ func ResolveAnnotations(text, lang string, raw []ai.RawAnnotation) ([]Annotation
 		}
 		at := occ[0]
 		if len(occ) > 1 {
-			if before := []rune(r.ContextBefore); len(before) > 0 {
+			if before := strings.TrimSpace(r.ContextBefore); before != "" {
+				at = -1
 				for _, o := range occ {
-					if o >= len(before) && string(runes[o-len(before):o]) == string(before) {
+					if strings.HasSuffix(strings.TrimRightFunc(string(runes[:o]), unicode.IsSpace), before) {
 						at = o
 						break
 					}
+				}
+				if at < 0 { // the context fits no occurrence: do not guess
+					drop.NotFound++
+					continue
 				}
 			}
 		}

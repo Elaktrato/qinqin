@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -210,6 +211,32 @@ func TestValidModel(t *testing.T) {
 	for _, id := range []string{"", "claude-opus-5-5-20260101", "gpt-4"} {
 		if ValidModel(id) {
 			t.Errorf("%q valid", id)
+		}
+	}
+}
+
+func TestCredentialsNeverEncodeKey(t *testing.T) {
+	c := Credentials{APIKey: "sk-ant-SECRET-VALUE-1234", Model: "claude-opus-5-5"}
+	outs := map[string]string{
+		"%v": fmt.Sprintf("%v", c), "%+v": fmt.Sprintf("%+v", c), "%#v": fmt.Sprintf("%#v", c),
+		"%s": fmt.Sprintf("%s", c), "%v ptr": fmt.Sprintf("%v", &c), "%+v ptr": fmt.Sprintf("%+v", &c),
+		"%#v ptr": fmt.Sprintf("%#v", &c), "%x": fmt.Sprintf("%x", c),
+	}
+	j, err := json.Marshal(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outs["json"] = string(j)
+	jp, _ := json.Marshal(map[string]any{"c": &c, "s": []Credentials{c}})
+	outs["json nested"] = string(jp)
+	txt, err := c.MarshalText()
+	if err != nil {
+		t.Fatal(err)
+	}
+	outs["text"] = string(txt)
+	for name, o := range outs {
+		if strings.Contains(o, "SECRET") || strings.Contains(o, "sk-ant") {
+			t.Errorf("%s leaks the key: %s", name, o)
 		}
 	}
 }

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -144,11 +145,7 @@ func (s *server) handleGetAIKey(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		return
 	}
-	if s.ai == nil || s.ai.Keys == nil {
-		writeAIError(w, ai.ErrNoKey)
-		return
-	}
-	info, err := s.ai.Keys.Info(r.Context(), u.ID)
+	info, err := s.rawKeys().Info(r.Context(), u.ID)
 	if errors.Is(err, ai.ErrNoKey) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "no_key", "message": aiMessages["no_key"]})
 		return
@@ -158,6 +155,15 @@ func (s *server) handleGetAIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, info)
+}
+
+// rawKeys is the key store when there is one, else a store with no secret
+// that can still describe rows (as undecryptable).
+func (s *server) rawKeys() *ai.KeyStore {
+	if s.ai != nil && s.ai.Keys != nil {
+		return s.ai.Keys
+	}
+	return &ai.KeyStore{DB: s.db}
 }
 
 // handlePutAIKey serves PUT /api/ai/key. With a key it is checked against the
@@ -196,7 +202,7 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 		writeAIError(w, errInvalidModel)
 		return
 	}
-	ctx := r.Context()
+	ctx := context.WithoutCancel(r.Context())
 	if req.Key == "" {
 		if req.Model == "" {
 			writeAIError(w, errInvalidModel)
@@ -221,14 +227,18 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 			model = info.Model // a new key keeps the model the learner chose
 		}
 	}
-	release, err := s.ai.Limiter.Acquire(ctx, u.ID)
-	if err != nil {
-		writeAIError(w, err)
-		return
-	}
-	verr := s.ai.Provider.Validate(ctx, ai.Credentials{APIKey: key, Model: model})
-	release()
-	_ = s.ai.Limiter.Record(ctx, ai.Call{UserID: u.ID, Kind: "validate", Model: model, OK: verr == nil})
+	verr := func() error {
+		release, err := s.ai.Limiter.Acquire(ctx, u.ID)
+		if err != nil {
+			return err
+		}
+		defer release()
+		vctx, cancel := context.WithTimeout(ctx, aiProviderTimeout)
+		defer cancel()
+		verr := s.ai.Provider.Validate(vctx, ai.Credentials{APIKey: key, Model: model})
+		_ = s.ai.Limiter.Record(ctx, ai.Call{UserID: u.ID, Kind: "validate", Model: model, OK: verr == nil})
+		return verr
+	}()
 	if verr != nil {
 		writeAIError(w, verr)
 		return
@@ -255,11 +265,10 @@ func (s *server) handleDeleteAIKey(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		return
 	}
-	if s.ai != nil && s.ai.Keys != nil {
-		if err := s.ai.Keys.Delete(r.Context(), u.ID); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
-			return
-		}
+	// Straight on the table: deleting must work without a usable secret.
+	if _, err := s.db.ExecContext(r.Context(), `DELETE FROM ai_keys WHERE user_id = ?`, u.ID); err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
