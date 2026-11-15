@@ -8,12 +8,14 @@
 		type AuditEvent,
 		type AuthSettings
 	} from '$lib/api/adminSettings';
+	import { user } from '$lib/auth';
 	import { EMAIL_CHOICES, REGISTRATION_CHOICES, auditLine, switchStates } from './securityView';
 
 	let settings = $state<AuthSettings | null>(null);
 	let error = $state('');
 	let status = $state('');
 	let busy = $state(false);
+	let signOutOthers = $state(false);
 
 	let events = $state<AuditEvent[]>([]);
 	let next = $state<number | null>(null);
@@ -108,10 +110,20 @@
 						type="checkbox"
 						checked={settings.mfaEnforced}
 						disabled={busy}
-						onchange={(e) => change({ mfaEnforced: e.currentTarget.checked }, 'Two-factor policy saved.')}
+						onchange={(e) => change({ mfaEnforced: e.currentTarget.checked, ...(e.currentTarget.checked && signOutOthers ? { signOutOthers: true } : {}) }, 'Two-factor policy saved.')}
 					/>
 					<span>Require two-factor authentication for everyone</span>
 				</label>
+				<label class="choice">
+					<input type="checkbox" bind:checked={signOutOthers} />
+					<span>Sign everyone else out now (when turning this on)</span>
+				</label>
+				{#if !$user?.mfa?.totp}
+					<p class="hint">You have no authenticator app yourself: your own sign-in will depend on email codes.</p>
+				{/if}
+				{#if settings.mfaEnforced && settings.mfaEnforcedEffective === false}
+					<p class="hint">Required, but inactive while no mail server is set up.</p>
+				{/if}
 				<label class="choice">
 					<input
 						type="checkbox"
