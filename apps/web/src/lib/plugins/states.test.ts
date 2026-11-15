@@ -4,6 +4,7 @@ import { get } from 'svelte/store';
 vi.mock('$lib/api/client', () => ({ api: vi.fn() }));
 
 import { api } from '$lib/api/client';
+import { logChangingTypes, setRegisteredManifests } from './contract';
 import { loadPluginStates, pluginStates, resetPluginStates } from './states';
 
 const mocked = vi.mocked(api);
@@ -32,6 +33,18 @@ describe('plugin states store', () => {
 		await expect(loadPluginStates()).resolves.toBeUndefined();
 
 		expect(get(pluginStates)).toEqual({ list: [], status: 'error' });
+	});
+
+	it('feeds the registered manifests to logChangingTypes, and drops them on reset', async () => {
+		mocked.mockResolvedValue([
+			{ id: 'zz', manifest: { id: 'zz', sdk: 1, events: [{ type: 'drill' }] }, enabled: false, order: 0 }
+		]);
+		await loadPluginStates();
+		expect(logChangingTypes().has('drill')).toBe(true);
+
+		resetPluginStates();
+		expect(logChangingTypes().has('drill')).toBe(false);
+		setRegisteredManifests(null);
 	});
 
 	it('reset returns to idle', async () => {

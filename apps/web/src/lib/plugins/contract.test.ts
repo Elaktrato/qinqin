@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
 	PERMISSIONS,
 	PERMISSION_LABELS,
 	builtinManifests,
 	logChangingTypes,
+	setRegisteredManifests,
 	sdkSupported
 } from './contract';
 
@@ -23,6 +24,26 @@ describe('sdkSupported', () => {
 
 describe('logChangingTypes', () => {
 	it('is the event types of every non-core built-in', () => {
+		expect([...logChangingTypes()].sort()).toEqual(['journal', 'read', 'review']);
+	});
+});
+
+describe('logChangingTypes with registered plugins', () => {
+	afterEach(() => setRegisteredManifests(null));
+
+	it('adds the event types of admin-registered plugins', () => {
+		setRegisteredManifests([
+			{ id: 'zz-grammar', sdk: 1, events: [{ type: 'drill' }, { type: 'review' }] },
+			{ id: 'qinqin-core', sdk: 1, events: [{ type: 'session' }] },
+			{ id: 'junk', events: 'nope' },
+			null
+		]);
+		expect([...logChangingTypes()].sort()).toEqual(['drill', 'journal', 'read', 'review']);
+	});
+
+	it('falls back to the built-ins when the states are cleared', () => {
+		setRegisteredManifests([{ id: 'x', sdk: 1, events: [{ type: 'drill' }] }]);
+		setRegisteredManifests(null);
 		expect([...logChangingTypes()].sort()).toEqual(['journal', 'read', 'review']);
 	});
 });
