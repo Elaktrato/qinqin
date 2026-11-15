@@ -11,7 +11,14 @@
 	import { loadIneligible } from '$lib/study/ineligible';
 	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { buildLevelQueue } from '$lib/study/levelQueue';
+	import {
+		levelEntryCount,
+		levelPlanCounts,
+		levelTypeWarnings,
+		levelUsable,
+		type LevelUnit
+	} from '$lib/study/levelQueue';
+	import { currentStudyDay } from '$lib/time/zone';
 	import {
 		CARD_TYPES,
 		loadConfig,
@@ -360,45 +367,30 @@
 		deckPlan.byKind.sentence + deckPlan.byKind.writing + deckPlan.byKind.tone
 	);
 
-	// Level sessions are vocab-only: without vocab selected they are empty.
+	// A character scheme studies recognition and writing cards; every
+	// other scheme is a word scheme (vocab only).
+	const levelUnit = $derived<LevelUnit>(selectedScheme?.unit === 'character' ? 'character' : 'word');
+
 	const levelCounts = $derived.by(() => {
-		if (
-			levelSelection === null ||
-			levelEntries.length === 0 ||
-			!selectedKinds.includes('vocab')
-		) {
-			return { due: 0, fresh: 0 };
+		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, selectedKinds)) {
+			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
 		}
-		const now = new Date();
-		const due = buildLevelQueue({
+		return levelPlanCounts({
 			entries: levelEntries,
 			cards,
 			reviews,
-			newLimit: 0,
-			reviewLimit: COUNT_CAP,
-			now,
-			w: weights
-		}).length;
-		const fresh = buildLevelQueue({
-			entries: levelEntries,
-			cards,
-			reviews,
-			newLimit: COUNT_CAP,
-			reviewLimit: 0,
-			now,
-			w: weights
-		}).length;
-		return { due, fresh };
+			now: new Date(),
+			w: weights,
+			unit: levelUnit,
+			kinds: selectedKinds,
+			studyDay: currentStudyDay()
+		});
 	});
 
 	// Selected types that have nothing to study: a warning, not a block,
 	// as long as another selected type has cards.
 	const typeWarnings = $derived.by((): string[] => {
-		if (mode === 'levels') {
-			return selectedKinds.some((kind) => kind !== 'vocab')
-				? ['Level sessions study vocab cards only; the other types apply to deck sessions.']
-				: [];
-		}
+		if (mode === 'levels') return levelTypeWarnings(levelUnit, selectedKinds);
 		if (selectedCards.length === 0) return [];
 		return selectedKinds
 			.filter((kind) => deckPlan.byKind[kind] === 0)
@@ -409,8 +401,11 @@
 	});
 
 	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
-	const levelWordCount = $derived(
-		levelEntries.filter((entry) => entry.kind === 'word').length
+	const levelEntryTotal = $derived(levelEntryCount(levelEntries, levelUnit));
+	const levelNoun = $derived(
+		levelUnit === 'character'
+			? levelEntryTotal === 1 ? 'character' : 'characters'
+			: levelEntryTotal === 1 ? 'word' : 'words'
 	);
 
 	const guidance = $derived.by(() => {
@@ -429,9 +424,13 @@
 			}
 			if (levelEntriesError) return levelEntriesError;
 			if (levelEntriesLoading) return 'Loading this level…';
-			if (levelEntries.length === 0) return 'This level has no words yet.';
-			if (!selectedKinds.includes('vocab')) {
-				return 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
+			if (levelEntries.length === 0) {
+				return `This level has no ${levelUnit === 'character' ? 'characters' : 'words'} yet.`;
+			}
+			if (!levelUsable(levelUnit, selectedKinds)) {
+				return levelUnit === 'character'
+					? 'Character levels study Vocab (recognition) and Writing cards. Select one of them, or switch to My decks.'
+					: 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
 			}
 			if (counts.due + counts.fresh === 0) {
 				return 'Nothing is due and no new cards are left in this level.';
@@ -711,7 +710,7 @@
 		{:else}
 			<section aria-labelledby="levels-heading">
 				<h2 id="levels-heading">Level</h2>
-				<p class="hint">Draw words from one level of an installed scheme.</p>
+				<p class="hint">Draw words or characters from one level of an installed scheme.</p>
 
 				{#if schemeError}
 					<p class="error" role="alert">{schemeError}</p>
@@ -795,8 +794,8 @@
 			<h2 id="summary-heading">This session</h2>
 			{#if mode === 'levels'}
 				<p class="stats">
-					<strong>{levelWordCount}</strong>
-					{levelWordCount === 1 ? 'word' : 'words'} in
+					<strong>{levelEntryTotal}</strong>
+					{levelNoun} in
 					<strong>{selectedScheme?.name ?? 'this scheme'}</strong>
 					{levelSelection?.levelName ?? ''} ·
 					<strong>{counts.due}</strong>

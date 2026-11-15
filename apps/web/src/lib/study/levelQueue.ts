@@ -244,3 +244,55 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 		reserve: fresh.slice(limit, limit + reserveSize(options))
 	};
 }
+
+/** What the setup page shows for one level and kind selection. */
+export interface LevelPlanCounts {
+	due: number;
+	fresh: number;
+	/** due + fresh, before the session's caps. */
+	items: number;
+	unitLabel: 'words' | 'characters';
+}
+
+const UNCAPPED = 1_000_000;
+
+/** levelPlanCounts counts what a level session would hold before the new/review caps. */
+export function levelPlanCounts(
+	options: Omit<BuildLevelQueueOptions, 'newLimit' | 'reviewLimit'>
+): LevelPlanCounts {
+	const due = buildLevelPlan({ ...options, newLimit: 0, reviewLimit: UNCAPPED, reserve: 0 }).queue
+		.length;
+	const fresh = buildLevelPlan({ ...options, newLimit: UNCAPPED, reviewLimit: 0, reserve: 0 })
+		.queue.length;
+	return {
+		due,
+		fresh,
+		items: due + fresh,
+		unitLabel: (options.unit ?? 'word') === 'character' ? 'characters' : 'words'
+	};
+}
+
+/** Whether a unit studies at least one of the selected kinds. */
+export function levelUsable(unit: LevelUnit, kinds: readonly StudyCardKind[]): boolean {
+	return unit === 'character'
+		? kinds.some((kind) => CHARACTER_KINDS.includes(kind))
+		: kinds.includes('vocab');
+}
+
+/** Warnings for selected kinds a level session of this unit does not study. */
+export function levelTypeWarnings(unit: LevelUnit, kinds: readonly StudyCardKind[]): string[] {
+	if (unit === 'character') {
+		return kinds.some((kind) => !CHARACTER_KINDS.includes(kind))
+			? ['Character levels study recognition and writing cards.']
+			: [];
+	}
+	return kinds.some((kind) => kind !== 'vocab')
+		? ['Level sessions study vocab cards only; the other types apply to deck sessions.']
+		: [];
+}
+
+/** How many entries of a level the unit studies (words, or characters). */
+export function levelEntryCount(entries: readonly LevelEntry[], unit: LevelUnit): number {
+	const kind = unit === 'character' ? 'character' : 'word';
+	return entries.filter((entry) => entry.kind === kind).length;
+}

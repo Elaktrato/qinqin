@@ -8,6 +8,10 @@ import { newCardId } from './canonical';
 import {
 	buildLevelPlan,
 	buildLevelQueue,
+	levelEntryCount,
+	levelPlanCounts,
+	levelTypeWarnings,
+	levelUsable,
 	virtualLevelId,
 	type LevelEntry,
 	type LevelUnit
@@ -339,4 +343,65 @@ describe('level card ids', () => {
 			expect(newCardId(c.kind, c.entryId)).toBe(c.cardId);
 		});
 	}
+});
+
+describe('levelPlanCounts', () => {
+	const base = { w: DEFAULT_W, cards: [], reviews: [], now: NOW };
+
+	it('counts a fresh character level as characters x 1 while writing is locked', () => {
+		const counts = levelPlanCounts({
+			...base,
+			unit: 'character',
+			kinds: ['vocab', 'writing'],
+			entries: [entry(1, 'character'), entry(2, 'character'), entry(9)]
+		});
+		expect(counts).toEqual({ due: 0, fresh: 2, items: 2, unitLabel: 'characters' });
+	});
+
+	it('counts due and new separately, before any session cap', () => {
+		const counts = levelPlanCounts({
+			...base,
+			unit: 'character',
+			kinds: ['vocab'],
+			entries: [entry(1, 'character'), entry(2, 'character')],
+			cards: [{ ...card('c1', 1), createdAt: '2026-01-01T00:00:00.000Z' }],
+			reviews: [review('c1', 3, '2026-01-01T00:00:00.000Z')]
+		});
+		expect(counts).toEqual({ due: 1, fresh: 1, items: 2, unitLabel: 'characters' });
+	});
+
+	it('labels word levels as words and ignores non-vocab kinds', () => {
+		const counts = levelPlanCounts({
+			...base,
+			kinds: ['writing'],
+			entries: [entry(1), entry(2)]
+		});
+		expect(counts).toEqual({ due: 0, fresh: 0, items: 0, unitLabel: 'words' });
+	});
+});
+
+describe('level setup helpers', () => {
+	it('is usable only with a kind the unit studies', () => {
+		expect(levelUsable('word', ['writing'])).toBe(false);
+		expect(levelUsable('word', ['vocab'])).toBe(true);
+		expect(levelUsable('character', ['writing'])).toBe(true);
+		expect(levelUsable('character', ['tone', 'sentence'])).toBe(false);
+	});
+
+	it('warns per unit about kinds a level does not study', () => {
+		expect(levelTypeWarnings('word', ['vocab'])).toEqual([]);
+		expect(levelTypeWarnings('word', ['vocab', 'tone'])).toEqual([
+			'Level sessions study vocab cards only; the other types apply to deck sessions.'
+		]);
+		expect(levelTypeWarnings('character', ['vocab', 'writing'])).toEqual([]);
+		expect(levelTypeWarnings('character', ['vocab', 'tone'])).toEqual([
+			'Character levels study recognition and writing cards.'
+		]);
+	});
+
+	it('counts the entries a unit studies', () => {
+		const entries = [entry(1), entry(2, 'character'), entry(3, 'sentence')];
+		expect(levelEntryCount(entries, 'word')).toBe(1);
+		expect(levelEntryCount(entries, 'character')).toBe(1);
+	});
 });
