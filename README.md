@@ -63,7 +63,7 @@ database with a SvelteKit single-page app embedded in the binary.
 
 ## Quick start (Docker Compose / Portainer)
 
-The stack is a single service. In Portainer, create a stack from
+The stack is a single service. For a production deployment on Portainer see [Deploying with Portainer](#deploying-with-portainer). In Portainer, create a stack from
 [`docker-compose.yml`](docker-compose.yml); or from this repository (Docker with
 the Compose plugin required) run:
 
@@ -139,6 +139,186 @@ an image.
 > Seed and create the admin account **before** exposing the port beyond your
 > LAN: while no user exists, the first registration over the API becomes the
 > admin — whoever makes it.
+
+## Release images and versions
+
+CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags
+(`develop` pushes only run tests). Tags: `latest` (the newest `main` build),
+`v<version>` for a release tag, and `sha-<commit>`. For production pin a `v*`
+tag in `QINQIN_IMAGE` rather than `latest`, so a redeploy never changes the
+version by surprise. The published image is the full build: Tesseract OCR
+(about +193 MB) and the Kanji alive audio (about +70 MB). Self-builds can drop
+them with `--build-arg WITH_OCR=0` / `WITH_AUDIO=0`.
+
+## Deploying with Portainer
+
+[`deploy/portainer-stack.yml`](deploy/portainer-stack.yml) differs from the
+quick-start `docker-compose.yml`: a named volume instead of `./data`
+(relative bind mounts depend on where Portainer checks the stack out), a
+required `QINQIN_SECRET` (the deployment fails if it is unset), memory/CPU
+limits (1 GiB, 2 CPUs), log rotation (3 x 10 MB) and `no-new-privileges`.
+It does not set `user:` or `read_only:`: the image has no `USER` (it runs as
+root) and the server writes temporary files to `/tmp` (OCR input, pack
+uploads), so a read-only root filesystem is not enabled.
+
+1. **Generate the secret** and store it in your password manager:
+   `head -c 32 /dev/urandom | base64`. It encrypts the users' AI API keys.
+   Back it up **separately** from the data volume; it is never written to
+   `/data`. Lose it and users must enter their keys again.
+2. **Add the stack.** Portainer: Stacks, Add stack. Either *Web editor* and
+   paste `deploy/portainer-stack.yml`, or *Repository* with URL
+   `https://github.com/Elaktrato/qinqin`, reference `refs/heads/main` (or a
+   tag) and compose path `deploy/portainer-stack.yml`.
+3. **Environment variables** (stack form): `QINQIN_SECRET` (required),
+   `QINQIN_IMAGE` (e.g. `ghcr.io/elaktrato/qinqin:v1.2.3`), `QINQIN_PORT`
+   (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute
+   host path (e.g. `/srv/qinqin/data`) to bind-mount a directory instead of the
+   named volume; the directory must exist and be writable by root.
+   `QINQIN_SECRET_PREVIOUS` only while rotating the secret.
+   `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the stack.
+4. **First run, before exposing the port beyond your LAN** (until a user
+   exists, the first registration over the API becomes admin). Portainer:
+   Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
+
+   ```sh
+   qinqin seed
+   qinqin adduser --username <name> --admin
+   ```
+
+   `adduser` prompts for the password and needs a TTY; Portainer's console
+   provides one (the typed password is echoed). `seed` installs the bundled
+   packs from the image (CC-CEDICT, Unihan, JMdict, KANJIDIC2, Jiten
+   frequencies, HSK 3.0 and JLPT kanji level lists, es-demo, and the Kanji
+   alive audio when present) into the database; it takes under a minute
+   (about 45 s measured) and is idempotent. Run it while nobody uses the app.
+5. Put a reverse proxy with HTTPS in front (below), then run the checklist.
+
+### Data directory
+
+Everything lives in `/data` (the volume):
+
+| Path | Content |
+|---|---|
+| `qinqin.db` (+ `-wal`, `-shm`) | SQLite database: users, entries, dictionaries, flashcards, journal, plugin data |
+| `packs/` | packs installed by an admin through the UI |
+| `audio/` | audio blobs imported by seed or packs |
+| `books/<user id>/` | uploaded and imported library books |
+| `journal/<user id>/` | draft photos, deleted when the draft ends |
+| `cache/sources/` | cache of the Aozora/Gutenberg imports; safe to delete |
+
+The bundled packs themselves stay in the image (`/opt/qinqin/packs`,
+`/opt/qinqin/audio`).
+
+### Backup
+
+The app has no backup command or endpoint yet (open issue
+[#61](https://github.com/Elaktrato/qinqin/issues/61)). Copying the live
+database can miss the WAL, so: stop the stack's container in Portainer, copy the
+whole volume, start it again. For a named volume, with the container stopped:
+
+```sh
+docker run --rm -v <stack>_qinqin-data:/data:ro -v "$PWD":/out alpine \
+  tar czf /out/qinqin-data-$(date +%F).tgz -C /data .
+```
+
+(`docker volume ls` shows the real name; Portainer prefixes the stack name.)
+With a host path, copy that directory. Restore by extracting into an empty
+volume while the container is stopped. Keep `QINQIN_SECRET` backed up
+separately.
+
+### Upgrading
+
+Back up first. Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
+redeploy with *Pull latest image* enabled. Migrations are embedded in the
+binary and applied automatically at start (`server/internal/db`); they are
+one-way. **Downgrading is not supported**: going back to an older image needs
+the pre-upgrade backup. After an upgrade the log may say
+`pack <id>: stored ... differs`; run `qinqin seed` in the console to refresh.
+
+### Reverse proxy and HTTPS
+
+The app speaks plain HTTP on 8080. Browser features that need a secure context
+may not work over plain HTTP from other devices, so serve it over HTTPS. No
+WebSocket is used. The server does not read client IPs or
+`X-Forwarded-*` headers anywhere (no per-IP limits; limits are per user), so
+no trusted-proxy setting exists. Pack uploads go up to 128 MiB and an AI
+review can take up to 170 s, so the proxy needs a body limit of at least
+130 MB and a read timeout of at least 180 s.
+
+Caddy (defaults are fine: no body limit, 0 response timeout):
+
+```
+qinqin.example.com {
+    reverse_proxy qinqin:8080
+}
+```
+
+Traefik labels (container on the proxy's network; no default body limit):
+
+```yaml
+labels:
+  - traefik.enable=true
+  - traefik.http.routers.qinqin.rule=Host(`qinqin.example.com`)
+  - traefik.http.routers.qinqin.entrypoints=websecure
+  - traefik.http.routers.qinqin.tls.certresolver=letsencrypt
+  - traefik.http.services.qinqin.loadbalancer.server.port=8080
+```
+
+(Raise Traefik's `respondingTimeouts.readTimeout`/`writeTimeout` on the
+entrypoint if you set them below 180 s.) Add `networks:` to the stack to join
+the proxy's network; the file does not.
+
+nginx:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    client_max_body_size 130m;
+    proxy_read_timeout 180s;
+    proxy_send_timeout 180s;
+    # Optional: stream uploads instead of buffering them to disk first.
+    # proxy_request_buffering off;
+}
+```
+
+### AI journal
+
+Each user opens Settings, AI and enters their own Anthropic API key; qinqin
+ships none. Journal text (up to 5,000 characters), study history snippets and
+photos **leave the server for the provider** when a user presses an AI button.
+The default model is `claude-opus-5-5`, the most expensive of the three: tell
+users to pick Sonnet or Haiku in Settings if cost matters (calls are limited to
+30 per user and hour). The settings `QINQIN_AI_PROVIDERS` and
+`QINQIN_AI_ALLOW_PRIVATE` (other providers, private endpoints) are coming with
+the multi-provider AI work and do nothing yet. Without a valid
+`QINQIN_SECRET`, AI shows as disabled with the reason.
+
+### Checklist after deploying
+
+- `curl http://<host>:<port>/healthz` returns `ok`; Portainer shows the
+  container `healthy`.
+- Log in as the admin created in step 4.
+- Search `好`: results appear (the seed ran).
+- Create a deck/flashcard.
+- Journal: with the fake provider off (`QINQIN_AI_PROVIDER` unset), Settings,
+  AI shows the key as storable; save a key and run a review.
+- The container log shows `AI: QINQIN_SECRET ok`.
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| Stack will not deploy: "required variable QINQIN_SECRET is missing" | Set it in the stack's environment variables |
+| Container restarting | Read its log. Bad host path in `QINQIN_DATA_VOLUME` or no write permission (`create data directory ...`); fix ownership (the image runs as root) |
+| Log: `QINQIN_SECRET ... not 32 bytes of base64` / AI disabled | Regenerate with `head -c 32 /dev/urandom | base64`; without it AI stays off, the app still works |
+| AI settings say there is no secret | `QINQIN_SECRET` unset or invalid when the container started; fix and redeploy |
+| 413 on upload (pack, book, photo) | Proxy body limit: `client_max_body_size 130m` |
+| 502/504 on an AI review | Proxy timeout below 180 s |
+| "port is already allocated" | Change `QINQIN_PORT` |
+| Unhealthy | `wget` against `127.0.0.1:8080/healthz` inside the container; see the log; a slow first start can exceed the 15 s start period on a slow disk |
+| "database is locked" during seed | Seed while the app is idle (5 s busy timeout) |
 
 ## Workspaces
 
