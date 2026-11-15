@@ -27,6 +27,8 @@ export interface ApiOptions {
 	auth?: boolean;
 	/** Aborts the request. */
 	signal?: AbortSignal;
+	/** Lets the request outlive the page (a save on pagehide). Bodies over 64 KiB cannot use it. */
+	keepalive?: boolean;
 }
 
 let unauthorizedHandler: (() => void) | null = null;
@@ -114,7 +116,8 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 		method: options.method ?? (hasBody ? 'POST' : 'GET'),
 		headers,
 		body: hasBody ? (isForm ? (options.body as FormData) : JSON.stringify(options.body)) : undefined,
-		signal: options.signal
+		signal: options.signal,
+		...(options.keepalive ? { keepalive: true } : {})
 	});
 
 	if (!response.ok) {

@@ -87,9 +87,22 @@ export async function getEntry(workspaceId: number, id: string): Promise<Journal
 	return row ? parseEntry(key, row.data) : null;
 }
 
-export async function saveEntry(workspaceId: number, entry: JournalEntry): Promise<JournalEntry> {
+// A keepalive request body may not exceed 64 KiB; a bigger entry goes without.
+const KEEPALIVE_MAX_BYTES = 60 * 1024;
+
+export async function saveEntry(
+	workspaceId: number,
+	entry: JournalEntry,
+	opts: { keepalive?: boolean } = {}
+): Promise<JournalEntry> {
 	const saved = { ...entry, updatedAt: new Date().toISOString() };
-	await api(dataPath(ENTRY_PREFIX + saved.id, workspaceId), { method: 'PUT', body: saved });
+	const keepalive =
+		opts.keepalive === true && new Blob([JSON.stringify(saved)]).size <= KEEPALIVE_MAX_BYTES;
+	await api(dataPath(ENTRY_PREFIX + saved.id, workspaceId), {
+		method: 'PUT',
+		body: saved,
+		...(keepalive ? { keepalive: true } : {})
+	});
 	return saved;
 }
 

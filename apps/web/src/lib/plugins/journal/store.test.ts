@@ -129,4 +129,14 @@ describe('journal store', () => {
 		expect(url).toBe('/api/plugins/qinqin-journal/data/settings?workspace=3');
 		expect(init?.method).toBe('PUT');
 	});
+
+	it('saves with keepalive for a small entry when asked, and without for a large one', async () => {
+		vi.mocked(fetch).mockImplementation(async () => json({}));
+		await saveEntry(3, { ...newEntry('typed'), text: 'short' }, { keepalive: true });
+		expect(vi.mocked(fetch).mock.calls[0][1]?.keepalive).toBe(true);
+		await saveEntry(3, { ...newEntry('typed'), text: 'x'.repeat(70000) }, { keepalive: true });
+		expect(vi.mocked(fetch).mock.calls[1][1]?.keepalive).toBeFalsy();
+		await saveEntry(3, newEntry('typed'));
+		expect(vi.mocked(fetch).mock.calls[2][1]?.keepalive).toBeFalsy();
+	});
 });
