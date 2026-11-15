@@ -160,6 +160,7 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/users/{id}", s.handleAdminDeleteUser, accAdmin, nil},
 		{"GET /api/account/deletion-preview", s.handleAccountDeletionPreview, accUser, nil},
 		{"DELETE /api/account", s.handleDeleteAccount, accUser, nil},
+		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil},
 		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil},
 		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil},
 		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
