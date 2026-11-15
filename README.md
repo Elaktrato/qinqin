@@ -73,6 +73,10 @@ the Compose plugin required) run:
 docker compose up -d
 ```
 
+No reverse proxy in front? Set `QINQIN_TRUSTED_PROXIES=none` (uncomment it in
+`docker-compose.yml`): the default trusts private-network peers' `X-Forwarded-For`,
+which a LAN client could forge to dodge the per-client sign-in limits.
+
 On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
 frequency list and the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists), then create the admin account:
 
@@ -194,8 +198,9 @@ uploads), so a read-only root filesystem is not enabled.
    (default: all; see [Journal and AI](#journal-and-ai)),
    `QINQIN_AI_ALLOW_PRIVATE=1` lets an admin register AI endpoints on private
    addresses, `QINQIN_TRUSTED_PROXIES` sets which proxies' `X-Forwarded-For`
-   is believed (default: private networks; `none` ignores it; see
-   [Reverse proxy and HTTPS](#reverse-proxy-and-https)), and
+   is believed (default: private networks; **set `none` if nothing
+   reverse-proxies to qinqin**, otherwise a LAN client can forge the header;
+   see [Reverse proxy and HTTPS](#reverse-proxy-and-https)), and
    `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the stack.
 4. **First run, before exposing the port beyond your LAN** (until a user
    exists, the first registration over the API becomes admin). Portainer:
@@ -271,9 +276,22 @@ the TCP peer is a trusted proxy: by default the private networks a Docker or
 LAN proxy connects from (127.0.0.0/8, ::1, 10/8, 172.16/12, 192.168/16,
 100.64/10, 169.254/16, fc00::/7, fe80::/10). Set `QINQIN_TRUSTED_PROXIES` to a
 comma list of CIDRs or addresses to replace that set (for example a CDN's
-ranges in front of your proxy), or to `none` to ignore the header on a LAN
-without a proxy (otherwise a client on the LAN could forge it). A bad value
-stops the server at startup. Addresses are used only as in-memory limiter
+ranges in front of your proxy), or to `none` to ignore the header. A bad value
+stops the server at startup.
+
+> **Warning: the default is spoofable without a proxy.** Private-network peers
+> are trusted by default, so on an install with **no** reverse proxy any client
+> on your LAN (or any peer the network layer makes look private) can send a
+> forged `X-Forwarded-For` and get a fresh per-client limit for every request.
+> The same happens when the proxy layer rewrites the source address: Docker's
+> userland proxy for IPv6, rootless Docker or Podman, Docker Desktop, or router
+> port forwarding that masquerades connections can all make every client look
+> like a private address. The per-username limit and the hash gate still hold,
+> but **set `QINQIN_TRUSTED_PROXIES=none` whenever nothing reverse-proxies to
+> qinqin**, and list your proxy's address when you do run one. The first time a
+> forwarded header is honoured the server logs one line,
+> `auth: honouring X-Forwarded-For from a trusted proxy; set
+> QINQIN_TRUSTED_PROXIES=none if you have no reverse proxy`, so you can tell. Addresses are used only as in-memory limiter
 keys (hashed with a per-process secret): never stored, never logged.
 
 Caddy (defaults are fine: no body limit, 0 response timeout):
@@ -327,7 +345,8 @@ each), so they are limited. The limits live in memory (a restart clears them):
 | Username | username, any client | burst 20 failures, one more per minute; a known-good pair is exempt |
 | Hash gate | the server | at most min(4, CPUs) hashes at once, 3 s wait, then 503 |
 
-A locked key is refused (429, `Retry-After`) before the password is checked,
+Known-good marks live in their own table (also capped at 65,536), so a flood of
+new failing keys cannot erase them. A locked key is refused (429, `Retry-After`) before the password is checked,
 unknown usernames behave exactly like known ones, and an administrator creating
 users is not throttled. Errors of both routes are JSON `{"error","message"}`
 (`rate_limited`, `busy`, `bad_credentials`, `admin_required`,
@@ -1071,6 +1090,7 @@ Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot b
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
+| `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks (see [Reverse proxy and HTTPS](#reverse-proxy-and-https)). Set `none` when no reverse proxy sits in front |
 | `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |
 | `QINQIN_AI_ALLOW_PRIVATE` | `1` or `true` lets admins register custom endpoints on loopback and private addresses (Ollama on the same host). Off by default; the admin's endpoints can then reach your LAN, so enable it only if you trust every admin |
 | `QINQIN_AI_PROVIDER` | Legacy. Unset: real providers, all allowed. `anthropic` (set explicitly) means `QINQIN_AI_PROVIDERS=anthropic`. `fake` is for testing only: a deterministic provider that replaces every adapter, never leaves the server, and is shown in the app as a "Test provider" badge. Anything else disables AI |

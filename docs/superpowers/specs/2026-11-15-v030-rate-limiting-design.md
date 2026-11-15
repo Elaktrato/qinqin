@@ -65,9 +65,14 @@ JSON, empty fields → 400, the L1 token stays spent) → L2/L3 (login only) →
 - Keys: usernames and client addresses are keyed by HMAC-SHA-256 with a random per-process key,
   truncated to 16 bytes, so the tables hold neither usernames nor addresses and a memory dump cannot be
   reversed by dictionary; a 4 KiB username costs 16 bytes.
+- Known-good marks live in their own table (cap 65 536, sampled-oldest eviction), so a flood of new failing
+  keys cannot erase them; creating a mark needs a correct password. Register: an administrator's bearer token
+  is checked first and skips L1 entirely (parallel bulk creation is never refused); everyone else pays one
+  L1 token, and the 429 reads "Too many attempts." (login: "Too many sign-in attempts."). A request whose
+  client went away is dropped with 499, no body, no log, nothing counted.
 - Every table holds at most 65 536 keys; a sweep every minute drops idle entries (full bucket, no lock,
   no failure in the last hour, no live known-good mark). A full table **evicts** the least recently
-  touched of 8 randomly sampled entries for each new key.
+  touched of the first 8 entries of Go's randomised map iteration for each new key (constant cost).
 
 Ruling: burst 10 / one per 6 s per client — a person mistyping a password never notices, a script gets
 10 tries a minute — cost: a classroom behind one IPv4 NAT signing in at once may see a short 429.

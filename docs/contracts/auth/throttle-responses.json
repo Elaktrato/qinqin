@@ -14,6 +14,11 @@
     "headers": {"Retry-After": "900", "Content-Type": "application/json"},
     "body": {"error": "rate_limited", "message": "Too many sign-in attempts. Try again in 15 minutes."}
   },
+  "register_rate_limited": {
+    "status": 429,
+    "headers": {"Retry-After": "6", "Content-Type": "application/json"},
+    "body": {"error": "rate_limited", "message": "Too many attempts. Try again in 6 seconds."}
+  },
   "busy": {
     "status": 503,
     "headers": {"Retry-After": "2", "Content-Type": "application/json"},

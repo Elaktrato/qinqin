@@ -13,7 +13,9 @@ Applies to `POST /api/auth/login` and `POST /api/auth/register`. Examples:
 5. Hash gate (min(4, CPUs) at once, 3 s wait): none free: 503 `busy`.
 6. Password check. Only a credential mismatch is a failure (401 `bad_credentials`); a 500 or 503 counts for nothing.
 
-Register: every call passes 2 and 5; an administrator whose token checks out gets the client token back.
+Register: an administrator's bearer token is checked first and then skips step 2 entirely (bulk creation is
+never throttled); every other call passes 2 and 5. Its 429 says "Too many attempts." (login: "Too many sign-in
+attempts."). A request whose client has gone (cancelled context) is dropped with status 499, no body, no log.
 Closed registration for others: 403 `admin_required`; duplicate: 409 `username_taken`.
 
 ## Statuses and bodies

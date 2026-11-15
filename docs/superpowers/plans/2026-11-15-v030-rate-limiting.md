@@ -276,3 +276,23 @@ register after the first user -> ten 403 then 429; (d) 30 parallel with own `X-F
 (20 hashed by L3), VmHWM 473-535 MiB; (e) `QINQIN_TRUSTED_PROXIES=none` -> header ignored (429 by the 10th/11th);
 default trust -> distinct addresses are distinct clients; bad value stops startup naming the item; (f) log has
 only `auth: sign-in throttled (layer ...)` lines, no address, username or password.
+
+## Fix wave after the security review
+
+- Ruling: known-good marks in a separate capped table (65 536, sampled-oldest eviction) — a flood of failing
+  pairs evicted marks before — cost: a second table of at most 65 536 small entries.
+- Ruling: eviction samples the first 8 entries of Go's map iteration (random start, no `rand.IntN` skip walk)
+  — O(8) per insert instead of O(n) — cost: the sample is clustered, not uniform; a test pins the cost.
+- Ruling: the default trusted set stays "private networks", now loudly documented as spoofable without a
+  proxy (README, Portainer stack, compose), with `QINQIN_TRUSTED_PROXIES=none` recommended there, and one log
+  line the first time a forwarded header is honoured — cost: an install without proxy that ignores the docs is
+  still spoofable on the per-client layers (per-username limit and hash gate hold).
+- Ruling: `QINQIN_TRUSTED_PROXIES` and `QINQIN_TESSERACT` are passed by the Portainer stack and offered in
+  docker-compose.yml; a test (`cmd/qinqin/deploy_env_test.go`) requires every variable of the README's
+  environment table to be in both files.
+- Ruling: IPv4-mapped prefixes in `QINQIN_TRUSTED_PROXIES` are converted (`::ffff:10.0.0.0/104` is `10.0.0.0/8`);
+  shorter than /96 is a startup error.
+- Ruling: register 429 reads "Too many attempts."; an administrator's valid bearer skips the client bucket
+  (checked before it, a plain token lookup) — cost: an invalid or non-admin bearer still pays.
+- Ruling: a cancelled request is answered 499 with no body and no log, nothing counted.
+- Forwarded entries with a port or brackets parse.
