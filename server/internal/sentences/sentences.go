@@ -180,7 +180,12 @@ func AddUser(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, s model.
 // unknown or already-uninstalled pack returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, pack string) error {
 	stamp := now()
-	res, err := sqlDB.ExecContext(ctx, `
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("uninstall sentences of pack %s: %w", pack, err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `
 		UPDATE sentences SET deleted_at = ?, updated_at = ?
 		WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL`,
 		stamp, stamp, pack)
@@ -191,8 +196,49 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, pack string) error {
 	if err != nil {
 		return fmt.Errorf("uninstall sentences of pack %s: %w", pack, err)
 	}
-	if n == 0 {
+	// A registered pack with no live sentences (all skipped) still
+	// uninstalls: the registry row is what the admin sees.
+	reg, err := tx.ExecContext(ctx, `
+		UPDATE sentence_packs SET deleted_at = ?, updated_at = ?
+		WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, pack)
+	if err != nil {
+		return fmt.Errorf("uninstall sentence pack %s: %w", pack, err)
+	}
+	regN, err := reg.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("uninstall sentence pack %s: %w", pack, err)
+	}
+	if n == 0 && regN == 0 {
 		return ErrNotFound
+	}
+	return tx.Commit()
+}
+
+// upsertRegistry records the pack's manifest in sentence_packs inside
+// tx, reviving an uninstalled row. An unchanged live row is not
+// restamped, so an identical re-import writes nothing.
+func upsertRegistry(ctx context.Context, tx *sql.Tx, m dict.Manifest, stamp string) error {
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO sentence_packs (pack_id, name, version, language, license, attribution, notice, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT (pack_id) DO UPDATE SET
+			name = excluded.name,
+			version = excluded.version,
+			language = excluded.language,
+			license = excluded.license,
+			attribution = excluded.attribution,
+			notice = excluded.notice,
+			updated_at = excluded.updated_at,
+			deleted_at = NULL
+		WHERE sentence_packs.name IS NOT excluded.name
+		   OR sentence_packs.version IS NOT excluded.version
+		   OR sentence_packs.language IS NOT excluded.language
+		   OR sentence_packs.license IS NOT excluded.license
+		   OR sentence_packs.attribution IS NOT excluded.attribution
+		   OR sentence_packs.notice IS NOT excluded.notice
+		   OR sentence_packs.deleted_at IS NOT NULL`,
+		m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, stamp); err != nil {
+		return fmt.Errorf("register sentence pack %s: %w", m.ID, err)
 	}
 	return nil
 }
@@ -256,6 +302,9 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, rows []sente
 	}
 	defer tx.Rollback()
 	stamp := now()
+	if err := upsertRegistry(ctx, tx, m, stamp); err != nil {
+		return err
+	}
 
 	// Diff against the pack's stored sentences — identified by entry and
 	// text — and write only the difference: an unchanged sentence keeps
