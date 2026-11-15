@@ -1,9 +1,11 @@
 import { api } from './client';
 import type { Entry, EntryDetail } from './types';
 
-// EntryPatch mirrors the PUT /api/entries/{id} body: an omitted field is
-// left untouched, while an empty readings list clears the overlay's
-// readings.
+// EntryPatch mirrors the PUT /api/entries/{id} body. PUT replaces the
+// caller's whole overlay: an omitted field is stored as "no overlay" and
+// shows the shared value again, so omitting a field is how it is reverted
+// (an empty patch removes the overlay entirely). Sending `readings: []`
+// is different: it overlays an empty reading list.
 export interface EntryPatchReading {
 	type: string;
 	value: string;

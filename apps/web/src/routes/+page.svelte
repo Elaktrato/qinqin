@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { APP_NAME } from '$lib/app';
@@ -40,6 +41,10 @@
 		await goto(`/search?q=${encodeURIComponent(query.trim())}`);
 	}
 </script>
+
+<svelte:head>
+	<title>{pageTitle()}</title>
+</svelte:head>
 
 <main class="home">
 	<h1>{APP_NAME}</h1>

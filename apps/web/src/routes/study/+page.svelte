@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
@@ -579,6 +580,10 @@
 		void goto('/study/session');
 	}
 </script>
+
+<svelte:head>
+	<title>{pageTitle('Study')}</title>
+</svelte:head>
 
 <main class="setup">
 	<h1>Study</h1>

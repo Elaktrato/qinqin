@@ -99,7 +99,57 @@ describe('auth store', () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
-	it('logout clears storage, the store, and navigates to /login', async () => {
+	it('login drops the token again when the user cannot be loaded (non-401 failure)', async () => {
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+			return new Response('boom', { status: 500 });
+		});
+
+		const seen: Array<string | null> = [];
+		const stop = auth.subscribe((state) => seen.push(state.token));
+		try {
+			await expect(login('ada', 'pw')).rejects.toMatchObject({ status: 500 });
+		} finally {
+			stop();
+		}
+		// The store never claimed a session, so the guard cannot bounce the
+		// login page away before it shows the error.
+		expect(seen.every((t) => t === null)).toBe(true);
+
+		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		expect(get(auth)).toEqual({ token: null, user: null });
+	});
+
+	it('login works when storage is blocked: the known token is used for /me', async () => {
+		vi.stubGlobal('localStorage', {
+			getItem: () => null,
+			setItem: () => {
+				throw new DOMException('blocked', 'SecurityError');
+			},
+			removeItem: () => undefined
+		});
+		const calls: Array<string | undefined> = [];
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+			const url = String(input);
+			if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+			calls.push((init?.headers as Record<string, string>).authorization);
+			return jsonResponse(user);
+		});
+
+		await login('ada', 'pw');
+
+		expect(calls).toEqual(['Bearer token-1']);
+		expect(get(auth)).toEqual({ token: 'token-1', user });
+	});
+
+	it('logout forgets the persisted workspace selection', () => {
+		localStorage.setItem('qinqin.workspace', '3');
+		logout();
+		expect(localStorage.getItem('qinqin.workspace')).toBeNull();
+	});
+
+	it('logout clears storage and the store; the layout guard does the navigation', async () => {
 		localStorage.setItem('qinqin.token', 'stored');
 		auth.set({ token: 'stored', user });
 
@@ -107,6 +157,6 @@ describe('auth store', () => {
 
 		expect(localStorage.getItem('qinqin.token')).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
-		expect(goto).toHaveBeenCalledWith('/login');
+		expect(goto).not.toHaveBeenCalled();
 	});
 });

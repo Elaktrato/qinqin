@@ -3,7 +3,6 @@ import {
 	allowed,
 	normalizePath,
 	redirectTarget,
-	redirectsOnUnauthorized,
 	routeAccess
 } from './routeAccess';
 
@@ -86,15 +85,5 @@ describe('redirectTarget', () => {
 		expect(redirectTarget('/unknown/path', false)).toBe('/login');
 		expect(redirectTarget('/sources/extra', false)).toBe('/login');
 		expect(redirectTarget('/study', true)).toBeNull();
-	});
-});
-
-describe('redirectsOnUnauthorized', () => {
-	it('redirects on private pages only', () => {
-		expect(redirectsOnUnauthorized('/study')).toBe(true);
-		expect(redirectsOnUnauthorized('/')).toBe(true);
-		expect(redirectsOnUnauthorized('/login')).toBe(false);
-		expect(redirectsOnUnauthorized('/register')).toBe(false);
-		expect(redirectsOnUnauthorized('/sources')).toBe(false);
 	});
 });

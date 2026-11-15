@@ -5,7 +5,7 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 import type { PluginInfo } from '../api/types';
 import { builtinManifests } from '../plugins/contract';
 import { webPlugins } from '../plugins';
-import { pluginRowInfo } from './pluginRows';
+import { pluginRowInfo, validOrder } from './pluginRows';
 
 function info(manifest: Record<string, unknown>): PluginInfo {
 	return { id: String(manifest.id), manifest: manifest as PluginInfo['manifest'], enabled: true, order: 0 };
@@ -43,5 +43,17 @@ describe('pluginRowInfo', () => {
 			permissions: '',
 			notice: null
 		});
+	});
+});
+
+describe('validOrder', () => {
+	it('accepts whole numbers of 0 or more only', () => {
+		expect(validOrder(0)).toBe(true);
+		expect(validOrder(7)).toBe(true);
+		expect(validOrder(-1)).toBe(false);
+		expect(validOrder(1.5)).toBe(false);
+		expect(validOrder(Number.NaN)).toBe(false);
+		expect(validOrder(null)).toBe(false);
+		expect(validOrder(undefined)).toBe(false);
 	});
 });

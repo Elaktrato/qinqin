@@ -393,11 +393,11 @@ every character of the language, studied or not, shaded by mastery.
   that is not a sample pack is offered the same way, under its name; characters
   outside it land in "Not in this scheme".
 - **Sections** show learned/total and a stacked stage bar. The stage legend doubles
-  as a filter (All, Not studied, Learning, Learned). Search matches the glyph,
+  as a filter (All, Not studied, In progress, Learned). Search matches the glyph,
   the reading (toneless pinyin works), the meaning, and hiragana or katakana.
   Jump to character opens its section and focuses the cell.
 - **Cells.** Colour is the character's mastery band: grey for not studied, then
-  red, amber, blue, and green for fresh, learning, mature, and learned. Non-colour
+  red, amber, blue, and green for started, growing, solid, and learned. Non-colour
   markers back this up: a tick for learned, a dashed outline for unseen. A popover
   shows reading, meaning, variants, stage, score and card count (hover, focus, or
   first tap on touch). The grid is keyboard-navigable: arrows, Home/End, Ctrl+Home/End;
@@ -459,7 +459,7 @@ A plugin's widgets are shown only while that plugin is enabled.
   `apps/web/src/lib/activity/activity.ts`.
 - **Characters**: "N of M learned" for the language's characters (the same
   universe and mastery as the map, see below; learned is a mastery of 80/100
-  or more). It also shows the stage bar (Not studied, Fresh, Learning, Mature,
+  or more). It also shows the stage bar (Not studied, Started, Growing, Solid,
   Learned) and a link to the full map. Shown only for Chinese and Japanese
   workspaces.
 - **Flashcards**: what is due and new (with the limits and card types of your
@@ -471,6 +471,10 @@ A plugin's widgets are shown only while that plugin is enabled.
   - **Learning**: in the FSRS learning or relearning state.
   - **Young**: in review with a stability under 21 days.
   - **Mature**: in review with a stability of 21 days or more.
+
+  These word states are not the character map's stages (Started, Growing, Solid,
+  Learned): a word's state follows its flashcard schedule, a character's stage its
+  mastery score.
 
   "N new cards waiting" counts every new vocabulary card, without the session's
   daily new limit. Stats adds a table with one row per deck. A card in several
