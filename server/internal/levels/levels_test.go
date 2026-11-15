@@ -829,3 +829,56 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 		t.Errorf("import cedict-format levels pack err = %v, want ErrInvalidPack", err)
 	}
 }
+
+func TestSkippedFormsAreListedOnce(t *testing.T) {
+	lang.Register(lang.Zh{})
+	sqlDB := newDB(t)
+	importCedict(t, sqlDB, lineNihao)
+	pack := buildPack(t, "dup-skipped", `{"unit":"word","levels":[
+		{"name":"1","entries":["电脑","你好","电脑"]},
+		{"name":"2","entries":["电脑"]}]}`)
+	res, err := levels.Import(context.Background(), sqlDB, pack)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(res.Skipped, "电脑") || len(slices.DeleteFunc(slices.Clone(res.Skipped), func(s string) bool { return s != "电脑" })) != 1 {
+		t.Errorf("skipped = %v, want 电脑 exactly once", res.Skipped)
+	}
+}
+
+func TestUnitErrorNamesCharacter(t *testing.T) {
+	lang.Register(lang.Zh{})
+	_, err := levels.Import(context.Background(), newDB(t),
+		buildPack(t, "bad-unit", `{"unit":"syllable","levels":[{"name":"1","entries":["你好"]}]}`))
+	if err == nil || !strings.Contains(err.Error(), "character") {
+		t.Errorf("err = %v, want the message to name character as accepted", err)
+	}
+}
+
+func TestLevelNamesAndFormsAreTrimmed(t *testing.T) {
+	lang.Register(lang.Zh{})
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importCedict(t, sqlDB, lineNihao, lineNi, lineHao)
+	nihao := lexID(t, sqlDB, "word", "你好")
+
+	// "1" and " 1" are the same level name.
+	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "ws-names",
+		`{"unit":"word","levels":[{"name":"1","entries":["你好"]},{"name":" 1 ","entries":["谢谢"]}]}`)); !errors.Is(err, dict.ErrInvalidPack) {
+		t.Errorf("names 1 and \" 1 \" err = %v, want ErrInvalidPack", err)
+	}
+
+	// A padded name is stored trimmed; a padded form still matches.
+	res, err := levels.Import(ctx, sqlDB, buildPack(t, "ws-ok",
+		`{"unit":"word","levels":[{"name":" 3 ","entries":["  你好\t"]}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Members != 1 || len(res.Skipped) != 0 {
+		t.Errorf("result = %+v, want the padded form matched, nothing skipped", res)
+	}
+	got, err := levels.ForEntry(ctx, sqlDB, nihao)
+	if err != nil || len(got) != 1 || got[0].LevelName != "3" {
+		t.Errorf("badges = %v, %v; want level name 3", got, err)
+	}
+}

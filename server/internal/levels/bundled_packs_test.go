@@ -103,12 +103,24 @@ func TestBundledLevelPacks(t *testing.T) {
 			}
 			var names []string
 			total := 0
+			distinct := map[string]bool{}
 			for _, lv := range data.Levels {
 				names = append(names, lv.Name)
 				if len(lv.Entries) == 0 {
 					t.Errorf("level %s is empty", lv.Name)
 				}
 				total += len(lv.Entries)
+				for _, e := range lv.Entries {
+					var form string
+					if json.Unmarshal(e, &form) != nil {
+						var obj struct{ Form string }
+						if err := json.Unmarshal(e, &obj); err != nil {
+							t.Fatalf("entry %s: %v", e, err)
+						}
+						form = obj.Form
+					}
+					distinct[strings.TrimSpace(form)] = true
+				}
 			}
 			if !slices.Equal(names, c.levels) {
 				t.Errorf("levels = %q, want %q", names, c.levels)
@@ -121,9 +133,9 @@ func TestBundledLevelPacks(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Import into an empty lexicon: %v", err)
 			}
-			if res.Levels != len(c.levels) || res.Members != 0 || len(res.Skipped) != total {
+			if res.Levels != len(c.levels) || res.Members != 0 || len(res.Skipped) != len(distinct) {
 				t.Errorf("Import = %d levels, %d members, %d skipped; want %d, 0, %d",
-					res.Levels, res.Members, len(res.Skipped), len(c.levels), total)
+					res.Levels, res.Members, len(res.Skipped), len(c.levels), len(distinct))
 			}
 		})
 	}
