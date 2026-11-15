@@ -282,3 +282,45 @@ describe('windowSummary', () => {
 		);
 	});
 });
+
+describe('journal source', () => {
+	const ev = (ts: string, payload: unknown) => ({ ts, type: 'journal', payload });
+
+	it('counts distinct entries per UTC day', () => {
+		const map = activityByDay(
+			[
+				ev('2026-11-13T08:00:00Z', { entryId: 'A' }),
+				ev('2026-11-13T09:00:00Z', { entryId: 'A' }),
+				ev('2026-11-13T10:00:00Z', { entryId: 'A' }),
+				ev('2026-11-13T11:00:00Z', { entryId: 'B' })
+			],
+			NOW
+		);
+		expect(map.get('2026-11-13')?.total).toBe(2);
+		expect(map.get('2026-11-13')?.bySource.journal).toBe(2);
+		expect(dayTooltip(map.get('2026-11-13')!)).toContain('2 Journal entries');
+	});
+
+	it('counts the same entry again on the next day', () => {
+		const map = activityByDay(
+			[ev('2026-11-12T08:00:00Z', { entryId: 'A' }), ev('2026-11-13T08:00:00Z', { entryId: 'A' })],
+			NOW
+		);
+		expect(map.get('2026-11-12')?.total).toBe(1);
+		expect(map.get('2026-11-13')?.total).toBe(1);
+		expect(dayTooltip(map.get('2026-11-13')!)).toContain('1 Journal entry');
+	});
+
+	it('gives 0 points for a payload without an entry id', () => {
+		const map = activityByDay(
+			[ev('2026-11-13T08:00:00Z', {}), ev('2026-11-13T08:00:00Z', null), ev('2026-11-13T08:00:00Z', { entryId: 5 })],
+			NOW
+		);
+		expect(map.get('2026-11-13')?.total).toBe(0);
+	});
+
+	it('describes the window total', () => {
+		const map = activityByDay([ev('2026-11-13T08:00:00Z', { entryId: 'A' })], NOW);
+		expect(windowSummary(map)).toContain('1 journal entry');
+	});
+});
