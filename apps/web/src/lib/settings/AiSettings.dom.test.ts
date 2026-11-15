@@ -63,6 +63,74 @@ afterEach(cleanup);
 
 const rows = () => within(screen.getByRole('list', { name: 'Your providers' })).getAllByRole('listitem');
 
+describe('Settings → AI key field and progress', () => {
+	it('is not autofilled with the login password and is not part of a login-looking form', async () => {
+		setup(status());
+		await fireEvent.change(await screen.findByLabelText('Provider'), { target: { value: 'openai' } });
+		const input = screen.getByLabelText('API key') as HTMLInputElement;
+		expect(input.type).toBe('password');
+		expect(input.getAttribute('autocomplete')).toBe('new-password');
+		expect(input.hasAttribute('data-1p-ignore')).toBe(true);
+		expect(input.getAttribute('data-lpignore')).toBe('true');
+		expect(input.hasAttribute('data-bwignore')).toBe(true);
+		expect(input.getAttribute('data-form-type')).toBe('other');
+		const form = input.closest('form') as HTMLFormElement;
+		expect(form.getAttribute('autocomplete')).toBe('off');
+		for (const field of Array.from(form.querySelectorAll('input, select')) as HTMLInputElement[]) {
+			const id = `${field.name} ${field.id} ${field.getAttribute('autocomplete') ?? ''}`.toLowerCase();
+			expect(id).not.toMatch(/user|email|login/);
+		}
+		// Nothing before the key field looks like a username (a text input right
+		// before a password field is what managers fill).
+		const before = Array.from(form.querySelectorAll('input[type="text"], input:not([type])')).filter(
+			(f) => f.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING
+		);
+		expect(before).toHaveLength(0);
+	});
+
+	it('keeps the progress text visible while the key is being checked', async () => {
+		setup(status());
+		await fireEvent.change(await screen.findByLabelText('Provider'), { target: { value: 'openai' } });
+		await fireEvent.input(screen.getByLabelText('API key'), { target: { value: 'sk-fake-openai-key-0001' } });
+		let release: (s: AiStatus) => void = () => {};
+		m.saveAiKey.mockReturnValue(new Promise<AiStatus>((r) => (release = r)));
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+		const live = screen.getByRole('status');
+		expect(live.getAttribute('aria-live')).toBe('polite');
+		await waitFor(() => expect(live.textContent).toBe('Checking the key…'));
+		release(status({ keys: [key('openai', 'gpt-6-astra')], active: active('openai', 'OpenAI', 'gpt-6-astra'), available: true, reason: '' }));
+		await waitFor(() => expect(live.textContent).toBe('Saved'));
+	});
+
+	it('shows Testing… while a key test runs', async () => {
+		setup(configured);
+		await screen.findByRole('list', { name: 'Your providers' });
+		let release: (s: AiStatus) => void = () => {};
+		m.testAiKey.mockReturnValue(new Promise<AiStatus>((r) => (release = r)));
+		await fireEvent.click(within(rows()[0]).getByRole('button', { name: /Test Anthropic key/ }));
+		await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Testing the key…'));
+		release(configured);
+		await waitFor(() => expect(screen.getByRole('status').textContent).toContain('works'));
+	});
+
+	it('a failed reload after a successful endpoint creation is not reported as a failure', async () => {
+		setup(configured, providers({ canManageCustom: true }));
+		await fireEvent.input(await screen.findByLabelText('Name'), { target: { value: 'Local' } });
+		await fireEvent.input(screen.getByLabelText('Base URL'), { target: { value: 'https://llm.example.com/v1' } });
+		await fireEvent.input(screen.getByLabelText('Default model'), { target: { value: 'llama3' } });
+		m.createCustomProvider.mockResolvedValue(CUSTOM);
+		m.getAiProviders.mockRejectedValue(new Error('offline'));
+		await fireEvent.click(screen.getByRole('button', { name: 'Add endpoint' }));
+		await waitFor(() => expect(m.createCustomProvider).toHaveBeenCalled());
+		await waitFor(() => expect(m.getAiProviders).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(screen.getByText(/Endpoint added/)).toBeTruthy());
+		expect(screen.queryByText(/Something went wrong/)).toBeNull();
+		expect(screen.getByText(/could not refresh the list/i)).toBeTruthy();
+		// The add form was reset: the endpoint exists.
+		expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('');
+	});
+});
+
 describe('Settings → AI', () => {
 	it('renders configured rows with Active first', async () => {
 		setup(status({ ...configured, active: active('openai', 'OpenAI', 'gpt-6-astra') }));
@@ -107,7 +175,7 @@ describe('Settings → AI', () => {
 		const input = screen.getByLabelText('API key') as HTMLInputElement;
 		expect(input.type).toBe('password');
 		expect(input.value).toBe('');
-		expect(input.getAttribute('autocomplete')).toBe('off');
+		expect(input.getAttribute('autocomplete')).toBe('new-password');
 		expect(document.body.innerHTML).not.toContain('sk-');
 	});
 

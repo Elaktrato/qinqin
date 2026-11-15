@@ -49,7 +49,7 @@
 </script>
 
 {#if builtin.length + custom.length > 0}
-	<form class="addform" onsubmit={submit}>
+	<form class="addform" onsubmit={submit} autocomplete="off">
 		<h3>Add a provider</h3>
 		<label>
 			<span>Provider</span>
@@ -75,9 +75,14 @@
 			{/if}
 			<label>
 				<span>API key</span>
+				<!-- An API key, not a login: keep password managers from filling the account password. -->
 				<input
 					type="password"
-					autocomplete="off"
+					autocomplete="new-password"
+					data-1p-ignore
+					data-lpignore="true"
+					data-bwignore
+					data-form-type="other"
 					autocapitalize="off"
 					spellcheck="false"
 					bind:value={key}

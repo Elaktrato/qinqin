@@ -984,7 +984,7 @@ An admin can register an OpenAI-compatible endpoint (Ollama, LM Studio, vLLM, To
 
 Proton's Lumo has no public API today (their roadmap only announces one), so it is not built in; if Proton ships an OpenAI-compatible API an admin can add it as a custom endpoint.
 
-**The owner's real-key checklist** is in `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`. These items were not confirmed against the providers' own documentation or a real call and are marked `UNVERIFIED 2026-11-15` in `server/internal/ai/registry.go`: the model ids `gpt-6-luna`, `mistral-large-latest`, `mistral-small-latest` and `grok-4.7` (and whether xAI, Mistral and OpenRouter models read photos), base64 image data URLs for OpenAI itself, DeepSeek's `/models` listing, and the REST field name Gemini uses for the JSON schema (`generationConfig.responseJsonSchema`).
+**The owner's real-key checklist** is in `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`. These items were not confirmed against the providers' own documentation or a real call and are marked `UNVERIFIED 2026-11-15` in `server/internal/ai/registry.go`: the model ids `gpt-6-luna`, `mistral-large-latest` and `mistral-small-latest` (`grok-4.7` is the id xAI's documentation names; what is unconfirmed for xAI, Mistral and OpenRouter is whether their models read photos), base64 image data URLs for OpenAI itself, DeepSeek's `/models` listing, and the REST field name Gemini uses for the JSON schema (`generationConfig.responseJsonSchema`).
 
 ### Photo routes
 

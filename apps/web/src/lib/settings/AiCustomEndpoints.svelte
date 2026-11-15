@@ -58,13 +58,24 @@
 			vision = false;
 			keyRequired = true;
 			message = 'Endpoint added';
-			await onchanged();
 		} catch (err) {
 			const text = aiErrorView(err, 'review').text;
 			if (apiErrorBody(err)?.error === 'endpoint_blocked') urlError = text;
 			else error = text;
+			busy = false;
+			return;
 		} finally {
 			busy = false;
+		}
+		await refresh();
+	}
+
+	// The change itself succeeded; a failed reload is only a stale list.
+	async function refresh(): Promise<void> {
+		try {
+			await onchanged();
+		} catch {
+			message += ' — but qinqin could not refresh the list. Reload the page.';
 		}
 	}
 
@@ -88,12 +99,13 @@
 			});
 			editing = null;
 			message = 'Endpoint saved';
-			await onchanged();
 		} catch (err) {
 			error = aiErrorView(err, 'review').text;
+			return;
 		} finally {
 			busy = false;
 		}
+		await refresh();
 	}
 
 	async function remove(id: string): Promise<void> {
@@ -103,12 +115,13 @@
 			await deleteCustomProvider(id);
 			removing = null;
 			message = 'Endpoint removed, with everyone’s keys for it';
-			await onchanged();
 		} catch (err) {
 			error = aiErrorView(err, 'review').text;
+			return;
 		} finally {
 			busy = false;
 		}
+		await refresh();
 	}
 
 	async function cancelRemove(id: string): Promise<void> {

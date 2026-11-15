@@ -6,6 +6,17 @@ function err(status: number, error: string, message = '', retry?: number): ApiEr
 	return new ApiError(status, JSON.stringify({ error, message }), retry);
 }
 
+describe('aiErrorView for input errors', () => {
+	it.each(['invalid_model', 'invalid_key', 'no_access'])('%s has its own fallback text', (code) => {
+		const v = aiErrorView(err(422, code), 'review');
+		expect(v.text).not.toBe('Something went wrong. Try again.');
+		expect(v.text.length).toBeGreaterThan(10);
+	});
+	it('does not tell the learner to pick from a list of models', () => {
+		expect(aiErrorView(err(422, 'invalid_model'), 'review').text).not.toMatch(/listed/);
+	});
+});
+
 describe('aiErrorView with several providers', () => {
 	it('no_vision offers offline reading and does not send the learner to settings', () => {
 		const v = aiErrorView(err(409, 'no_vision', 'deepseek-v4-pro on DeepSeek can\'t read photos. Read it offline instead.'), 'transcribe');

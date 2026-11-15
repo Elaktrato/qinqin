@@ -22,7 +22,7 @@ that read photos, **Read with AI** on a photo of handwriting. Then check:
 | Google Gemini | `gemini-3.8-flash` | The REST field `generationConfig.responseJsonSchema` is accepted (if you get "bad request", this is the first suspect); `GET /models/{model}` validation; photo reading via `inlineData`. |
 | DeepSeek | `deepseek-flash` | `GET /models` exists and lists the model (else key validation says "model not available"); empty or whitespace replies are repaired; `deepseek-v4-pro` must show "can't read photos" and offer offline reading. |
 | Mistral | `mistral-large-latest` | The ids `mistral-large-latest` and `mistral-small-latest`; non-strict `json_schema`; photo reading. |
-| xAI | `grok-4.7` | The id; strict `json_schema`; whether it reads photos (registry says yes; if Read with AI fails with "bad request", flip `Vision` in `server/internal/ai/registry.go`). |
+| xAI | `grok-4.7` | Strict `json_schema`; whether it reads photos (registry says yes; if Read with AI fails with "bad request", flip `Vision` in `server/internal/ai/registry.go`). |
 | Groq | `openai/gpt-oss-120b` | Non-strict `json_schema` on this model; Read with AI must be unavailable ("can't read photos"). |
 | OpenRouter | `openrouter/auto` | Key validation by a one-token chat call (the `/models` list needs no key and proves nothing); `provider.require_parameters` accepted; whether the routed model reads photos. |
 

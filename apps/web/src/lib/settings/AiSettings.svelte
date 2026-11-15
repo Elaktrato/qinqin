@@ -42,10 +42,10 @@
 	});
 
 	/** Runs one action: a busy flag, the message on success and the error text on failure. */
-	async function act(done: string, run: () => Promise<AiStatus | void>): Promise<boolean> {
+	async function act(pending: string, done: string, run: () => Promise<AiStatus | void>): Promise<boolean> {
 		busy = true;
 		error = '';
-		message = '';
+		message = pending; // stays visible until the call ends
 		try {
 			const next = await run();
 			if (next) status = next;
@@ -60,21 +60,19 @@
 	}
 
 	async function addKey(provider: string, key: string, model: string): Promise<void> {
-		message = key !== '' ? 'Checking the key…' : 'Saving…';
-		await act('Saved', () => saveAiKey(provider, key, model));
+		await act(key !== '' ? 'Checking the key…' : 'Saving…', 'Saved', () => saveAiKey(provider, key, model));
 	}
 
 	async function makeActive(id: string): Promise<void> {
-		await act('Active provider changed', () => setActiveProvider(id));
+		await act('Changing the active provider…', 'Active provider changed', () => setActiveProvider(id));
 	}
 
 	async function testKey(id: string): Promise<void> {
-		message = 'Testing the key…';
-		await act('The key works', () => testAiKey(id));
+		await act('Testing the key…', 'The key works', () => testAiKey(id));
 	}
 
 	async function remove(id: string): Promise<void> {
-		const ok = await act('Key removed', async () => {
+		const ok = await act('Removing the key…', 'Key removed', async () => {
 			await deleteAiKey(id);
 			return getAiStatus();
 		});
@@ -98,10 +96,11 @@
 
 	async function saveModel(event: SubmitEvent, id: string): Promise<void> {
 		event.preventDefault();
-		const ok = await act('Model saved', () => setAiModel(id, modelDraft.trim()));
+		const ok = await act('Saving the model…', 'Model saved', () => setAiModel(id, modelDraft.trim()));
 		if (ok) editingModel = null;
 	}
 
+	/** Reloads after the endpoint list changed; the caller handles a failure. */
 	async function reloadRegistry(): Promise<void> {
 		[status, registry] = await Promise.all([getAiStatus(), getAiProviders()]);
 	}
@@ -226,7 +225,7 @@
 		{/if}
 
 		<p class="usage">{view.usageLine}</p>
-		<div class="live" role="status">{message}</div>
+		<div class="live" role="status" aria-live="polite">{message}</div>
 		{#if error}
 			<p class="error" role="alert">{error}</p>
 		{/if}
