@@ -352,7 +352,7 @@ Known-good marks live in their own table (also capped at 65,536), so a flood of
 new failing keys cannot erase them. A locked key is refused (429, `Retry-After`) before the password is checked,
 unknown usernames behave exactly like known ones, and an administrator creating
 users is not throttled. Errors of both routes are JSON `{"error","message"}`
-(`rate_limited`, `busy`, `bad_credentials`, `admin_required`,
+(`rate_limited`, `busy`, `bad_credentials`, `registration_closed`,
 `username_taken`, `bad_request`, `too_large`); see `docs/contracts/auth/`.
 A distributed attack can keep an account refused for new devices and networks
 while it lasts; the owner's usual device keeps signing in.
@@ -396,7 +396,14 @@ password and must choose their own at the first sign-in; their sessions can do n
 one sets the password, signs the person out of every device and signs them in on this one. Disabling an
 account deletes its sessions and re-enabling never brings one back. The last active administrator cannot be
 demoted, disabled or deleted (the Admin tab says why; the server enforces it even when two admins act at the
-same moment). The audit log (Admin, Security) lists who did what, never a password, token or address.
+same moment). Pending reset links die with every containment action (a password change, a forced change, disabling, signing out
+everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. Deleting another user,
+issuing a reset link and making someone an administrator ask the acting administrator for their own password again.
+Email addresses are stored with the domain in its ASCII (punycode) form, so `bücher.de` and `xn--bcher-kva.de` are one
+address; a part before the `@` with non-ASCII letters is refused until internationalised mailboxes are supported. Every
+response carries `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`; at startup the server removes the book and
+photo folders of users that no longer exist. The audit log (Admin, Security) lists who did what, never a password,
+token or address.
 
 **Deleting an account** (an administrator, or you yourself in Settings, Account with your password and your
 username typed): the account and these are removed in one step: workspaces, study events, plugin data
@@ -405,7 +412,7 @@ with their bookmarks and highlights and their files, journal photo drafts and th
 AI usage records, time-zone history, sessions, reset links, invites the account created. **Kept**: admin-registered
 AI endpoints (their creator becomes nobody), installed packs, languages, plugins and dictionaries, and the audit log
 (the name in it becomes `deleted user #id`). The last active administrator cannot delete themselves. **Locked out?**
-`qinqin recover --username NAME [--enable] [--admin]` (new password from `QINQIN_PASSWORD` or stdin; it must be
+`qinqin recover --username NAME [--enable] [--admin]` (new password from `QINQIN_PASSWORD` or stdin; a terminal echoes what is typed, so prefer the variable or a pipe; `--admin` on a disabled account needs `--enable`; it must be
 changed at the next sign-in; every session of that account ends; `--reset-mfa` is accepted and does nothing until
 two-factor authentication exists).
 

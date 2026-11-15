@@ -100,7 +100,7 @@ Per the accounts shared rule, every error of these routes is JSON `{"error":"<co
   username.
 - 503 `busy`, `Retry-After: 2`, "The server is busy. Try again in a moment."
 - Login bad credentials: 401 `bad_credentials` (anonymous step; "401 = session gone" applies to signed-in
-  routes), dummy-hash timing kept. Register: 403 `admin_required` (closed mode, #64 renames per mode),
+  routes), dummy-hash timing kept. Register: 403 `registration_closed` (closed mode; #64 renamed it per mode),
   409 `username_taken`, 400 `bad_request`, 413 `too_large`. Codes shared with `docs/contracts/auth/errors.json`
   (#64); whichever branch merges second reconciles the two fixture files.
 
@@ -164,7 +164,7 @@ found no existing test above 10 auth requests per server; `TestConcurrentFirstRe
 
 - `throttling.md` — order, statuses, headers, bodies, client rules (show `message`, honour `Retry-After`,
   never retry automatically on 429/503).
-- `throttle-responses.json` — 429, 503, 401 `bad_credentials`, 403 `admin_required` examples (JSON).
+- `throttle-responses.json` — 429, 503, 401 `bad_credentials`, 403 `registration_closed` examples (JSON).
 
 ## Risks
 
