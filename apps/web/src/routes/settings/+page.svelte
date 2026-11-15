@@ -137,7 +137,7 @@
 	// dictionaries and level schemes once; a failure only drops the hints.
 	let allDictionaries = $state<Dictionary[] | null>(null);
 	let allSchemes = $state<Scheme[] | null>(null);
-	onMount(() => {
+	function loadCoverage(): void {
 		api<Dictionary[]>('/api/dictionaries', { auth: false }).then(
 			(list) => (allDictionaries = list),
 			() => {}
@@ -146,7 +146,8 @@
 			(list) => (allSchemes = list),
 			() => {}
 		);
-	});
+	}
+	onMount(loadCoverage);
 	// The workspace whose Dictionaries panel is open, and its button.
 	let dictionariesOpenId = $state<number | null>(null);
 	const dictionaryButtons: Record<number, HTMLButtonElement | undefined> = {};
@@ -317,7 +318,7 @@
 									type="button"
 									class="secondary dictionaries-button"
 									bind:this={dictionaryButtons[workspace.id]}
-									onclick={() => (dictionariesOpenId = workspace.id)}
+									onclick={() => (dictionariesOpenId = dictionariesOpenId === workspace.id ? null : workspace.id)}
 									aria-expanded={dictionariesOpenId === workspace.id}
 									aria-label="Dictionaries of {languageLabel(workspace.language)}{workspace.name
 										? ` (${workspace.name})`
@@ -497,7 +498,12 @@
 			hidden={activeTab !== 'data'}
 		>
 			<h2>Data</h2>
-			<PackManager onchange={() => (languagesKey += 1)} />
+			<PackManager
+				onchange={() => {
+					languagesKey += 1;
+					loadCoverage();
+				}}
+			/>
 			<LanguageManager refreshKey={languagesKey} />
 		</div>
 	{/if}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { ApiError } from '$lib/api/client';
 	import { languageUsage, registerLanguage, removeLanguage } from '$lib/api/adminLanguages';
 	import { listLanguages } from '$lib/api/languages';
@@ -20,6 +20,20 @@
 	let error = $state('');
 	let notice = $state('');
 	let confirmCode = $state<string | null>(null);
+	let confirmButton = $state<HTMLButtonElement | null>(null);
+	const removeButtons: Record<string, HTMLButtonElement | undefined> = {};
+
+	async function askRemove(code: string): Promise<void> {
+		confirmCode = code;
+		await tick();
+		confirmButton?.focus();
+	}
+
+	async function cancelRemove(code: string): Promise<void> {
+		confirmCode = null;
+		await tick();
+		removeButtons[code]?.focus();
+	}
 	let heading = $state<HTMLHeadingElement>();
 
 	const normalized = $derived(normalizeCode(code));
@@ -98,7 +112,7 @@
 		<div class="scroll">
 			<table>
 				<thead>
-					<tr><th>Language</th><th>Code</th><th>Kind</th><th>Packs</th><th>Workspaces</th><th></th></tr>
+					<tr><th>Language</th><th>Code</th><th>Kind</th><th>Packs</th><th>Workspaces</th><th><span class="sr-only">Actions</span></th></tr>
 				</thead>
 				<tbody>
 					{#each rows as row (row.code)}
@@ -117,14 +131,15 @@
 							<td>
 								{#if row.removable}
 									{#if confirmCode === row.code}
-										<button type="button" class="danger" onclick={() => remove(row)}>
+										<button type="button" class="danger" bind:this={confirmButton} onclick={() => remove(row)}>
 											Confirm remove {row.label}
 										</button>
-										<button type="button" onclick={() => (confirmCode = null)}>Cancel</button>
+										<button type="button" onclick={() => cancelRemove(row.code)}>Cancel</button>
 									{:else}
 										<button
 											type="button"
-											onclick={() => (confirmCode = row.code)}
+											bind:this={removeButtons[row.code]}
+											onclick={() => askRemove(row.code)}
 											aria-label="Remove {row.label} ({row.code})"
 										>
 											Remove
@@ -198,6 +213,15 @@
 		font-size: 0.75rem;
 		color: #c62828;
 		font-weight: 600;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
 	}
 
 	.none {

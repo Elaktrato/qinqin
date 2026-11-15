@@ -53,7 +53,7 @@
 		try {
 			installed = await listLanguages();
 		} catch (err) {
-			languagesError = message(err, 'Could not load the installed languages.');
+			languagesError = message(err, 'Could not load the languages.');
 		} finally {
 			loadingLanguages = false;
 		}
@@ -101,7 +101,7 @@
 			required
 		>
 			{#if options.length === 0}
-				<option value="">{loadingLanguages ? 'Loading…' : 'None installed'}</option>
+				<option value="">{loadingLanguages ? 'Loading…' : 'No languages'}</option>
 			{/if}
 			{#each options as option (option.code)}
 				<option value={option.code}>

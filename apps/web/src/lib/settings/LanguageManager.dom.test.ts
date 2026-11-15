@@ -62,4 +62,21 @@ describe('LanguageManager', () => {
 		await fireEvent.input(screen.getByLabelText('Language code'), { target: { value: 'x' } });
 		expect((screen.getByRole('button', { name: 'Add language' }) as HTMLButtonElement).disabled).toBe(true);
 	});
+
+	it('moves focus to Confirm after Remove and back to Remove on Cancel', async () => {
+		setup();
+		render(LanguageManager);
+		await screen.findByText('Portuguese');
+		await fireEvent.click(screen.getByRole('button', { name: 'Remove Portuguese (pt)' }));
+		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: /Confirm remove/ })));
+		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Remove Portuguese (pt)' })));
+	});
+
+	it('labels the actions column for screen readers', async () => {
+		setup();
+		render(LanguageManager);
+		await screen.findByText('Portuguese');
+		expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeTruthy();
+	});
 });

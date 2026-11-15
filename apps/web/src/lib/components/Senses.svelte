@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { SenseView } from '$lib/api/types';
+	import { tick } from 'svelte';
 	import { hiddenDictionaries, partitionSenses } from '$lib/dictionaryVisibility';
 	import { workspaces } from '$lib/workspaces';
 
@@ -10,6 +11,14 @@
 		partitionSenses(senses, hiddenDictionaries($workspaces.current))
 	);
 	let revealed = $state(false);
+	let heading = $state<HTMLHeadingElement | null>(null);
+
+	// The button vanishes once pressed: keep keyboard focus in the section.
+	async function reveal(): Promise<void> {
+		revealed = true;
+		await tick();
+		heading?.focus();
+	}
 	const visibleSenses = $derived(revealed ? senses : partition.shown);
 
 	interface SenseGroup {
@@ -58,7 +67,7 @@
 
 {#if groups.length > 0}
 	<section class="senses" aria-labelledby="senses-heading">
-		<h2 id="senses-heading">Senses</h2>
+		<h2 id="senses-heading" bind:this={heading} tabindex="-1">Senses</h2>
 		{#each groups as group (group.dictionaryId)}
 			<article class="dictionary">
 				<h3>{group.dictionaryName}</h3>
@@ -85,7 +94,7 @@
 		{#if partition.allHidden}
 			<p class="hidden-note">Shown although its dictionaries are hidden in this workspace</p>
 		{:else if !revealed && partition.hidden.length > 0}
-			<button type="button" class="reveal" onclick={() => (revealed = true)}>
+			<button type="button" class="reveal" onclick={reveal}>
 				Show {partition.hidden.length} from hidden dictionaries
 			</button>
 		{/if}

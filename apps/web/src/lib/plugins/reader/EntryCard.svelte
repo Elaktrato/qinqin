@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import type { LookupResult } from '$lib/api/types';
 	import { partitionSenses } from '$lib/dictionaryVisibility';
 	import AddToStudyButtons from './AddToStudyButtons.svelte';
@@ -45,6 +46,14 @@
 	const allSenses = $derived(shownSenses(result));
 	const partition = $derived(partitionSenses(allSenses, hidden));
 	let revealed = $state(false);
+	let sensesList = $state<HTMLOListElement | null>(null);
+
+	// The button vanishes once pressed: keep keyboard focus on the list.
+	async function reveal(): Promise<void> {
+		revealed = true;
+		await tick();
+		sensesList?.focus();
+	}
 	const senses = $derived(revealed ? allSenses : partition.shown);
 	let shown = $state(SENSES_VISIBLE);
 	const visible = $derived(visibleCount(senses.length, 0, shown));
@@ -93,7 +102,7 @@
 	{/if}
 
 	{#if senses.length > 0}
-		<ol class="senses">
+		<ol class="senses" bind:this={sensesList} tabindex="-1">
 			{#each senses.slice(0, visible) as sense, i (i)}
 				<li>
 					{#each senseChips(sense) as chip, c (c)}<span class="chip pos">{chip}</span>{/each}
@@ -124,7 +133,7 @@
 		{#if partition.allHidden}
 			<p class="hidden-note">Shown although its dictionaries are hidden in this workspace</p>
 		{:else if !revealed && partition.hidden.length > 0}
-			<button type="button" class="more reveal" onclick={() => (revealed = true)}>
+			<button type="button" class="more reveal" onclick={reveal}>
 				Show {partition.hidden.length} from hidden dictionaries
 			</button>
 		{/if}
