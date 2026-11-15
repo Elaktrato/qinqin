@@ -48,3 +48,26 @@ first; a response with `dataSkipped` or `dataRefused` > 0 is a failure.
 `POST /api/entries/bases` `{"ids":[int...]}` (1..500 ids, body <= 16 KiB) -> the `EntryBase` rows of
 `GET /api/schemes/{id}/entries`, in first-occurrence order, unknown ids omitted, with the caller's own
 overlay applied. 401 without a session, 400 `ids must be 1 to 500 entry ids`, 413 over the body cap.
+
+## Notes for implementers
+
+- Numbers are computed from one schedule replay per reviewed card; the fixtures give schedules directly so a
+  client with a different FSRS binding still checks the counting rules.
+- The deck row field `source` is optional and ignored by clients that do not know it; unknown `source` shapes
+  are dropped when reading. A copied deck is an ordinary deck: renaming, deleting and card management work as
+  for any other.
+- System decks are never written. Their level names are the identity of a copy: a pack update that renames a
+  level makes a later add create a second deck, the old one keeps working.
+- Daily limits (#89) and vacation (#88) are not part of these numbers yet; when they land, `due` and `fresh`
+  here stay uncapped and "left today" is shown beside them.
+
+## Real-app check (v0.3.0 build)
+
+Against a built server (embedded web build, `hsk-words` + `cedict` seeded, 127.0.0.1): `POST /api/entries/bases`
+401 without a token, 2 rows in request order for 3 ids with one unknown, 400 for 0 and for 501 ids, a user's
+overlay visible only to that user; `GET /api/schemes` -> `HSK 1` (163 words) -> owned id
+`d-lvl-hsk-words-b06fd2ac`; the add plan pushed through `POST /api/sync/push` (a General card joined, the rest
+created, `dataAccepted` = rows); the pulled plan of a second add is empty and no row's `updatedAt` moved; a
+tombstoned deck row and card row are revived by a later push under their old keys; an older revival against a
+newer tombstone answers `dataSkipped: 1`; a second user sees none of the rows and cannot push into the first
+user's workspace; 5,077 rows (HSK 7-9) pushed in 26 requests of 200.

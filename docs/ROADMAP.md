@@ -57,7 +57,8 @@ Direction: `docs/superpowers/directions/2026-11-15-v0.3.0-web-build.md`. Collect
 - ~~[#86](https://github.com/Elaktrato/qinqin/issues/86) login rate limiting and lockout~~ — done (develop)
 - ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) the learner's local day~~ — done (develop)
 - ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character schemes~~ — done (develop)
-- In progress or next: accounts (#64), reverse and cloze cards (#65), decks view (#90), vacation mode (#88), daily limits (#89), backup (#61), PWA (#79), reader display settings (#78), `docs/contracts/` for Android; stretch list in the direction document.
+- [#90](https://github.com/Elaktrato/qinqin/issues/90) decks view — built on `feature/v030-decks-view` (not yet merged); its daily-limit display waits for #89 (integration point: `apps/web/src/lib/plugins/flashcards/decks/DeckLimitsSlot.ts`)
+- In progress or next: accounts (#64), reverse and cloze cards (#65), vacation mode (#88), daily limits (#89), backup (#61), PWA (#79), reader display settings (#78), `docs/contracts/` for Android; stretch list in the direction document.
 
 ## v0.4.0 — Android client (milestone)
 

@@ -649,6 +649,27 @@ queue and the due counts. Reverse and cloze reviews give XP and count for streak
 and the heatmap, but not for character mastery. Rules and fixtures for other
 clients: `docs/contracts/cards/`.
 
+**Decks page.** The flashcards plugin has a page of its own, **Decks** (`/p/flashcards`,
+in the main navigation): your overall numbers (words, studied, mastered, retention and
+reviews of the last 30 learner days), then every deck with its words and cards, what is
+due and new, a progress bar and **Study** (a session over that deck only, with the saved
+limits and the card types the deck enables). A deck opens to its words: search by word,
+reading or id, filter by state, card kind or due now, sort, select several to **Move** or
+**Delete** (with the same ten-second Undo as the Card manager on `/study`), and per word
+**Remove** or **Turn back on** its reverse and cloze cards. **Settings** renames or deletes
+a deck (the confirmation says where its cards go) and holds the Reverse and Cloze switches;
+General can be configured but not renamed or deleted. "Mastered" means a memory score of 80
+or more (the "Learned" band of Stats → Characters); "Young" is a word in review that holds
+under 21 days.
+
+**Level decks.** Below your decks the page lists the installed level packs (HSK, JLPT, …)
+as read-only level decks, collapsed by scheme. A level shows how many of its words are
+already in your decks, can be studied as a level session, and can be copied with **Add to
+my decks**: into a new deck of your own (named like the level, with a fixed id so adding
+again never makes a second one) or into a deck you pick. Adding again only adds what is
+new; words you already have join the deck without losing their history. Rules and test
+vectors for other clients: `docs/contracts/decks/`.
+
 Sentence, writing and tone cards are **companions** of the vocab cards in the
 chosen decks. They are planned as virtual cards that share the new-card limit, and
 each one is created only when you grade it for the first time. Abandoning a
