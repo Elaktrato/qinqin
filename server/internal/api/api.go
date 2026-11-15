@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/auth"
 	"qinqin/internal/dict"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
@@ -83,6 +84,7 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 		policy = *s.authPolicy
 	}
 	s.limits = newAuthLimits(policy)
+	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
 		go s.runStageSweeper()
 	}

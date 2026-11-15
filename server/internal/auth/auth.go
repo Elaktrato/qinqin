@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"golang.org/x/crypto/argon2"
@@ -46,7 +47,28 @@ var ErrNotFirst = errors.New("users already exist")
 
 // dummyHash is a valid hash of an unguessable password, computed once, that
 // Login verifies against for unknown usernames.
-var dummyHash = sync.OnceValue(func() string { return Hash(hex.EncodeToString(randomBytes(16))) })
+var dummyHash = newDummyHash()
+
+func newDummyHash() func() string {
+	return sync.OnceValue(func() string {
+		h := Hash(hex.EncodeToString(randomBytes(16)))
+		dummyReady.Store(true)
+		return h
+	})
+}
+
+var dummyReady atomic.Bool
+
+// Warm computes the dummy hash unknown-user logins verify against, so the
+// first such login does not pay for two argon2 runs. Call it before serving.
+func Warm() { dummyHash() }
+
+func dummyHashReady() bool { return dummyReady.Load() }
+
+func resetDummyForTest() {
+	dummyReady.Store(false)
+	dummyHash = newDummyHash()
+}
 
 // Hash returns the argon2id digest of password as a PHC-format string
 // ($argon2id$v=19$m=…,t=…,p=…$salt$key) with a fresh random salt, so stored
@@ -117,9 +139,10 @@ func decodeHash(encoded string) (salt, key []byte, p argonParams, err error) {
 // CreateUser inserts a user with an argon2id hash of password and returns
 // it. ErrUsernameTaken marks a duplicate username.
 func CreateUser(ctx context.Context, sqlDB *sql.DB, username, password string, admin bool) (model.User, error) {
+	created := now()
 	res, err := sqlDB.ExecContext(ctx,
-		`INSERT INTO users (username, hash, admin, updated_at) VALUES (?, ?, ?, ?)`,
-		username, Hash(password), admin, now())
+		`INSERT INTO users (username, hash, admin, updated_at, created_at) VALUES (?, ?, ?, ?, ?)`,
+		username, Hash(password), admin, created, created)
 	if err != nil {
 		if isUniqueViolation(err) {
 			return model.User{}, ErrUsernameTaken
@@ -130,7 +153,7 @@ func CreateUser(ctx context.Context, sqlDB *sql.DB, username, password string, a
 	if err != nil {
 		return model.User{}, fmt.Errorf("insert user %q: last insert id: %w", username, err)
 	}
-	return model.User{ID: id, Username: username, Admin: admin}, nil
+	return model.User{ID: id, Username: username, Admin: admin, CreatedAt: created}, nil
 }
 
 // CreateFirstUser inserts the instance admin, but only while the users
@@ -138,10 +161,11 @@ func CreateUser(ctx context.Context, sqlDB *sql.DB, username, password string, a
 // so two concurrent first registrations cannot both win. A non-empty
 // table yields ErrNotFirst and writes nothing.
 func CreateFirstUser(ctx context.Context, sqlDB *sql.DB, username, password string) (model.User, error) {
+	created := now()
 	res, err := sqlDB.ExecContext(ctx, `
-		INSERT INTO users (username, hash, admin, updated_at)
-		SELECT ?, ?, 1, ? WHERE NOT EXISTS (SELECT 1 FROM users)`,
-		username, Hash(password), now())
+		INSERT INTO users (username, hash, admin, updated_at, created_at)
+		SELECT ?, ?, 1, ?, ? WHERE NOT EXISTS (SELECT 1 FROM users)`,
+		username, Hash(password), created, created)
 	if err != nil {
 		return model.User{}, fmt.Errorf("insert first user %q: %w", username, err)
 	}
@@ -156,7 +180,7 @@ func CreateFirstUser(ctx context.Context, sqlDB *sql.DB, username, password stri
 	if err != nil {
 		return model.User{}, fmt.Errorf("insert first user %q: last insert id: %w", username, err)
 	}
-	return model.User{ID: id, Username: username, Admin: true}, nil
+	return model.User{ID: id, Username: username, Admin: true, CreatedAt: created}, nil
 }
 
 // Login verifies username and password, creates a session, and returns its
@@ -178,37 +202,18 @@ func Login(ctx context.Context, sqlDB *sql.DB, username, password string) (strin
 	if !verifyPassword(hash, password) {
 		return "", ErrBadCredentials
 	}
-	token := hex.EncodeToString(randomBytes(32))
-	if _, err := sqlDB.ExecContext(ctx,
-		`INSERT INTO sessions (token_hash, user_id, created_at, last_used_at) VALUES (?, ?, ?, ?)`,
-		hashToken(token), id, now(), now()); err != nil {
-		return "", fmt.Errorf("insert session: %w", err)
-	}
-	return token, nil
+	return NewSession(ctx, sqlDB, id, LoginOptions{})
 }
 
 // UserFromRequest resolves the bearer token in r to its user. A nil user
-// with a nil error means the request is not authenticated (missing,
-// malformed, or unknown token); a non-nil error means the lookup failed.
+// with a nil error means the request is not authenticated. It ignores the
+// session's restriction; the api package uses Authenticate and the gate.
 func UserFromRequest(r *http.Request, sqlDB *sql.DB) (*model.User, error) {
-	token := bearerToken(r)
-	if token == "" {
-		return nil, nil
+	p, err := Authenticate(r, sqlDB)
+	if err != nil || p == nil {
+		return nil, err
 	}
-	var u model.User
-	var admin int
-	err := sqlDB.QueryRowContext(r.Context(), `
-		SELECT users.id, users.username, users.admin
-		FROM sessions JOIN users ON users.id = sessions.user_id
-		WHERE sessions.token_hash = ?`, hashToken(token)).Scan(&u.ID, &u.Username, &admin)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("lookup session: %w", err)
-	}
-	u.Admin = admin != 0
-	return &u, nil
+	return &p.User, nil
 }
 
 // hashToken is the stored form of a bearer token: hex SHA-256. Lookup is
@@ -242,8 +247,11 @@ func randomBytes(n int) []byte {
 // now returns the server clock as UTC RFC 3339, the timestamp convention
 // for every write.
 func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
+	return nowFunc().UTC().Format(time.RFC3339)
 }
+
+// nowFunc is the clock of the session store; tests replace it.
+var nowFunc = time.Now
 
 // isUniqueViolation reports whether err is a SQLite UNIQUE constraint error.
 func isUniqueViolation(err error) bool {
