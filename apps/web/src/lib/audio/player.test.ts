@@ -102,6 +102,26 @@ describe('createPlayer', () => {
 	});
 });
 
+describe('speak end callback', () => {
+	it('calls onEnd when the utterance ends or fails', () => {
+		const utterances: { onend?: () => void; onerror?: () => void }[] = [];
+		const synth = {
+			getVoices: () => [{ lang: 'ja-JP' }],
+			speak: (u: never) => utterances.push(u),
+			cancel: vi.fn()
+		} as unknown as SpeechSynthesisVoice[] & SpeechSynthesis;
+		vi.stubGlobal('SpeechSynthesisUtterance', class { voice: unknown = null; lang = ''; constructor(public text: string) {} });
+		const p = createPlayer(() => new FakeAudio() as unknown as HTMLAudioElement, synth);
+		const ended = vi.fn();
+		expect(p.speak('風', 'ja', ended)).toBe(true);
+		expect(p.playing).toBe(true);
+		utterances[0].onend?.();
+		expect(ended).toHaveBeenCalledTimes(1);
+		expect(p.playing).toBe(false);
+		vi.unstubAllGlobals();
+	});
+});
+
 describe('deviceVoiceFor', () => {
 	const v = (lang: string) => ({ lang }) as SpeechSynthesisVoice;
 	it('takes a voice of the language, preferring zh-CN and ja-JP', () => {

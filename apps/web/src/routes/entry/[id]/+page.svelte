@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
+	import { getEntryAudio, type AudioResolution } from '$lib/api/audio';
 	import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
 	import type { Entry, EntryBase, EntryDetail } from '$lib/api/types';
 	import AddToStudy from '$lib/components/AddToStudy.svelte';
@@ -11,6 +12,10 @@
 	import Senses from '$lib/components/Senses.svelte';
 	import Sentences from '$lib/components/Sentences.svelte';
 	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
+	import { token } from '$lib/auth';
+	import { creditLine, headwordClips, readingClips } from '$lib/audio/button';
+	import { readAudioSettings } from '$lib/audio/settings';
+	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { record } from '$lib/events';
 	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
@@ -23,6 +28,9 @@
 	// The entry a view event was already recorded for, so a re-render
 	// or a workspace arriving late never double-counts one visit.
 	let viewedEntry = $state<number | null>(null);
+
+	// The entry's recordings (signed-in users only; the device voice needs none).
+	let audio = $state<AudioResolution | null>(null);
 
 	// Guards against a slow earlier request overwriting a newer entry.
 	let requestSeq = 0;
@@ -104,6 +112,27 @@
 		void load(id);
 	});
 
+	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
+	const headClips = $derived(headwordClips(audio));
+	const audioFor = $derived(entry ? readingClips(audio, entry.readings) : null);
+	// The credit of every recording this page can play.
+	const credit = $derived(
+		creditLine([...headClips, ...(audio?.syllables ?? []).flatMap((slot) => slot ?? [])])
+	);
+
+	// Load the recordings once the entry is known; a failure just means no audio.
+	$effect(() => {
+		const id = entry?.id ?? null;
+		audio = null;
+		if (id === null || !$token) return;
+		void getEntryAudio(id).then(
+			(r) => {
+				if (entry?.id === id) audio = r;
+			},
+			() => {}
+		);
+	});
+
 	// Record the visit once the entry and the workspace are both known:
 	// the shell may still be loading workspaces when the entry lands.
 	$effect(() => {
@@ -130,7 +159,15 @@
 	{:else if entry}
 		<header class="head">
 			<div>
-				<h1 class="written">{entry.written}</h1>
+				<div class="headword">
+					<h1 class="written">{entry.written}</h1>
+					<PlayButton
+						clips={headClips}
+						speakText={entry.written}
+						lang={entry.language}
+						deviceVoice={audioSettings.deviceVoice}
+					/>
+				</div>
 				<div class="chips">
 					<span class="chip">{entry.kind}</span>
 					<span class="chip" title={entry.language}>{languageLabel(entry.language)}</span>
@@ -152,7 +189,15 @@
 				<EntryEditor entry={entry} onSaved={handleSaved} onCancel={closeEditor} />
 			{/key}
 		{:else}
-			<Readings readings={entry.readings} />
+			<Readings
+				readings={entry.readings}
+				audioFor={audioFor ?? undefined}
+				lang={entry.language}
+				deviceVoice={audioSettings.deviceVoice}
+			/>
+			{#if credit}
+				<p class="credit">{credit}</p>
+			{/if}
 		{/if}
 		<Badges badges={entry.badges} />
 		<Senses senses={entry.senses} />
@@ -232,6 +277,19 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 1rem;
+	}
+
+	.headword {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.credit {
+		margin: 0.5rem 0 0;
+		font-size: 0.8rem;
+		opacity: 0.7;
 	}
 
 	.written {

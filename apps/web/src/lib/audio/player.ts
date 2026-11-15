@@ -7,8 +7,8 @@ export interface Player {
 	 * cannot be played, so the caller can fall back to the device voice.
 	 */
 	play(clips: AudioClip[]): Promise<void>;
-	/** Speaks text with a device voice of lang; false when there is none. */
-	speak(text: string, lang: string): boolean;
+	/** Speaks text with a device voice of lang; false when there is none. onEnd runs when the speech ends or is interrupted. */
+	speak(text: string, lang: string, onEnd?: () => void): boolean;
 	/** Stops whatever is playing, recordings and speech. */
 	stop(): void;
 	readonly playing: boolean;
@@ -111,7 +111,7 @@ export function createPlayer(
 				}
 			}
 		},
-		speak(text, lang) {
+		speak(text, lang, onEnd) {
 			if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return false;
 			const voice = deviceVoiceFor(lang, synth.getVoices());
 			if (!voice) return false;
@@ -128,8 +128,12 @@ export function createPlayer(
 					busy = false;
 				}
 			};
-			u.onend = finish;
-			u.onerror = finish;
+			const end = () => {
+				finish();
+				onEnd?.();
+			};
+			u.onend = end;
+			u.onerror = end;
 			synth.speak(u);
 			return true;
 		},
