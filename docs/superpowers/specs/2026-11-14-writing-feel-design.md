@@ -97,7 +97,12 @@ The ink and every candidate (one stroke, or a join of consecutive strokes) are r
 by arc length. Each is also prepared in its **forgiving forms**: the stroke's short brush
 entry tick cut off (`body`), and, when it ends in a **hook** (a piece of at most `tailMax`
 = 25 % of the length that turns off a straight body by at least 50°), the hook cut off
-(`hookless`). The ink's own hook may be up to half its length (an exaggerated hook).
+(`hookless`). The ink's own hook may be up to half its length (an exaggerated hook). In a
+join the entry tick can only lie inside the first stroke and the hook inside the last, each at
+most half of that stroke, so a short stroke of a join is never cut away as a tick or hook.
+Before that, a tiny flick back at either end of the ink (pen-lift recoil or lead-in: at most
+0.035 and a tenth of the ink, turning back by 120° or more) is dropped. Ink with a point that
+is not a finite number (a pad without size) is ignored.
 The ink is compared with a candidate in these pairings, and the best that passes counts:
 
 - whole ink against the whole stroke, and against the stroke without its entry tick;
@@ -109,27 +114,35 @@ The ink is compared with a candidate in these pairings, and the best that passes
 One pairing passes when all of these generous ceilings hold:
 
 1. **Direction:** the overall start→end chords agree within ±60° (cosine ≥ 0.5), and so do
-   the chords of each half within about ±72° (cosine ≥ 0.3). Reversed strokes fail here;
-   loops (chord under a quarter of the length) skip the chord test and rely on shape.
-2. **Placement:** centroid offset ≤ 0.3 of the box, size ratio 0.45–2.2.
+   the chords of each half within about ±72° (cosine ≥ 0.3), and for a join the chord of each
+   of its strokes as well. Reversed strokes fail here; loops (chord under a quarter of the
+   length) skip a chord test and rely on shape and the other chords.
+2. **Placement:** centroid offset ≤ 0.3 of the box, size ratio 0.45–2.2 (sizes below an rms
+   radius of 0.02 count as 0.02, so a dot drawn small is not "too small").
 3. **Shape:** after removing translation and uniform scale (no rotation), the mean point
    distance over the stroke length clamped to 0.18–0.4 is ≤ 0.24 (a hand's absolute wobble is
    not magnified on a dot, and a long stroke is not judged loosely in absolute terms); and the
    farthest point of either path from the other polyline, over the length (at least 0.18), is
    ≤ 0.22, so a leg added or left out fails even when the mean is small.
 
-**Cost** of a passing pairing = shape + 0.5 × centroid offset + 0.1 × |ln size ratio| (+ penalty).
+**Cost** of a passing pairing = shape + 0.5 × centroid offset + 0.1 × |ln size ratio|
+(+ `trimPenalty`) + `joinCost` (0.03) for each stroke of a join beyond the first.
 
 **Acceptance is by rank:** the expected candidates are the stroke `next` and the joins that
 start at it. The best passing one is accepted unless some other stroke or join of the
 character, earlier or later, also passes and costs less by more than `rankMargin` (0.03);
-then the result is a miss with reason `order`. Ties go to the expected stroke, and among the
-expected candidates to the fewest strokes.
+then the result is a miss with reason `order`. Ink that fails every expected candidate but
+fits another stroke is also a miss with reason `order` (it was meant for that stroke);
+otherwise the reason is the expected stroke's own failure (`direction`, `placement`,
+`shape`). Ties go to the expected stroke, and among the expected candidates to the fewest
+strokes.
 
 **Joins** are candidates only when each stroke's end lies within `maxGap` (0.2 of the box)
-of the next stroke's start (糸/纟/红 measure 0.15–0.17), so a join never needs a retrace or
-a backwards connector (口's 横折 + 横 does not join). The corner between joined strokes
-must be present in the ink.
+of the next stroke's start (糸/纟/红 measure 0.15–0.17); the connector is a straight line
+from one stroke's end to the next stroke's start, so a join is only offered where the pen
+naturally flows on (口's 横折 + 横 does not join). This does not by itself rule out joins
+whose strokes double back on each other (等's first three strokes); the per-stroke direction
+test does. The corner between joined strokes must be present in the ink.
 
 All thresholds live in `params.ts` with a comment each.
 
@@ -164,6 +177,27 @@ in five: deliberate leniency, a flick on a dot is not a different stroke for a l
 **Ruling: no path-length (stretch) limit** — pointer jitter inflates the length of slowly
 drawn short strokes; the shape, farthest-point and half-direction rules already reject
 zigzags and retraces (scribbles 0.3 %).
+
+**Ruling: hardening after review (2026-11-15)** — fixes single strokes credited as joins,
+reversed strokes accepted as joins, and non-finite ink matching — cost if wrong: a learner who
+draws two strokes as one where the second is tiny gets only the first (draws the second
+again). An independent review found: a join's short last stroke was cut as a "hook" and a
+short first stroke as an "entry tick" (cuts are now bounded to half of the stroke they lie in),
+joins replaced the single stroke on any lower score (each extra stroke now costs `joinCost`
+0.03), long joins skipped the direction test (each stroke of a join now keeps its own
+direction), and NaN/Infinity ink always matched (now ignored; `toPadUnit` returns null for a
+pad without size). Capping the farthest-point divisor for joins at `shapeCap` was tried as the
+review suggested and dropped: it rejected 7 % of genuine one-motion joins and the per-stroke
+direction test already removes the reversed-join accepts. Also: dots drawn much smaller than
+shown count (size floor), and a tiny recoil flick at the ink's ends is dropped.
+On the reviewer's independent pointer model (234 characters, four hand profiles, seed 7),
+before → after: correct strokes 97.29 → 97.99 % (sloppy 94.2 → 95.7 %); a single stroke
+credited as a join 0.27 → 0.04 % (separate sweep: 47 → 12 of 14 988; only the next stroke
+drawn and credited as a join 5 → 0); reversed accepted 0.13 → 0 %; one-motion joins accepted
+97.2 → 97.8 %; later / earlier / next stroke false accepts 0.50 / 0.61 / 1.62 → 0.48 / 0.56 /
+1.60 %; a foreign stroke more than 70° off 1.16 → 0.53 %. On the hand model below, 好's six
+strokes stay at 100 % each (pinned by `matcher.feel.test.ts` at ≥ 97 %) and the sweep at
+99.5 %; short strokes under 0.15 drop from 98.2 to 97.7 % (the recoil trim).
 
 Measured with the hand model (`scripts/writing-ink-model.mjs`; per stroke: the stroke as a
 straight line where it has no corner, smooth wobble 0.03 with ends over/undershot by up to
@@ -228,7 +262,11 @@ correct pinyin with its tone mark, as the answer line does today.
   `make-writing-fixtures.mjs`) for 好 女 子 了 我 永 红 口 十 人: every stroke drawn as a
   simplified straight line, with wobble/over- and undershoot/rotation, pointer jitter, hooks
   left off and exaggerated, rounded corners, shifted and scaled — all must match; the same hand
-  drawing the stroke reversed, a later stroke, or the previous stroke again must miss.
+  drawing the stroke reversed, a later stroke, or the previous stroke again must miss (later and
+  earlier strokes with reason `order`). `fixtures/strokes.json` stores coordinates as flat
+  integer arrays (unit value × 10 000), at most 40 points per ink and one case per line; the
+  file's `format` field states the layout for the Kotlin port. `matcher.feel.test.ts` pins the
+  owner-approved feel of 好 (each stroke ≥ 97 % over 20 seeds of the hand model).
 - Unit tests for geometry and matcher from fixtures built on real stroke data:
   each stroke drawn from its median with noise, offset, scale up/down; joins
   (了 as one motion, the first two strokes of 子, 糸, 纟 and 红); negatives: a join that would need a retrace (口's

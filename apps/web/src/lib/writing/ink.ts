@@ -28,13 +28,23 @@ export function createPalmGate(): (e: PointerLike) => boolean {
 	};
 }
 
-/** Client coordinates to pad-unit coordinates (0..1 across the pad). */
-export function toPadUnit(clientX: number, clientY: number, rect: { left: number; top: number; width: number; height: number }): Pt {
-	return { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height };
+/**
+ * Client coordinates to pad-unit coordinates (0..1 across the pad), or null while the pad has
+ * no size (not laid out yet, or hidden): such a point would be Infinity or NaN.
+ */
+export function toPadUnit(
+	clientX: number,
+	clientY: number,
+	rect: { left: number; top: number; width: number; height: number }
+): Pt | null {
+	if (!(rect.width > 0) || !(rect.height > 0)) return null;
+	const p = { x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height };
+	return Number.isFinite(p.x) && Number.isFinite(p.y) ? p : null;
 }
 
-/** Append a point unless it repeats the previous one. */
-export function appendInk(ink: Pt[], p: Pt): boolean {
+/** Append a point unless it is missing, not finite, or repeats the previous one. */
+export function appendInk(ink: Pt[], p: Pt | null): boolean {
+	if (p === null || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return false;
 	const last = ink.at(-1);
 	if (last && last.x === p.x && last.y === p.y) return false;
 	ink.push(p);
