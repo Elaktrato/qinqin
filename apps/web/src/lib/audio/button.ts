@@ -21,7 +21,7 @@ export interface ButtonState {
 export function creditLine(clips: AudioClip[]): string {
 	const seen: string[] = [];
 	for (const c of clips) {
-		const credit = `${c.attribution} · ${c.license}`;
+		const credit = c.attribution.includes(c.license) ? c.attribution : `${c.attribution} · ${c.license}`;
 		if (!seen.includes(credit)) seen.push(credit);
 	}
 	return seen.length ? `Audio: ${seen.join('; ')}` : '';

@@ -908,7 +908,7 @@
 						</button>
 					{/each}
 				</div>
-				<p class="keys">{KEY_HINTS[current.item.kind]}</p>
+				<p class="keys">{KEY_HINTS[current.item.kind]}{#if done && currentAudio !== null} · P plays{/if}</p>
 			</article>
 		{/if}
 	{/if}

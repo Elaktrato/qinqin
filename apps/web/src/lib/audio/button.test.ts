@@ -40,6 +40,9 @@ describe('creditLine', () => {
 		expect(creditLine([clip('a'), clip('b'), clip('c', 'Ann', 'CC0')])).toBe('Audio: Kanji alive · CC BY 4.0; Ann · CC0');
 		expect(creditLine([])).toBe('');
 	});
+	it('does not repeat a licence the attribution already names', () => {
+		expect(creditLine([clip('a', 'Kanji alive (https://kanjialive.com), CC BY 4.0', 'CC BY 4.0')])).toBe('Audio: Kanji alive (https://kanjialive.com), CC BY 4.0');
+	});
 });
 
 function fakePlayer(over: Partial<Player> = {}): Player & { play: ReturnType<typeof vi.fn>; speak: ReturnType<typeof vi.fn> } {
