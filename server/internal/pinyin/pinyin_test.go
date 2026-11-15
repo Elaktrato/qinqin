@@ -91,7 +91,7 @@ func TestRealSyllablesAccepted(t *testing.T) {
 }
 
 func TestInvalidSyllableErrors(t *testing.T) {
-	for _, in := range []string{"hello", "hi", "fai", "duang", "gi", "ki"} {
+	for _, in := range []string{"hello", "hi", "fai", "duang", "gi", "ki", "bou", "chei", "len", "nun", "xiann", "yio"} {
 		if _, err := ToBopomofo(in); err == nil {
 			t.Errorf("ToBopomofo(%q) expected error", in)
 		}
@@ -157,5 +157,113 @@ func TestToNumberedErhua(t *testing.T) {
 	}
 	if _, err := ToNumbered("xyzr"); err == nil {
 		t.Error("ToNumbered(xyzr) succeeded, want error")
+	}
+}
+
+func TestSyllableTableCorrections(t *testing.T) {
+	for _, in := range []string{"pou", "zhei", "nen", "lun", "tun", "zei", "sen"} {
+		if _, err := ToBopomofo(in); err != nil {
+			t.Errorf("ToBopomofo(%q) unexpected error: %v", in, err)
+		}
+	}
+}
+
+func TestInterjectionsAndSyllabicNasals(t *testing.T) {
+	cases := []struct{ in, bopomofo, marked string }{
+		{"yo1", "ㄧㄛ", "yō"},
+		{"yo", "ㄧㄛ", "yo"},
+		{"n2", "ㄣˊ", "ń"},
+		{"ng3", "ㄫˇ", "ňg"},
+		{"m2", "ㄇˊ", "ḿ"},
+		{"hng", "ㄏㄫ", "hng"},
+		{"hm4", "ㄏㄇˋ", "hm̀"},
+		{"ê2", "ㄝˊ", "ế"},
+		{"eh4", "ㄝˋ", "ề"},
+		{"ế", "ㄝˊ", "ế"},
+		{"ń", "ㄣˊ", "ń"},
+	}
+	for _, c := range cases {
+		b, err := ToBopomofo(c.in)
+		if err != nil || b != c.bopomofo {
+			t.Errorf("ToBopomofo(%q) = %q, %v; want %q", c.in, b, err, c.bopomofo)
+		}
+		m, err := ToMarked(c.in)
+		if err != nil || m != c.marked {
+			t.Errorf("ToMarked(%q) = %q, %v; want %q", c.in, m, err, c.marked)
+		}
+	}
+	if got, err := ToNumbered("ê2 n3 yo1"); err != nil || strings.Join(got, " ") != "eh2 n3 yo1" {
+		t.Errorf("ToNumbered specials = %v, %v", got, err)
+	}
+	if p := Plain("ń ế"); p != "ne" {
+		t.Errorf("Plain(ń ế) = %q, want ne", p)
+	}
+}
+
+func TestApostropheForms(t *testing.T) {
+	cases := []struct{ in, bopomofo, marked string }{
+		{"xi'an", "ㄒㄧ ㄢ", "xi an"},
+		{"Xī’ān", "ㄒㄧ ㄢ", "xī ān"},
+		{"nv3'er2", "ㄋㄩˇ ㄦˊ", "nǚ ér"},
+		{"ping'an an1", "ㄆㄧㄥ ㄢ ㄢ", "ping an ān"},
+	}
+	for _, c := range cases {
+		b, err := ToBopomofo(c.in)
+		if err != nil || b != c.bopomofo {
+			t.Errorf("ToBopomofo(%q) = %q, %v; want %q", c.in, b, err, c.bopomofo)
+		}
+		m, err := ToMarked(c.in)
+		if err != nil || m != c.marked {
+			t.Errorf("ToMarked(%q) = %q, %v; want %q", c.in, m, err, c.marked)
+		}
+	}
+	if _, err := ToMarked("'"); err == nil {
+		t.Error("ToMarked of a lone apostrophe succeeded")
+	}
+	if _, err := ToMarked("xi'xyz"); err == nil {
+		t.Error("ToMarked(xi'xyz) succeeded")
+	}
+}
+
+func TestConverterEdgeRows(t *testing.T) {
+	if p := Plain("Xī'ān"); p != "xian" {
+		t.Errorf("Plain apostrophe = %q, want xian", p)
+	}
+	if p := Plain("xi’an"); p != "xian" {
+		t.Errorf("Plain typographic apostrophe = %q, want xian", p)
+	}
+	b, err := ToBopomofo("nv3")
+	if err != nil || b != "ㄋㄩˇ" {
+		t.Errorf("ToBopomofo(nv3) = %q, %v", b, err)
+	}
+	m, err := ToMarked("nv3")
+	if err != nil || m != "nǚ" {
+		t.Errorf("ToMarked(nv3) = %q, %v", m, err)
+	}
+	m, err = ToMarked("zhong1 guo2 ren2")
+	if err != nil || m != "zhōng guó rén" {
+		t.Errorf("ToMarked three syllables = %q, %v", m, err)
+	}
+	m, err = ToMarked("NI3 HAO3")
+	if err != nil || m != "nǐ hǎo" {
+		t.Errorf("ToMarked uppercase = %q, %v", m, err)
+	}
+	b, err = ToBopomofo("ZHONG1 Guo2")
+	if err != nil || b != "ㄓㄨㄥ ㄍㄨㄛˊ" {
+		t.Errorf("ToBopomofo uppercase = %q, %v", b, err)
+	}
+}
+
+func TestInitialsDeriveFromBopomofoTable(t *testing.T) {
+	if len(initials) != len(initialBopomofo)-1 {
+		t.Fatalf("initials has %d entries, initialBopomofo %d (minus the empty initial)", len(initials), len(initialBopomofo))
+	}
+	for i, ini := range initials {
+		if _, ok := initialBopomofo[ini]; !ok {
+			t.Errorf("initial %q is not in initialBopomofo", ini)
+		}
+		if i > 0 && len(initials[i-1]) < len(ini) {
+			t.Errorf("initials not ordered longest first at %q", ini)
+		}
 	}
 }

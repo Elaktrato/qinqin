@@ -4,6 +4,7 @@ package pinyin
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -29,11 +30,36 @@ var toneMarks = func() map[rune]toneMark {
 			m[r] = toneMark{base: base, tone: i + 1}
 		}
 	}
+	// Marks the syllabic nasals and ê carry; they are not in markedVowels
+	// because they are not vowels of the general tone-mark rule.
+	for r, tm := range map[rune]toneMark{
+		'ń': {'n', 2}, 'ň': {'n', 3}, 'ǹ': {'n', 4},
+		'ḿ': {'m', 2},
+		'ế': {'ê', 2}, 'ề': {'ê', 4},
+	} {
+		m[r] = tm
+	}
 	return m
 }()
 
-// initials is ordered so that multi-letter initials match before single letters.
-var initials = []string{"zh", "ch", "sh", "b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h", "j", "q", "x", "r", "z", "c", "s"}
+// initials lists the initials of initialBopomofo, longest first so that
+// multi-letter initials match before single letters; deriving it keeps the
+// two from drifting apart.
+var initials = func() []string {
+	out := make([]string, 0, len(initialBopomofo))
+	for ini := range initialBopomofo {
+		if ini != "" {
+			out = append(out, ini)
+		}
+	}
+	slices.SortFunc(out, func(a, b string) int {
+		if len(a) != len(b) {
+			return len(b) - len(a)
+		}
+		return strings.Compare(a, b)
+	})
+	return out
+}()
 
 var initialBopomofo = map[string]string{
 	"":   "",
@@ -105,17 +131,19 @@ var finalBopomofo = map[string]string{
 // finalsByInitial lists the finals each initial takes in standard Mandarin
 // syllables. Keys may name several initials separated by spaces.
 var finalsByInitial = map[string]string{
-	"b p":   "a o ai ei ao ou an en ang eng i ie iao ian in ing u",
+	"b":     "a o ai ei ao an en ang eng i ie iao ian in ing u",
+	"p":     "a o ai ei ao ou an en ang eng i ie iao ian in ing u",
 	"m":     "a e o ai ei ao ou an en ang eng i ie iao iou ian in ing u",
 	"f":     "a o ei ou an en ang eng u",
 	"d":     "a e ai ei ao ou an en ang eng ong i ia ie iao iou ian ing u uo uei uan uen",
 	"t":     "a e ai ei ao ou an ang eng ong i ie iao ian ing u uo uei uan uen",
-	"n":     "a e ai ei ao ou an en ang eng ong i ie iao iou ian in iang ing u uo uan uen ü üe",
-	"l":     "a e o ai ei ao ou an en ang eng ong i ia ie iao iou ian in iang ing u uo uan uen ü üe",
+	"n":     "a e ai ei ao ou an en ang eng ong i ie iao iou ian in iang ing u uo uan ü üe",
+	"l":     "a e o ai ei ao ou an ang eng ong i ia ie iao iou ian in iang ing u uo uan uen ü üe",
 	"g h":   "a e ai ei ao ou an en ang eng ong u ua uo uai uei uan uen uang",
 	"k":     "a e ai ei ao ou an en ang eng ong u ua uo uai uei uan uen uang",
 	"j q x": "i ia ie iao iou ian in iang ing iong ü üe üan ün",
-	"zh ch": "a e ai ei ao ou an en ang eng ong u ua uo uai uei uan uen uang",
+	"zh":    "a e ai ei ao ou an en ang eng ong u ua uo uai uei uan uen uang",
+	"ch":    "a e ai ao ou an en ang eng ong u ua uo uai uei uan uen uang",
 	"sh":    "a e ai ei ao ou an en ang eng u ua uo uai uei uan uen uang",
 	"r":     "e ao ou an en ang eng ong u uo uei uan uen",
 	"z":     "a e ai ei ao ou an en ang eng ong u uo uei uan uen",
@@ -150,6 +178,47 @@ func validSyllable(initial, final string) bool {
 	return validFinals[initial][final]
 }
 
+// special is a syllable that is no initial-final pair: the interjection yo
+// and the syllabic nasals and ê dictionaries write (嗯 n/ng, 呣 m, 哼 hng/hm,
+// 欸 ê). They are valid only as a whole token — never as a part of a longer
+// run — so splitting an unspaced token cannot invent them.
+type special struct {
+	bopomofo string
+	mark     int // rune index of the letter that carries the tone mark
+}
+
+var specials = map[string]special{
+	"yo":  {"ㄧㄛ", 1},
+	"n":   {"ㄣ", 0},
+	"ng":  {"ㄫ", 0},
+	"m":   {"ㄇ", 0},
+	"hng": {"ㄏㄫ", 1},
+	"hm":  {"ㄏㄇ", 1},
+	"ê":   {"ㄝ", 0},
+}
+
+// specialMarks holds the precomposed tone-marked forms of the letters a
+// special carries its mark on (0 = none: written with a combining mark).
+var specialMarks = map[rune][4]rune{
+	'n': {0, 'ń', 'ň', 'ǹ'},
+	'm': {0, 'ḿ', 0, 0},
+	'ê': {0, 'ế', 0, 'ề'},
+	'o': markedVowels['o'],
+}
+
+// combiningTone are the combining marks of tones 1-4: macron, acute,
+// caron, grave.
+var combiningTone = [4]rune{0x0304, 0x0301, 0x030C, 0x0300}
+
+// markSpecial writes letter with its tone mark, precomposed where Unicode
+// has the form and combining otherwise.
+func markSpecial(letter rune, tone int) string {
+	if r := specialMarks[letter][tone-1]; r != 0 {
+		return string(r)
+	}
+	return string([]rune{letter, combiningTone[tone-1]})
+}
+
 var toneBopomofo = [6]string{"", "", "ˊ", "ˇ", "ˋ", ""}
 
 // syllable is one parsed pinyin syllable.
@@ -158,6 +227,7 @@ type syllable struct {
 	final   string // normalized final: zero-initial spellings resolved, "ü" written as ü
 	spelled string // typed spelling with tone removed and ü written as ü
 	tone    int    // 0 = no tone given, 1-4 tones, 5 neutral
+	special bool   // a special (see specials): final holds its spelling
 }
 
 func (s syllable) isApical() bool {
@@ -165,6 +235,9 @@ func (s syllable) isApical() bool {
 }
 
 func (s syllable) bopomofo() string {
+	if s.special {
+		return specials[s.spelled].bopomofo + toneBopomofo[s.tone]
+	}
 	body := initialBopomofo[s.initial]
 	if !s.isApical() {
 		body += finalBopomofo[s.final]
@@ -200,7 +273,11 @@ func zeroInitialFinal(s string) string {
 	return s
 }
 
-func parse(token string) (syllable, error) {
+func parse(token string) (syllable, error) { return parseSyllable(token, true) }
+
+// parseSyllable parses one syllable; allowSpecial admits the specials, which
+// only a whole token may be.
+func parseSyllable(token string, allowSpecial bool) (syllable, error) {
 	invalid := fmt.Errorf("pinyin: invalid syllable %q", token)
 	runes := []rune(strings.ToLower(token))
 	tone := 0
@@ -215,6 +292,15 @@ func parse(token string) (syllable, error) {
 		}
 	}
 	spelled := strings.NewReplacer("u:", "ü", "v", "ü").Replace(string(runes))
+	if spelled == "eh" {
+		spelled = "ê"
+	}
+	if _, ok := specials[spelled]; ok {
+		if !allowSpecial {
+			return syllable{}, invalid
+		}
+		return syllable{final: spelled, spelled: spelled, tone: tone, special: true}, nil
+	}
 
 	initial := ""
 	rest := spelled
@@ -251,18 +337,25 @@ func parse(token string) (syllable, error) {
 	return syllable{initial: initial, final: final, spelled: spelled, tone: tone}, nil
 }
 
+// isApostrophe reports the apostrophes that separate syllables: the ASCII
+// one and the typographic one.
+func isApostrophe(r rune) bool { return r == '\'' || r == '’' }
+
+// parseAll parses whitespace-separated syllables. An apostrophe also
+// separates ("xi'an" is "xi an"); unspaced runs without one stay an error.
 func parseAll(s string) ([]syllable, error) {
-	tokens := strings.Fields(s)
-	if len(tokens) == 0 {
-		return nil, fmt.Errorf("pinyin: empty input")
-	}
-	syls := make([]syllable, len(tokens))
-	for i, tok := range tokens {
-		syl, err := parse(tok)
-		if err != nil {
-			return nil, err
+	var syls []syllable
+	for _, tok := range strings.Fields(s) {
+		for _, piece := range strings.FieldsFunc(tok, isApostrophe) {
+			syl, err := parse(piece)
+			if err != nil {
+				return nil, err
+			}
+			syls = append(syls, syl)
 		}
-		syls[i] = syl
+	}
+	if len(syls) == 0 {
+		return nil, fmt.Errorf("pinyin: empty input")
 	}
 	return syls, nil
 }
@@ -295,6 +388,13 @@ func ToMarked(s string) (string, error) {
 
 func (s syllable) marked() string {
 	spelled := []rune(s.spelled)
+	if s.special {
+		if s.tone >= 1 && s.tone <= 4 {
+			i := specials[s.spelled].mark
+			return string(spelled[:i]) + markSpecial(spelled[i], s.tone) + string(spelled[i+1:])
+		}
+		return s.spelled
+	}
 	if s.initial == "j" || s.initial == "q" || s.initial == "x" {
 		for i, r := range spelled {
 			if r == 'ü' {
@@ -348,6 +448,9 @@ func Plain(s string) string {
 		if m, ok := toneMarks[r]; ok {
 			r = m.base
 		}
+		if r == 'ê' {
+			r = 'e'
+		}
 		base.WriteRune(r)
 	}
 	var b strings.Builder
@@ -396,7 +499,7 @@ func splitPiece(r []rune) ([]string, bool) {
 		return []string{string(r)}, true
 	}
 	for n := min(len(r), maxSyllableRunes); n >= 1; n-- {
-		if _, err := parse(string(r[:n])); err != nil {
+		if _, err := parseSyllable(string(r[:n]), n == len(r)); err != nil {
 			continue
 		}
 		if rest, ok := splitPiece(r[n:]); ok {
@@ -431,6 +534,9 @@ func ToNumbered(s string) ([]string, error) {
 				tone = 5
 			}
 			spelled := strings.ReplaceAll(syl.spelled, "ü", "v")
+			if syl.special && spelled == "ê" {
+				spelled = "eh" // ASCII, as the audio index writes it
+			}
 			if syl.initial == "j" || syl.initial == "q" || syl.initial == "x" {
 				spelled = strings.ReplaceAll(spelled, "v", "u") // ju, not jv
 			}
