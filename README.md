@@ -928,6 +928,7 @@ Dockerfile copies that directory into the Go binary before compiling.
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--jlpt-vocab`, generates the optional local-only JLPT vocabulary pack into `plugins/data-local/` (download commands in its header) |
 | `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
+| `scripts/prepare-local-levels.mjs` | Converts a TSV you prepared (TBCL, curriculum tables, any private list) into a local-only level pack under `plugins/data-local/`; writes no `LICENSE`, refuses other directories |
 | `scripts/check-sources.mjs` | Checks that pack manifests (`license`, `attribution`, `notice`) and `docs/sources.md` agree; run in CI (`node scripts/check-sources.mjs [repo-root]`) |
 | `scripts/prepare-hsk-syllabus.mjs` | Rebuilds the HSK 3.0 packs `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 
