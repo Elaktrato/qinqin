@@ -77,8 +77,11 @@ func ptr[T any](v T) *T { return &v }
 // Builtins are the providers the server knows. Ids are frozen: they are part
 // of every stored key's additional data.
 //
-// Model ids marked UNVERIFIED were not confirmed against the provider's own
-// documentation on 2026-11-15; the owner's real-key run confirms them.
+// Entries marked UNVERIFIED could not be confirmed against the provider's own
+// documentation on 2026-11-15; "verified" entries cite the official page. The
+// sources and quotes are in the appendix of
+// docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md, and the owner's
+// real-key run confirms the rest.
 func Builtins() []ProviderSpec {
 	anthropicModels := make([]ModelSpec, 0, len(Models))
 	for _, m := range Models {
@@ -92,33 +95,35 @@ func Builtins() []ProviderSpec {
 			KeyURL: "https://platform.openai.com/api-keys", DefaultModel: "gpt-6-astra",
 			Models: []ModelSpec{
 				{ID: "gpt-6-astra", Label: "GPT-6 Astra"},
-				{ID: "gpt-6-luna", Label: "GPT-6 Luna"}, // UNVERIFIED 2026-11-15 (cheapest per the docs list; image data URLs unverified for OpenAI)
+				{ID: "gpt-6-luna", Label: "GPT-6 Luna"}, // verified 2026-11-15 developers.openai.com/api/docs/models/gpt-6-luna (text+image in, Chat Completions, structured outputs)
 			},
-			Structured: StructuredSchema, Strict: true, Vision: true, TokenField: "max_completion_tokens", ValidateBy: "models"},
+			Structured: StructuredSchema, Strict: true, Vision: true, TokenField: "max_completion_tokens", ValidateBy: "models"}, // verified 2026-11-15 chat reference: image_url.url is "Either a URL of the image or the base64 encoded image data"
 		{ID: "gemini", Name: "Google Gemini", Kind: KindGemini, BaseURL: "https://generativelanguage.googleapis.com/v1beta", KeyRequired: true,
 			KeyURL: "https://aistudio.google.com/apikey", DefaultModel: "gemini-3.8-flash",
 			Models: []ModelSpec{
 				{ID: "gemini-3.8-flash", Label: "Gemini 3.8 Flash"},
 				{ID: "gemini-3.5-flash-lite", Label: "Gemini 3.5 Flash-Lite"},
 			},
-			Structured: StructuredSchema, Vision: true, ValidateBy: "model"}, // UNVERIFIED 2026-11-15: REST field generationConfig.responseJsonSchema
+			Structured: StructuredSchema, Vision: true, ValidateBy: "model"}, // UNVERIFIED 2026-11-15: generationConfig.responseJsonSchema is listed in the reference, but the REST guide example uses generationConfig.responseFormat.text{mimeType,schema} instead; inlineData, GET /models/{model} and finish/block reasons verified 2026-11-15 aistudio.google.com/api-reference
 		{ID: "deepseek", Name: "DeepSeek", Kind: KindOpenAI, BaseURL: "https://api.deepseek.com", KeyRequired: true,
 			KeyURL: "https://platform.deepseek.com/api_keys", DefaultModel: "deepseek-flash",
 			Models: []ModelSpec{
 				{ID: "deepseek-flash", Label: "DeepSeek Flash", Vision: ptr(true)},
 				{ID: "deepseek-v4-pro", Label: "DeepSeek V4 Pro", Vision: ptr(false)},
 			},
-			Structured: StructuredObject, Vision: true, TokenField: "max_tokens", ValidateBy: "models"}, // UNVERIFIED 2026-11-15: /models
+			Structured: StructuredObject, Vision: true, TokenField: "max_tokens", ValidateBy: "models"}, // verified 2026-11-15 api-docs.deepseek.com/api/list-models: GET /models, data[].id
 		{ID: "mistral", Name: "Mistral", Kind: KindOpenAI, BaseURL: "https://api.mistral.ai/v1", KeyRequired: true,
 			KeyURL: "https://console.mistral.ai/api-keys", DefaultModel: "mistral-large-latest",
 			Models: []ModelSpec{
-				{ID: "mistral-large-latest", Label: "Mistral Large", Vision: ptr(true)}, // UNVERIFIED 2026-11-15
-				{ID: "mistral-small-latest", Label: "Mistral Small", Vision: ptr(true)}, // UNVERIFIED 2026-11-15
+				{ID: "mistral-large-latest", Label: "Mistral Large", Vision: ptr(true)}, // verified 2026-11-15 docs.mistral.ai: alias of Mistral Large 4, "multimodal" with "a 1.6B vision encoder"
+				{ID: "mistral-small-latest", Label: "Mistral Small", Vision: ptr(true)}, // id verified 2026-11-15 docs.mistral.ai (alias of Mistral Small 4); UNVERIFIED 2026-11-15: vision (the Small 4 card does not say; the vision guide lists mistral-small-2506 but its Python example uses mistral-small-latest)
 			},
+			// UNVERIFIED 2026-11-15: Mistral's chat docs show "image_url" as a plain string; we send the OpenAI object {"url": ...}.
+			// GET /v1/models verified 2026-11-15 docs.mistral.ai/api/endpoint/models (schema: object "list" + data[]; cards carry "aliases").
 			Structured: StructuredSchema, Vision: true, TokenField: "max_tokens", ValidateBy: "models"},
 		{ID: "xai", Name: "xAI", Kind: KindOpenAI, BaseURL: "https://api.x.ai/v1", KeyRequired: true,
 			KeyURL: "https://console.x.ai", DefaultModel: "grok-4.7",
-			Models:     []ModelSpec{{ID: "grok-4.7", Label: "Grok 4.7"}}, // UNVERIFIED 2026-11-15: vision
+			Models:     []ModelSpec{{ID: "grok-4.7", Label: "Grok 4.7"}}, // verified 2026-11-15 docs.x.ai/developers/models/grok-4.7: "text, image → text"
 			Structured: StructuredSchema, Strict: true, Vision: true, TokenField: "max_tokens", ValidateBy: "models"},
 		{ID: "groq", Name: "Groq", Kind: KindOpenAI, BaseURL: "https://api.groq.com/openai/v1", KeyRequired: true,
 			KeyURL: "https://console.groq.com/keys", DefaultModel: "openai/gpt-oss-120b",
@@ -126,9 +131,9 @@ func Builtins() []ProviderSpec {
 			Structured: StructuredSchema, Vision: false, TokenField: "max_tokens", ValidateBy: "models"}, // strict only on some models: sent non-strict
 		{ID: "openrouter", Name: "OpenRouter", Kind: KindOpenAI, BaseURL: "https://openrouter.ai/api/v1", KeyRequired: true,
 			KeyURL: "https://openrouter.ai/keys", DefaultModel: "openrouter/auto",
-			Models:     []ModelSpec{{ID: "openrouter/auto", Label: "Auto router"}}, // UNVERIFIED 2026-11-15: vision depends on the routed model
+			Models:     []ModelSpec{{ID: "openrouter/auto", Label: "Auto router"}}, // UNVERIFIED 2026-11-15: vision and json_schema depend on the routed model; the router docs only say it rates "whether it needs vision"
 			Structured: StructuredSchema, Vision: true, TokenField: "max_tokens", ValidateBy: "chat",
-			Extra: map[string]any{"provider": map[string]any{"require_parameters": true}}},
+			Extra: map[string]any{"provider": map[string]any{"require_parameters": true}}}, // verified 2026-11-15 openrouter.ai/docs/features/provider-routing: "Only use providers that support all parameters in your request"
 	}
 }
 
