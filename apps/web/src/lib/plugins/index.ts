@@ -10,6 +10,7 @@ import type { WidgetDef } from '$lib/widgets/types';
 import type { ContractManifest } from './contract';
 import { CORE_PLUGIN_ID } from './core/manifest';
 import type { PluginStatesValue } from './states';
+import FlashcardsPage from './flashcards/FlashcardsPage.svelte';
 import { flashcardsManifest } from './flashcards/manifest';
 import GrammarPage from './grammar/GrammarPage.svelte';
 import { grammarManifest } from './grammar/manifest';
@@ -50,7 +51,10 @@ export interface WebPlugin {
 }
 
 export const webPlugins: WebPlugin[] = [
-	{ manifest: flashcardsManifest },
+	{
+		manifest: flashcardsManifest,
+		pages: [{ title: 'Decks', nav: true, component: FlashcardsPage }]
+	},
 	{
 		manifest: readerManifest,
 		pages: [{ title: 'Reader', nav: true, component: ReaderPage }]
