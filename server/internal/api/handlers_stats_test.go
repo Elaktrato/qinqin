@@ -4,17 +4,23 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"qinqin/internal/api"
+	"qinqin/internal/db"
 	"qinqin/internal/plugins"
 )
 
 type activityBody struct {
-	From    string `json:"from"`
-	To      string `json:"to"`
-	Sources []struct {
+	From     string `json:"from"`
+	To       string `json:"to"`
+	TimeZone string `json:"timeZone"`
+	Sources  []struct {
 		Type     string `json:"type"`
 		Plugin   string `json:"plugin"`
 		Label    string `json:"label"`
@@ -80,24 +86,42 @@ func getActivity(t *testing.T, url, token, query string) (*http.Response, activi
 	return resp, out
 }
 
+// statsServerAt is statsServer with the server clock fixed.
+func statsServerAt(t *testing.T, now time.Time) (url, token string, ws int64) {
+	t.Helper()
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
+	t.Cleanup(ts.Close)
+	for _, raw := range plugins.Builtin() {
+		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	token = registerUser(t, ts.URL, "owner", "")
+	return ts.URL, token, statsWorkspace(t, ts.URL, token, "zh")
+}
+
 func TestStatsActivityDefaults(t *testing.T) {
-	url, token, _ := statsServer(t)
-	// The handler reads the clock itself: accept the UTC day before or
-	// after the request, so a run across midnight cannot flake.
-	before := time.Now().UTC()
+	// 2026-11-15T15:30:00Z is already the 16th in Tokyo.
+	now := time.Date(2026, 11, 15, 15, 30, 0, 0, time.UTC)
+	url, token, _ := statsServerAt(t, now)
 	resp, body := getActivity(t, url, token, "")
-	after := time.Now().UTC()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d", resp.StatusCode)
 	}
-	ok := false
-	for _, day := range []time.Time{before, after} {
-		if body.To == day.Format("2006-01-02") && body.From == day.AddDate(0, 0, -90).Format("2006-01-02") {
-			ok = true
-		}
+	if body.To != "2026-11-15" || body.From != "2026-08-17" || body.TimeZone != "UTC" {
+		t.Errorf("no zone: %s..%s %s, want UTC 2026-08-17..2026-11-15", body.From, body.To, body.TimeZone)
 	}
-	if !ok {
-		t.Errorf("window = %s..%s, want today (UTC) and the 90 days before", body.From, body.To)
+	if resp := doRaw(t, http.MethodPut, url, "/api/me/time-zone", token, `{"zone":"Asia/Tokyo"}`); resp.StatusCode != http.StatusOK {
+		t.Fatalf("put zone: %d", resp.StatusCode)
+	}
+	_, body = getActivity(t, url, token, "")
+	if body.To != "2026-11-16" || body.From != "2026-08-18" || body.TimeZone != "Asia/Tokyo" {
+		t.Errorf("tokyo: %s..%s %s, want 2026-08-18..2026-11-16 in Asia/Tokyo", body.From, body.To, body.TimeZone)
 	}
 	if body.Cells == nil || len(body.Cells) != 0 {
 		t.Errorf("cells = %#v, want empty non-nil", body.Cells)
@@ -114,6 +138,35 @@ func TestStatsActivityDefaults(t *testing.T) {
 		s := body.Sources[i]
 		if s.Type != w.typ || s.Plugin != w.plugin || s.Unit != w.unit || s.Label == "" || !strings.Contains(s.Describe.Other, "{n}") {
 			t.Errorf("source %d = %+v, want %v", i, s, w)
+		}
+	}
+}
+
+// Zone changes through the API move no past day.
+func TestStatsActivityZoneChangeKeepsPast(t *testing.T) {
+	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
+	url, token, ws := statsServerAt(t, now)
+	// Clearly past events, each hour for a week, put on the same days in any zone.
+	for i := 0; i < 24*7; i++ {
+		ts := time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC).Add(time.Duration(i) * time.Hour)
+		postEvent(t, url, token, ws, ts.Format(time.RFC3339), "review", `{}`)
+	}
+	put := func(zone string) {
+		t.Helper()
+		if resp := doRaw(t, http.MethodPut, url, "/api/me/time-zone", token, `{"zone":"`+zone+`"}`); resp.StatusCode != http.StatusOK {
+			t.Fatalf("put %s: %d", zone, resp.StatusCode)
+		}
+	}
+	put("Asia/Tokyo")
+	_, before := getActivity(t, url, token, "?from=2026-11-01&to=2026-11-08")
+	if len(before.Cells) == 0 {
+		t.Fatal("no cells")
+	}
+	for _, zone := range []string{"America/Los_Angeles", "Pacific/Kiritimati", "Europe/Berlin"} {
+		put(zone)
+		_, after := getActivity(t, url, token, "?from=2026-11-01&to=2026-11-08")
+		if !reflect.DeepEqual(before.Cells, after.Cells) || after.TimeZone != zone {
+			t.Errorf("%s: cells moved or zone %q wrong", zone, after.TimeZone)
 		}
 	}
 }

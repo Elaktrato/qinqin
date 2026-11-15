@@ -13,7 +13,7 @@ describe('fetchActivity', () => {
 	afterEach(() => vi.unstubAllGlobals());
 
 	it('builds the URL and returns the body', async () => {
-		const body = { from: '2026-08-15', to: '2026-11-13', sources: [], cells: [] };
+		const body = { from: '2026-08-15', to: '2026-11-13', timeZone: 'Asia/Tokyo', sources: [], cells: [] };
 		vi.mocked(fetch).mockResolvedValue(
 			new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } })
 		);

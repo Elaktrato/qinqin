@@ -4,7 +4,6 @@
 	import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
 	import {
 		HEATMAP_DAYS,
-		dayKey,
 		dayTooltip,
 		foldActivity,
 		levelFor,
@@ -31,13 +30,14 @@
 	} from '$lib/activity/viewPrefs';
 	import { onEventLogChange } from '$lib/events';
 	import { workspaceDisplay } from '$lib/languages';
+	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { workspaces } from '$lib/workspaces';
 
 	// The core home heatmap: the server-aggregated activity (one request
 	// for every workspace and type), folded here per scope and filter, one
-	// cell per UTC day over the last 13 weeks. The view (scope, hidden
+	// cell per learner day (the user's time zone, lib/time/studyDay.ts) over the last 13 weeks. The view (scope, hidden
 	// types) is remembered per user.
 	//
 	// A failed request shows a clear message with "Try again"; once data
@@ -48,6 +48,8 @@
 	let prefs = $state(initialPrefs());
 	let loading = $state(true);
 	let error = $state('');
+	// The learner's day rule; a zone change re-folds and re-requests the window.
+	let studyDay = $state.raw(currentStudyDay());
 
 	// Guards against a slow earlier request overwriting a newer view.
 	const requests = createSequencer();
@@ -71,11 +73,11 @@
 		return display.showName ? display.name : display.label;
 	}
 
-	const empty = { from: '', to: '', sources: [], cells: [] } satisfies ActivityResponse;
-	const byDay = $derived(foldActivity(response ?? empty, view, new Date()));
+	const empty = { from: '', to: '', timeZone: 'UTC', sources: [], cells: [] } satisfies ActivityResponse;
+	const byDay = $derived(foldActivity(response ?? empty, view, studyDay, new Date()));
 	// Chip counts ignore the filter, so a hidden type shows what it would add.
 	const chipPoints = $derived(
-		sourcePoints(foldActivity(response ?? empty, { ...view, hidden: [] }, new Date()))
+		sourcePoints(foldActivity(response ?? empty, { ...view, hidden: [] }, studyDay, new Date()))
 	);
 	const allHidden = $derived(sources.length > 0 && sources.every((s) => stored.hidden.includes(s.type)));
 	const days = $derived([...byDay.values()]);
@@ -100,7 +102,8 @@
 		if (response === null) loading = true;
 		try {
 			const now = new Date();
-			const next = await fetchActivity(dayKey(windowStart(now)), dayKey(now));
+			const rule = studyDay;
+			const next = await fetchActivity(windowStart(rule, now), rule.today(now.getTime()));
 			if (!requests.isCurrent(seq)) return;
 			response = next;
 		} catch (err) {
@@ -120,7 +123,15 @@
 	onMount(() => {
 		void load();
 		void loadActivityView().then((view) => (prefs = prefsLoaded(prefs, view)));
-		return onEventLogChange(() => void load());
+		const offEvents = onEventLogChange(() => void load());
+		const offZone = onStudyDayChange((next) => {
+			studyDay = next;
+			void load();
+		});
+		return () => {
+			offEvents();
+			offZone();
+		};
 	});
 </script>
 

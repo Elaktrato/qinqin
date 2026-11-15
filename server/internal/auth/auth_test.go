@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
@@ -291,7 +292,16 @@ func TestCreateFirstUserOnlyWhenEmpty(t *testing.T) {
 // TestConcurrentFirstRegisterCreatesOneAdmin races first-ever
 // registrations: exactly one wins and becomes the only admin.
 func TestConcurrentFirstRegisterCreatesOneAdmin(t *testing.T) {
-	ts, sqlDB := newServer(t)
+	// Eight racers all hash: give the gate room so none answers 503.
+	p := api.DefaultAuthPolicy()
+	p.Hashes, p.HashWait = 8, 30*time.Second
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAuthPolicy(p)))
+	t.Cleanup(ts.Close)
 
 	const racers = 8
 	statuses := make([]int, racers)

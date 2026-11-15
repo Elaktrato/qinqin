@@ -37,6 +37,16 @@ describe('parseSettingsTab', () => {
 	});
 });
 
+describe('the Study tab', () => {
+	it('is visible to every user and parsed from ?tab=study', () => {
+		expect(visibleSettingsTabs(false)).toContain('study');
+		expect(visibleSettingsTabs(true)).toContain('study');
+		expect(parseSettingsTab('study')).toBe('study');
+		expect(SETTINGS_TAB_LABELS.study).toBe('Study');
+		expect(settingsTabHref('study')).toBe('/settings?tab=study');
+	});
+});
+
 describe('settingsTabHref', () => {
 	it('keeps the default tab out of the URL', () => {
 		expect(settingsTabHref('workspaces')).toBe('/settings');

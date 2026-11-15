@@ -1,0 +1,524 @@
+{
+ "version": 1,
+ "rule": "study-day/activity-days",
+ "note": "Events (workspace 1) plus a zone history give the cells GET /api/stats/activity returns for from..to (learner dates, inclusive). Payloads are objects; omitted means none. Cells are sorted by day, workspace, type; read.raw is seconds, points 1 per started 300 s.",
+ "cases": [
+  {
+   "name": "no history is UTC",
+   "note": "A user who never set a zone is bucketed by UTC date.",
+   "history": [],
+   "events": [
+    {
+     "ts": "2026-11-15T23:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-16T00:00:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2026-11-15",
+   "to": "2026-11-16",
+   "cells": [
+    {
+     "day": "2026-11-15",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-16",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "tokyo: a review after local midnight is the next day",
+   "note": "UTC+9: 14:59:59Z is 23:59:59 on the 15th, 15:00:00Z is midnight of the 16th.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    }
+   ],
+   "events": [
+    {
+     "ts": "2026-11-15T14:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-15T15:00:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-15T15:30:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2026-11-15",
+   "to": "2026-11-16",
+   "cells": [
+    {
+     "day": "2026-11-15",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-16",
+     "workspace": 1,
+     "type": "review",
+     "points": 2,
+     "raw": 2
+    }
+   ]
+  },
+  {
+   "name": "berlin: the 25 hour day",
+   "note": "2025-10-26 lasts from 22:00Z on the 25th to 23:00Z on the 26th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "events": [
+    {
+     "ts": "2025-10-25T21:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2025-10-25T22:00:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2025-10-26T01:30:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2025-10-26T22:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2025-10-26T23:00:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2025-10-25",
+   "to": "2025-10-27",
+   "cells": [
+    {
+     "day": "2025-10-25",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2025-10-26",
+     "workspace": 1,
+     "type": "review",
+     "points": 3,
+     "raw": 3
+    },
+    {
+     "day": "2025-10-27",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "berlin: the 23 hour day",
+   "note": "2025-03-30 lasts from 23:00Z on the 29th to 22:00Z on the 30th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "events": [
+    {
+     "ts": "2025-03-29T22:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2025-03-29T23:00:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2025-03-30T21:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2025-03-30T22:00:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2025-03-29",
+   "to": "2025-03-31",
+   "cells": [
+    {
+     "day": "2025-03-29",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2025-03-30",
+     "workspace": 1,
+     "type": "review",
+     "points": 2,
+     "raw": 2
+    },
+    {
+     "day": "2025-03-31",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "tokyo: reading seconds are summed per local day",
+   "note": "300 s at 23:00 local on the 15th (14:00Z), 600 s at 01:00 on the 16th (16:00Z); 300 s = 1 point, 600 s = 2.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    }
+   ],
+   "events": [
+    {
+     "ts": "2026-11-15T14:00:00Z",
+     "type": "read",
+     "payload": {
+      "seconds": 300
+     }
+    },
+    {
+     "ts": "2026-11-15T16:00:00Z",
+     "type": "read",
+     "payload": {
+      "seconds": 600
+     }
+    }
+   ],
+   "from": "2026-11-15",
+   "to": "2026-11-16",
+   "cells": [
+    {
+     "day": "2026-11-15",
+     "workspace": 1,
+     "type": "read",
+     "points": 1,
+     "raw": 300
+    },
+    {
+     "day": "2026-11-16",
+     "workspace": 1,
+     "type": "read",
+     "points": 2,
+     "raw": 600
+    }
+   ]
+  },
+  {
+   "name": "tokyo: a journal entry counts once per local day",
+   "note": "Entry A at 23:00 local on the 15th and at 00:00 on the 16th is two distinct (day, entry) pairs; in UTC it would be one.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    }
+   ],
+   "events": [
+    {
+     "ts": "2026-11-15T14:00:00Z",
+     "type": "journal",
+     "payload": {
+      "entryId": "A"
+     }
+    },
+    {
+     "ts": "2026-11-15T15:00:00Z",
+     "type": "journal",
+     "payload": {
+      "entryId": "A"
+     }
+    },
+    {
+     "ts": "2026-11-15T15:10:00Z",
+     "type": "journal",
+     "payload": {
+      "entryId": "A"
+     }
+    }
+   ],
+   "from": "2026-11-15",
+   "to": "2026-11-16",
+   "cells": [
+    {
+     "day": "2026-11-15",
+     "workspace": 1,
+     "type": "journal",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-16",
+     "workspace": 1,
+     "type": "journal",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "west change: one long day, no repeated date",
+   "note": "Tokyo -> Los Angeles at 2026-11-10T16:00Z; the 11th runs from 2026-11-10T15:00Z to 2026-11-12T08:00Z.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    }
+   ],
+   "events": [
+    {
+     "ts": "2026-11-10T14:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-10T15:00:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-10T17:00:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-12T07:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-12T08:00:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2026-11-10",
+   "to": "2026-11-12",
+   "cells": [
+    {
+     "day": "2026-11-10",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-11",
+     "workspace": 1,
+     "type": "review",
+     "points": 3,
+     "raw": 3
+    },
+    {
+     "day": "2026-11-12",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "east change: today ends early",
+   "note": "Berlin -> Tokyo at 2026-11-10T12:00Z (Berlin 13:00, Tokyo 21:00 on the 10th); the 10th ends at 15:00Z.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-10T12:00:00Z"
+    }
+   ],
+   "events": [
+    {
+     "ts": "2026-11-10T11:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-10T12:00:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-10T14:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2026-11-10T15:00:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2026-11-09",
+   "to": "2026-11-11",
+   "cells": [
+    {
+     "day": "2026-11-10",
+     "workspace": 1,
+     "type": "review",
+     "points": 3,
+     "raw": 3
+    },
+    {
+     "day": "2026-11-11",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "skipped date has no cell",
+   "note": "Pacific/Apia jumped from 2011-12-29 to 2011-12-31 at 2011-12-30T10:00Z.",
+   "history": [
+    {
+     "zone": "Pacific/Apia",
+     "from": null
+    }
+   ],
+   "events": [
+    {
+     "ts": "2011-12-30T09:59:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2011-12-30T10:00:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2011-12-29",
+   "to": "2011-12-31",
+   "cells": [
+    {
+     "day": "2011-12-29",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2011-12-31",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "clock back across midnight keeps the date",
+   "note": "America/St_Johns 2010-11-07: DST ended at 00:01 NDT (02:31Z) and the clock went back to 23:01 on the 6th; the 7th lasts until 03:30Z on the 8th.",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "events": [
+    {
+     "ts": "2010-11-07T02:29:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2010-11-07T02:30:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2010-11-07T02:31:00Z",
+     "type": "review"
+    },
+    {
+     "ts": "2010-11-08T03:29:59Z",
+     "type": "review"
+    },
+    {
+     "ts": "2010-11-08T03:30:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2010-11-06",
+   "to": "2010-11-08",
+   "cells": [
+    {
+     "day": "2010-11-06",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2010-11-07",
+     "workspace": 1,
+     "type": "review",
+     "points": 3,
+     "raw": 3
+    },
+    {
+     "day": "2010-11-08",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "before the first change the first zone applies",
+   "note": "from = null: the 2001 event is read in Berlin.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-10T12:00:00Z"
+    }
+   ],
+   "events": [
+    {
+     "ts": "2001-06-01T22:30:00Z",
+     "type": "review"
+    }
+   ],
+   "from": "2001-06-01",
+   "to": "2001-06-03",
+   "cells": [
+    {
+     "day": "2001-06-02",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  }
+ ]
+}
