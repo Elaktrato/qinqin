@@ -172,9 +172,9 @@ const (
 	inviteInvalidMessage      = "This invite link is no longer valid."
 )
 
-// applyEmail validates the request's email against the policy and fills
-// nu; false means an error response was written.
-func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy string, email *string, nu *auth.NewUser, exceptID int64) bool {
+// applyEmailFormat validates the request's email against the policy and
+// fills nu (no database lookup); false means an error response was written.
+func (s *server) applyEmailFormat(w http.ResponseWriter, r *http.Request, policy string, email *string, nu *auth.NewUser) bool {
 	disp, norm, err := auth.ApplyEmailPolicy(policy, email)
 	switch {
 	case errors.Is(err, auth.ErrEmailRequired):
@@ -190,8 +190,18 @@ func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy strin
 		writeInternal(w, r)
 		return false
 	}
-	if norm != nil {
-		taken, err := auth.EmailTaken(r.Context(), s.db, *norm, exceptID)
+	nu.Email, nu.EmailNorm = disp, norm
+	return true
+}
+
+// applyEmail is applyEmailFormat plus the "taken" lookup (registration and
+// admin routes, where the caller is allowed to learn it).
+func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy string, email *string, nu *auth.NewUser, exceptID int64) bool {
+	if !s.applyEmailFormat(w, r, policy, email, nu) {
+		return false
+	}
+	if nu.EmailNorm != nil {
+		taken, err := auth.EmailTaken(r.Context(), s.db, *nu.EmailNorm, exceptID)
 		if err != nil {
 			writeInternal(w, r)
 			return false
@@ -201,7 +211,6 @@ func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy strin
 			return false
 		}
 	}
-	nu.Email, nu.EmailNorm = disp, norm
 	return true
 }
 

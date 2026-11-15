@@ -295,7 +295,8 @@ func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 // is a recovery channel. The address stays unverified until plan 3's code
 // check.
 func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
-	p := s.requirePrincipal(w, r, restrictionMFAEnrollment)
+	// A full session only: a restricted session must not probe addresses.
+	p := s.requirePrincipal(w, r)
 	if p == nil {
 		return
 	}
@@ -312,7 +313,9 @@ func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var nu auth.NewUser
-	if !s.applyEmail(w, r, set.EmailPolicy, req.Email, &nu, p.User.ID) {
+	// Format and policy only: whether an address is taken is told after the
+	// password, so nobody can probe addresses without proving who they are.
+	if !s.applyEmailFormat(w, r, set.EmailPolicy, req.Email, &nu) {
 		return
 	}
 	if req.CurrentPassword == "" {
