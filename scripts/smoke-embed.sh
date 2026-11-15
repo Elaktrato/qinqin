@@ -39,10 +39,14 @@ cp -r "$web" "$work/src/internal/webdist/dist"
 if command -v go >/dev/null 2>&1; then
   (cd "$work/src" && CGO_ENABLED=0 go build -trimpath -o "$work/qinqin" ./cmd/qinqin)
 else
-  docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e GOCACHE=/tmp/gocache \
-    -e GOPATH="${GOPATH:-$work/gopath}" -e GOTOOLCHAIN=auto -e GOFLAGS=-buildvcs=false -e CGO_ENABLED=0 \
-    -v "$work:/w" -v "${GOPATH:-$work/gopath}:${GOPATH:-$work/gopath}" -w /w/src golang:1.26 \
-    go build -trimpath -o /w/qinqin ./cmd/qinqin
+  # Module and build caches default to throw-away dirs; set GOPATH/GOCACHE to
+  # reuse warm ones (they must exist and be writable by you).
+  gp="${GOPATH:-$work/gopath}"; gc="${GOCACHE:-$work/gocache}"
+  mkdir -p "$gp" "$gc"
+  docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -e GOCACHE="$gc" -e GOPATH="$gp" \
+    -e GOTOOLCHAIN=auto -e GOFLAGS=-buildvcs=false -e CGO_ENABLED=0 \
+    -v "$work:$work" -v "$gp:$gp" -v "$gc:$gc" -w "$work/src" golang:1.26 \
+    go build -trimpath -o "$work/qinqin" ./cmd/qinqin
 fi
 
 port="${SMOKE_PORT:-$(node -e 'const s=require("net").createServer().listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')}"
@@ -68,7 +72,7 @@ expect() { # label path status ctype-substring cache body-substring
   ok "$1: $2"
 }
 
-asset="$(cd "$web" && find _app/immutable -name '*.js' | sort | head -1)"
+asset="$(cd "$web" && find _app/immutable/entry -name 'start.*.js' | sort | head -1)"
 [ -n "$asset" ] || bad "no hashed _app/immutable asset in the build"
 expect "index" / 200 text/html no-store "<!doctype html>"
 expect "deep link" /entry/5 200 text/html no-store "<!doctype html>"
