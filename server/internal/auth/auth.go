@@ -5,6 +5,7 @@ package auth
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/subtle"
 	"database/sql"
 	"encoding/base64"
@@ -179,8 +180,8 @@ func Login(ctx context.Context, sqlDB *sql.DB, username, password string) (strin
 	}
 	token := hex.EncodeToString(randomBytes(32))
 	if _, err := sqlDB.ExecContext(ctx,
-		`INSERT INTO sessions (token, user_id, updated_at) VALUES (?, ?, ?)`,
-		token, id, now()); err != nil {
+		`INSERT INTO sessions (token_hash, user_id, created_at, last_used_at) VALUES (?, ?, ?, ?)`,
+		hashToken(token), id, now(), now()); err != nil {
 		return "", fmt.Errorf("insert session: %w", err)
 	}
 	return token, nil
@@ -199,7 +200,7 @@ func UserFromRequest(r *http.Request, sqlDB *sql.DB) (*model.User, error) {
 	err := sqlDB.QueryRowContext(r.Context(), `
 		SELECT users.id, users.username, users.admin
 		FROM sessions JOIN users ON users.id = sessions.user_id
-		WHERE sessions.token = ?`, token).Scan(&u.ID, &u.Username, &admin)
+		WHERE sessions.token_hash = ?`, hashToken(token)).Scan(&u.ID, &u.Username, &admin)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -208,6 +209,14 @@ func UserFromRequest(r *http.Request, sqlDB *sql.DB) (*model.User, error) {
 	}
 	u.Admin = admin != 0
 	return &u, nil
+}
+
+// hashToken is the stored form of a bearer token: hex SHA-256. Lookup is
+// equality on this value, which an attacker cannot choose, so no
+// constant-time compare is needed.
+func hashToken(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
 }
 
 // bearerToken extracts the token from an "Authorization: Bearer <token>"

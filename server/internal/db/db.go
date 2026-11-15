@@ -135,6 +135,8 @@ func versionOf(name string) string {
 
 // applyMigration runs one migration and records it in schema_migrations
 // within a single transaction, so a failed migration is never recorded.
+// The version's Go step (goSteps), if any, runs after its SQL in the same
+// transaction.
 func applyMigration(sqlDB *sql.DB, version string, body []byte) error {
 	tx, err := sqlDB.Begin()
 	if err != nil {
@@ -145,6 +147,11 @@ func applyMigration(sqlDB *sql.DB, version string, body []byte) error {
 	if stmt := strings.TrimSpace(string(body)); stmt != "" {
 		if _, err := tx.Exec(stmt); err != nil {
 			return fmt.Errorf("apply migration %s: %w", version, err)
+		}
+	}
+	if step := goSteps[version]; step != nil {
+		if err := step(tx); err != nil {
+			return fmt.Errorf("go step of migration %s: %w", version, err)
 		}
 	}
 	if _, err := tx.Exec(
