@@ -1,7 +1,16 @@
 <script lang="ts">
 	import type { SenseView } from '$lib/api/types';
+	import { hiddenDictionaries, partitionSenses } from '$lib/dictionaryVisibility';
+	import { workspaces } from '$lib/workspaces';
 
 	let { senses }: { senses: SenseView[] } = $props();
+
+	// Dictionaries the current workspace hides collapse behind a button.
+	const partition = $derived(
+		partitionSenses(senses, hiddenDictionaries($workspaces.current))
+	);
+	let revealed = $state(false);
+	const visibleSenses = $derived(revealed ? senses : partition.shown);
 
 	interface SenseGroup {
 		dictionaryId: number;
@@ -15,7 +24,7 @@
 	// preserved rather than resorted by name or id.
 	const groups = $derived.by((): SenseGroup[] => {
 		const byDictionary = new Map<number, SenseGroup>();
-		for (const sense of senses) {
+		for (const sense of visibleSenses) {
 			let group = byDictionary.get(sense.dictionaryId);
 			if (!group) {
 				group = {
@@ -73,6 +82,13 @@
 				{/if}
 			</article>
 		{/each}
+		{#if partition.allHidden}
+			<p class="hidden-note">Shown although its dictionaries are hidden in this workspace</p>
+		{:else if !revealed && partition.hidden.length > 0}
+			<button type="button" class="reveal" onclick={() => (revealed = true)}>
+				Show {partition.hidden.length} from hidden dictionaries
+			</button>
+		{/if}
 	</section>
 {/if}
 
@@ -117,6 +133,25 @@
 
 	.separator {
 		margin: 0 0.25rem;
+	}
+
+	.hidden-note {
+		margin: 0.75rem 0 0;
+		font-size: 0.8rem;
+		opacity: 0.7;
+	}
+
+	.reveal {
+		min-height: 44px;
+		margin-top: 0.5rem;
+		padding: 0;
+		border: none;
+		background: none;
+		color: LinkText;
+		font: inherit;
+		font-size: 0.85rem;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 
 	.source a {

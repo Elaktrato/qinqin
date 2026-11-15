@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { LookupResult } from '$lib/api/types';
+	import { partitionSenses } from '$lib/dictionaryVisibility';
 	import AddToStudyButtons from './AddToStudyButtons.svelte';
 	import {
 		dictionaryNames,
@@ -26,22 +27,28 @@
 		result,
 		lang,
 		textLang,
-		study
+		study,
+		hidden = new Set<number>()
 	}: {
 		result: LookupResult;
 		lang: string;
 		textLang: string;
 		study?: { workspaceId: number; paragraph: string | null; hold: (on: boolean) => void };
+		/** Ids of dictionaries the workspace hides; their senses sit behind a button. */
+		hidden?: ReadonlySet<number>;
 	} = $props();
 
 	const ruby = $derived(rubyReading(result, lang));
 	const reading = $derived(readingLine(result, lang));
 	const forms = $derived(otherForms(result));
 	const sources = $derived(dictionaryNames(result));
-	const senses = $derived(shownSenses(result));
+	const allSenses = $derived(shownSenses(result));
+	const partition = $derived(partitionSenses(allSenses, hidden));
+	let revealed = $state(false);
+	const senses = $derived(revealed ? allSenses : partition.shown);
 	let shown = $state(SENSES_VISIBLE);
 	const visible = $derived(visibleCount(senses.length, 0, shown));
-	const hidden = $derived(senses.length - visible);
+	const more = $derived(senses.length - visible);
 </script>
 
 <article class="entry">
@@ -109,9 +116,16 @@
 				</li>
 			{/each}
 		</ol>
-		{#if hidden > 0}
+		{#if more > 0}
 			<button type="button" class="more" onclick={() => (shown = visibleCount(senses.length, shown))}>
-				{moreLabel(hidden, 'sense', 'senses')}
+				{moreLabel(more, 'sense', 'senses')}
+			</button>
+		{/if}
+		{#if partition.allHidden}
+			<p class="hidden-note">Shown although its dictionaries are hidden in this workspace</p>
+		{:else if !revealed && partition.hidden.length > 0}
+			<button type="button" class="more reveal" onclick={() => (revealed = true)}>
+				Show {partition.hidden.length} from hidden dictionaries
 			</button>
 		{/if}
 	{/if}
@@ -221,6 +235,17 @@
 		font-size: 0.8rem;
 		cursor: pointer;
 		text-decoration: underline;
+	}
+
+	.hidden-note {
+		margin: 0.25rem 0 0;
+		font-size: 0.75rem;
+		opacity: 0.7;
+	}
+
+	.reveal {
+		display: block;
+		min-height: 44px;
 	}
 
 	.open {
