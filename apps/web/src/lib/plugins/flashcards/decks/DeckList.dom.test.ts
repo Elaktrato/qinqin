@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
+vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn() }));
 vi.mock('$lib/study/history', () => ({
 	loadStudyHistory: vi.fn(),
 	invalidateStudyHistory: vi.fn()
@@ -77,6 +78,12 @@ describe('DeckList', () => {
 		await screen.findByRole('link', { name: 'Verbs' });
 		await new Promise((resolve) => setTimeout(resolve, 30));
 		expect(loadStudyHistory).toHaveBeenCalledTimes(1);
+	});
+
+	it('ends with the section of level and plugin decks', async () => {
+		render(DeckList);
+		await screen.findByRole('link', { name: 'Verbs' });
+		expect(await screen.findByRole('heading', { level: 2, name: 'Level and plugin decks' })).toBeTruthy();
 	});
 
 	it('gives each bar a text alternative', async () => {

@@ -7,6 +7,7 @@
 	import { progressShares, progressSummary } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
 	import DeckStatsPanel from './DeckStatsPanel.svelte';
+	import SystemDecks from './SystemDecks.svelte';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
 	import { flashcardsHref } from '../route';
 
@@ -25,6 +26,18 @@
 			w: data.weights,
 			kindsFor: (ids) => sessionKinds(data.workspaceId, ids, data.deckSettings)
 		});
+	});
+
+	// Words that already have a card in one of the learner's decks.
+	const ownedEntryIds = $derived.by(() => {
+		const data = store.data;
+		if (data === null) return new Set<number>();
+		const ids = new Set(['general', ...data.decks.map((d) => d.id)]);
+		return new Set(
+			data.cards
+				.filter((card) => card.kind === 'vocab' && card.deckIds.some((id) => ids.has(id)))
+				.map((card) => card.entryId)
+		);
 	});
 
 	let newName = $state('');
@@ -124,6 +137,8 @@
 			<p class="error" role="alert">{formError}</p>
 		{/if}
 	</form>
+
+	<SystemDecks language={$workspaces.current?.language ?? ''} {ownedEntryIds} />
 {/if}
 
 <style>
