@@ -497,3 +497,57 @@ func TestAuthLimitRegisterGateBusy(t *testing.T) {
 		t.Fatalf("first = %+v", r)
 	}
 }
+
+// The fixtures of docs/contracts/auth/throttle-responses.json are what a
+// real server answers.
+func TestAuthLimitContractFixtures(t *testing.T) {
+	raw, err := os.ReadFile("../../../docs/contracts/auth/throttle-responses.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fx map[string]struct {
+		Status  int               `json:"status"`
+		Headers map[string]string `json:"headers"`
+		Body    map[string]string `json:"body"`
+	}
+	if err := json.Unmarshal(raw, &fx); err != nil {
+		t.Fatal(err)
+	}
+	for name, f := range fx {
+		if f.Body["error"] == "" || f.Body["message"] == "" || len(f.Body) != 2 || f.Headers["Content-Type"] != "application/json" {
+			t.Errorf("fixture %s is not a {error,message} JSON response: %+v", name, f)
+		}
+	}
+	h := &fastLogin{}
+	ts, sqlDB, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{Login: h.login}))
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+		t.Fatal(err)
+	}
+	token, _ := auth.Login(context.Background(), sqlDB, "owner", "pw-owner")
+	same := func(name string, got authResp) {
+		t.Helper()
+		f := fx[name]
+		if got.Status != f.Status || got.Err != f.Body["error"] || got.Msg != f.Body["message"] ||
+			got.RetryAfter != f.Headers["Retry-After"] {
+			t.Errorf("%s: real %+v differs from fixture %+v", name, got, f)
+		}
+	}
+	same("login_bad_credentials", login1(t, ts, "198.51.100.1", "owner", "wrong"))
+	same("register_admin_required", registerAs(t, ts, "198.51.100.2", "", "x"))
+	same("register_username_taken", registerAs(t, ts, "198.51.100.2", token, "owner"))
+	same("bad_request", authRaw(t, ts, "/api/auth/login", "198.51.100.3", "", strings.NewReader("{")))
+	big := `{"username":"a","password":"` + strings.Repeat("x", 5000) + `"}`
+	same("too_large", authRaw(t, ts, "/api/auth/login", "198.51.100.3", "", strings.NewReader(big)))
+	var last authResp
+	for i := 0; i < 11; i++ {
+		last = login1(t, ts, "198.51.100.4", fmt.Sprintf("u%d", i), "wrong")
+	}
+	same("rate_limited", last)
+	// pair lock of 15 minutes words as minutes
+	for i := 0; i < 6; i++ {
+		login1(t, ts, "198.51.100.5", "owner", "wrong")
+	}
+	if r := login1(t, ts, "198.51.100.5", "owner", "wrong"); r.Err != "rate_limited" || r.Msg != "Too many sign-in attempts. Try again in 1 minute." {
+		t.Errorf("minute wording: %+v", r)
+	}
+}

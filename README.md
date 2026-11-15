@@ -193,8 +193,10 @@ uploads), so a read-only root filesystem is not enabled.
    `QINQIN_AI_PROVIDERS` limits which AI providers users may choose
    (default: all; see [Journal and AI](#journal-and-ai)),
    `QINQIN_AI_ALLOW_PRIVATE=1` lets an admin register AI endpoints on private
-   addresses, and `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the
-   stack.
+   addresses, `QINQIN_TRUSTED_PROXIES` sets which proxies' `X-Forwarded-For`
+   is believed (default: private networks; `none` ignores it; see
+   [Reverse proxy and HTTPS](#reverse-proxy-and-https)), and
+   `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the stack.
 4. **First run, before exposing the port beyond your LAN** (until a user
    exists, the first registration over the API becomes admin). Portainer:
    Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
@@ -258,11 +260,21 @@ the pre-upgrade backup. After an upgrade the log may say
 
 The app speaks plain HTTP on 8080. Browser features that need a secure context
 may not work over plain HTTP from other devices, so serve it over HTTPS. No
-WebSocket is used. The server does not read client IPs or
-`X-Forwarded-*` headers anywhere (no per-IP limits; limits are per user), so
-no trusted-proxy setting exists. Pack uploads go up to 128 MiB and an AI
+WebSocket is used. Pack uploads go up to 128 MiB and an AI
 review can take up to 170 s, so the proxy needs a body limit of at least
 130 MB and a read timeout of at least 180 s.
+
+**Client addresses and sign-in throttling.** Sign-in and registration are
+limited per client address (see [Sign-in throttling](#sign-in-throttling)), so
+the server must see the real address. It believes `X-Forwarded-For` only when
+the TCP peer is a trusted proxy: by default the private networks a Docker or
+LAN proxy connects from (127.0.0.0/8, ::1, 10/8, 172.16/12, 192.168/16,
+100.64/10, 169.254/16, fc00::/7, fe80::/10). Set `QINQIN_TRUSTED_PROXIES` to a
+comma list of CIDRs or addresses to replace that set (for example a CDN's
+ranges in front of your proxy), or to `none` to ignore the header on a LAN
+without a proxy (otherwise a client on the LAN could forge it). A bad value
+stops the server at startup. Addresses are used only as in-memory limiter
+keys (hashed with a per-process secret): never stored, never logged.
 
 Caddy (defaults are fine: no body limit, 0 response timeout):
 
@@ -294,6 +306,7 @@ location / {
     proxy_pass http://127.0.0.1:8080;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     client_max_body_size 130m;
     proxy_read_timeout 180s;
     proxy_send_timeout 180s;
@@ -301,6 +314,26 @@ location / {
     # proxy_request_buffering off;
 }
 ```
+
+### Sign-in throttling
+
+`POST /api/auth/login` and `/register` hash passwords with argon2id (64 MiB
+each), so they are limited. The limits live in memory (a restart clears them):
+
+| Layer | Key | Rule |
+|---|---|---|
+| Client | address (IPv6 per /64) | burst 10, one more every 6 s; every attempt costs one |
+| Pair | client and username | 5 failures free, then a lock of 60 s, doubling to 15 min; a success clears it and marks the pair known-good for 30 days |
+| Username | username, any client | burst 20 failures, one more per minute; a known-good pair is exempt |
+| Hash gate | the server | at most min(4, CPUs) hashes at once, 3 s wait, then 503 |
+
+A locked key is refused (429, `Retry-After`) before the password is checked,
+unknown usernames behave exactly like known ones, and an administrator creating
+users is not throttled. Errors of both routes are JSON `{"error","message"}`
+(`rate_limited`, `busy`, `bad_credentials`, `admin_required`,
+`username_taken`, `bad_request`, `too_large`); see `docs/contracts/auth/`.
+A distributed attack can keep an account refused for new devices and networks
+while it lasts; the owner's usual device keeps signing in.
 
 ### AI journal
 
