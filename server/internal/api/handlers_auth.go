@@ -62,6 +62,27 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		internal()
 		return
 	}
+	// An anonymous caller on an instance with users learns nothing about
+	// usernames: the closed answer comes before any policy or taken check.
+	if count != 0 && !isAdmin {
+		writeAuthError(w, http.StatusForbidden, "admin_required", "Registration needs an administrator.")
+		return
+	}
+	if err := auth.CheckNewUsername(r.Context(), s.db, req.Username); err != nil {
+		switch {
+		case errors.Is(err, auth.ErrInvalidUsername):
+			writeAuthError(w, http.StatusUnprocessableEntity, "invalid_username", auth.PolicyReason(err))
+		case errors.Is(err, auth.ErrUsernameTaken):
+			writeAuthError(w, http.StatusConflict, "username_taken", "That username is taken.")
+		default:
+			internal()
+		}
+		return
+	}
+	if err := auth.CheckPassword(req.Username, req.Password); err != nil {
+		writeAuthError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
+		return
+	}
 	var (
 		u   model.User
 		err error

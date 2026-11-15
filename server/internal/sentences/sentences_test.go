@@ -151,7 +151,7 @@ func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 // through the API and returns its id and bearer token.
 func registerFirstUser(t *testing.T, tsURL, username string) (int64, string) {
 	t.Helper()
-	body, _ := json.Marshal(map[string]string{"username": username, "password": "pw-" + username})
+	body, _ := json.Marshal(map[string]string{"username": username, "password": "secret-pass-" + username})
 	resp, err := http.Post(tsURL+"/api/auth/register", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("register %s: %v", username, err)
@@ -362,7 +362,7 @@ func TestReimportKeepsUserSentences(t *testing.T) {
 	if _, err := sentences.ImportPack(ctx, sqlDB, pack); err != nil {
 		t.Fatalf("import fixture pack: %v", err)
 	}
-	alice, err := auth.CreateUser(ctx, sqlDB, "alice", "pw-alice", false)
+	alice, err := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-alice", false)
 	if err != nil {
 		t.Fatalf("create alice: %v", err)
 	}

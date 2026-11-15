@@ -40,9 +40,9 @@ func wantTooLarge(t *testing.T, what string, resp *http.Response) {
 func TestAuthBodyLimit(t *testing.T) {
 	ts, _ := newServer(t)
 	admin := registerUser(t, ts.URL, "admin", "")
-	big := padded(`"username":"admin","password":"pw-admin"`, 4<<10)
+	big := padded(`"username":"admin","password":"secret-pass-admin"`, 4<<10)
 	wantTooLarge(t, "login", doRaw(t, http.MethodPost, ts.URL, "/api/auth/login", "", big))
-	wantTooLarge(t, "register", doRaw(t, http.MethodPost, ts.URL, "/api/auth/register", admin, padded(`"username":"bob","password":"pw"`, 4<<10)))
+	wantTooLarge(t, "register", doRaw(t, http.MethodPost, ts.URL, "/api/auth/register", admin, padded(`"username":"bob","password":"secret-pass"`, 4<<10)))
 	// An ordinary body still works.
 	login(t, ts.URL, "admin")
 }

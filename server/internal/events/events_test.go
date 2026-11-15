@@ -68,7 +68,7 @@ func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 // through the API and returns its id and bearer token.
 func registerFirstUser(t *testing.T, tsURL, username string) (int64, string) {
 	t.Helper()
-	body, _ := json.Marshal(map[string]string{"username": username, "password": "pw-" + username})
+	body, _ := json.Marshal(map[string]string{"username": username, "password": "secret-pass-" + username})
 	resp, err := http.Post(tsURL+"/api/auth/register", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("register %s: %v", username, err)
@@ -88,7 +88,7 @@ func registerFirstUser(t *testing.T, tsURL, username string) (int64, string) {
 // authorizes it — and returns its id and bearer token.
 func registerUser(t *testing.T, tsURL, username, adminToken string) (int64, string) {
 	t.Helper()
-	body, _ := json.Marshal(map[string]string{"username": username, "password": "pw-" + username})
+	body, _ := json.Marshal(map[string]string{"username": username, "password": "secret-pass-" + username})
 	req, err := http.NewRequest(http.MethodPost, tsURL+"/api/auth/register", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("build register request: %v", err)
@@ -112,7 +112,7 @@ func registerUser(t *testing.T, tsURL, username, adminToken string) (int64, stri
 // login returns a fresh bearer token for username.
 func login(t *testing.T, tsURL, username string) string {
 	t.Helper()
-	body, _ := json.Marshal(map[string]string{"username": username, "password": "pw-" + username})
+	body, _ := json.Marshal(map[string]string{"username": username, "password": "secret-pass-" + username})
 	resp, err := http.Post(tsURL+"/api/auth/login", "application/json", bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("login %s: %v", username, err)

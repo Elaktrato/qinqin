@@ -76,6 +76,14 @@ func register(t *testing.T, ts *httptest.Server, bearer, username, password stri
 	return post(t, ts.URL+"/api/auth/register", bearer, credentials{Username: username, Password: password})
 }
 
+// mustRegister registers a user and fails the test unless it answers 201.
+func mustRegister(t *testing.T, ts *httptest.Server, bearer, username, password string) {
+	t.Helper()
+	if resp := register(t, ts, bearer, username, password); resp.StatusCode != http.StatusCreated {
+		t.Fatalf("register %q: status = %d, want %d", username, resp.StatusCode, http.StatusCreated)
+	}
+}
+
 // login logs in via the API and returns the response.
 func login(t *testing.T, ts *httptest.Server, username, password string) *http.Response {
 	t.Helper()
@@ -123,7 +131,7 @@ func me(t *testing.T, ts *httptest.Server, bearer string) *http.Response {
 func TestFirstUserBecomesAdminNoAuth(t *testing.T) {
 	ts, _ := newServer(t)
 
-	resp := register(t, ts, "", "alice", "secret")
+	resp := register(t, ts, "", "alice", "secret-pass-1")
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("register first user: status = %d, want %d", resp.StatusCode, http.StatusCreated)
 	}
@@ -145,10 +153,10 @@ func TestFirstUserBecomesAdminNoAuth(t *testing.T) {
 func TestSecondRegisterRejectedWithoutAdmin(t *testing.T) {
 	ts, sqlDB := newServer(t)
 
-	register(t, ts, "", "alice", "secret")
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
 
 	// Without an admin token, registration is forbidden.
-	resp := register(t, ts, "", "bob", "secret")
+	resp := register(t, ts, "", "bob", "secret-pass-1")
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("anonymous second register: status = %d, want %d", resp.StatusCode, http.StatusForbidden)
 	}
@@ -161,18 +169,18 @@ func TestSecondRegisterRejectedWithoutAdmin(t *testing.T) {
 	}
 
 	// A non-admin token is forbidden too.
-	aliceToken := loginToken(t, ts, "alice", "secret")
-	if resp := register(t, ts, aliceToken, "bob", "secret"); resp.StatusCode != http.StatusCreated {
+	aliceToken := loginToken(t, ts, "alice", "secret-pass-1")
+	if resp := register(t, ts, aliceToken, "bob", "secret-pass-1"); resp.StatusCode != http.StatusCreated {
 		t.Fatalf("admin register bob: status = %d, want %d", resp.StatusCode, http.StatusCreated)
 	}
-	bobToken := loginToken(t, ts, "bob", "secret")
-	resp = register(t, ts, bobToken, "carol", "secret")
+	bobToken := loginToken(t, ts, "bob", "secret-pass-1")
+	resp = register(t, ts, bobToken, "carol", "secret-pass-1")
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("non-admin second register: status = %d, want %d", resp.StatusCode, http.StatusForbidden)
 	}
 
 	// An admin token may create further (non-admin) users.
-	resp = register(t, ts, aliceToken, "carol", "secret")
+	resp = register(t, ts, aliceToken, "carol", "secret-pass-1")
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("admin register: status = %d, want %d", resp.StatusCode, http.StatusCreated)
 	}
@@ -188,7 +196,7 @@ func TestSecondRegisterRejectedWithoutAdmin(t *testing.T) {
 func TestRegisterLoginMe(t *testing.T) {
 	ts, sqlDB := newServer(t)
 
-	register(t, ts, "", "alice", "secret")
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
 
 	// The stored password is an argon2id hash, never plaintext.
 	var hash string
@@ -199,7 +207,7 @@ func TestRegisterLoginMe(t *testing.T) {
 		t.Errorf("stored hash = %q, want argon2id-encoded", hash)
 	}
 
-	token := loginToken(t, ts, "alice", "secret")
+	token := loginToken(t, ts, "alice", "secret-pass-1")
 
 	resp := me(t, ts, token)
 	if resp.StatusCode != http.StatusOK {
@@ -222,7 +230,7 @@ func TestRegisterLoginMe(t *testing.T) {
 func TestLoginWrongPassword(t *testing.T) {
 	ts, _ := newServer(t)
 
-	register(t, ts, "", "alice", "secret")
+	mustRegister(t, ts, "", "alice", "secret-pass-1")
 
 	resp := login(t, ts, "alice", "wrong")
 	if resp.StatusCode != http.StatusUnauthorized {
@@ -231,26 +239,26 @@ func TestLoginWrongPassword(t *testing.T) {
 }
 
 func TestHashVerify(t *testing.T) {
-	h1, h2 := auth.Hash("secret"), auth.Hash("secret")
+	h1, h2 := auth.Hash("secret-pass-1"), auth.Hash("secret-pass-1")
 	if !strings.HasPrefix(h1, "$argon2id$") {
 		t.Errorf("hash = %q, want argon2id-encoded", h1)
 	}
 	if h1 == h2 {
 		t.Error("two hashes of the same password are identical, want per-password random salt")
 	}
-	if !auth.Verify(h1, "secret") {
+	if !auth.Verify(h1, "secret-pass-1") {
 		t.Error("Verify(hash, correct password) = false, want true")
 	}
 	if auth.Verify(h1, "wrong") {
 		t.Error("Verify(hash, wrong password) = true, want false")
 	}
-	if auth.Verify("not a hash", "secret") {
+	if auth.Verify("not a hash", "secret-pass-1") {
 		t.Error("Verify(malformed hash, ...) = true, want false")
 	}
-	if auth.Verify("$argon2id$v=19$m=65536,t=3,p=4$$", "secret") {
+	if auth.Verify("$argon2id$v=19$m=65536,t=3,p=4$$", "secret-pass-1") {
 		t.Error("Verify(hash with empty salt and key) = true, want false")
 	}
-	if auth.Verify("$argon2id$v=19$m=65536,t=0,p=4$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "secret") {
+	if auth.Verify("$argon2id$v=19$m=65536,t=0,p=4$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "secret-pass-1") {
 		t.Error("Verify(hash with zero rounds) = true, want false")
 	}
 }
@@ -258,10 +266,10 @@ func TestHashVerify(t *testing.T) {
 func TestRegisterDuplicateUsername(t *testing.T) {
 	ts, sqlDB := newServer(t)
 
-	if resp := register(t, ts, "", "alice", "secret"); resp.StatusCode != http.StatusCreated {
+	if resp := register(t, ts, "", "alice", "secret-pass-1"); resp.StatusCode != http.StatusCreated {
 		t.Fatalf("register alice: status = %d, want %d", resp.StatusCode, http.StatusCreated)
 	}
-	token := loginToken(t, ts, "alice", "secret")
+	token := loginToken(t, ts, "alice", "secret-pass-1")
 	resp := register(t, ts, token, "alice", "other")
 	if resp.StatusCode != http.StatusConflict {
 		t.Fatalf("duplicate username: status = %d, want %d", resp.StatusCode, http.StatusConflict)
@@ -276,11 +284,11 @@ func TestCreateFirstUserOnlyWhenEmpty(t *testing.T) {
 	_, sqlDB := newServer(t)
 	ctx := context.Background()
 
-	u, err := auth.CreateFirstUser(ctx, sqlDB, "alice", "secret")
+	u, err := auth.CreateFirstUser(ctx, sqlDB, "alice", "secret-pass-1")
 	if err != nil || !u.Admin || u.Username != "alice" {
 		t.Fatalf("first CreateFirstUser = %+v, %v; want admin alice", u, err)
 	}
-	if _, err := auth.CreateFirstUser(ctx, sqlDB, "bob", "secret"); !errors.Is(err, auth.ErrNotFirst) {
+	if _, err := auth.CreateFirstUser(ctx, sqlDB, "bob", "secret-pass-1"); !errors.Is(err, auth.ErrNotFirst) {
 		t.Errorf("second CreateFirstUser err = %v, want ErrNotFirst", err)
 	}
 	var count int
@@ -310,7 +318,7 @@ func TestConcurrentFirstRegisterCreatesOneAdmin(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			encoded, _ := json.Marshal(credentials{Username: fmt.Sprintf("user%d", i), Password: "secret"})
+			encoded, _ := json.Marshal(credentials{Username: fmt.Sprintf("user%d", i), Password: "secret-pass-1"})
 			resp, err := http.Post(ts.URL+"/api/auth/register", "application/json", bytes.NewReader(encoded))
 			if err != nil {
 				return
@@ -347,7 +355,7 @@ func TestConcurrentFirstRegisterCreatesOneAdmin(t *testing.T) {
 func TestLoginUnknownUserStillVerifies(t *testing.T) {
 	_, sqlDB := newServer(t)
 	ctx := context.Background()
-	if _, err := auth.CreateUser(ctx, sqlDB, "alice", "secret", true); err != nil {
+	if _, err := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", true); err != nil {
 		t.Fatalf("create user: %v", err)
 	}
 	var hashes []string
@@ -365,5 +373,43 @@ func TestLoginUnknownUserStillVerifies(t *testing.T) {
 		if len(hashes) != 1 || !strings.HasPrefix(hashes[0], "$argon2id$") {
 			t.Errorf("login %q verified %v, want exactly one argon2id hash", username, hashes)
 		}
+	}
+}
+
+func TestRegisterAppliesPolicy(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	cases := []struct {
+		user, pw string
+		status   int
+		code     string
+	}{
+		{"alice", "short", 422, "weak_password"},
+		{"alice", "alice", 422, "weak_password"},
+		{"a@b.example", "long-enough-pw", 422, "invalid_username"},
+		{"ab", "long-enough-pw", 422, "invalid_username"},
+	}
+	for _, c := range cases {
+		resp := register(t, ts, "", c.user, c.pw)
+		if resp.StatusCode != c.status {
+			t.Errorf("%q/%q: status %d, want %d", c.user, c.pw, resp.StatusCode, c.status)
+			continue
+		}
+		var body struct{ Error, Message string }
+		json.NewDecoder(resp.Body).Decode(&body)
+		if body.Error != c.code || body.Message == "" {
+			t.Errorf("%q/%q: body %+v, want code %s with a message", c.user, c.pw, body, c.code)
+		}
+	}
+	var n int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&n)
+	if n != 0 {
+		t.Errorf("users = %d after rejected registrations", n)
+	}
+	if resp := register(t, ts, "", "alice", "long-enough-pw"); resp.StatusCode != 201 {
+		t.Fatalf("valid register: %d", resp.StatusCode)
+	}
+	token := loginToken(t, ts, "alice", "long-enough-pw")
+	if resp := register(t, ts, token, "ALICE", "long-enough-pw"); resp.StatusCode != 409 {
+		t.Errorf("case-variant duplicate: %d, want 409", resp.StatusCode)
 	}
 }
