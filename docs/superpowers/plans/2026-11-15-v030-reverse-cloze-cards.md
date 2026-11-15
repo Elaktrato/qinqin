@@ -484,3 +484,47 @@ Running list for item 7 (`docs/contracts/`); every file below is created by this
   is checked again next session.
 - Ruling: fixtures use item 1's loader and format (`readContract`, `{"version":1,"rule","cases"}`) —
   one contract convention for Android — cost if wrong: none.
+
+## Rulings and deviations made while building (after #84, #86 and #57 were on `feature/v0.3.0`)
+
+- Ruling: the learner's day is the existing `StudyDay` object (`studyDay: Pick<StudyDay, 'dayOf'>` in
+  `buriedNow`, `studyDay?: StudyDay` in `deckSessionPlan`/`dueCounts`, UTC `studyDay([])` when absent),
+  not a bare `dayOf` function, and there is no `readContract` loader: fixtures are imported as JSON like
+  `levelQueue.test.ts` does, with rule names `cards/cardIds`, `cards/burying`, `cards/cloze` — one
+  convention with the other contracts — cost if wrong: none.
+- Ruling: `EntryLike` has no `glossCount`; reverse eligibility uses the existing optional `senses` list
+  (`kind === 'word'` and at least one sense) — cost if wrong: none.
+- Ruling: `deleteDeck` tombstones `deckcfg:<id>` only when the pull contained such a row (and still ignores
+  a 404), so decks that never had a switch cause no extra request and the existing delete tests stay
+  untouched — cost if wrong: none.
+- Ruling: `StudyData.deckSettings` is absent (not `{}`) when a workspace has no `deckcfg:` row, so every
+  existing `loadStudyData` result is byte-identical — cost if wrong: callers use `data.deckSettings ?? {}`.
+- Ruling: after #57 the level planner has two paths (`buildWordPlan`, `buildCharacterPlan`);
+  `excludeEntries` is applied in both. A word buried by a reverse/cloze answer is dropped as a whole
+  entry (`buriedLevelEntries`: any buried vocab or writing card/key), which is exact because such an answer
+  buries every kind of the word. `levelSessionItems` takes the `Buried` set as an optional 4th argument.
+  Level sessions still never plan reverse or cloze themselves (`CHARACTER_KINDS` and word levels are
+  unchanged) — cost if wrong: none.
+- Ruling: `planCompanions` also takes `skip` (the ineligible memory) so the "cloze when reverse is
+  remembered ineligible" preference is decided during planning; `deckSessionPlan` keeps its old post-filter
+  for the legacy kinds, and the planner size is `cards.length * 5` — cost if wrong: none.
+- Ruling: `ClozeChoice` ignores digit keys once it has an answer, without `preventDefault`; otherwise the
+  runner could never grade with 1-4 after a pick, since it honours `defaultPrevented` — cost if wrong: none.
+- Ruling: an Enter in an empty reverse field does nothing (only the Show answer button or Space/Enter
+  outside the field reveals without an answer), so an accidental Enter never gives up the card — cost if
+  wrong: one more click.
+- Deviation: the next cloze item's segmentation is NOT prefetched. The runner loads an entry only when the
+  item comes up, so there is nothing to segment earlier; the first showing of a cloze card waits for at
+  most 8 parallel `POST /api/segment` calls (cached per sentence for the session) — cost if wrong: a short
+  "Loading card…" before a cloze card; a prefetch would first need entry prefetching.
+- Deviation: the new-kind tests live in `deckKinds.test.ts` (planning, burying in deck and level sessions)
+  next to the existing ones instead of being appended to `companions.test.ts`/`levelQueue.test.ts`.
+- Deviation: no Go was changed, so the full Go gate was not run for this branch (rule: only if Go changed).
+- Interfaces for the decks view (#90): `effectiveKinds(remembered, enabled, choices)`,
+  `defaultExtraTypes`, `loadExtraChoices` (`lib/study/cardTypesMemory.ts`); `enabledKinds(settings, deckIds)`,
+  `parseDeckSettings`, `DeckSettings` (`lib/study/deckSettings.ts`); `saveDeckCardTypes` and the
+  `deckcfg:<deckId>` rows (`StudyData.deckSettings`); `DeckCardTypes.svelte` (per-deck switches);
+  `dueCounts` (`lib/study/dueCounts.ts`, accepts `scheduleOf`); `dropSiblingCards`, `skipKind`,
+  `unskipKind` (`store.ts`; undo = `restoreCards(rows)` without `onlyLive`); `buriedNow`,
+  `answeredEntriesToday`, `buries` (`siblings.ts`); `MASTERY_KINDS`, `cardScore` (`mastery.ts`);
+  `allowedReal`, `skipKindsByEntry` (`cardFlow.ts`).

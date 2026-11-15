@@ -87,7 +87,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 
 **Study**
 
-- [#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards
+- [#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards (built on `feature/v030-cards-reverse-cloze`: per-deck switch, sibling burying, contract fixtures in `docs/contracts/cards/`)
 - [#66](https://github.com/Elaktrato/qinqin/issues/66) leech handling with a per-user policy
 - [#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals
 - [#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks
