@@ -25,7 +25,7 @@ function ev(
 
 describe('BASE_XP', () => {
 	it('has the per-kind base values', () => {
-		expect(BASE_XP).toEqual({ vocab: 10, sentence: 15, writing: 20, tone: 8 });
+		expect(BASE_XP).toEqual({ vocab: 10, sentence: 15, writing: 20, tone: 8, reverse: 10, cloze: 15 });
 	});
 });
 
@@ -87,7 +87,7 @@ describe('xpByKind', () => {
 			ev(3, '2026-01-02T01:00:00Z', 1, 'writing')
 		];
 		const by = xpByKind(r);
-		expect(by).toEqual({ vocab: 20, sentence: 0, writing: 45, tone: 0 });
+		expect(by).toEqual({ vocab: 20, sentence: 0, writing: 45, tone: 0, reverse: 0, cloze: 0 });
 		expect(xpFromReviews(r, UTC.dayOf) - (by.vocab + by.sentence + by.writing + by.tone)).toBe(20);
 	});
 });

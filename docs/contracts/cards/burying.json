@@ -1,0 +1,484 @@
+{
+  "version": 1,
+  "rule": "cards/burying",
+  "cases": [
+    {
+      "name": "vocab answered today buries reverse and cloze, not writing",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-sentence-1",
+          "kind": "sentence",
+          "entryId": 1
+        },
+        {
+          "id": "c-writing-1",
+          "kind": "writing",
+          "entryId": 1
+        },
+        {
+          "id": "c-tone-1",
+          "kind": "tone",
+          "entryId": 1
+        },
+        {
+          "id": "c-reverse-1",
+          "kind": "reverse",
+          "entryId": 1
+        },
+        {
+          "id": "c-cloze-1",
+          "kind": "cloze",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-vocab-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [
+        "c-reverse-1",
+        "c-cloze-1"
+      ],
+      "buriedKeys": [
+        "reverse:1",
+        "cloze:1"
+      ],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "writing answered today buries reverse and cloze",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-sentence-1",
+          "kind": "sentence",
+          "entryId": 1
+        },
+        {
+          "id": "c-writing-1",
+          "kind": "writing",
+          "entryId": 1
+        },
+        {
+          "id": "c-tone-1",
+          "kind": "tone",
+          "entryId": 1
+        },
+        {
+          "id": "c-reverse-1",
+          "kind": "reverse",
+          "entryId": 1
+        },
+        {
+          "id": "c-cloze-1",
+          "kind": "cloze",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-writing-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [
+        "c-reverse-1",
+        "c-cloze-1"
+      ],
+      "buriedKeys": [
+        "reverse:1",
+        "cloze:1"
+      ],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "reverse answered today buries every sibling but not itself",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-sentence-1",
+          "kind": "sentence",
+          "entryId": 1
+        },
+        {
+          "id": "c-writing-1",
+          "kind": "writing",
+          "entryId": 1
+        },
+        {
+          "id": "c-tone-1",
+          "kind": "tone",
+          "entryId": 1
+        },
+        {
+          "id": "c-reverse-1",
+          "kind": "reverse",
+          "entryId": 1
+        },
+        {
+          "id": "c-cloze-1",
+          "kind": "cloze",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-reverse-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [
+        "c-vocab-1",
+        "c-sentence-1",
+        "c-writing-1",
+        "c-tone-1",
+        "c-cloze-1"
+      ],
+      "buriedKeys": [
+        "vocab:1",
+        "sentence:1",
+        "writing:1",
+        "tone:1",
+        "cloze:1"
+      ],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "cloze answered today buries every sibling",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-sentence-1",
+          "kind": "sentence",
+          "entryId": 1
+        },
+        {
+          "id": "c-writing-1",
+          "kind": "writing",
+          "entryId": 1
+        },
+        {
+          "id": "c-tone-1",
+          "kind": "tone",
+          "entryId": 1
+        },
+        {
+          "id": "c-reverse-1",
+          "kind": "reverse",
+          "entryId": 1
+        },
+        {
+          "id": "c-cloze-1",
+          "kind": "cloze",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-cloze-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [
+        "c-vocab-1",
+        "c-sentence-1",
+        "c-writing-1",
+        "c-tone-1",
+        "c-reverse-1"
+      ],
+      "buriedKeys": [
+        "vocab:1",
+        "sentence:1",
+        "writing:1",
+        "tone:1",
+        "reverse:1"
+      ],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "the four existing kinds never bury each other",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-sentence-1",
+          "kind": "sentence",
+          "entryId": 1
+        },
+        {
+          "id": "c-writing-1",
+          "kind": "writing",
+          "entryId": 1
+        },
+        {
+          "id": "c-tone-1",
+          "kind": "tone",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-vocab-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        },
+        {
+          "cardId": "c-writing-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [],
+      "buriedKeys": [
+        "reverse:1",
+        "cloze:1"
+      ],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "answered on the previous day buries nothing",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-sentence-1",
+          "kind": "sentence",
+          "entryId": 1
+        },
+        {
+          "id": "c-writing-1",
+          "kind": "writing",
+          "entryId": 1
+        },
+        {
+          "id": "c-tone-1",
+          "kind": "tone",
+          "entryId": 1
+        },
+        {
+          "id": "c-reverse-1",
+          "kind": "reverse",
+          "entryId": 1
+        },
+        {
+          "id": "c-cloze-1",
+          "kind": "cloze",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-vocab-1",
+          "ts": "2026-03-09T09:00:00Z",
+          "day": "2026-03-09",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [],
+      "buriedKeys": [],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "learner day, not UTC date: 02:00Z belongs to the previous learner day",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-sentence-1",
+          "kind": "sentence",
+          "entryId": 1
+        },
+        {
+          "id": "c-writing-1",
+          "kind": "writing",
+          "entryId": 1
+        },
+        {
+          "id": "c-tone-1",
+          "kind": "tone",
+          "entryId": 1
+        },
+        {
+          "id": "c-reverse-1",
+          "kind": "reverse",
+          "entryId": 1
+        },
+        {
+          "id": "c-cloze-1",
+          "kind": "cloze",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-vocab-1",
+          "ts": "2026-03-10T02:00:00Z",
+          "day": "2026-03-09",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [],
+      "buriedKeys": [],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "a review of a deleted card buries nothing",
+      "cards": [
+        {
+          "id": "c-vocab-9",
+          "kind": "vocab",
+          "entryId": 9
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-reverse-9",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [],
+      "buriedKeys": [],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "two entries do not interact",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-reverse-2",
+          "kind": "reverse",
+          "entryId": 2
+        },
+        {
+          "id": "c-cloze-2",
+          "kind": "cloze",
+          "entryId": 2
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-vocab-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [],
+      "buriedKeys": [
+        "reverse:1",
+        "cloze:1"
+      ],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "Again counts as answered",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        },
+        {
+          "id": "c-reverse-1",
+          "kind": "reverse",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-vocab-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 1
+        }
+      ],
+      "buriedCardIds": [
+        "c-reverse-1"
+      ],
+      "buriedKeys": [
+        "reverse:1",
+        "cloze:1"
+      ],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    },
+    {
+      "name": "no sibling card exists yet: only the virtual keys are buried",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "cardId": "c-vocab-1",
+          "ts": "2026-03-10T09:00:00Z",
+          "day": "2026-03-10",
+          "grade": 3
+        }
+      ],
+      "buriedCardIds": [],
+      "buriedKeys": [
+        "reverse:1",
+        "cloze:1"
+      ],
+      "now": "2026-03-10T12:00:00Z",
+      "today": "2026-03-10"
+    }
+  ]
+}

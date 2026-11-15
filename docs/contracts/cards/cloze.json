@@ -1,0 +1,815 @@
+{
+  "version": 1,
+  "rule": "cards/cloze",
+  "cases": [
+    {
+      "name": "two occurrences: first is the answer slot, the other shows the gap marker",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 11,
+          "hanzi": "我喜欢喝茶，他也喜欢。"
+        }
+      ],
+      "matchesBySentence": {
+        "11": [
+          {
+            "start": 1,
+            "end": 3,
+            "entries": [
+              {
+                "id": 1201
+              }
+            ]
+          },
+          {
+            "start": 8,
+            "end": 10,
+            "entries": [
+              {
+                "id": 1201
+              }
+            ]
+          }
+        ]
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        11
+      ],
+      "shownId": 11,
+      "spans": [
+        [
+          1,
+          3
+        ],
+        [
+          8,
+          10
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "喝茶，他也",
+        {
+          "gap": true,
+          "answer": "喜欢"
+        },
+        "。"
+      ],
+      "answer": "喜欢",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "an inflected Japanese form from the segmenter is the answer",
+      "entry": {
+        "id": 5001,
+        "written": "食べる",
+        "forms": [
+          {
+            "text": "食べます"
+          }
+        ]
+      },
+      "sentences": [
+        {
+          "id": 31,
+          "hanzi": "パンを食べました。"
+        }
+      ],
+      "matchesBySentence": {
+        "31": [
+          {
+            "start": 3,
+            "end": 8,
+            "entries": [
+              {
+                "id": 5001
+              }
+            ]
+          }
+        ]
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        31
+      ],
+      "shownId": 31,
+      "spans": [
+        [
+          3,
+          8
+        ]
+      ],
+      "before": [
+        "パンを"
+      ],
+      "after": [
+        "。"
+      ],
+      "answer": "食べました",
+      "cardId": "c-cloze-5001"
+    },
+    {
+      "name": "no segmenter match: literal occurrence of the written form",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 12,
+          "hanzi": "他很喜欢猫。"
+        }
+      ],
+      "matchesBySentence": {
+        "12": []
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        12
+      ],
+      "shownId": 12,
+      "spans": [
+        [
+          2,
+          4
+        ]
+      ],
+      "before": [
+        "他很"
+      ],
+      "after": [
+        "猫。"
+      ],
+      "answer": "喜欢",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "literal fallback tries forms, longest first",
+      "entry": {
+        "id": 5001,
+        "written": "食べる",
+        "forms": [
+          {
+            "text": "食べます"
+          }
+        ]
+      },
+      "sentences": [
+        {
+          "id": 32,
+          "hanzi": "毎日食べます。"
+        }
+      ],
+      "matchesBySentence": {
+        "32": []
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        32
+      ],
+      "shownId": 32,
+      "spans": [
+        [
+          2,
+          6
+        ]
+      ],
+      "before": [
+        "毎日"
+      ],
+      "after": [
+        "。"
+      ],
+      "answer": "食べます",
+      "cardId": "c-cloze-5001"
+    },
+    {
+      "name": "a segmenter match of another entry is ignored",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 13,
+          "hanzi": "我喜欢茶。"
+        }
+      ],
+      "matchesBySentence": {
+        "13": [
+          {
+            "start": 0,
+            "end": 1,
+            "entries": [
+              {
+                "id": 999
+              }
+            ]
+          }
+        ]
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        13
+      ],
+      "shownId": 13,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "茶。"
+      ],
+      "answer": "喜欢",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "a sentence without the word is not eligible",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 21,
+          "hanzi": "今天天气很好。"
+        }
+      ],
+      "matchesBySentence": {
+        "21": []
+      },
+      "reviews": 0,
+      "eligibleIds": [],
+      "shownId": null,
+      "spans": [],
+      "before": [],
+      "after": [],
+      "answer": "",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "code points, not UTF-16: an astral character before the word",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 14,
+          "hanzi": "𠮷喜欢"
+        }
+      ],
+      "matchesBySentence": {
+        "14": []
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        14
+      ],
+      "shownId": 14,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "𠮷"
+      ],
+      "after": [],
+      "answer": "喜欢",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "rotation: no review shows the first eligible sentence",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 11,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 12,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 13,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 15,
+          "hanzi": "我喜欢茶。"
+        }
+      ],
+      "matchesBySentence": {
+        "11": [],
+        "12": [],
+        "13": [],
+        "15": []
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        11,
+        12,
+        15
+      ],
+      "shownId": 11,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "茶。"
+      ],
+      "answer": "喜欢",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "rotation: one review shows the second",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 11,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 12,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 13,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 15,
+          "hanzi": "我喜欢茶。"
+        }
+      ],
+      "matchesBySentence": {
+        "11": [],
+        "12": [],
+        "13": [],
+        "15": []
+      },
+      "reviews": 1,
+      "eligibleIds": [
+        11,
+        12,
+        15
+      ],
+      "shownId": 12,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "茶。"
+      ],
+      "answer": "喜欢",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "rotation wraps around modulo the eligible count",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 11,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 12,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 13,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 15,
+          "hanzi": "我喜欢茶。"
+        }
+      ],
+      "matchesBySentence": {
+        "11": [],
+        "12": [],
+        "13": [],
+        "15": []
+      },
+      "reviews": 4,
+      "eligibleIds": [
+        11,
+        12,
+        15
+      ],
+      "shownId": 12,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "茶。"
+      ],
+      "answer": "喜欢",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "a retired sentence changes the pick, the card id stays",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 11,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 15,
+          "hanzi": "我喜欢茶。"
+        }
+      ],
+      "matchesBySentence": {
+        "11": [],
+        "15": []
+      },
+      "reviews": 1,
+      "eligibleIds": [
+        11,
+        15
+      ],
+      "shownId": 15,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "茶。"
+      ],
+      "answer": "喜欢",
+      "cardId": "c-cloze-1201"
+    },
+    {
+      "name": "cap: only the first 8 non-empty sentences are candidates (blank ones do not count), reviews 0",
+      "cardId": "c-cloze-1201",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 100,
+          "hanzi": " "
+        },
+        {
+          "id": 101,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 102,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 103,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 104,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 105,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 106,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 107,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 108,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 109,
+          "hanzi": "我喜欢茶。"
+        }
+      ],
+      "matchesBySentence": {
+        "100": [],
+        "101": [],
+        "102": [],
+        "103": [],
+        "104": [],
+        "105": [],
+        "106": [],
+        "107": [],
+        "108": [],
+        "109": []
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        102,
+        108
+      ],
+      "shownId": 102,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "茶。"
+      ],
+      "answer": "喜欢"
+    },
+    {
+      "name": "cap: the 8th candidate is used, the 9th (109) never is",
+      "cardId": "c-cloze-1201",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 100,
+          "hanzi": " "
+        },
+        {
+          "id": 101,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 102,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 103,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 104,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 105,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 106,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 107,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 108,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 109,
+          "hanzi": "我喜欢茶。"
+        }
+      ],
+      "matchesBySentence": {
+        "100": [],
+        "101": [],
+        "102": [],
+        "103": [],
+        "104": [],
+        "105": [],
+        "106": [],
+        "107": [],
+        "108": [],
+        "109": []
+      },
+      "reviews": 1,
+      "eligibleIds": [
+        102,
+        108
+      ],
+      "shownId": 108,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "茶。"
+      ],
+      "answer": "喜欢"
+    },
+    {
+      "name": "cap: rotation wraps within the candidates",
+      "cardId": "c-cloze-1201",
+      "entry": {
+        "id": 1201,
+        "written": "喜欢"
+      },
+      "sentences": [
+        {
+          "id": 100,
+          "hanzi": " "
+        },
+        {
+          "id": 101,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 102,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 103,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 104,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 105,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 106,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 107,
+          "hanzi": "今天很好。"
+        },
+        {
+          "id": 108,
+          "hanzi": "我喜欢茶。"
+        },
+        {
+          "id": 109,
+          "hanzi": "我喜欢茶。"
+        }
+      ],
+      "matchesBySentence": {
+        "100": [],
+        "101": [],
+        "102": [],
+        "103": [],
+        "104": [],
+        "105": [],
+        "106": [],
+        "107": [],
+        "108": [],
+        "109": []
+      },
+      "reviews": 2,
+      "eligibleIds": [
+        102,
+        108
+      ],
+      "shownId": 102,
+      "spans": [
+        [
+          1,
+          3
+        ]
+      ],
+      "before": [
+        "我"
+      ],
+      "after": [
+        "茶。"
+      ],
+      "answer": "喜欢"
+    },
+    {
+      "name": "literal fallback never blanks text inside a longer segmenter match of another entry",
+      "cardId": "c-cloze-7",
+      "entry": {
+        "id": 7,
+        "written": "中国"
+      },
+      "sentences": [
+        {
+          "id": 41,
+          "hanzi": "他是中国人。"
+        }
+      ],
+      "matchesBySentence": {
+        "41": [
+          {
+            "start": 2,
+            "end": 5,
+            "entries": [
+              {
+                "id": 8
+              }
+            ]
+          }
+        ]
+      },
+      "reviews": 0,
+      "eligibleIds": [],
+      "shownId": null,
+      "spans": [],
+      "before": [],
+      "after": [],
+      "answer": ""
+    },
+    {
+      "name": "a same-length match of a homograph entry does not block the literal blank",
+      "cardId": "c-cloze-7",
+      "entry": {
+        "id": 7,
+        "written": "中国"
+      },
+      "sentences": [
+        {
+          "id": 42,
+          "hanzi": "他是中国人。"
+        }
+      ],
+      "matchesBySentence": {
+        "42": [
+          {
+            "start": 2,
+            "end": 4,
+            "entries": [
+              {
+                "id": 9
+              }
+            ]
+          }
+        ]
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        42
+      ],
+      "shownId": 42,
+      "spans": [
+        [
+          2,
+          4
+        ]
+      ],
+      "before": [
+        "他是"
+      ],
+      "after": [
+        "人。"
+      ],
+      "answer": "中国"
+    }
+  ]
+}

@@ -192,3 +192,19 @@ describe('canonicalCards', () => {
 		expect(new Set(keys).size).toBe(keys.length);
 	});
 });
+
+describe('canonicalCards skipKinds', () => {
+	it('unions skipKinds of duplicate vocab rows in kind order', () => {
+		const a = card('c-vocab-1', 1, '2026-01-01T00:00:00Z', { skipKinds: ['cloze'] });
+		const b = card('x-dup', 1, '2026-01-02T00:00:00Z', { skipKinds: ['reverse'] });
+		const out = canonicalCards([a, b], []);
+		expect(out.cards).toHaveLength(1);
+		expect(out.cards[0].skipKinds).toEqual(['reverse', 'cloze']);
+	});
+
+	it('leaves rows without skipKinds without the field', () => {
+		const a = card('c-vocab-1', 1, '2026-01-01T00:00:00Z');
+		const b = card('x-dup', 1, '2026-01-02T00:00:00Z');
+		expect('skipKinds' in canonicalCards([a, b], []).cards[0]).toBe(false);
+	});
+});

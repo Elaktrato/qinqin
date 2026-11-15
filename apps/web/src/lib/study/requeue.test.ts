@@ -191,3 +191,30 @@ describe('removeAt', () => {
 		expect(ids(removeAt(queue, 2))).toEqual(['a', 'b']);
 	});
 });
+
+describe('cloze re-shows', () => {
+	it('an Again re-show keeps the sentence and the answer mode of the first showing', () => {
+		const queue = many(6);
+		const next = requeueAfterGrade(queue, 0, 1, undefined, undefined, {
+			sentenceId: 9,
+			mode: 'type'
+		});
+		const reshow = next.find((i) => i.reshow !== undefined)!;
+		expect(reshow.clozeSentenceId).toBe(9);
+		expect(reshow.clozeMode).toBe('type');
+	});
+
+	it('applyGrade passes it through', async () => {
+		const queue = [item('c0'), ...many(5).slice(1)];
+		const step = await applyGrade({
+			queue,
+			index: 0,
+			grade: 1,
+			cloze: { sentenceId: 4, mode: 'choose' },
+			record: async () => ({ ok: true, card: { id: 'c0' } as never, created: false })
+		});
+		expect(step.ok).toBe(true);
+		if (!step.ok) return;
+		expect(step.queue.find((i) => i.reshow !== undefined)?.clozeSentenceId).toBe(4);
+	});
+});

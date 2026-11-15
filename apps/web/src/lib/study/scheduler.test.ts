@@ -381,3 +381,24 @@ describe('scheduleFor weights', () => {
 		expect(schedulerCacheSize()).toBe(16);
 	});
 });
+
+describe('buildQueue with a schedule lookup', () => {
+	it('gives the same queue as replaying the history', () => {
+		const cards = ['a', 'b', 'c', 'd'].map((id, i) =>
+			card(id, ['general'], `2026-01-0${i + 1}T00:00:00.000Z`)
+		);
+		const reviews = [
+			review('a', 1, '2026-01-05T00:00:00.000Z', eventId(1)),
+			review('b', 3, '2026-02-20T00:00:00.000Z', eventId(2)),
+			review('b', 3, '2026-02-25T00:00:00.000Z', eventId(3))
+		];
+		const now = new Date('2026-03-01T00:00:00.000Z');
+		const options = { cards, reviews, deckIds: ['general'], newLimit: 5, reviewLimit: 5, now, w: DEFAULT_W };
+		const plain = buildQueue(options);
+		const looked = buildQueue({
+			...options,
+			scheduleOf: (id) => scheduleFor(id, reviews, now, DEFAULT_W)
+		});
+		expect(looked.map((c) => c.id)).toEqual(plain.map((c) => c.id));
+	});
+});

@@ -4,7 +4,7 @@
 	import { loadTokens } from '$lib/study/wordSalad';
 	import { workspaces } from '$lib/workspaces';
 	import WordSaladBoard from '../flashcards/cards/WordSaladBoard.svelte';
-	import ClozeChoice from './ClozeChoice.svelte';
+	import ClozeChoice from '$lib/components/ClozeChoice.svelte';
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
 	import { recordRun } from './progress';

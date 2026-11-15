@@ -1,13 +1,16 @@
 <script lang="ts">
 	import { errorMessage } from '$lib/stats/errors';
-	import { buildQueue } from '$lib/study/scheduler';
+	import { dueCounts } from '$lib/study/dueCounts';
+	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
 	import { loadConfig } from '$lib/study/session';
 	import {
 		effectiveCardTypes,
+		effectiveKinds,
 		hasTabSetup,
+		loadExtraChoices,
 		loadRememberedTypes
 	} from '$lib/study/cardTypesMemory';
 	import { loadStudyHistory } from '$lib/study/history';
@@ -28,6 +31,7 @@
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	let loading = $state(true);
 	let error = $state('');
 	let noWorkspace = $state(false);
@@ -40,10 +44,16 @@
 
 	// The card types a session would study: this tab's setup, else the
 	// types last started in this workspace, else vocab.
+	// Reverse and cloze join when a deck switches them on and the learner has
+	// not unchecked them (the same rule as the setup page, effectiveKinds).
 	const kinds = $derived(
-		effectiveCardTypes(
-			hasTabSetup() ? config.cardTypes : null,
-			workspaceId === null ? null : loadRememberedTypes(workspaceId)
+		effectiveKinds(
+			effectiveCardTypes(
+				hasTabSetup() ? config.cardTypes : null,
+				workspaceId === null ? null : loadRememberedTypes(workspaceId)
+			),
+			enabledKinds(deckSettings, deckIds),
+			workspaceId === null ? {} : loadExtraChoices(workspaceId)
 		)
 	);
 
@@ -52,29 +62,18 @@
 	// Unlike the setup page, companions not created yet are not counted.
 	const queue = $derived.by(() => {
 		if (noWorkspace || cards.length === 0) return { due: 0, fresh: 0 };
-		const now = new Date();
-		return {
-			due: buildQueue({
-				cards,
-				reviews,
-				deckIds,
-				newLimit: 0,
-				reviewLimit: config.reviewLimit,
-				now,
-				kinds,
-				w: weights
-			}).length,
-			fresh: buildQueue({
-				cards,
-				reviews,
-				deckIds,
-				newLimit: config.newLimit,
-				reviewLimit: 0,
-				now,
-				kinds,
-				w: weights
-			}).length
-		};
+		return dueCounts({
+			cards,
+			reviews,
+			deckIds,
+			kinds,
+			deckSettings,
+			now: new Date(),
+			w: weights,
+			studyDay,
+			newLimit: config.newLimit,
+			reviewLimit: config.reviewLimit
+		});
 	});
 
 	// The learner's day rule; a zone change recomputes XP and the streak.
@@ -112,6 +111,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 		} catch (err) {
 			if (seq !== requestSeq) return;

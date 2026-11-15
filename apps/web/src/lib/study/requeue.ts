@@ -4,6 +4,7 @@
 // log see each card exactly once per original review.
 
 import type { FlowItem } from './cardFlow';
+import type { ClozeMode } from './cloze';
 import type { SaladTier } from './wordSalad';
 import type { GradeItemResult } from './grade';
 import type { ReviewGrade, StudyCard } from './types';
@@ -27,7 +28,8 @@ export function requeueAfterGrade(
 	index: number,
 	grade: ReviewGrade,
 	card?: StudyCard,
-	tier?: SaladTier
+	tier?: SaladTier,
+	cloze?: { sentenceId: number; mode: ClozeMode }
 ): FlowItem[] {
 	const current = queue[index];
 	if (grade !== 1 || current === undefined) return queue as FlowItem[];
@@ -47,7 +49,9 @@ export function requeueAfterGrade(
 		virtual: false,
 		card: realCard,
 		reshow: count + 1,
-		...(tier === undefined ? {} : { tier })
+		...(tier === undefined ? {} : { tier }),
+		// A cloze re-show keeps the sentence and answer mode of its first showing.
+		...(cloze === undefined ? {} : { clozeSentenceId: cloze.sentenceId, clozeMode: cloze.mode })
 	};
 	let at = Math.min(index + 1 + REQUEUE_GAP, queue.length);
 	// First in, first out among re-shows that land on the same spot.
@@ -113,15 +117,17 @@ export async function applyGrade(input: {
 	index: number;
 	grade: ReviewGrade;
 	tier?: SaladTier;
+	/** The cloze sentence and mode of this showing; kept by a re-show. */
+	cloze?: { sentenceId: number; mode: ClozeMode };
 	record: () => Promise<GradeItemResult>;
 }): Promise<GradeStep> {
-	const { queue, index, grade, tier, record } = input;
+	const { queue, index, grade, tier, cloze, record } = input;
 	const item = queue[index];
 	if (item === undefined) return { ok: false, error: 'This card is no longer available.' };
 	if (!reviewRecorded(item)) {
 		return {
 			ok: true,
-			queue: requeueAfterGrade(queue, index, grade, undefined, tier),
+			queue: requeueAfterGrade(queue, index, grade, undefined, tier, cloze),
 			index: index + 1,
 			recorded: null
 		};
@@ -130,7 +136,7 @@ export async function applyGrade(input: {
 	if (!result.ok) return { ok: false, error: result.error };
 	return {
 		ok: true,
-		queue: requeueAfterGrade(queue, index, grade, result.card, tier),
+		queue: requeueAfterGrade(queue, index, grade, result.card, tier, cloze),
 		index: index + 1,
 		recorded: result
 	};

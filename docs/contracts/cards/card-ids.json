@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "rule": "cards/cardIds",
+  "cases": [
+    { "kind": "vocab", "entryId": 1201, "id": "c-vocab-1201", "cardKey": "vocab:1201" },
+    { "kind": "sentence", "entryId": 1201, "sentenceId": 77, "id": "c-sentence-1201", "cardKey": "sentence:1201:77" },
+    { "kind": "writing", "entryId": 1201, "id": "c-writing-1201", "cardKey": "writing:1201" },
+    { "kind": "tone", "entryId": 1201, "id": "c-tone-1201", "cardKey": "tone:1201" },
+    { "kind": "reverse", "entryId": 1201, "id": "c-reverse-1201", "cardKey": "reverse:1201", "virtualId": "companion:reverse:1201" },
+    { "kind": "cloze", "entryId": 1201, "sentenceId": 77, "id": "c-cloze-1201", "cardKey": "cloze:1201", "virtualId": "companion:cloze:1201" }
+  ]
+}
