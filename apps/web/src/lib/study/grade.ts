@@ -26,6 +26,8 @@ export interface GradeableItem {
 /** The entry data a virtual item needs to create its card. */
 export interface GradeEntry {
 	written: string;
+	/** The entry's kind; 'character' cards get no sentence and an entryKind snapshot. */
+	kind?: string;
 	sentences?: readonly { id: number }[];
 }
 
@@ -35,6 +37,7 @@ export type AddCard = (
 	opts: {
 		kind?: StudyCardKind;
 		written?: string;
+		entryKind?: 'character';
 		sentenceId?: number;
 		deckIds?: string[];
 	}
@@ -116,15 +119,17 @@ export async function gradeItem({
 	}
 
 	const kind = item.kind ?? 'vocab';
+	const isCharacter = entry.kind === 'character';
 	let card: StudyCard;
 	try {
 		card = await addCard(item.entryId, {
 			kind,
 			written: entry.written,
+			...(isCharacter ? { entryKind: 'character' as const } : {}),
 			// Only vocab (the example on its front) and sentence cards carry a
 			// sentence; writing and tone cards never store one.
 			sentenceId:
-				kind === 'vocab' || kind === 'sentence'
+				!isCharacter && (kind === 'vocab' || kind === 'sentence')
 					? (item.sentenceId ?? entry.sentences?.[0]?.id)
 					: undefined,
 			deckIds: item.deckIds ?? [GENERAL_DECK_ID]

@@ -363,8 +363,36 @@ describe('levelSessionItems', () => {
 		]);
 	});
 
-	it('is empty when vocab is not selected', () => {
+	it('is empty when no selected kind applies', () => {
 		expect(levelSessionItems(queue, cards, ['tone'])).toEqual([]);
+	});
+
+	it('maps a virtual writing item to a writing flow item', () => {
+		const items = levelSessionItems(
+			[{ cardId: 'level:writing:11', entryId: 11, virtual: true, kind: 'writing' }],
+			[],
+			['vocab', 'writing']
+		);
+		expect(items).toEqual([
+			{
+				cardId: 'level:writing:11',
+				kind: 'writing',
+				entryId: 11,
+				virtual: true,
+				card: null,
+				deckIds: ['general']
+			}
+		]);
+	});
+
+	it('drops items whose kind is not selected', () => {
+		const mixed: LevelQueueItem[] = [
+			{ cardId: 'level:writing:11', entryId: 11, virtual: true, kind: 'writing' },
+			{ cardId: 'level:12', entryId: 12, virtual: true, kind: 'vocab' }
+		];
+		expect(levelSessionItems(mixed, [], ['writing']).map((i) => i.cardId)).toEqual([
+			'level:writing:11'
+		]);
 	});
 });
 

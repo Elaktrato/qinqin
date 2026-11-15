@@ -3,7 +3,9 @@
 // virtual item, and the real card is created on its first grade (see
 // gradeItem). Planning is pure; it never writes.
 
-import type { StudyCard, StudyCardKind } from './types';
+import { studyDay as utcDay, type StudyDay } from '../time/studyDay';
+import { isValidReview, sortedReviews } from './scheduler';
+import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 export const COMPANION_PREFIX = 'companion:';
 
@@ -46,12 +48,21 @@ export function planCompanions({
 	cards,
 	kinds,
 	deckIds,
-	newBudget
+	newBudget,
+	reviews = [],
+	now = Date.now(),
+	studyDay
 }: {
 	cards: readonly StudyCard[];
 	kinds: readonly StudyCardKind[];
 	deckIds: readonly string[];
 	newBudget: number;
+	/** Review history; character cards unlock writing from it. */
+	reviews?: readonly ReviewEvent[];
+	/** The clock in epoch ms, for the unlock. */
+	now?: number;
+	/** The learner's day; UTC when absent. */
+	studyDay?: StudyDay;
 }): CompanionItem[] {
 	const budget = Number.isFinite(newBudget) ? Math.max(0, Math.floor(newBudget)) : 0;
 	const wantedKinds = COMPANION_KINDS.filter((kind) => kinds.includes(kind));
@@ -69,11 +80,30 @@ export function planCompanions({
 				createdAtMs(a) - createdAtMs(b) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
 		);
 
+	const day = studyDay ?? utcDay([]);
+	const today = day.today(now);
+	// A character's writing card unlocks the learner day after its
+	// recognition card was first reviewed.
+	const firstReview = new Map<string, number>();
+	if (sources.some((card) => card.entryKind === 'character')) {
+		for (const review of sortedReviews(reviews.filter(isValidReview))) {
+			const id = review.payload.cardId;
+			if (!firstReview.has(id)) firstReview.set(id, Date.parse(review.ts));
+		}
+	}
+	const isPlannable = (card: StudyCard, kind: CompanionKind): boolean => {
+		if (card.entryKind !== 'character') return true;
+		if (kind !== 'writing') return false;
+		const first = firstReview.get(card.id);
+		return first !== undefined && day.dayOf(first) < today;
+	};
+
 	const perKind = wantedKinds.map((kind) => {
 		const seen = new Set<number>();
 		const items: CompanionItem[] = [];
 		for (const card of sources) {
 			if (have.has(`${kind}:${card.entryId}`) || seen.has(card.entryId)) continue;
+			if (!isPlannable(card, kind)) continue;
 			seen.add(card.entryId);
 			const item: CompanionItem = {
 				cardId: `${COMPANION_PREFIX}${kind}:${card.entryId}`,

@@ -60,6 +60,9 @@ export interface StudyCard {
 	// a snapshot: later analysis uses it without another entry fetch.
 	// Cards added before this field existed have no snapshot.
 	written?: string;
+	// Set on cards created from a character entry (level sessions): no
+	// sentence or tone companions, writing unlocks a learner day later.
+	entryKind?: 'character';
 	sentenceId?: number;
 	deckIds: string[];
 	createdAt: string;

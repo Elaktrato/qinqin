@@ -2,6 +2,7 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
+import type { StudyDay } from '../time/studyDay';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
@@ -151,6 +152,8 @@ export interface DeckSessionOptions {
 	skip?: ReadonlySet<string>;
 	/** The workspace's active FSRS weights. */
 	w: readonly number[];
+	/** The learner's day, for the character writing unlock; UTC when absent. */
+	studyDay?: StudyDay;
 }
 
 /**
@@ -196,7 +199,8 @@ export function deckSessionPlan({
 	now,
 	language,
 	skip,
-	w
+	w,
+	studyDay
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
@@ -213,7 +217,10 @@ export function deckSessionPlan({
 		kinds: wanted,
 		deckIds,
 		// Plan everything, then split at the budget: the rest is the reserve.
-		newBudget: cards.length * 3
+		newBudget: cards.length * 3,
+		reviews,
+		now: now.getTime(),
+		studyDay
 	})
 		.filter((item) => skip === undefined || !skip.has(`${item.kind}:${item.entryId}`))
 		// Without a snapshot (Round 1 cards) writing is decided when shown.
@@ -293,27 +300,36 @@ export function resolveSentence<T extends { id: number }>(
 }
 
 /**
- * levelSessionItems maps a level queue to flow items. Level sessions stay
- * vocab-only, so a setup without vocab yields an empty session.
+ * levelSessionItems maps a level queue to flow items, each with its own
+ * kind. Items whose kind is not selected are dropped, so a setup with no
+ * applicable kind yields an empty session. A virtual recognition item
+ * carries no deck (gradeItem defaults to General, as it always did); a
+ * virtual writing item names General explicitly.
  */
 export function levelSessionItems(
 	items: readonly LevelQueueItem[],
 	cards: readonly StudyCard[],
 	kinds: readonly StudyCardKind[]
 ): FlowItem[] {
-	if (!kinds.includes('vocab')) return [];
 	const byId = new Map(cards.map((card) => [card.id, card]));
-	return items.map((item): FlowItem => {
+	const out: FlowItem[] = [];
+	for (const item of items) {
+		if (!kinds.includes(item.kind)) continue;
 		const card = item.virtual ? undefined : byId.get(item.cardId);
-		if (card !== undefined) return fromCard(card);
-		return {
+		if (card !== undefined) {
+			out.push(fromCard(card));
+			continue;
+		}
+		out.push({
 			cardId: item.cardId,
-			kind: 'vocab',
+			kind: item.kind,
 			entryId: item.entryId,
 			virtual: item.virtual,
-			card: null
-		};
-	});
+			card: null,
+			...(item.kind === 'vocab' ? {} : { deckIds: ['general'] })
+		});
+	}
+	return out;
 }
 
 /** Due reviews, new items, and items per kind of one planned session. */
