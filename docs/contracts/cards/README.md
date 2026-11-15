@@ -26,3 +26,17 @@ Fixture: `card-ids.json` (`kind`, `entryId`, `sentenceId?`, `id`, `cardKey`, `vi
 - Mastery counts only `vocab, sentence, writing, tone`. Reverse and cloze count as reviews for XP
   (`reverse` 10, `cloze` 15), streaks, heatmap and the optimizer.
 - Old clients ignore unknown card kinds and read an unknown review mode as `vocab`.
+
+## Burying (`burying.json`)
+
+Card C is buried at `now` iff some other live card S of the same entry has a recorded review R with
+`day(R.ts) === day(now)` (the learner's day, `docs/contracts/study-day/`) and `buries(S.kind, C.kind)`,
+where `buries(a, b) = a in {reverse, cloze} or b in {reverse, cloze}`. The four existing kinds never bury
+each other. Reviews of cards that no longer exist bury nothing; a card is never buried by its own reviews;
+Again counts. Buried cards stay due, nothing is rescheduled; they leave the queue and the due counts before
+any limit is applied. For virtual items the same rule yields keys `<kind>:<entryId>` for every kind
+(also kinds without a card) that an answered sibling of another kind buries.
+
+Case: `{name, now, today, cards: [{id, kind, entryId}], reviews: [{cardId, ts, day, grade}],
+buriedCardIds, buriedKeys}`. `day` is precomputed so the fixture does not depend on zone rules.
+Lists are compared as sets.

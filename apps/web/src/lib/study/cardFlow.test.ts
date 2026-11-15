@@ -7,6 +7,7 @@ import {
 	deckSessionPlan,
 	dropItem,
 	backfillLimit,
+	buryAfterAnswer,
 	isChinese,
 	isEligible,
 	levelSessionItems,
@@ -582,5 +583,78 @@ describe('tonePadLabels', () => {
 
 	it('falls back when a character is not Han', () => {
 		expect(tonePadLabels('T恤', 2)).toBeNull();
+	});
+});
+
+describe('buryAfterAnswer', () => {
+	function item(cardId: string, kind: StudyCardKind, entryId: number, virtual = false, extra: Partial<FlowItem> = {}): FlowItem {
+		return { cardId, kind, entryId, virtual, card: null, ...extra };
+	}
+	const answered = (kind: StudyCardKind, entryId: number, cardId: string) => ({ kind, entryId, cardId });
+
+	it('removes later items of the word that the answer buries and backfills a virtual one', () => {
+		const plan = {
+			queue: [
+				item('c-vocab-1', 'vocab', 1),
+				item('c-vocab-2', 'vocab', 2),
+				item('companion:reverse:1', 'reverse', 1, true)
+			],
+			reserve: [item('companion:sentence:5', 'sentence', 5, true)],
+			backfillLeft: 3
+		};
+		const out = buryAfterAnswer(plan, 0, answered('vocab', 1, 'c-vocab-1'));
+		expect(out.buried).toBe(1);
+		expect(out.plan.queue.map((i) => i.cardId)).toEqual(['c-vocab-1', 'c-vocab-2', 'companion:sentence:5']);
+		expect(out.plan.reserve).toEqual([]);
+		expect(out.plan.backfillLeft).toBe(2);
+	});
+
+	it('a removed real card frees no slot', () => {
+		const plan = {
+			queue: [item('c-reverse-1', 'reverse', 1), item('c-vocab-1', 'vocab', 1)],
+			reserve: [item('companion:sentence:5', 'sentence', 5, true)],
+			backfillLeft: 3
+		};
+		const out = buryAfterAnswer(plan, 0, answered('reverse', 1, 'c-reverse-1'));
+		expect(out.buried).toBe(1);
+		expect(out.plan.queue.map((i) => i.cardId)).toEqual(['c-reverse-1']);
+		expect(out.plan.reserve).toHaveLength(1);
+	});
+
+	it('keeps a pending re-show of the same card and items before the answered index', () => {
+		const plan = {
+			queue: [
+				item('c-reverse-1', 'reverse', 1),
+				item('c-vocab-1', 'vocab', 1),
+				item('c-reverse-1', 'reverse', 1, false, { reshow: 1 })
+			],
+			reserve: [],
+			backfillLeft: 0
+		};
+		const out = buryAfterAnswer(plan, 1, answered('vocab', 1, 'c-vocab-1'));
+		expect(out.buried).toBe(0);
+		expect(out.plan).toEqual(plan);
+	});
+
+	it('leaves the legacy pair vocab then writing untouched', () => {
+		const plan = {
+			queue: [item('c-vocab-1', 'vocab', 1), item('c-writing-1', 'writing', 1)],
+			reserve: [],
+			backfillLeft: 0
+		};
+		const out = buryAfterAnswer(plan, 0, answered('vocab', 1, 'c-vocab-1'));
+		expect(out.buried).toBe(0);
+		expect(out.plan.queue).toHaveLength(2);
+	});
+
+	it('removes a backfilled item that is itself buried', () => {
+		const plan = {
+			queue: [item('c-reverse-1', 'reverse', 1), item('companion:cloze:1', 'cloze', 1, true)],
+			reserve: [item('companion:writing:1', 'writing', 1, true), item('companion:tone:9', 'tone', 9, true)],
+			backfillLeft: 5
+		};
+		const out = buryAfterAnswer(plan, 0, answered('reverse', 1, 'c-reverse-1'));
+		expect(out.buried).toBe(2);
+		expect(out.plan.queue.map((i) => i.cardId)).toEqual(['c-reverse-1', 'companion:tone:9']);
 	});
 });

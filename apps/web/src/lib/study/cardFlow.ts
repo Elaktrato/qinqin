@@ -6,6 +6,7 @@ import type { StudyDay } from '../time/studyDay';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
+import { buries } from './siblings';
 import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
 import { tierFor, type SaladTier } from './wordSalad';
 import { isHan, writableChars } from './writing';
@@ -278,6 +279,35 @@ export function dropItem(plan: DeckSessionPlan, cardId: string): DeckSessionPlan
 	}
 	const [next, ...reserve] = plan.reserve;
 	return { queue: [...queue, next], reserve, backfillLeft: plan.backfillLeft - 1 };
+}
+
+/**
+ * buryAfterAnswer removes the items after `index` that the just recorded
+ * answer buries (same word, another card, not a re-show, see `buries`).
+ * A removed virtual item frees its new-card slot like dropItem; a
+ * removed real card frees nothing. Run it on the queue applyGrade
+ * returned, `index` = the answered position.
+ */
+export function buryAfterAnswer(
+	plan: DeckSessionPlan,
+	index: number,
+	answered: { kind: StudyCardKind; entryId: number; cardId: string }
+): { plan: DeckSessionPlan; buried: number } {
+	let current = plan;
+	let buried = 0;
+	for (;;) {
+		const target = current.queue.find(
+			(item, at) =>
+				at > index &&
+				item.entryId === answered.entryId &&
+				item.cardId !== answered.cardId &&
+				item.reshow === undefined &&
+				buries(answered.kind, item.kind)
+		);
+		if (target === undefined) return { plan: current, buried };
+		current = dropItem(current, target.cardId);
+		buried += 1;
+	}
 }
 
 /**
