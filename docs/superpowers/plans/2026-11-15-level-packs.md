@@ -42,19 +42,19 @@
 
 **Files:**
 - Create: `scripts/prepare-standard-levels.mjs`, `scripts/prepare-standard-levels.test.mjs`
-- Modify: `scripts/prepare-level-packs.mjs` (export `writePack`; no behaviour change)
+- Modify: `scripts/prepare-level-packs.mjs` (export `writePack`; make its `license` optional: when `undefined`, no `LICENSE` file is written; existing callers unchanged)
 
 **Interfaces:**
 - Consumes: `parseKanjidic2(xml) -> Map<literal, {grade, freq, old}>`, `writePack(dir, {manifest, unit, levels, license, attribution, extraFiles})` from `prepare-level-packs.mjs`.
-- Produces: `joyoLevels(kanjidic: Map) -> {name: string, entries: string[]}[]`; `parseTgh(text: string) -> Map<char, number>`; `tghLevels(serials: Map) -> {name, entries}[]`; `parseJoyoSet(text) -> Set<char>`; constants `JOYO_NOTICE`, `TGH_NOTICE`; CLI `node scripts/prepare-standard-levels.mjs [<packs-dir>]` (default `plugins/data`).
+- Produces: `joyoLevels(kanjidic: Map) -> {name: string, entries: string[]}[]`; `parseTgh(text: string) -> Map<char, number>`; `tghLevels(serials: Map) -> {name, entries}[]`; `parseJoyoSet(text) -> Set<char>` (keeps only values matching `^20\d{2}$` equal to `2010`; skips the 4 `U+XXXX` variant rows); constants `JOYO_NOTICE`, `TGH_NOTICE`; CLI `node scripts/prepare-standard-levels.mjs [<packs-dir>]` (default `plugins/data`).
 
 - [ ] **Step 1: Write failing tests** in `prepare-standard-levels.test.mjs`:
-  - `joyoLevels` on a fixture map `{一:{grade:1,freq:2}, 二:{grade:1,freq:undefined}, 誰:{grade:8,freq:undefined}, 伊:{grade:9}, 岡:{grade:4,freq:900}}` → `[{name:'Grade 1',entries:['一','二']},{name:'Grade 4',entries:['岡']},{name:'Secondary',entries:['誰']}]` (empty levels omitted; 伊 absent).
+  - `joyoLevels` on a fixture map `{一:{grade:1,freq:2,old:4}, 二:{grade:1,freq:null,old:4}, 誰:{grade:8,freq:null,old:null}, 伊:{grade:9,freq:null,old:null}, 岡:{grade:4,freq:900,old:null}}` (absent values are `null`, as `parseKanjidic2` returns them) → `[{name:'Grade 1',entries:['一','二']},{name:'Grade 4',entries:['岡']},{name:'Secondary',entries:['誰']}]` (empty levels omitted; 伊 absent).
   - `parseTgh("#\tkTGH\nU+4E00\tkTGH\t2013:1\nU+4E42\tkTGH\t2013:3501\nU+77D7\tkTGH\t2013:3500\nU+3447\tkTGH\t2013:6602\n")` → size 4, 一→1; `tghLevels` → `Level 1` [一, 矗(U+77D7)], `Level 2` [乂(U+4E42)], `Level 3` [U+3447]; a duplicate serial or char throws `PackError`.
-  - CLI on a temp packs dir holding fixture `kanjidic2/kanjidic2.xml.gz`, `kanjidic2/LICENSE`, `unihan/Unihan.zip` (built in the test with `zip` from fixture `Unihan_OtherMappings.txt`), `unihan/LICENSE`: writes both packs; running twice gives identical bytes; each `manifest.json` has `type` `levels`, the spec's names/licences; `notice` passes `assertValidNotice` (copy the helper from `prepare-level-packs.test.mjs`).
+  - CLI on a temp packs dir holding fixture `kanjidic2/kanjidic2.xml.gz`, `kanjidic2/LICENSE`, `unihan/Unihan.zip` (built in the test by a small stored-zip writer using `zlib.crc32`; the `zip` binary is not installed) holding a fixture `Unihan_OtherMappings.txt`, `unihan/LICENSE`: writes both packs; running twice gives identical bytes; each `manifest.json` has `type` `levels`, the spec's names/licences; `notice` passes `assertValidNotice` (copy the helper from `prepare-level-packs.test.mjs`).
   - Real-data test (skipped when `plugins/data/kanjidic2` is absent): total 2,136; set equals `parseJoyoSet` of the real `kJoyoKanji` values `2010`; `tgh-chars` counts 3,500 / 3,000 / 1,605.
 - [ ] **Step 2: Run** `node --test scripts/prepare-standard-levels.test.mjs` — FAIL (module missing).
-- [ ] **Step 3: Implement** the module; read the zip member with `execFileSync('unzip', ['-p', zip, 'Unihan_OtherMappings.txt'])`; ignore lines starting with `#`; serial must match `^2013:[1-9]\d{0,3}$`.
+- [ ] **Step 3: Implement** the module; manifest `version` `kanjidic2@<KANJIDIC2 database_version>` for `joyo-grades` and `unihan@<Unicode Version from the member's header, e.g. 18.0.0>` for `tgh-chars`; read the zip member with `execFileSync('unzip', ['-p', zip, 'Unihan_OtherMappings.txt'])`; ignore lines starting with `#`; serial must match `^2013:[1-9]\d{0,3}$`.
 - [ ] **Step 4: Run** the test file and `node --test scripts/prepare-level-packs.test.mjs` — PASS.
 - [ ] **Step 5: Commit** `feat(scripts): generate Jōyō grade and 通用规范 level packs from bundled data`.
 
@@ -69,7 +69,7 @@
 
 - [ ] **Step 1: Run** `node scripts/prepare-standard-levels.mjs` in `<wt>`; then `node scripts/check-sources.mjs .` — FAIL (packs not named in `docs/sources.md`).
 - [ ] **Step 2: Add the docs rows** (ids in backticks; evidence table from the spec incl. URLs and "checked 2026-11-15"); re-run `check-sources` — PASS.
-- [ ] **Step 3: Extend the real-pack Go test** to assert seed output lines `joyo-grades … 0 unknown forms skipped` and `tgh-chars … 0 unknown forms skipped`; run `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` via the Go gate command — PASS. If `tgh-chars` skips characters, record the count and the reason in `docs/sources.md` instead of hiding it.
+- [ ] **Step 3: Extend the real-pack Go test** (`TestSeedRealPacksRanksWithJiten` in `server/cmd/qinqin`) to match the padded seed lines with regexes `(?m)^joyo-grades\s+levels\s+0 unknown forms skipped$` and the same for `tgh-chars`; run `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` via the Go gate command — PASS. If `tgh-chars` skips characters, record the count and the reason in `docs/sources.md` instead of hiding it.
 - [ ] **Step 4: Commit** `feat(data): bundle Jōyō grade and 通用规范汉字表 level packs`.
 
 ### Task 3: Hide `joyo-grades` from the map's Group-by
@@ -94,7 +94,7 @@
 
 **Interfaces:**
 - Consumes: `writePack` (Task 1 export).
-- Produces: `parseLevelTsv(text: string, unit: 'word'|'character') -> {levels: {name, entries: (string|{form, reading})[]}[], droppedZhuyin: number}`; CLI flags `--id --name --language --unit --license --attribution [--version] [--force-dir] <tsv> [<out-dir>]` (default out `plugins/data-local`).
+- Produces: pack written through `writePack` with `license: undefined` (no `LICENSE`); `parseLevelTsv(text: string, unit: 'word'|'character') -> {levels: {name, entries: (string|{form, reading})[]}[], droppedZhuyin: number}`; CLI flags `--id --name --language --unit --license --attribution [--version] [--force-dir] <tsv> [<out-dir>]` (default out `plugins/data-local`).
 
 - [ ] **Step 1: Failing tests:** header `level\tform\treading` required (missing `form` → `PackError` naming the header); BOM and CRLF stripped; level order = first appearance; repeated form keeps the first level; `{form:'行', reading:'xíng'}` kept; reading `ㄒㄧㄥˊ` dropped and counted; empty level on line 3 → error containing `line 3`; `unit: 'character'` rejects a two-character form; CLI to a dir not named `data-local` exits non-zero unless `--force-dir`; output `ATTRIBUTION.md` contains "not bundled, local use only" and the input SHA-256; no `LICENSE` written.
 - [ ] **Step 2: Run** `node --test scripts/prepare-local-levels.test.mjs` — FAIL.
@@ -107,12 +107,12 @@
 **Files:** Modify `docs/ROADMAP.md` (#42 line: what shipped, what is local-only).
 
 - [ ] **Step 1: Seed a scratch data dir** (never the live `/home/user/qinqin-integration-data`): build the server binary in the Go container, `qinqin seed --data <scratch>/data`, start `qinqin serve` on a free 127.0.0.1 port (check with `ss -ltn`), web build served by it.
-- [ ] **Step 2: Check in a headless browser** (playwright-core in the scratchpad): Japanese workspace — entry 誰 shows a badge naming "Jōyō kanji by school grade" and level `Secondary`; `/study` offers the scheme and a `Grade 1` session starts with 80 kanji; `/stats/characters` Group-by has no Jōyō option but has "Grade". Chinese workspace — entry 乂 (U+4E42) shows a badge naming "通用规范汉字表 (2013) levels" and `Level 2`; map grouping by it shows three sections 3,500 / 3,000 / 1,605 (minus any skipped noted in Task 2); Sources lists both with licence and attribution.
+- [ ] **Step 2: Check in a headless browser** (playwright-core in the scratchpad): Japanese workspace — entry 誰 shows a badge naming "Jōyō kanji by school grade" and level `Secondary`; `/study` offers the scheme and its `Grade 1` level (and `GET /api/schemes/<id>/entries?level=Grade%201` returns 80 entries; a session starts with the usual new-card cap); `/stats/characters` Group-by has no Jōyō option but has "Grade". Chinese workspace — entry 乂 (U+4E42) shows a badge naming "通用规范汉字表 (2013) levels" and `Level 2`; map grouping by it shows three sections 3,500 / 3,000 / 1,605 (minus any skipped noted in Task 2); Sources lists both with licence and attribution.
 - [ ] **Step 3: Local pack check:** hand-write `<scratch>/mini.tsv` (3 rows, own words), run the converter into `<scratch>/data-local`, seed `--packs plugins/data,<scratch>/data-local`, confirm the scheme appears; delete it afterwards. Kill every process you started.
 - [ ] **Step 4: History scan** — each prints nothing:
   `git -C <wt> ls-files plugins/data-local`;
   `git -C <wt> log --all --name-only --format= | grep -Ei 'tbcl|curriculum|课程标准|八千|8000'`;
-  `git -C <wt> log --all -p -- plugins | grep -E '^\+.*(臺灣華語文能力基準|识字写字教学基本字表)'`.
+  `git -C <wt> log --all -p -- ':(glob)plugins/**/levels.json' scripts/testdata ':(glob)scripts/*.test.mjs' | grep -E '^\+.*(臺灣華語文能力基準|识字写字教学基本字表)'` (data and fixtures only; docs and READMEs may name the sources).
 - [ ] **Step 5: Update ROADMAP**, commit `docs: roadmap — #42 Jōyō and 通用规范 packs bundled, TBCL/curriculum local-only`.
 
 ## Risks and notes for the owner

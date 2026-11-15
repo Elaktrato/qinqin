@@ -122,8 +122,9 @@ node scripts/prepare-local-levels.mjs --id tbcl-words --name "TBCL words" \
 with `unzip -p` via `child_process`, as no zip library is a dependency) and
 writes `joyo-grades` and `tgh-chars`.
 Deterministic: same inputs, same bytes. It reuses `parseKanjidic2` and the
-pack writer from `prepare-level-packs.mjs` (export `writePack`, extend
-`parseKanjidic2` only if needed — it already returns `grade` and `freq`).
+pack writer from `prepare-level-packs.mjs` (export `writePack` and make its
+`license` optional so the local converter writes no `LICENSE`;
+`parseKanjidic2` already returns `grade` and `freq`, `null` when absent).
 
 - Ruling: a new script rather than more modes in the 1,120-line
   `prepare-level-packs.mjs` — those modes fetch pinned upstream files, these
@@ -168,8 +169,8 @@ written.
 No restricted data may reach git. Before review, all must print nothing:
 `git ls-files plugins/data-local`;
 `git log --all --name-only --format= | grep -Ei 'tbcl|curriculum|课程标准|八千|8000'`;
-`git log --all -p -- plugins scripts | grep -E '^\+.*(臺灣華語文能力基準|識字寫字|识字写字教学基本字表)' | grep -v 'sources.md\|ATTRIBUTION\|\.mjs'`
-(names in docs and scripts are fine; list rows are not). Test fixtures are
+`git log --all -p -- ':(glob)plugins/**/levels.json' scripts/testdata ':(glob)scripts/*.test.mjs' | grep -E '^\+.*(臺灣華語文能力基準|识字写字教学基本字表)'`
+(data and fixtures only; docs and READMEs may name the sources). Test fixtures are
 hand-written and contain no rows copied from TBCL or a 课程标准.
 
 ## Risks

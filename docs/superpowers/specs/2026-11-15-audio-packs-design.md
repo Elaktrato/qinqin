@@ -53,7 +53,9 @@ shtooka.net, JapanesePod101 terms) are marked unverified.
   media.kanjialive.com (`--build-arg WITH_AUDIO=0` skips it).
 - Ruling: `plugins/data-audio/` (clean, redistributable, gitignored for size)
   is separate from `plugins/data-local/` (unclear licence, never distributed);
-  the Dockerfile copies only `data-audio` — cost: one more directory.
+  the image fetches its own Kanji alive copy in a build stage and both dirs
+  are in `.dockerignore`, so no local file reaches an image — cost: one more
+  directory.
 - Ruling: Commons/Lingua Libre go through a local tool
   (`scripts/fetch-audio-commons.mjs`) that keeps a file only when its
   `LicenseShortName` is in {CC0, CC BY 2.0–4.0, CC BY-SA 2.0–4.0 incl.
@@ -75,6 +77,12 @@ shtooka.net, JapanesePod101 terms) are marked unverified.
 - Ruling: clips are served to signed-in users only — a self-hosted instance
   must not become a public mirror of local-only audio — cost: the public
   Sources page cannot preview audio (it still lists credits).
+- Ruling: a zh character gets one button per pinyin reading (行 xíng / háng),
+  so `Resolve` returns one syllable sequence per reading — polyphonic
+  characters are where audio helps most — cost: a slightly larger response.
+- Ruling: release images (CI on `main`/tags) build with the default
+  `WITH_AUDIO=1` — users of the published image get Japanese audio — cost:
+  each release build downloads 69 MB and fails if the pinned SHA changes.
 - Ruling: autoplay is off by default, per workspace setting — sound without a
   gesture surprises and browsers block it — cost: one setting to find.
 
@@ -115,14 +123,15 @@ plugins/data-audio/kanjialive-audio/
     `internal/pinyin`).
   - `Resolve(ctx, db, lang, written string, readings []string) (Resolution, error)`: term clips matching the
     entry's written form and first reading (all packs, pack order); else, zh
-    only, the syllable sequence when complete.
+    only, one syllable sequence per reading (`Syllables [][]Clip`, aligned with
+    the readings; nil where incomplete).
 - `seed`: `importOrder[TypeAudio] = 4`; the default roots gain
   `plugins/data-audio` when it exists (after `data`, before `data-local`).
 - Routes (all signed-in except the credits list):
   - `GET /api/audio/entries/{id}` → `{"terms":[Clip], "syllables":[Clip]|null}`.
   - `POST /api/audio/resolve` `{"entryIds":[…]}` (≤ 200; body ≤ 16 KiB) →
     `{"<id>": Resolution}` for study prefetch and Android.
-  - `GET /api/audio/clips/{sha}.{ext}` → `http.ServeContent` (Range, 304),
+  - `GET /api/audio/clips/{file}` (`<sha256>.<ext>`, parsed in the handler) → `http.ServeContent` (Range, 304),
     `Cache-Control: private, max-age=31536000, immutable`, `Content-Type`
     `audio/ogg` or `audio/mpeg`, `X-Content-Type-Options: nosniff`; 404 unless
     a row references the hash.
