@@ -124,3 +124,85 @@ func (s *server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
+
+// handleListSessions lists the caller's sessions, newest use first. It never
+// carries a token or its hash.
+func (s *server) handleListSessions(w http.ResponseWriter, r *http.Request) {
+	p := s.requirePrincipal(w, r)
+	if p == nil {
+		return
+	}
+	list, err := auth.ListSessions(r.Context(), s.db, p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	for i := range list {
+		list[i].Current = list[i].ID == p.SessionID
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"sessions": list})
+}
+
+// handleRevokeSession ends one of the caller's sessions (204); another
+// user's id is a 404. Revoking the current session is a logout.
+func (s *server) handleRevokeSession(w http.ResponseWriter, r *http.Request) {
+	p := s.requirePrincipal(w, r)
+	if p == nil {
+		return
+	}
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		writeAuthError(w, http.StatusNotFound, "not_found", "No such session.")
+		return
+	}
+	ok, err := auth.RevokeSession(r.Context(), s.db, p.User.ID, id)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	if !ok {
+		writeAuthError(w, http.StatusNotFound, "not_found", "No such session.")
+		return
+	}
+	if err := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: "sessions_revoked", ActorID: p.User.ID,
+		TargetID: &p.User.ID, Detail: map[string]any{"scope": "one", "revoked": 1}}); err != nil {
+		writeInternal(w, r)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// handleRevokeSessions ends the caller's other sessions ("others") or all of
+// them including this one ("all").
+func (s *server) handleRevokeSessions(w http.ResponseWriter, r *http.Request) {
+	p := s.requirePrincipal(w, r)
+	if p == nil {
+		return
+	}
+	var req struct {
+		Scope string `json:"scope"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	var except int64
+	switch req.Scope {
+	case "others":
+		except = p.SessionID
+	case "all":
+	default:
+		writeAuthError(w, http.StatusBadRequest, "bad_request", `scope must be "others" or "all".`)
+		return
+	}
+	n, err := auth.RevokeSessions(r.Context(), s.db, p.User.ID, except)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	if err := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: "sessions_revoked", ActorID: p.User.ID,
+		TargetID: &p.User.ID, Detail: map[string]any{"scope": req.Scope, "revoked": n}}); err != nil {
+		writeInternal(w, r)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int64{"revoked": n})
+}
