@@ -6,14 +6,20 @@ package stats
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
 
 	"qinqin/internal/plugins"
+	"qinqin/internal/studyday"
 )
 
-// Cell is the activity of one rule in one UTC day and workspace.
+// tsLayout is the stored event instant format (study_events.ts); window
+// bounds use exactly it so text comparison stays chronological.
+const tsLayout = "2006-01-02T15:04:05Z"
+
+// Cell is the activity of one rule in one learner day and workspace.
 type Cell struct {
 	Day       string  `json:"day"`
 	Workspace int64   `json:"workspace"`
@@ -23,16 +29,41 @@ type Cell struct {
 }
 
 // Activity returns the non-zero cells of the user's events for the
-// given rules. from and to are UTC dates; the window is [from, to+1
-// day). A non-nil workspace restricts the cells to that workspace. The
-// result is sorted by day, workspace, type and is never nil.
-func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, from, to time.Time, workspace *int64, rules []plugins.RuleOf) ([]Cell, error) {
-	fromS := from.UTC().Format(time.RFC3339)
-	toS := to.UTC().AddDate(0, 0, 1).Format(time.RFC3339)
+// given rules, bucketed by the learner's day: windows come from
+// studyday.History.Windows (ascending, contiguous; an empty window, a
+// skipped date, has no events and no cell). A non-nil workspace
+// restricts the cells to that workspace. The result is sorted by day,
+// workspace, type and is never nil.
+func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, windows []studyday.Window, workspace *int64, rules []plugins.RuleOf) ([]Cell, error) {
 	cells := []Cell{}
+	type jsonWindow struct {
+		D  string `json:"d"`
+		Lo string `json:"lo"`
+		Hi string `json:"hi"`
+	}
+	var list []jsonWindow
+	var first, last time.Time
+	for _, w := range windows {
+		if !w.Start.Before(w.End) {
+			continue
+		}
+		if len(list) == 0 {
+			first = w.Start
+		}
+		last = w.End
+		list = append(list, jsonWindow{w.Day.String(), w.Start.UTC().Format(tsLayout), w.End.UTC().Format(tsLayout)})
+	}
+	if len(list) == 0 {
+		return cells, nil
+	}
+	encoded, err := json.Marshal(list)
+	if err != nil {
+		return nil, fmt.Errorf("stats: encode windows: %w", err)
+	}
+	fromS, toS := first.UTC().Format(tsLayout), last.UTC().Format(tsLayout)
 	for _, r := range rules {
 		query := ruleQuery(r.Rule, workspace != nil)
-		args := ruleArgs(r.Rule, userID, r.Type, fromS, toS, workspace)
+		args := ruleArgs(r.Rule, userID, r.Type, fromS, toS, workspace, string(encoded))
 		rows, err := sqlDB.QueryContext(ctx, query, args...)
 		if err != nil {
 			return nil, fmt.Errorf("stats: activity of %s: %w", r.Type, err)
@@ -67,18 +98,31 @@ func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, from, to time.Ti
 }
 
 // Parameters are numbered so one statement shape serves every kind:
-// ?1 user, ?2 type, ?3 from, ?4 to (exclusive), ?5 workspace, ?6 payload
-// field, ?7 min, ?8 max, ?9 pointsPer. Field names come from validated
-// rules and are bound, never concatenated into SQL.
+// ?1 user, ?2 type, ?3 from, ?4 to (exclusive; the first window's start
+// and the last one's end; not referenced by the statements, see below),
+// ?5 workspace, ?6 payload field, ?7 min, ?8
+// max, ?9 pointsPer, ?10 the day windows as JSON [{"d","lo","hi"}].
+// Field names come from validated rules and are bound, never
+// concatenated into SQL.
 //
-// INDEXED BY pins the type index (renaming or dropping
-// idx_study_events_user_type_ts in a migration needs a matching change
-// here, or every activity query fails with "no such index"): with a workspace filter the planner
-// otherwise prefers idx_study_events_workspace_ts (which ignores the
-// type) on a table it has no statistics for.
-const window = `FROM study_events INDEXED BY idx_study_events_user_type_ts WHERE user_id = ?1 AND type = ?2 AND ts >= ?3 AND ts < ?4`
+// CROSS JOIN fixes json_each (the windows) as the outer loop and
+// study_events as the inner one, searched once per window on the type
+// index with ts >= lo AND ts < hi. INDEXED BY pins that index (renaming
+// or dropping idx_study_events_user_type_ts in a migration needs a
+// matching change here, or every activity query fails with "no such
+// index"): with a workspace filter the planner otherwise prefers
+// idx_study_events_workspace_ts (which ignores the type) on a table it
+// has no statistics for. The overall bounds ?3/?4 are deliberately not
+// in the WHERE clause: with them the planner takes the whole range as
+// the index constraint and filters every window against it (91 days
+// cost 8 s on 400k events); without them each window is its own index
+// range. The study_events columns are qualified where
+// json_each has a column of the same name (type).
+const window = `FROM json_each(?10) AS w CROSS JOIN study_events INDEXED BY idx_study_events_user_type_ts
+	WHERE study_events.user_id = ?1 AND study_events.type = ?2
+	AND ts >= w.value->>'lo' AND ts < w.value->>'hi'`
 
-// ruleQuery returns the SQL that scores one rule, grouped by UTC day
+// ruleQuery returns the SQL that scores one rule, grouped by learner day
 // and workspace, selecting day, workspace, points, raw.
 func ruleQuery(rule plugins.ActivityRule, withWorkspace bool) string {
 	where := window
@@ -91,7 +135,7 @@ func ruleQuery(rule plugins.ActivityRule, withWorkspace bool) string {
 		return `SELECT d, ws, SUM(CAST(q AS INTEGER) + (q > CAST(q AS INTEGER))), SUM(r) FROM (
 			SELECT d, ws, r, r * 1.0 / ?9 AS q FROM (
 				SELECT d, ws, MIN(v, ?8) AS r FROM (
-					SELECT substr(ts, 1, 10) AS d, workspace_id AS ws,
+					SELECT w.value->>'d' AS d, workspace_id AS ws,
 						CASE WHEN json_valid(payload) THEN
 							CASE WHEN json_type(payload, '$.' || ?6) IN ('integer', 'real')
 							THEN json_extract(payload, '$.' || ?6) END
@@ -101,35 +145,33 @@ func ruleQuery(rule plugins.ActivityRule, withWorkspace bool) string {
 		) GROUP BY d, ws`
 	case plugins.KindDistinct:
 		return `SELECT d, ws, COUNT(DISTINCT v), COUNT(DISTINCT v) FROM (
-			SELECT substr(ts, 1, 10) AS d, workspace_id AS ws,
+			SELECT w.value->>'d' AS d, workspace_id AS ws,
 				CASE WHEN json_valid(payload) THEN
 					CASE WHEN json_type(payload, '$.' || ?6) = 'text'
 					THEN json_extract(payload, '$.' || ?6) END
 				END AS v ` + where + `
 		) GROUP BY d, ws`
 	default:
-		return `SELECT substr(ts, 1, 10), workspace_id, COUNT(*), COUNT(*) ` + where +
-			` GROUP BY substr(ts, 1, 10), workspace_id`
+		return `SELECT d, ws, COUNT(*), COUNT(*) FROM (
+			SELECT w.value->>'d' AS d, workspace_id AS ws ` + where + `
+		) GROUP BY d, ws`
 	}
 }
 
-// ruleArgs returns exactly the positional arguments ruleQuery's
-// statement refers to (SQLite counts up to the highest ?N used).
-func ruleArgs(rule plugins.ActivityRule, userID int64, typ, from, to string, workspace *int64) []any {
+// ruleArgs returns the ten positional arguments every statement refers
+// to (SQLite counts up to the highest ?N used, and ?10 is always used);
+// slots a rule does not need stay nil.
+func ruleArgs(rule plugins.ActivityRule, userID int64, typ, from, to string, workspace *int64, windows string) []any {
 	var ws any
 	if workspace != nil {
 		ws = *workspace
 	}
-	args := []any{userID, typ, from, to}
+	args := []any{userID, typ, from, to, ws, nil, nil, nil, nil, windows}
 	switch rule.Kind() {
 	case plugins.KindMeasure:
-		return append(args, ws, rule.Measure.Field, rule.Measure.Min, rule.Measure.Max, rule.PointsPer)
+		args[5], args[6], args[7], args[8] = rule.Measure.Field, rule.Measure.Min, rule.Measure.Max, rule.PointsPer
 	case plugins.KindDistinct:
-		return append(args, ws, rule.DistinctBy)
-	default:
-		if workspace != nil {
-			args = append(args, ws)
-		}
-		return args
+		args[5] = rule.DistinctBy
 	}
+	return args
 }

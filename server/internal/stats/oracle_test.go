@@ -2,6 +2,7 @@ package stats_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"math"
 	"math/rand"
@@ -12,11 +13,13 @@ import (
 
 	"qinqin/internal/events"
 	"qinqin/internal/model"
+	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
+	"qinqin/internal/studyday"
 )
 
 // oracle scores the event log in plain Go, following the spec's table.
-func oracle(evs []model.StudyEvent, from, to time.Time) []stats.Cell {
+func oracle(evs []model.StudyEvent, h studyday.History, from, to time.Time) []stats.Cell {
 	type key struct {
 		day string
 		ws  int64
@@ -25,12 +28,13 @@ func oracle(evs []model.StudyEvent, from, to time.Time) []stats.Cell {
 	points := map[key]int64{}
 	raw := map[key]float64{}
 	ids := map[key]map[string]bool{}
-	end := to.AddDate(0, 0, 1)
+	lo, hi := date(from.Format("2006-01-02")), date(to.Format("2006-01-02"))
 	for _, ev := range evs {
-		if ev.TS.Before(from) || !ev.TS.Before(end) {
+		d := h.DayOf(ev.TS)
+		if d.Before(lo) || hi.Before(d) {
 			continue
 		}
-		k := key{ev.TS.UTC().Format("2006-01-02"), ev.WorkspaceID, ev.Type}
+		k := key{d.String(), ev.WorkspaceID, ev.Type}
 		var p map[string]any
 		_ = json.Unmarshal(ev.Payload, &p) // not an object: p stays nil
 		switch ev.Type {
@@ -110,6 +114,16 @@ func TestActivityMatchesOracle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	tokyo, _ := studyday.New([]studyday.Change{{Zone: "Asia/Tokyo"}})
+	change := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
+	trip, _ := studyday.New([]studyday.Change{{Zone: "Asia/Tokyo"}, {Zone: "America/Los_Angeles", From: &change}})
+	for _, h := range []studyday.History{studyday.UTCHistory(), tokyo, trip} {
+		checkOracle(t, sqlDB, rules, u, all, h, from, to)
+	}
+}
+
+func checkOracle(t *testing.T, sqlDB *sql.DB, rules []plugins.RuleOf, u int64, all []model.StudyEvent, h studyday.History, from, to time.Time) {
+	t.Helper()
 	for _, ws := range []*int64{nil, ptr(2)} {
 		var evs []model.StudyEvent
 		for _, ev := range all {
@@ -117,8 +131,8 @@ func TestActivityMatchesOracle(t *testing.T) {
 				evs = append(evs, ev)
 			}
 		}
-		want := oracle(evs, from, to)
-		got := run(t, sqlDB, u, "2026-08-15", "2026-11-13", ws, rules)
+		want := oracle(evs, h, from, to)
+		got := runIn(t, sqlDB, u, h, "2026-08-15", "2026-11-13", ws, rules)
 		if len(want) < 50 {
 			t.Fatalf("oracle too thin: %d cells", len(want))
 		}

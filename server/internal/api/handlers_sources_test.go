@@ -75,13 +75,24 @@ func (f *fakeSource) fetchCount() int {
 // newSourcesServer starts the API with the given sources.
 func newSourcesServer(t *testing.T, srcs ...sources.Source) (ts *httptest.Server, sqlDB *sql.DB, dataDir string) {
 	t.Helper()
+	return newSourcesServerWith(t, srcs)
+}
+
+// newSourcesServerAt fixes the server clock.
+func newSourcesServerAt(t *testing.T, now time.Time, srcs ...sources.Source) (ts *httptest.Server, sqlDB *sql.DB, dataDir string) {
+	t.Helper()
+	return newSourcesServerWith(t, srcs, api.WithClock(func() time.Time { return now }))
+}
+
+func newSourcesServerWith(t *testing.T, srcs []sources.Source, opts ...api.Option) (ts *httptest.Server, sqlDB *sql.DB, dataDir string) {
+	t.Helper()
 	dataDir = t.TempDir()
 	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatalf("db.Open: %v", err)
 	}
 	t.Cleanup(func() { sqlDB.Close() })
-	ts = httptest.NewServer(api.New(sqlDB, dataDir, srcs))
+	ts = httptest.NewServer(api.New(sqlDB, dataDir, srcs, opts...))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB, dataDir
 }
