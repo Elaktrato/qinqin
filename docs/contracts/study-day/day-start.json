@@ -1,0 +1,325 @@
+{
+ "version": 1,
+ "rule": "study-day/dayStart",
+ "cases": [
+  {
+   "name": "utc",
+   "note": "UTC midnight.",
+   "history": [],
+   "day": "2026-11-15",
+   "start": "2026-11-15T00:00:00Z"
+  },
+  {
+   "name": "tokyo",
+   "note": "Tokyo midnight.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    }
+   ],
+   "day": "2026-11-16",
+   "start": "2026-11-15T15:00:00Z"
+  },
+  {
+   "name": "berlin 23 h day start",
+   "note": "",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "day": "2025-03-30",
+   "start": "2025-03-29T23:00:00Z"
+  },
+  {
+   "name": "berlin 23 h day end",
+   "note": "The 30th lasts 23 hours.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "day": "2025-03-31",
+   "start": "2025-03-30T22:00:00Z"
+  },
+  {
+   "name": "berlin 25 h day start",
+   "note": "",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "day": "2025-10-26",
+   "start": "2025-10-25T22:00:00Z"
+  },
+  {
+   "name": "berlin 25 h day end",
+   "note": "The 26th lasts 25 hours.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "day": "2025-10-27",
+   "start": "2025-10-26T23:00:00Z"
+  },
+  {
+   "name": "santiago midnight gap",
+   "note": "Local midnight does not exist; the day starts when 01:00 begins.",
+   "history": [
+    {
+     "zone": "America/Santiago",
+     "from": null
+    }
+   ],
+   "day": "2024-09-08",
+   "start": "2024-09-08T04:00:00Z"
+  },
+  {
+   "name": "apia skipped date (empty window)",
+   "note": "The 30th never happened: its start equals the start of the 31st.",
+   "history": [
+    {
+     "zone": "Pacific/Apia",
+     "from": null
+    }
+   ],
+   "day": "2011-12-30",
+   "start": "2011-12-30T10:00:00Z"
+  },
+  {
+   "name": "apia after skipped date",
+   "note": "",
+   "history": [
+    {
+     "zone": "Pacific/Apia",
+     "from": null
+    }
+   ],
+   "day": "2011-12-31",
+   "start": "2011-12-30T10:00:00Z"
+  },
+  {
+   "name": "west change: long day starts in Tokyo",
+   "note": "",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    }
+   ],
+   "day": "2026-11-11",
+   "start": "2026-11-10T15:00:00Z"
+  },
+  {
+   "name": "west change: day after the long day",
+   "note": "",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    }
+   ],
+   "day": "2026-11-12",
+   "start": "2026-11-12T08:00:00Z"
+  },
+  {
+   "name": "east change",
+   "note": "Tokyo midnight inside the new segment.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-10T12:00:00Z"
+    }
+   ],
+   "day": "2026-11-11",
+   "start": "2026-11-10T15:00:00Z"
+  },
+  {
+   "name": "new york",
+   "note": "",
+   "history": [
+    {
+     "zone": "America/New_York",
+     "from": null
+    }
+   ],
+   "day": "2026-11-16",
+   "start": "2026-11-16T05:00:00Z"
+  },
+  {
+   "name": "kathmandu",
+   "note": "",
+   "history": [
+    {
+     "zone": "Asia/Kathmandu",
+     "from": null
+    }
+   ],
+   "day": "2026-01-02",
+   "start": "2026-01-01T18:15:00Z"
+  },
+  {
+   "name": "lord howe",
+   "note": "",
+   "history": [
+    {
+     "zone": "Australia/Lord_Howe",
+     "from": null
+    }
+   ],
+   "day": "2026-01-01",
+   "start": "2025-12-31T13:00:00Z"
+  },
+  {
+   "name": "floor branch: the change instant is the day start",
+   "note": "The floor equals the day; the day starts at the change.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T15:00:00Z"
+    }
+   ],
+   "day": "2026-11-11",
+   "start": "2026-11-10T15:00:00Z"
+  },
+  {
+   "name": "skip change: skipped date (empty window)",
+   "note": "",
+   "history": [
+    {
+     "zone": "Etc/GMT+12",
+     "from": null
+    },
+    {
+     "zone": "Pacific/Kiritimati",
+     "from": "2026-11-10T11:00:00Z"
+    }
+   ],
+   "day": "2026-11-10",
+   "start": "2026-11-10T11:00:00Z"
+  },
+  {
+   "name": "skip change: after",
+   "note": "",
+   "history": [
+    {
+     "zone": "Etc/GMT+12",
+     "from": null
+    },
+    {
+     "zone": "Pacific/Kiritimati",
+     "from": "2026-11-10T11:00:00Z"
+    }
+   ],
+   "day": "2026-11-11",
+   "start": "2026-11-10T11:00:00Z"
+  },
+  {
+   "name": "change at the old midnight",
+   "note": "",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-09T23:00:00Z"
+    }
+   ],
+   "day": "2026-11-10",
+   "start": "2026-11-09T23:00:00Z"
+  },
+  {
+   "name": "three zones",
+   "note": "The long day ended at the change back; the 12th starts when Tokyo takes over again (not at Tokyo midnight, which lies inside the LA segment).",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-11T20:00:00Z"
+    }
+   ],
+   "day": "2026-11-12",
+   "start": "2026-11-11T20:00:00Z"
+  },
+  {
+   "name": "st john's: the 6th",
+   "note": "",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "day": "2010-11-06",
+   "start": "2010-11-06T02:30:00Z"
+  },
+  {
+   "name": "st john's: the 7th starts at the first midnight, not the repeated one",
+   "note": "",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "day": "2010-11-07",
+   "start": "2010-11-07T02:30:00Z"
+  },
+  {
+   "name": "st john's: the 8th",
+   "note": "",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "day": "2010-11-08",
+   "start": "2010-11-08T03:30:00Z"
+  },
+  {
+   "name": "before 1970 clamps",
+   "note": "Dates before 1970 resolve to the epoch.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "day": "1960-05-05",
+   "start": "1970-01-01T00:00:00Z"
+  }
+ ]
+}

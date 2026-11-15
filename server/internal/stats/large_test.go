@@ -14,6 +14,7 @@ import (
 	"qinqin/internal/db"
 	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
+	"qinqin/internal/studyday"
 )
 
 type largeFixture struct {
@@ -99,9 +100,15 @@ func seedLarge(tb testing.TB) largeFixture {
 	return large
 }
 
-func window91() (time.Time, time.Time) {
-	to := time.Now().UTC().Truncate(24 * time.Hour)
-	return to.AddDate(0, 0, -90), to
+// window91 is the heatmap's 91 learner days (the zone is Asia/Tokyo, so
+// every window is offset from the UTC days the events were seeded on).
+func window91() []studyday.Window {
+	h, err := studyday.New([]studyday.Change{{Zone: "Asia/Tokyo"}})
+	if err != nil {
+		panic(err)
+	}
+	to := h.DayOf(time.Now())
+	return h.Windows(to.AddDays(-90), to)
 }
 
 func TestActivityLargeLog(t *testing.T) {
@@ -109,9 +116,9 @@ func TestActivityLargeLog(t *testing.T) {
 		t.Skip("large log")
 	}
 	f := seedLarge(t)
-	from, to := window91()
+	windows := window91()
 	start := time.Now()
-	cells, err := stats.Activity(context.Background(), f.db, f.user, from, to, nil, f.rules)
+	cells, err := stats.Activity(context.Background(), f.db, f.user, windows, nil, f.rules)
 	elapsed := time.Since(start)
 	if err != nil {
 		t.Fatal(err)
@@ -119,7 +126,7 @@ func TestActivityLargeLog(t *testing.T) {
 	t.Logf("user events %d, 91-day Activity: %v, %d cells", f.rows, elapsed, len(cells))
 	ws := int64(1)
 	start = time.Now()
-	one, err := stats.Activity(context.Background(), f.db, f.user, from, to, &ws, f.rules)
+	one, err := stats.Activity(context.Background(), f.db, f.user, windows, &ws, f.rules)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,10 +141,10 @@ func TestActivityLargeLog(t *testing.T) {
 
 func BenchmarkActivity91Days(b *testing.B) {
 	f := seedLarge(b)
-	from, to := window91()
+	windows := window91()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := stats.Activity(context.Background(), f.db, f.user, from, to, nil, f.rules); err != nil {
+		if _, err := stats.Activity(context.Background(), f.db, f.user, windows, nil, f.rules); err != nil {
 			b.Fatal(err)
 		}
 	}

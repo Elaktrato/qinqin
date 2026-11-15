@@ -1,8 +1,14 @@
 # Contracts
 
-Shared rules the web app and the future Kotlin client both follow, as prose plus JSON
-fixtures. Add one line per area; a Go or web test should decode each fixture.
+Rules every qinqin client (Go server, web, future Android/Kotlin) must implement identically. Each rule
+has a folder with a README (the rule) and JSON fixtures that all implementations run.
 
-| Area | Files | What it fixes |
-|---|---|---|
-| auth throttling | `auth/throttling.md`, `auth/throttle-responses.json` | order of checks, status codes, `Retry-After`, JSON error bodies of login and register |
+Fixture format: `{"version": 1, "rule": "<name>", "cases": [ ... ]}`. Go tests read the files with
+`os.ReadFile` (relative to the test's package), web tests import the JSON directly
+(`resolveJsonModule`). A fixture is only changed after re-deriving the value from its source of truth;
+never to match an implementation. Add one row per area; a Go or web test must decode each fixture.
+
+| Folder | Rule |
+| --- | --- |
+| [`study-day/`](study-day/README.md) | The learner's day: per-user zone history, `dayOf`, `dayStart`, `GET/PUT /api/me/time-zone`. Fixtures: `day-of.json`, `day-of-transitions.json`, `day-start.json`, `activity-days.json`, `time-zone-api.json` (Go: `studyday`, `stats`, `api`; web: `lib/time/studyDay.test.ts`) |
+| `auth/` | Sign-in throttling: order of checks, status codes, `Retry-After`, JSON error bodies of login and register. Files: `auth/throttling.md`, `auth/throttle-responses.json` |

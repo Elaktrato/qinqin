@@ -556,6 +556,29 @@ between simplified and traditional characters) it is marked with a **text change
 badge instead of being shown in the wrong place. Highlights and notes are private
 to the user and go with their book.
 
+## Study day and time zone
+
+Every "day" in qinqin (the activity heatmap, streaks, the daily XP bonus, reading totals, the
+once-a-day session and journal events, the reader's daily suggestions) is the learner's local day, not
+a UTC date. The time zone is stored per account on the server, so the web app and the future Android
+app agree.
+
+- **Where it is set:** Settings → **Study**. The first time you sign in after upgrading, the web app
+  sends your browser's zone as the default (only if the account has none). If the device zone later
+  differs, Settings offers "Use <zone> from now on"; nothing changes on its own.
+- **The first zone applies to your whole history:** the first zone an account ever gets (the browser default sent after the upgrade, or your first choice in Settings) is used for every past day too, so the heatmap and streaks are re-read once in that zone. Only later changes apply from now on.
+- **From now on:** a change takes effect when you save it. Past days never move, a date never repeats
+  (moving west makes the current day longer) and a skipped date simply has no activity. Daylight saving
+  days are 23 or 25 hours long and still one day.
+- **No zone set:** days are UTC, as before.
+- **API:** `GET /api/me/time-zone` returns `{"zone", "history"}`; `PUT /api/me/time-zone` with
+  `{"zone": "Asia/Tokyo"}` (optionally `"ifUnset": true`) records a change (IANA names only; errors are
+  JSON `{"error", "message"}`: `unknown_time_zone`, `bad_request`, `too_large`, `too_many_changes`).
+- **Contract:** the rule and its fixtures are in [`docs/contracts/study-day/`](docs/contracts/study-day/README.md),
+  run by the Go server and the web client and meant for the Android client.
+- **Upgrade note:** XP totals and best streaks are recomputed from the review log with local days, so
+  they can change by a few points or days once; the upgrade day may record one extra `session` event.
+
 ## Studying
 
 Study is a web feature plugin (`qinqin-flashcards`). To add a word, open any
@@ -820,7 +843,8 @@ All library and source routes need a signed-in user, and so does
 | `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user; an unknown or malformed id is 404 (checked before the body, so a bad body on a missing entry is still 404) |
 | `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; each event needs a `workspaceId` of 1 or more, else 400; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
 | `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
-| `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by UTC day, workspace and type for the plugins' activity rules: `{from, to, sources, cells}`. `from`/`to` are `YYYY-MM-DD` (default: today and the 90 days before; at most 366 days, else 400); a foreign workspace is 404. `sources` lists every rule (also those without cells) |
+| `GET /api/me/time-zone`, `PUT /api/me/time-zone` | The caller's learner time zone: `{zone, history:[{zone, from}]}` (`zone` null while none is set). `PUT {"zone":"Asia/Tokyo"[,"ifUnset":true]}` records a change effective from the server's now (the very first zone has `from: null` and applies to the whole log); IANA names only, body up to 1 KiB; errors are JSON `{error, message}`: `unknown_time_zone` (400), `bad_request` (400), `too_large` (413), `too_many_changes` (409) |
+| `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by learner day (their time zone, see "Study day and time zone"), workspace and type for the plugins' activity rules: `{from, to, timeZone, sources, cells}`. `from`/`to` are learner dates `YYYY-MM-DD` (default: today and the 90 days before; at most 366 days, else 400); a foreign workspace is 404. `sources` lists every rule (also those without cells) |
 | `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state (`hidden: true` marks the app's own surface-less built-ins such as `qinqin-core`; clients leave those out of plugin lists), and the caller's enable flag and (legacy) order for one plugin |
 | `GET /api/plugins/{id}/data?workspace=&prefix=` | The caller's live rows of a plugin whose key starts with `prefix`, scoped like the single-row routes, ordered by key, `[]` when none; an unknown plugin or foreign workspace is 404 |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |

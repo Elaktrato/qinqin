@@ -12,17 +12,19 @@ export function codePoints(text: string): number {
 }
 
 /**
- * True once per entry per UTC day, and only when the text changed. `sent`
+ * True once per entry per learner day, and only when the text changed.
+ * `dayOf` maps an instant in ms to its day (StudyDay.dayOf); `sent`
  * remembers the day of the last event per entry and is updated here.
  */
 export function journalEventDue(
 	entryId: string,
 	textChanged: boolean,
 	now: Date,
-	sent: Map<string, string>
+	sent: Map<string, string>,
+	dayOf: (ms: number) => string
 ): boolean {
 	if (!textChanged) return false;
-	const day = now.toISOString().slice(0, 10);
+	const day = dayOf(now.getTime());
 	if (sent.get(entryId) === day) return false;
 	sent.set(entryId, day);
 	return true;

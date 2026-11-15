@@ -33,6 +33,7 @@
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
 	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
+	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -245,11 +246,15 @@
 
 	// XP is the difference the session made to the whole log, so the
 	// daily bonus is only counted when this session earned it.
-	const historyXp = $derived(xpFromReviews(reviews));
-	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews]));
+	// The learner's day rule; a zone change recomputes XP and the streak.
+	let studyDay = $state.raw(currentStudyDay());
+	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+
+	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf));
+	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf));
 	const sessionXp = $derived(totalXp - historyXp);
 	const progress = $derived(levelProgress(totalXp));
-	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now()));
+	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay));
 	// Per-kind XP of this session; whatever the kinds do not explain is
 	// the daily bonus.
 	const kindXp = $derived(xpByKind(sessionReviews));

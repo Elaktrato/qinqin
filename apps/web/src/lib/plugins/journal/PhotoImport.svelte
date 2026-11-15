@@ -23,6 +23,7 @@
 		type PhotoState
 	} from './photoFlow';
 	import { journalHref } from './route';
+	import { currentStudyDay } from '$lib/time/zone';
 	import { newEntry, recordJournalEvent, saveEntry } from './store';
 	import type { Capabilities } from './types';
 
@@ -228,7 +229,7 @@
 		saveError = '';
 		const id = flow.photoId;
 		try {
-			const entry = newEntry('photo');
+			const entry = newEntry('photo', currentStudyDay());
 			entry.text = flow.text;
 			const saved = await saveEntry(ws, entry);
 			const now = new Date();

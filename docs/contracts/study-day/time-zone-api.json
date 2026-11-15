@@ -1,0 +1,395 @@
+{
+ "version": 1,
+ "rule": "study-day/time-zone-api",
+ "note": "Request bodies are JSON unless rawBody is given. `setup` lists PUTs applied by the same user first. Error bodies for 401 are not specified (the auth middleware's). `from: \"<server now>\"` is a placeholder: match any RFC 3339 UTC seconds value.",
+ "cases": [
+  {
+   "name": "get with no rows",
+   "request": {
+    "method": "GET",
+    "path": "/api/me/time-zone"
+   },
+   "status": 200,
+   "body": {
+    "zone": null,
+    "history": []
+   }
+  },
+  {
+   "name": "first put sets seq 0 (from null)",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Europe/Berlin"
+    }
+   },
+   "status": 200,
+   "body": {
+    "zone": "Europe/Berlin",
+    "history": [
+     {
+      "zone": "Europe/Berlin",
+      "from": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "first put of UTC is a zone too",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "UTC"
+    }
+   },
+   "status": 200,
+   "body": {
+    "zone": "UTC",
+    "history": [
+     {
+      "zone": "UTC",
+      "from": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "first put with ifUnset sets seq 0",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Asia/Tokyo",
+     "ifUnset": true
+    }
+   },
+   "status": 200,
+   "body": {
+    "zone": "Asia/Tokyo",
+    "history": [
+     {
+      "zone": "Asia/Tokyo",
+      "from": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "ifUnset with rows changes nothing",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "America/New_York",
+     "ifUnset": true
+    }
+   },
+   "status": 200,
+   "body": {
+    "zone": "Asia/Tokyo",
+    "history": [
+     {
+      "zone": "Asia/Tokyo",
+      "from": null
+     }
+    ]
+   },
+   "setup": [
+    {
+     "put": {
+      "zone": "Asia/Tokyo"
+     }
+    }
+   ]
+  },
+  {
+   "name": "same zone adds no row",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Asia/Tokyo"
+    }
+   },
+   "status": 200,
+   "body": {
+    "zone": "Asia/Tokyo",
+    "history": [
+     {
+      "zone": "Asia/Tokyo",
+      "from": null
+     }
+    ]
+   },
+   "setup": [
+    {
+     "put": {
+      "zone": "Asia/Tokyo"
+     }
+    }
+   ]
+  },
+  {
+   "name": "second zone adds a row from the server's now",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "America/New_York"
+    }
+   },
+   "status": 200,
+   "body": {
+    "zone": "America/New_York",
+    "history": [
+     {
+      "zone": "Asia/Tokyo",
+      "from": null
+     },
+     {
+      "zone": "America/New_York",
+      "from": "<server now>"
+     }
+    ]
+   },
+   "setup": [
+    {
+     "put": {
+      "zone": "Asia/Tokyo"
+     }
+    }
+   ],
+   "note": "`from` is the server clock truncated to whole seconds (RFC 3339 UTC); the example value is a placeholder."
+  },
+  {
+   "name": "400 unknown_time_zone: unknown name",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Mars/Base"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: Local",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Local"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: Factory",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Factory"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: posixrules",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "posixrules"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: posix/ prefix",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "posix/Europe/Berlin"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: right/ prefix",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "right/Europe/Berlin"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: empty",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": ""
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: 65 bytes",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: bad characters",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Europe/Berlin\n"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: lowercase of a real zone",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "europe/berlin"
+    }
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 unknown_time_zone: missing zone field",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {}
+   },
+   "status": 400,
+   "body": {
+    "error": "unknown_time_zone",
+    "message": "unknown time zone"
+   }
+  },
+  {
+   "name": "400 bad_request: malformed JSON",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "rawBody": "{not json"
+   },
+   "status": 400,
+   "body": {
+    "error": "bad_request",
+    "message": "invalid request body"
+   }
+  },
+  {
+   "name": "413 too_large: body over 1 KiB",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "rawBody": "{\"zone\":\"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"}"
+   },
+   "status": 413,
+   "body": {
+    "error": "too_large",
+    "message": "request body too large"
+   }
+  },
+  {
+   "name": "401 without a token (GET)",
+   "request": {
+    "method": "GET",
+    "path": "/api/me/time-zone",
+    "token": false
+   },
+   "status": 401,
+   "body": null
+  },
+  {
+   "name": "401 without a token (PUT)",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Asia/Tokyo"
+    },
+    "token": false
+   },
+   "status": 401,
+   "body": null
+  },
+  {
+   "name": "409 too_many_changes after 500 rows",
+   "request": {
+    "method": "PUT",
+    "path": "/api/me/time-zone",
+    "body": {
+     "zone": "Europe/Paris"
+    }
+   },
+   "status": 409,
+   "body": {
+    "error": "too_many_changes",
+    "message": "too many time zone changes"
+   },
+   "note": "The history already holds 500 rows (alternating two zones); a 501st change is refused."
+  }
+ ]
+}

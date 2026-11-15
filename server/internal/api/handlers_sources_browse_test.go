@@ -47,7 +47,7 @@ func TestSourcesBrowse(t *testing.T) {
 		{SourceID: "1", Title: "東京", Author: "A", Language: "ja", Reading: "とうきょう"},
 	}}
 	plain := &fakeSource{id: "plain"}
-	ts, _, _ := newSourcesServer(t, fb, plain)
+	ts, _, _ := newSourcesServerAt(t, time.Date(2026, 11, 15, 15, 30, 0, 0, time.UTC), fb, plain)
 	if resp := doJSON(t, http.MethodGet, ts.URL, "/api/library/sources/aozora/browse", "", nil); resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("no token: status = %d, want 401", resp.StatusCode)
 	}
@@ -66,13 +66,18 @@ func TestSourcesBrowse(t *testing.T) {
 	if len(out) != 1 || out[0].SourceID != "1" || out[0].Reading != "とうきょう" {
 		t.Errorf("results = %+v", out)
 	}
-	today := time.Now().UTC().Format("2006-01-02")
 	_, gotLang, gotSeed, gotLimit, hasDL := fb.seen()
 	if gotLang != "ja" || gotLimit != 12 || !hasDL {
 		t.Errorf("source saw lang=%q limit=%d deadline=%v", gotLang, gotLimit, hasDL)
 	}
-	if gotSeed != today && gotSeed != time.Now().UTC().Add(-time.Minute).Format("2006-01-02") {
-		t.Errorf("default seed = %q, want the UTC date %s", gotSeed, today)
+	if gotSeed != "2026-11-15" {
+		t.Errorf("default seed = %q, want the learner date 2026-11-15 (UTC, no zone set)", gotSeed)
+	}
+	// With a zone the default seed is the learner's date: 15:30Z is the 16th in Tokyo.
+	doRaw(t, http.MethodPut, ts.URL, "/api/me/time-zone", alice, `{"zone":"Asia/Tokyo"}`)
+	doJSON(t, http.MethodGet, ts.URL, "/api/library/sources/aozora/browse?language=ja", alice, nil)
+	if _, _, seed, _, _ := fb.seen(); seed != "2026-11-16" {
+		t.Errorf("tokyo default seed = %q, want 2026-11-16", seed)
 	}
 
 	resp = doJSON(t, http.MethodGet, ts.URL, "/api/library/sources/aozora/browse?language=ja&seed=abc", alice, nil)

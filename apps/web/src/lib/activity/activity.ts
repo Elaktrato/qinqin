@@ -1,14 +1,14 @@
 // Core activity: one points-per-day view across every learning source.
 // The server scores events by the activity rules in plugin manifests
-// (GET /api/stats/activity) and returns cells per UTC day, workspace and
-// type; these pure functions fold them into the heatmap's days.
+// (GET /api/stats/activity) and returns cells per learner day, workspace
+// and type (lib/time/studyDay.ts); these pure functions fold them into
+// the heatmap's days.
 
 import type { ActivityResponse, ActivitySource } from '../api/stats';
+import { addDays, type StudyDay } from '../time/studyDay';
 
 /** Days covered by the heatmap: 13 weeks of 7 cells. */
 export const HEATMAP_DAYS = 91;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** The scope and filter a heatmap is drawn for. */
 export interface ActivityView {
@@ -28,33 +28,28 @@ export interface DayActivity {
 	byWorkspace: Record<number, number>;
 }
 
-function utcDayStart(ms: number): number {
-	const date = new Date(ms);
-	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-}
-
-/** dayKey is the UTC date of a moment, YYYY-MM-DD. */
-export function dayKey(date: Date): string {
-	return date.toISOString().slice(0, 10);
-}
-
 function windowLength(days: number): number {
 	return Number.isFinite(days) ? Math.max(0, Math.floor(days)) : HEATMAP_DAYS;
 }
 
 /**
- * windowStart is UTC midnight of the first day `foldActivity` covers, so
- * the request can ask for exactly the window. An empty window starts today.
+ * windowStart is the first learner day `foldActivity` covers, so the
+ * request can ask for exactly the window. An empty window starts today.
  */
-export function windowStart(now: Date = new Date(), days: number = HEATMAP_DAYS): Date {
+export function windowStart(
+	day: StudyDay,
+	now: Date = new Date(),
+	days: number = HEATMAP_DAYS
+): string {
 	const windowDays = Math.max(1, windowLength(days));
-	return new Date(utcDayStart(now.getTime()) - (windowDays - 1) * DAY_MS);
+	return addDays(day.today(now.getTime()), -(windowDays - 1));
 }
 
 /**
- * foldActivity sums the server's cells per UTC day over the `days` days
- * ending on `now`'s UTC day, oldest first, for one view. Every day
- * appears, empty ones with total 0. Cells of unknown types (not in
+ * foldActivity sums the server's cells per learner day over the `days`
+ * days ending on today (`day.today(now)`), oldest first, for one view.
+ * Every day appears, empty ones with total 0, counted by civil dates (a
+ * 23 or 25 hour day is one day). Cells of unknown types (not in
  * `sources`), hidden types, other workspaces and days outside the window
  * are ignored. A workspace the user no longer has still counts in the
  * combined view.
@@ -62,6 +57,7 @@ export function windowStart(now: Date = new Date(), days: number = HEATMAP_DAYS)
 export function foldActivity(
 	resp: ActivityResponse,
 	view: ActivityView,
+	day: StudyDay,
 	now: Date = new Date(),
 	days: number = HEATMAP_DAYS
 ): Map<string, DayActivity> {
@@ -69,10 +65,9 @@ export function foldActivity(
 	const result = new Map<string, DayActivity>();
 	if (windowDays === 0) return result;
 
-	const today = utcDayStart(now.getTime());
-	const start = windowStart(now, windowDays).getTime();
-	for (let day = start; day <= today; day += DAY_MS) {
-		const key = dayKey(new Date(day));
+	const today = day.today(now.getTime());
+	const start = windowStart(day, now, windowDays);
+	for (let key = start; key <= today; key = addDays(key, 1)) {
 		result.set(key, { day: key, total: 0, bySource: {}, raw: {}, byWorkspace: {} });
 	}
 

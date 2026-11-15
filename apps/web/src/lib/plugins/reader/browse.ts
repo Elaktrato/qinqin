@@ -1,12 +1,14 @@
 // Small pure helpers for the source browser and the reader popup.
 
+import type { StudyDay } from '../../time/studyDay';
+
 /**
- * browseSeed is the seed of the daily browse assortment: the UTC date, as
- * the server uses by default, so "Suggestions for today" is the same list
- * all day long on every device.
+ * browseSeed is the seed of the daily browse assortment: the learner's
+ * date, as the server uses by default, so "Suggestions for today" is the
+ * same list all day long on every device.
  */
-export function browseSeed(now: Date = new Date()): string {
-	return now.toISOString().slice(0, 10);
+export function browseSeed(now: Date, day: StudyDay): string {
+	return day.today(now.getTime());
 }
 
 /** shuffleSeed is a random seed for the Shuffle button (never a date, at most 64 characters). */

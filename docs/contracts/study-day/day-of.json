@@ -1,0 +1,621 @@
+{
+ "version": 1,
+ "rule": "study-day/dayOf",
+ "cases": [
+  {
+   "name": "utc default, no history",
+   "note": "No history means UTC.",
+   "history": [],
+   "ts": "2026-11-15T23:30:00Z",
+   "day": "2026-11-15"
+  },
+  {
+   "name": "tokyo after midnight",
+   "note": "UTC+9: 00:30 on the 16th.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    }
+   ],
+   "ts": "2026-11-15T15:30:00Z",
+   "day": "2026-11-16"
+  },
+  {
+   "name": "tokyo before midnight",
+   "note": "UTC+9: 23:59:59 on the 15th.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    }
+   ],
+   "ts": "2026-11-15T14:59:59Z",
+   "day": "2026-11-15"
+  },
+  {
+   "name": "new york 23:59:59",
+   "note": "EST UTC-5 (DST ended 2026-11-01).",
+   "history": [
+    {
+     "zone": "America/New_York",
+     "from": null
+    }
+   ],
+   "ts": "2026-11-16T04:59:59Z",
+   "day": "2026-11-15"
+  },
+  {
+   "name": "new york midnight",
+   "note": "EST midnight.",
+   "history": [
+    {
+     "zone": "America/New_York",
+     "from": null
+    }
+   ],
+   "ts": "2026-11-16T05:00:00Z",
+   "day": "2026-11-16"
+  },
+  {
+   "name": "berlin before spring-forward day",
+   "note": "CET UTC+1: midnight of the 30th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "2025-03-29T23:00:00Z",
+   "day": "2025-03-30"
+  },
+  {
+   "name": "berlin last second of the 23 h day",
+   "note": "CEST UTC+2 after 01:00Z: 23:59:59 on the 30th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "2025-03-30T21:59:59Z",
+   "day": "2025-03-30"
+  },
+  {
+   "name": "berlin first second after the 23 h day",
+   "note": "00:00 on the 31st.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "2025-03-30T22:00:00Z",
+   "day": "2025-03-31"
+  },
+  {
+   "name": "berlin start of the 25 h day",
+   "note": "CEST UTC+2: midnight of the 26th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "2025-10-25T22:00:00Z",
+   "day": "2025-10-26"
+  },
+  {
+   "name": "berlin last second of the 25 h day",
+   "note": "CET UTC+1 after 01:00Z: 23:59:59 on the 26th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "2025-10-26T22:59:59Z",
+   "day": "2025-10-26"
+  },
+  {
+   "name": "berlin repeated hour counts once",
+   "note": "02:30 CEST (first pass).",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "2025-10-26T00:30:00Z",
+   "day": "2025-10-26"
+  },
+  {
+   "name": "berlin repeated hour second pass",
+   "note": "02:30 CET (second pass).",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "2025-10-26T01:30:00Z",
+   "day": "2025-10-26"
+  },
+  {
+   "name": "kathmandu before midnight",
+   "note": "UTC+5:45.",
+   "history": [
+    {
+     "zone": "Asia/Kathmandu",
+     "from": null
+    }
+   ],
+   "ts": "2026-01-01T18:14:59Z",
+   "day": "2026-01-01"
+  },
+  {
+   "name": "kathmandu midnight",
+   "note": "UTC+5:45.",
+   "history": [
+    {
+     "zone": "Asia/Kathmandu",
+     "from": null
+    }
+   ],
+   "ts": "2026-01-01T18:15:00Z",
+   "day": "2026-01-02"
+  },
+  {
+   "name": "lord howe before midnight",
+   "note": "UTC+11 (30-minute DST) : 23:59:59.",
+   "history": [
+    {
+     "zone": "Australia/Lord_Howe",
+     "from": null
+    }
+   ],
+   "ts": "2025-12-31T12:59:59Z",
+   "day": "2025-12-31"
+  },
+  {
+   "name": "lord howe midnight",
+   "note": "UTC+11.",
+   "history": [
+    {
+     "zone": "Australia/Lord_Howe",
+     "from": null
+    }
+   ],
+   "ts": "2025-12-31T13:00:00Z",
+   "day": "2026-01-01"
+  },
+  {
+   "name": "apia before the skipped date",
+   "note": "UTC-10 DST: 23:59:59 on 29th.",
+   "history": [
+    {
+     "zone": "Pacific/Apia",
+     "from": null
+    }
+   ],
+   "ts": "2011-12-30T09:59:59Z",
+   "day": "2011-12-29"
+  },
+  {
+   "name": "apia after the skipped date",
+   "note": "Zone jumps to UTC+14: 31st.",
+   "history": [
+    {
+     "zone": "Pacific/Apia",
+     "from": null
+    }
+   ],
+   "ts": "2011-12-30T10:00:00Z",
+   "day": "2011-12-31"
+  },
+  {
+   "name": "santiago before the midnight gap",
+   "note": "UTC-4 until 04:00Z.",
+   "history": [
+    {
+     "zone": "America/Santiago",
+     "from": null
+    }
+   ],
+   "ts": "2024-09-08T03:59:59Z",
+   "day": "2024-09-07"
+  },
+  {
+   "name": "santiago at the midnight gap",
+   "note": "00:00 becomes 01:00 (UTC-3).",
+   "history": [
+    {
+     "zone": "America/Santiago",
+     "from": null
+    }
+   ],
+   "ts": "2024-09-08T04:00:00Z",
+   "day": "2024-09-08"
+  },
+  {
+   "name": "east change before",
+   "note": "Berlin.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-10T12:00:00Z"
+    }
+   ],
+   "ts": "2026-11-10T11:59:59Z",
+   "day": "2026-11-10"
+  },
+  {
+   "name": "east change after",
+   "note": "Tokyo 00:30 on the 11th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-10T12:00:00Z"
+    }
+   ],
+   "ts": "2026-11-10T15:30:00Z",
+   "day": "2026-11-11"
+  },
+  {
+   "name": "east change at the instant",
+   "note": "Tokyo 21:00 on the 10th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-10T12:00:00Z"
+    }
+   ],
+   "ts": "2026-11-10T12:00:00Z",
+   "day": "2026-11-10"
+  },
+  {
+   "name": "west change: floor before",
+   "note": "Tokyo 00:59:59 on the 11th.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    }
+   ],
+   "ts": "2026-11-10T15:59:59Z",
+   "day": "2026-11-11"
+  },
+  {
+   "name": "west change: floor at the instant",
+   "note": "LA is still on the 10th, the floor holds the 11th.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    }
+   ],
+   "ts": "2026-11-10T16:00:00Z",
+   "day": "2026-11-11"
+  },
+  {
+   "name": "west change: floor after",
+   "note": "same long day.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    }
+   ],
+   "ts": "2026-11-10T17:00:00Z",
+   "day": "2026-11-11"
+  },
+  {
+   "name": "west change: last second of the long day",
+   "note": "LA 23:59:59 on the 11th.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    }
+   ],
+   "ts": "2026-11-12T07:59:59Z",
+   "day": "2026-11-11"
+  },
+  {
+   "name": "west change: next day",
+   "note": "LA midnight of the 12th.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    }
+   ],
+   "ts": "2026-11-12T08:00:00Z",
+   "day": "2026-11-12"
+  },
+  {
+   "name": "before the first change (from null)",
+   "note": "The first zone also applies to earlier events.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "2001-06-01T12:00:00Z",
+   "day": "2001-06-01"
+  },
+  {
+   "name": "skip change: before",
+   "note": "UTC-12: the 9th.",
+   "history": [
+    {
+     "zone": "Etc/GMT+12",
+     "from": null
+    },
+    {
+     "zone": "Pacific/Kiritimati",
+     "from": "2026-11-10T11:00:00Z"
+    }
+   ],
+   "ts": "2026-11-10T10:59:59Z",
+   "day": "2026-11-09"
+  },
+  {
+   "name": "skip change: after",
+   "note": "UTC+14: the 11th, the 10th is skipped.",
+   "history": [
+    {
+     "zone": "Etc/GMT+12",
+     "from": null
+    },
+    {
+     "zone": "Pacific/Kiritimati",
+     "from": "2026-11-10T11:00:00Z"
+    }
+   ],
+   "ts": "2026-11-10T11:00:00Z",
+   "day": "2026-11-11"
+  },
+  {
+   "name": "change at the old zone's midnight: before",
+   "note": "Berlin 23:59:59 on the 9th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-09T23:00:00Z"
+    }
+   ],
+   "ts": "2026-11-09T22:59:59Z",
+   "day": "2026-11-09"
+  },
+  {
+   "name": "change at the old zone's midnight: at",
+   "note": "Berlin midnight of the 10th, Tokyo 08:00 on the 10th.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-09T23:00:00Z"
+    }
+   ],
+   "ts": "2026-11-09T23:00:00Z",
+   "day": "2026-11-10"
+  },
+  {
+   "name": "three zones, back east",
+   "note": "LA 12:00 on the 11th; Tokyo would say the 12th, the floor is the 11th, Tokyo 05:00 on the 12th.",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    },
+    {
+     "zone": "America/Los_Angeles",
+     "from": "2026-11-10T16:00:00Z"
+    },
+    {
+     "zone": "Asia/Tokyo",
+     "from": "2026-11-11T20:00:00Z"
+    }
+   ],
+   "ts": "2026-11-11T20:00:00Z",
+   "day": "2026-11-12"
+  },
+  {
+   "name": "sydney summer",
+   "note": "AEDT UTC+11.",
+   "history": [
+    {
+     "zone": "Australia/Sydney",
+     "from": null
+    }
+   ],
+   "ts": "2026-01-14T13:00:00Z",
+   "day": "2026-01-15"
+  },
+  {
+   "name": "london winter",
+   "note": "GMT.",
+   "history": [
+    {
+     "zone": "Europe/London",
+     "from": null
+    }
+   ],
+   "ts": "2026-01-15T23:59:59Z",
+   "day": "2026-01-15"
+  },
+  {
+   "name": "london summer",
+   "note": "BST UTC+1.",
+   "history": [
+    {
+     "zone": "Europe/London",
+     "from": null
+    }
+   ],
+   "ts": "2026-07-15T23:00:00Z",
+   "day": "2026-07-16"
+  },
+  {
+   "name": "india half hour",
+   "note": "UTC+5:30.",
+   "history": [
+    {
+     "zone": "Asia/Kolkata",
+     "from": null
+    }
+   ],
+   "ts": "2026-11-15T18:30:00Z",
+   "day": "2026-11-16"
+  },
+  {
+   "name": "fixed zone Etc/GMT-9",
+   "note": "UTC+9, no DST.",
+   "history": [
+    {
+     "zone": "Etc/GMT-9",
+     "from": null
+    }
+   ],
+   "ts": "2026-11-15T15:00:00Z",
+   "day": "2026-11-16"
+  },
+  {
+   "name": "before 1970 clamps",
+   "note": "Instants before 1970-01-01T00:00:00Z are clamped to it.",
+   "history": [
+    {
+     "zone": "Europe/Berlin",
+     "from": null
+    }
+   ],
+   "ts": "1960-01-01T00:00:00Z",
+   "day": "1970-01-01"
+  },
+  {
+   "name": "st john's: before midnight",
+   "note": "NDT UTC-2:30: 23:59:59 on the 6th.",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "ts": "2010-11-07T02:29:59Z",
+   "day": "2010-11-06"
+  },
+  {
+   "name": "st john's: midnight before the DST end",
+   "note": "NDT: 00:00 on the 7th.",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "ts": "2010-11-07T02:30:00Z",
+   "day": "2010-11-07"
+  },
+  {
+   "name": "st john's: clocks go back across midnight (no repeated date)",
+   "note": "DST ended at 00:01 NDT; NST shows 23:01 on the 6th, but the 7th already began: the day does not repeat.",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "ts": "2010-11-07T02:31:00Z",
+   "day": "2010-11-07"
+  },
+  {
+   "name": "st john's: still the 7th at wall 23:30",
+   "note": "NST 23:30 on the 6th.",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "ts": "2010-11-07T03:00:00Z",
+   "day": "2010-11-07"
+  },
+  {
+   "name": "st john's: wall midnight again",
+   "note": "NST 00:00 on the 7th.",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "ts": "2010-11-07T03:30:00Z",
+   "day": "2010-11-07"
+  },
+  {
+   "name": "st john's: the 8th",
+   "note": "NST 00:00 on the 8th.",
+   "history": [
+    {
+     "zone": "America/St_Johns",
+     "from": null
+    }
+   ],
+   "ts": "2010-11-08T03:30:00Z",
+   "day": "2010-11-08"
+  },
+  {
+   "name": "casey: 3 h back across midnight",
+   "note": "UTC+11 -> +8 at 2010-03-04T15:00Z (02:00 on the 5th -> 23:00 on the 4th wall): the 5th does not repeat as the 4th.",
+   "history": [
+    {
+     "zone": "Antarctica/Casey",
+     "from": null
+    }
+   ],
+   "ts": "2010-03-04T15:00:00Z",
+   "day": "2010-03-05"
+  }
+ ]
+}
