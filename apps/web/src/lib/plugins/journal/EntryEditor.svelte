@@ -6,7 +6,6 @@
 <script lang="ts">
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
-	import { postEvents } from '$lib/events';
 	import AnnotationList from './AnnotationList.svelte';
 	import IdeasPanel from './IdeasPanel.svelte';
 	import OverallReview from './OverallReview.svelte';
@@ -18,7 +17,6 @@
 		AUTOSAVE_MS,
 		MAX_REVIEW_CHARS,
 		codePoints,
-		journalEvent,
 		journalEventDue
 	} from './entryDraft';
 	import {
@@ -36,7 +34,7 @@
 	} from './editorLogic';
 	import { pollForReview } from './reviewPoll';
 	import { journalHref, newEntryHref } from './route';
-	import { deleteEntry, getEntry, getReview, newEntry, saveEntry } from './store';
+	import { deleteEntry, getEntry, getReview, newEntry, recordJournalEvent, saveEntry } from './store';
 	import type { JournalEntry, Review } from './types';
 
 	let {
@@ -163,7 +161,7 @@
 		const now = new Date();
 		if (!journalEventDue(id, true, now, sentEvents)) return;
 		try {
-			await postEvents([journalEvent(ws, id, now)]);
+			await recordJournalEvent(ws, id, now);
 		} catch {
 			// Telemetry only; allow another try on the next save.
 			sentEvents.delete(id);

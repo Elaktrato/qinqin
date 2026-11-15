@@ -60,7 +60,9 @@ function decodeData(data: unknown): unknown {
 function scope(pluginId: string, workspace: number | null): DataScope {
 	const base = `/api/plugins/${encodeURIComponent(pluginId)}/data`;
 	const suffix = workspace === null ? '' : `?workspace=${workspace}`;
-	const keyPath = (key: string) => `${base}/${encodeURIComponent(key)}${suffix}`;
+	// ':' is legal in a path segment, so keys like `entry:<id>` keep their readable form.
+	const keyPath = (key: string) =>
+		`${base}/${encodeURIComponent(key).replaceAll('%3A', ':')}${suffix}`;
 	return {
 		async get<T>(key: string): Promise<T | null> {
 			try {

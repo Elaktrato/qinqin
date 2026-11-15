@@ -81,6 +81,14 @@ describe('plugin sdk data', () => {
 		expect(lastCall().url).not.toContain('workspace=');
 	});
 
+	it('keeps a colon readable in a key and rethrows other failures', async () => {
+		vi.mocked(fetch).mockResolvedValue(json({ data: 1 }));
+		await createPluginSdk(full).data.workspace(3).get('entry:a');
+		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data/entry:a?workspace=3');
+		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
+		await expect(createPluginSdk(full).data.user().get('k')).rejects.toThrow();
+	});
+
 	it('list uses the prefix route and maps rows', async () => {
 		vi.mocked(fetch).mockResolvedValue(
 			json([{ key: 'entry:a', data: { x: 1 }, version: 2, updatedAt: 't' }])
