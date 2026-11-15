@@ -95,4 +95,15 @@ attribution "$dest/kanjidic2" "KANJIDIC2" \
 # Jiten frequency list (word ranks), CC BY-SA 4.0, converted to freq-csv.
 "$root/scripts/fetch-jiten-frequency.sh" "$dest"
 
+# Checksum manifest: the SHA-256 of every file this script redistributes
+# unmodified from upstream (the Jiten list is converted, so it is not listed).
+# Commit it with the refreshed bundle; CI verifies the committed files against
+# it (scripts/check-archives.sh), so a refresh is auditable and a silent
+# change or corruption of a bundled payload fails the build. The rolling
+# dictionaries change upstream daily, so the manifest pins the snapshot that
+# was committed, not "the" upstream file.
+(cd "$dest" && sha256sum cedict/dictionary.txt.gz cedict/LICENSE \
+  unihan/Unihan.zip unihan/LICENSE jmdict/jmdict.xml.gz \
+  kanjidic2/kanjidic2.xml.gz >UPSTREAM.sha256)
+
 echo "done — now run: qinqin seed --data <dir> --packs $dest"

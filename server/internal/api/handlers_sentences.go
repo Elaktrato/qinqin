@@ -107,6 +107,8 @@ func (s *server) handleUninstallSentences(w http.ResponseWriter, r *http.Request
 	if u == nil {
 		return
 	}
+	s.packMu.Lock()
+	defer s.packMu.Unlock()
 	if err := sentences.Uninstall(r.Context(), s.db, r.PathValue("pack")); err != nil {
 		if errors.Is(err, sentences.ErrNotFound) {
 			http.Error(w, "sentence pack not found", http.StatusNotFound)

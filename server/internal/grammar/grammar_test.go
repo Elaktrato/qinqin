@@ -301,3 +301,30 @@ func TestImportRejectsNonJSONFormat(t *testing.T) {
 		t.Errorf("err = %v, want ErrInvalidPack", err)
 	}
 }
+
+func TestUninstallThenReinstall(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
+		t.Fatal(err)
+	}
+	if err := grammar.Uninstall(ctx, sqlDB, "zh-grammar-mini"); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := grammar.ListPacks(ctx, sqlDB, ""); len(got) != 0 {
+		t.Errorf("uninstalled pack listed: %+v", got)
+	}
+	if _, err := grammar.LessonByID(ctx, sqlDB, "zh-grammar-mini", "shi"); !errors.Is(err, grammar.ErrNotFound) {
+		t.Errorf("lesson of uninstalled pack err = %v", err)
+	}
+	if err := grammar.Uninstall(ctx, sqlDB, "zh-grammar-mini"); !errors.Is(err, grammar.ErrNotFound) {
+		t.Errorf("second Uninstall err = %v, want ErrNotFound", err)
+	}
+	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := grammar.ListPacks(ctx, sqlDB, "zh")
+	if len(got) != 1 || len(got[0].Lessons) != 3 {
+		t.Errorf("after reinstall: %+v", got)
+	}
+}

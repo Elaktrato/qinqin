@@ -211,7 +211,7 @@ func TestDictionaryRoutes(t *testing.T) {
 	}
 
 	// The pack persists under <data>/packs/<id>-<version>/.
-	if _, err := os.Stat(filepath.Join(dataDir, "packs", "mkgloss-1.0", "manifest.json")); err != nil {
+	if _, err := os.Stat(filepath.Join(dataDir, "packs", "dictionary", "mkgloss", "1.0", "manifest.json")); err != nil {
 		t.Errorf("installed pack files: %v (want manifest.json under packs/mkgloss-1.0/)", err)
 	}
 

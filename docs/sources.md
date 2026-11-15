@@ -51,10 +51,12 @@ original to the project.
 | **HSK 3.0 (characters)** (`hsk-chars`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Characters by HSK level (the characters to recognise, 认读字), HSK 1–6 and HSK 7–9 | No reuse licence granted; the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) allows only reasonable, good-faith quoting with the source indicated; included with attribution at the project owner's decision; legal status not verified | https://www.chinesetest.cn |
 | **HSK 3.0 (words)** (`hsk-words`), from the official syllabus (CLEC/CTI), edition 2025-11/2026-07 | Words by HSK level, HSK 1–6 and HSK 7–9 | No reuse licence granted; the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) allows only reasonable, good-faith quoting with the source indicated; included with attribution at the project owner's decision; legal status not verified | https://www.chinesetest.cn |
 
-Each pack directory carries its `manifest.json` (including `license`,
+Each bundled upstream pack directory carries its `manifest.json` (including `license`,
 `attribution` and, where the pack needs more than a line, a `notice`), the full license text (`LICENSE`; `jlpt-kanji` also
 `LICENSE-KANJIDIC2` for its derived levels), and credits
-(`ATTRIBUTION.md`); `joyo-grades` and `tgh-chars` carry copies of the KANJIDIC2 and Unihan licences; `hsk-words` and `hsk-chars` have no `LICENSE`, as no
+(`ATTRIBUTION.md`); `es-demo` is an exception: it has only its
+`manifest.json` and `dictionary.json` (a tiny demo dictionary written for this
+project; its licence and attribution are in the manifest); `joyo-grades` and `tgh-chars` carry copies of the KANJIDIC2 and Unihan licences; `hsk-words` and `hsk-chars` have no `LICENSE`, as no
 reuse licence is granted for them; their `ATTRIBUTION.md` gives the CTI Legal
 Notice terms instead. The dictionary files are redistributed **unmodified**;
 the download-and-bundle procedure lives in `scripts/fetch-seeds.sh`. The level
@@ -565,8 +567,8 @@ Make Me a Hanzi dataset) is licensed under the **Arphic Public License**.
 The web frontend bundles it and credits it on its Sources page (a core
 credit in `apps/web/src/lib/sources/coreCredits.ts`). The full
 license text is committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim
-from the `hanzi-writer-data` package) and is served by the app at
-[`/ARPHICPL.TXT`](/ARPHICPL.TXT).
+from the `hanzi-writer-data` package) and is served by the running app at
+`/ARPHICPL.TXT` (the file in `apps/web/static/`).
 
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).
@@ -602,9 +604,8 @@ only when a script conversion is selected. The Sources page credits it (a
 `sources` entry of the Reader plugin's manifest), and both
 licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
 `apps/web/static/OPENCC-APACHE-2.0.TXT` (copied verbatim from the `opencc-js`
-package; a web test keeps them identical) and served by the app at
-[`/OPENCC-JS-LICENSE.TXT`](/OPENCC-JS-LICENSE.TXT) and
-[`/OPENCC-APACHE-2.0.TXT`](/OPENCC-APACHE-2.0.TXT).
+package; a web test keeps them identical) and served by the running app at
+`/OPENCC-JS-LICENSE.TXT` and `/OPENCC-APACHE-2.0.TXT`.
 
 ## Level packs
 

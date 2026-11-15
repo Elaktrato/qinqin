@@ -1,6 +1,5 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import { searchForWorkspaceRoot } from 'vite';
-import { defineConfig } from 'vitest/config';
+import { defineConfig, searchForWorkspaceRoot } from 'vite';
 
 export default defineConfig({
 	plugins: [sveltekit()],
@@ -21,8 +20,5 @@ export default defineConfig({
 				assetFileNames: 'assets/[hash][extname]'
 			}
 		}
-	},
-	test: {
-		include: ['src/**/*.test.ts']
 	}
 });

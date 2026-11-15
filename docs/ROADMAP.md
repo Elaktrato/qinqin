@@ -53,7 +53,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 ## Future (milestone)
 
 - [#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK (permissions, behavior hooks, data API; page surfaces exist) — in progress on `feature/plugin-sdk`
-- [#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI
+- [#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI — in progress on `feature/pack-management` (Settings → Data: list, upload with licence review, uninstall)
 - [#41](https://github.com/Elaktrato/qinqin/issues/41) language and workspace management UI (rename/delete exist)
 - [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs: bundled `joyo-grades` (KANJIDIC2) and
   `tgh-chars` (通用规范汉字表, Unihan `kTGH`); TBCL and curriculum lists are local-only via

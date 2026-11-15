@@ -10,3 +10,4 @@ data/
 server/data/
 plugins/data-local
 plugins/data-audio
+apps/web/.env*
