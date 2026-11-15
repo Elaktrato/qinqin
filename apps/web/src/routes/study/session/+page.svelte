@@ -41,6 +41,7 @@
 	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
 	import {
 		acceptedClozeAnswers,
+		clozeCandidates,
 		clozeMode,
 		pickDistractors,
 		resolveClozeShowing,
@@ -520,9 +521,6 @@
 		return found;
 	}
 
-	/** Candidate sentences per word: the first few, to bound the segmenter calls. */
-	const CLOZE_CANDIDATES = 8;
-
 	/**
 	 * resolveCloze picks the sentence and blanks of a cloze showing. A failed
 	 * segment request rejects: the item is dropped without being remembered
@@ -536,9 +534,7 @@
 		now: Date,
 		base: Resolved
 	): Promise<Resolved | null> {
-		const candidates = entry.sentences
-			.filter((sentence) => sentence.hanzi.trim() !== '')
-			.slice(0, CLOZE_CANDIDATES);
+		const candidates = clozeCandidates(entry.sentences);
 		const matches = new Map<number, SegmentMatch[]>();
 		await Promise.all(
 			candidates.map(async (sentence) => {
@@ -549,7 +545,7 @@
 		const recorded = reviewCountFor(cardId, history);
 		const showing = resolveClozeShowing({
 			entry,
-			sentences: candidates,
+			sentences: entry.sentences,
 			matchesOf: (sentence) => matches.get(sentence.id) ?? [],
 			recorded,
 			fixedSentenceId: item.clozeSentenceId

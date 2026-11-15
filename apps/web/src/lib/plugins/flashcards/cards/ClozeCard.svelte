@@ -54,9 +54,9 @@
 	}
 </script>
 
-{#snippet gap()}
+{#snippet gap(surface: string | undefined)}
 	<span class="gap" class:right={outcome === 'right'} class:wrong={outcome === 'wrong' || outcome === 'gaveUp'}
-		><span class="sr-only">blank</span>{done ? prompt.answer : '＿＿'}</span
+		><span class="sr-only">blank</span>{done ? (surface ?? prompt.answer) : '＿＿'}</span
 	>
 {/snippet}
 
@@ -71,7 +71,7 @@
 	/>
 {:else}
 	<p class="sentence" lang={language}>
-		{#each prompt.before as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap()}{/if}{/each}{@render gap()}{#each prompt.after as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap()}{/if}{/each}
+		{#each prompt.before as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}{@render gap(undefined)}{#each prompt.after as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}
 	</p>
 
 	<div class="entry">

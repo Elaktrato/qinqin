@@ -5,6 +5,7 @@ import {
 	acceptedClozeAnswers,
 	blankSpans,
 	clozeMode,
+	clozeCandidates,
 	clozePrompt,
 	eligibleSentences,
 	normalizeAnswer,
@@ -35,8 +36,15 @@ describe('cloze contract', () => {
 		it(c.name, () => {
 			const spansOf = (s: { id: number; hanzi: string }) =>
 				blankSpans(s.hanzi, c.entry, c.matchesBySentence[String(s.id)] ?? []);
-			const eligible = eligibleSentences(c.sentences, spansOf);
+			const eligible = eligibleSentences(clozeCandidates(c.sentences), spansOf);
 			expect(eligible.map((s) => s.id)).toEqual(c.eligibleIds);
+			const showing = resolveClozeShowing({
+				entry: c.entry,
+				sentences: c.sentences,
+				matchesOf: (s) => c.matchesBySentence[String(s.id)] ?? [],
+				recorded: c.reviews
+			});
+			expect(showing?.sentence.id ?? null).toBe(c.shownId);
 			const shown = sentenceForShowing(eligible, c.reviews);
 			expect(shown?.id ?? null).toBe(c.shownId);
 			if (shown === null) return;
@@ -154,5 +162,36 @@ describe('resolveClozeShowing', () => {
 		const shown = resolveClozeShowing({ ...input, recorded: 0 })!;
 		expect(shown.prompt).toEqual({ before: ['我'], after: ['茶。'], answer: '喜欢' });
 		expect(resolveClozeShowing({ ...input, sentences: [sentences[1]], recorded: 0 })).toBeNull();
+	});
+});
+
+describe('clozeCandidates', () => {
+	it('keeps the first 8 non-blank sentences in order', () => {
+		const list = [{ id: 0, hanzi: ' ' }, ...Array.from({ length: 10 }, (_, i) => ({ id: i + 1, hanzi: 'x' }))];
+		expect(clozeCandidates(list).map((s) => s.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+	});
+});
+
+describe('literal fallback and longer matches', () => {
+	it('skips an occurrence inside a strictly longer match, keeps one inside an equal-length match', () => {
+		const entry = { id: 7, written: '日本' };
+		expect(blankSpans('日本語を話す', entry, [{ start: 0, end: 3, entries: [{ id: 8 }] }])).toEqual([]);
+		expect(blankSpans('日本語を話す', entry, [{ start: 0, end: 2, entries: [{ id: 9 }] }])).toEqual([{ start: 0, end: 2 }]);
+	});
+});
+
+describe('extra gaps keep their own surface', () => {
+	it('records each later span text on its gap', () => {
+		const prompt = clozePrompt('食べて、食べた。', [
+			{ start: 0, end: 2 },
+			{ start: 4, end: 6 }
+		]);
+		expect(prompt.answer).toBe('食べ');
+		expect(prompt.after).toEqual(['て、', { gap: true, answer: '食べ' }, 'た。']);
+		const other = clozePrompt('食べて、食べた。', [
+			{ start: 0, end: 3 },
+			{ start: 4, end: 7 }
+		]);
+		expect(other.after[1]).toEqual({ gap: true, answer: '食べた' });
 	});
 });

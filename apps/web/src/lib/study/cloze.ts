@@ -12,8 +12,8 @@ export interface Span {
 	end: number;
 }
 
-/** A string run, or an extra (non-answer) gap. */
-export type ClozePart = string | { gap: true };
+/** A string run, or an extra (non-answer) gap with its own surface text. */
+export type ClozePart = string | { gap: true; answer?: string };
 
 export interface ClozePrompt {
 	before: ClozePart[];
@@ -79,7 +79,25 @@ export function blankSpans(
 		chars.length
 	);
 	if (matched.length > 0) return matched;
-	return literalSpans(chars, [entry.written, ...(entry.forms ?? []).map((f) => f.text)]);
+	// The segmenter answered but not for this entry: an occurrence lying inside
+	// a strictly longer match (中国 in 中国人) is part of another word.
+	return literalSpans(chars, [entry.written, ...(entry.forms ?? []).map((f) => f.text)]).filter(
+		(span) =>
+			!matches.some(
+				(m) =>
+					m.start <= span.start &&
+					m.end >= span.end &&
+					m.end - m.start > span.end - span.start
+			)
+	);
+}
+
+/** How many of an entry's sentences a cloze card ever considers. */
+export const CLOZE_CANDIDATES = 8;
+
+/** The first CLOZE_CANDIDATES non-blank sentences in their given order. */
+export function clozeCandidates<S extends { hanzi: string }>(sentences: readonly S[]): S[] {
+	return sentences.filter((s) => s.hanzi.trim() !== '').slice(0, CLOZE_CANDIDATES);
 }
 
 /** The sentences with at least one blank, in their given order. */
@@ -117,7 +135,7 @@ export function resolveClozeShowing<S extends { id: number; hanzi: string }>(inp
 	fixedSentenceId?: number;
 }): ClozeShowing<S> | null {
 	const spansOf = (sentence: S) => blankSpans(sentence.hanzi, input.entry, input.matchesOf(sentence));
-	const eligible = eligibleSentences(input.sentences, spansOf);
+	const eligible = eligibleSentences(clozeCandidates(input.sentences), spansOf);
 	const fixed =
 		input.fixedSentenceId === undefined
 			? undefined
@@ -141,7 +159,7 @@ export function clozePrompt(text: string, spans: readonly Span[]): ClozePrompt {
 	let cursor = first.end;
 	for (const span of sorted.slice(1)) {
 		if (span.start > cursor) after.push(slice(cursor, span.start));
-		after.push({ gap: true });
+		after.push({ gap: true, answer: slice(span.start, span.end) });
 		cursor = span.end;
 	}
 	if (cursor < chars.length) after.push(slice(cursor, chars.length));

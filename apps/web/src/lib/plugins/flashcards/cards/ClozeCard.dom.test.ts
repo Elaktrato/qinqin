@@ -114,3 +114,17 @@ describe('ClozeCard (choose)', () => {
 		expect(screen.queryByText(/xi3/)).toBeNull();
 	});
 });
+
+describe('ClozeCard extra gaps', () => {
+	it('shows each gap\'s own surface once done', () => {
+		const custom = {
+			before: ['彼は'],
+			after: ['、', { gap: true as const, answer: '食べた' }, '。'],
+			answer: '食べて'
+		};
+		const { container } = setup({ prompt: custom, done: true });
+		const gaps = [...container.querySelectorAll('.gap')].map((g) => g.textContent);
+		expect(gaps[0]).toContain('食べて');
+		expect(gaps[1]).toContain('食べた');
+	});
+});

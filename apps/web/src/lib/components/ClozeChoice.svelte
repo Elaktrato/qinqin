@@ -54,20 +54,20 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-{#snippet gap()}
+{#snippet gap(surface: string | undefined)}
 	<span class="gap extra" class:right={finished && correct} class:wrong={finished && !correct}
-		><span class="sr-only">{gapLabel}</span>{finished ? answer : '＿＿'}</span
+		><span class="sr-only">{gapLabel}</span>{finished ? (surface ?? answer) : '＿＿'}</span
 	>
 {/snippet}
 
 <div class="cloze">
 	<p class="sentence" lang={language}>
-		{#each beforeParts as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap()}{/if}{/each}<span
+		{#each beforeParts as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}<span
 			class="gap"
 			class:right={finished && correct}
 			class:wrong={finished && !correct}
 			><span class="sr-only">{gapLabel}</span>{finished ? answer : '＿＿'}</span
-		>{#each afterParts as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap()}{/if}{/each}
+		>{#each afterParts as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}
 	</p>
 
 	<ul class="choices" aria-label="Choices">

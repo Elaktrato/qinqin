@@ -45,14 +45,18 @@ Lists are compared as sets.
 
 One cloze card per entry (`c-cloze-<entryId>`). Per showing, nothing stored:
 
-1. Eligible sentences = the entry's sentences in server order whose text has at least one blank span.
+1. Candidates = the first 8 sentences of the entry in server order whose text is not blank (blank ones do not
+   count towards the 8; a client segments at most these). Eligible sentences = the candidates whose text has at least
+   one blank span.
 2. Blank spans (code-point offsets, half-open) = the segmenter matches (`POST /api/segment`) whose
    `entries[].id` contains the entry id; if none, the non-overlapping leftmost occurrences of the written
-   form and of every form text, longest first. All spans are blanked; the first span is the answer slot,
+   form and of every form text, longest first, except an occurrence lying inside a strictly longer segmenter
+   match (中国 inside 中国人). All spans are blanked; the first span is the answer slot,
    the others show the same gap marker.
 3. Shown sentence = `eligible[n mod len]`, n = the card's number of recorded reviews.
 4. Answer = the code points of the first span.
 
 Case: `{name, cardId, entry: {id, written, forms?: [{text}]}, sentences: [{id, hanzi}],
 matchesBySentence: {"<id>": [{start, end, entries: [{id}]}]}, reviews: n, eligibleIds, shownId (null),
-spans: [[s, e]], before, after, answer}`; `before`/`after` are arrays of strings and `{"gap": true}`.
+spans: [[s, e]], before, after, answer}`; `before`/`after` are arrays of strings and extra gaps `{"gap": true, "answer": "<that span's own text>"}`
+(shown after the answer, so 食べて … 食べた keep their own forms).

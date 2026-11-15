@@ -61,4 +61,19 @@ describe('ClozeChoice', () => {
 		expect(status.textContent).toContain('Not quite');
 		expect(status.textContent).toContain('喜欢');
 	});
+
+	it('after answering, an extra gap shows its own surface form', async () => {
+		const { container } = render(ClozeChoice, {
+			before: [],
+			after: ['、', { gap: true, answer: '食べた' }, '。'],
+			choices: ['食べて', '飲んで'],
+			answer: '食べて',
+			onResult: vi.fn()
+		});
+		await fireEvent.click(screen.getByRole('button', { name: /食べて/ }));
+		const gaps = [...container.querySelectorAll('.gap')].map((g) => g.textContent);
+		expect(gaps[0]).toContain('食べて');
+		expect(gaps[1]).toContain('食べた');
+		expect(gaps[1]).not.toContain('食べて');
+	});
 });
