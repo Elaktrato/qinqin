@@ -104,7 +104,9 @@
 				<option value="">{loadingLanguages ? 'Loading…' : 'None installed'}</option>
 			{/if}
 			{#each options as option (option.code)}
-				<option value={option.code}>{option.label}</option>
+				<option value={option.code}>
+					{option.hasDictionary ? option.label : `${option.label} (no dictionary installed)`}
+				</option>
 			{/each}
 		</select>
 

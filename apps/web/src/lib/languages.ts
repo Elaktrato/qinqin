@@ -4,6 +4,8 @@ import type { Language, Workspace } from './api/types';
 export interface LanguageInfo {
 	code: string;
 	label: string;
+	/** True when dictionary data is installed for the language. */
+	hasDictionary: boolean;
 }
 
 export type FlagKind = 'cn' | 'jp' | 'es' | 'globe';
@@ -94,7 +96,8 @@ export function workspaceDisplay(
 
 /**
  * languageOptions lists the languages a new workspace may use: every
- * installed language plus the languages the user's workspaces already
+ * known language (GET /api/languages, flagged by whether a dictionary
+ * is installed) plus the languages the user's workspaces already
  * use, deduplicated by code and sorted by label. Labels always come
  * from the code, never from the server's pack names.
  */
@@ -103,10 +106,14 @@ export function languageOptions(
 	list: readonly Workspace[]
 ): LanguageInfo[] {
 	const codes = new Map<string, LanguageInfo>();
-	for (const code of [...installed.map((lang) => lang.code), ...list.map((ws) => ws.language)]) {
+	const entries = [
+		...installed.map((lang) => ({ code: lang.code, hasDictionary: lang.installed })),
+		...list.map((ws) => ({ code: ws.language, hasDictionary: false }))
+	];
+	for (const { code, hasDictionary } of entries) {
 		const normalized = code.trim().toLowerCase();
 		if (!normalized || codes.has(normalized)) continue;
-		codes.set(normalized, { code: normalized, label: languageLabel(normalized) });
+		codes.set(normalized, { code: normalized, label: languageLabel(normalized), hasDictionary });
 	}
 	return [...codes.values()].sort(
 		(a, b) => a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }) || a.code.localeCompare(b.code)
