@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { readingPoints } from '$lib/activity/activity';
 import {
 	MAX_READ_SECONDS,
 	formatDuration,
 	readSeconds,
+	readingPoints,
 	readingTotals,
 	topBooks
 } from './readingTime';

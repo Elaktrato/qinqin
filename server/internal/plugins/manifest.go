@@ -30,10 +30,11 @@ var (
 )
 
 // EventDecl is one event type a plugin emits. Activity is the optional
-// rule for counting it as activity, accepted as any JSON object here.
+// rule for counting it as activity (nil when absent or null).
 type EventDecl struct {
-	Type     string          `json:"type"`
-	Activity json.RawMessage `json:"activity,omitempty"`
+	Type        string        `json:"type"`
+	Activity    *ActivityRule `json:"activity,omitempty"`
+	badActivity bool
 }
 
 // Manifest is a feature-plugin manifest of the SDK contract.
@@ -135,8 +136,11 @@ func ParseManifest(raw []byte) (Manifest, error) {
 			add("events[%d].type %q is repeated", i, e.Type)
 		}
 		seenEvents[e.Type] = true
-		if len(e.Activity) > 0 && !isNull(e.Activity) && !isJSONObject(e.Activity) {
+		if e.badActivity {
 			add("events[%d].activity must be an object", i)
+		}
+		if e.Activity != nil {
+			problems = append(problems, e.Activity.validate(fmt.Sprintf("events[%d].activity", i))...)
 		}
 	}
 	if len(m.Events) > 0 && !m.Has("write:study-events") {

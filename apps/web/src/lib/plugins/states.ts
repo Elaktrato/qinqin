@@ -4,6 +4,7 @@
 import { writable } from 'svelte/store';
 import { api } from '$lib/api/client';
 import type { PluginInfo } from '$lib/api/types';
+import { setRegisteredManifests } from './contract';
 
 export interface PluginStatesValue {
 	list: PluginInfo[];
@@ -17,6 +18,7 @@ export async function loadPluginStates(): Promise<void> {
 	pluginStates.set({ list: [], status: 'loading' });
 	try {
 		const list = await api<PluginInfo[]>('/api/plugins');
+		setRegisteredManifests(list.map((p) => p.manifest));
 		pluginStates.set({ list, status: 'ready' });
 	} catch {
 		pluginStates.set({ list: [], status: 'error' });
@@ -24,5 +26,6 @@ export async function loadPluginStates(): Promise<void> {
 }
 
 export function resetPluginStates(): void {
+	setRegisteredManifests(null);
 	pluginStates.set({ list: [], status: 'idle' });
 }

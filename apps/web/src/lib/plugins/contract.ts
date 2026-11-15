@@ -25,10 +25,19 @@ export type Surface = (typeof SURFACES)[number];
 export type Permission = (typeof PERMISSIONS)[number];
 export type Hook = (typeof HOOKS)[number];
 
+/** How an event type counts as heatmap activity (mirrors plugins.ActivityRule). */
+export interface ActivityRule {
+	label: string;
+	describe: { one: string; other: string };
+	measure?: { field: string; unit: 'seconds'; min: number; max: number };
+	pointsPer?: number;
+	distinctBy?: string;
+}
+
 /** One event type a plugin emits; `activity` is the optional counting rule. */
 export interface EventDecl {
 	type: string;
-	activity?: Record<string, unknown>;
+	activity?: ActivityRule;
 }
 
 /** ContractManifest mirrors the manifest JSON the server stores and serves. */
@@ -68,14 +77,36 @@ export function builtinManifests(): ContractManifest[] {
 
 const CORE_ID = 'qinqin-core';
 
+let registered: unknown[] | null = null;
+
 /**
- * logChangingTypes is every event type declared by a built-in other than
- * the core: only those change what the readers of the full event log
- * show. The core's `session` event is posted on every home load, and
- * dropping the cached log for it would defeat the cache.
+ * setRegisteredManifests remembers the manifests of every plugin the
+ * server lists (admin-registered ones too; enabled or not, since a
+ * disabled plugin's history still counts), so their event types refresh
+ * the caches like a built-in's. null forgets them.
+ */
+export function setRegisteredManifests(manifests: unknown[] | null): void {
+	registered = manifests;
+}
+
+function eventTypes(manifest: unknown): string[] {
+	if (typeof manifest !== 'object' || manifest === null) return [];
+	const m = manifest as { id?: unknown; events?: unknown };
+	if (m.id === CORE_ID || !Array.isArray(m.events)) return [];
+	return m.events.flatMap((e) =>
+		typeof e === 'object' && e !== null && typeof (e as { type?: unknown }).type === 'string'
+			? [(e as { type: string }).type]
+			: []
+	);
+}
+
+/**
+ * logChangingTypes is every event type declared by a built-in or a
+ * registered plugin other than the core: only those change what the
+ * readers of the full event log show. The core's `session` event is
+ * posted on every home load, and dropping the cached log for it would
+ * defeat the cache.
  */
 export function logChangingTypes(): ReadonlySet<string> {
-	return new Set(
-		BUILTINS.filter((m) => m.id !== CORE_ID).flatMap((m) => m.events.map((e) => e.type))
-	);
+	return new Set([...BUILTINS, ...(registered ?? [])].flatMap(eventTypes));
 }

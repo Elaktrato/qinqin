@@ -109,6 +109,15 @@ func registerBuiltinPlugins(ctx context.Context, sqlDB *sql.DB) error {
 	if err := plugins.Unregister(ctx, sqlDB, retiredHeatmapPlugin); err != nil {
 		return fmt.Errorf("unregister retired plugin %s: %w", retiredHeatmapPlugin, err)
 	}
+	// Rows that fail the manifest contract stay writable but count for
+	// neither event ownership nor activity rules: say so once.
+	bad, err := plugins.UnparsableRows(ctx, sqlDB)
+	if err != nil {
+		return fmt.Errorf("check plugin registry: %w", err)
+	}
+	if len(bad) > 0 {
+		log.Printf("plugin registry rows that do not parse as manifests (re-register or remove them): %s", strings.Join(bad, ", "))
+	}
 	return nil
 }
 

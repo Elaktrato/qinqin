@@ -8,5 +8,5 @@
 	"surfaces": ["page"],
 	"permissions": ["owns-data", "write:study-events"],
 	"hooks": [],
-	"events": [{ "type": "journal" }]
+	"events": [{ "type": "journal", "activity": { "label": "Journal entries", "describe": { "one": "{n} journal entry", "other": "{n} journal entries" }, "distinctBy": "entryId" } }]
 }

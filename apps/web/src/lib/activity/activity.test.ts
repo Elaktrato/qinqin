@@ -1,326 +1,240 @@
 import { describe, expect, it } from 'vitest';
+import type { ActivityResponse, ActivitySource } from '../api/stats';
 import {
-	ACTIVITY_SOURCES,
 	HEATMAP_DAYS,
-	activityByDay,
+	dayKey,
 	dayTooltip,
+	describe as describeActivity,
+	foldActivity,
 	levelFor,
-	readingPoints,
-	sourceTotals,
+	sourcePoints,
 	windowStart,
 	windowSummary
 } from './activity';
 
 const NOW = new Date('2026-11-13T12:00:00Z');
 
-describe('readingPoints', () => {
-	it.each([
-		[{ seconds: NaN }, 0],
-		[{ seconds: Infinity }, 0],
-		[{ seconds: -10 }, 0],
-		[{ seconds: 29 }, 0],
-		[{ seconds: 30 }, 1],
-		[{ seconds: 300 }, 1],
-		[{ seconds: 301 }, 2],
-		[{ seconds: 99999 }, 24],
-		['nope', 0],
-		[null, 0],
-		[undefined, 0],
-		[{ seconds: '60' }, 0],
-		[{}, 0]
-	])('%j -> %i', (payload, expected) => {
-		expect(readingPoints(payload)).toBe(expected);
-	});
+const SOURCES: ActivitySource[] = [
+	{
+		type: 'review',
+		plugin: 'qinqin-flashcards',
+		label: 'Flashcard reviews',
+		unit: 'count',
+		describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
+	},
+	{
+		type: 'read',
+		plugin: 'qinqin-reader',
+		label: 'Reading',
+		unit: 'seconds',
+		describe: { one: '{n} minute of reading', other: '{n} minutes of reading' }
+	},
+	{
+		type: 'journal',
+		plugin: 'qinqin-journal',
+		label: 'Journal entries',
+		unit: 'count',
+		describe: { one: '{n} journal entry', other: '{n} journal entries' }
+	}
+];
+
+function resp(cells: ActivityResponse['cells']): ActivityResponse {
+	return { from: '2026-08-15', to: '2026-11-13', sources: SOURCES, cells };
+}
+
+const cell = (day: string, workspace: number, type: string, points: number, raw = points) => ({
+	day,
+	workspace,
+	type,
+	points,
+	raw
 });
 
-describe('ACTIVITY_SOURCES', () => {
-	it('defines review and read sources', () => {
-		const review = ACTIVITY_SOURCES.find((s) => s.type === 'review');
-		const read = ACTIVITY_SOURCES.find((s) => s.type === 'read');
-		expect(review).toMatchObject({ label: 'Flashcard reviews', unit: 'review(s)' });
-		expect(review?.points({})).toBe(1);
-		expect(read).toMatchObject({ label: 'Reading', unit: 'min' });
-		expect(read?.points({ seconds: 600 })).toBe(2);
-	});
-});
+const ALL = { workspace: null, hidden: [] as string[] };
 
-describe('activityByDay', () => {
-	it('sums reviews and reads on the same day with bySource', () => {
-		const map = activityByDay(
-			[
-				{ ts: '2026-11-13T01:00:00Z', type: 'review' },
-				{ ts: '2026-11-13T02:00:00Z', type: 'review' },
-				{ ts: '2026-11-13T03:00:00Z', type: 'read', payload: { seconds: 900 } }
-			],
-			NOW
-		);
-		expect(map.get('2026-11-13')).toEqual({
-			day: '2026-11-13',
-			total: 5,
-			bySource: { review: 2, read: 3 },
-			raw: { review: 2, read: 900 }
-		});
-	});
+describe('foldActivity', () => {
+	const cells = [
+		cell('2026-11-13', 3, 'review', 9),
+		cell('2026-11-13', 3, 'read', 3, 900),
+		cell('2026-11-13', 4, 'review', 2),
+		cell('2026-11-12', 4, 'journal', 1)
+	];
 
-	it('is dense over 91 days, oldest first', () => {
-		const keys = [...activityByDay([], NOW).keys()];
-		expect(keys).toHaveLength(91);
+	it('lists 91 days oldest first, empty days zero', () => {
+		const map = foldActivity(resp([]), ALL, NOW);
+		const keys = [...map.keys()];
+		expect(keys).toHaveLength(HEATMAP_DAYS);
 		expect(keys[0]).toBe('2026-08-15');
 		expect(keys[90]).toBe('2026-11-13');
-		expect(activityByDay([], NOW).get('2026-11-01')).toEqual({
+		expect(map.get('2026-11-01')).toEqual({
 			day: '2026-11-01',
 			total: 0,
 			bySource: {},
-			raw: {}
+			raw: {},
+			byWorkspace: {}
 		});
 	});
 
-	it('buckets by UTC midnight', () => {
-		const map = activityByDay(
-			[
-				{ ts: '2026-11-12T23:59:59Z', type: 'review' },
-				{ ts: '2026-11-13T00:00:00Z', type: 'review' }
-			],
+	it('keeps only one workspace for a workspace scope', () => {
+		const day = foldActivity(resp(cells), { workspace: 3, hidden: [] }, NOW).get('2026-11-13')!;
+		expect(day.total).toBe(12);
+		expect(day.bySource).toEqual({ review: 9, read: 3 });
+		expect(day.raw).toEqual({ review: 9, read: 900 });
+		expect(day.byWorkspace).toEqual({});
+		expect(foldActivity(resp(cells), { workspace: 3, hidden: [] }, NOW).get('2026-11-12')!.total).toBe(0);
+	});
+
+	it('sums all workspaces and fills byWorkspace', () => {
+		const map = foldActivity(resp(cells), ALL, NOW);
+		const day = map.get('2026-11-13')!;
+		expect(day.total).toBe(14);
+		expect(day.bySource).toEqual({ review: 11, read: 3 });
+		expect(day.byWorkspace).toEqual({ 3: 12, 4: 2 });
+		expect(map.get('2026-11-12')!.byWorkspace).toEqual({ 4: 1 });
+	});
+
+	it('removes hidden types from totals and bySource', () => {
+		const day = foldActivity(resp(cells), { workspace: null, hidden: ['read'] }, NOW).get('2026-11-13')!;
+		expect(day.total).toBe(11);
+		expect(day.bySource).toEqual({ review: 11 });
+		expect(day.raw).toEqual({ review: 11 });
+		expect(day.byWorkspace).toEqual({ 3: 9, 4: 2 });
+	});
+
+	it('ignores unknown types and cells outside the window', () => {
+		const map = foldActivity(
+			resp([
+				cell('2026-11-13', 3, 'mystery', 5),
+				cell('2026-08-14', 3, 'review', 5),
+				cell('2026-11-14', 3, 'review', 5),
+				cell('not-a-day', 3, 'review', 5),
+				cell('2026-08-15', 3, 'review', 1)
+			]),
+			ALL,
 			NOW
 		);
-		expect(map.get('2026-11-12')?.total).toBe(1);
-		expect(map.get('2026-11-13')?.total).toBe(1);
-	});
-
-	it('ignores unknown types, bad ts, future days, out-of-window and zero-point reads', () => {
-		const map = activityByDay(
-			[
-				{ ts: '2026-11-13T01:00:00Z', type: 'session' },
-				{ ts: 'garbage', type: 'review' },
-				{ ts: '2026-11-14T00:00:00Z', type: 'review' },
-				{ ts: '2026-08-14T23:59:59Z', type: 'review' },
-				{ ts: '2026-11-13T01:00:00Z', type: 'read', payload: { seconds: 5 } }
-			],
-			NOW
-		);
-		expect([...map.values()].reduce((sum, d) => sum + d.total, 0)).toBe(0);
-		expect(map.get('2026-11-13')?.bySource).toEqual({});
-	});
-
-	it('supports a custom window', () => {
-		expect(activityByDay([], NOW, 7).size).toBe(7);
-	});
-
-	it('resolves an offset timestamp to its UTC day', () => {
-		// 2026-11-13T01:30+09:00 is 2026-11-12T16:30Z.
-		const map = activityByDay([{ ts: '2026-11-13T01:30:00+09:00', type: 'review' }], NOW);
-		expect(map.get('2026-11-12')?.total).toBe(1);
-		expect(map.get('2026-11-13')?.total).toBe(0);
-	});
-
-	it("counts the window's first day", () => {
-		const map = activityByDay([{ ts: '2026-08-15T00:00:00Z', type: 'review' }], NOW);
+		expect([...map.values()].reduce((sum, d) => sum + d.total, 0)).toBe(1);
+		expect(map.get('2026-08-15')!.total).toBe(1);
 		expect(map.size).toBe(HEATMAP_DAYS);
-		expect(map.get('2026-08-15')?.total).toBe(1);
 	});
 });
 
-describe('windowStart', () => {
-	it("is UTC midnight of the window's first day", () => {
-		expect(windowStart(NOW).toISOString()).toBe('2026-08-15T00:00:00.000Z');
+describe('describe', () => {
+	it('uses the one and other forms of a count', () => {
+		expect(describeActivity(SOURCES[0], 1)).toBe('1 flashcard review');
+		expect(describeActivity(SOURCES[0], 2)).toBe('2 flashcard reviews');
 	});
 
-	it('matches the first key of activityByDay', () => {
-		expect(windowStart(NOW).toISOString().slice(0, 10)).toBe(
-			[...activityByDay([], NOW).keys()][0]
+	it('turns seconds into whole minutes, at least 1', () => {
+		expect(describeActivity(SOURCES[1], 900)).toBe('15 minutes of reading');
+		expect(describeActivity(SOURCES[1], 20)).toBe('1 minute of reading');
+		expect(describeActivity(SOURCES[1], 60)).toBe('1 minute of reading');
+	});
+});
+
+describe('sourcePoints', () => {
+	it('sums the window per type', () => {
+		const map = foldActivity(
+			resp([cell('2026-11-13', 3, 'review', 9), cell('2026-11-12', 3, 'review', 2)]),
+			ALL,
+			NOW
 		);
-	});
-
-	it('supports a custom window', () => {
-		expect(windowStart(NOW, 7).toISOString()).toBe('2026-11-07T00:00:00.000Z');
+		expect(sourcePoints(map)).toEqual({ review: 11 });
 	});
 });
 
 describe('dayTooltip', () => {
-	const day = (
-		total: number,
-		bySource: Record<string, number>,
-		raw: Record<string, number> = {}
-	) => ({
-		day: '2026-11-13',
-		total,
-		bySource,
-		raw
-	});
+	const names = (id: number) => (id === 3 ? '中文' : id === 4 ? '日本語' : `Workspace ${id}`);
 
-	it('reports no activity for zero', () => {
-		expect(dayTooltip(day(0, {}))).toBe('2026-11-13: no activity');
-	});
-
-	it('combines sources with reading minutes', () => {
-		expect(dayTooltip(day(12, { review: 9, read: 3 }, { review: 9, read: 900 }))).toBe(
-			'2026-11-13: 12 points — 9 Flashcard reviews, 3 Reading (15 min)'
-		);
-	});
-
-	it('uses singular forms', () => {
-		expect(dayTooltip(day(1, { review: 1 }))).toBe('2026-11-13: 1 point — 1 Flashcard review');
-	});
-
-	it('handles reading only', () => {
-		expect(dayTooltip(day(1, { read: 1 }, { read: 31 }))).toBe(
-			'2026-11-13: 1 point — 1 Reading (1 min)'
-		);
-	});
-});
-
-describe('real reading minutes', () => {
-	const read = (seconds: number, ts = '2026-11-13T01:00:00Z') => ({
-		ts,
-		type: 'read',
-		payload: { seconds }
-	});
-
-	it('a 31 s burst reads as 1 min', () => {
-		const d = activityByDay([read(31)], NOW).get('2026-11-13')!;
-		expect(d.raw.read).toBe(31);
-		expect(dayTooltip(d)).toBe('2026-11-13: 1 point — 1 Reading (1 min)');
-	});
-
-	it('ten 31 s bursts read as 5 min (10 points)', () => {
-		const d = activityByDay(Array.from({ length: 10 }, () => read(31)), NOW).get('2026-11-13')!;
-		expect(d.total).toBe(10);
-		expect(dayTooltip(d)).toBe('2026-11-13: 10 points — 10 Reading (5 min)');
-	});
-
-	it('clamps each event to 2 h and skips sub-30 s events', () => {
-		const d = activityByDay([read(99999), read(10)], NOW).get('2026-11-13')!;
-		expect(d.raw.read).toBe(7200);
-	});
-
-	it('mixed day', () => {
-		const d = activityByDay(
-			[{ ts: '2026-11-13T01:00:00Z', type: 'review' }, read(600)],
+	it('uses the rules own wording', () => {
+		const day = foldActivity(
+			resp([cell('2026-11-13', 3, 'review', 9), cell('2026-11-13', 3, 'read', 3, 900)]),
+			{ workspace: 3, hidden: [] },
 			NOW
 		).get('2026-11-13')!;
-		expect(dayTooltip(d)).toBe('2026-11-13: 3 points — 1 Flashcard review, 2 Reading (10 min)');
+		expect(dayTooltip(day, SOURCES, names)).toBe(
+			'2026-11-13: 12 points — 9 flashcard reviews, 15 minutes of reading'
+		);
+	});
+
+	it('adds the workspaces in the combined view', () => {
+		const day = foldActivity(
+			resp([
+				cell('2026-11-13', 3, 'review', 8),
+				cell('2026-11-13', 4, 'review', 1),
+				cell('2026-11-13', 4, 'read', 3, 900)
+			]),
+			ALL,
+			NOW
+		).get('2026-11-13')!;
+		expect(dayTooltip(day, SOURCES, names)).toBe(
+			'2026-11-13: 12 points — 9 flashcard reviews, 15 minutes of reading · 中文 8, 日本語 4'
+		);
+	});
+
+	it('uses a fallback name verbatim', () => {
+		const day = foldActivity(resp([cell('2026-11-13', 7, 'review', 1)]), ALL, NOW).get('2026-11-13')!;
+		expect(dayTooltip(day, SOURCES, names)).toBe(
+			'2026-11-13: 1 point — 1 flashcard review · Workspace 7 1'
+		);
+	});
+
+	it('says hidden, not no activity, when every type is hidden', () => {
+		const day = foldActivity(resp([]), ALL, NOW).get('2026-11-13')!;
+		expect(dayTooltip(day, SOURCES, names, true)).toBe('2026-11-13: all activity types hidden');
+	});
+
+	it('reports an empty day', () => {
+		const day = foldActivity(resp([]), ALL, NOW).get('2026-11-13')!;
+		expect(dayTooltip(day, SOURCES, names)).toBe('2026-11-13: no activity');
 	});
 });
 
-describe('sourceTotals', () => {
-	it('sums points and raw per source over the window', () => {
-		const map = activityByDay(
-			[
-				{ ts: '2026-11-13T01:00:00Z', type: 'review' },
-				{ ts: '2026-11-12T01:00:00Z', type: 'review' },
-				{ ts: '2026-11-12T02:00:00Z', type: 'read', payload: { seconds: 600 } }
-			],
-			NOW
+describe('windowSummary', () => {
+	const map = foldActivity(
+		resp([cell('2026-11-13', 3, 'review', 2), cell('2026-11-12', 3, 'read', 19, 5700)]),
+		ALL,
+		NOW
+	);
+
+	it('names the scope and the totals', () => {
+		expect(windowSummary(map, SOURCES, 'workspace')).toBe(
+			'Learning activity in this workspace for the last 13 weeks: 21 points — 2 flashcard reviews, 95 minutes of reading'
 		);
-		expect(sourceTotals(map)).toEqual({
-			review: { points: 2, raw: 2 },
-			read: { points: 2, raw: 600 }
-		});
+		expect(windowSummary(map, SOURCES, 'all')).toContain('in all workspaces for the last 13 weeks');
 	});
 
-	it('is empty for no activity', () => {
-		expect(sourceTotals(activityByDay([], NOW))).toEqual({});
+	it('says so when there is no activity', () => {
+		expect(windowSummary(foldActivity(resp([]), ALL, NOW), SOURCES, 'workspace')).toBe(
+			'Learning activity in this workspace for the last 13 weeks: no activity yet'
+		);
+	});
+});
+
+describe('windowStart and dayKey', () => {
+	it("is UTC midnight of the window's first day", () => {
+		expect(windowStart(NOW).toISOString()).toBe('2026-08-15T00:00:00.000Z');
+		expect(windowStart(NOW, 7).toISOString()).toBe('2026-11-07T00:00:00.000Z');
+	});
+
+	it('formats a UTC day', () => {
+		expect(dayKey(new Date('2026-11-13T23:59:59Z'))).toBe('2026-11-13');
+		expect(dayKey(windowStart(NOW))).toBe([...foldActivity(resp([]), ALL, NOW).keys()][0]);
 	});
 });
 
 describe('levelFor', () => {
 	it.each([
-		[-1, 0],
 		[0, 0],
+		[-1, 0],
 		[1, 1],
 		[2, 2],
 		[3, 2],
 		[4, 3],
 		[6, 3],
 		[7, 4],
-		[500, 4]
-	])('count %i -> level %i', (count, level) => {
+		[100, 4]
+	])('%i -> level %i', (count, level) => {
 		expect(levelFor(count)).toBe(level);
-	});
-});
-
-describe('windowSummary', () => {
-	const ev = (type: string, payload?: unknown, ts = '2026-11-13T01:00:00Z') => ({
-		ts,
-		type,
-		payload
-	});
-
-	it('says no activity yet for an empty window', () => {
-		expect(windowSummary(activityByDay([], NOW))).toBe(
-			'Learning activity for the last 13 weeks: no activity yet'
-		);
-	});
-
-	it('states points and per-source totals', () => {
-		const map = activityByDay(
-			[ev('review'), ev('review'), ev('read', { seconds: 5700 }, '2026-11-01T01:00:00Z')],
-			NOW
-		);
-		expect(windowSummary(map)).toBe(
-			'Learning activity for the last 13 weeks: 21 points — 2 flashcard reviews, 95 minutes of reading'
-		);
-	});
-
-	it('uses singular forms and shows at least a minute of reading', () => {
-		const map = activityByDay([ev('review'), ev('read', { seconds: 31 })], NOW);
-		expect(windowSummary(map)).toBe(
-			'Learning activity for the last 13 weeks: 2 points — 1 flashcard review, 1 minute of reading'
-		);
-	});
-
-	it('handles reading only', () => {
-		const map = activityByDay([ev('read', { seconds: 600 })], NOW);
-		expect(windowSummary(map)).toBe(
-			'Learning activity for the last 13 weeks: 2 points — 10 minutes of reading'
-		);
-	});
-
-	it('follows the window length', () => {
-		expect(windowSummary(activityByDay([], NOW, 7))).toBe(
-			'Learning activity for the last week: no activity yet'
-		);
-	});
-});
-
-describe('journal source', () => {
-	const ev = (ts: string, payload: unknown) => ({ ts, type: 'journal', payload });
-
-	it('counts distinct entries per UTC day', () => {
-		const map = activityByDay(
-			[
-				ev('2026-11-13T08:00:00Z', { entryId: 'A' }),
-				ev('2026-11-13T09:00:00Z', { entryId: 'A' }),
-				ev('2026-11-13T10:00:00Z', { entryId: 'A' }),
-				ev('2026-11-13T11:00:00Z', { entryId: 'B' })
-			],
-			NOW
-		);
-		expect(map.get('2026-11-13')?.total).toBe(2);
-		expect(map.get('2026-11-13')?.bySource.journal).toBe(2);
-		expect(dayTooltip(map.get('2026-11-13')!)).toContain('2 Journal entries');
-	});
-
-	it('counts the same entry again on the next day', () => {
-		const map = activityByDay(
-			[ev('2026-11-12T08:00:00Z', { entryId: 'A' }), ev('2026-11-13T08:00:00Z', { entryId: 'A' })],
-			NOW
-		);
-		expect(map.get('2026-11-12')?.total).toBe(1);
-		expect(map.get('2026-11-13')?.total).toBe(1);
-		expect(dayTooltip(map.get('2026-11-13')!)).toContain('1 Journal entry');
-	});
-
-	it('gives 0 points for a payload without an entry id', () => {
-		const map = activityByDay(
-			[ev('2026-11-13T08:00:00Z', {}), ev('2026-11-13T08:00:00Z', null), ev('2026-11-13T08:00:00Z', { entryId: 5 })],
-			NOW
-		);
-		expect(map.get('2026-11-13')?.total).toBe(0);
-	});
-
-	it('describes the window total', () => {
-		const map = activityByDay([ev('2026-11-13T08:00:00Z', { entryId: 'A' })], NOW);
-		expect(windowSummary(map)).toContain('1 journal entry');
 	});
 });
