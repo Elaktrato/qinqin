@@ -13,17 +13,21 @@ import (
 
 // credentials is the request body of /api/auth/register and /api/auth/login.
 type credentials struct {
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	DeviceName string `json:"deviceName"` // login only; a client's own label for the session
+	Username   string  `json:"username"`
+	Password   string  `json:"password"`
+	DeviceName string  `json:"deviceName"` // login only; a client's own label for the session
+	Email      *string `json:"email"`      // register only
+	Invite     string  `json:"invite"`     // register only: the token from an invite link
 }
 
-// handleRegister creates a user. On a fresh database with zero users no
-// authentication is required and the new user becomes the instance admin;
-// afterwards a valid admin bearer token is mandatory. Every call spends a
-// client-bucket token (anonymous callers reach the hash on some paths), an
-// admin whose token checks out gets it back, and every hash runs behind
-// the gate.
+// handleRegister creates a user (registration spec section 2). Order: the
+// admin bearer check (an equality lookup, no hash), the client bucket for
+// everyone else, the zero-users bootstrap (always allowed, becomes admin),
+// the legacy admin path (a valid unrestricted admin creates a non-admin
+// with the given password), then the instance mode: closed refuses,
+// invite needs a valid invite, open takes anyone (an invite supplied in
+// either mode is spent and must be valid). Every password hash runs behind
+// the gate and before any transaction opens.
 func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	body, ok := readAuthBody(w, r)
 	if !ok {
@@ -32,19 +36,14 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	// An administrator's token is checked first (an equality lookup, no
 	// hash): bulk creation is then never counted against the client
 	// bucket, however many run in parallel. Everyone else pays one token.
-	internal := func() {
-		if r.Context().Err() != nil {
-			writeClientGone(w)
-			return
-		}
-		writeAuthError(w, http.StatusInternalServerError, "internal", "Internal error.")
-	}
+	internal := func() { writeInternal(w, r) }
 	caller, cerr := s.authenticate(r)
 	if cerr != nil {
 		internal()
 		return
 	}
-	// A restricted admin session (forced password change) is no admin here.
+	// A restricted admin session (forced password change) is no admin here;
+	// a non-admin bearer is ignored and registers by the mode like anyone.
 	isAdmin := caller != nil && caller.User.Admin && caller.Restriction() == ""
 	if !isAdmin {
 		if _, ok := s.clientTake(w, r, "attempts"); !ok {
@@ -66,11 +65,37 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		internal()
 		return
 	}
-	// An anonymous caller on an instance with users learns nothing about
-	// usernames: the closed answer comes before any policy or taken check.
-	if count != 0 && !isAdmin {
-		writeAuthError(w, http.StatusForbidden, "admin_required", "Registration needs an administrator.")
+	set, err := auth.LoadSettings(r.Context(), s.db)
+	if err != nil {
+		internal()
 		return
+	}
+	// Who may register decides before any policy or taken check, so an
+	// outsider learns nothing about usernames or emails.
+	useInvite := false
+	switch {
+	case count == 0 || isAdmin:
+	case req.Invite != "":
+		if set.Registration == "closed" {
+			writeAuthError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
+			return
+		}
+		useInvite = true
+	case set.Registration == "closed":
+		writeAuthError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
+		return
+	case set.Registration == "invite":
+		writeAuthError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
+		return
+	}
+	if useInvite {
+		if _, err := auth.CheckInvite(r.Context(), s.db, req.Invite); errors.Is(err, auth.ErrInviteInvalid) {
+			writeAuthError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
+			return
+		} else if err != nil {
+			internal()
+			return
+		}
 	}
 	if err := auth.CheckNewUsername(r.Context(), s.db, req.Username); err != nil {
 		switch {
@@ -87,39 +112,52 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
 		return
 	}
-	var (
-		u   model.User
-		err error
-	)
-	if count == 0 {
+	nu := auth.NewUser{Username: req.Username, EmailVerified: isAdmin}
+	if !s.applyEmail(w, r, set.EmailPolicy, req.Email, &nu) {
+		return
+	}
+	var u model.User
+	switch {
+	case count == 0:
 		// The bootstrap insert re-checks emptiness atomically; losing a
-		// race to another first registration falls through to the
-		// admin-required path.
+		// race to another first registration is a closed instance now.
 		err = s.withHashGate(r.Context(), func() error {
 			var e error
 			u, e = s.hash.createFirstUser(r.Context(), s.db, req.Username, req.Password)
 			return e
 		})
 		if errors.Is(err, auth.ErrNotFirst) {
-			count = 1
-		}
-	}
-	if count != 0 {
-		if !isAdmin {
-			writeAuthError(w, http.StatusForbidden, "admin_required", "Registration needs an administrator.")
+			writeAuthError(w, http.StatusForbidden, "registration_closed", registrationClosedMessage)
 			return
 		}
+	case isAdmin && req.Email == nil:
 		err = s.withHashGate(r.Context(), func() error {
 			var e error
 			u, e = s.hash.createUser(r.Context(), s.db, req.Username, req.Password, false)
 			return e
 		})
+	default:
+		err = s.withHashGate(r.Context(), func() error {
+			nu.Hash = s.hash.hash(req.Password)
+			return nil
+		})
+		if err == nil {
+			if useInvite {
+				u, err = auth.RegisterWithInvite(r.Context(), s.db, req.Invite, nu)
+			} else {
+				u, err = auth.CreateUserWith(r.Context(), s.db, nu)
+			}
+		}
 	}
 	switch {
 	case err != nil && r.Context().Err() != nil:
 		writeClientGone(w)
 	case errors.Is(err, auth.ErrUsernameTaken):
 		writeAuthError(w, http.StatusConflict, "username_taken", "That username is taken.")
+	case errors.Is(err, auth.ErrEmailTaken):
+		writeAuthError(w, http.StatusConflict, "email_taken", "That email address is already in use.")
+	case errors.Is(err, auth.ErrInviteInvalid):
+		writeAuthError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
 	case errors.Is(err, errHashBusy):
 		writeBusy(w)
 	case err != nil:
@@ -127,6 +165,44 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeJSON(w, http.StatusCreated, u)
 	}
+}
+
+const (
+	registrationClosedMessage = "Registration is closed. Ask an administrator for an invite link or an account."
+	inviteInvalidMessage      = "This invite link is no longer valid."
+)
+
+// applyEmail validates the request's email against the policy and fills
+// nu; false means an error response was written.
+func (s *server) applyEmail(w http.ResponseWriter, r *http.Request, policy string, email *string, nu *auth.NewUser) bool {
+	disp, norm, err := auth.ApplyEmailPolicy(policy, email)
+	switch {
+	case errors.Is(err, auth.ErrEmailRequired):
+		writeAuthError(w, http.StatusUnprocessableEntity, "email_required", "An email address is required.")
+		return false
+	case errors.Is(err, auth.ErrEmailDisabled):
+		writeAuthError(w, http.StatusUnprocessableEntity, "email_disabled", "This instance does not use email addresses.")
+		return false
+	case errors.Is(err, auth.ErrInvalidEmail):
+		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_email", "Enter a valid email address.")
+		return false
+	case err != nil:
+		writeInternal(w, r)
+		return false
+	}
+	if norm != nil {
+		taken, err := auth.EmailTaken(r.Context(), s.db, *norm, 0)
+		if err != nil {
+			writeInternal(w, r)
+			return false
+		}
+		if taken {
+			writeAuthError(w, http.StatusConflict, "email_taken", "That email address is already in use.")
+			return false
+		}
+	}
+	nu.Email, nu.EmailNorm = disp, norm
+	return true
 }
 
 // handleLogin verifies credentials and returns a fresh bearer session token.

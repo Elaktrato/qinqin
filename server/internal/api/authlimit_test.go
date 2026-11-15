@@ -438,8 +438,8 @@ func TestAuthLimitRegisterAnonymousThrottled(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := 0; i < 10; i++ {
-		if r := registerAs(t, ts, "198.51.100.1", "", fmt.Sprintf("u%d", i)); r.Status != 403 || r.Err != "admin_required" {
-			t.Fatalf("anonymous %d = %+v, want 403 admin_required", i+1, r)
+		if r := registerAs(t, ts, "198.51.100.1", "", fmt.Sprintf("u%d", i)); r.Status != 403 || r.Err != "registration_closed" {
+			t.Fatalf("anonymous %d = %+v, want 403 registration_closed", i+1, r)
 		}
 	}
 	if r := registerAs(t, ts, "198.51.100.1", "", "u11"); r.Status != 429 || r.Err != "rate_limited" {
@@ -533,7 +533,7 @@ func TestAuthLimitContractFixtures(t *testing.T) {
 		}
 	}
 	same("login_bad_credentials", login1(t, ts, "198.51.100.1", "owner", "wrong"))
-	same("register_admin_required", registerAs(t, ts, "198.51.100.2", "", "x"))
+	same("register_closed", registerAs(t, ts, "198.51.100.2", "", "x"))
 	same("register_username_taken", registerAs(t, ts, "198.51.100.2", token, "owner"))
 	same("bad_request", authRaw(t, ts, "/api/auth/login", "198.51.100.3", "", strings.NewReader("{")))
 	big := `{"username":"a","password":"` + strings.Repeat("x", 5000) + `"}`

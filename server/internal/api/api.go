@@ -57,6 +57,7 @@ type server struct {
 	authPolicy *AuthPolicy // nil: DefaultAuthPolicy
 	limits     *authLimits // sign-in throttling state, built by New
 	hash       hashers     // password hashing entry points (tests swap them)
+	users      *auth.Users // admin changes of the users table (last-admin rule, deletion)
 }
 
 // Option configures optional parts of the server.
@@ -89,6 +90,7 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 		policy = *s.authPolicy
 	}
 	s.limits = newAuthLimits(policy)
+	s.users = auth.NewUsers(sqlDB)
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
 		go s.runStageSweeper()
