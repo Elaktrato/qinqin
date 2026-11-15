@@ -67,7 +67,6 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
   Open: level sessions draw words only, so character-unit packs give no study cards
 - ~~[#43](https://github.com/Elaktrato/qinqin/issues/43) audio pronunciation packs~~ — done (design `docs/superpowers/specs/2026-11-15-audio-packs-design.md`; `audio` pack type, play buttons on entries and after the reveal in study, Kanji alive pack fetched into the image, local Commons/Lingua Libre tool). Owner to-do: listen to ~10 Kanji alive clips against `index.tsv`; no Mandarin recordings out of the box (device voice fallback)
 - ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
-- [#45](https://github.com/Elaktrato/qinqin/issues/45) MCP server foundation (not needed by the journal for now)
 - ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — done (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`, demo pack `zh-grammar-demo`; native-speaker review of the demo sentences open)
 - ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: [#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days
 
