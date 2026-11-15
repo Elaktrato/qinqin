@@ -55,6 +55,7 @@ interface PluginDataRow {
   workspaceId: number | null;
   data: unknown;
   deletedAt: unknown;
+  updatedAt: unknown;
 }
 
 interface SyncDelta {
@@ -108,11 +109,11 @@ function decodeData(data: unknown): unknown {
 
 function asPluginDataRow(value: unknown): PluginDataRow | null {
   if (!isRecord(value)) return null;
-  const { pluginId, key, workspaceId, data, deletedAt } = value;
+  const { pluginId, key, workspaceId, data, deletedAt, updatedAt } = value;
   if (typeof pluginId !== "string" || typeof key !== "string") return null;
   const workspace = workspaceId === undefined ? null : workspaceId;
   if (workspace !== null && typeof workspace !== "number") return null;
-  return { pluginId, key, workspaceId: workspace, data, deletedAt };
+  return { pluginId, key, workspaceId: workspace, data, deletedAt, updatedAt };
 }
 
 function parseDeck(key: string, raw: unknown): Deck | null {
@@ -195,7 +196,10 @@ function parseCard(key: string, raw: unknown): StudyCard | null {
  * tombstones, and keys outside `deck:`/`card:` are ignored; a malformed
  * payload is skipped rather than failing the whole page.
  */
-async function fetchStudyData(workspaceId: number): Promise<StudyData> {
+async function fetchStudyData(
+  workspaceId: number,
+  knownAt?: Map<string, string>,
+): Promise<StudyData> {
   const delta = await api<SyncDelta>(SYNC_PULL_PATH);
   const rows = Array.isArray(delta?.pluginData) ? delta.pluginData : [];
   const decks: Deck[] = [];
@@ -209,6 +213,14 @@ async function fetchStudyData(workspaceId: number): Promise<StudyData> {
     if (row === null) continue;
     if (row.pluginId !== FLASHCARDS_PLUGIN_ID) continue;
     if (row.workspaceId !== workspaceId) continue;
+    if (knownAt !== undefined) {
+      // The newest time the server holds for the key, live or tombstoned.
+      const times = [row.updatedAt, row.deletedAt].filter(
+        (t): t is string => typeof t === "string" && !Number.isNaN(Date.parse(t)),
+      );
+      const newest = times.sort((a, b) => Date.parse(b) - Date.parse(a))[0];
+      if (newest !== undefined) knownAt.set(row.key, newest);
+    }
     if (row.deletedAt != null) continue;
 
     const data = decodeData(row.data);
@@ -248,14 +260,17 @@ export const studyRowKey = {
 /**
  * loadRawStudyData reads the live decks and cards of a workspace as stored:
  * duplicate cards are NOT merged, so a writer sees every row it must keep
- * consistent (the decks view's add-to-deck plan). Pages that show or
+ * consistent (the decks view's add-to-deck plan). `knownAt` is the newest
+ * time the server holds per row key (updatedAt or tombstone), for stamping
+ * a later write after it. Pages that show or
  * schedule cards use loadStudyData instead.
  */
 export async function loadRawStudyData(
   workspaceId: number,
-): Promise<{ decks: Deck[]; cards: StudyCard[] }> {
-  const { decks, cards } = await fetchStudyData(workspaceId);
-  return { decks, cards };
+): Promise<{ decks: Deck[]; cards: StudyCard[]; knownAt: Map<string, string> }> {
+  const knownAt = new Map<string, string>();
+  const { decks, cards } = await fetchStudyData(workspaceId, knownAt);
+  return { decks, cards, knownAt };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -305,6 +320,12 @@ export class PartialPushError extends Error {
   }
 }
 
+/** The earliest stamp that beats a row last written at `knownAt`: one millisecond later. */
+function stampAfter(knownAt: string | undefined): number {
+  const ms = knownAt === undefined ? NaN : Date.parse(knownAt);
+  return Number.isNaN(ms) ? 0 : ms + 1;
+}
+
 interface PushResult {
   dataAccepted?: number;
   dataSkipped?: number;
@@ -320,14 +341,14 @@ interface PushResult {
  */
 export async function pushStudyRows(
   workspaceId: number,
-  rows: readonly { key: string; data: unknown }[],
+  rows: readonly { key: string; data: unknown; knownAt?: string }[],
   opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<void> {
   const size = Math.max(1, opts.chunk ?? 200);
   let done = 0;
   for (let i = 0; i < rows.length; i += size) {
     const part = rows.slice(i, i + size);
-    const updatedAt = new Date().toISOString();
+    const nowMs = Date.now();
     let result: PushResult;
     try {
       result = await api<PushResult>("/api/sync/push", {
@@ -338,7 +359,12 @@ export async function pushStudyRows(
             key: row.key,
             workspaceId,
             data: row.data,
-            updatedAt,
+            // Last write wins on this stamp: never earlier than what the server
+            // already holds for the row (a client clock behind the server's would
+            // lose to a fresh tombstone for ever).
+            updatedAt: new Date(
+              Math.max(nowMs, stampAfter(row.knownAt)),
+            ).toISOString(),
           })),
         },
       });
@@ -352,7 +378,7 @@ export async function pushStudyRows(
     done += result?.dataAccepted ?? part.length - skipped;
     if (skipped > 0) {
       throw new PartialPushError(
-        `${skipped} ${skipped === 1 ? "row was" : "rows were"} not written because the server holds newer data for ${skipped === 1 ? "it" : "them"}. Reload and try again.`,
+        `${skipped} ${skipped === 1 ? "row was" : "rows were"} not written because the server holds newer data for ${skipped === 1 ? "it" : "them"}. Try again.`,
         done,
         skipped,
       );
@@ -528,13 +554,22 @@ export async function deleteDeck(id: string): Promise<void> {
     // The implicit deck has no stored row to tombstone and must survive.
     throw new Error("the general deck cannot be deleted");
   }
-  const { cards, deckSettings } = await fetchStudyData(workspaceId);
-  for (const card of cards) {
-    if (!card.deckIds.includes(id)) continue;
-    const remaining = card.deckIds.filter((deckId) => deckId !== id);
-    const deckIds = remaining.length === 0 ? [GENERAL_DECK_ID] : remaining;
-    await putData(workspaceId, cardRowKey(card.id), { ...card, deckIds });
-  }
+  const knownAt = new Map<string, string>();
+  const { cards, deckSettings } = await fetchStudyData(workspaceId, knownAt);
+  // One batch (chunks of 200) instead of a request per card: a big copied
+  // deck is a handful of requests. A failure throws before the tombstone.
+  const rows = cards
+    .filter((card) => card.deckIds.includes(id))
+    .map((card) => {
+      const remaining = card.deckIds.filter((deckId) => deckId !== id);
+      const deckIds = remaining.length === 0 ? [GENERAL_DECK_ID] : remaining;
+      return {
+        key: cardRowKey(card.id),
+        data: { ...card, deckIds },
+        knownAt: knownAt.get(cardRowKey(card.id)),
+      };
+    });
+  await pushStudyRows(workspaceId, rows);
   await deleteData(workspaceId, deckKey(id));
   // The deck's card type switches go with it; another tab may have
   // removed the row already.
