@@ -97,6 +97,8 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
 	mux.HandleFunc("GET /api/admin/packs", s.handleListPacks)
 	mux.HandleFunc("POST /api/admin/packs", s.handleStagePack)
+	mux.HandleFunc("POST /api/admin/packs/staged/{token}", s.handleInstallStaged)
+	mux.HandleFunc("GET /api/admin/packs/staged/{token}", s.handleStagedStatus)
 	mux.HandleFunc("DELETE /api/admin/packs/staged/{token}", s.handleDiscardStaged)
 	mux.HandleFunc("DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack)
 	mux.HandleFunc("GET /api/sentence-packs", s.handleListSentencePacks)
