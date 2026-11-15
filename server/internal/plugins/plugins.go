@@ -24,9 +24,9 @@ import (
 // never stored, or one already tombstoned.
 var ErrNotFound = errors.New("plugins: not found")
 
-// ErrInvalidManifest reports a feature-plugin manifest that is not a
-// JSON object carrying a non-empty id.
-var ErrInvalidManifest = errors.New(`plugins: manifest must be a JSON object with a non-empty "id"`)
+// ErrInvalidManifest reports a feature-plugin manifest that fails the
+// contract (see ParseManifest).
+var ErrInvalidManifest = errors.New("plugins: invalid manifest")
 
 // dataManifest is the manifest of a data plugin as ListFor serves it,
 // synthesized from the pack registry row its import left: the fields
