@@ -77,8 +77,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string)
 		}
 	}
 
-	type blob struct{ sha, ext string }
-	old := map[blob]bool{}
+	old := map[blobKey]bool{}
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import audio %s: %w", m.ID, err)
@@ -103,7 +102,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string)
 		return ImportResult{}, fmt.Errorf("import audio %s: %w", m.ID, err)
 	}
 	for cur.Next() {
-		var b blob
+		var b blobKey
 		if err := cur.Scan(&b.sha, &b.ext); err != nil {
 			cur.Close()
 			return ImportResult{}, fmt.Errorf("import audio %s: %w", m.ID, err)
@@ -132,17 +131,30 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string)
 	}
 
 	// Garbage-collect after commit: a failure here only leaves an orphan.
-	for b := range old {
+	if err := collectBlobs(ctx, sqlDB, storeDir, old); err != nil {
+		return res, fmt.Errorf("import audio %s: %w", m.ID, err)
+	}
+	return res, nil
+}
+
+// blobKey names a stored clip file: its hash and extension.
+type blobKey struct{ sha, ext string }
+
+// collectBlobs removes the given blobs that no clip row references any more,
+// whichever pack the row belongs to. It is the one refcount rule shared by
+// Import (a pack dropped clips) and Uninstall (a pack went away).
+func collectBlobs(ctx context.Context, sqlDB *sql.DB, storeDir string, candidates map[blobKey]bool) error {
+	for b := range candidates {
 		var n int
 		err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM audio_clips WHERE sha256 = ? AND ext = ?`, b.sha, b.ext).Scan(&n)
 		if err != nil {
-			return res, fmt.Errorf("import audio %s: check blob %s: %w", m.ID, b.sha, err)
+			return fmt.Errorf("check blob %s: %w", b.sha, err)
 		}
 		if n == 0 {
 			if err := os.Remove(BlobPath(storeDir, b.sha, b.ext)); err != nil && !errors.Is(err, os.ErrNotExist) {
-				return res, fmt.Errorf("import audio %s: remove blob %s: %w", m.ID, b.sha, err)
+				return fmt.Errorf("remove blob %s: %w", b.sha, err)
 			}
 		}
 	}
-	return res, nil
+	return nil
 }
