@@ -5,6 +5,7 @@
 
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrs/params';
+import type { VacationPeriod } from './vacation';
 
 /** Where an owned copy of a system deck came from (decks view, "Add to my decks"). */
 export type DeckSource =
@@ -101,6 +102,8 @@ export interface StudyData {
 	fsrs?: FsrsState;
 	/** Per-deck card type switches (`deckcfg:` rows), by deck id. */
 	deckSettings?: Record<string, DeckSettings>;
+	/** The user's vacation periods (user-global rows), absent when there are none. */
+	vacations?: VacationPeriod[];
 }
 
 /**

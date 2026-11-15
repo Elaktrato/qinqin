@@ -33,7 +33,8 @@
 		levelUsable,
 		type LevelUnit
 	} from '$lib/study/levelQueue';
-import { currentContext } from '$lib/study/currentContext';
+import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
+import type { StudyContext } from '$lib/study/studyContext';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import {
@@ -93,6 +94,8 @@ import { currentContext } from '$lib/study/currentContext';
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	// Vacation days and the study clock of the active workspace.
+	let ctx = $state.raw<StudyContext>(currentContext());
 	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	let extraChoices = $state.raw<ExtraChoices>({});
@@ -207,6 +210,7 @@ import { currentContext } from '$lib/study/currentContext';
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, workspaceId);
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
 		} catch (err) {
@@ -236,11 +240,15 @@ import { currentContext } from '$lib/study/currentContext';
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, activeWorkspaceId);
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
 			if (seq === requestSeq) deckError = message(err, 'Could not reload your cards.');
 		}
 	}
+
+	// A new learner day (or zone) changes what is due and on vacation.
+	$effect(() => onContextStale(() => void refreshData()));
 
 	async function loadSchemes(seq: number): Promise<void> {
 		try {
@@ -376,7 +384,7 @@ import { currentContext } from '$lib/study/currentContext';
 		);
 	});
 
-	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights, currentContext().clock));
+	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights, ctx.clock));
 
 	function levelOptionLabel(name: string): string {
 		const count = levelLearned.get(name);
@@ -438,7 +446,7 @@ import { currentContext } from '$lib/study/currentContext';
 			w: weights,
 			language: workspaceLanguage ?? '',
 			deckSettings,
-			ctx: currentContext(),
+			ctx,
 			// Words this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
@@ -478,11 +486,11 @@ import { currentContext } from '$lib/study/currentContext';
 			w: weights,
 			unit: levelUnit,
 			kinds: levelKinds,
-			ctx: currentContext(),
+			ctx,
 			hasStrokes: hasStrokeData,
 			// A word buried by a reverse or cloze answer today is left out, as in the session.
 			excludeEntries: buriedLevelEntries(
-				buriedNow({ cards, reviews, now: new Date(), studyDay: currentContext().day }),
+				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),
 				cards
 			),
 			// Items this tab already found unsuitable are not counted.

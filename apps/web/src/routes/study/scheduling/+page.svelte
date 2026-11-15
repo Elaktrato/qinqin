@@ -5,7 +5,8 @@
 	import OptimizePanel from '$lib/plugins/flashcards/scheduling/OptimizePanel.svelte';
 	import PreviewPanel from '$lib/plugins/flashcards/scheduling/PreviewPanel.svelte';
 	import SavedSets from '$lib/plugins/flashcards/scheduling/SavedSets.svelte';
-import { currentContext } from '$lib/study/currentContext';
+import { contextForData, currentContext } from '$lib/study/currentContext';
+import type { StudyContext } from '$lib/study/studyContext';
 	import { buildDataset, type Dataset } from '$lib/study/fsrs/dataset';
 	import { evaluate, type Fit } from '$lib/study/fsrs/evaluate';
 	import type { HeldOut, OptimizeResult } from '$lib/study/fsrs/optimize';
@@ -45,6 +46,7 @@ import { currentContext } from '$lib/study/currentContext';
 	let loadError = $state('');
 	let cards = $state.raw<StudyCard[]>([]);
 	let reviews = $state.raw<ReviewEvent[]>([]);
+	let ctx = $state.raw<StudyContext>(currentContext());
 	let dataset = $state.raw<Dataset>({ cards: [], labelled: 0 });
 	let fsrs = $state.raw<FsrsState>({ sets: [], active: null, w: DEFAULT_W });
 	let activeFit = $state.raw<Fit>(EMPTY_FIT);
@@ -98,7 +100,8 @@ import { currentContext } from '$lib/study/currentContext';
 			if (mine !== seq) return;
 			cards = data.cards;
 			reviews = data.reviews;
-			dataset = buildDataset(data.reviews, currentContext().clock);
+			ctx = contextForData(data, id);
+			dataset = buildDataset(data.reviews, ctx.clock);
 			fsrs = data.fsrs ?? { sets: [], active: null, w: DEFAULT_W };
 			activeFit = evaluate(fsrs.w, dataset);
 		} catch (err) {
@@ -194,7 +197,7 @@ import { currentContext } from '$lib/study/currentContext';
 		previewPending = true;
 		const ctl = new AbortController();
 		runPreview(
-			{ ...data, from: c.fromW, to: c.w, now: new Date(), ctx: currentContext() },
+			{ ...data, from: c.fromW, to: c.w, now: new Date(), ctx },
 			{ signal: ctl.signal }
 		)
 			.then((p) => {

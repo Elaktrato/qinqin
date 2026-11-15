@@ -2,7 +2,8 @@
 	import { errorMessage } from '$lib/stats/errors';
 	import { dueCounts } from '$lib/study/dueCounts';
 	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-	import { currentContext } from '$lib/study/currentContext';
+	import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
+	import type { StudyContext } from '$lib/study/studyContext';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
@@ -33,6 +34,8 @@
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
+	// Vacation days and the study clock of this workspace (rebuilt at midnight).
+	let ctx = $state.raw<StudyContext>(currentContext());
 	let loading = $state(true);
 	let error = $state('');
 	let noWorkspace = $state(false);
@@ -71,7 +74,7 @@
 			deckSettings,
 			now: new Date(),
 			w: weights,
-			ctx: currentContext(),
+			ctx,
 			newLimit: config.newLimit,
 			reviewLimit: config.reviewLimit
 		});
@@ -114,6 +117,7 @@
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, workspace);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			decks = [];
@@ -130,6 +134,7 @@
 	$effect(() => {
 		void load(workspaceId);
 	});
+	$effect(() => onContextStale(() => void load(workspaceId)));
 </script>
 
 <WidgetCard

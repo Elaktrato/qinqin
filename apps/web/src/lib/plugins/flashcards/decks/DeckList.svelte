@@ -9,6 +9,7 @@
 	import DeckStatsPanel from './DeckStatsPanel.svelte';
 	import SystemDecks from './SystemDecks.svelte';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
+	import { onContextStale } from '$lib/study/currentContext';
 	import { flashcardsHref } from '../route';
 
 	const store = createDecksData();
@@ -17,6 +18,8 @@
 	$effect(() => {
 		void store.load(workspaceId);
 	});
+	// A new learner day (or zone) changes what is due and on vacation.
+	$effect(() => onContextStale(() => void store.load(workspaceId)));
 
 	const summary = $derived.by(() => {
 		const data = store.data;

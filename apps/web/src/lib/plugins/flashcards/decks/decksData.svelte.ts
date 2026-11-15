@@ -11,7 +11,7 @@ import { loadStudyHistory } from '$lib/study/history';
 import { activeWeights } from '$lib/study/store';
 import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
 import { addDays } from '$lib/time/studyDay';
-import { currentContext } from '$lib/study/currentContext';
+import { contextForData } from '$lib/study/currentContext';
 import type { StudyContext } from '$lib/study/studyContext';
 import { currentStudyDay } from '$lib/time/zone';
 import { scheduleIndex, type ScheduleIndex } from './deckStats';
@@ -54,7 +54,7 @@ export function createDecksData() {
 			const data = await loadStudyHistory(workspaceId, { force });
 			if (mine !== seq) return;
 			const weights = activeWeights(data) ?? DEFAULT_W;
-			const ctx = currentContext();
+			const ctx = contextForData(data, workspaceId);
 			snapshot = {
 				workspaceId,
 				decks: data.decks,

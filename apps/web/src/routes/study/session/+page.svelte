@@ -49,7 +49,8 @@
 		type ClozePrompt
 	} from '$lib/study/cloze';
 	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
-import { currentContext } from '$lib/study/currentContext';
+import { contextForData } from '$lib/study/currentContext';
+import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
@@ -209,6 +210,8 @@ import { currentContext } from '$lib/study/currentContext';
 	let reviews = $state.raw<ReviewEvent[]>([]);
 	// The weights loaded with this session; a change elsewhere waits for the next load.
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	// The study clock of the session's workspace (set when the session loads).
+	let sessionClock = $state.raw<StudyClock>(IDENTITY_CLOCK);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
 	// Re-shows answered this session; practice only, never recorded.
@@ -389,6 +392,7 @@ import { currentContext } from '$lib/study/currentContext';
 			const history = data.reviews;
 			reviews = history;
 			weights = activeWeights(data);
+			sessionClock = contextForData(data, workspaceId).clock;
 			const w = weights;
 			cards = data.cards;
 			const now = new Date();
@@ -398,7 +402,7 @@ import { currentContext } from '$lib/study/currentContext';
 				// data) is replaced from the reserve, as in a deck session.
 				// A word answered today through reverse or cloze is buried: left out
 				// before the limits, so the next word takes its slot.
-				const ctx = currentContext();
+				const ctx = contextForData(data, workspaceId);
 				const day = ctx.day;
 				const buried = buriedNow({ cards: data.cards, reviews: history, now, studyDay: day });
 				const plan = buildLevelPlan({
@@ -429,7 +433,7 @@ import { currentContext } from '$lib/study/currentContext';
 					reviewLimit: config.reviewLimit,
 					now,
 					w,
-					ctx: currentContext(),
+					ctx: contextForData(data, workspaceId),
 					deckSettings: data.deckSettings,
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
@@ -490,7 +494,7 @@ import { currentContext } from '$lib/study/currentContext';
 					...base,
 					item: item.virtual ? { ...item, sentenceId: sentence?.id } : item,
 					sentence,
-					tier: item.tier ?? tierForCard(cardId, history, now, weights, currentContext().clock),
+					tier: item.tier ?? tierForCard(cardId, history, now, weights, sessionClock),
 					seed: `${item.card?.id ?? item.cardId}:${reviewCountFor(cardId, history)}`
 				};
 			}
@@ -569,7 +573,7 @@ import { currentContext } from '$lib/study/currentContext';
 		const mode =
 			item.clozeMode ??
 			clozeMode({
-				tier: tierForCard(cardId, history, now, weights, currentContext().clock),
+				tier: tierForCard(cardId, history, now, weights, sessionClock),
 				answer: prompt.answer,
 				entryForms: forms,
 				distractors

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import StageBar from '$lib/components/map/StageBar.svelte';
-	import { currentContext } from '$lib/study/currentContext';
+	import { onContextStale } from '$lib/study/currentContext';
 	import { usesHan } from '$lib/languages';
 	import { characterSummary, loadCharacterMapData, withLegacyWritten } from '$lib/stats/characterMap';
 	import { errorMessage } from '$lib/stats/errors';
@@ -68,7 +68,7 @@
 			const data = await loadCharacterMapData(id, lang, { force });
 			if (seq !== requestSeq) return;
 			const now = new Date();
-			stats = characterSummary(data.list.chars, data.cards, data.reviews, now, data.w, currentContext().clock);
+			stats = characterSummary(data.list.chars, data.cards, data.reviews, now, data.w, data.clock);
 			stale = data.list.stale === true;
 			loading = false;
 
@@ -77,7 +77,7 @@
 			if (data.cards.some((card) => card.written === undefined)) {
 				const filled = await withLegacyWritten(data.cards);
 				if (seq !== requestSeq) return;
-				stats = characterSummary(data.list.chars, filled.cards, data.reviews, now, data.w, currentContext().clock);
+				stats = characterSummary(data.list.chars, filled.cards, data.reviews, now, data.w, data.clock);
 				unresolved = filled.unresolved;
 			}
 		} catch (err) {
@@ -92,6 +92,7 @@
 	$effect(() => {
 		void load(workspaceId, language);
 	});
+	$effect(() => onContextStale(() => void load(workspaceId, language)));
 </script>
 
 <div class="tile">

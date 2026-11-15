@@ -30,6 +30,7 @@
 	} from './deckRows';
 	import { deckNumbers } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
+	import { onContextStale } from '$lib/study/currentContext';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
 
 	let { deckId }: { deckId: string } = $props();
@@ -39,6 +40,8 @@
 	$effect(() => {
 		void store.load(workspaceId);
 	});
+	// A new learner day (or zone) changes what is due and on vacation.
+	$effect(() => onContextStale(() => void store.load(workspaceId)));
 
 	const KIND_LABEL: Record<StudyCardKind, string> = {
 		vocab: 'Vocab',

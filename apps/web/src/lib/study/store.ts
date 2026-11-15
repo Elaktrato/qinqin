@@ -2,6 +2,9 @@
 // from one sync pull; writes are single-key PUTs and a delete is a
 // tombstoning DELETE. A missing current workspace is an error: study
 // data must never fall back to user-global or another workspace's rows.
+// The one explicit exception: `vacation:*` rows are user-global (they
+// apply to every workspace or a chosen list) and are read from rows with
+// no workspace (docs/contracts/scheduler/).
 
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
@@ -26,6 +29,7 @@ import {
   type DeckSettings,
 } from "./deckSettings";
 import { cardKey, parseReview } from "./reviewParse";
+import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
 import {
   CARD_KINDS,
   type Deck,
@@ -206,12 +210,19 @@ async function fetchStudyData(
   const cards: StudyCard[] = [];
   const sets: ParamSet[] = [];
   const deckSettings: Record<string, DeckSettings> = {};
+  const vacations: VacationPeriod[] = [];
   let activeRaw: unknown = null;
 
   for (const value of rows) {
     const row = asPluginDataRow(value);
     if (row === null) continue;
     if (row.pluginId !== FLASHCARDS_PLUGIN_ID) continue;
+    if (row.workspaceId === null && row.key.startsWith(VACATION_PREFIX)) {
+      if (row.deletedAt != null) continue;
+      const period = parseVacation(row.key, decodeData(row.data));
+      if (period !== null) vacations.push(period);
+      continue;
+    }
     if (row.workspaceId !== workspaceId) continue;
     if (knownAt !== undefined) {
       // The newest time the server holds for the key, live or tombstoned.
@@ -248,6 +259,7 @@ async function fetchStudyData(
     cards,
     fsrs: resolveState(sets, activeRaw),
     ...(Object.keys(deckSettings).length > 0 ? { deckSettings } : {}),
+    ...(vacations.length > 0 ? { vacations } : {}),
   };
 }
 
@@ -284,6 +296,9 @@ export function onStudyWrite(
   writeListeners.add(listener);
   return () => writeListeners.delete(listener);
 }
+
+/** The write touched rows every workspace reads (user-global vacations). */
+export const ALL_WORKSPACES = 0;
 
 function notifyWrite(workspaceId: number): void {
   for (const listener of writeListeners) listener(workspaceId);
@@ -456,6 +471,7 @@ export async function loadStudyDataWith(
     cards,
     fsrs: data.fsrs,
     ...(data.deckSettings === undefined ? {} : { deckSettings: data.deckSettings }),
+    ...(data.vacations === undefined ? {} : { vacations: data.vacations }),
     reviews,
     merged,
   };
@@ -1014,4 +1030,27 @@ export function cardsInDecks(
 ): StudyCard[] {
   const wanted = new Set(deckIds);
   return cards.filter((card) => card.deckIds.some((id) => wanted.has(id)));
+}
+
+/** saveVacation stores one vacation period (user-global: no workspace). */
+export async function saveVacation(period: VacationPeriod): Promise<void> {
+  try {
+    await api(`/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${VACATION_PREFIX}${period.id}`, {
+      method: "PUT",
+      body: period,
+    });
+  } finally {
+    notifyWrite(ALL_WORKSPACES);
+  }
+}
+
+/** deleteVacation tombstones one vacation period. */
+export async function deleteVacation(id: string): Promise<void> {
+  try {
+    await api(`/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${VACATION_PREFIX}${id}`, {
+      method: "DELETE",
+    });
+  } finally {
+    notifyWrite(ALL_WORKSPACES);
+  }
 }
