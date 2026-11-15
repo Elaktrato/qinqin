@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "rule": "scheduler/streak",
+  "cases": [
+    {
+      "name": "no vacation behaves as before",
+      "now": "2026-01-10T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [],
+      "reviews": [
+        "2026-01-08T10:00:00Z",
+        "2026-01-09T10:00:00Z",
+        "2026-01-10T10:00:00Z"
+      ],
+      "expect": {
+        "current": 3,
+        "best": 3,
+        "todayDone": true
+      },
+      "note": ""
+    },
+    {
+      "name": "a vacation gap does not break the run",
+      "now": "2026-01-11T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [
+        {
+          "start": "2026-01-07",
+          "end": "2026-01-10"
+        }
+      ],
+      "reviews": [
+        "2026-01-05T10:00:00Z",
+        "2026-01-06T10:00:00Z",
+        "2026-01-11T10:00:00Z"
+      ],
+      "expect": {
+        "current": 3,
+        "best": 3,
+        "todayDone": true
+      },
+      "note": ""
+    },
+    {
+      "name": "the same gap without a vacation breaks it",
+      "now": "2026-01-11T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [],
+      "reviews": [
+        "2026-01-05T10:00:00Z",
+        "2026-01-06T10:00:00Z",
+        "2026-01-11T10:00:00Z"
+      ],
+      "expect": {
+        "current": 1,
+        "best": 2,
+        "todayDone": true
+      },
+      "note": ""
+    },
+    {
+      "name": "today on vacation is done and the run stays alive",
+      "now": "2026-01-10T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [
+        {
+          "start": "2026-01-10",
+          "end": "2026-01-12"
+        }
+      ],
+      "reviews": [
+        "2026-01-08T10:00:00Z",
+        "2026-01-09T10:00:00Z"
+      ],
+      "expect": {
+        "current": 2,
+        "best": 2,
+        "todayDone": true
+      },
+      "note": ""
+    },
+    {
+      "name": "vacation today but the day before it was missed",
+      "now": "2026-01-10T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [
+        {
+          "start": "2026-01-08",
+          "end": "2026-01-10"
+        }
+      ],
+      "reviews": [
+        "2026-01-05T10:00:00Z"
+      ],
+      "expect": {
+        "current": 0,
+        "best": 1,
+        "todayDone": true
+      },
+      "note": "the last non-vacation day, 2026-01-07, has no review"
+    },
+    {
+      "name": "the run reaches back over a vacation",
+      "now": "2026-01-10T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [
+        {
+          "start": "2026-01-08",
+          "end": "2026-01-10"
+        }
+      ],
+      "reviews": [
+        "2026-01-06T10:00:00Z",
+        "2026-01-07T10:00:00Z"
+      ],
+      "expect": {
+        "current": 2,
+        "best": 2,
+        "todayDone": true
+      },
+      "note": ""
+    },
+    {
+      "name": "a review on a vacation day does not count",
+      "now": "2026-01-09T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [
+        {
+          "start": "2026-01-07",
+          "end": "2026-01-08"
+        }
+      ],
+      "reviews": [
+        "2026-01-06T10:00:00Z",
+        "2026-01-07T10:00:00Z",
+        "2026-01-09T10:00:00Z"
+      ],
+      "expect": {
+        "current": 2,
+        "best": 2,
+        "todayDone": true
+      },
+      "note": ""
+    },
+    {
+      "name": "after the vacation and not yet studied today",
+      "now": "2026-01-11T12:00:00Z",
+      "zone": "UTC",
+      "vacation": [
+        {
+          "start": "2026-01-07",
+          "end": "2026-01-09"
+        }
+      ],
+      "reviews": [
+        "2026-01-05T10:00:00Z",
+        "2026-01-06T10:00:00Z",
+        "2026-01-10T10:00:00Z"
+      ],
+      "expect": {
+        "current": 3,
+        "best": 3,
+        "todayDone": false
+      },
+      "note": "2026-01-10 is the last non-vacation day before today and counts"
+    },
+    {
+      "name": "vacation dates follow the learner zone",
+      "now": "2026-01-11T12:00:00Z",
+      "zone": "Asia/Tokyo",
+      "vacation": [
+        {
+          "start": "2026-01-07",
+          "end": "2026-01-09"
+        }
+      ],
+      "reviews": [
+        "2026-01-05T20:00:00Z",
+        "2026-01-07T20:00:00Z",
+        "2026-01-09T20:00:00Z",
+        "2026-01-10T20:00:00Z"
+      ],
+      "expect": {
+        "current": 3,
+        "best": 3,
+        "todayDone": true
+      },
+      "note": "Tokyo days: 01-06, 01-08 (vacation, ignored), 01-10, 01-11 (today); in UTC the same instants would be 01-05, 01-07, 01-09, 01-10"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "rule": "scheduler/due-today",
+  "cases": [
+    {
+      "name": "due in the past",
+      "now": "2026-11-15T10:00:00Z",
+      "vacationToday": false,
+      "due": "2026-11-15T06:00:00Z",
+      "isDue": true,
+      "note": ""
+    },
+    {
+      "name": "due exactly now",
+      "now": "2026-11-15T10:00:00Z",
+      "vacationToday": false,
+      "due": "2026-11-15T10:00:00Z",
+      "isDue": true,
+      "note": ""
+    },
+    {
+      "name": "due later today is not due yet",
+      "now": "2026-11-15T10:00:00Z",
+      "vacationToday": false,
+      "due": "2026-11-15T20:00:00Z",
+      "isDue": false,
+      "note": "instant rule: no whole-day due ness"
+    },
+    {
+      "name": "a learning card due in 10 minutes is not due",
+      "now": "2026-11-15T10:00:00Z",
+      "vacationToday": false,
+      "due": "2026-11-15T10:10:00Z",
+      "isDue": false,
+      "note": ""
+    },
+    {
+      "name": "overdue on a vacation day is not due",
+      "now": "2026-11-15T10:00:00Z",
+      "vacationToday": true,
+      "due": "2026-11-10T06:00:00Z",
+      "isDue": false,
+      "note": "nothing is due and no new card is offered on a vacation day"
+    },
+    {
+      "name": "due exactly now on a vacation day",
+      "now": "2026-11-15T10:00:00Z",
+      "vacationToday": true,
+      "due": "2026-11-15T10:00:00Z",
+      "isDue": false,
+      "note": ""
+    }
+  ]
+}
