@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { anchorAnnotations, isOutdated, segments } from './anchor';
+import { anchorAnnotations, isOutdated, originalCounts, segments } from './anchor';
 import { textHash } from './textHash';
 import type { Annotation, Review } from './types';
 
@@ -106,5 +106,31 @@ describe('isOutdated', () => {
 		const review = { textHash: textHash(TEXT) } as Review;
 		expect(isOutdated(TEXT, review)).toBe(false);
 		expect(isOutdated(TEXT + '!', review)).toBe(true);
+	});
+});
+
+describe('originalCounts', () => {
+	it('counts each quote in the reviewed text', () => {
+		expect(originalCounts(TEXT, [first, ann('a3', '昨天', '我', '去')])).toEqual({ a1: 2, a3: 1 });
+	});
+});
+
+describe('unique-quote fallback only for originally unique quotes', () => {
+	const edited = '今天我去学校。'; // one 去学校 left, both contexts changed
+	const a = ann('a1', '去学校', '我昨天', '。我去学校了。');
+
+	it('keeps the fallback when the quote was unique at review time', () => {
+		const r = anchorAnnotations(edited, [a], { a1: 1 });
+		expect(r.placed).toHaveLength(1);
+	});
+
+	it('reports missing when the quote occurred twice at review time', () => {
+		const r = anchorAnnotations(edited, [a], { a1: 2 });
+		expect(r.placed).toEqual([]);
+		expect(r.missing).toEqual([a]);
+	});
+
+	it('accepts the risk when the original count is unknown', () => {
+		expect(anchorAnnotations(edited, [a]).placed).toHaveLength(1);
 	});
 });

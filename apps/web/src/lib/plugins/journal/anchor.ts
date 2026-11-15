@@ -41,11 +41,21 @@ interface Candidate {
 	annotation: Annotation;
 	start: number;
 	end: number;
-	score: number; // 2 = exact context, 1 = one side or unique quote, 0 = unique quote only
+	score: number; // how many of prefix and suffix match: 2 = both (exact), 1 = one side, 0 = neither
 	exact: boolean;
 }
 
-function locate(text: string, a: Annotation): Candidate | null {
+/** How often each annotation's quote occurs in `text`; call it with the text a review was made for. */
+export function originalCounts(text: string, annotations: Annotation[]): Record<string, number> {
+	const out: Record<string, number> = {};
+	for (const a of annotations) {
+		const n = occurrences(text, a.quote).length;
+		if (n > 0) out[a.id] = n;
+	}
+	return out;
+}
+
+function locate(text: string, a: Annotation, original?: number): Candidate | null {
 	const starts = occurrences(text, a.quote);
 	if (starts.length === 0) return null;
 	const make = (start: number, exact: boolean): Candidate => {
@@ -58,7 +68,8 @@ function locate(text: string, a: Annotation): Candidate | null {
 		(s) => prefixMatches(text, s, a.prefix) && suffixMatches(text, s + a.quote.length, a.suffix)
 	);
 	if (exact !== undefined) return make(exact, true);
-	if (starts.length === 1) return make(starts[0], false);
+	// A lone quote is only trusted if it was the only one when reviewed (unknown: accepted risk).
+	if (starts.length === 1 && (original === undefined || original <= 1)) return make(starts[0], false);
 
 	const byPrefix = starts.filter((s) => prefixMatches(text, s, a.prefix));
 	if (byPrefix.length === 1) return make(byPrefix[0], false);
@@ -69,13 +80,17 @@ function locate(text: string, a: Annotation): Candidate | null {
 	return null;
 }
 
-export function anchorAnnotations(text: string, annotations: Annotation[]): Anchoring {
+export function anchorAnnotations(
+	text: string,
+	annotations: Annotation[],
+	original: Record<string, number> = {}
+): Anchoring {
 	const missing: Annotation[] = [];
 	const listOnly: Annotation[] = [];
 	const found: Candidate[] = [];
 
 	for (const a of annotations) {
-		const c = locate(text, a);
+		const c = locate(text, a, original[a.id]);
 		if (c) found.push(c);
 		else missing.push(a);
 	}
