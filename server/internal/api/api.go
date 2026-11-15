@@ -51,6 +51,10 @@ type server struct {
 	chars charactersCache // GET /api/characters payloads
 
 	trusted []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
+
+	authPolicy *AuthPolicy // nil: DefaultAuthPolicy
+	limits     *authLimits // sign-in throttling state, built by New
+	hash       hashers     // password hashing entry points (tests swap them)
 }
 
 // Option configures optional parts of the server.
@@ -69,10 +73,15 @@ func WithOCR(o journal.OCR) Option { return func(s *server) { s.ocr = o } }
 // added to the mux by later tasks, all sharing sqlDB. srcs are the
 // public-domain text sources the library can search and import from.
 func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) http.Handler {
-	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs}
+	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs, hash: defaultHashers()}
 	for _, o := range opts {
 		o(s)
 	}
+	policy := DefaultAuthPolicy()
+	if s.authPolicy != nil {
+		policy = *s.authPolicy
+	}
+	s.limits = newAuthLimits(policy)
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
 		go s.runStageSweeper()
 	}
@@ -220,7 +229,7 @@ func writeTooLarge(w http.ResponseWriter) {
 // the cap it stops reading, answers 413 itself (writeTooLarge) and
 // reports false; another read failure is a 400.
 func readBody(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool) {
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
+	body, err := readBodyErr(w, r, limit)
 	if err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
@@ -231,6 +240,12 @@ func readBody(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool
 		return nil, false
 	}
 	return body, true
+}
+
+// readBodyErr reads the whole request body, at most limit bytes, and
+// leaves the error to the caller.
+func readBodyErr(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, error) {
+	return io.ReadAll(http.MaxBytesReader(w, r.Body, limit))
 }
 
 func handleHealthz(w http.ResponseWriter, r *http.Request) {
