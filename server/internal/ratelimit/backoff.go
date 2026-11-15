@@ -21,7 +21,6 @@ type backoffState struct {
 	lockedTo time.Time
 	lockDur  time.Duration
 	lastFail time.Time
-	goodTo   time.Time
 }
 
 // Backoff tracks consecutive failures per key.
@@ -29,6 +28,10 @@ type Backoff struct {
 	mu sync.Mutex
 	p  BackoffPolicy
 	t  *table[backoffState]
+	// good holds the known-good marks (value: expiry) in a table of their
+	// own with their own cap, so a flood of new failing keys cannot evict
+	// them. Marks need a valid password to create.
+	good *table[time.Time]
 }
 
 // NewBackoff returns an empty tracker.
@@ -36,7 +39,7 @@ func NewBackoff(p BackoffPolicy) *Backoff {
 	if p.Free < 0 {
 		p.Free = 0
 	}
-	return &Backoff{p: p, t: newTable[backoffState](p.MaxKeys)}
+	return &Backoff{p: p, t: newTable[backoffState](p.MaxKeys), good: newTable[time.Time](p.MaxKeys)}
 }
 
 // forget drops failures after a quiet period; a live lock or an
@@ -51,8 +54,13 @@ func (b *Backoff) sweep(now time.Time) {
 	for k, s := range b.t.m {
 		st := &s.v
 		b.forget(st, now)
-		if st.inflight == 0 && st.failures == 0 && !now.Before(st.lockedTo) && !now.Before(st.goodTo) {
+		if st.inflight == 0 && st.failures == 0 && !now.Before(st.lockedTo) {
 			delete(b.t.m, k)
+		}
+	}
+	for k, s := range b.good.m {
+		if !now.Before(s.v) {
+			delete(b.good.m, k)
 		}
 	}
 }
@@ -117,16 +125,18 @@ func (b *Backoff) Fail(k Key, now time.Time) {
 func (b *Backoff) Succeed(k Key, now time.Time) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	s := b.t.get(k, now)
-	if s == nil {
-		s = b.t.add(k, backoffState{}, now)
+	if s := b.t.get(k, now); s != nil {
+		st := &s.v
+		if st.inflight > 0 {
+			st.inflight--
+		}
+		st.failures, st.lockDur, st.lockedTo = 0, 0, time.Time{}
 	}
-	st := &s.v
-	if st.inflight > 0 {
-		st.inflight--
+	if s := b.good.get(k, now); s != nil {
+		s.v = now.Add(b.p.GoodFor)
+	} else {
+		b.good.add(k, now.Add(b.p.GoodFor), now)
 	}
-	st.failures, st.lockDur, st.lockedTo = 0, 0, time.Time{}
-	st.goodTo = now.Add(b.p.GoodFor)
 }
 
 // Abort ends an in-flight attempt without counting it.
@@ -142,8 +152,8 @@ func (b *Backoff) Abort(k Key) {
 func (b *Backoff) KnownGood(k Key, now time.Time) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	s := b.t.m[k]
-	return s != nil && now.Before(s.v.goodTo)
+	s := b.good.m[k]
+	return s != nil && now.Before(s.v)
 }
 
 // Len is the number of keys held.

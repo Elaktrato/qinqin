@@ -166,3 +166,52 @@ func TestBackoffSweepAndEviction(t *testing.T) {
 		}
 	}
 }
+
+// A flood of new failing pairs must not wipe the known-good marks: the
+// marks live in their own table.
+func TestBackoffKnownGoodSurvivesFlood(t *testing.T) {
+	p := bpol()
+	p.MaxKeys = 65536
+	b, ky := NewBackoff(p), NewKeyer()
+	good := ky.Key("good-pair")
+	b.Begin(good, t0)
+	b.Succeed(good, t0)
+	now := t0.Add(time.Second)
+	for i := 0; i < 200000; i++ {
+		k := ky.Key(fmt.Sprint("flood", i))
+		b.Begin(k, now)
+		b.Fail(k, now)
+	}
+	if !b.KnownGood(good, now) {
+		t.Fatal("the flood evicted a known-good mark")
+	}
+	if b.Len() > p.MaxKeys {
+		t.Fatalf("failure table len %d above cap", b.Len())
+	}
+}
+
+// The marks have their own cap and drop old marks when full.
+func TestBackoffMarksCapped(t *testing.T) {
+	p := bpol()
+	p.MaxKeys = 50
+	b, ky := NewBackoff(p), NewKeyer()
+	var keys []Key
+	for i := 0; i < 120; i++ {
+		k := ky.Key(fmt.Sprint("m", i))
+		keys = append(keys, k)
+		b.Begin(k, t0.Add(time.Duration(i)*time.Second))
+		b.Succeed(k, t0.Add(time.Duration(i)*time.Second))
+	}
+	n := 0
+	for _, k := range keys {
+		if b.KnownGood(k, t0.Add(200*time.Second)) {
+			n++
+		}
+	}
+	if n > p.MaxKeys || n == 0 {
+		t.Fatalf("%d marks live, want 1..%d", n, p.MaxKeys)
+	}
+	if !b.KnownGood(keys[119], t0.Add(200*time.Second)) {
+		t.Fatal("newest mark missing")
+	}
+}

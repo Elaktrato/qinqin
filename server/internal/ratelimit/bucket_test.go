@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"encoding/binary"
 	"fmt"
 	"testing"
 	"time"
@@ -126,5 +127,29 @@ func TestKeyer(t *testing.T) {
 	}
 	if a.Key("x", "y") == a.Key("xy") || a.Key("x", "y") == a.Key("x", "z") {
 		t.Fatal("parts not separated")
+	}
+}
+
+// Inserting into a full table looks at a bounded sample, not at the map.
+func TestEvictionWalkBounded(t *testing.T) {
+	tb := newTable[int](65536)
+	key := func(i int) Key {
+		var k Key
+		binary.BigEndian.PutUint64(k[:], uint64(i)+1)
+		return k
+	}
+	for i := 0; i < 65536; i++ {
+		tb.add(key(i), 0, t0)
+	}
+	before := tb.walked
+	const inserts = 10000
+	for i := 0; i < inserts; i++ {
+		tb.add(key(70000+i), 0, t0)
+	}
+	if got := tb.walked - before; got > inserts*evictSample {
+		t.Fatalf("eviction visited %d entries for %d inserts, want at most %d", got, inserts, inserts*evictSample)
+	}
+	if len(tb.m) != 65536 {
+		t.Fatalf("len %d", len(tb.m))
 	}
 }

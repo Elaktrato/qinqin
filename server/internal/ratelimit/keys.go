@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	cryptorand "crypto/rand"
 	"crypto/sha256"
-	"math/rand/v2"
 	"time"
 )
 
@@ -49,6 +48,7 @@ type table[V any] struct {
 	m         map[Key]*slot[V]
 	max       int
 	lastSweep time.Time
+	walked    int // entries visited by evictions (a test asserts it stays small)
 }
 
 type slot[V any] struct {
@@ -72,36 +72,26 @@ func (t *table[V]) get(k Key, now time.Time) *slot[V] {
 	return s
 }
 
-// add inserts a new slot, evicting the least recently touched of a
-// small random sample when the table is full.
+// add inserts a new slot. When the table is full it evicts the least
+// recently touched of the first evictSample entries of Go's map
+// iteration. That order starts at a random bucket and offset on every
+// range, so the sample is random enough, and costs at most evictSample
+// steps however large the table is (no walk over the map).
 func (t *table[V]) add(k Key, v V, now time.Time) *slot[V] {
 	if len(t.m) >= t.max {
 		var victim Key
 		var oldest time.Time
-		first := true
 		n := 0
-		// Map iteration starts at a random bucket; skipping a random
-		// number of entries first spreads the sample further.
-		skip := rand.IntN(len(t.m))
 		for key, s := range t.m {
-			if skip > 0 {
-				skip--
-				continue
-			}
-			if first || s.touched.Before(oldest) {
-				victim, oldest, first = key, s.touched, false
+			if n == 0 || s.touched.Before(oldest) {
+				victim, oldest = key, s.touched
 			}
 			n++
 			if n >= evictSample {
 				break
 			}
 		}
-		if first { // skipped past everything: take the first entry
-			for key := range t.m {
-				victim = key
-				break
-			}
-		}
+		t.walked += n
 		delete(t.m, victim)
 	}
 	s := &slot[V]{v: v, touched: now}
