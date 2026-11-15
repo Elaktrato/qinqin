@@ -199,6 +199,8 @@ export interface PluginInfo {
 	manifest: { name?: unknown; [key: string]: unknown };
 	enabled: boolean;
 	order: number;
+	/** True for the app's own surface-less built-ins (qinqin-core): not listed in Settings. */
+	hidden?: boolean;
 }
 
 // StudyEventBody is one event in POST /api/events/batch. The server

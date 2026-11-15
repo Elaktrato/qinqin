@@ -263,12 +263,26 @@ func featurePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, err
 		}
 		info.Manifest = json.RawMessage(manifest)
 		info.Enabled = true
+		info.Hidden = isHiddenBuiltin(info.ID, manifest)
 		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read feature plugins: %w", err)
 	}
 	return list, nil
+}
+
+// isHiddenBuiltin reports whether a registry row is one of the built-in
+// plugins and declares no surface: nothing a user can switch or visit.
+// Admin-registered plugins are never hidden, whatever they declare.
+func isHiddenBuiltin(id, manifest string) bool {
+	if !slices.Contains(BuiltinIDs(), id) {
+		return false
+	}
+	var m struct {
+		Surfaces []string `json:"surfaces"`
+	}
+	return json.Unmarshal([]byte(manifest), &m) == nil && len(m.Surfaces) == 0
 }
 
 // dictionaryPlugins lists the dictionary packs, active only — an

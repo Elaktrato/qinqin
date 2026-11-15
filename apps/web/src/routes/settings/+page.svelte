@@ -106,8 +106,9 @@
 		pluginsError = '';
 		try {
 			const list = (await api<PluginInfo[]>('/api/plugins')).filter((p) => !isDataPackPlugin(p));
-			// The core app's own registry row is not a switchable plugin.
-			plugins = list.filter((plugin) => !isCorePlugin(plugin.id)).map((plugin) => ({
+			// The server flags the app's own surface-less built-ins (the core
+			// registry row); the id check keeps an older server working.
+			plugins = list.filter((plugin) => !plugin.hidden && !isCorePlugin(plugin.id)).map((plugin) => ({
 				id: plugin.id,
 				name: pluginName(plugin),
 				enabled: plugin.enabled,

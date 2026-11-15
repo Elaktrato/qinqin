@@ -69,3 +69,37 @@ func TestPutDataRejectsWorkspaceZero(t *testing.T) {
 		}
 	}
 }
+
+// TestListFlagsSurfacelessBuiltinsHidden: the built-in plugin without
+// surfaces (qinqin-core, registered only so its data is accepted) is listed
+// with hidden=true; built-ins with a surface and admin plugins are not.
+func TestListFlagsSurfacelessBuiltinsHidden(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	alice := newUser(t, sqlDB, "alice")
+	for _, raw := range plugins.Builtin() {
+		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, raw); err != nil {
+			t.Fatalf("RegisterBuiltin: %v", err)
+		}
+	}
+	// An admin plugin that also declares no surface stays visible: only
+	// the built-ins are the app's own.
+	mustRegister(t, sqlDB, `{"id":"quiet","name":"Quiet","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]}`)
+
+	list, err := plugins.ListFor(ctx, sqlDB, alice)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hidden := map[string]bool{}
+	for _, p := range list {
+		hidden[p.ID] = p.Hidden
+	}
+	if !hidden["qinqin-core"] {
+		t.Error("qinqin-core not hidden")
+	}
+	for _, id := range []string{"qinqin-flashcards", "qinqin-reader", "qinqin-journal", "qinqin-grammar", "quiet"} {
+		if h, ok := hidden[id]; !ok || h {
+			t.Errorf("%s: listed=%v hidden=%v, want listed and visible", id, ok, h)
+		}
+	}
+}

@@ -70,3 +70,22 @@ describe('plugin order validation', () => {
 		expect(screen.queryByText('Enter a whole number of 0 or more.')).toBeNull();
 	});
 });
+
+describe('hidden plugins', () => {
+	it('leaves out plugins the server flags hidden, whatever their id', async () => {
+		setUrl('/settings?tab=plugins');
+		const base = vi.mocked(api).getMockImplementation()!;
+		vi.mocked(api).mockImplementation((async (url: string, ...rest: unknown[]) => {
+			if (url === '/api/plugins') {
+				return [
+					plugin,
+					{ id: 'internal-thing', manifest: { name: 'Internal thing' }, enabled: true, order: 0, hidden: true }
+				];
+			}
+			return (base as (...a: unknown[]) => unknown)(url, ...rest);
+		}) as never);
+		render(Page);
+		await screen.findByText('Reader');
+		expect(screen.queryByText('Internal thing')).toBeNull();
+	});
+});
