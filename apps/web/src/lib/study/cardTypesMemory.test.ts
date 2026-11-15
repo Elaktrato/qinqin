@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { effectiveCardTypes, parseRememberedTypes, withRememberedTypes } from './cardTypesMemory';
+import {
+	defaultExtraTypes,
+	effectiveCardTypes,
+	effectiveKinds,
+	parseExtraChoices,
+	parseRememberedTypes,
+	withExtraChoice,
+	withRememberedTypes
+} from './cardTypesMemory';
 
 describe('remembered card types', () => {
 	it('reads one workspace, keeps known kinds in canonical order', () => {
@@ -30,5 +38,49 @@ describe('remembered card types', () => {
 		expect(effectiveCardTypes(null, ['writing'])).toEqual(['writing']);
 		expect(effectiveCardTypes(['bogus'], ['writing'])).toEqual(['writing']);
 		expect(effectiveCardTypes(null, null)).toEqual(['vocab']);
+	});
+});
+
+describe('extra (opt-in) type choices', () => {
+	it('reads one workspace; only booleans for the two opt-in kinds', () => {
+		const raw = JSON.stringify({ '1': { reverse: false, cloze: true, bogus: false }, '2': 'x' });
+		expect(parseExtraChoices(raw, 1)).toEqual({ reverse: false, cloze: true });
+		expect(parseExtraChoices(raw, 2)).toEqual({});
+		expect(parseExtraChoices(null, 1)).toEqual({});
+		expect(parseExtraChoices('junk', 1)).toEqual({});
+	});
+
+	it('writes one workspace and kind without touching the rest', () => {
+		const raw = withExtraChoice(JSON.stringify({ '2': { cloze: false } }), 1, 'reverse', false);
+		expect(parseExtraChoices(raw, 1)).toEqual({ reverse: false });
+		expect(parseExtraChoices(raw, 2)).toEqual({ cloze: false });
+		expect(parseExtraChoices(withExtraChoice(raw, 1, 'reverse', true), 1)).toEqual({ reverse: true });
+	});
+
+	it('defaultExtraTypes: enabled kinds, checked unless unchecked before', () => {
+		const enabled = new Set(['reverse', 'cloze'] as const);
+		expect(defaultExtraTypes(enabled, {})).toEqual(['reverse', 'cloze']);
+		expect(defaultExtraTypes(enabled, { cloze: false })).toEqual(['reverse']);
+		expect(defaultExtraTypes(new Set(['cloze'] as const), { reverse: true })).toEqual(['cloze']);
+	});
+});
+
+describe('effectiveKinds', () => {
+	it('adds the enabled, not unchecked opt-in kinds to the remembered existing kinds', () => {
+		expect(effectiveKinds(['vocab', 'tone'], new Set(['reverse'] as const), {})).toEqual([
+			'vocab',
+			'tone',
+			'reverse'
+		]);
+		expect(effectiveKinds(['vocab'], new Set(['reverse', 'cloze'] as const), { reverse: false })).toEqual([
+			'vocab',
+			'cloze'
+		]);
+	});
+
+	it('ignores opt-in entries of the remembered list and falls back to vocab', () => {
+		expect(effectiveKinds(['vocab', 'reverse', 'cloze'], new Set(), {})).toEqual(['vocab']);
+		expect(effectiveKinds(null, new Set(), {})).toEqual(['vocab']);
+		expect(effectiveKinds(['reverse'], new Set(['cloze'] as const), {})).toEqual(['vocab', 'cloze']);
 	});
 });

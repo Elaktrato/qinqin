@@ -13,7 +13,17 @@
 	import { workspaces } from '$lib/workspaces';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
-	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
+	import {
+		defaultExtraTypes,
+		hasTabSetup,
+		loadExtraChoices,
+		loadRememberedTypes,
+		rememberCardTypes,
+		rememberExtraChoice,
+		type ExtraChoices
+	} from '$lib/study/cardTypesMemory';
+	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
+	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import {
 		levelEntryCount,
@@ -43,6 +53,8 @@
 	} from '$lib/study/store';
 	import {
 		CARD_KINDS,
+		OPT_IN_KINDS,
+		type OptInKind,
 		type Deck,
 		type ReviewEvent,
 		type StudyCard,
@@ -79,6 +91,9 @@
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
+	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
+	let extraChoices = $state.raw<ExtraChoices>({});
 	let schedulingLabel = $state('default parameters');
 	let loading = $state(true);
 	let loadError = $state('');
@@ -166,6 +181,7 @@
 		}
 		schemesLoaded = false;
 		schemeError = '';
+		extraChoices = workspaceId === null ? {} : loadExtraChoices(workspaceId);
 
 		if (workspaceId === null) {
 			decks = [];
@@ -187,6 +203,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
@@ -215,6 +232,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
@@ -368,15 +386,37 @@
 	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
 	// hidden type stays in the saved setup (switching back restores it)
 	// but never counts or reaches a session.
-	const visibleTypes = $derived(
-		CARD_TYPES.filter((type) => type.id !== 'tone' || isChinese(workspaceLanguage ?? ''))
-	);
+	// Reverse and cloze are offered only when a selected deck switches them on;
+	// they start checked unless the learner unchecked them before in this workspace.
+	const enabledOptIn = $derived(enabledKinds(deckSettings, selectedDeckIds));
 
-	const selectedKinds = $derived(
-		CARD_KINDS.filter(
-			(kind) => cardTypes.includes(kind) && visibleTypes.some((type) => type.id === kind)
+	const visibleTypes = $derived(
+		CARD_TYPES.filter(
+			(type) =>
+				(type.id !== 'tone' || isChinese(workspaceLanguage ?? '')) &&
+				(!isOptIn(type.id) || enabledOptIn.has(type.id as OptInKind))
 		)
 	);
+
+	function isOptIn(kind: string): boolean {
+		return (OPT_IN_KINDS as readonly string[]).includes(kind);
+	}
+
+	const extraKinds = $derived(defaultExtraTypes(enabledOptIn, extraChoices));
+
+	const selectedKinds = $derived([
+		...CARD_KINDS.filter(
+			(kind) =>
+				!isOptIn(kind) &&
+				cardTypes.includes(kind) &&
+				visibleTypes.some((type) => type.id === kind)
+		),
+		...extraKinds
+	]);
+
+	function isChecked(id: string): boolean {
+		return isOptIn(id) ? extraKinds.includes(id as OptInKind) : cardTypes.includes(id);
+	}
 
 	// Due and new are counted separately so the setup shows what a
 	// session would actually contain today, with the selected types and
@@ -395,6 +435,8 @@
 			now: new Date(),
 			w: weights,
 			language: workspaceLanguage ?? '',
+			deckSettings,
+			studyDay: currentStudyDay(),
 			// Words this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
@@ -407,7 +449,11 @@
 	// a sentence, stroke data or a clean pinyin reading is only known when
 	// it comes up, and unsuitable words are skipped then.
 	const plannedCompanions = $derived(
-		deckPlan.byKind.sentence + deckPlan.byKind.writing + deckPlan.byKind.tone
+		deckPlan.byKind.sentence +
+			deckPlan.byKind.writing +
+			deckPlan.byKind.tone +
+			deckPlan.byKind.reverse +
+			deckPlan.byKind.cloze
 	);
 
 	// A character scheme studies recognition and writing cards; every
@@ -506,6 +552,12 @@
 
 	function toggleCardType(id: string): void {
 		errors = [];
+		if (isOptIn(id)) {
+			const next = !extraKinds.includes(id as OptInKind);
+			extraChoices = { ...extraChoices, [id]: next };
+			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, id as OptInKind, next);
+			return;
+		}
 		cardTypes = cardTypes.includes(id)
 			? cardTypes.filter((type) => type !== id)
 			: [...cardTypes, id];
@@ -609,7 +661,8 @@
 			deckIds: [...selectedDeckIds],
 			newLimit,
 			reviewLimit,
-			cardTypes: [...cardTypes]
+			// Existing kinds as set up (hidden ones stay), plus the checked opt-in kinds.
+			cardTypes: [...cardTypes.filter((kind) => !isOptIn(kind)), ...extraKinds]
 		};
 		// Validate what the session will actually use: a type hidden in
 		// this workspace does not count towards "at least one".
@@ -729,6 +782,14 @@
 										</button>
 									</div>
 								{/if}
+								<div class="deck-types">
+									<DeckCardTypes
+										deckId={deck.id}
+										deckName={deck.name}
+										cardTypes={deckSettings[deck.id]?.cardTypes ?? []}
+										onSaved={(saved) => (deckSettings = { ...deckSettings, [deck.id]: saved })}
+									/>
+								</div>
 							{/if}
 						</li>
 					{/each}
@@ -827,7 +888,7 @@
 						<label class="type-choice">
 							<input
 								type="checkbox"
-								checked={cardTypes.includes(type.id)}
+								checked={isChecked(type.id)}
 								aria-describedby={`type-${type.id}-info`}
 								onchange={() => toggleCardType(type.id)}
 							/>
@@ -985,6 +1046,10 @@
 		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 		border-radius: 0.4rem;
 		padding: 0.6rem 0.75rem;
+	}
+
+	.deck-types {
+		flex-basis: 100%;
 	}
 
 	.deck-choice,

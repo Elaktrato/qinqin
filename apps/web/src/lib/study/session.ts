@@ -36,7 +36,9 @@ export const CARD_TYPES = [
 	{ id: 'vocab', label: 'Vocab', available: true },
 	{ id: 'sentence', label: 'Word Salad', available: true },
 	{ id: 'writing', label: 'Writing', available: true },
-	{ id: 'tone', label: 'Tone', available: true }
+	{ id: 'tone', label: 'Tone', available: true },
+	{ id: 'reverse', label: 'Reverse', available: true },
+	{ id: 'cloze', label: 'Cloze', available: true }
 ] as const;
 
 /** The documented starting point: General deck, 20 new, 100 reviews. */
