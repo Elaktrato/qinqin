@@ -5,7 +5,9 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"qinqin/internal/lang"
@@ -80,7 +82,7 @@ func TestAdminLanguageRoutes(t *testing.T) {
 
 func TestDeleteLanguageBlockers(t *testing.T) {
 	lang.Register(lang.Zh{})
-	const blocked = "still used by packs or workspaces"
+	const blocked = "still used by:"
 	cases := []struct {
 		name string
 		stmt []string
@@ -88,6 +90,8 @@ func TestDeleteLanguageBlockers(t *testing.T) {
 		{"scheme", []string{`INSERT INTO schemes (id, pack_id, name, unit, version, language, license, attribution, updated_at) VALUES (1, 's', 'n', 'word', '1', 'es', 'l', 'a', 't')`}},
 		{"frequency pack", []string{`INSERT INTO frequency_packs (id, pack_id, name, version, language, license, attribution, ord, updated_at) VALUES (1, 'f', 'n', '1', 'es', 'l', 'a', 1, 't')`}},
 		{"sentence pack", []string{`INSERT INTO sentence_packs (pack_id, name, version, language, license, attribution, updated_at) VALUES ('sp', 'n', '1', 'es', 'l', 'a', 't')`}},
+		{"grammar pack", []string{`INSERT INTO grammar_packs (pack_id, name, version, language, license, attribution, levels_json, updated_at) VALUES ('g', 'n', '1', 'es', 'l', 'a', '[]', 't')`}},
+		{"audio pack", []string{`INSERT INTO audio_packs (pack_id, language, name, version, license, attribution, created_at, updated_at) VALUES ('a', 'es', 'n', '1', 'l', 'a', 't', 't')`}},
 		{"legacy sentence", []string{
 			`INSERT INTO entries (id, language, kind, ext_key, updated_at) VALUES (7001, 'es', 'word', 'hola', 't')`,
 			`INSERT INTO sentences (entry_id, source_pack, hanzi, pinyin, translation, updated_at) VALUES (7001, 'legacy', 'h', 'h', 'h', 't')`,
@@ -99,7 +103,7 @@ func TestDeleteLanguageBlockers(t *testing.T) {
 			admin := registerUser(t, ts.URL, "admin", "")
 			mustExec(t, sqlDB, `INSERT INTO languages (code, name, updated_at) VALUES ('es', 'es', 't')`)
 			mustExec(t, sqlDB, c.stmt...)
-			if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusConflict || msg != blocked {
+			if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusConflict || !strings.HasPrefix(msg, blocked) {
 				t.Errorf("DELETE = %d %q, want 409 %q", st, msg, blocked)
 			}
 		})
@@ -121,7 +125,7 @@ func TestDeleteLanguageBlockers(t *testing.T) {
 		ts, sqlDB := newServer(t)
 		admin := registerUser(t, ts.URL, "admin", "")
 		seedSpanish(t, sqlDB)
-		if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusConflict || msg != blocked {
+		if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusConflict || !strings.HasPrefix(msg, blocked) {
 			t.Errorf("DELETE installed = %d %q, want 409", st, msg)
 		}
 		// Uninstall: senses soft-deleted, entries stay.
@@ -141,7 +145,7 @@ func TestDeleteLanguageBlockers(t *testing.T) {
 		if st, _ := adminLang(t, http.MethodPost, ts.URL, "/api/workspaces", bob, map[string]string{"language": "es"}); st != http.StatusCreated {
 			t.Fatalf("bob workspace = %d", st)
 		}
-		if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusConflict || msg != blocked {
+		if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusConflict || !strings.HasPrefix(msg, blocked) {
 			t.Errorf("DELETE = %d %q, want 409", st, msg)
 		}
 	})
@@ -179,5 +183,62 @@ func TestLanguageUsage(t *testing.T) {
 	want := []usageBody{{"es", 2}, {"zh", 1}}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("usage = %+v, want %+v", got, want)
+	}
+}
+
+func TestDeleteLanguageBodyNamesBlockers(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "admin", "")
+	bob := registerUser(t, ts.URL, "bob", admin)
+	mustExec(t, sqlDB,
+		`INSERT INTO languages (code, name, updated_at) VALUES ('es', 'es', 't')`,
+		`INSERT INTO sentence_packs (pack_id, name, version, language, license, attribution, updated_at) VALUES ('sp', 'n', '1', 'es', 'l', 'a', 't')`)
+	for _, n := range []string{"a", "b"} {
+		if st, _ := adminLang(t, http.MethodPost, ts.URL, "/api/workspaces", bob, map[string]string{"language": "es", "name": n}); st != http.StatusCreated {
+			t.Fatalf("workspace = %d", st)
+		}
+	}
+	st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil)
+	want := "still used by: 2 workspaces, a sentence pack"
+	if st != http.StatusConflict || msg != want {
+		t.Errorf("DELETE = %d %q, want 409 %q", st, msg, want)
+	}
+	if strings.Contains(msg, "bob") {
+		t.Errorf("body names a user: %q", msg)
+	}
+}
+
+func TestDeleteLanguageStoredUppercase(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "admin", "")
+	mustExec(t, sqlDB, `INSERT INTO languages (code, name, updated_at) VALUES ('pt_BR', 'x', 't')`)
+	if st, _ := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/pt_BR", admin, nil); st != http.StatusNoContent {
+		t.Errorf("DELETE pt_BR = %d, want 204", st)
+	}
+}
+
+// Creating workspaces while the language is removed never leaves a
+// workspace of a language without a languages row.
+func TestDeleteLanguageRacesWorkspaceCreate(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "admin", "")
+	bob := registerUser(t, ts.URL, "bob", admin)
+	mustExec(t, sqlDB, `INSERT INTO languages (code, name, updated_at) VALUES ('es', 'es', 't')`)
+	var wg sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", bob, map[string]string{"language": "es", "name": "n" + strconv.Itoa(i)}).Body.Close()
+		}()
+		go func() {
+			defer wg.Done()
+			doJSON(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil).Body.Close()
+		}()
+	}
+	wg.Wait()
+	var orphans int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM workspaces w WHERE w.language = 'es' AND NOT EXISTS (SELECT 1 FROM languages WHERE code = 'es')`).Scan(&orphans); err != nil || orphans != 0 {
+		t.Errorf("workspaces without a languages row = %d (%v), want 0", orphans, err)
 	}
 }

@@ -21,7 +21,7 @@
 ## Global Constraints
 
 - Code pattern after normalisation (trim, lowercase, `_`→`-`): `^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$`.
-- Messages: invalid code `422` "language must be a code like es or pt-br"; non-admin unknown code `422` "unknown language — ask the administrator to add it"; register code pack `409` "<code> is built in"; delete in use `409` "still used by packs or workspaces".
+- Messages: invalid code `422` "language must be a code like es or pt-br"; non-admin unknown code `422` "unknown language — ask the administrator to add it"; register code pack `409` "<code> is built in"; delete in use `409` "still used by: <kinds>" (e.g. "2 workspaces, a sentence pack").
 - `hiddenDictionaries` is an array of dictionary ids (numbers) in `workspace.settings`; malformed values are ignored, never an error.
 - Hint copy: no dictionary — admin "No dictionary is installed for <Label>. Install one in Settings → Data." / others "No dictionary is installed for <Label>. Ask the administrator of this server to install one."; no levels — "No level lists for <Label>: level badges and filters are unavailable."; all hidden — "Shown although its dictionaries are hidden in this workspace"; reveal button "Show <n> from hidden dictionaries"; registration note "Adds the language to the workspace list. It has no dictionary until you install a pack for it."
 - Labels always from `languageLabel(code)`, never from the server's `name`.
@@ -168,6 +168,10 @@
 - Ruling: no migration was needed; 029 belongs to audio packs.
 - Ruling: a legacy sentence (live, on an entry of the language, `source_pack` without a `sentence_packs` row) blocks removal, user-authored ones included.
 - Ruling: ids in `hiddenDictionaries` that are not listed in the panel (uninstalled, other language) are kept on Save, so a reinstall keeps the choice.
+
+- Ruling (review wave): create and delete share `langMu`; delete is one conditional `DELETE` (no deferred SQLite transaction: its read-to-write upgrade fails with SQLITE_BUSY under concurrent writers).
+- Ruling (review wave): `Manifest.Validate` rejects a language that is not already a normalized code (`pt_br` is refused, existing installs are untouched).
+- Ruling (review wave): "known" for non-admin creation includes any live pack language (levels, frequency, sentences, grammar, audio).
 
 ## Risks and notes for the owner
 
