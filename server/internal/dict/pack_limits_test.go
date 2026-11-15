@@ -150,8 +150,8 @@ func (z *zeros) Read(p []byte) (int, error) {
 
 func TestExtractZipCapsTheArchiveItReads(t *testing.T) {
 	old := DefaultZipLimits
+	t.Cleanup(func() { DefaultZipLimits = old })
 	DefaultZipLimits = ZipLimits{MaxFiles: 10, MaxBytes: 1 << 20}
-	defer func() { DefaultZipLimits = old }()
 	err := ExtractZip(&zeros{n: 4 << 20}, t.TempDir())
 	if !errors.Is(err, ErrInvalidPack) || !strings.Contains(err.Error(), "larger than") {
 		t.Fatalf("err = %v, want ErrInvalidPack saying the archive is larger than the limit", err)
