@@ -7,6 +7,7 @@
 	import { aiButtonGate } from './editorLogic';
 	import EntryEditor from './EntryEditor.svelte';
 	import EntryList from './EntryList.svelte';
+	import PhotoImport from './PhotoImport.svelte';
 	import JournalSettingsView from './JournalSettings.svelte';
 	import { getCapabilities } from './api';
 	import { journalHref, parseJournalRoute } from './route';
@@ -53,7 +54,7 @@
 	let openedIn: number | undefined;
 	$effect(() => {
 		const id = workspace?.id;
-		if (route.view === 'entry' || route.view === 'new') {
+		if (route.view === 'entry' || route.view === 'new' || route.view === 'photo') {
 			if (openedIn !== undefined && id !== undefined && id !== openedIn) {
 				void goto(journalHref({ view: 'list' }), { replaceState: true });
 			}
@@ -76,6 +77,10 @@
 		<p>Choose a workspace first.</p>
 	{:else if route.view === 'settings'}
 		<JournalSettingsView {workspace} />
+	{:else if route.view === 'photo'}
+		{#key workspace.id}
+			<PhotoImport workspaceId={workspace.id} language={workspace.language} {capabilities} />
+		{/key}
 	{:else if route.view === 'entry' || route.view === 'new'}
 		{#key workspace.id}
 			<EntryEditor

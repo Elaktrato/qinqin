@@ -3,6 +3,8 @@
 	import { goto } from '$app/navigation';
 	import IdeasPanel from './IdeasPanel.svelte';
 	import type { AiGate } from './editorLogic';
+	import { photoObjectUrl } from './api';
+	import { clearDraft, loadDraft } from './photoDraftStore';
 	import { listEntries, getReview } from './store';
 	import { journalHref, newEntryHref } from './route';
 	import { entryLabel } from './entryLabel';
@@ -18,6 +20,7 @@
 	let loading = $state(true);
 	let loadError = $state('');
 	let reviewed = $state<Record<string, boolean>>({});
+	let resumable = $state(false);
 	let heading = $state<HTMLHeadingElement>();
 
 	// Reviews are only read to show a badge: a few at a time, newest
@@ -53,7 +56,20 @@
 		}
 	}
 
+	// A saved photo draft is only offered while its photo still exists.
+	async function checkDraft(): Promise<void> {
+		const draft = loadDraft(workspaceId);
+		if (!draft) return;
+		try {
+			URL.revokeObjectURL(await photoObjectUrl(draft.photoId));
+			resumable = true;
+		} catch {
+			clearDraft();
+		}
+	}
+
 	onMount(() => {
+		void checkDraft();
 		void load();
 	});
 </script>
@@ -62,6 +78,10 @@
 
 <div class="actions">
 	<a class="button primary" href={journalHref({ view: 'new' })}>New entry</a>
+	<a class="button secondary" href={journalHref({ view: 'photo' })}>Upload photo</a>
+	{#if resumable}
+		<a class="button secondary" href={journalHref({ view: 'photo' })}>Resume photo draft</a>
+	{/if}
 	<a class="button secondary" href={journalHref({ view: 'settings' })}>Journal settings</a>
 </div>
 
