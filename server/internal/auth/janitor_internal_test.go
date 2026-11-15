@@ -69,3 +69,31 @@ func TestRunJanitorSweepsAtStartAndStopsWithItsContext(t *testing.T) {
 		t.Fatal("janitor ignored its context")
 	}
 }
+
+func TestPruneDropsSpentAndExpiredResetLinksAfterAWeek(t *testing.T) {
+	sqlDB := openTest(t)
+	now := time.Date(2026, 6, 1, 0, 0, 0, 0, time.UTC)
+	at := func(d time.Duration) string { return now.Add(d).Format(time.RFC3339) }
+	ins := func(hash, expires string, used any) {
+		sqlDB.Exec(`INSERT INTO password_resets (token_hash, user_id, created_at, expires_at, used_at) VALUES (?, 1, 't', ?, ?)`, hash, expires, used)
+	}
+	ins("live", at(time.Hour), nil)
+	ins("expired-recently", at(-time.Hour), nil)
+	ins("expired-long-ago", at(-8*24*time.Hour), nil)
+	ins("used-long-ago", at(24*time.Hour), at(-8*24*time.Hour))
+	ins("used-recently", at(24*time.Hour), at(-time.Hour))
+	if _, _, err := Prune(context.Background(), sqlDB, now); err != nil {
+		t.Fatal(err)
+	}
+	var left []string
+	rows, _ := sqlDB.Query(`SELECT token_hash FROM password_resets ORDER BY token_hash`)
+	for rows.Next() {
+		var h string
+		rows.Scan(&h)
+		left = append(left, h)
+	}
+	rows.Close()
+	if len(left) != 3 || left[0] != "expired-recently" || left[1] != "live" || left[2] != "used-recently" {
+		t.Errorf("reset links left = %v", left)
+	}
+}
