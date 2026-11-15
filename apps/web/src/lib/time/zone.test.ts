@@ -9,7 +9,9 @@ import {
 	clearStudyDay,
 	currentStudyDay,
 	ensureStudyDay,
-	onStudyDayChange
+	onStudyDayChange,
+	syncStudyDayUser,
+	whenStudyDaySettled
 } from './zone';
 
 const store = new Map<string, string>();
@@ -184,5 +186,102 @@ describe('browserZone', () => {
 			})
 		).toBeNull();
 		expect(browserZone(() => 'Europe/Berlin')).toBe('Europe/Berlin');
+	});
+});
+
+function deferred<T>() {
+	let resolve!: (v: T) => void;
+	const promise = new Promise<T>((r) => (resolve = r));
+	return { promise, resolve };
+}
+const tokyoBody = { zone: 'Asia/Tokyo', history: [{ zone: 'Asia/Tokyo', from: null }] };
+const berlinBody = { zone: 'Europe/Berlin', history: [{ zone: 'Europe/Berlin', from: null }] };
+
+describe('sign-out and sign-in without a reload', () => {
+	it('reloads the history for the same user after logout (a Tokyo account on a Berlin browser keeps Tokyo days)', async () => {
+		vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+			timeZone: 'Europe/Berlin'
+		} as Intl.ResolvedDateTimeFormatOptions);
+		vi.mocked(fetch).mockImplementation(async () => json(tokyoBody));
+		await syncStudyDayUser(1);
+		syncStudyDayUser(null); // logout: user becomes null
+		clearStudyDay();
+		store.clear();
+		store.set('qinqin.token', 'tok');
+		const again = await syncStudyDayUser(1); // login as the same user, no reload
+		expect(calls().filter((c) => c.method === 'GET')).toHaveLength(2);
+		expect(again?.zone).toBe('Asia/Tokyo');
+		expect(currentStudyDay().dayOf(Date.parse('2026-11-15T15:30:00Z'))).toBe('2026-11-16');
+		vi.restoreAllMocks();
+	});
+
+	it('does nothing twice for the same signed-in user', async () => {
+		vi.mocked(fetch).mockImplementation(async () => json(tokyoBody));
+		await syncStudyDayUser(1);
+		await syncStudyDayUser(1);
+		expect(calls()).toHaveLength(1);
+	});
+});
+
+describe('stale responses', () => {
+	it("drops user A's response when user B signed in meanwhile", async () => {
+		const a = deferred<Response>();
+		vi.mocked(fetch).mockImplementationOnce(() => a.promise).mockImplementation(async () => json(berlinBody));
+		const pendingA = ensureStudyDay(1);
+		clearStudyDay();
+		await ensureStudyDay(2);
+		a.resolve(json(tokyoBody));
+		await pendingA;
+		expect(currentStudyDay().zone).toBe('Europe/Berlin');
+		expect(store.has('qinqin.studyDay.1')).toBe(false);
+		expect(JSON.parse(store.get('qinqin.studyDay.2')!)[0].zone).toBe('Europe/Berlin');
+	});
+
+	it("does not PUT the browser zone for a user who is gone", async () => {
+		vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+			timeZone: 'Asia/Tokyo'
+		} as Intl.ResolvedDateTimeFormatOptions);
+		const a = deferred<Response>();
+		vi.mocked(fetch).mockImplementationOnce(() => a.promise).mockImplementation(async () => json(berlinBody));
+		const pendingA = ensureStudyDay(1);
+		clearStudyDay();
+		await ensureStudyDay(2);
+		a.resolve(json({ zone: null, history: [] }));
+		await pendingA;
+		expect(calls().filter((c) => c.method === 'PUT')).toHaveLength(0);
+		vi.restoreAllMocks();
+	});
+
+	it("drops user A's changeZone result after B signed in", async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json(berlinBody));
+		await ensureStudyDay(1);
+		const put = deferred<Response>();
+		vi.mocked(fetch).mockImplementationOnce(() => put.promise);
+		const change = changeZone('Asia/Tokyo');
+		clearStudyDay();
+		vi.mocked(fetch).mockImplementation(async () => json(berlinBody));
+		await ensureStudyDay(2);
+		put.resolve(json(tokyoBody));
+		await change;
+		expect(currentStudyDay().zone).toBe('Europe/Berlin');
+		expect(JSON.parse(store.get('qinqin.studyDay.1') ?? 'null')).toBeNull();
+	});
+});
+
+describe('whenStudyDaySettled', () => {
+	it('resolves after the load finishes, with the loaded rule', async () => {
+		const d = deferred<Response>();
+		vi.mocked(fetch).mockImplementationOnce(() => d.promise);
+		void syncStudyDayUser(1);
+		let done = false;
+		void whenStudyDaySettled().then(() => (done = true));
+		await Promise.resolve();
+		expect(done).toBe(false);
+		d.resolve(json(tokyoBody));
+		await whenStudyDaySettled();
+		expect(currentStudyDay().zone).toBe('Asia/Tokyo');
+	});
+	it('resolves at once when nothing is loading', async () => {
+		await whenStudyDaySettled();
 	});
 });

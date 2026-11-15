@@ -10,6 +10,10 @@ import { studyDay, unusableZones, type StudyDay, type ZoneChange } from './study
 const CACHE_PREFIX = 'qinqin.studyDay.';
 
 let userId: number | null = null;
+// Bumped whenever the signed-in user changes or is cleared: a response
+// that was requested under an older epoch belongs to someone else.
+let epoch = 0;
+let pending: Promise<unknown> | null = null;
 let history: ZoneChange[] | null = null;
 let current: StudyDay | null = null;
 const listeners = new Set<(day: StudyDay) => void>();
@@ -88,37 +92,74 @@ function adopt(id: number, body: TimeZoneResponse): StudyDay {
 	return set(body.history.length > 0 ? body.history : null);
 }
 
+function resetUser(next: number | null): void {
+	epoch++;
+	userId = next;
+	history = null;
+	current = null;
+}
+
 /**
  * ensureStudyDay loads the history of the signed-in user. An empty
  * server history plus a usable browser zone sends the browser zone once
  * with `ifUnset` (a second device never turns that into a change). It
  * never rejects: offline, the cached copy (or the provisional browser
- * zone) stays in effect.
+ * zone) stays in effect. A response that arrives after the user signed
+ * out or another user signed in is dropped.
  */
 export async function ensureStudyDay(forUser: number): Promise<StudyDay> {
-	if (userId !== forUser) {
-		userId = forUser;
-		history = null;
-		current = null;
-	}
+	if (userId !== forUser) resetUser(forUser);
+	const mine = epoch;
 	const cached = history ?? readCache(forUser);
 	if (cached && !history) set(cached);
-	try {
-		let body = await getTimeZone();
-		if (body.history.length === 0) {
-			const zone = browserZone();
-			if (zone) body = await putTimeZone(zone, true);
+	const run = (async (): Promise<StudyDay> => {
+		try {
+			let body = await getTimeZone();
+			if (mine !== epoch) return currentStudyDay();
+			if (body.history.length === 0) {
+				const zone = browserZone();
+				if (zone) {
+					body = await putTimeZone(zone, true);
+					if (mine !== epoch) return currentStudyDay();
+				}
+			}
+			return adopt(forUser, body);
+		} catch {
+			return currentStudyDay();
 		}
-		return adopt(forUser, body);
-	} catch {
-		return currentStudyDay();
+	})();
+	pending = run;
+	void run.finally(() => {
+		if (pending === run) pending = null;
+	});
+	return run;
+}
+
+/**
+ * syncStudyDayUser follows the signed-in user: null (signed out) forgets
+ * the in-memory history, a new or returning user loads theirs once.
+ */
+export function syncStudyDayUser(id: number | null): Promise<StudyDay> | null {
+	if (id === null) {
+		resetUser(null);
+		return null;
 	}
+	if (id === userId && (history !== null || pending !== null)) return pending ? (pending as Promise<StudyDay>) : Promise.resolve(currentStudyDay());
+	return ensureStudyDay(id);
+}
+
+/** whenStudyDaySettled resolves once the load in flight (if any) has finished. */
+export async function whenStudyDaySettled(): Promise<void> {
+	while (pending) await pending.catch(() => undefined);
 }
 
 /** changeZone makes `zone` the learner's zone from now on and returns the new rule. */
 export async function changeZone(zone: string): Promise<StudyDay> {
+	const mine = epoch;
+	const forUser = userId;
 	const body = await putTimeZone(zone);
-	if (userId !== null) return adopt(userId, body);
+	if (mine !== epoch) return currentStudyDay();
+	if (forUser !== null) return adopt(forUser, body);
 	return set(body.history.length > 0 ? body.history : null);
 }
 
@@ -142,7 +183,5 @@ export function clearStudyDay(): void {
 			// Nothing to clear.
 		}
 	}
-	userId = null;
-	history = null;
-	current = null;
+	resetUser(null);
 }

@@ -6,7 +6,7 @@ import { api } from './api/client';
 import { logChangingTypes } from './plugins/contract';
 import { emitStudyEvents } from './plugins/hooks';
 import type { StudyEventBody } from './api/types';
-import { currentStudyDay } from './time/zone';
+import { currentStudyDay, whenStudyDaySettled } from './time/zone';
 import type { StudyDay } from './time/studyDay';
 import { newUlid } from './ulid';
 import { createWorkspaceCache } from './workspaceCache';
@@ -156,6 +156,16 @@ export function recordSessionOnce(
 		// Storage unavailable (private mode): record without a receipt.
 	}
 	void record('session', workspaceId);
+}
+
+/**
+ * recordSessionWhenSettled is recordSessionOnce after the learner's zone
+ * has loaded, so a receipt near midnight is not keyed by the provisional
+ * browser zone.
+ */
+export async function recordSessionWhenSettled(workspaceId: number): Promise<void> {
+	await whenStudyDaySettled();
+	recordSessionOnce(workspaceId);
 }
 
 /**
