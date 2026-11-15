@@ -347,3 +347,36 @@ func ResetMFA(ctx context.Context, ex execer, userID int64) error {
 	_, err := revokeSessions(ctx, ex, userID, 0)
 	return err
 }
+
+// Rotate re-seals authenticator secrets (confirmed and pending) that were
+// sealed with Previous. It returns how many values moved.
+func (m *MFA) Rotate(ctx context.Context) (int, error) {
+	rot := secretbox.Rotator{Current: m.Current, Previous: m.Previous}
+	if !rot.Active() {
+		return 0, nil
+	}
+	tx, err := m.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	aad := func(keys []any) (string, error) {
+		id, ok := keys[0].(int64)
+		if !ok {
+			return "", ErrMFAUnavailable
+		}
+		return TOTPAAD(id), nil
+	}
+	total := 0
+	for _, c := range []secretbox.Column{
+		{Table: "mfa_totp", Keys: []string{"user_id"}, Ct: "secret_ct", Nonce: "secret_nonce", FP: "secret_fp", AAD: aad},
+		{Table: "mfa_totp", Keys: []string{"user_id"}, Ct: "pending_ct", Nonce: "pending_nonce", FP: "pending_fp", AAD: aad},
+	} {
+		n, err := rot.Rotate(ctx, tx, c)
+		if err != nil {
+			return 0, err
+		}
+		total += n
+	}
+	return total, tx.Commit()
+}

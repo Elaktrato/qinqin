@@ -350,3 +350,23 @@ func (p Prepared) String() string { return "mail.Prepared{" + p.Host + "}" }
 
 // GoString redacts too (%#v).
 func (p Prepared) GoString() string { return p.String() }
+
+// Rotate re-seals the stored password with Current when it was sealed with
+// Previous (QINQIN_SECRET_PREVIOUS). It returns how many were moved (0 or 1).
+func (s *Store) Rotate(ctx context.Context) (int, error) {
+	rot := secretbox.Rotator{Current: s.Current, Previous: s.Previous}
+	if !rot.Active() {
+		return 0, nil
+	}
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	n, err := rot.Rotate(ctx, tx, secretbox.Column{Table: "smtp_settings", Keys: []string{"id"}, Ct: "password_ct", Nonce: "password_nonce", FP: "secret_fp",
+		AAD: func([]any) (string, error) { return PasswordAAD, nil }})
+	if err != nil {
+		return 0, err
+	}
+	return n, tx.Commit()
+}
