@@ -28,6 +28,10 @@ type server struct {
 	importMu  sync.Mutex
 	importing map[int64]bool // users with an import in flight
 
+	// packMu serializes pack imports and uninstalls of every type, the
+	// legacy per-type routes included.
+	packMu sync.Mutex
+
 	chars charactersCache // GET /api/characters payloads
 }
 
@@ -83,6 +87,9 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 	mux.HandleFunc("GET /api/schemes/{id}/characters", s.handleSchemeCharacters)
 	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
 	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
+	mux.HandleFunc("GET /api/admin/packs", s.handleListPacks)
+	mux.HandleFunc("DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack)
+	mux.HandleFunc("GET /api/sentence-packs", s.handleListSentencePacks)
 	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
 	mux.HandleFunc("GET /api/ai/status", s.handleAIStatus)
 	mux.HandleFunc("GET /api/ai/key", s.handleGetAIKey)

@@ -117,6 +117,8 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "invalid pack", http.StatusBadRequest)
 		return
 	}
+	s.packMu.Lock()
+	defer s.packMu.Unlock()
 	// One transaction: a failed import leaves nothing behind.
 	if _, err := dict.ImportLexicon(r.Context(), s.db, &pack); err != nil {
 		if errors.Is(err, dict.ErrInvalidPack) {
@@ -158,6 +160,8 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "dictionary not found", http.StatusNotFound)
 		return
 	}
+	s.packMu.Lock()
+	defer s.packMu.Unlock()
 	if err := dict.Uninstall(r.Context(), s.db, id); err != nil {
 		if errors.Is(err, dict.ErrNotFound) {
 			http.Error(w, "dictionary not found", http.StatusNotFound)

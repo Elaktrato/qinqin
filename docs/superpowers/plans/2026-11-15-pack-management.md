@@ -4,7 +4,7 @@
 
 **Goal:** Admins list, upload (with progress and a licence review step) and uninstall data packs of every type from a new Settings → Data tab.
 
-**Architecture:** A new `internal/packs` package owns import/uninstall/list for all four pack types (moved out of the seed CLI). New `/api/admin/packs` routes stage an upload (extract + validate into `<data>/packs/.stage-<token>/`), import it only after the client echoes the pack's licence string, and uninstall by type and pack id. Migration 026 adds a sentence-pack registry and `dictionaries.language`. The web adds an XHR upload helper, pure view helpers, and `PackManager.svelte` in an admin-only Data tab.
+**Architecture:** A new `internal/packs` package owns import/uninstall/list for all four pack types (moved out of the seed CLI). New `/api/admin/packs` routes stage an upload (extract + validate into `<data>/packs/.stage-<token>/`), import it only after the client echoes the pack's licence string, and uninstall by type and pack id. Migration 027 adds a sentence-pack registry and `dictionaries.language`. The web adds an XHR upload helper, pure view helpers, and `PackManager.svelte` in an admin-only Data tab.
 
 **Tech Stack:** Go 1.26 (stdlib mux, modernc SQLite), SvelteKit 2 + Svelte 5 (runes), vitest (node environment). No new Go or npm dependencies.
 
@@ -21,7 +21,8 @@
 
 ## Global Constraints
 
-- Migration file: `server/internal/db/migrations/026_pack_registry.sql`.
+- Migration file: `server/internal/db/migrations/027_pack_registry.sql`. Ruling: the plan said 026, but grammar-lessons already holds `026_grammar.sql` in its worktree and core-stats will take 028, so this branch uses 027; whichever branch merges second renumbers its file and its test (cost if wrong: a rename at merge time). `migrateThrough` needs the exact file stem.
+- Ruling: a legacy sentence pack (sentences, no registry row) lists after the registered sentence packs of the list, not sorted by its empty name — it must not look like the first, best-known pack. Unzipped `Pack.Dir` of a folder-wrapped zip is the inner folder, so `qinqin seed` leaves the empty outer temp dir behind for such zips (none are bundled; Task 6 cleans its own stages).
 - Limits: upload body 128 MiB + 1 MiB multipart overhead (`413` "pack zip larger than 128 MiB — use qinqin seed for larger packs"); at most 2,000 zip entries; at most 512 MiB uncompressed, counted on bytes written.
 - Stage: token 128-bit random hex; expiry 30 min; at most 3 live stages (`429` "finish or discard a staged pack first"); `.stage-*` dirs older than 1 h swept on each stage call; tokens bound to the uploading admin (other admin → `404`).
 - Install body `{"license": "<string>"}` must equal the staged manifest's `License` exactly, else `409` "confirm the pack's licence".
@@ -60,17 +61,17 @@
 - [ ] **Step 4: Run** the Go gate: PASS (existing seed and dict tests unchanged).
 - [ ] **Step 5: Commit** `feat(dict): bounded zip extraction and single-folder packs`.
 
-### Task 2: Migration 026 — sentence-pack registry and dictionary language
+### Task 2: Migration 027 — sentence-pack registry and dictionary language
 
 **Files:**
-- Create: `server/internal/db/migrations/026_pack_registry.sql`, `server/internal/db/migrate_026_test.go`
+- Create: `server/internal/db/migrations/027_pack_registry.sql`, `server/internal/db/migrate_026_test.go`
 - Modify: `server/internal/dict/import.go` (`upsertDictionary` gains a `language` argument), `server/internal/sentences/sentences.go` (`writePack`, `Uninstall`)
 - Test: `server/internal/sentences/registry_test.go` (new), `server/internal/dict/import_test.go`
 
 **Interfaces:**
 - Produces: table `sentence_packs (pack_id TEXT PRIMARY KEY, name TEXT NOT NULL, version TEXT NOT NULL, language TEXT NOT NULL, license TEXT NOT NULL, attribution TEXT NOT NULL, notice TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL, deleted_at TEXT)`; column `dictionaries.language TEXT NOT NULL DEFAULT ''`.
 
-- [ ] **Step 1: Failing tests.** `TestMigration026BackfillsDictionaryLanguage` (follow `migrate_025_test.go`: apply up to 025, insert a dictionary with one live sense on a `zh` entry and one with no senses, apply 026 → `zh` and `''`). `TestImportSetsDictionaryLanguage` (import fixture `es` pack → `language = 'es'`). `TestSentencePackRegistry`: `ImportPack` writes the row with the manifest's fields (notice included); re-import updates; `Uninstall` sets `deleted_at`; a re-import after uninstall clears it.
+- [ ] **Step 1: Failing tests.** `TestMigration027BackfillsDictionaryLanguage` (follow `migrate_025_test.go`: apply up to 025, insert a dictionary with one live sense on a `zh` entry and one with no senses, apply 026 → `zh` and `''`). `TestImportSetsDictionaryLanguage` (import fixture `es` pack → `language = 'es'`). `TestSentencePackRegistry`: `ImportPack` writes the row with the manifest's fields (notice included); re-import updates; `Uninstall` sets `deleted_at`; a re-import after uninstall clears it.
 - [ ] **Step 2: Run**: FAIL.
 - [ ] **Step 3: Implement.** Backfill: `UPDATE dictionaries SET language = COALESCE((SELECT e.language FROM senses s JOIN entries e ON e.id = s.entry_id WHERE s.dictionary_id = dictionaries.id AND s.deleted_at IS NULL LIMIT 1), '')`. Registry writes happen in the same transaction as the sentences.
 - [ ] **Step 4: Run** the Go gate: PASS.
@@ -96,7 +97,7 @@
 - Modify: `server/cmd/qinqin/seed.go` (`importPack` → `packs.Import`)
 
 **Interfaces:**
-- Consumes: `freq.Uninstall` (Task 3), the 026 columns (Task 2).
+- Consumes: `freq.Uninstall` (Task 3), the 027 columns (Task 2).
 - Produces:
   ```go
   type Installed struct {
@@ -247,5 +248,5 @@
 
 - A reverse proxy in front of qinqin may cap request bodies below 128 MiB (nginx defaults to 1 MiB) or time out a long JMdict import; the UI shows the proxy's error. Documented in `plugins/data/README.md`.
 - Pack files under `<data>/packs/` stay after uninstall (unchanged behaviour).
-- Sentence packs imported before migration 026 show "Licence not recorded" until reinstalled; none are bundled today.
+- Sentence packs imported before migration 027 show "Licence not recorded" until reinstalled; none are bundled today.
 - The licence caution is a word heuristic; it can miss restrictive terms written in other words.

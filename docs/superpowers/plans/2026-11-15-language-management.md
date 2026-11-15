@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-15-language-management-design.md` (and its dependency `2026-11-15-pack-management-design.md`). Its Rulings are binding.
 
-**Worktree:** `<wt>` = `/home/user/www/github/qinqin/.claude/worktrees/language-management`, branch `feature/language-management` **from the tip of `feature/pack-management`** (needs migration 026, `GET /api/admin/packs`, the Data tab). Ledger (git-ignored): `<wt>/.superpowers/sdd/2026-11-15-language-management/progress.md`. Run `npm --prefix <wt>/apps/web ci` once before the first web gate.
+**Worktree:** `<wt>` = `/home/user/www/github/qinqin/.claude/worktrees/language-management`, branch `feature/language-management` **from the tip of `feature/pack-management`** (needs migration 027, `GET /api/admin/packs`, the Data tab). Ledger (git-ignored): `<wt>/.superpowers/sdd/2026-11-15-language-management/progress.md`. Run `npm --prefix <wt>/apps/web ci` once before the first web gate.
 
 ## Gates
 
@@ -25,7 +25,7 @@
 - `hiddenDictionaries` is an array of dictionary ids (numbers) in `workspace.settings`; malformed values are ignored, never an error.
 - Hint copy: no dictionary — admin "No dictionary is installed for <Label>. Install one in Settings → Data." / others "No dictionary is installed for <Label>. Ask the administrator of this server to install one."; no levels — "No level lists for <Label>: level badges and filters are unavailable."; all hidden — "Shown although its dictionaries are hidden in this workspace"; reveal button "Show <n> from hidden dictionaries"; registration note "Adds the language to the workspace list. It has no dictionary until you install a pack for it."
 - Labels always from `languageLabel(code)`, never from the server's `name`.
-- No new migration (026 comes from the pack plan). Web style: tabs, single quotes, runes, 44 px targets, keyboard reachable.
+- No new migration (027 comes from the pack plan). Web style: tabs, single quotes, runes, 44 px targets, keyboard reachable.
 
 ## Review Focus
 

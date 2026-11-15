@@ -79,6 +79,8 @@ func (s *server) handleUninstallScheme(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "scheme not found", http.StatusNotFound)
 		return
 	}
+	s.packMu.Lock()
+	defer s.packMu.Unlock()
 	if err := levels.Uninstall(r.Context(), s.db, id); err != nil {
 		if errors.Is(err, levels.ErrNotFound) {
 			http.Error(w, "scheme not found", http.StatusNotFound)
