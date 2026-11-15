@@ -46,7 +46,7 @@
 
 **Interfaces:** Produces `func ToNumbered(s string) ([]string, error)` — one lowercase numbered syllable per syllable (`nǐ hǎo` → `["ni3","hao3"]`, ü as `v`, neutral tone `5`). `parseAll` splits on whitespace only (`strings.Fields`), so add an unexported `splitSyllables(token string) []string`: split on apostrophes, then greedy longest prefix that `parse` accepts (max 6 letters plus one tone mark), backtracking one step when the rest fails (`xian` alone stays one syllable; `Xī'ān` is split by its apostrophe). `ToNumbered` = `Fields` → `splitSyllables` → `parse` → numbered. `parseAll` and `ToBopomofo` are not changed.
 
-- [ ] **Step 1: Failing table test** `TestToNumbered`: `nǐ hǎo`→`ni3 hao3`; `lǜ`→`lv4`; `ma`→`ma5`; `nǚ'ér`→`nv3 er2`; `Xī'ān`→`xi1 an1`; `zhōngguó`→`zhong1 guo2`; invalid `xyz` → error. Erhua (`wánr`): pin whatever `parseAll` yields today in the test and note it in the ledger; do not change `parseAll`.
+- [ ] **Step 1: Failing table test** `TestToNumbered`: `nǐ hǎo`→`ni3 hao3`; `lǜ`→`lv4`; `ma`→`ma5`; `nǚ'ér`→`nv3 er2`; `Xī'ān`→`xi1 an1`; `zhōngguó`→`zhong1 guo2`; invalid `xyz` → error. Erhua (`wánr`): the first version pinned today's behaviour (an error). Review fix: an erhua r, alone (CC-CEDICT's `r5`) or after a syllable before or without a tone (`diǎnr`, `huàr`, `hua4r`, `zhe4r`), becomes the syllable `er5` (`yi1 dian3 r5` gives `yi1 dian3 er5`); `parseAll` and `ToBopomofo` are still unchanged.
 - [ ] **Step 2: Run** the Go gate with `-run TestToNumbered ./internal/pinyin` — FAIL.
 - [ ] **Step 3: Implement** `splitSyllables` and `ToNumbered` as above.
 - [ ] **Step 4: Run** — PASS. **Step 5: Commit** `feat(pinyin): numbered syllables for audio keys`.

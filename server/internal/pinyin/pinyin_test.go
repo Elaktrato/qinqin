@@ -132,9 +132,30 @@ func TestToNumbered(t *testing.T) {
 	}
 }
 
-func TestToNumberedErhuaPinned(t *testing.T) {
-	// Pins today's behaviour: a trailing r is not a syllable.
-	if _, err := ToNumbered("wánr"); err == nil {
-		t.Error("ToNumbered(wánr) succeeded; parseAll rejects it today, update the ledger if that changed")
+func TestToNumberedErhua(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"yi1 dian3 r5", "yi1 dian3 er5"}, // CC-CEDICT writes the suffix as its own token
+		{"diǎnr", "dian3 er5"},
+		{"huàr", "hua4 er5"},
+		{"hua4r", "hua4 er5"},
+		{"zhe4r", "zhe4 er5"},
+		{"wánr", "wan2 er5"},
+		{"r5", "er5"},
+		{"yī diǎnr", "yi1 dian3 er5"},
+		{"rén", "ren2"}, // an initial r is not erhua
+		{"er2", "er2"},
+	}
+	for _, c := range cases {
+		got, err := ToNumbered(c.in)
+		if err != nil {
+			t.Errorf("ToNumbered(%q): %v", c.in, err)
+			continue
+		}
+		if s := strings.Join(got, " "); s != c.want {
+			t.Errorf("ToNumbered(%q) = %q, want %q", c.in, s, c.want)
+		}
+	}
+	if _, err := ToNumbered("xyzr"); err == nil {
+		t.Error("ToNumbered(xyzr) succeeded, want error")
 	}
 }

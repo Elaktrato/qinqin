@@ -381,9 +381,19 @@ func splitSyllables(token string) []string {
 	return out
 }
 
+// isErhua reports whether a syllable is the erhua suffix r, alone or with the
+// neutral tone CC-CEDICT writes (r5).
+func isErhua(s string) bool {
+	s = strings.ToLower(s)
+	return s == "r" || s == "r5"
+}
+
 func splitPiece(r []rune) ([]string, bool) {
 	if len(r) == 0 {
 		return nil, true
+	}
+	if isErhua(string(r)) {
+		return []string{string(r)}, true
 	}
 	for n := min(len(r), maxSyllableRunes); n >= 1; n-- {
 		if _, err := parse(string(r[:n])); err != nil {
@@ -398,7 +408,8 @@ func splitPiece(r []rune) ([]string, bool) {
 
 // ToNumbered converts pinyin (tone numbers or tone marks, spaces optional)
 // to one lowercase numbered syllable per syllable: ü is written v and the
-// neutral tone 5, so "nǚ'ér" gives ["nv3", "er2"].
+// neutral tone 5, so "nǚ'ér" gives ["nv3", "er2"]. An erhua r, written alone
+// (CC-CEDICT's "r5") or after a syllable ("diǎnr"), is the syllable er5.
 func ToNumbered(s string) ([]string, error) {
 	tokens := strings.Fields(s)
 	if len(tokens) == 0 {
@@ -407,6 +418,10 @@ func ToNumbered(s string) ([]string, error) {
 	var out []string
 	for _, tok := range tokens {
 		for _, part := range splitSyllables(tok) {
+			if isErhua(part) {
+				out = append(out, "er5") // the suffix is spoken as a neutral-tone er
+				continue
+			}
 			syl, err := parse(part)
 			if err != nil {
 				return nil, err
