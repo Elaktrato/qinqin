@@ -37,6 +37,9 @@
 	let staged = $state<StagedPack | null>(null);
 	let confirmed = $state(false);
 	let notice = $state('');
+	// Called after an install or uninstall changed the installed packs.
+	let { onchange }: { onchange?: () => void } = $props();
+
 	let error = $state('');
 	let upload: AbortController | null = null;
 	let poll: AbortController | null = null;
@@ -148,6 +151,7 @@
 				notice = `Installed ${manifest.name}: ${result.summary ?? 'done'}.`;
 				if (result.warning) error = result.warning;
 				await load();
+				onchange?.();
 			} else {
 				error = result.error ?? 'The import failed.';
 			}
@@ -183,6 +187,7 @@
 			await uninstallPack(pack.type, pack.packId);
 			notice = `Uninstalled ${pack.name || pack.packId}.`;
 			await load();
+			onchange?.();
 		} catch (err) {
 			error = message(err, 'Could not uninstall the pack.');
 		} finally {

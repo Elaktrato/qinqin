@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"qinqin/internal/lang"
 )
 
 // Manifest types: the import pipeline a pack flows through.
@@ -97,6 +99,8 @@ func (m Manifest) Validate() error {
 		return errors.New("manifest: version is required")
 	case strings.TrimSpace(m.Language) == "":
 		return errors.New("manifest: language is required")
+	case !validLanguage(m.Language):
+		return fmt.Errorf("manifest: language %q must be a code like es or pt-br", m.Language)
 	case strings.TrimSpace(m.License) == "":
 		return errors.New("manifest: license is required — packs without license terms are rejected")
 	case strings.TrimSpace(m.Attribution) == "":
@@ -110,6 +114,13 @@ func (m Manifest) Validate() error {
 		return fmt.Errorf("manifest: %w", err)
 	}
 	return nil
+}
+
+// validLanguage reports whether code is already in the normalized
+// language code form (lowercase, "-" separators, e.g. es or pt-br).
+func validLanguage(code string) bool {
+	norm, ok := lang.ValidCode(code)
+	return ok && norm == strings.ToLower(strings.TrimSpace(code))
 }
 
 // normalize trims every field and lowercases the language code, so one

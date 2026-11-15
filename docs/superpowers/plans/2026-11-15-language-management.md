@@ -21,7 +21,7 @@
 ## Global Constraints
 
 - Code pattern after normalisation (trim, lowercase, `_`→`-`): `^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$`.
-- Messages: invalid code `422` "language must be a code like es or pt-br"; non-admin unknown code `422` "unknown language — ask the administrator to add it"; register code pack `409` "<code> is built in"; delete in use `409` "still used by packs or workspaces".
+- Messages: invalid code `422` "language must be a code like es or pt-br"; non-admin unknown code `422` "unknown language — ask the administrator to add it"; register code pack `409` "<code> is built in"; delete in use `409` "still used by: <kinds>" (e.g. "2 workspaces, a sentence pack").
 - `hiddenDictionaries` is an array of dictionary ids (numbers) in `workspace.settings`; malformed values are ignored, never an error.
 - Hint copy: no dictionary — admin "No dictionary is installed for <Label>. Install one in Settings → Data." / others "No dictionary is installed for <Label>. Ask the administrator of this server to install one."; no levels — "No level lists for <Label>: level badges and filters are unavailable."; all hidden — "Shown although its dictionaries are hidden in this workspace"; reveal button "Show <n> from hidden dictionaries"; registration note "Adds the language to the workspace list. It has no dictionary until you install a pack for it."
 - Labels always from `languageLabel(code)`, never from the server's `name`.
@@ -150,17 +150,28 @@
   (cd <wt>/plugins/data/es-demo && python3 -I -m zipfile -c <scratch>/es-demo.zip manifest.json dictionary.json)
   ```
   The image ships `es-demo` in `/opt/qinqin/packs`, so the seed installs it. Before step 2, as `admin`, uninstall es-demo in Settings → Data (this also checks that a seeded pack uninstalls), delete the admin's own default Spanish workspace (created at first login, since es was installed) in Settings → Workspaces, then remove the language `es` in Languages: it must now succeed. This starts the demo from a server without Spanish. Do not log in as `learner` before this, or the learner also gets a default Spanish workspace.
-- [ ] **Step 2: Drive the browser** (`run` skill) at `http://127.0.0.1:8088`:
-  1. `learner`: the create form lists Chinese and Japanese, no Spanish; `curl -X POST /api/workspaces {"language":"es"}` with the learner token → 422 "unknown language…".
-  2. `admin` → Data → Packs: upload `es-demo.zip`, review (licence `CC0-1.0`, attribution), tick, Install, `4 entries, 4 senses`. Languages: Spanish `es`, "data only", packs "Spanish–English demo dictionary (Dictionaries)", 0 workspaces, no Remove.
-  3. `learner`: create a Spanish workspace; Settings row shows "No level lists", no "No dictionary"; Search `hola` → entry with "hello", "hi"; `gracias` → "thank you"; add `agua` to flashcards and review it once.
-  4. Workspace **Dictionaries** → untick the demo dictionary → Save; the `hola` entry shows its glosses with "Shown although its dictionaries are hidden in this workspace". In a zh workspace hide Unihan: a character entry shows CC-CEDICT senses and "Show 1 from hidden dictionaries" (count per entry); the reader popup in a zh book hides them too; reveal works by keyboard.
-  5. `admin`: uninstall es-demo → learner's Search shows the no-dictionary hint ("Ask the administrator…"), Settings row shows "No dictionary"; Languages: es installed false, 1 workspace, no Remove. Reinstall → glosses back, the hidden setting still applies (same dictionary id).
-  6. `admin` registers `PT_br` → shown as `pt-br` "Brazilian Portuguese"; the learner's create form lists it with " (no dictionary installed)"; admin removes it → gone. Register `zh` → "zh is built in".
+- [ ] **Step 2: Real-app check without a browser** (owner rule: no Playwright or headless Chromium locally). Against the built server use `curl` and the jsdom component tests; the owner checks the UI by hand. Done on port 18950 with a scratchpad copy and `--build-arg WITH_AUDIO=0 --build-arg WITH_OCR=0`:
+  1. `GET /settings` serves the SPA (200 `text/html`); the learner token gets 403 on `/api/admin/languages/*`.
+  2. Seeded `es-demo` blocks `DELETE /api/admin/languages/es` (409), still blocked by workspaces after the uninstall; after deleting every `es` workspace the delete is 204; a learner `POST /api/workspaces {"language":"es"}` is then 422 "unknown language…", `"Hello!"` 422 "language must be a code…".
+  3. Stage `es-demo.zip` (`POST /api/admin/packs`, install with licence `CC0-1.0`): `4 entries, 4 senses`; `/api/languages` lists es installed; the learner creates the es workspace (201); search `hola` finds the entry, its senses are `hello`, `hi` with the dictionary id.
+  4. `PUT /api/workspaces/{id}` with `hiddenDictionaries: [2]` stores the ids; uninstalling shows es `installed:false` with 1 workspace and no removal (409).
+  5. Admin registers `PT_br` (201 `pt-br`, listed `installed:false`), removes it (204); registering `zh` is 409 "zh is built in".
+  Verified only by component tests (`*.dom.test.ts`, not in a browser): hidden-dictionary collapse and reveal in `Senses` and `EntryCard`, the Dictionaries panel, the Languages table, add and remove. Unverified in a browser (owner by hand): chips and the Dictionaries panel placement in Settings, focus handling, the Search no-dictionary hint, the reader popup in a zh book, 320/360/1024 px layouts in light and dark.
 - [ ] **Step 3: Stop** (`docker rm -f qinqin-langs`); run all gates on the tip.
 - [ ] **Step 4: Commit** `docs: language management and the Spanish demo`. Do not merge or push.
 
 ---
+
+## Rulings made while building
+
+- Ruling: `workspaces.setSettings` (already on develop) is the plan's `updateSettings`; no second function.
+- Ruling: no migration was needed; 029 belongs to audio packs.
+- Ruling: a legacy sentence (live, on an entry of the language, `source_pack` without a `sentence_packs` row) blocks removal, user-authored ones included.
+- Ruling: ids in `hiddenDictionaries` that are not listed in the panel (uninstalled, other language) are kept on Save, so a reinstall keeps the choice.
+
+- Ruling (review wave): create and delete share `langMu`; delete is one conditional `DELETE` (no deferred SQLite transaction: its read-to-write upgrade fails with SQLITE_BUSY under concurrent writers).
+- Ruling (review wave): `Manifest.Validate` rejects a language that is not already a normalized code (`pt_br` is refused, existing installs are untouched).
+- Ruling (review wave): "known" for non-admin creation includes any live pack language (levels, frequency, sentences, grammar, audio).
 
 ## Risks and notes for the owner
 

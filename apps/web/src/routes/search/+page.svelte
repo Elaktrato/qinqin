@@ -24,6 +24,10 @@
 		type SearchFilters
 	} from '$lib/searchFilters';
 	import { onMount } from 'svelte';
+	import { listLanguages } from '$lib/api/languages';
+	import { dictionaryHint } from '$lib/coverage';
+	import { languageLabel } from '$lib/languages';
+	import { user } from '$lib/auth';
 
 	// The server's default result cap (lexicon.defaultSearchLimit).
 	const RESULT_CAP = 50;
@@ -50,7 +54,17 @@
 	const activeScheme = $derived(schemes.find((s) => s.packId === filters.scheme));
 	let schemesLoaded = $state(false);
 
+	// Languages with installed dictionary data; null until loaded.
+	let installedCodes = $state<Set<string> | null>(null);
+	const noDictionary = $derived(
+		lang !== null && installedCodes !== null && !installedCodes.has(lang.toLowerCase())
+	);
+
 	onMount(() => {
+		listLanguages().then(
+			(list) => (installedCodes = new Set(list.filter((l) => l.installed).map((l) => l.code.toLowerCase()))),
+			() => {}
+		);
 		getSchemes().then(
 			(list) => {
 				allSchemes = list;
@@ -264,6 +278,10 @@
 
 	<!-- Always mounted so assistive tech announces changes to its text. -->
 	<p class="visually-hidden" role="status" aria-live="polite">{announcement}</p>
+
+	{#if noDictionary && lang !== null}
+		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), $user?.admin === true)}</p>
+	{/if}
 
 	{#if lang === null && $workspacesLoaded}
 		<p class="hint">
