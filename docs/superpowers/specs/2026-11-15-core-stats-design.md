@@ -81,7 +81,7 @@ The migrated rules (today's `ACTIVITY_SOURCES`, unchanged in effect):
 
 ## Server
 
-**Migration `026_study_events_type_index.sql`**: `CREATE INDEX idx_study_events_user_type_ts ON
+**Migration `028_study_events_type_index.sql`**: `CREATE INDEX idx_study_events_user_type_ts ON
 study_events (user_id, type, ts, workspace_id)`; count rules are then answered from the index alone.
 
 **`plugins.ActivityRules(ctx, db) ([]plugins.RuleOf, error)`**: `RuleOf{Plugin, Type string;

@@ -70,7 +70,11 @@ func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, from, to time.Ti
 // ?1 user, ?2 type, ?3 from, ?4 to (exclusive), ?5 workspace, ?6 payload
 // field, ?7 min, ?8 max, ?9 pointsPer. Field names come from validated
 // rules and are bound, never concatenated into SQL.
-const window = `FROM study_events WHERE user_id = ?1 AND type = ?2 AND ts >= ?3 AND ts < ?4`
+//
+// INDEXED BY pins the type index: with a workspace filter the planner
+// otherwise prefers idx_study_events_workspace_ts (which ignores the
+// type) on a table it has no statistics for.
+const window = `FROM study_events INDEXED BY idx_study_events_user_type_ts WHERE user_id = ?1 AND type = ?2 AND ts >= ?3 AND ts < ?4`
 
 // ruleQuery returns the SQL that scores one rule, grouped by UTC day
 // and workspace, selecting day, workspace, points, raw.
