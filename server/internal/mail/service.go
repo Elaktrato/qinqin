@@ -2,8 +2,12 @@ package mail
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/x509"
+	"errors"
+	"log"
 	"net"
+	"sync"
 	"time"
 
 	"qinqin/internal/netguard"
@@ -16,6 +20,12 @@ type Service struct {
 	Store  *Store
 	Secret secretbox.SecretState // state of QINQIN_SECRET, for the admin form
 	Policy netguard.GuardPolicy
+
+	Logf          func(string, ...any) // default log.Printf
+	GlobalPerHour int                  // default 200
+	Now           func() time.Time
+
+	qs queueState
 
 	// Tests only.
 	RootCAs  *x509.CertPool
@@ -41,3 +51,149 @@ func (s *Service) tune(t Transport) Transport {
 
 // TransportFor returns the transport of a prepared configuration.
 func (s *Service) TransportFor(p *Prepared) Transport { return s.tune(p.Transport(s.Policy)) }
+
+// Job is one mail to send. Build, when set, runs on the worker just before
+// sending and supplies the template data (a reset link is created there, so
+// the request that queued the job does the same database work for a known and
+// an unknown account). It returns ok=false to skip the mail.
+type Job struct {
+	Kind   Kind
+	UserID int64
+	To     string
+	Data   TemplateData
+	Build  func(ctx context.Context) (TemplateData, bool)
+}
+
+const (
+	queueSize     = 100
+	globalPerHour = 200
+)
+
+type queueState struct {
+	once sync.Once
+	ch   chan Job
+	mu   sync.Mutex
+	sent []time.Time // send times within the last hour (global cap)
+}
+
+func (s *Service) q() *queueState {
+	s.qs.once.Do(func() { s.qs.ch = make(chan Job, queueSize) })
+	return &s.qs
+}
+
+func (s *Service) logf(format string, a ...any) {
+	if s.Logf != nil {
+		s.Logf(format, a...)
+		return
+	}
+	log.Printf(format, a...)
+}
+
+func (s *Service) clock() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
+}
+
+// Enqueue hands j to the worker and returns at once; it never blocks the
+// request. A full queue drops the mail (logged without any address) and
+// returns false. Nothing is retried: the user can ask again.
+func (s *Service) Enqueue(j Job) bool {
+	if s == nil {
+		return false
+	}
+	select {
+	case s.q().ch <- j:
+		return true
+	default:
+		s.logf("mail: dropped kind=%s user=%d reason=queue_full", j.Kind, j.UserID)
+		return false
+	}
+}
+
+// underCap reports whether another mail may go out within the global hourly
+// cap, and records it.
+func (s *Service) underCap() bool {
+	q := s.q()
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	now := s.clock()
+	keep := q.sent[:0]
+	for _, t := range q.sent {
+		if now.Sub(t) < time.Hour {
+			keep = append(keep, t)
+		}
+	}
+	q.sent = keep
+	limit := s.GlobalPerHour
+	if limit <= 0 {
+		limit = globalPerHour
+	}
+	if len(q.sent) >= limit {
+		return false
+	}
+	q.sent = append(q.sent, now)
+	return true
+}
+
+// Run is the single worker: it sends queued mails one at a time until ctx
+// ends. Run it in its own goroutine.
+func (s *Service) Run(ctx context.Context) {
+	q := s.q()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case j := <-q.ch:
+			s.deliver(ctx, j)
+		}
+	}
+}
+
+func (s *Service) deliver(ctx context.Context, j Job) {
+	if !s.underCap() {
+		s.logf("mail: dropped kind=%s user=%d reason=hourly_cap", j.Kind, j.UserID)
+		return
+	}
+	t, cfg, err := s.Store.Stored(ctx)
+	if err != nil || cfg == nil {
+		s.logf("mail: failed kind=%s user=%d category=unconfigured", j.Kind, j.UserID)
+		return
+	}
+	data := j.Data
+	if j.Build != nil {
+		var ok bool
+		if data, ok = j.Build(ctx); !ok {
+			return
+		}
+	}
+	data.Site = cfg.Site()
+	if data.Minutes == 0 {
+		data.Minutes = 10
+	}
+	if data.Hours == 0 {
+		data.Hours = 1
+	}
+	msg, err := Render(j.Kind, data)
+	if err != nil {
+		s.logf("mail: failed kind=%s user=%d category=template", j.Kind, j.UserID)
+		return
+	}
+	msg.To = j.To
+	raw, err := Compose(Sender{Address: cfg.FromAddress, Name: cfg.FromName}, msg, s.clock(), rand.Reader)
+	if err != nil {
+		s.logf("mail: failed kind=%s user=%d category=compose", j.Kind, j.UserID)
+		return
+	}
+	if err := s.tune(t).Send(ctx, cfg.FromAddress, j.To, raw); err != nil {
+		var se *SendError
+		cat := "internal"
+		if errors.As(err, &se) {
+			cat = se.Category
+		}
+		s.logf("mail: failed kind=%s user=%d category=%s", j.Kind, j.UserID, cat)
+		return
+	}
+	s.logf("mail: sent kind=%s user=%d", j.Kind, j.UserID)
+}

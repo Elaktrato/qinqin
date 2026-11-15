@@ -169,9 +169,11 @@ func serveCmd(args []string) error {
 	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)
 
 	aiSvc := aiFromEnv(sqlDB, os.Getenv, log.Printf)
+	mailSvc := mailFromEnv(sqlDB, os.Getenv, log.Printf)
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
+	go mailSvc.Run(ctx)
 	go auth.RunJanitor(ctx, sqlDB, time.Hour, log.Printf)
 	// Files of users that no longer exist (a deletion whose file removal failed).
 	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, *data); err != nil {
@@ -193,7 +195,7 @@ func serveCmd(args []string) error {
 	}
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set

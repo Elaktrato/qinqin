@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"context"
 	"database/sql"
 	"net/http/httptest"
 	"path/filepath"
@@ -65,6 +66,9 @@ func newMailEnv(t *testing.T, o mailOpts) *mailEnv {
 		state = secretbox.SecretOK
 	}
 	svc := &mail.Service{Store: store, Secret: state, Policy: policy, RootCAs: fake.RootCAs(), Timeout: 5 * time.Second}
+	workerCtx, stopWorker := context.WithCancel(context.Background())
+	go svc.Run(workerCtx)
+	t.Cleanup(stopWorker)
 	opts := append([]api.Option{api.WithMail(svc)}, o.apiOpts...)
 	if o.authPolicy != nil {
 		opts = append(opts, api.WithAuthPolicy(*o.authPolicy))

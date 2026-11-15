@@ -293,3 +293,37 @@ func TestSMTPTestIsRateLimited(t *testing.T) {
 }
 
 var _ = mail.ModeNone
+
+func TestOptionsFollowTheMailConfiguration(t *testing.T) {
+	e := newMailEnv(t, mailOpts{})
+	opts := func() (reset, code bool) {
+		var o struct {
+			PasswordReset  bool `json:"passwordReset"`
+			EmailCodeLogin bool `json:"emailCodeLogin"`
+		}
+		decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/auth/options", "", nil), &o)
+		return o.PasswordReset, o.EmailCodeLogin
+	}
+	if r, _ := opts(); r {
+		t.Fatal("passwordReset is on without SMTP")
+	}
+	e.configure(t)
+	if r, _ := opts(); !r {
+		t.Fatal("passwordReset is off with SMTP")
+	}
+	var st struct{ Mail struct{ Configured bool } }
+	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/auth", e.owner, nil), &st)
+	if !st.Mail.Configured {
+		t.Error("settings/auth does not report mail configured")
+	}
+	if r := doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"emailCodeLogin": true}); r.StatusCode != 200 {
+		t.Errorf("emailCodeLogin with mail = %d", r.StatusCode)
+	}
+	if _, c := opts(); !c {
+		t.Error("emailCodeLogin option not on")
+	}
+	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil)
+	if r, c := opts(); r || c {
+		t.Errorf("after removing SMTP: reset=%v code=%v", r, c)
+	}
+}

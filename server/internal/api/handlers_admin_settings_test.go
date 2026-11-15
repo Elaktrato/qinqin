@@ -37,7 +37,7 @@ func TestAuthSettingsDefaultsPatchAndAudit(t *testing.T) {
 			t.Errorf("PATCH %v = %d, want 422", bad, r.StatusCode)
 		}
 	}
-	// Mail is not configured until plan 3: the switches that need it are refused.
+	// Without a mail service the switches that need mail are refused.
 	for _, k := range []string{"mfaEnforced", "emailCodeLogin"} {
 		r := doJSON(t, "PATCH", ts.URL, "/api/admin/settings/auth", owner, map[string]any{k: true})
 		var e struct{ Error string }
