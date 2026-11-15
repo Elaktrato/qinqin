@@ -3,10 +3,10 @@ package auth_test
 import (
 	"bytes"
 	"context"
-	"errors"
-	"fmt"
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"

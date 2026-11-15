@@ -290,7 +290,11 @@ func dictionaryPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, 
 			return nil, fmt.Errorf("plugins: scan dictionary: %w", err)
 		}
 		m.Type = "dictionary"
-		list = append(list, dataPlugin(m))
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read dictionaries: %w", err)
@@ -315,7 +319,11 @@ func schemePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, erro
 			return nil, fmt.Errorf("plugins: scan scheme: %w", err)
 		}
 		m.Type = "levels"
-		list = append(list, dataPlugin(m))
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read schemes: %w", err)
@@ -340,7 +348,11 @@ func frequencyPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, e
 			return nil, fmt.Errorf("plugins: scan frequency pack: %w", err)
 		}
 		m.Type = "frequency"
-		list = append(list, dataPlugin(m))
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read frequency packs: %w", err)
@@ -365,7 +377,11 @@ func sentencePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, er
 		if err := rows.Scan(&pack); err != nil {
 			return nil, fmt.Errorf("plugins: scan sentence pack: %w", err)
 		}
-		list = append(list, dataPlugin(dataManifest{ID: pack, Type: "sentences"}))
+		info, err := dataPlugin(dataManifest{ID: pack, Type: "sentences"})
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read sentence packs: %w", err)
@@ -390,7 +406,11 @@ func grammarPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, err
 			return nil, fmt.Errorf("plugins: scan grammar pack: %w", err)
 		}
 		m.Type = "grammar"
-		list = append(list, dataPlugin(m))
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read grammar packs: %w", err)
@@ -415,7 +435,11 @@ func audioPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error
 			return nil, fmt.Errorf("plugins: scan audio pack: %w", err)
 		}
 		m.Type = "audio"
-		list = append(list, dataPlugin(m))
+		info, err := dataPlugin(m)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, info)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("plugins: read audio packs: %w", err)
@@ -425,18 +449,21 @@ func audioPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error
 
 // dataPlugin turns one data-plugin manifest into its listed form:
 // enabled by default, ordered 0 until the user moves it.
-func dataPlugin(m dataManifest) model.PluginInfo {
-	manifest, err := json.Marshal(m)
+func dataPlugin(m dataManifest) (model.PluginInfo, error) {
+	manifest, err := marshalManifest(m)
 	if err != nil {
-		// dataManifest is a struct of strings; marshaling it cannot fail.
-		panic(fmt.Sprintf("plugins: marshal data manifest: %v", err))
+		return model.PluginInfo{}, fmt.Errorf("plugins: marshal data manifest %s: %w", m.ID, err)
 	}
 	return model.PluginInfo{
 		ID:       m.ID,
 		Manifest: manifest,
 		Enabled:  true,
-	}
+	}, nil
 }
+
+// marshalManifest encodes a data manifest; a variable only so a test can
+// make the (practically unreachable) failure happen.
+var marshalManifest = func(v any) ([]byte, error) { return json.Marshal(v) }
 
 // statesFor returns the user's plugin states keyed by plugin id.
 func statesFor(ctx context.Context, sqlDB *sql.DB, userID int64) (map[string]model.PluginState, error) {
@@ -553,21 +580,34 @@ func CanWriteData(ctx context.Context, sqlDB *sql.DB, pluginID string) (exists, 
 // nav links). The home layout is the per-user widget layout in the
 // qinqin-core plugin data, not this order.
 func SetState(ctx context.Context, sqlDB *sql.DB, userID int64, pluginID string, enabled bool, order int) error {
+	_, err := SetStateRow(ctx, sqlDB, userID, pluginID, enabled, order)
+	return err
+}
+
+// SetStateRow is SetState returning the stored state, so a response
+// carries exactly what the row holds (updated_at is second-truncated).
+func SetStateRow(ctx context.Context, sqlDB *sql.DB, userID int64, pluginID string, enabled bool, order int) (model.PluginState, error) {
 	enabledInt := 0
 	if enabled {
 		enabledInt = 1
 	}
-	if _, err := sqlDB.ExecContext(ctx, `
+	var updated string
+	if err := sqlDB.QueryRowContext(ctx, `
 		INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at)
 		VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT (pack_id, user_id) DO UPDATE SET
 			enabled = excluded.enabled,
 			ord = excluded.ord,
-			updated_at = excluded.updated_at`,
-		userID, pluginID, enabledInt, order, now()); err != nil {
-		return fmt.Errorf("plugins: set state of %s for user %d: %w", pluginID, userID, err)
+			updated_at = excluded.updated_at
+		RETURNING updated_at`,
+		userID, pluginID, enabledInt, order, now()).Scan(&updated); err != nil {
+		return model.PluginState{}, fmt.Errorf("plugins: set state of %s for user %d: %w", pluginID, userID, err)
 	}
-	return nil
+	at, err := time.Parse(time.RFC3339, updated)
+	if err != nil {
+		return model.PluginState{}, fmt.Errorf("plugins: parse updated_at %q of state %s: %w", updated, pluginID, err)
+	}
+	return model.PluginState{PluginID: pluginID, UserID: userID, Enabled: enabled, Order: order, UpdatedAt: at}, nil
 }
 
 // dataSelect is the shared column list of the plugin_data reads.
@@ -588,20 +628,34 @@ func PutData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int6
 // compares — while updated_at still takes the server's write stamp. The
 // zero time means "now". Callers clamp modifiedAt to the server clock.
 func PutDataAt(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, key string, val json.RawMessage, modifiedAt time.Time) (int, error) {
+	row, err := PutDataRow(ctx, sqlDB, userID, workspaceID, pluginID, key, val, &modifiedAt)
+	if err != nil {
+		return 0, err
+	}
+	return row.Version, nil
+}
+
+// PutDataRow is PutDataAt returning the row this very statement wrote,
+// so a response never shows a later concurrent write. A nil modifiedAt
+// (or the zero time) means "now".
+func PutDataRow(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int64, pluginID, key string, val json.RawMessage, modifiedAt *time.Time) (*model.PluginData, error) {
 	stamp := now()
 	modified := stamp
-	if !modifiedAt.IsZero() {
+	if modifiedAt != nil && !modifiedAt.IsZero() {
 		modified = modifiedAt.UTC().Format(time.RFC3339)
 	}
 	var workspace any
 	if workspaceID != nil {
+		if *workspaceID < 1 {
+			// The unique key stores a NULL workspace as 0 (idx_plugin_data_key), so 0 is no workspace id.
+			return nil, fmt.Errorf("plugins: put data %s/%s: invalid workspace id %d", pluginID, key, *workspaceID)
+		}
 		workspace = *workspaceID
 	}
-	var version int
-	// The conflict target coalesces a NULL workspace to 0, matching the
-	// table's unique key: the user-global row and every workspace's row
-	// are distinct rows for the same key.
-	err := sqlDB.QueryRowContext(ctx, `
+	// The conflict target coalesces a NULL workspace to 0
+	// (0, see the idx_plugin_data_key unique index): the user-global row
+	// and every workspace's row are distinct rows for the same key.
+	d, err := scanData(sqlDB.QueryRowContext(ctx, `
 		INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
 		VALUES (?, ?, ?, ?, ?, 1, ?, ?)
 		ON CONFLICT (pack_id, user_id, IFNULL(workspace_id, 0), key) DO UPDATE SET
@@ -610,12 +664,12 @@ func PutDataAt(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *in
 			updated_at = excluded.updated_at,
 			modified_at = excluded.modified_at,
 			deleted_at = NULL
-		RETURNING version`,
-		pluginID, userID, workspace, key, dataOf(val), stamp, modified).Scan(&version)
+		RETURNING pack_id, user_id, workspace_id, key, data, version, updated_at, deleted_at`,
+		pluginID, userID, workspace, key, dataOf(val), stamp, modified))
 	if err != nil {
-		return 0, fmt.Errorf("plugins: put data %s/%s for user %d: %w", pluginID, key, userID, err)
+		return nil, fmt.Errorf("plugins: put data %s/%s for user %d: %w", pluginID, key, userID, err)
 	}
-	return version, nil
+	return d, nil
 }
 
 // GetData returns the user's stored value for one key of one plugin,
