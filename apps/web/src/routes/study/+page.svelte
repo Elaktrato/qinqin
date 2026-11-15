@@ -3,6 +3,8 @@
 	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
 	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import { fetchCharacters } from '$lib/api/characters';
+	import type { CharRow } from '$lib/api/types';
 	import type { SchemeLevelMembers } from '$lib/study/charGroups';
 	import { levelMastery } from '$lib/study/levelMastery';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
@@ -106,6 +108,8 @@
 	// decoration, so a failed load only hides the counts.
 	let schemeCharacters = $state.raw<SchemeLevelMembers[]>([]);
 	let schemeCharactersSeq = 0;
+	// The language's character rows (variants), the Stats map's universe.
+	let universeRows = $state.raw<CharRow[]>([]);
 
 	let deckName = $state('');
 	let creating = $state(false);
@@ -336,17 +340,21 @@
 			schemeCharacters = [];
 			return;
 		}
-		fetchSchemeCharacters(scheme.id).then(
-			(levels) => {
-				if (seq === schemeCharactersSeq) schemeCharacters = levels;
+		Promise.all([fetchSchemeCharacters(scheme.id), fetchCharacters(scheme.language)]).then(
+			([levels, list]) => {
+				if (seq !== schemeCharactersSeq) return;
+				schemeCharacters = levels;
+				universeRows = list.chars;
 			},
 			() => {
-				if (seq === schemeCharactersSeq) schemeCharacters = [];
+				if (seq !== schemeCharactersSeq) return;
+				schemeCharacters = [];
+				universeRows = [];
 			}
 		);
 	});
 
-	const levelLearned = $derived(levelMastery(schemeCharacters, cards, reviews, new Date(), weights));
+	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights));
 
 	function levelOptionLabel(name: string): string {
 		const count = levelLearned.get(name);

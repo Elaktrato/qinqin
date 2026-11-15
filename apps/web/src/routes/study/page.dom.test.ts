@@ -8,6 +8,7 @@ vi.mock('$lib/api/schemes', () => ({
 	getSchemeEntries: vi.fn(),
 	fetchSchemeCharacters: vi.fn()
 }));
+vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	loadStudyData: vi.fn()
@@ -18,6 +19,7 @@ vi.mock('$lib/time/zone', () => ({
 	onStudyDayChange: vi.fn(() => () => {})
 }));
 
+import { fetchCharacters } from '$lib/api/characters';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import { loadStudyData } from '$lib/study/store';
 import { studyDay } from '$lib/time/studyDay';
@@ -64,6 +66,7 @@ beforeEach(() => {
 		merged: 0
 	});
 	vi.mocked(fetchSchemeCharacters).mockResolvedValue([]);
+	vi.mocked(fetchCharacters).mockResolvedValue({ count: 0, chars: [] });
 	vi.mocked(getSchemeEntries).mockImplementation(async () => {
 		return [
 			{ id: 11, kind: 'character', written: '日' },
@@ -128,6 +131,10 @@ describe('study setup, level sessions', () => {
 			{ levelId: 31, name: 'N5', chars: new Set(['日', '月', '火', '水']) },
 			{ levelId: 32, name: 'N4', chars: new Set(['木']) }
 		]);
+		vi.mocked(fetchCharacters).mockResolvedValue({
+			count: 5,
+			chars: ['日', '月', '火', '水', '木'].map((c, i) => ({ i: i + 1, c }))
+		});
 		vi.mocked(loadStudyData).mockResolvedValue({
 			decks: [],
 			cards: [
