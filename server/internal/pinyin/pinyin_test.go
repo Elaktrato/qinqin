@@ -1,6 +1,9 @@
 package pinyin
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestBopomofoTable(t *testing.T) {
 	cases := []struct {
@@ -95,5 +98,43 @@ func TestInvalidSyllableErrors(t *testing.T) {
 		if _, err := ToMarked(in); err == nil {
 			t.Errorf("ToMarked(%q) expected error", in)
 		}
+	}
+}
+
+func TestToNumbered(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"nǐ hǎo", "ni3 hao3"},
+		{"lǜ", "lv4"},
+		{"ma", "ma5"},
+		{"nǚ'ér", "nv3 er2"},
+		{"Xī'ān", "xi1 an1"},
+		{"zhōngguó", "zhong1 guo2"},
+		{"xian", "xian5"},
+		{"ni3hao3", "ni3 hao3"},
+		{"jǜ", "ju4"},
+		{"xv2", "xu2"},
+	}
+	for _, c := range cases {
+		got, err := ToNumbered(c.in)
+		if err != nil {
+			t.Errorf("ToNumbered(%q): %v", c.in, err)
+			continue
+		}
+		if s := strings.Join(got, " "); s != c.want {
+			t.Errorf("ToNumbered(%q) = %q, want %q", c.in, s, c.want)
+		}
+	}
+	if _, err := ToNumbered("xyz"); err == nil {
+		t.Error("ToNumbered(xyz) succeeded, want error")
+	}
+	if _, err := ToNumbered("  "); err == nil {
+		t.Error("ToNumbered(blank) succeeded, want error")
+	}
+}
+
+func TestToNumberedErhuaPinned(t *testing.T) {
+	// Pins today's behaviour: a trailing r is not a syllable.
+	if _, err := ToNumbered("wánr"); err == nil {
+		t.Error("ToNumbered(wánr) succeeded; parseAll rejects it today, update the ledger if that changed")
 	}
 }

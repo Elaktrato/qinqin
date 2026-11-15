@@ -358,3 +358,69 @@ func Plain(s string) string {
 	}
 	return b.String()
 }
+
+// maxSyllableRunes bounds a split attempt: six letters plus one tone mark.
+const maxSyllableRunes = 7
+
+// splitSyllables splits one whitespace-free token into syllables: first on
+// apostrophes, then greedily on the longest prefix that parse accepts,
+// backtracking one step at a time when the rest cannot be split. A token
+// that cannot be split is returned whole, so parse reports it.
+func splitSyllables(token string) []string {
+	var out []string
+	for _, piece := range strings.FieldsFunc(token, func(r rune) bool { return r == '\'' || r == '’' }) {
+		parts, ok := splitPiece([]rune(piece))
+		if !ok {
+			return []string{token}
+		}
+		out = append(out, parts...)
+	}
+	if len(out) == 0 {
+		return []string{token}
+	}
+	return out
+}
+
+func splitPiece(r []rune) ([]string, bool) {
+	if len(r) == 0 {
+		return nil, true
+	}
+	for n := min(len(r), maxSyllableRunes); n >= 1; n-- {
+		if _, err := parse(string(r[:n])); err != nil {
+			continue
+		}
+		if rest, ok := splitPiece(r[n:]); ok {
+			return append([]string{string(r[:n])}, rest...), true
+		}
+	}
+	return nil, false
+}
+
+// ToNumbered converts pinyin (tone numbers or tone marks, spaces optional)
+// to one lowercase numbered syllable per syllable: ü is written v and the
+// neutral tone 5, so "nǚ'ér" gives ["nv3", "er2"].
+func ToNumbered(s string) ([]string, error) {
+	tokens := strings.Fields(s)
+	if len(tokens) == 0 {
+		return nil, fmt.Errorf("pinyin: empty input")
+	}
+	var out []string
+	for _, tok := range tokens {
+		for _, part := range splitSyllables(tok) {
+			syl, err := parse(part)
+			if err != nil {
+				return nil, err
+			}
+			tone := syl.tone
+			if tone == 0 {
+				tone = 5
+			}
+			spelled := strings.ReplaceAll(syl.spelled, "ü", "v")
+			if syl.initial == "j" || syl.initial == "q" || syl.initial == "x" {
+				spelled = strings.ReplaceAll(spelled, "v", "u") // ju, not jv
+			}
+			out = append(out, spelled+string(rune('0'+tone)))
+		}
+	}
+	return out, nil
+}
