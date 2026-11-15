@@ -104,21 +104,23 @@ describe('journal store', () => {
 		]);
 	});
 
-	it('reads the review and suggestions, null when absent', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json(row('review:a', { entryId: 'a', annotations: [] })));
+	it('reads the review and suggestions through the list route, null when absent', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json([row('review:a', { entryId: 'a', annotations: [] })]));
 		expect((await getReview(3, 'a'))?.entryId).toBe('a');
-		vi.mocked(fetch).mockResolvedValueOnce(new Response('not found', { status: 404 }));
+		expect(vi.mocked(fetch).mock.calls[0][0]).toContain('prefix=review%3Aa');
+		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		expect(await getSuggestions(3)).toBeNull();
+		expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2); // no 404 requests
 	});
 
-	it('applies settings defaults for a 404, bad data and an unknown language', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(new Response('not found', { status: 404 }));
+	it('applies settings defaults for no row, bad data and an unknown language', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		expect(await getJournalSettings(3)).toEqual({ guidance: '', explanationLanguage: 'en' });
-		vi.mocked(fetch).mockResolvedValueOnce(json(row('settings', 42)));
+		vi.mocked(fetch).mockResolvedValueOnce(json([row('settings', 42)]));
 		expect(await getJournalSettings(3)).toEqual({ guidance: '', explanationLanguage: 'en' });
-		vi.mocked(fetch).mockResolvedValueOnce(json(row('settings', { guidance: 'be kind', explanationLanguage: 'klingon' })));
+		vi.mocked(fetch).mockResolvedValueOnce(json([row('settings', { guidance: 'be kind', explanationLanguage: 'klingon' })]));
 		expect(await getJournalSettings(3)).toEqual({ guidance: 'be kind', explanationLanguage: 'en' });
-		vi.mocked(fetch).mockResolvedValueOnce(json(row('settings', { guidance: 'g', explanationLanguage: 'de' })));
+		vi.mocked(fetch).mockResolvedValueOnce(json([row('settings', { guidance: 'g', explanationLanguage: 'de' })]));
 		expect(await getJournalSettings(3)).toEqual({ guidance: 'g', explanationLanguage: 'de' });
 	});
 

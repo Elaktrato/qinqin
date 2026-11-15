@@ -118,11 +118,9 @@ export function placeWidgets(widgets: readonly WidgetDef[]): PlacedWidget[] {
  * it is corrupt (use the default). Network and server errors reject.
  */
 export async function loadLayout(): Promise<string[] | null> {
-	// The list route answers 200 with no rows for a never-saved layout; a
-	// single-key GET would log a 404 on every home visit. The prefix match
-	// can also return longer keys, so the exact key is picked out.
-	const rows = await createPluginSdk(coreManifest).data.user().list(LAYOUT_KEY);
-	return parseLayout(rows.find((row) => row.key === LAYOUT_KEY)?.data);
+	// find() reads through the list route: a never-saved layout is a 200
+	// with no rows, where a single-key GET would log a 404 on every visit.
+	return parseLayout(await createPluginSdk(coreManifest).data.user().find(LAYOUT_KEY));
 }
 
 /** saveLayout stores the user's layout for every device. */

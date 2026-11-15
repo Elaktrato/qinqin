@@ -29,6 +29,11 @@ export interface DataScope {
 	/** 404 or a deleted row is null; a string value is JSON-decoded. */
 	get<T = unknown>(key: string): Promise<T | null>;
 	put(key: string, value: unknown, opts?: { keepalive?: boolean }): Promise<void>;
+	/**
+	 * Reads one key through the prefix route and picks the exact key, so a
+	 * missing row is an empty 200 instead of a logged 404. Null when absent.
+	 */
+	find<T = unknown>(key: string): Promise<T | null>;
 	/** The prefix route, ordered by key. */
 	list<T = unknown>(prefix?: string): Promise<DataRow<T>[]>;
 	/** A missing row counts as deleted. */
@@ -73,7 +78,7 @@ function scope(pluginId: string, workspace: number | null): DataScope {
 		}
 		return `${base}/${encodeURIComponent(key).replaceAll('%3A', ':')}${suffix}`;
 	};
-	return {
+	const scoped: DataScope = {
 		async get<T>(key: string): Promise<T | null> {
 			try {
 				const row = await api<{ data?: unknown } | undefined>(keyPath(key), { method: 'GET' });
@@ -89,6 +94,11 @@ function scope(pluginId: string, workspace: number | null): DataScope {
 				body: value,
 				...(opts?.keepalive ? { keepalive: true } : {})
 			});
+		},
+		async find<T>(key: string): Promise<T | null> {
+			const rows = await scoped.list<T>(key);
+			const row = rows.find((r) => r.key === key);
+			return row === undefined ? null : ((row.data ?? null) as T | null);
 		},
 		async list<T>(prefix?: string): Promise<DataRow<T>[]> {
 			const query: string[] = [];
@@ -119,6 +129,7 @@ function scope(pluginId: string, workspace: number | null): DataScope {
 			}
 		}
 	};
+	return scoped;
 }
 
 /** createPluginSdk binds the SDK to one manifest; every call checks it. */

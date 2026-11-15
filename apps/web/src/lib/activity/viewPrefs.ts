@@ -35,7 +35,7 @@ export function parseActivityView(value: unknown): StoredActivityView {
 export async function loadActivityView(): Promise<StoredActivityView> {
 	try {
 		return parseActivityView(
-			await createPluginSdk(coreManifest).data.user().get(ACTIVITY_VIEW_KEY)
+			await createPluginSdk(coreManifest).data.user().find(ACTIVITY_VIEW_KEY)
 		);
 	} catch {
 		return { ...DEFAULT_ACTIVITY_VIEW, hidden: [] };
