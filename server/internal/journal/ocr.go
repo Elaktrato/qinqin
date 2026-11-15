@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode"
 )
 
 // OCR reads the text of a photo offline.
@@ -175,5 +176,32 @@ func (t *Tesseract) Recognize(ctx context.Context, jpeg []byte, langs string) (s
 		}
 		return "", errors.New("journal: tesseract failed")
 	}
-	return strings.TrimSpace(out.String()), nil
+	return joinCJKSpaces(strings.TrimSpace(out.String())), nil
+}
+
+// isCJK reports whether r is written without spaces between words: Han, kana,
+// Hangul and the CJK and fullwidth punctuation.
+func isCJK(r rune) bool {
+	return unicode.In(r, unicode.Han, unicode.Hiragana, unicode.Katakana, unicode.Hangul) ||
+		(r >= 0x3000 && r <= 0x303F) || (r >= 0xFF00 && r <= 0xFFEF)
+}
+
+// joinCJKSpaces removes the spaces Tesseract's Chinese and Japanese models put
+// between characters ("我 今 天") while keeping spaces next to Latin text.
+func joinCJKSpaces(s string) string {
+	rs := []rune(s)
+	out := make([]rune, 0, len(rs))
+	for i, r := range rs {
+		if (r == ' ' || r == '\t') && len(out) > 0 && i+1 < len(rs) {
+			next := i + 1
+			for next < len(rs) && (rs[next] == ' ' || rs[next] == '\t') {
+				next++
+			}
+			if next < len(rs) && isCJK(out[len(out)-1]) && isCJK(rs[next]) {
+				continue
+			}
+		}
+		out = append(out, r)
+	}
+	return string(out)
 }
