@@ -14,6 +14,7 @@
 		clearFilters,
 		filtersFromParams,
 		hasFilters,
+		reconcileFilters,
 		schemesForLanguage,
 		searchHref,
 		setKind,
@@ -43,18 +44,37 @@
 	const filters = $derived(filtersFromParams(page.url.searchParams));
 	const schemes = $derived(schemesForLanguage(allSchemes, lang));
 	const activeScheme = $derived(schemes.find((s) => s.packId === filters.scheme));
-	const filtersKey = $derived(`${filters.kind}\u0000${filters.scheme}\u0000${filters.level}`);
+	let schemesLoaded = $state(false);
 
 	onMount(() => {
 		getSchemes().then(
-			(list) => (allSchemes = list),
+			(list) => {
+				allSchemes = list;
+				schemesLoaded = true;
+			},
 			() => (schemesFailed = true)
 		);
 	});
 
+	// Chips act on the committed search (the URL query), not on text still
+	// being typed: a chip never silently submits a half-typed query.
 	function applyFilters(next: SearchFilters): void {
-		void goto(searchHref(urlQuery.trim(), next));
+		void goto(searchHref(urlQuery.trim(), next), { keepFocus: true, noScroll: true });
 	}
+
+	// After a workspace/language switch, a scheme or level of another
+	// language must not stay in the URL as a hidden filter.
+	$effect(() => {
+		if (!schemesLoaded || lang === null) return;
+		const next = reconcileFilters(filters, schemes);
+		if (next !== filters) {
+			void goto(searchHref(urlQuery.trim(), next), {
+				replaceState: true,
+				keepFocus: true,
+				noScroll: true
+			});
+		}
+	});
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -126,7 +146,6 @@
 		const q = urlQuery.trim();
 		const language = lang;
 		const f = filtersFromParams(page.url.searchParams);
-		void filtersKey;
 		if (!q || !language) {
 			requestSeq++;
 			hits = [];
@@ -184,6 +203,8 @@
 				</div>
 			{:else if schemesFailed}
 				<p class="note">Level filters are unavailable right now.</p>
+			{:else if !schemesLoaded}
+				<div class="chips placeholder" aria-hidden="true"></div>
 			{/if}
 			{#if activeScheme}
 				<div class="chips" role="group" aria-label="Level">
@@ -199,11 +220,14 @@
 					{/each}
 				</div>
 			{/if}
-			{#if hasFilters(filters)}
-				<button type="button" class="clear" onclick={() => applyFilters(clearFilters())}>
-					Clear filters
-				</button>
-			{/if}
+			<button
+				type="button"
+				class="clear"
+				disabled={!hasFilters(filters)}
+				onclick={() => applyFilters(clearFilters())}
+			>
+				Clear filters
+			</button>
 		</div>
 	{/if}
 
@@ -263,13 +287,22 @@
 	.clear {
 		font: inherit;
 		font-size: 0.9rem;
-		min-height: 2.5rem;
+		min-height: 2.75rem;
 		padding: 0.3rem 0.85rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 		border-radius: 999px;
 		background: transparent;
 		color: inherit;
 		cursor: pointer;
+	}
+
+	.placeholder {
+		min-height: 2.75rem;
+	}
+
+	.clear:disabled {
+		opacity: 0.45;
+		cursor: default;
 	}
 
 	.chip[aria-pressed='true'] {

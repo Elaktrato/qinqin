@@ -4,6 +4,7 @@ import {
 	clearFilters,
 	filtersFromParams,
 	hasFilters,
+	reconcileFilters,
 	searchHref,
 	setKind,
 	setLevel,
@@ -63,5 +64,29 @@ describe('schemesForLanguage', () => {
 			({ id, name: 'n' + id, unit: 'w', language, packId, levels: [] }) as Scheme;
 		expect(schemesForLanguage([s(1, 'zh', 'a'), s(2, 'ja', 'b'), s(3, 'zh')], 'zh')).toHaveLength(1);
 		expect(schemesForLanguage([s(1, 'zh', 'a')], null)).toEqual([]);
+	});
+});
+
+describe('reconcileFilters', () => {
+	const mk = (packId: string, levels: string[]) =>
+		({ id: 1, name: packId, unit: 'w', language: 'zh', packId, levels: levels.map((name, i) => ({ id: i, ord: i, name })) }) as Scheme;
+	const zh = [mk('hsk', ['HSK 1'])];
+	it('drops a scheme that does not belong to the language, with its level', () => {
+		expect(reconcileFilters({ kind: 'word', scheme: 'jlpt', level: 'N5' }, zh)).toEqual({
+			kind: 'word',
+			scheme: '',
+			level: ''
+		});
+	});
+	it('drops only an unknown level', () => {
+		expect(reconcileFilters({ kind: '', scheme: 'hsk', level: 'N5' }, zh)).toEqual({
+			kind: '',
+			scheme: 'hsk',
+			level: ''
+		});
+	});
+	it('returns the same object when nothing changes', () => {
+		const f = { kind: '', scheme: 'hsk', level: 'HSK 1' };
+		expect(reconcileFilters(f, zh)).toBe(f);
 	});
 });

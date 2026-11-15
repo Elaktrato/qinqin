@@ -54,3 +54,17 @@ export function schemesForLanguage(schemes: readonly Scheme[], language: string 
 	if (!language) return [];
 	return schemes.filter((s) => s.language === language && !!s.packId);
 }
+
+/**
+ * reconcileFilters drops a scheme (and its level) that is not among the
+ * workspace language's schemes, and a level the scheme does not have, so
+ * a filter hidden from the chips can never silently zero the results.
+ * It returns the same object when nothing needs dropping.
+ */
+export function reconcileFilters(f: SearchFilters, schemes: readonly Scheme[]): SearchFilters {
+	if (!f.scheme) return f;
+	const scheme = schemes.find((s) => s.packId === f.scheme);
+	if (!scheme) return { ...f, scheme: '', level: '' };
+	if (f.level && !scheme.levels.some((l) => l.name === f.level)) return { ...f, level: '' };
+	return f;
+}
