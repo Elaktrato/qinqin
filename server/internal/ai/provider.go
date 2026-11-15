@@ -54,6 +54,16 @@ type ReviewReply struct {
 	Model       string
 	Usage       Usage
 	Calls       []CallUsage
+	// FallbackFrom is the requested model when the Anthropic adapter was
+	// served by a different one (refusal fallback); other adapters leave it empty.
+	FallbackFrom string
+}
+
+// CallResult is what a provider call reports back to the caller that records it.
+type CallResult struct {
+	Model string
+	Usage Usage
+	Calls []CallUsage
 }
 
 // EntrySummary is what a suggestion request sends about a past entry.

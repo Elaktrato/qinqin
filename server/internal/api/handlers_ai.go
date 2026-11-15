@@ -55,6 +55,12 @@ var aiMessages = map[string]string{
 	"in_flight":         "Another AI request is still running.",
 	"no_key":            "Add an API key in Settings → AI first.",
 	"key_undecryptable": "Your key was stored with a different QINQIN_SECRET. Enter it again.",
+	"no_selection":      "Choose which provider to use in Settings → AI.",
+	"unknown_provider":  "That provider does not exist.",
+	"provider_disabled": "This provider is turned off by the server.",
+	"endpoint_blocked":  "That address is not allowed.",
+	"forbidden":         "Only an admin can do that.",
+	"invalid_endpoint":  "That endpoint is not valid.",
 }
 
 // writeAIError is the single mapping from AI errors to HTTP. It never
@@ -80,8 +86,12 @@ func writeAIError(w http.ResponseWriter, err error) {
 	}
 	status := http.StatusUnprocessableEntity
 	switch code {
-	case "no_key", "ai_disabled", "key_undecryptable", "in_flight":
+	case "no_key", "ai_disabled", "key_undecryptable", "in_flight", "no_selection", "no_vision", "provider_disabled":
 		status = http.StatusConflict
+	case "unknown_provider":
+		status = http.StatusNotFound
+	case "forbidden":
+		status = http.StatusForbidden
 	case "too_long":
 		status = http.StatusRequestEntityTooLarge
 	case "rate_limited":
@@ -118,7 +128,7 @@ func (s *server) aiUsable() error {
 		return errAIDisabled("invalid_secret")
 	case s.ai.Secret != ai.SecretOK || s.ai.Keys == nil:
 		return errAIDisabled("no_secret")
-	case s.ai.Provider == nil:
+	case !s.ai.HasProviders():
 		return errAIDisabled("no_provider")
 	}
 	return nil
@@ -235,8 +245,16 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 		defer release()
 		vctx, cancel := context.WithTimeout(ctx, aiProviderTimeout)
 		defer cancel()
-		verr := s.ai.Provider.Validate(vctx, ai.Credentials{APIKey: key, Model: model})
-		_ = s.ai.Limiter.Record(ctx, ai.Call{UserID: u.ID, Kind: "validate", Model: model, OK: verr == nil})
+		spec, serr := s.ai.Lookup(ctx, "anthropic")
+		if serr != nil {
+			return serr
+		}
+		adapter, serr := s.ai.Adapter(spec)
+		if serr != nil {
+			return serr
+		}
+		verr := adapter.Validate(vctx, ai.Credentials{APIKey: key, Model: model, BaseURL: spec.BaseURL, Provider: spec.ID})
+		_ = s.ai.Limiter.Record(ctx, ai.Call{UserID: u.ID, Kind: "validate", Model: model, Provider: spec.ID, OK: verr == nil})
 		return verr
 	}()
 	if verr != nil {
@@ -246,6 +264,10 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 	if err := s.ai.Keys.Put(ctx, u.ID, req.Provider, key, model, ai.PutOptions{}); err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
+	}
+	// Bridge until the per-provider routes: the first stored key becomes active.
+	if _, err := s.ai.Selection.Active(ctx, u.ID); errors.Is(err, ai.ErrNoSelection) {
+		_ = s.ai.Selection.SetActive(ctx, u.ID, req.Provider)
 	}
 	s.writeAIStatus(w, r, u.ID)
 }

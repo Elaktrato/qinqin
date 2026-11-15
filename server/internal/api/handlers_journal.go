@@ -58,37 +58,61 @@ func (s *server) journalTarget(w http.ResponseWriter, r *http.Request, userID, w
 	return t, true
 }
 
-// runAI performs one provider call for the user: the hourly limit and the
-// one-in-flight lock are taken, the key is decrypted, and the call runs
-// detached from the client (a proxy cutting the request must not lose a paid
-// answer) with a 170 s timeout. It records the call either way and returns
-// the credentials the call used.
-func (s *server) runAI(r *http.Request, userID int64, kind string, call func(ctx context.Context, c ai.Credentials) (model string, usage ai.Usage, err error)) (ai.Credentials, error) {
+// aiRun is what a finished provider call used.
+type aiRun struct {
+	Creds ai.Credentials
+	Spec  ai.ProviderSpec
+}
+
+// runAI performs one provider call for the user with the provider the user
+// selected: the hourly limit and the one-in-flight lock are taken, the active
+// provider and its key are resolved (a user can only ever reach their own
+// selection and their own keys), and the call runs detached from the client
+// (a proxy cutting the request must not lose a paid answer) with a 170 s
+// timeout. Every provider call the action made is recorded, repairs included.
+func (s *server) runAI(r *http.Request, userID int64, kind string, call func(ctx context.Context, p ai.Provider, spec ai.ProviderSpec, c ai.Credentials) (ai.CallResult, error)) (aiRun, error) {
 	if err := s.aiUsable(); err != nil {
-		return ai.Credentials{}, err
+		return aiRun{}, err
 	}
 	release, err := s.ai.Limiter.Acquire(r.Context(), userID)
 	if err != nil {
-		return ai.Credentials{}, err
+		return aiRun{}, err
 	}
 	defer release()
 	// Only a call that may run decrypts the key and stamps last_used_at.
-	creds, err := s.ai.Keys.Credentials(r.Context(), userID, "anthropic") // Task 7 dispatches on the selection
+	provider, spec, creds, err := s.ai.For(r.Context(), userID)
 	if err != nil {
-		return ai.Credentials{}, err
+		return aiRun{}, err
 	}
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), aiProviderTimeout)
 	defer cancel()
-	_, usage, err := call(ctx, creds)
-	if rerr := s.ai.Limiter.Record(ctx, ai.Call{UserID: userID, Kind: kind, Model: creds.Model, OK: err == nil, Usage: usage}); rerr != nil {
-		log.Printf("ai: record %s call: %v", kind, rerr)
-	}
+	res, err := call(ctx, provider, spec, creds)
+	s.recordAICalls(ctx, userID, kind, spec.ID, creds.Model, res, err)
+	run := aiRun{Creds: creds, Spec: spec}
 	if err != nil {
-		// Never err.Error(): SDK errors can carry request details.
-		log.Printf("ai %s failed: code=%q", kind, ai.Code(err))
-		return creds, err
+		// Never err.Error(): provider errors can carry request details.
+		log.Printf("ai %s failed: provider=%s code=%q", kind, spec.ID, ai.Code(err))
+		return run, err
 	}
-	return creds, nil
+	return run, nil
+}
+
+// recordAICalls writes one ai_calls row per provider call the action made.
+// An adapter that reports no Calls made one call.
+func (s *server) recordAICalls(ctx context.Context, userID int64, kind, provider, model string, res ai.CallResult, callErr error) {
+	if res.Model != "" {
+		model = res.Model
+	}
+	calls := res.Calls
+	if len(calls) == 0 {
+		calls = []ai.CallUsage{{Kind: kind, Usage: res.Usage}}
+	}
+	for i, c := range calls {
+		ok := callErr == nil || i < len(calls)-1
+		if rerr := s.ai.Limiter.Record(ctx, ai.Call{UserID: userID, Kind: c.Kind, Model: model, Provider: provider, OK: ok, Usage: c.Usage}); rerr != nil {
+			log.Printf("ai: record %s call: %v", c.Kind, rerr)
+		}
+	}
 }
 
 func (s *server) putJournalDoc(ctx context.Context, userID, ws int64, key string, v any) error {
@@ -147,13 +171,13 @@ func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var reply ai.ReviewReply
-	creds, err := s.runAI(r, u.ID, "review", func(ctx context.Context, c ai.Credentials) (string, ai.Usage, error) {
+	run, err := s.runAI(r, u.ID, "review", func(ctx context.Context, p ai.Provider, _ ai.ProviderSpec, c ai.Credentials) (ai.CallResult, error) {
 		var err error
-		reply, err = s.ai.Provider.Review(ctx, c, ai.ReviewRequest{
+		reply, err = p.Review(ctx, c, ai.ReviewRequest{
 			Language: t.language, ExplanationLanguage: t.settings.ExplanationLanguage,
 			Guidance: t.settings.Guidance, Text: text,
 		})
-		return reply.Model, reply.Usage, err
+		return ai.CallResult{Model: reply.Model, Usage: reply.Usage, Calls: reply.Calls}, err
 	})
 	if err != nil {
 		writeAIError(w, err)
@@ -165,14 +189,12 @@ func (s *server) handleJournalReview(w http.ResponseWriter, r *http.Request) {
 	}
 	rev := journal.Review{
 		EntryID: entry.ID, TextHash: journal.TextHash(text), Annotations: anns, Overall: reply.Overall,
-		Model: reply.Model, Dropped: drop, CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		Model: reply.Model, Provider: run.Spec.ID, Dropped: drop, CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	}
 	if rev.Annotations == nil {
 		rev.Annotations = []journal.Annotation{}
 	}
-	if reply.Model != "" && reply.Model != creds.Model {
-		rev.FallbackFrom = creds.Model
-	}
+	rev.FallbackFrom = reply.FallbackFrom
 	wctx := context.WithoutCancel(r.Context())
 	// The entry may have been deleted while the provider worked: do not leave
 	// an orphaned review behind. (A delete in the instant between this check
@@ -219,19 +241,19 @@ func (s *server) handleJournalSuggestions(w http.ResponseWriter, r *http.Request
 		return
 	}
 	var reply ai.SuggestReply
-	_, err = s.runAI(r, u.ID, "suggest", func(ctx context.Context, c ai.Credentials) (string, ai.Usage, error) {
+	run, err := s.runAI(r, u.ID, "suggest", func(ctx context.Context, p ai.Provider, _ ai.ProviderSpec, c ai.Credentials) (ai.CallResult, error) {
 		var err error
-		reply, err = s.ai.Provider.Suggest(ctx, c, ai.SuggestRequest{
+		reply, err = p.Suggest(ctx, c, ai.SuggestRequest{
 			Language: t.language, ExplanationLanguage: t.settings.ExplanationLanguage, Words: words, Recent: recent,
 		})
-		return reply.Model, reply.Usage, err
+		return ai.CallResult{Model: reply.Model, Usage: reply.Usage, Calls: reply.Calls}, err
 	})
 	if err != nil {
 		writeAIError(w, err)
 		return
 	}
 	doc := journal.Suggestions{
-		Items: journal.FilterSuggestionWords(reply.Items, words), Model: reply.Model,
+		Items: journal.FilterSuggestionWords(reply.Items, words), Model: reply.Model, Provider: run.Spec.ID,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
 	}
 	if doc.Items == nil {

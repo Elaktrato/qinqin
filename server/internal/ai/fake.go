@@ -108,14 +108,15 @@ func (Fake) Review(ctx context.Context, c Credentials, r ReviewRequest) (ReviewR
 		anns = append(anns, RawAnnotation{Quote: "不存在的", Correction: corr, Explanation: "Fake explanation in " + r.ExplanationLanguage, Category: "grammar"})
 	}
 
-	model := c.Model
+	model, from := c.Model, ""
 	if strings.Contains(r.Text, "[[fake:fallback]]") {
-		model = "claude-opus-5"
+		model, from = "claude-opus-5", c.Model
 	}
 	return ReviewReply{
-		Annotations: anns,
-		Overall:     Overall{Summary: "Fake review (" + r.Language + ")", Strengths: []string{"fake strength"}, Focus: []string{"fake focus"}},
-		Model:       model,
+		FallbackFrom: from,
+		Annotations:  anns,
+		Overall:      Overall{Summary: "Fake review (" + r.Language + ")", Strengths: []string{"fake strength"}, Focus: []string{"fake focus"}},
+		Model:        model,
 	}, nil
 }
 

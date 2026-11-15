@@ -67,6 +67,9 @@ func (c *Claude) Review(ctx context.Context, cr Credentials, r ReviewRequest) (R
 		return ReviewReply{}, ErrBadReply
 	}
 	rep := ReviewReply{Overall: out.Overall, Model: model, Usage: usage}
+	if (cr.Model == "claude-opus-5-5" || cr.Model == "claude-sonnet-5-5") && model != "" && model != cr.Model {
+		rep.FallbackFrom = cr.Model
+	}
 	for _, a := range out.Annotations {
 		rep.Annotations = append(rep.Annotations, RawAnnotation{Quote: a.Quote, ContextBefore: a.ContextBefore, Correction: a.Correction, Explanation: a.Explanation, Category: a.Category})
 	}

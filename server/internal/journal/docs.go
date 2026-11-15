@@ -70,6 +70,7 @@ type Review struct {
 	Annotations  []Annotation `json:"annotations"`
 	Overall      ai.Overall   `json:"overall"`
 	Model        string       `json:"model"`
+	Provider     string       `json:"provider,omitempty"`
 	FallbackFrom string       `json:"fallbackFrom,omitempty"`
 	Dropped      DropCounts   `json:"dropped"`
 	CreatedAt    string       `json:"createdAt"`
@@ -79,6 +80,7 @@ type Review struct {
 type Suggestions struct {
 	Items     []ai.SuggestionItem `json:"items"`
 	Model     string              `json:"model"`
+	Provider  string              `json:"provider,omitempty"`
 	CreatedAt string              `json:"createdAt"`
 }
 

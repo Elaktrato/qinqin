@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"io"
@@ -30,15 +31,45 @@ func aiServer(t *testing.T, secret ai.SecretState) (*httptest.Server, *sql.DB, s
 		t.Fatalf("db.Open: %v", err)
 	}
 	t.Cleanup(func() { sqlDB.Close() })
-	svc := &ai.Service{Provider: ai.Fake{}, ProviderName: "fake", Secret: secret, Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30}}
+	var seed byte
 	if secret == ai.SecretOK {
-		raw := bytes.Repeat([]byte{7}, 32)
-		svc.Keys = &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(raw)}
+		seed = 7
 	}
+	svc := testAIService(sqlDB, ai.Fake{}, secret, seed)
+	svc.Fake = true
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts.Close)
 	admin := registerUser(t, ts.URL, "root", "")
 	return ts, sqlDB, admin
+}
+
+// testAIService builds the service the way aiFromEnv does, with one adapter
+// answering for every provider family (a fake or a client pointed at an
+// httptest server). seed 0 means no key store.
+func testAIService(sqlDB *sql.DB, p ai.Provider, secret ai.SecretState, seed byte) *ai.Service {
+	reg := &ai.Registry{Custom: &ai.CustomStore{DB: sqlDB}}
+	svc := &ai.Service{
+		Adapters: map[ai.Kind]ai.Provider{ai.KindAnthropic: p, ai.KindOpenAI: p, ai.KindGemini: p},
+		Registry: reg, Secret: secret, Selection: &ai.Selection{DB: sqlDB},
+		Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30},
+	}
+	if seed != 0 {
+		svc.Keys = &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(bytes.Repeat([]byte{seed}, 32)), AADFor: reg.AADFor}
+	}
+	return svc
+}
+
+// storeActiveKey stores a key for the user directly (no validation call) and
+// makes the provider active.
+func storeActiveKey(t *testing.T, sqlDB *sql.DB, userID int64, provider, key string) {
+	t.Helper()
+	svc := testAIService(sqlDB, ai.Fake{}, ai.SecretOK, 7)
+	if err := svc.Keys.Put(context.Background(), userID, provider, key, "", ai.PutOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.Selection.SetActive(context.Background(), userID, provider); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func aiBodyOf(t *testing.T, resp *http.Response) string {
@@ -174,8 +205,8 @@ func TestAIKeyUndecryptable(t *testing.T) {
 	ts, sqlDB, tok := aiServer(t, ai.SecretOK)
 	doJSON(t, http.MethodPut, ts.URL, "/api/ai/key", tok, map[string]string{"key": aiGoodKey})
 	// The server restarts with another secret.
-	svc := &ai.Service{Provider: ai.Fake{}, ProviderName: "fake", Secret: ai.SecretOK,
-		Keys: &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(bytes.Repeat([]byte{9}, 32))}, Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30}}
+	svc := testAIService(sqlDB, ai.Fake{}, ai.SecretOK, 9)
+	svc.Fake = true
 	ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts2.Close)
 	var st ai.Status
@@ -286,7 +317,8 @@ func TestAIKeyDeleteAndGetWithoutSecret(t *testing.T) {
 	doJSON(t, http.MethodPut, ts.URL, "/api/ai/key", tok, map[string]string{"key": aiGoodKey})
 	// The server restarts without a usable secret: no key store at all.
 	for _, secret := range []ai.SecretState{ai.SecretMissing, ai.SecretInvalid} {
-		svc := &ai.Service{Provider: ai.Fake{}, ProviderName: "fake", Secret: secret, Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30}}
+		svc := testAIService(sqlDB, ai.Fake{}, secret, 0)
+		svc.Fake = true
 		ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 		t.Cleanup(ts2.Close)
 		resp := doJSON(t, http.MethodGet, ts2.URL, "/api/ai/key", tok, nil)
@@ -297,7 +329,8 @@ func TestAIKeyDeleteAndGetWithoutSecret(t *testing.T) {
 			t.Fatalf("%s: GET key: %d %s", secret, resp.StatusCode, body)
 		}
 	}
-	svc := &ai.Service{Provider: ai.Fake{}, ProviderName: "fake", Secret: ai.SecretMissing, Limiter: &ai.Limiter{DB: sqlDB, PerHour: 30}}
+	svc := testAIService(sqlDB, ai.Fake{}, ai.SecretMissing, 0)
+	svc.Fake = true
 	ts2 := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts2.Close)
 	if resp := doJSON(t, http.MethodDelete, ts2.URL, "/api/ai/key", tok, nil); resp.StatusCode != http.StatusNoContent {

@@ -193,3 +193,22 @@ func (r *Registry) All(ctx context.Context) ([]ProviderSpec, error) {
 	}
 	return out, nil
 }
+
+// AADFor is the KeyStore hook: built-in ids use the frozen v1 additional
+// data, custom ids bind their current base URL (v2), anything else is an
+// error that leaves the row undecryptable.
+func (r *Registry) AADFor(userID int64, provider string) (string, error) {
+	for _, b := range Builtins() {
+		if b.ID == provider {
+			return KeyAAD(userID, provider), nil
+		}
+	}
+	if r.Custom == nil || !strings.HasPrefix(provider, customIDPrefix) {
+		return "", ErrUnknownProvider
+	}
+	sp, err := r.Custom.Get(context.Background(), provider)
+	if err != nil {
+		return "", err
+	}
+	return KeyAADCustom(userID, provider, sp.BaseURL), nil
+}
