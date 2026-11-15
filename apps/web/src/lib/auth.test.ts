@@ -9,6 +9,7 @@ vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('./audio/source', () => ({ clearClipCache }));
 vi.mock('./api/audio', () => ({ clearAudioCache }));
 
+import { getToken } from './api/client';
 import { auth, loadMe, login, logout, register, restriction } from './auth';
 
 const user = {
@@ -50,7 +51,7 @@ describe('auth store', () => {
 			vi.fn(async (input: RequestInfo | URL) => {
 				const url = String(input);
 				if (url === '/api/auth/register') return jsonResponse(user, 201);
-				if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+				if (url === '/api/auth/login') return jsonResponse({ status: 'ok', token: 'token-1' });
 				if (url === '/api/auth/me') return jsonResponse(user);
 				return new Response('not found', { status: 404 });
 			})
@@ -137,7 +138,7 @@ describe('auth store', () => {
 	it('login drops the token again when the user cannot be loaded (non-401 failure)', async () => {
 		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
 			const url = String(input);
-			if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+			if (url === '/api/auth/login') return jsonResponse({ status: 'ok', token: 'token-1' });
 			return new Response('boom', { status: 500 });
 		});
 
@@ -152,7 +153,7 @@ describe('auth store', () => {
 		// login page away before it shows the error.
 		expect(seen.every((t) => t === null)).toBe(true);
 
-		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		expect(getToken()).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
 	});
 
@@ -167,7 +168,7 @@ describe('auth store', () => {
 		const calls: Array<string | undefined> = [];
 		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
 			const url = String(input);
-			if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+			if (url === '/api/auth/login') return jsonResponse({ status: 'ok', token: 'token-1' });
 			calls.push((init?.headers as Record<string, string>).authorization);
 			return jsonResponse(user);
 		});
@@ -190,7 +191,7 @@ describe('auth store', () => {
 
 		logout();
 
-		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		expect(getToken()).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
 		expect(goto).not.toHaveBeenCalled();
 	});
@@ -204,7 +205,7 @@ describe('auth store', () => {
 
 		// State is cleared at once, without waiting for the request.
 		expect(get(auth)).toEqual({ token: null, user: null });
-		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		expect(getToken()).toBeNull();
 		await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
 		expect(String(url)).toBe('/api/auth/logout');
@@ -234,5 +235,18 @@ describe('auth store', () => {
 		logout();
 		expect(clearClipCache).toHaveBeenCalled();
 		expect(clearAudioCache).toHaveBeenCalled();
+	});
+});
+
+describe('an unknown login status', () => {
+	it('is not stored as a session', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => jsonResponse({ status: 'mfa_required', token: 'half' }))
+		);
+		auth.set({ token: null, user: null });
+		await expect(login('ada', 'pw')).rejects.toThrow(/not supported/);
+		expect(getToken()).toBeNull();
+		vi.unstubAllGlobals();
 	});
 });

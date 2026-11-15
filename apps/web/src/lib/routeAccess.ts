@@ -15,7 +15,9 @@
 export type RouteAccess = 'auth-only' | 'open' | 'private';
 
 const AUTH_ONLY: ReadonlySet<string> = new Set(['/login', '/register']);
-const OPEN: ReadonlySet<string> = new Set(['/sources']);
+// /reset is open: a signed-in person opening a reset link must not be bounced
+// home; a successful reset replaces the stored token.
+const OPEN: ReadonlySet<string> = new Set(['/sources', '/reset']);
 
 /** normalizePath drops trailing slashes; the root stays `/`. */
 export function normalizePath(path: string): string {

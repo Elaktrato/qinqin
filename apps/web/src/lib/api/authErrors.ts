@@ -30,6 +30,20 @@ export function authErrorMessage(err: unknown, fallback: string): string {
         return DISABLED;
       case "admin_required":
         return ADMIN_ONLY;
+      case "registration_closed":
+        return "Registration is closed. Ask the administrator for an invite link or an account.";
+      case "invite_invalid":
+        return "This invite link is no longer valid.";
+      case "email_required":
+        return "An email address is required.";
+      case "email_disabled":
+        return "This instance does not use email addresses.";
+      case "invalid_email":
+        return "Enter a valid email address.";
+      case "email_taken":
+        return "That email address is already in use.";
+      case "token_invalid":
+        return "This link is not valid any more. Ask for a new one.";
       case "rate_limited":
         if (err instanceof ApiError && err.retryAfterSeconds !== undefined) {
           // Registration says "attempts", sign-in says "sign-in attempts".

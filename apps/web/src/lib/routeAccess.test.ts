@@ -125,3 +125,11 @@ describe('restrictedTarget', () => {
 		expect(restrictedTarget('/sources/', 'mfa_enrollment')).toBeNull();
 	});
 });
+
+describe('the reset page', () => {
+	it('is open: a signed-in person opening a reset link is not bounced', () => {
+		expect(routeAccess('/reset')).toBe('open');
+		expect(redirectTarget('/reset', true)).toBeNull();
+		expect(redirectTarget('/reset', false)).toBeNull();
+	});
+});
