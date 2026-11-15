@@ -504,13 +504,18 @@ sessions and mastery map, and
 
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,
-`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages` and `GET /api/frequency-packs` are public.
+`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.
 
 | Route | Purpose |
 |---|---|
 | `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, forms, readings, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
 | `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates are other readings or entries with the same surface (at most 8 candidates in all). A candidate has `reading: true` when it matched by a kana reading (Japanese) |
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
+| `GET /api/audio/entries/{id}` | Signed-in. The pronunciation clips of one entry: `{terms: [Clip], syllables: [[Clip]\|null]\|null}`. `terms` are recordings of the whole word (matched on written form and first reading); `syllables` (zh entries only, else `null`) has one slot per pinyin reading in the entry's order, each the clips to play in sequence or `null` when a syllable has no recording. `Clip` is `{url, packId, license, attribution, source}`; 404 for an unknown entry |
+| `POST /api/audio/resolve` `{entryIds}` | Signed-in. The same resolution for up to 200 entries, keyed by id (unknown ids are left out); more is 422, a body over 16 KiB 413 |
+| `GET /api/audio/clips/{file}` | Signed-in. One stored clip, `file` being `<sha256>.<opus\|ogg\|mp3>` exactly as in a clip's `url`; Range and conditional requests work, served `private, max-age=31536000, immutable` with `nosniff`. Any other name, or a clip no installed pack references under that extension, is 404 |
+| `GET /api/audio-packs` | The installed audio packs with `license`, `attribution`, `notice`, `language` and `clipCount` (the Sources page lists them) |
+| `GET /api/audio-packs/{id}/credits?offset=&limit=` | The per-recording credits of a pack (`{total, offset, limit, clips: [{kind, form, reading, license, attribution, source}]}`, text only, `limit` up to 500, default 100); unknown pack 404 |
 | `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
@@ -564,6 +569,7 @@ All library and source routes need a signed-in user, and so does
 | `POST /api/library/books/{id}/highlights` | 16 KiB |
 | `POST /api/library/books/{id}/bookmarks` | 1 KiB |
 | `POST /api/entries/{id}/sentences` | 16 KiB |
+| `POST /api/audio/resolve` | 16 KiB (413; more than 200 ids is 422) |
 | `POST /api/library/sources/{source}/import` | 1 KiB |
 | `PUT /api/library/books/{id}/position` | 2 KiB |
 | `POST /api/events/batch` | 4 MiB |
