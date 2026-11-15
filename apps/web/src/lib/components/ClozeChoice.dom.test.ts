@@ -47,8 +47,11 @@ describe('ClozeChoice', () => {
 		expect(down.defaultPrevented).toBe(true);
 		expect(onResult).toHaveBeenCalledTimes(1);
 		expect(onResult).toHaveBeenCalledWith({ correct: false });
-		await fireEvent.keyDown(window, { key: '1' });
+		const second = new KeyboardEvent('keydown', { key: '1', cancelable: true, bubbles: true });
+		window.dispatchEvent(second);
 		expect(onResult).toHaveBeenCalledTimes(1);
+		// Answered: the digit is left to the runner's grading.
+		expect(second.defaultPrevented).toBe(false);
 	});
 
 	it('announces the result in a status region and reveals the answer', async () => {

@@ -33,6 +33,8 @@
 	}
 
 	function onKeydown(event: KeyboardEvent): void {
+		// Once answered the digits belong to whoever grades (the session runner).
+		if (finished) return;
 		const index = choiceForKeyEvent(
 			{
 				key: event.key,
