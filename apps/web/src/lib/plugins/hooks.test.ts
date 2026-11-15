@@ -27,7 +27,7 @@ describe('study-event hook', () => {
 	});
 	afterEach(() => {
 		offs.splice(0).forEach((off) => off());
-		setHookStates([]);
+		setHookStates(null);
 		vi.unstubAllGlobals();
 		vi.restoreAllMocks();
 	});
@@ -58,6 +58,28 @@ describe('study-event hook', () => {
 		expect(off).not.toHaveBeenCalled();
 		expect(on).toHaveBeenCalledTimes(1);
 		expect(unknown).toHaveBeenCalledTimes(1);
+	});
+
+	it('an empty state list (not loaded yet) runs no handler; null runs all', () => {
+		const handler = vi.fn();
+		offs.push(registerStudyEventHandler('p1', handler));
+		setHookStates([]);
+		emitStudyEvents([event]);
+		expect(handler).not.toHaveBeenCalled();
+		setHookStates(null);
+		emitStudyEvents([event]);
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it('isolates an async handler rejection', async () => {
+		const err = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+		const next = vi.fn();
+		offs.push(registerStudyEventHandler('p1', () => Promise.reject(new Error('late boom'))));
+		offs.push(registerStudyEventHandler('p2', next));
+		await expect(postEvents([event])).resolves.toBeUndefined();
+		await new Promise((r) => setTimeout(r, 0));
+		expect(next).toHaveBeenCalledTimes(1);
+		expect(err).toHaveBeenCalledTimes(1);
 	});
 
 	it('hooks isolate a throwing handler', async () => {

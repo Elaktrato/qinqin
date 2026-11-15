@@ -5,7 +5,7 @@
 
 import type { PluginInfo, StudyEventBody } from '../api/types';
 
-export type StudyEventHandler = (events: StudyEventBody[]) => void;
+export type StudyEventHandler = (events: StudyEventBody[]) => void | Promise<void>;
 
 interface Registration {
 	pluginId: string;
@@ -13,7 +13,7 @@ interface Registration {
 }
 
 const handlers = new Set<Registration>();
-let states: PluginInfo[] = [];
+let states: PluginInfo[] | null = null;
 
 /**
  * registerStudyEventHandler subscribes a handler for one plugin and
@@ -31,15 +31,19 @@ export function registerStudyEventHandler(
 }
 
 /**
- * setHookStates tells the dispatcher which plugins the user enabled.
- * Before the first call every plugin counts as enabled, the server's own
- * default for a plugin without a state row.
+ * setHookStates tells the dispatcher which plugins the user enabled. An
+ * empty list means the states are not known yet (loading, failed, signed
+ * out): no handler runs. `null` (also the state before the first call)
+ * counts every plugin as enabled, the server's default for a plugin
+ * without a state row.
  */
-export function setHookStates(next: PluginInfo[]): void {
+export function setHookStates(next: PluginInfo[] | null): void {
 	states = next;
 }
 
 function enabled(pluginId: string): boolean {
+	if (states === null) return true;
+	if (states.length === 0) return false;
 	const state = states.find((s) => s.id === pluginId);
 	return state ? state.enabled : true;
 }
@@ -48,10 +52,13 @@ function enabled(pluginId: string): boolean {
 export function emitStudyEvents(events: StudyEventBody[]): void {
 	for (const { pluginId, handler } of [...handlers]) {
 		if (!enabled(pluginId)) continue;
-		try {
-			handler(events);
-		} catch (err) {
+		const failed = (err: unknown) =>
 			console.error(`plugin ${pluginId}: study-event handler failed`, err);
+		try {
+			// An async handler's rejection must not become an unhandled one.
+			void Promise.resolve(handler(events)).catch(failed);
+		} catch (err) {
+			failed(err);
 		}
 	}
 }

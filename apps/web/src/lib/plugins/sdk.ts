@@ -48,12 +48,17 @@ export interface PluginSdk {
 const DEVICE = 'web';
 const EPOCH = '1970-01-01T00:00:00Z';
 
+// The API serves data as JSON, but a row may carry JSON text as a string (an
+// older writer): JSON text is decoded, any other string is returned as it is,
+// so put('k', 'hello') reads back as 'hello'. A string that is itself valid
+// JSON text ('123', '{"a":1}') still reads back decoded, a quirk to avoid by
+// storing objects instead of such strings.
 function decodeData(data: unknown): unknown {
 	if (typeof data !== 'string') return data;
 	try {
 		return JSON.parse(data) as unknown;
 	} catch {
-		return null;
+		return data;
 	}
 }
 
@@ -61,8 +66,13 @@ function scope(pluginId: string, workspace: number | null): DataScope {
 	const base = `/api/plugins/${encodeURIComponent(pluginId)}/data`;
 	const suffix = workspace === null ? '' : `?workspace=${workspace}`;
 	// ':' is legal in a path segment, so keys like `entry:<id>` keep their readable form.
-	const keyPath = (key: string) =>
-		`${base}/${encodeURIComponent(key).replaceAll('%3A', ':')}${suffix}`;
+	const keyPath = (key: string) => {
+		// '.' and '..' would be resolved away as path segments, and an empty key is no route.
+		if (key === '' || key === '.' || key === '..') {
+			throw new Error(`plugin ${pluginId}: invalid data key "${key}"`);
+		}
+		return `${base}/${encodeURIComponent(key).replaceAll('%3A', ':')}${suffix}`;
+	};
 	return {
 		async get<T>(key: string): Promise<T | null> {
 			try {
@@ -134,7 +144,7 @@ export function createPluginSdk(manifest: ContractManifest): PluginSdk {
 		events: {
 			list(opts) {
 				need('read:study-events');
-				const query = [`since=${opts.since ?? EPOCH}`];
+				const query = [`since=${encodeURIComponent(opts.since ?? EPOCH)}`];
 				if (opts.workspace !== undefined) query.push(`workspace=${opts.workspace}`);
 				const types = opts.types;
 				return api<StudyEvent[] | undefined>(`/api/events?${query.join('&')}`).then((events) => {

@@ -8,8 +8,12 @@ import { PERMISSION_LABELS, PERMISSIONS, sdkSupported, type Permission } from '.
 export interface PluginRowInfo {
 	/** Permission labels joined with ` · `; empty for data plugins. */
 	permissions: string;
-	/** A feature plugin this build has no module for, or whose sdk it does not run. */
-	needsUpdate: boolean;
+	/**
+	 * `app-update`: a feature plugin this build has no module for or whose sdk
+	 * it does not run (the app is older than the plugin). `legacy`: a row
+	 * registered without an sdk declaration (grandfathered).
+	 */
+	notice: 'app-update' | 'legacy' | null;
 }
 
 export function pluginRowInfo(plugin: PluginInfo, web: WebPlugin[]): PluginRowInfo {
@@ -22,5 +26,8 @@ export function pluginRowInfo(plugin: PluginInfo, web: WebPlugin[]): PluginRowIn
 	const hasModule = web.some(
 		(w) => w.manifest.id === plugin.id || `qinqin-${w.manifest.id}` === plugin.id
 	);
-	return { permissions, needsUpdate: feature && (!hasModule || !sdkSupported(plugin.manifest)) };
+	if (!feature) return { permissions, notice: null };
+	const declaresSdk = typeof (plugin.manifest as { sdk?: unknown }).sdk === 'number';
+	if (!declaresSdk) return { permissions, notice: 'legacy' };
+	return { permissions, notice: !hasModule || !sdkSupported(plugin.manifest) ? 'app-update' : null };
 }

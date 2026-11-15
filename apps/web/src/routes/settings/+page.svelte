@@ -30,7 +30,7 @@
 		enabled: boolean;
 		order: number;
 		permissions: string;
-		needsUpdate: boolean;
+		notice: 'app-update' | 'legacy' | null;
 		saving: boolean;
 		saved: boolean;
 		error: string;
@@ -329,12 +329,14 @@
 						<div class="plugin-head">
 							<strong>{plugin.name}</strong>
 							<code>{plugin.id}</code>
-							{#if plugin.needsUpdate}
+							{#if plugin.notice === 'app-update'}
 								<span class="needs-update">Needs an app update</span>
+							{:else if plugin.notice === 'legacy'}
+								<span class="needs-update">Plugin has no SDK declaration (legacy)</span>
 							{/if}
 						</div>
 						{#if plugin.permissions}
-							<p class="plugin-permissions">{plugin.permissions}</p>
+							<p class="plugin-permissions"><span class="plugin-permissions-label">Permissions:</span> {plugin.permissions}</p>
 						{/if}
 
 						<div class="plugin-controls">
@@ -525,7 +527,10 @@
 	.plugin-permissions {
 		margin: 0.25rem 0 0;
 		font-size: 0.9rem;
-		opacity: 0.75;
+	}
+
+	.plugin-permissions-label {
+		font-weight: 600;
 	}
 
 	.needs-update {

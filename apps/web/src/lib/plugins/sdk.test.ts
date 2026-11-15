@@ -64,14 +64,34 @@ describe('plugin sdk data', () => {
 		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data/k?workspace=3');
 	});
 
-	it('404 is null, a string is decoded, an unparsable string is null', async () => {
+	it('404 is null and a JSON-text string is decoded', async () => {
 		const scope = createPluginSdk(full).data.workspace(3);
 		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 404 }));
 		expect(await scope.get('k')).toBeNull();
 		vi.mocked(fetch).mockResolvedValue(json({ data: '{"a":1}' }));
 		expect(await scope.get('k')).toEqual({ a: 1 });
+	});
+
+	it('a plain string round-trips instead of reading back as null', async () => {
+		const scope = createPluginSdk(full).data.workspace(3);
+		vi.mocked(fetch).mockResolvedValue(json({}));
+		await scope.put('k', 'hello');
+		expect(JSON.parse(String(lastCall().init.body))).toBe('hello');
+		vi.mocked(fetch).mockResolvedValue(json({ data: 'hello' }));
+		expect(await scope.get('k')).toBe('hello');
 		vi.mocked(fetch).mockResolvedValue(json({ data: '{oops' }));
-		expect(await scope.get('k')).toBeNull();
+		expect(await scope.get('k')).toBe('{oops');
+	});
+
+	it('rejects empty, dot and dot-dot keys before any request', async () => {
+		const scope = createPluginSdk(full).data.workspace(3);
+		vi.mocked(fetch).mockClear();
+		for (const key of ['', '.', '..']) {
+			await expect(scope.get(key)).rejects.toThrow(/key/);
+			await expect(scope.put(key, 1)).rejects.toThrow(/key/);
+			await expect(scope.delete(key)).rejects.toThrow(/key/);
+		}
+		expect(fetch).not.toHaveBeenCalled();
 	});
 
 	it('user scope has no workspace parameter and keys are escaped', async () => {
@@ -128,8 +148,16 @@ describe('plugin sdk events', () => {
 			])
 		);
 		const rows = await createPluginSdk(full).events.list({ types: ['read'] });
-		expect(lastCall().url).toBe('/api/events?since=1970-01-01T00:00:00Z');
+		expect(lastCall().url).toBe('/api/events?since=1970-01-01T00%3A00%3A00Z');
 		expect(rows.map((r) => r.id)).toEqual(['1']);
+	});
+
+	it('list URL-encodes since', async () => {
+		vi.mocked(fetch).mockResolvedValue(json([]));
+		await createPluginSdk(full).events.list({ since: '2026-11-15T10:00:00+01:00', workspace: 2 });
+		expect(lastCall().url).toBe(
+			'/api/events?since=2026-11-15T10%3A00%3A00%2B01%3A00&workspace=2'
+		);
 	});
 
 	it('record posts one ULID event with device web and the given time', async () => {

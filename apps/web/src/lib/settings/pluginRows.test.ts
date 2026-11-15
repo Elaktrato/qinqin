@@ -17,7 +17,7 @@ describe('pluginRowInfo', () => {
 	it('lists the journal permissions and needs no update', () => {
 		expect(pluginRowInfo(info({ ...journal }), webPlugins)).toEqual({
 			permissions: 'Stores its own data · Records study activity',
-			needsUpdate: false
+			notice: null
 		});
 	});
 
@@ -26,17 +26,22 @@ describe('pluginRowInfo', () => {
 			info({ ...journal, id: 'qinqin-extra', permissions: ['owns-data'] }),
 			webPlugins
 		);
-		expect(row).toEqual({ permissions: 'Stores its own data', needsUpdate: true });
+		expect(row).toEqual({ permissions: 'Stores its own data', notice: 'app-update' });
 	});
 
-	it('flags a feature manifest with an unsupported sdk', () => {
-		expect(pluginRowInfo(info({ ...journal, sdk: 2 }), webPlugins).needsUpdate).toBe(true);
+	it('flags a feature manifest with a newer sdk as an app update', () => {
+		expect(pluginRowInfo(info({ ...journal, sdk: 2 }), webPlugins).notice).toBe('app-update');
+	});
+
+	it('flags a grandfathered row without sdk as legacy', () => {
+		const { sdk: _sdk, ...legacy } = journal;
+		expect(pluginRowInfo(info({ ...legacy, id: 'legacy-x' }), webPlugins).notice).toBe('legacy');
 	});
 
 	it('leaves a dictionary pack alone', () => {
 		expect(pluginRowInfo(info({ id: 'cedict', name: 'CC-CEDICT', type: 'dictionary' }), webPlugins)).toEqual({
 			permissions: '',
-			needsUpdate: false
+			notice: null
 		});
 	});
 });
