@@ -1,12 +1,13 @@
 // The Settings page's tabs and their `?tab=` deep links.
 
-export const SETTINGS_TABS = ['workspaces', 'home', 'plugins'] as const;
+export const SETTINGS_TABS = ['workspaces', 'home', 'plugins', 'ai'] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 export const SETTINGS_TAB_LABELS: Record<SettingsTab, string> = {
 	workspaces: 'Workspaces',
 	home: 'Home',
-	plugins: 'Plugins'
+	plugins: 'Plugins',
+	ai: 'AI'
 };
 
 /** parseSettingsTab reads `?tab=`; a missing or unknown value is the first tab. */

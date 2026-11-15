@@ -11,6 +11,7 @@
 	import { languageLabel } from '$lib/languages';
 	import { isCorePlugin } from '$lib/plugins';
 	import { loadPluginStates } from '$lib/plugins/states';
+	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import {
 		SETTINGS_TABS,
@@ -363,6 +364,15 @@
 				{/each}
 			</ul>
 		{/if}
+	</div>
+
+	<div
+		role="tabpanel"
+		id="settings-panel-ai"
+		aria-labelledby="settings-tab-ai"
+		hidden={activeTab !== 'ai'}
+	>
+		<AiSettings />
 	</div>
 </main>
 
