@@ -115,6 +115,15 @@
   `git -C <wt> log --all -p -- ':(glob)plugins/**/levels.json' scripts/testdata ':(glob)scripts/*.test.mjs' | grep -E '^\+.*(臺灣華語文能力基準|识字写字教学基本字表)'` (data and fixtures only; docs and READMEs may name the sources).
 - [ ] **Step 5: Update ROADMAP**, commit `docs: roadmap — #42 Jōyō and 通用规范 packs bundled, TBCL/curriculum local-only`.
 
+## Rulings made during execution (2026-11-15)
+
+- Ruling: the local converter treats `form` + `reading` as the identity of a row, so a repeated form with the same (or no) reading keeps its first level, while a homograph with a different reading stays a separate entry — the levels importer matches readings, so merging them would lose the second reading — cost: a list repeating a form with differing readings keeps both.
+- Ruling: `--id` must match `^[a-z0-9][a-z0-9-]*$` so it cannot escape the output directory — cost: none.
+- Ruling: default `--version` is `local-<first 8 hex of the input SHA-256>` (deterministic) — cost: none.
+- Ruling: `parseJoyoSet` fails on a `kJoyoKanji` value that is neither `2010` nor a `U+` variant, so a future Unihan edition cannot change the cross-check silently — cost: the test needs a look after a Unihan refresh.
+- Ruling: Task 2 also updated the two committed-pack Go tests (`TestCommittedPackNotices`, `TestDefaultRootHoldsNoLevelSamples`) that enumerate bundled packs — cost: none.
+- Finding (Task 5): the `/study` "By level" session uses only word entries (`levelQueue.ts`), so character-unit packs — `joyo-grades`, `tgh-chars` and the existing `jlpt-kanji` — list their levels but show "0 words … Nothing is due" and cannot start; the plan's "session starts with the usual new-card cap" does not hold for character packs. Not changed here (the study runner is out of scope; badges, map and filters work). The map's per-level counts for `tgh-chars` (3,509 / 3,006 / 1,615) include variant forms; `GET /api/schemes/<id>/characters` returns 3,500 / 3,000 / 1,605.
+
 ## Risks and notes for the owner
 
 - `tgh-chars` adds a mainland scheme the owner has not seen yet; purge procedure as for HSK if unwanted.
