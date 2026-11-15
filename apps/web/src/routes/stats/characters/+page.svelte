@@ -15,6 +15,7 @@
 		groupOptions,
 		masteryGlyphs,
 		sectionStats,
+		variantFormCount,
 		type CellState,
 		type GroupKey,
 		type SchemeLevelMembers,
@@ -269,7 +270,9 @@
 		return grouping.sections.map((section) => {
 			const cells = section.chars.map((row) => cellByRow.get(row)!);
 			const shown = filtering ? filterCells(cells, stageFilter, query) : cells;
-			return { id: section.id, label: section.label, cells, shown, stats: sectionStats(cells) };
+			const level = members?.levels.find((l) => `level-${l.levelId}` === section.id);
+			const variants = schemeId === null ? 0 : variantFormCount(section.chars, level?.chars);
+			return { id: section.id, label: section.label, cells, shown, stats: sectionStats(cells), variants };
 		});
 	});
 
@@ -454,10 +457,11 @@
 
 	/** headerName is a section button's name: "Grade 2, 0 of 160 learned". */
 	function headerName(
-		view: { label: string; stats: { learned: number; total: number }; shown: unknown[] },
+		view: { label: string; stats: { learned: number; total: number }; shown: unknown[]; variants: number },
 		filtered: boolean
 	): string {
-		const base = `${view.label}, ${formatCount(view.stats.learned)} of ${formatCount(view.stats.total)} learned`;
+		const extra = view.variants > 0 ? `, including ${formatCount(view.variants)} variant forms` : '';
+		const base = `${view.label}, ${formatCount(view.stats.learned)} of ${formatCount(view.stats.total)} learned${extra}`;
 		return filtered ? `${base}, ${formatCount(view.shown.length)} shown` : base;
 	}
 
@@ -639,8 +643,15 @@
 						>
 							<span class="chev" aria-hidden="true"></span>
 							<span class="label">{view.label}</span>
-							<span class="count" aria-hidden="true">
-								<strong>{formatCount(view.stats.learned)}</strong>/{formatCount(view.stats.total)}
+							<span
+								class="count"
+								aria-hidden="true"
+								title={view.variants > 0
+									? `${formatCount(view.stats.total)} includes ${formatCount(view.variants)} variant forms of listed characters`
+									: undefined}
+							>
+								<strong>{formatCount(view.stats.learned)}</strong>/{formatCount(view.stats.total)}{#if view.variants > 0}
+									<small>(incl. {formatCount(view.variants)} variant forms)</small>{/if}
 							</span>
 							{#if filtering}
 								<span class="shown" aria-hidden="true">{formatCount(view.shown.length)} shown</span>
@@ -957,6 +968,11 @@
 	.count {
 		font-variant-numeric: tabular-nums;
 		font-weight: 400;
+	}
+
+	.count small {
+		font-size: 0.8rem;
+		opacity: 0.75;
 	}
 
 	.shown {

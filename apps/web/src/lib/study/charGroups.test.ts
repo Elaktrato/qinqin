@@ -9,6 +9,7 @@ import {
 	dataGap,
 	filterCells,
 	groupOptions,
+	variantFormCount,
 	HIDDEN_GROUPING_PACK_IDS,
 	masteryGlyphs,
 	sectionStats,
@@ -613,5 +614,14 @@ describe('dataGap', () => {
 	it('is false for an empty list and for scheme groupings', () => {
 		expect(dataGap([], 'grade')).toBe(false);
 		expect(dataGap(fill(100, 0, {}), 'scheme:2')).toBe(false);
+	});
+});
+
+describe('variantFormCount', () => {
+	it('counts rows whose own glyph is not in the level', () => {
+		const rows = [row(1, '爱'), row(2, '愛', { v: ['爱'] }), row(3, '汉')];
+		expect(variantFormCount(rows, new Set(['爱', '汉']))).toBe(1);
+		expect(variantFormCount(rows, new Set(['爱', '汉', '愛']))).toBe(0);
+		expect(variantFormCount(rows, undefined)).toBe(0);
 	});
 });
