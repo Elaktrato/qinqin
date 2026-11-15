@@ -233,7 +233,20 @@ func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
 	// answer 200 HTML to a health probe.
 	mux.Handle("/healthz/{$}", http.RedirectHandler("/healthz", http.StatusPermanentRedirect))
 	mux.Handle("/", webdist.Handler(web))
-	return mux
+	return browserHeaders(mux)
+}
+
+// browserHeaders adds the headers every response (API, health and static)
+// carries: no Referer is sent from a page of this app (reset and invite
+// links keep their secret in the fragment, but nothing should leak further),
+// and no other site may frame it. There is deliberately no CSP yet.
+func browserHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("Referrer-Policy", "no-referrer")
+		h.Set("X-Frame-Options", "DENY")
+		next.ServeHTTP(w, r)
+	})
 }
 
 // envOr returns the environment variable key, or def when it is empty.
