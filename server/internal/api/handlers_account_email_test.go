@@ -43,11 +43,18 @@ func TestAccountEmailFollowsThePolicy(t *testing.T) {
 	if st, e := put(owner, map[string]any{"email": "b@example.org"}); st != 403 || e.Error != "current_password_required" {
 		t.Errorf("probe without a password = %d %s, want 403 current_password_required", st, e.Error)
 	}
-	// a restricted (enrolment) session cannot use the route at all
+	// an enrolment session may set an address without the password (it just proved
+	// it at sign-in); a password-change session may not use the route
 	sqlDB.Exec(`UPDATE sessions SET level = 'enroll' WHERE user_id = (SELECT id FROM users WHERE username = 'owner')`)
-	if st, e := put(owner, map[string]any{"email": "b@example.org", "currentPassword": "secret-pass-owner"}); st != 403 || e.Error != "mfa_enrollment_required" {
+	if st, e := put(owner, map[string]any{"email": "o@example.org"}); st != 200 {
 		t.Errorf("enrolment session = %d %s", st, e.Error)
 	}
+	sqlDB.Exec(`UPDATE users SET must_change_password = 1 WHERE username = 'bobby'`)
+	if st, e := put(bob, map[string]any{"email": "b@example.org", "currentPassword": pw}); st != 403 || e.Error != "password_change_required" {
+		t.Errorf("password-change session = %d %s", st, e.Error)
+	}
+	sqlDB.Exec(`UPDATE users SET must_change_password = 0 WHERE username = 'bobby'`)
+	sqlDB.Exec(`UPDATE users SET email = NULL, email_norm = NULL WHERE username = 'owner'`)
 	sqlDB.Exec(`UPDATE sessions SET level = 'full'`)
 	// re-saving the same address keeps verification
 	sqlDB.Exec(`UPDATE users SET email_verified_at = '2026-01-01T00:00:00Z' WHERE username = 'bobby'`)

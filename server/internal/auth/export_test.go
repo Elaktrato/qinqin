@@ -19,3 +19,8 @@ func SetClockForTest(f func() time.Time) (restore func()) {
 	nowFunc = f
 	return func() { nowFunc = old }
 }
+
+// HOTPForTest exposes the HOTP primitive for the RFC vectors.
+func HOTPForTest(secret []byte, counter uint64, digits int) string {
+	return hotp(secret, counter, digits)
+}

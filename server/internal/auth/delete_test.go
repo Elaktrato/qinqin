@@ -33,6 +33,9 @@ var seedSQL = map[string][]string{
 	"ai_calls":           {`INSERT INTO ai_calls (user_id, kind, model, ok, at) VALUES (?1, 'k', 'm', 1, 't')`},
 	"sessions":           {`INSERT INTO sessions (token_hash, user_id, created_at, last_used_at) VALUES ('th' || ?1, ?1, 't', 't')`},
 	"password_resets":    {`INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) VALUES ('rh' || ?1, ?1, 't', 't')`},
+	"mfa_totp":           {`INSERT INTO mfa_totp (user_id, secret_ct, secret_nonce, secret_fp, confirmed_at, created_at) VALUES (?1, x'00', x'00', 'fp', 't', 't')`},
+	"mfa_recovery_codes": {`INSERT INTO mfa_recovery_codes (user_id, code_hash) VALUES (?1, 'rc' || ?1)`},
+	"auth_challenges":    {`INSERT INTO auth_challenges (token_hash, kind, user_id, expires_at, created_at) VALUES ('ch' || ?1, 'mfa', ?1, 't', 't')`},
 	"invites":            {`INSERT INTO invites (token_hash, max_uses, created_by, created_at) VALUES ('ih' || ?1, 1, ?1, 't')`},
 }
 
@@ -93,7 +96,7 @@ func TestSchemaGuardEveryUserTableIsListed(t *testing.T) {
 		}
 	}
 	for _, tb := range auth.UserTables() {
-		if _, ok := seedSQL[tb.Name]; !ok && len(tb.Statements) > 0 && !slices.Contains([]string{"ai_custom_providers", "auth_settings"}, tb.Name) {
+		if _, ok := seedSQL[tb.Name]; !ok && len(tb.Statements) > 0 && !slices.Contains([]string{"ai_custom_providers", "auth_settings", "smtp_settings"}, tb.Name) {
 			t.Errorf("no seed row for %s: extend seedSQL so the deletion test covers it", tb.Name)
 		}
 	}

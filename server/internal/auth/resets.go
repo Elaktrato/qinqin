@@ -30,6 +30,17 @@ const (
 // administrator (a mailed request, plan 3). Only the token's SHA-256 is
 // stored; the token is returned once.
 func IssueReset(ctx context.Context, sqlDB *sql.DB, createdBy, userID int64, ttl time.Duration) (token string, expires time.Time, err error) {
+	return issueReset(ctx, sqlDB, createdBy, userID, ttl, false)
+}
+
+// IssueSelfServiceReset is the link of the "forgot password" mail: it replaces
+// only earlier self-service links, never one an administrator issued (an
+// anonymous request must not revoke an admin's link).
+func IssueSelfServiceReset(ctx context.Context, sqlDB *sql.DB, userID int64, ttl time.Duration) (string, time.Time, error) {
+	return issueReset(ctx, sqlDB, 0, userID, ttl, true)
+}
+
+func issueReset(ctx context.Context, sqlDB *sql.DB, createdBy, userID int64, ttl time.Duration, selfService bool) (token string, expires time.Time, err error) {
 	if ttl < time.Hour || ttl > MaxResetTTL {
 		return "", time.Time{}, fmt.Errorf("%w: lifetime must be between 1 and 168 hours", ErrResetInput)
 	}
@@ -41,7 +52,7 @@ func IssueReset(ctx context.Context, sqlDB *sql.DB, createdBy, userID int64, ttl
 	}
 	defer tx.Rollback()
 	// A write first: one live link per user, whoever races.
-	if _, err := tx.ExecContext(ctx, `DELETE FROM password_resets WHERE user_id = ? AND used_at IS NULL`, userID); err != nil {
+	if _, err := tx.ExecContext(ctx, `DELETE FROM password_resets WHERE user_id = ?1 AND used_at IS NULL AND (?2 = 0 OR self_service = 1)`, userID, selfService); err != nil {
 		return "", time.Time{}, fmt.Errorf("drop old resets: %w", err)
 	}
 	var exists int
@@ -51,8 +62,8 @@ func IssueReset(ctx context.Context, sqlDB *sql.DB, createdBy, userID int64, ttl
 		return "", time.Time{}, fmt.Errorf("read user: %w", err)
 	}
 	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO password_resets (token_hash, user_id, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?)`,
-		hashToken(token), userID, nullID(createdBy), now(), expires.Format(time.RFC3339)); err != nil {
+		INSERT INTO password_resets (token_hash, user_id, created_by, created_at, expires_at, self_service) VALUES (?, ?, ?, ?, ?, ?)`,
+		hashToken(token), userID, nullID(createdBy), now(), expires.Format(time.RFC3339), selfService); err != nil {
 		return "", time.Time{}, fmt.Errorf("insert reset: %w", err)
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "reset_link_issued", ActorID: createdBy, TargetID: &userID}); err != nil {
@@ -158,4 +169,10 @@ func dropPendingResets(ctx context.Context, ex execer, userID int64) error {
 		return fmt.Errorf("drop pending resets: %w", err)
 	}
 	return nil
+}
+
+// DropPendingResets deletes the user's unused reset links (containment after
+// a change of the recovery address).
+func DropPendingResets(ctx context.Context, sqlDB *sql.DB, userID int64) error {
+	return dropPendingResets(ctx, sqlDB, userID)
 }

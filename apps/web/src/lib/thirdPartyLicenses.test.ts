@@ -4,6 +4,8 @@ import leptonicaShipped from '../../static/LEPTONICA-LICENSE.TXT?raw';
 import anthropicShipped from '../../static/ANTHROPIC-SDK-GO-LICENSE.TXT?raw';
 import apacheShipped from '../../static/OPENCC-APACHE-2.0.TXT?raw';
 import mitShipped from '../../static/OPENCC-JS-LICENSE.TXT?raw';
+import uqrShipped from '../../static/UQR-LICENSE.TXT?raw';
+import uqrUpstream from '../../node_modules/uqr/LICENSE?raw';
 import apacheUpstream from '../../node_modules/opencc-js/LICENSES/Apache-2.0.txt?raw';
 import mitUpstream from '../../node_modules/opencc-js/LICENSE?raw';
 
@@ -23,6 +25,11 @@ describe('third-party licence texts', () => {
 	it('ships the opencc-js dictionary data Apache-2.0 licence verbatim', () => {
 		expect(apacheShipped).toBe(apacheUpstream);
 		expect(apacheShipped).toContain('Apache License');
+	});
+
+	it('ships the uqr (QR code) MIT licence verbatim', () => {
+		expect(uqrShipped).toBe(uqrUpstream);
+		expect(uqrShipped).toContain('MIT License');
 	});
 
 	it('ships the Tesseract Apache-2.0 licence', () => {

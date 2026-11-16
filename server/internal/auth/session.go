@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"qinqin/internal/model"
 )
 
 // SessionIdle is how long a session may go unused before it stops
@@ -28,6 +30,17 @@ const (
 type LoginOptions struct {
 	Device string
 	Level  string
+	// Gate, when set, runs after the password verified (and the account is
+	// enabled) and decides what the sign-in becomes: a session of a given
+	// level, or no session at all yet (Defer: a second step comes first, so
+	// no session row exists before it is passed).
+	Gate func(ctx context.Context, u model.User) (SessionPlan, error)
+}
+
+// SessionPlan is a Gate's decision.
+type SessionPlan struct {
+	Level string // "" full, or LevelEnroll
+	Defer bool   // create no session
 }
 
 // SessionInfo is one row of the session list. No token, no hash.
@@ -196,6 +209,34 @@ func RevokeOthersAudited(ctx context.Context, sqlDB *sql.DB, userID, exceptSessi
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: userID, TargetID: &userID,
 		Detail: map[string]any{"scope": scope, "revoked": n}}); err != nil {
+		return 0, err
+	}
+	return n, tx.Commit()
+}
+
+// PromoteSession turns an enrolment session into a full one (the user has
+// just enrolled a second factor).
+func PromoteSession(ctx context.Context, sqlDB *sql.DB, userID, sessionID int64) error {
+	if _, err := sqlDB.ExecContext(ctx, `UPDATE sessions SET level = 'full' WHERE id = ? AND user_id = ?`, sessionID, userID); err != nil {
+		return fmt.Errorf("promote session: %w", err)
+	}
+	return nil
+}
+
+// RevokeAllExcept deletes every session of every user except one (the
+// acting administrator's current session) and audits it.
+func RevokeAllExcept(ctx context.Context, sqlDB *sql.DB, actorID, exceptSessionID int64) (int64, error) {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin revoke all: %w", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE id <> ?`, exceptSessionID)
+	if err != nil {
+		return 0, fmt.Errorf("revoke all sessions: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: actorID, Detail: map[string]any{"scope": "everyone", "count": n}}); err != nil {
 		return 0, err
 	}
 	return n, tx.Commit()

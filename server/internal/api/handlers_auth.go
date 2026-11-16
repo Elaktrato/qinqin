@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -286,9 +287,15 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		device = auth.DeviceLabel(r.UserAgent())
 	}
 	var res auth.LoginResult
+	var plan signInPlan
 	err := s.withHashGate(r.Context(), func() error {
 		var err error
-		res, err = s.hash.login(r.Context(), s.db, req.Username, req.Password, auth.LoginOptions{Device: device})
+		res, err = s.hash.login(r.Context(), s.db, req.Username, req.Password, auth.LoginOptions{Device: device,
+			Gate: func(ctx context.Context, u model.User) (auth.SessionPlan, error) {
+				var perr error
+				plan, perr = s.planSignIn(ctx, u, factorPassword)
+				return plan.sessionPlan(), perr
+			}})
 		return err
 	})
 	switch {
@@ -297,6 +304,10 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		l.pair.Succeed(pair, s.now())
 		refund()
 		writeAuthError(w, http.StatusForbidden, "account_disabled", "This account has been disabled. Ask an administrator.")
+	case errors.Is(err, errMailUnavailable):
+		l.pair.Succeed(pair, s.now()) // the password was right
+		refund()
+		s.writeMailOutage(w)
 	case errors.Is(err, auth.ErrBadCredentials):
 		l.pair.Fail(pair, s.now()) // the account token stays spent
 		writeAuthError(w, http.StatusUnauthorized, "bad_credentials", "Wrong username or password.")
@@ -315,12 +326,7 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	default:
 		l.pair.Succeed(pair, s.now())
 		refund()
-		status := "ok"
-		if res.User.MustChangePassword {
-			status = "password_change_required"
-		}
-		s.hideEmailWhenOff(r, &res.User)
-		writeJSON(w, http.StatusOK, map[string]any{"status": status, "token": res.Token, "user": res.User})
+		s.respondSignIn(w, r, res.User, plan, res.Token, device, factorPassword)
 	}
 }
 
@@ -349,7 +355,7 @@ func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
-	mail := s.mailConfigured()
+	mail := s.mailConfigured(r.Context())
 	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, http.StatusOK, map[string]any{
 		"bootstrap":         count == 0,
@@ -358,6 +364,8 @@ func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 		"passwordReset":     mail,
 		"emailCodeLogin":    mail && set.EmailCodeLogin,
 		"passwordMinLength": auth.MinPasswordRunes,
+		"totpAvailable":     s.mfa.Available(),
+		"mfaEnforced":       mail && set.MFAEnforced,
 	})
 }
 
@@ -384,14 +392,20 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 	s.hideEmailWhenOff(r, &p.User)
 	// me is the user object plus what the session may do: "restriction" is
 	// "", "password_change" or "mfa_enrollment".
+	st, err := auth.LoadMFAState(r.Context(), s.db, p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
 	writeJSON(w, http.StatusOK, struct {
 		model.User
-		Restriction string `json:"restriction"`
+		MFA         auth.MFAState `json:"mfa"`
+		Restriction string        `json:"restriction"`
 		// NeedsCurrentPassword tells the change-password form whether to ask
 		// for the current password up front (everything but the session born
 		// from the temporary-password login).
 		NeedsCurrentPassword bool `json:"needsCurrentPassword"`
-	}{p.User, p.Restriction(), !p.TemporarySession})
+	}{p.User, st, p.Restriction(), !p.TemporarySession})
 }
 
 // The access gate. Every handler reaches a session through one of the
@@ -464,6 +478,16 @@ func (s *server) requireUser(w http.ResponseWriter, r *http.Request) *model.User
 // admin); a restricted session gets its restriction code, checked before the
 // admin bit.
 func (s *server) requireAdmin(w http.ResponseWriter, r *http.Request) *model.User {
+	p := s.requireAdminPrincipal(w, r)
+	if p == nil {
+		return nil
+	}
+	return &p.User
+}
+
+// requireAdminPrincipal is requireAdmin that also returns the session (the
+// acting administrator's current session is spared by "sign everyone out").
+func (s *server) requireAdminPrincipal(w http.ResponseWriter, r *http.Request) *auth.Principal {
 	p, err := s.authenticate(r)
 	if err != nil {
 		writeInternal(w, r)
@@ -480,7 +504,7 @@ func (s *server) requireAdmin(w http.ResponseWriter, r *http.Request) *model.Use
 		writeAuthError(w, http.StatusForbidden, "forbidden", "Administrator access is required.")
 		return nil
 	}
-	return &p.User
+	return p
 }
 
 // optionalUser is the signed-in user of a full session, nil for anonymous

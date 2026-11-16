@@ -90,7 +90,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 
 **Accounts and data**
 
-- [#64](https://github.com/Elaktrato/qinqin/issues/64) accounts: change password, admin user management, password reset, session control
+- [#64](https://github.com/Elaktrato/qinqin/issues/64) accounts: change password, admin user management, password reset, session control (done on `feature/v0.3.0`: sessions, registration modes, invites, SMTP, email verification, reset by mail, TOTP and email-code two-step sign-in, sign-in by code)
 - [#83](https://github.com/Elaktrato/qinqin/issues/83) accounts: personal access tokens for scripts and integrations
 - [#61](https://github.com/Elaktrato/qinqin/issues/61) backup: export and restore your own data, plus server backup
 - [#86](https://github.com/Elaktrato/qinqin/issues/86) auth: login/register rate limiting (done: per-client, per-pair and per-username limits, hash gate, trusted proxies)
