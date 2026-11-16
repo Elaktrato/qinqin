@@ -117,9 +117,11 @@ export interface Seg {
  * segment texts concatenated are the paragraph's plain text; every run
  * yields at least one segment (an empty run one empty segment). Highlights
  * that are empty, start past the end or overlap an earlier one are
- * ignored; one running past the end is cut there.
+ * ignored; one running past the end is cut there. `cuts` are extra
+ * paragraph code-point positions where segments are also split (the edges
+ * of generated readings); a cut never changes which highlight a segment has.
  */
-export function splitRunsByHighlights(runs: Run[], highlights: Highlight[]): Seg[] {
+export function splitRunsByHighlights(runs: Run[], highlights: Highlight[], cuts: readonly number[] = []): Seg[] {
 	const total = runs.reduce((n, run) => n + cpLength(run.text), 0);
 	const spans: { start: number; end: number; h: Highlight }[] = [];
 	for (const h of [...highlights].sort(byStart)) {
@@ -151,8 +153,10 @@ export function splitRunsByHighlights(runs: Run[], highlights: Highlight[]): Seg
 		while (pos < runEnd) {
 			while (next < spans.length && spans[next].end <= pos) next++;
 			const span = spans[next];
-			if (span && span.start <= pos) push(Math.min(span.end, runEnd), span.h);
-			else push(Math.min(span ? span.start : runEnd, runEnd), null);
+			const cut = cuts.find((c) => c > pos);
+			const stop = (to: number) => Math.min(to, runEnd, cut ?? Infinity);
+			if (span && span.start <= pos) push(stop(span.end), span.h);
+			else push(stop(span ? span.start : runEnd), null);
 		}
 		base = runEnd;
 	});

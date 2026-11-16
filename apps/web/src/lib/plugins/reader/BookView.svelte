@@ -22,6 +22,7 @@
 	import type { Book, Chapter } from '$lib/api/types';
 	import BookmarksPanel from './BookmarksPanel.svelte';
 	import ChapterText from './ChapterText.svelte';
+	import { DEFAULT_DISPLAY } from './displaySettings';
 	import HighlightEditor from './HighlightEditor.svelte';
 	import HighlightsPanel from './HighlightsPanel.svelte';
 	import { HighlightList } from './highlightList.svelte';
@@ -864,7 +865,7 @@
 					</h2>
 					<ChapterText
 						{paragraphs}
-						showRuby={prefs.furigana}
+						display={{ ...DEFAULT_DISPLAY, bookRuby: prefs.furigana }}
 						lang={textLang}
 						{lookup}
 						{marked}
