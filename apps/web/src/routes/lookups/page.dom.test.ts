@@ -203,12 +203,22 @@ describe('/lookups page', () => {
 		expect(source).not.toContain('{@html');
 	});
 
-	it('announces the count when the filter changes', async () => {
+	it('shows the count and announces it only when the filter changes', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1), item(2), item(3)], {}, { 2: 'learning' }));
-		render(Page);
+		vi.mocked(removeFromHistory).mockResolvedValue({ clearedAt: null, items: [item(2), item(3)], extra: {} });
+		const { container } = render(Page);
 		const count = await screen.findByText('3 words');
-		expect(count.getAttribute('aria-live')).toBe('polite');
+		expect(count.className).toContain('history-count');
+		expect(count.getAttribute('aria-live')).toBeNull();
+		const live = container.querySelector('.filter-live') as HTMLElement;
+		expect(live.getAttribute('aria-live')).toBe('polite');
+		expect(live.textContent).toBe('');
 		await fireEvent.click(screen.getByRole('radio', { name: 'No card yet' }));
-		await waitFor(() => expect(count.textContent).toBe('2 of 3 words with no card yet'));
+		await waitFor(() => expect(live.textContent).toBe('2 of 3 words with no card yet'));
+		expect(count.textContent).toBe('2 of 3 words with no card yet');
+		// Remove has its own status message: the count updates on screen, silently.
+		await fireEvent.click(screen.getByRole('button', { name: 'Remove 词1' }));
+		await waitFor(() => expect(count.textContent).toBe('1 of 2 words with no card yet'));
+		expect(live.textContent).toBe('2 of 3 words with no card yet');
 	});
 });

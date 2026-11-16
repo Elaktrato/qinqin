@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 	import { pageTitle } from '$lib/pageTitle';
 	import {
 		PAGE_SIZE,
@@ -62,6 +62,7 @@
 		shown = PAGE_SIZE;
 		confirming = false;
 		status = '';
+		filterAnnouncement = '';
 		if (id !== null) void load(id);
 	});
 
@@ -78,6 +79,15 @@
 		data ? promptItems(data.history, data.stateOf).filter((i) => data?.bases.has(i.entryId)) : []
 	);
 	const written = (id: number) => data?.bases.get(id)?.written ?? '';
+
+	// What a screen reader hears after the filter changes (the visible count
+	// above the list also follows Add and Remove, silently).
+	let filterAnnouncement = $state('');
+
+	async function announceFilter(): Promise<void> {
+		await tick();
+		filterAnnouncement = data ? historyCountText(rows.length, data.history.items.length, filter) : '';
+	}
 
 	function toggle(id: number, on: boolean): void {
 		selected = on ? [...selected, id] : selected.filter((x) => x !== id);
@@ -212,7 +222,7 @@
 			<button type="button" disabled={busy || selected.length === 0} onclick={() => remove([...selected])}
 				>Remove selected ({selected.length})</button
 			>
-			<fieldset class="filter">
+			<fieldset class="filter" onchange={announceFilter}>
 				<legend class="visually-hidden">Show</legend>
 				<label><input type="radio" name="filter" value="all" bind:group={filter} /> All</label>
 				<label><input type="radio" name="filter" value="nocard" bind:group={filter} /> No card yet</label>
@@ -238,7 +248,9 @@
 		<p role="status" class="status">{status}</p>
 		{#if actionError}<p role="alert">{actionError}</p>{/if}
 
-		<p class="count" aria-live="polite">{historyCountText(rows.length, data.history.items.length, filter)}</p>
+		<p class="history-count">{historyCountText(rows.length, data.history.items.length, filter)}</p>
+		<!-- Read out only when the filter changes: Add and Remove have their own status. -->
+		<p class="filter-live visually-hidden" aria-live="polite">{filterAnnouncement}</p>
 
 		{#if data.history.items.length === 0}
 			<p class="hint">No lookups yet. Hover or select a word in the reader, or open a search result.</p>
@@ -385,6 +397,12 @@
 	.missing {
 		font-size: 0.9rem;
 		font-style: italic;
+	}
+
+	.history-count {
+		margin: 0.5rem 0;
+		font-size: 0.9rem;
+		color: color-mix(in srgb, currentColor 75%, transparent);
 	}
 
 	.reading,
