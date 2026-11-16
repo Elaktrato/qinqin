@@ -415,3 +415,57 @@ tests and the style source. The midnight / zone-change reload (`onContextStale`)
 reviews counting for `flashcards:*`) were not exercised live. Backup export and restore of `goals:workspace`
 rely on the generic plugin-row export (read in `server/internal/backup/export.go`, not run). No Android client
 exists to run the fixtures. The DST case is covered by fixtures only, not against the server.
+
+### Review fixes
+
+One fix wave after the independent review; every item test-first (the new or changed test was run red before
+the change, except where noted), one commit per finding or small group. Where a fix replaces an earlier entry
+above, this section wins.
+
+1. **Offline flashcards goals** (b131947, must-fix). `loadGoalStatus` requests the activity window only when a
+   goal in effect inside `[windowStart, today]` has an `activity:*` metric (`metricsBetween` in `goals.ts`).
+   A failed request no longer rejects: `flashcards:*` days are still computed, `activity:*` days are
+   unavailable, and `GoalView.activityError` carries the message. Ruling: with `activityError` set and
+   today's goal unavailable, the home widget shows its error line with Try again and the flashcards widget leaves
+   the ring out, instead of the misleading "This goal's activity is no longer counted" — the spec's Offline
+   rule says an activity goal shows an error line until the route answers — cost: none. The pinned rejection
+   test was replaced; new tests cover a flashcards goal with a rejecting `fetchActivity` (no request made), an
+   activity goal earlier in the window, and one that ended before the window. Contract README and wiki Offline
+   text updated.
+2. **Capped streak text** (889cb38, must-fix). "Goal streak: N+ days" with N = `current`; contract README,
+   spec and wiki updated.
+3. **Workspace of a save** (2bca6b9). `saveGoals(workspaceId, row)`; GoalSettings records the workspace it read
+   the row from and refuses to write when the current workspace differs ("The workspace changed; check the
+   goal again."). The store test now writes to workspace 3 while 4 is current.
+4. **"Goal reached" in the small ring** (d8bdaa8), visible next to "62/50" and the check mark; dom tests in
+   `GoalRing` and the flashcards widget.
+5. **Zone history fixture** (8eae21f). `goal-amounts.json` gains a UTC → Asia/Tokyo (from 2026-11-16T03:00Z)
+   case, hand-derived by the study-day rule; flashcards cases may carry `zones`.
+6. **Home only** (7c9d70d). `daily-goal` surfaces are `['home']`; the Stats table row and the wiki's "also on
+   Stats" line are gone; spec updated.
+7. **Settings offline** (2bca6b9). The row and the activity list load independently; when the list fails the
+   built-in manifests' sources (`goals/builtinSources.ts`, from `$builtin`) are offered with a note and Try again;
+   a failed row load shows its error with Try again.
+8. **Future entries** (9d38829): Ruling recorded in the contract README — an entry after today is kept (a device
+   ahead), takes effect on its date; fixture case "an entry after today is kept" (this case passed on its first
+   run: it pins the existing behaviour).
+9. **Entries this client does not understand** (9d38829) stay out of the parsed history (a module `WeakMap` keyed
+   by the parsed row remembers them) and are written back verbatim after the understood entries; the 400 cap
+   counts understood entries only. Fixture case plus a `planForm` test through goal and streak changes. Cost if
+   wrong: a row object rebuilt by hand (not by `parseGoalsRow`) loses them — only the store's parsed object is
+   written.
+10. **Wiki "no longer counted"** (in 7c9d70d). While doing it I found that `GET /api/stats/activity` lists the
+    rules of every *registered* plugin whatever the user's own switch (`plugins.ActivityRules` reads
+    `plugin_registry`), so the wiki says the text appears when a plugin is removed from the server or renames
+    its type, not when a user switches it off.
+11. **Canonical merge** (07eb9cf): `loadGoal.merge.test.ts` runs the real study history (sync pull, event log,
+    `canonicalCards`) with a duplicated vocab card; one new card. It passed on its first run (the merge already
+    happened in the store); its sensitivity was checked by un-duplicating the card in a throwaway copy, which
+    failed (`met` instead of `open`).
+12. **In-flight key by user** (07eb9cf): the shared promise's key starts with `outboxUser()`; test with two users.
+
+Gates after the fix wave: `npm run check` exit 0 (1110 files, 0 errors, 0 warnings); `npm test` exit 0, 317
+files / 4974 tests; `npm run build` exit 0; Node 26.13.1 full vitest exit 0, 317 files / 4974 tests. No Go
+change in the fix wave, so the Go gate was not rerun (the earlier full run stands). The real-app check was not
+repeated. Still not verified in a real browser: the offline paths (the outbox, a failing activity request) were
+tested with mocks only.
