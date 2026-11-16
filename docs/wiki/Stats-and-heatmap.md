@@ -15,9 +15,8 @@
 | Flashcards | What is due and new, level and XP, streak, study buddy | all |
 | Words | How far each word has come: New, Learning, Young (under 21 days), Mature; one row per deck | all |
 | Reading time | Total, last 7 and last 30 days, five most read books | all |
-| This week | This week so far compared with last week up to the same weekday, the day strip and a link to the Week tab ([Weekly summary](Weekly-summary)) | all |
 
-The [Daily goal](Daily-goals) widget is on the home page only. A plugin's widgets only appear while that plugin is enabled. The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
+The [Daily goal](Daily-goals) widget and the **This week** widget ([Weekly summary](Weekly-summary)) are on the home page only; Stats has the Week tab instead. A plugin's widgets only appear while that plugin is enabled. The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
 
 ## The activity heatmap
 

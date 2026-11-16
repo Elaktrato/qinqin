@@ -43,7 +43,8 @@ export const coreWidgets: WidgetDef[] = [
 		description: 'This week so far compared with last week, day by day.',
 		owner: 'core',
 		size: 'normal',
-		surfaces: ['stats', 'home'],
+		// Home only, as the daily goal: Stats has the Week tab.
+		surfaces: ['home'],
 		component: WeeklySummaryWidget
 	}
 ];

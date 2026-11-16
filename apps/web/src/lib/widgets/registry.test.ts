@@ -122,13 +122,13 @@ describe('allWidgets', () => {
 		]);
 	});
 
-	it('offers this week on home and Stats', () => {
+	it('offers this week on the home page only (Stats has the Week tab)', () => {
 		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'es');
 		expect(list.find((w) => w.id === 'weekly-summary')).toMatchObject({
 			title: 'This week',
 			owner: 'core',
 			size: 'normal',
-			surfaces: ['stats', 'home']
+			surfaces: ['home']
 		});
 	});
 

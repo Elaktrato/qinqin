@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Home and Stats: this week so far compared with last week up to the
+	// Home: this week so far compared with last week up to the
 	// same weekday, day by day, and a link to Stats → Week. No mature
 	// words or characters here (no replay, no character universe). All
 	// logic lives in lib/weekly (loadWeek.ts is the load).
