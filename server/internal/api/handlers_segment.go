@@ -1,12 +1,14 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"unicode/utf8"
 
 	"qinqin/internal/lang"
+	"qinqin/internal/overlay"
 	"qinqin/internal/segment"
 )
 
@@ -43,6 +45,8 @@ func (s *server) handleSegmentAt(w http.ResponseWriter, r *http.Request) {
 type segmentRequest struct {
 	Lang string `json:"lang"`
 	Text string `json:"text"`
+	// Readings asks for Match.Reading, with the caller's overlay applied.
+	Readings bool `json:"readings"`
 }
 
 // handleSegment serves POST /api/segment {lang, text} with every match of
@@ -50,7 +54,8 @@ type segmentRequest struct {
 // (one request can run thousands of lookups; nothing in the web app calls
 // it yet); the body is capped at maxSegmentBody.
 func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
-	if s.requireUser(w, r) == nil {
+	u := s.requireUser(w, r)
+	if u == nil {
 		return
 	}
 	var req segmentRequest
@@ -72,7 +77,11 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	svc := s.segmenter()
+	svc.WithReadings = req.Readings
 	matches, err := svc.Segment(r.Context(), req.Lang, req.Text)
+	if err == nil && req.Readings {
+		err = s.overlayReadings(r.Context(), u.ID, matches)
+	}
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -83,4 +92,43 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 // segmenter is the tokenizer over the lookup engine.
 func (s *server) segmenter() segment.Service {
 	return segment.Service{Lookup: s.lookupService()}
+}
+
+// overlayReadings replaces each match's reading by the caller's saved
+// readings of its best entry: the matched reading when the overlay still
+// lists it, else the first overlay reading of the same type (any type
+// when none has it). Other users' overlays never apply.
+func (s *server) overlayReadings(ctx context.Context, userID int64, matches []segment.Match) error {
+	ids := make([]int64, 0, len(matches))
+	for _, m := range matches {
+		if len(m.Entries) > 0 {
+			ids = append(ids, m.Entries[0].ID)
+		}
+	}
+	patched, err := overlay.Readings(ctx, s.db, userID, ids)
+	if err != nil || len(patched) == 0 {
+		return err
+	}
+	for i := range matches {
+		m := &matches[i]
+		if len(m.Entries) == 0 || m.Reading == nil {
+			continue
+		}
+		rs := patched[m.Entries[0].ID]
+		if len(rs) == 0 {
+			continue
+		}
+		pick := rs[0]
+		for _, r := range rs {
+			if r.Type == m.Reading.Type && r.Value == m.Reading.Value {
+				pick = r
+				break
+			}
+			if pick.Type != m.Reading.Type && r.Type == m.Reading.Type {
+				pick = r
+			}
+		}
+		m.Reading = &segment.Reading{Type: pick.Type, Value: pick.Value}
+	}
+	return nil
 }
