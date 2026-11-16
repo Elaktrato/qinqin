@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { readingBeside } from '$lib/entry/displayForm';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { StarterEntry } from '$lib/api/frequency';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
@@ -187,7 +188,7 @@
 			{#each view.shown as item (item.id)}
 				<li>
 					<span class="word">{item.written}</span>
-					<span class="reading">{item.readings[0]?.value ?? ''}</span>
+					<span class="reading">{readingBeside(item.written, item.readings)}</span>
 					<span class="state">{stateLabel(item.id)}</span>
 				</li>
 			{/each}

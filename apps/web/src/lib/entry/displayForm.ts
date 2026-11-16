@@ -81,3 +81,13 @@ export function displayForm(entry: DisplayEntry, listForm?: string): string {
 	if (kana.length > 0) return bestKana();
 	return entry.readings[0]?.value ?? '';
 }
+
+/**
+ * readingBeside is the reading a list shows next to a word: its first
+ * reading, or nothing when the word is already shown as that reading (こと
+ * next to こと says nothing new).
+ */
+export function readingBeside(written: string, readings: readonly { value: string }[]): string {
+	const first = readings[0]?.value ?? '';
+	return first === written ? '' : first;
+}
