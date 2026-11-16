@@ -36,6 +36,8 @@
 		writeGroupBy,
 		type TipRequest
 	} from '$lib/study/mapGrid';
+import { contextForData, currentContext } from '$lib/study/currentContext';
+import type { StudyContext } from '$lib/study/studyContext';
 	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { activeWeights, loadStudyData } from '$lib/study/store';
@@ -64,6 +66,7 @@
 	let cards = $state.raw<StudyCard[]>([]);
 	let reviews = $state.raw<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	let ctx = $state.raw<StudyContext>(currentContext());
 	// Cards whose legacy written snapshot could not be resolved on this
 	// visit. Reported so the map never silently under-reports.
 	let unresolvedCards = $state(0);
@@ -175,6 +178,7 @@
 			cards = data.cards;
 			reviews = data.reviews;
 			weights = activeWeights(data);
+			ctx = contextForData(data, id);
 			groupKey = readGroupBy(storage(), lang, groupOptions(lang, schemeList));
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
@@ -212,7 +216,7 @@
 	// One mastery pass over every glyph and variant; a cell takes the best
 	// of its forms (a card written 愛 lights 爱).
 	const cellByRow = $derived.by(() => {
-		const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, new Date(), weights);
+		const mastery = masteryForChars(masteryGlyphs(chars), cards, reviews, new Date(), weights, ctx.clock);
 		const map = new Map<(typeof chars)[number], CellState>();
 		for (const cell of cellStates(chars, mastery)) map.set(cell.char, cell);
 		return map;

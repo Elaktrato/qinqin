@@ -1,3 +1,4 @@
+import { UTC_CONTEXT } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -25,7 +26,7 @@ function summarize(cards: StudyCard[], decks: Deck[], settings = {}) {
 		index: new Map(),
 		now: NOW,
 		w: DEFAULT_W,
-		day,
+		ctx: { ...UTC_CONTEXT, day: day as never },
 		addDays,
 		kindsFor: () => ['vocab']
 	});

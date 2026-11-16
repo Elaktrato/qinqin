@@ -7,7 +7,7 @@ vi.mock('$app/navigation', () => ({ goto }));
 import { invalidateWorkspaceEvents, loadWorkspaceEvents, postEvents } from '../events';
 import { workspaces } from '../workspaces';
 import { STUDY_HISTORY_TTL_MS, invalidateStudyHistory, loadStudyHistory } from './history';
-import { addCard, loadStudyData } from './store';
+import { addCard, loadStudyData, saveVacation } from './store';
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -105,6 +105,16 @@ describe('loadStudyHistory', () => {
 		expect(eight.cards).toHaveLength(0);
 		expect(eight.reviews).toHaveLength(0);
 		expect(calls('/api/sync/pull')).toBe(2);
+	});
+
+	it('a vacation write drops the cached history of every workspace', async () => {
+		await loadStudyHistory(7);
+		await loadStudyHistory(8);
+		await saveVacation({ version: 1, id: 'A', start: '2026-12-01', end: null, scope: 'all', createdDay: '2026-11-15', createdAt: '2026-11-15T08:00:00Z' });
+		await loadStudyHistory(7);
+		await loadStudyHistory(8);
+
+		expect(calls('/api/sync/pull')).toBe(4);
 	});
 
 	it('force reads the pull and the log again', async () => {

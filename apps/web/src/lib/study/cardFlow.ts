@@ -2,10 +2,12 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
-import { studyDay as utcStudyDay, type StudyDay } from '../time/studyDay';
+import type { StudyContext } from './studyContext';
+import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
-import { buildQueue, scheduleFor } from './scheduler';
+import { buildQueue, existingDecksOf, limitsOf, scheduleFor } from './scheduler';
+import { admit, dayCountsCached, type Candidate } from './limits';
 import type { ClozeMode } from './cloze';
 import { enabledKinds, type DeckSettings } from './deckSettings';
 import { buriedNow, buries, type Buried } from './siblings';
@@ -182,8 +184,8 @@ export interface DeckSessionOptions {
 	skip?: ReadonlySet<string>;
 	/** The workspace's active FSRS weights. */
 	w: readonly number[];
-	/** The learner's day, for the character writing unlock and burying; UTC when absent. */
-	studyDay?: StudyDay;
+	/** The learner's day (writing unlock, burying), the study clock and vacation state. */
+	ctx: StudyContext;
 	/** Per-deck card type switches; without them no reverse or cloze card is queued. */
 	deckSettings?: Record<string, DeckSettings>;
 }
@@ -278,16 +280,16 @@ export function deckSessionPlan({
 	language,
 	skip,
 	w,
-	studyDay,
+	ctx,
 	deckSettings
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
-	if (wanted.length === 0) return { queue: [], reserve: [], backfillLeft };
+	if (wanted.length === 0 || ctx.vacationToday) return { queue: [], reserve: [], backfillLeft };
 
 	// Cards that may not be shown (switch off, skipped, buried) leave before
 	// the limits apply, so they never use up a slot.
-	const buried = buriedNow({ cards, reviews, now, studyDay: studyDay ?? utcStudyDay([]) });
+	const buried = buriedNow({ cards, reviews, now, studyDay: ctx.day });
 	const skipByEntry = skipKindsByEntry(cards);
 	const vocabEntries = vocabEntryIds(cards);
 	const allowed = cards.filter(
@@ -303,12 +305,13 @@ export function deckSessionPlan({
 		reviewLimit,
 		now,
 		kinds: wanted,
-		w
+		w,
+		ctx,
+		// Reviews of cards that are not shown (buried, kind switched off) still
+		// use the day's allowance: count over every card.
+		counts: dayCountsCached(cards, reviews, ctx, now)
 	});
 	const reviewed = reviewedIds(reviews);
-	const freshCount = real.filter((card) => !reviewed.has(card.id)).length;
-	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
-	const budget = Math.max(0, limit - freshCount);
 
 	const companions = planCompanions({
 		cards,
@@ -318,7 +321,7 @@ export function deckSessionPlan({
 		newBudget: cards.length * 5,
 		reviews,
 		now: now.getTime(),
-		studyDay,
+		studyDay: ctx.day,
 		deckSettings,
 		exclude: new Set(real.map((card) => card.entryId)),
 		skip
@@ -345,9 +348,36 @@ export function deckSessionPlan({
 			})
 		);
 
+	// Companions are new cards: they share the new allowance (the session
+	// limit and each deck's daily limit) with the real new cards. The ones
+	// the daily limits still allow beyond the session limit are the reserve.
+	const counts = dayCountsCached(cards, reviews, ctx, now);
+	const caps = {
+		newLimit: Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0,
+		reviewLimit: Number.isFinite(reviewLimit) ? Math.max(0, Math.floor(reviewLimit)) : 0
+	};
+	const asCandidates: Candidate[] = [
+		...real.map((card) => ({
+			cardId: card.id,
+			deckIds: card.deckIds,
+			bucket: counts.reviewedToday.has(card.id)
+				? ('continuing' as const)
+				: reviewed.has(card.id)
+					? ('review' as const)
+					: ('new' as const)
+		})),
+		...companions.map((item) => ({ cardId: item.cardId, deckIds: item.deckIds ?? [], bucket: 'new' as const }))
+	];
+	const limitsFor = (deckId: string) => limitsOf(ctx, deckId);
+	const existing = existingDecksOf(ctx, asCandidates);
+	const inSession = new Set(admit(asCandidates, limitsFor, counts, caps, existing).admitted);
+	const inAllowance = new Set(
+		admit(asCandidates, limitsFor, counts, { ...caps, newLimit: Infinity }, existing).admitted
+	);
+
 	return {
-		queue: [...real.map(fromCard), ...companions.slice(0, budget)],
-		reserve: companions.slice(budget),
+		queue: [...real.map(fromCard), ...companions.filter((item) => inSession.has(item.cardId))],
+		reserve: companions.filter((item) => inAllowance.has(item.cardId) && !inSession.has(item.cardId)),
 		backfillLeft
 	};
 }
@@ -512,10 +542,11 @@ export function tierForCard(
 	cardId: string | null,
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	w: readonly number[]
+	w: readonly number[],
+	clock: StudyClock
 ): SaladTier {
 	if (cardId === null) return 0;
-	return tierFor(scheduleFor(cardId, reviews, now, w)?.stability ?? null);
+	return tierFor(scheduleFor(cardId, reviews, now, w, clock)?.stability ?? null);
 }
 
 /**

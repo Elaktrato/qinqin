@@ -77,14 +77,23 @@ function set(next: ZoneChange[] | null): StudyDay {
 /** currentStudyDay: the loaded history > this user's cached copy > the browser zone > UTC. */
 export function currentStudyDay(): StudyDay {
 	if (current) return current;
+	current = studyDay(effectiveHistory());
+	return current;
+}
+
+function effectiveHistory(): ZoneChange[] {
 	let source: ZoneChange[] | null = history;
 	if (!source && userId !== null) source = readCache(userId);
 	if (!source) {
 		const zone = browserZone();
 		source = zone ? [{ zone, from: null }] : [];
 	}
-	current = studyDay(source);
-	return current;
+	return source;
+}
+
+/** The zone history behind currentStudyDay() (serialisable, for workers). */
+export function currentStudyHistory(): ZoneChange[] {
+	return effectiveHistory();
 }
 
 function adopt(id: number, body: TimeZoneResponse): StudyDay {

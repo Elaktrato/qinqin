@@ -8,6 +8,7 @@ import {
 	levelFor,
 	sourcePoints,
 	windowStart,
+	vacationMarks,
 	windowSummary
 } from './activity';
 import { studyDay } from '../time/studyDay';
@@ -79,7 +80,9 @@ describe('foldActivity', () => {
 			total: 0,
 			bySource: {},
 			raw: {},
-			byWorkspace: {}
+			byWorkspace: {},
+			vacation: null,
+			vacationIn: []
 		});
 	});
 
@@ -284,5 +287,39 @@ describe('levelFor', () => {
 		[100, 4]
 	])('%i -> level %i', (count, level) => {
 		expect(levelFor(count)).toBe(level);
+	});
+});
+
+describe('vacation marks', () => {
+	const period = (id: string, start: string, end: string, scope: 'all' | { workspaces: number[] }) => ({
+		version: 1 as const, id, start, end, scope, createdDay: '2026-01-01', createdAt: '2026-01-01T00:00:00Z'
+	});
+	const empty = resp([]);
+
+	it('marks a workspace view by its own runs', () => {
+		const marks = vacationMarks([period('A', '2026-11-10', '2026-11-11', { workspaces: [2] })], [1, 2], 2, UTC, NOW);
+		expect(marks.get('2026-11-10')).toEqual({ mode: 'all', workspaces: [2] });
+		expect(marks.get('2026-11-12')).toBeUndefined();
+		expect(vacationMarks([period('A', '2026-11-10', '2026-11-11', { workspaces: [2] })], [1, 2], 1, UTC, NOW).size).toBe(0);
+	});
+
+	it('marks the all-workspaces view "all" only when every workspace is away', () => {
+		const periods = [period('A', '2026-11-10', '2026-11-11', 'all'), period('B', '2026-11-12', '2026-11-12', { workspaces: [2] })];
+		const marks = vacationMarks(periods, [1, 2], null, UTC, NOW);
+		expect(marks.get('2026-11-10')).toEqual({ mode: 'all', workspaces: [1, 2] });
+		expect(marks.get('2026-11-12')).toEqual({ mode: 'some', workspaces: [2] });
+	});
+
+	it('puts the marks on the folded days and into the tooltip', () => {
+		const periods = [period('A', '2026-11-10', '2026-11-10', 'all'), period('B', '2026-11-12', '2026-11-12', { workspaces: [2] })];
+		const marks = vacationMarks(periods, [1, 2], null, UTC, NOW);
+		const map = foldActivity(empty, { workspace: null, hidden: [] }, UTC, NOW, 91, marks);
+		const names = (id: number) => (id === 2 ? '日本語' : '中文');
+		expect(map.get('2026-11-10')?.vacation).toBe('all');
+		expect(map.get('2026-11-12')?.vacation).toBe('some');
+		expect(map.get('2026-11-11')?.vacation).toBeNull();
+		expect(dayTooltip(map.get('2026-11-10')!, SOURCES, names)).toBe('2026-11-10: no activity · On vacation');
+		expect(dayTooltip(map.get('2026-11-12')!, SOURCES, names)).toBe('2026-11-12: no activity · Vacation in 日本語');
+		expect(dayTooltip(map.get('2026-11-11')!, SOURCES, names)).toBe('2026-11-11: no activity');
 	});
 });

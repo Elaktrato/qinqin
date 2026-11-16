@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "name": "a review inside a run is fed at the frozen instant",
+      "zone": "Asia/Tokyo",
+      "runs": [{ "start": "2026-01-05", "a": "2026-01-04T15:00:00Z", "n": 7 }],
+      "reviews": [
+        { "ts": "2026-01-02T03:00:00Z", "grade": 3 },
+        { "ts": "2026-01-06T03:00:00Z", "grade": 3 },
+        { "ts": "2026-01-13T03:00:00Z", "grade": 3 }
+      ],
+      "steps": [{ "t": 0, "g": 3 }, { "t": 2, "g": 3 }, { "t": 2, "g": 3 }],
+      "labelled": 2,
+      "note": "fed instants: 01-02T03:00Z, 01-04T15:00Z (frozen), 01-06T03:00Z (13th minus 7 x 24 h)"
+    },
+    {
+      "name": "two reviews inside one run share the frozen instant",
+      "zone": "Asia/Tokyo",
+      "runs": [{ "start": "2026-01-05", "a": "2026-01-04T15:00:00Z", "n": 7 }],
+      "reviews": [
+        { "ts": "2026-01-02T03:00:00Z", "grade": 3 },
+        { "ts": "2026-01-06T03:00:00Z", "grade": 3 },
+        { "ts": "2026-01-08T03:00:00Z", "grade": 2 },
+        { "ts": "2026-01-12T03:00:00Z", "grade": 3 }
+      ],
+      "steps": [{ "t": 0, "g": 3 }, { "t": 2, "g": 3 }, { "t": 0, "g": 2 }, { "t": 1, "g": 3 }],
+      "labelled": 2,
+      "note": "fed instants: 01-02T03:00Z, a, a, 01-05T03:00Z"
+    }
+  ]
+}

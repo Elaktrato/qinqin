@@ -6,6 +6,16 @@
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
 import { weightsKey } from './fsrs/params';
+import { feedInstants, type StudyClock } from './studyClock';
+import { isDueNow, type StudyContext } from './studyContext';
+import {
+	admit,
+	dayCountsCached,
+	effectiveLimits,
+	type Candidate,
+	type DayCounts,
+	type LimitPair
+} from './limits';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 /** The derived schedule of one card. `due` is an RFC 3339 instant. */
@@ -23,6 +33,8 @@ export interface BuildQueueOptions {
 	newLimit: number;
 	reviewLimit: number;
 	now: Date;
+	/** The study clock and vacation state of the workspace. */
+	ctx: StudyContext;
 	/** Card kinds to include; every kind when omitted. */
 	kinds?: readonly StudyCardKind[];
 	/** The workspace's active FSRS weights (`activeWeights(history)`). */
@@ -32,6 +44,11 @@ export interface BuildQueueOptions {
 	 * counts). Absent: each card's history is replayed. null = never reviewed.
 	 */
 	scheduleOf?: (cardId: string) => Schedule | null;
+	/**
+	 * What today already used (limits.ts). Absent: counted from `cards` and
+	 * `reviews`; the decks view passes one shared count for many queues.
+	 */
+	counts?: DayCounts;
 }
 
 // One scheduler instance per weight set: instances are stateless between
@@ -107,12 +124,15 @@ export function sortedReviews(reviews: readonly ReviewEvent[]): ReviewEvent[] {
  * its derived schedule. `null` means the card has never been reviewed.
  * `now` is accepted for a stable "as of" API; the result depends only
  * on the history, so two calls with the same events agree exactly.
+ * Reviews are fed to ts-fsrs on the study clock (vacation days removed)
+ * and the due is mapped back (docs/contracts/scheduler/).
  */
 export function scheduleFor(
 	cardId: string,
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	w: readonly number[]
+	w: readonly number[],
+	clock: StudyClock
 ): Schedule | null {
 	void now;
 	const scheduler = schedulerFor(w);
@@ -122,13 +142,17 @@ export function scheduleFor(
 	);
 	if (history.length === 0) return null;
 
-	let card: Card = createEmptyCard(new Date(history[0].ts));
-	for (const review of history) {
-		card = scheduler.next(card, new Date(review.ts), RATING[review.payload.grade]).card;
-	}
+	const fed = feedInstants(
+		history.map((review) => instant(review.ts)),
+		clock
+	);
+	let card: Card = createEmptyCard(new Date(fed[0]));
+	history.forEach((review, i) => {
+		card = scheduler.next(card, new Date(fed[i]), RATING[review.payload.grade]).card;
+	});
 
 	return {
-		due: card.due.toISOString(),
+		due: new Date(clock.inverse(card.due.getTime())).toISOString(),
 		stability: card.stability,
 		difficulty: card.difficulty,
 		state: card.state as number
@@ -151,17 +175,37 @@ function cap(limit: number): number {
  * are not due yet are neither reviews nor new, so they are omitted.
  * Only cards belonging to one of `deckIds` are considered.
  */
-export function buildQueue({
+export function buildQueue(options: BuildQueueOptions): StudyCard[] {
+	const { newLimit, reviewLimit, ctx } = options;
+	const { candidates, byId: cardById, counts: dayUsed } = queueCandidates(options);
+	const { admitted } = admit(
+		candidates,
+		(deckId) => limitsOf(ctx, deckId),
+		dayUsed,
+		{ newLimit: cap(newLimit), reviewLimit: cap(reviewLimit) },
+		existingDecksOf(ctx, candidates)
+	);
+	return admitted.map((id) => cardById.get(id) as StudyCard);
+}
+
+/**
+ * queueCandidates lists what a queue could hold before any limit: the due
+ * cards (earliest due first), then the never-reviewed ones, each with its
+ * decks and bucket for admit(). Empty on a vacation day.
+ */
+export function queueCandidates({
 	cards,
 	reviews,
 	deckIds,
-	newLimit,
-	reviewLimit,
 	now,
+	ctx,
 	kinds,
 	w,
-	scheduleOf
-}: BuildQueueOptions): StudyCard[] {
+	scheduleOf,
+	counts
+}: BuildQueueOptions): { candidates: Candidate[]; byId: Map<string, StudyCard>; counts: DayCounts } {
+	const dayUsed = counts ?? dayCountsCached(cards, reviews, ctx, now);
+	if (ctx.vacationToday) return { candidates: [], byId: new Map(), counts: dayUsed };
 	const wanted = new Set(deckIds);
 	const scoped = cards.filter(
 		(card) =>
@@ -189,12 +233,12 @@ export function buildQueue({
 			continue;
 		}
 		const schedule =
-			scheduleOf === undefined ? scheduleFor(card.id, history ?? [], now, w) : scheduleOf(card.id);
+			scheduleOf === undefined ? scheduleFor(card.id, history ?? [], now, w, ctx.clock) : scheduleOf(card.id);
 		if (scheduleOf !== undefined && schedule === null) {
 			fresh.push(card);
 			continue;
 		}
-		if (schedule !== null && isDue(schedule, now)) {
+		if (schedule !== null && isDueNow(schedule, now, ctx)) {
 			due.push({ card, at: instant(schedule.due) });
 		}
 	}
@@ -202,10 +246,30 @@ export function buildQueue({
 	due.sort((a, b) => a.at - b.at || byId(a.card, b.card));
 	fresh.sort((a, b) => instant(a.createdAt) - instant(b.createdAt) || byId(a, b));
 
-	return [
-		...due.slice(0, cap(reviewLimit)).map((entry) => entry.card),
-		...fresh.slice(0, cap(newLimit))
+	const candidates: Candidate[] = [
+		...due.map(({ card }) => ({
+			cardId: card.id,
+			deckIds: card.deckIds,
+			bucket: dayUsed.reviewedToday.has(card.id) ? ('continuing' as const) : ('review' as const)
+		})),
+		...fresh.map((card) => ({ cardId: card.id, deckIds: card.deckIds, bucket: 'new' as const }))
 	];
+	const map = new Map([...due.map((e) => e.card), ...fresh].map((card) => [card.id, card]));
+	return { candidates, byId: map, counts: dayUsed };
+}
+
+/** The limits of one deck in a context: its row over the workspace's over the defaults. */
+export function limitsOf(ctx: StudyContext, deckId: string): LimitPair {
+	return effectiveLimits(ctx.limits.workspace, ctx.limits.decks[deckId] ?? null);
+}
+
+/** The decks that exist: the context's list, else every deck the candidates name. */
+export function existingDecksOf(
+	ctx: StudyContext,
+	candidates: readonly { deckIds: readonly string[] }[]
+): ReadonlySet<string> {
+	if (ctx.limits.existingDecks !== null) return ctx.limits.existingDecks;
+	return new Set(candidates.flatMap((candidate) => candidate.deckIds));
 }
 
 // XP lives in exp.ts; re-exported so existing imports keep working.

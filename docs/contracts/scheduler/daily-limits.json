@@ -1,0 +1,866 @@
+{
+  "version": 1,
+  "rule": "scheduler/daily-limits",
+  "counts": [
+    {
+      "name": "first review today is new, an older card reviewed today is a review",
+      "zone": "UTC",
+      "now": "2026-11-15T12:00:00Z",
+      "cards": [
+        {
+          "id": "n1",
+          "deckIds": [
+            "general"
+          ]
+        },
+        {
+          "id": "r1",
+          "deckIds": [
+            "general"
+          ]
+        },
+        {
+          "id": "r2",
+          "deckIds": [
+            "general"
+          ]
+        },
+        {
+          "id": "x",
+          "deckIds": [
+            "general"
+          ]
+        }
+      ],
+      "reviews": [
+        {
+          "id": "e1",
+          "ts": "2026-11-15T08:00:00Z",
+          "cardId": "n1",
+          "grade": 3
+        },
+        {
+          "id": "e2",
+          "ts": "2026-11-14T08:00:00Z",
+          "cardId": "r1",
+          "grade": 3
+        },
+        {
+          "id": "e3",
+          "ts": "2026-11-15T09:00:00Z",
+          "cardId": "r1",
+          "grade": 3
+        },
+        {
+          "id": "e4",
+          "ts": "2026-11-10T08:00:00Z",
+          "cardId": "r2",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "newDone": {
+          "general": 1
+        },
+        "reviewDone": {
+          "general": 1
+        },
+        "reviewedToday": [
+          "n1",
+          "r1"
+        ],
+        "firstDay": {
+          "n1": "2026-11-15",
+          "r1": "2026-11-14",
+          "r2": "2026-11-10"
+        }
+      }
+    },
+    {
+      "name": "a card in two decks counts in both",
+      "zone": "UTC",
+      "now": "2026-11-15T12:00:00Z",
+      "cards": [
+        {
+          "id": "a",
+          "deckIds": [
+            "d1",
+            "d2"
+          ]
+        }
+      ],
+      "reviews": [
+        {
+          "id": "e1",
+          "ts": "2026-11-15T08:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "newDone": {
+          "d1": 1,
+          "d2": 1
+        },
+        "reviewDone": {},
+        "reviewedToday": [
+          "a"
+        ],
+        "firstDay": {
+          "a": "2026-11-15"
+        }
+      }
+    },
+    {
+      "name": "Tokyo: 00:30 local is the next day, 23:30 is the day before",
+      "zone": "Asia/Tokyo",
+      "now": "2026-11-16T10:00:00Z",
+      "cards": [
+        {
+          "id": "c1",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "c2",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "c3",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "reviews": [
+        {
+          "id": "e1",
+          "ts": "2026-11-15T15:30:00Z",
+          "cardId": "c1",
+          "grade": 3
+        },
+        {
+          "id": "e2",
+          "ts": "2026-11-14T20:00:00Z",
+          "cardId": "c2",
+          "grade": 3
+        },
+        {
+          "id": "e3",
+          "ts": "2026-11-15T16:00:00Z",
+          "cardId": "c2",
+          "grade": 3
+        },
+        {
+          "id": "e4",
+          "ts": "2026-11-15T14:30:00Z",
+          "cardId": "c3",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "newDone": {
+          "d1": 1
+        },
+        "reviewDone": {
+          "d1": 1
+        },
+        "reviewedToday": [
+          "c1",
+          "c2"
+        ],
+        "firstDay": {
+          "c1": "2026-11-16",
+          "c2": "2026-11-15",
+          "c3": "2026-11-15"
+        }
+      },
+      "note": "c1: first review 2026-11-16 00:30 local (new today); c2: first 2026-11-15 05:00 local, again 2026-11-16 01:00 (a review today); c3: 2026-11-15 23:30 local, nothing today"
+    },
+    {
+      "name": "reviews of unknown cards and malformed events are ignored",
+      "zone": "UTC",
+      "now": "2026-11-15T12:00:00Z",
+      "cards": [
+        {
+          "id": "a",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "reviews": [
+        {
+          "id": "e1",
+          "ts": "2026-11-15T08:00:00Z",
+          "cardId": "gone",
+          "grade": 3
+        },
+        {
+          "id": "e2",
+          "ts": "2026-11-15T09:00:00Z",
+          "cardId": "a",
+          "grade": 9
+        },
+        {
+          "id": "e3",
+          "ts": "not a time",
+          "cardId": "a",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "newDone": {},
+        "reviewDone": {},
+        "reviewedToday": [],
+        "firstDay": {}
+      }
+    },
+    {
+      "name": "the earliest review decides the first day, not the order of the log",
+      "zone": "UTC",
+      "now": "2026-11-15T12:00:00Z",
+      "cards": [
+        {
+          "id": "a",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "reviews": [
+        {
+          "id": "e2",
+          "ts": "2026-11-15T09:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "e1",
+          "ts": "2026-11-14T09:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "newDone": {},
+        "reviewDone": {
+          "d1": 1
+        },
+        "reviewedToday": [
+          "a"
+        ],
+        "firstDay": {
+          "a": "2026-11-14"
+        }
+      }
+    }
+  ],
+  "admission": [
+    {
+      "name": "3 new left of 5 despite the session limit",
+      "candidates": [
+        {
+          "cardId": "n0",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n1",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n2",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n3",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n4",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "limits": {
+        "d1": {
+          "new": 20,
+          "reviews": 200
+        }
+      },
+      "counts": {
+        "newDone": {
+          "d1": 17
+        },
+        "reviewDone": {}
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "d1"
+      ],
+      "admitted": [
+        "n0",
+        "n1",
+        "n2"
+      ],
+      "left": {
+        "reviews": 0,
+        "new": 3,
+        "unlimited": false,
+        "limitedOut": 2
+      },
+      "note": ""
+    },
+    {
+      "name": "one review left of three",
+      "candidates": [
+        {
+          "cardId": "r0",
+          "bucket": "review",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "r1",
+          "bucket": "review",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "r2",
+          "bucket": "review",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "limits": {
+        "d1": {
+          "new": 20,
+          "reviews": 2
+        }
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {
+          "d1": 1
+        }
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "d1"
+      ],
+      "admitted": [
+        "r0"
+      ],
+      "left": {
+        "reviews": 1,
+        "new": 0,
+        "unlimited": false,
+        "limitedOut": 2
+      },
+      "note": ""
+    },
+    {
+      "name": "unlimited decks admit everything",
+      "candidates": [
+        {
+          "cardId": "r0",
+          "bucket": "review",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n0",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "limits": {
+        "d1": {
+          "new": null,
+          "reviews": null
+        }
+      },
+      "counts": {
+        "newDone": {
+          "d1": 500
+        },
+        "reviewDone": {
+          "d1": 900
+        }
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "d1"
+      ],
+      "admitted": [
+        "r0",
+        "n0"
+      ],
+      "left": {
+        "reviews": 1,
+        "new": 1,
+        "unlimited": true,
+        "limitedOut": 0
+      },
+      "note": ""
+    },
+    {
+      "name": "strict two-deck rule: skip and continue",
+      "candidates": [
+        {
+          "cardId": "c1",
+          "bucket": "review",
+          "deckIds": [
+            "A",
+            "B"
+          ]
+        },
+        {
+          "cardId": "c2",
+          "bucket": "review",
+          "deckIds": [
+            "A"
+          ]
+        },
+        {
+          "cardId": "c3",
+          "bucket": "review",
+          "deckIds": [
+            "A"
+          ]
+        }
+      ],
+      "limits": {
+        "A": {
+          "new": 20,
+          "reviews": 2
+        },
+        "B": {
+          "new": 20,
+          "reviews": 0
+        }
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "A",
+        "B"
+      ],
+      "admitted": [
+        "c2",
+        "c3"
+      ],
+      "left": {
+        "reviews": 2,
+        "new": 0,
+        "unlimited": false,
+        "limitedOut": 1
+      },
+      "note": "c1 needs room in both decks; B has none; later cards are still considered"
+    },
+    {
+      "name": "an admission uses up every deck of the card",
+      "candidates": [
+        {
+          "cardId": "c1",
+          "bucket": "review",
+          "deckIds": [
+            "A",
+            "B"
+          ]
+        },
+        {
+          "cardId": "c2",
+          "bucket": "review",
+          "deckIds": [
+            "B"
+          ]
+        },
+        {
+          "cardId": "c3",
+          "bucket": "review",
+          "deckIds": [
+            "A"
+          ]
+        }
+      ],
+      "limits": {
+        "A": {
+          "new": 20,
+          "reviews": 1
+        },
+        "B": {
+          "new": 20,
+          "reviews": 2
+        }
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "A",
+        "B"
+      ],
+      "admitted": [
+        "c1",
+        "c2"
+      ],
+      "left": {
+        "reviews": 2,
+        "new": 0,
+        "unlimited": false,
+        "limitedOut": 1
+      },
+      "note": "c1 takes the only slot of A and one of B; c3 finds A full"
+    },
+    {
+      "name": "continuing cards ignore the daily counts and count toward the session cap",
+      "candidates": [
+        {
+          "cardId": "l1",
+          "bucket": "continuing",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "l2",
+          "bucket": "continuing",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "l3",
+          "bucket": "continuing",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "r1",
+          "bucket": "review",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "limits": {
+        "d1": {
+          "new": 0,
+          "reviews": 0
+        }
+      },
+      "counts": {
+        "newDone": {
+          "d1": 3
+        },
+        "reviewDone": {
+          "d1": 9
+        }
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 2
+      },
+      "existingDecks": [
+        "d1"
+      ],
+      "admitted": [
+        "l1",
+        "l2"
+      ],
+      "left": {
+        "reviews": 3,
+        "new": 0,
+        "unlimited": false,
+        "limitedOut": 1
+      },
+      "note": "left ignores the session cap: three continuing cards, the review is refused"
+    },
+    {
+      "name": "deleted deck ids are ignored",
+      "candidates": [
+        {
+          "cardId": "c1",
+          "bucket": "review",
+          "deckIds": [
+            "gone",
+            "A"
+          ]
+        }
+      ],
+      "limits": {
+        "A": {
+          "new": 20,
+          "reviews": 200
+        },
+        "gone": {
+          "new": 0,
+          "reviews": 0
+        }
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {
+          "gone": 50
+        }
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "A"
+      ],
+      "admitted": [
+        "c1"
+      ],
+      "left": {
+        "reviews": 1,
+        "new": 0,
+        "unlimited": false,
+        "limitedOut": 0
+      },
+      "note": ""
+    },
+    {
+      "name": "level session: existing cards by their decks, virtual items by general",
+      "candidates": [
+        {
+          "cardId": "v1",
+          "bucket": "new",
+          "deckIds": [
+            "general"
+          ]
+        },
+        {
+          "cardId": "v2",
+          "bucket": "new",
+          "deckIds": [
+            "general"
+          ]
+        },
+        {
+          "cardId": "e1",
+          "bucket": "review",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "limits": {
+        "general": {
+          "new": 1,
+          "reviews": 200
+        },
+        "d1": {
+          "new": 20,
+          "reviews": 200
+        }
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "general",
+        "d1"
+      ],
+      "admitted": [
+        "v1",
+        "e1"
+      ],
+      "left": {
+        "reviews": 1,
+        "new": 1,
+        "unlimited": false,
+        "limitedOut": 1
+      },
+      "note": ""
+    },
+    {
+      "name": "the session new limit caps below the allowance",
+      "candidates": [
+        {
+          "cardId": "n0",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n1",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n2",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n3",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "limits": {
+        "d1": {
+          "new": 20,
+          "reviews": 200
+        }
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "session": {
+        "newLimit": 1,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "d1"
+      ],
+      "admitted": [
+        "n0"
+      ],
+      "left": {
+        "reviews": 0,
+        "new": 4,
+        "unlimited": false,
+        "limitedOut": 0
+      },
+      "note": "left counts are without session caps"
+    },
+    {
+      "name": "no candidates: nothing left",
+      "candidates": [],
+      "limits": {
+        "d1": {
+          "new": 20,
+          "reviews": 200
+        }
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "d1"
+      ],
+      "admitted": [],
+      "left": {
+        "reviews": 0,
+        "new": 0,
+        "unlimited": false,
+        "limitedOut": 0
+      },
+      "note": ""
+    },
+    {
+      "name": "new and reviews use separate counters",
+      "candidates": [
+        {
+          "cardId": "r1",
+          "bucket": "review",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "cardId": "n1",
+          "bucket": "new",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "limits": {
+        "d1": {
+          "new": 0,
+          "reviews": 1
+        }
+      },
+      "counts": {
+        "newDone": {},
+        "reviewDone": {}
+      },
+      "session": {
+        "newLimit": 20,
+        "reviewLimit": 100
+      },
+      "existingDecks": [
+        "d1"
+      ],
+      "admitted": [
+        "r1"
+      ],
+      "left": {
+        "reviews": 1,
+        "new": 0,
+        "unlimited": false,
+        "limitedOut": 1
+      },
+      "note": ""
+    }
+  ]
+}

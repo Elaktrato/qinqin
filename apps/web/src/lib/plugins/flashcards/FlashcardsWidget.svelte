@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { errorMessage } from '$lib/stats/errors';
-	import { dueCounts } from '$lib/study/dueCounts';
+	import { leftToday } from '$lib/study/dueCounts';
+	import { leftTodayText } from '$lib/study/limitsText';
 	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
+	import type { StudyContext } from '$lib/study/studyContext';
+	import type { VacationPeriod } from '$lib/study/vacation';
+	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
@@ -32,6 +37,9 @@
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
+	// Vacation days and the study clock of this workspace (rebuilt at midnight).
+	let ctx = $state.raw<StudyContext>(currentContext());
+	let vacations = $state.raw<VacationPeriod[]>([]);
 	let loading = $state(true);
 	let error = $state('');
 	let noWorkspace = $state(false);
@@ -57,23 +65,14 @@
 		)
 	);
 
-	// Due means a reviewed card of those types whose derived schedule has
-	// come due; fresh counts existing never-reviewed cards of those types.
-	// Unlike the setup page, companions not created yet are not counted.
-	const queue = $derived.by(() => {
-		if (noWorkspace || cards.length === 0) return { due: 0, fresh: 0 };
-		return dueCounts({
-			cards,
-			reviews,
-			deckIds,
-			kinds,
-			deckSettings,
-			now: new Date(),
-			w: weights,
-			studyDay,
-			newLimit: config.newLimit,
-			reviewLimit: config.reviewLimit
-		});
+	// What the daily limits admit right now for real cards of those types
+	// (companions not created yet are not counted): due reviews and new cards
+	// left today, burying and vacation applied (dueCounts.ts leftToday).
+	const left = $derived.by(() => {
+		if (noWorkspace || cards.length === 0) {
+			return { reviews: 0, new: 0, unlimited: false, limitedOut: 0 };
+		}
+		return leftToday({ cards, reviews, deckIds, kinds, deckSettings, now: new Date(), w: weights, ctx });
 	});
 
 	// The learner's day rule; a zone change recomputes XP and the streak.
@@ -81,9 +80,14 @@
 	$effect(() => onStudyDayChange((next) => (studyDay = next)));
 
 	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf));
+	const vacationText = $derived(
+		workspaceId === null
+			? null
+			: vacationLine(vacationStatus(vacations, workspaceId, studyDay.today()), studyDay.today())
+	);
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
-	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay));
+	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation));
 	const status = $derived<WidgetStatus>(
 		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
 	);
@@ -113,6 +117,8 @@
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, workspace);
+			vacations = data.vacations ?? [];
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			decks = [];
@@ -129,6 +135,7 @@
 	$effect(() => {
 		void load(workspaceId);
 	});
+	$effect(() => onContextStale(() => void load(workspaceId)));
 </script>
 
 <WidgetCard
@@ -148,9 +155,8 @@
 		<Mascot {level} streak={streak.current} todayDone={streak.todayDone} />
 		<div class="progress">
 			<p class="stats">
-				<strong>{queue.due}</strong>
-				{queue.due === 1 ? 'card' : 'cards'} due ·
-				<strong>{queue.fresh}</strong> new · Level <strong>{level}</strong> ·
+				{vacationText ?? leftTodayText(left)} ·
+				Level <strong>{level}</strong> ·
 				{xp} XP
 			</p>
 			<div

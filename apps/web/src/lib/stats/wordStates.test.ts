@@ -1,3 +1,4 @@
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -70,13 +71,13 @@ describe('classifySchedule', () => {
 
 describe('wordStateCounts', () => {
 	it('is all zero for no cards', () => {
-		const result = wordStateCounts([], [], [], NOW, DEFAULT_W);
+		const result = wordStateCounts([], [], [], NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.overall).toEqual(emptyCounts());
 		expect(result.decks).toEqual([]);
 	});
 
 	it('counts never-reviewed cards as new', () => {
-		const result = wordStateCounts([card('a'), card('b')], [], [], NOW, DEFAULT_W);
+		const result = wordStateCounts([card('a'), card('b')], [], [], NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.overall).toEqual({ new: 2, learning: 0, young: 0, mature: 0, total: 2 });
 	});
 
@@ -86,7 +87,7 @@ describe('wordStateCounts', () => {
 			review('again', 1, '2026-11-14T10:00:00.000Z'),
 			review('good', 4, '2026-11-01T10:00:00.000Z')
 		];
-		const result = wordStateCounts(cards, reviews, [], NOW, DEFAULT_W);
+		const result = wordStateCounts(cards, reviews, [], NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.overall.new).toBe(1);
 		expect(result.overall.learning).toBe(1);
 		// One Easy review moves a card straight into review with a few days of stability.
@@ -96,7 +97,7 @@ describe('wordStateCounts', () => {
 
 	it('uses the injected schedule for the 21-day boundary', () => {
 		const stabilities: Record<string, number> = { a: 20.99, b: 21 };
-		const result = wordStateCounts([card('a'), card('b')], [], [], NOW, DEFAULT_W, (id) =>
+		const result = wordStateCounts([card('a'), card('b')], [], [], NOW, DEFAULT_W, IDENTITY_CLOCK, (id) =>
 			schedule(2, stabilities[id])
 		);
 		expect(result.overall).toEqual({ new: 0, learning: 0, young: 1, mature: 1, total: 2 });
@@ -104,13 +105,13 @@ describe('wordStateCounts', () => {
 
 	it('counts vocab cards only', () => {
 		const cards = [card('v'), card('s', ['general'], 'sentence'), card('w', ['general'], 'writing'), card('t', ['general'], 'tone')];
-		expect(wordStateCounts(cards, [], [], NOW, DEFAULT_W).overall.total).toBe(1);
+		expect(wordStateCounts(cards, [], [], NOW, DEFAULT_W, IDENTITY_CLOCK).overall.total).toBe(1);
 	});
 
 	it('counts a card in several decks once overall and in each deck row', () => {
 		const decks = [deck('d1', 'HSK 1'), deck('d2', 'Travel')];
 		const cards = [card('a', ['d1', 'd2']), card('b', ['general'])];
-		const result = wordStateCounts(cards, [], decks, NOW, DEFAULT_W);
+		const result = wordStateCounts(cards, [], decks, NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.overall.total).toBe(2);
 		expect(result.decks.map((row) => [row.id, row.name, row.counts.total])).toEqual([
 			['general', 'General', 1],
@@ -122,18 +123,18 @@ describe('wordStateCounts', () => {
 	it('ignores deleted deck ids, and cards left in no known deck', () => {
 		const decks = [deck('d1', 'HSK 1')];
 		const cards = [card('a', ['d1', 'gone']), card('orphan', ['gone'])];
-		const result = wordStateCounts(cards, [], decks, NOW, DEFAULT_W);
+		const result = wordStateCounts(cards, [], decks, NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.overall.total).toBe(1);
 		expect(result.decks.map((row) => row.id)).toEqual(['d1']);
 	});
 
 	it('lists user decks even when empty but General only with cards', () => {
-		const result = wordStateCounts([], [], [deck('d1', 'Empty')], NOW, DEFAULT_W);
+		const result = wordStateCounts([], [], [deck('d1', 'Empty')], NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.decks).toEqual([{ id: 'd1', name: 'Empty', counts: emptyCounts() }]);
 	});
 
 	it('ignores reviews of cards that no longer exist', () => {
-		const result = wordStateCounts([card('a')], [review('gone', 3, '2026-11-10T00:00:00.000Z')], [], NOW, DEFAULT_W);
+		const result = wordStateCounts([card('a')], [review('gone', 3, '2026-11-10T00:00:00.000Z')], [], NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.overall).toEqual({ new: 1, learning: 0, young: 0, mature: 0, total: 1 });
 	});
 });

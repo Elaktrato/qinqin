@@ -1,0 +1,1061 @@
+{
+  "version": 1,
+  "rule": "scheduler/vacation-days",
+  "runs": [
+    {
+      "name": "one closed period",
+      "today": "2026-11-15",
+      "workspaceId": 1,
+      "rows": [
+        {
+          "key": "vacation:A",
+          "value": {
+            "version": 1,
+            "id": "A",
+            "start": "2026-12-20",
+            "end": "2027-01-03",
+            "scope": "all",
+            "createdDay": "2026-11-15",
+            "createdAt": "2026-11-15T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-12-20",
+          "end": "2027-01-03"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "open end counts up to today",
+      "today": "2026-11-15",
+      "workspaceId": 1,
+      "rows": [
+        {
+          "key": "vacation:A",
+          "value": {
+            "version": 1,
+            "id": "A",
+            "start": "2026-11-10",
+            "end": null,
+            "scope": "all",
+            "createdDay": "2026-11-10",
+            "createdAt": "2026-11-10T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-11-10",
+          "end": "2026-11-15"
+        }
+      ],
+      "note": "an open period shows dates up to and including today"
+    },
+    {
+      "name": "open end starting in the future is one date",
+      "today": "2026-11-15",
+      "workspaceId": 1,
+      "rows": [
+        {
+          "key": "vacation:A",
+          "value": {
+            "version": 1,
+            "id": "A",
+            "start": "2026-12-01",
+            "end": null,
+            "scope": "all",
+            "createdDay": "2026-11-15",
+            "createdAt": "2026-11-15T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-12-01",
+          "end": "2026-12-01"
+        }
+      ],
+      "note": "e = max(today, s)"
+    },
+    {
+      "name": "createdDay clamps the start",
+      "today": "2026-11-15",
+      "workspaceId": 1,
+      "rows": [
+        {
+          "key": "vacation:A",
+          "value": {
+            "version": 1,
+            "id": "A",
+            "start": "2026-11-01",
+            "end": "2026-11-20",
+            "scope": "all",
+            "createdDay": "2026-11-14",
+            "createdAt": "2026-11-14T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-11-14",
+          "end": "2026-11-20"
+        }
+      ],
+      "note": "a client cannot backdate a period into replayed history"
+    },
+    {
+      "name": "createdDay after the end leaves nothing",
+      "today": "2026-11-25",
+      "workspaceId": 1,
+      "rows": [
+        {
+          "key": "vacation:A",
+          "value": {
+            "version": 1,
+            "id": "A",
+            "start": "2026-11-01",
+            "end": "2026-11-10",
+            "scope": "all",
+            "createdDay": "2026-11-20",
+            "createdAt": "2026-11-20T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [],
+      "note": "s = 2026-11-20 > e = 2026-11-10"
+    },
+    {
+      "name": "overlap and adjacency join, a gap does not",
+      "today": "2026-11-15",
+      "workspaceId": 1,
+      "rows": [
+        {
+          "key": "vacation:A",
+          "value": {
+            "version": 1,
+            "id": "A",
+            "start": "2026-12-01",
+            "end": "2026-12-05",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:B",
+          "value": {
+            "version": 1,
+            "id": "B",
+            "start": "2026-12-06",
+            "end": "2026-12-10",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:C",
+          "value": {
+            "version": 1,
+            "id": "C",
+            "start": "2026-12-09",
+            "end": "2026-12-12",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:D",
+          "value": {
+            "version": 1,
+            "id": "D",
+            "start": "2026-12-14",
+            "end": "2026-12-15",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-12-01",
+          "end": "2026-12-12"
+        },
+        {
+          "start": "2026-12-14",
+          "end": "2026-12-15"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "scope: workspace 3 sees all three",
+      "today": "2026-11-15",
+      "workspaceId": 3,
+      "rows": [
+        {
+          "key": "vacation:X",
+          "value": {
+            "version": 1,
+            "id": "X",
+            "start": "2026-12-01",
+            "end": "2026-12-05",
+            "scope": {
+              "workspaces": [
+                3
+              ]
+            },
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:Y",
+          "value": {
+            "version": 1,
+            "id": "Y",
+            "start": "2026-12-10",
+            "end": "2026-12-12",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:Z",
+          "value": {
+            "version": 1,
+            "id": "Z",
+            "start": "2026-12-20",
+            "end": "2026-12-21",
+            "scope": {
+              "workspaces": [
+                3,
+                7
+              ]
+            },
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-12-01",
+          "end": "2026-12-05"
+        },
+        {
+          "start": "2026-12-10",
+          "end": "2026-12-12"
+        },
+        {
+          "start": "2026-12-20",
+          "end": "2026-12-21"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "scope: workspace 4 sees only \"all\"",
+      "today": "2026-11-15",
+      "workspaceId": 4,
+      "rows": [
+        {
+          "key": "vacation:X",
+          "value": {
+            "version": 1,
+            "id": "X",
+            "start": "2026-12-01",
+            "end": "2026-12-05",
+            "scope": {
+              "workspaces": [
+                3
+              ]
+            },
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:Y",
+          "value": {
+            "version": 1,
+            "id": "Y",
+            "start": "2026-12-10",
+            "end": "2026-12-12",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:Z",
+          "value": {
+            "version": 1,
+            "id": "Z",
+            "start": "2026-12-20",
+            "end": "2026-12-21",
+            "scope": {
+              "workspaces": [
+                3,
+                7
+              ]
+            },
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-12-10",
+          "end": "2026-12-12"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "scope: workspace 7 sees \"all\" and its list",
+      "today": "2026-11-15",
+      "workspaceId": 7,
+      "rows": [
+        {
+          "key": "vacation:X",
+          "value": {
+            "version": 1,
+            "id": "X",
+            "start": "2026-12-01",
+            "end": "2026-12-05",
+            "scope": {
+              "workspaces": [
+                3
+              ]
+            },
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:Y",
+          "value": {
+            "version": 1,
+            "id": "Y",
+            "start": "2026-12-10",
+            "end": "2026-12-12",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:Z",
+          "value": {
+            "version": 1,
+            "id": "Z",
+            "start": "2026-12-20",
+            "end": "2026-12-21",
+            "scope": {
+              "workspaces": [
+                3,
+                7
+              ]
+            },
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-12-10",
+          "end": "2026-12-12"
+        },
+        {
+          "start": "2026-12-20",
+          "end": "2026-12-21"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "unusable rows are ignored",
+      "today": "2026-11-15",
+      "workspaceId": 1,
+      "rows": [
+        {
+          "key": "vacation:T",
+          "value": null
+        },
+        {
+          "key": "vacation:V2",
+          "value": {
+            "version": 2,
+            "id": "V2",
+            "start": "2026-12-01",
+            "end": "2026-12-05",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:E",
+          "value": {
+            "version": 1,
+            "id": "E",
+            "start": "2026-12-05",
+            "end": "2026-12-01",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:W",
+          "value": {
+            "version": 1,
+            "id": "W",
+            "start": "2026-12-01",
+            "end": "2026-12-05",
+            "scope": {
+              "workspaces": []
+            },
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:D",
+          "value": {
+            "version": 1,
+            "id": "D",
+            "start": "2026-02-30",
+            "end": "2026-03-05",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:K",
+          "value": {
+            "version": 1,
+            "id": "OTHER",
+            "start": "2026-12-01",
+            "end": "2026-12-05",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:S",
+          "value": "text"
+        },
+        {
+          "key": "vacation:N",
+          "value": {
+            "version": 1,
+            "id": "N",
+            "start": "2026-12-01",
+            "end": "2026-12-05",
+            "scope": {
+              "workspaces": [
+                1.5
+              ]
+            },
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        },
+        {
+          "key": "vacation:OK",
+          "value": {
+            "version": 1,
+            "id": "OK",
+            "start": "2026-12-24",
+            "end": "2026-12-26",
+            "scope": "all",
+            "createdDay": "2026-11-01",
+            "createdAt": "2026-11-01T08:00:00Z"
+          }
+        }
+      ],
+      "runs": [
+        {
+          "start": "2026-12-24",
+          "end": "2026-12-26"
+        }
+      ],
+      "note": "tombstone, version 2, end before start, empty workspace list, impossible date, key and id differ, not an object, non-integer workspace id"
+    }
+  ],
+  "create": [
+    {
+      "name": "start now, nothing studied today",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [],
+      "draft": {
+        "start": "now",
+        "end": "2026-11-29",
+        "scope": "all"
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "NEW",
+              "start": "2026-11-15",
+              "end": "2026-11-29",
+              "scope": "all",
+              "createdDay": "2026-11-15",
+              "createdAt": "2026-11-15T10:12:00Z"
+            }
+          }
+        ],
+        "startsTomorrow": false
+      }
+    },
+    {
+      "name": "start now after studying today starts tomorrow",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [
+        1
+      ],
+      "existing": [],
+      "draft": {
+        "start": "now",
+        "end": "2026-11-29",
+        "scope": "all"
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "NEW",
+              "start": "2026-11-16",
+              "end": "2026-11-29",
+              "scope": "all",
+              "createdDay": "2026-11-15",
+              "createdAt": "2026-11-15T10:12:00Z"
+            }
+          }
+        ],
+        "startsTomorrow": true
+      }
+    },
+    {
+      "name": "start now for workspace 2 when only workspace 1 was studied",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [
+        1
+      ],
+      "existing": [],
+      "draft": {
+        "start": "now",
+        "end": null,
+        "scope": {
+          "workspaces": [
+            2
+          ]
+        }
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "NEW",
+              "start": "2026-11-15",
+              "end": null,
+              "scope": {
+                "workspaces": [
+                  2
+                ]
+              },
+              "createdDay": "2026-11-15",
+              "createdAt": "2026-11-15T10:12:00Z"
+            }
+          }
+        ],
+        "startsTomorrow": false
+      }
+    },
+    {
+      "name": "start now for workspace 1 after studying it",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [
+        1
+      ],
+      "existing": [],
+      "draft": {
+        "start": "now",
+        "end": null,
+        "scope": {
+          "workspaces": [
+            1,
+            2
+          ]
+        }
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "NEW",
+              "start": "2026-11-16",
+              "end": null,
+              "scope": {
+                "workspaces": [
+                  1,
+                  2
+                ]
+              },
+              "createdDay": "2026-11-15",
+              "createdAt": "2026-11-15T10:12:00Z"
+            }
+          }
+        ],
+        "startsTomorrow": true
+      }
+    },
+    {
+      "name": "a date before today is refused",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [],
+      "draft": {
+        "start": "2026-11-14",
+        "end": null,
+        "scope": "all"
+      },
+      "expect": {
+        "error": "start-before-today"
+      }
+    },
+    {
+      "name": "end before start is refused",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [],
+      "draft": {
+        "start": "2026-12-05",
+        "end": "2026-12-04",
+        "scope": "all"
+      },
+      "expect": {
+        "error": "end-before-start"
+      }
+    },
+    {
+      "name": "366 dates are allowed",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [],
+      "draft": {
+        "start": "2026-12-01",
+        "end": "2027-12-01",
+        "scope": "all"
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "NEW",
+              "start": "2026-12-01",
+              "end": "2027-12-01",
+              "scope": "all",
+              "createdDay": "2026-11-15",
+              "createdAt": "2026-11-15T10:12:00Z"
+            }
+          }
+        ],
+        "startsTomorrow": false
+      }
+    },
+    {
+      "name": "367 dates are refused",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [],
+      "draft": {
+        "start": "2026-12-01",
+        "end": "2027-12-02",
+        "scope": "all"
+      },
+      "expect": {
+        "error": "too-long"
+      }
+    },
+    {
+      "name": "an empty workspace list is refused",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [],
+      "draft": {
+        "start": "2026-12-01",
+        "end": "2026-12-05",
+        "scope": {
+          "workspaces": []
+        }
+      },
+      "expect": {
+        "error": "no-workspaces"
+      }
+    },
+    {
+      "name": "a draft bridging two rows of the same scope merges them",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [
+        {
+          "version": 1,
+          "id": "A",
+          "start": "2026-12-01",
+          "end": "2026-12-05",
+          "scope": "all",
+          "createdDay": "2026-11-10",
+          "createdAt": "2026-11-10T08:00:00Z"
+        },
+        {
+          "version": 1,
+          "id": "B",
+          "start": "2026-12-10",
+          "end": "2026-12-15",
+          "scope": "all",
+          "createdDay": "2026-11-12",
+          "createdAt": "2026-11-12T08:00:00Z"
+        }
+      ],
+      "draft": {
+        "start": "2026-12-06",
+        "end": "2026-12-09",
+        "scope": "all"
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "A",
+              "start": "2026-12-01",
+              "end": "2026-12-15",
+              "scope": "all",
+              "createdDay": "2026-11-10",
+              "createdAt": "2026-11-10T08:00:00Z"
+            }
+          },
+          {
+            "delete": "B"
+          }
+        ],
+        "startsTomorrow": false
+      }
+    },
+    {
+      "name": "merging with an open row stays open",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [
+        {
+          "version": 1,
+          "id": "A",
+          "start": "2026-12-01",
+          "end": null,
+          "scope": "all",
+          "createdDay": "2026-11-10",
+          "createdAt": "2026-11-10T08:00:00Z"
+        }
+      ],
+      "draft": {
+        "start": "2026-12-02",
+        "end": "2026-12-10",
+        "scope": "all"
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "A",
+              "start": "2026-12-01",
+              "end": null,
+              "scope": "all",
+              "createdDay": "2026-11-10",
+              "createdAt": "2026-11-10T08:00:00Z"
+            }
+          }
+        ],
+        "startsTomorrow": false
+      }
+    },
+    {
+      "name": "different scopes stay separate",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [
+        {
+          "version": 1,
+          "id": "A",
+          "start": "2026-12-01",
+          "end": "2026-12-05",
+          "scope": {
+            "workspaces": [
+              1
+            ]
+          },
+          "createdDay": "2026-11-10",
+          "createdAt": "2026-11-10T08:00:00Z"
+        }
+      ],
+      "draft": {
+        "start": "2026-12-03",
+        "end": "2026-12-08",
+        "scope": "all"
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "NEW",
+              "start": "2026-12-03",
+              "end": "2026-12-08",
+              "scope": "all",
+              "createdDay": "2026-11-15",
+              "createdAt": "2026-11-15T10:12:00Z"
+            }
+          }
+        ],
+        "startsTomorrow": false
+      }
+    },
+    {
+      "name": "a draft that only touches a row (adjacent) merges",
+      "today": "2026-11-15",
+      "now": "2026-11-15T10:12:00Z",
+      "newId": "NEW",
+      "reviewedTodayIn": [],
+      "existing": [
+        {
+          "version": 1,
+          "id": "A",
+          "start": "2026-12-01",
+          "end": "2026-12-05",
+          "scope": "all",
+          "createdDay": "2026-11-10",
+          "createdAt": "2026-11-10T08:00:00Z"
+        }
+      ],
+      "draft": {
+        "start": "2026-12-06",
+        "end": "2026-12-08",
+        "scope": "all"
+      },
+      "expect": {
+        "writes": [
+          {
+            "put": {
+              "version": 1,
+              "id": "A",
+              "start": "2026-12-01",
+              "end": "2026-12-08",
+              "scope": "all",
+              "createdDay": "2026-11-10",
+              "createdAt": "2026-11-10T08:00:00Z"
+            }
+          }
+        ],
+        "startsTomorrow": false
+      }
+    }
+  ],
+  "edit": [
+    {
+      "name": "end early in the middle of a run",
+      "op": "endEarly",
+      "today": "2026-12-10",
+      "period": {
+        "version": 1,
+        "id": "A",
+        "start": "2026-12-01",
+        "end": "2026-12-31",
+        "scope": "all",
+        "createdDay": "2026-11-01",
+        "createdAt": "2026-11-01T08:00:00Z"
+      },
+      "expect": {
+        "put": {
+          "version": 1,
+          "id": "A",
+          "start": "2026-12-01",
+          "end": "2026-12-09",
+          "scope": "all",
+          "createdDay": "2026-11-01",
+          "createdAt": "2026-11-01T08:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "end early on the first day deletes",
+      "op": "endEarly",
+      "today": "2026-12-10",
+      "period": {
+        "version": 1,
+        "id": "A",
+        "start": "2026-12-10",
+        "end": "2026-12-31",
+        "scope": "all",
+        "createdDay": "2026-11-01",
+        "createdAt": "2026-11-01T08:00:00Z"
+      },
+      "expect": {
+        "delete": "A"
+      }
+    },
+    {
+      "name": "end early before it started deletes",
+      "op": "endEarly",
+      "today": "2026-12-10",
+      "period": {
+        "version": 1,
+        "id": "A",
+        "start": "2026-12-20",
+        "end": "2026-12-31",
+        "scope": "all",
+        "createdDay": "2026-11-01",
+        "createdAt": "2026-11-01T08:00:00Z"
+      },
+      "expect": {
+        "delete": "A"
+      }
+    },
+    {
+      "name": "end early of an open period",
+      "op": "endEarly",
+      "today": "2026-11-15",
+      "period": {
+        "version": 1,
+        "id": "A",
+        "start": "2026-11-10",
+        "end": null,
+        "scope": "all",
+        "createdDay": "2026-11-10",
+        "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "expect": {
+        "put": {
+          "version": 1,
+          "id": "A",
+          "start": "2026-11-10",
+          "end": "2026-11-14",
+          "scope": "all",
+          "createdDay": "2026-11-10",
+          "createdAt": "2026-11-10T08:00:00Z"
+        }
+      }
+    },
+    {
+      "name": "end early uses the createdDay clamp",
+      "op": "endEarly",
+      "today": "2026-11-15",
+      "period": {
+        "version": 1,
+        "id": "A",
+        "start": "2026-11-01",
+        "end": "2026-11-30",
+        "scope": "all",
+        "createdDay": "2026-11-15",
+        "createdAt": "2026-11-15T08:00:00Z"
+      },
+      "expect": {
+        "delete": "A"
+      }
+    },
+    {
+      "name": "cancel a scheduled period",
+      "op": "cancel",
+      "today": "2026-12-10",
+      "period": {
+        "version": 1,
+        "id": "A",
+        "start": "2026-12-20",
+        "end": "2026-12-31",
+        "scope": "all",
+        "createdDay": "2026-11-01",
+        "createdAt": "2026-11-01T08:00:00Z"
+      },
+      "expect": {
+        "delete": "A"
+      }
+    },
+    {
+      "name": "cancel a period that starts today",
+      "op": "cancel",
+      "today": "2026-12-10",
+      "period": {
+        "version": 1,
+        "id": "A",
+        "start": "2026-12-10",
+        "end": "2026-12-31",
+        "scope": "all",
+        "createdDay": "2026-11-01",
+        "createdAt": "2026-11-01T08:00:00Z"
+      },
+      "expect": {
+        "delete": "A"
+      }
+    },
+    {
+      "name": "cancel of a started period is refused",
+      "op": "cancel",
+      "today": "2026-12-10",
+      "period": {
+        "version": 1,
+        "id": "A",
+        "start": "2026-12-01",
+        "end": "2026-12-31",
+        "scope": "all",
+        "createdDay": "2026-11-01",
+        "createdAt": "2026-11-01T08:00:00Z"
+      },
+      "expect": {
+        "error": "started"
+      }
+    }
+  ]
+}

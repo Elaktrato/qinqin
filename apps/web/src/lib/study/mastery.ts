@@ -4,6 +4,7 @@
 // review history that schedules cards also feeds the map.
 
 import { scheduleFor } from './scheduler';
+import type { StudyClock } from './studyClock';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 /** The five bands the mastery map colours. */
@@ -110,7 +111,8 @@ export function masteryForChars(
 	cards: readonly StudyCard[],
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	w: readonly number[]
+	w: readonly number[],
+	clock: StudyClock
 ): Map<string, CharMastery> {
 	const wanted = new Set(chars.filter((char) => char.length > 0));
 	const totals = new Map<string, { sum: number; count: number }>();
@@ -129,7 +131,7 @@ export function masteryForChars(
 			// No history means no schedule; skipping avoids a replay that
 			// would only return null.
 			if (history === undefined) continue;
-			const schedule = scheduleFor(card.id, history, now, w);
+			const schedule = scheduleFor(card.id, history, now, w, clock);
 			if (schedule === null) continue;
 
 			const strength = cardStrength(schedule.stability);
