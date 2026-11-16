@@ -127,3 +127,27 @@ func TestSearchShowsTheMatchedForm(t *testing.T) {
 		}
 	}
 }
+
+// TestFrequencyTopServesAGloss: every starter word carries the first gloss
+// of its first sense, so a list can tell two words of one display form
+// apart.
+func TestFrequencyTopServesAGloss(t *testing.T) {
+	lang.Register(lang.Ja{})
+	ts, sqlDB := newServer(t)
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
+		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
+	}, "jmdict.xml", displayJMdict)
+	packID := importFreqPack(t, sqlDB, "toy-freq", "ja", "いぬ,,1\nする,,2\n")
+	alice := registerUser(t, ts.URL, "alice", "")
+	var got struct {
+		Entries []struct {
+			Written string `json:"written"`
+			Gloss   string `json:"gloss"`
+		} `json:"entries"`
+	}
+	decodeJSON(t, getTop(t, ts.URL, alice, packID, "?size=500"), &got)
+	if len(got.Entries) != 2 || got.Entries[0].Gloss != "dog" || got.Entries[1].Gloss != "to do" {
+		t.Errorf("entries = %+v, want glosses dog, to do", got.Entries)
+	}
+}

@@ -100,7 +100,8 @@ mastery map, writing companion planning) show the old snapshot until the card is
   without data in the ranking pack, of another language or unknown are omitted; `pack: null` and `[]`
   without a pack. 401, 400 `ids must be 1 to 500 entry ids` / `language is required`, 413.
 - `GET /api/frequency-packs/{id}/top?size=500|1000|2000`, signed in -> `{packId, name, size, entries:
-  [EntryBase & {rank}]}` in deck order; 404 unknown or uninstalled pack, 400 other sizes.
+  [EntryBase & {rank, gloss}]}` (`gloss`: the first gloss of the entry's first sense, `""` without one; a
+  list shows it next to a display form that occurs more than once, e.g. なる 成る / 生る) in deck order; 404 unknown or uninstalled pack, 400 other sizes.
 
 Both answers are shared data (no per-user overlay); the service worker does not cache them.
 

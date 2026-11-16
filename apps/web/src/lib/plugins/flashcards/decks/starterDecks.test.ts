@@ -7,6 +7,7 @@ import {
 	STARTER_SIZES,
 	starterAddedText,
 	starterView,
+	duplicateGlosses,
 	starterAddItems,
 	starterCredit,
 	starterDeckName,
@@ -142,5 +143,37 @@ describe('starterAddedText', () => {
 		expect(starterAddedText(plan(3, 0, 1))).toBe('Added 3 words; 1 you know was skipped');
 		expect(starterAddedText(plan(470, 10, 20))).toBe('Added 480 words; 20 you know were skipped');
 		expect(starterAddedText(plan(1, 0, 0))).toBe('Added 1 word');
+	});
+});
+
+describe('duplicateGlosses', () => {
+	const word = (id: number, written: string, gloss: string) => ({
+		id,
+		language: 'ja',
+		kind: 'word',
+		written,
+		readings: [],
+		attrs: {},
+		radicalId: null,
+		rank: id,
+		gloss
+	});
+
+	it('glosses only the words whose display form occurs more than once', () => {
+		const got = duplicateGlosses([
+			word(1, 'なる', 'to become'),
+			word(2, 'の', 'of'),
+			word(3, 'なる', 'to bear fruit'),
+			word(4, 'いる', '')
+		]);
+		expect([...got]).toEqual([
+			[1, 'to become'],
+			[3, 'to bear fruit']
+		]);
+	});
+
+	it('copes with an older server without glosses', () => {
+		const old = [word(1, 'なる', ''), word(2, 'なる', '')].map(({ gloss: _g, ...rest }) => rest);
+		expect(duplicateGlosses(old).size).toBe(0);
 	});
 });

@@ -109,6 +109,17 @@ var starterSizes = map[string]int{"500": 500, "1000": 1000, "2000": 2000}
 type starterEntryBody struct {
 	model.EntryBase
 	Rank int `json:"rank"`
+	// Gloss is the first gloss of the entry's first sense ("" without one):
+	// a list tells two words of one display form apart by it (なる 成る / 生る).
+	Gloss string `json:"gloss"`
+}
+
+// firstGloss is the first gloss of e's first sense, "" without one.
+func firstGloss(e lexicon.Entry) string {
+	if len(e.Senses) == 0 || len(e.Senses[0].Glosses) == 0 {
+		return ""
+	}
+	return e.Senses[0].Glosses[0]
 }
 
 // handleFrequencyTop serves GET /api/frequency-packs/{id}/top?size=: the
@@ -188,7 +199,7 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 			// The deck shows, and a copy snapshots, the row's kana when it
 			// is a reading of the entry (freq.Written).
 			b.Written = freq.Written(es[i], byID[b.ID])
-			entries = append(entries, starterEntryBody{EntryBase: b, Rank: byID[b.ID].Rank})
+			entries = append(entries, starterEntryBody{EntryBase: b, Rank: byID[b.ID].Rank, Gloss: firstGloss(es[i])})
 		}
 	}
 	body, err := json.Marshal(struct {
