@@ -273,7 +273,8 @@ func featurePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, err
 }
 
 // isHiddenBuiltin reports whether a registry row is one of the built-in
-// plugins and declares no surface: nothing a user can switch or visit.
+// plugins and declares no surface: not a plugin to list (the core, and the
+// reserved rows of the core features, whose switch clients show apart).
 // Admin-registered plugins are never hidden, whatever they declare.
 func isHiddenBuiltin(id, manifest string) bool {
 	if !slices.Contains(BuiltinIDs(), id) {

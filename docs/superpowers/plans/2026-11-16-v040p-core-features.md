@@ -598,3 +598,37 @@ deviations with reasons, the `sample-v1` change, what was not verified).
   ./internal/sync ./internal/backup` exit 0 (all ok); `node scripts/gen-api-docs.mjs --check` exit 0;
   web `mfaResetView`, `reauth`, `tokensFormat`, `contractsDocs`, `wikiDocs` vitest 5 files / 153 tests
   passed. Route walk, `routes.fixture.json`, `auth/tokens-routes.json` unchanged (in the api run).
+
+#### A9 — registry: reserved core rows, events move to core
+
+- Tests first (seen failing: 9 Go tests in `plugins`, `cmd/qinqin`, `api`): `builtin_test.go` (core 1.2
+  with `session`, `view`, `lookup`, `review`, `read`; flashcards 2.0 `owns-data` only; reader 2.0 empty;
+  new `TestRegisterBuiltinsOverV030Rows`: the v0.3.0 rows in the registry, all built-ins registered in
+  order report no conflict, rules `review`/`read` under `qinqin-core`, an admin `review` claimer is refused
+  as owned by `qinqin-core`), `activity_test.go`, `rows_test.go` (hidden flags), `cmd/qinqin/main_test.go`
+  (versions, the conflict log names `qinqin-core`), `api/handlers_stats_test.go` (activity sources),
+  new `api` `TestReservedFeatureRows` (admin `POST` of `qinqin-reader`/`qinqin-flashcards` 409, `GET
+  /api/plugins` lists both with the caller's state, `PUT .../qinqin-reader/state` per user, study
+  namespace still owns data).
+- Implementation: the three JSON files; `RegisterBuiltin` never reports another built-in's row as a
+  conflict (stale v0.3.0 rows are replaced in the same start-up), so the registration order stays core
+  first and `ActivityRules` lists `review`, `read` (core), `journal`.
+- Ruling: the reserved rows `qinqin-flashcards` / `qinqin-reader` are listed with `hidden: true` (they
+  declare no surface, the existing rule) — why: they are not plugins; a client must not show them in a
+  plugin list, and their state (the feature switch) is still on the same row — cost if wrong: a client that
+  drops hidden rows before reading states would miss the switch (documented on `model.PluginInfo`).
+- Ruling: `order` sent to `PUT /api/plugins/{id}/state` for the two ids is stored as sent, not forced to 0
+  — why: v0.3.0 shells send their plugin order and must not be refused; "ignored" (spec Q6) means no
+  client uses it for these ids — cost if wrong: none.
+- Deviation (web, pulled forward from B5 to keep every commit green): the web imports the same JSON files
+  (`$builtin`), so moving `review`/`read` into `core.json` broke 12 web tests and, worse, the cache
+  invalidation of the event log (`logChangingTypes` skipped the core, so a posted review no longer dropped
+  the cached log). In this commit: `lib/plugins/contract.ts` `logChangingTypes` = every built-in or
+  registered event type with an activity rule (spec Q7's definition), `lib/goals/builtinSources.ts` reads
+  `core.json` and `journal.json` (route order), and the tests that pinned the old shapes
+  (`contract.test.ts`, `states.test.ts`, `builtinSources.test.ts`, `manifests.test.ts`: the two reserved
+  ids assert `surfaces: []`). B5 keeps the rest (webPlugins, nav, widgets gate, Settings rows).
+- Gate: `gofmt -l .` empty; `go vet` + `go test -count=1 -p 2 ./internal/plugins ./internal/api
+  ./cmd/qinqin ./internal/model ./internal/sync ./internal/stats ./internal/events` exit 0 (all ok); web
+  `npm run check` exit 0 (0 errors, 0 warnings); full vitest (Node 22) exit 0, 381 files / 6041 tests;
+  `gen-api-docs --check` exit 0.

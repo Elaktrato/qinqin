@@ -70,9 +70,12 @@ func TestPutDataRejectsWorkspaceZero(t *testing.T) {
 	}
 }
 
-// TestListFlagsSurfacelessBuiltinsHidden: the built-in plugin without
-// surfaces (qinqin-core, registered only so its data is accepted) is listed
-// with hidden=true; built-ins with a surface and admin plugins are not.
+// TestListFlagsSurfacelessBuiltinsHidden: the built-ins without surfaces
+// (qinqin-core, registered only so its data is accepted, and the reserved
+// rows of the core features flashcards and reader, which carry the study
+// namespace and the feature switches) are listed with hidden=true, so no
+// client shows them as plugins; built-ins with a surface and admin plugins
+// are not hidden.
 func TestListFlagsSurfacelessBuiltinsHidden(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := newDB(t)
@@ -94,10 +97,12 @@ func TestListFlagsSurfacelessBuiltinsHidden(t *testing.T) {
 	for _, p := range list {
 		hidden[p.ID] = p.Hidden
 	}
-	if !hidden["qinqin-core"] {
-		t.Error("qinqin-core not hidden")
+	for _, id := range []string{"qinqin-core", "qinqin-flashcards", "qinqin-reader"} {
+		if h, ok := hidden[id]; !ok || !h {
+			t.Errorf("%s: listed=%v hidden=%v, want listed and hidden", id, ok, h)
+		}
 	}
-	for _, id := range []string{"qinqin-flashcards", "qinqin-reader", "qinqin-journal", "qinqin-grammar", "quiet"} {
+	for _, id := range []string{"qinqin-journal", "qinqin-grammar", "quiet"} {
 		if h, ok := hidden[id]; !ok || h {
 			t.Errorf("%s: listed=%v hidden=%v, want listed and visible", id, ok, h)
 		}

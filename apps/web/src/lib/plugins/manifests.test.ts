@@ -11,9 +11,17 @@ type Missing = Exclude<EventType, (typeof EVENT_TYPES)[number]>;
 const noneMissing: Missing extends never ? true : false = true;
 
 describe('web plugin manifests', () => {
+	// Flashcards and the reader are core features since v0.4.0: their
+	// registry rows declare no surface (server/internal/plugins/builtin), and
+	// phase B of the core-features plan takes them out of webPlugins.
+	const coreFeatures = new Set(['qinqin-flashcards', 'qinqin-reader']);
 	for (const plugin of webPlugins) {
 		it(`${plugin.manifest.id}: surfaces match what it ships`, () => {
 			const { surfaces, widgets } = plugin.manifest;
+			if (coreFeatures.has(plugin.manifest.id)) {
+				expect(surfaces).toEqual([]);
+				return;
+			}
 			expect(surfaces.includes('page')).toBe(Boolean(plugin.pages?.length));
 			expect(surfaces.includes('home-widget')).toBe(Boolean(widgets?.length));
 		});

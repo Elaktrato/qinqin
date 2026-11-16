@@ -37,7 +37,7 @@ describe('plugin states store', () => {
 
 	it('feeds the registered manifests to logChangingTypes, and drops them on reset', async () => {
 		mocked.mockResolvedValue([
-			{ id: 'zz', manifest: { id: 'zz', sdk: 1, events: [{ type: 'drill' }] }, enabled: false, order: 0 }
+			{ id: 'zz', manifest: { id: 'zz', sdk: 1, events: [{ type: 'drill', activity: { label: 'Drill', describe: { one: '{n}', other: '{n}' } } }] }, enabled: false, order: 0 }
 		]);
 		await loadPluginStates();
 		expect(logChangingTypes().has('drill')).toBe(true);

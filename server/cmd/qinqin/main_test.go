@@ -233,9 +233,9 @@ func TestRegisterBuiltinOverLegacyDB(t *testing.T) {
 		if err := sqlDB.QueryRowContext(ctx, `SELECT manifest_json FROM plugin_registry WHERE pack_id = ?`, id).Scan(&raw); err != nil {
 			t.Fatalf("%s row: %v", id, err)
 		}
-		want := "1.1"
-		if id == "qinqin-flashcards" {
-			want = "1.2" // gained the decks page surface
+		want := map[string]string{"qinqin-core": "1.2", "qinqin-flashcards": "2.0", "qinqin-reader": "2.0"}[id]
+		if want == "" {
+			want = "1.1"
 		}
 		m, err := plugins.ParseManifest([]byte(raw))
 		if err != nil || m.SDK != 1 || m.Version != want {
@@ -266,7 +266,7 @@ func TestRegisterBuiltinPluginsLogsConflict(t *testing.T) {
 	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
 		t.Fatalf("registerBuiltinPlugins: %v", err)
 	}
-	if !strings.Contains(buf.String(), "plugin qinqin-other also claims event types of qinqin-reader; the built-in wins") {
+	if !strings.Contains(buf.String(), "plugin qinqin-other also claims event types of qinqin-core; the built-in wins") {
 		t.Errorf("log = %q", buf.String())
 	}
 }
