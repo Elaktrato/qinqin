@@ -77,3 +77,27 @@ func TestEntryShowsTheDisplayForm(t *testing.T) {
 		}
 	}
 }
+
+// TestFrequencyTopShowsTheListKana: a starter deck word whose row is
+// written in kana is served (and so snapshotted) in that kana when it is
+// one of the entry's readings — いぬ for a row いぬ, although 犬's display
+// form is 犬 (uk on a later sense only); する for the usually-kana 為る.
+func TestFrequencyTopShowsTheListKana(t *testing.T) {
+	lang.Register(lang.Ja{})
+	ts, sqlDB := newServer(t)
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
+		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
+	}, "jmdict.xml", displayJMdict)
+	packID := importFreqPack(t, sqlDB, "toy-freq", "ja", "いぬ,,1\nする,,2\n")
+	alice := registerUser(t, ts.URL, "alice", "")
+	var got topBody
+	decodeJSON(t, getTop(t, ts.URL, alice, packID, "?size=500"), &got)
+	var written []string
+	for _, e := range got.Entries {
+		written = append(written, e.Written)
+	}
+	if strings.Join(written, ",") != "いぬ,する" {
+		t.Errorf("written = %v, want いぬ,する", written)
+	}
+}

@@ -167,10 +167,10 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ids := make([]int64, len(top))
-	rank := make(map[int64]int, len(top))
+	byID := make(map[int64]freq.TopEntry, len(top))
 	for i, t := range top {
 		ids[i] = t.EntryID
-		rank[t.EntryID] = t.Rank
+		byID[t.EntryID] = t
 	}
 	entries := []starterEntryBody{}
 	for start := 0; start < len(ids); start += maxEntryBasesIDs {
@@ -184,8 +184,11 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
-		for _, b := range bases {
-			entries = append(entries, starterEntryBody{EntryBase: b, Rank: rank[b.ID]})
+		for i, b := range bases {
+			// The deck shows, and a copy snapshots, the row's kana when it
+			// is a reading of the entry (freq.Written).
+			b.Written = freq.Written(es[i], byID[b.ID])
+			entries = append(entries, starterEntryBody{EntryBase: b, Rank: byID[b.ID].Rank})
 		}
 	}
 	body, err := json.Marshal(struct {

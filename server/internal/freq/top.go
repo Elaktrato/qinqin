@@ -49,13 +49,19 @@ func allKana(s string) bool {
 	return true
 }
 
-// TopEntry is one word of a starter deck: the entry and the rank of the
-// pack row that took it.
+// TopEntry is one word of a starter deck: the entry, the rank of the
+// pack row that took it and that row's term (how the list writes it).
 type TopEntry struct {
 	EntryID int64
 	Rank    int
+	Term    string
 	row     int // position of that row in the rank walk, 0-based
 }
+
+// Written is the form a starter deck word is shown and snapshotted as:
+// the entry's display form with the row's term as the list form, so a
+// kana row shows its kana (contract: frequency/display-form.json).
+func Written(e lexicon.Entry, t TopEntry) string { return e.DisplayForm(t.Term) }
 
 // rowCap is how many pack rows a deck of size entries walks at most.
 func rowCap(size int) int { return 4 * size }
@@ -107,7 +113,7 @@ func (s Store) Top(ctx context.Context, r Resolver, pack PackInfo, size int) ([]
 			continue
 		}
 		taken[id] = true
-		out = append(out, TopEntry{EntryID: id, Rank: tr.rank, row: i})
+		out = append(out, TopEntry{EntryID: id, Rank: tr.rank, Term: tr.term, row: i})
 		if len(out) == size {
 			break
 		}
