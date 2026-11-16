@@ -30,6 +30,9 @@
 - [API overview](API-Overview)
 - [API routes](API-Routes)
 - [API errors](API-Errors)
+- [Plugin data API](Plugin-data-api)
+- [Plugin format](Plugin-format)
+- [Data pack format](Data-pack-format)
 
 **Reference**
 
