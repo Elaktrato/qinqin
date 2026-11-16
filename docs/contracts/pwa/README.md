@@ -41,9 +41,11 @@ rows and cannot create duplicate cards.
 The service worker answers from its saved copy only for these `GET`s, and only
 when the request carries an `Authorization` header: `/api/auth/me`,
 `/api/workspaces`, `/api/plugins`, `/api/languages`, `/api/me/time-zone`,
-`/api/sync/pull` with `collections` a non-empty subset of `pluginData,pluginStates`
-(the rows of `fsrs:*`, `deck:*`, `card:*`, `vacation:*` and `limits:*` keys travel
-in it), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=`,
+`/api/sync/pull` with `collections` a non-empty subset of
+`pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive` (the
+typed study rows of `docs/contracts/study/` and the keyed `goals:*`, `known:*` and
+`vacation:*` rows travel in it; the old `pluginData,pluginStates` form of a cached
+v0.3.x shell stays cacheable), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=`,
 and `/api/entries/{id}`; plus stroke data `/hanzi/U<HEX>.json` without credentials.
 Everything else (every non-GET request, admin, account, auth except `me`, AI,
 journal photos, audio, lookups, search) is never touched. The lookup history (#72,
