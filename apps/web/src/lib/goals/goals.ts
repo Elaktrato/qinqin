@@ -120,6 +120,17 @@ export function goalOn(row: GoalsRow | null, day: string): Goal | null {
 	return { metric: entry.metric, target: entry.target };
 }
 
+/** metricsBetween: the metrics of every goal in effect on some day of from..to. */
+export function metricsBetween(row: GoalsRow | null, from: string, to: string): GoalMetric[] {
+	if (row === null) return [];
+	const first = entryOn(row, from);
+	const entries = [
+		...(first === null ? [] : [first]),
+		...row.history.filter((e) => e.from > from && e.from <= to)
+	];
+	return [...new Set(entries.flatMap((e) => (e.metric === null ? [] : [e.metric])))];
+}
+
 function sameGoal(a: Goal | null, b: Goal | null): boolean {
 	if (a === null || b === null) return a === b;
 	return a.metric === b.metric && a.target === b.target;

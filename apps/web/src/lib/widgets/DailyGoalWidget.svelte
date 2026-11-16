@@ -19,9 +19,18 @@
 	let requestSeq = 0;
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
+	// Offline with an activity goal today: the error line, not "no longer counted".
+	const activityFailed = $derived(goal !== null && goal.activityError !== null && goal.today.unavailable);
 	const status = $derived<WidgetStatus>(
-		workspaceId === null ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
+		workspaceId === null
+			? 'no-workspace'
+			: loading
+				? 'loading'
+				: error || activityFailed
+					? 'error'
+					: 'ready'
 	);
+	const shownError = $derived(error || (activityFailed ? (goal?.activityError ?? '') : ''));
 	const hasGoal = $derived(goal !== null && (goal.today.status !== 'none' || goal.today.unavailable));
 
 	async function load(workspace: number | null, force = false): Promise<void> {
@@ -58,7 +67,7 @@
 	{status}
 	noWorkspaceText="Choose a workspace in the header to set a daily goal."
 	loadingText="Loading your daily goal…"
-	{error}
+	error={shownError}
 	onretry={() => void load(workspaceId, true)}
 >
 	{#snippet actions()}

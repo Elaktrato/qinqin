@@ -98,5 +98,7 @@ days". Today `none` gives `current: 0`.
 Read `goals:workspace` with the `limits:*` rows (one plugin-data pull, rows of the current workspace only;
 a tombstone is absent). Amounts for `activity:*` come from `GET /api/stats/activity?from=&to=&workspace=`
 (the server buckets cells by the learner's day); `flashcards:*` from the local review log by the learner's day
-(`dayOf` of `study-day/`, never the study clock), so reviews still in the outbox count for those. Vacation runs
+(`dayOf` of `study-day/`, never the study clock), so reviews still in the outbox count for those. Request the activity window only when a goal in effect inside it has an `activity:*` metric; when
+that request fails, `flashcards:*` days are still evaluated and `activity:*` days are unavailable (the web shows
+its error line, not "no longer counted"). Vacation runs
 as in `scheduler/`. Use the same day status and streak rules; never store progress.

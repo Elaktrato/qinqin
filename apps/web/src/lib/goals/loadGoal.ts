@@ -4,14 +4,14 @@
 // widget) call this; concurrent calls for the same workspace, learner day
 // and force flag share one promise, which is dropped once it settles.
 
-import { fetchActivity, type ActivitySource } from '../api/stats';
+import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
 import { loadStudyHistory } from '../study/history';
 import { effectiveLimits } from '../study/limits';
 import { vacationRuns } from '../study/vacation';
 import { addDays } from '../time/studyDay';
 import { currentStudyDay } from '../time/zone';
 import { NO_AMOUNTS, activityAmounts, amountsOf, flashcardAmounts } from './amounts';
-import { goalOn, type GoalsRow } from './goals';
+import { activityType, goalOn, metricsBetween, type GoalsRow } from './goals';
 import { goalDay, goalStreak, type GoalDay, type GoalStreak, type UnitOf } from './progress';
 
 /** Days before today the goal streak looks back (the activity route's 366-day cap). */
@@ -26,6 +26,11 @@ export interface GoalView {
 	sources: ActivitySource[];
 	/** The workspace's effective daily new-card limit (deck overrides not considered); null = unlimited. */
 	limitsNew: number | null;
+	/**
+	 * The activity request failed (offline): days of activity:* goals are
+	 * unavailable, flashcards:* goals are still computed from the local log.
+	 */
+	activityError: string | null;
 }
 
 const inflight = new Map<string, Promise<GoalView>>();
@@ -44,12 +49,24 @@ async function load(workspaceId: number, now: number, force: boolean): Promise<G
 			today: goalDay(null, today, today, NO_AMOUNTS, vacation, () => null),
 			streak: null,
 			sources: [],
-			limitsNew
+			limitsNew,
+			activityError: null
 		};
 	}
 	const withStreak = parsed.showStreak && goalOn(parsed, today) !== null;
 	const windowStart = withStreak ? addDays(today, -STREAK_WINDOW_DAYS) : today;
-	const activity = await fetchActivity(windowStart, today, workspaceId);
+	// Only an activity goal needs the server; flashcards goals are counted
+	// from the local log, so they keep working offline.
+	const needsActivity = metricsBetween(parsed, windowStart, today).some((m) => activityType(m) !== null);
+	let activity: Pick<ActivityResponse, 'sources' | 'cells'> = { sources: [], cells: [] };
+	let activityError: string | null = null;
+	if (needsActivity) {
+		try {
+			activity = await fetchActivity(windowStart, today, workspaceId);
+		} catch (err) {
+			activityError = err instanceof Error && err.message ? err.message : 'Could not load your activity.';
+		}
+	}
 	const sources = activity.sources ?? [];
 	const unitOf: UnitOf = (type) => sources.find((s) => s.type === type)?.unit ?? null;
 	const of = amountsOf(flashcardAmounts(data.reviews, day.dayOf), activityAmounts(activity.cells ?? [], workspaceId));
@@ -59,7 +76,8 @@ async function load(workspaceId: number, now: number, force: boolean): Promise<G
 		today: goalDay(parsed, today, today, of(today), vacation, unitOf),
 		streak: withStreak ? goalStreak(parsed, today, windowStart, of, vacation, unitOf) : null,
 		sources,
-		limitsNew
+		limitsNew,
+		activityError
 	};
 }
 

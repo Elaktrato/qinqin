@@ -24,7 +24,8 @@ const NO_GOAL: GoalView = {
 	},
 	streak: null,
 	sources: [],
-	limitsNew: 20
+	limitsNew: 20,
+	activityError: null
 };
 
 const WITH_GOAL: GoalView = {
@@ -53,7 +54,8 @@ const WITH_GOAL: GoalView = {
 			describe: { one: '{n} flashcard review', other: '{n} flashcard reviews' }
 		}
 	],
-	limitsNew: 20
+	limitsNew: 20,
+	activityError: null
 };
 
 const text = (el: HTMLElement) => el.textContent?.replace(/\s+/g, ' ').trim();
@@ -99,6 +101,20 @@ describe('FlashcardsWidget goal ring', () => {
 		await ready();
 		await screen.findByRole('progressbar', { name: 'Daily goal' });
 		expect(screen.queryByText(/Goal streak/)).toBeNull();
+	});
+
+	it('leaves the ring out when the activity request failed (offline)', async () => {
+		vi.mocked(loadGoalStatus).mockResolvedValue({
+			...WITH_GOAL,
+			activityError: 'offline',
+			today: { ...WITH_GOAL.today, status: 'none', amount: 0, fraction: 0, unavailable: true },
+			streak: null
+		});
+		await ready();
+		await waitFor(() => expect(loadGoalStatus).toHaveBeenCalled());
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByText("This goal's activity is no longer counted")).toBeNull();
+		expect(screen.queryByRole('progressbar', { name: 'Daily goal' })).toBeNull();
 	});
 
 	it('keeps the widget when the goal fails to load', async () => {

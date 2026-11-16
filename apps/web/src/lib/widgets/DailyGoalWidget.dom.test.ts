@@ -47,6 +47,7 @@ function view(partial: Partial<GoalView> = {}): GoalView {
 		streak: { current: 4, todayMet: false, capped: false },
 		sources: SOURCES,
 		limitsNew: 20,
+		activityError: null,
 		...partial
 	};
 }
@@ -107,6 +108,20 @@ describe('DailyGoalWidget', () => {
 		render(DailyGoalWidget);
 		expect(await screen.findByText(/set by a newer version of qinqin/)).toBeTruthy();
 		expect(screen.queryByRole('link', { name: 'Set a daily goal' })).toBeNull();
+	});
+
+	it('shows the activity error (offline) instead of "no longer counted"', async () => {
+		vi.mocked(loadGoalStatus).mockResolvedValue(
+			view({
+				activityError: 'offline',
+				today: today({ status: 'none', amount: 0, fraction: 0, unavailable: true }),
+				streak: null
+			})
+		);
+		render(DailyGoalWidget);
+		expect(await screen.findByText(/offline/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
+		expect(screen.queryByText("This goal's activity is no longer counted")).toBeNull();
 	});
 
 	it('asks for a workspace without one', async () => {

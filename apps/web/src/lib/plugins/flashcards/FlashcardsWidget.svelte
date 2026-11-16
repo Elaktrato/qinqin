@@ -52,8 +52,11 @@
 	// The daily goal loads on its own: a failure only leaves the ring out.
 	let goal = $state.raw<GoalView | null>(null);
 	let goalSeq = 0;
+	// Offline with an activity goal today the ring is left out (not "no longer counted").
 	const showGoal = $derived(
-		goal !== null && !noWorkspace && (goal.today.status !== 'none' || goal.today.unavailable)
+		goal !== null &&
+			!noWorkspace &&
+			(goal.today.status !== 'none' || (goal.today.unavailable && goal.activityError === null))
 	);
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);

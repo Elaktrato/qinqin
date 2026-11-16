@@ -70,6 +70,7 @@ describe('loadGoalStatus', () => {
 		expect(view.streak).toEqual({ current: 1, todayMet: false, capped: false });
 		expect(view.sources).toEqual([REVIEW]);
 		expect(view.newer).toBe(false);
+		expect(view.activityError).toBeNull();
 	});
 
 	it('asks only for today without the streak', async () => {
@@ -125,10 +126,85 @@ describe('loadGoalStatus', () => {
 		expect((await loadGoalStatus(3, { now: NOW })).limitsNew).toBe(7);
 	});
 
-	it('passes force to the history and rejects when the activity request fails', async () => {
+	it('passes force to the history; an activity goal reports a failed activity request', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: goalRow() }));
 		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
-		await expect(loadGoalStatus(3, { now: NOW, force: true })).rejects.toThrow('offline');
+		const view = await loadGoalStatus(3, { now: NOW, force: true });
 		expect(loadStudyHistory).toHaveBeenCalledWith(3, { force: true });
+		expect(view.activityError).toBe('offline');
+		expect(view.today.unavailable).toBe(true);
+		expect(view.today.status).toBe('none');
+	});
+
+	const newCards = (from = '2026-11-01') => ({
+		version: 1 as const,
+		showStreak: true,
+		history: [{ from, metric: 'flashcards:new' as const, target: 2 }]
+	});
+	const review = (n: number, ts: string, cardId: string) => ({
+		id: `01JLOADGOAL${String(n).padStart(15, '0')}`,
+		workspaceId: 3,
+		device: 'web',
+		ts,
+		type: 'review' as const,
+		payload: { cardId, mode: 'vocab' as const, grade: 3 as const }
+	});
+
+	it('a flashcards goal needs no activity request (works offline)', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(
+			history({
+				goals: newCards(),
+				reviews: [
+					review(1, '2026-11-15T10:00:00Z', 'a'),
+					review(2, '2026-11-15T10:01:00Z', 'b'),
+					review(3, '2026-11-16T10:00:00Z', 'c')
+				]
+			})
+		);
+		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
+		const view = await loadGoalStatus(3, { now: NOW });
+		expect(fetchActivity).not.toHaveBeenCalled();
+		expect(view.activityError).toBeNull();
+		expect([view.today.status, view.today.amount]).toEqual(['open', 1]);
+		expect(view.streak).toEqual({ current: 1, todayMet: false, capped: false });
+	});
+
+	it('asks for activity when an activity goal is in effect inside the window', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(
+			history({
+				goals: {
+					version: 1,
+					showStreak: true,
+					history: [
+						{ from: '2026-11-01', metric: 'activity:review', target: 5 },
+						{ from: '2026-11-10', metric: 'flashcards:new', target: 2 }
+					]
+				}
+			})
+		);
+		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
+		const view = await loadGoalStatus(3, { now: NOW });
+		expect(fetchActivity).toHaveBeenCalledWith('2025-11-16', '2026-11-16', 3);
+		// Today's flashcards goal is still computed; the activity request failed.
+		expect(view.today.status).toBe('open');
+		expect(view.today.unavailable).toBe(false);
+		expect(view.activityError).toBe('offline');
+	});
+
+	it('skips activity when the activity goal ended before the window', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(
+			history({
+				goals: {
+					version: 1,
+					showStreak: false,
+					history: [
+						{ from: '2026-11-01', metric: 'activity:review', target: 5 },
+						{ from: '2026-11-10', metric: 'flashcards:new', target: 2 }
+					]
+				}
+			})
+		);
+		await loadGoalStatus(3, { now: NOW });
+		expect(fetchActivity).not.toHaveBeenCalled();
 	});
 });

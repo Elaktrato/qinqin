@@ -41,7 +41,7 @@ The ring is read out by screen readers with its numbers ("Goal reached: 62 of 50
 
 ## Offline
 
-New cards and flashcard study time count reviews waiting in this device's offline outbox at once. Reviews, reading and other activity are counted by the server, so a review recorded offline counts there once it has been sent ([Install and offline](Install-and-offline)).
+New cards and flashcard study time count reviews waiting in this device's offline outbox at once. Reviews, reading and other activity are counted by the server, so a review recorded offline counts there once it has been sent ([Install and offline](Install-and-offline)). A goal on new cards or flashcard study time works fully offline; a goal on reviews, reading or other activity shows "Could not load" with **Try again** until the server can be reached.
 
 ## For client implementers
 
