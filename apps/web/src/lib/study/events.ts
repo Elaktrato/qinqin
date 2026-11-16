@@ -8,6 +8,7 @@ import { ApiError, getToken, isRestrictionResponse, isWorkspaceGoneResponse } fr
 import { showNotice } from '../notices';
 import { postEvents } from '../events';
 import { newUlid } from '../ulid';
+import { notifyAllSent, setQueued } from '../pwa/offlineState';
 import { flushable, settle, type OutboxItem, type OutboxState } from './outbox';
 import { onOutboxUser, outboxUser } from './outboxUser';
 import type {
@@ -102,6 +103,37 @@ function load(): OutboxItem[] {
 
 function save(items: OutboxItem[]): void {
 	writeState({ legacy: readArray(LEGACY_PENDING_KEY).filter(isEventBody), items });
+	refreshQueued(items);
+}
+
+/** Tells the offline banner how many of the signed-in user's reviews wait, and re-evaluates the retry timer. */
+function refreshQueued(items: readonly OutboxItem[]): void {
+	const user = outboxUser();
+	setQueued(user === null ? 0 : flushable(items, user).length);
+	syncPolling(user !== null && flushable(items, user).length > 0);
+}
+
+const POLL_MS = 60_000;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+function pageVisible(): boolean {
+	return typeof document === 'undefined' || document.visibilityState !== 'hidden';
+}
+
+/**
+ * While reviews are queued and the page is visible, try again every minute
+ * (a reconnect the browser did not announce, a server that came back). No
+ * Background Sync: Safari and Firefox lack it and a worker cannot read this
+ * queue.
+ */
+function syncPolling(queued: boolean): void {
+	const want = outboxStarted && queued && pageVisible();
+	if (want && pollTimer === null) {
+		pollTimer = setInterval(() => void flushPendingReviews(), POLL_MS);
+	} else if (!want && pollTimer !== null) {
+		clearInterval(pollTimer);
+		pollTimer = null;
+	}
 }
 
 function enqueue(event: StudyEventBody): void {
@@ -196,13 +228,17 @@ async function flushOnce(): Promise<void> {
 	// only that user's items may be sent.
 	const user = outboxUser();
 	if (getToken() === null || user === null) return;
-	const queued = flushable(load(), user);
+	const all = load();
+	refreshQueued(all);
+	const queued = flushable(all, user);
 	if (queued.length === 0) return;
 
 	let gone = 0;
+	let sent = 0;
 	for (const { event } of queued) {
 		try {
 			await postEvents([event]);
+			sent++;
 			removePending(event.id);
 		} catch (err) {
 			// The session is gone or restricted: every further POST would fail
@@ -221,6 +257,7 @@ async function flushOnce(): Promise<void> {
 			}
 		}
 	}
+	if (sent > 0 && pendingCount(user) === 0) notifyAllSent();
 	// Reviews of a workspace deleted elsewhere are lost for good: say so.
 	if (gone > 0) {
 		showNotice(
@@ -267,6 +304,14 @@ export function startReviewOutbox(): void {
 		});
 		// A user who becomes known after boot (me answered) drains their queue.
 		onOutboxUser(() => void flushPendingReviews());
+		// Coming back to the app (a phone woken from its pocket) is the best
+		// moment to send what waited; hiding it stops the retry timer.
+		if (typeof document !== 'undefined') {
+			document.addEventListener('visibilitychange', () => {
+				if (pageVisible()) void flushPendingReviews();
+				refreshQueued(load());
+			});
+		}
 	}
 	void flushPendingReviews();
 }

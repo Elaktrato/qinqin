@@ -25,6 +25,7 @@
 	} from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
 	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
+	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
 	import { registerWorker } from '$lib/pwa/register';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { requestSignOut } from '$lib/account/signOut';
@@ -188,6 +189,7 @@
 	<a class="skip-link" href="#main-content" onclick={skipToContent}>Skip to content</a>
 	<div class="app" class:with-bar={signedIn}>
 		<UpdateBanner />
+		<OfflineBanner />
 		{#if signedIn}
 			<header class="shell">
 				<!-- The logo is the home link (there is no separate Home tab). -->

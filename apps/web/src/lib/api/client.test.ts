@@ -4,6 +4,8 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
+import { get } from 'svelte/store';
+import { offline, reportNetworkFailure, resetOffline } from '../pwa/offlineState';
 import {
 	ApiError,
 	api,
@@ -323,5 +325,37 @@ describe('apiBlob and apiErrorBody', () => {
 		expect(apiErrorBody(new ApiError(500, 'internal error'))).toBeNull();
 		expect(apiErrorBody(new Error('x'))).toBeNull();
 		expect(apiErrorBody(new ApiError(400, '{"foo":1}'))).toBeNull();
+	});
+});
+
+describe('api client reports connectivity', () => {
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn());
+		resetOffline();
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('a response from the worker\'s saved copy is reported with its time', async () => {
+		vi.mocked(fetch).mockResolvedValue(
+			new Response('[]', {
+				headers: { 'x-qinqin-offline': '1', 'x-qinqin-saved-at': '2026-11-16T14:02:00.000Z' }
+			})
+		);
+		await api('/api/workspaces');
+		expect(get(offline).servedFromCacheAt).toBe('2026-11-16T14:02:00.000Z');
+	});
+
+	it('an error response still counts as the server answering', async () => {
+		reportNetworkFailure();
+		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 404 }));
+		await expect(api('/api/x')).rejects.toBeInstanceOf(ApiError);
+		expect(get(offline).online).toBe(true);
+	});
+
+	it('a network failure marks the app offline and still throws', async () => {
+		vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
+		await expect(api('/api/x')).rejects.toThrow('Failed to fetch');
+		expect(get(offline).online).toBe(false);
 	});
 });

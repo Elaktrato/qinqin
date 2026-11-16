@@ -1,6 +1,8 @@
 
 // The bearer token lives in localStorage under this exact key: the
 // static SPA has no server session, so every reload rehydrates from here.
+import { reportNetworkFailure, reportResponse } from '../pwa/offlineState';
+
 export const TOKEN_KEY = 'qinqin.token';
 
 // ApiError carries the HTTP status alongside the plain-text body the Go
@@ -163,13 +165,22 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 		headers['content-type'] = 'application/json';
 	}
 
-	const response = await fetch(path, {
-		method: options.method ?? (hasBody ? 'POST' : 'GET'),
-		headers,
-		body: hasBody ? (isForm ? (options.body as FormData) : JSON.stringify(options.body)) : undefined,
-		signal: options.signal,
-		...(options.keepalive ? { keepalive: true } : {})
-	});
+	let response: Response;
+	try {
+		response = await fetch(path, {
+			method: options.method ?? (hasBody ? 'POST' : 'GET'),
+			headers,
+			body: hasBody ? (isForm ? (options.body as FormData) : JSON.stringify(options.body)) : undefined,
+			signal: options.signal,
+			...(options.keepalive ? { keepalive: true } : {})
+		});
+	} catch (err) {
+		// An abort is the caller's choice, not a lost connection.
+		if (!(err instanceof DOMException && err.name === 'AbortError')) reportNetworkFailure();
+		throw err;
+	}
+	// The worker marks answers it served from its saved copy (offlineState.ts).
+	reportResponse(response.headers);
 
 	if (!response.ok) {
 		const message = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
