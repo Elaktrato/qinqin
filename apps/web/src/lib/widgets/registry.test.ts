@@ -119,6 +119,11 @@ describe('allWidgets', () => {
 		]);
 	});
 
+	it('offers the daily goal on the home page only (not Stats)', () => {
+		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'zh');
+		expect(list.find((w) => w.id === 'daily-goal')?.surfaces).toEqual(['home']);
+	});
+
 	it('shows the character map tile for Han languages only', () => {
 		const states = [state('qinqin-flashcards'), state('qinqin-reader')];
 

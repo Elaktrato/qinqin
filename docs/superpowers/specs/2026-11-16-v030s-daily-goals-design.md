@@ -130,7 +130,7 @@ vacation day the limits admit nothing and the goal is neutral, so they agree.
 - **Settings → Study**, new section "Daily goal" above Vacation: metric select (Flashcard reviews, New cards,
   Flashcard study time, then every other activity source by its `label`), target with its unit, "Show goal
   streak", Save, Remove goal; the limits hint; the newer-version note. Logic in `goalForm.ts`.
-- **Home**: new core widget `daily-goal` (surfaces home and stats, size normal) — the ring, "32 of 50
+- **Home**: new core widget `daily-goal` (surface home only — fix wave: Stats stays unchanged for learners without a goal; size normal) — the ring, "32 of 50
   flashcard reviews today", "Goal reached" when met, "On vacation — goal paused", the goal streak line; without a
   goal "Set a daily goal" linking to `/settings?tab=study`. Ruling: added to `DEFAULT_LAYOUT` after
   `flashcards-summary`; stored layouts are untouched — new learners find the feature, nobody's custom home

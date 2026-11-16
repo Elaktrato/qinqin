@@ -32,7 +32,8 @@ export const coreWidgets: WidgetDef[] = [
 		description: 'Today’s progress towards your daily goal and the goal streak.',
 		owner: 'core',
 		size: 'normal',
-		surfaces: ['stats', 'home'],
+		// Home only: Stats stays as it was for learners without a goal.
+		surfaces: ['home'],
 		component: DailyGoalWidget
 	}
 ];

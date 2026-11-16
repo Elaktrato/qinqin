@@ -26,7 +26,7 @@ A change to the goal applies from today, for the whole of today. Earlier days ke
 - **Goal reached**, with a check mark, once the amount reaches the target.
 - Today is open until then; a past day that did not reach the target is missed.
 - A vacation day ([Decks, limits and vacation](Flashcards-decks-limits-vacation)) pauses the goal: "On vacation — goal paused", whatever you did that day.
-- If the goal counts an activity whose plugin was removed, it says "This goal's activity is no longer counted" and those days count as no goal.
+- If the goal counts an activity that is no longer a source of the statistics, it says "This goal's activity is no longer counted" and those days count as no goal. That happens when the plugin is removed from the server or renames its activity type; switching a plugin off in your own Settings does not do it (its activity still counts).
 
 ## Goal streak
 
@@ -34,7 +34,7 @@ The goal streak counts the days in a row on which you reached the goal, ending t
 
 ## Where it shows
 
-- **Home**: the **Daily goal** widget with a progress ring, "32 of 50 flashcard reviews today" and the goal streak; without a goal it offers **Set a daily goal**. New accounts have it on the home page after the flashcards summary; an existing home layout is not changed (add it under Settings, Home). It is also on Stats, Overview.
+- **Home**: the **Daily goal** widget with a progress ring, "32 of 50 flashcard reviews today" and the goal streak; without a goal it offers **Set a daily goal**. New accounts have it on the home page after the flashcards summary; an existing home layout is not changed (add it under Settings, Home).
 - **Flashcards widget**: a small ring ("32/50") and the goal streak next to the review streak. Without a goal the widget looks as before.
 
 The ring is read out by screen readers with its numbers ("Goal reached: 62 of 50 flashcard reviews today"); the words are on screen too, so nothing depends on colour, and it does not animate when your system asks for reduced motion.

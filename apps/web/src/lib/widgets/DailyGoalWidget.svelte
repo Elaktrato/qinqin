@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Home and Stats: today's progress towards the workspace's daily goal and
+	// Home: today's progress towards the workspace's daily goal and
 	// the goal streak. All logic lives in lib/goals (loadGoal.ts is the load).
 	import GoalRing from '$lib/goals/GoalRing.svelte';
 	import { streakText } from '$lib/goals/goalText';
