@@ -252,4 +252,51 @@ describe('LookupRecorder', () => {
 		await r.flush();
 		expect(items(io, 3).map((i) => i.entryId).sort()).toEqual([7, 8]);
 	});
+
+	it('exclusive waits for a flush in flight and blocks new ones, so a Clear is never undone (#72 review)', async () => {
+		const io = fakeIO();
+		const old = { version: 1, clearedAt: null, items: [{ entryId: 7, count: 2, firstAt: '2026-11-01T09:00:00Z', lastAt: '2026-11-01T09:00:00Z', sources: {}, books: [] }] };
+		io.rows.set(3, old);
+		let release!: () => void;
+		const gate = new Promise<void>((res) => (release = res));
+		const write = io.writeRow;
+		io.writeRow = async (ws, data) => {
+			await gate;
+			return write(ws, data);
+		};
+		const r = new LookupRecorder(io);
+		r.note(3, { entryId: 8, source: 'reader' });
+		const flushing = r.flush();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(io.log).toEqual(['cfg', 'read 3']); // the write is held
+		const order: string[] = [];
+		const clearing = r.exclusive(async () => {
+			order.push('clear');
+			io.rows.set(3, { version: 1, clearedAt: '2026-11-16T09:00:00.000Z', items: [] });
+		});
+		r.note(3, { entryId: 9, source: 'reader' });
+		const later = r.flush();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(order).toEqual([]);
+		release();
+		await flushing;
+		await clearing;
+		await later;
+		expect(order).toEqual(['clear']);
+		// the flush queued behind the clear read the cleared row; 9 was noted before the clear instant only if
+		// the clock says so: here it is after (system time), so only 9 can be in the row, never 7 or 8
+		const ids = items(io, 3).map((i) => i.entryId);
+		expect(ids).not.toContain(7);
+		expect(ids).not.toContain(8);
+	});
+
+	it('exclusive passes its result and error through and keeps the chain alive', async () => {
+		const io = fakeIO();
+		const r = new LookupRecorder(io);
+		expect(await r.exclusive(async () => 5)).toBe(5);
+		await expect(r.exclusive(async () => Promise.reject(new Error('x')))).rejects.toThrow('x');
+		r.note(3, { entryId: 1, source: 'reader' });
+		await r.flush();
+		expect(items(io, 3).map((i) => i.entryId)).toEqual([1]);
+	});
 });

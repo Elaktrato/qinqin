@@ -73,6 +73,24 @@ export class LookupRecorder {
 		return run;
 	}
 
+	/**
+	 * exclusive runs a write of the history (Clear, Remove) in the flush chain:
+	 * it waits for a flush in flight and every later flush waits for it, so a
+	 * flush that read the row earlier can never write it back afterwards. The
+	 * generation is bumped, so a copy loaded before it is not kept.
+	 */
+	exclusive<T>(fn: () => Promise<T>): Promise<T> {
+		const run = this.#chain.then(() => {
+			this.#generation++;
+			return fn();
+		});
+		this.#chain = run.then(
+			() => {},
+			() => {}
+		);
+		return run;
+	}
+
 	async #flushNow(): Promise<void> {
 		this.#clearTimers();
 		if (this.#buffer.length === 0) return;

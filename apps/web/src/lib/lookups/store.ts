@@ -68,9 +68,13 @@ async function write(ws: number, h: LookupHistory): Promise<void> {
 
 /** removeFromHistory reads the row and writes it back without the entries. */
 export async function removeFromHistory(ws: number, entryIds: number[]): Promise<LookupHistory> {
-	const next = removeLookups(await loadHistory(ws), entryIds);
-	await write(ws, next);
-	lookupRecorder().adopt(ws, next);
+	const recorder = lookupRecorder();
+	const next = await recorder.exclusive(async () => {
+		const h = removeLookups(await loadHistory(ws), entryIds);
+		await write(ws, h);
+		recorder.adopt(ws, h);
+		return h;
+	});
 	await forgetOfflineLookups();
 	return next;
 }
@@ -81,9 +85,15 @@ export async function removeFromHistory(ws: number, entryIds: number[]): Promise
  * offline copies that may hold either.
  */
 export async function clearHistory(ws: number, now: Date = new Date()): Promise<{ eventsDeleted: number; history: LookupHistory }> {
-	const next = clearedLookups(await loadHistory(ws), now);
-	await write(ws, next);
-	lookupRecorder().adopt(ws, next);
+	const recorder = lookupRecorder();
+	// In the recorder's chain: a flush of this tab that read the row before
+	// the Clear finishes first, and none starts until the row is cleared.
+	const next = await recorder.exclusive(async () => {
+		const h = clearedLookups(await loadHistory(ws), now);
+		await write(ws, h);
+		recorder.adopt(ws, h);
+		return h;
+	});
 	let deleted: number;
 	try {
 		const res = await api<{ deleted?: unknown } | undefined>(`/api/events/lookups?workspace=${ws}`, { method: 'DELETE' });
