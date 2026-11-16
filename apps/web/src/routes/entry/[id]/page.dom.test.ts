@@ -12,9 +12,16 @@ vi.mock('$lib/api/entries', () => ({
 vi.mock('$lib/events', () => ({ record: vi.fn() }));
 vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/notes/store', async (orig) => ({
+	...(await orig<typeof import('$lib/notes/store')>()),
+	loadNote: vi.fn(async () => ({ entryId: 5, text: 'my mnemonic', extra: {} }))
+}));
 
-import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
-import { page } from '$lib/testing/appState.svelte';
+import { getCharsUnderRadical, getEntry, getSharedEntry } from '$lib/api/entries';
+import { page, setUrl } from '$lib/testing/appState.svelte';
+import { loadNote } from '$lib/notes/store';
+import { workspaces } from '$lib/workspaces';
+import type { Workspace } from '$lib/api/types';
 import Page from './+page.svelte';
 
 function entry(over: Partial<Entry> = {}): Entry {
@@ -39,6 +46,8 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+	workspaces.set({ list: [], current: null });
+	setUrl('/');
 });
 
 describe('entry page robustness', () => {
@@ -79,5 +88,47 @@ describe('entry page robustness', () => {
 		render(Page);
 		expect(await screen.findByRole('link', { name: /亻/ })).toBeTruthy();
 		await waitFor(() => expect(screen.queryByText(/Radical entry #9/)).toBeNull());
+	});
+});
+
+describe('entry page note', () => {
+	const ws = { id: 3, language: 'zh', name: '', settings: {}, updatedAt: '' } as unknown as Workspace;
+
+	it('shows the note section of the current workspace under the senses', async () => {
+		workspaces.set({ list: [ws], current: ws });
+		vi.mocked(getEntry).mockResolvedValue(
+			entry({
+				kind: 'word',
+				written: '马',
+				senses: [{ dictionaryId: 1, dictionaryName: 'D', license: '', attribution: '', gloss: 'horse' }] as never
+			})
+		);
+		render(Page);
+		const text = await screen.findByTestId('note-text');
+		expect(text.textContent).toBe('my mnemonic');
+		expect(loadNote).toHaveBeenCalledWith(3, 5);
+		const section = screen.getByRole('region', { name: 'Your note' });
+		const senses = screen.getByRole('region', { name: 'Senses' });
+		expect(senses.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+
+	it('hides the note while the entry editor is open', async () => {
+		workspaces.set({ list: [ws], current: ws });
+		setUrl('/entry/5?edit=1');
+		vi.mocked(getEntry).mockResolvedValue(entry({ kind: 'word', written: '马' }));
+		vi.mocked(getSharedEntry).mockResolvedValue(entry({ kind: 'word', written: '马' }) as never);
+		render(Page);
+		await screen.findByRole('heading', { name: '马' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('region', { name: 'Your note' })).toBeNull();
+	});
+
+	it('has no note section without a current workspace', async () => {
+		vi.mocked(getEntry).mockResolvedValue(entry({ kind: 'word', written: '马' }));
+		render(Page);
+		await screen.findByRole('heading', { name: '马' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('region', { name: 'Your note' })).toBeNull();
+		expect(loadNote).not.toHaveBeenCalled();
 	});
 });

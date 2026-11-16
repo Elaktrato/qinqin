@@ -15,6 +15,7 @@ Chooses and orders the home-page widgets. Each widget has an "On the home page" 
 - **Time zone.** Every "day" in qinqin (heatmap, streaks, daily XP bonus, reading totals, vacation, daily limits, daily goal) is your local day. The zone is stored on the server so every client agrees. The first time you sign in, the web app sends your browser's zone if your account has none. If your device zone later differs, Settings offers "Use <zone> from now on"; nothing changes by itself. The first zone you ever get applies to your whole history; later changes apply from the moment you save. Without a zone, days are UTC.
 - **Daily goal**: what to count each day (reviews, new cards, minutes of flashcard study or another activity), the target, and whether to show the goal streak ([Daily goals](Daily-goals)).
 - **Daily limits** and **Vacation** ([Decks, limits and vacation](Flashcards-decks-limits-vacation)).
+- **Show my notes on the answer side** (per workspace, on by default): your personal notes on words below a revealed flashcard ([Flashcards: study sessions](Flashcards-study-sessions)).
 - A link to Scheduling ([Scheduling and FSRS](Scheduling-and-FSRS)).
 
 ## Plugins
