@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '../api/client';
-import { canonicalZone, changeErrorMessage, mismatch, zoneLabel, zoneOptions } from './zoneSettings';
+import { canonicalZone, changeErrorMessage, mismatch, zoneLabel, zoneMatchText, zoneOptions } from './zoneSettings';
 
 describe('canonicalZone', () => {
 	it('maps aliases to one name', () => {
@@ -84,5 +84,25 @@ describe('changeErrorMessage', () => {
 	it('falls back for anything else', () => {
 		expect(changeErrorMessage(new ApiError(500, 'boom'))).toMatch(/could not change/i);
 		expect(changeErrorMessage(new Error('x'))).toMatch(/could not change/i);
+	});
+});
+
+describe('zoneMatchText', () => {
+	const zones = ['Asia/Tokyo', 'Europe/Berlin', 'America/New_York', 'America/Los_Angeles'];
+
+	it('says nothing without a query or a zone list', () => {
+		expect(zoneMatchText(zones, '')).toBe('');
+		expect(zoneMatchText(zones, '   ')).toBe('');
+		expect(zoneMatchText(undefined, 'tokyo')).toBe('');
+	});
+
+	it('counts the matching zones like the select does', () => {
+		expect(zoneMatchText(zones, 'america')).toBe('2 time zones match.');
+		expect(zoneMatchText(zones, 'new york')).toBe('1 time zone matches.');
+		expect(zoneMatchText(zones, 'utc')).toBe('1 time zone matches.');
+	});
+
+	it('says when nothing matches', () => {
+		expect(zoneMatchText(zones, 'atlantis')).toBe('No time zones match “atlantis”.');
 	});
 });

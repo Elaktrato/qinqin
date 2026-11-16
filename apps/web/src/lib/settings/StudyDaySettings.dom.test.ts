@@ -90,4 +90,28 @@ describe('StudyDaySettings', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Use Asia/Tokyo from now on' }));
 		await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/not a time zone/i));
 	});
+
+	it('announces how many time zones match once typing pauses', async () => {
+		vi.useFakeTimers();
+		try {
+			setup([{ zone: 'Europe/Berlin', from: null }], 'Europe/Berlin');
+			const box = screen.getByRole('searchbox', { name: 'Search time zones' });
+			const live = () => document.querySelector('[aria-live="polite"]');
+			await fireEvent.input(box, { target: { value: 'as' } });
+			await vi.advanceTimersByTimeAsync(300);
+			await fireEvent.input(box, { target: { value: 'asia' } });
+			await vi.advanceTimersByTimeAsync(300);
+			// Still typing: nothing announced yet, not even the first keystroke.
+			expect(live()?.textContent).toBe('');
+			await vi.advanceTimersByTimeAsync(250);
+			expect(live()?.textContent).toBe('1 time zone matches.');
+			await fireEvent.input(box, { target: { value: 'atlantis' } });
+			await vi.advanceTimersByTimeAsync(499);
+			expect(live()?.textContent).toBe('1 time zone matches.');
+			await vi.advanceTimersByTimeAsync(1);
+			expect(live()?.textContent).toBe('No time zones match “atlantis”.');
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 });

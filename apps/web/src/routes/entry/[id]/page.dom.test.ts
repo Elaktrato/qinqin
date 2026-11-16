@@ -90,6 +90,32 @@ describe('entry page robustness', () => {
 		await waitFor(() => expect(screen.queryByText(/Radical entry #9/)).toBeNull());
 	});
 
+	it('keeps the page and falls back to the id when the radical fetch fails', async () => {
+		vi.mocked(getEntry).mockImplementation((async (id: number) => {
+			if (id === 9) throw new Error('radical down');
+			return entry({ radicalId: 9 });
+		}) as never);
+		vi.mocked(getCharsUnderRadical).mockResolvedValue([]);
+		render(Page);
+		expect(await screen.findByRole('heading', { name: '你' })).toBeTruthy();
+		expect(await screen.findByRole('link', { name: 'Radical entry #9' })).toBeTruthy();
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
+	it('lists variants with formatted readings', async () => {
+		vi.mocked(getEntry).mockResolvedValue(
+			entry({
+				kind: 'word',
+				variants: [
+					{ id: 7, language: 'zh', kind: 'word', written: '妳', readings: [{ type: 'pinyin', value: 'ni3', plain: 'ni', ord: 0 }] }
+				] as never
+			})
+		);
+		render(Page);
+		const link = await screen.findByRole('link', { name: '妳' });
+		expect(link.parentElement?.textContent).toContain('Pinyin: ni3');
+	});
+
 	it('links a character to all characters with its radical', async () => {
 		vi.mocked(getEntry).mockImplementation((async (id: number) =>
 			id === 9 ? entry({ id: 9, language: 'ja', written: '言' }) : entry({ language: 'ja', written: '語', radicalId: 9 })) as never);

@@ -100,3 +100,14 @@ export function deckOptions(decks: readonly Pick<Deck, 'id' | 'name' | 'createdA
 	const sorted = [...decks].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 	return [{ id: GENERAL_DECK_ID, name: 'General' }, ...sorted.map((d) => ({ id: d.id, name: d.name }))];
 }
+
+/**
+ * historyCountText is the live count above the list (#12): how many words
+ * the filter shows, against the whole history; '' with no history.
+ */
+export function historyCountText(shown: number, total: number, filter: HistoryFilter): string {
+	if (total === 0) return '';
+	const words = (n: number) => (n === 1 ? 'word' : 'words');
+	if (filter === 'all') return `${shown} ${words(shown)}`;
+	return `${shown} of ${total} ${words(total)} with no card yet`;
+}
