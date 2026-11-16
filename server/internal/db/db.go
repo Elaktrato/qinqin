@@ -7,6 +7,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -30,6 +31,25 @@ func Open(path string) (*sql.DB, error) {
 // user data. Only seed uses this.
 func OpenForSeed(path string) (*sql.DB, error) {
 	return open(path, "NORMAL")
+}
+
+// OpenReadOnly opens an existing database read-only and WITHOUT applying
+// migrations, so a command such as `qinqin backup` can run beside the server
+// (or against an older database) and never changes it. A missing file is an
+// error, not a new database.
+func OpenReadOnly(path string) (*sql.DB, error) {
+	if _, err := os.Stat(path); err != nil {
+		return nil, fmt.Errorf("open database %s: %w", path, err)
+	}
+	sqlDB, err := sql.Open("sqlite", "file:"+path+"?mode=ro&_pragma=busy_timeout(5000)")
+	if err != nil {
+		return nil, fmt.Errorf("open database %s: %w", path, err)
+	}
+	if err := sqlDB.Ping(); err != nil {
+		sqlDB.Close()
+		return nil, fmt.Errorf("open database %s read-only: %w", path, err)
+	}
+	return sqlDB, nil
 }
 
 func open(path, synchronous string) (*sql.DB, error) {
