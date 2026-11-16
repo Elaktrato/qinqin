@@ -106,3 +106,17 @@ describe('planParagraph with word states', () => {
 		expect(words(plan)).toEqual([[['你，', null, false], ['好', 'learning', true]]]);
 	});
 });
+
+describe('planParagraph word states at scale', () => {
+	it('500 alternating words, given out of order, each get their own state', () => {
+		const text = '你'.repeat(1000);
+		const ranges = Array.from({ length: 500 }, (_, i) => ({ start: i * 2, end: i * 2 + 2, state: (i % 2 === 0 ? 'new' : 'learning') as 'new' | 'learning' }));
+		const plan = planParagraph([{ text }], [], [], true, [...ranges].reverse());
+		const segs = plan[0].segs;
+		expect(segs).toHaveLength(500);
+		segs.forEach((seg, i) => {
+			expect(seg.word).toBe(i % 2 === 0 ? 'new' : 'learning');
+			expect(seg.wordEnd).toBe(true);
+		});
+	});
+});

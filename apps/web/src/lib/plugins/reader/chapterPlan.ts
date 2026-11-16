@@ -48,21 +48,23 @@ export function planParagraph(
 		(p) => p.source === 'dict' && p.rt !== undefined && inOneRun(p) && clearOfHighlights(p)
 	);
 	// Word states are drawn only clear of every highlight (the highlight wins).
-	const marked = words.filter(clearOfHighlights);
+	const marked = words.filter(clearOfHighlights).sort((a, b) => a.start - b.start);
 	const cuts = [...new Set([...dict, ...marked].flatMap((p) => [p.start, p.end]))].sort((a, b) => a - b);
 	const shown = showBookRuby ? runs : runs.map((run) => ({ text: run.text }));
 	const segs = splitRunsByHighlights(shown, drawn, cuts);
 
 	const byRange = new Map(dict.map((p) => [`${p.start}:${p.end}`, p]));
 	let pos = 0;
+	let wi = 0; // the first word that may still hold a later piece (words are sorted, never overlap)
 	const withRt: PlanSeg[] = segs.map((seg) => {
 		const start = pos;
 		pos += cpLength(seg.text);
 		const piece = seg.highlight === null ? byRange.get(`${start}:${pos}`) : undefined;
 		const out: PlanSeg = piece ? { ...seg, noteMark: false, rt: piece.rt, concealed: piece.concealed } : { ...seg, noteMark: false };
 		if (marked.length > 0 && seg.highlight === null && pos > start) {
-			const w = marked.find((r) => r.start <= start && pos <= r.end);
-			if (w) {
+			while (wi < marked.length && marked[wi].end <= start) wi++;
+			const w = marked[wi];
+			if (w && w.start <= start && pos <= w.end) {
 				out.word = w.state;
 				if (w.end === pos) out.wordEnd = true;
 			}
