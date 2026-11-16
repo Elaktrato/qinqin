@@ -19,6 +19,7 @@ afterEach(() => cleanup());
 describe('WeekStrip', () => {
 	it('is a list of seven days with visible weekdays and full names', () => {
 		const { container } = render(WeekStrip, { days: DAYS, locale: 'en-GB' });
+		expect(container.querySelector('ol')?.getAttribute('aria-label')).toBe('Days of the week');
 		const items = container.querySelectorAll('ol > li');
 		expect(items).toHaveLength(7);
 		items.forEach((li, i) => {

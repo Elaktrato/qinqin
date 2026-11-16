@@ -44,7 +44,7 @@ Without a connection the summary still shows what this device knows: new cards, 
 
 ## The home widget
 
-**This week** shows the current week so far: reviews, new cards, study time (flashcards and reading together), days active with the day strip and the streak, each compared with last week up to the same weekday. New accounts have it on the home page after the daily goal; an existing home layout is not changed (add it under Settings, Home).
+**This week** shows the current week so far: reviews, new cards, study time (flashcards and reading together), days active with the day strip and the streak, each compared with last week up to the same weekday. Offline its study time is the flashcard time alone, marked "(flashcards only)". New accounts have it on the home page after the daily goal; an existing home layout is not changed (add it under Settings, Home).
 
 ## Related
 

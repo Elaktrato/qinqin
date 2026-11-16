@@ -201,7 +201,12 @@ export function summaryLines(
 			const row = byKey.get(key);
 			if (row !== undefined) lines.push(countLine(key, rowLabel(row, sources), row, s.nothingToCompare));
 		}
-		return [...lines, countLine('time', 'Study time', time, s.nothingToCompare), ...tail];
+		// Offline the reading time is unknown: the flashcard time alone, said so, without a comparison.
+		const timeLine =
+			time.value === null && flash !== undefined && flash.value !== null
+				? plain('time', 'Study time', `${formatDuration(flash.value)} (flashcards only)`)
+				: countLine('time', 'Study time', time, s.nothingToCompare);
+		return [...lines, timeLine, ...tail];
 	}
 	const lines = s.rows.map((row) => countLine(row.key, rowLabel(row, sources), row, s.nothingToCompare));
 	lines.push(...tail);

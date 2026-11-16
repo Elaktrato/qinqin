@@ -107,6 +107,7 @@ describe('WeeklySummaryWidget', () => {
 		render(WeeklySummaryWidget);
 		await waitFor(() => expect(reviewsValue()).toBe('Not available offline'));
 		expect(screen.getByText('1')).toBeTruthy();
+		expect(screen.getByText('10 min (flashcards only)')).toBeTruthy();
 		screen.getByRole('button', { name: 'Retry' }).click();
 		await waitFor(() => expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[2]).toEqual({ force: true }));
 	});

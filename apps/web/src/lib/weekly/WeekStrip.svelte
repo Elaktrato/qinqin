@@ -23,7 +23,7 @@
 	};
 </script>
 
-<ol class="strip">
+<ol class="strip" aria-label="Days of the week">
 	{#each days as day (day.date)}
 		{@const name = dayName(day, locale)}
 		<li class="day {day.state}" title={name}>

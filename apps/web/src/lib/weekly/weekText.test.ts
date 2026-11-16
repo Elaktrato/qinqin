@@ -226,7 +226,7 @@ describe('summaryLines', () => {
 		const offline = summary({
 			rows: summary().rows.map((r) => (r.key === 'reading' ? { ...r, value: null, previous: null } : r))
 		});
-		expect(summaryLines(offline, [], null, true)[2]).toMatchObject({ value: 'Not available offline', comparison: null });
+		expect(summaryLines(offline, [], null, true)[2]).toMatchObject({ value: '2 min (flashcards only)', comparison: null, trend: null });
 	});
 });
 
