@@ -24,6 +24,11 @@ describe('displayPatch', () => {
 		const patch = displayPatch({ font: 'serif' }, { reader: { future: { a: 1 }, readings: 'always' } });
 		expect(patch).toEqual({ reader: { future: { a: 1 }, readings: 'always', version: 1, font: 'serif' } });
 	});
+	it('writes highlightWords and keeps unknown keys', () => {
+		const patch = displayPatch({ highlightWords: true }, { reader: { future: 1 } });
+		expect(patch).toEqual({ reader: { future: 1, version: 1, highlightWords: true } });
+		expect(displayPatch({ highlightWords: false }, null).reader.highlightWords).toBe(false);
+	});
 	it('sanitizes the change like parseDisplay', () => {
 		const patch = displayPatch({ smartThreshold: 500, rubyScale: 0.6 }, null);
 		expect(patch.reader.smartThreshold).toBe(100);

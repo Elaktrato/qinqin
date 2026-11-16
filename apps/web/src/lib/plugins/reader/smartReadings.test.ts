@@ -52,7 +52,7 @@ describe('annotateParagraph (contract)', () => {
 				c.runs,
 				c.matches.map(toMatch),
 				index,
-				{ bookRuby: c.bookRuby, readings: c.readings as 'never', smartThreshold: c.smartThreshold, rubyScale: 0.55, font: 'default' },
+				{ bookRuby: c.bookRuby, readings: c.readings as 'never', smartThreshold: c.smartThreshold, rubyScale: 0.55, font: 'default', highlightWords: false },
 				c.lang
 			);
 			expect(got).toEqual(c.expect);
