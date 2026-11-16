@@ -24,6 +24,8 @@
 		routeAccess
 	} from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
+	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
+	import { registerWorker } from '$lib/pwa/register';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { requestSignOut } from '$lib/account/signOut';
 	import { logoutPrompt } from '$lib/account/logoutFlow';
@@ -111,6 +113,8 @@
 		// A workspace deleted in another tab or on another device: the
 		// first "workspace not found" reloads the list and falls back.
 		watchDeletedWorkspaces();
+		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
+		void registerWorker();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();
@@ -183,6 +187,7 @@
 	<!-- First focusable element: jumps past the header and its nav. -->
 	<a class="skip-link" href="#main-content" onclick={skipToContent}>Skip to content</a>
 	<div class="app" class:with-bar={signedIn}>
+		<UpdateBanner />
 		{#if signedIn}
 			<header class="shell">
 				<!-- The logo is the home link (there is no separate Home tab). -->
