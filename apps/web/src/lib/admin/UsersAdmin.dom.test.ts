@@ -105,7 +105,7 @@ describe('UsersAdmin', () => {
 		await fireEvent.input(await screen.findByLabelText(/Your own password, to confirm/), { target: { value: 'my-own-password' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 		const link = (await screen.findByLabelText('Reset link address')) as HTMLInputElement;
-		expect(adminUsers.issueResetLink).toHaveBeenCalledWith(2, 'my-own-password');
+		expect(adminUsers.issueResetLink).toHaveBeenCalledWith(2, { currentPassword: 'my-own-password' });
 		expect(link.value).toBe(`${location.origin}/reset#t=abc123`);
 		expect(screen.getByText(/shown once/)).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
@@ -145,7 +145,7 @@ describe('UsersAdmin', () => {
 		await fireEvent.input(within(dialog).getByLabelText('Your own password'), { target: { value: 'my-own-password' } });
 		expect(del.disabled).toBe(false);
 		await fireEvent.click(del);
-		await waitFor(() => expect(adminUsers.deleteUser).toHaveBeenCalledWith(2, 'user2', 'my-own-password'));
+		await waitFor(() => expect(adminUsers.deleteUser).toHaveBeenCalledWith(2, 'user2', { currentPassword: 'my-own-password' }));
 	});
 });
 
@@ -201,7 +201,7 @@ describe('UsersAdmin: reset two-step sign-in', () => {
 		await fireEvent.input(password, { target: { value: 'my-own-password' } });
 		expect(submit.disabled).toBe(false);
 		await fireEvent.click(submit);
-		await waitFor(() => expect(adminUsers.resetUserMfa).toHaveBeenCalledWith(2, 'my-own-password', undefined));
+		await waitFor(() => expect(adminUsers.resetUserMfa).toHaveBeenCalledWith(2, { currentPassword: 'my-own-password' }));
 		await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).toBeNull());
 		expect(screen.getAllByRole('status').map((n) => n.textContent)).toContain('Two-step sign-in of user2 was reset; they were signed out everywhere.');
 		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Users' })));
@@ -218,7 +218,7 @@ describe('UsersAdmin: reset two-step sign-in', () => {
 		await fireEvent.input(within(dialog).getByLabelText(/Authenticator or recovery code/), { target: { value: ' 123456 ' } });
 		expect(submit.disabled).toBe(false);
 		await fireEvent.click(submit);
-		await waitFor(() => expect(adminUsers.resetUserMfa).toHaveBeenCalledWith(2, 'my-own-password', '123456'));
+		await waitFor(() => expect(adminUsers.resetUserMfa).toHaveBeenCalledWith(2, { currentPassword: 'my-own-password', code: '123456' }));
 	});
 
 	it('shows a fixed sentence and focuses the field to fix after a refusal', async () => {
@@ -264,5 +264,127 @@ describe('UsersAdmin: reset two-step sign-in', () => {
 		await fireEvent.click(within(dialog).getByRole('button', { name: 'Reset two-step sign-in', hidden: true }));
 		expect((await within(dialog).findByRole('alert')).textContent).toBe('This account does not exist any more.');
 		await waitFor(() => expect(adminUsers.listUsers).toHaveBeenCalledTimes(2));
+	});
+});
+
+describe('UsersAdmin: the code of an administrator with an authenticator', () => {
+	beforeEach(() => {
+		auth.set({
+			token: 't',
+			user: {
+				id: 1, username: 'user1', admin: true, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't',
+				mfa: { totp: true, email: false, recoveryCodesLeft: 10 }
+			}
+		});
+	});
+	async function rowAction(name: string): Promise<void> {
+		render(UsersAdmin);
+		await screen.findByRole('table', { name: 'Users' });
+		const row = screen.getByRole('row', { name: /user2/ });
+		await fireEvent.click(within(row).getByText('Actions for user2'));
+		await fireEvent.click(within(row).getByRole('button', { name }));
+	}
+
+	it('asks for it before making someone admin', async () => {
+		vi.mocked(adminUsers.patchUser).mockResolvedValue(dto(2) as never);
+		await rowAction('Make admin');
+		const form = screen.getByRole('form', { name: 'Confirm with your password' });
+		await fireEvent.input(within(form).getByLabelText(/Your own password, to confirm/), { target: { value: 'pw-pw' } });
+		const confirm = within(form).getByRole('button', { name: 'Confirm' }) as HTMLButtonElement;
+		expect(confirm.disabled).toBe(true);
+		const code = within(form).getByLabelText(/Authenticator or recovery code/) as HTMLInputElement;
+		expect(code.getAttribute('spellcheck')).toBe('false');
+		expect(code.getAttribute('autocapitalize')).toBe('off');
+		await fireEvent.input(code, { target: { value: '123456' } });
+		await fireEvent.click(confirm);
+		await waitFor(() => expect(adminUsers.patchUser).toHaveBeenCalledWith(2, { admin: true, currentPassword: 'pw-pw', code: '123456' }));
+	});
+
+	it('keeps the confirmation open on a wrong code, clears and focuses the code field', async () => {
+		vi.mocked(adminUsers.patchUser).mockRejectedValueOnce(new ApiError(403, JSON.stringify({ error: 'code_invalid', message: 'server words' })));
+		await rowAction('Make admin');
+		await fireEvent.input(screen.getByLabelText(/Your own password, to confirm/), { target: { value: 'pw-pw' } });
+		const code = screen.getByLabelText(/Authenticator or recovery code/) as HTMLInputElement;
+		await fireEvent.input(code, { target: { value: '111111' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+		expect((await screen.findByRole('alert')).textContent).toBe('That code is not right. Use a current authenticator code or an unused recovery code.');
+		const again = screen.getByLabelText(/Authenticator or recovery code/) as HTMLInputElement;
+		expect(again.value).toBe('');
+		await waitFor(() => expect(document.activeElement).toBe(again));
+		expect((screen.getByLabelText(/Your own password, to confirm/) as HTMLInputElement).value).toBe('pw-pw');
+	});
+
+	it('asks for it before issuing a reset link', async () => {
+		vi.mocked(adminUsers.issueResetLink).mockResolvedValue({ path: '/reset#t=x', expiresAt: '2030-01-01T00:00:00Z' });
+		await rowAction('Reset link');
+		await fireEvent.input(screen.getByLabelText(/Your own password, to confirm/), { target: { value: 'pw-pw' } });
+		await fireEvent.input(screen.getByLabelText(/Authenticator or recovery code/), { target: { value: 'ABCD-EFGH-IJKL-MNOP' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+		await waitFor(() => expect(adminUsers.issueResetLink).toHaveBeenCalledWith(2, { currentPassword: 'pw-pw', code: 'ABCD-EFGH-IJKL-MNOP' }));
+	});
+
+	it('asks for it in the delete dialog', async () => {
+		vi.mocked(adminUsers.deletionPreview).mockResolvedValue({
+			workspaces: 0, studyEvents: 0, pluginData: 0, books: 0, journalPhotos: 0, aiKeys: 0, sessions: 0, overlays: 0, sentences: 0
+		});
+		vi.mocked(adminUsers.deleteUser).mockResolvedValue(undefined as never);
+		await rowAction('Delete');
+		const dialog = await screen.findByRole('dialog', { hidden: true });
+		await fireEvent.input(within(dialog).getByLabelText(/Type/), { target: { value: 'user2' } });
+		await fireEvent.input(within(dialog).getByLabelText('Your own password'), { target: { value: 'pw-pw' } });
+		const del = within(dialog).getByRole('button', { name: 'Delete account', hidden: true }) as HTMLButtonElement;
+		expect(del.disabled).toBe(true);
+		await fireEvent.input(within(dialog).getByLabelText(/Authenticator or recovery code/), { target: { value: '654321' } });
+		expect(del.disabled).toBe(false);
+		await fireEvent.click(del);
+		await waitFor(() => expect(adminUsers.deleteUser).toHaveBeenCalledWith(2, 'user2', { currentPassword: 'pw-pw', code: '654321' }));
+	});
+
+	it('asks for it when creating an administrator, and not for a plain user', async () => {
+		vi.mocked(adminUsers.createUser).mockResolvedValue(dto(3, { username: 'carla' }) as never);
+		render(UsersAdmin);
+		await screen.findByRole('table', { name: 'Users' });
+		expect(screen.queryByLabelText('Your own password, to create an administrator')).toBeNull();
+		await fireEvent.input(screen.getByLabelText('Username'), { target: { value: 'carla' } });
+		await fireEvent.input(screen.getByLabelText('Temporary password'), { target: { value: 'temp-password-1' } });
+		await fireEvent.click(screen.getByLabelText('Administrator'));
+		const create = screen.getByRole('button', { name: 'Create user' }) as HTMLButtonElement;
+		expect(create.disabled).toBe(true);
+		await fireEvent.input(screen.getByLabelText('Your own password, to create an administrator'), { target: { value: 'pw-pw' } });
+		expect(create.disabled).toBe(true);
+		await fireEvent.input(screen.getByLabelText(/Authenticator or recovery code/), { target: { value: '123456' } });
+		expect(create.disabled).toBe(false);
+		await fireEvent.click(create);
+		await waitFor(() =>
+			expect(adminUsers.createUser).toHaveBeenCalledWith({
+				username: 'carla', password: 'temp-password-1', admin: true, currentPassword: 'pw-pw', code: '123456'
+			})
+		);
+	});
+});
+
+describe('UsersAdmin: a stale copy of the signed-in administrator', () => {
+	it('shows the code field once the server asks for a code', async () => {
+		auth.set({
+			token: 't',
+			user: { id: 1, username: 'user1', admin: true, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't', mfa: { totp: false, email: false, recoveryCodesLeft: 0 } }
+		});
+		vi.mocked(adminUsers.listUsers).mockResolvedValue([dto(1, { admin: true }), dto(2, { mfa: { totp: true, email: false } })] as never);
+		render(UsersAdmin);
+		await screen.findByRole('table', { name: 'Users' });
+		const row = screen.getByRole('row', { name: /user2/ });
+		await fireEvent.click(within(row).getByText('Actions for user2'));
+		await fireEvent.click(within(row).getByRole('button', { name: 'Reset two-step sign-in' }));
+		const dialog = await screen.findByRole('dialog', { hidden: true });
+		expect(within(dialog).queryByLabelText(/Authenticator or recovery code/)).toBeNull();
+		await fireEvent.input(within(dialog).getByLabelText('Your own password'), { target: { value: 'pw-pw' } });
+		vi.mocked(adminUsers.resetUserMfa).mockRejectedValueOnce(new ApiError(403, JSON.stringify({ error: 'code_invalid', message: 'x' })));
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Reset two-step sign-in', hidden: true }));
+		const code = (await within(dialog).findByLabelText(/Authenticator or recovery code/)) as HTMLInputElement;
+		await waitFor(() => expect(document.activeElement).toBe(code));
+		vi.mocked(adminUsers.resetUserMfa).mockResolvedValueOnce(undefined);
+		await fireEvent.input(code, { target: { value: '123456' } });
+		await fireEvent.click(within(dialog).getByRole('button', { name: 'Reset two-step sign-in', hidden: true }));
+		await waitFor(() => expect(adminUsers.resetUserMfa).toHaveBeenLastCalledWith(2, { currentPassword: 'pw-pw', code: '123456' }));
 	});
 });

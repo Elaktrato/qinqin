@@ -3,6 +3,8 @@
 // (also a pending setup), every recovery code and the email-code method,
 // deletes every session and revokes every personal access token.
 
+import { reauthError } from './reauth';
+
 export interface MfaFactors {
 	totp: boolean;
 	email: boolean;
@@ -25,30 +27,16 @@ export function resetLines(mfa: MfaFactors): string[] {
 	return lines;
 }
 
-export function canSubmit(password: string, busy: boolean, needsCode: boolean, code: string): boolean {
-	return !busy && password !== '' && (!needsCode || code.trim() !== '');
-}
-
 export const RESET_ERROR_FALLBACK = 'Could not reset the two-step sign-in. Try again.';
 
-// Fixed sentences, never the server's message.
 const TEXT: Record<string, string> = {
-	wrong_password: 'Your password is wrong.',
-	password_required: 'Enter your own password.',
-	code_invalid: 'That code is not right. Use a current authenticator code or an unused recovery code.',
 	not_found: 'This account does not exist any more.',
-	self_target: 'You cannot reset your own two-step sign-in here. Use Settings, Account.',
-	rate_limited: 'Too many tries. Wait a few minutes and try again.',
-	busy: 'The server is busy. Try again in a moment.'
+	self_target: 'You cannot reset your own two-step sign-in here. Use Settings, Account.'
 };
 
+/** Fixed sentences, never the server's message (re-authentication ones from reauth.ts). */
 export function resetError(code: string | undefined): string {
-	return (code && TEXT[code]) || RESET_ERROR_FALLBACK;
-}
-
-/** Which field takes focus after a refusal: the one to fix. */
-export function focusAfterError(code: string | undefined): 'password' | 'code' {
-	return code === 'code_invalid' ? 'code' : 'password';
+	return (code && TEXT[code]) || reauthError(code, RESET_ERROR_FALLBACK);
 }
 
 export function resetNotice(username: string): string {

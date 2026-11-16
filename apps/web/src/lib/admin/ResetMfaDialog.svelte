@@ -3,7 +3,9 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { resetUserMfa } from '$lib/api/adminUsers';
 	import { user as me } from '$lib/auth';
-	import { canSubmit, focusAfterError, resetError, resetLines, type MfaFactors } from './mfaResetView';
+	import ReauthFields from './ReauthFields.svelte';
+	import { resetError, resetLines, type MfaFactors } from './mfaResetView';
+	import { reauthBody, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
 
 	// Confirmation for resetting someone else's two-step sign-in: says what
 	// goes and asks for the acting administrator's own password (and code,
@@ -25,17 +27,17 @@
 	} = $props();
 
 	const uid = $props.id();
-	const needsCode = $derived(!!$me?.mfa?.totp);
+	let sawCodeInvalid = $state(false);
+	const needsCode = $derived(reauthNeedsCode($me?.mfa?.totp, sawCodeInvalid));
 	let dialog = $state<HTMLDialogElement | null>(null);
-	let passwordInput = $state<HTMLInputElement | null>(null);
-	let codeInput = $state<HTMLInputElement | null>(null);
+	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let password = $state('');
 	let code = $state('');
 	let busy = $state(false);
 	let error = $state('');
 	let closed = false;
 
-	const ready = $derived(canSubmit(password, busy, needsCode, code));
+	const ready = $derived(!busy && reauthReady(password, needsCode, code));
 
 	function finish(reset: boolean): void {
 		if (closed) return;
@@ -53,26 +55,27 @@
 		busy = true;
 		error = '';
 		try {
-			await resetUserMfa(id, password, needsCode ? code.trim() : undefined);
+			await resetUserMfa(id, reauthBody(password, needsCode, code));
 			password = code = '';
 			finish(true);
 		} catch (err) {
 			const kind = apiErrorBody(err)?.error;
 			error = resetError(kind);
 			if (kind === 'not_found') ongone();
-			const target = focusAfterError(kind);
-			if (target === 'code') code = '';
-			else if (kind === 'wrong_password') password = '';
+			if (kind === 'code_invalid') sawCodeInvalid = true;
+			const f = reauthFocus(kind);
+			if (f.clear === 'code') code = '';
+			if (f.clear === 'password') password = '';
 			busy = false;
 			await tick();
-			(target === 'code' ? codeInput : passwordInput)?.focus();
+			fields?.focusField(f.focus);
 		}
 	}
 
 	onMount(() => {
 		if (typeof dialog?.showModal === 'function') dialog.showModal();
 		else dialog?.setAttribute('open', '');
-		passwordInput?.focus();
+		fields?.focusField('password');
 	});
 </script>
 
@@ -91,16 +94,7 @@
 		<ul id="{uid}-what">
 			{#each resetLines(mfa) as line (line)}<li>{line}</li>{/each}
 		</ul>
-		<label>
-			Your own password
-			<input bind:this={passwordInput} type="password" autocomplete="current-password" bind:value={password} />
-		</label>
-		{#if needsCode}
-			<label>
-				Authenticator or recovery code (yours)
-				<input bind:this={codeInput} autocomplete="one-time-code" bind:value={code} />
-			</label>
-		{/if}
+		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} />
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 		<div class="buttons">
 			<button type="button" onclick={() => finish(false)} disabled={busy}>Cancel</button>
@@ -113,15 +107,6 @@
 	dialog {
 		max-width: min(34rem, calc(100vw - 2rem));
 		padding: 1.2rem;
-	}
-	label {
-		display: grid;
-		gap: 0.3rem;
-		margin-top: 0.8rem;
-	}
-	input {
-		font: inherit;
-		padding: 0.45rem 0.6rem;
 	}
 	.buttons {
 		display: flex;

@@ -56,3 +56,16 @@ describe('ServerBackup', () => {
 		await waitFor(() => expect(api.createServerBackup).toHaveBeenCalledWith({ currentPassword: 'pw', code: '123456', include: ['db', 'books', 'packs', 'audio'] }));
 	});
 });
+
+describe('ServerBackup: a stale copy of the signed-in administrator', () => {
+	it('shows the code field once the server asks for a code', async () => {
+		render(ServerBackup, { assign: vi.fn() });
+		const btn = await fill();
+		expect(screen.queryByLabelText(/Authenticator or recovery code/)).toBeNull();
+		vi.mocked(api.createServerBackup).mockRejectedValueOnce(new ApiError(403, JSON.stringify({ error: 'code_invalid', message: 'x' })));
+		await fireEvent.click(btn);
+		const code = (await screen.findByLabelText(/Authenticator or recovery code/)) as HTMLInputElement;
+		expect(code.getAttribute('spellcheck')).toBe('false');
+		await waitFor(() => expect(document.activeElement).toBe(code));
+	});
+});

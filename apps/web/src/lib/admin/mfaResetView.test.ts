@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/auth/admin-users.json';
 import errors from '../../../../../docs/contracts/auth/errors.json';
 import type { AdminUserDto } from '$lib/api/adminUsers';
-import { canSubmit, focusAfterError, hasSecondStep, resetError, resetLines, resetNotice, RESET_ERROR_FALLBACK } from './mfaResetView';
+import { hasSecondStep, resetError, resetLines, resetNotice, RESET_ERROR_FALLBACK } from './mfaResetView';
 
 describe('resetLines', () => {
 	it('names the authenticator and its recovery codes only when the user has one', () => {
@@ -35,16 +35,6 @@ describe('hasSecondStep', () => {
 	});
 });
 
-describe('canSubmit', () => {
-	it('needs the password, the code when the admin has an authenticator, and no request in flight', () => {
-		expect(canSubmit('', false, false, '')).toBe(false);
-		expect(canSubmit('pw', false, false, '')).toBe(true);
-		expect(canSubmit('pw', true, false, '')).toBe(false);
-		expect(canSubmit('pw', false, true, '  ')).toBe(false);
-		expect(canSubmit('pw', false, true, '123456')).toBe(true);
-	});
-});
-
 describe('resetError', () => {
 	it('maps each server code to a fixed sentence', () => {
 		expect(resetError('wrong_password')).toBe('Your password is wrong.');
@@ -63,14 +53,6 @@ describe('resetError', () => {
 		for (const code of ['wrong_password', 'password_required', 'code_invalid', 'not_found', 'self_target', 'rate_limited', 'busy']) {
 			expect(Object.keys(errors)).toContain(code);
 		}
-	});
-});
-
-describe('focusAfterError', () => {
-	it('sends focus to the code field after a wrong code, else to the password', () => {
-		expect(focusAfterError('code_invalid')).toBe('code');
-		expect(focusAfterError('wrong_password')).toBe('password');
-		expect(focusAfterError(undefined)).toBe('password');
 	});
 });
 

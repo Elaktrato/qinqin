@@ -1,7 +1,7 @@
 import type { AdminUserDto } from '$lib/api/adminUsers';
 import { hasSecondStep } from './mfaResetView';
 
-/** Actions that ask the acting administrator for their own password first. */
+/** Actions that ask the acting administrator for their own password (and code, with an authenticator) first. */
 export const NEEDS_PASSWORD: ReadonlySet<UserActionId> = new Set(['makeAdmin', 'resetLink', 'delete']);
 
 export const LAST_ADMIN_REASON = 'The last administrator cannot be removed.';
