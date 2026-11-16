@@ -104,12 +104,25 @@ describe('registration', () => {
 		expect(e.reload).toHaveBeenCalledTimes(1);
 	});
 
-	it('a controllerchange nobody asked for (first claim) does not reload', async () => {
+	it('a controllerchange nobody asked for (first claim) does not reload nor offer an update', async () => {
 		const c = new FakeContainer();
 		const e = env(c);
 		await createWorkerRegistration(e).register();
 		c.dispatchEvent(new Event('controllerchange'));
 		expect(e.reload).not.toHaveBeenCalled();
+	});
+
+	it('a tab that did not press Reload learns about an update another tab applied', async () => {
+		const c = new FakeContainer();
+		c.controller = {};
+		const e = env(c);
+		const r = createWorkerRegistration(e);
+		await r.register();
+		c.dispatchEvent(new Event('controllerchange')); // another tab sent skip-waiting
+		expect(e.reload).not.toHaveBeenCalled(); // never swaps code under an open page by itself
+		expect(get(r.updateAvailable)).toBe(true);
+		r.apply(); // nothing is waiting any more: Reload just reloads
+		expect(e.reload).toHaveBeenCalledTimes(1);
 	});
 
 	it('checks for a new worker hourly', async () => {

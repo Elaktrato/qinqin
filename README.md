@@ -275,8 +275,11 @@ Installing the app and studying offline need HTTPS (or `http://localhost`; see
 [Install as an app](#install-as-an-app-and-study-offline)): over plain HTTP the
 site works as before, without a service worker. The proxy must pass the
 `Authorization` header and must not cache `/service-worker.js`,
-`/manifest.webmanifest` or anything under `/api/` (the server already sends the
-right headers: leave them alone). No WebSocket is used. Pack uploads go up to 128 MiB and an AI
+`/manifest.webmanifest` or anything under `/api/`. The server sets
+`Cache-Control` on the static files (`no-cache` for the worker and manifest,
+`no-store` for `index.html`); most API responses carry none, so a proxy must not
+apply a default cache to `/api/` (and one that does would serve one user's data
+to another). No WebSocket is used. Pack uploads go up to 128 MiB and an AI
 review can take up to 170 s, so the proxy needs a body limit of at least
 130 MB and a read timeout of at least 180 s.
 
@@ -790,8 +793,10 @@ is deleted. Signing out deletes the saved copies. If reviews have not been sent
 when you sign out, qinqin asks first: "Stay signed in" (default) or "Sign out and
 delete them". Reviews left behind by a session that ended some other way (it
 expired, you revoked it on another device, an administrator forced a password
-change) stay on the device for that user only: they are sent after the same user signs in
-again, never under another account, and deleted after 30 days if nobody does.
+change) stay on the device for that user only: they are sent only after the same user signs in
+again (a flush is bound to the token and user it started with, and other tabs
+follow a sign-in at once), never under another account, and deleted after 30
+days if nobody does.
 
 **Signed-out sessions.** If your session was revoked while you were offline you can
 keep studying the saved cards until the device reaches the server. Then the server

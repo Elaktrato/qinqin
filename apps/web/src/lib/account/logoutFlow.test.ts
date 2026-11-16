@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { decideLogout, unsentText } from './logoutFlow';
 
 describe('decideLogout', () => {
@@ -28,6 +28,26 @@ describe('decideLogout', () => {
 			throw new Error('x');
 		});
 		expect((await decideLogout({ pending: () => 1, flush })).decision).toBe('ask');
+	});
+});
+
+describe('decideLogout with a hanging flush', () => {
+	afterEach(() => vi.useRealTimers());
+
+	it('gives up after the timeout and asks (a dead network must not freeze sign-out)', async () => {
+		vi.useFakeTimers();
+		const flush = vi.fn(() => new Promise<void>(() => {}));
+		const decided = decideLogout({ pending: () => 2, flush, timeoutMs: 8000 });
+		await vi.advanceTimersByTimeAsync(8001);
+		expect(await decided).toEqual({ decision: 'ask', count: 2 });
+	});
+
+	it('a flush that finishes in time wins', async () => {
+		vi.useFakeTimers();
+		let n = 1;
+		const decided = decideLogout({ pending: () => n, flush: async () => void (n = 0), timeoutMs: 8000 });
+		await vi.advanceTimersByTimeAsync(10);
+		expect(await decided).toEqual({ decision: 'signout', count: 0 });
 	});
 });
 

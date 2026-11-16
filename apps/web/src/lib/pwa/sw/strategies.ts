@@ -123,6 +123,8 @@ async function apiRequest(req: Request, d: Deps): Promise<Response> {
 				return;
 			}
 			if (res.status !== 200) return;
+			// The server asked for this answer not to be kept.
+			if (/no-store/i.test(res.headers.get('cache-control') ?? '')) return;
 			try {
 				const headers = new Headers(res.headers);
 				headers.set(SAVED_AT_HEADER, new Date(d.now()).toISOString());

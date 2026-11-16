@@ -106,6 +106,13 @@ describe('api: network-first, partitioned by credential', () => {
 		expect(cache.entries.size).toBe(1);
 	});
 
+	it('does not store a response that says no-store, but still returns it', async () => {
+		fetchMock.mockResolvedValue(new Response('["secret"]', { status: 200, headers: { 'cache-control': 'private, No-Store' } }));
+		const res = await run(request(URL1, { auth: 'Bearer a' }));
+		expect(await res.json()).toEqual(['secret']);
+		expect((await (await caches.open(await partitionName('Bearer a'))).keys()).length).toBe(0);
+	});
+
 	it('only stores 200 responses', async () => {
 		fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 		await run(request(URL1, { auth: 'Bearer a' }));

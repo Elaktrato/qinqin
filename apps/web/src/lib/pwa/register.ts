@@ -40,6 +40,7 @@ export function createWorkerRegistration(env: RegistrationEnv): WorkerRegistrati
 	let registration: RegistrationLike | null = null;
 	let applying = false;
 	let reloaded = false;
+	let wasControlled = false;
 
 	async function register(): Promise<void> {
 		const container = env.serviceWorker;
@@ -50,6 +51,7 @@ export function createWorkerRegistration(env: RegistrationEnv): WorkerRegistrati
 			// The page was already controlled: a worker installed from now on is an
 			// update. Without a controller it is the first install (nothing to offer).
 			const hadController = container.controller !== null;
+			wasControlled = hadController;
 			registration = await container.register('/service-worker.js', { scope: '/', updateViaCache: 'none' });
 			const reg = registration;
 			if (hadController && reg.waiting) available.set(true);
@@ -61,8 +63,13 @@ export function createWorkerRegistration(env: RegistrationEnv): WorkerRegistrati
 				});
 			});
 			container.addEventListener('controllerchange', () => {
-				// Only the user's Reload may swap the code under an open page.
-				if (!applying || reloaded) return;
+				// Only the user's Reload may swap the code under an open page. A tab
+				// that did not press it (another tab did) offers the Reload instead.
+				if (!applying) {
+					if (wasControlled) available.set(true);
+					return;
+				}
+				if (reloaded) return;
 				reloaded = true;
 				env.reload();
 			});
@@ -74,7 +81,16 @@ export function createWorkerRegistration(env: RegistrationEnv): WorkerRegistrati
 
 	function apply(): void {
 		applying = true;
-		registration?.waiting?.postMessage({ type: 'skip-waiting' });
+		const waiting = registration?.waiting;
+		if (waiting) {
+			waiting.postMessage({ type: 'skip-waiting' });
+			return;
+		}
+		// Already taken over (another tab applied it): only this page is old.
+		if (!reloaded) {
+			reloaded = true;
+			env.reload();
+		}
 	}
 
 	return { updateAvailable: available, register, apply };

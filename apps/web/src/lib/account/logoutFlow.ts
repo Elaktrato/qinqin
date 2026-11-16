@@ -17,12 +17,22 @@ export interface LogoutDecision {
 export async function decideLogout(deps: {
 	pending: () => number;
 	flush: () => Promise<void>;
+	/** How long the flush may take before the user is asked anyway (default 8 s). */
+	timeoutMs?: number;
 }): Promise<LogoutDecision> {
 	if (deps.pending() === 0) return { decision: 'signout', count: 0 };
+	let timer: ReturnType<typeof setTimeout> | undefined;
 	try {
-		await deps.flush();
+		await Promise.race([
+			deps.flush(),
+			new Promise<void>((resolve) => {
+				timer = setTimeout(resolve, deps.timeoutMs ?? 8000);
+			})
+		]);
 	} catch {
 		// Falls through: the count decides.
+	} finally {
+		clearTimeout(timer);
 	}
 	const count = deps.pending();
 	return count === 0 ? { decision: 'signout', count: 0 } : { decision: 'ask', count };
