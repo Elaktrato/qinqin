@@ -279,7 +279,10 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 			writeInternal(w, r)
 		}
 	}
-	if req.Admin != nil && *req.Admin && !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
+	// Granting admin, and setting or removing an address (a reset link goes
+	// there; on one's own account it would also hand over the password this
+	// check asks for), re-authenticate.
+	if ((req.Admin != nil && *req.Admin) || setEmail) && !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	// Every field in one transaction: a refusal changes nothing.

@@ -122,7 +122,7 @@ func TestPatchIsAtomic(t *testing.T) {
 	setAuthSetting(t, sqlDB, "email_policy", "optional")
 	oid := itoa(userID(t, sqlDB, "owner"))
 	var e errBody
-	r := doJSON(t, "PATCH", ts.URL, "/api/admin/users/"+oid, owner, map[string]any{"email": "new@example.org", "admin": false})
+	r := doJSON(t, "PATCH", ts.URL, "/api/admin/users/"+oid, owner, map[string]any{"email": "new@example.org", "admin": false, "currentPassword": "secret-pass-owner"})
 	decodeJSON(t, r, &e)
 	if r.StatusCode != 409 || e.Error != "last_admin" {
 		t.Fatalf("patch = %d %s", r.StatusCode, e.Error)

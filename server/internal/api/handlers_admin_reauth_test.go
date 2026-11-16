@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 	"testing"
@@ -40,6 +41,21 @@ func adminReauthRoutes() []adminReauthRoute {
 		{"reset two-step sign-in", http.StatusNoContent, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			_, p := target(t, e, n)
 			return "POST", p + "/mfa/reset", map[string]any{}
+		}},
+		{"change another user's email", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			setAuthSetting(t, e.db, "email_policy", "optional")
+			_, p := target(t, e, n)
+			return "PATCH", p, map[string]any{"email": "new" + strconv.Itoa(n) + "@example.org"}
+		}},
+		{"change one's own email through the admin route", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			setAuthSetting(t, e.db, "email_policy", "optional")
+			return "PATCH", "/api/admin/users/" + userIDOf(t, e, "owner"), map[string]any{"email": "own" + strconv.Itoa(n) + "@example.org"}
+		}},
+		{"remove another user's email", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			setAuthSetting(t, e.db, "email_policy", "optional")
+			name, p := target(t, e, n)
+			e.db.Exec(`UPDATE users SET email = ?, email_norm = ?, email_verified_at = 't' WHERE username = ?`, name+"@example.org", name+"@example.org", name)
+			return "PATCH", p, map[string]any{"email": nil}
 		}},
 		{"server backup", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			return "POST", "/api/admin/backup", map[string]any{"include": []string{"books"}}
@@ -131,5 +147,32 @@ func TestAStolenAdminSessionAloneCannotMintAnAdministrator(t *testing.T) {
 	// a plain user still needs no re-authentication
 	if r := doJSON(t, "POST", e.ts.URL, "/api/admin/users", e.owner, map[string]any{"username": "plainuser", "password": "temp-password-1"}); r.StatusCode != 201 {
 		t.Errorf("create a plain user = %d", r.StatusCode)
+	}
+}
+
+// The review's takeover chain: with only a stolen admin session, point an
+// account's address (another user's, or the administrator's own, which would
+// then also hand over the re-authentication password) at the attacker and
+// ask for a reset link. The address change must be refused and nothing mailed.
+func TestAStolenAdminSessionCannotRedirectAnAccountsResetMail(t *testing.T) {
+	for _, who := range []string{"owner", "bobby"} {
+		t.Run(who, func(t *testing.T) {
+			e := newMailEnv(t, mailOpts{configure: true})
+			setAuthSetting(t, e.db, "email_policy", "optional")
+			registerUser(t, e.ts.URL, "bobby", e.owner)
+			var eb errBody
+			r := doJSON(t, "PATCH", e.ts.URL, "/api/admin/users/"+userIDOf(t, e, who), e.owner, map[string]any{"email": "evil@attacker.test"})
+			decodeJSON(t, r, &eb)
+			if r.StatusCode != 422 || eb.Error != "password_required" {
+				t.Fatalf("address change with a session only = %d %q", r.StatusCode, eb.Error)
+			}
+			var stored sql.NullString
+			e.db.QueryRow(`SELECT email FROM users WHERE username = ?`, who).Scan(&stored)
+			if stored.Valid {
+				t.Fatalf("address stored: %q", stored.String)
+			}
+			doJSON(t, "POST", e.ts.URL, "/api/auth/reset-request", "", map[string]any{"login": who})
+			e.noMoreMails(t, 0)
+		})
 	}
 }
