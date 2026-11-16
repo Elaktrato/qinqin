@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { APP_NAME } from './app';
+import { webPlugins } from './plugins';
 import { pluginPageImports, setsTitle } from './testing/routeTitles';
 
 // Route-walk (#12): every page in the route tree sets a document title
@@ -50,11 +51,21 @@ describe('document titles on every route', () => {
 		expect(setsTitle(readFileSync(page, 'utf8')) || titledByLayout(page)).toBe(true);
 	});
 
+	it('only the pinned pages rely on a layout title', () => {
+		// A page that takes its title from a layout must be added here deliberately.
+		const viaLayout = all.filter((p) => !setsTitle(readFileSync(p, 'utf8'))).map((p) => relative(routes, p));
+		expect(viaLayout).toEqual(['stats/+page.svelte', 'stats/characters/+page.svelte', 'stats/week/+page.svelte']);
+	});
+
 	const index = resolve(web, 'src/lib/plugins/index.ts');
 	const pluginPages = pluginPageImports(readFileSync(index, 'utf8')).map((p) => resolve(dirname(index), p));
 
-	it('finds the plugin pages', () => {
-		expect(pluginPages.length).toBeGreaterThanOrEqual(4);
+	it('finds every registered plugin page', () => {
+		// The source scan must see exactly the pages webPlugins registers, so a
+		// page registered in another form cannot slip past the title check.
+		const registered = webPlugins.flatMap((plugin) => plugin.pages ?? []);
+		expect(registered.length).toBeGreaterThanOrEqual(4);
+		expect(pluginPages).toHaveLength(registered.length);
 	});
 
 	it.each(pluginPages.map((p) => [relative(web, p), p]))('plugin page %s sets a title', (_name, page) => {
