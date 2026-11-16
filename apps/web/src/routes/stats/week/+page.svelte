@@ -11,7 +11,6 @@
 	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
-	import type { Pair } from '$lib/weekly/summary';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import {
 		hasPreviousWeek,
@@ -21,12 +20,12 @@
 		weekHref,
 		weekRedirect
 	} from '$lib/weekly/week';
-	import { weekHeading } from '$lib/weekly/weekText';
+	import { weekHeading, type CharactersState } from '$lib/weekly/weekText';
 	import { workspaces } from '$lib/workspaces';
 
 	let now = $state(Date.now());
 	let view = $state.raw<WeekView | null>(null);
-	let characters = $state.raw<Pair | null | 'pending'>(null);
+	let characters = $state.raw<CharactersState>(null);
 	let loading = $state(true);
 	let error = $state('');
 	// Guards against a slow earlier request overwriting a newer view.
@@ -74,7 +73,9 @@
 			const counted = await loadWeekCharacters(id, lang, week, { force });
 			if (seq === requestSeq) characters = counted;
 		} catch {
-			if (seq === requestSeq) characters = null;
+			// Offline (the universe or legacy written forms could not be read):
+			// the row stays, says so, and Retry loads again.
+			if (seq === requestSeq) characters = 'unavailable';
 		}
 	}
 

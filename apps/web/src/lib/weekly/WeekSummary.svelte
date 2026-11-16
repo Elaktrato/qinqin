@@ -3,14 +3,13 @@
 	// description list and the seven-day strip. Every word and number comes
 	// from weekText.ts (summaryLines); this component only lays them out.
 	import type { WeekView } from './loadWeek';
-	import type { Pair } from './summary';
 	import WeekStrip from './WeekStrip.svelte';
-	import { compareWindowText, summaryLines } from './weekText';
+	import { compareWindowText, offlineText, summaryLines, type CharactersState } from './weekText';
 
 	interface Props {
 		view: WeekView;
-		/** 'pending' while counting, null when not shown. */
-		characters?: Pair | null | 'pending';
+		/** 'pending' while counting, 'unavailable' offline, null when not shown. */
+		characters?: CharactersState;
 		/** The home widget's short form. */
 		compact?: boolean;
 		/** Retry the activity request (offline). */
@@ -21,6 +20,7 @@
 	let { view, characters = null, compact = false, onretry, locale }: Props = $props();
 
 	const lines = $derived(summaryLines(view.summary, view.sources, characters, compact));
+	const offline = $derived(offlineText(view.activityError !== null, characters === 'unavailable'));
 	const ARROW = { up: '▲', down: '▼', same: '=' } as const;
 </script>
 
@@ -31,9 +31,9 @@
 			{#if view.summary.allVacation}<span class="badge">On vacation all week</span>{/if}
 		</p>
 	{/if}
-	{#if view.activityError !== null}
+	{#if offline !== null}
 		<p class="offline" role="status">
-			Reviews, reading and journal numbers are not available offline.
+			{offline}
 			{#if onretry}<button type="button" class="retry" onclick={onretry}>Retry</button>{/if}
 		</p>
 	{/if}

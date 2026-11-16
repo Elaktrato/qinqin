@@ -123,6 +123,17 @@ export function goalText(goal: { met: number; of: number }, inProgress: boolean)
 	return `Daily goal met on ${goal.met} of ${plural(goal.of, 'day', 'days')}${inProgress ? ' so far' : ''}`;
 }
 
+/** The characters row: counted, counting, failed to load (offline), or not shown. */
+export type CharactersState = { value: number; previous: number } | null | 'pending' | 'unavailable';
+
+/** offlineText: the line above the rows naming what could not be loaded; null when nothing is missing. */
+export function offlineText(activity: boolean, characters: boolean): string | null {
+	if (activity && characters) return 'Reviews, reading, journal and character numbers are not available offline.';
+	if (activity) return 'Reviews, reading and journal numbers are not available offline.';
+	if (characters) return 'Characters learned is not available offline.';
+	return null;
+}
+
 /** One line of the summary's description list. */
 export interface SummaryLine {
 	id: string;
@@ -158,13 +169,13 @@ function countLine(
 /**
  * summaryLines: the rows the summary shows, in order. `compact` (the home
  * widget): reviews, new cards, study time (flashcards + reading), days
- * active and the streak. `characters`: 'pending' while counting, null when
- * not shown.
+ * active and the streak. `characters`: 'pending' while counting,
+ * 'unavailable' when their load failed (offline), null when not shown.
  */
 export function summaryLines(
 	s: WeekSummary,
 	sources: readonly ActivitySource[],
-	characters: { value: number; previous: number } | null | 'pending',
+	characters: CharactersState,
 	compact: boolean
 ): SummaryLine[] {
 	const byKey = new Map(s.rows.map((r) => [r.key, r]));
@@ -198,6 +209,7 @@ export function summaryLines(
 		lines.push(countLine('mature', 'Words reaching mature', { ...s.mature, unit: 'count' }, s.nothingToCompare));
 	}
 	if (characters === 'pending') lines.push(plain('characters', 'Characters learned', 'Counting characters…'));
+	else if (characters === 'unavailable') lines.push(plain('characters', 'Characters learned', OFFLINE));
 	else if (characters !== null) {
 		lines.push(countLine('characters', 'Characters learned', { ...characters, unit: 'count' }, s.nothingToCompare));
 	}

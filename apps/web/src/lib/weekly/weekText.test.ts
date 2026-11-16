@@ -11,6 +11,7 @@ import {
 	rowLabel,
 	rowValue,
 	streakText,
+	offlineText,
 	summaryLines,
 	weekHeading
 } from './weekText';
@@ -226,5 +227,25 @@ describe('summaryLines', () => {
 			rows: summary().rows.map((r) => (r.key === 'reading' ? { ...r, value: null, previous: null } : r))
 		});
 		expect(summaryLines(offline, [], null, true)[2]).toMatchObject({ value: 'Not available offline', comparison: null });
+	});
+});
+
+describe('characters unavailable', () => {
+	it('keeps the row with the offline text', () => {
+		const s = {
+			monday: '2026-11-09', today: '2026-11-18', inProgress: false, compareThrough: '2026-11-08', rows: [], days: [],
+			daysActive: { active: 0, of: 7, localOnly: false }, streak: 0, mature: null, characters: null, goal: null,
+			allVacation: false, nothingToCompare: false
+		} as WeekSummary;
+		expect(summaryLines(s, [], 'unavailable', false).find((l) => l.id === 'characters')).toEqual({
+			id: 'characters', term: 'Characters learned', value: 'Not available offline', comparison: null, trend: null
+		});
+	});
+
+	it('says what is missing offline', () => {
+		expect(offlineText(true, false)).toBe('Reviews, reading and journal numbers are not available offline.');
+		expect(offlineText(false, true)).toBe('Characters learned is not available offline.');
+		expect(offlineText(true, true)).toBe('Reviews, reading, journal and character numbers are not available offline.');
+		expect(offlineText(false, false)).toBeNull();
 	});
 });

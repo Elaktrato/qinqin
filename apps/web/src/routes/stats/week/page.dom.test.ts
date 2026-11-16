@@ -196,5 +196,13 @@ describe('Stats week page', () => {
 		onWrite(0);
 		await waitFor(() => expect(reviewsValue()).toBe('14'));
 	});
+
+	it('marks the characters unavailable when their load fails (offline)', async () => {
+		vi.mocked(loadWeekCharacters).mockRejectedValueOnce(new Error('offline'));
+		render(Page);
+		await waitFor(() => expect(screen.getByText('Characters learned')).toBeTruthy());
+		expect(screen.getByText('Not available offline')).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+	});
 });
 

@@ -96,4 +96,15 @@ describe('WeekSummary', () => {
 		expect(screen.getByText('Characters learned')).toBeTruthy();
 		expect(screen.getByText('2 more than last week')).toBeTruthy();
 	});
+
+	it('keeps an unavailable characters row with Retry', async () => {
+		const onretry = vi.fn();
+		render(WeekSummary, { view: view({ mature: null }), characters: 'unavailable', onretry });
+		expect(screen.getByText('Characters learned')).toBeTruthy();
+		expect(screen.getByText('Not available offline')).toBeTruthy();
+		expect(screen.getByText('Characters learned is not available offline.')).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+		expect(onretry).toHaveBeenCalledTimes(1);
+	});
 });
+

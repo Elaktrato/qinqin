@@ -40,7 +40,7 @@ Seven boxes, Monday to Sunday: active (a tick, filled), not active (a dot), vaca
 
 ## Offline
 
-Without a connection the summary still shows what this device knows: new cards, study time, the streak, mature words and characters. Reviews, reading, journal entries and plugin activity say "Not available offline"; **Retry** loads them again. Days active then counts flashcard reviews only and says so.
+Without a connection the summary still shows what this device knows: new cards, study time, the streak and mature words. Reviews, reading, journal entries and plugin activity say "Not available offline"; so does **Characters learned** when the language's character list was not loaded yet in this session. **Retry** loads them again. Days active then counts flashcard reviews only and says so.
 
 ## The home widget
 
