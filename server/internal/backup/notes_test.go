@@ -1,9 +1,13 @@
 package backup
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -153,5 +157,50 @@ func TestRestoreNoteOntoShiftedEntryIds(t *testing.T) {
 	}
 	if ts, err := time.Parse(time.RFC3339Nano, updated); err != nil || ts.Before(before) {
 		t.Errorf("updated_at %q is not now", updated)
+	}
+}
+
+// The sample archive (with its own manifest, verbatim) carries a note on
+// 1201 / 你好; restored onto a server where 你好 has another id, the note
+// lands on that id.
+func TestSampleArchiveNoteFollowsItsEntry(t *testing.T) {
+	files := sampleFiles(t)
+	files[NameManifest] = readSample(t, NameManifest)
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for name, b := range files {
+		if name == NameManifest {
+			continue
+		}
+		w, _ := zw.Create(name)
+		w.Write(b)
+	}
+	w, _ := zw.Create(NameManifest)
+	w.Write(files[NameManifest])
+	zw.Close()
+	p := filepath.Join(t.TempDir(), "sample.zip")
+	os.WriteFile(p, buf.Bytes(), 0o644)
+	a, err := Open(p)
+	if err != nil {
+		t.Fatalf("the sample archive with its manifest does not open: %v", err)
+	}
+	defer a.Close()
+	var tgE int64
+	tg := newTarget(t, func(b *baseWorld) { tgE = mkEntry(t, b.DB, "zh", "word", "cc-1201", "你好") })
+	if tgE == 1201 {
+		t.Fatal("ids not shifted")
+	}
+	if _, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{DropUnresolved: true}); err != nil {
+		t.Fatal(err)
+	}
+	var key, data string
+	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core'`, tg.UID).Scan(&key, &data); err != nil {
+		t.Fatalf("no restored note: %v", err)
+	}
+	if key != "note:"+strconv.FormatInt(tgE, 10) {
+		t.Errorf("key %s, want note:%d", key, tgE)
+	}
+	if id, _ := intMember(json.RawMessage(data), "entryId"); id != tgE {
+		t.Errorf("data %s", data)
 	}
 }
