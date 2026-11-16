@@ -181,7 +181,8 @@
 	// needed to hide readings (smart): one replay of the workspace's review
 	// log per open, again after study writes.
 	let index = $state.raw<KnownIndex>(EMPTY_KNOWN_INDEX);
-	const wantsIndex = $derived(display.readings === 'smart');
+	// Smart readings and word states both need it (Task 13 adds the Words panel).
+	const wantsIndex = $derived(display.readings === 'smart' || display.highlightWords);
 	$effect(() => {
 		const wsId = studyWorkspaceId;
 		if (!wantsIndex || wsId === null) return;
@@ -207,22 +208,28 @@
 	});
 
 	const readings = new ReadingsController((text, signal) => segmentWithReadings(book?.language ?? '', text, signal));
-	const wantsReadings = $derived(display.readings !== 'never');
+	// One match source for readings, word states and coverage.
+	// Primitives, so a display change that keeps both does not restart a load.
+	const wantReadings = $derived(display.readings !== 'never');
+	const wantWords = $derived(display.highlightWords);
+	const wantsMatches = $derived(wantReadings || wantWords);
+	const wantOf = (): { readings: boolean; words: boolean } => ({ readings: wantReadings, words: wantWords });
 	$effect(() => {
-		if (!wantsReadings || !book || !content || content.n !== chapter) {
+		if (!wantsMatches || !book || !content || content.n !== chapter) {
 			untrack(() => readings.stop());
 			return;
 		}
 		const runs = paragraphs;
 		const key = `${id}:${content.n}:${variant}`;
 		untrack(() =>
-			void readings.run({ key, lang: book!.language, runs, start: topParagraph ?? 0, display, index })
+			void readings.run({ key, lang: book!.language, runs, start: topParagraph ?? 0, display, index, want: wantOf() })
 		);
 	});
 	$effect(() => {
 		const next = display;
 		const idx = index;
-		untrack(() => readings.update(next, idx));
+		const w = wantOf();
+		untrack(() => readings.update(next, idx, w));
 	});
 	onDestroy(() => readings.stop());
 
@@ -987,7 +994,7 @@
 			{#if readings.failed > 0}
 				<p role="status">
 					Some readings could not be loaded.
-					<button type="button" onclick={() => untrack(() => void readings.run({ key: `${id}:${chapter}:${variant}`, lang: book?.language ?? '', runs: paragraphs, start: topParagraph ?? 0, display, index }))}>Try again</button>
+					<button type="button" onclick={() => untrack(() => void readings.run({ key: `${id}:${chapter}:${variant}`, lang: book?.language ?? '', runs: paragraphs, start: topParagraph ?? 0, display, index, want: wantOf() }))}>Try again</button>
 				</p>
 			{/if}
 
@@ -1007,6 +1014,7 @@
 						{paragraphs}
 						{display}
 						pieces={readings.pieces}
+						words={readings.words}
 						{reveal}
 						{showAll}
 						lang={textLang}

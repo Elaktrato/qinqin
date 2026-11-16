@@ -42,7 +42,7 @@ vi.mock('$lib/workspaces', async () => {
 
 import { getBook, getChapter } from '$lib/api/library';
 import { segmentWithReadings } from '$lib/api/segment';
-import { setSettings } from '$lib/workspaces';
+import { setSettings, workspaces } from '$lib/workspaces';
 import BookView from './BookView.svelte';
 
 class FakeObserver {
@@ -68,7 +68,15 @@ beforeEach(() => {
 		{ surface: '世界', start: 2, end: 4, lemma: '世界', reason: '', entries: [{ id: 2, kind: 'word' }], reading: { type: 'pinyin', value: 'shì jiè' } }
 	]);
 	vi.mocked(setSettings).mockClear();
+	setReader({ readings: 'smart', smartThreshold: 80 });
 });
+
+function setReader(reader: Record<string, unknown>): void {
+	workspaces.set({
+		list: [{ id: 7, language: 'zh', name: '', settings: { reader }, updatedAt: '' }],
+		current: null
+	} as never);
+}
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
@@ -107,6 +115,27 @@ describe('BookView readings', () => {
 		await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(1), { timeout: 2000 });
 		expect(setSettings).toHaveBeenCalledWith(7, { reader: { version: 1, readings: 'never', smartThreshold: 80 } });
 		await tick();
+		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('BookView word states', () => {
+	it('highlighting off and readings never: no segment request at all', async () => {
+		setReader({ readings: 'never', highlightWords: false });
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await tick();
+		await new Promise((r) => setTimeout(r, 50));
+		expect(segmentWithReadings).not.toHaveBeenCalled();
+		expect(document.querySelector('.w-new, .w-learning')).toBeNull();
+	});
+
+	it('highlighting on with readings never: loads matches and marks the new word only', async () => {
+		setReader({ readings: 'never', highlightWords: true });
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelectorAll('.w-new')).toHaveLength(1));
+		expect(document.querySelector('.w-new')?.textContent).toBe('世界');
+		expect(document.querySelector('ruby.gen')).toBeNull();
 		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
 	});
 });
