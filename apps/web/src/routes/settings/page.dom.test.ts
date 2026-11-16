@@ -10,6 +10,7 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 
 import { api } from '$lib/api/client';
 import { setUrl } from '$lib/testing/appState.svelte';
+import { auth } from '$lib/auth';
 import { workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
 
@@ -88,5 +89,19 @@ describe('hidden plugins', () => {
 		render(Page);
 		await screen.findByText('Reader');
 		expect(screen.queryByText('Internal thing')).toBeNull();
+	});
+});
+
+describe('settings page titles', () => {
+	afterEach(() => {
+		auth.set({ token: null, user: null });
+		document.title = '';
+	});
+
+	it('names the Admin section in the document title', async () => {
+		auth.set({ token: 't', user: { id: 1, username: 'root', admin: true } as never });
+		setUrl('/settings?tab=admin&section=email');
+		render(Page);
+		await waitFor(() => expect(document.title).toBe('Email · Admin · Settings · qinqin'));
 	});
 });
