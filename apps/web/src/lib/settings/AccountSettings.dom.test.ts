@@ -32,8 +32,10 @@ const sessions = () => ({
 });
 
 let list = sessions();
+let tokens: unknown[] = [];
 beforeEach(() => {
 	list = sessions();
+	tokens = [];
 	localStorage.setItem('qinqin.token', 'tok');
 	auth.set({ token: 'tok', user: me });
 	vi.mocked(api).mockImplementation((async (url: string, opts?: { method?: string }) => {
@@ -42,6 +44,7 @@ beforeEach(() => {
 		if (url === '/api/auth/options') return { emailPolicy: 'off' };
 		if (url.startsWith('/api/account/sessions/') && opts?.method === 'DELETE') return undefined;
 		if (url === '/api/account/sessions/revoke') return { revoked: 1 };
+		if (url === '/api/account/tokens' && !opts?.method) return { accessTokens: tokens };
 		throw new Error(`unexpected ${url}`);
 	}) as never);
 });
@@ -83,6 +86,7 @@ describe('Settings → Account: password', () => {
 	it('shows "The current password is wrong." for 403 wrong_password and stays signed in', async () => {
 		vi.mocked(api).mockImplementation((async (url: string) => {
 			if (url === '/api/account/sessions') return list;
+			if (url === '/api/account/tokens') return { accessTokens: [] };
 			throw new ApiError(403, JSON.stringify({ error: 'wrong_password', message: 'x' }));
 		}) as never);
 		render(AccountSettings);
@@ -149,5 +153,37 @@ describe('Settings → Account: sessions', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 		expect(screen.queryByText(/will need to sign in again/)).toBeNull();
 		expect(logout).not.toHaveBeenCalled();
+	});
+});
+
+describe('Settings → Account: access tokens and containment', () => {
+	const token = {
+		id: 1, name: 'cron', hint: 'abcdef', scope: 'read', workspaceId: null,
+		createdAt: '2026-11-01T00:00:00Z', expiresAt: '2099-01-01T00:00:00Z', lastUsedAt: null, expired: false
+	};
+
+	it('shows the Access tokens section', async () => {
+		render(AccountSettings);
+		expect(await screen.findByRole('heading', { name: 'Access tokens' })).toBeTruthy();
+		await screen.findByText('No access tokens yet.');
+	});
+
+	it('says tokens are revoked too, where the user has any', async () => {
+		tokens = [token];
+		render(AccountSettings);
+		await screen.findByRole('table', { name: 'Access tokens' });
+		const pw = screen.getByRole('region', { name: 'Password' });
+		expect(pw.textContent).toContain('Your access tokens are revoked too.');
+		const sess = screen.getByRole('region', { name: 'Sessions' });
+		expect(sess.textContent).toContain('Your access tokens are revoked too.');
+		await fireEvent.click(screen.getByRole('button', { name: 'Log out everywhere' }));
+		const confirm = screen.getByRole('group', { name: 'Confirm log out everywhere' });
+		expect(confirm.textContent).toContain('Your access tokens are revoked too.');
+	});
+
+	it('says nothing about tokens when there are none', async () => {
+		render(AccountSettings);
+		await screen.findByText('No access tokens yet.');
+		expect(document.body.textContent).not.toContain('Your access tokens are revoked too.');
 	});
 });

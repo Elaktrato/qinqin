@@ -26,6 +26,8 @@
 	import { loadMe, logout, user } from '$lib/auth';
 	import { clearPending } from '$lib/study/events';
 	import AppSection from '$lib/pwa/AppSection.svelte';
+	import AccessTokens from './AccessTokens.svelte';
+	import { containmentNote } from '$lib/account/tokensView';
 
 	let current = $state('');
 	let next = $state('');
@@ -42,6 +44,11 @@
 	let busy = $state(false);
 
 	const rows = $derived(sessionRows(sessions, new Date()));
+	// How many access tokens exist (AccessTokens reports it): a password
+	// change and the log-out actions revoke them, and say so.
+	let tokenCount = $state(0);
+	let tokensKey = $state(0); // bumped after a server-side revocation reloads the list
+	const tokenNote = $derived(containmentNote(tokenCount));
 	const hasOthers = $derived(rows.some((r) => r.canRevoke));
 
 	function message(err: unknown, fallback: string): string {
@@ -113,10 +120,11 @@
 		pwBusy = true;
 		try {
 			await changePassword({ currentPassword: current, newPassword: next, signOutOthers });
-			pwDone = signOutOthers
-				? 'Password changed. Your other sessions were signed out.'
-				: 'Password changed.';
+			pwDone =
+				(signOutOthers ? 'Password changed. Your other sessions were signed out.' : 'Password changed.') +
+				(tokenNote ? ' Your access tokens were revoked.' : '');
 			current = next = confirm = '';
+			tokensKey++;
 			await loadSessions();
 		} catch (err) {
 			// A wrong current password is a 403, so the session stays signed in.
@@ -149,6 +157,7 @@
 		busy = true;
 		try {
 			await revokeSessions('others');
+			tokensKey++;
 			await loadSessions();
 		} catch (err) {
 			sessionsError = message(err, 'Could not log the other devices out.');
@@ -252,6 +261,7 @@
 			<input type="checkbox" bind:checked={signOutOthers} />
 			Sign out my other sessions
 		</label>
+		{#if tokenNote}<p class="hint">{tokenNote}</p>{/if}
 		{#if pwError}<p class="error" role="alert">{pwError}</p>{/if}
 		<p class="ok" role="status">{pwDone}</p>
 		<button type="submit" disabled={pwBusy}>{pwBusy ? 'Changing…' : 'Change password'}</button>
@@ -304,14 +314,19 @@
 			>Log out everywhere</button
 		>
 	</div>
+	{#if tokenNote}<p class="hint">Logging out other devices or everywhere: {tokenNote}</p>{/if}
 	{#if confirmingAll}
 		<div class="confirm" role="group" aria-label="Confirm log out everywhere">
-			<p>{LOGOUT_EVERYWHERE_CONFIRM}</p>
+			<p>{LOGOUT_EVERYWHERE_CONFIRM}{#if tokenNote}{' '}{tokenNote}{/if}</p>
 			<button type="button" disabled={busy} onclick={revokeAll}>Yes, log out everywhere</button>
 			<button type="button" disabled={busy} onclick={() => (confirmingAll = false)}>Cancel</button>
 		</div>
 	{/if}
 </section>
+
+{#key tokensKey}
+	<AccessTokens oncount={(n) => (tokenCount = n)} />
+{/key}
 
 <YourData />
 
