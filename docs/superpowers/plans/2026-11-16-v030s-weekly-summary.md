@@ -363,5 +363,93 @@ suite in both. One implementer at a time (shared web gates).
 
 ## Execution record
 
-(empty — filled by the builder: deviations as Rulings, test-first notes, real-app check results, what was not
-verified)
+Built 2026-11-16 in one session, inline (one implementer, no subagent review waves). Before Task 1 the
+collection branch `feature/v0.3.0-stretch` (#67, #75, #77, #71) was merged in (`9d916e1`).
+
+**Adaptations to the merged #67 code**
+
+- `GoalView.activityError` is a string: `WeekView.activityError` is `string | null` (the message) rather than a
+  boolean. `metricsBetween` was not needed: the week always asks the activity route (reviews, reading and journal
+  rows), so there is no "only flashcards goals" shortcut.
+- `progressText` always says "today": the week has its own past-day wording (`goalText`: "Daily goal met on 2 of 6
+  days", "… so far" in the current week) and its own streak wording ("Study streak at the end of the week: N
+  days"); the goal streak's capped "N+ days" is not used (the week shows the review streak, `dailyStreak`, which
+  is not capped).
+- The daily-goal widget is home-only and `DEFAULT_LAYOUT` ends with `daily-goal`: `weekly-summary` is appended
+  after it and is on both surfaces (`['stats', 'home']`), as the spec says.
+- `study/known.ts` is not used at all (the spec's "no known words row" ruling), so #68's later change to it
+  cannot conflict.
+
+**Deviations (as Rulings)**
+
+- Ruling: `isoWeekday` counts civil days from a known Monday (`daysBetweenDates('1970-01-05', day)`) instead of
+  `Date.UTC(...).getUTCDay()` — the `utcGuard` test forbids `Date.UTC(` outside `studyDay.ts` and the result is the
+  same civil-date rule — cost: none.
+- Ruling: a plugin activity row is shown when the week **or** its comparison window is non-zero — a source that
+  dropped to 0 is worth showing — cost: a "0" row for a source unused this week (in the contract README).
+- Ruling: today's open goal day is left out of the goal line until met (`of = met + missed`) — "1 of 2 days" on a
+  Friday morning would read as a miss — cost: the denominator grows during the day (in the contract README).
+- Ruling: the home widget's "study time" is flashcards + reading together; offline (reading unknown) it says "Not
+  available offline" rather than a flashcards-only number — one label, one meaning — cost: the widget hides the
+  known flashcard time offline (the Week tab still shows it on its own row).
+- Ruling: the week heading is announced by `aria-live="polite"` and focus stays on the followed link
+  (`data-sveltekit-keepfocus`); the heading does not take focus — moving focus would fight keepfocus, and the
+  spec's two sentences conflict — cost: a screen-reader user hears the new heading instead of landing on it.
+- Ruling: the Week tab exists whenever a workspace is chosen (Overview only without one) — the summary is per
+  workspace — cost: none.
+- Ruling: the current week links as `/stats/week` (no parameter); normalisation also replaces an explicit
+  `?week=<current Monday>` by `/stats/week` (`weekRedirect`) — one URL per week — cost: none.
+- Ruling: offline, `nothingToCompare` is judged on the local reviews only — the activity cells are unknown —
+  cost: "Nothing last week to compare" can show offline for a week that had only reading.
+- Interface changes against the plan: `loadWeek(…, {detail})` adds mature words (the plan's `characters` option
+  became a separate `loadWeekCharacters(workspaceId, language, monday)` so the page renders the rest first);
+  `WeekSummary` gained `today`, `mature`/`characters` are `{value, previous}` pairs (they are compared too),
+  `WeekDay` keeps `points`; `weekCutoffs` (summary.ts) is shared by the summary and the character load;
+  `summaryLines` (weekText.ts) holds the row list and comparison words so the components stay thin; `week.ts`
+  gained `weekHref`, `weekRedirect`, `hasPreviousWeek`; `statsTabs.ts` gained `statsPanelLabel`.
+- `replayStats.timelines` (a counter in `replay.ts`, like `studyDayStats`) replaces a spy on `scheduleTimeline`:
+  vitest cannot spy on an ESM import inside another module.
+- Task 3's tests are in a new `study/scheduleTimeline.test.ts`; `scheduler.test.ts` is unchanged.
+- `week-of.json` cases carry `skipped[]` (the dates with an empty window); the `week-summary.json` shape is
+  `{…, activity: {sources, cells} | null, goals, cards?, decks?, timelines?, chars?, expect}` and a key absent
+  from `expect` is not checked (the replay cases check only `mature` and `characters`).
+- Task 11 found a real cost: `weekSummary` ran `flashcardAmounts` and the active-day pass over the whole log for
+  every week (~300 ms per week on 50 000 reviews, 20 s for 53 weeks). It is now memoised per (reviews array,
+  study day) — both are cached objects — and the 53 weeks take about 2 s. The fix is in Task 11's commit.
+- Task 5's commit was amended once, locally and before anything else was built on it, to fix a test-only type
+  error `svelte-check` reported after the commit (`readonly TimelinePoint[]`); from then on every commit waited for
+  `run check`.
+
+**Test-first:** every task's tests were run before the code and seen to fail (module missing or the new function
+absent; Task 9/10 also failed on the changed tab/layout/registry expectations). Task 11 was seen to fail against a
+per-week replay (`timelinesFor([...reviews], …)`: 265 000 replays instead of 5 000), then against the real code on
+the time bound (20 s, see above), then passed.
+
+**Real-app check (Task 13)**, scratch copy built (`npm ci`, `run build`, web build copied into
+`server/internal/webdist/dist`, `go build` under the lock), server on `127.0.0.1:18381` with a scratch data dir,
+driven by Python: first user (bootstrap admin) and a second user (created by the admin), workspaces A and B (zh),
+`PUT /api/me/time-zone` Europe/Berlin, reviews, a `read` (600 s) and a `journal` event via `POST /api/events/batch`,
+a `vacation:*` row for Friday 2026-10-23. The Berlin DST-end week 2026-10-19 was used instead of "this week's
+Monday" (today was itself a Monday, so "this week's Tuesday" was still in the future). A temporary
+`src/realapp.check.test.ts` in the copy read the live responses (events, plugin rows, activity cells of both
+windows, the zone history) and asserted with the pure modules: the review at 2026-10-19T22:30Z (Monday in UTC,
+00:30 Tuesday in Berlin) is on Tuesday and Monday is inactive; the review at 2026-10-25T22:30Z (23:30 CET after the
+change) is on Sunday and the one at 23:30Z is next week; reviews 3 vs 1, new cards 3 vs 1, study time 15 vs 5 s,
+reading 600 s, journal 1, Friday `vacation`, days active 4 of 6, streak 1; no cell of workspace B and B's review
+absent; the current week (Monday 2026-11-16) compares with last Monday only (1 vs 2 reviews; last Tuesday's review
+left out). A second user's `GET /api/stats/activity?workspace=<A>` is 404, without a token 401. 3/3 passed. The
+first journal event was posted with a numeric `entryId` and the server (correctly, the journal plugin sends a
+string) did not count it; it was re-posted with a string id. The server was killed and the copy, binary, data dir
+and scripts deleted.
+
+**Final gates** (the record lists the exit codes): `npm --prefix apps/web run check` 0 (0 errors, 0 warnings),
+`npm --prefix apps/web test` 0 (350 files, 5396 tests), `npm --prefix apps/web run build` 0, Node 26 full vitest 0
+(350 files, 5396 tests), full Go gate (proxy variables unset, under the lock): `gofmt -l` printed nothing, `go vet ./...` passed, `go test` exit 1 with 37 packages ok and only `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` failing (no IPv6 sockets in this sandbox, the known environment failure); no Go code changed on this branch.
+
+**Not verified:** no browser was used (house rule): the tab, the widget and the strip were checked in jsdom only,
+so layout, the 3:1 contrast values (computed by hand from the colours, see the components commit) and the real
+screen-reader announcement of the heading are unverified. `aria-live` on a heading inside SvelteKit navigation was
+not tried with a screen reader. The week heading's exact range text depends on the browser's ICU (tests normalise
+the spaces around the dash). The 10 s performance bound was measured locally only (about 2 s), not on CI hardware.
+Characters learned against a live server was not exercised (no character data seeded in the scratch server; the
+crossing logic is covered by the fixtures).
