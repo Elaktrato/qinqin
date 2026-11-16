@@ -420,4 +420,38 @@ were killed and the scratch copy and data directories deleted.
 `visibilitychange` flush in real browsers; two real devices racing a flush against a Clear (only the pure
 `staleAfterClear` and the recorder's read-before-write are tested); the service worker's actual Cache
 Storage contents in a browser (the classify rule and `forgetOfflineLookups` are unit-tested with fakes);
-Android. No independent review has been run on this branch.
+Android. (An independent privacy review ran afterwards; see Review fixes.)
+
+## Review fixes (the one fix wave, after the independent privacy review)
+
+**Start.** `feature/v0.3.0-stretch` merged again (`e0eb179`: #83 personal access tokens, #81 weekly summary).
+Conflicts: the route table (taken from the collection branch with its token column, then
+`{"DELETE /api/events/lookups", s.handleDeleteLookupEvents, accUser, nil, noTok}` added: token-forbidden, not
+in the tokengate allow map), `classify.test.ts` and `Settings-tour.md` (both sides kept);
+`docs/wiki/API-Routes.md` and the PWA route fixture regenerated. `npm ci` again.
+
+| Finding | Commit | What changed (test first, each seen failing) |
+| --- | --- | --- |
+| MUST 2 same-tab race | `a1425ab` | `LookupRecorder.exclusive(fn)` runs Clear and Remove in the flush chain (waits for a flush in flight, blocks new ones, bumps the generation). Recorder test with a held `writeRow`: the old words never come back. |
+| MUST 1 + NIT 6 real race, server clock | `681a23e` | The store keeps the clearedAt it wrote; it is the server's `updatedAt` of the PUT (the row is written once more with it when it differs from the client clock). `staleAfterClear(row, mine)`: the row's clearedAt missing or earlier than mine, or an item `lastAt <= mine`; a later clearedAt (cleared again elsewhere) with newer items only is not stale. The 30 s check runs from a store-level timer (leaving the page does not cancel it; sign-out does) and re-clears with mine and no items. Fixture cases and README updated. Store test with a fake server: B reads, A clears, B writes back its old row, 30 s later the row is the clear again, once. |
+| SHOULD 3 cached pulls and event logs | `13172e4` | `pwa/sw/scrub.ts`: before `cache.put` a saved pull loses its `qinqin-core` `lookup*` rows and a saved event log its `lookup` events (an unreadable body of those paths is not saved); `classify.ts` compares decoded paths (`qinqin%2Dcore`, `%6Cookups`). Strategy test: the live answers are whole, the saved ones hold neither. PWA and lookups READMEs and the wiki corrected. |
+| SHOULD 4 offline study stays ready | `13172e4` | `forgetOfflineLookups` became `scrubOfflineLookups`: copies saved earlier are filtered in place (save time kept); only an unreadable copy or a saved read of the lookup rows is deleted, and then the prepared receipts are cleared. |
+| SHOULD 5 user change | `4c2e341` | `auth.subscribe`: the recorder is reset whenever `auth.user?.id` changes (other tab, token swap), not only on logout/401. |
+| NIT 7 other tabs | `1ba3f74` | `visibilitychange` to visible re-reads the switch and every held copy before the popup hint is shown again. |
+| Minors | `e92db9b` | Source keys: known keys always stay, at most 13 others of at most 32 characters (web parse, Go restore merge; fixture cases, Go test). A 413 on a flush drops those lookups instead of retrying forever. Search records a middle-click open (`auxclick`, button 1); a context-menu "open in new tab" is not seen (wiki says so). |
+| Wiki: tokens | `29ef2d2` | Read tokens can read notes and the lookup history through plugin data and the pull; the delete route needs the app. |
+
+Rulings: re-clearing keeps no items of a stale write-back (its counts include the erased past) — cost: up to
+30 s of new lookups on other devices are lost. The second write for the server clearedAt is accepted (one
+extra PUT per Clear). Source key length is UTF-16 units on the web and bytes in Go (the same for the ASCII
+keys clients write).
+
+**Gates after the fixes.** Targeted Go (`./internal/events ./internal/backup ./internal/api`) ok, `gofmt -l`
+empty. Web `check` exit 0 (1241 files, 0 errors, 0 warnings), `test` exit 0 (372 files, 5852 tests), `build`
+exit 0; Node 26.13.1 vitest exit 0 (372 files, 5852 tests). One full Go run: `go vet ./...` clean, 37 packages
+ok, 1 FAIL `internal/ai` with only `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 here).
+
+**Not verified in the fix wave.** No new real-app run (the API behaviour of the server did not change apart
+from the token column); the worker's filtering in a real browser's Cache Storage; the server-time clearedAt
+against devices with skewed clocks (unit-tested only).
+
