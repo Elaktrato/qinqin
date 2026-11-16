@@ -49,7 +49,8 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 // Home -> Stats hop, not more. Joining the read in flight is the main gain.
 export const WORKSPACE_EVENTS_TTL_MS = 8_000;
 
-function fullLogPath(workspaceId: number): string {
+/** The whole event log of one workspace; the study load and offline preparation share it. */
+export function fullLogPath(workspaceId: number): string {
 	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
 }
 

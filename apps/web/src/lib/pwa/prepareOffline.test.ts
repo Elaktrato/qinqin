@@ -1,0 +1,189 @@
+import { describe, expect, it, vi } from 'vitest';
+import classifyFixtureRoutes from './sw/routes.fixture.json';
+import { classify } from './sw/classify';
+import { DEFAULT_W } from '../study/fsrs/params';
+import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
+import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
+import { SYNC_PULL_PATH } from '../study/store';
+import { fullLogPath } from '../events';
+import { entryPath } from '../api/entries';
+import { strokeUrl } from '../study/strokeData';
+import {
+	OFFLINE_API_PATHS,
+	PREPARE_THROTTLE_MS,
+	planOffline,
+	prepareOffline,
+	receiptKey,
+	type PrepareDeps
+} from './prepareOffline';
+
+const now = new Date('2026-03-01T12:00:00Z');
+
+function card(id: string, kind: StudyCardKind, entryId: number, written = '学习', createdAt = '2026-01-01T00:00:00.000Z'): StudyCard {
+	return { id, kind, entryId, written, deckIds: ['general'], createdAt };
+}
+
+const vocab = [1, 2, 3, 4, 5, 6].map((n) => card(`v${n}`, 'vocab', n, '学习', `2026-01-0${n}T00:00:00.000Z`));
+
+const base = {
+	cards: vocab,
+	reviews: [] as ReviewEvent[],
+	deckIds: ['general'],
+	kinds: ['vocab'] as StudyCardKind[],
+	newLimit: 2,
+	reviewLimit: 100,
+	now,
+	w: DEFAULT_W,
+	language: 'zh',
+	ctx: UTC_CONTEXT
+};
+
+describe('planOffline', () => {
+	it("is today's queue plus the next new cards, unique", () => {
+		const plan = planOffline(base, { extraNew: 2, maxEntries: 500 });
+		expect(plan.entryIds).toEqual([1, 2, 3, 4]);
+	});
+
+	it('daily limits apply to the extra new cards too (the same rule as online)', () => {
+		const limited: StudyContext = { ...UTC_CONTEXT, limits: { workspace: { new: 1 }, decks: {}, existingDecks: null } };
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 50, maxEntries: 500 }).entryIds).toEqual([1]);
+	});
+
+	it('a vacation day prepares nothing', () => {
+		const vacation: StudyContext = { ...UTC_CONTEXT, vacationToday: true };
+		expect(planOffline({ ...base, ctx: vacation }).entryIds).toEqual([]);
+	});
+
+	it('caps the entries', () => {
+		expect(planOffline(base, { extraNew: 50, maxEntries: 3 }).entryIds).toEqual([1, 2, 3]);
+	});
+
+	it('never plans companions (they are not studied offline)', () => {
+		const plan = planOffline({ ...base, kinds: ['vocab', 'sentence'] }, { extraNew: 50, maxEntries: 500 });
+		// vocab cards only: sentence companions would be virtual items
+		expect(plan.entryIds.every((id) => id >= 1 && id <= 6)).toBe(true);
+	});
+
+	it('collects the characters of writing cards for stroke data', () => {
+		const withWriting = { ...base, cards: [...vocab, card('w9', 'writing', 9, '猫咪')], kinds: ['vocab', 'writing'] as StudyCardKind[], newLimit: 20 };
+		const plan = planOffline(withWriting, { extraNew: 0, maxEntries: 500 });
+		expect(plan.chars.sort()).toEqual(['咪', '猫']);
+	});
+});
+
+describe('the URLs prepared are the URLs the pages request', () => {
+	it('every shell API path is cacheable by the worker', () => {
+		const ctx = { origin: 'https://x.test', shellUrls: new Set<string>() };
+		for (const path of OFFLINE_API_PATHS) {
+			const req = { method: 'GET', url: `https://x.test${path}`, mode: 'cors', headers: { get: () => 'Bearer t' } };
+			expect(classify(req, ctx), path).toBe('api');
+		}
+		expect(classify({ method: 'GET', url: `https://x.test${SYNC_PULL_PATH}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
+		expect(classify({ method: 'GET', url: `https://x.test${fullLogPath(3)}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
+		expect(classify({ method: 'GET', url: `https://x.test${entryPath(12)}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
+		expect(classify({ method: 'GET', url: `https://x.test${strokeUrl('猫')}`, mode: 'cors', headers: { get: () => null } }, ctx)).toBe('hanzi');
+	});
+
+	it('the shell API paths exist in the server route table', () => {
+		const patterns = new Set(classifyFixtureRoutes.map((r) => r.pattern));
+		for (const path of OFFLINE_API_PATHS) expect(patterns.has(`GET ${path}`), path).toBe(true);
+	});
+});
+
+describe('prepareOffline', () => {
+	function memoryStorage(): Storage {
+		const data = new Map<string, string>();
+		return {
+			getItem: (k: string) => data.get(k) ?? null,
+			setItem: (k: string, v: string) => void data.set(k, v),
+			removeItem: (k: string) => void data.delete(k),
+			clear: () => data.clear(),
+			key: (i: number) => [...data.keys()][i] ?? null,
+			get length() {
+				return data.size;
+			}
+		} as Storage;
+	}
+
+	function makeDeps(over: Partial<PrepareDeps> = {}): PrepareDeps & { calls: string[]; active: { now: number; max: number } } {
+		const calls: string[] = [];
+		const active = { now: 0, max: 0 };
+		const track = async (url: string) => {
+			calls.push(url);
+			active.now++;
+			active.max = Math.max(active.max, active.now);
+			await new Promise((r) => setTimeout(r, 1));
+			active.now--;
+		};
+		return {
+			calls,
+			active,
+			userId: 1,
+			loadHistory: async () => ({ decks: [], cards: vocab, fsrs: undefined, reviews: [], merged: 0 }) as never,
+			config: () => ({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 2, reviewLimit: 100, cardTypes: ['vocab'] }),
+			language: 'zh',
+			contextFor: () => UTC_CONTEXT,
+			weights: () => DEFAULT_W,
+			fetchEntry: (id) => track(entryPath(id)),
+			fetchStroke: (ch) => track(strokeUrl(ch)),
+			fetchApi: (path) => track(path),
+			storage: memoryStorage(),
+			now: () => now.getTime(),
+			canPrepare: () => true,
+			extraNew: 2,
+			onPrepared: () => {},
+			...over
+		};
+	}
+
+	it('fetches the shell API set and every planned entry, two at a time', async () => {
+		const deps = makeDeps();
+		const result = await prepareOffline(7, deps);
+		expect(result.status).toBe('prepared');
+		for (const path of OFFLINE_API_PATHS) expect(deps.calls).toContain(path);
+		expect(deps.calls.filter((c) => c.startsWith('/api/entries/')).sort()).toEqual([1, 2, 3, 4].map((n) => entryPath(n)).sort());
+		expect(deps.active.max).toBeLessThanOrEqual(2);
+	});
+
+	it('is throttled for 30 minutes unless the counts changed', async () => {
+		const deps = makeDeps();
+		await prepareOffline(7, deps);
+		const first = deps.calls.length;
+		expect((await prepareOffline(7, { ...deps, now: () => now.getTime() + PREPARE_THROTTLE_MS - 1000 })).status).toBe('skipped');
+		expect(deps.calls.length).toBe(first);
+		const changed = { ...deps, now: () => now.getTime() + 1000, loadHistory: async () => ({ decks: [], cards: [...vocab, card('v7', 'vocab', 7)], reviews: [], merged: 0 }) as never };
+		expect((await prepareOffline(7, changed)).status).toBe('prepared');
+		expect((await prepareOffline(7, { ...deps, now: () => now.getTime() + PREPARE_THROTTLE_MS + 1 })).status).toBe('prepared');
+	});
+
+	it('receipts are per user and workspace', async () => {
+		const deps = makeDeps();
+		await prepareOffline(7, deps);
+		expect(deps.storage!.getItem(receiptKey(1, 7))).not.toBeNull();
+		expect(deps.storage!.getItem(receiptKey(2, 7))).toBeNull();
+		expect((await prepareOffline(7, { ...deps, userId: 2 })).status).toBe('prepared');
+	});
+
+	it('does nothing when it must not (no controlling worker, offline, data saver)', async () => {
+		const deps = makeDeps({ canPrepare: () => false });
+		expect((await prepareOffline(7, deps)).status).toBe('skipped');
+		expect(deps.calls).toEqual([]);
+	});
+
+	it('stops quietly when the connection drops, and keeps no receipt', async () => {
+		const deps = makeDeps({
+			fetchEntry: vi.fn(async () => {
+				throw new TypeError('Failed to fetch');
+			})
+		});
+		const result = await prepareOffline(7, deps);
+		expect(result.status).toBe('failed');
+		expect(deps.storage!.getItem(receiptKey(1, 7))).toBeNull();
+	});
+
+	it('reports what was saved', async () => {
+		const onPrepared = vi.fn();
+		await prepareOffline(7, makeDeps({ onPrepared }));
+		expect(onPrepared).toHaveBeenCalledWith({ workspaceId: 7, cards: 4, at: now.toISOString() });
+	});
+});

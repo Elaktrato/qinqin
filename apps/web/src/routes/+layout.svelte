@@ -27,6 +27,7 @@
 	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
 	import { registerWorker } from '$lib/pwa/register';
+	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { requestSignOut } from '$lib/account/signOut';
 	import { logoutPrompt } from '$lib/account/logoutFlow';
@@ -150,6 +151,24 @@
 		startReviewOutbox();
 		void loadPluginStates();
 		void loadShellWorkspaces();
+	});
+
+	// Keep today's study queue available offline: a few seconds after the
+	// active workspace is up, and again whenever the app comes back to the
+	// front (throttled inside; a no-op without a controlling worker).
+	$effect(() => {
+		const id = $workspacesLoaded && $restriction === null ? ($workspaces.current?.id ?? null) : null;
+		if (id === null) return;
+		const run = () => void prepareActiveWorkspace();
+		const timer = setTimeout(run, 4000);
+		const onVisible = () => {
+			if (document.visibilityState === 'visible') run();
+		};
+		document.addEventListener('visibilitychange', onVisible);
+		return () => {
+			clearTimeout(timer);
+			document.removeEventListener('visibilitychange', onVisible);
+		};
 	});
 
 	// The learner's time zone history (and, once per account, the browser
