@@ -179,10 +179,13 @@ some noise parts (二 inside 五).
 
 Decompositions **not bundled**:
 
-- **CHISE IDS** (GPL-2.0-or-later), **cjkvi-ids** (`ids.txt` "follows CHISE
-  terms", other files GPLv2) and **Make Me a Hanzi** `dictionary.txt` (LGPL,
-  derived from Unihan and cjklib with an unverified chain): copyleft or
-  unverified, so they stay local. Prepare one yourself with
+- **Chinese components** (`zh-components`, local only): CHISE / cjkvi-ids /
+  Make Me a Hanzi decompositions are GPL or LGPL or have unverified chains.
+  **CHISE IDS** is GPL-2.0-or-later, **cjkvi-ids** (`ids.txt`) "follows CHISE
+  terms" (its other files GPLv2) and **Make Me a Hanzi** `dictionary.txt` is
+  LGPL, derived from Unihan and cjklib with an unverified chain, so they stay
+  local in `plugins/data-local/` and are never committed or put in the image.
+  Prepare one yourself with
   `node scripts/prepare-ids-components.mjs <ids.txt> plugins/data-local/zh-components --id zh-components --license "<as stated>" --attribution "<who, with a link>"`
   and seed `plugins/data-local`; the pack carries the licence its source states.
 - **KRADFILE / RADKFILE** (EDRDG, CC BY-SA): the licence family fits, but the
