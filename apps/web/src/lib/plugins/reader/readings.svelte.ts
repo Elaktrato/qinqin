@@ -51,6 +51,8 @@ export class ReadingsController {
 	progress = $state.raw<{ done: number; total: number }>({ done: 0, total: 0 });
 	/** Chunks whose request failed in the last run (their paragraphs stay plain). */
 	failed = $state(0);
+	/** The key `matches` and `progress` belong to ('' when stopped). */
+	key = $state('');
 
 	#loader;
 	#key = '';
@@ -88,6 +90,7 @@ export class ReadingsController {
 	}
 
 	#publish(): void {
+		this.key = this.#key;
 		this.matches = new Map(this.#matches);
 		const total = this.#input?.runs.filter((r) => paragraphString([...r]) !== '').length ?? 0;
 		this.progress = { done: this.#matches.size, total };
@@ -140,6 +143,7 @@ export class ReadingsController {
 		this.words = new Map();
 		this.matches = new Map();
 		this.progress = { done: 0, total: 0 };
+		this.key = '';
 		this.failed = 0;
 	}
 }

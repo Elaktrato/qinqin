@@ -139,3 +139,19 @@ describe('BookView word states', () => {
 		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe('BookView Words tab', () => {
+	it('opening the Words tab loads the matches and shows the chapter figure', async () => {
+		setReader({ readings: 'never', highlightWords: false });
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		expect(segmentWithReadings).not.toHaveBeenCalled();
+		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));
+		// 你好 is known (score 90), 世界 is new: 1 of 2 tokens.
+		await screen.findByText('You know 50% of the words in this chapter');
+		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
+		expect(screen.getByRole('checkbox', { name: '世界' })).toBeTruthy();
+		// The panel alone draws no word states in the text.
+		expect(document.querySelector('.w-new')).toBeNull();
+	});
+});

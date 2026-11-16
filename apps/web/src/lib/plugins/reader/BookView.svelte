@@ -32,7 +32,14 @@
 	import { DEFAULT_DISPLAY } from './displaySettings';
 	import { ReadingsController } from './readings.svelte';
 	import { createReveal, revealKey } from './reveal';
-	import { EMPTY_KNOWN_INDEX, knownIndex, type KnownIndex } from '$lib/study/known';
+	import { EMPTY_KNOWN_INDEX, familiarity, knownIndex, type KnownIndex } from '$lib/study/known';
+	import { loadEntryBases } from '$lib/api/entryBases';
+	import { loadRawStudyData, pushStudyRows, setKnownMarks } from '$lib/study/store';
+	import type { Deck } from '$lib/study/types';
+	import WordsPanel from './WordsPanel.svelte';
+	import { coverageOf, mergeTallies, tallyChapter, unknownList, type ChapterTally } from './coverage';
+	import { createBookCounter, type BookCounter } from './bookCounter';
+	import { addWords, markWords } from './wordActions';
 	import HighlightEditor from './HighlightEditor.svelte';
 	import HighlightsPanel from './HighlightsPanel.svelte';
 	import { HighlightList } from './highlightList.svelte';
@@ -124,6 +131,30 @@
 		book ? workspaceForBook(book, $workspaces.list, $workspaces.current) : null
 	);
 
+	// --- side rail ---
+
+	// Wide screens: a column beside the text (expanded or collapsed to its
+	// tab strip, remembered). Narrow ones: a drawer that always starts
+	// closed. Either way the rail is sticky or fixed, so using it never
+	// scrolls the text (which a toolbar button at the top of the page did).
+	let railState = $state(loadRailState(browserStorage()));
+	$effect(() => saveRailState(browserStorage(), { open: railState.open, tab: railState.tab }));
+	let viewportWidth = $state(typeof window === 'undefined' ? 0 : window.innerWidth);
+	$effect(() => {
+		const onResize = (): void => void (viewportWidth = window.innerWidth);
+		window.addEventListener('resize', onResize, { passive: true });
+		return () => window.removeEventListener('resize', onResize);
+	});
+	const mode = $derived(railMode(viewportWidth));
+	let drawerOpen = $state(false);
+	// Back to a wide window: the drawer is gone; coming back starts closed.
+	$effect(() => {
+		if (mode === 'column') drawerOpen = false;
+	});
+	const railOpen = $derived(mode === 'column' ? railState.open : drawerOpen);
+	// The Words tab is shown: it needs the matches and the known index.
+	const wordsPanelOpen = $derived(railOpen && railState.tab === 'words');
+
 	// --- display settings and generated readings (per workspace) ---
 
 	let display = $state(DEFAULT_DISPLAY);
@@ -181,8 +212,9 @@
 	// needed to hide readings (smart): one replay of the workspace's review
 	// log per open, again after study writes.
 	let index = $state.raw<KnownIndex>(EMPTY_KNOWN_INDEX);
-	// Smart readings and word states both need it (Task 13 adds the Words panel).
-	const wantsIndex = $derived(display.readings === 'smart' || display.highlightWords);
+	// Smart readings, word states and the Words panel need it.
+	const wantsIndex = $derived(display.readings === 'smart' || display.highlightWords || wordsPanelOpen);
+	let studyDecks = $state.raw<Deck[]>([]);
 	$effect(() => {
 		const wsId = studyWorkspaceId;
 		if (!wantsIndex || wsId === null) return;
@@ -193,6 +225,7 @@
 				if (!alive) return;
 				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock);
 				index = knownIndex(data.cards, (cardId) => schedules.get(cardId) ?? null, data.known);
+				studyDecks = data.decks;
 			} catch {
 				// Without the index nothing counts as known: every reading stays shown.
 			}
@@ -211,7 +244,7 @@
 	// One match source for readings, word states and coverage.
 	// Primitives, so a display change that keeps both does not restart a load.
 	const wantReadings = $derived(display.readings !== 'never');
-	const wantWords = $derived(display.highlightWords);
+	const wantWords = $derived(display.highlightWords || wordsPanelOpen);
 	const wantsMatches = $derived(wantReadings || wantWords);
 	const wantOf = (): { readings: boolean; words: boolean } => ({ readings: wantReadings, words: wantWords });
 	$effect(() => {
@@ -807,27 +840,6 @@
 		}
 	}
 
-	// --- side rail ---
-
-	// Wide screens: a column beside the text (expanded or collapsed to its
-	// tab strip, remembered). Narrow ones: a drawer that always starts
-	// closed. Either way the rail is sticky or fixed, so using it never
-	// scrolls the text (which a toolbar button at the top of the page did).
-	let railState = $state(loadRailState(browserStorage()));
-	$effect(() => saveRailState(browserStorage(), { open: railState.open, tab: railState.tab }));
-	let viewportWidth = $state(typeof window === 'undefined' ? 0 : window.innerWidth);
-	$effect(() => {
-		const onResize = (): void => void (viewportWidth = window.innerWidth);
-		window.addEventListener('resize', onResize, { passive: true });
-		return () => window.removeEventListener('resize', onResize);
-	});
-	const mode = $derived(railMode(viewportWidth));
-	let drawerOpen = $state(false);
-	// Back to a wide window: the drawer is gone; coming back starts closed.
-	$effect(() => {
-		if (mode === 'column') drawerOpen = false;
-	});
-	const railOpen = $derived(mode === 'column' ? railState.open : drawerOpen);
 
 	function toggleRail(open: boolean): void {
 		if (mode === 'column') railState.open = open;
@@ -847,8 +859,101 @@
 
 	const railTabs = $derived([
 		{ id: 'bookmarks' as const, label: 'Bookmarks', alert: bookmarksFailed || bookmarks.error !== '' },
-		{ id: 'highlights' as const, label: 'Highlights', alert: highlightsFailed || highlights.error !== '' }
+		{ id: 'highlights' as const, label: 'Highlights', alert: highlightsFailed || highlights.error !== '' },
+		{ id: 'words' as const, label: 'Words' }
 	]);
+
+	// --- words panel: coverage and unknown words (#68) ---
+
+	const stateOf = (entryId: number) => familiarity(entryId, index, display.smartThreshold);
+	const chapterKey = $derived(content ? `${id}:${content.n}:${variant}` : '');
+	// The open chapter's tally, once every paragraph of it has its matches.
+	const chapterTally = $derived.by<ChapterTally | null>(() => {
+		if (!wordsPanelOpen || !book || !content || readings.key !== chapterKey) return null;
+		if (readings.progress.done < readings.progress.total) return null;
+		return tallyChapter(content.n, book.language, paragraphs.map((p) => paragraphString(p)), readings.matches);
+	});
+	const chapterCounted = $derived(
+		chapterTally === null ? null : { coverage: coverageOf(chapterTally, stateOf), list: unknownList(chapterTally, stateOf) }
+	);
+
+	// The whole-book count: on demand, per book and variant, memory only.
+	let counter: BookCounter | null = null;
+	let bookVersion = $state(0);
+	let bookProgress = $state.raw<{ done: number; total: number } | null>(null);
+	let bookFailed = $state(0);
+	$effect(() => {
+		void id;
+		void variant;
+		untrack(() => {
+			counter?.abort();
+			counter = null;
+			bookProgress = null;
+			bookFailed = 0;
+			bookVersion++;
+		});
+	});
+	function bookCounter(): BookCounter | null {
+		const b = book;
+		if (!b) return null;
+		const v = variant;
+		counter ??= createBookCounter({
+			getChapter: (n) => getChapter(id, n),
+			segment: (text, signal) => segmentWithReadings(b.language, text, signal),
+			displayRuns: (p) => displayRuns(p, v),
+			lang: b.language
+		});
+		return counter;
+	}
+	$effect(() => {
+		const t = chapterTally;
+		const n = content?.n;
+		if (t === null || n === undefined) return;
+		untrack(() => {
+			bookCounter()?.put(n, t);
+			bookVersion++;
+		});
+	});
+	const bookCounted = $derived.by(() => {
+		void bookVersion;
+		if (counter === null || chapterCount === 0 || counter.tallies.size < chapterCount) return null;
+		const t = mergeTallies(counter.tallies.values());
+		return { coverage: coverageOf(t, stateOf), list: unknownList(t, stateOf) };
+	});
+	async function countBook(): Promise<void> {
+		const c = bookCounter();
+		if (!c) return;
+		bookProgress = { done: 0, total: chapterCount };
+		const { failed } = await c.count(chapterCount, (done, total) => (bookProgress = { done, total }));
+		if (counter !== c) return;
+		bookFailed = failed.length;
+		bookProgress = null;
+		bookVersion++;
+	}
+	function cancelBook(): void {
+		counter?.abort();
+		bookProgress = null;
+	}
+	function bookWorkspace(): number {
+		const wsId = studyWorkspaceId;
+		if (wsId === null) throw new Error('This book has no workspace to study in.');
+		return wsId;
+	}
+	function addFromPanel(ids: number[], target: { id: string; name: string }) {
+		const wsId = bookWorkspace();
+		return addWords({
+			workspaceId: wsId,
+			entryIds: ids,
+			target,
+			now: new Date(),
+			bases: (x) => loadEntryBases(x),
+			raw: () => loadRawStudyData(wsId),
+			push: pushStudyRows
+		});
+	}
+	function markFromPanel(ids: number[]) {
+		return markWords({ workspaceId: bookWorkspace(), entryIds: ids, marked: index.marks, on: true, set: setKnownMarks });
+	}
 	// Heard even while the rail is collapsed or the drawer closed (a `b`
 	// press that failed, a list that could not load).
 	const bookmarkAlert = $derived(bookmarks.error || (bookmarksFailed ? bookmarks.loadError : ''));
@@ -1085,6 +1190,22 @@
 						{canToggle}
 						failed={bookmarksFailed}
 						ontoggle={toggleBookmark}
+					/>
+				{:else if tab === 'words'}
+					<WordsPanel
+						lang={book?.language ?? ''}
+						chapter={chapterCounted}
+						progress={readings.progress}
+						failed={readings.failed}
+						onretry={() => untrack(() => void readings.run({ key: chapterKey, lang: book?.language ?? '', runs: paragraphs, start: topParagraph ?? 0, display, index, want: wantOf() }))}
+						book={bookCounted}
+						{bookProgress}
+						{bookFailed}
+						oncountbook={() => void countBook()}
+						oncancelbook={cancelBook}
+						decks={studyDecks}
+						onadd={addFromPanel}
+						onmark={markFromPanel}
 					/>
 				{:else}
 					<HighlightsPanel

@@ -136,5 +136,8 @@ describe('ReadingsController as the one match source', () => {
 		const r: Run[][] = [[{ text: '你好' }], [{ text: '' }], [{ text: '你好' }]];
 		await c.run({ key: 'a', lang: 'zh', runs: r, start: 0, display: display({}), index: EMPTY_KNOWN_INDEX, want: wordsOnly });
 		expect(c.progress).toEqual({ done: 2, total: 2 });
+		expect(c.key).toBe('a');
+		c.stop();
+		expect(c.key).toBe('');
 	});
 });
