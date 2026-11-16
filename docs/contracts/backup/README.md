@@ -79,6 +79,13 @@ is not canonical (`note:01`, `note:+1`, `note:`) or whose `data` is not an objec
 key names on the target, or collide with a remapped note); it counts in `droppedRows`. Every other
 `qinqin-core` row (`notecfg`, the home layout, ...) is restored unchanged.
 
+Manual known marks (`qinqin-flashcards` rows `known:<entryId>`, `reader/README.md`) follow the same rules as
+notes: export lists the entry of each live mark in `refs/entries.json`; restore rewrites key and `entryId`
+together (other members byte for byte), drops a mark whose entry is unresolved, drops an invalid `known:`
+row (key not canonical, `data` not an object with a JSON integer `entryId` equal to the key's number) and
+keeps the newest of two marks that would land on one target; every dropped mark counts in `droppedRows`.
+Other `qinqin-flashcards` keys (`knownfilter`, ...) are untouched.
+
 ## Limits of a restore
 
 At most 2,000,000 events (`backup_too_many_events`), one restore applied at a time server-wide

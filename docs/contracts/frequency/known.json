@@ -138,6 +138,89 @@
     4,
     7
    ]
+  },
+  {
+   "name": "a marked entry without a card is known",
+   "cards": [],
+   "schedules": {},
+   "marks": [
+    1
+   ],
+   "notes": {
+    "1": "marked, no card",
+    "2": "nothing"
+   },
+   "entries": [
+    1,
+    2
+   ],
+   "expectedKnown": [
+    1
+   ]
+  },
+  {
+   "name": "a marked entry with a low score is known",
+   "cards": [
+    {
+     "id": "c-vocab-3",
+     "kind": "vocab",
+     "entryId": 3,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    {
+     "id": "c-vocab-4",
+     "kind": "vocab",
+     "entryId": 4,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00.000Z"
+    }
+   ],
+   "schedules": {
+    "c-vocab-3": {
+     "state": 2,
+     "stability": 1,
+     "difficulty": 5,
+     "due": "2027-01-01T00:00:00.000Z"
+    },
+    "c-vocab-4": {
+     "state": 2,
+     "stability": 1,
+     "difficulty": 5,
+     "due": "2027-01-01T00:00:00.000Z"
+    }
+   },
+   "marks": [
+    3
+   ],
+   "notes": {
+    "3": "score 12, marked",
+    "4": "score 12, not marked"
+   },
+   "entries": [
+    3,
+    4
+   ],
+   "expectedKnown": [
+    3
+   ]
+  },
+  {
+   "name": "an unmarked (tombstoned) mark is not passed and does not count",
+   "cards": [],
+   "schedules": {},
+   "marks": [],
+   "notes": {
+    "9": "known:9 tombstoned: the store passes live marks only"
+   },
+   "entries": [
+    9
+   ],
+   "expectedKnown": []
   }
  ]
 }

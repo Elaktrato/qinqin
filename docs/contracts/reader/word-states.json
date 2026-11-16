@@ -1,0 +1,332 @@
+{
+ "version": 1,
+ "rule": "reader/word-states",
+ "threshold": 80,
+ "_doc": "familiarity of a match by its first candidate (entries[0]). scores: entry -> best cardScore of its reviewed live vocab cards; carded: entries with a live vocab card (reviewed or not); marks: live known:<entryId> rows of the workspace. Other card kinds never enter scores or carded. rowCases: parseKnownMark(key, data) -> entry id or null.",
+ "cases": [
+  {
+   "name": "a mark without a card is known",
+   "entries": [
+    1
+   ],
+   "scores": {},
+   "carded": [],
+   "marks": [
+    1
+   ],
+   "threshold": 80,
+   "expect": "known"
+  },
+  {
+   "name": "a mark beats a low score",
+   "entries": [
+    1
+   ],
+   "scores": {
+    "1": 10
+   },
+   "carded": [
+    1
+   ],
+   "marks": [
+    1
+   ],
+   "threshold": 80,
+   "expect": "known"
+  },
+  {
+   "name": "a mark beats any threshold",
+   "entries": [
+    1
+   ],
+   "scores": {
+    "1": 10
+   },
+   "carded": [
+    1
+   ],
+   "marks": [
+    1
+   ],
+   "threshold": 100,
+   "expect": "known"
+  },
+  {
+   "name": "a score equal to the threshold is known",
+   "entries": [
+    1
+   ],
+   "scores": {
+    "1": 80
+   },
+   "carded": [
+    1
+   ],
+   "marks": [],
+   "threshold": 80,
+   "expect": "known"
+  },
+  {
+   "name": "one below the threshold with a card is learning",
+   "entries": [
+    1
+   ],
+   "scores": {
+    "1": 79
+   },
+   "carded": [
+    1
+   ],
+   "marks": [],
+   "threshold": 80,
+   "expect": "learning"
+  },
+  {
+   "name": "an unreviewed card is learning",
+   "entries": [
+    1
+   ],
+   "scores": {},
+   "carded": [
+    1
+   ],
+   "marks": [],
+   "threshold": 80,
+   "expect": "learning"
+  },
+  {
+   "name": "no card and no mark is new",
+   "entries": [
+    1
+   ],
+   "scores": {},
+   "carded": [],
+   "marks": [],
+   "threshold": 80,
+   "expect": "new"
+  },
+  {
+   "name": "only the first candidate counts: a mastered second candidate",
+   "entries": [
+    3,
+    1
+   ],
+   "scores": {
+    "1": 90
+   },
+   "carded": [
+    1
+   ],
+   "marks": [],
+   "threshold": 80,
+   "expect": "new"
+  },
+  {
+   "name": "only the first candidate counts: a marked second candidate",
+   "entries": [
+    3,
+    1
+   ],
+   "scores": {},
+   "carded": [],
+   "marks": [
+    1
+   ],
+   "threshold": 80,
+   "expect": "new"
+  },
+  {
+   "name": "only the first candidate counts: a card on the first, none on the second",
+   "entries": [
+    3,
+    1
+   ],
+   "scores": {
+    "3": 20
+   },
+   "carded": [
+    3
+   ],
+   "marks": [],
+   "threshold": 80,
+   "expect": "learning"
+  },
+  {
+   "name": "a custom threshold: 65 is known from 60",
+   "entries": [
+    1
+   ],
+   "scores": {
+    "1": 65
+   },
+   "carded": [
+    1
+   ],
+   "marks": [],
+   "threshold": 60,
+   "expect": "known"
+  },
+  {
+   "name": "a custom threshold: 65 is learning at 80",
+   "entries": [
+    1
+   ],
+   "scores": {
+    "1": 65
+   },
+   "carded": [
+    1
+   ],
+   "marks": [],
+   "threshold": 80,
+   "expect": "learning"
+  },
+  {
+   "name": "a word with only a writing card is new (non-vocab cards are not in carded)",
+   "entries": [
+    5
+   ],
+   "scores": {},
+   "carded": [],
+   "marks": [],
+   "threshold": 80,
+   "expect": "new"
+  },
+  {
+   "name": "a match without candidates is new",
+   "entries": [],
+   "scores": {},
+   "carded": [],
+   "marks": [],
+   "threshold": 80,
+   "expect": "new"
+  }
+ ],
+ "rowCases": [
+  {
+   "name": "a valid mark",
+   "key": "known:12",
+   "data": {
+    "version": 1,
+    "entryId": 12,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": 12
+  },
+  {
+   "name": "extra fields are irrelevant",
+   "key": "known:12",
+   "data": {
+    "version": 1,
+    "entryId": 12,
+    "createdAt": "2026-11-16T00:00:00.000Z",
+    "by": "list"
+   },
+   "expect": 12
+  },
+  {
+   "name": "createdAt is informational",
+   "key": "known:7",
+   "data": {
+    "version": 1,
+    "entryId": 7
+   },
+   "expect": 7
+  },
+  {
+   "name": "key number differs from entryId",
+   "key": "known:12",
+   "data": {
+    "version": 1,
+    "entryId": 13,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  },
+  {
+   "name": "zero is not an entry",
+   "key": "known:0",
+   "data": {
+    "version": 1,
+    "entryId": 0,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  },
+  {
+   "name": "a negative key",
+   "key": "known:-3",
+   "data": {
+    "version": 1,
+    "entryId": -3,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  },
+  {
+   "name": "a fractional key",
+   "key": "known:1.5",
+   "data": {
+    "version": 1,
+    "entryId": 1.5,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  },
+  {
+   "name": "a non-numeric key",
+   "key": "known:abc",
+   "data": {
+    "version": 1,
+    "entryId": 1,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  },
+  {
+   "name": "a leading zero is not canonical",
+   "key": "known:012",
+   "data": {
+    "version": 1,
+    "entryId": 12,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  },
+  {
+   "name": "entryId as a string",
+   "key": "known:12",
+   "data": {
+    "version": 1,
+    "entryId": "12",
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  },
+  {
+   "name": "missing version",
+   "key": "known:12",
+   "data": {
+    "entryId": 12,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  },
+  {
+   "name": "data not an object",
+   "key": "known:12",
+   "data": 12,
+   "expect": null
+  },
+  {
+   "name": "another prefix",
+   "key": "card:12",
+   "data": {
+    "version": 1,
+    "entryId": 12,
+    "createdAt": "2026-11-16T00:00:00.000Z"
+   },
+   "expect": null
+  }
+ ]
+}
