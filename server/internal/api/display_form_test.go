@@ -101,3 +101,29 @@ func TestFrequencyTopShowsTheListKana(t *testing.T) {
 		t.Errorf("written = %v, want いぬ,する", written)
 	}
 }
+
+// TestSearchShowsTheMatchedForm: a written-form hit shows the form that
+// matched (為る searched shows 為る, as a lookup does), unless that form is
+// search-only (之 shows の); a reading hit shows the display form.
+func TestSearchShowsTheMatchedForm(t *testing.T) {
+	lang.Register(lang.Ja{})
+	ts, sqlDB := newServer(t)
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
+		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
+	}, "jmdict.xml", displayJMdict)
+	for _, tt := range []struct{ q, written string }{{"為る", "為る"}, {"之", "の"}, {"する", "する"}} {
+		resp := doJSON(t, http.MethodGet, ts.URL, "/api/search?lang=ja&q="+tt.q, "", nil)
+		var hits []struct {
+			Written string `json:"written"`
+			Source  string `json:"source"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&hits); err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if len(hits) == 0 || hits[0].Written != tt.written {
+			t.Errorf("search %s = %+v, want first written %s", tt.q, hits, tt.written)
+		}
+	}
+}
