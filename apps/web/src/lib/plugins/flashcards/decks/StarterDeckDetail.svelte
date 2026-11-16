@@ -62,7 +62,7 @@
 
 	const data = $derived(store.data);
 	const known = $derived(
-		data === null ? new Set<number>() : knownEntries(data.cards, (id) => data.index.get(id) ?? null)
+		data === null ? new Set<number>() : knownEntries(data.cards, (id) => data.index.get(id) ?? null, data.known)
 	);
 	const view = $derived(starterView(entries ?? [], known));
 	const existingIds = $derived(new Set([GENERAL_DECK_ID, ...(data?.decks ?? []).map((d) => d.id)]));
@@ -105,7 +105,7 @@
 				error = 'Could not load your cards to leave out the words you know. Try again.';
 				return;
 			}
-			const knownNow = knownEntries(fresh.cards, (id) => fresh.index.get(id) ?? null);
+			const knownNow = knownEntries(fresh.cards, (id) => fresh.index.get(id) ?? null, fresh.known);
 			// Planned from the stored rows right now, so a retry adds only the rest.
 			const raw = await loadRawStudyData(workspaceId);
 			const named = { ...target, name: raw.decks.find((d) => d.id === target.id)?.name ?? target.name };

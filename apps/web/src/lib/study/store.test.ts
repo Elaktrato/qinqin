@@ -41,6 +41,8 @@ import {
   saveWorkspaceLimits,
   saveDeckLimits,
   saveGoals,
+  setKnownMark,
+  setKnownMarks,
   ALL_WORKSPACES,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
@@ -2050,5 +2052,114 @@ describe("goal row", () => {
     await expect(saveGoals(0, goal as never)).rejects.toThrow(/workspace/);
     await expect(saveGoals(1.5, goal as never)).rejects.toThrow(/workspace/);
     expect(calls()).toHaveLength(0);
+  });
+});
+
+describe("known marks", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(3);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+  const mark = (id: number) => ({ version: 1, entryId: id, createdAt: "2026-11-16T00:00:00.000Z" });
+
+  it("reads the live marks of the workspace only", async () => {
+    respondPull({
+      pluginData: [
+        pluginRow("known:5", mark(5), { workspaceId: 3 }),
+        pluginRow("known:6", mark(6), { workspaceId: 4 }),
+        pluginRow("known:7", mark(7), { workspaceId: 3, pluginId: "other" }),
+        pluginRow("known:8", mark(8), { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" }),
+        pluginRow("known:9", mark(10), { workspaceId: 3 }),
+        pluginRow("known:11", JSON.stringify(mark(11)), { workspaceId: 3 }),
+      ],
+    });
+    expect((await loadStudyData(3)).known).toEqual([5, 11]);
+  });
+
+  it("leaves known absent without live marks", async () => {
+    respondPull({ pluginData: [pluginRow("known:8", mark(8), { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" })] });
+    const data = await loadStudyData(3);
+    expect("known" in data).toBe(false);
+  });
+
+  it("setKnownMark PUTs the row in the given workspace and notifies", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    const seen: number[] = [];
+    const off = onStudyWrite((w) => seen.push(w));
+    selectWorkspace(4); // the current workspace is not the book's
+    await setKnownMark(3, 41, true);
+    off();
+    const [put] = putBodies();
+    expect(put.url).toBe(`/api/plugins/${PLUGIN_ID}/data/known:41?workspace=3`);
+    expect(put.body).toMatchObject({ version: 1, entryId: 41 });
+    expect(Number.isNaN(Date.parse((put.body as { createdAt: string }).createdAt))).toBe(false);
+    expect(seen).toEqual([3]);
+  });
+
+  it("setKnownMark off DELETEs (tombstones) the row", async () => {
+    vi.mocked(fetch).mockImplementation(async () => new Response(null, { status: 204 }));
+    const seen: number[] = [];
+    const off = onStudyWrite((w) => seen.push(w));
+    await setKnownMark(3, 41, false);
+    off();
+    expect(calls().map(([url, init]) => [String(url), init?.method])).toEqual([
+      [`/api/plugins/${PLUGIN_ID}/data/known:41?workspace=3`, "DELETE"],
+    ]);
+    expect(seen).toEqual([3]);
+  });
+
+  it("setKnownMark off of a mark the server does not hold is not an error", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ error: "not_found" }, 404));
+    await expect(setKnownMark(3, 41, false)).resolves.toBeUndefined();
+  });
+
+  it("setKnownMark refuses an id that is not a workspace", async () => {
+    await expect(setKnownMark(0, 41, true)).rejects.toThrow(/workspace/);
+    expect(calls()).toHaveLength(0);
+  });
+
+  function pushBodies(): Array<{ pluginData: Array<Record<string, unknown>> }> {
+    return calls()
+      .filter(([url]) => String(url) === "/api/sync/push")
+      .map(([, init]) => JSON.parse(String(init?.body)));
+  }
+  const accept = () =>
+    vi.mocked(fetch).mockImplementation(async (_url, init) =>
+      jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 }),
+    );
+
+  it("setKnownMarks pushes 450 marks as 200/200/50", async () => {
+    accept();
+    const ids = Array.from({ length: 450 }, (_, i) => i + 1);
+    await setKnownMarks(3, ids, true);
+    const bodies = pushBodies();
+    expect(bodies.map((b) => b.pluginData.length)).toEqual([200, 200, 50]);
+    expect(bodies[0].pluginData[0]).toMatchObject({ key: "known:1", workspaceId: 3, data: { version: 1, entryId: 1 } });
+    expect(bodies[0].pluginData[0].deletedAt).toBeUndefined();
+  });
+
+  it("setKnownMarks off sends tombstones with deletedAt", async () => {
+    accept();
+    await setKnownMarks(3, [4, 5, 4], false);
+    const rows = pushBodies().flatMap((b) => b.pluginData);
+    expect(rows.map((r) => r.key)).toEqual(["known:4", "known:5"]);
+    for (const r of rows) {
+      expect(typeof r.deletedAt).toBe("string");
+      expect(r.deletedAt).toBe(r.updatedAt);
+    }
+  });
+
+  it("a skipped mark is an error", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 1, dataSkipped: 1, dataRefused: 0 }));
+    await expect(setKnownMarks(3, [1, 2], true)).rejects.toBeInstanceOf(PartialPushError);
+  });
+
+  it("setKnownMarks refuses an id that is not a workspace", async () => {
+    await expect(setKnownMarks(1.5, [1], true)).rejects.toThrow(/workspace/);
   });
 });

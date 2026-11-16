@@ -45,6 +45,7 @@ import { GOALS_KEY, parseGoalsRow, type GoalsRow, type ParsedGoals } from "../go
 import { pendingReviews } from "./events";
 import { outboxUser } from "./outboxUser";
 import { recentSentReviews } from "./recentSent";
+import { KNOWN_PREFIX, knownMarkKey, knownMarkRow, parseKnownMark } from "./knownMarks";
 import {
   CARD_KINDS,
   type Deck,
@@ -240,6 +241,7 @@ async function fetchStudyData(
   const limitsDecks: Record<string, Partial<LimitPair>> = {};
   let activeRaw: unknown = null;
   let goals: ParsedGoals = null;
+  const known: number[] = [];
 
   for (const value of rows) {
     const row = asPluginDataRow(value);
@@ -284,6 +286,9 @@ async function fetchStudyData(
       activeRaw = data;
     } else if (row.key === GOALS_KEY) {
       goals = parseGoalsRow(data);
+    } else if (row.key.startsWith(KNOWN_PREFIX)) {
+      const entryId = parseKnownMark(row.key, data);
+      if (entryId !== null) known.push(entryId);
     }
   }
 
@@ -299,6 +304,7 @@ async function fetchStudyData(
       ? { limits: { workspace: limitsWorkspace, decks: limitsDecks } }
       : {}),
     ...(goals === null ? {} : { goals }),
+    ...(known.length > 0 ? { known } : {}),
   };
 }
 
@@ -401,7 +407,7 @@ interface PushResult {
  */
 export async function pushStudyRows(
   workspaceId: number,
-  rows: readonly { key: string; data: unknown; knownAt?: string }[],
+  rows: readonly { key: string; data: unknown; knownAt?: string; deleted?: true }[],
   opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<void> {
   const size = Math.max(1, opts.chunk ?? 200);
@@ -414,18 +420,23 @@ export async function pushStudyRows(
       result = await api<PushResult>("/api/sync/push", {
         method: "POST",
         body: {
-          pluginData: part.map((row) => ({
-            pluginId: FLASHCARDS_PLUGIN_ID,
-            key: row.key,
-            workspaceId,
-            data: row.data,
+          pluginData: part.map((row) => {
             // Last write wins on this stamp: never earlier than what the server
             // already holds for the row (a client clock behind the server's would
             // lose to a fresh tombstone for ever).
-            updatedAt: new Date(
+            const stamp = new Date(
               Math.max(nowMs, stampAfter(row.knownAt)),
-            ).toISOString(),
-          })),
+            ).toISOString();
+            return {
+              pluginId: FLASHCARDS_PLUGIN_ID,
+              key: row.key,
+              workspaceId,
+              data: row.data,
+              updatedAt: stamp,
+              // A tombstone: the server skips it when it holds no live row.
+              ...(row.deleted ? { deletedAt: stamp } : {}),
+            };
+          }),
         },
       });
     } catch (err) {
@@ -543,6 +554,7 @@ export async function loadStudyDataWith(
     ...(data.vacations === undefined ? {} : { vacations: data.vacations }),
     ...(data.limits === undefined ? {} : { limits: data.limits }),
     ...(data.goals === undefined ? {} : { goals: data.goals }),
+    ...(data.known === undefined ? {} : { known: data.known }),
     reviews,
     merged,
   };
@@ -1202,4 +1214,49 @@ export async function saveDeckLimits(deckId: string, limits: Partial<LimitPair>)
     return;
   }
   await putData(workspaceId, limitsDeckKey(deckId), { version: 1, ...limits });
+}
+
+function requireWorkspaceArg(workspaceId: number, fn: string): void {
+  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    throw new Error(`${fn}: not a workspace id: study data is workspace-scoped`);
+  }
+}
+
+/**
+ * setKnownMark marks (PUT) or unmarks (DELETE = tombstone) one entry as
+ * known in the given workspace (the book's, never "whatever is current").
+ * Unmarking a mark the server does not hold is not an error.
+ */
+export async function setKnownMark(workspaceId: number, entryId: number, on: boolean): Promise<void> {
+  requireWorkspaceArg(workspaceId, "setKnownMark");
+  if (on) {
+    const row = knownMarkRow(entryId, new Date());
+    await putData(workspaceId, row.key, row.data);
+    return;
+  }
+  try {
+    await deleteData(workspaceId, knownMarkKey(entryId));
+  } catch (err) {
+    if (!(err instanceof ApiError && err.status === 404)) throw err;
+  }
+}
+
+/**
+ * setKnownMarks marks or unmarks many entries through pushStudyRows (200
+ * rows per request). A skipped row is a PartialPushError; unmark only
+ * entries whose mark is live (a tombstone for a missing row is skipped).
+ */
+export async function setKnownMarks(
+  workspaceId: number,
+  entryIds: readonly number[],
+  on: boolean,
+  opts: { onProgress?: (done: number, total: number) => void } = {},
+): Promise<void> {
+  requireWorkspaceArg(workspaceId, "setKnownMarks");
+  const now = new Date();
+  const rows = [...new Set(entryIds)].map((id) => {
+    const row = knownMarkRow(id, now);
+    return on ? row : { key: row.key, data: {}, deleted: true as const };
+  });
+  await pushStudyRows(workspaceId, rows, opts);
 }
