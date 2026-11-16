@@ -20,6 +20,8 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/lang"
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 // Errors a restore reports before it has changed anything.
@@ -444,6 +446,22 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		nr, drop := m.PluginRow(r)
 		if drop {
 			res.DroppedRows++
+			return nil
+		}
+		// A typed study family goes to its typed table through the codec
+		// (one storage); updated_at = now as below, version and edit time kept.
+		if row, typed, ok := typedRow(nr); typed {
+			if !ok {
+				res.DroppedRows++
+				return nil
+			}
+			if err := study.InsertStored(ctx, tx, userID, row, int(nr.Version), now, restoredModified(nr, now), nil); err != nil {
+				return fmt.Errorf("backup: study row: %w", err)
+			}
+			res.Restored.PluginData++
+			if row.Family() == rows.Cards {
+				res.Restored.Cards++
+			}
 			return nil
 		}
 		var ws any

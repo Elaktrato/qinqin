@@ -119,8 +119,8 @@ func TestLegacyPutWritesTheTypedTable(t *testing.T) {
 	for key, body := range map[string]string{
 		"deck:d-1":         `{"id":"d-1","name":"Words","createdAt":"2026-11-10T08:00:00Z"}`,
 		"deckcfg:d-1":      `{"deckId":"d-1","cardTypes":["reverse"],"newOrder":{"by":"frequency"},"updatedAt":"2026-11-10T08:00:00Z"}`,
-		"limits:workspace": `{"version":1,"new":{"limit":10}}`,
-		"limits:deck:d-1":  `{"version":1,"reviews":{"limit":null}}`,
+		"limits:workspace": `{"version":1,"new":10}`,
+		"limits:deck:d-1":  `{"version":1,"reviews":null}`,
 		"fsrs:set:s-1":     `{"id":"s-1","w":[0.2,1.2,3.1,15.6,7.2,0.5,1.4,0.005,1.5,0.1,1,1.9,0.1,0.3,2.3,0.2,3,0.5,0.6,0.1,0.5],"createdAt":"2026-11-10T08:00:00Z","source":"imported"}`,
 		"fsrs:active":      `{"setId":"s-1","changedAt":"2026-11-10T08:00:00Z"}`,
 	} {

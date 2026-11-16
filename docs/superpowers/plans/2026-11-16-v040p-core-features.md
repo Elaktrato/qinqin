@@ -713,3 +713,61 @@ deviations with reasons, the `sample-v1` change, what was not verified).
 - Gate: `gofmt -l .` empty; `go vet` + `go test -count=1 -p 2 ./internal/backup ./internal/api
   ./internal/study/...` exit 0 (all ok).
 - Not verified here: that a v0.4 archive restores on a v0.3.0 server (plan C2, real-app step 6).
+
+#### A13 — backup restore: v1 archives into typed tables
+
+- `sample-v1` extended (shapes from the v0.3.0 parsers `store.ts`, `deckSettings.ts`, `limits.ts`,
+  `fsrs/params.ts`): `deck:d-01JD0000000000000000000D1`, `deckcfg:` of it with `cardTypes` and `newOrder`
+  `{"by":"frequency"}` (version 2), `limits:workspace` `{"version":1,"new":15,"reviews":null}`,
+  `limits:deck:general` `{"version":1,"new":5}`, `fsrs:set:01JD00000000000000000FS01` (21 weights,
+  `optimized`, `labelled`/`logLoss`/`baselineLogLoss`), `fsrs:active`, all in workspace 7.
+  `counts.pluginData` 6 → 12; `plugin-data/000001.jsonl` 1798 → 3480 bytes, sha256 `b56308389c17caaf09302b4b889d7d8bdfae4f762326b9cdfb0733604f9962f5` (after
+  the limits correction below); recomputed with Python `hashlib` and checked with `sha256sum`/`wc -c`. New test `TestSampleManifestMatchesItsFiles` pins every
+  listed size and hash against the files (no test did before).
+- Tests first, seen failing (5 tests): `TestRestoreSampleV1IntoTypedTables` (every family in its table,
+  workspace ids remapped, derived card ids follow the shifted entry, ULID card id kept, version and
+  `modified_at` kept, a null `modifiedAt` takes the row's `updatedAt`, `updated_at` = restore time, deck
+  settings and limits values exact, reviews follow the remapped card id, `plugin_data` holds only the three
+  keyed rows, `Restored` counts 12/3); `TestRestoreDropsUnreadableTypedRows` (a card without `createdAt`,
+  limits version 2, a user-global `deck:`: dropped and counted in the dry-run report and the restore,
+  nothing stored); `TestRestoreReplacesTheUsersDataAndOnlyTheirs` (typed cards restored with kept stamps,
+  a later typed card, a typed tombstone and a `library_deletions` row of the user cleared, no `card:` in
+  `plugin_data`); `TestRestoreOntoAServerWithShiftedEntryIds` and
+  `TestRestoreUnresolvedNeedsAcknowledgementAndChangesNothing` read `study_cards` now; `tableCounts`
+  (refused restores change nothing) includes the seven new tables.
+- Implementation: `backup/typed.go` (`typedRow`: a remapped typed-family row decoded by `rows.FromLegacy`
+  + `Validate`, dropped without a workspace; `restoredModified`), `restore.go` inserts typed rows with
+  `study.InsertStored(version, updatedAt = now, modifiedAt kept)`, counted under `pluginData`/`cards`;
+  `plan.go` drops the same rows in the dry run before the collision check. `remap.json` and `reject.json`
+  pass unchanged. `docs/contracts/backup/README.md` gains "Typed study rows (v0.4.0, still format 1)" and
+  the never-exported list.
+- Correction found by the new restore test: the first sample limits rows used the typed wire shape
+  (`"new":{"limit":15}`) instead of the legacy shape (`"new":15`); the codec (correctly, as v0.3.0's
+  `parseLimitRow`) moved them into `extra`. Fixed the sample (and the same mistake in two earlier test
+  inputs: A12's `TestExportEveryTypedFamilyAsItsLegacyRow` and A8's legacy PUT test, which only counted
+  rows), then recomputed the manifest; `TestPlanBlocksTwoCardsThatWouldGetTheSameId` got readable cards
+  (its dummy rows are unreadable now and would be dropped before they collide).
+- Ruling: a restored typed row gets `updated_at` = the restore time and keeps `version` and its edit time —
+  why: the same rule as restored plugin rows (every client's delta pull sees it; LWW keeps comparing the
+  real edit time) — cost if wrong: a pull cursor older than the restore re-sends the rows (wanted).
+- Gate: `gofmt -l .` empty; `go vet` + `go test -count=1 -p 2 ./internal/backup ./internal/api
+  ./internal/study/...` exit 0.
+
+#### Phase A — final gates (on the A13 tree, before its commit)
+
+- ONE full Go run, proxies unset: `gofmt -l .` printed nothing; `go vet ./...` ok; `go test -count=1 -p 2
+  ./...`: 39 packages ok, 3 without tests, 1 failed — `internal/ai`, only
+  `TestHostnameResolvingToEmbeddedFormIsRefused` ("address family not supported by protocol", the known
+  no-IPv6 sandbox failure; CI is green on it). Exit code 1 because of exactly that test.
+- Web: `npm run check` exit 0 (1265 files, 0 errors, 0 warnings); full vitest with Node 26.13.1 exit 0,
+  381 files / 6043 tests. `node scripts/gen-api-docs.mjs --check` exit 0 after every task; no route was
+  added (route walk, `routes.fixture.json`, `auth/tokens-routes.json` unchanged and green in every api run).
+- Not verified in phase A: a real v0.3.0 binary migrating real data, an old cached shell in a browser,
+  a v0.4 archive restored on a v0.3 server, an outbox flush against a migrated DB (all plan C1/C2); no
+  `-race` run (no shared state was added); no independent review or mutation check yet (after phase B per
+  the process). `docs/contracts/overview.md` row-key table and Gaps are not updated yet (D1), only the
+  `docs/contracts/README.md` folder row for `library/` (required by `contractsDocs.test.ts`).
+- For phase B: the web already reads activity sources from `core.json`/`journal.json` and uses the new
+  `logChangingTypes` (A9); the deletion preview has `cards` (A10). Library JSON has `updatedAt` on books
+  and bookmarks (the web may ignore it). `limits` legacy data is `{version:1,new:number|null,…}`, the
+  typed wire is `{"new":{"limit":…}|null}` — do not mix them up (A13 did once).

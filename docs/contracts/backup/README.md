@@ -33,6 +33,25 @@ Ids in the archive are the SOURCE server's ids. A `workspaceId: null` plugin row
 (for example `vacation:<ULID>` rows of `qinqin-flashcards`): ALL of the user's live rows are exported,
 global ones included, and a restore writes them back as global rows.
 
+### Typed study rows (v0.4.0, still format 1)
+
+Cards, decks, deck settings, limits, FSRS sets and the active set live in typed tables on a v0.4 server
+(`docs/contracts/study/`). The archive carries each LIVE typed row as its legacy `qinqin-flashcards` plugin
+row (`card:<id>`, `deck:<id>`, `deckcfg:<deckId>`, `limits:workspace`, `limits:deck:<deckId>`,
+`fsrs:set:<id>`, `fsrs:active`; the study codec's `ToLegacy`: same key, data, `version`, `updatedAt`,
+`modifiedAt`), counted under `pluginData`, so a v0.4 archive restores on a v0.3 server and a v0.3 archive on
+a v0.4 one. Typed tombstones are never exported. A leftover `plugin_data` row of a typed family is exported
+only while it is still a readable study row whose key no typed row holds (so keys never repeat).
+
+A restore remaps these rows exactly like every plugin row (workspaces, derived card ids, entry and
+sentence ids, `remap.json`), then decodes each with the codec into its typed table: `version` and the edit
+time (`modifiedAt`, else `updatedAt`) are kept, `updatedAt` is the restore time (like every restored plugin
+row). A typed-family row the codec cannot read, or one without a workspace, is dropped and counted in
+`droppedRows` (the dry-run report counts it too); v0.3.0 restored such rows as inert plugin rows no client
+read. The restore clears the user's typed rows (tombstones included) and the library deletion log
+(`library_deletions`, sync bookkeeping that is never exported); every client pulls in full after a
+restore.
+
 ## Version rule
 
 `formatVersion` is the only compatibility key. A reader accepts exactly the versions it knows (1) and
@@ -43,7 +62,8 @@ A newer server must keep reading v1; an older server rejects a newer format.
 
 Password hash, email, sessions, personal access tokens, reset links, one-time-code challenges, TOTP secrets and recovery codes,
 AI keys and AI selection and usage, invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo
-drafts, tombstoned (deleted) plugin rows and tombstoned own sentences, dictionary and pack content.
+drafts, tombstoned (deleted) plugin rows, typed study rows and own sentences, the library deletion log,
+dictionary and pack content.
 A restore never changes who can sign in.
 
 ## Caps (checked on the bytes read, declared sizes ignored)

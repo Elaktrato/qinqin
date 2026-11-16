@@ -331,6 +331,12 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	collisions := 0
 	if err := a.PluginRows(func(r PluginRow) error {
 		nr, drop := m.PluginRow(r)
+		if !drop {
+			// a typed study row the codec cannot read is dropped (restore does the same)
+			if _, typed, ok := typedRow(nr); typed && !ok {
+				drop = true
+			}
+		}
 		noteID, isNote := noteEntryID(r)
 		_, isKeyed := entryKeyedID(r)
 		// notes and known marks never collide: RegisterNote picked one winner per target

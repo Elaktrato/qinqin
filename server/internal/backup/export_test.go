@@ -359,8 +359,8 @@ func TestExportEveryTypedFamilyAsItsLegacyRow(t *testing.T) {
 	legacy := map[string]string{
 		"deck:d-1":         `{"id":"d-1","name":"Words","createdAt":"2026-11-01T00:00:00Z","source":{"type":"frequency","packId":"zh-freq","size":500}}`,
 		"deckcfg:d-1":      `{"deckId":"d-1","cardTypes":["reverse"],"newOrder":{"by":"level","packId":"hsk"},"x-keep":1}`,
-		"limits:workspace": `{"version":1,"new":{"limit":10},"reviews":{"limit":null}}`,
-		"limits:deck:d-1":  `{"version":1,"new":{"limit":0}}`,
+		"limits:workspace": `{"version":1,"new":10,"reviews":null}`,
+		"limits:deck:d-1":  `{"version":1,"new":0}`,
 		"fsrs:set:s-1":     `{"id":"s-1","w":[0.2,1.2,3.1,15.6,7.2,0.5,1.4,0.005,1.5,0.1,1,1.9,0.1,0.3,2.3,0.2,3,0.5,0.6,0.1,0.5],"createdAt":"2026-11-01T00:00:00Z","source":"optimized","labelled":120,"logLoss":0.31,"baselineLogLoss":0.35}`,
 		"fsrs:active":      `{"setId":"s-1","changedAt":"2026-11-02T00:00:00Z"}`,
 	}
