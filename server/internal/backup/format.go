@@ -255,3 +255,25 @@ type Highlight struct {
 	CreatedAt string `json:"createdAt"`
 	UpdatedAt string `json:"updatedAt"`
 }
+
+// AppVersion is written to manifests; informational only.
+const AppVersion = "0.3.0"
+
+var derivedCardID = regexp.MustCompile(`^c-(vocab|sentence|writing|tone|reverse|cloze)-(\d{1,18})$`)
+
+// ParseDerivedCardID splits a card id of the form c-<kind>-<entryId>.
+func ParseDerivedCardID(id string) (kind string, entryID int64, ok bool) {
+	m := derivedCardID.FindStringSubmatch(id)
+	if m == nil {
+		return "", 0, false
+	}
+	n, err := strconv.ParseInt(m[2], 10, 64)
+	if err != nil {
+		return "", 0, false
+	}
+	return m[1], n, true
+}
+
+// FlashcardsPlugin is the plugin whose rows hold cards (card:<id>) and
+// vacation periods (vacation:<ULID>, user-global).
+const FlashcardsPlugin = "qinqin-flashcards"
