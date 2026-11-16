@@ -25,6 +25,9 @@ export function createDisplayController(opts: {
 	let display = parseDisplay(opts.settings(), opts.localFurigana());
 	let pending: Partial<ReaderDisplay> | null = null;
 	let timer: ReturnType<typeof setTimeout> | null = null;
+	// A save is in flight, or the last one failed: the reader's choice stands.
+	let saving = false;
+	let unsaved = false;
 
 	const set = (next: ReaderDisplay): void => {
 		display = next;
@@ -37,10 +40,15 @@ export function createDisplayController(opts: {
 		const change = pending;
 		pending = null;
 		if (change === null) return;
+		saving = true;
 		try {
 			await opts.save(displayPatch(change, opts.settings()));
+			unsaved = false;
 		} catch (err) {
+			unsaved = true;
 			opts.onError(err);
+		} finally {
+			saving = false;
 		}
 	}
 
@@ -56,7 +64,7 @@ export function createDisplayController(opts: {
 		},
 		flush,
 		adopt() {
-			if (pending !== null) return;
+			if (pending !== null || saving || unsaved) return;
 			set(parseDisplay(opts.settings(), opts.localFurigana()));
 		},
 		destroy() {

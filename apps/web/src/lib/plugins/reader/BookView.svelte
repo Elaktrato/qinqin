@@ -7,6 +7,7 @@
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
 	import { activeWeights, onStudyWrite } from '$lib/study/store';
 	import { loadStudyHistory } from '$lib/study/history';
+	import { contextForData } from '$lib/study/currentContext';
 	import { createReadingTimer } from './readingTimer';
 	import { workspaceForBook } from './readingWorkspace';
 	import {
@@ -69,7 +70,7 @@
 	import { chapterTitle, formatPosition, type Position } from './position';
 	import { jumpPlan, restoreDecision, restorePlan } from './restore';
 	import { PositionSaver } from './positionSaver';
-	import { browserStorage, loadPrefs, saveVariant } from './prefs';
+	import { browserStorage, loadPrefs, saveFurigana, saveVariant } from './prefs';
 	import { LIBRARY_HREF, bookHref, safeHttpUrl } from './route';
 	import { LookupController } from './useLookup.svelte';
 	import { prepareVariant, type Variant } from './variants';
@@ -163,7 +164,14 @@
 	function changeDisplay(change: Partial<typeof display>): void {
 		displayNotice = '';
 		displayController?.change(change);
-		if (!displayController) display = { ...display, ...change };
+		if (!displayController) {
+			// No workspace to hold the setting: remember book ruby in this browser.
+			display = { ...display, ...change };
+			if (change.bookRuby !== undefined) {
+				prefs.furigana = change.bookRuby;
+				saveFurigana(browserStorage(), change.bookRuby);
+			}
+		}
 	}
 
 	let showAll = $state(false);
@@ -181,7 +189,7 @@
 			try {
 				const data = await loadStudyHistory(wsId);
 				if (!alive) return;
-				index = masteryIndex(data.cards, scheduleIndex(data.cards, data.reviews, activeWeights(data)));
+				index = masteryIndex(data.cards, scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock));
 			} catch {
 				// Without the index nothing counts as known: every reading stays shown.
 			}

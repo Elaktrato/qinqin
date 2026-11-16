@@ -33,7 +33,7 @@ is the display form (`nǐ hǎo`, `たべる`). This `reading` object is unrelate
   and kana runs, matches the kana-folded reading against that pattern and applies each kanji run's reading
   to the kanji at the start of the surface (inflection only changes the trailing kana). Katakana is folded
   to hiragana; the long-vowel mark `ー` is literal; `々` and `〆` belong to kanji runs. Null (no furigana)
-  when the reading is not kana, the surface or lemma has no kanji, a kanji lies outside the prefix both
+  when the lemma ends in 来る/來る and the surface is inflected, the reading is not kana, the surface or lemma has no kanji, a kanji lies outside the prefix both
   share, or the reading splits in more than one way: no reading rather than a wrong one.
 - A match overlapping a book ruby run that is shown gets no generated reading (book ruby wins).
 
@@ -44,7 +44,8 @@ is the display form (`nǐ hǎo`, `たべる`). This `reading` object is unrelate
 - `smart`: a match is known iff its first candidate entry (the one whose reading is shown) has a score >=
   `smartThreshold`. A mastered homograph further down the candidates never hides a reading.
   A known match keeps its reading in the document but concealed (invisible, not removed).
-- A book ruby run is concealed iff it has kanji and every kanji lies inside known matches; characters outside
+- A book ruby run is concealed iff it has kanji, every kanji lies inside known matches and the known matches'
+  readings (kana-folded, in order) spell the run's ruby exactly; characters outside
   every match are never known.
 - `never`: no generated readings; book ruby follows `bookRuby`. `always`: nothing is concealed.
   `bookRuby: false` hides book ruby in every mode.

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import { planParagraph, type PlanSeg } from './chapterPlan';
 	import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
 	import { fontStack } from './fonts';
@@ -99,6 +100,8 @@
 		if (!el) return;
 		return reveal.attach(el);
 	});
+
+	onDestroy(() => reveal.reset());
 
 	// A new chapter or script starts with every reading as the rule says.
 	$effect(() => {

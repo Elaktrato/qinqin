@@ -37,6 +37,15 @@ export function loadPrefs(storage: PrefsStorage | null): ReaderPrefs {
  * but a stored value stays: it is the default until the workspace has its own.
  */
 export function saveVariant(storage: PrefsStorage | null, variant: Variant): void {
+	merge(storage, { variant });
+}
+
+/** saveFurigana: the per-browser book ruby flag, used only where no workspace holds the setting. */
+export function saveFurigana(storage: PrefsStorage | null, furigana: boolean): void {
+	merge(storage, { furigana });
+}
+
+function merge(storage: PrefsStorage | null, change: Record<string, unknown>): void {
 	try {
 		let stored: Record<string, unknown> = {};
 		try {
@@ -45,7 +54,7 @@ export function saveVariant(storage: PrefsStorage | null, variant: Variant): voi
 		} catch {
 			// Corrupt data: start over.
 		}
-		storage?.setItem(KEY, JSON.stringify({ ...stored, variant }));
+		storage?.setItem(KEY, JSON.stringify({ ...stored, ...change }));
 	} catch {
 		// Storage is a convenience; the toggles still work for this visit.
 	}

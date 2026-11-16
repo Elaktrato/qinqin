@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PREFS, loadPrefs, saveVariant } from './prefs';
+import { DEFAULT_PREFS, loadPrefs, saveFurigana, saveVariant } from './prefs';
 
 function memoryStorage(initial: Record<string, string> = {}) {
 	const data = new Map(Object.entries(initial));
@@ -57,5 +57,13 @@ describe('reader prefs', () => {
 		expect(loadPrefs(throwing)).toEqual(DEFAULT_PREFS);
 		expect(() => saveVariant(throwing, 'original')).not.toThrow();
 		expect(() => saveVariant(null, 'original')).not.toThrow();
+	});
+
+	it('saveFurigana stores the legacy flag and keeps the script', () => {
+		const storage = memoryStorage();
+		saveVariant(storage, 'traditional');
+		saveFurigana(storage, false);
+		expect(loadPrefs(storage)).toEqual({ furigana: false, variant: 'traditional' });
+		expect(() => saveFurigana(throwing, true)).not.toThrow();
 	});
 });

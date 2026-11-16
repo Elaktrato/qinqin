@@ -27,6 +27,7 @@ vi.mock('$lib/study/history', () => ({
 	})),
 	invalidateStudyHistory: vi.fn()
 }));
+vi.mock('$lib/study/currentContext', () => ({ contextForData: () => ({ clock: {} }) }));
 vi.mock('../flashcards/decks/deckStats', () => ({
 	scheduleIndex: vi.fn(() => new Map([['c1', { due: '', stability: 200, difficulty: 5, state: 2 }]]))
 }));

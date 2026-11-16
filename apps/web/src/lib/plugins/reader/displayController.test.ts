@@ -69,4 +69,22 @@ describe('createDisplayController', () => {
 		expect(c.display.readings).toBe('always');
 		expect(c.display.font).toBe('sans');
 	});
+
+	it('does not adopt while a save is in flight, and keeps the choice when it fails', async () => {
+		let settings: Record<string, unknown> | null = null;
+		let reject: (e: Error) => void = () => {};
+		const save = vi.fn(() => new Promise<void>((_, r) => (reject = r)));
+		const onError = vi.fn();
+		const c = createDisplayController({ settings: () => settings, localFurigana: () => null, save, onError });
+		c.change({ readings: 'smart' });
+		await vi.advanceTimersByTimeAsync(SAVE_DELAY_MS);
+		settings = { reader: { readings: 'never' } };
+		c.adopt();
+		expect(c.display.readings).toBe('smart');
+		reject(new Error('offline'));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(onError).toHaveBeenCalledTimes(1);
+		c.adopt();
+		expect(c.display.readings).toBe('smart');
+	});
 });
