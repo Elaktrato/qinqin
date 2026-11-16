@@ -505,11 +505,13 @@ account deletes its sessions and re-enabling never brings one back. The last act
 demoted, disabled or deleted (the Admin tab says why; the server enforces it even when two admins act at the
 same moment). Pending reset links die with every containment action (a password change, a forced change, disabling, signing out
 everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. Deleting another user,
-issuing a reset link and making someone an administrator ask the acting administrator for their own password again.
+issuing a reset link, making someone an administrator (also by creating them as one), resetting someone's two-step sign-in
+and a server backup ask the acting administrator for their own password again and, if they have an authenticator, a
+current authenticator or unused recovery code.
 **Reset two-step sign-in** (a row action, shown only for another user who has an authenticator or emailed codes)
 removes their authenticator app with all of its recovery codes and turns emailed codes off, signs them out of every
-device and revokes their personal access tokens; it asks for your own password and, if you have an authenticator, your
-authenticator or recovery code. Your own second steps are managed in Settings, Account.
+device, revokes their personal access tokens and ends pending reset links. Your own second steps are managed in
+Settings, Account.
 Email addresses are stored with the domain in its ASCII (punycode) form, so `bücher.de` and `xn--bcher-kva.de` are one
 address; a part before the `@` with non-ASCII letters is refused until internationalised mailboxes are supported. Every
 response carries `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`; at startup the server removes the book and

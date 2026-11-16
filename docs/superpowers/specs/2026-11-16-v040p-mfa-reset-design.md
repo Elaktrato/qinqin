@@ -33,12 +33,14 @@ table has no such action. Today the only way is `qinqin recover --reset-mfa` on 
   and the issue asks for it; a stolen admin session plus a phished password must not be enough —
   cost if wrong: one more field for admins with an authenticator; older web builds (none shipped with
   a button) are unaffected.
-- Ruling: delete user, reset link and grant admin stay password-only in this item — the issue is the
-  MFA reset; changing three more routes widens the review surface; recorded as open in the handoff —
-  cost if wrong: those three remain weaker than the backup and this reset until a follow-up.
-- Ruling: the order stays self → password → code → target lookup — an unknown id answers 404 only to
-  someone who already proved password and code, so the route cannot probe ids more cheaply than the
-  user list it already shows — cost: none known.
+- Ruling (superseded by the review fix wave, see below): delete user, reset link and grant admin stay
+  password-only in this item.
+- Ruling: the order stays self → password → code → target lookup, so password and code are spent
+  (a recovery code is used up, an authenticator code's step is consumed) before an unknown id is found —
+  an unknown id answers 404 only to someone who already proved password and code, so the route cannot
+  probe ids; the web app only offers ids from the list it just loaded, so a spent factor on a 404 means
+  the account was deleted in between — cost if wrong: on that race the admin spends one recovery code
+  or waits 30 s for the next authenticator code.
 - Ruling: `wrong_password` and `code_invalid` stay distinct (as for the backup and self-deletion) —
   both are rate limited per user, and other admin routes already reveal whether a password is right —
   cost if wrong: an attacker holding a session learns the password was right before the code step.
@@ -61,6 +63,31 @@ table has no such action. Today the only way is `qinqin recover --reset-mfa` on 
   success or Cancel/Escape the dialog closes, the Users heading takes focus and a status line says
   what happened — same as after a deletion — cost: none known.
 - Ruling: the audit log names the event "reset two-step sign-in" instead of the fallback "mfa reset".
+
+## Review fix wave (independent security review)
+
+The review found pre-existing holes, also in v0.3.0: creating a user with `admin: true` needed no
+re-authentication at all (a stolen admin session alone could mint an administrator, who could then
+reset the owner's two-step sign-in with only their own password), and only the backup asked for the code.
+
+- Ruling: one helper `requireAdminReauth(password, code)` (password through the reauth limiter, then
+  `HasTOTP` → `secondFactorOK` through the per-user code budget) for every destructive admin action:
+  grant admin, create an administrator, delete another user, issue a reset link, reset another user's
+  two-step sign-in, server backup — a stolen session plus a phished password is not enough anywhere —
+  cost: admins with an authenticator type a code more often.
+- Ruling: creating a user with `admin: true` is granting admin; creating a plain user needs nothing more
+  (as before) — cost: none known.
+- Ruling: an administrator whose only second step is the emailed code is asked for the password alone,
+  as for the backup — sending an emailed code here would make the mailbox the proof, which is weaker
+  than the password-plus-session the attacker is assumed to have, and email is down exactly when
+  recovery is needed — cost if wrong: such admins are protected by their password only; the wiki
+  recommends an authenticator for administrators.
+- Ruling: a two-step sign-in reset also ends pending reset links (containment, like every other
+  credential-revoking action) and its audit row counts revoked sessions and tokens (`revoked`,
+  `tokens`; counts only).
+- Ruling: the web asks for the code when the signed-in copy says the admin has an authenticator OR
+  after the server answered `code_invalid`, so a stale copy (authenticator added in another tab) can
+  still finish — cost: one refused attempt in that case.
 
 ## Confirmation text
 
