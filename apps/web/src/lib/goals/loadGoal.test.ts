@@ -9,6 +9,7 @@ vi.mock('../time/zone', async () => {
 
 import { fetchActivity, type ActivityResponse } from '../api/stats';
 import { loadStudyHistory } from '../study/history';
+import { setOutboxUser } from '../study/outboxUser';
 import type { StudyHistory } from '../study/types';
 import { loadGoalStatus } from './loadGoal';
 
@@ -59,6 +60,18 @@ describe('loadGoalStatus', () => {
 		// Settled: the next call loads again.
 		await loadGoalStatus(3, { now: NOW });
 		expect(loadStudyHistory).toHaveBeenCalledTimes(2);
+	});
+
+	it('does not share a load between users', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: goalRow() }));
+		setOutboxUser(1, 'token-one');
+		const first = loadGoalStatus(3, { now: NOW });
+		setOutboxUser(2, 'token-two');
+		const second = loadGoalStatus(3, { now: NOW });
+		expect(second).not.toBe(first);
+		await Promise.all([first, second]);
+		expect(loadStudyHistory).toHaveBeenCalledTimes(2);
+		setOutboxUser(null, null);
 	});
 
 	it('asks for a year with the streak, for the workspace, and computes today and the streak', async () => {

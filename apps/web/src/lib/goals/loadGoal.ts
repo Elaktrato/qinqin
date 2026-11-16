@@ -2,10 +2,11 @@
 // reviews, vacations, limits; cached and shared, study/history.ts) plus one
 // activity window of that workspace. Both rings (home widget, flashcards
 // widget) call this; concurrent calls for the same workspace, learner day
-// and force flag share one promise, which is dropped once it settles.
+// and force flag (and signed-in user) share one promise, dropped once it settles.
 
 import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
 import { loadStudyHistory } from '../study/history';
+import { outboxUser } from '../study/outboxUser';
 import { effectiveLimits } from '../study/limits';
 import { vacationRuns } from '../study/vacation';
 import { addDays } from '../time/studyDay';
@@ -87,7 +88,8 @@ export function loadGoalStatus(
 ): Promise<GoalView> {
 	const now = opts?.now ?? Date.now();
 	const force = opts?.force === true;
-	const key = `${workspaceId}|${currentStudyDay().today(now)}|${force ? 1 : 0}`;
+	// Keyed by the signed-in user too: a load in flight never serves the next account.
+	const key = `${outboxUser() ?? 0}|${workspaceId}|${currentStudyDay().today(now)}|${force ? 1 : 0}`;
 	const pending = inflight.get(key);
 	if (pending !== undefined) return pending;
 	const promise = load(workspaceId, now, force).finally(() => {
