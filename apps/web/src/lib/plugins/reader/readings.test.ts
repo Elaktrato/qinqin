@@ -141,3 +141,38 @@ describe('ReadingsController as the one match source', () => {
 		expect(c.key).toBe('');
 	});
 });
+
+describe('ReadingsController cost', () => {
+	it('readings only: the matches are not copied out for the panel', async () => {
+		const c = new ReadingsController(async () => [zhMatch(0, 2, 1, 'x')]);
+		await c.run({ key: 'a', lang: 'zh', runs, start: 0, display: display({ readings: 'always' }), index: EMPTY_KNOWN_INDEX, want: { readings: true, words: false } });
+		expect(c.pieces.size).toBe(2);
+		expect(c.matches.size).toBe(0);
+		// The panel opens: the loaded matches are published without a request.
+		c.update(display({ readings: 'always' }), EMPTY_KNOWN_INDEX, { readings: true, words: true });
+		expect(c.matches.size).toBe(2);
+		expect(c.progress).toEqual({ done: 2, total: 2 });
+	});
+
+	it('a whitespace-only paragraph (U+FEFF, spaces) is not counted as a part to load', async () => {
+		const c = new ReadingsController(async () => [zhMatch(0, 2, 1, 'x')]);
+		const r: Run[][] = [[{ text: '你好' }], [{ text: ' \uFEFF ' }], [{ text: '\u3000' }]];
+		await c.run({ key: 'a', lang: 'zh', runs: r, start: 0, display: display({}), index: EMPTY_KNOWN_INDEX, want: { readings: false, words: true } });
+		expect(c.progress).toEqual({ done: 1, total: 1 });
+	});
+
+	it('publishes per chunk, not per paragraph (4 000 one-word paragraphs)', async () => {
+		const many: Run[][] = Array.from({ length: 4000 }, () => [{ text: '你' }]);
+		const one = (start: number): SegmentMatch => ({ surface: '你', start, end: start + 1, lemma: '你', reason: '', entries: [{ id: 1, kind: 'word' }] });
+		// Every paragraph "你" sits at an even offset of the chunk text (joined by newlines).
+		const segment = vi.fn(async (text: string) => Array.from({ length: Math.ceil(text.length / 2) }, (_, i) => one(i * 2)));
+		const c = new ReadingsController(segment);
+		const t0 = performance.now();
+		await c.run({ key: 'a', lang: 'zh', runs: many, start: 0, display: display({ readings: 'always', highlightWords: true }), index: EMPTY_KNOWN_INDEX, want: { readings: true, words: true } });
+		const ms = performance.now() - t0;
+		console.info(`readings controller: 4000 paragraphs in ${ms.toFixed(0)} ms`);
+		expect(c.progress).toEqual({ done: 4000, total: 4000 });
+		expect(c.words.size).toBe(4000);
+		expect(ms).toBeLessThan(400);
+	});
+});

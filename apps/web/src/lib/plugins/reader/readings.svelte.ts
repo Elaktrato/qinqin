@@ -58,6 +58,11 @@ export class ReadingsController {
 	#key = '';
 	#matches = new Map<number, SegmentMatch[]>();
 	#input: ReadingsInput | null = null;
+	/** Paragraphs with text of the current key (computed once per run). */
+	#total = 0;
+	/** Paragraphs that arrived since the last publication (one per chunk). */
+	#arrived: number[] = [];
+	#flushQueued = false;
 
 	constructor(segment: SegmentFn) {
 		this.#loader = createAnnotationLoader({ segment });
@@ -89,11 +94,34 @@ export class ReadingsController {
 		this.words = words;
 	}
 
+	/** The matches and progress, for the Words panel only (no copies for readings alone). */
 	#publish(): void {
 		this.key = this.#key;
-		this.matches = new Map(this.#matches);
-		const total = this.#input?.runs.filter((r) => paragraphString([...r]) !== '').length ?? 0;
-		this.progress = { done: this.#matches.size, total };
+		const words = this.#input ? wantOf(this.#input.display, this.#input.want).words : false;
+		this.matches = words ? new Map(this.#matches) : new Map();
+		this.progress = { done: this.#matches.size, total: this.#total };
+	}
+
+	/** One publication for every paragraph a chunk settled (they arrive synchronously). */
+	#flush(): void {
+		this.#flushQueued = false;
+		const arrived = this.#arrived;
+		this.#arrived = [];
+		if (arrived.length === 0) return;
+		const pieces = new Map(this.pieces);
+		const words = new Map(this.words);
+		let wordsChanged = false;
+		for (const p of arrived) {
+			pieces.set(p, this.#annotate(p));
+			const w = this.#words(p);
+			if (w !== null) {
+				words.set(p, w);
+				wordsChanged = true;
+			}
+		}
+		this.pieces = pieces;
+		if (wordsChanged) this.words = words;
+		this.#publish();
 	}
 
 	async run(input: ReadingsInput): Promise<void> {
@@ -109,18 +137,28 @@ export class ReadingsController {
 			this.#matches = new Map();
 			this.pieces = new Map();
 			this.words = new Map();
+			this.#arrived = [];
 		}
-		this.#publish();
 		const texts = input.runs.map((runs) => paragraphString([...runs]));
+		// The same predicate as chunkParagraphs: a whitespace-only paragraph is never loaded.
+		this.#total = texts.filter((t) => t.trim() !== '').length;
+		this.#publish();
 		const { failed } = await this.#loader.load(input.key, texts, input.start, (p, matches) => {
 			if (this.#input?.key !== input.key) return;
 			this.#matches.set(p, matches);
-			this.pieces = new Map(this.pieces).set(p, this.#annotate(p));
-			const w = this.#words(p);
-			if (w !== null) this.words = new Map(this.words).set(p, w);
-			this.#publish();
+			this.#arrived.push(p);
+			if (!this.#flushQueued) {
+				this.#flushQueued = true;
+				queueMicrotask(() => {
+					if (this.#key === input.key) this.#flush();
+					else this.#flushQueued = false;
+				});
+			}
 		});
-		if (this.#input?.key === input.key) this.failed = failed;
+		if (this.#input?.key === input.key) {
+			this.#flush();
+			this.failed = failed;
+		}
 	}
 
 	/** A new setting or known index: re-apply the rules to the loaded matches. */
@@ -133,6 +171,7 @@ export class ReadingsController {
 		}
 		this.#input = { ...this.#input, display, index, want: w };
 		this.#rebuild();
+		this.#publish();
 	}
 
 	stop(): void {
@@ -143,6 +182,8 @@ export class ReadingsController {
 		this.words = new Map();
 		this.matches = new Map();
 		this.progress = { done: 0, total: 0 };
+		this.#total = 0;
+		this.#arrived = [];
 		this.key = '';
 		this.failed = 0;
 	}
