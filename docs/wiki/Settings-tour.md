@@ -27,7 +27,7 @@ Providers, keys and model per provider, the active provider, and this hour's usa
 
 ## Account
 
-Profile (email, if the server asks for one), password, two-step sign-in, signed-in devices, "Your data" (export and restore), the app and offline section, and Delete account. See [Accounts and sign-in](Accounts-and-sign-in), [Your data](Your-data) and [Install as an app and study offline](Install-and-offline).
+Profile (email, if the server asks for one), password, two-step sign-in, signed-in devices, access tokens for scripts ([API access tokens](API-Access-tokens)), "Your data" (export and restore), the app and offline section, and Delete account. See [Accounts and sign-in](Accounts-and-sign-in), [Your data](Your-data) and [Install as an app and study offline](Install-and-offline).
 
 ## Data (administrators)
 
