@@ -418,5 +418,119 @@ run beside Tasks 5–8.
 
 ## Execution record
 
-(empty — filled in by the builder: deviations, rulings made while building, test-first notes, measured
-times against the budget, what was not verified)
+Built 2026-11-16 by one implementer (no subagent review wave ran inside this build; the orchestrator
+reviews). Base: `git merge --no-ff feature/v0.3.0-stretch` (2d76e55, brings #67, #75, #77), then one
+commit per task, 5907cc7 … this commit.
+
+### Adaptations to the merged code
+
+- #75's `knownEntries(cards, scheduleOf)` was unchanged; it gained an optional third `marks` argument and
+  is now `isKnownEntry` over `knownIndex` (Task 2). `scheduleOf` accepts `Pick<Schedule, 'stability'>`.
+- Starter decks actually skip marked words: `decksData.svelte.ts` keeps `data.known` and
+  `StarterDeckDetail.svelte` passes it to `knownEntries` (Task 3; the plan named no file for it), with a
+  jsdom test.
+- Backup (Task 4) follows #77's final structure instead of a separate path: `entryKeyedID` /
+  `entryKeyedPrefix` recognise `qinqin-core note:` and `qinqin-flashcards known:` rows alike; the
+  canonical-key and JSON-integer `entryId` checks, the winner pre-pass (`RegisterNote`, slot now keyed
+  by row kind so a note and a mark on one entry never compete) and the export ref are shared.
+  Ruling: invalid `known:` rows (key not canonical, `entryId` missing, a string or different, `data` not
+  an object) are dropped on restore and counted in `droppedRows`, as #77 does for notes — the plan's
+  fixture case "restored unchanged" became "dropped" — cost if wrong: a hand-made row is lost on restore.
+  Ruling: two archive marks landing on one target keep one row (newest), never a blocking collision —
+  cost if wrong: none, both mean the same. No per-entry `knownMarks` counter was added to the dry-run
+  report (its shape is unchanged); dropped marks show in `droppedRows` only.
+- Web parse of a mark additionally requires `version: 1` (fixture case "missing version"); the Go remap
+  does not check `version` (as for notes). A version-less row is therefore ignored by the web but
+  restored by a backup.
+
+### Deviations and rulings while building
+
+- Task 1 committed contract cases whose decoding tests fail until Tasks 2–6 (as the plan designs it):
+  between Task 1 and Task 6 `displaySettings.test.ts` (15 contract cases) failed; every other task gate
+  was green.
+- Task 3: `setKnownMark(ws, id, false)` tolerates a 404 (nothing to unmark). `pushStudyRows` rows take
+  `deleted: true` → `deletedAt` = the row's stamp. The server side of a pushed tombstone is covered by
+  `sync_test.go` `TestPushEventsAndLWW` and `sync_review_test.go` `TestPushLWWUsesClientEditTime`; no new
+  Go test. A tombstone for a row the server does not hold is `dataSkipped` (so a `PartialPushError`).
+- Task 6: the word-state colour tokens and classes (`--word-new`, `--word-new-line`, `--word-learning`,
+  `--word-learning-line`, `.w-new`, `.w-learning`, `.w-end`, forced-colours fallback) live in `app.css`,
+  not in `ChapterText.svelte`: the Display legend draws the same samples.
+- Task 9: `ReadingsInput.want` and `update(…, want)` are optional (default: readings unless `never`,
+  words when highlighting is on), so existing callers are unchanged. BookView tracks the two booleans,
+  not an object, so a display change that keeps them does not restart a load; switching readings on with
+  highlighting already on only re-applies the rule (tested: no new request).
+- Task 11 ruling: a chapter with any failed chunk is not tallied and is listed in `failed` (retried by the
+  next count) — a partial tally would understate the book — cost if wrong: one failed request costs that
+  chapter's figure until the retry.
+- Task 12: `bases` is `loadEntryBases` (a Map; it already chunks by 500 with 2 in flight) instead of an
+  `EntryBase[]` function. `markWords` takes the live marks and writes only ids whose mark changes, so its
+  Undo never unmarks a word marked earlier and never sends a tombstone the server would skip.
+- Task 13: the rail state block moved above the display section of `BookView.svelte` (the index and match
+  conditions read `wordsPanelOpen`). `ReadingsController.key` was added so the panel never tallies a
+  previous chapter's matches. The Words tab shows for every book; for languages other than zh/ja it says
+  "Word counts are available for Chinese and Japanese books".
+- Task 14: "I know this" is shown in every popup that has a workspace, whatever the highlighting setting;
+  the state line only with highlighting on. The `stateLine` prop is threaded BookView → PopupStackView →
+  PopupFrameView → EntryCard → AddToStudyButtons; that plumbing is type-checked but has no dedicated test.
+
+### Test-first notes
+
+Every task's tests were run and seen failing before the implementation (missing module, missing export
+or wrong result), then passing — with these exceptions: `wordsPanel.ts` (Task 13) was written before its
+test was run; the failure was then shown by moving the module away; the `readings.key` assertion
+(Task 13) and the `dom.dom.test.ts` hand-markup case (Task 8, `dom.ts` ignores classes) passed at once.
+Two real bugs were caught by the new tests: Undo in the Words panel (cleared before use) and a Go test
+that used a valid row as its "invalid" example.
+
+### Measured budgets
+
+The build machine has 4 cores shared with two other builders; load average was 4–9 during the checks.
+
+| Step | Budget | Measured |
+| --- | --- | --- |
+| one 4 000-code-point chunk, `readings: true` (real server, round trip) | ≤ 400 ms | 393–548 ms, median 427 ms at load 3.3; 559–868 ms at load 9 (without `readings`: 680–820 ms at load 9 — segmentation, not the overlay, is the cost) — **not met** |
+| 30 082-code-point chapter, 8 chunks, 2 in flight | ≤ 2 s | 5.1–5.6 s (3 runs, load 9) — **not met on this machine** |
+| states + coverage + list, 30 000 synthetic tokens (vitest, Node 22) | ≤ 50 ms | 14–19 ms (3 runs); recompute from a kept tally 0.1 ms |
+| same, on the real matches of the 30 082-cp text (12 617 tokens, 5 245 types) | ≤ 50 ms | 13.3 ms; recompute 3.2 ms |
+| whole-book count, 10 × 30 082 code points, 2 in flight | ≤ 60 s | 56.4 s (load 5 → 4) |
+
+Reproducible: `coverage.test.ts` prints its timing (`--reporter=verbose`); the server timings came from a
+Python driver against the real-app server (not committed). The segment route itself is #78's and was not
+changed here; the miss is recorded, not fixed (a server-side speed-up of `/api/segment` is outside #68).
+
+### Real-app check (API only, no browser)
+
+`git archive HEAD` into the scratchpad, `go build ./cmd/qinqin` (bare build, no embedded UI), `seed` with
+`cedict`, `hsk-words`, `jmdict`; users alice (admin) and bob with random passwords on stdin (0 hits for
+either in the server log); `serve` on 127.0.0.1:18761. A Python driver (`python3 -I`): zh workspace; a
+30 082-code-point text from CC-CEDICT headwords in 8 chunks (timings above); `known:` rows for 3 entries
+pushed (`dataAccepted: 3`), one tombstoned by a `deletedAt` push (`dataAccepted: 1`); the full pull shows
+exactly the 2 live marks; bob's pull has none, bob's push and PUT into alice's workspace are 404; export:
+the 2 live marks in `plugin-data/`, both entries in `refs/entries.json` (the tombstoned mark is not
+exported, so its entry is not referenced — the plan expected 3); restore on the same server: ready, no
+blocking, `droppedRows: 0`, apply → done, the 2 marks back with the same keys. The real matches were fed to
+`tallyChapter`/`coverageOf`/`unknownList` through a temporary vitest file in the scratch copy (never
+committed): 12 617 tokens, 0 unmatched runs (headword text), percent 25 with synthetic states. Server
+killed, scratch copy, data dir and driver deleted.
+
+### Gates before the last commit
+
+- Web: `check` 0 (1 165 files, 0 errors, 0 warnings), `test` 0 (340 files, 5 351 tests), `build` 0;
+  Node 26.13.1 full vitest 0 (340 files, 5 351 tests).
+- Go: full `./...` once, proxy variables unset, under the lock: `gofmt -l` printed nothing, `go vet` clean,
+  35 packages ok, 1 failing test: `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` ("address
+  family not supported by protocol", the known IPv6-less sandbox failure); nothing else failed. The
+  backup package gate (Task 4) passed on its own.
+- No route changed: route walk, PWA route fixture and `docs/wiki/API-Routes.md` untouched.
+
+### Not verified
+
+- Nothing was seen in a browser: the underline/tint rendering (background layers, the 0.12em gap, a
+  `<ruby>` piece's background reaching over its `<rt>`), the forced-colours fallback and the Words tab
+  layout on a phone. The underline contrast was computed from the token colours against assumed page
+  colours (#fff light, #121212 dark): new 5.85:1 page / 5.00:1 tint, learning 5.49 / 4.87 (light); new
+  8.85 / 6.65, learning 9.13 / 6.68 (dark); text on the tints ≥ 13.7:1.
+- Screen-reader output of the popup toggle and state line (only the DOM roles and names are tested).
+- Japanese in the real-app check (only zh text was segmented; ja is covered by unit fixtures).
+- The whole-book count was timed with repeated segment requests, not through `bookCounter.ts` in a
+  browser (its chapter fetching and abort are unit-tested with fakes).

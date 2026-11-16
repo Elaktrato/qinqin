@@ -92,6 +92,17 @@ highlight no state is drawn. The text and its offsets are unchanged.
 
 Offsets are code points of the displayed paragraph text, as for readings.
 
+## Real-app check (#68, 2026-11-16, API only)
+
+Built server (scratch copy, `cedict` + `hsk-words` + `jmdict` seeded), two users, a zh workspace, a
+30 082-code-point text of CC-CEDICT headwords (100 paragraphs, 8 chunks of at most 4 000 code points):
+`known:` rows for 3 entries pushed through `POST /api/sync/push`, one tombstoned: the pull shows 2 live
+marks; the second user sees none and gets 404 pushing or PUTting into the first user's workspace; the
+export lists the 2 live marks in `plugin-data/` and their entries in `refs/entries.json` (the tombstoned
+mark is not exported); a restore on the same server brings back exactly the 2 marks. The real matches
+gave 12 617 tokens and 5 245 types; tally, coverage and list took 13 ms in vitest. Timings of the
+segment route on the shared, loaded build machine are in the plan's execution record.
+
 ## Android notes
 
 Read and write the same `reader` object per workspace (with `highlightWords`); use `POST /api/segment` with `readings: true` for the
