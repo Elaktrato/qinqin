@@ -397,6 +397,67 @@ in Task 13's real-app check.)
 
 ## Execution record
 
-(empty — filled by the builder: per task the commit, test-first evidence or deviation, Rulings taken while
-building, the real-app check results, mutation checks done by the reviewer, and what was NOT verified, e.g.
-the Settings UI in a real browser, clipboard on iOS Safari, an Android client.)
+Built in one session by one implementer (no separate per-task subagents; the independent security review and
+mutation checks of the plan header are for the reviewer and are **not done yet**).
+
+**Merge first:** `df624c5` merges `feature/v0.3.0-stretch` (#67 daily goals, #75 frequency decks) into this branch.
+Migration number taken: **037** (`036_components.sql` belongs to #71, built in parallel).
+
+| Task | Commit | Test-first evidence / deviation |
+|---|---|---|
+| 1 Contracts | `155a499` | `tokensFormat.test.ts` failed (no module, no fixtures), then 52 passed. |
+| 2 Migration | `033c69e` | `TestMigration037AccessTokens` failed (table missing), then passed. Deviation: the `userTables` row (delete with user, `ExportSkip`, `RestoreKeep`) landed here, because the existing schema guard `TestSchemaGuardEveryUserTableIsListed` failed on the new table; the preview key followed in Task 5. |
+| 3 create/list/revoke | `8447a86` | Build failure (undefined API), then pass. Creation's 20-token cap is checked inside the `INSERT … SELECT … WHERE (count) < 20`, so parallel creates cannot exceed it. |
+| 4 AuthenticateToken | `a270855` | Build failure, then pass; `-race` on `internal/auth` token tests passed (first-use audit exactly once under 20 goroutines). `auth.Authenticate` returns nil for any `qq_pat_` bearer before querying. |
+| 5 Containment | `022392c` | 5 tests failed (11 of 12 containment paths kept tokens, sign-everyone-out, audit counts, janitor, static test), then passed; workspace-delete test failed then passed; restore keeps tokens (assertion added to the existing restore test; it passed before and after, as expected for a "keep"). Deviation: the existing `TestAuditHoldsNoSecrets` bans the substring "token" in audit bodies; the new detail key `tokens` (a count) is stripped before that check and `qq_pat_` was added to the banned list. Web: `accessTokens` in the deletion preview (`deleteView` line) — that small web change was written together with its test, not strictly test-first. |
+| 6 Gate | `a31c2e7` | Build failure (no `route.token`), then pass. Rows got a fifth positional field (`noTok`, `tokReadGlobal`, `tokReadAny`, `tokReadWS`, `tokWriteAny`, `tokWriteWS`). `requireCustomAdmin` now resolves a principal and refuses `ViaToken()`. The gate's rate-limit call landed here (it used the client policy until Task 8 defined `pat`). |
+| 7 v1 route set | `e6b4f2d` | `TestTokenRulesAreTheV1Set` failed (no rules), then the route walk with token actors, consistency, two-workspace confinement and cross-user tests passed. Route decisions after the merge: see the note under the Task 7 table (both #75 routes session-only). |
+| 8 Rate limits | `f6a056c` | Policy test failed (no `pat`/`pat-create` buckets), then passed. The per-user/shared/session-unaffected test passed on first run because the gate already called the bucket (Task 6). Bucket keys are `int64Key(userID)` under the bucket name (the keyer namespaces by name), not the literal `user:<id>` of the plan. |
+| 9 Management routes | `a439620` | Handler tests failed (404, no routes), then passed. The tokens.json contract test was written after the handlers (it replays the Task 1 fixture and passed first time). PWA routes fixture regenerated; the four routes are `bypass` (classify is allowlist-based; explicit assertions added). Log capture (`captureLog`) wraps every token handler test and the contract test and asserts no `qq_pat_`. Order in create: form (422) → password present (403 `current_password_required`) → `pat-create` (429) → `reauth` + verify (403 `wrong_password`) → create (404/409). |
+| 10 tokensView | `f498afc` | Failed (no module), then one real failure (a fresh 7-day token read "6 days"; days are now rounded), then 25 passed. |
+| 11 Settings UI | `8a22e0c` | DOM tests failed (no component), then a jsdom `dialog.close` gap was fixed, then 9 passed; AccountSettings note tests failed then passed. The full web suite found the `utcGuard` ban on `/ DAY` in `tokensView.ts`; it got an allow-list entry (a duration, not a day bucket). The token list reloads (`{#key}`) after a password change or "log out others". |
+| 12 Docs | `32d77e2` | `gen-api-docs.test.mjs` token-column tests failed (2), then passed; new wiki page `API-Access-tokens.md`, sidebar, overview, accounts, settings tour, your data, backup contract, README. |
+| 13 Real app, gates | this commit | below |
+
+Rulings taken while building:
+
+- Ruling: `POST /api/entries/frequency-ranks` and `GET /api/frequency-packs/{id}/top` (added by #75) take no token —
+  the spec's v1 set is binding and needs an amendment to grow — cost if wrong: scripts cannot fetch ranks or
+  starter decks until a later amendment.
+- Ruling: the create form is validated before the password is asked for (no reauth token spent on a typo); the
+  `pat-create` budget is spent before the password check, so wrong guesses also count — cost if wrong: a user who
+  mistypes the password ten times waits 6 minutes.
+- Ruling: a workspace-limited token's `?workspace=` must appear exactly once and parse (as the handlers parse it)
+  to the token's id — cost if wrong: none known (stricter than the handlers).
+- Ruling: a personal restore replaces workspaces with new ids, so a token limited to a replaced workspace keeps
+  existing but matches nothing (ids are never reused; the list shows "Deleted workspace") — cost if wrong: the
+  user recreates such tokens after a restore.
+- Ruling: `GET /api/stats/activity` with a limited token also returns the account's current `timeZone` —
+  account-wide, like the wsGlobal overlays ruling — cost if wrong: a limited token reveals the owner's zone.
+
+Real-app check (scratch-built server on 127.0.0.1:18473, data dir in the scratchpad, killed and deleted
+afterwards): all five wiki curl examples answered 200 with a write token (plugin data with the real workspace id 1
+instead of the page's illustrative 3; lookup `{"results":[]}` because no dictionary was installed); the refusal
+example 403 `token_not_allowed`; a read token on `POST /api/events/batch` 403 `token_read_only`; the admin's write
+token on `/api/auth/me`, `/api/account/tokens`, `POST /api/account/export`, `/api/admin/users`,
+`PUT /api/ai/keys/openai` all 403 `token_not_allowed`; the limited token 200 on `?workspace=A`, 403
+`token_workspace` on B and on `/api/sync/pull`; bob's session listed no tokens and his `DELETE` of alice's token was
+404 while it kept working; a password change with "sign out others" off made all three tokens 401 (audit
+`password_changed` `tokens: 3`); bob's token 401 after the admin disabled him (`user_disabled` `tokens: 1`); 130
+requests with one token gave 121×200 and 9×429 with `Retry-After: 1`, the session unaffected; the database held
+only `token_hash`/`hint` (no token suffix in `qinqin.db`, `-wal`, `-shm`); `qq_pat_` occurred 0 times in the server
+log and 0 times in the audit answer; the audit showed `token_created`, `token_first_used`, `token_revoked`
+(`scope: all`) and the `tokens` counts; a malformed token 401 with the one body.
+
+Gates before this commit (proxy variables unset, under the lock): full Go `gofmt -l` empty, `go vet ./...` clean,
+`go test ./...` exit 1 with 35 packages ok and the one known environment failure only
+(`internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`, no IPv6 sockets here); `-race` on the `internal/auth`
+token tests passed (Task 4). Web: `npm run check` 0 (0 errors, 0 warnings), `npm test` 0 (329 files, 5203 tests),
+`npm run build` 0; Node 26 vitest 0 (329 files, 5203 tests); `node scripts/gen-api-docs.mjs --check` 0;
+`node --test scripts/*.test.mjs` 93 pass, 0 fail.
+
+Not verified: the Settings UI in a real browser (jsdom only: the `<dialog>` modal behaviour, focus, layout on a
+phone), the clipboard on iOS Safari and other browsers, an Android client, the janitor running in a live server
+(unit-tested only), HEAD requests with a token (served through the GET rows by Go's mux, not tested separately),
+`-race` on the api package (not run, per the brief), lookups with a real dictionary in the real-app check. The
+independent security review and its mutation checks have not happened yet.
