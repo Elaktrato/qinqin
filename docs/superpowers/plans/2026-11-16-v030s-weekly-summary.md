@@ -497,3 +497,10 @@ full vitest 0 (362 files, 5663 tests). No Go file changed in the fix wave, so no
 **Open items:** milestones (first 100 words, 1000 reviews, streak lengths, level completions; "shown once, then a
 history list") are deferred by the spec's ruling and need a follow-up issue (a stored "last seen" row per user).
 
+
+### Mutation check (orchestrator, after the fix wave)
+
+Three mutants, each killed (then reverted):
+- `weekOf` returns the Sunday before instead of the Monday: 35 tests fail.
+- vacation days count towards days active: 4 tests fail.
+- an inactive today counts against days active: 1 test fails.
