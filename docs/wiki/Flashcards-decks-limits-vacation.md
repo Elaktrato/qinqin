@@ -14,7 +14,7 @@ Below your decks the page lists installed level packs (HSK, JLPT and others) as 
 
 ## Daily limits
 
-Each deck admits at most N new cards (default 20) and N reviews (default 200) per study day, however many sessions you start. Set the workspace value under Settings, Study, Daily limits; it is the default for every deck. A deck's own settings can use that value, its own number, or no limit. A card in several decks must fit every one. Cards you are not shown stay due and come back later; scheduling is not touched. The home widget shows what is left today ("18 reviews, 5 new left today").
+Each deck admits at most N new cards (default 20) and N reviews (default 200) per study day, however many sessions you start. Set the workspace value under Settings, Study, Daily limits; it is the default for every deck. A deck's own settings can use that value, its own number, or no limit. A card in several decks must fit every one. Cards you are not shown stay due and come back later; scheduling is not touched. The home widget shows what is left today ("18 reviews, 5 new left today"). A [daily goal](Daily-goals) of new cards above the workspace's new-card limit cannot be reached by studying; Settings says so, and does not raise the limit for you.
 
 ## Vacation mode
 
@@ -24,9 +24,10 @@ Settings, Study, Vacation freezes your reviews while you are away. On a vacation
 - "Start now" after you studied today starts tomorrow, so what you did today stays as recorded.
 - You see "Vacation until ..." on the study page, "On vacation until ..." in the home widget, "On vacation" in the decks view, and hatched dates in the heatmap.
 - The FSRS optimizer ignores vacation time too.
+- A [daily goal](Daily-goals) and its goal streak are paused on vacation days, like the review streak.
 
 All days here are your learner's day in your time zone (Settings, Study); see [Settings tour](Settings-tour).
 
 ## For client implementers
 
-Vacations are user-global plugin-data rows `vacation:<ULID>`; limits are the workspace rows `limits:workspace` and `limits:deck:<deckId>` of `qinqin-flashcards`. Rules and fixtures: `docs/contracts/scheduler/` and `docs/contracts/decks/` (see [API overview](API-Overview)).
+Vacations are user-global plugin-data rows `vacation:<ULID>`; limits are the workspace rows `limits:workspace` and `limits:deck:<deckId>` of `qinqin-flashcards`; the daily goal is the workspace row `goals:workspace` (`docs/contracts/goals/`). Rules and fixtures: `docs/contracts/scheduler/` and `docs/contracts/decks/` (see [API overview](API-Overview)).

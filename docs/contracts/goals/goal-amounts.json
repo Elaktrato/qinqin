@@ -1,0 +1,297 @@
+{
+  "version": 1,
+  "rule": "goals/goal-amounts",
+  "cases": [
+    {
+      "name": "first valid review per card is new, answer time capped at 60 s",
+      "op": "flashcards",
+      "zone": "UTC",
+      "reviews": [
+        {
+          "id": "01JGOAL0000000000000000001",
+          "ts": "2026-11-15T10:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 5000
+        },
+        {
+          "id": "01JGOAL0000000000000000002",
+          "ts": "2026-11-16T09:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 90000
+        },
+        {
+          "id": "01JGOAL0000000000000000003",
+          "ts": "2026-11-16T09:05:00Z",
+          "cardId": "b",
+          "grade": 1
+        },
+        {
+          "id": "01JGOAL0000000000000000004",
+          "ts": "2026-11-16T09:06:00Z",
+          "cardId": "c",
+          "grade": 5,
+          "durationMs": 4000
+        },
+        {
+          "id": "01JGOAL0000000000000000005",
+          "ts": "2026-11-16T09:07:00Z",
+          "cardId": "c",
+          "grade": 2,
+          "durationMs": 2500
+        }
+      ],
+      "expect": {
+        "2026-11-15": {
+          "newCards": 1,
+          "studySeconds": 5
+        },
+        "2026-11-16": {
+          "newCards": 2,
+          "studySeconds": 62.5
+        }
+      },
+      "note": "a is new on 11-15 only; 90 s counts 60 s; b has no durationMs (0); c's grade 5 review is invalid and adds nothing, its grade 2 review makes it new on 11-16"
+    },
+    {
+      "name": "an invalid review before the first valid one does not make a card new",
+      "op": "flashcards",
+      "zone": "UTC",
+      "reviews": [
+        {
+          "id": "01JGOAL0000000000000000006",
+          "ts": "2026-11-15T08:00:00Z",
+          "cardId": "d",
+          "grade": 0,
+          "durationMs": 1000
+        },
+        {
+          "id": "01JGOAL0000000000000000007",
+          "ts": "2026-11-16T08:00:00Z",
+          "cardId": "d",
+          "grade": 3,
+          "durationMs": 1000
+        }
+      ],
+      "expect": {
+        "2026-11-16": {
+          "newCards": 1,
+          "studySeconds": 1
+        }
+      }
+    },
+    {
+      "name": "invalid ts and empty card id are ignored",
+      "op": "flashcards",
+      "zone": "UTC",
+      "reviews": [
+        {
+          "id": "01JGOAL0000000000000000008",
+          "ts": "not a time",
+          "cardId": "e",
+          "grade": 3,
+          "durationMs": 1000
+        },
+        {
+          "id": "01JGOAL0000000000000000009",
+          "ts": "2026-11-16T08:00:00Z",
+          "cardId": "",
+          "grade": 3,
+          "durationMs": 1000
+        }
+      ],
+      "expect": {}
+    },
+    {
+      "name": "Tokyo 23:30 belongs to the Tokyo date",
+      "op": "flashcards",
+      "zone": "Asia/Tokyo",
+      "reviews": [
+        {
+          "id": "01JGOAL0000000000000000010",
+          "ts": "2026-11-15T14:30:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 10000
+        },
+        {
+          "id": "01JGOAL0000000000000000011",
+          "ts": "2026-11-15T15:30:00Z",
+          "cardId": "b",
+          "grade": 3,
+          "durationMs": 20000
+        }
+      ],
+      "expect": {
+        "2026-11-15": {
+          "newCards": 1,
+          "studySeconds": 10
+        },
+        "2026-11-16": {
+          "newCards": 1,
+          "studySeconds": 20
+        }
+      },
+      "note": "14:30Z is 23:30 JST on 11-15, 15:30Z is 00:30 JST on 11-16; in UTC both would be 11-15"
+    },
+    {
+      "name": "the Berlin DST day (2026-03-29, 23 hours)",
+      "op": "flashcards",
+      "zone": "Europe/Berlin",
+      "reviews": [
+        {
+          "id": "01JGOAL0000000000000000012",
+          "ts": "2026-03-28T23:30:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 1000
+        },
+        {
+          "id": "01JGOAL0000000000000000013",
+          "ts": "2026-03-29T21:30:00Z",
+          "cardId": "b",
+          "grade": 3,
+          "durationMs": 2000
+        },
+        {
+          "id": "01JGOAL0000000000000000014",
+          "ts": "2026-03-29T22:30:00Z",
+          "cardId": "c",
+          "grade": 3,
+          "durationMs": 3000
+        }
+      ],
+      "expect": {
+        "2026-03-29": {
+          "newCards": 2,
+          "studySeconds": 3
+        },
+        "2026-03-30": {
+          "newCards": 1,
+          "studySeconds": 3
+        }
+      },
+      "note": "23:30Z on 03-28 is 00:30 CET on 03-29; 21:30Z on 03-29 is 23:30 CEST (still 03-29); 22:30Z is 00:30 CEST on 03-30"
+    },
+    {
+      "name": "a zone change mid-day: UTC, then Asia/Tokyo from 2026-11-16T03:00:00Z",
+      "op": "flashcards",
+      "zones": [
+        {
+          "zone": "UTC",
+          "from": null
+        },
+        {
+          "zone": "Asia/Tokyo",
+          "from": "2026-11-16T03:00:00Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "01JGOAL0000000000000000101",
+          "ts": "2026-11-15T20:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 1000
+        },
+        {
+          "id": "01JGOAL0000000000000000102",
+          "ts": "2026-11-16T01:00:00Z",
+          "cardId": "b",
+          "grade": 3,
+          "durationMs": 2000
+        },
+        {
+          "id": "01JGOAL0000000000000000103",
+          "ts": "2026-11-16T14:00:00Z",
+          "cardId": "c",
+          "grade": 3,
+          "durationMs": 3000
+        },
+        {
+          "id": "01JGOAL0000000000000000104",
+          "ts": "2026-11-16T16:00:00Z",
+          "cardId": "d",
+          "grade": 3,
+          "durationMs": 4000
+        }
+      ],
+      "expect": {
+        "2026-11-15": {
+          "newCards": 1,
+          "studySeconds": 1
+        },
+        "2026-11-16": {
+          "newCards": 2,
+          "studySeconds": 5
+        },
+        "2026-11-17": {
+          "newCards": 1,
+          "studySeconds": 4
+        }
+      },
+      "note": "study-day rule: 20:00Z on 11-15 is still the UTC segment (11-15; Tokyo would say 11-16); 01:00Z is UTC 11-16; after the change 14:00Z is 23:00 JST (11-16) and 16:00Z is 01:00 JST (11-17). The floor of the Tokyo segment is 11-16 and changes nothing here."
+    },
+    {
+      "name": "the cells of one workspace by day and type",
+      "op": "activity",
+      "workspace": 3,
+      "cells": [
+        {
+          "day": "2026-11-15",
+          "workspace": 3,
+          "type": "review",
+          "points": 12,
+          "raw": 12
+        },
+        {
+          "day": "2026-11-16",
+          "workspace": 3,
+          "type": "review",
+          "points": 30,
+          "raw": 30
+        },
+        {
+          "day": "2026-11-16",
+          "workspace": 3,
+          "type": "read",
+          "points": 4,
+          "raw": 1260
+        },
+        {
+          "day": "2026-11-16",
+          "workspace": 4,
+          "type": "review",
+          "points": 99,
+          "raw": 99
+        }
+      ],
+      "expect": {
+        "2026-11-15": {
+          "review": 12
+        },
+        "2026-11-16": {
+          "review": 30,
+          "read": 1260
+        }
+      },
+      "note": "raw, not points; workspace 4 is ignored"
+    },
+    {
+      "name": "only other workspaces' cells",
+      "op": "activity",
+      "workspace": 3,
+      "cells": [
+        {
+          "day": "2026-11-16",
+          "workspace": 4,
+          "type": "review",
+          "points": 5,
+          "raw": 5
+        }
+      ],
+      "expect": {}
+    }
+  ]
+}
