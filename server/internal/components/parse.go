@@ -25,6 +25,8 @@ const (
 	MaxComponentsBytes = 8 << 20
 	MaxParts           = 32
 	MaxStrokes         = 64
+	// MaxLineBytes caps one line of either file (32 parts need under 200 bytes).
+	MaxLineBytes = 4 << 10
 )
 
 // maxBytes is the cap per file; a variable so tests can lower it.
@@ -66,20 +68,22 @@ func Parse(components io.Reader, parts io.Reader) (Data, error) {
 			return fmt.Errorf("%s is listed twice", char)
 		}
 		var out []string
+		seen := make(map[string]bool, MaxParts)
 		for _, p := range strings.Fields(list) {
 			if !onePart(p) {
 				return fmt.Errorf("part %q is not one printable code point", p)
 			}
-			if p == char || contains(out, p) {
+			if p == char || seen[p] {
 				continue
 			}
+			if len(out) == MaxParts {
+				return fmt.Errorf("%s has more than %d parts", char, MaxParts)
+			}
+			seen[p] = true
 			out = append(out, p)
 		}
-		switch {
-		case len(out) == 0:
+		if len(out) == 0 {
 			return fmt.Errorf("%s has no parts", char)
-		case len(out) > MaxParts:
-			return fmt.Errorf("%s has %d parts, at most %d", char, len(out), MaxParts)
 		}
 		d.Chars[char] = out
 		return nil
@@ -119,8 +123,9 @@ func Parse(components io.Reader, parts io.Reader) (Data, error) {
 func eachLine(r io.Reader, name string, fn func(line string) error) error {
 	lr := &io.LimitedReader{R: r, N: maxBytes + 1}
 	sc := bufio.NewScanner(lr)
-	sc.Buffer(make([]byte, 0, 64<<10), 1<<20)
-	for n := 1; sc.Scan(); n++ {
+	sc.Buffer(make([]byte, 0, MaxLineBytes), MaxLineBytes)
+	n := 0
+	for n = 1; sc.Scan(); n++ {
 		if lr.N <= 0 {
 			return fmt.Errorf("%s exceeds the %d-byte limit", name, maxBytes)
 		}
@@ -141,7 +146,9 @@ func eachLine(r io.Reader, name string, fn func(line string) error) error {
 	if lr.N <= 0 {
 		return fmt.Errorf("%s exceeds the %d-byte limit", name, maxBytes)
 	}
-	if err := sc.Err(); err != nil {
+	if err := sc.Err(); errors.Is(err, bufio.ErrTooLong) {
+		return fmt.Errorf("%s line %d: longer than %d bytes", name, n, MaxLineBytes)
+	} else if err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
 	return nil
@@ -151,13 +158,4 @@ func eachLine(r io.Reader, name string, fn func(line string) error) error {
 func onePart(p string) bool {
 	r, size := utf8.DecodeRuneInString(p)
 	return size == len(p) && r != utf8.RuneError && unicode.IsGraphic(r) && !unicode.IsSpace(r)
-}
-
-func contains(list []string, s string) bool {
-	for _, x := range list {
-		if x == s {
-			return true
-		}
-	}
-	return false
 }

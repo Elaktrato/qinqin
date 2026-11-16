@@ -85,3 +85,30 @@ func TestParseCaps(t *testing.T) {
 		t.Errorf("over-cap parts.tsv: err = %v", err)
 	}
 }
+
+// A line with many distinct parts fails as soon as the cap is passed, and a
+// line longer than MaxLineBytes fails without being split into parts.
+func TestParseLongLines(t *testing.T) {
+	distinct := func(n int) string {
+		var b strings.Builder
+		for i := 0; i < n; i++ {
+			if i > 0 {
+				b.WriteByte(' ')
+			}
+			b.WriteRune(rune(0x4E00 + i))
+		}
+		return b.String()
+	}
+	_, err := components.Parse(strings.NewReader("語\t"+distinct(900)+"\n"), nil)
+	if err == nil || !strings.Contains(err.Error(), "components.tsv line 1") || !strings.Contains(err.Error(), "more than 32 parts") {
+		t.Errorf("900 distinct parts: err = %v", err)
+	}
+	_, err = components.Parse(strings.NewReader("話\t言\n語\t"+distinct(20000)+"\n"), nil)
+	if err == nil || !strings.Contains(err.Error(), "components.tsv") || !strings.Contains(err.Error(), "longer than") {
+		t.Errorf("a 80 KB line: err = %v", err)
+	}
+	_, err = components.Parse(strings.NewReader("語\t言\n"), strings.NewReader("言\t"+strings.Repeat("7", components.MaxLineBytes+1)+"\n"))
+	if err == nil || !strings.Contains(err.Error(), "parts.tsv") || !strings.Contains(err.Error(), "longer than") {
+		t.Errorf("a long parts.tsv line: err = %v", err)
+	}
+}
