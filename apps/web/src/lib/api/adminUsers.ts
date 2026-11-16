@@ -10,6 +10,8 @@ export interface AdminUserDto {
 	mustChangePassword: boolean;
 	createdAt: string;
 	lastSeenAt: string | null;
+	/** Which second steps the user has (never a secret); absent from servers before v0.3.0. */
+	mfa?: { totp: boolean; email: boolean };
 }
 
 export interface DeletionPreview {

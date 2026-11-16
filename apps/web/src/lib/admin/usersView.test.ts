@@ -18,6 +18,25 @@ const now = new Date('2026-11-15T12:00:00Z');
 const ids = (row: { actions: { id: string }[] }) => row.actions.map((a) => a.id);
 
 describe('userRows', () => {
+	it('offers Reset two-step sign-in only for another user who has a second step', () => {
+		const rows = userRows(
+			[
+				u(1, { admin: true, mfa: { totp: true, email: false } }),
+				u(2, { mfa: { totp: true, email: false } }),
+				u(3, { mfa: { totp: false, email: true } }),
+				u(4, { mfa: { totp: false, email: false } }),
+				u(5)
+			],
+			1,
+			now
+		);
+		expect(ids(rows[0])).not.toContain('resetMfa'); // own row: Settings, Account
+		expect(rows[1].actions.find((a) => a.id === 'resetMfa')).toEqual({ id: 'resetMfa', label: 'Reset two-step sign-in', disabled: false });
+		expect(ids(rows[2])).toContain('resetMfa');
+		expect(ids(rows[3])).not.toContain('resetMfa');
+		expect(ids(rows[4])).not.toContain('resetMfa');
+	});
+
 	it('gives the own row no disable and no delete', () => {
 		const rows = userRows([u(1, { admin: true }), u(2, { admin: true })], 1, now);
 		expect(ids(rows[0])).not.toContain('disable');
