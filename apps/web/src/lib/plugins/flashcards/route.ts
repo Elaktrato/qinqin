@@ -71,3 +71,17 @@ export function flashcardsHref(route: FlashcardsRoute): string {
 			return `/p/flashcards/system/frequency/${enc(route.packId)}/${route.size}`;
 	}
 }
+
+const VIEW_TITLES: Record<FlashcardsRoute['view'], string> = {
+	list: 'Decks',
+	deck: 'Deck',
+	settings: 'Deck settings',
+	'system-level': 'Level deck',
+	'system-plugin': 'Deck',
+	'system-frequency': 'Starter deck'
+};
+
+/** flashcardsTitle is the document title of a flashcards view, most specific first (pageTitle adds the app name). */
+export function flashcardsTitle(route: FlashcardsRoute): string[] {
+	return [VIEW_TITLES[route.view], 'Flashcards'];
+}

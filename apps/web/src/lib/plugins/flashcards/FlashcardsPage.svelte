@@ -5,7 +5,7 @@
 	import SystemDeckDetail from './decks/SystemDeckDetail.svelte';
 	import StarterDeckDetail from './decks/StarterDeckDetail.svelte';
 	import DeckList from './decks/DeckList.svelte';
-	import { parseDecodedFlashcardsRoute } from './route';
+	import { flashcardsTitle, parseDecodedFlashcardsRoute } from './route';
 
 	let { rest }: { rest: string } = $props();
 
@@ -13,7 +13,7 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Decks', 'Flashcards')}</title>
+	<title>{pageTitle(...flashcardsTitle(route))}</title>
 </svelte:head>
 
 <!-- A new route is a fresh view: no state leaks between decks. -->
