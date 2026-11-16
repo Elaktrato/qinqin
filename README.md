@@ -267,8 +267,13 @@ the pre-upgrade backup. After an upgrade the log may say
 ### Reverse proxy and HTTPS
 
 The app speaks plain HTTP on 8080. Browser features that need a secure context
-may not work over plain HTTP from other devices, so serve it over HTTPS. No
-WebSocket is used. Pack uploads go up to 128 MiB and an AI
+may not work over plain HTTP from other devices, so serve it over HTTPS.
+Installing the app and studying offline need HTTPS (or `http://localhost`; see
+[Install as an app](#install-as-an-app-and-study-offline)): over plain HTTP the
+site works as before, without a service worker. The proxy must pass the
+`Authorization` header and must not cache `/service-worker.js`,
+`/manifest.webmanifest` or anything under `/api/` (the server already sends the
+right headers: leave them alone). No WebSocket is used. Pack uploads go up to 128 MiB and an AI
 review can take up to 170 s, so the proxy needs a body limit of at least
 130 MB and a read timeout of at least 180 s.
 
@@ -489,6 +494,10 @@ cost matters (calls are limited to 30 per user and hour across all providers).
   AI lists the providers and shows a key as storable; save a key (it becomes
   the active provider) and run a review.
 - The container log shows `AI: QINQIN_SECRET ok`.
+- Over HTTPS, `curl -sI https://<host>/service-worker.js` shows
+  `Cache-Control: no-cache` and a JavaScript content type, and
+  `/manifest.webmanifest` is `application/manifest+json` (a proxy that caches
+  or rewrites them breaks installs and updates).
 
 ### Troubleshooting
 
@@ -505,6 +514,8 @@ cost matters (calls are limited to 30 per user and hour across all providers).
 | Test mail fails with `tls` | The server needs STARTTLS (587), implicit TLS (465), or choose None only on a private relay; the certificate must match the host name |
 | Test mail fails with `blocked` | The address is private: set `QINQIN_SMTP_ALLOW_PRIVATE=1` (metadata and link-local are never allowed) |
 | Test mail fails with `auth` | Wrong user name or password; Microsoft 365 needs an app password or SMTP AUTH enabled |
+| No install button, "Installing needs HTTPS" in Settings | The site is opened over plain HTTP; serve it over HTTPS (or use `http://localhost`) |
+| Users do not get new versions after an update | The proxy caches `/service-worker.js`; it must be passed through (`no-cache`) |
 | "database is locked" during seed | Seed while the app is idle (5 s busy timeout) |
 
 ## Workspaces
@@ -708,6 +719,80 @@ Data: vacations are user-global plugin-data rows `vacation:<ULID>` (every client
 workspace rows `limits:workspace` and `limits:deck:<deckId>` of the `qinqin-flashcards` plugin; there is
 no server change. The exact rules and JSON fixtures for the Android client are in
 [`docs/contracts/scheduler/`](docs/contracts/scheduler/README.md).
+
+## Install as an app and study offline
+
+qinqin is an installable web app (PWA). It is a stopgap for phones: a native
+Android client remains planned.
+
+**Requirements.** HTTPS (or `http://localhost` for a test on the same machine).
+Over plain HTTP, including a LAN address such as `http://192.168.1.20:8080`, browsers
+refuse service workers: the site works exactly as before, and Settings, Account,
+App says so.
+
+**Install.**
+
+- Chrome or Edge (Android, desktop): Settings, Account, App, "Install qinqin"
+  (or the browser's own install entry).
+- iPhone and iPad (Safari): Share, then "Add to Home Screen". Safari offers no
+  install button, so there is none in the app.
+- Firefox for Android: menu, "Install". Firefox desktop has no install.
+
+**What works offline.** The app opens; your decks and today's study queue (the
+cards a session started now would hold, plus the next 50 new cards, within your
+daily limits and vacation days) are saved on the device whenever you use the app
+online; you study the real cards you already have, grade them, and the reviews are
+saved on the device and sent when the connection returns. The day, vacation and
+limits follow the same rules offline: the time zone you set is saved with your
+data, and "today" is computed on the device from it.
+
+**What does not.** Reader, search, journal, dictionary lookups, settings changes,
+adding or editing cards, level sessions, and the companion cards of a word
+(sentence, writing, tone, reverse, cloze cards a word does not have yet: creating
+one is a write). A session offline says "Companion cards return when you are
+online." Audio is not saved.
+
+**Reviews and sync.** A review is sent when you grade it. If the server cannot be
+reached it waits in a per-user queue on the device and is sent when the browser
+comes online, when you return to the app, and once a minute while the app is open
+and something is waiting. Every review keeps its own id, so a retry can never count
+twice. There is no background sync: on iOS, and in any browser, reviews leave the
+device when you next open the app.
+
+**Several people on one device.** Saved data is kept per sign-in: a different
+user (or the same user after signing in again) gets an empty saved copy, and the old one
+is deleted. Signing out deletes the saved copies. If reviews have not been sent
+when you sign out, qinqin asks first: "Stay signed in" (default) or "Sign out and
+delete them". Reviews left behind by a session that ended some other way (it
+expired, you revoked it on another device, an administrator forced a password
+change) stay on the device for that user only: they are sent after the same user signs in
+again, never under another account, and deleted after 30 days if nobody does.
+
+**Signed-out sessions.** If your session was revoked while you were offline you can
+keep studying the saved cards until the device reaches the server. Then the server
+answers 401, the saved copies are deleted, and you sign in again; the waiting
+reviews are sent after that sign-in. A restricted session (forced password
+change, required two-step enrolment) never studies: the app shows only the page
+you may use, and waiting reviews stay queued.
+
+**Updates.** A new version is downloaded in the background and a bar says "A new
+version of qinqin is available. Reload". Nothing changes under an open page
+until you press Reload.
+
+**Settings, Account, App** shows the install button, what is saved for offline use
+(cards and time), the storage in use, and "Clear offline data" (saved copies only;
+waiting reviews are kept).
+
+**iOS and Safari limits, honestly.** Safari may delete a website's saved data
+after about a week without use (installed home-screen apps are treated more
+kindly); it may also remove offline data under storage pressure. A review that
+has not been sent is only as safe as the device: open the app online to send them.
+Safari has no install prompt and no Background Sync. Push notifications are not
+offered. Private browsing windows keep nothing.
+
+**Not verified in a browser by the developers:** installation on Android, iOS and
+desktop, offline behaviour on real devices, and the update flow. They are covered
+by unit and component tests and by checking the served files and headers.
 
 ## Studying
 
@@ -1495,7 +1580,13 @@ cd server && go vet ./... && go test ./...
 ```
 
 `npm --prefix apps/web run build` writes the SPA to `apps/web/build`; the
-Dockerfile copies that directory into the Go binary before compiling.
+Dockerfile copies that directory into the Go binary before compiling. The build also
+writes `build/service-worker.js` (hand-written, no Workbox; the logic lives in
+`apps/web/src/lib/pwa/sw/`, the version is `QINQIN_BUILD_ID` or the git hash plus the build
+time). The app icons are generated by `node apps/web/scripts/make-icons.mjs` and committed;
+after a new server route, regenerate the route fixture with
+`UPDATE_ROUTES_FIXTURE=1 go test -run RoutesFixture ./internal/api/` and decide in
+`apps/web/src/lib/pwa/sw/classify.ts` whether it may be cached offline (default: no).
 
 ## Project layout
 
