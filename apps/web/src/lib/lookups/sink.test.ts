@@ -24,7 +24,7 @@ describe('recordLookup', () => {
 
 describe('the reader and lessons pass the right source', () => {
 	it('BookView records reader lookups with the book id in the book workspace', async () => {
-		const src = (await import('../plugins/reader/BookView.svelte?raw')).default;
+		const src = (await import('../features/reader/BookView.svelte?raw')).default;
 		expect(src).toMatch(/onLookup:\s*\(entryId\)\s*=>\s*recordLookup\(studyWorkspaceId,\s*\{\s*entryId,\s*source:\s*'reader',\s*bookId:\s*book\?\.id\s*\}\)/);
 		expect(src).toContain('lookupRecorder().load(');
 	});

@@ -14,12 +14,12 @@
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { ApiError } from '$lib/api/client';
 	import type { Entry, EntryBase, SegmentMatch, Sentence } from '$lib/api/types';
-	import ClozeCard from '$lib/plugins/flashcards/cards/ClozeCard.svelte';
-	import ReverseCard from '$lib/plugins/flashcards/cards/ReverseCard.svelte';
-	import SentenceCard from '$lib/plugins/flashcards/cards/SentenceCard.svelte';
-	import ToneCard from '$lib/plugins/flashcards/cards/ToneCard.svelte';
-	import VocabCard from '$lib/plugins/flashcards/cards/VocabCard.svelte';
-	import WritingCard from '$lib/plugins/flashcards/cards/WritingCard.svelte';
+	import ClozeCard from '$lib/features/flashcards/cards/ClozeCard.svelte';
+	import ReverseCard from '$lib/features/flashcards/cards/ReverseCard.svelte';
+	import SentenceCard from '$lib/features/flashcards/cards/SentenceCard.svelte';
+	import ToneCard from '$lib/features/flashcards/cards/ToneCard.svelte';
+	import VocabCard from '$lib/features/flashcards/cards/VocabCard.svelte';
+	import WritingCard from '$lib/features/flashcards/cards/WritingCard.svelte';
 	import {
 		backfillLimit,
 		buryAfterAnswer,
@@ -55,7 +55,7 @@ import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
 import type { Run } from '$lib/study/vacation';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
-	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
+	import Mascot from '$lib/features/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';

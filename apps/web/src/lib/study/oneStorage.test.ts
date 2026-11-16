@@ -10,12 +10,12 @@ const sources = {
 		import: 'default',
 		eager: true
 	}),
-	...import.meta.glob(['../plugins/flashcards/**/*.{ts,svelte}', '!../plugins/flashcards/**/*.test.ts'], {
+	...import.meta.glob(['../features/flashcards/**/*.{ts,svelte}', '!../features/flashcards/**/*.test.ts'], {
 		query: '?raw',
 		import: 'default',
 		eager: true
 	}),
-	...import.meta.glob(['../plugins/reader/**/*.{ts,svelte}', '!../plugins/reader/**/*.test.ts'], {
+	...import.meta.glob(['../features/reader/**/*.{ts,svelte}', '!../features/reader/**/*.test.ts'], {
 		query: '?raw',
 		import: 'default',
 		eager: true

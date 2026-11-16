@@ -12,10 +12,10 @@ import { CORE_PLUGIN_ID } from '$lib/plugins/core/manifest';
 import type { PluginManifest } from '$lib/plugins';
 import { visibleNavPages, webPlugins } from '$lib/plugins';
 import type { PluginStatesValue } from '$lib/plugins/states';
-import FlashcardsPage from '$lib/plugins/flashcards/FlashcardsPage.svelte';
-import { flashcardsManifest } from '$lib/plugins/flashcards/manifest';
-import ReaderPage from '$lib/plugins/reader/ReaderPage.svelte';
-import { readerManifest } from '$lib/plugins/reader/manifest';
+import FlashcardsPage from '$lib/features/flashcards/FlashcardsPage.svelte';
+import { flashcardsManifest } from '$lib/features/flashcards/manifest';
+import ReaderPage from '$lib/features/reader/ReaderPage.svelte';
+import { readerManifest } from '$lib/features/reader/manifest';
 
 export const FLASHCARDS_ID = 'qinqin-flashcards';
 export const READER_ID = 'qinqin-reader';

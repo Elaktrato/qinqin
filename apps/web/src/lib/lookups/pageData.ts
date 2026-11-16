@@ -5,8 +5,8 @@
 import { loadEntryBases } from '$lib/api/entryBases';
 import { listBooks } from '$lib/api/library';
 import type { EntryBase } from '$lib/api/types';
-import { scheduleIndex } from '$lib/plugins/flashcards/decks/deckStats';
-import { addWords, type AddWordsResult } from '$lib/plugins/reader/wordActions';
+import { scheduleIndex } from '$lib/features/flashcards/decks/deckStats';
+import { addWords, type AddWordsResult } from '$lib/features/reader/wordActions';
 import { contextForData } from '$lib/study/currentContext';
 import { loadStudyHistory } from '$lib/study/history';
 import { type KnownIndex, familiarity, knownIndex } from '$lib/study/known';

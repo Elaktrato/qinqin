@@ -4,7 +4,7 @@ vi.mock('$lib/api/schemes', () => ({ getSchemeEntries: vi.fn() }));
 
 import { getSchemeEntries } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
-import { clearLevelItemsCache } from '$lib/plugins/flashcards/decks/systemDeckItems';
+import { clearLevelItemsCache } from '$lib/features/flashcards/decks/systemDeckItems';
 import { loadLevelKeys } from './levelKeys';
 
 function word(id: number): EntryBase {

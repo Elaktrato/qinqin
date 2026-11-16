@@ -630,7 +630,7 @@ The Reader (see the README) imports public-domain works on user request. Nothing
 from these sources is bundled; each imported book stores its source link,
 attribution, and a licence note, which the Reader shows. The Reader plugin
 credits both sources, and `opencc-js` below, on the Sources page through the
-`sources` in its manifest (`apps/web/src/lib/plugins/reader/manifest.ts`).
+`sources` in its manifest (`apps/web/src/lib/features/reader/manifest.ts`).
 
 - **Aozora Bunko** (<https://www.aozora.gr.jp/>) — only works in the public domain
   are listed or importable: the catalog's work copyright flag **and** person

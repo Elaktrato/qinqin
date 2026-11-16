@@ -11,7 +11,7 @@
 	import { loadStudyHistory } from '$lib/study/history';
 	import { activeWeights } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
-	import { flashcardsHref } from '$lib/plugins/flashcards/route';
+	import { flashcardsHref } from '$lib/features/flashcards/route';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
 

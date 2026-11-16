@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
 	import { onDestroy, untrack } from 'svelte';
-	import ImportExport from '$lib/plugins/flashcards/scheduling/ImportExport.svelte';
-	import OptimizePanel from '$lib/plugins/flashcards/scheduling/OptimizePanel.svelte';
-	import PreviewPanel from '$lib/plugins/flashcards/scheduling/PreviewPanel.svelte';
-	import SavedSets from '$lib/plugins/flashcards/scheduling/SavedSets.svelte';
+	import ImportExport from '$lib/features/flashcards/scheduling/ImportExport.svelte';
+	import OptimizePanel from '$lib/features/flashcards/scheduling/OptimizePanel.svelte';
+	import PreviewPanel from '$lib/features/flashcards/scheduling/PreviewPanel.svelte';
+	import SavedSets from '$lib/features/flashcards/scheduling/SavedSets.svelte';
 import { contextForData, currentContext } from '$lib/study/currentContext';
 import type { StudyContext } from '$lib/study/studyContext';
 	import { buildDataset, type Dataset } from '$lib/study/fsrs/dataset';

@@ -24,7 +24,7 @@
 	import { entryRadicalLinks } from '$lib/radicals/selection';
 	import { workspaces } from '$lib/workspaces';
 	import EntryNote from '$lib/notes/EntryNote.svelte';
-	import { joinForms, otherForms } from '$lib/plugins/reader/entryDisplay';
+	import { joinForms, otherForms } from '$lib/features/reader/entryDisplay';
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);

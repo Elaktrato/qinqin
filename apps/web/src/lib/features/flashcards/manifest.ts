@@ -3,8 +3,8 @@
 // lets the app render the plugin's widgets without asking the server
 // for them.
 import flashcards from '$builtin/flashcards.json';
-import type { ContractManifest } from '../contract';
-import type { PluginManifest } from '../index';
+import type { ContractManifest } from '$lib/plugins/contract';
+import type { PluginManifest } from '$lib/plugins';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
 import WordStatesHome from '$lib/widgets/WordStatesHome.svelte';
 import WordStatesWidget from '$lib/widgets/WordStatesWidget.svelte';

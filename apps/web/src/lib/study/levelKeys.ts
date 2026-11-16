@@ -4,8 +4,8 @@
 // session). Entries outside the scheme have no key.
 
 import type { Scheme } from '$lib/api/types';
-import { loadLevelItems } from '$lib/plugins/flashcards/decks/systemDeckItems';
-import { levelDecks } from '$lib/plugins/flashcards/decks/systemDecks';
+import { loadLevelItems } from '$lib/features/flashcards/decks/systemDeckItems';
+import { levelDecks } from '$lib/features/flashcards/decks/systemDecks';
 
 export async function loadLevelKeys(scheme: Scheme): Promise<(entryId: number) => number | null> {
 	const decks = levelDecks([scheme], scheme.language);

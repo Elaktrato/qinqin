@@ -3,8 +3,8 @@
 // sources it fetches from and the conversion library it bundles are core
 // credits (lib/sources/coreCredits.ts).
 import reader from '$builtin/reader.json';
-import type { ContractManifest } from '../contract';
-import type { PluginManifest } from '../index';
+import type { ContractManifest } from '$lib/plugins/contract';
+import type { PluginManifest } from '$lib/plugins';
 import ReadingTimeWidget from '$lib/widgets/ReadingTimeWidget.svelte';
 
 export const readerManifest: PluginManifest = {

@@ -3,7 +3,7 @@
 	import { segmentBatch } from '$lib/api/segment';
 	import { loadTokens } from '$lib/study/wordSalad';
 	import { workspaces } from '$lib/workspaces';
-	import WordSaladBoard from '../flashcards/cards/WordSaladBoard.svelte';
+	import WordSaladBoard from '$lib/features/flashcards/cards/WordSaladBoard.svelte';
 	import ClozeChoice from '$lib/components/ClozeChoice.svelte';
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
