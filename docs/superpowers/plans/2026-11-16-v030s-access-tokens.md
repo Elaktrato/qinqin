@@ -402,8 +402,8 @@ in Task 13's real-app check.)
 
 ## Execution record
 
-Built in one session by one implementer (no separate per-task subagents; the independent security review and
-mutation checks of the plan header are for the reviewer and are **not done yet**).
+Built in one session by one implementer (no separate per-task subagents). The independent security review and its mutation checks followed the build:
+see **Review fixes** at the end.
 
 **Merge first:** `df624c5` merges `feature/v0.3.0-stretch` (#67 daily goals, #75 frequency decks) into this branch.
 Migration number taken: **037** (`036_components.sql` belongs to #71, built in parallel).
@@ -465,4 +465,60 @@ Not verified: the Settings UI in a real browser (jsdom only: the `<dialog>` moda
 phone), the clipboard on iOS Safari and other browsers, an Android client, the janitor running in a live server
 (unit-tested only), HEAD requests with a token (served through the GET rows by Go's mux, not tested separately),
 `-race` on the api package (not run, per the brief), lookups with a real dictionary in the real-app check. The
-independent security review and its mutation checks have not happened yet.
+independent security review and its mutation checks happened afterwards: see Review fixes.
+
+## Review fixes
+
+The independent security review found no MUST-FIX. One fix wave, after merging the collection branch again
+(`ce075e3`: #77 notes added no server route; #71 radicals holds migration `036`, this branch keeps `037`; #71's
+public `GET /api/components` and `GET /api/component-packs` became `tokRead / wsGlobal`, pinned, with a spec §3
+amendment and a Ruling under the Task 7 table). Each fix test-first (the new test failed, then passed):
+
+| # | Finding | Commit | Fix |
+|---|---|---|---|
+| 1 | (SHOULD, blocking) A personal restore left workspace-limited tokens on deleted workspace ids | `ef6ce89` | In the restore transaction a limited token follows its workspace through the archive's id map; a token whose workspace is not in the archive is deleted, audited `token_revoked` {scope: restore, count}. Spec Ruling and wiki updated. `TestRestoreRemapsWorkspaceLimitedTokens` failed (stale ids, token survived, no audit), then passed. |
+| 2 | A refused request counted as a use | `6fd36f8` | `AuthenticateToken` no longer touches the row; `auth.TouchToken` runs in the gate after the read-only, workspace and rate-limit checks. `TestRefusedTokenRequestsAreNotUses` failed (2 first-use rows from refused requests), then passed; the auth last-used test now calls `TouchToken` and proves authenticating alone writes nothing; `-race` on it passed. |
+| 3 | Revoke-one audit lacked the token id | `f833c44` | `token_revoked` {scope: one, count: 1, tokenId}. |
+| 4 | Workspace deletion revoked tokens unaudited | `f833c44` | `token_revoked` {scope: workspace, count: n} in the deletion transaction, only when n > 0 (the shape of the other `token_revoked` rows uses `count`). |
+| 5 | Token management handlers relied on the gate alone | `9050d2b` | `requireTokenManager` refuses a token principal with 403 `token_not_allowed` (like the admin helpers); a direct-call test over all four handlers failed (200/403 wrong_password/404/200), then passed. |
+| 6 | The session-delete guard walked only `internal/` | `6f7f3e0` | It walks the whole server module and asserts it saw `cmd/qinqin/main.go` and `recover.go` (failed before, passed after). |
+| 7 | Server-backup restores bring revoked sessions and tokens back | `8796d5a`, this commit | Wiki (backup and recovery): sign everyone out afterwards. Found while writing it: there is no one-click "sign everyone out" in the UI; the page names Admin, Users, "Sign out everywhere" per user, or the two-step switch with "Sign everyone else out now" (which ends every other session and revokes every access token, the administrator's own tokens included). |
+
+Mutation checks by the reviewer (harness `/tmp/claude-0/review-83/mut/run.py`, run against the pre-fix branch):
+20 mutants, **all killed**.
+
+| Mutant | Result |
+|---|---|
+| M1 no expiry check at authentication | killed |
+| M2 `revokeCredentials` skips tokens | killed |
+| M3 plain password change keeps tokens | killed |
+| M4 `wsNone` lets a limited token through | killed |
+| M5 no read-only check | killed |
+| M6 workspace delete keeps tokens | killed |
+| M7 sign-everyone-out keeps tokens | killed |
+| M8 disabled owner still authenticates | killed |
+| M9 account deletion keeps tokens | killed |
+| M10 gate uses the last `?workspace=` value, no duplicate check | killed |
+| M11 no rate limit | killed |
+| M12 gate skips the restriction | killed |
+| M13 token cap removed | killed |
+| M14 janitor never prunes tokens | killed |
+| M15 MFA reset deletes sessions only | killed |
+| M16 create without the password check | killed |
+| M19 custom-admin token check removed | killed |
+| M22 create skips workspace ownership | killed |
+| M23 revoke-one ignores the owner | killed |
+| M24 admin helper token check removed | killed |
+
+(M6's patch text targets the pre-fix workspace-deletion code; fix 4 moved that statement, so the mutant would need
+re-targeting to be re-run on the current branch. Not re-run here.)
+
+Gates after the fixes (proxy variables unset, under the lock): targeted `go vet` + `go test` of `internal/auth`,
+`internal/api`, `internal/backup` exit 0; full Go `./...` exit 1 with 37 packages ok and only the known
+`internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 here), `gofmt -l` empty; web `npm ci` 0,
+`check` 0 (0 errors, 0 warnings), `test` 0 (342 files, 5377 tests), `build` 0; Node 26 vitest 0 (342 files,
+5377 tests); `gen-api-docs --check` 0; `node --test scripts/*.test.mjs` 105 pass.
+
+Not verified in this wave: no new real-app run (the fixes are covered by Go tests only); the restore remap across
+servers (an archive whose workspace ids collide with a token's workspace id binds it to that archive workspace,
+see the spec Ruling).
