@@ -217,6 +217,30 @@ describe('StudySettings note switch', () => {
 		await waitFor(() => expect(box.checked).toBe(false));
 	});
 
+	it('stays disabled until the stored value has loaded, then saves with its members', async () => {
+		let resolve!: (v: { onAnswer: boolean; extra: Record<string, unknown> }) => void;
+		vi.mocked(loadNoteCfg).mockReturnValueOnce(new Promise((r) => (resolve = r)));
+		setup();
+		const box = (await screen.findByLabelText(label)) as HTMLInputElement;
+		expect(box.disabled).toBe(true);
+		await fireEvent.click(box);
+		expect(saveNoteCfg).not.toHaveBeenCalled();
+		resolve({ onAnswer: false, extra: { later: 2 } });
+		await waitFor(() => expect(box.disabled).toBe(false));
+		expect(box.checked).toBe(false);
+		await fireEvent.click(box);
+		await waitFor(() => expect(saveNoteCfg).toHaveBeenCalledWith(1, true, { onAnswer: false, extra: { later: 2 } }));
+		expect(box.checked).toBe(true);
+	});
+
+	it('a failed load reads as on and the box can be used', async () => {
+		vi.mocked(loadNoteCfg).mockRejectedValueOnce(new Error('down'));
+		setup();
+		const box = (await screen.findByLabelText(label)) as HTMLInputElement;
+		await waitFor(() => expect(box.disabled).toBe(false));
+		expect(box.checked).toBe(true);
+	});
+
 	it('a failed save reverts the box and shows an alert', async () => {
 		vi.mocked(saveNoteCfg).mockRejectedValueOnce(new Error('offline'));
 		setup();

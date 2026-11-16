@@ -9,6 +9,9 @@
 	let cfg = $state.raw<NoteCfg>({ onAnswer: true, extra: {} });
 	let checked = $state(true);
 	let busy = $state(false);
+	// The box is off until the stored row has been read, so a change never
+	// races the load (a stale load would overwrite it and lose unknown members).
+	let loaded = $state(false);
 	let error = $state('');
 	let seq = 0;
 
@@ -18,21 +21,24 @@
 		cfg = { onAnswer: true, extra: {} };
 		checked = true;
 		error = '';
+		loaded = false;
 		if (ws === null) return;
 		loadNoteCfg(ws).then(
-			(loaded) => {
+			(row) => {
 				if (mine !== seq) return;
-				cfg = loaded;
-				checked = loaded.onAnswer;
+				cfg = row;
+				checked = row.onAnswer;
+				loaded = true;
 			},
 			() => {
-				// Unreadable reads as the default (on).
+				// Unreadable reads as the default (on); the box stays usable.
+				if (mine === seq) loaded = true;
 			}
 		);
 	});
 
 	async function change(): Promise<void> {
-		if (workspaceId === null) return;
+		if (workspaceId === null || !loaded) return;
 		const value = checked;
 		busy = true;
 		error = '';
@@ -52,7 +58,7 @@
 	<section class="notes">
 		<h2>Personal notes</h2>
 		<label class="check">
-			<input type="checkbox" bind:checked disabled={busy} onchange={change} />
+			<input type="checkbox" bind:checked disabled={busy || !loaded} onchange={change} />
 			Show my notes on the answer side
 		</label>
 		<p class="hint">Your notes on words appear below a flashcard once its answer is shown, in this workspace.</p>
