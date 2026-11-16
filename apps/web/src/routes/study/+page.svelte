@@ -33,6 +33,12 @@
 		levelUsable,
 		type LevelUnit
 	} from '$lib/study/levelQueue';
+import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
+import type { StudyContext } from '$lib/study/studyContext';
+import type { VacationPeriod } from '$lib/study/vacation';
+import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
+import { startTodayText } from '$lib/study/limitsText';
+import { limitsOf } from '$lib/study/scheduler';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import {
@@ -92,6 +98,9 @@
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	// Vacation days and the study clock of the active workspace.
+	let ctx = $state.raw<StudyContext>(currentContext());
+	let vacations = $state.raw<VacationPeriod[]>([]);
 	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	let extraChoices = $state.raw<ExtraChoices>({});
@@ -206,6 +215,8 @@
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, workspaceId);
+			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
 		} catch (err) {
@@ -235,11 +246,16 @@
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, activeWorkspaceId);
+			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
 			if (seq === requestSeq) deckError = message(err, 'Could not reload your cards.');
 		}
 	}
+
+	// A new learner day (or zone) changes what is due and on vacation.
+	$effect(() => onContextStale(() => void refreshData()));
 
 	async function loadSchemes(seq: number): Promise<void> {
 		try {
@@ -375,7 +391,7 @@
 		);
 	});
 
-	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights));
+	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights, ctx.clock));
 
 	function levelOptionLabel(name: string): string {
 		const count = levelLearned.get(name);
@@ -437,7 +453,7 @@
 			w: weights,
 			language: workspaceLanguage ?? '',
 			deckSettings,
-			studyDay: currentStudyDay(),
+			ctx,
 			// Words this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
@@ -477,11 +493,11 @@
 			w: weights,
 			unit: levelUnit,
 			kinds: levelKinds,
-			studyDay: currentStudyDay(),
+			ctx,
 			hasStrokes: hasStrokeData,
 			// A word buried by a reverse or cloze answer today is left out, as in the session.
 			excludeEntries: buriedLevelEntries(
-				buriedNow({ cards, reviews, now: new Date(), studyDay: currentStudyDay() }),
+				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),
 				cards
 			),
 			// Items this tab already found unsuitable are not counted.
@@ -508,6 +524,27 @@
 		levelUnit === 'character'
 			? levelEntryTotal === 1 ? 'character' : 'characters'
 			: levelEntryTotal === 1 ? 'word' : 'words'
+	);
+
+	// True when no deck of the session has a daily limit (the note is dropped then).
+	const noDailyLimit = $derived(
+		mode === 'levels'
+			? false
+			: selectedDeckIds.length > 0 &&
+					selectedDeckIds.every((id) => {
+						const limit = limitsOf(ctx, id);
+						return limit.new === null && limit.reviews === null;
+					})
+	);
+
+	// "Vacation until 3 Jan": nothing is due and no new card is offered today.
+	const vacationText = $derived(
+		activeWorkspaceId === null || !ctx.vacationToday
+			? null
+			: vacationBanner(
+					vacationStatus(vacations, activeWorkspaceId, ctx.day.today()),
+					ctx.day.today()
+				)
 	);
 
 	const guidance = $derived.by(() => {
@@ -698,6 +735,10 @@
 
 <main class="setup">
 	<h1>Study</h1>
+
+	{#if vacationText !== null}
+		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">Change</a></p>
+	{/if}
 	<p class="hint">Choose what this session should draw from.</p>
 	{#if $workspaces.current && usesHan($workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">View the mastery map →</a></p>
@@ -912,6 +953,9 @@
 
 		<section class="summary" aria-labelledby="summary-heading">
 			<h2 id="summary-heading">This session</h2>
+			{#if vacationText === null}
+				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
+			{/if}
 			{#if mode === 'levels'}
 				<p class="stats">
 					<strong>{levelEntryTotal}</strong>
@@ -958,11 +1002,13 @@
 				</ul>
 			{/if}
 
-			<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
-				{starting ? 'Starting…' : 'Start studying'}
-			</button>
+			{#if vacationText === null}
+				<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
+					{starting ? 'Starting…' : 'Start studying'}
+				</button>
+			{/if}
 
-			{#if guidance}
+			{#if guidance && vacationText === null}
 				<p class="hint" role="status">{guidance}</p>
 			{/if}
 		</section>

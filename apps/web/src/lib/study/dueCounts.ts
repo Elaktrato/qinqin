@@ -9,13 +9,34 @@
 import { allowedReal, skipKindsByEntry, vocabEntryIds } from './cardFlow';
 import type { DeckSettings } from './deckSettings';
 import { buriedNow } from './siblings';
-import { buildQueue, type Schedule } from './scheduler';
-import { studyDay as utcStudyDay, type StudyDay } from '../time/studyDay';
+import {
+	buildQueue,
+	existingDecksOf,
+	limitsOf,
+	queueCandidates,
+	type BuildQueueOptions,
+	type Schedule
+} from './scheduler';
+import type { LimitRows, StudyContext } from './studyContext';
+import { admit, dayCountsCached, type Admission, type DayCounts } from './limits';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 const UNLIMITED = 1_000_000;
 
-export function dueCounts(input: {
+/** Limits that never refuse anything. */
+const NO_DAILY_LIMITS: LimitRows = {
+	workspace: { new: null, reviews: null },
+	decks: {},
+	existingDecks: null
+};
+const EMPTY_COUNTS: DayCounts = {
+	newDone: new Map(),
+	reviewDone: new Map(),
+	reviewedToday: new Set(),
+	firstDay: new Map()
+};
+
+export interface DueCountsInput {
 	cards: readonly StudyCard[];
 	reviews: readonly ReviewEvent[];
 	deckIds: readonly string[];
@@ -23,13 +44,24 @@ export function dueCounts(input: {
 	deckSettings?: Record<string, DeckSettings>;
 	now: Date;
 	w: readonly number[];
-	studyDay?: Pick<StudyDay, 'dayOf'>;
+	ctx: StudyContext;
 	newLimit?: number;
 	reviewLimit?: number;
 	scheduleOf?: (cardId: string) => Schedule | null;
-}): { due: number; fresh: number } {
+	/**
+	 * Apply the daily limits (the home widget's and the study start's "left
+	 * today"). Off by default: the decks view shows what is due and new, with
+	 * the allowance beside it (limitsLeft.ts).
+	 */
+	applyDailyLimits?: boolean;
+	/** What today already used, shared by many counts (limits.ts). */
+	counts?: DayCounts;
+}
+
+/** The queue options of a count: buried and switched-off cards left out first. */
+function prepare(input: DueCountsInput): BuildQueueOptions {
 	const { cards, reviews, deckIds, kinds, deckSettings, now, w, scheduleOf } = input;
-	const buried = buriedNow({ cards, reviews, now, studyDay: input.studyDay ?? utcStudyDay([]) });
+	const buried = buriedNow({ cards, reviews, now, studyDay: input.ctx.day });
 	const skipByEntry = skipKindsByEntry(cards);
 	const vocabEntries = vocabEntryIds(cards);
 	const allowed = cards.filter(
@@ -37,17 +69,50 @@ export function dueCounts(input: {
 			!buried.cardIds.has(card.id) &&
 			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry, vocabEntries })
 	);
-	const base = { cards: allowed, reviews, deckIds, now, kinds, w, scheduleOf };
+	// Counting uses every card (all kinds), not only the ones shown.
+	const used = input.applyDailyLimits === true ? (input.counts ?? dayCountsCached(cards, reviews, input.ctx, now)) : undefined;
+	const ctx = input.applyDailyLimits === true ? input.ctx : { ...input.ctx, limits: NO_DAILY_LIMITS };
+	return {
+		cards: allowed,
+		reviews,
+		deckIds,
+		now,
+		kinds,
+		w,
+		scheduleOf,
+		ctx,
+		counts: used ?? EMPTY_COUNTS,
+		newLimit: input.newLimit ?? UNLIMITED,
+		reviewLimit: input.reviewLimit ?? UNLIMITED
+	};
+}
+
+export function dueCounts(input: DueCountsInput): { due: number; fresh: number } {
+	const base = prepare(input);
 	return {
 		due: buildQueue({
 			...base,
-			newLimit: 0,
-			reviewLimit: input.reviewLimit ?? UNLIMITED
+			newLimit: 0
 		}).length,
 		fresh: buildQueue({
 			...base,
-			newLimit: input.newLimit ?? UNLIMITED,
 			reviewLimit: 0
 		}).length
 	};
+}
+
+/**
+ * leftToday: what the daily limits admit right now for these decks and kinds,
+ * session caps removed (limits.ts `admit().left`). Real cards only.
+ */
+export function leftToday(input: DueCountsInput): Admission['left'] {
+	const base = prepare({ ...input, applyDailyLimits: true });
+	const { candidates, counts } = queueCandidates(base);
+	return admit(
+		candidates,
+		(deckId) => limitsOf(base.ctx, deckId),
+		counts,
+		{ newLimit: Infinity, reviewLimit: Infinity },
+		existingDecksOf(base.ctx, candidates)
+	).left;
 }

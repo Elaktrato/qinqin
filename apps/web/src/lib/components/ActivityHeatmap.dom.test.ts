@@ -6,6 +6,7 @@ vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
 	onStudyDayChange: vi.fn()
 }));
+vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
 vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/activity/viewPrefs')>()),
 	loadActivityView: vi.fn(() => Promise.resolve({ scope: 'workspace', hidden: [] })),
@@ -13,6 +14,7 @@ vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 }));
 
 import { fetchActivity } from '$lib/api/stats';
+import { getStudyData } from '$lib/study/studyData';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
@@ -23,6 +25,7 @@ const BERLIN = studyDay([{ zone: 'Europe/Berlin', from: null }]);
 const empty = { from: '', to: '', timeZone: 'UTC', sources: [], cells: [] };
 
 beforeEach(() => {
+	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] });
 	vi.mocked(currentStudyDay).mockReturnValue(studyDay([]));
 	vi.mocked(onStudyDayChange).mockReturnValue(() => {});
 });
@@ -89,5 +92,23 @@ describe('ActivityHeatmap learner days', () => {
 		listener!(TOKYO);
 		await waitFor(() => expect(fetchActivity).toHaveBeenCalledTimes(2));
 		expect(vi.mocked(fetchActivity).mock.calls[1]).toEqual(['2026-08-18', '2026-11-16']);
+	});
+});
+
+describe('ActivityHeatmap vacation marks', () => {
+	it('hatches vacation days, says so in the tooltip and lists them for assistive tech', async () => {
+		const today = studyDay([]).today();
+		workspaces.set({ list: [{ id: 3, language: 'zh', name: 'zh' } as never], current: { id: 3, language: 'zh', name: 'zh' } as never });
+		vi.mocked(getStudyData).mockResolvedValue({
+			decks: [],
+			cards: [],
+			vacations: [{ version: 1, id: 'A', start: today, end: today, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
+		});
+		vi.mocked(fetchActivity).mockResolvedValue({ from: today, to: today, timeZone: 'UTC', sources: [], cells: [] });
+		render(ActivityHeatmap);
+		await waitFor(() => expect(document.querySelectorAll('.cell.vacation')).toHaveLength(1));
+		expect(document.querySelector('.cell.vacation')?.getAttribute('title')).toBe(`${today}: no activity · On vacation`);
+		const list = screen.getByRole('list', { name: 'Daily activity' });
+		expect(within(list).getAllByRole('listitem')).toHaveLength(1);
 	});
 });

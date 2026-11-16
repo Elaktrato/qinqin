@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn(), invalidateStudyHistory: vi.fn() }));
+vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn(() => Promise.resolve({ decks: [], cards: [] })) }));
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	renameDeck: vi.fn(),
@@ -97,11 +98,16 @@ describe('DeckSettingsView', () => {
 		expect(saveDeckCardTypes).toHaveBeenCalledWith('d1', ['cloze', 'reverse']);
 	});
 
-	it('hides the limits section until an editor is plugged in, then renders it', async () => {
+	it('renders the real daily limits editor by default, hides the section without one, and takes a stub', async () => {
 		const first = render(DeckSettingsView, { deckId: 'd1' });
 		await screen.findByLabelText('Deck name');
-		expect(screen.queryByRole('heading', { name: 'Daily limits' })).toBeNull();
+		expect(screen.getByRole('heading', { name: 'Daily limits' })).toBeTruthy();
+		expect(await screen.findByRole('button', { name: 'Save limits' })).toBeTruthy();
 		first.unmount();
+		const none = render(DeckSettingsView, { deckId: 'd1', limitsEditor: null });
+		await screen.findByLabelText('Deck name');
+		expect(screen.queryByRole('heading', { name: 'Daily limits' })).toBeNull();
+		none.unmount();
 		render(DeckSettingsView, { deckId: 'd1', limitsEditor: LimitsStub });
 		await screen.findByLabelText('Deck name');
 		expect(screen.getByRole('heading', { name: 'Daily limits' })).toBeTruthy();

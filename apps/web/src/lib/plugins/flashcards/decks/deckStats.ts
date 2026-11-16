@@ -13,7 +13,8 @@ import { isValidReview, scheduleFor, type Schedule } from '$lib/study/scheduler'
 import type { DeckSettings } from '$lib/study/deckSettings';
 import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
 import { classifySchedule, emptyCounts, type WordStateCounts } from '$lib/stats/wordStates';
-import type { StudyDay } from '$lib/time/studyDay';
+import type { StudyContext } from '$lib/study/studyContext';
+import type { StudyClock } from '$lib/study/studyClock';
 
 /** Reviewed card ids only; a missing id means "never reviewed". */
 export type ScheduleIndex = Map<string, Schedule | null>;
@@ -57,7 +58,8 @@ export interface DeckNumbersInput {
 	deckSettings?: Record<string, DeckSettings>;
 	now: Date;
 	w: readonly number[];
-	day: Pick<StudyDay, 'dayOf' | 'today'>;
+	/** The learner's day, study clock and vacation state (one object, see decksData). */
+	ctx: StudyContext;
 	addDays: (day: string, n: number) => string;
 }
 
@@ -69,6 +71,7 @@ export function scheduleIndex(
 	cards: readonly StudyCard[],
 	reviews: readonly ReviewEvent[],
 	w: readonly number[],
+	clock: StudyClock,
 	schedule: ScheduleFn = scheduleFor
 ): ScheduleIndex {
 	const byCard = new Map<string, ReviewEvent[]>();
@@ -84,7 +87,7 @@ export function scheduleIndex(
 	for (const card of cards) {
 		const history = byCard.get(card.id);
 		if (history === undefined) continue;
-		const result = schedule(card.id, history, asOf, w);
+		const result = schedule(card.id, history, asOf, w, clock);
 		if (result !== null) index.set(card.id, result);
 	}
 	return index;
@@ -132,7 +135,8 @@ function recentReviews(reviews: readonly ReviewEvent[], now: number): ReviewEven
 
 /** deckNumbers: the numbers of one deck, or of everything for `deckId: null`. */
 export function deckNumbers(input: DeckNumbersInput): DeckNumbers {
-	const { deckId, cards, decks, reviews, index, kinds, deckSettings, now, w, day, addDays } = input;
+	const { deckId, cards, decks, reviews, index, kinds, deckSettings, now, w, ctx, addDays } = input;
+	const day = ctx.day;
 	const existing = new Set([GENERAL_DECK_ID, ...decks.map((d) => d.id)]);
 	const scopeDecks = deckId === null ? [...existing] : [deckId];
 	const wanted = new Set(scopeDecks);
@@ -158,7 +162,7 @@ export function deckNumbers(input: DeckNumbersInput): DeckNumbers {
 		deckSettings,
 		now,
 		w,
-		studyDay: day,
+		ctx,
 		scheduleOf: (id) => index.get(id) ?? null
 	});
 

@@ -16,6 +16,7 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 vi.mock('$lib/components/CardManager.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
+	currentStudyHistory: vi.fn(() => []),
 	onStudyDayChange: vi.fn(() => () => {})
 }));
 
@@ -235,5 +236,42 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		await waitFor(() => expect(box(/cloze/)).not.toBeNull());
 		expect(box(/reverse/)!.checked).toBe(true);
 		expect(box(/cloze/)!.checked).toBe(false);
+	});
+});
+
+describe('study setup on a vacation day', () => {
+	it('shows the vacation banner and no start button', async () => {
+		setup(charScheme, ['vocab']);
+		const today = studyDay([]).today();
+		const end = new Date(Date.parse(`${today}T00:00:00Z`) + 5 * 86_400_000).toISOString().slice(0, 10);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [],
+			cards: [],
+			reviews: [],
+			merged: 0,
+			vacations: [{ version: 1, id: 'V', start: today, end, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
+		});
+		render(Page);
+		const banner = await screen.findByText(/Vacation until/);
+		expect(banner.textContent).toMatch(/^Vacation until \d+ \w+/);
+		expect(screen.queryByRole('button', { name: /start studying/i })).toBeNull();
+	});
+});
+
+describe('study start and the daily limits', () => {
+	it('words the day with the limits applied', async () => {
+		setup(charScheme, ['vocab']);
+		render(Page);
+		expect((await screen.findByText(/^Today:/)).textContent).toBe('Today: 0 reviews and 3 new (daily limits applied)');
+	});
+
+	it('caps the new cards by the workspace limit', async () => {
+		setup(charScheme, ['vocab']);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [], cards: [], reviews: [], merged: 0,
+			limits: { workspace: { new: 2 }, decks: {} }
+		});
+		render(Page);
+		expect((await screen.findByText(/^Today:/)).textContent).toBe('Today: 0 reviews and 2 new (daily limits applied)');
 	});
 });

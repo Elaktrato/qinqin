@@ -305,7 +305,7 @@ const (
 	// 30 MB read (or a 30 MB row served back on every list and pull).
 	maxAuthBody           = 4 << 10  // POST /api/auth/login and /register: a username and a password
 	maxWorkspaceBody      = 16 << 10 // POST /api/workspaces and PUT /api/workspaces/{id}: a name and a settings patch
-	maxWorkspaceSettings  = 64 << 10 // the merged settings object stored per workspace (the web client stores none today)
+	maxWorkspaceSettings  = 64 << 10 // the merged settings object stored per workspace (the web client stores audio and reader display settings)
 	maxPluginManifestBody = 64 << 10 // POST /api/admin/plugins: the bundled manifests are under 0.5 KiB
 	maxPluginStateBody    = 64 << 10 // PUT /api/plugins/{id}/state: {"enabled","order"}, a few dozen bytes
 	maxEntryBody          = 64 << 10 // PUT /api/entries/{id}: one user's patch of an entry (written, readings, glosses)

@@ -51,8 +51,9 @@ type segmentRequest struct {
 
 // handleSegment serves POST /api/segment {lang, text} with every match of
 // the text in order, as {"matches": Match[]}. It needs a signed-in user
-// (one request can run thousands of lookups; nothing in the web app calls
-// it yet); the body is capped at maxSegmentBody.
+// (one request can run thousands of lookups; the reader calls it, in
+// chunks, only when readings are on); the body is capped at maxSegmentBody.
+// With "readings": true each match carries the caller's reading.
 func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {

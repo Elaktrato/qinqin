@@ -1,3 +1,4 @@
+import { UTC_CONTEXT } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import type { Dataset } from './dataset';
@@ -78,7 +79,7 @@ describe('runOptimizer', () => {
 });
 
 describe('runPreview', () => {
-	const input = { cards: [], reviews: [], from: [1], to: [2], now: new Date('2026-06-01T00:00:00Z') };
+	const input = { ctx: UTC_CONTEXT, cards: [], reviews: [], from: [1], to: [2], now: new Date('2026-06-01T00:00:00Z') };
 	const preview = {
 		dueNow: [1, 2],
 		due7: [1, 2],
@@ -92,7 +93,7 @@ describe('runPreview', () => {
 		const w = new FakeWorker();
 		const p = runPreview(input, { createWorker: make(w) });
 		expect(w.posted).toEqual([
-			{ type: 'preview', cards: [], reviews: [], from: [1], to: [2], now: input.now.getTime() }
+			{ type: 'preview', cards: [], reviews: [], from: [1], to: [2], now: input.now.getTime(), history: [], runs: [], vacationToday: false }
 		]);
 		w.emit({ type: 'preview', preview });
 		await expect(p).resolves.toEqual(preview);

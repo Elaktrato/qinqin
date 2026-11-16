@@ -4,6 +4,7 @@ import type { Dataset } from './dataset';
 import type { OptimizeResult } from './optimize';
 import type { Preview } from './preview';
 import type { ReviewEvent, StudyCard } from '../types';
+import type { StudyContext } from '../studyContext';
 
 export interface RunOptions {
 	onProgress?: (fraction: number) => void;
@@ -75,6 +76,7 @@ export interface PreviewInput {
 	from: readonly number[];
 	to: readonly number[];
 	now: Date;
+	ctx: StudyContext;
 }
 
 /** runPreview computes previewChange in a worker so a long log never blocks the page. */
@@ -124,7 +126,10 @@ export function runPreview(
 				reviews: input.reviews,
 				from: input.from,
 				to: input.to,
-				now: input.now.getTime()
+				now: input.now.getTime(),
+				history: [...input.ctx.history],
+				runs: [...input.ctx.clock.runs],
+				vacationToday: input.ctx.vacationToday
 			});
 		} catch {
 			finish();

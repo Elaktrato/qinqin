@@ -1,10 +1,10 @@
-// The place daily limits (item 4b, #89) plug into the decks page. Until 4b
-// lands both exports are null: the settings view hides the section and the
-// list and detail show no "left today". 4b replaces the values with its
-// per-deck editor (rows `limits:deck:<deckId>`) and its remaining counts
-// (`effectiveLimits` + `dayCounts`); nothing else on this page changes.
+// The place daily limits (#89) plug into the decks page: the per-deck editor
+// for DeckSettingsView and the "left today" numbers of the list and detail.
 
 import type { Component } from 'svelte';
+import DeckLimitsEditor from '$lib/settings/DeckLimitsEditor.svelte';
+import type { StudyCardKind } from '$lib/study/types';
+import { deckLeftToday, type LeftInput } from './deckLimits';
 
 export interface DeckLimitsEditorProps {
 	deckId: string;
@@ -18,8 +18,10 @@ export interface LimitsLeftToday {
 	reviews: number | null;
 }
 
-/** The per-deck limit control for DeckSettingsView, or null while 4b is not built. */
-export const deckLimitsEditor: Component<DeckLimitsEditorProps> | null = null as Component<DeckLimitsEditorProps> | null;
+/** The per-deck limit control for DeckSettingsView (rows `limits:deck:<deckId>`). */
+export const deckLimitsEditor: Component<DeckLimitsEditorProps> | null = DeckLimitsEditor;
 
-/** What is left of today's limits for a deck, or null while 4b is not built. */
-export const limitsLeftToday: ((deckId: string) => LimitsLeftToday) | null = null as ((deckId: string) => LimitsLeftToday) | null;
+/** What is left of today's limits for a deck (the decks snapshot and the deck's kinds). */
+export const limitsLeftToday:
+	| ((deckId: string, data: LeftInput, kinds: readonly StudyCardKind[]) => LimitsLeftToday)
+	| null = (deckId, data, kinds) => deckLeftToday(data, deckId, kinds);

@@ -4,7 +4,7 @@
 import { GENERAL_DECK_ID } from '$lib/study/store';
 import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
-import type { StudyDay } from '$lib/time/studyDay';
+import type { StudyContext } from '$lib/study/studyContext';
 import { deckNumbers, type DeckNumbers, type ScheduleIndex } from './deckStats';
 
 export interface DeckSummary {
@@ -25,7 +25,7 @@ export interface SummarizeInput {
 	index: ScheduleIndex;
 	now: Date;
 	w: readonly number[];
-	day: Pick<StudyDay, 'dayOf' | 'today'>;
+	ctx: StudyContext;
 	addDays: (day: string, n: number) => string;
 	/** The effective kinds of a session over these decks (deckKinds). */
 	kindsFor: (deckIds: string[]) => StudyCardKind[];
