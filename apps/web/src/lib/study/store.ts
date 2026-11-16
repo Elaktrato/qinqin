@@ -31,6 +31,7 @@ import {
   cleanCardTypes,
   type DeckSettings,
 } from "./deckSettings";
+import type { NewOrder } from "./newOrder";
 import { cardKey, parseReview } from "./reviewParse";
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
 import {
@@ -170,6 +171,15 @@ function parseSource(raw: unknown): DeckSource | undefined {
   ) {
     return { type: "plugin", pluginId: raw.pluginId, key: raw.key };
   }
+  if (
+    raw.type === "frequency" &&
+    typeof raw.packId === "string" &&
+    typeof raw.size === "number" &&
+    Number.isInteger(raw.size) &&
+    raw.size > 0
+  ) {
+    return { type: "frequency", packId: raw.packId, size: raw.size };
+  }
   return undefined;
 }
 
@@ -308,10 +318,16 @@ export const studyRowKey = {
  */
 export async function loadRawStudyData(
   workspaceId: number,
-): Promise<{ decks: Deck[]; cards: StudyCard[]; knownAt: Map<string, string> }> {
+): Promise<{
+  decks: Deck[];
+  cards: StudyCard[];
+  knownAt: Map<string, string>;
+  /** The live `deckcfg:` rows, by deck id (always set by the store). */
+  deckSettings?: Record<string, DeckSettings>;
+}> {
   const knownAt = new Map<string, string>();
-  const { decks, cards } = await fetchStudyData(workspaceId, knownAt);
-  return { decks, cards, knownAt };
+  const { decks, cards, deckSettings } = await fetchStudyData(workspaceId, knownAt);
+  return { decks, cards, knownAt, deckSettings: deckSettings ?? {} };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -672,10 +688,45 @@ export async function saveDeckCardTypes(
 ): Promise<DeckSettings> {
   const workspaceId = requireWorkspaceId();
   const { deckSettings } = await fetchStudyData(workspaceId);
+  const stored = deckSettings?.[deckId];
   const next: DeckSettings = {
     deckId,
     cardTypes: cleanCardTypes(cardTypes),
-    extra: deckSettings?.[deckId]?.extra ?? {},
+    ...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+    extra: stored?.extra ?? {},
+  };
+  await putData(
+    workspaceId,
+    deckSettingsKey(deckId),
+    serializeDeckSettings(next, new Date().toISOString()),
+  );
+  return next;
+}
+
+function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown> {
+  const { newOrder: _dropped, ...rest } = extra;
+  void _dropped;
+  return rest;
+}
+
+/**
+ * saveDeckNewOrder sets the order of new cards of one deck (#75) by
+ * rewriting its `deckcfg:` row; card types and unknown fields survive.
+ * `added` is stored as no field (the default).
+ */
+export async function saveDeckNewOrder(
+  deckId: string,
+  order: NewOrder,
+): Promise<DeckSettings> {
+  const workspaceId = requireWorkspaceId();
+  const { deckSettings } = await fetchStudyData(workspaceId);
+  const stored = deckSettings?.[deckId];
+  const next: DeckSettings = {
+    deckId,
+    cardTypes: stored?.cardTypes ?? [],
+    ...(order.by === "added" ? {} : { newOrder: order }),
+    // Choosing an order replaces an unreadable stored one too.
+    extra: withoutNewOrder(stored?.extra ?? {}),
   };
   await putData(
     workspaceId,

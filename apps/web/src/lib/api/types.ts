@@ -167,6 +167,8 @@ export interface Dictionary {
 // word-frequency pack's credit line, in priority order.
 export interface FrequencyPack {
 	id: number;
+	/** The manifest id (e.g. `jiten-frequency`); stable across servers. */
+	packId: string;
 	name: string;
 	version: string;
 	language: string;
