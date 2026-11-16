@@ -126,6 +126,14 @@ func (req TokenRequest) validate() (string, error) {
 	return name, nil
 }
 
+// ValidateTokenRequest is CreateToken's request check on its own (a
+// *TokenRequestError), so a caller can refuse a bad form before it asks for
+// the password.
+func ValidateTokenRequest(req TokenRequest) error {
+	_, err := req.validate()
+	return err
+}
+
 // CreateToken mints a token for userID and stores its hash, audited
 // (token_created) in the same transaction. The returned token is the only
 // copy: the caller shows it once and never logs it. A workspace that is
