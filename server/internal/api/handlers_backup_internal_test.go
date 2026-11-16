@@ -33,3 +33,30 @@ func TestExportRefusesAConcurrentExportAndARestore(t *testing.T) {
 		t.Errorf("export during restore = %d %s", code, body)
 	}
 }
+
+func TestServerBackupAllowsOneAtATime(t *testing.T) {
+	s, h, a, sqlDB := newGateServer(t)
+	var adminID int64
+	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'gate-admin'`).Scan(&adminID)
+	s.backups.mu.Lock()
+	s.backups.server = true
+	s.backups.mu.Unlock()
+	do := func(method, path, token, body string) (int, string) {
+		r := httptest.NewRequest(method, path, strings.NewReader(body))
+		r.Header.Set("Content-Type", "application/json")
+		if token != "" {
+			r.Header.Set("Authorization", "Bearer "+token)
+		}
+		r.RemoteAddr = "192.0.2.10:1"
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code, w.Body.String()
+	}
+	if code, body := do("POST", "/api/admin/backup", a.admin, `{"currentPassword":"x"}`); code != 409 || !strings.Contains(body, "backup_running") {
+		t.Errorf("start while running = %d %s", code, body)
+	}
+	tok := s.tickets.issueExtra(adminID, ticketServerBackup, ticketTTL, s.now(), "books")
+	if code, body := do("GET", "/api/admin/backup/"+tok, "", ""); code != 409 || !strings.Contains(body, "backup_running") {
+		t.Errorf("download while running = %d %s", code, body)
+	}
+}

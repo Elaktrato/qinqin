@@ -209,6 +209,8 @@ func (s *server) routes() []route {
 		{"GET /api/account/deletion-preview", s.handleAccountDeletionPreview, accUser, nil},
 		{"DELETE /api/account", s.handleDeleteAccount, accUser, nil},
 		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil},
+		{"POST /api/admin/backup", s.handleAdminBackupStart, accAdmin, nil},
+		{"GET /api/admin/backup/{ticket}", s.handleAdminBackupDownload, accPublic, nil},
 		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil},
 		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil},
 		{"POST /api/account/mfa/totp/setup", s.handleTOTPSetup, accSession, []string{restrictionMFAEnrollment}},

@@ -19,6 +19,7 @@ type ticket struct {
 	userID  int64
 	kind    string
 	expires time.Time
+	extra   string // what the ticket was issued for (the include list of a server backup)
 }
 
 type ticketStore struct {
@@ -36,6 +37,11 @@ func hashTicket(token string) string {
 // issue creates a ticket for userID and kind valid for ttl from now and
 // returns the token (never stored). Expired tickets are purged on the way.
 func (ts *ticketStore) issue(userID int64, kind string, ttl time.Duration, now time.Time) string {
+	return ts.issueExtra(userID, kind, ttl, now, "")
+}
+
+// issueExtra is issue with a payload that consumeExtra hands back.
+func (ts *ticketStore) issueExtra(userID int64, kind string, ttl time.Duration, now time.Time, extra string) string {
 	var b [16]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		panic("api: no randomness: " + err.Error())
@@ -48,7 +54,7 @@ func (ts *ticketStore) issue(userID int64, kind string, ttl time.Duration, now t
 			delete(ts.m, k)
 		}
 	}
-	ts.m[hashTicket(token)] = ticket{userID: userID, kind: kind, expires: now.Add(ttl)}
+	ts.m[hashTicket(token)] = ticket{userID: userID, kind: kind, expires: now.Add(ttl), extra: extra}
 	return token
 }
 
@@ -56,19 +62,25 @@ func (ts *ticketStore) issue(userID int64, kind string, ttl time.Duration, now t
 // wrong-kind tickets are all refused alike; a wrong-kind attempt does not
 // spend the ticket.
 func (ts *ticketStore) consume(token, kind string, now time.Time) (userID int64, ok bool) {
+	userID, _, ok = ts.consumeExtra(token, kind, now)
+	return userID, ok
+}
+
+// consumeExtra is consume that also returns the payload of the ticket.
+func (ts *ticketStore) consumeExtra(token, kind string, now time.Time) (userID int64, extra string, ok bool) {
 	if token == "" {
-		return 0, false
+		return 0, "", false
 	}
 	key := hashTicket(token)
 	ts.mu.Lock()
 	defer ts.mu.Unlock()
 	t, found := ts.m[key]
 	if !found || t.kind != kind {
-		return 0, false
+		return 0, "", false
 	}
 	delete(ts.m, key)
 	if !now.Before(t.expires) {
-		return 0, false
+		return 0, "", false
 	}
-	return t.userID, true
+	return t.userID, t.extra, true
 }
