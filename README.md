@@ -5,6 +5,12 @@ per-dictionary meanings, character readings, stroke-order animation, level
 badges, and study statistics in one small Docker stack: a Go API and SQLite
 database with a SvelteKit single-page app embedded in the binary.
 
+## Documentation
+
+- The user guide, self-hosting guide, API reference and the plugin and data pack formats are Markdown sources in [`docs/wiki/`](docs/wiki/Home.md), published as the GitHub wiki once the owner enables it.
+- [`docs/contracts/overview.md`](docs/contracts/overview.md): the shared rules (scheduler, study day, ids, sync formats) with JSON fixtures for other clients.
+- [`docs/sources.md`](docs/sources.md): the licence and attribution reference for all bundled data.
+
 ## Features
 
 - **Hanzi and kanji views** — simplified/traditional variants, readings in
