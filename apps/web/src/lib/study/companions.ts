@@ -63,7 +63,8 @@ export function planCompanions({
 	studyDay,
 	deckSettings,
 	exclude,
-	skip
+	skip,
+	offline = false
 }: {
 	cards: readonly StudyCard[];
 	kinds: readonly StudyCardKind[];
@@ -81,7 +82,14 @@ export function planCompanions({
 	exclude?: ReadonlySet<number>;
 	/** `kind:entryId` of items already found ineligible. */
 	skip?: ReadonlySet<string>;
+	/**
+	 * Offline nothing is planned: a companion becomes a card only by a
+	 * plugin-data write on its first grade, and the offline outbox carries
+	 * review events, not rows.
+	 */
+	offline?: boolean;
 }): CompanionItem[] {
+	if (offline) return [];
 	const budget = Number.isFinite(newBudget) ? Math.max(0, Math.floor(newBudget)) : 0;
 	const wantedKinds = COMPANION_KINDS.filter((kind) => kinds.includes(kind));
 	if (budget === 0 || wantedKinds.length === 0) return [];

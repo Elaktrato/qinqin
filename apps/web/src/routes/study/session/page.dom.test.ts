@@ -39,6 +39,7 @@ import { addCard, loadStudyData } from '$lib/study/store';
 import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
+import { offline, resetOffline } from '$lib/pwa/offlineState';
 import { workspaces } from '$lib/workspaces';
 import Page from './+page.svelte';
 
@@ -203,5 +204,43 @@ describe('character level session', () => {
 		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(12));
 		expect(addCard).not.toHaveBeenCalled();
 		expect(sessionStorage.getItem('qinqin.study.ineligible') ?? '').toContain('writing:11');
+	});
+});
+
+describe('offline start', () => {
+	function configureDecks(cardTypes: string[]): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes })
+		);
+	}
+	const word = (id: number): StudyCard => ({ id: `v${id}`, kind: 'vocab', entryId: id, written: '日', deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' });
+
+	beforeEach(() => resetOffline());
+	afterEach(() => resetOffline());
+
+	it('says the workspace is not ready when nothing was saved', async () => {
+		offline.update((s) => ({ ...s, online: false }));
+		configureDecks(['vocab']);
+		vi.mocked(loadStudyData).mockRejectedValue(new TypeError('Failed to fetch'));
+		render(Page);
+		expect(await screen.findByText("This workspace isn't ready for offline study yet. Open it once while online.")).toBeTruthy();
+	});
+
+	it('a level session offline says it needs a connection', async () => {
+		offline.update((s) => ({ ...s, online: false }));
+		configure(['vocab']);
+		vi.mocked(getSchemes).mockRejectedValue(new TypeError('Failed to fetch'));
+		render(Page);
+		expect(await screen.findByText('Level sessions need a connection. Start a deck session instead.')).toBeTruthy();
+	});
+
+	it('studies saved real cards and notes that companion cards return online', async () => {
+		offline.update((s) => ({ ...s, online: false }));
+		configureDecks(['vocab', 'sentence']);
+		history([word(11), word(12)], []);
+		render(Page);
+		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		expect(screen.getByText('Companion cards return when you are online.')).toBeTruthy();
 	});
 });

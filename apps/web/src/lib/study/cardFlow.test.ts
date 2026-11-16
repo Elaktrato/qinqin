@@ -305,6 +305,32 @@ describe('Round 1 cards without a written snapshot', () => {
 	});
 });
 
+describe('deckSessionPlan offline', () => {
+	const now = new Date('2026-03-01T00:00:00Z');
+	const cards = [1, 2, 3].map((n) => card(`v${n}`, 'vocab', n, { createdAt: `2026-01-0${n}T00:00:00Z` }));
+	const options = {
+		ctx: UTC_CONTEXT,
+		cards,
+		reviews: [] as ReviewEvent[],
+		deckIds: ['general'],
+		kinds: ['vocab', 'sentence'] as StudyCardKind[],
+		newLimit: 10,
+		reviewLimit: 100,
+		now,
+		w: DEFAULT_W,
+		language: 'zh'
+	};
+
+	it('keeps real cards, drops every virtual companion, and leaves no reserve', () => {
+		const online = deckSessionPlan(options);
+		expect(online.queue.some((item) => item.virtual)).toBe(true);
+		const offline = deckSessionPlan({ ...options, offline: true });
+		expect(offline.queue.every((item) => !item.virtual)).toBe(true);
+		expect(offline.queue.map((item) => item.cardId)).toEqual(['v1', 'v2', 'v3']);
+		expect(offline.reserve).toEqual([]);
+	});
+});
+
 describe('deckSessionPlan and dropItem', () => {
 	const now = new Date('2026-03-01T00:00:00Z');
 	// Words 1 and 2 (oldest) have no sentences; 3 and 4 do.

@@ -188,6 +188,8 @@ export interface DeckSessionOptions {
 	ctx: StudyContext;
 	/** Per-deck card type switches; without them no reverse or cloze card is queued. */
 	deckSettings?: Record<string, DeckSettings>;
+	/** Offline: real cards only, no companions (see planCompanions). */
+	offline?: boolean;
 }
 
 /**
@@ -281,7 +283,8 @@ export function deckSessionPlan({
 	skip,
 	w,
 	ctx,
-	deckSettings
+	deckSettings,
+	offline
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
@@ -324,7 +327,8 @@ export function deckSessionPlan({
 		studyDay: ctx.day,
 		deckSettings,
 		exclude: new Set(real.map((card) => card.entryId)),
-		skip
+		skip,
+		offline
 	})
 		.filter((item) => skip === undefined || !skip.has(`${item.kind}:${item.entryId}`))
 		// A word answered today already buried these (see siblings.ts).
