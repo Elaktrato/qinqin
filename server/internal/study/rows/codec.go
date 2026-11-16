@@ -229,11 +229,10 @@ func cardFromLegacy(key string, o object) (Row, error) {
 		}
 	}
 	if raw, ok := o.take("sentenceId"); ok {
-		if _, isNum := value(raw).(json.Number); isNum {
-			n, ok := entryInt(raw)
-			if !ok {
-				return nil, unreadable(key, "sentenceId is not an integer in 1..2^53-1")
-			}
+		// The v0.3.0 web kept any number here; one the typed shape cannot
+		// carry (not an integer in 1..2^53-1) stays in extra, so the card is
+		// still read (review fix, phase A).
+		if n, ok := entryInt(raw); ok {
 			c.SentenceID = &n
 		} else {
 			o.keep("sentenceId", raw)

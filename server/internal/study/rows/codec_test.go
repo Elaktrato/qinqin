@@ -116,3 +116,33 @@ func TestFromLegacyRefusesOtherKeys(t *testing.T) {
 		}
 	}
 }
+
+// ToLegacy writes extra first and every typed member over it, so a typed
+// member always wins over an extra member of the same name, even for a row
+// that was never validated (review fix, phase A: pins the order).
+func TestToLegacyTypedMembersWinOverExtra(t *testing.T) {
+	r := &Card{ID: "c-vocab-1", Kind: "vocab", EntryID: 1, DeckIDs: []string{"general"}, CreatedAt: "t",
+		Extra: json.RawMessage(`{"id":"other","kind":"tone","entryId":9,"deckIds":["x"],"createdAt":"never","color":"red"}`)}
+	key, data := ToLegacy(r)
+	if key != "card:c-vocab-1" {
+		t.Fatalf("key %q", key)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]any{"id": "c-vocab-1", "kind": "vocab", "entryId": float64(1), "deckIds": []any{"general"}, "createdAt": "t", "color": "red"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ToLegacy = %s, want typed members over extra", data)
+	}
+	s := &DeckSettingsRow{DeckID: "d1", CardTypes: []string{"cloze"}, NewOrder: &NewOrder{By: "frequency"},
+		Extra: json.RawMessage(`{"deckId":"x","cardTypes":["reverse"],"newOrder":{"by":"added"},"updatedAt":"old"}`)}
+	s.ModifiedAt = time.Date(2026, 11, 12, 10, 0, 0, 0, time.UTC)
+	_, data = ToLegacy(s)
+	got = nil
+	json.Unmarshal(data, &got)
+	want = map[string]any{"deckId": "d1", "cardTypes": []any{"cloze"}, "newOrder": map[string]any{"by": "frequency"}, "updatedAt": "2026-11-12T10:00:00Z"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ToLegacy(deck settings) = %s", data)
+	}
+}

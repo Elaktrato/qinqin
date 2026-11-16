@@ -68,10 +68,15 @@ only: FSRS weight ranges stay a client rule (a set outside the ts-fsrs ranges is
 On push `version` is ignored and may be left out, and `deletedAt` may be left out (= live).
 
 `extra` holds every member the typed shape does not carry, verbatim (a newer client's member, or a known
-member whose stored value the typed shape cannot carry, under its own name). A member that the legacy form
-writes from a typed value always wins: the server drops `extra` members shadowed by a set typed member
-(`id`, `kind`, `entryId`, `deckIds`, `createdAt` of a card; `deckId`, `cardTypes`, `updatedAt` of deck
-settings; `version` of limits; and every optional member that is not `null`).
+member whose stored value the typed shape cannot carry, under its own name). `extra` must not carry a
+typed member's name, with one exception: a known member whose stored legacy value the typed shape cannot
+carry while that typed member is unset (`null`) - an unusable `source`, an `entryKind` other than
+`"character"`, a `sentenceId` that is not an integer in `1..2^53-1`, an unreadable `newOrder`, a limit
+outside `0..9999`. The legacy view writes `extra` first, so an old shell reads such a value back exactly as
+it stored it; a client that sets the typed member replaces it. A member that the legacy form writes from a
+typed value always wins: the server drops `extra` members shadowed by a set typed member (`id`, `kind`,
+`entryId`, `deckIds`, `createdAt` of a card; `deckId`, `cardTypes`, `updatedAt` of deck settings;
+`version` of limits; and every optional member that is not `null`), and a writer must not send them.
 
 ## Last-write-wins and tombstones (`lww.json`)
 
@@ -88,7 +93,8 @@ only; any other cursor (including `1970-01-01T00:00:00Z`) ships tombstones too.
 `FromLegacy(key, data)` reads a legacy row exactly as the v0.3.0 web parsers did (key/payload agreement,
 `deckIds` cleaned to unique strings, `skipKinds`/`cardTypes` to known kinds in kind order, limits only at
 `version: 1`, members beyond a source or order variant dropped). A row the v0.3.0 parsers ignored is
-`unreadable` (and so is a card whose `entryId` or `sentenceId` is not an integer). `ToLegacy` writes the
+`unreadable` (and so is a card whose `entryId` is not an integer in `1..2^53-1`; a `sentenceId` that is not
+one stays in `extra`, since the v0.3.0 web read such a card). `ToLegacy` writes the
 legacy object back; deck settings get `updatedAt` = the row's edit time (`modified_at`).
 `ToLegacy(FromLegacy(row))` equals the row as JSON values except for that cleaning.
 

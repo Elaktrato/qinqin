@@ -93,10 +93,8 @@ export function fromLegacy(key: string, data: unknown): { collection: StudyColle
 			}
 			const sid = take(o, 'sentenceId');
 			if (sid.has) {
-				if (typeof sid.v === 'number') {
-					if (entryInt(sid.v) === null) return null;
-					body.sentenceId = sid.v;
-				} else o.sentenceId = sid.v;
+				if (entryInt(sid.v) !== null) body.sentenceId = sid.v;
+				else o.sentenceId = sid.v;
 			}
 			const sk = take(o, 'skipKinds');
 			if (sk.has) {

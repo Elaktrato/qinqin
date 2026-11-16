@@ -647,7 +647,7 @@
    "expect": "unreadable"
   },
   {
-   "name": "fractional sentence id",
+   "name": "a fractional sentenceId: kept in extra (the v0.3.0 web read the card)",
    "key": "card:c-vocab-1201",
    "data": {
     "id": "c-vocab-1201",
@@ -659,7 +659,121 @@
     "createdAt": "2026-11-10T08:00:00Z",
     "sentenceId": 1.5
    },
-   "expect": "unreadable"
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "sentenceId": 1.5
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 1.5
+   }
+  },
+  {
+   "name": "sentenceId 0: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 0
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "sentenceId": 0
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 0
+   }
+  },
+  {
+   "name": "sentenceId above 2^53-1: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 9007199254740992
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "sentenceId": 9007199254740992
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 9007199254740992
+   }
   },
   {
    "name": "unknown kind",
