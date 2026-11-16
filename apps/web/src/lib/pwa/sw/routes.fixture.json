@@ -8,6 +8,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/account/restore/{token}",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/account/sessions/{id}",
 		"access": "user"
 	},
@@ -88,12 +92,28 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/account/export/{ticket}",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/account/restore/safety-export/{ticket}",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/account/restore/{token}",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/account/sessions",
 		"access": "user"
 	},
 	{
 		"pattern": "GET /api/admin/audit",
 		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/backup/{ticket}",
+		"access": "public"
 	},
 	{
 		"pattern": "GET /api/admin/invites",
@@ -320,6 +340,10 @@
 		"access": "session"
 	},
 	{
+		"pattern": "POST /api/account/export",
+		"access": "user"
+	},
+	{
 		"pattern": "POST /api/account/mfa/email",
 		"access": "session"
 	},
@@ -344,8 +368,24 @@
 		"access": "session"
 	},
 	{
+		"pattern": "POST /api/account/restore",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/restore/safety-export",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/restore/{token}",
+		"access": "user"
+	},
+	{
 		"pattern": "POST /api/account/sessions/revoke",
 		"access": "user"
+	},
+	{
+		"pattern": "POST /api/admin/backup",
+		"access": "admin"
 	},
 	{
 		"pattern": "POST /api/admin/dictionaries",
