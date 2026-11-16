@@ -79,6 +79,17 @@ describe('classify: spec table', () => {
 		expect(kind('/api/entries/12', { auth: false })).toBe('bypass');
 	});
 
+	it('the lookup history rows are never saved offline (#72)', () => {
+		expect(kind('/api/plugins/qinqin-core/data/lookups?workspace=3')).toBe('bypass');
+		expect(kind('/api/plugins/qinqin-core/data/lookupcfg')).toBe('bypass');
+		expect(kind('/api/plugins/qinqin-core/data?workspace=3&prefix=lookups')).toBe('bypass');
+		expect(kind('/api/plugins/qinqin-core/data?prefix=lookupcfg')).toBe('bypass');
+		expect(kind('/api/plugins/qinqin-core/data?prefix=look')).toBe('bypass');
+		expect(kind('/api/plugins/qinqin-core/data?workspace=3&prefix=note%3A')).toBe('api');
+		expect(kind('/api/plugins/qinqin-core/data/note:5?workspace=3')).toBe('api');
+		expect(kind('/api/plugins/qinqin-flashcards/data/lookups?workspace=3')).toBe('api');
+	});
+
 	it('sync/pull only for the plugin collections', () => {
 		expect(kind('/api/sync/pull?cursor=1970-01-01T00:00:00Z')).toBe('bypass');
 		expect(kind('/api/sync/pull?collections=pluginData,lexicon')).toBe('bypass');
