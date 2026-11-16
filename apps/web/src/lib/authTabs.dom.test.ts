@@ -6,7 +6,7 @@ import { outboxToken, outboxUser } from './study/outboxUser';
 const user = (id: number) => ({ id, username: `u${id}`, admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' });
 
 function storageEvent(key: string | null): void {
-	window.dispatchEvent(new StorageEvent('storage', { key, storageArea: localStorage }));
+	window.dispatchEvent(new StorageEvent('storage', { key }));
 }
 
 beforeEach(() => {
