@@ -1907,11 +1907,13 @@ describe("goal row", () => {
     expect((await loadStudyData(3)).goals).toBe("newer");
   });
 
-  it("saveGoals PUTs the row verbatim to the current workspace and drops caches", async () => {
+  it("saveGoals PUTs the row verbatim to the workspace it was given and drops caches", async () => {
     vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
     const seen: number[] = [];
     const off = onStudyWrite((w) => seen.push(w));
-    await saveGoals(goal as never);
+    // The current workspace has moved on: the caller's captured id wins.
+    selectWorkspace(4);
+    await saveGoals(3, goal as never);
     off();
     expect(putBodies()).toEqual([
       { url: `/api/plugins/${PLUGIN_ID}/data/goals:workspace?workspace=3`, body: goal },
@@ -1919,10 +1921,10 @@ describe("goal row", () => {
     expect(seen).toEqual([3]);
   });
 
-  it("saveGoals throws without a current workspace", async () => {
-    selectWorkspace(null);
+  it("saveGoals refuses an id that is not a workspace", async () => {
     vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
-    await expect(saveGoals(goal as never)).rejects.toThrow(/workspace/);
+    await expect(saveGoals(0, goal as never)).rejects.toThrow(/workspace/);
+    await expect(saveGoals(1.5, goal as never)).rejects.toThrow(/workspace/);
     expect(calls()).toHaveLength(0);
   });
 });

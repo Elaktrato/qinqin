@@ -2,6 +2,7 @@
 	// Settings → Study: the workspace's daily goal. The rules live in
 	// lib/goals (row, texts) and ./goalForm.ts (form view model).
 	import { fetchActivity, type ActivitySource } from '$lib/api/stats';
+	import { BUILTIN_SOURCES } from '$lib/goals/builtinSources';
 	import { activityType, type GoalsRow } from '$lib/goals/goals';
 	import { metricOptions, type MetricOption } from '$lib/goals/goalText';
 	import { onContextStale } from '$lib/study/currentContext';
@@ -18,7 +19,12 @@
 
 	let row = $state.raw<GoalsRow | null>(null);
 	let newer = $state(false);
-	let sources = $state.raw<ActivitySource[]>([]);
+	let sources = $state.raw<readonly ActivitySource[]>(BUILTIN_SOURCES);
+	// The activity list failed (offline): the built-in choices are shown.
+	let sourcesFailed = $state(false);
+	// The workspace the shown row was read from; a save writes only there.
+	let loadedFor = $state<number | null>(null);
+	let loadFailed = $state(false);
 	let newLimit = $state<number | null>(null);
 	let form = $state<GoalFormState>({ metric: '', target: '', showStreak: true });
 	let loaded = $state(false);
@@ -26,6 +32,7 @@
 	let message = $state('');
 	let error = $state('');
 	let seq = 0;
+	let sourcesSeq = 0;
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
 	// A goal whose activity is no longer a source stays selectable, so the
@@ -46,6 +53,8 @@
 	async function load(workspace: number | null, force = false): Promise<void> {
 		const mine = ++seq;
 		loaded = false;
+		loadFailed = false;
+		loadedFor = null;
 		message = '';
 		error = '';
 		if (workspace === null) {
@@ -54,22 +63,37 @@
 			form = formFrom(null, today);
 			return;
 		}
+		// The row and the activity list load independently: the row is all a
+		// flashcards goal needs, so the form also works offline.
+		void loadSources(workspace);
 		try {
-			const [data, activity] = await Promise.all([
-				getStudyData(workspace, { force }),
-				fetchActivity(today, today, workspace)
-			]);
+			const data = await getStudyData(workspace, { force });
 			if (mine !== seq) return;
 			const goals = data.goals ?? null;
 			newer = goals === 'newer';
 			row = goals === 'newer' ? null : goals;
-			sources = activity.sources ?? [];
 			newLimit = effectiveLimits(data.limits?.workspace ?? null, null).new;
 			form = formFrom(row, today);
+			loadedFor = workspace;
 			loaded = true;
 		} catch {
 			if (mine !== seq) return;
+			loadFailed = true;
 			error = 'Could not load your daily goal.';
+		}
+	}
+
+	async function loadSources(workspace: number): Promise<void> {
+		const mine = ++sourcesSeq;
+		try {
+			const activity = await fetchActivity(today, today, workspace);
+			if (mine !== sourcesSeq) return;
+			sources = activity.sources ?? [];
+			sourcesFailed = false;
+		} catch {
+			if (mine !== sourcesSeq) return;
+			sources = BUILTIN_SOURCES;
+			sourcesFailed = true;
 		}
 	}
 
@@ -82,10 +106,15 @@
 			message = 'No changes';
 			return;
 		}
+		const target = loadedFor;
+		if (target === null || target !== workspaceId) {
+			error = 'The workspace changed; check the goal again.';
+			return;
+		}
 		busy = true;
 		try {
-			await saveGoals(next);
-			await load(workspaceId, true);
+			await saveGoals(target, next);
+			await load(target, true);
 			message = 'Saved.';
 		} catch {
 			error = 'Could not save the daily goal.';
@@ -125,6 +154,12 @@
 		study, or any other activity the statistics count. A change applies from today; earlier days keep
 		the goal they had. Vacation days pause the goal and its streak.
 	</p>
+	{#if sourcesFailed}
+		<p class="note" role="status">
+			Could not load the activity list; showing the built-in choices.
+			<button type="button" onclick={() => workspaceId !== null && void loadSources(workspaceId)}>Try again</button>
+		</p>
+	{/if}
 	{#if newer}
 		<p class="note" role="status">
 			This goal was set by a newer version of qinqin and cannot be changed here.
@@ -163,7 +198,12 @@
 		<p class="hint">{hint}</p>
 	{/if}
 	{#if error}
-		<p class="error" role="alert">{error}</p>
+		<p class="error" role="alert">
+			{error}
+			{#if loadFailed}
+				<button type="button" onclick={() => void load(workspaceId, true)}>Try again</button>
+			{/if}
+		</p>
 	{/if}
 </section>
 

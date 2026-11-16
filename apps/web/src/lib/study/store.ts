@@ -1124,11 +1124,16 @@ export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<v
 }
 
 /**
- * saveGoals stores the current workspace's daily goal row as given (unknown
- * keys included); the caller plans it with planGoalEdit (goals/goals.ts).
+ * saveGoals stores one workspace's daily goal row as given (unknown keys
+ * included); the caller plans it with planGoalEdit (goals/goals.ts) and
+ * passes the workspace the row was read from, never "whatever is current
+ * now", so a workspace switch mid-save cannot write another workspace.
  */
-export async function saveGoals(row: GoalsRow): Promise<void> {
-  await putData(requireWorkspaceId(), GOALS_KEY, row);
+export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<void> {
+  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    throw new Error("saveGoals: not a workspace id: study data is workspace-scoped");
+  }
+  await putData(workspaceId, GOALS_KEY, row);
 }
 
 /**

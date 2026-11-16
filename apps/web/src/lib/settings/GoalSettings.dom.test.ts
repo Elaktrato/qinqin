@@ -90,11 +90,12 @@ describe('GoalSettings', () => {
 		await fireEvent.input(f.target, { target: { value: '50' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][0]).toEqual({
+		expect(vi.mocked(saveGoals).mock.calls[0][1]).toEqual({
 			version: 1,
 			showStreak: true,
 			history: [{ from: today, metric: 'activity:review', target: 50 }]
 		});
+		expect(vi.mocked(saveGoals).mock.calls[0][0]).toBe(1);
 		expect(await screen.findByText('Saved.')).toBeTruthy();
 	});
 
@@ -124,7 +125,7 @@ describe('GoalSettings', () => {
 		await form();
 		await fireEvent.click(screen.getByRole('button', { name: 'Remove goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][0].history).toEqual([
+		expect(vi.mocked(saveGoals).mock.calls[0][1].history).toEqual([
 			{ from: '2026-01-01', metric: 'activity:review', target: 50 },
 			{ from: today, metric: null, target: null }
 		]);
@@ -137,7 +138,7 @@ describe('GoalSettings', () => {
 		await fireEvent.click(streak);
 		await fireEvent.click(screen.getByRole('button', { name: 'Save goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][0]).toEqual(goal('activity:review', 50, false));
+		expect(vi.mocked(saveGoals).mock.calls[0][1]).toEqual(goal('activity:review', 50, false));
 	});
 
 	it('hints at the new-card limit', async () => {
@@ -164,5 +165,51 @@ describe('GoalSettings', () => {
 		await waitFor(() => expect((screen.getByLabelText('Target') as HTMLInputElement).value).toBe('7'));
 		expect(vi.mocked(getStudyData).mock.calls.map((c) => c[0])).toContain(2);
 		expect((screen.getByLabelText('Count') as HTMLSelectElement).value).toBe('flashcards:new');
+	});
+
+	it('writes to the workspace the form was loaded for, never a newer one', async () => {
+		setup({ goals: goal('activity:review', 50) });
+		await form();
+		// Workspace 2 is still loading: the form is disabled, nothing is written.
+		vi.mocked(getStudyData).mockReturnValue(new Promise(() => {}));
+		select(2);
+		await waitFor(() =>
+			expect((screen.getByRole('button', { name: 'Save goal' }) as HTMLButtonElement).disabled).toBe(true)
+		);
+		await fireEvent.click(screen.getByRole('button', { name: 'Remove goal' }));
+		expect(saveGoals).not.toHaveBeenCalled();
+	});
+
+	it('works offline with the built-in choices and offers Try again', async () => {
+		setup({ goals: goal('flashcards:new', 5) });
+		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
+		cleanup();
+		render(GoalSettings);
+		const { metric, target } = await form();
+		expect(target.value).toBe('5');
+		expect([...metric.options].map((o) => o.textContent?.trim())).toEqual([
+			'No daily goal',
+			'Flashcard reviews',
+			'New cards',
+			'Flashcard study time',
+			'Journal entries',
+			'Reading'
+		]);
+		expect(screen.getByText(/Could not load the activity list/)).toBeTruthy();
+		vi.mocked(fetchActivity).mockResolvedValue({ from: today, to: today, timeZone: 'UTC', sources: SOURCES, cells: [] });
+		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+		await waitFor(() => expect(screen.queryByText(/Could not load the activity list/)).toBeNull());
+		expect([...metric.options].map((o) => o.textContent?.trim())).not.toContain('Journal entries');
+	});
+
+	it('shows a load error with Try again when the goal row cannot be read', async () => {
+		setup();
+		vi.mocked(getStudyData).mockRejectedValueOnce(new Error('offline'));
+		cleanup();
+		render(GoalSettings);
+		expect((await screen.findByRole('alert')).textContent).toContain('Could not load your daily goal.');
+		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [], goals: goal('activity:review', 9) });
+		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+		await waitFor(() => expect((screen.getByLabelText('Target') as HTMLInputElement).value).toBe('9'));
 	});
 });
