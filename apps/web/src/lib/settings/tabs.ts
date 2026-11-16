@@ -31,14 +31,15 @@ export function visibleSettingsTabs(admin: boolean): SettingsTab[] {
 }
 
 /** The sections of the Admin tab (`?tab=admin&section=`). Email arrives with the mail settings. */
-export const ADMIN_SECTIONS = ['users', 'invites', 'email', 'security'] as const;
+export const ADMIN_SECTIONS = ['users', 'invites', 'email', 'security', 'backup'] as const;
 export type AdminSection = (typeof ADMIN_SECTIONS)[number];
 
 export const ADMIN_SECTION_LABELS: Record<AdminSection, string> = {
 	users: 'Users',
 	invites: 'Invites',
 	email: 'Email',
-	security: 'Security'
+	security: 'Security',
+	backup: 'Backup'
 };
 
 /** parseAdminSection reads `?section=`; anything unknown is Users. */
