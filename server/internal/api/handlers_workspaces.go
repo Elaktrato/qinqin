@@ -8,6 +8,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"qinqin/internal/auth"
 	"strconv"
 	"strings"
 	"time"
@@ -456,10 +457,22 @@ func (s *server) deleteWorkspace(ctx context.Context, userID, id int64) ([]int64
 		}
 		return nil, nil, errWorkspaceNotFound
 	}
-	// Every table with a workspace_id column (migrations 009, 010, 019);
-	// bookmarks and highlights hang off the books.
+	// Every table with a workspace_id column (migrations 009, 010, 019,
+	// 037); bookmarks and highlights hang off the books.
 	for _, table := range []string{"study_events", "plugin_data"} {
 		if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE workspace_id = ?`, id); err != nil {
+			return nil, nil, err
+		}
+	}
+	// Access tokens limited to the workspace go with it (foreign keys are
+	// off), audited like every other revocation.
+	res, err = tx.ExecContext(ctx, `DELETE FROM access_tokens WHERE workspace_id = ? AND user_id = ?`, id, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if n, _ := res.RowsAffected(); n > 0 {
+		if err := auth.Audit(ctx, tx, auth.AuditEvent{Action: "token_revoked", ActorID: userID, TargetID: &userID,
+			Detail: map[string]any{"scope": "workspace", "count": n}}); err != nil {
 			return nil, nil, err
 		}
 	}

@@ -63,6 +63,13 @@ describe('dom mapping with readings inside pieces', () => {
 		everySpan(container, runs);
 	});
 
+	it('round-trips with word state classes on the pieces', () => {
+		const container = mount(
+			'<p data-p="0"><span data-r="0"><ruby data-o="0" class="gen w-new">你<rt>nǐ</rt></ruby><span data-o="1" class="w-new w-end">好</span><span data-o="2" class="w-learning w-end">世界</span></span></p>'
+		);
+		expect(everySpan(container, plainRuns)).toEqual(everySpan(mount(plain), plainRuns));
+	});
+
 	it('reports a caret inside a generated <rt> as inRt, at its piece', () => {
 		const container = mount(withRuby);
 		const rtText = container.querySelector('rt')!.firstChild!;

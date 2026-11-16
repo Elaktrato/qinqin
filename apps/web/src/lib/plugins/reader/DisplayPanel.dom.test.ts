@@ -53,14 +53,18 @@ describe('DisplayPanel', () => {
 		expect(onchange).toHaveBeenLastCalledWith({ readings: 'always' });
 	});
 
-	it('the threshold slider exists only in Smart, with its sentence and link', async () => {
+	it('the threshold slider exists only in Smart or with highlighting, with its sentence and link', async () => {
 		const { onchange } = mount({ readings: 'always' });
 		await open();
 		expect(screen.queryByRole('slider')).toBeNull();
 		cleanup();
+		mount({ readings: 'never', highlightWords: true, smartThreshold: 80 });
+		await open();
+		expect(screen.getByRole('slider', { name: 'A word counts as known from a memory score of 80' })).toBeTruthy();
+		cleanup();
 		const smart = mount({ readings: 'smart', smartThreshold: 80 });
 		await open();
-		const slider = screen.getByRole('slider') as HTMLInputElement;
+		const slider = screen.getByRole('slider', { name: 'A word counts as known from a memory score of 80' }) as HTMLInputElement;
 		expect(slider.min).toBe('10');
 		expect(slider.max).toBe('100');
 		expect(slider.step).toBe('5');
@@ -69,6 +73,23 @@ describe('DisplayPanel', () => {
 		await fireEvent.input(slider, { target: { value: '70' } });
 		expect(smart.onchange).toHaveBeenLastCalledWith({ smartThreshold: 70 });
 		expect(onchange).not.toHaveBeenCalled();
+	});
+
+	it('the highlighting checkbox reports its value, the legend shows when on', async () => {
+		const { onchange } = mount({ highlightWords: false });
+		await open();
+		const box = screen.getByRole('checkbox', { name: 'Mark words by how well I know them' }) as HTMLInputElement;
+		expect(box.checked).toBe(false);
+		expect(screen.queryByText('New: solid underline')).toBeNull();
+		await fireEvent.click(box);
+		expect(onchange).toHaveBeenLastCalledWith({ highlightWords: true });
+		cleanup();
+		mount({ highlightWords: true });
+		await open();
+		expect((screen.getByRole('checkbox', { name: 'Mark words by how well I know them' }) as HTMLInputElement).checked).toBe(true);
+		expect(screen.getByText('New: solid underline')).toBeTruthy();
+		expect(screen.getByText('Learning: dotted underline')).toBeTruthy();
+		expect(screen.getByText(/Known words are not marked/)).toBeTruthy();
 	});
 
 	it('the Book ruby control is hidden for a book without ruby', async () => {

@@ -70,7 +70,10 @@ func TestAuditHoldsNoSecrets(t *testing.T) {
 	if len(body) < 100 {
 		t.Fatalf("audit body too small: %s", body)
 	}
-	for _, secret := range []string{"secret", "example.org", inv.Token, tokenOf(link.Path), "token", "password\""} {
+	// "tokens" is the audit key counting revoked access tokens (a number,
+	// never a token); any other "token" would be one.
+	body = strings.ReplaceAll(body, `"tokens":`, "")
+	for _, secret := range []string{"secret", "example.org", inv.Token, tokenOf(link.Path), "token", "password\"", "qq_pat_"} {
 		if strings.Contains(body, secret) {
 			t.Errorf("audit body contains %q", secret)
 		}

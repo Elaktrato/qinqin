@@ -298,7 +298,7 @@ func setDisabledTx(ctx context.Context, tx *sql.Tx, actorID, id int64, disabled 
 		}
 		return nil
 	}
-	revoked, err := revokeSessions(ctx, tx, id, 0)
+	revoked, tokens, err := revokeCredentials(ctx, tx, id, 0)
 	if err != nil {
 		return err
 	}
@@ -309,7 +309,7 @@ func setDisabledTx(ctx context.Context, tx *sql.Tx, actorID, id int64, disabled 
 	if disabled {
 		action = "user_disabled"
 	}
-	if err := Audit(ctx, tx, AuditEvent{Action: action, ActorID: actorID, TargetID: &id, Detail: map[string]any{"revoked": revoked}}); err != nil {
+	if err := Audit(ctx, tx, AuditEvent{Action: action, ActorID: actorID, TargetID: &id, Detail: map[string]any{"revoked": revoked, "tokens": tokens}}); err != nil {
 		return err
 	}
 	return nil
@@ -398,7 +398,7 @@ func (u *Users) RevokeAllSessions(ctx context.Context, actorID, id int64) (int64
 	} else if err != nil {
 		return 0, fmt.Errorf("read user: %w", err)
 	}
-	n, err := revokeSessions(ctx, tx, id, 0)
+	n, tokens, err := revokeCredentials(ctx, tx, id, 0)
 	if err != nil {
 		return 0, err
 	}
@@ -406,7 +406,7 @@ func (u *Users) RevokeAllSessions(ctx context.Context, actorID, id int64) (int64
 		return 0, err
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: actorID, TargetID: &id,
-		Detail: map[string]any{"scope": "all", "revoked": n}}); err != nil {
+		Detail: map[string]any{"scope": "all", "revoked": n, "tokens": tokens}}); err != nil {
 		return 0, err
 	}
 	return n, tx.Commit()

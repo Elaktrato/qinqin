@@ -1,12 +1,10 @@
 // Which readings the reader shows, and which of them it conceals because
 // the learner already knows the word (docs/contracts/reader/). "Known" is
-// the existing mastery definition: the best vocab card of an entry has a
-// memory score (cardScore) at or above the threshold (default
-// MASTERY_THRESHOLD, as the decks view's "mastered").
+// the shared predicate of study/known.ts: the learner's manual mark, or the
+// best vocab card of an entry has a memory score (cardScore) at or above
+// the reader's threshold.
 import type { SegmentMatch } from '$lib/api/types';
-import { cardScore } from '$lib/study/mastery';
-import type { Schedule } from '$lib/study/scheduler';
-import type { StudyCard } from '$lib/study/types';
+import { isKnownEntry, type KnownIndex } from '$lib/study/known';
 import type { ReaderDisplay } from './displaySettings';
 import { alignFurigana, fold } from './furigana';
 import type { Run } from './paragraphText';
@@ -22,39 +20,16 @@ export interface Piece {
 	source: 'book' | 'dict';
 }
 
-export type MasteryIndex = ReadonlyMap<number, number>;
-
 const HAN = /[\p{Script=Han}々〆]/u;
 
 /**
- * masteryIndex: entry id -> the best score among its reviewed vocab cards.
- * `schedules` is the replay of the review log (scheduleIndex of the decks
- * view), so the whole index costs no extra replay.
+ * isKnown: the entry whose reading is shown (the first candidate) is known
+ * (marked, or a score of at least `threshold`). A mastered homograph further
+ * down the list never hides a reading the learner has not mastered.
  */
-export function masteryIndex(
-	cards: readonly StudyCard[],
-	schedules: ReadonlyMap<string, Pick<Schedule, 'stability'> | null>
-): Map<number, number> {
-	const index = new Map<number, number>();
-	for (const card of cards) {
-		if (card.kind !== 'vocab') continue;
-		const schedule = schedules.get(card.id);
-		if (!schedule) continue;
-		const score = cardScore(schedule.stability);
-		const best = index.get(card.entryId);
-		if (best === undefined || score > best) index.set(card.entryId, score);
-	}
-	return index;
-}
-
-/**
- * isKnown: the entry whose reading is shown (the first candidate) has a
- * score of at least `threshold`. A mastered homograph further down the
- * list never hides a reading the learner has not mastered.
- */
-export function isKnown(match: Pick<SegmentMatch, 'entries'>, index: MasteryIndex, threshold: number): boolean {
+export function isKnown(match: Pick<SegmentMatch, 'entries'>, index: KnownIndex, threshold: number): boolean {
 	const first = match.entries[0];
-	return first !== undefined && (index.get(first.id) ?? 0) >= threshold;
+	return first !== undefined && isKnownEntry(first.id, index, threshold);
 }
 
 /**
@@ -67,7 +42,7 @@ export function isKnown(match: Pick<SegmentMatch, 'entries'>, index: MasteryInde
 export function annotateParagraph(
 	runs: readonly Run[],
 	matches: readonly SegmentMatch[],
-	index: MasteryIndex,
+	index: KnownIndex,
 	display: ReaderDisplay,
 	lang: string
 ): Piece[] {

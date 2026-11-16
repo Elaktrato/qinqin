@@ -1,11 +1,11 @@
-// The reader's side rail (bookmarks, highlights): which tab is shown and
+// The reader's side rail (bookmarks, highlights, words): which tab is shown and
 // whether the wide-screen column is expanded, remembered per browser in
 // localStorage when it is available. Every access is guarded, as in
 // prefs.ts: the reader must work without storage.
 import type { PrefsStorage } from './prefs';
 
-export type RailTab = 'bookmarks' | 'highlights';
-export const RAIL_TABS: readonly RailTab[] = ['bookmarks', 'highlights'];
+export type RailTab = 'bookmarks' | 'highlights' | 'words';
+export const RAIL_TABS: readonly RailTab[] = ['bookmarks', 'highlights', 'words'];
 
 export interface RailState {
 	/** The column is expanded (wide screens). The phone drawer always starts closed. */

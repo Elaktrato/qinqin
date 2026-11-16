@@ -2,7 +2,7 @@
 	import { tick } from 'svelte';
 	import { addSentence, getEntry } from '$lib/api/entries';
 	import type { LookupResult } from '$lib/api/types';
-	import { GENERAL_DECK_ID, addCard } from '$lib/study/store';
+	import { GENERAL_DECK_ID, addCard, setKnownMark } from '$lib/study/store';
 	import { getStudyData, hasCard } from '$lib/study/studyData';
 	import type { Deck } from '$lib/study/types';
 	import { popupWritten } from './browse';
@@ -12,11 +12,14 @@
 	// General; with custom decks, "…" opens a menu to pick the deck. A word
 	// added from the book also saves the sentence it was found in (when
 	// `paragraph` is known: the root popup) as its example sentence.
+	// "I know this" (#68) toggles the manual known mark (no card); with word
+	// highlighting on, `stateLine` says how well the word is known.
 	let {
 		result,
 		workspaceId,
 		paragraph,
-		hold
+		hold,
+		stateLine = null
 	}: {
 		result: LookupResult;
 		/** The workspace the card goes to: the book's. */
@@ -25,7 +28,14 @@
 		paragraph: string | null;
 		/** Pins the popup while the deck menu is open. */
 		hold: (on: boolean) => void;
+		/** "New word", "Learning", "Known — …"; null hides the line. */
+		stateLine?: string | null;
 	} = $props();
+
+	// null: not known yet (toggle disabled).
+	let marked = $state<boolean | null>(null);
+	let marking = $state(false);
+	let markError = $state('');
 
 	// null: not known yet (buttons disabled). A failed check frees the
 	// buttons: a click then reports the real error.
@@ -49,9 +59,11 @@
 		const ws = workspaceId;
 		let stale = false;
 		inStudy = null;
+		marked = null;
 		getStudyData(ws).then(
 			(data) => {
 				if (stale) return;
+				marked = (data.known ?? []).includes(entryId);
 				decks = [...data.decks].sort(
 					(a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
 				);
@@ -61,6 +73,7 @@
 				if (stale) return;
 				decks = [];
 				inStudy = false;
+				marked = false;
 			}
 		);
 		return () => {
@@ -172,6 +185,22 @@
 		}
 	}
 
+	async function toggleKnown(): Promise<void> {
+		if (marking || marked === null) return;
+		const next = !marked;
+		marking = true;
+		markError = '';
+		marked = next;
+		try {
+			await setKnownMark(workspaceId, result.entryId, next);
+		} catch {
+			marked = !next;
+			markError = 'Could not save this mark.';
+		} finally {
+			marking = false;
+		}
+	}
+
 	async function restoreFocus(): Promise<void> {
 		await tick();
 		const active = document.activeElement;
@@ -236,7 +265,17 @@
 			{/each}
 		</div>
 	{/if}
+	<button
+		type="button"
+		class="know"
+		aria-pressed={marked === true}
+		disabled={marking || marked === null}
+		onmousedown={keepSelection}
+		onclick={() => void toggleKnown()}>I know this</button
+	>
+	{#if stateLine}<p class="state">{stateLine}</p>{/if}
 	{#if note}<p class="note" role="status">{note}</p>{/if}
+	{#if markError}<p class="error" role="alert">{markError}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 </div>
 
@@ -252,7 +291,8 @@
 	}
 
 	.add,
-	.deck {
+	.deck,
+	.know {
 		font: inherit;
 		font-size: 0.95rem;
 		line-height: 1;
@@ -266,6 +306,17 @@
 		cursor: pointer;
 	}
 
+	.know[aria-pressed='true'] {
+		background: color-mix(in srgb, #1b8a5a 22%, transparent);
+	}
+
+	.state {
+		flex-basis: 100%;
+		margin: 0;
+		font-size: 0.8rem;
+		text-align: right;
+	}
+
 	.add:not(:disabled):hover,
 	.add:focus-visible,
 	.deck:not(:disabled):hover,
@@ -275,7 +326,8 @@
 	}
 
 	.add:disabled,
-	.deck:disabled {
+	.deck:disabled,
+	.know:disabled {
 		cursor: default;
 		opacity: 0.55;
 	}

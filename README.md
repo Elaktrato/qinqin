@@ -71,7 +71,12 @@ database with a SvelteKit single-page app embedded in the binary.
   per-book bookmarks, highlights and notes (see [Reader](#reader)).
 - **Reader display** — per workspace: book ruby on or off, generated pinyin or
   furigana over words, smart hiding of the readings of words you have mastered,
-  ruby size and a system font choice (see [Reader display](#reader-display)).
+  ruby size and a system font choice, and optional highlighting of new and
+  learning words (see [Reader display](#reader-display)).
+- **Unknown words and coverage** — the Reader's Words tab shows how much of a
+  chapter (or, on demand, the whole book) you know, lists the most frequent
+  unknown words, adds them to a deck in one click, and lets you mark words as
+  known without a flashcard ("I know this").
 - **Home widgets** — the home page renders widgets from a per-user layout stored
   on the server (shared by every device and workspace; by default the activity
   heatmap, the flashcards summary, the daily goal, then this week). A widget that does not apply to the
@@ -746,6 +751,17 @@ per workspace (workspace settings, key `reader`), so they follow you across devi
   Hover a word, tap it (4 seconds), press **R** (outside text fields) or use
   **Show all readings** to see hidden readings.
 - **Ruby size** and **Font** (default, sans, serif, kai: system fonts only, nothing is downloaded).
+- **Mark words by how well I know them** (off by default): new words (no flashcard) get a
+  solid underline and a light tint, words you are learning a dotted one; known words stay
+  plain. A word is known from the threshold's memory score, or when you marked it with
+  **I know this** in the popup (a workspace row `known:<entryId>`, synced and in the backup;
+  it creates no card). The same rule hides readings in Smart mode and leaves words out of
+  starter decks.
+- **Words tab** (side rail): coverage of the chapter ("You know 87% of the words in this
+  chapter": running words with a Chinese character or kana, rounded down; passages the
+  dictionary lacks are counted separately), an on-demand count of the whole book, and the
+  unknown words by frequency with **Add selected**, **Add all new words** and
+  **I know these** (with Undo).
 
 The reader only: entry pages, flashcards and study cards always show readings. Rules and
 fixtures for other clients: [`docs/contracts/reader/`](docs/contracts/reader/README.md).
@@ -1199,6 +1215,12 @@ sessions and mastery map, and
 [issue #25](https://github.com/Elaktrato/qinqin/issues/25) the Round 3 exercises.
 
 ### API
+
+Scripts can use a personal access token (`qq_pat_…`, Settings, Account, Access tokens) instead of a session on the
+routes marked in the Token column of the wiki's API routes page; every other route answers 403 `token_not_allowed`.
+See the wiki page API access tokens and `docs/contracts/auth/tokens.json`. Token management:
+`GET`/`POST`/`DELETE /api/account/tokens`, `DELETE /api/account/tokens/{id}` (a full session; create re-asks for the
+password and answers the token once, `no-store`).
 
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,

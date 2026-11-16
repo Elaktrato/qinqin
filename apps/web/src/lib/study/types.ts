@@ -117,6 +117,8 @@ export interface StudyData {
 	limits?: StudyLimits;
 	/** The workspace's `goals:workspace` row ('newer': a newer client's); absent without one. */
 	goals?: Exclude<ParsedGoals, null>;
+	/** Entries the learner marked known (live `known:` rows), absent without any. */
+	known?: number[];
 }
 
 /**

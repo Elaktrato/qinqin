@@ -86,6 +86,10 @@ var userTables = []UserTable{
 	{Name: "ai_calls", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_calls WHERE user_id = ?1`}, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	{Name: "sessions", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM sessions WHERE user_id = ?1`},
 		PreviewKey: "sessions", Count: `SELECT COUNT(*) FROM sessions WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
+	// Personal access tokens (only their hashes are stored): never exported,
+	// kept on a personal restore (a restore is not a security action).
+	{Name: "access_tokens", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM access_tokens WHERE user_id = ?1`},
+		PreviewKey: "accessTokens", Count: `SELECT COUNT(*) FROM access_tokens WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	// Reset links of the user go; links the user issued for others stay,
 	// without the issuer.
 	{Name: "password_resets", Columns: []string{"user_id", "created_by"},
@@ -141,6 +145,7 @@ type Preview struct {
 	Sessions      int `json:"sessions"`
 	Overlays      int `json:"overlays"`
 	Sentences     int `json:"sentences"`
+	AccessTokens  int `json:"accessTokens"`
 }
 
 // DeletionPreview counts what DeleteUser would remove, from the same
@@ -155,7 +160,7 @@ func DeletionPreview(ctx context.Context, sqlDB *sql.DB, id int64) (Preview, err
 	var p Preview
 	fields := map[string]*int{"workspaces": &p.Workspaces, "studyEvents": &p.StudyEvents, "pluginData": &p.PluginData,
 		"books": &p.Books, "journalPhotos": &p.JournalPhotos, "aiKeys": &p.AIKeys, "sessions": &p.Sessions,
-		"overlays": &p.Overlays, "sentences": &p.Sentences}
+		"overlays": &p.Overlays, "sentences": &p.Sentences, "accessTokens": &p.AccessTokens}
 	for _, t := range userTables {
 		if t.PreviewKey == "" {
 			continue

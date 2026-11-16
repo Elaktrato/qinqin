@@ -142,6 +142,17 @@ describe('StarterDeckDetail', () => {
 		expect(pushed.length).toBe(before);
 	});
 
+	it('skips a word the learner marked known, card or not', async () => {
+		const history = vi.mocked(loadStudyHistory).getMockImplementation()!;
+		vi.mocked(loadStudyHistory).mockImplementation(async (ws) => ({ ...(await history(ws)), known: [2] }));
+		render(StarterDeckDetail, { route });
+		await screen.findByText('2 known words skipped');
+		expect(screen.queryByText('w2')).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
+		await screen.findByText(/Added 2 words/);
+		expect(pushed.map((r) => r.key).filter((k) => k.startsWith('card:'))).toEqual(['card:c-vocab-1', 'card:c-vocab-3']);
+	});
+
 	it('never adds known words when the study data was not loaded yet', async () => {
 		const history = vi.mocked(loadStudyHistory).getMockImplementation()!;
 		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('offline'));
