@@ -64,6 +64,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/events/lookups",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/journal/photos/{id}",
 		"access": "user"
 	},
