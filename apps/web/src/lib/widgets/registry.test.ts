@@ -99,6 +99,7 @@ describe('allWidgets', () => {
 		expect(ids(list)).toEqual([
 			'activity-heatmap',
 			'character-map-summary',
+			'daily-goal',
 			'flashcards-summary',
 			'word-states',
 			'reading-time'
@@ -106,13 +107,15 @@ describe('allWidgets', () => {
 		expect(list.map((w) => [w.owner, w.size])).toEqual([
 			['core', 'wide'],
 			['core', 'normal'],
+			['core', 'normal'],
 			['qinqin-flashcards', 'normal'],
 			['qinqin-flashcards', 'normal'],
 			['qinqin-reader', 'normal']
 		]);
 		expect(ids(allWidgets(webPlugins, [state('qinqin-flashcards', false)], 'zh'))).toEqual([
 			'activity-heatmap',
-			'character-map-summary'
+			'character-map-summary',
+			'daily-goal'
 		]);
 	});
 
