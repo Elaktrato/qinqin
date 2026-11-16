@@ -577,3 +577,10 @@ investigated further.
 - Japanese in the real-app check (only zh text was segmented; ja is covered by unit fixtures).
 - The whole-book count was timed with repeated segment requests, not through `bookCounter.ts` in a
   browser (its chapter fetching and abort are unit-tested with fakes).
+
+### Mutation check (orchestrator, after the fix wave)
+
+Three mutants, each killed (then reverted):
+- `familiarity` ignores manual marks: 8 tests fail.
+- `familiarity` never answers `learning`: 8 tests fail.
+- coverage percent rounded instead of floored: 2 tests fail.
