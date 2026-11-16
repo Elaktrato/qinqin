@@ -14,6 +14,18 @@ import (
 // or lists tokens). Nothing here logs; the token string leaves the server
 // once, in the create answer.
 
+// requireTokenManager is requirePrincipal for the token routes: a full
+// session, never an access token (tokenGate refuses one first; this holds
+// even if a row were marked).
+func (s *server) requireTokenManager(w http.ResponseWriter, r *http.Request) *auth.Principal {
+	p := s.requirePrincipal(w, r)
+	if p != nil && p.ViaToken() {
+		writeAuthError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
+		return nil
+	}
+	return p
+}
+
 // tokenCreateBody is the body of POST /api/account/tokens.
 type tokenCreateBody struct {
 	Name            string `json:"name"`
@@ -29,7 +41,7 @@ type tokenCreateBody struct {
 // spend the pat-create budget, and the answer is 201 {token, accessToken}
 // with Cache-Control: no-store.
 func (s *server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
-	p := s.requirePrincipal(w, r)
+	p := s.requireTokenManager(w, r)
 	if p == nil {
 		return
 	}
@@ -117,7 +129,7 @@ func writeTokenRequestError(w http.ResponseWriter, err error) bool {
 // handleListTokens serves GET /api/account/tokens: the caller's tokens,
 // newest first, never a token or a hash.
 func (s *server) handleListTokens(w http.ResponseWriter, r *http.Request) {
-	p := s.requirePrincipal(w, r)
+	p := s.requireTokenManager(w, r)
 	if p == nil {
 		return
 	}
@@ -132,7 +144,7 @@ func (s *server) handleListTokens(w http.ResponseWriter, r *http.Request) {
 // handleRevokeToken serves DELETE /api/account/tokens/{id} (204); unknown
 // and other users' ids are 404.
 func (s *server) handleRevokeToken(w http.ResponseWriter, r *http.Request) {
-	p := s.requirePrincipal(w, r)
+	p := s.requireTokenManager(w, r)
 	if p == nil {
 		return
 	}
@@ -155,7 +167,7 @@ func (s *server) handleRevokeToken(w http.ResponseWriter, r *http.Request) {
 
 // handleRevokeAllTokens serves DELETE /api/account/tokens: {revoked: n}.
 func (s *server) handleRevokeAllTokens(w http.ResponseWriter, r *http.Request) {
-	p := s.requirePrincipal(w, r)
+	p := s.requireTokenManager(w, r)
 	if p == nil {
 		return
 	}

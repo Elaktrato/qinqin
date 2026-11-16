@@ -529,3 +529,23 @@ func hashHex(s string) string {
 	sum := sha256.Sum256([]byte(s))
 	return hex.EncodeToString(sum[:])
 }
+
+// Review fix: the token management handlers refuse a token principal
+// themselves, even if their rows were wrongly marked (a token never mints,
+// lists or revokes tokens).
+func TestTokenHandlersRefuseTokenPrincipals(t *testing.T) {
+	s, _, _, _ := newGateServer(t)
+	p := &auth.Principal{User: model.User{ID: 1, Username: "gate-user"}, Level: auth.LevelFull, TokenID: 7, TokenScope: "write"}
+	for name, h := range map[string]http.HandlerFunc{
+		"list": s.handleListTokens, "create": s.handleCreateToken, "revoke": s.handleRevokeToken, "revokeAll": s.handleRevokeAllTokens,
+	} {
+		r := httptest.NewRequest("POST", "/", strings.NewReader(`{"name":"n","scope":"write","expiresInDays":1,"currentPassword":"x"}`))
+		r = r.WithContext(context.WithValue(r.Context(), gatePrincipalKey{}, p))
+		r.SetPathValue("id", "1")
+		w := httptest.NewRecorder()
+		h(w, r)
+		if w.Code != 403 || !strings.Contains(w.Body.String(), "token_not_allowed") {
+			t.Errorf("%s: %d %s", name, w.Code, w.Body.String())
+		}
+	}
+}
