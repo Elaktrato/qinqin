@@ -2128,9 +2128,12 @@ describe("known marks", () => {
       .filter(([url]) => String(url) === "/api/sync/push")
       .map(([, init]) => JSON.parse(String(init?.body)));
   }
+  // setKnownMarks reads the stored rows first (for their stamps), then pushes.
   const accept = () =>
-    vi.mocked(fetch).mockImplementation(async (_url, init) =>
-      jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 }),
+    vi.mocked(fetch).mockImplementation(async (url, init) =>
+      String(url).startsWith("/api/sync/pull")
+        ? jsonResponse({ pluginData: [] })
+        : jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 }),
     );
 
   it("setKnownMarks pushes 450 marks as 200/200/50", async () => {
@@ -2152,6 +2155,25 @@ describe("known marks", () => {
       expect(typeof r.deletedAt).toBe("string");
       expect(r.deletedAt).toBe(r.updatedAt);
     }
+  });
+
+  it("stamps each mark after the time the server holds for its key (clock skew)", async () => {
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (String(input).startsWith("/api/sync/pull")) {
+        return jsonResponse({
+          pluginData: [
+            pluginRow("known:4", mark(4), { workspaceId: 3, updatedAt: "2099-01-01T00:00:00Z", deletedAt: "2099-01-01T00:00:05Z" }),
+            pluginRow("known:5", mark(5), { workspaceId: 4, updatedAt: "2099-06-01T00:00:00Z" }),
+          ],
+        });
+      }
+      return jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 });
+    });
+    await setKnownMarks(3, [4, 5], true);
+    const rows = pushBodies().flatMap((b) => b.pluginData);
+    expect(rows.find((r) => r.key === "known:4")?.updatedAt).toBe("2099-01-01T00:00:05.001Z");
+    // known:5 of another workspace does not count: stamped now.
+    expect(Date.parse(String(rows.find((r) => r.key === "known:5")?.updatedAt))).toBeLessThan(Date.parse("2099-01-01T00:00:00Z"));
   });
 
   it("a skipped mark is an error", async () => {

@@ -1253,10 +1253,15 @@ export async function setKnownMarks(
   opts: { onProgress?: (done: number, total: number) => void } = {},
 ): Promise<void> {
   requireWorkspaceArg(workspaceId, "setKnownMarks");
+  // Each row is stamped after the time the server holds for its key (a
+  // client clock behind the server's would otherwise lose every write).
+  const { knownAt } = await loadRawStudyData(workspaceId);
   const now = new Date();
   const rows = [...new Set(entryIds)].map((id) => {
     const row = knownMarkRow(id, now);
-    return on ? row : { key: row.key, data: {}, deleted: true as const };
+    const at = knownAt.get(row.key);
+    const stamp = at === undefined ? {} : { knownAt: at };
+    return on ? { ...row, ...stamp } : { key: row.key, data: {}, deleted: true as const, ...stamp };
   });
   await pushStudyRows(workspaceId, rows, opts);
 }
