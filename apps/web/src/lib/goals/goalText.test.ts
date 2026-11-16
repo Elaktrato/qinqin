@@ -87,6 +87,9 @@ describe('streakText', () => {
 		expect(streakText({ current: 4, capped: false })).toBe('Goal streak: 4 days');
 		expect(streakText({ current: 1, capped: false })).toBe('Goal streak: 1 day');
 		expect(streakText({ current: 0, capped: false })).toBe('Goal streak: 0 days');
-		expect(streakText({ current: 366, capped: true })).toBe('Goal streak: 365+ days');
+		// Capped: at least this many (vacation days are skipped, so not always 365).
+		expect(streakText({ current: 366, capped: true })).toBe('Goal streak: 366+ days');
+		expect(streakText({ current: 246, capped: true })).toBe('Goal streak: 246+ days');
+		expect(streakText({ current: 4, capped: true })).toBe('Goal streak: 4+ days');
 	});
 });

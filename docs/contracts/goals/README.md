@@ -90,8 +90,9 @@ goal; kept for an unavailable goal). The fixture's `days` gives the amounts per 
 Consecutive `met` days ending today, or ending yesterday while today is `open`. Vacation days are skipped
 (neither extend nor break); `none` and `missed` break. `todayMet` is true when today is `met` or `vacation`.
 The walk never goes before `windowStart` (normally `today - 365`, the activity route's 366-day cap); when it
-passes `windowStart` without a break and the run is not empty, `capped` is true and the run shows as "365+
-days". Today `none` gives `current: 0`.
+passes `windowStart` without a break and the run is not empty, `capped` is true and the run shows as
+"`current`+ days" (at least that many; with vacation days in the window `current` is below 366). Today `none`
+gives `current: 0`.
 
 ## Android and other clients
 

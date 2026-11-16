@@ -110,7 +110,7 @@ cost: studying on vacation does not extend the goal streak.
 **Goal streak.** Consecutive `met` days ending today, or yesterday while today is `open`; `vacation` days are
 skipped (neither extend nor break), `none` and `missed` break. `todayMet` is true when today is `met` or
 `vacation`. Ruling: computed over a window of today and the 365 days before (one activity request, the route's
-366-day cap); a run that reaches the window's first day is shown as "365+ days" (`capped: true`) — cost: no
+366-day cap); a run that reaches the window's first day is shown as "N+ days" (`capped: true`; N = `current`, which vacation days make smaller than 366; fix wave) — cost: no
 exact count past a year, no "best goal streak". Ruling: `showStreak` (default true) only hides the line; the
 review streak is unchanged and always shown — the issue calls the goal streak optional alongside it — cost: one
 checkbox.
@@ -172,7 +172,7 @@ activity cells per day), `progress.ts` (`goalDay`, `goalDays`, `goalStreak`), `g
 - `goal-days.json` — status per day: none before the first entry, target change from its day, null entry,
   unavailable type, seconds target, vacation day with activity, today open vs met, past missed.
 - `goal-streak.json` — vacation gap, a missed day, today open counts from yesterday, a `none` day breaks, the
-  365+ cap.
+  window cap (`capped`).
 
 Decoded by `lib/goals/*.test.ts`. No Go test: the server is unchanged. `overview.md` gains the `goals:workspace`
 row and `README.md` the folder row.

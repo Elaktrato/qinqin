@@ -73,6 +73,7 @@ export function statusLine(day: GoalDay): string | null {
 }
 
 export function streakText(s: { current: number; capped: boolean }): string {
-	if (s.capped) return 'Goal streak: 365+ days';
+	// Capped: at least `current` (vacation days are skipped, so not always 365).
+	if (s.capped) return `Goal streak: ${s.current}+ days`;
 	return `Goal streak: ${s.current} ${s.current === 1 ? 'day' : 'days'}`;
 }

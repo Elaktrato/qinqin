@@ -30,7 +30,7 @@ A change to the goal applies from today, for the whole of today. Earlier days ke
 
 ## Goal streak
 
-The goal streak counts the days in a row on which you reached the goal, ending today, or yesterday while today is still open. Vacation days neither extend nor break it; a missed day or a day without a goal breaks it. It looks back one year at most and shows "365+ days" beyond that. Turn **Show goal streak** off to hide it; your review streak is not affected.
+The goal streak counts the days in a row on which you reached the goal, ending today, or yesterday while today is still open. Vacation days neither extend nor break it; a missed day or a day without a goal breaks it. It looks back one year at most; a streak that reaches that far shows a plus, for example "Goal streak: 340+ days" (vacation days in the year are not counted). Turn **Show goal streak** off to hide it; your review streak is not affected.
 
 ## Where it shows
 
