@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"qinqin/internal/model"
@@ -77,7 +78,9 @@ func NewSession(ctx context.Context, sqlDB *sql.DB, userID int64, o LoginOptions
 // disabled); an error means the lookup failed.
 func Authenticate(r *http.Request, sqlDB *sql.DB) (*Principal, error) {
 	token := bearerToken(r)
-	if token == "" {
+	// An access token is never looked up as a session (and the reverse:
+	// AuthenticateToken refuses anything not shaped like a token).
+	if token == "" || strings.HasPrefix(token, TokenPrefix) {
 		return nil, nil
 	}
 	at := nowFunc().UTC()

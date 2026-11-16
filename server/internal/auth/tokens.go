@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 	"unicode"
@@ -265,4 +266,93 @@ func revokeTokens(ctx context.Context, ex execer, userID int64) (int64, error) {
 	}
 	n, _ := res.RowsAffected()
 	return n, nil
+}
+
+// TokenFromRequest returns the bearer value of r when it is an access
+// token candidate (it starts with TokenPrefix); ok false otherwise. The
+// value is not validated or looked up here.
+func TokenFromRequest(r *http.Request) (raw string, ok bool) {
+	raw = bearerToken(r)
+	return raw, strings.HasPrefix(raw, TokenPrefix)
+}
+
+// AuthenticateToken resolves an access token. nil, nil means refuse (401):
+// malformed, unknown, expired, revoked, or its owner is disabled. There is
+// one lookup, on the hash of the presented string; no secret is compared
+// in Go. last_used_at is written at most every lastUsedEvery; the first
+// use (NULL to a value) is audited once, token_first_used, even under
+// parallel requests (the guarded UPDATE has one winner).
+func AuthenticateToken(ctx context.Context, sqlDB *sql.DB, raw string) (*Principal, error) {
+	if !IsTokenShaped(raw) {
+		return nil, nil
+	}
+	at := nowFunc().UTC()
+	stamp := at.Format(time.RFC3339)
+	var p Principal
+	var admin, must int
+	var email, verified, last sql.NullString
+	var ws sql.NullInt64
+	err := sqlDB.QueryRowContext(ctx, `
+		SELECT users.id, users.username, users.admin, users.email, users.email_verified_at,
+		       users.must_change_password, users.created_at,
+		       access_tokens.id, access_tokens.scope, access_tokens.workspace_id, access_tokens.last_used_at
+		FROM access_tokens JOIN users ON users.id = access_tokens.user_id
+		WHERE access_tokens.token_hash = ? AND users.disabled_at IS NULL AND access_tokens.expires_at > ?`,
+		hashToken(raw), stamp).Scan(
+		&p.User.ID, &p.User.Username, &admin, &email, &verified, &must, &p.User.CreatedAt,
+		&p.TokenID, &p.TokenScope, &ws, &last)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("lookup access token: %w", err)
+	}
+	p.User.Admin = admin != 0
+	p.User.MustChangePassword = must != 0
+	p.User.EmailVerified = verified.Valid
+	if email.Valid {
+		p.User.Email = &email.String
+	}
+	if ws.Valid {
+		p.TokenWorkspace = &ws.Int64
+	}
+	p.Level = LevelFull
+	if err := touchToken(ctx, sqlDB, p.TokenID, p.User.ID, last, at); err != nil {
+		return nil, err
+	}
+	return &p, nil
+}
+
+// touchToken records a use: the first one with its audit row, later ones
+// at most every lastUsedEvery (a read that sees a recent stamp writes
+// nothing).
+func touchToken(ctx context.Context, sqlDB *sql.DB, tokenID, userID int64, last sql.NullString, at time.Time) error {
+	stamp := at.Format(time.RFC3339)
+	if !last.Valid {
+		tx, err := sqlDB.BeginTx(ctx, nil)
+		if err != nil {
+			return fmt.Errorf("begin first use: %w", err)
+		}
+		defer tx.Rollback()
+		res, err := tx.ExecContext(ctx, `UPDATE access_tokens SET last_used_at = ? WHERE id = ? AND last_used_at IS NULL`, stamp, tokenID)
+		if err != nil {
+			return fmt.Errorf("touch access token: %w", err)
+		}
+		if n, _ := res.RowsAffected(); n == 1 {
+			if err := Audit(ctx, tx, AuditEvent{Action: "token_first_used", ActorID: userID, TargetID: &userID,
+				Detail: map[string]any{"tokenId": tokenID}}); err != nil {
+				return err
+			}
+		}
+		return tx.Commit()
+	}
+	cutoff := at.Add(-lastUsedEvery).Format(time.RFC3339)
+	if last.String >= cutoff {
+		return nil
+	}
+	if _, err := sqlDB.ExecContext(ctx, `UPDATE access_tokens SET last_used_at = ? WHERE id = ? AND last_used_at < ?`,
+		stamp, tokenID, cutoff); err != nil {
+		return fmt.Errorf("touch access token: %w", err)
+	}
+	return nil
 }
