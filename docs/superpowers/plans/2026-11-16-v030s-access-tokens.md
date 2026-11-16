@@ -522,3 +522,10 @@ Gates after the fixes (proxy variables unset, under the lock): targeted `go vet`
 Not verified in this wave: no new real-app run (the fixes are covered by Go tests only); the restore remap across
 servers (an archive whose workspace ids collide with a token's workspace id binds it to that archive workspace,
 see the spec Ruling).
+
+### Mutation check (orchestrator, on the code after the fix wave)
+
+Three mutants, each killed (then reverted), in addition to the reviewer's 20:
+- gate read-only check removed: 4 api tests fail.
+- gate workspace limit removed: 5 api tests fail.
+- restore no longer moves limited tokens to the new workspace id: 1 backup test fails.
