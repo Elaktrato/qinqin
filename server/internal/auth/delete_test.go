@@ -294,3 +294,50 @@ func TestSweepOrphanUserDirs(t *testing.T) {
 		t.Errorf("empty data dir: %d %v", n, err)
 	}
 }
+
+// TestExportAndRestoreDecisionsPerTable pins the backup decision of every
+// user table: data the learner made is exported and replaced on restore;
+// security and account state is never exported and never touched.
+func TestExportAndRestoreDecisionsPerTable(t *testing.T) {
+	rows := map[string]bool{"workspaces": true, "study_events": true, "plugin_data": true, "plugin_states": true,
+		"user_edits": true, "sentences": true, "library_books": true, "library_bookmarks": true,
+		"library_highlights": true, "user_time_zones": true}
+	for _, tb := range auth.UserTables() {
+		if tb.Restore == auth.RestoreUnset {
+			t.Errorf("%s has no restore decision", tb.Name)
+		}
+		switch {
+		case rows[tb.Name]:
+			if tb.Export != auth.ExportRows || tb.Restore != auth.RestoreReplace {
+				t.Errorf("%s must be exported and replaced", tb.Name)
+			}
+		case tb.Name == "journal_photos":
+			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreDrop {
+				t.Errorf("journal_photos: skip export, drop on restore")
+			}
+		default:
+			if tb.Export != auth.ExportSkip || tb.Restore != auth.RestoreKeep {
+				t.Errorf("%s must be skipped from export and kept on restore (security or instance data)", tb.Name)
+			}
+		}
+	}
+	if !slices.Contains(auth.UserDirs, "backups/pre-restore") {
+		t.Errorf("UserDirs %v lacks the safety export directory", auth.UserDirs)
+	}
+}
+
+func TestDeleteUserRemovesSafetyExports(t *testing.T) {
+	sqlDB, users := usersFixture(t)
+	mkUser(t, sqlDB, "alice", true)
+	b := mkUser(t, sqlDB, "bobby", false)
+	data := t.TempDir()
+	dir := filepath.Join(data, "backups", "pre-restore", strconv.FormatInt(b, 10))
+	os.MkdirAll(dir, 0o755)
+	os.WriteFile(filepath.Join(dir, "x.zip"), []byte("z"), 0o644)
+	if err := users.DeleteUser(context.Background(), b, b, data); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Errorf("safety export directory survived the deletion: %v", err)
+	}
+}

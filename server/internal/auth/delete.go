@@ -22,6 +22,16 @@ const (
 	ExportSkip                    // not exported; Reason says why
 )
 
+// RestoreMode is what restoring a personal backup does to a user table.
+type RestoreMode int
+
+const (
+	RestoreUnset   RestoreMode = iota // the schema guard fails on this
+	RestoreReplace                    // the user's rows are replaced by the archive's
+	RestoreDrop                       // the user's rows are removed, nothing is restored (drafts)
+	RestoreKeep                       // untouched: account identity and security data
+)
+
 // UserTable is one table that references a user: how deleting the user
 // treats it, how the deletion preview counts it, and whether a personal
 // export carries it.
@@ -40,6 +50,9 @@ type UserTable struct {
 	PreviewKey, Count string
 	Export            ExportMode
 	ExportReason      string // for ExportSkip
+	// Restore decides what a restore does with the table; account state is
+	// never resurrected from an archive (RestoreKeep).
+	Restore RestoreMode
 }
 
 const (
@@ -50,44 +63,44 @@ const (
 // userTables lists every table whose rows are REMOVED with the user.
 var userTables = []UserTable{
 	{Name: "workspaces", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM workspaces WHERE user_id = ?1`},
-		PreviewKey: "workspaces", Count: `SELECT COUNT(*) FROM workspaces WHERE user_id = ?1`, Export: ExportRows},
+		PreviewKey: "workspaces", Count: `SELECT COUNT(*) FROM workspaces WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "study_events", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM study_events WHERE user_id = ?1`},
-		PreviewKey: "studyEvents", Count: `SELECT COUNT(*) FROM study_events WHERE user_id = ?1`, Export: ExportRows},
-	{Name: "plugin_states", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM plugin_states WHERE user_id = ?1`}, Export: ExportRows},
+		PreviewKey: "studyEvents", Count: `SELECT COUNT(*) FROM study_events WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
+	{Name: "plugin_states", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM plugin_states WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "plugin_data", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM plugin_data WHERE user_id = ?1`},
-		PreviewKey: "pluginData", Count: `SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows},
+		PreviewKey: "pluginData", Count: `SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "user_edits", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_edits WHERE user_id = ?1`},
-		PreviewKey: "overlays", Count: `SELECT COUNT(*) FROM user_edits WHERE user_id = ?1`, Export: ExportRows},
+		PreviewKey: "overlays", Count: `SELECT COUNT(*) FROM user_edits WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "sentences", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM sentences WHERE user_id = ?1`},
-		PreviewKey: "sentences", Count: `SELECT COUNT(*) FROM sentences WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows},
+		PreviewKey: "sentences", Count: `SELECT COUNT(*) FROM sentences WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "library_books", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM library_books WHERE user_id = ?1`},
-		PreviewKey: "books", Count: `SELECT COUNT(*) FROM library_books WHERE user_id = ?1`, Export: ExportRows},
-	{Name: "library_bookmarks", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_bookmarks WHERE user_id = ?1`}, Export: ExportRows},
-	{Name: "library_highlights", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_highlights WHERE user_id = ?1`}, Export: ExportRows},
-	{Name: "user_time_zones", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_time_zones WHERE user_id = ?1`}, Export: ExportRows},
+		PreviewKey: "books", Count: `SELECT COUNT(*) FROM library_books WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
+	{Name: "library_bookmarks", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_bookmarks WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
+	{Name: "library_highlights", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_highlights WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
+	{Name: "user_time_zones", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM user_time_zones WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "journal_photos", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM journal_photos WHERE user_id = ?1`},
-		PreviewKey: "journalPhotos", Count: `SELECT COUNT(*) FROM journal_photos WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipDraft},
+		PreviewKey: "journalPhotos", Count: `SELECT COUNT(*) FROM journal_photos WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipDraft, Restore: RestoreDrop},
 	{Name: "ai_keys", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_keys WHERE user_id = ?1`},
-		PreviewKey: "aiKeys", Count: `SELECT COUNT(*) FROM ai_keys WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipSecurity},
-	{Name: "ai_selection", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_selection WHERE user_id = ?1`}, Export: ExportSkip, ExportReason: skipSecurity},
-	{Name: "ai_calls", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_calls WHERE user_id = ?1`}, Export: ExportSkip, ExportReason: skipSecurity},
+		PreviewKey: "aiKeys", Count: `SELECT COUNT(*) FROM ai_keys WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
+	{Name: "ai_selection", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_selection WHERE user_id = ?1`}, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
+	{Name: "ai_calls", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_calls WHERE user_id = ?1`}, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	{Name: "sessions", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM sessions WHERE user_id = ?1`},
-		PreviewKey: "sessions", Count: `SELECT COUNT(*) FROM sessions WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipSecurity},
+		PreviewKey: "sessions", Count: `SELECT COUNT(*) FROM sessions WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	// Reset links of the user go; links the user issued for others stay,
 	// without the issuer.
 	{Name: "password_resets", Columns: []string{"user_id", "created_by"},
 		Statements: []string{`DELETE FROM password_resets WHERE user_id = ?1`, `UPDATE password_resets SET created_by = NULL WHERE created_by = ?1`},
-		Export:     ExportSkip, ExportReason: skipSecurity},
+		Export:     ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	// Invites the user handed out go with them (a pending link stops working).
 	{Name: "invites", Columns: []string{"created_by"}, Statements: []string{`DELETE FROM invites WHERE created_by = ?1`},
-		Export: ExportSkip, ExportReason: skipSecurity},
+		Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	// Two-factor data and pending one-time-code challenges: secrets, never exported.
 	{Name: "mfa_totp", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM mfa_totp WHERE user_id = ?1`},
-		Export: ExportSkip, ExportReason: skipSecurity},
+		Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	{Name: "mfa_recovery_codes", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM mfa_recovery_codes WHERE user_id = ?1`},
-		Export: ExportSkip, ExportReason: skipSecurity},
+		Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	{Name: "auth_challenges", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM auth_challenges WHERE user_id = ?1`},
-		Export: ExportSkip, ExportReason: skipSecurity},
+		Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 }
 
 // keptTables lists the tables that reference a user but outlive them,
@@ -96,19 +109,20 @@ var keptTables = []UserTable{
 	// Shared by every user: an admin-registered AI endpoint stays, its
 	// creator becomes "nobody" (0).
 	{Name: "ai_custom_providers", Columns: []string{"created_by"}, Statements: []string{`UPDATE ai_custom_providers SET created_by = 0 WHERE created_by = ?1`},
-		Export: ExportSkip, ExportReason: "shared by every user"},
+		Export: ExportSkip, ExportReason: "shared by every user", Restore: RestoreKeep},
 	{Name: "auth_settings", Columns: []string{"updated_by"}, Statements: []string{`UPDATE auth_settings SET updated_by = NULL WHERE updated_by = ?1`},
-		Export: ExportSkip, ExportReason: "instance settings"},
+		Export: ExportSkip, ExportReason: "instance settings", Restore: RestoreKeep},
 	{Name: "smtp_settings", Columns: []string{"updated_by"}, Statements: []string{`UPDATE smtp_settings SET updated_by = NULL WHERE updated_by = ?1`},
-		Export: ExportSkip, ExportReason: "instance settings"},
+		Export: ExportSkip, ExportReason: "instance settings", Restore: RestoreKeep},
 	// The audit log keeps its rows; the user's name in them is replaced
 	// (see DeleteUser).
-	{Name: "auth_audit", Columns: []string{"actor_id", "target_id"}, Export: ExportSkip, ExportReason: skipSecurity},
+	{Name: "auth_audit", Columns: []string{"actor_id", "target_id"}, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 }
 
 // UserDirs are the per-user directories under the data directory that the
 // deletion removes after the commit.
-var UserDirs = []string{"books", "journal"}
+// "backups/pre-restore" holds the safety exports a restore writes first.
+var UserDirs = []string{"books", "journal", "backups/pre-restore"}
 
 // UserTables returns the registry (deleted, then kept) for features that
 // must make the same per-table decision, such as the personal export.
