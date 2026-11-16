@@ -212,11 +212,19 @@ export function clearedLookups(h: LookupHistory, now: Date): LookupHistory {
 	return { clearedAt: now.toISOString(), items: [], extra: { ...h.extra } };
 }
 
-/** staleAfterClear: an item at or before clearedAt came back (a racing flush). */
-export function staleAfterClear(h: LookupHistory): boolean {
-	const cleared = instant(h.clearedAt);
-	if (cleared === null) return false;
-	return h.items.some((i) => (instant(i.lastAt) ?? Infinity) <= cleared);
+/**
+ * staleAfterClear: the row is no longer the clear this client wrote at
+ * `cleared` — its clearedAt is missing or earlier (another device's flush
+ * that read the row before the Clear wrote its old copy back), or an item
+ * at or before `cleared` came back. A later clearedAt (cleared again
+ * elsewhere) with newer items only is not stale.
+ */
+export function staleAfterClear(h: LookupHistory, cleared: string): boolean {
+	const mine = instant(cleared);
+	if (mine === null) return false;
+	const theirs = instant(h.clearedAt);
+	if (theirs === null || theirs < mine) return true;
+	return h.items.some((i) => (instant(i.lastAt) ?? Infinity) <= mine);
 }
 
 /** promptItems: often looked-up words that are still new, at most PROMPT_MAX. */

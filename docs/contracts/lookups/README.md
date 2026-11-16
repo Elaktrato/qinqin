@@ -85,10 +85,19 @@ in one tab) so two tabs and other clients agree.
 
 - Remove = the same read-modify-write without the given entry ids.
 - Clear = `PUT lookups?workspace=<ws>` with `{...extra, version: 1, clearedAt: <now>, items: []}`, then
-  `DELETE /api/events/lookups?workspace=<ws>` (below). Unknown top-level members are kept.
-- `staleAfterClear`: true when `clearedAt` is set and some item has `lastAt <= clearedAt` — another
-  device's flush that read the row before the Clear wrote it back. A client that just cleared re-reads
-  after about 30 s and clears again once when this is true.
+  `DELETE /api/events/lookups?workspace=<ws>` (below). Unknown top-level members are kept. **clearedAt is the
+  server's clock**: the `updatedAt` of the PUT answer (RFC 3339, whole seconds); when it differs from the
+  client's `<now>` the row is written once more with it, so every device's lookups compare against one
+  clock. The client keeps this clearedAt ("mine").
+- A client never writes Clear or Remove while one of its own flushes is in flight, and starts none until
+  the write is done (one chain per tab).
+- `staleAfterClear(row, mine)` (input `{row, clearedAt: mine}`): true when the row's `clearedAt` is missing
+  or earlier than mine — another device's flush that read the row before the Clear wrote its old copy
+  back, with its old clearedAt — or some item has `lastAt <= mine`. A later clearedAt (cleared again
+  elsewhere) with only newer items is not stale. About 30 s after a Clear the client re-reads the row once
+  (from its store, not the page, so leaving the page does not cancel it; signing out does) and, when
+  stale, writes `{...extra, version: 1, clearedAt: mine, items: []}`: a stale copy's counts include the
+  erased past, so none of its items is kept.
 
 ## Writing: read, merge, write
 

@@ -107,7 +107,7 @@ describe('docs/contracts/lookups/lookup-merge.json', () => {
 				expect(serializeLookups(clearedLookups(h, new Date(c.input.now as string)))).toEqual(c.expect);
 				break;
 			case 'staleAfterClear':
-				expect(staleAfterClear(h)).toBe(c.expect);
+				expect(staleAfterClear(h, c.input.clearedAt as string)).toBe(c.expect);
 				break;
 			case 'size': {
 				expect(h.items.length).toBe(LOOKUP_CAP);

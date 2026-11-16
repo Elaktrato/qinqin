@@ -791,7 +791,7 @@
       }
     },
     {
-      "name": "staleAfterClear: an item at or before clearedAt came back",
+      "name": "staleAfterClear: an item at or before my clearedAt came back",
       "op": "staleAfterClear",
       "input": {
         "row": {
@@ -809,12 +809,13 @@
               "books": []
             }
           ]
-        }
+        },
+        "clearedAt": "2026-11-16T09:00:00Z"
       },
       "expect": true
     },
     {
-      "name": "staleAfterClear: only newer items",
+      "name": "staleAfterClear: my clear stands, only newer items",
       "op": "staleAfterClear",
       "input": {
         "row": {
@@ -832,12 +833,13 @@
               "books": []
             }
           ]
-        }
+        },
+        "clearedAt": "2026-11-16T09:00:00Z"
       },
       "expect": false
     },
     {
-      "name": "staleAfterClear: never cleared",
+      "name": "staleAfterClear: another device wrote back its old row (clearedAt null)",
       "op": "staleAfterClear",
       "input": {
         "row": {
@@ -848,16 +850,87 @@
               "entryId": 1,
               "count": 1,
               "firstAt": "2026-11-10T09:00:00Z",
-              "lastAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-16T09:05:00Z",
               "sources": {
                 "reader": 1
               },
               "books": []
             }
           ]
-        }
+        },
+        "clearedAt": "2026-11-16T09:00:00Z"
+      },
+      "expect": true
+    },
+    {
+      "name": "staleAfterClear: another device wrote back an older clearedAt",
+      "op": "staleAfterClear",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": "2026-11-01T00:00:00Z",
+          "items": [
+            {
+              "entryId": 1,
+              "count": 3,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-16T09:05:00Z",
+              "sources": {
+                "reader": 3
+              },
+              "books": []
+            }
+          ]
+        },
+        "clearedAt": "2026-11-16T09:00:00Z"
+      },
+      "expect": true
+    },
+    {
+      "name": "staleAfterClear: cleared again later elsewhere, nothing stale",
+      "op": "staleAfterClear",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": "2026-11-16T10:00:00Z",
+          "items": [
+            {
+              "entryId": 1,
+              "count": 1,
+              "firstAt": "2026-11-16T10:00:01Z",
+              "lastAt": "2026-11-16T10:00:01Z",
+              "sources": {
+                "reader": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "clearedAt": "2026-11-16T09:00:00Z"
       },
       "expect": false
+    },
+    {
+      "name": "staleAfterClear: the same instant written differently is mine",
+      "op": "staleAfterClear",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": "2026-11-16T10:00:00+01:00",
+          "items": []
+        },
+        "clearedAt": "2026-11-16T09:00:00Z"
+      },
+      "expect": false
+    },
+    {
+      "name": "staleAfterClear: a missing row is stale (the clear was undone)",
+      "op": "staleAfterClear",
+      "input": {
+        "row": null,
+        "clearedAt": "2026-11-16T09:00:00Z"
+      },
+      "expect": true
     },
     {
       "name": "a 500-item row with realistic values stays under 80 000 bytes",

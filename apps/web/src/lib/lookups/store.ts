@@ -15,6 +15,7 @@ import {
 	type LookupCfg,
 	type LookupHistory,
 	clearedLookups,
+	instant,
 	parseLookupCfg,
 	parseLookups,
 	removeLookups,
@@ -55,6 +56,7 @@ export function lookupRecorder(): LookupRecorder {
 
 /** resetLookupRecorder drops the tab's buffer and copies (sign-out). */
 export function resetLookupRecorder(): void {
+	cancelRepairs();
 	recorder?.reset();
 }
 
@@ -79,21 +81,67 @@ export async function removeFromHistory(ws: number, entryIds: number[]): Promise
 	return next;
 }
 
+/** How long after a Clear the row is checked once for a stale write-back. */
+export const REPAIR_AFTER_CLEAR_MS = 30_000;
+
+const repairs = new Map<number, ReturnType<typeof setTimeout>>();
+
+function cancelRepairs(): void {
+	for (const t of repairs.values()) clearTimeout(t);
+	repairs.clear();
+}
+
+/** The server time of a write (`updatedAt` of the PUT answer), if it is RFC 3339. */
+function serverTime(res: unknown): string | null {
+	const at = (res as { updatedAt?: unknown } | null | undefined)?.updatedAt;
+	return typeof at === 'string' && instant(at) !== null ? at : null;
+}
+
+async function writeCleared(ws: number, h: LookupHistory): Promise<string | null> {
+	return serverTime(await api<unknown>(`/api/plugins/qinqin-core/data/${LOOKUPS_KEY}?workspace=${ws}`, { method: 'PUT', body: serializeLookups(h) }));
+}
+
 /**
  * clearHistory overwrites the row with an empty one (a PUT, so no tombstone
- * keeps the words), then deletes the workspace's old `lookup` events and the
- * offline copies that may hold either.
+ * keeps the words), then deletes the workspace's old `lookup` events and
+ * scrubs the offline copies. clearedAt is the server's time of that write
+ * (the row is written again with it when it differs from this device's
+ * clock), so other devices' lookups compare against one clock. 30 s later
+ * the row is checked once (repairAfterClear) from here, not from the page,
+ * so leaving the page does not cancel it; `onRepaired` hears when it had to
+ * clear again.
  */
-export async function clearHistory(ws: number, now: Date = new Date()): Promise<{ eventsDeleted: number; history: LookupHistory }> {
+export async function clearHistory(
+	ws: number,
+	now: Date = new Date(),
+	opts: { onRepaired?: (ws: number) => void } = {}
+): Promise<{ eventsDeleted: number; history: LookupHistory }> {
 	const recorder = lookupRecorder();
 	// In the recorder's chain: a flush of this tab that read the row before
 	// the Clear finishes first, and none starts until the row is cleared.
 	const next = await recorder.exclusive(async () => {
-		const h = clearedLookups(await loadHistory(ws), now);
-		await write(ws, h);
+		let h = clearedLookups(await loadHistory(ws), now);
+		const at = await writeCleared(ws, h);
+		if (at !== null && at !== h.clearedAt) {
+			h = { ...h, clearedAt: at };
+			await writeCleared(ws, h);
+		}
 		recorder.adopt(ws, h);
 		return h;
 	});
+	const mine = next.clearedAt as string;
+	clearTimeout(repairs.get(ws));
+	repairs.set(
+		ws,
+		setTimeout(() => {
+			repairs.delete(ws);
+			void repairAfterClear(ws, mine)
+				.then((again) => {
+					if (again) opts.onRepaired?.(ws);
+				})
+				.catch(() => undefined);
+		}, REPAIR_AFTER_CLEAR_MS)
+	);
 	let deleted: number;
 	try {
 		const res = await api<{ deleted?: unknown } | undefined>(`/api/events/lookups?workspace=${ws}`, { method: 'DELETE' });
@@ -108,17 +156,22 @@ export async function clearHistory(ws: number, now: Date = new Date()): Promise<
 }
 
 /**
- * repairAfterClear: another device's flush that read the row before a Clear
- * may write the old items back. Re-read; when items at or before clearedAt
- * came back, clear once more. True when it cleared again.
+ * repairAfterClear: another device's flush that read the row before the
+ * Clear at `cleared` may have written its old copy back. When the row is no
+ * longer that clear (staleAfterClear), it is cleared again with the same
+ * clearedAt and no items (a stale copy's counts include the erased past, so
+ * nothing of it is kept). True when it cleared again.
  */
-export async function repairAfterClear(ws: number, now: Date = new Date()): Promise<boolean> {
-	const h = await loadHistory(ws);
-	if (!staleAfterClear(h)) return false;
-	const next = clearedLookups(h, now);
-	await write(ws, next);
-	lookupRecorder().adopt(ws, next);
-	return true;
+export async function repairAfterClear(ws: number, cleared: string): Promise<boolean> {
+	const recorder = lookupRecorder();
+	return recorder.exclusive(async () => {
+		const h = await loadHistory(ws);
+		if (!staleAfterClear(h, cleared)) return false;
+		const next: LookupHistory = { clearedAt: cleared, items: [], extra: h.extra };
+		await write(ws, next);
+		recorder.adopt(ws, next);
+		return true;
+	});
 }
 
 export async function loadLookupCfg(): Promise<LookupCfg> {

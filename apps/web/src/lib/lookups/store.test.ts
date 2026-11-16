@@ -17,6 +17,7 @@ import {
 	recorderIO,
 	removeFromHistory,
 	repairAfterClear,
+	resetLookupRecorder,
 	saveLookupCfg
 } from './store';
 
@@ -95,16 +96,30 @@ describe('lookups store', () => {
 		expect(calls()).toHaveLength(2);
 	});
 
-	it('repairAfterClear clears again once when older items came back', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: '2026-11-16T00:00:00Z', items: [item(5)] }));
-		vi.mocked(fetch).mockResolvedValueOnce(json({}));
-		expect(await repairAfterClear(3)).toBe(true);
-		expect(calls()[1].slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data/lookups?workspace=3', 'PUT']);
-		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: '2026-11-14T00:00:00Z', items: [item(5)] }));
-		expect(await repairAfterClear(3)).toBe(false);
-		expect(calls()).toHaveLength(3);
+	it('the clear uses the server time of its write as clearedAt (clock skew)', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json([]));
+		vi.mocked(fetch).mockResolvedValueOnce(json({ key: 'lookups', updatedAt: '2026-11-16T11:59:58Z' }));
+		vi.mocked(fetch).mockResolvedValueOnce(json({ key: 'lookups', updatedAt: '2026-11-16T11:59:59Z' }));
+		vi.mocked(fetch).mockResolvedValueOnce(json({ deleted: 0 }));
+		const out = await clearHistory(3, new Date('2026-11-16T12:00:07.000Z'));
+		expect(out.history.clearedAt).toBe('2026-11-16T11:59:58Z');
+		const c = calls();
+		expect(c.map((x) => x[1])).toEqual(['GET', 'PUT', 'PUT', 'DELETE']);
+		expect(JSON.parse(String(c[1][2])).clearedAt).toBe('2026-11-16T12:00:07.000Z');
+		expect(JSON.parse(String(c[2][2]))).toEqual({ version: 1, clearedAt: '2026-11-16T11:59:58Z', items: [] });
 	});
 
+	it('repairAfterClear clears again when the row is not my clear any more', async () => {
+		const mine = '2026-11-16T12:00:00Z';
+		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: null, items: [item(5)] }));
+		vi.mocked(fetch).mockResolvedValueOnce(json({}));
+		expect(await repairAfterClear(3, mine)).toBe(true);
+		expect(calls()[1].slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data/lookups?workspace=3', 'PUT']);
+		expect(JSON.parse(String(calls()[1][2]))).toEqual({ version: 1, clearedAt: mine, items: [] });
+		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: mine, items: [{ ...item(6), lastAt: '2026-11-16T12:00:05Z' }] }));
+		expect(await repairAfterClear(3, mine)).toBe(false);
+		expect(calls()).toHaveLength(3);
+	});
 	it('reads and writes the user-global switch, keeping unknown members', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([{ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } }]));
 		expect(await loadLookupCfg()).toEqual({ record: false, extra: { k: 2 } });
@@ -164,5 +179,64 @@ describe('forgetOfflineLookups', () => {
 		const caches = new FakeCacheStorage();
 		await forgetOfflineLookups(caches);
 		expect(caches.stores.size).toBe(0);
+	});
+});
+
+describe('Clear against another device that read the row before it (the real race)', () => {
+	interface Row { data: unknown; updatedAt: string }
+	let server: Map<number, Row>;
+	let serverNow: string;
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.setSystemTime(new Date('2026-11-16T12:00:00.400Z'));
+		server = new Map();
+		serverNow = '2026-11-16T12:00:00Z';
+		vi.mocked(fetch).mockImplementation(async (input, init) => {
+			const url = new URL(String(input), 'http://x');
+			const method = (init as RequestInit | undefined)?.method ?? 'GET';
+			const ws = Number(url.searchParams.get('workspace'));
+			if (url.pathname === '/api/events/lookups') return json({ deleted: 1 });
+			if (method === 'GET') {
+				const r = server.get(ws);
+				return json(r ? [{ key: 'lookups', data: r.data, updatedAt: r.updatedAt }] : []);
+			}
+			if (method === 'PUT') {
+				server.set(ws, { data: JSON.parse(String((init as RequestInit).body)), updatedAt: serverNow });
+				return json({ key: 'lookups', updatedAt: serverNow });
+			}
+			return json({});
+		});
+	});
+	afterEach(() => vi.useRealTimers());
+
+	it('a stale write-back with the old clearedAt is cleared again 30 s later, once, even after leaving the page', async () => {
+		const old = { version: 1, clearedAt: null, items: [item(5)] };
+		server.set(3, { data: old, updatedAt: T });
+		const deviceBRead = structuredClone(old); // B reads before the Clear
+		const repaired = vi.fn();
+		await clearHistory(3, new Date(), { onRepaired: repaired });
+		expect(server.get(3)!.data).toEqual({ version: 1, clearedAt: '2026-11-16T12:00:00Z', items: [] });
+		// B writes back its merge of the stale copy: its own (old) clearedAt
+		serverNow = '2026-11-16T12:00:03Z';
+		server.set(3, { data: { ...deviceBRead, items: [...deviceBRead.items, { ...item(6), lastAt: '2026-11-16T12:00:02Z' }] }, updatedAt: serverNow });
+		await vi.advanceTimersByTimeAsync(29_000);
+		expect((server.get(3)!.data as { items: unknown[] }).items).toHaveLength(2);
+		await vi.advanceTimersByTimeAsync(1_000);
+		expect(server.get(3)!.data).toEqual({ version: 1, clearedAt: '2026-11-16T12:00:00Z', items: [] });
+		expect(repaired).toHaveBeenCalledWith(3);
+		// only once
+		server.set(3, { data: old, updatedAt: serverNow });
+		await vi.advanceTimersByTimeAsync(120_000);
+		expect(server.get(3)!.data).toEqual(old);
+	});
+
+	it('sign-out cancels a pending repair', async () => {
+		server.set(3, { data: { version: 1, clearedAt: null, items: [item(5)] }, updatedAt: T });
+		await clearHistory(3, new Date());
+		const stale = { version: 1, clearedAt: null, items: [item(5)] };
+		server.set(3, { data: stale, updatedAt: T });
+		resetLookupRecorder();
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(server.get(3)!.data).toEqual(stale);
 	});
 });

@@ -12,7 +12,7 @@
 	} from '$lib/lookups/historyView';
 	import { promptItems } from '$lib/lookups/lookups';
 	import { addEntries, loadPage, type PageData } from '$lib/lookups/pageData';
-	import { clearHistory, removeFromHistory, repairAfterClear, saveLookupCfg } from '$lib/lookups/store';
+	import { clearHistory, removeFromHistory, saveLookupCfg } from '$lib/lookups/store';
 	import { GENERAL_DECK_ID } from '$lib/study/store';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaces } from '$lib/workspaces';
@@ -20,7 +20,6 @@
 	// The lookup history of the current workspace (#72): what the learner
 	// looked up, add to a deck, remove, clear, and the recording switch. The
 	// rules live in $lib/lookups; nothing here is kept in browser storage.
-	const REPAIR_AFTER_CLEAR_MS = 30_000;
 
 	const ws = $derived($workspaces.current);
 	const wsId = $derived(ws?.id ?? null);
@@ -38,7 +37,7 @@
 	let confirming = $state(false);
 	let record = $state(true);
 	let offerClear = $state(false);
-	let repairTimer: ReturnType<typeof setTimeout> | undefined;
+	let mounted = true;
 	let seq = 0;
 
 	async function load(id: number): Promise<void> {
@@ -65,7 +64,7 @@
 		if (id !== null) void load(id);
 	});
 
-	onDestroy(() => clearTimeout(repairTimer));
+	onDestroy(() => (mounted = false));
 
 	const day = currentStudyDay();
 	const today = day.today();
@@ -123,7 +122,13 @@
 			confirming = false;
 			offerClear = false;
 			try {
-				const out = await clearHistory(id);
+				// The store checks the row again 30 s later (another device's stale
+				// write-back); reload when it had to clear again and the page is open.
+				const out = await clearHistory(id, new Date(), {
+					onRepaired: (w) => {
+						if (mounted && w === wsId) void load(w);
+					}
+				});
 				if (data) data = { ...data, history: out.history };
 				status = 'The lookup history is cleared.';
 			} catch (err) {
@@ -132,13 +137,6 @@
 				throw err;
 			} finally {
 				selected = [];
-				clearTimeout(repairTimer);
-				// Another device's flush may write the old words back: check once.
-				repairTimer = setTimeout(() => {
-					void repairAfterClear(id)
-						.then((again) => (again ? load(id) : undefined))
-						.catch(() => undefined);
-				}, REPAIR_AFTER_CLEAR_MS);
 			}
 		});
 	}
