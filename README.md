@@ -1232,7 +1232,7 @@ All library and source routes need a signed-in user, and so does
 
 | Route | Purpose |
 |---|---|
-| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, forms, readings, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
+| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, the `term` to show (a Japanese matched written form unless it is search-only, else the display form: こと for the usually-kana 事, の for 乃), forms with flags, readings with flags, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
 | `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates are other readings or entries with the same surface (at most 8 candidates in all). A candidate has `reading: true` when it matched by a kana reading (Japanese) |
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/audio/entries/{id}` | Signed-in. The pronunciation clips of one entry: `{terms: [Clip], syllables: [[Clip]\|null]\|null}`. `terms` are recordings of the whole word (matched on written form and first reading); `syllables` (zh entries only, else `null`) has one slot per pinyin reading in the entry's order, each the clips to play in sequence or `null` when a syllable has no recording. `Clip` is `{url, packId, license, attribution, source}`; 404 for an unknown entry |
@@ -1562,6 +1562,10 @@ one entry. `entry_links` connect characters to their radical and to variants.
   reading, the part-of-speech tags **per sense**, the `uk` flag (usually written
   in kana) and a priority score derived from JMdict's priority markers.
   Homographs are separate entries, so 為る and 刷る are two results for する.
+  An entry is shown by its **display form** (`docs/contracts/frequency/display-form.json`):
+  the kana when its first sense is `uk` (事 → こと, 為る → する), never a search-only
+  (`sK`) form (乃 → の); a starter deck word whose list row is kana shows that kana. Cards
+  keep the form they were added with as their snapshot.
 - **Chinese**: one entry per simplified written form; its traditional forms are
   forms of the same entry (flag `trad`), so 學習 finds 学习. Homograph lines
   (行 xíng / háng) merge into one entry carrying all readings, with one sense per

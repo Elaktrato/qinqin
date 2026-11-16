@@ -54,8 +54,43 @@ entries or after `4 × size` rows. Fixture: a toy Japanese lexicon (`forms`, kan
 and toy packs; `expected` lists entry keys with the rank of the row that took them. Sizes other than 500,
 1000, 2000 appear only in this fixture.
 
+Each starter word is served with `written` = its **display form** with the row's term as list form (next
+section), and the add snapshots exactly that as the card's `written`: a kana row shows its kana when it is a
+reading of the entry. Fixture: `expected[].written`; toy `uk` = `entries.uk` and a first sense tagged `uk`
+unless `senseTags` lists the senses' tags.
+
 Adding a starter deck reuses the add-to-deck plan; entries that are known are left out and counted. The add
 also writes `deckcfg:<id>` with `newOrder: {by:"frequency"}` only when no live row exists.
+
+## Display form (`display-form.json`, #92)
+
+The text an entry is shown as — entry bases (`written` of search hits, the entry page, `POST
+/api/entries/bases`, scheme entries, starter decks), study card fronts, deck lists, the lookup popup's term
+after a kana match, the words panel — and the `written` snapshot of a card added from those surfaces.
+`displayForm(entry, listForm?)` over the entry's `forms` (`text`, `flags`), `readings` (`type`, `value`,
+`flags`) and `senses` (`tags`, in the entry's order):
+
+1. `listForm` (a starter deck row's term), when written only in hiragana, katakana and ー and equal to the
+   value of one of the entry's `kana` readings not flagged `sk`;
+2. when the **first sense** carries the tag `uk` and the entry has a kana reading: the best kana reading;
+3. the best written form;
+4. the best kana reading (else the first kana reading), else the first reading of any type, else `""`.
+
+Best = the first item (stored order) without a rare flag (forms `rK oK iK sK`, readings `rk ok ik sk`), else
+the first that is not search-only (`sK` / `sk`); a search-only form is never shown. Other flags (`ateji`,
+`trad`, …) do not matter. Only the first sense counts for `uk`: JMdict tags minor senses of 犬, 見る, 山 or
+携帯 `uk`, while `entries.uk` (and the sync wire's `uk`) is "any sense" and only ranks. Examples from JMdict:
+の (1469800, forms 乃/之 both `sK`, not `uk`) → の; 事 → こと; 為る → する; 此れ → これ; 分かる → わかる;
+犬 → 犬; 爽凉 (`oK`) → 爽涼. Chinese and character entries keep their first form.
+
+A lookup (`GET /api/lookup`) of a Japanese written form shows the matched form as `term` unless it is
+search-only (之 → の); a kana match shows the display form. Readings carry `flags`. The reader popup's add
+snapshot is `displayForm` of the lookup result without a list form (`reader/popup-written.json`).
+
+No import change: form flags, reading flags and sense tags are stored by the JMdict importer since before
+v0.3.0, so existing databases need no re-seed. Cards added before #92 keep their snapshot (乃): surfaces that
+load the entry show the display form; snapshot-only surfaces (card manager labels, the FSRS preview, the
+mastery map, writing companion planning) show the old snapshot until the card is re-added.
 
 ## Routes
 
@@ -88,8 +123,8 @@ Top 500 is the prefix of Top 1000 and Top 1000 of Top 2000; `size=3` is 400, an 
 20 words are particles and basic words (は, に, を, が, と, も, だ, 為る/する, か, から, …). The first
 build resolved `で` to the usually-kana 出 by the level-word rule; the kana-row step (review fix) makes it
 the particle で (re-checked: first Top 2000 1.23 s, cached 0.002 s, nested sizes). `の` resolves to JMdict
-1469800, the particle, whose written forms 乃 and 之 are search-only (sK); entry bases show the first form,
-so the deck lists it as 乃 — a display follow-up, not a resolution error. Ranks of 600 entries in two calls equal the 600 one-by-one answers, in request order, and
+1469800, the particle, whose written forms 乃 and 之 are search-only (sK); entry bases showed the first form,
+so the deck listed it as 乃 — fixed by the display form (#92, above). Ranks of 600 entries in two calls equal the 600 one-by-one answers, in request order, and
 are identical for a second user; `language: "zh"` answers `{"pack":null,"ranks":[]}`. The add plan of
 Top 500 for a fresh user (planned by the web modules, pushed through `POST /api/sync/push` in 3 requests of
 at most 200 rows) wrote 502 rows (deck, `deckcfg` with `newOrder: {by: "frequency"}`, 500 cards), all
