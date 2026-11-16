@@ -1,0 +1,246 @@
+{
+ "version": 1,
+ "rule": "reader/furigana-align",
+ "cases": [
+  {
+   "name": "plain kanji word",
+   "surface": "漢字",
+   "lemma": "漢字",
+   "reading": "かんじ",
+   "expect": [
+    [
+     "漢字",
+     "かんじ"
+    ]
+   ]
+  },
+  {
+   "name": "inflected verb: only the stem gets furigana",
+   "surface": "食べました",
+   "lemma": "食べる",
+   "reading": "たべる",
+   "expect": [
+    [
+     "食",
+     "た"
+    ],
+    [
+     "べました",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "leading kana stays plain",
+   "surface": "お茶",
+   "lemma": "お茶",
+   "reading": "おちゃ",
+   "expect": [
+    [
+     "お",
+     null
+    ],
+    [
+     "茶",
+     "ちゃ"
+    ]
+   ]
+  },
+  {
+   "name": "okurigana between kanji",
+   "surface": "取り扱い",
+   "lemma": "取り扱い",
+   "reading": "とりあつかい",
+   "expect": [
+    [
+     "取",
+     "と"
+    ],
+    [
+     "り",
+     null
+    ],
+    [
+     "扱",
+     "あつか"
+    ],
+    [
+     "い",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "katakana reading is shown as hiragana",
+   "surface": "漢字",
+   "lemma": "漢字",
+   "reading": "カンジ",
+   "expect": [
+    [
+     "漢字",
+     "かんじ"
+    ]
+   ]
+  },
+  {
+   "name": "katakana in the lemma matches a hiragana reading",
+   "surface": "新ビル",
+   "lemma": "新ビル",
+   "reading": "しんびる",
+   "expect": [
+    [
+     "新",
+     "しん"
+    ],
+    [
+     "ビル",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "long vowel mark kept literally",
+   "surface": "漢ー",
+   "lemma": "漢ー",
+   "reading": "かんー",
+   "expect": [
+    [
+     "漢",
+     "かん"
+    ],
+    [
+     "ー",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "iteration mark belongs to the kanji run",
+   "surface": "人々",
+   "lemma": "人々",
+   "reading": "ひとびと",
+   "expect": [
+    [
+     "人々",
+     "ひとびと"
+    ]
+   ]
+  },
+  {
+   "name": "inflection that changes the stem is still the common prefix",
+   "surface": "行った",
+   "lemma": "行く",
+   "reading": "いく",
+   "expect": [
+    [
+     "行",
+     "い"
+    ],
+    [
+     "った",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "kana in the reading that does not fit the lemma: no furigana",
+   "surface": "食べる",
+   "lemma": "食べる",
+   "reading": "のむ",
+   "expect": null
+  },
+  {
+   "name": "reading that is not kana",
+   "surface": "漢字",
+   "lemma": "漢字",
+   "reading": "han4 zi4",
+   "expect": null
+  },
+  {
+   "name": "surface without kanji",
+   "surface": "たべる",
+   "lemma": "食べる",
+   "reading": "たべる",
+   "expect": null
+  },
+  {
+   "name": "irregular: the surface kanji are not in the lemma",
+   "surface": "居た",
+   "lemma": "いる",
+   "reading": "いる",
+   "expect": null
+  },
+  {
+   "name": "inflected 来る: the stem reading changes (き, こ): no furigana",
+   "surface": "来た",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": null
+  },
+  {
+   "name": "two ways to split the reading: no furigana",
+   "surface": "木か木",
+   "lemma": "木か木",
+   "reading": "きかきかき",
+   "expect": null
+  },
+  {
+   "name": "empty reading",
+   "surface": "漢字",
+   "lemma": "漢字",
+   "reading": "",
+   "expect": null
+  },
+  {
+   "name": "来る itself is aligned",
+   "surface": "来る",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": [
+    [
+     "来",
+     "く"
+    ],
+    [
+     "る",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "来ない",
+   "surface": "来ない",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": null
+  },
+  {
+   "name": "来ます",
+   "surface": "来ます",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": null
+  },
+  {
+   "name": "持って来た",
+   "surface": "来た",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": null
+  },
+  {
+   "name": "compound ending in 来る, inflected",
+   "surface": "出来た",
+   "lemma": "出来る",
+   "reading": "できる",
+   "expect": null
+  },
+  {
+   "name": "traditional form 來",
+   "surface": "來た",
+   "lemma": "來る",
+   "reading": "くる",
+   "expect": null
+  }
+ ]
+}

@@ -1,31 +1,47 @@
 <script lang="ts">
-	import { groupSegsByRun, type RunPiece } from './highlightUi';
-	import { splitRunsByHighlights, type Highlight } from './highlights';
+	import { onDestroy } from 'svelte';
+	import { planParagraph, type PlanSeg } from './chapterPlan';
+	import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
+	import { fontStack } from './fonts';
+	import type { Highlight } from './highlights';
 	import type { Run } from './paragraphText';
+	import { createReveal, type Reveal } from './reveal';
+	import type { Piece } from './smartReadings';
 	import type { LookupController } from './useLookup.svelte';
 
 	// Renders the chapter as real, selectable text. The markup is the
 	// contract dom.ts maps against: <p data-p> per paragraph, one element
 	// with data-r per run whose first text node is the displayed run text,
-	// furigana (when shown) in an <rt> after it. A paragraph with
-	// highlights cuts its runs into pieces instead (<span>/<mark> with
-	// data-o, the piece's UTF-16 start in its run), all inside the run's
-	// element and before its <rt>. Runs are written without whitespace
-	// between them so no stray spaces enter CJK text.
+	// the book's furigana (when shown) in an <rt> after it. A paragraph with
+	// highlights or generated readings cuts its runs into pieces instead
+	// (<span>/<mark>/<ruby> with data-o, the piece's UTF-16 start in its
+	// run), all inside the run's element and before its <rt>; a generated
+	// <ruby> piece holds its own <rt> after the base text. Runs are written
+	// without whitespace between them so no stray spaces enter CJK text.
 	let {
 		paragraphs,
-		showRuby,
+		display = DEFAULT_DISPLAY,
+		pieces = new Map<number, Piece[]>(),
 		lang,
 		lookup,
+		reveal = createReveal(),
+		showAll = false,
 		marked = new Set<number>(),
 		highlights = new Map<number, Highlight[]>(),
 		onhighlight,
 		container = $bindable(null)
 	}: {
 		paragraphs: Run[][];
-		showRuby: boolean;
+		/** Reading display settings: book ruby, ruby size, font. */
+		display?: ReaderDisplay;
+		/** Readings per paragraph (smartReadings.annotateParagraph). */
+		pieces?: ReadonlyMap<number, Piece[]>;
 		lang: string;
 		lookup: LookupController;
+		/** Hides revealed readings; BookView owns it for the `R` key. */
+		reveal?: Reveal;
+		/** Show all readings (also the concealed ones). */
+		showAll?: boolean;
 		/** Paragraphs with a bookmark: they get a margin marker. */
 		marked?: ReadonlySet<number>;
 		/** The highlights to draw, per paragraph (visibleHighlights' `drawn`). */
@@ -35,9 +51,18 @@
 		container?: HTMLElement | null;
 	} = $props();
 
-	function piecesOf(runs: Run[], drawn: Highlight[]): ReturnType<typeof groupSegsByRun> {
-		return groupSegsByRun(splitRunsByHighlights(runs, drawn), runs.length);
+	function planOf(runs: Run[], drawn: Highlight[], list: readonly Piece[]) {
+		return planParagraph(runs, drawn, list, display.bookRuby);
 	}
+
+	/** Paragraph code-point start of run r. */
+	function bookStart(runs: Run[], r: number): number {
+		let at = 0;
+		for (let i = 0; i < r; i++) at += Array.from(runs[i].text).length;
+		return at;
+	}
+
+	const stack = $derived(fontStack(display.font, lang.split('-')[0]));
 
 	// A click on a highlight edits it; a click that ended a selection (a
 	// drag, a double click) is the selection lookup's, not ours.
@@ -68,6 +93,22 @@
 		};
 	});
 
+	// A tap on a concealed word reveals it for a moment; the listeners only
+	// observe, so the lookup keeps getting every event.
+	$effect(() => {
+		const el = container;
+		if (!el) return;
+		return reveal.attach(el);
+	});
+
+	onDestroy(() => reveal.reset());
+
+	// A new chapter or script starts with every reading as the rule says.
+	$effect(() => {
+		void paragraphs;
+		reveal.reset();
+	});
+
 	// Pointer events are delegated to the container (no per-paragraph
 	// listeners). They only enhance plain text, so the container gets no
 	// interactive role: keyboard users select text and get the same popup.
@@ -86,13 +127,21 @@
 	});
 </script>
 
-{#snippet piece(s: RunPiece)}{#if s.highlight}<mark data-o={s.startInRun} data-h={s.highlight.id} class="hl {s.highlight.color}" class:noted={s.noteMark}>{s.text}</mark>{:else}<span data-o={s.startInRun}>{s.text}</span>{/if}{/snippet}
+{#snippet piece(s: PlanSeg)}{#if s.highlight}<mark data-o={s.startInRun} data-h={s.highlight.id} class="hl {s.highlight.color}" class:noted={s.noteMark}>{s.text}</mark>{:else if s.rt !== undefined}<ruby data-o={s.startInRun} class="gen">{s.text}<rt class:concealed={s.concealed}>{s.rt}</rt></ruby>{:else}<span data-o={s.startInRun}>{s.text}</span>{/if}{/snippet}
 
-<div class="chapter-text" {lang} bind:this={container}>
+<div
+	class="chapter-text"
+	class:show-all={showAll}
+	{lang}
+	bind:this={container}
+	style:--reader-rt-size="{display.rubyScale}em"
+	style:--reader-font={stack === 'inherit' ? undefined : stack}
+>
 	{#each paragraphs as runs, p (p)}
-		{@const drawn = highlights.get(p)}
+		{@const drawn = highlights.get(p) ?? []}
+		{@const list = pieces.get(p) ?? []}
 		<!-- One <p> per paragraph whatever its content: the position observers watch these elements. -->
-		<p data-p={p} class:bookmarked={marked.has(p)}>{#if drawn && drawn.length > 0}{#each piecesOf(runs, drawn) as g (g.run)}{#if g.ruby && showRuby}<ruby data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}<rt>{g.ruby}</rt></ruby>{:else}<span data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}</span>{/if}{/each}{:else}{#each runs as run, r (r)}{#if run.ruby && showRuby}<ruby data-r={r}>{run.text}<rt>{run.ruby}</rt></ruby>{:else}<span data-r={r}>{run.text}</span>{/if}{/each}{/if}</p>
+		<p data-p={p} class:bookmarked={marked.has(p)}>{#if drawn.length > 0 || list.some((x) => x.source === 'dict')}{#each planOf(runs, drawn, list) as g (g.run)}{#if g.ruby}<ruby data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}<rt class:concealed={g.bookConcealed}>{g.ruby}</rt></ruby>{:else}<span data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}</span>{/if}{/each}{:else}{#each runs as run, r (r)}{#if run.ruby && display.bookRuby}<ruby data-r={r}>{run.text}<rt class:concealed={list.find((x) => x.source === 'book' && x.start === bookStart(runs, r))?.concealed}>{run.ruby}</rt></ruby>{:else}<span data-r={r}>{run.text}</span>{/if}{/each}{/if}</p>
 	{/each}
 </div>
 
@@ -100,6 +149,7 @@
 	.chapter-text {
 		font-size: 1.25rem;
 		line-height: 2;
+		font-family: var(--reader-font, inherit);
 	}
 
 	.chapter-text p {
@@ -132,8 +182,27 @@
 	/* Furigana is a reading aid, not part of the text: copying or
 	   selecting a passage leaves it out. */
 	rt {
-		font-size: 0.55em;
+		font-size: var(--reader-rt-size, 0.55em);
 		user-select: none;
+	}
+
+	/* A reading of a known word: still laid out (revealing never moves the
+	   text) and still in the accessibility tree, only drawn transparent.
+	   Hover or a reveal (tap, Show all readings) draws it. */
+	rt.concealed {
+		color: transparent;
+	}
+
+	ruby:hover > rt.concealed,
+	:global(ruby.revealed > rt.concealed),
+	:global(.chapter-text.show-all rt.concealed) {
+		color: inherit;
+	}
+
+	@media (forced-colors: active) {
+		rt.concealed {
+			color: inherit;
+		}
 	}
 
 	/* Highlights: a light tint under dark text, a deep one under light

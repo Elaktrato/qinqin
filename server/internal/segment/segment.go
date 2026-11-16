@@ -38,10 +38,26 @@ type Match struct {
 	// Reason; later candidates are other readings or entries with the
 	// same surface, which may have a different lemma.
 	Entries []Candidate `json:"entries"`
+	// Reading is the best candidate's reading, set only when the service
+	// has WithReadings: for a Japanese form match the entry's first
+	// reading, for a reading match the matched one; Chinese pinyin. It is
+	// unrelated to Candidate.Reading, the "matched by a reading" flag.
+	Reading *Reading `json:"reading,omitempty"`
+}
+
+// Reading is one reading of a match: its type ("pinyin", "kana", ...) and
+// display value.
+type Reading struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
 
 // Service tokenizes text with the lookup engine.
-type Service struct{ Lookup lookup.Service }
+type Service struct {
+	Lookup lookup.Service
+	// WithReadings fills Match.Reading.
+	WithReadings bool
+}
 
 // MatchAt returns the longest dictionary match starting at the code-point
 // offset, or nil, nil when nothing matches there (or the offset is out of
@@ -102,5 +118,22 @@ func (s Service) matchAt(ctx context.Context, language string, runes []rune, off
 		}
 		m.Entries = append(m.Entries, Candidate{ID: r.EntryID, Kind: r.Kind, Reading: r.ViaReading})
 	}
+	if s.WithReadings {
+		m.Reading = readingOf(best)
+	}
 	return m, nil
+}
+
+// readingOf is the reading lookup reports for r (the matched one, else
+// the first) with its type, or nil for an entry without readings.
+func readingOf(r lookup.Result) *Reading {
+	for _, rd := range r.Readings {
+		if rd.Value == r.Reading {
+			return &Reading{Type: rd.Type, Value: rd.Value}
+		}
+	}
+	if len(r.Readings) > 0 {
+		return &Reading{Type: r.Readings[0].Type, Value: r.Readings[0].Value}
+	}
+	return nil
 }
