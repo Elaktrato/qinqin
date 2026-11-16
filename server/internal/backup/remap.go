@@ -21,8 +21,9 @@ type Maps struct {
 	// Cards maps every old card id of the archive to its new id, or to
 	// "orphan:<old>" for a dropped card. Filled by RegisterCard.
 	Cards map[string]string
-	// noteWinner names, per (source workspace, target note key), the
-	// archive note row that is restored there. Filled by RegisterNote.
+	// noteWinner names, per (row kind, source workspace, target entry), the
+	// archive note or known mark row that is restored there. Filled by
+	// RegisterNote.
 	noteWinner map[string]noteCandidate
 }
 
@@ -43,6 +44,7 @@ const (
 	vacationKeyPrefix = "vacation:"
 	orphanPrefix      = "orphan:"
 	noteKeyPrefix     = "note:"
+	knownKeyPrefix    = "known:"
 )
 
 type kv struct {
@@ -310,12 +312,13 @@ func (m *Maps) vacationScope(data json.RawMessage) (json.RawMessage, bool) {
 }
 
 // PluginRow remaps one plugin data row: its workspace (null stays null),
-// flashcards card rows, vacation periods and qinqin-core notes. Every other
-// row is restored as it is. drop is true for a row of an unknown workspace,
-// a card of an unresolved entry or sentence, a vacation with no workspace
-// left, a note of an unresolved entry or one that loses its target to a
-// newer note (RegisterNote), and a qinqin-core note: row that is not a valid
-// note (key not canonical, entryId missing or different).
+// flashcards card rows, vacation periods, qinqin-core notes and flashcards
+// known marks. Every other row is restored as it is. drop is true for a row
+// of an unknown workspace, a card of an unresolved entry or sentence, a
+// vacation with no workspace left, a note or known mark of an unresolved
+// entry or one that loses its target to a newer row (RegisterNote), and a
+// note: / known: row that is not valid (key not canonical, entryId missing
+// or different).
 func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 	src := r
 	if r.WorkspaceID != nil {
@@ -332,6 +335,8 @@ func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 		return r, false
 	}
 	switch {
+	case strings.HasPrefix(r.Key, knownKeyPrefix):
+		return m.note(src, r)
 	case strings.HasPrefix(r.Key, cardKeyPrefix):
 		nk, nd, drop := m.Card(r.Key, r.Data)
 		if drop {
@@ -348,14 +353,45 @@ func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 	return r, false
 }
 
+// entryKeyedPrefix names the rows whose key is <prefix><entryId>: notes
+// (qinqin-core note:) and known marks (qinqin-flashcards known:); "" for
+// every other row.
+func entryKeyedPrefix(r PluginRow) string {
+	switch {
+	case r.PluginID == CorePlugin && strings.HasPrefix(r.Key, noteKeyPrefix):
+		return noteKeyPrefix
+	case r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, knownKeyPrefix):
+		return knownKeyPrefix
+	}
+	return ""
+}
+
 // noteEntryID is the entry id of a qinqin-core note row: the key is
 // note:<n> with n canonical decimal (positive, no sign, no leading zero)
 // and data.entryId is the same n. Anything else is not a note.
 func noteEntryID(r PluginRow) (int64, bool) {
-	if r.PluginID != CorePlugin || !strings.HasPrefix(r.Key, noteKeyPrefix) {
+	if entryKeyedPrefix(r) != noteKeyPrefix {
 		return 0, false
 	}
-	digits := strings.TrimPrefix(r.Key, noteKeyPrefix)
+	return entryKeyedID(r)
+}
+
+// knownEntryID is noteEntryID for a qinqin-flashcards known:<n> mark.
+func knownEntryID(r PluginRow) (int64, bool) {
+	if entryKeyedPrefix(r) != knownKeyPrefix {
+		return 0, false
+	}
+	return entryKeyedID(r)
+}
+
+// entryKeyedID is the entry id of a valid note or known mark (see
+// noteEntryID); false for an invalid one and for every other row.
+func entryKeyedID(r PluginRow) (int64, bool) {
+	prefix := entryKeyedPrefix(r)
+	if prefix == "" {
+		return 0, false
+	}
+	digits := strings.TrimPrefix(r.Key, prefix)
 	if digits == "" || digits[0] < '1' || digits[0] > '9' {
 		return 0, false
 	}
@@ -378,14 +414,15 @@ func noteEntryID(r PluginRow) (int64, bool) {
 	return n, true
 }
 
-// noteSlot is the winner-map key of a note's target: the source workspace
-// (workspaces map one to one) and the target entry.
+// noteSlot is the winner-map key of a note's or mark's target: the row
+// kind, the source workspace (workspaces map one to one) and the target
+// entry.
 func noteSlot(r PluginRow, target int64) string {
 	ws := "null"
 	if r.WorkspaceID != nil {
 		ws = strconv.FormatInt(*r.WorkspaceID, 10)
 	}
-	return ws + "\x00" + strconv.FormatInt(target, 10)
+	return entryKeyedPrefix(r) + "\x00" + ws + "\x00" + strconv.FormatInt(target, 10)
 }
 
 func noteTime(r PluginRow) time.Time {
@@ -400,12 +437,12 @@ func noteTime(r PluginRow) time.Time {
 	return t
 }
 
-// RegisterNote records, per target note, the archive row that wins it: the
-// newest modifiedAt ?? updatedAt, ties to the smaller source entry id. Call
-// it for every archive row (non-notes are ignored) before PluginRow; without
-// it every note is its own winner.
+// RegisterNote records, per target note or known mark, the archive row that
+// wins it: the newest modifiedAt ?? updatedAt, ties to the smaller source
+// entry id. Call it for every archive row (other rows are ignored) before
+// PluginRow; without it every note and mark is its own winner.
 func (m *Maps) RegisterNote(r PluginRow) {
-	src, ok := noteEntryID(r)
+	src, ok := entryKeyedID(r)
 	if !ok {
 		return
 	}
@@ -424,10 +461,10 @@ func (m *Maps) RegisterNote(r PluginRow) {
 	}
 }
 
-// isNoteLoser reports a note row that maps to a resolved entry but loses
-// that target to another archive note (see RegisterNote).
+// isNoteLoser reports a note or mark row that maps to a resolved entry but
+// loses that target to another archive row of its kind (see RegisterNote).
 func (m *Maps) isNoteLoser(r PluginRow) bool {
-	src, ok := noteEntryID(r)
+	src, ok := entryKeyedID(r)
 	if !ok {
 		return false
 	}
@@ -439,20 +476,20 @@ func (m *Maps) isNoteLoser(r PluginRow) bool {
 	return has && w.sourceID != src
 }
 
-// note remaps a qinqin-core row (src as in the archive, r with its
-// workspace already mapped): an invalid note: row is dropped; a note
-// follows its entry (key and entryId rewritten together, other bytes kept),
-// is dropped when the entry is unresolved or another note wins the target;
-// any other core row is restored as it is.
+// note remaps a qinqin-core row or a flashcards known: row (src as in the
+// archive, r with its workspace already mapped): an invalid note: / known:
+// row is dropped; a valid one follows its entry (key and entryId rewritten
+// together, other bytes kept), is dropped when the entry is unresolved or
+// another row of its kind wins the target; any other core row is restored
+// as it is.
 func (m *Maps) note(src, r PluginRow) (PluginRow, bool) {
-	id, ok := noteEntryID(src)
+	prefix := entryKeyedPrefix(src)
+	id, ok := entryKeyedID(src)
 	if !ok {
-		// Any other note: row is dropped: kept verbatim it would annotate
-		// whatever entry its key names here, or collide with a remapped note.
-		if strings.HasPrefix(src.Key, noteKeyPrefix) {
-			return r, true
-		}
-		return r, false
+		// Any other note: / known: row is dropped: kept verbatim it would
+		// annotate (or mark) whatever entry its key names here, or collide
+		// with a remapped row.
+		return r, prefix != ""
 	}
 	target, ok := m.Entries[id]
 	if !ok {
@@ -461,7 +498,7 @@ func (m *Maps) note(src, r PluginRow) (PluginRow, bool) {
 	if m.isNoteLoser(src) {
 		return r, true
 	}
-	r.Key = noteKeyPrefix + strconv.FormatInt(target, 10)
+	r.Key = prefix + strconv.FormatInt(target, 10)
 	r.Data = rewriteObject(r.Data, map[string]json.RawMessage{"entryId": num(target)})
 	return r, false
 }
