@@ -13,9 +13,10 @@ const LAYOUT_VERSION = 1;
 
 /**
  * Home without a stored layout: the activity heatmap, the flashcards summary,
- * then the daily goal. A stored layout is never changed by a new default.
+ * the daily goal, then this week. A stored layout is never changed by a new
+ * default.
  */
-export const DEFAULT_LAYOUT: readonly string[] = ['activity-heatmap', 'flashcards-summary', 'daily-goal'];
+export const DEFAULT_LAYOUT: readonly string[] = ['activity-heatmap', 'flashcards-summary', 'daily-goal', 'weekly-summary'];
 
 export interface StoredLayout {
 	version: typeof LAYOUT_VERSION;

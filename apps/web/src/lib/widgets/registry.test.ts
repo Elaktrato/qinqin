@@ -100,12 +100,14 @@ describe('allWidgets', () => {
 			'activity-heatmap',
 			'character-map-summary',
 			'daily-goal',
+			'weekly-summary',
 			'flashcards-summary',
 			'word-states',
 			'reading-time'
 		]);
 		expect(list.map((w) => [w.owner, w.size])).toEqual([
 			['core', 'wide'],
+			['core', 'normal'],
 			['core', 'normal'],
 			['core', 'normal'],
 			['qinqin-flashcards', 'normal'],
@@ -115,8 +117,19 @@ describe('allWidgets', () => {
 		expect(ids(allWidgets(webPlugins, [state('qinqin-flashcards', false)], 'zh'))).toEqual([
 			'activity-heatmap',
 			'character-map-summary',
-			'daily-goal'
+			'daily-goal',
+			'weekly-summary'
 		]);
+	});
+
+	it('offers this week on home and Stats', () => {
+		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'es');
+		expect(list.find((w) => w.id === 'weekly-summary')).toMatchObject({
+			title: 'This week',
+			owner: 'core',
+			size: 'normal',
+			surfaces: ['stats', 'home']
+		});
 	});
 
 	it('offers the daily goal on the home page only (not Stats)', () => {
