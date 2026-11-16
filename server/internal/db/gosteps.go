@@ -9,9 +9,8 @@ import (
 	"fmt"
 	"log"
 
+	"qinqin/internal/db/step038"
 	"qinqin/internal/model"
-	"qinqin/internal/study"
-	"qinqin/internal/study/rows"
 )
 
 // goSteps are migration work SQL cannot do. A step runs inside the
@@ -118,14 +117,16 @@ func fillUsernameKeys(tx *sql.Tx) error {
 // with its last data), and deletes the plugin_data row. A row whose workspace
 // is NULL or not the row user's, or whose data the codec refuses, stays in
 // plugin_data untouched: no client could read it before either. Study events
-// are not touched. One log line counts what moved and what stayed.
+// are not touched. One log line counts what moved and what stayed. It uses
+// only the frozen codec and insert of package step038, never the live study
+// code, so a later change there cannot change how an old database upgrades.
 func coreStudyStep(tx *sql.Tx) error {
 	ctx := context.Background()
 	q, err := tx.QueryContext(ctx, `
 		SELECT p.rowid, p.user_id, p.workspace_id, w.user_id, p.key, p.data, p.version, p.updated_at,
 			COALESCE(p.modified_at, p.updated_at), p.deleted_at
 		FROM plugin_data p LEFT JOIN workspaces w ON w.id = p.workspace_id
-		WHERE p.pack_id = ? ORDER BY p.rowid`, rows.Namespace)
+		WHERE p.pack_id = ? ORDER BY p.rowid`, step038.Namespace)
 	if err != nil {
 		return fmt.Errorf("read study rows: %w", err)
 	}
@@ -152,20 +153,20 @@ func coreStudyStep(tx *sql.Tx) error {
 	}
 	q.Close()
 
-	moved := map[rows.Family]int{}
+	moved := map[step038.Family]int{}
 	total, left := 0, 0
 	for _, l := range all {
-		if _, typed := rows.FamilyOf(l.key); !typed {
+		if _, typed := step038.FamilyOf(l.key); !typed {
 			continue
 		}
 		if !l.ws.Valid || !l.wsOwner.Valid || l.wsOwner.Int64 != l.user {
 			left++
 			continue
 		}
-		r, err := rows.FromLegacy(l.key, json.RawMessage(l.data))
+		r, err := step038.FromLegacy(l.key, json.RawMessage(l.data))
 		if err == nil {
 			r.M().WorkspaceID = l.ws.Int64
-			err = rows.Validate(r)
+			err = step038.Validate(r)
 		}
 		if err != nil {
 			left++
@@ -175,7 +176,7 @@ func coreStudyStep(tx *sql.Tx) error {
 		if l.deleted.Valid {
 			deleted = &l.deleted.String
 		}
-		if err := study.InsertStored(ctx, tx, l.user, r, l.version, l.updated, l.modified, deleted); err != nil {
+		if err := step038.Insert(ctx, tx, l.user, r, l.version, l.updated, l.modified, deleted); err != nil {
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `DELETE FROM plugin_data WHERE rowid = ?`, l.rowid); err != nil {
@@ -188,6 +189,6 @@ func coreStudyStep(tx *sql.Tx) error {
 		return nil // a database without study rows (a fresh install) has nothing to report
 	}
 	log.Printf("migration 038: moved %d study rows (cards %d, decks %d, deckSettings %d, limits %d, fsrsSets %d, fsrsActive %d), left %d unreadable rows in plugin_data",
-		total, moved[rows.Cards], moved[rows.Decks], moved[rows.DeckSettings], moved[rows.Limits], moved[rows.FsrsSets], moved[rows.FsrsActive], left)
+		total, moved[step038.Cards], moved[step038.Decks], moved[step038.DeckSettings], moved[step038.Limits], moved[step038.FsrsSets], moved[step038.FsrsActive], left)
 	return nil
 }
