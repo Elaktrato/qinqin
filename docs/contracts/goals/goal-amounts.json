@@ -175,6 +175,65 @@
       "note": "23:30Z on 03-28 is 00:30 CET on 03-29; 21:30Z on 03-29 is 23:30 CEST (still 03-29); 22:30Z is 00:30 CEST on 03-30"
     },
     {
+      "name": "a zone change mid-day: UTC, then Asia/Tokyo from 2026-11-16T03:00:00Z",
+      "op": "flashcards",
+      "zones": [
+        {
+          "zone": "UTC",
+          "from": null
+        },
+        {
+          "zone": "Asia/Tokyo",
+          "from": "2026-11-16T03:00:00Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "01JGOAL0000000000000000101",
+          "ts": "2026-11-15T20:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 1000
+        },
+        {
+          "id": "01JGOAL0000000000000000102",
+          "ts": "2026-11-16T01:00:00Z",
+          "cardId": "b",
+          "grade": 3,
+          "durationMs": 2000
+        },
+        {
+          "id": "01JGOAL0000000000000000103",
+          "ts": "2026-11-16T14:00:00Z",
+          "cardId": "c",
+          "grade": 3,
+          "durationMs": 3000
+        },
+        {
+          "id": "01JGOAL0000000000000000104",
+          "ts": "2026-11-16T16:00:00Z",
+          "cardId": "d",
+          "grade": 3,
+          "durationMs": 4000
+        }
+      ],
+      "expect": {
+        "2026-11-15": {
+          "newCards": 1,
+          "studySeconds": 1
+        },
+        "2026-11-16": {
+          "newCards": 2,
+          "studySeconds": 5
+        },
+        "2026-11-17": {
+          "newCards": 1,
+          "studySeconds": 4
+        }
+      },
+      "note": "study-day rule: 20:00Z on 11-15 is still the UTC segment (11-15; Tokyo would say 11-16); 01:00Z is UTC 11-16; after the change 14:00Z is 23:00 JST (11-16) and 16:00Z is 01:00 JST (11-17). The floor of the Tokyo segment is 11-16 and changes nothing here."
+    },
+    {
       "name": "the cells of one workspace by day and type",
       "op": "activity",
       "workspace": 3,

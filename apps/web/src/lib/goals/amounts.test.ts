@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/goals/goal-amounts.json';
-import { studyDay } from '../time/studyDay';
+import { studyDay, type ZoneChange } from '../time/studyDay';
 import type { ActivityCell } from '../api/stats';
 import type { ReviewEvent } from '../study/types';
 import { MAX_REVIEW_MS, NO_AMOUNTS, activityAmounts, amountsOf, flashcardAmounts } from './amounts';
@@ -32,14 +32,22 @@ function event(r: FixtureReview): ReviewEvent {
 const toObject = <T>(m: ReadonlyMap<string, T>): Record<string, T> => Object.fromEntries(m);
 
 type Case =
-	| { name: string; op: 'flashcards'; zone: string; reviews: FixtureReview[]; expect: Record<string, unknown> }
+	| {
+			name: string;
+			op: 'flashcards';
+			/** A single zone, or a whole zone history (`zones` wins). */
+			zone?: string;
+			zones?: ZoneChange[];
+			reviews: FixtureReview[];
+			expect: Record<string, unknown>;
+	  }
 	| { name: string; op: 'activity'; workspace: number; cells: ActivityCell[]; expect: Record<string, unknown> };
 const cases = fixture.cases as Case[];
 
 describe('goal-amounts.json', () => {
 	it.each(cases.map((c) => [c.name, c] as const))('%s', (_name, c) => {
 		if (c.op === 'flashcards') {
-			const day = studyDay([{ zone: c.zone, from: null }]);
+			const day = studyDay(c.zones ?? [{ zone: c.zone!, from: null }]);
 			expect(toObject(flashcardAmounts(c.reviews.map(event), day.dayOf))).toEqual(c.expect);
 		} else {
 			expect(toObject(activityAmounts(c.cells, c.workspace))).toEqual(c.expect);

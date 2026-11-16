@@ -58,7 +58,8 @@ Edits (`goal-rows.json`, `op: "edit"`, `expect: null` = nothing is written) on t
 
 ## Amounts (`goal-amounts.json`)
 
-`op: "flashcards"`: the reviews of one workspace (`zone` is the learner's single zone) to
+`op: "flashcards"`: the reviews of one workspace (`zone` is the learner's single zone, or `zones` the whole
+zone history `[{zone, from}]` of `study-day/`) to
 `{"<day>": {newCards, studySeconds}}` by the learner day of each review's `ts`; `studySeconds` is the capped
 milliseconds / 1000, not rounded. A day appears when it has at least one valid review. Order of the input does
 not matter (each card's reviews are sorted by `ts`, then `id`).
