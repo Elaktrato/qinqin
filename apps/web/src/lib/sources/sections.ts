@@ -3,6 +3,7 @@
 // and the app's own credits. The page only renders what this returns.
 
 import type { SentencePack } from '$lib/api/packs';
+import type { ComponentPack } from '$lib/api/types';
 import type { PluginManifest } from '$lib/plugins';
 import { localLicensePath, type LicenseText, type SourceCredit } from './credits';
 import { cjkLang, parseNotice, safeHref, type NoticeParagraph } from './notice';
@@ -29,6 +30,27 @@ export function sentencePackSources(list: SentencePack[]): PackSource[] {
 		attribution: p.attribution,
 		notice: p.notice
 	}));
+}
+
+/**
+ * componentsSection is the Sources page's "Character components" block: the
+ * table of GET /api/component-packs. It shows only while a pack is installed,
+ * or on a load error (so the retry is reachable).
+ */
+export function componentsSection(list: ComponentPack[], error: string): { show: boolean; table: PackTable } {
+	const table = packTable(
+		'components',
+		list.map((p, i) => ({
+			id: i,
+			name: p.name,
+			language: p.language,
+			version: p.version,
+			license: p.license,
+			attribution: p.attribution,
+			notice: p.notice
+		}))
+	);
+	return { show: error !== '' || list.length > 0, table };
 }
 
 export interface PackRow {

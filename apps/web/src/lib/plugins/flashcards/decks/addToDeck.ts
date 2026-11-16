@@ -12,8 +12,14 @@
 //  - otherwise skip.
 // The deck row is written only when no live row with the id exists: a
 // rename survives re-adding, a tombstoned copy is revived.
+//
+// Starter decks (#75): `exclude` leaves known words out before planning
+// (counted as `known`, never written), and `settings` writes the copy's
+// `deckcfg:` row with its new-card order only when no live row exists.
 
 import { newCardId } from '$lib/study/canonical';
+import { deckSettingsKey, serializeDeckSettings } from '$lib/study/deckSettings';
+import type { NewOrder } from '$lib/study/newOrder';
 import { GENERAL_DECK_ID, studyRowKey } from '$lib/study/store';
 import type { Deck, StudyCard } from '$lib/study/types';
 
@@ -31,6 +37,10 @@ export interface AddPlan {
 	created: number;
 	joined: number;
 	skipped: number;
+	/** Items left out as known (set when `exclude` is given). */
+	known?: number;
+	/** The `deckcfg:` row to write (only with `settings` and no live row). */
+	settings?: Record<string, unknown>;
 }
 
 export interface AddInput {
@@ -41,10 +51,15 @@ export interface AddInput {
 	/** Every live stored card row, duplicates included (loadRawStudyData). */
 	rawCards: readonly StudyCard[];
 	now: Date;
+	/** Entry ids never added (known words); they are counted in `known`. */
+	exclude?: ReadonlySet<number>;
+	/** The copy's new-card order; written only when `exists` is false. */
+	settings?: { newOrder: NewOrder; exists: boolean };
 }
 
 export function planAddToDeck(input: AddInput): AddPlan {
-	const { items, target, existingDeck, rawCards, now } = input;
+	const { target, existingDeck, rawCards, now, exclude } = input;
+	const items = exclude === undefined ? input.items : input.items.filter((item) => !exclude.has(item.entryId));
 	const base = now.getTime();
 	const byEntry = new Map<number, StudyCard[]>();
 	for (const card of rawCards) {
@@ -95,11 +110,19 @@ export function planAddToDeck(input: AddInput): AddPlan {
 				...(target.source === undefined ? {} : { source: target.source })
 			}
 		: null;
-	return { deck, writes, created, joined, skipped };
+	const plan: AddPlan = { deck, writes, created, joined, skipped };
+	if (exclude !== undefined) plan.known = input.items.length - items.length;
+	if (input.settings !== undefined && !input.settings.exists && target.id !== GENERAL_DECK_ID) {
+		plan.settings = serializeDeckSettings(
+			{ deckId: target.id, cardTypes: [], newOrder: input.settings.newOrder, extra: {} },
+			now.toISOString()
+		);
+	}
+	return plan;
 }
 
 /**
- * The rows to push for a plan: the deck row first, then the cards. `knownAt` (from
+ * The rows to push for a plan: the deck row first, then its settings row, then the cards. `knownAt` (from
  * loadRawStudyData) lets the writer stamp each row after what the server holds.
  */
 export function addPlanRows(
@@ -112,6 +135,9 @@ export function addPlanRows(
 	};
 	return [
 		...(plan.deck === null ? [] : [row(studyRowKey.deck(plan.deck.id), plan.deck)]),
+		...(plan.settings === undefined
+			? []
+			: [row(deckSettingsKey(String(plan.settings.deckId)), plan.settings)]),
 		...plan.writes.map((card) => row(studyRowKey.card(card.id), card))
 	];
 }

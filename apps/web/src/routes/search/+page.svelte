@@ -26,7 +26,7 @@
 	import { onMount } from 'svelte';
 	import { listLanguages } from '$lib/api/languages';
 	import { dictionaryHint } from '$lib/coverage';
-	import { languageLabel } from '$lib/languages';
+	import { languageLabel, usesHan } from '$lib/languages';
 	import { user } from '$lib/auth';
 
 	// The server's default result cap (lexicon.defaultSearchLimit).
@@ -219,6 +219,10 @@
 		<button type="submit" disabled={lang === null}>Search</button>
 	</form>
 
+	{#if lang !== null && usesHan(lang)}
+		<p class="parts-link"><a href="/search/parts">Find a character by radical or part</a></p>
+	{/if}
+
 	{#if lang !== null}
 		<div class="filters" role="group" aria-label="Search filters">
 			<div class="chips" role="group" aria-label="Kind">
@@ -327,6 +331,10 @@
 </main>
 
 <style>
+	.parts-link {
+		margin: 0.6rem 0 0;
+	}
+
 	.filters {
 		display: grid;
 		gap: 0.6rem;
