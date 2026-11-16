@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sync/atomic"
 	"testing"
@@ -21,7 +22,7 @@ func bigWorld(t *testing.T) *baseWorld {
 	u := w.AliceUID
 	exec(t, w.DB, `WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i < 1000000)
 		INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at)
-		SELECT printf('01JDBIG%019d', i), ?1, ?2, 'web', printf('2026-01-01T00:00:00.%06dZ', i), 'review',
+		SELECT printf('01JDB6G%019d', i), ?1, ?2, 'web', printf('2026-01-01T00:00:00.%06dZ', i), 'review',
 			printf('{"cardId":"c-vocab-%d","mode":"vocab","grade":3}', ?3), 't' FROM n`, u, w.Alice.WS1, w.E1)
 	exec(t, w.DB, `WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i < 20000)
 		INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
@@ -69,4 +70,41 @@ func TestBigExportStaysMemoryBound(t *testing.T) {
 		t.Errorf("peak HeapInuse %d MiB, want < 64", mib)
 	}
 	t.Logf("peak heap %d MiB", peak.Load()>>20)
+}
+
+func TestBigRestoreFinishesQuicklyAndStaysMemoryBound(t *testing.T) {
+	w := bigWorld(t)
+	p := filepath.Join(t.TempDir(), "big.zip")
+	f, err := os.Create(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := WriteUser(context.Background(), w.DB, w.Data, w.AliceUID, f, testMeta); err != nil {
+		t.Fatal(err)
+	}
+	f.Close()
+	runtime.GC()
+	peak, stop := sampleHeap()
+	start := time.Now()
+	a, err := Open(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	res, _, err := Restore(context.Background(), deps(w), w.AliceUID, 0, a, Options{})
+	elapsed := time.Since(start)
+	stop()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Restored.Events != 1000004 || res.Restored.Cards < 20000 {
+		t.Errorf("result %+v", res.Restored)
+	}
+	if elapsed > 60*time.Second {
+		t.Errorf("restore took %s, want < 60s", elapsed)
+	}
+	if mib := peak.Load() >> 20; mib >= 64 {
+		t.Errorf("peak HeapInuse %d MiB, want < 64", mib)
+	}
+	t.Logf("restore (validate + safety export + apply) %s, peak heap %d MiB", elapsed, peak.Load()>>20)
 }

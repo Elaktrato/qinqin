@@ -148,6 +148,9 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 
 	var uname string
 	if err := db.QueryRowContext(ctx, `SELECT username FROM users WHERE id = ?`, userID).Scan(&uname); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return rep, nil, ErrUserGone
+		}
 		return rep, nil, fmt.Errorf("plan: read user: %w", err)
 	}
 	if a.Manifest.User.Username != uname {

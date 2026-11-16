@@ -94,8 +94,8 @@ func seedUserData(t *testing.T, sqlDB *sql.DB, dataDir string, uid, e1, e2, dict
 	s.WS1 = ins(`INSERT INTO workspaces (user_id, language, name, settings, updated_at) VALUES (?, 'zh', '', ?, '2026-11-01T00:00:00Z')`,
 		uid, fmt.Sprintf(`{"hiddenDictionaries":[%d]}`, dict))
 	s.WS2 = ins(`INSERT INTO workspaces (user_id, language, name, settings, updated_at) VALUES (?, 'ja', 'JP', '{}', '2026-11-02T00:00:00Z')`, uid)
-	s.OwnSentence = ins(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, 'user', ?, '你好吗', 'p', 't', 't')`, e1, uid)
-	ins(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at) VALUES (?, 'user', ?, 'GONE', 'p', 't', 't', 't')`, e1, uid)
+	s.OwnSentence = ins(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, '', ?, '你好吗', 'p', 't', 't')`, e1, uid)
+	ins(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at) VALUES (?, '', ?, 'GONE', 'p', 't', 't', 't')`, e1, uid)
 	sqlDB.Exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
 		SELECT ?, 'tatoeba', NULL, 'packsatz', 'p', 't', 't' WHERE NOT EXISTS (SELECT 1 FROM sentences WHERE source_pack = 'tatoeba' AND hanzi = 'packsatz')`, e2)
 	sqlDB.QueryRow(`SELECT id FROM sentences WHERE source_pack = 'tatoeba' AND hanzi = 'packsatz'`).Scan(&s.PackSent)
