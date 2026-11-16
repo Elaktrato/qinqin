@@ -318,7 +318,7 @@ func (m *Maps) vacationScope(data json.RawMessage) (json.RawMessage, bool) {
 // vacation with no workspace left, a note or known mark of an unresolved
 // entry or one that loses its target to a newer row (RegisterNote), and a
 // note: / known: row that is not valid (key not canonical, entryId missing
-// or different).
+// or different; a known: row without a workspace).
 func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 	src := r
 	if r.WorkspaceID != nil {
@@ -336,6 +336,10 @@ func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 	}
 	switch {
 	case strings.HasPrefix(r.Key, knownKeyPrefix):
+		if r.WorkspaceID == nil {
+			// Marks are workspace rows: a user-global one is never read, so it is dropped.
+			return r, true
+		}
 		return m.note(src, r)
 	case strings.HasPrefix(r.Key, cardKeyPrefix):
 		nk, nd, drop := m.Card(r.Key, r.Data)
