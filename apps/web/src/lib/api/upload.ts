@@ -8,6 +8,8 @@ export interface UploadProgress {
 export interface UploadOptions {
 	onProgress?: (p: UploadProgress) => void;
 	signal?: AbortSignal;
+	/** Content-Type for a raw (non-FormData) body, such as application/zip. */
+	contentType?: string;
 	/** Builds the request object; tests pass a fake. */
 	xhr?: () => XMLHttpRequest;
 }
@@ -23,7 +25,7 @@ function abortError(): DOMException {
  * plain-text body, a 401 also runs the unauthorized handling, and an
  * aborted signal cancels the request and rejects with an AbortError.
  */
-export function uploadWithProgress<T>(path: string, form: FormData, opts: UploadOptions = {}): Promise<T> {
+export function uploadWithProgress<T>(path: string, form: FormData | Blob, opts: UploadOptions = {}): Promise<T> {
 	return new Promise<T>((resolve, reject) => {
 		const { signal, onProgress } = opts;
 		if (signal?.aborted) {
@@ -46,6 +48,7 @@ export function uploadWithProgress<T>(path: string, form: FormData, opts: Upload
 
 		xhr.open('POST', path);
 		xhr.setRequestHeader('accept', 'application/json');
+		if (opts.contentType) xhr.setRequestHeader('content-type', opts.contentType);
 		const token = getToken();
 		if (token && isOwnApiPath(path)) xhr.setRequestHeader('authorization', `Bearer ${token}`);
 		xhr.upload.onprogress = (e) => {
