@@ -39,6 +39,7 @@ import {
   deleteVacation,
   saveWorkspaceLimits,
   saveDeckLimits,
+  saveGoals,
   ALL_WORKSPACES,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
@@ -1856,5 +1857,72 @@ describe("queued reviews count in the loaded history", () => {
     const data = await loadStudyData();
 
     expect(data.reviews).toEqual([]);
+  });
+});
+
+describe("goal row", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(3);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+  const goal = {
+    version: 1,
+    showStreak: true,
+    note: "kept",
+    history: [{ from: "2026-11-16", metric: "activity:review", target: 50, by: "android" }],
+  };
+  function pull(rows: PluginDataRow[]) {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      if (String(input).startsWith("/api/events")) return jsonResponse([]);
+      return jsonResponse({ pluginData: rows });
+    });
+  }
+
+  it("reads the goals:workspace row of the workspace only", async () => {
+    pull([
+      pluginRow("goals:workspace", goal, { workspaceId: 3 }),
+      pluginRow("goals:workspace", { ...goal, showStreak: false }, { workspaceId: null }),
+    ]);
+    expect((await loadStudyData(3)).goals).toEqual(goal);
+    expect((await loadStudyData(4)).goals).toBeUndefined();
+  });
+
+  it("ignores a user-global row with the key", async () => {
+    pull([pluginRow("goals:workspace", goal, { workspaceId: null })]);
+    expect((await loadStudyData(3)).goals).toBeUndefined();
+  });
+
+  it("ignores a tombstoned row", async () => {
+    pull([pluginRow("goals:workspace", goal, { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" })]);
+    expect((await loadStudyData(3)).goals).toBeUndefined();
+  });
+
+  it("reads a newer row as 'newer'", async () => {
+    pull([pluginRow("goals:workspace", { version: 2 }, { workspaceId: 3 })]);
+    expect((await loadStudyData(3)).goals).toBe("newer");
+  });
+
+  it("saveGoals PUTs the row verbatim to the current workspace and drops caches", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    const seen: number[] = [];
+    const off = onStudyWrite((w) => seen.push(w));
+    await saveGoals(goal as never);
+    off();
+    expect(putBodies()).toEqual([
+      { url: `/api/plugins/${PLUGIN_ID}/data/goals:workspace?workspace=3`, body: goal },
+    ]);
+    expect(seen).toEqual([3]);
+  });
+
+  it("saveGoals throws without a current workspace", async () => {
+    selectWorkspace(null);
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    await expect(saveGoals(goal as never)).rejects.toThrow(/workspace/);
+    expect(calls()).toHaveLength(0);
   });
 });
