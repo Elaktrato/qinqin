@@ -240,6 +240,15 @@ describe("study store", () => {
           pluginRow("deck:gone", deck("gone", "Gone"), {
             deletedAt: "2026-01-03T00:00:00Z",
           }),
+          // qinqin-core rows (personal notes, even one keyed like a card) are not study data.
+          pluginRow(
+            "note:42",
+            { version: 1, entryId: 42, text: "mnemonic" },
+            { pluginId: "qinqin-core" },
+          ),
+          pluginRow("card:core-card", card("core-card", 45, ["general"]), {
+            pluginId: "qinqin-core",
+          }),
           // Keys the study layer does not own are ignored.
           pluginRow("settings:study", { newLimit: 20 }),
           // A malformed payload is skipped rather than crashing.

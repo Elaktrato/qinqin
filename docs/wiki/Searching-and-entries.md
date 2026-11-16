@@ -23,6 +23,15 @@ An entry is one dictionary headword, either a **word** or a **character** (kanji
 
 You can correct written forms and readings of an entry. The edit is stored per user as a patch over the shared data; the shared dictionary is never changed, and clearing a field reverts it to the shared value. Your edited readings are used in the Reader as well.
 
+## Your note
+
+Under the senses, **Your note** keeps one private note per word: a mnemonic, a usage warning, a memory hook. Press **Add a note**, type, and **Save**; **Edit** and **Delete** change it later (Delete asks first, there is no undo). Esc cancels editing.
+
+- Plain text only, line breaks kept; nothing is turned into links or formatting. At most 2,000 characters.
+- A note belongs to the current workspace, even for a word of another language, like Add to study. Two workspaces keep separate notes.
+- It syncs to your other devices, is in [your backup](Your-data), and appears on the flashcard answer side (see [Flashcards: study sessions](Flashcards-study-sessions)).
+- Notes are not searchable yet.
+
 ## Add to study
 
 Press **Add to study** next to an entry's title. The card joins the General deck and keeps the entry's first example sentence for context. See [Flashcards: study sessions](Flashcards-study-sessions).

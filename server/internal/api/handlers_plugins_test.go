@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/lang"
 	"qinqin/internal/plugins"
 )
 
@@ -436,4 +437,129 @@ func TestPluginRegistrationRefusesTrailingData(t *testing.T) {
 			}
 		}
 	}
+}
+
+// seedCore registers the shipped qinqin-core manifest, as serve startup does.
+func seedCore(t *testing.T, sqlDB *sql.DB) {
+	t.Helper()
+	for _, raw := range plugins.Builtin() {
+		m, err := plugins.ParseManifest(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if m.ID == "qinqin-core" {
+			seedBuiltin(t, sqlDB, string(raw))
+			return
+		}
+	}
+	t.Fatal("no qinqin-core manifest among the built-ins")
+}
+
+// TestNoteRowsIsolation: personal notes (qinqin-core note:<entryId>, issue
+// #77) are only ever the author's, per workspace, through the generic
+// plugin data routes.
+func TestNoteRowsIsolation(t *testing.T) {
+	lang.Register(lang.Zh{})
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	alice := registerUser(t, ts.URL, "alice", admin)
+	bob := registerUser(t, ts.URL, "bob", admin)
+	seedCore(t, sqlDB)
+	newWS := func(token, name string) int64 {
+		t.Helper()
+		resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", token, map[string]string{"language": "zh", "name": name})
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("POST workspace: %d %s", resp.StatusCode, readAll(t, resp))
+		}
+		var ws workspaceBody
+		decodeJSON(t, resp, &ws)
+		return ws.ID
+	}
+	a1, a2, b1 := newWS(alice, "One"), newWS(alice, "Two"), newWS(bob, "One")
+	q := func(ws int64) string { return "?workspace=" + strconv.FormatInt(ws, 10) }
+	const key = "/api/plugins/qinqin-core/data/note:1201"
+	const list = "/api/plugins/qinqin-core/data"
+	const aliceNote = `{"version":1,"entryId":1201,"text":"Horse\n<img src=x onerror=alert(1)>"}`
+	if r := doRaw(t, http.MethodPut, ts.URL, key+q(a1), alice, aliceNote); r.StatusCode != http.StatusOK {
+		t.Fatalf("alice PUT: %d", r.StatusCode)
+	}
+	aliceRow := func() string {
+		t.Helper()
+		r := doJSON(t, http.MethodGet, ts.URL, key+q(a1), alice, nil)
+		if r.StatusCode != http.StatusOK {
+			t.Fatalf("alice GET: %d", r.StatusCode)
+		}
+		var d pluginDataBody
+		decodeJSON(t, r, &d)
+		return canonJSON(t, d.Data)
+	}
+	if got := aliceRow(); got != canonJSON(t, []byte(aliceNote)) {
+		t.Fatalf("alice reads %s", got)
+	}
+
+	// Bob cannot read, overwrite, delete or list alice's note through her workspace.
+	if r := doJSON(t, http.MethodGet, ts.URL, key+q(a1), bob, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("bob GET: %d, want 404", r.StatusCode)
+	}
+	if r := doRaw(t, http.MethodPut, ts.URL, key+q(a1), bob, `{"version":1,"entryId":1201,"text":"bob was here"}`); r.StatusCode != http.StatusNotFound {
+		t.Errorf("bob PUT: %d, want 404", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodDelete, ts.URL, key+q(a1), bob, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("bob DELETE: %d, want 404", r.StatusCode)
+	}
+	if r := doJSON(t, http.MethodGet, ts.URL, list+q(a1)+"&prefix=note:", bob, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("bob list: %d, want 404", r.StatusCode)
+	}
+	if got := aliceRow(); got != canonJSON(t, []byte(aliceNote)) {
+		t.Errorf("alice's note changed to %s", got)
+	}
+
+	// Bob's own note on the same entry stays his.
+	if r := doRaw(t, http.MethodPut, ts.URL, key+q(b1), bob, `{"version":1,"entryId":1201,"text":"bob's"}`); r.StatusCode != http.StatusOK {
+		t.Fatalf("bob PUT own: %d", r.StatusCode)
+	}
+	listed := func(token string, ws int64) []pluginDataBody {
+		t.Helper()
+		r := doJSON(t, http.MethodGet, ts.URL, list+q(ws)+"&prefix=note:", token, nil)
+		if r.StatusCode != http.StatusOK {
+			t.Fatalf("list: %d", r.StatusCode)
+		}
+		var rows []pluginDataBody
+		decodeJSON(t, r, &rows)
+		return rows
+	}
+	if rows := listed(alice, a1); len(rows) != 1 || canonJSON(t, rows[0].Data) != canonJSON(t, []byte(aliceNote)) {
+		t.Errorf("alice's list in workspace 1 = %+v", rows)
+	}
+	// Per workspace: alice's second workspace has no note.
+	if rows := listed(alice, a2); len(rows) != 0 {
+		t.Errorf("alice's list in workspace 2 = %+v", rows)
+	}
+	if r := doJSON(t, http.MethodGet, ts.URL, key+q(a2), alice, nil); r.StatusCode != http.StatusNotFound {
+		t.Errorf("alice GET in workspace 2: %d, want 404", r.StatusCode)
+	}
+	if rows := listed(bob, b1); len(rows) != 1 || !strings.Contains(string(rows[0].Data), "bob's") {
+		t.Errorf("bob's list = %+v", rows)
+	}
+
+	// No token is 401 on every note route.
+	for _, m := range []string{http.MethodGet, http.MethodPut, http.MethodDelete} {
+		if r := doRaw(t, m, ts.URL, key+q(a1), "", aliceNote); r.StatusCode != http.StatusUnauthorized {
+			t.Errorf("%s without token: %d, want 401", m, r.StatusCode)
+		}
+	}
+	if r := doJSON(t, http.MethodGet, ts.URL, list+q(a1)+"&prefix=note:", "", nil); r.StatusCode != http.StatusUnauthorized {
+		t.Errorf("list without token: %d, want 401", r.StatusCode)
+	}
+}
+
+// canonJSON re-encodes a JSON value so escaping and spacing do not matter.
+func canonJSON(t *testing.T, raw []byte) string {
+	t.Helper()
+	var v any
+	if err := json.Unmarshal(raw, &v); err != nil {
+		t.Fatalf("bad JSON %s: %v", raw, err)
+	}
+	b, _ := json.Marshal(v)
+	return string(b)
 }

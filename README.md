@@ -30,6 +30,10 @@ database with a SvelteKit single-page app embedded in the binary.
   of dictionary entries with frequency chips, and popups open from inside popups.
 - **Editing** — correct written forms and readings per user without mutating
   the shared dictionary data.
+- **Personal notes** — one plain-text note per word and workspace (a mnemonic,
+  a usage warning) on the entry page, shown below a flashcard once its answer is
+  revealed (switch in **Settings → Study**), synced and included in the backup
+  (`docs/contracts/notes/`).
 - **Study mode** — add any word from its entry page and review it with Anki-style
   grading; the flashcards plugin derives FSRS schedules and EXP/levels from the
   event log.
@@ -274,7 +278,7 @@ Two kinds, both in the app (issue [#61](https://github.com/Elaktrato/qinqin/issu
 
 - *Download my data* gives a zip of JSON (format v1, `docs/contracts/backup/`): workspaces and settings,
   study history, flashcards and decks, vacation periods and limits (all plugin rows, user-global ones
-  included), word edits, your own sentences, library books with bookmarks and highlights, plugin switches
+  included), word edits, personal notes, your own sentences, library books with bookmarks and highlights, plugin switches
   and your time zone history. The link is a one-time ticket valid 60 s; six downloads per hour.
 - The download never holds your password, email, sessions, two-factor secrets and recovery codes, AI keys,
   invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo drafts, deleted rows, or dictionary
@@ -286,7 +290,7 @@ Two kinds, both in the app (issue [#61](https://github.com/Elaktrato/qinqin/issu
   `/data/backups/pre-restore/<id>/` (newest only, kept 7 days; the app links to it). Your other devices
   are signed out and reload; your sign-in, password and two-factor setup are never touched.
 - Words are matched by dictionary identity, not by internal id, so a backup restores onto another server.
-  Cards, reviews, edits and sentences of words this server does not have are dropped, never guessed: the
+  Cards, reviews, edits, notes and sentences of words this server does not have are dropped, never guessed: the
   report lists them and you must tick "drop them". Installing the dictionary and restoring again brings
   them back. A restore holds the database write lock for its whole transaction: **it blocks every other
   write on the server for about 30 seconds per million study events**, so other users' saves wait (and
