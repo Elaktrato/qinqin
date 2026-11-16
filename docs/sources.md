@@ -3,7 +3,8 @@
 The app's **Sources page** (`/sources`) is the live source of truth for
 credits. It is public: anyone can open it without signing in. It is built at runtime from three places: the installed packs'
 manifests (`license`, `attribution` and the optional `notice`, served by
-`GET /api/dictionaries`, `/api/frequency-packs` and `/api/schemes`), the
+`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes` and
+`/api/component-packs`), the
 `sources` that a web plugin declares in its manifest, and the app's own
 credits (`apps/web/src/lib/sources/coreCredits.ts`). This file is the human
 overview of the same material: the per-language tables and the notes on
@@ -32,8 +33,9 @@ seeds offline (`qinqin seed`):
 | **Jiten frequency list** (`jiten-frequency`) | Japanese word frequency ranks that order lookup results | CC BY-SA 4.0 (Jitensoft) | https://jiten.moe/frequency-dictionaries |
 | **Jōyō kanji by school grade** (`joyo-grades`), derived from KANJIDIC2 | The 2,136 jōyō kanji by school grade (Grade 1–6, Secondary) | CC BY-SA 4.0 (EDRDG) | https://www.edrdg.org/wiki/index.php/KANJIDIC_Project |
 | **JLPT kanji (approximate)** (`jlpt-kanji`), from kanjiapi.dev and KANJIDIC2 | Kanji by approximate JLPT level N5–N1 | MIT (© 2023 Iridium Szreter); derived levels CC BY-SA 4.0 (EDRDG) | https://github.com/onlyskin/kanjiapi.dev |
+| **KanjiVG components** (`kanjivg-components`), derived from KanjiVG r20260714 | The parts each kanji is drawn from (6,312 kanji), for the radical and part lookup | CC BY-SA 3.0 (© Ulrich Apel); the derived index under the same licence | https://kanjivg.tagaini.net |
 
-Optional, local only (not bundled): **JLPT vocabulary** (`jlpt-words`, from open-anki-jlpt-decks); see "Japanese" under "Level lists".
+Optional, local only (not bundled): **JLPT vocabulary** (`jlpt-words`, from open-anki-jlpt-decks); see "Japanese" under "Level lists". **Chinese components** (`zh-components`) for the radical and part lookup; see "Character components".
 
 **Other**
 
@@ -149,6 +151,47 @@ The importers keep a few per-character attributes for the character map
 
 Each importer owns exactly these keys (KANJIDIC2 also the retired `jlpt`) and
 replaces them on re-seed; CC-CEDICT owns none.
+
+## Character components
+
+The radical and part lookup (`/search/parts`) narrows a character grid by
+the Kangxi radical, the parts a learner can see and the total stroke count.
+Radicals need no extra data: the Unihan importer keeps each character's
+`kRSUnicode` radical number and KANJIDIC2 its classical radical, both as a
+`radical` link (`GET /api/characters` serves the number as `k`). Unihan 18.0
+has no decomposition field (no `kIDS`), so the parts come from **components
+packs** (`type: components`, `format: components-tsv`, `GET /api/components`).
+
+**KanjiVG components** (`kanjivg-components`, Japanese, bundled) is derived
+from KanjiVG (<https://kanjivg.tagaini.net>, © Ulrich Apel), tag
+`r20260714`, commit `d95a97627fd9fe5b2c8d06ca81e38149609c0c1e`. KanjiVG is
+licensed CC BY-SA 3.0, as its README, its `COPYING` and the header of every
+SVG state. For each kanji drawing (variant files and non-ideographs skipped)
+every nested `kvg:element` group except the kanji itself becomes a part,
+deduplicated in document order (語 → 言 口 吾 五 二), at most 32; a part's
+stroke count is the stroke count of its own drawing, else the most common
+count of its groups. No drawing or stroke data is copied. The derived index
+(6,312 kanji, 1,456 parts, about 170 KB) is shared under the same licence,
+CC BY-SA 3.0; the pack carries KanjiVG's `COPYING` as `LICENSE` and an
+`ATTRIBUTION.md`. `scripts/fetch-kanjivg-components.sh` rebuilds it (a manual
+maintainer action that refuses to run without `KANJIVG_LICENCE_CHECKED`).
+The elements are graphical, not etymological, so "Show all parts" also lists
+some noise parts (二 inside 五).
+
+Decompositions **not bundled**:
+
+- **Chinese components** (`zh-components`, local only): CHISE / cjkvi-ids /
+  Make Me a Hanzi decompositions are GPL or LGPL or have unverified chains.
+  **CHISE IDS** is GPL-2.0-or-later, **cjkvi-ids** (`ids.txt`) "follows CHISE
+  terms" (its other files GPLv2) and **Make Me a Hanzi** `dictionary.txt` is
+  LGPL, derived from Unihan and cjklib with an unverified chain, so they stay
+  local in `plugins/data-local/` and are never committed or put in the image.
+  Prepare one yourself with
+  `node scripts/prepare-ids-components.mjs <ids.txt> plugins/data-local/zh-components --id zh-components --license "<as stated>" --attribution "<who, with a link>"`
+  and seed `plugins/data-local`; the pack carries the licence its source states.
+- **KRADFILE / RADKFILE** (EDRDG, CC BY-SA): the licence family fits, but the
+  canonical file and EDRDG's current statement could not be fetched and
+  checked when this was built; a later option.
 
 ## Level lists
 

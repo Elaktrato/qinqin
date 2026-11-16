@@ -67,6 +67,13 @@ describe('classify: spec table', () => {
 		}
 	});
 
+	it('the radical lookup data is never cached offline (decision: bypass)', () => {
+		for (const url of ['/api/components?language=ja', '/api/component-packs', '/api/characters?language=ja']) {
+			expect(kind(url), url).toBe('bypass');
+			expect(kind(url, { auth: false }), url).toBe('bypass');
+		}
+	});
+
 	it('api without Authorization is never classified api', () => {
 		expect(kind('/api/workspaces', { auth: false })).toBe('bypass');
 		expect(kind('/api/entries/12', { auth: false })).toBe('bypass');

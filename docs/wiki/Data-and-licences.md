@@ -15,6 +15,7 @@ qinqin bundles dictionaries and level lists so a fresh install seeds offline (`q
 | Jōyō grades (`joyo-grades`) | The 2,136 jōyō kanji by school grade, derived from KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
 | 通用规范汉字表 (`tgh-chars`) | The standard characters list in three levels, derived from Unihan | Unicode License v3 |
 | JLPT kanji (`jlpt-kanji`) | Approximate N5 to N1 kanji levels from kanjiapi.dev plus levels derived from KANJIDIC2 | MIT and CC BY-SA 4.0 |
+| KanjiVG components (`kanjivg-components`) | The parts each kanji is drawn from, for the radical and part lookup, derived from KanjiVG | CC BY-SA 3.0 (© Ulrich Apel); the derived index under the same licence |
 
 The dictionary files are redistributed unmodified. Also credited on the Sources page: stroke-order data (`hanzi-writer-data`, from the Make Me a Hanzi dataset, Arphic Public License), the FSRS library, the script converter `opencc-js`, and Kanji alive example-word audio (CC BY 4.0, Japanese clips) in the published image.
 
@@ -31,6 +32,10 @@ The JLPT has published no official kanji list since 2010, so the kanji levels ar
 Data with an unclear or restrictive licence is never committed or bundled. Put it in the gitignored `plugins/data-local/` folder; `qinqin seed` imports it after the bundled packs. A pack is a directory with a `manifest.json` (`id`, `name`, `version`, `type`, `language`, `format`, `license`, `attribution`; `license` and `attribution` are required) plus its data file. Level packs use `"type": "levels"` and a `levels.json`; frequency packs use `yomitan-freq` or `freq-csv`. Under Docker, mount the folder and pass it with `--packs` ([Backup, recovery and the command line](Admin-backup-and-recovery)). Details: `plugins/data/README.md` and `docs/sources.md`.
 
 Administrators can also install a dictionary pack as a zip in Settings, Data.
+
+## Radicals and character components
+
+The radical lookup uses data already bundled: Unihan's radical numbers (Chinese) and KANJIDIC2's classical radicals (Japanese). The parts come from **components packs**. The bundled Japanese one is derived from KanjiVG (tag r20260714, CC BY-SA 3.0, © Ulrich Apel, https://kanjivg.tagaini.net): for each kanji, the elements of its stroke-order drawing. It carries KanjiVG's licence text and is credited on the Sources page. Chinese decompositions (CHISE IDS and cjkvi-ids: GPL; Make Me a Hanzi: LGPL with an unverified chain) are **not bundled**; an operator can prepare a local-only pack with `scripts/prepare-ids-components.mjs` into `plugins/data-local/`. EDRDG's KRADFILE is a later option once its current licence statement has been checked.
 
 ## Frequency order and starter decks
 

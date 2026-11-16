@@ -1,0 +1,30 @@
+{
+ "version": 1,
+ "rule": "radicals/components-response",
+ "pack": {
+  "components.tsv": "# fixture\n語\t言 口 吾 五 二\n話\t言 舌 口 千 十\n吾\t五 口 二\n",
+  "parts.tsv": "言\t7\n口\t3\n五\t4\n二\t2\n十\t2\n"
+ },
+ "components": {
+  "language": "ja",
+  "packs": [{"id": "ja-comp", "license": "CC BY-SA 3.0", "attribution": "Test fixture"}],
+  "parts": [
+   {"c": "二", "s": 2, "n": 2},
+   {"c": "十", "s": 2, "n": 1},
+   {"c": "口", "s": 3, "n": 3},
+   {"c": "五", "s": 4, "n": 2},
+   {"c": "言", "s": 7, "n": 2},
+   {"c": "千", "s": 0, "n": 1},
+   {"c": "吾", "s": 0, "n": 1},
+   {"c": "舌", "s": 0, "n": 1}
+  ],
+  "chars": {
+   "吾": ["五", "口", "二"],
+   "語": ["言", "口", "吾", "五", "二"],
+   "話": ["言", "舌", "口", "千", "十"]
+  }
+ },
+ "emptyComponents": {"language": "ja", "packs": [], "parts": [], "chars": {}},
+ "charactersRow": {"i": 4, "c": "語", "s": 14, "k": 149},
+ "charactersRowWithoutRadical": {"i": 5, "c": "〇"}
+}

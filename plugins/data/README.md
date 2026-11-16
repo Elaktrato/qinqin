@@ -10,7 +10,7 @@ Manifest fields:
 | Field | Required | Meaning |
 |---|---|---|
 | `id`, `name`, `version` | yes | identity of the pack |
-| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency` or `grammar` |
+| `type` | yes | `dictionary`, `levels`, `sentences`, `frequency`, `grammar`, `audio` or `components` |
 | `language` | yes | language tag (`ja`, `zh`, `es`, ...) |
 | `format` | yes | how the data file is read |
 | `license` | yes | the licence as the publisher states it |
@@ -52,6 +52,15 @@ Committed (small, hand-written, CC0 — a sample):
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack); install it from Settings → Data to try a data-only language |
 | `zh-grammar-demo` | grammar | zh | ten A1 lessons with 40 exercises, written for qinqin, CC0; demo content not reviewed by a native speaker |
 
+Components pack format (`format: components-tsv`): `components.tsv` holds one
+character per line, the character, a tab and its parts separated by spaces
+(`語<TAB>言 口 吾 五 二`); the character is one Han code point, each part one
+code point, duplicates are kept once, the character itself is dropped, and at
+most 32 parts remain. The optional `parts.tsv` gives a part's stroke count
+(`言<TAB>7`, 1–64). `#` starts a comment line; a malformed line fails the pack
+with its line number; a line is at most 4 KiB and each file at most 8 MiB. The
+pack's `language` is stored as its primary subtag (`zh-tw` becomes `zh`).
+
 Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",
 "name", "schemeLevels": [{"scheme": "<levels pack id>", "level": "<level name>"}]}],
 "lessons": [{"id", "level", "title", "summary", "pattern": [...], "body": [...],
@@ -83,6 +92,7 @@ directory):
 | `jmdict` | dictionary | ja | JMdict words (`jmdict.xml.gz`) |
 | `kanjidic2` | dictionary | ja | KANJIDIC2 kanji (`kanjidic2.xml.gz`) |
 | `jiten-frequency` | frequency | ja | Jiten global word frequency ranks, converted to `freq.csv.gz` (`term,reading,rank`, ranks unmodified) |
+| `kanjivg-components` | components | ja | the parts each kanji is drawn from, derived from KanjiVG `r20260714` (CC BY-SA 3.0, © Ulrich Apel), for the radical and part lookup: `components.tsv` (`語<TAB>言 口 吾 五 二`, 6,312 kanji) and `parts.tsv` (part stroke counts); `LICENSE` is KanjiVG's `COPYING`; rebuilt by `scripts/fetch-kanjivg-components.sh` |
 
 Committed level lists (converted; each with an `ATTRIBUTION.md`, and the
 upstream `LICENSE` where upstream has one; `jlpt-kanji` also carries the

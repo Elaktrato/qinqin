@@ -89,6 +89,25 @@ describe('entry page robustness', () => {
 		expect(await screen.findByRole('link', { name: /亻/ })).toBeTruthy();
 		await waitFor(() => expect(screen.queryByText(/Radical entry #9/)).toBeNull());
 	});
+
+	it('links a character to all characters with its radical', async () => {
+		vi.mocked(getEntry).mockImplementation((async (id: number) =>
+			id === 9 ? entry({ id: 9, language: 'ja', written: '言' }) : entry({ language: 'ja', written: '語', radicalId: 9 })) as never);
+		vi.mocked(getCharsUnderRadical).mockResolvedValue([]);
+		render(Page);
+		const link = await screen.findByRole('link', { name: 'All characters with this radical' });
+		expect(link.getAttribute('href')).toBe('/search/parts?r=149');
+	});
+
+	it('a radical entry offers browsing by stroke count', async () => {
+		vi.mocked(getEntry).mockResolvedValue(entry({ id: 5, written: '水' }));
+		vi.mocked(getCharsUnderRadical).mockResolvedValue([
+			{ id: 6, language: 'zh', kind: 'character', written: '河', readings: [] }
+		] as never);
+		render(Page);
+		const link = await screen.findByRole('link', { name: 'Browse by stroke count' });
+		expect(link.getAttribute('href')).toBe('/search/parts?r=85');
+	});
 });
 
 describe('entry page note', () => {

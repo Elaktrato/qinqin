@@ -26,6 +26,10 @@ database with a SvelteKit single-page app embedded in the binary.
   and statistics (see [Workspaces](#workspaces)).
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
+- **Radical and part lookup** — in Chinese and Japanese workspaces, find a
+  character you cannot read or type by its Kangxi radical, the parts you can see
+  (Japanese parts derived from KanjiVG) and its total stroke count
+  (`/search/parts`; rules: `docs/contracts/radicals/`).
 - **Yomitan-style lookup** — in the Reader, hovering a word shows a ranked stack
   of dictionary entries with frequency chips, and popups open from inside popups.
 - **Editing** — correct written forms and readings per user without mutating
@@ -1191,7 +1195,7 @@ sessions and mastery map, and
 
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,
-`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.
+`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/characters`, `GET /api/components`, `GET /api/component-packs`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.
 
 | Route | Purpose |
 |---|---|
@@ -1207,7 +1211,9 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/frequency-packs/{id}/top?size=500\|1000\|2000` | Signed-in. A starter deck: `{packId, name, size, entries}` with the entry base fields and the `rank` of each word, in rank order; computed from the installed pack (resolved once per pack content), shared data with no overlay. 404 for an unknown or uninstalled pack, 400 for another size |
 | `POST /api/entries/frequency-ranks` `{language, ids}` | Signed-in. Each entry's rank in the language's first frequency pack: `{pack: {id, packId, name, license, attribution} \| null, ranks: [{id, rank}]}` in request order, entries without data omitted; 1 to 500 ids (400 otherwise, 400 without `language`), body up to 16 KiB (413) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
-| `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
+| `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms, `k` the Kangxi radical number (1–214) of the character's radical; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
+| `GET /api/components?language=` | Public, no user data. The radical and part lookup's component index: `{language, packs: [{id, license, attribution}], parts: [{c, s, n}], chars: {glyph: [part, ...]}}`, the union of the language's installed components packs (`packs` credits them) (`s` part strokes, 0 when unknown; `n` characters containing the part). A language without packs gets empty `packs`, `parts` and `chars`, a malformed one 400. Gzip, weak `ETag` and 304 as `/api/characters`; contract `docs/contracts/radicals/` |
+| `GET /api/component-packs` | Public. The installed components packs with `packId`, `name`, `version`, `language`, `license`, `attribution` and `notice` (the Sources page lists them) |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
 | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (`{username, password, email?, invite?}`: the first user on an empty database becomes the admin without a token; afterwards the registration mode decides: `closed` 403 `registration_closed`, `invite` needs a valid invite (403 `invite_invalid`), `open` takes anyone; an admin token still creates a plain user; username, password and email follow the policies), log in (`{username, password, deviceName?}` answers `{status: "ok" \| "password_change_required", token, user}`), read the current user and the session's `restriction`. Login and register bodies up to 4 KiB |
 | `GET /api/auth/options` | Public: `{bootstrap, registration, emailPolicy, passwordReset, emailCodeLogin, passwordMinLength}`, never cached |
@@ -1531,6 +1537,12 @@ one entry. `entry_links` connect characters to their radical and to variants.
   `variant` links.
 - **Frequency** lives in `frequency`, one row per term (optionally tied to one
   reading) with its rank, grouped by pack in `frequency_packs`.
+- **Character components** (the radical and part lookup) live in `components`
+  (one row per pack and character: its parts as a JSON array) and
+  `component_parts` (part stroke counts), grouped by pack in `component_packs`
+  (migration 036). They are keyed by glyph, not entry id, so they import in any
+  order; they are shared lookup data, replaced per pack on import and not synced
+  or exported in a personal backup.
 
 Importers live in `server/internal/dict/` (`jmdict`, `cedict`, `kanjidic2`,
 `unihan` and the `json` pack format) and write through one lexicon importer;
@@ -1587,6 +1599,7 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
+| [KanjiVG](https://kanjivg.tagaini.net) (`kanjivg-components`) | Japanese: the parts each kanji is drawn from (6,312 kanji), derived from KanjiVG r20260714 for the radical and part lookup | CC BY-SA 3.0 (© Ulrich Apel); derived index under the same licence |
 | [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-chars`) | Chinese: the official HSK 3.0 character list, the characters to recognise (认读字) per level, HSK 1–6 and HSK 7–9 (3,088 characters; same edition) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
 | [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-words`) | Chinese: the official HSK 3.0 word list, HSK 1–6 and HSK 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07; CLEC, distributed by CTI) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (`joyo-grades`) | Japanese: the 2,136 jōyō kanji by school grade (Grade 1–6, Secondary), derived from the grades recorded in KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
@@ -1708,11 +1721,12 @@ after a new server route, regenerate the route fixture with
 |---|---|
 | `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`, `recover`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
-| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists) with their licenses and attribution notices |
+| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists, the KanjiVG component index) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
 | `plugins/samples/` | Hand-written samples: dictionaries (`zh-mini`, `ja-mini`) and level packs (`hsk-mini`, `jlpt-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
+| `scripts/fetch-kanjivg-components.sh` | Rebuilds the bundled KanjiVG component index from the pinned KanjiVG tag (a manual, licence-checked step); `prepare-ids-components.mjs` prepares a local-only Chinese components pack from an IDS file |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--jlpt-vocab`, generates the optional local-only JLPT vocabulary pack into `plugins/data-local/` (download commands in its header) |
 | `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
 | `scripts/prepare-local-levels.mjs` | Converts a TSV you prepared (TBCL, curriculum tables, any private list) into a local-only level pack under `plugins/data-local/`; writes no `LICENSE`, refuses other directories |
