@@ -35,6 +35,7 @@ The goal streak counts the days in a row on which you reached the goal, ending t
 ## Where it shows
 
 - **Home**: the **Daily goal** widget with a progress ring, "32 of 50 flashcard reviews today" and the goal streak; without a goal it offers **Set a daily goal**. New accounts have it on the home page after the flashcards summary; an existing home layout is not changed (add it under Settings, Home).
+- **Weekly summary**: "Daily goal met on 4 of 6 days" for the week ([Weekly summary](Weekly-summary)); vacation days and days without a goal are left out, and today counts once it is reached.
 - **Flashcards widget**: a small ring ("32/50") and the goal streak next to the review streak. Without a goal the widget looks as before.
 
 The ring is read out by screen readers with its numbers ("Goal reached: 62 of 50 flashcard reviews today"); the words are on screen too, so nothing depends on colour, and it does not animate when your system asks for reduced motion.

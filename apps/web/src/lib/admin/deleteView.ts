@@ -18,6 +18,7 @@ export function previewLines(p: DeletionPreview): string[] {
 	if (p.journalPhotos) lines.push(plural(p.journalPhotos, 'journal photo draft', 'journal photo drafts'));
 	if (p.aiKeys) lines.push(plural(p.aiKeys, 'stored AI key', 'stored AI keys'));
 	if (p.sessions) lines.push(plural(p.sessions, 'signed-in session', 'signed-in sessions'));
+	if (p.accessTokens) lines.push(plural(p.accessTokens, 'personal access token', 'personal access tokens'));
 	if (lines.length === 0) lines.push('Nothing else: there is no data in this account yet.');
 	return lines;
 }

@@ -28,6 +28,7 @@ beforeEach(() => {
 	vi.mocked(api).mockImplementation((async (url: string, opts?: { method?: string }) => {
 		if (url === '/api/auth/options') return { emailPolicy: policy };
 		if (url === '/api/account/sessions') return { sessions: [] };
+		if (url === '/api/account/tokens' && !opts?.method) return { accessTokens: [] };
 		if (url === '/api/account/email') return { email: 'a@example.org', emailVerified: false };
 		if (url === '/api/account/deletion-preview') {
 			return { workspaces: 2, studyEvents: 5, pluginData: 0, books: 0, journalPhotos: 0, aiKeys: 0, sessions: 1, overlays: 0, sentences: 0 };

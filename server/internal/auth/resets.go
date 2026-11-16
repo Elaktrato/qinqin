@@ -118,7 +118,7 @@ func UseReset(ctx context.Context, sqlDB *sql.DB, token, newHash string) (model.
 		WHERE id = ?`, newHash, at, at, userID); err != nil {
 		return model.User{}, fmt.Errorf("set password: %w", err)
 	}
-	revoked, err := revokeSessions(ctx, tx, userID, 0)
+	revoked, tokens, err := revokeCredentials(ctx, tx, userID, 0)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -126,7 +126,7 @@ func UseReset(ctx context.Context, sqlDB *sql.DB, token, newHash string) (model.
 		return model.User{}, err
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "password_reset", ActorID: userID, TargetID: &userID,
-		Detail: map[string]any{"signedOutOthers": revoked}}); err != nil {
+		Detail: map[string]any{"signedOutOthers": revoked, "tokens": tokens}}); err != nil {
 		return model.User{}, err
 	}
 	u, err := LoadUser(ctx, tx, userID)

@@ -58,6 +58,13 @@ database with a SvelteKit single-page app embedded in the binary.
   flashcards widget, a "Goal reached" state, and an optional goal streak; target
   changes apply from today, vacation days pause the goal. Progress is derived from
   the event log, never stored (`docs/contracts/goals/`).
+- **Weekly summary** — in the app only (no email): **Stats → Week** and a
+  "This week" widget show one workspace's week, Monday to Sunday in your time
+  zone: reviews, new cards, study and reading time, journal entries, days active
+  with a day strip (vacation days marked and neutral), the streak, words reaching
+  mature, characters learned and goal days, each compared with the week before
+  (up to the same weekday while the week is in progress); 52 weeks back. Computed
+  from events, never stored (`docs/contracts/weekly/`).
 - **Installable app** — the web app installs as a PWA and keeps studying
   offline; reviews wait in a per-user outbox and sync when you are back online.
 - **Accounts** — sessions you can end, registration modes and invites, password
@@ -76,7 +83,7 @@ database with a SvelteKit single-page app embedded in the binary.
   known without a flashcard ("I know this").
 - **Home widgets** — the home page renders widgets from a per-user layout stored
   on the server (shared by every device and workspace; by default the activity
-  heatmap, the flashcards summary, then the daily goal). A widget that does not apply to the
+  heatmap, the flashcards summary, the daily goal, then this week). A widget that does not apply to the
   current language, or whose plugin is disabled, is left out. **Settings → Home**
   (`/settings?tab=home`) chooses and orders them: an "On the home page" switch
   per widget, **Move up** / **Move down** buttons (or drag a row by its handle),
@@ -1212,6 +1219,12 @@ sessions and mastery map, and
 [issue #25](https://github.com/Elaktrato/qinqin/issues/25) the Round 3 exercises.
 
 ### API
+
+Scripts can use a personal access token (`qq_pat_…`, Settings, Account, Access tokens) instead of a session on the
+routes marked in the Token column of the wiki's API routes page; every other route answers 403 `token_not_allowed`.
+See the wiki page API access tokens and `docs/contracts/auth/tokens.json`. Token management:
+`GET`/`POST`/`DELETE /api/account/tokens`, `DELETE /api/account/tokens/{id}` (a full session; create re-asks for the
+password and answers the token once, `no-store`).
 
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,

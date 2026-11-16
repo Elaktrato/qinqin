@@ -90,6 +90,12 @@ describe('classify: spec table', () => {
 		expect(kind('/api/plugins/qinqin-flashcards/data/lookups?workspace=3')).toBe('api');
 	});
 
+	it('access token management is never cached (the list, and create, which carries the token once)', () => {
+		expect(kind('/api/account/tokens')).toBe('bypass');
+		expect(kind('/api/account/tokens/4')).toBe('bypass');
+		expect(kind('/api/account/tokens', { method: 'POST' })).toBe('bypass');
+	});
+
 	it('sync/pull only for the plugin collections', () => {
 		expect(kind('/api/sync/pull?cursor=1970-01-01T00:00:00Z')).toBe('bypass');
 		expect(kind('/api/sync/pull?collections=pluginData,lexicon')).toBe('bypass');

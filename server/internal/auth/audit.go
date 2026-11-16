@@ -28,6 +28,10 @@ var auditKeys = map[string]bool{
 	"scope": true, "revoked": true, "forced": true, "signedOutOthers": true,
 	"field": true, "to": true, "maxUses": true, "uses": true, "count": true, "enabled": true,
 	"admin": true,
+	// Personal access tokens: the row id, the expiry in days, whether the
+	// token is limited to a workspace, and how many tokens a containment
+	// action revoked. Never the name (user text) or the hint.
+	"tokenId": true, "days": true, "limited": true, "tokens": true,
 }
 
 // maxAuditValue caps a string detail value (in bytes).

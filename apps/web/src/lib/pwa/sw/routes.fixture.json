@@ -16,6 +16,14 @@
 		"access": "user"
 	},
 	{
+		"pattern": "DELETE /api/account/tokens",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/account/tokens/{id}",
+		"access": "user"
+	},
+	{
 		"pattern": "DELETE /api/admin/dictionaries/{id}",
 		"access": "admin"
 	},
@@ -109,6 +117,10 @@
 	},
 	{
 		"pattern": "GET /api/account/sessions",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/account/tokens",
 		"access": "user"
 	},
 	{
@@ -397,6 +409,10 @@
 	},
 	{
 		"pattern": "POST /api/account/sessions/revoke",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/tokens",
 		"access": "user"
 	},
 	{

@@ -11,7 +11,7 @@ Derived from the code on `develop`; each owner path below is where the rule is i
 | --- | --- |
 | Identity and transport | `auth/` (token, restrictions, errors, two-step sign-in), `pwa/` (outbox, cache rules) |
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
-| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak) |
+| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored) |
 | Reader | `reader/` (display settings, furigana, smart readings, word states, coverage) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Data safety | `backup/` (archive format v1, id remapping) |
@@ -93,6 +93,10 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   `mfa_enrollment_required`, sign-in by emailed code); setup: `auth/mfa-setup.json`; throttling
   (429 `Retry-After`, never retry automatically): `auth/throttling.md`, `auth/throttle-responses.json`.
 - Send `deviceName` on login; never log tokens, passwords or one-time codes.
+- Personal access tokens (scripts, not the app): `qq_pat_` + 64 hex, created in Settings, shown once, read or
+  write, optionally one workspace, always expiring; refused with 403 `token_not_allowed` on every route
+  that does not declare token use. A client app signs in with a session, never with an access token.
+  `auth/tokens.json`, `auth/tokens-format.json`, `auth/README.md` (Personal access tokens).
 
 ## Study rules (links)
 
@@ -102,6 +106,8 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
 - Reverse and cloze cards, sibling burying: `cards/`.
 - Daily goal, its amounts (activity cells of the workspace, new cards and capped answer time from the review
   log), day status and goal streak (vacation days neutral): `goals/`.
+- Weekly summary (Monday to Sunday learner dates, rows, days, comparison, mature and character crossings;
+  computed from events, nothing stored, no row key): `weekly/`.
 
 ## Backup archive (`backup/`)
 

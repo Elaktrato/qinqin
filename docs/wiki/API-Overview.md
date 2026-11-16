@@ -24,6 +24,10 @@ Send `Authorization: Bearer <token>`.
 
 A session unused for 90 days stops working; each use refreshes it.
 
+### Access tokens for scripts
+
+A script uses a personal access token instead of a session: `qq_pat_` plus 64 hex characters, created in Settings, shown once, read only or read and write, optionally limited to one workspace, always expiring. Only the routes marked in the Token column of [API routes](API-Routes) take one; everything else (account, sign-in, admin, backup, AI) answers 403 `token_not_allowed`. A client app signs in with a session, never with an access token. See [API access tokens](API-Access-tokens).
+
 ### 401 versus 403
 
 - **401 `unauthorized`**: this session is gone (unknown, idle, revoked, user disabled or deleted). Drop the token and show sign-in. `401 bad_credentials` on login is the anonymous step, not a lost session.

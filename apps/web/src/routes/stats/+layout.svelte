@@ -1,19 +1,19 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
 	import { page } from '$app/state';
-	import { activeStatsTab, statsTabs, tabKeyTarget } from '$lib/statsTabs';
+	import { activeStatsTab, statsPanelLabel, statsTabs, tabKeyTarget } from '$lib/statsTabs';
 	import { currentLanguage } from '$lib/workspaces';
 
 	let { children } = $props();
 
-	// Each view has its own URL (/stats, /stats/characters), so Back,
-	// Forward and deep links pick the tab. Characters exists only for Han
+	// Each view has its own URL (/stats, /stats/week, /stats/characters),
+	// so Back, Forward and deep links pick the tab. Characters exists only for Han
 	// languages; a direct visit in another workspace shows the panel's
 	// note with no tab selected.
 	const tabs = $derived(statsTabs($currentLanguage));
 	const active = $derived(activeStatsTab(page.url.pathname));
 	const activeTab = $derived(tabs.find((tab) => tab.id === active) ?? null);
-	const panelLabel = $derived(active === 'characters' ? 'Characters' : 'Overview');
+	const panelLabel = $derived(statsPanelLabel(active));
 
 	const tabEls: Record<string, HTMLAnchorElement | undefined> = {};
 

@@ -335,6 +335,13 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		m.Workspaces[w.ID] = id
 		res.Restored.Workspaces++
 	}
+	// 4b. access tokens are kept (a restore is not a security action), but a
+	// token limited to a workspace follows it to its new id; one limited to a
+	// workspace the archive does not hold would point at a deleted id, so it
+	// goes, audited.
+	if err := remapTokenWorkspaces(ctx, tx, userID, m.Workspaces); err != nil {
+		return nil, err
+	}
 	// 5. own sentences (new ids), overlays
 	insSent, err := tx.PrepareContext(ctx, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, '', ?, ?, ?, ?, ?)`)
 	if err != nil {
@@ -568,4 +575,46 @@ func insertEvents(ctx context.Context, tx *sql.Tx, userID int64, evs []Event, re
 		res.ReidentifiedEvents++
 	}
 	return nil
+}
+
+// remapTokenWorkspaces moves the user's workspace-limited access tokens to
+// the restored workspaces (old id -> new id of the archive) and deletes the
+// ones whose workspace the archive does not hold, with one token_revoked
+// audit row (scope "restore") when any went.
+func remapTokenWorkspaces(ctx context.Context, tx *sql.Tx, userID int64, ws map[int64]int64) error {
+	rs, err := tx.QueryContext(ctx, `SELECT id, workspace_id FROM access_tokens WHERE user_id = ? AND workspace_id IS NOT NULL`, userID)
+	if err != nil {
+		return fmt.Errorf("backup: read access tokens: %w", err)
+	}
+	type bound struct{ id, ws int64 }
+	var list []bound
+	for rs.Next() {
+		var b bound
+		if err := rs.Scan(&b.id, &b.ws); err != nil {
+			rs.Close()
+			return fmt.Errorf("backup: scan access token: %w", err)
+		}
+		list = append(list, b)
+	}
+	if err := closeRows(rs); err != nil {
+		return err
+	}
+	var dropped int64
+	for _, b := range list {
+		if to, ok := ws[b.ws]; ok {
+			if _, err := tx.ExecContext(ctx, `UPDATE access_tokens SET workspace_id = ? WHERE id = ?`, to, b.id); err != nil {
+				return fmt.Errorf("backup: remap access token: %w", err)
+			}
+			continue
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM access_tokens WHERE id = ?`, b.id); err != nil {
+			return fmt.Errorf("backup: drop access token: %w", err)
+		}
+		dropped++
+	}
+	if dropped == 0 {
+		return nil
+	}
+	return auth.Audit(ctx, tx, auth.AuditEvent{Action: "token_revoked", ActorID: userID, TargetID: &userID,
+		Detail: map[string]any{"scope": "restore", "count": dropped}})
 }

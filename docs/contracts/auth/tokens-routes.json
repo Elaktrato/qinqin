@@ -1,0 +1,265 @@
+{
+	"_doc": "GENERATED from the route table by server/internal/api/tokens_routes_fixture_test.go (UPDATE_TOKEN_ROUTES_FIXTURE=1). Every route a personal access token may use; every other route answers 403 token_not_allowed. scope: read (a read or write token) or write (a write token). workspace: how a token limited to one workspace fares - any (the route reads no per-workspace data), query (the request must carry ?workspace= with the token's workspace) or refused (the route spans workspaces or addresses objects by id: 403 token_workspace).",
+	"routes": [
+		{
+			"pattern": "DELETE /api/library/books/{id}",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "DELETE /api/library/books/{id}/bookmarks/{bid}",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "DELETE /api/library/books/{id}/highlights/{hid}",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "DELETE /api/plugins/{id}/data/{key}",
+			"scope": "write",
+			"workspace": "query"
+		},
+		{
+			"pattern": "GET /api/audio-packs",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/audio-packs/{id}/credits",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/audio/clips/{file}",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/audio/entries/{id}",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/characters",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/component-packs",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/components",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/dictionaries",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/entries/{id}",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/entries/{id}/chars",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/events",
+			"scope": "read",
+			"workspace": "query"
+		},
+		{
+			"pattern": "GET /api/frequency-packs",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/grammar",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/grammar/{pack}/{lesson}",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/languages",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/library/books",
+			"scope": "read",
+			"workspace": "query"
+		},
+		{
+			"pattern": "GET /api/library/books/{id}",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/library/books/{id}/bookmarks",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/library/books/{id}/chapters/{n}",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/library/books/{id}/highlights",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/lookup",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/me/time-zone",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/plugins",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/plugins/{id}/data",
+			"scope": "read",
+			"workspace": "query"
+		},
+		{
+			"pattern": "GET /api/plugins/{id}/data/{key}",
+			"scope": "read",
+			"workspace": "query"
+		},
+		{
+			"pattern": "GET /api/schemes",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/schemes/{id}/characters",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/schemes/{id}/entries",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/search",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/segment/at",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/sentence-packs",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/stats/activity",
+			"scope": "read",
+			"workspace": "query"
+		},
+		{
+			"pattern": "GET /api/sync/pull",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/workspaces",
+			"scope": "read",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "POST /api/entries/bases",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "POST /api/entries/{id}/sentences",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "POST /api/events/batch",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "POST /api/library/books/{id}/bookmarks",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "POST /api/library/books/{id}/highlights",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "POST /api/library/upload",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "POST /api/segment",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "POST /api/sync/push",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "PUT /api/entries/{id}",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "PUT /api/library/books/{id}/bookmarks/{bid}",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "PUT /api/library/books/{id}/highlights/{hid}",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "PUT /api/library/books/{id}/position",
+			"scope": "write",
+			"workspace": "refused"
+		},
+		{
+			"pattern": "PUT /api/plugins/{id}/data/{key}",
+			"scope": "write",
+			"workspace": "query"
+		},
+		{
+			"pattern": "PUT /api/plugins/{id}/state",
+			"scope": "write",
+			"workspace": "refused"
+		}
+	]
+}

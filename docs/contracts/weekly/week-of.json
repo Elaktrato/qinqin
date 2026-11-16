@@ -1,0 +1,253 @@
+{
+  "version": 1,
+  "rule": "weekly/week-of",
+  "note": "Instants derived with Python zoneinfo and the study-day dayStart rule (docs/contracts/study-day/). `skipped` lists the dates whose window is empty (dayStart(D) == dayStart(D + 1)).",
+  "cases": [
+    {
+      "name": "UTC, a Monday is its own week",
+      "note": "Monday 2026-11-16 00:00 UTC to Monday 2026-11-23 00:00 UTC (168 h)",
+      "history": [],
+      "day": "2026-11-16",
+      "monday": "2026-11-16",
+      "dates": [
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22"
+      ],
+      "start": "2026-11-16T00:00:00Z",
+      "end": "2026-11-23T00:00:00Z",
+      "skipped": []
+    },
+    {
+      "name": "UTC, a Sunday maps to the previous Monday",
+      "note": "Sunday 2026-11-22 belongs to the week of 2026-11-16",
+      "history": [],
+      "day": "2026-11-22",
+      "monday": "2026-11-16",
+      "dates": [
+        "2026-11-16",
+        "2026-11-17",
+        "2026-11-18",
+        "2026-11-19",
+        "2026-11-20",
+        "2026-11-21",
+        "2026-11-22"
+      ],
+      "start": "2026-11-16T00:00:00Z",
+      "end": "2026-11-23T00:00:00Z",
+      "skipped": []
+    },
+    {
+      "name": "Berlin, DST starts on the week's Sunday",
+      "note": "Mon 2026-03-23 00:00 CET = 03-22T23:00Z; Mon 03-30 00:00 CEST = 03-29T22:00Z: a 167 h week",
+      "history": [
+        {
+          "zone": "Europe/Berlin",
+          "from": null
+        }
+      ],
+      "day": "2026-03-25",
+      "monday": "2026-03-23",
+      "dates": [
+        "2026-03-23",
+        "2026-03-24",
+        "2026-03-25",
+        "2026-03-26",
+        "2026-03-27",
+        "2026-03-28",
+        "2026-03-29"
+      ],
+      "start": "2026-03-22T23:00:00Z",
+      "end": "2026-03-29T22:00:00Z",
+      "skipped": []
+    },
+    {
+      "name": "Berlin, the week before DST ends",
+      "note": "DST ends Sunday 2026-10-25, the last day of the week of 2026-10-19: Mon 10-19 00:00 CEST = 10-18T22:00Z to Mon 10-26 00:00 CET = 10-25T23:00Z (169 h)",
+      "history": [
+        {
+          "zone": "Europe/Berlin",
+          "from": null
+        }
+      ],
+      "day": "2026-10-25",
+      "monday": "2026-10-19",
+      "dates": [
+        "2026-10-19",
+        "2026-10-20",
+        "2026-10-21",
+        "2026-10-22",
+        "2026-10-23",
+        "2026-10-24",
+        "2026-10-25"
+      ],
+      "start": "2026-10-18T22:00:00Z",
+      "end": "2026-10-25T23:00:00Z",
+      "skipped": []
+    },
+    {
+      "name": "Berlin, the week after DST ends",
+      "note": "Mon 10-26 00:00 CET = 10-25T23:00Z to Mon 11-02 00:00 CET = 11-01T23:00Z (168 h)",
+      "history": [
+        {
+          "zone": "Europe/Berlin",
+          "from": null
+        }
+      ],
+      "day": "2026-10-26",
+      "monday": "2026-10-26",
+      "dates": [
+        "2026-10-26",
+        "2026-10-27",
+        "2026-10-28",
+        "2026-10-29",
+        "2026-10-30",
+        "2026-10-31",
+        "2026-11-01"
+      ],
+      "start": "2026-10-25T23:00:00Z",
+      "end": "2026-11-01T23:00:00Z",
+      "skipped": []
+    },
+    {
+      "name": "Tokyo to Berlin on the Wednesday",
+      "note": "Mon 11-09 00:00 JST = 11-08T15:00Z; the change at 11-11T12:00Z (21:00 JST, 13:00 CET) makes Wednesday longer; Mon 11-16 00:00 CET = 11-15T23:00Z",
+      "history": [
+        {
+          "zone": "Asia/Tokyo",
+          "from": null
+        },
+        {
+          "zone": "Europe/Berlin",
+          "from": "2026-11-11T12:00:00Z"
+        }
+      ],
+      "day": "2026-11-12",
+      "monday": "2026-11-09",
+      "dates": [
+        "2026-11-09",
+        "2026-11-10",
+        "2026-11-11",
+        "2026-11-12",
+        "2026-11-13",
+        "2026-11-14",
+        "2026-11-15"
+      ],
+      "start": "2026-11-08T15:00:00Z",
+      "end": "2026-11-15T23:00:00Z",
+      "skipped": []
+    },
+    {
+      "name": "Apia skips 2011-12-30",
+      "note": "Apia went from UTC-10 to UTC+14 at the end of 2011-12-29: dayStart(12-30) = dayStart(12-31) = 2011-12-30T10:00Z; week 12-26 00:00 -10 = 12-26T10:00Z to 2012-01-02 00:00 +14 = 2012-01-01T10:00Z",
+      "history": [
+        {
+          "zone": "Pacific/Apia",
+          "from": null
+        }
+      ],
+      "day": "2011-12-28",
+      "monday": "2011-12-26",
+      "dates": [
+        "2011-12-26",
+        "2011-12-27",
+        "2011-12-28",
+        "2011-12-29",
+        "2011-12-30",
+        "2011-12-31",
+        "2012-01-01"
+      ],
+      "start": "2011-12-26T10:00:00Z",
+      "end": "2012-01-01T10:00:00Z",
+      "skipped": [
+        "2011-12-30"
+      ]
+    },
+    {
+      "name": "a week across the year end",
+      "note": "Monday 2026-12-28 to Sunday 2027-01-03, UTC",
+      "history": [],
+      "day": "2027-01-01",
+      "monday": "2026-12-28",
+      "dates": [
+        "2026-12-28",
+        "2026-12-29",
+        "2026-12-30",
+        "2026-12-31",
+        "2027-01-01",
+        "2027-01-02",
+        "2027-01-03"
+      ],
+      "start": "2026-12-28T00:00:00Z",
+      "end": "2027-01-04T00:00:00Z",
+      "skipped": []
+    },
+    {
+      "name": "no parameter is the current week",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": null,
+      "expect": "2026-11-16"
+    },
+    {
+      "name": "an empty parameter is the current week",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": "",
+      "expect": "2026-11-16"
+    },
+    {
+      "name": "a weekday maps to its Monday",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": "2026-11-18",
+      "expect": "2026-11-16"
+    },
+    {
+      "name": "a Sunday of an earlier week maps to its Monday",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": "2026-11-08",
+      "expect": "2026-11-02"
+    },
+    {
+      "name": "a future week is the current week",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": "2026-12-01",
+      "expect": "2026-11-16"
+    },
+    {
+      "name": "60 weeks back is clamped to 52 weeks back",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": "2025-09-22",
+      "expect": "2025-11-17"
+    },
+    {
+      "name": "exactly 52 weeks back stays",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": "2025-11-17",
+      "expect": "2025-11-17"
+    },
+    {
+      "name": "garbage is the current week",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": "garbage",
+      "expect": "2026-11-16"
+    },
+    {
+      "name": "a date that does not exist is the current week",
+      "op": "normalize",
+      "today": "2026-11-18",
+      "param": "2026-02-30",
+      "expect": "2026-11-16"
+    }
+  ]
+}

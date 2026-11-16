@@ -56,8 +56,8 @@ Direction: `docs/superpowers/directions/2026-11-15-v0.3.0-web-build.md`. Collect
 
 - Done on develop (merged via `feature/v0.3.0` and the topic branches): ~~[#86](https://github.com/Elaktrato/qinqin/issues/86) login rate limiting~~, ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) the learner's local day~~, ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions~~, ~~[#64](https://github.com/Elaktrato/qinqin/issues/64) accounts (sessions, invites, SMTP, MFA)~~, ~~[#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards~~, ~~[#90](https://github.com/Elaktrato/qinqin/issues/90) decks view~~ (merge 0764d27), ~~[#88](https://github.com/Elaktrato/qinqin/issues/88) vacation mode and [#89](https://github.com/Elaktrato/qinqin/issues/89) daily limits~~ (merge b3548b2), ~~[#61](https://github.com/Elaktrato/qinqin/issues/61) backup~~ (merge 0a3884f), ~~[#79](https://github.com/Elaktrato/qinqin/issues/79) installable app and offline study~~ (merge 97e0053), ~~[#78](https://github.com/Elaktrato/qinqin/issues/78) reader display settings~~ (merge 3d05ae0).
 - `docs/contracts/` for the Android client: done, entry point `docs/contracts/overview.md` (gaps listed there).
-- Stretch (`feature/v0.3.0-stretch`, brief `docs/superpowers/directions/2026-11-16-v0.3.0-stretch-agent-brief.md`): ~~[#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals~~ (merge 93f70f9, `docs/contracts/goals/`), ~~[#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks~~ (merge ed99015, `docs/contracts/frequency/`; no new data bundled, no clearly licensed Chinese word list exists), ~~[#77](https://github.com/Elaktrato/qinqin/issues/77) personal notes and mnemonics~~ (merge ab1352b, `docs/contracts/notes/`), ~~[#71](https://github.com/Elaktrato/qinqin/issues/71) radical and component lookup~~ (merge d91bf90, `docs/contracts/radicals/`; KanjiVG components bundled, Chinese components local-only).
-- Stretch, not started: [#68](https://github.com/Elaktrato/qinqin/issues/68) unknown-word highlighting, [#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history, [#83](https://github.com/Elaktrato/qinqin/issues/83) personal access tokens, [#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary, [#80](https://github.com/Elaktrato/qinqin/issues/80).
+- Stretch (`feature/v0.3.0-stretch`, brief `docs/superpowers/directions/2026-11-16-v0.3.0-stretch-agent-brief.md`): ~~[#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals~~ (merge 93f70f9, `docs/contracts/goals/`), ~~[#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks~~ (merge ed99015, `docs/contracts/frequency/`; no new data bundled, no clearly licensed Chinese word list exists), ~~[#77](https://github.com/Elaktrato/qinqin/issues/77) personal notes and mnemonics~~ (merge ab1352b, `docs/contracts/notes/`), ~~[#71](https://github.com/Elaktrato/qinqin/issues/71) radical and component lookup~~ (merge d91bf90, `docs/contracts/radicals/`; KanjiVG components bundled, Chinese components local-only), ~~[#68](https://github.com/Elaktrato/qinqin/issues/68) unknown-word highlighting and text coverage~~ (merge f0ab056, `docs/contracts/reader/`), ~~[#83](https://github.com/Elaktrato/qinqin/issues/83) personal access tokens~~ (merge f10435e, `docs/contracts/auth/tokens*.json`, wiki `API-Access-tokens.md`).
+- Stretch, not started: [#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history, [#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary, [#80](https://github.com/Elaktrato/qinqin/issues/80).
 
 ## v0.4.0 — Android client (milestone)
 
@@ -90,7 +90,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 **Accounts and data**
 
 - [#64](https://github.com/Elaktrato/qinqin/issues/64) accounts: change password, admin user management, password reset, session control (done on `feature/v0.3.0`: sessions, registration modes, invites, SMTP, email verification, reset by mail, TOTP and email-code two-step sign-in, sign-in by code)
-- [#83](https://github.com/Elaktrato/qinqin/issues/83) accounts: personal access tokens for scripts and integrations
+- ~~[#83](https://github.com/Elaktrato/qinqin/issues/83) accounts: personal access tokens for scripts and integrations~~ — done (v0.3.0 stretch)
 - [#61](https://github.com/Elaktrato/qinqin/issues/61) backup: export and restore your own data, plus server backup
 - [#86](https://github.com/Elaktrato/qinqin/issues/86) auth: login/register rate limiting (done: per-client, per-pair and per-username limits, hash gate, trusted proxies)
 
@@ -113,7 +113,7 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 
 **Reader and lookup**
 
-- [#68](https://github.com/Elaktrato/qinqin/issues/68) highlight unknown words, text coverage
+- ~~[#68](https://github.com/Elaktrato/qinqin/issues/68) highlight unknown words, text coverage~~ — done (v0.3.0 stretch)
 - [#69](https://github.com/Elaktrato/qinqin/issues/69) import your own text (paste, txt, epub, subtitles)
 - [#70](https://github.com/Elaktrato/qinqin/issues/70) handwriting lookup
 - ~~[#71](https://github.com/Elaktrato/qinqin/issues/71) radical and component lookup~~ — done (v0.3.0 stretch)
