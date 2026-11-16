@@ -8,6 +8,9 @@ vi.mock('$lib/time/zone', () => ({
 }));
 vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
 vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
+vi.mock('$lib/api/stats', () => ({
+	fetchActivity: vi.fn(() => Promise.resolve({ from: '', to: '', timeZone: 'UTC', sources: [], cells: [] }))
+}));
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	saveVacation: vi.fn(() => Promise.resolve()),
@@ -166,5 +169,14 @@ describe('StudySettings limits wording', () => {
 	it('says the limits are per deck and the workspace value is the default', async () => {
 		setup();
 		expect((await screen.findByText(/Each deck gets at most/)).textContent).toMatch(/workspace value is the default for every deck/);
+	});
+});
+
+describe('StudySettings daily goal', () => {
+	it('has the daily goal section above the vacation section', async () => {
+		setup();
+		const goal = await screen.findByRole('heading', { name: 'Daily goal' });
+		const vacation = screen.getByRole('heading', { name: 'Vacation' });
+		expect(goal.compareDocumentPosition(vacation) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 	});
 });
