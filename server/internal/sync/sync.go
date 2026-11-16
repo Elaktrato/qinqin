@@ -13,6 +13,7 @@ package sync
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -21,6 +22,8 @@ import (
 	"qinqin/internal/events"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 var (
@@ -65,6 +68,15 @@ type Delta struct {
 	Dictionaries []model.Dictionary `json:"dictionaries"`
 	Schemes      []model.Scheme     `json:"schemes"`
 	Levels       []model.Level      `json:"levels"`
+
+	// The caller's typed study rows (docs/contracts/study/), last-write-wins
+	// per row with tombstones, like plugin data.
+	Cards        []rows.Card            `json:"cards"`
+	Decks        []rows.Deck            `json:"decks"`
+	DeckSettings []rows.DeckSettingsRow `json:"deckSettings"`
+	Limits       []rows.LimitsRow       `json:"limits"`
+	FsrsSets     []rows.FsrsSet         `json:"fsrsSets"`
+	FsrsActive   []rows.FsrsActiveRow   `json:"fsrsActive"`
 }
 
 // Overlay is one of the caller's per-user entry edits (user_edits row):
@@ -86,12 +98,32 @@ type Overlay struct {
 // harmless: clients upsert by key.
 const cursorMargin = 30 * time.Second
 
-// PushBody is a client's offline work: study events and plugin data
-// rows. Event users are forced to the caller; plugin data rows carry the
-// client's updated_at (and deleted_at for a deletion) for last-write-wins.
+// PushBody is a client's offline work: study events, plugin data rows and
+// typed study rows. Event users are forced to the caller; plugin data and
+// typed rows carry the client's updatedAt (and deletedAt for a deletion)
+// for last-write-wins. Typed rows are decoded strictly (rows.Decode).
 type PushBody struct {
 	Events     []model.StudyEvent `json:"events"`
 	PluginData []model.PluginData `json:"pluginData"`
+
+	Cards        []json.RawMessage `json:"cards"`
+	Decks        []json.RawMessage `json:"decks"`
+	DeckSettings []json.RawMessage `json:"deckSettings"`
+	Limits       []json.RawMessage `json:"limits"`
+	FsrsSets     []json.RawMessage `json:"fsrsSets"`
+	FsrsActive   []json.RawMessage `json:"fsrsActive"`
+}
+
+// Typed returns the typed items of the body by collection, in wire order.
+func (b PushBody) Typed() []struct {
+	Family rows.Family
+	Items  []json.RawMessage
+} {
+	return []struct {
+		Family rows.Family
+		Items  []json.RawMessage
+	}{{rows.Cards, b.Cards}, {rows.Decks, b.Decks}, {rows.DeckSettings, b.DeckSettings},
+		{rows.Limits, b.Limits}, {rows.FsrsSets, b.FsrsSets}, {rows.FsrsActive, b.FsrsActive}}
 }
 
 // PushResult counts what a push did.
@@ -103,6 +135,13 @@ type PushResult struct {
 	// DataRefused counts rows of plugins that do not declare owns-data;
 	// they are not applied, the rest of the push is.
 	DataRefused int `json:"dataRefused"`
+}
+
+// typedItem is one decoded typed push item and its edit.
+type typedItem struct {
+	row     rows.Row
+	edited  time.Time
+	deleted bool
 }
 
 // Push applies body for userID. It validates the whole body first —
@@ -179,6 +218,21 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		}
 	}
 
+	var typed []typedItem
+	for _, coll := range body.Typed() {
+		for i, raw := range coll.Items {
+			r, err := rows.Decode(coll.Family, raw)
+			if err != nil {
+				return PushResult{}, fmt.Errorf("%w: %s %d: %v", ErrInvalid, coll.Family, i, err)
+			}
+			if err := checkWorkspace(r.M().WorkspaceID); err != nil {
+				return PushResult{}, err
+			}
+			m := r.M()
+			typed = append(typed, typedItem{row: r, edited: study.EditTime(m.UpdatedAt, m.DeletedAt), deleted: m.DeletedAt != nil})
+		}
+	}
+
 	var res PushResult
 	if len(evts) > 0 {
 		accepted, dups, err := events.Append(ctx, sqlDB, evts)
@@ -195,6 +249,17 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		applied, err := applyData(ctx, sqlDB, userID, row)
 		if err != nil {
 			return res, err
+		}
+		if applied {
+			res.DataAccepted++
+		} else {
+			res.DataSkipped++
+		}
+	}
+	for _, it := range typed {
+		applied, err := study.Apply(ctx, sqlDB, userID, it.row, it.edited, it.deleted)
+		if err != nil {
+			return res, fmt.Errorf("sync push: %w", err)
 		}
 		if applied {
 			res.DataAccepted++

@@ -10,12 +10,15 @@ import (
 
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 // Collections are the names of the Delta collections, as they appear in
 // its JSON. A pull may be limited to a subset of them.
 var Collections = []string{"entries", "links", "senses", "levelMembers", "sentences",
-	"pluginData", "pluginStates", "overlays", "dictionaries", "schemes", "levels"}
+	"pluginData", "pluginStates", "overlays", "dictionaries", "schemes", "levels",
+	"cards", "decks", "deckSettings", "limits", "fsrsSets", "fsrsActive"}
 
 // ParseCollections parses a comma-separated list of collection names into
 // the set Pull takes. An empty list means every collection (nil set); an
@@ -51,6 +54,8 @@ func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, on
 		Entries: []Entry{}, Links: []Link{}, Senses: []Sense{}, LevelMembers: []LevelMember{},
 		Sentences: []model.Sentence{}, PluginData: []model.PluginData{}, PluginStates: []model.PluginState{},
 		Overlays: []Overlay{}, Dictionaries: []model.Dictionary{}, Schemes: []model.Scheme{}, Levels: []model.Level{},
+		Cards: []rows.Card{}, Decks: []rows.Deck{}, DeckSettings: []rows.DeckSettingsRow{}, Limits: []rows.LimitsRow{},
+		FsrsSets: []rows.FsrsSet{}, FsrsActive: []rows.FsrsActiveRow{},
 	}
 	since := cursor.UTC().Format(time.RFC3339)
 	live := ""
@@ -117,6 +122,20 @@ func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, on
 		if d.PluginStates, err = pullPluginStates(ctx, sqlDB, userID, since); err != nil {
 			return Delta{}, err
 		}
+	}
+	families := map[rows.Family]bool{}
+	for _, f := range rows.Families {
+		if want(string(f)) {
+			families[f] = true
+		}
+	}
+	if len(families) > 0 {
+		typed, err := study.Pull(ctx, sqlDB, userID, cursor, families)
+		if err != nil {
+			return Delta{}, fmt.Errorf("sync pull: %w", err)
+		}
+		d.Cards, d.Decks, d.DeckSettings = typed.Cards, typed.Decks, typed.DeckSettings
+		d.Limits, d.FsrsSets, d.FsrsActive = typed.Limits, typed.FsrsSets, typed.FsrsActive
 	}
 	return d, nil
 }

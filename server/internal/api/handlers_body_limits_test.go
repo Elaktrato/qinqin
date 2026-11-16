@@ -151,6 +151,14 @@ func TestPluginBodyLimits(t *testing.T) {
 	push := `{"events":[],"pluginData":[{"pluginId":"qinqin-flashcards","workspaceId":` + ws +
 		`,"key":"card:y","data":` + padded("", 256<<10) + `,"updatedAt":"2026-11-14T10:00:00Z"}]}`
 	wantTooLarge(t, "sync push plugin data", doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", admin, push))
+
+	// A typed study row has the same per-item cap.
+	card := `{"workspaceId":` + ws + `,"id":"c1","kind":"vocab","entryId":1,"written":null,"entryKind":null,"sentenceId":null,` +
+		`"skipKinds":[],"deckIds":[],"createdAt":"t","updatedAt":"2026-11-14T10:00:00Z","extra":`
+	if resp := doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", admin, `{"cards":[`+card+padded("", 200<<10)+`}]}`); resp.StatusCode != http.StatusOK {
+		t.Errorf("200 KiB typed card: status = %d, want 200", resp.StatusCode)
+	}
+	wantTooLarge(t, "sync push typed card", doRaw(t, http.MethodPost, ts.URL, "/api/sync/push", admin, `{"cards":[`+card+padded("", 256<<10)+`}]}`))
 }
 
 func TestEntryBodyLimit(t *testing.T) {

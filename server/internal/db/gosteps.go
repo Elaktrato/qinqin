@@ -184,6 +184,9 @@ func coreStudyStep(tx *sql.Tx) error {
 		moved[r.Family()]++
 		total++
 	}
+	if total+left == 0 {
+		return nil // a database without study rows (a fresh install) has nothing to report
+	}
 	log.Printf("migration 038: moved %d study rows (cards %d, decks %d, deckSettings %d, limits %d, fsrsSets %d, fsrsActive %d), left %d unreadable rows in plugin_data",
 		total, moved[rows.Cards], moved[rows.Decks], moved[rows.DeckSettings], moved[rows.Limits], moved[rows.FsrsSets], moved[rows.FsrsActive], left)
 	return nil
