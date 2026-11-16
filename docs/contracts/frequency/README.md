@@ -41,8 +41,12 @@ Top 2000. Owned copy id: `d-frq-<slug(packId)>-<fnv1a32(packId + "\0" + "top-" +
 {type:"frequency", packId, size}}`.
 
 Resolution (server): walk the pack's rows by `rank`, then row position; resolve each row's term (and
-reading, when given) to one word entry like a level pack word (`BestWordReading`: form + reading, then
-the form, then the kana reading fallback); skip unresolved rows and entries already taken; stop at `size`
+reading, when given) to one word entry. A **kana row** (no reading or the reading equal to the term, the
+term written only in hiragana, katakana and ー) first takes the word with no written form whose first
+reading is exactly the term and whose priority is above 0, highest priority, then lowest id (so `の` is
+the particle, not the usually-kana 乃; a kana-only `こと` without priority does not displace 事). Every
+other row, and a kana row without such a word, resolves like a level pack word (`BestWordReading`: form +
+reading, then the form, then the kana reading fallback); level imports never use the kana step. Skip unresolved rows and entries already taken; stop at `size`
 entries or after `4 × size` rows. Fixture: a toy Japanese lexicon (`forms`, kana `readings`, `pri`, `uk`)
 and toy packs; `expected` lists entry keys with the rank of the row that took them. Sizes other than 500,
 1000, 2000 appear only in this fixture.

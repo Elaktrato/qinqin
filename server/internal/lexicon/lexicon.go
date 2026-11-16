@@ -462,6 +462,36 @@ func (s Store) BestWordReadingID(ctx context.Context, language, form, reading st
 	return s.bestWordID(ctx, language, form)
 }
 
+// kanaOnlyWordQuery is KanaOnlyWordID's query, driven from readings by
+// the plain index like bestKanaWordQuery.
+const kanaOnlyWordQuery = `
+	SELECT e.id FROM readings r
+	CROSS JOIN entries e ON e.id = r.entry_id
+	WHERE r.plain = ? AND r.value = ? AND r.type = 'kana' AND r.ord = 0 AND r.deleted_at IS NULL
+	  AND e.language = ? AND e.kind = 'word' AND e.pri > 0 AND e.deleted_at IS NULL
+	  AND NOT EXISTS (SELECT 1 FROM forms f WHERE f.entry_id = e.id AND f.deleted_at IS NULL)
+	ORDER BY e.pri DESC, e.id
+	LIMIT 1`
+
+// KanaOnlyWordID returns the word entry written only in kana — no written
+// form — whose first reading is exactly kana and which carries a priority,
+// the highest priority first, then the lowest id; ErrNotFound when there
+// is none. Frequency starter decks try it for a kana row before the
+// level-word rule (BestWordReadingID), so a particle such as の is the
+// particle, not the usually-kana 乃; level imports do not use it.
+func (s Store) KanaOnlyWordID(ctx context.Context, language, kana string) (int64, error) {
+	plain := lang.For(language).NormalizeReading("kana", kana)
+	var id int64
+	err := s.DB.QueryRowContext(ctx, kanaOnlyWordQuery, plain, kana, language).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, ErrNotFound
+	}
+	if err != nil {
+		return 0, fmt.Errorf("kana-only word %s/%q: %w", language, kana, err)
+	}
+	return id, nil
+}
+
 // Link links fromID to toID with typ (LinkVariant or LinkRadical). A
 // variant link is stored in both directions so reads are symmetric.
 // Linking an existing pair again writes nothing; a soft-deleted link

@@ -153,7 +153,7 @@ func entriesOf(es []freq.TopEntry) []freq.TopEntry {
 func TestTopFollowsTheResolutionContract(t *testing.T) {
 	sqlDB, r, ids, packs := seedResolution(t)
 	st := freq.Store{DB: sqlDB}
-	lx := lexicon.Store{DB: sqlDB}
+	lx := freq.StarterResolver{Lexicon: lexicon.Store{DB: sqlDB}}
 	if packs["main"].ContentHash == "" {
 		t.Fatal("PackInfo.ContentHash is empty")
 	}
@@ -179,7 +179,7 @@ func TestTopFollowsTheResolutionContract(t *testing.T) {
 func TestTopCacheResolvesOncePerContentHash(t *testing.T) {
 	sqlDB, r, ids, packs := seedResolution(t)
 	st := freq.Store{DB: sqlDB}
-	res := &counting{r: lexicon.Store{DB: sqlDB}}
+	res := &counting{r: freq.StarterResolver{Lexicon: lexicon.Store{DB: sqlDB}}}
 	var cache freq.TopCache
 	ctx := context.Background()
 	first, err := cache.Get(ctx, st, res, packs["main"], 3)
@@ -222,7 +222,7 @@ func TestTopCacheResolvesOncePerContentHash(t *testing.T) {
 func TestTopCacheConcurrentGet(t *testing.T) {
 	sqlDB, r, ids, packs := seedResolution(t)
 	st := freq.Store{DB: sqlDB}
-	res := &counting{r: lexicon.Store{DB: sqlDB}}
+	res := &counting{r: freq.StarterResolver{Lexicon: lexicon.Store{DB: sqlDB}}}
 	var cache freq.TopCache
 	var wg sync.WaitGroup
 	errs := make(chan error, 8)
@@ -244,12 +244,37 @@ func TestTopCacheConcurrentGet(t *testing.T) {
 			t.Error(err)
 		}
 	}
-	single := &counting{r: lexicon.Store{DB: sqlDB}}
+	single := &counting{r: freq.StarterResolver{Lexicon: lexicon.Store{DB: sqlDB}}}
 	if _, err := st.Top(context.Background(), single, packs["main"], 2000); err != nil {
 		t.Fatal(err)
 	}
 	if res.calls.Load() != single.calls.Load() {
 		t.Errorf("8 concurrent Gets resolved %d rows, one Top(2000) resolves %d: computed more than once",
 			res.calls.Load(), single.calls.Load())
+	}
+}
+
+// TestKanaRowsPreferKanaOnlyWordsForStarterDecksOnly: the level-word rule
+// keeps resolving の to the usually-kana 乃; only the starter resolver
+// prefers the kana-only word, and only one with a priority.
+func TestKanaRowsPreferKanaOnlyWordsForStarterDecksOnly(t *testing.T) {
+	sqlDB, _, ids, _ := seedResolution(t)
+	ctx := context.Background()
+	lx := lexicon.Store{DB: sqlDB}
+	starter := freq.StarterResolver{Lexicon: lx}
+	for _, tc := range []struct{ term, reading, level, start string }{
+		{"の", "", "no-kanji", "no"},
+		{"の", "の", "no-kanji", "no"},
+		{"こと", "", "koto", "koto"},
+		{"する", "", "suru", "suru"},
+		{"コレ", "", "kore", "kore"},
+		{"乃", "の", "no-kanji", "no-kanji"},
+	} {
+		if id, err := lx.BestWordReadingID(ctx, "ja", tc.term, tc.reading); err != nil || id != ids[tc.level] {
+			t.Errorf("level rule %s/%s = %d, %v; want %s", tc.term, tc.reading, id, err, tc.level)
+		}
+		if id, err := starter.BestWordReadingID(ctx, "ja", tc.term, tc.reading); err != nil || id != ids[tc.start] {
+			t.Errorf("starter rule %s/%s = %d, %v; want %s", tc.term, tc.reading, id, err, tc.start)
+		}
 	}
 }

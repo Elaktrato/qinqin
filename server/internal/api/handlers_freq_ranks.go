@@ -148,7 +148,7 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	store := lexicon.Store{DB: s.db}
-	top, err := s.freqTop.Get(r.Context(), fs, store, *pack, size)
+	top, err := s.freqTop.Get(r.Context(), fs, freq.StarterResolver{Lexicon: store}, *pack, size)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return

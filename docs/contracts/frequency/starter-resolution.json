@@ -2,6 +2,7 @@
  "version": 1,
  "rule": "frequency/starter-resolution",
  "language": "ja",
+ "kanaNote": "a kana row (no reading, or the reading equal to the term) first takes a word with no written form whose first reading is the term and whose priority is above 0, highest priority first; levels do not use this step",
  "sizeNote": "sizes other than 500/1000/2000 are test-only overrides of the resolution function",
  "lexicon": [
   {
@@ -68,12 +69,58 @@
    ],
    "pri": 0,
    "uk": false
+  },
+  {
+   "key": "no-kanji",
+   "forms": [
+    "乃"
+   ],
+   "readings": [
+    "の"
+   ],
+   "pri": 60,
+   "uk": true
+  },
+  {
+   "key": "no",
+   "forms": [],
+   "readings": [
+    "の"
+   ],
+   "pri": 60,
+   "uk": false
+  },
+  {
+   "key": "koto",
+   "forms": [
+    "事"
+   ],
+   "readings": [
+    "こと"
+   ],
+   "pri": 60,
+   "uk": true
+  },
+  {
+   "key": "koto-particle",
+   "forms": [],
+   "readings": [
+    "こと"
+   ],
+   "pri": 0,
+   "uk": false
   }
  ],
  "packs": {
   "main": [
    {
     "term": "の",
+    "reading": "",
+    "rank": 1,
+    "note": "kana term: the kana-only word の (priority) before the usually-kana 乃"
+   },
+   {
+    "term": "ぬ",
     "reading": "",
     "rank": 1,
     "note": "no entry: unresolved, skipped"
@@ -119,6 +166,12 @@
     "reading": "",
     "rank": 8,
     "note": "form alone"
+   },
+   {
+    "term": "こと",
+    "reading": "",
+    "rank": 9,
+    "note": "kana term: the kana-only こと has no priority, so the usually-kana 事 by the level-word rule"
    }
   ],
   "cap": [
@@ -157,16 +210,16 @@
    "size": 3,
    "expected": [
     {
+     "key": "no",
+     "rank": 1
+    },
+    {
      "key": "suru",
      "rank": 2
     },
     {
      "key": "kaze",
      "rank": 3
-    },
-    {
-     "key": "furi",
-     "rank": 5
     }
    ]
   },
@@ -175,6 +228,10 @@
    "pack": "main",
    "size": 500,
    "expected": [
+    {
+     "key": "no",
+     "rank": 1
+    },
     {
      "key": "suru",
      "rank": 2
@@ -198,6 +255,10 @@
     {
      "key": "nomu",
      "rank": 8
+    },
+    {
+     "key": "koto",
+     "rank": 9
     }
    ]
   },

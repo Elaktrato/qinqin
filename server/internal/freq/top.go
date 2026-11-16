@@ -16,6 +16,39 @@ type Resolver interface {
 	BestWordReadingID(ctx context.Context, language, form, reading string) (int64, error)
 }
 
+// StarterResolver is the resolution of starter decks: a kana row (no
+// reading, or the reading equal to the term, the term written only in
+// hiragana, katakana and the prolonged mark) first takes the kana-only
+// word with a priority (lexicon.Store.KanaOnlyWordID), then, like every
+// other row, the level-word rule (BestWordReadingID). Without the first
+// step の, で resolve to the usually-kana 乃, 出 and the particles never
+// appear; levels keep the level-word rule unchanged.
+type StarterResolver struct{ Lexicon lexicon.Store }
+
+// BestWordReadingID implements Resolver.
+func (r StarterResolver) BestWordReadingID(ctx context.Context, language, form, reading string) (int64, error) {
+	if (reading == "" || reading == form) && allKana(form) {
+		id, err := r.Lexicon.KanaOnlyWordID(ctx, language, form)
+		if !errors.Is(err, lexicon.ErrNotFound) {
+			return id, err
+		}
+	}
+	return r.Lexicon.BestWordReadingID(ctx, language, form, reading)
+}
+
+// allKana reports a non-empty text of hiragana, katakana and ー only.
+func allKana(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		if !(c >= 0x3041 && c <= 0x3096) && !(c >= 0x30a1 && c <= 0x30fa) && c != 0x30fc {
+			return false
+		}
+	}
+	return true
+}
+
 // TopEntry is one word of a starter deck: the entry and the rank of the
 // pack row that took it.
 type TopEntry struct {
