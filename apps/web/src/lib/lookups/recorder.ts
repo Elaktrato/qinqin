@@ -172,10 +172,20 @@ export class LookupRecorder {
 		this.recording = true;
 	}
 
-	/** attach flushes when the document is hidden; returns the detach. */
+	/** reloadCopies re-reads the switch and every workspace copy held (the popup hint's counts). */
+	async reloadCopies(): Promise<void> {
+		await Promise.all([...this.#copies.keys()].map((ws) => this.load(ws).catch(() => undefined)));
+	}
+
+	/**
+	 * attach flushes when the document is hidden and re-reads the held copies
+	 * when it is shown again (another tab or device may have counted, cleared
+	 * or switched recording off meanwhile); returns the detach.
+	 */
 	attach(doc: Document): () => void {
 		const onVisibility = () => {
 			if (doc.visibilityState === 'hidden') void this.flush();
+			else if (doc.visibilityState === 'visible') void this.reloadCopies();
 		};
 		doc.addEventListener('visibilitychange', onVisibility);
 		return () => doc.removeEventListener('visibilitychange', onVisibility);

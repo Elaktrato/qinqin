@@ -299,4 +299,25 @@ describe('LookupRecorder', () => {
 		await r.flush();
 		expect(items(io, 3).map((i) => i.entryId)).toEqual([1]);
 	});
+
+	it('coming back to the tab re-reads the loaded copies (another tab or device may have counted or cleared)', async () => {
+		const io = fakeIO();
+		const row = (count: number) => ({ version: 1, clearedAt: null, items: [{ entryId: 7, count, firstAt: '2026-11-01T09:00:00Z', lastAt: '2026-11-01T09:00:00Z', sources: {}, books: [] }] });
+		io.rows.set(3, row(2));
+		const r = new LookupRecorder(io);
+		const detach = r.attach(document);
+		await r.load(3);
+		expect(r.countOf(3, 7)).toBe(2);
+		io.rows.set(3, row(5));
+		const spy = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+		document.dispatchEvent(new Event('visibilitychange'));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(r.countOf(3, 7)).toBe(5);
+		io.cfg = { version: 1, record: false };
+		document.dispatchEvent(new Event('visibilitychange'));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(r.countOf(3, 7)).toBe(0);
+		spy.mockRestore();
+		detach();
+	});
 });
