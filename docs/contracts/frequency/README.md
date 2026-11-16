@@ -72,7 +72,10 @@ after a kana match, the words panel — and the `written` snapshot of a card add
 
 1. `listForm` (a starter deck row's term), when written only in hiragana, katakana and ー and equal to the
    value of one of the entry's `kana` readings not flagged `sk`;
-2. when the **first sense** carries the tag `uk` and the entry has a kana reading: the best kana reading;
+2. when the **first sense** carries the tag `uk` and the entry has a kana reading: the best kana reading.
+   The first sense is the first **live** sense (not tombstoned) of an **installed** dictionary (not
+   uninstalled) by `(dictionaryId, ord, id)` — the order `GET /api/entries/{id}` `senseGroups`, lookup
+   `senses` and the sync pull's senses (sorted by that key) give;
 3. the best written form;
 4. the best kana reading (else the first kana reading), else the first reading of any type, else `""`.
 

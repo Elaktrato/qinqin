@@ -832,5 +832,6 @@
    "listForm": "taberu",
    "expected": "食べる"
   }
- ]
+ ],
+ "senseOrder": "senses are given in the entry's order: the live senses (not tombstoned) of installed (not uninstalled) dictionaries, by (dictionaryId, ord, id); the first of them decides uk (Go: lexicon TestDisplayFormFirstSenseOfAnInstalledDictionary pins it with two dictionaries)"
 }

@@ -1,6 +1,7 @@
 package lexicon_test
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"testing"
@@ -61,5 +62,38 @@ func TestDisplayFormFixture(t *testing.T) {
 				t.Errorf("%s: Headword() = %q, want %q", c.Name, got, c.Expected)
 			}
 		}
+	}
+}
+
+// TestDisplayFormFirstSenseOfAnInstalledDictionary: "the first sense" is
+// the first live sense by (dictionary id, ord, id) among the senses of
+// installed dictionaries, as Get loads them.
+func TestDisplayFormFirstSenseOfAnInstalledDictionary(t *testing.T) {
+	st := newStore(t)
+	plainDict := addDictionary(t, st, "a-plain")
+	ukDict := addDictionary(t, st, "b-uk")
+	e := &lexicon.Entry{Language: "ja", Kind: "word", Key: "j:1",
+		Forms:    []lexicon.Form{{Text: "犬"}},
+		Readings: []lexicon.Reading{{Type: "kana", Value: "いぬ", Plain: "いぬ"}},
+		Senses:   []lexicon.Sense{{Glosses: []string{"dog"}}}}
+	id := mustPut(t, st, e, plainDict)
+	e.Senses = []lexicon.Sense{{Tags: []string{"uk"}, Glosses: []string{"snoop"}}}
+	mustPut(t, st, e, ukDict)
+
+	got, err := st.Get(context.Background(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w := got.Headword(); w != "犬" {
+		t.Errorf("with both dictionaries: %q, want 犬 (the lower dictionary id's sense is first)", w)
+	}
+	if _, err := st.DB.Exec(`UPDATE dictionaries SET deleted_at = '2026-02-01T00:00:00Z' WHERE id = ?`, plainDict); err != nil {
+		t.Fatal(err)
+	}
+	if got, err = st.Get(context.Background(), id); err != nil {
+		t.Fatal(err)
+	}
+	if w := got.Headword(); w != "いぬ" {
+		t.Errorf("after uninstalling the first dictionary: %q, want いぬ", w)
 	}
 }
