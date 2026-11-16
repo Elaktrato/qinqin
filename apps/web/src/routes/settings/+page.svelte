@@ -24,6 +24,7 @@
 	import StudySettings from '$lib/settings/StudySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
+	import FeatureSettings from '$lib/settings/FeatureSettings.svelte';
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
 	import { user } from '$lib/auth';
 	import {
@@ -412,6 +413,15 @@
 	>
 		<StudyDaySettings />
 		<StudySettings />
+	</div>
+
+	<div
+		role="tabpanel"
+		id="settings-panel-features"
+		aria-labelledby="settings-tab-features"
+		hidden={activeTab !== 'features'}
+	>
+		<FeatureSettings />
 	</div>
 
 	<div

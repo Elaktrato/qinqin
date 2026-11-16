@@ -6,7 +6,6 @@
 	import { getComponentPacks } from '$lib/api/components';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
-	import { coreFeatures } from '$lib/features';
 	import { webPlugins } from '$lib/plugins';
 	import { listGrammar } from '$lib/plugins/grammar/api';
 	import type { PackInfo } from '$lib/plugins/grammar/types';
@@ -26,7 +25,7 @@
 	// Credits declared in code: the app's own, and each web plugin's.
 	const coreViews = coreCredits.map(creditView);
 	const plugins = pluginCredits(
-		[...coreFeatures, ...webPlugins].map((owner) => owner.manifest),
+		webPlugins.map((plugin) => plugin.manifest),
 		coreCredits
 	);
 

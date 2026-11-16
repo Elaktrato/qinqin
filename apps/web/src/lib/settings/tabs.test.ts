@@ -51,13 +51,23 @@ describe('the Study tab', () => {
 	});
 });
 
+describe('features tab', () => {
+	it('is visible to everyone, before Plugins', () => {
+		expect(SETTINGS_TAB_LABELS.features).toBe('Features');
+		expect(parseSettingsTab('features')).toBe('features');
+		expect(settingsTabHref('features')).toBe('/settings?tab=features');
+		expect(settingsTitleParts('features', null)).toEqual(['Features', 'Settings']);
+	});
+});
+
 describe('account tab', () => {
 	it('is visible to everyone, between AI and Data', () => {
-		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'study', 'plugins', 'ai', 'account']);
+		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'study', 'features', 'plugins', 'ai', 'account']);
 		expect(visibleSettingsTabs(true)).toEqual([
 			'workspaces',
 			'home',
 			'study',
+			'features',
 			'plugins',
 			'ai',
 			'account',
