@@ -662,3 +662,30 @@ deviations with reasons, the `sample-v1` change, what was not verified).
   `TestDeleteUserRemovesEverythingPersonal` failed on the new `Cards` count, fixed in the test, rerun
   `./internal/auth` ok); web `npm run check` exit 0; vitest `src/lib/admin src/lib/settings
   contractsDocs` 35 files / 356 tests passed.
+
+#### A11 — library row stamps, deletion log, library contract
+
+- Tests first: `library/stamps_test.go` (book `updatedAt` = `createdAt` on create, stamped by a position
+  write, listed; bookmark stamped by a relabel, an existing bookmark at the same position comes back
+  unchanged; highlight edit stamps; every delete path logs one `library_deletions` row per removed row with
+  the book's workspace — one bookmark, one highlight, a book with its children, `DeleteWorkspaceBooks`;
+  another user's ids log nothing; a failing log insert (trigger) rolls every delete path back) — failed to
+  compile (`Book.UpdatedAt` missing), then passing. `api/contract_library_test.go` drives the new
+  `docs/contracts/library/rows.json` (32 cases: shapes with every key, `updatedAt`, positions incl. 413,
+  bookmarks 201/200/422, highlight code-point ranges, overlap 409 with `existingId`, touching ranges,
+  colours, UTF-16 offsets refused, two-user isolation on every verb 404, deletes, 401; then the exact
+  deletion log). It was written after the store change, so it was checked to bite by running it against
+  the pre-change `library/*.go` (stashed): 9 failures (missing `updatedAt` keys, empty deletion log).
+  `TestDeleteWorkspaceCascades` asserts the workspace's book and bookmark in the log.
+- Implementation: `Book.UpdatedAt`, `Bookmark.UpdatedAt` (columns read and written; an empty stored stamp
+  falls back to `createdAt`), `SetPosition` and `RenameBookmark` stamp; `logDeletions` (one
+  `INSERT … SELECT` per collection before the delete, same transaction); `DeleteBookmark` /
+  `DeleteHighlight` now run in a transaction (`deleteChild`); `Delete` deletes children through the
+  ownership subquery. Contract README `docs/contracts/library/README.md`; folder row in
+  `docs/contracts/README.md` (the overview's row-key table is D1's).
+- Ruling: a `library_deletions` conflict on `(collection, row_id)` refreshes the row instead of failing —
+  why: ids are AUTOINCREMENT and never reused, so a conflict can only come from an id written verbatim
+  (none today); failing a user's delete over bookkeeping would be worse — cost if wrong: none known.
+- Gate: `gofmt -l .` empty; `go vet` + `go test -count=1 -p 2 ./internal/library/... ./internal/api
+  ./internal/backup ./internal/auth` exit 0 (all ok, first run stopped at a vet error in my test, fixed);
+  `gen-api-docs --check` exit 0; web `contractsDocs` + `wikiDocs` passed.

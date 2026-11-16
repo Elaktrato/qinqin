@@ -186,6 +186,12 @@ func TestDeleteWorkspaceCascades(t *testing.T) {
 	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM library_bookmarks WHERE book_id = ?`, goneBook); n != 0 {
 		t.Errorf("bookmarks of the deleted book: %d left", n)
 	}
+	// The library deletion log records the workspace's book and bookmark.
+	var logged int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM library_deletions WHERE workspace_id = ? AND user_id = ?
+		AND ((collection = 'books' AND row_id = ?) OR collection = 'bookmarks')`, gone, aliceID, goneBook).Scan(&logged); err != nil || logged != 2 {
+		t.Errorf("library deletions of the deleted workspace: %d (%v), want 2", logged, err)
+	}
 	if n := countWhere(t, sqlDB, `SELECT COUNT(*) FROM library_highlights WHERE book_id = ?`, goneBook); n != 0 {
 		t.Errorf("highlights of the deleted book: %d left", n)
 	}
