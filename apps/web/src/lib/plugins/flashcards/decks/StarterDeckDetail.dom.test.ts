@@ -142,6 +142,25 @@ describe('StarterDeckDetail', () => {
 		expect(pushed.length).toBe(before);
 	});
 
+	it('never adds known words when the study data was not loaded yet', async () => {
+		const history = vi.mocked(loadStudyHistory).getMockImplementation()!;
+		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('offline'));
+		render(StarterDeckDetail, { route });
+		const button = await screen.findByRole('button', { name: 'Add to my decks' });
+		vi.mocked(loadStudyHistory).mockImplementation(history);
+		await fireEvent.click(button);
+		await screen.findByText('Added 3 words; 1 you know was skipped');
+		expect(pushed.map((r) => r.key)).not.toContain('card:c-vocab-4');
+	});
+
+	it('does not add when the study data cannot be loaded', async () => {
+		vi.mocked(loadStudyHistory).mockRejectedValue(new Error('offline'));
+		render(StarterDeckDetail, { route });
+		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
+		await screen.findByRole('alert');
+		expect(pushed).toEqual([]);
+	});
+
 	it('an unknown pack is not found', async () => {
 		render(StarterDeckDetail, { route: { ...route, packId: 'nope' } });
 		await screen.findByText('Deck not found.');

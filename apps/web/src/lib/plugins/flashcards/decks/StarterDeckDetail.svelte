@@ -97,6 +97,15 @@
 		progress = null;
 		let headRows = 0;
 		try {
+			// Known words come from a fresh load of the study history: with the page's
+			// data missing (a failed load) every known word would be added.
+			await store.load(workspaceId, true);
+			const fresh = store.data;
+			if (store.status !== 'ready' || fresh === null) {
+				error = 'Could not load your cards to leave out the words you know. Try again.';
+				return;
+			}
+			const knownNow = knownEntries(fresh.cards, (id) => fresh.index.get(id) ?? null);
 			// Planned from the stored rows right now, so a retry adds only the rest.
 			const raw = await loadRawStudyData(workspaceId);
 			const named = { ...target, name: raw.decks.find((d) => d.id === target.id)?.name ?? target.name };
@@ -106,7 +115,7 @@
 				existingDeck: raw.decks.find((d) => d.id === target.id) ?? null,
 				rawCards: raw.cards,
 				now: new Date(),
-				exclude: known,
+				exclude: knownNow,
 				// Joined cards keep their older createdAt, so the copy studies by frequency.
 				settings: { newOrder: { by: 'frequency' }, exists: raw.deckSettings?.[target.id] !== undefined }
 			});
