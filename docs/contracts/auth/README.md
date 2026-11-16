@@ -20,6 +20,7 @@ examples of its throttling subset and a test checks that both agree on every cod
 | `mfa-setup.json` | Authenticator setup and confirm (secret and recovery codes shown once) |
 | `reset.json` | Reset link check and use (a login-shaped answer) |
 | `tokens.json` | Personal access tokens: create (the token is shown once), list, revoke one / all, and every refusal of the token gate |
+| `tokens-routes.json` | GENERATED from the route table: every route an access token may use, its scope and how a workspace-limited token fares (`any`, `query`, `refused`) |
 | `tokens-format.json` | The access token string: prefix, scanner regex, valid and invalid examples, hint, the stored SHA-256 of a fixed test string |
 
 ## Tokens

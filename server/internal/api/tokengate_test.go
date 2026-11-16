@@ -302,3 +302,128 @@ func TestTokenWithoutGatePrincipalIsAnonymous(t *testing.T) {
 		t.Errorf("requireAdminPrincipal = %v, %d", p, w.Code)
 	}
 }
+
+// v1TokenRoutes is the binding table of the plan (Task 7): every route an
+// access token may use, with its rule. A route may leave it only after its
+// handler was read and the reason recorded in the plan; none may join it
+// without a spec amendment, so the test pins the whole set.
+var v1TokenRoutes = map[string]tokenRule{
+	"GET /api/search":                   tokReadGlobal,
+	"GET /api/lookup":                   tokReadGlobal,
+	"GET /api/entries/{id}":             tokReadGlobal,
+	"GET /api/entries/{id}/chars":       tokReadGlobal,
+	"GET /api/segment/at":               tokReadGlobal,
+	"GET /api/languages":                tokReadGlobal,
+	"GET /api/characters":               tokReadGlobal,
+	"GET /api/dictionaries":             tokReadGlobal,
+	"GET /api/frequency-packs":          tokReadGlobal,
+	"GET /api/sentence-packs":           tokReadGlobal,
+	"GET /api/audio-packs":              tokReadGlobal,
+	"GET /api/audio-packs/{id}/credits": tokReadGlobal,
+	"GET /api/schemes":                  tokReadGlobal,
+	"GET /api/schemes/{id}/entries":     tokReadGlobal,
+	"GET /api/schemes/{id}/characters":  tokReadGlobal,
+	"GET /api/grammar":                  tokReadGlobal,
+	"GET /api/grammar/{pack}/{lesson}":  tokReadGlobal,
+	"POST /api/segment":                 tokReadGlobal,
+	"POST /api/entries/bases":           tokReadGlobal,
+
+	"GET /api/workspaces":                      tokReadAny,
+	"GET /api/sync/pull":                       tokReadAny,
+	"GET /api/me/time-zone":                    tokReadAny,
+	"GET /api/plugins":                         tokReadAny,
+	"GET /api/library/books/{id}":              tokReadAny,
+	"GET /api/library/books/{id}/chapters/{n}": tokReadAny,
+	"GET /api/library/books/{id}/bookmarks":    tokReadAny,
+	"GET /api/library/books/{id}/highlights":   tokReadAny,
+	"GET /api/audio/entries/{id}":              tokReadAny,
+	"GET /api/audio/clips/{file}":              tokReadAny,
+
+	"GET /api/events":                  tokReadWS,
+	"GET /api/stats/activity":          tokReadWS,
+	"GET /api/library/books":           tokReadWS,
+	"GET /api/plugins/{id}/data":       tokReadWS,
+	"GET /api/plugins/{id}/data/{key}": tokReadWS,
+
+	"POST /api/sync/push":                             tokWriteAny,
+	"POST /api/events/batch":                          tokWriteAny,
+	"PUT /api/entries/{id}":                           tokWriteAny,
+	"POST /api/entries/{id}/sentences":                tokWriteAny,
+	"POST /api/library/upload":                        tokWriteAny,
+	"PUT /api/library/books/{id}/position":            tokWriteAny,
+	"DELETE /api/library/books/{id}":                  tokWriteAny,
+	"POST /api/library/books/{id}/bookmarks":          tokWriteAny,
+	"PUT /api/library/books/{id}/bookmarks/{bid}":     tokWriteAny,
+	"DELETE /api/library/books/{id}/bookmarks/{bid}":  tokWriteAny,
+	"POST /api/library/books/{id}/highlights":         tokWriteAny,
+	"PUT /api/library/books/{id}/highlights/{hid}":    tokWriteAny,
+	"DELETE /api/library/books/{id}/highlights/{hid}": tokWriteAny,
+	"PUT /api/plugins/{id}/state":                     tokWriteAny,
+
+	"PUT /api/plugins/{id}/data/{key}":    tokWriteWS,
+	"DELETE /api/plugins/{id}/data/{key}": tokWriteWS,
+}
+
+// readPOSTs are the POST routes whose handlers change nothing and may be
+// tokRead.
+var readPOSTs = map[string]bool{"POST /api/segment": true, "POST /api/entries/bases": true}
+
+func TestTokenRulesAreTheV1Set(t *testing.T) {
+	s, _, _, _ := newGateServer(t)
+	got := map[string]tokenRule{}
+	for _, rt := range s.routes() {
+		if rt.token != noTok {
+			got[rt.pattern] = rt.token
+		}
+	}
+	for p, want := range v1TokenRoutes {
+		if got[p] != want {
+			t.Errorf("%s: rule %+v, the v1 table says %+v", p, got[p], want)
+		}
+	}
+	for p, r := range got {
+		if _, ok := v1TokenRoutes[p]; !ok {
+			t.Errorf("%s accepts access tokens (%+v) but is not in the v1 table: amend the spec first", p, r)
+		}
+	}
+}
+
+// The rule rows are consistent and no forbidden class has a rule (spec §3).
+func TestTokenRuleConsistency(t *testing.T) {
+	s, _, _, _ := newGateServer(t)
+	forbiddenPrefixes := []string{"/api/auth/", "/api/account/", "/api/account", "/api/admin/", "/api/ai/", "/api/journal/", "/api/workspaces/"}
+	forbidden := map[string]bool{
+		"PUT /api/me/time-zone": true, "POST /api/library/sources/{source}/import": true, "POST /api/audio/resolve": true,
+		"POST /api/workspaces": true, "GET /healthz": true,
+	}
+	for _, rt := range s.routes() {
+		method, path, _ := strings.Cut(rt.pattern, " ")
+		if rt.token == noTok {
+			continue
+		}
+		for _, p := range forbiddenPrefixes {
+			if strings.HasPrefix(path, p) {
+				t.Errorf("%s: %s routes never take an access token", rt.pattern, p)
+			}
+		}
+		if forbidden[rt.pattern] || strings.Contains(path, "{ticket}") || strings.Contains(path, "backup") || strings.Contains(path, "export") || strings.Contains(path, "restore") {
+			t.Errorf("%s is a forbidden class and has a token rule", rt.pattern)
+		}
+		switch rt.access {
+		case accAdmin, accAdminSignedIn, accSession:
+			t.Errorf("%s is %s and has a token rule", rt.pattern, rt.access)
+		}
+		if rt.token.scope == tokRead && method != http.MethodGet && !readPOSTs[rt.pattern] {
+			t.Errorf("%s: tokRead on a %s route outside the read-POST allowlist", rt.pattern, method)
+		}
+		if rt.token.scope == tokWrite && method == http.MethodGet {
+			t.Errorf("%s: tokWrite on a GET route", rt.pattern)
+		}
+		if rt.token.ws == wsGlobal && rt.token.scope != tokRead {
+			t.Errorf("%s: wsGlobal is only for reads", rt.pattern)
+		}
+		if rt.token.scope == tokNone {
+			t.Errorf("%s: a workspace rule without a scope", rt.pattern)
+		}
+	}
+}

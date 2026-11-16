@@ -266,6 +266,21 @@ Binding table (drop a row only after reading its handler and recording why; neve
 | tokWrite / zero | `POST /api/sync/push`, `POST /api/events/batch`, `PUT /api/entries/{id}`, `POST /api/entries/{id}/sentences`, `POST /api/library/upload`, `PUT /api/library/books/{id}/position`, `DELETE /api/library/books/{id}`, bookmark and highlight `POST`/`PUT`/`DELETE`, `PUT /api/plugins/{id}/state` |
 | tokWrite / wsQuery | `PUT /api/plugins/{id}/data/{key}`, `DELETE /api/plugins/{id}/data/{key}` |
 
+**Re-check after merging the collection branch (#67, #75), at build time.** The merge added two routes; each got a
+deliberate decision, and every other route outside the table above stays session-only (no rule):
+
+- `POST /api/entries/frequency-ranks` (#75, `accUser`): **no token rule.** Ruling: session-only — the handler reads
+  shared data only (read-only POST), but the spec's v1 set is binding and adding a route needs a spec amendment; a
+  script gets ranks from `GET /api/frequency-packs` + lookups — cost if wrong: one more row and a spec line later.
+- `GET /api/frequency-packs/{id}/top` (#75, `accUser`): **no token rule.** Ruling: session-only — the first call per
+  pack resolves a whole starter deck (expensive), which is why the route needs sign-in at all; a token's 120/min
+  budget would let a script keep it busy — cost if wrong: scripts cannot fetch starter decks.
+- Also deliberately session-only although they read only: `GET /api/library/sources` and its `search`/`browse`
+  (outbound fetches to remote libraries on the server's behalf), `GET /api/ai/*` and `GET /api/journal/*` (spec §3),
+  `GET /healthz` (public, but a token on it is still `403 token_not_allowed`: every route without a rule refuses).
+- No route was dropped from the table after reading its handlers. Noted: `GET /api/stats/activity` with a limited
+  token also returns the account's current `timeZone` (account-wide, like the wsGlobal overlays ruling).
+
 - [ ] Tests first: consistency — forbidden prefixes/classes (spec §3) have no rule; `tokRead` only on GET or
   the read-POST allowlist; `tokWrite` never on GET; `wsGlobal` only with `tokRead`; no rule on
   `accAdmin`/`accAdminSignedIn`/`accSession`; route walk with rules: `patR` through on reads and 403
