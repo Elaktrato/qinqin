@@ -126,13 +126,71 @@ export function sortedReviews(reviews: readonly ReviewEvent[]): ReviewEvent[] {
 	return [...reviews].sort((a, b) => instant(a.ts) - instant(b.ts) || byId(a, b));
 }
 
+/** The schedule of a card right after one of its reviews (`ts`: the review's real instant, epoch ms). */
+export interface TimelinePoint {
+	ts: number;
+	schedule: Schedule;
+}
+
+/**
+ * scheduleTimeline replays one card's valid reviews from an empty card and
+ * returns the schedule after each of them, in replay order (ts, then id);
+ * [] when the card has none. Its last point is scheduleFor's result, and
+ * the point before any instant is the replay of the reviews before it
+ * (feedInstants only looks back), so one replay answers every cutoff.
+ */
+export function scheduleTimeline(
+	cardId: string,
+	reviews: readonly ReviewEvent[],
+	w: readonly number[],
+	clock: StudyClock
+): TimelinePoint[] {
+	const scheduler = schedulerFor(w);
+	const history = sortedReviews(
+		reviews.filter((review) => isValidReview(review) && review.payload.cardId === cardId)
+	);
+	if (history.length === 0) return [];
+
+	const real = history.map((review) => instant(review.ts));
+	const fed = feedInstants(real, clock);
+	let card: Card = createEmptyCard(new Date(fed[0]));
+	return history.map((review, i) => {
+		card = scheduler.next(card, new Date(fed[i]), RATING[review.payload.grade]).card;
+		return {
+			ts: real[i],
+			schedule: {
+				due: new Date(clock.inverse(card.due.getTime())).toISOString(),
+				stability: card.stability,
+				difficulty: card.difficulty,
+				state: card.state as number
+			}
+		};
+	});
+}
+
+/**
+ * scheduleAt is the schedule replayed from the reviews with ts < cutoff:
+ * the last timeline point before it; null when there is none.
+ */
+export function scheduleAt(timeline: readonly TimelinePoint[], cutoffMs: number): Schedule | null {
+	let lo = 0;
+	let hi = timeline.length;
+	while (lo < hi) {
+		const mid = (lo + hi) >> 1;
+		if (timeline[mid].ts < cutoffMs) lo = mid + 1;
+		else hi = mid;
+	}
+	return lo === 0 ? null : timeline[lo - 1].schedule;
+}
+
 /**
  * scheduleFor replays one card's reviews from an empty card and returns
  * its derived schedule. `null` means the card has never been reviewed.
  * `now` is accepted for a stable "as of" API; the result depends only
  * on the history, so two calls with the same events agree exactly.
  * Reviews are fed to ts-fsrs on the study clock (vacation days removed)
- * and the due is mapped back (docs/contracts/scheduler/).
+ * and the due is mapped back (docs/contracts/scheduler/). It is the last
+ * point of scheduleTimeline (one replay code path).
  */
 export function scheduleFor(
 	cardId: string,
@@ -142,28 +200,7 @@ export function scheduleFor(
 	clock: StudyClock
 ): Schedule | null {
 	void now;
-	const scheduler = schedulerFor(w);
-
-	const history = sortedReviews(
-		reviews.filter((review) => isValidReview(review) && review.payload.cardId === cardId)
-	);
-	if (history.length === 0) return null;
-
-	const fed = feedInstants(
-		history.map((review) => instant(review.ts)),
-		clock
-	);
-	let card: Card = createEmptyCard(new Date(fed[0]));
-	history.forEach((review, i) => {
-		card = scheduler.next(card, new Date(fed[i]), RATING[review.payload.grade]).card;
-	});
-
-	return {
-		due: new Date(clock.inverse(card.due.getTime())).toISOString(),
-		stability: card.stability,
-		difficulty: card.difficulty,
-		state: card.state as number
-	};
+	return scheduleTimeline(cardId, reviews, w, clock).at(-1)?.schedule ?? null;
 }
 
 /** isDue reports whether a schedule has reached its due instant. */
