@@ -65,3 +65,15 @@ describe('the lookup history recorder follows the session (#72)', () => {
 		expect(vi.mocked(fetch).mock.calls.some(([u]) => String(u).includes('lookups'))).toBe(false);
 	});
 });
+
+describe('the lookup recorder follows the signed-in user (#72 review)', () => {
+	it('another user signing in (another tab, a token swap) drops the previous buffer', () => {
+		auth.set({ token: 'a', user: { id: 1, username: 'alice' } as never });
+		const r = lookupRecorder();
+		r.note(3, { entryId: 7, source: 'reader' });
+		auth.set({ token: 'a', user: { id: 1, username: 'alice' } as never }); // same user: kept
+		expect(r.countOf(3, 7)).toBe(1);
+		auth.set({ token: 'b', user: { id: 2, username: 'bob' } as never });
+		expect(r.countOf(3, 7)).toBe(0);
+	});
+});

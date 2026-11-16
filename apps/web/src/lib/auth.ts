@@ -57,6 +57,16 @@ export const restriction = derived(auth, ($auth): Restriction | null => $auth.us
 // The review outbox belongs to the user `me` named; null when signed out.
 auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null, $auth.token));
 
+// The lookup history's buffer and copies (memory only) belong to one user:
+// whenever the signed-in user changes (sign-out, another tab signing in as
+// someone else, a token swap) they are dropped.
+let lookupUser: number | null = null;
+auth.subscribe(($auth) => {
+	const id = $auth.user?.id ?? null;
+	if (id !== lookupUser) resetLookupRecorder();
+	lookupUser = id;
+});
+
 // A 401 anywhere clears the token in the client; mirror that in the store.
 // Its offline copies and receipts are worthless too (the worker deletes the partition itself).
 setUnauthorizedHandler(() => {
