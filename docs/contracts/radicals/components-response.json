@@ -7,6 +7,7 @@
  },
  "components": {
   "language": "ja",
+  "packs": [{"id": "ja-comp", "license": "CC BY-SA 3.0", "attribution": "Test fixture"}],
   "parts": [
    {"c": "二", "s": 2, "n": 2},
    {"c": "十", "s": 2, "n": 1},
@@ -23,7 +24,7 @@
    "話": ["言", "舌", "口", "千", "十"]
   }
  },
- "emptyComponents": {"language": "ja", "parts": [], "chars": {}},
+ "emptyComponents": {"language": "ja", "packs": [], "parts": [], "chars": {}},
  "charactersRow": {"i": 4, "c": "語", "s": 14, "k": 149},
  "charactersRowWithoutRadical": {"i": 5, "c": "〇"}
 }

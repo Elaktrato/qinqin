@@ -13,11 +13,21 @@ import (
 const componentsFormat = 1
 
 // componentsBody is GET /api/components: the union of the language's
-// active components packs (see components.Index).
+// active components packs (see components.Index) and the packs it is built
+// from, by pack id.
 type componentsBody struct {
 	Language string              `json:"language"`
+	Packs    []componentCredit   `json:"packs"`
 	Parts    []components.Part   `json:"parts"`
 	Chars    map[string][]string `json:"chars"`
+}
+
+// componentCredit is one pack the index is built from, with the credit a
+// client shows next to the parts (the full credits: /api/component-packs).
+type componentCredit struct {
+	ID          string `json:"id"`
+	License     string `json:"license"`
+	Attribution string `json:"attribution"`
 }
 
 // componentPackBody is one installed components pack as served by
@@ -48,7 +58,17 @@ func (c *componentsPayloads) get(ctx context.Context, sqlDB *sql.DB, language st
 			if err != nil {
 				return nil, err
 			}
-			body := componentsBody{Language: language, Parts: idx.Parts, Chars: idx.Chars}
+			packs, err := components.List(ctx, sqlDB)
+			if err != nil {
+				return nil, err
+			}
+			credits := []componentCredit{}
+			for _, p := range packs {
+				if p.Language == language {
+					credits = append(credits, componentCredit{ID: p.PackID, License: p.License, Attribution: p.Attribution})
+				}
+			}
+			body := componentsBody{Language: language, Packs: credits, Parts: idx.Parts, Chars: idx.Chars}
 			return encodePayload(body, version, fmt.Sprintf(`W/"comp%d-%s-%d-%s"`, componentsFormat, language, len(idx.Chars), version))
 		})
 }

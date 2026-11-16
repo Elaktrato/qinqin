@@ -5,6 +5,7 @@ import { api } from './client';
 import type { ComponentPack, ComponentPart, ComponentsResponse } from './types';
 
 export interface ComponentIndex {
+	packs: ComponentsResponse['packs'];
 	parts: ComponentPart[];
 	chars: Record<string, string[]>;
 }
@@ -22,9 +23,10 @@ export function clearComponentsCache(): void {
 }
 
 function decode(body: Partial<ComponentsResponse> | null): ComponentIndex {
+	const packs = Array.isArray(body?.packs) ? body.packs : [];
 	const parts = Array.isArray(body?.parts) ? body.parts : [];
 	const chars = body?.chars && typeof body.chars === 'object' && !Array.isArray(body.chars) ? body.chars : {};
-	return { parts, chars };
+	return { packs, parts, chars };
 }
 
 /**

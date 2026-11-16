@@ -28,7 +28,7 @@
 	const supported = $derived(lang !== null && usesHan(lang));
 
 	let chars = $state.raw<CharRow[] | null>(null);
-	const EMPTY_COMPONENTS: ComponentIndex = { parts: [], chars: {} };
+	const EMPTY_COMPONENTS: ComponentIndex = { packs: [], parts: [], chars: {} };
 	let comps = $state.raw<ComponentIndex>(EMPTY_COMPONENTS);
 	let loadError = $state('');
 	let showAllParts = $state(false);

@@ -30,6 +30,7 @@ const chars: CharRow[] = [
 	{ i: 9, c: '沽', s: 8, k: 85 }
 ];
 const components = {
+	packs: [],
 	parts: [
 		{ c: '氵', s: 3, n: 12 },
 		{ c: '口', s: 3, n: 40 },
@@ -165,6 +166,7 @@ describe('radical and part lookup page', () => {
 			count: chars.length + 2
 		});
 		vi.mocked(fetchComponents).mockResolvedValue({
+			packs: [],
 			parts: [...components.parts, { c: '⻖', s: 3, n: 30 }, { c: '⻏', s: 3, n: 20 }],
 			chars: { ...components.chars, 陽: ['⻖', '昜'], 都: ['者', '⻏'] }
 		});
@@ -187,7 +189,7 @@ describe('radical and part lookup page', () => {
 
 	it('a zh workspace without components shows no parts picker but a note', async () => {
 		workspace('zh-TW');
-		vi.mocked(fetchComponents).mockResolvedValue({ parts: [], chars: {} });
+		vi.mocked(fetchComponents).mockResolvedValue({ packs: [], parts: [], chars: {} });
 		render(Page);
 		await screen.findByRole('group', { name: 'Radicals' });
 		expect(fetchCharacters).toHaveBeenCalledWith('zh-TW');

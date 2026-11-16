@@ -24,6 +24,7 @@ describe('fetchComponents', () => {
 		expect(url.pathname).toBe('/api/components');
 		expect(url.searchParams.get('language')).toBe('ja');
 		expect(got.parts).toEqual(fixture.components.parts);
+		expect(got.packs).toEqual([{ id: 'ja-comp', license: 'CC BY-SA 3.0', attribution: 'Test fixture' }]);
 		expect(got.chars['語']).toEqual(['言', '口', '吾', '五', '二']);
 		await fetchComponents('JA');
 		expect(fetch).toHaveBeenCalledTimes(1);
@@ -44,7 +45,7 @@ describe('fetchComponents', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ error: 'x' }, 500));
 		await expect(fetchComponents('ja')).rejects.toBeTruthy();
 		vi.mocked(fetch).mockResolvedValueOnce(jsonResponse({ parts: 'nope', chars: null }));
-		expect(await fetchComponents('ja')).toEqual({ parts: [], chars: {} });
+		expect(await fetchComponents('ja')).toEqual({ packs: [], parts: [], chars: {} });
 		expect(fetch).toHaveBeenCalledTimes(2);
 	});
 });

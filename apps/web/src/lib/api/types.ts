@@ -176,6 +176,8 @@ export interface ComponentPart {
 // ComponentsResponse is GET /api/components?language= (docs/contracts/radicals).
 export interface ComponentsResponse {
 	language: string;
+	/** the packs the index is built from, by pack id */
+	packs: { id: string; license: string; attribution: string }[];
 	parts: ComponentPart[];
 	/** glyph -> the parts it contains */
 	chars: Record<string, string[]>;

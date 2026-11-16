@@ -42,7 +42,7 @@ A data pack carries content: a dictionary, a level list, a frequency list, sente
 
 An audio index has the header `kind	form	reading	file	license	attribution	source`; `kind` is `term` or `syllable`. Empty `license` and `attribution` cells inherit the manifest's; a manifest licence of `per file` requires every row to state its own.
 
-A components pack lists, per character, the parts the radical and part lookup offers. In `components.tsv` each line is one Han character, a tab and its parts separated by spaces; each part is one code point, duplicates are kept once, the character itself is dropped and at most 32 parts remain. `parts.tsv` gives part stroke counts (1 to 64). `#` starts a comment line, a malformed line fails the pack with its line number, and each file is capped at 8 MiB. Packs are matched by glyph, so they import in any order; the lookup uses the union of a language's packs (`GET /api/components`).
+A components pack lists, per character, the parts the radical and part lookup offers. In `components.tsv` each line is one Han character, a tab and its parts separated by spaces; each part is one code point, duplicates are kept once, the character itself is dropped and at most 32 parts remain. `parts.tsv` gives part stroke counts (1 to 64). `#` starts a comment line, a malformed line fails the pack with its line number, and each file is capped at 8 MiB. Packs are matched by glyph, so they import in any order; the lookup uses the union of a language's packs (`GET /api/components`, which also lists the packs it used with their licence and attribution).
 
 ## Installing
 

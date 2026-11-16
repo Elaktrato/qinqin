@@ -130,7 +130,7 @@ func TestComponentsBody(t *testing.T) {
 	}
 	// Another language is still empty.
 	_, body = getPlain(t, ts.URL, "/api/components?language=zh", nil)
-	if string(body) != `{"language":"zh","parts":[],"chars":{}}` {
+	if string(body) != `{"language":"zh","packs":[],"parts":[],"chars":{}}` {
 		t.Errorf("zh body = %s", body)
 	}
 }

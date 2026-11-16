@@ -38,11 +38,12 @@ format is 3 (the ETag carries `chars3-`). Example: `components-response.json` `c
 ## `GET /api/components?language=<code>` (`components-response.json`)
 
 Public, no per-user data: every caller gets the same bytes. Body
-`{language, parts: [{c, s, n}], chars: {glyph: [part, ...]}}`, the union of the language's active
-components packs. `n` is the number of distinct characters containing the part; `s` the largest non-zero
+`{language, packs: [{id, license, attribution}], parts: [{c, s, n}], chars: {glyph: [part, ...]}}`, the
+union of the language's active components packs; `packs` names them by pack id with their stated licence and
+attribution, so a client can credit the parts it shows. `n` is the number of distinct characters containing the part; `s` the largest non-zero
 stroke count a pack gives the part, 0 when none; `parts` sorted by `s` ascending with 0 last, then code
 point. A character in several packs keeps the parts of the first pack by pack id. A language without packs
-gives `{"language":"<code>","parts":[],"chars":{}}` (200); a malformed code 400. ETag, gzip and
+gives `{"language":"<code>","packs":[],"parts":[],"chars":{}}` (200); a malformed code 400. ETag, gzip and
 `Cache-Control: private, max-age=0, must-revalidate` as `/api/characters`. The service worker does not
 cache it (`bypass`). `GET /api/component-packs` lists the packs' credits like `/api/frequency-packs`.
 
