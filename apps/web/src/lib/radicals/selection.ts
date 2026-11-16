@@ -1,6 +1,6 @@
 // Edits of a radical lookup selection and the page's labels. Pure; the
 // /search/parts page and the entry page only wire these up.
-import { radicalChar, radicalNumber } from './kangxi';
+import { radicalChar, radicalForms, radicalNumber, radicalsListing } from './kangxi';
 import type { Selection } from './lookup';
 import { MAX_PARTS, partsHref } from './url';
 
@@ -40,6 +40,46 @@ export function typedSelection(sel: Selection, text: string, hasParts: boolean):
 	const n = radicalNumber(t);
 	if (n > 0 && (radicalChar(n) !== t || !hasParts)) return { ...sel, p: [...sel.p], r: n };
 	return sel.p.includes(t) ? sel : togglePart(sel, t);
+}
+
+export interface TypedOption {
+	key: string;
+	/** what picking it means, e.g. "radical 阜 (170)" or "part ⻖" */
+	name: string;
+	next: Selection;
+}
+
+/**
+ * typedOptions is what one typed character can mean. A form listed under
+ * several radicals (阝: 邑 163 on the right, 阜 170 on the left) offers each
+ * radical, and, when isPart says the language's parts hold them, the
+ * radicals' own shapes from the CJK Radicals Supplement (⻏, ⻖), so 陽 院 阿
+ * and 都 部 are all reachable; the page asks which. Anything else gives the
+ * single typedSelection result, nothing for text that is not one character.
+ */
+export function typedOptions(sel: Selection, text: string, isPart: (x: string) => boolean): TypedOption[] {
+	const t = text.trim();
+	if ([...t].length !== 1) return [];
+	const listing = radicalsListing(t);
+	if (listing.length > 1) {
+		const options: TypedOption[] = listing.map((n) => ({
+			key: `r:${n}`,
+			name: `radical ${radicalChar(n)} (${n})`,
+			next: { ...sel, p: [...sel.p], r: n }
+		}));
+		for (const n of listing) {
+			for (const f of radicalForms(n)) {
+				const c = f.codePointAt(0) ?? 0;
+				if (c >= 0x2e80 && c <= 0x2eff && isPart(f) && !sel.p.includes(f)) {
+					options.push({ key: `p:${f}`, name: `part ${f}`, next: togglePart(sel, f) });
+				}
+			}
+		}
+		return options;
+	}
+	// A radical's own character (口) counts as a part when it is a known part.
+	const next = typedSelection(sel, t, isPart(t));
+	return next === null ? [] : [{ key: 'one', name: t, next }];
 }
 
 /** statusLine is the live result count; '' before anything is picked. */

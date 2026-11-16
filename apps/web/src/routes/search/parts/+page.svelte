@@ -18,7 +18,8 @@
 		togglePart,
 		toggleRadical,
 		toggleStrokes,
-		typedSelection
+		typedOptions,
+		type TypedOption
 	} from '$lib/radicals/selection';
 	import { partsHref, selectionFromParams } from '$lib/radicals/url';
 	import { currentLanguage, workspacesLoaded } from '$lib/workspaces';
@@ -33,6 +34,8 @@
 	let showAllParts = $state(false);
 	let showAllResults = $state(false);
 	let typed = $state('');
+	// The meanings of an ambiguous typed character (阝), until one is picked.
+	let typedChoices = $state.raw<TypedOption[]>([]);
 	let seq = 0;
 
 	async function load(language: string): Promise<void> {
@@ -77,10 +80,16 @@
 
 	function submitTyped(event: SubmitEvent): void {
 		event.preventDefault();
-		const next = typedSelection(sel, typed, comps.parts.length > 0);
-		if (next === null) return;
+		const known = new Set(comps.parts.map((x) => x.c));
+		const options = typedOptions(sel, typed, (x) => known.has(x));
+		if (options.length === 0) return;
 		typed = '';
-		go(next);
+		if (options.length === 1) {
+			typedChoices = [];
+			go(options[0].next);
+		} else {
+			typedChoices = options;
+		}
 	}
 </script>
 
@@ -117,6 +126,24 @@
 			<button type="submit">Add</button>
 			<button type="button" class="clear" disabled={isEmpty(sel)} onclick={() => go({ p: [] })}>Clear</button>
 		</form>
+
+		{#if typedChoices.length > 0}
+			<div class="chips" role="group" aria-label="Which one?">
+				{#each typedChoices as option (option.key)}
+					<button
+						type="button"
+						class="chip"
+						lang={glyphLang}
+						onclick={() => {
+							typedChoices = [];
+							go(option.next);
+						}}
+					>
+						{option.name}
+					</button>
+				{/each}
+			</div>
+		{/if}
 
 		{#if !isEmpty(sel)}
 			<div class="chips selected" role="group" aria-label="Selected">

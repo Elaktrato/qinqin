@@ -74,3 +74,16 @@ export function radicalChar(n: number): string {
 export function isRadical(n: number): boolean {
 	return byN.has(n);
 }
+
+/** radicalsListing is every radical whose character or forms include char, in number order. */
+export function radicalsListing(char: string): number[] {
+	return rows
+		.filter((r) => r.c === char || r.forms.all.includes(char) || r.forms.zh.includes(char) || r.forms.ja.includes(char))
+		.map((r) => r.n);
+}
+
+/** radicalForms is every form of radical n (all, zh and ja). */
+export function radicalForms(n: number): string[] {
+	const r = byN.get(n);
+	return r ? [...r.forms.all, ...r.forms.zh, ...r.forms.ja] : [];
+}

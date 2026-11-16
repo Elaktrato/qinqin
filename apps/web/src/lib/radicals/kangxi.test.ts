@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { radicalNumber, radicalTable, radicalStrokes, radicalChar } from './kangxi';
+import { radicalNumber, radicalTable, radicalStrokes, radicalChar, radicalsListing } from './kangxi';
 
 // The app imports a copy (the web build cannot reach docs/); it must stay
 // byte-identical to the contract fixture.
@@ -45,6 +45,11 @@ describe('radicalNumber', () => {
 		expect(radicalNumber('月')).toBe(74);
 		expect(radicalNumber('⺼')).toBe(130);
 		expect(radicalNumber('阝')).toBe(163);
+		expect(radicalNumber('⻏')).toBe(163);
+		expect(radicalNumber('⻖')).toBe(170);
+		expect(radicalsListing('阝')).toEqual([163, 170]);
+		expect(radicalsListing('水')).toEqual([85]);
+		expect(radicalsListing('語')).toEqual([]);
 		expect(radicalNumber('語')).toBe(0);
 		expect(radicalNumber('')).toBe(0);
 	});

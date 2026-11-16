@@ -159,6 +159,32 @@ describe('radical and part lookup page', () => {
 		await waitFor(() => expect(cells()).toEqual(['沽']));
 	});
 
+	it('a typed 阝 asks which one and finds the left-side characters', async () => {
+		vi.mocked(fetchCharacters).mockResolvedValue({
+			chars: [...chars, { i: 20, c: '陽', s: 12, k: 170 }, { i: 21, c: '都', s: 11, k: 163 }],
+			count: chars.length + 2
+		});
+		vi.mocked(fetchComponents).mockResolvedValue({
+			parts: [...components.parts, { c: '⻖', s: 3, n: 30 }, { c: '⻏', s: 3, n: 20 }],
+			chars: { ...components.chars, 陽: ['⻖', '昜'], 都: ['者', '⻏'] }
+		});
+		render(Page);
+		const input = await screen.findByLabelText('Type a radical or part');
+		await fireEvent.input(input, { target: { value: '阝' } });
+		await fireEvent.submit(input.closest('form')!);
+		const which = screen.getByRole('group', { name: 'Which one?' });
+		expect(within(which).getAllByRole('button').map((b) => b.textContent?.trim())).toEqual([
+			'radical 邑 (163)',
+			'radical 阜 (170)',
+			'part ⻏',
+			'part ⻖'
+		]);
+		await fireEvent.click(within(which).getByRole('button', { name: 'part ⻖' }));
+		expect(page.url.searchParams.getAll('p')).toEqual(['⻖']);
+		await waitFor(() => expect(cells()).toEqual(['陽']));
+		expect(screen.queryByRole('group', { name: 'Which one?' })).toBeNull();
+	});
+
 	it('a zh workspace without components shows no parts picker but a note', async () => {
 		workspace('zh-TW');
 		vi.mocked(fetchComponents).mockResolvedValue({ parts: [], chars: {} });

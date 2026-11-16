@@ -59,7 +59,7 @@ func TestTable(t *testing.T) {
 func TestNumber(t *testing.T) {
 	for char, want := range map[string]int{
 		"水": 85, "氵": 85, "讠": 149, "言": 149, "訁": 149, "竜": 212, "月": 74, "⺼": 130,
-		"阝": 163, "x": 0, "": 0, "語": 0, "水水": 0,
+		"阝": 163, "⻏": 163, "⻖": 170, "x": 0, "": 0, "語": 0, "水水": 0,
 	} {
 		if got := Number(char); got != want {
 			t.Errorf("Number(%q) = %d, want %d", char, got, want)

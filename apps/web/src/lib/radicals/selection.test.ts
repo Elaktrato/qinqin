@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	entryRadicalLinks,
 	selectionChips,
+	typedOptions,
 	statusLine,
 	strokesLabel,
 	togglePart,
@@ -83,5 +84,28 @@ describe('selectionChips', () => {
 			{ key: 's', label: '8 strokes', name: '8 strokes', next: { r: 85, p: ['口', '吾'] } }
 		]);
 		expect(selectionChips({ p: [] })).toEqual([]);
+	});
+});
+
+describe('typedOptions', () => {
+	const known = new Set(['⻖', '⻏', '口']);
+	const isPart = (x: string) => known.has(x);
+	it('a form listed under two radicals offers both radicals and their part shapes', () => {
+		expect(typedOptions({ p: [] }, '阝', isPart).map((o) => [o.name, o.next])).toEqual([
+			['radical 邑 (163)', { r: 163, p: [] }],
+			['radical 阜 (170)', { r: 170, p: [] }],
+			['part ⻏', { p: ['⻏'] }],
+			['part ⻖', { p: ['⻖'] }]
+		]);
+		expect(typedOptions({ p: [] }, '阝', () => false).map((o) => o.name)).toEqual(['radical 邑 (163)', 'radical 阜 (170)']);
+	});
+	it('anything else is the one typedSelection result', () => {
+		expect(typedOptions({ p: [] }, '氵', isPart).map((o) => o.next)).toEqual([{ r: 85, p: [] }]);
+		expect(typedOptions({ p: [] }, '口', isPart).map((o) => o.next)).toEqual([{ p: ['口'] }]);
+		expect(typedOptions({ p: [] }, '口木', isPart)).toEqual([]);
+	});
+	it('the positional 阝 shapes map to their own radicals', () => {
+		expect(typedOptions({ p: [] }, '⻖', () => false).map((o) => o.next)).toEqual([{ r: 170, p: [] }]);
+		expect(typedOptions({ p: [] }, '⻏', () => false).map((o) => o.next)).toEqual([{ r: 163, p: [] }]);
 	});
 });

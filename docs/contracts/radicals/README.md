@@ -16,7 +16,14 @@ standard shapes (竜 for 212).
 
 - **Number(char)**: the `n` whose `c` is `char`; otherwise the lowest `n` that lists `char` in any of its
   forms (`all`, `zh`, `ja`); otherwise 0. So 月 → 74 (its own row wins over the form of 130) and 阝 → 163
-  (listed under 163 and 170).
+  (listed under 163 and 170). The side-specific shapes of the CJK Radicals Supplement are listed too: ⻏
+  (U+2ECF, right) under 163 and ⻖ (U+2ED6, left) under 170, so each maps to its own radical; KanjiVG names
+  the parts that way.
+- **A typed character** (the page's text box): a form listed under several radicals (阝) offers each of
+  those radicals and, when the language's components hold them, their Radicals Supplement shapes as parts
+  (⻏, ⻖); the user picks one. Otherwise a radical form that is not a radical's own character (氵, 讠) picks
+  the radical, a radical's own character (口) is a part when the components list it as a part, else the
+  radical, and any other character is a part.
 - A language's table shows `forms.all` plus `forms.<primary subtag>` (zh-TW uses `zh`).
 - The Go package `server/internal/radicals` embeds a byte-identical copy of this file; the web module
   `apps/web/src/lib/radicals/kangxi.ts` imports it.
