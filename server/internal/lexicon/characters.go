@@ -386,6 +386,10 @@ func (r *CharacterRow) addVariants(raw string) error {
 	return nil
 }
 
+// IsHan reports whether s is one Han character that belongs in a
+// character grid (see isHan); the components packs use the same rule.
+func IsHan(s string) bool { return isHan(s) }
+
 // isHan reports whether s is one Han character that belongs in a grid.
 // CC-CEDICT has a few single-letter lines (A, B, □, ○) that are character
 // entries with a pinyin reading, and unicode.Han also holds the radical
