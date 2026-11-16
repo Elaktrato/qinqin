@@ -37,6 +37,8 @@ import {
   parseLimitRow,
   type LimitPair,
 } from "./limits";
+import { pendingReviews } from "./events";
+import { outboxUser } from "./outboxUser";
 import {
   CARD_KINDS,
   type Deck,
@@ -450,6 +452,24 @@ function reviewsOf(
 }
 
 /**
+ * withQueued adds the signed-in user's reviews that wait in the outbox to the
+ * log (deduplicated by id), so a card reviewed offline - or just before a
+ * reload - is not shown as due again before the review has been sent. Another
+ * user's queue, or any queue while no user is known, is never read.
+ */
+function withQueued(
+  workspaceId: number,
+  events: readonly StudyEvent[],
+): readonly StudyEvent[] {
+  const user = outboxUser();
+  if (user === null) return events;
+  const queued = pendingReviews(user, workspaceId);
+  if (queued.length === 0) return events;
+  const known = new Set(events.map((event) => event.id));
+  return [...events, ...queued.filter((event) => !known.has(event.id))];
+}
+
+/**
  * loadStudyData is THE read of a workspace's study state for anything
  * that shows, counts or schedules cards: decks, cards and the review
  * history, with duplicate cards (one word added on two devices before
@@ -481,7 +501,7 @@ export async function loadStudyDataWith(
   ]);
   const { cards, reviews, merged } = canonicalCards(
     data.cards,
-    reviewsOf(workspaceId, events),
+    reviewsOf(workspaceId, withQueued(workspaceId, events)),
   );
   return {
     decks: data.decks,

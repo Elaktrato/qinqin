@@ -5,6 +5,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock("$app/navigation", () => ({ goto }));
 
 import { workspaces } from "../workspaces";
+import { setOutboxUser } from "./outboxUser";
 import { gradeItem } from "./grade";
 import type { StudyEvent } from "../events";
 import type { Deck, StudyCard } from "./types";
@@ -1766,5 +1767,75 @@ describe("limit rows", () => {
       url("deck:d1"),
       url("limits:deck:d1"),
     ]);
+  });
+});
+
+describe("queued reviews count in the loaded history", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(WORKSPACE_ID);
+    setOutboxUser(1);
+  });
+  afterEach(() => {
+    setOutboxUser(null);
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  function queue(userId: number, event: StudyEvent): void {
+    const raw = localStorage.getItem("qinqin.study.pending.v2");
+    const items = raw === null ? [] : JSON.parse(raw);
+    items.push({ userId, queuedAt: new Date().toISOString(), event });
+    localStorage.setItem("qinqin.study.pending.v2", JSON.stringify(items));
+  }
+
+  const word = card("card-1", 42, ["general"], "2026-01-02T00:00:00Z", "猫");
+  const pull = { pluginData: [pluginRow("card:card-1", word)] };
+
+  it("a queued review is part of the history before it is sent", async () => {
+    respondPull(pull, []);
+    queue(1, reviewEvent("Q1", "card-1"));
+
+    const data = await loadStudyData();
+
+    expect(data.reviews.map((r) => r.id)).toEqual(["Q1"]);
+  });
+
+  it("a queued review already on the server appears once", async () => {
+    respondPull(pull, [reviewEvent("Q1", "card-1")]);
+    queue(1, reviewEvent("Q1", "card-1"));
+
+    const data = await loadStudyData();
+
+    expect(data.reviews.map((r) => r.id)).toEqual(["Q1"]);
+  });
+
+  it("another user's queued review is ignored", async () => {
+    respondPull(pull, []);
+    queue(2, reviewEvent("Q2", "card-1"));
+
+    const data = await loadStudyData();
+
+    expect(data.reviews).toEqual([]);
+  });
+
+  it("another workspace's queued review is ignored", async () => {
+    respondPull(pull, []);
+    queue(1, reviewEvent("Q3", "card-1", WORKSPACE_ID + 1));
+
+    const data = await loadStudyData();
+
+    expect(data.reviews).toEqual([]);
+  });
+
+  it("nothing is merged while no user is known", async () => {
+    respondPull(pull, []);
+    queue(1, reviewEvent("Q1", "card-1"));
+    setOutboxUser(null);
+
+    const data = await loadStudyData();
+
+    expect(data.reviews).toEqual([]);
   });
 });
