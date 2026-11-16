@@ -52,7 +52,8 @@ type server struct {
 	sweepCtx   context.Context
 	sweepEvery time.Duration
 
-	chars charactersCache // GET /api/characters payloads
+	chars charactersCache    // GET /api/characters payloads
+	comps componentsPayloads // GET /api/components payloads
 
 	freqTop       freq.TopCache // GET /api/frequency-packs/{id}/top: resolved starter decks per pack content
 	freqTopBodies starterBodies // and its answers per pack, size and lexicon version
@@ -264,6 +265,7 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/languages/{code}", s.handleDeleteLanguage, accAdmin, nil, noTok},
 		{"GET /api/admin/languages/usage", s.handleLanguageUsage, accAdmin, nil, noTok},
 		{"GET /api/characters", s.handleListCharacters, accPublic, nil, tokReadGlobal},
+		{"GET /api/components", s.handleListComponents, accPublic, nil, tokReadGlobal},
 		{"POST /api/events/batch", s.handleEventBatch, accUser, nil, tokWriteAny},
 		{"GET /api/events", s.handleListEvents, accUser, nil, tokReadWS},
 		{"GET /api/stats/activity", s.handleActivity, accUser, nil, tokReadWS},
@@ -271,6 +273,7 @@ func (s *server) routes() []route {
 		{"POST /api/admin/dictionaries", s.handleInstallDictionary, accAdmin, nil, noTok},
 		{"DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary, accAdmin, nil, noTok},
 		{"GET /api/frequency-packs", s.handleListFrequencyPacks, accPublic, nil, tokReadGlobal},
+		{"GET /api/component-packs", s.handleListComponentPacks, accPublic, nil, tokReadGlobal},
 		{"GET /api/frequency-packs/{id}/top", s.handleFrequencyTop, accUser, nil, noTok},
 		{"GET /api/grammar", s.handleListGrammar, accPublic, nil, tokReadGlobal},
 		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil, tokReadGlobal},

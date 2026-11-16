@@ -47,6 +47,16 @@
 			"workspace": "any"
 		},
 		{
+			"pattern": "GET /api/component-packs",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/components",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
 			"pattern": "GET /api/dictionaries",
 			"scope": "read",
 			"workspace": "any"

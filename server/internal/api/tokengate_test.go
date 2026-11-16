@@ -315,6 +315,8 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/segment/at":               tokReadGlobal,
 	"GET /api/languages":                tokReadGlobal,
 	"GET /api/characters":               tokReadGlobal,
+	"GET /api/components":               tokReadGlobal, // #71: public shared data (amendment at merge)
+	"GET /api/component-packs":          tokReadGlobal, // #71: public shared data (amendment at merge)
 	"GET /api/dictionaries":             tokReadGlobal,
 	"GET /api/frequency-packs":          tokReadGlobal,
 	"GET /api/sentence-packs":           tokReadGlobal,

@@ -278,6 +278,11 @@ deliberate decision, and every other route outside the table above stays session
 - Also deliberately session-only although they read only: `GET /api/library/sources` and its `search`/`browse`
   (outbound fetches to remote libraries on the server's behalf), `GET /api/ai/*` and `GET /api/journal/*` (spec §3),
   `GET /healthz` (public, but a token on it is still `403 token_not_allowed`: every route without a rule refuses).
+- **Amendment at the second merge (#71 radicals, #77 notes):** `GET /api/components` and `GET /api/component-packs`
+  (#71, `accPublic`) are **`tokRead / wsGlobal`**, added to the pinned set and to spec §3. Ruling: both are public
+  reads of shared pack data (the handlers read no user or workspace data), exactly like `GET /api/characters` and
+  `GET /api/frequency-packs`; anyone may call them without a token, so accepting one exposes nothing, while refusing
+  it would make a script drop its header for two routes — cost if wrong: none known. #77 added no server route.
 - No route was dropped from the table after reading its handlers. Noted: `GET /api/stats/activity` with a limited
   token also returns the account's current `timeZone` (account-wide, like the wsGlobal overlays ruling).
 

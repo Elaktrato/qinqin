@@ -94,7 +94,8 @@ type tokenRule struct {
 - **The v1 set** (the plan's table is binding; the builder may drop a route after reading its
   handler, never add one without a spec amendment): dictionary and content reads (`/api/search`,
   `/api/lookup`, `/api/entries/{id}`, `/api/entries/{id}/chars`, `/api/segment/at`, languages,
-  characters, dictionaries, frequency/sentence/audio packs, schemes, grammar) as `tokRead/wsGlobal`;
+  characters, components and component packs (amended at the #71 merge), dictionaries,
+  frequency/sentence/audio packs, schemes, grammar) as `tokRead/wsGlobal`;
   `GET /api/workspaces`, `GET /api/sync/pull`, library books/chapters/bookmarks/highlights reads,
   audio entries and clips, `GET /api/plugins`, `GET /api/me/time-zone` as `tokRead`;
   `GET /api/events`, `GET /api/stats/activity`, `GET /api/library/books`, plugin data reads as

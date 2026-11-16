@@ -1,0 +1,11 @@
+{
+  "id": "kanjivg-components",
+  "name": "KanjiVG components",
+  "version": "r20260714",
+  "type": "components",
+  "language": "ja",
+  "license": "CC BY-SA 3.0",
+  "attribution": "KanjiVG © Ulrich Apel (https://kanjivg.tagaini.net); component index derived by qinqin",
+  "notice": "A component index derived from [KanjiVG](https://kanjivg.tagaini.net) r20260714 (commit d95a976): for each kanji, the elements its stroke-order drawing is built from, at every depth, with part stroke counts taken from the KanjiVG drawings. The elements are graphical, not etymological.\n\nKanjiVG is copyright Ulrich Apel and licensed CC BY-SA 3.0; this derived index is shared under the same licence, see [the licence](https://creativecommons.org/licenses/by-sa/3.0/).",
+  "format": "components-tsv"
+}

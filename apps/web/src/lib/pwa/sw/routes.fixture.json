@@ -200,6 +200,14 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/component-packs",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/components",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/dictionaries",
 		"access": "public"
 	},

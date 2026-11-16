@@ -81,6 +81,8 @@ import type { Run } from '$lib/study/vacation';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { newUlid } from '$lib/ulid';
 	import { workspaces } from '$lib/workspaces';
+	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
+	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
 	const GRADE_LABELS: { grade: ReviewGrade; label: string }[] = [
@@ -241,6 +243,19 @@ import type { Run } from '$lib/study/vacation';
 	let audioSettled = $state(false);
 	let entryError = $state('');
 	let gradeError = $state('');
+	// The learner's notes of this workspace (entry id -> text), loaded once per
+	// session next to the start and never awaited by it; empty while loading,
+	// after a failure, when the workspace switched them off, and offline.
+	let sessionNotes = $state.raw<Map<number, string>>(new Map());
+
+	async function loadSessionNotes(workspaceId: number, seq: number): Promise<void> {
+		try {
+			const [notes, cfg] = await Promise.all([loadNotes(workspaceId), loadNoteCfg(workspaceId)]);
+			if (seq === requestSeq && cfg.onAnswer) sessionNotes = notes;
+		} catch {
+			// Notes are optional help: a failed load shows none.
+		}
+	}
 	let grading = $state(false);
 
 	// The card being shown and how far the learner got with it. `done`
@@ -379,11 +394,13 @@ import type { Run } from '$lib/study/vacation';
 		grading = false;
 		pendingEntryId = null;
 
+		sessionNotes = new Map();
 		if (workspaceId === null) {
 			noWorkspace = true;
 			loading = false;
 			return;
 		}
+		if ($offline.online) void loadSessionNotes(workspaceId, seq);
 
 		try {
 			// Queued reviews must land before the history is read: the
@@ -1166,6 +1183,8 @@ import type { Run } from '$lib/study/vacation';
 						/>
 					{/if}
 				{/key}
+
+				<NoteAnswer text={done && !offlineSession ? sessionNotes.get(current.item.entryId) : undefined} />
 
 				{#if gradeError}
 					<p class="error" role="alert">{gradeError}</p>

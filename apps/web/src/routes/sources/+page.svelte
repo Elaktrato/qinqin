@@ -2,7 +2,8 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
-	import type { Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
+	import type { ComponentPack, Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
+	import { getComponentPacks } from '$lib/api/components';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
 	import { webPlugins } from '$lib/plugins';
@@ -12,6 +13,7 @@
 	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
 	import { listSentencePacks, type SentencePack } from '$lib/api/packs';
 	import {
+		componentsSection,
 		creditView,
 		packTable,
 		pluginCredits,
@@ -100,6 +102,21 @@
 		}
 	}
 
+	// The Character components section exists only while a pack is installed.
+	let componentPacks = $state<ComponentPack[]>([]);
+	let componentsError = $state('');
+	const components = $derived(componentsSection(componentPacks, componentsError));
+
+	async function loadComponents(): Promise<void> {
+		componentsError = '';
+		try {
+			componentPacks = await getComponentPacks();
+		} catch (err) {
+			componentPacks = [];
+			componentsError = message(err, 'Could not load character component credits.');
+		}
+	}
+
 	let schemes = $state<Scheme[]>([]);
 	let schemesLoading = $state(true);
 	let schemesError = $state('');
@@ -148,6 +165,7 @@
 		loadSentences();
 		loadAudio();
 		loadSchemes();
+		loadComponents();
 	});
 </script>
 
@@ -376,6 +394,48 @@
 				</table>
 			</div>
 			{@render notes(sentencesTable)}
+		</section>
+	{/if}
+
+	{#if components.show}
+		<section>
+			<h2 id="sources-components">Character components</h2>
+			{#if componentsError}
+				<p class="error" role="alert">{componentsError}</p>
+				<button type="button" onclick={loadComponents}>Retry</button>
+			{:else}
+				<div class="table-wrap">
+					<table aria-labelledby="sources-components">
+						<thead>
+							<tr>
+								<th scope="col">Name</th>
+								{@render noteHeader(components.table)}
+								<th scope="col">Language</th>
+								<th scope="col">Version</th>
+								<th scope="col">License</th>
+								<th scope="col">Attribution</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each components.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(components.table, row.noteId, row.name)}
+									<td title={row.language}>{languageLabel(row.language)}</td>
+									<td>{row.version}</td>
+									<td>{@render cell(row.license, row.language)}</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{@render notes(components.table)}
+			{/if}
+			<p class="notice">
+				Character components power the radical and part lookup. Only decompositions under a
+				redistributable licence are bundled; others stay local to an instance.
+			</p>
 		</section>
 	{/if}
 

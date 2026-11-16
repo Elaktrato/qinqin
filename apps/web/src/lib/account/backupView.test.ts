@@ -28,6 +28,22 @@ describe('report sentences', () => {
 		expect(needsDropAck(r)).toBe(true);
 		expect(needsDropAck(report())).toBe(false);
 	});
+	it('names the personal notes of an unresolved word', () => {
+		const r = report({
+			unresolved: {
+				entries: [
+					{ written: '马', language: 'zh', cards: 1, overlays: 0, notes: 1 },
+					{ written: '牛', language: 'zh', cards: 0, overlays: 0, notes: 2 },
+					// an older server sends no notes count: read as 0
+					{ written: '羊', language: 'zh', cards: 1, overlays: 1 }
+				],
+				entryCount: 3,
+				sentences: 0,
+				droppedRows: 6
+			}
+		});
+		expect(unresolvedLines(r)).toEqual(['马 (1 card, 1 note)', '牛 (2 notes)', '羊 (1 card, 1 edit)']);
+	});
 });
 
 describe('canApply', () => {
