@@ -523,6 +523,49 @@ killed, scratch copy, data dir and driver deleted.
   backup package gate (Task 4) passed on its own.
 - No route changed: route walk, PWA route fixture and `docs/wiki/API-Routes.md` untouched.
 
+### Open follow-up: the segment route budgets
+
+The two missed budgets (one 4 000-code-point chunk ≤ 400 ms, a 30 000-code-point chapter ≤ 2 s) are the
+cost of the existing `POST /api/segment` (#78): the same chunk without `readings` took as long. This item
+did not change the route; speeding up segmentation (or a server-side tally) is an open follow-up.
+
+### Review fixes (the one fix wave)
+
+Base: `git merge --no-ff feature/v0.3.0-stretch` (57941b1, brings #71; the only conflict was the area
+table of `docs/contracts/overview.md`, both rows kept). Each fix test-first unless noted:
+
+1. **Selection survived a chapter or book change** (cca2fd8). `WordsPanel` takes `resetKey`
+   (`bookId:chapter:variant:workspace`); a change clears the selection, result, Undo, paging and scope;
+   an add or mark that finishes after the key changed shows nothing. Actions use only selected words still
+   in the list. Two panel tests and a BookView chapter-change test failed first (the latter against a fixed
+   key); a BookView book-switch test passed before the fix too (the panel remounts while the new book
+   loads) and stays as a guard.
+2. **Index of the previous workspace / 0 % flash** (with 3, 7, 8 in 128a1da). On a workspace change the
+   index and decks reset; the panel shows "Loading your cards…" (no figure, no actions) until the index
+   is loaded, and "Could not load your cards…" with Try again on failure.
+3. **Overlapping reloads.** `latestLoad.ts` applies only the newest load and turns reloads asked for during
+   a batch into one reload after it; the panel's add and mark (and Undo) run in a batch. Unit tests, and a
+   BookView test: a 250-word add (2 pushes) reloads the cards once.
+4. **Clock skew in bulk marks** (a9d044a). `setKnownMarks` reads `loadRawStudyData` first and stamps each
+   row after the server's time for its key (`knownAt`), as `addWords` does; test with a server time in
+   2099.
+5. **O(P²) publication** and 6. **part count predicate** (7970dce). `total` is computed once per run with
+   the loader's `trim() !== ''`; paragraphs of a chunk are published together (one microtask per chunk);
+   `matches` are copied out only when the words or the panel want them. 4 000 one-word paragraphs: 2 502 ms
+   before, 64 ms after; a U+FEFF / U+3000 paragraph is no longer a part that never loads.
+7. **Index only for zh/ja**: a BookView test with an English book (no `loadStudyHistory` call).
+9. **User-global `known:` row** (09d9e27): dropped on restore and counted; `remap.json` case, backup README.
+12. **Linear walk** (beea06a): word ranges are sorted once and walked with one pointer. A refactor: the new
+    500-word out-of-order test passes before and after; the existing plan and render tests are unchanged.
+    `splitRunsByHighlights`' own per-segment `cuts.find` (#78) is left as it is.
+
+Gates after the fixes: web `check` 0 (1 184 files, 0 errors), `test` 0 (348 files, 5 441 tests),
+`build` 0, Node 26 vitest 0 (348 files, 5 441 tests); backup gate 0; full Go `./...` once (proxy unset, under the lock): `gofmt -l` empty, `go vet` clean, 36 packages ok, two
+failures: the known IPv6 `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`, and
+`library/sources/aozora` `TestAozoraCatalogWaiterHonorsContext` with "TempDir RemoveAll cleanup: directory
+not empty" (a cleanup race in code this branch never touched; the package then passed `-count=5`). Not
+investigated further.
+
 ### Not verified
 
 - Nothing was seen in a browser: the underline/tint rendering (background layers, the 0.12em gap, a
