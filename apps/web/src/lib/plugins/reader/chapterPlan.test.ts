@@ -60,3 +60,49 @@ describe('planParagraph', () => {
 		expect(hidden[0].ruby).toBeUndefined();
 	});
 });
+
+describe('planParagraph with word states', () => {
+	const words = (plan: ReturnType<typeof planParagraph>) =>
+		plan.map((g) => g.segs.map((s) => [s.text, s.word ?? null, s.wordEnd ?? false]));
+
+	it('without words the plan is unchanged', () => {
+		const runs: Run[] = [{ text: '漢字', ruby: 'かんじ' }, { text: 'を読む' }];
+		const pieces = [dict(3, 4, 'よ')];
+		for (const hls of [[], [hl(1, 1, 3)]]) {
+			expect(planParagraph(runs, hls, pieces, true, [])).toEqual(planParagraph(runs, hls, pieces, true));
+			expect(planParagraph(runs, hls, pieces, true, undefined)).toEqual(planParagraph(runs, hls, pieces, true));
+		}
+	});
+
+	it('cuts at word edges and marks the last piece of each word', () => {
+		const plan = planParagraph([{ text: '你好世界' }], [], [], true, [
+			{ start: 0, end: 2, state: 'new' },
+			{ start: 2, end: 4, state: 'learning' }
+		]);
+		expect(words(plan)).toEqual([[['你好', 'new', true], ['世界', 'learning', true]]]);
+	});
+
+	it('a ja reading piece inside a new word: both pieces new, only the last ends the word', () => {
+		const plan = planParagraph([{ text: '食べました' }], [], [dict(0, 1, 'た')], true, [{ start: 0, end: 5, state: 'new' }]);
+		expect(words(plan)).toEqual([[['食', 'new', false], ['べました', 'new', true]]]);
+		expect(plan[0].segs[0].rt).toBe('た');
+	});
+
+	it('a word across two runs keeps its state on both', () => {
+		const plan = planParagraph([{ text: '你' }, { text: '好世' }], [], [], true, [{ start: 0, end: 2, state: 'new' }]);
+		expect(words(plan)).toEqual([[['你', 'new', false]], [['好', 'new', true], ['世', null, false]]]);
+	});
+
+	it('a highlight over half a word drops that word, not its neighbour', () => {
+		const plan = planParagraph([{ text: '你好世界' }], [hl(1, 1, 2)], [], true, [
+			{ start: 0, end: 2, state: 'new' },
+			{ start: 2, end: 4, state: 'new' }
+		]);
+		expect(words(plan)).toEqual([[['你', null, false], ['好', null, false], ['世界', 'new', true]]]);
+	});
+
+	it('plain text between words gets no state', () => {
+		const plan = planParagraph([{ text: '你，好' }], [], [], true, [{ start: 2, end: 3, state: 'learning' }]);
+		expect(words(plan)).toEqual([[['你，', null, false], ['好', 'learning', true]]]);
+	});
+});
