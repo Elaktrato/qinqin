@@ -3,6 +3,7 @@
 // fields are kept verbatim so another feature's fields (or a newer
 // client's) survive a read-modify-write.
 
+import { parseNewOrder, type NewOrder } from './newOrder';
 import { OPT_IN_KINDS, type OptInKind } from './types';
 
 export const DECKCFG_PREFIX = 'deckcfg:';
@@ -10,6 +11,8 @@ export const DECKCFG_PREFIX = 'deckcfg:';
 export interface DeckSettings {
 	deckId: string;
 	cardTypes: OptInKind[];
+	/** The order of new cards (#75); absent, null or malformed = added. */
+	newOrder?: NewOrder | null;
 	/** Every field this version does not know, verbatim. */
 	extra: Record<string, unknown>;
 }
@@ -30,13 +33,15 @@ export function cleanCardTypes(list: readonly unknown[]): OptInKind[] {
 /** parseDeckSettings reads a row; the key must be `deckcfg:<deckId>`. */
 export function parseDeckSettings(key: string, raw: unknown): DeckSettings | null {
 	if (!isRecord(raw)) return null;
-	const { deckId, cardTypes, updatedAt: _updatedAt, ...extra } = raw;
+	const { deckId, cardTypes, newOrder, updatedAt: _updatedAt, ...extra } = raw;
 	void _updatedAt;
 	if (typeof deckId !== 'string' || deckId === '') return null;
 	if (key !== deckSettingsKey(deckId)) return null;
+	const order = parseNewOrder(newOrder);
 	return {
 		deckId,
 		cardTypes: Array.isArray(cardTypes) ? cleanCardTypes(cardTypes) : [],
+		...(order === null ? {} : { newOrder: order }),
 		extra
 	};
 }
@@ -45,10 +50,12 @@ export function serializeDeckSettings(
 	settings: DeckSettings,
 	updatedAt: string
 ): Record<string, unknown> {
+	const order = parseNewOrder(settings.newOrder);
 	return {
 		...settings.extra,
 		deckId: settings.deckId,
 		cardTypes: cleanCardTypes(settings.cardTypes),
+		...(order === null ? {} : { newOrder: order }),
 		updatedAt
 	};
 }

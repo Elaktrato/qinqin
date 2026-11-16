@@ -7,6 +7,7 @@ import {
 	serializeDeckSettings,
 	type DeckSettings
 } from './deckSettings';
+import deckcfgFixture from '../../../../../docs/contracts/frequency/deckcfg-new-order.json';
 
 describe('parseDeckSettings', () => {
 	it('round-trips and keeps unknown fields', () => {
@@ -48,5 +49,45 @@ describe('enabledKinds', () => {
 		expect([...enabledKinds(settings, ['a'])]).toEqual(['reverse']);
 		expect([...enabledKinds(settings, ['a', 'b', 'zz'])].sort()).toEqual(['cloze', 'reverse']);
 		expect(enabledKinds(undefined, ['a']).size).toBe(0);
+	});
+});
+
+describe('newOrder field (frequency/deckcfg-new-order.json)', () => {
+	it.each(deckcfgFixture.cases)('$name', (c) => {
+		const parsed = parseDeckSettings('deckcfg:d1', c.row)!;
+		expect(parsed.newOrder ?? null).toEqual(c.newOrder);
+		expect(parsed.extra).toEqual(c.extra);
+	});
+
+	it('serialize writes newOrder only when set', () => {
+		const base: DeckSettings = { deckId: 'd1', cardTypes: ['reverse'], extra: { goal: 1 } };
+		expect(serializeDeckSettings(base, 't')).toEqual({
+			goal: 1,
+			deckId: 'd1',
+			cardTypes: ['reverse'],
+			updatedAt: 't'
+		});
+		expect(serializeDeckSettings({ ...base, newOrder: null }, 't')).not.toHaveProperty('newOrder');
+		expect(
+			serializeDeckSettings({ ...base, newOrder: { by: 'level', packId: 'hsk-words' } }, 't')
+		).toEqual({
+			goal: 1,
+			deckId: 'd1',
+			cardTypes: ['reverse'],
+			newOrder: { by: 'level', packId: 'hsk-words' },
+			updatedAt: 't'
+		});
+	});
+
+	it('a malformed newOrder is dropped, not kept in extra', () => {
+		const parsed = parseDeckSettings('deckcfg:d1', {
+			deckId: 'd1',
+			cardTypes: ['cloze'],
+			newOrder: { by: 'level' }
+		})!;
+		expect(parsed.newOrder ?? null).toBeNull();
+		expect(parsed.extra).toEqual({});
+		expect(parsed.cardTypes).toEqual(['cloze']);
+		expect(serializeDeckSettings(parsed, 't')).not.toHaveProperty('newOrder');
 	});
 });

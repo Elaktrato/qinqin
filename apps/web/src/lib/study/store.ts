@@ -28,6 +28,7 @@ import {
   cleanCardTypes,
   type DeckSettings,
 } from "./deckSettings";
+import type { NewOrder } from "./newOrder";
 import { cardKey, parseReview } from "./reviewParse";
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
 import {
@@ -663,10 +664,38 @@ export async function saveDeckCardTypes(
 ): Promise<DeckSettings> {
   const workspaceId = requireWorkspaceId();
   const { deckSettings } = await fetchStudyData(workspaceId);
+  const stored = deckSettings?.[deckId];
   const next: DeckSettings = {
     deckId,
     cardTypes: cleanCardTypes(cardTypes),
-    extra: deckSettings?.[deckId]?.extra ?? {},
+    ...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+    extra: stored?.extra ?? {},
+  };
+  await putData(
+    workspaceId,
+    deckSettingsKey(deckId),
+    serializeDeckSettings(next, new Date().toISOString()),
+  );
+  return next;
+}
+
+/**
+ * saveDeckNewOrder sets the order of new cards of one deck (#75) by
+ * rewriting its `deckcfg:` row; card types and unknown fields survive.
+ * `added` is stored as no field (the default).
+ */
+export async function saveDeckNewOrder(
+  deckId: string,
+  order: NewOrder,
+): Promise<DeckSettings> {
+  const workspaceId = requireWorkspaceId();
+  const { deckSettings } = await fetchStudyData(workspaceId);
+  const stored = deckSettings?.[deckId];
+  const next: DeckSettings = {
+    deckId,
+    cardTypes: stored?.cardTypes ?? [],
+    ...(order.by === "added" ? {} : { newOrder: order }),
+    extra: stored?.extra ?? {},
   };
   await putData(
     workspaceId,

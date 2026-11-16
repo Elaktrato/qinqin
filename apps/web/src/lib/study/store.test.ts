@@ -19,6 +19,7 @@ import {
   deleteCards,
   deleteDeck,
   saveDeckCardTypes,
+  saveDeckNewOrder,
   dropSiblingCards,
   skipKind,
   unskipKind,
@@ -509,6 +510,71 @@ describe("study store", () => {
         cardTypes: ["reverse", "cloze"],
         limits: { new: 5 },
       });
+    });
+
+    it("saveDeckCardTypes keeps the deck's new-card order", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: [],
+              newOrder: { by: "frequency" },
+              updatedAt: "2026-01-01T00:00:00Z",
+            }),
+          ],
+        });
+      });
+      await saveDeckCardTypes("d1", ["reverse"]);
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "d1",
+        cardTypes: ["reverse"],
+        newOrder: { by: "frequency" },
+      });
+    });
+
+    it("saveDeckNewOrder keeps card types and unknown fields", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: ["cloze"],
+              updatedAt: "2026-01-01T00:00:00Z",
+              goal: { n: 5 },
+            }),
+          ],
+        });
+      });
+      const saved = await saveDeckNewOrder("d1", { by: "level", packId: "hsk-words" });
+      expect(saved.newOrder).toEqual({ by: "level", packId: "hsk-words" });
+      expect(putBodies()[0]!.url).toBe(cfgUrl("d1"));
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "d1",
+        cardTypes: ["cloze"],
+        newOrder: { by: "level", packId: "hsk-words" },
+        goal: { n: 5 },
+      });
+    });
+
+    it("saveDeckNewOrder with added removes the field", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: [],
+              newOrder: { by: "frequency" },
+              updatedAt: "2026-01-01T00:00:00Z",
+            }),
+          ],
+        });
+      });
+      await saveDeckNewOrder("d1", { by: "added" });
+      expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
     });
 
     it("saveDeckCardTypes creates the row when none exists", async () => {
