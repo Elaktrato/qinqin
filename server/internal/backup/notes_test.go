@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -202,5 +203,130 @@ func TestSampleArchiveNoteFollowsItsEntry(t *testing.T) {
 	}
 	if id, _ := intMember(json.RawMessage(data), "entryId"); id != tgE {
 		t.Errorf("data %s", data)
+	}
+}
+
+// docs/contracts/notes/note-rows.json: restoreKeeps says which note: rows a
+// restore remaps (noteEntryID accepts them); the rest are dropped.
+func TestNoteRowsFixtureRestoreKeeps(t *testing.T) {
+	raw, err := os.ReadFile("../../../docs/contracts/notes/note-rows.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fx struct {
+		Cases []struct {
+			Name  string `json:"name"`
+			Op    string `json:"op"`
+			Input struct {
+				Key  string          `json:"key"`
+				Data json.RawMessage `json:"data"`
+			} `json:"input"`
+			Expect       json.RawMessage `json:"expect"`
+			RestoreKeeps *bool           `json:"restoreKeeps"`
+		} `json:"cases"`
+	}
+	if err := json.Unmarshal(raw, &fx); err != nil {
+		t.Fatal(err)
+	}
+	n := 0
+	for _, c := range fx.Cases {
+		if c.Op != "note" || !strings.HasPrefix(c.Input.Key, noteKeyPrefix) {
+			continue
+		}
+		if c.RestoreKeeps == nil {
+			t.Errorf("%s: no restoreKeeps", c.Name)
+			continue
+		}
+		n++
+		r := PluginRow{PluginID: CorePlugin, Key: c.Input.Key, Data: c.Input.Data}
+		id, ok := noteEntryID(r)
+		if ok != *c.RestoreKeeps {
+			t.Errorf("%s: noteEntryID ok=%v, fixture restoreKeeps=%v", c.Name, ok, *c.RestoreKeeps)
+		}
+		// every note the web reads is one a restore keeps, on the same entry
+		if string(c.Expect) != "null" {
+			var want struct {
+				EntryID int64 `json:"entryId"`
+			}
+			json.Unmarshal(c.Expect, &want)
+			if !*c.RestoreKeeps || id != want.EntryID {
+				if c.Name != "data a JSON string of a valid object is decoded" {
+					t.Errorf("%s: a readable note is not kept on its entry (id %d, want %d)", c.Name, id, want.EntryID)
+				}
+			}
+		}
+		// a kept row is dropped exactly when its entry is unresolved
+		m := NewMaps()
+		// with no entry map every note: row is dropped: a kept row because its
+		// entry is unresolved, any other because it is not a note
+		if _, drop := m.PluginRow(r); !drop {
+			t.Errorf("%s: row kept without a resolvable entry", c.Name)
+		}
+		if *c.RestoreKeeps {
+			m.Entries[id] = id + 1000
+			if nr, drop := m.PluginRow(r); drop || nr.Key != "note:"+strconv.FormatInt(id+1000, 10) {
+				t.Errorf("%s: kept row not remapped: drop=%v key=%s", c.Name, drop, nr.Key)
+			}
+		}
+	}
+	if n < 15 {
+		t.Fatalf("only %d note: cases", n)
+	}
+}
+
+// An invalid note row whose key names the target id of a valid note no
+// longer collides with it: the dry run and the restore agree, the invalid
+// row is dropped and counted (review finding).
+func TestInvalidNoteCannotCollideWithARemappedNote(t *testing.T) {
+	src := newWorld(t)
+	tg := newTarget(t, nil)
+	putNote(t, src, src.AliceUID, src.Alice.WS2, src.E2, "valid", false)
+	exec(t, src.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
+		VALUES ('qinqin-core', ?, ?, ?, '{"version":1,"entryId":999999,"text":"evil"}', 1, '2026-11-11T08:00:00Z', NULL)`,
+		src.AliceUID, src.Alice.WS2, fmt.Sprintf("note:%d", tg.E2))
+	base, _, err := Plan(context.Background(), newTarget(t, nil).DB, openExport(t, newWorld(t), src.AliceUID), tg.UID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := openExport(t, src, src.AliceUID)
+	rep, _, err := Plan(context.Background(), tg.DB, a, tg.UID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rep.Blocking) != 0 {
+		t.Errorf("blocking %v", rep.Blocking)
+	}
+	// +1 valid note restored, +1 invalid row dropped
+	if rep.Restores.PluginData != base.Restores.PluginData+1 || rep.Unresolved.DroppedRows != base.Unresolved.DroppedRows+1 {
+		t.Errorf("restores %d (base %d), dropped %d (base %d)", rep.Restores.PluginData, base.Restores.PluginData, rep.Unresolved.DroppedRows, base.Unresolved.DroppedRows)
+	}
+	if _, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{DropUnresolved: true}); err != nil {
+		t.Fatalf("restore: %v", err)
+	}
+	var key, data string
+	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core'`, tg.UID).Scan(&key, &data); err != nil {
+		t.Fatal(err)
+	}
+	if key != fmt.Sprintf("note:%d", tg.E2) || !strings.Contains(data, `"valid"`) {
+		t.Errorf("restored %s %s", key, data)
+	}
+}
+
+// A note: row without entryId is not restored verbatim onto whatever entry
+// its key number names on the target (review finding).
+func TestNoteWithoutEntryIDIsNotRestoredVerbatim(t *testing.T) {
+	src := newWorld(t)
+	tg := newTarget(t, nil)
+	exec(t, src.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
+		VALUES ('qinqin-core', ?, ?, ?, '{"version":1,"text":"no entryId"}', 1, '2026-11-11T08:00:00Z', NULL)`,
+		src.AliceUID, src.Alice.WS2, fmt.Sprintf("note:%d", src.E1))
+	a := openExport(t, src, src.AliceUID)
+	if _, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{DropUnresolved: true}); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	tg.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key LIKE 'note:%'`, tg.UID).Scan(&n)
+	if n != 0 {
+		t.Errorf("%d note rows restored, want 0", n)
 	}
 }

@@ -73,8 +73,11 @@ the entry is unresolved (the dry-run report counts it under that entry's `notes`
 If two archive notes of one workspace would land on the same target entry, the newest
 (`modifiedAt ?? updatedAt`, ties: the smaller source entry id) is kept and the other dropped, never a
 blocking collision. (Today's entry resolution maps at most one archive entry to a target entry, so this
-cannot happen through `resolveEntries`; the rule keeps a restore safe if that ever changes.) A note row
-whose key and `entryId` disagree, and every other `qinqin-core` row, is restored unchanged.
+cannot happen through `resolveEntries`; the rule keeps a restore safe if that ever changes.) Invalid note rows are dropped: a `qinqin-core` row whose key starts with `note:` but
+is not canonical (`note:01`, `note:+1`, `note:`) or whose `data` is not an object with a JSON integer
+`entryId` equal to the key's number is never restored (kept verbatim it would annotate whatever entry its
+key names on the target, or collide with a remapped note); it counts in `droppedRows`. Every other
+`qinqin-core` row (`notecfg`, the home layout, ...) is restored unchanged.
 
 ## Limits of a restore
 

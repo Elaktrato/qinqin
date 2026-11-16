@@ -256,8 +256,10 @@ func TestNoteRewriteKeepsOtherBytes(t *testing.T) {
 	}
 }
 
-// Keys that are not canonical note keys are left alone.
-func TestNonCanonicalNoteKeysUntouched(t *testing.T) {
+// A qinqin-core row keyed note: that is not a valid note is dropped: kept
+// verbatim it would annotate whatever entry its key names on the target, or
+// collide with a remapped note. Other core keys are left alone.
+func TestInvalidNoteRowsAreDropped(t *testing.T) {
 	m := NewMaps()
 	m.Workspaces[7] = 70
 	m.Entries[1201], m.Entries[1] = 1250, 2
@@ -265,7 +267,17 @@ func TestNonCanonicalNoteKeysUntouched(t *testing.T) {
 		coreNote(7, "note:01201", `{"version":1,"entryId":1201,"text":"x"}`, "2026-11-05T00:00:00Z", nil),
 		coreNote(7, "note:+1", `{"version":1,"entryId":1,"text":"x"}`, "2026-11-05T00:00:00Z", nil),
 		coreNote(7, "note:1", `"not an object"`, "2026-11-05T00:00:00Z", nil),
+		coreNote(7, "note:1", `{"version":1,"text":"no entryId"}`, "2026-11-05T00:00:00Z", nil),
+		coreNote(7, "note:1", `{"version":1,"entryId":1201,"text":"other id"}`, "2026-11-05T00:00:00Z", nil),
+		coreNote(7, "note:", `{"version":1,"entryId":1,"text":"x"}`, "2026-11-05T00:00:00Z", nil),
+	} {
+		if _, drop := m.PluginRow(r); !drop {
+			t.Errorf("%s %s kept", r.Key, r.Data)
+		}
+	}
+	for _, r := range []PluginRow{
 		coreNote(7, "notecfg", `{"version":1,"onAnswer":false}`, "2026-11-05T00:00:00Z", nil),
+		coreNote(7, "notebook:1", `{"entryId":1}`, "2026-11-05T00:00:00Z", nil),
 	} {
 		nr, drop := m.PluginRow(r)
 		if drop || nr.Key != r.Key || string(nr.Data) != string(r.Data) {

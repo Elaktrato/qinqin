@@ -1,5 +1,5 @@
 {
- "_doc": "Pure remapping of a restored archive (docs/contracts/backup/README.md). maps: source id -> target id per table (JSON keys are decimal strings). ops: card {key,data} -> {drop,key,data}; events {cards,events} -> {events:[{drop,workspaceId,payload}]} (every card row is registered first, then the events are mapped); pluginRow -> {drop,workspaceId,key,data} (qinqin-core note:<entryId> rows follow their entry; each case is a single row, so it is its own winner: the newest-wins rule for two notes on one target is tested in Go); workspaceSettings -> settings. Go: backup/remap_test.go.",
+ "_doc": "Pure remapping of a restored archive (docs/contracts/backup/README.md). maps: source id -> target id per table (JSON keys are decimal strings). ops: card {key,data} -> {drop,key,data}; events {cards,events} -> {events:[{drop,workspaceId,payload}]} (every card row is registered first, then the events are mapped); pluginRow -> {drop,workspaceId,key,data} (qinqin-core note:<entryId> rows follow their entry, every other qinqin-core note: row (key not canonical, entryId missing or different, data not an object) is dropped; each case is a single row, so it is its own winner: the newest-wins rule for two notes on one target is tested in Go); workspaceSettings -> settings. Go: backup/remap_test.go.",
  "version": 1,
  "rule": "backup/remap",
  "cases": [
@@ -937,7 +937,7 @@
    "note": "never guessed: a note on a word this server lacks is dropped and reported"
   },
   {
-   "name": "note: key and entryId disagree, restored unchanged",
+   "name": "note: key and entryId disagree, dropped",
    "op": "pluginRow",
    "maps": {
     "workspaces": {
@@ -959,16 +959,9 @@
     }
    },
    "expect": {
-    "drop": false,
-    "workspaceId": 70,
-    "key": "note:1201",
-    "data": {
-     "version": 1,
-     "entryId": 1202,
-     "text": "x"
-    }
+    "drop": true
    },
-   "note": "not a note by the notes/rows rule; kept byte for byte"
+   "note": "an invalid note: kept verbatim it would stick to whatever entry the key names on the target, or collide with a remapped note"
   },
   {
    "name": "note: a qinqin-flashcards row keyed note: is untouched",
@@ -1030,6 +1023,144 @@
     "data": {
      "version": 1,
      "entryId": 5
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "note: missing entryId is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "text": "x"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "note: leading zero in the key is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:01201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "x"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "note: data not an object is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1",
+    "data": "note"
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "core: notecfg is restored as it is",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "notecfg",
+    "data": {
+     "version": 1,
+     "onAnswer": false
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "notecfg",
+    "data": {
+     "version": 1,
+     "onAnswer": false
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "core: a key that only starts with note but not note: is restored as it is",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "notebook:1",
+    "data": {
+     "entryId": 1
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "notebook:1",
+    "data": {
+     "entryId": 1
     }
    },
    "note": ""

@@ -313,8 +313,9 @@ func (m *Maps) vacationScope(data json.RawMessage) (json.RawMessage, bool) {
 // flashcards card rows, vacation periods and qinqin-core notes. Every other
 // row is restored as it is. drop is true for a row of an unknown workspace,
 // a card of an unresolved entry or sentence, a vacation with no workspace
-// left, and a note of an unresolved entry or one that loses its target to a
-// newer note (RegisterNote).
+// left, a note of an unresolved entry or one that loses its target to a
+// newer note (RegisterNote), and a qinqin-core note: row that is not a valid
+// note (key not canonical, entryId missing or different).
 func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 	src := r
 	if r.WorkspaceID != nil {
@@ -365,6 +366,10 @@ func noteEntryID(r PluginRow) (int64, bool) {
 	}
 	n, err := strconv.ParseInt(digits, 10, 64)
 	if err != nil {
+		return 0, false
+	}
+	// entryId must be a JSON number literal ("1201" as a string is not one)
+	if v, ok := member(r.Data, "entryId"); !ok || len(v) == 0 || v[0] == '"' {
 		return 0, false
 	}
 	if id, ok := intMember(r.Data, "entryId"); !ok || id != n {
@@ -435,13 +440,18 @@ func (m *Maps) isNoteLoser(r PluginRow) bool {
 }
 
 // note remaps a qinqin-core row (src as in the archive, r with its
-// workspace already mapped): a note
+// workspace already mapped): an invalid note: row is dropped; a note
 // follows its entry (key and entryId rewritten together, other bytes kept),
 // is dropped when the entry is unresolved or another note wins the target;
 // any other core row is restored as it is.
 func (m *Maps) note(src, r PluginRow) (PluginRow, bool) {
 	id, ok := noteEntryID(src)
 	if !ok {
+		// Any other note: row is dropped: kept verbatim it would annotate
+		// whatever entry its key names here, or collide with a remapped note.
+		if strings.HasPrefix(src.Key, noteKeyPrefix) {
+			return r, true
+		}
 		return r, false
 	}
 	target, ok := m.Entries[id]

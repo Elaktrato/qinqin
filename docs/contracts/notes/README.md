@@ -72,5 +72,8 @@ Live note rows are exported with the other plugin data rows, and each note's `da
 `refs/entries.json`. On restore the key and `entryId` are rewritten together to the target server's entry
 id; a note whose entry cannot be resolved is dropped and counted under `notes` of the unresolved entry in
 the dry-run report; when two archive notes map to the same target entry the newest
-(`modifiedAt ?? updatedAt`, ties: smaller source key) wins and the other counts as dropped. See
+(`modifiedAt ?? updatedAt`, ties: the smaller source entry id) wins and the other counts as dropped.
+Invalid note rows are dropped on restore: any `note:` row whose key is not canonical or whose `data` is not
+an object holding the same id as a JSON integer `entryId` (fixture field `restoreKeeps`; a version 2 note
+or one with blank text is still remapped, so a newer client's rows survive). See
 [`../backup/README.md`](../backup/README.md) and the `note:*` cases of `../backup/remap.json`.
