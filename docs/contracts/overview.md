@@ -13,6 +13,7 @@ Derived from the code on `develop`; each owner path below is where the rule is i
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
 | Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak) |
 | Reader | `reader/` (display settings, furigana, smart readings) |
+| Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Data safety | `backup/` (archive format v1, id remapping) |
 
 Read order: `auth/` -> `study-day/` -> this page's sync model -> `cards/` -> `scheduler/` -> `decks/` -> `levels/`.
