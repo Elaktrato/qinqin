@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
 import { scheduleAt, scheduleFor, scheduleTimeline } from './scheduler';
@@ -90,5 +90,18 @@ describe('scheduleAt', () => {
 	it('excludes a review at exactly the cutoff', () => {
 		expect(scheduleAt(timeline, T0 + 3 * DAY)).toEqual(timeline[0].schedule);
 		expect(scheduleAt(timeline, T0 + 3 * DAY + 1)).toEqual(timeline[1].schedule);
+	});
+});
+
+describe('scheduleFor stays lean', () => {
+	it('builds one schedule, not one per review', () => {
+		const reviews = history(3).filter((rv) => rv.payload.cardId === 'a');
+		const spy = vi.spyOn(Date.prototype, 'toISOString');
+		try {
+			scheduleFor('a', reviews, NOW, DEFAULT_W, IDENTITY_CLOCK);
+			expect(spy).toHaveBeenCalledTimes(1);
+		} finally {
+			spy.mockRestore();
+		}
 	});
 });

@@ -132,6 +132,37 @@ export interface TimelinePoint {
 	schedule: Schedule;
 }
 
+/** The valid reviews of a card in replay order with their real instants and the cards ts-fsrs produced. */
+function replay(
+	cardId: string,
+	reviews: readonly ReviewEvent[],
+	w: readonly number[],
+	clock: StudyClock,
+	onStep: (card: Card, realTs: number) => void
+): void {
+	const scheduler = schedulerFor(w);
+	const history = sortedReviews(
+		reviews.filter((review) => isValidReview(review) && review.payload.cardId === cardId)
+	);
+	if (history.length === 0) return;
+	const real = history.map((review) => instant(review.ts));
+	const fed = feedInstants(real, clock);
+	let card: Card = createEmptyCard(new Date(fed[0]));
+	history.forEach((review, i) => {
+		card = scheduler.next(card, new Date(fed[i]), RATING[review.payload.grade]).card;
+		onStep(card, real[i]);
+	});
+}
+
+function toSchedule(card: Card, clock: StudyClock): Schedule {
+	return {
+		due: new Date(clock.inverse(card.due.getTime())).toISOString(),
+		stability: card.stability,
+		difficulty: card.difficulty,
+		state: card.state as number
+	};
+}
+
 /**
  * scheduleTimeline replays one card's valid reviews from an empty card and
  * returns the schedule after each of them, in replay order (ts, then id);
@@ -145,27 +176,9 @@ export function scheduleTimeline(
 	w: readonly number[],
 	clock: StudyClock
 ): TimelinePoint[] {
-	const scheduler = schedulerFor(w);
-	const history = sortedReviews(
-		reviews.filter((review) => isValidReview(review) && review.payload.cardId === cardId)
-	);
-	if (history.length === 0) return [];
-
-	const real = history.map((review) => instant(review.ts));
-	const fed = feedInstants(real, clock);
-	let card: Card = createEmptyCard(new Date(fed[0]));
-	return history.map((review, i) => {
-		card = scheduler.next(card, new Date(fed[i]), RATING[review.payload.grade]).card;
-		return {
-			ts: real[i],
-			schedule: {
-				due: new Date(clock.inverse(card.due.getTime())).toISOString(),
-				stability: card.stability,
-				difficulty: card.difficulty,
-				state: card.state as number
-			}
-		};
-	});
+	const out: TimelinePoint[] = [];
+	replay(cardId, reviews, w, clock, (card, ts) => out.push({ ts, schedule: toSchedule(card, clock) }));
+	return out;
 }
 
 /**
@@ -190,7 +203,7 @@ export function scheduleAt(timeline: readonly TimelinePoint[], cutoffMs: number)
  * on the history, so two calls with the same events agree exactly.
  * Reviews are fed to ts-fsrs on the study clock (vacation days removed)
  * and the due is mapped back (docs/contracts/scheduler/). It is the last
- * point of scheduleTimeline (one replay code path).
+ * point of scheduleTimeline (one replay code path, `replay`).
  */
 export function scheduleFor(
 	cardId: string,
@@ -200,7 +213,12 @@ export function scheduleFor(
 	clock: StudyClock
 ): Schedule | null {
 	void now;
-	return scheduleTimeline(cardId, reviews, w, clock).at(-1)?.schedule ?? null;
+	// The same replay as scheduleTimeline; only the last card becomes a Schedule.
+	let last: Card | null = null;
+	replay(cardId, reviews, w, clock, (card) => {
+		last = card;
+	});
+	return last === null ? null : toSchedule(last, clock);
 }
 
 /** isDue reports whether a schedule has reached its due instant. */
