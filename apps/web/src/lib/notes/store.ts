@@ -31,12 +31,11 @@ function data(ws: number): DataScope {
 	return createPluginSdk(coreManifest).data.workspace(ws);
 }
 
-/** loadNote reads an entry's note (through the prefix route: a missing note is no 404). */
+/** loadNote reads an entry's note with the single-row route; 404 (none or deleted) is no note. */
 export async function loadNote(ws: number, entryId: number): Promise<Note | null> {
 	const key = noteKey(entryId);
-	const rows = await data(ws).list(key);
-	const row = rows.find((r) => r.key === key);
-	return row ? parseNote(row.key, row.data) : null;
+	const value = await data(ws).get(key);
+	return value === null ? null : parseNote(key, value);
 }
 
 /**

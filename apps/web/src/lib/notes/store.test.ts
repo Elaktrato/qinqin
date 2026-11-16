@@ -17,17 +17,18 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('notes store', () => {
-	it('loads one note of the workspace without a 404 for a missing one', async () => {
+	it('loads one note through the key route; 404 is no note', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
-			json([
-				{ key: 'note:5', data: { version: 1, entryId: 5, text: 'five' } },
-				{ key: 'note:50', data: { version: 1, entryId: 50, text: 'fifty' } }
-			])
+			json({ pluginId: 'qinqin-core', key: 'note:5', data: { version: 1, entryId: 5, text: 'five' }, version: 1 })
 		);
 		expect(await loadNote(3, 5)).toEqual({ entryId: 5, text: 'five', extra: {} });
-		expect(calls()[0][0]).toBe('/api/plugins/qinqin-core/data?workspace=3&prefix=note%3A5');
-		vi.mocked(fetch).mockResolvedValueOnce(json([]));
+		expect(calls()[0].slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data/note:5?workspace=3', 'GET']);
+		vi.mocked(fetch).mockResolvedValueOnce(new Response('plugin data not found', { status: 404 }));
 		expect(await loadNote(3, 6)).toBeNull();
+		vi.mocked(fetch).mockResolvedValueOnce(json({ key: 'note:7', data: { version: 1, entryId: 8, text: 'bad' } }));
+		expect(await loadNote(3, 7)).toBeNull();
+		vi.mocked(fetch).mockResolvedValueOnce(new Response('boom', { status: 500 }));
+		await expect(loadNote(3, 9)).rejects.toBeTruthy();
 	});
 
 	it('saves a note with PUT to the key route of the workspace', async () => {
