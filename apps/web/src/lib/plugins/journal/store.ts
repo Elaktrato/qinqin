@@ -2,6 +2,7 @@
 // entry:<id>, review:<id>, suggestions and settings. Reads of the list go
 // through the prefix route, so the journal never pulls every plugin row.
 
+import type { StudyDay } from '../../time/studyDay';
 import { newUlid } from '../../ulid';
 import { createPluginSdk, type DataScope } from '../sdk';
 import { journalManifest } from './manifest';
@@ -76,17 +77,16 @@ export async function saveEntry(
 	return saved;
 }
 
-function localDate(d: Date): string {
-	const month = String(d.getMonth() + 1).padStart(2, '0');
-	const day = String(d.getDate()).padStart(2, '0');
-	return `${d.getFullYear()}-${month}-${day}`;
-}
-
-export function newEntry(source: 'typed' | 'photo', today: Date = new Date()): JournalEntry {
+/** newEntry starts an entry dated by the learner's day (the user's time zone). */
+export function newEntry(
+	source: 'typed' | 'photo',
+	day: StudyDay,
+	today: Date = new Date()
+): JournalEntry {
 	const now = new Date().toISOString();
 	return {
 		id: newUlid(),
-		date: localDate(today),
+		date: day.today(today.getTime()),
 		title: '',
 		text: '',
 		source,

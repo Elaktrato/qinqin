@@ -8,8 +8,11 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/search', () => ({ search: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(() => Promise.resolve([])) }));
 vi.mock('$lib/events', () => ({ record: vi.fn() }));
+vi.mock('$lib/lookups/sink', () => ({ recordLookup: vi.fn() }));
 
 import { goto } from '$app/navigation';
+import { record } from '$lib/events';
+import { recordLookup } from '$lib/lookups/sink';
 import { search } from '$lib/api/search';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { workspaces, workspacesLoaded } from '$lib/workspaces';
@@ -160,5 +163,51 @@ describe('search page', () => {
 		);
 		expect((screen.getByLabelText('Search entries') as HTMLInputElement).disabled).toBe(true);
 		expect((screen.getByRole('button', { name: 'Search' }) as HTMLButtonElement).disabled).toBe(true);
+	});
+
+	it('links the radical and part lookup in ja and zh workspaces only', async () => {
+		render(Page);
+		const link = await screen.findByRole('link', { name: 'Find a character by radical or part' });
+		expect(link.getAttribute('href')).toBe('/search/parts');
+		cleanup();
+		workspaces.set({ list: [], current: { id: 2, language: 'es', name: 'es' } as never });
+		render(Page);
+		await tick();
+		expect(screen.queryByRole('link', { name: 'Find a character by radical or part' })).toBeNull();
+	});
+
+	it('records no lookup event for a query (#72)', async () => {
+		searchMock.mockResolvedValue([hit(1, '你好')]);
+		setUrl('/search?q=nihao');
+		render(Page);
+		await screen.findByText('你好');
+		expect(record).not.toHaveBeenCalled();
+		expect(recordLookup).not.toHaveBeenCalled();
+	});
+
+	it('opening a result records it once in the lookup history, source search', async () => {
+		searchMock.mockResolvedValue([hit(7, '你好'), hit(8, '世界')]);
+		setUrl('/search?q=ni');
+		render(Page);
+		const link = await screen.findByText('你好');
+		link.addEventListener('click', (e) => e.preventDefault());
+		await fireEvent.click(link);
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+	});
+
+	it('links the lookup history', async () => {
+		render(Page);
+		expect(screen.getByRole('link', { name: 'Lookup history' }).getAttribute('href')).toBe('/lookups');
+	});
+
+	it('a middle-click open records too; a right-button auxclick does not', async () => {
+		searchMock.mockResolvedValue([hit(7, '你好')]);
+		setUrl('/search?q=ni');
+		render(Page);
+		const link = await screen.findByText('你好');
+		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 2 }));
+		expect(recordLookup).not.toHaveBeenCalled();
+		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 1 }));
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
 	});
 });

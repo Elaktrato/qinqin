@@ -9,14 +9,29 @@
 	import { iconFor } from '$lib/components/navIcons';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
-	import { auth, loadMe, logout, user } from '$lib/auth';
+	import { auth, loadMe, restriction, user } from '$lib/auth';
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
-	import { recordSessionOnce } from '$lib/events';
+	import { recordSessionWhenSettled } from '$lib/events';
+	import { syncStudyDayUser } from '$lib/time/zone';
 	import { dismissNotice, notice } from '$lib/notices';
-	import { allowed as routeAllowed, normalizePath, redirectTarget, routeAccess } from '$lib/routeAccess';
+	import {
+		allowed as routeAllowed,
+		normalizePath,
+		redirectTarget,
+		restrictedTarget,
+		routeAccess
+	} from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
+	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
+	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
+	import { registerWorker } from '$lib/pwa/register';
+	import { captureInstallPrompt, persistOnceNow } from '$lib/pwa/install';
+	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
+	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
+	import { requestSignOut } from '$lib/account/signOut';
+	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import {
 		load as loadWorkspaces,
@@ -47,7 +62,12 @@
 	// Render a route only when the session matches it: protected pages
 	// never flash while a redirect is in flight, auth pages do not show
 	// once signed in, and open pages show either way (lib/routeAccess.ts).
-	const allowed = $derived(routeAllowed(path, signedIn, booted));
+	// A restricted session (forced password change, MFA enrolment) sees only
+	// its own page and the open Sources page, and loads nothing of the app.
+	const restricted = $derived(signedIn && $restriction !== null);
+	const allowed = $derived(
+		routeAllowed(path, signedIn, booted) && restrictedTarget(path, $restriction) === null
+	);
 	// Stats (and its Characters view, the map) is one nav item for
 	// every workspace; the tab itself appears only for Han languages.
 	const inStats = $derived(path === '/stats' || path.startsWith('/stats/'));
@@ -96,6 +116,10 @@
 		// A workspace deleted in another tab or on another device: the
 		// first "workspace not found" reloads the list and falls back.
 		watchDeletedWorkspaces();
+		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
+		void registerWorker();
+		captureInstallPrompt(window); // the root layout lives as long as the page
+		void persistOnceNow();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();
@@ -119,6 +143,9 @@
 			workspaces.set({ list: [], current: null });
 			return;
 		}
+		// Nothing of the app loads for a restricted session; the effect runs
+		// again when the restriction clears.
+		if ($restriction !== null) return;
 		if (token === loadedToken) return;
 		loadedToken = token;
 		workspacesLoaded.set(false);
@@ -129,12 +156,39 @@
 		void loadShellWorkspaces();
 	});
 
+	// Keep today's study queue available offline: a few seconds after the
+	// active workspace is up, and again whenever the app comes back to the
+	// front (throttled inside; a no-op without a controlling worker).
+	$effect(() => {
+		const id = $workspacesLoaded && $restriction === null ? ($workspaces.current?.id ?? null) : null;
+		if (id === null) return;
+		const run = () => void prepareActiveWorkspace();
+		const timer = setTimeout(run, 4000);
+		const onVisible = () => {
+			if (document.visibilityState === 'visible') run();
+		};
+		document.addEventListener('visibilitychange', onVisible);
+		return () => {
+			clearTimeout(timer);
+			document.removeEventListener('visibilitychange', onVisible);
+		};
+	});
+
+	// The learner's time zone history (and, once per account, the browser
+	// zone as its default) loads right after sign-in; every "day" follows it.
+	// Signing out forgets it, so signing in again (same user, no reload)
+	// loads it again instead of falling back to the browser zone.
+	$effect(() => {
+		void syncStudyDayUser($user?.id ?? null);
+	});
+
 	// One session event per workspace per UTC day, recorded for whichever
 	// workspace is active once the list is in: the first one at load and any
 	// the user switches to or creates later (receipts keep it once a day).
 	$effect(() => {
 		const id = $workspacesLoaded ? ($workspaces.current?.id ?? null) : null;
-		if (id !== null) recordSessionOnce(id);
+		// The receipt is keyed by the learner day, so wait for the zone to settle.
+		if (id !== null) void recordSessionWhenSettled(id);
 	});
 
 	// Re-evaluate on every client-side navigation and auth change, so
@@ -142,6 +196,11 @@
 	// Open pages never redirect.
 	$effect(() => {
 		if (!booted) return;
+		const restrictedTo = restrictedTarget(path, $restriction);
+		if (restrictedTo !== null) {
+			void navigate(restrictedTo);
+			return;
+		}
 		const target = redirectTarget(path, signedIn);
 		if (target !== null) void navigate(target);
 	});
@@ -151,6 +210,8 @@
 	<!-- First focusable element: jumps past the header and its nav. -->
 	<a class="skip-link" href="#main-content" onclick={skipToContent}>Skip to content</a>
 	<div class="app" class:with-bar={signedIn}>
+		<UpdateBanner />
+		<OfflineBanner />
 		{#if signedIn}
 			<header class="shell">
 				<!-- The logo is the home link (there is no separate Home tab). -->
@@ -165,6 +226,7 @@
 
 				<!-- Wide screens: pills in the header. Below 720 px: a fixed
 				     bottom tab bar (see the styles). -->
+				{#if !restricted}
 				<nav class="main-nav" aria-label="Main">
 					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}
 						><NavIcon name={iconFor('search')} /><span class="label">Search</span></a
@@ -185,18 +247,19 @@
 				<div class="workspace">
 					<WorkspacePicker />
 				</div>
+				{/if}
 				<div class="account">
 					{#if $user}
 						<span class="username">{$user.username}</span>
 					{/if}
-					<button type="button" class="sign-out" title="Sign out" onclick={logout}
+					<button type="button" class="sign-out" title="Sign out" onclick={() => void requestSignOut()}
 						><NavIcon name={iconFor('signout')} size={18} /><span class="label">Sign out</span
 						></button
 					>
 				</div>
 			</header>
 
-			{#if workspaceError}
+			{#if workspaceError && !restricted}
 				<p class="workspace-error" role="alert">
 					{workspaceError}
 					<button type="button" class="retry" onclick={() => void loadShellWorkspaces()}>
@@ -233,8 +296,10 @@
 			{/if}
 		</div>
 
+		{#if $logoutPrompt !== null}<LogoutDialog />{/if}
+
 		<div class="content" id="main-content" tabindex="-1">
-			{#if signedIn && noWorkspaces}
+			{#if signedIn && !restricted && noWorkspaces}
 				<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
 					<h2 id="empty-workspaces-heading">Create your first workspace</h2>
 					<p>
@@ -251,15 +316,19 @@
 		{#if signedIn}
 			<footer class="footer">
 				<nav class="footer-links" aria-label="Footer">
-					<a href="/stats" aria-current={inStats ? 'page' : undefined}
-						><NavIcon name={iconFor('stats')} size={16} /><span>Stats</span></a
-					>
+					{#if !restricted}
+						<a href="/stats" aria-current={inStats ? 'page' : undefined}
+							><NavIcon name={iconFor('stats')} size={16} /><span>Stats</span></a
+						>
+					{/if}
 					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
 						><NavIcon name={iconFor('sources')} size={16} /><span>Sources</span></a
 					>
-					<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}
-						><NavIcon name={iconFor('settings')} size={16} /><span>Settings</span></a
-					>
+					{#if !restricted}
+						<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}
+							><NavIcon name={iconFor('settings')} size={16} /><span>Settings</span></a
+						>
+					{/if}
 				</nav>
 				<span class="version">
 					<span lang="zh">{APP_NAME_HANZI}</span>

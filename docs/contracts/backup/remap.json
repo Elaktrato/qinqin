@@ -1,0 +1,2213 @@
+{
+ "_doc": "Pure remapping of a restored archive (docs/contracts/backup/README.md). maps: source id -> target id per table (JSON keys are decimal strings). ops: card {key,data} -> {drop,key,data}; events {cards,events} -> {events:[{drop,workspaceId,payload}]} (every card row is registered first, then the events are mapped); pluginRow -> {drop,workspaceId,key,data} (qinqin-core lookups rows: items follow entries and books, merged per target entry, sorted and capped, a row that is not a version 1 object or has no workspace is dropped, docs/contracts/lookups/README.md; qinqin-core note:<entryId> rows follow their entry, every other qinqin-core note: row (key not canonical, entryId missing or different, data not an object) is dropped; qinqin-flashcards known:<entryId> rows follow the same rule (invalid ones dropped, the newest of two marks on one target wins); each case is a single row, so it is its own winner: the newest-wins rule for two notes on one target is tested in Go); workspaceSettings -> settings. Go: backup/remap_test.go.",
+ "version": 1,
+ "rule": "backup/remap",
+ "cases": [
+  {
+   "name": "same server: identity",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1201": 1201
+    }
+   },
+   "input": {
+    "key": "card:c-vocab-1201",
+    "data": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-vocab-1201",
+    "data": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "shifted entry: derived id follows the entry",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1201": 1250
+    }
+   },
+   "input": {
+    "key": "card:c-reverse-1201",
+    "data": {
+     "id": "c-reverse-1201",
+     "kind": "reverse",
+     "entryId": 1201
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-reverse-1250",
+    "data": {
+     "id": "c-reverse-1250",
+     "kind": "reverse",
+     "entryId": 1250
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "ULID card keeps its id, entryId rewritten",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "7": 9
+    }
+   },
+   "input": {
+    "key": "card:01JDULIDCARD0000000000001",
+    "data": {
+     "id": "01JDULIDCARD0000000000001",
+     "kind": "vocab",
+     "entryId": 7
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:01JDULIDCARD0000000000001",
+    "data": {
+     "id": "01JDULIDCARD0000000000001",
+     "kind": "vocab",
+     "entryId": 9
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "derived-looking id whose number differs from entryId is not derived",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "5": 6
+    }
+   },
+   "input": {
+    "key": "card:c-vocab-99",
+    "data": {
+     "id": "c-vocab-99",
+     "kind": "vocab",
+     "entryId": 5
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-vocab-99",
+    "data": {
+     "id": "c-vocab-99",
+     "kind": "vocab",
+     "entryId": 6
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "unresolved entry drops the card",
+   "op": "card",
+   "maps": {
+    "entries": {}
+   },
+   "input": {
+    "key": "card:c-vocab-1201",
+    "data": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "sentence card follows entry and sentence",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1201": 50
+    },
+    "sentences": {
+     "88": 900
+    }
+   },
+   "input": {
+    "key": "card:c-sentence-1201",
+    "data": {
+     "id": "c-sentence-1201",
+     "kind": "sentence",
+     "entryId": 1201,
+     "sentenceId": 88
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-sentence-50",
+    "data": {
+     "id": "c-sentence-50",
+     "kind": "sentence",
+     "entryId": 50,
+     "sentenceId": 900
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "unresolved pack sentence drops the sentence card",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1201": 50
+    },
+    "sentences": {}
+   },
+   "input": {
+    "key": "card:c-sentence-1201",
+    "data": {
+     "id": "c-sentence-1201",
+     "kind": "sentence",
+     "entryId": 1201,
+     "sentenceId": 88
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "unknown fields keep their order and bytes",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1": 2
+    }
+   },
+   "input": {
+    "key": "card:c-vocab-1",
+    "data": {
+     "zeta": {
+      "b": 1,
+      "a": [
+       3,
+       2,
+       1
+      ]
+     },
+     "id": "c-vocab-1",
+     "entryId": 1,
+     "alpha": null,
+     "x-unknown": "ä"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-vocab-2",
+    "data": {
+     "zeta": {
+      "b": 1,
+      "a": [
+       3,
+       2,
+       1
+      ]
+     },
+     "id": "c-vocab-2",
+     "entryId": 2,
+     "alpha": null,
+     "x-unknown": "ä"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "swapped entry ids: review events follow without chaining",
+   "op": "events",
+   "maps": {
+    "entries": {
+     "1": 2,
+     "2": 1
+    },
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [
+     {
+      "key": "card:c-vocab-1",
+      "data": {
+       "id": "c-vocab-1",
+       "kind": "vocab",
+       "entryId": 1
+      }
+     },
+     {
+      "key": "card:c-vocab-2",
+      "data": {
+       "id": "c-vocab-2",
+       "kind": "vocab",
+       "entryId": 2
+      }
+     }
+    ],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-1",
+       "grade": 3
+      }
+     },
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-2",
+       "grade": 3
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "c-vocab-2",
+       "grade": 3
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "c-vocab-1",
+       "grade": 3
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "review of a dropped card keeps history under orphan:",
+   "op": "events",
+   "maps": {
+    "entries": {
+     "1": 2
+    },
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [
+     {
+      "key": "card:c-vocab-9",
+      "data": {
+       "id": "c-vocab-9",
+       "kind": "vocab",
+       "entryId": 9
+      }
+     }
+    ],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-9",
+       "mode": "vocab",
+       "grade": 1
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "orphan:c-vocab-9",
+       "mode": "vocab",
+       "grade": 1
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "review of a deleted card (no row) with a resolvable entry follows the entry",
+   "op": "events",
+   "maps": {
+    "entries": {
+     "1": 2
+    },
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-1",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "c-vocab-2",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "review of a deleted card with an unresolved entry is an orphan",
+   "op": "events",
+   "maps": {
+    "entries": {},
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-424242",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "orphan:c-vocab-424242",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "review of a deleted ULID card is kept as is",
+   "op": "events",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "01JDULIDCARD0000000000001",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "01JDULIDCARD0000000000001",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "read event: bookId through the book map, unknown book removed",
+   "op": "events",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "books": {
+     "3": 30
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "read",
+      "workspaceId": 7,
+      "payload": {
+       "bookId": 3,
+       "seconds": 120
+      }
+     },
+     {
+      "type": "read",
+      "workspaceId": 7,
+      "payload": {
+       "bookId": 4,
+       "seconds": 5
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "bookId": 30,
+       "seconds": 120
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "seconds": 5
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "view event: entryId remapped, unresolved field removed, event kept",
+   "op": "events",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 5
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "view",
+      "workspaceId": 7,
+      "payload": {
+       "entryId": 1201
+      }
+     },
+     {
+      "type": "view",
+      "workspaceId": 7,
+      "payload": {
+       "entryId": 1
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "entryId": 5
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {}
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "event of a workspace not in the archive is dropped",
+   "op": "events",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 9,
+      "payload": {
+       "cardId": "x"
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": true
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "vacation: workspace ids remapped, user-global row stays global",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70,
+     "8": 80
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "version": 1,
+     "id": "V1",
+     "start": "2026-12-20",
+     "end": null,
+     "scope": {
+      "workspaces": [
+       7,
+       8
+      ]
+     },
+     "createdDay": "2026-11-13"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "version": 1,
+     "id": "V1",
+     "start": "2026-12-20",
+     "end": null,
+     "scope": {
+      "workspaces": [
+       70,
+       80
+      ]
+     },
+     "createdDay": "2026-11-13"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "vacation: ids not in the backup are dropped from the list",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "id": "V1",
+     "scope": {
+      "workspaces": [
+       7,
+       99
+      ]
+     }
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "id": "V1",
+     "scope": {
+      "workspaces": [
+       70
+      ]
+     }
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "vacation: an emptied checklist drops the period (never widens to all)",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "id": "V1",
+     "scope": {
+      "workspaces": [
+       99
+      ]
+     }
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "vacation: scope all is untouched",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "vacation:V2",
+    "data": {
+     "id": "V2",
+     "scope": "all"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "vacation:V2",
+    "data": {
+     "id": "V2",
+     "scope": "all"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "workspace row: workspaceId remapped, limits row data verbatim",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "limits:general",
+    "data": {
+     "newPerDay": 20
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "limits:general",
+    "data": {
+     "newPerDay": 20
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "row of a workspace missing from the archive is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "other",
+    "workspaceId": 9,
+    "key": "k",
+    "data": {}
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "another plugin's user-global row is restored verbatim",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {}
+   },
+   "input": {
+    "pluginId": "other",
+    "workspaceId": null,
+    "key": "settings",
+    "data": {
+     "entryId": 5,
+     "id": "c-vocab-5"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "settings",
+    "data": {
+     "entryId": 5,
+     "id": "c-vocab-5"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "hiddenDictionaries remapped by pack, unknown dropped",
+   "op": "workspaceSettings",
+   "maps": {
+    "dicts": {
+     "3": 8
+    }
+   },
+   "input": {
+    "hiddenDictionaries": [
+     3,
+     4
+    ],
+    "theme": "x"
+   },
+   "expect": {
+    "hiddenDictionaries": [
+     8
+    ],
+    "theme": "x"
+   },
+   "note": ""
+  },
+  {
+   "name": "settings without hiddenDictionaries are untouched",
+   "op": "workspaceSettings",
+   "maps": {
+    "dicts": {}
+   },
+   "input": {
+    "a": 1
+   },
+   "expect": {
+    "a": 1
+   },
+   "note": ""
+  },
+  {
+   "name": "note: identity map keeps the row",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1201
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "Horse"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "Horse"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "note: shifted entry id rewrites key and entryId, other members kept",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "Horse: four dots.\nNot 吗.",
+     "attachments": [
+      {
+       "id": "a1"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "note:1250",
+    "data": {
+     "version": 1,
+     "entryId": 1250,
+     "text": "Horse: four dots.\nNot 吗.",
+     "attachments": [
+      {
+       "id": "a1"
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "note: unresolved entry drops the note",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {}
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "Horse"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": "never guessed: a note on a word this server lacks is dropped and reported"
+  },
+  {
+   "name": "note: key and entryId disagree, dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1202": 1260
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1202,
+     "text": "x"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": "an invalid note: kept verbatim it would stick to whatever entry the key names on the target, or collide with a remapped note"
+  },
+  {
+   "name": "note: a qinqin-flashcards row keyed note: is untouched",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "5": 50
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "note:5",
+    "data": {
+     "version": 1,
+     "entryId": 5,
+     "text": "x"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "note:5",
+    "data": {
+     "version": 1,
+     "entryId": 5,
+     "text": "x"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "core: home-layout is restored as it is",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "5": 50
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": null,
+    "key": "home-layout",
+    "data": {
+     "version": 1,
+     "entryId": 5
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "home-layout",
+    "data": {
+     "version": 1,
+     "entryId": 5
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "note: missing entryId is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "text": "x"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "note: leading zero in the key is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:01201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "x"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "note: data not an object is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1",
+    "data": "note"
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "core: notecfg is restored as it is",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "notecfg",
+    "data": {
+     "version": 1,
+     "onAnswer": false
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "notecfg",
+    "data": {
+     "version": 1,
+     "onAnswer": false
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "core: a key that only starts with note but not note: is restored as it is",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1": 2
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "notebook:1",
+    "data": {
+     "entryId": 1
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "notebook:1",
+    "data": {
+     "entryId": 1
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "known: identity map keeps the mark",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 41
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": 41,
+     "createdAt": "2026-11-16T00:00:00.000Z"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": 41,
+     "createdAt": "2026-11-16T00:00:00.000Z"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "known: shifted entry id rewrites key and entryId, other members kept",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 1041
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": 41,
+     "createdAt": "2026-11-16T00:00:00.000Z",
+     "by": "list"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "known:1041",
+    "data": {
+     "version": 1,
+     "entryId": 1041,
+     "createdAt": "2026-11-16T00:00:00.000Z",
+     "by": "list"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "known: unresolved entry drops the mark",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {}
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": 41,
+     "createdAt": "2026-11-16T00:00:00.000Z"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": "never guessed: a mark on a word this server lacks is dropped and counted"
+  },
+  {
+   "name": "known: key and entryId disagree, dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 1041,
+     "42": 1042
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": 42,
+     "createdAt": "2026-11-16T00:00:00.000Z"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": "kept verbatim it would mark whatever entry its key names here"
+  },
+  {
+   "name": "known: leading zero in the key is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 1041
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "known:041",
+    "data": {
+     "version": 1,
+     "entryId": 41,
+     "createdAt": "2026-11-16T00:00:00.000Z"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "known: entryId as a string is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 1041
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": "41"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "known: data not an object is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 1041
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "known:41",
+    "data": "known"
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "known: a qinqin-core row keyed known: is untouched",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 1041
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": 41,
+     "createdAt": "2026-11-16T00:00:00.000Z"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": 41,
+     "createdAt": "2026-11-16T00:00:00.000Z"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "known: a flashcards key that only starts with known is untouched",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 1041
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "knownfilter",
+    "data": {
+     "entryId": 41
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "knownfilter",
+    "data": {
+     "entryId": 41
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "known: a user-global mark (no workspace) is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "41": 1041
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "known:41",
+    "data": {
+     "version": 1,
+     "entryId": 41,
+     "createdAt": "2026-11-16T00:00:00.000Z"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": "marks are workspace rows; a user-global one is never read by a client"
+  },
+  {
+   "name": "lookups: shifted entries and books follow",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "88": 90
+    },
+    "books": {
+     "17": 170,
+     "4": 40
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1201,
+       "count": 4,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 1
+       },
+       "books": [
+        17,
+        4
+       ]
+      },
+      {
+       "entryId": 88,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1250,
+       "count": 4,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 1
+       },
+       "books": [
+        170,
+        40
+       ]
+      },
+      {
+       "entryId": 90,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: unresolved entry drops the item",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1201
+    },
+    "books": {
+     "17": 17,
+     "4": 4
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1201,
+       "count": 4,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 1
+       },
+       "books": [
+        17,
+        4
+       ]
+      },
+      {
+       "entryId": 88,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1201,
+       "count": 4,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 1
+       },
+       "books": [
+        17,
+        4
+       ]
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: unresolved book ids are removed from books",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1201,
+     "88": 88
+    },
+    "books": {
+     "4": 41
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1201,
+       "count": 4,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 1
+       },
+       "books": [
+        17,
+        4
+       ]
+      },
+      {
+       "entryId": 88,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1201,
+       "count": 4,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 1
+       },
+       "books": [
+        41
+       ]
+      },
+      {
+       "entryId": 88,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: two items mapping to one entry merge (sum, earliest firstAt, latest lastAt, books newest first)",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "5": 50,
+     "6": 50
+    },
+    "books": {
+     "1": 10,
+     "2": 20,
+     "3": 30,
+     "4": 40
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 5,
+       "count": 2,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "reader": 2
+       },
+       "books": [
+        1,
+        2
+       ]
+      },
+      {
+       "entryId": 6,
+       "count": 3,
+       "firstAt": "2026-11-01T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "search": 3,
+        "reader": 1
+       },
+       "books": [
+        3,
+        1,
+        4
+       ]
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 50,
+       "count": 5,
+       "firstAt": "2026-11-01T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 3
+       },
+       "books": [
+        30,
+        10,
+        40
+       ]
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: the merged list is sorted newest first again",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1": 1,
+     "2": 2,
+     "3": 1
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 2,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "reader": 1
+       },
+       "books": []
+      },
+      {
+       "entryId": 1,
+       "count": 1,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-10T09:00:00Z",
+       "sources": {
+        "reader": 1
+       },
+       "books": []
+      },
+      {
+       "entryId": 3,
+       "count": 1,
+       "firstAt": "2026-11-15T07:05:00.250Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1,
+       "count": 2,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 1,
+        "lesson": 1
+       },
+       "books": []
+      },
+      {
+       "entryId": 2,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "reader": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: clearedAt and unknown top-level members are kept",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "88": 90
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": "2026-11-01T00:00:00Z",
+     "device": "tablet",
+     "items": [
+      {
+       "entryId": 88,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": "2026-11-01T00:00:00Z",
+     "device": "tablet",
+     "items": [
+      {
+       "entryId": 90,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: invalid items are dropped by the parse rules",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "5": 50,
+     "88": 90
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": "5",
+       "count": 1,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-10T09:00:00Z",
+       "sources": {},
+       "books": []
+      },
+      {
+       "entryId": 5,
+       "count": 0,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-10T09:00:00Z",
+       "sources": {},
+       "books": []
+      },
+      {
+       "entryId": 88,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      },
+      {
+       "entryId": 88,
+       "count": 9,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 90,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: data that is JSON text of a row is decoded and remapped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "88": 90
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": "{\"version\": 1, \"clearedAt\": null, \"items\": [{\"entryId\": 88, \"count\": 1, \"firstAt\": \"2026-11-12T18:30:00Z\", \"lastAt\": \"2026-11-12T18:30:00Z\", \"sources\": {\"lesson\": 1}, \"books\": []}]}"
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 90,
+       "count": 1,
+       "firstAt": "2026-11-12T18:30:00Z",
+       "lastAt": "2026-11-12T18:30:00Z",
+       "sources": {
+        "lesson": 1
+       },
+       "books": []
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: version 2 drops the row",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1201
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "version": 2,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1201,
+       "count": 4,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 1
+       },
+       "books": [
+        17,
+        4
+       ]
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": "kept as it is, its entry ids would name other words on the target"
+  },
+  {
+   "name": "lookups: data not an object drops the row",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": [
+     1,
+     2
+    ]
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: a row without a workspace is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "entries": {
+     "1201": 1201
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": null,
+    "key": "lookups",
+    "data": {
+     "version": 1,
+     "clearedAt": null,
+     "items": [
+      {
+       "entryId": 1201,
+       "count": 4,
+       "firstAt": "2026-11-10T09:00:00Z",
+       "lastAt": "2026-11-15T07:05:00.250Z",
+       "sources": {
+        "reader": 3,
+        "search": 1
+       },
+       "books": [
+        17,
+        4
+       ]
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "lookups: a qinqin-flashcards row keyed lookups is untouched",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "lookups",
+    "data": {
+     "anything": [
+      1
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "lookups",
+    "data": {
+     "anything": [
+      1
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "core: lookupcfg is restored as it is",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": null,
+    "key": "lookupcfg",
+    "data": {
+     "version": 1,
+     "record": false,
+     "x": 1
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "lookupcfg",
+    "data": {
+     "version": 1,
+     "record": false,
+     "x": 1
+    }
+   },
+   "note": ""
+  }
+ ]
+}

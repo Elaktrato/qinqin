@@ -148,3 +148,9 @@ test('the CLI exits 1 with messages on failure and 0 on success', () => {
 test('missing docs/sources.md is one clear error', () => {
 	assert.deepEqual(checkSources(repo(okPacks(), null)), ['docs/sources.md: file is missing']);
 });
+
+test('the local-only zh components pack the docs name is accepted', () => {
+	assert.ok(LOCAL_ONLY_PACKS.includes('zh-components'));
+	const doc = DOC + '- **Chinese components** (`zh-components`, local)\n';
+	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
+});

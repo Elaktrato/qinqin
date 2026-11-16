@@ -22,13 +22,16 @@
 		info,
 		lookup,
 		studyWorkspaceId,
-		highlighter = null
+		highlighter = null,
+		stateLine = null
 	}: {
 		frame: PopupFrame;
 		info: StackInfo;
 		lookup: LookupController;
 		studyWorkspaceId: number | null;
 		highlighter?: HighlightActions | null;
+		/** The word-state line per entry (word highlighting on). */
+		stateLine?: ((entryId: number) => string) | null;
 	} = $props();
 
 	let popup = $state<HTMLElement | null>(null);
@@ -53,7 +56,7 @@
 	const study = $derived(
 		studyWorkspaceId === null
 			? undefined
-			: { workspaceId: studyWorkspaceId, paragraph: isRoot ? info.paragraph || null : null, hold }
+			: { workspaceId: studyWorkspaceId, paragraph: isRoot ? info.paragraph || null : null, hold, stateLine }
 	);
 	const position = $derived(
 		placePopup(
@@ -110,7 +113,7 @@
 				<p class="hint">No dictionary entry found for <span lang={info.textLang}>{frame.text}</span>.</p>
 			{:else}
 				{#each results.slice(0, visible) as result, i (`${result.entryId}:${result.kind}:${i}`)}
-					<EntryCard {result} lang={info.lang} textLang={info.textLang} {study} hidden={hiddenIds} />
+					<EntryCard {result} lang={info.lang} textLang={info.textLang} {study} hidden={hiddenIds} first={isRoot && i === 0} />
 				{/each}
 				{#if hidden > 0}
 					<button type="button" class="more" onclick={() => (shown = visibleCount(results.length, shown))}>

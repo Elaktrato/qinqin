@@ -230,3 +230,54 @@ func TestIOErrorsAreNotAbsentFiles(t *testing.T) {
 		}
 	}
 }
+
+// pwaFS adds the installable-app files to the hardening build.
+func pwaFS() fstest.MapFS {
+	fsys := hardeningFS()
+	fsys["service-worker.js"] = &fstest.MapFile{Data: []byte("self.addEventListener('install',()=>{})")}
+	fsys["manifest.webmanifest"] = &fstest.MapFile{Data: []byte(`{"name":"qinqin"}`)}
+	fsys["icons/icon-192.png"] = &fstest.MapFile{Data: []byte("\x89PNG")}
+	fsys["favicon.svg"] = &fstest.MapFile{Data: []byte("<svg/>")}
+	return fsys
+}
+
+func headerOf(t *testing.T, h http.Handler, target, name string) (string, string) {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("%s: status %d", target, rec.Code)
+	}
+	return rec.Header().Get(name), rec.Header().Get("Content-Type")
+}
+
+func TestInstallableAppHeaders(t *testing.T) {
+	h := webdist.Handler(pwaFS())
+	cases := []struct{ path, cache, ctype string }{
+		{"/service-worker.js", "no-cache", "text/javascript"},
+		{"/manifest.webmanifest", "no-cache", "application/manifest+json"},
+		{"/icons/icon-192.png", "public, max-age=86400", "image/png"},
+		{"/favicon.svg", "public, max-age=86400", "image/svg+xml"},
+		{"/", "no-store", "text/html"},
+		{"/_app/immutable/entry/app.abc123.js", "public, max-age=31536000, immutable", "text/javascript"},
+	}
+	for _, c := range cases {
+		cache, ctype := headerOf(t, h, c.path, "Cache-Control")
+		if cache != c.cache {
+			t.Errorf("%s: Cache-Control = %q, want %q", c.path, cache, c.cache)
+		}
+		if !strings.HasPrefix(ctype, c.ctype) {
+			t.Errorf("%s: Content-Type = %q, want prefix %q", c.path, ctype, c.ctype)
+		}
+	}
+}
+
+// A bare build has no worker file: the SPA fallback must stay no-store (a
+// cached HTML "worker" would never update) and is not JavaScript.
+func TestMissingWorkerFallsBackToNoStoreIndex(t *testing.T) {
+	h := webdist.Handler(spaFS())
+	cache, ctype := headerOf(t, h, "/service-worker.js", "Cache-Control")
+	if cache != "no-store" || !strings.HasPrefix(ctype, "text/html") {
+		t.Errorf("fallback = %q / %q", cache, ctype)
+	}
+}

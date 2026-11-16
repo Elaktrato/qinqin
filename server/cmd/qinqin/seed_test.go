@@ -199,7 +199,7 @@ func TestSeedWarnsAboutUserDataOnEntryIDs(t *testing.T) {
 		if out := seedOut(sqlDB); strings.Contains(out, "WARNING") {
 			t.Errorf("seed of an empty database warned:\n%s", out)
 		}
-		u, err := auth.CreateUser(ctx, sqlDB, "erik", "s3cret-pw", true)
+		u, err := auth.CreateUser(ctx, sqlDB, "erik", "s3cret-pw-1234", true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -330,7 +330,7 @@ func TestAddUser(t *testing.T) {
 	dir := t.TempDir()
 	args := []string{"--data", dir, "--admin", "--username", "erik"}
 
-	if err := adduserCmd(args, strings.NewReader("s3cret-pw\n"), io.Discard); err != nil {
+	if err := adduserCmd(args, strings.NewReader("s3cret-pw-1234\n"), io.Discard); err != nil {
 		t.Fatalf("adduser: %v", err)
 	}
 	sqlDB, err := db.Open(filepath.Join(dir, "qinqin.db"))
@@ -338,7 +338,7 @@ func TestAddUser(t *testing.T) {
 		t.Fatalf("reopen db: %v", err)
 	}
 	defer sqlDB.Close()
-	if _, err := auth.Login(ctx, sqlDB, "erik", "s3cret-pw"); err != nil {
+	if _, err := auth.Login(ctx, sqlDB, "erik", "s3cret-pw-1234"); err != nil {
 		t.Errorf("login as the new user: %v", err)
 	}
 	var admin bool

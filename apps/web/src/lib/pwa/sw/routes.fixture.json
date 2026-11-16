@@ -1,0 +1,634 @@
+[
+	{
+		"pattern": "DELETE /api/account",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/account/mfa/totp",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/account/restore/{token}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/account/sessions/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/account/tokens",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/account/tokens/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/admin/dictionaries/{id}",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/invites/{id}",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/languages/{code}",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/packs/staged/{token}",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/packs/{type}/{packId}",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/schemes/{id}",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/sentences/{pack}",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/settings/smtp",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/users/{id}",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/admin/users/{id}/reset-link",
+		"access": "admin"
+	},
+	{
+		"pattern": "DELETE /api/ai/custom-providers/{id}",
+		"access": "admin-signed-in"
+	},
+	{
+		"pattern": "DELETE /api/ai/keys/{provider}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/events/lookups",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/journal/photos/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/library/books/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/library/books/{id}/bookmarks/{bid}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/library/books/{id}/highlights/{hid}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/plugins/{id}/data/{key}",
+		"access": "user"
+	},
+	{
+		"pattern": "DELETE /api/workspaces/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/account/deletion-preview",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/account/export/{ticket}",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/account/restore/safety-export/{ticket}",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/account/restore/{token}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/account/sessions",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/account/tokens",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/admin/audit",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/backup/{ticket}",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/admin/invites",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/languages/usage",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/packs",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/packs/staged/{token}",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/settings/auth",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/settings/smtp",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/users",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/users/{id}",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/admin/users/{id}/deletion-preview",
+		"access": "admin"
+	},
+	{
+		"pattern": "GET /api/ai/providers",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/ai/status",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/audio-packs",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/audio-packs/{id}/credits",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/audio/clips/{file}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/audio/entries/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/auth/me",
+		"access": "session"
+	},
+	{
+		"pattern": "GET /api/auth/options",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/characters",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/component-packs",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/components",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/dictionaries",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/entries/{id}",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/entries/{id}/chars",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/events",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/frequency-packs",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/frequency-packs/{id}/top",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/grammar",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/grammar/{pack}/{lesson}",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/journal/capabilities",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/journal/photos/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/languages",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/library/books",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/library/books/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/library/books/{id}/bookmarks",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/library/books/{id}/chapters/{n}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/library/books/{id}/highlights",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/library/sources",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/library/sources/{source}/browse",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/library/sources/{source}/search",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/lookup",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/me/time-zone",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/plugins",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/plugins/{id}/data",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/plugins/{id}/data/{key}",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/schemes",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/schemes/{id}/characters",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/schemes/{id}/entries",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/search",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/segment/at",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/sentence-packs",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/stats/activity",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/sync/pull",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/workspaces",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /healthz",
+		"access": "public"
+	},
+	{
+		"pattern": "PATCH /api/admin/settings/auth",
+		"access": "admin"
+	},
+	{
+		"pattern": "PATCH /api/admin/users/{id}",
+		"access": "admin"
+	},
+	{
+		"pattern": "PATCH /api/ai/custom-providers/{id}",
+		"access": "admin-signed-in"
+	},
+	{
+		"pattern": "POST /api/account/email/resend",
+		"access": "session"
+	},
+	{
+		"pattern": "POST /api/account/email/verify",
+		"access": "session"
+	},
+	{
+		"pattern": "POST /api/account/export",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/mfa/email",
+		"access": "session"
+	},
+	{
+		"pattern": "POST /api/account/mfa/email/confirm",
+		"access": "session"
+	},
+	{
+		"pattern": "POST /api/account/mfa/recovery-codes",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/mfa/totp/confirm",
+		"access": "session"
+	},
+	{
+		"pattern": "POST /api/account/mfa/totp/setup",
+		"access": "session"
+	},
+	{
+		"pattern": "POST /api/account/password",
+		"access": "session"
+	},
+	{
+		"pattern": "POST /api/account/restore",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/restore/safety-export",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/restore/{token}",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/sessions/revoke",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/account/tokens",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/admin/backup",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/dictionaries",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/invites",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/languages",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/packs",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/packs/staged/{token}",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/plugins",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/settings/smtp/test",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/users",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/users/{id}/mfa/reset",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/users/{id}/reset-link",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/admin/users/{id}/sessions/revoke",
+		"access": "admin"
+	},
+	{
+		"pattern": "POST /api/ai/custom-providers",
+		"access": "admin-signed-in"
+	},
+	{
+		"pattern": "POST /api/ai/keys/{provider}/test",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/audio/resolve",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/auth/email-login/start",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/email-login/verify",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/invite/check",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/login",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/login/mfa",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/login/mfa/email",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/logout",
+		"access": "session"
+	},
+	{
+		"pattern": "POST /api/auth/register",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/reset",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/reset-request",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/auth/reset/check",
+		"access": "public"
+	},
+	{
+		"pattern": "POST /api/entries/bases",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/entries/frequency-ranks",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/entries/{id}/sentences",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/events/batch",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/photos",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/review",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/suggestions",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/journal/transcribe",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/library/books/{id}/bookmarks",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/library/books/{id}/highlights",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/library/sources/{source}/import",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/library/upload",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/segment",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/sync/push",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/workspaces",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/account/email",
+		"access": "session"
+	},
+	{
+		"pattern": "PUT /api/admin/settings/smtp",
+		"access": "admin"
+	},
+	{
+		"pattern": "PUT /api/ai/active",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/ai/keys/{provider}",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/entries/{id}",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/journal/photos/{id}/keepalive",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/library/books/{id}/bookmarks/{bid}",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/library/books/{id}/highlights/{hid}",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/library/books/{id}/position",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/me/time-zone",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/plugins/{id}/data/{key}",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/plugins/{id}/state",
+		"access": "user"
+	},
+	{
+		"pattern": "PUT /api/workspaces/{id}",
+		"access": "user"
+	}
+]

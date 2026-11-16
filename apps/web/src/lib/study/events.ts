@@ -4,10 +4,14 @@
 // arrives) and is retried on boot and when the browser goes online.
 
 import type { StudyEventBody } from '../api/types';
-import { ApiError, getToken, isWorkspaceGoneResponse } from '../api/client';
+import { ApiError, getToken, isRestrictionResponse, isWorkspaceGoneResponse } from '../api/client';
 import { showNotice } from '../notices';
 import { postEvents } from '../events';
 import { newUlid } from '../ulid';
+import { notifyAllSent, setQueued } from '../pwa/offlineState';
+import { flushable, settle, type OutboxItem, type OutboxState } from './outbox';
+import { onOutboxUser, outboxToken, outboxUser, resetOutboxUserForTests } from './outboxUser';
+import { rememberSent } from './recentSent';
 import type {
 	ReviewEvent,
 	ReviewGrade,
@@ -16,8 +20,10 @@ import type {
 	StudyCardKind
 } from './types';
 
-/** localStorage key of the append-only pending review queue. */
-export const PENDING_REVIEWS_KEY = 'qinqin.study.pending';
+/** localStorage key of the per-user pending review queue (items {userId, queuedAt, event}). */
+export const PENDING_REVIEWS_KEY = 'qinqin.study.pending.v2';
+/** The pre-v2 queue (bare events, no owner): adopted by the first signed-in user, then removed. */
+export const LEGACY_PENDING_KEY = 'qinqin.study.pending';
 
 const DEVICE = 'web';
 
@@ -40,37 +46,118 @@ function isEventBody(value: unknown): value is StudyEventBody {
 	);
 }
 
-function readPending(): StudyEventBody[] {
+function isItem(value: unknown): value is OutboxItem {
+	if (typeof value !== 'object' || value === null) return false;
+	const item = value as Record<string, unknown>;
+	return (
+		(item.userId === null || typeof item.userId === 'number') &&
+		typeof item.queuedAt === 'string' &&
+		isEventBody(item.event)
+	);
+}
+
+function readArray(key: string): unknown[] {
 	const store = storage();
 	if (store === null) return [];
 	try {
-		const raw = store.getItem(PENDING_REVIEWS_KEY);
+		const raw = store.getItem(key);
 		if (raw === null) return [];
 		const parsed: unknown = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed.filter(isEventBody);
+		return Array.isArray(parsed) ? parsed : [];
 	} catch {
 		// Corrupt data or denied storage: nothing can be retried.
 		return [];
 	}
 }
 
-function writePending(events: StudyEventBody[]): void {
+function writeState(state: OutboxState): void {
 	const store = storage();
 	if (store === null) return;
 	try {
-		if (events.length === 0) {
-			store.removeItem(PENDING_REVIEWS_KEY);
-		} else {
-			store.setItem(PENDING_REVIEWS_KEY, JSON.stringify(events));
-		}
+		if (state.items.length === 0) store.removeItem(PENDING_REVIEWS_KEY);
+		else store.setItem(PENDING_REVIEWS_KEY, JSON.stringify(state.items));
+		if (state.legacy.length === 0) store.removeItem(LEGACY_PENDING_KEY);
+		else store.setItem(LEGACY_PENDING_KEY, JSON.stringify(state.legacy));
 	} catch {
 		// Storage unavailable (private mode): the queue stays empty.
 	}
 }
 
+/**
+ * load reads the queue. With a known user it first settles it (legacy and
+ * unowned items adopted, other users' expired items removed) and saves the
+ * result; without one the legacy queue is left alone.
+ */
+function load(): OutboxItem[] {
+	const state: OutboxState = {
+		legacy: readArray(LEGACY_PENDING_KEY).filter(isEventBody),
+		items: readArray(PENDING_REVIEWS_KEY).filter(isItem)
+	};
+	const user = outboxUser();
+	if (user === null) return state.items;
+	const next = settle(state, user, Date.now());
+	if (state.legacy.length > 0 || JSON.stringify(next.items) !== JSON.stringify(state.items)) {
+		writeState(next);
+	}
+	return next.items;
+}
+
+function save(items: OutboxItem[]): void {
+	writeState({ legacy: readArray(LEGACY_PENDING_KEY).filter(isEventBody), items });
+	refreshQueued(items);
+}
+
+/** Tells the offline banner how many of the signed-in user's reviews wait, and re-evaluates the retry timer. */
+function refreshQueued(items: readonly OutboxItem[]): void {
+	const user = outboxUser();
+	setQueued(user === null ? 0 : flushable(items, user).length);
+	syncPolling(user !== null && flushable(items, user).length > 0);
+}
+
+const POLL_MS = 60_000;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+function pageVisible(): boolean {
+	return typeof document === 'undefined' || document.visibilityState !== 'hidden';
+}
+
+/**
+ * While reviews are queued and the page is visible, try again every minute
+ * (a reconnect the browser did not announce, a server that came back). No
+ * Background Sync: Safari and Firefox lack it and a worker cannot read this
+ * queue.
+ */
+function syncPolling(queued: boolean): void {
+	const want = outboxStarted && queued && pageVisible();
+	if (want && pollTimer === null) {
+		pollTimer = setInterval(() => {
+			if (Date.now() >= backoffUntil) void flushPendingReviews();
+		}, POLL_MS);
+	} else if (!want && pollTimer !== null) {
+		clearInterval(pollTimer);
+		pollTimer = null;
+	}
+}
+
 function enqueue(event: StudyEventBody): void {
-	writePending([...readPending(), event]);
+	save([...load(), { userId: outboxUser(), queuedAt: new Date().toISOString(), event }]);
+}
+
+/** pendingReviews: the not yet sent events of `userId` in one workspace. */
+export function pendingReviews(userId: number, workspaceId: number): StudyEventBody[] {
+	return flushable(load(), userId)
+		.map((item) => item.event)
+		.filter((event) => event.workspaceId === workspaceId);
+}
+
+/** pendingCount: how many reviews of `userId` wait to be sent. */
+export function pendingCount(userId: number): number {
+	return flushable(load(), userId).length;
+}
+
+/** clearPending deletes `userId`'s unsent reviews (an explicit "sign out and delete them"). */
+export function clearPending(userId: number): void {
+	save(load().filter((item) => item.userId !== userId));
 }
 
 /**
@@ -97,6 +184,8 @@ export async function recordReview(
 
 	try {
 		await postEvents([event]);
+		const owner = outboxUser();
+		if (owner !== null) rememberSent(owner, [event]);
 	} catch (err) {
 		// The workspace was deleted elsewhere: a retry can never succeed.
 		// The shell reloads the workspaces on the same 404 (workspaceGone.ts).
@@ -118,6 +207,13 @@ function isWorkspaceGone(err: unknown): boolean {
 // for a retry, and sharing the promise keeps them from sending the same
 // queued event twice.
 let flushing: Promise<void> | null = null;
+// After a transient failure the one-minute poll waits (2, 4, 8... up to 10 minutes);
+// explicit triggers (online, back to the app, sign-in) still try at once.
+let backoffUntil = 0;
+let failureRun = 0;
+function backoffMs(run: number): number {
+	return Math.min(POLL_MS * 2 ** run, 10 * 60_000);
+}
 let outboxStarted = false;
 
 /**
@@ -140,26 +236,55 @@ export function flushPendingReviews(): Promise<void> {
 async function flushOnce(): Promise<void> {
 	// Signed out (an open page such as /sources, or a reconnect after
 	// logout): every POST would be a 401, so the queue waits for the next
-	// session instead.
-	if (getToken() === null) return;
-	const queued = readPending();
+	// session instead. The same holds until `me` has told who is signed in:
+	// only that user's items may be sent.
+	const user = outboxUser();
+	const token = getToken();
+	// The pair (user, token) is captured once. The user was loaded with
+	// `outboxToken()`; if the stored token is another one (a second tab signed
+	// in as someone else) this tab's idea of the user is stale: send nothing.
+	if (token === null || user === null || token !== outboxToken()) return;
+	const all = load();
+	refreshQueued(all);
+	const queued = flushable(all, user);
 	if (queued.length === 0) return;
 
 	let gone = 0;
-	for (const event of queued) {
+	let sent = 0;
+	let failures = 0;
+	for (const { event } of queued) {
+		// Re-checked before every event: a sign-in elsewhere replaced the token.
+		if (getToken() !== token || outboxUser() !== user) break;
 		try {
 			await postEvents([event]);
+			rememberSent(user, [event]);
+			sent++;
 			removePending(event.id);
 		} catch (err) {
+			// The session is gone or restricted: every further POST would fail
+			// the same way. Everything stays queued for this user's next full
+			// session; another user never sends it.
+			if (isSessionProblem(err)) {
+				console.warn('review outbox paused: the session cannot send right now', err);
+				break;
+			}
+			// A refusal only counts for this user while the request was theirs.
+			if (getToken() !== token || outboxUser() !== user) break;
 			if (isPermanentFailure(err)) {
 				if (isWorkspaceGone(err)) gone++;
 				console.warn(`review event "${event.id}" rejected permanently; dropped`, err);
 				removePending(event.id);
 			} else {
+				// Transient (network, 5xx, 429): the next events would fail the same
+				// way. Stop and back off; the next trigger tries again.
 				console.warn(`review event "${event.id}" not flushed; kept for retry`, err);
+				failures++;
+				break;
 			}
 		}
 	}
+	backoffUntil = failures > 0 ? Date.now() + backoffMs(++failureRun) : ((failureRun = 0), 0);
+	if (sent > 0 && pendingCount(user) === 0) notifyAllSent();
 	// Reviews of a workspace deleted elsewhere are lost for good: say so.
 	if (gone > 0) {
 		showNotice(
@@ -170,8 +295,13 @@ async function flushOnce(): Promise<void> {
 	}
 }
 
+/** A 401 (revoked or expired session) or a 403 restriction (password change, MFA enrolment). */
+function isSessionProblem(err: unknown): boolean {
+	return err instanceof ApiError && (err.status === 401 || isRestrictionResponse(err.status, err.message));
+}
+
 function removePending(id: string): void {
-	writePending(readPending().filter((event) => event.id !== id));
+	save(load().filter((item) => item.event.id !== id));
 }
 
 /**
@@ -199,6 +329,28 @@ export function startReviewOutbox(): void {
 		window.addEventListener('online', () => {
 			void flushPendingReviews();
 		});
+		// A user who becomes known after boot (me answered) drains their queue.
+		onOutboxUser(() => void flushPendingReviews());
+		// Coming back to the app (a phone woken from its pocket) is the best
+		// moment to send what waited; hiding it stops the retry timer.
+		if (typeof document !== 'undefined') {
+			document.addEventListener('visibilitychange', () => {
+				if (pageVisible()) void flushPendingReviews();
+				refreshQueued(load());
+			});
+		}
 	}
 	void flushPendingReviews();
+}
+
+
+/** Test hook: forget the module's timers and flags so each test starts clean. */
+export function resetOutboxForTests(): void {
+	resetOutboxUserForTests();
+	flushing = null;
+	outboxStarted = false;
+	backoffUntil = 0;
+	failureRun = 0;
+	if (pollTimer !== null) clearInterval(pollTimer);
+	pollTimer = null;
 }

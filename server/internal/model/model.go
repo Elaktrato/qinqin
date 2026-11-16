@@ -9,9 +9,13 @@ import (
 // User is an authenticated account. The first user registered on a fresh
 // database becomes the instance admin.
 type User struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
-	Admin    bool   `json:"admin"`
+	ID                 int64   `json:"id"`
+	Username           string  `json:"username"`
+	Admin              bool    `json:"admin"`
+	Email              *string `json:"email"`
+	EmailVerified      bool    `json:"emailVerified"`
+	MustChangePassword bool    `json:"mustChangePassword"`
+	CreatedAt          string  `json:"createdAt"`
 }
 
 // Reading is one pronunciation of an entry. Type is pack-defined —

@@ -60,6 +60,21 @@ describe('labelMatches', () => {
 	});
 });
 
+describe('forgetWorkspace outbox v2', () => {
+	it('purges the deleted workspace from every user\'s v2 items only', () => {
+		const item = (id: string, userId: number, ws: number) => ({
+			userId,
+			queuedAt: '2026-11-10T08:00:00.000Z',
+			event: { id, workspaceId: ws, ts: 't', type: 'review', device: 'web', payload: {} }
+		});
+		const local = fakeStorage({
+			'qinqin.study.pending.v2': JSON.stringify([item('a', 1, 7), item('b', 2, 7), item('c', 1, 3)])
+		});
+		forgetWorkspace(7, local, null);
+		expect(JSON.parse(local.getItem('qinqin.study.pending.v2') ?? '[]')).toEqual([item('c', 1, 3)]);
+	});
+});
+
 describe('forgetWorkspace', () => {
 	it('removes what the browser keeps for one workspace and nothing else', () => {
 		const local = fakeStorage({
@@ -70,6 +85,7 @@ describe('forgetWorkspace', () => {
 			'qinqin.session.17.2026-11-14': '1',
 			'qinqin.session.3.2026-11-14': '1',
 			'qinqin.study.cardTypes': JSON.stringify({ '7': ['vocab'], '3': ['tone'] }),
+			'qinqin.study.extraTypes': JSON.stringify({ '7': { reverse: false }, '3': { cloze: false } }),
 			'qinqin.study.pending': JSON.stringify([
 				{ id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} },
 				{ id: 'b', workspaceId: 3, ts: 't', type: 'review', device: 'web', payload: {} }
@@ -89,6 +105,7 @@ describe('forgetWorkspace', () => {
 			'qinqin.session.17.2026-11-14': '1',
 			'qinqin.session.3.2026-11-14': '1',
 			'qinqin.study.cardTypes': JSON.stringify({ '3': ['tone'] }),
+			'qinqin.study.extraTypes': JSON.stringify({ '3': { cloze: false } }),
 			'qinqin.study.pending': JSON.stringify([
 				{ id: 'b', workspaceId: 3, ts: 't', type: 'review', device: 'web', payload: {} }
 			]),

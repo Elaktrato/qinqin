@@ -4,6 +4,7 @@
 import type { HeldOut } from './optimize';
 import { isValidReview, scheduleFor, sortedReviews } from '../scheduler';
 import type { ReviewEvent, StudyCard } from '../types';
+import type { StudyContext } from '../studyContext';
 
 const DAY = 86_400_000;
 const MOVED = 10;
@@ -35,6 +36,7 @@ export function previewChange(o: {
 	from: readonly number[];
 	to: readonly number[];
 	now: Date;
+	ctx: StudyContext;
 }): Preview {
 	const byCard = new Map<string, ReviewEvent[]>();
 	for (const review of o.reviews) {
@@ -52,16 +54,16 @@ export function previewChange(o: {
 	for (const card of o.cards) {
 		const history = byCard.get(card.id);
 		if (history === undefined) continue;
-		const a = scheduleFor(card.id, history, o.now, o.from);
-		const b = scheduleFor(card.id, history, o.now, o.to);
+		const a = scheduleFor(card.id, history, o.now, o.from, o.ctx.clock);
+		const b = scheduleFor(card.id, history, o.now, o.to, o.ctx.clock);
 		if (a === null || b === null) continue;
 		const last = Date.parse(sortedReviews(history)[history.length - 1].ts);
 		[a, b].forEach((s, side) => {
 			const due = Date.parse(s.due);
-			if (due <= now) counts.now[side]++;
+			if (due <= now && !o.ctx.vacationToday) counts.now[side]++;
 			if (due <= now + 7 * DAY) counts.d7[side]++;
 			if (due <= now + 30 * DAY) counts.d30[side]++;
-			intervals[side].push((due - last) / DAY);
+			intervals[side].push((o.ctx.clock.v(due) - o.ctx.clock.v(last)) / DAY);
 		});
 		const gap = Math.abs(Date.parse(b.due) - Date.parse(a.due));
 		if (gap > 0) {

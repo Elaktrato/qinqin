@@ -15,6 +15,7 @@ import (
 // frequencyPackBody mirrors the JSON body of GET /api/frequency-packs.
 type frequencyPackBody struct {
 	ID          int64  `json:"id"`
+	PackID      string `json:"packId"`
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Language    string `json:"language"`
@@ -56,7 +57,7 @@ func TestListFrequencyPacks(t *testing.T) {
 	}
 
 	list := listFrequencyPacks(t, ts.URL)
-	want := []frequencyPackBody{{Name: "Jiten frequency list", Version: "2026-11-12", Language: "ja",
+	want := []frequencyPackBody{{PackID: "jiten-frequency", Name: "Jiten frequency list", Version: "2026-11-12", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "Jiten (https://jiten.moe)"}}
 	if len(list) == 1 {
 		want[0].ID = list[0].ID

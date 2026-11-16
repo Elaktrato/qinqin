@@ -1,13 +1,18 @@
 import { api } from './client';
 import type { Entry, EntryBase, EntryDetail, Sentence } from './types';
 
+/** The URL of one entry; offline preparation requests exactly the same string. */
+export function entryPath(id: number): string {
+	return `/api/entries/${id}`;
+}
+
 /**
  * getEntry queries GET /api/entries/{id}. With a stored bearer token the
  * API layers the caller's overlay on top of the shared entry; anonymous
  * callers see the shared entry.
  */
 export function getEntry(id: number): Promise<Entry> {
-	return api<Entry>(`/api/entries/${id}`);
+	return api<Entry>(entryPath(id));
 }
 
 /**

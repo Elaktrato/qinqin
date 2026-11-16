@@ -1,0 +1,360 @@
+{
+  "version": 1,
+  "rule": "lookups/prompt",
+  "_doc": "The 'you keep looking these up' prompt (docs/contracts/lookups/README.md): items with count >= 3 whose entry is new, count desc, lastAt desc, entryId asc, at most 10. states maps entry id -> familiarity (missing = new). expect = entry ids in order. Web: lib/lookups/lookups.test.ts.",
+  "cases": [
+    {
+      "name": "count 2 is excluded, count 3 with no card is included",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 2,
+              "count": 3,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 3
+              },
+              "books": []
+            }
+          ]
+        },
+        "states": {
+          "1": "new",
+          "2": "new"
+        }
+      },
+      "expect": [
+        2
+      ]
+    },
+    {
+      "name": "an entry with a card is excluded",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1,
+              "count": 5,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 5
+              },
+              "books": []
+            },
+            {
+              "entryId": 2,
+              "count": 3,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 3
+              },
+              "books": []
+            }
+          ]
+        },
+        "states": {
+          "1": "learning",
+          "2": "new"
+        }
+      },
+      "expect": [
+        2
+      ]
+    },
+    {
+      "name": "an entry marked known is excluded",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1,
+              "count": 5,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 5
+              },
+              "books": []
+            },
+            {
+              "entryId": 2,
+              "count": 3,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 3
+              },
+              "books": []
+            }
+          ]
+        },
+        "states": {
+          "1": "known",
+          "2": "new"
+        }
+      },
+      "expect": [
+        2
+      ]
+    },
+    {
+      "name": "an entry with no state given is new",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1,
+              "count": 4,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 4
+              },
+              "books": []
+            }
+          ]
+        },
+        "states": {}
+      },
+      "expect": [
+        1
+      ]
+    },
+    {
+      "name": "ordered by count, then lastAt, then entryId",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1,
+              "count": 3,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "reader": 3
+              },
+              "books": []
+            },
+            {
+              "entryId": 2,
+              "count": 3,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 3
+              },
+              "books": []
+            },
+            {
+              "entryId": 3,
+              "count": 9,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "reader": 9
+              },
+              "books": []
+            },
+            {
+              "entryId": 4,
+              "count": 3,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 3
+              },
+              "books": []
+            }
+          ]
+        },
+        "states": {}
+      },
+      "expect": [
+        3,
+        2,
+        4,
+        1
+      ]
+    },
+    {
+      "name": "twelve candidates give ten",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1,
+              "count": 4,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 4
+              },
+              "books": []
+            },
+            {
+              "entryId": 2,
+              "count": 5,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 5
+              },
+              "books": []
+            },
+            {
+              "entryId": 3,
+              "count": 6,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 6
+              },
+              "books": []
+            },
+            {
+              "entryId": 4,
+              "count": 7,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 7
+              },
+              "books": []
+            },
+            {
+              "entryId": 5,
+              "count": 8,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 8
+              },
+              "books": []
+            },
+            {
+              "entryId": 6,
+              "count": 9,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 9
+              },
+              "books": []
+            },
+            {
+              "entryId": 7,
+              "count": 10,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 10
+              },
+              "books": []
+            },
+            {
+              "entryId": 8,
+              "count": 11,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 11
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 12,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 12
+              },
+              "books": []
+            },
+            {
+              "entryId": 10,
+              "count": 13,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 13
+              },
+              "books": []
+            },
+            {
+              "entryId": 11,
+              "count": 14,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 14
+              },
+              "books": []
+            },
+            {
+              "entryId": 12,
+              "count": 15,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 15
+              },
+              "books": []
+            }
+          ]
+        },
+        "states": {}
+      },
+      "expect": [
+        12,
+        11,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3
+      ]
+    },
+    {
+      "name": "empty history",
+      "input": {
+        "row": {
+          "version": 1,
+          "clearedAt": null,
+          "items": []
+        },
+        "states": {}
+      },
+      "expect": []
+    }
+  ]
+}

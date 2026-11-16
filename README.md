@@ -5,6 +5,12 @@ per-dictionary meanings, character readings, stroke-order animation, level
 badges, and study statistics in one small Docker stack: a Go API and SQLite
 database with a SvelteKit single-page app embedded in the binary.
 
+## Documentation
+
+- The user guide, self-hosting guide, API reference and the plugin and data pack formats are Markdown sources in [`docs/wiki/`](docs/wiki/Home.md), published as the GitHub wiki once the owner enables it.
+- [`docs/contracts/overview.md`](docs/contracts/overview.md): the shared rules (scheduler, study day, ids, sync formats) with JSON fixtures for other clients.
+- [`docs/sources.md`](docs/sources.md): the licence and attribution reference for all bundled data.
+
 ## Features
 
 - **Hanzi and kanji views** — simplified/traditional variants, readings in
@@ -20,19 +26,64 @@ database with a SvelteKit single-page app embedded in the binary.
   and statistics (see [Workspaces](#workspaces)).
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
+- **Radical and part lookup** — in Chinese and Japanese workspaces, find a
+  character you cannot read or type by its Kangxi radical, the parts you can see
+  (Japanese parts derived from KanjiVG) and its total stroke count
+  (`/search/parts`; rules: `docs/contracts/radicals/`).
 - **Yomitan-style lookup** — in the Reader, hovering a word shows a ranked stack
   of dictionary entries with frequency chips, and popups open from inside popups.
+- **Lookup history** — the words you looked up in the Reader, lessons and search
+  (opened results), per workspace, with counts, a "you keep looking these up"
+  prompt, add to a deck, remove, clear (also old search records) and a recording
+  switch (`/lookups`; rules: `docs/contracts/lookups/`).
 - **Editing** — correct written forms and readings per user without mutating
   the shared dictionary data.
+- **Personal notes** — one plain-text note per word and workspace (a mnemonic,
+  a usage warning) on the entry page, shown below a flashcard once its answer is
+  revealed (switch in **Settings → Study**), synced and included in the backup
+  (`docs/contracts/notes/`).
 - **Study mode** — add any word from its entry page and review it with Anki-style
   grading; the flashcards plugin derives FSRS schedules and EXP/levels from the
   event log.
+- **Decks, limits and vacation** — a decks view with per-deck numbers (studied,
+  mastered, due, 30-day reviews, retention) and copies of level decks; starter decks
+  (Top 500/1000/2000 of an installed frequency list, known words skipped) and a
+  per-deck and per-session order for new cards (added, most frequent first, by level); optional
+  reverse and cloze cards per deck; daily limits for new cards and reviews (per
+  workspace, overridable per deck); vacation mode that pauses your schedule
+  without piling up reviews. Rules: `docs/contracts/`.
+- **Daily goals** — one target per workspace and learner day (flashcard reviews,
+  new cards, minutes of flashcard study, or any other activity the statistics
+  count), set in **Settings → Study**: a progress ring on the home page and in the
+  flashcards widget, a "Goal reached" state, and an optional goal streak; target
+  changes apply from today, vacation days pause the goal. Progress is derived from
+  the event log, never stored (`docs/contracts/goals/`).
+- **Weekly summary** — in the app only (no email): **Stats → Week** and a
+  "This week" widget show one workspace's week, Monday to Sunday in your time
+  zone: reviews, new cards, study and reading time, journal entries, days active
+  with a day strip (vacation days marked and neutral), the streak, words reaching
+  mature, characters learned and goal days, each compared with the week before
+  (up to the same weekday while the week is in progress); 52 weeks back. Computed
+  from events, never stored (`docs/contracts/weekly/`).
+- **Installable app** — the web app installs as a PWA and keeps studying
+  offline; reviews wait in a per-user outbox and sync when you are back online.
+- **Accounts** — sessions you can end, registration modes and invites, password
+  reset by mail, two-step sign-in (authenticator or emailed code), and personal
+  backup and restore (see [Backup](#backup)).
 - **Reader library, bookmarks and highlights** — each workspace has its own
   library of imported books, a tabbed importer with daily suggestions, and
   per-book bookmarks, highlights and notes (see [Reader](#reader)).
+- **Reader display** — per workspace: book ruby on or off, generated pinyin or
+  furigana over words, smart hiding of the readings of words you have mastered,
+  ruby size and a system font choice, and optional highlighting of new and
+  learning words (see [Reader display](#reader-display)).
+- **Unknown words and coverage** — the Reader's Words tab shows how much of a
+  chapter (or, on demand, the whole book) you know, lists the most frequent
+  unknown words, adds them to a deck in one click, and lets you mark words as
+  known without a flashcard ("I know this").
 - **Home widgets** — the home page renders widgets from a per-user layout stored
   on the server (shared by every device and workspace; by default the activity
-  heatmap, then the flashcards summary). A widget that does not apply to the
+  heatmap, the flashcards summary, the daily goal, then this week). A widget that does not apply to the
   current language, or whose plugin is disabled, is left out. **Settings → Home**
   (`/settings?tab=home`) chooses and orders them: an "On the home page" switch
   per widget, **Move up** / **Move down** buttons (or drag a row by its handle),
@@ -72,6 +123,10 @@ the Compose plugin required) run:
 ```bash
 docker compose up -d
 ```
+
+No reverse proxy in front? Set `QINQIN_TRUSTED_PROXIES=none` (uncomment it in
+`docker-compose.yml`): the default trusts private-network peers' `X-Forwarded-For`,
+which a LAN client could forge to dodge the per-client sign-in limits.
 
 On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
 frequency list and the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists), then create the admin account:
@@ -132,7 +187,7 @@ the server waits at most 5 s (`busy_timeout`) before a write fails.
 > `qinqin seed` prints a `WARNING` line whenever the database holds user edits or
 > flashcards.
 
-The `adduser` command prompts for a password. Then open
+The `adduser` command prompts for a password (10 to 256 characters, not the username). Then open
 <http://localhost:8080>.
 
 The SQLite database and installed packs live in `./data` next to the compose
@@ -152,6 +207,18 @@ tag in `QINQIN_IMAGE` rather than `latest`, so a redeploy never changes the
 version by surprise. The published image is the full build: Tesseract OCR
 (about +193 MB) and the Kanji alive audio (about +70 MB). Self-builds can drop
 them with `--build-arg WITH_OCR=0` / `WITH_AUDIO=0`.
+
+**The package is private until you change it.** GitHub creates a new container
+package as private, so a `docker pull` or Portainer deployment fails with
+`unauthorized` until you do one of these:
+
+- make the package public: GitHub profile, Packages, `qinqin`, Package settings,
+  Change visibility, Public; or
+- keep it private and give Portainer a login: Registries, Add registry, GitHub
+  Container Registry, your GitHub username and a personal access token with only
+  the `read:packages` scope; then select that registry when you create the stack.
+
+Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.3.0`.
 
 ## Deploying with Portainer
 
@@ -181,10 +248,15 @@ uploads), so a read-only root filesystem is not enabled.
    `QINQIN_AI_PROVIDERS` limits which AI providers users may choose
    (default: all; see [Journal and AI](#journal-and-ai)),
    `QINQIN_AI_ALLOW_PRIVATE=1` lets an admin register AI endpoints on private
-   addresses, and `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the
-   stack.
+   addresses, `QINQIN_TRUSTED_PROXIES` sets which proxies' `X-Forwarded-For`
+   is believed (default: private networks; **set `none` if nothing
+   reverse-proxies to qinqin**, otherwise a LAN client can forge the header;
+   see [Reverse proxy and HTTPS](#reverse-proxy-and-https)), and
+   `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the stack.
 4. **First run, before exposing the port beyond your LAN** (until a user
-   exists, the first registration over the API becomes admin). Portainer:
+   exists, the first registration over the API becomes admin in every
+   registration mode; afterwards the default mode `closed` refuses everyone
+   but an administrator). Portainer:
    Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
 
    ```sh
@@ -211,6 +283,8 @@ Everything lives in `/data` (the volume):
 | `audio/` | audio blobs imported by seed or packs |
 | `books/<user id>/` | uploaded and imported library books |
 | `journal/<user id>/` | draft photos, deleted when the draft ends |
+| `backups/` | pre-restore safety exports (`backups/pre-restore/<user id>/`) and, if you choose, CLI backups |
+| `tmp/` | staged restore uploads and database snapshots; emptied at start-up |
 | `cache/sources/` | cache of the Aozora/Gutenberg imports; safe to delete |
 
 The bundled packs themselves stay in the image (`/opt/qinqin/packs`,
@@ -218,24 +292,71 @@ The bundled packs themselves stay in the image (`/opt/qinqin/packs`,
 
 ### Backup
 
-The app has no backup command or endpoint yet (open issue
-[#61](https://github.com/Elaktrato/qinqin/issues/61)). Copying the live
-database can miss the WAL, so: stop the stack's container in Portainer, copy the
-whole volume, start it again. For a named volume, with the container stopped:
+Two kinds, both in the app (issue [#61](https://github.com/Elaktrato/qinqin/issues/61)).
+
+**Your own data (every user): Settings, Account, Your data.**
+
+- *Download my data* gives a zip of JSON (format v1, `docs/contracts/backup/`): workspaces and settings,
+  study history, flashcards and decks, vacation periods and limits (all plugin rows, user-global ones
+  included), word edits, personal notes, your own sentences, library books with bookmarks and highlights, plugin switches
+  and your time zone history. The link is a one-time ticket valid 60 s; six downloads per hour.
+- The download never holds your password, email, sessions, two-factor secrets and recovery codes, AI keys,
+  invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo drafts, deleted rows, or dictionary
+  and pack content. After moving to another server you enter AI keys again.
+- *Restore from a backup* **replaces all** of your data with the backup's, in one transaction (a failed
+  restore changes nothing). You upload the zip (at most 128 MiB), read a report of what is replaced and
+  what comes back, then confirm with your password (plus an authenticator or recovery code if you have
+  one) and your username. Before anything changes the server saves your current data to
+  `/data/backups/pre-restore/<id>/` (newest only, kept 7 days; the app links to it). Your other devices
+  are signed out and reload; your sign-in, password and two-factor setup are never touched.
+- Words are matched by dictionary identity, not by internal id, so a backup restores onto another server.
+  Cards, reviews, edits, notes and sentences of words this server does not have are dropped, never guessed: the
+  report lists them and you must tick "drop them". Installing the dictionary and restoring again brings
+  them back. A restore holds the database write lock for its whole transaction: **it blocks every other
+  write on the server for about 30 seconds per million study events**, so other users' saves wait (and
+  are retried by their clients). A backup with more than 2,000,000 events is refused
+  (`backup_too_many_events`), and only one restore is applied at a time server-wide (the second gets
+  `409 restore_busy` with `Retry-After`). The download is refused up front (`backup_too_large_to_restore`)
+  when it could not be restored here: over 128 MiB as a zip, 2 GiB expanded or 64 MiB per book.
+- Restore needs a proxy body limit of at least 130 MB (the same as pack uploads).
+
+**The whole server (administrators): Settings, Admin, Backup.** Choose database, books, packs, audio, enter
+your password (and your authenticator or recovery code if you use one), and a `qinqin-server-<date>.tar.gz` downloads: `BACKUP-INFO.json` (checksums), `qinqin.db`
+(a consistent `VACUUM INTO` snapshot taken while the server runs), `books/`, `packs/`, `audio/`. Never
+`journal/`, `cache/`, `tmp/`, `backups/`. The snapshot needs free space on the data volume of database
+size + 64 MiB. One at a time, one per minute.
+
+For a schedule use the CLI, which opens the database read-only and never migrates, so it can run beside
+the server:
 
 ```sh
-docker run --rm -v <stack>_qinqin-data:/data:ro -v "$PWD":/out alpine \
-  tar czf /out/qinqin-data-$(date +%F).tgz -C /data .
+# --out is a path INSIDE the container; /data/backups is <your data volume or bind path>/backups on the host
+docker exec <container> qinqin backup --out /data/backups/qinqin-$(date +%F).tar.gz
+# host crontab, keep 14 days (/srv/qinqin/data is the host path mounted at /data):
+0 3 * * * docker exec qinqin qinqin backup --out /data/backups/qinqin-$(date +\%F).tar.gz && find /srv/qinqin/data/backups -name 'qinqin-*.tar.gz' -mtime +14 -delete
 ```
 
-(`docker volume ls` shows the real name; Portainer prefixes the stack name.)
-With a host path, copy that directory. Restore by extracting into an empty
-volume while the container is stopped. Keep `QINQIN_SECRET` backed up
-separately.
+(`--out -` writes to standard output, `--only db,books` limits the parts. When `--out` is on the data
+volume the free-space check counts the archive as well as the snapshot. Run `docker exec` as the image's
+own user: with `-u root` the files in `/data/backups` and `/data/tmp` become root-owned and the server
+cannot clean them up.) Put `/data/backups` on a bind
+mount or its own volume if you want the archives outside the data volume.
+
+**The server archive contains password hashes, hashed session tokens and AI keys and the SMTP password
+sealed with `QINQIN_SECRET`: store it like the secret.** Authenticator (TOTP) secrets are sealed with it
+too. Restoring without the same secret loses the sealed values: users enter AI keys again, the admin
+re-enters SMTP, and **users with an authenticator can no longer pass the second step**: they sign in with
+a recovery code, or an administrator resets their two-factor sign-in (Settings, Admin, Users).
+
+**Restoring a server backup is offline:** stop the container, empty the data volume, `tar xzf
+<file> -C /data`, start the same `QINQIN_SECRET` with the same or a newer image. A book added during the
+backup may be an orphan file, a book deleted during it may lack its text. Keep `QINQIN_SECRET` backed up
+separately. (Without the app: stop the container and copy the whole volume works too.)
 
 ### Upgrading
 
-Back up first. Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
+Back up first (a backup taken before upgrading to a release with migration 032 still holds the old
+plaintext session tokens: store it like the database and delete it after the upgrade). Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
 redeploy with *Pull latest image* enabled. Migrations are embedded in the
 binary and applied automatically at start (`server/internal/db`); they are
 one-way. **Downgrading is not supported**: going back to an older image needs
@@ -245,12 +366,43 @@ the pre-upgrade backup. After an upgrade the log may say
 ### Reverse proxy and HTTPS
 
 The app speaks plain HTTP on 8080. Browser features that need a secure context
-may not work over plain HTTP from other devices, so serve it over HTTPS. No
-WebSocket is used. The server does not read client IPs or
-`X-Forwarded-*` headers anywhere (no per-IP limits; limits are per user), so
-no trusted-proxy setting exists. Pack uploads go up to 128 MiB and an AI
+may not work over plain HTTP from other devices, so serve it over HTTPS.
+Installing the app and studying offline need HTTPS (or `http://localhost`; see
+[Install as an app](#install-as-an-app-and-study-offline)): over plain HTTP the
+site works as before, without a service worker. The proxy must pass the
+`Authorization` header and must not cache `/service-worker.js`,
+`/manifest.webmanifest` or anything under `/api/`. The server sets
+`Cache-Control` on the static files (`no-cache` for the worker and manifest,
+`no-store` for `index.html`); most API responses carry none, so a proxy must not
+apply a default cache to `/api/` (and one that does would serve one user's data
+to another). No WebSocket is used. Pack uploads go up to 128 MiB and an AI
 review can take up to 170 s, so the proxy needs a body limit of at least
 130 MB and a read timeout of at least 180 s.
+
+**Client addresses and sign-in throttling.** Sign-in and registration are
+limited per client address (see [Sign-in throttling](#sign-in-throttling)), so
+the server must see the real address. It believes `X-Forwarded-For` only when
+the TCP peer is a trusted proxy: by default the private networks a Docker or
+LAN proxy connects from (127.0.0.0/8, ::1, 10/8, 172.16/12, 192.168/16,
+100.64/10, 169.254/16, fc00::/7, fe80::/10). Set `QINQIN_TRUSTED_PROXIES` to a
+comma list of CIDRs or addresses to replace that set (for example a CDN's
+ranges in front of your proxy), or to `none` to ignore the header. A bad value
+stops the server at startup.
+
+> **Warning: the default is spoofable without a proxy.** Private-network peers
+> are trusted by default, so on an install with **no** reverse proxy any client
+> on your LAN (or any peer the network layer makes look private) can send a
+> forged `X-Forwarded-For` and get a fresh per-client limit for every request.
+> The same happens when the proxy layer rewrites the source address: Docker's
+> userland proxy for IPv6, rootless Docker or Podman, Docker Desktop, or router
+> port forwarding that masquerades connections can all make every client look
+> like a private address. The per-username limit and the hash gate still hold,
+> but **set `QINQIN_TRUSTED_PROXIES=none` whenever nothing reverse-proxies to
+> qinqin**, and list your proxy's address when you do run one. The first time a
+> forwarded header is honoured the server logs one line,
+> `auth: honouring X-Forwarded-For from a trusted proxy; set
+> QINQIN_TRUSTED_PROXIES=none if you have no reverse proxy`, so you can tell. Addresses are used only as in-memory limiter
+keys (hashed with a per-process secret): never stored, never logged.
 
 Caddy (defaults are fine: no body limit, 0 response timeout):
 
@@ -282,6 +434,7 @@ location / {
     proxy_pass http://127.0.0.1:8080;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     client_max_body_size 130m;
     proxy_read_timeout 180s;
     proxy_send_timeout 180s;
@@ -289,6 +442,126 @@ location / {
     # proxy_request_buffering off;
 }
 ```
+
+### Sign-in throttling
+
+`POST /api/auth/login` and `/register` hash passwords with argon2id (64 MiB
+each), so they are limited. The limits live in memory (a restart clears them):
+
+| Layer | Key | Rule |
+|---|---|---|
+| Client | address (IPv6 per /64) | burst 10, one more every 6 s; every attempt costs one |
+| Pair | client and username | 5 failures free, then a lock of 60 s, doubling to 15 min; a success clears it and marks the pair known-good for 30 days |
+| Username | username, any client | burst 20 failures, one more per minute; a known-good pair is exempt |
+| Hash gate | the server | at most min(4, CPUs) hashes at once, 3 s wait, then 503 |
+
+Known-good marks live in their own table (also capped at 65,536), so a flood of
+new failing keys cannot erase them. A locked key is refused (429, `Retry-After`) before the password is checked,
+unknown usernames behave exactly like known ones, and an administrator creating
+users is not throttled. Errors of both routes are JSON `{"error","message"}`
+(`rate_limited`, `busy`, `bad_credentials`, `registration_closed`,
+`username_taken`, `bad_request`, `too_large`); see `docs/contracts/auth/`.
+A distributed attack can keep an account refused for new devices and networks
+while it lasts; the owner's usual device keeps signing in.
+
+### Accounts and sign-in
+
+Bearer tokens are 64 random hex characters, shown once at login; the database keeps only their
+SHA-256, so a copied database file or backup hands out no live session. A session unused for 90
+days stops working and is pruned (an hourly janitor also drops audit rows older than 180 days).
+Logging out in the web app now ends the session on the server, and Settings, Account lists the
+signed-in devices (a coarse label such as "Firefox on Linux", never the raw User-Agent, never an
+address), revokes one, "Log out everywhere else", "Log out everywhere", and changes the password
+(other sessions are signed out by default).
+
+New passwords need 10 to 256 characters and may not equal the username; there are no other rules.
+New usernames are 3 to 32 letters, digits, dots, underscores or hyphens, stored in Unicode NFC, and
+unique by their NFKC form with case folded (so `Bob`, `bob` and a fullwidth `Ｂob` are one name; a name that mixes Latin with
+Cyrillic or Greek letters is refused). Older accounts whose names collide under that rule keep working, login still matches
+the exact name, but their names cannot be taken again. Existing accounts keep working unchanged on upgrade: their sessions are hashed in
+place by migration 032, existing passwords are grandfathered. A session whose user must change the
+password (an administrator's temporary password) is restricted: it can only change the password,
+read `me`, log out and open the Sources page, and the web app sends it to the change page. The
+rules for clients are in `docs/contracts/auth/README.md`.
+
+#### Registration, invites and user management
+
+Who may create an account is an instance setting, **Settings, Admin, Security**: `closed` (the
+default: nobody registers, administrators create accounts), `invite` (only people holding an invite
+link) or `open` (anyone who reaches the server). The very first registration on an empty database always
+works and becomes the administrator, in every mode. An email policy decides whether addresses are
+collected: `off` (default: nothing personal is asked or shown), `optional` or `required` (new accounts
+need one; existing accounts are only asked, never locked out).
+
+**Invite links** (Admin, Invites): uses 1 to 100, expiry 1, 7, 30 or 90 days or none, an optional note.
+The link `https://your-server/register#invite=...` is shown once, when it is created; the server keeps
+only a hash, and the token sits in the URL fragment, which browsers never send to a server. Revoke a link
+at any time. While registration is `closed` invites are kept but inactive; an expired, used up, revoked or
+unknown link all get the same answer. **Administrator-created users** (Admin, Users) get a temporary
+password and must choose their own at the first sign-in; their sessions can do nothing else until then.
+**Reset links** (a row action) are shown once, last 24 hours by default (1 to 168) and may be used once: using
+one sets the password, signs the person out of every device and signs them in on this one. Disabling an
+account deletes its sessions and re-enabling never brings one back. The last active administrator cannot be
+demoted, disabled or deleted (the Admin tab says why; the server enforces it even when two admins act at the
+same moment). Pending reset links die with every containment action (a password change, a forced change, disabling, signing out
+everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. Deleting another user,
+issuing a reset link and making someone an administrator ask the acting administrator for their own password again.
+Email addresses are stored with the domain in its ASCII (punycode) form, so `bücher.de` and `xn--bcher-kva.de` are one
+address; a part before the `@` with non-ASCII letters is refused until internationalised mailboxes are supported. Every
+response carries `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`; at startup the server removes the book and
+photo folders of users that no longer exist. The audit log (Admin, Security) lists who did what, never a password,
+token or address.
+
+**Deleting an account** (an administrator, or you yourself in Settings, Account with your password and your
+username typed): the account and these are removed in one step: workspaces, study events, plugin data
+(flashcards, journal entries, reader settings), edited dictionary entries, sentences you added, library books
+with their bookmarks and highlights and their files, journal photo drafts and their files, AI keys and selection,
+AI usage records, time-zone history, sessions, reset links, invites the account created. **Kept**: admin-registered
+AI endpoints (their creator becomes nobody), installed packs, languages, plugins and dictionaries, and the audit log
+(the name in it becomes `deleted user #id`). The last active administrator cannot delete themselves. **Locked out?**
+`qinqin recover --username NAME [--enable] [--admin]` (new password from `QINQIN_PASSWORD` or stdin; a terminal echoes what is typed, so prefer the variable or a pipe; `--admin` on a disabled account needs `--enable`; it must be
+changed at the next sign-in; every session of that account ends; `--reset-mfa` also removes the account's
+authenticator app, recovery codes and email-code method).
+
+Security notes. (1) Migration 032 stores only hashes of the session tokens and zeroes the database pages that
+held the old plaintext ones (including the write-ahead log once it is checkpointed), but **a backup taken before the
+upgrade still contains the plaintext tokens of that moment**: keep it as private as the database itself, and delete
+it once the upgrade is confirmed. Sessions that were idle count as used at the upgrade time, so nobody is signed out
+because of it. (2) Signing in to a disabled account with the right password answers `account_disabled` (so a person
+knows why), and a wrong password still answers the usual 401; this tells someone who already holds the password that
+the account exists and is disabled, which was judged better than a mystery refusal. (3) Forcing a password change
+signs the user out everywhere.
+
+#### Email (SMTP)
+
+Email is optional and lives in the server itself: **Settings, Admin, Email**. Fields: server, connection
+security (`STARTTLS` on port 587, the default and required to succeed, never silently downgraded; `TLS` on 465;
+`None`, plain text, allowed only without a user name and password), user name and password, sender address and
+name, and the address people use to reach the site (it goes into reset links). Certificates are always verified.
+The password is encrypted with `QINQIN_SECRET` and never shown again or logged: the form says "A password is
+saved" and offers Replace and Remove; changing the server, port, security or user name makes you type the password
+again, so a session cannot send it somewhere else. **Send test mail** reports a category (`connect`, `blocked`, `tls`,
+`auth`, `sender`, `recipient`, `timeout`, `protocol`) and the SMTP reply code, never the server's own text. Mail goes
+out in the background (one queue, at most 200 mails an hour for the whole server, never an address or code in the log).
+By default the server may not connect to loopback or private addresses; set `QINQIN_SMTP_ALLOW_PRIVATE=1` for a relay in
+your LAN or a container (cloud metadata and link-local addresses are never allowed). Docker example: a relay service
+`smtp` in the same stack, host `smtp`, port 25, security None, and `QINQIN_SMTP_ALLOW_PRIVATE=1` on qinqin. To try it
+without a provider run `python3 scripts/smtp-sink.py --port 2525 --dir ./mail` (stores each message as `.eml`, prints
+the subject only) and use host `127.0.0.1` (or the container name), port 2525, security None.
+Without email these features are hidden, not broken: forgot-password by mail, address confirmation, emailed codes,
+required two-step sign-in and sign-in by code. Removing the email setup switches them off again.
+
+#### Two-step sign-in
+
+Everyone may add an **authenticator app** (TOTP, RFC 6238, 6 digits, 30 s) in Settings, Account, with 10 single-use
+recovery codes; it needs `QINQIN_SECRET`, not email. Where email works, an **emailed code** is a second method. Each
+code can be tried 5 times and lives 10 minutes; at most 10 wrong codes per account per 15 minutes count across all
+sign-ins. An authenticator code works once (replay is refused). The administrator can require two-step sign-in for
+everyone (**Admin, Security**; needs email): it applies at each person's next sign-in, optionally signing everyone else
+out now. A person without an address is sent to a setup page first. **Sign in with an emailed code** (another switch)
+adds a password-free route; an account with an authenticator still asks for it, and while two steps are required an
+account without one must use the password. A password reset or reset link never removes two-step sign-in, and a reset link or an emailed code is never accepted as a second step after itself. People whose only second step is an emailed code are protected by their mailbox alone, by construction: while email does not work they cannot sign in (503), and Admin, Email says how many; give them an authenticator app for independence from mail. Changing your email address asks for the authenticator code too, cancels open reset links and tells the old address. Locked out:
+a recovery code, an administrator (Admin, Users: reset two-factor) or `qinqin recover --username NAME --reset-mfa`.
 
 ### AI journal
 
@@ -323,6 +596,10 @@ cost matters (calls are limited to 30 per user and hour across all providers).
   AI lists the providers and shows a key as storable; save a key (it becomes
   the active provider) and run a review.
 - The container log shows `AI: QINQIN_SECRET ok`.
+- Over HTTPS, `curl -sI https://<host>/service-worker.js` shows
+  `Cache-Control: no-cache` and a JavaScript content type, and
+  `/manifest.webmanifest` is `application/manifest+json` (a proxy that caches
+  or rewrites them breaks installs and updates).
 
 ### Troubleshooting
 
@@ -336,6 +613,11 @@ cost matters (calls are limited to 30 per user and hour across all providers).
 | 502/504 on an AI review | Proxy timeout below 180 s |
 | "port is already allocated" | Change `QINQIN_PORT` |
 | Unhealthy | `wget` against `127.0.0.1:8080/healthz` inside the container; see the log; a slow first start can exceed the 15 s start period on a slow disk |
+| Test mail fails with `tls` | The server needs STARTTLS (587), implicit TLS (465), or choose None only on a private relay; the certificate must match the host name |
+| Test mail fails with `blocked` | The address is private: set `QINQIN_SMTP_ALLOW_PRIVATE=1` (metadata and link-local are never allowed) |
+| Test mail fails with `auth` | Wrong user name or password; Microsoft 365 needs an app password or SMTP AUTH enabled |
+| No install button, "Installing needs HTTPS" in Settings | The site is opened over plain HTTP; serve it over HTTPS (or use `http://localhost`) |
+| Users do not get new versions after an update | The proxy caches `/service-worker.js`; it must be passed through (`no-cache`) |
 | "database is locked" during seed | Seed while the app is idle (5 s busy timeout) |
 
 ## Workspaces
@@ -455,6 +737,39 @@ a Japanese one on Aozora.
 - A result in another language shows "Needs a <language> workspace" instead of
   Import.
 
+### Reader display
+
+The **Display** button above a chapter opens the reading display settings. They are saved
+per workspace (workspace settings, key `reader`), so they follow you across devices.
+
+- **Book ruby** (only for a book that has ruby): the reading marks printed in the book.
+- **Readings over words**: *Never* (default), *Always*, or *Smart*. Chinese words get pinyin,
+  Japanese words with kanji get furigana over the kanji only (inflection stays plain). A
+  reading is left out when the app cannot align it with certainty; it never guesses. Your own
+  edited readings of an entry are used. The readings come from the dictionary through
+  `POST /api/segment` with `"readings": true`, only while this setting is on.
+- **Smart** hides the reading of a word you know: its flashcard has a memory score at or
+  above the threshold (10 to 100, default 80, the same score as "mastered" on the Flashcards
+  decks page). A word you have not mastered always shows its reading; the reading is still
+  there, only drawn transparent, so screen readers read it and the text does not move.
+  Hover a word, tap it (4 seconds), press **R** (outside text fields) or use
+  **Show all readings** to see hidden readings.
+- **Ruby size** and **Font** (default, sans, serif, kai: system fonts only, nothing is downloaded).
+- **Mark words by how well I know them** (off by default): new words (no flashcard) get a
+  solid underline and a light tint, words you are learning a dotted one; known words stay
+  plain. A word is known from the threshold's memory score, or when you marked it with
+  **I know this** in the popup (a workspace row `known:<entryId>`, synced and in the backup;
+  it creates no card). The same rule hides readings in Smart mode and leaves words out of
+  starter decks.
+- **Words tab** (side rail): coverage of the chapter ("You know 87% of the words in this
+  chapter": running words with a Chinese character or kana, rounded down; passages the
+  dictionary lacks are counted separately), an on-demand count of the whole book, and the
+  unknown words by frequency with **Add selected**, **Add all new words** and
+  **I know these** (with Undo).
+
+The reader only: entry pages, flashcards and study cards always show readings. Rules and
+fixtures for other clients: [`docs/contracts/reader/`](docs/contracts/reader/README.md).
+
 **Add to study from the popup.** Every entry in the Reader's lookup popup has a
 **+** button that adds the word to the General deck of the book's workspace. The
 **⋯** deck menu appears only when the workspace has custom decks. The sentence of
@@ -492,6 +807,130 @@ between simplified and traditional characters) it is marked with a **text change
 badge instead of being shown in the wrong place. Highlights and notes are private
 to the user and go with their book.
 
+## Study day and time zone
+
+Every "day" in qinqin (the activity heatmap, streaks, the daily XP bonus, reading totals, the
+once-a-day session and journal events, the reader's daily suggestions) is the learner's local day, not
+a UTC date. The time zone is stored per account on the server, so the web app and the future Android
+app agree.
+
+- **Where it is set:** Settings → **Study**. The first time you sign in after upgrading, the web app
+  sends your browser's zone as the default (only if the account has none). If the device zone later
+  differs, Settings offers "Use <zone> from now on"; nothing changes on its own.
+- **The first zone applies to your whole history:** the first zone an account ever gets (the browser default sent after the upgrade, or your first choice in Settings) is used for every past day too, so the heatmap and streaks are re-read once in that zone. Only later changes apply from now on.
+- **From now on:** a change takes effect when you save it. Past days never move, a date never repeats
+  (moving west makes the current day longer) and a skipped date simply has no activity. Daylight saving
+  days are 23 or 25 hours long and still one day.
+- **No zone set:** days are UTC, as before.
+- **API:** `GET /api/me/time-zone` returns `{"zone", "history"}`; `PUT /api/me/time-zone` with
+  `{"zone": "Asia/Tokyo"}` (optionally `"ifUnset": true`) records a change (IANA names only; errors are
+  JSON `{"error", "message"}`: `unknown_time_zone`, `bad_request`, `too_large`, `too_many_changes`).
+- **Contract:** the rule and its fixtures are in [`docs/contracts/study-day/`](docs/contracts/study-day/README.md),
+  run by the Go server and the web client and meant for the Android client.
+- **Upgrade note:** XP totals and best streaks are recomputed from the review log with local days, so
+  they can change by a few points or days once; the upgrade day may record one extra `session` event.
+
+## Vacation mode and daily limits
+
+**Vacation** (Settings → Study → Vacation) freezes your reviews while you are away: nothing is due and no
+new cards are offered on a vacation day, your streak is neither extended nor broken, and when you come back
+there is no pile of overdue cards, because the scheduler measures the time since your last review
+without the vacation days (nothing in your review log is rewritten; ending a vacation early is a one-row
+edit). A vacation applies to all workspaces or the ones you choose, starts now or on a date, and ends on a
+date or when you end it. "Start now" after studying today starts tomorrow, so what you already reviewed
+today is never rewritten. The study page shows "Vacation until …", the home widget "On vacation until …",
+the decks view "On vacation", and vacation dates are hatched in the heatmap. The FSRS optimizer ignores
+vacation time too.
+
+**Daily limits** apply per deck: each deck gets at most N new cards (default 20) and N reviews (default
+200) per study day, however many sessions you start. Settings → Study → Daily limits sets the workspace value,
+which is the default for every deck; a deck's own settings can use that value, its own number or no limit. A card
+in several decks must fit every one. Cards you are not shown stay due and come back later, scheduling is
+untouched. The home widget shows
+"18 reviews · 5 new left today" and the decks list "x new · y reviews left today". Both features count by
+the learner's day ("Study day and time zone").
+
+Data: vacations are user-global plugin-data rows `vacation:<ULID>` (every client reads them), limits are
+workspace rows `limits:workspace` and `limits:deck:<deckId>` of the `qinqin-flashcards` plugin; there is
+no server change. The exact rules and JSON fixtures for the Android client are in
+[`docs/contracts/scheduler/`](docs/contracts/scheduler/README.md).
+
+## Install as an app and study offline
+
+qinqin is an installable web app (PWA). It is a stopgap for phones: a native
+Android client remains planned.
+
+**Requirements.** HTTPS (or `http://localhost` for a test on the same machine).
+Over plain HTTP, including a LAN address such as `http://192.168.1.20:8080`, browsers
+refuse service workers: the site works exactly as before, and Settings, Account,
+App says so.
+
+**Install.**
+
+- Chrome or Edge (Android, desktop): Settings, Account, App, "Install qinqin"
+  (or the browser's own install entry).
+- iPhone and iPad (Safari): Share, then "Add to Home Screen". Safari offers no
+  install button, so there is none in the app.
+- Firefox for Android: menu, "Install". Firefox desktop has no install.
+
+**What works offline.** The app opens; your decks and today's study queue (the
+cards a session started now would hold, plus the next 50 new cards, within your
+daily limits and vacation days) are saved on the device whenever you use the app
+online; you study the real cards you already have, grade them, and the reviews are
+saved on the device and sent when the connection returns. The day, vacation and
+limits follow the same rules offline: the time zone you set is saved with your
+data, and "today" is computed on the device from it.
+
+**What does not.** Reader, search, journal, dictionary lookups, settings changes,
+adding or editing cards, level sessions, and the companion cards of a word
+(sentence, writing, tone, reverse, cloze cards a word does not have yet: creating
+one is a write). A session offline says "Companion cards return when you are
+online." Audio is not saved.
+
+**Reviews and sync.** A review is sent when you grade it. If the server cannot be
+reached it waits in a per-user queue on the device and is sent when the browser
+comes online, when you return to the app, and once a minute while the app is open
+and something is waiting. Every review keeps its own id, so a retry can never count
+twice. There is no background sync: on iOS, and in any browser, reviews leave the
+device when you next open the app.
+
+**Several people on one device.** Saved data is kept per sign-in: a different
+user (or the same user after signing in again) gets an empty saved copy, and the old one
+is deleted. Signing out deletes the saved copies. If reviews have not been sent
+when you sign out, qinqin asks first: "Stay signed in" (default) or "Sign out and
+delete them". Reviews left behind by a session that ended some other way (it
+expired, you revoked it on another device, an administrator forced a password
+change) stay on the device for that user only: they are sent only after the same user signs in
+again (a flush is bound to the token and user it started with, and other tabs
+follow a sign-in at once), never under another account, and deleted after 30
+days if nobody does.
+
+**Signed-out sessions.** If your session was revoked while you were offline you can
+keep studying the saved cards until the device reaches the server. Then the server
+answers 401, the saved copies are deleted, and you sign in again; the waiting
+reviews are sent after that sign-in. A restricted session (forced password
+change, required two-step enrolment) never studies: the app shows only the page
+you may use, and waiting reviews stay queued.
+
+**Updates.** A new version is downloaded in the background and a bar says "A new
+version of qinqin is available. Reload". Nothing changes under an open page
+until you press Reload.
+
+**Settings, Account, App** shows the install button, what is saved for offline use
+(cards and time), the storage in use, and "Clear offline data" (saved copies only;
+waiting reviews are kept).
+
+**iOS and Safari limits, honestly.** Safari may delete a website's saved data
+after about a week without use (installed home-screen apps are treated more
+kindly); it may also remove offline data under storage pressure. A review that
+has not been sent is only as safe as the device: open the app online to send them.
+Safari has no install prompt and no Background Sync. Push notifications are not
+offered. Private browsing windows keep nothing.
+
+**Not verified in a browser by the developers:** installation on Android, iOS and
+desktop, offline behaviour on real devices, and the update flow. They are covered
+by unit and component tests and by checking the served files and headers.
+
 ## Studying
 
 Study is a web feature plugin (`qinqin-flashcards`). To add a word, open any
@@ -511,6 +950,47 @@ workspace (the home widget counts the same types).
 | **Word Salad** | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, **Check**, or **Show answer** | an example sentence |
 | **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Reveal character** animates it | Han characters with bundled stroke data; kana stay visible |
 | **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
+
+**Reverse and cloze cards** are opt-in per deck. Each deck row on `/study` has a
+Reverse and a Cloze switch (stored per deck, General included); a deck that never
+turns them on behaves exactly as before. In a session, their checkboxes appear
+when a selected deck enables the kind and start checked unless you unchecked that
+kind before in this workspace.
+
+| Type | What you do | Needs |
+|---|---|---|
+| **Reverse** | See the meaning, recall the word; optionally **Show reading** (a hint) and type the word, then **Show answer** | a word (not a character) with a gloss |
+| **Cloze** | Fill the gap in an example sentence of the word (choose at first, type once it is learned); the translation is shown, the reading after the answer | a word with an example sentence that contains it |
+
+Both are created the first time you grade them, like the other companions, with
+one reverse or cloze card at most per word and session (reverse first). A word's
+other cards are **buried until your next learner day** once a reverse or cloze
+card of it is answered (and the other way round); vocab, sentence, writing and
+tone cards do not bury each other. Buried cards stay due and are left out of the
+queue and the due counts. Reverse and cloze reviews give XP and count for streaks
+and the heatmap, but not for character mastery. Rules and fixtures for other
+clients: `docs/contracts/cards/`.
+
+**Decks page.** The flashcards plugin has a page of its own, **Decks** (`/p/flashcards`,
+in the main navigation): your overall numbers (words, studied, mastered, retention and
+reviews of the last 30 learner days), then every deck with its words and cards, what is
+due and new, a progress bar and **Study** (a session over that deck only, with the saved
+limits and the card types the deck enables). A deck opens to its words: search by word,
+reading or id, filter by state, card kind or due now, sort, select several to **Move** or
+**Delete** (with the same ten-second Undo as the Card manager on `/study`), and per word
+**Remove** or **Turn back on** its reverse and cloze cards. **Settings** renames or deletes
+a deck (the confirmation says where its cards go) and holds the Reverse and Cloze switches;
+General can be configured but not renamed or deleted. "Mastered" means a memory score of 80
+or more (the "Learned" band of Stats → Characters); "Young" is a word in review that holds
+under 21 days.
+
+**Level decks.** Below your decks the page lists the installed level packs (HSK, JLPT, …)
+as read-only level decks, collapsed by scheme. A level shows how many of its words are
+already in your decks, can be studied as a level session, and can be copied with **Add to
+my decks**: into a new deck of your own (named like the level, with a fixed id so adding
+again never makes a second one) or into a deck you pick. Adding again only adds what is
+new; words you already have join the deck without losing their history. Rules and test
+vectors for other clients: `docs/contracts/decks/`.
 
 Sentence, writing and tone cards are **companions** of the vocab cards in the
 chosen decks. They are planned as virtual cards that share the new-card limit, and
@@ -589,6 +1069,14 @@ an installed scheme (HSK, JLPT, or a curriculum pack) and one of its levels, and
 the session queues that level's words. A word that already has a card reuses it;
 the rest get a card in the general deck when you first grade them, so abandoning
 a level session creates nothing.
+
+Character schemes (JLPT kanji, Jōyō grades, 通用规范汉字表) work the same way, with two cards per
+character: **Vocab** (recognition: the glyph alone, then readings and meanings) and **Writing**
+(readings and meanings, then write the glyph). The writing card of a character only joins a session
+the day after its recognition card was first reviewed (your learner's day, see Settings); a
+writing-only session has no such wait. Characters without stroke data or meanings get no writing
+card. The level picker shows "3 of 80 learned" per level, using the same definition as Stats →
+Characters. The new-card limit counts cards, not characters.
 
 Stats → Characters (`/stats/characters`, formerly `/study/map`) is the Hanzi/Kanji map for the current workspace language. It lists
 every character of the language, studied or not, shaded by mastery.
@@ -732,9 +1220,15 @@ sessions and mastery map, and
 
 ### API
 
+Scripts can use a personal access token (`qq_pat_…`, Settings, Account, Access tokens) instead of a session on the
+routes marked in the Token column of the wiki's API routes page; every other route answers 403 `token_not_allowed`.
+See the wiki page API access tokens and `docs/contracts/auth/tokens.json`. Token management:
+`GET`/`POST`/`DELETE /api/account/tokens`, `DELETE /api/account/tokens/{id}` (a full session; create re-asks for the
+password and answers the token once, `no-store`).
+
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,
-`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.
+`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/characters`, `GET /api/components`, `GET /api/component-packs`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.
 
 | Route | Purpose |
 |---|---|
@@ -746,17 +1240,36 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/audio/clips/{file}` | Signed-in. One stored clip, `file` being `<sha256>.<opus\|ogg\|mp3>` exactly as in a clip's `url`; Range and conditional requests work, served `private, max-age=31536000, immutable` with `nosniff`. Any other name, or a clip no installed pack references under that extension, is 404 |
 | `GET /api/audio-packs` | The installed audio packs with `license`, `attribution`, `notice`, `language` and `clipCount` (the Sources page lists them) |
 | `GET /api/audio-packs/{id}/credits?offset=&limit=` | The per-recording credits of a pack (`{total, offset, limit, clips: [{kind, form, reading, license, attribution, source}]}` (`reading` is the stored match key: hiragana for Japanese, numbered pinyin such as `ni3hao3` for Chinese; empty for a word clip without a reading), text only, `limit` up to 500, default 100); unknown pack 404 |
-| `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
+| `GET /api/frequency-packs` | The installed frequency packs in priority order, with `packId` (the manifest id), `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
+| `GET /api/frequency-packs/{id}/top?size=500\|1000\|2000` | Signed-in. A starter deck: `{packId, name, size, entries}` with the entry base fields and the `rank` of each word, in rank order; computed from the installed pack (resolved once per pack content), shared data with no overlay. 404 for an unknown or uninstalled pack, 400 for another size |
+| `POST /api/entries/frequency-ranks` `{language, ids}` | Signed-in. Each entry's rank in the language's first frequency pack: `{pack: {id, packId, name, license, attribution} \| null, ranks: [{id, rank}]}` in request order, entries without data omitted; 1 to 500 ids (400 otherwise, 400 without `language`), body up to 16 KiB (413) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
-| `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
+| `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms, `k` the Kangxi radical number (1–214) of the character's radical; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
+| `GET /api/components?language=` | Public, no user data. The radical and part lookup's component index: `{language, packs: [{id, license, attribution}], parts: [{c, s, n}], chars: {glyph: [part, ...]}}`, the union of the language's installed components packs (`packs` credits them) (`s` part strokes, 0 when unknown; `n` characters containing the part). A language without packs gets empty `packs`, `parts` and `chars`, a malformed one 400. Gzip, weak `ETag` and 304 as `/api/characters`; contract `docs/contracts/radicals/` |
+| `GET /api/component-packs` | Public. The installed components packs with `packId`, `name`, `version`, `language`, `license`, `attribution` and `notice` (the Sources page lists them) |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
-| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (the first user on an empty database becomes the admin without a token; afterwards an admin token is required), log in for a bearer token, read the current user. Login and register bodies up to 4 KiB |
+| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (`{username, password, email?, invite?}`: the first user on an empty database becomes the admin without a token; afterwards the registration mode decides: `closed` 403 `registration_closed`, `invite` needs a valid invite (403 `invite_invalid`), `open` takes anyone; an admin token still creates a plain user; username, password and email follow the policies), log in (`{username, password, deviceName?}` answers `{status: "ok" \| "password_change_required", token, user}`), read the current user and the session's `restriction`. Login and register bodies up to 4 KiB |
+| `GET /api/auth/options` | Public: `{bootstrap, registration, emailPolicy, passwordReset, emailCodeLogin, passwordMinLength}`, never cached |
+| `POST /api/auth/invite/check` `{invite}`, `POST /api/auth/reset/check` `{token}`, `POST /api/auth/reset` `{token, password, deviceName?}` | Public: is this invite usable (403 `invite_invalid`); whose reset link is this (400 `token_invalid`); spend a reset link (login-shaped answer) |
+| `GET`/`PATCH /api/admin/settings/auth` | Admin: registration mode, email policy (and, once mail exists, MFA / email-code switches; 409 `mail_unavailable` before) |
+| `GET`/`POST /api/admin/invites`, `DELETE /api/admin/invites/{id}` | Admin: list (never a token), create (`{maxUses, expiresInDays, note}`; the token and `path` only in the 201), revoke |
+| `GET`/`POST /api/admin/users`, `GET`/`PATCH /api/admin/users/{id}`, `POST …/{id}/sessions/revoke`, `POST …/{id}/reset-link`, `GET …/{id}/deletion-preview`, `DELETE …/{id}` `{confirm}` | Admin user management (409 `last_admin`, 409 `self_target`, 422 `confirm_mismatch`) |
+| `POST /api/account/export`, `GET /api/account/export/{ticket}` | Your own data as a zip: the POST answers `{url, expiresInSeconds: 60}`, the unauthenticated GET of that single-use URL streams the file (404 for anything else). 6 per hour, 409 `export_running` |
+| `POST /api/account/restore` (body = the zip, `application/zip`, 128 MiB) → 202 `{token}`; `GET`, `DELETE /api/account/restore/{token}`; `POST /api/account/restore/{token}` `{confirm, password, code?, unresolved?: "drop"}` | Staged restore that replaces all of your data. GET answers `{status: validating\|ready\|invalid\|running\|done\|failed, report, error, result}`. The POST needs your username, password and, with an authenticator, a code (403 `wrong_password`/`code_invalid`); 409 `unresolved_entries` until the missing words are acknowledged. 5 uploads per hour |
+| `POST /api/account/restore/safety-export`, `GET /api/account/restore/safety-export/{ticket}` | A fresh ticket for the data you had before your last restore |
+| `POST /api/admin/backup` `{currentPassword, include?: ["db","books","packs","audio"]}`, `GET /api/admin/backup/{ticket}` | Admin: ticket, then the streamed `tar.gz` server backup. 507 `insufficient_storage`, 409 `backup_running`, 1 per minute |
+| `GET /api/admin/audit?before&limit` | Admin: audit events, newest first, `next` id for the following page |
+| `PUT /api/account/email` `{email, currentPassword}`, `GET /api/account/deletion-preview`, `DELETE /api/account` `{password, confirm}` | Set or clear your own address under the email policy; what deleting your account removes; delete it |
+| `POST /api/auth/logout` | Ends the session the request came in on (204); allowed for a restricted session |
+| `POST /api/account/password` `{currentPassword, newPassword, signOutOthers?}` | Change the caller's password; wrong current password is 403 `wrong_password`, a policy failure 422; other sessions are signed out unless `signOutOthers` is false (always after a forced change) |
+| `GET /api/account/sessions`, `DELETE /api/account/sessions/{id}`, `POST /api/account/sessions/revoke` `{scope: "others" \| "all"}` | The caller's signed-in devices (no tokens), end one (204; another user's id is 404), end the others or all |
 | `GET /healthz` | Liveness check |
 | `GET /api/entries/{id}/chars` | Public. The characters classified under a radical entry, ordered by headword; an empty array for a radical without any, 404 for an unknown id |
 | `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user; an unknown or malformed id is 404 (checked before the body, so a bad body on a missing entry is still 404) |
 | `POST /api/events/batch`, `GET /api/events?since=&workspace=` | Append offline-recorded study events (idempotent by event id; each event needs a `workspaceId` of 1 or more, else 400; the workspace must be the caller's, else 404) and list the caller's events, optionally of one workspace |
 | `POST /api/sync/push` | Push offline events and plugin data (events idempotent by id, plugin data last-write-wins); an unknown or foreign workspace or plugin is 404 and nothing is applied. Body up to 8 MiB |
-| `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by UTC day, workspace and type for the plugins' activity rules: `{from, to, sources, cells}`. `from`/`to` are `YYYY-MM-DD` (default: today and the 90 days before; at most 366 days, else 400); a foreign workspace is 404. `sources` lists every rule (also those without cells) |
+| `GET /api/me/time-zone`, `PUT /api/me/time-zone` | The caller's learner time zone: `{zone, history:[{zone, from}]}` (`zone` null while none is set). `PUT {"zone":"Asia/Tokyo"[,"ifUnset":true]}` records a change effective from the server's now (the very first zone has `from: null` and applies to the whole log); IANA names only, body up to 1 KiB; errors are JSON `{error, message}`: `unknown_time_zone` (400), `bad_request` (400), `too_large` (413), `too_many_changes` (409) |
+| `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by learner day (their time zone, see "Study day and time zone"), workspace and type for the plugins' activity rules: `{from, to, timeZone, sources, cells}`. `from`/`to` are learner dates `YYYY-MM-DD` (default: today and the 90 days before; at most 366 days, else 400); a foreign workspace is 404. `sources` lists every rule (also those without cells) |
 | `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state (`hidden: true` marks the app's own surface-less built-ins such as `qinqin-core`; clients leave those out of plugin lists), and the caller's enable flag and (legacy) order for one plugin |
 | `GET /api/plugins/{id}/data?workspace=&prefix=` | The caller's live rows of a plugin whose key starts with `prefix`, scoped like the single-row routes, ordered by key, `[]` when none; an unknown plugin or foreign workspace is 404 |
 | `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | The caller's plugin data row, scoped to the workspace or user-global without `workspace`; `DELETE` tombstones it, a missing or tombstoned key reads 404 |
@@ -816,7 +1329,9 @@ All library and source routes need a signed-in user, and so does
 `POST /api/admin/dictionaries` (admin only) has no total cap: uploads beyond
 32 MiB spill to a temporary file, since real packs can be large.
 
-`lang` must be a registered language (`zh` or `ja` for the reader), and offsets
+`POST /api/segment` also takes `"readings": true`: every match then carries
+`reading: {type, value}` (the first candidate's reading, with your own edited readings applied);
+without the flag the response is unchanged. `lang` must be a registered language (`zh` or `ja` for the reader), and offsets
 count Unicode code points, not bytes or UTF-16 units. `GET /api/search` ranks hits
 by tier (exact form, exact reading, reading prefix, bopomofo prefix, then a gloss
 substring), at most 50 hits unless `limit` asks for more (up to 200); within a
@@ -985,7 +1500,7 @@ An admin can register an OpenAI-compatible endpoint (Ollama, LM Studio, vLLM, To
 
 Proton's Lumo has no public API today (their roadmap only announces one), so it is not built in; if Proton ships an OpenAI-compatible API an admin can add it as a custom endpoint.
 
-**The owner's real-key checklist** is in `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`. These items were not confirmed against the providers' own documentation or a real call and are marked `UNVERIFIED 2026-11-15` in `server/internal/ai/registry.go`: the model ids `gpt-6-luna`, `mistral-large-latest` and `mistral-small-latest` (`grok-4.7` is the id xAI's documentation names; what is unconfirmed for xAI, Mistral and OpenRouter is whether their models read photos), base64 image data URLs for OpenAI itself, DeepSeek's `/models` listing, and the REST field name Gemini uses for the JSON schema (`generationConfig.responseJsonSchema`).
+**The owner's real-key checklist** is in `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`; its appendix lists the official documentation pages checked on 2026-11-15 and what they say. These items are still not confirmed by the providers' own documentation and are marked `UNVERIFIED 2026-11-15` in `server/internal/ai/registry.go`: the REST field Gemini uses for the JSON schema (`generationConfig.responseJsonSchema`; the docs' REST example uses `generationConfig.responseFormat.text` instead), whether `mistral-small-latest` and `openrouter/auto` read photos, and whether Mistral accepts the OpenAI-style `image_url` object (its docs show a plain string). Confirmed from the docs: the ids `gpt-6-luna`, `mistral-large-latest`, `mistral-small-latest` and `grok-4.7`, photo reading for `gpt-6-luna`, `mistral-large-latest` and `grok-4.7`, base64 image data URLs for OpenAI, DeepSeek's `/models` listing, and OpenRouter's `provider.require_parameters`.
 
 ### Photo routes
 
@@ -1019,13 +1534,15 @@ head -c 32 /dev/urandom | base64
 
 Without a valid secret the server still starts, AI shows as disabled with the reason (not set, or not 32 bytes of base64), and no key can be stored.
 
-Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot be read and users must enter them again; it is never written to `/data`. Rotate it by moving the old value to `QINQIN_SECRET_PREVIOUS` for one restart: on startup the keys sealed with the previous secret are re-encrypted with the new one, after which the previous value can be removed. A key sealed with a secret the server no longer knows shows as "re-enter your key" instead of failing.
+`QINQIN_SECRET` also seals the mail password and the authenticator secrets (a mail password cannot be stored without it, and authenticator apps are unavailable; recovery codes still work). Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot be read and users must enter them again; it is never written to `/data`. Rotate it by moving the old value to `QINQIN_SECRET_PREVIOUS` for one restart: on startup the keys sealed with the previous secret are re-encrypted with the new one, after which the previous value can be removed. A key sealed with a secret the server no longer knows shows as "re-enter your key" instead of failing.
 
 | Variable | Meaning |
 |---|---|
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
+| `QINQIN_SMTP_ALLOW_PRIVATE` | `1` or `true` lets the mail server be on loopback or a private network (a relay container, a LAN host). Off by default |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
+| `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks (see [Reverse proxy and HTTPS](#reverse-proxy-and-https)). Set `none` when no reverse proxy sits in front |
 | `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |
 | `QINQIN_AI_ALLOW_PRIVATE` | `1` or `true` lets admins register custom endpoints on loopback and private addresses (Ollama on the same host). Off by default; the admin's endpoints can then reach your LAN, so enable it only if you trust every admin |
 | `QINQIN_AI_PROVIDER` | Legacy. Unset: real providers, all allowed. `anthropic` (set explicitly) means `QINQIN_AI_PROVIDERS=anthropic`. `fake` is for testing only: a deterministic provider that replaces every adapter, never leaves the server, and is shown in the app as a "Test provider" badge. Anything else disables AI |
@@ -1053,6 +1570,12 @@ one entry. `entry_links` connect characters to their radical and to variants.
   `variant` links.
 - **Frequency** lives in `frequency`, one row per term (optionally tied to one
   reading) with its rank, grouped by pack in `frequency_packs`.
+- **Character components** (the radical and part lookup) live in `components`
+  (one row per pack and character: its parts as a JSON array) and
+  `component_parts` (part stroke counts), grouped by pack in `component_packs`
+  (migration 036). They are keyed by glyph, not entry id, so they import in any
+  order; they are shared lookup data, replaced per pack on import and not synced
+  or exported in a personal backup.
 
 Importers live in `server/internal/dict/` (`jmdict`, `cedict`, `kanjidic2`,
 `unihan` and the `json` pack format) and write through one lexicon importer;
@@ -1109,6 +1632,7 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
+| [KanjiVG](https://kanjivg.tagaini.net) (`kanjivg-components`) | Japanese: the parts each kanji is drawn from (6,312 kanji), derived from KanjiVG r20260714 for the radical and part lookup | CC BY-SA 3.0 (© Ulrich Apel); derived index under the same licence |
 | [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-chars`) | Chinese: the official HSK 3.0 character list, the characters to recognise (认读字) per level, HSK 1–6 and HSK 7–9 (3,088 characters; same edition) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
 | [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-words`) | Chinese: the official HSK 3.0 word list, HSK 1–6 and HSK 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07; CLEC, distributed by CTI) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (`joyo-grades`) | Japanese: the 2,136 jōyō kanji by school grade (Grade 1–6, Secondary), derived from the grades recorded in KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
@@ -1216,19 +1740,26 @@ cd server && go vet ./... && go test ./...
 ```
 
 `npm --prefix apps/web run build` writes the SPA to `apps/web/build`; the
-Dockerfile copies that directory into the Go binary before compiling.
+Dockerfile copies that directory into the Go binary before compiling. The build also
+writes `build/service-worker.js` (hand-written, no Workbox; the logic lives in
+`apps/web/src/lib/pwa/sw/`, the version is `QINQIN_BUILD_ID` or the git hash plus the build
+time). The app icons are generated by `node apps/web/scripts/make-icons.mjs` and committed;
+after a new server route, regenerate the route fixture with
+`UPDATE_ROUTES_FIXTURE=1 go test -run RoutesFixture ./internal/api/` and decide in
+`apps/web/src/lib/pwa/sw/classify.ts` whether it may be cached offline (default: no).
 
 ## Project layout
 
 | Path | Contents |
 |---|---|
-| `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`) |
+| `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`, `recover`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
-| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists) with their licenses and attribution notices |
+| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists, the KanjiVG component index) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
 | `plugins/samples/` | Hand-written samples: dictionaries (`zh-mini`, `ja-mini`) and level packs (`hsk-mini`, `jlpt-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
+| `scripts/fetch-kanjivg-components.sh` | Rebuilds the bundled KanjiVG component index from the pinned KanjiVG tag (a manual, licence-checked step); `prepare-ids-components.mjs` prepares a local-only Chinese components pack from an IDS file |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--jlpt-vocab`, generates the optional local-only JLPT vocabulary pack into `plugins/data-local/` (download commands in its header) |
 | `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
 | `scripts/prepare-local-levels.mjs` | Converts a TSV you prepared (TBCL, curriculum tables, any private list) into a local-only level pack under `plugins/data-local/`; writes no `LICENSE`, refuses other directories |

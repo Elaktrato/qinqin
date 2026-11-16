@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+	ADMIN_SECTIONS,
+	adminSectionHref,
+	parseAdminSection,
 	SETTINGS_TABS,
 	SETTINGS_TAB_LABELS,
 	parseSettingsTab,
@@ -37,6 +40,35 @@ describe('parseSettingsTab', () => {
 	});
 });
 
+describe('the Study tab', () => {
+	it('is visible to every user and parsed from ?tab=study', () => {
+		expect(visibleSettingsTabs(false)).toContain('study');
+		expect(visibleSettingsTabs(true)).toContain('study');
+		expect(parseSettingsTab('study')).toBe('study');
+		expect(SETTINGS_TAB_LABELS.study).toBe('Study');
+		expect(settingsTabHref('study')).toBe('/settings?tab=study');
+	});
+});
+
+describe('account tab', () => {
+	it('is visible to everyone, between AI and Data', () => {
+		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'study', 'plugins', 'ai', 'account']);
+		expect(visibleSettingsTabs(true)).toEqual([
+			'workspaces',
+			'home',
+			'study',
+			'plugins',
+			'ai',
+			'account',
+			'data',
+			'admin'
+		]);
+		expect(SETTINGS_TAB_LABELS.account).toBe('Account');
+		expect(parseSettingsTab('account')).toBe('account');
+		expect(settingsTabHref('account')).toBe('/settings?tab=account');
+	});
+});
+
 describe('settingsTabHref', () => {
 	it('keeps the default tab out of the URL', () => {
 		expect(settingsTabHref('workspaces')).toBe('/settings');
@@ -68,10 +100,27 @@ describe('tabKeyTarget', () => {
 });
 
 describe('visibleSettingsTabs', () => {
-	it('shows the Data tab to admins only, last', () => {
+	it('shows the Data and Admin tabs to admins only, Admin last', () => {
 		expect(visibleSettingsTabs(false)).not.toContain('data');
+		expect(visibleSettingsTabs(false)).not.toContain('admin');
 		const admin = visibleSettingsTabs(true);
-		expect(admin[admin.length - 1]).toBe('data');
+		expect(admin.slice(-2)).toEqual(['data', 'admin']);
 		expect(admin).toEqual(SETTINGS_TABS);
+	});
+});
+
+describe('the Admin tab', () => {
+	it('is parsed for admins only and labelled', () => {
+		expect(parseSettingsTab('admin', true)).toBe('admin');
+		expect(parseSettingsTab('admin', false)).toBe('workspaces');
+		expect(SETTINGS_TAB_LABELS.admin).toBe('Admin');
+	});
+	it('has the sections Users, Invites, Email, Security with Users as the default', () => {
+		expect([...ADMIN_SECTIONS]).toEqual(['users', 'invites', 'email', 'security', 'backup']);
+		expect(parseAdminSection(null)).toBe('users');
+		expect(parseAdminSection('invites')).toBe('invites');
+		expect(parseAdminSection('email')).toBe('email');
+		expect(parseAdminSection('nope')).toBe('users');
+		expect(adminSectionHref('security')).toBe('/settings?tab=admin&section=security');
 	});
 });

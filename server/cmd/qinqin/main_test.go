@@ -233,9 +233,13 @@ func TestRegisterBuiltinOverLegacyDB(t *testing.T) {
 		if err := sqlDB.QueryRowContext(ctx, `SELECT manifest_json FROM plugin_registry WHERE pack_id = ?`, id).Scan(&raw); err != nil {
 			t.Fatalf("%s row: %v", id, err)
 		}
+		want := "1.1"
+		if id == "qinqin-flashcards" {
+			want = "1.2" // gained the decks page surface
+		}
 		m, err := plugins.ParseManifest([]byte(raw))
-		if err != nil || m.SDK != 1 || m.Version != "1.1" {
-			t.Errorf("%s = %s (err %v), want sdk 1, version 1.1", id, raw, err)
+		if err != nil || m.SDK != 1 || m.Version != want {
+			t.Errorf("%s = %s (err %v), want sdk 1, version %s", id, raw, err, want)
 		}
 	}
 	var n int
@@ -264,5 +268,40 @@ func TestRegisterBuiltinPluginsLogsConflict(t *testing.T) {
 	}
 	if !strings.Contains(buf.String(), "plugin qinqin-other also claims event types of qinqin-reader; the built-in wins") {
 		t.Errorf("log = %q", buf.String())
+	}
+}
+
+// A bad QINQIN_TRUSTED_PROXIES stops startup before anything is opened
+// or listened on.
+func TestServeRejectsBadTrustedProxies(t *testing.T) {
+	t.Setenv("QINQIN_TRUSTED_PROXIES", "10.0.0.0/33")
+	err := serveCmd([]string{"--addr", "127.0.0.1:0", "--data", t.TempDir()})
+	if err == nil || !strings.Contains(err.Error(), "QINQIN_TRUSTED_PROXIES") || !strings.Contains(err.Error(), "10.0.0.0/33") {
+		t.Fatalf("serveCmd error = %v, want one naming QINQIN_TRUSTED_PROXIES and the item", err)
+	}
+}
+
+// Every response, API or static, tells browsers not to send a Referer and
+// not to be framed.
+func TestRootHandlerSetsBrowserHeaders(t *testing.T) {
+	web := fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("<!doctype html>")}}
+	stub := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { io.WriteString(w, "api") })
+	srv := httptest.NewServer(rootHandler(web, stub))
+	defer srv.Close()
+	for _, path := range []string{"/", "/register", "/api/auth/options", "/healthz", "/missing.js"} {
+		resp, err := http.Get(srv.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if got := resp.Header.Get("Referrer-Policy"); got != "no-referrer" {
+			t.Errorf("%s: Referrer-Policy = %q", path, got)
+		}
+		if got := resp.Header.Get("X-Frame-Options"); got != "DENY" {
+			t.Errorf("%s: X-Frame-Options = %q", path, got)
+		}
+		if got := resp.Header.Get("Content-Security-Policy"); got != "" {
+			t.Errorf("%s: unexpected CSP %q", path, got)
+		}
 	}
 }

@@ -1,0 +1,18 @@
+{
+  "_doc": "Authenticator setup (all values are fake). The secret, the otpauth URI and the recovery codes appear in exactly these answers and never again: me carries only mfa {totp, email, recoveryCodesLeft}. Setup asks the password in a full session (not in an enrolment session); a wrong code is 403 code_invalid (never 401). Confirm in an enrolment session makes that same token a full session.",
+  "setup": {
+    "request": {"method": "POST", "path": "/api/account/mfa/totp/setup", "body": {"password": "<password>"}},
+    "status": 200,
+    "body": {"secret": "JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP", "otpauthUri": "otpauth://totp/qinqin:bobby?secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP&issuer=qinqin&algorithm=SHA1&digits=6&period=30", "expiresAt": "2026-11-15T12:10:00Z"}
+  },
+  "confirm": {
+    "request": {"method": "POST", "path": "/api/account/mfa/totp/confirm", "body": {"code": "123456"}},
+    "status": 200,
+    "body": {"recoveryCodes": ["AAAA-BBBB-CCCC-DDDD", "EEEE-FFFF-GGGG-HHHH", "IIII-JJJJ-KKKK-LLLL", "MMMM-NNNN-OOOO-PPPP", "QQQQ-RRRR-SSSS-TTTT", "UUUU-VVVV-WWWW-XXXX", "YYYY-ZZZZ-2222-3333", "4444-5555-6666-7777", "AAAA-2222-BBBB-3333", "CCCC-4444-DDDD-5555"]}
+  },
+  "confirm_wrong": {
+    "request": {"method": "POST", "path": "/api/account/mfa/totp/confirm", "body": {"code": "000000"}},
+    "status": 403,
+    "body": {"error": "code_invalid", "message": "That code is not right. Check the clock of your phone and try the next code."}
+  }
+}

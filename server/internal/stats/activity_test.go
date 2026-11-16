@@ -16,6 +16,7 @@ import (
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
+	"qinqin/internal/studyday"
 )
 
 func newDB(t testing.TB) *sql.DB {
@@ -78,9 +79,23 @@ func day(s string) time.Time {
 	return d
 }
 
+func date(s string) studyday.Date {
+	d, err := studyday.ParseDate(s)
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
+// run buckets by UTC days (a user with no zone).
 func run(t *testing.T, sqlDB *sql.DB, user int64, from, to string, ws *int64, rules []plugins.RuleOf) []stats.Cell {
 	t.Helper()
-	cells, err := stats.Activity(context.Background(), sqlDB, user, day(from), day(to), ws, rules)
+	return runIn(t, sqlDB, user, studyday.UTCHistory(), from, to, ws, rules)
+}
+
+func runIn(t *testing.T, sqlDB *sql.DB, user int64, h studyday.History, from, to string, ws *int64, rules []plugins.RuleOf) []stats.Cell {
+	t.Helper()
+	cells, err := stats.Activity(context.Background(), sqlDB, user, h.Windows(date(from), date(to)), ws, rules)
 	if err != nil {
 		t.Fatalf("Activity: %v", err)
 	}

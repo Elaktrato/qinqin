@@ -1,12 +1,24 @@
 <script lang="ts">
 	import { errorMessage } from '$lib/stats/errors';
-	import { buildQueue } from '$lib/study/scheduler';
+	import GoalRing from '$lib/goals/GoalRing.svelte';
+	import { streakText } from '$lib/goals/goalText';
+	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
+	import { leftToday } from '$lib/study/dueCounts';
+	import { leftTodayText } from '$lib/study/limitsText';
+	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
+	import type { StudyContext } from '$lib/study/studyContext';
+	import type { VacationPeriod } from '$lib/study/vacation';
+	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
+	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
 	import { loadConfig } from '$lib/study/session';
 	import {
 		effectiveCardTypes,
+		effectiveKinds,
 		hasTabSetup,
+		loadExtraChoices,
 		loadRememberedTypes
 	} from '$lib/study/cardTypesMemory';
 	import { loadStudyHistory } from '$lib/study/history';
@@ -27,59 +39,67 @@
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
+	// Vacation days and the study clock of this workspace (rebuilt at midnight).
+	let ctx = $state.raw<StudyContext>(currentContext());
+	let vacations = $state.raw<VacationPeriod[]>([]);
 	let loading = $state(true);
 	let error = $state('');
 	let noWorkspace = $state(false);
 
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
+	// The daily goal loads on its own: a failure only leaves the ring out.
+	let goal = $state.raw<GoalView | null>(null);
+	let goalSeq = 0;
+	// Offline with an activity goal today the ring is left out (not "no longer counted").
+	const showGoal = $derived(
+		goal !== null &&
+			!noWorkspace &&
+			(goal.today.status !== 'none' || (goal.today.unavailable && goal.activityError === null))
+	);
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
 	const deckIds = $derived([GENERAL_DECK_ID, ...decks.map((deck) => deck.id)]);
 
 	// The card types a session would study: this tab's setup, else the
 	// types last started in this workspace, else vocab.
+	// Reverse and cloze join when a deck switches them on and the learner has
+	// not unchecked them (the same rule as the setup page, effectiveKinds).
 	const kinds = $derived(
-		effectiveCardTypes(
-			hasTabSetup() ? config.cardTypes : null,
-			workspaceId === null ? null : loadRememberedTypes(workspaceId)
+		effectiveKinds(
+			effectiveCardTypes(
+				hasTabSetup() ? config.cardTypes : null,
+				workspaceId === null ? null : loadRememberedTypes(workspaceId)
+			),
+			enabledKinds(deckSettings, deckIds),
+			workspaceId === null ? {} : loadExtraChoices(workspaceId)
 		)
 	);
 
-	// Due means a reviewed card of those types whose derived schedule has
-	// come due; fresh counts existing never-reviewed cards of those types.
-	// Unlike the setup page, companions not created yet are not counted.
-	const queue = $derived.by(() => {
-		if (noWorkspace || cards.length === 0) return { due: 0, fresh: 0 };
-		const now = new Date();
-		return {
-			due: buildQueue({
-				cards,
-				reviews,
-				deckIds,
-				newLimit: 0,
-				reviewLimit: config.reviewLimit,
-				now,
-				kinds,
-				w: weights
-			}).length,
-			fresh: buildQueue({
-				cards,
-				reviews,
-				deckIds,
-				newLimit: config.newLimit,
-				reviewLimit: 0,
-				now,
-				kinds,
-				w: weights
-			}).length
-		};
+	// What the daily limits admit right now for real cards of those types
+	// (companions not created yet are not counted): due reviews and new cards
+	// left today, burying and vacation applied (dueCounts.ts leftToday).
+	const left = $derived.by(() => {
+		if (noWorkspace || cards.length === 0) {
+			return { reviews: 0, new: 0, unlimited: false, limitedOut: 0 };
+		}
+		return leftToday({ cards, reviews, deckIds, kinds, deckSettings, now: new Date(), w: weights, ctx });
 	});
 
-	const xp = $derived(xpFromReviews(reviews));
+	// The learner's day rule; a zone change recomputes XP and the streak.
+	let studyDay = $state.raw(currentStudyDay());
+	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+
+	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf));
+	const vacationText = $derived(
+		workspaceId === null
+			? null
+			: vacationLine(vacationStatus(vacations, workspaceId, studyDay.today()), studyDay.today())
+	);
 	const progress = $derived(levelProgress(xp));
 	const level = $derived(progress.level);
-	const streak = $derived(dailyStreak(reviews, Date.now()));
+	const streak = $derived(dailyStreak(reviews, Date.now(), studyDay, ctx.vacation));
 	const status = $derived<WidgetStatus>(
 		noWorkspace ? 'no-workspace' : loading ? 'loading' : error ? 'error' : 'ready'
 	);
@@ -107,7 +127,10 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, workspace);
+			vacations = data.vacations ?? [];
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			decks = [];
@@ -119,11 +142,32 @@
 		}
 	}
 
+	async function loadGoal(workspace: number | null, force = false): Promise<void> {
+		const seq = ++goalSeq;
+		if (workspace === null) {
+			goal = null;
+			return;
+		}
+		try {
+			const next = await loadGoalStatus(workspace, { force });
+			if (seq === goalSeq) goal = next;
+		} catch {
+			if (seq === goalSeq) goal = null;
+		}
+	}
+
 	// Refetch when the active workspace changes; the header switcher makes
 	// that possible without leaving home.
 	$effect(() => {
 		void load(workspaceId);
+		void loadGoal(workspaceId);
 	});
+	$effect(() =>
+		onContextStale(() => {
+			void load(workspaceId);
+			void loadGoal(workspaceId);
+		})
+	);
 </script>
 
 <WidgetCard
@@ -133,7 +177,10 @@
 	noWorkspaceText="Choose a workspace in the header to study."
 	loadingText="Loading study data…"
 	{error}
-	onretry={() => void load(workspaceId, true)}
+	onretry={() => {
+		void load(workspaceId, true);
+		void loadGoal(workspaceId, true);
+	}}
 >
 	{#snippet actions()}
 		<a class="study" href="/study">Study</a>
@@ -143,9 +190,8 @@
 		<Mascot {level} streak={streak.current} todayDone={streak.todayDone} />
 		<div class="progress">
 			<p class="stats">
-				<strong>{queue.due}</strong>
-				{queue.due === 1 ? 'card' : 'cards'} due ·
-				<strong>{queue.fresh}</strong> new · Level <strong>{level}</strong> ·
+				{vacationText ?? leftTodayText(left)} ·
+				Level <strong>{level}</strong> ·
 				{xp} XP
 			</p>
 			<div
@@ -169,6 +215,14 @@
 						? 'study today to start one'
 						: 'study today to keep it'}
 			</p>
+			{#if showGoal && goal !== null}
+				<div class="goal">
+					<GoalRing day={goal.today} sources={goal.sources} size="small" />
+					{#if goal.streak !== null}
+						<span class="goal-streak">{streakText(goal.streak)}</span>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 </WidgetCard>
@@ -229,6 +283,15 @@
 
 	.streak.idle .flame {
 		filter: grayscale(1);
+	}
+
+	.goal {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.35rem 0.75rem;
+		margin-top: 0.5rem;
+		font-size: 0.85rem;
 	}
 
 	.stats {

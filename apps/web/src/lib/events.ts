@@ -6,6 +6,8 @@ import { api } from './api/client';
 import { logChangingTypes } from './plugins/contract';
 import { emitStudyEvents } from './plugins/hooks';
 import type { StudyEventBody } from './api/types';
+import { currentStudyDay, whenStudyDaySettled } from './time/zone';
+import type { StudyDay } from './time/studyDay';
 import { newUlid } from './ulid';
 import { createWorkspaceCache } from './workspaceCache';
 
@@ -24,12 +26,6 @@ export interface StudyEvent {
 
 // The client id the server records for every event this app creates.
 const DEVICE = 'web';
-
-// UTC day keys sort the once-per-day session receipts: `YYYY-MM-DD` is
-// the same boundary the heatmap buckets events by.
-function utcDayKey(now: Date): string {
-	return now.toISOString().slice(0, 10);
-}
 
 /**
  * postEvents sends a batch of already-built events. Unlike `record` it
@@ -53,7 +49,8 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 // Home -> Stats hop, not more. Joining the read in flight is the main gain.
 export const WORKSPACE_EVENTS_TTL_MS = 8_000;
 
-function fullLogPath(workspaceId: number): string {
+/** The whole event log of one workspace; the study load and offline preparation share it. */
+export function fullLogPath(workspaceId: number): string {
 	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
 }
 
@@ -139,14 +136,18 @@ function sessionKey(workspaceId: number, day: string): string {
 }
 
 /**
- * recordSessionOnce records one `session` event per workspace per UTC
- * day. The receipt is written to localStorage before the POST so two
+ * recordSessionOnce records one `session` event per workspace per learner
+ * day (the same boundary the heatmap buckets events by). The receipt is written to localStorage before the POST so two
  * mounts in the same page (or a reload) cannot double-count the day;
  * with storage unavailable the session is recorded every time, which
  * is the safe direction.
  */
-export function recordSessionOnce(workspaceId: number): void {
-	const key = sessionKey(workspaceId, utcDayKey(new Date()));
+export function recordSessionOnce(
+	workspaceId: number,
+	day: StudyDay = currentStudyDay(),
+	now: number = Date.now()
+): void {
+	const key = sessionKey(workspaceId, day.today(now));
 	try {
 		if (typeof localStorage !== 'undefined') {
 			if (localStorage.getItem(key) !== null) return;
@@ -156,6 +157,16 @@ export function recordSessionOnce(workspaceId: number): void {
 		// Storage unavailable (private mode): record without a receipt.
 	}
 	void record('session', workspaceId);
+}
+
+/**
+ * recordSessionWhenSettled is recordSessionOnce after the learner's zone
+ * has loaded, so a receipt near midnight is not keyed by the provisional
+ * browser zone.
+ */
+export async function recordSessionWhenSettled(workspaceId: number): Promise<void> {
+	await whenStudyDaySettled();
+	recordSessionOnce(workspaceId);
 }
 
 /**

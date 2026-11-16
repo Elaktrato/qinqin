@@ -16,7 +16,8 @@ export type ErrorContext =
 	| 'bookmarks'
 	| 'highlight'
 	| 'highlightAdd'
-	| 'highlights';
+	| 'highlights'
+	| 'display';
 
 const fallbacks: Record<ErrorContext, string> = {
 	upload: 'Could not upload the file.',
@@ -33,7 +34,8 @@ const fallbacks: Record<ErrorContext, string> = {
 	bookmarks: 'Could not load the bookmarks.',
 	highlight: 'Could not save the highlight.',
 	highlightAdd: 'Could not save the highlight.',
-	highlights: 'Could not load the highlights.'
+	highlights: 'Could not load the highlights.',
+	display: 'Could not save the display settings.'
 };
 
 // A 404 from a book-scoped request whose only id is the book's (opening

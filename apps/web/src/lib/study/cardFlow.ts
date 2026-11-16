@@ -2,13 +2,27 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
+import type { StudyContext } from './studyContext';
+import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
-import { buildQueue, scheduleFor } from './scheduler';
+import { buildQueue, existingDecksOf, limitsOf, scheduleFor } from './scheduler';
+import { admit, dayCountsCached, type Candidate } from './limits';
+import type { ClozeMode } from './cloze';
+import { enabledKinds, type DeckSettings } from './deckSettings';
+import { buriedNow, buries, type Buried } from './siblings';
 import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
 import { tierFor, type SaladTier } from './wordSalad';
 import { isHan, writableChars } from './writing';
-import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
+import {
+	OPT_IN_KINDS,
+	type OptInKind,
+	type ReviewEvent,
+	type ReviewGrade,
+	type ReviewMeta,
+	type StudyCard,
+	type StudyCardKind
+} from './types';
 
 /**
  * What a card component reports when the learner has finished it: the
@@ -40,6 +54,9 @@ export interface FlowItem {
 	reshow?: number;
 	/** Word Salad tier the first showing used; a re-show keeps it. */
 	tier?: SaladTier;
+	/** Cloze: the sentence and answer mode of the first showing; a re-show keeps them. */
+	clozeSentenceId?: number;
+	clozeMode?: ClozeMode;
 }
 
 /** The entry fields eligibility needs. */
@@ -47,6 +64,9 @@ export interface EntryLike {
 	language: string;
 	written: string;
 	readings: readonly { type: string; value: string }[];
+	/** Entry kind and glosses; a character without glosses gets no writing card. */
+	kind?: string;
+	senses?: readonly unknown[];
 }
 
 export interface EligibilityContext {
@@ -56,6 +76,8 @@ export interface EligibilityContext {
 	usableChars?: string[];
 	/** Whether a sentence resolved for this item (sentence only). */
 	hasSentence: boolean;
+	/** Whether an eligible cloze sentence resolved (cloze only). */
+	hasCloze?: boolean;
 }
 
 /** zh and its regional tags (zh-Hant, zh_TW, ...). */
@@ -87,6 +109,11 @@ export function cardedSentenceIds(cards: readonly StudyCard[], entryId: number):
 	return ids;
 }
 
+/** A character entry with no senses: a pinyin-only prompt matches many homophones. */
+function lacksGlosses(entry: { kind?: string; senses?: readonly unknown[] }): boolean {
+	return entry.kind === 'character' && entry.senses !== undefined && entry.senses.length === 0;
+}
+
 /**
  * isEligible decides, when an item is about to be shown, whether its kind
  * can be studied for this word. Ineligible companions are dropped from the
@@ -103,9 +130,15 @@ export function isEligible(
 		case 'sentence':
 			return ctx.hasSentence;
 		case 'writing':
+			if (lacksGlosses(entry)) return false;
 			return (ctx.usableChars?.length ?? 0) > 0;
 		case 'tone':
 			return eligibleForTone(ctx.language, pinyinReadings(entry.readings));
+		case 'reverse':
+			// Words only (a character's meaning does not name one word), with a gloss.
+			return entry.kind === 'word' && (entry.senses?.length ?? 0) > 0;
+		case 'cloze':
+			return ctx.hasCloze === true;
 		default:
 			return false;
 	}
@@ -151,6 +184,14 @@ export interface DeckSessionOptions {
 	skip?: ReadonlySet<string>;
 	/** The workspace's active FSRS weights. */
 	w: readonly number[];
+	/** The learner's day (writing unlock, burying), the study clock and vacation state. */
+	ctx: StudyContext;
+	/** Per-deck card type switches; without them no reverse or cloze card is queued. */
+	deckSettings?: Record<string, DeckSettings>;
+	/** Offline: real cards only, no companions (see planCompanions). */
+	offline?: boolean;
+	/** The new-card order (#75, BuildQueueOptions.newKey); absent: the order added. */
+	newKey?: (card: StudyCard) => number | null;
 }
 
 /**
@@ -178,6 +219,52 @@ export interface DeckSessionPlan {
 	backfillLeft: number;
 }
 
+/** Non-vocab kinds each word's vocab row says to skip. */
+export function skipKindsByEntry(cards: readonly StudyCard[]): Map<number, Set<StudyCardKind>> {
+	const out = new Map<number, Set<StudyCardKind>>();
+	for (const card of cards) {
+		if (card.kind !== 'vocab' || card.skipKinds === undefined) continue;
+		const set = out.get(card.entryId) ?? new Set<StudyCardKind>();
+		for (const kind of card.skipKinds) set.add(kind);
+		out.set(card.entryId, set);
+	}
+	return out;
+}
+
+/** The entries that have a stored vocab card. */
+export function vocabEntryIds(cards: readonly StudyCard[]): Set<number> {
+	return new Set(cards.filter((card) => card.kind === 'vocab').map((card) => card.entryId));
+}
+
+/**
+ * allowedReal says whether a stored card may be queued: a reverse or
+ * cloze card needs a deck of the session that switches its kind on, and
+ * no kind the word's vocab row skips is queued. Turning a kind off only
+ * stops queuing; the cards and their history stay.
+ */
+export function allowedReal(
+	card: StudyCard,
+	ctx: {
+		sessionDecks: readonly string[];
+		deckSettings?: Record<string, DeckSettings>;
+		skipByEntry: Map<number, Set<StudyCardKind>>;
+		/** Entries that have a live vocab row; an opt-in card without one is an orphan. */
+		vocabEntries?: ReadonlySet<number>;
+	}
+): boolean {
+	if (card.kind !== 'vocab' && ctx.skipByEntry.get(card.entryId)?.has(card.kind)) return false;
+	if (OPT_IN_KINDS.includes(card.kind as OptInKind)) {
+		if (ctx.vocabEntries !== undefined && !ctx.vocabEntries.has(card.entryId)) return false;
+		const decks = new Set(ctx.sessionDecks);
+		const enabled = enabledKinds(
+			ctx.deckSettings,
+			card.deckIds.filter((id) => decks.has(id))
+		);
+		return enabled.has(card.kind as OptInKind);
+	}
+	return true;
+}
+
 /**
  * deckSessionPlan builds a deck session: the existing cards of the
  * selected kinds (due reviews first, then new cards), followed by at most
@@ -196,26 +283,60 @@ export function deckSessionPlan({
 	now,
 	language,
 	skip,
-	w
+	w,
+	ctx,
+	deckSettings,
+	offline,
+	newKey
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
-	if (wanted.length === 0) return { queue: [], reserve: [], backfillLeft };
+	if (wanted.length === 0 || ctx.vacationToday) return { queue: [], reserve: [], backfillLeft };
 
-	const real = buildQueue({ cards, reviews, deckIds, newLimit, reviewLimit, now, kinds: wanted, w });
+	// Cards that may not be shown (switch off, skipped, buried) leave before
+	// the limits apply, so they never use up a slot.
+	const buried = buriedNow({ cards, reviews, now, studyDay: ctx.day });
+	const skipByEntry = skipKindsByEntry(cards);
+	const vocabEntries = vocabEntryIds(cards);
+	const allowed = cards.filter(
+		(card) =>
+			!buried.cardIds.has(card.id) &&
+			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry, vocabEntries })
+	);
+	const real = buildQueue({
+		cards: allowed,
+		reviews,
+		deckIds,
+		newLimit,
+		reviewLimit,
+		now,
+		kinds: wanted,
+		w,
+		ctx,
+		// Reviews of cards that are not shown (buried, kind switched off) still
+		// use the day's allowance: count over every card.
+		counts: dayCountsCached(cards, reviews, ctx, now),
+		newKey
+	});
 	const reviewed = reviewedIds(reviews);
-	const freshCount = real.filter((card) => !reviewed.has(card.id)).length;
-	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
-	const budget = Math.max(0, limit - freshCount);
 
 	const companions = planCompanions({
 		cards,
 		kinds: wanted,
 		deckIds,
 		// Plan everything, then split at the budget: the rest is the reserve.
-		newBudget: cards.length * 3
+		newBudget: cards.length * 5,
+		reviews,
+		now: now.getTime(),
+		studyDay: ctx.day,
+		deckSettings,
+		exclude: new Set(real.map((card) => card.entryId)),
+		skip,
+		offline
 	})
 		.filter((item) => skip === undefined || !skip.has(`${item.kind}:${item.entryId}`))
+		// A word answered today already buried these (see siblings.ts).
+		.filter((item) => !buried.keys.has(`${item.kind}:${item.entryId}`))
 		// Without a snapshot (Round 1 cards) writing is decided when shown.
 		.filter(
 			(item) =>
@@ -235,9 +356,36 @@ export function deckSessionPlan({
 			})
 		);
 
+	// Companions are new cards: they share the new allowance (the session
+	// limit and each deck's daily limit) with the real new cards. The ones
+	// the daily limits still allow beyond the session limit are the reserve.
+	const counts = dayCountsCached(cards, reviews, ctx, now);
+	const caps = {
+		newLimit: Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0,
+		reviewLimit: Number.isFinite(reviewLimit) ? Math.max(0, Math.floor(reviewLimit)) : 0
+	};
+	const asCandidates: Candidate[] = [
+		...real.map((card) => ({
+			cardId: card.id,
+			deckIds: card.deckIds,
+			bucket: counts.reviewedToday.has(card.id)
+				? ('continuing' as const)
+				: reviewed.has(card.id)
+					? ('review' as const)
+					: ('new' as const)
+		})),
+		...companions.map((item) => ({ cardId: item.cardId, deckIds: item.deckIds ?? [], bucket: 'new' as const }))
+	];
+	const limitsFor = (deckId: string) => limitsOf(ctx, deckId);
+	const existing = existingDecksOf(ctx, asCandidates);
+	const inSession = new Set(admit(asCandidates, limitsFor, counts, caps, existing).admitted);
+	const inAllowance = new Set(
+		admit(asCandidates, limitsFor, counts, { ...caps, newLimit: Infinity }, existing).admitted
+	);
+
 	return {
-		queue: [...real.map(fromCard), ...companions.slice(0, budget)],
-		reserve: companions.slice(budget),
+		queue: [...real.map(fromCard), ...companions.filter((item) => inSession.has(item.cardId))],
+		reserve: companions.filter((item) => inAllowance.has(item.cardId) && !inSession.has(item.cardId)),
 		backfillLeft
 	};
 }
@@ -265,13 +413,50 @@ export function dropItem(plan: DeckSessionPlan, cardId: string): DeckSessionPlan
 }
 
 /**
+ * buryAfterAnswer removes the items after `index` that the just recorded
+ * answer buries (same word, another card, not a re-show, see `buries`).
+ * A removed virtual item frees its new-card slot like dropItem; a
+ * removed real card frees nothing. Run it on the queue applyGrade
+ * returned, `index` = the answered position.
+ */
+export function buryAfterAnswer(
+	plan: DeckSessionPlan,
+	index: number,
+	answered: { kind: StudyCardKind; entryId: number; cardId: string }
+): { plan: DeckSessionPlan; buried: number } {
+	let current = plan;
+	let buried = 0;
+	for (;;) {
+		const target = current.queue.find(
+			(item, at) =>
+				at > index &&
+				item.entryId === answered.entryId &&
+				item.cardId !== answered.cardId &&
+				item.reshow === undefined &&
+				buries(answered.kind, item.kind)
+		);
+		if (target === undefined) return { plan: current, buried };
+		current = dropItem(current, target.cardId);
+		buried += 1;
+	}
+}
+
+/**
  * rememberDrop decides whether a dropped item's ineligibility is final
  * enough to remember for later sessions. Only companions are remembered.
  * A writing drop is remembered only when the word has no Han character at
  * all: missing stroke data may be a transient network failure.
  */
-export function rememberDrop(item: FlowItem, written: string): boolean {
+export function rememberDrop(
+	item: FlowItem,
+	written: string,
+	entry?: { kind?: string; senses?: readonly unknown[] },
+	opts: { transient?: boolean } = {}
+): boolean {
 	if (!item.virtual) return false;
+	// A failed request says nothing about the word: check it again next session.
+	if (opts.transient === true) return false;
+	if (item.kind === 'writing' && entry !== undefined && lacksGlosses(entry)) return true;
 	return item.kind !== 'writing' || writableChars(written).length === 0;
 }
 
@@ -293,27 +478,38 @@ export function resolveSentence<T extends { id: number }>(
 }
 
 /**
- * levelSessionItems maps a level queue to flow items. Level sessions stay
- * vocab-only, so a setup without vocab yields an empty session.
+ * levelSessionItems maps a level queue to flow items, each with its own
+ * kind. Items whose kind is not selected are dropped, so a setup with no
+ * applicable kind yields an empty session. A virtual recognition item
+ * carries no deck (gradeItem defaults to General, as it always did); a
+ * virtual writing item names General explicitly.
  */
 export function levelSessionItems(
 	items: readonly LevelQueueItem[],
 	cards: readonly StudyCard[],
-	kinds: readonly StudyCardKind[]
+	kinds: readonly StudyCardKind[],
+	buried?: Buried
 ): FlowItem[] {
-	if (!kinds.includes('vocab')) return [];
 	const byId = new Map(cards.map((card) => [card.id, card]));
-	return items.map((item): FlowItem => {
+	const out: FlowItem[] = [];
+	for (const item of items) {
+		if (!kinds.includes(item.kind)) continue;
+		if (buried?.cardIds.has(item.cardId) || buried?.keys.has(`${item.kind}:${item.entryId}`)) continue;
 		const card = item.virtual ? undefined : byId.get(item.cardId);
-		if (card !== undefined) return fromCard(card);
-		return {
+		if (card !== undefined) {
+			out.push(fromCard(card));
+			continue;
+		}
+		out.push({
 			cardId: item.cardId,
-			kind: 'vocab',
+			kind: item.kind,
 			entryId: item.entryId,
 			virtual: item.virtual,
-			card: null
-		};
-	});
+			card: null,
+			...(item.kind === 'vocab' ? {} : { deckIds: ['general'] })
+		});
+	}
+	return out;
 }
 
 /** Due reviews, new items, and items per kind of one planned session. */
@@ -322,7 +518,14 @@ export function sessionCounts(
 	reviews: readonly ReviewEvent[]
 ): { due: number; fresh: number; byKind: Record<StudyCardKind, number> } {
 	const reviewed = reviewedIds(reviews);
-	const byKind: Record<StudyCardKind, number> = { vocab: 0, sentence: 0, writing: 0, tone: 0 };
+	const byKind: Record<StudyCardKind, number> = {
+		vocab: 0,
+		sentence: 0,
+		writing: 0,
+		tone: 0,
+		reverse: 0,
+		cloze: 0
+	};
 	let due = 0;
 	for (const item of items) {
 		byKind[item.kind] += 1;
@@ -347,10 +550,11 @@ export function tierForCard(
 	cardId: string | null,
 	reviews: readonly ReviewEvent[],
 	now: Date,
-	w: readonly number[]
+	w: readonly number[],
+	clock: StudyClock
 ): SaladTier {
 	if (cardId === null) return 0;
-	return tierFor(scheduleFor(cardId, reviews, now, w)?.stability ?? null);
+	return tierFor(scheduleFor(cardId, reviews, now, w, clock)?.stability ?? null);
 }
 
 /**
@@ -421,6 +625,30 @@ export function tonePadLabels(written: string, syllableCount: number): string[] 
 /** The tone check candidates of an entry: its clean pinyin readings. */
 export function toneCandidates(readings: readonly { type: string; value: string }[]): Syllable[][] {
 	return cleanReadings(pinyinReadings(readings));
+}
+
+/** Whether Space/Enter outside a field reveals the answer of this kind of card. */
+export function revealsOnKey(kind: StudyCardKind): boolean {
+	return kind === 'vocab' || kind === 'reverse';
+}
+
+/**
+ * The `written` snapshots of the session decks' other vocab cards: where a
+ * cloze card's wrong choices come from.
+ */
+export function clozeDistractorPool(
+	cards: readonly StudyCard[],
+	deckIds: readonly string[],
+	entryId: number
+): string[] {
+	const decks = new Set(deckIds);
+	const out = new Set<string>();
+	for (const card of cards) {
+		if (card.kind !== 'vocab' || card.entryId === entryId) continue;
+		if (!card.deckIds.some((id) => decks.has(id))) continue;
+		if (typeof card.written === 'string' && card.written !== '') out.add(card.written);
+	}
+	return [...out];
 }
 
 /** How long after the suggestion gains focus a keyboard activation is suspect. */

@@ -9,6 +9,9 @@
 #   QINQIN_IMAGE     default ghcr.io/elaktrato/qinqin:latest. Pin a release,
 #                    e.g. ghcr.io/elaktrato/qinqin:v1.2.3 (tags: latest, v*, sha).
 #   QINQIN_PORT      published host port, default 8080.
+# Backups: users download their data in the app; admins create server backups
+#                    (Settings, Admin, Backup) or run `docker exec <c> qinqin backup --out /data/backups/x.tar.gz`.
+#                    /data/backups lives in the data volume; bind-mount a host path there to keep archives outside it.
 #   QINQIN_DATA_VOLUME  default "qinqin-data" (a named volume). To use a host
 #                    directory instead, set it to an absolute path such as
 #                    /srv/qinqin/data: Docker then bind-mounts it (it must exist
@@ -21,6 +24,17 @@
 #   QINQIN_AI_ALLOW_PRIVATE "1" lets admin-registered AI endpoints reach
 #                    loopback and private addresses (Ollama on your LAN). Off
 #                    by default; enable only if you trust every admin.
+#   QINQIN_SMTP_ALLOW_PRIVATE "1" lets the mail server be on loopback or a
+#                    private network (a relay container, a LAN host).
+#   QINQIN_TRUSTED_PROXIES  which peers may tell the server a client's address
+#                    through X-Forwarded-For (sign-in limits are per client).
+#                    Empty = private networks (right behind a reverse proxy on
+#                    a Docker or LAN network). "none" = ignore the header:
+#                    set it when NOTHING reverse-proxies to qinqin, because a
+#                    client that reaches the port directly could otherwise
+#                    forge the header and dodge the per-client limits. Or a
+#                    comma list of CIDRs/addresses (a CDN's ranges, one proxy).
+#   QINQIN_TESSERACT        path of the tesseract binary; empty = the image's.
 #   QINQIN_AI_PROVIDER      "fake" for testing only; never contacts an AI service.
 #                    "anthropic" (legacy) means QINQIN_AI_PROVIDERS=anthropic.
 services:
@@ -37,7 +51,10 @@ services:
       QINQIN_SECRET_PREVIOUS: ${QINQIN_SECRET_PREVIOUS:-}
       QINQIN_AI_PROVIDERS: ${QINQIN_AI_PROVIDERS:-}
       QINQIN_AI_ALLOW_PRIVATE: ${QINQIN_AI_ALLOW_PRIVATE:-}
+      QINQIN_SMTP_ALLOW_PRIVATE: ${QINQIN_SMTP_ALLOW_PRIVATE:-}
       QINQIN_AI_PROVIDER: ${QINQIN_AI_PROVIDER:-}
+      QINQIN_TRUSTED_PROXIES: ${QINQIN_TRUSTED_PROXIES:-}
+      QINQIN_TESSERACT: ${QINQIN_TESSERACT:-}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 30s

@@ -30,6 +30,10 @@ const throwing = {
 const KEY = 'qinqin.reader.rail';
 
 describe('rail state', () => {
+	it('keeps a stored words tab', () => {
+		expect(loadRailState(memoryStorage({ [KEY]: '{"open":true,"tab":"words"}' }))).toEqual({ open: true, tab: 'words' });
+	});
+
 	it('defaults to an open rail on the bookmarks tab', () => {
 		expect(DEFAULT_RAIL_STATE).toEqual({ open: true, tab: 'bookmarks' });
 		expect(loadRailState(memoryStorage())).toEqual(DEFAULT_RAIL_STATE);

@@ -11,7 +11,7 @@
 
 import { invalidateWorkspaceEvents, loadWorkspaceEvents, onEventLogChange } from '../events';
 import { createWorkspaceCache } from '../workspaceCache';
-import { loadStudyDataWith, onStudyWrite } from './store';
+import { ALL_WORKSPACES, loadStudyDataWith, onStudyWrite } from './store';
 import type { StudyHistory } from './types';
 
 export const STUDY_HISTORY_TTL_MS = 8_000;
@@ -22,7 +22,9 @@ const history = createWorkspaceCache(
 	STUDY_HISTORY_TTL_MS
 );
 
-onStudyWrite((workspaceId) => history.invalidate(workspaceId));
+onStudyWrite((workspaceId) =>
+	history.invalidate(workspaceId === ALL_WORKSPACES ? undefined : workspaceId)
+);
 onEventLogChange((workspaceId) => history.invalidate(workspaceId));
 
 /**

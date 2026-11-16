@@ -15,9 +15,13 @@
 	import { pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
 	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
+	import AccountSettings from '$lib/settings/AccountSettings.svelte';
+	import AdminSettings from '$lib/settings/AdminSettings.svelte';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
+	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
+	import StudySettings from '$lib/settings/StudySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
@@ -402,6 +406,16 @@
 
 	<div
 		role="tabpanel"
+		id="settings-panel-study"
+		aria-labelledby="settings-tab-study"
+		hidden={activeTab !== 'study'}
+	>
+		<StudyDaySettings />
+		<StudySettings />
+	</div>
+
+	<div
+		role="tabpanel"
 		id="settings-panel-plugins"
 		aria-labelledby="settings-tab-plugins"
 		hidden={activeTab !== 'plugins'}
@@ -491,6 +505,15 @@
 		<AiSettings />
 	</div>
 
+	<div
+		role="tabpanel"
+		id="settings-panel-account"
+		aria-labelledby="settings-tab-account"
+		hidden={activeTab !== 'account'}
+	>
+		<AccountSettings />
+	</div>
+
 	{#if admin}
 		<div
 			role="tabpanel"
@@ -506,6 +529,15 @@
 				}}
 			/>
 			<LanguageManager refreshKey={languagesKey} />
+		</div>
+		<div
+			role="tabpanel"
+			id="settings-panel-admin"
+			aria-labelledby="settings-tab-admin"
+			hidden={activeTab !== 'admin'}
+		>
+			<h2>Admin</h2>
+			{#if activeTab === 'admin'}<AdminSettings />{/if}
 		</div>
 	{/if}
 </main>

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"qinqin/internal/radicals"
 )
 
 // CharacterRow is one character of a language's character universe (the
@@ -31,6 +33,9 @@ type CharacterRow struct {
 	Reading  string   // first reading, at most MaxCharacterReading runes
 	Gloss    string   // first gloss, at most MaxCharacterGloss runes
 	Variants []string // written forms of the variant partners, deduplicated
+	// Radical is the Kangxi number (1–214) of the character's radical
+	// link (see radicalOf), 0 when it has none.
+	Radical int
 }
 
 // CharacterSet is a language's character universe. Stale reports a
@@ -109,6 +114,16 @@ const glossLists = `(SELECT group_concat(s.glosses, char(31) ORDER BY s.dictiona
 	JOIN dictionaries d ON d.id = s.dictionary_id AND d.deleted_at IS NULL
 	WHERE s.entry_id = e.id AND s.deleted_at IS NULL AND s.glosses <> '[]')`
 
+// radicalOf is the first live form of the live target of e's first live
+// radical link (by target id): the radical entry's canonical character,
+// which the importers create from the Kangxi table. One seek on the
+// entry_links primary key (from_id, ...).
+const radicalOf = `(SELECT f.text FROM entry_links l
+	JOIN entries t ON t.id = l.to_id AND t.deleted_at IS NULL
+	JOIN forms f ON f.entry_id = t.id AND f.deleted_at IS NULL
+	WHERE l.from_id = e.id AND l.type = 'radical' AND l.deleted_at IS NULL
+	ORDER BY l.to_id, f.ord, f.id LIMIT 1)`
+
 // HasCharacterUniverse reports whether language has a character universe
 // (ja, zh); Characters of any other language is empty.
 func HasCharacterUniverse(language string) bool {
@@ -142,7 +157,8 @@ func characterMarkerQuery(language string) (string, bool) {
 // (the stale rule when stale), bound to the language: per character its
 // attrs, first form, first reading, gloss lists (glossLists) and its
 // variant partners (links of both directions, live on both ends) as a
-// JSON array of [id, form, hkgrade]. Each per-row value is an index seek
+// JSON array of [id, form, hkgrade], and its radical's character
+// (radicalOf). Each per-row value is an index seek
 // on the child table's entry index.
 func charactersQuery(language string, stale bool) (string, bool) {
 	u, ok := characterUniverses[language]
@@ -170,7 +186,8 @@ func charactersQuery(language string, stale bool) (string, bool) {
 				` + partner("from_id", "to_id") + `
 				UNION ALL
 				` + partner("to_id", "from_id") + `
-			) v)` + liveCharacters + `
+			) v),
+			` + radicalOf + liveCharacters + `
 			AND ` + where, true
 }
 
@@ -232,8 +249,9 @@ func (s Store) Characters(ctx context.Context, language string) (CharacterSet, e
 			r                        CharacterRow
 			attrs                    string
 			reading, gloss, variants *string
+			radical                  *string
 		)
-		if err := rows.Scan(&r.ID, &r.Char, &attrs, &reading, &gloss, &variants); err != nil {
+		if err := rows.Scan(&r.ID, &r.Char, &attrs, &reading, &gloss, &variants, &radical); err != nil {
 			return err
 		}
 		if !isHan(r.Char) {
@@ -260,6 +278,9 @@ func (s Store) Characters(ctx context.Context, language string) (CharacterSet, e
 			if err := r.addVariants(*variants); err != nil {
 				return fmt.Errorf("variants of entry %d: %w", r.ID, err)
 			}
+		}
+		if radical != nil {
+			r.Radical = radicals.Number(*radical)
 		}
 		set.Rows = append(set.Rows, r)
 		return nil
@@ -364,6 +385,10 @@ func (r *CharacterRow) addVariants(raw string) error {
 	}
 	return nil
 }
+
+// IsHan reports whether s is one Han character that belongs in a
+// character grid (see isHan); the components packs use the same rule.
+func IsHan(s string) bool { return isHan(s) }
 
 // isHan reports whether s is one Han character that belongs in a grid.
 // CC-CEDICT has a few single-letter lines (A, B, □, ○) that are character

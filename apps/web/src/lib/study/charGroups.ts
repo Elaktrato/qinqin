@@ -343,6 +343,9 @@ function fold(text: string): string {
 		.replace(HIRAGANA, (kana) => String.fromCharCode(kana.charCodeAt(0) + 0x60));
 }
 
+/** The same folding for other searchable lists (the decks view). */
+export { fold as foldSearch };
+
 // The folded search text per row, computed once: a keystroke then folds
 // only the query, not 13k rows × 4 fields.
 const haystacks = new WeakMap<CharRow, string>();

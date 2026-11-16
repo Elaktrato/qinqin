@@ -1,0 +1,17 @@
+[
+ {
+  "id": 3,
+  "workspaceId": 7,
+  "language": "zh",
+  "title": "Sample book",
+  "author": "A. Writer",
+  "source": "upload",
+  "sourceId": "s3",
+  "sourceUrl": "",
+  "attribution": "",
+  "licenseNote": "",
+  "chapterCount": 1,
+  "position": "0:0",
+  "createdAt": "2026-11-05T00:00:00Z"
+ }
+]

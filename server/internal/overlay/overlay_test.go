@@ -334,3 +334,33 @@ func TestAllNilPatchRevertsAndKeepsMarker(t *testing.T) {
 		t.Errorf("marker row = %v %v, want NULL fields", w, r)
 	}
 }
+
+func TestReadingsBatch(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	alice, bob := createUser(t, sqlDB, "alice"), createUser(t, sqlDB, "bob")
+	importPack(t, ctx, sqlDB, overlayManifest, faJSON("to send"))
+	id := entryID(t, sqlDB, "发")
+	got, err := overlay.Readings(ctx, sqlDB, alice.ID, []int64{id, 999999})
+	if err != nil || len(got) != 0 {
+		t.Fatalf("Readings without a patch = %v, %v, want empty", got, err)
+	}
+	patch := model.EntryPatch{Readings: []model.Reading{{Type: "pinyin", Value: "fa4"}}}
+	if err := overlay.Put(ctx, sqlDB, alice.ID, id, patch); err != nil {
+		t.Fatal(err)
+	}
+	got, err = overlay.Readings(ctx, sqlDB, alice.ID, []int64{id})
+	if err != nil || len(got[id]) != 1 || got[id][0].Value != "fa4" {
+		t.Errorf("alice Readings = %v, %v, want her fa4", got, err)
+	}
+	if got, _ = overlay.Readings(ctx, sqlDB, bob.ID, []int64{id}); len(got) != 0 {
+		t.Errorf("bob Readings = %v, want none", got)
+	}
+	// A written-only patch carries no readings.
+	if err := overlay.Put(ctx, sqlDB, alice.ID, id, model.EntryPatch{Written: new(string)}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ = overlay.Readings(ctx, sqlDB, alice.ID, []int64{id}); len(got) != 0 {
+		t.Errorf("written-only patch Readings = %v, want none", got)
+	}
+}

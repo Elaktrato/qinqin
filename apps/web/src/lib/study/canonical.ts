@@ -7,7 +7,7 @@
 // others count for it. Stored data is never rewritten.
 
 import { cardKey } from './reviewParse';
-import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
+import { CARD_KINDS, type ReviewEvent, type StudyCard, type StudyCardKind } from './types';
 
 /**
  * newCardId is the deterministic id of a new card: `c-<kind>-<entryId>`.
@@ -18,6 +18,11 @@ import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
  */
 export function newCardId(kind: StudyCardKind, entryId: number): string {
 	return `c-${kind}-${entryId}`;
+}
+
+/** The known, non-vocab kinds of a list, deduplicated, in kind order. */
+export function cleanSkipKinds(list: readonly unknown[]): StudyCardKind[] {
+	return CARD_KINDS.filter((kind) => kind !== 'vocab' && list.includes(kind));
 }
 
 function createdAtMs(card: StudyCard): number {
@@ -54,8 +59,15 @@ function mergeInto(survivor: StudyCard, others: readonly StudyCard[]): StudyCard
 		if (merged.written === undefined && other.written !== undefined) {
 			merged.written = other.written;
 		}
+		if (merged.entryKind === undefined && other.entryKind !== undefined) {
+			merged.entryKind = other.entryKind;
+		}
 		if (merged.sentenceId === undefined && other.sentenceId !== undefined) {
 			merged.sentenceId = other.sentenceId;
+		}
+		if (other.skipKinds !== undefined) {
+			const union = cleanSkipKinds([...(merged.skipKinds ?? []), ...other.skipKinds]);
+			if (union.length > 0) merged.skipKinds = union;
 		}
 	}
 	return merged;

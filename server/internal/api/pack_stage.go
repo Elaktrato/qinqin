@@ -232,6 +232,7 @@ func (s *server) runStageSweeper() {
 			return
 		case <-t.C:
 			s.sweepStages(packsDir)
+			s.sweepRestore()
 		}
 	}
 }

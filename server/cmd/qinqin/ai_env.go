@@ -55,7 +55,8 @@ func aiFromEnv(sqlDB *sql.DB, getenv func(string) string, logf func(string, ...a
 		Limiter:   &ai.Limiter{DB: sqlDB, PerHour: ai.HourlyLimit},
 	}
 
-	secret, state := ai.ParseSecret(getenv("QINQIN_SECRET"))
+	sec := secretsFromEnv(getenv)
+	state := sec.State
 	svc.Secret = state
 	logf("AI: QINQIN_SECRET %s", state)
 	switch state {
@@ -96,14 +97,13 @@ func aiFromEnv(sqlDB *sql.DB, getenv func(string) string, logf func(string, ...a
 	if state != ai.SecretOK {
 		return svc
 	}
-	svc.Keys = &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(secret), AADFor: reg.AADFor}
-	if raw := getenv("QINQIN_SECRET_PREVIOUS"); raw != "" {
-		prev, pstate := ai.ParseSecret(raw)
-		if pstate != ai.SecretOK {
-			logf("AI: QINQIN_SECRET_PREVIOUS is not 32 bytes of base64; ignored")
-			return svc
-		}
-		svc.Keys.Previous = ai.NewSealer(prev)
+	svc.Keys = &ai.KeyStore{DB: sqlDB, Current: sec.Current, AADFor: reg.AADFor}
+	if sec.PreviousInvalid {
+		logf("AI: QINQIN_SECRET_PREVIOUS is not 32 bytes of base64; ignored")
+		return svc
+	}
+	if sec.Previous != nil {
+		svc.Keys.Previous = sec.Previous
 		n, err := svc.Keys.Rotate(context.Background())
 		if err != nil {
 			logf("AI: rotating keys to the new QINQIN_SECRET failed: %v", err)

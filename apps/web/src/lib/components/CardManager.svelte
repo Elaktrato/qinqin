@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
+	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
 	import {
-		PartialCardsError,
 		deleteCards,
+		dropSiblingCards,
 		moveCards,
-		restoreCards
+		restoreCards,
+		skipKind,
+		unskipKind
 	} from '$lib/study/store';
 	import { rangeIds, toggleId, wordsOfCards } from '$lib/study/cardSelection';
 	import type { Deck, StudyCard } from '$lib/study/types';
@@ -13,6 +16,8 @@
 	// between decks or deleted, one or many at once. Every change can be
 	// undone from the toast; `onchanged` tells the page to reload.
 	// Only the newest change is undoable: a new one replaces the toast.
+	// The writes, the undo slot and its timer live in the shared controller
+	// (lib/study/cardActions.ts), which the decks view uses as well.
 	let {
 		cards,
 		decks,
@@ -23,29 +28,27 @@
 		onchanged: () => void | Promise<void>;
 	} = $props();
 
-	const UNDO_MS = 10000;
-
-	interface UndoSlot {
-		text: string;
-		rows: StudyCard[];
-		// A move-undo must not revive a card another tab deleted since.
-		onlyLive: boolean;
-	}
-
 	let root: HTMLDetailsElement | undefined = $state();
 	let filter = $state('all');
 	let selected = $state<string[]>([]);
 	let target = $state('');
-	let pending = $state(0);
-	let error = $state('');
 	let confirming = $state(false);
 	let anchor = $state<string | null>(null);
-	let undo = $state<UndoSlot | null>(null);
-	let undoTimer: ReturnType<typeof setTimeout> | undefined;
-	// Writes run one after another, so an old undo can never overlap or
-	// follow a newer delete it would resurrect.
-	let chain: Promise<unknown> = Promise.resolve();
-	const busy = $derived(pending > 0);
+
+	const actions = createCardActions({
+		deleteCards,
+		moveCards,
+		restoreCards,
+		dropSiblingCards,
+		skipKind,
+		unskipKind,
+		onchanged: () => onchanged()
+	});
+	let controller = $state<CardActionsState>({ busy: false, error: '', undo: null });
+	const unsubscribe = actions.state.subscribe((next) => (controller = next));
+	const busy = $derived(controller.busy);
+	const undo = $derived(controller.undo);
+	const error = $derived(controller.error);
 
 	const deckName = $derived(new Map(decks.map((deck) => [deck.id, deck.name])));
 	const words = $derived(wordsOfCards(cards));
@@ -64,7 +67,10 @@
 		confirming = false;
 	});
 
-	onDestroy(() => clearTimeout(undoTimer));
+	onDestroy(() => {
+		unsubscribe();
+		actions.destroy();
+	});
 
 	function label(card: StudyCard): string {
 		return card.written ?? `Entry ${card.entryId}`;
@@ -72,41 +78,6 @@
 
 	function decksOf(card: StudyCard): string {
 		return card.deckIds.map((id) => deckName.get(id) ?? id).join(', ');
-	}
-
-	function startTimer(): void {
-		clearTimeout(undoTimer);
-		undoTimer = setTimeout(() => {
-			// Never expire under a running write or a hovering pointer.
-			if (busy) startTimer();
-			else undo = null;
-		}, UNDO_MS);
-	}
-
-	function offerUndo(slot: UndoSlot): void {
-		undo = slot;
-		startTimer();
-	}
-
-	function run(action: () => Promise<void>): Promise<void> {
-		const task = chain.then(async () => {
-			pending += 1;
-			error = '';
-			try {
-				await action();
-			} catch (err) {
-				error = err instanceof Error && err.message ? err.message : 'That did not work.';
-			} finally {
-				// A failed write may still have landed: always show the stored state.
-				try {
-					await onchanged();
-				} finally {
-					pending -= 1;
-				}
-			}
-		});
-		chain = task.catch(() => undefined);
-		return task;
 	}
 
 	function pick(card: StudyCard, event: MouseEvent): void {
@@ -140,72 +111,20 @@
 	async function remove(ids: string[]): Promise<void> {
 		confirming = false;
 		const index = Math.min(...ids.map((id) => visibleIds.indexOf(id)).filter((i) => i >= 0));
-		await run(async () => {
-			let removed: StudyCard[];
-			let failure: unknown = null;
-			try {
-				removed = await deleteCards(ids);
-			} catch (err) {
-				if (!(err instanceof PartialCardsError)) throw err;
-				// Part of it landed: that part stays undoable.
-				removed = err.rows;
-				failure = err;
-			}
-			selected = selected.filter((id) => !ids.includes(id));
-			if (removed.length > 0) {
-				offerUndo({
-					text: ids.length === 1 ? 'Card deleted.' : `${ids.length} cards deleted.`,
-					rows: removed,
-					onlyLive: false
-				});
-			}
-			if (failure !== null) throw failure;
-		});
+		await actions.remove(ids);
+		selected = selected.filter((id) => !ids.includes(id));
 		await focusRow(Number.isFinite(index) ? index : 0);
 	}
 
 	async function move(): Promise<void> {
 		if (target === '' || chosen.length === 0) return;
 		const ids = [...chosen];
-		const name = deckName.get(target) ?? target;
-		await run(async () => {
-			let before: StudyCard[];
-			let failure: unknown = null;
-			try {
-				before = await moveCards(ids, target);
-			} catch (err) {
-				if (!(err instanceof PartialCardsError)) throw err;
-				before = err.rows;
-				failure = err;
-			}
-			selected = [];
-			if (before.length > 0) {
-				offerUndo({
-					text: ids.length === 1 ? `Moved to ${name}.` : `Moved ${ids.length} cards to ${name}.`,
-					rows: before,
-					onlyLive: true
-				});
-			}
-			if (failure !== null) throw failure;
-		});
+		await actions.move(ids, target, deckName.get(target) ?? target);
+		selected = [];
 	}
 
-	async function undoLast(): Promise<void> {
-		if (undo === null || busy) return;
-		clearTimeout(undoTimer);
-		await run(async () => {
-			const slot = undo;
-			if (slot === null) return;
-			try {
-				await restoreCards(slot.rows, { onlyLive: slot.onlyLive });
-				// Cleared only after it worked, so a failed undo can be retried.
-				undo = null;
-			} catch (err) {
-				if (err instanceof PartialCardsError) undo = { ...slot, rows: err.rows };
-				startTimer();
-				throw err;
-			}
-		});
+	function undoLast(): Promise<void> {
+		return actions.undo();
 	}
 
 	function rowKey(event: KeyboardEvent, card: StudyCard): void {
@@ -341,10 +260,10 @@
 		<div
 			class="toast"
 			role="presentation"
-			onmouseenter={() => clearTimeout(undoTimer)}
-			onmouseleave={startTimer}
-			onfocusin={() => clearTimeout(undoTimer)}
-			onfocusout={startTimer}
+			onmouseenter={() => actions.pauseTimer()}
+			onmouseleave={() => actions.resumeTimer()}
+			onfocusin={() => actions.pauseTimer()}
+			onfocusout={() => actions.resumeTimer()}
 		>
 			<span>{undo.text}</span>
 			<button type="button" disabled={busy} onclick={undoLast}>Undo</button>

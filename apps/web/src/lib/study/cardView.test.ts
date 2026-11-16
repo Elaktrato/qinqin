@@ -141,3 +141,29 @@ describe('buildVocabFaces', () => {
 		expect(faces.front.sentenceLines).toEqual(['你好世界']);
 	});
 });
+
+describe('buildVocabFaces for a character', () => {
+	const kanji = entry({
+		kind: 'character',
+		language: 'ja',
+		written: '学',
+		readings: [reading('on', 'ガク'), reading('kun', 'まな.ぶ', 1), reading('on', 'ガッ', 2)],
+		senses: [sense('KANJIDIC', 'study')]
+	});
+
+	it('shows the glyph alone on the front', () => {
+		const { front } = buildVocabFaces(kanji, sentence('学校'), 'ja');
+		expect(front).toEqual({ written: '学', readings: [], sentenceLines: [] });
+	});
+
+	it('puts every reading on the back, grouped by type, with the glosses', () => {
+		const { back } = buildVocabFaces(kanji, null, 'ja');
+		expect(back.readings.map((r) => r.value)).toEqual(['ガク', 'ガッ', 'まな.ぶ']);
+		expect(back.glosses).toEqual([{ dictionaryName: 'KANJIDIC', glosses: ['study'] }]);
+	});
+
+	it('keeps a word back equal to its front readings', () => {
+		const faces = buildVocabFaces(entry(), null, 'zh');
+		expect(faces.back.readings).toEqual(faces.front.readings);
+	});
+});

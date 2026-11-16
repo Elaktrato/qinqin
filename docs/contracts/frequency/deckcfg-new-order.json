@@ -1,0 +1,183 @@
+{
+ "version": 1,
+ "rule": "frequency/deckcfg-new-order",
+ "cases": [
+  {
+   "name": "absent = added (null)",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z"
+   },
+   "newOrder": null,
+   "extra": {}
+  },
+  {
+   "name": "added",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": {
+     "by": "added"
+    }
+   },
+   "newOrder": {
+    "by": "added"
+   },
+   "extra": {}
+  },
+  {
+   "name": "frequency",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": {
+     "by": "frequency"
+    }
+   },
+   "newOrder": {
+    "by": "frequency"
+   },
+   "extra": {}
+  },
+  {
+   "name": "level with packId",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": {
+     "by": "level",
+     "packId": "hsk-words"
+    }
+   },
+   "newOrder": {
+    "by": "level",
+    "packId": "hsk-words"
+   },
+   "extra": {}
+  },
+  {
+   "name": "level without packId is malformed: kept verbatim",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": {
+     "by": "level"
+    }
+   },
+   "newOrder": null,
+   "extra": {
+    "newOrder": {
+     "by": "level"
+    }
+   }
+  },
+  {
+   "name": "level with empty packId is malformed: kept verbatim",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": {
+     "by": "level",
+     "packId": ""
+    }
+   },
+   "newOrder": null,
+   "extra": {
+    "newOrder": {
+     "by": "level",
+     "packId": ""
+    }
+   }
+  },
+  {
+   "name": "an unknown by (a newer client) is kept verbatim",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": {
+     "by": "popular"
+    }
+   },
+   "newOrder": null,
+   "extra": {
+    "newOrder": {
+     "by": "popular"
+    }
+   }
+  },
+  {
+   "name": "a string is malformed: kept verbatim",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": "frequency"
+   },
+   "newOrder": null,
+   "extra": {
+    "newOrder": "frequency"
+   }
+  },
+  {
+   "name": "null is malformed: kept verbatim",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": null
+   },
+   "newOrder": null,
+   "extra": {
+    "newOrder": null
+   }
+  },
+  {
+   "name": "fields inside newOrder beyond the shape are dropped",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": {
+     "by": "frequency",
+     "packId": "x",
+     "weight": 2
+    }
+   },
+   "newOrder": {
+    "by": "frequency"
+   },
+   "extra": {}
+  },
+  {
+   "name": "unknown row fields stay verbatim",
+   "row": {
+    "deckId": "d1",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-16T00:00:00.000Z",
+    "newOrder": {
+     "by": "frequency"
+    },
+    "goal": {
+     "n": 5
+    }
+   },
+   "newOrder": {
+    "by": "frequency"
+   },
+   "extra": {
+    "goal": {
+     "n": 5
+    }
+   }
+  }
+ ]
+}

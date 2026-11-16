@@ -543,6 +543,23 @@ func TestOpenAIValidate(t *testing.T) {
 	})
 }
 
+// TestDeepSeekValidateDocsList pins key validation to the list shape of
+// api-docs.deepseek.com/api/list-models (checked 2026-11-15): GET /models,
+// "object": "list", data[].id "deepseek-flash" and "deepseek-v4-pro".
+func TestDeepSeekValidateDocsList(t *testing.T) {
+	const list = `{"object":"list","data":[{"id":"deepseek-flash","object":"model"},{"id":"deepseek-v4-pro","object":"model"}]}`
+	rig := newOARig(t, func(_ int, w http.ResponseWriter, _ *http.Request, _ seenReq) { writeJSON200(w, list) })
+	ad, sp := oaAdapterFor(rig, "deepseek", nil)
+	for _, m := range []string{"deepseek-flash", "deepseek-v4-pro"} {
+		if err := ad.Validate(context.Background(), oaCreds(sp, m)); err != nil {
+			t.Errorf("%s: %v", m, err)
+		}
+	}
+	if rq := rig.requests(); len(rq) != 2 || rq[0].Method != http.MethodGet || rq[0].Path != "/models" {
+		t.Errorf("requests = %+v", rq)
+	}
+}
+
 func TestOpenAINoKeyInErrors(t *testing.T) {
 	var logs bytes.Buffer
 	log.SetOutput(&logs)

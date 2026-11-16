@@ -4,6 +4,8 @@
 //	qinqin [serve] [--addr :8080] [--data ./data]
 //	qinqin seed    --data <dir> --packs <dir>
 //	qinqin adduser --data <dir> --username <name> [--admin]
+//	qinqin recover --data <dir> --username <name> [--enable] [--admin] [--reset-mfa]
+//	qinqin backup  --out <file|-> [--data <dir>] [--only db,books,packs,audio]
 package main
 
 import (
@@ -22,6 +24,7 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/api"
+	"qinqin/internal/auth"
 	"qinqin/internal/db"
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
@@ -50,8 +53,12 @@ func main() {
 		err = seedCmd(args, os.Stdout)
 	case "adduser":
 		err = adduserCmd(args, os.Stdin, os.Stderr)
+	case "recover":
+		err = recoverCmd(args, os.Stdin, os.Stderr)
+	case "backup":
+		err = backupCmd(args, os.Stdout, os.Stderr)
 	default:
-		err = fmt.Errorf("%w: unknown command %q (want serve, seed, or adduser)", errUsage, cmd)
+		err = fmt.Errorf("%w: unknown command %q (want serve, seed, adduser, recover or backup)", errUsage, cmd)
 	}
 	if errors.Is(err, flag.ErrHelp) {
 		return
@@ -147,6 +154,10 @@ func serveCmd(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	trusted, err := api.ParseTrustedProxies(os.Getenv("QINQIN_TRUSTED_PROXIES"))
+	if err != nil {
+		return fmt.Errorf("QINQIN_TRUSTED_PROXIES: %w", err)
+	}
 	registerLanguages()
 	sqlDB, err := openData(*data)
 	if err != nil {
@@ -161,9 +172,22 @@ func serveCmd(args []string) error {
 	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)
 
 	aiSvc := aiFromEnv(sqlDB, os.Getenv, log.Printf)
+	sec := secretsFromEnv(os.Getenv)
+	mailSvc := mailFromEnv(sqlDB, sec, os.Getenv, log.Printf)
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 	go aiJanitor(ctx, aiSvc, 15*time.Minute, log.Printf)
+	rotateSecrets(ctx, sqlDB, sec, mailSvc, log.Printf)
+	go mailSvc.Run(ctx)
+	go auth.RunJanitor(ctx, sqlDB, time.Hour, log.Printf)
+	// Files of users that no longer exist (a deletion whose file removal failed).
+	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, *data); err != nil {
+		log.Printf("startup sweep of orphan user directories: %v", err)
+	} else if n > 0 {
+		log.Printf("startup sweep: removed %d orphan user director%s", n, map[bool]string{true: "y", false: "ies"}[n == 1])
+	}
+	// Interrupted restores and server backups leave staged files behind.
+	api.CleanBackupTemp(*data)
 	var limiter *ai.Limiter
 	if aiSvc != nil {
 		limiter = aiSvc.Limiter
@@ -178,7 +202,7 @@ func serveCmd(args []string) error {
 	}
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set
@@ -218,7 +242,20 @@ func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
 	// answer 200 HTML to a health probe.
 	mux.Handle("/healthz/{$}", http.RedirectHandler("/healthz", http.StatusPermanentRedirect))
 	mux.Handle("/", webdist.Handler(web))
-	return mux
+	return browserHeaders(mux)
+}
+
+// browserHeaders adds the headers every response (API, health and static)
+// carries: no Referer is sent from a page of this app (reset and invite
+// links keep their secret in the fragment, but nothing should leak further),
+// and no other site may frame it. There is deliberately no CSP yet.
+func browserHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("Referrer-Policy", "no-referrer")
+		h.Set("X-Frame-Options", "DENY")
+		next.ServeHTTP(w, r)
+	})
 }
 
 // envOr returns the environment variable key, or def when it is empty.

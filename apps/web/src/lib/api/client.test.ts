@@ -4,6 +4,8 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
+import { get } from 'svelte/store';
+import { offline, reportNetworkFailure, resetOffline } from '../pwa/offlineState';
 import {
 	ApiError,
 	api,
@@ -11,6 +13,7 @@ import {
 	apiErrorBody,
 	clearToken,
 	getToken,
+	setRestrictedHandler,
 	setToken,
 	setUnauthorizedHandler
 } from './client';
@@ -138,6 +141,56 @@ describe('api client', () => {
 		await expect(api('/api/auth/me')).rejects.toMatchObject({ status: 401 });
 
 		expect(goto).not.toHaveBeenCalled();
+	});
+});
+
+describe('restricted sessions', () => {
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn());
+	});
+	afterEach(() => {
+		setRestrictedHandler(null);
+		vi.unstubAllGlobals();
+	});
+
+	it.each(['password_change_required', 'mfa_enrollment_required'])(
+		'a 403 %s tells the handler and keeps the token',
+		async (code) => {
+			localStorage.setItem('qinqin.token', 'tok');
+			const handler = vi.fn();
+			setRestrictedHandler(handler);
+			vi.mocked(fetch).mockResolvedValue(
+				new Response(JSON.stringify({ error: code, message: 'm' }), { status: 403 })
+			);
+			await expect(api('/api/workspaces')).rejects.toMatchObject({ status: 403 });
+			expect(handler).toHaveBeenCalledTimes(1);
+			expect(localStorage.getItem('qinqin.token')).toBe('tok');
+		}
+	);
+
+	it.each([
+		['wrong_password', 403],
+		['forbidden', 403],
+		['password_change_required', 409]
+	])('a %s (%i) is not a restriction', async (code, status) => {
+		const handler = vi.fn();
+		setRestrictedHandler(handler);
+		vi.mocked(fetch).mockResolvedValue(
+			new Response(JSON.stringify({ error: code, message: 'm' }), { status })
+		);
+		await expect(api('/api/account/password', { method: 'POST', body: {} })).rejects.toBeInstanceOf(
+			ApiError
+		);
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it('a plain-text 403 is not a restriction', async () => {
+		const handler = vi.fn();
+		setRestrictedHandler(handler);
+		vi.mocked(fetch).mockResolvedValue(new Response('admin token required', { status: 403 }));
+		await expect(api('/api/admin/packs')).rejects.toBeInstanceOf(ApiError);
+		expect(handler).not.toHaveBeenCalled();
 	});
 });
 
@@ -272,5 +325,37 @@ describe('apiBlob and apiErrorBody', () => {
 		expect(apiErrorBody(new ApiError(500, 'internal error'))).toBeNull();
 		expect(apiErrorBody(new Error('x'))).toBeNull();
 		expect(apiErrorBody(new ApiError(400, '{"foo":1}'))).toBeNull();
+	});
+});
+
+describe('api client reports connectivity', () => {
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn());
+		resetOffline();
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('a response from the worker\'s saved copy is reported with its time', async () => {
+		vi.mocked(fetch).mockResolvedValue(
+			new Response('[]', {
+				headers: { 'x-qinqin-offline': '1', 'x-qinqin-saved-at': '2026-11-16T14:02:00.000Z' }
+			})
+		);
+		await api('/api/workspaces');
+		expect(get(offline).servedFromCacheAt).toBe('2026-11-16T14:02:00.000Z');
+	});
+
+	it('an error response still counts as the server answering', async () => {
+		reportNetworkFailure();
+		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 404 }));
+		await expect(api('/api/x')).rejects.toBeInstanceOf(ApiError);
+		expect(get(offline).online).toBe(true);
+	});
+
+	it('a network failure marks the app offline and still throws', async () => {
+		vi.mocked(fetch).mockRejectedValue(new TypeError('Failed to fetch'));
+		await expect(api('/api/x')).rejects.toThrow('Failed to fetch');
+		expect(get(offline).online).toBe(false);
 	});
 });

@@ -54,7 +54,7 @@ func newDB(t *testing.T) *sql.DB {
 // newUser creates a user and returns its id.
 func newUser(t *testing.T, sqlDB *sql.DB, username string) int64 {
 	t.Helper()
-	u, err := auth.CreateUser(context.Background(), sqlDB, username, "pw-"+username, false)
+	u, err := auth.CreateUser(context.Background(), sqlDB, username, "secret-pass-"+username, false)
 	if err != nil {
 		t.Fatalf("create user %s: %v", username, err)
 	}
@@ -257,12 +257,15 @@ func TestSyncEndpoints(t *testing.T) {
 // its bearer token.
 func registerAndLogin(t *testing.T, tsURL string) string {
 	t.Helper()
-	creds, _ := json.Marshal(map[string]string{"username": "owner", "password": "pw-owner"})
+	creds, _ := json.Marshal(map[string]string{"username": "owner", "password": "secret-pass-owner"})
 	resp, err := http.Post(tsURL+"/api/auth/register", "application/json", bytes.NewReader(creds))
 	if err != nil {
 		t.Fatalf("register: %v", err)
 	}
 	resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("register status = %d, want 201", resp.StatusCode)
+	}
 	resp, err = http.Post(tsURL+"/api/auth/login", "application/json", bytes.NewReader(creds))
 	if err != nil {
 		t.Fatalf("login: %v", err)

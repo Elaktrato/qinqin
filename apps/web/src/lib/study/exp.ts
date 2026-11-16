@@ -1,6 +1,9 @@
 // EXP, levels and streaks are derived from the review log, never stored.
-// Day boundaries are UTC so every device agrees on what "today" is.
+// Day boundaries are the learner's day (lib/time/studyDay.ts), recomputed
+// for the whole log, so every device agrees on what "today" is.
 
+import { addDays, type StudyDay } from '../time/studyDay';
+import { isVacationDay, type Run } from './vacation';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
 
 /** Base XP of one review by card kind. */
@@ -8,15 +11,15 @@ export const BASE_XP: Record<StudyCardKind, number> = {
 	vocab: 10,
 	sentence: 15,
 	writing: 20,
-	tone: 8
+	tone: 8,
+	reverse: 10,
+	cloze: 15
 };
 
 const GRADE_BONUS: Record<ReviewGrade, number> = { 1: 0, 2: 0, 3: 5, 4: 10 };
 
-/** Bonus for the first review of each UTC day. */
+/** Bonus for the first review of each learner day. */
 const DAILY_BONUS = 10;
-
-const DAY_MS = 86_400_000;
 
 interface ValidReview {
 	id: string;
@@ -50,16 +53,16 @@ function validReviews(reviews: readonly ReviewEvent[]): ValidReview[] {
 	return out;
 }
 
-function utcDay(at: number): number {
-	return Math.floor(at / DAY_MS);
-}
-
 /**
  * xpFromReviews awards the kind's base XP plus a grade bonus per review,
- * and a flat +10 for every distinct UTC day that has at least one review.
- * Only the day count matters, so the total never depends on event order.
+ * and a flat +10 for every distinct learner day that has at least one
+ * review (`dayOf` maps an instant in ms to its day, StudyDay.dayOf). Only
+ * the day count matters, so the total never depends on event order.
  */
-export function xpFromReviews(reviews: readonly ReviewEvent[]): number {
+export function xpFromReviews(
+	reviews: readonly ReviewEvent[],
+	dayOf: (ms: number) => string
+): number {
 	const valid = validReviews(reviews);
 	let total = 0;
 	for (const review of valid) {
@@ -67,7 +70,7 @@ export function xpFromReviews(reviews: readonly ReviewEvent[]): number {
 	}
 	// The bonus is flat, so it only depends on how many distinct days
 	// have a review. Counting days keeps it order-independent by design.
-	total += new Set(valid.map((review) => utcDay(review.at))).size * DAILY_BONUS;
+	total += new Set(valid.map((review) => dayOf(review.at))).size * DAILY_BONUS;
 	return total;
 }
 
@@ -77,7 +80,14 @@ export function xpFromReviews(reviews: readonly ReviewEvent[]): number {
  * it as xpFromReviews minus the sum of these.
  */
 export function xpByKind(reviews: readonly ReviewEvent[]): Record<StudyCardKind, number> {
-	const out: Record<StudyCardKind, number> = { vocab: 0, sentence: 0, writing: 0, tone: 0 };
+	const out: Record<StudyCardKind, number> = {
+		vocab: 0,
+		sentence: 0,
+		writing: 0,
+		tone: 0,
+		reverse: 0,
+		cloze: 0
+	};
 	for (const review of validReviews(reviews)) {
 		out[review.mode] += BASE_XP[review.mode] + GRADE_BONUS[review.grade];
 	}
@@ -100,40 +110,53 @@ export function levelFromXp(xp: number): number {
 }
 
 /**
- * dailyStreak counts consecutive UTC days with a review. The current run
- * counts back from today, or from yesterday while today has none yet.
- * Days after `now` (clock skew, a device set ahead) are ignored for both
- * the current run and the best run.
+ * dailyStreak counts consecutive learner days with a review (civil dates,
+ * so a 23 or 25 hour day is one day). The current run counts back from
+ * today, or from yesterday while today has none yet. Days after `now`
+ * (clock skew, a device set ahead) are ignored for both the current run
+ * and the best run.
  */
 export function dailyStreak(
 	reviews: readonly ReviewEvent[],
-	now: number
+	now: number,
+	day: StudyDay,
+	vacation: readonly Run[] = []
 ): { current: number; best: number; todayDone: boolean } {
-	const today = utcDay(now);
+	const today = day.today(now);
+	const onVacation = (d: string): boolean => isVacationDay(vacation, d);
+	// Vacation days are neutral: they neither extend nor break a run, and a
+	// review on one does not count (docs/contracts/scheduler/).
 	const days = [
 		...new Set(
 			validReviews(reviews)
-				.map((review) => utcDay(review.at))
-				.filter((day) => day <= today)
+				.map((review) => day.dayOf(review.at))
+				.filter((d) => d <= today && !onVacation(d))
 		)
-	].sort((a, b) => a - b);
+	].sort();
 	const set = new Set(days);
+	/** The nearest date before `d` that is not a vacation day. */
+	const before = (d: string): string => {
+		let c = addDays(d, -1);
+		for (let guard = 0; onVacation(c) && guard < 100_000; guard++) c = addDays(c, -1);
+		return c;
+	};
 
 	let best = 0;
 	let run = 0;
-	let prev: number | null = null;
-	for (const day of days) {
-		run = prev !== null && day === prev + 1 ? run + 1 : 1;
+	let prev: string | null = null;
+	for (const d of days) {
+		run = prev !== null && before(d) === prev ? run + 1 : 1;
 		best = Math.max(best, run);
-		prev = day;
+		prev = d;
 	}
 
-	const todayDone = set.has(today);
-	let cursor = todayDone ? today : today - 1;
+	const todayVacation = onVacation(today);
+	const todayDone = todayVacation || set.has(today);
+	let cursor = set.has(today) ? today : before(today);
 	let current = 0;
 	while (set.has(cursor)) {
 		current += 1;
-		cursor -= 1;
+		cursor = before(cursor);
 	}
 	return { current, best, todayDone };
 }

@@ -12,6 +12,7 @@ import (
 	"qinqin/internal/library"
 	"qinqin/internal/library/epub"
 	"qinqin/internal/library/sources"
+	"qinqin/internal/studyday"
 )
 
 const (
@@ -109,12 +110,13 @@ func (s *server) handleSearchSource(w http.ResponseWriter, r *http.Request) {
 
 // handleBrowseSource serves GET /api/library/sources/{source}/browse
 // ?language=&seed=&limit=: an assortment of the source's works in the
-// language ("" for any), the same for the same seed (default: today's
-// UTC date) and another for another seed. limit defaults to 12 and is
-// clamped to 1..50. A source without an assortment is a 501; a language
+// language ("" for any), the same for the same seed (default: the
+// caller's learner date today) and another for another seed. limit
+// defaults to 12 and is clamped to 1..50. A source without an assortment is a 501; a language
 // the source holds no books of is an empty list.
 func (s *server) handleBrowseSource(w http.ResponseWriter, r *http.Request) {
-	if s.requireUser(w, r) == nil {
+	u := s.requireUser(w, r)
+	if u == nil {
 		return
 	}
 	src, ok := s.source(w, r)
@@ -147,7 +149,12 @@ func (s *server) handleBrowseSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if seed == "" {
-		seed = time.Now().UTC().Format("2006-01-02")
+		hist, _, err := studyday.Load(r.Context(), s.db, u.ID)
+		if err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
+		seed = hist.DayOf(s.now()).String()
 	}
 	if language != "" && !sourceServes(src.ID(), language) {
 		writeJSON(w, http.StatusOK, []sources.Result{})

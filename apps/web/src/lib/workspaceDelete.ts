@@ -5,8 +5,8 @@
 
 import type { Workspace } from './api/types';
 import { workspaceDisplay } from './languages';
-import { LAST_CARD_TYPES_KEY } from './study/cardTypesMemory';
-import { PENDING_REVIEWS_KEY } from './study/events';
+import { EXTRA_TYPES_KEY, LAST_CARD_TYPES_KEY } from './study/cardTypesMemory';
+import { LEGACY_PENDING_KEY, PENDING_REVIEWS_KEY } from './study/events';
 import { INELIGIBLE_KEY } from './study/ineligible';
 
 /**
@@ -50,18 +50,29 @@ function dropEntry(storage: Storage, key: string, id: number): void {
 	else storage.setItem(key, JSON.stringify(all));
 }
 
-/** Removes the queued reviews of `id` from the review outbox. */
+/**
+ * Removes the queued reviews of `id` from the review outbox: the bare events
+ * of the pre-v2 key and the `{userId, queuedAt, event}` items of v2 (of every
+ * user: a workspace id is global and the workspace is gone for all).
+ */
 function dropPending(storage: Storage, id: number): void {
-	const raw = storage.getItem(PENDING_REVIEWS_KEY);
-	if (raw === null) return;
-	const parsed: unknown = JSON.parse(raw);
-	if (!Array.isArray(parsed)) return;
-	const kept = parsed.filter(
-		(event) => !(typeof event === 'object' && event !== null && (event as { workspaceId?: unknown }).workspaceId === id)
-	);
-	if (kept.length === parsed.length) return;
-	if (kept.length === 0) storage.removeItem(PENDING_REVIEWS_KEY);
-	else storage.setItem(PENDING_REVIEWS_KEY, JSON.stringify(kept));
+	const inWorkspace = (event: unknown): boolean =>
+		typeof event === 'object' && event !== null && (event as { workspaceId?: unknown }).workspaceId === id;
+	for (const [key, eventOf] of [
+		[LEGACY_PENDING_KEY, (item: unknown) => item],
+		[PENDING_REVIEWS_KEY, (item: unknown) => (item as { event?: unknown } | null)?.event]
+	] as const) {
+		attempt(() => {
+			const raw = storage.getItem(key);
+			if (raw === null) return;
+			const parsed: unknown = JSON.parse(raw);
+			if (!Array.isArray(parsed)) return;
+			const kept = parsed.filter((item) => !inWorkspace(eventOf(item)));
+			if (kept.length === parsed.length) return;
+			if (kept.length === 0) storage.removeItem(key);
+			else storage.setItem(key, JSON.stringify(kept));
+		});
+	}
 }
 
 /**
@@ -83,7 +94,8 @@ export function forgetWorkspace(id: number, local: Storage | null, session: Stor
 			for (const key of doomed) local.removeItem(key);
 		});
 		attempt(() => dropEntry(local, LAST_CARD_TYPES_KEY, id));
-		attempt(() => dropPending(local, id));
+		attempt(() => dropEntry(local, EXTRA_TYPES_KEY, id));
+		dropPending(local, id);
 	}
 	if (session !== null) {
 		attempt(() => dropEntry(session, INELIGIBLE_KEY, id));

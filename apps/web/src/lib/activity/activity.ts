@@ -1,14 +1,15 @@
 // Core activity: one points-per-day view across every learning source.
 // The server scores events by the activity rules in plugin manifests
-// (GET /api/stats/activity) and returns cells per UTC day, workspace and
-// type; these pure functions fold them into the heatmap's days.
+// (GET /api/stats/activity) and returns cells per learner day, workspace
+// and type (lib/time/studyDay.ts); these pure functions fold them into
+// the heatmap's days.
 
 import type { ActivityResponse, ActivitySource } from '../api/stats';
+import { addDays, type StudyDay } from '../time/studyDay';
+import { isVacationDay, vacationRuns, type VacationPeriod } from '../study/vacation';
 
 /** Days covered by the heatmap: 13 weeks of 7 cells. */
 export const HEATMAP_DAYS = 91;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** The scope and filter a heatmap is drawn for. */
 export interface ActivityView {
@@ -26,16 +27,42 @@ export interface DayActivity {
 	raw: Record<string, number>;
 	/** Points per workspace; filled only for the combined view. */
 	byWorkspace: Record<number, number>;
+	/** 'all': every workspace of the view is on vacation; 'some': only `vacationIn`. */
+	vacation: 'all' | 'some' | null;
+	vacationIn: number[];
 }
 
-function utcDayStart(ms: number): number {
-	const date = new Date(ms);
-	return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+/** A vacation mark of one day: who is away. */
+export interface VacationMark {
+	mode: 'all' | 'some';
+	workspaces: number[];
 }
 
-/** dayKey is the UTC date of a moment, YYYY-MM-DD. */
-export function dayKey(date: Date): string {
-	return date.toISOString().slice(0, 10);
+/**
+ * vacationMarks says, per learner day of the window, which workspaces of the
+ * view are on vacation. A single-workspace view marks its own days 'all'; the
+ * combined view marks 'all' when every workspace is away and 'some' otherwise.
+ */
+export function vacationMarks(
+	periods: readonly VacationPeriod[],
+	workspaceIds: readonly number[],
+	workspace: number | null,
+	day: StudyDay,
+	now: Date = new Date(),
+	days: number = HEATMAP_DAYS
+): Map<string, VacationMark> {
+	const marks = new Map<string, VacationMark>();
+	const today = day.today(now.getTime());
+	const start = windowStart(day, now, days);
+	const scope = workspace === null ? [...workspaceIds] : [workspace];
+	if (scope.length === 0 || periods.length === 0) return marks;
+	const runs = new Map(scope.map((id) => [id, vacationRuns(periods, id, today)]));
+	for (let key = start; key <= today; key = addDays(key, 1)) {
+		const away = scope.filter((id) => isVacationDay(runs.get(id) ?? [], key));
+		if (away.length === 0) continue;
+		marks.set(key, { mode: away.length === scope.length ? 'all' : 'some', workspaces: away });
+	}
+	return marks;
 }
 
 function windowLength(days: number): number {
@@ -43,18 +70,23 @@ function windowLength(days: number): number {
 }
 
 /**
- * windowStart is UTC midnight of the first day `foldActivity` covers, so
- * the request can ask for exactly the window. An empty window starts today.
+ * windowStart is the first learner day `foldActivity` covers, so the
+ * request can ask for exactly the window. An empty window starts today.
  */
-export function windowStart(now: Date = new Date(), days: number = HEATMAP_DAYS): Date {
+export function windowStart(
+	day: StudyDay,
+	now: Date = new Date(),
+	days: number = HEATMAP_DAYS
+): string {
 	const windowDays = Math.max(1, windowLength(days));
-	return new Date(utcDayStart(now.getTime()) - (windowDays - 1) * DAY_MS);
+	return addDays(day.today(now.getTime()), -(windowDays - 1));
 }
 
 /**
- * foldActivity sums the server's cells per UTC day over the `days` days
- * ending on `now`'s UTC day, oldest first, for one view. Every day
- * appears, empty ones with total 0. Cells of unknown types (not in
+ * foldActivity sums the server's cells per learner day over the `days`
+ * days ending on today (`day.today(now)`), oldest first, for one view.
+ * Every day appears, empty ones with total 0, counted by civil dates (a
+ * 23 or 25 hour day is one day). Cells of unknown types (not in
  * `sources`), hidden types, other workspaces and days outside the window
  * are ignored. A workspace the user no longer has still counts in the
  * combined view.
@@ -62,18 +94,28 @@ export function windowStart(now: Date = new Date(), days: number = HEATMAP_DAYS)
 export function foldActivity(
 	resp: ActivityResponse,
 	view: ActivityView,
+	day: StudyDay,
 	now: Date = new Date(),
-	days: number = HEATMAP_DAYS
+	days: number = HEATMAP_DAYS,
+	marks?: ReadonlyMap<string, VacationMark>
 ): Map<string, DayActivity> {
 	const windowDays = windowLength(days);
 	const result = new Map<string, DayActivity>();
 	if (windowDays === 0) return result;
 
-	const today = utcDayStart(now.getTime());
-	const start = windowStart(now, windowDays).getTime();
-	for (let day = start; day <= today; day += DAY_MS) {
-		const key = dayKey(new Date(day));
-		result.set(key, { day: key, total: 0, bySource: {}, raw: {}, byWorkspace: {} });
+	const today = day.today(now.getTime());
+	const start = windowStart(day, now, windowDays);
+	for (let key = start; key <= today; key = addDays(key, 1)) {
+		const mark = marks?.get(key);
+		result.set(key, {
+			day: key,
+			total: 0,
+			bySource: {},
+			raw: {},
+			byWorkspace: {},
+			vacation: mark?.mode ?? null,
+			vacationIn: mark?.workspaces ?? []
+		});
 	}
 
 	const known = new Set(resp.sources.map((s) => s.type));
@@ -118,6 +160,13 @@ export function sourcePoints(map: Map<string, DayActivity>): Record<string, numb
 	return totals;
 }
 
+/** The tooltip's vacation suffix: " · On vacation" or " · Vacation in 中文, 日本語". */
+function vacationNote(day: DayActivity, workspaceName: (id: number) => string): string {
+	if (day.vacation === 'all') return ' · On vacation';
+	if (day.vacation === 'some') return ` · Vacation in ${day.vacationIn.map(workspaceName).join(', ')}`;
+	return '';
+}
+
 /**
  * dayTooltip describes a day in the sources' fixed order, e.g.
  * "2026-11-13: 12 points — 9 flashcard reviews, 15 minutes of reading";
@@ -130,7 +179,8 @@ export function dayTooltip(
 	allHidden = false
 ): string {
 	if (allHidden) return `${day.day}: all activity types hidden`;
-	if (day.total <= 0) return `${day.day}: no activity`;
+	const away = vacationNote(day, workspaceName);
+	if (day.total <= 0) return `${day.day}: no activity${away}`;
 	const parts: string[] = [];
 	for (const source of sources) {
 		if (!day.bySource[source.type]) continue;
@@ -143,7 +193,7 @@ export function dayTooltip(
 	if (spaces.length > 0) {
 		text += ` · ${spaces.map((s) => `${workspaceName(s.id)} ${s.points}`).join(', ')}`;
 	}
-	return text;
+	return text + away;
 }
 
 /**

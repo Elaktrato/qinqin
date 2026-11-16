@@ -273,7 +273,7 @@ Each reads "Ruling: what — why — cost if wrong". Decision rule: licensing fi
 - Custom endpoints never use an HTTP proxy (the guard needs the dialled IP); built-ins honour `HTTPS_PROXY` as Anthropic does today.
 - Gemini's `generateContent` is labelled "Legacy"; watch for a sunset date and port to Interactions then.
 - In-app admins are trusted as operators: an admin can still register an endpoint they control; users see "Added by your admin · <host>" before typing a key.
-- OpenAI's `data:` URL images and DeepSeek `/models` are UNVERIFIED in the docs we read.
+- OpenAI's `data:` URL images and DeepSeek `/models` were UNVERIFIED in the docs we read; both are confirmed by the follow-up check below.
 
 ## Appendix: Provider reference (official docs, checked 2026-11-15)
 
@@ -335,3 +335,34 @@ Model ids change fast; the registry only *suggests* them and the learner may typ
   but pulls cloud.google.com/go/auth, grpc, protobuf; `anthropic-sdk-go/v2`
   Apache-2.0 (already used). Licences pass; the weight, and their own HTTP stacks
   that would bypass the SSRF guard, do not.
+
+### Follow-up: UNVERIFIED items checked against official docs (2026-11-15)
+
+Done on `feature/ai-registry-verify`; no provider API was called. The full table
+with quotes is the appendix of `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`.
+No adapter field was shown to be wrong, so the code is unchanged apart from the
+registry comments and one pinning test (`TestDeepSeekValidateDocsList`).
+
+- **Confirmed.** `gpt-6-luna` is a listed model with "Input modalities: text, image"
+  (developers.openai.com/api/docs/models/gpt-6-luna). OpenAI `image_url.url` is "Either a
+  URL of the image or the base64 encoded image data" (developers.openai.com/api/reference/
+  resources/chat/subresources/completions/methods/create). Gemini `inlineData{mimeType,data}`,
+  "GET `/v1beta/models/{model}`", the finish/block reasons and the usage fields
+  (aistudio.google.com/api-reference/generate-content, /api-reference/models). DeepSeek
+  `GET /models` with `data[].id` `deepseek-flash`, `deepseek-v4-pro` (api-docs.deepseek.com/
+  api/list-models). Mistral "Mistral Large 4 – `mistral-large-latest`", "Mistral Small 4 –
+  `mistral-small-latest`" (docs.mistral.ai/inference/conversations/function-calling), and Large 4 has "a
+  1.6B vision encoder" (docs.mistral.ai/models/mistral-large-4-0). xAI `grok-4.7` "text,
+  image → text" (docs.x.ai/developers/models/grok-4.7). OpenRouter `require_parameters`:
+  "Only use providers that support all parameters in your request" (openrouter.ai/docs/
+  features/provider-routing). Ollama: "Structured outputs work through the
+  OpenAI-compatible API via `response_format`" (docs.ollama.com/capabilities/structured-outputs).
+- **Still UNVERIFIED.** Gemini `generationConfig.responseJsonSchema`: it is listed in the reference
+  and not marked deprecated, but the REST guide example uses `generationConfig.responseFormat.text`
+  `{mimeType: "APPLICATION_JSON", schema}` (aistudio.google.com/docs/structured-output?generate-content=true),
+  so this is the fallback if Gemini answers 400. Vision for `mistral-small-latest` (the Small 4 card is
+  silent) and for `openrouter/auto` (the router only "rates … whether it needs vision").
+- **Newly flagged.** Mistral shows `image_url` as a plain string, while we send the OpenAI
+  object. Mistral `/v1/models` cards carry `aliases`, while we match `id` only, so a `-latest`
+  alias might fail key validation.
+

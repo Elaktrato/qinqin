@@ -3,7 +3,7 @@ import { webPlugins } from '$lib/plugins';
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
-import { creditView, packTable, pluginCredits, sentencePackSources } from './sections';
+import { componentsSection, creditView, packTable, pluginCredits, sentencePackSources } from './sections';
 
 describe('packTable', () => {
 	it('builds rows and a note per pack with a notice, with unique ids', () => {
@@ -203,7 +203,8 @@ describe('declared credits', () => {
 			'/LEPTONICA-LICENSE.TXT',
 			'/OPENCC-APACHE-2.0.TXT',
 			'/OPENCC-JS-LICENSE.TXT',
-			'/TESSERACT-APACHE-2.0.TXT'
+			'/TESSERACT-APACHE-2.0.TXT',
+			'/UQR-LICENSE.TXT'
 		]);
 		for (const path of paths) {
 			expect(localLicensePath(path)).toBe(path);
@@ -234,5 +235,24 @@ describe('sentencePackSources', () => {
 	});
 	it('is empty for no packs', () => {
 		expect(sentencePackSources([])).toEqual([]);
+	});
+});
+
+describe('componentsSection', () => {
+	const pack = { packId: 'kanjivg-components', name: 'KanjiVG components', version: 'r20260714', language: 'ja', license: 'CC BY-SA 3.0', attribution: 'KanjiVG © Ulrich Apel', notice: 'Derived from [KanjiVG](https://kanjivg.tagaini.net).' };
+	it('is hidden without packs and without an error', () => {
+		expect(componentsSection([], '').show).toBe(false);
+	});
+	it('shows the stated credits and the notice of each pack', () => {
+		const s = componentsSection([pack], '');
+		expect(s.show).toBe(true);
+		expect(s.table.rows.map((r) => [r.name, r.language, r.version, r.license, r.attribution])).toEqual([
+			['KanjiVG components', 'ja', 'r20260714', 'CC BY-SA 3.0', 'KanjiVG © Ulrich Apel']
+		]);
+		expect(s.table.notes).toHaveLength(1);
+		expect(s.table.notes[0].id).toBe('note-components-0');
+	});
+	it('shows on an error so the retry is reachable', () => {
+		expect(componentsSection([], 'down').show).toBe(true);
 	});
 });

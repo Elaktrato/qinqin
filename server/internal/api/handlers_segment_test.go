@@ -2,9 +2,11 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -186,5 +188,65 @@ func TestSegmentAtOutOfRangeOffset(t *testing.T) {
 		if got := strings.TrimSpace(string(raw)); resp.StatusCode != http.StatusOK || got != `{"match":null}` {
 			t.Errorf("offset %s = %d %s, want 200 {\"match\":null}", off, resp.StatusCode, got)
 		}
+	}
+}
+
+type segmentReadingBody struct {
+	Surface string `json:"surface"`
+	Reading *struct {
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	} `json:"reading"`
+}
+
+func segmentReadings(t *testing.T, tsURL, token string, body map[string]any) (int, string, []segmentReadingBody) {
+	t.Helper()
+	resp := doJSON(t, http.MethodPost, tsURL, "/api/segment", token, body)
+	raw, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	var out struct {
+		Matches []segmentReadingBody `json:"matches"`
+	}
+	_ = json.Unmarshal(raw, &out)
+	return resp.StatusCode, string(raw), out.Matches
+}
+
+func TestSegmentReadings(t *testing.T) {
+	tsURL, wordID := seedSegmentWords(t)
+	alice := registerUser(t, tsURL, "alice", "")
+	bob := registerUser(t, tsURL, "bob", alice)
+
+	// Without the flag the body carries no reading at all.
+	_, raw, _ := segmentReadings(t, tsURL, alice, map[string]any{"lang": "zh", "text": "学习"})
+	if strings.Contains(raw, "reading") {
+		t.Errorf("no flag: %s, want no reading key", raw)
+	}
+	body := map[string]any{"lang": "zh", "text": "学习", "readings": true}
+	if _, _, ms := segmentReadings(t, tsURL, bob, body); len(ms) != 1 || ms[0].Reading == nil ||
+		ms[0].Reading.Type != "pinyin" || ms[0].Reading.Value != "xué xí" {
+		t.Fatalf("shared reading = %+v, want pinyin xué xí", ms)
+	}
+
+	// Alice's overlay replaces the reading for her only.
+	put := doJSON(t, http.MethodPut, tsURL, "/api/entries/"+strconv.FormatInt(wordID, 10), alice, map[string]any{
+		"readings": []map[string]string{{"type": "pinyin", "value": "xue9 xi9"}},
+	})
+	if put.StatusCode != http.StatusOK {
+		t.Fatalf("PUT overlay = %d", put.StatusCode)
+	}
+	if _, _, ms := segmentReadings(t, tsURL, alice, body); len(ms) != 1 || ms[0].Reading == nil || ms[0].Reading.Value != "xue9 xi9" {
+		t.Errorf("alice = %+v, want her overlay xue9 xi9", ms)
+	}
+	if _, _, ms := segmentReadings(t, tsURL, bob, body); len(ms) != 1 || ms[0].Reading == nil || ms[0].Reading.Value != "xué xí" {
+		t.Errorf("bob = %+v, want the shared reading", ms)
+	}
+
+	// Authorization is unchanged.
+	if code, _, _ := segmentReadings(t, tsURL, "", body); code != http.StatusUnauthorized {
+		t.Errorf("anonymous = %d, want 401", code)
+	}
+	long := map[string]any{"lang": "zh", "text": strings.Repeat("学", 5001), "readings": true}
+	if code, _, _ := segmentReadings(t, tsURL, alice, long); code != http.StatusRequestEntityTooLarge {
+		t.Errorf("5001 runes = %d, want 413", code)
 	}
 }

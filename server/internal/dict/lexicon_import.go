@@ -17,6 +17,7 @@ import (
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
+	"qinqin/internal/radicals"
 )
 
 // RegistryTerms returns the pack id, licence and attribution of the
@@ -448,7 +449,7 @@ func unionReadings(base, add []lexicon.Reading) []lexicon.Reading {
 // checkRadical reports a radical number outside the Kangxi radicals
 // 1–214; who names the character classified under it.
 func checkRadical(who string, n int) error {
-	if _, ok := kangxiRadicals[n]; !ok {
+	if !radicals.Valid(n) {
 		return fmt.Errorf("%s is under radical %d, outside the Kangxi radicals 1–214", who, n)
 	}
 	return nil
@@ -462,7 +463,7 @@ func radicalEntryID(ctx context.Context, tx *sql.Tx, store lexicon.Store, langua
 	if err := checkRadical(who, n); err != nil {
 		return 0, err
 	}
-	radical := kangxiRadicals[n]
+	radical, _ := radicals.Char(n)
 	if id, ok := cache[radical]; ok {
 		return id, nil
 	}

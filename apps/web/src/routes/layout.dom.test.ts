@@ -11,7 +11,7 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 }));
 vi.mock('$lib/events', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/events')>()),
-	recordSessionOnce: vi.fn(),
+	recordSessionWhenSettled: vi.fn(),
 	record: vi.fn()
 }));
 vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
@@ -19,7 +19,7 @@ vi.mock('$lib/workspaceGone', () => ({ watchDeletedWorkspaces: vi.fn() }));
 
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
-import { recordSessionOnce } from '$lib/events';
+import { recordSessionWhenSettled as recordSessionOnce } from '$lib/events';
 import { select, workspaces } from '$lib/workspaces';
 import { api } from '$lib/api/client';
 import { auth } from '$lib/auth';
@@ -136,5 +136,69 @@ describe('layout workspaces', () => {
 		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(1));
 		select(2);
 		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(2));
+	});
+});
+
+describe('layout restricted sessions', () => {
+	const me = (restriction: string) => ({
+		id: 1,
+		username: 'u',
+		admin: false,
+		email: null,
+		emailVerified: false,
+		mustChangePassword: restriction === 'password_change',
+		createdAt: 't',
+		restriction
+	});
+
+	function mountRestricted(path: string, restriction: string) {
+		setUrl(path);
+		localStorage.clear();
+		localStorage.setItem('qinqin.token', 'tok');
+		vi.mocked(api).mockImplementation((async (url: string) => {
+			if (url === '/api/auth/me') return me(restriction);
+			return [];
+		}) as never);
+		return render(Layout, { children });
+	}
+
+	it('sends a password-change session from a private page to /account/password', async () => {
+		const { queryByText } = mountRestricted('/study', 'password_change');
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/account/password', { replaceState: true }));
+		expect(queryByText('page body')).toBeNull();
+	});
+
+	it('does not load workspaces or plugin states for a restricted session', async () => {
+		mountRestricted('/account/password', 'password_change');
+		await waitFor(() => expect(api).toHaveBeenCalledWith('/api/auth/me'));
+		await new Promise((r) => setTimeout(r, 30));
+		const urls = vi.mocked(api).mock.calls.map(([u]) => String(u));
+		expect(urls).not.toContain('/api/workspaces');
+		expect(urls.some((u) => u.startsWith('/api/plugins'))).toBe(false);
+	});
+
+	it('renders the change page itself and keeps Sign out within reach', async () => {
+		const { findByText, getByRole, queryByRole } = mountRestricted(
+			'/account/password',
+			'password_change'
+		);
+		await findByText('page body');
+		expect(goto).not.toHaveBeenCalled();
+		expect(getByRole('button', { name: 'Sign out' })).toBeTruthy();
+		// No navigation into the app while restricted.
+		expect(queryByRole('navigation', { name: 'Main' })).toBeNull();
+	});
+
+	it('sends an enrolment session to its setup page', async () => {
+		mountRestricted('/', 'mfa_enrollment');
+		await waitFor(() =>
+			expect(goto).toHaveBeenCalledWith('/account/two-factor-setup', { replaceState: true })
+		);
+	});
+
+	it('leaves the open Sources page reachable', async () => {
+		const { findByText } = mountRestricted('/sources', 'password_change');
+		await findByText('page body');
+		expect(goto).not.toHaveBeenCalled();
 	});
 });

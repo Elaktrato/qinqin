@@ -33,7 +33,18 @@ services:
       # LAN (Ollama on this host or network). Enable only if you trust every
       # admin. Link-local and cloud-metadata addresses stay blocked.
       # QINQIN_AI_ALLOW_PRIVATE: "1"
+      # Lets the mail server (Settings, Admin, Email) be on loopback or a private
+      # network (a relay container, a LAN host). Metadata addresses stay blocked.
+      # QINQIN_SMTP_ALLOW_PRIVATE: "1"
       # Testing only: a fake provider that never contacts any AI service.
+      # Who may tell the server a client's address (X-Forwarded-For). Default:
+      # private networks, right for a reverse proxy on a Docker/LAN network.
+      # Without any reverse proxy in front, set "none" (a direct client could
+      # forge the header and dodge the per-client sign-in limits). A comma list
+      # of CIDRs or addresses also works (a CDN's ranges).
+      # QINQIN_TRUSTED_PROXIES: none
+      # Path of the tesseract binary (default: the image's).
+      # QINQIN_TESSERACT: /usr/bin/tesseract
       # QINQIN_AI_PROVIDER: fake
     security_opt:
       - no-new-privileges:true

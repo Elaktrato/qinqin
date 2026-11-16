@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
 	import { getEntry } from '$lib/api/entries';
+	import { segmentBatch } from '$lib/api/segment';
 	import { token } from '$lib/auth';
 	import { activate, canSound, headwordClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
@@ -11,19 +12,25 @@
 	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { ApiError } from '$lib/api/client';
-	import type { Entry, EntryBase, Sentence } from '$lib/api/types';
+	import type { Entry, EntryBase, SegmentMatch, Sentence } from '$lib/api/types';
+	import ClozeCard from '$lib/plugins/flashcards/cards/ClozeCard.svelte';
+	import ReverseCard from '$lib/plugins/flashcards/cards/ReverseCard.svelte';
 	import SentenceCard from '$lib/plugins/flashcards/cards/SentenceCard.svelte';
 	import ToneCard from '$lib/plugins/flashcards/cards/ToneCard.svelte';
 	import VocabCard from '$lib/plugins/flashcards/cards/VocabCard.svelte';
 	import WritingCard from '$lib/plugins/flashcards/cards/WritingCard.svelte';
 	import {
+		backfillLimit,
+		buryAfterAnswer,
 		cardedSentenceIds,
+		clozeDistractorPool,
 		deckSessionPlan,
 		dropItem,
 		isEligible,
 		levelSessionItems,
 		rememberDrop,
 		resolveSentence,
+		revealsOnKey,
 		reviewCountFor,
 		shouldIgnoreGrade,
 		tierForCard,
@@ -32,14 +39,35 @@
 	} from '$lib/study/cardFlow';
 	import { flushPendingReviews, recordReview } from '$lib/study/events';
 	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
+	import {
+		acceptedClozeAnswers,
+		clozeCandidates,
+		clozeMode,
+		pickDistractors,
+		resolveClozeShowing,
+		type ClozeMode,
+		type ClozePrompt
+	} from '$lib/study/cloze';
+	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
+import { contextForData } from '$lib/study/currentContext';
+import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
+import type { Run } from '$lib/study/vacation';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
+	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/plugins/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { buildLevelQueue } from '$lib/study/levelQueue';
+	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
+	import { COMPANION_NOTE, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
+	import { offline } from '$lib/pwa/offlineState';
 	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
+	import { getFrequencyPacks } from '$lib/api/frequency';
+	import { loadRanks } from '$lib/study/frequencyRanks';
+	import { loadLevelKeys } from '$lib/study/levelKeys';
+	import { sessionNewOrder } from '$lib/study/session';
+	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/study/sessionOrder';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -48,10 +76,13 @@
 		type StudyCard,
 		type StudyCardKind
 	} from '$lib/study/types';
-	import type { SaladTier } from '$lib/study/wordSalad';
+	import { shuffleTokens, type SaladTier } from '$lib/study/wordSalad';
 	import { usableChars } from '$lib/study/writing';
+	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { newUlid } from '$lib/ulid';
 	import { workspaces } from '$lib/workspaces';
+	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
+	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
 	const GRADE_LABELS: { grade: ReviewGrade; label: string }[] = [
@@ -65,10 +96,12 @@
 		vocab: 'Vocab',
 		sentence: 'Word Salad',
 		writing: 'Writing',
-		tone: 'Tone'
+		tone: 'Tone',
+		reverse: 'Reverse',
+		cloze: 'Cloze'
 	};
 
-	const STUDY_KINDS: StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
+	const STUDY_KINDS: readonly StudyCardKind[] = CARD_KINDS;
 
 	const TIER_LABELS: Record<SaladTier, string> = {
 		0: 'Tier 0 · words, translation shown',
@@ -81,7 +114,10 @@
 		vocab: 'Keys: Space or Enter shows the answer · 1–4 grade',
 		sentence: 'Tap the tiles in order, then Check · keys 1–4 grade once checked',
 		writing: 'Draw each character stroke by stroke · keys 1–4 grade when finished',
-		tone: 'Keys: 1–5 set the highlighted syllable’s tone (5 = neutral) · ←/→ move · Backspace clears · Enter checks · then 1–4 grade'
+		tone: 'Keys: 1–5 set the highlighted syllable’s tone (5 = neutral) · ←/→ move · Backspace clears · Enter checks · then 1–4 grade',
+		reverse:
+			'Keys: type the word and press Enter to check · Space or Enter outside the field shows the answer · 1–4 grade',
+		cloze: 'Keys: 1–4 pick a choice or type the word, Enter checks · then 1–4 grade'
 	};
 
 	// The SPA has no SSR, so the tab's setup is readable during init.
@@ -100,6 +136,14 @@
 		chars: string[];
 		tier: SaladTier;
 		seed: string;
+		/** Cloze: the shown sentence, its prompt, answer mode, choices and accepted answers. */
+		cloze?: {
+			sentence: Sentence;
+			prompt: ClozePrompt;
+			mode: ClozeMode;
+			choices: string[];
+			accepted: Set<string>;
+		};
 	}
 
 	/**
@@ -111,9 +155,15 @@
 	 */
 	class LevelWorkspaceMismatch extends Error {}
 
+	/** The configured level's entries and the unit of its scheme. */
+	interface LevelRequest {
+		entries: EntryBase[];
+		unit: LevelUnit;
+	}
+
 	/** levelEntriesRequest loads the configured level, or nothing in decks mode. */
-	async function levelEntriesRequest(language: string | null): Promise<EntryBase[]> {
-		if (config.mode !== 'levels') return [];
+	async function levelEntriesRequest(language: string | null): Promise<LevelRequest> {
+		if (config.mode !== 'levels') return { entries: [], unit: 'word' };
 		if (config.schemeId === null || config.levelName === null) {
 			return Promise.reject(new Error('This level session is missing its scheme or level.'));
 		}
@@ -132,7 +182,10 @@
 				`The level “${config.levelName}” no longer exists in ${scheme.name}. Start a new session from the study setup.`
 			);
 		}
-		return getSchemeEntries(config.schemeId, config.levelName);
+		return {
+			entries: await getSchemeEntries(config.schemeId, config.levelName),
+			unit: scheme.unit === 'character' ? 'character' : 'word'
+		};
 	}
 
 	/**
@@ -154,6 +207,10 @@
 
 	let loading = $state(true);
 	let loadError = $state('');
+	// True when this session was planned from saved data (no companion cards).
+	let offlineSession = $state(false);
+	// Why the new cards keep the order added (#75): mixed decks, no pack, offline.
+	let orderNote = $state('');
 	let workspaceMismatch = $state('');
 	let noWorkspace = $state(false);
 	let sessionWorkspaceId = $state<number | null>(null);
@@ -167,10 +224,17 @@
 	let reviews = $state.raw<ReviewEvent[]>([]);
 	// The weights loaded with this session; a change elsewhere waits for the next load.
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	// The study clock of the session's workspace (set when the session loads).
+	let sessionClock = $state.raw<StudyClock>(IDENTITY_CLOCK);
+	let sessionVacation = $state.raw<readonly Run[]>([]);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
 	let index = $state(0);
 	// Re-shows answered this session; practice only, never recorded.
 	let reshown = $state(0);
+	// Said once a graded answer buried related cards; cleared by the next grade.
+	let buryNote = $state('');
+	// Segmenter results per sentence id for this session (cloze blanks).
+	let segmentCache = new Map<number, Promise<SegmentMatch[]>>();
 	let entries = $state.raw<Record<number, Entry>>({});
 	// The recordings of every entry in the queue, resolved once per session.
 	let audioMap = $state.raw<Record<string, AudioResolution>>({});
@@ -179,10 +243,24 @@
 	let audioSettled = $state(false);
 	let entryError = $state('');
 	let gradeError = $state('');
+	// The learner's notes of this workspace (entry id -> text), loaded once per
+	// session next to the start and never awaited by it; empty while loading,
+	// after a failure, when the workspace switched them off, and offline.
+	let sessionNotes = $state.raw<Map<number, string>>(new Map());
+
+	async function loadSessionNotes(workspaceId: number, seq: number): Promise<void> {
+		try {
+			const [notes, cfg] = await Promise.all([loadNotes(workspaceId), loadNoteCfg(workspaceId)]);
+			if (seq === requestSeq && cfg.onAnswer) sessionNotes = notes;
+		} catch {
+			// Notes are optional help: a failed load shows none.
+		}
+	}
 	let grading = $state(false);
 
 	// The card being shown and how far the learner got with it. `done`
 	// unlocks the grade buttons; `suggested` is preselected on them.
+	let reverseCard = $state<ReverseCard | null>(null);
 	let resolved = $state.raw<Resolved | null>(null);
 	let done = $state(false);
 	let suggested = $state<ReviewGrade | null>(null);
@@ -245,11 +323,15 @@
 
 	// XP is the difference the session made to the whole log, so the
 	// daily bonus is only counted when this session earned it.
-	const historyXp = $derived(xpFromReviews(reviews));
-	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews]));
+	// The learner's day rule; a zone change recomputes XP and the streak.
+	let studyDay = $state.raw(currentStudyDay());
+	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+
+	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf));
+	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf));
 	const sessionXp = $derived(totalXp - historyXp);
 	const progress = $derived(levelProgress(totalXp));
-	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now()));
+	const streak = $derived(dailyStreak([...reviews, ...sessionReviews], Date.now(), studyDay, sessionVacation));
 	// Per-kind XP of this session; whatever the kinds do not explain is
 	// the daily bonus.
 	const kindXp = $derived(xpByKind(sessionReviews));
@@ -301,6 +383,9 @@
 		sessionReviews = [];
 		index = 0;
 		reshown = 0;
+		buryNote = '';
+		orderNote = '';
+		segmentCache = new Map();
 		entries = {};
 		audioMap = {};
 		audioSettled = false;
@@ -309,11 +394,13 @@
 		grading = false;
 		pendingEntryId = null;
 
+		sessionNotes = new Map();
 		if (workspaceId === null) {
 			noWorkspace = true;
 			loading = false;
 			return;
 		}
+		if ($offline.online) void loadSessionNotes(workspaceId, seq);
 
 		try {
 			// Queued reviews must land before the history is read: the
@@ -327,33 +414,76 @@
 				// The outbox retries on the next boot or reconnect.
 			}
 			// Duplicate cards arrive merged, their reviews re-pointed.
-			const [data, schemeEntries] = await Promise.all([
+			const [data, levelRequest] = await Promise.all([
 				loadStudyData(workspaceId),
 				levelEntriesRequest(language)
 			]);
 			if (seq !== requestSeq) return;
 
+			// Offline (or answered from the saved copy): real cards only, see planCompanions.
+			offlineSession = !$offline.online || $offline.servedFromCacheAt !== null;
 			const history = data.reviews;
 			reviews = history;
 			weights = activeWeights(data);
+			const loaded = contextForData(data, workspaceId);
+			sessionClock = loaded.clock;
+			sessionVacation = loaded.vacation;
 			const w = weights;
 			cards = data.cards;
 			const now = new Date();
+			// The order of new cards (#75): ranks or level keys only for entries
+			// that can be new; offline or on failure the order added, with a note.
+			const order = await sessionNewKey(
+				{
+					mode: config.mode,
+					order: sessionNewOrder(config),
+					language: language ?? '',
+					deckOrders: deckOrdersOf(config.deckIds, data.decks, data.deckSettings),
+					levelUnit: levelRequest.unit,
+					newEntryIds:
+						config.mode === 'levels'
+							? candidateNewEntries({
+									cards: data.cards,
+									reviews: history,
+									entries: levelRequest.entries.map((entry) => entry.id),
+									kinds
+								})
+							: candidateNewEntries({ cards: data.cards, reviews: history, deckIds: config.deckIds }),
+					online: !offlineSession
+				},
+				{ packs: getFrequencyPacks, schemes: getSchemes, ranks: loadRanks, levelKeys: loadLevelKeys }
+			);
+			if (seq !== requestSeq) return;
+			orderNote = order.note ?? '';
+			const keyOf = order.key;
 			if (config.mode === 'levels') {
-				// Level sessions stay vocab-only; companions are deck-only.
-				queue = levelSessionItems(
-					buildLevelQueue({
-						entries: schemeEntries,
-						cards: data.cards,
-						reviews: history,
-						newLimit: config.newLimit,
-						reviewLimit: config.reviewLimit,
-						now,
-						w
-					}),
-					data.cards,
-					kinds
-				);
+				// Character levels study recognition and writing; word levels vocab
+				// only. Companions are deck-only. A dropped virtual item (no stroke
+				// data) is replaced from the reserve, as in a deck session.
+				// A word answered today through reverse or cloze is buried: left out
+				// before the limits, so the next word takes its slot.
+				const ctx = contextForData(data, workspaceId);
+				const day = ctx.day;
+				const buried = buriedNow({ cards: data.cards, reviews: history, now, studyDay: day });
+				const plan = buildLevelPlan({
+					entries: levelRequest.entries,
+					cards: data.cards,
+					reviews: history,
+					newLimit: config.newLimit,
+					reviewLimit: config.reviewLimit,
+					now,
+					w,
+					unit: levelRequest.unit,
+					kinds,
+					ctx,
+					hasStrokes: hasStrokeData,
+					skip: loadIneligible(workspaceId),
+					excludeEntries: buriedLevelEntries(buried, data.cards),
+					newKey: keyOf ?? undefined
+				});
+				queue = levelSessionItems(plan.queue, data.cards, kinds, buried);
+				reserve = levelSessionItems(plan.reserve, data.cards, kinds, buried);
+				backfillLeft = backfillLimit(config.newLimit);
 			} else {
 				const plan = deckSessionPlan({
 					cards: data.cards,
@@ -364,9 +494,13 @@
 					reviewLimit: config.reviewLimit,
 					now,
 					w,
+					ctx: contextForData(data, workspaceId),
+					deckSettings: data.deckSettings,
+					offline: offlineSession,
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
-					skip: loadIneligible(workspaceId)
+					skip: loadIneligible(workspaceId),
+					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId)
 				});
 				queue = plan.queue;
 				reserve = plan.reserve;
@@ -381,7 +515,11 @@
 			if (err instanceof LevelWorkspaceMismatch) {
 				workspaceMismatch = err.message;
 			} else {
-				loadError = message(err, 'Could not start your session.');
+				loadError = sessionStartError({
+					offline: !$offline.online || err instanceof TypeError,
+					mode: config.mode,
+					fallback: message(err, 'Could not start your session.')
+				});
 			}
 		} finally {
 			if (seq === requestSeq) loading = false;
@@ -423,7 +561,7 @@
 					...base,
 					item: item.virtual ? { ...item, sentenceId: sentence?.id } : item,
 					sentence,
-					tier: item.tier ?? tierForCard(cardId, history, now, weights),
+					tier: item.tier ?? tierForCard(cardId, history, now, weights, sessionClock),
 					seed: `${item.card?.id ?? item.cardId}:${reviewCountFor(cardId, history)}`
 				};
 			}
@@ -436,9 +574,89 @@
 			}
 			case 'tone':
 				return isEligible('tone', entry, { language, hasSentence: false }) ? base : null;
+			case 'reverse':
+				return isEligible('reverse', entry, { language, hasSentence: false }) ? base : null;
+			case 'cloze':
+				return resolveCloze(item, entry, language, history, now, base);
 			default:
 				return null;
 		}
+	}
+
+	/** segmentOf caches one sentence's segmenter matches for the session. */
+	function segmentOf(language: string, sentence: Sentence): Promise<SegmentMatch[]> {
+		let found = segmentCache.get(sentence.id);
+		if (found === undefined) {
+			found = segmentBatch(language, sentence.hanzi);
+			// A failed request is not cached: the next showing asks again.
+			found.catch(() => segmentCache.delete(sentence.id));
+			segmentCache.set(sentence.id, found);
+		}
+		return found;
+	}
+
+	/**
+	 * resolveCloze picks the sentence and blanks of a cloze showing. A failed
+	 * segment request rejects: the item is dropped without being remembered
+	 * as ineligible (the word is checked again next session).
+	 */
+	async function resolveCloze(
+		item: FlowItem,
+		entry: Entry,
+		language: string,
+		history: readonly ReviewEvent[],
+		now: Date,
+		base: Resolved
+	): Promise<Resolved | null> {
+		const candidates = clozeCandidates(entry.sentences);
+		const matches = new Map<number, SegmentMatch[]>();
+		await Promise.all(
+			candidates.map(async (sentence) => {
+				matches.set(sentence.id, await segmentOf(language, sentence));
+			})
+		);
+		const cardId = item.virtual ? null : item.cardId;
+		const recorded = reviewCountFor(cardId, history);
+		const showing = resolveClozeShowing({
+			entry,
+			sentences: entry.sentences,
+			matchesOf: (sentence) => matches.get(sentence.id) ?? [],
+			recorded,
+			fixedSentenceId: item.clozeSentenceId
+		});
+		if (!isEligible('cloze', entry, { language, hasSentence: false, hasCloze: showing !== null })) {
+			return null;
+		}
+		if (showing === null) return null;
+		const { prompt, sentence } = showing;
+		const seed = `${item.card?.id ?? item.cardId}:${recorded}`;
+		const forms = [entry.written, ...(entry.forms ?? []).map((form) => form.text)];
+		const distractors = pickDistractors({
+			answer: prompt.answer,
+			sentence: sentence.hanzi,
+			candidates: clozeDistractorPool(cards, config.deckIds, item.entryId),
+			seed
+		});
+		const mode =
+			item.clozeMode ??
+			clozeMode({
+				tier: tierForCard(cardId, history, now, weights, sessionClock),
+				answer: prompt.answer,
+				entryForms: forms,
+				distractors
+			});
+		return {
+			...base,
+			item: { ...item, clozeSentenceId: sentence.id, clozeMode: mode },
+			seed,
+			cloze: {
+				sentence,
+				prompt,
+				mode,
+				choices: mode === 'choose' ? shuffleTokens([prompt.answer, ...distractors], seed) : [],
+				accepted: acceptedClozeAnswers(prompt.answer, entry)
+			}
+		};
 	}
 
 	/**
@@ -455,7 +673,7 @@
 		if (
 			entry !== null &&
 			workspaceId !== null &&
-			rememberDrop(item, item.written ?? entry.written)
+			rememberDrop(item, item.written ?? entry.written, entry)
 		) {
 			rememberIneligible(workspaceId, ineligibleKey(item.kind, item.entryId));
 		}
@@ -478,7 +696,7 @@
 	 * card never waits on it.
 	 */
 	function prefetchAudio(seq: number): void {
-		const ids = [...queue, ...reserve].filter((i) => i.kind === 'vocab' || i.kind === 'tone').map((i) => i.entryId);
+		const ids = [...queue, ...reserve].filter(hasWordAudio).map((i) => i.entryId);
 		if (!$token || ids.length === 0) {
 			audioSettled = true;
 			return;
@@ -490,10 +708,14 @@
 		});
 	}
 
+	// Vocab, tone and reverse cards pronounce their word (reverse only after the reveal).
+	function hasWordAudio(item: FlowItem): boolean {
+		return item.kind === 'vocab' || item.kind === 'tone' || item.kind === 'reverse';
+	}
+
 	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
-	// Only vocab and tone cards pronounce their word.
 	const currentAudio = $derived(
-		resolved !== null && (resolved.item.kind === 'vocab' || resolved.item.kind === 'tone')
+		resolved !== null && hasWordAudio(resolved.item)
 			? cardAudio(resolved.entry, audioMap[String(resolved.item.entryId)], audioSettings)
 			: null
 	);
@@ -525,7 +747,7 @@
 	$effect(() => {
 		const next = queue[index + 1];
 		const res = next === undefined ? undefined : audioMap[String(next.entryId)];
-		if (res !== undefined && (next?.kind === 'vocab' || next?.kind === 'tone')) {
+		if (res !== undefined && next !== undefined && hasWordAudio(next)) {
 			preloadClips({ clips: headwordClips(res), speakText: '', lang: '', deviceVoice: false });
 		}
 	});
@@ -590,8 +812,14 @@
 		}
 	}
 
-	function revealVocab(): void {
-		if (resolved?.item.kind !== 'vocab') return;
+	function revealByKey(): void {
+		if (resolved === null || !revealsOnKey(resolved.item.kind)) return;
+		// A reverse card finishes through its own path, so what was typed and the
+		// shown reading count (suggestion and hint) like the Show answer button.
+		if (resolved.item.kind === 'reverse' && reverseCard !== null) {
+			reverseCard.finish();
+			return;
+		}
 		void onCardDone({ suggested: null, meta: {} });
 	}
 
@@ -631,6 +859,10 @@
 				index,
 				grade: value,
 				tier: current.tier,
+				cloze:
+					item.kind === 'cloze' && item.clozeSentenceId !== undefined && item.clozeMode !== undefined
+						? { sentenceId: item.clozeSentenceId, mode: item.clozeMode }
+						: undefined,
 				record: () =>
 					gradeItem({
 						item,
@@ -668,7 +900,23 @@
 			// The focused grade button is disabled for the next card; drop the
 			// focus so Space/Enter reach the window in every browser.
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-			queue = step.queue;
+			buryNote = '';
+			if (result !== null) {
+				// The answer may bury the word's other cards until tomorrow.
+				const next = buryAfterAnswer({ queue: step.queue, reserve, backfillLeft }, index, {
+					kind: item.kind,
+					entryId: item.entryId,
+					cardId: item.cardId
+				});
+				if (next.buried > 0) {
+					buryNote = `${next.buried} related ${next.buried === 1 ? 'card is' : 'cards are'} buried until tomorrow`;
+				}
+				queue = next.plan.queue;
+				reserve = next.plan.reserve;
+				backfillLeft = next.plan.backfillLeft;
+			} else {
+				queue = step.queue;
+			}
 			index = step.index;
 			ensureEntry(queue[index]);
 		} finally {
@@ -697,7 +945,7 @@
 	}
 
 	/**
-	 * Key map: vocab — Space/Enter reveal, then 1–4 grade. Other kinds own
+	 * Key map: vocab and reverse — Space/Enter reveal, then 1–4 grade. Other kinds own
 	 * their keys until the learner finishes the card (tone uses 1–5 for
 	 * tones), then 1–4 grade. The runner never handles a key before then.
 	 */
@@ -708,10 +956,10 @@
 		if (current === null || complete) return;
 
 		if (!done) {
-			if (current.item.kind !== 'vocab' || isInteractive(event.target)) return;
+			if (!revealsOnKey(current.item.kind) || isInteractive(event.target)) return;
 			if (event.key === ' ' || event.key === 'Enter') {
 				event.preventDefault();
-				revealVocab();
+				revealByKey();
 			}
 			return;
 		}
@@ -837,6 +1085,18 @@
 			<a href="/study">End session</a>
 		</header>
 
+		{#if buryNote}
+			<p class="hint" role="status">{buryNote}</p>
+		{/if}
+
+		{#if orderNote}
+			<p class="hint" role="status">{orderNote}</p>
+		{/if}
+
+		{#if showCompanionNote({ offline: offlineSession, kinds })}
+			<p class="hint">{COMPANION_NOTE}</p>
+		{/if}
+
 		{#if entryError}
 			<section class="state">
 				<p class="error" role="alert">{entryError}</p>
@@ -890,6 +1150,29 @@
 							{done}
 							onDone={onCardDone}
 						/>
+					{:else if current.item.kind === 'reverse'}
+						<ReverseCard
+							bind:this={reverseCard}
+							item={current.item}
+							entry={current.entry}
+							revealed={done}
+							language={sessionLanguage || current.entry.language}
+							onDone={onCardDone}
+							audio={currentAudio ?? undefined}
+						/>
+					{:else if current.item.kind === 'cloze' && current.cloze !== undefined}
+						<ClozeCard
+							item={current.item}
+							entry={current.entry}
+							sentence={current.cloze.sentence}
+							prompt={current.cloze.prompt}
+							mode={current.cloze.mode}
+							choices={current.cloze.choices}
+							accepted={current.cloze.accepted}
+							language={sessionLanguage || current.entry.language}
+							{done}
+							onDone={onCardDone}
+						/>
 					{:else if current.item.kind === 'tone'}
 						<ToneCard
 							item={current.item}
@@ -900,6 +1183,8 @@
 						/>
 					{/if}
 				{/key}
+
+				<NoteAnswer text={done && !offlineSession ? sessionNotes.get(current.item.entryId) : undefined} />
 
 				{#if gradeError}
 					<p class="error" role="alert">{gradeError}</p>

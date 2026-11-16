@@ -1,6 +1,6 @@
 // Package packs is the one place that imports, uninstalls and lists data
-// packs of every type — dictionaries, frequency lists, level lists and
-// sentence packs. The seed CLI and the admin API both go through it, so
+// packs of every type — dictionaries, frequency lists, level lists,
+// sentence, grammar, audio and components packs. The seed CLI and the admin API both go through it, so
 // a pack installs, shows up and goes away the same way however it
 // arrived.
 package packs
@@ -13,6 +13,7 @@ import (
 	"sort"
 
 	"qinqin/internal/audio"
+	"qinqin/internal/components"
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/grammar"
@@ -49,6 +50,7 @@ var typeOrder = map[string]int{
 	dict.TypeSentences:  3,
 	dict.TypeGrammar:    4,
 	dict.TypeAudio:      5,
+	dict.TypeComponents: 6,
 }
 
 // Supported reports whether typ is a pack type this package manages.
@@ -138,6 +140,12 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) 
 			line += fmt.Sprintf(" (skipped %d with no usable reading)", r.Skipped)
 		}
 		return line, nil
+	case dict.TypeComponents:
+		r, err := components.Import(ctx, sqlDB, pack)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d characters, %d parts", r.Chars, r.Parts), nil
 	}
 	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 }
@@ -172,11 +180,14 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...O
 			return errNoAudioStore
 		}
 		_, err = audio.Uninstall(ctx, sqlDB, packID, o.audioStore)
+	case dict.TypeComponents:
+		err = components.Uninstall(ctx, sqlDB, packID)
 	default:
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
 	if errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
-		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) || errors.Is(err, audio.ErrPackNotFound) {
+		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) || errors.Is(err, audio.ErrPackNotFound) ||
+		errors.Is(err, components.ErrNotFound) {
 		return ErrNotFound
 	}
 	return err
@@ -209,7 +220,8 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 }
 
 // List returns every live pack of every type, ordered by type
-// (dictionary, frequency, levels, sentences, grammar, audio), then name, then pack id.
+// (dictionary, frequency, levels, sentences, grammar, audio,
+// components), then name, then pack id.
 // Sentence packs imported before the registry existed list with only
 // their type and id, after the registered ones: their licence is not
 // recorded, and the list must not make them look like known packs.
@@ -228,6 +240,8 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 			FROM grammar_packs WHERE deleted_at IS NULL`},
 		{dict.TypeAudio, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
 			FROM audio_packs WHERE deleted_at IS NULL`},
+		{dict.TypeComponents, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
+			FROM component_packs WHERE deleted_at IS NULL`},
 	} {
 		rows, err := sqlDB.QueryContext(ctx, q.query)
 		if err != nil {

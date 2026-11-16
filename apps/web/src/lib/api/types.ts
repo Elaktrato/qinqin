@@ -135,6 +135,8 @@ export interface CharRow {
 	m?: string;
 	/** Variant forms (zh traditional/simplified partners) sharing the cell. */
 	v?: string[];
+	/** Kangxi number (1–214) of the character's radical (docs/contracts/radicals). */
+	k?: number;
 }
 
 // CharactersResponse is GET /api/characters?language=.
@@ -163,10 +165,43 @@ export interface Dictionary {
 	language: string;
 }
 
+// ComponentPart is one part of GET /api/components: its glyph, its stroke
+// count (0 = unknown) and how many characters contain it.
+export interface ComponentPart {
+	c: string;
+	s: number;
+	n: number;
+}
+
+// ComponentsResponse is GET /api/components?language= (docs/contracts/radicals).
+export interface ComponentsResponse {
+	language: string;
+	/** the packs the index is built from, by pack id */
+	packs: { id: string; license: string; attribution: string }[];
+	parts: ComponentPart[];
+	/** glyph -> the parts it contains */
+	chars: Record<string, string[]>;
+}
+
+// ComponentPack is one element of GET /api/component-packs: an installed
+// character components pack's credit line.
+export interface ComponentPack {
+	packId: string;
+	name: string;
+	version: string;
+	language: string;
+	license: string;
+	attribution: string;
+	/** The pack's notice mini-markup (lib/sources/notice.ts); '' when none. */
+	notice?: string;
+}
+
 // FrequencyPack is one element of GET /api/frequency-packs: an installed
 // word-frequency pack's credit line, in priority order.
 export interface FrequencyPack {
 	id: number;
+	/** The manifest id (e.g. `jiten-frequency`); stable across servers. */
+	packId: string;
 	name: string;
 	version: string;
 	language: string;
@@ -255,6 +290,8 @@ export interface SegmentMatch {
 	lemma: string;
 	reason: string;
 	entries: SegmentCandidate[];
+	/** Only with `readings: true`: the best candidate's reading, the caller's overlay applied. */
+	reading?: { type: string; value: string };
 }
 
 // SegmentCandidate is one entry a match resolves to; reading is true when

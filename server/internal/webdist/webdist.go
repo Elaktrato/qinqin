@@ -38,6 +38,8 @@ func mustSub(fsys fs.FS, dir string) fs.FS {
 
 const (
 	cacheNoStore    = "no-store"
+	cacheNoCache    = "no-cache"
+	cacheDay        = "public, max-age=86400"
 	cacheImmutable  = "public, max-age=31536000, immutable"
 	immutablePrefix = "_app/immutable/"
 )
@@ -50,6 +52,8 @@ var extraTypes = map[string]string{
 	".ttf":   "font/ttf",
 	".otf":   "font/otf",
 	".txt":   "text/plain; charset=utf-8",
+	// The web app manifest; the platform table may not know the extension.
+	".webmanifest": "application/manifest+json",
 }
 
 func contentType(name string) string {
@@ -71,7 +75,8 @@ func absent(err error) bool {
 // answers 200 text/html with a placeholder instead of a 404, so the
 // embedded API remains reachable from a bare build. An I/O error is a 500,
 // never a silent SPA fallback. Every response carries nosniff; index.html
-// is no-store, content-hashed _app/immutable files are cached for a year.
+// is no-store, content-hashed _app/immutable files are cached for a year,
+// the service worker and manifest are no-cache and icons are cached a day.
 func Handler(fsys fs.FS) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
@@ -136,6 +141,13 @@ func serveFile(w http.ResponseWriter, r *http.Request, fsys fs.FS, name string) 
 		w.Header().Set("Cache-Control", cacheNoStore)
 	case strings.HasPrefix(name, immutablePrefix):
 		w.Header().Set("Cache-Control", cacheImmutable)
+	// The worker and the manifest are revalidated on every load so an update
+	// is seen at once; icons change rarely and may be reused for a day. The
+	// worker lives at the root, so its scope is "/" without extra headers.
+	case name == "service-worker.js" || name == "manifest.webmanifest":
+		w.Header().Set("Cache-Control", cacheNoCache)
+	case name == "favicon.svg" || strings.HasPrefix(name, "icons/"):
+		w.Header().Set("Cache-Control", cacheDay)
 	}
 	http.ServeContent(w, r, info.Name(), info.ModTime(), bytes.NewReader(data))
 	return true, nil

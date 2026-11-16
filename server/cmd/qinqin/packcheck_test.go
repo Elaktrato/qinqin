@@ -151,3 +151,26 @@ func TestStalePackTermsIgnoresUninstalledAndSentencePacks(t *testing.T) {
 		t.Errorf("uninstalled pack: got %q, want no lines", rec.lines)
 	}
 }
+
+func TestStalePackTermsChecksComponentsPacks(t *testing.T) {
+	sqlDB, root := seededPacks(t)
+	dir := filepath.Join(root, "comp-x")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(`{
+		"id": "comp-x", "name": "X", "version": "1", "type": "components", "language": "ja",
+		"license": "CC BY-SA 3.0", "attribution": "someone", "notice": "Derived.", "format": "components-tsv"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := sqlDB.Exec(`
+		INSERT INTO component_packs (pack_id, name, version, language, license, attribution, updated_at)
+		VALUES ('comp-x', 'X', '1', 'ja', 'CC BY-SA 3.0', 'someone', '2026-01-01T00:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	var rec logRecorder
+	warnStalePackTerms(context.Background(), sqlDB, []string{root}, rec.logf)
+	if len(rec.lines) != 1 || !strings.HasPrefix(rec.lines[0], "pack comp-x: stored license/attribution/notice differs from ") {
+		t.Errorf("got %q, want one warning for comp-x", rec.lines)
+	}
+}

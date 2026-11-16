@@ -3,8 +3,9 @@
 // contains it. No extra event type and no per-character table — the same
 // review history that schedules cards also feeds the map.
 
-import { scheduleFor } from './scheduler';
-import type { ReviewEvent, StudyCard } from './types';
+import { scheduleFor, type Schedule } from './scheduler';
+import type { StudyClock } from './studyClock';
+import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 /** The five bands the mastery map colours. */
 export type MasteryStage = 'unknown' | 'fresh' | 'learning' | 'mature' | 'learned';
@@ -39,6 +40,18 @@ function clamp01(value: number): number {
 function cardStrength(stability: number): number {
 	if (!Number.isFinite(stability)) return 0;
 	return clamp01(Math.log2(1 + Math.max(0, stability)) / MAX_LOG);
+}
+
+/**
+ * The kinds whose reviews feed character mastery. Reverse and cloze cards
+ * re-test links the others already cover, so enabling them never moves
+ * the map (docs/contracts/cards/README.md).
+ */
+export const MASTERY_KINDS: readonly StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
+
+/** A card's own 0-100 score from its FSRS stability. */
+export function cardScore(stability: number): number {
+	return Math.round(100 * cardStrength(stability));
 }
 
 /**
@@ -82,23 +95,18 @@ function groupReviewsByCard(reviews: readonly ReviewEvent[]): Map<string, Review
 }
 
 /**
- * masteryForChars scores many characters in one pass: reviews are
- * bucketed by card once, each reviewed card's FSRS schedule is replayed
- * once, and its strength is added to every character in its written
- * snapshot. The map holds an entry for every requested character,
- * including characters no reviewed card contains. An empty string is
- * never matched — `written.includes('')` would otherwise make every
- * string contain it.
- *
- * This is the single scoring entry point; the map page calls it once for
- * every glyph (variants included) it shows.
+ * masteryFromSchedules scores many characters from ready schedules: each
+ * MASTERY_KINDS card with a written snapshot and a schedule (null = never
+ * reviewed, skipped) adds its strength to every character in its snapshot.
+ * The map holds an entry for every requested character, including
+ * characters no reviewed card contains. An empty string is never matched
+ * — `written.includes('')` would otherwise make every string contain it.
+ * The weekly summary samples replay timelines through it.
  */
-export function masteryForChars(
+export function masteryFromSchedules(
 	chars: readonly string[],
 	cards: readonly StudyCard[],
-	reviews: readonly ReviewEvent[],
-	now: Date,
-	w: readonly number[]
+	scheduleOf: (cardId: string) => Schedule | null
 ): Map<string, CharMastery> {
 	const wanted = new Set(chars.filter((char) => char.length > 0));
 	const totals = new Map<string, { sum: number; count: number }>();
@@ -107,16 +115,11 @@ export function masteryForChars(
 	}
 
 	if (wanted.size > 0) {
-		const reviewsByCard = groupReviewsByCard(reviews);
-
 		for (const card of cards) {
+			if (!MASTERY_KINDS.includes(card.kind)) continue;
 			const written = card.written;
 			if (written === undefined || written === '') continue;
-			const history = reviewsByCard.get(card.id);
-			// No history means no schedule; skipping avoids a replay that
-			// would only return null.
-			if (history === undefined) continue;
-			const schedule = scheduleFor(card.id, history, now, w);
+			const schedule = scheduleOf(card.id);
 			if (schedule === null) continue;
 
 			const strength = cardStrength(schedule.stability);
@@ -142,4 +145,30 @@ export function masteryForChars(
 		mastery.set(char, { score, stage: stageOf(score), reviewedCards: total.count });
 	}
 	return mastery;
+}
+
+/**
+ * masteryForChars scores many characters in one pass: reviews are
+ * bucketed by card once and each reviewed card's FSRS schedule is
+ * replayed once (masteryFromSchedules does the scoring).
+ *
+ * This is the single scoring entry point; the map page calls it once for
+ * every glyph (variants included) it shows.
+ */
+export function masteryForChars(
+	chars: readonly string[],
+	cards: readonly StudyCard[],
+	reviews: readonly ReviewEvent[],
+	now: Date,
+	w: readonly number[],
+	clock: StudyClock
+): Map<string, CharMastery> {
+	if (!chars.some((char) => char.length > 0)) return masteryFromSchedules(chars, cards, () => null);
+	const reviewsByCard = groupReviewsByCard(reviews);
+	// No history means no schedule; skipping avoids a replay that would
+	// only return null.
+	return masteryFromSchedules(chars, cards, (cardId) => {
+		const history = reviewsByCard.get(cardId);
+		return history === undefined ? null : scheduleFor(cardId, history, now, w, clock);
+	});
 }

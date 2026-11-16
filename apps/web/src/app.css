@@ -72,3 +72,92 @@ main {
 	white-space: nowrap;
 	border: 0;
 }
+
+/* Visually hidden, still read by screen readers (live regions, hints). */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* A button that reads as a text link (secondary actions inside a form page). */
+button.link {
+	background: none;
+	border: none;
+	padding: 0;
+	margin: 0 0.75em 0 0;
+	font: inherit;
+	color: var(--link, #2563eb);
+	text-decoration: underline;
+	cursor: pointer;
+}
+button.link:disabled {
+	color: inherit;
+	opacity: 0.6;
+	cursor: not-allowed;
+	text-decoration: none;
+}
+
+/* Reader word states (#68): new = solid underline + blue tint, learning =
+   dotted underline + amber tint, known = plain. The text colour never
+   changes; the underline colours reach 3:1 against the page and the tint in
+   both themes. The underline and tint are background layers ending 0.12em
+   before the word's last piece ends (.w-end), so neighbouring words of one
+   state stay apart. */
+:root {
+	--word-new: #e3eefe;
+	--word-new-line: #1a62c4;
+	--word-learning: #fdf0d8;
+	--word-learning-line: #a35400;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--word-new: #1b2c45;
+		--word-new-line: #7db5ff;
+		--word-learning: #3a2b10;
+		--word-learning-line: #f0a640;
+	}
+}
+.w-new,
+.w-learning {
+	background-repeat: no-repeat;
+	background-position: left bottom;
+	background-size: 100% 100%;
+}
+.w-new {
+	background-image:
+		linear-gradient(var(--word-new-line), var(--word-new-line)),
+		linear-gradient(var(--word-new), var(--word-new));
+	background-size: 100% 2px, 100% 100%;
+}
+.w-learning {
+	background-image:
+		repeating-linear-gradient(90deg, var(--word-learning-line) 0 3px, transparent 3px 5px),
+		linear-gradient(var(--word-learning), var(--word-learning));
+	background-size: 100% 2px, 100% 100%;
+}
+.w-new.w-end,
+.w-learning.w-end {
+	background-size: calc(100% - 0.12em) 2px, calc(100% - 0.12em) 100%;
+}
+@media (forced-colors: active) {
+	.w-new,
+	.w-learning {
+		background-image: none;
+		text-decoration-line: underline;
+		text-decoration-color: CanvasText;
+		text-decoration-thickness: 2px;
+	}
+	.w-new {
+		text-decoration-style: solid;
+	}
+	.w-learning {
+		text-decoration-style: dotted;
+	}
+}

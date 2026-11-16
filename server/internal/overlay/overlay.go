@@ -79,6 +79,54 @@ func Apply(ctx context.Context, sqlDB *sql.DB, userID int64, e *model.EntryBase)
 	return nil
 }
 
+// Readings returns the saved readings of user userID's patches of the
+// given entries, decoded exactly like Apply, keyed by entry id. Entries
+// without a patch or whose patch leaves readings untouched are absent.
+// One query per 500 ids.
+func Readings(ctx context.Context, sqlDB *sql.DB, userID int64, ids []int64) (map[int64][]model.Reading, error) {
+	out := map[int64][]model.Reading{}
+	const chunk = 500
+	for start := 0; start < len(ids); start += chunk {
+		part := ids[start:min(start+chunk, len(ids))]
+		args := make([]any, 0, len(part)+1)
+		args = append(args, userID)
+		marks := make([]byte, 0, 2*len(part))
+		for i, id := range part {
+			if i > 0 {
+				marks = append(marks, ',')
+			}
+			marks = append(marks, '?')
+			args = append(args, id)
+		}
+		rows, err := sqlDB.QueryContext(ctx, `
+			SELECT entry_id, readings FROM user_edits
+			WHERE user_id = ? AND readings IS NOT NULL AND entry_id IN (`+string(marks)+`)`, args...)
+		if err != nil {
+			return nil, fmt.Errorf("load readings of user %d: %w", userID, err)
+		}
+		for rows.Next() {
+			var id int64
+			var blob string
+			if err := rows.Scan(&id, &blob); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("scan readings of user %d: %w", userID, err)
+			}
+			var rs []model.Reading
+			if err := json.Unmarshal([]byte(blob), &rs); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("unmarshal readings of user %d on entry %d: %w", userID, id, err)
+			}
+			out[id] = rs
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, fmt.Errorf("load readings of user %d: %w", userID, err)
+		}
+	}
+	return out, nil
+}
+
 // now returns the server clock as UTC RFC 3339, the timestamp
 // convention for every write.
 func now() string {

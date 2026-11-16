@@ -2,20 +2,55 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
-	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
+	import { fetchCharacters } from '$lib/api/characters';
+	import type { CharRow } from '$lib/api/types';
+	import type { SchemeLevelMembers } from '$lib/study/charGroups';
+	import { levelMastery } from '$lib/study/levelMastery';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
 	import CardManager from '$lib/components/CardManager.svelte';
 	import { workspaces } from '$lib/workspaces';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
-	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
+	import {
+		defaultExtraTypes,
+		hasTabSetup,
+		loadExtraChoices,
+		loadRememberedTypes,
+		rememberCardTypes,
+		rememberExtraChoice,
+		type ExtraChoices
+	} from '$lib/study/cardTypesMemory';
+	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
+	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { buildLevelQueue } from '$lib/study/levelQueue';
+	import {
+		levelEntryCount,
+		levelPlanCounts,
+		levelTypeWarnings,
+		levelUsable,
+		type LevelUnit
+	} from '$lib/study/levelQueue';
+import { contextForData, currentContext, onContextStale } from '$lib/study/currentContext';
+import type { StudyContext } from '$lib/study/studyContext';
+import type { VacationPeriod } from '$lib/study/vacation';
+import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
+import { startTodayText } from '$lib/study/limitsText';
+import { limitsOf } from '$lib/study/scheduler';
+	import { currentStudyDay } from '$lib/time/zone';
+	import { hasStrokeData } from '$lib/study/strokeIndex';
+	import { getFrequencyPacks } from '$lib/api/frequency';
+	import type { FrequencyPack } from '$lib/api/types';
+	import { resolveSessionOrder } from '$lib/study/newOrder';
+	import { MIXED_NOTE, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
+	import { deckOrdersOf } from '$lib/study/sessionOrder';
 	import {
 		CARD_TYPES,
 		loadConfig,
 		saveConfig,
+		sessionNewOrder,
 		validateConfig,
 		type StudySessionConfig,
 		type StudySessionMode
@@ -31,6 +66,8 @@
 	} from '$lib/study/store';
 	import {
 		CARD_KINDS,
+		OPT_IN_KINDS,
+		type OptInKind,
 		type Deck,
 		type ReviewEvent,
 		type StudyCard,
@@ -54,7 +91,9 @@
 			'Rebuild an example sentence from shuffled tiles; words without sentences are skipped.',
 		writing:
 			'Draw each Han character stroke by stroke; words without Han characters are skipped.',
-		tone: 'Swipe or type the tone of every syllable (Chinese only).'
+		tone: 'Swipe or type the tone of every syllable (Chinese only).',
+		reverse: 'See the meaning, recall the word (words only; switched on per deck).',
+		cloze: 'Fill the gap in an example sentence (switched on per deck).'
 	};
 
 	// Restore this tab's setup before the first render: on an SPA the
@@ -65,6 +104,12 @@
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	// Vacation days and the study clock of the active workspace.
+	let ctx = $state.raw<StudyContext>(currentContext());
+	let vacations = $state.raw<VacationPeriod[]>([]);
+	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
+	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
+	let extraChoices = $state.raw<ExtraChoices>({});
 	let schedulingLabel = $state('default parameters');
 	let loading = $state(true);
 	let loadError = $state('');
@@ -77,6 +122,9 @@
 	let mode = $state<StudySessionMode>(saved.mode);
 	let schemeId = $state<number | null>(saved.schemeId);
 	let levelName = $state<string | null>(saved.levelName);
+	// The order of new cards (#75), as a select value; see newOrderView.ts.
+	let newOrderValue = $state(encodeOrder(sessionNewOrder(saved)));
+	let frequencyPacks = $state.raw<FrequencyPack[]>([]);
 
 	// Schemes are global, so they are filtered by the language of the
 	// workspace the setup is running in. `schemesLoaded` separates "not
@@ -92,6 +140,12 @@
 	let levelEntriesLoading = $state(false);
 	let levelEntriesError = $state('');
 	let levelEntriesSeq = 0;
+	// The scheme's characters per level (for "L of N learned"); optional
+	// decoration, so a failed load only hides the counts.
+	let schemeCharacters = $state.raw<SchemeLevelMembers[]>([]);
+	let schemeCharactersSeq = 0;
+	// The language's character rows (variants), the Stats map's universe.
+	let universeRows = $state.raw<CharRow[]>([]);
 
 	let deckName = $state('');
 	let creating = $state(false);
@@ -146,6 +200,7 @@
 		}
 		schemesLoaded = false;
 		schemeError = '';
+		extraChoices = workspaceId === null ? {} : loadExtraChoices(workspaceId);
 
 		if (workspaceId === null) {
 			decks = [];
@@ -167,7 +222,10 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, workspaceId);
+			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
 		} catch (err) {
@@ -195,12 +253,18 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
+			ctx = contextForData(data, activeWorkspaceId);
+			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
 			if (seq === requestSeq) deckError = message(err, 'Could not reload your cards.');
 		}
 	}
+
+	// A new learner day (or zone) changes what is due and on vacation.
+	$effect(() => onContextStale(() => void refreshData()));
 
 	async function loadSchemes(seq: number): Promise<void> {
 		try {
@@ -215,6 +279,14 @@
 			if (seq === requestSeq) schemesLoaded = true;
 		}
 	}
+
+	// The installed frequency packs decide whether "most frequent first" is
+	// offered; without them the setup shows the hint (nothing is bundled).
+	$effect(() => {
+		getFrequencyPacks()
+			.then((list) => (frequencyPacks = Array.isArray(list) ? list : []))
+			.catch(() => (frequencyPacks = []));
+	});
 
 	// Refetch when the active workspace changes; the header switcher
 	// makes that possible without leaving the page.
@@ -315,25 +387,77 @@
 		void loadLevelEntries(selection.schemeId, selection.levelName);
 	});
 
+	$effect(() => {
+		const scheme = mode === 'levels' && schemesLoaded ? selectedScheme : null;
+		const seq = ++schemeCharactersSeq;
+		if (scheme === null) {
+			schemeCharacters = [];
+			return;
+		}
+		Promise.all([fetchSchemeCharacters(scheme.id), fetchCharacters(scheme.language)]).then(
+			([levels, list]) => {
+				if (seq !== schemeCharactersSeq) return;
+				schemeCharacters = levels;
+				universeRows = list.chars;
+			},
+			() => {
+				if (seq !== schemeCharactersSeq) return;
+				schemeCharacters = [];
+				universeRows = [];
+			}
+		);
+	});
+
+	const levelLearned = $derived(levelMastery(schemeCharacters, universeRows, cards, reviews, new Date(), weights, ctx.clock));
+
+	function levelOptionLabel(name: string): string {
+		const count = levelLearned.get(name);
+		return count === undefined || count.total === 0
+			? name
+			: `${name} — ${count.learned} of ${count.total} learned`;
+	}
+
 	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
 	// hidden type stays in the saved setup (switching back restores it)
 	// but never counts or reaches a session.
-	const visibleTypes = $derived(
-		CARD_TYPES.filter((type) => type.id !== 'tone' || isChinese(workspaceLanguage ?? ''))
-	);
+	// Reverse and cloze are offered only when a selected deck switches them on;
+	// they start checked unless the learner unchecked them before in this workspace.
+	const enabledOptIn = $derived(enabledKinds(deckSettings, selectedDeckIds));
 
-	const selectedKinds = $derived(
-		CARD_KINDS.filter(
-			(kind) => cardTypes.includes(kind) && visibleTypes.some((type) => type.id === kind)
+	const visibleTypes = $derived(
+		CARD_TYPES.filter(
+			(type) =>
+				(type.id !== 'tone' || isChinese(workspaceLanguage ?? '')) &&
+				(!isOptIn(type.id) || enabledOptIn.has(type.id as OptInKind))
 		)
 	);
+
+	function isOptIn(kind: string): boolean {
+		return (OPT_IN_KINDS as readonly string[]).includes(kind);
+	}
+
+	const extraKinds = $derived(defaultExtraTypes(enabledOptIn, extraChoices));
+
+	const selectedKinds = $derived([
+		...CARD_KINDS.filter(
+			(kind) =>
+				!isOptIn(kind) &&
+				cardTypes.includes(kind) &&
+				visibleTypes.some((type) => type.id === kind)
+		),
+		...extraKinds
+	]);
+
+	function isChecked(id: string): boolean {
+		return isOptIn(id) ? extraKinds.includes(id as OptInKind) : cardTypes.includes(id);
+	}
 
 	// Due and new are counted separately so the setup shows what a
 	// session would actually contain today, with the selected types and
 	// the companion cards a deck session would plan. Cards reviewed but
 	// not due yet belong to neither bucket.
 	const deckPlan = $derived.by(() => {
-		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0 } };
+		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
 		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
 		const items = deckSessionItems({
 			cards,
@@ -345,6 +469,8 @@
 			now: new Date(),
 			w: weights,
 			language: workspaceLanguage ?? '',
+			deckSettings,
+			ctx,
 			// Words this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
@@ -357,48 +483,49 @@
 	// a sentence, stroke data or a clean pinyin reading is only known when
 	// it comes up, and unsuitable words are skipped then.
 	const plannedCompanions = $derived(
-		deckPlan.byKind.sentence + deckPlan.byKind.writing + deckPlan.byKind.tone
+		deckPlan.byKind.sentence +
+			deckPlan.byKind.writing +
+			deckPlan.byKind.tone +
+			deckPlan.byKind.reverse +
+			deckPlan.byKind.cloze
 	);
 
-	// Level sessions are vocab-only: without vocab selected they are empty.
+	// Level sessions never plan reverse or cloze: they do not count towards the
+	// level's usable kinds or its "vocab only" warning.
+	const levelKinds = $derived(selectedKinds.filter((kind) => !isOptIn(kind)));
+
+	// A character scheme studies recognition and writing cards; every
+	// other scheme is a word scheme (vocab only).
+	const levelUnit = $derived<LevelUnit>(selectedScheme?.unit === 'character' ? 'character' : 'word');
+
 	const levelCounts = $derived.by(() => {
-		if (
-			levelSelection === null ||
-			levelEntries.length === 0 ||
-			!selectedKinds.includes('vocab')
-		) {
-			return { due: 0, fresh: 0 };
+		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, levelKinds)) {
+			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
 		}
-		const now = new Date();
-		const due = buildLevelQueue({
+		return levelPlanCounts({
 			entries: levelEntries,
 			cards,
 			reviews,
-			newLimit: 0,
-			reviewLimit: COUNT_CAP,
-			now,
-			w: weights
-		}).length;
-		const fresh = buildLevelQueue({
-			entries: levelEntries,
-			cards,
-			reviews,
-			newLimit: COUNT_CAP,
-			reviewLimit: 0,
-			now,
-			w: weights
-		}).length;
-		return { due, fresh };
+			now: new Date(),
+			w: weights,
+			unit: levelUnit,
+			kinds: levelKinds,
+			ctx,
+			hasStrokes: hasStrokeData,
+			// A word buried by a reverse or cloze answer today is left out, as in the session.
+			excludeEntries: buriedLevelEntries(
+				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),
+				cards
+			),
+			// Items this tab already found unsuitable are not counted.
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
+		});
 	});
 
 	// Selected types that have nothing to study: a warning, not a block,
 	// as long as another selected type has cards.
 	const typeWarnings = $derived.by((): string[] => {
-		if (mode === 'levels') {
-			return selectedKinds.some((kind) => kind !== 'vocab')
-				? ['Level sessions study vocab cards only; the other types apply to deck sessions.']
-				: [];
-		}
+		if (mode === 'levels') return levelTypeWarnings(levelUnit, levelKinds);
 		if (selectedCards.length === 0) return [];
 		return selectedKinds
 			.filter((kind) => deckPlan.byKind[kind] === 0)
@@ -409,8 +536,32 @@
 	});
 
 	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
-	const levelWordCount = $derived(
-		levelEntries.filter((entry) => entry.kind === 'word').length
+	const levelEntryTotal = $derived(levelEntryCount(levelEntries, levelUnit));
+	const levelNoun = $derived(
+		levelUnit === 'character'
+			? levelEntryTotal === 1 ? 'character' : 'characters'
+			: levelEntryTotal === 1 ? 'word' : 'words'
+	);
+
+	// True when no deck of the session has a daily limit (the note is dropped then).
+	const noDailyLimit = $derived(
+		mode === 'levels'
+			? false
+			: selectedDeckIds.length > 0 &&
+					selectedDeckIds.every((id) => {
+						const limit = limitsOf(ctx, id);
+						return limit.new === null && limit.reviews === null;
+					})
+	);
+
+	// "Vacation until 3 Jan": nothing is due and no new card is offered today.
+	const vacationText = $derived(
+		activeWorkspaceId === null || !ctx.vacationToday
+			? null
+			: vacationBanner(
+					vacationStatus(vacations, activeWorkspaceId, ctx.day.today()),
+					ctx.day.today()
+				)
 	);
 
 	const guidance = $derived.by(() => {
@@ -429,11 +580,18 @@
 			}
 			if (levelEntriesError) return levelEntriesError;
 			if (levelEntriesLoading) return 'Loading this level…';
-			if (levelEntries.length === 0) return 'This level has no words yet.';
-			if (!selectedKinds.includes('vocab')) {
-				return 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
+			if (levelEntries.length === 0) {
+				return `This level has no ${levelUnit === 'character' ? 'characters' : 'words'} yet.`;
+			}
+			if (!levelUsable(levelUnit, levelKinds)) {
+				return levelUnit === 'character'
+					? 'Character levels study Vocab (recognition) and Writing cards. Select one of them, or switch to My decks.'
+					: 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
 			}
 			if (counts.due + counts.fresh === 0) {
+				if (levelUnit === 'character' && !selectedKinds.includes('vocab')) {
+					return 'Nothing to write here: writing cards need stroke data and the characters of this level have none left to study. Select Vocab to practise recognition.';
+				}
 				return 'Nothing is due and no new cards are left in this level.';
 			}
 			return '';
@@ -458,6 +616,12 @@
 
 	function toggleCardType(id: string): void {
 		errors = [];
+		if (isOptIn(id)) {
+			const next = !extraKinds.includes(id as OptInKind);
+			extraChoices = { ...extraChoices, [id]: next };
+			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, id as OptInKind, next);
+			return;
+		}
 		cardTypes = cardTypes.includes(id)
 			? cardTypes.filter((type) => type !== id)
 			: [...cardTypes, id];
@@ -546,6 +710,25 @@
 		}
 	}
 
+	const orderView = $derived(
+		sessionOrderChoices({
+			mode,
+			language: workspaceLanguage ?? '',
+			packs: frequencyPacks,
+			schemes: schemesForLanguage,
+			levelScheme: selectedScheme
+		})
+	);
+	// A value the current mode does not offer (switched mode, pack removed) is the default.
+	const orderValue = $derived(
+		orderView.choices.some((choice) => choice.value === newOrderValue) ? newOrderValue : 'deck'
+	);
+	const ordersMixed = $derived(
+		mode === 'decks' &&
+			orderValue === 'deck' &&
+			resolveSessionOrder('deck', deckOrdersOf(selectedDeckIds, decks, deckSettings)).mixed
+	);
+
 	function selectMode(next: StudySessionMode): void {
 		errors = [];
 		mode = next;
@@ -561,8 +744,11 @@
 			deckIds: [...selectedDeckIds],
 			newLimit,
 			reviewLimit,
-			cardTypes: [...cardTypes]
+			// Existing kinds as set up (hidden ones stay), plus the checked opt-in kinds.
+			cardTypes: [...cardTypes.filter((kind) => !isOptIn(kind)), ...extraKinds]
 		};
+		const order = decodeOrder(orderValue);
+		if (order !== 'deck') config.newOrder = order;
 		// Validate what the session will actually use: a type hidden in
 		// this workspace does not count towards "at least one".
 		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });
@@ -587,6 +773,10 @@
 
 <main class="setup">
 	<h1>Study</h1>
+
+	{#if vacationText !== null}
+		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">Change</a></p>
+	{/if}
 	<p class="hint">Choose what this session should draw from.</p>
 	{#if $workspaces.current && usesHan($workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">View the mastery map →</a></p>
@@ -681,6 +871,14 @@
 										</button>
 									</div>
 								{/if}
+								<div class="deck-types">
+									<DeckCardTypes
+										deckId={deck.id}
+										deckName={deck.name}
+										cardTypes={deckSettings[deck.id]?.cardTypes ?? []}
+										onSaved={(saved) => (deckSettings = { ...deckSettings, [deck.id]: saved })}
+									/>
+								</div>
 							{/if}
 						</li>
 					{/each}
@@ -711,7 +909,7 @@
 		{:else}
 			<section aria-labelledby="levels-heading">
 				<h2 id="levels-heading">Level</h2>
-				<p class="hint">Draw words from one level of an installed scheme.</p>
+				<p class="hint">Draw words or characters from one level of an installed scheme.</p>
 
 				{#if schemeError}
 					<p class="error" role="alert">{schemeError}</p>
@@ -735,7 +933,7 @@
 							Level
 							<select bind:value={levelName}>
 								{#each schemeLevels as level (level.id)}
-									<option value={level.name}>{level.name}</option>
+									<option value={level.name}>{levelOptionLabel(level.name)}</option>
 								{/each}
 							</select>
 						</label>
@@ -764,6 +962,23 @@
 					<input type="number" min="1" max="999" step="1" bind:value={reviewLimit} />
 				</label>
 			</div>
+			<label class="order">
+				Order of new cards
+				<select
+					value={orderValue}
+					onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
+				>
+					{#each orderView.choices as choice (choice.value)}
+						<option value={choice.value}>{choice.label}</option>
+					{/each}
+				</select>
+			</label>
+			{#if ordersMixed}
+				<p class="hint" role="status">{MIXED_NOTE}</p>
+			{/if}
+			{#if orderView.hint !== null}
+				<p class="hint">{orderView.hint}</p>
+			{/if}
 			<p class="hint">
 				<a href="/study/scheduling">Scheduling: {schedulingLabel}</a>
 			</p>
@@ -779,7 +994,7 @@
 						<label class="type-choice">
 							<input
 								type="checkbox"
-								checked={cardTypes.includes(type.id)}
+								checked={isChecked(type.id)}
 								aria-describedby={`type-${type.id}-info`}
 								onchange={() => toggleCardType(type.id)}
 							/>
@@ -793,10 +1008,13 @@
 
 		<section class="summary" aria-labelledby="summary-heading">
 			<h2 id="summary-heading">This session</h2>
+			{#if vacationText === null}
+				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
+			{/if}
 			{#if mode === 'levels'}
 				<p class="stats">
-					<strong>{levelWordCount}</strong>
-					{levelWordCount === 1 ? 'word' : 'words'} in
+					<strong>{levelEntryTotal}</strong>
+					{levelNoun} in
 					<strong>{selectedScheme?.name ?? 'this scheme'}</strong>
 					{levelSelection?.levelName ?? ''} ·
 					<strong>{counts.due}</strong>
@@ -839,11 +1057,13 @@
 				</ul>
 			{/if}
 
-			<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
-				{starting ? 'Starting…' : 'Start studying'}
-			</button>
+			{#if vacationText === null}
+				<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
+					{starting ? 'Starting…' : 'Start studying'}
+				</button>
+			{/if}
 
-			{#if guidance}
+			{#if guidance && vacationText === null}
 				<p class="hint" role="status">{guidance}</p>
 			{/if}
 		</section>
@@ -939,6 +1159,10 @@
 		padding: 0.6rem 0.75rem;
 	}
 
+	.deck-types {
+		flex-basis: 100%;
+	}
+
 	.deck-choice,
 	.inline {
 		display: flex;
@@ -986,6 +1210,7 @@
 
 	.create label,
 	.limits label,
+	.order,
 	.levels label {
 		display: grid;
 		gap: 0.35rem;
@@ -996,6 +1221,15 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 1rem;
+	}
+
+	.order {
+		margin-top: 0.75rem;
+		max-width: 100%;
+	}
+
+	.order select {
+		max-width: 100%;
 	}
 
 	.modes,
@@ -1012,6 +1246,7 @@
 	.create input,
 	.limits input,
 	.levels select,
+	.order select,
 	.rename input,
 	.setup button {
 		font: inherit;
@@ -1020,6 +1255,7 @@
 	.create input,
 	.limits input,
 	.levels select,
+	.order select,
 	.rename input {
 		padding: 0.4rem 0.55rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);

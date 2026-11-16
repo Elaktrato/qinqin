@@ -1,0 +1,20 @@
+[
+ {
+  "id": 7,
+  "language": "zh",
+  "name": "",
+  "settings": {
+   "hiddenDictionaries": [
+    3
+   ]
+  },
+  "updatedAt": "2026-11-01T00:00:00Z"
+ },
+ {
+  "id": 8,
+  "language": "ja",
+  "name": "Japanese",
+  "settings": {},
+  "updatedAt": "2026-11-02T00:00:00Z"
+ }
+]
