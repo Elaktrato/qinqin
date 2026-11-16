@@ -27,26 +27,13 @@ type StarterResolver struct{ Lexicon lexicon.Store }
 
 // BestWordReadingID implements Resolver.
 func (r StarterResolver) BestWordReadingID(ctx context.Context, language, form, reading string) (int64, error) {
-	if (reading == "" || reading == form) && allKana(form) {
+	if (reading == "" || reading == form) && lexicon.AllKana(form) {
 		id, err := r.Lexicon.KanaOnlyWordID(ctx, language, form)
 		if !errors.Is(err, lexicon.ErrNotFound) {
 			return id, err
 		}
 	}
 	return r.Lexicon.BestWordReadingID(ctx, language, form, reading)
-}
-
-// allKana reports a non-empty text of hiragana, katakana and ー only.
-func allKana(s string) bool {
-	if s == "" {
-		return false
-	}
-	for _, c := range s {
-		if !(c >= 0x3041 && c <= 0x3096) && !(c >= 0x30a1 && c <= 0x30fa) && c != 0x30fc {
-			return false
-		}
-	}
-	return true
 }
 
 // TopEntry is one word of a starter deck: the entry, the rank of the

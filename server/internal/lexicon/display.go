@@ -32,7 +32,7 @@ var rareReadingFlags = []string{"rk", "ok", "ik", "sk"}
 // search-only; a search-only written form (sK) is never displayed. Only the
 // first sense counts for uk: JMdict marks minor senses of 犬, 見る or 山 uk.
 func (e Entry) DisplayForm(listForm string) string {
-	if listForm != "" && allKana(listForm) && slices.ContainsFunc(e.Readings, func(r Reading) bool {
+	if listForm != "" && AllKana(listForm) && slices.ContainsFunc(e.Readings, func(r Reading) bool {
 		return r.Type == "kana" && r.Value == listForm && !slices.Contains(r.Flags, "sk")
 	}) {
 		return listForm
@@ -101,8 +101,8 @@ func best(items []flagged, rare []string, hidden string) (string, bool) {
 	return "", false
 }
 
-// allKana reports a non-empty text of hiragana, katakana and ー only.
-func allKana(s string) bool {
+// AllKana reports a non-empty text of hiragana, katakana and ー only.
+func AllKana(s string) bool {
 	if s == "" {
 		return false
 	}
