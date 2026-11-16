@@ -1,8 +1,12 @@
 <script lang="ts">
-	import { onMount, tick, untrack } from 'svelte';
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { record as recordEvent } from '$lib/events';
-	import { workspaces } from '$lib/workspaces';
+	import { setSettings, workspaces } from '$lib/workspaces';
+	import { segmentWithReadings } from '$lib/api/segment';
+	import { scheduleIndex } from '../flashcards/decks/deckStats';
+	import { activeWeights, onStudyWrite } from '$lib/study/store';
+	import { loadStudyHistory } from '$lib/study/history';
 	import { createReadingTimer } from './readingTimer';
 	import { workspaceForBook } from './readingWorkspace';
 	import {
@@ -22,7 +26,12 @@
 	import type { Book, Chapter } from '$lib/api/types';
 	import BookmarksPanel from './BookmarksPanel.svelte';
 	import ChapterText from './ChapterText.svelte';
+	import DisplayPanel from './DisplayPanel.svelte';
+	import { createDisplayController, type DisplayController } from './displayController';
 	import { DEFAULT_DISPLAY } from './displaySettings';
+	import { ReadingsController } from './readings.svelte';
+	import { createReveal, revealKey } from './reveal';
+	import { masteryIndex, type MasteryIndex } from './smartReadings';
 	import HighlightEditor from './HighlightEditor.svelte';
 	import HighlightsPanel from './HighlightsPanel.svelte';
 	import { HighlightList } from './highlightList.svelte';
@@ -60,7 +69,7 @@
 	import { chapterTitle, formatPosition, type Position } from './position';
 	import { jumpPlan, restoreDecision, restorePlan } from './restore';
 	import { PositionSaver } from './positionSaver';
-	import { browserStorage, loadPrefs, savePrefs } from './prefs';
+	import { browserStorage, loadPrefs, saveVariant } from './prefs';
 	import { LIBRARY_HREF, bookHref, safeHttpUrl } from './route';
 	import { LookupController } from './useLookup.svelte';
 	import { prepareVariant, type Variant } from './variants';
@@ -78,7 +87,7 @@
 	let container = $state<HTMLElement | null>(null);
 	let prefs = $state(loadPrefs(browserStorage()));
 
-	$effect(() => savePrefs(browserStorage(), { furigana: prefs.furigana, variant: prefs.variant }));
+	$effect(() => saveVariant(browserStorage(), prefs.variant));
 
 	// The chosen script applies once its converter has loaded; until then
 	// (or if loading fails) the text stays as it is.
@@ -114,6 +123,113 @@
 		book ? workspaceForBook(book, $workspaces.list, $workspaces.current) : null
 	);
 
+	// --- display settings and generated readings (per workspace) ---
+
+	let display = $state(DEFAULT_DISPLAY);
+	let displayNotice = $state('');
+	let displayController: DisplayController | null = null;
+	const settingsOf = (wsId: number) => $workspaces.list.find((w) => w.id === wsId)?.settings ?? null;
+
+	$effect(() => {
+		const wsId = studyWorkspaceId;
+		untrack(() => {
+			void displayController?.flush();
+			displayController?.destroy();
+			displayController = null;
+			if (wsId === null) {
+				display = { ...DEFAULT_DISPLAY, bookRuby: prefs.furigana };
+				return;
+			}
+			displayController = createDisplayController({
+				settings: () => settingsOf(wsId),
+				localFurigana: () => prefs.furigana,
+				save: (patch) => setSettings(wsId, patch),
+				onError: (err) => (displayNotice = apiErrorMessage(err, 'display')),
+				onChange: (next) => (display = next)
+			});
+			display = displayController.display;
+		});
+	});
+	// Settings changed elsewhere (another tab, the server's copy of our own save).
+	$effect(() => {
+		void $workspaces;
+		untrack(() => displayController?.adopt());
+	});
+	onDestroy(() => {
+		void displayController?.flush();
+		displayController?.destroy();
+	});
+
+	function changeDisplay(change: Partial<typeof display>): void {
+		displayNotice = '';
+		displayController?.change(change);
+		if (!displayController) display = { ...display, ...change };
+	}
+
+	let showAll = $state(false);
+	const reveal = createReveal({ onAll: (v) => (showAll = v) });
+
+	// The mastery index is only needed to hide readings (smart): one replay
+	// of the workspace's review log per open, again after study writes.
+	let index = $state.raw<MasteryIndex>(new Map());
+	const wantsIndex = $derived(display.readings === 'smart');
+	$effect(() => {
+		const wsId = studyWorkspaceId;
+		if (!wantsIndex || wsId === null) return;
+		let alive = true;
+		const load = async (): Promise<void> => {
+			try {
+				const data = await loadStudyHistory(wsId);
+				if (!alive) return;
+				index = masteryIndex(data.cards, scheduleIndex(data.cards, data.reviews, activeWeights(data)));
+			} catch {
+				// Without the index nothing counts as known: every reading stays shown.
+			}
+		};
+		void load();
+		const off = onStudyWrite((changed) => {
+			if (changed === wsId) void load();
+		});
+		return () => {
+			alive = false;
+			off();
+		};
+	});
+
+	const readings = new ReadingsController((text, signal) => segmentWithReadings(book?.language ?? '', text, signal));
+	const wantsReadings = $derived(display.readings !== 'never');
+	$effect(() => {
+		if (!wantsReadings || !book || !content || content.n !== chapter) {
+			untrack(() => readings.stop());
+			return;
+		}
+		const runs = paragraphs;
+		const key = `${id}:${content.n}:${variant}`;
+		untrack(() =>
+			void readings.run({ key, lang: book!.language, runs, start: topParagraph ?? 0, display, index })
+		);
+	});
+	$effect(() => {
+		const next = display;
+		const idx = index;
+		untrack(() => readings.update(next, idx));
+	});
+	onDestroy(() => readings.stop());
+
+	// `R` shows or hides every concealed reading (smart mode, outside fields).
+	$effect(() => {
+		const onKey = (e: KeyboardEvent): void => {
+			if (display.readings !== 'smart') return;
+			const target = e.target instanceof HTMLElement ? e.target : null;
+			const busy = highlightKeyBusy(target, document, inPopup(e.target));
+			if (!revealKey(e, { busy })) return;
+			e.preventDefault();
+			reveal.toggleAll();
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	});
+
 	const lookup = new LookupController({
 		container: () => container,
 		lang: () => book?.language ?? '',
@@ -125,7 +241,7 @@
 	// change): drop the popup rather than leave it pointing at nothing.
 	$effect(() => {
 		void paragraphs;
-		void prefs.furigana;
+		void display.bookRuby;
 		lookup.close();
 	});
 
@@ -835,8 +951,14 @@
 			</header>
 
 			<div class="toggles">
-				{#if book.language === 'ja' || hasRuby}
-					<label><input type="checkbox" bind:checked={prefs.furigana} /> Furigana</label>
+				{#if book.language === 'ja' || book.language === 'zh' || hasRuby}
+					<DisplayPanel
+						{display}
+						hasBookRuby={hasRuby}
+						{showAll}
+						onchange={changeDisplay}
+						ontoggleAll={() => reveal.toggleAll()}
+					/>
 				{/if}
 				{#if book.language === 'zh'}
 					<label>
@@ -850,6 +972,14 @@
 					{#if variantError}<span class="error" role="alert">{variantError}</span>{/if}
 				{/if}
 			</div>
+
+			{#if displayNotice}<p class="error" role="alert">{displayNotice}</p>{/if}
+			{#if readings.failed > 0}
+				<p role="status">
+					Some readings could not be loaded.
+					<button type="button" onclick={() => untrack(() => void readings.run({ key: `${id}:${chapter}:${variant}`, lang: book?.language ?? '', runs: paragraphs, start: topParagraph ?? 0, display, index }))}>Try again</button>
+				</p>
+			{/if}
 
 			{@render chapterNav('Chapters')}
 
@@ -865,7 +995,10 @@
 					</h2>
 					<ChapterText
 						{paragraphs}
-						display={{ ...DEFAULT_DISPLAY, bookRuby: prefs.furigana }}
+						{display}
+						pieces={readings.pieces}
+						{reveal}
+						{showAll}
 						lang={textLang}
 						{lookup}
 						{marked}

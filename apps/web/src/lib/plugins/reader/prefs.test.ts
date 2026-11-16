@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PREFS, loadPrefs, savePrefs } from './prefs';
+import { DEFAULT_PREFS, loadPrefs, saveVariant } from './prefs';
 
 function memoryStorage(initial: Record<string, string> = {}) {
 	const data = new Map(Object.entries(initial));
@@ -25,10 +25,20 @@ describe('reader prefs', () => {
 		expect(loadPrefs(memoryStorage())).toEqual(DEFAULT_PREFS);
 	});
 
-	it('round-trips saved prefs', () => {
-		const storage = memoryStorage();
-		savePrefs(storage, { furigana: false, variant: 'traditional' });
+	it('saves the script and keeps the legacy furigana value it no longer writes', () => {
+		const storage = memoryStorage({ 'qinqin.reader.prefs': '{"furigana":false,"variant":"original"}' });
+		saveVariant(storage, 'traditional');
 		expect(loadPrefs(storage)).toEqual({ furigana: false, variant: 'traditional' });
+		const fresh = memoryStorage();
+		saveVariant(fresh, 'simplified');
+		expect(JSON.parse(fresh.data.get('qinqin.reader.prefs')!)).toEqual({ variant: 'simplified' });
+		expect(loadPrefs(fresh)).toEqual({ furigana: true, variant: 'simplified' });
+	});
+
+	it('saveVariant starts over from corrupt stored data', () => {
+		const storage = memoryStorage({ 'qinqin.reader.prefs': '{nope' });
+		saveVariant(storage, 'simplified');
+		expect(loadPrefs(storage).variant).toBe('simplified');
 	});
 
 	it('ignores malformed or invalid stored values field by field', () => {
@@ -45,7 +55,7 @@ describe('reader prefs', () => {
 	it('works without storage or when storage throws', () => {
 		expect(loadPrefs(null)).toEqual(DEFAULT_PREFS);
 		expect(loadPrefs(throwing)).toEqual(DEFAULT_PREFS);
-		expect(() => savePrefs(throwing, DEFAULT_PREFS)).not.toThrow();
-		expect(() => savePrefs(null, DEFAULT_PREFS)).not.toThrow();
+		expect(() => saveVariant(throwing, 'original')).not.toThrow();
+		expect(() => saveVariant(null, 'original')).not.toThrow();
 	});
 });
