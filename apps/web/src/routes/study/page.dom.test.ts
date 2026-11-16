@@ -311,6 +311,32 @@ describe('study setup, new-card order (#75)', () => {
 		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!).newOrder).toEqual({ by: 'frequency' });
 	});
 
+	it('a deleted deck in the saved setup does not make the orders mixed', async () => {
+		vi.mocked(getFrequencyPacks).mockResolvedValue([jiten] as never);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [],
+			cards: [],
+			reviews: [],
+			merged: 0,
+			deckSettings: { general: { deckId: 'general', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
+		} as never);
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({
+				mode: 'decks',
+				schemeId: null,
+				levelName: null,
+				deckIds: ['general', 'gone'],
+				newLimit: 20,
+				reviewLimit: 100,
+				cardTypes: ['vocab']
+			})
+		);
+		render(Page);
+		await waitFor(() => expect(orderSelect().options.length).toBeGreaterThan(2));
+		expect(screen.queryByText('Your decks use different orders: in the order added.')).toBeNull();
+	});
+
 	it('without a pack: no frequency option and the hint', async () => {
 		vi.mocked(getFrequencyPacks).mockResolvedValue([]);
 		render(Page);

@@ -62,12 +62,12 @@ import type { Run } from '$lib/study/vacation';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { COMPANION_NOTE, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
 	import { offline } from '$lib/pwa/offlineState';
-	import { GENERAL_DECK_ID, activeWeights, addCard, loadStudyData } from '$lib/study/store';
+	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { loadRanks } from '$lib/study/frequencyRanks';
 	import { loadLevelKeys } from '$lib/study/levelKeys';
 	import { sessionNewOrder } from '$lib/study/session';
-	import { candidateNewEntries, sessionNewKey } from '$lib/study/sessionOrder';
+	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/study/sessionOrder';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -416,15 +416,12 @@ import type { Run } from '$lib/study/vacation';
 			const now = new Date();
 			// The order of new cards (#75): ranks or level keys only for entries
 			// that can be new; offline or on failure the order added, with a note.
-			const existingDecks = new Set([GENERAL_DECK_ID, ...data.decks.map((deck) => deck.id)]);
 			const order = await sessionNewKey(
 				{
 					mode: config.mode,
 					order: sessionNewOrder(config),
 					language: language ?? '',
-					deckOrders: config.deckIds
-						.filter((id) => existingDecks.has(id))
-						.map((id) => data.deckSettings?.[id]?.newOrder ?? null),
+					deckOrders: deckOrdersOf(config.deckIds, data.decks, data.deckSettings),
 					levelUnit: levelRequest.unit,
 					newEntryIds:
 						config.mode === 'levels'

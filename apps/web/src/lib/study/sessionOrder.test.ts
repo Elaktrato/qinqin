@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FrequencyPack, Scheme } from '$lib/api/types';
 import { MIXED_NOTE, OFFLINE_NOTE } from './newOrderView';
-import { candidateNewEntries, sessionNewKey, type SessionKeyDeps } from './sessionOrder';
+import { candidateNewEntries, deckOrdersOf, sessionNewKey, type SessionKeyDeps } from './sessionOrder';
 import type { ReviewEvent, StudyCard } from './types';
 
 const jiten = {
@@ -166,5 +166,14 @@ describe('candidateNewEntries', () => {
 				kinds: ['vocab', 'writing']
 			})
 		).toEqual([1, 2, 3]);
+	});
+});
+
+describe('deckOrdersOf', () => {
+	it('takes the orders of the selected decks that still exist', () => {
+		const settings = { general: { deckId: 'general', cardTypes: [], newOrder: { by: 'frequency' as const }, extra: {} } };
+		expect(deckOrdersOf(['general', 'gone'], [{ id: 'd1' }], settings)).toEqual([{ by: 'frequency' }]);
+		expect(deckOrdersOf(['general', 'd1'], [{ id: 'd1' }], settings)).toEqual([{ by: 'frequency' }, null]);
+		expect(deckOrdersOf(['gone'], [], undefined)).toEqual([]);
 	});
 });

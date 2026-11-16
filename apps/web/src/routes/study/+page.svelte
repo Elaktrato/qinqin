@@ -45,6 +45,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	import type { FrequencyPack } from '$lib/api/types';
 	import { resolveSessionOrder } from '$lib/study/newOrder';
 	import { MIXED_NOTE, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
+	import { deckOrdersOf } from '$lib/study/sessionOrder';
 	import {
 		CARD_TYPES,
 		loadConfig,
@@ -725,10 +726,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	const ordersMixed = $derived(
 		mode === 'decks' &&
 			orderValue === 'deck' &&
-			resolveSessionOrder(
-				'deck',
-				selectedDeckIds.map((id) => deckSettings[id]?.newOrder ?? null)
-			).mixed
+			resolveSessionOrder('deck', deckOrdersOf(selectedDeckIds, decks, deckSettings)).mixed
 	);
 
 	function selectMode(next: StudySessionMode): void {

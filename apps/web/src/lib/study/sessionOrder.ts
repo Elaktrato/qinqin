@@ -10,6 +10,8 @@ import { MIXED_NOTE, OFFLINE_NOTE, resolveAvailableOrder } from './newOrderView'
 import type { RanksResult } from './frequencyRanks';
 import { isValidReview } from './scheduler';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
+import type { DeckSettings } from './deckSettings';
+import { GENERAL_DECK_ID } from './store';
 
 export interface SessionKeyDeps {
 	packs: () => Promise<FrequencyPack[]>;
@@ -106,4 +108,18 @@ export function candidateNewEntries(input: {
 	return [...new Set(input.entries)].filter((id) =>
 		kinds.some((kind) => !done.has(`${kind}:${id}`))
 	);
+}
+
+/**
+ * deckOrdersOf: the own orders of the selected decks that still exist
+ * (General always does), so a deleted deck in a saved setup never makes
+ * the orders "mixed".
+ */
+export function deckOrdersOf(
+	deckIds: readonly string[],
+	decks: readonly { id: string }[],
+	settings: Readonly<Record<string, DeckSettings>> | undefined
+): (NewOrder | null)[] {
+	const existing = new Set([GENERAL_DECK_ID, ...decks.map((deck) => deck.id)]);
+	return deckIds.filter((id) => existing.has(id)).map((id) => settings?.[id]?.newOrder ?? null);
 }
