@@ -15,7 +15,7 @@
 | Words | How far each word has come: New, Learning, Young (under 21 days), Mature; one row per deck | all |
 | Reading time | Total, last 7 and last 30 days, five most read books | all |
 
-A plugin's widgets only appear while that plugin is enabled. The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
+The [Daily goal](Daily-goals) widget is on the home page only. A plugin's widgets only appear while that plugin is enabled. The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
 
 ## The activity heatmap
 

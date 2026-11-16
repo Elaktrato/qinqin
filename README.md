@@ -38,6 +38,12 @@ database with a SvelteKit single-page app embedded in the binary.
   reverse and cloze cards per deck; daily limits for new cards and reviews (per
   workspace, overridable per deck); vacation mode that pauses your schedule
   without piling up reviews. Rules: `docs/contracts/`.
+- **Daily goals** — one target per workspace and learner day (flashcard reviews,
+  new cards, minutes of flashcard study, or any other activity the statistics
+  count), set in **Settings → Study**: a progress ring on the home page and in the
+  flashcards widget, a "Goal reached" state, and an optional goal streak; target
+  changes apply from today, vacation days pause the goal. Progress is derived from
+  the event log, never stored (`docs/contracts/goals/`).
 - **Installable app** — the web app installs as a PWA and keeps studying
   offline; reviews wait in a per-user outbox and sync when you are back online.
 - **Accounts** — sessions you can end, registration modes and invites, password
@@ -51,7 +57,7 @@ database with a SvelteKit single-page app embedded in the binary.
   ruby size and a system font choice (see [Reader display](#reader-display)).
 - **Home widgets** — the home page renders widgets from a per-user layout stored
   on the server (shared by every device and workspace; by default the activity
-  heatmap, then the flashcards summary). A widget that does not apply to the
+  heatmap, the flashcards summary, then the daily goal). A widget that does not apply to the
   current language, or whose plugin is disabled, is left out. **Settings → Home**
   (`/settings?tab=home`) chooses and orders them: an "On the home page" switch
   per widget, **Move up** / **Move down** buttons (or drag a row by its handle),

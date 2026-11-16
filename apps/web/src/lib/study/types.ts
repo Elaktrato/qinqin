@@ -3,6 +3,7 @@
 // `card:<id>`; review history and scheduling are separate (events, never
 // stored schedules).
 
+import type { ParsedGoals } from '../goals/goals';
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrs/params';
 import type { LimitPair } from './limits';
@@ -113,6 +114,8 @@ export interface StudyData {
 	vacations?: VacationPeriod[];
 	/** The workspace's daily limit rows; absent without any. */
 	limits?: StudyLimits;
+	/** The workspace's `goals:workspace` row ('newer': a newer client's); absent without one. */
+	goals?: Exclude<ParsedGoals, null>;
 }
 
 /**

@@ -11,7 +11,7 @@ Derived from the code on `develop`; each owner path below is where the rule is i
 | --- | --- |
 | Identity and transport | `auth/` (token, restrictions, errors, two-step sign-in), `pwa/` (outbox, cache rules) |
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
-| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits) |
+| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak) |
 | Reader | `reader/` (display settings, furigana, smart readings) |
 | Data safety | `backup/` (archive format v1, id remapping) |
 
@@ -59,6 +59,7 @@ fixture or the contract text that fixes the shape.
 | `deckcfg:<deckId>` | workspace (also for `general`) | `{deckId, cardTypes: ("reverse"\|"cloze")[], updatedAt, ...unknown kept verbatim}` | `study/deckSettings.ts` | `cards/README.md` (Data); no JSON fixture |
 | `limits:workspace` | workspace | `{version:1, new?: int 0..9999 \| null, reviews?: same}`; null = unlimited | `study/limits.ts` | `scheduler/limits-rows.json`, `scheduler/daily-limits.json` |
 | `limits:deck:<deckId>` | workspace (`general` allowed) | same fields; deck field, else workspace, else default 20 new / 200 reviews | `study/limits.ts` | same |
+| `goals:workspace` | workspace | `{version:1, showStreak: bool, history: [{from: "YYYY-MM-DD", metric: "activity:<type>"\|"flashcards:new"\|"flashcards:studyTime"\|null, target: int\|null}]}`; the goal of day D is the last entry with `from <= D`; a version above 1 is never overwritten; unknown keys kept; at most 400 entries; progress is never stored | `goals/goals.ts` | `goals/goal-rows.json` |
 | `vacation:<ULID>` | **user-global** (`workspaceId: null`; written without `workspace`) | `{version:1, id, start: "YYYY-MM-DD", end: day \| null, scope: "all" \| {workspaces: int[]}, createdDay, createdAt}` | `study/vacation.ts`, `study/store.ts` (reads rows with no workspace) | `scheduler/vacation-days.json`, `scheduler/vacation-schedule.json` |
 | `fsrs:set:<setId>` | workspace | `{id, w: 21 numbers, createdAt, source: "optimized"\|"imported", labelled?, logLoss?, baselineLogLoss?}`; weights outside ts-fsrs clamp ranges make the row unusable | `study/fsrs/params.ts`, `study/store.ts` | `scheduler/optimizer-steps*.json` (steps only); the row shape has no fixture |
 | `fsrs:active` | workspace | `{setId: string \| null, changedAt}`; missing, null or dangling = default weights | `study/fsrs/params.ts` `resolveState` | no fixture |
@@ -90,6 +91,8 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
 - Clock, vacation, due, streak, limits: `scheduler/` (vacation shifts the study clock by whole days;
   limits count by the learner's day). Level sessions: `levels/`. Deck numbers and system deck ids: `decks/`.
 - Reverse and cloze cards, sibling burying: `cards/`.
+- Daily goal, its amounts (activity cells of the workspace, new cards and capped answer time from the review
+  log), day status and goal streak (vacation days neutral): `goals/`.
 
 ## Backup archive (`backup/`)
 

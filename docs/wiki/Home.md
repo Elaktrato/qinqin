@@ -9,7 +9,7 @@ This wiki has four parts. Pick the one that matches why you are here.
 - [Getting started](Getting-started): first sign-in, the home page, the main areas.
 - [Workspaces and languages](Workspaces-and-languages)
 - [Searching and entries](Searching-and-entries)
-- [Flashcards: study sessions](Flashcards-study-sessions), [Decks, limits and vacation](Flashcards-decks-limits-vacation), [Scheduling and the FSRS optimizer](Scheduling-and-FSRS)
+- [Flashcards: study sessions](Flashcards-study-sessions), [Decks, limits and vacation](Flashcards-decks-limits-vacation), [Daily goals](Daily-goals), [Scheduling and the FSRS optimizer](Scheduling-and-FSRS)
 - [Reader](Reader)
 - [Journal and AI providers](Journal-and-AI)
 - [Stats and the activity heatmap](Stats-and-heatmap)
