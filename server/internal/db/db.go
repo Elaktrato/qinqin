@@ -35,6 +35,23 @@ func OpenForSeed(path string) (*sql.DB, error) {
 	return open(path, "NORMAL")
 }
 
+// OpenThrough opens the database like Open but applies the migrations only
+// up to and including version `last` (e.g. "037_access_tokens"). It exists
+// for compatibility tests in other packages that must build a database the
+// way an older release left it before the next migration runs; serving code
+// always uses Open.
+func OpenThrough(path, last string) (*sql.DB, error) {
+	sqlDB, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=synchronous(FULL)")
+	if err != nil {
+		return nil, fmt.Errorf("open database %s: %w", path, err)
+	}
+	if err := migrateThrough(sqlDB, last); err != nil {
+		sqlDB.Close()
+		return nil, err
+	}
+	return sqlDB, nil
+}
+
 // OpenReadOnly opens an existing database read-only and WITHOUT applying
 // migrations, so a command such as `qinqin backup` can run beside the server
 // (or against an older database) and never changes it. A missing file is an
