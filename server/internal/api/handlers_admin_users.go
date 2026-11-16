@@ -290,10 +290,13 @@ func (s *server) handleAdminRevokeSessions(w http.ResponseWriter, r *http.Reques
 }
 
 // handleAdminResetMFA serves POST /api/admin/users/{id}/mfa/reset
-// {currentPassword}: the lockout recovery for a user who lost their
+// {currentPassword, code?}: the lockout recovery for a user who lost their
 // authenticator and recovery codes. It needs the administrator's own password
-// like every destructive admin action, and not for oneself (Settings, Account
-// does that with the user's own factors).
+// like every destructive admin action and, from an administrator who has an
+// authenticator, a current authenticator or recovery code too (403
+// code_invalid), as the server backup does: removing someone's second step
+// must not need less than a stolen session and a password. Not for oneself
+// (Settings, Account does that with the user's own factors).
 func (s *server) handleAdminResetMFA(w http.ResponseWriter, r *http.Request) {
 	admin := s.requireAdmin(w, r)
 	if admin == nil {
@@ -305,6 +308,7 @@ func (s *server) handleAdminResetMFA(w http.ResponseWriter, r *http.Request) {
 	}
 	var req struct {
 		CurrentPassword string `json:"currentPassword"`
+		Code            string `json:"code"` // authenticator or recovery code, for admins who have one
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -314,6 +318,12 @@ func (s *server) handleAdminResetMFA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
+		return
+	}
+	if has, herr := auth.HasTOTP(r.Context(), s.db, admin.ID); herr != nil {
+		writeInternal(w, r)
+		return
+	} else if has && !s.secondFactorOK(w, r, admin.ID, req.Code) {
 		return
 	}
 	if err := s.users.ResetUserMFA(r.Context(), admin.ID, id); err != nil {

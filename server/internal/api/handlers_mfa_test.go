@@ -338,4 +338,41 @@ func TestAdminResetsAUsersTwoFactor(t *testing.T) {
 	}
 }
 
+func TestAdminMFAResetAsksAnAdminWithTwoFactorForTheCode(t *testing.T) {
+	e := newMailEnv(t, mailOpts{configure: true})
+	bob := registerUser(t, e.ts.URL, "bobby", e.owner)
+	e.enrolTOTP(t, bob, "secret-pass-bobby")
+	secret, _ := e.enrolTOTP(t, e.owner, "secret-pass-owner")
+	e.clk.advance(31 * time.Second) // the enrolment's code is spent for its step
+	path := "/api/admin/users/" + userIDOf(t, e, "bobby") + "/mfa/reset"
+	bobHasTOTP := func() bool {
+		var n int
+		e.db.QueryRow(`SELECT COUNT(*) FROM mfa_totp t JOIN users u ON u.id = t.user_id WHERE u.username = 'bobby'`).Scan(&n)
+		return n == 1
+	}
+	var eb errBody
+	r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner"})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 403 || eb.Error != "code_invalid" || !bobHasTOTP() {
+		t.Fatalf("without a code = %d %+v (bob keeps totp: %v)", r.StatusCode, eb, bobHasTOTP())
+	}
+	r = doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner", "code": "000000"})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 403 || eb.Error != "code_invalid" || !bobHasTOTP() {
+		t.Fatalf("wrong code = %d %+v", r.StatusCode, eb)
+	}
+	// the code does not replace the password
+	r = doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "wrong-password-x", "code": e.code(secret, 0)})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 403 || eb.Error != "wrong_password" || !bobHasTOTP() {
+		t.Fatalf("wrong password with a right code = %d %+v", r.StatusCode, eb)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner", "code": e.code(secret, 0)}); r.StatusCode != 204 {
+		t.Fatalf("with the right code = %d", r.StatusCode)
+	}
+	if bobHasTOTP() || e.sessionCount(t, "bobby") != 0 {
+		t.Errorf("after reset: totp %v, sessions %d", bobHasTOTP(), e.sessionCount(t, "bobby"))
+	}
+}
+
 func totpAt(secret string, at time.Time) (string, error) { return auth.TOTPCode(secret, at) }
