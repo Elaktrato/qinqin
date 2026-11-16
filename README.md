@@ -218,7 +218,7 @@ package as private, so a `docker pull` or Portainer deployment fails with
   Container Registry, your GitHub username and a personal access token with only
   the `read:packages` scope; then select that registry when you create the stack.
 
-Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.2.0`.
+Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.3.0`.
 
 ## Deploying with Portainer
 
