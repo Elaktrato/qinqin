@@ -1,3 +1,5 @@
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import { UTC_CONTEXT, type StudyContext } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
@@ -161,8 +163,8 @@ describe('helpers', () => {
 
 	it('tierForCard is T0 for new or virtual cards and rises with stability', () => {
 		const now = new Date('2027-06-01T00:00:00Z');
-		expect(tierForCard(null, [], now, DEFAULT_W)).toBe(0);
-		expect(tierForCard('a', [], now, DEFAULT_W)).toBe(0);
+		expect(tierForCard(null, [], now, DEFAULT_W, IDENTITY_CLOCK)).toBe(0);
+		expect(tierForCard('a', [], now, DEFAULT_W, IDENTITY_CLOCK)).toBe(0);
 		// A long run of Good reviews spaced far apart builds large stability.
 		const reviews = [
 			review('a', '2026-01-01T00:00:00Z', 4),
@@ -170,7 +172,7 @@ describe('helpers', () => {
 			review('a', '2026-05-01T00:00:00Z', 4),
 			review('a', '2026-12-01T00:00:00Z', 4)
 		];
-		expect(tierForCard('a', reviews, now, DEFAULT_W)).toBe(2);
+		expect(tierForCard('a', reviews, now, DEFAULT_W, IDENTITY_CLOCK)).toBe(2);
 	});
 
 	it('maskWritten hides the usable characters not yet written', () => {
@@ -218,6 +220,7 @@ describe('deckSessionItems', () => {
 		card('v3', 'vocab', 3, { written: '中文', createdAt: '2026-01-03T00:00:00Z' })
 	];
 	const base = {
+		ctx: UTC_CONTEXT,
 		cards,
 		reviews: [] as ReviewEvent[],
 		deckIds: ['general'],
@@ -287,7 +290,7 @@ describe('deckSessionItems', () => {
 describe('Round 1 cards without a written snapshot', () => {
 	it('get companions of every kind, writing included (checked when shown)', () => {
 		const legacy: StudyCard = { id: 'old', kind: 'vocab', entryId: 5, deckIds: ['general'], createdAt: '2025-01-01T00:00:00Z' };
-		const items = deckSessionItems({ w: DEFAULT_W,
+		const items = deckSessionItems({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			cards: [legacy],
 			reviews: [],
 			deckIds: ['general'],
@@ -309,6 +312,7 @@ describe('deckSessionPlan and dropItem', () => {
 		card(`v${entryId}`, 'vocab', entryId, { createdAt: `2026-01-0${entryId}T00:00:00Z` })
 	);
 	const options = {
+		ctx: UTC_CONTEXT,
 		cards,
 		reviews: [] as ReviewEvent[],
 		deckIds: ['general'],
@@ -404,7 +408,7 @@ describe('sessionCounts', () => {
 		const now = new Date('2026-03-01T00:00:00Z');
 		const cards = [card('v1', 'vocab', 1), card('v2', 'vocab', 2)];
 		const reviews = [review('v1', '2026-01-05T00:00:00Z', 1)];
-		const items = deckSessionItems({ w: DEFAULT_W,
+		const items = deckSessionItems({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			cards,
 			reviews,
 			deckIds: ['general'],
@@ -451,7 +455,9 @@ describe('backfill bound', () => {
 			createdAt: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString()
 		})
 	);
+	// Unlimited daily limits: this block tests the backfill bound, not the allowance.
 	const options = {
+		ctx: { ...UTC_CONTEXT, limits: { workspace: { new: null, reviews: null }, decks: {}, existingDecks: null } },
 		cards: many,
 		reviews: [] as ReviewEvent[],
 		deckIds: ['general'],
@@ -711,5 +717,113 @@ describe('runner helpers for reverse and cloze', () => {
 		];
 		expect(clozeDistractorPool(cards, ['general'], 1)).toEqual(['朋友']);
 		expect(clozeDistractorPool(cards, ['general', 'other'], 1).sort()).toEqual(['学习', '朋友']);
+	});
+});
+
+describe('deckSessionPlan with daily limits', () => {
+	const now = new Date('2026-03-01T12:00:00Z');
+	const vocab = [1, 2, 3, 4, 5].map((entryId) =>
+		card(`v${entryId}`, 'vocab', entryId, { written: '学习', createdAt: `2026-01-0${entryId}T00:00:00Z` })
+	);
+	const opts = {
+		cards: vocab,
+		reviews: [] as ReviewEvent[],
+		deckIds: ['general'],
+		kinds: ['vocab', 'sentence'] as StudyCardKind[],
+		newLimit: 50,
+		reviewLimit: 100,
+		now,
+		w: DEFAULT_W,
+		language: 'zh'
+	};
+	const ctxNew = (n: number | null): StudyContext => ({
+		...UTC_CONTEXT,
+		limits: { workspace: { new: n }, decks: {}, existingDecks: null }
+	});
+
+	it('counts companions as new: the allowance is shared with the real new cards', () => {
+		const plan = deckSessionPlan({ ...opts, ctx: ctxNew(7) });
+		expect(plan.queue).toHaveLength(7);
+		expect(plan.queue.filter((item) => item.virtual)).toHaveLength(2);
+		expect(plan.reserve).toHaveLength(0);
+	});
+
+	it('the session limit stays the cap and the allowance beyond it is the reserve', () => {
+		const plan = deckSessionPlan({ ...opts, newLimit: 6, ctx: ctxNew(8) });
+		expect(plan.queue).toHaveLength(6);
+		expect(plan.reserve).toHaveLength(2);
+	});
+
+	it('a dropped companion is replaced from the reserve only while the allowance holds', () => {
+		let plan = deckSessionPlan({ ...opts, newLimit: 6, ctx: ctxNew(8) });
+		const dropped = plan.queue.find((item) => item.virtual)!;
+		plan = dropItem(plan, dropped.cardId);
+		expect(plan.queue).toHaveLength(6);
+		expect(plan.reserve).toHaveLength(1);
+	});
+
+	it('a companion whose word sits in a full deck is skipped, the next one is admitted', () => {
+		const cards = [
+			card('v1', 'vocab', 1, { written: '学习', deckIds: ['full'], createdAt: '2026-01-01T00:00:00Z' }),
+			card('v2', 'vocab', 2, { written: '学习', deckIds: ['general'], createdAt: '2026-01-02T00:00:00Z' })
+		];
+		const ctx: StudyContext = { ...UTC_CONTEXT, limits: { workspace: null, decks: { full: { new: 0 } }, existingDecks: null } };
+		const plan = deckSessionPlan({ ...opts, cards, deckIds: ['full', 'general'], kinds: ['sentence'], ctx });
+		expect(plan.queue.map((item) => item.entryId)).toEqual([2]);
+	});
+
+	it('is empty on a vacation day', () => {
+		const plan = deckSessionPlan({ ...opts, ctx: { ...UTC_CONTEXT, vacationToday: true } });
+		expect(plan.queue).toEqual([]);
+	});
+
+	it('with no limit rows and fewer cards than 20 nothing changes', () => {
+		const plan = deckSessionPlan({ ...opts, ctx: UTC_CONTEXT });
+		expect(plan.queue).toHaveLength(10);
+	});
+});
+
+describe('daily counts include cards that are not shown', () => {
+	const now = new Date('2026-03-01T12:00:00Z');
+	const rev = (n: number, cardId: string): ReviewEvent => ({
+		id: `01JREG${String(n).padStart(20, '0')}`, workspaceId: 1, device: 'w', ts: '2026-03-01T08:00:00Z', type: 'review',
+		payload: { cardId, mode: 'reverse', grade: 3 }
+	});
+	const mk = (id: string, kind: StudyCardKind, entryId: number, deckIds: string[]): StudyCard => ({
+		id, kind, entryId, deckIds, createdAt: '2026-01-01T00:00:00Z', written: '学习'
+	});
+	const settings = (deckId: string, on: boolean) => ({
+		[deckId]: { deckId, cardTypes: on ? ['reverse'] : [], extra: {} }
+	}) as never;
+	const lim = (decks: Record<string, { new: number }>): StudyContext => ({
+		...UTC_CONTEXT,
+		limits: { workspace: null, decks, existingDecks: null }
+	});
+
+	it('a reverse card reviewed today still uses the deck allowance after Reverse is switched off', () => {
+		const cards = [
+			mk('v1', 'vocab', 1, ['A']), mk('r1', 'reverse', 1, ['A']),
+			mk('v2', 'vocab', 2, ['A']), mk('r2', 'reverse', 2, ['A']),
+			mk('v3', 'vocab', 3, ['A'])
+		];
+		const reviews = [rev(1, 'r1'), rev(2, 'r2')];
+		const plan = deckSessionPlan({
+			cards, reviews, deckIds: ['A'], kinds: ['vocab'], newLimit: 50, reviewLimit: 50, now, w: DEFAULT_W,
+			language: 'zh', deckSettings: settings('A', false), ctx: lim({ A: { new: 2 } })
+		});
+		expect(plan.queue.filter((i) => !i.virtual && i.kind === 'vocab' && i.cardId === 'v3')).toHaveLength(0);
+		expect(plan.queue).toHaveLength(0);
+	});
+
+	it('a reverse card in decks A and B reviewed today counts toward B in a session of B', () => {
+		const cards = [
+			mk('v1', 'vocab', 1, ['B']), mk('r1', 'reverse', 1, ['A', 'B']),
+			mk('v2', 'vocab', 2, ['B'])
+		];
+		const plan = deckSessionPlan({
+			cards, reviews: [rev(1, 'r1')], deckIds: ['B'], kinds: ['vocab'], newLimit: 50, reviewLimit: 50, now, w: DEFAULT_W,
+			language: 'zh', deckSettings: settings('A', true), ctx: lim({ B: { new: 1 } })
+		});
+		expect(plan.queue).toHaveLength(0);
 	});
 });

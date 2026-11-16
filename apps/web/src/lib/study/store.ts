@@ -2,6 +2,9 @@
 // from one sync pull; writes are single-key PUTs and a delete is a
 // tombstoning DELETE. A missing current workspace is an error: study
 // data must never fall back to user-global or another workspace's rows.
+// The one explicit exception: `vacation:*` rows are user-global (they
+// apply to every workspace or a chosen list) and are read from rows with
+// no workspace (docs/contracts/scheduler/).
 
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
@@ -26,6 +29,14 @@ import {
   type DeckSettings,
 } from "./deckSettings";
 import { cardKey, parseReview } from "./reviewParse";
+import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
+import {
+  LIMITS_DECK_PREFIX,
+  LIMITS_WORKSPACE_KEY,
+  limitsDeckKey,
+  parseLimitRow,
+  type LimitPair,
+} from "./limits";
 import {
   CARD_KINDS,
   type Deck,
@@ -206,12 +217,21 @@ async function fetchStudyData(
   const cards: StudyCard[] = [];
   const sets: ParamSet[] = [];
   const deckSettings: Record<string, DeckSettings> = {};
+  const vacations: VacationPeriod[] = [];
+  let limitsWorkspace: Partial<LimitPair> | null = null;
+  const limitsDecks: Record<string, Partial<LimitPair>> = {};
   let activeRaw: unknown = null;
 
   for (const value of rows) {
     const row = asPluginDataRow(value);
     if (row === null) continue;
     if (row.pluginId !== FLASHCARDS_PLUGIN_ID) continue;
+    if (row.workspaceId === null && row.key.startsWith(VACATION_PREFIX)) {
+      if (row.deletedAt != null) continue;
+      const period = parseVacation(row.key, decodeData(row.data));
+      if (period !== null) vacations.push(period);
+      continue;
+    }
     if (row.workspaceId !== workspaceId) continue;
     if (knownAt !== undefined) {
       // The newest time the server holds for the key, live or tombstoned.
@@ -236,6 +256,11 @@ async function fetchStudyData(
     } else if (row.key.startsWith(SET_PREFIX)) {
       const set = parseParamSet(row.key, data);
       if (set !== null) sets.push(set);
+    } else if (row.key === LIMITS_WORKSPACE_KEY) {
+      limitsWorkspace = parseLimitRow(row.key, data);
+    } else if (row.key.startsWith(LIMITS_DECK_PREFIX)) {
+      const parsed = parseLimitRow(row.key, data);
+      if (parsed !== null) limitsDecks[row.key.slice(LIMITS_DECK_PREFIX.length)] = parsed;
     } else if (row.key === ACTIVE_KEY) {
       activeRaw = data;
     }
@@ -248,6 +273,10 @@ async function fetchStudyData(
     cards,
     fsrs: resolveState(sets, activeRaw),
     ...(Object.keys(deckSettings).length > 0 ? { deckSettings } : {}),
+    ...(vacations.length > 0 ? { vacations } : {}),
+    ...(limitsWorkspace !== null || Object.keys(limitsDecks).length > 0
+      ? { limits: { workspace: limitsWorkspace, decks: limitsDecks } }
+      : {}),
   };
 }
 
@@ -284,6 +313,9 @@ export function onStudyWrite(
   writeListeners.add(listener);
   return () => writeListeners.delete(listener);
 }
+
+/** The write touched rows every workspace reads (user-global vacations). */
+export const ALL_WORKSPACES = 0;
 
 function notifyWrite(workspaceId: number): void {
   for (const listener of writeListeners) listener(workspaceId);
@@ -456,6 +488,8 @@ export async function loadStudyDataWith(
     cards,
     fsrs: data.fsrs,
     ...(data.deckSettings === undefined ? {} : { deckSettings: data.deckSettings }),
+    ...(data.vacations === undefined ? {} : { vacations: data.vacations }),
+    ...(data.limits === undefined ? {} : { limits: data.limits }),
     reviews,
     merged,
   };
@@ -555,7 +589,7 @@ export async function deleteDeck(id: string): Promise<void> {
     throw new Error("the general deck cannot be deleted");
   }
   const knownAt = new Map<string, string>();
-  const { cards, deckSettings } = await fetchStudyData(workspaceId, knownAt);
+  const { cards, deckSettings, limits } = await fetchStudyData(workspaceId, knownAt);
   // One batch (chunks of 200) instead of a request per card: a big copied
   // deck is a handful of requests. A failure throws before the tombstone.
   const rows = cards
@@ -576,6 +610,14 @@ export async function deleteDeck(id: string): Promise<void> {
   if (deckSettings?.[id] !== undefined) {
     try {
       await deleteData(workspaceId, deckSettingsKey(id));
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
+  }
+  // So do its daily limits.
+  if (limits?.decks[id] !== undefined) {
+    try {
+      await deleteData(workspaceId, limitsDeckKey(id));
     } catch (err) {
       if (!(err instanceof ApiError && err.status === 404)) throw err;
     }
@@ -1014,4 +1056,49 @@ export function cardsInDecks(
 ): StudyCard[] {
   const wanted = new Set(deckIds);
   return cards.filter((card) => card.deckIds.some((id) => wanted.has(id)));
+}
+
+/** saveVacation stores one vacation period (user-global: no workspace). */
+export async function saveVacation(period: VacationPeriod): Promise<void> {
+  try {
+    await api(`/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${VACATION_PREFIX}${period.id}`, {
+      method: "PUT",
+      body: period,
+    });
+  } finally {
+    notifyWrite(ALL_WORKSPACES);
+  }
+}
+
+/** deleteVacation tombstones one vacation period. */
+export async function deleteVacation(id: string): Promise<void> {
+  try {
+    await api(`/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${VACATION_PREFIX}${id}`, {
+      method: "DELETE",
+    });
+  } finally {
+    notifyWrite(ALL_WORKSPACES);
+  }
+}
+
+/** saveWorkspaceLimits stores the workspace's daily limits (`null` = unlimited). */
+export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<void> {
+  await putData(requireWorkspaceId(), LIMITS_WORKSPACE_KEY, { version: 1, ...limits });
+}
+
+/**
+ * saveDeckLimits stores one deck's overrides (General included). A field
+ * left out follows the workspace; an empty object removes the row.
+ */
+export async function saveDeckLimits(deckId: string, limits: Partial<LimitPair>): Promise<void> {
+  const workspaceId = requireWorkspaceId();
+  if (Object.keys(limits).length === 0) {
+    try {
+      await deleteData(workspaceId, limitsDeckKey(deckId));
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) throw err;
+    }
+    return;
+  }
+  await putData(workspaceId, limitsDeckKey(deckId), { version: 1, ...limits });
 }

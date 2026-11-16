@@ -1,3 +1,4 @@
+import { UTC_CONTEXT } from '$lib/study/studyContext';
 import { describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
@@ -323,7 +324,7 @@ describe('gradeItem', () => {
 
 		expect(addCard.mock.calls[0][1].deckIds).toEqual(['deck-a']);
 		if (!result.ok) throw new Error('expected ok');
-		const queue = buildQueue({ w: DEFAULT_W,
+		const queue = buildQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			cards: [vocab, result.card],
 			reviews: [],
 			deckIds: ['deck-a'],

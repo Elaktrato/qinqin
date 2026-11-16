@@ -1,3 +1,4 @@
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
 import type { CharRow } from '../api/types';
@@ -23,7 +24,7 @@ const levels = [
 
 describe('levelMastery', () => {
 	it('counts a character of a strong card as learned', () => {
-		const result = levelMastery(levels, rows, [card('a', '日')], strongReviews('a'), NOW, DEFAULT_W);
+		const result = levelMastery(levels, rows, [card('a', '日')], strongReviews('a'), NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.get('N5')).toEqual({ learned: 1, total: 3 });
 	});
 
@@ -35,18 +36,18 @@ describe('levelMastery', () => {
 			strongReviews('a'),
 			NOW,
 			DEFAULT_W
-		);
+		, IDENTITY_CLOCK);
 		expect(result.get('N5')).toEqual({ learned: 1, total: 3 });
 		expect(result.get('N3')).toEqual({ learned: 0, total: 0 });
 	});
 
 	it('counts a variant-only studied character like the Stats map does', () => {
-		const result = levelMastery(levels, rows, [card('a', '爱')], strongReviews('a'), NOW, DEFAULT_W);
+		const result = levelMastery(levels, rows, [card('a', '爱')], strongReviews('a'), NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.get('N4')).toEqual({ learned: 1, total: 2 });
 	});
 
 	it('does not count an unreviewed character', () => {
-		const result = levelMastery(levels, rows, [card('a', '水')], [], NOW, DEFAULT_W);
+		const result = levelMastery(levels, rows, [card('a', '水')], [], NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.get('N4')).toEqual({ learned: 0, total: 2 });
 	});
 });

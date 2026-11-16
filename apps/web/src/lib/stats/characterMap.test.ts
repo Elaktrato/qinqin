@@ -1,3 +1,4 @@
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -37,12 +38,12 @@ function strongHistory(cardId: string): ReviewEvent[] {
 
 describe('characterSummary', () => {
 	it('is all unknown and empty without characters or reviews', () => {
-		expect(characterSummary([], [], [], NOW, DEFAULT_W)).toEqual({
+		expect(characterSummary([], [], [], NOW, DEFAULT_W, IDENTITY_CLOCK)).toEqual({
 			total: 0,
 			learned: 0,
 			byStage: { unknown: 0, fresh: 0, learning: 0, mature: 0, learned: 0 }
 		});
-		const stats = characterSummary([row(1, '好'), row(2, '人')], [card('a', '好人')], [], NOW, DEFAULT_W);
+		const stats = characterSummary([row(1, '好'), row(2, '人')], [card('a', '好人')], [], NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(stats.total).toBe(2);
 		expect(stats.byStage.unknown).toBe(2);
 		expect(stats.learned).toBe(0);
@@ -52,7 +53,7 @@ describe('characterSummary', () => {
 		const chars = [row(1, '好'), row(2, '人'), row(3, '大')];
 		const cards = [card('strong', '好人'), card('weak', '大')];
 		const reviews = [...strongHistory('strong'), review('weak', 1, '2026-11-14T10:00:00.000Z')];
-		const stats = characterSummary(chars, cards, reviews, NOW, DEFAULT_W);
+		const stats = characterSummary(chars, cards, reviews, NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(stats.total).toBe(3);
 		expect(stats.learned).toBe(2);
 		expect(stats.byStage.learned).toBe(2);
@@ -61,12 +62,12 @@ describe('characterSummary', () => {
 
 	it('lets a variant form light its cell (the map rule)', () => {
 		const chars = [row(1, '爱', ['愛'])];
-		const stats = characterSummary(chars, [card('t', '愛')], strongHistory('t'), NOW, DEFAULT_W);
+		const stats = characterSummary(chars, [card('t', '愛')], strongHistory('t'), NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(stats.learned).toBe(1);
 	});
 
 	it('ignores cards without a written snapshot', () => {
-		const stats = characterSummary([row(1, '好')], [card('legacy')], strongHistory('legacy'), NOW, DEFAULT_W);
+		const stats = characterSummary([row(1, '好')], [card('legacy')], strongHistory('legacy'), NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(stats.byStage.unknown).toBe(1);
 	});
 });

@@ -1,3 +1,5 @@
+import { UTC_CONTEXT } from '$lib/study/studyContext';
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
 import fixture from '../../../../../../../docs/contracts/decks/deck-stats.json';
@@ -89,7 +91,7 @@ describe('deck numbers contract', () => {
 					deckSettings: toSettings(c.deckSettings),
 					now,
 					w: DEFAULT_W,
-					day,
+					ctx: { ...UTC_CONTEXT, day: day as never },
 					addDays
 				});
 				const want = expected.numbers;
@@ -129,11 +131,11 @@ function numbers(
 		cards,
 		decks,
 		reviews,
-		index: scheduleIndex(cards, reviews, DEFAULT_W),
+		index: scheduleIndex(cards, reviews, DEFAULT_W, IDENTITY_CLOCK),
 		kinds: ['vocab'],
 		now: NOW,
 		w: DEFAULT_W,
-		day: utcDay,
+		ctx: { ...UTC_CONTEXT, day: utcDay as never },
 		addDays
 	});
 }
@@ -144,7 +146,7 @@ function longHistory(cardId: string, kind: StudyCardKind = 'vocab'): ReviewEvent
 	for (let i = 0; i < 8; i++) {
 		const iso = new Date(ts).toISOString();
 		out.push({ ...review(cardId, iso, 4, i), payload: { cardId, mode: kind, grade: 4 } });
-		const s = scheduleFor(cardId, out, NOW, DEFAULT_W);
+		const s = scheduleFor(cardId, out, NOW, DEFAULT_W, IDENTITY_CLOCK);
 		ts = Date.parse(s?.due ?? iso);
 	}
 	return out;
@@ -164,7 +166,7 @@ describe('deckNumbers', () => {
 		];
 		const decks = [deck('d1'), deck('d2')];
 		const got = numbers('d1', cards, reviews, decks);
-		const want = wordStateCounts(cards, reviews, decks, NOW, DEFAULT_W).decks.find((d) => d.id === 'd1')!;
+		const want = wordStateCounts(cards, reviews, decks, NOW, DEFAULT_W, IDENTITY_CLOCK).decks.find((d) => d.id === 'd1')!;
 		expect(got.states).toEqual(want.counts);
 		expect(got.words).toBe(3);
 		expect(got.cards).toBe(4);
@@ -199,7 +201,7 @@ describe('deckNumbers', () => {
 		const cards = [card('c-vocab-1', 'vocab', 1, ['d1']), card('c-vocab-2', 'vocab', 2, ['d1']), card('c-vocab-3', 'vocab', 3, ['d2'])];
 		const reviews = [review('c-vocab-1', '2026-03-01T09:00:00.000Z', 3)];
 		const got = numbers('d1', cards, reviews);
-		const widget = dueCounts({ cards, reviews, deckIds: ['d1'], kinds: ['vocab'], now: NOW, w: DEFAULT_W });
+		const widget = dueCounts({ ctx: UTC_CONTEXT, cards, reviews, deckIds: ['d1'], kinds: ['vocab'], now: NOW, w: DEFAULT_W });
 		expect({ due: got.due, fresh: got.fresh }).toEqual(widget);
 	});
 
@@ -243,9 +245,9 @@ describe('scheduleIndex', () => {
 			reviews.push(review(`c-vocab-${c}`, new Date(Date.UTC(2026, 0, 1, 0, 0, i % 3600)).toISOString(), 3, i));
 		}
 		const calls: string[] = [];
-		const index = scheduleIndex(cards, reviews, DEFAULT_W, (id, history, now, w) => {
+		const index = scheduleIndex(cards, reviews, DEFAULT_W, IDENTITY_CLOCK, (id, history, now, w) => {
 			calls.push(id);
-			return scheduleFor(id, history, now, w);
+			return scheduleFor(id, history, now, w, IDENTITY_CLOCK);
 		});
 		expect(calls.length).toBe(2500);
 		expect(new Set(calls).size).toBe(2500);
@@ -254,7 +256,7 @@ describe('scheduleIndex', () => {
 		const decks = Array.from({ length: 20 }, (_, i) => deck(`d${i}`));
 		const run = (idx: ScheduleIndex) =>
 			decks.map((d) =>
-				deckNumbers({ deckId: d.id, cards, decks, reviews, index: idx, kinds: ['vocab'], now: NOW, w: DEFAULT_W, day: utcDay, addDays })
+				deckNumbers({ deckId: d.id, cards, decks, reviews, index: idx, kinds: ['vocab'], now: NOW, w: DEFAULT_W, ctx: { ...UTC_CONTEXT, day: utcDay as never }, addDays })
 			);
 		// Premise: with the real schedules the reviewed cards are due (reviews are in January).
 		expect(run(index).reduce((sum, n) => sum + n.due, 0)).toBeGreaterThan(0);
@@ -275,7 +277,7 @@ describe('scheduleIndex', () => {
 		const index: ScheduleIndex = new Map([
 			['c-vocab-1', { state: 2, stability: 500, difficulty: 3, due: '2026-03-09T00:00:00.000Z' }]
 		]);
-		const got = deckNumbers({ deckId: 'd1', cards, decks: [deck('d1')], reviews, index, kinds: ['vocab'], now: NOW, w: DEFAULT_W, day: utcDay, addDays });
+		const got = deckNumbers({ deckId: 'd1', cards, decks: [deck('d1')], reviews, index, kinds: ['vocab'], now: NOW, w: DEFAULT_W, ctx: { ...UTC_CONTEXT, day: utcDay as never }, addDays });
 		expect(got.states.mature).toBe(1);
 		expect(got.mastered).toBe(1);
 		expect(got.due).toBe(1);

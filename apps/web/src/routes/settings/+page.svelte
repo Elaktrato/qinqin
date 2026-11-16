@@ -21,6 +21,7 @@
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
+	import StudySettings from '$lib/settings/StudySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
@@ -410,6 +411,7 @@
 		hidden={activeTab !== 'study'}
 	>
 		<StudyDaySettings />
+		<StudySettings />
 	</div>
 
 	<div

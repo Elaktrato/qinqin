@@ -8,6 +8,7 @@
 		foldActivity,
 		levelFor,
 		sourcePoints,
+		vacationMarks,
 		windowStart,
 		windowSummary
 	} from '$lib/activity/activity';
@@ -29,6 +30,8 @@
 		type StoredActivityView
 	} from '$lib/activity/viewPrefs';
 	import { onEventLogChange } from '$lib/events';
+	import { getStudyData } from '$lib/study/studyData';
+	import type { VacationPeriod } from '$lib/study/vacation';
 	import { workspaceDisplay } from '$lib/languages';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
@@ -50,6 +53,8 @@
 	let error = $state('');
 	// The learner's day rule; a zone change re-folds and re-requests the window.
 	let studyDay = $state.raw(currentStudyDay());
+	// The user's vacation periods (user-global rows): their dates are hatched.
+	let vacations = $state.raw<VacationPeriod[]>([]);
 
 	// Guards against a slow earlier request overwriting a newer view.
 	const requests = createSequencer();
@@ -74,10 +79,13 @@
 	}
 
 	const empty = { from: '', to: '', timeZone: 'UTC', sources: [], cells: [] } satisfies ActivityResponse;
-	const byDay = $derived(foldActivity(response ?? empty, view, studyDay, new Date()));
+	const marks = $derived(
+		vacationMarks(vacations, $workspaces.list.map((w) => w.id), view.workspace, studyDay, new Date())
+	);
+	const byDay = $derived(foldActivity(response ?? empty, view, studyDay, new Date(), undefined, marks));
 	// Chip counts ignore the filter, so a hidden type shows what it would add.
 	const chipPoints = $derived(
-		sourcePoints(foldActivity(response ?? empty, { ...view, hidden: [] }, studyDay, new Date()))
+		sourcePoints(foldActivity(response ?? empty, { ...view, hidden: [] }, studyDay, new Date(), undefined, marks))
 	);
 	const allHidden = $derived(sources.length > 0 && sources.every((s) => stored.hidden.includes(s.type)));
 	const days = $derived([...byDay.values()]);
@@ -85,7 +93,8 @@
 		days.map((day) => ({
 			day: day.day,
 			title: dayTooltip(day, sources, workspaceName, allHidden),
-			level: levelFor(day.total)
+			level: levelFor(day.total),
+			vacation: day.vacation !== null
 		}))
 	);
 	const windowTotal = $derived(days.reduce((sum, day) => sum + day.total, 0));
@@ -106,12 +115,25 @@
 			const next = await fetchActivity(windowStart(rule, now), rule.today(now.getTime()));
 			if (!requests.isCurrent(seq)) return;
 			response = next;
+			void loadVacations();
 		} catch (err) {
 			if (!requests.isCurrent(seq)) return;
 			if (response === null) error = errorMessage(err, 'Could not load your activity.');
 			else console.warn('activity refresh failed', err);
 		} finally {
 			if (requests.isCurrent(seq)) loading = false;
+		}
+	}
+
+	async function loadVacations(): Promise<void> {
+		if (workspaceId === null) {
+			vacations = [];
+			return;
+		}
+		try {
+			vacations = (await getStudyData(workspaceId)).vacations ?? [];
+		} catch {
+			// The marks are decoration: the heatmap works without them.
 		}
 	}
 
@@ -193,12 +215,12 @@
 	     tech gets the window summary and one list item per day with activity. -->
 	<div class="grid" aria-hidden="true">
 		{#each cells as cell (cell.day)}
-			<span class="cell level-{cell.level}" title={cell.title}></span>
+			<span class="cell level-{cell.level}" class:vacation={cell.vacation} title={cell.title}></span>
 		{/each}
 	</div>
 	<p class="visually-hidden">{summary}</p>
 	<ul class="visually-hidden" aria-label="Daily activity">
-		{#each cells.filter((cell) => cell.level > 0) as cell (cell.day)}
+		{#each cells.filter((cell) => cell.level > 0 || cell.vacation) as cell (cell.day)}
 			<li>{cell.title}</li>
 		{/each}
 	</ul>
@@ -311,6 +333,15 @@
 		height: 0.85rem;
 		border-radius: 0.15rem;
 		background: color-mix(in srgb, currentColor 12%, transparent);
+	}
+
+	/* Hatched: a vacation day (the pattern also works without colour). */
+	.cell.vacation {
+		background-image: repeating-linear-gradient(
+			45deg,
+			color-mix(in srgb, currentColor 45%, transparent) 0 2px,
+			transparent 2px 5px
+		);
 	}
 
 	.level-1 {

@@ -1,3 +1,4 @@
+import { contextFor, UTC_CONTEXT, type StudyContext } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
@@ -52,7 +53,7 @@ const NOW = new Date('2026-06-01T00:00:00.000Z');
 describe('buildLevelQueue', () => {
 	it('returns an empty queue for empty inputs', () => {
 		expect(
-			buildLevelQueue({ w: DEFAULT_W,
+			buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 				entries: [],
 				cards: [],
 				reviews: [],
@@ -64,7 +65,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('reuses an existing card instead of creating a virtual item', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1)],
 			cards: [card('c1', 1)],
 			reviews: [review('c1', 3, '2026-01-01T00:00:00.000Z')],
@@ -77,7 +78,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('creates stable virtual ids in level entry order', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(7), entry(3), entry(12)],
 			cards: [],
 			reviews: [],
@@ -94,7 +95,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('puts due cards first, ordered by due, then virtual entries', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1), entry(2), entry(3), entry(4)],
 			cards: [card('c2', 2), card('c1', 1)],
 			reviews: [
@@ -111,7 +112,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('orders equal due instants by entry id', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1), entry(2)],
 			cards: [card('c2', 2), card('c1', 1)],
 			reviews: [
@@ -127,7 +128,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('leaves out cards that are reviewed but not due', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1), entry(2), entry(3)],
 			cards: [card('c1', 1), card('c2', 2)],
 			reviews: [
@@ -144,7 +145,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('includes an existing unreviewed card as new, with its real id', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1), entry(2)],
 			cards: [card('c1', 1)],
 			reviews: [],
@@ -160,7 +161,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('caps the combined new bucket, existing cards before virtual entries', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1), entry(2), entry(3), entry(4)],
 			cards: [card('c3', 3), card('c2', 2)],
 			reviews: [],
@@ -178,7 +179,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('orders the combined new bucket: existing by entry id, then virtual in level order', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(4), entry(3), entry(2), entry(1)],
 			cards: [card('c2', 2), card('c3', 3)],
 			reviews: [],
@@ -191,7 +192,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('caps due cards and virtual entries independently', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1), entry(2), entry(3), entry(4)],
 			cards: [card('c1', 1), card('c2', 2)],
 			reviews: [
@@ -210,7 +211,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('keeps virtual entries when the review cap is zero', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1), entry(2)],
 			cards: [card('c1', 1)],
 			reviews: [review('c1', 3, '2026-01-01T00:00:00.000Z')],
@@ -223,7 +224,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('skips non-word entries', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1, 'character'), entry(2, 'word'), entry(3, 'sentence')],
 			cards: [],
 			reviews: [],
@@ -236,7 +237,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('skips a non-word entry even when a card matches it', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1, 'character')],
 			cards: [card('c1', 1)],
 			reviews: [review('c1', 3, '2026-01-01T00:00:00.000Z')],
@@ -249,7 +250,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('dedupes repeated entries and keeps the first occurrence', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(5), entry(3), entry(5)],
 			cards: [],
 			reviews: [],
@@ -265,7 +266,7 @@ describe('buildLevelQueue', () => {
 	});
 
 	it('does not mark a card due from reviews of other cards', () => {
-		const queue = buildLevelQueue({ w: DEFAULT_W,
+		const queue = buildLevelQueue({ ctx: UTC_CONTEXT, w: DEFAULT_W,
 			entries: [entry(1)],
 			cards: [card('c1', 1)],
 			reviews: [review('other', 3, '2026-01-01T00:00:00.000Z')],
@@ -314,7 +315,7 @@ describe('character level queue fixtures', () => {
 			const plan = buildLevelPlan({
 				unit: c.unit,
 				kinds: c.kinds,
-				studyDay: studyDay(c.history),
+				ctx: contextFor(studyDay(c.history)),
 				entries: c.entries,
 				hasStrokes: (glyph: string) =>
 					!c.entries.some((e) => e.written === glyph && e.strokeData === false),
@@ -342,7 +343,7 @@ describe('level card ids', () => {
 });
 
 describe('levelPlanCounts', () => {
-	const base = { w: DEFAULT_W, cards: [], reviews: [], now: NOW };
+	const base = { ctx: UTC_CONTEXT, w: DEFAULT_W, cards: [], reviews: [], now: NOW };
 
 	it('counts a fresh character level as characters x 1 while writing is locked', () => {
 		const counts = levelPlanCounts({
@@ -404,7 +405,7 @@ describe('level setup helpers', () => {
 
 describe('character level skip set', () => {
 	it('never plans a virtual item found ineligible, and refills from the rest', () => {
-		const plan = buildLevelPlan({
+		const plan = buildLevelPlan({ ctx: UTC_CONTEXT,
 			w: DEFAULT_W,
 			unit: 'character',
 			kinds: ['writing'],
@@ -432,6 +433,7 @@ describe('stroke-less glyphs and the new-card budget', () => {
 		review(`c-vocab-${100 + i}`, 4, '2026-05-31T12:00:00.000Z', eventId(i + 1))
 	);
 	const base = {
+		ctx: UTC_CONTEXT,
 		w: DEFAULT_W,
 		unit: 'character' as const,
 		kinds: ['vocab', 'writing'] as const,
@@ -450,8 +452,42 @@ describe('stroke-less glyphs and the new-card budget', () => {
 	});
 
 	it('counts no droppable writing item as new on the setup page', () => {
-		const counts = levelPlanCounts(base);
+		// Unlimited daily limits: this is about which items are new, not the allowance.
+		const counts = levelPlanCounts({
+			...base,
+			ctx: { ...UTC_CONTEXT, limits: { workspace: { new: null, reviews: null }, decks: {}, existingDecks: null } }
+		});
 		// 60 locked-in stroke-less writing items are not new; only the 30 fresh recognitions.
 		expect(counts.fresh).toBe(30);
+	});
+});
+
+describe('level sessions and daily limits', () => {
+	const NOW2 = new Date('2026-03-10T12:00:00Z');
+	const entries = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, kind: 'word' }));
+	const withLimits = (rows: Partial<{ new: number | null; reviews: number | null }>, decks = {}): StudyContext => ({
+		...UTC_CONTEXT,
+		limits: { workspace: rows, decks, existingDecks: null }
+	});
+	const base = { entries, cards: [] as StudyCard[], reviews: [] as ReviewEvent[], newLimit: 50, reviewLimit: 50, now: NOW2, w: DEFAULT_W };
+
+	it('virtual items count against general: 4 new allowed gives 4 virtual items and a reserve', () => {
+		const plan = buildLevelPlan({ ...base, newLimit: 3, ctx: withLimits({ new: 4 }) });
+		expect(plan.queue).toHaveLength(3);
+		expect(plan.reserve).toHaveLength(1);
+	});
+
+	it('an existing card counts against its own deck, not general', () => {
+		const cards: StudyCard[] = [
+			{ id: 'c1', kind: 'vocab', entryId: 1, deckIds: ['full'], createdAt: '2026-01-01T00:00:00Z' }
+		];
+		const ctx = withLimits({}, { full: { new: 0 } });
+		const queue = buildLevelPlan({ ...base, cards, ctx }).queue;
+		expect(queue.some((item) => item.cardId === 'c1')).toBe(false);
+		expect(queue.filter((item) => item.virtual)).toHaveLength(9);
+	});
+
+	it('is empty on a vacation day', () => {
+		expect(buildLevelPlan({ ...base, ctx: { ...UTC_CONTEXT, vacationToday: true } }).queue).toEqual([]);
 	});
 });
