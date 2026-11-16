@@ -6,7 +6,7 @@ Settings, Account, **Your data** lets every user download all their data and res
 
 You get a zip of JSON files (format version 1). It contains: workspaces and settings, study history, flashcards and decks, vacation periods, limits and daily goals, word edits, personal notes on words, words you marked as known, your own sentences, library books with bookmarks and highlights, plugin switches and your time-zone history. The download link is a one-time ticket valid for 60 seconds, and you can make six downloads per hour.
 
-It never contains: your password, email, sessions, two-step secrets and recovery codes, AI keys, invites, the audit log, SMTP settings, the server secret, journal photo drafts, deleted rows, or dictionary and pack content. After moving to another server you enter your AI keys again.
+It never contains: your password, email, sessions, access tokens, two-step secrets and recovery codes, AI keys, invites, the audit log, SMTP settings, the server secret, journal photo drafts, deleted rows, or dictionary and pack content. After moving to another server you enter your AI keys again.
 
 The download is refused up front (`backup_too_large_to_restore`) if it could not be restored on this server: over 128 MiB zipped, 2 GiB expanded, or 64 MiB for one book.
 

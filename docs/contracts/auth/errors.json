@@ -1,7 +1,7 @@
 {
   "_doc": "The one catalogue of auth error codes. Every error body is {\"error\": code, \"message\": English sentence}. throttle-responses.json holds worked examples of the sign-in throttling subset; each of its codes and statuses must appear here with the same status.",
   "bad_request": {"status": 400, "meaning": "Malformed or incomplete request body."},
-  "unauthorized": {"status": 401, "meaning": "No session, or the token is unknown, idle for 90 days or revoked. The client drops its token and shows sign-in."},
+  "unauthorized": {"status": 401, "meaning": "No session, or the token is unknown, idle for 90 days or revoked, or the access token is unknown, expired or revoked. The client drops its token and shows sign-in."},
   "bad_credentials": {"status": 401, "meaning": "Wrong username or password at sign-in (anonymous step, not a lost session)."},
   "forbidden": {"status": 403, "meaning": "The route needs an administrator."},
   "registration_closed": {"status": 403, "meaning": "Registration is closed: only an administrator creates accounts (the instance already has users and the mode is closed)."},
@@ -65,5 +65,10 @@
   "invalid_username": {"status": 422, "meaning": "The username breaks the policy (3-32 letters, digits, dot, underscore, hyphen; no @). message names the rule."},
   "rate_limited": {"status": 429, "meaning": "Too many attempts; Retry-After carries the wait in whole seconds. Never retry automatically."},
   "internal": {"status": 500, "meaning": "Unexpected server error; nothing was changed."},
-  "busy": {"status": 503, "meaning": "The password-hash gate is saturated; Retry-After is 2. Never retry automatically."}
+  "busy": {"status": 503, "meaning": "The password-hash gate is saturated; Retry-After is 2. Never retry automatically."},
+  "token_not_allowed": {"status": 403, "meaning": "Access tokens cannot be used on this route (account, sign-in, admin, backup, AI, journal, workspace management, the token routes themselves). Use a signed-in session."},
+  "token_read_only": {"status": 403, "meaning": "The access token is read-only and the route writes."},
+  "token_workspace": {"status": 403, "meaning": "The access token is limited to one workspace and the request is not inside it: ?workspace= is missing or names another workspace, or the route spans workspaces or addresses objects by id."},
+  "token_limit": {"status": 409, "meaning": "20 live access tokens already; revoke one first. Expired tokens do not count."},
+  "invalid_token_request": {"status": 422, "meaning": "Name (1-64 characters), scope (read or write) or expiry (1-365 days) out of range; the message names the field."}
 }

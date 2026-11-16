@@ -82,6 +82,12 @@ func DefaultAuthPolicy() AuthPolicy {
 			"export":        {Burst: 6, Every: 10 * time.Minute, MaxKeys: authTableCap},
 			"restore":       {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
 			"server-backup": {Burst: 1, Every: time.Minute, MaxKeys: authTableCap},
+			// Personal access token requests per user, shared by all of the
+			// user's tokens (minting more buys no throughput): 120 burst, one
+			// more per 500 ms. Token creation per user: 10 burst, one per 6
+			// minutes. Session traffic is not throttled.
+			"pat":        {Burst: 120, Every: 500 * time.Millisecond, MaxKeys: authTableCap},
+			"pat-create": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 		},
 	}
 }

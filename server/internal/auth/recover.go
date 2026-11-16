@@ -51,7 +51,7 @@ func RecoverAccount(ctx context.Context, sqlDB *sql.DB, o RecoverOptions) (int64
 	if err != nil {
 		return 0, fmt.Errorf("recover user: %w", err)
 	}
-	revoked, err := revokeSessions(ctx, tx, id, 0)
+	revoked, tokens, err := revokeCredentials(ctx, tx, id, 0)
 	if err != nil {
 		return 0, err
 	}
@@ -67,7 +67,7 @@ func RecoverAccount(ctx context.Context, sqlDB *sql.DB, o RecoverOptions) (int64
 		}
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "password_change_forced", ActorName: "cli", TargetID: &id,
-		Detail: map[string]any{"signedOutOthers": revoked, "enabled": o.Enable, "admin": o.Admin}}); err != nil {
+		Detail: map[string]any{"signedOutOthers": revoked, "tokens": tokens, "enabled": o.Enable, "admin": o.Admin}}); err != nil {
 		return 0, err
 	}
 	return id, tx.Commit()

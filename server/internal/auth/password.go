@@ -27,6 +27,8 @@ func VerifyUserPassword(ctx context.Context, sqlDB *sql.DB, userID int64, passwo
 // argon2 run), clears a forced-change flag, and removes the user's other
 // sessions when revokeOthers is set or a change was forced, all in one
 // transaction with the audit row. keepSessionID is the session that stays.
+// Every access token of the user goes in any case: a password change is the
+// "I may be compromised" step, and a stolen session could have minted one.
 func ChangePassword(ctx context.Context, sqlDB *sql.DB, userID int64, newHash string, keepSessionID int64, revokeOthers bool) error {
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
@@ -43,17 +45,19 @@ func ChangePassword(ctx context.Context, sqlDB *sql.DB, userID int64, newHash st
 		       password_changed_at = ?, updated_at = ? WHERE id = ?`, newHash, at, at, userID); err != nil {
 		return fmt.Errorf("update password: %w", err)
 	}
-	revoked := int64(0)
+	var revoked, tokens int64
 	if revokeOthers || forced != 0 {
-		if revoked, err = revokeSessions(ctx, tx, userID, keepSessionID); err != nil {
+		if revoked, tokens, err = revokeCredentials(ctx, tx, userID, keepSessionID); err != nil {
 			return err
 		}
+	} else if tokens, err = revokeTokens(ctx, tx, userID); err != nil {
+		return err
 	}
 	if err := dropPendingResets(ctx, tx, userID); err != nil {
 		return err
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "password_changed", ActorID: userID, TargetID: &userID,
-		Detail: map[string]any{"forced": forced != 0, "signedOutOthers": revoked}}); err != nil {
+		Detail: map[string]any{"forced": forced != 0, "signedOutOthers": revoked, "tokens": tokens}}); err != nil {
 		return err
 	}
 	if err := tx.Commit(); err != nil {
@@ -93,7 +97,7 @@ func forceChangeTx(ctx context.Context, tx *sql.Tx, userID, actorID int64) error
 	if n, _ := res.RowsAffected(); n == 0 {
 		return sql.ErrNoRows
 	}
-	revoked, err := revokeSessions(ctx, tx, userID, 0)
+	revoked, tokens, err := revokeCredentials(ctx, tx, userID, 0)
 	if err != nil {
 		return err
 	}
@@ -101,5 +105,5 @@ func forceChangeTx(ctx context.Context, tx *sql.Tx, userID, actorID int64) error
 		return err
 	}
 	return Audit(ctx, tx, AuditEvent{Action: "password_change_forced", ActorID: actorID, TargetID: &userID,
-		Detail: map[string]any{"signedOutOthers": revoked}})
+		Detail: map[string]any{"signedOutOthers": revoked, "tokens": tokens}})
 }

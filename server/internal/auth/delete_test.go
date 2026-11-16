@@ -32,6 +32,7 @@ var seedSQL = map[string][]string{
 	"ai_selection":       {`INSERT INTO ai_selection (user_id, provider, updated_at) VALUES (?1, 'anthropic', 't')`},
 	"ai_calls":           {`INSERT INTO ai_calls (user_id, kind, model, ok, at) VALUES (?1, 'k', 'm', 1, 't')`},
 	"sessions":           {`INSERT INTO sessions (token_hash, user_id, created_at, last_used_at) VALUES ('th' || ?1, ?1, 't', 't')`},
+	"access_tokens":      {`INSERT INTO access_tokens (user_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?1, 'n', 'ah' || ?1, 'abcdef', 'read', 't', '9999')`},
 	"password_resets":    {`INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) VALUES ('rh' || ?1, ?1, 't', 't')`},
 	"mfa_totp":           {`INSERT INTO mfa_totp (user_id, secret_ct, secret_nonce, secret_fp, confirmed_at, created_at) VALUES (?1, x'00', x'00', 'fp', 't', 't')`},
 	"mfa_recovery_codes": {`INSERT INTO mfa_recovery_codes (user_id, code_hash) VALUES (?1, 'rc' || ?1)`},
@@ -155,7 +156,7 @@ func TestDeleteUserRemovesEverythingPersonal(t *testing.T) {
 	sqlDB.Exec(`UPDATE auth_settings SET updated_by = ?`, a)
 
 	prev, err := auth.DeletionPreview(ctx, sqlDB, a)
-	want := auth.Preview{Workspaces: 1, StudyEvents: 1, PluginData: 1, Books: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1}
+	want := auth.Preview{Workspaces: 1, StudyEvents: 1, PluginData: 1, Books: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, AccessTokens: 1}
 	if err != nil || prev != want {
 		t.Fatalf("preview = %+v (%v), want %+v", prev, err, want)
 	}

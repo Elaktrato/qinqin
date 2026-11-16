@@ -7,7 +7,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | Code | Status | Meaning |
 |---|---|---|
 | `bad_request` | 400 | Malformed or incomplete request body. |
-| `unauthorized` | 401 | No session, or the token is unknown, idle for 90 days or revoked. The client drops its token and shows sign-in. |
+| `unauthorized` | 401 | No session, or the token is unknown, idle for 90 days or revoked, or the access token is unknown, expired or revoked. The client drops its token and shows sign-in. |
 | `bad_credentials` | 401 | Wrong username or password at sign-in (anonymous step, not a lost session). |
 | `forbidden` | 403 | The route needs an administrator. |
 | `registration_closed` | 403 | Registration is closed: only an administrator creates accounts (the instance already has users and the mode is closed). |
@@ -72,3 +72,8 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `rate_limited` | 429 | Too many attempts; Retry-After carries the wait in whole seconds. Never retry automatically. |
 | `internal` | 500 | Unexpected server error; nothing was changed. |
 | `busy` | 503 | The password-hash gate is saturated; Retry-After is 2. Never retry automatically. |
+| `token_not_allowed` | 403 | Access tokens cannot be used on this route (account, sign-in, admin, backup, AI, journal, workspace management, the token routes themselves). Use a signed-in session. |
+| `token_read_only` | 403 | The access token is read-only and the route writes. |
+| `token_workspace` | 403 | The access token is limited to one workspace and the request is not inside it: ?workspace= is missing or names another workspace, or the route spans workspaces or addresses objects by id. |
+| `token_limit` | 409 | 20 live access tokens already; revoke one first. Expired tokens do not count. |
+| `invalid_token_request` | 422 | Name (1-64 characters), scope (read or write) or expiry (1-365 days) out of range; the message names the field. |
