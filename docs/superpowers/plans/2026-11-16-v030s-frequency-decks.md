@@ -459,3 +459,11 @@ ok; full Go `./...` 35 ok, only the known `TestHostnameResolvingToEmbeddedFormIs
 errors, `npm test` 313 files / 4934 tests, build ok; Node 26 vitest 313 / 4934; `check-sources` and
 `gen-api-docs --check` ok. Real-app recheck on a scratch server (jmdict + jiten-frequency, free port,
 killed and deleted): first Top 2000 1.23 s, cached 0.002 s, Top 500 the prefix of Top 2000.
+
+### Mutation check (orchestrator, after the fix wave)
+
+Four mutants, each killed (then reverted):
+- `orderNew` puts unranked items first: 4 tests fail.
+- known predicate `>=` → `>` threshold: 1 test fails.
+- starter deck id seed `top-N` → `topN`: 14 tests fail (fixture ids).
+- session order never reports mixed decks: 2 tests fail.
