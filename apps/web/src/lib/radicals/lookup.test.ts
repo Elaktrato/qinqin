@@ -33,6 +33,20 @@ describe('lookup (docs/contracts/radicals/lookup.json)', () => {
 		expect(got.availableStrokes).toEqual(c.want.availableStrokes);
 	});
 
+	it('a radical filters by equality even when a part list is the smaller candidate list', () => {
+		// 口 has fewer cells than radical 30, so the part list drives the match;
+		// 語 (radical 149) carries 口 but must not match radical 30.
+		const universe: CharRow[] = [
+			{ i: 1, c: '語', s: 14, k: 149 },
+			{ i: 2, c: '吾', s: 7, k: 30 },
+			{ i: 3, c: '口', s: 3, k: 30 },
+			{ i: 4, c: '名', s: 6, k: 30 },
+			{ i: 5, c: '可', s: 5, k: 30 }
+		];
+		const index = buildIndex(universe, { 語: ['言', '口', '吾'], 吾: ['五', '口'] });
+		expect(lookup(index, { r: 30, p: ['口'] }).results.map((r) => r.c)).toEqual(['吾']);
+	});
+
 	it('groups carry the capped result cells', () => {
 		const index = buildIndex(fixture.universe as CharRow[], fixture.components);
 		const got = lookup(index, { r: 85, p: [] });
