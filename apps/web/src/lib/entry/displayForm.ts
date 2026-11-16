@@ -34,6 +34,32 @@ function firstSenseUK(entry: DisplayEntry): boolean {
 	return (entry.senses?.[0]?.tags ?? []).includes('uk');
 }
 
+/** listFormOf: listForm when it is written only in kana and is a kana reading not flagged sk (step 1). */
+function listFormOf(
+	readings: DisplayEntry['readings'],
+	listForm: string | undefined
+): string | null {
+	if (!listForm || !KANA.test(listForm)) return null;
+	const listed = readings.some(
+		(r) => r.type === 'kana' && r.value === listForm && !(r.flags ?? []).includes('sk')
+	);
+	return listed ? listForm : null;
+}
+
+/**
+ * shownWritten is what a card shows for its entry: the card's snapshot when
+ * it is a kana reading of the entry (a starter deck's kana row: いぬ, not 犬;
+ * step 1 of the rule with the snapshot as list form), else the server's
+ * display form `written` (steps 2-4 already applied; an old 乃 snapshot
+ * shows の).
+ */
+export function shownWritten(
+	entry: { written: string; readings: DisplayEntry['readings'] },
+	snapshot: string | undefined
+): string {
+	return listFormOf(entry.readings, snapshot) ?? entry.written;
+}
+
 /**
  * displayForm: 1. a list form written only in kana that is one of the
  * entry's kana readings (not search-only); 2. when the first sense is tagged
@@ -45,8 +71,8 @@ export function displayForm(entry: DisplayEntry, listForm?: string): string {
 	const kana: Flagged[] = entry.readings
 		.filter((r) => r.type === 'kana')
 		.map((r) => ({ text: r.value, flags: r.flags ?? [] }));
-	const listed = kana.some((r) => r.text === listForm && !r.flags.includes('sk'));
-	if (listForm && KANA.test(listForm) && listed) return listForm;
+	const listed = listFormOf(entry.readings, listForm);
+	if (listed !== null) return listed;
 	const bestKana = (): string => best(kana, RARE_READING, 'sk') ?? kana[0].text;
 	if (kana.length > 0 && firstSenseUK(entry)) return bestKana();
 	const forms = entry.forms.map((f) => ({ text: f.text, flags: f.flags ?? [] }));

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Entry, Reading, SenseView, Sentence } from '../api/types';
-import { buildVocabFaces } from './cardView';
+import { buildVocabFaces, withShownWritten } from './cardView';
 
 function reading(type: string, value: string, ord = 0): Reading {
 	return { type, value, plain: value, ord };
@@ -165,5 +165,31 @@ describe('buildVocabFaces for a character', () => {
 	it('keeps a word back equal to its front readings', () => {
 		const faces = buildVocabFaces(entry(), null, 'zh');
 		expect(faces.back.readings).toEqual(faces.front.readings);
+	});
+});
+
+describe('withShownWritten', () => {
+	const inu = {
+		id: 1,
+		language: 'ja',
+		kind: 'word',
+		written: '犬',
+		readings: [{ type: 'kana', value: 'いぬ', plain: 'いぬ', ord: 0 }],
+		senses: [],
+		sentences: [],
+		variants: [],
+		badges: []
+	};
+
+	it('a starter-copied いぬ card shows いぬ on its front', () => {
+		const shown = withShownWritten(inu as Entry, 'いぬ');
+		expect(shown.written).toBe('いぬ');
+		expect(buildVocabFaces(shown, null, 'ja').front.written).toBe('いぬ');
+	});
+
+	it('keeps the entry when there is no snapshot, a kanji snapshot or a kana that is no reading', () => {
+		expect(withShownWritten(inu as Entry, undefined)).toBe(inu);
+		expect(withShownWritten(inu as Entry, '狗').written).toBe('犬');
+		expect(withShownWritten(inu as Entry, 'ねこ').written).toBe('犬');
 	});
 });

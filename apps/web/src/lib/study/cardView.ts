@@ -4,6 +4,17 @@
 // separately from the page keeps the reveal rules testable.
 
 import type { Entry, SenseView, Sentence } from '../api/types';
+import { shownWritten } from '../entry/displayForm';
+
+/**
+ * withShownWritten is the entry a card is drawn with: its written form is
+ * shownWritten(entry, the card's snapshot), so a card copied from a starter
+ * deck's kana row shows that kana on every face. The same entry otherwise.
+ */
+export function withShownWritten(entry: Entry, snapshot: string | undefined): Entry {
+	const written = shownWritten(entry, snapshot);
+	return written === entry.written ? entry : { ...entry, written };
+}
 
 /** The placeholder that replaces the studied word in an example sentence. */
 export const BLANK = '____';
