@@ -129,7 +129,8 @@ Every count row, mature words and characters show `previous`, the same quantity 
 For mature and characters the comparison window's "before" and "after" are the end of `d₁ − 8` and the end of
 `compareThrough`. `nothingToCompare`: the comparison window has no activity cell of `w` with `points > 0` or
 `raw > 0` and no valid local review (offline: local reviews only). Text: "12 more than last week", "3 fewer than
-last week", "Same as last week", "Nothing last week to compare".
+last week", "Same as last week", "Nothing last week to compare"; seconds rows compare in the whole minutes they
+show ("5 min less than last week"). No comparison is shown for a row whose value or previous is unavailable.
 
 `week-summary.json`: cases `{name, note, history, now, week, workspace, language, vacation, goals, activity:
 {sources, cells} | null, reviews: [{id, ts, cardId, grade, durationMs?}], cards?, decks?, timelines?, chars?,

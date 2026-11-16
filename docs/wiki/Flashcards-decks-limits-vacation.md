@@ -29,6 +29,7 @@ Settings, Study, Vacation freezes your reviews while you are away. On a vacation
 - You see "Vacation until ..." on the study page, "On vacation until ..." in the home widget, "On vacation" in the decks view, and hatched dates in the heatmap.
 - The FSRS optimizer ignores vacation time too.
 - A [daily goal](Daily-goals) and its goal streak are paused on vacation days, like the review streak.
+- The [weekly summary](Weekly-summary) marks vacation days in its day strip and leaves them out of days active and goal days; what you did on them still counts in the totals.
 
 All days here are your learner's day in your time zone (Settings, Study); see [Settings tour](Settings-tour).
 

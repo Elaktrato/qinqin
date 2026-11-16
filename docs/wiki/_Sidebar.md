@@ -12,6 +12,7 @@
 - [Reader](Reader)
 - [Journal and AI](Journal-and-AI)
 - [Stats and heatmap](Stats-and-heatmap)
+- [Weekly summary](Weekly-summary)
 - [Settings tour](Settings-tour)
 - [Accounts and sign-in](Accounts-and-sign-in)
 - [Your data](Your-data)
