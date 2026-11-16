@@ -39,15 +39,17 @@ Read order: `auth/` -> `study-day/` -> this page's sync model -> `cards/` -> `sc
   devices writing different keys never conflict; writing the same key is decided by `updatedAt`.
 - Tombstones: a deleted row stays in the pull with `deletedAt` set and its last `data`. A client treats
   `deletedAt != null` as absent. Deleting an absent or already deleted row counts as skipped.
-- `workspaceId: null` rows are user-global (apply to every workspace). Today only `vacation:*` uses this.
+- `workspaceId: null` rows are user-global (apply to every workspace). Examples: `vacation:*`, `lookupcfg` and the `qinqin-core` UI rows.
   Everything else is per workspace; a write needs a current workspace and never falls back to another.
-- Events: append-only study events, idempotent by client-generated ULID `id`. Via the push body or
+- Events: study events, idempotent by client-generated ULID `id`. Via the push body or
   `POST /api/events/batch {events:[...]}` -> `{accepted, duplicates}`; the server forces `userId` to the
   caller and keeps `ts` verbatim; `workspaceId` must be owned (else 404). `GET /api/events?since=&workspace=`
   lists them. Event shape: `{id (ULID), workspaceId, device, ts (RFC 3339), type, payload}`, `type` one of
   `session|view|lookup|review|read|journal` (`apps/web/src/lib/events.ts`). A card's schedule is never
-  stored: it is derived by replaying `review` events (`scheduler/`).
-- The flashcards rows are plugin data of plugin `qinqin-flashcards` (`FLASHCARDS_PLUGIN_ID`); personal notes (`note:*`, `notecfg`) are plugin data of the built-in plugin `qinqin-core` (`CORE_PLUGIN_ID`, which also holds user-global UI rows such as the home layout and the activity view).
+  stored: it is derived by replaying `review` events (`scheduler/`). Events are append-only, except that
+  the owner can delete their `lookup` events of a workspace (`DELETE /api/events/lookups?workspace=`,
+  `lookups/`); the web app no longer emits them.
+- The flashcards rows are plugin data of plugin `qinqin-flashcards` (`FLASHCARDS_PLUGIN_ID`); personal notes (`note:*`, `notecfg`) and the lookup history (`lookups`, `lookupcfg`) are plugin data of the built-in plugin `qinqin-core` (`CORE_PLUGIN_ID`, which also holds user-global UI rows such as the home layout and the activity view).
 
 ## Row-key conventions
 
@@ -68,6 +70,8 @@ fixture or the contract text that fixes the shape.
 | `note:<entryId>` (plugin **`qinqin-core`**) | workspace (the current one, even for an entry of another language) | `{version:1, entryId: int (= the key's number), text: string (plain text, non-empty after trim), ...unknown kept}`; key decimal, positive, no leading zero; absent unless all hold; editor cap 2000 code points; delete = tombstone; restore rewrites key and `entryId` to the target entry, drops it when unresolved | `notes/notes.ts`, `notes/store.ts`; restore: `server/internal/backup/remap.go` | `notes/note-rows.json`, `notes/note-text.json`, `backup/remap.json` |
 | `known:<entryId>` | workspace (the book's workspace when written from the reader) | `{version:1, entryId: int (= the key's number), createdAt: RFC 3339, ...unknown kept}`; key decimal, positive, no leading zero; anything else is ignored; unmark = tombstone, mark again revives the same key; the learner's manual "I know this word" (a known entry for the reader, smart readings and starter decks; creates no card); restore rewrites key and `entryId` to the target entry, drops it when invalid or unresolved | `study/knownMarks.ts`, `study/store.ts` (`setKnownMark`, `setKnownMarks`), `study/known.ts`; restore: `server/internal/backup/remap.go` | `reader/word-states.json`, `frequency/known.json`, `backup/remap.json` |
 | `notecfg` (plugin **`qinqin-core`**) | workspace | `{version:1, onAnswer: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = on | `notes/notes.ts` | `notes/note-rows.json` |
+| `lookups` (plugin **`qinqin-core`**) | workspace | `{version:1, clearedAt: RFC 3339 \| null, items: [{entryId: int, count: int 1..1000000, firstAt, lastAt, sources: {reader?, lesson?, search?: int}, books: int[≤3]}], ...unknown kept}`; one row per workspace, at most 500 items newest first; written only by read-merge-write in one flush (10-minute dedupe); Clear = `PUT` with `items: []` and `clearedAt` (never a `DELETE`); restore remaps item entries and books, merges duplicates, drops a row that is not version 1 | `lookups/lookups.ts`, `lookups/recorder.ts`, `lookups/store.ts`; restore: `server/internal/backup/remap.go` | `lookups/lookup-rows.json`, `lookups/lookup-merge.json`, `lookups/lookup-prompt.json`, `backup/remap.json` |
+| `lookupcfg` (plugin **`qinqin-core`**) | **user-global** (`workspaceId: null`) | `{version:1, record: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = recording on | `lookups/lookups.ts` | `lookups/lookup-rows.json` |
 | `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}}`; an unknown `mode` reads as `vocab` | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `server/internal/events` | `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
 | workspace settings key `reader` | workspace row of `workspaces.settings` (not plugin data) | `{version:1, bookRuby: bool, readings: never\|always\|smart, smartThreshold: 10..100, rubyScale: 0.45\|0.55\|0.65\|0.75, font: default\|sans\|serif\|kai, highlightWords: bool}`; written via `PUT /api/workspaces/{id}` with `settings` merged as RFC 7396; unknown keys kept | `plugins/reader/displaySettings.ts` | `reader/display-settings.json` |
 | Reader library, bookmarks, highlights, book position | **not sync rows**: server tables under `/api/library/books/{id}[/bookmarks\|/highlights\|/position]` | see `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/api` library handlers | `plugins/reader/bookmarks.ts`, `highlights.ts` | only through `backup/sample-v1/library/*`; no API fixture |
@@ -140,4 +144,6 @@ other permanent 4xx drop the item; 5xx, 408, 429 and network errors keep it; for
   are not part of the sync pull (Delta has no library collection).
 - `POST /api/sync/push` and `GET /api/sync/pull` response shapes are covered by Go tests in
   `server/internal/sync`, not by a shared JSON fixture.
-- Event `payload` shapes of `session`, `view`, `lookup`, `journal` are not specified here.
+- Event `payload` shapes of `session`, `view`, `lookup`, `journal` are not specified here. `lookup` events
+  (`{query}` from older web clients) are no longer written by the web app; the lookup history is the
+  `lookups` row.

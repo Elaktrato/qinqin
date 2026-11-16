@@ -15,6 +15,8 @@ Imports run on the server, one work per request, from an allow-list of hosts. A 
 
 Hover a word in the text to see a ranked stack of dictionary entries with frequency chips; popups open from inside popups. Every entry in the popup has a **+** button that adds the word to the General deck of the book's workspace (a **...** deck menu appears only if the workspace has custom decks). The sentence around the word (up to 200 characters) is saved as your own example sentence and linked to the card. Sentences you save are private to you.
 
+Words you look up are kept in the workspace's [lookup history](Searching-and-entries#lookup-history) (a popup that stays open a second, one you move into, or a selection); a word you looked up three times or more without a card says so in its popup. Turn recording off on the history page.
+
 ## I know this word
 
 Next to **+** every popup entry has an **I know this** toggle. It marks the word as known without making a flashcard: the mark counts like a mastered card everywhere a word is called known (word highlighting, Smart readings, the Words tab, starter decks skip it). Press it again to take the mark back. The mark belongs to the book's workspace and is synced and included in your backup. With word highlighting on, the popup also says how well you know the word ("New word", "Learning", "Known — memory score 85" or "Known — marked by you").

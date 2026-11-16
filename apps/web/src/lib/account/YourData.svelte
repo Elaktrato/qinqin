@@ -170,6 +170,10 @@
 		password, sign-in sessions, two-factor secrets or AI keys; after moving to another server you enter AI keys again.
 	</p>
 	<button type="button" disabled={busy} onclick={download}>Download my data</button>
+	<p class="hint">
+		The words you looked up are in the download too. See, add to a deck or clear them in the
+		<a href="/lookups">Lookup history</a>.
+	</p>
 
 	<h3>Restore from a backup</h3>
 	<p class="hint">Restoring replaces <strong>all</strong> of your data with the backup's, and signs you out on your other devices.</p>

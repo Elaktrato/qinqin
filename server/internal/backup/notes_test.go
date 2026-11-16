@@ -195,7 +195,7 @@ func TestSampleArchiveNoteFollowsItsEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 	var key, data string
-	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core'`, tg.UID).Scan(&key, &data); err != nil {
+	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key LIKE 'note:%'`, tg.UID).Scan(&key, &data); err != nil {
 		t.Fatalf("no restored note: %v", err)
 	}
 	if key != "note:"+strconv.FormatInt(tgE, 10) {
@@ -203,6 +203,18 @@ func TestSampleArchiveNoteFollowsItsEntry(t *testing.T) {
 	}
 	if id, _ := intMember(json.RawMessage(data), "entryId"); id != tgE {
 		t.Errorf("data %s", data)
+	}
+	// the sample's lookup history follows the entry and the restored book (#72)
+	var book int64
+	if err := tg.DB.QueryRow(`SELECT id FROM library_books WHERE user_id = ?`, tg.UID).Scan(&book); err != nil {
+		t.Fatal(err)
+	}
+	if err := tg.DB.QueryRow(`SELECT data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key = 'lookups'`, tg.UID).Scan(&data); err != nil {
+		t.Fatalf("no restored lookup history: %v", err)
+	}
+	want := fmt.Sprintf(`{"version":1,"clearedAt":null,"items":[{"entryId":%d,"count":4,"firstAt":"2026-11-10T09:00:00Z","lastAt":"2026-11-14T08:00:00Z","sources":{"reader":3,"search":1},"books":[%d]}]}`, tgE, book)
+	if data != want {
+		t.Errorf("lookups %s\nwant %s", data, want)
 	}
 }
 
@@ -304,7 +316,7 @@ func TestInvalidNoteCannotCollideWithARemappedNote(t *testing.T) {
 		t.Fatalf("restore: %v", err)
 	}
 	var key, data string
-	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core'`, tg.UID).Scan(&key, &data); err != nil {
+	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND pack_id = 'qinqin-core' AND key LIKE 'note:%'`, tg.UID).Scan(&key, &data); err != nil {
 		t.Fatal(err)
 	}
 	if key != fmt.Sprintf("note:%d", tg.E2) || !strings.Contains(data, `"valid"`) {

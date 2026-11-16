@@ -448,6 +448,10 @@ func writePluginData(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID i
 			if id, ok := entryKeyedID(r); ok {
 				refs.entries[id] = struct{}{}
 			}
+			// so does every word of the lookup history
+			for _, id := range lookupEntryIDs(r) {
+				refs.entries[id] = struct{}{}
+			}
 			return r, nil
 		})
 }

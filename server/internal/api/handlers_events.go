@@ -125,6 +125,43 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, evts)
 }
 
+// handleDeleteLookupEvents serves DELETE /api/events/lookups?workspace=:
+// the caller erases their "lookup" events of one workspace (the lookup
+// history's Clear, #72) and gets {"deleted": n}. The workspace is
+// required; unknown and foreign workspaces are 404. No other event type is
+// ever deleted.
+func (s *server) handleDeleteLookupEvents(w http.ResponseWriter, r *http.Request) {
+	u := s.requireUser(w, r)
+	if u == nil {
+		return
+	}
+	raw := r.URL.Query().Get("workspace")
+	if raw == "" {
+		http.Error(w, "workspace is required", http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		http.Error(w, "workspace must be an integer", http.StatusBadRequest)
+		return
+	}
+	ok, err := s.workspaceOwned(r.Context(), u.ID, id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "workspace not found", http.StatusNotFound)
+		return
+	}
+	n, err := events.DeleteLookups(r.Context(), s.db, u.ID, id)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int64{"deleted": n})
+}
+
 // workspaceOwned reports whether the workspace belongs to userID. The
 // lookup keys on (id, user_id), so unknown and foreign ids are
 // indistinguishable to the caller.

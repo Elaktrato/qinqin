@@ -6,7 +6,7 @@
 	import { ApiError } from '$lib/api/client';
 	import { search } from '$lib/api/search';
 	import type { SearchHit } from '$lib/api/types';
-	import { record } from '$lib/events';
+	import { recordLookup } from '$lib/lookups/sink';
 	import { currentLanguage, workspaces, workspacesLoaded } from '$lib/workspaces';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { Scheme } from '$lib/api/types';
@@ -100,18 +100,12 @@
 		return fallback;
 	}
 
-	// One lookup per query and language for this page visit: the URL
-	// effect re-runs on navigation and workspace switches, but a repeat
-	// search must not inflate the study log.
-	const recordedLookups = new Set<string>();
-
-	function recordLookup(q: string, language: string): void {
-		const key = `${language}\u0000${q}`;
-		if (recordedLookups.has(key)) return;
-		const workspace = get(workspaces).current;
-		if (!workspace) return;
-		recordedLookups.add(key);
-		void record('lookup', workspace.id, { query: q });
+	// Opening a result is the look-up (#72): it goes to the lookup history
+	// of the current workspace (a click, Enter, Ctrl/Cmd-click or a middle
+	// click; "open in new tab" from the context menu is not seen). Typed
+	// queries are never recorded.
+	function openedHit(entryId: number): void {
+		recordLookup(get(workspaces).current?.id, { entryId, source: 'search' });
 	}
 
 	// What a screen reader hears once a search settles; empty while it runs
@@ -192,7 +186,6 @@
 			return;
 		}
 		void runSearch(q, language, f);
-		recordLookup(q, language);
 	});
 </script>
 
@@ -222,6 +215,7 @@
 	{#if lang !== null && usesHan(lang)}
 		<p class="parts-link"><a href="/search/parts">Find a character by radical or part</a></p>
 	{/if}
+	<p class="parts-link"><a href="/lookups">Lookup history</a></p>
 
 	{#if lang !== null}
 		<div class="filters" role="group" aria-label="Search filters">
@@ -310,7 +304,8 @@
 		<ul class="results" aria-label="Search results">
 			{#each hits as hit (hit.id)}
 				<li class="result">
-					<a class="written" href={`/entry/${hit.id}`}>{hit.written}</a>
+					<a class="written" href={`/entry/${hit.id}`} onclick={() => openedHit(hit.id)}
+						onauxclick={(e) => e.button === 1 && openedHit(hit.id)}>{hit.written}</a>
 
 					<div class="details">
 						{#if hit.readings.length > 0}

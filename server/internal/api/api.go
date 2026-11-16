@@ -268,6 +268,7 @@ func (s *server) routes() []route {
 		{"GET /api/components", s.handleListComponents, accPublic, nil, tokReadGlobal},
 		{"POST /api/events/batch", s.handleEventBatch, accUser, nil, tokWriteAny},
 		{"GET /api/events", s.handleListEvents, accUser, nil, tokReadWS},
+		{"DELETE /api/events/lookups", s.handleDeleteLookupEvents, accUser, nil, noTok},
 		{"GET /api/stats/activity", s.handleActivity, accUser, nil, tokReadWS},
 		{"GET /api/dictionaries", s.handleListDictionaries, accPublic, nil, tokReadGlobal},
 		{"POST /api/admin/dictionaries", s.handleInstallDictionary, accAdmin, nil, noTok},

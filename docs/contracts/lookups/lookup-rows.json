@@ -1,0 +1,1834 @@
+{
+  "version": 1,
+  "rule": "lookups/rows",
+  "_doc": "Parse rules of the qinqin-core lookups (per workspace) and lookupcfg (user-global) rows (docs/contracts/lookups/README.md). op rows: input {data, deletedAt} -> {clearedAt, items, extra}; op cfg: -> {record, extra}. A tombstone (deletedAt set) is a missing row. Web: lib/lookups/lookups.test.ts.",
+  "cases": [
+    {
+      "name": "valid row",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1201,
+              "count": 4,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 3,
+                "search": 1
+              },
+              "books": [
+                17,
+                4
+              ]
+            },
+            {
+              "entryId": 88,
+              "count": 1,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "lesson": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 1201,
+            "count": 4,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-15T07:05:00.250Z",
+            "sources": {
+              "reader": 3,
+              "search": 1
+            },
+            "books": [
+              17,
+              4
+            ]
+          },
+          {
+            "entryId": 88,
+            "count": 1,
+            "firstAt": "2026-11-12T18:30:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "lesson": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "missing row is an empty history",
+      "op": "rows",
+      "input": {
+        "data": null,
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "tombstoned row is an empty history",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1201,
+              "count": 4,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 3,
+                "search": 1
+              },
+              "books": [
+                17,
+                4
+              ]
+            },
+            {
+              "entryId": 88,
+              "count": 1,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "lesson": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": "2026-11-16T10:00:00Z"
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "version 2 is an empty history",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 2,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1201,
+              "count": 4,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 3,
+                "search": 1
+              },
+              "books": [
+                17,
+                4
+              ]
+            },
+            {
+              "entryId": 88,
+              "count": 1,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "lesson": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "missing version is an empty history",
+      "op": "rows",
+      "input": {
+        "data": {
+          "items": [
+            {
+              "entryId": 1201,
+              "count": 4,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 3,
+                "search": 1
+              },
+              "books": [
+                17,
+                4
+              ]
+            },
+            {
+              "entryId": 88,
+              "count": 1,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "lesson": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "version as a string is an empty history",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": "1",
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1201,
+              "count": 4,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 3,
+                "search": 1
+              },
+              "books": [
+                17,
+                4
+              ]
+            },
+            {
+              "entryId": 88,
+              "count": 1,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "lesson": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "data not an object is an empty history",
+      "op": "rows",
+      "input": {
+        "data": [
+          1,
+          2
+        ],
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "data a JSON string of a valid row is decoded",
+      "op": "rows",
+      "input": {
+        "data": "{\"version\": 1, \"clearedAt\": null, \"items\": [{\"entryId\": 1201, \"count\": 4, \"firstAt\": \"2026-11-10T09:00:00Z\", \"lastAt\": \"2026-11-15T07:05:00.250Z\", \"sources\": {\"reader\": 3, \"search\": 1}, \"books\": [17, 4]}, {\"entryId\": 88, \"count\": 1, \"firstAt\": \"2026-11-12T18:30:00Z\", \"lastAt\": \"2026-11-12T18:30:00Z\", \"sources\": {\"lesson\": 1}, \"books\": []}]}",
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 1201,
+            "count": 4,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-15T07:05:00.250Z",
+            "sources": {
+              "reader": 3,
+              "search": 1
+            },
+            "books": [
+              17,
+              4
+            ]
+          },
+          {
+            "entryId": 88,
+            "count": 1,
+            "firstAt": "2026-11-12T18:30:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "lesson": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "items not an array is empty",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": {
+            "a": 1
+          }
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "clearedAt kept when RFC 3339",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": "2026-11-16T09:00:00Z",
+          "items": []
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": "2026-11-16T09:00:00Z",
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "clearedAt not a timestamp reads as null",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": "yesterday",
+          "items": []
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with entryId 0 is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 0,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with entryId as a string is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": "5",
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with entryId 1.5 is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1.5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with entryId negative is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": -3,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with count 0 is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 0,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with count as a string is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": "2",
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with count 2.5 is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2.5,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with bad firstAt is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with missing lastAt is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with lastAt not a date is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-13-40T99:00:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with a lowercase t in lastAt is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12t18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with lastAt 30 February is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-02-30T10:00:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with item not an object is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            "x",
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "duplicate entryId: the second is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 5,
+              "count": 7,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 7
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "reader": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "count above 1 000 000 is clamped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2000000,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 1000000,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "firstAt after lastAt reads as firstAt = lastAt",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-15T07:05:00.250Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-12T18:30:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "offset timestamps are kept as written",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T18:00:00+09:00",
+              "lastAt": "2026-11-12T18:30:00.5-05:00",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T18:00:00+09:00",
+            "lastAt": "2026-11-12T18:30:00.5-05:00",
+            "sources": {
+              "reader": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "unknown source key kept, invalid source values dropped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 1,
+                "android": 2,
+                "search": -1,
+                "lesson": 1.5,
+                "x": "3"
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 1,
+              "android": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "source counts above 1 000 000 are clamped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 5000000
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 1000000
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "more than 16 source keys: the known ones stay, then the first 13 others",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "k00": 1,
+                "k01": 1,
+                "k02": 1,
+                "k03": 1,
+                "k04": 1,
+                "k05": 1,
+                "k06": 1,
+                "k07": 1,
+                "k08": 1,
+                "k09": 1,
+                "k10": 1,
+                "k11": 1,
+                "k12": 1,
+                "k13": 1,
+                "k14": 1,
+                "k15": 1,
+                "k16": 1,
+                "k17": 1,
+                "k18": 1,
+                "k19": 1,
+                "search": 4,
+                "reader": 2
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "k00": 1,
+              "k01": 1,
+              "k02": 1,
+              "k03": 1,
+              "k04": 1,
+              "k05": 1,
+              "k06": 1,
+              "k07": 1,
+              "k08": 1,
+              "k09": 1,
+              "k10": 1,
+              "k11": 1,
+              "k12": 1,
+              "search": 4,
+              "reader": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "a source key longer than 32 characters is dropped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx": 1,
+                "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy": 1,
+                "reader": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy": 1,
+              "reader": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "sources missing or not an object is empty",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "books": []
+            },
+            {
+              "entryId": 6,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": [
+                1
+              ],
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {},
+            "books": []
+          },
+          {
+            "entryId": 6,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {},
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "books: 3 distinct positive integers, most recent first",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": [
+                4,
+                4,
+                -2,
+                "7",
+                1.5,
+                0,
+                9,
+                17,
+                3
+              ]
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 2
+            },
+            "books": [
+              4,
+              9,
+              17
+            ]
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "books not an array is empty",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": 17
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "unknown top-level member kept, unknown item member not",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "device": "tablet",
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": [],
+              "sentence": "x"
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {
+          "device": "tablet"
+        }
+      }
+    },
+    {
+      "name": "items unsorted are sorted newest first (ties: count desc, entryId asc)",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 3,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "reader": 1
+              },
+              "books": []
+            },
+            {
+              "entryId": 2,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-15T07:05:00.250Z",
+              "sources": {
+                "reader": 1
+              },
+              "books": []
+            },
+            {
+              "entryId": 7,
+              "count": 5,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 5
+              },
+              "books": []
+            },
+            {
+              "entryId": 1,
+              "count": 1,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 1
+              },
+              "books": []
+            },
+            {
+              "entryId": 4,
+              "count": 1,
+              "firstAt": "2026-11-12T18:30:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "reader": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 2,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-15T07:05:00.250Z",
+            "sources": {
+              "reader": 1
+            },
+            "books": []
+          },
+          {
+            "entryId": 7,
+            "count": 5,
+            "firstAt": "2026-11-12T18:30:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 5
+            },
+            "books": []
+          },
+          {
+            "entryId": 1,
+            "count": 1,
+            "firstAt": "2026-11-12T18:30:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 1
+            },
+            "books": []
+          },
+          {
+            "entryId": 4,
+            "count": 1,
+            "firstAt": "2026-11-12T18:30:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "reader": 1
+            },
+            "books": []
+          },
+          {
+            "entryId": 3,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "reader": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "timestamps compare as instants, not text",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 1,
+              "count": 1,
+              "firstAt": "2026-11-12T10:00:00Z",
+              "lastAt": "2026-11-12T10:00:00Z",
+              "sources": {
+                "reader": 1
+              },
+              "books": []
+            },
+            {
+              "entryId": 2,
+              "count": 1,
+              "firstAt": "2026-11-12T18:00:00+09:00",
+              "lastAt": "2026-11-12T18:00:00+09:00",
+              "sources": {
+                "reader": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 1,
+            "count": 1,
+            "firstAt": "2026-11-12T10:00:00Z",
+            "lastAt": "2026-11-12T10:00:00Z",
+            "sources": {
+              "reader": 1
+            },
+            "books": []
+          },
+          {
+            "entryId": 2,
+            "count": 1,
+            "firstAt": "2026-11-12T18:00:00+09:00",
+            "lastAt": "2026-11-12T18:00:00+09:00",
+            "sources": {
+              "reader": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "cfg missing is on",
+      "op": "cfg",
+      "input": {
+        "data": null,
+        "deletedAt": null
+      },
+      "expect": {
+        "record": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "cfg record false is off",
+      "op": "cfg",
+      "input": {
+        "data": {
+          "version": 1,
+          "record": false
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "record": false,
+        "extra": {}
+      }
+    },
+    {
+      "name": "cfg record true is on",
+      "op": "cfg",
+      "input": {
+        "data": {
+          "version": 1,
+          "record": true
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "record": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "cfg record as a string is on",
+      "op": "cfg",
+      "input": {
+        "data": {
+          "version": 1,
+          "record": "no"
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "record": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "cfg version 2 is on",
+      "op": "cfg",
+      "input": {
+        "data": {
+          "version": 2,
+          "record": false
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "record": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "cfg tombstoned is on",
+      "op": "cfg",
+      "input": {
+        "data": {
+          "version": 1,
+          "record": false
+        },
+        "deletedAt": "2026-11-16T10:00:00Z"
+      },
+      "expect": {
+        "record": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "cfg unknown members kept",
+      "op": "cfg",
+      "input": {
+        "data": {
+          "version": 1,
+          "record": false,
+          "askedAt": "x"
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "record": false,
+        "extra": {
+          "askedAt": "x"
+        }
+      }
+    },
+    {
+      "name": "cfg JSON string decoded",
+      "op": "cfg",
+      "input": {
+        "data": "{\"version\": 1, \"record\": false}",
+        "deletedAt": null
+      },
+      "expect": {
+        "record": false,
+        "extra": {}
+      }
+    }
+  ]
+}

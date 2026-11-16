@@ -32,6 +32,10 @@ database with a SvelteKit single-page app embedded in the binary.
   (`/search/parts`; rules: `docs/contracts/radicals/`).
 - **Yomitan-style lookup** — in the Reader, hovering a word shows a ranked stack
   of dictionary entries with frequency chips, and popups open from inside popups.
+- **Lookup history** — the words you looked up in the Reader, lessons and search
+  (opened results), per workspace, with counts, a "you keep looking these up"
+  prompt, add to a deck, remove, clear (also old search records) and a recording
+  switch (`/lookups`; rules: `docs/contracts/lookups/`).
 - **Editing** — correct written forms and readings per user without mutating
   the shared dictionary data.
 - **Personal notes** — one plain-text note per word and workspace (a mnemonic,

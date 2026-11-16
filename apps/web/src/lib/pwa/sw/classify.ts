@@ -38,9 +38,35 @@ const API_PATTERNS: RegExp[] = [
 	/^\/api\/entries\/[0-9]+$/
 ];
 
+const CORE_DATA = '/api/plugins/qinqin-core/data';
+
+/**
+ * holdsLookups: a qinqin-core plugin data read that can return the lookup
+ * history rows (`lookups`, `lookupcfg`, #72): the key route of such a key,
+ * or a list whose prefix can match one. Never saved offline, so a Clear
+ * leaves no copy in Cache Storage.
+ */
+export function holdsLookups(url: URL): boolean {
+	const { searchParams } = url;
+	let pathname: string;
+	try {
+		// An encoded path (qinqin%2Dcore, %6Cookups) names the same route.
+		pathname = decodeURIComponent(url.pathname);
+	} catch {
+		return true;
+	}
+	if (pathname === CORE_DATA) {
+		const p = searchParams.get('prefix') ?? '';
+		return 'lookups'.startsWith(p) || 'lookupcfg'.startsWith(p) || p.startsWith('lookup');
+	}
+	if (!pathname.startsWith(`${CORE_DATA}/`)) return false;
+	return pathname.slice(CORE_DATA.length + 1).startsWith('lookup');
+}
+
 /** True when the path and query are one of the allowlisted API reads. */
 function apiAllowed(url: URL): boolean {
 	const { pathname, searchParams } = url;
+	if (holdsLookups(url)) return false;
 	if (API_PATTERNS.some((re) => re.test(pathname))) return true;
 	if (pathname === '/api/sync/pull') {
 		// Without `collections` a pull is the whole dictionary delta: never stored.
