@@ -22,13 +22,16 @@
 		info,
 		lookup,
 		studyWorkspaceId,
-		highlighter = null
+		highlighter = null,
+		stateLine = null
 	}: {
 		frame: PopupFrame;
 		info: StackInfo;
 		lookup: LookupController;
 		studyWorkspaceId: number | null;
 		highlighter?: HighlightActions | null;
+		/** The word-state line per entry (word highlighting on). */
+		stateLine?: ((entryId: number) => string) | null;
 	} = $props();
 
 	let popup = $state<HTMLElement | null>(null);
@@ -53,7 +56,7 @@
 	const study = $derived(
 		studyWorkspaceId === null
 			? undefined
-			: { workspaceId: studyWorkspaceId, paragraph: isRoot ? info.paragraph || null : null, hold }
+			: { workspaceId: studyWorkspaceId, paragraph: isRoot ? info.paragraph || null : null, hold, stateLine }
 	);
 	const position = $derived(
 		placePopup(

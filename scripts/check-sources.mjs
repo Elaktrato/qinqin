@@ -33,7 +33,8 @@ export const LOCAL_ONLY_PACKS = [
 	'tbcl-chars',
 	'cn-curriculum-chars',
 	'commons-audio-zh',
-	'commons-audio-ja'
+	'commons-audio-ja',
+	'zh-components'
 ];
 /**
  * Packs with a clear, redistributable licence that are fetched by a script

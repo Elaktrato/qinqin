@@ -33,6 +33,7 @@ type UnresolvedEntry struct {
 	Language string `json:"language"`
 	Cards    int    `json:"cards"`
 	Overlays int    `json:"overlays"`
+	Notes    int    `json:"notes"` // personal notes (qinqin-core note:<entryId>)
 }
 
 // Unresolved lists what a restore would drop for lack of a counterpart.
@@ -40,7 +41,7 @@ type Unresolved struct {
 	Entries     []UnresolvedEntry `json:"entries"` // the first maxListed, by written form
 	EntryCount  int               `json:"entryCount"`
 	Sentences   int               `json:"sentences"`
-	DroppedRows int               `json:"droppedRows"` // card rows, overlays and sentences that go with them
+	DroppedRows int               `json:"droppedRows"` // card rows, notes, overlays and sentences that go with them
 }
 
 // ReportBackup describes the archive.
@@ -281,6 +282,7 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 		if r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, cardKeyPrefix) {
 			m.RegisterCard(r.Key, r.Data)
 		}
+		m.RegisterNote(r)
 		if !installed[r.PluginID] {
 			notInstalled[r.PluginID] = true
 		}
@@ -304,7 +306,7 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	for _, e := range a.Entries {
 		byID[e.ID] = e
 	}
-	note := func(entryID int64, card, overlay bool) {
+	note := func(entryID int64, card, overlay, personal bool) {
 		u := unres[entryID]
 		if u == nil {
 			ref := byID[entryID]
@@ -317,6 +319,9 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 		if overlay {
 			u.Overlays++
 		}
+		if personal {
+			u.Notes++
+		}
 	}
 	rep.Restores.Workspaces = len(a.Workspaces)
 	rep.Restores.Books = len(a.Books)
@@ -324,7 +329,10 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	collisions := 0
 	if err := a.PluginRows(func(r PluginRow) error {
 		nr, drop := m.PluginRow(r)
-		if !drop {
+		noteID, isNote := noteEntryID(r)
+		_, isKeyed := entryKeyedID(r)
+		// notes and known marks never collide: RegisterNote picked one winner per target
+		if !drop && !isKeyed {
 			var ws int64
 			if nr.WorkspaceID != nil {
 				ws = *nr.WorkspaceID
@@ -341,8 +349,13 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 			if isCard {
 				if id, ok := intMember(r.Data, "entryId"); ok {
 					if _, resolved := m.Entries[id]; !resolved {
-						note(id, true, false)
+						note(id, true, false, false)
 					}
+				}
+			}
+			if isNote {
+				if _, resolved := m.Entries[noteID]; !resolved {
+					note(noteID, false, false, true)
 				}
 			}
 			return nil
@@ -360,7 +373,7 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 			rep.Restores.Overlays++
 		} else {
 			rep.Unresolved.DroppedRows++
-			note(o.EntryID, false, true)
+			note(o.EntryID, false, true, false)
 		}
 		return nil
 	}); err != nil {
@@ -378,7 +391,7 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	for _, e := range a.Entries {
 		if _, ok := m.Entries[e.ID]; !ok {
 			if _, seen := unres[e.ID]; !seen {
-				note(e.ID, false, false)
+				note(e.ID, false, false, false)
 			}
 		}
 	}

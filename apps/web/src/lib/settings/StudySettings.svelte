@@ -2,7 +2,9 @@
 	import { onMount } from 'svelte';
 	import { loadWorkspaceEvents } from '$lib/events';
 	import { deleteVacation, saveVacation, saveWorkspaceLimits } from '$lib/study/store';
+	import GoalSettings from './GoalSettings.svelte';
 	import LimitField from './LimitField.svelte';
+	import NoteSettings from './NoteSettings.svelte';
 	import { workspaceFieldFrom, workspaceRowFrom, type FieldState } from './limitsForm';
 	import { getStudyData } from '$lib/study/studyData';
 	import { newUlid } from '$lib/ulid';
@@ -188,6 +190,8 @@
 	}
 </script>
 
+<GoalSettings />
+
 <section class="vacation">
 	<h2>Vacation</h2>
 	<p class="hint">
@@ -303,6 +307,7 @@
 		<p class="error" role="alert">{limitsError}</p>
 	{/if}
 </section>
+<NoteSettings />
 
 <style>
 	fieldset {

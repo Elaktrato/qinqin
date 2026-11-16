@@ -7,6 +7,7 @@ import { rangeForSpan, selectionSpan } from './dom';
 import type { Highlight } from './highlights';
 import type { Run } from './paragraphText';
 import type { Piece } from './smartReadings';
+import type { WordRange } from './wordRanges';
 import { createReveal } from './reveal';
 import type { LookupController } from './useLookup.svelte';
 
@@ -24,6 +25,7 @@ function mount(props: {
 	lang?: string;
 	reveal?: ReturnType<typeof createReveal>;
 	showAll?: boolean;
+	words?: Map<number, WordRange[]>;
 }) {
 	const result = render(ChapterText, { lang: 'zh', lookup, display: display(), ...props } as never);
 	return { ...result, root: result.container.querySelector('.chapter-text') as HTMLElement };
@@ -163,4 +165,89 @@ describe('ChapterText reveal', () => {
 		await view.rerender({ paragraphs: [[{ text: '再见' }]] } as never);
 		expect(reveal.isAllShown).toBe(false);
 	});
+});
+
+describe('ChapterText word states', () => {
+	const w = (start: number, end: number, state: WordRange['state']): WordRange => ({ start, end, state });
+	const classes = (root: HTMLElement) =>
+		Array.from(root.querySelectorAll('[data-o]')).map((el) => [
+			el.tagName,
+			el.firstChild?.textContent,
+			['w-new', 'w-learning', 'w-end'].filter((c) => el.classList.contains(c)).join(' ')
+		]);
+
+	it('puts the state classes on the pieces of new and learning words only', () => {
+		const { root } = mount({ paragraphs: [[{ text: '你好，世界人' }]], words: new Map([[0, [w(0, 2, 'new'), w(3, 5, 'learning')]]]) });
+		expect(classes(root)).toEqual([
+			['SPAN', '你好', 'w-new w-end'],
+			['SPAN', '，', ''],
+			['SPAN', '世界', 'w-learning w-end'],
+			['SPAN', '人', '']
+		]);
+	});
+
+	it('a generated ruby piece inside a new word carries the class, the word ends on its last piece', () => {
+		const { root } = mount({
+			paragraphs: [[{ text: '食べました' }]],
+			lang: 'ja',
+			display: display({ readings: 'always' }),
+			pieces: new Map([[0, [dict(0, 1, 'た')]]]),
+			words: new Map([[0, [w(0, 5, 'new')]]])
+		});
+		expect(classes(root)).toEqual([
+			['RUBY', '食', 'w-new'],
+			['SPAN', 'べました', 'w-new w-end']
+		]);
+		// The <rt> is outside the base text node the offsets count.
+		expect(root.querySelector('ruby.w-new')?.firstChild?.nodeType).toBe(Node.TEXT_NODE);
+		expect(root.querySelector('ruby.w-new > rt')?.textContent).toBe('た');
+	});
+
+	it('draws nothing inside a user highlight', () => {
+		const h = { id: 1, chapter: 0, paragraph: 0, start: 1, end: 2, text: '好', note: '', color: 'yellow' } as unknown as Highlight;
+		const { root } = mount({ paragraphs: zh, highlights: new Map([[0, [h]]]), words: new Map([[0, [w(0, 2, 'new'), w(2, 4, 'new')]]]) });
+		expect(root.querySelector('mark[data-h]')?.className).not.toMatch(/w-/);
+		expect(classes(root).filter(([, , c]) => c !== '')).toEqual([['SPAN', '世界', 'w-new w-end']]);
+	});
+
+	it('no words: the plain markup, no extra pieces', () => {
+		const { root } = mount({ paragraphs: zh, words: new Map() });
+		expect(root.querySelector('[data-o]')).toBeNull();
+		expect(root.querySelector('[data-r]')?.textContent).toBe('你好世界');
+	});
+
+	const roundTrip = (root: HTMLElement, runs: Run[]) => {
+		const n = Array.from(runs.map((r) => r.text).join('')).length;
+		const out: unknown[] = [];
+		for (let s = 0; s < n; s++)
+			for (let e = s + 1; e <= n; e++) out.push(selectionSpan(root, rangeForSpan(root, 0, runs, s, e)!, () => runs));
+		return out;
+	};
+	const scenes: { name: string; runs: Run[]; pieces?: Piece[]; hl?: Highlight[]; words: WordRange[] }[] = [
+		{ name: 'a plain run', runs: [{ text: '你好世界' }], words: [w(0, 2, 'new'), w(2, 4, 'learning')] },
+		{ name: 'generated ruby', runs: [{ text: '𠮷你好世界' }], pieces: [dict(1, 3, 'nǐ hǎo')], words: [w(1, 3, 'new'), w(3, 5, 'new')] },
+		{ name: 'a book ruby run', runs: [{ text: '漢字', ruby: 'かんじ' }, { text: 'を読む' }], words: [w(0, 2, 'new'), w(3, 5, 'learning')] },
+		{
+			name: 'next to a highlight',
+			runs: [{ text: '你好世界' }],
+			hl: [{ id: 1, chapter: 0, paragraph: 0, start: 2, end: 3, text: '世', note: '', color: 'yellow' } as unknown as Highlight],
+			words: [w(0, 2, 'new'), w(2, 4, 'new')]
+		}
+	];
+	for (const sc of scenes) {
+		it(`maps selections identically with and without word states: ${sc.name}`, () => {
+			const base = {
+				paragraphs: [sc.runs],
+				display: display({ readings: 'always' }),
+				pieces: new Map([[0, sc.pieces ?? []]]),
+				highlights: new Map([[0, sc.hl ?? []]])
+			};
+			const withWords = mount({ ...base, words: new Map([[0, sc.words]]) });
+			expect(withWords.root.querySelector('.w-new, .w-learning')).not.toBeNull();
+			const a = roundTrip(withWords.root, sc.runs);
+			cleanup();
+			const b = roundTrip(mount(base).root, sc.runs);
+			expect(a).toEqual(b);
+		});
+	}
 });

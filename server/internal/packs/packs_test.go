@@ -239,3 +239,40 @@ func TestFind(t *testing.T) {
 		t.Errorf("unknown type err = %v", err)
 	}
 }
+
+func componentsPack(t *testing.T) dict.Pack {
+	return buildPack(t, "components", "es-comp", "Components", "CC BY-SA 3.0", "components-tsv",
+		map[string]string{"components.tsv": "語\t言 口 吾\n話\t言 舌\n", "parts.tsv": "言\t7\n"})
+}
+
+func TestComponentsPacks(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	importAll(t, sqlDB)
+	got, err := packs.Import(ctx, sqlDB, componentsPack(t))
+	if err != nil || got != "2 characters, 4 parts" {
+		t.Fatalf("Import = %q, %v", got, err)
+	}
+	list, _ := packs.List(ctx, sqlDB)
+	last := list[len(list)-1]
+	if last.Type != "components" || last.PackID != "es-comp" || last.License != "CC BY-SA 3.0" || last.Notice != "A notice." || last.UpdatedAt == "" {
+		t.Fatalf("list = %+v", list)
+	}
+	if !packs.Supported("components") || !packs.Installable("components") {
+		t.Errorf("components must be supported and installable")
+	}
+	if _, err := packs.Find(ctx, sqlDB, "components", "es-comp"); err != nil {
+		t.Errorf("Find = %v", err)
+	}
+	if err := packs.Uninstall(ctx, sqlDB, "components", "es-comp"); err != nil {
+		t.Fatal(err)
+	}
+	if err := packs.Uninstall(ctx, sqlDB, "components", "es-comp"); !errors.Is(err, packs.ErrNotFound) {
+		t.Errorf("second uninstall = %v", err)
+	}
+	var rows int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM components`).Scan(&rows)
+	if rows != 0 {
+		t.Errorf("components rows after uninstall = %d", rows)
+	}
+}

@@ -20,9 +20,19 @@ vi.mock('$lib/study/writing', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/writing')>()),
 	usableChars: vi.fn()
 }));
-vi.mock('$lib/plugins/flashcards/cards/WritingCard.svelte', () => ({ default: () => ({}) }));
-vi.mock('$lib/plugins/flashcards/cards/SentenceCard.svelte', () => ({ default: () => ({}) }));
-vi.mock('$lib/plugins/flashcards/cards/ToneCard.svelte', () => ({ default: () => ({}) }));
+const { fakeCard } = vi.hoisted(() => ({
+	fakeCard: async () => ({ default: (await import('$lib/testing/FakeCard.svelte')).default })
+}));
+vi.mock('$lib/plugins/flashcards/cards/WritingCard.svelte', fakeCard);
+vi.mock('$lib/plugins/flashcards/cards/SentenceCard.svelte', fakeCard);
+vi.mock('$lib/plugins/flashcards/cards/ToneCard.svelte', fakeCard);
+vi.mock('$lib/plugins/flashcards/cards/ReverseCard.svelte', fakeCard);
+vi.mock('$lib/plugins/flashcards/cards/ClozeCard.svelte', fakeCard);
+vi.mock('$lib/api/segment', () => ({ segmentBatch: vi.fn(async () => []) }));
+vi.mock('$lib/notes/store', () => ({
+	loadNotes: vi.fn(async () => new Map()),
+	loadNoteCfg: vi.fn(async () => ({ onAnswer: true, extra: {} }))
+}));
 vi.mock('$lib/plugins/flashcards/Mascot.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/time/zone', () => ({
@@ -32,6 +42,7 @@ vi.mock('$lib/time/zone', () => ({
 }));
 
 import { getEntry } from '$lib/api/entries';
+import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import { recordReview } from '$lib/study/events';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
@@ -242,5 +253,129 @@ describe('offline start', () => {
 		render(Page);
 		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
 		expect(screen.getByText('Companion cards return when you are online.')).toBeTruthy();
+	});
+});
+
+describe('personal note on the answer side', () => {
+	function configureDecks(cardTypes: string[]): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes })
+		);
+	}
+	const word = {
+		id: 21,
+		language: 'zh',
+		kind: 'word',
+		written: '日本',
+		readings: [{ type: 'pinyin', value: 'rì běn', plain: 'riben', ord: 0 }],
+		badges: [],
+		variants: [],
+		sentences: [{ id: 301, entryId: 21, hanzi: '我去日本。', pinyin: 'wo3 qu4 ri4 ben3', translation: 'I go to Japan.' }],
+		senses: [{ dictionaryId: 1, dictionaryName: 'CC', packId: 'c', license: 'x', attribution: 'x', gloss: 'Japan' }]
+	} as unknown as Entry;
+	const cardOf = (kind: string): StudyCard =>
+		({
+			id: `c-${kind}-21`,
+			kind,
+			entryId: 21,
+			written: '日本',
+			deckIds: ['general'],
+			createdAt: '2026-01-01T00:00:00.000Z',
+			...(kind === 'sentence' ? { sentenceId: 301 } : {})
+		}) as StudyCard;
+	const NOTE = 'Sun + root <img src=x onerror=alert(1)>';
+
+	beforeEach(() => {
+		resetOffline();
+		workspaces.set({
+			list: [{ id: 2, language: 'zh', name: 'zh' } as never],
+			current: { id: 2, language: 'zh', name: 'zh' } as never
+		});
+		vi.mocked(getEntry).mockResolvedValue(word);
+		vi.mocked(usableChars).mockResolvedValue(['日', '本']);
+		vi.mocked(loadNotes).mockResolvedValue(new Map([[21, NOTE]]));
+		vi.mocked(loadNoteCfg).mockResolvedValue({ onAnswer: true, extra: {} });
+	});
+	afterEach(() => resetOffline());
+
+	const LABELS: Record<string, string> = {
+		vocab: 'Vocab card',
+		reverse: 'Reverse card',
+		cloze: 'Cloze card',
+		sentence: 'Word Salad card',
+		writing: 'Writing card',
+		tone: 'Tone card'
+	};
+
+	it.each(['vocab', 'reverse', 'cloze', 'sentence', 'writing', 'tone'])(
+		'%s: absent before the reveal, shown after it',
+		async (kind) => {
+			configureDecks([kind]);
+			// Reverse and cloze are opt-in per deck and need the word's vocab card.
+			const cards = kind === 'reverse' || kind === 'cloze' ? [cardOf('vocab'), cardOf(kind)] : [cardOf(kind)];
+			vi.mocked(loadStudyData).mockResolvedValue({
+				decks: [],
+				cards,
+				reviews: [],
+				merged: 0,
+				deckSettings: { general: { deckId: 'general', cardTypes: ['reverse', 'cloze'], extra: {} } }
+			} as never);
+			render(Page);
+			expect(await screen.findByLabelText(LABELS[kind])).toBeTruthy();
+			await waitFor(() => expect(loadNotes).toHaveBeenCalledWith(2));
+			await new Promise((r) => setTimeout(r, 0));
+			expect(screen.queryByRole('note', { name: 'Your note' })).toBeNull();
+			await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+			const box = await screen.findByRole('note', { name: 'Your note' });
+			expect(box.textContent).toContain(NOTE);
+			expect(box.querySelector('img')).toBeNull();
+		}
+	);
+
+	it('is absent when the workspace switched notes off', async () => {
+		vi.mocked(loadNoteCfg).mockResolvedValue({ onAnswer: false, extra: {} });
+		configureDecks(['vocab']);
+		history([cardOf('vocab')], []);
+		render(Page);
+		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		await waitFor(() => expect(loadNoteCfg).toHaveBeenCalledWith(2));
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('note', { name: 'Your note' })).toBeNull();
+	});
+
+	it('a failed notes load never blocks the session and shows no error', async () => {
+		vi.mocked(loadNotes).mockRejectedValue(new Error('down'));
+		configureDecks(['vocab']);
+		history([cardOf('vocab')], []);
+		render(Page);
+		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('note', { name: 'Your note' })).toBeNull();
+		expect(screen.queryByRole('alert')).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: /Good/ }));
+		await waitFor(() => expect(recordReview).toHaveBeenCalledTimes(1));
+	});
+
+	it('the session does not wait for the notes', async () => {
+		vi.mocked(loadNotes).mockReturnValue(new Promise(() => {}));
+		configureDecks(['vocab']);
+		history([cardOf('vocab')], []);
+		render(Page);
+		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+	});
+
+	it('an offline session makes no notes request', async () => {
+		offline.update((s) => ({ ...s, online: false }));
+		configureDecks(['vocab']);
+		history([cardOf('vocab')], []);
+		render(Page);
+		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		expect(loadNotes).not.toHaveBeenCalled();
+		expect(loadNoteCfg).not.toHaveBeenCalled();
+		expect(screen.queryByRole('note', { name: 'Your note' })).toBeNull();
 	});
 });

@@ -1,0 +1,501 @@
+{
+  "version": 1,
+  "rule": "notes/rows",
+  "_doc": "Parse rules of qinqin-core note:<entryId> and notecfg rows (docs/contracts/notes/README.md). op note: input {key, data, deletedAt} -> expect null (absent) or {entryId, text, extra}; op cfg: -> {onAnswer, extra}. Web: lib/notes/notes.test.ts. restoreKeeps (note cases whose key starts with note:): whether a backup restore remaps the row to the target entry (key note:<canonical id>, data a JSON object whose integer entryId equals it); every other note: row is dropped on restore. Go: backup/notes_test.go.",
+  "cases": [
+    {
+      "name": "valid note",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": 1201,
+          "text": "Horse: four dots are the legs."
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "entryId": 1201,
+        "text": "Horse: four dots are the legs.",
+        "extra": {}
+      },
+      "restoreKeeps": true
+    },
+    {
+      "name": "multi-line text is kept as it is",
+      "op": "note",
+      "input": {
+        "key": "note:7",
+        "data": {
+          "version": 1,
+          "entryId": 7,
+          "text": "Line one\n\n- line three  "
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "entryId": 7,
+        "text": "Line one\n\n- line three  ",
+        "extra": {}
+      },
+      "restoreKeeps": true
+    },
+    {
+      "name": "tombstoned row is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": 1201,
+          "text": "Horse: four dots are the legs."
+        },
+        "deletedAt": "2026-11-16T10:00:00Z"
+      },
+      "expect": null,
+      "restoreKeeps": true
+    },
+    {
+      "name": "version 2 is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 2,
+          "entryId": 1201,
+          "text": "Horse: four dots are the legs."
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": true
+    },
+    {
+      "name": "missing version is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "entryId": 1201,
+          "text": "x"
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": true
+    },
+    {
+      "name": "entryId as a string is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": "1201",
+          "text": "x"
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "entryId 1201.5 is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": 1201.5,
+          "text": "x"
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "key and entryId disagree",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": 1202,
+          "text": "x"
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "leading zero in the key",
+      "op": "note",
+      "input": {
+        "key": "note:01201",
+        "data": {
+          "version": 1,
+          "entryId": 1201,
+          "text": "Horse: four dots are the legs."
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "negative key",
+      "op": "note",
+      "input": {
+        "key": "note:-1",
+        "data": {
+          "version": 1,
+          "entryId": -1,
+          "text": "x"
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "zero key",
+      "op": "note",
+      "input": {
+        "key": "note:0",
+        "data": {
+          "version": 1,
+          "entryId": 0,
+          "text": "x"
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "plus sign in the key",
+      "op": "note",
+      "input": {
+        "key": "note:+1201",
+        "data": {
+          "version": 1,
+          "entryId": 1201,
+          "text": "Horse: four dots are the legs."
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "not a note key",
+      "op": "note",
+      "input": {
+        "key": "notecfg",
+        "data": {
+          "version": 1,
+          "entryId": 1201,
+          "text": "Horse: four dots are the legs."
+        },
+        "deletedAt": null
+      },
+      "expect": null
+    },
+    {
+      "name": "whitespace-only text is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": 1201,
+          "text": " \n\t　"
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": true
+    },
+    {
+      "name": "text a number is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": 1201,
+          "text": 5
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": true
+    },
+    {
+      "name": "missing text is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": 1201
+        },
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": true
+    },
+    {
+      "name": "data an array is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": [
+          {
+            "version": 1,
+            "entryId": 1201,
+            "text": "Horse: four dots are the legs."
+          }
+        ],
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "data null is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": null,
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "data a JSON string of a valid object is decoded",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": "{\"version\": 1, \"entryId\": 1201, \"text\": \"Horse: four dots are the legs.\"}",
+        "deletedAt": null
+      },
+      "expect": {
+        "entryId": 1201,
+        "text": "Horse: four dots are the legs.",
+        "extra": {}
+      },
+      "restoreKeeps": false
+    },
+    {
+      "name": "data a plain string is absent",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": "Horse",
+        "deletedAt": null
+      },
+      "expect": null,
+      "restoreKeeps": false
+    },
+    {
+      "name": "markup in the text is kept verbatim",
+      "op": "note",
+      "input": {
+        "key": "note:3",
+        "data": {
+          "version": 1,
+          "entryId": 3,
+          "text": "<img src=x onerror=alert(1)>"
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "entryId": 3,
+        "text": "<img src=x onerror=alert(1)>",
+        "extra": {}
+      },
+      "restoreKeeps": true
+    },
+    {
+      "name": "extra members are kept",
+      "op": "note",
+      "input": {
+        "key": "note:1201",
+        "data": {
+          "version": 1,
+          "entryId": 1201,
+          "text": "x",
+          "attachments": [
+            {
+              "id": "a1"
+            }
+          ],
+          "colour": "red"
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "entryId": 1201,
+        "text": "x",
+        "extra": {
+          "attachments": [
+            {
+              "id": "a1"
+            }
+          ],
+          "colour": "red"
+        }
+      },
+      "restoreKeeps": true
+    },
+    {
+      "name": "a longer stored text than the cap is still a note",
+      "op": "note",
+      "input": {
+        "key": "note:9",
+        "data": {
+          "version": 1,
+          "entryId": 9,
+          "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "entryId": 9,
+        "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "extra": {}
+      },
+      "restoreKeeps": true
+    },
+    {
+      "name": "missing notecfg reads as on",
+      "op": "cfg",
+      "input": {
+        "key": "notecfg",
+        "data": null,
+        "deletedAt": null
+      },
+      "expect": {
+        "onAnswer": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "onAnswer false",
+      "op": "cfg",
+      "input": {
+        "key": "notecfg",
+        "data": {
+          "version": 1,
+          "onAnswer": false
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "onAnswer": false,
+        "extra": {}
+      }
+    },
+    {
+      "name": "onAnswer true",
+      "op": "cfg",
+      "input": {
+        "key": "notecfg",
+        "data": {
+          "version": 1,
+          "onAnswer": true
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "onAnswer": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "onAnswer not a boolean reads as on",
+      "op": "cfg",
+      "input": {
+        "key": "notecfg",
+        "data": {
+          "version": 1,
+          "onAnswer": "no"
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "onAnswer": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "version 2 reads as on",
+      "op": "cfg",
+      "input": {
+        "key": "notecfg",
+        "data": {
+          "version": 2,
+          "onAnswer": false
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "onAnswer": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "tombstoned notecfg reads as on",
+      "op": "cfg",
+      "input": {
+        "key": "notecfg",
+        "data": {
+          "version": 1,
+          "onAnswer": false
+        },
+        "deletedAt": "2026-11-16T10:00:00Z"
+      },
+      "expect": {
+        "onAnswer": true,
+        "extra": {}
+      }
+    },
+    {
+      "name": "notecfg unknown members are kept",
+      "op": "cfg",
+      "input": {
+        "key": "notecfg",
+        "data": {
+          "version": 1,
+          "onAnswer": false,
+          "later": 1
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "onAnswer": false,
+        "extra": {
+          "later": 1
+        }
+      }
+    },
+    {
+      "name": "notecfg as JSON text is decoded",
+      "op": "cfg",
+      "input": {
+        "key": "notecfg",
+        "data": "{\"version\": 1, \"onAnswer\": false}",
+        "deletedAt": null
+      },
+      "expect": {
+        "onAnswer": false,
+        "extra": {}
+      }
+    }
+  ]
+}

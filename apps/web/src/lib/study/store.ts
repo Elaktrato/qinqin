@@ -5,6 +5,9 @@
 // The one explicit exception: `vacation:*` rows are user-global (they
 // apply to every workspace or a chosen list) and are read from rows with
 // no workspace (docs/contracts/scheduler/).
+// Rows of the workspace: deck:*, card:*, deckcfg:*, fsrs:set:*, fsrs:active,
+// limits:workspace, limits:deck:*, and the daily goal goals:workspace
+// (docs/contracts/goals/).
 
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
@@ -28,6 +31,7 @@ import {
   cleanCardTypes,
   type DeckSettings,
 } from "./deckSettings";
+import type { NewOrder } from "./newOrder";
 import { cardKey, parseReview } from "./reviewParse";
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
 import {
@@ -37,9 +41,11 @@ import {
   parseLimitRow,
   type LimitPair,
 } from "./limits";
+import { GOALS_KEY, parseGoalsRow, type GoalsRow, type ParsedGoals } from "../goals/goals";
 import { pendingReviews } from "./events";
 import { outboxUser } from "./outboxUser";
 import { recentSentReviews } from "./recentSent";
+import { KNOWN_PREFIX, knownMarkKey, knownMarkRow, parseKnownMark } from "./knownMarks";
 import {
   CARD_KINDS,
   type Deck,
@@ -166,6 +172,15 @@ function parseSource(raw: unknown): DeckSource | undefined {
   ) {
     return { type: "plugin", pluginId: raw.pluginId, key: raw.key };
   }
+  if (
+    raw.type === "frequency" &&
+    typeof raw.packId === "string" &&
+    typeof raw.size === "number" &&
+    Number.isInteger(raw.size) &&
+    raw.size > 0
+  ) {
+    return { type: "frequency", packId: raw.packId, size: raw.size };
+  }
   return undefined;
 }
 
@@ -225,6 +240,8 @@ async function fetchStudyData(
   let limitsWorkspace: Partial<LimitPair> | null = null;
   const limitsDecks: Record<string, Partial<LimitPair>> = {};
   let activeRaw: unknown = null;
+  let goals: ParsedGoals = null;
+  const known: number[] = [];
 
   for (const value of rows) {
     const row = asPluginDataRow(value);
@@ -267,6 +284,11 @@ async function fetchStudyData(
       if (parsed !== null) limitsDecks[row.key.slice(LIMITS_DECK_PREFIX.length)] = parsed;
     } else if (row.key === ACTIVE_KEY) {
       activeRaw = data;
+    } else if (row.key === GOALS_KEY) {
+      goals = parseGoalsRow(data);
+    } else if (row.key.startsWith(KNOWN_PREFIX)) {
+      const entryId = parseKnownMark(row.key, data);
+      if (entryId !== null) known.push(entryId);
     }
   }
 
@@ -281,6 +303,8 @@ async function fetchStudyData(
     ...(limitsWorkspace !== null || Object.keys(limitsDecks).length > 0
       ? { limits: { workspace: limitsWorkspace, decks: limitsDecks } }
       : {}),
+    ...(goals === null ? {} : { goals }),
+    ...(known.length > 0 ? { known } : {}),
   };
 }
 
@@ -300,10 +324,16 @@ export const studyRowKey = {
  */
 export async function loadRawStudyData(
   workspaceId: number,
-): Promise<{ decks: Deck[]; cards: StudyCard[]; knownAt: Map<string, string> }> {
+): Promise<{
+  decks: Deck[];
+  cards: StudyCard[];
+  knownAt: Map<string, string>;
+  /** The live `deckcfg:` rows, by deck id (always set by the store). */
+  deckSettings?: Record<string, DeckSettings>;
+}> {
   const knownAt = new Map<string, string>();
-  const { decks, cards } = await fetchStudyData(workspaceId, knownAt);
-  return { decks, cards, knownAt };
+  const { decks, cards, deckSettings } = await fetchStudyData(workspaceId, knownAt);
+  return { decks, cards, knownAt, deckSettings: deckSettings ?? {} };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -377,7 +407,7 @@ interface PushResult {
  */
 export async function pushStudyRows(
   workspaceId: number,
-  rows: readonly { key: string; data: unknown; knownAt?: string }[],
+  rows: readonly { key: string; data: unknown; knownAt?: string; deleted?: true }[],
   opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<void> {
   const size = Math.max(1, opts.chunk ?? 200);
@@ -390,18 +420,23 @@ export async function pushStudyRows(
       result = await api<PushResult>("/api/sync/push", {
         method: "POST",
         body: {
-          pluginData: part.map((row) => ({
-            pluginId: FLASHCARDS_PLUGIN_ID,
-            key: row.key,
-            workspaceId,
-            data: row.data,
+          pluginData: part.map((row) => {
             // Last write wins on this stamp: never earlier than what the server
             // already holds for the row (a client clock behind the server's would
             // lose to a fresh tombstone for ever).
-            updatedAt: new Date(
+            const stamp = new Date(
               Math.max(nowMs, stampAfter(row.knownAt)),
-            ).toISOString(),
-          })),
+            ).toISOString();
+            return {
+              pluginId: FLASHCARDS_PLUGIN_ID,
+              key: row.key,
+              workspaceId,
+              data: row.data,
+              updatedAt: stamp,
+              // A tombstone: the server skips it when it holds no live row.
+              ...(row.deleted ? { deletedAt: stamp } : {}),
+            };
+          }),
         },
       });
     } catch (err) {
@@ -518,6 +553,8 @@ export async function loadStudyDataWith(
     ...(data.deckSettings === undefined ? {} : { deckSettings: data.deckSettings }),
     ...(data.vacations === undefined ? {} : { vacations: data.vacations }),
     ...(data.limits === undefined ? {} : { limits: data.limits }),
+    ...(data.goals === undefined ? {} : { goals: data.goals }),
+    ...(data.known === undefined ? {} : { known: data.known }),
     reviews,
     merged,
   };
@@ -663,10 +700,45 @@ export async function saveDeckCardTypes(
 ): Promise<DeckSettings> {
   const workspaceId = requireWorkspaceId();
   const { deckSettings } = await fetchStudyData(workspaceId);
+  const stored = deckSettings?.[deckId];
   const next: DeckSettings = {
     deckId,
     cardTypes: cleanCardTypes(cardTypes),
-    extra: deckSettings?.[deckId]?.extra ?? {},
+    ...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+    extra: stored?.extra ?? {},
+  };
+  await putData(
+    workspaceId,
+    deckSettingsKey(deckId),
+    serializeDeckSettings(next, new Date().toISOString()),
+  );
+  return next;
+}
+
+function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown> {
+  const { newOrder: _dropped, ...rest } = extra;
+  void _dropped;
+  return rest;
+}
+
+/**
+ * saveDeckNewOrder sets the order of new cards of one deck (#75) by
+ * rewriting its `deckcfg:` row; card types and unknown fields survive.
+ * `added` is stored as no field (the default).
+ */
+export async function saveDeckNewOrder(
+  deckId: string,
+  order: NewOrder,
+): Promise<DeckSettings> {
+  const workspaceId = requireWorkspaceId();
+  const { deckSettings } = await fetchStudyData(workspaceId);
+  const stored = deckSettings?.[deckId];
+  const next: DeckSettings = {
+    deckId,
+    cardTypes: stored?.cardTypes ?? [],
+    ...(order.by === "added" ? {} : { newOrder: order }),
+    // Choosing an order replaces an unreadable stored one too.
+    extra: withoutNewOrder(stored?.extra ?? {}),
   };
   await putData(
     workspaceId,
@@ -1115,6 +1187,19 @@ export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<v
 }
 
 /**
+ * saveGoals stores one workspace's daily goal row as given (unknown keys
+ * included); the caller plans it with planGoalEdit (goals/goals.ts) and
+ * passes the workspace the row was read from, never "whatever is current
+ * now", so a workspace switch mid-save cannot write another workspace.
+ */
+export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<void> {
+  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    throw new Error("saveGoals: not a workspace id: study data is workspace-scoped");
+  }
+  await putData(workspaceId, GOALS_KEY, row);
+}
+
+/**
  * saveDeckLimits stores one deck's overrides (General included). A field
  * left out follows the workspace; an empty object removes the row.
  */
@@ -1129,4 +1214,54 @@ export async function saveDeckLimits(deckId: string, limits: Partial<LimitPair>)
     return;
   }
   await putData(workspaceId, limitsDeckKey(deckId), { version: 1, ...limits });
+}
+
+function requireWorkspaceArg(workspaceId: number, fn: string): void {
+  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    throw new Error(`${fn}: not a workspace id: study data is workspace-scoped`);
+  }
+}
+
+/**
+ * setKnownMark marks (PUT) or unmarks (DELETE = tombstone) one entry as
+ * known in the given workspace (the book's, never "whatever is current").
+ * Unmarking a mark the server does not hold is not an error.
+ */
+export async function setKnownMark(workspaceId: number, entryId: number, on: boolean): Promise<void> {
+  requireWorkspaceArg(workspaceId, "setKnownMark");
+  if (on) {
+    const row = knownMarkRow(entryId, new Date());
+    await putData(workspaceId, row.key, row.data);
+    return;
+  }
+  try {
+    await deleteData(workspaceId, knownMarkKey(entryId));
+  } catch (err) {
+    if (!(err instanceof ApiError && err.status === 404)) throw err;
+  }
+}
+
+/**
+ * setKnownMarks marks or unmarks many entries through pushStudyRows (200
+ * rows per request). A skipped row is a PartialPushError; unmark only
+ * entries whose mark is live (a tombstone for a missing row is skipped).
+ */
+export async function setKnownMarks(
+  workspaceId: number,
+  entryIds: readonly number[],
+  on: boolean,
+  opts: { onProgress?: (done: number, total: number) => void } = {},
+): Promise<void> {
+  requireWorkspaceArg(workspaceId, "setKnownMarks");
+  // Each row is stamped after the time the server holds for its key (a
+  // client clock behind the server's would otherwise lose every write).
+  const { knownAt } = await loadRawStudyData(workspaceId);
+  const now = new Date();
+  const rows = [...new Set(entryIds)].map((id) => {
+    const row = knownMarkRow(id, now);
+    const at = knownAt.get(row.key);
+    const stamp = at === undefined ? {} : { knownAt: at };
+    return on ? { ...row, ...stamp } : { key: row.key, data: {}, deleted: true as const, ...stamp };
+  });
+  await pushStudyRows(workspaceId, rows, opts);
 }

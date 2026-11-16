@@ -87,9 +87,26 @@
 				{/each}
 			</fieldset>
 
-			{#if display.readings === 'smart'}
+			<label class="row">
+				<input
+					type="checkbox"
+					checked={display.highlightWords}
+					aria-describedby={display.highlightWords ? `${id}-legend` : undefined}
+					onchange={(e) => onchange({ highlightWords: e.currentTarget.checked })}
+				/>
+				Mark words by how well I know them
+			</label>
+			{#if display.highlightWords}
+				<ul id="{id}-legend" class="legend">
+					<li><span class="w-new w-end" aria-hidden="true">字</span> New: solid underline</li>
+					<li><span class="w-learning w-end" aria-hidden="true">字</span> Learning: dotted underline</li>
+					<li class="hint">Known words are not marked.</li>
+				</ul>
+			{/if}
+
+			{#if display.readings === 'smart' || display.highlightWords}
 				<div class="threshold">
-					<label for="{id}-threshold">Memory score that counts as known: {display.smartThreshold}</label>
+					<label for="{id}-threshold">A word counts as known from a memory score of {display.smartThreshold}</label>
 					<input
 						id="{id}-threshold"
 						type="range"
@@ -101,10 +118,15 @@
 						oninput={(e) => onchange({ smartThreshold: Number(e.currentTarget.value) })}
 					/>
 					<p id="{id}-hint" class="hint">
-						Hide readings of words with a memory score of {display.smartThreshold} or more.
+						{#if display.readings === 'smart'}
+							Hide readings of words with a memory score of {display.smartThreshold} or more.
+						{/if}
+						Words you mark with “I know this” always count as known.
 						<a href="/stats/characters">What is the score?</a>
 					</p>
 				</div>
+			{/if}
+			{#if display.readings === 'smart'}
 				<button type="button" aria-pressed={showAll} onclick={ontoggleAll}>Show all readings</button>
 			{/if}
 
@@ -200,5 +222,15 @@
 	.hint {
 		margin: 0;
 		font-size: 0.85rem;
+	}
+
+	.legend {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		font-size: 0.9rem;
 	}
 </style>

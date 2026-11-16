@@ -328,15 +328,30 @@ const (
 // 覆 into 复's entry as a traditional form, and 覆 also heads its own. It
 // returns ErrNotFound when no entry has the form.
 func (s Store) Best(ctx context.Context, language, kind, form string) (*Entry, error) {
+	id, err := s.bestID(ctx, language, kind, form)
+	return s.getResolved(ctx, id, err)
+}
+
+// getResolved loads the entry of an id-only resolution, passing its
+// error through.
+func (s Store) getResolved(ctx context.Context, id int64, err error) (*Entry, error) {
+	if err != nil {
+		return nil, err
+	}
+	return s.Get(ctx, id)
+}
+
+// bestID is Best without loading the entry.
+func (s Store) bestID(ctx context.Context, language, kind, form string) (int64, error) {
 	var id int64
 	err := s.DB.QueryRowContext(ctx, bestQuery, form, language, kind, kind).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
+		return 0, ErrNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("best entry %s/%s/%q: %w", language, kind, form, err)
+		return 0, fmt.Errorf("best entry %s/%s/%q: %w", language, kind, form, err)
 	}
-	return s.Get(ctx, id)
+	return id, nil
 }
 
 // bestKanaWordQuery is BestWord's reading fallback, driven from
@@ -375,24 +390,29 @@ const bestKanaWordQuery = `
 // unresolved rather than resolving to ダレ (誰 is not marked uk). It returns
 // ErrNotFound when neither step matches.
 func (s Store) BestWord(ctx context.Context, language, form string) (*Entry, error) {
-	e, err := s.Best(ctx, language, "word", form)
+	id, err := s.bestWordID(ctx, language, form)
+	return s.getResolved(ctx, id, err)
+}
+
+// bestWordID is BestWord without loading the entry.
+func (s Store) bestWordID(ctx context.Context, language, form string) (int64, error) {
+	id, err := s.bestID(ctx, language, "word", form)
 	if !errors.Is(err, ErrNotFound) {
-		return e, err
+		return id, err
 	}
 	plain := lang.For(language).NormalizeReading("kana", form)
-	var id int64
 	hiragana := 0
 	if plain == form {
 		hiragana = 1 // NormalizeReading folds katakana to hiragana: an unchanged word is hiragana
 	}
 	err = s.DB.QueryRowContext(ctx, bestKanaWordQuery, plain, hiragana, language, form).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, ErrNotFound
+		return 0, ErrNotFound
 	}
 	if err != nil {
-		return nil, fmt.Errorf("best word %s/%q: %w", language, form, err)
+		return 0, fmt.Errorf("best word %s/%q: %w", language, form, err)
 	}
-	return s.Get(ctx, id)
+	return id, nil
 }
 
 // bestFormReadingQuery is BestWordReading's first step, driven from forms
@@ -419,19 +439,57 @@ const bestFormReadingQuery = `
 // does not use only lowercases), or as written. With an empty reading,
 // or one no entry of that form has, it is BestWord.
 func (s Store) BestWordReading(ctx context.Context, language, form, reading string) (*Entry, error) {
+	id, err := s.BestWordReadingID(ctx, language, form, reading)
+	return s.getResolved(ctx, id, err)
+}
+
+// BestWordReadingID is BestWordReading without loading the entry: it
+// returns the resolved entry's id, or ErrNotFound. Bulk resolutions (a
+// frequency pack's starter decks) need only the ids.
+func (s Store) BestWordReadingID(ctx context.Context, language, form, reading string) (int64, error) {
 	if reading != "" {
 		p := lang.For(language)
 		kana, toneless := p.NormalizeReading("kana", reading), p.NormalizeReading("pinyin", reading)
 		var id int64
 		err := s.DB.QueryRowContext(ctx, bestFormReadingQuery, form, language, kana, toneless, reading).Scan(&id)
 		if err == nil {
-			return s.Get(ctx, id)
+			return id, nil
 		}
 		if !errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("best word %s/%q (%s): %w", language, form, reading, err)
+			return 0, fmt.Errorf("best word %s/%q (%s): %w", language, form, reading, err)
 		}
 	}
-	return s.BestWord(ctx, language, form)
+	return s.bestWordID(ctx, language, form)
+}
+
+// kanaOnlyWordQuery is KanaOnlyWordID's query, driven from readings by
+// the plain index like bestKanaWordQuery.
+const kanaOnlyWordQuery = `
+	SELECT e.id FROM readings r
+	CROSS JOIN entries e ON e.id = r.entry_id
+	WHERE r.plain = ? AND r.value = ? AND r.type = 'kana' AND r.ord = 0 AND r.deleted_at IS NULL
+	  AND e.language = ? AND e.kind = 'word' AND e.pri > 0 AND e.deleted_at IS NULL
+	  AND NOT EXISTS (SELECT 1 FROM forms f WHERE f.entry_id = e.id AND f.deleted_at IS NULL)
+	ORDER BY e.pri DESC, e.id
+	LIMIT 1`
+
+// KanaOnlyWordID returns the word entry written only in kana — no written
+// form — whose first reading is exactly kana and which carries a priority,
+// the highest priority first, then the lowest id; ErrNotFound when there
+// is none. Frequency starter decks try it for a kana row before the
+// level-word rule (BestWordReadingID), so a particle such as の is the
+// particle, not the usually-kana 乃; level imports do not use it.
+func (s Store) KanaOnlyWordID(ctx context.Context, language, kana string) (int64, error) {
+	plain := lang.For(language).NormalizeReading("kana", kana)
+	var id int64
+	err := s.DB.QueryRowContext(ctx, kanaOnlyWordQuery, plain, kana, language).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, ErrNotFound
+	}
+	if err != nil {
+		return 0, fmt.Errorf("kana-only word %s/%q: %w", language, kana, err)
+	}
+	return id, nil
 }
 
 // Link links fromID to toID with typ (LinkVariant or LinkRadical). A

@@ -11,7 +11,7 @@ A user's own data as a zip of JSON (`qinqin-<username>-<YYYYMMDD-HHMMSS>.zip`). 
 manifest.json            written LAST: format, formatVersion (1), appVersion, schemaVersion, createdAt,
                          user {id, username}, counts, files [{name, bytes, sha256}]
 account.json             {username, timeZones [{zone, from, createdAt}], pluginStates [{pluginId, enabled, order}]}
-refs/entries.json        [{id, language, kind, extKey, written}]   entries any exported row refers to
+refs/entries.json        [{id, language, kind, extKey, written}]   entries any exported row refers to (cards, notes, edits, events)
 refs/dictionaries.json   [{id, packId}]                              dictionaries named by hiddenDictionaries
 refs/sentences.json      [{id, entryId, own, sourcePack, hanzi}]    sentences cards point at
 workspaces.json          [{id, language, name, settings, updatedAt}]
@@ -65,6 +65,27 @@ history under `orphan:<oldId>`. `read` events: `payload.bookId` through the book
 `payload.entryId` (unresolved: field removed). Workspace ids inside `vacation:*` rows
 (`scope.workspaces`) and `hiddenDictionaries` (by dictionary pack id) are remapped; a vacation whose
 workspace list becomes empty is dropped (`"all"` stays). Workspace and book ids are always new.
+
+Personal notes (`qinqin-core` rows `note:<entryId>` whose key number equals `data.entryId`,
+`docs/contracts/notes/`): export lists each live note's entry in `refs/entries.json`; restore rewrites the
+key and `entryId` together to the target entry, every other member byte for byte, and drops the note when
+the entry is unresolved (the dry-run report counts it under that entry's `notes` and in `droppedRows`).
+If two archive notes of one workspace would land on the same target entry, the newest
+(`modifiedAt ?? updatedAt`, ties: the smaller source entry id) is kept and the other dropped, never a
+blocking collision. (Today's entry resolution maps at most one archive entry to a target entry, so this
+cannot happen through `resolveEntries`; the rule keeps a restore safe if that ever changes.) Invalid note rows are dropped: a `qinqin-core` row whose key starts with `note:` but
+is not canonical (`note:01`, `note:+1`, `note:`) or whose `data` is not an object with a JSON integer
+`entryId` equal to the key's number is never restored (kept verbatim it would annotate whatever entry its
+key names on the target, or collide with a remapped note); it counts in `droppedRows`. Every other
+`qinqin-core` row (`notecfg`, the home layout, ...) is restored unchanged.
+
+Manual known marks (`qinqin-flashcards` rows `known:<entryId>`, `reader/README.md`) follow the same rules as
+notes: export lists the entry of each live mark in `refs/entries.json`; restore rewrites key and `entryId`
+together (other members byte for byte), drops a mark whose entry is unresolved, drops an invalid `known:`
+row (key not canonical, `data` not an object with a JSON integer `entryId` equal to the key's number, or
+no workspace: marks are workspace rows) and
+keeps the newest of two marks that would land on one target; every dropped mark counts in `droppedRows`.
+Other `qinqin-flashcards` keys (`knownfilter`, ...) are untouched.
 
 ## Limits of a restore
 

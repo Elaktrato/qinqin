@@ -27,9 +27,13 @@ export interface ActivityResponse {
 	cells: ActivityCell[];
 }
 
-/** fetchActivity reads the combined cells of the learner days from..to (YYYY-MM-DD, inclusive). */
-export function fetchActivity(from: string, to: string): Promise<ActivityResponse> {
+/**
+ * fetchActivity reads the combined cells of the learner days from..to
+ * (YYYY-MM-DD, inclusive), of one workspace when `workspace` is given.
+ */
+export function fetchActivity(from: string, to: string, workspace?: number): Promise<ActivityResponse> {
+	const scope = workspace === undefined ? '' : `&workspace=${encodeURIComponent(String(workspace))}`;
 	return api<ActivityResponse>(
-		`/api/stats/activity?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+		`/api/stats/activity?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${scope}`
 	);
 }

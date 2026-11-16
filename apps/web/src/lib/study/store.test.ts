@@ -19,6 +19,7 @@ import {
   deleteCards,
   deleteDeck,
   saveDeckCardTypes,
+  saveDeckNewOrder,
   dropSiblingCards,
   skipKind,
   unskipKind,
@@ -39,6 +40,9 @@ import {
   deleteVacation,
   saveWorkspaceLimits,
   saveDeckLimits,
+  saveGoals,
+  setKnownMark,
+  setKnownMarks,
   ALL_WORKSPACES,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
@@ -237,6 +241,15 @@ describe("study store", () => {
           // Tombstones are deleted rows.
           pluginRow("deck:gone", deck("gone", "Gone"), {
             deletedAt: "2026-01-03T00:00:00Z",
+          }),
+          // qinqin-core rows (personal notes, even one keyed like a card) are not study data.
+          pluginRow(
+            "note:42",
+            { version: 1, entryId: 42, text: "mnemonic" },
+            { pluginId: "qinqin-core" },
+          ),
+          pluginRow("card:core-card", card("core-card", 45, ["general"]), {
+            pluginId: "qinqin-core",
           }),
           // Keys the study layer does not own are ignored.
           pluginRow("settings:study", { newLimit: 20 }),
@@ -509,6 +522,84 @@ describe("study store", () => {
         cardTypes: ["reverse", "cloze"],
         limits: { new: 5 },
       });
+    });
+
+    it("saveDeckCardTypes keeps the deck's new-card order", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: [],
+              newOrder: { by: "frequency" },
+              updatedAt: "2026-01-01T00:00:00Z",
+            }),
+          ],
+        });
+      });
+      await saveDeckCardTypes("d1", ["reverse"]);
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "d1",
+        cardTypes: ["reverse"],
+        newOrder: { by: "frequency" },
+      });
+    });
+
+    it("saveDeckNewOrder keeps card types and unknown fields", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: ["cloze"],
+              updatedAt: "2026-01-01T00:00:00Z",
+              goal: { n: 5 },
+            }),
+          ],
+        });
+      });
+      const saved = await saveDeckNewOrder("d1", { by: "level", packId: "hsk-words" });
+      expect(saved.newOrder).toEqual({ by: "level", packId: "hsk-words" });
+      expect(putBodies()[0]!.url).toBe(cfgUrl("d1"));
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "d1",
+        cardTypes: ["cloze"],
+        newOrder: { by: "level", packId: "hsk-words" },
+        goal: { n: 5 },
+      });
+    });
+
+    it("saveDeckNewOrder with added removes the field", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: [],
+              newOrder: { by: "frequency" },
+              updatedAt: "2026-01-01T00:00:00Z",
+            }),
+          ],
+        });
+      });
+      await saveDeckNewOrder("d1", { by: "added" });
+      expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
+    });
+
+    it("saveDeckNewOrder with added also drops an unreadable stored order", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "popular" } }),
+          ],
+        });
+      });
+      await saveDeckNewOrder("d1", { by: "added" });
+      expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
     });
 
     it("saveDeckCardTypes creates the row when none exists", async () => {
@@ -1579,6 +1670,42 @@ describe("study store", () => {
       expect(decks.find((d) => d.id === "plain")?.source).toBeUndefined();
     });
 
+    it("keeps a frequency source and drops a malformed one", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deck:d-frq-jiten-frequency-d4514a31", {
+            id: "d-frq-jiten-frequency-d4514a31",
+            name: "Jiten · Top 500",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "frequency", packId: "jiten-frequency", size: 500 },
+          }),
+          pluginRow("deck:bad", {
+            id: "bad",
+            name: "Bad",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "frequency", packId: "jiten-frequency", size: "500" },
+          }),
+        ],
+      });
+      const { decks } = await loadStudyData(WORKSPACE_ID);
+      expect(decks.find((d) => d.id === "d-frq-jiten-frequency-d4514a31")?.source).toEqual({
+        type: "frequency",
+        packId: "jiten-frequency",
+        size: 500,
+      });
+      expect(decks.find((d) => d.id === "bad")?.source).toBeUndefined();
+    });
+
+    it("loadRawStudyData returns the live deck settings", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "frequency" } }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.deckSettings?.d1?.newOrder).toEqual({ by: "frequency" });
+    });
+
     it("loadRawStudyData keeps stored duplicates the merged read folds away", async () => {
       respondPull({
         pluginData: [
@@ -1856,5 +1983,205 @@ describe("queued reviews count in the loaded history", () => {
     const data = await loadStudyData();
 
     expect(data.reviews).toEqual([]);
+  });
+});
+
+describe("goal row", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(3);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+  const goal = {
+    version: 1,
+    showStreak: true,
+    note: "kept",
+    history: [{ from: "2026-11-16", metric: "activity:review", target: 50, by: "android" }],
+  };
+  function pull(rows: PluginDataRow[]) {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      if (String(input).startsWith("/api/events")) return jsonResponse([]);
+      return jsonResponse({ pluginData: rows });
+    });
+  }
+
+  it("reads the goals:workspace row of the workspace only", async () => {
+    pull([
+      pluginRow("goals:workspace", goal, { workspaceId: 3 }),
+      pluginRow("goals:workspace", { ...goal, showStreak: false }, { workspaceId: null }),
+    ]);
+    expect((await loadStudyData(3)).goals).toEqual(goal);
+    expect((await loadStudyData(4)).goals).toBeUndefined();
+  });
+
+  it("ignores a user-global row with the key", async () => {
+    pull([pluginRow("goals:workspace", goal, { workspaceId: null })]);
+    expect((await loadStudyData(3)).goals).toBeUndefined();
+  });
+
+  it("ignores a tombstoned row", async () => {
+    pull([pluginRow("goals:workspace", goal, { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" })]);
+    expect((await loadStudyData(3)).goals).toBeUndefined();
+  });
+
+  it("reads a newer row as 'newer'", async () => {
+    pull([pluginRow("goals:workspace", { version: 2 }, { workspaceId: 3 })]);
+    expect((await loadStudyData(3)).goals).toBe("newer");
+  });
+
+  it("saveGoals PUTs the row verbatim to the workspace it was given and drops caches", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    const seen: number[] = [];
+    const off = onStudyWrite((w) => seen.push(w));
+    // The current workspace has moved on: the caller's captured id wins.
+    selectWorkspace(4);
+    await saveGoals(3, goal as never);
+    off();
+    expect(putBodies()).toEqual([
+      { url: `/api/plugins/${PLUGIN_ID}/data/goals:workspace?workspace=3`, body: goal },
+    ]);
+    expect(seen).toEqual([3]);
+  });
+
+  it("saveGoals refuses an id that is not a workspace", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    await expect(saveGoals(0, goal as never)).rejects.toThrow(/workspace/);
+    await expect(saveGoals(1.5, goal as never)).rejects.toThrow(/workspace/);
+    expect(calls()).toHaveLength(0);
+  });
+});
+
+describe("known marks", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(3);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+  const mark = (id: number) => ({ version: 1, entryId: id, createdAt: "2026-11-16T00:00:00.000Z" });
+
+  it("reads the live marks of the workspace only", async () => {
+    respondPull({
+      pluginData: [
+        pluginRow("known:5", mark(5), { workspaceId: 3 }),
+        pluginRow("known:6", mark(6), { workspaceId: 4 }),
+        pluginRow("known:7", mark(7), { workspaceId: 3, pluginId: "other" }),
+        pluginRow("known:8", mark(8), { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" }),
+        pluginRow("known:9", mark(10), { workspaceId: 3 }),
+        pluginRow("known:11", JSON.stringify(mark(11)), { workspaceId: 3 }),
+      ],
+    });
+    expect((await loadStudyData(3)).known).toEqual([5, 11]);
+  });
+
+  it("leaves known absent without live marks", async () => {
+    respondPull({ pluginData: [pluginRow("known:8", mark(8), { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" })] });
+    const data = await loadStudyData(3);
+    expect("known" in data).toBe(false);
+  });
+
+  it("setKnownMark PUTs the row in the given workspace and notifies", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    const seen: number[] = [];
+    const off = onStudyWrite((w) => seen.push(w));
+    selectWorkspace(4); // the current workspace is not the book's
+    await setKnownMark(3, 41, true);
+    off();
+    const [put] = putBodies();
+    expect(put.url).toBe(`/api/plugins/${PLUGIN_ID}/data/known:41?workspace=3`);
+    expect(put.body).toMatchObject({ version: 1, entryId: 41 });
+    expect(Number.isNaN(Date.parse((put.body as { createdAt: string }).createdAt))).toBe(false);
+    expect(seen).toEqual([3]);
+  });
+
+  it("setKnownMark off DELETEs (tombstones) the row", async () => {
+    vi.mocked(fetch).mockImplementation(async () => new Response(null, { status: 204 }));
+    const seen: number[] = [];
+    const off = onStudyWrite((w) => seen.push(w));
+    await setKnownMark(3, 41, false);
+    off();
+    expect(calls().map(([url, init]) => [String(url), init?.method])).toEqual([
+      [`/api/plugins/${PLUGIN_ID}/data/known:41?workspace=3`, "DELETE"],
+    ]);
+    expect(seen).toEqual([3]);
+  });
+
+  it("setKnownMark off of a mark the server does not hold is not an error", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ error: "not_found" }, 404));
+    await expect(setKnownMark(3, 41, false)).resolves.toBeUndefined();
+  });
+
+  it("setKnownMark refuses an id that is not a workspace", async () => {
+    await expect(setKnownMark(0, 41, true)).rejects.toThrow(/workspace/);
+    expect(calls()).toHaveLength(0);
+  });
+
+  function pushBodies(): Array<{ pluginData: Array<Record<string, unknown>> }> {
+    return calls()
+      .filter(([url]) => String(url) === "/api/sync/push")
+      .map(([, init]) => JSON.parse(String(init?.body)));
+  }
+  // setKnownMarks reads the stored rows first (for their stamps), then pushes.
+  const accept = () =>
+    vi.mocked(fetch).mockImplementation(async (url, init) =>
+      String(url).startsWith("/api/sync/pull")
+        ? jsonResponse({ pluginData: [] })
+        : jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 }),
+    );
+
+  it("setKnownMarks pushes 450 marks as 200/200/50", async () => {
+    accept();
+    const ids = Array.from({ length: 450 }, (_, i) => i + 1);
+    await setKnownMarks(3, ids, true);
+    const bodies = pushBodies();
+    expect(bodies.map((b) => b.pluginData.length)).toEqual([200, 200, 50]);
+    expect(bodies[0].pluginData[0]).toMatchObject({ key: "known:1", workspaceId: 3, data: { version: 1, entryId: 1 } });
+    expect(bodies[0].pluginData[0].deletedAt).toBeUndefined();
+  });
+
+  it("setKnownMarks off sends tombstones with deletedAt", async () => {
+    accept();
+    await setKnownMarks(3, [4, 5, 4], false);
+    const rows = pushBodies().flatMap((b) => b.pluginData);
+    expect(rows.map((r) => r.key)).toEqual(["known:4", "known:5"]);
+    for (const r of rows) {
+      expect(typeof r.deletedAt).toBe("string");
+      expect(r.deletedAt).toBe(r.updatedAt);
+    }
+  });
+
+  it("stamps each mark after the time the server holds for its key (clock skew)", async () => {
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if (String(input).startsWith("/api/sync/pull")) {
+        return jsonResponse({
+          pluginData: [
+            pluginRow("known:4", mark(4), { workspaceId: 3, updatedAt: "2099-01-01T00:00:00Z", deletedAt: "2099-01-01T00:00:05Z" }),
+            pluginRow("known:5", mark(5), { workspaceId: 4, updatedAt: "2099-06-01T00:00:00Z" }),
+          ],
+        });
+      }
+      return jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 });
+    });
+    await setKnownMarks(3, [4, 5], true);
+    const rows = pushBodies().flatMap((b) => b.pluginData);
+    expect(rows.find((r) => r.key === "known:4")?.updatedAt).toBe("2099-01-01T00:00:05.001Z");
+    // known:5 of another workspace does not count: stamped now.
+    expect(Date.parse(String(rows.find((r) => r.key === "known:5")?.updatedAt))).toBeLessThan(Date.parse("2099-01-01T00:00:00Z"));
+  });
+
+  it("a skipped mark is an error", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 1, dataSkipped: 1, dataRefused: 0 }));
+    await expect(setKnownMarks(3, [1, 2], true)).rejects.toBeInstanceOf(PartialPushError);
+  });
+
+  it("setKnownMarks refuses an id that is not a workspace", async () => {
+    await expect(setKnownMarks(1.5, [1], true)).rejects.toThrow(/workspace/);
   });
 });

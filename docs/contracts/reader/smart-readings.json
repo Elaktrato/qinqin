@@ -1141,6 +1141,251 @@
      "source": "book"
     }
    ]
+  },
+  {
+   "name": "smart: a marked word without a card is concealed",
+   "lang": "zh",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": true,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ],
+   "marks": [
+    1
+   ]
+  },
+  {
+   "name": "smart: a mark conceals even with a low score",
+   "lang": "zh",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {
+    "1": 10,
+    "2": 10
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": true,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ],
+   "marks": [
+    1
+   ]
+  },
+  {
+   "name": "smart: a marked second candidate does not conceal",
+   "lang": "zh",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      3,
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": false,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ],
+   "marks": [
+    1
+   ]
+  },
+  {
+   "name": "always: a mark conceals nothing",
+   "lang": "zh",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": false,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ],
+   "marks": [
+    1,
+    2
+   ]
   }
  ]
 }

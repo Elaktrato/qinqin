@@ -9,7 +9,9 @@ const ROUTES: FlashcardsRoute[] = [
 	{ view: 'system-level', packId: 'hsk-words', level: 'HSK 7–9' },
 	{ view: 'system-level', packId: 'tgh-chars', level: '一级' },
 	{ view: 'system-level', packId: 'x', level: 'a/b %' },
-	{ view: 'system-plugin', plugin: 'starter', key: 'basics 1' }
+	{ view: 'system-plugin', plugin: 'starter', key: 'basics 1' },
+	{ view: 'system-frequency', packId: 'jiten-frequency', size: 500 },
+	{ view: 'system-frequency', packId: 'My Pack/ü', size: 2000 }
 ];
 
 describe('flashcards route', () => {
@@ -28,6 +30,17 @@ describe('flashcards route', () => {
 		expect(parseFlashcardsRoute('deck')).toEqual({ view: 'list' });
 		expect(parseFlashcardsRoute('deck/a/b/c')).toEqual({ view: 'list' });
 		expect(parseFlashcardsRoute('system/level/only-pack')).toEqual({ view: 'list' });
+	});
+
+	it('reads starter decks of the three sizes only', () => {
+		expect(parseFlashcardsRoute('system/frequency/jiten-frequency/1000')).toEqual({
+			view: 'system-frequency',
+			packId: 'jiten-frequency',
+			size: 1000
+		});
+		expect(parseFlashcardsRoute('system/frequency/jiten-frequency/3')).toEqual({ view: 'list' });
+		expect(parseFlashcardsRoute('system/frequency/jiten-frequency/500x')).toEqual({ view: 'list' });
+		expect(parseFlashcardsRoute('system/frequency/jiten-frequency')).toEqual({ view: 'list' });
 	});
 
 	it('treats a malformed escape as the list', () => {

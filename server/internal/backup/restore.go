@@ -416,12 +416,14 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}); err != nil {
 		return nil, err
 	}
-	// 7. plugin rows: decide every card id first (one pass over the OLD ids), then insert
+	// 7. plugin rows: decide every card id and note winner first (one pass over the OLD ids), then insert
 	m.Cards = map[string]string{}
+	m.noteWinner = map[string]noteCandidate{}
 	if err := a.PluginRows(func(r PluginRow) error {
 		if r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, cardKeyPrefix) {
 			m.RegisterCard(r.Key, r.Data)
 		}
+		m.RegisterNote(r)
 		return nil
 	}); err != nil {
 		return nil, err

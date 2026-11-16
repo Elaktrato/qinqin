@@ -188,6 +188,14 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/component-packs",
+		"access": "public"
+	},
+	{
+		"pattern": "GET /api/components",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/dictionaries",
 		"access": "public"
 	},
@@ -206,6 +214,10 @@
 	{
 		"pattern": "GET /api/frequency-packs",
 		"access": "public"
+	},
+	{
+		"pattern": "GET /api/frequency-packs/{id}/top",
+		"access": "user"
 	},
 	{
 		"pattern": "GET /api/grammar",
@@ -489,6 +501,10 @@
 	},
 	{
 		"pattern": "POST /api/entries/bases",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/entries/frequency-ranks",
 		"access": "user"
 	},
 	{

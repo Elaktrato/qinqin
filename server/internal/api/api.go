@@ -15,6 +15,7 @@ import (
 	"qinqin/internal/ai"
 	"qinqin/internal/auth"
 	"qinqin/internal/dict"
+	"qinqin/internal/freq"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
 	"qinqin/internal/mail"
@@ -51,7 +52,11 @@ type server struct {
 	sweepCtx   context.Context
 	sweepEvery time.Duration
 
-	chars charactersCache // GET /api/characters payloads
+	chars charactersCache    // GET /api/characters payloads
+	comps componentsPayloads // GET /api/components payloads
+
+	freqTop       freq.TopCache // GET /api/frequency-packs/{id}/top: resolved starter decks per pack content
+	freqTopBodies starterBodies // and its answers per pack, size and lexicon version
 
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
@@ -235,6 +240,7 @@ func (s *server) routes() []route {
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},
 		{"POST /api/entries/bases", s.handleEntryBases, accUser, nil},
+		{"POST /api/entries/frequency-ranks", s.handleFrequencyRanks, accUser, nil},
 		{"PUT /api/entries/{id}", s.handlePutEntry, accUser, nil},
 		{"POST /api/entries/{id}/sentences", s.handleAddSentence, accUser, nil},
 		{"GET /api/search", s.handleSearch, accPublic, nil},
@@ -252,6 +258,7 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/languages/{code}", s.handleDeleteLanguage, accAdmin, nil},
 		{"GET /api/admin/languages/usage", s.handleLanguageUsage, accAdmin, nil},
 		{"GET /api/characters", s.handleListCharacters, accPublic, nil},
+		{"GET /api/components", s.handleListComponents, accPublic, nil},
 		{"POST /api/events/batch", s.handleEventBatch, accUser, nil},
 		{"GET /api/events", s.handleListEvents, accUser, nil},
 		{"GET /api/stats/activity", s.handleActivity, accUser, nil},
@@ -259,6 +266,8 @@ func (s *server) routes() []route {
 		{"POST /api/admin/dictionaries", s.handleInstallDictionary, accAdmin, nil},
 		{"DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary, accAdmin, nil},
 		{"GET /api/frequency-packs", s.handleListFrequencyPacks, accPublic, nil},
+		{"GET /api/component-packs", s.handleListComponentPacks, accPublic, nil},
+		{"GET /api/frequency-packs/{id}/top", s.handleFrequencyTop, accUser, nil},
 		{"GET /api/grammar", s.handleListGrammar, accPublic, nil},
 		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil},
 		{"GET /api/audio/entries/{id}", s.handleAudioEntry, accUser, nil},

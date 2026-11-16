@@ -82,6 +82,14 @@ describe('groupPacks', () => {
 		]);
 		expect(groups[0].packs.map((p) => p.packId)).toEqual(['b', 'a']);
 	});
+	it('lists components packs after audio', () => {
+		const groups = groupPacks([pack('components', 'c', 'C'), pack('audio', 'k', 'K')]);
+		expect(groups.map((g) => [g.type, g.label])).toEqual([
+			['audio', 'Audio'],
+			['components', 'Character components']
+		]);
+		expect(uninstallWarning('components')).toMatch(/radical and part lookup/);
+	});
 	it('lists audio packs last', () => {
 		const groups = groupPacks([pack('audio', 'k', 'K'), pack('grammar', 'g', 'G'), pack('dictionary', 'd', 'D')]);
 		expect(groups.map((g) => g.type)).toEqual(['dictionary', 'grammar', 'audio']);
@@ -93,7 +101,8 @@ describe('groupPacks', () => {
 			levels: 'Level lists',
 			sentences: 'Sentences',
 			grammar: 'Grammar lessons',
-			audio: 'Audio'
+			audio: 'Audio',
+			components: 'Character components'
 		});
 	});
 });

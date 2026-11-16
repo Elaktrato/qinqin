@@ -11,8 +11,11 @@ export const LAYOUT_PLUGIN_ID = coreManifest.id;
 export const LAYOUT_KEY = 'home-layout';
 const LAYOUT_VERSION = 1;
 
-/** Today's home: the activity heatmap, then the flashcards summary. */
-export const DEFAULT_LAYOUT: readonly string[] = ['activity-heatmap', 'flashcards-summary'];
+/**
+ * Home without a stored layout: the activity heatmap, the flashcards summary,
+ * then the daily goal. A stored layout is never changed by a new default.
+ */
+export const DEFAULT_LAYOUT: readonly string[] = ['activity-heatmap', 'flashcards-summary', 'daily-goal'];
 
 export interface StoredLayout {
 	version: typeof LAYOUT_VERSION;

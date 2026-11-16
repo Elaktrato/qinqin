@@ -3,6 +3,7 @@
 // `card:<id>`; review history and scheduling are separate (events, never
 // stored schedules).
 
+import type { ParsedGoals } from '../goals/goals';
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrs/params';
 import type { LimitPair } from './limits';
@@ -11,14 +12,15 @@ import type { VacationPeriod } from './vacation';
 /** Where an owned copy of a system deck came from (decks view, "Add to my decks"). */
 export type DeckSource =
 	| { type: 'level'; packId: string; level: string }
-	| { type: 'plugin'; pluginId: string; key: string };
+	| { type: 'plugin'; pluginId: string; key: string }
+	| { type: 'frequency'; packId: string; size: number };
 
 /** One user-created deck. The implicit `general` deck has no stored row. */
 export interface Deck {
 	id: string;
 	name: string;
 	createdAt: string;
-	/** Set on a copy of a level or plugin deck: "Copied from HSK 1". */
+	/** Set on a copy of a level, plugin or starter deck: "Copied from HSK 1". */
 	source?: DeckSource;
 }
 
@@ -113,6 +115,10 @@ export interface StudyData {
 	vacations?: VacationPeriod[];
 	/** The workspace's daily limit rows; absent without any. */
 	limits?: StudyLimits;
+	/** The workspace's `goals:workspace` row ('newer': a newer client's); absent without one. */
+	goals?: Exclude<ParsedGoals, null>;
+	/** Entries the learner marked known (live `known:` rows), absent without any. */
+	known?: number[];
 }
 
 /**

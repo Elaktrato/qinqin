@@ -1,0 +1,594 @@
+{
+  "version": 1,
+  "rule": "goals/goal-days",
+  "cases": [
+    {
+      "name": "none before the first entry, a target change from its day, a null entry",
+      "today": "2026-11-20",
+      "from": "2026-11-15",
+      "to": "2026-11-20",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-16",
+            "metric": "activity:review",
+            "target": 5
+          },
+          {
+            "from": "2026-11-18",
+            "metric": "activity:review",
+            "target": 3
+          },
+          {
+            "from": "2026-11-19",
+            "metric": null,
+            "target": null
+          }
+        ]
+      },
+      "days": {
+        "2026-11-15": {
+          "activity": {
+            "review": 9
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 4
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-17": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-18": {
+          "activity": {
+            "review": 4
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-19": {
+          "activity": {
+            "review": 10
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": [
+        {
+          "day": "2026-11-15",
+          "status": "none",
+          "metric": null,
+          "target": null,
+          "amount": 0,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-16",
+          "status": "missed",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 4,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-17",
+          "status": "met",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 5,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-18",
+          "status": "met",
+          "metric": "activity:review",
+          "target": 3,
+          "amount": 4,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-19",
+          "status": "none",
+          "metric": null,
+          "target": null,
+          "amount": 0,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-20",
+          "status": "none",
+          "metric": null,
+          "target": null,
+          "amount": 0,
+          "unavailable": false
+        }
+      ],
+      "note": "11-18 is met under the new target 3; the old target 5 never applies to it"
+    },
+    {
+      "name": "today open, yesterday met (new cards)",
+      "today": "2026-11-16",
+      "from": "2026-11-15",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "flashcards:new",
+            "target": 10
+          }
+        ]
+      },
+      "days": {
+        "2026-11-15": {
+          "activity": {
+            "review": 40
+          },
+          "newCards": 10,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 7
+          },
+          "newCards": 3,
+          "studySeconds": 0
+        }
+      },
+      "expect": [
+        {
+          "day": "2026-11-15",
+          "status": "met",
+          "metric": "flashcards:new",
+          "target": 10,
+          "amount": 10,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-16",
+          "status": "open",
+          "metric": "flashcards:new",
+          "target": 10,
+          "amount": 3,
+          "unavailable": false
+        }
+      ]
+    },
+    {
+      "name": "today met",
+      "today": "2026-11-16",
+      "from": "2026-11-16",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:review",
+            "target": 50
+          }
+        ]
+      },
+      "days": {
+        "2026-11-16": {
+          "activity": {
+            "review": 62
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": [
+        {
+          "day": "2026-11-16",
+          "status": "met",
+          "metric": "activity:review",
+          "target": 50,
+          "amount": 62,
+          "unavailable": false
+        }
+      ]
+    },
+    {
+      "name": "a seconds source: minutes target, whole minutes shown",
+      "today": "2026-11-16",
+      "from": "2026-11-14",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:read",
+            "target": 10
+          }
+        ]
+      },
+      "days": {
+        "2026-11-14": {
+          "activity": {
+            "read": 599
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "read": 600
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "read": 119
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": [
+        {
+          "day": "2026-11-14",
+          "status": "missed",
+          "metric": "activity:read",
+          "target": 10,
+          "amount": 9,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-15",
+          "status": "met",
+          "metric": "activity:read",
+          "target": 10,
+          "amount": 10,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-16",
+          "status": "open",
+          "metric": "activity:read",
+          "target": 10,
+          "amount": 1,
+          "unavailable": false
+        }
+      ],
+      "note": "met at exactly 600 s; 599 s shows 9 minutes, 119 s shows 1"
+    },
+    {
+      "name": "flashcard study time",
+      "today": "2026-11-16",
+      "from": "2026-11-15",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "flashcards:studyTime",
+            "target": 2
+          }
+        ]
+      },
+      "days": {
+        "2026-11-15": {
+          "activity": {},
+          "newCards": 0,
+          "studySeconds": 120
+        },
+        "2026-11-16": {
+          "activity": {},
+          "newCards": 0,
+          "studySeconds": 119.5
+        }
+      },
+      "expect": [
+        {
+          "day": "2026-11-15",
+          "status": "met",
+          "metric": "flashcards:studyTime",
+          "target": 2,
+          "amount": 2,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-16",
+          "status": "open",
+          "metric": "flashcards:studyTime",
+          "target": 2,
+          "amount": 1,
+          "unavailable": false
+        }
+      ]
+    },
+    {
+      "name": "an activity type that is no longer a source is unavailable",
+      "today": "2026-11-16",
+      "from": "2026-11-16",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:quiz",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-16": {
+          "activity": {
+            "quiz": 9
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": [
+        {
+          "day": "2026-11-16",
+          "status": "none",
+          "metric": "activity:quiz",
+          "target": 5,
+          "amount": 0,
+          "unavailable": true
+        }
+      ]
+    },
+    {
+      "name": "a vacation day is vacation whatever was done",
+      "today": "2026-11-16",
+      "from": "2026-11-14",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [
+        {
+          "start": "2026-11-15",
+          "end": "2026-11-15"
+        }
+      ],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-14": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 8
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": [
+        {
+          "day": "2026-11-14",
+          "status": "met",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 5,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-15",
+          "status": "vacation",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 8,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-16",
+          "status": "open",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 0,
+          "unavailable": false
+        }
+      ],
+      "note": "the vacation amount still reports what was done"
+    },
+    {
+      "name": "today on vacation without activity",
+      "today": "2026-11-16",
+      "from": "2026-11-16",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [
+        {
+          "start": "2026-11-16",
+          "end": "2026-11-20"
+        }
+      ],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {},
+      "expect": [
+        {
+          "day": "2026-11-16",
+          "status": "vacation",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 0,
+          "unavailable": false
+        }
+      ]
+    },
+    {
+      "name": "past days without activity are missed",
+      "today": "2026-11-16",
+      "from": "2026-11-14",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-14",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {},
+      "expect": [
+        {
+          "day": "2026-11-14",
+          "status": "missed",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 0,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-15",
+          "status": "missed",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 0,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-16",
+          "status": "open",
+          "metric": "activity:review",
+          "target": 5,
+          "amount": 0,
+          "unavailable": false
+        }
+      ]
+    },
+    {
+      "name": "no row: every day is none",
+      "today": "2026-11-16",
+      "from": "2026-11-15",
+      "to": "2026-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": null,
+      "days": {
+        "2026-11-15": {
+          "activity": {
+            "review": 50
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": [
+        {
+          "day": "2026-11-15",
+          "status": "none",
+          "metric": null,
+          "target": null,
+          "amount": 0,
+          "unavailable": false
+        },
+        {
+          "day": "2026-11-16",
+          "status": "none",
+          "metric": null,
+          "target": null,
+          "amount": 0,
+          "unavailable": false
+        }
+      ]
+    }
+  ]
+}
