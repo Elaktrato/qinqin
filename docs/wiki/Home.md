@@ -31,6 +31,7 @@ This wiki has four parts. Pick the one that matches why you are here.
 
 - [API overview](API-Overview): sessions, restrictions, conventions.
 - [API routes](API-Routes) and [API errors](API-Errors): both generated from the code.
+- [Plugin data API](Plugin-data-api), [Plugin format](Plugin-format) and [Data pack format](Data-pack-format).
 
 ## Reference
 
