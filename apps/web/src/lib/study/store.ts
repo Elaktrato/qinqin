@@ -1,13 +1,12 @@
-// Deck and card definitions as workspace-scoped plugin data. Reads come
-// from one sync pull; writes are single-key PUTs and a delete is a
-// tombstoning DELETE. A missing current workspace is an error: study
+// The study state of a workspace. Cards, decks, deck settings, limits and
+// FSRS sets are typed core rows (docs/contracts/study/), read from one sync
+// pull; the keyed rows goals:workspace, known:* and vacation:* stay plugin
+// data of the study namespace `qinqin-flashcards`. A missing current workspace is an error: study
 // data must never fall back to user-global or another workspace's rows.
 // The one explicit exception: `vacation:*` rows are user-global (they
 // apply to every workspace or a chosen list) and are read from rows with
 // no workspace (docs/contracts/scheduler/).
-// Rows of the workspace: deck:*, card:*, deckcfg:*, fsrs:set:*, fsrs:active,
-// limits:workspace, limits:deck:*, and the daily goal goals:workspace
-// (docs/contracts/goals/).
+// The daily goal is goals:workspace (docs/contracts/goals/).
 
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
@@ -19,26 +18,41 @@ import {
   ACTIVE_KEY,
   DEFAULT_W,
   SET_PREFIX,
-  parseParamSet,
   resolveState,
   type ParamSet,
 } from "./fsrs/params";
 import {
-  DECKCFG_PREFIX,
   deckSettingsKey,
-  parseDeckSettings,
   serializeDeckSettings,
   cleanCardTypes,
   type DeckSettings,
 } from "./deckSettings";
 import type { NewOrder } from "./newOrder";
 import { cardKey, parseReview } from "./reviewParse";
+import {
+  STUDY_COLLECTIONS,
+  activeOf,
+  cardOf,
+  deckOf,
+  identityOf,
+  legacyFamily,
+  limitsOf,
+  parseRow,
+  setOf,
+  settingsOf,
+  type CardRow,
+  type DeckRow,
+  type DeckSettingsRow,
+  type FsrsSetRow,
+  type FsrsActiveRow,
+  type LimitsRow,
+  type StudyCollection,
+  type StudyRow,
+} from "./rows";
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
 import {
-  LIMITS_DECK_PREFIX,
   LIMITS_WORKSPACE_KEY,
   limitsDeckKey,
-  parseLimitRow,
   type LimitPair,
 } from "./limits";
 import { GOALS_KEY, parseGoalsRow, type GoalsRow, type ParsedGoals } from "../goals/goals";
@@ -47,9 +61,7 @@ import { outboxUser } from "./outboxUser";
 import { recentSentReviews } from "./recentSent";
 import { KNOWN_PREFIX, knownMarkKey, knownMarkRow, parseKnownMark } from "./knownMarks";
 import {
-  CARD_KINDS,
   type Deck,
-  type DeckSource,
   type OptInKind,
   type ReviewEvent,
   type StudyCard,
@@ -65,9 +77,15 @@ export const GENERAL_DECK_ID = "general";
 
 const DECK_PREFIX = "deck:";
 const CARD_PREFIX = "card:";
-/** Every plugin row of the user (decks, cards, FSRS sets, vacation and limits rows). */
+/**
+ * The study pull: the keyed plugin rows (goals, known marks, vacations), the
+ * feature switches, and the six typed study collections. Naming a typed
+ * collection keeps the server's legacy view (typed rows copied into
+ * pluginData for old shells) out of this answer (docs/contracts/study/).
+ */
 export const SYNC_PULL_PATH =
-  "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates";
+  "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates," +
+  STUDY_COLLECTIONS.join(",");
 
 // Only the fields the study layer reads; the server sends more.
 interface PluginDataRow {
@@ -79,9 +97,7 @@ interface PluginDataRow {
   updatedAt: unknown;
 }
 
-interface SyncDelta {
-  pluginData?: unknown;
-}
+type SyncDelta = { pluginData?: unknown } & Partial<Record<StudyCollection, unknown>>;
 
 /**
  * requireWorkspaceId returns the selected workspace id. Study data is
@@ -137,87 +153,30 @@ function asPluginDataRow(value: unknown): PluginDataRow | null {
   return { pluginId, key, workspaceId: workspace, data, deletedAt, updatedAt };
 }
 
-function parseDeck(key: string, raw: unknown): Deck | null {
-  if (!isRecord(raw)) return null;
-  const { id, name, createdAt } = raw;
-  if (
-    typeof id !== "string" ||
-    typeof name !== "string" ||
-    typeof createdAt !== "string"
-  ) {
-    return null;
-  }
-  // The key and the payload must agree: a write updates `deck:<id>`
-  // and a mismatched row would make renames target the wrong key.
-  if (key !== deckKey(id)) return null;
-  const result: Deck = { id, name, createdAt };
-  const source = parseSource(raw.source);
-  if (source !== undefined) result.source = source;
-  return result;
+/** The newest time the server holds for a row, live or tombstoned. */
+function newestOf(times: readonly unknown[]): string | undefined {
+  return times
+    .filter((t): t is string => typeof t === "string" && !Number.isNaN(Date.parse(t)))
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0];
 }
 
-function parseSource(raw: unknown): DeckSource | undefined {
-  if (!isRecord(raw)) return undefined;
-  if (
-    raw.type === "level" &&
-    typeof raw.packId === "string" &&
-    typeof raw.level === "string"
-  ) {
-    return { type: "level", packId: raw.packId, level: raw.level };
+/** The legacy key a typed row had (knownAt is still keyed by it). */
+function legacyKeyOf(collection: StudyCollection, row: StudyRow): string {
+  const id = identityOf(collection, row);
+  switch (collection) {
+    case "cards":
+      return cardRowKey(id);
+    case "decks":
+      return deckKey(id);
+    case "deckSettings":
+      return deckSettingsKey(id);
+    case "limits":
+      return id === "" ? LIMITS_WORKSPACE_KEY : limitsDeckKey(id);
+    case "fsrsSets":
+      return `${SET_PREFIX}${id}`;
+    case "fsrsActive":
+      return ACTIVE_KEY;
   }
-  if (
-    raw.type === "plugin" &&
-    typeof raw.pluginId === "string" &&
-    typeof raw.key === "string"
-  ) {
-    return { type: "plugin", pluginId: raw.pluginId, key: raw.key };
-  }
-  if (
-    raw.type === "frequency" &&
-    typeof raw.packId === "string" &&
-    typeof raw.size === "number" &&
-    Number.isInteger(raw.size) &&
-    raw.size > 0
-  ) {
-    return { type: "frequency", packId: raw.packId, size: raw.size };
-  }
-  return undefined;
-}
-
-function parseCard(key: string, raw: unknown): StudyCard | null {
-  if (!isRecord(raw)) return null;
-  const { id, kind, entryId, sentenceId, deckIds, createdAt, written, entryKind, skipKinds } = raw;
-  if (typeof id !== "string" || typeof entryId !== "number") return null;
-  if (!CARD_KINDS.includes(kind as StudyCardKind)) return null;
-  if (typeof createdAt !== "string") return null;
-  if (key !== cardRowKey(id)) return null;
-  if (!Array.isArray(deckIds)) return null;
-  const decks = [
-    ...new Set(
-      deckIds.filter((deckId): deckId is string => typeof deckId === "string"),
-    ),
-  ];
-  const card: StudyCard = {
-    id,
-    kind: kind as StudyCardKind,
-    entryId,
-    deckIds: decks,
-    createdAt,
-  };
-  if (typeof written === "string") {
-    card.written = written;
-  }
-  if (entryKind === "character") {
-    card.entryKind = "character";
-  }
-  if (typeof sentenceId === "number") {
-    card.sentenceId = sentenceId;
-  }
-  if (kind === "vocab" && Array.isArray(skipKinds)) {
-    const skipped = cleanSkipKinds(skipKinds);
-    if (skipped.length > 0) card.skipKinds = skipped;
-  }
-  return card;
 }
 
 /**
@@ -243,10 +202,54 @@ async function fetchStudyData(
   let goals: ParsedGoals = null;
   const known: number[] = [];
 
+  for (const collection of STUDY_COLLECTIONS) {
+    const list = delta?.[collection];
+    for (const raw of Array.isArray(list) ? list : []) {
+      // A row the strict parse refuses is skipped rather than failing the page.
+      const row = parseRow(collection, raw);
+      if (row === null || row.workspaceId !== workspaceId) continue;
+      if (knownAt !== undefined) {
+        const newest = newestOf([row.updatedAt, row.deletedAt]);
+        if (newest !== undefined) knownAt.set(legacyKeyOf(collection, row), newest);
+      }
+      if (row.deletedAt !== null) continue;
+      switch (collection) {
+        case "cards":
+          cards.push(cardOf(row as CardRow));
+          break;
+        case "decks":
+          decks.push(deckOf(row as DeckRow));
+          break;
+        case "deckSettings": {
+          const settings = settingsOf(row as DeckSettingsRow);
+          deckSettings[settings.deckId] = settings;
+          break;
+        }
+        case "limits": {
+          const limits = row as LimitsRow;
+          if (limits.deckId === null) limitsWorkspace = limitsOf(limits);
+          else limitsDecks[limits.deckId] = limitsOf(limits);
+          break;
+        }
+        case "fsrsSets": {
+          const set = setOf(row as FsrsSetRow);
+          if (set !== null) sets.push(set);
+          break;
+        }
+        case "fsrsActive":
+          activeRaw = activeOf(row as FsrsActiveRow);
+          break;
+      }
+    }
+  }
+
   for (const value of rows) {
     const row = asPluginDataRow(value);
     if (row === null) continue;
     if (row.pluginId !== FLASHCARDS_PLUGIN_ID) continue;
+    // A typed-family key in pluginData is a leftover the server could not
+    // read (or an old server's legacy view): never study state.
+    if (legacyFamily(row.key) !== null) continue;
     if (row.workspaceId === null && row.key.startsWith(VACATION_PREFIX)) {
       if (row.deletedAt != null) continue;
       const period = parseVacation(row.key, decodeData(row.data));
@@ -255,36 +258,13 @@ async function fetchStudyData(
     }
     if (row.workspaceId !== workspaceId) continue;
     if (knownAt !== undefined) {
-      // The newest time the server holds for the key, live or tombstoned.
-      const times = [row.updatedAt, row.deletedAt].filter(
-        (t): t is string => typeof t === "string" && !Number.isNaN(Date.parse(t)),
-      );
-      const newest = times.sort((a, b) => Date.parse(b) - Date.parse(a))[0];
+      const newest = newestOf([row.updatedAt, row.deletedAt]);
       if (newest !== undefined) knownAt.set(row.key, newest);
     }
     if (row.deletedAt != null) continue;
 
     const data = decodeData(row.data);
-    if (row.key.startsWith(DECK_PREFIX)) {
-      const deck = parseDeck(row.key, data);
-      if (deck !== null) decks.push(deck);
-    } else if (row.key.startsWith(CARD_PREFIX)) {
-      const card = parseCard(row.key, data);
-      if (card !== null) cards.push(card);
-    } else if (row.key.startsWith(DECKCFG_PREFIX)) {
-      const settings = parseDeckSettings(row.key, data);
-      if (settings !== null) deckSettings[settings.deckId] = settings;
-    } else if (row.key.startsWith(SET_PREFIX)) {
-      const set = parseParamSet(row.key, data);
-      if (set !== null) sets.push(set);
-    } else if (row.key === LIMITS_WORKSPACE_KEY) {
-      limitsWorkspace = parseLimitRow(row.key, data);
-    } else if (row.key.startsWith(LIMITS_DECK_PREFIX)) {
-      const parsed = parseLimitRow(row.key, data);
-      if (parsed !== null) limitsDecks[row.key.slice(LIMITS_DECK_PREFIX.length)] = parsed;
-    } else if (row.key === ACTIVE_KEY) {
-      activeRaw = data;
-    } else if (row.key === GOALS_KEY) {
+    if (row.key === GOALS_KEY) {
       goals = parseGoalsRow(data);
     } else if (row.key.startsWith(KNOWN_PREFIX)) {
       const entryId = parseKnownMark(row.key, data);

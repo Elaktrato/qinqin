@@ -46,6 +46,7 @@ import {
   ALL_WORKSPACES,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
+import { typedPull } from "./testing/legacyCodec";
 
 const PLUGIN_ID = "qinqin-flashcards";
 const WORKSPACE_ID = 7;
@@ -65,7 +66,19 @@ function fakeStorage(): Storage {
   } as Storage;
 }
 
+/**
+ * jsonResponse answers a request. A pull body is described as the v0.3.0
+ * plugin rows the study state was; it is served as the migrated server
+ * answers it (typed collections, leftovers in pluginData; typedPull).
+ */
 function jsonResponse(body: unknown, status = 200): Response {
+  const isPull =
+    typeof body === "object" && body !== null && Array.isArray((body as { pluginData?: unknown }).pluginData);
+  return rawResponse(isPull ? typedPull(body as Record<string, unknown>) : body, status);
+}
+
+/** rawResponse answers exactly `body` (no conversion). */
+function rawResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json" },
@@ -268,7 +281,7 @@ describe("study store", () => {
       ]);
       expect("written" in data.cards[2]!).toBe(false);
       expect(calls().map(([url]) => String(url))).toEqual([
-        "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates",
+        "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive",
         `/api/events?since=1970-01-01T00:00:00Z&workspace=${WORKSPACE_ID}`,
       ]);
     });
@@ -1637,7 +1650,8 @@ describe("study store", () => {
       respondPull({
         pluginData: [
           pluginRow("card:live", { id: "live", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }, { updatedAt: "2026-02-01T00:00:00Z" }),
-          pluginRow("card:gone", { id: "gone" }, { updatedAt: "2026-02-02T00:00:00Z", deletedAt: "2026-02-03T00:00:00Z" }),
+          // A tombstone keeps its last data (migrated tombstones are typed rows too).
+          pluginRow("card:gone", { id: "gone", kind: "vocab", entryId: 2, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }, { updatedAt: "2026-02-02T00:00:00Z", deletedAt: "2026-02-03T00:00:00Z" }),
         ],
       });
       const raw = await loadRawStudyData(WORKSPACE_ID);
@@ -1787,6 +1801,153 @@ describe("study store", () => {
       expect(studyRowKey.deck("d1")).toBe("deck:d1");
       expect(studyRowKey.card("c-vocab-1")).toBe("card:c-vocab-1");
     });
+  });
+});
+
+describe("typed study collections", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(WORKSPACE_ID);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  const meta = (overrides: Record<string, unknown> = {}) => ({
+    workspaceId: WORKSPACE_ID,
+    version: 2,
+    updatedAt: "2026-02-01T00:00:00Z",
+    deletedAt: null,
+    ...overrides,
+  });
+  const cardBody = (id: string, entryId: number, extra: Record<string, unknown> = {}) => ({
+    id,
+    kind: "vocab",
+    entryId,
+    written: null,
+    entryKind: null,
+    sentenceId: null,
+    skipKinds: [],
+    deckIds: ["general"],
+    createdAt: "2026-01-02T00:00:00Z",
+    extra,
+  });
+  const empty = {
+    cards: [],
+    decks: [],
+    deckSettings: [],
+    limits: [],
+    fsrsSets: [],
+    fsrsActive: [],
+  };
+  const set = (id: string) => ({
+    id,
+    w: [...DEFAULT_W],
+    createdAt: "2026-01-05T00:00:00Z",
+    source: "optimized",
+    labelled: 120,
+    logLoss: null,
+    baselineLogLoss: null,
+    extra: {},
+  });
+
+  function serve(pull: Record<string, unknown>): void {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      if (String(input).startsWith("/api/events")) return rawResponse([]);
+      return rawResponse({ ...empty, pluginData: [], ...pull });
+    });
+  }
+
+  it("builds the study state from the typed rows of the workspace", async () => {
+    serve({
+      cards: [
+        { ...cardBody("c-vocab-1", 1), ...meta() },
+        {
+          ...cardBody("c-sentence-2", 2),
+          kind: "sentence",
+          sentenceId: 9,
+          written: "猫",
+          ...meta(),
+        },
+        // Tombstones and other workspaces are not study state.
+        { ...cardBody("c-vocab-3", 3), ...meta({ deletedAt: "2026-02-02T00:00:00Z" }) },
+        { ...cardBody("c-vocab-4", 4), ...meta({ workspaceId: 8 }) },
+        // A row the strict parse refuses is skipped.
+        { ...cardBody("c-vocab-5", 5), kind: "flash", ...meta() },
+      ],
+      decks: [
+        {
+          id: "d1",
+          name: "HSK 1",
+          createdAt: "2026-01-01T00:00:00Z",
+          source: { type: "level", packId: "hsk", level: "1" },
+          extra: {},
+          ...meta(),
+        },
+      ],
+      deckSettings: [
+        { deckId: "d1", cardTypes: ["cloze"], newOrder: { by: "level", packId: "hsk" }, extra: { x: 1 }, ...meta() },
+      ],
+      limits: [
+        { deckId: null, new: { limit: 5 }, reviews: null, extra: {}, ...meta() },
+        { deckId: "d1", new: null, reviews: { limit: null }, extra: {}, ...meta() },
+      ],
+      fsrsSets: [{ ...set("S1"), ...meta() }],
+      fsrsActive: [{ setId: "S1", changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }],
+    });
+
+    const data = await loadStudyData();
+
+    expect(data.cards).toEqual([
+      card("c-vocab-1", 1, ["general"]),
+      { id: "c-sentence-2", kind: "sentence", entryId: 2, written: "猫", sentenceId: 9, deckIds: ["general"], createdAt: "2026-01-02T00:00:00Z" },
+    ]);
+    expect(data.decks).toEqual([
+      { id: "d1", name: "HSK 1", createdAt: "2026-01-01T00:00:00Z", source: { type: "level", packId: "hsk", level: "1" } },
+    ]);
+    expect(data.deckSettings).toEqual({
+      d1: { deckId: "d1", cardTypes: ["cloze"], newOrder: { by: "level", packId: "hsk" }, extra: { x: 1 } },
+    });
+    expect(data.limits).toEqual({ workspace: { new: 5 }, decks: { d1: { reviews: null } } });
+    expect(data.fsrs?.active?.id).toBe("S1");
+    expect(data.fsrs?.pointer).toBe("S1");
+    expect(data.fsrs?.sets.map((s) => s.id)).toEqual(["S1"]);
+  });
+
+  it("ignores typed-family keys left in pluginData and keeps reading the keyed rows", async () => {
+    serve({
+      pluginData: [
+        // A leftover the migration could not read: never study state.
+        pluginRow("card:c-vocab-9", card("c-vocab-9", 9, ["general"])),
+        pluginRow("deck:d9", deck("d9", "Leftover")),
+        pluginRow("limits:workspace", { version: 1, new: 3 }),
+        pluginRow("fsrs:active", { setId: "S9" }),
+        // The keyed rows stay plugin data.
+        pluginRow("known:42", { version: 1, entryId: 42, createdAt: "2026-01-01T00:00:00Z" }),
+        pluginRow("goals:workspace", { version: 1, kind: "minutes", target: 10 }),
+      ],
+    });
+
+    const data = await loadStudyData();
+
+    expect(data.cards).toEqual([]);
+    expect(data.decks).toEqual([]);
+    expect(data.limits).toBeUndefined();
+    expect(data.fsrs?.pointer).toBeNull();
+    expect(data.known).toEqual([42]);
+    expect(data.goals).toBeDefined();
+  });
+
+  it("an empty pull without typed collections reads as no study state", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) =>
+      String(input).startsWith("/api/events") ? rawResponse([]) : rawResponse({ cursor: "x" }),
+    );
+    const data = await loadStudyData();
+    expect(data.cards).toEqual([]);
+    expect(data.fsrs).toEqual({ sets: [], active: null, w: DEFAULT_W, pointer: null });
   });
 });
 
