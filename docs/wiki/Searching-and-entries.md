@@ -47,6 +47,22 @@ Under the senses, **Your note** keeps one private note per word: a mnemonic, a u
 
 Press **Add to study** next to an entry's title. The card joins the General deck and keeps the entry's first example sentence for context. See [Flashcards: study sessions](Flashcards-study-sessions).
 
+## Lookup history
+
+**Search → Lookup history** (`/lookups`, also linked from **Settings → Account → Your data**) lists the words you looked up in the current workspace, newest first: how often (`×4`), the day of the last lookup, and where (book titles, lessons, search; a book you deleted reads "a removed book"), with a chip that says **No card**, **In study** or **Known**.
+
+What counts as a lookup:
+
+- In the reader and in grammar lessons: a hover popup that stays open for a second, or that you move the pointer into, and every selection popup that finds something. The word recorded is the popup's first entry. Moving the mouse across a line records nothing, and popups opened from inside a popup never count.
+- In search: opening a result. Typing a query records nothing.
+- Looking the same word up again within ten minutes only updates "last" (rereading a paragraph does not inflate the count). Visiting an entry page from a link is not a lookup.
+
+The box **You keep looking these up** names up to ten words you looked up at least three times that have no card and are not marked known, with a button to add them all. Every row has **Add** (to the deck chosen at the top: General first, then your decks) and **Remove**; select several rows for **Add selected** and **Remove selected**, and filter to **No card yet**. Adding twice creates nothing new; added words stay in the history. The reader popup says "You've looked this up 4 times." under the buttons of a word you looked up at least three times without a card.
+
+**Clear history…** asks first, then deletes the workspace's history on the server, including old search records (older versions kept the text of every search query). It cannot be undone. The switch **Record words I look up** is one setting for your account on every device and workspace; turning it off stops recording (other devices stop at their next save) but deletes nothing, so the page then offers **Clear history too**.
+
+The history lives on your server only (the at most 500 most recent words per workspace), syncs between your devices, and is in your backup. Lookups wait in the open tab for a few seconds before they are saved; a lookup made right before the tab is closed while offline can be lost. Nothing about the history is kept in browser storage; the service worker never saves it for offline use. See [Your data](Your-data) for what Clear cannot reach.
+
 ## Related
 
 [Reader](Reader) (lookup popups with the same entries), [Data and licences](Data-and-licences).
