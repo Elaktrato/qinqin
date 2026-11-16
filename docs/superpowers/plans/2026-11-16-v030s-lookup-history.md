@@ -455,3 +455,10 @@ ok, 1 FAIL `internal/ai` with only `TestHostnameResolvingToEmbeddedFormIsRefused
 from the token column); the worker's filtering in a real browser's Cache Storage; the server-time clearedAt
 against devices with skewed clocks (unit-tested only).
 
+
+### Mutation check (orchestrator, after the fix wave)
+
+Three mutants, each killed (then reverted):
+- service-worker scrub keeps `lookup` events in saved event logs: 2 tests fail.
+- dedupe window 10 min → 1 min: 3 tests fail.
+- Go `DeleteLookups` without `type = 'lookup'` (deletes every event of the workspace): `TestDeleteLookups` and `TestDeleteLookupEvents` fail.
