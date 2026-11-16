@@ -5,6 +5,9 @@
 // The one explicit exception: `vacation:*` rows are user-global (they
 // apply to every workspace or a chosen list) and are read from rows with
 // no workspace (docs/contracts/scheduler/).
+// Rows of the workspace: deck:*, card:*, deckcfg:*, fsrs:set:*, fsrs:active,
+// limits:workspace, limits:deck:*, and the daily goal goals:workspace
+// (docs/contracts/goals/).
 
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
@@ -37,6 +40,7 @@ import {
   parseLimitRow,
   type LimitPair,
 } from "./limits";
+import { GOALS_KEY, parseGoalsRow, type GoalsRow, type ParsedGoals } from "../goals/goals";
 import { pendingReviews } from "./events";
 import { outboxUser } from "./outboxUser";
 import { recentSentReviews } from "./recentSent";
@@ -225,6 +229,7 @@ async function fetchStudyData(
   let limitsWorkspace: Partial<LimitPair> | null = null;
   const limitsDecks: Record<string, Partial<LimitPair>> = {};
   let activeRaw: unknown = null;
+  let goals: ParsedGoals = null;
 
   for (const value of rows) {
     const row = asPluginDataRow(value);
@@ -267,6 +272,8 @@ async function fetchStudyData(
       if (parsed !== null) limitsDecks[row.key.slice(LIMITS_DECK_PREFIX.length)] = parsed;
     } else if (row.key === ACTIVE_KEY) {
       activeRaw = data;
+    } else if (row.key === GOALS_KEY) {
+      goals = parseGoalsRow(data);
     }
   }
 
@@ -281,6 +288,7 @@ async function fetchStudyData(
     ...(limitsWorkspace !== null || Object.keys(limitsDecks).length > 0
       ? { limits: { workspace: limitsWorkspace, decks: limitsDecks } }
       : {}),
+    ...(goals === null ? {} : { goals }),
   };
 }
 
@@ -518,6 +526,7 @@ export async function loadStudyDataWith(
     ...(data.deckSettings === undefined ? {} : { deckSettings: data.deckSettings }),
     ...(data.vacations === undefined ? {} : { vacations: data.vacations }),
     ...(data.limits === undefined ? {} : { limits: data.limits }),
+    ...(data.goals === undefined ? {} : { goals: data.goals }),
     reviews,
     merged,
   };
@@ -1112,6 +1121,19 @@ export async function deleteVacation(id: string): Promise<void> {
 /** saveWorkspaceLimits stores the workspace's daily limits (`null` = unlimited). */
 export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<void> {
   await putData(requireWorkspaceId(), LIMITS_WORKSPACE_KEY, { version: 1, ...limits });
+}
+
+/**
+ * saveGoals stores one workspace's daily goal row as given (unknown keys
+ * included); the caller plans it with planGoalEdit (goals/goals.ts) and
+ * passes the workspace the row was read from, never "whatever is current
+ * now", so a workspace switch mid-save cannot write another workspace.
+ */
+export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<void> {
+  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    throw new Error("saveGoals: not a workspace id: study data is workspace-scoped");
+  }
+  await putData(workspaceId, GOALS_KEY, row);
 }
 
 /**

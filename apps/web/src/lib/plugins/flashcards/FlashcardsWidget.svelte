@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { errorMessage } from '$lib/stats/errors';
+	import GoalRing from '$lib/goals/GoalRing.svelte';
+	import { streakText } from '$lib/goals/goalText';
+	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
 	import { leftToday } from '$lib/study/dueCounts';
 	import { leftTodayText } from '$lib/study/limitsText';
 	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
@@ -46,6 +49,15 @@
 
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
+	// The daily goal loads on its own: a failure only leaves the ring out.
+	let goal = $state.raw<GoalView | null>(null);
+	let goalSeq = 0;
+	// Offline with an activity goal today the ring is left out (not "no longer counted").
+	const showGoal = $derived(
+		goal !== null &&
+			!noWorkspace &&
+			(goal.today.status !== 'none' || (goal.today.unavailable && goal.activityError === null))
+	);
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
 	const deckIds = $derived([GENERAL_DECK_ID, ...decks.map((deck) => deck.id)]);
@@ -130,12 +142,32 @@
 		}
 	}
 
+	async function loadGoal(workspace: number | null, force = false): Promise<void> {
+		const seq = ++goalSeq;
+		if (workspace === null) {
+			goal = null;
+			return;
+		}
+		try {
+			const next = await loadGoalStatus(workspace, { force });
+			if (seq === goalSeq) goal = next;
+		} catch {
+			if (seq === goalSeq) goal = null;
+		}
+	}
+
 	// Refetch when the active workspace changes; the header switcher makes
 	// that possible without leaving home.
 	$effect(() => {
 		void load(workspaceId);
+		void loadGoal(workspaceId);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId)));
+	$effect(() =>
+		onContextStale(() => {
+			void load(workspaceId);
+			void loadGoal(workspaceId);
+		})
+	);
 </script>
 
 <WidgetCard
@@ -145,7 +177,10 @@
 	noWorkspaceText="Choose a workspace in the header to study."
 	loadingText="Loading study data…"
 	{error}
-	onretry={() => void load(workspaceId, true)}
+	onretry={() => {
+		void load(workspaceId, true);
+		void loadGoal(workspaceId, true);
+	}}
 >
 	{#snippet actions()}
 		<a class="study" href="/study">Study</a>
@@ -180,6 +215,14 @@
 						? 'study today to start one'
 						: 'study today to keep it'}
 			</p>
+			{#if showGoal && goal !== null}
+				<div class="goal">
+					<GoalRing day={goal.today} sources={goal.sources} size="small" />
+					{#if goal.streak !== null}
+						<span class="goal-streak">{streakText(goal.streak)}</span>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 </WidgetCard>
@@ -240,6 +283,15 @@
 
 	.streak.idle .flame {
 		filter: grayscale(1);
+	}
+
+	.goal {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.35rem 0.75rem;
+		margin-top: 0.5rem;
+		font-size: 0.85rem;
 	}
 
 	.stats {
