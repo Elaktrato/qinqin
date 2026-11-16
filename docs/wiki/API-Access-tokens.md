@@ -43,7 +43,12 @@ token routes themselves, export, restore, account deletion), every administrator
 is an ordinary user token), backups and download tickets, AI keys and providers, the journal and its photos,
 creating, renaming or deleting workspaces, changing your time zone, importing from online libraries, and the
 health check. They all answer 403 `token_not_allowed`, before the token is even looked up. Use the app for those.
-To check that a token works, call `GET /api/workspaces`.
+To check that a token works, call `GET /api/workspaces`. Deleting your lookup history's old search records
+(`DELETE /api/events/lookups`) also needs the app.
+
+A token that may read your data can read your personal notes and your [lookup history](Searching-and-entries#lookup-history)
+(the `qinqin-core` plugin data rows `note:*` and `lookups`, through the plugin data routes and the sync pull), like
+everything else you study; a read and write token can also change them.
 
 ## Using it
 
