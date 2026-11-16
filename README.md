@@ -650,6 +650,30 @@ app agree.
 - **Upgrade note:** XP totals and best streaks are recomputed from the review log with local days, so
   they can change by a few points or days once; the upgrade day may record one extra `session` event.
 
+## Vacation mode and daily limits
+
+**Vacation** (Settings → Study → Vacation) freezes your reviews while you are away: nothing is due and no
+new cards are offered on a vacation day, your streak is neither extended nor broken, and when you come back
+there is no pile of overdue cards, because the scheduler measures the time since your last review
+without the vacation days (nothing in your review log is rewritten; ending a vacation early is a one-row
+edit). A vacation applies to all workspaces or the ones you choose, starts now or on a date, and ends on a
+date or when you end it. "Start now" after studying today starts tomorrow, so what you already reviewed
+today is never rewritten. The study page shows "Vacation until …", the home widget "On vacation until …",
+the decks view "On vacation", and vacation dates are hatched in the heatmap. The FSRS optimizer ignores
+vacation time too.
+
+**Daily limits** (Settings → Study → Daily limits, and per deck in the deck's settings) cap how many new
+cards (default 20) and reviews (default 200) are offered per study day, however many sessions you start;
+cards you are not shown stay due and come back later, scheduling is untouched. A deck can use the workspace
+value, its own number or no limit; a card in several decks must fit every one. The home widget shows
+"18 reviews · 5 new left today" and the decks list "x new · y reviews left today". Both features count by
+the learner's day ("Study day and time zone").
+
+Data: vacations are user-global plugin-data rows `vacation:<ULID>` (every client reads them), limits are
+workspace rows `limits:workspace` and `limits:deck:<deckId>` of the `qinqin-flashcards` plugin; there is
+no server change. The exact rules and JSON fixtures for the Android client are in
+[`docs/contracts/scheduler/`](docs/contracts/scheduler/README.md).
+
 ## Studying
 
 Study is a web feature plugin (`qinqin-flashcards`). To add a word, open any

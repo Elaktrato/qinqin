@@ -67,6 +67,15 @@ admission uses one slot of all its decks. `left` is the same pass without sessio
 continuing cards); `unlimited` is true when every involved deck is unlimited in both fields (false with no
 candidates); `limitedOut` counts candidates refused by a daily limit.
 
+## Android and other clients
+
+Read the user-global `vacation:*` rows and the workspace `limits:*` rows like `fsrs:*` (one plugin-data
+pull; `vacation:*` rows arrive with `workspaceId: null`). Use the learner's day for every date here, port
+`v` and `inverse` with whole-day shifts (`n * 86 400 000 ms`, never the run's real length), feed ts-fsrs
+`f_i = max(v(ts_i), f_{i-1})`, map the due back with `inverse`, keep the instant due rule
+(`due <= now`), and build every queue from the same admission. A client must not write a vacation date before
+its own `today`.
+
 ## Regenerating the generated files
 
 ```sh
