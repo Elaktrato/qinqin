@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -307,5 +308,69 @@ func TestCharactersDecodesAsClientRows(t *testing.T) {
 	}
 	if got.Count != 1 || len(got.Chars) != 1 || got.Chars[0].I != ids.ai || !reflect.DeepEqual(got.Chars[0].V, []string{"愛"}) {
 		t.Errorf("decoded %+v", got)
+	}
+}
+
+// k is the Kangxi number of a character's radical link (format 3): the
+// served 語 row has the shape of the contract example, and a character
+// without a radical link omits k.
+func TestCharactersRadicalNumber(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	ctx := context.Background()
+	st := lexicon.Store{DB: sqlDB}
+	var dict int64
+	if err := sqlDB.QueryRow(`INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
+		VALUES ('d', 'd', '1', 'x', 'x', '2026-01-01T00:00:00Z') RETURNING id`).Scan(&dict); err != nil {
+		t.Fatal(err)
+	}
+	put := func(char string, attrs map[string]string) int64 {
+		t.Helper()
+		id, err := st.Put(ctx, &lexicon.Entry{Language: "ja", Kind: "character", Key: char,
+			Forms: []lexicon.Form{{Text: char}}, Attrs: attrs}, dict)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	gen := put("言", map[string]string{"src": "kd2", "strokes": "7"})
+	gid := put("語", map[string]string{"src": "kd2", "strokes": "14"})
+	if err := st.Link(ctx, gid, gen, lexicon.LinkRadical); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, body := getCharacters(t, ts.URL, "?language=ja", nil)
+	if !strings.Contains(resp.Header.Get("ETag"), `"chars3-`) {
+		t.Errorf("ETag = %q, want format 3", resp.Header.Get("ETag"))
+	}
+	var got struct {
+		Chars []map[string]any `json:"chars"`
+	}
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile("../../../docs/contracts/radicals/components-response.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fx struct {
+		Row     map[string]any `json:"charactersRow"`
+		Without map[string]any `json:"charactersRowWithoutRadical"`
+	}
+	if err := json.Unmarshal(raw, &fx); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Chars) != 2 {
+		t.Fatalf("chars = %v", got.Chars)
+	}
+	gotGo := got.Chars[1] // 言 U+8A00 < 語 U+8A9E
+	gotGo["i"] = fx.Row["i"]
+	if !reflect.DeepEqual(gotGo, fx.Row) {
+		t.Errorf("語 row = %v, want %v", gotGo, fx.Row)
+	}
+	if _, ok := got.Chars[0]["k"]; ok {
+		t.Errorf("言 row has k: %v", got.Chars[0])
+	}
+	if _, ok := fx.Without["k"]; ok {
+		t.Errorf("fixture row without radical has k")
 	}
 }

@@ -20,6 +20,7 @@
 	import { record } from '$lib/events';
 	import { formatReading } from '$lib/format';
 	import { languageLabel } from '$lib/languages';
+	import { entryRadicalLinks } from '$lib/radicals/selection';
 	import { workspaces } from '$lib/workspaces';
 	import EntryNote from '$lib/notes/EntryNote.svelte';
 
@@ -137,6 +138,9 @@
 		void load(id);
 	});
 
+	const lookupLinks = $derived(
+		entry === null ? {} : entryRadicalLinks(entry.written, entry.kind, radicalWritten)
+	);
 	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
 	const headClips = $derived(headwordClips(audio));
 	const audioFor = $derived(entry ? readingClips(audio, entry.readings) : null);
@@ -268,6 +272,9 @@
 					<a href={`/entry/${entry.radicalId}`}>
 						{radicalWritten || `Radical entry #${entry.radicalId}`}
 					</a>
+					{#if lookupLinks.withRadical}
+						· <a href={lookupLinks.withRadical}>All characters with this radical</a>
+					{/if}
 				</p>
 			</section>
 		{/if}
@@ -275,6 +282,9 @@
 		{#if chars.length > 0}
 			<section class="chars" aria-labelledby="chars-heading">
 				<h2 id="chars-heading">Characters under this radical</h2>
+				{#if lookupLinks.browse}
+					<p class="browse"><a href={lookupLinks.browse}>Browse by stroke count</a></p>
+				{/if}
 				<ul>
 					{#each chars as char (char.id)}
 						<li>

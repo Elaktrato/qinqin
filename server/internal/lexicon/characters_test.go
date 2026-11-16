@@ -555,3 +555,81 @@ func TestCharactersPerformance(t *testing.T) {
 		}
 	}
 }
+
+// Radical is the Kangxi number of the first live form of the live target
+// of the character's live radical link; a missing link, a deleted link, a
+// deleted radical entry or a target whose glyph is no table character
+// gives 0.
+func TestCharactersRadical(t *testing.T) {
+	st := newStore(t)
+	kd2 := addDictionary(t, st, "kanjidic2")
+	ctx := context.Background()
+	link := func(from, to int64) {
+		t.Helper()
+		if err := st.Link(ctx, from, to, lexicon.LinkRadical); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ja := func(char string) int64 {
+		return putChar(t, st, kd2, charFixture{lang: "ja", char: char, attrs: map[string]string{"src": "kd2"}})
+	}
+	zh := func(char string) int64 {
+		return putChar(t, st, kd2, charFixture{lang: "zh", char: char, attrs: map[string]string{"tghz": "1"}})
+	}
+	// ja: 海 → 水 (85); 語 → 言 (149); 犬 has no link.
+	mizu, gen := ja("水"), ja("言")
+	umi, go_, inu := ja("海"), ja("語"), ja("犬")
+	link(umi, mizu)
+	link(go_, gen)
+	// A deleted link and a deleted radical entry give no k.
+	lost, gone := ja("河"), ja("話")
+	link(lost, mizu)
+	mustExec(t, st, `UPDATE entry_links SET deleted_at = '2026-01-02T00:00:00Z' WHERE from_id = ? AND type = 'radical'`, lost)
+	hi := ja("火")
+	link(gone, hi)
+	mustExec(t, st, `UPDATE entries SET deleted_at = '2026-01-02T00:00:00Z' WHERE id = ?`, hi)
+	// zh: 语 → 言 (149), a simplified character under its Kangxi number.
+	zgen, yu := zh("言"), zh("语")
+	link(yu, zgen)
+
+	byID := map[int64]int{}
+	for _, r := range characters(t, st, "ja", false) {
+		byID[r.ID] = r.Radical
+	}
+	for _, r := range characters(t, st, "zh", false) {
+		byID[r.ID] = r.Radical
+	}
+	for id, want := range map[int64]int{umi: 85, go_: 149, inu: 0, mizu: 0, lost: 0, gone: 0, yu: 149, zgen: 0} {
+		if got := byID[id]; got != want {
+			t.Errorf("entry %d radical = %d, want %d", id, got, want)
+		}
+	}
+
+	// The radical subquery seeks the entry_links primary key on from_id,
+	// like the variant partners' forward half: two such seeks.
+	query, _ := lexicon.CharactersQueryForTest("ja", false)
+	rows, err := st.DB.QueryContext(ctx, "EXPLAIN QUERY PLAN "+query, "ja")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var plan []string
+	for rows.Next() {
+		var id, parent, notused int
+		var detail string
+		if err := rows.Scan(&id, &parent, &notused, &detail); err != nil {
+			t.Fatal(err)
+		}
+		plan = append(plan, detail)
+	}
+	t.Logf("query plan:\n%s", strings.Join(plan, "\n"))
+	seeks := 0
+	for _, d := range plan {
+		if strings.Contains(d, "entry_links") && strings.Contains(d, "(from_id=?)") {
+			seeks++
+		}
+	}
+	if seeks != 2 {
+		t.Errorf("entry_links seeks on from_id = %d, want 2 (variants and radical)", seeks)
+	}
+}

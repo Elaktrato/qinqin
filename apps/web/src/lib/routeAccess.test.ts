@@ -29,6 +29,7 @@ describe('routeAccess', () => {
 
 	it('matches exactly: no prefix or subpath matches', () => {
 		expect(routeAccess('/sourcesx')).toBe('private');
+		expect(routeAccess('/search/parts')).toBe('private');
 		expect(routeAccess('/sources/extra')).toBe('private');
 		expect(routeAccess('/loginx')).toBe('private');
 		expect(routeAccess('/SOURCES')).toBe('private');
