@@ -1,0 +1,235 @@
+{
+ "_doc": "Hostile archives and the error code Open must answer. Builders live in the Go test (server/internal/backup/archive_test.go); other implementations rebuild each case from its name. caps scales a cap down so a small file triggers it.",
+ "version": 1,
+ "rule": "backup/reject",
+ "cases": [
+  {
+   "name": "formatVersion 0",
+   "builder": "version_0",
+   "code": "backup_version_unsupported",
+   "note": "unknown version"
+  },
+  {
+   "name": "formatVersion 2",
+   "builder": "version_2",
+   "code": "backup_version_unsupported",
+   "note": "a newer format is refused, never guessed"
+  },
+  {
+   "name": "formatVersion as string",
+   "builder": "version_string",
+   "code": "backup_version_unsupported",
+   "note": ""
+  },
+  {
+   "name": "manifest names another format",
+   "builder": "wrong_format_name",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "no manifest",
+   "builder": "missing_manifest",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "entry bytes differ from the manifest sha256",
+   "builder": "sha_mismatch",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "manifest count differs from the lines",
+   "builder": "count_mismatch",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "manifest count with an unknown key",
+   "builder": "unknown_count_key",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "duplicate entry name",
+   "builder": "duplicate_names",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "zip slip: ../../etc/passwd",
+   "builder": "zip_slip_name",
+   "code": "backup_invalid",
+   "note": "names are never paths"
+  },
+  {
+   "name": "absolute entry name",
+   "builder": "absolute_name",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "library/books/../x.json",
+   "builder": "book_path_traversal",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "book file for an id absent from books.json",
+   "builder": "book_file_for_unlisted_id",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "book file is not an array",
+   "builder": "book_not_an_array",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "book file truncated JSON",
+   "builder": "book_truncated_json",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "encrypted entry",
+   "builder": "encrypted_flag",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "compression method other than store/deflate",
+   "builder": "unknown_compression_method",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "more entries than the cap",
+   "builder": "too_many_entries",
+   "code": "backup_too_large",
+   "note": "cap scaled down",
+   "caps": {
+    "entries": 5
+   }
+  },
+  {
+   "name": "JSONL line over the line cap",
+   "builder": "line_too_long",
+   "code": "backup_too_large",
+   "note": "cap scaled to 1024",
+   "caps": {
+    "line": 1024
+   }
+  },
+  {
+   "name": "a 2 MiB JSONL line at the real cap",
+   "builder": "two_mib_line",
+   "code": "backup_too_large",
+   "note": ""
+  },
+  {
+   "name": "entries expand beyond the total cap",
+   "builder": "expands_beyond_total",
+   "code": "backup_too_large",
+   "note": "tiny on disk, 4 MiB inflated; total scaled to 1 MiB",
+   "caps": {
+    "total": 1048576
+   }
+  },
+  {
+   "name": "deflate bomb with a forged small declared size",
+   "builder": "forged_small_declared_size",
+   "code": "backup_invalid",
+   "note": "declared sizes are ignored; the stream is read against the caps or refused as damaged"
+  },
+  {
+   "name": "event id is not a ULID",
+   "builder": "invalid_ulid",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "event in a workspace the archive lacks",
+   "builder": "event_unknown_workspace",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "event timestamp not RFC 3339",
+   "builder": "event_bad_timestamp",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "plugin value over 256 KiB",
+   "builder": "plugin_value_too_big",
+   "code": "backup_too_large",
+   "note": ""
+  },
+  {
+   "name": "plugin row twice",
+   "builder": "plugin_row_twice",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "plugin row in an unknown workspace",
+   "builder": "plugin_row_unknown_workspace",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "unknown field in a row",
+   "builder": "unknown_field_in_row",
+   "code": "backup_invalid",
+   "note": "strict JSON"
+  },
+  {
+   "name": "trailing data after a JSON document",
+   "builder": "trailing_garbage_after_json",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "bookmark of an unlisted book",
+   "builder": "bookmark_for_unlisted_book",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "unknown time zone",
+   "builder": "unknown_time_zone",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "entry not listed in the manifest",
+   "builder": "unlisted_entry",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "manifest over the cap",
+   "builder": "manifest_too_big",
+   "code": "backup_too_large",
+   "note": "cap scaled to 1024",
+   "caps": {
+    "manifest": 1024
+   }
+  },
+  {
+   "name": "truncated archive",
+   "builder": "truncated_archive",
+   "code": "backup_invalid",
+   "note": ""
+  },
+  {
+   "name": "not a zip at all",
+   "builder": "not_a_zip",
+   "code": "backup_invalid",
+   "note": ""
+  }
+ ]
+}
