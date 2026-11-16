@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -92,13 +93,35 @@ func WriteSafetyExport(ctx context.Context, d RestoreDeps, userID int64) (string
 		os.Remove(tmp)
 		return "", err
 	}
-	entries, _ := os.ReadDir(dir)
+	pruneSafetyDir(dir, now)
+	return final, nil
+}
+
+// pruneSafetyDir keeps the newest three safety exports and every one younger
+// than 7 days (whichever keeps more); the rest go. An older copy is never
+// dropped merely because a newer one was written: it needs three newer ones.
+func pruneSafetyDir(dir string, now time.Time) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	var names []string
 	for _, e := range entries {
-		if e.Name() != filepath.Base(final) {
-			os.Remove(filepath.Join(dir, e.Name()))
+		if strings.HasSuffix(e.Name(), ".zip") {
+			names = append(names, e.Name())
 		}
 	}
-	return final, nil
+	slices.Sort(names) // names are timestamps: oldest first
+	for i, n := range names {
+		if i >= len(names)-3 {
+			break // the newest three
+		}
+		info, err := os.Stat(filepath.Join(dir, n))
+		if err == nil && now.Sub(info.ModTime()) <= 7*24*time.Hour {
+			continue
+		}
+		os.Remove(filepath.Join(dir, n))
+	}
 }
 
 // LatestSafetyExport returns the newest safety export of the user, if any.
@@ -119,18 +142,12 @@ func LatestSafetyExport(dataDir string, userID int64) (string, bool) {
 	return filepath.Join(SafetyDir(dataDir, userID), best), true
 }
 
-// SweepSafetyExports removes safety exports older than maxAge.
-func SweepSafetyExports(dataDir string, maxAge time.Duration, now time.Time) {
+// SweepSafetyExports applies the retention rule (newest three or 7 days) to every user.
+func SweepSafetyExports(dataDir string, _ time.Duration, now time.Time) {
 	root := filepath.Join(dataDir, "backups", "pre-restore")
 	users, _ := os.ReadDir(root)
 	for _, u := range users {
-		files, _ := os.ReadDir(filepath.Join(root, u.Name()))
-		for _, f := range files {
-			info, err := f.Info()
-			if err == nil && now.Sub(info.ModTime()) > maxAge {
-				os.Remove(filepath.Join(root, u.Name(), f.Name()))
-			}
-		}
+		pruneSafetyDir(filepath.Join(root, u.Name()), now)
 	}
 }
 
@@ -436,47 +453,41 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}); err != nil {
 		return nil, err
 	}
-	// 8. events: ids are kept; an id owned by another user is re-identified with a new ULID of the same millisecond
-	insEv, err := tx.PrepareContext(ctx, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (id) DO NOTHING`)
-	if err != nil {
-		return nil, err
+	// 8. events, in chunks inside this one transaction: ids are kept; an id owned
+	// by another user gets a new ULID of the same millisecond; ts is normalised
+	// to UTC whole seconds like a normal push.
+	batch := make([]Event, 0, eventChunk)
+	flush := func() error {
+		for len(batch) > 0 {
+			n := min(eventStmtRows, len(batch))
+			if err := insertEvents(ctx, tx, userID, batch[:n], res); err != nil {
+				return err
+			}
+			batch = batch[n:]
+		}
+		batch = make([]Event, 0, eventChunk)
+		return ctx.Err()
 	}
-	defer insEv.Close()
 	if err := a.Events(func(e Event) error {
 		ne, drop := m.Event(e)
 		if drop {
 			res.DroppedRows++
 			return nil
 		}
-		r, err := insEv.ExecContext(ctx, ne.ID, userID, ne.WorkspaceID, ne.Device, ne.TS, ne.Type, string(ne.Payload), ne.UpdatedAt)
+		ts, err := time.Parse(time.RFC3339, ne.TS)
 		if err != nil {
-			return fmt.Errorf("backup: event: %w", err)
+			return fmt.Errorf("backup: event %s: bad timestamp", ne.ID)
 		}
-		if n, _ := r.RowsAffected(); n == 0 {
-			var owner int64
-			if err := tx.QueryRowContext(ctx, `SELECT user_id FROM study_events WHERE id = ?`, ne.ID).Scan(&owner); err != nil {
-				return err
-			}
-			if owner == userID {
-				return nil // the same event twice in the archive: once is enough
-			}
-			parsed, perr := ulid.ParseStrict(ne.ID)
-			if perr != nil {
-				return perr
-			}
-			newID, merr := ulid.New(parsed.Time(), crand.Reader)
-			if merr != nil {
-				return merr
-			}
-			if _, err := insEv.ExecContext(ctx, newID.String(), userID, ne.WorkspaceID, ne.Device, ne.TS, ne.Type, string(ne.Payload), ne.UpdatedAt); err != nil {
-				return fmt.Errorf("backup: event: %w", err)
-			}
-			res.ReidentifiedEvents++
+		ne.TS = ts.UTC().Format(time.RFC3339)
+		batch = append(batch, ne)
+		if len(batch) >= eventChunk {
+			return flush()
 		}
-		res.Restored.Events++
-		return ctx.Err()
+		return nil
 	}); err != nil {
+		return nil, err
+	}
+	if err := flush(); err != nil {
 		return nil, err
 	}
 	// 9. other devices must reload instead of pushing stale rows into the restored state
@@ -495,4 +506,64 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		}
 	}
 	return oldBooks, nil
+}
+
+// Chunk sizes of the event inserts (variables so tests can shrink them).
+var (
+	eventChunk    = 5000 // events gathered before they are written
+	eventStmtRows = 400  // rows of one multi-row INSERT (8 variables each)
+)
+
+// insertEvents writes up to eventStmtRows events with one statement. Rows whose
+// id is taken are looked up: the user's own duplicate is skipped, another
+// user's id is re-identified.
+func insertEvents(ctx context.Context, tx *sql.Tx, userID int64, evs []Event, res *Result) error {
+	if len(evs) == 0 {
+		return nil
+	}
+	var q strings.Builder
+	q.WriteString(`INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES `)
+	args := make([]any, 0, len(evs)*8)
+	for i, e := range evs {
+		if i > 0 {
+			q.WriteByte(',')
+		}
+		q.WriteString("(?,?,?,?,?,?,?,?)")
+		args = append(args, e.ID, userID, e.WorkspaceID, e.Device, e.TS, e.Type, string(e.Payload), e.UpdatedAt)
+	}
+	q.WriteString(` ON CONFLICT (id) DO NOTHING`)
+	r, err := tx.ExecContext(ctx, q.String(), args...)
+	if err != nil {
+		return fmt.Errorf("backup: events: %w", err)
+	}
+	n, _ := r.RowsAffected()
+	res.Restored.Events += int(n)
+	if int(n) == len(evs) {
+		return nil
+	}
+	// Some ids were taken: by another user (re-identify) or twice in the archive (skip).
+	for _, e := range evs {
+		var owner int64
+		if err := tx.QueryRowContext(ctx, `SELECT user_id FROM study_events WHERE id = ?`, e.ID).Scan(&owner); err != nil {
+			return err
+		}
+		if owner == userID {
+			continue
+		}
+		parsed, perr := ulid.ParseStrict(e.ID)
+		if perr != nil {
+			return perr
+		}
+		newID, merr := ulid.New(parsed.Time(), crand.Reader)
+		if merr != nil {
+			return merr
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES (?,?,?,?,?,?,?,?)`,
+			newID.String(), userID, e.WorkspaceID, e.Device, e.TS, e.Type, string(e.Payload), e.UpdatedAt); err != nil {
+			return fmt.Errorf("backup: event: %w", err)
+		}
+		res.Restored.Events++
+		res.ReidentifiedEvents++
+	}
+	return nil
 }

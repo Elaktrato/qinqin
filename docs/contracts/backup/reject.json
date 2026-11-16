@@ -230,6 +230,15 @@
    "builder": "not_a_zip",
    "code": "backup_invalid",
    "note": ""
+  },
+  {
+   "name": "more study events than the cap",
+   "builder": "too_many_events",
+   "code": "backup_too_many_events",
+   "note": "cap scaled to 3 events",
+   "caps": {
+    "events": 3
+   }
   }
  ]
 }

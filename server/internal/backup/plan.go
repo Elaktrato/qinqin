@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"qinqin/internal/lang"
@@ -319,9 +320,21 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	}
 	rep.Restores.Workspaces = len(a.Workspaces)
 	rep.Restores.Books = len(a.Books)
+	taken := map[string]bool{}
+	collisions := 0
 	if err := a.PluginRows(func(r PluginRow) error {
 		nr, drop := m.PluginRow(r)
-		_ = nr
+		if !drop {
+			var ws int64
+			if nr.WorkspaceID != nil {
+				ws = *nr.WorkspaceID
+			}
+			k := nr.PluginID + "\x00" + strconv.FormatInt(ws, 10) + "\x00" + nr.Key
+			if taken[k] {
+				collisions++
+			}
+			taken[k] = true
+		}
 		isCard := r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, cardKeyPrefix)
 		if drop {
 			rep.Unresolved.DroppedRows++
@@ -352,6 +365,9 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 		return nil
 	}); err != nil {
 		return rep, nil, err
+	}
+	if collisions > 0 {
+		rep.Blocking = append(rep.Blocking, fmt.Sprintf("%d cards would get the same id on this server, so the backup cannot be restored here as it is.", collisions))
 	}
 	rep.Restores.Sentences = len(ownPresent)
 	rep.Unresolved.DroppedRows += ownDropped

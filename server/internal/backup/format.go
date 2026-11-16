@@ -26,6 +26,7 @@ const (
 	MaxEntries       = 10000
 	MaxPluginValue   = 256 << 10 // like PUT /api/plugins/{id}/data/{key}
 	EventsPerFile    = 100000
+	MaxEvents        = 2000000 // events per restore: a restore holds the write lock about 30 s per million
 	maxBooksJSONSize = 8 << 20
 )
 

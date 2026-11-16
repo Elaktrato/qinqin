@@ -278,8 +278,8 @@ func TestSafetyExportIsWrittenFirstAndOlderOnesGo(t *testing.T) {
 		t.Error("the safety export does not hold the data as it was before the restore")
 	}
 	ents, _ := os.ReadDir(dir)
-	if len(ents) != 1 {
-		t.Errorf("%d files in the safety dir, want only the newest", len(ents))
+	if len(ents) != 2 {
+		t.Errorf("%d files in the safety dir, want the old copy and the new one (the only older copy is never dropped for a newer one)", len(ents))
 	}
 }
 

@@ -60,3 +60,32 @@ func TestServerBackupAllowsOneAtATime(t *testing.T) {
 		t.Errorf("download while running = %d %s", code, body)
 	}
 }
+
+func TestOnlyOneRestoreIsAppliedAtATime(t *testing.T) {
+	s, h, a, sqlDB := newGateServer(t)
+	var uid int64
+	sqlDB.QueryRow(`SELECT id FROM users WHERE username = 'gate-user'`).Scan(&uid)
+	token, hash := newRestoreToken()
+	s.restores.mu.Lock()
+	st := &restoreStage{hash: hash, userID: uid, expires: s.now().Add(restoreStageTTL), status: rsReady}
+	s.restores.byHash[hash], s.restores.byUser[uid] = st, st
+	s.restores.mu.Unlock()
+	if !s.backups.tryApply() { // somebody else's restore is running
+		t.Fatal("could not take the slot")
+	}
+	r := httptest.NewRequest(http.MethodPost, "/api/account/restore/"+token, strings.NewReader(`{"confirm":"gate-user","password":"x"}`))
+	r.Header.Set("Authorization", "Bearer "+a.user)
+	r.Header.Set("Content-Type", "application/json")
+	r.RemoteAddr = "192.0.2.10:1"
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	if w.Code != 409 || !strings.Contains(w.Body.String(), "restore_busy") || w.Header().Get("Retry-After") != "30" {
+		t.Errorf("second apply = %d %s retry-after %q", w.Code, w.Body.String(), w.Header().Get("Retry-After"))
+	}
+	s.restores.mu.Lock()
+	status := st.status
+	s.restores.mu.Unlock()
+	if status != rsReady {
+		t.Errorf("a refused apply changed the stage to %s", status)
+	}
+}

@@ -36,6 +36,16 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 		writeRateLimitedAs(w, retry, "restore uploads")
 		return
 	}
+	if err := os.MkdirAll(s.restoreDir(), 0o700); err != nil {
+		writeInternal(w, r)
+		return
+	}
+	token, hash := newRestoreToken()
+	path := filepath.Join(s.restoreDir(), token+".zip")
+	// One stage per user, taken atomically: the new upload replaces the old
+	// stage under the mutex, THEN the global cap is checked (the slot the user
+	// already held is theirs), so two uploads of one user never both survive.
+	st := &restoreStage{hash: hash, userID: u.ID, path: path, expires: s.now().Add(restoreStageTTL), status: rsValidating}
 	s.restores.mu.Lock()
 	old := s.restores.byUser[u.ID]
 	if old != nil && old.status == rsRunning {
@@ -43,24 +53,28 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
 		return
 	}
-	if old == nil && len(s.restores.byHash) >= maxRestoreStages {
+	if old != nil {
+		s.restores.dropLocked(old)
+	}
+	if len(s.restores.byHash) >= maxRestoreStages {
 		s.restores.mu.Unlock()
 		writeBusy(w)
 		return
 	}
-	if old != nil {
-		s.restores.dropLocked(old) // a new upload discards the old stage
-	}
+	s.restores.byHash[hash] = st
+	s.restores.byUser[u.ID] = st
 	s.restores.mu.Unlock()
-
-	if err := os.MkdirAll(s.restoreDir(), 0o700); err != nil {
-		writeInternal(w, r)
-		return
+	abandon := func() {
+		s.restores.mu.Lock()
+		if s.restores.byHash[hash] == st {
+			s.restores.dropLocked(st)
+		}
+		s.restores.mu.Unlock()
+		os.Remove(path)
 	}
-	token, hash := newRestoreToken()
-	path := filepath.Join(s.restoreDir(), token+".zip")
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
+		abandon()
 		writeInternal(w, r)
 		return
 	}
@@ -73,7 +87,7 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 		cerr = err
 	}
 	if cerr != nil {
-		os.Remove(path)
+		abandon()
 		var tooBig *http.MaxBytesError
 		if errors.As(cerr, &tooBig) {
 			writeAuthError(w, http.StatusRequestEntityTooLarge, backup.CodeTooLarge, "This file is larger than 128 MiB, the most a backup upload may be.")
@@ -84,11 +98,14 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	st := &restoreStage{hash: hash, userID: u.ID, path: path, expires: s.now().Add(restoreStageTTL), status: rsValidating}
 	s.restores.mu.Lock()
-	s.restores.byHash[hash] = st
-	s.restores.byUser[u.ID] = st
+	still := s.restores.byHash[hash] == st
 	s.restores.mu.Unlock()
+	if !still { // a newer upload of this user took the slot meanwhile
+		os.Remove(path)
+		writeAuthError(w, http.StatusConflict, "stage_not_ready", "A newer upload replaced this one.")
+		return
+	}
 	go s.validateStage(st)
 	writeJSON(w, http.StatusAccepted, map[string]string{"token": token})
 }
@@ -186,6 +203,10 @@ func (s *server) handleRestoreApply(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusConflict, "unresolved_entries", "The backup refers to words this server does not have. Confirm that they are dropped to continue.")
 		return
 	}
+	if s.backups.applyBusy() {
+		writeRestoreBusy(w)
+		return
+	}
 	if !s.verifyOwnPassword(w, r, u.ID, req.Password) {
 		return
 	}
@@ -195,15 +216,22 @@ func (s *server) handleRestoreApply(w http.ResponseWriter, r *http.Request) {
 	} else if has && !s.secondFactorOK(w, r, u.ID, req.Code) {
 		return
 	}
-	// One restore per user, never beside an export of that user.
+	// One restore per user, never beside an export of that user, and only one
+	// apply server-wide: a restore holds the database write lock.
+	if !s.backups.tryApply() {
+		writeRestoreBusy(w)
+		return
+	}
 	s.backups.mu.Lock()
 	if s.backups.restoring[u.ID] {
 		s.backups.mu.Unlock()
+		s.backups.endApply()
 		writeAuthError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
 		return
 	}
 	if s.backups.exporting[u.ID] {
 		s.backups.mu.Unlock()
+		s.backups.endApply()
 		writeAuthError(w, http.StatusConflict, "export_running", "An export of your data is running. Wait until it has finished.")
 		return
 	}
@@ -215,6 +243,7 @@ func (s *server) handleRestoreApply(w http.ResponseWriter, r *http.Request) {
 		s.backups.mu.Lock()
 		delete(s.backups.restoring, u.ID)
 		s.backups.mu.Unlock()
+		s.backups.endApply()
 		writeAuthError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
 		return
 	}
@@ -246,6 +275,7 @@ func (s *server) runRestore(st *restoreStage, keepSession int64, drop bool) {
 		s.backups.mu.Lock()
 		delete(s.backups.restoring, st.userID)
 		s.backups.mu.Unlock()
+		s.backups.endApply()
 		if s.stageDone != nil {
 			select {
 			case s.stageDone <- st.userID:
@@ -316,4 +346,9 @@ func (s *server) handleSafetyExportDownload(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin-before-restore", username, info.ModTime(), "zip")+`"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	http.ServeContent(w, r, "", info.ModTime(), f)
+}
+
+func writeRestoreBusy(w http.ResponseWriter) {
+	w.Header().Set("Retry-After", "30")
+	writeAuthError(w, http.StatusConflict, "restore_busy", "Another restore is running on this server. Try again in a minute.")
 }

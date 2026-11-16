@@ -175,6 +175,8 @@ func stageErrorFor(err error) *stageError {
 			msg = "This backup is larger than the limits allow."
 		case backup.CodeVersion:
 			msg = "This backup has a format this server cannot read."
+		case backup.CodeTooManyEvents:
+			msg = "This backup holds more study events than a restore accepts (2,000,000)."
 		}
 		return &stageError{Code: ie.Code, Message: msg, Detail: ie.Detail}
 	}

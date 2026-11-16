@@ -21,11 +21,12 @@ import (
 
 // Error codes of an invalid archive (docs/contracts/auth/errors.json).
 const (
-	CodeInvalid     = "backup_invalid"
-	CodeTooLarge    = "backup_too_large"
-	CodeVersion     = "backup_version_unsupported"
-	maxArrayFile    = 32 << 20
-	maxEventPayload = 64 << 10
+	CodeInvalid       = "backup_invalid"
+	CodeTooLarge      = "backup_too_large"
+	CodeVersion       = "backup_version_unsupported"
+	CodeTooManyEvents = "backup_too_many_events"
+	maxArrayFile      = 32 << 20
+	maxEventPayload   = 64 << 10
 )
 
 // ErrVersion is returned (wrapped in *InvalidError) for a formatVersion this
@@ -58,6 +59,7 @@ var (
 	capArray    int64 = maxArrayFile
 	capTotal    int64 = MaxTotal
 	capEntries        = MaxEntries
+	capEvents         = MaxEvents
 )
 
 // Archive is a validated, open personal backup. Open reads every entry once
@@ -188,6 +190,9 @@ func (a *Archive) validate() error {
 			return invalid("an archive entry is not listed in the manifest")
 		}
 	}
+	if a.Manifest.Counts["events"] > capEvents {
+		return &InvalidError{Code: CodeTooManyEvents, Detail: fmt.Sprintf("the backup holds more than %d study events", capEvents)}
+	}
 	var total int64
 	hashed := func(name string) (*hashingReader, error) {
 		f := a.files[name]
@@ -304,6 +309,9 @@ func (a *Archive) validate() error {
 					return invalid("%s holds a malformed line", name)
 				}
 				n++
+				if evCount+n > capEvents {
+					return &InvalidError{Code: CodeTooManyEvents, Detail: fmt.Sprintf("the backup holds more than %d study events", capEvents)}
+				}
 				return checkEvent(e, wsIDs)
 			})
 		})

@@ -467,3 +467,46 @@ func TestExportTicketOfADisabledUserIsDead(t *testing.T) {
 		t.Errorf("ticket of a disabled user = %d, want 404", status)
 	}
 }
+
+func TestTwoUploadsOfOneUserNeverBothSurvive(t *testing.T) {
+	e := newBackupEnv(t)
+	alice := registerUser(t, e.ts.URL, "alice", "")
+	archive := e.export(t, alice)
+	pr, pw := io.Pipe()
+	req, _ := http.NewRequest("POST", e.ts.URL+"/api/account/restore", pr)
+	req.Header.Set("Content-Type", "application/zip")
+	req.Header.Set("Authorization", "Bearer "+alice)
+	first := make(chan int, 1)
+	go func() {
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			first <- -1
+			return
+		}
+		resp.Body.Close()
+		first <- resp.StatusCode
+	}()
+	pw.Write([]byte("PK")) // the first upload has taken its slot and holds its file open
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if ents, _ := os.ReadDir(filepath.Join(e.data, "tmp", "restore")); len(ents) == 1 {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	code, rt, _ := e.upload(t, alice, archive)
+	if code != 202 {
+		t.Fatalf("second upload = %d", code)
+	}
+	pw.Close()
+	if st := <-first; st != 409 {
+		t.Errorf("the replaced upload answered %d, want 409", st)
+	}
+	e.wait(t)
+	if ents, _ := os.ReadDir(filepath.Join(e.data, "tmp", "restore")); len(ents) != 1 {
+		t.Errorf("%d stage files, want exactly the second upload's", len(ents))
+	}
+	if st, v := e.status(t, alice, rt); st != 200 || v.Status != "ready" {
+		t.Errorf("the surviving stage: %d %s", st, v.Status)
+	}
+}

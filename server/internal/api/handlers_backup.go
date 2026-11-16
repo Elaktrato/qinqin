@@ -27,6 +27,30 @@ type backupState struct {
 	exporting map[int64]bool
 	restoring map[int64]bool
 	server    bool
+	applying  bool // a restore apply is running (one per server: it holds the write lock)
+}
+
+func (b *backupState) applyBusy() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.applying
+}
+
+// tryApply takes the server-wide restore slot.
+func (b *backupState) tryApply() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.applying {
+		return false
+	}
+	b.applying = true
+	return true
+}
+
+func (b *backupState) endApply() {
+	b.mu.Lock()
+	b.applying = false
+	b.mu.Unlock()
 }
 
 func newBackupState() backupState {

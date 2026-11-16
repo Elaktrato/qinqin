@@ -52,6 +52,8 @@
   "unresolved_entries": {"status": 409, "meaning": "The backup refers to words this server does not have; send \"unresolved\": \"drop\" to restore without them (the report lists them first)."},
   "unsupported_media_type": {"status": 415, "meaning": "The restore upload must be sent as application/zip."},
   "backup_too_large": {"status": 413, "meaning": "A backup upload above 128 MiB, or an archive beyond the entry, line or expanded-size caps (also a stage error code)."},
+  "restore_busy": {"status": 409, "meaning": "Another restore is being applied on this server (only one at a time; a restore holds the database write lock about 30 s per million events). Retry-After is 30; try again later."},
+  "backup_too_many_events": {"status": 422, "meaning": "Stage error code: the backup holds more than 2,000,000 study events, which a restore refuses."},
   "backup_invalid": {"status": 422, "meaning": "Stage error code, not an HTTP status: the uploaded file is not a valid qinqin backup (hostile or damaged zip, bad checksum, unknown field) or cannot be restored here (language not set up). status carries the stage, the HTTP answer of the status route is 200."},
   "backup_version_unsupported": {"status": 422, "meaning": "Stage error code: the archive's formatVersion is not one this server reads (formats are never guessed)."},
   "backup_too_large_to_restore": {"status": 422, "meaning": "Export refused: the archive would exceed what a restore accepts (128 MiB compressed, 2 GiB expanded, 64 MiB per book), so no download link is issued."},

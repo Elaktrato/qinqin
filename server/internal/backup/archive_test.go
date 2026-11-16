@@ -327,6 +327,7 @@ var builders = map[string]func(t *testing.T) string{
 	"manifest_too_big": func(t *testing.T) string {
 		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["appVersion"] = strings.Repeat("v", 5000) }})
 	},
+	"too_many_events": func(t *testing.T) string { return writeZip(t, sampleFiles(t), zopts{}) },
 	"truncated_archive": func(t *testing.T) string {
 		p := writeZip(t, sampleFiles(t), zopts{})
 		b, _ := os.ReadFile(p)
@@ -396,8 +397,11 @@ func TestRejectCases(t *testing.T) {
 			if !ok {
 				t.Fatalf("no builder %q", c.Builder)
 			}
-			oldM, oldL, oldT, oldE := capManifest, capLine, capTotal, capEntries
-			defer func() { capManifest, capLine, capTotal, capEntries = oldM, oldL, oldT, oldE }()
+			oldM, oldL, oldT, oldE, oldV := capManifest, capLine, capTotal, capEntries, capEvents
+			defer func() { capManifest, capLine, capTotal, capEntries, capEvents = oldM, oldL, oldT, oldE, oldV }()
+			if v, ok := c.Caps["events"]; ok {
+				capEvents = int(v)
+			}
 			if v, ok := c.Caps["manifest"]; ok {
 				capManifest = v
 			}
