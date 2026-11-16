@@ -9,6 +9,10 @@ import (
 	"qinqin/internal/components"
 )
 
+// componentsVersion is components.Version; a variable so a test can count
+// the reads.
+var componentsVersion = components.Version
+
 // componentsFormat versions the GET /api/components body inside its ETag.
 const componentsFormat = 1
 
@@ -47,12 +51,15 @@ type componentPackBody struct {
 type componentsPayloads struct{ payloadCache }
 
 func (c *componentsPayloads) get(ctx context.Context, sqlDB *sql.DB, language string) (*charactersPayload, error) {
-	version, err := components.Version(ctx, sqlDB, language)
+	version, err := componentsVersion(ctx, sqlDB, language)
 	if err != nil {
 		return nil, err
 	}
+	// The version is read once, before the index is built: a write in
+	// between leaves the payload under the older version, so the next
+	// request rebuilds it.
 	return c.payloadCache.get(language, version != components.NoPacks,
-		func() (string, error) { return components.Version(ctx, sqlDB, language) },
+		func() (string, error) { return version, nil },
 		func(version string) (*charactersPayload, error) {
 			idx, err := components.Index(ctx, sqlDB, language)
 			if err != nil {
