@@ -427,3 +427,58 @@ func TestTokenRuleConsistency(t *testing.T) {
 		}
 	}
 }
+
+// The token budgets of the spec (§6).
+func TestTokenRateLimitPolicy(t *testing.T) {
+	p := DefaultAuthPolicy()
+	if got := p.Named["pat"]; got.Burst != 120 || got.Every != 500*time.Millisecond {
+		t.Errorf("pat policy %+v", got)
+	}
+	if got := p.Named["pat-create"]; got.Burst != 10 || got.Every != 6*time.Minute {
+		t.Errorf("pat-create policy %+v", got)
+	}
+}
+
+// Matrix 18: the per-user token budget is shared by all of a user's tokens,
+// separate per user, answered 429 with a whole-second Retry-After, and never
+// spent by the same user's session.
+func TestTokenRateLimitPerUser(t *testing.T) {
+	s, h, a, sqlDB := newGateServer(t)
+	p := DefaultAuthPolicy()
+	p.Named["pat"] = ratelimit.BucketPolicy{Burst: 3, Every: time.Hour, MaxKeys: authTableCap}
+	s.limits = newAuthLimits(p)
+	ta := newTokenActors(t, sqlDB)
+	call := func(tok string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest("GET", "/api/workspaces", nil)
+		r.Header.Set("Authorization", "Bearer "+tok)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w
+	}
+	// Sessions of the same user never touch the budget.
+	for i := 0; i < 5; i++ {
+		if w := call(a.user); w.Code != 200 {
+			t.Fatalf("session call %d: %d", i, w.Code)
+		}
+	}
+	for i, tok := range []string{ta.patW, ta.patR, ta.patW} {
+		if w := call(tok); w.Code != 200 {
+			t.Fatalf("token call %d: %d %s", i, w.Code, w.Body.String())
+		}
+	}
+	w := call(ta.patR) // the other token of the same user: the budget is shared
+	var e struct{ Error string }
+	json.Unmarshal(w.Body.Bytes(), &e)
+	if w.Code != 429 || e.Error != "rate_limited" {
+		t.Fatalf("4th token call: %d %s", w.Code, w.Body.String())
+	}
+	if ra, err := strconv.Atoi(w.Header().Get("Retry-After")); err != nil || ra < 1 {
+		t.Errorf("Retry-After %q", w.Header().Get("Retry-After"))
+	}
+	if w := call(ta.adminPatW); w.Code != 200 {
+		t.Errorf("another user's token: %d", w.Code)
+	}
+	if w := call(a.user); w.Code != 200 {
+		t.Errorf("session after the token budget ran out: %d", w.Code)
+	}
+}
