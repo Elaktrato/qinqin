@@ -17,6 +17,7 @@ import {
 	startReviewOutbox
 } from './events';
 import { setOutboxUser } from './outboxUser';
+import { recentSentReviews } from './recentSent';
 
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -555,5 +556,33 @@ describe('outbox per user', () => {
 		await flushPendingReviews();
 		expect(pending()).toEqual([]);
 		expect(fetch).not.toHaveBeenCalled();
+	});
+});
+
+describe('sent reviews are remembered for the offline history', () => {
+	beforeEach(() => {
+		setOutboxUser(1);
+		vi.stubGlobal('localStorage', fakeStorage());
+		localStorage.setItem('qinqin.token', 'secret');
+		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ accepted: 1, duplicates: 0 })));
+	});
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		setOutboxUser(null);
+	});
+
+	it('a review that was accepted at once is kept in the recent list', async () => {
+		await recordReview(7, 'card-1', 3);
+		const [event] = recentSentReviews(1, 7);
+		expect((event.payload as { cardId: string }).cardId).toBe('card-1');
+	});
+
+	it('a queued review is remembered when the flush sends it, not before', async () => {
+		vi.mocked(fetch).mockRejectedValueOnce(new Error('offline'));
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+		await recordReview(7, 'card-2', 3);
+		expect(recentSentReviews(1, 7)).toEqual([]);
+		await flushPendingReviews();
+		expect(recentSentReviews(1, 7)).toHaveLength(1);
 	});
 });

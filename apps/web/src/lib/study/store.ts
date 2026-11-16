@@ -39,6 +39,7 @@ import {
 } from "./limits";
 import { pendingReviews } from "./events";
 import { outboxUser } from "./outboxUser";
+import { recentSentReviews } from "./recentSent";
 import {
   CARD_KINDS,
   type Deck,
@@ -449,8 +450,8 @@ function reviewsOf(
 }
 
 /**
- * withQueued adds the signed-in user's reviews that wait in the outbox to the
- * log (deduplicated by id), so a card reviewed offline - or just before a
+ * withQueued adds the signed-in user's reviews that wait in the outbox (or were
+ * sent since the log was read) to the log (deduplicated by id), so a card reviewed offline - or just before a
  * reload - is not shown as due again before the review has been sent. Another
  * user's queue, or any queue while no user is known, is never read.
  */
@@ -460,10 +461,20 @@ function withQueued(
 ): readonly StudyEvent[] {
   const user = outboxUser();
   if (user === null) return events;
-  const queued = pendingReviews(user, workspaceId);
+  // Unsent reviews, and reviews sent since the (possibly cached) log was read.
+  const queued = [
+    ...pendingReviews(user, workspaceId),
+    ...recentSentReviews(user, workspaceId),
+  ];
   if (queued.length === 0) return events;
   const known = new Set(events.map((event) => event.id));
-  return [...events, ...queued.filter((event) => !known.has(event.id))];
+  const extra: StudyEvent[] = [];
+  for (const event of queued) {
+    if (known.has(event.id)) continue;
+    known.add(event.id);
+    extra.push(event);
+  }
+  return [...events, ...extra];
 }
 
 /**

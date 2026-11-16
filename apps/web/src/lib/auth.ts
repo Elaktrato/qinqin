@@ -7,6 +7,7 @@ import { hasSession, stepFor, type LoginStep, type MfaChallenge } from './accoun
 import { emailLoginVerify, mfaStep, type LoginBody } from './api/mfa';
 import { clearStudyDay } from './time/zone';
 import { setOutboxUser } from './study/outboxUser';
+import { clearRecentSent } from './study/recentSent';
 import { cleanupPartitions, ownPartition } from './pwa/partitions';
 import {
 	api,
@@ -190,7 +191,8 @@ export function logout(): void {
 		api('/api/auth/logout', { method: 'POST', body: {} }).catch(() => undefined);
 	}
 	clearToken();
-	// Offline API copies belong to the session that just ended.
+	// Offline API copies and the list of recently sent reviews belong to the session that just ended.
+	clearRecentSent();
 	void cleanupPartitions(undefined, null);
 	// Recordings fetched for this user must not outlive the session.
 	clearClipCache();

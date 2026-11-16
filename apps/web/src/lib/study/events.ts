@@ -11,6 +11,7 @@ import { newUlid } from '../ulid';
 import { notifyAllSent, setQueued } from '../pwa/offlineState';
 import { flushable, settle, type OutboxItem, type OutboxState } from './outbox';
 import { onOutboxUser, outboxUser } from './outboxUser';
+import { rememberSent } from './recentSent';
 import type {
 	ReviewEvent,
 	ReviewGrade,
@@ -181,6 +182,8 @@ export async function recordReview(
 
 	try {
 		await postEvents([event]);
+		const owner = outboxUser();
+		if (owner !== null) rememberSent(owner, [event]);
 	} catch (err) {
 		// The workspace was deleted elsewhere: a retry can never succeed.
 		// The shell reloads the workspaces on the same 404 (workspaceGone.ts).
@@ -238,6 +241,7 @@ async function flushOnce(): Promise<void> {
 	for (const { event } of queued) {
 		try {
 			await postEvents([event]);
+			rememberSent(user, [event]);
 			sent++;
 			removePending(event.id);
 		} catch (err) {

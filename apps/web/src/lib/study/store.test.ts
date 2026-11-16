@@ -6,6 +6,7 @@ vi.mock("$app/navigation", () => ({ goto }));
 
 import { workspaces } from "../workspaces";
 import { setOutboxUser } from "./outboxUser";
+import { rememberSent } from "./recentSent";
 import { gradeItem } from "./grade";
 import type { StudyEvent } from "../events";
 import type { Deck, StudyCard } from "./types";
@@ -1827,6 +1828,24 @@ describe("queued reviews count in the loaded history", () => {
     const data = await loadStudyData();
 
     expect(data.reviews).toEqual([]);
+  });
+
+  it("a review sent minutes ago counts although the cached log predates it", async () => {
+    respondPull(pull, []);
+    rememberSent(1, [reviewEvent("S1", "card-1")]);
+
+    const data = await loadStudyData();
+
+    expect(data.reviews.map((r) => r.id)).toEqual(["S1"]);
+  });
+
+  it("a sent review that is also in the log appears once", async () => {
+    respondPull(pull, [reviewEvent("S1", "card-1")]);
+    rememberSent(1, [reviewEvent("S1", "card-1")]);
+
+    const data = await loadStudyData();
+
+    expect(data.reviews.map((r) => r.id)).toEqual(["S1"]);
   });
 
   it("nothing is merged while no user is known", async () => {
