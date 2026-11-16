@@ -1,0 +1,257 @@
+// Package backup writes and restores a user's personal data archive
+// (format v1, docs/contracts/backup/) and the admin whole-server backup.
+package backup
+
+import (
+	"encoding/json"
+	"regexp"
+	"strconv"
+)
+
+// Format identity. FormatVersion is the only compatibility key: a reader
+// accepts exactly the versions it knows and rejects the rest.
+const (
+	FormatName    = "qinqin-user-backup"
+	FormatVersion = 1
+)
+
+// Caps, enforced on the bytes actually read (declared sizes are ignored).
+const (
+	MaxUpload        = 128 << 20 // the archive file itself
+	MaxManifest      = 1 << 20
+	MaxLine          = 1 << 20  // one JSONL line
+	MaxJSONFile      = 64 << 20 // a book file or a JSON array file
+	MaxTotal         = 2 << 30  // all entries uncompressed together
+	MaxEntries       = 10000
+	MaxPluginValue   = 256 << 10 // like PUT /api/plugins/{id}/data/{key}
+	EventsPerFile    = 100000
+	maxBooksJSONSize = 8 << 20
+)
+
+// Entry names of the archive.
+const (
+	NameManifest     = "manifest.json"
+	NameAccount      = "account.json"
+	NameRefEntries   = "refs/entries.json"
+	NameRefDicts     = "refs/dictionaries.json"
+	NameRefSentences = "refs/sentences.json"
+	NameWorkspaces   = "workspaces.json"
+	NamePluginData   = "plugin-data.jsonl"
+	NameOverlays     = "overlays.jsonl"
+	NameSentences    = "sentences.jsonl"
+	NameBooks        = "library/books.json"
+	NameBookmarks    = "library/bookmarks.jsonl"
+	NameHighlights   = "library/highlights.jsonl"
+)
+
+// Kinds of a known archive entry name.
+const (
+	KindFixed  = "fixed" // one of the Name* constants
+	KindEvents = "events"
+	KindBook   = "book"
+)
+
+var (
+	eventsName = regexp.MustCompile(`^events/\d{6}\.jsonl$`)
+	bookName   = regexp.MustCompile(`^library/books/(0|[1-9]\d{0,17})\.json$`)
+	fixedNames = map[string]bool{
+		NameManifest: true, NameAccount: true, NameRefEntries: true, NameRefDicts: true,
+		NameRefSentences: true, NameWorkspaces: true, NamePluginData: true, NameOverlays: true,
+		NameSentences: true, NameBooks: true, NameBookmarks: true, NameHighlights: true,
+	}
+)
+
+// KnownName classifies an archive entry name. Only the names of format v1
+// are known; anything else (paths, "..", absolute names, wrong widths)
+// is not, and no name is ever joined into a filesystem path.
+func KnownName(name string) (kind string, bookID int64, ok bool) {
+	switch {
+	case fixedNames[name]:
+		return KindFixed, 0, true
+	case eventsName.MatchString(name):
+		return KindEvents, 0, true
+	}
+	if m := bookName.FindStringSubmatch(name); m != nil {
+		id, err := strconv.ParseInt(m[1], 10, 64)
+		if err != nil {
+			return "", 0, false
+		}
+		return KindBook, id, true
+	}
+	return "", 0, false
+}
+
+// EventsName is the entry name of the n-th (1-based) events file.
+func EventsName(n int) string { return "events/" + pad6(n) + ".jsonl" }
+
+// BookName is the entry name of a book's content.
+func BookName(id int64) string { return "library/books/" + strconv.FormatInt(id, 10) + ".json" }
+
+func pad6(n int) string {
+	s := strconv.Itoa(n)
+	for len(s) < 6 {
+		s = "0" + s
+	}
+	return s
+}
+
+// FileEntry is one archive entry listed in the manifest.
+type FileEntry struct {
+	Name   string `json:"name"`
+	Bytes  int64  `json:"bytes"`
+	SHA256 string `json:"sha256"`
+}
+
+// ManifestUser names the account the archive came from.
+type ManifestUser struct {
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+}
+
+// Manifest is manifest.json, the last entry of an archive.
+type Manifest struct {
+	Format        string         `json:"format"`
+	FormatVersion int            `json:"formatVersion"`
+	AppVersion    string         `json:"appVersion"`
+	SchemaVersion string         `json:"schemaVersion"`
+	CreatedAt     string         `json:"createdAt"`
+	User          ManifestUser   `json:"user"`
+	Counts        map[string]int `json:"counts"`
+	Files         []FileEntry    `json:"files"`
+}
+
+// TimeZone is one step of the learner's time zone history.
+type TimeZone struct {
+	Zone      string  `json:"zone"`
+	From      *string `json:"from"`
+	CreatedAt string  `json:"createdAt"`
+}
+
+// PluginState is one plugin's switch and order for the user.
+type PluginState struct {
+	PluginID string `json:"pluginId"`
+	Enabled  bool   `json:"enabled"`
+	Order    int    `json:"order"`
+}
+
+// Account is account.json: no identity, only the user's own settings.
+type Account struct {
+	Username     string        `json:"username"`
+	TimeZones    []TimeZone    `json:"timeZones"`
+	PluginStates []PluginState `json:"pluginStates"`
+}
+
+// EntryRef identifies a dictionary entry portably: (language, kind,
+// extKey), with the first written form as a fallback.
+type EntryRef struct {
+	ID       int64  `json:"id"`
+	Language string `json:"language"`
+	Kind     string `json:"kind"`
+	ExtKey   string `json:"extKey"`
+	Written  string `json:"written"`
+}
+
+// DictRef identifies an installed dictionary by its pack id.
+type DictRef struct {
+	ID     int64  `json:"id"`
+	PackID string `json:"packId"`
+}
+
+// SentenceRef is a sentence a card points at.
+type SentenceRef struct {
+	ID         int64  `json:"id"`
+	EntryID    int64  `json:"entryId"`
+	Own        bool   `json:"own"`
+	SourcePack string `json:"sourcePack"`
+	Hanzi      string `json:"hanzi"`
+}
+
+// Workspace is one workspace row.
+type Workspace struct {
+	ID        int64           `json:"id"`
+	Language  string          `json:"language"`
+	Name      string          `json:"name"`
+	Settings  json.RawMessage `json:"settings"`
+	UpdatedAt string          `json:"updatedAt"`
+}
+
+// Event is one study event.
+type Event struct {
+	ID          string          `json:"id"`
+	WorkspaceID int64           `json:"workspaceId"`
+	Device      string          `json:"device"`
+	TS          string          `json:"ts"`
+	Type        string          `json:"type"`
+	Payload     json.RawMessage `json:"payload"`
+	UpdatedAt   string          `json:"updatedAt"`
+}
+
+// PluginRow is a live plugin_data row; WorkspaceID nil is a user-global row.
+type PluginRow struct {
+	PluginID    string          `json:"pluginId"`
+	WorkspaceID *int64          `json:"workspaceId"`
+	Key         string          `json:"key"`
+	Data        json.RawMessage `json:"data"`
+	Version     int64           `json:"version"`
+	UpdatedAt   string          `json:"updatedAt"`
+	ModifiedAt  *string         `json:"modifiedAt"`
+}
+
+// Overlay is a user edit of an entry.
+type Overlay struct {
+	EntryID   int64   `json:"entryId"`
+	Written   *string `json:"written"`
+	Readings  *string `json:"readings"`
+	UpdatedAt string  `json:"updatedAt"`
+}
+
+// OwnSentence is a sentence the user added.
+type OwnSentence struct {
+	ID          int64  `json:"id"`
+	EntryID     int64  `json:"entryId"`
+	Hanzi       string `json:"hanzi"`
+	Pinyin      string `json:"pinyin"`
+	Translation string `json:"translation"`
+	UpdatedAt   string `json:"updatedAt"`
+}
+
+// Book is a library book's metadata; its chapters are library/books/<id>.json.
+type Book struct {
+	ID           int64  `json:"id"`
+	WorkspaceID  int64  `json:"workspaceId"`
+	Language     string `json:"language"`
+	Title        string `json:"title"`
+	Author       string `json:"author"`
+	Source       string `json:"source"`
+	SourceID     string `json:"sourceId"`
+	SourceURL    string `json:"sourceUrl"`
+	Attribution  string `json:"attribution"`
+	LicenseNote  string `json:"licenseNote"`
+	ChapterCount int    `json:"chapterCount"`
+	Position     string `json:"position"`
+	CreatedAt    string `json:"createdAt"`
+}
+
+// Bookmark is a library bookmark.
+type Bookmark struct {
+	ID        int64  `json:"id"`
+	BookID    int64  `json:"bookId"`
+	Position  string `json:"position"`
+	Label     string `json:"label"`
+	CreatedAt string `json:"createdAt"`
+}
+
+// Highlight is a library highlight.
+type Highlight struct {
+	ID        int64  `json:"id"`
+	BookID    int64  `json:"bookId"`
+	Chapter   int    `json:"chapter"`
+	Paragraph int    `json:"paragraph"`
+	StartCP   int    `json:"startCp"`
+	EndCP     int    `json:"endCp"`
+	Text      string `json:"text"`
+	Color     string `json:"color"`
+	Note      string `json:"note"`
+	CreatedAt string `json:"createdAt"`
+	UpdatedAt string `json:"updatedAt"`
+}
