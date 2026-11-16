@@ -1,0 +1,836 @@
+{
+ "version": 1,
+ "rule": "frequency/display-form",
+ "note": "displayForm(entry, listForm?): 1. listForm written only in kana and equal to a kana reading that is not sk; 2. first sense tagged uk and a kana reading: best kana reading; 3. best written form; 4. best kana reading (else the first kana reading), else the first reading, else empty. Best = first without a rare flag (forms rK oK iK sK, readings rk ok ik sk), else first not search-only (sK / sk).",
+ "cases": [
+  {
+   "name": "の (JMdict 1469800): both written forms are search-only (sK), not uk",
+   "forms": [
+    {
+     "text": "乃",
+     "flags": [
+      "sK"
+     ]
+    },
+    {
+     "text": "之",
+     "flags": [
+      "sK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "の",
+     "flags": []
+    },
+    {
+     "type": "romaji",
+     "value": "no",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    }
+   ],
+   "expected": "の"
+  },
+  {
+   "name": "こと (1313580): first sense uk",
+   "forms": [
+    {
+     "text": "事",
+     "flags": []
+    },
+    {
+     "text": "縡",
+     "flags": [
+      "oK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "こと",
+     "flags": []
+    },
+    {
+     "type": "romaji",
+     "value": "koto",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": []
+    }
+   ],
+   "expected": "こと"
+  },
+  {
+   "name": "する (1157170): uk, rare kanji",
+   "forms": [
+    {
+     "text": "為る",
+     "flags": [
+      "rK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "する",
+     "flags": []
+    },
+    {
+     "type": "romaji",
+     "value": "suru",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    }
+   ],
+   "expected": "する"
+  },
+  {
+   "name": "やる (1012980): uk; the search-only reading ヤる is never chosen",
+   "forms": [
+    {
+     "text": "遣る",
+     "flags": [
+      "rK"
+     ]
+    },
+    {
+     "text": "行る",
+     "flags": [
+      "sK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "やる",
+     "flags": []
+    },
+    {
+     "type": "kana",
+     "value": "ヤる",
+     "flags": [
+      "sk"
+     ]
+    },
+    {
+     "type": "romaji",
+     "value": "yaru",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    }
+   ],
+   "expected": "やる"
+  },
+  {
+   "name": "これ (1628530): uk on senses 1-5, not 6",
+   "forms": [
+    {
+     "text": "此れ",
+     "flags": [
+      "rK"
+     ]
+    },
+    {
+     "text": "是",
+     "flags": [
+      "rK"
+     ]
+    },
+    {
+     "text": "此",
+     "flags": [
+      "sK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "これ",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": []
+    }
+   ],
+   "expected": "これ"
+  },
+  {
+   "name": "わかる (1606560): uk on the first sense (not all)",
+   "forms": [
+    {
+     "text": "分かる",
+     "flags": []
+    },
+    {
+     "text": "解る",
+     "flags": []
+    },
+    {
+     "text": "理解る",
+     "flags": [
+      "sK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "わかる",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    },
+    {
+     "tags": []
+    }
+   ],
+   "expected": "わかる"
+  },
+  {
+   "name": "犬 (1258330): uk only on a later sense: written form",
+   "forms": [
+    {
+     "text": "犬",
+     "flags": []
+    },
+    {
+     "text": "狗",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "いぬ",
+     "flags": []
+    },
+    {
+     "type": "kana",
+     "value": "イヌ",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    },
+    {
+     "tags": [
+      "derog",
+      "uk"
+     ]
+    },
+    {
+     "tags": [
+      "derog"
+     ]
+    },
+    {
+     "tags": []
+    }
+   ],
+   "expected": "犬"
+  },
+  {
+   "name": "爽涼 (1596480): an outdated (oK) first form yields to a plain one",
+   "forms": [
+    {
+     "text": "爽凉",
+     "flags": [
+      "oK"
+     ]
+    },
+    {
+     "text": "爽涼",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "そうりょう",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "爽涼"
+  },
+  {
+   "name": "only rare forms: the first one that is not search-only",
+   "forms": [
+    {
+     "text": "甲",
+     "flags": [
+      "sK"
+     ]
+    },
+    {
+     "text": "乙",
+     "flags": [
+      "rK"
+     ]
+    },
+    {
+     "text": "丙",
+     "flags": [
+      "iK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "かな",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "乙"
+  },
+  {
+   "name": "other flags (ateji) do not matter",
+   "forms": [
+    {
+     "text": "苦味",
+     "flags": [
+      "ateji"
+     ]
+    },
+    {
+     "text": "苦み",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "にがみ",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "苦味"
+  },
+  {
+   "name": "食べる (1358280): plain word",
+   "forms": [
+    {
+     "text": "食べる",
+     "flags": []
+    },
+    {
+     "text": "喰べる",
+     "flags": [
+      "sK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "たべる",
+     "flags": []
+    },
+    {
+     "type": "romaji",
+     "value": "taberu",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    }
+   ],
+   "expected": "食べる"
+  },
+  {
+   "name": "と (1008490): kana-only word",
+   "forms": [],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "と",
+     "flags": []
+    },
+    {
+     "type": "romaji",
+     "value": "to",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    }
+   ],
+   "expected": "と"
+  },
+  {
+   "name": "kana-only word whose first reading is rare: the plain one",
+   "forms": [],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "ヤア",
+     "flags": [
+      "ok"
+     ]
+    },
+    {
+     "type": "kana",
+     "value": "やあ",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "やあ"
+  },
+  {
+   "name": "kana-only word whose only reading is search-only: still shown",
+   "forms": [],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "ヤア",
+     "flags": [
+      "sk"
+     ]
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "ヤア"
+  },
+  {
+   "name": "uk tag but no kana reading: written form",
+   "forms": [
+    {
+     "text": "字",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "romaji",
+     "value": "ji",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    }
+   ],
+   "expected": "字"
+  },
+  {
+   "name": "no form, no kana reading: the first reading",
+   "forms": [],
+   "readings": [
+    {
+     "type": "pinyin",
+     "value": "ma",
+     "flags": []
+    }
+   ],
+   "senses": [],
+   "expected": "ma"
+  },
+  {
+   "name": "nothing: empty",
+   "forms": [],
+   "readings": [],
+   "senses": [],
+   "expected": ""
+  },
+  {
+   "name": "Chinese word: the simplified first form (trad flag does not matter)",
+   "forms": [
+    {
+     "text": "学习",
+     "flags": []
+    },
+    {
+     "text": "學習",
+     "flags": [
+      "trad"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "pinyin",
+     "value": "xué xí",
+     "flags": []
+    },
+    {
+     "type": "bopomofo",
+     "value": "ㄒㄩㄝˊ ㄒㄧˊ",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    },
+    {
+     "tags": []
+    }
+   ],
+   "expected": "学习"
+  },
+  {
+   "name": "Japanese character (KANJIDIC-like): its form",
+   "forms": [
+    {
+     "text": "日",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "on",
+     "value": "ニチ",
+     "flags": []
+    },
+    {
+     "type": "kun",
+     "value": "ひ",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "日"
+  },
+  {
+   "name": "list form: a kana row that is one of the readings wins",
+   "forms": [
+    {
+     "text": "食べる",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "たべる",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "listForm": "たべる",
+   "expected": "たべる"
+  },
+  {
+   "name": "list form: katakana not among the readings is ignored",
+   "forms": [
+    {
+     "text": "此れ",
+     "flags": [
+      "rK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "これ",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    }
+   ],
+   "listForm": "コレ",
+   "expected": "これ"
+  },
+  {
+   "name": "list form: a search-only reading is ignored",
+   "forms": [
+    {
+     "text": "遣る",
+     "flags": [
+      "rK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "やる",
+     "flags": []
+    },
+    {
+     "type": "kana",
+     "value": "ヤる",
+     "flags": [
+      "sk"
+     ]
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    }
+   ],
+   "listForm": "ヤる",
+   "expected": "やる"
+  },
+  {
+   "name": "list form: a kanji row is not a list form",
+   "forms": [
+    {
+     "text": "振り",
+     "flags": []
+    },
+    {
+     "text": "風",
+     "flags": [
+      "rK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "ふり",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    },
+    {
+     "tags": [
+      "uk"
+     ]
+    }
+   ],
+   "listForm": "風",
+   "expected": "振り"
+  },
+  {
+   "name": "list form: の for 1469800",
+   "forms": [
+    {
+     "text": "乃",
+     "flags": [
+      "sK"
+     ]
+    },
+    {
+     "text": "之",
+     "flags": [
+      "sK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "の",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "listForm": "の",
+   "expected": "の"
+  },
+  {
+   "name": "list form: the romaji reading is not a kana reading",
+   "forms": [
+    {
+     "text": "食べる",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "たべる",
+     "flags": []
+    },
+    {
+     "type": "romaji",
+     "value": "taberu",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "listForm": "taberu",
+   "expected": "食べる"
+  }
+ ]
+}
