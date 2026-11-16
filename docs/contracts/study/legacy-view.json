@@ -638,7 +638,7 @@
    }
   },
   {
-   "name": "an equal rewrite is skipped",
+   "name": "an equal rewrite is accepted without a write (an old shell treats a skip as an error)",
    "request": {
     "method": "POST",
     "path": "/api/sync/push",
@@ -666,8 +666,8 @@
    "expect": {
     "status": 200,
     "result": {
-     "dataAccepted": 0,
-     "dataSkipped": 1
+     "dataAccepted": 1,
+     "dataSkipped": 0
     },
     "typedAfter": [
      {

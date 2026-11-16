@@ -101,7 +101,9 @@ A cached v0.3.x web shell keeps working for the v0.4.x line through a legacy vie
   `qinqin-flashcards` row. A pull without `collections` gets the typed collections and no legacy rows. A
   client that understands typed collections must name one whenever it pulls `pluginData`.
 - A pushed (`POST /api/sync/push` `pluginData`) or `PUT /api/plugins/qinqin-flashcards/data/{key}` row of a
-  typed family is decoded and applied to the typed table with the same last-write-wins; a row the codec
+  typed family is decoded and applied to the typed table with the same last-write-wins, except that a row
+  equal to the stored live row after the codec's cleaning is counted `dataAccepted` without a write (no
+  version bump; a v0.3.0 shell reports any skipped row as an error and re-sends unchanged rows); a row the codec
   refuses is `dataRefused` (push) or 400 `study_row_invalid` (`PUT`; also for a typed key without
   `?workspace=`, since there is no user-global typed row). A `PUT` is stamped with the server clock and
   answers the stored legacy row; equal content changes nothing (the version stays). `DELETE` tombstones

@@ -101,6 +101,7 @@ func HasTypedRow(ctx context.Context, q Querier, userID, workspaceID int64, key 
 // time; Apply clamps it). A live row is decoded with the codec
 // (rows.ErrUnreadable when it refuses, and for a row without a workspace);
 // a deletion tombstones the typed row, or is ErrNoTypedRow when none exists.
+// A live row equal to the stored live row reports applied without a write.
 func ApplyLegacy(ctx context.Context, q Querier, userID int64, row model.PluginData, edited time.Time) (bool, error) {
 	if row.WorkspaceID == nil {
 		return false, fmt.Errorf("%w: %s: typed study rows belong to a workspace", rows.ErrUnreadable, row.Key)
@@ -127,6 +128,18 @@ func ApplyLegacy(ctx context.Context, q Querier, userID int64, row model.PluginD
 	r.M().WorkspaceID = ws
 	if err := rows.Validate(r); err != nil {
 		return false, fmt.Errorf("%w: %s: %v", rows.ErrUnreadable, row.Key, err)
+	}
+	// An old shell re-sends rows unchanged (a retry, a save that changes
+	// nothing) and treats any skipped row as an error it can never clear.
+	// Content equal to the stored live row (after the codec's cleaning) is
+	// therefore accepted, as the v0.3.0 server accepted it, without a
+	// rewrite: no version bump, no new stamp.
+	existing, exists, err := Load(ctx, q, userID, ws, r.Family(), r.Identity())
+	if err != nil {
+		return false, err
+	}
+	if exists && existing.M().DeletedAt == nil && rows.Equal(existing, r) {
+		return true, nil
 	}
 	return Apply(ctx, q, userID, r, edited, false)
 }
