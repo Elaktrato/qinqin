@@ -18,6 +18,7 @@
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { record } from '$lib/events';
+	import { loadEntryExtras } from '$lib/entry/extras';
 	import { formatReading } from '$lib/format';
 	import { languageLabel } from '$lib/languages';
 	import { entryRadicalLinks } from '$lib/radicals/selection';
@@ -81,22 +82,10 @@
 	}
 
 	async function loadExtras(loaded: Entry, seq: number): Promise<void> {
-		// Words have no characters under them: skip the always-empty query.
-		const under =
-			loaded.kind === 'word'
-				? Promise.resolve([] as EntryBase[])
-				: getCharsUnderRadical(loaded.id).catch(() => [] as EntryBase[]);
-		const radical =
-			loaded.radicalId === null
-				? Promise.resolve('')
-				: getEntry(loaded.radicalId).then(
-						(r) => r.written,
-						() => ''
-					);
-		const [list, written] = await Promise.all([under, radical]);
+		const extras = await loadEntryExtras(loaded, { chars: getCharsUnderRadical, entry: getEntry });
 		if (seq !== requestSeq) return;
-		chars = list;
-		radicalWritten = written;
+		chars = extras.chars;
+		radicalWritten = extras.radicalWritten;
 	}
 
 	function retry(): void {
