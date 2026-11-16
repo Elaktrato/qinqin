@@ -1,0 +1,840 @@
+{
+ "_doc": "Pure remapping of a restored archive (docs/contracts/backup/README.md). maps: source id -> target id per table (JSON keys are decimal strings). ops: card {key,data} -> {drop,key,data}; events {cards,events} -> {events:[{drop,workspaceId,payload}]} (every card row is registered first, then the events are mapped); pluginRow -> {drop,workspaceId,key,data}; workspaceSettings -> settings. Go: backup/remap_test.go.",
+ "version": 1,
+ "rule": "backup/remap",
+ "cases": [
+  {
+   "name": "same server: identity",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1201": 1201
+    }
+   },
+   "input": {
+    "key": "card:c-vocab-1201",
+    "data": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-vocab-1201",
+    "data": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "shifted entry: derived id follows the entry",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1201": 1250
+    }
+   },
+   "input": {
+    "key": "card:c-reverse-1201",
+    "data": {
+     "id": "c-reverse-1201",
+     "kind": "reverse",
+     "entryId": 1201
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-reverse-1250",
+    "data": {
+     "id": "c-reverse-1250",
+     "kind": "reverse",
+     "entryId": 1250
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "ULID card keeps its id, entryId rewritten",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "7": 9
+    }
+   },
+   "input": {
+    "key": "card:01JDULIDCARD0000000000001",
+    "data": {
+     "id": "01JDULIDCARD0000000000001",
+     "kind": "vocab",
+     "entryId": 7
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:01JDULIDCARD0000000000001",
+    "data": {
+     "id": "01JDULIDCARD0000000000001",
+     "kind": "vocab",
+     "entryId": 9
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "derived-looking id whose number differs from entryId is not derived",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "5": 6
+    }
+   },
+   "input": {
+    "key": "card:c-vocab-99",
+    "data": {
+     "id": "c-vocab-99",
+     "kind": "vocab",
+     "entryId": 5
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-vocab-99",
+    "data": {
+     "id": "c-vocab-99",
+     "kind": "vocab",
+     "entryId": 6
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "unresolved entry drops the card",
+   "op": "card",
+   "maps": {
+    "entries": {}
+   },
+   "input": {
+    "key": "card:c-vocab-1201",
+    "data": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "sentence card follows entry and sentence",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1201": 50
+    },
+    "sentences": {
+     "88": 900
+    }
+   },
+   "input": {
+    "key": "card:c-sentence-1201",
+    "data": {
+     "id": "c-sentence-1201",
+     "kind": "sentence",
+     "entryId": 1201,
+     "sentenceId": 88
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-sentence-50",
+    "data": {
+     "id": "c-sentence-50",
+     "kind": "sentence",
+     "entryId": 50,
+     "sentenceId": 900
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "unresolved pack sentence drops the sentence card",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1201": 50
+    },
+    "sentences": {}
+   },
+   "input": {
+    "key": "card:c-sentence-1201",
+    "data": {
+     "id": "c-sentence-1201",
+     "kind": "sentence",
+     "entryId": 1201,
+     "sentenceId": 88
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "unknown fields keep their order and bytes",
+   "op": "card",
+   "maps": {
+    "entries": {
+     "1": 2
+    }
+   },
+   "input": {
+    "key": "card:c-vocab-1",
+    "data": {
+     "zeta": {
+      "b": 1,
+      "a": [
+       3,
+       2,
+       1
+      ]
+     },
+     "id": "c-vocab-1",
+     "entryId": 1,
+     "alpha": null,
+     "x-unknown": "ä"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "key": "card:c-vocab-2",
+    "data": {
+     "zeta": {
+      "b": 1,
+      "a": [
+       3,
+       2,
+       1
+      ]
+     },
+     "id": "c-vocab-2",
+     "entryId": 2,
+     "alpha": null,
+     "x-unknown": "ä"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "swapped entry ids: review events follow without chaining",
+   "op": "events",
+   "maps": {
+    "entries": {
+     "1": 2,
+     "2": 1
+    },
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [
+     {
+      "key": "card:c-vocab-1",
+      "data": {
+       "id": "c-vocab-1",
+       "kind": "vocab",
+       "entryId": 1
+      }
+     },
+     {
+      "key": "card:c-vocab-2",
+      "data": {
+       "id": "c-vocab-2",
+       "kind": "vocab",
+       "entryId": 2
+      }
+     }
+    ],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-1",
+       "grade": 3
+      }
+     },
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-2",
+       "grade": 3
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "c-vocab-2",
+       "grade": 3
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "c-vocab-1",
+       "grade": 3
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "review of a dropped card keeps history under orphan:",
+   "op": "events",
+   "maps": {
+    "entries": {
+     "1": 2
+    },
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [
+     {
+      "key": "card:c-vocab-9",
+      "data": {
+       "id": "c-vocab-9",
+       "kind": "vocab",
+       "entryId": 9
+      }
+     }
+    ],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-9",
+       "mode": "vocab",
+       "grade": 1
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "orphan:c-vocab-9",
+       "mode": "vocab",
+       "grade": 1
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "review of a deleted card (no row) with a resolvable entry follows the entry",
+   "op": "events",
+   "maps": {
+    "entries": {
+     "1": 2
+    },
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-1",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "c-vocab-2",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "review of a deleted card with an unresolved entry is an orphan",
+   "op": "events",
+   "maps": {
+    "entries": {},
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "c-vocab-424242",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "orphan:c-vocab-424242",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "review of a deleted ULID card is kept as is",
+   "op": "events",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 7,
+      "payload": {
+       "cardId": "01JDULIDCARD0000000000001",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "cardId": "01JDULIDCARD0000000000001",
+       "grade": 2
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "read event: bookId through the book map, unknown book removed",
+   "op": "events",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "books": {
+     "3": 30
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "read",
+      "workspaceId": 7,
+      "payload": {
+       "bookId": 3,
+       "seconds": 120
+      }
+     },
+     {
+      "type": "read",
+      "workspaceId": 7,
+      "payload": {
+       "bookId": 4,
+       "seconds": 5
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "bookId": 30,
+       "seconds": 120
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "seconds": 5
+      }
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "view event: entryId remapped, unresolved field removed, event kept",
+   "op": "events",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 5
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "view",
+      "workspaceId": 7,
+      "payload": {
+       "entryId": 1201
+      }
+     },
+     {
+      "type": "view",
+      "workspaceId": 7,
+      "payload": {
+       "entryId": 1
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {
+       "entryId": 5
+      }
+     },
+     {
+      "drop": false,
+      "workspaceId": 70,
+      "payload": {}
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "event of a workspace not in the archive is dropped",
+   "op": "events",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "cards": [],
+    "events": [
+     {
+      "type": "review",
+      "workspaceId": 9,
+      "payload": {
+       "cardId": "x"
+      }
+     }
+    ]
+   },
+   "expect": {
+    "events": [
+     {
+      "drop": true
+     }
+    ]
+   },
+   "note": ""
+  },
+  {
+   "name": "vacation: workspace ids remapped, user-global row stays global",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70,
+     "8": 80
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "version": 1,
+     "id": "V1",
+     "start": "2026-12-20",
+     "end": null,
+     "scope": {
+      "workspaces": [
+       7,
+       8
+      ]
+     },
+     "createdDay": "2026-11-13"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "version": 1,
+     "id": "V1",
+     "start": "2026-12-20",
+     "end": null,
+     "scope": {
+      "workspaces": [
+       70,
+       80
+      ]
+     },
+     "createdDay": "2026-11-13"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "vacation: ids not in the backup are dropped from the list",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "id": "V1",
+     "scope": {
+      "workspaces": [
+       7,
+       99
+      ]
+     }
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "id": "V1",
+     "scope": {
+      "workspaces": [
+       70
+      ]
+     }
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "vacation: an emptied checklist drops the period (never widens to all)",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "vacation:V1",
+    "data": {
+     "id": "V1",
+     "scope": {
+      "workspaces": [
+       99
+      ]
+     }
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "vacation: scope all is untouched",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": null,
+    "key": "vacation:V2",
+    "data": {
+     "id": "V2",
+     "scope": "all"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "vacation:V2",
+    "data": {
+     "id": "V2",
+     "scope": "all"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "workspace row: workspaceId remapped, limits row data verbatim",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "limits:general",
+    "data": {
+     "newPerDay": 20
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "limits:general",
+    "data": {
+     "newPerDay": 20
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "row of a workspace missing from the archive is dropped",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "other",
+    "workspaceId": 9,
+    "key": "k",
+    "data": {}
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": ""
+  },
+  {
+   "name": "another plugin's user-global row is restored verbatim",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {}
+   },
+   "input": {
+    "pluginId": "other",
+    "workspaceId": null,
+    "key": "settings",
+    "data": {
+     "entryId": 5,
+     "id": "c-vocab-5"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "settings",
+    "data": {
+     "entryId": 5,
+     "id": "c-vocab-5"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "hiddenDictionaries remapped by pack, unknown dropped",
+   "op": "workspaceSettings",
+   "maps": {
+    "dicts": {
+     "3": 8
+    }
+   },
+   "input": {
+    "hiddenDictionaries": [
+     3,
+     4
+    ],
+    "theme": "x"
+   },
+   "expect": {
+    "hiddenDictionaries": [
+     8
+    ],
+    "theme": "x"
+   },
+   "note": ""
+  },
+  {
+   "name": "settings without hiddenDictionaries are untouched",
+   "op": "workspaceSettings",
+   "maps": {
+    "dicts": {}
+   },
+   "input": {
+    "a": 1
+   },
+   "expect": {
+    "a": 1
+   },
+   "note": ""
+  }
+ ]
+}

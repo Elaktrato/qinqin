@@ -56,8 +56,8 @@
   },
   {
    "name": "plugin-data.jsonl",
-   "bytes": 1144,
-   "sha256": "0a3788246d6a1d16c0fa090cde7eb9bab0c2bdf6f43ecd30b0fe75ba815105dd"
+   "bytes": 1219,
+   "sha256": "16dd28a56045cf57667419c582ae77f176dc43a69fc5c444979578a97ccc9615"
   },
   {
    "name": "refs/dictionaries.json",
