@@ -101,7 +101,9 @@ when:
 - your account is deleted;
 - the workspace a token is limited to is deleted (only the tokens limited to it).
 
-Restoring a personal backup does not revoke tokens. Tokens are never part of a backup.
+Restoring a personal backup does not revoke tokens. The restored workspaces get new ids, and a token limited to a
+workspace moves with it; a token limited to a workspace the backup does not contain (one made after the backup) is
+revoked. Tokens are never part of a backup.
 
 The administrator's audit log records when a token is created, first used and revoked (never the token, its name
 or hint). The list shows when each token was last used (updated at most every 5 minutes).

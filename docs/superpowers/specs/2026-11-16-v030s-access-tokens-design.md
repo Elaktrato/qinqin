@@ -175,6 +175,12 @@ behaviour is unchanged.
   Ruling: a personal restore does NOT revoke tokens (it revokes other sessions because they hold
   stale offline state; scripts do not) and is not a security action — cost if wrong: a script
   pushes old rows after a restore.
+  Ruling (review fix): a restore gives the restored workspaces new ids, so in the same
+  transaction a workspace-limited token follows its workspace through the archive's id map
+  (archive id -> new id); a token limited to a workspace the archive does not hold (made after
+  the export) is deleted, audited `token_revoked` {scope: restore, count} — cost if wrong: an
+  archive from another server whose workspace ids happen to equal a token's workspace id binds
+  that token to the archive's workspace of that id, still one of the owner's own.
   Ruling: existing response shapes (`{revoked: n}` of the session routes, admin routes) do not
   change; revoked token counts go into the audit detail as `tokens` — cost if wrong: the UI cannot
   say how many tokens went, only that they did.
