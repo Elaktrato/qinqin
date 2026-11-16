@@ -122,3 +122,85 @@ export function goalText(goal: { met: number; of: number }, inProgress: boolean)
 	if (goal.of === 0) return 'No goal days to count';
 	return `Daily goal met on ${goal.met} of ${plural(goal.of, 'day', 'days')}${inProgress ? ' so far' : ''}`;
 }
+
+/** One line of the summary's description list. */
+export interface SummaryLine {
+	id: string;
+	term: string;
+	value: string;
+	/** The words of the comparison; null when there is none. */
+	comparison: string | null;
+	/** The decorative arrow's direction (the words carry the meaning). */
+	trend: 'up' | 'down' | 'same' | null;
+}
+
+function trendOf(value: number, previous: number, unit: 'count' | 'seconds'): 'up' | 'down' | 'same' {
+	const diff = unit === 'seconds' ? Math.floor(value / 60) - Math.floor(previous / 60) : value - previous;
+	return diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
+}
+
+function countLine(
+	id: string,
+	term: string,
+	row: Pick<CountRow, 'value' | 'previous' | 'unit'>,
+	nothingToCompare: boolean
+): SummaryLine {
+	const comparable = row.value !== null && row.previous !== null && !nothingToCompare;
+	return {
+		id,
+		term,
+		value: rowValue(row),
+		comparison: comparable ? compareText(row.value!, row.previous!, row.unit) : null,
+		trend: comparable ? trendOf(row.value!, row.previous!, row.unit) : null
+	};
+}
+
+/**
+ * summaryLines: the rows the summary shows, in order. `compact` (the home
+ * widget): reviews, new cards, study time (flashcards + reading), days
+ * active and the streak. `characters`: 'pending' while counting, null when
+ * not shown.
+ */
+export function summaryLines(
+	s: WeekSummary,
+	sources: readonly ActivitySource[],
+	characters: { value: number; previous: number } | null | 'pending',
+	compact: boolean
+): SummaryLine[] {
+	const byKey = new Map(s.rows.map((r) => [r.key, r]));
+	const plain = (id: string, term: string, value: string): SummaryLine => ({
+		id,
+		term,
+		value,
+		comparison: null,
+		trend: null
+	});
+	const tail = [
+		plain('daysActive', 'Days active', daysActiveText(s.daysActive, s.inProgress)),
+		plain('streak', 'Streak', streakText(s.streak, s.inProgress))
+	];
+	if (compact) {
+		const flash = byKey.get('studyTime');
+		const reading = byKey.get('reading');
+		const sum = (a: number | null | undefined, b: number | null | undefined) =>
+			a === null || a === undefined || b === null || b === undefined ? null : a + b;
+		const time = { value: sum(flash?.value, reading?.value), previous: sum(flash?.previous, reading?.previous), unit: 'seconds' as const };
+		const lines: SummaryLine[] = [];
+		for (const key of ['reviews', 'newCards'] as const) {
+			const row = byKey.get(key);
+			if (row !== undefined) lines.push(countLine(key, rowLabel(row, sources), row, s.nothingToCompare));
+		}
+		return [...lines, countLine('time', 'Study time', time, s.nothingToCompare), ...tail];
+	}
+	const lines = s.rows.map((row) => countLine(row.key, rowLabel(row, sources), row, s.nothingToCompare));
+	lines.push(...tail);
+	if (s.mature !== null) {
+		lines.push(countLine('mature', 'Words reaching mature', { ...s.mature, unit: 'count' }, s.nothingToCompare));
+	}
+	if (characters === 'pending') lines.push(plain('characters', 'Characters learned', 'Counting characters…'));
+	else if (characters !== null) {
+		lines.push(countLine('characters', 'Characters learned', { ...characters, unit: 'count' }, s.nothingToCompare));
+	}
+	if (s.goal !== null) lines.push(plain('goal', 'Daily goal', goalText(s.goal, s.inProgress)));
+	return lines;
+}

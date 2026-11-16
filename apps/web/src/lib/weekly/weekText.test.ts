@@ -11,6 +11,7 @@ import {
 	rowLabel,
 	rowValue,
 	streakText,
+	summaryLines,
 	weekHeading
 } from './weekText';
 
@@ -146,5 +147,84 @@ describe('streak and goal', () => {
 		expect(goalText({ met: 2, of: 6 }, false)).toBe('Daily goal met on 2 of 6 days');
 		expect(goalText({ met: 1, of: 1 }, true)).toBe('Daily goal met on 1 of 1 day so far');
 		expect(goalText({ met: 0, of: 0 }, false)).toBe('No goal days to count');
+	});
+});
+
+describe('summaryLines', () => {
+	const summary = (over: Partial<WeekSummary> = {}): WeekSummary => ({
+		monday: '2026-11-09',
+		today: '2026-11-18',
+		inProgress: false,
+		compareThrough: '2026-11-08',
+		rows: [
+			{ key: 'reviews', value: 15, previous: 8, unit: 'count' },
+			{ key: 'newCards', value: 2, previous: 2, unit: 'count' },
+			{ key: 'studyTime', value: 120, previous: 60, unit: 'seconds' },
+			{ key: 'reading', value: 600, previous: 900, unit: 'seconds' },
+			{ key: 'journal', value: 1, previous: 0, unit: 'count' },
+			{ key: 'activity:drill', value: 4, previous: 0, unit: 'count' }
+		],
+		days: [],
+		daysActive: { active: 5, of: 7, localOnly: false },
+		streak: 3,
+		mature: { value: 2, previous: 1 },
+		characters: null,
+		goal: { met: 2, of: 6 },
+		allVacation: false,
+		nothingToCompare: false,
+		...over
+	});
+
+	it('lists every row in order with its comparison', () => {
+		const lines = summaryLines(summary(), [drill], { value: 3, previous: 5 }, false);
+		expect(lines.map((l) => l.term)).toEqual([
+			'Reviews',
+			'New cards',
+			'Flashcard study time',
+			'Reading',
+			'Journal entries',
+			'Grammar drills',
+			'Days active',
+			'Streak',
+			'Words reaching mature',
+			'Characters learned',
+			'Daily goal'
+		]);
+		expect(lines[0]).toEqual({ id: 'reviews', term: 'Reviews', value: '15', comparison: '7 more than last week', trend: 'up' });
+		expect(lines[1].trend).toBe('same');
+		expect(lines[3]).toMatchObject({ value: '10 min', comparison: '5 min less than last week', trend: 'down' });
+		expect(lines[6]).toMatchObject({ value: 'Active on 5 of 7 days', comparison: null, trend: null });
+		expect(lines[7].value).toBe('Study streak at the end of the week: 3 days');
+		expect(lines[8]).toMatchObject({ value: '2', comparison: '1 more than last week' });
+		expect(lines[9]).toMatchObject({ value: '3', comparison: '2 fewer than last week' });
+		expect(lines[10]).toMatchObject({ value: 'Daily goal met on 2 of 6 days', comparison: null });
+	});
+
+	it('leaves out comparisons with nothing to compare or offline', () => {
+		const offline = summary({
+			nothingToCompare: true,
+			rows: [{ key: 'reviews', value: null, previous: null, unit: 'count' }]
+		});
+		const lines = summaryLines(offline, [], null, false);
+		expect(lines[0]).toMatchObject({ value: 'Not available offline', comparison: null, trend: null });
+		expect(lines.find((l) => l.id === 'mature')?.comparison).toBeNull();
+		expect(lines.some((l) => l.id === 'characters')).toBe(false);
+	});
+
+	it('shows the pending characters row', () => {
+		expect(summaryLines(summary(), [], 'pending', false).find((l) => l.id === 'characters')).toMatchObject({
+			value: 'Counting characters…',
+			comparison: null
+		});
+	});
+
+	it('compact: reviews, new cards, study time with reading, days active and streak', () => {
+		const lines = summaryLines(summary({ inProgress: true }), [drill], { value: 1, previous: 0 }, true);
+		expect(lines.map((l) => l.id)).toEqual(['reviews', 'newCards', 'time', 'daysActive', 'streak']);
+		expect(lines[2]).toMatchObject({ term: 'Study time', value: '12 min', comparison: '4 min less than last week' });
+		const offline = summary({
+			rows: summary().rows.map((r) => (r.key === 'reading' ? { ...r, value: null, previous: null } : r))
+		});
+		expect(summaryLines(offline, [], null, true)[2]).toMatchObject({ value: 'Not available offline', comparison: null });
 	});
 });
