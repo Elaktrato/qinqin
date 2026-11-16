@@ -163,15 +163,16 @@ describe('api: network-first, partitioned by credential', () => {
 		await run(request(URL1, { auth: 'Bearer a' }));
 
 		fetchMock.mockImplementationOnce(() => new Promise(() => {}));
+		const before = fetchMock.mock.calls.length;
 		const slow = run(request(URL1, { auth: 'Bearer a' }));
-		await vi.advanceTimersByTimeAsync(0); // let the request start before time moves
+		await vi.waitFor(() => expect(fetchMock.mock.calls.length).toBe(before + 1)); // the request has started
 		await vi.advanceTimersByTimeAsync(8001);
 		expect((await slow).headers.get(OFFLINE_HEADER)).toBe('1');
 
 		let resolve: (r: Response) => void = () => {};
 		fetchMock.mockImplementationOnce(() => new Promise<Response>((r) => (resolve = r)));
 		const noCopy = run(request('/api/languages', { auth: 'Bearer a' }));
-		await vi.advanceTimersByTimeAsync(0);
+		await vi.waitFor(() => expect(fetchMock.mock.calls.length).toBe(3));
 		await vi.advanceTimersByTimeAsync(20_000);
 		resolve(json(['late']));
 		expect(await (await noCopy).json()).toEqual(['late']);
@@ -200,8 +201,9 @@ describe('navigate', () => {
 		fetchMock.mockResolvedValueOnce(new Response('x', { status: 503 }));
 		expect(await (await run(request('/stats', { mode: 'navigate' }))).text()).toBe('<html>shell</html>');
 		fetchMock.mockImplementationOnce(() => new Promise(() => {}));
+		const before = fetchMock.mock.calls.length;
 		const slow = run(request('/', { mode: 'navigate' }));
-		await vi.advanceTimersByTimeAsync(0);
+		await vi.waitFor(() => expect(fetchMock.mock.calls.length).toBe(before + 1));
 		await vi.advanceTimersByTimeAsync(4001);
 		expect(await (await slow).text()).toBe('<html>shell</html>');
 	});
