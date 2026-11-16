@@ -232,6 +232,8 @@ Everything lives in `/data` (the volume):
 | `audio/` | audio blobs imported by seed or packs |
 | `books/<user id>/` | uploaded and imported library books |
 | `journal/<user id>/` | draft photos, deleted when the draft ends |
+| `backups/` | pre-restore safety exports (`backups/pre-restore/<user id>/`) and, if you choose, CLI backups |
+| `tmp/` | staged restore uploads and database snapshots; emptied at start-up |
 | `cache/sources/` | cache of the Aozora/Gutenberg imports; safe to delete |
 
 The bundled packs themselves stay in the image (`/opt/qinqin/packs`,
@@ -239,20 +241,56 @@ The bundled packs themselves stay in the image (`/opt/qinqin/packs`,
 
 ### Backup
 
-The app has no backup command or endpoint yet (open issue
-[#61](https://github.com/Elaktrato/qinqin/issues/61)). Copying the live
-database can miss the WAL, so: stop the stack's container in Portainer, copy the
-whole volume, start it again. For a named volume, with the container stopped:
+Two kinds, both in the app (issue [#61](https://github.com/Elaktrato/qinqin/issues/61)).
+
+**Your own data (every user): Settings, Account, Your data.**
+
+- *Download my data* gives a zip of JSON (format v1, `docs/contracts/backup/`): workspaces and settings,
+  study history, flashcards and decks, vacation periods and limits (all plugin rows, user-global ones
+  included), word edits, your own sentences, library books with bookmarks and highlights, plugin switches
+  and your time zone history. The link is a one-time ticket valid 60 s; six downloads per hour.
+- The download never holds your password, email, sessions, two-factor secrets and recovery codes, AI keys,
+  invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo drafts, deleted rows, or dictionary
+  and pack content. After moving to another server you enter AI keys again.
+- *Restore from a backup* **replaces all** of your data with the backup's, in one transaction (a failed
+  restore changes nothing). You upload the zip (at most 128 MiB), read a report of what is replaced and
+  what comes back, then confirm with your password (plus an authenticator or recovery code if you have
+  one) and your username. Before anything changes the server saves your current data to
+  `/data/backups/pre-restore/<id>/` (newest only, kept 7 days; the app links to it). Your other devices
+  are signed out and reload; your sign-in, password and two-factor setup are never touched.
+- Words are matched by dictionary identity, not by internal id, so a backup restores onto another server.
+  Cards, reviews, edits and sentences of words this server does not have are dropped, never guessed: the
+  report lists them and you must tick "drop them". Installing the dictionary and restoring again brings
+  them back. A restore briefly pauses writes for everybody while it runs (about half a minute for a
+  million reviews).
+- Restore needs a proxy body limit of at least 130 MB (the same as pack uploads).
+
+**The whole server (administrators): Settings, Admin, Backup.** Choose database, books, packs, audio, enter
+your password, and a `qinqin-server-<date>.tar.gz` downloads: `BACKUP-INFO.json` (checksums), `qinqin.db`
+(a consistent `VACUUM INTO` snapshot taken while the server runs), `books/`, `packs/`, `audio/`. Never
+`journal/`, `cache/`, `tmp/`, `backups/`. The snapshot needs free space on the data volume of database
+size + 64 MiB. One at a time, one per minute.
+
+For a schedule use the CLI, which opens the database read-only and never migrates, so it can run beside
+the server:
 
 ```sh
-docker run --rm -v <stack>_qinqin-data:/data:ro -v "$PWD":/out alpine \
-  tar czf /out/qinqin-data-$(date +%F).tgz -C /data .
+docker exec <container> qinqin backup --out /data/backups/qinqin-$(date +%F).tar.gz
+# crontab, keep 14 days:
+0 3 * * * docker exec qinqin qinqin backup --out /data/backups/qinqin-$(date +\%F).tar.gz && find /srv/qinqin/backups -name 'qinqin-*.tar.gz' -mtime +14 -delete
 ```
 
-(`docker volume ls` shows the real name; Portainer prefixes the stack name.)
-With a host path, copy that directory. Restore by extracting into an empty
-volume while the container is stopped. Keep `QINQIN_SECRET` backed up
-separately.
+(`--out -` writes to standard output, `--only db,books` limits the parts.) Put `/data/backups` on a bind
+mount or its own volume if you want the archives outside the data volume.
+
+**The server archive contains password hashes, hashed session tokens and AI keys and the SMTP password
+sealed with `QINQIN_SECRET`: store it like the secret.** Restoring without the same secret loses the
+sealed values (users enter AI keys again, the admin re-enters SMTP).
+
+**Restoring a server backup is offline:** stop the container, empty the data volume, `tar xzf
+<file> -C /data`, start the same `QINQIN_SECRET` with the same or a newer image. A book added during the
+backup may be an orphan file, a book deleted during it may lack its text. Keep `QINQIN_SECRET` backed up
+separately. (Without the app: stop the container and copy the whole volume works too.)
 
 ### Upgrading
 
@@ -997,6 +1035,10 @@ All library and source routes need a signed-in user, and so does
 | `GET`/`PATCH /api/admin/settings/auth` | Admin: registration mode, email policy (and, once mail exists, MFA / email-code switches; 409 `mail_unavailable` before) |
 | `GET`/`POST /api/admin/invites`, `DELETE /api/admin/invites/{id}` | Admin: list (never a token), create (`{maxUses, expiresInDays, note}`; the token and `path` only in the 201), revoke |
 | `GET`/`POST /api/admin/users`, `GET`/`PATCH /api/admin/users/{id}`, `POST …/{id}/sessions/revoke`, `POST …/{id}/reset-link`, `GET …/{id}/deletion-preview`, `DELETE …/{id}` `{confirm}` | Admin user management (409 `last_admin`, 409 `self_target`, 422 `confirm_mismatch`) |
+| `POST /api/account/export`, `GET /api/account/export/{ticket}` | Your own data as a zip: the POST answers `{url, expiresInSeconds: 60}`, the unauthenticated GET of that single-use URL streams the file (404 for anything else). 6 per hour, 409 `export_running` |
+| `POST /api/account/restore` (body = the zip, `application/zip`, 128 MiB) → 202 `{token}`; `GET`, `DELETE /api/account/restore/{token}`; `POST /api/account/restore/{token}` `{confirm, password, code?, unresolved?: "drop"}` | Staged restore that replaces all of your data. GET answers `{status: validating\|ready\|invalid\|running\|done\|failed, report, error, result}`. The POST needs your username, password and, with an authenticator, a code (403 `wrong_password`/`code_invalid`); 409 `unresolved_entries` until the missing words are acknowledged. 5 uploads per hour |
+| `POST /api/account/restore/safety-export`, `GET /api/account/restore/safety-export/{ticket}` | A fresh ticket for the data you had before your last restore |
+| `POST /api/admin/backup` `{currentPassword, include?: ["db","books","packs","audio"]}`, `GET /api/admin/backup/{ticket}` | Admin: ticket, then the streamed `tar.gz` server backup. 507 `insufficient_storage`, 409 `backup_running`, 1 per minute |
 | `GET /api/admin/audit?before&limit` | Admin: audit events, newest first, `next` id for the following page |
 | `PUT /api/account/email` `{email, currentPassword}`, `GET /api/account/deletion-preview`, `DELETE /api/account` `{password, confirm}` | Set or clear your own address under the email policy; what deleting your account removes; delete it |
 | `POST /api/auth/logout` | Ends the session the request came in on (204); allowed for a restricted session |

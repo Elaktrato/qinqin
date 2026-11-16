@@ -61,6 +61,21 @@ history under `orphan:<oldId>`. `read` events: `payload.bookId` through the book
 (`scope.workspaces`) and `hiddenDictionaries` (by dictionary pack id) are remapped; a vacation whose
 workspace list becomes empty is dropped (`"all"` stays). Workspace and book ids are always new.
 
+## Restore rules in short
+
+Order: validate everything (nothing changes), dry-run report, safety export of the current data, then one
+transaction that deletes the user's rows through the same registry as account deletion
+(`auth.UserTables()`: every table with user data has an export decision and a restore decision, enforced
+by the schema guard test) and inserts the archive's. Account identity and security tables are never
+touched; only the user's OTHER sessions are revoked. Books are staged beside the target and moved after
+the commit. Restore replaces; there is no merging import.
+
+## Server backup (not a user archive)
+
+`qinqin-server-<date>.tar.gz`: `qinqin.db` (VACUUM INTO snapshot), `books/`, `packs/`, `audio/`,
+`BACKUP-INFO.json` last (`format: qinqin-server-backup`, `formatVersion`, per-file SHA-256). It holds
+password hashes and sealed secrets; restoring is offline (`tar xzf` into an empty volume).
+
 ## Android (v0.4.0)
 
 Export and restore are server features; the app calls the same routes (ticket download, staged upload).

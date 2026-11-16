@@ -29,7 +29,7 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if ct := strings.ToLower(strings.TrimSpace(strings.SplitN(r.Header.Get("Content-Type"), ";", 2)[0])); ct != "application/zip" && ct != "application/octet-stream" && ct != "application/x-zip-compressed" {
-		writeAuthError(w, http.StatusUnsupportedMediaType, "bad_request", "Send the backup file as application/zip.")
+		writeAuthError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Send the backup file as application/zip.")
 		return
 	}
 	if ok, retry := s.authLimiter("restore").Allow(int64Key(u.ID)); !ok {
