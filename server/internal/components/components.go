@@ -55,7 +55,8 @@ type Set struct {
 // components-tsv): components.tsv and the optional parts.tsv of its
 // directory are parsed completely (Parse), then ONE transaction upserts
 // the component_packs row (clearing an uninstall) and replaces the pack's
-// rows. A malformed pack is dict.ErrInvalidPack and leaves nothing behind.
+// rows. The language is stored as its primary subtag (zh-tw -> zh). A
+// malformed pack is dict.ErrInvalidPack and leaves nothing behind.
 func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
@@ -92,6 +93,9 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 		return Result{}, fmt.Errorf("import components pack %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
+	// The lookup asks by primary subtag (a zh-TW workspace asks for zh), so a
+	// pack's language is stored as its primary subtag: zh-tw -> zh.
+	language, _, _ := strings.Cut(m.Language, "-")
 	stamp := time.Now().UTC().Format(time.RFC3339)
 	if _, err := tx.ExecContext(ctx, `
 		INSERT INTO component_packs (pack_id, name, version, language, license, attribution, notice, content_hash, updated_at, deleted_at)
@@ -100,7 +104,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 			language = excluded.language, license = excluded.license, attribution = excluded.attribution,
 			notice = excluded.notice, content_hash = excluded.content_hash, updated_at = excluded.updated_at,
 			deleted_at = NULL`,
-		m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash, stamp); err != nil {
+		m.ID, m.Name, m.Version, language, m.License, m.Attribution, m.Notice, hash, stamp); err != nil {
 		return Result{}, fmt.Errorf("import components pack %s: %w", m.ID, err)
 	}
 	if err := deleteRows(ctx, tx, m.ID); err != nil {

@@ -40,7 +40,8 @@ format is 3 (the ETag carries `chars3-`). Example: `components-response.json` `c
 Public, no per-user data: every caller gets the same bytes. Body
 `{language, packs: [{id, license, attribution}], parts: [{c, s, n}], chars: {glyph: [part, ...]}}`, the
 union of the language's active components packs; `packs` names them by pack id with their stated licence and
-attribution, so a client can credit the parts it shows. `n` is the number of distinct characters containing the part; `s` the largest non-zero
+attribution, so a client can credit the parts it shows. A pack's language is stored as its primary subtag at import (`zh-tw` → `zh`), and the route takes a
+primary subtag, so a zh-TW workspace sees zh packs. `n` is the number of distinct characters containing the part; `s` the largest non-zero
 stroke count a pack gives the part, 0 when none; `parts` sorted by `s` ascending with 0 last, then code
 point. A character in several packs keeps the parts of the first pack by pack id. A language without packs
 gives `{"language":"<code>","packs":[],"parts":[],"chars":{}}` (200); a malformed code 400. ETag, gzip and

@@ -58,7 +58,8 @@ character per line, the character, a tab and its parts separated by spaces
 code point, duplicates are kept once, the character itself is dropped, and at
 most 32 parts remain. The optional `parts.tsv` gives a part's stroke count
 (`言<TAB>7`, 1–64). `#` starts a comment line; a malformed line fails the pack
-with its line number; each file is capped at 8 MiB.
+with its line number; a line is at most 4 KiB and each file at most 8 MiB. The
+pack's `language` is stored as its primary subtag (`zh-tw` becomes `zh`).
 
 Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",
 "name", "schemeLevels": [{"scheme": "<levels pack id>", "level": "<level name>"}]}],

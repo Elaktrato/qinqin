@@ -218,3 +218,24 @@ func TestImportRejects(t *testing.T) {
 		t.Errorf("a rejected pack left %d rows", n)
 	}
 }
+
+// A pack's language is stored as its primary subtag: the lookup asks for
+// zh, ja (GET /api/components takes the primary subtag).
+func TestImportNormalisesLanguageToPrimarySubtag(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	if _, err := components.Import(ctx, sqlDB, writePack(t, "tw", "zh-tw", "components-tsv", map[string]string{"components.tsv": "語\t言 吾\n"})); err != nil {
+		t.Fatal(err)
+	}
+	idx, err := components.Index(ctx, sqlDB, "zh")
+	if err != nil || len(idx.Chars) != 1 {
+		t.Fatalf("zh index = %+v, %v", idx, err)
+	}
+	if v, _ := components.Version(ctx, sqlDB, "zh"); v == components.NoPacks {
+		t.Errorf("zh version = NoPacks")
+	}
+	list, _ := components.List(ctx, sqlDB)
+	if len(list) != 1 || list[0].Language != "zh" {
+		t.Errorf("list = %+v, want language zh", list)
+	}
+}
