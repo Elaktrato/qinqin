@@ -1,7 +1,6 @@
 # Visual rework — design
 
-Status: design agreed with the owner in conversation on 2026-11-16; awaiting the owner's approval of this
-document. Mockups (open in a browser, every mock repaints with the theme switcher):
+Status: approved by the owner on 2026-11-16. Mockups (open in a browser, every mock repaints with the theme switcher):
 [`assets/2026-11-16-visual-rework-mockups.html`](assets/2026-11-16-visual-rework-mockups.html). The mockups load
 Google Fonts for convenience; the app must not (see Fonts).
 
@@ -288,7 +287,9 @@ applied (one `<style>` block on `:root` vs inline properties); the `font` pack m
 search URL shape; animation timings; how pages are migrated in order (suggested: tokens + theme packs + appearance
 settings → base components → frame → Home → Flashcards → Reader → Journal → Search + Entry → Stats → the rest).
 
-GitHub issues to create when this design is approved:
+GitHub issues (created 2026-11-16): epic #95; theme packs and appearance #96; fonts #97; base components #98;
+frame #99; home and heatmap #100; flashcards #101; reader #102; journal (incl. the `kind` field) #103; search and
+entry #104; stats #105; remaining pages #106; owner drawings #107; house theme #108. Original list:
 - Visual rework (epic) linking this document and the mockups, with one sub-issue per migration step above.
 - `theme` pack type and appearance settings (contract `docs/contracts/themes/`, built-in palettes with licence check).
 - Font packs for hanzi/kanji (OFL faces, subsetting) and the bundled interface font.
