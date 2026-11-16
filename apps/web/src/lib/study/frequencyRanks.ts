@@ -49,6 +49,18 @@ export async function loadRanks(
 	language: string,
 	entryIds: readonly number[]
 ): Promise<RanksResult> {
+	// A ranking pack re-installed in the middle of a load drops what the older
+	// pack answered; the dropped ids are asked again, a few times at most.
+	for (let attempt = 0; attempt < 3; attempt++) {
+		const switched = await loadOnce(language, entryIds);
+		const state = stateOf(language);
+		if (!switched || entryIds.every((id) => state.ranks.has(id))) return result(state);
+	}
+	throw new Error('The frequency list changed while loading; try again.');
+}
+
+/** loadOnce asks for the ids not known yet; true when the ranking pack changed meanwhile. */
+async function loadOnce(language: string, entryIds: readonly number[]): Promise<boolean> {
 	const state = stateOf(language);
 	const missing = [...new Set(entryIds)].filter((id) => !state.ranks.has(id));
 	const parts: number[][] = [];
@@ -57,6 +69,7 @@ export async function loadRanks(
 
 	let next = 0;
 	let failure: unknown = null;
+	let switched = false;
 	const worker = async (): Promise<void> => {
 		for (;;) {
 			const part = parts[next++];
@@ -69,6 +82,7 @@ export async function loadRanks(
 						: { id: body.pack.id, packId: body.pack.packId, name: body.pack.name };
 				if (state.pack !== undefined && (state.pack?.id ?? null) !== (pack?.id ?? null)) {
 					state.ranks = new Map(); // another ranking pack: older ranks do not apply
+					switched = true;
 				}
 				state.pack = pack;
 				const got = new Map(
@@ -82,5 +96,5 @@ export async function loadRanks(
 	};
 	await Promise.all(Array.from({ length: Math.min(CONCURRENCY, parts.length) }, worker));
 	if (failure !== null) throw failure;
-	return result(state);
+	return switched;
 }

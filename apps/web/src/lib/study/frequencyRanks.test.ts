@@ -144,6 +144,31 @@ describe('loadRanks', () => {
 		expect(b.rankOf(1)).toBeNull();
 	});
 
+	it('a pack switch in the middle of a load reloads what the older pack answered', async () => {
+		const done = loadRanks('ja', range(1, 1000));
+		await vi.waitFor(() => expect(calls).toHaveLength(2));
+		answer(calls[0]); // ids 1..500 from pack 3
+		calls[1].resolve({ pack: { ...PACK, id: 9 }, ranks: calls[1].ids.map((id) => ({ id, rank: id })) });
+		// The ids pack 3 answered are asked again, from pack 9.
+		await vi.waitFor(() => expect(calls).toHaveLength(3));
+		expect(calls[2].ids).toEqual(range(1, 500));
+		calls[2].resolve({ pack: { ...PACK, id: 9 }, ranks: calls[2].ids.map((id) => ({ id, rank: id })) });
+		const r = await done;
+		expect(r.pack?.id).toBe(9);
+		expect(r.rankOf(7)).toBe(7);
+		expect(r.rankOf(700)).toBe(700);
+	});
+
+	it('a pack that keeps switching rejects instead of mixing ranks', async () => {
+		let n = 0;
+		vi.mocked(api).mockImplementation((async (_p: string, opts?: { body?: unknown }) => {
+			n += 1;
+			const ids = (opts?.body as { ids: number[] }).ids;
+			return { pack: { ...PACK, id: n }, ranks: ids.map((id) => ({ id, rank: id })) };
+		}) as never);
+		await expect(loadRanks('ja', range(1, 1000))).rejects.toThrow('frequency list changed');
+	});
+
 	it('no ids: no request', async () => {
 		const r = await loadRanks('ja', []);
 		expect(calls).toHaveLength(0);
