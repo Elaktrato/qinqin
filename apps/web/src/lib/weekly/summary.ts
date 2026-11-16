@@ -12,6 +12,7 @@ import { isValidReview } from '../study/scheduler';
 import type { ReviewEvent } from '../study/types';
 import { isVacationDay, type Run } from '../study/vacation';
 import { addDays, type StudyDay } from '../time/studyDay';
+import { reviewsKey } from './replay';
 import { isSkippedDate, isoWeekday, weekDates, weekOf } from './week';
 
 export type DayState = 'active' | 'inactive' | 'vacation' | 'upcoming' | 'skipped';
@@ -113,24 +114,27 @@ interface LocalPass {
 	localDays: Set<string>;
 }
 
-// The per-day pass over the review log, once per loaded history and study
-// day (both are cached objects), so browsing weeks does not repeat it.
-const passes = new WeakMap<readonly ReviewEvent[], WeakMap<StudyDay, LocalPass>>();
+/** Counts passes over the review log; the performance test reads it. */
+export const summaryStats = { logPasses: 0 };
+
+// The per-day pass over the review log, once per log content (reviewsKey:
+// a history reloaded after its TTL is a new, equal array) and study day
+// (a cached object), so browsing weeks does not repeat it.
+const MAX_PASSES = 4;
+const passes = new Map<string, { day: StudyDay; pass: LocalPass }>();
 
 function localPass(reviews: readonly ReviewEvent[], day: StudyDay): LocalPass {
-	let byDay = passes.get(reviews);
-	if (byDay === undefined) {
-		byDay = new WeakMap();
-		passes.set(reviews, byDay);
-	}
-	let pass = byDay.get(day);
-	if (pass === undefined) {
-		pass = {
-			flash: flashcardAmounts(reviews, day.dayOf),
-			localDays: new Set(reviews.filter(isValidReview).map((r) => day.dayOf(Date.parse(r.ts))))
-		};
-		byDay.set(day, pass);
-	}
+	const key = reviewsKey(reviews);
+	const hit = passes.get(key);
+	if (hit !== undefined && hit.day === day) return hit.pass;
+	summaryStats.logPasses += 1;
+	const pass = {
+		flash: flashcardAmounts(reviews, day.dayOf),
+		localDays: new Set(reviews.filter(isValidReview).map((r) => day.dayOf(Date.parse(r.ts))))
+	};
+	passes.delete(key);
+	if (passes.size >= MAX_PASSES) passes.delete(passes.keys().next().value as string);
+	passes.set(key, { day, pass });
 	return pass;
 }
 

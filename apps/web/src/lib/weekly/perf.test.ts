@@ -4,7 +4,7 @@ import { IDENTITY_CLOCK } from '../study/studyClock';
 import type { ReviewEvent, StudyCard } from '../study/types';
 import { addDays, studyDay } from '../time/studyDay';
 import { replayStats, timelinesFor, wordsReachingMature } from './replay';
-import { weekSummary } from './summary';
+import { summaryStats, weekSummary } from './summary';
 import { MAX_WEEKS_BACK, weekOf } from './week';
 
 // A guard against an accidental per-week replay: 53 weeks (current + 52
@@ -64,5 +64,26 @@ describe('weekly summary performance', () => {
 		const elapsed = performance.now() - t0;
 		expect(replayStats.timelines - before).toBe(CARDS);
 		expect(elapsed).toBeLessThan(10_000);
+
+		// After the study history's TTL the page gets a new, equal history
+		// object: browsing on replays nothing and repeats no log pass.
+		const reloaded = reviews.map((r) => ({ ...r, payload: { ...r.payload } }));
+		const passes = summaryStats.logPasses;
+		const t = timelinesFor(reloaded, DEFAULT_W, IDENTITY_CLOCK);
+		for (let k = 0; k < 3; k++) {
+			weekSummary({
+				monday: addDays(current, -7 * k),
+				now: NOW,
+				day,
+				workspaceId: 1,
+				reviews: reloaded,
+				vacation: [],
+				activity: { sources: [], cells: [] },
+				goals: null,
+				mature: (b, a) => wordsReachingMature(cards, decks, t, b, a)
+			});
+		}
+		expect(replayStats.timelines - before).toBe(CARDS);
+		expect(summaryStats.logPasses).toBe(passes);
 	}, 60_000);
 });

@@ -25,7 +25,37 @@ export interface Timelines {
 /** Counts scheduleTimeline calls made here; the tests read it. */
 export const replayStats = { timelines: 0 };
 
-const memo = new WeakMap<readonly ReviewEvent[], Map<string, Timelines>>();
+/** Timelines kept per content key; a few, so switching workspaces does not thrash. */
+const MAX_MEMO = 4;
+const memo = new Map<string, Timelines>();
+const keys = new WeakMap<readonly ReviewEvent[], string>();
+
+/**
+ * reviewsKey identifies a review log by its content (FNV-1a over each
+ * event's id, ts, card and grade, plus the count), so a study history
+ * reloaded after its cache TTL — a new array with the same events — finds
+ * the same timelines and log pass. Computed once per array.
+ */
+export function reviewsKey(reviews: readonly ReviewEvent[]): string {
+	const cached = keys.get(reviews);
+	if (cached !== undefined) return cached;
+	let h = 0x811c9dc5;
+	const mix = (text: string): void => {
+		for (let i = 0; i < text.length; i++) {
+			h ^= text.charCodeAt(i);
+			h = Math.imul(h, 0x01000193) >>> 0;
+		}
+		h ^= 0x1f;
+		h = Math.imul(h, 0x01000193) >>> 0;
+	};
+	for (const review of reviews) {
+		const payload = (review?.payload ?? {}) as { cardId?: unknown; grade?: unknown };
+		mix(`${review?.id}|${review?.ts}|${String(payload.cardId)}|${String(payload.grade)}`);
+	}
+	const key = `${reviews.length}:${h.toString(36)}`;
+	keys.set(reviews, key);
+	return key;
+}
 
 function build(reviews: readonly ReviewEvent[], w: readonly number[], clock: StudyClock): Timelines {
 	let byCard: Map<string, ReviewEvent[]> | null = null;
@@ -56,21 +86,19 @@ function build(reviews: readonly ReviewEvent[], w: readonly number[], clock: Stu
 }
 
 /**
- * timelinesFor: one lazily built timeline per reviewed card, memoised per
- * reviews array (the cached study history), weights and clock runs.
+ * timelinesFor: one lazily built timeline per reviewed card, memoised by
+ * the reviews' content (reviewsKey), the weights and the clock runs.
  */
 export function timelinesFor(reviews: readonly ReviewEvent[], w: readonly number[], clock: StudyClock): Timelines {
-	const key = `${weightsKey(w)}|${JSON.stringify(clock.runs)}`;
-	let byKey = memo.get(reviews);
-	if (byKey === undefined) {
-		byKey = new Map();
-		memo.set(reviews, byKey);
-	}
-	let t = byKey.get(key);
+	const key = `${reviewsKey(reviews)}|${weightsKey(w)}|${JSON.stringify(clock.runs)}`;
+	let t = memo.get(key);
 	if (t === undefined) {
 		t = build(reviews, w, clock);
-		byKey.set(key, t);
+		if (memo.size >= MAX_MEMO) memo.delete(memo.keys().next().value as string);
+	} else {
+		memo.delete(key);
 	}
+	memo.set(key, t);
 	return t;
 }
 

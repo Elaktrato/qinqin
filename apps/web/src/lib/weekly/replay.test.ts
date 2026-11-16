@@ -96,12 +96,22 @@ describe('timelinesFor', () => {
 		expect(t1.of('none')).toEqual([]);
 	});
 
-	it('replays again for a new reviews array or another clock', () => {
+	it('keeps the timelines for a new array with the same reviews (a reloaded history after its TTL)', () => {
 		timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK).of('a');
 		const before = replayStats.timelines;
-		timelinesFor([...reviews], DEFAULT_W, IDENTITY_CLOCK).of('a');
+		timelinesFor(reviews.map((r) => ({ ...r, payload: { ...r.payload } })), DEFAULT_W, IDENTITY_CLOCK).of('a');
+		expect(replayStats.timelines - before).toBe(0);
+	});
+
+	it('replays again when the reviews, the weights or the clock change', () => {
+		timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK).of('a');
+		const before = replayStats.timelines;
+		timelinesFor([...reviews, ev(4, 'a', 1, '2026-11-06T10:00:00Z')], DEFAULT_W, IDENTITY_CLOCK).of('a');
+		// A review moved to another card by a duplicate merge: same ids, other content.
+		timelinesFor(reviews.map((r) => (r.payload.cardId === 'b' ? { ...r, payload: { ...r.payload, cardId: 'a' } } : r)), DEFAULT_W, IDENTITY_CLOCK).of('a');
+		timelinesFor(reviews, DEFAULT_W.map((x, i) => (i === 0 ? x + 0.1 : x)), IDENTITY_CLOCK).of('a');
 		timelinesFor(reviews, DEFAULT_W, clockFromRuns([{ a: Date.parse('2026-11-03T00:00:00Z'), n: 1 }])).of('a');
-		expect(replayStats.timelines - before).toBe(2);
+		expect(replayStats.timelines - before).toBe(4);
 	});
 });
 

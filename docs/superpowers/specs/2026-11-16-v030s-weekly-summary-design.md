@@ -111,9 +111,11 @@ is not reported weekly.
 timeline per reviewed card is built per loaded study history (memoised on the history object and the weights)
 and every week, comparison week and the characters sample from it. Browsing to another week replays nothing.
 
-Ruling: memoise on the cached history object (`loadStudyHistory` returns the same object until invalidated) —
-one replay as on the decks view, no stored statistics — cost: memory of one schedule per review (a learner with
-100 000 reviews holds ~100 000 small objects while Stats is open).
+Ruling (corrected in the review fix wave): memoise on the review log's **content** (`reviewsKey`: the count and
+an FNV-1a hash of each event's id, ts, card and grade), the weights and the clock runs, not on the history object —
+`loadStudyHistory` returns a new object after its 8 s TTL, so an identity memo replayed everything on the next
+"Previous week"; the content key costs one hash pass per new history object and keeps four entries — cost: memory
+of one schedule per review for up to four logs (~100 000 small objects for a 100 000-review learner).
 
 **Compared with the previous week.** Each count row shows the difference to the previous week. A completed week
 compares with the whole previous week. The **current (in-progress) week compares with the previous week up to the
