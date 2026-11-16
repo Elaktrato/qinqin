@@ -39,13 +39,18 @@ func typedRow(r PluginRow) (row rows.Row, typed, ok bool) {
 // restoredModified is the edit time a restored typed row keeps: the
 // archive's modifiedAt, else its updatedAt (a row no client stamped), else
 // the restore time; always RFC 3339 UTC seconds, since last-write-wins
-// compares it.
+// compares it, and never after the restore time (an edit time in the future
+// would win every later write).
 func restoredModified(r PluginRow, now string) string {
+	limit, limitErr := time.Parse(time.RFC3339, now)
 	for _, s := range []*string{r.ModifiedAt, &r.UpdatedAt} {
 		if s == nil {
 			continue
 		}
 		if t, err := time.Parse(time.RFC3339, *s); err == nil {
+			if limitErr == nil && t.After(limit) {
+				return now
+			}
 			return t.UTC().Truncate(time.Second).Format(time.RFC3339)
 		}
 	}
