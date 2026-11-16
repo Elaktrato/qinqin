@@ -25,6 +25,10 @@ Sentence, writing and tone cards are **companions** of vocab cards: a companion 
 
 They are opt-in per deck: each deck row on `/study` has a **Reverse** and a **Cloze** switch. A deck that never turns them on behaves as before. After you answer a reverse or cloze card of a word, its other cards are buried until your next learner day (they stay due but are left out of the queue and counts); vocab, sentence, writing and tone cards do not bury each other. Reverse and cloze reviews give XP and count for streaks and the heatmap but not for character mastery.
 
+## Your notes on the answer side
+
+When a card's answer is shown, your note on the word (see [Searching and entries](Searching-and-entries)) appears below the card, for every card type, level sessions included. It never shows before the answer, since a mnemonic often gives it away. Notes are loaded once when a session starts, so a note edited meanwhile in another tab appears in the next session; an offline session shows none, and a session never waits for them. Turn them off per workspace in Settings, Study: **Show my notes on the answer side**.
+
 ## Grading
 
 Grade each card **Again**, **Hard**, **Good** or **Easy** (keys 1 to 4). After a check the exercise suggests a grade by highlighting and focusing a button; it never submits one, and never suggests Easy.
