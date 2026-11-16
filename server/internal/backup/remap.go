@@ -419,9 +419,9 @@ func (m *Maps) RegisterNote(r PluginRow) {
 	}
 }
 
-// IsNoteLoser reports a note row that maps to a resolved entry but loses
+// isNoteLoser reports a note row that maps to a resolved entry but loses
 // that target to another archive note (see RegisterNote).
-func (m *Maps) IsNoteLoser(r PluginRow) bool {
+func (m *Maps) isNoteLoser(r PluginRow) bool {
 	src, ok := noteEntryID(r)
 	if !ok {
 		return false
@@ -433,9 +433,6 @@ func (m *Maps) IsNoteLoser(r PluginRow) bool {
 	w, has := m.noteWinner[noteSlot(r, target)]
 	return has && w.sourceID != src
 }
-
-// NoteEntryID is the source entry id of a qinqin-core note row, if it is one.
-func NoteEntryID(r PluginRow) (int64, bool) { return noteEntryID(r) }
 
 // note remaps a qinqin-core row (src as in the archive, r with its
 // workspace already mapped): a note
@@ -451,7 +448,7 @@ func (m *Maps) note(src, r PluginRow) (PluginRow, bool) {
 	if !ok {
 		return r, true
 	}
-	if m.IsNoteLoser(src) {
+	if m.isNoteLoser(src) {
 		return r, true
 	}
 	r.Key = noteKeyPrefix + strconv.FormatInt(target, 10)
