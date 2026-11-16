@@ -169,7 +169,7 @@ describe('buildVocabFaces for a character', () => {
 });
 
 describe('withShownWritten', () => {
-	const inu = {
+	const inu: Entry = {
 		id: 1,
 		language: 'ja',
 		kind: 'word',
@@ -178,18 +178,20 @@ describe('withShownWritten', () => {
 		senses: [],
 		sentences: [],
 		variants: [],
-		badges: []
+		badges: [],
+		attrs: {},
+		radicalId: null
 	};
 
 	it('a starter-copied いぬ card shows いぬ on its front', () => {
-		const shown = withShownWritten(inu as Entry, 'いぬ');
+		const shown = withShownWritten(inu, 'いぬ');
 		expect(shown.written).toBe('いぬ');
 		expect(buildVocabFaces(shown, null, 'ja').front.written).toBe('いぬ');
 	});
 
 	it('keeps the entry when there is no snapshot, a kanji snapshot or a kana that is no reading', () => {
-		expect(withShownWritten(inu as Entry, undefined)).toBe(inu);
-		expect(withShownWritten(inu as Entry, '狗').written).toBe('犬');
-		expect(withShownWritten(inu as Entry, 'ねこ').written).toBe('犬');
+		expect(withShownWritten(inu, undefined)).toBe(inu);
+		expect(withShownWritten(inu, '狗').written).toBe('犬');
+		expect(withShownWritten(inu, 'ねこ').written).toBe('犬');
 	});
 });

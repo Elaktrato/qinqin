@@ -23,9 +23,14 @@
 	import { entryRadicalLinks } from '$lib/radicals/selection';
 	import { workspaces } from '$lib/workspaces';
 	import EntryNote from '$lib/notes/EntryNote.svelte';
+	import { joinForms, otherForms } from '$lib/plugins/reader/entryDisplay';
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
+	// The other written forms (事 on the entry shown as こと); search-only ones never.
+	const alsoWritten = $derived(
+		entry ? otherForms({ forms: entry.forms ?? [], term: entry.written }, Infinity) : []
+	);
 	// The radical's written form, once fetched; empty shows the id instead.
 	let radicalWritten = $state('');
 	let loading = $state(true);
@@ -202,6 +207,11 @@
 						label={entry.written}
 					/>
 				</div>
+				{#if alsoWritten.length > 0}
+					<p class="also-written" lang={entry.language}>
+						Also written: {joinForms(alsoWritten, entry.language)}
+					</p>
+				{/if}
 				<div class="chips">
 					<span class="chip">{entry.kind}</span>
 					<span class="chip" title={entry.language}>{languageLabel(entry.language)}</span>
@@ -334,6 +344,11 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 1rem;
+	}
+
+	.also-written {
+		margin: 0.25rem 0 0;
+		color: var(--muted, #666);
 	}
 
 	.headword {
