@@ -26,6 +26,10 @@ database with a SvelteKit single-page app embedded in the binary.
   and statistics (see [Workspaces](#workspaces)).
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
+- **Radical and part lookup** — in Chinese and Japanese workspaces, find a
+  character you cannot read or type by its Kangxi radical, the parts you can see
+  (Japanese parts derived from KanjiVG) and its total stroke count
+  (`/search/parts`; rules: `docs/contracts/radicals/`).
 - **Yomitan-style lookup** — in the Reader, hovering a word shows a ranked stack
   of dictionary entries with frequency chips, and popups open from inside popups.
 - **Editing** — correct written forms and readings per user without mutating
@@ -1529,6 +1533,12 @@ one entry. `entry_links` connect characters to their radical and to variants.
   `variant` links.
 - **Frequency** lives in `frequency`, one row per term (optionally tied to one
   reading) with its rank, grouped by pack in `frequency_packs`.
+- **Character components** (the radical and part lookup) live in `components`
+  (one row per pack and character: its parts as a JSON array) and
+  `component_parts` (part stroke counts), grouped by pack in `component_packs`
+  (migration 036). They are keyed by glyph, not entry id, so they import in any
+  order; they are shared lookup data, replaced per pack on import and not synced
+  or exported in a personal backup.
 
 Importers live in `server/internal/dict/` (`jmdict`, `cedict`, `kanjidic2`,
 `unihan` and the `json` pack format) and write through one lexicon importer;
@@ -1585,6 +1595,7 @@ frequency list and level lists under `/opt/qinqin/packs` (source: `plugins/data/
 | [JMdict](https://www.edrdg.org/) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
 | [Jiten frequency list](https://jiten.moe/frequency-dictionaries) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
+| [KanjiVG](https://kanjivg.tagaini.net) (`kanjivg-components`) | Japanese: the parts each kanji is drawn from (6,312 kanji), derived from KanjiVG r20260714 for the radical and part lookup | CC BY-SA 3.0 (© Ulrich Apel); derived index under the same licence |
 | [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-chars`) | Chinese: the official HSK 3.0 character list, the characters to recognise (认读字) per level, HSK 1–6 and HSK 7–9 (3,088 characters; same edition) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
 | [HSK 考试大纲 (Syllabus for the Chinese Proficiency Test)](https://www.chinesetest.cn) (`hsk-words`) | Chinese: the official HSK 3.0 word list, HSK 1–6 and HSK 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07; CLEC, distributed by CTI) | No reuse licence granted; see the CTI [Legal Notice](https://www.chinesetest.cn/legal-notice) (source must be indicated; reasonable, good-faith quoting only); included with attribution at the project owner's decision; legal status not verified |
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (`joyo-grades`) | Japanese: the 2,136 jōyō kanji by school grade (Grade 1–6, Secondary), derived from the grades recorded in KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
@@ -1706,11 +1717,12 @@ after a new server route, regenerate the route fixture with
 |---|---|
 | `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`, `recover`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
-| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists) with their licenses and attribution notices |
+| `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists, the KanjiVG component index) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |
 | `plugins/samples/` | Hand-written samples: dictionaries (`zh-mini`, `ja-mini`) and level packs (`hsk-mini`, `jlpt-mini`), not seeded by default: `qinqin seed --packs plugins/samples` |
 | `docs/` | Design notes, data sources, and the git-flow guide |
 | `scripts/fetch-seeds.sh` | Refreshes the bundled upstream dictionaries (and, via `fetch-jiten-frequency.sh`, the Jiten list: a manual, licence-checked step) |
+| `scripts/fetch-kanjivg-components.sh` | Rebuilds the bundled KanjiVG component index from the pinned KanjiVG tag (a manual, licence-checked step); `prepare-ids-components.mjs` prepares a local-only Chinese components pack from an IDS file |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); with `--jlpt-vocab`, generates the optional local-only JLPT vocabulary pack into `plugins/data-local/` (download commands in its header) |
 | `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
 | `scripts/prepare-local-levels.mjs` | Converts a TSV you prepared (TBCL, curriculum tables, any private list) into a local-only level pack under `plugins/data-local/`; writes no `LICENSE`, refuses other directories |

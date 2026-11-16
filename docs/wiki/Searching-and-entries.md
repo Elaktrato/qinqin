@@ -6,6 +6,17 @@ Search looks across written forms, readings and meanings and is scoped to the la
 
 Readings you can search by: pinyin and bopomofo for Chinese, kana (and romaji) for Japanese.
 
+## Find a character by radical or part
+
+In a Chinese or Japanese workspace, **Find a character by radical or part** on the Search page opens `/search/parts`, for a character you can see but cannot read or type (鯖, 锈).
+
+- **Radical**: the 214 Kangxi radicals in 17 groups by their classical stroke count. Each tile shows the radical with the shapes you meet in text (氵 for 水; 讠 in Chinese, 竜 in Japanese). Picking one lists the characters classified under it.
+- **Parts**: the parts you can see anywhere in the character, at any depth (語 has 言 口 吾 五 二). Every chosen part must be in the character. Parts that would leave nothing are greyed out; the list shows the common parts first, **Show all parts** lists the rest. Japanese has a bundled parts list (derived from KanjiVG); Chinese has radicals and strokes only, unless the server has a local components pack.
+- **Total strokes**: narrows the result to one total stroke count (total, not residual strokes).
+- **Type a radical or part**: a typed 氵 picks radical 85; any other character is added as a part.
+
+Results are grouped by total stroke count, at most 300 at first (**Show all** shows the rest), and each links to its entry. The address keeps the selection (`/search/parts?r=85&p=口`), so a reload or a shared link shows the same list. A character entry links **All characters with this radical**, and a radical's own entry **Browse by stroke count**. The lookup needs no network beyond loading the character list once; it does not work offline.
+
 ## Entries
 
 An entry is one dictionary headword, either a **word** or a **character** (kanji or hanzi).

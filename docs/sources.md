@@ -3,7 +3,8 @@
 The app's **Sources page** (`/sources`) is the live source of truth for
 credits. It is public: anyone can open it without signing in. It is built at runtime from three places: the installed packs'
 manifests (`license`, `attribution` and the optional `notice`, served by
-`GET /api/dictionaries`, `/api/frequency-packs` and `/api/schemes`), the
+`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes` and
+`/api/component-packs`), the
 `sources` that a web plugin declares in its manifest, and the app's own
 credits (`apps/web/src/lib/sources/coreCredits.ts`). This file is the human
 overview of the same material: the per-language tables and the notes on
