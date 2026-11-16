@@ -190,6 +190,8 @@ export interface DeckSessionOptions {
 	deckSettings?: Record<string, DeckSettings>;
 	/** Offline: real cards only, no companions (see planCompanions). */
 	offline?: boolean;
+	/** The new-card order (#75, BuildQueueOptions.newKey); absent: the order added. */
+	newKey?: (card: StudyCard) => number | null;
 }
 
 /**
@@ -284,7 +286,8 @@ export function deckSessionPlan({
 	w,
 	ctx,
 	deckSettings,
-	offline
+	offline,
+	newKey
 }: DeckSessionOptions): DeckSessionPlan {
 	const backfillLeft = backfillLimit(newLimit);
 	const wanted = sessionKinds(kinds, language);
@@ -312,7 +315,8 @@ export function deckSessionPlan({
 		ctx,
 		// Reviews of cards that are not shown (buried, kind switched off) still
 		// use the day's allowance: count over every card.
-		counts: dayCountsCached(cards, reviews, ctx, now)
+		counts: dayCountsCached(cards, reviews, ctx, now),
+		newKey
 	});
 	const reviewed = reviewedIds(reviews);
 

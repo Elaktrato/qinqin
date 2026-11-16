@@ -56,7 +56,8 @@ Direction: `docs/superpowers/directions/2026-11-15-v0.3.0-web-build.md`. Collect
 
 - Done on develop (merged via `feature/v0.3.0` and the topic branches): ~~[#86](https://github.com/Elaktrato/qinqin/issues/86) login rate limiting~~, ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) the learner's local day~~, ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions~~, ~~[#64](https://github.com/Elaktrato/qinqin/issues/64) accounts (sessions, invites, SMTP, MFA)~~, ~~[#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards~~, ~~[#90](https://github.com/Elaktrato/qinqin/issues/90) decks view~~ (merge 0764d27), ~~[#88](https://github.com/Elaktrato/qinqin/issues/88) vacation mode and [#89](https://github.com/Elaktrato/qinqin/issues/89) daily limits~~ (merge b3548b2), ~~[#61](https://github.com/Elaktrato/qinqin/issues/61) backup~~ (merge 0a3884f), ~~[#79](https://github.com/Elaktrato/qinqin/issues/79) installable app and offline study~~ (merge 97e0053), ~~[#78](https://github.com/Elaktrato/qinqin/issues/78) reader display settings~~ (merge 3d05ae0).
 - `docs/contracts/` for the Android client: done, entry point `docs/contracts/overview.md` (gaps listed there).
-- Stretch, not started: [#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals, [#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered starter decks, [#77](https://github.com/Elaktrato/qinqin/issues/77) notes and mnemonics, [#68](https://github.com/Elaktrato/qinqin/issues/68) unknown-word highlighting, [#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history, [#71](https://github.com/Elaktrato/qinqin/issues/71) radical lookup, [#83](https://github.com/Elaktrato/qinqin/issues/83) personal access tokens, [#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary, [#80](https://github.com/Elaktrato/qinqin/issues/80).
+- Stretch (`feature/v0.3.0-stretch`, brief `docs/superpowers/directions/2026-11-16-v0.3.0-stretch-agent-brief.md`): ~~[#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals~~ (merge 93f70f9, `docs/contracts/goals/`), ~~[#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks~~ (merge ed99015, `docs/contracts/frequency/`; no new data bundled, no clearly licensed Chinese word list exists).
+- Stretch, not started: [#77](https://github.com/Elaktrato/qinqin/issues/77) notes and mnemonics, [#68](https://github.com/Elaktrato/qinqin/issues/68) unknown-word highlighting, [#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history, [#71](https://github.com/Elaktrato/qinqin/issues/71) radical lookup, [#83](https://github.com/Elaktrato/qinqin/issues/83) personal access tokens, [#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary, [#80](https://github.com/Elaktrato/qinqin/issues/80).
 
 ## v0.4.0 — Android client (milestone)
 
@@ -97,8 +98,8 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 
 - [#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards (built on `feature/v030-cards-reverse-cloze`: per-deck switch, sibling burying, contract fixtures in `docs/contracts/cards/`)
 - [#66](https://github.com/Elaktrato/qinqin/issues/66) leech handling with a per-user policy
-- [#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals
-- [#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks
+- ~~[#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals~~ — done (v0.3.0 stretch)
+- ~~[#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks~~ — done (v0.3.0 stretch)
 - [#76](https://github.com/Elaktrato/qinqin/issues/76) focus sessions from weak characters and leeches
 - [#74](https://github.com/Elaktrato/qinqin/issues/74) placement test and "I already know this"
 - [#60](https://github.com/Elaktrato/qinqin/issues/60) Anki import

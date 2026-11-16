@@ -853,3 +853,24 @@ describe('daily counts include cards that are not shown', () => {
 		expect(plan.queue).toHaveLength(0);
 	});
 });
+
+describe('deckSessionPlan with a new-card key (#75)', () => {
+	it('passes the key to the real queue', () => {
+		const cards = [1, 2, 3].map((n) => card(`v${n}`, 'vocab', n, { createdAt: `2026-01-0${n}T00:00:00Z` }));
+		const options = {
+			ctx: UTC_CONTEXT,
+			cards,
+			reviews: [] as ReviewEvent[],
+			deckIds: ['general'],
+			kinds: ['vocab'] as StudyCardKind[],
+			newLimit: 2,
+			reviewLimit: 100,
+			now: new Date('2026-03-01T00:00:00Z'),
+			w: DEFAULT_W,
+			language: 'zh'
+		};
+		expect(deckSessionPlan(options).queue.map((i) => i.cardId)).toEqual(['v1', 'v2']);
+		const ranked = deckSessionPlan({ ...options, newKey: (c: StudyCard) => ({ 3: 1, 2: 2 })[c.entryId] ?? null });
+		expect(ranked.queue.map((i) => i.cardId)).toEqual(['v3', 'v2']);
+	});
+});

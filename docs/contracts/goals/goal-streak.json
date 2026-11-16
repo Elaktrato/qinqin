@@ -1,0 +1,650 @@
+{
+  "version": 1,
+  "rule": "goals/goal-streak",
+  "cases": [
+    {
+      "name": "today met ends a run of three",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-13": {
+          "activity": {
+            "review": 2
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-14": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 6
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 3,
+        "todayMet": true,
+        "capped": false
+      }
+    },
+    {
+      "name": "today open counts from yesterday",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-13": {
+          "activity": {
+            "review": 2
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-14": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 6
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 2
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 2,
+        "todayMet": false,
+        "capped": false
+      }
+    },
+    {
+      "name": "a vacation gap neither extends nor breaks",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [
+        {
+          "start": "2026-11-14",
+          "end": "2026-11-15"
+        }
+      ],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-12": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-13": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 9
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 3,
+        "todayMet": true,
+        "capped": false
+      },
+      "note": "11-16, 11-13 and 11-12 are met; 11-15 is vacation although 9 reviews were done; 11-11 is missed"
+    },
+    {
+      "name": "a missed day breaks",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-14": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 4
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 1,
+        "todayMet": true,
+        "capped": false
+      }
+    },
+    {
+      "name": "a none day breaks",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 5
+          },
+          {
+            "from": "2026-11-14",
+            "metric": null,
+            "target": null
+          },
+          {
+            "from": "2026-11-15",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-13": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-14": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 2,
+        "todayMet": true,
+        "capped": false
+      }
+    },
+    {
+      "name": "today on vacation keeps the run",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [
+        {
+          "start": "2026-11-16",
+          "end": "2026-11-16"
+        }
+      ],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-13": {
+          "activity": {
+            "review": 0
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-14": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 2,
+        "todayMet": true,
+        "capped": false
+      }
+    },
+    {
+      "name": "earlier days keep their own target",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 5
+          },
+          {
+            "from": "2026-11-15",
+            "metric": "activity:review",
+            "target": 10
+          }
+        ]
+      },
+      "days": {
+        "2026-11-13": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-14": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 10
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 7
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 2,
+        "todayMet": false,
+        "capped": false
+      },
+      "note": "11-14 is met under target 5, 11-15 under target 10, today is open at 7 of 10"
+    },
+    {
+      "name": "a goal that starts today, not met yet",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-16",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "days": {
+        "2026-11-15": {
+          "activity": {
+            "review": 9
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 2
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 0,
+        "todayMet": false,
+        "capped": false
+      }
+    },
+    {
+      "name": "no goal today",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 5
+          },
+          {
+            "from": "2026-11-16",
+            "metric": null,
+            "target": null
+          }
+        ]
+      },
+      "days": {
+        "2026-11-15": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 0,
+        "todayMet": false,
+        "capped": false
+      }
+    },
+    {
+      "name": "no row",
+      "today": "2026-11-16",
+      "windowStart": "2025-11-16",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": null,
+      "days": {
+        "2026-11-16": {
+          "activity": {
+            "review": 5
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 0,
+        "todayMet": false,
+        "capped": false
+      }
+    },
+    {
+      "name": "a run that reaches the window start is capped",
+      "today": "2026-11-16",
+      "windowStart": "2026-11-13",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 1
+          }
+        ]
+      },
+      "days": {
+        "2026-11-12": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-13": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-14": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 4,
+        "todayMet": true,
+        "capped": true
+      },
+      "note": "a short window for the fixture: 11-13..11-16 are counted, 11-12 is outside the window"
+    },
+    {
+      "name": "a run broken exactly at the window start is not capped",
+      "today": "2026-11-16",
+      "windowStart": "2026-11-13",
+      "units": {
+        "review": "count",
+        "read": "seconds",
+        "journal": "count"
+      },
+      "vacation": [],
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-01",
+            "metric": "activity:review",
+            "target": 1
+          }
+        ]
+      },
+      "days": {
+        "2026-11-14": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-15": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        },
+        "2026-11-16": {
+          "activity": {
+            "review": 1
+          },
+          "newCards": 0,
+          "studySeconds": 0
+        }
+      },
+      "expect": {
+        "current": 3,
+        "todayMet": true,
+        "capped": false
+      }
+    }
+  ]
+}

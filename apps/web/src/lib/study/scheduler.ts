@@ -5,6 +5,7 @@
 
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
+import { orderNew } from './newOrder';
 import { weightsKey } from './fsrs/params';
 import { feedInstants, type StudyClock } from './studyClock';
 import { isDueNow, type StudyContext } from './studyContext';
@@ -49,6 +50,12 @@ export interface BuildQueueOptions {
 	 * `reviews`; the decks view passes one shared count for many queues.
 	 */
 	counts?: DayCounts;
+	/**
+	 * The new-card order (#75): a key per never-reviewed card, lower
+	 * first, null after every keyed card (orderNew). Absent: the order
+	 * added. Reviews and the due order are unchanged.
+	 */
+	newKey?: (card: StudyCard) => number | null;
 }
 
 // One scheduler instance per weight set: instances are stateless between
@@ -202,7 +209,8 @@ export function queueCandidates({
 	kinds,
 	w,
 	scheduleOf,
-	counts
+	counts,
+	newKey
 }: BuildQueueOptions): { candidates: Candidate[]; byId: Map<string, StudyCard>; counts: DayCounts } {
 	const dayUsed = counts ?? dayCountsCached(cards, reviews, ctx, now);
 	if (ctx.vacationToday) return { candidates: [], byId: new Map(), counts: dayUsed };
@@ -245,6 +253,7 @@ export function queueCandidates({
 
 	due.sort((a, b) => a.at - b.at || byId(a.card, b.card));
 	fresh.sort((a, b) => instant(a.createdAt) - instant(b.createdAt) || byId(a, b));
+	const ordered = newKey === undefined ? fresh : orderNew(fresh, newKey);
 
 	const candidates: Candidate[] = [
 		...due.map(({ card }) => ({
@@ -252,9 +261,9 @@ export function queueCandidates({
 			deckIds: card.deckIds,
 			bucket: dayUsed.reviewedToday.has(card.id) ? ('continuing' as const) : ('review' as const)
 		})),
-		...fresh.map((card) => ({ cardId: card.id, deckIds: card.deckIds, bucket: 'new' as const }))
+		...ordered.map((card) => ({ cardId: card.id, deckIds: card.deckIds, bucket: 'new' as const }))
 	];
-	const map = new Map([...due.map((e) => e.card), ...fresh].map((card) => [card.id, card]));
+	const map = new Map([...due.map((e) => e.card), ...ordered].map((card) => [card.id, card]));
 	return { candidates, byId: map, counts: dayUsed };
 }
 

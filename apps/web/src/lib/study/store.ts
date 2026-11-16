@@ -5,6 +5,9 @@
 // The one explicit exception: `vacation:*` rows are user-global (they
 // apply to every workspace or a chosen list) and are read from rows with
 // no workspace (docs/contracts/scheduler/).
+// Rows of the workspace: deck:*, card:*, deckcfg:*, fsrs:set:*, fsrs:active,
+// limits:workspace, limits:deck:*, and the daily goal goals:workspace
+// (docs/contracts/goals/).
 
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
@@ -28,6 +31,7 @@ import {
   cleanCardTypes,
   type DeckSettings,
 } from "./deckSettings";
+import type { NewOrder } from "./newOrder";
 import { cardKey, parseReview } from "./reviewParse";
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
 import {
@@ -37,6 +41,7 @@ import {
   parseLimitRow,
   type LimitPair,
 } from "./limits";
+import { GOALS_KEY, parseGoalsRow, type GoalsRow, type ParsedGoals } from "../goals/goals";
 import { pendingReviews } from "./events";
 import { outboxUser } from "./outboxUser";
 import { recentSentReviews } from "./recentSent";
@@ -166,6 +171,15 @@ function parseSource(raw: unknown): DeckSource | undefined {
   ) {
     return { type: "plugin", pluginId: raw.pluginId, key: raw.key };
   }
+  if (
+    raw.type === "frequency" &&
+    typeof raw.packId === "string" &&
+    typeof raw.size === "number" &&
+    Number.isInteger(raw.size) &&
+    raw.size > 0
+  ) {
+    return { type: "frequency", packId: raw.packId, size: raw.size };
+  }
   return undefined;
 }
 
@@ -225,6 +239,7 @@ async function fetchStudyData(
   let limitsWorkspace: Partial<LimitPair> | null = null;
   const limitsDecks: Record<string, Partial<LimitPair>> = {};
   let activeRaw: unknown = null;
+  let goals: ParsedGoals = null;
 
   for (const value of rows) {
     const row = asPluginDataRow(value);
@@ -267,6 +282,8 @@ async function fetchStudyData(
       if (parsed !== null) limitsDecks[row.key.slice(LIMITS_DECK_PREFIX.length)] = parsed;
     } else if (row.key === ACTIVE_KEY) {
       activeRaw = data;
+    } else if (row.key === GOALS_KEY) {
+      goals = parseGoalsRow(data);
     }
   }
 
@@ -281,6 +298,7 @@ async function fetchStudyData(
     ...(limitsWorkspace !== null || Object.keys(limitsDecks).length > 0
       ? { limits: { workspace: limitsWorkspace, decks: limitsDecks } }
       : {}),
+    ...(goals === null ? {} : { goals }),
   };
 }
 
@@ -300,10 +318,16 @@ export const studyRowKey = {
  */
 export async function loadRawStudyData(
   workspaceId: number,
-): Promise<{ decks: Deck[]; cards: StudyCard[]; knownAt: Map<string, string> }> {
+): Promise<{
+  decks: Deck[];
+  cards: StudyCard[];
+  knownAt: Map<string, string>;
+  /** The live `deckcfg:` rows, by deck id (always set by the store). */
+  deckSettings?: Record<string, DeckSettings>;
+}> {
   const knownAt = new Map<string, string>();
-  const { decks, cards } = await fetchStudyData(workspaceId, knownAt);
-  return { decks, cards, knownAt };
+  const { decks, cards, deckSettings } = await fetchStudyData(workspaceId, knownAt);
+  return { decks, cards, knownAt, deckSettings: deckSettings ?? {} };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -518,6 +542,7 @@ export async function loadStudyDataWith(
     ...(data.deckSettings === undefined ? {} : { deckSettings: data.deckSettings }),
     ...(data.vacations === undefined ? {} : { vacations: data.vacations }),
     ...(data.limits === undefined ? {} : { limits: data.limits }),
+    ...(data.goals === undefined ? {} : { goals: data.goals }),
     reviews,
     merged,
   };
@@ -663,10 +688,45 @@ export async function saveDeckCardTypes(
 ): Promise<DeckSettings> {
   const workspaceId = requireWorkspaceId();
   const { deckSettings } = await fetchStudyData(workspaceId);
+  const stored = deckSettings?.[deckId];
   const next: DeckSettings = {
     deckId,
     cardTypes: cleanCardTypes(cardTypes),
-    extra: deckSettings?.[deckId]?.extra ?? {},
+    ...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+    extra: stored?.extra ?? {},
+  };
+  await putData(
+    workspaceId,
+    deckSettingsKey(deckId),
+    serializeDeckSettings(next, new Date().toISOString()),
+  );
+  return next;
+}
+
+function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown> {
+  const { newOrder: _dropped, ...rest } = extra;
+  void _dropped;
+  return rest;
+}
+
+/**
+ * saveDeckNewOrder sets the order of new cards of one deck (#75) by
+ * rewriting its `deckcfg:` row; card types and unknown fields survive.
+ * `added` is stored as no field (the default).
+ */
+export async function saveDeckNewOrder(
+  deckId: string,
+  order: NewOrder,
+): Promise<DeckSettings> {
+  const workspaceId = requireWorkspaceId();
+  const { deckSettings } = await fetchStudyData(workspaceId);
+  const stored = deckSettings?.[deckId];
+  const next: DeckSettings = {
+    deckId,
+    cardTypes: stored?.cardTypes ?? [],
+    ...(order.by === "added" ? {} : { newOrder: order }),
+    // Choosing an order replaces an unreadable stored one too.
+    extra: withoutNewOrder(stored?.extra ?? {}),
   };
   await putData(
     workspaceId,
@@ -1112,6 +1172,19 @@ export async function deleteVacation(id: string): Promise<void> {
 /** saveWorkspaceLimits stores the workspace's daily limits (`null` = unlimited). */
 export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<void> {
   await putData(requireWorkspaceId(), LIMITS_WORKSPACE_KEY, { version: 1, ...limits });
+}
+
+/**
+ * saveGoals stores one workspace's daily goal row as given (unknown keys
+ * included); the caller plans it with planGoalEdit (goals/goals.ts) and
+ * passes the workspace the row was read from, never "whatever is current
+ * now", so a workspace switch mid-save cannot write another workspace.
+ */
+export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<void> {
+  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    throw new Error("saveGoals: not a workspace id: study data is workspace-scoped");
+  }
+  await putData(workspaceId, GOALS_KEY, row);
 }
 
 /**
