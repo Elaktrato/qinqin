@@ -327,6 +327,9 @@ func TestPluginDataRoute(t *testing.T) {
 }
 
 func TestListPluginDataRoute(t *testing.T) {
+	// Its own language pack: the test must not depend on another test having
+	// registered zh first (review fix, phase A, 10: it failed when run alone).
+	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
