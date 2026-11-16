@@ -1,0 +1,255 @@
+package freq_test
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"os"
+	"reflect"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"testing"
+
+	"qinqin/internal/freq"
+	"qinqin/internal/lang"
+	"qinqin/internal/lexicon"
+)
+
+// The server registers its language packs at start; the kana fallback
+// (コレ -> これ) needs the Japanese one.
+func init() { lang.Register(lang.Ja{}) }
+
+// resolution is docs/contracts/frequency/starter-resolution.json.
+type resolution struct {
+	Language string `json:"language"`
+	Lexicon  []struct {
+		Key      string   `json:"key"`
+		Forms    []string `json:"forms"`
+		Readings []string `json:"readings"`
+		Pri      int      `json:"pri"`
+		UK       bool     `json:"uk"`
+	} `json:"lexicon"`
+	Packs map[string][]struct {
+		Term    string `json:"term"`
+		Reading string `json:"reading"`
+		Rank    int    `json:"rank"`
+	} `json:"packs"`
+	Cases []struct {
+		Name     string `json:"name"`
+		Pack     string `json:"pack"`
+		Size     int    `json:"size"`
+		Expected []struct {
+			Key  string `json:"key"`
+			Rank int    `json:"rank"`
+		} `json:"expected"`
+	} `json:"cases"`
+}
+
+func loadResolution(t *testing.T) resolution {
+	t.Helper()
+	raw, err := os.ReadFile("../../../docs/contracts/frequency/starter-resolution.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var r resolution
+	if err := json.Unmarshal(raw, &r); err != nil {
+		t.Fatal(err)
+	}
+	return r
+}
+
+// seedLexicon puts the fixture's toy entries and returns key -> id.
+func seedLexicon(t *testing.T, sqlDB *sql.DB, r resolution) map[string]int64 {
+	t.Helper()
+	var dictID int64
+	if err := sqlDB.QueryRow(`
+		INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
+		VALUES ('toy', 'toy', '1', 'CC0-1.0', 'test', '2026-01-01T00:00:00Z') RETURNING id`).Scan(&dictID); err != nil {
+		t.Fatal(err)
+	}
+	st := lexicon.Store{DB: sqlDB}
+	ids := map[string]int64{}
+	for _, e := range r.Lexicon {
+		entry := &lexicon.Entry{Language: r.Language, Kind: "word", Key: e.Key, Pri: e.Pri, UK: e.UK}
+		for _, f := range e.Forms {
+			entry.Forms = append(entry.Forms, lexicon.Form{Text: f})
+		}
+		for _, rd := range e.Readings {
+			entry.Readings = append(entry.Readings, lexicon.Reading{Type: "kana", Value: rd, Plain: rd})
+		}
+		id, err := st.Put(context.Background(), entry, dictID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids[e.Key] = id
+	}
+	return ids
+}
+
+func packCSV(r resolution, name string) string {
+	var b strings.Builder
+	for _, row := range r.Packs[name] {
+		fmt.Fprintf(&b, "%s,%s,%d\n", row.Term, row.Reading, row.Rank)
+	}
+	return b.String()
+}
+
+// seedResolution imports the lexicon and both toy packs and returns the
+// installed packs by fixture name.
+func seedResolution(t *testing.T) (*sql.DB, resolution, map[string]int64, map[string]freq.PackInfo) {
+	t.Helper()
+	sqlDB := openDB(t)
+	r := loadResolution(t)
+	ids := seedLexicon(t, sqlDB, r)
+	for name := range r.Packs {
+		mustImport(t, sqlDB, csvPack(t, "toy-"+name, packCSV(r, name)))
+	}
+	packs := packsByName(t, sqlDB)
+	return sqlDB, r, ids, packs
+}
+
+func packsByName(t *testing.T, sqlDB *sql.DB) map[string]freq.PackInfo {
+	t.Helper()
+	all, err := freq.Store{DB: sqlDB}.Packs(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]freq.PackInfo{}
+	for _, p := range all {
+		out[strings.TrimPrefix(p.PackID, "toy-")] = p
+	}
+	return out
+}
+
+// counting wraps a resolver and counts its calls.
+type counting struct {
+	r     freq.Resolver
+	calls atomic.Int64
+}
+
+func (c *counting) BestWordReadingID(ctx context.Context, language, form, reading string) (int64, error) {
+	c.calls.Add(1)
+	return c.r.BestWordReadingID(ctx, language, form, reading)
+}
+
+func want(r resolution, ids map[string]int64, i int) []freq.TopEntry {
+	out := []freq.TopEntry{}
+	for _, e := range r.Cases[i].Expected {
+		out = append(out, freq.TopEntry{EntryID: ids[e.Key], Rank: e.Rank})
+	}
+	return out
+}
+
+func entriesOf(es []freq.TopEntry) []freq.TopEntry {
+	out := []freq.TopEntry{}
+	for _, e := range es {
+		out = append(out, freq.TopEntry{EntryID: e.EntryID, Rank: e.Rank})
+	}
+	return out
+}
+
+func TestTopFollowsTheResolutionContract(t *testing.T) {
+	sqlDB, r, ids, packs := seedResolution(t)
+	st := freq.Store{DB: sqlDB}
+	lx := lexicon.Store{DB: sqlDB}
+	if packs["main"].ContentHash == "" {
+		t.Fatal("PackInfo.ContentHash is empty")
+	}
+	var cache freq.TopCache
+	for i, c := range r.Cases {
+		got, err := st.Top(context.Background(), lx, packs[c.Pack], c.Size)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(entriesOf(got), want(r, ids, i)) {
+			t.Errorf("%s: Top = %v, want %v", c.Name, got, want(r, ids, i))
+		}
+		cached, err := cache.Get(context.Background(), st, lx, packs[c.Pack], c.Size)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(entriesOf(cached), want(r, ids, i)) {
+			t.Errorf("%s: TopCache.Get = %v, want %v", c.Name, cached, want(r, ids, i))
+		}
+	}
+}
+
+func TestTopCacheResolvesOncePerContentHash(t *testing.T) {
+	sqlDB, r, ids, packs := seedResolution(t)
+	st := freq.Store{DB: sqlDB}
+	res := &counting{r: lexicon.Store{DB: sqlDB}}
+	var cache freq.TopCache
+	ctx := context.Background()
+	first, err := cache.Get(ctx, st, res, packs["main"], 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	calls := res.calls.Load()
+	if calls == 0 {
+		t.Fatal("the first Get resolved nothing")
+	}
+	again, err := cache.Get(ctx, st, res, packs["main"], 500)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.calls.Load() != calls {
+		t.Errorf("second Get resolved %d more rows, want 0 (cached)", res.calls.Load()-calls)
+	}
+	if !reflect.DeepEqual(entriesOf(again[:3]), entriesOf(first)) {
+		t.Errorf("size 3 = %v is not the prefix of size 500 = %v", first, again)
+	}
+
+	// A re-import with other rows changes the content hash: recomputed.
+	mustImport(t, sqlDB, csvPack(t, "toy-main", "飲む,,1\n"+packCSV(r, "main")))
+	packs2 := packsByName(t, sqlDB)
+	if packs2["main"].ContentHash == packs["main"].ContentHash {
+		t.Fatal("re-import kept the content hash")
+	}
+	fresh, err := cache.Get(ctx, st, res, packs2["main"], 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.calls.Load() == calls {
+		t.Error("Get after a re-import did not recompute")
+	}
+	if len(fresh) == 0 || fresh[0].EntryID != ids["nomu"] || fresh[0].Rank != 1 {
+		t.Errorf("after re-import Top 3 = %v, want 飲む first", fresh)
+	}
+}
+
+func TestTopCacheConcurrentGet(t *testing.T) {
+	sqlDB, r, ids, packs := seedResolution(t)
+	st := freq.Store{DB: sqlDB}
+	res := &counting{r: lexicon.Store{DB: sqlDB}}
+	var cache freq.TopCache
+	var wg sync.WaitGroup
+	errs := make(chan error, 8)
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			got, err := cache.Get(context.Background(), st, res, packs["main"], 3)
+			if err == nil && !reflect.DeepEqual(entriesOf(got), want(r, ids, 0)) {
+				err = fmt.Errorf("Get = %v", got)
+			}
+			errs <- err
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Error(err)
+		}
+	}
+	single := &counting{r: lexicon.Store{DB: sqlDB}}
+	if _, err := st.Top(context.Background(), single, packs["main"], 2000); err != nil {
+		t.Fatal(err)
+	}
+	if res.calls.Load() != single.calls.Load() {
+		t.Errorf("8 concurrent Gets resolved %d rows, one Top(2000) resolves %d: computed more than once",
+			res.calls.Load(), single.calls.Load())
+	}
+}
