@@ -68,6 +68,11 @@ type server struct {
 
 	tickets *ticketStore // single-use download tickets (personal export, admin backup)
 	backups backupState  // in-flight exports, restores and server backups
+
+	restores   *restoreStore   // staged restores of personal backups
+	restoreCap int64           // upload cap in bytes; 0: backup.MaxUpload (tests lower it)
+	stageDone  chan int64      // test hook: receives a user id when a stage finishes validating or restoring
+	bg         context.Context // lives as long as the server; background jobs run under it
 }
 
 // Option configures optional parts of the server.
@@ -114,6 +119,11 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 	s.users = auth.NewUsers(sqlDB)
 	s.tickets = newTicketStore()
 	s.backups = newBackupState()
+	s.restores = newRestoreStore()
+	s.bg = context.Background()
+	if s.sweepCtx != nil {
+		s.bg = s.sweepCtx
+	}
 	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
@@ -213,6 +223,12 @@ func (s *server) routes() []route {
 		// ticket is a 404 (a browser navigation cannot send a bearer token).
 		{"POST /api/account/export", s.handleExportStart, accUser, nil},
 		{"GET /api/account/export/{ticket}", s.handleExportDownload, accPublic, nil},
+		{"POST /api/account/restore", s.handleRestoreUpload, accUser, nil},
+		{"POST /api/account/restore/safety-export", s.handleSafetyExportTicket, accUser, nil},
+		{"GET /api/account/restore/safety-export/{ticket}", s.handleSafetyExportDownload, accPublic, nil},
+		{"GET /api/account/restore/{token}", s.handleRestoreStatus, accUser, nil},
+		{"DELETE /api/account/restore/{token}", s.handleRestoreDiscard, accUser, nil},
+		{"POST /api/account/restore/{token}", s.handleRestoreApply, accUser, nil},
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},
 		{"POST /api/entries/bases", s.handleEntryBases, accUser, nil},

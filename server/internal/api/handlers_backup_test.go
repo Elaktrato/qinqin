@@ -165,3 +165,16 @@ func TestExportIsRateLimitedPerUser(t *testing.T) {
 		t.Errorf("another user shares the bucket: %d", r.StatusCode)
 	}
 }
+
+// newZipWriter returns a writer func: (name, data) adds an entry, (":close", nil) finishes.
+func newZipWriter(buf *bytes.Buffer) func(string, []byte) {
+	zw := zip.NewWriter(buf)
+	return func(name string, data []byte) {
+		if name == ":close" {
+			zw.Close()
+			return
+		}
+		w, _ := zw.Create(name)
+		w.Write(data)
+	}
+}

@@ -8,6 +8,8 @@ import (
 	"slices"
 	"sort"
 	"strings"
+
+	"qinqin/internal/lang"
 )
 
 // Counts is a set of row counts shown before a restore.
@@ -160,12 +162,19 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	// languages every workspace and book needs
 	missing := map[string]bool{}
 	langOK := map[string]bool{}
+	// A language is usable when it is a compiled-in pack, a registered language
+	// or has dictionary entries here (the same sources workspace creation uses).
 	checkLang := func(code string) error {
 		if langOK[code] || missing[code] {
 			return nil
 		}
+		if lang.Registered(code) {
+			langOK[code] = true
+			return nil
+		}
 		var one int
-		err := db.QueryRowContext(ctx, `SELECT 1 FROM languages WHERE code = ?`, code).Scan(&one)
+		err := db.QueryRowContext(ctx, `SELECT 1 FROM languages WHERE code = ?
+			UNION ALL SELECT 1 FROM entries WHERE language = ? AND deleted_at IS NULL LIMIT 1`, code, code).Scan(&one)
 		if errors.Is(err, sql.ErrNoRows) {
 			missing[code] = true
 			return nil

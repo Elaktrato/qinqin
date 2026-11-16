@@ -183,6 +183,8 @@ func serveCmd(args []string) error {
 	} else if n > 0 {
 		log.Printf("startup sweep: removed %d orphan user director%s", n, map[bool]string{true: "y", false: "ies"}[n == 1])
 	}
+	// Interrupted restores and server backups leave staged files behind.
+	api.CleanBackupTemp(*data)
 	var limiter *ai.Limiter
 	if aiSvc != nil {
 		limiter = aiSvc.Limiter

@@ -18,6 +18,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/lang"
 )
 
 // Errors a restore reports before it has changed anything.
@@ -302,6 +303,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}
 	// 4. workspaces (new ids)
 	for _, w := range a.Workspaces {
+		if !lang.Registered(w.Language) { // the row workspace creation writes for a language that is not compiled in
+			if _, err := tx.ExecContext(ctx, `INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?) ON CONFLICT (code) DO NOTHING`, w.Language, w.Language, now); err != nil {
+				return nil, fmt.Errorf("backup: language: %w", err)
+			}
+		}
 		settings := m.WorkspaceSettings(w.Settings)
 		r, err := tx.ExecContext(ctx, `INSERT INTO workspaces (user_id, language, name, settings, updated_at) VALUES (?, ?, ?, ?, ?)`,
 			userID, w.Language, w.Name, string(settings), now)
