@@ -1,6 +1,6 @@
 // "Add to my decks": copy a system deck into a deck the learner owns. The
-// plan is pure and idempotent, the write goes through one batch push
-// (pushStudyRows). Rule and fixtures: docs/contracts/decks/add-to-deck.json.
+// plan is pure and idempotent, the write goes through one batch push of
+// typed study rows (pushStudy). Rule and fixtures: docs/contracts/decks/add-to-deck.json.
 //
 // Per item, in level order:
 //  - no live vocab card -> create `c-vocab-<entryId>` (the id of a deleted
@@ -15,12 +15,13 @@
 //
 // Starter decks (#75): `exclude` leaves known words out before planning
 // (counted as `known`, never written), and `settings` writes the copy's
-// `deckcfg:` row with its new-card order only when no live row exists.
+// deck settings row with its new-card order only when no live row exists.
 
 import { newCardId } from '$lib/study/canonical';
-import { deckSettingsKey, serializeDeckSettings } from '$lib/study/deckSettings';
+import type { DeckSettings } from '$lib/study/deckSettings';
 import type { NewOrder } from '$lib/study/newOrder';
-import { GENERAL_DECK_ID, studyRowKey } from '$lib/study/store';
+import { cardRow, deckRow, settingsRow } from '$lib/study/rows';
+import { GENERAL_DECK_ID, extraOf, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/study/store';
 import type { Deck, StudyCard } from '$lib/study/types';
 
 export interface AddItem {
@@ -39,8 +40,8 @@ export interface AddPlan {
 	skipped: number;
 	/** Items left out as known (set when `exclude` is given). */
 	known?: number;
-	/** The `deckcfg:` row to write (only with `settings` and no live row). */
-	settings?: Record<string, unknown>;
+	/** The deck settings row to write (only with `settings` and no live row). */
+	settings?: DeckSettings;
 }
 
 export interface AddInput {
@@ -113,31 +114,25 @@ export function planAddToDeck(input: AddInput): AddPlan {
 	const plan: AddPlan = { deck, writes, created, joined, skipped };
 	if (exclude !== undefined) plan.known = input.items.length - items.length;
 	if (input.settings !== undefined && !input.settings.exists && target.id !== GENERAL_DECK_ID) {
-		plan.settings = serializeDeckSettings(
-			{ deckId: target.id, cardTypes: [], newOrder: input.settings.newOrder, extra: {} },
-			now.toISOString()
-		);
+		plan.settings = {
+			deckId: target.id,
+			cardTypes: [],
+			newOrder: input.settings.newOrder,
+			extra: {}
+		};
 	}
 	return plan;
 }
 
 /**
- * The rows to push for a plan: the deck row first, then its settings row, then the cards. `knownAt` (from
- * loadRawStudyData) lets the writer stamp each row after what the server holds.
+ * The typed writes for a plan: the deck row first, then its settings row, then the cards. `stored` (from
+ * loadRawStudyData) lets each write be stamped after what the server holds and echo the stored `extra`.
  */
-export function addPlanRows(
-	plan: AddPlan,
-	knownAt?: ReadonlyMap<string, string>
-): { key: string; data: unknown; knownAt?: string }[] {
-	const row = (key: string, data: unknown) => {
-		const known = knownAt?.get(key);
-		return known === undefined ? { key, data } : { key, data, knownAt: known };
-	};
-	return [
-		...(plan.deck === null ? [] : [row(studyRowKey.deck(plan.deck.id), plan.deck)]),
-		...(plan.settings === undefined
-			? []
-			: [row(deckSettingsKey(String(plan.settings.deckId)), plan.settings)]),
-		...plan.writes.map((card) => row(studyRowKey.card(card.id), card))
+export function addPlanRows(plan: AddPlan, stored?: Partial<StudySnapshot>): StudyWrite[] {
+	const writes = [
+		...(plan.deck === null ? [] : [studyWrite(stored, 'decks', deckRow(plan.deck, extraOf(stored, 'decks', plan.deck.id)))]),
+		...(plan.settings === undefined ? [] : [studyWrite(stored, 'deckSettings', settingsRow(plan.settings))]),
+		...plan.writes.map((card) => studyWrite(stored, 'cards', cardRow(card, extraOf(stored, 'cards', card.id))))
 	];
+	return writes.filter((w): w is StudyWrite => w !== null);
 }

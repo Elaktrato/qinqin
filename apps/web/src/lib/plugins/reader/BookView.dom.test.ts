@@ -225,7 +225,7 @@ describe('BookView Words tab and the known index', () => {
 			'fetch',
 			vi.fn(async (url: string, init?: RequestInit) => {
 				const body = String(url).startsWith('/api/sync/push')
-					? { dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 }
+					? { dataAccepted: JSON.parse(String(init?.body)).cards.length, dataSkipped: 0, dataRefused: 0 }
 					: { pluginData: [] };
 				return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 			})

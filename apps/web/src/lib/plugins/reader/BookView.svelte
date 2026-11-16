@@ -34,7 +34,7 @@
 	import { createReveal, revealKey } from './reveal';
 	import { EMPTY_KNOWN_INDEX, familiarity, knownIndex, type KnownIndex } from '$lib/study/known';
 	import { loadEntryBases } from '$lib/api/entryBases';
-	import { loadRawStudyData, pushStudyRows, setKnownMarks } from '$lib/study/store';
+	import { loadRawStudyData, pushStudy, setKnownMarks } from '$lib/study/store';
 	import type { Deck } from '$lib/study/types';
 	import WordsPanel from './WordsPanel.svelte';
 	import { stateLineText, wordCountsSupported } from './wordsPanel';
@@ -996,7 +996,7 @@
 			now: new Date(),
 			bases: (x) => loadEntryBases(x),
 			raw: () => loadRawStudyData(wsId),
-			push: pushStudyRows
+			push: pushStudy
 		}));
 	}
 	function markFromPanel(ids: number[]) {

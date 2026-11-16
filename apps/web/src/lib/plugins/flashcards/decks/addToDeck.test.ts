@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../../../docs/contracts/decks/add-to-deck.json';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { addPlanRows, planAddToDeck, type AddPlan } from './addToDeck';
+import { cardRow, identityOf, parseRow, studyKey } from '$lib/study/rows';
+import type { StudyWrite } from '$lib/study/store';
+
+const keyOf = (w: StudyWrite) => studyKey(w.collection, identityOf(w.collection, w.row));
 
 interface Case {
 	name: string;
@@ -96,8 +100,39 @@ describe('addPlanRows', () => {
 			rawCards: [],
 			now: new Date('2026-03-10T12:00:00.000Z')
 		});
-		expect(addPlanRows(plan).map((r) => r.key)).toEqual(['deck:d1', 'card:c-vocab-1']);
-		expect(addPlanRows({ ...plan, deck: null }).map((r) => r.key)).toEqual(['card:c-vocab-1']);
+		expect(addPlanRows(plan).map(keyOf)).toEqual(['decks:d1', 'cards:c-vocab-1']);
+		expect(addPlanRows({ ...plan, deck: null }).map(keyOf)).toEqual(['cards:c-vocab-1']);
+		// Typed rows only, never a plugin-data row.
+		expect(addPlanRows(plan)[1]).toMatchObject({ collection: 'cards', row: { id: 'c-vocab-1', entryId: 1, written: 'a', extra: {} } });
+	});
+
+	it('stamps after the stored row and echoes its extra (a joined card keeps a newer client member)', () => {
+		const card = { id: 'c-vocab-1', kind: 'vocab' as const, entryId: 1, deckIds: ['general'], createdAt: '2026-01-01T00:00:00Z' };
+		const plan = planAddToDeck({
+			items: [{ entryId: 1, written: 'a' }],
+			target: { id: 'd1', name: 'D' },
+			existingDeck: { id: 'd1', name: 'D', createdAt: 'x' },
+			rawCards: [card],
+			now: new Date('2026-03-10T12:00:00.000Z')
+		});
+		const stored = parseRow('cards', {
+			...cardRow(card, { color: 'red' }),
+			workspaceId: 7,
+			version: 2,
+			updatedAt: '2026-03-10T12:00:05Z',
+			deletedAt: null
+		})!;
+		const writes = addPlanRows(plan, {
+			knownAt: new Map([['cards:c-vocab-1', '2026-03-10T12:00:05Z']]),
+			stored: new Map([['cards:c-vocab-1', stored]])
+		});
+		expect(writes).toEqual([
+			{
+				collection: 'cards',
+				row: { ...cardRow({ ...card, deckIds: ['general', 'd1'] }), extra: { color: 'red' } },
+				knownAt: '2026-03-10T12:00:05Z'
+			}
+		]);
 	});
 });
 
@@ -125,16 +160,17 @@ describe('add with known words skipped and a deck setting (#75)', () => {
 			deckId: target.id,
 			cardTypes: [],
 			newOrder: { by: 'frequency' },
-			updatedAt: '2026-11-16T12:00:00.000Z'
+			extra: {}
 		});
 		const rows = addPlanRows(plan);
-		expect(rows.map((r) => r.key)).toEqual([
-			`deck:${target.id}`,
-			`deckcfg:${target.id}`,
-			'card:c-vocab-1',
-			'card:c-vocab-3',
-			'card:c-vocab-4'
+		expect(rows.map(keyOf)).toEqual([
+			`decks:${target.id}`,
+			`deckSettings:${target.id}`,
+			'cards:c-vocab-1',
+			'cards:c-vocab-3',
+			'cards:c-vocab-4'
 		]);
+		expect(rows[1]!.row).toEqual({ deckId: target.id, cardTypes: [], newOrder: { by: 'frequency' }, extra: {} });
 	});
 
 	it('writes no deck setting when a live one exists, and a re-add writes nothing', () => {

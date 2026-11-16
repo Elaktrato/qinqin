@@ -5,7 +5,7 @@
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorMessage } from '$lib/stats/errors';
 	import { knownEntries } from '$lib/study/known';
-	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudyRows } from '$lib/study/store';
+	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
@@ -122,17 +122,17 @@
 				// Joined cards keep their older createdAt, so the copy studies by frequency.
 				settings: { newOrder: { by: 'frequency' }, exists: raw.deckSettings?.[target.id] !== undefined }
 			});
-			const rows = addPlanRows(plan, raw.knownAt);
+			const rows = addPlanRows(plan, raw);
 			if (plan.writes.length === 0) {
 				// A deck or settings row alone (a deleted copy) is still written.
-				if (rows.length > 0) await pushStudyRows(workspaceId, rows);
+				if (rows.length > 0) await pushStudy(workspaceId, rows);
 				result = `Nothing new to add to ${named.name}`;
 				return;
 			}
 			headRows = rows.length - plan.writes.length;
 			const total = plan.writes.length;
 			progress = { done: 0, total };
-			await pushStudyRows(workspaceId, rows, {
+			await pushStudy(workspaceId, rows, {
 				onProgress: (done) => (progress = { done: Math.max(0, done - headRows), total })
 			});
 			result = starterAddedText(plan);

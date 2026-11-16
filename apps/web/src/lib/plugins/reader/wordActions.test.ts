@@ -2,12 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import type { EntryBase } from '$lib/api/types';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { addWords, allNew, markWords } from './wordActions';
+import type { StudyWrite } from '$lib/study/store';
+import { toLegacy } from '$lib/study/testing/legacyCodec';
 
 const base = (id: number): EntryBase => ({ id, language: 'zh', kind: 'word', written: `w${id}`, readings: [], attrs: {}, radicalId: null });
 
 function fakeStore(cards: StudyCard[] = [], decks: Deck[] = []) {
 	const pushed: { key: string; data: unknown }[][] = [];
-	const push = vi.fn(async (_ws: number, rows: readonly { key: string; data: unknown }[]) => {
+	const push = vi.fn(async (_ws: number, writes: readonly StudyWrite[]) => {
+		// The typed writes, viewed as the legacy rows they stand for (test codec).
+		const rows: { key: string; data: unknown }[] = writes.map((w) => toLegacy(w.collection, w.row));
 		pushed.push([...rows]);
 		for (const r of rows) {
 			if (r.key.startsWith('card:')) {

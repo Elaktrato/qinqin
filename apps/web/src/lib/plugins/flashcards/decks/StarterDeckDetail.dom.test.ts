@@ -10,12 +10,19 @@ vi.mock('$lib/study/history', () => ({
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	loadRawStudyData: vi.fn(),
-	pushStudyRows: vi.fn()
+	pushStudy: vi.fn()
 }));
 
 import { getFrequencyPacks, getStarterEntries } from '$lib/api/frequency';
 import { loadStudyHistory } from '$lib/study/history';
-import { loadRawStudyData, pushStudyRows } from '$lib/study/store';
+import { loadRawStudyData, pushStudy } from '$lib/study/store';
+import { toLegacy } from '$lib/study/testing/legacyCodec';
+import type { StudyWrite } from '$lib/study/store';
+
+/** The typed writes as the legacy rows they stand for (test codec). */
+function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; knownAt?: string }[] {
+	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
+}
 import type { Deck, StudyCard } from '$lib/study/types';
 import { strongReviews } from '$lib/testing/reviews';
 import { workspaces } from '$lib/workspaces';
@@ -84,10 +91,11 @@ beforeEach(() => {
 		decks: structuredClone(decks),
 		cards: structuredClone(cards),
 		knownAt: new Map(),
+		stored: new Map(),
 		deckSettings: structuredClone(settings)
 	}));
-	vi.mocked(pushStudyRows).mockImplementation(async (_ws, rows) => {
-		for (const row of rows) {
+	vi.mocked(pushStudy).mockImplementation(async (_ws, writes) => {
+		for (const row of keyed(writes)) {
 			pushed.push(row);
 			if (row.key.startsWith('deck:')) decks.push(row.data as Deck);
 			if (row.key.startsWith('card:')) cards.push(row.data as StudyCard);

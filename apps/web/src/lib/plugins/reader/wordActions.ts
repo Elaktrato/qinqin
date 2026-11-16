@@ -3,10 +3,9 @@
 // an undo that tombstones exactly what it wrote). Pure apart from the
 // injected reads and writes; always the book's workspace.
 import type { EntryBase } from '$lib/api/types';
+import type { StudySnapshot, StudyWrite } from '$lib/study/store';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { addPlanRows, planAddToDeck } from '../flashcards/decks/addToDeck';
-
-type Rows = readonly { key: string; data: unknown; knownAt?: string }[];
 
 export interface AddWordsResult {
 	created: number;
@@ -24,8 +23,9 @@ export async function addWords(o: {
 	/** loadEntryBases (POST /api/entries/bases in chunks of 500). */
 	bases: (ids: readonly number[]) => Promise<ReadonlyMap<number, EntryBase>>;
 	/** loadRawStudyData of the workspace. */
-	raw: () => Promise<{ decks: Deck[]; cards: StudyCard[]; knownAt: ReadonlyMap<string, string> }>;
-	push: (workspaceId: number, rows: Rows) => Promise<void>;
+	raw: () => Promise<{ decks: Deck[]; cards: StudyCard[] } & Partial<StudySnapshot>>;
+	/** pushStudy. */
+	push: (workspaceId: number, writes: readonly StudyWrite[]) => Promise<void>;
 }): Promise<AddWordsResult> {
 	const ids = [...new Set(o.entryIds)];
 	const [bases, raw] = await Promise.all([o.bases(ids), o.raw()]);
@@ -40,7 +40,7 @@ export async function addWords(o: {
 		rawCards: raw.cards,
 		now: o.now
 	});
-	const rows = addPlanRows(plan, raw.knownAt);
+	const rows = addPlanRows(plan, raw);
 	if (plan.writes.length > 0) await o.push(o.workspaceId, rows);
 	return { created: plan.created, joined: plan.joined, skipped: plan.skipped, missing: ids.length - items.length };
 }

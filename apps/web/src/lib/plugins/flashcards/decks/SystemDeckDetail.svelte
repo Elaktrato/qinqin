@@ -6,7 +6,7 @@
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorMessage } from '$lib/stats/errors';
 	import { loadConfig, saveConfig } from '$lib/study/session';
-	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudyRows } from '$lib/study/store';
+	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
@@ -141,7 +141,7 @@
 				rawCards: raw.cards,
 				now: new Date()
 			});
-			const rows = addPlanRows(plan, raw.knownAt);
+			const rows = addPlanRows(plan, raw);
 			if (rows.length === 0) {
 				result = `Nothing new to add to ${target.name}`;
 				return;
@@ -149,7 +149,7 @@
 			deckRows = plan.deck === null ? 0 : 1;
 			const total = plan.writes.length;
 			progress = { done: 0, total };
-			await pushStudyRows(workspaceId, rows, {
+			await pushStudy(workspaceId, rows, {
 				onProgress: (done) => (progress = { done: Math.max(0, done - deckRows), total })
 			});
 			result = `Added ${words(plan.created + plan.joined)} to ${target.name}`;

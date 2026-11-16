@@ -6,14 +6,17 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/api/entryBases', () => ({
 	loadEntryBases: vi.fn(async (ids: readonly number[]) => new Map(ids.filter((id) => id !== 404).map((id) => [id, { id, written: `w${id}`, readings: [] }])))
 }));
-vi.mock('$lib/study/store', async (orig) => ({
+vi.mock('$lib/study/store', async (orig) => {
+	const { cardOf } = await import('$lib/study/rows');
+	return {
 	...(await orig<typeof import('$lib/study/store')>()),
 	loadRawStudyData: vi.fn(async () => ({ decks: [], cards: [...mem.cards.values()] as StudyCard[], knownAt: new Map() })),
-	pushStudyRows: vi.fn(async (_ws: number, rows: { key: string; data: unknown }[]) => {
+	pushStudy: vi.fn(async (_ws: number, writes: { collection: string; row: { id: string } }[]) => {
 		mem.pushes++;
-		for (const r of rows) if (r.key.startsWith('card:')) mem.cards.set(r.key, r.data);
+		for (const w of writes) if (w.collection === 'cards') mem.cards.set(`card:${w.row.id}`, cardOf(w.row as never));
 	})
-}));
+	};
+});
 
 import { addEntries } from './pageData';
 
