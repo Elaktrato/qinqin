@@ -27,6 +27,8 @@ docker exec <container> qinqin backup --out /data/backups/qinqin-$(date +%F).tar
 
 Stop the container, empty the data volume, `tar xzf <file> -C /data`, and start with the **same `QINQIN_SECRET`** and the same or a newer image. Restoring without the same secret loses the sealed values: users enter AI keys again, the admin re-enters SMTP, and users with an authenticator can no longer pass the second step (they use a recovery code, or you reset their two-step sign-in). Copying the whole volume of a stopped container also works.
 
+A server backup is a copy of everything at that moment, so sessions and [access tokens](API-Access-tokens) that were revoked after it was taken come back with it. After restoring one, sign everyone out: in Settings, Admin, Users choose **Sign out everywhere** for each user (it ends their sessions and revokes their access tokens), yourself last; turning on "Require two-factor authentication for everyone" with "Sign everyone else out now" does the same for everyone but you in one step. People then sign in again and make new tokens.
+
 ## Rotating `QINQIN_SECRET`
 
 Put the old value into `QINQIN_SECRET_PREVIOUS`, set the new one in `QINQIN_SECRET`, and restart once. On startup the keys sealed with the previous secret are re-encrypted with the new one; then remove `QINQIN_SECRET_PREVIOUS`. A key sealed with a secret the server no longer knows shows as "re-enter your key". Keep the secret backed up separately from `/data`.
