@@ -53,6 +53,10 @@ cache it (`bypass`). `GET /api/component-packs` lists the packs' credits like `/
 Inputs: the universe rows `{i, c, s?, k?, v?}`, the components map and a selection `{r?, p: [], s?}`.
 
 - The **parts of a cell** are the union of the components of its glyph `c` and of each variant in `v`.
+  A zh cell (语, `v` 語) therefore matches parts of either form, even one from each (讠 and 言 together);
+  the cell stands for both glyphs, and a learner may see either in a text. Ruling: union, not per-glyph
+  matching — simpler and never hides the character a learner is looking at — cost: a mixed pick can match a
+  combination no single glyph has.
 - A cell matches when `k === r` (if `r` is set), every chosen part is among its parts (AND), and its
   strokes equal `s` (if `s` is set). Radicals and parts are separate questions: a part 氵 is matched by
   containment only, never through `k`.
