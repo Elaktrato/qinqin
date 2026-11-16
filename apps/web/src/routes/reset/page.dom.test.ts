@@ -98,4 +98,17 @@ describe('reset page', () => {
 		expect(signInWithToken).not.toHaveBeenCalled();
 		expect(screen.getByRole('link', { name: 'Go to sign in' })).toBeTruthy();
 	});
+
+	it('a reset that left no session (second step by email) points to the sign-in page', async () => {
+		location.hash = '#t=reset-token';
+		vi.mocked(checkReset).mockResolvedValue({ username: 'bobby', expiresAt: 'x' });
+		vi.mocked(useReset).mockResolvedValue({ status: 'password_changed' });
+		render(Page);
+		await screen.findByText('bobby');
+		await fireEvent.input(screen.getByLabelText('New password'), { target: { value: 'brand-new-password' } });
+		await fireEvent.input(screen.getByLabelText('Repeat the new password'), { target: { value: 'brand-new-password' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Set password and sign in' }));
+		expect((await screen.findByRole('status')).textContent).toContain('second step');
+		expect(signInWithToken).not.toHaveBeenCalled();
+	});
 });

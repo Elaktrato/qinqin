@@ -179,7 +179,7 @@ Files: `handlers_admin_users.go` (`POST /api/admin/users/{id}/mfa/reset`), `cmd/
 Files: `handlers_auth.go` (`POST /api/auth/email-login/start`, `/verify`), tests.
 Tests first: unknown identifier → 202 with a challenge and **the same key set and timing path**
 (the fake SMTP inbox stays empty); known → code mail; verify ok → `status:"ok"` session; TOTP
-user → `mfa_required` (`totp`,`recovery`); enforced and no TOTP → 403 `password_required`;
+user → `mfa_required` (`totp`,`recovery`); enforced and no TOTP → 403 `password_login_required`;
 switch off → 409 `email_login_unavailable`; disabled user → behaves as unknown; wrong codes
 count in `mfa:<user id>` and `mfa-day:<user id>` together with MFA challenges (11th wrong code in
 15 min across fresh challenges → 429).
@@ -235,7 +235,7 @@ Files: `scripts/smtp-sink.py` (stdlib `socketserver`; `--port`, `--dir`; answers
 DATA/QUIT; writes `<n>.eml`; prints one line per message with the subject only),
 `docs/contracts/auth/{mfa-setup,login-responses}.json` (add `mfa_required`,
 `mfa_enrollment_required`, email-code flow), `errors.json` (`code_invalid`, `challenge_expired`,
-`mfa_required`, `password_required`, `secret_unavailable`, `email_login_unavailable`,
+`mfa_required`, `password_login_required`, `secret_unavailable`, `email_login_unavailable`,
 `smtp_test_failed` …), `README.md` (spec §10), `docs/ROADMAP.md` (#64 entry, via the
 orchestrator's normal flow). Commit `docs: email, two-step sign-in and the SMTP sink`.
 

@@ -63,8 +63,9 @@ export interface PutEmailResult {
 }
 
 /** An enrolment session sends no password (the server skips it there). */
-export function putEmail(email: string | null, currentPassword?: string): Promise<PutEmailResult> {
-	return api('/api/account/email', { method: 'PUT', body: { email, ...(currentPassword ? { currentPassword } : {}) } });
+/** `code`: the authenticator or recovery code, for accounts that have an authenticator. */
+export function putEmail(email: string | null, currentPassword?: string, code?: string): Promise<PutEmailResult> {
+	return api('/api/account/email', { method: 'PUT', body: { email, ...(currentPassword ? { currentPassword } : {}), ...(code ? { code } : {}) } });
 }
 
 export interface SelfDeletionPreview {

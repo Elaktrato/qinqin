@@ -6,7 +6,21 @@
 
 	// Confirms a self-entered address with the six-digit code the server mailed
 	// to it. 403 code_invalid / challenge_expired: this is a signed-in route.
-	let { address, resendAfter = 60, onverified }: { address: string; resendAfter?: number; onverified: () => void } = $props();
+	let {
+		address,
+		resendAfter = 60,
+		onverified,
+		verify = verifyEmailCode,
+		resend: resendCode = resendEmailCode,
+		submitLabel = 'Confirm address'
+	}: {
+		address: string;
+		resendAfter?: number;
+		onverified: () => void;
+		verify?: (code: string) => Promise<unknown>;
+		resend?: () => Promise<{ resendAfter?: number }>;
+		submitLabel?: string;
+	} = $props();
 
 	const attrs = otpAttrs('email');
 	let code = $state('');
@@ -37,7 +51,7 @@
 		busy = true;
 		error = '';
 		try {
-			await verifyEmailCode(code);
+			await verify(code);
 			onverified();
 		} catch (err) {
 			error = codeFailure(apiErrorBody(err), 'Could not check the code.').text;
@@ -51,8 +65,8 @@
 		busy = true;
 		error = '';
 		try {
-			const res = await resendEmailCode();
-			countdown(res.resendAfter);
+			const res = await resendCode();
+			countdown(res.resendAfter ?? 60);
 			live = `A new code was sent to ${address}.`;
 		} catch (err) {
 			error = apiErrorBody(err)?.message || 'Could not send a new code.';
@@ -80,7 +94,7 @@
 		/>
 	</label>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
-	<button type="submit" disabled={busy || !otpComplete(code, 'email')}>Confirm address</button>
+	<button type="submit" disabled={busy || !otpComplete(code, 'email')}>{submitLabel}</button>
 	<p class="hint">
 		{resendText(left)}
 		<button type="button" class="link" disabled={busy || left > 0} onclick={resend}>Send a new code</button>

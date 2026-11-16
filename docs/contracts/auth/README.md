@@ -138,3 +138,13 @@ credentials -> [mfa] -> [password change] -> [enrolment] -> full.
 - Email verification: `PUT /api/account/email` answers `verification`: `sent`, `unavailable` or
   `none`; `POST /api/account/email/verify {code}` (403 `code_invalid` / `challenge_expired`).
 - The client never computes TOTP and never stores a challenge beyond its screen.
+
+## Second-wave rules
+- `mfa_required.methods` lists exactly what may be answered; `email` appears only after a password sign-in. After a
+  reset link or an emailed sign-in code it is absent and `/login/mfa/email` answers 409 `method_unavailable`.
+- `POST /api/auth/reset` may answer `{"status":"password_changed"}` (no token): the account's second step is email, so
+  sign in with the new password.
+- `POST /api/account/mfa/email {enabled:true}` in an enrolment session answers 202 `{confirm:true}` and mails a code;
+  `POST /api/account/mfa/email/confirm {code}` finishes it (and only then ends the restriction).
+- `POST /api/auth/login` may answer 503 `mail_outage` (second step by email while mail is down): retry later.
+- `PUT /api/account/email` also takes `code` (authenticator or recovery code) for accounts with an authenticator.

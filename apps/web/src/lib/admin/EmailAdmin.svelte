@@ -81,6 +81,11 @@
 		{#if saved.secret !== 'ok'}
 			<p class="hint">QINQIN_SECRET is {saved.secret}: a mail password cannot be stored. A relay without a password still works.</p>
 		{/if}
+		{#if (saved.usersDependOnMail ?? 0) > 0 && (!saved.configured || saved.password === 'undecryptable')}
+			<p class="error" role="alert">
+				{saved.usersDependOnMail} {saved.usersDependOnMail === 1 ? 'person has' : 'people have'} email codes as their only second step and cannot sign in while email does not work. Fix the setup below, or reset their two-factor under Users.
+			</p>
+		{/if}
 		<form onsubmit={save} class="stack">
 			<label>Server <input name="host" bind:value={draft.host} required /></label>
 			<label>

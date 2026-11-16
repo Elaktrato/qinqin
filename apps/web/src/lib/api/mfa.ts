@@ -62,7 +62,8 @@ export function newRecoveryCodes(password: string, code: string): Promise<{ reco
 	return api('/api/account/mfa/recovery-codes', { method: 'POST', body: { password, code } });
 }
 
-export function setEmailMethod(enabled: boolean, password?: string): Promise<{ email: boolean }> {
+/** Enabling in an enrolment session answers 202 {confirm: true}: a code was mailed, confirm it next. */
+export function setEmailMethod(enabled: boolean, password?: string): Promise<{ email?: boolean; confirm?: boolean; resendAfter?: number }> {
 	return api('/api/account/mfa/email', { method: 'POST', body: { enabled, ...(password ? { password } : {}) } });
 }
 
@@ -72,4 +73,9 @@ export function verifyEmailCode(code: string): Promise<{ emailVerified: boolean 
 
 export function resendEmailCode(): Promise<{ resendAfter: number }> {
 	return api('/api/account/email/resend', { method: 'POST', body: {} });
+}
+
+/** The mailed code that turns the email method on (and ends an enrolment restriction). */
+export function confirmEmailMethod(code: string): Promise<{ email: boolean }> {
+	return api('/api/account/mfa/email/confirm', { method: 'POST', body: { code } });
 }

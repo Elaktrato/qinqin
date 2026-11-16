@@ -60,6 +60,7 @@
 	let emailPolicy = $state<AuthOptions['emailPolicy'] | null>(null);
 	let emailDraft = $state('');
 	let emailPassword = $state('');
+	let emailCode = $state('');
 	let emailError = $state('');
 	let emailDone = $state('');
 	let emailBusy = $state(false);
@@ -73,10 +74,10 @@
 		emailError = emailDone = '';
 		emailBusy = true;
 		try {
-			const res = await putEmail(next, emailPassword);
+			const res = await putEmail(next, emailPassword, emailCode.trim() || undefined);
 			verifying = res.verification === 'sent';
 			emailDone = next === null ? 'Email address removed.' : verifying ? 'Email address saved. Enter the code we sent to confirm it.' : 'Email address saved.';
-			emailPassword = emailDraft = '';
+			emailPassword = emailDraft = emailCode = '';
 			await loadMe();
 		} catch (err) {
 			const body = apiErrorBody(err);
@@ -192,6 +193,12 @@
 				Your password
 				<input type="password" autocomplete="current-password" bind:value={emailPassword} required />
 			</label>
+			{#if $user?.mfa?.totp}
+				<label>
+					Code from your authenticator app (or a recovery code)
+					<input name="email-code" autocomplete="one-time-code" bind:value={emailCode} required />
+				</label>
+			{/if}
 			{#if emailError}<p class="error" role="alert">{emailError}</p>{/if}
 			<p class="ok" role="status">{emailDone}</p>
 			<div class="actions">

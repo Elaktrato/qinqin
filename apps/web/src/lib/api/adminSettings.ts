@@ -80,6 +80,8 @@ export interface SmtpSettings {
 	secret: 'ok' | 'missing' | 'invalid';
 	allowPrivate: boolean;
 	updatedAt: string;
+	/** Users whose only second step is an emailed code: they cannot sign in while mail is down. */
+	usersDependOnMail?: number;
 }
 
 export interface SmtpPayload {

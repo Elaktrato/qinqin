@@ -44,4 +44,16 @@ describe('EmailAdmin', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Send test mail' }));
 		expect((await screen.findByRole('alert')).textContent).toBe('The server refused the user name or password. (server reply 535)');
 	});
+
+	it('warns when people depend on mail that does not work', async () => {
+		vi.mocked(api.getSmtp).mockResolvedValue(saved({ configured: false, usersDependOnMail: 2 }) as never);
+		render(EmailAdmin);
+		expect((await screen.findByRole('alert')).textContent).toContain('2 people have email codes as their only second step');
+	});
+	it('stays quiet when mail works', async () => {
+		vi.mocked(api.getSmtp).mockResolvedValue(saved({ usersDependOnMail: 2 }) as never);
+		render(EmailAdmin);
+		await screen.findByText('A password is saved.');
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
 });

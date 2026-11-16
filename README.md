@@ -453,7 +453,7 @@ sign-ins. An authenticator code works once (replay is refused). The administrato
 everyone (**Admin, Security**; needs email): it applies at each person's next sign-in, optionally signing everyone else
 out now. A person without an address is sent to a setup page first. **Sign in with an emailed code** (another switch)
 adds a password-free route; an account with an authenticator still asks for it, and while two steps are required an
-account without one must use the password. A password reset or reset link never removes two-step sign-in. Locked out:
+account without one must use the password. A password reset or reset link never removes two-step sign-in, and a reset link or an emailed code is never accepted as a second step after itself. People whose only second step is an emailed code are protected by their mailbox alone, by construction: while email does not work they cannot sign in (503), and Admin, Email says how many; give them an authenticator app for independence from mail. Changing your email address asks for the authenticator code too, cancels open reset links and tells the old address. Locked out:
 a recovery code, an administrator (Admin, Users: reset two-factor) or `qinqin recover --username NAME --reset-mfa`.
 
 ### AI journal

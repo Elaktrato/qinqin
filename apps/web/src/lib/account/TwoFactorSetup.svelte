@@ -2,7 +2,7 @@
 	import { tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { putEmail, type AuthOptions } from '$lib/api/account';
-	import { setEmailMethod, totpConfirm, totpSetup, type TotpSetup } from '$lib/api/mfa';
+	import { confirmEmailMethod, setEmailMethod, totpConfirm, totpSetup, type TotpSetup } from '$lib/api/mfa';
 	import { loadMe, user } from '$lib/auth';
 	import { codeFailure, otpAttrs, otpComplete, sanitizeOtp } from './otpInput';
 	import { groupSecret, twoFactorChoices } from './mfaView';
@@ -34,6 +34,7 @@
 	// email path
 	let emailDraft = $state('');
 	let verifying = $state(false);
+	let confirming = $state(false);
 	let verifyAddress = $state('');
 
 	const choices = $derived(twoFactorChoices(options));
@@ -128,8 +129,10 @@
 		busy = true;
 		error = '';
 		try {
-			await setEmailMethod(true, forced ? undefined : password);
-			await finish();
+			const res = await setEmailMethod(true, forced ? undefined : password);
+			// An enrolment session must first prove the mailbox with a code.
+			if (res.confirm) confirming = true;
+			else await finish();
 		} catch (err) {
 			error = fail(err, 'Could not turn on emailed codes.');
 		} finally {
@@ -207,7 +210,15 @@
 		<RecoveryCodes codes={recovery} {site} oncontinue={finish} />
 	{:else if step === 'email'}
 		<h2 tabindex="-1" bind:this={heading}>Email codes</h2>
-		{#if emailReady}
+		{#if confirming}
+			<EmailVerify
+				address={$user?.email ?? ''}
+				verify={confirmEmailMethod}
+				resend={async () => (await setEmailMethod(true)) as { resendAfter?: number }}
+				submitLabel="Turn on email codes"
+				onverified={finish}
+			/>
+		{:else if emailReady}
 			<p>Codes will go to <strong>{$user?.email}</strong>.</p>
 			<form onsubmit={enableEmail}>
 				{#if !forced}

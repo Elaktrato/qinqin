@@ -68,7 +68,7 @@
 		try {
 			const res = await useReset(token, password);
 			const step = stepFor(res.status, res);
-			if (step.kind === 'mfa') {
+			if (step.kind === 'mfa' || res.status === 'password_changed') {
 				// The password is changed, but two-step sign-in still applies: finish on the sign-in page.
 				passwordChanged = true;
 				return;

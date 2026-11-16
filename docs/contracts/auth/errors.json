@@ -31,6 +31,7 @@
   "method_unavailable": {"status": 409, "meaning": "The second-step method asked for (an emailed code) is not available for this account or instance."},
   "email_login_unavailable": {"status": 409, "meaning": "Sign-in by emailed code is switched off (or the server has no mail): use the password."},
   "password_login_required": {"status": 403, "meaning": "Two-step sign-in is required and this account has no authenticator, so an emailed code alone cannot sign in: use the password."},
+  "mail_outage": {"status": 503, "meaning": "Sign-in refused (fail closed): the account's second step is an emailed code and the server cannot send mail. Retry later; an administrator can fix Admin, Email or run qinqin recover --reset-mfa."},
   "last_admin": {"status": 409, "meaning": "The change would leave the instance without an active administrator."},
   "self_target": {"status": 409, "meaning": "An administrator tried to disable or delete their own account through the admin routes."},
   "invalid_request": {"status": 422, "meaning": "A well-formed request the server will not do (for example cancelling a forced password change)."},

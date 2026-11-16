@@ -15,12 +15,13 @@ vi.mock('$lib/api/mfa', () => ({
 	totpConfirm: vi.fn(),
 	setEmailMethod: vi.fn(),
 	verifyEmailCode: vi.fn(),
+	confirmEmailMethod: vi.fn(),
 	resendEmailCode: vi.fn()
 }));
 vi.mock('$lib/api/account', () => ({ putEmail: vi.fn() }));
 
 import { putEmail, type AuthOptions } from '$lib/api/account';
-import { setEmailMethod, totpConfirm, totpSetup } from '$lib/api/mfa';
+import { confirmEmailMethod, setEmailMethod, totpConfirm, totpSetup } from '$lib/api/mfa';
 import { loadMe } from '$lib/auth';
 import { encode } from 'uqr';
 import TwoFactorSetup from './TwoFactorSetup.svelte';
@@ -146,5 +147,22 @@ describe('email method path', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Email codes' }));
 		expect(await screen.findByText('b@example.org')).toBeTruthy();
 		expect(putEmail).not.toHaveBeenCalled();
+	});
+});
+
+describe('email method in an enrolment session', () => {
+	it('is finished only after the mailed code was confirmed', async () => {
+		(me.current as ReturnType<typeof writable>).set({ id: 1, username: 'bobby', email: 'b@example.org', emailVerified: true });
+		vi.mocked(setEmailMethod).mockResolvedValue({ confirm: true, resendAfter: 60 });
+		vi.mocked(confirmEmailMethod).mockResolvedValue({ email: true });
+		const onfinished = vi.fn();
+		render(TwoFactorSetup, { options: options(), forced: true, onfinished });
+		await fireEvent.click(screen.getByRole('button', { name: 'Email codes' }));
+		await fireEvent.click(await screen.findByRole('button', { name: 'Turn on email codes' }));
+		await fireEvent.input(await screen.findByLabelText('Code from the email'), { target: { value: '123456' } });
+		expect(onfinished).not.toHaveBeenCalled();
+		await fireEvent.click(screen.getByRole('button', { name: 'Turn on email codes' }));
+		await waitFor(() => expect(confirmEmailMethod).toHaveBeenCalledWith('123456'));
+		await waitFor(() => expect(onfinished).toHaveBeenCalled());
 	});
 });
