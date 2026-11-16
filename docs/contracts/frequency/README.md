@@ -44,8 +44,8 @@ Top 2000. Owned copy id: `d-frq-<slug(packId)>-<fnv1a32(packId + "\0" + "top-" +
 Resolution (server): walk the pack's rows by `rank`, then row position; resolve each row's term (and
 reading, when given) to one word entry. A **kana row** (no reading or the reading equal to the term, the
 term written only in hiragana, katakana and ー) first takes the word with no written form whose first
-reading is exactly the term and whose priority is above 0, highest priority, then lowest id (so `の` is
-the particle, not the usually-kana 乃; a kana-only `こと` without priority does not displace 事). Every
+reading is exactly the term and whose priority is above 0, highest priority, then lowest id (so `で` is
+the particle, not the usually-kana 出; a kana-only `こと` without priority does not displace 事). Every
 other row, and a kana row without such a word, resolves like a level pack word (`BestWordReading`: form +
 reading, then the form, then the kana reading fallback); level imports never use the kana step. Skip unresolved rows and entries already taken; stop at `size`
 entries or after `4 × size` rows. Fixture: a toy Japanese lexicon (`forms`, kana `readings`, `pri`, `uk`)
@@ -83,9 +83,11 @@ Against a server built from a scratch copy (embedded web build; `jmdict`, `jiten
 `GET /api/frequency-packs/1/top?size=2000` took 1.46 s (1.26 s again after a restart; budget 2 s), the
 second 0.10 s from the cache, 2000 entries, 656 KB, byte-identical for two users and after the restart;
 Top 500 is the prefix of Top 1000 and Top 1000 of Top 2000; `size=3` is 400, an unknown pack 404. The first
-20 words are particles and basic words (は, に, を, が, と, も, だ, 為る/する, か, から, …); two kana rows
-resolve to a usually-kana homograph by the shared level-word rule (`の` -> 乃, `で` -> 出), see the spec's
-homograph risk. Ranks of 600 entries in two calls equal the 600 one-by-one answers, in request order, and
+20 words are particles and basic words (は, に, を, が, と, も, だ, 為る/する, か, から, …). The first
+build resolved `で` to the usually-kana 出 by the level-word rule; the kana-row step (review fix) makes it
+the particle で (re-checked: first Top 2000 1.23 s, cached 0.002 s, nested sizes). `の` resolves to JMdict
+1469800, the particle, whose written forms 乃 and 之 are search-only (sK); entry bases show the first form,
+so the deck lists it as 乃 — a display follow-up, not a resolution error. Ranks of 600 entries in two calls equal the 600 one-by-one answers, in request order, and
 are identical for a second user; `language: "zh"` answers `{"pack":null,"ranks":[]}`. The add plan of
 Top 500 for a fresh user (planned by the web modules, pushed through `POST /api/sync/push` in 3 requests of
 at most 200 rows) wrote 502 rows (deck, `deckcfg` with `newOrder: {by: "frequency"}`, 500 cards), all

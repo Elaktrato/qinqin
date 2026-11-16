@@ -420,3 +420,42 @@ exercised end to end (no Chinese pack is installable here without unclear-licenc
 covered by `pack: null` and the hint. Level-order sessions were tested in unit tests only, not against a
 real HSK level. Performance of a ranks load for a very large deck (5,000 new cards) was not measured.
 
+
+**Review fixes** (one fix wave after the independent review; test-first per finding, failures seen first):
+
+1. Starter cache ignored dictionary installs: `TopCache` keys on (pack id, content hash, lexicon version =
+   `lexicon.Store.CharactersVersion`); tests: a word installed after the first `Get` (freq) and a JMdict
+   pack installed after the first GET (api) appear. Seen failing: the api test with an empty version.
+2. Kana rows resolved to usually-kana homographs: `freq.StarterResolver` tries, for a kana row (no reading or
+   reading = term, term all kana), `lexicon.Store.KanaOnlyWordID` (no written form, first reading exactly
+   the term, priority > 0, highest priority) before `BestWordReadingID`; levels untouched (test asserts
+   both rules). Ruling: priority > 0 is required — the real JMdict has kana-only, priority-less entries for
+   こと (particle), なる, た, よう, れる that would otherwise displace 事, 成る, … — cost if wrong: a rare
+   kana-only word without priority stays behind its kanji homograph. Fixture `starter-resolution.json`
+   re-derived by hand with toy の/乃 and こと/事 entries; contract README and wiki updated. Real-data recheck:
+   `で` is now the particle; `の` was already the particle entry (JMdict 1469800), whose search-only forms
+   乃/之 make the entry base show 乃 — a display follow-up, not fixed here.
+3. A panicking resolution left waiters hanging: the computation runs in `compute` with a deferred
+   `close(done)` and delete-on-failure; a panic still reaches its caller, waiters get an error, the next
+   `Get` recomputes (test with a panicking resolver; seen hanging first). `-race` ok.
+4. Deck settings could show and save "added" while lists loaded or failed: `deckOrderControl` (pure, tested)
+   keeps the select disabled on the stored order until packs and schemes are in, disables it with a hint
+   when one failed, and shows an unavailable stored order as a disabled "(not available)" choice; dom tests.
+5. Known words could be added with no study data: the add reloads the study history itself and computes the
+   known words from it, and refuses with an error when that load fails; dom tests (failed first load, and a
+   load that keeps failing: nothing pushed).
+6. A ranking-pack switch mid-load wiped loaded chunks: `loadRanks` asks the dropped ids again (at most three
+   rounds) and otherwise rejects "The frequency list changed while loading; try again."
+8. Done: the route keeps its marshalled answer per (pack, size) under the full key (pack hash, lexicon
+   version, size); a cached Top 2000 now answers in about 2 ms.
+9. An unreadable `newOrder` (a newer client's) is kept verbatim in `extra` and survives a save; choosing an
+   order (including added) replaces it. Fixture `deckcfg-new-order.json` malformed cases re-derived; README.
+10. `deckOrdersOf` (tested) gives both the setup and the session page the orders of the selected decks that
+   still exist. The new setup dom test passed before the change (the setup already prunes deleted decks
+   from its selection); the unit test failed first.
+
+Gates after the fixes: targeted Go (`freq`, `lexicon`, `levels`, `lookup`, `api`) ok, `-race ./internal/freq`
+ok; full Go `./...` 35 ok, only the known `TestHostnameResolvingToEmbeddedFormIsRefused` failed; web check 0
+errors, `npm test` 313 files / 4934 tests, build ok; Node 26 vitest 313 / 4934; `check-sources` and
+`gen-api-docs --check` ok. Real-app recheck on a scratch server (jmdict + jiten-frequency, free port,
+killed and deleted): first Top 2000 1.23 s, cached 0.002 s, Top 500 the prefix of Top 2000.
