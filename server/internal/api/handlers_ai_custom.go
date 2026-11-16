@@ -18,10 +18,17 @@ const maxCustomBody = 4 << 10
 // (the shared auth rule), 403 JSON for a non-admin, 409 provider_disabled
 // when the operator turned custom endpoints off.
 func (s *server) requireCustomAdmin(w http.ResponseWriter, r *http.Request) (*model.User, bool) {
-	u := s.requireUser(w, r)
-	if u == nil {
+	p := s.requirePrincipal(w, r)
+	if p == nil {
 		return nil, false
 	}
+	// Admin-only: an access token never manages endpoints (tokenGate refuses
+	// it first; this holds even if the route row were marked).
+	if p.ViaToken() {
+		writeAuthError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
+		return nil, false
+	}
+	u := &p.User
 	if !u.Admin {
 		writeAIError(w, errForbidden)
 		return nil, false

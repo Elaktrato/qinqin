@@ -436,7 +436,16 @@ func writeInternal(w http.ResponseWriter, r *http.Request) {
 }
 
 // authenticate resolves the session of r: nil with no error is anonymous.
+// An access token resolves only through tokenGate, which puts its principal
+// in the request context; a qq_pat_ bearer without one (a handler reached
+// some other way) is anonymous.
 func (s *server) authenticate(r *http.Request) (*auth.Principal, error) {
+	if p := gatePrincipal(r); p != nil {
+		return p, nil
+	}
+	if _, ok := auth.TokenFromRequest(r); ok {
+		return nil, nil
+	}
 	return auth.Authenticate(r, s.db)
 }
 
@@ -491,6 +500,11 @@ func (s *server) requireAdminPrincipal(w http.ResponseWriter, r *http.Request) *
 	p, err := s.authenticate(r)
 	if err != nil {
 		writeInternal(w, r)
+		return nil
+	}
+	// No admin route takes an access token, even if its row were marked.
+	if p != nil && p.ViaToken() {
+		writeAuthError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
 		return nil
 	}
 	if p != nil {
