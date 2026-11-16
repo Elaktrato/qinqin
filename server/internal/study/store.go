@@ -137,6 +137,30 @@ func PullRows(ctx context.Context, q Querier, userID int64, f rows.Family, since
 	return out, nil
 }
 
+// ForEach streams the user's live rows of family f (every workspace) in
+// pull order to fn, without holding them all (the backup export).
+func ForEach(ctx context.Context, q Querier, userID int64, f rows.Family, fn func(rows.Row) error) error {
+	t, ok := tables[f]
+	if !ok {
+		return fmt.Errorf("study: unknown family %q", f)
+	}
+	rs, err := q.QueryContext(ctx, `SELECT `+selectCols(f)+` FROM `+t.name+` WHERE user_id = ? AND deleted_at IS NULL ORDER BY workspace_id, `+orderBy(f), userID)
+	if err != nil {
+		return fmt.Errorf("study: read %s: %w", f, err)
+	}
+	defer rs.Close()
+	for rs.Next() {
+		r, err := scanRow(f, rs)
+		if err != nil {
+			return fmt.Errorf("study: read %s: %w", f, err)
+		}
+		if err := fn(r); err != nil {
+			return err
+		}
+	}
+	return rs.Err()
+}
+
 // Pull returns the families in only (nil: all) changed since since, as
 // PullRows. Every slice of the result is non-nil.
 func Pull(ctx context.Context, q Querier, userID int64, since time.Time, only map[rows.Family]bool) (Delta, error) {

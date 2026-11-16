@@ -10,7 +10,9 @@ import (
 	"errors"
 	"io"
 	"os"
+	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -98,8 +100,11 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 	for _, l := range rows {
 		var r PluginRow
 		strictDecode(t, []byte(l), &r)
-		if r.Key == "card:TOMBSTONE" {
+		if r.Key == "card:TOMBSTONE" || r.Key == "deck:GONE" {
 			t.Error("tombstoned row exported")
+		}
+		if r.Key == "card:LEFTOVER" {
+			t.Error("a leftover typed-family plugin row was exported")
 		}
 		if r.WorkspaceID == nil {
 			global++
@@ -110,6 +115,26 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 	}
 	if len(rows) != 5 || global != 2 || nullModified != 1 {
 		t.Errorf("plugin rows %d global %d nullModified %d", len(rows), global, nullModified)
+	}
+	// typed cards travel as their legacy qinqin-flashcards rows (rows.ToLegacy)
+	cards := map[string]PluginRow{}
+	for _, l := range rows {
+		var r PluginRow
+		strictDecode(t, []byte(l), &r)
+		if strings.HasPrefix(r.Key, "card:") {
+			cards[r.Key] = r
+		}
+	}
+	rev := cards["card:c-reverse-"+strconv.FormatInt(w.E1, 10)]
+	if len(cards) != 3 || rev.PluginID != FlashcardsPlugin || rev.WorkspaceID == nil || *rev.WorkspaceID != w.Alice.WS1 ||
+		rev.Version != 2 || rev.UpdatedAt != "2026-11-10T08:00:00Z" || rev.ModifiedAt == nil || *rev.ModifiedAt != "2026-11-10T08:00:00Z" {
+		t.Errorf("exported cards %+v", cards)
+	}
+	if want := fmt.Sprintf(`{"createdAt":"2026-11-10T08:00:00Z","deckIds":["general"],"entryId":%d,"id":"c-reverse-%d","kind":"reverse","x-unknown":{"b":1,"a":2}}`, w.E1, w.E1); string(rev.Data) != want {
+		t.Errorf("reverse card data %s, want %s", rev.Data, want)
+	}
+	if strings.Contains(strings.Join(order, ","), "deletion") || m.FormatVersion != 1 {
+		t.Errorf("archive names %v format %d", order, m.FormatVersion)
 	}
 	// own sentences only, none tombstoned
 	var s OwnSentence
@@ -279,5 +304,44 @@ func TestWriteUserRefusesToProduceWhatARestoreWouldRefuse(t *testing.T) {
 	capBook = oldB
 	if _, err := WriteUser(ctx, w.DB, w.Data, w.AliceUID, io.Discard, testMeta); err != nil {
 		t.Errorf("a normal export failed: %v", err)
+	}
+}
+
+// A typed-family plugin row is exported only while it carries a readable
+// study row no typed row shadows; the counts the dry run shows agree.
+func TestExportTypedFamilyLeftovers(t *testing.T) {
+	w := newWorld(t)
+	uid := w.AliceUID
+	e1 := strconv.FormatInt(w.E1, 10)
+	ins := func(ws int64, key, data string) {
+		exec(t, w.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
+			VALUES ('qinqin-flashcards', ?, ?, ?, ?, 1, '2026-11-10T08:00:00Z', '2026-11-10T08:00:00Z')`, uid, ws, key, data)
+	}
+	// readable and unshadowed: exported
+	ins(w.Alice.WS2, "deck:PLAIN", `{"id":"PLAIN","name":"n","createdAt":"t"}`)
+	// readable but a typed row holds the key: only the typed row goes
+	ins(w.Alice.WS1, "card:c-vocab-"+e1, `{"id":"c-vocab-`+e1+`","kind":"vocab","entryId":`+e1+`,"deckIds":["SHADOWED"],"createdAt":"t"}`)
+	// readable but in another user's workspace: never
+	ins(w.Bob.WS1, "deck:FOREIGN", `{"id":"FOREIGN","name":"n","createdAt":"t"}`)
+	data, man := exportBytes(t, w, uid)
+	files, _ := unzipAll(t, data)
+	keys := map[string]int{}
+	for _, l := range lines(files[PartName(NamePluginData, 1)]) {
+		var r PluginRow
+		strictDecode(t, []byte(l), &r)
+		keys[r.Key]++
+		if strings.Contains(string(r.Data), "SHADOWED") {
+			t.Error("a shadowed leftover was exported")
+		}
+	}
+	if keys["deck:PLAIN"] != 1 || keys["card:c-vocab-"+e1] != 1 || keys["deck:FOREIGN"] != 0 || keys["card:LEFTOVER"] != 0 {
+		t.Errorf("exported keys %v", keys)
+	}
+	c, err := CurrentCounts(context.Background(), w.DB, uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.PluginData != man.Counts["pluginData"] || c.PluginData != 6 || c.Cards != 3 {
+		t.Errorf("CurrentCounts %+v, export counts %v", c, man.Counts)
 	}
 }

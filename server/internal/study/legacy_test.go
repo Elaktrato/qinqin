@@ -109,3 +109,20 @@ func TestOnlyKnownCodeWritesPluginData(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// LegacyKeySQL selects exactly the keys FamilyOf gives a family.
+func TestLegacyKeySQLMatchesFamilyOf(t *testing.T) {
+	sqlDB := openDB(t)
+	keys := []string{"card:x", "card:", "CARD:x", "cards:x", "deck:x", "decks", "deckcfg:x", "deckcfg:", "limits:workspace", "limits:workspaces",
+		"limits:deck:x", "limits:deck:", "limits:other", "fsrs:set:x", "fsrs:active", "fsrs:activeX", "fsrs:other", "known:5", "goals:workspace", "vacation:x", "x"}
+	for _, k := range keys {
+		var n int
+		if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM (SELECT ? AS key) WHERE `+study.LegacyKeySQL, k).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		_, typed := rows.FamilyOf(k)
+		if (n == 1) != typed {
+			t.Errorf("%q: SQL %v, FamilyOf %v", k, n == 1, typed)
+		}
+	}
+}

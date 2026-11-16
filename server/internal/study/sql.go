@@ -346,7 +346,9 @@ func scanRow(f rows.Family, sc scanner) (rows.Row, error) {
 		return nil, err
 	}
 	if m.ModifiedAt, err = parseStamp(modified); err != nil {
-		return nil, err
+		// An edit time no client wrote in RFC 3339 (a hand-made archive) must
+		// not make the row unreadable: it counts as the write stamp.
+		m.ModifiedAt = m.UpdatedAt
 	}
 	if deleted.Valid {
 		d, err := parseStamp(deleted.String)

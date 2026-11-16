@@ -17,6 +17,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 // Meta is what the manifest records about the producing server.
@@ -427,33 +430,87 @@ func writeEvents(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64
 		})
 }
 
+// writePluginData writes the plugin-data family: the live plugin rows, then
+// every live typed study row as its legacy qinqin-flashcards row
+// (rows.ToLegacy), so the archive stays format v1 and restores on a v0.3
+// server too. A qinqin-flashcards plugin row of a typed family is written
+// only while it still carries a readable study row no typed row shadows
+// (study.ReadableLeftover); a leftover the migration could not read is
+// never written (no client reads it, and its key could collide with a typed
+// row's, which would make the archive invalid).
 func writePluginData(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, refs *refSet) (int, error) {
-	return writeParts(ctx, tx, a, NamePluginData,
-		`SELECT pack_id, workspace_id, key, data, version, updated_at, modified_at FROM plugin_data
-		 WHERE user_id = ? AND deleted_at IS NULL ORDER BY pack_id, IFNULL(workspace_id, 0), key`, []any{userID},
-		func(rs *sql.Rows) (any, error) {
-			var r PluginRow
-			var data string
-			if err := rs.Scan(&r.PluginID, &r.WorkspaceID, &r.Key, &data, &r.Version, &r.UpdatedAt, &r.ModifiedAt); err != nil {
-				return nil, err
+	pw := &partWriter{a: a, fam: NamePluginData}
+	var leftovers []PluginRow
+	rs, err := tx.QueryContext(ctx, `SELECT pack_id, workspace_id, key, data, version, updated_at, modified_at FROM plugin_data
+		 WHERE user_id = ? AND deleted_at IS NULL ORDER BY pack_id, IFNULL(workspace_id, 0), key`, userID)
+	if err != nil {
+		return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+	}
+	for rs.Next() {
+		var r PluginRow
+		var data string
+		if err := rs.Scan(&r.PluginID, &r.WorkspaceID, &r.Key, &data, &r.Version, &r.UpdatedAt, &r.ModifiedAt); err != nil {
+			rs.Close()
+			return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+		}
+		if !json.Valid([]byte(data)) {
+			rs.Close()
+			return 0, fmt.Errorf("backup: %s: row %s/%s holds unreadable JSON", NamePluginData, r.PluginID, r.Key)
+		}
+		r.Data = json.RawMessage(data)
+		if r.PluginID == FlashcardsPlugin {
+			if _, typed := rows.FamilyOf(r.Key); typed {
+				leftovers = append(leftovers, r) // decided below, with rs closed
+				continue
 			}
-			if !json.Valid([]byte(data)) {
-				return nil, fmt.Errorf("row %s/%s holds unreadable JSON", r.PluginID, r.Key)
+		}
+		// a personal note or known mark names its entry, so a restore can move it to the same word
+		if id, ok := entryKeyedID(r); ok {
+			refs.entries[id] = struct{}{}
+		}
+		// so does every word of the lookup history
+		for _, id := range lookupEntryIDs(r) {
+			refs.entries[id] = struct{}{}
+		}
+		if err := pw.encode(r); err != nil {
+			rs.Close()
+			return 0, err
+		}
+	}
+	if err := closeRows(rs); err != nil {
+		return 0, err
+	}
+	for _, r := range leftovers {
+		keep, err := study.ReadableLeftover(ctx, tx, userID, r.WorkspaceID, r.Key, r.Data)
+		if err != nil {
+			return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+		}
+		if !keep {
+			continue
+		}
+		if strings.HasPrefix(r.Key, "card:") {
+			noteCard(refs, r.Key, r.Data)
+		}
+		if err := pw.encode(r); err != nil {
+			return 0, err
+		}
+	}
+	for _, f := range rows.Families {
+		if err := study.ForEach(ctx, tx, userID, f, func(r rows.Row) error {
+			key, data := rows.ToLegacy(r)
+			m := r.M()
+			ws := m.WorkspaceID
+			modified := m.ModifiedAt.UTC().Format(time.RFC3339)
+			if r.Family() == rows.Cards {
+				noteCard(refs, key, data)
 			}
-			r.Data = json.RawMessage(data)
-			if r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, "card:") {
-				noteCard(refs, r.Key, r.Data)
-			}
-			// a personal note or known mark names its entry, so a restore can move it to the same word
-			if id, ok := entryKeyedID(r); ok {
-				refs.entries[id] = struct{}{}
-			}
-			// so does every word of the lookup history
-			for _, id := range lookupEntryIDs(r) {
-				refs.entries[id] = struct{}{}
-			}
-			return r, nil
-		})
+			return pw.encode(PluginRow{PluginID: FlashcardsPlugin, WorkspaceID: &ws, Key: key, Data: data,
+				Version: int64(m.Version), UpdatedAt: m.UpdatedAt.UTC().Format(time.RFC3339), ModifiedAt: &modified})
+		}); err != nil {
+			return 0, fmt.Errorf("backup: %s: %w", NamePluginData, err)
+		}
+	}
+	return pw.total, pw.close()
 }
 
 // noteCard records the entry and sentence a card row points at.
