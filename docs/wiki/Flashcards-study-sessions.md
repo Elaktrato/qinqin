@@ -8,6 +8,8 @@ Studying is provided by the flashcards plugin. To add a word open any word or ch
 
 You can also draw from a level instead of a deck: choose **By level**, pick an installed scheme (HSK, JLPT, a curriculum pack) and one of its levels. A word that already has a card reuses it; the rest get a card in the General deck when you first grade them, so abandoning a level session creates nothing.
 
+**Order of new cards** (under Limits) decides which new cards come first; reviews always come first and in due order, and the daily limits are unchanged. In a deck session the default follows each deck's own setting (deck Settings, New cards); you can override it with "In the order added", "Most frequent first (<list name>)" or "By level: <scheme>". When the selected decks use different orders the session uses the order added and says so. A level session keeps level order, or takes **Most frequent first** for a word scheme (word frequency does not rank kanji). The frequency choice appears only when a frequency list of the workspace language is installed. The ranks need the server: offline, or when the request fails, the session keeps the order added and shows "Frequency order needs a connection; using the order added".
+
 ## Card types
 
 | Type | What you do | Needs |

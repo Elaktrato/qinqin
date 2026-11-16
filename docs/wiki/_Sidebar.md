@@ -7,6 +7,7 @@
 - [Searching and entries](Searching-and-entries)
 - [Flashcards: study sessions](Flashcards-study-sessions)
 - [Decks, limits and vacation](Flashcards-decks-limits-vacation)
+- [Daily goals](Daily-goals)
 - [Scheduling and FSRS](Scheduling-and-FSRS)
 - [Reader](Reader)
 - [Journal and AI](Journal-and-AI)
