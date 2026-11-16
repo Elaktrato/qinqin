@@ -120,8 +120,10 @@ an unknown `status` as "not signed in".
 
 ## Administration (web only in v0.4.0)
 Email addresses are validated as: one `@`, an ASCII local part (non-ASCII is `422 invalid_email`), an IDNA domain
-stored in punycode, at most 254 bytes. Deleting another user, issuing a reset link and granting admin need the acting
-administrator's own `currentPassword` (`422 password_required`, `403 wrong_password`).
+stored in punycode, at most 254 bytes. Deleting another user, issuing a reset link, granting admin and resetting another
+user's two-step sign-in need the acting administrator's own `currentPassword` (`422 password_required`,
+`403 wrong_password`); the two-step sign-in reset (`POST /api/admin/users/{id}/mfa/reset`) also needs a
+`code` (authenticator or recovery code) from an administrator who has an authenticator (`403 code_invalid`).
 `/api/admin/users`, `/api/admin/invites`, `/api/admin/settings/auth`, `/api/admin/audit` are used by the web
 admin screens only; the Kotlin client needs just the routes above, `PUT /api/account/email`,
 `GET /api/account/deletion-preview` and `DELETE /api/account` (self deletion: `{password, confirm}`; 409

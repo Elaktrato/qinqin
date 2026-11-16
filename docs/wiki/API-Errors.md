@@ -43,7 +43,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `invalid_request` | 422 | A well-formed request the server will not do (for example cancelling a forced password change). |
 | `token_invalid` | 400 | A reset link is unknown, expired, already used or belongs to a disabled account (one code and one body for all of them). |
 | `confirm_mismatch` | 422 | The typed confirmation (the username) does not match the account being deleted. |
-| `password_required` | 422 | An administrator action that needs the acting administrator's own password (delete another user, issue a reset link, grant admin) came without currentPassword. |
+| `password_required` | 422 | An administrator action that needs the acting administrator's own password (delete another user, issue a reset link, grant admin, reset another user's two-step sign-in, create a server backup) came without currentPassword. |
 | `invalid_invite` | 422 | An invite parameter is out of range (uses 1-100, expiry 1-90 days, note at most 100 characters). |
 | `invalid_setting` | 422 | A settings value outside its vocabulary. |
 | `account_disabled` | 403 | Right password, but an administrator disabled the account. |

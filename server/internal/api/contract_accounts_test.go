@@ -130,7 +130,7 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 	var aliceID = userID(t, sqlDB, "alice")
 	id := func() string { return strconv.FormatInt(carlaID, 10) }
 	var resetToken string
-	runCases(t, "admin-users.json", []string{"list", "create", "patch", "last_admin", "self_target", "reset_link", "sessions_revoke", "deletion_preview", "confirm_mismatch", "password_required", "delete"}, map[string]func() (int, any){
+	runCases(t, "admin-users.json", []string{"list", "create", "patch", "last_admin", "self_target", "reset_link", "sessions_revoke", "deletion_preview", "mfa_reset", "confirm_mismatch", "password_required", "delete"}, map[string]func() (int, any){
 		"list": func() (int, any) {
 			st, body := callJSON(t, ts, "GET", "/api/admin/users", alice, nil)
 			if m, ok := body.(map[string]any); ok {
@@ -169,6 +169,10 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 		},
 		"deletion_preview": func() (int, any) {
 			return callJSON(t, ts, "GET", "/api/admin/users/"+id()+"/deletion-preview", alice, nil)
+		},
+		"mfa_reset": func() (int, any) {
+			// alice has no authenticator, so her password alone confirms it
+			return callJSON(t, ts, "POST", "/api/admin/users/"+id()+"/mfa/reset", alice, map[string]any{"currentPassword": "secret-pass-alice"})
 		},
 		"confirm_mismatch": func() (int, any) {
 			return callJSON(t, ts, "DELETE", "/api/admin/users/"+id(), alice, map[string]any{"confirm": "nope"})
