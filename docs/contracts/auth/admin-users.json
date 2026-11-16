@@ -1,5 +1,5 @@
 {
-  "_doc": "Deleting another user, issuing a reset link and granting admin ask the ACTING administrator for their own current password (currentPassword; 422 password_required when missing, 403 wrong_password when wrong, 5 wrong tries per 15 minutes). DELETE /api/admin/users/{id}/reset-link takes back a pending link (204). Administrator routes for users (web only in v0.4.0; the Kotlin client does not show them). AdminUser is the object of the list, create and patch answers. lastSeenAt is null until a session was used. Every route answers 403 forbidden to a non-admin and 403 password_change_required to a restricted admin.",
+  "_doc": "Destructive administrator actions re-authenticate the ACTING administrator. Always: granting admin (PATCH admin: true), creating an administrator (POST /api/admin/users with admin: true), deleting another user, issuing a reset link, resetting another user's two-step sign-in (POST /api/admin/users/{id}/mfa/reset), saving or removing the mail settings and the server backup (admin-settings.json, POST /api/admin/backup). Depending on the change (admin-reauth.json has the rule and its cases): PATCH /api/admin/users/{id} with an email key (set or removed, also on one's own account), demoting or disabling ANOTHER administrator; PATCH /api/admin/settings/auth when it lowers a protection or signs everyone else out. Not: demoting oneself, disabling or enabling a plain user, enabling anyone, requiring a password change, revoking sessions or reset links, invites. They take currentPassword (422 password_required when missing, 403 wrong_password when wrong, 5 wrong tries per 15 minutes) and, from an administrator who has an authenticator, code: a current authenticator code or an unused recovery code (403 code_invalid, checked after the password, no attemptsLeft; its own per-user budget of 10 per 15 minutes and 30 per day, separate from the sign-in code budget). An administrator whose only second step is the emailed code gives the password alone. The two-step sign-in reset removes the target's authenticator (also a pending setup), recovery codes and email-code method, cancels open second-step challenges and pending reset links, deletes every session and revokes every personal access token (409 self_target for your own id, before the password; 404 not_found only after password and code). An address an administrator sets counts as verified. DELETE /api/admin/users/{id}/reset-link takes back a pending link (204). Administrator routes for users (web only in v0.4.0; the Kotlin client does not show them). AdminUser is the object of the list, create and patch answers; mfa says which second steps a user has, never a secret. lastSeenAt is null until a session was used. Every route answers 403 forbidden to a non-admin and 403 password_change_required to a restricted admin.",
   "list": {
     "request": {"method": "GET", "path": "/api/admin/users"},
     "status": 200,
@@ -10,10 +10,20 @@
     "status": 201,
     "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": false, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}}
   },
+  "create_admin_reauth": {
+    "request": {"method": "POST", "path": "/api/admin/users", "body": {"username": "mallory", "password": "<temporary password>", "admin": true}},
+    "status": 422,
+    "body": {"error": "password_required", "message": "Enter your own password to confirm this action."}
+  },
   "patch": {
-    "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": true, "currentPassword": "<your own password>"}},
+    "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": true, "currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
     "status": 200,
     "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}}
+  },
+  "demote_admin_reauth": {
+    "request": {"method": "PATCH", "path": "/api/admin/users/{id of another administrator}", "body": {"admin": false}},
+    "status": 422,
+    "body": {"error": "password_required", "message": "Enter your own password to confirm this action."}
   },
   "last_admin": {
     "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": false}},
@@ -26,7 +36,7 @@
     "body": {"error": "self_target", "message": "You cannot disable your own account."}
   },
   "reset_link": {
-    "request": {"method": "POST", "path": "/api/admin/users/{id}/reset-link", "body": {"expiresInHours": 24, "currentPassword": "<your own password>"}},
+    "request": {"method": "POST", "path": "/api/admin/users/{id}/reset-link", "body": {"expiresInHours": 24, "currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
     "status": 201,
     "body": {"path": "/reset#t=<token>", "expiresAt": "2026-11-16T12:00:00Z"}
   },
@@ -40,13 +50,18 @@
     "status": 200,
     "body": {"workspaces": 1, "studyEvents": 120, "pluginData": 8, "books": 0, "journalPhotos": 0, "aiKeys": 0, "sessions": 1, "overlays": 0, "sentences": 0, "accessTokens": 0}
   },
+  "mfa_reset": {
+    "request": {"method": "POST", "path": "/api/admin/users/{id}/mfa/reset", "body": {"currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
+    "status": 204,
+    "body": null
+  },
   "password_required": {
     "request": {"method": "DELETE", "path": "/api/admin/users/{id}", "body": {"confirm": "<the username>"}},
     "status": 422,
     "body": {"error": "password_required", "message": "Enter your own password to confirm this action."}
   },
   "delete": {
-    "request": {"method": "DELETE", "path": "/api/admin/users/{id}", "body": {"confirm": "<the username>", "currentPassword": "<your own password>"}},
+    "request": {"method": "DELETE", "path": "/api/admin/users/{id}", "body": {"confirm": "<the username>", "currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
     "status": 204,
     "body": null
   },

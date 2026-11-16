@@ -27,7 +27,7 @@ func TestAuthSettingsDefaultsPatchAndAudit(t *testing.T) {
 	if resp.StatusCode != 200 || got.Registration != "closed" || got.EmailPolicy != "off" || got.MFAEnforced || got.Mail.Configured {
 		t.Fatalf("defaults = %d %+v", resp.StatusCode, got)
 	}
-	resp = doJSON(t, "PATCH", ts.URL, "/api/admin/settings/auth", owner, map[string]any{"registration": "invite", "emailPolicy": "optional"})
+	resp = doJSON(t, "PATCH", ts.URL, "/api/admin/settings/auth", owner, map[string]any{"registration": "invite", "emailPolicy": "optional", "currentPassword": "secret-pass-owner"})
 	decodeJSON(t, resp, &got)
 	if resp.StatusCode != 200 || got.Registration != "invite" || got.EmailPolicy != "optional" {
 		t.Fatalf("patch = %d %+v", resp.StatusCode, got)
@@ -82,7 +82,7 @@ func TestAuthOptionsArePublicAndTrackBootstrap(t *testing.T) {
 		t.Fatalf("empty db options = %d %+v", resp.StatusCode, o)
 	}
 	owner := registerUser(t, ts.URL, "owner", "")
-	doJSON(t, "PATCH", ts.URL, "/api/admin/settings/auth", owner, map[string]any{"registration": "open"})
+	doJSON(t, "PATCH", ts.URL, "/api/admin/settings/auth", owner, map[string]any{"registration": "open", "currentPassword": "secret-pass-owner"})
 	resp = doJSON(t, "GET", ts.URL, "/api/auth/options", "", nil)
 	decodeJSON(t, resp, &o)
 	if o.Bootstrap || o.Registration != "open" {

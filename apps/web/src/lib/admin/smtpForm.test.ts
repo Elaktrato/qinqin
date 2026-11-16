@@ -36,6 +36,8 @@ describe('smtpForm', () => {
 		expect(needsReentry(saved, { ...d, host: 'other.example.org' })).toBe(true);
 		expect(needsReentry(saved, { ...d, host: 'other.example.org', passwordChoice: 'replace', password: 'x' })).toBe(false);
 		expect(needsReentry({ ...saved, password: 'none' }, { ...d, host: 'o' })).toBe(false);
+		// reset links carry the public URL: a new one needs the password again too
+		expect(needsReentry(saved, { ...d, publicUrl: 'https://elsewhere.example.org' })).toBe(true);
 	});
 	it('turns a failure category into a sentence', () => {
 		expect(testFailure('auth', 535)).toBe('The server refused the user name or password. (server reply 535)');

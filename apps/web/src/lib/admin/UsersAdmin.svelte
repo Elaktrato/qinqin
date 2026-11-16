@@ -14,7 +14,11 @@
 	import { passwordHint } from '$lib/account/passwordRules';
 	import { user as me } from '$lib/auth';
 	import DeleteUserDialog from './DeleteUserDialog.svelte';
-	import { NEEDS_PASSWORD, generateTempPassword, userRows, type UserActionId } from './usersView';
+	import ResetMfaDialog from './ResetMfaDialog.svelte';
+	import { resetNotice, type MfaFactors } from './mfaResetView';
+	import ReauthFields from './ReauthFields.svelte';
+	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady, type Reauth } from './reauth';
+	import { actionNeedsReauth, generateTempPassword, userRows, type UserActionId } from './usersView';
 
 	let users = $state<AdminUserDto[]>([]);
 	let loaded = $state(false);
@@ -33,15 +37,44 @@
 	let resetLink = $state<{ username: string; url: string; expiresAt: string } | null>(null);
 	let copied = $state(false);
 	let deleting = $state<{ id: number; username: string } | null>(null);
+	let resettingMfa = $state<{ id: number; username: string; mfa: MfaFactors } | null>(null);
 	// An action waiting for the acting administrator's own password.
 	let askPassword = $state<{ id: number; username: string; action: UserActionId } | null>(null);
 	let ownPassword = $state('');
+	let ownCode = $state('');
+	// Creating an administrator re-authenticates too.
+	let createPassword = $state('');
+	let createCode = $state('');
+	// The server asked for a code although "me" says no authenticator (a stale copy).
+	let sawCodeInvalid = $state(false);
+	const needsCode = $derived(reauthNeedsCode($me?.mfa?.totp, sawCodeInvalid));
+	let askFields = $state<ReturnType<typeof ReauthFields> | null>(null);
+	let createFields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let heading = $state<HTMLHeadingElement | null>(null);
 
 	const rows = $derived(userRows(users, $me?.id ?? 0, new Date()));
 
 	function message(err: unknown, fallback: string): string {
 		return apiErrorBody(err)?.message || (err instanceof Error ? err.message : '') || fallback;
+	}
+
+	/** A re-authentication refusal: fixed sentence, clear and focus the field to fix. True if it was one. */
+	async function reauthRefused(err: unknown, which: 'ask' | 'create'): Promise<boolean> {
+		const kind = apiErrorBody(err)?.error;
+		if (!kind || !['wrong_password', 'password_required', 'code_invalid', 'rate_limited', 'busy'].includes(kind)) return false;
+		error = reauthError(kind);
+		if (kind === 'code_invalid') sawCodeInvalid = true;
+		const f = reauthFocus(kind);
+		if (which === 'ask') {
+			if (f.clear === 'code') ownCode = '';
+			if (f.clear === 'password') ownPassword = '';
+		} else {
+			if (f.clear === 'code') createCode = '';
+			if (f.clear === 'password') createPassword = '';
+		}
+		await tick();
+		(which === 'ask' ? askFields : createFields)?.focusField(f.focus);
+		return true;
 	}
 
 	async function load(): Promise<void> {
@@ -66,50 +99,65 @@
 	async function create(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
 		if (busy) return;
+		if (makeAdmin && !reauthReady(createPassword, needsCode, createCode)) return;
 		busy = true;
 		error = createNote = '';
+		let refused: unknown = null;
 		try {
 			const created = await createUser({
 				username: username.trim(),
 				password,
 				...(emailPolicy !== 'off' && email.trim() ? { email: email.trim() } : {}),
-				admin: makeAdmin
+				admin: makeAdmin,
+				...(makeAdmin ? reauthBody(createPassword, needsCode, createCode) : {})
 			});
 			createNote = `${created.username} was created. They must choose a new password when they first sign in.`;
-			username = password = email = '';
+			username = password = email = createPassword = createCode = '';
 			makeAdmin = false;
 			await load();
 		} catch (err) {
+			refused = err;
 			error = message(err, 'Could not create the user.');
 		} finally {
 			busy = false;
 		}
+		if (refused) await reauthRefused(refused, 'create');
 	}
 
-	async function run(row: { id: number; username: string }, id: UserActionId, password = ''): Promise<void> {
+	async function run(row: { id: number; username: string }, id: UserActionId, reauth?: Reauth): Promise<void> {
 		if (busy) return;
 		if (id === 'delete') {
 			deleting = { id: row.id, username: row.username };
 			return;
 		}
-		if (NEEDS_PASSWORD.has(id) && !password) {
-			askPassword = { id: row.id, username: row.username, action: id };
-			ownPassword = '';
+		if (id === 'resetMfa') {
+			const mfa = users.find((u) => u.id === row.id)?.mfa ?? { totp: false, email: false };
+			error = notice = '';
+			resettingMfa = { id: row.id, username: row.username, mfa };
 			return;
 		}
-		askPassword = null;
+		const target = users.find((u) => u.id === row.id);
+		if (actionNeedsReauth(id, { admin: !!target?.admin, self: row.id === $me?.id }) && !reauth) {
+			askPassword = { id: row.id, username: row.username, action: id };
+			ownPassword = ownCode = '';
+			error = '';
+			await tick();
+			askFields?.focusField('password');
+			return;
+		}
 		busy = true;
 		error = notice = '';
+		let refused: unknown = null;
 		try {
 			switch (id) {
 				case 'makeAdmin':
-					await patchUser(row.id, { admin: true, currentPassword: password });
+					await patchUser(row.id, { admin: true, ...reauth });
 					break;
 				case 'removeAdmin':
-					await patchUser(row.id, { admin: false });
+					await patchUser(row.id, { admin: false, ...reauth });
 					break;
 				case 'disable':
-					await patchUser(row.id, { disabled: true });
+					await patchUser(row.id, { disabled: true, ...reauth });
 					break;
 				case 'enable':
 					await patchUser(row.id, { disabled: false });
@@ -128,18 +176,25 @@
 					notice = `Any pending reset link of ${row.username} was revoked.`;
 					break;
 				case 'resetLink': {
-					const out = await issueResetLink(row.id, password);
+					const out = await issueResetLink(row.id, reauth ?? { currentPassword: '' });
 					resetLink = { username: row.username, url: location.origin + out.path, expiresAt: out.expiresAt };
 					copied = false;
 					break;
 				}
 			}
+			if (reauth) {
+				askPassword = null;
+				ownPassword = ownCode = '';
+			}
 			await load();
 		} catch (err) {
+			refused = err;
 			error = message(err, 'That did not work.');
 		} finally {
 			busy = false;
 		}
+		// a refused re-authentication keeps the form open on the field to fix
+		if (refused && reauth && !(await reauthRefused(refused, 'ask'))) askPassword = null;
 	}
 
 	async function copy(): Promise<void> {
@@ -150,6 +205,17 @@
 		} catch {
 			error = 'Could not copy. Select the link and copy it by hand.';
 		}
+	}
+
+	async function closeResetMfa(reset: boolean): Promise<void> {
+		const who = resettingMfa?.username ?? '';
+		resettingMfa = null;
+		if (reset) {
+			notice = resetNotice(who);
+			await load();
+		}
+		await tick();
+		heading?.focus();
 	}
 
 	async function closeDelete(deleted: boolean): Promise<void> {
@@ -172,14 +238,18 @@
 			onsubmit={(event) => {
 				event.preventDefault();
 				const a = askPassword;
-				if (a) void run({ id: a.id, username: a.username }, a.action, ownPassword);
+				if (a && reauthReady(ownPassword, needsCode, ownCode))
+					void run({ id: a.id, username: a.username }, a.action, reauthBody(ownPassword, needsCode, ownCode));
 			}}
 		>
-			<label>
-				Your own password, to confirm this for {askPassword.username}
-				<input type="password" autocomplete="current-password" bind:value={ownPassword} required />
-			</label>
-			<button type="submit" disabled={busy || ownPassword === ''}>Confirm</button>
+			<ReauthFields
+				bind:this={askFields}
+				bind:password={ownPassword}
+				bind:code={ownCode}
+				{needsCode}
+				passwordLabel="Your own password, to confirm this for {askPassword.username}"
+			/>
+			<button type="submit" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}>Confirm</button>
 			<button type="button" onclick={() => (askPassword = null)}>Cancel</button>
 		</form>
 	{/if}
@@ -261,13 +331,34 @@
 			</label>
 		{/if}
 		<label class="check"><input type="checkbox" bind:checked={makeAdmin} /> Administrator</label>
+		{#if makeAdmin}
+			<div class="reauth">
+				<ReauthFields
+					bind:this={createFields}
+					bind:password={createPassword}
+					bind:code={createCode}
+					{needsCode}
+					passwordLabel="Your own password, to create an administrator"
+				/>
+			</div>
+		{/if}
 		<p class="ok" role="status">{createNote}</p>
-		<button type="submit" disabled={busy}>Create user</button>
+		<button type="submit" disabled={busy || (makeAdmin && !reauthReady(createPassword, needsCode, createCode))}>Create user</button>
 	</form>
 </section>
 
 {#if deleting}
 	<DeleteUserDialog id={deleting.id} username={deleting.username} onclose={closeDelete} />
+{/if}
+
+{#if resettingMfa}
+	<ResetMfaDialog
+		id={resettingMfa.id}
+		username={resettingMfa.username}
+		mfa={resettingMfa.mfa}
+		onclose={closeResetMfa}
+		ongone={() => void load()}
+	/>
 {/if}
 
 <style>

@@ -207,7 +207,7 @@ func TestEmailOnlySecondStepFailsClosedWithoutMail(t *testing.T) {
 	registerUser(t, e.ts.URL, "bobby", e.owner)
 	registerUser(t, e.ts.URL, "carol", e.owner)
 	e.db.Exec(`UPDATE users SET email = 'bobby@example.org', email_norm = 'bobby@example.org', email_verified_at = 't', mfa_email = 1 WHERE username = 'bobby'`)
-	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil)
+	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth)
 	before := e.sessionCount(t, "bobby")
 	st, body := e.loginAs(t, "bobby")
 	if st != 503 || body["error"] != "mail_outage" || body["token"] != nil {
@@ -223,7 +223,7 @@ func TestEmailOnlySecondStepFailsClosedWithoutMail(t *testing.T) {
 	var v struct {
 		UsersDependOnMail int `json:"usersDependOnMail"`
 	}
-	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil), &v)
+	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth), &v)
 	if v.UsersDependOnMail != 1 {
 		t.Errorf("usersDependOnMail = %d", v.UsersDependOnMail)
 	}

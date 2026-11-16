@@ -34,15 +34,21 @@ func (s *server) codeBudgetKey(w http.ResponseWriter, userKey, otherKey string, 
 	if unknown {
 		key = otherKey
 	}
-	m, d := s.authLimiter("mfa"), s.authLimiter("mfa-day")
+	return s.codeBudgetNamed(w, key, "mfa", "mfa-day")
+}
+
+// codeBudgetNamed spends one token of the named per-key code budgets (a
+// short and a daily bucket).
+func (s *server) codeBudgetNamed(w http.ResponseWriter, key, short, day string) (refund func(), ok bool) {
+	m, d := s.authLimiter(short), s.authLimiter(day)
 	if ok, retry := m.Allow(key); !ok {
-		s.logThrottled("mfa")
+		s.logThrottled(short)
 		writeRateLimitedAs(w, retry, "code attempts")
 		return nil, false
 	}
 	if ok, retry := d.Allow(key); !ok {
 		m.(refunder).Refund(key)
-		s.logThrottled("mfa-day")
+		s.logThrottled(day)
 		writeRateLimitedAs(w, retry, "code attempts")
 		return nil, false
 	}
@@ -88,6 +94,21 @@ func (s *server) secondFactorOK(w http.ResponseWriter, r *http.Request, userID i
 	if !ok {
 		return false
 	}
+	return s.checkSecondFactor(w, r, userID, code, refund)
+}
+
+// adminReauthCodeOK is secondFactorOK on the administrator re-authentication
+// budget ("reauth-code"), so wrong codes there cannot lock the administrator
+// out of signing in.
+func (s *server) adminReauthCodeOK(w http.ResponseWriter, r *http.Request, userID int64, code string) bool {
+	refund, ok := s.codeBudgetNamed(w, int64Key(userID), "reauth-code", "reauth-code-day")
+	if !ok {
+		return false
+	}
+	return s.checkSecondFactor(w, r, userID, code, refund)
+}
+
+func (s *server) checkSecondFactor(w http.ResponseWriter, r *http.Request, userID int64, code string, refund func()) bool {
 	err := s.mfa.VerifyTOTP(r.Context(), userID, code, s.now())
 	if errors.Is(err, auth.ErrTOTPCodeInvalid) {
 		err = auth.UseRecoveryCode(r.Context(), s.db, userID, code)

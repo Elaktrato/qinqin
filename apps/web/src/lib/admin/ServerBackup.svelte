@@ -3,13 +3,18 @@
 	import { createServerBackup } from '$lib/api/backup';
 	import { user } from '$lib/auth';
 	import { PARTS, RESTORE_STEPS, SECURITY_NOTE, backupError, canCreate, includeBody } from './serverBackupView';
+	import { tick } from 'svelte';
+	import ReauthFields from './ReauthFields.svelte';
+	import { reauthBody, reauthFocus, reauthNeedsCode } from './reauth';
 
 	let { assign = (u: string) => location.assign(u) }: { assign?: (url: string) => void } = $props();
 
 	let selected = $state(new Set(PARTS.map((p) => p.id)));
 	let password = $state('');
 	let code = $state('');
-	const needsCode = $derived(!!$user?.mfa?.totp);
+	let sawCodeInvalid = $state(false);
+	const needsCode = $derived(reauthNeedsCode($user?.mfa?.totp, sawCodeInvalid));
+	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let busy = $state(false);
 	let error = $state('');
 	let started = $state(false);
@@ -28,7 +33,8 @@
 		error = '';
 		started = false;
 		try {
-			const out = await createServerBackup({ currentPassword: password, code: code.trim() || undefined, include: includeBody(selected) });
+			const r = reauthBody(password, needsCode, code);
+			const out = await createServerBackup({ currentPassword: r.currentPassword, code: r.code, include: includeBody(selected) });
 			password = '';
 			code = '';
 			started = true;
@@ -36,6 +42,15 @@
 		} catch (err) {
 			const b = apiErrorBody(err);
 			error = backupError(b?.error, b?.message || 'Could not create the backup.');
+			if (b?.error === 'code_invalid') sawCodeInvalid = true;
+			const f = reauthFocus(b?.error);
+			if (f.clear === 'code') code = '';
+			if (f.clear === 'password') password = '';
+			busy = false;
+			if (f.clear) {
+				await tick();
+				fields?.focusField(f.focus);
+			}
 		} finally {
 			busy = false;
 		}
@@ -55,10 +70,7 @@
 				</label>
 			{/each}
 		</fieldset>
-		<label>Your password <input type="password" autocomplete="current-password" bind:value={password} /></label>
-		{#if needsCode}
-			<label>Authenticator or recovery code <input autocomplete="one-time-code" bind:value={code} /></label>
-		{/if}
+		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} passwordLabel="Your password" />
 		<button type="submit" disabled={!canCreate(selected, password, busy, needsCode, code)}>Create server backup</button>
 	</form>
 	{#if started}<p role="status">The download starts now.</p>{/if}

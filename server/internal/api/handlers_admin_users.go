@@ -36,12 +36,32 @@ func writeUserError(w http.ResponseWriter, err error) bool {
 	return true
 }
 
-// requireAdminPassword asks the acting administrator for their current
-// password before a sensitive action (deleting another user, issuing a reset
-// link, granting admin): a stolen admin session alone cannot do these. Empty:
-// 422 password_required (nothing counted); wrong: 403 wrong_password through
-// the reauth limiter, which a right password refunds. False: a response was
-// written.
+// requireAdminReauth re-authenticates the acting administrator before a
+// destructive action (granting admin, creating an administrator, deleting
+// another user, issuing a reset link, resetting another user's two-step
+// sign-in, a server backup): a stolen admin session alone, or with a phished
+// password, cannot do these. First the password: empty is 422
+// password_required (nothing counted), wrong is 403 wrong_password through
+// the reauth limiter, which a right password refunds. Then, for an
+// administrator with an authenticator, a current authenticator or unused
+// recovery code (403 code_invalid through its own per-user "reauth-code" budget, separate from the sign-in code budget). An
+// administrator whose only second step is the emailed code is asked for the
+// password alone (sending a code here would make the mailbox the proof).
+// False: a response was written.
+func (s *server) requireAdminReauth(w http.ResponseWriter, r *http.Request, adminID int64, password, code string) bool {
+	if !s.requireAdminPassword(w, r, adminID, password) {
+		return false
+	}
+	has, err := auth.HasTOTP(r.Context(), s.db, adminID)
+	if err != nil {
+		writeInternal(w, r)
+		return false
+	}
+	return !has || s.adminReauthCodeOK(w, r, adminID, code)
+}
+
+// requireAdminPassword is the password step of requireAdminReauth; nothing
+// else calls it.
 func (s *server) requireAdminPassword(w http.ResponseWriter, r *http.Request, adminID int64, password string) bool {
 	if password == "" {
 		writeAuthError(w, http.StatusUnprocessableEntity, "password_required", "Enter your own password to confirm this action.")
@@ -116,7 +136,8 @@ func (s *server) handleAdminGetUser(w http.ResponseWriter, r *http.Request) {
 
 // handleAdminCreateUser serves POST /api/admin/users: the new account has a
 // temporary password and must change it at the first sign-in; an email an
-// administrator entered counts as verified.
+// administrator entered counts as verified. Creating an administrator
+// (admin: true) is granting admin and needs requireAdminReauth.
 func (s *server) handleAdminCreateUser(w http.ResponseWriter, r *http.Request) {
 	admin := s.requireAdmin(w, r)
 	if admin == nil {
@@ -127,6 +148,9 @@ func (s *server) handleAdminCreateUser(w http.ResponseWriter, r *http.Request) {
 		Password string  `json:"password"`
 		Email    *string `json:"email"`
 		Admin    bool    `json:"admin"`
+		// Creating an administrator is granting admin: re-authentication.
+		CurrentPassword string `json:"currentPassword"`
+		Code            string `json:"code"`
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -149,6 +173,9 @@ func (s *server) handleAdminCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := auth.CheckPassword(req.Username, req.Password); err != nil {
 		writeAuthError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
+		return
+	}
+	if req.Admin && !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	set, err := auth.LoadSettings(r.Context(), s.db)
@@ -205,6 +232,7 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 		Email              json.RawMessage `json:"email"`
 		MustChangePassword *bool           `json:"mustChangePassword"`
 		CurrentPassword    string          `json:"currentPassword"`
+		Code               string          `json:"code"` // authenticator or recovery code, for admins who have one
 	}
 	if !readAccountBodyStrict(w, r, &req) {
 		return
@@ -218,7 +246,8 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusConflict, "self_target", "You cannot disable your own account.")
 		return
 	}
-	if _, err := s.users.GetUser(ctx, id, false); err != nil {
+	target, err := s.users.GetUser(ctx, id, false)
+	if err != nil {
 		if !writeUserError(w, err) {
 			writeInternal(w, r)
 		}
@@ -251,7 +280,8 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 			writeInternal(w, r)
 		}
 	}
-	if req.Admin != nil && *req.Admin && !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
+	if userPatchNeedsReauth(target.Admin, id == admin.ID, userPatchChange{Admin: req.Admin, Disabled: req.Disabled, SetEmail: setEmail}) &&
+		!s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	// Every field in one transaction: a refusal changes nothing.
@@ -290,10 +320,13 @@ func (s *server) handleAdminRevokeSessions(w http.ResponseWriter, r *http.Reques
 }
 
 // handleAdminResetMFA serves POST /api/admin/users/{id}/mfa/reset
-// {currentPassword}: the lockout recovery for a user who lost their
+// {currentPassword, code?}: the lockout recovery for a user who lost their
 // authenticator and recovery codes. It needs the administrator's own password
-// like every destructive admin action, and not for oneself (Settings, Account
-// does that with the user's own factors).
+// like every destructive admin action and, from an administrator who has an
+// authenticator, a current authenticator or recovery code too (403
+// code_invalid), as the server backup does: removing someone's second step
+// must not need less than a stolen session and a password. Not for oneself
+// (Settings, Account does that with the user's own factors).
 func (s *server) handleAdminResetMFA(w http.ResponseWriter, r *http.Request) {
 	admin := s.requireAdmin(w, r)
 	if admin == nil {
@@ -305,6 +338,7 @@ func (s *server) handleAdminResetMFA(w http.ResponseWriter, r *http.Request) {
 	}
 	var req struct {
 		CurrentPassword string `json:"currentPassword"`
+		Code            string `json:"code"` // authenticator or recovery code, for admins who have one
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -313,7 +347,7 @@ func (s *server) handleAdminResetMFA(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusConflict, "self_target", "You cannot reset your own two-factor authentication here. Use Settings, Account.")
 		return
 	}
-	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
+	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	if err := s.users.ResetUserMFA(r.Context(), admin.ID, id); err != nil {
@@ -363,6 +397,7 @@ func (s *server) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Confirm         string `json:"confirm"`
 		CurrentPassword string `json:"currentPassword"`
+		Code            string `json:"code"` // authenticator or recovery code, for admins who have one
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -382,7 +417,7 @@ func (s *server) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type the username exactly to confirm.")
 		return
 	}
-	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
+	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	if err := s.users.DeleteUser(r.Context(), admin.ID, id, s.dataDir); err != nil {

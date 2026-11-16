@@ -1,0 +1,28 @@
+{
+  "_doc": "Re-authentication of the administrator settings routes (web only in v0.4.0). PATCH /api/admin/settings/auth takes currentPassword (and code from an administrator with an authenticator) when the change lowers a protection or signs everyone else out; the exact rule with its cases is admin-reauth.json. PUT /api/admin/settings/smtp (the whole settings object plus currentPassword and code) and DELETE /api/admin/settings/smtp {currentPassword, code?} always re-authenticate; PUT validates the settings first (a 422 of the mail settings spends no attempt). Note that 422 password_required on PUT smtp has two meanings: the mail account's user name needs a password (message 'A user name needs a password.'), or the administrator's own currentPassword is missing; a client that always sends currentPassword only sees the first. A new publicUrl, like a new host, port, security or user name, needs the stored mail password again (422 password_reentry_required): reset links carry it. Refusals: 422 password_required, 403 wrong_password, 403 code_invalid (see errors.json).",
+  "auth_settings_reauth": {
+    "request": {"method": "PATCH", "path": "/api/admin/settings/auth", "body": {"registration": "open"}},
+    "status": 422,
+    "body": {"error": "password_required", "message": "Enter your own password to confirm this action."}
+  },
+  "auth_settings": {
+    "request": {"method": "PATCH", "path": "/api/admin/settings/auth", "body": {"registration": "open", "currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
+    "status": 200,
+    "body": {"registration": "open", "emailPolicy": "off", "mfaEnforced": false, "mfaEnforcedEffective": false, "emailCodeLogin": false, "mail": {"configured": true}}
+  },
+  "smtp_put_reauth": {
+    "request": {"method": "PUT", "path": "/api/admin/settings/smtp", "body": {"host": "mail.example.org", "port": 587, "tls": "starttls", "username": "mailer", "password": "<the mail account's password>", "fromAddress": "qinqin@example.org", "fromName": "qinqin", "publicUrl": "https://words.example.org"}},
+    "status": 422,
+    "body": {"error": "password_required", "message": "Enter your own password to confirm this action."}
+  },
+  "smtp_delete_reauth": {
+    "request": {"method": "DELETE", "path": "/api/admin/settings/smtp", "body": {}},
+    "status": 422,
+    "body": {"error": "password_required", "message": "Enter your own password to confirm this action."}
+  },
+  "smtp_delete": {
+    "request": {"method": "DELETE", "path": "/api/admin/settings/smtp", "body": {"currentPassword": "<your own password>", "code": "<only when YOU have an authenticator>"}},
+    "status": 204,
+    "body": null
+  }
+}

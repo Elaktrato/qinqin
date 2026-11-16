@@ -73,6 +73,11 @@ func DefaultAuthPolicy() AuthPolicy {
 			// minutes and 30 per day (MFA, email-code sign-in, setup).
 			"mfa":     {Burst: 10, Every: 90 * time.Second, MaxKeys: authTableCap},
 			"mfa-day": {Burst: 30, Every: 48 * time.Minute, MaxKeys: authTableCap},
+			// Wrong codes in an administrator's re-authentication before a
+			// destructive admin action: the same sizes, a separate budget, so
+			// they do not lock the administrator out of signing in.
+			"reauth-code":     {Burst: 10, Every: 90 * time.Second, MaxKeys: authTableCap},
+			"reauth-code-day": {Burst: 30, Every: 48 * time.Minute, MaxKeys: authTableCap},
 			// Mail-triggering anonymous requests per client (reset requests and
 			// sign-in codes): 10 per hour.
 			"mailreq":   {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},

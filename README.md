@@ -504,8 +504,19 @@ one sets the password, signs the person out of every device and signs them in on
 account deletes its sessions and re-enabling never brings one back. The last active administrator cannot be
 demoted, disabled or deleted (the Admin tab says why; the server enforces it even when two admins act at the
 same moment). Pending reset links die with every containment action (a password change, a forced change, disabling, signing out
-everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. Deleting another user,
-issuing a reset link and making someone an administrator ask the acting administrator for their own password again.
+everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. 
+Re-authentication: these ask the acting administrator for their own password again and, if they have an
+authenticator, a current authenticator or unused recovery code (an administrator whose only second step is an emailed
+code gives the password alone): making someone an administrator (also by creating them as one), demoting or disabling
+another administrator, setting or removing anyone's address in Admin, Users (your own too), deleting another user,
+issuing a reset link, resetting someone's two-step sign-in, saving or removing the email settings, a Security change that
+lowers a protection (turning required two-step sign-in off, allowing sign-in by emailed code, opening registration,
+lowering the email policy) or signs everyone else out, and a server backup. Wrong codes there have their own limit and
+do not lock you out of signing in.
+**Reset two-step sign-in** (a row action, shown only for another user who has an authenticator or emailed codes)
+removes their authenticator app with all of its recovery codes and turns emailed codes off, signs them out of every
+device, revokes their personal access tokens and ends pending reset links. Your own second steps are managed in
+Settings, Account.
 Email addresses are stored with the domain in its ASCII (punycode) form, so `bücher.de` and `xn--bcher-kva.de` are one
 address; a part before the `@` with non-ASCII letters is refused until internationalised mailboxes are supported. Every
 response carries `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`; at startup the server removes the book and
@@ -539,7 +550,7 @@ security (`STARTTLS` on port 587, the default and required to succeed, never sil
 `None`, plain text, allowed only without a user name and password), user name and password, sender address and
 name, and the address people use to reach the site (it goes into reset links). Certificates are always verified.
 The password is encrypted with `QINQIN_SECRET` and never shown again or logged: the form says "A password is
-saved" and offers Replace and Remove; changing the server, port, security or user name makes you type the password
+saved" and offers Replace and Remove; changing the server, port, security, user name or site address makes you type the password
 again, so a session cannot send it somewhere else. **Send test mail** reports a category (`connect`, `blocked`, `tls`,
 `auth`, `sender`, `recipient`, `timeout`, `protocol`) and the SMTP reply code, never the server's own text. Mail goes
 out in the background (one queue, at most 200 mails an hour for the whole server, never an address or code in the log).
@@ -561,7 +572,7 @@ everyone (**Admin, Security**; needs email): it applies at each person's next si
 out now. A person without an address is sent to a setup page first. **Sign in with an emailed code** (another switch)
 adds a password-free route; an account with an authenticator still asks for it, and while two steps are required an
 account without one must use the password. A password reset or reset link never removes two-step sign-in, and a reset link or an emailed code is never accepted as a second step after itself. People whose only second step is an emailed code are protected by their mailbox alone, by construction: while email does not work they cannot sign in (503), and Admin, Email says how many; give them an authenticator app for independence from mail. Changing your email address asks for the authenticator code too, cancels open reset links and tells the old address. Locked out:
-a recovery code, an administrator (Admin, Users: reset two-factor) or `qinqin recover --username NAME --reset-mfa`.
+a recovery code, an administrator (Admin, Users: Reset two-step sign-in) or `qinqin recover --username NAME --reset-mfa`.
 
 ### AI journal
 

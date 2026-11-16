@@ -23,11 +23,11 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `invalid_tls` | 422 | The connection security is not starttls, tls or none. |
 | `credentials_need_tls` | 422 | A user name was given with connection security none: credentials never travel in clear text. |
 | `invalid_public_url` | 422 | The public URL is not an absolute http(s) address without path, query, fragment or login. |
-| `password_reentry_required` | 422 | The server, port, security or user name changed (or the stored password cannot be read): the mail password must be sent again. |
+| `password_reentry_required` | 422 | The server, port, security, user name or public URL changed (or the stored password cannot be read): the mail password must be sent again. |
 | `recipient_required` | 422 | A test mail needs a recipient and the account has no email address. |
 | `secret_unavailable` | 409 | QINQIN_SECRET is missing or invalid, so a secret (mail password, two-factor secret) cannot be stored. |
 | `smtp_test_failed` | 502 | The test mail failed. The body carries category (connect, blocked, tls, auth, sender, recipient, timeout, protocol) and smtpCode when the server gave a reply code; never the server's text. |
-| `code_invalid` | 403 | A one-time code (email code, authenticator code, recovery code) is wrong; the body carries attemptsLeft. 403 on routes with a session, 401 on the anonymous sign-in steps (login/mfa, email-login/verify), so the client never mistakes it for a lost session. |
+| `code_invalid` | 403 | A one-time code (email code, authenticator code, recovery code) is wrong. The emailed-code and sign-in second steps carry attemptsLeft; the re-authentication checks before an account or administrator action do not (their budget is per user). 403 on routes with a session, 401 on the anonymous sign-in steps (login/mfa, email-login/verify), so the client never mistakes it for a lost session. |
 | `challenge_expired` | 403 | The code challenge is gone: expired (10 minutes), spent, or tried 5 times. Start again (401 on the anonymous sign-in steps, 403 with a session). |
 | `nothing_to_verify` | 409 | Resend asked for a code but the account has no unverified email address. |
 | `setup_expired` | 409 | The authenticator setup (10 minutes) expired before its first code was confirmed. Start the setup again. |
@@ -39,11 +39,11 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `password_login_required` | 403 | Two-step sign-in is required and this account has no authenticator, so an emailed code alone cannot sign in: use the password. |
 | `mail_outage` | 503 | Sign-in refused (fail closed): the account's second step is an emailed code and the server cannot send mail. Retry later; an administrator can fix Admin, Email or run qinqin recover --reset-mfa. |
 | `last_admin` | 409 | The change would leave the instance without an active administrator. |
-| `self_target` | 409 | An administrator tried to disable or delete their own account through the admin routes. |
+| `self_target` | 409 | An administrator tried to disable or delete their own account, or reset their own two-step sign-in, through the admin routes (Settings, Account does these). |
 | `invalid_request` | 422 | A well-formed request the server will not do (for example cancelling a forced password change). |
 | `token_invalid` | 400 | A reset link is unknown, expired, already used or belongs to a disabled account (one code and one body for all of them). |
 | `confirm_mismatch` | 422 | The typed confirmation (the username) does not match the account being deleted. |
-| `password_required` | 422 | An administrator action that needs the acting administrator's own password (delete another user, issue a reset link, grant admin) came without currentPassword. |
+| `password_required` | 422 | An administrator action that needs the acting administrator's own password (the list in README.md, Administration: e.g. grant admin, delete another user, change an address, save the mail settings, lower a sign-in protection) came without currentPassword. An administrator with an authenticator also sends code (403 code_invalid). On PUT /api/admin/settings/smtp the same code can also mean the mail account's user name needs a password; the message says which. |
 | `invalid_invite` | 422 | An invite parameter is out of range (uses 1-100, expiry 1-90 days, note at most 100 characters). |
 | `invalid_setting` | 422 | A settings value outside its vocabulary. |
 | `account_disabled` | 403 | Right password, but an administrator disabled the account. |

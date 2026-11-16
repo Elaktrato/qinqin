@@ -67,10 +67,11 @@ export function passwordNote(state: SmtpSettings['password']): string {
 	return 'No password is saved.';
 }
 
-/** A connection change needs the password again (the server enforces it). */
+/** A connection or public-URL change needs the password again (the server enforces it). */
 export function needsReentry(saved: SmtpSettings, d: SmtpDraft): boolean {
 	return saved.password !== 'none' && d.passwordChoice === 'keep' &&
-		(saved.host !== d.host.trim() || saved.port !== d.port || saved.tls !== d.tls || saved.username !== d.username.trim());
+		(saved.host !== d.host.trim() || saved.port !== d.port || saved.tls !== d.tls || saved.username !== d.username.trim() ||
+			saved.publicUrl !== d.publicUrl.trim());
 }
 
 const CATEGORY_TEXT: Record<string, string> = {

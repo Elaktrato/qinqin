@@ -130,7 +130,7 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 	var aliceID = userID(t, sqlDB, "alice")
 	id := func() string { return strconv.FormatInt(carlaID, 10) }
 	var resetToken string
-	runCases(t, "admin-users.json", []string{"list", "create", "patch", "last_admin", "self_target", "reset_link", "sessions_revoke", "deletion_preview", "confirm_mismatch", "password_required", "delete"}, map[string]func() (int, any){
+	runCases(t, "admin-users.json", []string{"list", "create", "create_admin_reauth", "patch", "demote_admin_reauth", "last_admin", "self_target", "reset_link", "sessions_revoke", "deletion_preview", "mfa_reset", "confirm_mismatch", "password_required", "delete"}, map[string]func() (int, any){
 		"list": func() (int, any) {
 			st, body := callJSON(t, ts, "GET", "/api/admin/users", alice, nil)
 			if m, ok := body.(map[string]any); ok {
@@ -146,12 +146,20 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 			}
 			return st, body
 		},
+		"create_admin_reauth": func() (int, any) {
+			// creating an administrator is granting admin: a session alone is refused
+			return callJSON(t, ts, "POST", "/api/admin/users", alice, map[string]any{"username": "mallory", "password": "temp-password-1", "admin": true})
+		},
 		"patch": func() (int, any) {
 			return callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": true, "currentPassword": "secret-pass-alice"})
 		},
+		"demote_admin_reauth": func() (int, any) {
+			// carla is an administrator now: taking her out of the way re-authenticates
+			return callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": false})
+		},
 		"last_admin": func() (int, any) {
 			// alice and carla are admins now: demote carla, then alice alone is last
-			callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": false})
+			callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": false, "currentPassword": "secret-pass-alice"})
 			return callJSON(t, ts, "PATCH", "/api/admin/users/"+strconv.FormatInt(aliceID, 10), alice, map[string]any{"admin": false})
 		},
 		"self_target": func() (int, any) {
@@ -169,6 +177,10 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 		},
 		"deletion_preview": func() (int, any) {
 			return callJSON(t, ts, "GET", "/api/admin/users/"+id()+"/deletion-preview", alice, nil)
+		},
+		"mfa_reset": func() (int, any) {
+			// alice has no authenticator, so her password alone confirms it
+			return callJSON(t, ts, "POST", "/api/admin/users/"+id()+"/mfa/reset", alice, map[string]any{"currentPassword": "secret-pass-alice"})
 		},
 		"confirm_mismatch": func() (int, any) {
 			return callJSON(t, ts, "DELETE", "/api/admin/users/"+id(), alice, map[string]any{"confirm": "nope"})
@@ -202,6 +214,32 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 		},
 		"token_invalid": func() (int, any) {
 			return callJSON(t, ts, "POST", "/api/auth/reset", "", map[string]any{"token": tok, "password": "brand-new-password"})
+		},
+	}, false)
+}
+
+// docs/contracts/auth/admin-settings.json: the re-authentication of the
+// security and mail settings routes (the rule: admin-reauth.json).
+func TestAdminSettingsContractFixturesMatchTheServer(t *testing.T) {
+	e := newMailEnv(t, mailOpts{configure: true})
+	ts := e.ts
+	runCases(t, "admin-settings.json", []string{"auth_settings_reauth", "auth_settings", "smtp_put_reauth", "smtp_delete_reauth", "smtp_delete"}, map[string]func() (int, any){
+		"auth_settings_reauth": func() (int, any) {
+			return callJSON(t, ts, "PATCH", "/api/admin/settings/auth", e.owner, map[string]any{"registration": "open"})
+		},
+		"auth_settings": func() (int, any) {
+			return callJSON(t, ts, "PATCH", "/api/admin/settings/auth", e.owner, map[string]any{"registration": "open", "currentPassword": "secret-pass-owner"})
+		},
+		"smtp_put_reauth": func() (int, any) {
+			p := e.smtpPayload()
+			delete(p, "currentPassword")
+			return callJSON(t, ts, "PUT", "/api/admin/settings/smtp", e.owner, p)
+		},
+		"smtp_delete_reauth": func() (int, any) {
+			return callJSON(t, ts, "DELETE", "/api/admin/settings/smtp", e.owner, map[string]any{})
+		},
+		"smtp_delete": func() (int, any) {
+			return callJSON(t, ts, "DELETE", "/api/admin/settings/smtp", e.owner, map[string]any{"currentPassword": "secret-pass-owner"})
 		},
 	}, false)
 }

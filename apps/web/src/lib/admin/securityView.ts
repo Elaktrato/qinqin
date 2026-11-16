@@ -46,6 +46,7 @@ const ACTION_TEXT: Record<string, string> = {
 	invite_used: 'registered with an invite',
 	settings_changed: 'changed a setting',
 	sessions_revoked: 'signed out sessions',
+	mfa_reset: 'reset the two-step sign-in',
 	data_exported: 'downloaded their data',
 	data_restored: 'restored their data from a backup',
 	server_backup_created: 'created a server backup'

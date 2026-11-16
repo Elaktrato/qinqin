@@ -48,7 +48,7 @@ func TestInviteCreateListRevokeCheck(t *testing.T) {
 	if got := strings.Join(keys, ","); got != "createdAt,createdBy,expiresAt,id,maxUses,note,state,uses" {
 		t.Errorf("invite keys = %s", got)
 	}
-	doJSON(t, "PATCH", ts.URL, "/api/admin/settings/auth", owner, map[string]any{"registration": "invite"})
+	doJSON(t, "PATCH", ts.URL, "/api/admin/settings/auth", owner, map[string]any{"registration": "invite", "currentPassword": "secret-pass-owner"})
 	decodeJSON(t, doJSON(t, "GET", ts.URL, "/api/admin/invites", owner, nil), &list)
 	if list.Invites[0]["state"] != "active" {
 		t.Errorf("state = %v, want active", list.Invites[0]["state"])
