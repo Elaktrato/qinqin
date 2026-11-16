@@ -45,76 +45,90 @@ type charactersBody struct {
 }
 
 // charactersPayload is one encoded response: the JSON body, its gzip
-// form and its validator, built for one lexicon version.
+// form and its validator, built for one version of its data (also used
+// by GET /api/components).
 type charactersPayload struct {
 	version, etag string
 	raw, gz       []byte
 }
 
-// charactersCache keeps the last payload per language with a character
-// universe (ja, zh). A payload is reused while lexicon.CharactersVersion
-// is unchanged, so a revalidation or repeat load costs a few index seeks
-// instead of the universe query and the compression. Each language has
-// its own slot and lock: concurrent first loads of a language share one
-// build, and a slow zh build does not hold up ja.
-type charactersCache struct {
+// payloadCache keeps the last payload per language of one route. A
+// payload is reused while its version is unchanged, so a revalidation or
+// repeat load costs a few index seeks instead of the query and the
+// compression. Each language has its own slot and lock: concurrent first
+// loads of a language share one build, and a slow build of one language
+// does not hold up another.
+type payloadCache struct {
 	mu    sync.Mutex // guards slots
-	slots map[string]*charactersSlot
+	slots map[string]*payloadSlot
 }
 
-// charactersSlot is one language's cached payload and the lock its
-// builds run under.
-type charactersSlot struct {
+// payloadSlot is one language's cached payload and the lock its builds
+// run under.
+type payloadSlot struct {
 	mu      sync.Mutex
 	payload *charactersPayload
 }
 
 // slot returns language's slot, creating it on first use.
-func (c *charactersCache) slot(language string) *charactersSlot {
+func (c *payloadCache) slot(language string) *payloadSlot {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.slots == nil {
-		c.slots = make(map[string]*charactersSlot)
+		c.slots = make(map[string]*payloadSlot)
 	}
 	s := c.slots[language]
 	if s == nil {
-		s = &charactersSlot{}
+		s = &payloadSlot{}
 		c.slots[language] = s
 	}
 	return s
 }
 
-// get returns language's payload for the current lexicon version,
-// building it when the cached one is missing or older. Languages without
-// a universe are built (empty) and not cached, so arbitrary codes cannot
-// grow the cache. The version is read under the language's lock, after
-// any build a request waited for, and before the list: a write in between
-// leaves the cached payload under an older version, so the next request
+// get returns language's payload for the current version, building it
+// when the cached one is missing or older. When cacheable is false the
+// payload is built and not kept, so arbitrary codes cannot grow the
+// cache. The version is read under the language's lock, after any build
+// a request waited for, and before the build: a write in between leaves
+// the cached payload under an older version, so the next request
 // rebuilds it.
-func (c *charactersCache) get(ctx context.Context, st lexicon.Store, language string) (*charactersPayload, error) {
-	if !lexicon.HasCharacterUniverse(language) {
-		version, err := st.CharactersVersion(ctx)
+func (c *payloadCache) get(language string, cacheable bool, version func() (string, error), build func(version string) (*charactersPayload, error)) (*charactersPayload, error) {
+	if !cacheable {
+		v, err := version()
 		if err != nil {
 			return nil, err
 		}
-		return buildCharactersPayload(ctx, st, language, version)
+		return build(v)
 	}
 	s := c.slot(language)
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	version, err := st.CharactersVersion(ctx)
+	v, err := version()
 	if err != nil {
 		return nil, err
 	}
-	if s.payload != nil && s.payload.version == version {
+	if s.payload != nil && s.payload.version == v {
 		return s.payload, nil
 	}
-	p, err := buildCharactersPayload(ctx, st, language, version)
+	p, err := build(v)
 	if err != nil {
 		return nil, err
 	}
 	s.payload = p
 	return p, nil
+}
+
+// charactersCache keeps the last /api/characters payload per language
+// with a character universe (ja, zh), under lexicon.CharactersVersion.
+// Languages without a universe are built (empty) and not cached.
+type charactersCache struct{ payloadCache }
+
+func (c *charactersCache) get(ctx context.Context, st lexicon.Store, language string) (*charactersPayload, error) {
+	return c.payloadCache.get(language, lexicon.HasCharacterUniverse(language),
+		func() (string, error) { return st.CharactersVersion(ctx) },
+		func(version string) (*charactersPayload, error) {
+			return buildCharactersPayload(ctx, st, language, version)
+		})
 }
 
 // charactersFormat versions the body's shape inside the ETag: a change to
@@ -142,13 +156,20 @@ func buildCharactersPayload(ctx context.Context, st lexicon.Store, language, ver
 			R: r.Reading, M: r.Gloss, V: r.Variants, K: r.Radical,
 		}
 	}
+	sum := sha256.Sum256([]byte(version))
+	return encodePayload(body, version, fmt.Sprintf(`W/"chars%d-%s-%d-%s"`, charactersFormat, language, body.Count, hex.EncodeToString(sum[:8])))
+}
+
+// encodePayload encodes body as JSON (HTML not escaped) and its gzip
+// form under the given version and ETag.
+func encodePayload(body any, version, etag string) (*charactersPayload, error) {
 	var raw bytes.Buffer
 	enc := json.NewEncoder(&raw)
 	enc.SetEscapeHTML(false)
 	if err := enc.Encode(body); err != nil {
 		return nil, err
 	}
-	p := &charactersPayload{version: version, raw: bytes.TrimSuffix(raw.Bytes(), []byte("\n"))}
+	p := &charactersPayload{version: version, etag: etag, raw: bytes.TrimSuffix(raw.Bytes(), []byte("\n"))}
 	var gz bytes.Buffer
 	zw := gzip.NewWriter(&gz)
 	if _, err := zw.Write(p.raw); err != nil {
@@ -158,8 +179,6 @@ func buildCharactersPayload(ctx context.Context, st lexicon.Store, language, ver
 		return nil, err
 	}
 	p.gz = gz.Bytes()
-	sum := sha256.Sum256([]byte(version))
-	p.etag = fmt.Sprintf(`W/"chars%d-%s-%d-%s"`, charactersFormat, language, body.Count, hex.EncodeToString(sum[:8]))
 	return p, nil
 }
 
@@ -192,6 +211,13 @@ func (s *server) handleListCharacters(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	servePayload(w, r, p)
+}
+
+// servePayload writes p with the shared validator handling: a weak ETag,
+// `Cache-Control: private, max-age=0, must-revalidate`, a bodyless 304 on
+// a matching If-None-Match, and the gzip form when Accept-Encoding allows.
+func servePayload(w http.ResponseWriter, r *http.Request, p *charactersPayload) {
 	h := w.Header()
 	h.Set("Cache-Control", "private, max-age=0, must-revalidate")
 	h.Set("Vary", "Accept-Encoding")

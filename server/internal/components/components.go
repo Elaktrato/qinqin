@@ -222,8 +222,12 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]PackInfo, error) {
 	return out, rows.Err()
 }
 
+// NoPacks is the Version of a language without live packs.
+const NoPacks = "0"
+
 // Version returns a value that changes whenever language's Index can:
-// the live packs' ids and content hashes. Read it before Index.
+// the live packs' ids and content hashes; NoPacks when the language has
+// none. Read it before Index.
 func Version(ctx context.Context, sqlDB *sql.DB, language string) (string, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT pack_id, content_hash FROM component_packs
@@ -233,7 +237,9 @@ func Version(ctx context.Context, sqlDB *sql.DB, language string) (string, error
 	}
 	defer rows.Close()
 	h := sha256.New()
+	n := 0
 	for rows.Next() {
+		n++
 		var id, hash string
 		if err := rows.Scan(&id, &hash); err != nil {
 			return "", fmt.Errorf("components: version: %w", err)
@@ -242,6 +248,9 @@ func Version(ctx context.Context, sqlDB *sql.DB, language string) (string, error
 	}
 	if err := rows.Err(); err != nil {
 		return "", fmt.Errorf("components: version: %w", err)
+	}
+	if n == 0 {
+		return NoPacks, nil
 	}
 	return hex.EncodeToString(h.Sum(nil)[:12]), nil
 }
