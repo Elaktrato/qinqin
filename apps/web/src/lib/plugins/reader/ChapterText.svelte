@@ -4,6 +4,7 @@
 	import { fontStack } from './fonts';
 	import type { Highlight } from './highlights';
 	import type { Run } from './paragraphText';
+	import { createReveal, type Reveal } from './reveal';
 	import type { Piece } from './smartReadings';
 	import type { LookupController } from './useLookup.svelte';
 
@@ -22,6 +23,8 @@
 		pieces = new Map<number, Piece[]>(),
 		lang,
 		lookup,
+		reveal = createReveal(),
+		showAll = false,
 		marked = new Set<number>(),
 		highlights = new Map<number, Highlight[]>(),
 		onhighlight,
@@ -34,6 +37,10 @@
 		pieces?: ReadonlyMap<number, Piece[]>;
 		lang: string;
 		lookup: LookupController;
+		/** Hides revealed readings; BookView owns it for the `R` key. */
+		reveal?: Reveal;
+		/** Show all readings (also the concealed ones). */
+		showAll?: boolean;
 		/** Paragraphs with a bookmark: they get a margin marker. */
 		marked?: ReadonlySet<number>;
 		/** The highlights to draw, per paragraph (visibleHighlights' `drawn`). */
@@ -85,6 +92,20 @@
 		};
 	});
 
+	// A tap on a concealed word reveals it for a moment; the listeners only
+	// observe, so the lookup keeps getting every event.
+	$effect(() => {
+		const el = container;
+		if (!el) return;
+		return reveal.attach(el);
+	});
+
+	// A new chapter or script starts with every reading as the rule says.
+	$effect(() => {
+		void paragraphs;
+		reveal.reset();
+	});
+
 	// Pointer events are delegated to the container (no per-paragraph
 	// listeners). They only enhance plain text, so the container gets no
 	// interactive role: keyboard users select text and get the same popup.
@@ -107,6 +128,7 @@
 
 <div
 	class="chapter-text"
+	class:show-all={showAll}
 	{lang}
 	bind:this={container}
 	style:--reader-rt-size="{display.rubyScale}em"

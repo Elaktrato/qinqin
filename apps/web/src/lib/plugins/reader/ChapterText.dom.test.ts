@@ -1,5 +1,5 @@
 import { cleanup, render } from '@testing-library/svelte';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import ChapterText from './ChapterText.svelte';
 import source from './ChapterText.svelte?raw';
 import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
@@ -7,6 +7,7 @@ import { rangeForSpan, selectionSpan } from './dom';
 import type { Highlight } from './highlights';
 import type { Run } from './paragraphText';
 import type { Piece } from './smartReadings';
+import { createReveal } from './reveal';
 import type { LookupController } from './useLookup.svelte';
 
 afterEach(cleanup);
@@ -21,6 +22,8 @@ function mount(props: {
 	display?: ReaderDisplay;
 	highlights?: Map<number, Highlight[]>;
 	lang?: string;
+	reveal?: ReturnType<typeof createReveal>;
+	showAll?: boolean;
 }) {
 	const result = render(ChapterText, { lang: 'zh', lookup, display: display(), ...props } as never);
 	return { ...result, root: result.container.querySelector('.chapter-text') as HTMLElement };
@@ -110,5 +113,54 @@ describe('ChapterText stylesheet', () => {
 		const rule = source.match(/rt\.concealed\s*\{[^}]*\}/)?.[0] ?? '';
 		expect(rule).toContain('color: transparent');
 		expect(rule).not.toMatch(/visibility|display/);
+	});
+});
+
+describe('ChapterText reveal', () => {
+	const pieces = new Map([[0, [dict(0, 2, 'nǐ hǎo', true)]]]);
+	function pointer(type: string, target: Element, x = 5, y = 5): void {
+		const e = new MouseEvent(type, { bubbles: true, clientX: x, clientY: y });
+		Object.defineProperty(e, 'pointerId', { value: 1 });
+		target.dispatchEvent(e);
+	}
+
+	it('a tap on a concealed word reveals it and the lookup still gets the events', () => {
+		vi.useFakeTimers();
+		try {
+			const pointerdown = vi.fn();
+			const reveal = createReveal();
+			const { root } = mount({ paragraphs: zh, pieces, display: display({ readings: 'smart' }), reveal, lookup: { ...lookup, pointerdown } } as never);
+			const word = root.querySelector('ruby.gen')!;
+			pointer('pointerdown', word);
+			pointer('pointerup', word);
+			expect(pointerdown).toHaveBeenCalledTimes(1);
+			expect(word.classList.contains('revealed')).toBe(true);
+			vi.advanceTimersByTime(4000);
+			expect(word.classList.contains('revealed')).toBe(false);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('a drag reveals nothing', () => {
+		const reveal = createReveal();
+		const { root } = mount({ paragraphs: zh, pieces, display: display({ readings: 'smart' }), reveal });
+		const word = root.querySelector('ruby.gen')!;
+		pointer('pointerdown', word, 0, 0);
+		pointer('pointerup', word, 40, 0);
+		expect(word.classList.contains('revealed')).toBe(false);
+	});
+
+	it('showAll puts the class on the container', () => {
+		const { root } = mount({ paragraphs: zh, pieces, display: display({ readings: 'smart' }), showAll: true });
+		expect(root.classList.contains('show-all')).toBe(true);
+	});
+
+	it('a chapter change resets the reveals', async () => {
+		const reveal = createReveal();
+		const view = mount({ paragraphs: zh, pieces, display: display({ readings: 'smart' }), reveal });
+		reveal.toggleAll();
+		await view.rerender({ paragraphs: [[{ text: '再见' }]] } as never);
+		expect(reveal.isAllShown).toBe(false);
 	});
 });
