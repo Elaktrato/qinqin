@@ -89,8 +89,15 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 		WorkspaceID *int64 `json:"workspaceId"`
 	}
 	json.Unmarshal([]byte(b), &rows)
-	if st != 200 || len(rows) != 1 || rows[0].WorkspaceID == nil || *rows[0].WorkspaceID != w.wsA {
+	// populateWorkspace: one keyed row plus one typed study row of each of
+	// the six families, which the legacy view lists as plugin rows.
+	if st != 200 || len(rows) != 7 {
 		t.Errorf("plugin data list: %d %s", st, b)
+	}
+	for _, r := range rows {
+		if r.WorkspaceID == nil || *r.WorkspaceID != w.wsA {
+			t.Errorf("plugin data list row of another workspace: %s", b)
+		}
 	}
 	if st, b = get("/api/plugins/qinqin-flashcards/data/known:1?workspace=" + A); st != 200 || !strings.Contains(b, `"workspaceId":`+A) {
 		t.Errorf("plugin data row: %d %s", st, b)

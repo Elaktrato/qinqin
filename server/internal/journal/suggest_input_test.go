@@ -15,6 +15,8 @@ import (
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 func TestSuggestionInput(t *testing.T) {
@@ -46,18 +48,39 @@ func TestSuggestionInput(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	card := func(ws int64, id string, entry int64, written string) {
+	// Cards are typed study rows (migration 038), written as a client would.
+	cardAt := func(ws int64, id string, entry int64, written string, deleted bool) {
 		t.Helper()
-		b, _ := json.Marshal(map[string]any{"id": id, "entryId": entry, "written": written})
-		if _, err := plugins.PutData(ctx, sqlDB, uid, &ws, "qinqin-flashcards", "card:"+id, b); err != nil {
+		data := map[string]any{"id": id, "kind": "vocab", "entryId": entry, "deckIds": []string{}, "createdAt": "2026-11-01T00:00:00Z"}
+		if written != "" {
+			data["written"] = written
+		}
+		b, _ := json.Marshal(data)
+		r, err := rows.FromLegacy("card:"+id, b)
+		if err != nil {
 			t.Fatal(err)
 		}
+		r.M().WorkspaceID = ws
+		if _, err := study.Apply(ctx, sqlDB, uid, r, time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC), false); err != nil {
+			t.Fatal(err)
+		}
+		if deleted {
+			if _, err := study.Apply(ctx, sqlDB, uid, r, time.Date(2026, 11, 2, 0, 0, 0, 0, time.UTC), true); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
+	card := func(ws int64, id string, entry int64, written string) { cardAt(ws, id, entry, written, false) }
 	card(w, "c1", e1, "學校") // written wins over the entry form
 	card(w, "c2", e2, "")   // falls back to the entry's first form
 	card(w, "c3", e1, "学校") // duplicate of c1 by word? "學校" vs "学校" differ; c4 dups c2
 	card(w, "c4", e2, "老师")
 	card(v, "cv", e1, "只在V")
+	cardAt(w, "gone", e1, "删掉", true) // a deleted card is never suggested
+	// A leftover plugin row (unreadable to every client) is not a card.
+	if _, err := plugins.PutData(ctx, sqlDB, uid, &w, "qinqin-flashcards", "card:old", json.RawMessage(`{"id":"old","entryId":1,"written":"旧"}`)); err != nil {
+		t.Fatal(err)
+	}
 
 	now := time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)
 	ev := func(n int, ws int64, card string, ago time.Duration) model.StudyEvent {
@@ -67,6 +90,7 @@ func TestSuggestionInput(t *testing.T) {
 	day := 24 * time.Hour
 	if _, _, err := events.Append(ctx, sqlDB, []model.StudyEvent{
 		ev(1, w, "c1", 2*day), ev(2, w, "c2", day), ev(3, w, "c4", 3*day), ev(4, w, "c3", 40*day), ev(5, v, "cv", day),
+		ev(6, w, "gone", day/2), ev(7, w, "old", day/3),
 	}); err != nil {
 		t.Fatal(err)
 	}

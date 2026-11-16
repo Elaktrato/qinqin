@@ -13,7 +13,8 @@ import (
 	"qinqin/internal/journal"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
-	"qinqin/internal/plugins"
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 // TestSuggestionInputUsesTheDisplayForm: a card without a written snapshot
@@ -56,8 +57,13 @@ func TestSuggestionInputUsesTheDisplayForm(t *testing.T) {
 		id    string
 		entry int64
 	}{{"c1", no}, {"c2", suru}} {
-		b, _ := json.Marshal(map[string]any{"id": c.id, "entryId": c.entry})
-		if _, err := plugins.PutData(ctx, sqlDB, uid, &w, "qinqin-flashcards", "card:"+c.id, b); err != nil {
+		b, _ := json.Marshal(map[string]any{"id": c.id, "kind": "vocab", "entryId": c.entry, "deckIds": []string{}, "createdAt": "2026-11-01T00:00:00Z"})
+		r, err := rows.FromLegacy("card:"+c.id, b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.M().WorkspaceID = w
+		if _, err := study.Apply(ctx, sqlDB, uid, r, time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC), false); err != nil {
 			t.Fatal(err)
 		}
 	}

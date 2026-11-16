@@ -632,3 +632,33 @@ deviations with reasons, the `sample-v1` change, what was not verified).
   ./cmd/qinqin ./internal/model ./internal/sync ./internal/stats ./internal/events` exit 0 (all ok); web
   `npm run check` exit 0 (0 errors, 0 warnings); full vitest (Node 22) exit 0, 381 files / 6041 tests;
   `gen-api-docs --check` exit 0.
+
+#### A10 — other server readers, workspace and account deletion
+
+- Tests first, each seen failing: journal `TestSuggestionInput` (typed cards via `study.Apply`; a
+  tombstoned card and a leftover plugin `card:` row are never suggested — failed with `words = [旧]`);
+  `cmd/qinqin` `TestSeedWarnsAboutUserDataOnEntryIDs` (a live typed card counts, a tombstone does not, a
+  leftover adds: "2 flashcard(s)"); `api` `populateWorkspace` now pushes one typed row of each of the six
+  families and `workspaceRows` counts the six study tables, so `TestDeleteWorkspaceCascades`,
+  `TestDeleteWorkspaceFailureRollsBack` and `TestDeletedWorkspaceSync` (typed pull lists only the kept
+  workspace, a typed push into the deleted one is 404) cover them — failed with one row left per study
+  table; `TestAdminDeletesUserEverythingGoes` (preview `cards`, every study table empty after);
+  `auth` `TestDeleteUserRemovesEverythingPersonal` (`Cards: 1`); web `deleteView.test.ts` (flashcards
+  line, seen failing against the old `deleteView.ts`).
+- Implementation: `journal/suggest_input.go` reads `study.ListCards`; `seed.go` counts live
+  `study_cards` plus leftover `card:` rows; workspace deletion deletes the workspace's rows of every
+  `study.Tables()` table in its transaction; `auth.Preview.Cards` (`cards`, live cards) from the registry;
+  `docs/contracts/auth/admin-users.json` `deletion_preview` gains `cards`; web `DeletionPreview` /
+  `SelfDeletionPreview` gain optional `cards`, the dialog says "N flashcards, with their decks and study
+  settings" and words `pluginData` as "other saved items (journal entries, notes, known words, settings)".
+- The registry entries of the six study tables and `library_deletions` were already in `auth.UserTables()`
+  (from A2); the schema guard test passes unchanged.
+- Deviation: the library deletion log on workspace deletion moved to A11, which owns every library delete
+  path (one place for `library_deletions` writes).
+- Test changes: `tokens_routes_test.go` and `TestDeletedWorkspaceSync` now expect the legacy view's six
+  typed rows in plugin-data lists/pulls of a populated workspace (7 rows, all of the right workspace).
+- Gate: `gofmt -l .` empty; `go vet` + `go test -count=1 -p 2 ./internal/journal ./internal/api
+  ./internal/auth ./cmd/qinqin ./internal/backup` exit 0 after the `auth` test fix (first run: only
+  `TestDeleteUserRemovesEverythingPersonal` failed on the new `Cards` count, fixed in the test, rerun
+  `./internal/auth` ok); web `npm run check` exit 0; vitest `src/lib/admin src/lib/settings
+  contractsDocs` 35 files / 356 tests passed.
