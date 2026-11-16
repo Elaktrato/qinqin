@@ -30,6 +30,9 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Reader library, bookmarks and highlights** — each workspace has its own
   library of imported books, a tabbed importer with daily suggestions, and
   per-book bookmarks, highlights and notes (see [Reader](#reader)).
+- **Reader display** — per workspace: book ruby on or off, generated pinyin or
+  furigana over words, smart hiding of the readings of words you have mastered,
+  ruby size and a system font choice (see [Reader display](#reader-display)).
 - **Home widgets** — the home page renders widgets from a per-user layout stored
   on the server (shared by every device and workspace; by default the activity
   heatmap, then the flashcards summary). A widget that does not apply to the
@@ -624,6 +627,28 @@ a Japanese one on Aozora.
 - A result in another language shows "Needs a <language> workspace" instead of
   Import.
 
+### Reader display
+
+The **Display** button above a chapter opens the reading display settings. They are saved
+per workspace (workspace settings, key `reader`), so they follow you across devices.
+
+- **Book ruby** (only for a book that has ruby): the reading marks printed in the book.
+- **Readings over words**: *Never* (default), *Always*, or *Smart*. Chinese words get pinyin,
+  Japanese words with kanji get furigana over the kanji only (inflection stays plain). A
+  reading is left out when the app cannot align it with certainty; it never guesses. Your own
+  edited readings of an entry are used. The readings come from the dictionary through
+  `POST /api/segment` with `"readings": true`, only while this setting is on.
+- **Smart** hides the reading of a word you know: its flashcard has a memory score at or
+  above the threshold (10 to 100, default 80, the same score as "mastered" on the Flashcards
+  decks page). A word you have not mastered always shows its reading; the reading is still
+  there, only drawn transparent, so screen readers read it and the text does not move.
+  Hover a word, tap it (4 seconds), press **R** (outside text fields) or use
+  **Show all readings** to see hidden readings.
+- **Ruby size** and **Font** (default, sans, serif, kai: system fonts only, nothing is downloaded).
+
+The reader only: entry pages, flashcards and study cards always show readings. Rules and
+fixtures for other clients: [`docs/contracts/reader/`](docs/contracts/reader/README.md).
+
 **Add to study from the popup.** Every entry in the Reader's lookup popup has a
 **+** button that adds the word to the General deck of the book's workspace. The
 **⋯** deck menu appears only when the workspace has custom decks. The sentence of
@@ -1093,7 +1118,9 @@ All library and source routes need a signed-in user, and so does
 `POST /api/admin/dictionaries` (admin only) has no total cap: uploads beyond
 32 MiB spill to a temporary file, since real packs can be large.
 
-`lang` must be a registered language (`zh` or `ja` for the reader), and offsets
+`POST /api/segment` also takes `"readings": true`: every match then carries
+`reading: {type, value}` (the first candidate's reading, with your own edited readings applied);
+without the flag the response is unchanged. `lang` must be a registered language (`zh` or `ja` for the reader), and offsets
 count Unicode code points, not bytes or UTF-16 units. `GET /api/search` ranks hits
 by tier (exact form, exact reading, reading prefix, bopomofo prefix, then a gloss
 substring), at most 50 hits unless `limit` asks for more (up to 200); within a

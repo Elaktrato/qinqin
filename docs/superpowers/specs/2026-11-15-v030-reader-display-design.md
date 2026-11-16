@@ -95,9 +95,10 @@ Rule (contract): with `readings = "smart"`, a match is **known** iff
 a book-ruby run is hidden iff every Han character of its base text lies inside known matches.
 Characters outside any match are never known. With `always`, nothing is hidden; with `never`, no
 generated readings exist and book ruby follows `bookRuby` alone.
-Ruling: any candidate entry of the match counts — the learner's card may sit on the second-ranked
-homograph of the same written word, and the reading shown is the top candidate's anyway — cost if
-wrong: a known homograph hides a reading the learner does not know (one tap shows it).
+Ruling (revised in the build): only the FIRST candidate entry of the match counts — it is the entry whose
+reading is shown, and smart mode must never hide a reading the learner has not mastered; a mastered
+homograph further down does not hide it — cost if wrong: a reading stays visible although a homograph is
+mastered.
 Ruling: only vocab cards count, exactly as the decks view's "mastered" — cost if wrong: one filter.
 
 **Revealing** (all reveal, never re-layout): a hidden reading is rendered as `<rt class="concealed">`
@@ -109,8 +110,9 @@ with `visibility: hidden`, so it keeps its space and showing it never moves the 
 - Keyboard: the display panel has **Show all readings** (`aria-pressed`, also key `R` when focus is in
   the reader and not in a field), lasting until toggled off or the chapter changes; the keyboard
   selection lookup popup already shows the reading of the selected word.
-- Screen readers: concealed readings are out of the accessibility tree (visibility), revealed ones are
-  read as native ruby. Words are not made focusable.
+- Screen readers (revised in the build): concealed readings stay in the accessibility tree (transparent
+  colour, not `visibility: hidden`), so no content disappears for assistive technology; the cost is that a
+  screen-reader user also hears readings of known words. Forced-colors mode shows them. Words are not made focusable.
 Ruling: no tab stop per hidden word — a chapter has thousands; the toggle and the lookup popup are the
 keyboard paths — cost if wrong: keyboard users reveal per paragraph via selection only.
 
@@ -162,3 +164,12 @@ shows the existing notice. The `variant` toggle stays per browser.
 `smart-readings.json` (cards + reviews + threshold + matches → shown/hidden; it references the decks
 view's `cardScore` fixture so both clients use one score). Android: honour the same `reader` settings
 object and rule; the segment `readings` flag is the server API to use.
+
+## Execution record (build)
+
+- Known = first candidate only; concealed readings use `color: transparent` (a11y), not `visibility: hidden`.
+- A book ruby run is concealed only if every kanji is in known matches AND the known matches' readings
+  (kana-folded) spell the run's ruby (明日 with あす stays visible for a learner who knows あした).
+- `alignFurigana` returns null for an inflected lemma ending in 来る/來る (き/こ/く change under inflection).
+- A highlighted word and a word crossing a run boundary draw no generated reading.
+- Without a workspace the book ruby toggle is kept in the browser (legacy `furigana` pref).

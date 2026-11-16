@@ -550,3 +550,48 @@ func TestSegmentJapaneseSentence(t *testing.T) {
 		}
 	}
 }
+
+// --- Readings ---
+
+func TestSegmentReadingsOffByDefault(t *testing.T) {
+	ms, err := zhService(t).Segment(context.Background(), "zh", "我学习")
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := json.Marshal(ms)
+	if strings.Contains(string(raw), `"reading"`) {
+		t.Errorf("JSON without the option = %s, want no reading key", raw)
+	}
+}
+
+func TestSegmentReadingsChinese(t *testing.T) {
+	svc := zhService(t)
+	svc.WithReadings = true
+	ms, err := svc.Segment(context.Background(), "zh", "我学习")
+	if err != nil || len(ms) != 2 {
+		t.Fatalf("Segment = %+v, %v, want 2 matches", ms, err)
+	}
+	if r := ms[0].Reading; r == nil || r.Type != "pinyin" || r.Value != "wǒ" {
+		t.Errorf("我 reading = %+v, want pinyin wǒ", r)
+	}
+	if r := ms[1].Reading; r == nil || r.Type != "pinyin" || r.Value != "xué xí" {
+		t.Errorf("学习 reading = %+v, want pinyin xué xí", r)
+	}
+}
+
+func TestSegmentReadingsJapanese(t *testing.T) {
+	svc, _ := jaService(t, jaWords, "")
+	svc.WithReadings = true
+	ms, err := svc.Segment(context.Background(), "ja", "食べました")
+	if err != nil || len(ms) == 0 {
+		t.Fatalf("Segment = %+v, %v", ms, err)
+	}
+	if ms[0].Lemma != "食べる" || ms[0].Reading == nil || ms[0].Reading.Type != "kana" || ms[0].Reading.Value != "たべる" {
+		t.Errorf("食べました = %+v, want lemma 食べる reading kana たべる", ms[0])
+	}
+	// A kana match by reading carries the matched reading, not another one.
+	ms, err = svc.Segment(context.Background(), "ja", "さくじつ")
+	if err != nil || len(ms) != 1 || ms[0].Reading == nil || ms[0].Reading.Value != "さくじつ" {
+		t.Errorf("さくじつ = %+v, %v, want the matched reading さくじつ", ms, err)
+	}
+}

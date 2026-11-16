@@ -220,3 +220,10 @@ flag; Android notes), `docs/contracts/README.md` index line, `README.md` (reader
   (Task 4).
 - `docs/contracts/reader/README.md` — the segment `readings` flag (`reading: {type, value}` on matches,
   overlay applied) and that Android's reader must honour the same settings object per workspace.
+
+## Execution record
+
+See the spec's Execution record: first candidate only counts as known; concealed readings are
+`color: transparent` (kept in the accessibility tree); book ruby concealed only when the known readings spell
+it; no furigana for inflected 来る; `masteryIndex(cards, schedules)` takes the decks view's `scheduleIndex`
+(with the study clock); `chunkParagraphs` returns `parts`.
