@@ -125,6 +125,11 @@ has no activity and no local review (a first week, a week after a break). Arrows
 
 Ruling: same-weekday comparison for the in-progress week — a full-week baseline makes every Monday a drop —
 cost: one more window computation (cheap; same timelines, same request).
+Ruling (review fix wave): the window ends with the whole of `today − 7`, not at the same local time — the activity
+cells are whole days, so a time-of-day cut could apply to the local rows only — cost: on a Wednesday morning all of
+last Wednesday is compared.
+Ruling (review fix wave): today joins the days-active denominator only once it is active — "Active on 2 of 3
+days so far" at 8 a.m. reads as a miss — cost: the denominator grows during the day.
 Ruling: no comparison for streak (a state, not an amount) and for the goal line — cost: none.
 
 **How far back?** Ruling: 52 completed weeks before the current one (`MAX_WEEKS_BACK = 52`), whatever the

@@ -198,7 +198,14 @@ export function weekSummary(input: WeekInputs): WeekSummary {
 		else state = 'inactive';
 		return { date, state, reviews: reviewsOf, points: pointsOf };
 	});
-	const counted = days.filter((d) => d.state !== 'upcoming' && d.state !== 'vacation' && d.state !== 'skipped');
+	// Today counts once something is done: an empty morning is not a miss.
+	const counted = days.filter(
+		(d) =>
+			d.state !== 'upcoming' &&
+			d.state !== 'vacation' &&
+			d.state !== 'skipped' &&
+			!(d.date === today && d.state === 'inactive')
+	);
 
 	const end = inProgress ? input.now : day.dayStart(addDays(sunday, 1)) - 1;
 	const streak = dailyStreak(reviews, end, day, vacation).current;

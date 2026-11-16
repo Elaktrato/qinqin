@@ -20,7 +20,7 @@ A week is Monday to Sunday in your own days: your time zone, as set in [Settings
 | Reading | minutes read in the Reader |
 | Journal entries | journal entries written |
 | Other activity | each plugin activity that was counted this week or last week |
-| Days active | days on which you did anything that counts (vacation days are left out, see below) |
+| Days active | days on which you did anything that counts (vacation days are left out, see below); today joins the count once you have done something today |
 | Streak | your review streak at the end of the week (today for the current week) |
 | Words reaching mature | words whose flashcard became mature that week: in review with a stability of 21 days or more, as on the decks view. A word that became mature and slipped back in the same week does not count |
 | Characters learned | Chinese and Japanese workspaces only: characters whose score reached 80 of 100 that week, as on the character map. This row appears a moment after the others ("Counting characters…") |
@@ -28,7 +28,7 @@ A week is Monday to Sunday in your own days: your time zone, as set in [Settings
 
 ## Compared with last week
 
-Each number says how it compares with the week before: "12 more than last week", "3 fewer than last week" or "Same as last week". While the week is in progress it compares with last week **up to the same weekday** ("Compared with Monday to Wednesday last week"), so a Wednesday is not compared with a whole week. With nothing in the week before (your first week, or after a break) it says "Nothing last week to compare". The arrows are decoration; the words say the same.
+Each number says how it compares with the week before: "12 more than last week", "3 fewer than last week" or "Same as last week". While the week is in progress it compares with last week **up to the same weekday** ("Compared with Monday to Wednesday last week", the whole of last Wednesday included), so a Wednesday is not compared with a whole week. With nothing in the week before (your first week, or after a break) it says "Nothing last week to compare". The arrows are decoration; the words say the same.
 
 ## Vacation days
 

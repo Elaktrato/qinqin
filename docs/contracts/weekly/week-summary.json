@@ -1938,6 +1938,114 @@
         },
         "characters": null
       }
+    },
+    {
+      "name": "today is not counted against days active until it is active",
+      "note": "Wednesday 11-18 08:00, nothing yet today: Monday active, Tuesday not, today inactive and left out of the denominator (1 of 2); it joins once something counts today.",
+      "history": [],
+      "now": "2026-11-18T08:00:00Z",
+      "week": "2026-11-16",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": [
+          {
+            "day": "2026-11-16",
+            "workspace": 1,
+            "type": "review",
+            "points": 1,
+            "raw": 1
+          }
+        ]
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000031",
+          "ts": "2026-11-16T09:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "inProgress": true,
+        "compareThrough": "2026-11-11",
+        "days": [
+          {
+            "date": "2026-11-16",
+            "state": "active",
+            "reviews": 1
+          },
+          {
+            "date": "2026-11-17",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-18",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-19",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-20",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-21",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-22",
+            "state": "upcoming",
+            "reviews": null
+          }
+        ],
+        "daysActive": {
+          "active": 1,
+          "of": 2,
+          "localOnly": false
+        }
+      }
     }
   ]
 }

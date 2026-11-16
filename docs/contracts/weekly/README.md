@@ -79,7 +79,8 @@ Each of the seven dates has a state, in this order of precedence:
 | `inactive` | otherwise |
 
 `reviews` of a day is the `review` cell's `raw` (0 without a cell), `null` offline or upcoming.
-Days active: `active` = days in state `active`; `of` = dates `≤ last` that are neither `vacation` nor `skipped`;
+Days active: `active` = days in state `active`; `of` = dates `≤ last` that are neither `vacation` nor `skipped`,
+and today only once it is `active` (an empty morning is not a missed day);
 `localOnly: true` when the activity response is unavailable (then only local reviews make a day active).
 
 Ruling: totals include what was done on vacation days (it happened) while the days-active line and the goal line
@@ -125,6 +126,10 @@ Every count row, mature words and characters show `previous`, the same quantity 
 - a completed week: the whole previous week `d₁ − 7 … d₁ − 1`;
 - the current (in-progress) week: the previous week up to the same weekday, `d₁ − 7 … today − 7`
   (`compareThrough`), so Wednesday never looks like a collapse.
+
+Ruling: the in-progress window ends with the **whole** of `today − 7`, not at the same local time a week ago — the
+activity cells are whole learner days (the route has no time of day), and cutting only the local rows at a time
+of day would give one row two meanings — cost: on a Wednesday morning, all of last Wednesday is in the comparison.
 
 For mature and characters the comparison window's "before" and "after" are the end of `d₁ − 8` and the end of
 `compareThrough`. `nothingToCompare`: the comparison window has no activity cell of `w` with `points > 0` or
