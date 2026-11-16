@@ -87,6 +87,17 @@ no workspace: marks are workspace rows) and
 keeps the newest of two marks that would land on one target; every dropped mark counts in `droppedRows`.
 Other `qinqin-flashcards` keys (`knownfilter`, ...) are untouched.
 
+The lookup history (`qinqin-core` row `lookups`, one per workspace, `docs/contracts/lookups/`): export lists
+the entry of every valid item in `refs/entries.json`. Restore parses the row with the lookups parse rules,
+moves each item to the target entry (unresolved: the item is dropped), maps `books` through the book map
+(unresolved ids removed), merges items that land on one target entry (`count` and every `sources` member
+summed and clamped to 1 000 000, earliest `firstAt`, latest `lastAt`, books of the newest item first,
+distinct, at most three), sorts newest first and keeps 500; `clearedAt`, `version` and unknown top-level
+members keep their bytes. A `lookups` row whose `data` is not a version 1 object (a JSON string holding one
+is decoded first) or that has no workspace is dropped and counts in `droppedRows` (kept as it is, its ids
+would name other words). Dropped items are not listed in the dry-run report. `lookupcfg` (user-global, no
+ids) is restored unchanged. Cases: the `lookups:` rows of `remap.json`; the sample archive carries one row.
+
 ## Limits of a restore
 
 At most 2,000,000 events (`backup_too_many_events`), one restore applied at a time server-wide
