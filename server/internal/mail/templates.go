@@ -11,11 +11,12 @@ import (
 type Kind string
 
 const (
-	KindReset       Kind = "reset"
-	KindLoginCode   Kind = "login_code"
-	KindMFACode     Kind = "mfa_code"
-	KindVerifyEmail Kind = "verify_email"
-	KindTest        Kind = "test"
+	KindReset        Kind = "reset"
+	KindLoginCode    Kind = "login_code"
+	KindMFACode      Kind = "mfa_code"
+	KindVerifyEmail  Kind = "verify_email"
+	KindTest         Kind = "test"
+	KindEmailChanged Kind = "email_changed"
 )
 
 //go:embed templates/*.txt
@@ -24,11 +25,12 @@ var templateFS embed.FS
 // subjects are constants: a code or link never appears in a subject (lock
 // screens and notification previews show it).
 var subjects = map[Kind]string{
-	KindReset:       "Reset your qinqin password",
-	KindLoginCode:   "Your qinqin sign-in code",
-	KindMFACode:     "Your qinqin two-step code",
-	KindVerifyEmail: "Confirm your email address for qinqin",
-	KindTest:        "qinqin test message",
+	KindReset:        "Reset your qinqin password",
+	KindLoginCode:    "Your qinqin sign-in code",
+	KindMFACode:      "Your qinqin two-step code",
+	KindVerifyEmail:  "Confirm your email address for qinqin",
+	KindTest:         "qinqin test message",
+	KindEmailChanged: "Your qinqin email address was changed",
 }
 
 var templates = template.Must(template.ParseFS(templateFS, "templates/*.txt"))

@@ -68,12 +68,12 @@ func TestEmailVerificationFlow(t *testing.T) {
 	if st != 200 || v.EmailVerified || v.Verification != "sent" {
 		t.Errorf("change = %d %+v", st, v)
 	}
-	e.waitMails(t, 2)
+	e.waitMails(t, 3) // the code for the new address and the notice to the old one
 	// wrong password: nothing is sent
 	if st, _, eb := put(bob, map[string]any{"email": "third@example.org", "currentPassword": "nope-nope-nope"}); st != 403 || eb.Error != "wrong_password" {
 		t.Errorf("wrong password = %d %s", st, eb.Error)
 	}
-	e.noMoreMails(t, 2)
+	e.noMoreMails(t, 3)
 }
 
 func TestEmailVerificationAttemptsResendAndLimits(t *testing.T) {

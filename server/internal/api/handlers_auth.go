@@ -293,7 +293,7 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		res, err = s.hash.login(r.Context(), s.db, req.Username, req.Password, auth.LoginOptions{Device: device,
 			Gate: func(ctx context.Context, u model.User) (auth.SessionPlan, error) {
 				var perr error
-				plan, perr = s.planSignIn(ctx, u, false)
+				plan, perr = s.planSignIn(ctx, u, factorPassword)
 				return plan.sessionPlan(), perr
 			}})
 		return err
@@ -304,6 +304,10 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		l.pair.Succeed(pair, s.now())
 		refund()
 		writeAuthError(w, http.StatusForbidden, "account_disabled", "This account has been disabled. Ask an administrator.")
+	case errors.Is(err, errMailUnavailable):
+		l.pair.Succeed(pair, s.now()) // the password was right
+		refund()
+		s.writeMailOutage(w)
 	case errors.Is(err, auth.ErrBadCredentials):
 		l.pair.Fail(pair, s.now()) // the account token stays spent
 		writeAuthError(w, http.StatusUnauthorized, "bad_credentials", "Wrong username or password.")
@@ -322,7 +326,7 @@ func (s *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	default:
 		l.pair.Succeed(pair, s.now())
 		refund()
-		s.respondSignIn(w, r, res.User, plan, res.Token, device)
+		s.respondSignIn(w, r, res.User, plan, res.Token, device, factorPassword)
 	}
 }
 

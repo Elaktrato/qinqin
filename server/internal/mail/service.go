@@ -69,11 +69,18 @@ const (
 	globalPerHour = 200
 )
 
+// sentAt is one send for the hourly cap; anon marks mails an unauthenticated
+// request can trigger (reset links, sign-in codes).
+type sentAt struct {
+	t    time.Time
+	anon bool
+}
+
 type queueState struct {
 	once sync.Once
 	ch   chan Job
 	mu   sync.Mutex
-	sent []time.Time // send times within the last hour (global cap)
+	sent []sentAt // sends within the last hour (global cap)
 }
 
 func (s *Service) q() *queueState {
@@ -112,17 +119,25 @@ func (s *Service) Enqueue(j Job) bool {
 	}
 }
 
+func anonymousKind(k Kind) bool { return k == KindReset || k == KindLoginCode }
+
 // underCap reports whether another mail may go out within the global hourly
-// cap, and records it.
-func (s *Service) underCap() bool {
+// cap, and records it. Mails an anonymous request can trigger may use only
+// three quarters of the cap, so no client can use up the allowance of the
+// signed-in flows (verification, second-step codes, notices, test mail).
+func (s *Service) underCap(kind Kind) bool {
 	q := s.q()
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	now := s.clock()
 	keep := q.sent[:0]
-	for _, t := range q.sent {
-		if now.Sub(t) < time.Hour {
-			keep = append(keep, t)
+	anon := 0
+	for _, e := range q.sent {
+		if now.Sub(e.t) < time.Hour {
+			keep = append(keep, e)
+			if e.anon {
+				anon++
+			}
 		}
 	}
 	q.sent = keep
@@ -130,10 +145,11 @@ func (s *Service) underCap() bool {
 	if limit <= 0 {
 		limit = globalPerHour
 	}
-	if len(q.sent) >= limit {
+	isAnon := anonymousKind(kind)
+	if len(q.sent) >= limit || (isAnon && anon >= limit*3/4) {
 		return false
 	}
-	q.sent = append(q.sent, now)
+	q.sent = append(q.sent, sentAt{now, isAnon})
 	return true
 }
 
@@ -152,7 +168,7 @@ func (s *Service) Run(ctx context.Context) {
 }
 
 func (s *Service) deliver(ctx context.Context, j Job) {
-	if !s.underCap() {
+	if !s.underCap(j.Kind) {
 		s.logf("mail: dropped kind=%s user=%d reason=hourly_cap", j.Kind, j.UserID)
 		return
 	}

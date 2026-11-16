@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,6 +20,7 @@ const (
 	ChallengeMFA         = "mfa"          // second step of a password sign-in
 	ChallengeEmailLogin  = "email_login"  // passwordless sign-in by emailed code
 	ChallengeEmailVerify = "email_verify" // confirming a self-entered address
+	ChallengeMFAEnable   = "mfa_enable"   // proving the mailbox before the email method turns on
 )
 
 // Challenge limits (smtp-mfa spec section 6).
@@ -48,10 +50,14 @@ type Challenge struct {
 	UserID    int64 // 0: none (an unknown identifier)
 	EmailNorm string
 	Device    string
-	Sends     int
-	Attempts  int
-	ExpiresAt time.Time
-	LastSent  time.Time
+	// FirstFactor and Methods (mfa challenges): what proved the first factor
+	// and the second-step methods issued with the challenge.
+	FirstFactor string
+	Methods     []string
+	Sends       int
+	Attempts    int
+	ExpiresAt   time.Time
+	LastSent    time.Time
 }
 
 // AttemptsLeft is how many wrong codes remain.
@@ -97,8 +103,8 @@ func scanChallenge(row *sql.Row) (Challenge, string, error) {
 	var uid sql.NullInt64
 	var exp string
 	var last sql.NullString
-	var codeHash string
-	err := row.Scan(&c.ID, &c.Kind, &uid, &c.EmailNorm, &c.Device, &c.Sends, &c.Attempts, &exp, &last, &codeHash)
+	var codeHash, methods string
+	err := row.Scan(&c.ID, &c.Kind, &uid, &c.EmailNorm, &c.Device, &c.Sends, &c.Attempts, &exp, &last, &codeHash, &c.FirstFactor, &methods)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Challenge{}, "", ErrChallengeInvalid
 	}
@@ -106,6 +112,9 @@ func scanChallenge(row *sql.Row) (Challenge, string, error) {
 		return Challenge{}, "", fmt.Errorf("load challenge: %w", err)
 	}
 	c.UserID = uid.Int64
+	if methods != "" {
+		c.Methods = strings.Split(methods, ",")
+	}
 	c.ExpiresAt, _ = time.Parse(time.RFC3339, exp)
 	if last.Valid {
 		c.LastSent, _ = time.Parse(time.RFC3339, last.String)
@@ -113,7 +122,7 @@ func scanChallenge(row *sql.Row) (Challenge, string, error) {
 	return c, codeHash, nil
 }
 
-const challengeColumns = `id, kind, user_id, email_norm, device, sends, attempts, expires_at, last_sent_at, code_hash`
+const challengeColumns = `id, kind, user_id, email_norm, device, sends, attempts, expires_at, last_sent_at, code_hash, first_factor, methods`
 
 // LoadChallenge returns the live challenge behind token.
 func LoadChallenge(ctx context.Context, sqlDB *sql.DB, token string) (Challenge, error) {
@@ -290,6 +299,26 @@ func SpendAttempt(ctx context.Context, sqlDB *sql.DB, token, kind string) (Chall
 func ExhaustIfSpent(ctx context.Context, sqlDB *sql.DB, c Challenge) error {
 	if c.Attempts >= MaxAttempts {
 		return DeleteChallenge(ctx, sqlDB, c.ID)
+	}
+	return nil
+}
+
+// HasMethod reports whether the challenge was issued with the method.
+func (c Challenge) HasMethod(m string) bool {
+	for _, x := range c.Methods {
+		if x == m {
+			return true
+		}
+	}
+	return false
+}
+
+// SetChallengeFactor records what proved the first factor and which second-step
+// methods the challenge offers; nothing else may be answered later.
+func SetChallengeFactor(ctx context.Context, sqlDB *sql.DB, id int64, firstFactor string, methods []string) error {
+	_, err := sqlDB.ExecContext(ctx, `UPDATE auth_challenges SET first_factor = ?, methods = ? WHERE id = ?`, firstFactor, strings.Join(methods, ","), id)
+	if err != nil {
+		return fmt.Errorf("set challenge factor: %w", err)
 	}
 	return nil
 }

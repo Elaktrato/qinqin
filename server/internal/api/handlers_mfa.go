@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/mail"
 	"qinqin/internal/model"
 )
 
@@ -294,9 +295,12 @@ func (s *server) handleRecoveryCodes(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleMFAEmail serves POST /api/account/mfa/email {enabled, password}: the
-// email method needs a verified address and a configured mail server. An
-// enrolment session skips the password and becomes a full one when the method
-// is turned on.
+// email method needs a verified address that the instance policy still uses
+// and a working mail server. A full session proves the password and the
+// method turns on at once. An ENROLMENT session proves nothing yet: it gets a
+// code mailed to the address and stays restricted until
+// POST /api/account/mfa/email/confirm has verified that code (202), so a stale
+// or unreachable address can never end the restriction.
 func (s *server) handleMFAEmail(w http.ResponseWriter, r *http.Request) {
 	p := s.requirePrincipal(w, r, restrictionMFAEnrollment)
 	if p == nil {
@@ -320,8 +324,8 @@ func (s *server) handleMFAEmail(w http.ResponseWriter, r *http.Request) {
 			writeAuthError(w, http.StatusConflict, "mail_unavailable", "Email codes need email to be set up on this server.")
 			return
 		}
-		if !p.User.EmailVerified {
-			writeAuthError(w, http.StatusConflict, "email_unverified", "Confirm your email address first.")
+		if !s.emailMethodUsable(r.Context(), p.User, set) {
+			writeAuthError(w, http.StatusConflict, "email_unverified", "Confirm your email address first. Addresses must also be in use on this server.")
 			return
 		}
 	} else if s.mfaEnforcedEffective(r.Context(), set) && !s.otherMethodLeft(r.Context(), p.User, st, "email") {
@@ -331,23 +335,95 @@ func (s *server) handleMFAEmail(w http.ResponseWriter, r *http.Request) {
 	if p.Restriction() == "" && !s.verifyOwnPassword(w, r, p.User.ID, req.Password) {
 		return
 	}
-	if err := auth.SetMFAEmail(r.Context(), s.db, p.User.ID, req.Enabled); err != nil {
+	if req.Enabled && p.Level == auth.LevelEnroll {
+		s.startEmailMethodConfirm(w, r, p.User)
+		return
+	}
+	if err := s.setEmailMethod(r.Context(), p.User.ID, req.Enabled); err != nil {
 		writeInternal(w, r)
 		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"email": req.Enabled})
+}
+
+func (s *server) setEmailMethod(ctx context.Context, userID int64, on bool) error {
+	if err := auth.SetMFAEmail(ctx, s.db, userID, on); err != nil {
+		return err
 	}
 	action := "mfa_disabled"
-	if req.Enabled {
+	if on {
 		action = "mfa_enabled"
 	}
-	if err := auth.Audit(r.Context(), s.db, auth.AuditEvent{Action: action, ActorID: p.User.ID, TargetID: &p.User.ID, Detail: map[string]any{"scope": "email"}}); err != nil {
+	return auth.Audit(ctx, s.db, auth.AuditEvent{Action: action, ActorID: userID, TargetID: &userID, Detail: map[string]any{"scope": "email"}})
+}
+
+// startEmailMethodConfirm mails a code to the (verified) address of an
+// enrolment session; a repeated call resends within the send limits.
+func (s *server) startEmailMethodConfirm(w http.ResponseWriter, r *http.Request, u model.User) {
+	ch, err := auth.LoadUserChallenge(r.Context(), s.db, u.ID, auth.ChallengeMFAEnable)
+	if errors.Is(err, auth.ErrChallengeInvalid) {
+		_, ch, err = auth.NewChallenge(r.Context(), s.db, auth.ChallengeMFAEnable, &u.ID, "", "")
+	}
+	if err != nil {
 		writeInternal(w, r)
 		return
 	}
-	if req.Enabled && p.Level == auth.LevelEnroll {
+	code, err := auth.SetCode(r.Context(), s.db, ch.ID)
+	var ce *auth.CodeError
+	switch {
+	case errors.As(err, &ce):
+		writeRateLimitedAs(w, ce.Retry, "code requests")
+	case err != nil:
+		writeInternal(w, r)
+	default:
+		s.mailCode(u.ID, mail.KindVerifyEmail, *u.Email, code)
+		writeJSON(w, http.StatusAccepted, map[string]any{"confirm": true, "resendAfter": int(auth.ResendEvery.Seconds())})
+	}
+}
+
+// handleMFAEmailConfirm serves POST /api/account/mfa/email/confirm {code}:
+// the mailed code turns the email method on and only then lifts an
+// enrolment session's restriction.
+func (s *server) handleMFAEmailConfirm(w http.ResponseWriter, r *http.Request) {
+	p := s.requirePrincipal(w, r, restrictionMFAEnrollment)
+	if p == nil {
+		return
+	}
+	var req struct {
+		Code string `json:"code"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	set, serr := auth.LoadSettings(r.Context(), s.db)
+	if serr != nil {
+		writeInternal(w, r)
+		return
+	}
+	if !s.emailMethodUsable(r.Context(), p.User, set) {
+		writeAuthError(w, http.StatusConflict, "email_unverified", "Confirm your email address first. Addresses must also be in use on this server.")
+		return
+	}
+	refund, ok := s.codeBudget(w, p.User.ID)
+	if !ok {
+		return
+	}
+	if _, err := auth.VerifyUserCode(r.Context(), s.db, p.User.ID, auth.ChallengeMFAEnable, req.Code); err != nil {
+		if !writeCodeError(w, err, true) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	refund()
+	if err := s.setEmailMethod(r.Context(), p.User.ID, true); err != nil {
+		writeInternal(w, r)
+		return
+	}
+	if p.Level == auth.LevelEnroll {
 		if err := auth.PromoteSession(r.Context(), s.db, p.User.ID, p.SessionID); err != nil {
 			writeInternal(w, r)
 			return
 		}
 	}
-	writeJSON(w, http.StatusOK, map[string]bool{"email": req.Enabled})
+	writeJSON(w, http.StatusOK, map[string]bool{"email": true})
 }

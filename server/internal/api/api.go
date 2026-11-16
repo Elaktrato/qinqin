@@ -56,14 +56,15 @@ type server struct {
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
 
-	authPolicy *AuthPolicy // nil: DefaultAuthPolicy
-	limits     *authLimits // sign-in throttling state, built by New
-	hash       hashers     // password hashing entry points (tests swap them)
-	mfa        *auth.MFA   // TOTP secrets and recovery codes (always set; no sealer = unavailable)
-	sealCur    *secretbox.Sealer
-	sealPrev   *secretbox.Sealer
-	mail       *mail.Service // nil: mail is not configured and cannot be
-	users      *auth.Users   // admin changes of the users table (last-admin rule, deletion)
+	authPolicy  *AuthPolicy // nil: DefaultAuthPolicy
+	limits      *authLimits // sign-in throttling state, built by New
+	hash        hashers     // password hashing entry points (tests swap them)
+	mfa         *auth.MFA   // TOTP secrets and recovery codes (always set; no sealer = unavailable)
+	sealCur     *secretbox.Sealer
+	sealPrev    *secretbox.Sealer
+	mailDownLog sync.Once     // logs the mail-outage sign-in refusal once per start
+	mail        *mail.Service // nil: mail is not configured and cannot be
+	users       *auth.Users   // admin changes of the users table (last-admin rule, deletion)
 }
 
 // Option configures optional parts of the server.
@@ -200,6 +201,7 @@ func (s *server) routes() []route {
 		{"DELETE /api/account/mfa/totp", s.handleTOTPDisable, accUser, nil},
 		{"POST /api/account/mfa/recovery-codes", s.handleRecoveryCodes, accUser, nil},
 		{"POST /api/account/mfa/email", s.handleMFAEmail, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/mfa/email/confirm", s.handleMFAEmailConfirm, accSession, []string{restrictionMFAEnrollment}},
 		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},

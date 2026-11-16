@@ -146,19 +146,19 @@ func (s *server) handleReset(w http.ResponseWriter, r *http.Request) {
 		// A reset must not remove two-factor authentication: the same plan
 		// as a password sign-in decides between a session, the second step
 		// and enrolment.
-		plan, err := s.planSignIn(r.Context(), u, false)
+		plan, err := s.planSignIn(r.Context(), u, factorReset)
 		if err != nil {
 			writeInternal(w, r)
 			return
 		}
 		token := ""
-		if !plan.challenge() {
+		if !plan.challenge() && plan.kind != "changed" {
 			if token, err = auth.NewSession(r.Context(), s.db, u.ID, auth.LoginOptions{Device: device, Level: plan.sessionPlan().Level}); err != nil {
 				writeInternal(w, r)
 				return
 			}
 		}
-		s.respondSignIn(w, r, u, plan, token, device)
+		s.respondSignIn(w, r, u, plan, token, device, factorReset)
 	}
 }
 
@@ -202,6 +202,9 @@ func (s *server) handleResetRequest(w http.ResponseWriter, r *http.Request) {
 	if _, ok := s.clientTake(w, r, "attempts"); !ok {
 		return
 	}
+	if !s.mailRequestBudget(w, r) {
+		return
+	}
 	var req struct {
 		Login string `json:"login"`
 	}
@@ -236,7 +239,7 @@ func (s *server) handleResetRequest(w http.ResponseWriter, r *http.Request) {
 		to, uid := target.Email, target.UserID
 		s.mail.Enqueue(mail.Job{Kind: mail.KindReset, UserID: uid, To: to,
 			Build: func(ctx context.Context, cfg mail.Config) (mail.TemplateData, bool) {
-				token, _, err := auth.IssueReset(ctx, s.db, 0, uid, time.Hour)
+				token, _, err := auth.IssueSelfServiceReset(ctx, s.db, uid, time.Hour)
 				if err != nil {
 					return mail.TemplateData{}, false
 				}
@@ -244,4 +247,17 @@ func (s *server) handleResetRequest(w http.ResponseWriter, r *http.Request) {
 			}})
 	}
 	writeJSON(w, http.StatusAccepted, struct{}{})
+}
+
+// mailRequestBudget caps how many mail-triggering anonymous requests one
+// client may make per hour (reset requests and sign-in codes together), the
+// same for every identifier, so a single client cannot use up the server's
+// hourly mail allowance.
+func (s *server) mailRequestBudget(w http.ResponseWriter, r *http.Request) bool {
+	if ok, retry := s.authLimiter("mailreq").Allow(clientKeyString(s.clientIP(r))); !ok {
+		s.logThrottled("mailreq")
+		writeRateLimitedAs(w, retry, "requests")
+		return false
+	}
+	return true
 }

@@ -44,6 +44,9 @@ type smtpView struct {
 	Secret       string `json:"secret"` // ok | missing | invalid
 	AllowPrivate bool   `json:"allowPrivate"`
 	UpdatedAt    string `json:"updatedAt"`
+	// UsersDependOnMail counts users whose only second step is an emailed
+	// code: they cannot sign in while mail does not work.
+	UsersDependOnMail int `json:"usersDependOnMail"`
 }
 
 func (s *server) smtpView(ctx context.Context) (smtpView, error) {
@@ -57,6 +60,11 @@ func (s *server) smtpView(ctx context.Context) (smtpView, error) {
 		v.FromAddress, v.FromName, v.PublicURL, v.UpdatedAt = c.FromAddress, c.FromName, c.PublicURL, c.UpdatedAt
 	}
 	v.Configured = s.mail.Configured(ctx)
+	if set, serr := auth.LoadSettings(ctx, s.db); serr == nil {
+		if n, cerr := auth.CountMailDependents(ctx, s.db, set.MFAEnforced); cerr == nil {
+			v.UsersDependOnMail = n
+		}
+	}
 	return v, nil
 }
 

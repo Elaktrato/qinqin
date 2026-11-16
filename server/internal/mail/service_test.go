@@ -128,7 +128,7 @@ func TestGlobalHourlyCap(t *testing.T) {
 	defer cancel()
 	go s.Run(ctx)
 	for i := 0; i < 3; i++ {
-		s.Enqueue(Job{Kind: KindLoginCode, UserID: int64(i), To: "bob@example.com"})
+		s.Enqueue(Job{Kind: KindMFACode, UserID: int64(i), To: "bob@example.com"})
 	}
 	wait(t, func() bool { return strings.Contains(sink.all(), "reason=hourly_cap") })
 	if n := len(fake.Messages()); n != 2 {
@@ -154,5 +154,25 @@ func TestBuildHookRunsOnTheWorkerAndMaySkip(t *testing.T) {
 	wait(t, func() bool { return len(fake.Messages()) == 1 })
 	if !ran.Valid || !strings.Contains(fake.Messages()[0].Data, "reset#t=3Dabc") && !strings.Contains(fake.Messages()[0].Data, "reset#t=abc") {
 		t.Errorf("build hook: ran=%v data=%q", ran, fake.Messages()[0].Data)
+	}
+}
+
+func TestAnonymousTriggeredMailsCannotExhaustTheGlobalCap(t *testing.T) {
+	fake, _ := mailtest.New(mailtest.Options{})
+	defer fake.Close()
+	sink := &logSink{}
+	s := svcFor(t, fake, sink)
+	s.GlobalPerHour = 4 // anonymous kinds may use 3 of them
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go s.Run(ctx)
+	for i := 0; i < 6; i++ {
+		s.Enqueue(Job{Kind: KindReset, UserID: int64(i), To: "bob@example.com"})
+	}
+	wait(t, func() bool { return strings.Contains(sink.all(), "reason=hourly_cap") })
+	s.Enqueue(Job{Kind: KindMFACode, UserID: 99, To: "bob@example.com", Data: TemplateData{Code: "123456"}})
+	wait(t, func() bool { return strings.Contains(sink.all(), "sent kind=mfa_code user=99") })
+	if n := len(fake.Messages()); n != 4 {
+		t.Errorf("sent %d, want 3 anonymous + 1 reserved", n)
 	}
 }

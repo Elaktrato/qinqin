@@ -380,3 +380,16 @@ func (m *MFA) Rotate(ctx context.Context) (int, error) {
 	}
 	return total, tx.Commit()
 }
+
+// CountMailDependents counts the users whose only second step is email (the
+// email method is on, or enforcement applies to a verified address) and who
+// have no authenticator: they cannot sign in while mail is down.
+func CountMailDependents(ctx context.Context, ex querier, enforced bool) (int, error) {
+	var n int
+	err := ex.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM users u
+		WHERE u.disabled_at IS NULL
+		  AND NOT EXISTS (SELECT 1 FROM mfa_totp t WHERE t.user_id = u.id AND t.confirmed_at IS NOT NULL)
+		  AND (u.mfa_email = 1 OR (?1 AND u.email_verified_at IS NOT NULL))`, enforced).Scan(&n)
+	return n, err
+}

@@ -52,7 +52,7 @@ CREATE INDEX idx_mfa_recovery_user ON mfa_recovery_codes (user_id);
 CREATE TABLE auth_challenges (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     token_hash TEXT NOT NULL UNIQUE,
-    kind TEXT NOT NULL CHECK (kind IN ('mfa','email_login','email_verify')),
+    kind TEXT NOT NULL CHECK (kind IN ('mfa','email_login','email_verify','mfa_enable')),
     user_id INTEGER,
     email_norm TEXT NOT NULL DEFAULT '',
     code_hash TEXT NOT NULL DEFAULT '',
@@ -61,9 +61,18 @@ CREATE TABLE auth_challenges (
     attempts INTEGER NOT NULL DEFAULT 0,
     expires_at TEXT NOT NULL,
     created_at TEXT NOT NULL,
-    device TEXT NOT NULL DEFAULT ''
+    device TEXT NOT NULL DEFAULT '',
+    -- mfa challenges: what proved the first factor (password, email_code, reset) and
+    -- the second-step methods that were issued with it (comma list). Only those
+    -- may be answered.
+    first_factor TEXT NOT NULL DEFAULT 'password',
+    methods TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX idx_auth_challenges_user ON auth_challenges (user_id);
 CREATE INDEX idx_auth_challenges_expires ON auth_challenges (expires_at);
 
 ALTER TABLE users ADD COLUMN mfa_email INTEGER NOT NULL DEFAULT 0;
+
+-- Reset links made by the mail request ("forgot password") are told apart from
+-- links an administrator issued: an anonymous request replaces only the former.
+ALTER TABLE password_resets ADD COLUMN self_service INTEGER NOT NULL DEFAULT 0;

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"qinqin/internal/auth"
 	"qinqin/internal/mail"
@@ -314,6 +315,7 @@ func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Email           *string `json:"email"`
 		CurrentPassword string  `json:"currentPassword"`
+		Code            string  `json:"code"` // authenticator or recovery code, for users who have one
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -329,9 +331,20 @@ func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
 	if !s.applyEmailFormat(w, r, set.EmailPolicy, req.Email, &nu) {
 		return
 	}
-	if p.Restriction() == "" && !s.verifyOwnPassword(w, r, p.User.ID, req.CurrentPassword) {
-		return
+	if p.Restriction() == "" {
+		if !s.verifyOwnPassword(w, r, p.User.ID, req.CurrentPassword) {
+			return
+		}
+		// The address is the recovery channel: whoever holds a stolen session
+		// and the password must not be able to move it without the second factor.
+		if has, herr := auth.HasTOTP(r.Context(), s.db, p.User.ID); herr != nil {
+			writeInternal(w, r)
+			return
+		} else if has && !s.secondFactorOK(w, r, p.User.ID, req.Code) {
+			return
+		}
 	}
+	oldEmail := p.User.Email
 	if err := auth.SetOwnEmail(r.Context(), s.db, p.User.ID, nu.Email, nu.EmailNorm); err != nil {
 		if !writeUserError(w, err) {
 			writeInternal(w, r)
@@ -342,6 +355,17 @@ func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeInternal(w, r)
 		return
+	}
+	if changed := oldEmail != nil && (u.Email == nil || !strings.EqualFold(*oldEmail, *u.Email)); changed {
+		// Recovery links issued before the change must not outlive it, and the
+		// old address (whose owner may not be the one who changed it) is told.
+		if err := auth.DropPendingResets(r.Context(), s.db, p.User.ID); err != nil {
+			writeInternal(w, r)
+			return
+		}
+		if s.mailConfigured(r.Context()) {
+			s.mail.Enqueue(mail.Job{Kind: mail.KindEmailChanged, UserID: p.User.ID, To: *oldEmail})
+		}
 	}
 	verification := "none"
 	if u.Email != nil && !u.EmailVerified {

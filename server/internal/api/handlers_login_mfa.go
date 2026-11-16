@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -40,9 +41,21 @@ func (p signInPlan) has(method string) bool {
 	return false
 }
 
-// errPasswordRequired: an emailed code alone is one factor, so under
-// enforcement a user without an authenticator must use the password.
-var errPasswordRequired = errors.New("password required")
+// First factors: what proved the person before the second step.
+const (
+	factorPassword  = "password"
+	factorEmailCode = "email_code" // an emailed sign-in code
+	factorReset     = "reset"      // a reset link
+)
+
+var (
+	// errPasswordRequired: an emailed code alone is one factor, so a user whose
+	// only second step is email must use the password.
+	errPasswordRequired = errors.New("password required")
+	// errMailUnavailable: the account's second step is an emailed code and mail
+	// does not work. Sign-in fails closed instead of skipping the step.
+	errMailUnavailable = errors.New("mail unavailable")
+)
 
 // emailMethodUsable: the address is verified, the policy uses addresses and
 // mail works.
@@ -50,8 +63,8 @@ func (s *server) emailMethodUsable(ctx context.Context, u model.User, set auth.S
 	return u.Email != nil && u.EmailVerified && set.EmailPolicy != "off" && s.mailConfigured(ctx)
 }
 
-// planSignIn applies the rules of the smtp-mfa spec section 5 after the
-// password (or, with viaEmailCode, the emailed code) was proven:
+// planSignIn applies the rules of the smtp-mfa spec section 5 after a first
+// factor was proven:
 //  1. an authenticator -> second step (totp, recovery, + email when that
 //     method is on and usable);
 //  2. the email method on and usable -> email;
@@ -59,9 +72,15 @@ func (s *server) emailMethodUsable(ctx context.Context, u model.User, set auth.S
 //  4. enforced -> an enrolment session;
 //  5. nothing.
 //
-// With viaEmailCode the emailed code already was one factor: only an
-// authenticator may follow, and enforcement without one needs the password.
-func (s *server) planSignIn(ctx context.Context, u model.User, viaEmailCode bool) (signInPlan, error) {
+// The email method is offered only after a PASSWORD: a reset link or an
+// emailed sign-in code already proved the mailbox, and the mailbox must not
+// also be the second factor. After those, an authenticator is asked for; a
+// user without one whose second step is email gets no session (a reset answers
+// "changed": sign in with the new password; an emailed code answers
+// errPasswordRequired). A user whose only second step is email is
+// mailbox-only by construction and fails closed (errMailUnavailable) while
+// mail is down.
+func (s *server) planSignIn(ctx context.Context, u model.User, factor string) (signInPlan, error) {
 	st, err := auth.LoadMFAState(ctx, s.db, u.ID)
 	if err != nil {
 		return signInPlan{}, err
@@ -72,30 +91,58 @@ func (s *server) planSignIn(ctx context.Context, u model.User, viaEmailCode bool
 	}
 	enforced := s.mfaEnforcedEffective(ctx, set)
 	usable := s.emailMethodUsable(ctx, u, set)
+	addr := u.Email != nil && u.EmailVerified && set.EmailPolicy != "off"
+	// Would this account have an email second step if mail worked?
+	dependent := !st.TOTP && (st.Email || (set.MFAEnforced && addr))
 	switch {
 	case st.TOTP:
 		methods := []string{"totp", "recovery"}
-		if !viaEmailCode && st.Email && usable {
+		if factor == factorPassword && st.Email && usable {
 			methods = append(methods, "email")
 		}
-		return signInPlan{"challenge", methods}, nil
-	case viaEmailCode && enforced:
-		return signInPlan{}, errPasswordRequired
-	case viaEmailCode:
+		return signInPlan{kind: "challenge", methods: methods}, nil
+	case factor == factorEmailCode:
+		if dependent || enforced {
+			return signInPlan{}, errPasswordRequired
+		}
 		return signInPlan{}, nil
+	case factor == factorReset:
+		switch {
+		case dependent:
+			return signInPlan{kind: "changed"}, nil
+		case enforced:
+			return signInPlan{kind: "enroll", methods: s.enrolMethods(ctx, set)}, nil
+		}
+		return signInPlan{}, nil
+	case dependent && !usable:
+		return signInPlan{}, errMailUnavailable
 	case st.Email && usable, enforced && usable:
-		return signInPlan{"challenge", []string{"email"}}, nil
+		return signInPlan{kind: "challenge", methods: []string{"email"}}, nil
 	case enforced:
-		var methods []string
-		if s.mfa.Available() {
-			methods = append(methods, "totp")
-		}
-		if s.mailConfigured(ctx) && set.EmailPolicy != "off" {
-			methods = append(methods, "email")
-		}
-		return signInPlan{"enroll", methods}, nil
+		return signInPlan{kind: "enroll", methods: s.enrolMethods(ctx, set)}, nil
 	}
 	return signInPlan{}, nil
+}
+
+func (s *server) enrolMethods(ctx context.Context, set auth.Settings) []string {
+	var methods []string
+	if s.mfa.Available() {
+		methods = append(methods, "totp")
+	}
+	if s.mailConfigured(ctx) && set.EmailPolicy != "off" {
+		methods = append(methods, "email")
+	}
+	return methods
+}
+
+// writeMailOutage answers a sign-in that fails closed, and logs the condition
+// once per start (no address, no user).
+func (s *server) writeMailOutage(w http.ResponseWriter) {
+	s.mailDownLog.Do(func() {
+		log.Printf("auth: sign-in refused: accounts whose second step is an emailed code cannot sign in while email is not working (fix Admin, Email, or qinqin recover --reset-mfa)")
+	})
+	w.Header().Set("Retry-After", "60")
+	writeAuthError(w, http.StatusServiceUnavailable, "mail_outage", "Two-step sign-in by email is not working right now because the server cannot send mail. Ask an administrator.")
 }
 
 // maskEmail shows enough of an address to recognise it: "a•••@e•••.org".
@@ -119,10 +166,18 @@ func maskEmail(addr string) string {
 
 // respondSignIn writes the answer of a proven password: a session, the
 // second-step challenge, or the enrolment session.
-func (s *server) respondSignIn(w http.ResponseWriter, r *http.Request, u model.User, plan signInPlan, token, device string) {
+func (s *server) respondSignIn(w http.ResponseWriter, r *http.Request, u model.User, plan signInPlan, token, device, factor string) {
+	if plan.kind == "changed" {
+		writeJSON(w, http.StatusOK, map[string]any{"status": "password_changed"})
+		return
+	}
 	if plan.challenge() {
 		ctok, ch, err := auth.NewChallenge(r.Context(), s.db, auth.ChallengeMFA, &u.ID, "", device)
 		if err != nil {
+			writeInternal(w, r)
+			return
+		}
+		if err := auth.SetChallengeFactor(r.Context(), s.db, ch.ID, factor, plan.methods); err != nil {
 			writeInternal(w, r)
 			return
 		}
@@ -194,6 +249,12 @@ func (s *server) handleLoginMFAEmail(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	// Only what the challenge was issued with may be answered: after a reset
+	// link or an emailed sign-in code the mailbox is never the second step.
+	if !ch.HasMethod("email") {
+		writeAuthError(w, http.StatusConflict, "method_unavailable", "Email codes are not available for this sign-in.")
+		return
+	}
 	st, err := auth.LoadMFAState(r.Context(), s.db, u.ID)
 	set, serr := auth.LoadSettings(r.Context(), s.db)
 	if err != nil || serr != nil {
@@ -244,6 +305,10 @@ func (s *server) handleLoginMFA(w http.ResponseWriter, r *http.Request) {
 	}
 	ch, u, ok := s.mfaChallenge(w, r, req.Challenge)
 	if !ok {
+		return
+	}
+	if !ch.HasMethod(req.Method) {
+		writeAuthError(w, http.StatusConflict, "method_unavailable", "That method is not available for this sign-in.")
 		return
 	}
 	refund, ok := s.codeBudget(w, u.ID)
@@ -301,7 +366,7 @@ func (s *server) handleLoginMFA(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
-	s.respondSignIn(w, r, u, signInPlan{}, token, ch.Device)
+	s.respondSignIn(w, r, u, signInPlan{}, token, ch.Device, factorPassword)
 }
 
 // emailLoginAvailable: mail works and the administrator turned the switch on.
@@ -330,6 +395,9 @@ func (s *server) handleEmailLoginStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, ok := s.clientTake(w, r, "attempts"); !ok {
+		return
+	}
+	if !s.mailRequestBudget(w, r) {
 		return
 	}
 	var req struct {
@@ -418,7 +486,9 @@ func (s *server) handleEmailLoginVerify(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	budgetKey := ch.UserID
-	refund, ok := s.codeBudgetKey(w, int64Key(budgetKey), "u:"+ch.EmailNorm, ch.UserID == 0)
+	// Its own budget: guesses at a sign-in code must not drain the user's
+	// second-step budget, or anyone could lock the real user out.
+	refund, ok := s.codeBudgetKey(w, "el:"+int64Key(budgetKey), "el-u:"+ch.EmailNorm, ch.UserID == 0)
 	if !ok {
 		return
 	}
@@ -443,7 +513,7 @@ func (s *server) handleEmailLoginVerify(w http.ResponseWriter, r *http.Request) 
 		writeCodeError(w, auth.ErrChallengeInvalid, false)
 		return
 	}
-	plan, err := s.planSignIn(r.Context(), u, true)
+	plan, err := s.planSignIn(r.Context(), u, factorEmailCode)
 	if errors.Is(err, errPasswordRequired) {
 		writeAuthError(w, http.StatusForbidden, "password_login_required", "Two-step sign-in is required here: sign in with your password.")
 		return
@@ -459,5 +529,5 @@ func (s *server) handleEmailLoginVerify(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
-	s.respondSignIn(w, r, u, plan, token, ch.Device)
+	s.respondSignIn(w, r, u, plan, token, ch.Device, factorEmailCode)
 }
