@@ -1,0 +1,989 @@
+{
+ "version": 1,
+ "rule": "reader/smart-readings",
+ "scoreCases": [
+  {
+   "stability": 0,
+   "score": 0
+  },
+  {
+   "stability": 1,
+   "score": 12
+  },
+  {
+   "stability": 30,
+   "score": 58
+  },
+  {
+   "stability": 100,
+   "score": 78
+  },
+  {
+   "stability": 110,
+   "score": 80
+  },
+  {
+   "stability": 200,
+   "score": 90
+  },
+  {
+   "stability": 365,
+   "score": 100
+  }
+ ],
+ "masteryThreshold": 80,
+ "indexCases": [
+  {
+   "name": "vocab cards only, the best card per entry",
+   "cards": [
+    {
+     "id": "a",
+     "kind": "vocab",
+     "entryId": 1,
+     "stability": 100
+    },
+    {
+     "id": "b",
+     "kind": "vocab",
+     "entryId": 1,
+     "stability": 200
+    },
+    {
+     "id": "c",
+     "kind": "sentence",
+     "entryId": 2,
+     "stability": 365
+    },
+    {
+     "id": "d",
+     "kind": "reverse",
+     "entryId": 3,
+     "stability": 365
+    },
+    {
+     "id": "e",
+     "kind": "vocab",
+     "entryId": 4,
+     "stability": null
+    },
+    {
+     "id": "f",
+     "kind": "vocab",
+     "entryId": 5,
+     "stability": 110
+    }
+   ],
+   "expect": {
+    "1": 90,
+    "5": 80
+   }
+  }
+ ],
+ "cases": [
+  {
+   "name": "never: no generated readings",
+   "lang": "zh",
+   "readings": "never",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {
+    "1": 90,
+    "2": 40
+   },
+   "expect": []
+  },
+  {
+   "name": "always: nothing concealed",
+   "lang": "zh",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {
+    "1": 90,
+    "2": 40
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": false,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "smart: the known word is concealed, the unknown shown",
+   "lang": "zh",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {
+    "1": 90,
+    "2": 40
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": true,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "smart: score equal to the threshold is known",
+   "lang": "zh",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {
+    "1": 80,
+    "2": 79
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": true,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "smart: a custom threshold",
+   "lang": "zh",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 60,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {
+    "1": 60,
+    "2": 59
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": true,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "smart: an entry without a score is unknown",
+   "lang": "zh",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "surface": "世界",
+     "lemma": "世界",
+     "entries": [
+      2
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "shì jiè"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": false,
+     "source": "dict"
+    },
+    {
+     "start": 2,
+     "end": 4,
+     "rt": "shì jiè",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "smart: only the entry whose reading is shown counts, never a mastered homograph",
+   "lang": "zh",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      3,
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    }
+   ],
+   "scores": {
+    "1": 90,
+    "3": 10
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "nǐ hǎo",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "a match without a reading gets no piece",
+   "lang": "zh",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "你好世界"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": null
+    }
+   ],
+   "scores": {
+    "1": 90
+   },
+   "expect": []
+  },
+  {
+   "name": "a match without Han characters gets no piece",
+   "lang": "zh",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "abc"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 3,
+     "surface": "abc",
+     "lemma": "abc",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "a b c"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": []
+  },
+  {
+   "name": "ja: furigana only over the kanji, inflection stays plain",
+   "lang": "ja",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "食べました"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 5,
+     "surface": "食べました",
+     "lemma": "食べる",
+     "entries": [
+      5
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "たべる"
+     }
+    }
+   ],
+   "scores": {
+    "5": 10
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 1,
+     "rt": "た",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "ja: a known word is concealed",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "食べました"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 5,
+     "surface": "食べました",
+     "lemma": "食べる",
+     "entries": [
+      5
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "たべる"
+     }
+    }
+   ],
+   "scores": {
+    "5": 95
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 1,
+     "rt": "た",
+     "concealed": true,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "ja: no alignment, no furigana",
+   "lang": "ja",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "居た"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "居た",
+     "lemma": "いる",
+     "entries": [
+      5
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "いる"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": []
+  },
+  {
+   "name": "astral characters count once",
+   "lang": "zh",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "𠮷你好"
+    }
+   ],
+   "matches": [
+    {
+     "start": 1,
+     "end": 3,
+     "surface": "你好",
+     "lemma": "你好",
+     "entries": [
+      1
+     ],
+     "reading": {
+      "type": "pinyin",
+      "value": "nǐ hǎo"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": [
+    {
+     "start": 1,
+     "end": 3,
+     "rt": "nǐ hǎo",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "book ruby shown in never mode",
+   "lang": "ja",
+   "readings": "never",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    },
+    {
+     "text": "を読む"
+    }
+   ],
+   "matches": [],
+   "scores": {},
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "かんじ",
+     "concealed": false,
+     "source": "book"
+    }
+   ]
+  },
+  {
+   "name": "bookRuby false hides book ruby in every mode",
+   "lang": "ja",
+   "readings": "always",
+   "bookRuby": false,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    },
+    {
+     "text": "を読む"
+    }
+   ],
+   "matches": [],
+   "scores": {},
+   "expect": []
+  },
+  {
+   "name": "bookRuby false: a match over the ruby run gets its generated reading",
+   "lang": "ja",
+   "readings": "always",
+   "bookRuby": false,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    },
+    {
+     "text": "を読む"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "漢字",
+     "lemma": "漢字",
+     "entries": [
+      7
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "かんじ"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "かんじ",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "book ruby wins over a generated reading on the same word",
+   "lang": "ja",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    },
+    {
+     "text": "を読む"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "漢字",
+     "lemma": "漢字",
+     "entries": [
+      7
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "かんじ"
+     }
+    },
+    {
+     "start": 3,
+     "end": 5,
+     "surface": "読む",
+     "lemma": "読む",
+     "entries": [
+      8
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "よむ"
+     }
+    }
+   ],
+   "scores": {
+    "7": 0,
+    "8": 0
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "かんじ",
+     "concealed": false,
+     "source": "book"
+    },
+    {
+     "start": 3,
+     "end": 4,
+     "rt": "よ",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
+  },
+  {
+   "name": "smart: book ruby concealed when all its kanji are in known matches",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    },
+    {
+     "text": "を読む"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "漢字",
+     "lemma": "漢字",
+     "entries": [
+      7
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "かんじ"
+     }
+    }
+   ],
+   "scores": {
+    "7": 90
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "かんじ",
+     "concealed": true,
+     "source": "book"
+    }
+   ]
+  },
+  {
+   "name": "smart: book ruby stays shown when only part of its kanji is known",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    },
+    {
+     "text": "を読む"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 1,
+     "surface": "漢",
+     "lemma": "漢",
+     "entries": [
+      7
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "かん"
+     }
+    }
+   ],
+   "scores": {
+    "7": 90
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "かんじ",
+     "concealed": false,
+     "source": "book"
+    }
+   ]
+  },
+  {
+   "name": "smart: characters outside any match are never known",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    },
+    {
+     "text": "を読む"
+    }
+   ],
+   "matches": [],
+   "scores": {},
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "かんじ",
+     "concealed": false,
+     "source": "book"
+    }
+   ]
+  },
+  {
+   "name": "smart: book ruby spanning two known matches is concealed",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    },
+    {
+     "text": "を読む"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 1,
+     "surface": "漢",
+     "lemma": "漢",
+     "entries": [
+      7
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "かん"
+     }
+    },
+    {
+     "start": 1,
+     "end": 2,
+     "surface": "字",
+     "lemma": "字",
+     "entries": [
+      9
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "じ"
+     }
+    }
+   ],
+   "scores": {
+    "7": 90,
+    "9": 85
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "かんじ",
+     "concealed": true,
+     "source": "book"
+    }
+   ]
+  }
+ ]
+}
