@@ -1,0 +1,30 @@
+{
+  "_doc": "When a PATCH of an administrator route needs the acting administrator's re-authentication (currentPassword, plus code from an administrator with an authenticator; see README.md). Always: grant admin, create an administrator, delete another user, issue a reset link, reset another user's two-step sign-in, save or remove the mail settings, server backup. For PATCH /api/admin/users/{id} and PATCH /api/admin/settings/auth it depends on the change, as listed here: a client asks for the password exactly when reauth is true, the server enforces the same rule. userPatch: target.admin is the target's role before the change, self whether the target is the acting administrator; a present email key (a string or null) is a change of the address. authSettings: current is the stored settings; rank of registration closed < invite < open (opening needs reauth), of emailPolicy off < optional < required (lowering needs reauth); turning mfaEnforced off, turning emailCodeLogin on and signOutOthers: true need reauth; tightening and no-op values do not.",
+  "userPatch": [
+    {"name": "grant admin", "self": false, "target": {"admin": false}, "patch": {"admin": true}, "reauth": true},
+    {"name": "demote another administrator", "self": false, "target": {"admin": true}, "patch": {"admin": false}, "reauth": true},
+    {"name": "demote oneself", "self": true, "target": {"admin": true}, "patch": {"admin": false}, "reauth": false},
+    {"name": "admin false on a plain user (no-op)", "self": false, "target": {"admin": false}, "patch": {"admin": false}, "reauth": false},
+    {"name": "disable another administrator", "self": false, "target": {"admin": true}, "patch": {"disabled": true}, "reauth": true},
+    {"name": "disable a plain user", "self": false, "target": {"admin": false}, "patch": {"disabled": true}, "reauth": false},
+    {"name": "enable an administrator", "self": false, "target": {"admin": true}, "patch": {"disabled": false}, "reauth": false},
+    {"name": "set another user's email", "self": false, "target": {"admin": false}, "patch": {"email": "new@example.org"}, "reauth": true},
+    {"name": "set one's own email", "self": true, "target": {"admin": true}, "patch": {"email": "new@example.org"}, "reauth": true},
+    {"name": "remove an email", "self": false, "target": {"admin": false}, "patch": {"email": null}, "reauth": true},
+    {"name": "require a password change", "self": false, "target": {"admin": true}, "patch": {"mustChangePassword": true}, "reauth": false}
+  ],
+  "authSettings": [
+    {"name": "turn two-step enforcement off", "current": {"registration": "closed", "emailPolicy": "optional", "mfaEnforced": true, "emailCodeLogin": false}, "patch": {"mfaEnforced": false}, "reauth": true},
+    {"name": "turn two-step enforcement on", "current": {"registration": "closed", "emailPolicy": "optional", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"mfaEnforced": true}, "reauth": false},
+    {"name": "turn it on and sign everyone else out", "current": {"registration": "closed", "emailPolicy": "optional", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"mfaEnforced": true, "signOutOthers": true}, "reauth": true},
+    {"name": "mfaEnforced false while already off (no-op)", "current": {"registration": "closed", "emailPolicy": "optional", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"mfaEnforced": false}, "reauth": false},
+    {"name": "allow sign-in by emailed code", "current": {"registration": "closed", "emailPolicy": "optional", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"emailCodeLogin": true}, "reauth": true},
+    {"name": "stop sign-in by emailed code", "current": {"registration": "closed", "emailPolicy": "optional", "mfaEnforced": false, "emailCodeLogin": true}, "patch": {"emailCodeLogin": false}, "reauth": false},
+    {"name": "open registration", "current": {"registration": "closed", "emailPolicy": "off", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"registration": "open"}, "reauth": true},
+    {"name": "invites only, from closed", "current": {"registration": "closed", "emailPolicy": "off", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"registration": "invite"}, "reauth": true},
+    {"name": "close registration", "current": {"registration": "open", "emailPolicy": "off", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"registration": "closed"}, "reauth": false},
+    {"name": "lower the email policy", "current": {"registration": "closed", "emailPolicy": "required", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"emailPolicy": "optional"}, "reauth": true},
+    {"name": "raise the email policy", "current": {"registration": "closed", "emailPolicy": "off", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"emailPolicy": "required"}, "reauth": false},
+    {"name": "an unknown value is not a lowering (the server answers 422 invalid_setting)", "current": {"registration": "closed", "emailPolicy": "optional", "mfaEnforced": false, "emailCodeLogin": false}, "patch": {"registration": "everyone"}, "reauth": false}
+  ]
+}

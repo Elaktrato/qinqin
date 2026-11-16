@@ -61,6 +61,10 @@ func (s *server) handlePatchAuthSettings(w http.ResponseWriter, r *http.Request)
 		// SignOutOthers, with mfaEnforced turned on, also ends every session
 		// except the acting administrator's current one.
 		SignOutOthers bool `json:"signOutOthers"`
+		// Re-authentication when the change lowers a protection or signs
+		// everyone out (settingsPatchNeedsReauth).
+		CurrentPassword string `json:"currentPassword"`
+		Code            string `json:"code"`
 	}
 	if !readAccountBodyStrict(w, r, &req) {
 		return
@@ -69,8 +73,16 @@ func (s *server) handlePatchAuthSettings(w http.ResponseWriter, r *http.Request)
 		writeAuthError(w, http.StatusConflict, "mail_unavailable", "Set up email first: this switch needs a working mail server.")
 		return
 	}
-	set, err := auth.UpdateSettings(r.Context(), s.db, admin.ID, auth.SettingsPatch{
-		Registration: req.Registration, EmailPolicy: req.EmailPolicy, MFAEnforced: req.MFAEnforced, EmailCodeLogin: req.EmailCodeLogin})
+	patch := auth.SettingsPatch{Registration: req.Registration, EmailPolicy: req.EmailPolicy, MFAEnforced: req.MFAEnforced, EmailCodeLogin: req.EmailCodeLogin}
+	cur, err := auth.LoadSettings(r.Context(), s.db)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	if settingsPatchNeedsReauth(cur, patch, req.SignOutOthers) && !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
+		return
+	}
+	set, err := auth.UpdateSettings(r.Context(), s.db, admin.ID, patch)
 	switch {
 	case errors.Is(err, auth.ErrInvalidSetting):
 		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_setting", err.Error())

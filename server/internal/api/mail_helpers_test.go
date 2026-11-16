@@ -110,11 +110,15 @@ func newMailEnv(t *testing.T, o mailOpts) *mailEnv {
 	return e
 }
 
-// smtpPayload is a valid PUT body for the fake server.
+// smtpPayload is a valid PUT body for the fake server, with the owner's
+// re-authentication (an owner without an authenticator).
 func (e *mailEnv) smtpPayload() map[string]any {
 	return map[string]any{"host": e.smtp.Host, "port": e.smtp.Port, "tls": "starttls", "username": "mailer", "password": testSMTPPassword,
-		"fromAddress": "qinqin@example.org", "fromName": "qinqin", "publicUrl": "https://words.example.org"}
+		"fromAddress": "qinqin@example.org", "fromName": "qinqin", "publicUrl": "https://words.example.org", "currentPassword": "secret-pass-owner"}
 }
+
+// ownerReauth is the owner's re-authentication body (no authenticator).
+var ownerReauth = map[string]any{"currentPassword": "secret-pass-owner"}
 
 func (e *mailEnv) configure(t *testing.T) {
 	t.Helper()

@@ -12,7 +12,7 @@ import (
 
 // A pending reset link is a second way into the account: every action that
 // contains the account (password change, forced change, disable, sign out
-// everywhere, CLI recovery) must kill it in the same transaction.
+// everywhere, CLI recovery, a two-step sign-in reset) must kill it in the same transaction.
 func TestContainmentActionsKillPendingResetLinks(t *testing.T) {
 	ctx := context.Background()
 	actions := map[string]func(*sql.DB, *auth.Users, int64, int64) error{
@@ -36,6 +36,7 @@ func TestContainmentActionsKillPendingResetLinks(t *testing.T) {
 			return err
 		},
 		"RevokePendingResets": func(_ *sql.DB, u *auth.Users, admin, id int64) error { return u.RevokePendingResets(ctx, admin, id) },
+		"ResetUserMFA":        func(_ *sql.DB, u *auth.Users, admin, id int64) error { return u.ResetUserMFA(ctx, admin, id) },
 	}
 	for name, act := range actions {
 		sqlDB, users := usersFixture(t)

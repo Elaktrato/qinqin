@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { Reauth } from '$lib/admin/reauth';
 
 export type Registration = 'closed' | 'invite' | 'open';
 export type EmailPolicy = 'off' | 'optional' | 'required';
@@ -18,7 +19,7 @@ export function getAuthSettings(): Promise<AuthSettings> {
 }
 
 export function patchAuthSettings(
-	patch: Partial<Pick<AuthSettings, 'registration' | 'emailPolicy' | 'mfaEnforced' | 'emailCodeLogin'>> & { signOutOthers?: boolean }
+	patch: Partial<Pick<AuthSettings, 'registration' | 'emailPolicy' | 'mfaEnforced' | 'emailCodeLogin'>> & { signOutOthers?: boolean } & Partial<Reauth>
 ): Promise<AuthSettings> {
 	return api('/api/admin/settings/auth', { method: 'PATCH', body: patch });
 }
@@ -97,7 +98,8 @@ export interface SmtpPayload {
 }
 
 export const getSmtp = (): Promise<SmtpSettings> => api('/api/admin/settings/smtp');
-export const putSmtp = (body: SmtpPayload): Promise<SmtpSettings> => api('/api/admin/settings/smtp', { method: 'PUT', body });
-export const deleteSmtp = (): Promise<void> => api('/api/admin/settings/smtp', { method: 'DELETE' });
+/** Saving re-authenticates the acting administrator (password, and code with an authenticator). */
+export const putSmtp = (body: SmtpPayload & Reauth): Promise<SmtpSettings> => api('/api/admin/settings/smtp', { method: 'PUT', body });
+export const deleteSmtp = (reauth: Reauth): Promise<void> => api('/api/admin/settings/smtp', { method: 'DELETE', body: { ...reauth } });
 export const testSmtp = (body: { to?: string; draft?: SmtpPayload }): Promise<{ sent: boolean }> =>
 	api('/api/admin/settings/smtp/test', { method: 'POST', body });

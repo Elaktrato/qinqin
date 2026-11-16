@@ -332,20 +332,25 @@ func SetMFAEmail(ctx context.Context, ex execer, userID int64, on bool) error {
 }
 
 // ResetMFA removes every second factor of the user (authenticator, recovery
-// codes, the email method flag) and deletes their sessions and access
-// tokens, in the caller's transaction.
-func ResetMFA(ctx context.Context, ex execer, userID int64) error {
+// codes, the email method flag), deletes their sessions and access tokens
+// and their pending reset links, in the caller's transaction.
+// It returns how many sessions and tokens it revoked.
+func ResetMFA(ctx context.Context, ex execer, userID int64) (sessions, tokens int64, err error) {
 	if err := RemoveTOTP(ctx, ex, userID); err != nil {
-		return err
+		return 0, 0, err
 	}
 	if err := SetMFAEmail(ctx, ex, userID, false); err != nil {
-		return err
+		return 0, 0, err
 	}
 	if _, err := ex.ExecContext(ctx, `DELETE FROM auth_challenges WHERE user_id = ? AND kind = 'mfa'`, userID); err != nil {
-		return fmt.Errorf("drop mfa challenges: %w", err)
+		return 0, 0, fmt.Errorf("drop mfa challenges: %w", err)
 	}
-	_, _, err := revokeCredentials(ctx, ex, userID, 0)
-	return err
+	sessions, tokens, err = revokeCredentials(ctx, ex, userID, 0)
+	if err != nil {
+		return 0, 0, err
+	}
+	// A pending reset link is a second way in: it dies with the reset.
+	return sessions, tokens, dropPendingResets(ctx, ex, userID)
 }
 
 // Rotate re-seals authenticator secrets (confirmed and pending) that were

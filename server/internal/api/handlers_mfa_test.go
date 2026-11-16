@@ -338,4 +338,101 @@ func TestAdminResetsAUsersTwoFactor(t *testing.T) {
 	}
 }
 
+func TestAdminMFAResetAsksAnAdminWithTwoFactorForTheCode(t *testing.T) {
+	e := newMailEnv(t, mailOpts{configure: true})
+	bob := registerUser(t, e.ts.URL, "bobby", e.owner)
+	e.enrolTOTP(t, bob, "secret-pass-bobby")
+	secret, _ := e.enrolTOTP(t, e.owner, "secret-pass-owner")
+	e.clk.advance(31 * time.Second) // the enrolment's code is spent for its step
+	path := "/api/admin/users/" + userIDOf(t, e, "bobby") + "/mfa/reset"
+	bobHasTOTP := func() bool {
+		var n int
+		e.db.QueryRow(`SELECT COUNT(*) FROM mfa_totp t JOIN users u ON u.id = t.user_id WHERE u.username = 'bobby'`).Scan(&n)
+		return n == 1
+	}
+	var eb errBody
+	r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner"})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 403 || eb.Error != "code_invalid" || !bobHasTOTP() {
+		t.Fatalf("without a code = %d %+v (bob keeps totp: %v)", r.StatusCode, eb, bobHasTOTP())
+	}
+	r = doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner", "code": "000000"})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 403 || eb.Error != "code_invalid" || !bobHasTOTP() {
+		t.Fatalf("wrong code = %d %+v", r.StatusCode, eb)
+	}
+	// the code does not replace the password
+	r = doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "wrong-password-x", "code": e.code(secret, 0)})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 403 || eb.Error != "wrong_password" || !bobHasTOTP() {
+		t.Fatalf("wrong password with a right code = %d %+v", r.StatusCode, eb)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner", "code": e.code(secret, 0)}); r.StatusCode != 204 {
+		t.Fatalf("with the right code = %d", r.StatusCode)
+	}
+	if bobHasTOTP() || e.sessionCount(t, "bobby") != 0 {
+		t.Errorf("after reset: totp %v, sessions %d", bobHasTOTP(), e.sessionCount(t, "bobby"))
+	}
+}
+
 func totpAt(secret string, at time.Time) (string, error) { return auth.TOTPCode(secret, at) }
+
+// The reset leaves no trace of a second step: a pending (unconfirmed)
+// authenticator setup, an open second-step challenge, personal access
+// tokens, and it answers for oneself before any password is looked at.
+func TestAdminMFAResetRemovesPendingSetupChallengesAndTokens(t *testing.T) {
+	e := newMailEnv(t, mailOpts{configure: true})
+	setAuthSetting(t, e.db, "email_policy", "optional")
+	bob := registerUser(t, e.ts.URL, "bobby", e.owner)
+	var tk struct {
+		Token string `json:"token"`
+	}
+	r := doJSON(t, "POST", e.ts.URL, "/api/account/tokens", bob, map[string]any{"name": "phone", "scope": "read", "expiresInDays": 30, "currentPassword": "secret-pass-bobby"})
+	decodeJSON(t, r, &tk)
+	if r.StatusCode != 201 || tk.Token == "" {
+		t.Fatalf("create token = %d", r.StatusCode)
+	}
+	if r := doJSON(t, "GET", e.ts.URL, "/api/workspaces", tk.Token, nil); r.StatusCode != 200 {
+		t.Fatalf("token before reset = %d", r.StatusCode)
+	}
+	// emailed codes as the second step, and an authenticator setup begun but not confirmed
+	e.db.Exec(`UPDATE users SET email = 'bobby@example.org', email_norm = 'bobby@example.org', email_verified_at = 't', mfa_email = 1 WHERE username = 'bobby'`)
+	if r := doJSON(t, "POST", e.ts.URL, "/api/account/mfa/totp/setup", bob, map[string]any{"password": "secret-pass-bobby"}); r.StatusCode != 200 {
+		t.Fatalf("setup = %d", r.StatusCode)
+	}
+	if st, body := e.loginAs(t, "bobby"); st != 200 || body["status"] != "mfa_required" {
+		t.Fatalf("login = %d %v", st, body)
+	}
+	count := func(q string) int {
+		var n int
+		e.db.QueryRow(q).Scan(&n)
+		return n
+	}
+	const pending = `SELECT COUNT(*) FROM mfa_totp WHERE user_id = (SELECT id FROM users WHERE username = 'bobby')`
+	const challenges = `SELECT COUNT(*) FROM auth_challenges WHERE kind = 'mfa' AND user_id = (SELECT id FROM users WHERE username = 'bobby')`
+	if count(pending) != 1 || count(challenges) == 0 {
+		t.Fatalf("before: setup rows %d, challenges %d", count(pending), count(challenges))
+	}
+	// one's own id is refused before the password is checked
+	var eb errBody
+	r = doJSON(t, "POST", e.ts.URL, "/api/admin/users/"+userIDOf(t, e, "owner")+"/mfa/reset", e.owner, map[string]any{"currentPassword": "wrong-password-x"})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 409 || eb.Error != "self_target" {
+		t.Errorf("self with a wrong password = %d %q, want 409 self_target", r.StatusCode, eb.Error)
+	}
+	if r := doJSON(t, "POST", e.ts.URL, "/api/admin/users/"+userIDOf(t, e, "bobby")+"/mfa/reset", e.owner, map[string]any{"currentPassword": "secret-pass-owner"}); r.StatusCode != 204 {
+		t.Fatalf("reset = %d", r.StatusCode)
+	}
+	if count(pending) != 0 || count(challenges) != 0 {
+		t.Errorf("after: setup rows %d, challenges %d", count(pending), count(challenges))
+	}
+	if r := doJSON(t, "GET", e.ts.URL, "/api/workspaces", tk.Token, nil); r.StatusCode != 401 {
+		t.Errorf("token after reset = %d, want 401", r.StatusCode)
+	}
+	// the audit row says how much was revoked (counts only, never a secret)
+	var detail string
+	e.db.QueryRow(`SELECT detail FROM auth_audit WHERE action = 'mfa_reset'`).Scan(&detail)
+	if detail != `{"revoked":1,"tokens":1}` {
+		t.Errorf("audit detail = %s", detail)
+	}
+}

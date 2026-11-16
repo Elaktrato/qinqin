@@ -20,7 +20,7 @@ func TestSMTPSettingsNeverReturnThePassword(t *testing.T) {
 	e := newMailEnv(t, mailOpts{})
 	// before: defaults, not configured
 	var v map[string]any
-	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil), &v)
+	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth), &v)
 	if v["configured"] != false || v["password"] != "none" || v["secret"] != "ok" || v["port"].(float64) != 587 || v["tls"] != "starttls" {
 		t.Fatalf("defaults = %v", v)
 	}
@@ -29,7 +29,7 @@ func TestSMTPSettingsNeverReturnThePassword(t *testing.T) {
 	if put.StatusCode != 200 || strings.Contains(putBody, testSMTPPassword) {
 		t.Fatalf("PUT = %d %s", put.StatusCode, putBody)
 	}
-	get := doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil)
+	get := doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth)
 	body := readBody(t, get.Body)
 	if strings.Contains(body, testSMTPPassword) || !strings.Contains(body, `"password":"set"`) || !strings.Contains(body, `"configured":true`) {
 		t.Fatalf("GET = %s", body)
@@ -69,7 +69,7 @@ func TestSMTPPasswordKeepClearReplace(t *testing.T) {
 	e := newMailEnv(t, mailOpts{configure: true})
 	state := func() string {
 		var v struct{ Password string }
-		decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil), &v)
+		decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth), &v)
 		return v.Password
 	}
 	// keep: password absent, same connection (only the from name changes)
@@ -113,6 +113,8 @@ func TestSMTPPasswordNeverFollowsANewHost(t *testing.T) {
 		"port":     func(p map[string]any) { p["port"] = e.smtp.Port + 1 },
 		"tls":      func(p map[string]any) { p["tls"] = "tls" },
 		"username": func(p map[string]any) { p["username"] = "someone-else" },
+		// reset links and sign-in mails carry the public URL: a new one is a new target too
+		"publicUrl": func(p map[string]any) { p["publicUrl"] = "https://evil.attacker.test" },
 	} {
 		p := e.smtpPayload()
 		delete(p, "password")
@@ -195,7 +197,7 @@ func TestSMTPWithoutSecretStoresNoPassword(t *testing.T) {
 		t.Fatalf("unauthenticated relay = %d", r.StatusCode)
 	}
 	var v struct{ Secret string }
-	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil), &v)
+	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth), &v)
 	if v.Secret != "missing" {
 		t.Errorf("secret = %q", v.Secret)
 	}
@@ -259,14 +261,14 @@ func TestSMTPDeleteAndAuthorization(t *testing.T) {
 			}
 		}
 	}
-	if r := doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil); r.StatusCode != 204 {
+	if r := doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth); r.StatusCode != 204 {
 		t.Fatalf("delete = %d", r.StatusCode)
 	}
 	var v struct {
 		Configured bool
 		Password   string
 	}
-	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil), &v)
+	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth), &v)
 	if v.Configured || v.Password != "none" {
 		t.Errorf("after delete = %+v", v)
 	}
@@ -316,13 +318,13 @@ func TestOptionsFollowTheMailConfiguration(t *testing.T) {
 	if !st.Mail.Configured {
 		t.Error("settings/auth does not report mail configured")
 	}
-	if r := doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"emailCodeLogin": true}); r.StatusCode != 200 {
+	if r := doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"emailCodeLogin": true, "currentPassword": "secret-pass-owner"}); r.StatusCode != 200 {
 		t.Errorf("emailCodeLogin with mail = %d", r.StatusCode)
 	}
 	if _, c := opts(); !c {
 		t.Error("emailCodeLogin option not on")
 	}
-	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil)
+	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth)
 	if r, c := opts(); r || c {
 		t.Errorf("after removing SMTP: reset=%v code=%v", r, c)
 	}
