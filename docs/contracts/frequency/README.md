@@ -69,3 +69,19 @@ UTF-8, FNV-1a 32; `re.sub("[^a-z0-9-]", "-", lower)` per code point); its first 
 spec's examples. `known.json` stabilities were chosen with the score formula (108 -> 79, 109 -> 80,
 150 -> 85, 200 -> 90). `new-order.json`, `deckcfg-new-order.json` and `starter-resolution.json` are
 hand-written from the rules above.
+
+## Real-app check (2026-11-16 build)
+
+Against a server built from a scratch copy (embedded web build; `jmdict`, `jiten-frequency`, `cedict`,
+`hsk-words` seeded; 127.0.0.1 on a free port; 4 shared cores): `GET /api/frequency-packs` carries
+`packId: "jiten-frequency"`; both new routes answer 401 without a token; the first
+`GET /api/frequency-packs/1/top?size=2000` took 1.46 s (1.26 s again after a restart; budget 2 s), the
+second 0.10 s from the cache, 2000 entries, 656 KB, byte-identical for two users and after the restart;
+Top 500 is the prefix of Top 1000 and Top 1000 of Top 2000; `size=3` is 400, an unknown pack 404. The first
+20 words are particles and basic words (は, に, を, が, と, も, だ, 為る/する, か, から, …); two kana rows
+resolve to a usually-kana homograph by the shared level-word rule (`の` -> 乃, `で` -> 出), see the spec's
+homograph risk. Ranks of 600 entries in two calls equal the 600 one-by-one answers, in request order, and
+are identical for a second user; `language: "zh"` answers `{"pack":null,"ranks":[]}`. The add plan of
+Top 500 for a fresh user (planned by the web modules, pushed through `POST /api/sync/push` in 3 requests of
+at most 200 rows) wrote 502 rows (deck, `deckcfg` with `newOrder: {by: "frequency"}`, 500 cards), all
+accepted; the next plan was empty; another user saw none of the rows.

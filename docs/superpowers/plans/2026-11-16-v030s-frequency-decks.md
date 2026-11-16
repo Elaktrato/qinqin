@@ -338,5 +338,85 @@ the check below finds plugin rows are not exported generically.
 
 ## Execution record
 
-(empty — filled in by the builder: deviations, rulings made while building, test-first notes, what was not
-verified)
+Built 2026-11-16 by one implementer, inline, task by task, in the order 1–15 (no parallel implementers, no
+independent per-task reviewer: the orchestrator reviews the branch). One commit per task. Every task was
+test-first: the test was written and run and seen failing (missing module/function, or the asserted
+behaviour) before the implementation; failures seen were the expected ones.
+
+**Rulings made while building**
+
+- Ruling: `parseNewOrder` normalises a stored order to its shape (fields beyond `by`/`packId` dropped); a
+  malformed `newOrder` is dropped, not kept in `extra` — one shape for every reader — cost if wrong: a newer
+  client's extra field inside `newOrder` is lost on a read-modify-write by this version.
+- Ruling: `added` is stored as no `newOrder` field (`saveDeckNewOrder`) and `null` compares equal to added in
+  the `'deck'` resolution — absent = added everywhere — cost if wrong: none.
+- Ruling: `StudySessionConfig.newOrder` is optional (absent = `'deck'`), and an unreadable stored order
+  loads as `'deck'` instead of discarding the whole setup — old tabs keep their setup, existing session
+  tests unchanged — cost if wrong: none.
+- Ruling: the deck-settings "New cards" select is labelled "Order of new cards" under the heading "New
+  cards" (the daily-limits editor already has a "New cards" field) — cost if wrong: wording.
+- Ruling: decks-mode "By level" offers every installed scheme of the language, character schemes too (as
+  the spec says); a word deck ordered by a character scheme gets no keys and stays in the order added —
+  cost if wrong: one filter.
+- Ruling: `TopCache.Get` answers a smaller size from the cached Top 2000 **exactly** as `Top(size)` would (it
+  keeps each entry's row position and applies the `4 × size` row cap per size), so the contract fixture holds
+  for the cache too; the first computation runs with `context.WithoutCancel` and is shared by concurrent
+  callers; a failure is not cached — cost if wrong: none (tested with `-race`).
+- Ruling: the session's ranks are asked only for "candidate new" entries (`candidateNewEntries`: never-reviewed
+  cards of the selected decks; level entries lacking a reviewed card of a selected kind) — cost if wrong: a
+  few ranks too many, never a wrong order.
+- Ruling: a level order offline or failing uses a connection note too (`OFFLINE_NOTE`, the frequency text)
+  — one note — cost if wrong: wording.
+- Ruling: the decks list's starter group loads Top 2000 once per pack on expand and shows "N of M in your
+  decks" for 500/1000 from its prefix (the sizes are nested); the detail page loads the exact size — cost if
+  wrong: the list count can differ from the detail count only for a pack where fewer than 500 (1000) of the
+  first 2000 (4000) rows resolve.
+- Ruling: a failed frequency-pack list on the decks page is a quiet hint, not an alert — starter decks are
+  an extra and an alert would compete with the page's real errors — cost if wrong: none.
+- Ruling: `loadRawStudyData` also returns the live `deckSettings` (optional field, additive) so the add knows
+  whether a live `deckcfg` row exists — cost if wrong: none.
+
+**Deviations from the plan**
+
+- Task 11: the async part of the session order (resolve against decks/installed data, load ranks or level
+  keys, notes) is a new tested module `study/sessionOrder.ts` (+ `candidateNewEntries`) so the session page
+  stays thin; the setup page has a dom test (the harness existed).
+- Task 13/14: the starter detail is its own component `decks/StarterDeckDetail.svelte` (+ dom test) instead
+  of a variant inside `SystemDeckDetail.svelte`, routed as `system-frequency` from `FlashcardsPage.svelte`;
+  `SystemDeckDetail` and its tests are untouched. Its add has no target picker (always the owned copy) and a
+  simple retry. `DeckDetail.svelte`'s "Copied from" moved into a tested `copiedFrom()` in `systemDecks.ts`
+  (it had to learn the third source kind).
+- Task 8: the Top route checks the size before the pack (an unknown pack with a bad size is 400); a
+  non-numeric pack id is 404. `language` is lowercased and trimmed.
+- Task 1: the overview's `deck:*` row also names `source: {type:"frequency", packId, size}` and `d-frq-…`;
+  `decks/README.md` links the frequency folder.
+
+**Backup check (Task 15 step 1):** `server/internal/backup/export.go` `writePluginData` exports every live
+`plugin_data` row of the user (`WHERE user_id = ? AND deleted_at IS NULL`), so `deckcfg:*` (with `newOrder`),
+the `d-frq-*` deck rows and their cards are in the archive; no contract change needed. Entry ids inside
+cards are remapped on restore as before; `newOrder.packId` and `source.packId` are manifest ids and need no
+remap.
+
+**Real-app check (Task 15 step 2):** done as planned, results in `docs/contracts/frequency/README.md`
+("Real-app check"): first Top 2000 1.46 s (1.26 s after a restart) within the 2 s budget, 0.10 s cached;
+nested sizes; identical answers for two users and after a cache rebuild; 600 ranks batched = one-by-one; zh
+`pack: null`; Top 500 add pushed (502 rows, 3 requests), second plan empty, other user sees nothing. The
+push was driven by a temporary vitest file in a scratch copy of `apps/web` (never in the worktree). Server
+killed, scratch copy deleted. **Finding:** the shared word resolution maps the kana rows `の` and `で` to the
+usually-kana homographs 乃 and 出 (kana fallback ranks by priority), so the particles themselves are not in
+the starter decks; this is the spec's homograph risk of reusing the level-word rule and is left as a
+follow-up (a kana-only preference for kana rows would change level imports too).
+
+**Gates (final):** full Go `./...` (proxy variables unset): gofmt clean, vet clean, 35 packages ok, only
+`internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` failed (the known no-IPv6 sandbox failure);
+`-race` on `./internal/freq` ok. Web: `npm run check` 0 errors, `npm test` 313 files / 4920 tests passed,
+`npm run build` ok; Node 26 full vitest 313 files / 4920 tests passed; `node --test scripts/*.test.mjs`
+91 passed; `check-sources` and `gen-api-docs --check` ok.
+
+**Not verified:** no browser was used (by rule): the setup select, the deck-settings select, the starter
+group and detail were checked with jsdom tests and the server routes with the real-app check, not by
+looking at the pages; layout at phone width is not checked. A Chinese frequency order/starter deck was not
+exercised end to end (no Chinese pack is installable here without unclear-licence data); the zh path is
+covered by `pack: null` and the hint. Level-order sessions were tested in unit tests only, not against a
+real HSK level. Performance of a ranks load for a very large deck (5,000 new cards) was not measured.
+
