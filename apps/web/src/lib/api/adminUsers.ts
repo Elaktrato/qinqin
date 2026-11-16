@@ -82,3 +82,15 @@ export function deletionPreview(id: number): Promise<DeletionPreview> {
 export function deleteUser(id: number, confirm: string, currentPassword: string): Promise<void> {
 	return api(`/api/admin/users/${id}`, { method: 'DELETE', body: { confirm, currentPassword } });
 }
+
+/**
+ * resetUserMfa removes another user's second steps and signs them out
+ * everywhere. `code` is the acting administrator's own authenticator or
+ * recovery code, needed when they have an authenticator.
+ */
+export function resetUserMfa(id: number, currentPassword: string, code?: string): Promise<void> {
+	return api(`/api/admin/users/${id}/mfa/reset`, {
+		method: 'POST',
+		body: code === undefined ? { currentPassword } : { currentPassword, code }
+	});
+}

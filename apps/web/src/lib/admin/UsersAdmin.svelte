@@ -14,6 +14,8 @@
 	import { passwordHint } from '$lib/account/passwordRules';
 	import { user as me } from '$lib/auth';
 	import DeleteUserDialog from './DeleteUserDialog.svelte';
+	import ResetMfaDialog from './ResetMfaDialog.svelte';
+	import { resetNotice, type MfaFactors } from './mfaResetView';
 	import { NEEDS_PASSWORD, generateTempPassword, userRows, type UserActionId } from './usersView';
 
 	let users = $state<AdminUserDto[]>([]);
@@ -33,6 +35,7 @@
 	let resetLink = $state<{ username: string; url: string; expiresAt: string } | null>(null);
 	let copied = $state(false);
 	let deleting = $state<{ id: number; username: string } | null>(null);
+	let resettingMfa = $state<{ id: number; username: string; mfa: MfaFactors } | null>(null);
 	// An action waiting for the acting administrator's own password.
 	let askPassword = $state<{ id: number; username: string; action: UserActionId } | null>(null);
 	let ownPassword = $state('');
@@ -90,6 +93,12 @@
 		if (busy) return;
 		if (id === 'delete') {
 			deleting = { id: row.id, username: row.username };
+			return;
+		}
+		if (id === 'resetMfa') {
+			const mfa = users.find((u) => u.id === row.id)?.mfa ?? { totp: false, email: false };
+			error = notice = '';
+			resettingMfa = { id: row.id, username: row.username, mfa };
 			return;
 		}
 		if (NEEDS_PASSWORD.has(id) && !password) {
@@ -150,6 +159,17 @@
 		} catch {
 			error = 'Could not copy. Select the link and copy it by hand.';
 		}
+	}
+
+	async function closeResetMfa(reset: boolean): Promise<void> {
+		const who = resettingMfa?.username ?? '';
+		resettingMfa = null;
+		if (reset) {
+			notice = resetNotice(who);
+			await load();
+		}
+		await tick();
+		heading?.focus();
 	}
 
 	async function closeDelete(deleted: boolean): Promise<void> {
@@ -268,6 +288,16 @@
 
 {#if deleting}
 	<DeleteUserDialog id={deleting.id} username={deleting.username} onclose={closeDelete} />
+{/if}
+
+{#if resettingMfa}
+	<ResetMfaDialog
+		id={resettingMfa.id}
+		username={resettingMfa.username}
+		mfa={resettingMfa.mfa}
+		onclose={closeResetMfa}
+		ongone={() => void load()}
+	/>
 {/if}
 
 <style>
