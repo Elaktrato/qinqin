@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flashcardsHref, parseDecodedFlashcardsRoute, parseFlashcardsRoute, type FlashcardsRoute } from './route';
+import { flashcardsHref, flashcardsTitle, parseDecodedFlashcardsRoute, parseFlashcardsRoute, type FlashcardsRoute } from './route';
 
 const ROUTES: FlashcardsRoute[] = [
 	{ view: 'list' },
@@ -71,5 +71,16 @@ describe('parseDecodedFlashcardsRoute', () => {
 		});
 		expect(parseDecodedFlashcardsRoute('deck/01JABC/settings')).toEqual({ view: 'settings', deckId: '01JABC' });
 		expect(parseDecodedFlashcardsRoute('')).toEqual({ view: 'list' });
+	});
+});
+
+describe('flashcardsTitle', () => {
+	it('names every view, most specific first', () => {
+		expect(flashcardsTitle({ view: 'list' })).toEqual(['Decks', 'Flashcards']);
+		expect(flashcardsTitle({ view: 'deck', deckId: 'general' })).toEqual(['Deck', 'Flashcards']);
+		expect(flashcardsTitle({ view: 'settings', deckId: 'general' })).toEqual(['Deck settings', 'Flashcards']);
+		expect(flashcardsTitle({ view: 'system-level', packId: 'hsk', level: '1' })).toEqual(['Level deck', 'Flashcards']);
+		expect(flashcardsTitle({ view: 'system-plugin', plugin: 'qinqin-grammar', key: 'k' })).toEqual(['Deck', 'Flashcards']);
+		expect(flashcardsTitle({ view: 'system-frequency', packId: 'f', size: 500 })).toEqual(['Starter deck', 'Flashcards']);
 	});
 });

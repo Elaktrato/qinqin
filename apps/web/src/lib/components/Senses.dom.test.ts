@@ -59,3 +59,18 @@ describe('Senses with hidden dictionaries', () => {
 		expect(screen.getByRole('button', { name: 'Show 1 from hidden dictionaries' })).toBeTruthy();
 	});
 });
+
+describe('Senses licence', () => {
+	it('links a recognised licence to its text', () => {
+		render(Senses, { senses: [{ ...sense(1, 'CEDICT', 'hello'), license: 'CC BY-SA 4.0' }] });
+		const link = screen.getByRole('link', { name: 'CC BY-SA 4.0' });
+		expect(link.getAttribute('href')).toBe('https://creativecommons.org/licenses/by-sa/4.0/');
+		expect(link.getAttribute('rel')).toContain('noopener');
+	});
+
+	it('keeps an unrecognised licence as plain text', () => {
+		render(Senses, { senses: [{ ...sense(1, 'Test', 'hello'), license: 'Unicode License v3 (fixture)' }] });
+		expect(screen.getByText('Unicode License v3 (fixture)')).toBeTruthy();
+		expect(screen.queryByRole('link')).toBeNull();
+	});
+});

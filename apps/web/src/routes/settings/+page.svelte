@@ -30,6 +30,7 @@
 		SETTINGS_TAB_LABELS,
 		parseSettingsTab,
 		settingsTabHref,
+		settingsTitleParts,
 		tabKeyTarget,
 		visibleSettingsTabs,
 		type SettingsTab
@@ -224,7 +225,7 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle(SETTINGS_TAB_LABELS[activeTab], 'Settings')}</title>
+	<title>{pageTitle(...settingsTitleParts(activeTab, page.url.searchParams.get('section')))}</title>
 </svelte:head>
 
 <main class="settings">

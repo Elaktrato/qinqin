@@ -44,6 +44,19 @@ export function zoneOptions(
 	return [current, ...rest];
 }
 
+/**
+ * zoneMatchText is the live count while searching time zones (#12),
+ * matching the same way as zoneOptions; '' with no query or zone list.
+ */
+export function zoneMatchText(supported: readonly string[] | undefined, query: string): string {
+	const q = words(query.trim());
+	if (!supported || q === '') return '';
+	const all = supported.includes('UTC') ? supported : [...supported, 'UTC'];
+	const n = all.filter((zone) => words(zone).includes(q)).length;
+	if (n === 0) return `No time zones match “${query.trim()}”.`;
+	return n === 1 ? '1 time zone matches.' : `${n} time zones match.`;
+}
+
 /** zoneLabel is "Asia/Tokyo (UTC+09:00)" with the offset in force at `now`. */
 export function zoneLabel(zone: string, now: number): string {
 	try {
