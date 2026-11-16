@@ -6,9 +6,19 @@ vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/weekly/loadWeek', () => ({ loadWeek: vi.fn(), loadWeekCharacters: vi.fn() }));
 vi.mock('$lib/study/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
+vi.mock('$lib/events', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/events')>()),
+	onEventLogChange: vi.fn(() => () => {})
+}));
+vi.mock('$lib/study/store', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/store')>()),
+	onStudyWrite: vi.fn(() => () => {})
+}));
 
 import { goto } from '$app/navigation';
+import { onEventLogChange } from '$lib/events';
 import { onContextStale } from '$lib/study/currentContext';
+import { onStudyWrite } from '$lib/study/store';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 import type { WeekSummary } from '$lib/weekly/summary';
@@ -150,4 +160,41 @@ describe('Stats week page', () => {
 		expect(loadWeekCharacters).not.toHaveBeenCalled();
 		expect(screen.queryByText('Counting characters…')).toBeNull();
 	});
+
+	it('keeps the shown week’s heading, busy and dimmed, until the next week has loaded', async () => {
+		render(Page);
+		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		const next = deferred<WeekView>();
+		vi.mocked(loadWeek).mockReturnValueOnce(next.promise);
+		setUrl('/stats/week?week=2026-11-09');
+		await tick();
+		const heading = screen.getByRole('heading', { level: 2 });
+		expect(heading.textContent).toMatch(/^This week/);
+		const body = document.querySelector('.week-body')!;
+		expect(body.getAttribute('aria-busy')).toBe('true');
+		expect(body.classList.contains('stale')).toBe(true);
+		next.resolve(view('2026-11-09', 5));
+		await waitFor(() => expect(reviewsValue()).toBe('5'));
+		expect(screen.getByRole('heading', { level: 2 }).textContent).toMatch(/^Last week/);
+		expect(body.getAttribute('aria-busy')).toBe('false');
+		expect(document.querySelector('.week-body')!.classList.contains('stale')).toBe(false);
+	});
+
+	it('reloads after a review is posted or study data is written in this workspace', async () => {
+		render(Page);
+		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		const onLog = vi.mocked(onEventLogChange).mock.calls[0][0];
+		const onWrite = vi.mocked(onStudyWrite).mock.calls[0][0];
+		const calls = vi.mocked(loadWeek).mock.calls.length;
+		onLog(2);
+		await tick();
+		expect(vi.mocked(loadWeek).mock.calls.length).toBe(calls);
+		vi.mocked(loadWeek).mockResolvedValueOnce(view('2026-11-16', 13));
+		onLog(1);
+		await waitFor(() => expect(reviewsValue()).toBe('13'));
+		vi.mocked(loadWeek).mockResolvedValueOnce(view('2026-11-16', 14));
+		onWrite(0);
+		await waitFor(() => expect(reviewsValue()).toBe('14'));
+	});
 });
+
