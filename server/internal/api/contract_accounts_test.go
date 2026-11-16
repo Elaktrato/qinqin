@@ -155,7 +155,7 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 		},
 		"last_admin": func() (int, any) {
 			// alice and carla are admins now: demote carla, then alice alone is last
-			callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": false})
+			callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": false, "currentPassword": "secret-pass-alice"})
 			return callJSON(t, ts, "PATCH", "/api/admin/users/"+strconv.FormatInt(aliceID, 10), alice, map[string]any{"admin": false})
 		},
 		"self_target": func() (int, any) {

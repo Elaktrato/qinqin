@@ -246,7 +246,8 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusConflict, "self_target", "You cannot disable your own account.")
 		return
 	}
-	if _, err := s.users.GetUser(ctx, id, false); err != nil {
+	target, err := s.users.GetUser(ctx, id, false)
+	if err != nil {
 		if !writeUserError(w, err) {
 			writeInternal(w, r)
 		}
@@ -279,10 +280,8 @@ func (s *server) handleAdminPatchUser(w http.ResponseWriter, r *http.Request) {
 			writeInternal(w, r)
 		}
 	}
-	// Granting admin, and setting or removing an address (a reset link goes
-	// there; on one's own account it would also hand over the password this
-	// check asks for), re-authenticate.
-	if ((req.Admin != nil && *req.Admin) || setEmail) && !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
+	if userPatchNeedsReauth(target.Admin, id == admin.ID, userPatchChange{Admin: req.Admin, Disabled: req.Disabled, SetEmail: setEmail}) &&
+		!s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	// Every field in one transaction: a refusal changes nothing.

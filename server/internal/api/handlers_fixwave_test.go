@@ -79,6 +79,8 @@ func TestSensitiveAdminActionsNeedTheAdminsPassword(t *testing.T) {
 			m["confirm"] = "bobby"
 		case "grant":
 			m["admin"] = true
+		case "demote":
+			m["admin"] = false
 		}
 		if pw != "" {
 			m["currentPassword"] = pw
@@ -110,8 +112,11 @@ func TestSensitiveAdminActionsNeedTheAdminsPassword(t *testing.T) {
 	if r := doJSON(t, "PATCH", ts.URL, "/api/admin/users/"+bid, owner, body("grant", "secret-pass-owner")); r.StatusCode != 200 {
 		t.Errorf("grant = %d", r.StatusCode)
 	}
-	// demoting needs no password (it only removes power)
-	if r := doJSON(t, "PATCH", ts.URL, "/api/admin/users/"+bid, owner, map[string]any{"admin": false}); r.StatusCode != 200 {
+	// demoting another administrator needs it too (it takes them out of the way)
+	if r := doJSON(t, "PATCH", ts.URL, "/api/admin/users/"+bid, owner, map[string]any{"admin": false}); r.StatusCode != 422 {
+		t.Errorf("demote without a password = %d, want 422", r.StatusCode)
+	}
+	if r := doJSON(t, "PATCH", ts.URL, "/api/admin/users/"+bid, owner, body("demote", "secret-pass-owner")); r.StatusCode != 200 {
 		t.Errorf("demote = %d", r.StatusCode)
 	}
 }

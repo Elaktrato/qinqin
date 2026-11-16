@@ -58,6 +58,36 @@ func adminReauthRoutes() []adminReauthRoute {
 			e.db.Exec(`UPDATE users SET email = ?, email_norm = ?, email_verified_at = 't' WHERE username = ?`, name+"@example.org", name+"@example.org", name)
 			return "PATCH", p, map[string]any{"email": nil}
 		}},
+		{"demote another administrator", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			name, p := target(t, e, n)
+			e.db.Exec(`UPDATE users SET admin = 1 WHERE username = ?`, name)
+			return "PATCH", p, map[string]any{"admin": false}
+		}},
+		{"disable another administrator", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			name, p := target(t, e, n)
+			e.db.Exec(`UPDATE users SET admin = 1 WHERE username = ?`, name)
+			return "PATCH", p, map[string]any{"disabled": true}
+		}},
+		{"turn two-step enforcement off", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			setAuthSetting(t, e.db, "mfa_enforced", "1")
+			return "PATCH", "/api/admin/settings/auth", map[string]any{"mfaEnforced": false}
+		}},
+		{"allow sign-in by emailed code", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			setAuthSetting(t, e.db, "email_code_login", "0")
+			return "PATCH", "/api/admin/settings/auth", map[string]any{"emailCodeLogin": true}
+		}},
+		{"open registration", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			setAuthSetting(t, e.db, "registration", "closed")
+			return "PATCH", "/api/admin/settings/auth", map[string]any{"registration": "open"}
+		}},
+		{"lower the email policy", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			setAuthSetting(t, e.db, "email_policy", "required")
+			return "PATCH", "/api/admin/settings/auth", map[string]any{"emailPolicy": "optional"}
+		}},
+		{"enforce two steps and sign everyone else out", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			setAuthSetting(t, e.db, "mfa_enforced", "0")
+			return "PATCH", "/api/admin/settings/auth", map[string]any{"mfaEnforced": true, "signOutOthers": true}
+		}},
 		{"save the mail settings", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			p := e.smtpPayload()
 			delete(p, "currentPassword")
@@ -184,5 +214,28 @@ func TestAStolenAdminSessionCannotRedirectAnAccountsResetMail(t *testing.T) {
 			doJSON(t, "POST", e.ts.URL, "/api/auth/reset-request", "", map[string]any{"login": who})
 			e.noMoreMails(t, 0)
 		})
+	}
+}
+
+// Changes that only tighten, or touch a plain user, keep working with the
+// session alone (docs/contracts/auth/admin-reauth.json has the full rule).
+func TestTighteningAdminChangesNeedNoReauth(t *testing.T) {
+	e := newMailEnv(t, mailOpts{configure: true})
+	registerUser(t, e.ts.URL, "bobby", e.owner)
+	bob := "/api/admin/users/" + userIDOf(t, e, "bobby")
+	for _, c := range []struct {
+		method, path string
+		body         map[string]any
+	}{
+		{"PATCH", bob, map[string]any{"disabled": true}},
+		{"PATCH", bob, map[string]any{"disabled": false}},
+		{"PATCH", bob, map[string]any{"mustChangePassword": true}},
+		{"PATCH", "/api/admin/settings/auth", map[string]any{"mfaEnforced": true}},
+		{"PATCH", "/api/admin/settings/auth", map[string]any{"emailCodeLogin": false}},
+		{"PATCH", "/api/admin/settings/auth", map[string]any{"registration": "closed", "emailPolicy": "required"}},
+	} {
+		if r := doJSON(t, c.method, e.ts.URL, c.path, e.owner, c.body); r.StatusCode != 200 {
+			t.Errorf("%s %s %v = %d", c.method, c.path, c.body, r.StatusCode)
+		}
 	}
 }

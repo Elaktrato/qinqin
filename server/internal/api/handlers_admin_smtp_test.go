@@ -318,7 +318,7 @@ func TestOptionsFollowTheMailConfiguration(t *testing.T) {
 	if !st.Mail.Configured {
 		t.Error("settings/auth does not report mail configured")
 	}
-	if r := doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"emailCodeLogin": true}); r.StatusCode != 200 {
+	if r := doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"emailCodeLogin": true, "currentPassword": "secret-pass-owner"}); r.StatusCode != 200 {
 		t.Errorf("emailCodeLogin with mail = %d", r.StatusCode)
 	}
 	if _, c := opts(); !c {
