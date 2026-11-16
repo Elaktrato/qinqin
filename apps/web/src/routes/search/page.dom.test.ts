@@ -161,4 +161,15 @@ describe('search page', () => {
 		expect((screen.getByLabelText('Search entries') as HTMLInputElement).disabled).toBe(true);
 		expect((screen.getByRole('button', { name: 'Search' }) as HTMLButtonElement).disabled).toBe(true);
 	});
+
+	it('links the radical and part lookup in ja and zh workspaces only', async () => {
+		render(Page);
+		const link = await screen.findByRole('link', { name: 'Find a character by radical or part' });
+		expect(link.getAttribute('href')).toBe('/search/parts');
+		cleanup();
+		workspaces.set({ list: [], current: { id: 2, language: 'es', name: 'es' } as never });
+		render(Page);
+		await tick();
+		expect(screen.queryByRole('link', { name: 'Find a character by radical or part' })).toBeNull();
+	});
 });
