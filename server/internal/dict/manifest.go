@@ -20,6 +20,9 @@ const (
 	TypeFrequency  = "frequency"
 	TypeGrammar    = "grammar"
 	TypeAudio      = "audio"
+	// TypeComponents is a character components pack: which parts each
+	// character contains, for the radical and part lookup.
+	TypeComponents = "components"
 )
 
 // Pack formats: how a dictionary pack's data files are encoded.
@@ -37,6 +40,9 @@ const (
 
 	// FormatAudioIndex is an audio pack: index.tsv plus clip files.
 	FormatAudioIndex = "audio-index"
+	// FormatComponentsTSV is a components pack: components.tsv plus an
+	// optional parts.tsv (see internal/components).
+	FormatComponentsTSV = "components-tsv"
 )
 
 // manifestTypes and manifestFormats are the valid enum values of a
@@ -49,6 +55,7 @@ var (
 		TypeFrequency:  true,
 		TypeGrammar:    true,
 		TypeAudio:      true,
+		TypeComponents: true,
 	}
 	manifestFormats = map[string]bool{
 		FormatJSON:      true,
@@ -60,7 +67,8 @@ var (
 		FormatYomitanFreq: true,
 		FormatFreqCSV:     true,
 
-		FormatAudioIndex: true,
+		FormatAudioIndex:    true,
+		FormatComponentsTSV: true,
 	}
 )
 
@@ -106,9 +114,9 @@ func (m Manifest) Validate() error {
 	case strings.TrimSpace(m.Attribution) == "":
 		return errors.New("manifest: attribution is required — packs without attribution are rejected")
 	case !manifestTypes[m.Type]:
-		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, frequency, grammar, or audio)", m.Type)
+		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, frequency, grammar, audio, or components)", m.Type)
 	case !manifestFormats[m.Format]:
-		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, or audio-index)", m.Format)
+		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, or components-tsv)", m.Format)
 	}
 	if err := ValidateNotice(m.Notice); err != nil {
 		return fmt.Errorf("manifest: %w", err)

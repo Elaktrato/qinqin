@@ -59,7 +59,8 @@ RUN if [ "$WITH_OCR" = "1" ]; then apk add --no-cache tesseract-ocr tesseract-oc
 COPY --from=build /out/qinqin /usr/local/bin/qinqin
 # The bundled seed packs (CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten
 # frequency list, the HSK 3.0 character and word level lists, the
-# approximate JLPT kanji level list and es-demo), so a fresh
+# approximate JLPT kanji level list, the KanjiVG component index
+# (kanjivg-components, CC BY-SA 3.0, about 190 KB) and es-demo), so a fresh
 # stack can seed itself offline:
 #   docker compose exec qinqin qinqin seed
 # The samples in plugins/samples (dictionaries and level packs) are not
