@@ -84,6 +84,29 @@ function datesBetween(from: string, to: string): string[] {
 	return out;
 }
 
+export interface WeekCutoffs {
+	/** [end of Monday − 1, end of the last counted date] (epoch ms). */
+	week: [number, number];
+	/** The same for the comparison window. */
+	previous: [number, number];
+}
+
+/**
+ * weekCutoffs: the replay cutoffs of a week and its comparison window.
+ * "The end of day D" is the instant dayStart(D + 1); the state before
+ * the week is the end of Monday − 1, i.e. dayStart(Monday).
+ */
+export function weekCutoffs(monday: string, today: string, day: StudyDay): WeekCutoffs {
+	const sunday = addDays(monday, 6);
+	const last = sunday < today ? sunday : today;
+	const compareThrough = monday === weekOf(today) ? addDays(today, -7) : addDays(monday, -1);
+	const end = (d: string): number => day.dayStart(addDays(d, 1));
+	return {
+		week: [day.dayStart(monday), end(last)],
+		previous: [day.dayStart(addDays(monday, -7)), end(compareThrough)]
+	};
+}
+
 export function weekSummary(input: WeekInputs): WeekSummary {
 	const { monday, day, workspaceId, reviews, vacation, activity } = input;
 	const today = day.today(input.now);
@@ -150,12 +173,9 @@ export function weekSummary(input: WeekInputs): WeekSummary {
 	const end = inProgress ? input.now : day.dayStart(addDays(sunday, 1)) - 1;
 	const streak = dailyStreak(reviews, end, day, vacation).current;
 
-	// Cutoffs: "the end of day D" is the instant dayStart(D + 1).
-	const cut = (d: string): number => day.dayStart(addDays(d, 1));
+	const cuts = weekCutoffs(monday, today, day);
 	const pair = (f: ((before: number, after: number) => number) | undefined): Pair | null =>
-		f === undefined
-			? null
-			: { value: f(day.dayStart(monday), cut(last)), previous: f(day.dayStart(prevMonday), cut(compareThrough)) };
+		f === undefined ? null : { value: f(...cuts.week), previous: f(...cuts.previous) };
 
 	const nothingToCompare =
 		!prev.some((d) => localDays.has(d)) &&
