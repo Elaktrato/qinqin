@@ -157,6 +157,10 @@ type typedItem struct {
 // absent or already deleted, count as skipped. A row of a plugin that
 // does not declare owns-data is refused alone (DataRefused): the events
 // and every other row still apply.
+//
+// A qinqin-flashcards row of a typed study family (an old web shell's write)
+// goes through the legacy view to its typed table under the same rule; a row
+// the codec cannot read, or one without a workspace, is refused alone.
 func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (PushResult, error) {
 	owned := map[int64]bool{}
 	checkWorkspace := func(id int64) error {
@@ -245,6 +249,28 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		if !knownPlugin[row.PluginID] {
 			res.DataRefused++
 			continue
+		}
+		if row.PluginID == rows.Namespace {
+			if _, typed := rows.FamilyOf(row.Key); typed {
+				// The legacy view: an old web shell's study row goes to its
+				// typed table; one the codec refuses is refused alone.
+				applied, err := study.ApplyLegacy(ctx, sqlDB, userID, row, editTime(row))
+				switch {
+				case errors.Is(err, rows.ErrUnreadable):
+					res.DataRefused++
+					continue
+				case errors.Is(err, study.ErrNoTypedRow):
+					// a deletion of a leftover row: plugin data as before
+				case err != nil:
+					return res, fmt.Errorf("sync push: %w", err)
+				case applied:
+					res.DataAccepted++
+					continue
+				default:
+					res.DataSkipped++
+					continue
+				}
+			}
 		}
 		applied, err := applyData(ctx, sqlDB, userID, row)
 		if err != nil {

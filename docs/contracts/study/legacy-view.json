@@ -1,0 +1,1159 @@
+{
+ "version": 1,
+ "rule": "study/legacy-view",
+ "about": "Requests of a cached v0.3.x web shell against the v0.4 server. Each case starts from setup for one user with one workspace ($ws). pluginData expectations are compared as a set of (key, workspace, data as JSON values, version, updatedAt, deletedAt); $now is the server clock (any RFC 3339 time at or after the request).",
+ "setup": {
+  "note": "typed rows are stored through the codec (FromLegacy of key+data) with the given version and stamps; pluginData rows as given",
+  "typed": [
+   {
+    "key": "card:c-vocab-1201",
+    "data": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z"
+    },
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "modifiedAt": "2026-11-12T09:59:58Z",
+    "deletedAt": null
+   },
+   {
+    "key": "card:c-tone-9",
+    "data": {
+     "id": "c-tone-9",
+     "kind": "tone",
+     "entryId": 9,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z"
+    },
+    "version": 5,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "modifiedAt": "2026-11-12T09:59:58Z",
+    "deletedAt": "2026-11-12T10:00:00Z"
+   },
+   {
+    "key": "deck:01JDECK",
+    "data": {
+     "id": "01JDECK",
+     "name": "Words",
+     "createdAt": "2026-11-10T08:00:00Z"
+    },
+    "version": 2,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "modifiedAt": "2026-11-12T09:59:58Z",
+    "deletedAt": null
+   },
+   {
+    "key": "deckcfg:general",
+    "data": {
+     "deckId": "general",
+     "cardTypes": [
+      "reverse"
+     ],
+     "newOrder": {
+      "by": "level",
+      "packId": "hsk-words"
+     },
+     "updatedAt": "2026-11-12T09:59:58Z"
+    },
+    "version": 2,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "modifiedAt": "2026-11-12T09:59:58Z",
+    "deletedAt": null
+   },
+   {
+    "key": "limits:workspace",
+    "data": {
+     "version": 1,
+     "new": 10
+    },
+    "version": 1,
+    "updatedAt": "2026-11-10T08:00:00Z",
+    "modifiedAt": "2026-11-10T08:00:00Z",
+    "deletedAt": null
+   },
+   {
+    "key": "fsrs:active",
+    "data": {
+     "setId": null,
+     "changedAt": "2026-11-11T07:00:00.000Z"
+    },
+    "version": 1,
+    "updatedAt": "2026-11-10T08:00:00Z",
+    "modifiedAt": "2026-11-10T08:00:00Z",
+    "deletedAt": null
+   }
+  ],
+  "pluginData": [
+   {
+    "key": "known:5",
+    "workspace": true,
+    "data": {
+     "at": "2026-11-10T08:00:00Z"
+    },
+    "version": 1,
+    "updatedAt": "2026-11-10T08:00:00Z",
+    "deletedAt": null
+   },
+   {
+    "key": "vacation:01JVACATION",
+    "workspace": false,
+    "data": {
+     "id": "01JVACATION",
+     "start": "2026-11-01",
+     "end": "2026-11-03"
+    },
+    "version": 1,
+    "updatedAt": "2026-11-10T08:00:00Z",
+    "deletedAt": null
+   },
+   {
+    "key": "card:c-vocab-15",
+    "workspace": true,
+    "data": {
+     "id": "c-vocab-15",
+     "kind": "vocab",
+     "entryId": 1.5,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z"
+    },
+    "version": 1,
+    "updatedAt": "2026-11-10T08:00:00Z",
+    "deletedAt": null
+   }
+  ]
+ },
+ "cases": [
+  {
+   "name": "the v0.3.0 pull gets every typed row as its legacy row, tombstones included",
+   "request": {
+    "method": "GET",
+    "path": "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates"
+   },
+   "expect": {
+    "status": 200,
+    "pluginData": [
+     {
+      "key": "card:c-vocab-1201",
+      "workspace": true,
+      "data": {
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 3,
+      "updatedAt": "2026-11-12T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "card:c-tone-9",
+      "workspace": true,
+      "data": {
+       "id": "c-tone-9",
+       "kind": "tone",
+       "entryId": 9,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 5,
+      "updatedAt": "2026-11-12T10:00:00Z",
+      "deletedAt": "2026-11-12T10:00:00Z"
+     },
+     {
+      "key": "deck:01JDECK",
+      "workspace": true,
+      "data": {
+       "id": "01JDECK",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 2,
+      "updatedAt": "2026-11-12T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "deckcfg:general",
+      "workspace": true,
+      "data": {
+       "deckId": "general",
+       "cardTypes": [
+        "reverse"
+       ],
+       "newOrder": {
+        "by": "level",
+        "packId": "hsk-words"
+       },
+       "updatedAt": "2026-11-12T09:59:58Z"
+      },
+      "version": 2,
+      "updatedAt": "2026-11-12T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "limits:workspace",
+      "workspace": true,
+      "data": {
+       "version": 1,
+       "new": 10
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "fsrs:active",
+      "workspace": true,
+      "data": {
+       "setId": null,
+       "changedAt": "2026-11-11T07:00:00.000Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "known:5",
+      "workspace": true,
+      "data": {
+       "at": "2026-11-10T08:00:00Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "vacation:01JVACATION",
+      "workspace": false,
+      "data": {
+       "id": "01JVACATION",
+       "start": "2026-11-01",
+       "end": "2026-11-03"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "card:c-vocab-15",
+      "workspace": true,
+      "data": {
+       "id": "c-vocab-15",
+       "kind": "vocab",
+       "entryId": 1.5,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "a pull from the zero cursor that names only pluginData ships live legacy rows",
+   "request": {
+    "method": "GET",
+    "path": "/api/sync/pull?collections=pluginData"
+   },
+   "expect": {
+    "status": 200,
+    "pluginData": [
+     {
+      "key": "card:c-vocab-1201",
+      "workspace": true,
+      "data": {
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 3,
+      "updatedAt": "2026-11-12T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "deck:01JDECK",
+      "workspace": true,
+      "data": {
+       "id": "01JDECK",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 2,
+      "updatedAt": "2026-11-12T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "deckcfg:general",
+      "workspace": true,
+      "data": {
+       "deckId": "general",
+       "cardTypes": [
+        "reverse"
+       ],
+       "newOrder": {
+        "by": "level",
+        "packId": "hsk-words"
+       },
+       "updatedAt": "2026-11-12T09:59:58Z"
+      },
+      "version": 2,
+      "updatedAt": "2026-11-12T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "limits:workspace",
+      "workspace": true,
+      "data": {
+       "version": 1,
+       "new": 10
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "fsrs:active",
+      "workspace": true,
+      "data": {
+       "setId": null,
+       "changedAt": "2026-11-11T07:00:00.000Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "known:5",
+      "workspace": true,
+      "data": {
+       "at": "2026-11-10T08:00:00Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "vacation:01JVACATION",
+      "workspace": false,
+      "data": {
+       "id": "01JVACATION",
+       "start": "2026-11-01",
+       "end": "2026-11-03"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "card:c-vocab-15",
+      "workspace": true,
+      "data": {
+       "id": "c-vocab-15",
+       "kind": "vocab",
+       "entryId": 1.5,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "a pull that names a typed collection gets no legacy rows",
+   "request": {
+    "method": "GET",
+    "path": "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,cards"
+   },
+   "expect": {
+    "status": 200,
+    "pluginData": [
+     {
+      "key": "known:5",
+      "workspace": true,
+      "data": {
+       "at": "2026-11-10T08:00:00Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "vacation:01JVACATION",
+      "workspace": false,
+      "data": {
+       "id": "01JVACATION",
+       "start": "2026-11-01",
+       "end": "2026-11-03"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "card:c-vocab-15",
+      "workspace": true,
+      "data": {
+       "id": "c-vocab-15",
+       "kind": "vocab",
+       "entryId": 1.5,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "a pull without collections gets no legacy rows (the documented break for scripts)",
+   "request": {
+    "method": "GET",
+    "path": "/api/sync/pull?cursor=1970-01-01T00:00:00Z"
+   },
+   "expect": {
+    "status": 200,
+    "pluginData": [
+     {
+      "key": "known:5",
+      "workspace": true,
+      "data": {
+       "at": "2026-11-10T08:00:00Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "vacation:01JVACATION",
+      "workspace": false,
+      "data": {
+       "id": "01JVACATION",
+       "start": "2026-11-01",
+       "end": "2026-11-03"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "key": "card:c-vocab-15",
+      "workspace": true,
+      "data": {
+       "id": "c-vocab-15",
+       "kind": "vocab",
+       "entryId": 1.5,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      },
+      "version": 1,
+      "updatedAt": "2026-11-10T08:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "pushStudyRows: a new card lands in the typed table",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "card:c-vocab-7",
+       "data": {
+        "id": "c-vocab-7",
+        "kind": "vocab",
+        "entryId": 7,
+        "deckIds": [
+         "01JDECK"
+        ],
+        "createdAt": "2026-11-13T00:00:00.000Z"
+       },
+       "updatedAt": "2026-11-13T00:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "dataAccepted": 1,
+     "dataSkipped": 0,
+     "dataRefused": 0
+    },
+    "typedAfter": [
+     {
+      "key": "card:c-vocab-7",
+      "version": 1,
+      "deleted": false,
+      "data": {
+       "id": "c-vocab-7",
+       "kind": "vocab",
+       "entryId": 7,
+       "deckIds": [
+        "01JDECK"
+       ],
+       "createdAt": "2026-11-13T00:00:00.000Z"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "pushStudyRows: moving a card rewrites the typed row (last write wins on the edit time)",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "card:c-vocab-1201",
+       "data": {
+        "id": "c-vocab-1201",
+        "kind": "vocab",
+        "entryId": 1201,
+        "deckIds": [
+         "general",
+         "01JDECK"
+        ],
+        "createdAt": "2026-11-10T08:00:00Z"
+       },
+       "updatedAt": "2026-11-13T00:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "dataAccepted": 1
+    },
+    "typedAfter": [
+     {
+      "key": "card:c-vocab-1201",
+      "version": 4,
+      "deleted": false,
+      "data": {
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "deckIds": [
+        "general",
+        "01JDECK"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "an older rewrite is skipped",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "card:c-vocab-1201",
+       "data": {
+        "id": "c-vocab-1201",
+        "kind": "vocab",
+        "entryId": 1201,
+        "deckIds": [
+         "general",
+         "01JDECK"
+        ],
+        "createdAt": "2026-11-10T08:00:00Z"
+       },
+       "updatedAt": "2026-11-12T09:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "dataAccepted": 0,
+     "dataSkipped": 1
+    },
+    "typedAfter": [
+     {
+      "key": "card:c-vocab-1201",
+      "version": 3,
+      "deleted": false,
+      "data": {
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "an equal rewrite is skipped",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "card:c-vocab-1201",
+       "data": {
+        "id": "c-vocab-1201",
+        "kind": "vocab",
+        "entryId": 1201,
+        "deckIds": [
+         "general"
+        ],
+        "createdAt": "2026-11-10T08:00:00Z"
+       },
+       "updatedAt": "2026-11-13T00:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "dataAccepted": 0,
+     "dataSkipped": 1
+    },
+    "typedAfter": [
+     {
+      "key": "card:c-vocab-1201",
+      "version": 3,
+      "deleted": false,
+      "data": {
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "deleteDeck: a legacy tombstone tombstones the typed deck",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "deck:01JDECK",
+       "data": null,
+       "updatedAt": "2026-11-13T00:00:00.000Z",
+       "deletedAt": "2026-11-13T00:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "dataAccepted": 1
+    },
+    "typedAfter": [
+     {
+      "key": "deck:01JDECK",
+      "version": 3,
+      "deleted": true,
+      "data": {
+       "id": "01JDECK",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "an unreadable typed-family row is refused alone; the event and the keyed row apply",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [
+      {
+       "id": "01JEVENT0000000000000000AA",
+       "workspaceId": "$ws",
+       "device": "d",
+       "ts": "2026-11-13T00:00:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "mode": "vocab",
+        "grade": 3
+       }
+      }
+     ],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "card:c-vocab-8",
+       "data": {
+        "id": "c-vocab-8",
+        "kind": "vocab",
+        "entryId": 8.5,
+        "deckIds": [],
+        "createdAt": "2026-11-10T08:00:00Z"
+       },
+       "updatedAt": "2026-11-13T00:00:00.000Z"
+      },
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "known:6",
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "updatedAt": "2026-11-13T00:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "eventsAccepted": 1,
+     "dataAccepted": 1,
+     "dataRefused": 1
+    },
+    "typedAfter": [
+     {
+      "key": "card:c-vocab-8",
+      "absent": true
+     }
+    ],
+    "pluginDataAfter": [
+     {
+      "key": "known:6",
+      "deleted": false
+     },
+     {
+      "key": "card:c-vocab-8",
+      "absent": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "a typed-family row without a workspace is refused",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": null,
+       "key": "card:c-vocab-9",
+       "data": {
+        "id": "c-vocab-9",
+        "kind": "vocab",
+        "entryId": 7,
+        "deckIds": [
+         "01JDECK"
+        ],
+        "createdAt": "2026-11-13T00:00:00.000Z"
+       },
+       "updatedAt": "2026-11-13T00:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "dataAccepted": 0,
+     "dataRefused": 1
+    },
+    "pluginDataAfter": [
+     {
+      "key": "card:c-vocab-9",
+      "absent": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "a tombstone for a key that only a leftover row holds tombstones the leftover",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "card:c-vocab-15",
+       "data": null,
+       "updatedAt": "2026-11-13T00:00:00.000Z",
+       "deletedAt": "2026-11-13T00:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "dataAccepted": 1
+    },
+    "pluginDataAfter": [
+     {
+      "key": "card:c-vocab-15",
+      "deleted": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "keyed rows (goals, known, vacation) still go to plugin data",
+   "request": {
+    "method": "POST",
+    "path": "/api/sync/push",
+    "body": {
+     "events": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": "$ws",
+       "key": "goals:workspace",
+       "data": {
+        "version": 1,
+        "history": []
+       },
+       "updatedAt": "2026-11-13T00:00:00.000Z"
+      },
+      {
+       "pluginId": "qinqin-flashcards",
+       "workspaceId": null,
+       "key": "vacation:01JVAC2",
+       "data": {
+        "id": "01JVAC2"
+       },
+       "updatedAt": "2026-11-13T00:00:00.000Z"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "status": 200,
+    "result": {
+     "dataAccepted": 2
+    },
+    "pluginDataAfter": [
+     {
+      "key": "goals:workspace",
+      "deleted": false
+     },
+     {
+      "key": "vacation:01JVAC2",
+      "deleted": false
+     }
+    ]
+   }
+  },
+  {
+   "name": "GET of a typed key answers its legacy row",
+   "request": {
+    "method": "GET",
+    "path": "/api/plugins/qinqin-flashcards/data/card:c-vocab-1201?workspace=$ws"
+   },
+   "expect": {
+    "status": 200,
+    "row": {
+     "key": "card:c-vocab-1201",
+     "workspace": true,
+     "data": {
+      "id": "c-vocab-1201",
+      "kind": "vocab",
+      "entryId": 1201,
+      "deckIds": [
+       "general"
+      ],
+      "createdAt": "2026-11-10T08:00:00Z"
+     },
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   }
+  },
+  {
+   "name": "GET of a tombstoned typed key is 404",
+   "request": {
+    "method": "GET",
+    "path": "/api/plugins/qinqin-flashcards/data/card:c-tone-9?workspace=$ws"
+   },
+   "expect": {
+    "status": 404
+   }
+  },
+  {
+   "name": "GET of a key only a leftover row holds answers the leftover",
+   "request": {
+    "method": "GET",
+    "path": "/api/plugins/qinqin-flashcards/data/card:c-vocab-15?workspace=$ws"
+   },
+   "expect": {
+    "status": 200,
+    "row": {
+     "key": "card:c-vocab-15",
+     "workspace": true,
+     "data": {
+      "id": "c-vocab-15",
+      "kind": "vocab",
+      "entryId": 1.5,
+      "deckIds": [
+       "general"
+      ],
+      "createdAt": "2026-11-10T08:00:00Z"
+     },
+     "version": 1,
+     "updatedAt": "2026-11-10T08:00:00Z",
+     "deletedAt": null
+    }
+   }
+  },
+  {
+   "name": "GET of an absent key is 404",
+   "request": {
+    "method": "GET",
+    "path": "/api/plugins/qinqin-flashcards/data/card:c-none?workspace=$ws"
+   },
+   "expect": {
+    "status": 404
+   }
+  },
+  {
+   "name": "GET of a prefix merges typed legacy rows and leftovers in key order",
+   "request": {
+    "method": "GET",
+    "path": "/api/plugins/qinqin-flashcards/data?workspace=$ws&prefix=card:"
+   },
+   "expect": {
+    "status": 200,
+    "keys": [
+     "card:c-vocab-1201",
+     "card:c-vocab-15"
+    ]
+   }
+  },
+  {
+   "name": "GET of the whole namespace lists typed and keyed rows",
+   "request": {
+    "method": "GET",
+    "path": "/api/plugins/qinqin-flashcards/data?workspace=$ws"
+   },
+   "expect": {
+    "status": 200,
+    "keys": [
+     "card:c-vocab-1201",
+     "card:c-vocab-15",
+     "deck:01JDECK",
+     "deckcfg:general",
+     "fsrs:active",
+     "known:5",
+     "limits:workspace"
+    ]
+   }
+  },
+  {
+   "name": "putData: a typed key writes the typed table and answers the legacy row",
+   "request": {
+    "method": "PUT",
+    "path": "/api/plugins/qinqin-flashcards/data/deckcfg:general?workspace=$ws",
+    "body": {
+     "deckId": "general",
+     "cardTypes": [
+      "reverse",
+      "cloze"
+     ],
+     "newOrder": {
+      "by": "level",
+      "packId": "hsk-words"
+     },
+     "updatedAt": "2026-11-13T00:00:00.000Z"
+    }
+   },
+   "expect": {
+    "status": 200,
+    "rowVersion": 3,
+    "typedAfter": [
+     {
+      "key": "deckcfg:general",
+      "version": 3,
+      "deleted": false,
+      "data": {
+       "deckId": "general",
+       "cardTypes": [
+        "reverse",
+        "cloze"
+       ],
+       "newOrder": {
+        "by": "level",
+        "packId": "hsk-words"
+       },
+       "updatedAt": "$now"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "putData: unreadable data for a typed key is 400 study_row_invalid",
+   "request": {
+    "method": "PUT",
+    "path": "/api/plugins/qinqin-flashcards/data/limits:workspace?workspace=$ws",
+    "body": {
+     "version": 2,
+     "new": 1
+    }
+   },
+   "expect": {
+    "status": 400,
+    "code": "study_row_invalid",
+    "typedAfter": [
+     {
+      "key": "limits:workspace",
+      "version": 1,
+      "deleted": false,
+      "data": {
+       "version": 1,
+       "new": 10
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "putData without a workspace for a typed key is 400 study_row_invalid",
+   "request": {
+    "method": "PUT",
+    "path": "/api/plugins/qinqin-flashcards/data/card:c-vocab-1201",
+    "body": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z"
+    }
+   },
+   "expect": {
+    "status": 400,
+    "code": "study_row_invalid"
+   }
+  },
+  {
+   "name": "deleteData tombstones the typed row",
+   "request": {
+    "method": "DELETE",
+    "path": "/api/plugins/qinqin-flashcards/data/fsrs:active?workspace=$ws"
+   },
+   "expect": {
+    "status": 204,
+    "typedAfter": [
+     {
+      "key": "fsrs:active",
+      "version": 2,
+      "deleted": true,
+      "data": {
+       "setId": null,
+       "changedAt": "2026-11-11T07:00:00.000Z"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "name": "deleteData of a key only a leftover holds tombstones the leftover",
+   "request": {
+    "method": "DELETE",
+    "path": "/api/plugins/qinqin-flashcards/data/card:c-vocab-15?workspace=$ws"
+   },
+   "expect": {
+    "status": 204,
+    "pluginDataAfter": [
+     {
+      "key": "card:c-vocab-15",
+      "deleted": true
+     }
+    ]
+   }
+  },
+  {
+   "name": "deleteData of an absent or deleted key is 404",
+   "request": {
+    "method": "DELETE",
+    "path": "/api/plugins/qinqin-flashcards/data/card:c-tone-9?workspace=$ws"
+   },
+   "expect": {
+    "status": 404
+   }
+  }
+ ]
+}

@@ -546,3 +546,33 @@ func mergeExtra(o object, extra json.RawMessage) {
 		}
 	}
 }
+
+// KeyIdentity splits a legacy typed key into its family and identity
+// without reading data (a deletion carries none): card:<id>, deck:<id>,
+// deckcfg:<deckId>, limits:workspace (""), limits:deck:<deckId>,
+// fsrs:set:<id>, fsrs:active (""). False for any other key and for a deck
+// key without a deck id.
+func KeyIdentity(key string) (Family, string, bool) {
+	f, ok := FamilyOf(key)
+	if !ok {
+		return "", "", false
+	}
+	switch f {
+	case Cards:
+		return f, strings.TrimPrefix(key, cardPrefix), true
+	case Decks:
+		return f, strings.TrimPrefix(key, deckPrefix), true
+	case DeckSettings:
+		id := strings.TrimPrefix(key, deckcfgPrefix)
+		return f, id, id != ""
+	case Limits:
+		if key == limitsWorkspace {
+			return f, "", true
+		}
+		id := strings.TrimPrefix(key, limitsDeckPrefix)
+		return f, id, id != ""
+	case FsrsSets:
+		return f, strings.TrimPrefix(key, setPrefix), true
+	}
+	return f, "", true
+}
