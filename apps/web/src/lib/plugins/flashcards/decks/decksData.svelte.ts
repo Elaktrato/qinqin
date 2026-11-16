@@ -24,6 +24,8 @@ export interface DecksSnapshot {
 	deckSettings: Record<string, DeckSettings>;
 	weights: readonly number[];
 	index: ScheduleIndex;
+	/** Entries the learner marked known (#68). */
+	known: number[];
 	now: Date;
 	ctx: StudyContext;
 	addDays: typeof addDays;
@@ -63,6 +65,7 @@ export function createDecksData() {
 				deckSettings: data.deckSettings ?? {},
 				weights,
 				index: scheduleIndex(data.cards, data.reviews, weights, ctx.clock),
+				known: data.known ?? [],
 				now: new Date(),
 				ctx,
 				addDays

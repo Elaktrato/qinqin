@@ -8,6 +8,7 @@
 	import { createReveal, type Reveal } from './reveal';
 	import type { Piece } from './smartReadings';
 	import type { LookupController } from './useLookup.svelte';
+	import type { WordRange } from './wordRanges';
 
 	// Renders the chapter as real, selectable text. The markup is the
 	// contract dom.ts maps against: <p data-p> per paragraph, one element
@@ -18,10 +19,14 @@
 	// run), all inside the run's element and before its <rt>; a generated
 	// <ruby> piece holds its own <rt> after the base text. Runs are written
 	// without whitespace between them so no stray spaces enter CJK text.
+	// Word states (#68) only add a class (w-new / w-learning, w-end on a
+	// word's last piece) to existing <span data-o> / <ruby> pieces, so the
+	// offsets stay the same; their styles are global (app.css).
 	let {
 		paragraphs,
 		display = DEFAULT_DISPLAY,
 		pieces = new Map<number, Piece[]>(),
+		words = new Map<number, WordRange[]>(),
 		lang,
 		lookup,
 		reveal = createReveal(),
@@ -36,6 +41,8 @@
 		display?: ReaderDisplay;
 		/** Readings per paragraph (smartReadings.annotateParagraph). */
 		pieces?: ReadonlyMap<number, Piece[]>;
+		/** New and learning words per paragraph (wordRanges); empty when highlighting is off. */
+		words?: ReadonlyMap<number, WordRange[]>;
 		lang: string;
 		lookup: LookupController;
 		/** Hides revealed readings; BookView owns it for the `R` key. */
@@ -51,8 +58,8 @@
 		container?: HTMLElement | null;
 	} = $props();
 
-	function planOf(runs: Run[], drawn: Highlight[], list: readonly Piece[]) {
-		return planParagraph(runs, drawn, list, display.bookRuby);
+	function planOf(runs: Run[], drawn: Highlight[], list: readonly Piece[], ranges: readonly WordRange[]) {
+		return planParagraph(runs, drawn, list, display.bookRuby, ranges);
 	}
 
 	/** Paragraph code-point start of run r. */
@@ -127,7 +134,7 @@
 	});
 </script>
 
-{#snippet piece(s: PlanSeg)}{#if s.highlight}<mark data-o={s.startInRun} data-h={s.highlight.id} class="hl {s.highlight.color}" class:noted={s.noteMark}>{s.text}</mark>{:else if s.rt !== undefined}<ruby data-o={s.startInRun} class="gen">{s.text}<rt class:concealed={s.concealed}>{s.rt}</rt></ruby>{:else}<span data-o={s.startInRun}>{s.text}</span>{/if}{/snippet}
+{#snippet piece(s: PlanSeg)}{#if s.highlight}<mark data-o={s.startInRun} data-h={s.highlight.id} class="hl {s.highlight.color}" class:noted={s.noteMark}>{s.text}</mark>{:else if s.rt !== undefined}<ruby data-o={s.startInRun} class="gen" class:w-new={s.word === 'new'} class:w-learning={s.word === 'learning'} class:w-end={s.wordEnd}>{s.text}<rt class:concealed={s.concealed}>{s.rt}</rt></ruby>{:else}<span data-o={s.startInRun} class:w-new={s.word === 'new'} class:w-learning={s.word === 'learning'} class:w-end={s.wordEnd}>{s.text}</span>{/if}{/snippet}
 
 <div
 	class="chapter-text"
@@ -140,8 +147,9 @@
 	{#each paragraphs as runs, p (p)}
 		{@const drawn = highlights.get(p) ?? []}
 		{@const list = pieces.get(p) ?? []}
+		{@const ranges = words.get(p) ?? []}
 		<!-- One <p> per paragraph whatever its content: the position observers watch these elements. -->
-		<p data-p={p} class:bookmarked={marked.has(p)}>{#if drawn.length > 0 || list.some((x) => x.source === 'dict')}{#each planOf(runs, drawn, list) as g (g.run)}{#if g.ruby}<ruby data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}<rt class:concealed={g.bookConcealed}>{g.ruby}</rt></ruby>{:else}<span data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}</span>{/if}{/each}{:else}{#each runs as run, r (r)}{#if run.ruby && display.bookRuby}<ruby data-r={r}>{run.text}<rt class:concealed={list.find((x) => x.source === 'book' && x.start === bookStart(runs, r))?.concealed}>{run.ruby}</rt></ruby>{:else}<span data-r={r}>{run.text}</span>{/if}{/each}{/if}</p>
+		<p data-p={p} class:bookmarked={marked.has(p)}>{#if drawn.length > 0 || ranges.length > 0 || list.some((x) => x.source === 'dict')}{#each planOf(runs, drawn, list, ranges) as g (g.run)}{#if g.ruby}<ruby data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}<rt class:concealed={g.bookConcealed}>{g.ruby}</rt></ruby>{:else}<span data-r={g.run}>{#each g.segs as s (s.startInRun)}{@render piece(s)}{/each}</span>{/if}{/each}{:else}{#each runs as run, r (r)}{#if run.ruby && display.bookRuby}<ruby data-r={r}>{run.text}<rt class:concealed={list.find((x) => x.source === 'book' && x.start === bookStart(runs, r))?.concealed}>{run.ruby}</rt></ruby>{:else}<span data-r={r}>{run.text}</span>{/if}{/each}{/if}</p>
 	{/each}
 </div>
 

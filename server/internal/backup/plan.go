@@ -330,8 +330,9 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	if err := a.PluginRows(func(r PluginRow) error {
 		nr, drop := m.PluginRow(r)
 		noteID, isNote := noteEntryID(r)
-		// notes never collide: RegisterNote picked one winner per target
-		if !drop && !isNote {
+		_, isKeyed := entryKeyedID(r)
+		// notes and known marks never collide: RegisterNote picked one winner per target
+		if !drop && !isKeyed {
 			var ws int64
 			if nr.WorkspaceID != nil {
 				ws = *nr.WorkspaceID
