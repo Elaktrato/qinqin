@@ -1,5 +1,6 @@
 // Small pure helpers for the source browser and the reader popup.
 
+import { displayForm, type DisplayEntry } from '../../entry/displayForm';
 import type { StudyDay } from '../../time/studyDay';
 
 /**
@@ -18,13 +19,10 @@ export function shuffleSeed(random: () => number = Math.random): string {
 
 /**
  * popupWritten is the written form snapshotted onto a study card added from
- * a lookup popup: the first written form, else the first reading (a word
- * written in kana only), else the looked-up term.
+ * a lookup popup: the entry's display form (contract
+ * reader/popup-written.json: の, not the search-only 乃; こと for the
+ * usually-kana 事), else the looked-up term.
  */
-export function popupWritten(r: {
-	forms: { text: string }[];
-	readings: { value: string }[];
-	term: string;
-}): string {
-	return r.forms[0]?.text ?? r.readings[0]?.value ?? r.term;
+export function popupWritten(r: DisplayEntry & { term: string }): string {
+	return displayForm(r) || r.term;
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../../../docs/contracts/frequency/starter-deck-ids.json';
+import resolution from '../../../../../../../docs/contracts/frequency/starter-resolution.json';
 import type { FrequencyPack } from '$lib/api/types';
 import { ownedStarterDeckId } from './systemDecks';
 import {
@@ -84,6 +85,26 @@ describe('starterDecks', () => {
 				}
 			])
 		).toEqual([{ entryId: 7, written: 'する' }]);
+	});
+
+	it('snapshots the served written form (frequency/starter-resolution.json)', () => {
+		// The server serves each word in its display form with the row as list
+		// form (の, not the search-only 乃); the add snapshots exactly that.
+		const served = resolution.cases.flatMap((c) => c.expected);
+		const entries = served.map((e, i) => ({
+			id: i + 1,
+			language: 'ja',
+			kind: 'word',
+			written: e.written,
+			readings: [],
+			attrs: {},
+			radicalId: null,
+			rank: e.rank
+		}));
+		expect(starterAddItems(entries).map((item) => item.written)).toEqual(
+			served.map((e) => e.written)
+		);
+		expect(served.map((e) => e.written)).toContain('の');
 	});
 });
 

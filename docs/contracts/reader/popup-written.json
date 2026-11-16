@@ -1,0 +1,160 @@
+{
+ "version": 1,
+ "rule": "reader/popup-written",
+ "note": "popupWritten(lookupResult) is the written snapshot of a card added from the lookup popup: displayForm (frequency/display-form.json) of the result's forms, readings (with flags) and senses (tags), without a list form; the term when that is empty.",
+ "cases": [
+  {
+   "name": "の (1469800) matched by its reading: the kana, not the search-only 乃",
+   "term": "乃",
+   "forms": [
+    {
+     "text": "乃",
+     "flags": [
+      "sK"
+     ]
+    },
+    {
+     "text": "之",
+     "flags": [
+      "sK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "の",
+     "plain": "の",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "の"
+  },
+  {
+   "name": "こと matched in a text written 事: the usually-kana word is snapshotted as こと",
+   "term": "事",
+   "forms": [
+    {
+     "text": "事",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "こと",
+     "plain": "こと",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": [
+      "uk"
+     ]
+    }
+   ],
+   "expected": "こと"
+  },
+  {
+   "name": "食べる matched by its reading たべる: the written form",
+   "term": "食べる",
+   "forms": [
+    {
+     "text": "食べる",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "たべる",
+     "plain": "たべる",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "食べる"
+  },
+  {
+   "name": "解る (a later form) matched: the entry's display form 分かる, not the text's form",
+   "term": "解る",
+   "forms": [
+    {
+     "text": "分かる",
+     "flags": []
+    },
+    {
+     "text": "解る",
+     "flags": []
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "わかる",
+     "plain": "わかる",
+     "flags": []
+    }
+   ],
+   "senses": [
+    {
+     "tags": []
+    }
+   ],
+   "expected": "分かる"
+  },
+  {
+   "name": "a kana-only word",
+   "term": "ありがとう",
+   "forms": [],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "ありがとう",
+     "plain": "ありがとう",
+     "flags": []
+    }
+   ],
+   "senses": [],
+   "expected": "ありがとう"
+  },
+  {
+   "name": "an older server without reading flags or senses: the rule with what is there",
+   "term": "為る",
+   "forms": [
+    {
+     "text": "為る",
+     "flags": [
+      "rK"
+     ]
+    }
+   ],
+   "readings": [
+    {
+     "type": "kana",
+     "value": "する",
+     "plain": "する"
+    }
+   ],
+   "expected": "為る"
+  },
+  {
+   "name": "nothing to show: the looked-up term",
+   "term": "中",
+   "forms": [],
+   "readings": [],
+   "senses": [],
+   "expected": "中"
+  }
+ ]
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { studyDay } from '../../time/studyDay';
+import popupFixture from '../../../../../../docs/contracts/reader/popup-written.json';
 import { browseSeed, popupWritten, shuffleSeed } from './browse';
 
 describe('browseSeed', () => {
@@ -32,20 +33,8 @@ describe('shuffleSeed', () => {
 	});
 });
 
-describe('popupWritten', () => {
-	it('prefers the first written form', () => {
-		expect(
-			popupWritten({ forms: [{ text: '食べる' }], readings: [{ value: 'たべる' }], term: 'x' })
-		).toBe('食べる');
-	});
-
-	it('falls back to the first reading for a word without forms', () => {
-		expect(popupWritten({ forms: [], readings: [{ value: 'ありがとう' }], term: 'x' })).toBe(
-			'ありがとう'
-		);
-	});
-
-	it('falls back to the term last', () => {
-		expect(popupWritten({ forms: [], readings: [], term: '中' })).toBe('中');
+describe('popupWritten (reader/popup-written.json)', () => {
+	it.each(popupFixture.cases)('$name', (c) => {
+		expect(popupWritten(c)).toBe(c.expected);
 	});
 });
