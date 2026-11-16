@@ -6,6 +6,7 @@
 		addResultText,
 		dayLabel,
 		deckOptions,
+		historyCountText,
 		historyRows,
 		stateLabel,
 		type HistoryFilter
@@ -236,6 +237,8 @@
 
 		<p role="status" class="status">{status}</p>
 		{#if actionError}<p role="alert">{actionError}</p>{/if}
+
+		<p class="count" aria-live="polite">{historyCountText(rows.length, data.history.items.length, filter)}</p>
 
 		{#if data.history.items.length === 0}
 			<p class="hint">No lookups yet. Hover or select a word in the reader, or open a search result.</p>

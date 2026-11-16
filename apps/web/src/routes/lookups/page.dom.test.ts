@@ -202,4 +202,13 @@ describe('/lookups page', () => {
 	it('uses no raw HTML', () => {
 		expect(source).not.toContain('{@html');
 	});
+
+	it('announces the count when the filter changes', async () => {
+		vi.mocked(loadPage).mockResolvedValue(data([item(1), item(2), item(3)], {}, { 2: 'learning' }));
+		render(Page);
+		const count = await screen.findByText('3 words');
+		expect(count.getAttribute('aria-live')).toBe('polite');
+		await fireEvent.click(screen.getByRole('radio', { name: 'No card yet' }));
+		await waitFor(() => expect(count.textContent).toBe('2 of 3 words with no card yet'));
+	});
 });
