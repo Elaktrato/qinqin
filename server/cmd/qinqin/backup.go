@@ -47,7 +47,12 @@ func backupCmd(args []string, stdout, stderr io.Writer) error {
 	ctx := context.Background()
 	meta := backup.Meta{AppVersion: backup.AppVersion, SchemaVersion: backup.SchemaVersion(ctx, sqlDB), Now: time.Now()}
 	if inc.DB {
-		if err := backup.CheckSpace(*data); err != nil {
+		// The archive itself needs room too when it is written to the data volume.
+		var extra int64
+		if *out != "-" && backup.SameVolume(*data, filepath.Dir(*out)) {
+			extra = backup.EstimateServerBytes(*data, inc)
+		}
+		if err := backup.CheckSpace(*data, extra); err != nil {
 			return fmt.Errorf("backup: %w (the snapshot of the database is written to %s first)", err, filepath.Join(*data, "tmp"))
 		}
 	}

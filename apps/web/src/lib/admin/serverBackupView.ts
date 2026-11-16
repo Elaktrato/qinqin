@@ -12,8 +12,8 @@ export function includeBody(selected: ReadonlySet<string>): string[] {
 	return PARTS.map((p) => p.id).filter((id) => selected.has(id));
 }
 
-export function canCreate(selected: ReadonlySet<string>, password: string, busy: boolean): boolean {
-	return !busy && selected.size > 0 && password !== '';
+export function canCreate(selected: ReadonlySet<string>, password: string, busy: boolean, needsCode = false, code = ''): boolean {
+	return !busy && selected.size > 0 && password !== '' && (!needsCode || code.trim() !== '');
 }
 
 const TEXT: Record<string, string> = {
@@ -22,6 +22,7 @@ const TEXT: Record<string, string> = {
 	wrong_password: 'Your password is wrong.',
 	password_required: 'Enter your own password.',
 	rate_limited: 'Server backups are limited to one per minute. Try again shortly.',
+	code_invalid: 'That code is not right.',
 	forbidden: 'Only administrators can create server backups.'
 };
 

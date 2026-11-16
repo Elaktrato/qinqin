@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { apiErrorBody } from '$lib/api/client';
 	import { createServerBackup } from '$lib/api/backup';
+	import { user } from '$lib/auth';
 	import { PARTS, RESTORE_STEPS, SECURITY_NOTE, backupError, canCreate, includeBody } from './serverBackupView';
 
 	let { assign = (u: string) => location.assign(u) }: { assign?: (url: string) => void } = $props();
 
 	let selected = $state(new Set(PARTS.map((p) => p.id)));
 	let password = $state('');
+	let code = $state('');
+	const needsCode = $derived(!!$user?.mfa?.totp);
 	let busy = $state(false);
 	let error = $state('');
 	let started = $state(false);
@@ -20,13 +23,14 @@
 
 	async function create(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
-		if (!canCreate(selected, password, busy)) return;
+		if (!canCreate(selected, password, busy, needsCode, code)) return;
 		busy = true;
 		error = '';
 		started = false;
 		try {
-			const out = await createServerBackup({ currentPassword: password, include: includeBody(selected) });
+			const out = await createServerBackup({ currentPassword: password, code: code.trim() || undefined, include: includeBody(selected) });
 			password = '';
+			code = '';
 			started = true;
 			assign(out.url);
 		} catch (err) {
@@ -52,7 +56,10 @@
 			{/each}
 		</fieldset>
 		<label>Your password <input type="password" autocomplete="current-password" bind:value={password} /></label>
-		<button type="submit" disabled={!canCreate(selected, password, busy)}>Create server backup</button>
+		{#if needsCode}
+			<label>Authenticator or recovery code <input autocomplete="one-time-code" bind:value={code} /></label>
+		{/if}
+		<button type="submit" disabled={!canCreate(selected, password, busy, needsCode, code)}>Create server backup</button>
 	</form>
 	{#if started}<p role="status">The download starts now.</p>{/if}
 	{#if error}<p role="alert">{error}</p>{/if}

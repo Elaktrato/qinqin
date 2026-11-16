@@ -2,11 +2,16 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/sv
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
+const me = await vi.hoisted(async () => {
+	const { writable } = await import('svelte/store');
+	return writable<unknown>({ username: 'owner', mfa: { totp: false } });
+});
+vi.mock('$lib/auth', () => ({ user: me }));
 vi.mock('$lib/api/backup', () => ({ createServerBackup: vi.fn() }));
 import * as api from '$lib/api/backup';
 import ServerBackup from './ServerBackup.svelte';
 
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); me.set({ username: 'owner', mfa: { totp: false } }); });
 
 async function fill(): Promise<HTMLButtonElement> {
 	await fireEvent.input(screen.getByLabelText('Your password'), { target: { value: 'pw' } });
@@ -22,7 +27,7 @@ describe('ServerBackup', () => {
 		const btn = await fill();
 		await fireEvent.click(btn);
 		await waitFor(() => expect(assign).toHaveBeenCalledWith('/api/admin/backup/t'));
-		expect(api.createServerBackup).toHaveBeenCalledWith({ currentPassword: 'pw', include: ['db', 'books', 'packs'] });
+		expect(api.createServerBackup).toHaveBeenCalledWith({ currentPassword: 'pw', code: undefined, include: ['db', 'books', 'packs'] });
 	});
 	it('shows the free-space sentence on 507 and the running sentence on 409', async () => {
 		render(ServerBackup, { assign: vi.fn() });
@@ -38,5 +43,16 @@ describe('ServerBackup', () => {
 		render(ServerBackup);
 		expect((screen.getByRole('button', { name: 'Create server backup' }) as HTMLButtonElement).disabled).toBe(true);
 		expect(screen.getByText(/Stop the container/)).toBeTruthy();
+	});
+	it('asks for the authenticator code of an administrator who has one', async () => {
+		me.set({ username: 'owner', mfa: { totp: true } });
+		vi.mocked(api.createServerBackup).mockResolvedValue({ url: '/u', expiresInSeconds: 60, include: [] });
+		render(ServerBackup, { assign: vi.fn() });
+		const btn = await fill();
+		expect(btn.disabled).toBe(true);
+		await fireEvent.input(screen.getByLabelText(/Authenticator or recovery code/), { target: { value: '123456' } });
+		expect(btn.disabled).toBe(false);
+		await fireEvent.click(btn);
+		await waitFor(() => expect(api.createServerBackup).toHaveBeenCalledWith({ currentPassword: 'pw', code: '123456', include: ['db', 'books', 'packs', 'audio'] }));
 	});
 });

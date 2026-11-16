@@ -264,12 +264,16 @@ Two kinds, both in the app (issue [#61](https://github.com/Elaktrato/qinqin/issu
 - Words are matched by dictionary identity, not by internal id, so a backup restores onto another server.
   Cards, reviews, edits and sentences of words this server does not have are dropped, never guessed: the
   report lists them and you must tick "drop them". Installing the dictionary and restoring again brings
-  them back. A restore briefly pauses writes for everybody while it runs (about half a minute for a
-  million reviews).
+  them back. A restore holds the database write lock for its whole transaction: **it blocks every other
+  write on the server for about 30 seconds per million study events**, so other users' saves wait (and
+  are retried by their clients). A backup with more than 2,000,000 events is refused
+  (`backup_too_many_events`), and only one restore is applied at a time server-wide (the second gets
+  `409 restore_busy` with `Retry-After`). The download is refused up front (`backup_too_large_to_restore`)
+  when it could not be restored here: over 128 MiB as a zip, 2 GiB expanded or 64 MiB per book.
 - Restore needs a proxy body limit of at least 130 MB (the same as pack uploads).
 
 **The whole server (administrators): Settings, Admin, Backup.** Choose database, books, packs, audio, enter
-your password, and a `qinqin-server-<date>.tar.gz` downloads: `BACKUP-INFO.json` (checksums), `qinqin.db`
+your password (and your authenticator or recovery code if you use one), and a `qinqin-server-<date>.tar.gz` downloads: `BACKUP-INFO.json` (checksums), `qinqin.db`
 (a consistent `VACUUM INTO` snapshot taken while the server runs), `books/`, `packs/`, `audio/`. Never
 `journal/`, `cache/`, `tmp/`, `backups/`. The snapshot needs free space on the data volume of database
 size + 64 MiB. One at a time, one per minute.
@@ -278,17 +282,23 @@ For a schedule use the CLI, which opens the database read-only and never migrate
 the server:
 
 ```sh
+# --out is a path INSIDE the container; /data/backups is <your data volume or bind path>/backups on the host
 docker exec <container> qinqin backup --out /data/backups/qinqin-$(date +%F).tar.gz
-# crontab, keep 14 days:
-0 3 * * * docker exec qinqin qinqin backup --out /data/backups/qinqin-$(date +\%F).tar.gz && find /srv/qinqin/backups -name 'qinqin-*.tar.gz' -mtime +14 -delete
+# host crontab, keep 14 days (/srv/qinqin/data is the host path mounted at /data):
+0 3 * * * docker exec qinqin qinqin backup --out /data/backups/qinqin-$(date +\%F).tar.gz && find /srv/qinqin/data/backups -name 'qinqin-*.tar.gz' -mtime +14 -delete
 ```
 
-(`--out -` writes to standard output, `--only db,books` limits the parts.) Put `/data/backups` on a bind
+(`--out -` writes to standard output, `--only db,books` limits the parts. When `--out` is on the data
+volume the free-space check counts the archive as well as the snapshot. Run `docker exec` as the image's
+own user: with `-u root` the files in `/data/backups` and `/data/tmp` become root-owned and the server
+cannot clean them up.) Put `/data/backups` on a bind
 mount or its own volume if you want the archives outside the data volume.
 
 **The server archive contains password hashes, hashed session tokens and AI keys and the SMTP password
-sealed with `QINQIN_SECRET`: store it like the secret.** Restoring without the same secret loses the
-sealed values (users enter AI keys again, the admin re-enters SMTP).
+sealed with `QINQIN_SECRET`: store it like the secret.** Authenticator (TOTP) secrets are sealed with it
+too. Restoring without the same secret loses the sealed values: users enter AI keys again, the admin
+re-enters SMTP, and **users with an authenticator can no longer pass the second step**: they sign in with
+a recovery code, or an administrator resets their two-factor sign-in (Settings, Admin, Users).
 
 **Restoring a server backup is offline:** stop the container, empty the data volume, `tar xzf
 <file> -C /data`, start the same `QINQIN_SECRET` with the same or a newer image. A book added during the

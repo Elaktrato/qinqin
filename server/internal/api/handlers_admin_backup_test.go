@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"qinqin/internal/backup"
 )
@@ -145,5 +146,26 @@ func TestAdminBackupTicketOfADemotedAdminIsDead(t *testing.T) {
 	e.db.Exec(`UPDATE users SET admin = 0 WHERE username = 'second'`)
 	if status, _, _ := getRaw(t, e.ts.URL, tk.URL, ""); status != 404 {
 		t.Errorf("ticket of a demoted admin = %d, want 404", status)
+	}
+}
+
+func TestAdminServerBackupAsksAnAdminWithTwoFactorForTheCode(t *testing.T) {
+	e := newMailEnv(t, mailOpts{configure: true})
+	secret, _ := e.enrolTOTP(t, e.owner, "secret-pass-owner")
+	e.clk.advance(31 * time.Second) // the code of the enrolment is spent for its step
+	var eb errBody
+	r := doJSON(t, "POST", e.ts.URL, "/api/admin/backup", e.owner, map[string]any{"currentPassword": "secret-pass-owner"})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 403 || eb.Error != "code_invalid" {
+		t.Errorf("without a code = %d %+v", r.StatusCode, eb)
+	}
+	r = doJSON(t, "POST", e.ts.URL, "/api/admin/backup", e.owner, map[string]any{"currentPassword": "secret-pass-owner", "code": "000000"})
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 403 || eb.Error != "code_invalid" {
+		t.Errorf("wrong code = %d %+v", r.StatusCode, eb)
+	}
+	r = doJSON(t, "POST", e.ts.URL, "/api/admin/backup", e.owner, map[string]any{"currentPassword": "secret-pass-owner", "code": e.code(secret, 0), "include": []string{"books"}})
+	if r.StatusCode != 200 {
+		t.Errorf("with the right code = %d", r.StatusCode)
 	}
 }

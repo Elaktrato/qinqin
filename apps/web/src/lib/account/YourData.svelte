@@ -173,7 +173,7 @@
 
 	<h3>Restore from a backup</h3>
 	<p class="hint">Restoring replaces <strong>all</strong> of your data with the backup's, and signs you out on your other devices.</p>
-	{#if !view || view.status === 'invalid'}
+	{#if !view || view.status === 'invalid' || view.status === 'failed'}
 		<label class="file">
 			Backup file (.zip)
 			<input type="file" accept=".zip,application/zip" disabled={busy} onchange={pick} />
@@ -187,13 +187,13 @@
 	{/if}
 	{#if view?.status === 'invalid'}
 		<p role="alert">{stageProblem(view)}</p>
-		{#if view.report?.blocking.length}<ul>{#each view.report.blocking as b (b)}<li>{b}</li>{/each}</ul>{/if}
+		{#if view.report?.blocking.length}<ul>{#each view.report.blocking as b, i (i)}<li>{b}</li>{/each}</ul>{/if}
 	{/if}
 	{#if view?.status === 'ready' && view.report}
 		{@const r = view.report}
 		<p>{replaceSentence(r)}</p>
 		<p>{restoreSentence(r)}</p>
-		{#each r.warnings as w (w)}<p role="note">{w}</p>{/each}
+		{#each r.warnings as w, i (i)}<p role="note">{w}</p>{/each}
 		{#if r.pluginsNotInstalled.length}
 			<p class="hint">Data of plugins that are not installed here is kept but does nothing: {r.pluginsNotInstalled.join(', ')}.</p>
 		{/if}
@@ -201,7 +201,7 @@
 		{#if needsDropAck(r)}
 			<div role="group" aria-label="Words this server does not have">
 				<p>This server does not have these words, so what refers to them is dropped:</p>
-				<ul>{#each unresolvedLines(r) as l (l)}<li>{l}</li>{/each}</ul>
+				<ul>{#each unresolvedLines(r) as l, i (i)}<li>{l}</li>{/each}</ul>
 				{#if r.unresolved.sentences}<p>{r.unresolved.sentences} example sentences cannot be matched either.</p>{/if}
 				<label><input type="checkbox" bind:checked={ackDrop} /> Drop them and restore the rest</label>
 			</div>

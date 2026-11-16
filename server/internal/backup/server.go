@@ -87,9 +87,10 @@ var (
 func DBPath(dataDir string) string { return filepath.Join(dataDir, "qinqin.db") }
 
 // CheckSpace says whether the volume of dataDir can take a VACUUM INTO of the
-// database: free space >= database + WAL + 64 MiB.
-func CheckSpace(dataDir string) error {
-	need := int64(spaceMargin)
+// database: free space >= database + WAL + 64 MiB + extra (the size of the
+// output archive when it is written to the same volume).
+func CheckSpace(dataDir string, extra int64) error {
+	need := int64(spaceMargin) + extra
 	for _, p := range []string{DBPath(dataDir), DBPath(dataDir) + "-wal"} {
 		if st, err := os.Stat(p); err == nil {
 			need += st.Size()
@@ -250,4 +251,43 @@ func SetFreeBytesForTest(f func(string) (uint64, error)) (restore func()) {
 	old := freeBytes
 	freeBytes = f
 	return func() { freeBytes = old }
+}
+
+// EstimateServerBytes is an upper bound of the archive: the uncompressed size
+// of the database, its WAL and the chosen directories.
+func EstimateServerBytes(dataDir string, inc Include) int64 {
+	var total int64
+	add := func(p string) {
+		filepath.WalkDir(p, func(_ string, d fs.DirEntry, err error) error {
+			if err == nil && d.Type().IsRegular() {
+				if info, ierr := d.Info(); ierr == nil {
+					total += info.Size()
+				}
+			}
+			return nil
+		})
+	}
+	if inc.DB {
+		add(DBPath(dataDir))
+		add(DBPath(dataDir) + "-wal")
+	}
+	for _, p := range []struct {
+		on  bool
+		dir string
+	}{{inc.Books, "books"}, {inc.Packs, "packs"}, {inc.Audio, "audio"}} {
+		if p.on {
+			add(filepath.Join(dataDir, p.dir))
+		}
+	}
+	return total
+}
+
+// SameVolume reports whether two paths live on one filesystem (the output of
+// a backup written beside the data takes the same free space).
+func SameVolume(a, b string) bool {
+	var sa, sb syscall.Stat_t
+	if syscall.Stat(a, &sa) != nil || syscall.Stat(b, &sb) != nil {
+		return true // unknown: assume the worst
+	}
+	return sa.Dev == sb.Dev
 }

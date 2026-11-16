@@ -47,6 +47,8 @@ export function safetyExportTicket(): Promise<TicketReply> {
 
 export interface ServerBackupBody {
 	currentPassword: string;
+	/** Authenticator or recovery code, for an administrator who has two-factor sign-in. */
+	code?: string;
 	include: string[];
 }
 

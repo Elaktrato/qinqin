@@ -3,6 +3,7 @@ package db_test
 import (
 	"context"
 	"database/sql"
+	"os"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -202,5 +203,40 @@ func TestSynchronousModePerCommand(t *testing.T) {
 	}
 	if mode != 1 {
 		t.Errorf("db.OpenForSeed synchronous = %d, want 1 (NORMAL)", mode)
+	}
+}
+
+func TestOpenReadOnlyEscapesTheDatabasePath(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "a b#c?d")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "qinqin.db")
+	plain := filepath.Join(t.TempDir(), "plain.db")
+	rw, err := db.Open(plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rw.Exec(`INSERT INTO languages (code, name, updated_at) VALUES ('xx', 'x', 't')`)
+	rw.Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
+	rw.Close()
+	raw, err := os.ReadFile(plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, raw, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ro, err := db.OpenReadOnly(path)
+	if err != nil {
+		t.Fatalf("a path with URI characters: %v", err)
+	}
+	defer ro.Close()
+	var n int
+	if err := ro.QueryRow(`SELECT COUNT(*) FROM languages WHERE code = 'xx'`).Scan(&n); err != nil || n != 1 {
+		t.Errorf("read back %d %v", n, err)
+	}
+	if _, err := ro.Exec(`INSERT INTO languages (code, name, updated_at) VALUES ('yy', 'y', 't')`); err == nil {
+		t.Error("the read-only handle accepted a write")
 	}
 }

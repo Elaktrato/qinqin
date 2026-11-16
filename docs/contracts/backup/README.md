@@ -66,6 +66,13 @@ history under `orphan:<oldId>`. `read` events: `payload.bookId` through the book
 (`scope.workspaces`) and `hiddenDictionaries` (by dictionary pack id) are remapped; a vacation whose
 workspace list becomes empty is dropped (`"all"` stays). Workspace and book ids are always new.
 
+## Limits of a restore
+
+At most 2,000,000 events (`backup_too_many_events`), one restore applied at a time server-wide
+(`restore_busy`, Retry-After 30), event `ts` normalised to UTC whole seconds like a normal push, a card
+id collision after remapping makes the stage invalid (never fails at apply), safety exports: newest three
+or one week.
+
 ## Restore rules in short
 
 Order: validate everything (nothing changes), dry-run report, safety export of the current data, then one

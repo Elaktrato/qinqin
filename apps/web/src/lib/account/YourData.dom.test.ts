@@ -35,7 +35,7 @@ beforeEach(() => {
 		return { token: 'tok' };
 	});
 });
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
 describe('YourData', () => {
 	it('downloads through a ticket and navigates to it', async () => {
@@ -119,5 +119,22 @@ describe('YourData', () => {
 		render(YourData);
 		await choose();
 		expect((await screen.findByRole('alert')).textContent).toContain('format this server cannot read');
+	});
+
+	it('lets you pick a file again after a failed restore and lists duplicates', async () => {
+		const r = ready();
+		r.report.warnings = ['same', 'same'] as never;
+		let calls = 0;
+		const failed = { status: 'failed', report: null, result: null, error: { code: 'internal', message: 'The restore failed.' } };
+		vi.mocked(api.restoreStatus).mockImplementation((async () => (calls++ === 0 ? r : failed)) as never);
+		vi.mocked(api.applyRestore).mockResolvedValue({ status: 'running' });
+		render(YourData);
+		await choose();
+		expect((await screen.findAllByText('same')).length).toBe(2);
+		await fireEvent.input(screen.getByLabelText('Your password'), { target: { value: 'pw' } });
+		await fireEvent.input(screen.getByLabelText(/Type your username/), { target: { value: 'alice' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+		expect((await screen.findByText(/Nothing was changed/, {}, { timeout: 3000 })).textContent).toContain('Nothing was changed');
+		expect(screen.getByLabelText('Backup file (.zip)')).toBeTruthy();
 	});
 });

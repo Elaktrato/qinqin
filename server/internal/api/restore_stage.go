@@ -129,8 +129,13 @@ func (s *server) restoreDir() string { return filepath.Join(s.dataDir, "tmp", "r
 // server-backup snapshots and book staging directories. It runs at start-up.
 func CleanBackupTemp(dataDir string) {
 	os.RemoveAll(filepath.Join(dataDir, "tmp", "restore"))
+	// A snapshot younger than an hour may belong to a `qinqin backup` that is
+	// running beside this server: leave it.
 	if matches, err := filepath.Glob(filepath.Join(dataDir, "tmp", "backup-*")); err == nil {
 		for _, m := range matches {
+			if info, err := os.Stat(m); err == nil && time.Since(info.ModTime()) < time.Hour {
+				continue
+			}
 			os.Remove(m)
 		}
 	}

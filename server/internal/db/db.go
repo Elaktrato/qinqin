@@ -7,7 +7,9 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -41,7 +43,13 @@ func OpenReadOnly(path string) (*sql.DB, error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("open database %s: %w", path, err)
 	}
-	sqlDB, err := sql.Open("sqlite", "file:"+path+"?mode=ro&_pragma=busy_timeout(5000)")
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("open database %s: %w", path, err)
+	}
+	// A URI: characters such as ? # % and spaces in the path must be escaped.
+	u := url.URL{Scheme: "file", Path: abs}
+	sqlDB, err := sql.Open("sqlite", u.String()+"?mode=ro&_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, fmt.Errorf("open database %s: %w", path, err)
 	}

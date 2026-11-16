@@ -22,6 +22,7 @@ func (s *server) handleAdminBackupStart(w http.ResponseWriter, r *http.Request) 
 	}
 	var req struct {
 		CurrentPassword string   `json:"currentPassword"`
+		Code            string   `json:"code"` // authenticator or recovery code, for admins who have one
 		Include         []string `json:"include"`
 	}
 	if !readAccountBodyStrict(w, r, &req) {
@@ -39,8 +40,15 @@ func (s *server) handleAdminBackupStart(w http.ResponseWriter, r *http.Request) 
 	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
 		return
 	}
+	// The archive holds every password hash: an admin with an authenticator proves it too.
+	if has, herr := auth.HasTOTP(r.Context(), s.db, admin.ID); herr != nil {
+		writeInternal(w, r)
+		return
+	} else if has && !s.secondFactorOK(w, r, admin.ID, req.Code) {
+		return
+	}
 	if inc.DB {
-		if err := backup.CheckSpace(s.dataDir); err != nil {
+		if err := backup.CheckSpace(s.dataDir, 0); err != nil {
 			s.writeSpaceError(w, r, err)
 			return
 		}
@@ -106,7 +114,7 @@ func (s *server) handleAdminBackupDownload(w http.ResponseWriter, r *http.Reques
 		s.backups.mu.Unlock()
 	}()
 	if inc.DB {
-		if err := backup.CheckSpace(s.dataDir); err != nil {
+		if err := backup.CheckSpace(s.dataDir, 0); err != nil {
 			s.writeSpaceError(w, r, err)
 			return
 		}

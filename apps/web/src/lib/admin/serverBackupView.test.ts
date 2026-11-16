@@ -12,6 +12,10 @@ describe('serverBackupView', () => {
 		expect(canCreate(new Set(['db']), '', false)).toBe(false);
 		expect(canCreate(new Set(['db']), 'pw', true)).toBe(false);
 	});
+	it('needs the code when the administrator has two-factor sign-in', () => {
+		expect(canCreate(new Set(['db']), 'pw', false, true, '')).toBe(false);
+		expect(canCreate(new Set(['db']), 'pw', false, true, ' 123456 ')).toBe(true);
+	});
 	it('words the errors and lists the restore steps', () => {
 		expect(backupError('insufficient_storage', 'x')).toContain('free space');
 		expect(backupError('backup_running', 'x')).toBe('A backup is already running.');

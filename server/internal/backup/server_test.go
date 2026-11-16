@@ -175,11 +175,11 @@ func TestCheckSpace(t *testing.T) {
 	old := freeBytes
 	t.Cleanup(func() { freeBytes = old })
 	freeBytes = func(string) (uint64, error) { return 1 << 20, nil }
-	if err := CheckSpace(w.Data); !errors.Is(err, ErrInsufficientStorage) {
+	if err := CheckSpace(w.Data, 0); !errors.Is(err, ErrInsufficientStorage) {
 		t.Errorf("low space: %v", err)
 	}
 	freeBytes = func(string) (uint64, error) { return 10 << 30, nil }
-	if err := CheckSpace(w.Data); err != nil {
+	if err := CheckSpace(w.Data, 0); err != nil {
 		t.Errorf("plenty: %v", err)
 	}
 	if _, err := ParseInclude([]string{"db", "secrets"}); err == nil {
@@ -187,5 +187,27 @@ func TestCheckSpace(t *testing.T) {
 	}
 	if inc, _ := ParseInclude(nil); inc != AllIncluded {
 		t.Error("empty include is all")
+	}
+}
+
+func TestCheckSpaceCountsTheOutputArchive(t *testing.T) {
+	w := newWorld(t)
+	old := freeBytes
+	t.Cleanup(func() { freeBytes = old })
+	freeBytes = func(string) (uint64, error) { return 100 << 20, nil }
+	if err := CheckSpace(w.Data, 0); err != nil {
+		t.Fatalf("snapshot alone: %v", err)
+	}
+	if err := CheckSpace(w.Data, 200<<20); !errors.Is(err, ErrInsufficientStorage) {
+		t.Errorf("snapshot plus a 200 MiB archive on the same volume: %v", err)
+	}
+	clean := t.TempDir()
+	writeFileAt(t, clean, "books/1/1.json", strings.Repeat("x", 1000))
+	writeFileAt(t, clean, "audio/a.bin", strings.Repeat("y", 500))
+	if got := EstimateServerBytes(clean, Include{Books: true, Audio: true}); got != 1500 {
+		t.Errorf("estimate %d, want 1500", got)
+	}
+	if got := EstimateServerBytes(clean, Include{Books: true}); got != 1000 {
+		t.Errorf("estimate %d, want 1000", got)
 	}
 }

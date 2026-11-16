@@ -3,8 +3,11 @@ package api
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestExportRefusesAConcurrentExportAndARestore(t *testing.T) {
@@ -87,5 +90,28 @@ func TestOnlyOneRestoreIsAppliedAtATime(t *testing.T) {
 	s.restores.mu.Unlock()
 	if status != rsReady {
 		t.Errorf("a refused apply changed the stage to %s", status)
+	}
+}
+
+func TestCleanBackupTempLeavesAFreshSnapshotAlone(t *testing.T) {
+	dir := t.TempDir()
+	tmp := filepath.Join(dir, "tmp")
+	os.MkdirAll(filepath.Join(tmp, "restore"), 0o755)
+	os.WriteFile(filepath.Join(tmp, "restore", "x.zip"), []byte("z"), 0o600)
+	fresh := filepath.Join(tmp, "backup-fresh.db")
+	stale := filepath.Join(tmp, "backup-stale.db")
+	os.WriteFile(fresh, []byte("z"), 0o600)
+	os.WriteFile(stale, []byte("z"), 0o600)
+	old := time.Now().Add(-2 * time.Hour)
+	os.Chtimes(stale, old, old)
+	CleanBackupTemp(dir)
+	if _, err := os.Stat(fresh); err != nil {
+		t.Error("a snapshot younger than an hour (a CLI backup in progress) was deleted")
+	}
+	if _, err := os.Stat(stale); !os.IsNotExist(err) {
+		t.Error("a stale snapshot was kept")
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "restore")); !os.IsNotExist(err) {
+		t.Error("staged restores survived a restart")
 	}
 }
