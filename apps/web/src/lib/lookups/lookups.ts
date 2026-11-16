@@ -53,7 +53,8 @@ export function instant(v: unknown): number | null {
 	const mm = Number(v.slice(14, 16));
 	const ss = Number(v.slice(17, 19));
 	if (mo < 1 || mo > 12 || d < 1 || hh > 23 || mm > 59 || ss > 59) return null;
-	if (d > new Date(Date.UTC(y, mo, 0)).getUTCDate()) return null;
+	const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+	if (d > [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]) return null;
 	return t;
 }
 

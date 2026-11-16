@@ -37,11 +37,6 @@
 		first?: boolean;
 	} = $props();
 
-	// The lookup history's hint (#72): the root popup's first result, looked
-	// up often, with no card and no "I know this" mark. The count comes from
-	// the recorder's memory (0 while recording is off); no request per popup.
-	const lookedUp = $derived(first && paragraph !== null ? lookupRecorder().countOf(workspaceId, result.entryId) : 0);
-	const showLookedUp = $derived(lookedUp >= PROMPT_MIN_COUNT && inStudy === false && marked === false);
 
 	// null: not known yet (toggle disabled).
 	let marked = $state<boolean | null>(null);
@@ -63,6 +58,11 @@
 	let addButton = $state<HTMLButtonElement | null>(null);
 
 	const term = $derived(result.term);
+	// The lookup history's hint (#72): the root popup's first result, looked
+	// up often, with no card and no "I know this" mark. The count comes from
+	// the recorder's memory (0 while recording is off); no request per popup.
+	const lookedUp = $derived(first && paragraph !== null ? lookupRecorder().countOf(workspaceId, result.entryId) : 0);
+	const showLookedUp = $derived(lookedUp >= PROMPT_MIN_COUNT && inStudy === false && marked === false);
 	const disabled = $derived(busy || inStudy !== false);
 
 	$effect(() => {
