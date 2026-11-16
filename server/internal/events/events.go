@@ -1,6 +1,7 @@
 // Package events stores study events: append-only, immutable rows keyed
 // by the client-generated event id, so a retried batch counts its
-// already-stored events as duplicates instead of failing.
+// already-stored events as duplicates instead of failing. The one
+// exception is DeleteLookups (the owner erasing their lookup events).
 package events
 
 import (
@@ -26,8 +27,8 @@ func ValidID(id string) bool {
 // Append inserts evts as new study_events rows inside one transaction,
 // counting rows whose id already exists as duplicates — a retried batch
 // is never an error. It returns how many events were stored and how
-// many were duplicates. Events are immutable: nothing here updates or
-// deletes rows. Callers validate that each event's WorkspaceID belongs
+// many were duplicates. Events are immutable: nothing here updates them,
+// and only DeleteLookups deletes (the "lookup" type, for privacy). Callers validate that each event's WorkspaceID belongs
 // to its UserID; Append trusts its inputs.
 func Append(ctx context.Context, sqlDB *sql.DB, evts []model.StudyEvent) (accepted, duplicates int, err error) {
 	tx, err := sqlDB.BeginTx(ctx, nil)
@@ -63,6 +64,26 @@ func Append(ctx context.Context, sqlDB *sql.DB, evts []model.StudyEvent) (accept
 		return 0, 0, fmt.Errorf("append study events: %w", err)
 	}
 	return accepted, duplicates, nil
+}
+
+// DeleteLookups deletes the user's events of type "lookup" in one
+// workspace and returns how many rows it deleted. It is the only deletion
+// of events (privacy, #72): nothing derives from lookup events (no activity
+// rule, no replay) and older web clients stored free-text search queries in
+// them. Callers check that the workspace is the user's; a workspace of
+// another user matches no row anyway.
+func DeleteLookups(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int64) (int64, error) {
+	res, err := sqlDB.ExecContext(ctx,
+		`DELETE FROM study_events WHERE user_id = ? AND workspace_id = ? AND type = 'lookup'`,
+		userID, workspaceID)
+	if err != nil {
+		return 0, fmt.Errorf("delete lookup events: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("delete lookup events: %w", err)
+	}
+	return n, nil
 }
 
 // Since returns the user's study events from since (inclusive) onward,
