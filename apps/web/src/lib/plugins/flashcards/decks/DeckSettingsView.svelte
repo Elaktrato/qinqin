@@ -3,7 +3,11 @@
 	import type { Component } from 'svelte';
 	import { tick, untrack } from 'svelte';
 	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
-	import { GENERAL_DECK_ID, deleteDeck, renameDeck } from '$lib/study/store';
+	import { GENERAL_DECK_ID, deleteDeck, renameDeck, saveDeckNewOrder } from '$lib/study/store';
+	import { getFrequencyPacks } from '$lib/api/frequency';
+	import { getSchemes } from '$lib/api/schemes';
+	import type { FrequencyPack, Scheme } from '$lib/api/types';
+	import { decodeOrder, deckOrderChoices, encodeOrder } from '$lib/study/newOrderView';
 	import { workspaces } from '$lib/workspaces';
 	import { flashcardsHref } from '../route';
 	import { deleteDeckText } from './deleteText';
@@ -42,6 +46,41 @@
 			name = stored;
 		}
 	});
+
+	// The order of new cards (#75): offered from the installed packs and schemes.
+	let packs = $state.raw<FrequencyPack[]>([]);
+	let schemes = $state.raw<Scheme[]>([]);
+	$effect(() => {
+		getFrequencyPacks()
+			.then((list) => (packs = Array.isArray(list) ? list : []))
+			.catch(() => (packs = []));
+		getSchemes()
+			.then((list) => (schemes = Array.isArray(list) ? list : []))
+			.catch(() => (schemes = []));
+	});
+	const language = $derived($workspaces.current?.language ?? '');
+	const orderView = $derived(deckOrderChoices({ language, packs, schemes }));
+	const storedOrder = $derived(encodeOrder(data?.deckSettings[deckId]?.newOrder ?? { by: 'added' }));
+	// A stored order this server cannot offer (pack removed) shows as added.
+	const orderValue = $derived(
+		orderView.choices.some((choice) => choice.value === storedOrder) ? storedOrder : 'added'
+	);
+
+	async function saveOrder(value: string): Promise<void> {
+		message = '';
+		error = '';
+		const order = decodeOrder(value);
+		busy = true;
+		try {
+			await saveDeckNewOrder(deckId, order === 'deck' ? { by: 'added' } : order);
+			message = 'Saved.';
+			await store.load(workspaceId, true);
+		} catch (err) {
+			error = err instanceof Error && err.message ? err.message : 'Could not save the order.';
+		} finally {
+			busy = false;
+		}
+	}
 
 	let message = $state('');
 	let error = $state('');
@@ -139,6 +178,25 @@
 			/>
 		</section>
 
+		<section>
+			<h2>New cards</h2>
+			<label>
+				Order of new cards
+				<select
+					value={orderValue}
+					disabled={busy}
+					onchange={(event) => void saveOrder((event.currentTarget as HTMLSelectElement).value)}
+				>
+					{#each orderView.choices as choice (choice.value)}
+						<option value={choice.value}>{choice.label}</option>
+					{/each}
+				</select>
+			</label>
+			{#if orderView.hint !== null}
+				<p class="hint">{orderView.hint}</p>
+			{/if}
+		</section>
+
 		{#if limitsEditor !== null}
 			{@const Editor = limitsEditor}
 			<section>
@@ -190,8 +248,14 @@
 		font-size: 0.9rem;
 	}
 
-	button {
+	button,
+	select {
 		min-height: 44px;
+	}
+
+	select {
+		max-width: 100%;
+		font: inherit;
 	}
 
 	.danger {

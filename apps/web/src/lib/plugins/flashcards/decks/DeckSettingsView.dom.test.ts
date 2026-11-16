@@ -9,11 +9,16 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	renameDeck: vi.fn(),
 	deleteDeck: vi.fn(),
-	saveDeckCardTypes: vi.fn()
+	saveDeckCardTypes: vi.fn(),
+	saveDeckNewOrder: vi.fn()
 }));
+vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) }));
+vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []) }));
 
 import { loadStudyHistory } from '$lib/study/history';
-import { deleteDeck, renameDeck, saveDeckCardTypes } from '$lib/study/store';
+import { getFrequencyPacks } from '$lib/api/frequency';
+import { getSchemes } from '$lib/api/schemes';
+import { deleteDeck, renameDeck, saveDeckCardTypes, saveDeckNewOrder } from '$lib/study/store';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
 import DeckSettingsView from './DeckSettingsView.svelte';
@@ -117,5 +122,77 @@ describe('DeckSettingsView', () => {
 	it('says when the deck does not exist', async () => {
 		render(DeckSettingsView, { deckId: 'nope' });
 		expect(await screen.findByText('Deck not found.')).toBeTruthy();
+	});
+
+	describe('order of new cards (#75)', () => {
+		const zhPack = {
+			id: 4,
+			packId: 'local-zh',
+			name: 'Local zh list',
+			version: '1',
+			language: 'zh',
+			license: 'local',
+			attribution: 'local'
+		};
+		const hsk = { id: 7, name: 'HSK 3.0 (words)', unit: 'word', language: 'zh', packId: 'hsk-words', levels: [] };
+		const select = () => screen.getByLabelText('Order of new cards') as HTMLSelectElement;
+
+		beforeEach(() => {
+			vi.mocked(getFrequencyPacks).mockResolvedValue([zhPack] as never);
+			vi.mocked(getSchemes).mockResolvedValue([hsk] as never);
+			vi.mocked(saveDeckNewOrder).mockImplementation(async (deckId, order) => ({
+				deckId,
+				cardTypes: ['cloze'],
+				...(order.by === 'added' ? {} : { newOrder: order }),
+				extra: {}
+			}));
+		});
+
+		it('saves most frequent first and by level', async () => {
+			render(DeckSettingsView, { deckId: 'd1' });
+			await waitFor(() =>
+				expect([...select().options].map((o) => o.textContent)).toEqual([
+					'In the order added',
+					'Most frequent first (Local zh list)',
+					'By level: HSK 3.0 (words)'
+				])
+			);
+			expect(select().value).toBe('added');
+			await fireEvent.change(select(), { target: { value: 'frequency' } });
+			await waitFor(() => expect(saveDeckNewOrder).toHaveBeenCalledWith('d1', { by: 'frequency' }));
+			await fireEvent.change(select(), { target: { value: 'level:hsk-words' } });
+			await waitFor(() =>
+				expect(saveDeckNewOrder).toHaveBeenCalledWith('d1', { by: 'level', packId: 'hsk-words' })
+			);
+			expect(saveDeckCardTypes).not.toHaveBeenCalled();
+		});
+
+		it('shows the stored order', async () => {
+			vi.mocked(loadStudyHistory).mockResolvedValue({
+				decks: [greetings],
+				cards: [],
+				reviews: [],
+				merged: 0,
+				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
+			});
+			render(DeckSettingsView, { deckId: 'd1' });
+			await waitFor(() => expect(select().value).toBe('frequency'));
+		});
+
+		it('without a pack: no frequency option and the hint', async () => {
+			vi.mocked(getFrequencyPacks).mockResolvedValue([]);
+			render(DeckSettingsView, { deckId: 'd1' });
+			await screen.findByText(
+				'No frequency list is installed for Chinese. An administrator can add one in Settings, Data; see Data and licences.'
+			);
+			expect([...select().options].map((o) => o.value)).toEqual(['added', 'level:hsk-words']);
+		});
+
+		it('works for General', async () => {
+			render(DeckSettingsView, { deckId: 'general' });
+			await waitFor(() => expect(select().options.length).toBe(3));
+			await fireEvent.change(select(), { target: { value: 'frequency' } });
+			await waitFor(() => expect(saveDeckNewOrder).toHaveBeenCalledWith('general', { by: 'frequency' }));
+		});
 	});
 });
