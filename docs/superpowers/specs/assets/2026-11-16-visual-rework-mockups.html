@@ -1,0 +1,1416 @@
+<title>qinqin Visual Direction</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;600&family=Noto+Serif+SC:wght@600;900&family=LXGW+WenKai+TC&display=swap">
+<style>
+/* Layout: a review board. Each mock is a small qinqin window drawn from the same theme tokens,
+   so switching a theme repaints every mock at once. Tokens: chrome (window frame / menus),
+   panel (content surface), raised (cards, hovers), line, text, muted, accent, on-accent. */
+:root {
+	--chrome: #dce0e8; --panel: #eff1f5; --raised: #e6e9ef; --line: #ccd0da;
+	--text: #4c4f69; --muted: #6c6f85; --accent: #8839ef; --on-accent: #ffffff;
+	--good: #40a02b; --warn: #df8e1d; --bad: #d20f39;
+	--g-again: #d20f39; --g-hard: #fe640b; --g-good: #40a02b; --g-easy: #1e66f5;
+	--board: #e6e9ef;
+	--r: 10px; --pad: 1;
+	--ui: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--cjk: 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans', 'Microsoft YaHei', sans-serif;
+	--brand: 'Noto Serif SC', 'Songti SC', serif;
+	color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--chrome: #11111b; --panel: #1e1e2e; --raised: #313244; --line: #45475a;
+		--text: #cdd6f4; --muted: #a6adc8; --accent: #cba6f7; --on-accent: #11111b;
+		--good: #a6e3a1; --warn: #f9e2af; --bad: #f38ba8; --board: #181825;
+		--g-again: #f38ba8; --g-hard: #fab387; --g-good: #a6e3a1; --g-easy: #89b4fa;
+		color-scheme: dark;
+	}
+}
+:root[data-theme="dark"] {
+	--chrome: #11111b; --panel: #1e1e2e; --raised: #313244; --line: #45475a;
+	--text: #cdd6f4; --muted: #a6adc8; --accent: #cba6f7; --on-accent: #11111b;
+	--good: #a6e3a1; --warn: #f9e2af; --bad: #f38ba8; --board: #181825;
+		--g-again: #f38ba8; --g-hard: #fab387; --g-good: #a6e3a1; --g-easy: #89b4fa;
+	color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--board); color: var(--text); font-family: var(--ui); font-size: 15px; line-height: 1.5; transition: background .25s, color .25s; }
+.page { max-width: 1120px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 1.3rem; font-weight: 700; }
+h3 { font-size: 1rem; font-weight: 700; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 66ch; }
+.intro { display: grid; gap: 10px; }
+.intro .eyebrow { font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+section { display: grid; gap: 16px; }
+.sechead { display: grid; gap: 4px; }
+.sechead p { color: var(--muted); max-width: 70ch; }
+.cjk { font-family: var(--cjk); }
+
+/* ---------- theme controls ---------- */
+.controls { background: var(--panel); border-radius: calc(var(--r) + 4px); padding: 18px; display: grid; gap: 16px; }
+.ctl-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; }
+.ctl-row > .lbl { font-size: .8rem; font-weight: 700; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tchip { font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer; border: 0; border-radius: 999px; padding: 6px 12px 6px 8px; display: inline-flex; align-items: center; gap: 8px; background: var(--raised); color: var(--text); }
+.tchip .sw { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1px rgba(127,127,127,.35); }
+.tchip .sw i { width: 9px; height: 9px; border-radius: 50%; }
+.tchip[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.group-label { font-size: .72rem; color: var(--muted); align-self: center; margin-right: 2px; }
+.accent-dot { width: 28px; height: 28px; border-radius: 50%; border: 0; cursor: pointer; box-shadow: 0 0 0 2px var(--panel), 0 0 0 3px transparent; }
+.accent-dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px var(--text); }
+.seg { display: inline-flex; background: var(--raised); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { font: inherit; font-size: .85rem; font-weight: 600; border: 0; background: transparent; color: var(--muted); padding: 5px 12px; border-radius: 999px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 600px) { .ctl-row { grid-template-columns: 1fr; gap: 6px; } }
+
+/* ---------- option framing ---------- */
+.opt { display: grid; gap: 10px; }
+.opt-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.opt-letter { font-weight: 800; color: var(--on-accent); background: var(--accent); width: 26px; height: 26px; border-radius: 8px; display: inline-grid; place-items: center; font-size: .85rem; flex: none; }
+.opt-head p { color: var(--muted); font-size: .92rem; flex: 1 1 300px; min-width: 0; }
+.scroll { overflow-x: auto; padding-bottom: 4px; }
+
+/* ---------- the mock app ---------- */
+.app { min-width: 820px; height: 400px; background: var(--chrome); border-radius: calc(var(--r) + 6px); position: relative; overflow: hidden; display: grid; color: var(--text); font-size: 14px; box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 12px 32px -16px rgba(0,0,0,.35); }
+.app.top { grid-template-rows: 54px 1fr; }
+.app.rail { grid-template-columns: 68px 1fr; }
+.bar { display: flex; align-items: center; gap: 8px; padding: 0 14px; }
+.home-link { position: relative; text-decoration: none; border-radius: var(--r); }
+.home-link:hover { background: var(--raised); }
+.home-link .tip { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--text); color: var(--panel); font: 600 12px var(--ui); padding: 3px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s; z-index: 5; }
+.home-link:hover .tip, .home-link:focus-visible .tip { opacity: 1; }
+.brand { font-family: var(--brand); font-weight: 900; font-size: 22px; color: var(--accent); line-height: 1; width: 36px; height: 36px; display: grid; place-items: center; }
+.nav { display: flex; gap: 4px; }
+.nav.center { margin: 0 auto; }
+.ib { position: relative; width: 40px; height: 40px; border: 0; background: transparent; color: var(--muted); border-radius: var(--r); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.ib svg { width: 22px; height: 22px; }
+.ib:hover { background: var(--raised); color: var(--text); }
+.ib.on { color: var(--accent); }
+.ib.on::after { content: ""; position: absolute; bottom: 1px; left: 50%; width: 16px; height: 3px; margin-left: -8px; border-radius: 3px; background: var(--accent); }
+.rail-nav .ib.on::after { bottom: auto; left: -12px; top: 50%; width: 4px; height: 20px; margin: -10px 0 0; }
+.ib .tip { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--text); color: var(--panel); font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s; z-index: 5; }
+.ib:hover .tip, .ib:focus-visible .tip { opacity: 1; }
+.rail-nav .ib .tip { top: 50%; left: calc(100% + 8px); transform: translateY(-50%); }
+.flag { width: 40px; height: 40px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; border-radius: var(--r); padding: 0; }
+.flag:hover { background: var(--raised); }
+.flag svg { width: 26px; height: 18px; border-radius: 3px; box-shadow: 0 0 0 1px rgba(0,0,0,.12); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 700; display: grid; place-items: center; font-size: 14px; border: 0; cursor: pointer; flex: none; }
+.right { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.nav.center + .right { margin-left: 0; }
+
+.panel { background: var(--panel); border-radius: calc(var(--r) + 4px); margin: 0 8px 8px; padding: calc(18px * var(--pad)) calc(22px * var(--pad)); overflow: hidden; display: grid; grid-template-columns: 1.3fr 1fr; grid-template-rows: auto 1fr; gap: calc(14px * var(--pad)); align-content: start; }
+.app.rail .panel { margin: 8px 8px 8px 0; }
+.panel .greet { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; }
+.greet .big { font-size: 22px; font-weight: 700; }
+.greet .date { color: var(--muted); }
+.card { background: var(--raised); border-radius: var(--r); padding: calc(14px * var(--pad)) calc(16px * var(--pad)); display: grid; gap: 10px; align-content: start; }
+.card .k { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+.due { display: flex; gap: 18px; align-items: baseline; }
+.due b { font-size: 30px; line-height: 1; font-variant-numeric: tabular-nums; }
+.due span { color: var(--muted); font-size: 13px; }
+.btn { font: inherit; font-weight: 700; border: 0; border-radius: var(--r); padding: 9px 16px; background: var(--accent); color: var(--on-accent); cursor: pointer; justify-self: start; }
+.word { display: flex; gap: 14px; align-items: center; }
+.word .han { font-family: var(--cjk); font-size: 36px; line-height: 1; }
+.word .rd { color: var(--accent); font-weight: 600; }
+.word .gl { color: var(--muted); font-size: 13px; }
+.stub { height: 34px; border-radius: calc(var(--r) - 2px); background: repeating-linear-gradient(90deg, var(--line) 0 14px, transparent 14px 18px); opacity: .55; }
+.note { font-size: 11px; color: var(--muted); }
+
+/* option B: bar carries the section's tabs, one continuous surface */
+.app.sect { grid-template-rows: 56px 1fr; background: var(--panel); }
+.app.sect .bar { background: var(--chrome); }
+.app.sect .panel { margin: 0; border-radius: 0; }
+.sect-title { display: flex; align-items: center; gap: 18px; margin-left: 10px; padding-left: 16px; height: 28px; box-shadow: -1px 0 0 var(--line); }
+.sect-title b { font-size: 16px; }
+.tabs { display: flex; gap: 16px; }
+.tabs a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 13.5px; padding: 17px 0 15px; border-bottom: 2px solid transparent; }
+.tabs a.on { color: var(--text); border-color: var(--accent); }
+
+/* rail */
+.rail-col { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; }
+.rail-nav { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.rail-col .sep { width: 28px; height: 2px; border-radius: 2px; background: var(--line); margin: 4px 0; }
+.rail-col .bottom { margin-top: auto; display: grid; gap: 8px; justify-items: center; }
+
+/* menus */
+.menu { position: absolute; background: var(--raised); border-radius: calc(var(--r) + 2px); padding: 6px; min-width: 230px; box-shadow: 0 16px 40px -12px rgba(0,0,0,.45), 0 0 0 1px var(--line); z-index: 4; display: grid; gap: 1px; }
+.menu .who { display: flex; gap: 10px; align-items: center; padding: 8px 10px 10px; }
+.menu .who small { display: block; color: var(--muted); font-size: 12px; }
+.menu .mi { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: calc(var(--r) - 2px); font-weight: 600; font-size: 13.5px; }
+.menu .mi:hover { background: var(--panel); }
+.menu .mi svg { width: 18px; height: 18px; color: var(--muted); flex: none; }
+.menu .mi .end { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 12.5px; }
+.menu .tag { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--accent); }
+.menu hr { border: 0; height: 1px; background: var(--line); margin: 4px 6px; }
+.menu .mi.bad, .menu .mi.bad svg { color: var(--bad); }
+.menu .mi .fl svg { width: 24px; height: 17px; border-radius: 3px; box-shadow: 0 0 0 1px rgba(0,0,0,.12); display: block; }
+.menu .mi.cur { background: var(--panel); }
+.menu .mi .lang { color: var(--muted); font-weight: 500; font-size: 12px; display: block; }
+
+/* ---------- phones ---------- */
+.phones { display: flex; gap: 28px; flex-wrap: wrap; }
+.phone-wrap { display: grid; gap: 8px; justify-items: start; }
+.phone-wrap p { color: var(--muted); font-size: .9rem; max-width: 290px; }
+.phone { width: 290px; height: 580px; max-width: 100%; border-radius: 34px; background: var(--chrome); padding: 10px; box-shadow: 0 12px 32px -16px rgba(0,0,0,.45); }
+.screen { position: relative; height: 100%; border-radius: 26px; overflow: hidden; background: var(--panel); display: grid; grid-template-rows: 52px 1fr; }
+.pbar { display: flex; align-items: center; gap: 6px; padding: 0 8px; }
+.pbar b { font-size: 17px; margin-right: auto; margin-left: 2px; }
+.pbody { padding: 4px 14px 14px; display: grid; gap: 12px; align-content: start; }
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+.drawer { position: absolute; inset: 0 auto 0 0; width: 80%; background: var(--chrome); display: grid; grid-template-rows: auto auto 1fr auto; padding: 16px 10px 12px; gap: 10px; border-radius: 0 22px 22px 0; }
+.ws-row { display: flex; gap: 8px; align-items: center; padding: 0 4px; }
+.ws { width: 44px; height: 44px; border-radius: 14px; background: var(--raised); display: grid; place-items: center; position: relative; border: 0; padding: 0; }
+.ws svg { width: 26px; height: 18px; border-radius: 3px; }
+.ws.on { box-shadow: 0 0 0 2px var(--accent); }
+.ws.add { color: var(--muted); font-size: 22px; font-weight: 500; }
+.ws-name { padding: 0 6px; font-size: 12.5px; color: var(--muted); }
+.ws-name b { color: var(--text); display: block; font-size: 14px; }
+.dnav { display: grid; gap: 2px; align-content: start; }
+.dnav a { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-radius: var(--r); color: var(--text); text-decoration: none; font-weight: 600; }
+.dnav a svg { width: 22px; height: 22px; color: var(--muted); }
+.dnav a.on { background: var(--raised); color: var(--accent); }
+.dnav a.on svg { color: var(--accent); }
+.dfoot { display: flex; gap: 10px; align-items: center; padding: 10px 8px 0; box-shadow: 0 -1px 0 var(--line); }
+.dfoot .n { margin-right: auto; font-weight: 600; font-size: 13.5px; }
+.dfoot .n small { display: block; color: var(--muted); font-weight: 500; font-size: 12px; }
+
+.next { background: var(--panel); border-radius: calc(var(--r) + 4px); padding: 18px 20px; display: grid; gap: 8px; }
+.next ul { margin: 0; padding-left: 1.1em; color: var(--muted); display: grid; gap: 4px; }
+.next b { color: var(--text); }
+
+/* ---------- heatmap garden ---------- */
+.muted { color: var(--muted); }
+.hcard { background: var(--panel); border-radius: calc(var(--r) + 4px); padding: 18px 20px; display: grid; gap: 14px; }
+.hhead { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.hhead .muted { margin-left: auto; font-size: .88rem; }
+.ib.sm { width: 32px; height: 32px; font-size: 20px; color: var(--text); }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 22px; }
+.legend .li { display: flex; align-items: center; gap: 8px; font-size: .9rem; }
+.legend .li .t { width: 34px; height: 34px; border-radius: calc(var(--r) * .6); background: var(--raised); display: grid; place-items: center; }
+.legend .li .t svg { width: 28px; height: 28px; }
+.legend .li small { display: block; color: var(--muted); font-size: .78rem; }
+.garden { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 28px); grid-auto-columns: 28px; gap: 4px; width: max-content; }
+.garden .dl { font-size: 10.5px; color: var(--muted); display: grid; align-items: center; width: 26px; }
+.tile { border-radius: calc(var(--r) * .45); display: grid; place-items: center; background: var(--raised); position: relative; }
+.tile svg { width: 24px; height: 24px; }
+.tile.future { background: transparent; box-shadow: inset 0 0 0 1px var(--line); opacity: .5; }
+.tile.today { box-shadow: 0 0 0 2px var(--accent); }
+.month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; max-width: 520px; }
+.month .wd { font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; letter-spacing: .04em; }
+.month .tile { aspect-ratio: 1; max-width: 100%; border-radius: calc(var(--r) * .7); }
+.month .tile svg { width: 72%; height: 72%; }
+.month .tile .dn { position: absolute; top: 3px; left: 6px; font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.month .tile.blank { background: transparent; }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; max-width: 620px; }
+.week .d { display: grid; gap: 6px; justify-items: center; text-align: center; }
+.week .d .tile { width: 100%; aspect-ratio: 1; max-width: 76px; border-radius: calc(var(--r) * .8); }
+.week .d .tile svg { width: 78%; height: 78%; }
+.week .d b { font-size: 12px; color: var(--muted); }
+.week .d span { font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* ---------- flashcards ---------- */
+.seg.wrap { flex-wrap: wrap; border-radius: 16px; }
+.fc-stage { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.fc-desk-wrap { flex: 1 1 560px; min-width: 0; }
+.fc-desk { min-width: 560px; height: 580px; background: var(--chrome); border-radius: calc(var(--r) + 6px); padding: 8px; display: grid; box-shadow: 0 12px 32px -16px rgba(0,0,0,.35); }
+.fc-desk > .sess { background: var(--panel); border-radius: calc(var(--r) + 4px); }
+.fc-phone-screen { grid-template-rows: 1fr; }
+.sess { display: grid; grid-template-rows: auto 1fr; min-height: 0; overflow: hidden; }
+.sess-top { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+.sess-top .x { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); font-size: 18px; }
+.sess-top .bar-p { flex: 1; height: 6px; border-radius: 6px; background: var(--raised); overflow: hidden; }
+.sess-top .bar-p i { display: block; height: 100%; width: 24%; background: var(--accent); border-radius: 6px; }
+.sess-top .cnt { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fcwrap { display: grid; grid-template-rows: 1fr auto; min-height: 0; padding: 4px 16px 16px; gap: 12px; }
+.fc { display: grid; grid-template-rows: auto auto 1fr; align-content: start; gap: 14px; min-height: 0; overflow: auto; justify-self: center; width: 100%; max-width: 540px; }
+.style-raised .fc { background: var(--raised); border-radius: calc(var(--r) + 6px); padding: 16px 18px 18px; box-shadow: 0 10px 30px -18px rgba(0,0,0,.5); }
+.style-open .fcwrap { padding-top: 10px; }
+.fc-kind { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .05em; text-transform: uppercase; }
+.fc-kind svg { width: 16px; height: 16px; }
+.fc-kind .deck { margin-left: auto; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 600; }
+.fc-prompt { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 6px 0; }
+.fc-prompt .han { font-family: var(--cjk); font-size: 64px; line-height: 1.15; }
+.fc-prompt .sent { font-family: var(--cjk); font-size: 24px; line-height: 1.6; }
+.fc-prompt .sub { color: var(--muted); font-size: 14px; }
+.fc-prompt .mean { font-size: 22px; font-weight: 600; }
+.gap { display: inline-block; min-width: 2.4em; border-bottom: 2px solid var(--accent); color: var(--accent); }
+.gap.ok { color: var(--g-good); border-color: var(--g-good); }
+.fc-work { display: grid; gap: 10px; justify-items: center; align-content: start; }
+.field { width: 100%; max-width: 320px; display: flex; align-items: center; gap: 8px; background: var(--panel); border-radius: var(--r); padding: 10px 12px; box-shadow: inset 0 0 0 1.5px var(--line); font-family: var(--cjk); font-size: 20px; min-height: 48px; }
+.style-open .field { background: var(--raised); }
+.field.ok { box-shadow: inset 0 0 0 2px var(--g-good); }
+.field .ph { color: var(--muted); font-family: var(--ui); font-size: 15px; }
+.field .tick { margin-left: auto; color: var(--g-good); font-weight: 800; font-family: var(--ui); }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 360px; }
+.choice { background: var(--panel); border-radius: var(--r); padding: 10px; text-align: center; font-family: var(--cjk); font-size: 19px; box-shadow: inset 0 0 0 1.5px var(--line); }
+.style-open .choice { background: var(--raised); }
+.choice small { font-family: var(--ui); color: var(--muted); font-size: 11px; margin-right: 6px; }
+.choice.ok { box-shadow: inset 0 0 0 2px var(--g-good); color: var(--g-good); }
+.slots { min-height: 50px; width: 100%; max-width: 420px; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; border-radius: var(--r); box-shadow: inset 0 -2px 0 var(--line); justify-content: center; }
+.pool { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 420px; }
+.tok { font-family: var(--cjk); font-size: 18px; padding: 6px 12px; border-radius: calc(var(--r) * .7); background: var(--panel); box-shadow: inset 0 0 0 1.5px var(--line), 0 2px 0 var(--line); }
+.style-open .tok { background: var(--raised); }
+.tok.ok { box-shadow: inset 0 0 0 1.5px var(--g-good); color: var(--g-good); }
+.pad { width: 200px; height: 200px; max-width: 100%; border-radius: var(--r); background: var(--panel); box-shadow: inset 0 0 0 1.5px var(--line); }
+.style-open .pad { background: var(--raised); }
+.pad svg { width: 100%; height: 100%; display: block; }
+.dots { display: flex; gap: 6px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.dots i.cur { background: var(--accent); }
+.dots i.ok { background: var(--g-good); }
+.tones { display: flex; gap: 12px; }
+.tpad { width: 110px; display: grid; gap: 6px; justify-items: center; }
+.tpad .tp { width: 110px; height: 110px; border-radius: var(--r); background: var(--panel); box-shadow: inset 0 0 0 1.5px var(--line); position: relative; }
+.style-open .tpad .tp { background: var(--raised); }
+.tpad .tp.cur { box-shadow: inset 0 0 0 2px var(--accent); }
+.tpad .tp.ok { box-shadow: inset 0 0 0 2px var(--g-good); }
+.tpad .tp svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.tpad .tp b { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--cjk); font-size: 30px; font-weight: 400; color: var(--muted); }
+.tpad .nums { display: flex; gap: 3px; }
+.tpad .nums span { width: 19px; height: 19px; border-radius: 5px; font-size: 11px; font-weight: 700; display: grid; place-items: center; background: var(--panel); color: var(--muted); }
+.style-open .tpad .nums span { background: var(--raised); }
+.tpad .nums span.on { background: var(--accent); color: var(--on-accent); }
+.fc-ans { display: grid; gap: 8px; padding-top: 12px; box-shadow: 0 -1px 0 var(--line); }
+.fc-ans .rrow { display: flex; align-items: center; gap: 10px; justify-content: center; }
+.fc-ans .rd { color: var(--accent); font-weight: 700; font-size: 18px; }
+.fc-ans .play { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; font-size: 11px; }
+.fc-ans .gl { text-align: center; }
+.fc-ans .src { text-align: center; font-size: 11.5px; color: var(--muted); }
+.fc-ans .note { font-size: 13px; color: var(--muted); background: color-mix(in srgb, var(--warn) 14%, transparent); border-radius: calc(var(--r) * .7); padding: 8px 10px; }
+.fc-ans .note b { color: var(--text); }
+.acts { display: grid; gap: 6px; justify-self: center; width: 100%; max-width: 540px; }
+.acts .main { font: inherit; font-weight: 700; border: 0; border-radius: var(--r); padding: 12px; background: var(--accent); color: var(--on-accent); width: 100%; }
+.grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.gb { border-radius: var(--r); padding: 8px 4px; text-align: center; font-weight: 700; font-size: 13.5px; display: grid; gap: 1px; }
+.gb small { font-weight: 600; font-size: 11px; opacity: .8; }
+.gb.again { background: color-mix(in srgb, var(--g-again) 18%, transparent); color: var(--g-again); }
+.gb.hard { background: color-mix(in srgb, var(--g-hard) 18%, transparent); color: var(--g-hard); }
+.gb.good { background: color-mix(in srgb, var(--g-good) 18%, transparent); color: var(--g-good); }
+.gb.easy { background: color-mix(in srgb, var(--g-easy) 18%, transparent); color: var(--g-easy); }
+.gb.sugg.again { background: var(--g-again); color: var(--on-accent); }
+.gb.sugg.hard { background: var(--g-hard); color: var(--on-accent); }
+.gb.sugg.good { background: var(--g-good); color: var(--on-accent); }
+.gb.sugg.easy { background: var(--g-easy); color: var(--on-accent); }
+.acts .keys { text-align: center; font-size: 11.5px; color: var(--muted); }
+.fc-phone-screen .fc-prompt .han { font-size: 52px; }
+.fc-phone-screen .fc-prompt .sent { font-size: 20px; }
+.fc-phone-screen .pad { width: 170px; height: 170px; }
+.fc-phone-screen .tpad, .fc-phone-screen .tpad .tp { width: 92px; }
+.fc-phone-screen .tpad .tp { height: 92px; }
+.fc-phone-screen .fcwrap { padding: 2px 10px 12px; }
+.fc-phone-screen .style-raised .fc, .fc-phone-screen.style-raised .fc { padding: 12px 12px 14px; }
+.fc-phone-screen .acts .keys { display: none; }
+.fc-phone-screen .gb { font-size: 12.5px; }
+
+/* ---------- lighter weight (round 4) ----------
+   Rule: a box needs a reason. Grouping comes from space and small labels; lines are hairlines
+   (--hair, the line colour at half strength); fills are reserved for the one primary action and for
+   meaning (accent, grades, the heatmap). Type tops out at 600, icons are drawn at 1.5. */
+:root.lite { --icon-w: 1.5; }
+:root { --hair: color-mix(in srgb, var(--line) 55%, transparent); }
+.lite .app, .lite .fc-desk, .lite .phone { box-shadow: 0 0 0 1px var(--hair), 0 18px 40px -28px rgba(0,0,0,.35); }
+.lite .panel { box-shadow: 0 0 0 1px var(--hair); gap: calc(22px * var(--pad)) calc(28px * var(--pad)); padding: calc(22px * var(--pad)) calc(28px * var(--pad)); }
+.lite .ib { color: color-mix(in srgb, var(--muted) 85%, transparent); }
+.lite .ib.on::after { width: 4px; height: 4px; margin-left: -2px; bottom: 3px; border-radius: 50%; }
+.lite .greet .big { font-weight: 600; letter-spacing: -0.01em; }
+.lite .card { background: transparent; padding: 0; border-radius: 0; gap: 8px; }
+.lite .card .k { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 12.5px; }
+.lite .due b { font-weight: 500; font-size: 34px; letter-spacing: -0.02em; }
+.lite .btn { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; padding: 8px 14px; }
+.lite .word .rd { font-weight: 500; }
+.lite .stub { height: 26px; opacity: .35; }
+.lite .avatar { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); font-weight: 600; width: 30px; height: 30px; font-size: 13px; }
+.lite .menu { box-shadow: 0 0 0 1px var(--hair), 0 20px 44px -22px rgba(0,0,0,.45); background: var(--panel); }
+.lite .menu .mi { font-weight: 500; }
+.lite .menu .mi:hover, .lite .menu .mi.cur { background: var(--raised); }
+.lite .menu hr { background: var(--hair); }
+.lite .flag svg { box-shadow: 0 0 0 1px var(--hair); }
+.lite .drawer { box-shadow: 1px 0 0 var(--hair); }
+.lite .dnav a { font-weight: 500; }
+.lite .dnav a.on { background: transparent; }
+.lite .ws { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); }
+.lite .ws.on { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.lite .dfoot { box-shadow: 0 -1px 0 var(--hair); }
+/* heatmap */
+.lite .hcard { background: transparent; padding: 0; }
+.lite .tile { background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.lite .legend .li .t { background: transparent; }
+.lite .tile.today { box-shadow: 0 0 0 1.5px var(--accent); }
+/* flashcards */
+.lite .sess-top .bar-p { height: 3px; }
+.lite .fc-kind { font-weight: 500; text-transform: none; letter-spacing: 0; font-size: 12.5px; }
+.lite .fc-kind .deck { font-weight: 400; }
+.lite .fc-prompt .han { font-weight: 400; }
+.lite .fc-prompt .mean { font-weight: 500; }
+.lite .field { background: transparent !important; box-shadow: inset 0 -1.5px 0 var(--line); border-radius: 0; padding-inline: 2px; }
+.lite .field.ok { box-shadow: inset 0 -2px 0 var(--g-good); }
+.lite .choice { background: transparent !important; box-shadow: inset 0 0 0 1px var(--hair); font-weight: 400; }
+.lite .choice.ok { box-shadow: inset 0 0 0 1.5px var(--g-good); }
+.lite .tok { background: transparent !important; box-shadow: inset 0 0 0 1px var(--line); }
+.lite .tok.ok { box-shadow: inset 0 0 0 1px var(--g-good); }
+.lite .slots { box-shadow: inset 0 -1px 0 var(--hair); }
+.lite .pad, .lite .tpad .tp { background: transparent !important; box-shadow: inset 0 0 0 1px var(--hair); }
+.lite .tpad .tp.cur { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.lite .tpad .tp.ok { box-shadow: inset 0 0 0 1.5px var(--g-good); }
+.lite .tpad .nums span { background: transparent !important; font-weight: 500; }
+.lite .tpad .nums span.on { background: transparent !important; color: var(--accent); box-shadow: inset 0 -1.5px 0 var(--accent); border-radius: 0; }
+.lite .fc-ans { box-shadow: 0 -1px 0 var(--hair); }
+.lite .fc-ans .rd { font-weight: 500; }
+.lite .fc-ans .play { background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px currentColor; }
+.lite .fc-ans .note { background: transparent; padding: 0 0 0 10px; box-shadow: inset 2px 0 0 color-mix(in srgb, var(--warn) 60%, transparent); border-radius: 0; }
+.lite .acts .main { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
+.lite .gb { background: transparent !important; font-weight: 600; box-shadow: inset 0 -2px 0 color-mix(in srgb, currentColor 35%, transparent); border-radius: 0; padding: 8px 4px 9px; }
+.lite .gb small { font-weight: 400; }
+.lite .gb.sugg { box-shadow: inset 0 -2px 0 currentColor; }
+.lite .gb.sugg.again { color: var(--g-again); background: color-mix(in srgb, var(--g-again) 10%, transparent) !important; }
+.lite .gb.sugg.hard { color: var(--g-hard); background: color-mix(in srgb, var(--g-hard) 10%, transparent) !important; }
+.lite .gb.sugg.good { color: var(--g-good); background: color-mix(in srgb, var(--g-good) 10%, transparent) !important; }
+.lite .gb.sugg.easy { color: var(--g-easy); background: color-mix(in srgb, var(--g-easy) 10%, transparent) !important; }
+
+/* ---------- reader ---------- */
+.rd-app { height: 520px; }
+.rd-panel { grid-template-columns: minmax(0, 1fr) 220px 44px; grid-template-rows: 1fr; position: relative; gap: 0 !important; padding: 0 !important; }
+.rtext { padding: 26px 36px; overflow: hidden; display: grid; gap: 14px; align-content: start; max-width: 40em; justify-self: center; }
+.rbook { display: flex; gap: 14px; align-items: center; font-size: 13px; font-family: var(--cjk); }
+.rbook .muted { font-family: var(--ui); }
+.rbook .rmark { width: 18px; height: 18px; margin-left: auto; color: var(--accent); fill: color-mix(in srgb, var(--accent) 30%, transparent); }
+.rp { font-family: var(--cjk); font-size: 20px; line-height: 2.25; margin: 0; }
+.rp rt { font-family: var(--ui); font-size: 10.5px; color: var(--muted); letter-spacing: .02em; }
+.w-n { background-image: linear-gradient(var(--accent), var(--accent)); background-size: 100% 1.5px; background-repeat: no-repeat; background-position: 0 92%; }
+.w-l { background-image: repeating-linear-gradient(90deg, var(--warn) 0 3px, transparent 3px 6px); background-size: 100% 1.5px; background-repeat: no-repeat; background-position: 0 92%; }
+.sel { background-color: color-mix(in srgb, var(--accent) 16%, transparent); border-radius: 3px; }
+mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: inherit; border-radius: 2px; }
+.rside { box-shadow: -1px 0 0 var(--hair, var(--line)); padding: 22px 16px; display: grid; gap: 10px; align-content: start; font-size: 13px; }
+.rs-h { font-weight: 600; font-size: 14px; }
+.rs-cov b { font-size: 22px; font-weight: 500; }
+.rs-bar { height: 3px; border-radius: 3px; background: var(--raised); overflow: hidden; }
+.rs-bar i { display: block; height: 100%; background: var(--accent); }
+.rs-k { color: var(--muted); margin-top: 6px; }
+.rs-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.rs-list li { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.rs-list .cjk { font-size: 16px; }
+.rs-list small { color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+.rs-list button { width: 26px; height: 26px; border: 0; background: transparent; color: var(--accent); border-radius: 50%; display: grid; place-items: center; cursor: pointer; padding: 0; }
+.rs-list button svg { width: 16px; height: 16px; }
+.rs-legend { color: var(--muted); font-size: 12px; display: flex; gap: 10px; margin-top: 6px; }
+.rrail { box-shadow: -1px 0 0 var(--hair, var(--line)); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 0; }
+.rrail .ib .tip { top: 50%; left: auto; right: calc(100% + 8px); transform: translateY(-50%); }
+.rrail .ib.on::after { left: auto; right: -2px; top: 50%; bottom: auto; margin: -2px 0 0; }
+.lk-pos { position: absolute; left: 300px; top: 238px; z-index: 3; }
+.lk { width: 300px; background: var(--panel); border-radius: calc(var(--r) + 2px); box-shadow: 0 0 0 1px var(--hair, var(--line)), 0 20px 44px -22px rgba(0,0,0,.5); padding: 4px 14px; display: grid; }
+.lk-e { display: grid; gap: 6px; padding: 12px 0; }
+.lk-e + .lk-e { box-shadow: 0 -1px 0 var(--hair, var(--line)); }
+.lk-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.lk-t { font-family: var(--cjk); font-size: 24px; }
+.lk-r { color: var(--accent); font-weight: 500; }
+.lk-c { font-size: 11px; color: var(--muted); box-shadow: inset 0 0 0 1px var(--hair, var(--line)); border-radius: 999px; padding: 1px 7px; }
+.lk-g { margin: 0; padding-left: 1.2em; display: grid; gap: 2px; font-size: 13.5px; }
+.lk-g .pos { color: var(--muted); font-size: 11.5px; margin-right: 4px; }
+.lk-s { font-size: 11px; color: var(--muted); }
+.lk-a { display: flex; gap: 6px; }
+.lk-a button { font: inherit; font-size: 12.5px; font-weight: 600; border: 0; border-radius: calc(var(--r) * .8); padding: 5px 10px; display: inline-flex; gap: 4px; align-items: center; cursor: pointer; background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--hair, var(--line)); }
+.lk-a button:first-child { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); box-shadow: none; }
+.lk-a svg { width: 14px; height: 14px; }
+.rd-phone { position: relative; }
+.rd-phone .pbar b { font-weight: 600; }
+.rd-phone .rp { font-size: 17px; line-height: 2.2; }
+.rd-phone .pbody { padding: 4px 18px; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel); border-radius: 18px 18px 0 0; box-shadow: 0 -1px 0 var(--hair, var(--line)), 0 -18px 40px -20px rgba(0,0,0,.45); padding: 8px 4px 6px; display: grid; justify-items: center; }
+.sheet .grab { width: 36px; height: 4px; border-radius: 4px; background: var(--line); margin: 2px 0 2px; }
+.sheet .lk { box-shadow: none; width: 100%; background: transparent; }
+.sheet .lk-e + .lk-e { display: none; }
+
+/* ---------- journal ---------- */
+.jr-app { height: 620px; }
+.jr-panel { grid-template-columns: 190px minmax(0, 1fr) 240px; grid-template-rows: 1fr; gap: 0 !important; padding: 0 !important; }
+.jlist { box-shadow: 1px 0 0 var(--hair, var(--line)); padding: 16px 10px; display: grid; gap: 2px; align-content: start; }
+.jnew { font: inherit; font-weight: 600; font-size: 13px; border: 0; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); border-radius: var(--r); padding: 8px 10px; display: flex; gap: 6px; align-items: center; margin-bottom: 10px; cursor: pointer; }
+.jnew svg, .jideas svg { width: 16px; height: 16px; }
+.je { display: grid; grid-template-columns: 1fr auto; padding: 7px 10px; border-radius: var(--r); color: var(--text); text-decoration: none; }
+.je small { color: var(--muted); font-size: 11.5px; grid-column: 1; }
+.je span { grid-column: 1; font-size: 14.5px; }
+.je .rv { grid-row: 1 / span 2; grid-column: 2; align-self: center; width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+.je.on { background: var(--raised); }
+.jideas { margin-top: 14px; padding: 0 10px; color: var(--muted); font-size: 13px; display: flex; gap: 6px; align-items: center; }
+.jpage { padding: 26px 34px; display: grid; gap: 10px; align-content: start; overflow: hidden; max-width: 38em; justify-self: center; width: 100%; }
+.jdate { color: var(--muted); font-size: 12.5px; }
+.jtitle { font-size: 22px; font-weight: 500; margin: 0; }
+.jtext { font-family: var(--cjk); font-size: 17.5px; line-height: 2; margin: 0; }
+.caret { display: inline-block; width: 1.5px; height: 1.1em; background: var(--accent); vertical-align: -3px; margin-left: 1px; }
+.cx { text-decoration-line: underline; text-underline-offset: 5px; text-decoration-thickness: 1.5px; cursor: pointer; border-radius: 3px; }
+.cx.bad { text-decoration-style: wavy; text-decoration-color: var(--g-again); }
+.cx.tip2 { text-decoration-style: dotted; text-decoration-color: var(--g-easy); text-decoration-thickness: 2px; }
+.cx.on { background: color-mix(in srgb, var(--g-again) 14%, transparent); }
+.jfoot { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 12.5px; }
+.jfoot .muted { margin-right: auto; }
+.jghost, .jprimary { font: inherit; font-size: 13px; font-weight: 600; border: 0; border-radius: var(--r); padding: 7px 12px; cursor: pointer; }
+.jghost { background: transparent; color: var(--muted); box-shadow: inset 0 0 0 1px var(--hair, var(--line)); }
+.jprimary { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.jover { margin-top: 10px; padding-top: 14px; box-shadow: 0 -1px 0 var(--hair, var(--line)); display: grid; gap: 6px; font-size: 14px; }
+.jmeta { color: var(--muted); font-size: 11.5px; }
+.jaside { box-shadow: -1px 0 0 var(--hair, var(--line)); padding: 22px 16px; overflow: hidden; }
+.jnotes { display: grid; gap: 4px; align-content: start; }
+.jn-h { font-weight: 600; font-size: 13.5px; margin-bottom: 6px; }
+.jn { padding: 9px 10px; border-radius: var(--r); display: grid; gap: 4px; font-size: 13px; }
+.jn.on { background: var(--raised); }
+.jn-cat { color: var(--muted); font-size: 11.5px; display: flex; align-items: center; gap: 6px; }
+.jn-cat .dot { width: 7px; height: 7px; border-radius: 50%; }
+.dot.bad { background: var(--g-again); } .dot.tip { background: var(--g-easy); }
+.jn-fix { font-family: var(--cjk); font-size: 15px; }
+.jn-fix s { color: var(--muted); text-decoration-color: var(--g-again); }
+.jn-fix b { font-weight: 500; color: var(--g-good); }
+.jn-why { color: var(--muted); line-height: 1.45; }
+[data-jr="review"] .jt-write, [data-jr="write"] .jt-review { display: none !important; }
+.jsheet { justify-items: stretch; padding: 8px 14px 10px; }
+.jsheet .grab { justify-self: center; }
+.jsheet .jn-h, .jsheet .jn:not(.on) { display: none; }
+.rd-phone .jtext { font-size: 16px; }
+
+/* ---------- search ---------- */
+.se-app { height: 600px; }
+.se-panel { grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: 1fr; gap: 0 !important; padding: 0 !important; }
+.se-left { box-shadow: 1px 0 0 var(--hair, var(--line)); padding: 18px 14px; display: grid; gap: 10px; align-content: start; overflow: hidden; }
+.sfield { display: flex; align-items: center; gap: 6px; padding: 2px 4px 2px 10px; box-shadow: inset 0 -1.5px 0 var(--accent); }
+.sfield > svg { width: 18px; height: 18px; color: var(--muted); }
+.sfield span { flex: 1; font-size: 16px; }
+.sfield .ib { width: 34px; height: 34px; }
+.sfield .ib svg { width: 19px; height: 19px; }
+.sfilters { display: flex; gap: 14px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+.sfilters .on { color: var(--text); box-shadow: inset 0 -1.5px 0 var(--accent); }
+.sfilters .sp { margin-left: auto; }
+.scount { font-size: 12px; color: var(--muted); }
+.slist { display: grid; gap: 1px; }
+.sr-row { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 12px; padding: 8px 10px; border-radius: var(--r); color: var(--text); text-decoration: none; }
+.sr-row.on { background: var(--raised); }
+.sr-w { grid-row: 1 / span 2; font-size: 24px; align-self: center; min-width: 2.2em; }
+.sr-m { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.sr-r { color: var(--accent); font-weight: 500; font-size: 13.5px; }
+.sr-g { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.sr-b { font-size: 11.5px; color: var(--muted); }
+.se-entry { padding: 24px 32px; display: grid; gap: 16px; align-content: start; overflow: hidden; }
+.en-top { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.en-w { font-size: 48px; line-height: 1.1; }
+.en-r { display: flex; align-items: center; gap: 8px; }
+.en-r .rd { color: var(--accent); font-size: 18px; font-weight: 500; }
+.en-r .play { width: 28px; height: 28px; border-radius: 50%; color: var(--accent); box-shadow: inset 0 0 0 1px currentColor; display: grid; place-items: center; font-size: 10px; }
+.en-add { margin-left: auto; display: inline-flex; gap: 4px; align-items: center; }
+.en-add svg { width: 15px; height: 15px; }
+.en-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.en-sec { display: grid; gap: 6px; }
+.en-k { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.en-chars { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+.en-ch { display: grid; justify-items: start; gap: 2px; }
+.en-ch .cjk { font-size: 30px; line-height: 1.1; }
+.en-ch small { color: var(--muted); font-size: 12px; }
+.en-ch.stroke svg { width: 76px; height: 76px; box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r); }
+.en-ex { font-size: 18px; }
+.en-tr { font-size: 13px; }
+.se-note { font-size: 13px; color: var(--muted); padding-left: 10px; box-shadow: inset 2px 0 0 color-mix(in srgb, var(--warn) 60%, transparent); }
+/* ---------- stats ---------- */
+.st-app { height: 560px; }
+.st-panel { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 0 !important; padding: 0 28px 20px !important; }
+.st-tabs { gap: 22px; box-shadow: inset 0 -1px 0 var(--hair, var(--line)); }
+.st-tabs a { padding: 14px 0 12px; }
+.st-body { display: none; padding-top: 20px; gap: 22px; align-content: start; overflow: hidden; }
+[data-st="ov"] .st-ov, [data-st="ch"] .st-ch, [data-st="wk"] .st-wk { display: grid; }
+[data-st="ov"] .st-tabs a[data-t="ov"], [data-st="ch"] .st-tabs a[data-t="ch"], [data-st="wk"] .st-tabs a[data-t="wk"] { color: var(--text); border-color: var(--accent); }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.kpis div { display: grid; gap: 2px; }
+.kpis b { font-size: 30px; font-weight: 400; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.kpis span { color: var(--muted); font-size: 12.5px; }
+.kpis em { font-style: normal; font-weight: 600; margin-left: 4px; }
+.kpis em.up { color: var(--good); } .kpis em.dn { color: var(--g-hard); }
+.st-two { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; }
+.st-blk { display: grid; gap: 8px; align-content: start; }
+.stack { display: flex; height: 8px; border-radius: 8px; overflow: hidden; gap: 2px; }
+.stack-l { display: flex; gap: 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.stack-l span { display: inline-flex; gap: 5px; align-items: center; }
+.stack-l i { width: 8px; height: 8px; border-radius: 2px; }
+.bars { display: flex; align-items: flex-end; gap: 3px; height: 110px; box-shadow: inset 0 -1px 0 var(--hair, var(--line)); }
+.bars i { flex: 1; background: color-mix(in srgb, var(--accent) 60%, transparent); border-radius: 2px 2px 0 0; }
+.bars i.today { background: var(--accent); }
+.wbars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; height: 120px; align-items: end; box-shadow: inset 0 -1px 0 var(--hair, var(--line)); }
+.wbars .wd { display: flex; align-items: flex-end; gap: 3px; height: 100%; position: relative; }
+.wbars .wd i { flex: 1; border-radius: 2px 2px 0 0; }
+.wbars .wd i.last { background: color-mix(in srgb, var(--muted) 35%, transparent); }
+.wbars .wd i.now { background: var(--accent); }
+.wbars .wd small { position: absolute; bottom: -20px; left: 0; right: 0; text-align: center; font-size: 11px; color: var(--muted); }
+.wk-h { display: flex; gap: 12px; align-items: baseline; }
+.wk-h b { font-weight: 600; }
+.mgroup { display: grid; gap: 8px; }
+.mg-h { display: flex; gap: 10px; align-items: baseline; font-size: 13px; }
+.mg-h b { font-weight: 600; }
+.mgrid { display: flex; flex-wrap: wrap; gap: 4px; }
+.mc { width: 34px; height: 34px; border-radius: calc(var(--r) * .5); display: inline-grid; place-items: center; font-size: 18px; }
+.mc.m0 { box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); }
+.mc.m1 { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.mc.m2 { background: color-mix(in srgb, var(--accent) 32%, transparent); }
+.mc.m3 { background: color-mix(in srgb, var(--accent) 58%, transparent); }
+.mc.m4, .mc.m5 { background: var(--accent); color: var(--on-accent); }
+.mlegend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.mlegend span { display: inline-flex; gap: 6px; align-items: center; }
+.mlegend .mc { width: 14px; height: 14px; border-radius: 3px; }
+
+/* ---------- dictionary entry ---------- */
+.en-app { height: 640px; }
+.en-panel { grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto 1fr; gap: 0 !important; padding: 0 !important; }
+.en-head { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "word word acts" "reads badges badges"; align-items: center; gap: 6px 20px; padding: 24px 32px 18px; box-shadow: inset 0 -1px 0 var(--hair, var(--line)); }
+.en-word { grid-area: word; display: flex; align-items: baseline; gap: 14px; }
+.en-head .en-w { font-size: 56px; line-height: 1.05; }
+.en-var { color: var(--muted); font-size: 20px; }
+.en-var small { font-family: var(--ui); font-size: 11.5px; }
+.en-reads { grid-area: reads; display: flex; gap: 12px; align-items: center; }
+.en-reads .rd { color: var(--accent); font-size: 19px; font-weight: 500; }
+.play-b { width: 28px; height: 28px; border-radius: 50%; color: var(--accent); box-shadow: inset 0 0 0 1px currentColor; display: grid; place-items: center; font-size: 10px; }
+.en-head .en-badges { grid-area: badges; }
+.en-acts { grid-area: acts; display: flex; gap: 8px; }
+.lk-c.on { color: var(--good); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--good) 50%, transparent); }
+.en-main { padding: 22px 32px; display: grid; gap: 22px; align-content: start; overflow: hidden; }
+.en-gl { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; font-size: 15px; }
+.en-gl .pos, .en-gl + .pos { color: var(--muted); font-size: 12px; margin-right: 8px; }
+.en-sent { display: grid; gap: 1px; }
+.en-sent .cjk { font-size: 17px; }
+.en-sent b { font-weight: 500; color: var(--accent); }
+.en-sent .muted { font-size: 13px; }
+.en-rel { display: flex; gap: 18px; font-size: 17px; flex-wrap: wrap; }
+.en-rel a { color: var(--text); text-decoration: none; box-shadow: inset 0 -1px 0 var(--line); }
+.en-rel small { font-family: var(--ui); font-size: 11px; color: var(--muted); }
+.en-side { box-shadow: -1px 0 0 var(--hair, var(--line)); padding: 22px 20px; display: grid; gap: 22px; align-content: start; overflow: hidden; }
+.ec { display: flex; gap: 12px; align-items: center; padding: 6px 0; color: var(--text); text-decoration: none; }
+.ec-g { font-size: 30px; line-height: 1; width: 1.2em; }
+.ec-m { display: grid; gap: 1px; font-size: 13.5px; }
+.ec-m .rd { color: var(--accent); font-weight: 500; }
+.ec-m small { color: var(--muted); font-size: 11.5px; }
+.en-stroke { display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; }
+.en-stroke svg { width: 120px; height: 120px; box-shadow: inset 0 0 0 1px var(--hair, var(--line)); border-radius: var(--r); }
+.en-sbtn { display: grid; gap: 6px; justify-items: start; font-size: 12px; }
+.en-phone .pbody { display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
+.en-phone .pbody > * { grid-area: auto; }
+.en-phone .en-reads { flex-wrap: wrap; }
+.en-phone .en-w { font-size: 46px; line-height: 1.1; }
+.en-phone .en-var { font-size: 17px; }
+.en-phone .en-gl { font-size: 14px; }
+
+/* ---------- stats on the phone ---------- */
+.sp-phones { gap: 20px; }
+.sp-screen { grid-template-rows: 52px 1fr; }
+.sp-body { padding: 0 14px 14px; display: grid; gap: 16px; align-content: start; overflow: hidden; }
+.sp-tabs { gap: 18px; box-shadow: inset 0 -1px 0 var(--hair, var(--line)); }
+.sp-tabs a { padding: 6px 0 9px; font-size: 13px; }
+.sp-tabs a.on { color: var(--text); border-color: var(--accent); }
+.sp-k { grid-template-columns: 1fr 1fr; gap: 14px 12px; }
+.sp-k b { font-size: 25px; }
+.sp-k span { font-size: 11.5px; }
+.sp-bars { height: 80px; gap: 2px; }
+.sp-group { font-size: 12.5px; color: var(--muted); }
+.sp-group b { color: var(--text); font-weight: 600; }
+.sp-m .mc { width: 30px; height: 30px; font-size: 16px; }
+.sp-m { gap: 3px; }
+.sp-leg { gap: 10px; font-size: 11px; }
+.sp-week { display: flex; align-items: center; justify-content: space-between; }
+.sp-week b { font-weight: 600; font-size: 14px; }
+.sp-week .ib[disabled] { opacity: .35; }
+.sp-wbars { gap: 8px; height: 100px; }
+@media (prefers-reduced-motion: no-preference) {
+	.tile.today svg { animation: sway 3.2s ease-in-out infinite; transform-origin: 50% 85%; }
+	@keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+	<defs>
+		<symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v8.5h11V10"/><path d="M10 18.5v-4.5h4v4.5"/></symbol>
+		<symbol id="i-study" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="4" width="12" height="15" rx="2.5"/><path d="M5 7.5v10A2.5 2.5 0 0 0 7.5 20H15"/><path d="M11 9.5h4M11 13h3"/></symbol>
+		<symbol id="i-reader" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c-2-1.6-4.6-2-8-1.5V18c3.4-.5 6 0 8 1.5 2-1.5 4.6-2 8-1.5V5.5C16.6 5 14 5.4 12 7Z"/><path d="M12 7v12.5"/></symbol>
+		<symbol id="i-journal" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5 19.5 8.5 9 19H5v-4Z"/><path d="M13 7l4 4"/></symbol>
+		<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></symbol>
+		<symbol id="i-stats" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19V11M10 19V6M15 19v-5M20 19V9"/></symbol>
+		<symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round"><path d="M5 7h14M5 12h10M5 17h14"/></symbol>
+		<symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M6 18l1.6-1.6M16.4 7.6 18 6"/></symbol>
+		<symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 5.5 6.5V12c0 4 2.8 6.8 6.5 8 3.7-1.2 6.5-4 6.5-8V6.5Z"/><path d="m9.5 12 2 2 3.5-4"/></symbol>
+		<symbol id="i-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4a8 8 0 1 0 0 16c1.2 0 1.6-.9 1.2-1.8-.5-1 .1-2.2 1.3-2.2H17a3 3 0 0 0 3-3c0-5-3.6-9-8-9Z"/><circle cx="8" cy="11" r="1"/><circle cx="11" cy="7.8" r="1"/><circle cx="15" cy="8.5" r="1"/></symbol>
+		<symbol id="i-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5H7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7"/><path d="m16 8 4 4-4 4M20 12H10"/></symbol>
+		<symbol id="i-toc" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round"><path d="M9 7h10M9 12h10M9 17h10"/><circle cx="5" cy="7" r=".6"/><circle cx="5" cy="12" r=".6"/><circle cx="5" cy="17" r=".6"/></symbol>
+		<symbol id="i-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linejoin="round"><path d="M7 4.5h10v15l-5-3.5-5 3.5Z"/></symbol>
+		<symbol id="i-marker" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="m14 5 5 5-7.5 7.5H7v-4.5Z"/><path d="M5 20h14"/></symbol>
+		<symbol id="i-words" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18 8.5 6 13 18M5.6 14h5.8"/><path d="M15 18v-6.5M15 14.5c0-2 1.2-3 2.7-3s2.3 1 2.3 3V18"/></symbol>
+		<symbol id="i-type" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7V5h14v2M12 5v14M9 19h6"/></symbol>
+		<symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></symbol>
+		<symbol id="i-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6 8.5 12l6 6"/></symbol>
+		<symbol id="i-draw" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17c3-1 4-9 7-9s1 7 4 7 2-3 3-4"/></symbol>
+		<symbol id="i-parts" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="stroke-width:var(--icon-w, 1.8)" stroke-linejoin="round"><rect x="4" y="4" width="7" height="16" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></symbol>
+		<symbol id="f-cn" viewBox="0 0 30 20"><rect width="30" height="20" fill="#de2910"/><path fill="#ffde00" d="M5 2.2l.9 2.8h2.9L6.5 6.7l.9 2.8L5 7.8 2.6 9.5l.9-2.8L1.2 5h2.9z"/><circle cx="10" cy="2" r=".8" fill="#ffde00"/><circle cx="12" cy="4" r=".8" fill="#ffde00"/><circle cx="12" cy="7" r=".8" fill="#ffde00"/><circle cx="10" cy="9" r=".8" fill="#ffde00"/></symbol>
+		<symbol id="f-jp" viewBox="0 0 30 20"><rect width="30" height="20" fill="#ffffff"/><circle cx="15" cy="10" r="6" fill="#bc002d"/></symbol>
+		<symbol id="f-tw" viewBox="0 0 30 20"><rect width="30" height="20" fill="#fe0000"/><rect width="15" height="10" fill="#000095"/><circle cx="7.5" cy="5" r="2.6" fill="#fff"/></symbol>
+	</defs>
+</svg>
+
+<div class="page">
+	<header class="intro">
+		<span class="eyebrow">Visual rework · round 6</span>
+		<h1>Reader, journal, search, entries and stats</h1>
+		<p class="lede">The reader, journal, search, dictionary entries and stats in the lighter design. The reader shows a chapter of Lu Xun's 故乡 (public domain) with the lookup open; the journal shows an entry while writing and after the AI review, with its corrections. Everything further down is decided, including the lighter weight (the Weight switch still compares it with round 3). Tell me in the chat what you think of them.</p>
+	</header>
+
+	<section aria-labelledby="themes-h">
+		<div class="sechead">
+			<h2 id="themes-h">Themes and your own adjustments</h2>
+			<p>A theme is a named set of colours. On top of it, each person can change the accent, the corner style, the spacing and the font used for hanzi and kanji. The page starts on Catppuccin Latte or Mocha, matching your device's light or dark setting.</p>
+		</div>
+		<div class="controls">
+			<div class="ctl-row"><span class="lbl">Weight</span>
+				<div class="seg" id="weight"><button type="button" data-v="lite" aria-pressed="true">Lighter (new)</button><button type="button" data-v="heavy">Round 3</button></div></div>
+			<div class="ctl-row"><span class="lbl">Theme</span><div class="chips" id="themes"></div></div>
+			<div class="ctl-row"><span class="lbl">Accent</span><div class="chips" id="accents"></div></div>
+			<div class="ctl-row"><span class="lbl">Corners</span>
+				<div class="seg" id="corners"><button type="button" data-v="4">Sharp</button><button type="button" data-v="10" aria-pressed="true">Soft</button><button type="button" data-v="16">Round</button></div></div>
+			<div class="ctl-row"><span class="lbl">Spacing</span>
+				<div class="seg" id="density"><button type="button" data-v="0.75">Compact</button><button type="button" data-v="1" aria-pressed="true">Comfortable</button></div></div>
+			<div class="ctl-row"><span class="lbl">Hanzi font</span>
+				<div class="seg" id="cjk"><button type="button" data-v="sans" aria-pressed="true">Sans</button><button type="button" data-v="serif">Serif</button><button type="button" data-v="kai">Brush (kai)</button></div></div>
+		</div>
+	</section>
+
+	<section aria-labelledby="rd-h">
+		<div class="sechead">
+			<h2 id="rd-h">Reader</h2>
+			<p>The text gets the space; everything else stays out of its way. The reader's side rail becomes a column of icons at the right edge (Contents, Bookmarks, Highlights, Words, Display), shown here with Words open. Hovering or tapping a word opens the lookup popup, a stack of dictionary entries. On the phone the popup becomes a sheet from the bottom, and the rail moves into one button in the top bar.</p>
+		</div>
+		<div class="scroll"><div class="app top rd-app" data-mock>
+			<div class="bar">
+				<a class="brand home-link" href="#" aria-label="Home">勤<span class="tip">Home</span></a>
+				<nav class="nav center" data-nav data-active="reader" aria-label="Main (mock)"></nav>
+				<div class="right">
+					<button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button>
+					<button class="avatar" type="button" aria-label="Account menu">L</button>
+				</div>
+			</div>
+			<div class="panel rd-panel">
+				<article class="rtext">
+					<p class="rbook"><span>故乡 · 鲁迅</span><span class="muted">Chapter 1 · 12 min left</span><svg class="rmark" aria-label="Bookmarked"><use href="#i-bookmark"/></svg></p>
+					<p class="rp">我冒了<ruby class="w-n">严寒<rt>yánhán</rt></ruby>，回到相隔二千余里，别了二十余年的故乡去。时候既然是深冬；渐近故乡时，天气又<ruby class="w-n">阴晦<rt>yīnhuì</rt></ruby>了，冷风吹进<span class="w-l">船舱</span>中，呜呜的响，从<span class="w-l">篷隙</span>向外一望，<mark class="hl">苍黄的天底下</mark>，远近横着几个<ruby class="w-n sel">萧索<rt>xiāosuǒ</rt></ruby>的荒村，没有一些活气。</p>
+					<p class="rp">我的心禁不住<span class="w-l">悲凉</span>起来了。阿！这不是我二十年来时时记得的故乡？</p>
+				</article>
+				<div class="rside">
+	<p class="rs-h">Words in this chapter</p>
+	<p class="rs-cov"><b>82%</b> of the words are known to you</p>
+	<div class="rs-bar"><i style="width:82%"></i></div>
+	<p class="rs-k">Most frequent unknown</p>
+	<ul class="rs-list">
+		<li><span class="cjk">闰土</span><small>14×</small><button type="button" aria-label="Add 闰土"><svg><use href="#i-plus"/></svg></button></li>
+		<li><span class="cjk">萧索</span><small>3×</small><button type="button" aria-label="Add 萧索"><svg><use href="#i-plus"/></svg></button></li>
+		<li><span class="cjk">阴晦</span><small>2×</small><button type="button" aria-label="Add 阴晦"><svg><use href="#i-plus"/></svg></button></li>
+		<li><span class="cjk">严寒</span><small>1×</small><button type="button" aria-label="Add 严寒"><svg><use href="#i-plus"/></svg></button></li>
+	</ul>
+	<p class="rs-legend"><span class="w-n">new</span> <span class="w-l">learning</span> known</p>
+</div>
+				<div class="rrail"><button type="button" class="ib" aria-label="Contents"><svg aria-hidden="true"><use href="#i-toc"/></svg><span class="tip">Contents</span></button><button type="button" class="ib" aria-label="Bookmarks"><svg aria-hidden="true"><use href="#i-bookmark"/></svg><span class="tip">Bookmarks</span></button><button type="button" class="ib" aria-label="Highlights"><svg aria-hidden="true"><use href="#i-marker"/></svg><span class="tip">Highlights</span></button><button type="button" class="ib on" aria-label="Words"><svg aria-hidden="true"><use href="#i-words"/></svg><span class="tip">Words</span></button><button type="button" class="ib" aria-label="Display"><svg aria-hidden="true"><use href="#i-type"/></svg><span class="tip">Display</span></button></div>
+				<div class="lk-pos"><div class="lk">
+	<div class="lk-e">
+		<div class="lk-h"><span class="lk-t">萧索</span><span class="lk-r">xiāosuǒ</span><span class="lk-c">HSK 7–9</span><span class="lk-c">#18,204</span></div>
+		<ol class="lk-g"><li><span class="pos">adj</span> bleak; desolate; dreary</li></ol>
+		<p class="lk-s">CC-CEDICT</p>
+		<div class="lk-a"><button type="button"><svg><use href="#i-plus"/></svg>Add to deck</button><button type="button">I know this</button></div>
+	</div>
+	<div class="lk-e">
+		<div class="lk-h"><span class="lk-t">萧</span><span class="lk-r">xiāo</span><span class="lk-c">#2,903</span></div>
+		<ol class="lk-g"><li>desolate; dreary</li><li>a surname</li></ol>
+		<p class="lk-s">CC-CEDICT · Unihan</p>
+	</div>
+</div></div>
+			</div>
+		</div></div>
+		<div class="phones">
+			<div class="phone-wrap">
+				<div class="phone"><div class="screen rd-phone">
+					<div class="pbar"><button class="ib" type="button" aria-label="Back to the library"><svg><use href="#i-back"/></svg></button><b class="cjk">故乡</b><button class="ib" type="button" aria-label="Contents, bookmarks, highlights, words and display"><svg><use href="#i-type"/></svg></button></div>
+					<div class="pbody"><p class="rp">我冒了<ruby class="w-n">严寒<rt>yánhán</rt></ruby>，回到相隔二千余里，别了二十余年的故乡去。时候既然是深冬；渐近故乡时，天气又<ruby class="w-n">阴晦<rt>yīnhuì</rt></ruby>了，冷风吹进<span class="w-l">船舱</span>中，呜呜的响，从<span class="w-l">篷隙</span>向外一望，<mark class="hl">苍黄的天底下</mark>，远近横着几个<ruby class="w-n sel">萧索<rt>xiāosuǒ</rt></ruby>的荒村，没有一些活气。</p></div>
+					<div class="sheet"><span class="grab"></span><div class="lk">
+	<div class="lk-e">
+		<div class="lk-h"><span class="lk-t">萧索</span><span class="lk-r">xiāosuǒ</span><span class="lk-c">HSK 7–9</span><span class="lk-c">#18,204</span></div>
+		<ol class="lk-g"><li><span class="pos">adj</span> bleak; desolate; dreary</li></ol>
+		<p class="lk-s">CC-CEDICT</p>
+		<div class="lk-a"><button type="button"><svg><use href="#i-plus"/></svg>Add to deck</button><button type="button">I know this</button></div>
+	</div>
+	<div class="lk-e">
+		<div class="lk-h"><span class="lk-t">萧</span><span class="lk-r">xiāo</span><span class="lk-c">#2,903</span></div>
+		<ol class="lk-g"><li>desolate; dreary</li><li>a surname</li></ol>
+		<p class="lk-s">CC-CEDICT · Unihan</p>
+	</div>
+</div></div>
+				</div></div>
+				<p>The lookup as a bottom sheet: drag it up for more entries, down to close.</p>
+			</div>
+		</div>
+	</section>
+
+	<section aria-labelledby="jr-h">
+		<div class="sechead">
+			<h2 id="jr-h">Journal</h2>
+			<p>Entries on the left, the page in the middle, corrections in the margin on the right, like comments in a document. Mistakes get a red wavy line, suggestions a blue dotted one. The open correction is tinted in the text and expanded in the margin. On the phone the margin becomes the same bottom sheet as the reader's lookup.</p>
+		</div>
+		<div class="controls"><div class="ctl-row"><span class="lbl">Moment</span>
+			<div class="seg" id="jr-moment"><button type="button" data-v="write">Writing</button><button type="button" data-v="review" aria-pressed="true">After the review</button></div></div></div>
+		<div class="scroll"><div class="app top jr-app" data-mock data-jr="review">
+			<div class="bar">
+				<a class="brand home-link" href="#" aria-label="Home">勤<span class="tip">Home</span></a>
+				<nav class="nav center" data-nav data-active="journal" aria-label="Main (mock)"></nav>
+				<div class="right">
+					<button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button>
+					<button class="avatar" type="button" aria-label="Account menu">L</button>
+				</div>
+			</div>
+			<div class="panel jr-panel">
+				<div class="jlist">
+	<button type="button" class="jnew"><svg><use href="#i-plus"/></svg>New entry</button>
+	<a class="je on" href="#"><small>Mon 16 Nov</small><span class="cjk">周末去爬山</span><i class="rv" title="Reviewed"></i></a>
+	<a class="je" href="#"><small>Sat 14 Nov</small><span class="cjk">我的新工作</span><i class="rv"></i></a>
+	<a class="je" href="#"><small>Wed 11 Nov</small><span class="cjk">第一次做饺子</span></a>
+	<a class="je" href="#"><small>Sun 8 Nov</small><span class="cjk">下雨天</span><i class="rv"></i></a>
+	<p class="jideas"><svg><use href="#i-journal"/></svg>Ideas for today</p>
+</div>
+				<article class="jpage">
+					<p class="jdate">Monday, 16 November 2026</p>
+					<h3 class="jtitle cjk">周末去爬山</h3>
+					<p class="jtext jt-write">上个周末我和朋友们去爬山了。天气很好，但是山很高，我们爬了三个小时才到了山顶。在山顶上我们看见了一个很漂亮的风景。我觉得非常累可是很开心。下山的时候，我的朋友把脚扭伤了，所以我们走得很慢。回家以后我马上就睡觉了。<span class="caret"></span></p>
+					<p class="jtext jt-review">上个周末我和朋友们去爬山了。天气很好，但是山很高，我们爬了三个小时<span class="cx bad on">才到了</span>山顶。在山顶上我们看见了<span class="cx bad">一个</span>很漂亮的风景。<span class="cx tip2">我觉得非常累可是很开心</span>。下山的时候，我的朋友把脚扭伤了，所以我们走得很慢。回家以后我马上就睡觉了。</p>
+					<div class="jfoot jt-write"><span class="muted">104 characters · saved</span><button type="button" class="jghost" aria-label="Import a photo">Photo</button><button type="button" class="jprimary">Review</button></div>
+					<div class="jfoot jt-review"><span class="muted">Reviewed 2 min ago</span><button type="button" class="jghost">Edit</button><button type="button" class="jghost">Review again</button></div>
+					<div class="jt-review"><div class="jover"><p class="jn-h">Overall</p><p>A clear, well-ordered account of your day. Watch 才 with 了 and which nouns take 个. Your sentences are already varied; linking ideas with 虽然…但是 would make them flow.</p><p class="jmeta">Reviewed with your Anthropic key · claude-sonnet-5-5</p></div></div>
+				</article>
+				<aside class="jt-review jaside"><div class="jnotes">
+	<p class="jn-h">3 corrections</p>
+	<div class="jn on">
+		<p class="jn-cat"><i class="dot bad"></i>Grammar</p>
+		<p class="jn-fix"><s>才到了</s> → <b>才到</b></p>
+		<p class="jn-why">才 says something happened later than expected. It isn't followed by 了.</p>
+	</div>
+	<div class="jn"><p class="jn-cat"><i class="dot bad"></i>Measure word</p><p class="jn-fix"><s>一个</s> → <b>(leave out)</b></p></div>
+	<div class="jn"><p class="jn-cat"><i class="dot tip"></i>Style</p><p class="jn-fix"><s>…可是很开心</s> → <b class="cjk">虽然…但是</b></p></div>
+</div></aside>
+				<aside class="jt-write jaside"><div class="jnotes"><p class="jn-h">Ideas for today</p><div class="jn"><p class="jn-fix cjk">你最近学会做的一道菜</p><p class="jn-why">Describe the steps. Practises 先…然后… and 把.</p></div><div class="jn"><p class="jn-fix cjk">一个让你后悔的决定</p><p class="jn-why">Practises 如果…就… and the past with 了.</p></div></div></aside>
+			</div>
+		</div></div>
+		<div class="phones">
+			<div class="phone-wrap">
+				<div class="phone"><div class="screen rd-phone">
+					<div class="pbar"><button class="ib" type="button" aria-label="Back to entries"><svg><use href="#i-back"/></svg></button><b class="cjk">周末去爬山</b></div>
+					<div class="pbody"><p class="jtext">上个周末我和朋友们去爬山了。天气很好，但是山很高，我们爬了三个小时<span class="cx bad on">才到了</span>山顶。在山顶上我们看见了<span class="cx bad">一个</span>很漂亮的风景。<span class="cx tip2">我觉得非常累可是很开心</span>。下山的时候，我的朋友把脚扭伤了，所以我们走得很慢。回家以后我马上就睡觉了。</p></div>
+					<div class="sheet jsheet"><span class="grab"></span><div class="jnotes">
+	<p class="jn-h">3 corrections</p>
+	<div class="jn on">
+		<p class="jn-cat"><i class="dot bad"></i>Grammar</p>
+		<p class="jn-fix"><s>才到了</s> → <b>才到</b></p>
+		<p class="jn-why">才 says something happened later than expected. It isn't followed by 了.</p>
+	</div>
+	<div class="jn"><p class="jn-cat"><i class="dot bad"></i>Measure word</p><p class="jn-fix"><s>一个</s> → <b>(leave out)</b></p></div>
+	<div class="jn"><p class="jn-cat"><i class="dot tip"></i>Style</p><p class="jn-fix"><s>…可是很开心</s> → <b class="cjk">虽然…但是</b></p></div>
+</div></div>
+				</div></div>
+				<p>A correction opens as a sheet; swipe sideways for the next one.</p>
+			</div>
+		</div>
+	</section>
+
+	<section aria-labelledby="se-h">
+		<div class="sechead">
+			<h2 id="se-h">Search</h2>
+			<p>Search keeps the results on the left and opens an entry beside them, so you can step through results without losing the list. Drawing a character and searching by its parts are two buttons in the search field. On the phone the entry opens as its own page.</p>
+		</div>
+		<div class="scroll"><div class="app top se-app" data-mock>
+			<div class="bar">
+				<a class="brand home-link" href="#" aria-label="Home">勤<span class="tip">Home</span></a>
+				<nav class="nav center" data-nav data-active="search" aria-label="Main (mock)"></nav>
+				<div class="right">
+					<button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button>
+					<button class="avatar" type="button" aria-label="Account menu">L</button>
+				</div>
+			</div>
+			<div class="panel se-panel">
+				<div class="se-left">
+					<div class="sfield"><svg><use href="#i-search"/></svg><span>qin</span><button type="button" class="ib" aria-label="Draw a character"><svg><use href="#i-draw"/></svg><span class="tip">Draw</span></button><button type="button" class="ib" aria-label="Search by parts"><svg><use href="#i-parts"/></svg><span class="tip">By parts</span></button></div>
+					<div class="sfilters"><span class="on">All</span><span>Words</span><span>Characters</span><span class="sp">Level: any ▾</span></div>
+					<p class="scount">214 results for qin</p>
+					<div class="slist"><a class="sr-row on" href="#"><span class="sr-w cjk">勤奋</span><span class="sr-m"><span class="sr-r">qínfèn</span><span class="sr-g">diligent; industrious</span></span><span class="sr-b">Word · HSK 5</span></a><a class="sr-row" href="#"><span class="sr-w cjk">勤</span><span class="sr-m"><span class="sr-r">qín</span><span class="sr-g">diligent; frequent</span></span><span class="sr-b">Character · HSK 5</span></a><a class="sr-row" href="#"><span class="sr-w cjk">勤劳</span><span class="sr-m"><span class="sr-r">qínláo</span><span class="sr-g">hard-working</span></span><span class="sr-b">Word · HSK 5</span></a><a class="sr-row" href="#"><span class="sr-w cjk">琴</span><span class="sr-m"><span class="sr-r">qín</span><span class="sr-g">zither; musical instrument</span></span><span class="sr-b">Character · HSK 6</span></a><a class="sr-row" href="#"><span class="sr-w cjk">亲</span><span class="sr-m"><span class="sr-r">qīn</span><span class="sr-g">parent; relative; to kiss</span></span><span class="sr-b">Character · HSK 3</span></a><a class="sr-row" href="#"><span class="sr-w cjk">秦</span><span class="sr-m"><span class="sr-r">Qín</span><span class="sr-g">the Qin dynasty; a surname</span></span><span class="sr-b">Character · HSK 7–9</span></a></div>
+				</div>
+				<article class="se-entry">
+					<div class="en-top"><span class="en-w cjk">勤奋</span><div class="en-r"><span class="rd">qínfèn</span><span class="play" aria-hidden="true">▶</span></div><button type="button" class="jprimary en-add"><svg><use href="#i-plus"/></svg>Add to deck</button></div>
+					<p class="en-badges"><span class="lk-c">HSK 5</span><span class="lk-c">#4,812 in frequency</span><span class="lk-c">Word</span></p>
+					<div class="en-sec"><p class="en-k">Meanings</p><ol class="lk-g"><li><span class="pos">adj</span> diligent; industrious; hard-working</li></ol><p class="lk-s">CC-CEDICT · CC BY-SA 4.0</p></div>
+					<div class="en-sec"><p class="en-k">Characters</p><div class="en-chars"><div class="en-ch"><span class="cjk">勤</span><small>qín · diligent</small></div><div class="en-ch"><span class="cjk">奋</span><small>fèn · to exert oneself</small></div><div class="en-ch stroke"><svg viewBox="0 0 100 100" aria-hidden="true"><g stroke="var(--line)" stroke-dasharray="3 3" opacity=".6"><path d="M50 4V96M4 50H96"/></g><text x="50" y="80" text-anchor="middle" font-size="78" fill="var(--muted)" opacity=".3" style="font-family:var(--cjk)">勤</text><path d="M14 26H52M24 14V40M42 14V40" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" fill="none"/></svg><small>Stroke order ▶</small></div></div></div>
+					<div class="en-sec"><p class="en-k">Example</p><p class="cjk en-ex">他每天都勤奋地学习。</p><p class="muted en-tr">He studies diligently every day.</p></div>
+					<div class="en-sec"><p class="en-k">Your note</p><p class="se-note">勤 has 力 (strength) on the right.</p></div>
+				</article>
+			</div>
+		</div></div>
+	</section>
+
+	<section aria-labelledby="en-h">
+		<div class="sechead">
+			<h2 id="en-h">Dictionary entry</h2>
+			<p>The full entry page, reached from search, the reader's popup or a flashcard. The word, its readings and the two actions lead; meanings are grouped by dictionary with their source and licence; the right column holds the characters, stroke order and your note. A character entry adds its radical and the characters that share it.</p>
+		</div>
+		<div class="scroll"><div class="app top en-app" data-mock>
+			<div class="bar">
+				<a class="brand home-link" href="#" aria-label="Home">勤<span class="tip">Home</span></a>
+				<nav class="nav center" data-nav data-active="search" aria-label="Main (mock)"></nav>
+				<div class="right">
+					<button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button>
+					<button class="avatar" type="button" aria-label="Account menu">L</button>
+				</div>
+			</div>
+			<div class="panel en-panel">
+				<header class="en-head">
+					<div class="en-word"><span class="en-w cjk">勤奋</span><span class="en-var cjk" title="Traditional">勤奮 <small>traditional</small></span></div>
+					<div class="en-reads"><span class="rd">qínfèn</span><span class="cjk muted">ㄑㄧㄣˊ ㄈㄣˋ</span><span class="play-b" aria-hidden="true">▶</span></div>
+					<p class="en-badges"><span class="lk-c">HSK 5</span><span class="lk-c">#4,812 in frequency</span><span class="lk-c">Word</span><span class="lk-c on">In 2 decks</span></p>
+					<div class="en-acts"><button type="button" class="jprimary en-add"><svg><use href="#i-plus"/></svg>Add to deck</button><button type="button" class="jghost">Edit</button></div>
+				</header>
+				<div class="en-main">
+					<div class="en-sec"><p class="en-k">Meanings · CC-CEDICT</p><ol class="en-gl"><li><span class="pos">adj</span>diligent; industrious; hard-working</li><li><span class="pos">n</span>diligence</li></ol><p class="lk-s">CC-CEDICT · CC BY-SA 4.0</p></div>
+					<div class="en-sec"><p class="en-k">Examples</p>
+						<div class="en-sent"><p class="cjk">他每天都<b>勤奋</b>地学习。</p><p class="muted">He studies diligently every day.</p></div>
+						<div class="en-sent"><p class="cjk">成功来自<b>勤奋</b>和耐心。</p><p class="muted">Success comes from hard work and patience.</p></div>
+						<p class="lk-s">Sample sentences</p>
+					</div>
+					<div class="en-sec"><p class="en-k">Related</p><p class="en-rel cjk"><a href="#">勤劳</a><a href="#">努力</a><a href="#">用功</a><a href="#">懒惰 <small>opposite</small></a></p></div>
+				</div>
+				<aside class="en-side">
+					<div class="en-sec"><p class="en-k">Characters</p><a class="ec" href="#"><span class="ec-g cjk">勤</span><span class="ec-m"><span><b class="rd">qín</b> diligent</span><small>Radical <span class="cjk">力</span> · 13 strokes · HSK 5</small></span></a><a class="ec" href="#"><span class="ec-g cjk">奋</span><span class="ec-m"><span><b class="rd">fèn</b> to exert oneself</span><small>Radical <span class="cjk">大</span> · 8 strokes · HSK 5</small></span></a></div>
+					<div class="en-sec"><p class="en-k">Stroke order</p><div class="en-stroke"><svg viewBox="0 0 100 100" aria-hidden="true"><g stroke="var(--line)" stroke-dasharray="3 3" opacity=".6" fill="none"><path d="M50 4V96M4 50H96M8 8l84 84M92 8 8 92"/></g><text x="50" y="80" text-anchor="middle" font-size="78" fill="var(--muted)" opacity=".28" style="font-family:var(--cjk)">勤</text><path d="M14 26H52M24 14V40M42 14V40" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" fill="none"/></svg><div class="en-sbtn"><button type="button" class="jghost">▶ Play</button><button type="button" class="jghost">Loop</button><span class="muted">勤 · 3 of 13</span></div></div></div>
+					<div class="en-sec"><p class="en-k">Your note</p><p class="se-note">勤 has 力 (strength) on the right.</p></div>
+				</aside>
+			</div>
+		</div></div>
+		<div class="phones">
+			<div class="phone-wrap">
+				<div class="phone"><div class="screen en-phone">
+					<div class="pbar"><button class="ib" type="button" aria-label="Back to results"><svg><use href="#i-back"/></svg></button><b></b><button class="ib" type="button" aria-label="Add to deck"><svg><use href="#i-plus"/></svg></button></div>
+					<div class="pbody">
+						<div class="en-word"><span class="en-w cjk">勤奋</span><span class="en-var cjk">勤奮</span></div>
+						<div class="en-reads"><span class="rd">qínfèn</span><span class="cjk muted">ㄑㄧㄣˊ ㄈㄣˋ</span><span class="play-b" aria-hidden="true">▶</span></div>
+						<p class="en-badges"><span class="lk-c">HSK 5</span><span class="lk-c">#4,812</span><span class="lk-c on">In 2 decks</span></p>
+						<div class="en-sec"><p class="en-k">Meanings · CC-CEDICT</p><ol class="en-gl"><li><span class="pos">adj</span>diligent; industrious</li><li><span class="pos">n</span>diligence</li></ol></div>
+						<div class="en-sec"><p class="en-k">Characters</p><a class="ec" href="#"><span class="ec-g cjk">勤</span><span class="ec-m"><span><b class="rd">qín</b> diligent</span><small>Radical <span class="cjk">力</span> · 13 strokes · HSK 5</small></span></a><a class="ec" href="#"><span class="ec-g cjk">奋</span><span class="ec-m"><span><b class="rd">fèn</b> to exert oneself</span><small>Radical <span class="cjk">大</span> · 8 strokes · HSK 5</small></span></a></div>
+					</div>
+				</div></div>
+				<p>On the phone the same sections stack in one column; Add to deck moves to the top bar.</p>
+			</div>
+		</div>
+	</section>
+
+	<section aria-labelledby="st-h">
+		<div class="sechead">
+			<h2 id="st-h">Stats</h2>
+			<p>Stats keeps its three tabs (Overview, Characters, Week) as plain text tabs at the top of the page, on desktop and phone. Numbers are set large and light instead of in tiles. The character map colours each character from faint to full accent as you learn it, so it reads in every theme.</p>
+		</div>
+		<div class="controls"><div class="ctl-row"><span class="lbl">Tab</span>
+			<div class="seg" id="st-tab"><button type="button" data-v="ov" aria-pressed="true">Overview</button><button type="button" data-v="ch">Characters</button><button type="button" data-v="wk">Week</button></div></div></div>
+		<div class="scroll"><div class="app top st-app" data-mock data-st="ov">
+			<div class="bar">
+				<a class="brand home-link" href="#" aria-label="Home">勤<span class="tip">Home</span></a>
+				<nav class="nav center" data-nav data-active="stats" aria-label="Main (mock)"></nav>
+				<div class="right">
+					<button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button>
+					<button class="avatar" type="button" aria-label="Account menu">L</button>
+				</div>
+			</div>
+			<div class="panel st-panel">
+				<div class="st-tabs tabs"><a href="#" data-t="ov">Overview</a><a href="#" data-t="ch">Characters</a><a href="#" data-t="wk">Week</a></div>
+				<div class="st-body st-ov">
+					<div class="kpis">
+						<div><b>23</b><span>day streak</span></div>
+						<div><b>1,284</b><span>words known</span></div>
+						<div><b>91%</b><span>recall, last 30 days</span></div>
+						<div><b>14h 20m</b><span>studied this month</span></div>
+					</div>
+					<div class="st-two">
+						<div class="st-blk"><p class="en-k">Cards by state</p>
+							<div class="stack"><i style="flex:182;background:color-mix(in srgb, var(--accent) 25%, transparent)"></i><i style="flex:240;background:color-mix(in srgb, var(--accent) 55%, transparent)"></i><i style="flex:862;background:var(--accent)"></i></div>
+							<p class="stack-l"><span><i style="background:color-mix(in srgb, var(--accent) 25%, transparent)"></i>New 182</span><span><i style="background:color-mix(in srgb, var(--accent) 55%, transparent)"></i>Learning 240</span><span><i style="background:var(--accent)"></i>Mature 862</span></p>
+						</div>
+						<div class="st-blk"><p class="en-k">Level 12</p><div class="rs-bar"><i style="width:64%"></i></div><p class="muted" style="font-size:12.5px">3,210 of 5,000 XP to level 13</p></div>
+					</div>
+					<div class="st-blk"><p class="en-k">Reviews per day, last 30 days</p><div class="bars" id="st-bars"></div></div>
+				</div>
+				<div class="st-body st-ch"><div class="mgroup"><p class="mg-h"><b>HSK 1</b><span class="muted">21 of 23 learned</span></p><div class="mgrid cjk"><span class="mc m5" title="一">一</span><span class="mc m5" title="二">二</span><span class="mc m5" title="三">三</span><span class="mc m5" title="十">十</span><span class="mc m5" title="人">人</span><span class="mc m5" title="大">大</span><span class="mc m4" title="小">小</span><span class="mc m5" title="中">中</span><span class="mc m5" title="国">国</span><span class="mc m5" title="我">我</span><span class="mc m5" title="你">你</span><span class="mc m5" title="他">他</span><span class="mc m4" title="好">好</span><span class="mc m4" title="上">上</span><span class="mc m5" title="下">下</span><span class="mc m4" title="山">山</span><span class="mc m4" title="水">水</span><span class="mc m3" title="火">火</span><span class="mc m5" title="日">日</span><span class="mc m5" title="月">月</span><span class="mc m5" title="天">天</span><span class="mc m4" title="多">多</span><span class="mc m3" title="少">少</span></div></div><div class="mgroup"><p class="mg-h"><b>HSK 2</b><span class="muted">5 of 20 learned</span></p><div class="mgrid cjk"><span class="mc m4" title="开">开</span><span class="mc m4" title="关">关</span><span class="mc m4" title="门">门</span><span class="mc m4" title="问">问</span><span class="mc m3" title="时">时</span><span class="mc m3" title="间">间</span><span class="mc m3" title="知">知</span><span class="mc m4" title="道">道</span><span class="mc m3" title="觉">觉</span><span class="mc m2" title="得">得</span><span class="mc m3" title="身">身</span><span class="mc m3" title="体">体</span><span class="mc m2" title="运">运</span><span class="mc m2" title="动">动</span><span class="mc m1" title="唱">唱</span><span class="mc m1" title="歌">歌</span><span class="mc m2" title="跳">跳</span><span class="mc m2" title="舞">舞</span><span class="mc m0" title="游">游</span><span class="mc m1" title="泳">泳</span></div></div><div class="mgroup"><p class="mg-h"><b>HSK 5</b><span class="muted">0 of 18 learned</span></p><div class="mgrid cjk"><span class="mc m2" title="勤">勤</span><span class="mc m2" title="奋">奋</span><span class="mc m3" title="努">努</span><span class="mc m3" title="力">力</span><span class="mc m1" title="坚">坚</span><span class="mc m1" title="持">持</span><span class="mc m1" title="萧">萧</span><span class="mc m1" title="索">索</span><span class="mc m0" title="阴">阴</span><span class="mc m0" title="晦">晦</span><span class="mc m1" title="严">严</span><span class="mc m0" title="寒">寒</span><span class="mc m0" title="篷">篷</span><span class="mc m0" title="隙">隙</span><span class="mc m0" title="船">船</span><span class="mc m0" title="舱">舱</span><span class="mc m0" title="悲">悲</span><span class="mc m0" title="凉">凉</span></div></div><p class="mlegend"><span><i class="mc m0"></i>Not started</span><span><i class="mc m1"></i>Fresh</span><span><i class="mc m2"></i>Learning</span><span><i class="mc m3"></i>Mature</span><span><i class="mc m4"></i>Learned</span></p></div>
+				<div class="st-body st-wk">
+					<p class="wk-h"><b>Week of 16 November</b><span class="muted">compared with last week</span></p>
+					<div class="kpis">
+						<div><b>312</b><span>reviews <em class="up">+12%</em></span></div>
+						<div><b>48</b><span>new words <em class="up">+6</em></span></div>
+						<div><b>3h 10m</b><span>studied <em class="dn">−20m</em></span></div>
+						<div><b>2</b><span>journal entries <em>same</em></span></div>
+					</div>
+					<div class="st-blk"><p class="en-k">This week (accent) and last week (grey), per day</p><div class="wbars" id="wk-bars"></div></div>
+					<p class="muted" style="font-size:13px;margin-top:14px">Milestone this week: <b style="color:var(--text);font-weight:600">1,000 words known</b></p>
+				</div>
+			</div>
+		</div></div>
+		<div class="phones sp-phones">
+			<div class="phone-wrap">
+				<div class="phone"><div class="screen sp-screen">
+					<div class="pbar"><button class="ib" type="button" aria-label="Open menu"><svg><use href="#i-menu"/></svg></button><b>Stats</b><button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button></div>
+					<div class="sp-body"><div class="sp-tabs tabs"><a href="#" class="on">Overview</a><a href="#" class="">Characters</a><a href="#" class="">Week</a></div><div class="kpis sp-k"><div><b>23</b><span>day streak</span></div><div><b>1,284</b><span>words known</span></div><div><b>91%</b><span>recall, 30 days</span></div><div><b>14h 20m</b><span>this month</span></div></div>
+<div class="st-blk"><p class="en-k">Cards by state</p><div class="stack"><i style="flex:182;background:color-mix(in srgb, var(--accent) 25%, transparent)"></i><i style="flex:240;background:color-mix(in srgb, var(--accent) 55%, transparent)"></i><i style="flex:862;background:var(--accent)"></i></div><p class="stack-l"><span><i style="background:color-mix(in srgb, var(--accent) 25%, transparent)"></i>New 182</span><span><i style="background:color-mix(in srgb, var(--accent) 55%, transparent)"></i>Learning 240</span><span><i style="background:var(--accent)"></i>Mature 862</span></p></div>
+<div class="st-blk"><p class="en-k">Level 12 · 3,210 / 5,000 XP</p><div class="rs-bar"><i style="width:64%"></i></div></div>
+<div class="st-blk"><p class="en-k">Reviews per day, last 30 days</p><div class="bars sp-bars" data-bars="30"></div></div></div>
+				</div></div>
+				<p>Overview: the four numbers go two by two, the charts follow full width. The tabs stay at the top, under the title.</p>
+			</div>
+			<div class="phone-wrap">
+				<div class="phone"><div class="screen sp-screen">
+					<div class="pbar"><button class="ib" type="button" aria-label="Open menu"><svg><use href="#i-menu"/></svg></button><b>Stats</b><button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button></div>
+					<div class="sp-body"><div class="sp-tabs tabs"><a href="#" class="">Overview</a><a href="#" class="on">Characters</a><a href="#" class="">Week</a></div><p class="sp-group">Group by <b>HSK level ▾</b></p>
+<div class="mgroup"><p class="mg-h"><b>HSK 1</b><span class="muted">20 of 23 learned</span></p><div class="mgrid cjk sp-m"><span class="mc m5">一</span><span class="mc m5">二</span><span class="mc m5">三</span><span class="mc m5">十</span><span class="mc m5">人</span><span class="mc m5">大</span><span class="mc m4">小</span><span class="mc m5">中</span><span class="mc m5">国</span><span class="mc m5">我</span><span class="mc m5">你</span><span class="mc m5">他</span><span class="mc m4">好</span><span class="mc m4">上</span><span class="mc m5">下</span><span class="mc m4">山</span><span class="mc m4">水</span><span class="mc m3">火</span><span class="mc m5">日</span><span class="mc m5">月</span><span class="mc m5">天</span><span class="mc m4">多</span><span class="mc m3">少</span></div></div>
+<div class="mgroup"><p class="mg-h"><b>HSK 2</b><span class="muted">5 of 20 learned</span></p><div class="mgrid cjk sp-m"><span class="mc m4">开</span><span class="mc m4">关</span><span class="mc m4">门</span><span class="mc m4">问</span><span class="mc m3">时</span><span class="mc m3">间</span><span class="mc m3">知</span><span class="mc m4">道</span><span class="mc m3">觉</span><span class="mc m2">得</span><span class="mc m3">身</span><span class="mc m3">体</span><span class="mc m2">运</span><span class="mc m2">动</span><span class="mc m1">唱</span><span class="mc m1">歌</span><span class="mc m2">跳</span><span class="mc m2">舞</span><span class="mc m0">游</span><span class="mc m1">泳</span></div></div>
+<p class="mlegend sp-leg"><span><i class="mc m0"></i>Not started</span><span><i class="mc m2"></i>Learning</span><span><i class="mc m4"></i>Learned</span></p></div>
+				</div></div>
+				<p>Characters: the map wraps to the screen. Grouping (HSK level, grade, frequency) is one choice at the top.</p>
+			</div>
+			<div class="phone-wrap">
+				<div class="phone"><div class="screen sp-screen">
+					<div class="pbar"><button class="ib" type="button" aria-label="Open menu"><svg><use href="#i-menu"/></svg></button><b>Stats</b><button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button></div>
+					<div class="sp-body"><div class="sp-tabs tabs"><a href="#" class="">Overview</a><a href="#" class="">Characters</a><a href="#" class="on">Week</a></div><div class="sp-week"><button class="ib sm" type="button" aria-label="Previous week">‹</button><b>16–22 November</b><button class="ib sm" type="button" aria-label="Next week" disabled>›</button></div>
+<div class="kpis sp-k"><div><b>312</b><span>reviews <em class="up">+12%</em></span></div><div><b>48</b><span>new words <em class="up">+6</em></span></div><div><b>3h 10m</b><span>studied <em class="dn">−20m</em></span></div><div><b>2</b><span>journal <em>same</em></span></div></div>
+<div class="st-blk"><p class="en-k">This week (accent) and last (grey)</p><div class="wbars sp-wbars" data-wbars></div></div>
+<p class="muted" style="font-size:12.5px;margin-top:12px">Milestone: <b style="color:var(--text);font-weight:600">1,000 words known</b></p></div>
+				</div></div>
+				<p>Week: arrows page through earlier weeks; the comparison bars keep both weeks side by side per day.</p>
+			</div>
+		</div>
+	</section>
+
+	<section aria-labelledby="fc-h">
+		<div class="sechead">
+			<h2 id="fc-h">Flashcards: one layout, six kinds, open page</h2>
+			<p>Every card has the same four parts in the same places: a kind label at the top, the prompt, the area where you answer (nothing, a text field, choices, tiles, a writing pad or tone pads), and the answer. The grade buttons always sit in the same spot and use the theme's red, orange, green and blue. After an exercise the suggested grade is filled in, as it is today.</p>
+		</div>
+		<div class="controls">
+			<div class="ctl-row"><span class="lbl">Kind</span>
+				<div class="seg wrap" id="fc-kind"><button type="button" data-v="vocab" aria-pressed="true">Recognise</button><button type="button" data-v="reverse">Recall</button><button type="button" data-v="cloze">Fill the gap</button><button type="button" data-v="sentence">Build the sentence</button><button type="button" data-v="writing">Write</button><button type="button" data-v="tone">Tones</button></div></div>
+			<div class="ctl-row"><span class="lbl">Moment</span>
+				<div class="seg" id="fc-moment"><button type="button" data-v="0" aria-pressed="true">Before the answer</button><button type="button" data-v="1">After the answer</button></div></div>
+		</div>
+		<p class="lede">Decided: the open page. No card box, buttons docked at the bottom.</p>
+		<div class="fc-stage">
+			<div class="fc-desk-wrap scroll"><div class="fc-desk" id="fc-desk"></div></div>
+			<div class="phone"><div class="screen fc-phone-screen" id="fc-phone"></div></div>
+		</div>
+	</section>
+
+	<section aria-labelledby="heat-h">
+		<div class="sechead">
+			<h2 id="heat-h">Decided: the heatmap, three layouts to choose from</h2>
+			<p>Each person picks the layout for their home page in Settings → Home. The flower shows how close you came to the day's goal. You'll draw the flowers yourself (a GitHub issue tracks it), so the ones here are placeholders and won't ship.</p>
+		</div>
+		<div class="hcard"><h3>Growth stages</h3><div class="legend" id="legend"></div></div>
+
+		<div class="opt">
+			<div class="opt-head"><span class="opt-letter">A</span><h3>Garden grid</h3><p>The 13-week grid you have today, with a flower in each tile and the tile tinted by how much you did. It's dense and shows the long view, but each flower is small.</p></div>
+			<div class="hcard"><div class="hhead"><b>Last 13 weeks</b><span class="muted">Goal: 50 reviews a day</span></div><div class="scroll"><div class="garden" id="garden"></div></div></div>
+		</div>
+
+		<div class="opt">
+			<div class="opt-head"><span class="opt-letter">B</span><h3>Month calendar</h3><p>One month as a calendar, with date numbers and bigger flowers, paged month by month. Easy to read on a phone. It shows a shorter stretch at a glance.</p></div>
+			<div class="hcard month-card"><div class="hhead"><button class="ib sm" type="button" aria-label="Previous month">‹</button><b>November 2026</b><button class="ib sm" type="button" aria-label="Next month">›</button><span class="muted" id="msum"></span></div><div class="month" id="month"></div></div>
+		</div>
+
+		<div class="opt">
+			<div class="opt-head"><span class="opt-letter">C</span><h3>This week on Home, the month in Stats</h3><p>Home shows only this week as seven large flowers with your amount under each. Tapping it opens the month calendar (B) in Stats, and the 13-week garden (A) can stay there as a second view.</p></div>
+			<div class="hcard"><div class="hhead"><b>This week</b><span class="muted" id="wsum"></span></div><div class="week" id="week"></div></div>
+		</div>
+	</section>
+
+	<section aria-labelledby="desk-h">
+		<div class="sechead">
+			<h2 id="desk-h">Decided: desktop frame A</h2>
+			<p>Icons only, no pills and no borders, the workspace is just its flag, and Settings and Admin settings live in the account menu. The page floats on the window frame as a raised panel. There's no Home icon: the 勤 logo takes you home. The phone drawer keeps a Home row, because the phone has no logo to tap.</p>
+		</div>
+
+		<div class="opt">
+			<div class="opt-head"><span class="opt-letter">A</span><h3>Inset panel</h3><p>The menu sits in the window frame and the page floats on it as a raised panel, the way Discord separates its chrome from the conversation. Shown with the account menu open.</p></div>
+			<div class="scroll"><div class="app top" data-mock>
+				<div class="bar">
+					<a class="brand home-link" href="#" aria-label="Home" aria-current="page">勤<span class="tip">Home</span></a>
+					<nav class="nav center" data-nav aria-label="Main (mock)"></nav>
+					<div class="right">
+						<button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button>
+						<button class="avatar" type="button" aria-label="Account menu">L</button>
+					</div>
+				</div>
+				<div class="panel" data-home></div>
+				<div class="menu" style="top:50px; right:12px;">
+					<div class="who"><span class="avatar" aria-hidden="true">L</span><div><b>learner</b><small>Signed in on this device</small></div></div>
+					<hr>
+					<div class="mi"><svg><use href="#i-gear"/></svg>Settings</div>
+					<div class="mi"><svg><use href="#i-palette"/></svg>Theme<span class="end" data-theme-name>Mocha</span></div>
+					<div class="mi"><svg><use href="#i-shield"/></svg>Admin settings<span class="tag">Admin</span></div>
+					<hr>
+					<div class="mi bad"><svg><use href="#i-out"/></svg>Sign out</div>
+				</div>
+			</div></div>
+		</div>
+
+	</section>
+
+	<section aria-labelledby="phone-h">
+		<div class="sechead">
+			<h2 id="phone-h">Decided: the phone drawer</h2>
+			<p>One frame for the installable web app now and the Android app later. The drawer opens from the left. Workspaces sit at its top as flags (tap to switch, + to add), then the sections, then your account at the bottom, where Settings and Admin settings live.</p>
+		</div>
+		<div class="phones">
+			<div class="phone-wrap">
+				<div class="phone"><div class="screen">
+					<div class="pbar"><button class="ib" type="button" aria-label="Open menu"><svg><use href="#i-menu"/></svg></button><b>Today</b><button class="flag" type="button" aria-label="Workspace: Chinese"><svg><use href="#f-cn"/></svg></button></div>
+					<div class="pbody" data-phone-home></div>
+				</div></div>
+				<p>Closed: the page title, the menu button and the flag. Nothing else.</p>
+			</div>
+			<div class="phone-wrap">
+				<div class="phone"><div class="screen">
+					<div class="pbar"><button class="ib" type="button" aria-label="Open menu"><svg><use href="#i-menu"/></svg></button><b>Today</b></div>
+					<div class="pbody" data-phone-home></div>
+					<div class="scrim"></div>
+					<div class="drawer">
+						<div class="ws-row">
+							<button class="ws on" type="button" aria-label="Mandarin"><svg><use href="#f-cn"/></svg></button>
+							<button class="ws" type="button" aria-label="Taiwan reading"><svg><use href="#f-tw"/></svg></button>
+							<button class="ws" type="button" aria-label="Japanese"><svg><use href="#f-jp"/></svg></button>
+							<button class="ws add" type="button" aria-label="Add workspace">+</button>
+						</div>
+						<div class="ws-name"><b>Mandarin</b>Chinese · simplified</div>
+						<nav class="dnav" data-drawer aria-label="Main (mock)"></nav>
+						<div class="dfoot"><span class="avatar" aria-hidden="true">L</span><span class="n">learner<small>Settings · Admin</small></span><button class="ib" type="button" aria-label="Settings"><svg><use href="#i-gear"/></svg></button></div>
+					</div>
+				</div></div>
+				<p>Open: flags as a row of workspaces, sections with labels (the drawer has room for them), account at the bottom.</p>
+			</div>
+		</div>
+	</section>
+
+	<div class="next">
+		<h3>Coming in the next rounds</h3>
+		<ul>
+						<li><b>Icons:</b> the line icons here are placeholders. Your own drawings can replace them, plus level and day markers.</li>
+			<li><b>A qinqin house theme</b> alongside Catppuccin and the others.</li>
+		</ul>
+	</div>
+</div>
+
+<script>
+(function () {
+	const NAV = [
+		['home', 'Home'], ['study', 'Study'], ['reader', 'Reader'], ['journal', 'Journal'], ['search', 'Search'], ['stats', 'Stats']
+	];
+	const icon = (id) => '<svg aria-hidden="true"><use href="#i-' + id + '"/></svg>';
+
+	document.querySelectorAll('[data-nav]').forEach((nav) => {
+		const active = nav.dataset.active || '';
+		nav.innerHTML = NAV.filter(([id]) => id !== 'home').map(([id, label]) =>
+			'<button type="button" class="ib' + (id === active ? ' on' : '') + '" aria-label="' + label + '">' + icon(id) + '<span class="tip">' + label + '</span></button>'
+		).join('');
+	});
+	document.querySelectorAll('[data-drawer]').forEach((nav) => {
+		nav.innerHTML = NAV.map(([id, label]) =>
+			'<a href="#" class="' + (id === 'home' ? 'on' : '') + '">' + icon(id) + label + '</a>'
+		).join('');
+	});
+	const home =
+		'<div class="greet"><span class="big">Good evening</span><span class="date">Monday, 16 November · day 23 of your streak</span></div>' +
+		'<div class="card"><span class="k">Due today</span><div class="due"><div><b>42</b> <span>reviews</span></div><div><b>8</b> <span>new</span></div></div><button class="btn" type="button">Start studying</button></div>' +
+		'<div class="card"><span class="k">Word of the day</span><div class="word"><span class="han">勤奋</span><div><div class="rd">qínfèn</div><div class="gl">diligent, hard-working · HSK 5</div></div></div></div>' +
+		'<div class="card" style="grid-column:1/-1"><span class="k">Activity</span><div class="stub"></div><span class="note">The heatmap layout you pick in round 2 goes here.</span></div>';
+	document.querySelectorAll('[data-home]').forEach((el) => { el.innerHTML = home; });
+	const phoneHome =
+		'<div class="card"><span class="k">Due today</span><div class="due"><div><b>42</b> <span>reviews</span></div><div><b>8</b> <span>new</span></div></div><button class="btn" type="button">Start studying</button></div>' +
+		'<div class="card"><span class="k">Word of the day</span><div class="word"><span class="han">勤奋</span><div><div class="rd">qínfèn</div><div class="gl">diligent · HSK 5</div></div></div></div>' +
+		'<div class="card"><span class="k">Activity</span><div class="stub"></div></div>';
+	document.querySelectorAll('[data-phone-home]').forEach((el) => { el.innerHTML = phoneHome; });
+
+	// chrome, panel, raised, line, text, muted, good, warn, bad, accents{}, dark?
+	const ctp = (name, c, dark) => ({ name, group: 'Catppuccin', dark,
+		chrome: c.crust, panel: c.base, raised: c.surface0, line: c.surface1, text: c.text, muted: c.subtext0,
+		board: c.mantle, good: c.green, warn: c.yellow, bad: c.red,
+		accents: { mauve: c.mauve, pink: c.pink, red: c.red, peach: c.peach, yellow: c.yellow, green: c.green, teal: c.teal, sky: c.sky, blue: c.blue, lavender: c.lavender },
+		grades: [c.red, c.peach, c.green, c.blue], accent: 'mauve' });
+	const THEMES = {
+		latte: ctp('Latte', { crust:'#dce0e8', mantle:'#e6e9ef', base:'#eff1f5', surface0:'#e6e9ef', surface1:'#ccd0da', text:'#4c4f69', subtext0:'#6c6f85',
+			mauve:'#8839ef', pink:'#ea76cb', red:'#d20f39', peach:'#fe640b', yellow:'#df8e1d', green:'#40a02b', teal:'#179299', sky:'#04a5e5', blue:'#1e66f5', lavender:'#7287fd' }, false),
+		frappe: ctp('Frappé', { crust:'#232634', mantle:'#292c3c', base:'#303446', surface0:'#414559', surface1:'#51576d', text:'#c6d0f5', subtext0:'#a5adce',
+			mauve:'#ca9ee6', pink:'#f4b8e4', red:'#e78284', peach:'#ef9f76', yellow:'#e5c890', green:'#a6d189', teal:'#81c8be', sky:'#99d1db', blue:'#8caaee', lavender:'#babbf1' }, true),
+		macchiato: ctp('Macchiato', { crust:'#181926', mantle:'#1e2030', base:'#24273a', surface0:'#363a4f', surface1:'#494d64', text:'#cad3f5', subtext0:'#a5adcb',
+			mauve:'#c6a0f6', pink:'#f5bde6', red:'#ed8796', peach:'#f5a97f', yellow:'#eed49f', green:'#a6da95', teal:'#8bd5ca', sky:'#91d7e3', blue:'#8aadf4', lavender:'#b7bdf8' }, true),
+		mocha: ctp('Mocha', { crust:'#11111b', mantle:'#181825', base:'#1e1e2e', surface0:'#313244', surface1:'#45475a', text:'#cdd6f4', subtext0:'#a6adc8',
+			mauve:'#cba6f7', pink:'#f5c2e7', red:'#f38ba8', peach:'#fab387', yellow:'#f9e2af', green:'#a6e3a1', teal:'#94e2d5', sky:'#89dceb', blue:'#89b4fa', lavender:'#b4befe' }, true),
+		rosepine: { name: 'Rosé Pine', group: 'Others', dark: true, chrome:'#191724', panel:'#1f1d2e', raised:'#26233a', line:'#403d52', text:'#e0def4', muted:'#908caa', board:'#16141f',
+			good:'#9ccfd8', warn:'#f6c177', bad:'#eb6f92', accents: { iris:'#c4a7e7', rose:'#ebbcba', love:'#eb6f92', gold:'#f6c177', foam:'#9ccfd8', pine:'#3e8fb0' }, grades: ['#eb6f92', '#f6c177', '#9ccfd8', '#c4a7e7'], accent: 'iris' },
+		dawn: { name: 'Rosé Pine Dawn', group: 'Others', dark: false, chrome:'#f2e9e1', panel:'#fffaf3', raised:'#faf4ed', line:'#dfdad9', text:'#575279', muted:'#797593', board:'#f4ede8',
+			good:'#286983', warn:'#ea9d34', bad:'#b4637a', accents: { iris:'#907aa9', rose:'#d7827e', love:'#b4637a', gold:'#ea9d34', foam:'#56949f', pine:'#286983' }, grades: ['#b4637a', '#ea9d34', '#286983', '#907aa9'], accent: 'pine' },
+		nord: { name: 'Nord', group: 'Others', dark: true, chrome:'#242933', panel:'#2e3440', raised:'#3b4252', line:'#4c566a', text:'#eceff4', muted:'#a3adc2', board:'#272c36',
+			good:'#a3be8c', warn:'#ebcb8b', bad:'#bf616a', accents: { frost:'#88c0d0', glacier:'#81a1c1', sea:'#5e81ac', aurora:'#b48ead', orange:'#d08770', green:'#a3be8c' }, grades: ['#bf616a', '#d08770', '#a3be8c', '#81a1c1'], accent: 'frost' },
+		gruvbox: { name: 'Gruvbox', group: 'Others', dark: true, chrome:'#1d2021', panel:'#282828', raised:'#3c3836', line:'#504945', text:'#ebdbb2', muted:'#a89984', board:'#232323',
+			good:'#b8bb26', warn:'#fabd2f', bad:'#fb4934', accents: { orange:'#fe8019', yellow:'#fabd2f', green:'#b8bb26', aqua:'#8ec07c', blue:'#83a598', purple:'#d3869b', red:'#fb4934' }, grades: ['#fb4934', '#fe8019', '#b8bb26', '#83a598'], accent: 'orange' }
+	};
+	const CJK = {
+		sans: "'Noto Sans SC', 'PingFang SC', 'Hiragino Sans', 'Microsoft YaHei', sans-serif",
+		serif: "'Noto Serif SC', 'Songti SC', 'Hiragino Mincho ProN', serif",
+		kai: "'LXGW WenKai TC', 'Kaiti SC', 'STKaiti', serif"
+	};
+	const state = { theme: null, accent: null };
+	const root = document.documentElement;
+
+	function hexLum(h) {
+		const n = parseInt(h.slice(1), 16);
+		const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+		return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+	}
+	function applyTheme(key, accentKey) {
+		const t = THEMES[key];
+		state.theme = key;
+		state.accent = accentKey && t.accents[accentKey] ? accentKey : t.accent;
+		const acc = t.accents[state.accent];
+		const set = { chrome: t.chrome, panel: t.panel, raised: t.raised, line: t.line, text: t.text, muted: t.muted, board: t.board,
+			good: t.good, warn: t.warn, bad: t.bad, accent: acc, 'g-again': t.grades[0], 'g-hard': t.grades[1], 'g-good': t.grades[2], 'g-easy': t.grades[3], 'on-accent': hexLum(acc) > 0.35 ? t.chrome : '#ffffff' };
+		if (!t.dark) set['on-accent'] = hexLum(acc) > 0.45 ? t.text : '#ffffff';
+		Object.entries(set).forEach(([k, v]) => root.style.setProperty('--' + k, v));
+		root.style.colorScheme = t.dark ? 'dark' : 'light';
+		document.querySelectorAll('[data-theme-name]').forEach((el) => { el.textContent = t.name; });
+		renderChips();
+	}
+	function renderChips() {
+		const box = document.getElementById('themes');
+		let lastGroup = null; let html = '';
+		Object.entries(THEMES).forEach(([key, t]) => {
+			if (t.group !== lastGroup) { html += '<span class="group-label">' + t.group + '</span>'; lastGroup = t.group; }
+			html += '<button type="button" class="tchip" data-k="' + key + '" aria-pressed="' + (key === state.theme) + '">' +
+				'<span class="sw" style="background:' + t.panel + '"><i style="background:' + t.accents[t.accent] + '"></i></span>' + t.name + '</button>';
+		});
+		box.innerHTML = html;
+		const t = THEMES[state.theme];
+		document.getElementById('accents').innerHTML = Object.entries(t.accents).map(([k, v]) =>
+			'<button type="button" class="accent-dot" data-a="' + k + '" aria-label="Accent ' + k + '" title="' + k + '" aria-pressed="' + (k === state.accent) + '" style="background:' + v + '"></button>'
+		).join('');
+	}
+	document.getElementById('themes').addEventListener('click', (e) => {
+		const b = e.target.closest('[data-k]'); if (b) applyTheme(b.dataset.k);
+	});
+	document.getElementById('accents').addEventListener('click', (e) => {
+		const b = e.target.closest('[data-a]'); if (b) applyTheme(state.theme, b.dataset.a);
+	});
+	function seg(id, fn) {
+		const box = document.getElementById(id);
+		box.addEventListener('click', (e) => {
+			const b = e.target.closest('button'); if (!b) return;
+			box.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+			fn(b.dataset.v);
+		});
+	}
+	seg('corners', (v) => root.style.setProperty('--r', v + 'px'));
+	seg('density', (v) => root.style.setProperty('--pad', v));
+	seg('cjk', (v) => root.style.setProperty('--cjk', CJK[v]));
+	seg('weight', (v) => root.classList.toggle('lite', v === 'lite'));
+	root.classList.add('lite');
+
+
+	// ---------- heatmap garden ----------
+	const GOAL = 50;
+	const day = (y, m, d) => new Date(Date.UTC(y, m - 1, d));
+	const TODAY = day(2026, 11, 16);
+	const iso = (d) => d.toISOString().slice(0, 10);
+	const add = (d, n) => new Date(d.getTime() + n * 86400000);
+	let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+	const DATA = {};
+	for (let d = day(2026, 8, 24); d <= add(TODAY, 6); d = add(d, 1)) {
+		const k = iso(d); let amt;
+		if (d > TODAY) { DATA[k] = { future: true }; continue; }
+		if (d >= day(2026, 10, 5) && d <= day(2026, 10, 9)) { DATA[k] = { vacation: true, amount: 0 }; continue; }
+		if (+d === +TODAY) amt = 21;
+		else if (d >= day(2026, 10, 24)) amt = 50 + Math.round(rnd() * 40);
+		else { const r = rnd(); amt = r < 0.18 ? 0 : Math.round(r * 85); }
+		DATA[k] = { amount: amt };
+	}
+	const STAGES = [
+		{ id: 'soil', name: 'Nothing yet', note: 'no reviews' },
+		{ id: 'sprout', name: 'Sprout', note: 'under a third' },
+		{ id: 'bud', name: 'Bud', note: 'a third or more' },
+		{ id: 'open', name: 'Opening', note: 'two thirds or more' },
+		{ id: 'bloom', name: 'In bloom', note: 'goal reached' },
+		{ id: 'rest', name: 'Resting', note: 'vacation day' }
+	];
+	function stageOf(v) {
+		if (v.vacation) return 'rest';
+		const r = v.amount / GOAL;
+		if (v.amount <= 0) return 'soil';
+		if (r >= 1) return 'bloom';
+		if (r >= 2 / 3) return 'open';
+		if (r >= 1 / 3) return 'bud';
+		return 'sprout';
+	}
+	function flower(stage) {
+		const soil = '<ellipse cx="12" cy="20.5" rx="5.5" ry="1.7" fill="var(--line)"/>';
+		const stem = (top) => '<path d="M12 20.3V' + top + '" stroke="var(--good)" stroke-width="1.6" stroke-linecap="round" fill="none"/>';
+		const leaves = (y) => '<path d="M12 ' + y + 'c-2.6-.2-4.2-1.6-4.6-3.6 2.4 0 4.1 1.2 4.6 3.6Z" fill="var(--good)"/><path d="M12 ' + (y - 1.6) + 'c2.4-.1 3.9-1.4 4.3-3.3-2.2 0-3.8 1.1-4.3 3.3Z" fill="var(--good)"/>';
+		const petal = (a, r, rx, ry) => '<ellipse cx="12" cy="' + (8.5 - r) + '" rx="' + rx + '" ry="' + ry + '" fill="var(--accent)" transform="rotate(' + a + ' 12 8.5)"/>';
+		switch (stage) {
+			case 'soil': return '<svg viewBox="0 0 24 24" aria-hidden="true">' + soil + '<circle cx="12" cy="18.6" r="1" fill="var(--muted)" opacity=".6"/></svg>';
+			case 'sprout': return '<svg viewBox="0 0 24 24" aria-hidden="true">' + soil + stem(15.5) + '<path d="M12 16c-2.2 0-3.6-1.1-4-2.8 2 0 3.5.9 4 2.8Z" fill="var(--good)"/><path d="M12 15.6c2 0 3.3-1 3.6-2.6-1.8 0-3.2.9-3.6 2.6Z" fill="var(--good)"/></svg>';
+			case 'bud': return '<svg viewBox="0 0 24 24" aria-hidden="true">' + soil + stem(10) + leaves(17.4) + '<path d="M12 4.6c1.9 1.4 2.7 3 2.5 4.6-.3 1.5-1.3 2.2-2.5 2.2s-2.2-.7-2.5-2.2c-.2-1.6.6-3.2 2.5-4.6Z" fill="var(--accent)"/><path d="M9.6 9.6c.9.6 1.6.8 2.4.8s1.5-.2 2.4-.8" stroke="var(--good)" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>';
+			case 'open': return '<svg viewBox="0 0 24 24" aria-hidden="true">' + soil + stem(10) + leaves(17.4) + petal(-38, 2.6, 2.1, 3.1) + petal(38, 2.6, 2.1, 3.1) + petal(0, 3, 2.1, 3.2) + '<circle cx="12" cy="9" r="1.7" fill="var(--warn)"/></svg>';
+			case 'bloom': return '<svg viewBox="0 0 24 24" aria-hidden="true">' + soil + stem(11) + leaves(18) + [0, 72, 144, 216, 288].map((a) => petal(a, 3.4, 2.4, 3.2)).join('') + '<circle cx="12" cy="8.5" r="2.1" fill="var(--warn)"/></svg>';
+			case 'rest': return '<svg viewBox="0 0 24 24" aria-hidden="true">' + soil + '<path d="M14.5 6.2a5.2 5.2 0 1 0 3.3 8.3 4.2 4.2 0 0 1-3.3-8.3Z" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+		}
+		return '';
+	}
+	const fmt = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
+	function tile(d, extra) {
+		const v = DATA[iso(d)];
+		if (!v || v.future) return '<div class="tile future ' + (extra || '') + '" title="' + fmt(d) + ': still to come"></div>';
+		const st = stageOf(v);
+		const tint = v.vacation ? 0 : Math.min(1, v.amount / (GOAL * 1.6));
+		const bg = 'color-mix(in srgb, var(--accent) ' + Math.round(tint * 30) + '%, var(--raised))';
+		const today = +d === +TODAY;
+		const label = fmt(d) + ': ' + (v.vacation ? 'vacation' : v.amount + ' of ' + GOAL + ' reviews') + (today ? ' (today, still open)' : '');
+		return '<div class="tile ' + (today ? 'today ' : '') + (extra || '') + '" style="background:' + bg + '" title="' + label + '" role="img" aria-label="' + label + '">' + flower(st) + '</div>';
+	}
+	document.getElementById('legend').innerHTML = STAGES.map((s) =>
+		'<div class="li"><span class="t">' + flower(s.id) + '</span><span>' + s.name + '<small>' + s.note + '</small></span></div>').join('');
+	// A: garden grid (columns are weeks, Monday first)
+	let g = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].map((l) => '<span class="dl">' + l + '</span>').join('');
+	for (let d = day(2026, 8, 24); d <= add(TODAY, 6); d = add(d, 1)) g += tile(d);
+	document.getElementById('garden').innerHTML = g;
+	// B: month calendar
+	let m = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((w) => '<span class="wd">' + w + '</span>').join('');
+	const first = day(2026, 11, 1); const lead = (first.getUTCDay() + 6) % 7;
+	for (let i = 0; i < lead; i++) m += '<div class="tile blank"></div>';
+	let met = 0, past = 0;
+	for (let d = first; d.getUTCMonth() === 10; d = add(d, 1)) {
+		m += tile(d).replace('">', '"><span class="dn">' + d.getUTCDate() + '</span>');
+		const v = DATA[iso(d)]; if (v && !v.future && +d < +TODAY && !v.vacation) { past++; if (v.amount >= GOAL) met++; }
+	}
+	document.getElementById('month').innerHTML = m;
+	document.getElementById('msum').textContent = 'Goal reached on ' + met + ' of ' + past + ' days';
+	// C: week strip
+	const mon = add(TODAY, -((TODAY.getUTCDay() + 6) % 7));
+	let w = '';
+	for (let i = 0; i < 7; i++) {
+		const d = add(mon, i); const v = DATA[iso(d)];
+		w += '<div class="d"><b>' + d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + '</b>' + tile(d) + '<span>' + (v && !v.future ? (v.vacation ? 'rest' : v.amount + '/' + GOAL) : '') + '</span></div>';
+	}
+	document.getElementById('week').innerHTML = w;
+	document.getElementById('wsum').textContent = '29 reviews to go today · goal streak 23 days';
+
+
+	// ---------- flashcards ----------
+	const fcState = { kind: 'vocab', after: false, style: 'open' };
+	const KIND = {
+		vocab: { label: 'Recognise', icon: 'study' },
+		reverse: { label: 'Recall', icon: 'journal' },
+		cloze: { label: 'Fill the gap', icon: 'reader' },
+		sentence: { label: 'Build the sentence', icon: 'reader' },
+		writing: { label: 'Write', icon: 'journal' },
+		tone: { label: 'Tones', icon: 'stats' }
+	};
+	const STYLE_NOTE = {
+		raised: 'A · Raised card: the card is a raised surface floating on the page, with the grade buttons under it. It feels like holding a card, and the card colour comes from the theme.',
+		open: 'B · Open page: no card box. The exercise sits directly on the page and the buttons are docked at the bottom, closer to Kanji Study and Anki on a phone. Quieter, and roomier on small screens.'
+	};
+	const mi = '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+		'<g stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3" fill="none"><path d="M50 4V96M4 50H96M8 8l84 84M92 8 8 92"/></g>';
+	function fcHTML(compact) {
+		const k = fcState.kind, after = fcState.after;
+		let prompt = '', work = '', ans = '', main = 'Show answer', sugg = 'good';
+		const reading = '<div class="rrow"><span class="rd">qínfèn</span><span class="play" aria-hidden="true">▶</span></div>';
+		const gloss = '<p class="gl">diligent; industrious; hard-working</p><p class="src">CC-CEDICT · HSK 5</p>';
+		const note = '<p class="note"><b>Your note:</b> 勤 has 力 (strength) on the right.</p>';
+		if (k === 'vocab') {
+			prompt = '<span class="han">勤奋</span>';
+			ans = reading + gloss + note; sugg = '';
+		} else if (k === 'reverse') {
+			prompt = '<span class="sub">adjective</span><span class="mean">diligent; industrious</span>';
+			work = after ? '<div class="field ok">勤奋<span class="tick">✓</span></div>' : '<div class="field"><span class="ph">Type the word</span></div>';
+			main = 'Check'; ans = reading + '<p class="src">Typed correctly on the first try</p>';
+		} else if (k === 'cloze') {
+			prompt = '<span class="sent">他学习很<span class="gap' + (after ? ' ok' : '') + '">' + (after ? '勤奋' : '&nbsp;') + '</span>，每天都复习。</span><span class="sub">He studies very ___ and reviews every day.</span>';
+			work = '<div class="choices">' + ['勤奋', '安静', '便宜', '认真'].map((w, i) => '<div class="choice' + (after && i === 0 ? ' ok' : '') + '"><small>' + (i + 1) + '</small>' + w + '</div>').join('') + '</div>';
+			main = 'Check'; ans = reading + gloss;
+		} else if (k === 'sentence') {
+			prompt = '<span class="mean" style="font-size:19px">He studies diligently every day.</span><span class="sub">Uses 勤奋</span>';
+			const all = ['他', '每天', '都', '勤奋', '地', '学习'];
+			const placed = after ? all : all.slice(0, 2);
+			const pool = after ? [] : ['学习', '地', '勤奋', '都'];
+			work = '<div class="slots">' + placed.map((t) => '<span class="tok' + (after ? ' ok' : '') + '">' + t + '</span>').join('') + '</div>' +
+				(pool.length ? '<div class="pool">' + pool.map((t) => '<span class="tok">' + t + '</span>').join('') + '</div>' : '');
+			main = 'Check'; ans = '<p class="gl cjk" style="font-size:18px">他每天都勤奋地学习。</p><p class="src">tā měitiān dōu qínfèn de xuéxí</p>';
+		} else if (k === 'writing') {
+			prompt = '<span class="han">' + (after ? '勤' : '□') + '奋</span><span class="sub">qínfèn · diligent</span>';
+			const strokes = after
+				? '<text x="50" y="80" text-anchor="middle" font-size="78" fill="var(--g-good)" style="font-family:var(--cjk)">勤</text>'
+				: '<g stroke="var(--accent)" stroke-width="5" stroke-linecap="round" fill="none"><path d="M14 26H52"/><path d="M24 14V40"/><path d="M42 14V40"/></g>';
+			work = '<div class="pad">' + mi + strokes + '</svg></div><div class="dots"><i class="' + (after ? 'ok' : 'cur') + '"></i><i class="' + (after ? 'ok' : '') + '"></i></div>';
+			main = 'Show strokes'; ans = '<p class="src">Written with 1 mistake · stroke order checked</p>' + reading; sugg = after ? 'hard' : '';
+		} else if (k === 'tone') {
+			prompt = '<span class="han">勤奋</span>';
+			const pad = (ch, path, cls, on) => '<div class="tpad"><div class="tp ' + cls + '"><b>' + ch + '</b>' +
+				(path ? '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="' + path + '" stroke="' + (cls === 'ok' ? 'var(--g-good)' : 'var(--accent)') + '" stroke-width="6" stroke-linecap="round" fill="none"/></svg>' : '') +
+				'</div><div class="nums">' + [1, 2, 3, 4, 5].map((n) => '<span class="' + (n === on ? 'on' : '') + '">' + n + '</span>').join('') + '</div></div>';
+			work = '<div class="tones">' + pad('勤', 'M22 74 78 26', after ? 'ok' : '', 2) + pad('奋', after ? 'M22 24 78 78' : '', after ? 'ok' : 'cur', after ? 4 : 0) + '</div>';
+			main = 'Check'; ans = reading;
+		}
+		const grades = '<div class="grades">' + [['again', 'Again', '<1m'], ['hard', 'Hard', '6m'], ['good', 'Good', '1d'], ['easy', 'Easy', '4d']]
+			.map(([c, l, t]) => '<div class="gb ' + c + (after && sugg === c ? ' sugg' : '') + '">' + l + '<small>' + t + '</small></div>').join('') + '</div>';
+		const acts = '<div class="acts">' + (after ? grades : '<button class="main" type="button">' + main + '</button>') +
+			'<p class="keys">' + (after ? 'Keys 1–4 grade' : 'Space shows the answer') + '</p></div>';
+		const card = '<div class="fc"><div class="fc-kind"><svg><use href="#i-' + KIND[k].icon + '"/></svg>' + KIND[k].label + '<span class="deck">HSK 5 · Mandarin</span></div>' +
+			'<div class="fc-prompt">' + prompt + '</div>' +
+			'<div class="fc-work">' + work + (after ? '<div class="fc-ans" style="width:100%">' + ans + '</div>' : '') + '</div></div>';
+		return '<div class="sess style-' + fcState.style + '"><div class="sess-top"><span class="x" aria-hidden="true">✕</span><span class="bar-p"><i></i></span><span class="cnt">12 / 50</span></div>' +
+			'<div class="fcwrap">' + card + acts + '</div></div>';
+	}
+	function renderFc() {
+		document.getElementById('fc-desk').innerHTML = fcHTML(false);
+		document.getElementById('fc-phone').innerHTML = fcHTML(true);
+		
+	}
+
+	seg('st-tab', (v) => { document.querySelector('.st-app').dataset.st = v; });
+	(function () {
+		let sd = 3; const r = () => { sd = (sd * 16807) % 2147483647; return (sd - 1) / 2147483646; };
+		let b = '';
+		for (let i = 0; i < 30; i++) { const v = i === 29 ? 21 : 30 + Math.round(r() * 60); b += '<i class="' + (i === 29 ? 'today' : '') + '" style="height:' + v + '%" title="' + v + ' reviews"></i>'; }
+		document.getElementById('st-bars').innerHTML = b;
+		const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+		const last = [52, 40, 61, 38, 55, 70, 12], now = [58, 63, 49, 66, 60, 0, 0];
+		document.getElementById('wk-bars').innerHTML = days.map((d, i) => '<div class="wd"><i class="last" style="height:' + last[i] + '%"></i><i class="now" style="height:' + now[i] + '%"></i><small>' + d + '</small></div>').join('');
+	})();
+
+	(function () {
+		let sd = 3; const r = () => { sd = (sd * 16807) % 2147483647; return (sd - 1) / 2147483646; };
+		document.querySelectorAll('[data-bars]').forEach((el) => {
+			let b = '';
+			for (let i = 0; i < 30; i++) { const v = i === 29 ? 21 : 30 + Math.round(r() * 60); b += '<i class="' + (i === 29 ? 'today' : '') + '" style="height:' + v + '%"></i>'; }
+			el.innerHTML = b;
+		});
+		const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+		const last = [52, 40, 61, 38, 55, 70, 12], now = [58, 63, 49, 66, 60, 0, 0];
+		document.querySelectorAll('[data-wbars]').forEach((el) => {
+			el.innerHTML = days.map((d, i) => '<div class="wd"><i class="last" style="height:' + last[i] + '%"></i><i class="now" style="height:' + now[i] + '%"></i><small>' + d + '</small></div>').join('');
+		});
+	})();
+	seg('jr-moment', (v) => { document.querySelector('.jr-app').dataset.jr = v; });
+	seg('fc-kind', (v) => { fcState.kind = v; renderFc(); });
+	seg('fc-moment', (v) => { fcState.after = v === '1'; renderFc(); });
+		renderFc();
+
+	let dark = false;
+	try { dark = root.dataset.theme === 'dark' || (root.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+	applyTheme(dark ? 'mocha' : 'latte');
+})();
+</script>
