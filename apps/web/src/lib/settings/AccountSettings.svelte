@@ -13,6 +13,7 @@
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import { emailSection } from '$lib/account/emailView';
 	import DeleteAccountDialog from './DeleteAccountDialog.svelte';
+	import YourData from '$lib/account/YourData.svelte';
 	import TwoFactorManage from '$lib/account/TwoFactorManage.svelte';
 	import EmailVerify from '$lib/account/EmailVerify.svelte';
 	import { mailAvailable } from '$lib/account/mfaView';
@@ -309,6 +310,8 @@
 		</div>
 	{/if}
 </section>
+
+<YourData />
 
 <section aria-labelledby="account-delete-heading" class="block">
 	<h2 id="account-delete-heading">Delete account</h2>

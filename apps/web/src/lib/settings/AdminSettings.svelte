@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ServerBackup from '$lib/admin/ServerBackup.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import EmailAdmin from '$lib/admin/EmailAdmin.svelte';
@@ -30,6 +31,8 @@
 	<InvitesAdmin />
 {:else if section === 'email'}
 	<EmailAdmin />
+{:else if section === 'backup'}
+	<ServerBackup />
 {:else}
 	<SecurityAdmin />
 {/if}

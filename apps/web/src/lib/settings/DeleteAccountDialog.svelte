@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { downloadMyData } from '$lib/api/backup';
 	import { accountDeletionPreview, deleteAccount, type SelfDeletionPreview } from '$lib/api/account';
 	import { apiErrorBody } from '$lib/api/client';
 	import { user } from '$lib/auth';
@@ -87,7 +88,7 @@
 			{:else}
 				<p role="status">Counting…</p>
 			{/if}
-			<p>This cannot be undone. Export your data first if you want to keep it.</p>
+			<p>This cannot be undone. <button type="button" onclick={() => void downloadMyData().catch(() => (error = 'Could not start the download.'))}>Download your data first</button> if you want to keep it.</p>
 		</div>
 		<label>
 			Your password

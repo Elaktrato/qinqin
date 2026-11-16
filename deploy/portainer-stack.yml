@@ -9,6 +9,9 @@
 #   QINQIN_IMAGE     default ghcr.io/elaktrato/qinqin:latest. Pin a release,
 #                    e.g. ghcr.io/elaktrato/qinqin:v1.2.3 (tags: latest, v*, sha).
 #   QINQIN_PORT      published host port, default 8080.
+# Backups: users download their data in the app; admins create server backups
+#                    (Settings, Admin, Backup) or run `docker exec <c> qinqin backup --out /data/backups/x.tar.gz`.
+#                    /data/backups lives in the data volume; bind-mount a host path there to keep archives outside it.
 #   QINQIN_DATA_VOLUME  default "qinqin-data" (a named volume). To use a host
 #                    directory instead, set it to an absolute path such as
 #                    /srv/qinqin/data: Docker then bind-mounts it (it must exist

@@ -65,6 +65,15 @@ type server struct {
 	mailDownLog sync.Once     // logs the mail-outage sign-in refusal once per start
 	mail        *mail.Service // nil: mail is not configured and cannot be
 	users       *auth.Users   // admin changes of the users table (last-admin rule, deletion)
+
+	tickets *ticketStore // single-use download tickets (personal export, admin backup)
+	backups backupState  // in-flight exports, restores and server backups
+
+	restores   *restoreStore   // staged restores of personal backups
+	exportCap  int64           // largest export in bytes; 0: backup.MaxUpload (tests lower it)
+	restoreCap int64           // upload cap in bytes; 0: backup.MaxUpload (tests lower it)
+	stageDone  chan int64      // test hook: receives a user id when a stage finishes validating or restoring
+	bg         context.Context // lives as long as the server; background jobs run under it
 }
 
 // Option configures optional parts of the server.
@@ -109,6 +118,13 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 	}
 	s.limits = newAuthLimits(policy)
 	s.users = auth.NewUsers(sqlDB)
+	s.tickets = newTicketStore()
+	s.backups = newBackupState()
+	s.restores = newRestoreStore()
+	s.bg = context.Background()
+	if s.sweepCtx != nil {
+		s.bg = s.sweepCtx
+	}
 	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
@@ -194,6 +210,8 @@ func (s *server) routes() []route {
 		{"GET /api/account/deletion-preview", s.handleAccountDeletionPreview, accUser, nil},
 		{"DELETE /api/account", s.handleDeleteAccount, accUser, nil},
 		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil},
+		{"POST /api/admin/backup", s.handleAdminBackupStart, accAdmin, nil},
+		{"GET /api/admin/backup/{ticket}", s.handleAdminBackupDownload, accPublic, nil},
 		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil},
 		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil},
 		{"POST /api/account/mfa/totp/setup", s.handleTOTPSetup, accSession, []string{restrictionMFAEnrollment}},
@@ -203,6 +221,17 @@ func (s *server) routes() []route {
 		{"POST /api/account/mfa/email", s.handleMFAEmail, accSession, []string{restrictionMFAEnrollment}},
 		{"POST /api/account/mfa/email/confirm", s.handleMFAEmailConfirm, accSession, []string{restrictionMFAEnrollment}},
 		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
+		// The ticket routes are unauthenticated by design: the single-use
+		// ticket in the path is the credential, and anything but a live
+		// ticket is a 404 (a browser navigation cannot send a bearer token).
+		{"POST /api/account/export", s.handleExportStart, accUser, nil},
+		{"GET /api/account/export/{ticket}", s.handleExportDownload, accPublic, nil},
+		{"POST /api/account/restore", s.handleRestoreUpload, accUser, nil},
+		{"POST /api/account/restore/safety-export", s.handleSafetyExportTicket, accUser, nil},
+		{"GET /api/account/restore/safety-export/{ticket}", s.handleSafetyExportDownload, accPublic, nil},
+		{"GET /api/account/restore/{token}", s.handleRestoreStatus, accUser, nil},
+		{"DELETE /api/account/restore/{token}", s.handleRestoreDiscard, accUser, nil},
+		{"POST /api/account/restore/{token}", s.handleRestoreApply, accUser, nil},
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},
 		{"POST /api/entries/bases", s.handleEntryBases, accUser, nil},

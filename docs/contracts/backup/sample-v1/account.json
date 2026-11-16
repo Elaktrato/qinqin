@@ -1,0 +1,17 @@
+{
+ "username": "alice",
+ "timeZones": [
+  {
+   "zone": "Europe/Berlin",
+   "from": null,
+   "createdAt": "2026-11-01T00:00:00Z"
+  }
+ ],
+ "pluginStates": [
+  {
+   "pluginId": "qinqin-flashcards",
+   "enabled": true,
+   "order": 0
+  }
+ ]
+}

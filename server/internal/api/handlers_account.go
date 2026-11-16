@@ -295,6 +295,7 @@ func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	s.restores.discardUser(u.ID) // a staged backup of a deleted account goes with it
 	w.WriteHeader(http.StatusNoContent)
 }
 

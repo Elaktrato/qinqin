@@ -391,5 +391,6 @@ func (s *server) handleAdminDeleteUser(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	s.restores.discardUser(id)
 	w.WriteHeader(http.StatusNoContent)
 }

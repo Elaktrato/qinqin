@@ -5,6 +5,7 @@
 //	qinqin seed    --data <dir> --packs <dir>
 //	qinqin adduser --data <dir> --username <name> [--admin]
 //	qinqin recover --data <dir> --username <name> [--enable] [--admin] [--reset-mfa]
+//	qinqin backup  --out <file|-> [--data <dir>] [--only db,books,packs,audio]
 package main
 
 import (
@@ -54,8 +55,10 @@ func main() {
 		err = adduserCmd(args, os.Stdin, os.Stderr)
 	case "recover":
 		err = recoverCmd(args, os.Stdin, os.Stderr)
+	case "backup":
+		err = backupCmd(args, os.Stdout, os.Stderr)
 	default:
-		err = fmt.Errorf("%w: unknown command %q (want serve, seed, adduser or recover)", errUsage, cmd)
+		err = fmt.Errorf("%w: unknown command %q (want serve, seed, adduser, recover or backup)", errUsage, cmd)
 	}
 	if errors.Is(err, flag.ErrHelp) {
 		return
@@ -183,6 +186,8 @@ func serveCmd(args []string) error {
 	} else if n > 0 {
 		log.Printf("startup sweep: removed %d orphan user director%s", n, map[bool]string{true: "y", false: "ies"}[n == 1])
 	}
+	// Interrupted restores and server backups leave staged files behind.
+	api.CleanBackupTemp(*data)
 	var limiter *ai.Limiter
 	if aiSvc != nil {
 		limiter = aiSvc.Limiter
