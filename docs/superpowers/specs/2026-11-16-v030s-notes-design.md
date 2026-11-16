@@ -63,11 +63,19 @@ silently annotate whatever entry has id 1201 there. So:
   restore maps the entry, rewrites key and `entryId` together, and drops the note when the entry is
   unresolved (never guessed, like cards); the dry-run report counts it per unresolved entry (`notes`) —
   cost: a note on a word the target server lacks is lost, which the report says before applying.
-- Ruling: two archive notes whose entries map to the SAME target entry (possible through the
-  written-form fallback) do not block the restore (cards do): the note with the newest
-  `modifiedAt ?? updatedAt` wins, ties by the smaller source key; the loser counts as dropped — a
-  blocked restore for two notes would be worse than losing the older one — cost: one note lost in a
-  rare case, visible in the report's dropped count.
+- Ruling: two archive notes whose entries map to the SAME target entry do not block the restore
+  (cards do): the note with the newest `modifiedAt ?? updatedAt` wins, ties by the smaller source
+  entry id; the loser counts as dropped — a blocked restore for two notes would be worse than losing
+  the older one — cost: one note lost in a rare case, visible in the report's dropped count.
+  Correction (build): this cannot happen through today's entry resolution — `resolveEntries` maps at
+  most one archive entry to a target entry (two written-form matches onto one target are both
+  unresolved, an exact match beats a written-form one). The written-form fallback does NOT make it
+  possible, as this Ruling first said. The rule is kept as a cheap safeguard.
+- Ruling (review fix): a `qinqin-core` row whose key starts with `note:` but is not a valid note (key
+  not canonical, `entryId` missing, not a JSON integer or different from the key) is dropped on
+  restore and counted as dropped — restored verbatim it could collide with a remapped note (dry run OK,
+  restore failing on the unique index) or stick to whatever entry its key names on the target — cost:
+  such a row is lost (no client writes one).
 
 **3. Shape of the row.**
 
