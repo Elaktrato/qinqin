@@ -135,6 +135,18 @@ describe('buildVocabFaces', () => {
 		expect(faces.front.sentenceLines).toEqual(['你____，____久不见']);
 	});
 
+	it('does not blank a one-kana headword inside other words (の in この)', () => {
+		const faces = buildVocabFaces(entry({ written: 'の' }), sentence('この本は私の本です'), 'ja');
+
+		expect(faces.front.sentenceLines).toEqual(['この本は私の本です']);
+	});
+
+	it('still blanks a longer kana headword (こと)', () => {
+		const faces = buildVocabFaces(entry({ written: 'こと' }), sentence('見たことがある'), 'ja');
+
+		expect(faces.front.sentenceLines).toEqual(['見た____がある']);
+	});
+
 	it('does not inject blanks when the written form is empty', () => {
 		const faces = buildVocabFaces(entry({ written: '' }), sentence('你好世界'), 'zh');
 

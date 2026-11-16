@@ -16,6 +16,8 @@ export function withShownWritten(entry: Entry, snapshot: string | undefined): En
 	return written === entry.written ? entry : { ...entry, written };
 }
 
+const ONE_KANA = /^[\u3041-\u3096\u30a1-\u30fa\u30fc]$/u;
+
 /** The placeholder that replaces the studied word in an example sentence. */
 export const BLANK = '____';
 
@@ -50,11 +52,18 @@ export interface VocabFaces {
  * sentenceLines blanks the written form inside the example sentence. An
  * absent sentence (or an id that no longer resolves, which the caller
  * passes as null) has no block at all; a sentence that does not contain
- * the word is shown verbatim rather than silently dropped.
+ * the word is shown verbatim rather than silently dropped. A one-kana
+ * headword (の, で — shown in kana by the display form) is never blanked:
+ * the same kana sits inside other words (この), so blanking would garble
+ * the sentence.
  */
 function sentenceLines(entry: Entry, sentence: Sentence | null | undefined): string[] {
 	if (sentence === null || sentence === undefined) return [];
-	if (entry.written.length === 0 || !sentence.hanzi.includes(entry.written)) {
+	if (
+		entry.written.length === 0 ||
+		ONE_KANA.test(entry.written) ||
+		!sentence.hanzi.includes(entry.written)
+	) {
 		return [sentence.hanzi];
 	}
 	return [sentence.hanzi.split(entry.written).join(BLANK)];
