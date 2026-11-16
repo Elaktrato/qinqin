@@ -96,6 +96,16 @@ describe('FlashcardsWidget goal ring', () => {
 		expect(loadGoalStatus).toHaveBeenCalledWith(1, { force: false });
 	});
 
+	it('says "Goal reached" next to the small ring when met', async () => {
+		vi.mocked(loadGoalStatus).mockResolvedValue({
+			...WITH_GOAL,
+			today: { ...WITH_GOAL.today, status: 'met', amount: 50, fraction: 1 }
+		});
+		await ready();
+		await screen.findByRole('progressbar', { name: 'Daily goal' });
+		expect(screen.getByText('Goal reached')).toBeTruthy();
+	});
+
 	it('has no goal streak line when the streak is hidden', async () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue({ ...WITH_GOAL, streak: null });
 		await ready();

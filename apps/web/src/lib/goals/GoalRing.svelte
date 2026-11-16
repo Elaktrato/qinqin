@@ -54,6 +54,8 @@
 		{#if reached}<span class="check" aria-hidden="true">✓</span>{/if}
 		{#if size === 'small'}
 			<span class="text short" aria-hidden="true">{shortText(day)}</span>
+			<!-- Reached is said in words, not by colour or the check mark alone. -->
+			{#if reached}<span class="reached-word" aria-hidden="true">Goal reached</span>{/if}
 		{:else}
 			<p class="text">{valueText}</p>
 		{/if}
@@ -125,6 +127,11 @@
 		.check {
 			color: #6fd08c;
 		}
+	}
+
+	.reached-word {
+		font-size: 0.85rem;
+		font-weight: 600;
 	}
 
 	.reached .text {

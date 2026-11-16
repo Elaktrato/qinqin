@@ -87,6 +87,20 @@ describe('GoalRing', () => {
 		expect(screen.getByText('32/50')).toBeTruthy();
 	});
 
+	it('small size says "Goal reached" in words when met', () => {
+		const { container } = render(GoalRing, {
+			day: day({ status: 'met', amount: 62, fraction: 1 }),
+			sources: SOURCES,
+			size: 'small'
+		});
+		expect(screen.getByText('Goal reached')).toBeTruthy();
+		expect(screen.getByText('62/50')).toBeTruthy();
+		expect(container.querySelector('.check')?.textContent).toBe('✓');
+		cleanup();
+		render(GoalRing, { day: day({}), sources: SOURCES, size: 'small' });
+		expect(screen.queryByText('Goal reached')).toBeNull();
+	});
+
 	it('turns the arc transition off under reduced motion', () => {
 		const source = readFileSync(resolve(__dirname, 'GoalRing.svelte'), 'utf8');
 		const style = source.slice(source.indexOf('<style>'));
