@@ -46,6 +46,15 @@ if [ "$head" != "$commit" ]; then
   echo "fetch-kanjivg-components: tag $tag is at $head, expected $commit; refusing" >&2
   exit 1
 fi
+# The licence text is pinned: plugins/data/UPSTREAM.sha256 holds the SHA-256
+# of KanjiVG's COPYING as committed (kanjivg-components/LICENSE). A different
+# text upstream stops the refresh until someone re-reads it and updates the pin.
+pinned="$(awk '$2 == "kanjivg-components/LICENSE" { print $1 }' "$root/plugins/data/UPSTREAM.sha256")"
+actual="$(sha256sum "$tmp/kanjivg/COPYING" | cut -d' ' -f1)"
+if [ -z "$pinned" ] || [ "$actual" != "$pinned" ]; then
+  echo "fetch-kanjivg-components: COPYING sha256 $actual does not match the pin '$pinned' in plugins/data/UPSTREAM.sha256; re-read the licence and update the pin" >&2
+  exit 1
+fi
 grep -q "Attribution-Share Alike 3.0" "$tmp/kanjivg/README.md" || {
   echo "fetch-kanjivg-components: README.md no longer states CC BY-SA 3.0; check the licence" >&2
   exit 1

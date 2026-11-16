@@ -102,8 +102,12 @@ attribution "$dest/kanjidic2" "KANJIDIC2" \
 # change or corruption of a bundled payload fails the build. The rolling
 # dictionaries change upstream daily, so the manifest pins the snapshot that
 # was committed, not "the" upstream file.
+# KanjiVG's COPYING (kanjivg-components/LICENSE) stays pinned too; the
+# components pack is rebuilt by fetch-kanjivg-components.sh, which checks a
+# fresh clone's COPYING against this line.
 (cd "$dest" && sha256sum cedict/dictionary.txt.gz cedict/LICENSE \
   unihan/Unihan.zip unihan/LICENSE jmdict/jmdict.xml.gz \
-  kanjidic2/kanjidic2.xml.gz >UPSTREAM.sha256)
+  kanjidic2/kanjidic2.xml.gz \
+  $( [ -f kanjivg-components/LICENSE ] && echo kanjivg-components/LICENSE ) >UPSTREAM.sha256)
 
 echo "done — now run: qinqin seed --data <dir> --packs $dest"
