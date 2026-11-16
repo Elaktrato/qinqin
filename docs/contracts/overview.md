@@ -84,6 +84,10 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   `mfa_enrollment_required`, sign-in by emailed code); setup: `auth/mfa-setup.json`; throttling
   (429 `Retry-After`, never retry automatically): `auth/throttling.md`, `auth/throttle-responses.json`.
 - Send `deviceName` on login; never log tokens, passwords or one-time codes.
+- Personal access tokens (scripts, not the app): `qq_pat_` + 64 hex, created in Settings, shown once, read or
+  write, optionally one workspace, always expiring; refused with 403 `token_not_allowed` on every route
+  that does not declare token use. A client app signs in with a session, never with an access token.
+  `auth/tokens.json`, `auth/tokens-format.json`, `auth/README.md` (Personal access tokens).
 
 ## Study rules (links)
 

@@ -19,6 +19,8 @@ examples of its throttling subset and a test checks that both agree on every cod
 | `mfa-login.json` | `mfa_required`, the second step, `mfa_enrollment_required`, sign-in by emailed code |
 | `mfa-setup.json` | Authenticator setup and confirm (secret and recovery codes shown once) |
 | `reset.json` | Reset link check and use (a login-shaped answer) |
+| `tokens.json` | Personal access tokens: create (the token is shown once), list, revoke one / all, and every refusal of the token gate |
+| `tokens-format.json` | The access token string: prefix, scanner regex, valid and invalid examples, hint, the stored SHA-256 of a fixed test string |
 
 ## Tokens
 - A bearer token is 64 hex characters, returned once by login. Treat it as opaque; never log it,
@@ -26,6 +28,25 @@ examples of its throttling subset and a test checks that both agree on every cod
 - The server stores only its SHA-256. A session unused for 90 days stops working (there is no
   absolute lifetime); each use refreshes it (at most one write per 5 minutes).
 - Send `Authorization: Bearer <token>`. `POST /api/auth/logout` ends exactly that session (204).
+
+## Personal access tokens
+- For scripts. Created in Settings (`POST /api/account/tokens`, full session plus the current
+  password); the string `qq_pat_` + 64 lowercase hex is shown once, in the create answer only
+  (`Cache-Control: no-store`). The server keeps only its SHA-256 and a 6-character hint; the list
+  (`GET /api/account/tokens`) never carries the token. Scanner regex: `qq_pat_[0-9a-f]{64}`.
+- Send it like a session: `Authorization: Bearer qq_pat_...`. A bearer starting with `qq_pat_` is
+  only ever looked up as an access token, anything else only as a session token.
+- `scope` `read` or `write`; `workspaceId` `null` (all workspaces) or one workspace; `expiresInDays`
+  1-365, always set. At most 20 live tokens per user (`409 token_limit`).
+- Only routes whose row declares token use accept one; every other route answers
+  `403 token_not_allowed` before the token is looked up (account, sign-in, admin, backup, AI,
+  journal, workspace management, the token routes themselves). The gate's order: not allowed (403)
+  -> unknown, expired, revoked or owner disabled (401 `unauthorized`, one body) -> owner restricted
+  (its 403) -> read token on a writing route (`403 token_read_only`) -> outside the token's
+  workspace (`403 token_workspace`) -> per-user token rate limit (`429 rate_limited`).
+- Every password change or reset, MFA reset, disable, session revocation by the user or an
+  administrator, account deletion, and deleting the workspace a token is limited to revokes tokens.
+  Tokens are never in a backup.
 
 ## 401 versus 403
 - **401 `unauthorized`** means this session is gone (unknown, idle, revoked, user disabled or
