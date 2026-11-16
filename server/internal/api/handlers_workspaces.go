@@ -456,9 +456,10 @@ func (s *server) deleteWorkspace(ctx context.Context, userID, id int64) ([]int64
 		}
 		return nil, nil, errWorkspaceNotFound
 	}
-	// Every table with a workspace_id column (migrations 009, 010, 019);
-	// bookmarks and highlights hang off the books.
-	for _, table := range []string{"study_events", "plugin_data"} {
+	// Every table with a workspace_id column (migrations 009, 010, 019,
+	// 037); bookmarks and highlights hang off the books. Access tokens
+	// limited to the workspace go with it (foreign keys are off).
+	for _, table := range []string{"study_events", "plugin_data", "access_tokens"} {
 		if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE workspace_id = ?`, id); err != nil {
 			return nil, nil, err
 		}

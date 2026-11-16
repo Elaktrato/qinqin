@@ -119,6 +119,7 @@ func scramble(t *testing.T, w *baseWorld) (extraWS, extraBook int64) {
 	extraBook, _ = res.LastInsertId()
 	os.WriteFile(filepath.Join(w.Data, "books", strconv.FormatInt(uid, 10), strconv.FormatInt(extraBook, 10)+".json"), []byte(`[]`), 0o644)
 	exec(t, w.DB, `INSERT INTO sessions (token_hash, user_id, created_at, last_used_at) VALUES ('keep', ?, 't', 't'), ('other', ?, 't', 't')`, uid, uid)
+	exec(t, w.DB, `INSERT INTO access_tokens (user_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?, 'n', 'pat', 'abcdef', 'write', 't', '9999')`, uid)
 	return
 }
 
@@ -187,6 +188,12 @@ func TestRestoreReplacesTheUsersDataAndOnlyTheirs(t *testing.T) {
 	rs.Close()
 	if len(sess) != 1 || sess[0] != "keep" || res.RevokedSessions != 2 {
 		t.Errorf("sessions %v revoked %d (the seeded one and 'other' go, 'keep' stays)", sess, res.RevokedSessions)
+	}
+	// Matrix 14: a personal restore is not a security action; access tokens stay.
+	var toks int
+	w.DB.QueryRow(`SELECT COUNT(*) FROM access_tokens WHERE user_id = ?`, uid).Scan(&toks)
+	if toks != 1 {
+		t.Errorf("access tokens after restore = %d, want the seeded one kept", toks)
 	}
 	var bobSess int
 	w.DB.QueryRow(`SELECT COUNT(*) FROM sessions WHERE user_id = ?`, w.BobID).Scan(&bobSess)

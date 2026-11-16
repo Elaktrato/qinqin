@@ -78,6 +78,8 @@ export interface SelfDeletionPreview {
 	sessions: number;
 	overlays: number;
 	sentences: number;
+	/** Personal access tokens (absent from servers before #83). */
+	accessTokens?: number;
 }
 
 export function accountDeletionPreview(): Promise<SelfDeletionPreview> {

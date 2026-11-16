@@ -130,22 +130,35 @@ func RevokeSession(ctx context.Context, sqlDB *sql.DB, userID, sessionID int64) 
 }
 
 // RevokeSessions deletes every session of userID except exceptSessionID
-// (0 deletes them all) and returns how many went.
+// (0 deletes them all) and every access token of the user, and returns how
+// many sessions went.
 func RevokeSessions(ctx context.Context, sqlDB *sql.DB, userID, exceptSessionID int64) (int64, error) {
-	return revokeSessions(ctx, sqlDB, userID, exceptSessionID)
+	n, _, err := revokeCredentials(ctx, sqlDB, userID, exceptSessionID)
+	return n, err
 }
 
 type execer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
-func revokeSessions(ctx context.Context, ex execer, userID, exceptSessionID int64) (int64, error) {
+// revokeCredentials is the one containment helper: it deletes every
+// session of userID except exceptSessionID (0: all) AND every access token
+// of the user, in the caller's transaction, and returns both counts. Every
+// action that signs a user out (password change or reset, recovery, MFA
+// reset, disable, session revocation) goes through here, so none can
+// forget the tokens; a static test refuses per-user session deletes
+// elsewhere.
+func revokeCredentials(ctx context.Context, ex execer, userID, exceptSessionID int64) (sessions, tokens int64, err error) {
 	res, err := ex.ExecContext(ctx, `DELETE FROM sessions WHERE user_id = ? AND id <> ?`, userID, exceptSessionID)
 	if err != nil {
-		return 0, fmt.Errorf("revoke sessions: %w", err)
+		return 0, 0, fmt.Errorf("revoke sessions: %w", err)
 	}
-	n, _ := res.RowsAffected()
-	return n, nil
+	sessions, _ = res.RowsAffected()
+	tokens, err = revokeTokens(ctx, ex, userID)
+	if err != nil {
+		return 0, 0, err
+	}
+	return sessions, tokens, nil
 }
 
 // ListSessions returns the sessions of userID, most recently used first.
@@ -203,7 +216,7 @@ func RevokeOthersAudited(ctx context.Context, sqlDB *sql.DB, userID, exceptSessi
 		return 0, fmt.Errorf("begin revoke: %w", err)
 	}
 	defer tx.Rollback()
-	n, err := revokeSessions(ctx, tx, userID, exceptSessionID)
+	n, tokens, err := revokeCredentials(ctx, tx, userID, exceptSessionID)
 	if err != nil {
 		return 0, err
 	}
@@ -211,7 +224,7 @@ func RevokeOthersAudited(ctx context.Context, sqlDB *sql.DB, userID, exceptSessi
 		return 0, err
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: userID, TargetID: &userID,
-		Detail: map[string]any{"scope": scope, "revoked": n}}); err != nil {
+		Detail: map[string]any{"scope": scope, "revoked": n, "tokens": tokens}}); err != nil {
 		return 0, err
 	}
 	return n, tx.Commit()
@@ -227,7 +240,8 @@ func PromoteSession(ctx context.Context, sqlDB *sql.DB, userID, sessionID int64)
 }
 
 // RevokeAllExcept deletes every session of every user except one (the
-// acting administrator's current session) and audits it.
+// acting administrator's current session) and every access token of every
+// user (the administrator's too), and audits it.
 func RevokeAllExcept(ctx context.Context, sqlDB *sql.DB, actorID, exceptSessionID int64) (int64, error) {
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
@@ -239,7 +253,12 @@ func RevokeAllExcept(ctx context.Context, sqlDB *sql.DB, actorID, exceptSessionI
 		return 0, fmt.Errorf("revoke all sessions: %w", err)
 	}
 	n, _ := res.RowsAffected()
-	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: actorID, Detail: map[string]any{"scope": "everyone", "count": n}}); err != nil {
+	res, err = tx.ExecContext(ctx, `DELETE FROM access_tokens`)
+	if err != nil {
+		return 0, fmt.Errorf("revoke all access tokens: %w", err)
+	}
+	tokens, _ := res.RowsAffected()
+	if err := Audit(ctx, tx, AuditEvent{Action: "sessions_revoked", ActorID: actorID, Detail: map[string]any{"scope": "everyone", "count": n, "tokens": tokens}}); err != nil {
 		return 0, err
 	}
 	return n, tx.Commit()

@@ -156,7 +156,7 @@ func TestDeleteUserRemovesEverythingPersonal(t *testing.T) {
 	sqlDB.Exec(`UPDATE auth_settings SET updated_by = ?`, a)
 
 	prev, err := auth.DeletionPreview(ctx, sqlDB, a)
-	want := auth.Preview{Workspaces: 1, StudyEvents: 1, PluginData: 1, Books: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1}
+	want := auth.Preview{Workspaces: 1, StudyEvents: 1, PluginData: 1, Books: 1, JournalPhotos: 1, AIKeys: 1, Sessions: 1, Overlays: 1, Sentences: 1, AccessTokens: 1}
 	if err != nil || prev != want {
 		t.Fatalf("preview = %+v (%v), want %+v", prev, err, want)
 	}
