@@ -469,3 +469,11 @@ files / 4974 tests; `npm run build` exit 0; Node 26.13.1 full vitest exit 0, 317
 change in the fix wave, so the Go gate was not rerun (the earlier full run stands). The real-app check was not
 repeated. Still not verified in a real browser: the offline paths (the outbox, a failing activity request) were
 tested with mocks only.
+
+### Mutation check (orchestrator, after the fix wave)
+
+Four mutants, each killed by `npx vitest run src/lib/goals` (then reverted):
+- `MAX_REVIEW_MS` 60 000 → 600 000: 2 tests fail (study-time cap).
+- goal streak: vacation day `continue` → `break`: 2 tests fail (vacation neutrality).
+- capped streak text `${current}+` → `365+`: 1 test fails.
+- `capped: current > 0` → `capped: false`: 2 tests fail.
