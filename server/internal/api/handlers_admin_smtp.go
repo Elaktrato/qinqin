@@ -24,6 +24,10 @@ type smtpBody struct {
 	FromAddress string  `json:"fromAddress"`
 	FromName    string  `json:"fromName"`
 	PublicURL   string  `json:"publicUrl"`
+	// The acting administrator's re-authentication (PUT only; a draft
+	// test ignores it).
+	CurrentPassword string `json:"currentPassword"`
+	Code            string `json:"code"`
 }
 
 func (b smtpBody) input() mail.Input {
@@ -122,6 +126,9 @@ func (s *server) handleGetSMTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // handlePutSMTP serves PUT /api/admin/settings/smtp (the whole object).
+// Every auth mail (reset links, sign-in codes) goes through these settings
+// and carries the public URL, so saving re-authenticates the administrator
+// (after validation: a typo spends no attempt).
 func (s *server) handlePutSMTP(w http.ResponseWriter, r *http.Request) {
 	admin := s.requireAdmin(w, r)
 	if admin == nil || !s.requireMailService(w) {
@@ -138,6 +145,9 @@ func (s *server) handlePutSMTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
+		return
+	}
 	if err := s.mail.Store.Save(r.Context(), p, admin.ID); err != nil {
 		writeInternal(w, r)
 		return
@@ -151,11 +161,22 @@ func (s *server) handlePutSMTP(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, v)
 }
 
-// handleDeleteSMTP serves DELETE /api/admin/settings/smtp: mail-dependent
-// features become inactive.
+// handleDeleteSMTP serves DELETE /api/admin/settings/smtp {currentPassword,
+// code?}: mail-dependent features become inactive (two-step enforcement and
+// emailed codes), so it re-authenticates the administrator.
 func (s *server) handleDeleteSMTP(w http.ResponseWriter, r *http.Request) {
 	admin := s.requireAdmin(w, r)
 	if admin == nil || !s.requireMailService(w) {
+		return
+	}
+	var req struct {
+		CurrentPassword string `json:"currentPassword"`
+		Code            string `json:"code"`
+	}
+	if !readAccountBodyStrict(w, r, &req) {
+		return
+	}
+	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	if err := s.mail.Store.Delete(r.Context()); err != nil {

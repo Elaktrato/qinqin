@@ -309,7 +309,7 @@ func TestRemovingMailMakesEnforcementInactiveButTOTPStays(t *testing.T) {
 	secret, _ := e.totpUser(t)
 	registerUser(t, e.ts.URL, "carol", e.owner)
 	doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"mfaEnforced": true})
-	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil)
+	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth)
 	var v struct{ MFAEnforced, MFAEnforcedEffective bool }
 	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/auth", e.owner, nil), &v)
 	if !v.MFAEnforced || v.MFAEnforcedEffective {

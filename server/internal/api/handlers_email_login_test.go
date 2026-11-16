@@ -144,7 +144,7 @@ func TestEmailLoginSwitchOffAndWithoutMail(t *testing.T) {
 		}
 	}
 	setAuthSetting(t, e.db, "email_code_login", "1")
-	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil)
+	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth)
 	if st, _ := e.emailStart(t, "bobby"); st != 409 {
 		t.Errorf("without mail = %d", st)
 	}

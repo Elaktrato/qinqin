@@ -236,7 +236,9 @@ func (s *Store) Prepare(ctx context.Context, in Input) (*Prepared, error) {
 	case in.PasswordValue != nil:
 		p.password, p.changed = *in.PasswordValue, true
 	case stored != nil && stored.cfg.Password != PasswordNone:
-		moved := stored.cfg.Host != c.Host || stored.cfg.Port != c.Port || stored.cfg.TLS != c.TLS || stored.cfg.Username != c.Username
+		// A new public URL is a new target too: reset links and sign-in mails carry it.
+		moved := stored.cfg.Host != c.Host || stored.cfg.Port != c.Port || stored.cfg.TLS != c.TLS || stored.cfg.Username != c.Username ||
+			stored.cfg.PublicURL != c.PublicURL
 		if moved || stored.cfg.Password == PasswordUndecryptable {
 			return nil, ErrReentryRequired
 		}

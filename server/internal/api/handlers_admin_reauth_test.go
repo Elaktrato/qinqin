@@ -13,6 +13,7 @@ import (
 type adminReauthRoute struct {
 	name  string
 	ok    int
+	once  bool // a success cannot be repeated in the same test (rate limit, nothing left to remove)
 	fresh func(t *testing.T, e *mailEnv, n int) (method, path string, body map[string]any)
 }
 
@@ -23,41 +24,50 @@ func adminReauthRoutes() []adminReauthRoute {
 		return name, "/api/admin/users/" + userIDOf(t, e, name)
 	}
 	return []adminReauthRoute{
-		{"grant admin", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"grant admin", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			_, p := target(t, e, n)
 			return "PATCH", p, map[string]any{"admin": true}
 		}},
-		{"create an administrator", http.StatusCreated, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"create an administrator", http.StatusCreated, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			return "POST", "/api/admin/users", map[string]any{"username": "newadmin" + strconv.Itoa(n), "password": "temp-password-1", "admin": true}
 		}},
-		{"delete user", http.StatusNoContent, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"delete user", http.StatusNoContent, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			name, p := target(t, e, n)
 			return "DELETE", p, map[string]any{"confirm": name}
 		}},
-		{"issue reset link", http.StatusCreated, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"issue reset link", http.StatusCreated, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			_, p := target(t, e, n)
 			return "POST", p + "/reset-link", map[string]any{}
 		}},
-		{"reset two-step sign-in", http.StatusNoContent, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"reset two-step sign-in", http.StatusNoContent, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			_, p := target(t, e, n)
 			return "POST", p + "/mfa/reset", map[string]any{}
 		}},
-		{"change another user's email", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"change another user's email", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			setAuthSetting(t, e.db, "email_policy", "optional")
 			_, p := target(t, e, n)
 			return "PATCH", p, map[string]any{"email": "new" + strconv.Itoa(n) + "@example.org"}
 		}},
-		{"change one's own email through the admin route", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"change one's own email through the admin route", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			setAuthSetting(t, e.db, "email_policy", "optional")
 			return "PATCH", "/api/admin/users/" + userIDOf(t, e, "owner"), map[string]any{"email": "own" + strconv.Itoa(n) + "@example.org"}
 		}},
-		{"remove another user's email", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"remove another user's email", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			setAuthSetting(t, e.db, "email_policy", "optional")
 			name, p := target(t, e, n)
 			e.db.Exec(`UPDATE users SET email = ?, email_norm = ?, email_verified_at = 't' WHERE username = ?`, name+"@example.org", name+"@example.org", name)
 			return "PATCH", p, map[string]any{"email": nil}
 		}},
-		{"server backup", http.StatusOK, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+		{"save the mail settings", http.StatusOK, false, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			p := e.smtpPayload()
+			delete(p, "currentPassword")
+			p["fromName"] = "qinqin " + strconv.Itoa(n)
+			return "PUT", "/api/admin/settings/smtp", p
+		}},
+		{"remove the mail settings", http.StatusNoContent, true, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
+			return "DELETE", "/api/admin/settings/smtp", map[string]any{}
+		}},
+		{"server backup", http.StatusOK, true, func(t *testing.T, e *mailEnv, n int) (string, string, map[string]any) {
 			return "POST", "/api/admin/backup", map[string]any{"include": []string{"books"}}
 		}},
 	}
@@ -99,8 +109,8 @@ func TestDestructiveAdminActionsAskAnAdminWithTwoFactorForACode(t *testing.T) {
 			expect("wrong code", doJSON(t, m, e.ts.URL, p, e.owner, with(b, "currentPassword", "secret-pass-owner", "code", "000000")), 403, "code_invalid")
 			expect("wrong password, right code", doJSON(t, m, e.ts.URL, p, e.owner, with(b, "currentPassword", "wrong-password-x", "code", e.code(secret, 0))), 403, "wrong_password")
 			expect("recovery code", doJSON(t, m, e.ts.URL, p, e.owner, with(b, "currentPassword", "secret-pass-owner", "code", recovery[0])), rt.ok, "")
-			if rt.name == "server backup" {
-				return // one backup per minute; the authenticator code is covered by TestAdminServerBackupAsksAnAdminWithTwoFactorForTheCode
+			if rt.once {
+				return // the backup: one per minute (its authenticator code: TestAdminServerBackupAsksAnAdminWithTwoFactorForTheCode); the mail settings: removed
 			}
 			m, p, b = rt.fresh(t, e, 2)
 			expect("used recovery code", doJSON(t, m, e.ts.URL, p, e.owner, with(b, "currentPassword", "secret-pass-owner", "code", recovery[0])), 403, "code_invalid")
