@@ -125,3 +125,37 @@ Real-app check: built server, real `jmdict` and `jiten-frequency` packs, Top 500
 - Learners used to 分かる see わかる in lists; the entry page lists every form and the popup still echoes
   kanji text.
 - An entry from a non-JMdict Japanese pack has no `uk` tags or flags: first form as before.
+
+## Review fixes (2026-11-16)
+
+Ruling: **cards and deck rows show the card's kana snapshot when it is a reading of the entry**
+(`shownWritten(entry, snapshot)` = step 1 of the rule with the snapshot as list form, else the server's
+`written`) — a starter copy of the row ところ snapshots ところ while 所's display form is 所 (its first sense is
+not `uk`); without this the starter list, the copied deck and the card front disagreed — cost if wrong: a
+learner who added 所 from a kana text sees ところ on its card (only when the snapshot is kana).
+
+Ruling: the entry page lists the other written forms ("Also written: 事、縡"; search-only forms never), so
+kanji stay visible on an entry shown in kana. Search hits do not list forms (EntryBase has none) — cost if
+wrong: a search list shows こと without 事 (the entry page has it).
+
+Ruling: a Japanese **written-form search hit shows the form searched** (為る searched shows 為る, like a lookup),
+unless that form is search-only (之 → の); reading and gloss hits show the display form. Chinese keeps the
+simplified display form — cost if wrong: one condition in `handleSearch`.
+
+Ruling: lists leave the reading column empty when the word is shown as its first reading (こと next to こと)
+— `readingBeside`; showing a kanji form there would need forms in every list — cost if wrong: a
+kana-shown word's kanji is one click away.
+
+Ruling: starter words carry `gloss` (first gloss of the first sense) and the starter list shows it next to a
+display form that occurs more than once (なる "to become" / なる "to bear fruit") — cost if wrong: an additive
+field.
+
+Ruling: **mastery map and writing companions follow the snapshot**: a new usually-kana card snapshots kana
+(こと), so the mastery map no longer credits 事 to it and no writing companion is planned for it (writing
+needs Han characters in the snapshot). Using the entry's best non-search-only kanji form there would need the
+entry's forms at planning time (companions are planned from card rows before entries load) — not cheap, so
+not done — cost if wrong: kanji practice for usually-kana words needs a later change (load forms for
+companion planning, or a second snapshot field).
+
+Ruling: a one-kana headword (の, で) is never blanked in its example sentence: the kana sits inside other
+words (この) — cost if wrong: the particle stays visible in its sentence.

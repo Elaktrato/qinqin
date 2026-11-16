@@ -91,7 +91,11 @@ search-only (之 → の); a kana match shows the display form. Readings carry `
 snapshot is `displayForm` of the lookup result without a list form (`reader/popup-written.json`).
 
 No import change: form flags, reading flags and sense tags are stored by the JMdict importer since before
-v0.3.0, so existing databases need no re-seed. Cards added before #92 keep their snapshot (乃): surfaces that
+v0.3.0, so existing databases need no re-seed. A card shows `shownWritten(entry, snapshot)`: its snapshot when that is a kana reading of the
+entry not flagged `sk` (a starter copy of ところ shows ところ, though 所's display form is 所), else the served
+`written` (deck rows, study card fronts). Lists leave the reading beside a word empty when the word is shown as
+its first reading. A Japanese written-form search hit shows the searched form unless it is search-only.
+Cards added before #92 keep their snapshot (乃): surfaces that
 load the entry show the display form; snapshot-only surfaces (card manager labels, the FSRS preview, the
 mastery map, writing companion planning) show the old snapshot until the card is re-added.
 

@@ -5,8 +5,8 @@ import "time"
 // EntryBase is a lexicon entry as the API lists it: its id, language and
 // kind, its headword (Written: its display form, lexicon.Entry.Headword —
 // the kana of a usually-kana word, never a search-only form), its
-// readings in stored order, its attrs, and the radical entry a character is classified under (nil for words and unclassified
-// characters). A user's overlay (see the overlay package) replaces
+// readings in stored order, its attrs, and the radical entry a character
+// is classified under (nil for words and unclassified characters). A user's overlay (see the overlay package) replaces
 // Written and Readings on this struct. DeletedAt is always nil: only
 // active entries are served.
 type EntryBase struct {
