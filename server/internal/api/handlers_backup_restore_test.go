@@ -441,3 +441,29 @@ func TestRestoreNeedsASecondFactorWhenTheUserHasOne(t *testing.T) {
 		t.Errorf("mfa_totp rows %d after the restore", n)
 	}
 }
+
+func TestExportRefusesAnArchiveTheServerCouldNotRestore(t *testing.T) {
+	e := newBackupEnv(t, api.WithExportCap(300))
+	alice := registerUser(t, e.ts.URL, "alice", "")
+	var eb errBody
+	r := doJSON(t, "POST", e.ts.URL, "/api/account/export", alice, nil)
+	decodeJSON(t, r, &eb)
+	if r.StatusCode != 422 || eb.Error != "backup_too_large_to_restore" || !strings.Contains(eb.Message, "administrator") {
+		t.Errorf("over the cap = %d %+v", r.StatusCode, eb)
+	}
+	if n := e.count(t, `SELECT COUNT(*) FROM auth_audit WHERE action = 'data_exported'`); n != 0 {
+		t.Errorf("audit rows %d", n)
+	}
+}
+
+func TestExportTicketOfADisabledUserIsDead(t *testing.T) {
+	e := newBackupEnv(t)
+	owner := registerUser(t, e.ts.URL, "owner", "")
+	bob := registerUser(t, e.ts.URL, "bobby", owner)
+	var tk ticketReply
+	decodeJSON(t, doJSON(t, "POST", e.ts.URL, "/api/account/export", bob, nil), &tk)
+	e.db.Exec(`UPDATE users SET disabled_at = '2026-11-16T00:00:00Z' WHERE username = 'bobby'`)
+	if status, _, _ := getRaw(t, e.ts.URL, tk.URL, ""); status != 404 {
+		t.Errorf("ticket of a disabled user = %d, want 404", status)
+	}
+}

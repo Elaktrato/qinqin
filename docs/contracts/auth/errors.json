@@ -54,6 +54,7 @@
   "backup_too_large": {"status": 413, "meaning": "A backup upload above 128 MiB, or an archive beyond the entry, line or expanded-size caps (also a stage error code)."},
   "backup_invalid": {"status": 422, "meaning": "Stage error code, not an HTTP status: the uploaded file is not a valid qinqin backup (hostile or damaged zip, bad checksum, unknown field) or cannot be restored here (language not set up). status carries the stage, the HTTP answer of the status route is 200."},
   "backup_version_unsupported": {"status": 422, "meaning": "Stage error code: the archive's formatVersion is not one this server reads (formats are never guessed)."},
+  "backup_too_large_to_restore": {"status": 422, "meaning": "Export refused: the archive would exceed what a restore accepts (128 MiB compressed, 2 GiB expanded, 64 MiB per book), so no download link is issued."},
   "insufficient_storage": {"status": 507, "meaning": "Admin server backup: the data volume lacks room for a snapshot of the database (database + WAL + 64 MiB)."},
   "not_found": {"status": 404, "meaning": "No such object (or it belongs to someone else)."},
   "username_taken": {"status": 409, "meaning": "The username exists (compared case-insensitively)."},

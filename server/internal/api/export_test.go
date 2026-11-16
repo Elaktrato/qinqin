@@ -72,3 +72,6 @@ func WithRestoreCap(n int64) Option { return func(s *server) { s.restoreCap = n 
 
 // WithStageDone receives a user id whenever a restore stage finishes validating or restoring.
 func WithStageDone(ch chan int64) Option { return func(s *server) { s.stageDone = ch } }
+
+// WithExportCap lowers the largest export this server will produce.
+func WithExportCap(n int64) Option { return func(s *server) { s.exportCap = n } }

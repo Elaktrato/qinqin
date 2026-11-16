@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Format identity. FormatVersion is the only compatibility key: a reader
@@ -36,29 +37,38 @@ const (
 	NameRefDicts     = "refs/dictionaries.json"
 	NameRefSentences = "refs/sentences.json"
 	NameWorkspaces   = "workspaces.json"
-	NamePluginData   = "plugin-data.jsonl"
-	NameOverlays     = "overlays.jsonl"
-	NameSentences    = "sentences.jsonl"
 	NameBooks        = "library/books.json"
-	NameBookmarks    = "library/bookmarks.jsonl"
-	NameHighlights   = "library/highlights.jsonl"
 )
+
+// The JSONL collections are "families": numbered parts <family>/NNNNNN.jsonl,
+// each at most EventsPerFile lines and about partBytes bytes, so no single
+// entry can outgrow the per-entry cap a reader enforces.
+const (
+	FamEvents      = "events"
+	NamePluginData = "plugin-data"
+	NameOverlays   = "overlays"
+	NameSentences  = "sentences"
+	NameBookmarks  = "library/bookmarks"
+	NameHighlights = "library/highlights"
+)
+
+// Families lists every JSONL family.
+var Families = []string{FamEvents, NamePluginData, NameOverlays, NameSentences, NameBookmarks, NameHighlights}
 
 // Kinds of a known archive entry name.
 const (
-	KindFixed  = "fixed" // one of the Name* constants
-	KindEvents = "events"
-	KindBook   = "book"
+	KindFixed = "fixed" // one of the Name* constants
+	KindPart  = "part"  // a numbered part of a JSONL family
+	KindBook  = "book"
 )
 
 var (
-	eventsName = regexp.MustCompile(`^events/\d{6}\.jsonl$`)
 	bookName   = regexp.MustCompile(`^library/books/(0|[1-9]\d{0,17})\.json$`)
 	fixedNames = map[string]bool{
 		NameManifest: true, NameAccount: true, NameRefEntries: true, NameRefDicts: true,
-		NameRefSentences: true, NameWorkspaces: true, NamePluginData: true, NameOverlays: true,
-		NameSentences: true, NameBooks: true, NameBookmarks: true, NameHighlights: true,
+		NameRefSentences: true, NameWorkspaces: true, NameBooks: true,
 	}
+	partName = regexp.MustCompile(`^(events|plugin-data|overlays|sentences|library/bookmarks|library/highlights)/\d{6}\.jsonl$`)
 )
 
 // KnownName classifies an archive entry name. Only the names of format v1
@@ -68,8 +78,8 @@ func KnownName(name string) (kind string, bookID int64, ok bool) {
 	switch {
 	case fixedNames[name]:
 		return KindFixed, 0, true
-	case eventsName.MatchString(name):
-		return KindEvents, 0, true
+	case partName.MatchString(name):
+		return KindPart, 0, true
 	}
 	if m := bookName.FindStringSubmatch(name); m != nil {
 		id, err := strconv.ParseInt(m[1], 10, 64)
@@ -81,8 +91,20 @@ func KnownName(name string) (kind string, bookID int64, ok bool) {
 	return "", 0, false
 }
 
+// PartName is the entry name of the n-th (1-based) part of a family.
+func PartName(family string, n int) string { return family + "/" + pad6(n) + ".jsonl" }
+
 // EventsName is the entry name of the n-th (1-based) events file.
-func EventsName(n int) string { return "events/" + pad6(n) + ".jsonl" }
+func EventsName(n int) string { return PartName(FamEvents, n) }
+
+// FamilyOf returns the family of a part name.
+func FamilyOf(name string) string {
+	i := strings.LastIndex(name, "/")
+	if i < 0 {
+		return ""
+	}
+	return name[:i]
+}
 
 // BookName is the entry name of a book's content.
 func BookName(id int64) string { return "library/books/" + strconv.FormatInt(id, 10) + ".json" }

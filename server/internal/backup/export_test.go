@@ -7,7 +7,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -90,7 +93,7 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 		}
 	}
 	// plugin data: tombstone absent, user-global rows present with null workspace, NULL modified_at kept null
-	rows := lines(files[NamePluginData])
+	rows := lines(files[PartName(NamePluginData, 1)])
 	global, nullModified := 0, 0
 	for _, l := range rows {
 		var r PluginRow
@@ -110,7 +113,7 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 	}
 	// own sentences only, none tombstoned
 	var s OwnSentence
-	if sl := lines(files[NameSentences]); len(sl) != 1 {
+	if sl := lines(files[PartName(NameSentences, 1)]); len(sl) != 1 {
 		t.Fatalf("sentences = %v", sl)
 	} else {
 		strictDecode(t, []byte(sl[0]), &s)
@@ -203,7 +206,78 @@ func TestWriteUserEmptyUser(t *testing.T) {
 	carol := mkUser(t, w.DB, "carol")
 	data, man := exportBytes(t, w, carol)
 	files, _ := unzipAll(t, data)
-	if man.Counts["events"] != 0 || files[NameWorkspaces] == nil || files[NamePluginData] == nil {
+	if man.Counts["events"] != 0 || files[NameWorkspaces] == nil || files[PartName(NamePluginData, 1)] != nil {
 		t.Errorf("empty export: %v", man.Counts)
+	}
+}
+
+func TestWriteUserSplitsEveryFamilyByBytesAndTheArchiveStillOpens(t *testing.T) {
+	w := newWorld(t)
+	old := partBytes
+	partBytes = 150 // every part closes after about one line
+	t.Cleanup(func() { partBytes = old })
+	data, man := exportBytes(t, w, w.AliceUID)
+	files, order := unzipAll(t, data)
+	for _, fam := range []string{FamEvents, NamePluginData} {
+		n := 0
+		for _, name := range order {
+			if FamilyOf(name) == fam {
+				n++
+				if len(lines(files[name])) != 1 {
+					t.Errorf("%s holds %d lines with a 150 byte part size", name, len(lines(files[name])))
+				}
+			}
+		}
+		want := man.Counts["events"]
+		if fam == NamePluginData {
+			want = man.Counts["pluginData"]
+		}
+		if n != want {
+			t.Errorf("%s: %d parts, want %d", fam, n, want)
+		}
+	}
+	if files["plugin-data.jsonl"] != nil || files["overlays.jsonl"] != nil {
+		t.Error("an unnumbered JSONL entry was written")
+	}
+	p := filepath.Join(t.TempDir(), "s.zip")
+	os.WriteFile(p, data, 0o644)
+	a, err := Open(p)
+	if err != nil {
+		t.Fatalf("a split archive does not open: %v", err)
+	}
+	defer a.Close()
+	rows := 0
+	a.PluginRows(func(PluginRow) error { rows++; return nil })
+	if rows != man.Counts["pluginData"] {
+		t.Errorf("read back %d plugin rows", rows)
+	}
+}
+
+func TestWriteUserRefusesToProduceWhatARestoreWouldRefuse(t *testing.T) {
+	w := newWorld(t)
+	ctx := context.Background()
+	// compressed size above the upload cap
+	var buf bytes.Buffer
+	m := testMeta
+	m.MaxBytes = 300
+	if _, err := WriteUser(ctx, w.DB, w.Data, w.AliceUID, &buf, m); !errors.Is(err, ErrTooLargeToRestore) {
+		t.Errorf("MaxBytes: %v", err)
+	}
+	// expanded size above the total cap
+	old := capTotal
+	capTotal = 500
+	if _, err := WriteUser(ctx, w.DB, w.Data, w.AliceUID, io.Discard, testMeta); !errors.Is(err, ErrTooLargeToRestore) {
+		t.Errorf("capTotal: %v", err)
+	}
+	capTotal = old
+	// a book file above the book cap
+	oldB := capBook
+	capBook = 10
+	if _, err := WriteUser(ctx, w.DB, w.Data, w.AliceUID, io.Discard, testMeta); !errors.Is(err, ErrTooLargeToRestore) {
+		t.Errorf("capBook: %v", err)
+	}
+	capBook = oldB
+	if _, err := WriteUser(ctx, w.DB, w.Data, w.AliceUID, io.Discard, testMeta); err != nil {
+		t.Errorf("a normal export failed: %v", err)
 	}
 }

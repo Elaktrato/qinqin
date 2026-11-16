@@ -45,15 +45,14 @@ func canon(t *testing.T, data []byte) string {
 		out = append(out, fmt.Sprintf("BOOK %v ws=%s src=%v pos=%v file=%s", b["title"], wsName[b["workspaceId"].(float64)], b["sourceId"], b["position"], files[BookName(int64(b["id"].(float64)))]))
 	}
 	for name, b := range files {
-		kind, _, _ := KnownName(name)
 		switch {
-		case kind == KindEvents:
+		case FamilyOf(name) == FamEvents:
 			for _, l := range lines(b) {
 				var e map[string]any
 				json.Unmarshal([]byte(l), &e)
 				out = append(out, fmt.Sprintf("EV %v ws=%s %v %v %s", e["id"], wsName[e["workspaceId"].(float64)], e["ts"], e["type"], jsonOf(e["payload"])))
 			}
-		case name == NamePluginData:
+		case FamilyOf(name) == NamePluginData:
 			for _, l := range lines(b) {
 				var r map[string]any
 				json.Unmarshal([]byte(l), &r)
@@ -74,23 +73,23 @@ func canon(t *testing.T, data []byte) string {
 				}
 				out = append(out, fmt.Sprintf("PD %v ws=%s %v %v v=%v mod=%v", r["pluginId"], ws, r["key"], jsonOf(data), r["version"], r["modifiedAt"]))
 			}
-		case name == NameOverlays:
+		case FamilyOf(name) == NameOverlays:
 			for _, l := range lines(b) {
 				out = append(out, "OV "+l)
 			}
-		case name == NameSentences:
+		case FamilyOf(name) == NameSentences:
 			for _, l := range lines(b) {
 				var s map[string]any
 				json.Unmarshal([]byte(l), &s)
 				out = append(out, fmt.Sprintf("SE %v|%v|%v", s["hanzi"], s["pinyin"], s["translation"]))
 			}
-		case name == NameBookmarks:
+		case FamilyOf(name) == NameBookmarks:
 			for _, l := range lines(b) {
 				var x map[string]any
 				json.Unmarshal([]byte(l), &x)
 				out = append(out, fmt.Sprintf("BM %s %v %v", bookName[x["bookId"].(float64)], x["position"], x["label"]))
 			}
-		case name == NameHighlights:
+		case FamilyOf(name) == NameHighlights:
 			for _, l := range lines(b) {
 				var x map[string]any
 				json.Unmarshal([]byte(l), &x)

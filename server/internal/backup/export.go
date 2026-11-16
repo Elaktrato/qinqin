@@ -24,6 +24,32 @@ type Meta struct {
 	AppVersion    string
 	SchemaVersion string
 	Now           time.Time
+	// MaxBytes, when positive, is the largest compressed archive WriteUser
+	// may produce: beyond it the export fails with ErrTooLargeToRestore
+	// instead of producing a file this server would then refuse to restore.
+	MaxBytes int64
+}
+
+// ErrTooLargeToRestore: the archive would exceed what a restore accepts
+// (upload cap, expanded-size cap or book size cap).
+var ErrTooLargeToRestore = errors.New("backup: this archive would be larger than a restore accepts")
+
+// partBytes is the size at which a part is closed and the next one started.
+var partBytes int64 = 32 << 20
+
+// limitWriter fails once more than max bytes went through it.
+type limitWriter struct {
+	w   io.Writer
+	n   int64
+	max int64
+}
+
+func (l *limitWriter) Write(p []byte) (int, error) {
+	l.n += int64(len(p))
+	if l.max > 0 && l.n > l.max {
+		return 0, ErrTooLargeToRestore
+	}
+	return l.w.Write(p)
 }
 
 // eventsPerFile is EventsPerFile; tests lower it.
@@ -50,6 +76,7 @@ type archiveWriter struct {
 	z     *zip.Writer
 	now   time.Time
 	files []FileEntry
+	raw   int64 // uncompressed bytes of the finished entries
 }
 
 type openEntry struct {
@@ -77,11 +104,18 @@ func (a *archiveWriter) begin(name string) (*openEntry, error) {
 	return &openEntry{a: a, name: name, hash: h, cnt: cnt, bw: bw, enc: enc}, nil
 }
 
+// size is the number of bytes written to the entry so far, buffered ones included.
+func (o *openEntry) size() int64 { return o.cnt.n + int64(o.bw.Buffered()) }
+
 func (o *openEntry) finish() error {
 	if err := o.bw.Flush(); err != nil {
 		return err
 	}
 	o.a.files = append(o.a.files, FileEntry{Name: o.name, Bytes: o.cnt.n, SHA256: hex.EncodeToString(o.hash.Sum(nil))})
+	o.a.raw += o.cnt.n
+	if o.a.raw > capTotal {
+		return ErrTooLargeToRestore
+	}
 	return nil
 }
 
@@ -131,7 +165,7 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	if err := tx.QueryRowContext(ctx, `SELECT username FROM users WHERE id = ?`, userID).Scan(&username); err != nil {
 		return man, fmt.Errorf("backup: read user: %w", err)
 	}
-	a := &archiveWriter{z: zip.NewWriter(w), now: meta.Now.UTC()}
+	a := &archiveWriter{z: zip.NewWriter(&limitWriter{w: w, max: meta.MaxBytes}), now: meta.Now.UTC()}
 	refs := newRefs()
 	counts := map[string]int{}
 
@@ -213,7 +247,7 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 		return man, err
 	}
 	// overlays
-	if counts["overlays"], err = writeLines(ctx, tx, a, NameOverlays,
+	if counts["overlays"], err = writeParts(ctx, tx, a, NameOverlays,
 		`SELECT entry_id, written, readings, updated_at FROM user_edits WHERE user_id = ? ORDER BY entry_id`, []any{userID},
 		func(rs *sql.Rows) (any, error) {
 			var o Overlay
@@ -226,7 +260,7 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 		return man, err
 	}
 	// own sentences (pack sentences are content, not user data)
-	if counts["sentences"], err = writeLines(ctx, tx, a, NameSentences,
+	if counts["sentences"], err = writeParts(ctx, tx, a, NameSentences,
 		`SELECT id, entry_id, hanzi, pinyin, translation, updated_at FROM sentences WHERE user_id = ? AND deleted_at IS NULL ORDER BY id`, []any{userID},
 		func(rs *sql.Rows) (any, error) {
 			var s OwnSentence
@@ -244,7 +278,7 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 		return man, err
 	}
 	counts["books"] = len(bookIDs)
-	if counts["bookmarks"], err = writeLines(ctx, tx, a, NameBookmarks,
+	if counts["bookmarks"], err = writeParts(ctx, tx, a, NameBookmarks,
 		`SELECT id, book_id, position, label, created_at FROM library_bookmarks WHERE user_id = ? ORDER BY id`, []any{userID},
 		func(rs *sql.Rows) (any, error) {
 			var b Bookmark
@@ -253,7 +287,7 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 		}); err != nil {
 		return man, err
 	}
-	if counts["highlights"], err = writeLines(ctx, tx, a, NameHighlights,
+	if counts["highlights"], err = writeParts(ctx, tx, a, NameHighlights,
 		`SELECT id, book_id, chapter, paragraph, start_cp, end_cp, text, color, note, created_at, updated_at
 		 FROM library_highlights WHERE user_id = ? ORDER BY id`, []any{userID},
 		func(rs *sql.Rows) (any, error) {
@@ -297,101 +331,104 @@ func closeRows(rs *sql.Rows) error {
 	return rs.Close()
 }
 
-// writeLines streams a query as JSON Lines into one entry and returns the
-// number of lines. The entry exists (empty) even when there are no rows.
-func writeLines(ctx context.Context, tx *sql.Tx, a *archiveWriter, name, query string, args []any, scan func(*sql.Rows) (any, error)) (int, error) {
-	o, err := a.begin(name)
-	if err != nil {
-		return 0, err
+// partWriter rolls over to the next numbered part of a family when a part is
+// full (lines or bytes).
+type partWriter struct {
+	a     *archiveWriter
+	fam   string
+	cur   *openEntry
+	n, in int
+	total int
+}
+
+func (p *partWriter) encode(v any) error {
+	if p.cur == nil || p.in >= eventsPerFile || p.cur.size() >= partBytes {
+		if p.cur != nil {
+			if err := p.cur.finish(); err != nil {
+				return err
+			}
+		}
+		p.n++
+		p.in = 0
+		var err error
+		if p.cur, err = p.a.begin(PartName(p.fam, p.n)); err != nil {
+			return err
+		}
 	}
+	if err := p.cur.enc.Encode(v); err != nil {
+		return err
+	}
+	p.in++
+	p.total++
+	return nil
+}
+
+func (p *partWriter) close() error {
+	if p.cur == nil {
+		return nil
+	}
+	return p.cur.finish()
+}
+
+// writeParts streams a query as JSON Lines into numbered parts of a family
+// and returns the number of lines. A family without rows has no entry.
+func writeParts(ctx context.Context, tx *sql.Tx, a *archiveWriter, fam, query string, args []any, scan func(*sql.Rows) (any, error)) (int, error) {
 	rs, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
-		return 0, fmt.Errorf("backup: %s: %w", name, err)
+		return 0, fmt.Errorf("backup: %s: %w", fam, err)
 	}
-	n := 0
+	pw := &partWriter{a: a, fam: fam}
 	for rs.Next() {
 		v, err := scan(rs)
 		if err != nil {
 			rs.Close()
-			return 0, fmt.Errorf("backup: %s: %w", name, err)
+			return 0, fmt.Errorf("backup: %s: %w", fam, err)
 		}
-		if err := o.enc.Encode(v); err != nil {
+		if err := pw.encode(v); err != nil {
 			rs.Close()
 			return 0, err
 		}
-		n++
 	}
 	if err := closeRows(rs); err != nil {
 		return 0, err
 	}
-	return n, o.finish()
+	return pw.total, pw.close()
 }
 
 func writeEvents(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, refs *refSet) (int, error) {
-	rs, err := tx.QueryContext(ctx, `SELECT id, workspace_id, device, ts, type, payload, updated_at FROM study_events WHERE user_id = ? ORDER BY ts, id`, userID)
-	if err != nil {
-		return 0, fmt.Errorf("backup: events: %w", err)
-	}
-	defer rs.Close()
-	var cur *openEntry
-	file, inFile, total := 0, 0, 0
-	for rs.Next() {
-		var e Event
-		var payload string
-		if err := rs.Scan(&e.ID, &e.WorkspaceID, &e.Device, &e.TS, &e.Type, &payload, &e.UpdatedAt); err != nil {
-			return 0, err
-		}
-		if !json.Valid([]byte(payload)) {
-			return 0, fmt.Errorf("backup: event %s has an unreadable payload", e.ID)
-		}
-		e.Payload = json.RawMessage(payload)
-		switch e.Type {
-		case "review":
-			var p struct {
-				CardID string `json:"cardId"`
+	return writeParts(ctx, tx, a, FamEvents, `SELECT id, workspace_id, device, ts, type, payload, updated_at FROM study_events WHERE user_id = ? ORDER BY ts, id`,
+		[]any{userID}, func(rs *sql.Rows) (any, error) {
+			var e Event
+			var payload string
+			if err := rs.Scan(&e.ID, &e.WorkspaceID, &e.Device, &e.TS, &e.Type, &payload, &e.UpdatedAt); err != nil {
+				return nil, err
 			}
-			if json.Unmarshal(e.Payload, &p) == nil {
-				refs.noteCardID(p.CardID)
+			if !json.Valid([]byte(payload)) {
+				return nil, fmt.Errorf("event %s has an unreadable payload", e.ID)
 			}
-		case "view":
-			var p struct {
-				EntryID int64 `json:"entryId"`
-			}
-			if json.Unmarshal(e.Payload, &p) == nil && p.EntryID > 0 {
-				refs.entries[p.EntryID] = struct{}{}
-			}
-		}
-		if cur == nil || inFile >= eventsPerFile {
-			if cur != nil {
-				if err := cur.finish(); err != nil {
-					return 0, err
+			e.Payload = json.RawMessage(payload)
+			switch e.Type {
+			case "review":
+				var p struct {
+					CardID string `json:"cardId"`
+				}
+				if json.Unmarshal(e.Payload, &p) == nil {
+					refs.noteCardID(p.CardID)
+				}
+			case "view":
+				var p struct {
+					EntryID int64 `json:"entryId"`
+				}
+				if json.Unmarshal(e.Payload, &p) == nil && p.EntryID > 0 {
+					refs.entries[p.EntryID] = struct{}{}
 				}
 			}
-			file++
-			inFile = 0
-			if cur, err = a.begin(EventsName(file)); err != nil {
-				return 0, err
-			}
-		}
-		if err := cur.enc.Encode(e); err != nil {
-			return 0, err
-		}
-		inFile++
-		total++
-	}
-	if err := rs.Err(); err != nil {
-		return 0, err
-	}
-	if cur != nil {
-		if err := cur.finish(); err != nil {
-			return 0, err
-		}
-	}
-	return total, nil
+			return e, nil
+		})
 }
 
 func writePluginData(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID int64, refs *refSet) (int, error) {
-	return writeLines(ctx, tx, a, NamePluginData,
+	return writeParts(ctx, tx, a, NamePluginData,
 		`SELECT pack_id, workspace_id, key, data, version, updated_at, modified_at FROM plugin_data
 		 WHERE user_id = ? AND deleted_at IS NULL ORDER BY pack_id, IFNULL(workspace_id, 0), key`, []any{userID},
 		func(rs *sql.Rows) (any, error) {
@@ -463,6 +500,10 @@ func writeBooks(ctx context.Context, tx *sql.Tx, a *archiveWriter, dataDir strin
 		}
 		if err != nil {
 			return nil, fmt.Errorf("backup: book %d: %w", b.ID, err)
+		}
+		if st, serr := f.Stat(); serr == nil && st.Size() > capBook {
+			f.Close()
+			return nil, ErrTooLargeToRestore
 		}
 		o, err := a.begin(BookName(b.ID))
 		if err != nil {

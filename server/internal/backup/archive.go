@@ -75,7 +75,7 @@ type Archive struct {
 	Dicts      []DictRef
 	SentRefs   []SentenceRef
 	bookFiles  map[int64]bool
-	eventFiles []string
+	parts      map[string][]string // family -> part names in order
 	// Counted during validation.
 	Total int64
 }
@@ -284,14 +284,18 @@ func (a *Archive) validate() error {
 	}
 	counts := map[string]int{"workspaces": len(a.Workspaces), "books": len(a.Books)}
 	// events (sorted names: the iteration order is the name order)
+	a.parts = map[string][]string{}
 	for name := range a.files {
-		if k, _, _ := KnownName(name); k == KindEvents {
-			a.eventFiles = append(a.eventFiles, name)
+		if k, _, _ := KnownName(name); k == KindPart {
+			fam := FamilyOf(name)
+			a.parts[fam] = append(a.parts[fam], name)
 		}
 	}
-	sort.Strings(a.eventFiles)
+	for _, names := range a.parts {
+		sort.Strings(names)
+	}
 	evCount := 0
-	for _, name := range a.eventFiles {
+	for _, name := range a.parts[FamEvents] {
 		n := 0
 		err := read(name, func(r io.Reader) error {
 			return scanLines(r, name, func(b []byte) error {
@@ -443,12 +447,22 @@ func (a *Archive) readAll(f *zip.File, max int64, what string, total *int64) ([]
 	return b, nil
 }
 
-func (a *Archive) countLines(read func(string, func(io.Reader) error) error, name string, fn func([]byte) error) (int, error) {
+// countLines runs fn over every line of every part of a family.
+func (a *Archive) countLines(read func(string, func(io.Reader) error) error, family string, fn func([]byte) error) (int, error) {
 	n := 0
-	err := read(name, func(r io.Reader) error {
-		return scanLines(r, name, func(b []byte) error { n++; return fn(b) })
-	})
-	return n, err
+	for _, name := range a.parts[family] {
+		c := 0
+		err := read(name, func(r io.Reader) error {
+			return scanLines(r, name, func(b []byte) error { n++; c++; return fn(b) })
+		})
+		if err != nil {
+			return n, err
+		}
+		if c > EventsPerFile {
+			return n, invalid("%s holds too many lines", name)
+		}
+	}
+	return n, nil
 }
 
 func scanLines(r io.Reader, name string, fn func([]byte) error) error {
@@ -675,9 +689,9 @@ func each[T any](a *Archive, name string, fn func(T) error) error {
 	return err
 }
 
-// Events streams every event, files in name order.
-func (a *Archive) Events(fn func(Event) error) error {
-	for _, name := range a.eventFiles {
+// eachFamily streams every line of every part of a family, in part order.
+func eachFamily[T any](a *Archive, family string, fn func(T) error) error {
+	for _, name := range a.parts[family] {
 		if err := each(a, name, fn); err != nil {
 			return err
 		}
@@ -685,20 +699,29 @@ func (a *Archive) Events(fn func(Event) error) error {
 	return nil
 }
 
+// Events streams every event, files in name order.
+func (a *Archive) Events(fn func(Event) error) error { return eachFamily(a, FamEvents, fn) }
+
 // PluginRows streams plugin-data.jsonl.
-func (a *Archive) PluginRows(fn func(PluginRow) error) error { return each(a, NamePluginData, fn) }
+func (a *Archive) PluginRows(fn func(PluginRow) error) error {
+	return eachFamily(a, NamePluginData, fn)
+}
 
 // Overlays streams overlays.jsonl.
-func (a *Archive) Overlays(fn func(Overlay) error) error { return each(a, NameOverlays, fn) }
+func (a *Archive) Overlays(fn func(Overlay) error) error { return eachFamily(a, NameOverlays, fn) }
 
 // OwnSentences streams sentences.jsonl.
-func (a *Archive) OwnSentences(fn func(OwnSentence) error) error { return each(a, NameSentences, fn) }
+func (a *Archive) OwnSentences(fn func(OwnSentence) error) error {
+	return eachFamily(a, NameSentences, fn)
+}
 
 // Bookmarks streams library/bookmarks.jsonl.
-func (a *Archive) Bookmarks(fn func(Bookmark) error) error { return each(a, NameBookmarks, fn) }
+func (a *Archive) Bookmarks(fn func(Bookmark) error) error { return eachFamily(a, NameBookmarks, fn) }
 
 // Highlights streams library/highlights.jsonl.
-func (a *Archive) Highlights(fn func(Highlight) error) error { return each(a, NameHighlights, fn) }
+func (a *Archive) Highlights(fn func(Highlight) error) error {
+	return eachFamily(a, NameHighlights, fn)
+}
 
 // HasBookFile says whether the archive carries the content of book id.
 func (a *Archive) HasBookFile(id int64) bool { return a.bookFiles[id] }

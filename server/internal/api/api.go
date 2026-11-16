@@ -70,6 +70,7 @@ type server struct {
 	backups backupState  // in-flight exports, restores and server backups
 
 	restores   *restoreStore   // staged restores of personal backups
+	exportCap  int64           // largest export in bytes; 0: backup.MaxUpload (tests lower it)
 	restoreCap int64           // upload cap in bytes; 0: backup.MaxUpload (tests lower it)
 	stageDone  chan int64      // test hook: receives a user id when a stage finishes validating or restoring
 	bg         context.Context // lives as long as the server; background jobs run under it

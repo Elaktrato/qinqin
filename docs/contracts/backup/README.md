@@ -15,14 +15,18 @@ refs/entries.json        [{id, language, kind, extKey, written}]   entries any e
 refs/dictionaries.json   [{id, packId}]                              dictionaries named by hiddenDictionaries
 refs/sentences.json      [{id, entryId, own, sourcePack, hanzi}]    sentences cards point at
 workspaces.json          [{id, language, name, settings, updatedAt}]
-events/NNNNNN.jsonl      {id, workspaceId, device, ts, type, payload, updatedAt}, <= 100000 lines per file
-plugin-data.jsonl        {pluginId, workspaceId|null, key, data, version, updatedAt, modifiedAt|null}
-overlays.jsonl           {entryId, written, readings, updatedAt}
-sentences.jsonl          {id, entryId, hanzi, pinyin, translation, updatedAt}     own sentences only
+events/NNNNNN.jsonl      {id, workspaceId, device, ts, type, payload, updatedAt}
+plugin-data/NNNNNN.jsonl {pluginId, workspaceId|null, key, data, version, updatedAt, modifiedAt|null}
+overlays/NNNNNN.jsonl    {entryId, written, readings, updatedAt}
+sentences/NNNNNN.jsonl   {id, entryId, hanzi, pinyin, translation, updatedAt}     own sentences only
 library/books.json       [{id, workspaceId, language, title, author, source, sourceId, sourceUrl,
                            attribution, licenseNote, chapterCount, position, createdAt}]
 library/books/<id>.json  the chapter array exactly as stored
-library/bookmarks.jsonl, library/highlights.jsonl
+library/bookmarks/NNNNNN.jsonl, library/highlights/NNNNNN.jsonl
+
+Every JSONL collection is a FAMILY of numbered parts (NNNNNN = 000001, 000002, ...), each at most 100000 lines
+and about 32 MiB, so no entry outgrows the per-entry cap; a family without rows has no part. Readers read the
+parts in name order.
 ```
 
 Ids in the archive are the SOURCE server's ids. A `workspaceId: null` plugin row is a user-global row
@@ -44,7 +48,8 @@ A restore never changes who can sign in.
 
 ## Caps (checked on the bytes read, declared sizes ignored)
 
-Upload 128 MiB; manifest 1 MiB; one JSONL line 1 MiB; a JSON array file or book file 64 MiB; all
+Upload 128 MiB (a server never PRODUCES an archive above its own upload cap, 2 GiB expanded or 64 MiB per book:
+the export is refused with `backup_too_large_to_restore`); manifest 1 MiB; one JSONL line 1 MiB; a JSON array file or book file 64 MiB; all
 entries together 2 GiB; at most 10 000 entries; a plugin value 256 KiB; names exactly as above, no
 duplicates; book files only for ids listed in `library/books.json`. Entry names are never joined into
 a path: only integer book ids build file names.

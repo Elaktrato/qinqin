@@ -174,7 +174,7 @@ var builders = map[string]func(t *testing.T) string{
 		p := writeZip(t, files, zopts{})
 		// rewrite with one file changed but the old manifest
 		files2 := sampleFiles(t)
-		files2[NameOverlays] = []byte(strings.Replace(string(files2[NameOverlays]), "你好吗", "你好呢", 1))
+		files2[PartName(NameOverlays, 1)] = []byte(strings.Replace(string(files2[PartName(NameOverlays, 1)]), "你好吗", "你好呢", 1))
 		old := writeZipWithManifestFrom(t, files2, p)
 		return old
 	},
@@ -184,7 +184,7 @@ var builders = map[string]func(t *testing.T) string{
 	"unknown_count_key": func(t *testing.T) string {
 		return writeZip(t, sampleFiles(t), zopts{manifest: func(m map[string]any) { m["counts"].(map[string]any)["secrets"] = 1 }})
 	},
-	"duplicate_names": func(t *testing.T) string { return writeZip(t, sampleFiles(t), zopts{dupOf: NameOverlays}) },
+	"duplicate_names": func(t *testing.T) string { return writeZip(t, sampleFiles(t), zopts{dupOf: PartName(NameOverlays, 1)}) },
 	"zip_slip_name": func(t *testing.T) string {
 		files := sampleFiles(t)
 		files["../../etc/passwd"] = []byte("x")
@@ -212,14 +212,14 @@ var builders = map[string]func(t *testing.T) string{
 		return mut(t, "library/books/3.json", func([]byte) []byte { return []byte(`[{"title":"x"`) }, zopts{})
 	},
 	"encrypted_flag": func(t *testing.T) string {
-		return writeZip(t, sampleFiles(t), zopts{flags: map[string]uint16{NameOverlays: 0x1}})
+		return writeZip(t, sampleFiles(t), zopts{flags: map[string]uint16{PartName(NameOverlays, 1): 0x1}})
 	},
 	"unknown_compression_method": func(t *testing.T) string {
 		files := sampleFiles(t)
 		var buf bytes.Buffer
 		zw := zip.NewWriter(&buf)
-		data := files[NameOverlays]
-		w, err := zw.CreateRaw(&zip.FileHeader{Name: NameOverlays, Method: 12, CRC32: crc32.ChecksumIEEE(data),
+		data := files[PartName(NameOverlays, 1)]
+		w, err := zw.CreateRaw(&zip.FileHeader{Name: PartName(NameOverlays, 1), Method: 12, CRC32: crc32.ChecksumIEEE(data),
 			CompressedSize64: uint64(len(data)), UncompressedSize64: uint64(len(data))})
 		if err != nil {
 			t.Fatal(err)
@@ -232,12 +232,12 @@ var builders = map[string]func(t *testing.T) string{
 	},
 	"too_many_entries": func(t *testing.T) string { return writeZip(t, sampleFiles(t), zopts{}) },
 	"line_too_long": func(t *testing.T) string {
-		return mut(t, NameOverlays, func([]byte) []byte {
+		return mut(t, PartName(NameOverlays, 1), func([]byte) []byte {
 			return []byte(`{"entryId":1,"written":"` + strings.Repeat("a", 3000) + `","readings":null,"updatedAt":"t"}` + "\n")
 		}, zopts{})
 	},
 	"two_mib_line": func(t *testing.T) string {
-		return mut(t, NameOverlays, func([]byte) []byte {
+		return mut(t, PartName(NameOverlays, 1), func([]byte) []byte {
 			return []byte(`{"entryId":1,"written":"` + strings.Repeat("a", 2<<20) + `","readings":null,"updatedAt":"t"}` + "\n")
 		}, zopts{})
 	},
@@ -247,7 +247,7 @@ var builders = map[string]func(t *testing.T) string{
 		for i := 0; i < 40000; i++ {
 			b.WriteString(`{"entryId":` + itoa(i+1) + `,"written":"` + strings.Repeat("z", 90) + `","readings":null,"updatedAt":"t"}` + "\n")
 		}
-		return mut(t, NameOverlays, func([]byte) []byte { return []byte(b.String()) }, zopts{})
+		return mut(t, PartName(NameOverlays, 1), func([]byte) []byte { return []byte(b.String()) }, zopts{})
 	},
 	"forged_small_declared_size": func(t *testing.T) string {
 		// deflate stream of 3 MiB of 'a' declared as 10 bytes
@@ -255,7 +255,7 @@ var builders = map[string]func(t *testing.T) string{
 		comp := deflateRaw(t, big)
 		var buf bytes.Buffer
 		zw := zip.NewWriter(&buf)
-		w, err := zw.CreateRaw(&zip.FileHeader{Name: NameOverlays, Method: zip.Deflate, CRC32: crc32.ChecksumIEEE(big),
+		w, err := zw.CreateRaw(&zip.FileHeader{Name: PartName(NameOverlays, 1), Method: zip.Deflate, CRC32: crc32.ChecksumIEEE(big),
 			CompressedSize64: uint64(len(comp)), UncompressedSize64: 10})
 		if err != nil {
 			t.Fatal(err)
@@ -282,25 +282,25 @@ var builders = map[string]func(t *testing.T) string{
 		}, zopts{})
 	},
 	"plugin_value_too_big": func(t *testing.T) string {
-		return mut(t, NamePluginData, func(b []byte) []byte {
+		return mut(t, PartName(NamePluginData, 1), func(b []byte) []byte {
 			row := `{"pluginId":"p","workspaceId":null,"key":"big","data":"` + strings.Repeat("a", MaxPluginValue+10) +
 				`","version":1,"updatedAt":"t","modifiedAt":null}` + "\n"
 			return append(b, row...)
 		}, zopts{manifest: func(m map[string]any) { m["counts"].(map[string]any)["pluginData"] = 5 }})
 	},
 	"plugin_row_twice": func(t *testing.T) string {
-		return mut(t, NamePluginData, func(b []byte) []byte {
+		return mut(t, PartName(NamePluginData, 1), func(b []byte) []byte {
 			l := strings.SplitN(string(b), "\n", 2)[0] + "\n"
 			return append(b, l...)
 		}, zopts{manifest: func(m map[string]any) { m["counts"].(map[string]any)["pluginData"] = 5 }})
 	},
 	"plugin_row_unknown_workspace": func(t *testing.T) string {
-		return mut(t, NamePluginData, func(b []byte) []byte {
+		return mut(t, PartName(NamePluginData, 1), func(b []byte) []byte {
 			return []byte(strings.Replace(string(b), `"workspaceId":7`, `"workspaceId":77`, 1))
 		}, zopts{})
 	},
 	"unknown_field_in_row": func(t *testing.T) string {
-		return mut(t, NameOverlays, func(b []byte) []byte {
+		return mut(t, PartName(NameOverlays, 1), func(b []byte) []byte {
 			return []byte(strings.Replace(string(b), `"entryId"`, `"extra":1,"entryId"`, 1))
 		}, zopts{})
 	},
@@ -308,7 +308,7 @@ var builders = map[string]func(t *testing.T) string{
 		return mut(t, NameAccount, func(b []byte) []byte { return append(b, []byte(`{"x":1}`)...) }, zopts{})
 	},
 	"bookmark_for_unlisted_book": func(t *testing.T) string {
-		return mut(t, NameBookmarks, func(b []byte) []byte {
+		return mut(t, PartName(NameBookmarks, 1), func(b []byte) []byte {
 			return []byte(strings.Replace(string(b), `"bookId":3`, `"bookId":4`, 1))
 		}, zopts{})
 	},

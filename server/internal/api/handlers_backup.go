@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -84,8 +85,39 @@ func (s *server) handleExportStart(w http.ResponseWriter, r *http.Request) {
 		writeRateLimitedAs(w, retry, "exports")
 		return
 	}
+	// A dry run first: never hand out a link to an archive this server would
+	// refuse to restore (upload, expanded-size or book-size cap).
+	started, _ := s.backups.beginExport(u.ID)
+	if !started {
+		writeAuthError(w, http.StatusConflict, "export_running", "An export of your data is already running.")
+		return
+	}
+	_, err := backup.WriteUser(r.Context(), s.db, s.dataDir, u.ID, io.Discard, backup.Meta{
+		AppVersion: backup.AppVersion, Now: s.now(), MaxBytes: s.exportLimit()})
+	s.backups.endExport(u.ID)
+	switch {
+	case errors.Is(err, backup.ErrTooLargeToRestore):
+		writeAuthError(w, http.StatusUnprocessableEntity, "backup_too_large_to_restore",
+			"Your data is larger than a restore can take (128 MiB as a download, 2 GiB expanded, 64 MiB per book). Delete large books or old material first, or ask the administrator for a server backup.")
+		return
+	case err != nil && r.Context().Err() != nil:
+		writeClientGone(w)
+		return
+	case err != nil:
+		log.Printf("backup: export check of user %d failed: %v", u.ID, err)
+		writeInternal(w, r)
+		return
+	}
 	token := s.tickets.issue(u.ID, ticketExport, ticketTTL, s.now())
 	writeJSON(w, http.StatusOK, map[string]any{"url": "/api/account/export/" + token, "expiresInSeconds": int(ticketTTL.Seconds())})
+}
+
+// exportLimit is the largest compressed export: what a restore accepts.
+func (s *server) exportLimit() int64 {
+	if s.exportCap > 0 {
+		return s.exportCap
+	}
+	return backup.MaxUpload
 }
 
 var unsafeNameChars = regexp.MustCompile(`[^A-Za-z0-9._-]`)
@@ -136,7 +168,7 @@ func (s *server) handleExportDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer s.backups.endExport(uid)
 	var username string
-	if err := s.db.QueryRowContext(r.Context(), `SELECT username FROM users WHERE id = ?`, uid).Scan(&username); err != nil {
+	if err := s.db.QueryRowContext(r.Context(), `SELECT username FROM users WHERE id = ? AND disabled_at IS NULL`, uid).Scan(&username); err != nil {
 		writeAuthError(w, http.StatusNotFound, "not_found", "This download link is not valid any more.")
 		return
 	}
@@ -146,7 +178,7 @@ func (s *server) handleExportDownload(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin", username, now, "zip")+`"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	man, err := backup.WriteUser(r.Context(), s.db, s.dataDir, uid, tw, backup.Meta{
-		AppVersion: backup.AppVersion, SchemaVersion: backup.SchemaVersion(r.Context(), s.db), Now: now})
+		AppVersion: backup.AppVersion, SchemaVersion: backup.SchemaVersion(r.Context(), s.db), Now: now, MaxBytes: s.exportLimit()})
 	if err != nil {
 		if !errors.Is(err, r.Context().Err()) || r.Context().Err() == nil {
 			log.Printf("backup: export of user %d failed: %v", uid, err)
