@@ -53,3 +53,20 @@ export async function segmentBatch(
 	});
 	return matches;
 }
+
+/**
+ * segmentWithReadings is segmentBatch with `readings: true`: each match
+ * carries the best candidate's reading, the caller's overlay applied.
+ */
+export async function segmentWithReadings(
+	lang: string,
+	text: string,
+	signal?: AbortSignal
+): Promise<SegmentMatch[]> {
+	const { matches } = await api<{ matches: SegmentMatch[] }>('/api/segment', {
+		method: 'POST',
+		body: { lang, text, readings: true },
+		signal
+	});
+	return matches;
+}

@@ -255,6 +255,8 @@ export interface SegmentMatch {
 	lemma: string;
 	reason: string;
 	entries: SegmentCandidate[];
+	/** Only with `readings: true`: the best candidate's reading, the caller's overlay applied. */
+	reading?: { type: string; value: string };
 }
 
 // SegmentCandidate is one entry a match resolves to; reading is true when

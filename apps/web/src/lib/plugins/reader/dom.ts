@@ -1,9 +1,11 @@
 // DOM side of the paragraph mapping. ChapterText renders each paragraph as
 // <p data-p="i"> and each run as an element with data-r="j" whose FIRST
 // text node is the run's displayed text; a shown furigana lives in an <rt>
-// after it. In a paragraph with highlights a run's text is cut into
-// pieces instead: child <span>/<mark> elements with data-o = the piece's
-// UTF-16 start in the run, all before the <rt>. Everything here maps DOM boundary points onto that model and
+// after it. In a paragraph with highlights or generated readings a run's
+// text is cut into pieces instead: child <span>/<mark>/<ruby> elements
+// with data-o = the piece's UTF-16 start in the run, all before the run's
+// own <rt>; a generated <ruby> piece keeps its <rt> inside, after the base
+// text node, so a piece's length is that of its first text node. Everything here maps DOM boundary points onto that model and
 // back; the arithmetic itself lives in paragraphText.ts. The last two
 // helpers serve Shift+hover scanning inside the lookup popups.
 import { codePointToUtf16, utf16ToCodePoint } from './lookup';
@@ -92,7 +94,13 @@ export function runPointAt(node: Node, offset: number, bias: 'start' | 'end'): R
 	const length = runLength(pieces);
 	const p = indexOf(paragraph, 'p');
 	const r = indexOf(run, 'r');
-	if (el.closest('rt')) return { p, r, utf16: bias === 'start' ? 0 : length, inRt: true };
+	const rt = el.closest('rt');
+	if (rt) {
+		// A generated reading sits inside its piece: map to that piece's edge.
+		const own = pieces.find((piece) => piece.el !== run && piece.el.contains(rt));
+		const [from, to] = own ? [own.o, own.o + own.length] : [0, length];
+		return { p, r, utf16: bias === 'start' ? from : to, inRt: true };
+	}
 	const at = (utf16: number): RunPoint => ({ p, r, utf16, inRt: false });
 	const text = pieces.find((piece) => piece.node === node);
 	if (text) return at(text.o + offset);
