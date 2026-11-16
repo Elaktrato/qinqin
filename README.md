@@ -369,7 +369,9 @@ into typed tables, keeping every card id, review, setting, version and stamp; no
 is lost, and a row no v0.3 client could read stays where it was. Old open tabs (a
 cached v0.3 app) keep reading and writing their cards until they are reloaded. Old
 `/p/flashcards` and `/p/reader` links redirect to `/flashcards` and `/reader`. A v0.3
-backup restores on v0.4 and a v0.4 backup restores on v0.3. After an upgrade the log may say
+backup restores on v0.4 and a v0.4 backup restores on v0.3 (that is the way back: running the v0.3
+binary on the upgraded database is unsupported; if it happened, the flashcards rows it wrote are taken
+over at the next v0.4 start, except changes to rows v0.4 already holds). After an upgrade the log may say
 `pack <id>: stored ... differs`; run `qinqin seed` in the console to refresh.
 
 ### Reverse proxy and HTTPS

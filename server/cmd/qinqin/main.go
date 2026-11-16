@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"qinqin/internal/study"
 	"strings"
 	"time"
 
@@ -167,6 +168,11 @@ func serveCmd(args []string) error {
 
 	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
 		return err
+	}
+	// Study rows an older (downgraded) binary wrote as plugin data after
+	// migration 038 move into the typed tables; idempotent and per row.
+	if _, err := study.AdoptLeftovers(context.Background(), sqlDB); err != nil {
+		return fmt.Errorf("adopt study rows: %w", err)
 	}
 	// The Sources page shows the stored terms; say when seed is due.
 	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)

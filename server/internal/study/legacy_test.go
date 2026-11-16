@@ -81,12 +81,15 @@ func jsonEqual(a, b any) bool {
 }
 
 // One storage: raw SQL writes to plugin_data live only in the plugin store,
-// the backup restore and the migrations; every other writer goes through
+// the backup restore, the migrations and the startup adoption of leftovers; every other writer goes through
 // plugins.PutData*/DeleteData*, which the legacy view routes first.
 func TestOnlyKnownCodeWritesPluginData(t *testing.T) {
 	allowed := map[string]bool{
 		"internal/plugins/plugins.go": true,
 		"internal/backup/restore.go":  true,
+		// the startup adoption after a downgrade: deletes exactly the rows it
+		// moved into the typed tables, like migration 038
+		"internal/study/adopt.go": true,
 	}
 	writes := regexp.MustCompile(`(?i)(INSERT\s+(OR\s+\w+\s+)?INTO|UPDATE|DELETE\s+FROM|REPLACE\s+INTO)\s+plugin_data\b`)
 	root := "../.."
