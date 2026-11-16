@@ -491,3 +491,46 @@ describe('level sessions and daily limits', () => {
 		expect(buildLevelPlan({ ...base, ctx: { ...UTC_CONTEXT, vacationToday: true } }).queue).toEqual([]);
 	});
 });
+
+describe('level queues with a new-item key (#75)', () => {
+	const ranks: Record<number, number> = { 1: 500, 2: 3, 3: 40, 4: 1 };
+	const newKey = (entryId: number) => ranks[entryId] ?? null;
+
+	it('word plan: real and virtual new items interleave by key', () => {
+		const base = {
+			ctx: UTC_CONTEXT,
+			w: DEFAULT_W,
+			entries: [entry(1), entry(2), entry(3), entry(4), entry(5)],
+			// 3 has a never-reviewed card (real id), the rest are virtual.
+			cards: [card('c3', 3)],
+			reviews: [],
+			newLimit: 3,
+			reviewLimit: 100,
+			now: NOW
+		};
+		expect(buildLevelQueue(base).map((i) => i.cardId)).toEqual(['c3', 'level:1', 'level:2']);
+		expect(buildLevelQueue({ ...base, newKey }).map((i) => i.cardId)).toEqual(['level:4', 'level:2', 'c3']);
+		// The reserve continues in key order; unranked last.
+		const plan = buildLevelPlan({ ...base, newKey, newLimit: 1, reserve: 10 });
+		expect(plan.reserve.map((i) => i.entryId)).toEqual([2, 3, 1, 5]);
+	});
+
+	it('character plan: writing still comes before recognition, the key orders inside each group', () => {
+		const chars = [1, 2, 3].map((id) => ({ id, kind: 'character', written: String.fromCodePoint(0x4e00 + id) }));
+		const plan = buildLevelPlan({
+			ctx: UTC_CONTEXT,
+			w: DEFAULT_W,
+			unit: 'character',
+			kinds: ['vocab', 'writing'],
+			entries: chars,
+			// Recognition of 1 and 3 was reviewed long ago (Easy): their writing is unlocked.
+			cards: [card('r1', 1), card('r3', 3)],
+			reviews: [review('r1', 4, '2026-05-30T00:00:00.000Z', eventId(1)), review('r3', 4, '2026-05-30T00:00:00.000Z', eventId(2))],
+			newLimit: 10,
+			reviewLimit: 0,
+			now: NOW,
+			newKey: (entryId: number) => ({ 1: 9, 2: 2, 3: 1 })[entryId] ?? null
+		});
+		expect(plan.queue.map((i) => `${i.kind}:${i.entryId}`)).toEqual(['writing:3', 'writing:1', 'vocab:2']);
+	});
+});
