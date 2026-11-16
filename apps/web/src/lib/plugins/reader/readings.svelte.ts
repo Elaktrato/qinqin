@@ -7,7 +7,8 @@ import type { SegmentMatch } from '$lib/api/types';
 import { createAnnotationLoader, type SegmentFn } from './annotations';
 import type { ReaderDisplay } from './displaySettings';
 import { paragraphString, type Run } from './paragraphText';
-import { annotateParagraph, type MasteryIndex, type Piece } from './smartReadings';
+import type { KnownIndex } from '$lib/study/known';
+import { annotateParagraph, type Piece } from './smartReadings';
 
 export interface ReadingsInput {
 	/** bookId:chapter:variant (and anything else that changes the text). */
@@ -18,7 +19,7 @@ export interface ReadingsInput {
 	/** The paragraph in view: segmented first. */
 	start: number;
 	display: ReaderDisplay;
-	index: MasteryIndex;
+	index: KnownIndex;
 }
 
 const LANGUAGES = new Set(['zh', 'ja']);
@@ -72,7 +73,7 @@ export class ReadingsController {
 	}
 
 	/** A new setting or mastery index: re-apply the rule to the loaded matches. */
-	update(display: ReaderDisplay, index: MasteryIndex): void {
+	update(display: ReaderDisplay, index: KnownIndex): void {
 		if (!this.#input) return;
 		if (display.readings === 'never') {
 			this.stop();

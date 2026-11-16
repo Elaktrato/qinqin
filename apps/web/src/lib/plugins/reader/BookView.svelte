@@ -32,7 +32,7 @@
 	import { DEFAULT_DISPLAY } from './displaySettings';
 	import { ReadingsController } from './readings.svelte';
 	import { createReveal, revealKey } from './reveal';
-	import { masteryIndex, type MasteryIndex } from './smartReadings';
+	import { EMPTY_KNOWN_INDEX, knownIndex, type KnownIndex } from '$lib/study/known';
 	import HighlightEditor from './HighlightEditor.svelte';
 	import HighlightsPanel from './HighlightsPanel.svelte';
 	import { HighlightList } from './highlightList.svelte';
@@ -177,9 +177,10 @@
 	let showAll = $state(false);
 	const reveal = createReveal({ onAll: (v) => (showAll = v) });
 
-	// The mastery index is only needed to hide readings (smart): one replay
-	// of the workspace's review log per open, again after study writes.
-	let index = $state.raw<MasteryIndex>(new Map());
+	// The known index (study/known.ts: cards, scores and manual marks) is only
+	// needed to hide readings (smart): one replay of the workspace's review
+	// log per open, again after study writes.
+	let index = $state.raw<KnownIndex>(EMPTY_KNOWN_INDEX);
 	const wantsIndex = $derived(display.readings === 'smart');
 	$effect(() => {
 		const wsId = studyWorkspaceId;
@@ -189,7 +190,8 @@
 			try {
 				const data = await loadStudyHistory(wsId);
 				if (!alive) return;
-				index = masteryIndex(data.cards, scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock));
+				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock);
+				index = knownIndex(data.cards, (cardId) => schedules.get(cardId) ?? null, data.known);
 			} catch {
 				// Without the index nothing counts as known: every reading stays shown.
 			}
