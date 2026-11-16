@@ -37,7 +37,8 @@
 	import { loadRawStudyData, pushStudyRows, setKnownMarks } from '$lib/study/store';
 	import type { Deck } from '$lib/study/types';
 	import WordsPanel from './WordsPanel.svelte';
-	import { stateLineText } from './wordsPanel';
+	import { stateLineText, wordCountsSupported } from './wordsPanel';
+	import { createLatestLoad, type LatestLoad } from './latestLoad';
 	import { coverageOf, mergeTallies, tallyChapter, unknownList, type ChapterTally } from './coverage';
 	import { createBookCounter, type BookCounter } from './bookCounter';
 	import { addWords, markWords } from './wordActions';
@@ -213,33 +214,63 @@
 	// needed to hide readings (smart): one replay of the workspace's review
 	// log per open, again after study writes.
 	let index = $state.raw<KnownIndex>(EMPTY_KNOWN_INDEX);
-	// Smart readings, word states and the Words panel need it.
-	const wantsIndex = $derived(display.readings === 'smart' || display.highlightWords || wordsPanelOpen);
+	// Smart readings, word states and the Words panel need it (zh and ja only).
+	const wantsIndex = $derived(
+		wordCountsSupported(book?.language ?? '') && (display.readings === 'smart' || display.highlightWords || wordsPanelOpen)
+	);
 	let studyDecks = $state.raw<Deck[]>([]);
+	// Whose index `index` is, and whether it is loaded: the Words panel waits for it.
+	let indexWs: number | null = null;
+	let indexState = $state<'loading' | 'ready' | 'error'>('loading');
+	let indexLoad: LatestLoad | null = null;
 	$effect(() => {
 		const wsId = studyWorkspaceId;
 		if (!wantsIndex || wsId === null) return;
-		let alive = true;
-		const load = async (): Promise<void> => {
-			try {
-				const data = await loadStudyHistory(wsId);
-				if (!alive) return;
-				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock);
-				index = knownIndex(data.cards, (cardId) => schedules.get(cardId) ?? null, data.known);
-				studyDecks = data.decks;
-			} catch {
-				// Without the index nothing counts as known: every reading stays shown.
+		untrack(() => {
+			if (indexWs !== wsId) {
+				// Another workspace: nothing of the previous one's cards may count here.
+				indexWs = wsId;
+				index = EMPTY_KNOWN_INDEX;
+				studyDecks = [];
+				indexState = 'loading';
 			}
-		};
-		void load();
+		});
+		const loader = createLatestLoad(
+			async () => {
+				const data = await loadStudyHistory(wsId);
+				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock);
+				return { index: knownIndex(data.cards, (cardId) => schedules.get(cardId) ?? null, data.known), decks: data.decks };
+			},
+			(v) => {
+				index = v.index;
+				studyDecks = v.decks;
+				indexState = 'ready';
+			},
+			() => {
+				// Without the index nothing counts as known: every reading stays shown,
+				// and the Words panel says it could not load the cards.
+				if (indexState !== 'ready') indexState = 'error';
+			}
+		);
+		indexLoad = loader;
+		void loader.reload();
 		const off = onStudyWrite((changed) => {
-			if (changed === wsId) void load();
+			if (changed === wsId) void loader.reload();
 		});
 		return () => {
-			alive = false;
+			loader.dispose();
+			if (indexLoad === loader) indexLoad = null;
 			off();
 		};
 	});
+	function retryIndex(): void {
+		indexState = 'loading';
+		void indexLoad?.reload();
+	}
+	// A bulk write notifies once per pushed chunk: reload the index once, after it.
+	function batched<R>(run: () => Promise<R>): Promise<R> {
+		return indexLoad ? indexLoad.batch(run) : run();
+	}
 
 	const readings = new ReadingsController((text, signal) => segmentWithReadings(book?.language ?? '', text, signal));
 	// One match source for readings, word states and coverage.
@@ -949,7 +980,7 @@
 	}
 	function addFromPanel(ids: number[], target: { id: string; name: string }) {
 		const wsId = bookWorkspace();
-		return addWords({
+		return batched(() => addWords({
 			workspaceId: wsId,
 			entryIds: ids,
 			target,
@@ -957,10 +988,14 @@
 			bases: (x) => loadEntryBases(x),
 			raw: () => loadRawStudyData(wsId),
 			push: pushStudyRows
-		});
+		}));
 	}
 	function markFromPanel(ids: number[]) {
-		return markWords({ workspaceId: bookWorkspace(), entryIds: ids, marked: index.marks, on: true, set: setKnownMarks });
+		const wsId = bookWorkspace();
+		return batched(async () => {
+			const res = await markWords({ workspaceId: wsId, entryIds: ids, marked: index.marks, on: true, set: setKnownMarks });
+			return { written: res.written, undo: () => batched(res.undo) };
+		});
 	}
 	// Heard even while the rail is collapsed or the drawer closed (a `b`
 	// press that failed, a list that could not load).
@@ -1202,6 +1237,8 @@
 				{:else if tab === 'words'}
 					<WordsPanel
 						resetKey={`${chapterKey}:${studyWorkspaceId ?? ''}`}
+						cards={indexState}
+						oncardsretry={retryIndex}
 						lang={book?.language ?? ''}
 						chapter={chapterCounted}
 						progress={readings.progress}

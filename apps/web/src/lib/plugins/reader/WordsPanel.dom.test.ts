@@ -25,6 +25,8 @@ function mount(over: Record<string, unknown> = {}) {
 	const onretry = vi.fn();
 	const props = {
 		resetKey: '1:0:original:7',
+		cards: 'ready',
+		oncardsretry: vi.fn(),
 		lang: 'zh',
 		chapter: { coverage, list },
 		progress: { done: 3, total: 3 },
@@ -167,5 +169,24 @@ describe('WordsPanel across a chapter or book change', () => {
 		await r.rerender({ chapter: { coverage, list: list.filter((w) => w.entryId !== 1) } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Add selected (1)' }));
 		expect(r.onadd).toHaveBeenLastCalledWith([2], { id: 'general', name: 'General' });
+	});
+});
+
+describe('WordsPanel before the cards are loaded', () => {
+	it('shows no figure and offers no action while loading', () => {
+		mount({ cards: 'loading' });
+		expect(screen.getByText('Loading your cards…')).toBeTruthy();
+		expect(screen.queryByText(/You know/)).toBeNull();
+		expect(screen.queryByRole('button', { name: /Add all new words/ })).toBeNull();
+		expect(screen.queryByRole('checkbox')).toBeNull();
+	});
+
+	it('a failed load says so and retries', async () => {
+		const oncardsretry = vi.fn();
+		mount({ cards: 'error', oncardsretry });
+		expect(screen.getByText(/Could not load your cards/)).toBeTruthy();
+		expect(screen.queryByText(/You know/)).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+		expect(oncardsretry).toHaveBeenCalled();
 	});
 });

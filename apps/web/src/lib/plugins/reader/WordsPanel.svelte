@@ -24,6 +24,8 @@
 	type Counted = { coverage: Coverage; list: UnknownItem[] };
 	let {
 		resetKey,
+		cards,
+		oncardsretry,
 		lang,
 		chapter,
 		progress,
@@ -40,6 +42,9 @@
 	}: {
 		/** Book, chapter, variant and workspace: a change drops the selection, result and Undo. */
 		resetKey: string;
+		/** The learner's cards and marks (the known index): figures and actions wait for them. */
+		cards: 'loading' | 'ready' | 'error';
+		oncardsretry: () => void;
 		lang: string;
 		/** The open chapter, once every part is counted. */
 		chapter: Counted | null;
@@ -152,6 +157,10 @@
 <h2>Words</h2>
 {#if !wordCountsSupported(lang)}
 	<p class="hint">Word counts are available for Chinese and Japanese books</p>
+{:else if cards === 'loading'}
+	<p class="hint" role="status">Loading your cards…</p>
+{:else if cards === 'error'}
+	<p class="error">Could not load your cards, so the words you know cannot be counted. <button type="button" onclick={oncardsretry}>Try again</button></p>
 {:else}
 	<section aria-labelledby="{id}-chapter">
 		<h3 id="{id}-chapter">This chapter</h3>
