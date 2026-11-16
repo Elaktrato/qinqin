@@ -76,9 +76,8 @@ func SuggestionInput(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int
 			return nil, nil, err
 		}
 		for _, e := range entries {
-			if len(e.Forms) > 0 {
-				forms[e.ID] = e.Forms[0].Text
-			}
+			// The entry's display form: の, not the search-only 乃.
+			forms[e.ID] = e.Headword()
 		}
 	}
 	seen := map[string]bool{}
