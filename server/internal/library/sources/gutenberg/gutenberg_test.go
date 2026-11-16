@@ -349,11 +349,16 @@ func TestGutenbergCatalogSingleFlight(t *testing.T) {
 func TestGutenbergCatalogWaiterHonorsContext(t *testing.T) {
 	f := newFixture(t, header)
 	f.gate = make(chan struct{})
-	defer close(f.gate)
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 	if _, err := f.ad.Search(ctx, "", 5); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("err = %v", err)
+	}
+	// Release the refresh this test left running and wait for it, so it never
+	// writes into the test's temp dir while that is being removed.
+	close(f.gate)
+	if _, err := f.ad.Search(context.Background(), "", 5); err != nil {
+		t.Fatalf("after release: %v", err)
 	}
 }
 
