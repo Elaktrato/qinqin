@@ -1,0 +1,2051 @@
+{
+  "version": 1,
+  "rule": "weekly/week-summary",
+  "note": "Hand-derived; each case explains its numbers. Card timelines are given as schedules so the file does not depend on FSRS parameters. A case without `timelines` expects mature and characters null when listed. `expect` keys absent from a case are not checked.",
+  "cases": [
+    {
+      "name": "a completed week compared with the whole previous week",
+      "note": "Week 11-09 (today 11-18). Reviews 10 + 5 vs 8; new cards b, c vs a (11-03); study time 30 + 60 (90 s capped) + 10 vs 20 s; reading 600 vs 300 s; journal 1 vs 0; drill 4 vs 0; quiz 0 vs 2 (shown: the comparison window is non-zero); listen absent (zero in both). Workspace 2's review cell on 11-11 is ignored; the grade-5 review on 11-14 is invalid. Streak 0: no review on 11-15 or 11-14.",
+      "history": [],
+      "now": "2026-11-18T12:00:00Z",
+      "week": "2026-11-09",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          },
+          {
+            "type": "drill",
+            "plugin": "grammar-drills",
+            "label": "Grammar drills",
+            "unit": "count",
+            "describe": {
+              "one": "{n} drill",
+              "other": "{n} drills"
+            }
+          },
+          {
+            "type": "quiz",
+            "plugin": "quizzes",
+            "label": "Quizzes",
+            "unit": "count",
+            "describe": {
+              "one": "{n} quiz",
+              "other": "{n} quizzes"
+            }
+          },
+          {
+            "type": "listen",
+            "plugin": "listening",
+            "label": "Listening",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of listening",
+              "other": "{n} minutes of listening"
+            }
+          }
+        ],
+        "cells": [
+          {
+            "day": "2026-11-03",
+            "workspace": 1,
+            "type": "review",
+            "points": 8,
+            "raw": 8
+          },
+          {
+            "day": "2026-11-04",
+            "workspace": 1,
+            "type": "quiz",
+            "points": 2,
+            "raw": 2
+          },
+          {
+            "day": "2026-11-05",
+            "workspace": 1,
+            "type": "read",
+            "points": 1,
+            "raw": 300
+          },
+          {
+            "day": "2026-11-09",
+            "workspace": 1,
+            "type": "review",
+            "points": 10,
+            "raw": 10
+          },
+          {
+            "day": "2026-11-10",
+            "workspace": 1,
+            "type": "review",
+            "points": 5,
+            "raw": 5
+          },
+          {
+            "day": "2026-11-11",
+            "workspace": 2,
+            "type": "review",
+            "points": 50,
+            "raw": 50
+          },
+          {
+            "day": "2026-11-12",
+            "workspace": 1,
+            "type": "read",
+            "points": 2,
+            "raw": 600
+          },
+          {
+            "day": "2026-11-13",
+            "workspace": 1,
+            "type": "drill",
+            "points": 4,
+            "raw": 4
+          },
+          {
+            "day": "2026-11-15",
+            "workspace": 1,
+            "type": "journal",
+            "points": 1,
+            "raw": 1
+          }
+        ]
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000001",
+          "ts": "2026-11-03T09:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 20000
+        },
+        {
+          "id": "01JWEEK0000000000000000002",
+          "ts": "2026-11-09T09:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 30000
+        },
+        {
+          "id": "01JWEEK0000000000000000003",
+          "ts": "2026-11-09T09:01:00Z",
+          "cardId": "b",
+          "grade": 3,
+          "durationMs": 90000
+        },
+        {
+          "id": "01JWEEK0000000000000000004",
+          "ts": "2026-11-10T09:00:00Z",
+          "cardId": "c",
+          "grade": 4,
+          "durationMs": 10000
+        },
+        {
+          "id": "01JWEEK0000000000000000005",
+          "ts": "2026-11-14T09:00:00Z",
+          "cardId": "a",
+          "grade": 5
+        }
+      ],
+      "expect": {
+        "inProgress": false,
+        "compareThrough": "2026-11-08",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": 15,
+            "previous": 8,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 2,
+            "previous": 1,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 100,
+            "previous": 20,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": 600,
+            "previous": 300,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": 1,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "activity:drill",
+            "value": 4,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "activity:quiz",
+            "value": 0,
+            "previous": 2,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2026-11-09",
+            "state": "active",
+            "reviews": 10
+          },
+          {
+            "date": "2026-11-10",
+            "state": "active",
+            "reviews": 5
+          },
+          {
+            "date": "2026-11-11",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-12",
+            "state": "active",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-13",
+            "state": "active",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-14",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-15",
+            "state": "active",
+            "reviews": 0
+          }
+        ],
+        "daysActive": {
+          "active": 5,
+          "of": 7,
+          "localOnly": false
+        },
+        "streak": 0,
+        "goal": null,
+        "allVacation": false,
+        "nothingToCompare": false
+      }
+    },
+    {
+      "name": "the week in progress compares with the previous week up to the same weekday",
+      "note": "Today Wednesday 11-18: compared with 11-09..11-11 (3 + 3 + 1 = 7 reviews; the 20 on Friday 11-13 is outside). New cards: d (11-17) vs x (11-10); y (11-13) is outside. Study time 5 + 3 + 2 s vs 1 s. Thursday to Sunday are upcoming. Streak 4: 11-15 to 11-18.",
+      "history": [],
+      "now": "2026-11-18T20:00:00Z",
+      "week": "2026-11-16",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": [
+          {
+            "day": "2026-11-09",
+            "workspace": 1,
+            "type": "review",
+            "points": 3,
+            "raw": 3
+          },
+          {
+            "day": "2026-11-10",
+            "workspace": 1,
+            "type": "review",
+            "points": 3,
+            "raw": 3
+          },
+          {
+            "day": "2026-11-11",
+            "workspace": 1,
+            "type": "review",
+            "points": 1,
+            "raw": 1
+          },
+          {
+            "day": "2026-11-13",
+            "workspace": 1,
+            "type": "review",
+            "points": 20,
+            "raw": 20
+          },
+          {
+            "day": "2026-11-16",
+            "workspace": 1,
+            "type": "review",
+            "points": 4,
+            "raw": 4
+          },
+          {
+            "day": "2026-11-17",
+            "workspace": 1,
+            "type": "review",
+            "points": 6,
+            "raw": 6
+          },
+          {
+            "day": "2026-11-18",
+            "workspace": 1,
+            "type": "review",
+            "points": 2,
+            "raw": 2
+          }
+        ]
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000006",
+          "ts": "2026-11-10T08:00:00Z",
+          "cardId": "x",
+          "grade": 3,
+          "durationMs": 1000
+        },
+        {
+          "id": "01JWEEK0000000000000000007",
+          "ts": "2026-11-13T08:00:00Z",
+          "cardId": "y",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000008",
+          "ts": "2026-11-15T08:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000009",
+          "ts": "2026-11-16T08:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 5000
+        },
+        {
+          "id": "01JWEEK0000000000000000010",
+          "ts": "2026-11-17T08:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000011",
+          "ts": "2026-11-17T08:05:00Z",
+          "cardId": "d",
+          "grade": 1,
+          "durationMs": 3000
+        },
+        {
+          "id": "01JWEEK0000000000000000012",
+          "ts": "2026-11-18T08:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 2000
+        }
+      ],
+      "expect": {
+        "inProgress": true,
+        "compareThrough": "2026-11-11",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": 12,
+            "previous": 7,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 1,
+            "previous": 1,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 10,
+            "previous": 1,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2026-11-16",
+            "state": "active",
+            "reviews": 4
+          },
+          {
+            "date": "2026-11-17",
+            "state": "active",
+            "reviews": 6
+          },
+          {
+            "date": "2026-11-18",
+            "state": "active",
+            "reviews": 2
+          },
+          {
+            "date": "2026-11-19",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-20",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-21",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-22",
+            "state": "upcoming",
+            "reviews": null
+          }
+        ],
+        "daysActive": {
+          "active": 3,
+          "of": 3,
+          "localOnly": false
+        },
+        "streak": 4,
+        "goal": null,
+        "allVacation": false,
+        "nothingToCompare": false
+      }
+    },
+    {
+      "name": "a vacation Tuesday with reviews: counted in the totals, not in days active or the goal",
+      "note": "Week 11-02, vacation 11-03. Reviews 3 + 5 + 1 + 4 = 13 (Tuesday's 5 included); new cards a and b (b on the vacation day). Days active 3 of 6 (Tuesday left out). Goal (3 reviews): met 11-02 and 11-06, missed 11-04, 11-05, 11-07, 11-08 = 2 of 6. Streak 0 (no review on 11-08 or 11-07).",
+      "history": [],
+      "now": "2026-11-18T12:00:00Z",
+      "week": "2026-11-02",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [
+        {
+          "start": "2026-11-03",
+          "end": "2026-11-03"
+        }
+      ],
+      "goals": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-10-01",
+            "metric": "activity:review",
+            "target": 3
+          }
+        ]
+      },
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": [
+          {
+            "day": "2026-10-27",
+            "workspace": 1,
+            "type": "review",
+            "points": 2,
+            "raw": 2
+          },
+          {
+            "day": "2026-11-02",
+            "workspace": 1,
+            "type": "review",
+            "points": 3,
+            "raw": 3
+          },
+          {
+            "day": "2026-11-03",
+            "workspace": 1,
+            "type": "review",
+            "points": 5,
+            "raw": 5
+          },
+          {
+            "day": "2026-11-04",
+            "workspace": 1,
+            "type": "review",
+            "points": 1,
+            "raw": 1
+          },
+          {
+            "day": "2026-11-06",
+            "workspace": 1,
+            "type": "review",
+            "points": 4,
+            "raw": 4
+          }
+        ]
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000013",
+          "ts": "2026-11-02T10:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000014",
+          "ts": "2026-11-03T10:00:00Z",
+          "cardId": "b",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000015",
+          "ts": "2026-11-04T10:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000016",
+          "ts": "2026-11-06T10:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "inProgress": false,
+        "compareThrough": "2026-11-01",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": 13,
+            "previous": 2,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 2,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2026-11-02",
+            "state": "active",
+            "reviews": 3
+          },
+          {
+            "date": "2026-11-03",
+            "state": "vacation",
+            "reviews": 5
+          },
+          {
+            "date": "2026-11-04",
+            "state": "active",
+            "reviews": 1
+          },
+          {
+            "date": "2026-11-05",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-06",
+            "state": "active",
+            "reviews": 4
+          },
+          {
+            "date": "2026-11-07",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-08",
+            "state": "inactive",
+            "reviews": 0
+          }
+        ],
+        "daysActive": {
+          "active": 3,
+          "of": 6,
+          "localOnly": false
+        },
+        "streak": 0,
+        "goal": {
+          "met": 2,
+          "of": 6
+        },
+        "allVacation": false,
+        "nothingToCompare": false
+      }
+    },
+    {
+      "name": "a week entirely on vacation",
+      "note": "Vacation 10-30..11-10 covers the whole week of 11-02; nothing happened in it or the week before.",
+      "history": [],
+      "now": "2026-11-18T12:00:00Z",
+      "week": "2026-11-02",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [
+        {
+          "start": "2026-10-30",
+          "end": "2026-11-10"
+        }
+      ],
+      "goals": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-10-01",
+            "metric": "activity:review",
+            "target": 3
+          }
+        ]
+      },
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": []
+      },
+      "reviews": [],
+      "expect": {
+        "inProgress": false,
+        "compareThrough": "2026-11-01",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2026-11-02",
+            "state": "vacation",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-03",
+            "state": "vacation",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-04",
+            "state": "vacation",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-05",
+            "state": "vacation",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-06",
+            "state": "vacation",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-07",
+            "state": "vacation",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-08",
+            "state": "vacation",
+            "reviews": 0
+          }
+        ],
+        "daysActive": {
+          "active": 0,
+          "of": 0,
+          "localOnly": false
+        },
+        "streak": 0,
+        "goal": {
+          "met": 0,
+          "of": 0
+        },
+        "allVacation": true,
+        "nothingToCompare": true
+      }
+    },
+    {
+      "name": "a first week has nothing to compare",
+      "note": "Monday 11-16 10:00, the first review ever at 09:00.",
+      "history": [],
+      "now": "2026-11-16T10:00:00Z",
+      "week": "2026-11-16",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": [
+          {
+            "day": "2026-11-16",
+            "workspace": 1,
+            "type": "review",
+            "points": 1,
+            "raw": 1
+          }
+        ]
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000017",
+          "ts": "2026-11-16T09:00:00Z",
+          "cardId": "a",
+          "grade": 3,
+          "durationMs": 4000
+        }
+      ],
+      "expect": {
+        "inProgress": true,
+        "compareThrough": "2026-11-09",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": 1,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 1,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 4,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2026-11-16",
+            "state": "active",
+            "reviews": 1
+          },
+          {
+            "date": "2026-11-17",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-18",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-19",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-20",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-21",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-22",
+            "state": "upcoming",
+            "reviews": null
+          }
+        ],
+        "daysActive": {
+          "active": 1,
+          "of": 1,
+          "localOnly": false
+        },
+        "streak": 1,
+        "goal": null,
+        "allVacation": false,
+        "nothingToCompare": true
+      }
+    },
+    {
+      "name": "offline: activity rows unavailable, the local rows and days from local reviews",
+      "note": "activity null (the route failed). New cards a, b vs c; days active from the local log only.",
+      "history": [],
+      "now": "2026-11-18T12:00:00Z",
+      "week": "2026-11-09",
+      "workspace": 1,
+      "language": "es",
+      "vacation": [],
+      "goals": null,
+      "activity": null,
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000018",
+          "ts": "2026-11-05T10:00:00Z",
+          "cardId": "c",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000019",
+          "ts": "2026-11-09T10:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000020",
+          "ts": "2026-11-11T10:00:00Z",
+          "cardId": "b",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "inProgress": false,
+        "compareThrough": "2026-11-08",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": null,
+            "previous": null,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 2,
+            "previous": 1,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": null,
+            "previous": null,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": null,
+            "previous": null,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2026-11-09",
+            "state": "active",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-10",
+            "state": "inactive",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-11",
+            "state": "active",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-12",
+            "state": "inactive",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-13",
+            "state": "inactive",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-14",
+            "state": "inactive",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-15",
+            "state": "inactive",
+            "reviews": null
+          }
+        ],
+        "daysActive": {
+          "active": 2,
+          "of": 7,
+          "localOnly": true
+        },
+        "streak": 0,
+        "goal": null,
+        "allVacation": false,
+        "nothingToCompare": false,
+        "mature": null,
+        "characters": null
+      }
+    },
+    {
+      "name": "Apia: the skipped 2011-12-30 is no day",
+      "note": "2011-12-29T12:00Z is 02:00 on 12-29 (UTC-10); 2011-12-31T12:00Z is 02:00 on 2012-01-01 (UTC+14). 12-30 never happened there: skipped, outside the denominator (6 days). Streak 1 (01-01; 12-31 has no review).",
+      "history": [
+        {
+          "zone": "Pacific/Apia",
+          "from": null
+        }
+      ],
+      "now": "2012-01-10T00:00:00Z",
+      "week": "2011-12-26",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": []
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000021",
+          "ts": "2011-12-29T12:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000022",
+          "ts": "2011-12-31T12:00:00Z",
+          "cardId": "b",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "inProgress": false,
+        "compareThrough": "2011-12-25",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 2,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2011-12-26",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2011-12-27",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2011-12-28",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2011-12-29",
+            "state": "active",
+            "reviews": 0
+          },
+          {
+            "date": "2011-12-30",
+            "state": "skipped",
+            "reviews": 0
+          },
+          {
+            "date": "2011-12-31",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2012-01-01",
+            "state": "active",
+            "reviews": 0
+          }
+        ],
+        "daysActive": {
+          "active": 2,
+          "of": 6,
+          "localOnly": false
+        },
+        "streak": 1,
+        "goal": null,
+        "allVacation": false,
+        "nothingToCompare": true
+      }
+    },
+    {
+      "name": "goal days: none, met, vacation, missed and today open",
+      "note": "Today Friday 11-20. Goal \"1 new card\" from 11-17. Mon none; Tue met (b new); Wed vacation (c new, neutral); Thu missed (only a again); Fri open (a again) and left out until met: 1 of 2. Streak 4: 11-20, 11-19, (vacation 11-18 skipped), 11-17, 11-16.",
+      "history": [],
+      "now": "2026-11-20T12:00:00Z",
+      "week": "2026-11-16",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [
+        {
+          "start": "2026-11-18",
+          "end": "2026-11-18"
+        }
+      ],
+      "goals": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-17",
+            "metric": "flashcards:new",
+            "target": 1
+          }
+        ]
+      },
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": []
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000023",
+          "ts": "2026-11-16T10:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000024",
+          "ts": "2026-11-17T10:00:00Z",
+          "cardId": "b",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000025",
+          "ts": "2026-11-18T10:00:00Z",
+          "cardId": "c",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000026",
+          "ts": "2026-11-19T10:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000027",
+          "ts": "2026-11-20T10:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "inProgress": true,
+        "compareThrough": "2026-11-13",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 3,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2026-11-16",
+            "state": "active",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-17",
+            "state": "active",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-18",
+            "state": "vacation",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-19",
+            "state": "active",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-20",
+            "state": "active",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-21",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-22",
+            "state": "upcoming",
+            "reviews": null
+          }
+        ],
+        "daysActive": {
+          "active": 4,
+          "of": 4,
+          "localOnly": false
+        },
+        "streak": 4,
+        "goal": {
+          "met": 1,
+          "of": 2
+        },
+        "allVacation": false,
+        "nothingToCompare": true
+      }
+    },
+    {
+      "name": "Berlin: the week ending with the DST change, a review at 23:30",
+      "note": "2026-10-19T21:30Z is 23:30 CEST on Monday 10-19; 2026-10-25T22:30Z is 23:30 CET on Sunday 10-25; 2026-10-25T23:30Z is 00:30 on Monday 10-26 (next week, not counted, and after the streak's end 10-25T22:59:59.999Z).",
+      "history": [
+        {
+          "zone": "Europe/Berlin",
+          "from": null
+        }
+      ],
+      "now": "2026-11-18T12:00:00Z",
+      "week": "2026-10-19",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": []
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000028",
+          "ts": "2026-10-19T21:30:00Z",
+          "cardId": "a",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000029",
+          "ts": "2026-10-25T22:30:00Z",
+          "cardId": "b",
+          "grade": 3
+        },
+        {
+          "id": "01JWEEK0000000000000000030",
+          "ts": "2026-10-25T23:30:00Z",
+          "cardId": "c",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "inProgress": false,
+        "compareThrough": "2026-10-18",
+        "rows": [
+          {
+            "key": "reviews",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "newCards",
+            "value": 2,
+            "previous": 0,
+            "unit": "count"
+          },
+          {
+            "key": "studyTime",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "reading",
+            "value": 0,
+            "previous": 0,
+            "unit": "seconds"
+          },
+          {
+            "key": "journal",
+            "value": 0,
+            "previous": 0,
+            "unit": "count"
+          }
+        ],
+        "days": [
+          {
+            "date": "2026-10-19",
+            "state": "active",
+            "reviews": 0
+          },
+          {
+            "date": "2026-10-20",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-10-21",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-10-22",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-10-23",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-10-24",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-10-25",
+            "state": "active",
+            "reviews": 0
+          }
+        ],
+        "daysActive": {
+          "active": 2,
+          "of": 7,
+          "localOnly": false
+        },
+        "streak": 1,
+        "goal": null,
+        "allVacation": false,
+        "nothingToCompare": true
+      }
+    },
+    {
+      "name": "words reaching mature and characters learned",
+      "note": "Week 11-09 (before = 11-09T00:00Z, after = 11-16T00:00Z; previous window 11-02T00:00Z..11-09T00:00Z). Mature: v1 crosses (stability 25), v8 crosses at exactly 21; v2 was mature already; v3 lapsed on Friday; v4 is in no existing deck; v5 is a reverse card; v6 is deleted (timeline, no card); v7 crossed the week before (previous 1). Characters (score >= 80 is stability >= ~108): 学 via its variant 學 (c1, 10 -> 150); 中 via c3 (150); 大 stays below (c3 150 and c4 5 mean 58; the reverse v5 does not count); 好 was learned already. Characters learned 2, previous 0. Rows are not checked here.",
+      "history": [],
+      "now": "2026-11-18T12:00:00Z",
+      "week": "2026-11-09",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": []
+      },
+      "reviews": [],
+      "decks": [
+        "d1"
+      ],
+      "cards": [
+        {
+          "id": "v1",
+          "kind": "vocab",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "v2",
+          "kind": "vocab",
+          "deckIds": [
+            "general"
+          ]
+        },
+        {
+          "id": "v3",
+          "kind": "vocab",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "v4",
+          "kind": "vocab",
+          "deckIds": [
+            "gone"
+          ]
+        },
+        {
+          "id": "v5",
+          "kind": "reverse",
+          "written": "大",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "v7",
+          "kind": "vocab",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "v8",
+          "kind": "vocab",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "c1",
+          "kind": "writing",
+          "written": "學",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "c2",
+          "kind": "vocab",
+          "written": "好",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "c3",
+          "kind": "sentence",
+          "written": "中大",
+          "deckIds": [
+            "d1"
+          ]
+        },
+        {
+          "id": "c4",
+          "kind": "tone",
+          "written": "大",
+          "deckIds": [
+            "d1"
+          ]
+        }
+      ],
+      "timelines": {
+        "v1": [
+          {
+            "ts": "2026-10-20T10:00:00Z",
+            "state": 1,
+            "stability": 1
+          },
+          {
+            "ts": "2026-11-10T10:00:00Z",
+            "state": 2,
+            "stability": 25
+          }
+        ],
+        "v2": [
+          {
+            "ts": "2026-10-01T10:00:00Z",
+            "state": 2,
+            "stability": 30
+          }
+        ],
+        "v3": [
+          {
+            "ts": "2026-11-10T10:00:00Z",
+            "state": 2,
+            "stability": 30
+          },
+          {
+            "ts": "2026-11-13T10:00:00Z",
+            "state": 3,
+            "stability": 5
+          }
+        ],
+        "v4": [
+          {
+            "ts": "2026-11-10T10:00:00Z",
+            "state": 2,
+            "stability": 30
+          }
+        ],
+        "v5": [
+          {
+            "ts": "2026-11-10T10:00:00Z",
+            "state": 2,
+            "stability": 400
+          }
+        ],
+        "v6": [
+          {
+            "ts": "2026-11-10T10:00:00Z",
+            "state": 2,
+            "stability": 30
+          }
+        ],
+        "v7": [
+          {
+            "ts": "2026-11-05T10:00:00Z",
+            "state": 2,
+            "stability": 22
+          }
+        ],
+        "v8": [
+          {
+            "ts": "2026-11-01T10:00:00Z",
+            "state": 2,
+            "stability": 10
+          },
+          {
+            "ts": "2026-11-10T10:00:00Z",
+            "state": 2,
+            "stability": 21
+          }
+        ],
+        "c1": [
+          {
+            "ts": "2026-11-01T10:00:00Z",
+            "state": 2,
+            "stability": 10
+          },
+          {
+            "ts": "2026-11-11T10:00:00Z",
+            "state": 2,
+            "stability": 150
+          }
+        ],
+        "c2": [
+          {
+            "ts": "2026-10-01T10:00:00Z",
+            "state": 2,
+            "stability": 200
+          }
+        ],
+        "c3": [
+          {
+            "ts": "2026-11-12T10:00:00Z",
+            "state": 2,
+            "stability": 150
+          }
+        ],
+        "c4": [
+          {
+            "ts": "2026-10-01T10:00:00Z",
+            "state": 2,
+            "stability": 5
+          }
+        ]
+      },
+      "chars": [
+        {
+          "c": "好"
+        },
+        {
+          "c": "学",
+          "v": [
+            "學"
+          ]
+        },
+        {
+          "c": "中"
+        },
+        {
+          "c": "大"
+        }
+      ],
+      "expect": {
+        "mature": {
+          "value": 2,
+          "previous": 1
+        },
+        "characters": {
+          "value": 2,
+          "previous": 0
+        }
+      }
+    },
+    {
+      "name": "no characters row outside Han languages",
+      "note": "The same character timelines in a Spanish workspace: characters null; mature still counted (v1 crosses).",
+      "history": [],
+      "now": "2026-11-18T12:00:00Z",
+      "week": "2026-11-09",
+      "workspace": 1,
+      "language": "es",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": []
+      },
+      "reviews": [],
+      "decks": [],
+      "cards": [
+        {
+          "id": "v1",
+          "kind": "vocab",
+          "written": "casa",
+          "deckIds": [
+            "general"
+          ]
+        }
+      ],
+      "timelines": {
+        "v1": [
+          {
+            "ts": "2026-11-10T10:00:00Z",
+            "state": 2,
+            "stability": 400
+          }
+        ]
+      },
+      "chars": [
+        {
+          "c": "好"
+        }
+      ],
+      "expect": {
+        "mature": {
+          "value": 1,
+          "previous": 0
+        },
+        "characters": null
+      }
+    },
+    {
+      "name": "today is not counted against days active until it is active",
+      "note": "Wednesday 11-18 08:00, nothing yet today: Monday active, Tuesday not, today inactive and left out of the denominator (1 of 2); it joins once something counts today.",
+      "history": [],
+      "now": "2026-11-18T08:00:00Z",
+      "week": "2026-11-16",
+      "workspace": 1,
+      "language": "zh",
+      "vacation": [],
+      "goals": null,
+      "activity": {
+        "sources": [
+          {
+            "type": "review",
+            "plugin": "qinqin-flashcards",
+            "label": "Flashcard reviews",
+            "unit": "count",
+            "describe": {
+              "one": "{n} flashcard review",
+              "other": "{n} flashcard reviews"
+            }
+          },
+          {
+            "type": "journal",
+            "plugin": "qinqin-journal",
+            "label": "Journal entries",
+            "unit": "count",
+            "describe": {
+              "one": "{n} journal entry",
+              "other": "{n} journal entries"
+            }
+          },
+          {
+            "type": "read",
+            "plugin": "qinqin-reader",
+            "label": "Reading",
+            "unit": "seconds",
+            "describe": {
+              "one": "{n} minute of reading",
+              "other": "{n} minutes of reading"
+            }
+          }
+        ],
+        "cells": [
+          {
+            "day": "2026-11-16",
+            "workspace": 1,
+            "type": "review",
+            "points": 1,
+            "raw": 1
+          }
+        ]
+      },
+      "reviews": [
+        {
+          "id": "01JWEEK0000000000000000031",
+          "ts": "2026-11-16T09:00:00Z",
+          "cardId": "a",
+          "grade": 3
+        }
+      ],
+      "expect": {
+        "inProgress": true,
+        "compareThrough": "2026-11-11",
+        "days": [
+          {
+            "date": "2026-11-16",
+            "state": "active",
+            "reviews": 1
+          },
+          {
+            "date": "2026-11-17",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-18",
+            "state": "inactive",
+            "reviews": 0
+          },
+          {
+            "date": "2026-11-19",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-20",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-21",
+            "state": "upcoming",
+            "reviews": null
+          },
+          {
+            "date": "2026-11-22",
+            "state": "upcoming",
+            "reviews": null
+          }
+        ],
+        "daysActive": {
+          "active": 1,
+          "of": 2,
+          "localOnly": false
+        }
+      }
+    }
+  ]
+}

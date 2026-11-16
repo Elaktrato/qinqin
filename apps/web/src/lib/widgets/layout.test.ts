@@ -37,8 +37,21 @@ function widget(id: string, extra: Partial<WidgetDef> = {}): WidgetDef {
 const ids = (list: WidgetDef[]) => list.map((w) => w.id);
 
 describe('DEFAULT_LAYOUT', () => {
-	it('is today’s home: the heatmap, the flashcards summary, then the daily goal', () => {
-		expect(DEFAULT_LAYOUT).toEqual(['activity-heatmap', 'flashcards-summary', 'daily-goal']);
+	it('is today’s home: the heatmap, the flashcards summary, the daily goal, then this week', () => {
+		expect(DEFAULT_LAYOUT).toEqual(['activity-heatmap', 'flashcards-summary', 'daily-goal', 'weekly-summary']);
+	});
+
+	it('a stored layout without this week stays without it', () => {
+		const available = [widget('activity-heatmap'), widget('daily-goal'), widget('weekly-summary')];
+		expect(ids(resolveLayout(['daily-goal', 'activity-heatmap'], available, 'home'))).toEqual([
+			'daily-goal',
+			'activity-heatmap'
+		]);
+		expect(ids(resolveLayout(null, available, 'home'))).toEqual([
+			'activity-heatmap',
+			'daily-goal',
+			'weekly-summary'
+		]);
 	});
 
 	it('a stored layout without the daily goal stays without it', () => {

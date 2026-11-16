@@ -2,7 +2,8 @@ import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_W } from './fsrs/params';
-import { cardScore, masteryForChars, MASTERY_KINDS, stageOf, type CharMastery } from './mastery';
+import { cardScore, masteryForChars, masteryFromSchedules, MASTERY_KINDS, stageOf, type CharMastery } from './mastery';
+import { scheduleFor, type Schedule } from './scheduler';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 
 /** One character scored on its own: the per-character view of the batch API. */
@@ -371,5 +372,48 @@ describe('cardScore', () => {
 		expect(cardScore(109)).toBe(80);
 		expect(cardScore(108)).toBe(79);
 		expect(cardScore(21)).toBe(52);
+	});
+});
+
+describe('masteryFromSchedules', () => {
+	const sched = (stability: number): Schedule => ({ due: '', stability, difficulty: 5, state: 2 });
+	const kindCard = (id: string, kind: StudyCard['kind'], written: string): StudyCard => ({
+		id,
+		kind,
+		entryId: 1,
+		written,
+		deckIds: ['general'],
+		createdAt: '2025-01-01T00:00:00.000Z'
+	});
+
+	it('scores the mean strength of the given schedules, MASTERY_KINDS only, once per card', () => {
+		const cards = [
+			kindCard('a', 'vocab', '好好'),
+			kindCard('b', 'writing', '好'),
+			kindCard('r', 'reverse', '好'),
+			kindCard('n', 'vocab', '好')
+		];
+		const given: Record<string, Schedule | null> = { a: sched(150), b: sched(5), r: sched(400), n: null };
+		const m = masteryFromSchedules(['好', '学'], cards, (id) => given[id] ?? null);
+		const expected = Math.round((cardScore(150) + cardScore(5)) / 2);
+		expect(Math.abs(m.get('好')!.score - expected)).toBeLessThanOrEqual(1);
+		expect(m.get('好')!.reviewedCards).toBe(2);
+		expect(m.get('学')).toEqual({ score: 0, stage: 'unknown', reviewedCards: 0 });
+	});
+
+	it('equals masteryForChars with the replayed schedules', () => {
+		const cards = [card('x', '学生'), card('y', '学'), card('z', '生日'), card('u')];
+		const reviews = [
+			review('x', 3, new Date(BASE).toISOString(), eventId(1)),
+			review('x', 3, new Date(BASE + 5 * DAY).toISOString(), eventId(2)),
+			review('x', 4, new Date(BASE + 30 * DAY).toISOString(), eventId(3)),
+			review('y', 1, new Date(BASE + 2 * DAY).toISOString(), eventId(4)),
+			review('z', 3, new Date(BASE + 3 * DAY).toISOString(), eventId(5))
+		];
+		const chars = ['学', '生', '日', '月', ''];
+		const replayed = (id: string) => scheduleFor(id, reviews, NOW, DEFAULT_W, IDENTITY_CLOCK);
+		expect(masteryFromSchedules(chars, cards, replayed)).toEqual(
+			masteryForChars(chars, cards, reviews, NOW, DEFAULT_W, IDENTITY_CLOCK)
+		);
 	});
 });

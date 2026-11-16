@@ -11,7 +11,7 @@ Derived from the code on `develop`; each owner path below is where the rule is i
 | --- | --- |
 | Identity and transport | `auth/` (token, restrictions, errors, two-step sign-in), `pwa/` (outbox, cache rules) |
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
-| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak) |
+| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored) |
 | Reader | `reader/` (display settings, furigana, smart readings, word states, coverage) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Data safety | `backup/` (archive format v1, id remapping) |
@@ -102,6 +102,8 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
 - Reverse and cloze cards, sibling burying: `cards/`.
 - Daily goal, its amounts (activity cells of the workspace, new cards and capped answer time from the review
   log), day status and goal streak (vacation days neutral): `goals/`.
+- Weekly summary (Monday to Sunday learner dates, rows, days, comparison, mature and character crossings;
+  computed from events, nothing stored, no row key): `weekly/`.
 
 ## Backup archive (`backup/`)
 

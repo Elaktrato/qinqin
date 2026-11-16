@@ -4,7 +4,7 @@
 import { usesHan } from './languages';
 import { normalizePath } from './routeAccess';
 
-export type StatsTabId = 'overview' | 'characters';
+export type StatsTabId = 'overview' | 'week' | 'characters';
 
 export interface StatsTab {
 	id: StatsTabId;
@@ -13,23 +13,34 @@ export interface StatsTab {
 }
 
 const OVERVIEW: StatsTab = { id: 'overview', label: 'Overview', href: '/stats' };
+const WEEK: StatsTab = { id: 'week', label: 'Week', href: '/stats/week' };
 const CHARACTERS: StatsTab = { id: 'characters', label: 'Characters', href: '/stats/characters' };
 
 /**
  * statsTabs lists the views for the workspace language: Overview always,
- * Characters (the character map) only for languages written with Han
- * characters. With no workspace chosen there is no map to show.
+ * Week (the weekly summary) with a workspace, Characters (the character
+ * map) only for languages written with Han characters. With no workspace
+ * chosen there is no week or map to show.
  */
 export function statsTabs(language: string | null): StatsTab[] {
-	return language !== null && usesHan(language) ? [OVERVIEW, CHARACTERS] : [OVERVIEW];
+	if (language === null) return [OVERVIEW];
+	return usesHan(language) ? [OVERVIEW, WEEK, CHARACTERS] : [OVERVIEW, WEEK];
 }
 
 /** activeStatsTab is the view a pathname shows, or null outside Stats. */
 export function activeStatsTab(path: string): StatsTabId | null {
 	const normalized = normalizePath(path);
 	if (normalized === OVERVIEW.href) return 'overview';
+	if (normalized === WEEK.href) return 'week';
 	if (normalized === CHARACTERS.href) return 'characters';
 	return null;
+}
+
+/** statsPanelLabel names the panel (and the page title) of a view. */
+export function statsPanelLabel(id: StatsTabId | null): string {
+	if (id === 'week') return WEEK.label;
+	if (id === 'characters') return CHARACTERS.label;
+	return OVERVIEW.label;
 }
 
 /**
