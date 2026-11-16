@@ -2,6 +2,7 @@
 	import { workspaces } from '$lib/workspaces';
 	import PopupStackView from '../reader/PopupStackView.svelte';
 	import { LookupController } from '../reader/useLookup.svelte';
+	import { recordLookup } from '$lib/lookups/sink';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
 	import { browserReadingsStorage, loadReadings, saveReadings } from './readings';
 	import { grammarHref } from './route';
@@ -53,7 +54,8 @@
 		container: () => container,
 		lang: () => language,
 		textLang: () => textLang,
-		runsOf: (p) => [{ text: texts[p] ?? '' }]
+		runsOf: (p) => [{ text: texts[p] ?? '' }],
+		onLookup: (entryId) => recordLookup(studyWorkspaceId, { entryId, source: 'lesson' })
 	});
 	$effect(() => lookup.attach());
 	$effect(() => {
