@@ -219,7 +219,7 @@ a sign-in code". `POST /api/auth/email-login/start {login, deviceName?}` → alw
 `user_id NULL` is stored and no mail is sent, so the answer is indistinguishable. `POST
 /api/auth/email-login/verify {challenge, code}` → like a login: `ok`; `mfa_required`
 (methods `totp`,`recovery`) when the user has TOTP; under enforcement a user without TOTP gets
-403 `password_required` ("sign in with your password; two steps are required").
+403 `password_login_required` ("sign in with your password; two steps are required").
 Ruling: the code adds a sign-in route, it does not replace passwords — admin-created users and the
 Android client keep one stable path — cost if wrong: admins wanting password-free accounts wait.
 Ruling: under enforced MFA an email code alone is one factor, so it only counts together with
@@ -262,3 +262,22 @@ deleting accounts, `qinqin recover`), "Email (SMTP)" (fields, TLS modes, test ma
 `QINQIN_SMTP_ALLOW_PRIVATE`, Docker relay example, `scripts/smtp-sink.py` for trying it),
 "Two-step sign-in" (TOTP, recovery codes, enforcement, lockout recovery), API table rows, the
 `QINQIN_SECRET` section (now also SMTP and TOTP), Troubleshooting rows (test-mail categories).
+
+## 11. Security review fixes (second wave)
+
+- **The mailbox is never both factors.** An `mfa` challenge records its first factor (`password`, `email_code`,
+  `reset`) and the methods issued with it; both second-step routes refuse any method not issued. After a reset link
+  or an emailed sign-in code the `email` method is never offered, so only an authenticator can follow. A user whose
+  only second step is email is mailbox-only by construction: for them an emailed sign-in code answers 403
+  `password_login_required`, and a reset answers `password_changed` (no session; sign in with the new password and
+  its email step).
+- **Fail closed.** Users whose second step is email only (the method is on, or enforcement applies to their verified
+  address) get 503 `mail_outage` at sign-in while mail does not work; nothing is skipped. Logged once per start, no
+  address. Admin, Email warns with the count; recovery is `qinqin recover --reset-mfa` or the Users reset.
+- **Enabling email codes** needs a verified address under a policy that uses addresses and working mail; an
+  enrolment session is lifted only after one mailed code was verified (`POST /api/account/mfa/email/confirm`).
+- Wrong emailed sign-in codes use their own budget (per user for known, per identifier for unknown), not the user's
+  second-step budget.
+- Changing the email needs the authenticator code too, cancels pending reset links and mails the old address.
+- Mail caps: 10 mail-triggering anonymous requests per client and hour; anonymous kinds may use three quarters of
+  the 200 mails per hour. An anonymous reset request replaces only self-service links, never an admin's.

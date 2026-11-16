@@ -1,0 +1,7 @@
+Your sign-in code for {{.Site}} is:
+
+{{.Code}}
+
+It is valid for {{.Minutes}} minutes and works once.
+
+If this was not you, ignore this message and do not share the code with anyone.

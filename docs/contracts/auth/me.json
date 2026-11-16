@@ -2,11 +2,11 @@
   "full": {
     "request": {"method": "GET", "path": "/api/auth/me"},
     "status": 200,
-    "body": {"id": 1, "username": "alice", "admin": true, "email": null, "emailVerified": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z", "restriction": "", "needsCurrentPassword": true}
+    "body": {"id": 1, "username": "alice", "admin": true, "email": null, "emailVerified": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z", "mfa": {"totp": false, "email": false, "recoveryCodesLeft": 0}, "restriction": "", "needsCurrentPassword": true}
   },
   "password_change": {
     "request": {"method": "GET", "path": "/api/auth/me"},
     "status": 200,
-    "body": {"id": 2, "username": "bobby", "admin": false, "email": null, "emailVerified": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "restriction": "password_change", "needsCurrentPassword": false}
+    "body": {"id": 2, "username": "bobby", "admin": false, "email": null, "emailVerified": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "mfa": {"totp": false, "email": false, "recoveryCodesLeft": 0}, "restriction": "password_change", "needsCurrentPassword": false}
   }
 }

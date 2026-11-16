@@ -3,17 +3,17 @@
   "list": {
     "request": {"method": "GET", "path": "/api/admin/users"},
     "status": 200,
-    "body": {"users": [{"id": 1, "username": "alice", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": "2026-11-15T12:30:00Z"}]}
+    "body": {"users": [{"id": 1, "username": "alice", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": "2026-11-15T12:30:00Z", "mfa": {"totp": false, "email": false}}]}
   },
   "create": {
     "request": {"method": "POST", "path": "/api/admin/users", "body": {"username": "carla", "password": "<temporary password>", "email": "optional", "admin": false}},
     "status": 201,
-    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": false, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null}
+    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": false, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}}
   },
   "patch": {
     "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": true, "currentPassword": "<your own password>"}},
     "status": 200,
-    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null}
+    "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}}
   },
   "last_admin": {
     "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": false}},

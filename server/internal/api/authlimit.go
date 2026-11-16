@@ -60,6 +60,23 @@ func DefaultAuthPolicy() AuthPolicy {
 			// Reset-link check and use, per client: 10 burst, one more per
 			// 30 s. The tokens are 256-bit; the budget only bounds noise.
 			"reset": {Burst: 10, Every: 30 * time.Second, MaxKeys: authTableCap},
+			// Test mails an administrator may send: 10 per hour.
+			// Code mails per user (verification, sign-in, second step): 5 per
+			// hour; beyond that the mail is silently not sent.
+			"mailcode": {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
+			// Reset requests and sign-in code requests per identifier (the
+			// same for known and unknown identifiers): 5 per hour.
+			"ident": {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
+			// Reset mails per user: 3 per hour, beyond that silently skipped.
+			"reset-mail": {Burst: 3, Every: 20 * time.Minute, MaxKeys: authTableCap},
+			// Wrong one-time codes per user across challenges: 10 per 15
+			// minutes and 30 per day (MFA, email-code sign-in, setup).
+			"mfa":     {Burst: 10, Every: 90 * time.Second, MaxKeys: authTableCap},
+			"mfa-day": {Burst: 30, Every: 48 * time.Minute, MaxKeys: authTableCap},
+			// Mail-triggering anonymous requests per client (reset requests and
+			// sign-in codes): 10 per hour.
+			"mailreq":   {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
+			"smtp-test": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 		},
 	}
 }
@@ -265,3 +282,6 @@ func (s *server) clientTake(w http.ResponseWriter, r *http.Request, subject stri
 	}
 	return k, true
 }
+
+// int64Key is the limiter key of a user id.
+func int64Key(id int64) string { return strconv.FormatInt(id, 10) }

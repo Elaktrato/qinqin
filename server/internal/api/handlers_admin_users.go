@@ -289,6 +289,42 @@ func (s *server) handleAdminRevokeSessions(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, map[string]any{"revoked": n})
 }
 
+// handleAdminResetMFA serves POST /api/admin/users/{id}/mfa/reset
+// {currentPassword}: the lockout recovery for a user who lost their
+// authenticator and recovery codes. It needs the administrator's own password
+// like every destructive admin action, and not for oneself (Settings, Account
+// does that with the user's own factors).
+func (s *server) handleAdminResetMFA(w http.ResponseWriter, r *http.Request) {
+	admin := s.requireAdmin(w, r)
+	if admin == nil {
+		return
+	}
+	id, ok := userTarget(w, r)
+	if !ok {
+		return
+	}
+	var req struct {
+		CurrentPassword string `json:"currentPassword"`
+	}
+	if !readAccountBody(w, r, &req) {
+		return
+	}
+	if id == admin.ID {
+		writeAuthError(w, http.StatusConflict, "self_target", "You cannot reset your own two-factor authentication here. Use Settings, Account.")
+		return
+	}
+	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
+		return
+	}
+	if err := s.users.ResetUserMFA(r.Context(), admin.ID, id); err != nil {
+		if !writeUserError(w, err) {
+			writeInternal(w, r)
+		}
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // handleAdminDeletionPreview serves GET /api/admin/users/{id}/deletion-preview.
 func (s *server) handleAdminDeletionPreview(w http.ResponseWriter, r *http.Request) {
 	if s.requireAdmin(w, r) == nil {

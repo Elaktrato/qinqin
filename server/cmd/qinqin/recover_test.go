@@ -24,6 +24,10 @@ func TestRecoverResetsPasswordAndSessions(t *testing.T) {
 		auth.NewSession(ctx, sqlDB, u.ID, auth.LoginOptions{})
 	}
 	sqlDB.Exec(`UPDATE users SET disabled_at = '2020-01-01T00:00:00Z' WHERE id = ?`, u.ID)
+	sqlDB.Exec(`INSERT INTO mfa_totp (user_id, secret_ct, secret_nonce, secret_fp, confirmed_at, created_at) VALUES (?, x'00', x'00', 'fp', 't', 't')`, u.ID)
+	sqlDB.Exec(`INSERT INTO mfa_recovery_codes (user_id, code_hash) VALUES (?, 'h1'), (?, 'h2')`, u.ID, u.ID)
+	sqlDB.Exec(`UPDATE users SET mfa_email = 1 WHERE id = ?`, u.ID)
+	sqlDB.Exec(`INSERT INTO mfa_totp (user_id, secret_ct, secret_nonce, secret_fp, confirmed_at, created_at) VALUES (999, x'00', x'00', 'fp', 't', 't')`)
 	sqlDB.Close()
 
 	var out bytes.Buffer
@@ -31,11 +35,20 @@ func TestRecoverResetsPasswordAndSessions(t *testing.T) {
 	if err := recoverCmd(args, strings.NewReader("brand-new-temp-1\n"), &out); err != nil {
 		t.Fatalf("recover: %v", err)
 	}
-	if !strings.Contains(out.String(), "no two-factor data") {
+	if !strings.Contains(out.String(), "authenticator, recovery codes and email codes") {
 		t.Errorf("output %q lacks the two-factor note", out.String())
 	}
 	sqlDB, _ = db.Open(filepath.Join(dir, "qinqin.db"))
 	defer sqlDB.Close()
+	var totp, codes, mfaEmail, others, audit int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM mfa_totp WHERE user_id = ?`, u.ID).Scan(&totp)
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM mfa_recovery_codes WHERE user_id = ?`, u.ID).Scan(&codes)
+	sqlDB.QueryRow(`SELECT mfa_email FROM users WHERE id = ?`, u.ID).Scan(&mfaEmail)
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM mfa_totp WHERE user_id = 999`).Scan(&others)
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM auth_audit WHERE action = 'mfa_reset' AND actor_name = 'cli'`).Scan(&audit)
+	if totp != 0 || codes != 0 || mfaEmail != 0 || others != 1 || audit != 1 {
+		t.Errorf("--reset-mfa: totp=%d codes=%d mfa_email=%d other user's totp=%d audit=%d", totp, codes, mfaEmail, others, audit)
+	}
 	var n, must, admin int
 	var disabled *string
 	sqlDB.QueryRow(`SELECT COUNT(*) FROM sessions WHERE user_id = ?`, u.ID).Scan(&n)
@@ -76,6 +89,10 @@ func TestRecoverAdminOnDisabledNeedsEnable(t *testing.T) {
 	ctx := context.Background()
 	u, _ := auth.CreateUser(ctx, sqlDB, "alice", "old-password-123", false)
 	sqlDB.Exec(`UPDATE users SET disabled_at = '2020-01-01T00:00:00Z' WHERE id = ?`, u.ID)
+	sqlDB.Exec(`INSERT INTO mfa_totp (user_id, secret_ct, secret_nonce, secret_fp, confirmed_at, created_at) VALUES (?, x'00', x'00', 'fp', 't', 't')`, u.ID)
+	sqlDB.Exec(`INSERT INTO mfa_recovery_codes (user_id, code_hash) VALUES (?, 'h1'), (?, 'h2')`, u.ID, u.ID)
+	sqlDB.Exec(`UPDATE users SET mfa_email = 1 WHERE id = ?`, u.ID)
+	sqlDB.Exec(`INSERT INTO mfa_totp (user_id, secret_ct, secret_nonce, secret_fp, confirmed_at, created_at) VALUES (999, x'00', x'00', 'fp', 't', 't')`)
 	sqlDB.Close()
 	var out bytes.Buffer
 	err := recoverCmd([]string{"--data", dir, "--username", "alice", "--admin"}, strings.NewReader("brand-new-temp-1\n"), &out)

@@ -115,11 +115,12 @@ describe('the Admin tab', () => {
 		expect(parseSettingsTab('admin', false)).toBe('workspaces');
 		expect(SETTINGS_TAB_LABELS.admin).toBe('Admin');
 	});
-	it('has the sections Users, Invites, Security with Users as the default', () => {
-		expect([...ADMIN_SECTIONS]).toEqual(['users', 'invites', 'security']);
+	it('has the sections Users, Invites, Email, Security with Users as the default', () => {
+		expect([...ADMIN_SECTIONS]).toEqual(['users', 'invites', 'email', 'security']);
 		expect(parseAdminSection(null)).toBe('users');
 		expect(parseAdminSection('invites')).toBe('invites');
-		expect(parseAdminSection('email')).toBe('users');
+		expect(parseAdminSection('email')).toBe('email');
+		expect(parseAdminSection('nope')).toBe('users');
 		expect(adminSectionHref('security')).toBe('/settings?tab=admin&section=security');
 	});
 });

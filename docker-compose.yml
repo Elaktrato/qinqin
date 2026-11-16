@@ -33,6 +33,9 @@ services:
       # LAN (Ollama on this host or network). Enable only if you trust every
       # admin. Link-local and cloud-metadata addresses stay blocked.
       # QINQIN_AI_ALLOW_PRIVATE: "1"
+      # Lets the mail server (Settings, Admin, Email) be on loopback or a private
+      # network (a relay container, a LAN host). Metadata addresses stay blocked.
+      # QINQIN_SMTP_ALLOW_PRIVATE: "1"
       # Testing only: a fake provider that never contacts any AI service.
       # Who may tell the server a client's address (X-Forwarded-For). Default:
       # private networks, right for a reverse proxy on a Docker/LAN network.

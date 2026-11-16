@@ -111,20 +111,29 @@ var (
 
 // AdminUser is a user as an administrator sees it.
 type AdminUser struct {
-	ID                 int64   `json:"id"`
-	Username           string  `json:"username"`
-	Email              *string `json:"email"`
-	EmailVerified      bool    `json:"emailVerified"`
-	Admin              bool    `json:"admin"`
-	Disabled           bool    `json:"disabled"`
-	MustChangePassword bool    `json:"mustChangePassword"`
-	CreatedAt          string  `json:"createdAt"`
-	LastSeenAt         *string `json:"lastSeenAt"`
+	ID                 int64    `json:"id"`
+	Username           string   `json:"username"`
+	Email              *string  `json:"email"`
+	EmailVerified      bool     `json:"emailVerified"`
+	Admin              bool     `json:"admin"`
+	Disabled           bool     `json:"disabled"`
+	MustChangePassword bool     `json:"mustChangePassword"`
+	CreatedAt          string   `json:"createdAt"`
+	LastSeenAt         *string  `json:"lastSeenAt"`
+	MFA                AdminMFA `json:"mfa"`
+}
+
+// AdminMFA tells an administrator which second factors a user has (never a
+// secret).
+type AdminMFA struct {
+	TOTP  bool `json:"totp"`
+	Email bool `json:"email"`
 }
 
 const adminUserSelect = `
 	SELECT u.id, u.username, u.email, u.email_verified_at, u.admin, u.disabled_at, u.must_change_password, u.created_at,
-	       (SELECT MAX(s.last_used_at) FROM sessions s WHERE s.user_id = u.id)
+	       (SELECT MAX(s.last_used_at) FROM sessions s WHERE s.user_id = u.id),
+	       EXISTS (SELECT 1 FROM mfa_totp t WHERE t.user_id = u.id AND t.confirmed_at IS NOT NULL), u.mfa_email
 	FROM users u`
 
 type rowScanner interface{ Scan(dest ...any) error }
@@ -132,10 +141,11 @@ type rowScanner interface{ Scan(dest ...any) error }
 func scanAdminUser(r rowScanner) (AdminUser, error) {
 	var a AdminUser
 	var email, verified, disabled, seen sql.NullString
-	var admin, must int
-	if err := r.Scan(&a.ID, &a.Username, &email, &verified, &admin, &disabled, &must, &a.CreatedAt, &seen); err != nil {
+	var admin, must, totp, mfaEmail int
+	if err := r.Scan(&a.ID, &a.Username, &email, &verified, &admin, &disabled, &must, &a.CreatedAt, &seen, &totp, &mfaEmail); err != nil {
 		return AdminUser{}, err
 	}
+	a.MFA = AdminMFA{TOTP: totp != 0, Email: mfaEmail != 0}
 	a.Admin, a.MustChangePassword = admin != 0, must != 0
 	a.Disabled, a.EmailVerified = disabled.Valid, verified.Valid
 	if email.Valid {
@@ -510,6 +520,83 @@ func (u *Users) Patch(ctx context.Context, actorID, id int64, p UserPatch) error
 			}
 			return err
 		}
+	}
+	return tx.Commit()
+}
+
+// MarkEmailVerified records that the user proved they can read mail sent to
+// norm. It is a no-op when the address changed in the meantime.
+func MarkEmailVerified(ctx context.Context, sqlDB *sql.DB, userID int64, norm string) error {
+	tx, err := sqlDB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin verify email: %w", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `UPDATE users SET email_verified_at = ?1, updated_at = ?1 WHERE id = ?2 AND email_norm = ?3 AND email_verified_at IS NULL`, now(), userID, norm)
+	if err != nil {
+		return fmt.Errorf("mark email verified: %w", err)
+	}
+	if n, _ := res.RowsAffected(); n == 1 {
+		if err := Audit(ctx, tx, AuditEvent{Action: "email_verified", ActorID: userID, TargetID: &userID}); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// MailTarget is who a login identifier (username, or an address when it
+// holds "@") points at, for the mails that go out without a session. UserID
+// 0: nobody. Eligible: enabled and the address is verified.
+type MailTarget struct {
+	UserID   int64
+	Email    string
+	Eligible bool
+}
+
+// FindMailTarget looks the identifier up in exactly one query, found or not.
+func FindMailTarget(ctx context.Context, sqlDB *sql.DB, login string) (MailTarget, error) {
+	col, arg := "username", login
+	if strings.Contains(login, "@") {
+		col, arg = "email_norm", strings.ToLower(login)
+	}
+	var t MailTarget
+	var email, verified, disabled sql.NullString
+	err := sqlDB.QueryRowContext(ctx, `SELECT id, email, email_verified_at, disabled_at FROM users WHERE `+col+` = ?`, arg).
+		Scan(&t.UserID, &email, &verified, &disabled)
+	if errors.Is(err, sql.ErrNoRows) {
+		return MailTarget{}, nil
+	}
+	if err != nil {
+		return MailTarget{}, fmt.Errorf("find mail target: %w", err)
+	}
+	t.Email = email.String
+	t.Eligible = email.Valid && verified.Valid && !disabled.Valid
+	return t, nil
+}
+
+// ResetUserMFA removes every second factor of user id and signs them out
+// everywhere (so a stolen session cannot outlive the reset), audited with the
+// administrator as actor. The user then signs in with the password alone, or
+// is sent to enrolment again when the instance requires two-step sign-in.
+func (u *Users) ResetUserMFA(ctx context.Context, actorID, id int64) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	tx, err := u.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin reset mfa: %w", err)
+	}
+	defer tx.Rollback()
+	var exists int
+	if err := tx.QueryRowContext(ctx, `SELECT 1 FROM users WHERE id = ?`, id).Scan(&exists); errors.Is(err, sql.ErrNoRows) {
+		return ErrUserNotFound
+	} else if err != nil {
+		return fmt.Errorf("read user: %w", err)
+	}
+	if err := ResetMFA(ctx, tx, id); err != nil {
+		return err
+	}
+	if err := Audit(ctx, tx, AuditEvent{Action: "mfa_reset", ActorID: actorID, TargetID: &id}); err != nil {
+		return err
 	}
 	return tx.Commit()
 }

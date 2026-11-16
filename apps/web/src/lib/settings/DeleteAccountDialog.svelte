@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { accountDeletionPreview, deleteAccount, type SelfDeletionPreview } from '$lib/api/account';
 	import { apiErrorBody } from '$lib/api/client';
+	import { user } from '$lib/auth';
 	import { previewLines } from '$lib/admin/deleteView';
 
 	// Deleting your own account: what goes (the server's counts), your
@@ -14,6 +15,7 @@
 	let input = $state<HTMLInputElement | null>(null);
 	let password = $state('');
 	let typed = $state('');
+	let code = $state('');
 	let preview = $state<SelfDeletionPreview | null>(null);
 	let busy = $state(false);
 	let error = $state('');
@@ -34,7 +36,7 @@
 		busy = true;
 		error = '';
 		try {
-			await deleteAccount(password, typed);
+			await deleteAccount(password, typed, code.trim() || undefined);
 			closed = true;
 			ondone();
 		} catch (err) {
@@ -44,6 +46,8 @@
 					? 'You are the last administrator. Make someone else an administrator first.'
 					: body?.error === 'wrong_password'
 						? 'The password is wrong.'
+						: body?.error === 'code_invalid'
+							? 'That code is not right.'
 						: body?.message || 'Could not delete the account.';
 			busy = false;
 			await tick();
@@ -93,6 +97,12 @@
 			Type <strong>{username}</strong> to confirm
 			<input bind:value={typed} autocomplete="off" />
 		</label>
+		{#if $user?.mfa?.totp}
+			<label>
+				Code from your authenticator app (or a recovery code)
+				<input name="code" autocomplete="one-time-code" bind:value={code} />
+			</label>
+		{/if}
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 		<div class="buttons">
 			<button type="button" onclick={finish} disabled={busy}>Cancel</button>

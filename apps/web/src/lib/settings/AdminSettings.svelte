@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import EmailAdmin from '$lib/admin/EmailAdmin.svelte';
 	import InvitesAdmin from '$lib/admin/InvitesAdmin.svelte';
 	import SecurityAdmin from '$lib/admin/SecurityAdmin.svelte';
 	import UsersAdmin from '$lib/admin/UsersAdmin.svelte';
@@ -27,6 +28,8 @@
 	<UsersAdmin />
 {:else if section === 'invites'}
 	<InvitesAdmin />
+{:else if section === 'email'}
+	<EmailAdmin />
 {:else}
 	<SecurityAdmin />
 {/if}

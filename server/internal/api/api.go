@@ -17,6 +17,8 @@ import (
 	"qinqin/internal/dict"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
+	"qinqin/internal/mail"
+	"qinqin/internal/secretbox"
 )
 
 // server carries the shared database handle and data directory for all
@@ -54,10 +56,15 @@ type server struct {
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
 
-	authPolicy *AuthPolicy // nil: DefaultAuthPolicy
-	limits     *authLimits // sign-in throttling state, built by New
-	hash       hashers     // password hashing entry points (tests swap them)
-	users      *auth.Users // admin changes of the users table (last-admin rule, deletion)
+	authPolicy  *AuthPolicy // nil: DefaultAuthPolicy
+	limits      *authLimits // sign-in throttling state, built by New
+	hash        hashers     // password hashing entry points (tests swap them)
+	mfa         *auth.MFA   // TOTP secrets and recovery codes (always set; no sealer = unavailable)
+	sealCur     *secretbox.Sealer
+	sealPrev    *secretbox.Sealer
+	mailDownLog sync.Once     // logs the mail-outage sign-in refusal once per start
+	mail        *mail.Service // nil: mail is not configured and cannot be
+	users       *auth.Users   // admin changes of the users table (last-admin rule, deletion)
 }
 
 // Option configures optional parts of the server.
@@ -66,6 +73,17 @@ type Option func(*server)
 // WithAI mounts the AI service the /api/ai routes use; without it they
 // report AI as disabled.
 func WithAI(svc *ai.Service) Option { return func(s *server) { s.ai = svc } }
+
+// WithSecrets hands the sealers derived from QINQIN_SECRET (and the
+// previous one, for rotation) to the two-factor store. Without a current
+// sealer an authenticator cannot be enrolled or verified.
+func WithSecrets(current, previous *secretbox.Sealer) Option {
+	return func(s *server) { s.sealCur, s.sealPrev = current, previous }
+}
+
+// WithMail mounts the mail service (SMTP settings, queue); without it every
+// mail-dependent feature is hidden.
+func WithMail(svc *mail.Service) Option { return func(s *server) { s.mail = svc } }
 
 // WithOCR mounts the offline reader the transcribe route and the
 // capabilities use; without it offline reading is unavailable.
@@ -91,6 +109,7 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 	}
 	s.limits = newAuthLimits(policy)
 	s.users = auth.NewUsers(sqlDB)
+	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
 		go s.runStageSweeper()
@@ -136,6 +155,10 @@ func (s *server) routes() []route {
 		{"GET /healthz", handleHealthz, accPublic, nil},
 		{"POST /api/auth/register", s.handleRegister, accPublic, nil},
 		{"POST /api/auth/login", s.handleLogin, accPublic, nil},
+		{"POST /api/auth/login/mfa", s.handleLoginMFA, accPublic, nil},
+		{"POST /api/auth/login/mfa/email", s.handleLoginMFAEmail, accPublic, nil},
+		{"POST /api/auth/email-login/start", s.handleEmailLoginStart, accPublic, nil},
+		{"POST /api/auth/email-login/verify", s.handleEmailLoginVerify, accPublic, nil},
 		{"POST /api/auth/logout", s.handleLogout, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
 		{"POST /api/account/password", s.handleChangePassword, accSession, []string{restrictionPasswordChange}},
 		{"GET /api/account/sessions", s.handleListSessions, accUser, nil},
@@ -144,6 +167,10 @@ func (s *server) routes() []route {
 		{"GET /api/auth/options", s.handleAuthOptions, accPublic, nil},
 		{"GET /api/admin/settings/auth", s.handleGetAuthSettings, accAdmin, nil},
 		{"PATCH /api/admin/settings/auth", s.handlePatchAuthSettings, accAdmin, nil},
+		{"GET /api/admin/settings/smtp", s.handleGetSMTP, accAdmin, nil},
+		{"PUT /api/admin/settings/smtp", s.handlePutSMTP, accAdmin, nil},
+		{"DELETE /api/admin/settings/smtp", s.handleDeleteSMTP, accAdmin, nil},
+		{"POST /api/admin/settings/smtp/test", s.handleTestSMTP, accAdmin, nil},
 		{"POST /api/auth/invite/check", s.handleCheckInvite, accPublic, nil},
 		{"POST /api/admin/invites", s.handleCreateInvite, accAdmin, nil},
 		{"GET /api/admin/invites", s.handleListInvites, accAdmin, nil},
@@ -153,18 +180,28 @@ func (s *server) routes() []route {
 		{"GET /api/admin/users/{id}", s.handleAdminGetUser, accAdmin, nil},
 		{"PATCH /api/admin/users/{id}", s.handleAdminPatchUser, accAdmin, nil},
 		{"POST /api/admin/users/{id}/sessions/revoke", s.handleAdminRevokeSessions, accAdmin, nil},
+		{"POST /api/admin/users/{id}/mfa/reset", s.handleAdminResetMFA, accAdmin, nil},
 		{"POST /api/admin/users/{id}/reset-link", s.handleAdminResetLink, accAdmin, nil},
 		{"DELETE /api/admin/users/{id}/reset-link", s.handleAdminRevokeResetLink, accAdmin, nil},
 		{"POST /api/auth/reset/check", s.handleResetCheck, accPublic, nil},
 		{"POST /api/auth/reset", s.handleReset, accPublic, nil},
+		{"POST /api/auth/reset-request", s.handleResetRequest, accPublic, nil},
 		{"GET /api/admin/users/{id}/deletion-preview", s.handleAdminDeletionPreview, accAdmin, nil},
 		{"DELETE /api/admin/users/{id}", s.handleAdminDeleteUser, accAdmin, nil},
-		{"PUT /api/account/email", s.handlePutEmail, accUser, nil},
+		{"PUT /api/account/email", s.handlePutEmail, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/email/verify", s.handleEmailVerify, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/email/resend", s.handleEmailResend, accSession, []string{restrictionMFAEnrollment}},
 		{"GET /api/account/deletion-preview", s.handleAccountDeletionPreview, accUser, nil},
 		{"DELETE /api/account", s.handleDeleteAccount, accUser, nil},
 		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil},
 		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil},
 		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil},
+		{"POST /api/account/mfa/totp/setup", s.handleTOTPSetup, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/mfa/totp/confirm", s.handleTOTPConfirm, accSession, []string{restrictionMFAEnrollment}},
+		{"DELETE /api/account/mfa/totp", s.handleTOTPDisable, accUser, nil},
+		{"POST /api/account/mfa/recovery-codes", s.handleRecoveryCodes, accUser, nil},
+		{"POST /api/account/mfa/email", s.handleMFAEmail, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/mfa/email/confirm", s.handleMFAEmailConfirm, accSession, []string{restrictionMFAEnrollment}},
 		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},
