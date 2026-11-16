@@ -107,6 +107,33 @@ export function weekCutoffs(monday: string, today: string, day: StudyDay): WeekC
 	};
 }
 
+interface LocalPass {
+	flash: Map<string, FlashcardDay>;
+	/** Learner days with a valid local review. */
+	localDays: Set<string>;
+}
+
+// The per-day pass over the review log, once per loaded history and study
+// day (both are cached objects), so browsing weeks does not repeat it.
+const passes = new WeakMap<readonly ReviewEvent[], WeakMap<StudyDay, LocalPass>>();
+
+function localPass(reviews: readonly ReviewEvent[], day: StudyDay): LocalPass {
+	let byDay = passes.get(reviews);
+	if (byDay === undefined) {
+		byDay = new WeakMap();
+		passes.set(reviews, byDay);
+	}
+	let pass = byDay.get(day);
+	if (pass === undefined) {
+		pass = {
+			flash: flashcardAmounts(reviews, day.dayOf),
+			localDays: new Set(reviews.filter(isValidReview).map((r) => day.dayOf(Date.parse(r.ts))))
+		};
+		byDay.set(day, pass);
+	}
+	return pass;
+}
+
 export function weekSummary(input: WeekInputs): WeekSummary {
 	const { monday, day, workspaceId, reviews, vacation, activity } = input;
 	const today = day.today(input.now);
@@ -122,14 +149,13 @@ export function weekSummary(input: WeekInputs): WeekSummary {
 	const week = datesBetween(monday, last);
 	const prev = datesBetween(prevMonday, compareThrough);
 
-	const flash = flashcardAmounts(reviews, day.dayOf);
+	const { flash, localDays } = localPass(reviews, day);
 	const act = activity === null ? null : activityAmounts(activity.cells, workspaceId);
 	const points = new Map<string, number>();
 	for (const cell of activity?.cells ?? []) {
 		if (cell.workspace !== workspaceId || typeof cell.points !== 'number' || !Number.isFinite(cell.points)) continue;
 		points.set(cell.day, (points.get(cell.day) ?? 0) + cell.points);
 	}
-	const localDays = new Set(reviews.filter(isValidReview).map((r) => day.dayOf(Date.parse(r.ts))));
 
 	const sumFlash = (range: string[], field: keyof FlashcardDay): number =>
 		range.reduce((n, d) => n + (flash.get(d)?.[field] ?? 0), 0);
