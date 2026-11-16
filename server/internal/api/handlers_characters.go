@@ -31,6 +31,7 @@ type charRow struct {
 	R string   `json:"r,omitempty"` // first reading
 	M string   `json:"m,omitempty"` // first gloss
 	V []string `json:"v,omitempty"` // variant forms sharing the cell
+	K int      `json:"k,omitempty"` // Kangxi number of the radical link
 }
 
 // charactersBody is GET /api/characters. Stale is set when the database
@@ -117,10 +118,11 @@ func (c *charactersCache) get(ctx context.Context, st lexicon.Store, language st
 }
 
 // charactersFormat versions the body's shape inside the ETag: a change to
-// the fields (2 dropped "j", the pre-2010 JLPT level) bumps it, so a
+// the fields (2 dropped "j", the pre-2010 JLPT level; 3 added "k", the
+// radical number) bumps it, so a
 // validator issued for the old shape over an unchanged lexicon never
 // earns a 304.
-const charactersFormat = 2
+const charactersFormat = 3
 
 // buildCharactersPayload lists, encodes and compresses language's
 // universe. The weak ETag names the body format, the language, the count
@@ -137,7 +139,7 @@ func buildCharactersPayload(ctx context.Context, st lexicon.Store, language, ver
 			I: r.ID, C: r.Char, S: r.Strokes,
 			G: r.Grade, F: r.Freq,
 			T: r.TGHZ, B: r.GB, H: r.HKGrade,
-			R: r.Reading, M: r.Gloss, V: r.Variants,
+			R: r.Reading, M: r.Gloss, V: r.Variants, K: r.Radical,
 		}
 	}
 	var raw bytes.Buffer
