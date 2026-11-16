@@ -306,7 +306,10 @@ export function deckSessionPlan({
 		now,
 		kinds: wanted,
 		w,
-		ctx
+		ctx,
+		// Reviews of cards that are not shown (buried, kind switched off) still
+		// use the day's allowance: count over every card.
+		counts: dayCountsCached(cards, reviews, ctx, now)
 	});
 	const reviewed = reviewedIds(reviews);
 

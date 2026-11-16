@@ -782,3 +782,48 @@ describe('deckSessionPlan with daily limits', () => {
 		expect(plan.queue).toHaveLength(10);
 	});
 });
+
+describe('daily counts include cards that are not shown', () => {
+	const now = new Date('2026-03-01T12:00:00Z');
+	const rev = (n: number, cardId: string): ReviewEvent => ({
+		id: `01JREG${String(n).padStart(20, '0')}`, workspaceId: 1, device: 'w', ts: '2026-03-01T08:00:00Z', type: 'review',
+		payload: { cardId, mode: 'reverse', grade: 3 }
+	});
+	const mk = (id: string, kind: StudyCardKind, entryId: number, deckIds: string[]): StudyCard => ({
+		id, kind, entryId, deckIds, createdAt: '2026-01-01T00:00:00Z', written: '学习'
+	});
+	const settings = (deckId: string, on: boolean) => ({
+		[deckId]: { deckId, cardTypes: on ? ['reverse'] : [], extra: {} }
+	}) as never;
+	const lim = (decks: Record<string, { new: number }>): StudyContext => ({
+		...UTC_CONTEXT,
+		limits: { workspace: null, decks, existingDecks: null }
+	});
+
+	it('a reverse card reviewed today still uses the deck allowance after Reverse is switched off', () => {
+		const cards = [
+			mk('v1', 'vocab', 1, ['A']), mk('r1', 'reverse', 1, ['A']),
+			mk('v2', 'vocab', 2, ['A']), mk('r2', 'reverse', 2, ['A']),
+			mk('v3', 'vocab', 3, ['A'])
+		];
+		const reviews = [rev(1, 'r1'), rev(2, 'r2')];
+		const plan = deckSessionPlan({
+			cards, reviews, deckIds: ['A'], kinds: ['vocab'], newLimit: 50, reviewLimit: 50, now, w: DEFAULT_W,
+			language: 'zh', deckSettings: settings('A', false), ctx: lim({ A: { new: 2 } })
+		});
+		expect(plan.queue.filter((i) => !i.virtual && i.kind === 'vocab' && i.cardId === 'v3')).toHaveLength(0);
+		expect(plan.queue).toHaveLength(0);
+	});
+
+	it('a reverse card in decks A and B reviewed today counts toward B in a session of B', () => {
+		const cards = [
+			mk('v1', 'vocab', 1, ['B']), mk('r1', 'reverse', 1, ['A', 'B']),
+			mk('v2', 'vocab', 2, ['B'])
+		];
+		const plan = deckSessionPlan({
+			cards, reviews: [rev(1, 'r1')], deckIds: ['B'], kinds: ['vocab'], newLimit: 50, reviewLimit: 50, now, w: DEFAULT_W,
+			language: 'zh', deckSettings: settings('A', true), ctx: lim({ B: { new: 1 } })
+		});
+		expect(plan.queue).toHaveLength(0);
+	});
+});
