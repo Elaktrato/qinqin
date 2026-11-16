@@ -24,6 +24,7 @@ function mount(over: Record<string, unknown> = {}) {
 	const oncancelbook = vi.fn();
 	const onretry = vi.fn();
 	const props = {
+		resetKey: '1:0:original:7',
 		lang: 'zh',
 		chapter: { coverage, list },
 		progress: { done: 3, total: 3 },
@@ -136,5 +137,35 @@ describe('WordsPanel', () => {
 		expect(screen.getAllByRole('listitem')).toHaveLength(50);
 		await fireEvent.click(screen.getByRole('button', { name: 'Show 50 more' }));
 		expect(screen.getAllByRole('listitem')).toHaveLength(60);
+	});
+});
+
+describe('WordsPanel across a chapter or book change', () => {
+	it('drops the selection, the result and its Undo, and the paging', async () => {
+		const many = Array.from({ length: 60 }, (_, i) => item(100 + i, `w${i}`, 1, 'new'));
+		const r = mount({ chapter: { coverage, list: [...list, ...many] } });
+		await fireEvent.click(screen.getByRole('checkbox', { name: '猫' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'I know these (1)' }));
+		await screen.findByRole('button', { name: 'Undo' });
+		await fireEvent.click(screen.getByRole('checkbox', { name: '狗' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Show 50 more' }));
+		expect(screen.getAllByRole('listitem')).toHaveLength(63);
+		// Another book (and workspace) opens in the same page.
+		await r.rerender({ resetKey: '2:0:original:8', chapter: { coverage, list: [...list, ...many] } });
+		expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull();
+		expect(screen.queryByText('Marked 1 word as known')).toBeNull();
+		expect((screen.getByRole('checkbox', { name: '狗' }) as HTMLInputElement).checked).toBe(false);
+		expect(screen.getByRole('button', { name: 'Add selected (0)' })).toBeTruthy();
+		expect(screen.getAllByRole('listitem')).toHaveLength(50);
+	});
+
+	it('acts only on selected words still in the list', async () => {
+		const r = mount();
+		await fireEvent.click(screen.getByRole('checkbox', { name: '猫' }));
+		await fireEvent.click(screen.getByRole('checkbox', { name: '狗' }));
+		// 猫 became known elsewhere (the popup): it leaves the list, same chapter.
+		await r.rerender({ chapter: { coverage, list: list.filter((w) => w.entryId !== 1) } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Add selected (1)' }));
+		expect(r.onadd).toHaveBeenLastCalledWith([2], { id: 'general', name: 'General' });
 	});
 });

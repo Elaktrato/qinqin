@@ -23,6 +23,7 @@
 	// callbacks (BookView wires them to wordActions.ts in the book's workspace).
 	type Counted = { coverage: Coverage; list: UnknownItem[] };
 	let {
+		resetKey,
 		lang,
 		chapter,
 		progress,
@@ -37,6 +38,8 @@
 		onadd,
 		onmark
 	}: {
+		/** Book, chapter, variant and workspace: a change drops the selection, result and Undo. */
+		resetKey: string;
 		lang: string;
 		/** The open chapter, once every part is counted. */
 		chapter: Counted | null;
@@ -73,7 +76,24 @@
 	const newIds = $derived(allNew(list));
 	const options = $derived(deckOptions(decks));
 	const target = $derived(options.find((d) => d.id === deckId) ?? options[0]);
-	const labels = $derived(buttonLabels(selected.size, newIds.length));
+	// Only words still in the list count (one may have become known meanwhile).
+	const chosen = $derived(list.filter((w) => selected.has(w.entryId)).map((w) => w.entryId));
+	const labels = $derived(buttonLabels(chosen.length, newIds.length));
+
+	// Another chapter or book (the page is reused): nothing carries over, so
+	// nothing is ever written into the new book's workspace by mistake.
+	let lastKey = '';
+	$effect.pre(() => {
+		const key = resetKey;
+		if (key === lastKey) return;
+		lastKey = key;
+		selected = new Set();
+		pages = 1;
+		scope = 'chapter';
+		result = '';
+		error = '';
+		undo = null;
+	});
 
 	$effect(() => {
 		if (book === null && scope === 'book') scope = 'chapter';
@@ -103,13 +123,18 @@
 	const add = (ids: number[]) =>
 		act(async () => {
 			const t = target;
-			result = addResultText(await onadd(ids, t), t.name);
+			const key = lastKey;
+			const res = await onadd(ids, t);
+			if (key !== lastKey) return; // the reader moved on meanwhile
+			result = addResultText(res, t.name);
 			selected = new Set();
 		});
 
 	const mark = () =>
 		act(async () => {
-			const res = await onmark([...selected]);
+			const key = lastKey;
+			const res = await onmark(chosen);
+			if (key !== lastKey) return;
 			result = markResultText(res.written.length);
 			selected = new Set();
 			if (res.written.length > 0) undo = res.undo;
@@ -187,9 +212,9 @@
 			<select id="{id}-deck" bind:value={deckId}>
 				{#each options as d (d.id)}<option value={d.id}>{d.name}</option>{/each}
 			</select>
-			<button type="button" disabled={busy || selected.size === 0} onclick={() => add([...selected])}>{labels.addSelected}</button>
+			<button type="button" disabled={busy || chosen.length === 0} onclick={() => add(chosen)}>{labels.addSelected}</button>
 			<button type="button" disabled={busy || newIds.length === 0} onclick={() => add(newIds)}>{labels.addAll}</button>
-			<button type="button" disabled={busy || selected.size === 0} onclick={mark}>{labels.know}</button>
+			<button type="button" disabled={busy || chosen.length === 0} onclick={mark}>{labels.know}</button>
 		</div>
 	{:else if current !== null}
 		<p class="hint">No unknown words here.</p>

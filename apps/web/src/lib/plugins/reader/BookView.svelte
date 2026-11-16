@@ -1201,6 +1201,7 @@
 					/>
 				{:else if tab === 'words'}
 					<WordsPanel
+						resetKey={`${chapterKey}:${studyWorkspaceId ?? ''}`}
 						lang={book?.language ?? ''}
 						chapter={chapterCounted}
 						progress={readings.progress}

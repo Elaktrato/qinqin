@@ -155,3 +155,40 @@ describe('BookView Words tab', () => {
 		expect(document.querySelector('.w-new')).toBeNull();
 	});
 });
+
+describe('BookView Words tab across books', () => {
+	it('a selection does not survive opening another book in the same page', async () => {
+		setReader({ readings: 'never', highlightWords: false });
+		const r = render(BookView, { id: 1, chapter: 0 });
+		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));
+		const box = (await screen.findByRole('checkbox', { name: '世界' })) as HTMLInputElement;
+		await fireEvent.click(box);
+		expect(screen.getByRole('button', { name: 'Add selected (1)' })).toBeTruthy();
+		vi.mocked(getBook).mockResolvedValue({
+			id: 2, workspaceId: 7, language: 'zh', title: 'T2', author: '', source: '', sourceId: '', sourceUrl: '',
+			attribution: '', licenseNote: '', chapterCount: 1, position: '', createdAt: ''
+		});
+		await r.rerender({ id: 2, chapter: 0 });
+		const again = (await screen.findByRole('checkbox', { name: '世界' })) as HTMLInputElement;
+		await waitFor(() => expect(getBook).toHaveBeenLastCalledWith(2));
+		await tick();
+		expect(again.checked).toBe(false);
+		expect(screen.getByRole('button', { name: 'Add selected (0)' })).toBeTruthy();
+	});
+
+	it('nor does it survive a chapter change', async () => {
+		setReader({ readings: 'never', highlightWords: false });
+		vi.mocked(getBook).mockResolvedValue({
+			id: 1, workspaceId: 7, language: 'zh', title: 'T', author: '', source: '', sourceId: '', sourceUrl: '',
+			attribution: '', licenseNote: '', chapterCount: 2, position: '', createdAt: ''
+		});
+		const r = render(BookView, { id: 1, chapter: 0 });
+		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));
+		await fireEvent.click(await screen.findByRole('checkbox', { name: '世界' }));
+		await r.rerender({ id: 1, chapter: 1 });
+		await waitFor(() => expect(getChapter).toHaveBeenLastCalledWith(1, 1));
+		const again = (await screen.findByRole('checkbox', { name: '世界' })) as HTMLInputElement;
+		await tick();
+		expect(again.checked).toBe(false);
+	});
+});
