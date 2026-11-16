@@ -110,3 +110,11 @@ generated readings; apply the rule above with the same score. Conceal a known re
 (keep it available to the accessibility layer) and let the user reveal it. Word states and coverage: the
 same `known:` row and parse rule, the same predicate with the reader's threshold, the same token rule and
 floor, first candidate only.
+
+## Popup snapshot (`popup-written.json`)
+
+A card added from the lookup popup snapshots `written = displayForm(result) || result.term`: the display form
+rule of `frequency/display-form.json` over the result's `forms`, `readings` (with `flags`) and `senses`
+(`tags`), without a list form — の for 1469800 (not the search-only 乃), こと for the usually-kana 事, and the
+entry's display form, not the text's spelling, for a form match (解る in a text snapshots 分かる). The popup's
+headword is the server's `term`: the matched written form unless it is search-only, else the display form.

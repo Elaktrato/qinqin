@@ -27,7 +27,7 @@ type StarterResolver struct{ Lexicon lexicon.Store }
 
 // BestWordReadingID implements Resolver.
 func (r StarterResolver) BestWordReadingID(ctx context.Context, language, form, reading string) (int64, error) {
-	if (reading == "" || reading == form) && allKana(form) {
+	if (reading == "" || reading == form) && lexicon.AllKana(form) {
 		id, err := r.Lexicon.KanaOnlyWordID(ctx, language, form)
 		if !errors.Is(err, lexicon.ErrNotFound) {
 			return id, err
@@ -36,26 +36,19 @@ func (r StarterResolver) BestWordReadingID(ctx context.Context, language, form, 
 	return r.Lexicon.BestWordReadingID(ctx, language, form, reading)
 }
 
-// allKana reports a non-empty text of hiragana, katakana and ー only.
-func allKana(s string) bool {
-	if s == "" {
-		return false
-	}
-	for _, c := range s {
-		if !(c >= 0x3041 && c <= 0x3096) && !(c >= 0x30a1 && c <= 0x30fa) && c != 0x30fc {
-			return false
-		}
-	}
-	return true
-}
-
-// TopEntry is one word of a starter deck: the entry and the rank of the
-// pack row that took it.
+// TopEntry is one word of a starter deck: the entry, the rank of the
+// pack row that took it and that row's term (how the list writes it).
 type TopEntry struct {
 	EntryID int64
 	Rank    int
+	Term    string
 	row     int // position of that row in the rank walk, 0-based
 }
+
+// Written is the form a starter deck word is shown and snapshotted as:
+// the entry's display form with the row's term as the list form, so a
+// kana row shows its kana (contract: frequency/display-form.json).
+func Written(e lexicon.Entry, t TopEntry) string { return e.DisplayForm(t.Term) }
 
 // rowCap is how many pack rows a deck of size entries walks at most.
 func rowCap(size int) int { return 4 * size }
@@ -107,7 +100,7 @@ func (s Store) Top(ctx context.Context, r Resolver, pack PackInfo, size int) ([]
 			continue
 		}
 		taken[id] = true
-		out = append(out, TopEntry{EntryID: id, Rank: tr.rank, row: i})
+		out = append(out, TopEntry{EntryID: id, Rank: tr.rank, Term: tr.term, row: i})
 		if len(out) == size {
 			break
 		}

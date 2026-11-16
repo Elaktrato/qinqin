@@ -3,6 +3,7 @@
 // and manageable), with the state of the word, a folded search string
 // built once, filters and sorts. Pure; the component only renders.
 
+import { shownWritten } from '$lib/entry/displayForm';
 import type { EntryBase } from '$lib/api/types';
 import { cleanSkipKinds } from '$lib/study/canonical';
 import { foldSearch } from '$lib/study/charGroups';
@@ -55,8 +56,11 @@ export function deckRows(
 		const vocab = group.find((card) => card.kind === 'vocab') ?? null;
 		const siblings = group.filter((card) => card.kind !== 'vocab');
 		const base = bases?.get(entryId);
+		const snapshot = vocab?.written ?? group.find((card) => card.written)?.written;
+		// The live display form, unless the snapshot is a kana reading of the
+		// entry (a starter deck's kana row): shownWritten, as on the card front.
 		const written =
-			base?.written ?? vocab?.written ?? group.find((card) => card.written)?.written ?? `Entry ${entryId}`;
+			base === undefined ? (snapshot ?? `Entry ${entryId}`) : shownWritten(base, snapshot);
 		const schedule = vocab === null ? null : (index.get(vocab.id) ?? null);
 		let nextDue: string | null = null;
 		for (const card of group) {

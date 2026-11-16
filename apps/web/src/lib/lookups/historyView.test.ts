@@ -63,6 +63,13 @@ describe('historyRows', () => {
 		expect(rows[2]).toMatchObject({ entryId: 3, written: null, missing: true });
 	});
 
+	it('leaves the reading empty when the word is shown as that reading (こと)', () => {
+		const koto = { ...base(9, 'こと', 'こと'), language: 'ja' } as EntryBase;
+		const one = { ...h, items: [{ ...h.items[0], entryId: 9 }] };
+		const [row] = historyRows(one, new Map([[9, koto]]), books, stateOf, dayOf, 'all');
+		expect(row.reading).toBe('');
+	});
+
 	it('filter "No card yet" keeps new words that are still in the dictionary', () => {
 		expect(historyRows(h, bases, books, stateOf, dayOf, 'nocard').map((r) => r.entryId)).toEqual([1]);
 	});

@@ -22,6 +22,8 @@ export interface EntryRanksBody {
 
 export interface StarterEntry extends EntryBase {
 	rank: number;
+	/** The first gloss of the entry's first sense (absent from older servers). */
+	gloss?: string;
 }
 
 export interface StarterBody {

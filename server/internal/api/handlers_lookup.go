@@ -22,9 +22,10 @@ type lookupForm struct {
 }
 
 type lookupReading struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
-	Plain string `json:"plain"`
+	Type  string   `json:"type"`
+	Value string   `json:"value"`
+	Plain string   `json:"plain"`
+	Flags []string `json:"flags"` // JMdict re_inf (sk, ik, ...): input of the display form rule
 }
 
 type lookupFrequency struct {
@@ -84,7 +85,7 @@ func toLookupResult(r lookup.Result) lookupResult {
 		out.Forms = append(out.Forms, lookupForm{Text: f.Text, Flags: nonNil(f.Flags)})
 	}
 	for _, rd := range r.Readings {
-		out.Readings = append(out.Readings, lookupReading{Type: rd.Type, Value: rd.Value, Plain: rd.Plain})
+		out.Readings = append(out.Readings, lookupReading{Type: rd.Type, Value: rd.Value, Plain: rd.Plain, Flags: nonNil(rd.Flags)})
 	}
 	for _, f := range r.Frequencies {
 		out.Frequencies = append(out.Frequencies, lookupFrequency{PackID: f.PackID, PackName: f.PackName, Rank: f.Rank, Display: f.Display})

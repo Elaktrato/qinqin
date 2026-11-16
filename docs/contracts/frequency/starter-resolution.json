@@ -109,6 +109,24 @@
    ],
    "pri": 0,
    "uk": false
+  },
+  {
+   "key": "inu",
+   "forms": [
+    "犬"
+   ],
+   "readings": [
+    "いぬ"
+   ],
+   "pri": 5,
+   "uk": true,
+   "senseTags": [
+    [],
+    [
+     "uk"
+    ]
+   ],
+   "note": "uk on a later sense only (JMdict 犬): entries.uk ranks it, but its display form is 犬"
   }
  ],
  "packs": {
@@ -201,6 +219,25 @@
     "rank": 5,
     "note": "fifth row"
    }
+  ],
+  "kanaform": [
+   {
+    "term": "いぬ",
+    "reading": "",
+    "rank": 1,
+    "note": "kana row of a word whose display form is 犬: the row's kana is shown"
+   },
+   {
+    "term": "犬",
+    "reading": "",
+    "rank": 2,
+    "note": "same entry: already taken"
+   },
+   {
+    "term": "の",
+    "reading": "",
+    "rank": 3
+   }
   ]
  },
  "cases": [
@@ -211,15 +248,18 @@
    "expected": [
     {
      "key": "no",
-     "rank": 1
+     "rank": 1,
+     "written": "の"
     },
     {
      "key": "suru",
-     "rank": 2
+     "rank": 2,
+     "written": "する"
     },
     {
      "key": "kaze",
-     "rank": 3
+     "rank": 3,
+     "written": "風"
     }
    ]
   },
@@ -230,35 +270,43 @@
    "expected": [
     {
      "key": "no",
-     "rank": 1
+     "rank": 1,
+     "written": "の"
     },
     {
      "key": "suru",
-     "rank": 2
+     "rank": 2,
+     "written": "する"
     },
     {
      "key": "kaze",
-     "rank": 3
+     "rank": 3,
+     "written": "風"
     },
     {
      "key": "furi",
-     "rank": 5
+     "rank": 5,
+     "written": "ふり"
     },
     {
      "key": "kore",
-     "rank": 6
+     "rank": 6,
+     "written": "これ"
     },
     {
      "key": "taberu",
-     "rank": 6
+     "rank": 6,
+     "written": "食べる"
     },
     {
      "key": "nomu",
-     "rank": 8
+     "rank": 8,
+     "written": "飲む"
     },
     {
      "key": "koto",
-     "rank": 9
+     "rank": 9,
+     "written": "こと"
     }
    ]
   },
@@ -275,9 +323,28 @@
    "expected": [
     {
      "key": "kore",
-     "rank": 5
+     "rank": 5,
+     "written": "これ"
+    }
+   ]
+  },
+  {
+   "name": "a kana row shows the list's kana form when it is a reading of the entry",
+   "pack": "kanaform",
+   "size": 500,
+   "expected": [
+    {
+     "key": "inu",
+     "rank": 1,
+     "written": "いぬ"
+    },
+    {
+     "key": "no",
+     "rank": 3,
+     "written": "の"
     }
    ]
   }
- ]
+ ],
+ "writtenNote": "written is the display form served and snapshotted (frequency/display-form.json) with the row's term as list form; uk means entries.uk and, unless senseTags gives the senses' tags, a first sense tagged uk"
 }

@@ -370,13 +370,18 @@ func TestAozoraCatalogSingleFlight(t *testing.T) {
 func TestAozoraCatalogWaiterHonorsContext(t *testing.T) {
 	f := newFixture(t, header)
 	f.catGate = make(chan struct{})
-	defer close(f.catGate)
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
 	start := time.Now()
 	_, err := f.ad.Search(ctx, "", 5)
 	if !errors.Is(err, context.DeadlineExceeded) || time.Since(start) > 2*time.Second {
 		t.Fatalf("err = %v after %v", err, time.Since(start))
+	}
+	// Release the refresh this test left running and wait for it, so it never
+	// writes into the test's temp dir while that is being removed.
+	close(f.catGate)
+	if _, err := f.ad.Search(context.Background(), "", 5); err != nil {
+		t.Fatalf("after release: %v", err)
 	}
 }
 

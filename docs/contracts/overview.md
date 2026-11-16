@@ -106,6 +106,11 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
 - Reverse and cloze cards, sibling burying: `cards/`.
 - Daily goal, its amounts (activity cells of the workspace, new cards and capped answer time from the review
   log), day status and goal streak (vacation days neutral): `goals/`.
+- Display form of an entry (the headword lists, cards and the reader show, and the `written` snapshot of
+  added cards; also what a client builds from the synced lexicon: forms and readings with flags, senses
+  with tags): `frequency/display-form.json` (`uk` on the first live sense of an installed dictionary by
+  `(dictionaryId, ord, id)` → kana, search-only `sK` never shown, a
+  starter deck's kana row shown as written). Reader popup snapshot: `reader/popup-written.json`.
 - Weekly summary (Monday to Sunday learner dates, rows, days, comparison, mature and character crossings;
   computed from events, nothing stored, no row key): `weekly/`.
 

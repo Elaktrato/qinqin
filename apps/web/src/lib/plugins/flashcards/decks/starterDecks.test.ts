@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../../../docs/contracts/frequency/starter-deck-ids.json';
+import resolution from '../../../../../../../docs/contracts/frequency/starter-resolution.json';
 import type { FrequencyPack } from '$lib/api/types';
 import { ownedStarterDeckId } from './systemDecks';
 import {
 	STARTER_SIZES,
 	starterAddedText,
 	starterView,
+	duplicateGlosses,
 	starterAddItems,
 	starterCredit,
 	starterDeckName,
@@ -85,6 +87,26 @@ describe('starterDecks', () => {
 			])
 		).toEqual([{ entryId: 7, written: 'する' }]);
 	});
+
+	it('snapshots the served written form (frequency/starter-resolution.json)', () => {
+		// The server serves each word in its display form with the row as list
+		// form (の, not the search-only 乃); the add snapshots exactly that.
+		const served = resolution.cases.flatMap((c) => c.expected);
+		const entries = served.map((e, i) => ({
+			id: i + 1,
+			language: 'ja',
+			kind: 'word',
+			written: e.written,
+			readings: [],
+			attrs: {},
+			radicalId: null,
+			rank: e.rank
+		}));
+		expect(starterAddItems(entries).map((item) => item.written)).toEqual(
+			served.map((e) => e.written)
+		);
+		expect(served.map((e) => e.written)).toContain('の');
+	});
 });
 
 describe('starterView', () => {
@@ -121,5 +143,37 @@ describe('starterAddedText', () => {
 		expect(starterAddedText(plan(3, 0, 1))).toBe('Added 3 words; 1 you know was skipped');
 		expect(starterAddedText(plan(470, 10, 20))).toBe('Added 480 words; 20 you know were skipped');
 		expect(starterAddedText(plan(1, 0, 0))).toBe('Added 1 word');
+	});
+});
+
+describe('duplicateGlosses', () => {
+	const word = (id: number, written: string, gloss: string) => ({
+		id,
+		language: 'ja',
+		kind: 'word',
+		written,
+		readings: [],
+		attrs: {},
+		radicalId: null,
+		rank: id,
+		gloss
+	});
+
+	it('glosses only the words whose display form occurs more than once', () => {
+		const got = duplicateGlosses([
+			word(1, 'なる', 'to become'),
+			word(2, 'の', 'of'),
+			word(3, 'なる', 'to bear fruit'),
+			word(4, 'いる', '')
+		]);
+		expect([...got]).toEqual([
+			[1, 'to become'],
+			[3, 'to bear fruit']
+		]);
+	});
+
+	it('copes with an older server without glosses', () => {
+		const old = [word(1, 'なる', ''), word(2, 'なる', '')].map(({ gloss: _g, ...rest }) => rest);
+		expect(duplicateGlosses(old).size).toBe(0);
 	});
 });

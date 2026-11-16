@@ -31,6 +31,8 @@ type resolution struct {
 		Readings []string `json:"readings"`
 		Pri      int      `json:"pri"`
 		UK       bool     `json:"uk"`
+		// SenseTags, when given, are the tags of the entry's senses.
+		SenseTags [][]string `json:"senseTags"`
 	} `json:"lexicon"`
 	Packs map[string][]struct {
 		Term    string `json:"term"`
@@ -42,8 +44,9 @@ type resolution struct {
 		Pack     string `json:"pack"`
 		Size     int    `json:"size"`
 		Expected []struct {
-			Key  string `json:"key"`
-			Rank int    `json:"rank"`
+			Key     string `json:"key"`
+			Rank    int    `json:"rank"`
+			Written string `json:"written"`
 		} `json:"expected"`
 	} `json:"cases"`
 }
@@ -74,6 +77,18 @@ func seedLexicon(t *testing.T, sqlDB *sql.DB, r resolution) map[string]int64 {
 	ids := map[string]int64{}
 	for _, e := range r.Lexicon {
 		entry := &lexicon.Entry{Language: r.Language, Kind: "word", Key: e.Key, Pri: e.Pri, UK: e.UK}
+		// The fixture's uk: the entry's first (here only) sense is tagged uk.
+		sense := lexicon.Sense{Tags: []string{}, Glosses: []string{e.Key}}
+		if e.UK {
+			sense.Tags = []string{"uk"}
+		}
+		entry.Senses = []lexicon.Sense{sense}
+		if e.SenseTags != nil {
+			entry.Senses = nil
+			for _, tags := range e.SenseTags {
+				entry.Senses = append(entry.Senses, lexicon.Sense{Tags: tags, Glosses: []string{e.Key}})
+			}
+		}
 		for _, f := range e.Forms {
 			entry.Forms = append(entry.Forms, lexicon.Form{Text: f})
 		}
@@ -174,7 +189,35 @@ func TestTopFollowsTheResolutionContract(t *testing.T) {
 		if !reflect.DeepEqual(entriesOf(cached), want(r, ids, i)) {
 			t.Errorf("%s: TopCache.Get = %v, want %v", c.Name, cached, want(r, ids, i))
 		}
+		for _, top := range [][]freq.TopEntry{got, cached} {
+			if w := writtenOf(t, sqlDB, top); !reflect.DeepEqual(w, wantWritten(r, i)) {
+				t.Errorf("%s: written = %v, want %v", c.Name, w, wantWritten(r, i))
+			}
+		}
 	}
+}
+
+// writtenOf is the display form each starter entry is served and
+// snapshotted with (freq.Written).
+func writtenOf(t *testing.T, sqlDB *sql.DB, top []freq.TopEntry) []string {
+	t.Helper()
+	out := []string{}
+	for _, e := range top {
+		entry, err := lexicon.Store{DB: sqlDB}.Get(context.Background(), e.EntryID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, freq.Written(*entry, e))
+	}
+	return out
+}
+
+func wantWritten(r resolution, i int) []string {
+	out := []string{}
+	for _, e := range r.Cases[i].Expected {
+		out = append(out, e.Written)
+	}
+	return out
 }
 
 func TestTopCacheResolvesOncePerContentHash(t *testing.T) {

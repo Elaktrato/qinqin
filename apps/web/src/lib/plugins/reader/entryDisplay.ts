@@ -38,15 +38,19 @@ const SEARCH_ONLY = 'sK';
 
 /**
  * otherForms lists other written forms of the entry (traditional
- * characters, kanji variants); JMdict's search-only (sK) forms are hidden,
- * irregular (iK) and rare (rK) ones stay.
+ * characters, kanji variants; 事 for an entry shown as こと); JMdict's
+ * search-only (sK) forms are hidden, irregular (iK) and rare (rK) ones
+ * stay. The popup shows at most four, the entry page all of them.
  */
-export function otherForms(r: LookupResult): string[] {
+export function otherForms(
+	r: { forms: readonly { text: string; flags?: readonly string[] }[]; term: string },
+	max = MAX_OTHER_FORMS
+): string[] {
 	return r.forms
 		.filter((f) => !f.flags?.includes(SEARCH_ONLY))
 		.map((f) => f.text)
 		.filter((text) => text !== r.term)
-		.slice(0, MAX_OTHER_FORMS);
+		.slice(0, max);
 }
 
 /** joinForms lists written forms: with 、 in Japanese, with " · " in Chinese. */

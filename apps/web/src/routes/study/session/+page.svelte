@@ -7,6 +7,7 @@
 	import { segmentBatch } from '$lib/api/segment';
 	import { token } from '$lib/auth';
 	import { activate, canSound, headwordClips } from '$lib/audio/button';
+	import { withShownWritten } from '$lib/study/cardView';
 	import { readAudioSettings } from '$lib/audio/settings';
 	import { getPlayer } from '$lib/audio/shared';
 	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
@@ -532,6 +533,9 @@ import type { Run } from '$lib/study/vacation';
 	 * this session, and a virtual one is never created.
 	 */
 	async function resolveItem(item: FlowItem, entry: Entry): Promise<Resolved | null> {
+		// Every face shows the card's kana snapshot when it is a reading (a
+		// starter deck's kana row), like the deck list.
+		entry = withShownWritten(entry, item.card?.written ?? item.written);
 		const language = sessionLanguage || entry.language;
 		const now = new Date();
 		const history = [...reviews, ...sessionReviews];

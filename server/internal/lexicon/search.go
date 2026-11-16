@@ -290,15 +290,3 @@ func (s Store) Radicals(ctx context.Context, ids []int64) (map[int64]int64, erro
 	}
 	return out, nil
 }
-
-// Headword is the entry's display text: its first form, else its first
-// reading's value, else "".
-func (e Entry) Headword() string {
-	if len(e.Forms) > 0 {
-		return e.Forms[0].Text
-	}
-	if len(e.Readings) > 0 {
-		return e.Readings[0].Value
-	}
-	return ""
-}

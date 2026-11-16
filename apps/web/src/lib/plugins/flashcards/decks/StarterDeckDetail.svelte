@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { readingBeside } from '$lib/entry/displayForm';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { StarterEntry } from '$lib/api/frequency';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
@@ -17,6 +18,7 @@
 		starterDecks,
 		starterTarget,
 		starterView,
+		duplicateGlosses,
 		type StarterDeck
 	} from './starterDecks';
 
@@ -65,6 +67,7 @@
 		data === null ? new Set<number>() : knownEntries(data.cards, (id) => data.index.get(id) ?? null, data.known)
 	);
 	const view = $derived(starterView(entries ?? [], known));
+	const glosses = $derived(duplicateGlosses(view.shown));
 	const existingIds = $derived(new Set([GENERAL_DECK_ID, ...(data?.decks ?? []).map((d) => d.id)]));
 	const vocabByEntry = $derived.by(() => {
 		const map = new Map<number, string>();
@@ -187,7 +190,10 @@
 			{#each view.shown as item (item.id)}
 				<li>
 					<span class="word">{item.written}</span>
-					<span class="reading">{item.readings[0]?.value ?? ''}</span>
+					<span class="reading">{readingBeside(item.written, item.readings)}</span>
+					{#if glosses.has(item.id)}
+						<span class="gloss">{glosses.get(item.id)}</span>
+					{/if}
 					<span class="state">{stateLabel(item.id)}</span>
 				</li>
 			{/each}
@@ -229,6 +235,7 @@
 	}
 
 	.reading,
+	.gloss,
 	.state,
 	.hint {
 		opacity: 0.8;
