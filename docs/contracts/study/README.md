@@ -15,6 +15,11 @@ Fixtures:
 - `legacy-codec.json` — legacy `qinqin-flashcards` row (key + data) to typed row, `unreadable`, and the
   legacy object written back (`roundTrip`); `families` maps keys to collections.
 - `lww.json` — last-write-wins and tombstone cases of a push.
+- `legacy-view.json` — the request shapes of a v0.3.0 web shell and what the legacy view answers.
+
+Web: `apps/web/src/lib/study/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
+pull and push; a write is never sent when it would change nothing). The web decodes `rows.json`, `lww.json`
+and `legacy-codec.json` (a test-only mirror of the codec, `lib/study/testing/legacyCodec.ts`).
 
 ## Collections
 

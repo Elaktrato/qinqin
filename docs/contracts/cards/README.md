@@ -20,7 +20,8 @@ Fixture: `card-ids.json` (`kind`, `entryId`, `sentenceId?`, `id`, `cardKey`, `vi
 
 ## Data
 
-- Deck switch: plugin-data key `deckcfg:<deckId>` -> `{deckId, cardTypes: ["reverse"|"cloze"], updatedAt, ...unknown fields kept}`.
+- Deck switch: the typed `deckSettings` row of the deck (`study/README.md`; legacy key `deckcfg:<deckId>`)
+  -> `{deckId, cardTypes: ["reverse"|"cloze"], newOrder, extra}`; unknown members are kept in `extra`.
   Absent or unparsable = no opt-in kinds. Works for `general`.
 - A vocab row may carry `skipKinds: [kind]` (non-vocab kinds the learner removed for that word); duplicates union it.
 - Mastery counts only `vocab, sentence, writing, tone`. Reverse and cloze count as reviews for XP

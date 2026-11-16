@@ -62,7 +62,7 @@ A newer server must keep reading v1; an older server rejects a newer format.
 
 Password hash, email, sessions, personal access tokens, reset links, one-time-code challenges, TOTP secrets and recovery codes,
 AI keys and AI selection and usage, invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo
-drafts, tombstoned (deleted) plugin rows, typed study rows and own sentences, the library deletion log,
+drafts, tombstoned (deleted) plugin rows and typed study rows, own sentences, the library deletion log,
 dictionary and pack content.
 A restore never changes who can sign in.
 
