@@ -167,6 +167,15 @@ function parseSource(raw: unknown): DeckSource | undefined {
   ) {
     return { type: "plugin", pluginId: raw.pluginId, key: raw.key };
   }
+  if (
+    raw.type === "frequency" &&
+    typeof raw.packId === "string" &&
+    typeof raw.size === "number" &&
+    Number.isInteger(raw.size) &&
+    raw.size > 0
+  ) {
+    return { type: "frequency", packId: raw.packId, size: raw.size };
+  }
   return undefined;
 }
 
@@ -301,10 +310,16 @@ export const studyRowKey = {
  */
 export async function loadRawStudyData(
   workspaceId: number,
-): Promise<{ decks: Deck[]; cards: StudyCard[]; knownAt: Map<string, string> }> {
+): Promise<{
+  decks: Deck[];
+  cards: StudyCard[];
+  knownAt: Map<string, string>;
+  /** The live `deckcfg:` rows, by deck id (always set by the store). */
+  deckSettings?: Record<string, DeckSettings>;
+}> {
   const knownAt = new Map<string, string>();
-  const { decks, cards } = await fetchStudyData(workspaceId, knownAt);
-  return { decks, cards, knownAt };
+  const { decks, cards, deckSettings } = await fetchStudyData(workspaceId, knownAt);
+  return { decks, cards, knownAt, deckSettings: deckSettings ?? {} };
 }
 
 // Called after every write with the workspace it touched, so caches of

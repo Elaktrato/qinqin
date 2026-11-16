@@ -28,6 +28,7 @@
 		type DeckRow,
 		type RowQuery
 	} from './deckRows';
+	import { copiedFrom } from './systemDecks';
 	import { deckNumbers } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
 	import { onContextStale } from '$lib/study/currentContext';
@@ -299,9 +300,7 @@
 		<h1 tabindex="-1">{deck.name}</h1>
 		{#if deck.source !== undefined}
 			<p class="source">
-				Copied from {deck.source.type === 'level'
-					? `${deck.source.packId} · ${deck.source.level}`
-					: `${deck.source.pluginId} · ${deck.source.key}`}
+				Copied from {copiedFrom(deck.source)}
 			</p>
 		{/if}
 		<section class="numbers" aria-label={`${deck.name} numbers`}>

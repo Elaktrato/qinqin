@@ -1645,6 +1645,42 @@ describe("study store", () => {
       expect(decks.find((d) => d.id === "plain")?.source).toBeUndefined();
     });
 
+    it("keeps a frequency source and drops a malformed one", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deck:d-frq-jiten-frequency-d4514a31", {
+            id: "d-frq-jiten-frequency-d4514a31",
+            name: "Jiten · Top 500",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "frequency", packId: "jiten-frequency", size: 500 },
+          }),
+          pluginRow("deck:bad", {
+            id: "bad",
+            name: "Bad",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "frequency", packId: "jiten-frequency", size: "500" },
+          }),
+        ],
+      });
+      const { decks } = await loadStudyData(WORKSPACE_ID);
+      expect(decks.find((d) => d.id === "d-frq-jiten-frequency-d4514a31")?.source).toEqual({
+        type: "frequency",
+        packId: "jiten-frequency",
+        size: 500,
+      });
+      expect(decks.find((d) => d.id === "bad")?.source).toBeUndefined();
+    });
+
+    it("loadRawStudyData returns the live deck settings", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "frequency" } }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.deckSettings?.d1?.newOrder).toEqual({ by: "frequency" });
+    });
+
     it("loadRawStudyData keeps stored duplicates the merged read folds away", async () => {
       respondPull({
         pluginData: [
