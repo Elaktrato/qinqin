@@ -5,7 +5,7 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
 import { ApiError } from './client';
-import { segmentAt, segmentBatch, windowAt } from './segment';
+import { segmentAt, segmentBatch, segmentWithReadings, windowAt } from './segment';
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -154,5 +154,27 @@ describe('segmentBatch', () => {
 		const err = await segmentBatch('zh', 'x').catch((e) => e);
 		expect(err).toBeInstanceOf(ApiError);
 		expect(err.status).toBe(413);
+	});
+});
+
+describe('segmentWithReadings', () => {
+	beforeEach(() => {
+		vi.stubGlobal('localStorage', { getItem: () => null });
+		vi.stubGlobal('fetch', vi.fn());
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('asks for readings and returns the matches', async () => {
+		const matches = [
+			{ surface: '你好', start: 0, end: 2, lemma: '你好', reason: '', entries: [{ id: 1, kind: 'word' }], reading: { type: 'pinyin', value: 'nǐ hǎo' } }
+		];
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ matches }));
+		const controller = new AbortController();
+		const result = await segmentWithReadings('zh', '你好', controller.signal);
+		expect(result).toEqual(matches);
+		const [url, init] = vi.mocked(fetch).mock.calls[0];
+		expect(url).toBe('/api/segment');
+		expect(JSON.parse(String(init?.body))).toEqual({ lang: 'zh', text: '你好', readings: true });
+		expect(init?.signal).toBe(controller.signal);
 	});
 });
