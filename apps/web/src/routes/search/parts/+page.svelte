@@ -26,7 +26,8 @@
 	const supported = $derived(lang !== null && usesHan(lang));
 
 	let chars = $state.raw<CharRow[] | null>(null);
-	let comps = $state.raw<ComponentIndex>({ parts: [], chars: {} });
+	const EMPTY_COMPONENTS: ComponentIndex = { parts: [], chars: {} };
+	let comps = $state.raw<ComponentIndex>(EMPTY_COMPONENTS);
 	let loadError = $state('');
 	let showAllParts = $state(false);
 	let showAllResults = $state(false);
@@ -38,7 +39,10 @@
 		chars = null;
 		loadError = '';
 		try {
-			const [list, index] = await Promise.all([fetchCharacters(language), fetchComponents(language)]);
+			// Components are optional: a failed request leaves the radical
+			// table and strokes working, with the "no components" note.
+			const parts = fetchComponents(language).catch(() => EMPTY_COMPONENTS);
+			const [list, index] = await Promise.all([fetchCharacters(language), parts]);
 			if (mine !== seq) return;
 			chars = list.chars;
 			comps = index;

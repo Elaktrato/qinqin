@@ -155,6 +155,17 @@ describe('radical and part lookup page', () => {
 		expect(screen.getByRole('button', { name: /^言/ }).textContent).toContain('讠');
 	});
 
+	it('a failed components request still shows the radical table, without parts', async () => {
+		vi.mocked(fetchComponents).mockRejectedValue(new Error('components down'));
+		setUrl('/search/parts?r=85');
+		render(Page);
+		expect(await screen.findByRole('group', { name: 'Radicals' })).toBeTruthy();
+		await waitFor(() => expect(cells()).toEqual(['池', '河', '沽', '海']));
+		expect(screen.queryByRole('alert')).toBeNull();
+		expect(screen.queryByRole('group', { name: 'Parts' })).toBeNull();
+		expect(screen.getByText(/No character components are installed/)).toBeTruthy();
+	});
+
 	it('a language without a character universe says so', async () => {
 		workspace('es');
 		render(Page);
