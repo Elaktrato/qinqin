@@ -7,7 +7,7 @@
 
 import type { FrequencyPack, Scheme } from '$lib/api/types';
 import { languageLabel } from '$lib/languages';
-import { parseNewOrder, type NewOrder, type SessionNewOrder } from './newOrder';
+import { ADDED, parseNewOrder, type NewOrder, type SessionNewOrder } from './newOrder';
 
 export interface OrderChoice {
 	value: string;
@@ -119,4 +119,44 @@ export function resolveAvailableOrder(
 		if (!found) return { order: { by: 'added' }, note: MISSING_LEVELS_NOTE };
 	}
 	return { order, note: null };
+}
+
+export interface ControlChoice extends OrderChoice {
+	disabled?: boolean;
+}
+
+function orderLabel(order: NewOrder): string {
+	if (order.by === 'frequency') return 'Most frequent first';
+	if (order.by === 'level') return `By level: ${order.packId}`;
+	return 'In the order added';
+}
+
+/**
+ * deckOrderControl: the deck settings' select. While the pack and scheme
+ * lists load (env null) or after one failed, the select is disabled and
+ * shows the stored order, so touching it can never overwrite the setting
+ * with "added". A stored order this server cannot run stays selected as a
+ * disabled "(not available)" choice until the learner picks another.
+ */
+export function deckOrderControl(input: {
+	stored: NewOrder | null;
+	env: OrderEnv | null;
+	failed: boolean;
+}): { choices: ControlChoice[]; value: string; disabled: boolean; hint: string | null } {
+	const stored = input.stored ?? ADDED;
+	const value = encodeOrder(stored);
+	if (input.env === null || input.failed) {
+		return {
+			choices: [{ value, label: orderLabel(stored), disabled: true }],
+			value,
+			disabled: true,
+			hint: input.failed ? 'Could not load the order choices. Try again later.' : null
+		};
+	}
+	const { choices, hint } = deckOrderChoices(input.env);
+	const out: ControlChoice[] = [...choices];
+	if (!choices.some((c) => c.value === value)) {
+		out.push({ value, label: `${orderLabel(stored)} (not available)`, disabled: true });
+	}
+	return { choices: out, value, disabled: false, hint };
 }

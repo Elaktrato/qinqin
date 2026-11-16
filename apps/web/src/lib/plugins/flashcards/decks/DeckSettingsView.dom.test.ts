@@ -188,6 +188,49 @@ describe('DeckSettingsView', () => {
 			expect([...select().options].map((o) => o.value)).toEqual(['added', 'level:hsk-words']);
 		});
 
+		it('keeps the select disabled on the stored order until both lists load', async () => {
+			let release!: (v: never) => void;
+			vi.mocked(getSchemes).mockReturnValue(new Promise((r) => (release = r)) as never);
+			vi.mocked(loadStudyHistory).mockResolvedValue({
+				decks: [greetings],
+				cards: [],
+				reviews: [],
+				merged: 0,
+				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
+			});
+			render(DeckSettingsView, { deckId: 'd1' });
+			await waitFor(() => expect(select().value).toBe('frequency'));
+			expect(select().disabled).toBe(true);
+			release([hsk] as never);
+			await waitFor(() => expect(select().disabled).toBe(false));
+			expect(select().value).toBe('frequency');
+		});
+
+		it('shows a stored order whose list is gone as not available, and does not save it away', async () => {
+			vi.mocked(getFrequencyPacks).mockResolvedValue([]);
+			vi.mocked(loadStudyHistory).mockResolvedValue({
+				decks: [greetings],
+				cards: [],
+				reviews: [],
+				merged: 0,
+				deckSettings: { d1: { deckId: 'd1', cardTypes: [], newOrder: { by: 'frequency' }, extra: {} } }
+			});
+			render(DeckSettingsView, { deckId: 'd1' });
+			await waitFor(() => expect(select().disabled).toBe(false));
+			expect(select().value).toBe('frequency');
+			const gone = [...select().options].find((o) => o.value === 'frequency')!;
+			expect(gone.textContent).toBe('Most frequent first (not available)');
+			expect(gone.disabled).toBe(true);
+			expect(saveDeckNewOrder).not.toHaveBeenCalled();
+		});
+
+		it('a failed list keeps the select disabled', async () => {
+			vi.mocked(getFrequencyPacks).mockRejectedValue(new Error('offline'));
+			render(DeckSettingsView, { deckId: 'd1' });
+			await screen.findByText('Could not load the order choices. Try again later.');
+			expect(select().disabled).toBe(true);
+		});
+
 		it('works for General', async () => {
 			render(DeckSettingsView, { deckId: 'general' });
 			await waitFor(() => expect(select().options.length).toBe(3));

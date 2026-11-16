@@ -5,6 +5,7 @@ import {
 	OFFLINE_NOTE,
 	decodeOrder,
 	deckOrderChoices,
+	deckOrderControl,
 	encodeOrder,
 	noPackHint,
 	rankingPack,
@@ -192,5 +193,40 @@ describe('resolveAvailableOrder', () => {
 	it('notes', () => {
 		expect(MIXED_NOTE).toBe('Your decks use different orders: in the order added.');
 		expect(OFFLINE_NOTE).toBe('Frequency order needs a connection; using the order added.');
+	});
+});
+
+describe('deckOrderControl', () => {
+	const env = { language: 'ja', packs: [jiten], schemes: [jlptWords] };
+	it('is disabled and keeps the stored order while the lists load', () => {
+		const c = deckOrderControl({ stored: { by: 'frequency' }, env: null, failed: false });
+		expect(c.disabled).toBe(true);
+		expect(c.value).toBe('frequency');
+		expect(c.choices).toEqual([{ value: 'frequency', label: 'Most frequent first', disabled: true }]);
+		expect(c.hint).toBeNull();
+	});
+	it('offers the choices once loaded', () => {
+		const c = deckOrderControl({ stored: null, env, failed: false });
+		expect(c.disabled).toBe(false);
+		expect(c.value).toBe('added');
+		expect(c.choices.map((x) => x.value)).toEqual(['added', 'frequency', 'level:jlpt-words']);
+	});
+	it('shows a stored order that cannot run as a disabled choice, selected', () => {
+		const c = deckOrderControl({ stored: { by: 'frequency' }, env: { ...env, packs: [] }, failed: false });
+		expect(c.value).toBe('frequency');
+		expect(c.disabled).toBe(false);
+		expect(c.choices[c.choices.length - 1]).toEqual({
+			value: 'frequency',
+			label: 'Most frequent first (not available)',
+			disabled: true
+		});
+		const lvl = deckOrderControl({ stored: { by: 'level', packId: 'hsk-words' }, env, failed: false });
+		expect(lvl.value).toBe('level:hsk-words');
+		expect(lvl.choices.at(-1)).toEqual({ value: 'level:hsk-words', label: 'By level: hsk-words (not available)', disabled: true });
+	});
+	it('stays disabled when a list failed to load', () => {
+		const c = deckOrderControl({ stored: null, env, failed: true });
+		expect(c.disabled).toBe(true);
+		expect(c.hint).toBe('Could not load the order choices. Try again later.');
 	});
 });

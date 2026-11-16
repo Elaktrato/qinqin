@@ -7,7 +7,7 @@
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { FrequencyPack, Scheme } from '$lib/api/types';
-	import { decodeOrder, deckOrderChoices, encodeOrder } from '$lib/study/newOrderView';
+	import { decodeOrder, deckOrderControl } from '$lib/study/newOrderView';
 	import { workspaces } from '$lib/workspaces';
 	import { flashcardsHref } from '../route';
 	import { deleteDeckText } from './deleteText';
@@ -48,22 +48,25 @@
 	});
 
 	// The order of new cards (#75): offered from the installed packs and schemes.
-	let packs = $state.raw<FrequencyPack[]>([]);
-	let schemes = $state.raw<Scheme[]>([]);
+	// Until both lists are in, the select is disabled on the stored order.
+	let packs = $state.raw<FrequencyPack[] | null>(null);
+	let schemes = $state.raw<Scheme[] | null>(null);
+	let listsFailed = $state(false);
 	$effect(() => {
 		getFrequencyPacks()
 			.then((list) => (packs = Array.isArray(list) ? list : []))
-			.catch(() => (packs = []));
+			.catch(() => (listsFailed = true));
 		getSchemes()
 			.then((list) => (schemes = Array.isArray(list) ? list : []))
-			.catch(() => (schemes = []));
+			.catch(() => (listsFailed = true));
 	});
 	const language = $derived($workspaces.current?.language ?? '');
-	const orderView = $derived(deckOrderChoices({ language, packs, schemes }));
-	const storedOrder = $derived(encodeOrder(data?.deckSettings[deckId]?.newOrder ?? { by: 'added' }));
-	// A stored order this server cannot offer (pack removed) shows as added.
-	const orderValue = $derived(
-		orderView.choices.some((choice) => choice.value === storedOrder) ? storedOrder : 'added'
+	const orderControl = $derived(
+		deckOrderControl({
+			stored: data?.deckSettings[deckId]?.newOrder ?? null,
+			env: packs === null || schemes === null ? null : { language, packs, schemes },
+			failed: listsFailed
+		})
 	);
 
 	async function saveOrder(value: string): Promise<void> {
@@ -183,17 +186,17 @@
 			<label>
 				Order of new cards
 				<select
-					value={orderValue}
-					disabled={busy}
+					value={orderControl.value}
+					disabled={busy || orderControl.disabled}
 					onchange={(event) => void saveOrder((event.currentTarget as HTMLSelectElement).value)}
 				>
-					{#each orderView.choices as choice (choice.value)}
-						<option value={choice.value}>{choice.label}</option>
+					{#each orderControl.choices as choice (choice.value)}
+						<option value={choice.value} disabled={choice.disabled}>{choice.label}</option>
 					{/each}
 				</select>
 			</label>
-			{#if orderView.hint !== null}
-				<p class="hint">{orderView.hint}</p>
+			{#if orderControl.hint !== null}
+				<p class="hint">{orderControl.hint}</p>
 			{/if}
 		</section>
 
