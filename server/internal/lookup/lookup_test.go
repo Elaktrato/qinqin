@@ -273,11 +273,14 @@ func run(t *testing.T, s lookup.Service, language, text string, offset int, kind
 	return got
 }
 
-// terms lists "Term[reasons]" of each result, e.g. 為る[past].
+// terms lists "label[reasons]" of each result, e.g. 為る[past]. The label
+// names the entry: the matched written form, else its first written form
+// (for a kana match the display Term is the kana, する for 為る and 掏る
+// alike — display_test.go checks Term), else Term.
 func terms(rs []lookup.Result) []string {
 	out := make([]string, len(rs))
 	for i, r := range rs {
-		out[i] = r.Term
+		out[i] = label(r)
 		if len(r.Reasons) > 0 {
 			out[i] += "[" + strings.Join(r.Reasons, " ") + "]"
 		}
@@ -285,9 +288,18 @@ func terms(rs []lookup.Result) []string {
 	return out
 }
 
+// label names the entry of a result (see terms).
+func label(r lookup.Result) string {
+	if r.ViaReading && len(r.Forms) > 0 {
+		return r.Forms[0].Text
+	}
+	return r.Term
+}
+
+// find returns the result labelled term (see terms), nil when none is.
 func find(rs []lookup.Result, term string) *lookup.Result {
 	for i := range rs {
-		if rs[i].Term == term {
+		if label(rs[i]) == term {
 			return &rs[i]
 		}
 	}

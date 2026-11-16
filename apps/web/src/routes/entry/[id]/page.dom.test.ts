@@ -177,3 +177,34 @@ describe('entry page note', () => {
 		expect(loadNote).not.toHaveBeenCalled();
 	});
 });
+
+describe('entry page written forms', () => {
+	it('lists the other written forms of a word shown in kana, never a search-only one', async () => {
+		vi.mocked(getEntry).mockResolvedValue(
+			entry({
+				language: 'ja',
+				kind: 'word',
+				written: 'こと',
+				readings: [{ type: 'kana', value: 'こと', plain: 'こと', ord: 0 }],
+				forms: [
+					{ text: '事', flags: [] },
+					{ text: '縡', flags: ['oK'] },
+					{ text: '乃', flags: ['sK'] }
+				]
+			})
+		);
+		render(Page);
+		await screen.findByRole('heading', { name: 'こと' });
+		const line = screen.getByText(/Also written/);
+		expect(line.textContent).toBe('Also written: 事、縡');
+	});
+
+	it('says nothing when the headword is the only form', async () => {
+		vi.mocked(getEntry).mockResolvedValue(
+			entry({ language: 'ja', kind: 'word', written: '犬', forms: [{ text: '犬', flags: [] }] })
+		);
+		render(Page);
+		await screen.findByRole('heading', { name: '犬' });
+		expect(screen.queryByText(/Also written/)).toBeNull();
+	});
+});

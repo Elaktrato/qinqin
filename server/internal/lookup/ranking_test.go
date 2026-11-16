@@ -238,8 +238,8 @@ func TestFirstPackWithAnyDataRanks(t *testing.T) {
 		for _, f := range r.Frequencies {
 			ranks = append(ranks, f.Rank)
 		}
-		if !slices.Equal(ranks, want[r.Term]) {
-			t.Errorf("%s frequencies = %v, want %v", r.Term, ranks, want[r.Term])
+		if !slices.Equal(ranks, want[label(r)]) {
+			t.Errorf("%s frequencies = %v, want %v", label(r), ranks, want[label(r)])
 		}
 	}
 }

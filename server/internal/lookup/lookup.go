@@ -315,27 +315,21 @@ func rankKeys(pack lang.Pack, language string, m *match) candidate {
 }
 
 // displayTerm is the headword a result shows: for Japanese the written form
-// that matched (解る, not 分かる); otherwise — a reading match, or
-// Chinese, whose traditional match still shows the simplified headword
-// — the entry's headword.
+// that matched (解る, not 分かる) unless it is search-only (之 shows の);
+// otherwise — a reading match, or Chinese, whose traditional match still
+// shows the simplified headword — the entry's display form
+// (lexicon.Entry.Headword: the kana of a usually-kana word).
 func displayTerm(language string, m *match) string {
-	if language == "ja" && m.reading < 0 {
+	if language == "ja" && m.reading < 0 && !slices.ContainsFunc(m.entry.Forms, func(f lexicon.Form) bool {
+		return f.Text == m.probe.term && slices.Contains(f.Flags, flagSearchOnly)
+	}) {
 		return m.probe.term
 	}
-	return headword(m.entry)
+	return m.entry.Headword()
 }
 
-// headword is an entry's first form, or its first reading when it has
-// no form.
-func headword(e lexicon.Entry) string {
-	if len(e.Forms) > 0 {
-		return e.Forms[0].Text
-	}
-	if len(e.Readings) > 0 {
-		return e.Readings[0].Value
-	}
-	return ""
-}
+// flagSearchOnly is JMdict's search-only kanji form flag (sK).
+const flagSearchOnly = "sK"
 
 // result renders a ranked match.
 func result(language string, m *match, freqs []Frequency, names map[int64]string, window []rune, offset int) Result {

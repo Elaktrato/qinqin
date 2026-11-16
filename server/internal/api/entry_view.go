@@ -61,7 +61,7 @@ type searchHit struct {
 }
 
 // entryBase maps a lexicon entry onto the API's base view: Written is
-// the headword (first form, else first reading), readings keep their
+// the display form (lexicon.Entry.Headword), readings keep their
 // stored order, attrs are never nil, and radicalID is the radical entry
 // a character is classified under (nil for none).
 func entryBase(e lexicon.Entry, radicalID *int64) model.EntryBase {

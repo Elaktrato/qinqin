@@ -263,7 +263,7 @@ export interface LookupResult {
 	term: string;
 	reading: string;
 	forms: { text: string; flags?: string[] }[];
-	readings: { type: string; value: string; plain: string }[];
+	readings: { type: string; value: string; plain: string; flags?: string[] }[];
 	matched: string;
 	start: number;
 	end: number;

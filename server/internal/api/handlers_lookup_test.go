@@ -142,8 +142,11 @@ func TestLookupHappyPath(t *testing.T) {
 			Text  string   `json:"text"`
 			Flags []string `json:"flags"`
 		}
-		Readings []struct{ Type, Value, Plain string }
-		Freqs    []struct {
+		Readings []struct {
+			Type, Value, Plain string
+			Flags              []string `json:"flags"`
+		}
+		Freqs []struct {
 			PackID   int64   `json:"packId"`
 			PackName string  `json:"packName"`
 			Rank     int     `json:"rank"`
@@ -162,12 +165,14 @@ func TestLookupHappyPath(t *testing.T) {
 	if err := json.Unmarshal(b, &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Term != "為る" || got.Kind != "word" || got.Matched != "した" || got.Start != 3 || got.End != 5 ||
+	// A kana match of the usually-kana 為る shows its display form する.
+	if got.Term != "する" || got.Kind != "word" || got.Matched != "した" || got.Start != 3 || got.End != 5 ||
 		got.Reading != "する" || len(got.Reasons) != 1 || got.Reasons[0] != "past" {
-		t.Errorf("first = %+v, want 為る matched した [3,5) past", got)
+		t.Errorf("first = %+v, want する (為る) matched した [3,5) past", got)
 	}
+	// Readings carry their flags (never null) for a client's display form rule.
 	if len(got.Forms) == 0 || got.Forms[0].Text != "為る" || len(got.Readings) == 0 || got.Readings[0].Value != "する" ||
-		got.Readings[0].Type != "kana" {
+		got.Readings[0].Type != "kana" || got.Readings[0].Flags == nil {
 		t.Errorf("forms/readings = %+v / %+v", got.Forms, got.Readings)
 	}
 	if len(got.Freqs) != 1 || got.Freqs[0].Rank != 15 || got.Freqs[0].PackName != "Freq test" || got.Freqs[0].PackID == 0 {

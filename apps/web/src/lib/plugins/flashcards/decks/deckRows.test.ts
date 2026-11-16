@@ -50,6 +50,22 @@ describe('deckRows', () => {
 		expect(rows[0].siblings.map((c) => c.kind).sort()).toEqual(['reverse', 'writing']);
 	});
 
+	it('a kana snapshot that is a reading wins over the live written form (starter copy)', () => {
+		// A starter deck row いぬ snapshots いぬ; the entry's display form is 犬.
+		const cards = [card('vocab', 1, ['d1'], { written: 'いぬ' }), card('vocab', 2, ['d1'], { written: '乃' })];
+		const ja = (id: number, written: string, kana: string): EntryBase => ({
+			...base(id, written, []),
+			language: 'ja',
+			readings: [{ type: 'kana', value: kana, plain: kana, ord: 0 }]
+		});
+		const bases = new Map([
+			[1, ja(1, '犬', 'いぬ')],
+			[2, ja(2, 'の', 'の')]
+		]);
+		const rows = deckRows(cards, 'd1', new Map(), bases);
+		expect(rows.map((r) => r.written)).toEqual(['いぬ', 'の']);
+	});
+
 	it('a stray sibling without a vocab card still gets a row, state New', () => {
 		const rows = deckRows([card('reverse', 7)], 'd1', new Map());
 		expect(rows).toHaveLength(1);
