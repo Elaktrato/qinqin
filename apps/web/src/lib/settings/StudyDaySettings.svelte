@@ -31,7 +31,16 @@
 	const unusable = $derived(unusableZones(history));
 	const device = $derived(mismatch(current, browserZone()));
 	const options = $derived(zoneOptions(supported, current, query));
-	const matchText = $derived(zoneMatchText(supported, query));
+	// The live count follows the query once typing pauses, so a screen
+	// reader hears one count instead of one per keystroke.
+	const ANNOUNCE_DELAY_MS = 500;
+	let announcedQuery = $state('');
+	$effect(() => {
+		const next = query;
+		const timer = setTimeout(() => (announcedQuery = next), ANNOUNCE_DELAY_MS);
+		return () => clearTimeout(timer);
+	});
+	const matchText = $derived(zoneMatchText(supported, announcedQuery));
 	const selected = $derived(picked !== '' && options.includes(picked) ? picked : current);
 
 	async function apply(zone: string): Promise<void> {
