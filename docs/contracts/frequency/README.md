@@ -31,8 +31,10 @@ the frequency packs installed on the server (`GET /api/frequency-packs`).
 
 An entry is known when one of its **live vocab** cards has a schedule whose card score
 (`round(100 * log2(1 + stability) / log2(366))`, `decks/README.md`) is at least 80. Other kinds never make
-an entry known; a schedule of a card that is not live does not count. A manual mark (#68) will extend this
-one predicate.
+an entry known; a schedule of a card that is not live does not count. The learner's manual mark (#68, a live
+`known:<entryId>` row, `reader/README.md`) makes an entry known whatever its cards: a marked word is skipped
+by starter decks. The reader passes its own `smartThreshold` to the same predicate (`reader/word-states.json`);
+starter decks always use 80.
 
 ## Starter decks (`starter-deck-ids.json`, `starter-resolution.json`)
 
