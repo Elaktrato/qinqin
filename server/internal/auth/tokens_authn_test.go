@@ -153,6 +153,10 @@ func TestAuthenticateTokenLastUsed(t *testing.T) {
 			p, err := auth.AuthenticateToken(ctx, sqlDB, tok)
 			if err != nil || p == nil {
 				errs <- err
+				return
+			}
+			if err := auth.TouchToken(ctx, sqlDB, p); err != nil {
+				errs <- err
 			}
 		}()
 	}
@@ -169,13 +173,28 @@ func TestAuthenticateTokenLastUsed(t *testing.T) {
 	if got := lastUsed(); got != "2026-11-16T12:01:00Z" {
 		t.Errorf("last used %q", got)
 	}
-	set(start.Add(5 * time.Minute))
+	use := func() {
+		p, err := auth.AuthenticateToken(ctx, sqlDB, tok)
+		if err != nil || p == nil {
+			t.Fatalf("use: %v %v", p, err)
+		}
+		if err := auth.TouchToken(ctx, sqlDB, p); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Authenticating alone records no use.
+	set(start.Add(2 * time.Minute))
 	auth.AuthenticateToken(ctx, sqlDB, tok)
+	if got := lastUsed(); got != "2026-11-16T12:01:00Z" {
+		t.Errorf("AuthenticateToken wrote a use: %q", got)
+	}
+	set(start.Add(5 * time.Minute))
+	use()
 	if got := lastUsed(); got != "2026-11-16T12:01:00Z" {
 		t.Errorf("written within 5 minutes: %q", got)
 	}
 	set(start.Add(7 * time.Minute))
-	auth.AuthenticateToken(ctx, sqlDB, tok)
+	use()
 	if got := lastUsed(); got != "2026-11-16T12:07:00Z" {
 		t.Errorf("not written after 5 minutes: %q", got)
 	}

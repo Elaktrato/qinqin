@@ -287,9 +287,8 @@ func TokenFromRequest(r *http.Request) (raw string, ok bool) {
 // AuthenticateToken resolves an access token. nil, nil means refuse (401):
 // malformed, unknown, expired, revoked, or its owner is disabled. There is
 // one lookup, on the hash of the presented string; no secret is compared
-// in Go. last_used_at is written at most every lastUsedEvery; the first
-// use (NULL to a value) is audited once, token_first_used, even under
-// parallel requests (the guarded UPDATE has one winner).
+// in Go. It records no use: the caller calls TouchToken once the request
+// has passed every check, so a refused request is not a use.
 func AuthenticateToken(ctx context.Context, sqlDB *sql.DB, raw string) (*Principal, error) {
 	if !IsTokenShaped(raw) {
 		return nil, nil
@@ -325,10 +324,19 @@ func AuthenticateToken(ctx context.Context, sqlDB *sql.DB, raw string) (*Princip
 		p.TokenWorkspace = &ws.Int64
 	}
 	p.Level = LevelFull
-	if err := touchToken(ctx, sqlDB, p.TokenID, p.User.ID, last, at); err != nil {
-		return nil, err
-	}
+	p.tokenLastUsed = last
 	return &p, nil
+}
+
+// TouchToken records a use of the token behind p (a principal of
+// AuthenticateToken): last_used_at at most every lastUsedEvery, and the
+// first use (NULL to a value) audited once, token_first_used, even under
+// parallel requests (the guarded UPDATE has one winner).
+func TouchToken(ctx context.Context, sqlDB *sql.DB, p *Principal) error {
+	if p == nil || !p.ViaToken() {
+		return nil
+	}
+	return touchToken(ctx, sqlDB, p.TokenID, p.User.ID, p.tokenLastUsed, nowFunc().UTC())
 }
 
 // touchToken records a use: the first one with its audit row, later ones

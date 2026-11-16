@@ -129,7 +129,8 @@ bearer, in this order:
 4. read token on a `tokWrite` route → `403 token_read_only`;
 5. workspace limit (§3) → `403 token_workspace`;
 6. per-user token rate limit → `429 rate_limited` + `Retry-After`;
-7. the principal goes into the request context and the handler runs; `s.authenticate(r)` returns
+7. the use is recorded (`last_used_at`, first use audited; review fix: a refused request is
+   never a use) and the principal goes into the request context and the handler runs; `s.authenticate(r)` returns
    it. A `qq_pat_` bearer without a gate principal in context resolves as anonymous (defence in
    depth), and `requireAdmin*` / `requireCustomAdmin` refuse any token principal with
    `403 token_not_allowed` even if a row were wrongly marked.

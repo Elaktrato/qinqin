@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -483,4 +485,47 @@ func TestTokenRateLimitPerUser(t *testing.T) {
 	if w := call(a.user); w.Code != 200 {
 		t.Errorf("session after the token budget ran out: %d", w.Code)
 	}
+}
+
+// Review fix: a request the gate refuses (read-only, workspace, rate limit)
+// is not a use: last_used_at and token_first_used come only once a request
+// reaches its handler.
+func TestRefusedTokenRequestsAreNotUses(t *testing.T) {
+	s, _, _, sqlDB := newGateServer(t)
+	p := DefaultAuthPolicy()
+	p.Named["pat"] = ratelimit.BucketPolicy{Burst: 2, Every: time.Hour, MaxKeys: authTableCap}
+	s.limits = newAuthLimits(p)
+	ta := newTokenActors(t, sqlDB)
+	var ran bool
+	var got *auth.Principal
+	uses := func(tok string) (last sql.NullString, first int) {
+		sqlDB.QueryRow(`SELECT last_used_at FROM access_tokens WHERE token_hash = ?`, hashHex(tok)).Scan(&last)
+		sqlDB.QueryRow(`SELECT COUNT(*) FROM auth_audit WHERE action = 'token_first_used'`).Scan(&first)
+		return
+	}
+	serveStub(s, stubRoute(tokWriteAny, &ran, &got), ta.patR, "")      // read-only
+	serveStub(s, stubRoute(tokReadAny, &ran, &got), ta.patL, "")       // workspace
+	serveStub(s, stubRoute(tokReadAny, &ran, &got), ta.patExpired, "") // expired
+	for _, tok := range []string{ta.patR, ta.patL} {
+		if last, first := uses(tok); last.Valid || first != 0 {
+			t.Fatalf("a refused request counted as a use: %v, %d first-use rows", last, first)
+		}
+	}
+	// Spend the budget with the write token, then a refused (429) read.
+	serveStub(s, stubRoute(tokReadAny, &ran, &got), ta.patW, "")
+	serveStub(s, stubRoute(tokReadAny, &ran, &got), ta.patW, "")
+	if w := serveStub(s, stubRoute(tokReadAny, &ran, &got), ta.patR, ""); w.Code != 429 {
+		t.Fatalf("third request %d, want 429", w.Code)
+	}
+	if last, _ := uses(ta.patR); last.Valid {
+		t.Error("a rate-limited request counted as a use")
+	}
+	if last, first := uses(ta.patW); !last.Valid || first != 1 {
+		t.Errorf("a request that reached its handler was not a use: %v, %d", last, first)
+	}
+}
+
+func hashHex(s string) string {
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:])
 }

@@ -1,6 +1,10 @@
 package auth
 
-import "qinqin/internal/model"
+import (
+	"database/sql"
+
+	"qinqin/internal/model"
+)
 
 // Principal is an authenticated request: the user, the session it came
 // in on, and how far that session may go.
@@ -22,6 +26,7 @@ type Principal struct {
 	TokenID        int64
 	TokenScope     string
 	TokenWorkspace *int64
+	tokenLastUsed  sql.NullString // as read by AuthenticateToken, for TouchToken
 }
 
 // ViaToken reports whether the request came in on a personal access token

@@ -70,8 +70,9 @@ func gatePrincipal(r *http.Request) *auth.Principal {
 // owner is 401 unauthorized (one code, one body); a restricted owner gets
 // its restriction; a read token on a writing route is 403 token_read_only;
 // a request outside the token's workspace is 403 token_workspace; the
-// per-user token budget is 429 rate_limited. Then the handler runs with the
-// principal in its context. It is the only caller of
+// per-user token budget is 429 rate_limited. Then the use is recorded
+// (auth.TouchToken: last_used_at, first use audited) and the handler runs
+// with the principal in its context; a refused request is never a use. It is the only caller of
 // auth.AuthenticateToken (gate_static_test.go) and logs nothing.
 func (s *server) tokenGate(rt route) http.HandlerFunc {
 	rule := rt.token
@@ -110,6 +111,11 @@ func (s *server) tokenGate(rt route) http.HandlerFunc {
 		}
 		if allowed, retry := s.authLimiter("pat").Allow(int64Key(p.User.ID)); !allowed {
 			writeRateLimitedAs(w, retry, "access token requests")
+			return
+		}
+		// Only a request that passed every check is a use.
+		if err := auth.TouchToken(r.Context(), s.db, p); err != nil {
+			writeInternal(w, r)
 			return
 		}
 		next(w, r.WithContext(context.WithValue(r.Context(), gatePrincipalKey{}, p)))
