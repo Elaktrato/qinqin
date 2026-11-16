@@ -15,6 +15,7 @@ import (
 	"qinqin/internal/ai"
 	"qinqin/internal/auth"
 	"qinqin/internal/dict"
+	"qinqin/internal/freq"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
 	"qinqin/internal/mail"
@@ -52,6 +53,9 @@ type server struct {
 	sweepEvery time.Duration
 
 	chars charactersCache // GET /api/characters payloads
+
+	freqTop       freq.TopCache // GET /api/frequency-packs/{id}/top: resolved starter decks per pack content
+	freqTopBodies starterBodies // and its answers per pack, size and lexicon version
 
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
@@ -235,6 +239,7 @@ func (s *server) routes() []route {
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},
 		{"POST /api/entries/bases", s.handleEntryBases, accUser, nil},
+		{"POST /api/entries/frequency-ranks", s.handleFrequencyRanks, accUser, nil},
 		{"PUT /api/entries/{id}", s.handlePutEntry, accUser, nil},
 		{"POST /api/entries/{id}/sentences", s.handleAddSentence, accUser, nil},
 		{"GET /api/search", s.handleSearch, accPublic, nil},
@@ -259,6 +264,7 @@ func (s *server) routes() []route {
 		{"POST /api/admin/dictionaries", s.handleInstallDictionary, accAdmin, nil},
 		{"DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary, accAdmin, nil},
 		{"GET /api/frequency-packs", s.handleListFrequencyPacks, accPublic, nil},
+		{"GET /api/frequency-packs/{id}/top", s.handleFrequencyTop, accUser, nil},
 		{"GET /api/grammar", s.handleListGrammar, accPublic, nil},
 		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil},
 		{"GET /api/audio/entries/{id}", s.handleAudioEntry, accUser, nil},

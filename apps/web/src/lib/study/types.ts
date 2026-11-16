@@ -12,14 +12,15 @@ import type { VacationPeriod } from './vacation';
 /** Where an owned copy of a system deck came from (decks view, "Add to my decks"). */
 export type DeckSource =
 	| { type: 'level'; packId: string; level: string }
-	| { type: 'plugin'; pluginId: string; key: string };
+	| { type: 'plugin'; pluginId: string; key: string }
+	| { type: 'frequency'; packId: string; size: number };
 
 /** One user-created deck. The implicit `general` deck has no stored row. */
 export interface Deck {
 	id: string;
 	name: string;
 	createdAt: string;
-	/** Set on a copy of a level or plugin deck: "Copied from HSK 1". */
+	/** Set on a copy of a level, plugin or starter deck: "Copied from HSK 1". */
 	source?: DeckSource;
 }
 

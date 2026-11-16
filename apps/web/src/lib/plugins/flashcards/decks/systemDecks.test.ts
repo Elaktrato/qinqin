@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../../../docs/contracts/decks/system-deck-ids.json';
 import type { EntryBase, Scheme } from '$lib/api/types';
 import {
+	copiedFrom,
 	fnv1a32,
 	levelDecks,
 	levelItems,
@@ -117,5 +118,13 @@ describe('levelItems', () => {
 describe('plugin deck providers', () => {
 	it('none ships one in v0.3.0', () => {
 		expect(pluginDeckProviders).toEqual([]);
+	});
+});
+
+describe('copiedFrom', () => {
+	it('names the system deck a copy came from', () => {
+		expect(copiedFrom({ type: 'level', packId: 'hsk-words', level: 'HSK 1' })).toBe('hsk-words · HSK 1');
+		expect(copiedFrom({ type: 'plugin', pluginId: 'p', key: 'k' })).toBe('p · k');
+		expect(copiedFrom({ type: 'frequency', packId: 'jiten-frequency', size: 500 })).toBe('jiten-frequency · Top 500');
 	});
 });

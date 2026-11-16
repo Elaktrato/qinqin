@@ -19,6 +19,7 @@ import {
   deleteCards,
   deleteDeck,
   saveDeckCardTypes,
+  saveDeckNewOrder,
   dropSiblingCards,
   skipKind,
   unskipKind,
@@ -519,6 +520,84 @@ describe("study store", () => {
         cardTypes: ["reverse", "cloze"],
         limits: { new: 5 },
       });
+    });
+
+    it("saveDeckCardTypes keeps the deck's new-card order", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: [],
+              newOrder: { by: "frequency" },
+              updatedAt: "2026-01-01T00:00:00Z",
+            }),
+          ],
+        });
+      });
+      await saveDeckCardTypes("d1", ["reverse"]);
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "d1",
+        cardTypes: ["reverse"],
+        newOrder: { by: "frequency" },
+      });
+    });
+
+    it("saveDeckNewOrder keeps card types and unknown fields", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: ["cloze"],
+              updatedAt: "2026-01-01T00:00:00Z",
+              goal: { n: 5 },
+            }),
+          ],
+        });
+      });
+      const saved = await saveDeckNewOrder("d1", { by: "level", packId: "hsk-words" });
+      expect(saved.newOrder).toEqual({ by: "level", packId: "hsk-words" });
+      expect(putBodies()[0]!.url).toBe(cfgUrl("d1"));
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "d1",
+        cardTypes: ["cloze"],
+        newOrder: { by: "level", packId: "hsk-words" },
+        goal: { n: 5 },
+      });
+    });
+
+    it("saveDeckNewOrder with added removes the field", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: [],
+              newOrder: { by: "frequency" },
+              updatedAt: "2026-01-01T00:00:00Z",
+            }),
+          ],
+        });
+      });
+      await saveDeckNewOrder("d1", { by: "added" });
+      expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
+    });
+
+    it("saveDeckNewOrder with added also drops an unreadable stored order", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "popular" } }),
+          ],
+        });
+      });
+      await saveDeckNewOrder("d1", { by: "added" });
+      expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
     });
 
     it("saveDeckCardTypes creates the row when none exists", async () => {
@@ -1587,6 +1666,42 @@ describe("study store", () => {
       });
       // An unknown source shape is dropped, the deck stays.
       expect(decks.find((d) => d.id === "plain")?.source).toBeUndefined();
+    });
+
+    it("keeps a frequency source and drops a malformed one", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deck:d-frq-jiten-frequency-d4514a31", {
+            id: "d-frq-jiten-frequency-d4514a31",
+            name: "Jiten · Top 500",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "frequency", packId: "jiten-frequency", size: 500 },
+          }),
+          pluginRow("deck:bad", {
+            id: "bad",
+            name: "Bad",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "frequency", packId: "jiten-frequency", size: "500" },
+          }),
+        ],
+      });
+      const { decks } = await loadStudyData(WORKSPACE_ID);
+      expect(decks.find((d) => d.id === "d-frq-jiten-frequency-d4514a31")?.source).toEqual({
+        type: "frequency",
+        packId: "jiten-frequency",
+        size: 500,
+      });
+      expect(decks.find((d) => d.id === "bad")?.source).toBeUndefined();
+    });
+
+    it("loadRawStudyData returns the live deck settings", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "frequency" } }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.deckSettings?.d1?.newOrder).toEqual({ by: "frequency" });
     });
 
     it("loadRawStudyData keeps stored duplicates the merged read folds away", async () => {
