@@ -50,16 +50,13 @@ Order: web first. Most features ship on web before the Android build starts.
   active selection per user. On `feature/ai-providers`; implemented and checked against fake servers only, never against a
   real provider (owner checklist: `docs/superpowers/handoffs/2026-11-15-ai-providers-handoff.md`). Lumo has no public API yet.
 
-## v0.3.0 — shared-data rules for the Android client (in progress)
+## v0.3.0 — shared-data rules for the Android client (done on develop; stretch open)
 
 Direction: `docs/superpowers/directions/2026-11-15-v0.3.0-web-build.md`. Collection branch `feature/v0.3.0`.
 
-- ~~[#86](https://github.com/Elaktrato/qinqin/issues/86) login rate limiting and lockout~~ — done (develop)
-- ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) the learner's local day~~ — done (develop)
-- ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character schemes~~ — done (develop)
-- [#90](https://github.com/Elaktrato/qinqin/issues/90) decks view — built on `feature/v030-decks-view` (not yet merged); its daily-limit display is wired by #89 (`apps/web/src/lib/plugins/flashcards/decks/DeckLimitsSlot.ts`)
-- ~~[#88](https://github.com/Elaktrato/qinqin/issues/88) vacation mode~~ and ~~[#89](https://github.com/Elaktrato/qinqin/issues/89) daily limits~~ — built on `feature/v030-vacation-limits` (not yet merged); contract in `docs/contracts/scheduler/`; the decks view limit editor and "left today" are wired
-- In progress or next: accounts (#64), reverse and cloze cards (#65), backup (#61), PWA (#79), reader display settings (#78), `docs/contracts/` for Android; stretch list in the direction document.
+- Done on develop (merged via `feature/v0.3.0` and the topic branches): ~~[#86](https://github.com/Elaktrato/qinqin/issues/86) login rate limiting~~, ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) the learner's local day~~, ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions~~, ~~[#64](https://github.com/Elaktrato/qinqin/issues/64) accounts (sessions, invites, SMTP, MFA)~~, ~~[#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards~~, ~~[#90](https://github.com/Elaktrato/qinqin/issues/90) decks view~~ (merge 0764d27), ~~[#88](https://github.com/Elaktrato/qinqin/issues/88) vacation mode and [#89](https://github.com/Elaktrato/qinqin/issues/89) daily limits~~ (merge b3548b2), ~~[#61](https://github.com/Elaktrato/qinqin/issues/61) backup~~ (merge 0a3884f), ~~[#79](https://github.com/Elaktrato/qinqin/issues/79) installable app and offline study~~ (merge 97e0053), ~~[#78](https://github.com/Elaktrato/qinqin/issues/78) reader display settings~~ (merge 3d05ae0).
+- `docs/contracts/` for the Android client: done, entry point `docs/contracts/overview.md` (gaps listed there).
+- Stretch, not started: [#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals, [#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered starter decks, [#77](https://github.com/Elaktrato/qinqin/issues/77) notes and mnemonics, [#68](https://github.com/Elaktrato/qinqin/issues/68) unknown-word highlighting, [#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history, [#71](https://github.com/Elaktrato/qinqin/issues/71) radical lookup, [#83](https://github.com/Elaktrato/qinqin/issues/83) personal access tokens, [#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary, [#80](https://github.com/Elaktrato/qinqin/issues/80).
 
 ## v0.4.0 — Android client (milestone)
 

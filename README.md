@@ -27,6 +27,16 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Study mode** — add any word from its entry page and review it with Anki-style
   grading; the flashcards plugin derives FSRS schedules and EXP/levels from the
   event log.
+- **Decks, limits and vacation** — a decks view with per-deck numbers (studied,
+  mastered, due, 30-day reviews, retention) and copies of level decks; optional
+  reverse and cloze cards per deck; daily limits for new cards and reviews (per
+  workspace, overridable per deck); vacation mode that pauses your schedule
+  without piling up reviews. Rules: `docs/contracts/`.
+- **Installable app** — the web app installs as a PWA and keeps studying
+  offline; reviews wait in a per-user outbox and sync when you are back online.
+- **Accounts** — sessions you can end, registration modes and invites, password
+  reset by mail, two-step sign-in (authenticator or emailed code), and personal
+  backup and restore (see [Backup](#backup)).
 - **Reader library, bookmarks and highlights** — each workspace has its own
   library of imported books, a tabbed importer with daily suggestions, and
   per-book bookmarks, highlights and notes (see [Reader](#reader)).
