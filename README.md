@@ -1209,6 +1209,12 @@ sessions and mastery map, and
 
 ### API
 
+Scripts can use a personal access token (`qq_pat_…`, Settings, Account, Access tokens) instead of a session on the
+routes marked in the Token column of the wiki's API routes page; every other route answers 403 `token_not_allowed`.
+See the wiki page API access tokens and `docs/contracts/auth/tokens.json`. Token management:
+`GET`/`POST`/`DELETE /api/account/tokens`, `DELETE /api/account/tokens/{id}` (a full session; create re-asks for the
+password and answers the token once, `no-store`).
+
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,
 `GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/characters`, `GET /api/components`, `GET /api/component-packs`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.

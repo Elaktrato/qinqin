@@ -114,3 +114,44 @@ func TestRoutesAreMountedOnlyFromTheTable(t *testing.T) {
 		}
 	}
 }
+
+// Access tokens are resolved in one place: tokengate.go is the only caller
+// of auth.AuthenticateToken and the only file that puts a principal into a
+// request context, so no handler can authenticate a token behind the gate's
+// back (route rule, read-only, workspace limit and rate limit).
+func TestOnlyTheTokenGateAuthenticatesTokens(t *testing.T) {
+	found := false
+	for name, f := range apiSources(t) {
+		local, _ := authLocalName(f)
+		ast.Inspect(f, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			if id, ok := sel.X.(*ast.Ident); ok && local != "" && id.Name == local && sel.Sel.Name == "AuthenticateToken" {
+				if name != "tokengate.go" {
+					t.Errorf("%s calls auth.AuthenticateToken: only tokenGate may", name)
+				} else {
+					found = true
+				}
+			}
+			if sel.Sel.Name == "WithValue" {
+				for _, arg := range call.Args {
+					if cl, ok := arg.(*ast.CompositeLit); ok {
+						if id, ok := cl.Type.(*ast.Ident); ok && id.Name == "gatePrincipalKey" && name != "tokengate.go" {
+							t.Errorf("%s puts a gate principal into a context: only tokenGate may", name)
+						}
+					}
+				}
+			}
+			return true
+		})
+	}
+	if !found {
+		t.Error("tokengate.go does not call auth.AuthenticateToken: the scan is broken")
+	}
+}

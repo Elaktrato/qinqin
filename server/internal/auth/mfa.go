@@ -332,8 +332,8 @@ func SetMFAEmail(ctx context.Context, ex execer, userID int64, on bool) error {
 }
 
 // ResetMFA removes every second factor of the user (authenticator, recovery
-// codes, the email method flag) and deletes their sessions, in the caller's
-// transaction.
+// codes, the email method flag) and deletes their sessions and access
+// tokens, in the caller's transaction.
 func ResetMFA(ctx context.Context, ex execer, userID int64) error {
 	if err := RemoveTOTP(ctx, ex, userID); err != nil {
 		return err
@@ -344,7 +344,7 @@ func ResetMFA(ctx context.Context, ex execer, userID int64) error {
 	if _, err := ex.ExecContext(ctx, `DELETE FROM auth_challenges WHERE user_id = ? AND kind = 'mfa'`, userID); err != nil {
 		return fmt.Errorf("drop mfa challenges: %w", err)
 	}
-	_, err := revokeSessions(ctx, ex, userID, 0)
+	_, _, err := revokeCredentials(ctx, ex, userID, 0)
 	return err
 }
 

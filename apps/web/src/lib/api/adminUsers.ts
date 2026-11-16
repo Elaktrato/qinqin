@@ -22,6 +22,8 @@ export interface DeletionPreview {
 	sessions: number;
 	overlays: number;
 	sentences: number;
+	/** Personal access tokens (absent from servers before #83). */
+	accessTokens?: number;
 }
 
 export async function listUsers(): Promise<AdminUserDto[]> {

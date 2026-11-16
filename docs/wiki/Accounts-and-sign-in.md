@@ -24,6 +24,12 @@ Use a recovery code at the second step. If you have none, ask an administrator t
 
 Settings, Account, Password. You enter the current password and a new one (10 to 256 characters, not your username). Other sessions are signed out by default. If an administrator gave you a temporary password, the app takes you to this page first and nothing else works until you change it.
 
+Changing your password also revokes all your [access tokens](API-Access-tokens), so scripts that use one stop working until you give them a new token.
+
+## Access tokens
+
+Settings, Account, Access tokens: personal access tokens for your own scripts (read only or read and write, all workspaces or one, 7 to 365 days). Creating one asks for your password; the token is shown once. Logging out other devices, a password change or reset, and the administrator's security actions revoke them. See [API access tokens](API-Access-tokens).
+
 ## Email address
 
 If the server's email policy is `optional` or `required`, set or change your address in Settings, Account. Changing it needs your password and, if you have one, an authenticator code; it cancels open reset links and notifies the old address. With email policy `off` (the default) no address is asked for or shown.

@@ -38,6 +38,9 @@ const ALLOWED: Record<string, Record<string, string>> = {
 	'/src/lib/settings/PackManager.svelte': {
 		'toISOString().slice(0, 10)': "a pack's install date label, a calendar date of an instant"
 	},
+	'/src/lib/account/tokensView.ts': {
+		'/ DAY': 'expiryText: how long an access token still lives (a duration in 24 h units), not a day bucket'
+	},
 	'/src/lib/events.ts': {
 		'24 * 60 * 60 * 1000)': 'sinceDaysAgo: an instant N x 24 h back for a fetch window, not a day bucket'
 	}
