@@ -4,6 +4,8 @@ import type { FrequencyPack } from '$lib/api/types';
 import { ownedStarterDeckId } from './systemDecks';
 import {
 	STARTER_SIZES,
+	starterAddedText,
+	starterView,
 	starterAddItems,
 	starterCredit,
 	starterDeckName,
@@ -82,5 +84,42 @@ describe('starterDecks', () => {
 				}
 			])
 		).toEqual([{ entryId: 7, written: 'する' }]);
+	});
+});
+
+describe('starterView', () => {
+	const entries = [1, 2, 3, 4].map((id) => ({
+		id,
+		language: 'ja',
+		kind: 'word',
+		written: `w${id}`,
+		readings: [],
+		attrs: {},
+		radicalId: null,
+		rank: id
+	}));
+	it('hides the known words and counts them', () => {
+		const view = starterView(entries, new Set([2, 4, 99]));
+		expect(view.shown.map((e) => e.id)).toEqual([1, 3]);
+		expect(view.known).toBe(2);
+		expect(view.knownLine).toBe('2 known words skipped');
+		expect(starterView(entries, new Set([1])).knownLine).toBe('1 known word skipped');
+		expect(starterView(entries, new Set()).knownLine).toBeNull();
+	});
+});
+
+describe('starterAddedText', () => {
+	const plan = (created: number, joined: number, known: number) => ({
+		deck: null,
+		writes: [],
+		created,
+		joined,
+		skipped: 0,
+		known
+	});
+	it('names the added words and the known ones skipped', () => {
+		expect(starterAddedText(plan(3, 0, 1))).toBe('Added 3 words; 1 you know was skipped');
+		expect(starterAddedText(plan(470, 10, 20))).toBe('Added 480 words; 20 you know were skipped');
+		expect(starterAddedText(plan(1, 0, 0))).toBe('Added 1 word');
 	});
 });
