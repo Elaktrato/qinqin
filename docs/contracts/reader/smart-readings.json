@@ -984,6 +984,163 @@
      "source": "book"
     }
    ]
+  },
+  {
+   "name": "smart: book ruby differing from the known reading stays visible (明日 あす vs あした)",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "明日",
+     "ruby": "あす"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "明日",
+     "lemma": "明日",
+     "entries": [
+      3
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "あした"
+     }
+    }
+   ],
+   "scores": {
+    "3": 90
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "あす",
+     "concealed": false,
+     "source": "book"
+    }
+   ]
+  },
+  {
+   "name": "smart: book ruby of a gloss reading stays visible (本気 マジ)",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "本気",
+     "ruby": "マジ"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "本気",
+     "lemma": "本気",
+     "entries": [
+      3
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "ほんき"
+     }
+    }
+   ],
+   "scores": {
+    "3": 90
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "マジ",
+     "concealed": false,
+     "source": "book"
+    }
+   ]
+  },
+  {
+   "name": "smart: katakana book ruby equal to the known reading is concealed",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "カンジ"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "漢字",
+     "lemma": "漢字",
+     "entries": [
+      3
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "かんじ"
+     }
+    }
+   ],
+   "scores": {
+    "3": 90
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "カンジ",
+     "concealed": true,
+     "source": "book"
+    }
+   ]
+  },
+  {
+   "name": "smart: a known match without a reading cannot conceal book ruby",
+   "lang": "ja",
+   "readings": "smart",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "漢字",
+     "ruby": "かんじ"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "surface": "漢字",
+     "lemma": "漢字",
+     "entries": [
+      3
+     ],
+     "reading": null
+    }
+   ],
+   "scores": {
+    "3": 90
+   },
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "かんじ",
+     "concealed": false,
+     "source": "book"
+    }
+   ]
   }
  ]
 }

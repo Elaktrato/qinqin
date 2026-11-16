@@ -12,7 +12,7 @@ const KANJI = /[\p{Script=Han}々〆]/u;
 const KANA_READING = /^[ぁ-ゖー]+$/u;
 
 /** Katakana to hiragana; the long-vowel mark and everything else stay as is. */
-function fold(text: string): string {
+export function fold(text: string): string {
 	let out = '';
 	for (const ch of text) {
 		const c = ch.codePointAt(0) as number;
@@ -74,6 +74,9 @@ export function alignFurigana(surface: string, lemma: string, reading: string): 
 	if (!KANJI.test(surface) || !KANJI.test(lemma)) return null;
 	const kana = fold(reading);
 	if (!KANA_READING.test(kana)) return null;
+
+	// 来る is read き/こ/く by inflection: the stem reading is not the lemma's.
+	if (surface !== lemma && /[来來]る$/.test(lemma)) return null;
 
 	const s = Array.from(surface);
 	const l = Array.from(lemma);

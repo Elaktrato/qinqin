@@ -8,7 +8,7 @@ import { cardScore } from '$lib/study/mastery';
 import type { Schedule } from '$lib/study/scheduler';
 import type { StudyCard } from '$lib/study/types';
 import type { ReaderDisplay } from './displaySettings';
-import { alignFurigana } from './furigana';
+import { alignFurigana, fold } from './furigana';
 import type { Run } from './paragraphText';
 
 /** One reading over paragraph code points [start, end). */
@@ -97,7 +97,17 @@ export function annotateParagraph(
 			chars.forEach((c, i) => {
 				if (HAN.test(c)) han.push(start + i);
 			});
-			concealed = han.length > 0 && han.every((i) => knownAt.has(i));
+			// Known only when the known matches' readings spell the book's ruby
+			// (明日 with ruby あす stays visible for a learner who knows あした).
+			const covering = matches
+				.filter((m) => knownMatch.get(m) === true && m.start < pos && start < m.end)
+				.sort((a, b) => a.start - b.start);
+			const spelled = covering.map((m) => m.reading?.value ?? null);
+			concealed =
+				han.length > 0 &&
+				han.every((i) => knownAt.has(i)) &&
+				!spelled.includes(null) &&
+				fold(spelled.join('')) === fold(run.ruby);
 		}
 		pieces.push({ start, end: pos, rt: run.ruby, concealed, source: 'book' });
 	}

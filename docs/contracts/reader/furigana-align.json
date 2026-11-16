@@ -171,20 +171,11 @@
    "expect": null
   },
   {
-   "name": "ichidan-like stem with a trailing inflection",
+   "name": "inflected 来る: the stem reading changes (き, こ): no furigana",
    "surface": "来た",
    "lemma": "来る",
    "reading": "くる",
-   "expect": [
-    [
-     "来",
-     "く"
-    ],
-    [
-     "た",
-     null
-    ]
-   ]
+   "expect": null
   },
   {
    "name": "two ways to split the reading: no furigana",
@@ -198,6 +189,57 @@
    "surface": "漢字",
    "lemma": "漢字",
    "reading": "",
+   "expect": null
+  },
+  {
+   "name": "来る itself is aligned",
+   "surface": "来る",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": [
+    [
+     "来",
+     "く"
+    ],
+    [
+     "る",
+     null
+    ]
+   ]
+  },
+  {
+   "name": "来ない",
+   "surface": "来ない",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": null
+  },
+  {
+   "name": "来ます",
+   "surface": "来ます",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": null
+  },
+  {
+   "name": "持って来た",
+   "surface": "来た",
+   "lemma": "来る",
+   "reading": "くる",
+   "expect": null
+  },
+  {
+   "name": "compound ending in 来る, inflected",
+   "surface": "出来た",
+   "lemma": "出来る",
+   "reading": "できる",
+   "expect": null
+  },
+  {
+   "name": "traditional form 來",
+   "surface": "來た",
+   "lemma": "來る",
+   "reading": "くる",
    "expect": null
   }
  ]
