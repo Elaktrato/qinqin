@@ -90,4 +90,13 @@ describe('StudyDaySettings', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Use Asia/Tokyo from now on' }));
 		await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/not a time zone/i));
 	});
+
+	it('announces how many time zones match the search', async () => {
+		setup([{ zone: 'Europe/Berlin', from: null }], 'Europe/Berlin');
+		const box = screen.getByRole('searchbox', { name: 'Search time zones' });
+		await fireEvent.input(box, { target: { value: 'asia' } });
+		await waitFor(() => expect(screen.getByText('1 time zone matches.').getAttribute('aria-live')).toBe('polite'));
+		await fireEvent.input(box, { target: { value: 'atlantis' } });
+		await waitFor(() => expect(screen.getByText('No time zones match “atlantis”.')).toBeTruthy());
+	});
 });
