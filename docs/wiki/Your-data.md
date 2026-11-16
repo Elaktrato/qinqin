@@ -12,7 +12,7 @@ The download is refused up front (`backup_too_large_to_restore`) if it could not
 
 ### Lookup history
 
-The [lookup history](Searching-and-entries#lookup-history) is in the download (with its words named, so a restore puts it on the same words on another server; words that server lacks are left out). **Clear history** deletes the history and the old search records of the workspace on the server, and the offline copies in this browser. It cannot reach copies you already downloaded, the safety exports a restore makes (kept at most seven days), backups your administrator made, or the database's free space until it is reused.
+The [lookup history](Searching-and-entries#lookup-history) is in the download (with its words named, so a restore puts it on the same words on another server; words that server lacks are left out). **Clear history** deletes the history and the old search records of the workspace on the server, and filters it out of offline copies this browser saved earlier (offline study keeps working). It cannot reach copies you already downloaded, the safety exports a restore makes (kept at most seven days), backups your administrator made, or the database's free space until it is reused.
 
 ## Restore from a backup
 

@@ -9,6 +9,9 @@ import { invalidateWorkspaceEvents } from '../events';
 import { coreManifest } from '../plugins/core/manifest';
 import { createPluginSdk, type DataScope } from '../plugins/sdk';
 import { ownPartition } from '../pwa/partitions';
+import { clearReceipts } from '../pwa/prepareOffline';
+import { holdsLookups } from '../pwa/sw/classify';
+import { scrubForCache, scrubbedPath } from '../pwa/sw/scrub';
 import {
 	LOOKUPS_KEY,
 	LOOKUP_CFG_KEY,
@@ -77,7 +80,7 @@ export async function removeFromHistory(ws: number, entryIds: number[]): Promise
 		recorder.adopt(ws, h);
 		return h;
 	});
-	await forgetOfflineLookups();
+	await scrubOfflineLookups();
 	return next;
 }
 
@@ -150,7 +153,7 @@ export async function clearHistory(
 		throw new LookupEventsNotDeletedError();
 	} finally {
 		invalidateWorkspaceEvents(ws);
-		await forgetOfflineLookups();
+		await scrubOfflineLookups();
 	}
 	return { eventsDeleted: deleted, history: next };
 }
@@ -185,18 +188,29 @@ export async function saveLookupCfg(record: boolean): Promise<void> {
 	lookupRecorder().setRecording(record);
 }
 
+interface CacheLike {
+	keys(): Promise<readonly Request[]>;
+	match(request: Request | string): Promise<Response | undefined>;
+	put(request: Request | string, response: Response): Promise<void>;
+	delete(request: Request | string): Promise<boolean>;
+}
+
 interface CachesLike {
 	keys(): Promise<string[]>;
-	open(name: string): Promise<{ keys(): Promise<readonly Request[]>; delete(request: Request | string): Promise<boolean> }>;
+	open(name: string): Promise<CacheLike>;
 }
 
 /**
- * forgetOfflineLookups deletes the saved offline copies (service worker API
- * partition of the current credential) that can hold the history or old
- * lookup events: whole-account pulls, event logs and qinqin-core plugin
- * data. They are fetched again the next time a page needs them. Best effort.
+ * scrubOfflineLookups cleans the saved offline copies of the current
+ * credential's service worker partition after a Clear or Remove: saved pulls
+ * and event logs are filtered in place (the lookups rows and old lookup
+ * events taken out, everything else and the save time kept), so offline
+ * study stays ready. The worker already filters what it saves (scrub.ts);
+ * this covers copies saved before. A copy that cannot be read, or a saved
+ * read of the lookup rows, is deleted, and then the "prepared" receipts are
+ * cleared so the app prepares offline use again. Best effort.
  */
-export async function forgetOfflineLookups(
+export async function scrubOfflineLookups(
 	cachesLike: CachesLike | undefined = typeof caches === 'undefined' ? undefined : (caches as unknown as CachesLike)
 ): Promise<void> {
 	if (cachesLike === undefined) return;
@@ -206,12 +220,27 @@ export async function forgetOfflineLookups(
 		const name = await ownPartition(token);
 		if (!(await cachesLike.keys()).includes(name)) return;
 		const cache = await cachesLike.open(name);
+		let deleted = false;
 		for (const req of await cache.keys()) {
-			const path = new URL(req.url).pathname;
-			if (path === '/api/sync/pull' || path === '/api/events' || path.startsWith('/api/plugins/qinqin-core/data')) {
-				await cache.delete(req);
+			const url = new URL(req.url);
+			if (holdsLookups(url)) {
+				deleted = (await cache.delete(req)) || deleted;
+				continue;
+			}
+			if (!scrubbedPath(url.pathname)) continue;
+			const saved = await cache.match(req);
+			if (!saved) continue;
+			const text = await saved.clone().text();
+			const body = scrubForCache(url.pathname, text);
+			if (body === null) {
+				deleted = (await cache.delete(req)) || deleted;
+			} else if (body !== text) {
+				const headers = new Headers(saved.headers);
+				headers.delete('content-length');
+				await cache.put(req, new Response(body, { status: saved.status, statusText: saved.statusText, headers }));
 			}
 		}
+		if (deleted) clearReceipts(typeof localStorage === 'undefined' ? null : localStorage);
 	} catch {
 		// Best effort: Cache Storage may be unavailable.
 	}

@@ -61,7 +61,7 @@ The box **You keep looking these up** names up to ten words you looked up at lea
 
 **Clear history…** asks first, then deletes the workspace's history on the server, including old search records (older versions kept the text of every search query). It cannot be undone. The switch **Record words I look up** is one setting for your account on every device and workspace; turning it off stops recording (other devices stop at their next save) but deletes nothing, so the page then offers **Clear history too**.
 
-The history lives on your server only (the at most 500 most recent words per workspace), syncs between your devices, and is in your backup. Lookups wait in the open tab for a few seconds before they are saved; a lookup made right before the tab is closed while offline can be lost. Nothing about the history is kept in browser storage; the service worker never saves it for offline use. See [Your data](Your-data) for what Clear cannot reach.
+The history lives on your server only (the at most 500 most recent words per workspace), syncs between your devices, and is in your backup. Lookups wait in the open tab for a few seconds before they are saved; a lookup made right before the tab is closed while offline can be lost. Nothing about the history is kept in browser storage: the offline copies the app saves for studying offline leave the history and old search records out. See [Your data](Your-data) for what Clear cannot reach.
 
 ## Related
 

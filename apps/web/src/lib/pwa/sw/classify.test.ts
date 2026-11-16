@@ -88,6 +88,10 @@ describe('classify: spec table', () => {
 		expect(kind('/api/plugins/qinqin-core/data?workspace=3&prefix=note%3A')).toBe('api');
 		expect(kind('/api/plugins/qinqin-core/data/note:5?workspace=3')).toBe('api');
 		expect(kind('/api/plugins/qinqin-flashcards/data/lookups?workspace=3')).toBe('api');
+		// an encoded path names the same route
+		expect(kind('/api/plugins/qinqin%2Dcore/data/lookups?workspace=3')).toBe('bypass');
+		expect(kind('/api/plugins/qinqin%2Dcore/data?workspace=3&prefix=lookups')).toBe('bypass');
+		expect(kind('/api/plugins/qinqin-core/data/%6Cookups?workspace=3')).toBe('bypass');
 	});
 
 	it('access token management is never cached (the list, and create, which carries the token once)', () => {

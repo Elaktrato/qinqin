@@ -46,20 +46,21 @@ const CORE_DATA = '/api/plugins/qinqin-core/data';
  * or a list whose prefix can match one. Never saved offline, so a Clear
  * leaves no copy in Cache Storage.
  */
-function holdsLookups(url: URL): boolean {
-	const { pathname, searchParams } = url;
+export function holdsLookups(url: URL): boolean {
+	const { searchParams } = url;
+	let pathname: string;
+	try {
+		// An encoded path (qinqin%2Dcore, %6Cookups) names the same route.
+		pathname = decodeURIComponent(url.pathname);
+	} catch {
+		return true;
+	}
 	if (pathname === CORE_DATA) {
 		const p = searchParams.get('prefix') ?? '';
 		return 'lookups'.startsWith(p) || 'lookupcfg'.startsWith(p) || p.startsWith('lookup');
 	}
 	if (!pathname.startsWith(`${CORE_DATA}/`)) return false;
-	let key: string;
-	try {
-		key = decodeURIComponent(pathname.slice(CORE_DATA.length + 1));
-	} catch {
-		return true;
-	}
-	return key.startsWith('lookup');
+	return pathname.slice(CORE_DATA.length + 1).startsWith('lookup');
 }
 
 /** True when the path and query are one of the allowlisted API reads. */

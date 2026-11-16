@@ -106,7 +106,8 @@ never writes a copy it read earlier: a copy from before a Clear on another devic
 words back. Two devices writing in the same second can lose one device's increments (last write wins per
 row); the counts are informal and this is accepted. Before every flush the client re-reads `lookupcfg`;
 when recording is off it writes nothing and discards its buffer. The buffer is memory only: nothing about
-lookups goes to `localStorage`, `sessionStorage`, IndexedDB, URLs or logs.
+lookups goes to `localStorage`, `sessionStorage`, IndexedDB, URLs or logs, and the web service worker
+filters the rows and old `lookup` events out of every API copy it saves (`../pwa/README.md`).
 
 ## Prompt (`lookup-prompt.json`)
 

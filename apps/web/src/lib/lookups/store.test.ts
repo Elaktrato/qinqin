@@ -10,7 +10,7 @@ import { ownPartition } from '../pwa/partitions';
 import {
 	LookupEventsNotDeletedError,
 	clearHistory,
-	forgetOfflineLookups,
+	scrubOfflineLookups,
 	loadHistory,
 	loadLookupCfg,
 	lookupRecorder,
@@ -151,33 +151,55 @@ describe('lookups store', () => {
 	});
 });
 
-describe('forgetOfflineLookups', () => {
-	it("deletes the own partition's saved pulls, event logs and core plugin data, nothing else", async () => {
+describe('scrubOfflineLookups', () => {
+	const pullUrl = 'https://app.test/api/sync/pull?collections=pluginData%2CpluginStates&cursor=1970-01-01T00%3A00%3A00Z';
+	const eventsUrl = 'https://app.test/api/events?since=1970-01-01T00%3A00%3A00Z&workspace=3';
+	const noteUrl = 'https://app.test/api/plugins/qinqin-core/data?workspace=3&prefix=note%3A';
+	const savedAt = { 'content-type': 'application/json', 'x-qinqin-saved-at': '2026-11-16T10:00:00.000Z' };
+
+	it("filters the own partition's saved pull and event logs in place; offline study stays ready", async () => {
+		const removed: string[] = [];
+		vi.stubGlobal('localStorage', {
+			getItem: () => 'tok', setItem: () => {}, removeItem: (k: string) => removed.push(k), length: 1, key: () => 'qinqin.pwa.prepared.1.3'
+		});
 		const caches = new FakeCacheStorage();
 		const own = await caches.open(await ownPartition('tok'));
 		const other = await caches.open('qinqin-api-v1-someoneelse');
-		const keep = [
-			'https://app.test/api/plugins/qinqin-flashcards/data?workspace=3&prefix=card%3A',
-			'https://app.test/api/workspaces',
-			'https://app.test/api/entries/12'
-		];
-		const drop = [
-			'https://app.test/api/sync/pull?collections=pluginData%2CpluginStates&cursor=1970-01-01T00%3A00%3A00Z',
-			'https://app.test/api/events?since=1970-01-01T00%3A00%3A00Z&workspace=3',
-			'https://app.test/api/plugins/qinqin-core/data?workspace=3'
-		];
-		for (const u of [...keep, ...drop]) await own.put(u, new Response('x'));
-		await other.put(drop[0], new Response('x'));
-		await forgetOfflineLookups(caches);
-		expect([...own.entries.keys()]).toEqual(keep);
+		const pull = { pluginData: [{ pluginId: 'qinqin-core', key: 'lookups', data: { items: [{ entryId: 5 }] } }, { pluginId: 'qinqin-core', key: 'note:5', data: { text: 'n' } }] };
+		await own.put(pullUrl, new Response(JSON.stringify(pull), { headers: savedAt }));
+		await own.put(eventsUrl, new Response(JSON.stringify([{ id: '1', type: 'lookup', payload: { query: 'ma' } }, { id: '2', type: 'review' }]), { headers: savedAt }));
+		await own.put(noteUrl, new Response('[]', { headers: savedAt }));
+		await own.put('https://app.test/api/workspaces', new Response('[1]'));
+		await other.put(pullUrl, new Response(JSON.stringify(pull)));
+		await scrubOfflineLookups(caches);
+		expect([...own.entries.keys()].sort()).toEqual([pullUrl, eventsUrl, noteUrl, 'https://app.test/api/workspaces'].sort());
+		const savedPull = await (await own.match(pullUrl))!.json();
+		expect(savedPull.pluginData.map((r: { key: string }) => r.key)).toEqual(['note:5']);
+		expect((await own.match(pullUrl))!.headers.get('x-qinqin-saved-at')).toBe('2026-11-16T10:00:00.000Z');
+		expect((await (await own.match(eventsUrl))!.json()).map((e: { id: string }) => e.id)).toEqual(['2']);
 		expect(other.entries.size).toBe(1);
+		expect(removed).toEqual([]); // nothing deleted: the prepared receipts stay
+	});
+
+	it('deletes an unreadable saved copy or a saved lookups read, and then clears the prepared receipts', async () => {
+		const removed: string[] = [];
+		vi.stubGlobal('localStorage', {
+			getItem: () => 'tok', setItem: () => {}, removeItem: (k: string) => removed.push(k), length: 1, key: () => 'qinqin.pwa.prepared.1.3'
+		});
+		const caches = new FakeCacheStorage();
+		const own = await caches.open(await ownPartition('tok'));
+		await own.put(pullUrl, new Response('{broken'));
+		await own.put('https://app.test/api/plugins/qinqin-core/data?workspace=3', new Response('[]'));
+		await scrubOfflineLookups(caches);
+		expect(own.entries.size).toBe(0);
+		expect(removed).toEqual(['qinqin.pwa.prepared.1.3']);
 	});
 
 	it('does nothing without Cache Storage or a token', async () => {
-		await forgetOfflineLookups(undefined);
+		await scrubOfflineLookups(undefined);
 		vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {}, removeItem: () => {} });
 		const caches = new FakeCacheStorage();
-		await forgetOfflineLookups(caches);
+		await scrubOfflineLookups(caches);
 		expect(caches.stores.size).toBe(0);
 	});
 });
