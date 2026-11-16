@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { activeStatsTab, statsTabs, tabKeyTarget } from './statsTabs';
+import { activeStatsTab, statsPanelLabel, statsTabs, tabKeyTarget } from './statsTabs';
 
 describe('statsTabs', () => {
-	it('offers Overview and Characters for Han languages', () => {
-		expect(statsTabs('zh').map((tab) => tab.id)).toEqual(['overview', 'characters']);
-		expect(statsTabs('ja').map((tab) => tab.id)).toEqual(['overview', 'characters']);
-		expect(statsTabs('zh-TW').map((tab) => tab.id)).toEqual(['overview', 'characters']);
+	it('offers Overview, Week and Characters for Han languages', () => {
+		expect(statsTabs('zh').map((tab) => tab.id)).toEqual(['overview', 'week', 'characters']);
+		expect(statsTabs('ja').map((tab) => tab.id)).toEqual(['overview', 'week', 'characters']);
+		expect(statsTabs('zh-TW').map((tab) => tab.id)).toEqual(['overview', 'week', 'characters']);
 	});
 
-	it('offers only Overview for other languages', () => {
-		expect(statsTabs('es').map((tab) => tab.id)).toEqual(['overview']);
-		expect(statsTabs('ko').map((tab) => tab.id)).toEqual(['overview']);
+	it('offers Overview and Week for other languages', () => {
+		expect(statsTabs('es').map((tab) => tab.id)).toEqual(['overview', 'week']);
+		expect(statsTabs('ko').map((tab) => tab.id)).toEqual(['overview', 'week']);
 	});
 
 	it('offers only Overview while no workspace is chosen', () => {
@@ -20,6 +20,7 @@ describe('statsTabs', () => {
 	it('links each tab to its own URL', () => {
 		expect(statsTabs('zh')).toEqual([
 			{ id: 'overview', label: 'Overview', href: '/stats' },
+			{ id: 'week', label: 'Week', href: '/stats/week' },
 			{ id: 'characters', label: 'Characters', href: '/stats/characters' }
 		]);
 	});
@@ -69,5 +70,26 @@ describe('tabKeyTarget', () => {
 	it('starts from the edges when no tab is selected', () => {
 		expect(tabKeyTarget('ArrowRight', -1, 2)).toBe(0);
 		expect(tabKeyTarget('ArrowLeft', -1, 2)).toBe(1);
+	});
+});
+
+describe('the Week tab', () => {
+	it('sits between Overview and Characters whenever a workspace is chosen', () => {
+		expect(statsTabs('zh').map((tab) => tab.id)).toEqual(['overview', 'week', 'characters']);
+		expect(statsTabs('es').map((tab) => tab.id)).toEqual(['overview', 'week']);
+		expect(statsTabs(null).map((tab) => tab.id)).toEqual(['overview']);
+		expect(statsTabs('es')[1]).toEqual({ id: 'week', label: 'Week', href: '/stats/week' });
+	});
+
+	it('is active on /stats/week, with or without a query', () => {
+		expect(activeStatsTab('/stats/week')).toBe('week');
+		expect(activeStatsTab('/stats/week/')).toBe('week');
+	});
+
+	it('names the panel', () => {
+		expect(statsPanelLabel('week')).toBe('Week');
+		expect(statsPanelLabel('characters')).toBe('Characters');
+		expect(statsPanelLabel('overview')).toBe('Overview');
+		expect(statsPanelLabel(null)).toBe('Overview');
 	});
 });
