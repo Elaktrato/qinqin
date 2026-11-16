@@ -4,6 +4,8 @@
 	import type { LookupResult } from '$lib/api/types';
 	import { GENERAL_DECK_ID, addCard, setKnownMark } from '$lib/study/store';
 	import { getStudyData, hasCard } from '$lib/study/studyData';
+	import { PROMPT_MIN_COUNT } from '$lib/lookups/lookups';
+	import { lookupRecorder } from '$lib/lookups/store';
 	import type { Deck } from '$lib/study/types';
 	import { popupWritten } from './browse';
 	import { bookSentence, resolveBookSentence } from './sentence';
@@ -19,7 +21,8 @@
 		workspaceId,
 		paragraph,
 		hold,
-		stateLine = null
+		stateLine = null,
+		first = false
 	}: {
 		result: LookupResult;
 		/** The workspace the card goes to: the book's. */
@@ -30,7 +33,15 @@
 		hold: (on: boolean) => void;
 		/** "New word", "Learning", "Known — …"; null hides the line. */
 		stateLine?: string | null;
+		/** The first result of the popup (the one a lookup records). */
+		first?: boolean;
 	} = $props();
+
+	// The lookup history's hint (#72): the root popup's first result, looked
+	// up often, with no card and no "I know this" mark. The count comes from
+	// the recorder's memory (0 while recording is off); no request per popup.
+	const lookedUp = $derived(first && paragraph !== null ? lookupRecorder().countOf(workspaceId, result.entryId) : 0);
+	const showLookedUp = $derived(lookedUp >= PROMPT_MIN_COUNT && inStudy === false && marked === false);
 
 	// null: not known yet (toggle disabled).
 	let marked = $state<boolean | null>(null);
@@ -274,6 +285,7 @@
 		onclick={() => void toggleKnown()}>I know this</button
 	>
 	{#if stateLine}<p class="state">{stateLine}</p>{/if}
+	{#if showLookedUp}<p class="state looked-up">You've looked this up {lookedUp} times.</p>{/if}
 	{#if note}<p class="note" role="status">{note}</p>{/if}
 	{#if markError}<p class="error" role="alert">{markError}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
