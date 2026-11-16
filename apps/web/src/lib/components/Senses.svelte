@@ -2,6 +2,7 @@
 	import type { SenseView } from '$lib/api/types';
 	import { tick } from 'svelte';
 	import { hiddenDictionaries, partitionSenses } from '$lib/dictionaryVisibility';
+	import { licenseUrl } from '$lib/licenses';
 	import { workspaces } from '$lib/workspaces';
 
 	let { senses }: { senses: SenseView[] } = $props();
@@ -78,7 +79,13 @@
 				</ol>
 				{#if group.license || group.attribution}
 					<p class="source">
-						{#if group.license}<span class="license">{group.license}</span>{/if}
+						{#if group.license}
+							{@const href = licenseUrl(group.license)}
+							<span class="license"
+								>{#if href}<a {href} target="_blank" rel="noopener noreferrer">{group.license}</a
+									>{:else}{group.license}{/if}</span
+							>
+						{/if}
 						{#if group.license && group.attribution}<span class="separator">·</span>{/if}
 						{#each attributionParts(group.attribution) as part, index (index)}
 							{#if part.href}
