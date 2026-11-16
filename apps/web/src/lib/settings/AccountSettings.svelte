@@ -24,6 +24,7 @@
 	} from '$lib/account/sessionsView';
 	import { loadMe, logout, user } from '$lib/auth';
 	import { clearPending } from '$lib/study/events';
+	import AppSection from '$lib/pwa/AppSection.svelte';
 
 	let current = $state('');
 	let next = $state('');
@@ -310,6 +311,8 @@
 		</div>
 	{/if}
 </section>
+
+<AppSection />
 
 <section aria-labelledby="account-delete-heading" class="block">
 	<h2 id="account-delete-heading">Delete account</h2>

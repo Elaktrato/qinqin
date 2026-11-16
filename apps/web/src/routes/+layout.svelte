@@ -27,6 +27,7 @@
 	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
 	import { registerWorker } from '$lib/pwa/register';
+	import { captureInstallPrompt, persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { requestSignOut } from '$lib/account/signOut';
@@ -117,6 +118,8 @@
 		watchDeletedWorkspaces();
 		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
 		void registerWorker();
+		captureInstallPrompt(window); // the root layout lives as long as the page
+		void persistOnceNow();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();

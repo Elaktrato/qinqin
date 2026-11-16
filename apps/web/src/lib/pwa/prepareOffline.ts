@@ -93,7 +93,17 @@ export interface PrepareDeps {
 	onPrepared: (prepared: NonNullable<OfflineState['prepared']>) => void;
 }
 
-function readReceipt(storage: Storage | null, key: string): Receipt | null {
+/** readReceipt: what was last prepared for a workspace, as the Settings line shows it. */
+export function readReceipt(
+	storage: Storage | null,
+	userId: number,
+	workspaceId: number
+): NonNullable<OfflineState['prepared']> | null {
+	const receipt = readReceiptAt(storage, receiptKey(userId, workspaceId));
+	return receipt === null ? null : { workspaceId, cards: receipt.entries, at: new Date(receipt.at).toISOString() };
+}
+
+function readReceiptAt(storage: Storage | null, key: string): Receipt | null {
 	try {
 		const raw = storage?.getItem(key);
 		if (!raw) return null;
@@ -132,7 +142,7 @@ export async function prepareOffline(
 	try {
 		const data = await d.loadHistory(workspaceId);
 		const key = receiptKey(d.userId, workspaceId);
-		const receipt = readReceipt(d.storage, key);
+		const receipt = readReceiptAt(d.storage, key);
 		const now = d.now();
 		if (
 			receipt !== null &&
