@@ -130,7 +130,7 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 	var aliceID = userID(t, sqlDB, "alice")
 	id := func() string { return strconv.FormatInt(carlaID, 10) }
 	var resetToken string
-	runCases(t, "admin-users.json", []string{"list", "create", "patch", "last_admin", "self_target", "reset_link", "sessions_revoke", "deletion_preview", "mfa_reset", "confirm_mismatch", "password_required", "delete"}, map[string]func() (int, any){
+	runCases(t, "admin-users.json", []string{"list", "create", "create_admin_reauth", "patch", "last_admin", "self_target", "reset_link", "sessions_revoke", "deletion_preview", "mfa_reset", "confirm_mismatch", "password_required", "delete"}, map[string]func() (int, any){
 		"list": func() (int, any) {
 			st, body := callJSON(t, ts, "GET", "/api/admin/users", alice, nil)
 			if m, ok := body.(map[string]any); ok {
@@ -145,6 +145,10 @@ func TestAccountsContractFixturesMatchTheServer(t *testing.T) {
 				carlaID = int64(m["id"].(float64))
 			}
 			return st, body
+		},
+		"create_admin_reauth": func() (int, any) {
+			// creating an administrator is granting admin: a session alone is refused
+			return callJSON(t, ts, "POST", "/api/admin/users", alice, map[string]any{"username": "mallory", "password": "temp-password-1", "admin": true})
 		},
 		"patch": func() (int, any) {
 			return callJSON(t, ts, "PATCH", "/api/admin/users/"+id(), alice, map[string]any{"admin": true, "currentPassword": "secret-pass-alice"})

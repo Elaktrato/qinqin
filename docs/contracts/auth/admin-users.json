@@ -1,5 +1,5 @@
 {
-  "_doc": "Deleting another user, issuing a reset link, granting admin and resetting another user's two-step sign-in ask the ACTING administrator for their own current password (currentPassword; 422 password_required when missing, 403 wrong_password when wrong, 5 wrong tries per 15 minutes). The two-step sign-in reset (POST /api/admin/users/{id}/mfa/reset) also asks an administrator who has an authenticator for a current authenticator or recovery code (code; 403 code_invalid), checked after the password; it removes the target's authenticator (also a pending setup), recovery codes and email-code method, cancels open second-step challenges, deletes every session and revokes every personal access token (409 self_target for your own id; 404 not_found only after the password and code). DELETE /api/admin/users/{id}/reset-link takes back a pending link (204). Administrator routes for users (web only in v0.4.0; the Kotlin client does not show them). AdminUser is the object of the list, create and patch answers. lastSeenAt is null until a session was used. Every route answers 403 forbidden to a non-admin and 403 password_change_required to a restricted admin.",
+  "_doc": "Every destructive administrator action re-authenticates the ACTING administrator: granting admin (PATCH admin: true), creating an administrator (POST /api/admin/users with admin: true), deleting another user, issuing a reset link, resetting another user's two-step sign-in (POST /api/admin/users/{id}/mfa/reset) and the server backup (POST /api/admin/backup). They take currentPassword (422 password_required when missing, 403 wrong_password when wrong, 5 wrong tries per 15 minutes) and, from an administrator who has an authenticator, code: a current authenticator code or an unused recovery code (403 code_invalid, checked after the password, no attemptsLeft; the per-user code budget). An administrator whose only second step is the emailed code gives the password alone. Since v0.4.0 prep; before it only the backup and the two-step reset of v0.4.0 asked for the code. The two-step sign-in reset removes the target's authenticator (also a pending setup), recovery codes and email-code method, cancels open second-step challenges and pending reset links, deletes every session and revokes every personal access token (409 self_target for your own id, before the password; 404 not_found only after password and code). DELETE /api/admin/users/{id}/reset-link takes back a pending link (204). Administrator routes for users (web only in v0.4.0; the Kotlin client does not show them). AdminUser is the object of the list, create and patch answers; mfa says which second steps a user has, never a secret. lastSeenAt is null until a session was used. Every route answers 403 forbidden to a non-admin and 403 password_change_required to a restricted admin.",
   "list": {
     "request": {"method": "GET", "path": "/api/admin/users"},
     "status": 200,
@@ -10,8 +10,13 @@
     "status": 201,
     "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": false, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}}
   },
+  "create_admin_reauth": {
+    "request": {"method": "POST", "path": "/api/admin/users", "body": {"username": "mallory", "password": "<temporary password>", "admin": true}},
+    "status": 422,
+    "body": {"error": "password_required", "message": "Enter your own password to confirm this action."}
+  },
   "patch": {
-    "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": true, "currentPassword": "<your own password>"}},
+    "request": {"method": "PATCH", "path": "/api/admin/users/{id}", "body": {"admin": true, "currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
     "status": 200,
     "body": {"id": 3, "username": "carla", "email": null, "emailVerified": false, "admin": true, "disabled": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z", "lastSeenAt": null, "mfa": {"totp": false, "email": false}}
   },
@@ -26,7 +31,7 @@
     "body": {"error": "self_target", "message": "You cannot disable your own account."}
   },
   "reset_link": {
-    "request": {"method": "POST", "path": "/api/admin/users/{id}/reset-link", "body": {"expiresInHours": 24, "currentPassword": "<your own password>"}},
+    "request": {"method": "POST", "path": "/api/admin/users/{id}/reset-link", "body": {"expiresInHours": 24, "currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
     "status": 201,
     "body": {"path": "/reset#t=<token>", "expiresAt": "2026-11-16T12:00:00Z"}
   },
@@ -51,7 +56,7 @@
     "body": {"error": "password_required", "message": "Enter your own password to confirm this action."}
   },
   "delete": {
-    "request": {"method": "DELETE", "path": "/api/admin/users/{id}", "body": {"confirm": "<the username>", "currentPassword": "<your own password>"}},
+    "request": {"method": "DELETE", "path": "/api/admin/users/{id}", "body": {"confirm": "<the username>", "currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},
     "status": 204,
     "body": null
   },
