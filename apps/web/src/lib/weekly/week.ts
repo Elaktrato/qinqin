@@ -70,3 +70,23 @@ export function nextWeek(monday: string, today: string): string | null {
 	const next = addDays(monday, 7);
 	return next > weekOf(today) ? null : next;
 }
+
+const WEEK_PATH = '/stats/week';
+
+/** weekHref: the Week tab's link for a Monday (the current week has no parameter). */
+export function weekHref(monday: string, today: string): string {
+	return monday === weekOf(today) ? WEEK_PATH : `${WEEK_PATH}?week=${monday}`;
+}
+
+/** weekRedirect: the link to replace the URL with when `?week=` is not the week shown; null when it is. */
+export function weekRedirect(param: string | null, today: string): string | null {
+	if (param === null) return null;
+	const monday = normalizeWeekParam(param, today);
+	const href = weekHref(monday, today);
+	return param === monday && href !== WEEK_PATH ? null : href;
+}
+
+/** hasPreviousWeek: a week before `monday` is still within the cap. */
+export function hasPreviousWeek(monday: string, today: string): boolean {
+	return previousWeek(monday) >= oldestWeek(today);
+}

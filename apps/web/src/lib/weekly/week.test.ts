@@ -3,6 +3,7 @@ import fixture from '../../../../../docs/contracts/weekly/week-of.json';
 import { addDays, daysBetweenDates, studyDay, type ZoneChange } from '../time/studyDay';
 import {
 	MAX_WEEKS_BACK,
+	hasPreviousWeek,
 	isSkippedDate,
 	isoWeekday,
 	nextWeek,
@@ -10,7 +11,9 @@ import {
 	oldestWeek,
 	previousWeek,
 	weekDates,
+	weekHref,
 	weekOf,
+	weekRedirect,
 	weekWindow
 } from './week';
 
@@ -103,5 +106,28 @@ describe('week math', () => {
 			expect(gap).toBeGreaterThanOrEqual(0);
 			expect(gap).toBeLessThanOrEqual(6);
 		}
+	});
+});
+
+describe('week links', () => {
+	it('links the current week without a parameter and others by their Monday', () => {
+		expect(weekHref('2026-11-16', '2026-11-18')).toBe('/stats/week');
+		expect(weekHref('2026-11-09', '2026-11-18')).toBe('/stats/week?week=2026-11-09');
+	});
+
+	it('redirects only a parameter that is not the week it shows', () => {
+		expect(weekRedirect(null, '2026-11-18')).toBeNull();
+		expect(weekRedirect('2026-11-09', '2026-11-18')).toBeNull();
+		expect(weekRedirect('2026-11-11', '2026-11-18')).toBe('/stats/week?week=2026-11-09');
+		expect(weekRedirect('2026-11-16', '2026-11-18')).toBe('/stats/week');
+		expect(weekRedirect('2026-12-07', '2026-11-18')).toBe('/stats/week');
+		expect(weekRedirect('garbage', '2026-11-18')).toBe('/stats/week');
+		expect(weekRedirect('', '2026-11-18')).toBe('/stats/week');
+		expect(weekRedirect('2020-01-06', '2026-11-18')).toBe(`/stats/week?week=${oldestWeek('2026-11-18')}`);
+	});
+
+	it('has a previous week down to the oldest one', () => {
+		expect(hasPreviousWeek('2026-11-16', '2026-11-18')).toBe(true);
+		expect(hasPreviousWeek(oldestWeek('2026-11-18'), '2026-11-18')).toBe(false);
 	});
 });
