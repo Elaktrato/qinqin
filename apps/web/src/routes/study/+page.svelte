@@ -41,10 +41,15 @@ import { startTodayText } from '$lib/study/limitsText';
 import { limitsOf } from '$lib/study/scheduler';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
+	import { getFrequencyPacks } from '$lib/api/frequency';
+	import type { FrequencyPack } from '$lib/api/types';
+	import { resolveSessionOrder } from '$lib/study/newOrder';
+	import { MIXED_NOTE, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
 	import {
 		CARD_TYPES,
 		loadConfig,
 		saveConfig,
+		sessionNewOrder,
 		validateConfig,
 		type StudySessionConfig,
 		type StudySessionMode
@@ -116,6 +121,9 @@ import { limitsOf } from '$lib/study/scheduler';
 	let mode = $state<StudySessionMode>(saved.mode);
 	let schemeId = $state<number | null>(saved.schemeId);
 	let levelName = $state<string | null>(saved.levelName);
+	// The order of new cards (#75), as a select value; see newOrderView.ts.
+	let newOrderValue = $state(encodeOrder(sessionNewOrder(saved)));
+	let frequencyPacks = $state.raw<FrequencyPack[]>([]);
 
 	// Schemes are global, so they are filtered by the language of the
 	// workspace the setup is running in. `schemesLoaded` separates "not
@@ -270,6 +278,14 @@ import { limitsOf } from '$lib/study/scheduler';
 			if (seq === requestSeq) schemesLoaded = true;
 		}
 	}
+
+	// The installed frequency packs decide whether "most frequent first" is
+	// offered; without them the setup shows the hint (nothing is bundled).
+	$effect(() => {
+		getFrequencyPacks()
+			.then((list) => (frequencyPacks = Array.isArray(list) ? list : []))
+			.catch(() => (frequencyPacks = []));
+	});
 
 	// Refetch when the active workspace changes; the header switcher
 	// makes that possible without leaving the page.
@@ -693,6 +709,28 @@ import { limitsOf } from '$lib/study/scheduler';
 		}
 	}
 
+	const orderView = $derived(
+		sessionOrderChoices({
+			mode,
+			language: workspaceLanguage ?? '',
+			packs: frequencyPacks,
+			schemes: schemesForLanguage,
+			levelScheme: selectedScheme
+		})
+	);
+	// A value the current mode does not offer (switched mode, pack removed) is the default.
+	const orderValue = $derived(
+		orderView.choices.some((choice) => choice.value === newOrderValue) ? newOrderValue : 'deck'
+	);
+	const ordersMixed = $derived(
+		mode === 'decks' &&
+			orderValue === 'deck' &&
+			resolveSessionOrder(
+				'deck',
+				selectedDeckIds.map((id) => deckSettings[id]?.newOrder ?? null)
+			).mixed
+	);
+
 	function selectMode(next: StudySessionMode): void {
 		errors = [];
 		mode = next;
@@ -711,6 +749,8 @@ import { limitsOf } from '$lib/study/scheduler';
 			// Existing kinds as set up (hidden ones stay), plus the checked opt-in kinds.
 			cardTypes: [...cardTypes.filter((kind) => !isOptIn(kind)), ...extraKinds]
 		};
+		const order = decodeOrder(orderValue);
+		if (order !== 'deck') config.newOrder = order;
 		// Validate what the session will actually use: a type hidden in
 		// this workspace does not count towards "at least one".
 		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });
@@ -924,6 +964,23 @@ import { limitsOf } from '$lib/study/scheduler';
 					<input type="number" min="1" max="999" step="1" bind:value={reviewLimit} />
 				</label>
 			</div>
+			<label class="order">
+				Order of new cards
+				<select
+					value={orderValue}
+					onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
+				>
+					{#each orderView.choices as choice (choice.value)}
+						<option value={choice.value}>{choice.label}</option>
+					{/each}
+				</select>
+			</label>
+			{#if ordersMixed}
+				<p class="hint" role="status">{MIXED_NOTE}</p>
+			{/if}
+			{#if orderView.hint !== null}
+				<p class="hint">{orderView.hint}</p>
+			{/if}
 			<p class="hint">
 				<a href="/study/scheduling">Scheduling: {schedulingLabel}</a>
 			</p>
@@ -1155,6 +1212,7 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	.create label,
 	.limits label,
+	.order,
 	.levels label {
 		display: grid;
 		gap: 0.35rem;
@@ -1165,6 +1223,15 @@ import { limitsOf } from '$lib/study/scheduler';
 		display: flex;
 		flex-wrap: wrap;
 		gap: 1rem;
+	}
+
+	.order {
+		margin-top: 0.75rem;
+		max-width: 100%;
+	}
+
+	.order select {
+		max-width: 100%;
 	}
 
 	.modes,
@@ -1181,6 +1248,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	.create input,
 	.limits input,
 	.levels select,
+	.order select,
 	.rename input,
 	.setup button {
 		font: inherit;
@@ -1189,6 +1257,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	.create input,
 	.limits input,
 	.levels select,
+	.order select,
 	.rename input {
 		padding: 0.4rem 0.55rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);

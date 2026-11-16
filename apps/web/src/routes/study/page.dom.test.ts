@@ -9,6 +9,7 @@ vi.mock('$lib/api/schemes', () => ({
 	fetchSchemeCharacters: vi.fn()
 }));
 vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
+vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) }));
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	loadStudyData: vi.fn()
@@ -21,6 +22,9 @@ vi.mock('$lib/time/zone', () => ({
 }));
 
 import { fetchCharacters } from '$lib/api/characters';
+import { getFrequencyPacks } from '$lib/api/frequency';
+import { goto } from '$app/navigation';
+import { fireEvent } from '@testing-library/svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import { loadStudyData } from '$lib/study/store';
 import { studyDay } from '$lib/time/studyDay';
@@ -273,5 +277,46 @@ describe('study start and the daily limits', () => {
 		});
 		render(Page);
 		expect((await screen.findByText(/^Today:/)).textContent).toBe('Today: 0 reviews and 2 new (daily limits applied)');
+	});
+});
+
+describe('study setup, new-card order (#75)', () => {
+	const jiten = {
+		id: 3,
+		packId: 'jiten-frequency',
+		name: 'Jiten frequency list',
+		version: '1',
+		language: 'ja',
+		license: 'CC BY-SA 4.0',
+		attribution: 'Jiten'
+	};
+	const orderSelect = () => screen.getByLabelText('Order of new cards') as HTMLSelectElement;
+
+	beforeEach(() => {
+		vi.mocked(getSchemes).mockResolvedValue([]);
+	});
+
+	it('offers most frequent first with a pack and saves the choice', async () => {
+		vi.mocked(getFrequencyPacks).mockResolvedValue([jiten] as never);
+		render(Page);
+		await waitFor(() =>
+			expect([...orderSelect().options].map((o) => o.textContent)).toContain(
+				'Most frequent first (Jiten frequency list)'
+			)
+		);
+		expect(orderSelect().value).toBe('deck');
+		await fireEvent.change(orderSelect(), { target: { value: 'frequency' } });
+		await fireEvent.click(screen.getByRole('button', { name: /start/i }));
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
+		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!).newOrder).toEqual({ by: 'frequency' });
+	});
+
+	it('without a pack: no frequency option and the hint', async () => {
+		vi.mocked(getFrequencyPacks).mockResolvedValue([]);
+		render(Page);
+		await screen.findByText(
+			'No frequency list is installed for Japanese. An administrator can add one in Settings, Data; see Data and licences.'
+		);
+		expect([...orderSelect().options].map((o) => o.value)).toEqual(['deck', 'added']);
 	});
 });
