@@ -12,6 +12,10 @@ import (
 // now is the store clock (tests swap it).
 var now = time.Now
 
+// Now is the store clock in UTC: the edit time of a write made on this
+// server (the legacy plugin-data routes).
+func Now() time.Time { return now().UTC() }
+
 // Delta is the typed study rows of one pull; every slice is non-nil.
 type Delta struct {
 	Cards        []rows.Card

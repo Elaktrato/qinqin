@@ -56,7 +56,9 @@ func populateWorkspace(t *testing.T, tsURL, token string, store library.Store, u
 	if resp := doJSON(t, http.MethodPost, tsURL, "/api/events/batch", token, batch); resp.StatusCode != http.StatusOK {
 		t.Fatalf("events batch for %s: status = %d", ws, resp.StatusCode)
 	}
-	if resp := doRaw(t, http.MethodPut, tsURL, "/api/plugins/qinqin-flashcards/data/card:x?workspace="+ws, token, `{"id":"x"}`); resp.StatusCode != http.StatusOK {
+	// A keyed row of the study namespace (plugin data). Typed study rows
+	// (card:, deck:, ...) live in the study tables since migration 038.
+	if resp := doRaw(t, http.MethodPut, tsURL, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+ws, token, `{"id":"x"}`); resp.StatusCode != http.StatusOK {
 		t.Fatalf("plugin data for %s: status = %d", ws, resp.StatusCode)
 	}
 	b, err := store.Create(context.Background(), library.Book{
@@ -233,7 +235,7 @@ func TestDeletedWorkspaceSync(t *testing.T) {
 	gone := createWorkspace(t, ts.URL, alice, "zh", "throwaway")
 	kept := createWorkspace(t, ts.URL, alice, "zh", "")
 	for _, ws := range []int64{gone, kept} {
-		if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/card:x?workspace="+strconv.FormatInt(ws, 10), alice, `{"id":"x"}`); resp.StatusCode != http.StatusOK {
+		if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+strconv.FormatInt(ws, 10), alice, `{"id":"x"}`); resp.StatusCode != http.StatusOK {
 			t.Fatalf("plugin data: status = %d", resp.StatusCode)
 		}
 	}

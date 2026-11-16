@@ -141,7 +141,9 @@ func TestPluginBodyLimits(t *testing.T) {
 
 	ws := strconv.FormatInt(createWorkspace(t, ts.URL, admin, "zh", "w"), 10)
 	data := "/api/plugins/qinqin-flashcards/data/card:x?workspace=" + ws
-	if resp := doRaw(t, http.MethodPut, ts.URL, data, admin, padded("", 200<<10)); resp.StatusCode != http.StatusOK {
+	// card:x is a typed study key (the legacy view): a readable card whose
+	// unknown member pads it travels to the typed table under the same cap.
+	if resp := doRaw(t, http.MethodPut, ts.URL, data, admin, padded(`"id":"x","kind":"vocab","entryId":1,"deckIds":[],"createdAt":"t"`, 200<<10)); resp.StatusCode != http.StatusOK {
 		t.Errorf("200 KiB plugin data: status = %d, want 200", resp.StatusCode)
 	}
 	wantTooLarge(t, "plugin data", doRaw(t, http.MethodPut, ts.URL, data, admin, padded("", 256<<10)))

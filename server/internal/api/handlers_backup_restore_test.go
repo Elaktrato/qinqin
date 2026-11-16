@@ -143,12 +143,12 @@ func TestRestoreFlowStageApplyAndIsolation(t *testing.T) {
 	aliceID, bobID := userID(t, e.db, "alice"), userID(t, e.db, "bobby")
 	wsA := createWorkspace(t, e.ts.URL, alice, "zh", "")
 	wsB := createWorkspace(t, e.ts.URL, bob, "zh", "")
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/card:keep?workspace="+itoa(wsA), alice, `{"id":"keep"}`)
+	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/test:keep?workspace="+itoa(wsA), alice, `{"id":"keep"}`)
 	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/vacation:V1", alice, `{"version":1,"id":"V1","scope":{"workspaces":[`+itoa(wsA)+`]}}`)
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/card:bobs?workspace="+itoa(wsB), bob, `{"id":"bobs"}`)
+	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/test:bobs?workspace="+itoa(wsB), bob, `{"id":"bobs"}`)
 	archive := e.export(t, alice)
 	// change alice's data afterwards, and a second device of hers
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/card:later?workspace="+itoa(wsA), alice, `{"id":"later"}`)
+	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/test:later?workspace="+itoa(wsA), alice, `{"id":"later"}`)
 	other := login(t, e.ts.URL, "alice")
 
 	code, rt, eb := e.upload(t, alice, archive)
@@ -180,7 +180,7 @@ func TestRestoreFlowStageApplyAndIsolation(t *testing.T) {
 	if c, eb := e.apply(t, alice, rt, map[string]any{"confirm": "alice"}); c != 403 || eb.Error != "current_password_required" {
 		t.Errorf("no password = %d %+v", c, eb)
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'card:later'`, aliceID); n != 1 {
+	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'test:later'`, aliceID); n != 1 {
 		t.Fatal("data changed before the restore was confirmed")
 	}
 	if c, eb := e.apply(t, alice, rt, map[string]any{"confirm": "alice", "password": "secret-pass-alice", "surprise": 1}); c != 400 {
@@ -194,10 +194,10 @@ func TestRestoreFlowStageApplyAndIsolation(t *testing.T) {
 	if view.Status != "done" || view.Result == nil {
 		t.Fatalf("after apply: %+v", view)
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'card:later'`, aliceID); n != 0 {
+	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'test:later'`, aliceID); n != 0 {
 		t.Error("data after the backup survived the restore")
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key IN ('card:keep','vacation:V1')`, aliceID); n != 2 {
+	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key IN ('test:keep','vacation:V1')`, aliceID); n != 2 {
 		t.Errorf("restored rows: %d", n)
 	}
 	var vac string
@@ -207,7 +207,7 @@ func TestRestoreFlowStageApplyAndIsolation(t *testing.T) {
 	if !strings.Contains(vac, `"workspaces":[`+itoa(newWS)+`]`) || newWS == wsA {
 		t.Errorf("vacation %s, workspace %d (old %d)", vac, newWS, wsA)
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'card:bobs'`, bobID); n != 1 {
+	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key = 'test:bobs'`, bobID); n != 1 {
 		t.Error("bob's data was touched")
 	}
 	// sessions: the restoring one lives, the other device is signed out
@@ -325,7 +325,7 @@ func TestRestoreUnresolvedNeedsTheAcknowledgement(t *testing.T) {
 	e.db.QueryRow(`SELECT id FROM entries WHERE ext_key = 'k1'`).Scan(&eid)
 	e.db.Exec(`INSERT INTO forms (entry_id, text, ord, updated_at) VALUES (?, '水', 0, 't')`, eid)
 	doRaw(t, "PUT", e.ts.URL, fmt.Sprintf("/api/plugins/qinqin-flashcards/data/card:c-vocab-%d?workspace=%d", eid, ws), alice,
-		fmt.Sprintf(`{"id":"c-vocab-%d","kind":"vocab","entryId":%d,"deckIds":[]}`, eid, eid))
+		fmt.Sprintf(`{"id":"c-vocab-%d","kind":"vocab","entryId":%d,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"}`, eid, eid))
 	archive := e.export(t, alice)
 	e.db.Exec(`UPDATE entries SET deleted_at = 't' WHERE id = ?`, eid) // the word is gone from this server
 	_, rt, _ := e.upload(t, alice, archive)
@@ -337,14 +337,17 @@ func TestRestoreUnresolvedNeedsTheAcknowledgement(t *testing.T) {
 	if c, eb := e.apply(t, alice, rt, map[string]any{"confirm": "alice", "password": "secret-pass-alice"}); c != 409 || eb.Error != "unresolved_entries" {
 		t.Errorf("without the acknowledgement = %d %+v", c, eb)
 	}
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key LIKE 'card:%'`, aliceID); n != 1 {
+	// cards are typed study rows (migration 038); a leftover plugin row would count too
+	cards := `SELECT (SELECT COUNT(*) FROM study_cards WHERE user_id = ?1 AND deleted_at IS NULL) +
+		(SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND key LIKE 'card:%')`
+	if n := e.count(t, cards, aliceID); n != 1 {
 		t.Error("data changed")
 	}
 	if c, eb := e.apply(t, alice, rt, map[string]any{"confirm": "alice", "password": "secret-pass-alice", "unresolved": "drop"}); c != 202 {
 		t.Fatalf("apply = %d %+v", c, eb)
 	}
 	e.wait(t)
-	if n := e.count(t, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key LIKE 'card:%'`, aliceID); n != 0 {
+	if n := e.count(t, cards, aliceID); n != 0 {
 		t.Error("the card of the missing word was restored")
 	}
 }

@@ -97,8 +97,14 @@ A cached v0.3.x web shell keeps working for the v0.4.x line through a legacy vie
   client that understands typed collections must name one whenever it pulls `pluginData`.
 - A pushed (`POST /api/sync/push` `pluginData`) or `PUT /api/plugins/qinqin-flashcards/data/{key}` row of a
   typed family is decoded and applied to the typed table with the same last-write-wins; a row the codec
-  refuses is `dataRefused` (push) or 400 `study_row_invalid` (`PUT`). `DELETE` tombstones the typed row.
-  `GET` of a key or a prefix answers the legacy row of a typed row.
+  refuses is `dataRefused` (push) or 400 `study_row_invalid` (`PUT`; also for a typed key without
+  `?workspace=`, since there is no user-global typed row). A `PUT` is stamped with the server clock and
+  answers the stored legacy row; equal content changes nothing (the version stays). `DELETE` tombstones
+  the typed row (404 when it is already a tombstone).
+- `GET` of a key or a prefix answers the legacy row of a typed row. A typed row (live or tombstoned)
+  shadows a leftover `plugin_data` row of the same key; a key only a leftover holds (a row the migration
+  could not read) is served, listed and deleted from `plugin_data` exactly as before. Prefix lists merge
+  both in key order.
 
 Android never uses the legacy view: it pulls and pushes the typed collections and uses `pluginData` only
 for the keyed rows.

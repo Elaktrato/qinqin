@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"time"
 
 	"qinqin/internal/model"
@@ -127,4 +129,71 @@ func ApplyLegacy(ctx context.Context, q Querier, userID int64, row model.PluginD
 		return false, fmt.Errorf("%w: %s: %v", rows.ErrUnreadable, row.Key, err)
 	}
 	return Apply(ctx, q, userID, r, edited, false)
+}
+
+// LegacyGet answers a legacy read of one key in a workspace: held is true
+// when a typed row (live or tombstoned) holds the key, and then live
+// reports whether it is live and row is its legacy form. When held is
+// false the caller reads plugin data (a leftover row).
+func LegacyGet(ctx context.Context, q Querier, userID, workspaceID int64, key string) (row model.PluginData, held, live bool, err error) {
+	f, id, ok := rows.KeyIdentity(key)
+	if !ok {
+		return model.PluginData{}, false, false, nil
+	}
+	r, exists, err := Load(ctx, q, userID, workspaceID, f, id)
+	if err != nil || !exists {
+		return model.PluginData{}, false, false, err
+	}
+	if r.M().DeletedAt != nil {
+		return model.PluginData{}, true, false, nil
+	}
+	return LegacyRow(userID, r), true, true, nil
+}
+
+// legacyKeySpace is the key prefix every legacy key of a family starts with.
+var legacyKeySpace = map[rows.Family]string{
+	rows.Cards: "card:", rows.Decks: "deck:", rows.DeckSettings: "deckcfg:", rows.Limits: "limits:",
+	rows.FsrsSets: "fsrs:set:", rows.FsrsActive: "fsrs:active",
+}
+
+// LegacyList answers a legacy prefix list in a workspace: the live typed
+// rows whose legacy key starts with prefix, as legacy rows in key order,
+// and the set of keys a typed row holds (live or tombstoned) among them,
+// which shadow leftover plugin rows of the same key.
+func LegacyList(ctx context.Context, q Querier, userID, workspaceID int64, prefix string) (list []model.PluginData, held map[string]bool, err error) {
+	list, held = []model.PluginData{}, map[string]bool{}
+	for _, f := range rows.Families {
+		space := legacyKeySpace[f]
+		if !strings.HasPrefix(space, prefix) && !strings.HasPrefix(prefix, space) {
+			continue
+		}
+		t := tables[f]
+		rs, err := q.QueryContext(ctx, `SELECT `+selectCols(f)+` FROM `+t.name+` WHERE user_id = ? AND workspace_id = ?`, userID, workspaceID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("study: legacy list %s: %w", f, err)
+		}
+		for rs.Next() {
+			r, err := scanRow(f, rs)
+			if err != nil {
+				rs.Close()
+				return nil, nil, fmt.Errorf("study: legacy list %s: %w", f, err)
+			}
+			row := LegacyRow(userID, r)
+			if !strings.HasPrefix(row.Key, prefix) {
+				continue
+			}
+			held[row.Key] = true
+			if row.DeletedAt == nil {
+				list = append(list, row)
+			}
+		}
+		if err := rs.Close(); err != nil {
+			return nil, nil, err
+		}
+		if err := rs.Err(); err != nil {
+			return nil, nil, fmt.Errorf("study: legacy list %s: %w", f, err)
+		}
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].Key < list[j].Key })
+	return list, held, nil
 }

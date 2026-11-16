@@ -92,7 +92,7 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 	if st != 200 || len(rows) != 1 || rows[0].WorkspaceID == nil || *rows[0].WorkspaceID != w.wsA {
 		t.Errorf("plugin data list: %d %s", st, b)
 	}
-	if st, b = get("/api/plugins/qinqin-flashcards/data/card:x?workspace=" + A); st != 200 || !strings.Contains(b, `"workspaceId":`+A) {
+	if st, b = get("/api/plugins/qinqin-flashcards/data/known:1?workspace=" + A); st != 200 || !strings.Contains(b, `"workspaceId":`+A) {
 		t.Errorf("plugin data row: %d %s", st, b)
 	}
 	// stats: the handler is reached with A (no activity rule is installed
@@ -108,15 +108,15 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 		}
 	}
 	// Writes: A's row changes, B's not; B and user-global are refused.
-	if resp := doRaw(t, http.MethodPut, w.url, "/api/plugins/qinqin-flashcards/data/card:x?workspace="+A, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 200 {
+	if resp := doRaw(t, http.MethodPut, w.url, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+A, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 200 {
 		t.Errorf("put A: %d %s", resp.StatusCode, body(t, resp))
 	}
-	for _, path := range []string{"/api/plugins/qinqin-flashcards/data/card:x?workspace=" + B, "/api/plugins/qinqin-flashcards/data/settings"} {
+	for _, path := range []string{"/api/plugins/qinqin-flashcards/data/known:1?workspace=" + B, "/api/plugins/qinqin-flashcards/data/settings"} {
 		if resp := doRaw(t, http.MethodPut, w.url, path, w.limitedA, `{"id":"changed"}`); resp.StatusCode != 403 {
 			t.Errorf("put %s: %d, want 403", path, resp.StatusCode)
 		}
 	}
-	_, bRow := doJSONBody(t, http.MethodGet, w.url, "/api/plugins/qinqin-flashcards/data/card:x?workspace="+B, w.alice)
+	_, bRow := doJSONBody(t, http.MethodGet, w.url, "/api/plugins/qinqin-flashcards/data/known:1?workspace="+B, w.alice)
 	if strings.Contains(bRow, "changed") {
 		t.Error("B's row changed")
 	}
@@ -146,7 +146,7 @@ func TestTokenCannotReachAnotherUsersData(t *testing.T) {
 		{"GET", "/api/events?workspace=" + C},
 		{"GET", "/api/library/books?workspace=" + C},
 		{"GET", "/api/plugins/qinqin-flashcards/data?workspace=" + C},
-		{"GET", "/api/plugins/qinqin-flashcards/data/card:x?workspace=" + C},
+		{"GET", "/api/plugins/qinqin-flashcards/data/known:1?workspace=" + C},
 		{"DELETE", bookC},
 	} {
 		tokSt, _ := doJSONBody(t, c.method, w.url, c.path, w.writeAll)

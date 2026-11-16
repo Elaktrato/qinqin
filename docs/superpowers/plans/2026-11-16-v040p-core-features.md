@@ -539,5 +539,62 @@ moves flashcards data into typed tables; nothing is lost; old open tabs keep wor
 
 ## Execution record
 
-(empty — filled by the builder: merge commit of items 1–3, migration number, per-task commits and gate
-results, deviations from the plan with reasons, the `sample-v1` change, what was not verified.)
+Filled by the builders (merge commit of items 1–3, migration number, per-task commits and gate results,
+deviations with reasons, the `sample-v1` change, what was not verified).
+
+### Phase A
+
+- Merge of `feature/v0.4.0-prep` (items 1–3): `60d18b4`. Migration number: **038** (`038_core_study.sql`,
+  Go step `038_core_study`).
+- A1–A7 were built by a first builder (stopped by the owner, not resumable): `08fd82f` A1, `c9adb59` A2,
+  `4c72ec5` A3, `e7fde74` A4, `06f2a16` A5, `0a8ac2b` A6, `3035232` A7. It left no notes here; its gate
+  results are not recorded and were not re-derived beyond the gates the second builder ran on top (below).
+- `23758a5` "wip(study): A8 … interrupted mid-task": the first builder's uncommitted edits, saved by the
+  orchestrator. Inspected by the second builder: despite its title it holds **no A8 work** (nothing in
+  `api/handlers_plugins.go`). It is A12 material (backup export of typed rows as v1 legacy rows:
+  `backup/export.go` `writePluginData`, `backup/plan.go` `CurrentCounts`, `study.ForEach`,
+  `study.LegacyKeySQL`, `study.ReadableLeftover`, test seeds in `backup/seed_test.go`,
+  `export_test.go`, `export_big_test.go`) plus one A13-related leniency (`study/sql.go` `scanRow`: an
+  unparseable stored `modified_at` counts as `updated_at` instead of making the row unreadable). History
+  is kept as is (no rewrite); the second builder builds on top. State found: `./internal/study/...`,
+  `./internal/sync`, `./internal/backup` green, `gofmt -l` listed `backup/export_test.go` (import order),
+  and `./internal/api` was **red** on the WIP: `TestRoundTripOnTheSameServer`,
+  `TestRestoreOntoAnotherServerWithShiftedEntryIds`, `TestRestoreFlowStageApplyAndIsolation`,
+  `TestRestoreUnresolvedNeedsTheAcknowledgement` (the WIP export drops unreadable leftover card rows,
+  which those tests seeded with dummy bodies such as `{"id":"keep"}`). The WIP export code is kept and
+  verified test-first in A12 (its tests are made to fail against the pre-WIP `writePluginData` there).
+
+#### A8 — legacy view on the plugin-data routes
+
+- Tests first: `api/handlers_plugins_legacy_test.go` (PUT per family to the typed tables, version bump,
+  equal content keeps the version, deckcfg `updatedAt` written back, unreadable → 400
+  `study_row_invalid`, a typed key without `?workspace=` → 400, keyed rows stay plugin data; GET typed /
+  leftover / shadowed / absent / other workspace; prefix lists merged in key order, typed wins, prefixes
+  inside a family; DELETE tombstone, re-DELETE 404, leftover fallback, absent 404, revival; two users on
+  every verb; read token GET 200, PUT/DELETE 403 `token_read_only`, workspace-bound token 403
+  `token_workspace` and 200 in its workspace). Seen failing (16 assertions across 4 tests), then passing.
+- Implementation: `api/handlers_plugins_legacy.go` (`legacyGet`, `mergeLegacyList`, `legacyPut`,
+  `legacyDelete`), hooks in `handlers_plugins.go`; `study.LegacyGet`, `study.LegacyList`, `study.Now`.
+  `docs/contracts/auth/errors.json` gains `study_row_invalid` (400); `docs/wiki/API-Errors.md`
+  regenerated; `docs/contracts/study/README.md` states the fallback and shadowing rules.
+- Ruling: a typed row (live **or tombstoned**) shadows a leftover `plugin_data` row of the same key on
+  GET, list and DELETE (a tombstoned typed key reads 404 even when a leftover exists) — why: the same rule
+  the A7 legacy pull applies (`HasTypedRow`), so an old shell sees one row per key on every path and a
+  card it deleted does not come back as a stale leftover — cost if wrong: a leftover under a deleted typed
+  key is unreachable through the routes (it stays in the database untouched).
+- Ruling: `PUT` of a typed key without `?workspace=` is 400 `study_row_invalid` — why: there is no
+  user-global typed row (spec Q4) and the push path already refuses it (`dataRefused`); v0.3.0 shells
+  never write one — cost if wrong: a token script that stored a user-global `card:` row gets 400.
+- Ruling: a `PUT` whose content equals the stored live row answers 200 with the stored row and an
+  unchanged `version` (v0.3.0 bumped it) — why: the spec's equal-content skip (Q4) on one write path; the
+  v0.3.0 web ignores the `PUT` response — cost if wrong: a script comparing versions sees no bump.
+- Existing api tests that wrote dummy, unreadable bodies under typed keys were changed (their subject is
+  not the study rows): `populateWorkspace` and `TestDeletedWorkspaceSync` write the keyed row `known:1`
+  (typed rows on workspace deletion are A10's), `tokens_routes_test.go` follows it, the body-limit test
+  pads a readable card, the restore flow test uses neutral keys `test:*`, the unresolved-restore test
+  counts `study_cards` plus leftovers, the round-trip test's cards gained `createdAt`. A10/A13 add the
+  typed assertions to these areas. Also `gofmt` of the WIP's `backup/export_test.go`.
+- Gate: `gofmt -l .` empty; `go vet` + `go test -count=1 -p 2 ./internal/api ./internal/study/...
+  ./internal/sync ./internal/backup` exit 0 (all ok); `node scripts/gen-api-docs.mjs --check` exit 0;
+  web `mfaResetView`, `reauth`, `tokensFormat`, `contractsDocs`, `wikiDocs` vitest 5 files / 153 tests
+  passed. Route walk, `routes.fixture.json`, `auth/tokens-routes.json` unchanged (in the api run).
