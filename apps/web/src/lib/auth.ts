@@ -6,6 +6,7 @@ import { clearSelection } from './workspaces';
 import { hasSession, stepFor, type LoginStep, type MfaChallenge } from './account/loginFlow';
 import { emailLoginVerify, mfaStep, type LoginBody } from './api/mfa';
 import { clearStudyDay } from './time/zone';
+import { setOutboxUser } from './study/outboxUser';
 import {
 	api,
 	clearToken,
@@ -47,6 +48,9 @@ export const token = derived(auth, ($auth) => $auth.token);
 export const user = derived(auth, ($auth) => $auth.user);
 /** The restriction of the current session (from `me`), or null. */
 export const restriction = derived(auth, ($auth): Restriction | null => $auth.user?.restriction || null);
+
+// The review outbox belongs to the user `me` named; null when signed out.
+auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null));
 
 // A 401 anywhere clears the token in the client; mirror that in the store.
 setUnauthorizedHandler(() => auth.set({ token: null, user: null }));

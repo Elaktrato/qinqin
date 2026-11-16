@@ -50,6 +50,17 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
 	unauthorizedHandler = handler;
 }
 
+/** True for the 403 body of a restricted session (`password_change_required`, `mfa_enrollment_required`). */
+export function isRestrictionResponse(status: number, message: string): boolean {
+	if (status !== 403) return false;
+	try {
+		const code = (JSON.parse(message) as { error?: unknown }).error;
+		return typeof code === 'string' && RESTRICTION_CODES.has(code);
+	} catch {
+		return false;
+	}
+}
+
 /**
  * Registers a callback fired when a request is refused with 403
  * `password_change_required` or `mfa_enrollment_required`: the session is

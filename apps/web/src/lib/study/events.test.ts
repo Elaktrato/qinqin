@@ -6,7 +6,17 @@ vi.mock('$app/navigation', () => ({ goto }));
 
 import { get } from 'svelte/store';
 import { dismissNotice, notice } from '../notices';
-import { PENDING_REVIEWS_KEY, flushPendingReviews, recordReview, startReviewOutbox } from './events';
+import {
+	LEGACY_PENDING_KEY,
+	PENDING_REVIEWS_KEY,
+	clearPending,
+	flushPendingReviews,
+	pendingCount,
+	pendingReviews,
+	recordReview,
+	startReviewOutbox
+} from './events';
+import { setOutboxUser } from './outboxUser';
 
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -37,9 +47,14 @@ function lastBatch(): { events: Record<string, unknown>[] } {
 	return JSON.parse(String(init?.body));
 }
 
-function pending(): Record<string, unknown>[] {
+function pendingItems(): { userId: number | null; queuedAt: string; event: Record<string, unknown> }[] {
 	const raw = localStorage.getItem(PENDING_REVIEWS_KEY);
-	return raw === null ? [] : (JSON.parse(raw) as Record<string, unknown>[]);
+	return raw === null ? [] : JSON.parse(raw);
+}
+
+// The queued events of every user, in queue order.
+function pending(): Record<string, unknown>[] {
+	return pendingItems().map((item) => item.event);
 }
 
 // Flatten every event sent across all batch calls, so a flush that sends
@@ -54,6 +69,7 @@ function sentEvents(): Record<string, unknown>[] {
 
 describe('recordReview', () => {
 	beforeEach(() => {
+		setOutboxUser(1);
 		vi.stubGlobal('localStorage', fakeStorage());
 		vi.stubGlobal('fetch', vi.fn());
 		vi.useFakeTimers({ toFake: ['Date'] });
@@ -157,6 +173,7 @@ describe('recordReview', () => {
 
 describe('flushPendingReviews', () => {
 	beforeEach(() => {
+		setOutboxUser(1);
 		vi.stubGlobal('localStorage', fakeStorage());
 		localStorage.setItem('qinqin.token', 'secret');
 		vi.stubGlobal('fetch', vi.fn());
@@ -342,6 +359,7 @@ describe('flushPendingReviews', () => {
 
 	it('recovers from malformed stored data', async () => {
 		localStorage.setItem(PENDING_REVIEWS_KEY, 'not json');
+		localStorage.setItem(LEGACY_PENDING_KEY, '{"oops"');
 
 		await expect(flushPendingReviews()).resolves.toBeUndefined();
 		expect(fetch).not.toHaveBeenCalled();
@@ -372,6 +390,7 @@ describe('flushPendingReviews', () => {
 });
 
 describe('startReviewOutbox', () => {
+	beforeEach(() => setOutboxUser(1));
 	afterEach(() => {
 		vi.unstubAllGlobals();
 	});
@@ -390,7 +409,7 @@ describe('startReviewOutbox', () => {
 		const addEventListener = vi.fn();
 		vi.stubGlobal('window', { addEventListener });
 		localStorage.setItem(
-			PENDING_REVIEWS_KEY,
+			LEGACY_PENDING_KEY,
 			JSON.stringify([
 				{
 					id: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
@@ -411,5 +430,130 @@ describe('startReviewOutbox', () => {
 		expect(addEventListener).toHaveBeenCalledTimes(1);
 		expect(addEventListener).toHaveBeenCalledWith('online', expect.any(Function));
 		expect(pending()).toEqual([]);
+	});
+});
+
+
+describe('outbox per user', () => {
+	beforeEach(() => {
+		setOutboxUser(1);
+		vi.stubGlobal('localStorage', fakeStorage());
+		localStorage.setItem('qinqin.token', 'secret');
+		vi.stubGlobal('fetch', vi.fn());
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+	});
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.unstubAllGlobals();
+		setOutboxUser(null);
+	});
+
+	async function queueAs(user: number, ws: number, card: string): Promise<void> {
+		setOutboxUser(user);
+		vi.mocked(fetch).mockRejectedValueOnce(new Error('offline'));
+		await recordReview(ws, card, 3);
+	}
+
+	it('stores the owner and the queue time with each queued review', async () => {
+		await queueAs(5, 7, 'c1');
+		const [item] = pendingItems();
+		expect(item.userId).toBe(5);
+		expect(Number.isNaN(Date.parse(item.queuedAt))).toBe(false);
+		expect(localStorage.getItem(LEGACY_PENDING_KEY)).toBeNull();
+	});
+
+	it("never sends another user's reviews; the owner's next session sends them", async () => {
+		await queueAs(1, 7, 'a1');
+		const aId = pending()[0].id;
+		setOutboxUser(2);
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ accepted: 1, duplicates: 0 }));
+		await flushPendingReviews();
+		expect(fetch).not.toHaveBeenCalled();
+		expect(pending()).toHaveLength(1);
+
+		setOutboxUser(1);
+		await flushPendingReviews();
+		expect(sentEvents().map((e) => e.id)).toEqual([aId]);
+		expect(pending()).toEqual([]);
+	});
+
+	it('sends nothing before a user is known', async () => {
+		await queueAs(1, 7, 'a1');
+		setOutboxUser(null);
+		vi.mocked(fetch).mockClear();
+		await flushPendingReviews();
+		expect(fetch).not.toHaveBeenCalled();
+		expect(pending()).toHaveLength(1);
+	});
+
+	it('adopts the legacy queue for the first signed-in user and removes the key', async () => {
+		localStorage.setItem(
+			LEGACY_PENDING_KEY,
+			JSON.stringify([{ id: 'L1', workspaceId: 7, device: 'web', ts: '2026-03-15T08:30:00.000Z', type: 'review', payload: {} }])
+		);
+		vi.mocked(fetch).mockRejectedValue(new Error('offline'));
+		await flushPendingReviews();
+		expect(localStorage.getItem(LEGACY_PENDING_KEY)).toBeNull();
+		expect(pendingItems().map((i) => [i.userId, i.event.id])).toEqual([[1, 'L1']]);
+	});
+
+	it('stops at a 401 and keeps every item for the same user\'s next sign-in', async () => {
+		await queueAs(1, 7, 'a1');
+		await queueAs(1, 7, 'a2');
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch).mockResolvedValue(new Response('unauthorized', { status: 401 }));
+		await flushPendingReviews();
+		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(pending()).toHaveLength(2);
+	});
+
+	it('keeps reviews when the session is restricted (403 password_change_required) and stops', async () => {
+		await queueAs(1, 7, 'a1');
+		await queueAs(1, 7, 'a2');
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch).mockResolvedValue(
+			new Response(JSON.stringify({ error: 'password_change_required' }), { status: 403 })
+		);
+		await flushPendingReviews();
+		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(pending()).toHaveLength(2);
+	});
+
+	it('still drops an ordinary permanent 403', async () => {
+		await queueAs(1, 7, 'a1');
+		vi.mocked(fetch).mockResolvedValue(new Response('forbidden', { status: 403 }));
+		await flushPendingReviews();
+		expect(pending()).toEqual([]);
+	});
+
+	it('pendingReviews and pendingCount are per user and workspace', async () => {
+		await queueAs(1, 7, 'a1');
+		await queueAs(1, 8, 'a2');
+		await queueAs(2, 7, 'b1');
+		expect(pendingReviews(1, 7).map((e) => (e.payload as { cardId: string }).cardId)).toEqual(['a1']);
+		expect(pendingReviews(2, 8)).toEqual([]);
+		expect(pendingCount(1)).toBe(2);
+		expect(pendingCount(2)).toBe(1);
+	});
+
+	it('clearPending removes only that user\'s items', async () => {
+		await queueAs(1, 7, 'a1');
+		await queueAs(2, 7, 'b1');
+		clearPending(1);
+		expect(pendingItems().map((i) => i.userId)).toEqual([2]);
+	});
+
+	it('removes expired items of other users when the next user flushes', async () => {
+		localStorage.setItem(
+			PENDING_REVIEWS_KEY,
+			JSON.stringify([
+				{ userId: 9, queuedAt: '2020-01-01T00:00:00.000Z', event: { id: 'old', workspaceId: 7, device: 'web', ts: 't', type: 'review', payload: {} } }
+			])
+		);
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ accepted: 1, duplicates: 0 }));
+		await flushPendingReviews();
+		expect(pending()).toEqual([]);
+		expect(fetch).not.toHaveBeenCalled();
 	});
 });

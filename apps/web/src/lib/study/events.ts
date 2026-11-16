@@ -4,10 +4,12 @@
 // arrives) and is retried on boot and when the browser goes online.
 
 import type { StudyEventBody } from '../api/types';
-import { ApiError, getToken, isWorkspaceGoneResponse } from '../api/client';
+import { ApiError, getToken, isRestrictionResponse, isWorkspaceGoneResponse } from '../api/client';
 import { showNotice } from '../notices';
 import { postEvents } from '../events';
 import { newUlid } from '../ulid';
+import { flushable, settle, type OutboxItem, type OutboxState } from './outbox';
+import { onOutboxUser, outboxUser } from './outboxUser';
 import type {
 	ReviewEvent,
 	ReviewGrade,
@@ -16,8 +18,10 @@ import type {
 	StudyCardKind
 } from './types';
 
-/** localStorage key of the append-only pending review queue. */
-export const PENDING_REVIEWS_KEY = 'qinqin.study.pending';
+/** localStorage key of the per-user pending review queue (items {userId, queuedAt, event}). */
+export const PENDING_REVIEWS_KEY = 'qinqin.study.pending.v2';
+/** The pre-v2 queue (bare events, no owner): adopted by the first signed-in user, then removed. */
+export const LEGACY_PENDING_KEY = 'qinqin.study.pending';
 
 const DEVICE = 'web';
 
@@ -40,37 +44,85 @@ function isEventBody(value: unknown): value is StudyEventBody {
 	);
 }
 
-function readPending(): StudyEventBody[] {
+function isItem(value: unknown): value is OutboxItem {
+	if (typeof value !== 'object' || value === null) return false;
+	const item = value as Record<string, unknown>;
+	return (
+		(item.userId === null || typeof item.userId === 'number') &&
+		typeof item.queuedAt === 'string' &&
+		isEventBody(item.event)
+	);
+}
+
+function readArray(key: string): unknown[] {
 	const store = storage();
 	if (store === null) return [];
 	try {
-		const raw = store.getItem(PENDING_REVIEWS_KEY);
+		const raw = store.getItem(key);
 		if (raw === null) return [];
 		const parsed: unknown = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed.filter(isEventBody);
+		return Array.isArray(parsed) ? parsed : [];
 	} catch {
 		// Corrupt data or denied storage: nothing can be retried.
 		return [];
 	}
 }
 
-function writePending(events: StudyEventBody[]): void {
+function writeState(state: OutboxState): void {
 	const store = storage();
 	if (store === null) return;
 	try {
-		if (events.length === 0) {
-			store.removeItem(PENDING_REVIEWS_KEY);
-		} else {
-			store.setItem(PENDING_REVIEWS_KEY, JSON.stringify(events));
-		}
+		if (state.items.length === 0) store.removeItem(PENDING_REVIEWS_KEY);
+		else store.setItem(PENDING_REVIEWS_KEY, JSON.stringify(state.items));
+		if (state.legacy.length === 0) store.removeItem(LEGACY_PENDING_KEY);
+		else store.setItem(LEGACY_PENDING_KEY, JSON.stringify(state.legacy));
 	} catch {
 		// Storage unavailable (private mode): the queue stays empty.
 	}
 }
 
+/**
+ * load reads the queue. With a known user it first settles it (legacy and
+ * unowned items adopted, other users' expired items removed) and saves the
+ * result; without one the legacy queue is left alone.
+ */
+function load(): OutboxItem[] {
+	const state: OutboxState = {
+		legacy: readArray(LEGACY_PENDING_KEY).filter(isEventBody),
+		items: readArray(PENDING_REVIEWS_KEY).filter(isItem)
+	};
+	const user = outboxUser();
+	if (user === null) return state.items;
+	const next = settle(state, user, Date.now());
+	if (state.legacy.length > 0 || JSON.stringify(next.items) !== JSON.stringify(state.items)) {
+		writeState(next);
+	}
+	return next.items;
+}
+
+function save(items: OutboxItem[]): void {
+	writeState({ legacy: readArray(LEGACY_PENDING_KEY).filter(isEventBody), items });
+}
+
 function enqueue(event: StudyEventBody): void {
-	writePending([...readPending(), event]);
+	save([...load(), { userId: outboxUser(), queuedAt: new Date().toISOString(), event }]);
+}
+
+/** pendingReviews: the not yet sent events of `userId` in one workspace. */
+export function pendingReviews(userId: number, workspaceId: number): StudyEventBody[] {
+	return flushable(load(), userId)
+		.map((item) => item.event)
+		.filter((event) => event.workspaceId === workspaceId);
+}
+
+/** pendingCount: how many reviews of `userId` wait to be sent. */
+export function pendingCount(userId: number): number {
+	return flushable(load(), userId).length;
+}
+
+/** clearPending deletes `userId`'s unsent reviews (an explicit "sign out and delete them"). */
+export function clearPending(userId: number): void {
+	save(load().filter((item) => item.userId !== userId));
 }
 
 /**
@@ -140,17 +192,26 @@ export function flushPendingReviews(): Promise<void> {
 async function flushOnce(): Promise<void> {
 	// Signed out (an open page such as /sources, or a reconnect after
 	// logout): every POST would be a 401, so the queue waits for the next
-	// session instead.
-	if (getToken() === null) return;
-	const queued = readPending();
+	// session instead. The same holds until `me` has told who is signed in:
+	// only that user's items may be sent.
+	const user = outboxUser();
+	if (getToken() === null || user === null) return;
+	const queued = flushable(load(), user);
 	if (queued.length === 0) return;
 
 	let gone = 0;
-	for (const event of queued) {
+	for (const { event } of queued) {
 		try {
 			await postEvents([event]);
 			removePending(event.id);
 		} catch (err) {
+			// The session is gone or restricted: every further POST would fail
+			// the same way. Everything stays queued for this user's next full
+			// session; another user never sends it.
+			if (isSessionProblem(err)) {
+				console.warn('review outbox paused: the session cannot send right now', err);
+				break;
+			}
 			if (isPermanentFailure(err)) {
 				if (isWorkspaceGone(err)) gone++;
 				console.warn(`review event "${event.id}" rejected permanently; dropped`, err);
@@ -170,8 +231,13 @@ async function flushOnce(): Promise<void> {
 	}
 }
 
+/** A 401 (revoked or expired session) or a 403 restriction (password change, MFA enrolment). */
+function isSessionProblem(err: unknown): boolean {
+	return err instanceof ApiError && (err.status === 401 || isRestrictionResponse(err.status, err.message));
+}
+
 function removePending(id: string): void {
-	writePending(readPending().filter((event) => event.id !== id));
+	save(load().filter((item) => item.event.id !== id));
 }
 
 /**
@@ -199,6 +265,8 @@ export function startReviewOutbox(): void {
 		window.addEventListener('online', () => {
 			void flushPendingReviews();
 		});
+		// A user who becomes known after boot (me answered) drains their queue.
+		onOutboxUser(() => void flushPendingReviews());
 	}
 	void flushPendingReviews();
 }
