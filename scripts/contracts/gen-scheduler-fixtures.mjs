@@ -64,7 +64,7 @@ const CASES = [
 		name: 'Tokyo: learning card due before the run starts is not moved',
 		zone: 'Asia/Tokyo', runs: [{ start: '2026-01-05', a: '2026-01-04T15:00:00Z', n: 7 }],
 		reviews: [['2026-01-04T14:00:00Z', 1]],
-		note: 'due 14:10Z precedes the run start 15:00Z'
+		note: 'due 14:01Z precedes the run start 15:00Z'
 	},
 	{
 		name: 'two runs, reviews between and after',

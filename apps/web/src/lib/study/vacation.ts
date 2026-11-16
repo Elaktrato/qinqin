@@ -116,6 +116,7 @@ export function planCreate(
 	}
 ): { writes: VacationWrite[]; startsTomorrow: boolean } | { error: string } {
 	if (draft.scope !== 'all' && draft.scope.workspaces.length === 0) return { error: 'no-workspaces' };
+	if (draft.start === '') return { error: 'start-missing' };
 	let startsTomorrow = false;
 	let start: string;
 	if (draft.start === 'now') {
@@ -128,7 +129,9 @@ export function planCreate(
 	} else start = draft.start;
 	if (!isDay(start) || start < o.today) return { error: 'start-before-today' };
 	if (draft.end !== null) {
-		if (!isDay(draft.end) || draft.end < start) return { error: 'end-before-start' };
+		if (!isDay(draft.end) || draft.end < start) {
+			return { error: startsTomorrow ? 'end-before-start-tomorrow' : 'end-before-start' };
+		}
 		if (daysBetweenDates(start, draft.end) + 1 > MAX_DATES) return { error: 'too-long' };
 	}
 

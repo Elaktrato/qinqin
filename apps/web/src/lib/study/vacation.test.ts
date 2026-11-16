@@ -72,3 +72,14 @@ describe('run helpers', () => {
 		expect(currentVacation(runs, '2026-12-07')).toBeNull();
 	});
 });
+
+describe('start messages', () => {
+	const o = { today: '2026-11-15', now: new Date('2026-11-15T10:00:00Z'), newId: () => 'N' };
+	it('says why an end today fails after studying today', () => {
+		expect(planCreate([], { start: 'now', end: '2026-11-15', scope: 'all' }, { ...o, reviewedToday: () => true })).toEqual({ error: 'end-before-start-tomorrow' });
+		expect(planCreate([], { start: 'now', end: '2026-11-15', scope: 'all' }, { ...o, reviewedToday: () => false })).toMatchObject({ writes: expect.any(Array) });
+	});
+	it('asks for a start date', () => {
+		expect(planCreate([], { start: '', end: null, scope: 'all' }, { ...o, reviewedToday: () => false })).toEqual({ error: 'start-missing' });
+	});
+});

@@ -166,7 +166,7 @@
         "state": 1
       },
       "dueDayShift": 0,
-      "note": "due 14:10Z precedes the run start 15:00Z"
+      "note": "due 14:01Z precedes the run start 15:00Z"
     },
     {
       "name": "two runs, reviews between and after",

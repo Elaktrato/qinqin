@@ -15,7 +15,8 @@
 		type VacationPeriod,
 		type VacationWrite
 	} from '$lib/study/vacation';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
+	import { onContextStale } from '$lib/study/currentContext';
+	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaceDisplay } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
 	import {
@@ -30,7 +31,8 @@
 	// user-global rows; the pure rules live in lib/study/vacation.ts.
 
 	let day = $state.raw(currentStudyDay());
-	$effect(() => onStudyDayChange((next) => (day = next)));
+	// A new learner day (or a zone change) moves "today": min dates and plan rules follow.
+	$effect(() => onContextStale(() => (day = currentStudyDay())));
 	const today = $derived(day.today());
 
 	let periods = $state.raw<VacationPeriod[]>([]);
@@ -262,9 +264,20 @@
 						{describePeriod(period, today, named)}
 						<em>({status === 'active' ? 'active' : 'scheduled'})</em>
 					</span>
-					<button type="button" disabled={busy} onclick={() => void run(() => planEndEarly(period, today))}>End now</button>
-					{#if status === 'scheduled'}
-						<button type="button" disabled={busy} onclick={() => void run(() => planCancel(period, today))}>Cancel</button>
+					{#if status === 'active'}
+						<button
+							type="button"
+							disabled={busy}
+							aria-label={`End now: ${describePeriod(period, today, named)}`}
+							onclick={() => void run(() => planEndEarly(period, today))}>End now</button
+						>
+					{:else}
+						<button
+							type="button"
+							disabled={busy}
+							aria-label={`Cancel vacation ${describePeriod(period, today, named)}`}
+							onclick={() => void run(() => planCancel(period, today))}>Cancel</button
+						>
 					{/if}
 				</li>
 			{/each}
@@ -275,9 +288,10 @@
 <section class="limits">
 	<h2>Daily limits</h2>
 	<p class="hint">
-		At most this many new cards and reviews are offered per study day in this workspace, however many
-		sessions you start. Cards you are not shown stay due and come back the next day. A deck can have
-		its own limits in its settings.
+		Each deck gets at most this many new cards and reviews per study day, however many sessions you
+		start (the workspace value is the default for every deck; a deck can have its own in its
+		settings). A card in several decks must fit every one. Cards you are not shown stay due and come
+		back the next day.
 	</p>
 	<form novalidate onsubmit={saveLimits} aria-label="Daily limits of this workspace">
 		<LimitField legend="New cards per day" name="ws-new" bind:state={newState} />

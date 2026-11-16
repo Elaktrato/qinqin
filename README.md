@@ -696,10 +696,11 @@ today is never rewritten. The study page shows "Vacation until …", the home wi
 the decks view "On vacation", and vacation dates are hatched in the heatmap. The FSRS optimizer ignores
 vacation time too.
 
-**Daily limits** (Settings → Study → Daily limits, and per deck in the deck's settings) cap how many new
-cards (default 20) and reviews (default 200) are offered per study day, however many sessions you start;
-cards you are not shown stay due and come back later, scheduling is untouched. A deck can use the workspace
-value, its own number or no limit; a card in several decks must fit every one. The home widget shows
+**Daily limits** apply per deck: each deck gets at most N new cards (default 20) and N reviews (default
+200) per study day, however many sessions you start. Settings → Study → Daily limits sets the workspace value,
+which is the default for every deck; a deck's own settings can use that value, its own number or no limit. A card
+in several decks must fit every one. Cards you are not shown stay due and come back later, scheduling is
+untouched. The home widget shows
 "18 reviews · 5 new left today" and the decks list "x new · y reviews left today". Both features count by
 the learner's day ("Study day and time zone").
 

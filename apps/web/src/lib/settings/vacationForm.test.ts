@@ -81,10 +81,17 @@ describe('startNowNote and errorText', () => {
 		expect(startNowNote(false)).toBe('');
 	});
 	it('words every planner error', () => {
-		for (const code of ['start-before-today', 'end-before-start', 'too-long', 'no-workspaces', 'started']) {
+		for (const code of ['start-missing', 'end-before-start-tomorrow', 'start-before-today', 'end-before-start', 'too-long', 'no-workspaces', 'started']) {
 			expect(errorText(code)).not.toBe(code);
 		}
 		expect(errorText('???')).toBe('Could not save the vacation.');
+	});
+});
+
+describe('new error texts', () => {
+	it('words the start-tomorrow and missing-start errors', () => {
+		expect(errorText('start-missing')).toBe('Choose a start date.');
+		expect(errorText('end-before-start-tomorrow')).toMatch(/starts tomorrow because you already studied today/);
 	});
 });
 

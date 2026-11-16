@@ -91,6 +91,9 @@ export function startNowNote(startsTomorrow: boolean): string {
 
 const ERRORS: Record<string, string> = {
 	'start-before-today': 'The start cannot be in the past.',
+	'start-missing': 'Choose a start date.',
+	'end-before-start-tomorrow':
+		'Your vacation starts tomorrow because you already studied today; the end cannot be before that.',
 	'end-before-start': 'The end must not be before the start.',
 	'too-long': 'A vacation can be at most 366 days.',
 	'no-workspaces': 'Choose at least one workspace.',

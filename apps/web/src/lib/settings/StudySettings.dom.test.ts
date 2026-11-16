@@ -99,9 +99,12 @@ describe('StudySettings vacation', () => {
 
 	it('lists a scheduled period with Cancel and an active one with End now only', async () => {
 		setup([period({ id: 'S' }), period({ id: 'A', start: today, end: later(3) })]);
-		const cancel = await screen.findAllByRole('button', { name: 'Cancel' });
+		const cancel = await screen.findAllByRole('button', { name: /^Cancel/ });
 		expect(cancel).toHaveLength(1);
-		expect(screen.getAllByRole('button', { name: 'End now' })).toHaveLength(2);
+		// Only the active period can be ended; the scheduled one only cancelled.
+		expect(screen.getAllByRole('button', { name: /^End now/ })).toHaveLength(1);
+		expect(cancel[0].getAttribute('aria-label')).toMatch(/^Cancel vacation /);
+		expect(screen.getByRole('button', { name: /^End now/ }).getAttribute('aria-label')).toMatch(/^End now: /);
 		await fireEvent.click(cancel[0]);
 		await waitFor(() => expect(deleteVacation).toHaveBeenCalledWith('S'));
 	});
@@ -109,9 +112,31 @@ describe('StudySettings vacation', () => {
 	it('ends an active period early by writing the day before today', async () => {
 		const start = later(-3);
 		setup([period({ id: 'A', start, end: later(5), createdDay: start })]);
-		await fireEvent.click(await screen.findByRole('button', { name: 'End now' }));
+		await fireEvent.click(await screen.findByRole('button', { name: /^End now/ }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
 		expect(vi.mocked(saveVacation).mock.calls[0][0]).toMatchObject({ id: 'A', end: later(-1) });
+	});
+});
+
+describe('StudySettings messages', () => {
+	it('explains a start tomorrow whose end is today', async () => {
+		setup([], [`${today}T00:00:01Z`]);
+		await screen.findByRole('heading', { name: 'Vacation' });
+		await fireEvent.click(screen.getByLabelText('Until'));
+		await fireEvent.input(screen.getByLabelText('End date'), { target: { value: today } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Start vacation' }));
+		expect((await screen.findByRole('alert')).textContent).toBe(
+			'Your vacation starts tomorrow because you already studied today; the end cannot be before that.'
+		);
+		expect(saveVacation).not.toHaveBeenCalled();
+	});
+
+	it('asks for a start date when none is chosen', async () => {
+		setup();
+		await screen.findByRole('heading', { name: 'Vacation' });
+		await fireEvent.click(screen.getByLabelText('On a date'));
+		await fireEvent.submit(screen.getByRole('button', { name: 'Schedule vacation' }).closest('form')!);
+		expect((await screen.findByRole('alert')).textContent).toBe('Choose a start date.');
 	});
 });
 
@@ -134,5 +159,12 @@ describe('StudySettings daily limits', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
 		expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number from 0 to 9999.');
 		expect(saveWorkspaceLimits).not.toHaveBeenCalled();
+	});
+});
+
+describe('StudySettings limits wording', () => {
+	it('says the limits are per deck and the workspace value is the default', async () => {
+		setup();
+		expect((await screen.findByText(/Each deck gets at most/)).textContent).toMatch(/workspace value is the default for every deck/);
 	});
 });
