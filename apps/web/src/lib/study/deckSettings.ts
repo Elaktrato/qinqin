@@ -38,6 +38,9 @@ export function parseDeckSettings(key: string, raw: unknown): DeckSettings | nul
 	if (typeof deckId !== 'string' || deckId === '') return null;
 	if (key !== deckSettingsKey(deckId)) return null;
 	const order = parseNewOrder(newOrder);
+	// An order this version cannot read (a newer client's) stays verbatim in
+	// `extra`, so saving another field of the row keeps it.
+	if (order === null && 'newOrder' in raw) extra.newOrder = newOrder;
 	return {
 		deckId,
 		cardTypes: Array.isArray(cardTypes) ? cleanCardTypes(cardTypes) : [],

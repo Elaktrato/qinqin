@@ -577,6 +577,19 @@ describe("study store", () => {
       expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
     });
 
+    it("saveDeckNewOrder with added also drops an unreadable stored order", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "popular" } }),
+          ],
+        });
+      });
+      await saveDeckNewOrder("d1", { by: "added" });
+      expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
+    });
+
     it("saveDeckCardTypes creates the row when none exists", async () => {
       vi.mocked(fetch).mockImplementation(async (_input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 1 });

@@ -21,8 +21,9 @@ the frequency packs installed on the server (`GET /api/frequency-packs`).
 - Only new items are reordered (a deck session's never-reviewed cards, a level session's new bucket);
   reviews, due order, admission and daily limits are unchanged.
 - Per deck: the optional field `newOrder` of `deckcfg:<deckId>`. Absent or malformed (not an object, an
-  unknown `by`, `level` without a non-empty string `packId`) = added. The parsed value is normalised to the
-  shape (fields beyond it are dropped); the row's other unknown fields stay verbatim.
+  unknown `by`, `level` without a non-empty string `packId`) = added. A readable value is normalised to the
+  shape (fields beyond it are dropped); an unreadable one (a newer client's) is kept verbatim like every
+  other unknown field, so saving the row keeps it, until this client sets an order of its own.
 - Per session: `'deck'` (default) resolves to the selected decks' common order, or added when they differ
   (`mixed`); an explicit order wins. Level sessions use level order unless the session says `frequency`.
 

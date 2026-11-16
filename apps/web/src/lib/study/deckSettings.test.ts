@@ -79,15 +79,19 @@ describe('newOrder field (frequency/deckcfg-new-order.json)', () => {
 		});
 	});
 
-	it('a malformed newOrder is dropped, not kept in extra', () => {
+	it('an unreadable newOrder is kept verbatim and survives a save', () => {
 		const parsed = parseDeckSettings('deckcfg:d1', {
 			deckId: 'd1',
 			cardTypes: ['cloze'],
-			newOrder: { by: 'level' }
+			newOrder: { by: 'popular', window: 3 }
 		})!;
 		expect(parsed.newOrder ?? null).toBeNull();
-		expect(parsed.extra).toEqual({});
+		expect(parsed.extra).toEqual({ newOrder: { by: 'popular', window: 3 } });
 		expect(parsed.cardTypes).toEqual(['cloze']);
-		expect(serializeDeckSettings(parsed, 't')).not.toHaveProperty('newOrder');
+		expect(serializeDeckSettings(parsed, 't').newOrder).toEqual({ by: 'popular', window: 3 });
+		// A readable order set by this version replaces it.
+		expect(serializeDeckSettings({ ...parsed, newOrder: { by: 'frequency' } }, 't').newOrder).toEqual({
+			by: 'frequency'
+		});
 	});
 });

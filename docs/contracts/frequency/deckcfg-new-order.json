@@ -60,7 +60,7 @@
    "extra": {}
   },
   {
-   "name": "level without packId is malformed",
+   "name": "level without packId is malformed: kept verbatim",
    "row": {
     "deckId": "d1",
     "cardTypes": [],
@@ -70,10 +70,14 @@
     }
    },
    "newOrder": null,
-   "extra": {}
+   "extra": {
+    "newOrder": {
+     "by": "level"
+    }
+   }
   },
   {
-   "name": "level with empty packId is malformed",
+   "name": "level with empty packId is malformed: kept verbatim",
    "row": {
     "deckId": "d1",
     "cardTypes": [],
@@ -84,10 +88,15 @@
     }
    },
    "newOrder": null,
-   "extra": {}
+   "extra": {
+    "newOrder": {
+     "by": "level",
+     "packId": ""
+    }
+   }
   },
   {
-   "name": "unknown by is malformed",
+   "name": "an unknown by (a newer client) is kept verbatim",
    "row": {
     "deckId": "d1",
     "cardTypes": [],
@@ -97,10 +106,14 @@
     }
    },
    "newOrder": null,
-   "extra": {}
+   "extra": {
+    "newOrder": {
+     "by": "popular"
+    }
+   }
   },
   {
-   "name": "a string is malformed",
+   "name": "a string is malformed: kept verbatim",
    "row": {
     "deckId": "d1",
     "cardTypes": [],
@@ -108,10 +121,12 @@
     "newOrder": "frequency"
    },
    "newOrder": null,
-   "extra": {}
+   "extra": {
+    "newOrder": "frequency"
+   }
   },
   {
-   "name": "null is malformed",
+   "name": "null is malformed: kept verbatim",
    "row": {
     "deckId": "d1",
     "cardTypes": [],
@@ -119,7 +134,9 @@
     "newOrder": null
    },
    "newOrder": null,
-   "extra": {}
+   "extra": {
+    "newOrder": null
+   }
   },
   {
    "name": "fields inside newOrder beyond the shape are dropped",

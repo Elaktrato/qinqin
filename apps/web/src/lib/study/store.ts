@@ -694,6 +694,12 @@ export async function saveDeckCardTypes(
   return next;
 }
 
+function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown> {
+  const { newOrder: _dropped, ...rest } = extra;
+  void _dropped;
+  return rest;
+}
+
 /**
  * saveDeckNewOrder sets the order of new cards of one deck (#75) by
  * rewriting its `deckcfg:` row; card types and unknown fields survive.
@@ -710,7 +716,8 @@ export async function saveDeckNewOrder(
     deckId,
     cardTypes: stored?.cardTypes ?? [],
     ...(order.by === "added" ? {} : { newOrder: order }),
-    extra: stored?.extra ?? {},
+    // Choosing an order replaces an unreadable stored one too.
+    extra: withoutNewOrder(stored?.extra ?? {}),
   };
   await putData(
     workspaceId,
