@@ -13,6 +13,8 @@ import {
 	PREPARE_THROTTLE_MS,
 	planOffline,
 	prepareOffline,
+	clearReceipts,
+	readReceipt,
 	receiptKey,
 	type PrepareDeps
 } from './prepareOffline';
@@ -130,6 +132,8 @@ describe('prepareOffline', () => {
 			storage: memoryStorage(),
 			now: () => now.getTime(),
 			canPrepare: () => true,
+			partition: async () => 'qinqin-api-v1-aaa',
+			isCached: async () => false,
 			extraNew: 2,
 			onPrepared: () => {},
 			...over
@@ -145,15 +149,53 @@ describe('prepareOffline', () => {
 		expect(deps.active.max).toBeLessThanOrEqual(2);
 	});
 
-	it('is throttled for 30 minutes unless the counts changed', async () => {
+	it('is throttled for 30 minutes, and then does not even download the history first', async () => {
 		const deps = makeDeps();
 		await prepareOffline(7, deps);
 		const first = deps.calls.length;
-		expect((await prepareOffline(7, { ...deps, now: () => now.getTime() + PREPARE_THROTTLE_MS - 1000 })).status).toBe('skipped');
+		const loadHistory = vi.fn(deps.loadHistory);
+		const soon = { ...deps, loadHistory, now: () => now.getTime() + PREPARE_THROTTLE_MS - 1000 };
+		expect((await prepareOffline(7, soon)).status).toBe('skipped');
+		expect(loadHistory).not.toHaveBeenCalled();
 		expect(deps.calls.length).toBe(first);
-		const changed = { ...deps, now: () => now.getTime() + 1000, loadHistory: async () => ({ decks: [], cards: [...vocab, card('v7', 'vocab', 7)], reviews: [], merged: 0 }) as never };
-		expect((await prepareOffline(7, changed)).status).toBe('prepared');
-		expect((await prepareOffline(7, { ...deps, now: () => now.getTime() + PREPARE_THROTTLE_MS + 1 })).status).toBe('prepared');
+		expect((await prepareOffline(7, { ...deps, loadHistory, now: () => now.getTime() + PREPARE_THROTTLE_MS + 1 })).status).toBe('prepared');
+		expect(loadHistory).toHaveBeenCalledTimes(1);
+	});
+
+	it('a receipt of another credential partition is worth nothing: it prepares again', async () => {
+		const deps = makeDeps();
+		await prepareOffline(7, deps);
+		const next = { ...deps, partition: async () => 'qinqin-api-v1-bbb' };
+		expect((await prepareOffline(7, next)).status).toBe('prepared');
+	});
+
+	it('no partition (not signed in) prepares nothing', async () => {
+		const deps = makeDeps({ partition: async () => null });
+		expect((await prepareOffline(7, deps)).status).toBe('skipped');
+		expect(deps.calls).toEqual([]);
+	});
+
+	it('skips entries that are already saved', async () => {
+		const deps = makeDeps({ isCached: async (path) => path === entryPath(1) || path === entryPath(2) });
+		await prepareOffline(7, deps);
+		expect(deps.calls.filter((c) => c.startsWith('/api/entries/')).sort()).toEqual([entryPath(3), entryPath(4)]);
+	});
+
+	it('readReceipt shows nothing for a receipt of another partition', async () => {
+		const deps = makeDeps();
+		await prepareOffline(7, deps);
+		expect(readReceipt(deps.storage, 1, 7, 'qinqin-api-v1-aaa')?.cards).toBe(4);
+		expect(readReceipt(deps.storage, 1, 7, 'qinqin-api-v1-other')).toBeNull();
+		expect(readReceipt(deps.storage, 1, 7, null)).toBeNull();
+	});
+
+	it('clearReceipts removes them all', async () => {
+		const deps = makeDeps();
+		await prepareOffline(7, deps);
+		deps.storage!.setItem('qinqin.study.pending.v2', '[]');
+		clearReceipts(deps.storage);
+		expect(deps.storage!.getItem(receiptKey(1, 7))).toBeNull();
+		expect(deps.storage!.getItem('qinqin.study.pending.v2')).toBe('[]');
 	});
 
 	it('receipts are per user and workspace', async () => {

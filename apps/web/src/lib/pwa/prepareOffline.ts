@@ -4,6 +4,7 @@
 // for. The queue is computed by the real planner (daily limits, vacation,
 // burying, the learner's day), not a copy of its rules.
 
+import { entryPath } from '../api/entries';
 import { deckSessionPlan, type DeckSessionOptions } from '../study/cardFlow';
 import { writableChars } from '../study/writing';
 import type { StudyContext } from '../study/studyContext';
@@ -73,6 +74,8 @@ interface Receipt {
 	cards: number;
 	reviews: number;
 	entries: number;
+	/** The cache partition (credential) the entries were saved in. */
+	partition: string;
 }
 
 export interface PrepareDeps {
@@ -89,18 +92,43 @@ export interface PrepareDeps {
 	now: () => number;
 	/** True when a worker controls the page, the device is online and data saver is off. */
 	canPrepare: () => boolean;
+	/** The signed-in credential's cache partition name; null when there is none. */
+	partition: () => Promise<string | null>;
+	/** True when the worker already holds this API path for the current partition. */
+	isCached: (path: string) => Promise<boolean>;
 	extraNew?: number;
 	onPrepared: (prepared: NonNullable<OfflineState['prepared']>) => void;
 }
 
-/** readReceipt: what was last prepared for a workspace, as the Settings line shows it. */
+/**
+ * readReceipt: what was last prepared for a workspace, as the Settings line
+ * shows it. A receipt written for another credential partition (another login)
+ * describes a cache that is not this session's: nothing is shown for it.
+ */
 export function readReceipt(
 	storage: Storage | null,
 	userId: number,
-	workspaceId: number
+	workspaceId: number,
+	partition: string | null
 ): NonNullable<OfflineState['prepared']> | null {
 	const receipt = readReceiptAt(storage, receiptKey(userId, workspaceId));
-	return receipt === null ? null : { workspaceId, cards: receipt.entries, at: new Date(receipt.at).toISOString() };
+	if (receipt === null || partition === null || receipt.partition !== partition) return null;
+	return { workspaceId, cards: receipt.entries, at: new Date(receipt.at).toISOString() };
+}
+
+/** clearReceipts: every "prepared" receipt (wherever the partitions are deleted). */
+export function clearReceipts(storage: Pick<Storage, 'length' | 'key' | 'removeItem'> | null): void {
+	if (storage === null) return;
+	try {
+		const doomed: string[] = [];
+		for (let i = 0; i < storage.length; i++) {
+			const key = storage.key(i);
+			if (key !== null && key.startsWith(RECEIPT_PREFIX)) doomed.push(key);
+		}
+		for (const key of doomed) storage.removeItem(key);
+	} catch {
+		// Storage denied: the receipts are only validated against the partition anyway.
+	}
 }
 
 function readReceiptAt(storage: Storage | null, key: string): Receipt | null {
@@ -108,7 +136,7 @@ function readReceiptAt(storage: Storage | null, key: string): Receipt | null {
 		const raw = storage?.getItem(key);
 		if (!raw) return null;
 		const parsed = JSON.parse(raw) as Partial<Receipt>;
-		return typeof parsed.at === 'number' && typeof parsed.cards === 'number' && typeof parsed.reviews === 'number'
+		return typeof parsed.at === 'number' && typeof parsed.cards === 'number' && typeof parsed.reviews === 'number' && typeof parsed.partition === 'string'
 			? (parsed as Receipt)
 			: null;
 	} catch {
@@ -140,18 +168,16 @@ export async function prepareOffline(
 ): Promise<{ status: 'prepared' | 'skipped' | 'failed'; entries: number }> {
 	if (!d.canPrepare()) return { status: 'skipped', entries: 0 };
 	try {
-		const data = await d.loadHistory(workspaceId);
+		const partition = await d.partition();
+		if (partition === null) return { status: 'skipped', entries: 0 };
 		const key = receiptKey(d.userId, workspaceId);
 		const receipt = readReceiptAt(d.storage, key);
 		const now = d.now();
-		if (
-			receipt !== null &&
-			now - receipt.at < PREPARE_THROTTLE_MS &&
-			receipt.cards === data.cards.length &&
-			receipt.reviews === data.reviews.length
-		) {
+		// Fresh enough: do not even download the study history to find out.
+		if (receipt !== null && receipt.partition === partition && now - receipt.at < PREPARE_THROTTLE_MS) {
 			return { status: 'skipped', entries: receipt.entries };
 		}
+		const data = await d.loadHistory(workspaceId);
 		const config = d.config();
 		// A levels session cannot run offline (its entries come from the scheme
 		// API); prepare the plain deck session instead.
@@ -174,9 +200,11 @@ export async function prepareOffline(
 			{ extraNew: d.extraNew }
 		);
 		for (const path of OFFLINE_API_PATHS) await d.fetchApi(path);
-		await pool(plan.entryIds, (id) => d.fetchEntry(id));
+		await pool(plan.entryIds, async (id) => {
+			if (!(await d.isCached(entryPath(id)))) await d.fetchEntry(id);
+		});
 		await pool(plan.chars, (ch) => d.fetchStroke(ch));
-		const saved: Receipt = { at: now, cards: data.cards.length, reviews: data.reviews.length, entries: plan.entryIds.length };
+		const saved: Receipt = { at: now, cards: data.cards.length, reviews: data.reviews.length, entries: plan.entryIds.length, partition };
 		try {
 			d.storage?.setItem(key, JSON.stringify(saved));
 		} catch {

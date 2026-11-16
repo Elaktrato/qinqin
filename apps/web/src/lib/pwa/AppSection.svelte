@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { getToken } from '$lib/api/client';
 	import { user } from '$lib/auth';
 	import { workspaces } from '$lib/workspaces';
 	import { appSectionView, clearOfflineData } from './appSectionView';
+	import { ownPartition } from './partitions';
 	import { currentIos, currentStandalone, installPrompt, promptInstall } from './install';
 	import { offline, setPrepared } from './offlineState';
 	import { readReceipt } from './prepareOffline';
@@ -12,13 +14,25 @@
 	let usage = $state<{ usage: number; quota: number } | null>(null);
 	let cleared = $state(false);
 	let busy = $state(false);
+	// The credential's cache partition, when the worker really holds it.
+	let partition = $state<string | null>(null);
+
+	async function refreshPartition(): Promise<void> {
+		const token = getToken();
+		try {
+			const name = token === null ? null : await ownPartition(token);
+			partition = name !== null && typeof caches !== 'undefined' && (await caches.has(name)) ? name : null;
+		} catch {
+			partition = null;
+		}
+	}
 
 	// What was prepared: this session's result, else the receipt of the active workspace.
 	const prepared = $derived.by(() => {
-		if ($offline.prepared !== null) return $offline.prepared;
+		if ($offline.prepared !== null && partition !== null) return $offline.prepared;
 		const ws = $workspaces.current;
 		if (!$user || !ws || cleared) return null;
-		return readReceipt(typeof localStorage === 'undefined' ? null : localStorage, $user.id, ws.id);
+		return readReceipt(typeof localStorage === 'undefined' ? null : localStorage, $user.id, ws.id, partition);
 	});
 
 	const view = $derived(
@@ -49,12 +63,16 @@
 		await clearOfflineData(typeof caches === 'undefined' ? undefined : caches, typeof localStorage === 'undefined' ? null : localStorage);
 		setPrepared(null);
 		cleared = true;
+		await refreshPartition();
 		await readUsage();
 		busy = false;
 	}
 
 	onMount(() => {
-		if (secure) void readUsage();
+		if (secure) {
+			void readUsage();
+			void refreshPartition();
+		}
 	});
 </script>
 

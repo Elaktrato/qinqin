@@ -3,7 +3,7 @@
 
 import { cleanupPartitions, type CachesLike } from './partitions';
 import { formatBytes } from './install';
-import { RECEIPT_PREFIX } from './prepareOffline';
+import { clearReceipts } from './prepareOffline';
 import type { OfflineState } from './offlineState';
 
 export interface AppViewInput {
@@ -68,15 +68,5 @@ export async function clearOfflineData(
 	storage: Pick<Storage, 'length' | 'key' | 'removeItem'> | null
 ): Promise<void> {
 	await cleanupPartitions(caches, null);
-	if (storage === null) return;
-	try {
-		const doomed: string[] = [];
-		for (let i = 0; i < storage.length; i++) {
-			const key = storage.key(i);
-			if (key !== null && key.startsWith(RECEIPT_PREFIX)) doomed.push(key);
-		}
-		for (const key of doomed) storage.removeItem(key);
-	} catch {
-		// Storage denied: the receipts only throttle.
-	}
+	clearReceipts(storage);
 }

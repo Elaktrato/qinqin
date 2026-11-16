@@ -5,6 +5,14 @@ import { workspaces } from '$lib/workspaces';
 import { captureInstallPrompt, installPrompt } from './install';
 import { resetOffline, setPrepared } from './offlineState';
 import AppSection from './AppSection.svelte';
+import { FakeCacheStorage } from '../testing/fakeCaches';
+import { ownPartition } from './partitions';
+
+let fake: FakeCacheStorage;
+async function receipt(user: number, entries: number, withPartition = true): Promise<void> {
+	localStorage.setItem(`qinqin.pwa.prepared.${user}.7`, JSON.stringify({ at: new Date(2026, 10, 16, 14, 2).getTime(), cards: 5, reviews: 2, entries, partition: await ownPartition('t') }));
+	if (withPartition) await fake.open(await ownPartition('t'));
+}
 
 const me = { id: 1, username: 'a', admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' };
 
@@ -13,6 +21,9 @@ function secure(value: boolean): void {
 }
 
 beforeEach(() => {
+	fake = new FakeCacheStorage();
+	vi.stubGlobal('caches', fake);
+	localStorage.setItem('qinqin.token', 't');
 	resetOffline();
 	installPrompt.set(null);
 	auth.set({ token: 't', user: me });
@@ -24,6 +35,7 @@ beforeEach(() => {
 	});
 });
 afterEach(() => {
+	vi.unstubAllGlobals();
 	cleanup();
 	localStorage.clear();
 	vi.restoreAllMocks();
@@ -55,14 +67,29 @@ describe('Settings -> Account -> App', () => {
 		expect(screen.getByText(/tap Share, then Add to Home Screen/)).toBeTruthy();
 	});
 
-	it('offline status from the receipt of the active workspace', () => {
-		localStorage.setItem('qinqin.pwa.prepared.1.7', JSON.stringify({ at: new Date(2026, 10, 16, 14, 2).getTime(), cards: 5, reviews: 2, entries: 120 }));
+	it('offline status from the receipt of the active workspace', async () => {
+		await receipt(1, 120);
 		render(AppSection);
-		expect(screen.getByText('Offline: ready - 120 cards saved at 14:02')).toBeTruthy();
+		expect(await screen.findByText('Offline: ready - 120 cards saved at 14:02')).toBeTruthy();
 	});
 
-	it('another user\'s receipt is not shown', () => {
-		localStorage.setItem('qinqin.pwa.prepared.2.7', JSON.stringify({ at: Date.now(), cards: 5, reviews: 2, entries: 120 }));
+	it('never "ready" for an empty partition (receipt kept, cache gone)', async () => {
+		await receipt(1, 120, false);
+		render(AppSection);
+		await new Promise((r) => setTimeout(r, 20));
+		expect(screen.getByText(/Offline: not prepared yet/)).toBeTruthy();
+	});
+
+	it('never "ready" for a receipt written under another login', async () => {
+		await receipt(1, 120);
+		localStorage.setItem('qinqin.token', 'other-login');
+		render(AppSection);
+		await new Promise((r) => setTimeout(r, 20));
+		expect(screen.getByText(/Offline: not prepared yet/)).toBeTruthy();
+	});
+
+	it('another user\'s receipt is not shown', async () => {
+		await receipt(2, 120);
 		render(AppSection);
 		expect(screen.getByText(/Offline: not prepared yet/)).toBeTruthy();
 	});
@@ -73,7 +100,7 @@ describe('Settings -> Account -> App', () => {
 	});
 
 	it('Clear offline data removes receipts, keeps the review outbox, and says so', async () => {
-		localStorage.setItem('qinqin.pwa.prepared.1.7', JSON.stringify({ at: Date.now(), cards: 1, reviews: 1, entries: 3 }));
+		await receipt(1, 3);
 		localStorage.setItem('qinqin.study.pending.v2', '[{"x":1}]');
 		setPrepared({ workspaceId: 7, cards: 3, at: new Date().toISOString() });
 		render(AppSection);

@@ -9,6 +9,7 @@ import { clearStudyDay } from './time/zone';
 import { setOutboxUser } from './study/outboxUser';
 import { clearRecentSent } from './study/recentSent';
 import { cleanupPartitions, ownPartition } from './pwa/partitions';
+import { clearReceipts } from './pwa/prepareOffline';
 import {
 	api,
 	TOKEN_KEY,
@@ -56,13 +57,27 @@ export const restriction = derived(auth, ($auth): Restriction | null => $auth.us
 auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null, $auth.token));
 
 // A 401 anywhere clears the token in the client; mirror that in the store.
-setUnauthorizedHandler(() => auth.set({ token: null, user: null }));
+// Its offline copies and receipts are worthless too (the worker deletes the partition itself).
+setUnauthorizedHandler(() => {
+	auth.set({ token: null, user: null });
+	forgetOfflineCopies();
+});
 
 // A 403 that names a restriction means the session changed under us (an admin
 // forced a password change): reload `me` so the layout guard moves it.
 setRestrictedHandler(() => {
 	void loadMe().catch(() => undefined);
 });
+
+/** Offline copies of the API (all partitions) and the "prepared" receipts. Best effort. */
+function forgetOfflineCopies(): void {
+	void cleanupPartitions(undefined, null);
+	try {
+		clearReceipts(typeof localStorage === 'undefined' ? null : localStorage);
+	} catch {
+		// Storage denied.
+	}
+}
 
 /**
  * Another tab signed in, out or as someone else: localStorage holds the one
@@ -94,6 +109,8 @@ export async function loadMe(known?: string): Promise<User | null> {
 	const stored = known ?? getToken();
 	if (!stored) {
 		auth.set({ token: null, user: null });
+		// Booting without a session: nothing saved may linger for the next sign-in.
+		forgetOfflineCopies();
 		return null;
 	}
 
@@ -214,7 +231,7 @@ export function logout(): void {
 	clearToken();
 	// Offline API copies and the list of recently sent reviews belong to the session that just ended.
 	clearRecentSent();
-	void cleanupPartitions(undefined, null);
+	forgetOfflineCopies();
 	// Recordings fetched for this user must not outlive the session.
 	clearClipCache();
 	clearAudioCache();
