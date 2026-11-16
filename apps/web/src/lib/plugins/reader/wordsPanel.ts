@@ -1,6 +1,7 @@
 // The Words rail tab's view model (#68): texts, paging and the deck list.
 // Pure; WordsPanel.svelte only renders it.
 import { GENERAL_DECK_ID } from '$lib/study/store';
+import { familiarity, type KnownIndex } from '$lib/study/known';
 import type { Deck } from '$lib/study/types';
 import type { Coverage } from './coverage';
 import type { AddWordsResult } from './wordActions';
@@ -66,4 +67,13 @@ export function pageOf<T>(list: readonly T[], pages: number): { shown: T[]; more
 export function deckOptions(decks: readonly Deck[]): { id: string; name: string }[] {
 	const own = [...decks].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id.localeCompare(b.id));
 	return [{ id: GENERAL_DECK_ID, name: 'General' }, ...own.map((d) => ({ id: d.id, name: d.name }))];
+}
+
+/** stateLineText: the popup's state line for an entry (shown with highlighting on). */
+export function stateLineText(entryId: number, index: KnownIndex, threshold: number): string {
+	const state = familiarity(entryId, index, threshold);
+	if (state === 'new') return 'New word';
+	if (state === 'learning') return 'Learning';
+	if (index.marks.has(entryId)) return 'Known — marked by you';
+	return `Known — memory score ${index.scores.get(entryId) ?? 0}`;
 }

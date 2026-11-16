@@ -34,7 +34,13 @@
 		result: LookupResult;
 		lang: string;
 		textLang: string;
-		study?: { workspaceId: number; paragraph: string | null; hold: (on: boolean) => void };
+		study?: {
+			workspaceId: number;
+			paragraph: string | null;
+			hold: (on: boolean) => void;
+			/** The word-state line of an entry (word highlighting on), else absent. */
+			stateLine?: ((entryId: number) => string) | null;
+		};
 		/** Ids of dictionaries the workspace hides; their senses sit behind a button. */
 		hidden?: ReadonlySet<number>;
 	} = $props();
@@ -73,6 +79,7 @@
 				workspaceId={study.workspaceId}
 				paragraph={study.paragraph}
 				hold={study.hold}
+				stateLine={study.stateLine ? study.stateLine(result.entryId) : null}
 			/>
 		{/if}
 	</header>

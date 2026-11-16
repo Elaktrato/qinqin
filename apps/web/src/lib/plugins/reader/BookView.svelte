@@ -37,6 +37,7 @@
 	import { loadRawStudyData, pushStudyRows, setKnownMarks } from '$lib/study/store';
 	import type { Deck } from '$lib/study/types';
 	import WordsPanel from './WordsPanel.svelte';
+	import { stateLineText } from './wordsPanel';
 	import { coverageOf, mergeTallies, tallyChapter, unknownList, type ChapterTally } from './coverage';
 	import { createBookCounter, type BookCounter } from './bookCounter';
 	import { addWords, markWords } from './wordActions';
@@ -866,6 +867,13 @@
 	// --- words panel: coverage and unknown words (#68) ---
 
 	const stateOf = (entryId: number) => familiarity(entryId, index, display.smartThreshold);
+	// The popup's state line, only while words are highlighted.
+	const wordStateLine = $derived.by(() => {
+		if (!display.highlightWords) return null;
+		const idx = index;
+		const threshold = display.smartThreshold;
+		return (entryId: number) => stateLineText(entryId, idx, threshold);
+	});
 	const chapterKey = $derived(content ? `${id}:${content.n}:${variant}` : '');
 	// The open chapter's tally, once every paragraph of it has its matches.
 	const chapterTally = $derived.by<ChapterTally | null>(() => {
@@ -1146,7 +1154,7 @@
 				{/if}
 			</footer>
 
-			<PopupStackView {lookup} {studyWorkspaceId} {highlighter} />
+			<PopupStackView {lookup} {studyWorkspaceId} {highlighter} stateLine={wordStateLine} />
 			<!-- An each over at most one item: a new key is a fresh editor, and
 			     the closing one keeps its own values while it is torn down. -->
 			{#each editor ? [editor] : [] as open (open.key)}

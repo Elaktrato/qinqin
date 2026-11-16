@@ -10,12 +10,18 @@
 	let {
 		lookup,
 		studyWorkspaceId = null,
-		highlighter = null
-	}: { lookup: LookupController; studyWorkspaceId?: number | null; highlighter?: HighlightActions | null } = $props();
+		highlighter = null,
+		stateLine = null
+	}: {
+		lookup: LookupController;
+		studyWorkspaceId?: number | null;
+		highlighter?: HighlightActions | null;
+		stateLine?: ((entryId: number) => string) | null;
+	} = $props();
 </script>
 
 {#if lookup.info}
 	{#each lookup.stack.frames as frame (frame.id)}
-		<PopupFrameView {frame} info={lookup.info} {lookup} {studyWorkspaceId} {highlighter} />
+		<PopupFrameView {frame} info={lookup.info} {lookup} {studyWorkspaceId} {highlighter} {stateLine} />
 	{/each}
 {/if}

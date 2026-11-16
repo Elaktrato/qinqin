@@ -10,6 +10,7 @@ import {
 	figuresText,
 	markResultText,
 	pageOf,
+	stateLineText,
 	unmatchedText,
 	wordCountsSupported
 } from './wordsPanel';
@@ -78,5 +79,17 @@ describe('list paging and decks', () => {
 			{ id: 'a', name: 'A', createdAt: '2026-01-01T00:00:00Z' }
 		];
 		expect(deckOptions(decks).map((d) => d.id)).toEqual(['general', 'a', 'b']);
+	});
+});
+
+describe('stateLineText (the popup state line)', () => {
+	const index = { scores: new Map([[1, 85], [2, 40]]), carded: new Set([1, 2]), marks: new Set([3, 1]) };
+	it('names the state and why a word is known', () => {
+		expect(stateLineText(9, index, 80)).toBe('New word');
+		expect(stateLineText(2, index, 80)).toBe('Learning');
+		expect(stateLineText(2, index, 40)).toBe('Known — memory score 40');
+		expect(stateLineText(3, index, 80)).toBe('Known — marked by you');
+		expect(stateLineText(1, index, 80)).toBe('Known — marked by you');
+		expect(stateLineText(1, { ...index, marks: new Set() }, 80)).toBe('Known — memory score 85');
 	});
 });
