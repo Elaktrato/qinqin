@@ -178,19 +178,21 @@ func TestJanitorPrunesLongExpiredTokens(t *testing.T) {
 // userTables row and the documented restore exception: a new containment
 // path that deleted sessions by hand would forget the tokens.
 func TestOnlyRevokeCredentialsDeletesAUsersSessions(t *testing.T) {
-	root := "../"
+	root := "../../" // the whole server module: internal/ and cmd/
 	allowed := map[string]bool{
-		"auth/session.go":   true, // revokeCredentials, RevokeSession(Audited) (one id), RevokeAllExcept
-		"auth/delete.go":    true, // the userTables row
-		"backup/restore.go": true, // personal restore: tokens are kept on purpose
-		"auth/janitor.go":   true, // idle sessions of everyone
+		"internal/auth/session.go":   true, // revokeCredentials, RevokeSession(Audited) (one id), RevokeAllExcept
+		"internal/auth/delete.go":    true, // the userTables row
+		"internal/backup/restore.go": true, // personal restore: tokens are kept on purpose
+		"internal/auth/janitor.go":   true, // idle sessions of everyone
 	}
+	visited := map[string]bool{}
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
 			return err
 		}
 		rel, _ := filepath.Rel(root, path)
 		rel = filepath.ToSlash(rel)
+		visited[rel] = true
 		f, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
 		if err != nil {
 			return err
@@ -214,6 +216,12 @@ func TestOnlyRevokeCredentialsDeletesAUsersSessions(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	// The walk covers the whole server module, the command line included.
+	for _, must := range []string{"cmd/qinqin/main.go", "cmd/qinqin/recover.go", "internal/api/api.go"} {
+		if !visited[must] {
+			t.Errorf("the walk did not see %s", must)
+		}
 	}
 	// And inside session.go, the per-user delete exists once, in revokeCredentials.
 	src, _ := os.ReadFile("session.go")
