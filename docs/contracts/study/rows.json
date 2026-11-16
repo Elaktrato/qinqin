@@ -1087,6 +1087,30 @@
    }
   },
   {
+   "name": "updatedAt the zero time (refused like a zero plugin-data stamp)",
+   "collection": "cards",
+   "valid": false,
+   "member": "updatedAt",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "0001-01-01T00:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
    "name": "unknown source type",
    "collection": "decks",
    "valid": false,

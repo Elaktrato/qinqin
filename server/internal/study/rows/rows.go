@@ -437,6 +437,11 @@ func Decode(f Family, raw json.RawMessage) (Row, error) {
 			return nil, fmt.Errorf("%w: %s row: %s: %v", ErrInvalid, f, k, err)
 		}
 	}
+	// The zero time is no edit time (a plugin-data push refuses it too): a
+	// client that forgot to stamp the item must not win or lose by accident.
+	if r.M().UpdatedAt.IsZero() {
+		return nil, fmt.Errorf("%w: %s row: updatedAt is the zero time", ErrInvalid, f)
+	}
 	if err := Validate(r); err != nil {
 		return nil, err
 	}

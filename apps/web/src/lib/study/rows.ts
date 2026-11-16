@@ -138,8 +138,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+const ZERO_TIME = Date.parse('0001-01-01T00:00:00Z');
+
+/** An RFC 3339 time that is not the zero time (the server refuses that as an edit time). */
 function isTime(value: unknown): value is string {
-	return typeof value === 'string' && RFC3339.test(value) && !Number.isNaN(Date.parse(value));
+	if (typeof value !== 'string' || !RFC3339.test(value)) return false;
+	const ms = Date.parse(value);
+	return !Number.isNaN(ms) && ms !== ZERO_TIME;
 }
 
 function isId(value: unknown): value is number {
