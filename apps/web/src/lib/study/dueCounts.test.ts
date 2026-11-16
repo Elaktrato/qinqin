@@ -2,7 +2,7 @@ import { UTC_CONTEXT } from '$lib/study/studyContext';
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
-import { dueCounts } from './dueCounts';
+import { dueCounts, leftToday } from './dueCounts';
 import type { DeckSettings } from './deckSettings';
 import { DEFAULT_W } from './fsrs/params';
 import { buildQueue, scheduleFor } from './scheduler';
@@ -95,5 +95,32 @@ describe('dueCounts with reverse and cloze', () => {
 			scheduleOf: (id) => scheduleFor(id, reviews, NOW, DEFAULT_W, IDENTITY_CLOCK)
 		});
 		expect(withLookup).toEqual(dueCounts({ ...base, reviews, deckSettings: settings }));
+	});
+});
+
+describe('daily limits in counts', () => {
+	const cardsMany = Array.from({ length: 30 }, (_, i) => card(`m${i}`, 'vocab', i + 1));
+	const input = {
+		ctx: UTC_CONTEXT,
+		cards: cardsMany,
+		reviews: [] as ReviewEvent[],
+		deckIds: ['general'],
+		now: NOW,
+		kinds: ['vocab'] as StudyCardKind[],
+		w: DEFAULT_W
+	};
+
+	it('does not apply the daily limits unless asked (the decks view shows raw numbers)', () => {
+		expect(dueCounts(input)).toEqual({ due: 0, fresh: 30 });
+		expect(dueCounts({ ...input, applyDailyLimits: true })).toEqual({ due: 0, fresh: 20 });
+	});
+
+	it('leftToday equals what admission admits with the session caps removed', () => {
+		const left = leftToday(input);
+		expect(left).toMatchObject({ reviews: 0, new: 20, unlimited: false, limitedOut: 10 });
+	});
+
+	it('leftToday is zero on a vacation day', () => {
+		expect(leftToday({ ...input, ctx: { ...UTC_CONTEXT, vacationToday: true } })).toMatchObject({ reviews: 0, new: 0 });
 	});
 });

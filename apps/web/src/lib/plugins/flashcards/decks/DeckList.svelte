@@ -10,6 +10,8 @@
 	import SystemDecks from './SystemDecks.svelte';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
 	import { onContextStale } from '$lib/study/currentContext';
+	import { deckLeftText } from '$lib/study/limitsText';
+	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { flashcardsHref } from '../route';
 
 	const store = createDecksData();
@@ -104,8 +106,16 @@
 					</span>
 				</div>
 				<div class="counts">
-					<span>{deck.numbers.due} due</span>
-					<span>{deck.numbers.fresh} new</span>
+					{#if store.data?.ctx.vacationToday}
+						<span>On vacation</span>
+					{:else}
+						<span>{deck.numbers.due} due</span>
+						<span>{deck.numbers.fresh} new</span>
+						{#if store.data !== null && limitsLeftToday !== null}
+							{@const left = deckLeftText(limitsLeftToday(deck.id, store.data, deck.kinds))}
+							{#if left !== null}<span class="left">{left}</span>{/if}
+						{/if}
+					{/if}
 				</div>
 				<div class="bar" role="img" aria-label={progressSummary(deck.numbers)}>
 					<span class="mastered" style:width={`${shares.mastered}%`}></span>

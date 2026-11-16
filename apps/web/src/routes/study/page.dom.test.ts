@@ -257,3 +257,21 @@ describe('study setup on a vacation day', () => {
 		expect(screen.queryByRole('button', { name: /start studying/i })).toBeNull();
 	});
 });
+
+describe('study start and the daily limits', () => {
+	it('words the day with the limits applied', async () => {
+		setup(charScheme, ['vocab']);
+		render(Page);
+		expect((await screen.findByText(/^Today:/)).textContent).toBe('Today: 0 reviews and 3 new (daily limits applied)');
+	});
+
+	it('caps the new cards by the workspace limit', async () => {
+		setup(charScheme, ['vocab']);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [], cards: [], reviews: [], merged: 0,
+			limits: { workspace: { new: 2 }, decks: {} }
+		});
+		render(Page);
+		expect((await screen.findByText(/^Today:/)).textContent).toBe('Today: 0 reviews and 2 new (daily limits applied)');
+	});
+});

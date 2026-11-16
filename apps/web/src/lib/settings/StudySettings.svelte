@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { loadWorkspaceEvents } from '$lib/events';
-	import { deleteVacation, saveVacation } from '$lib/study/store';
+	import { deleteVacation, saveVacation, saveWorkspaceLimits } from '$lib/study/store';
+	import LimitField from './LimitField.svelte';
+	import { workspaceFieldFrom, workspaceRowFrom, type FieldState } from './limitsForm';
 	import { getStudyData } from '$lib/study/studyData';
 	import { newUlid } from '$lib/ulid';
 	import {
@@ -32,6 +34,10 @@
 	const today = $derived(day.today());
 
 	let periods = $state.raw<VacationPeriod[]>([]);
+	let newState = $state<FieldState>(workspaceFieldFrom(null, 'new'));
+	let reviewsState = $state<FieldState>(workspaceFieldFrom(null, 'reviews'));
+	let limitsMessage = $state('');
+	let limitsError = $state('');
 	let loaded = $state(false);
 	let busy = $state(false);
 	let error = $state('');
@@ -66,6 +72,8 @@
 		}
 		try {
 			const data = await getStudyData(workspaceId, { force });
+			newState = workspaceFieldFrom(data.limits?.workspace ?? null, 'new');
+			reviewsState = workspaceFieldFrom(data.limits?.workspace ?? null, 'reviews');
 			periods = (data.vacations ?? [])
 				.map((p) => parseVacation(`vacation:${p.id}`, p))
 				.filter((p): p is VacationPeriod => p !== null);
@@ -147,6 +155,27 @@
 			await apply([result]);
 		} catch {
 			error = errorText('');
+		} finally {
+			busy = false;
+		}
+	}
+
+	async function saveLimits(event: SubmitEvent): Promise<void> {
+		event.preventDefault();
+		limitsMessage = '';
+		limitsError = '';
+		const plan = workspaceRowFrom(newState, reviewsState);
+		if ('error' in plan) {
+			limitsError = plan.error;
+			return;
+		}
+		busy = true;
+		try {
+			await saveWorkspaceLimits(plan.row);
+			limitsMessage = 'Saved.';
+			await load(true);
+		} catch {
+			limitsError = 'Could not save the limits.';
 		} finally {
 			busy = false;
 		}
@@ -240,6 +269,24 @@
 				</li>
 			{/each}
 		</ul>
+	{/if}
+</section>
+
+<section class="limits">
+	<h2>Daily limits</h2>
+	<p class="hint">
+		At most this many new cards and reviews are offered per study day in this workspace, however many
+		sessions you start. Cards you are not shown stay due and come back the next day. A deck can have
+		its own limits in its settings.
+	</p>
+	<form novalidate onsubmit={saveLimits} aria-label="Daily limits of this workspace">
+		<LimitField legend="New cards per day" name="ws-new" bind:state={newState} />
+		<LimitField legend="Reviews per day" name="ws-reviews" bind:state={reviewsState} />
+		<button type="submit" disabled={busy || workspaceId === null}>Save limits</button>
+		{#if limitsMessage}<span role="status">{limitsMessage}</span>{/if}
+	</form>
+	{#if limitsError}
+		<p class="error" role="alert">{limitsError}</p>
 	{/if}
 </section>
 

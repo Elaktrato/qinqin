@@ -37,6 +37,8 @@ import { contextForData, currentContext, onContextStale } from '$lib/study/curre
 import type { StudyContext } from '$lib/study/studyContext';
 import type { VacationPeriod } from '$lib/study/vacation';
 import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
+import { startTodayText } from '$lib/study/limitsText';
+import { limitsOf } from '$lib/study/scheduler';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import {
@@ -524,6 +526,17 @@ import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 			: levelEntryTotal === 1 ? 'word' : 'words'
 	);
 
+	// True when no deck of the session has a daily limit (the note is dropped then).
+	const noDailyLimit = $derived(
+		mode === 'levels'
+			? false
+			: selectedDeckIds.length > 0 &&
+					selectedDeckIds.every((id) => {
+						const limit = limitsOf(ctx, id);
+						return limit.new === null && limit.reviews === null;
+					})
+	);
+
 	// "Vacation until 3 Jan": nothing is due and no new card is offered today.
 	const vacationText = $derived(
 		activeWorkspaceId === null || !ctx.vacationToday
@@ -940,6 +953,9 @@ import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 
 		<section class="summary" aria-labelledby="summary-heading">
 			<h2 id="summary-heading">This session</h2>
+			{#if vacationText === null}
+				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
+			{/if}
 			{#if mode === 'levels'}
 				<p class="stats">
 					<strong>{levelEntryTotal}</strong>

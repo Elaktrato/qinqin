@@ -175,20 +175,37 @@ function cap(limit: number): number {
  * are not due yet are neither reviews nor new, so they are omitted.
  * Only cards belonging to one of `deckIds` are considered.
  */
-export function buildQueue({
+export function buildQueue(options: BuildQueueOptions): StudyCard[] {
+	const { newLimit, reviewLimit, ctx } = options;
+	const { candidates, byId: cardById, counts: dayUsed } = queueCandidates(options);
+	const { admitted } = admit(
+		candidates,
+		(deckId) => limitsOf(ctx, deckId),
+		dayUsed,
+		{ newLimit: cap(newLimit), reviewLimit: cap(reviewLimit) },
+		existingDecksOf(ctx, candidates)
+	);
+	return admitted.map((id) => cardById.get(id) as StudyCard);
+}
+
+/**
+ * queueCandidates lists what a queue could hold before any limit: the due
+ * cards (earliest due first), then the never-reviewed ones, each with its
+ * decks and bucket for admit(). Empty on a vacation day.
+ */
+export function queueCandidates({
 	cards,
 	reviews,
 	deckIds,
-	newLimit,
-	reviewLimit,
 	now,
 	ctx,
 	kinds,
 	w,
 	scheduleOf,
 	counts
-}: BuildQueueOptions): StudyCard[] {
-	if (ctx.vacationToday) return [];
+}: BuildQueueOptions): { candidates: Candidate[]; byId: Map<string, StudyCard>; counts: DayCounts } {
+	const dayUsed = counts ?? dayCountsCached(cards, reviews, ctx, now);
+	if (ctx.vacationToday) return { candidates: [], byId: new Map(), counts: dayUsed };
 	const wanted = new Set(deckIds);
 	const scoped = cards.filter(
 		(card) =>
@@ -229,7 +246,6 @@ export function buildQueue({
 	due.sort((a, b) => a.at - b.at || byId(a.card, b.card));
 	fresh.sort((a, b) => instant(a.createdAt) - instant(b.createdAt) || byId(a, b));
 
-	const dayUsed = counts ?? dayCountsCached(cards, reviews, ctx, now);
 	const candidates: Candidate[] = [
 		...due.map(({ card }) => ({
 			cardId: card.id,
@@ -238,15 +254,8 @@ export function buildQueue({
 		})),
 		...fresh.map((card) => ({ cardId: card.id, deckIds: card.deckIds, bucket: 'new' as const }))
 	];
-	const cardById = new Map([...due.map((e) => e.card), ...fresh].map((card) => [card.id, card]));
-	const { admitted } = admit(
-		candidates,
-		(deckId) => limitsOf(ctx, deckId),
-		dayUsed,
-		{ newLimit: cap(newLimit), reviewLimit: cap(reviewLimit) },
-		existingDecksOf(ctx, candidates)
-	);
-	return admitted.map((id) => cardById.get(id) as StudyCard);
+	const map = new Map([...due.map((e) => e.card), ...fresh].map((card) => [card.id, card]));
+	return { candidates, byId: map, counts: dayUsed };
 }
 
 /** The limits of one deck in a context: its row over the workspace's over the defaults. */

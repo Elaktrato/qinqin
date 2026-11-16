@@ -11,11 +11,12 @@ vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	saveVacation: vi.fn(() => Promise.resolve()),
+	saveWorkspaceLimits: vi.fn(() => Promise.resolve()),
 	deleteVacation: vi.fn(() => Promise.resolve())
 }));
 
 import { loadWorkspaceEvents } from '$lib/events';
-import { deleteVacation, saveVacation } from '$lib/study/store';
+import { deleteVacation, saveVacation, saveWorkspaceLimits } from '$lib/study/store';
 import { getStudyData } from '$lib/study/studyData';
 import type { VacationPeriod } from '$lib/study/vacation';
 import { studyDay } from '$lib/time/studyDay';
@@ -111,5 +112,27 @@ describe('StudySettings vacation', () => {
 		await fireEvent.click(await screen.findByRole('button', { name: 'End now' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
 		expect(vi.mocked(saveVacation).mock.calls[0][0]).toMatchObject({ id: 'A', end: later(-1) });
+	});
+});
+
+describe('StudySettings daily limits', () => {
+	it('shows the defaults and saves new values and unlimited reviews', async () => {
+		setup();
+		const newValue = (await screen.findByLabelText('New cards per day value')) as HTMLInputElement;
+		expect(newValue.value).toBe('20');
+		expect((screen.getByLabelText('Reviews per day value') as HTMLInputElement).value).toBe('200');
+		await fireEvent.input(newValue, { target: { value: '12' } });
+		await fireEvent.click(screen.getAllByLabelText('Unlimited')[1]);
+		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith({ new: 12, reviews: null }));
+	});
+
+	it('refuses a bad value', async () => {
+		setup();
+		const newValue = await screen.findByLabelText('New cards per day value');
+		await fireEvent.input(newValue, { target: { value: '-3' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
+		expect((await screen.findByRole('alert')).textContent).toBe('Enter a whole number from 0 to 9999.');
+		expect(saveWorkspaceLimits).not.toHaveBeenCalled();
 	});
 });
