@@ -1,0 +1,78 @@
+{
+ "version": 1,
+ "rule": "frequency/starter-deck-ids",
+ "cases": [
+  {
+   "packId": "jiten-frequency",
+   "size": 500,
+   "fnv1a32": "d4514a31",
+   "id": "d-frq-jiten-frequency-d4514a31"
+  },
+  {
+   "packId": "jiten-frequency",
+   "size": 1000,
+   "fnv1a32": "a0d21277",
+   "id": "d-frq-jiten-frequency-a0d21277"
+  },
+  {
+   "packId": "jiten-frequency",
+   "size": 2000,
+   "fnv1a32": "effe0824",
+   "id": "d-frq-jiten-frequency-effe0824"
+  },
+  {
+   "packId": "My_Freq-Pack",
+   "size": 500,
+   "fnv1a32": "f9cb2541",
+   "id": "d-frq-my-freq-pack-f9cb2541"
+  },
+  {
+   "packId": "My_Freq-Pack",
+   "size": 1000,
+   "fnv1a32": "83002947",
+   "id": "d-frq-my-freq-pack-83002947"
+  },
+  {
+   "packId": "My_Freq-Pack",
+   "size": 2000,
+   "fnv1a32": "d22c1ef4",
+   "id": "d-frq-my-freq-pack-d22c1ef4"
+  },
+  {
+   "packId": "日本語-freq",
+   "size": 500,
+   "fnv1a32": "fcccad3d",
+   "id": "d-frq-----freq-fcccad3d"
+  },
+  {
+   "packId": "日本語-freq",
+   "size": 1000,
+   "fnv1a32": "9f59d893",
+   "id": "d-frq-----freq-9f59d893"
+  },
+  {
+   "packId": "日本語-freq",
+   "size": 2000,
+   "fnv1a32": "d24e63e0",
+   "id": "d-frq-----freq-d24e63e0"
+  },
+  {
+   "packId": "p😀q",
+   "size": 500,
+   "fnv1a32": "998c69ec",
+   "id": "d-frq-p-q-998c69ec"
+  },
+  {
+   "packId": "p😀q",
+   "size": 1000,
+   "fnv1a32": "12bb7390",
+   "id": "d-frq-p-q-12bb7390"
+  },
+  {
+   "packId": "p😀q",
+   "size": 2000,
+   "fnv1a32": "e1041cc3",
+   "id": "d-frq-p-q-e1041cc3"
+  }
+ ]
+}
