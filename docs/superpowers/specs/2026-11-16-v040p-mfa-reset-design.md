@@ -89,6 +89,42 @@ reset the owner's two-step sign-in with only their own password), and only the b
   after the server answered `code_invalid`, so a stale copy (authenticator added in another tab) can
   still finish — cost: one refused attempt in that case.
 
+## Security second pass (focused review)
+
+Confirmed bypasses with tests: a stolen admin session could set any account's address through
+`PATCH /api/admin/users/{id}` (its own too), ask for a reset link and take the account over, which also
+yields the password `requireAdminReauth` asks for; and it could save the mail settings with only a new
+public URL (the stored mail password kept) so every reset link points at another host.
+
+- Ruling: exactly these re-authenticate (list in `docs/contracts/auth/README.md`): always — grant admin,
+  create an administrator, delete another user, reset link, two-step reset, save or remove the mail
+  settings, server backup; by the change (`docs/contracts/auth/admin-reauth.json`, one Go rule and one TS
+  rule decoding the same cases) — an `email` key in a user PATCH (set or removed, self included),
+  demoting or disabling another administrator, and a Security change that turns enforcement off, turns
+  sign-in by emailed code on, opens registration (closed < invite < open), lowers the email policy
+  (off < optional < required) or signs everyone else out — cost: more password prompts for admins.
+- Ruling: an address an administrator sets stays verified — the re-authentication is the proof the
+  administrator means it, and an unverified address would silently break reset mail for people whose
+  administrator manages addresses for them — cost if wrong: a re-authenticated but malicious admin can
+  still redirect a user's mail (an admin can always take over a user; that is not a boundary).
+- Ruling: demoting oneself, disabling or enabling a plain user, enabling anyone, forcing a password change,
+  revoking sessions or reset links and invites need no re-authentication — they remove access or power or
+  are already containment — cost if wrong: a stolen session can lock users out (recoverable by the owner).
+- Ruling: a new public URL counts as a move of the mail settings (the stored mail password must be typed
+  again), like host, port, security and user name — reset links carry it — cost: one more re-entry.
+- Ruling: PUT smtp validates first, then re-authenticates (a typo spends no attempt). Its 422
+  `password_required` is ambiguous (mail account vs. own password); documented in
+  `admin-settings.json`; the web always sends the own password, so it only sees the mail-account one,
+  and shows the server's sentence for it — cost: a client that omits currentPassword must read the message.
+- Ruling: DELETE smtp now takes a JSON body `{currentPassword, code?}`; an empty body is 400 bad_request
+  (as every strict auth body) — cost: an old client gets 400 instead of 422.
+- Ruling: wrong re-authentication codes spend their own per-administrator budget (`reauth-code`, 10 per
+  15 minutes and 30 per day, the same sizes as the sign-in budget), so they cannot lock the administrator
+  out of signing in — cost: an attacker who has the password gets a separate set of guesses (still
+  ~1e-4 per day against a 6-digit code).
+- Ruling: the web has no control for changing an existing user's address, so nothing to wire there; the
+  rule is in `adminReauthRules.ts` for when one is added.
+
 ## Confirmation text
 
 Title: `Reset two-step sign-in for “<username>”?` Body (only what applies):

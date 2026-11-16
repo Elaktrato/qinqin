@@ -15,7 +15,9 @@ examples of its throttling subset and a test checks that both agree on every cod
 | `sessions.json` | Logout, change password, the session list and revoke routes, and the restricted answer |
 | `options.json` | `GET /api/auth/options` in the four states (bootstrap, closed, invite, open) |
 | `invites.json` | Invite create (the token is shown once), list, revoke, check |
-| `admin-users.json` | `AdminUser`, create / patch, last-admin and self-target refusals, reset link, deletion preview and delete |
+| `admin-users.json` | `AdminUser`, create / patch, last-admin and self-target refusals, reset link, deletion preview and delete, the re-authentication refusals |
+| `admin-settings.json` | Re-authentication of the Security and Email settings routes (PATCH settings/auth, PUT and DELETE settings/smtp) |
+| `admin-reauth.json` | The rule for when PATCH users/{id} and PATCH settings/auth need re-authentication, as cases (decoded by Go and web tests) |
 | `mfa-login.json` | `mfa_required`, the second step, `mfa_enrollment_required`, sign-in by emailed code |
 | `mfa-setup.json` | Authenticator setup and confirm (secret and recovery codes shown once) |
 | `reset.json` | Reset link check and use (a login-shaped answer) |
@@ -120,12 +122,23 @@ an unknown `status` as "not signed in".
 
 ## Administration (web only in v0.4.0)
 Email addresses are validated as: one `@`, an ASCII local part (non-ASCII is `422 invalid_email`), an IDNA domain
-stored in punycode, at most 254 bytes. Every destructive administrator action (granting admin,
-creating an administrator, deleting another user, issuing a reset link, resetting another user's two-step
-sign-in, the server backup) needs the acting administrator's own `currentPassword` (`422 password_required`,
+stored in punycode, at most 254 bytes. Administrator re-authentication: the acting administrator's own `currentPassword` (`422 password_required`,
 `403 wrong_password`) and, from an administrator who has an authenticator, a `code` (authenticator or unused
-recovery code, `403 code_invalid`, checked after the password). An administrator whose only second step is the
-emailed code gives the password alone.
+recovery code, `403 code_invalid`, checked after the password, its own per-user budget). An administrator whose
+only second step is the emailed code gives the password alone. Exactly these actions need it:
+
+| Route | When |
+|---|---|
+| `PATCH /api/admin/users/{id}` | `admin: true`; any `email` key (set or removed, also one's own); `admin: false` or `disabled: true` on another administrator |
+| `POST /api/admin/users` | `admin: true` |
+| `DELETE /api/admin/users/{id}` | always |
+| `POST /api/admin/users/{id}/reset-link` | always |
+| `POST /api/admin/users/{id}/mfa/reset` | always |
+| `PATCH /api/admin/settings/auth` | turning `mfaEnforced` off, `emailCodeLogin` on, opening `registration`, lowering `emailPolicy`, `signOutOthers: true` |
+| `PUT` and `DELETE /api/admin/settings/smtp` | always (a new `publicUrl` also needs the stored mail password again) |
+| `POST /api/admin/backup` | always |
+
+The conditional rules are pinned as cases in `admin-reauth.json`.
 `/api/admin/users`, `/api/admin/invites`, `/api/admin/settings/auth`, `/api/admin/audit` are used by the web
 admin screens only; the Kotlin client needs just the routes above, `PUT /api/account/email`,
 `GET /api/account/deletion-preview` and `DELETE /api/account` (self deletion: `{password, confirm}`; 409
