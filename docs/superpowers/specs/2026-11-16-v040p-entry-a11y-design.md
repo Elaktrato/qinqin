@@ -86,10 +86,14 @@ The checker is a pure module `src/lib/testing/routeTitles.ts`, unit-tested on sm
 ### Live counts
 
 - Lookup history: `historyCountText(shown, total, filter)` in `$lib/lookups/historyView.ts` → `''` with
-  no history, "12 words" for All, "3 of 12 words have no card yet" for No card yet; rendered in a
-  `role="status"` paragraph above the list.
-- Time zones: `zoneMatchText(supported, query)` in `$lib/settings/zoneSettings.ts` → `''` for an empty
-  query, "No time zones match “x”." or "5 time zones match." in a visually hidden `aria-live` paragraph.
+  no history, "12 words" for All, "3 of 12 words with no card yet" for No card yet. It is shown in a
+  plain paragraph (`.history-count`) above the list that always follows the list (also after Add and
+  Remove); a separate visually hidden `aria-live="polite"` paragraph is filled with the same text only when
+  the filter changes — Add and Remove already announce through the page's `role="status"` message.
+- Time zones: `zoneMatchText(supported, query)` in `$lib/settings/zoneSettings.ts` (pure) → `''` for an
+  empty query, "No time zones match “x”.", "1 time zone matches." or "5 time zones match." in a visually
+  hidden `aria-live="polite"` paragraph. The component feeds it the query only after typing pauses for
+  500 ms, so a screen reader hears one count, not one per keystroke.
 - Ruling: the lookup count is visible, the zone count hidden — the lookup list is long and a count helps
   everyone; the zone picker is a `<select>` whose length sighted users see — cost if wrong: cosmetic.
 
