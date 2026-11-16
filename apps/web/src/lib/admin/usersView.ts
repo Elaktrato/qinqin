@@ -1,7 +1,38 @@
 import type { AdminUserDto } from '$lib/api/adminUsers';
+import { hasSecondStep } from './mfaResetView';
+import { userPatchNeedsReauth, type UserPatchChange } from './adminReauthRules';
 
-/** Actions that ask the acting administrator for their own password first. */
-export const NEEDS_PASSWORD: ReadonlySet<UserActionId> = new Set(['makeAdmin', 'resetLink', 'delete']);
+/** Actions that always ask the acting administrator for their own password (and code, with an authenticator) first. */
+const ALWAYS_REAUTH: ReadonlySet<UserActionId> = new Set(['makeAdmin', 'resetLink', 'delete']);
+
+/** The PATCH a row action sends (none for the other actions). */
+export function actionPatch(id: UserActionId): UserPatchChange | null {
+	switch (id) {
+		case 'makeAdmin':
+			return { admin: true };
+		case 'removeAdmin':
+			return { admin: false };
+		case 'disable':
+			return { disabled: true };
+		case 'enable':
+			return { disabled: false };
+		case 'requirePasswordChange':
+			return { mustChangePassword: true };
+		default:
+			return null;
+	}
+}
+
+/**
+ * Whether a row action asks for re-authentication first, by the server's
+ * rule (docs/contracts/auth/admin-reauth.json). The two-step reset has its
+ * own dialog with the same fields.
+ */
+export function actionNeedsReauth(id: UserActionId, target: { admin: boolean; self: boolean }): boolean {
+	if (ALWAYS_REAUTH.has(id)) return true;
+	const p = actionPatch(id);
+	return p !== null && userPatchNeedsReauth(target.admin, target.self, p);
+}
 
 export const LAST_ADMIN_REASON = 'The last administrator cannot be removed.';
 
@@ -14,6 +45,7 @@ export type UserActionId =
 	| 'resetLink'
 	| 'revokeResetLink'
 	| 'signOutEverywhere'
+	| 'resetMfa'
 	| 'delete';
 
 export interface UserAction {
@@ -58,7 +90,8 @@ function activeAdmins(users: readonly AdminUserDto[]): number {
 /**
  * userRows turns the server's user list into table rows with the actions
  * each row offers. The own row has no disable and no delete (Settings,
- * Account deletes yourself); the last active administrator cannot be
+ * Account deletes yourself) and no two-step reset; "Reset two-step sign-in"
+ * appears only for a user who has a second step; the last active administrator cannot be
  * demoted, disabled or deleted, and says why.
  */
 export function userRows(users: readonly AdminUserDto[], selfId: number, now: Date): UserRow[] {
@@ -82,6 +115,8 @@ export function userRows(users: readonly AdminUserDto[], selfId: number, now: Da
 			{ id: 'revokeResetLink', label: 'Revoke reset link', disabled: false },
 			{ id: 'signOutEverywhere', label: 'Sign out everywhere', disabled: false }
 		);
+		// Not for oneself: Settings, Account manages one's own factors (the server answers self_target).
+		if (!self && hasSecondStep(u)) actions.push({ id: 'resetMfa', label: 'Reset two-step sign-in', disabled: false });
 		if (!self) actions.push(guard('delete', 'Delete'));
 		const status = [u.disabled ? 'Disabled' : 'Active'];
 		if (u.mustChangePassword) status.push('Must change password');

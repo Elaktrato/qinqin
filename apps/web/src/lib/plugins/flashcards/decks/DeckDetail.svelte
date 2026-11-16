@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { readingBeside } from '$lib/entry/displayForm';
 	import { goto } from '$app/navigation';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { loadEntryBases } from '$lib/api/entryBases';
@@ -440,7 +441,7 @@
 								onchange={() => (selected = toggleNum(selected, row.entryId))}
 							/>
 							<a class="word" href={`/entry/${row.entryId}`}>{row.written}</a>
-							<span class="reading">{bases.get(row.entryId)?.readings[0]?.value ?? ''}</span>
+							<span class="reading">{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span>
 							<span class="state">{WORD_STATES.find((s) => s.state === row.state)?.label}</span>
 							<span class="chips">
 								{#each chips(row) as chip (chip.kind)}

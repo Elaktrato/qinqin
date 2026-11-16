@@ -89,8 +89,9 @@ func TestSearchEndpoint(t *testing.T) {
 	if suri := lexID(t, sqlDB, "ja", "word", "j:1397500"); suri > suru {
 		t.Fatalf("fixture: 刷る id %d should be below 為る id %d", suri, suru)
 	}
-	if _, hits = search("q=suru&lang=ja"); len(hits) != 2 || hitsOf(hits)[0] != (hit{suru, "kana"}) || hits[0].Written != "為る" || hits[1].Written != "刷る" {
-		t.Errorf("suru = %+v, want 為る then 刷る via kana", hitsOf(hits))
+	if _, hits = search("q=suru&lang=ja"); len(hits) != 2 || hitsOf(hits)[0] != (hit{suru, "kana"}) || hits[0].Written != "する" || hits[1].Written != "刷る" {
+		// 為る is usually written in kana (first sense uk): its display form is する.
+		t.Errorf("suru = %+v, want する (為る) then 刷る via kana", hitsOf(hits))
 	}
 
 	// Kind and scheme/level filters ride on query parameters.

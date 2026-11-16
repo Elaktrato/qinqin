@@ -59,7 +59,8 @@ func RecoverAccount(ctx context.Context, sqlDB *sql.DB, o RecoverOptions) (int64
 		return 0, err
 	}
 	if o.ResetMFA {
-		if err := ResetMFA(ctx, tx, id); err != nil {
+		// credentials and links are gone already (above): nothing more to count
+		if _, _, err := ResetMFA(ctx, tx, id); err != nil {
 			return 0, err
 		}
 		if err := Audit(ctx, tx, AuditEvent{Action: "mfa_reset", ActorName: "cli", TargetID: &id}); err != nil {

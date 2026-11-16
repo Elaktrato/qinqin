@@ -1,3 +1,4 @@
+import { licenseUrl } from '$lib/licenses';
 import { packTable, type PackTable } from './sections';
 
 /** One element of GET /api/audio-packs. */
@@ -21,20 +22,14 @@ export interface AudioSection {
 	table: PackTable;
 	/** Row key to the per-recording credit pages (500 recordings each), for packs whose licence is "per file". */
 	creditsPages: Record<number, CreditsLink[]>;
-	/** Row key to the licence text, for the common Creative Commons licences. */
+	/** Row key to the licence text, for recognised licences ($lib/licenses). */
 	licenseHref: Record<number, string>;
 }
 
 const PAGE = 500;
-const LICENSES: [RegExp, string][] = [
-	[/^cc by 4\.0$/i, 'https://creativecommons.org/licenses/by/4.0/'],
-	[/^cc by-sa 4\.0$/i, 'https://creativecommons.org/licenses/by-sa/4.0/'],
-	[/^cc0( 1\.0)?$/i, 'https://creativecommons.org/publicdomain/zero/1.0/']
-];
-
-/** licenseHref is the licence text URL of a licence name, when it is a common Creative Commons one. */
+/** licenseHref is the licence text URL of a recognised licence name ($lib/licenses). */
 export function licenseHref(license: string): string | undefined {
-	return LICENSES.find(([re]) => re.test(license.trim()))?.[1];
+	return licenseUrl(license) ?? undefined;
 }
 
 /**

@@ -1,6 +1,7 @@
 // The lookup history page model (#72): pure, so the Svelte page stays thin.
 // Words and titles are returned as plain strings for text interpolation.
 
+import { readingBeside } from '$lib/entry/displayForm';
 import type { EntryBase } from '$lib/api/types';
 import { GENERAL_DECK_ID } from '$lib/study/store';
 import type { Deck } from '$lib/study/types';
@@ -67,7 +68,7 @@ export function historyRows(
 		rows.push({
 			entryId: item.entryId,
 			written: base?.written ?? null,
-			reading: base?.readings[0]?.value ?? '',
+			reading: base === undefined ? '' : readingBeside(base.written, base.readings),
 			count: item.count,
 			lastDay: dayOf(item.lastAt),
 			where: whereText(item, books),
@@ -99,4 +100,15 @@ export function addResultText(r: { created: number; joined: number; skipped: num
 export function deckOptions(decks: readonly Pick<Deck, 'id' | 'name' | 'createdAt'>[]): { id: string; name: string }[] {
 	const sorted = [...decks].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
 	return [{ id: GENERAL_DECK_ID, name: 'General' }, ...sorted.map((d) => ({ id: d.id, name: d.name }))];
+}
+
+/**
+ * historyCountText is the live count above the list (#12): how many words
+ * the filter shows, against the whole history; '' with no history.
+ */
+export function historyCountText(shown: number, total: number, filter: HistoryFilter): string {
+	if (total === 0) return '';
+	const words = (n: number) => (n === 1 ? 'word' : 'words');
+	if (filter === 'all') return `${shown} ${words(shown)}`;
+	return `${shown} of ${total} ${words(total)} with no card yet`;
 }

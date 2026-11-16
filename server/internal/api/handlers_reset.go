@@ -41,6 +41,7 @@ func (s *server) handleAdminResetLink(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		ExpiresInHours  *int   `json:"expiresInHours"`
 		CurrentPassword string `json:"currentPassword"`
+		Code            string `json:"code"` // authenticator or recovery code, for admins who have one
 	}
 	if !readAccountBody(w, r, &req) {
 		return
@@ -53,7 +54,7 @@ func (s *server) handleAdminResetLink(w http.ResponseWriter, r *http.Request) {
 		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_request", "The link may last 1 to 168 hours.")
 		return
 	}
-	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
+	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	token, expires, err := s.users.IssueReset(r.Context(), admin.ID, id, ttl)

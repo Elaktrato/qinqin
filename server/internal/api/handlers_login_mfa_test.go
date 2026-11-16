@@ -243,9 +243,9 @@ func TestEnablingEnforcementLeavesLiveSessionsUnlessAsked(t *testing.T) {
 	if r := doJSON(t, "GET", e.ts.URL, "/api/workspaces", bob, nil); r.StatusCode != 200 {
 		t.Errorf("a live session was cut: %d", r.StatusCode)
 	}
-	doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"mfaEnforced": false})
+	doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"mfaEnforced": false, "currentPassword": "secret-pass-owner"})
 	var v struct{ MFAEnforced, MFAEnforcedEffective bool }
-	r := doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"mfaEnforced": true, "signOutOthers": true})
+	r := doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"mfaEnforced": true, "signOutOthers": true, "currentPassword": "secret-pass-owner"})
 	decodeJSON(t, r, &v)
 	if r.StatusCode != 200 || !v.MFAEnforced || !v.MFAEnforcedEffective {
 		t.Fatalf("patch = %d %+v", r.StatusCode, v)
@@ -309,7 +309,7 @@ func TestRemovingMailMakesEnforcementInactiveButTOTPStays(t *testing.T) {
 	secret, _ := e.totpUser(t)
 	registerUser(t, e.ts.URL, "carol", e.owner)
 	doJSON(t, "PATCH", e.ts.URL, "/api/admin/settings/auth", e.owner, map[string]any{"mfaEnforced": true})
-	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, nil)
+	doJSON(t, "DELETE", e.ts.URL, "/api/admin/settings/smtp", e.owner, ownerReauth)
 	var v struct{ MFAEnforced, MFAEnforcedEffective bool }
 	decodeJSON(t, doJSON(t, "GET", e.ts.URL, "/api/admin/settings/auth", e.owner, nil), &v)
 	if !v.MFAEnforced || v.MFAEnforcedEffective {

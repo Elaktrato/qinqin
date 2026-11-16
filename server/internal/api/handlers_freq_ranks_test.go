@@ -205,8 +205,9 @@ func TestFrequencyTopEntriesInRankOrder(t *testing.T) {
 	if got.PackID != "toy-freq" || got.Name != "Pack toy-freq" || got.Size != 500 || len(got.Entries) != 2 {
 		t.Fatalf("top = %+v", got)
 	}
-	if e := got.Entries[0]; e.ID != suru || e.Rank != 1 || e.Written != "為る" || e.Kind != "word" || e.Language != "ja" || len(e.Readings) == 0 {
-		t.Errorf("first entry = %+v, want 為る rank 1 with its base fields", e)
+	// 為る is usually kana: the deck shows (and a copy snapshots) する.
+	if e := got.Entries[0]; e.ID != suru || e.Rank != 1 || e.Written != "する" || e.Kind != "word" || e.Language != "ja" || len(e.Readings) == 0 {
+		t.Errorf("first entry = %+v, want する (為る) rank 1 with its base fields", e)
 	}
 	if e := got.Entries[1]; e.ID != suru2 || e.Rank != 3 {
 		t.Errorf("second entry = %+v, want 刷る rank 3", e)

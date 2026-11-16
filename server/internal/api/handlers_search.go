@@ -3,7 +3,9 @@ package api
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
 
 	"qinqin/internal/lexicon"
 )
@@ -51,7 +53,23 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 	out := make([]searchHit, len(hits))
 	for i, h := range hits {
+		if h.Source == "written" && h.Entry.Language == "ja" {
+			bases[i].Written = matchedForm(h.Entry, strings.TrimSpace(q.Text))
+		}
 		out[i] = searchHit{EntryBase: bases[i], Source: h.Source}
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// matchedForm is what a Japanese written-form hit shows: the form that
+// matched (為る searched shows 為る, as a lookup does), unless it is
+// search-only (sK: 之 shows の) — then the entry's display form. Chinese
+// keeps the display form (a traditional match shows the simplified word).
+func matchedForm(e lexicon.Entry, text string) string {
+	for _, f := range e.Forms {
+		if f.Text == text && !slices.Contains(f.Flags, "sK") {
+			return f.Text
+		}
+	}
+	return e.Headword()
 }

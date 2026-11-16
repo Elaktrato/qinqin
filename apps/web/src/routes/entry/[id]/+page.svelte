@@ -18,14 +18,20 @@
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { record } from '$lib/events';
+	import { loadEntryExtras } from '$lib/entry/extras';
 	import { formatReading } from '$lib/format';
 	import { languageLabel } from '$lib/languages';
 	import { entryRadicalLinks } from '$lib/radicals/selection';
 	import { workspaces } from '$lib/workspaces';
 	import EntryNote from '$lib/notes/EntryNote.svelte';
+	import { joinForms, otherForms } from '$lib/plugins/reader/entryDisplay';
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
+	// The other written forms (事 on the entry shown as こと); search-only ones never.
+	const alsoWritten = $derived(
+		entry ? otherForms({ forms: entry.forms ?? [], term: entry.written }, Infinity) : []
+	);
 	// The radical's written form, once fetched; empty shows the id instead.
 	let radicalWritten = $state('');
 	let loading = $state(true);
@@ -81,22 +87,10 @@
 	}
 
 	async function loadExtras(loaded: Entry, seq: number): Promise<void> {
-		// Words have no characters under them: skip the always-empty query.
-		const under =
-			loaded.kind === 'word'
-				? Promise.resolve([] as EntryBase[])
-				: getCharsUnderRadical(loaded.id).catch(() => [] as EntryBase[]);
-		const radical =
-			loaded.radicalId === null
-				? Promise.resolve('')
-				: getEntry(loaded.radicalId).then(
-						(r) => r.written,
-						() => ''
-					);
-		const [list, written] = await Promise.all([under, radical]);
+		const extras = await loadEntryExtras(loaded, { chars: getCharsUnderRadical, entry: getEntry });
 		if (seq !== requestSeq) return;
-		chars = list;
-		radicalWritten = written;
+		chars = extras.chars;
+		radicalWritten = extras.radicalWritten;
 	}
 
 	function retry(): void {
@@ -202,6 +196,11 @@
 						label={entry.written}
 					/>
 				</div>
+				{#if alsoWritten.length > 0}
+					<p class="also-written" lang={entry.language}>
+						Also written: {joinForms(alsoWritten, entry.language)}
+					</p>
+				{/if}
 				<div class="chips">
 					<span class="chip">{entry.kind}</span>
 					<span class="chip" title={entry.language}>{languageLabel(entry.language)}</span>
@@ -334,6 +333,11 @@
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 1rem;
+	}
+
+	.also-written {
+		margin: 0.25rem 0 0;
+		color: var(--muted, #666);
 	}
 
 	.headword {

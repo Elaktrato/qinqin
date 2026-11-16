@@ -7,6 +7,7 @@ import {
 	SETTINGS_TAB_LABELS,
 	parseSettingsTab,
 	settingsTabHref,
+	settingsTitleParts,
 	tabKeyTarget,
 	visibleSettingsTabs
 } from './tabs';
@@ -122,5 +123,22 @@ describe('the Admin tab', () => {
 		expect(parseAdminSection('email')).toBe('email');
 		expect(parseAdminSection('nope')).toBe('users');
 		expect(adminSectionHref('security')).toBe('/settings?tab=admin&section=security');
+	});
+});
+
+describe('settingsTitleParts', () => {
+	it('names the tab, then Settings', () => {
+		expect(settingsTitleParts('workspaces', null)).toEqual(['Workspaces', 'Settings']);
+		expect(settingsTitleParts('ai', 'users')).toEqual(['AI', 'Settings']);
+	});
+
+	it('puts the Admin section first', () => {
+		expect(settingsTitleParts('admin', 'users')).toEqual(['Users', 'Admin', 'Settings']);
+		expect(settingsTitleParts('admin', 'backup')).toEqual(['Backup', 'Admin', 'Settings']);
+	});
+
+	it('reads a missing or unknown section as Users, like the Admin tab', () => {
+		expect(settingsTitleParts('admin', null)).toEqual(['Users', 'Admin', 'Settings']);
+		expect(settingsTitleParts('admin', 'nope')).toEqual(['Users', 'Admin', 'Settings']);
 	});
 });

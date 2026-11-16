@@ -121,3 +121,18 @@ export function loadStarterEntries(packNumId: number, size: number): Promise<Sta
 	}
 	return pending;
 }
+
+/**
+ * duplicateGlosses: entry id -> gloss for the words whose display form occurs
+ * more than once in the list (なる 成る "to become" / 生る "to bear fruit"), so
+ * the list can tell them apart; words without a gloss are left out.
+ */
+export function duplicateGlosses(entries: readonly StarterEntry[]): Map<number, string> {
+	const count = new Map<string, number>();
+	for (const e of entries) count.set(e.written, (count.get(e.written) ?? 0) + 1);
+	const out = new Map<number, string>();
+	for (const e of entries) {
+		if ((count.get(e.written) ?? 0) > 1 && e.gloss) out.set(e.id, e.gloss);
+	}
+	return out;
+}

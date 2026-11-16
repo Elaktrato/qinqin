@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EntryBase } from '$lib/api/types';
 import { parseLookups, type LookupItem } from './lookups';
-import { PAGE_SIZE, addResultText, dayLabel, deckOptions, historyRows, stateLabel, whereText } from './historyView';
+import { PAGE_SIZE, addResultText, dayLabel, deckOptions, historyCountText, historyRows, stateLabel, whereText } from './historyView';
 
 const item = (entryId: number, over: Partial<LookupItem> = {}): LookupItem => ({
 	entryId,
@@ -63,6 +63,13 @@ describe('historyRows', () => {
 		expect(rows[2]).toMatchObject({ entryId: 3, written: null, missing: true });
 	});
 
+	it('leaves the reading empty when the word is shown as that reading (こと)', () => {
+		const koto = { ...base(9, 'こと', 'こと'), language: 'ja' } as EntryBase;
+		const one = { ...h, items: [{ ...h.items[0], entryId: 9 }] };
+		const [row] = historyRows(one, new Map([[9, koto]]), books, stateOf, dayOf, 'all');
+		expect(row.reading).toBe('');
+	});
+
 	it('filter "No card yet" keeps new words that are still in the dictionary', () => {
 		expect(historyRows(h, bases, books, stateOf, dayOf, 'nocard').map((r) => r.entryId)).toEqual([1]);
 	});
@@ -90,5 +97,23 @@ describe('labels', () => {
 	});
 	it('pages hold 50 rows', () => {
 		expect(PAGE_SIZE).toBe(50);
+	});
+});
+
+describe('historyCountText', () => {
+	it('says nothing without a history', () => {
+		expect(historyCountText(0, 0, 'all')).toBe('');
+		expect(historyCountText(0, 0, 'nocard')).toBe('');
+	});
+
+	it('counts every word under All', () => {
+		expect(historyCountText(12, 12, 'all')).toBe('12 words');
+		expect(historyCountText(1, 1, 'all')).toBe('1 word');
+	});
+
+	it('counts the words with no card yet against the whole history', () => {
+		expect(historyCountText(3, 12, 'nocard')).toBe('3 of 12 words with no card yet');
+		expect(historyCountText(0, 12, 'nocard')).toBe('0 of 12 words with no card yet');
+		expect(historyCountText(1, 1, 'nocard')).toBe('1 of 1 word with no card yet');
 	});
 });

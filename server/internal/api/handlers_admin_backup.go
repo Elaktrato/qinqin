@@ -37,14 +37,8 @@ func (s *server) handleAdminBackupStart(w http.ResponseWriter, r *http.Request) 
 		writeAuthError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
 		return
 	}
-	if !s.requireAdminPassword(w, r, admin.ID, req.CurrentPassword) {
-		return
-	}
-	// The archive holds every password hash: an admin with an authenticator proves it too.
-	if has, herr := auth.HasTOTP(r.Context(), s.db, admin.ID); herr != nil {
-		writeInternal(w, r)
-		return
-	} else if has && !s.secondFactorOK(w, r, admin.ID, req.Code) {
+	// The archive holds every password hash: password, and a code from an admin with an authenticator.
+	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
 		return
 	}
 	if inc.DB {

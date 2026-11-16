@@ -504,8 +504,19 @@ one sets the password, signs the person out of every device and signs them in on
 account deletes its sessions and re-enabling never brings one back. The last active administrator cannot be
 demoted, disabled or deleted (the Admin tab says why; the server enforces it even when two admins act at the
 same moment). Pending reset links die with every containment action (a password change, a forced change, disabling, signing out
-everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. Deleting another user,
-issuing a reset link and making someone an administrator ask the acting administrator for their own password again.
+everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. 
+Re-authentication: these ask the acting administrator for their own password again and, if they have an
+authenticator, a current authenticator or unused recovery code (an administrator whose only second step is an emailed
+code gives the password alone): making someone an administrator (also by creating them as one), demoting or disabling
+another administrator, setting or removing anyone's address in Admin, Users (your own too), deleting another user,
+issuing a reset link, resetting someone's two-step sign-in, saving or removing the email settings, a Security change that
+lowers a protection (turning required two-step sign-in off, allowing sign-in by emailed code, opening registration,
+lowering the email policy) or signs everyone else out, and a server backup. Wrong codes there have their own limit and
+do not lock you out of signing in.
+**Reset two-step sign-in** (a row action, shown only for another user who has an authenticator or emailed codes)
+removes their authenticator app with all of its recovery codes and turns emailed codes off, signs them out of every
+device, revokes their personal access tokens and ends pending reset links. Your own second steps are managed in
+Settings, Account.
 Email addresses are stored with the domain in its ASCII (punycode) form, so `bücher.de` and `xn--bcher-kva.de` are one
 address; a part before the `@` with non-ASCII letters is refused until internationalised mailboxes are supported. Every
 response carries `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`; at startup the server removes the book and
@@ -539,7 +550,7 @@ security (`STARTTLS` on port 587, the default and required to succeed, never sil
 `None`, plain text, allowed only without a user name and password), user name and password, sender address and
 name, and the address people use to reach the site (it goes into reset links). Certificates are always verified.
 The password is encrypted with `QINQIN_SECRET` and never shown again or logged: the form says "A password is
-saved" and offers Replace and Remove; changing the server, port, security or user name makes you type the password
+saved" and offers Replace and Remove; changing the server, port, security, user name or site address makes you type the password
 again, so a session cannot send it somewhere else. **Send test mail** reports a category (`connect`, `blocked`, `tls`,
 `auth`, `sender`, `recipient`, `timeout`, `protocol`) and the SMTP reply code, never the server's own text. Mail goes
 out in the background (one queue, at most 200 mails an hour for the whole server, never an address or code in the log).
@@ -561,7 +572,7 @@ everyone (**Admin, Security**; needs email): it applies at each person's next si
 out now. A person without an address is sent to a setup page first. **Sign in with an emailed code** (another switch)
 adds a password-free route; an account with an authenticator still asks for it, and while two steps are required an
 account without one must use the password. A password reset or reset link never removes two-step sign-in, and a reset link or an emailed code is never accepted as a second step after itself. People whose only second step is an emailed code are protected by their mailbox alone, by construction: while email does not work they cannot sign in (503), and Admin, Email says how many; give them an authenticator app for independence from mail. Changing your email address asks for the authenticator code too, cancels open reset links and tells the old address. Locked out:
-a recovery code, an administrator (Admin, Users: reset two-factor) or `qinqin recover --username NAME --reset-mfa`.
+a recovery code, an administrator (Admin, Users: Reset two-step sign-in) or `qinqin recover --username NAME --reset-mfa`.
 
 ### AI journal
 
@@ -1232,7 +1243,7 @@ All library and source routes need a signed-in user, and so does
 
 | Route | Purpose |
 |---|---|
-| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, forms, readings, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
+| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, the `term` to show (a Japanese matched written form unless it is search-only, else the display form: こと for the usually-kana 事, の for 乃), forms with flags, readings with flags, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
 | `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates are other readings or entries with the same surface (at most 8 candidates in all). A candidate has `reading: true` when it matched by a kana reading (Japanese) |
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/audio/entries/{id}` | Signed-in. The pronunciation clips of one entry: `{terms: [Clip], syllables: [[Clip]\|null]\|null}`. `terms` are recordings of the whole word (matched on written form and first reading); `syllables` (zh entries only, else `null`) has one slot per pinyin reading in the entry's order, each the clips to play in sequence or `null` when a syllable has no recording. `Clip` is `{url, packId, license, attribution, source}`; 404 for an unknown entry |
@@ -1241,7 +1252,7 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/audio-packs` | The installed audio packs with `license`, `attribution`, `notice`, `language` and `clipCount` (the Sources page lists them) |
 | `GET /api/audio-packs/{id}/credits?offset=&limit=` | The per-recording credits of a pack (`{total, offset, limit, clips: [{kind, form, reading, license, attribution, source}]}` (`reading` is the stored match key: hiragana for Japanese, numbered pinyin such as `ni3hao3` for Chinese; empty for a word clip without a reading), text only, `limit` up to 500, default 100); unknown pack 404 |
 | `GET /api/frequency-packs` | The installed frequency packs in priority order, with `packId` (the manifest id), `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
-| `GET /api/frequency-packs/{id}/top?size=500\|1000\|2000` | Signed-in. A starter deck: `{packId, name, size, entries}` with the entry base fields and the `rank` of each word, in rank order; computed from the installed pack (resolved once per pack content), shared data with no overlay. 404 for an unknown or uninstalled pack, 400 for another size |
+| `GET /api/frequency-packs/{id}/top?size=500\|1000\|2000` | Signed-in. A starter deck: `{packId, name, size, entries}` with the entry base fields (`written` = the display form, a kana row as written), the `rank` and the `gloss` (first gloss of the first sense) of each word, in rank order; computed from the installed pack (resolved once per pack content), shared data with no overlay. 404 for an unknown or uninstalled pack, 400 for another size |
 | `POST /api/entries/frequency-ranks` `{language, ids}` | Signed-in. Each entry's rank in the language's first frequency pack: `{pack: {id, packId, name, license, attribution} \| null, ranks: [{id, rank}]}` in request order, entries without data omitted; 1 to 500 ids (400 otherwise, 400 without `language`), body up to 16 KiB (413) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms, `k` the Kangxi radical number (1–214) of the character's radical; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
@@ -1562,6 +1573,10 @@ one entry. `entry_links` connect characters to their radical and to variants.
   reading, the part-of-speech tags **per sense**, the `uk` flag (usually written
   in kana) and a priority score derived from JMdict's priority markers.
   Homographs are separate entries, so 為る and 刷る are two results for する.
+  An entry is shown by its **display form** (`docs/contracts/frequency/display-form.json`):
+  the kana when its first sense is `uk` (事 → こと, 為る → する), never a search-only
+  (`sK`) form (乃 → の); a starter deck word whose list row is kana shows that kana. Cards
+  keep the form they were added with as their snapshot.
 - **Chinese**: one entry per simplified written form; its traditional forms are
   forms of the same entry (flag `trad`), so 學習 finds 学习. Homograph lines
   (行 xíng / háng) merge into one entry carrying all readings, with one sense per

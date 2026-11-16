@@ -3,6 +3,9 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { deleteUser, deletionPreview, type DeletionPreview } from '$lib/api/adminUsers';
 	import { previewLines } from './deleteView';
+	import { user as me } from '$lib/auth';
+	import ReauthFields from './ReauthFields.svelte';
+	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
 
 	// Confirmation for deleting someone else's account: says exactly what
 	// goes (the server's own counts) and asks for the username to be typed.
@@ -19,18 +22,25 @@
 	let input = $state<HTMLInputElement | null>(null);
 	let typed = $state('');
 	let password = $state('');
+	let code = $state('');
+	let sawCodeInvalid = $state(false);
+	const needsCode = $derived(reauthNeedsCode($me?.mfa?.totp, sawCodeInvalid));
+	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let preview = $state<DeletionPreview | null>(null);
 	let previewFailed = $state(false);
 	let busy = $state(false);
 	let error = $state('');
 	let closed = false;
 
-	const ready = $derived(typed === username && password !== '' && !busy);
+	const ready = $derived(typed === username && reauthReady(password, needsCode, code) && !busy);
 
 	function finish(deleted: boolean): void {
 		if (closed) return;
 		closed = true;
-		if (dialog?.open) dialog.close();
+		if (dialog?.open) {
+			if (typeof dialog.close === 'function') dialog.close();
+			else dialog.removeAttribute('open');
+		}
 		onclose(deleted);
 	}
 
@@ -40,13 +50,19 @@
 		busy = true;
 		error = '';
 		try {
-			await deleteUser(id, typed, password);
+			await deleteUser(id, typed, reauthBody(password, needsCode, code));
 			finish(true);
 		} catch (err) {
-			error = apiErrorBody(err)?.message || 'Could not delete the account.';
+			const b = apiErrorBody(err);
+			error = reauthError(b?.error, b?.message || 'Could not delete the account.');
 			busy = false;
+			if (b?.error === 'code_invalid') sawCodeInvalid = true;
+			const f = reauthFocus(b?.error);
+			if (f.clear === 'code') code = '';
+			if (f.clear === 'password') password = '';
 			await tick();
-			input?.focus();
+			if (f.clear || b?.error === 'password_required') fields?.focusField(f.focus);
+			else input?.focus();
 		}
 	}
 
@@ -90,10 +106,7 @@
 			Type <strong>{username}</strong> to confirm
 			<input bind:this={input} bind:value={typed} autocomplete="off" />
 		</label>
-		<label>
-			Your own password
-			<input type="password" autocomplete="current-password" bind:value={password} />
-		</label>
+		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} />
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 		<div class="buttons">
 			<button type="button" onclick={() => finish(false)} disabled={busy}>Cancel</button>

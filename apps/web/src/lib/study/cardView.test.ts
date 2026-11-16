@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Entry, Reading, SenseView, Sentence } from '../api/types';
-import { buildVocabFaces } from './cardView';
+import { buildVocabFaces, withShownWritten } from './cardView';
 
 function reading(type: string, value: string, ord = 0): Reading {
 	return { type, value, plain: value, ord };
@@ -135,6 +135,18 @@ describe('buildVocabFaces', () => {
 		expect(faces.front.sentenceLines).toEqual(['你____，____久不见']);
 	});
 
+	it('does not blank a one-kana headword inside other words (の in この)', () => {
+		const faces = buildVocabFaces(entry({ written: 'の' }), sentence('この本は私の本です'), 'ja');
+
+		expect(faces.front.sentenceLines).toEqual(['この本は私の本です']);
+	});
+
+	it('still blanks a longer kana headword (こと)', () => {
+		const faces = buildVocabFaces(entry({ written: 'こと' }), sentence('見たことがある'), 'ja');
+
+		expect(faces.front.sentenceLines).toEqual(['見た____がある']);
+	});
+
 	it('does not inject blanks when the written form is empty', () => {
 		const faces = buildVocabFaces(entry({ written: '' }), sentence('你好世界'), 'zh');
 
@@ -165,5 +177,33 @@ describe('buildVocabFaces for a character', () => {
 	it('keeps a word back equal to its front readings', () => {
 		const faces = buildVocabFaces(entry(), null, 'zh');
 		expect(faces.back.readings).toEqual(faces.front.readings);
+	});
+});
+
+describe('withShownWritten', () => {
+	const inu: Entry = {
+		id: 1,
+		language: 'ja',
+		kind: 'word',
+		written: '犬',
+		readings: [{ type: 'kana', value: 'いぬ', plain: 'いぬ', ord: 0 }],
+		senses: [],
+		sentences: [],
+		variants: [],
+		badges: [],
+		attrs: {},
+		radicalId: null
+	};
+
+	it('a starter-copied いぬ card shows いぬ on its front', () => {
+		const shown = withShownWritten(inu, 'いぬ');
+		expect(shown.written).toBe('いぬ');
+		expect(buildVocabFaces(shown, null, 'ja').front.written).toBe('いぬ');
+	});
+
+	it('keeps the entry when there is no snapshot, a kanji snapshot or a kana that is no reading', () => {
+		expect(withShownWritten(inu, undefined)).toBe(inu);
+		expect(withShownWritten(inu, '狗').written).toBe('犬');
+		expect(withShownWritten(inu, 'ねこ').written).toBe('犬');
 	});
 });

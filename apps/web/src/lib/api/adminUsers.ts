@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { Reauth } from '$lib/admin/reauth';
 
 export interface AdminUserDto {
 	id: number;
@@ -10,6 +11,8 @@ export interface AdminUserDto {
 	mustChangePassword: boolean;
 	createdAt: string;
 	lastSeenAt: string | null;
+	/** Which second steps the user has (never a secret); absent from servers before v0.3.0. */
+	mfa?: { totp: boolean; email: boolean };
 }
 
 export interface DeletionPreview {
@@ -36,6 +39,9 @@ export function createUser(body: {
 	password: string;
 	email?: string;
 	admin: boolean;
+	/** Creating an administrator: the acting administrator's own password (and code). */
+	currentPassword?: string;
+	code?: string;
 }): Promise<AdminUserDto> {
 	return api('/api/admin/users', { method: 'POST', body });
 }
@@ -47,8 +53,9 @@ export function patchUser(
 		disabled?: boolean;
 		mustChangePassword?: true;
 		email?: string | null;
-		/** The acting administrator's own password; needed to grant admin. */
+		/** The acting administrator's own password (and code); needed to grant admin. */
 		currentPassword?: string;
+		code?: string;
 	}
 ): Promise<AdminUserDto> {
 	return api(`/api/admin/users/${id}`, { method: 'PATCH', body });
@@ -60,12 +67,12 @@ export function revokeUserSessions(id: number): Promise<{ revoked: number }> {
 
 export function issueResetLink(
 	id: number,
-	currentPassword: string,
+	reauth: Reauth,
 	expiresInHours?: number
 ): Promise<{ path: string; expiresAt: string }> {
 	return api(`/api/admin/users/${id}/reset-link`, {
 		method: 'POST',
-		body: expiresInHours === undefined ? { currentPassword } : { currentPassword, expiresInHours }
+		body: expiresInHours === undefined ? { ...reauth } : { ...reauth, expiresInHours }
 	});
 }
 
@@ -77,6 +84,15 @@ export function deletionPreview(id: number): Promise<DeletionPreview> {
 	return api(`/api/admin/users/${id}/deletion-preview`);
 }
 
-export function deleteUser(id: number, confirm: string, currentPassword: string): Promise<void> {
-	return api(`/api/admin/users/${id}`, { method: 'DELETE', body: { confirm, currentPassword } });
+export function deleteUser(id: number, confirm: string, reauth: Reauth): Promise<void> {
+	return api(`/api/admin/users/${id}`, { method: 'DELETE', body: { confirm, ...reauth } });
+}
+
+/**
+ * resetUserMfa removes another user's second steps and signs them out
+ * everywhere, confirmed with the acting administrator's own password and,
+ * when they have an authenticator, their code.
+ */
+export function resetUserMfa(id: number, reauth: Reauth): Promise<void> {
+	return api(`/api/admin/users/${id}/mfa/reset`, { method: 'POST', body: { ...reauth } });
 }

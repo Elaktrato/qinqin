@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import {
 		getAuthSettings,
@@ -10,6 +10,9 @@
 	} from '$lib/api/adminSettings';
 	import { user } from '$lib/auth';
 	import { EMAIL_CHOICES, REGISTRATION_CHOICES, auditLine, switchStates } from './securityView';
+	import ReauthFields from './ReauthFields.svelte';
+	import { settingsPatchNeedsReauth, type SettingsPatch } from './adminReauthRules';
+	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady, type Reauth } from './reauth';
 
 	let settings = $state<AuthSettings | null>(null);
 	let error = $state('');
@@ -22,6 +25,24 @@
 	let auditError = $state('');
 
 	const switches = $derived(settings ? switchStates(settings) : null);
+
+	// A change that lowers a protection waits for the administrator's own
+	// password (and code): the server's rule, docs/contracts/auth/admin-reauth.json.
+	let pending = $state<{ patch: SettingsPatch; saved: string } | null>(null);
+	let ownPassword = $state('');
+	let ownCode = $state('');
+	let sawCodeInvalid = $state(false);
+	const needsCode = $derived(reauthNeedsCode($user?.mfa?.totp, sawCodeInvalid));
+	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
+	// Bumped to redraw the controls from the stored settings (after Cancel or a refusal).
+	let shown = $state(0);
+
+	function cancelPending(): void {
+		pending = null;
+		ownPassword = ownCode = '';
+		// the radio or checkbox the person clicked shows the stored value again
+		shown++;
+	}
 
 	function message(err: unknown, fallback: string): string {
 		return apiErrorBody(err)?.message || (err instanceof Error ? err.message : '') || fallback;
@@ -47,17 +68,40 @@
 		await loadAudit();
 	});
 
-	async function change(patch: Parameters<typeof patchAuthSettings>[0], saved: string): Promise<void> {
-		if (busy) return;
+	async function change(patch: SettingsPatch, saved: string, reauth?: Reauth): Promise<void> {
+		if (busy || !settings) return;
+		if (!reauth && settingsPatchNeedsReauth(settings, patch)) {
+			pending = { patch, saved };
+			ownPassword = ownCode = '';
+			error = '';
+			await tick();
+			fields?.focusField('password');
+			return;
+		}
 		busy = true;
 		error = status = '';
+		let refused = '';
 		try {
-			settings = await patchAuthSettings(patch);
+			settings = await patchAuthSettings({ ...patch, ...reauth });
 			status = saved;
+			pending = null;
+			ownPassword = ownCode = '';
 		} catch (err) {
-			error = message(err, 'Could not save the setting.');
+			const kind = apiErrorBody(err)?.error ?? '';
+			error = reauth ? reauthError(kind, message(err, 'Could not save the setting.')) : message(err, 'Could not save the setting.');
+			refused = kind;
 		} finally {
 			busy = false;
+		}
+		if (refused && reauth) {
+			if (refused === 'code_invalid') sawCodeInvalid = true;
+			const f = reauthFocus(refused);
+			if (f.clear === 'code') ownCode = '';
+			if (f.clear === 'password') ownPassword = '';
+			await tick();
+			fields?.focusField(f.focus);
+		} else if (refused) {
+			shown++;
 		}
 	}
 </script>
@@ -67,6 +111,24 @@
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{status}</p>
 
+	{#if pending}
+		<form
+			class="confirm"
+			aria-label="Confirm with your password"
+			onsubmit={(event) => {
+				event.preventDefault();
+				const p = pending;
+				if (p && reauthReady(ownPassword, needsCode, ownCode)) void change(p.patch, p.saved, reauthBody(ownPassword, needsCode, ownCode));
+			}}
+		>
+			<p>This lowers a sign-in protection or signs people out. Confirm it with your own password.</p>
+			<ReauthFields bind:this={fields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel="Your own password, to confirm this change" />
+			<button type="submit" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}>Confirm</button>
+			<button type="button" onclick={cancelPending}>Cancel</button>
+		</form>
+	{/if}
+
+	{#key shown}
 	{#if settings && switches}
 		<fieldset>
 			<legend>Registration</legend>
@@ -77,7 +139,7 @@
 						name="registration"
 						value={c.value}
 						checked={settings.registration === c.value}
-						disabled={busy}
+						disabled={busy || !!pending}
 						onchange={() => change({ registration: c.value }, `Registration is now ${c.label.toLowerCase()}.`)}
 					/>
 					<span><strong>{c.label}</strong> {c.hint}</span>
@@ -94,7 +156,7 @@
 						name="email-policy"
 						value={c.value}
 						checked={settings.emailPolicy === c.value}
-						disabled={busy}
+						disabled={busy || !!pending}
 						onchange={() => change({ emailPolicy: c.value }, `Email addresses are now ${c.label.toLowerCase()}.`)}
 					/>
 					<span><strong>{c.label}</strong> {c.hint}</span>
@@ -109,7 +171,7 @@
 					<input
 						type="checkbox"
 						checked={settings.mfaEnforced}
-						disabled={busy}
+						disabled={busy || !!pending}
 						onchange={(e) => change({ mfaEnforced: e.currentTarget.checked, ...(e.currentTarget.checked && signOutOthers ? { signOutOthers: true } : {}) }, 'Two-factor policy saved.')}
 					/>
 					<span>Require two-factor authentication for everyone</span>
@@ -128,7 +190,7 @@
 					<input
 						type="checkbox"
 						checked={settings.emailCodeLogin}
-						disabled={busy}
+						disabled={busy || !!pending}
 						onchange={(e) => change({ emailCodeLogin: e.currentTarget.checked }, 'Email sign-in code setting saved.')}
 					/>
 					<span>Allow signing in with an emailed code</span>
@@ -138,6 +200,7 @@
 			{/if}
 		</fieldset>
 	{/if}
+	{/key}
 
 	<h3>Activity</h3>
 	{#if auditError}<p class="error" role="alert">{auditError}</p>{/if}

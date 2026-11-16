@@ -47,6 +47,16 @@ export function parseAdminSection(value: string | null): AdminSection {
 	return (ADMIN_SECTIONS as readonly string[]).includes(value ?? '') ? (value as AdminSection) : 'users';
 }
 
+/**
+ * settingsTitleParts is the document title of a Settings view, most
+ * specific first: "Users · Admin · Settings", "AI · Settings" (pageTitle
+ * adds the app name). `section` is the raw `?section=` value.
+ */
+export function settingsTitleParts(tab: SettingsTab, section: string | null): string[] {
+	if (tab === 'admin') return [ADMIN_SECTION_LABELS[parseAdminSection(section)], SETTINGS_TAB_LABELS.admin, 'Settings'];
+	return [SETTINGS_TAB_LABELS[tab], 'Settings'];
+}
+
 /** adminSectionHref is the URL of an Admin section. */
 export function adminSectionHref(section: AdminSection): string {
 	return `/settings?tab=admin&section=${section}`;

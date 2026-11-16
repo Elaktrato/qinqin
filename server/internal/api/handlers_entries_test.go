@@ -213,8 +213,9 @@ func TestGetEntryJapaneseWord(t *testing.T) {
 	}
 
 	body := getEntryBody(t, ts.URL, suru)
-	if body.ID != suru || body.Language != "ja" || body.Kind != "word" || body.Written != "為る" {
-		t.Errorf("entry = %+v, want the 為る word", body.EntryBase)
+	if body.ID != suru || body.Language != "ja" || body.Kind != "word" || body.Written != "する" {
+		// 為る is usually written in kana: its display form is する.
+		t.Errorf("entry = %+v, want the 為る word shown as する", body.EntryBase)
 	}
 	wantReadings := []model.Reading{
 		{Type: "kana", Value: "する", Plain: "する", Ord: 0},
