@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -289,7 +290,7 @@ func TestRevokeTokens(t *testing.T) {
 		rows.Scan(&d)
 		details = append(details, d)
 	}
-	if len(details) != 2 || !strings.Contains(details[0], `"scope":"one"`) || !strings.Contains(details[1], `"scope":"all"`) || !strings.Contains(details[1], `"count":2`) {
+	if len(details) != 2 || !strings.Contains(details[0], `"scope":"one"`) || !strings.Contains(details[0], `"tokenId":`+strconv.FormatInt(a.ID, 10)) || !strings.Contains(details[1], `"scope":"all"`) || !strings.Contains(details[1], `"count":2`) {
 		t.Errorf("audit %v", details)
 	}
 }

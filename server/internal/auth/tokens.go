@@ -240,7 +240,7 @@ func RevokeToken(ctx context.Context, sqlDB *sql.DB, userID, tokenID int64) erro
 		return ErrTokenNotFound
 	}
 	if err := Audit(ctx, tx, AuditEvent{Action: "token_revoked", ActorID: userID, TargetID: &userID,
-		Detail: map[string]any{"scope": "one", "count": 1}}); err != nil {
+		Detail: map[string]any{"scope": "one", "count": 1, "tokenId": tokenID}}); err != nil {
 		return err
 	}
 	return tx.Commit()
