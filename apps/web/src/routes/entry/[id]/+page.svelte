@@ -21,6 +21,7 @@
 	import { formatReading } from '$lib/format';
 	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
+	import EntryNote from '$lib/notes/EntryNote.svelte';
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
@@ -238,6 +239,11 @@
 		{#key entry.id}
 			<Senses senses={entry.senses} />
 		{/key}
+		{#if !editing && $workspaces.current}
+			{#key `${$workspaces.current.id}:${entry.id}`}
+				<EntryNote workspaceId={$workspaces.current.id} entryId={entry.id} />
+			{/key}
+		{/if}
 
 		{#if entry.variants.length > 0}
 			<section class="variants" aria-labelledby="variants-heading">

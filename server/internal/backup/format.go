@@ -300,3 +300,7 @@ func ParseDerivedCardID(id string) (kind string, entryID int64, ok bool) {
 // FlashcardsPlugin is the plugin whose rows hold cards (card:<id>) and
 // vacation periods (vacation:<ULID>, user-global).
 const FlashcardsPlugin = "qinqin-flashcards"
+
+// CorePlugin is the built-in plugin whose workspace rows hold personal
+// notes on entries (note:<entryId>, docs/contracts/notes/).
+const CorePlugin = "qinqin-core"

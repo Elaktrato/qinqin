@@ -100,3 +100,59 @@ describe('addPlanRows', () => {
 		expect(addPlanRows({ ...plan, deck: null }).map((r) => r.key)).toEqual(['card:c-vocab-1']);
 	});
 });
+
+describe('add with known words skipped and a deck setting (#75)', () => {
+	const target = {
+		id: 'd-frq-jiten-frequency-d4514a31',
+		name: 'Jiten · Top 500',
+		source: { type: 'frequency' as const, packId: 'jiten-frequency', size: 500 }
+	};
+	const items = [1, 2, 3, 4].map((entryId) => ({ entryId, written: `w${entryId}` }));
+	const now = new Date('2026-11-16T12:00:00.000Z');
+	const settings = { newOrder: { by: 'frequency' as const }, exists: false };
+
+	it('leaves known entries out, counts them, and writes the deck setting', () => {
+		const plan = planAddToDeck({ items, target, existingDeck: null, rawCards: [], now, exclude: new Set([2]), settings });
+		expect(plan.writes.map((c) => c.entryId)).toEqual([1, 3, 4]);
+		expect(plan.writes.map((c) => c.createdAt)).toEqual([
+			'2026-11-16T12:00:00.000Z',
+			'2026-11-16T12:00:00.001Z',
+			'2026-11-16T12:00:00.002Z'
+		]);
+		expect(plan.known).toBe(1);
+		expect(plan.created).toBe(3);
+		expect(plan.settings).toEqual({
+			deckId: target.id,
+			cardTypes: [],
+			newOrder: { by: 'frequency' },
+			updatedAt: '2026-11-16T12:00:00.000Z'
+		});
+		const rows = addPlanRows(plan);
+		expect(rows.map((r) => r.key)).toEqual([
+			`deck:${target.id}`,
+			`deckcfg:${target.id}`,
+			'card:c-vocab-1',
+			'card:c-vocab-3',
+			'card:c-vocab-4'
+		]);
+	});
+
+	it('writes no deck setting when a live one exists, and a re-add writes nothing', () => {
+		const first = planAddToDeck({ items, target, existingDeck: null, rawCards: [], now, exclude: new Set([2]), settings });
+		const again = planAddToDeck({
+			items,
+			target,
+			existingDeck: first.deck,
+			rawCards: first.writes,
+			now,
+			exclude: new Set([2]),
+			settings: { ...settings, exists: true }
+		});
+		expect(again.writes).toEqual([]);
+		expect(again.deck).toBeNull();
+		expect(again.settings).toBeUndefined();
+		expect(again.known).toBe(1);
+		expect(again.skipped).toBe(3);
+		expect(addPlanRows(again)).toEqual([]);
+	});
+});

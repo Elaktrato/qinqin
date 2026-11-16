@@ -19,6 +19,7 @@ import {
   deleteCards,
   deleteDeck,
   saveDeckCardTypes,
+  saveDeckNewOrder,
   dropSiblingCards,
   skipKind,
   unskipKind,
@@ -39,6 +40,7 @@ import {
   deleteVacation,
   saveWorkspaceLimits,
   saveDeckLimits,
+  saveGoals,
   ALL_WORKSPACES,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
@@ -237,6 +239,15 @@ describe("study store", () => {
           // Tombstones are deleted rows.
           pluginRow("deck:gone", deck("gone", "Gone"), {
             deletedAt: "2026-01-03T00:00:00Z",
+          }),
+          // qinqin-core rows (personal notes, even one keyed like a card) are not study data.
+          pluginRow(
+            "note:42",
+            { version: 1, entryId: 42, text: "mnemonic" },
+            { pluginId: "qinqin-core" },
+          ),
+          pluginRow("card:core-card", card("core-card", 45, ["general"]), {
+            pluginId: "qinqin-core",
           }),
           // Keys the study layer does not own are ignored.
           pluginRow("settings:study", { newLimit: 20 }),
@@ -509,6 +520,84 @@ describe("study store", () => {
         cardTypes: ["reverse", "cloze"],
         limits: { new: 5 },
       });
+    });
+
+    it("saveDeckCardTypes keeps the deck's new-card order", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: [],
+              newOrder: { by: "frequency" },
+              updatedAt: "2026-01-01T00:00:00Z",
+            }),
+          ],
+        });
+      });
+      await saveDeckCardTypes("d1", ["reverse"]);
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "d1",
+        cardTypes: ["reverse"],
+        newOrder: { by: "frequency" },
+      });
+    });
+
+    it("saveDeckNewOrder keeps card types and unknown fields", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: ["cloze"],
+              updatedAt: "2026-01-01T00:00:00Z",
+              goal: { n: 5 },
+            }),
+          ],
+        });
+      });
+      const saved = await saveDeckNewOrder("d1", { by: "level", packId: "hsk-words" });
+      expect(saved.newOrder).toEqual({ by: "level", packId: "hsk-words" });
+      expect(putBodies()[0]!.url).toBe(cfgUrl("d1"));
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "d1",
+        cardTypes: ["cloze"],
+        newOrder: { by: "level", packId: "hsk-words" },
+        goal: { n: 5 },
+      });
+    });
+
+    it("saveDeckNewOrder with added removes the field", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", {
+              deckId: "d1",
+              cardTypes: [],
+              newOrder: { by: "frequency" },
+              updatedAt: "2026-01-01T00:00:00Z",
+            }),
+          ],
+        });
+      });
+      await saveDeckNewOrder("d1", { by: "added" });
+      expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
+    });
+
+    it("saveDeckNewOrder with added also drops an unreadable stored order", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "popular" } }),
+          ],
+        });
+      });
+      await saveDeckNewOrder("d1", { by: "added" });
+      expect(putBodies()[0]!.body).not.toHaveProperty("newOrder");
     });
 
     it("saveDeckCardTypes creates the row when none exists", async () => {
@@ -1579,6 +1668,42 @@ describe("study store", () => {
       expect(decks.find((d) => d.id === "plain")?.source).toBeUndefined();
     });
 
+    it("keeps a frequency source and drops a malformed one", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deck:d-frq-jiten-frequency-d4514a31", {
+            id: "d-frq-jiten-frequency-d4514a31",
+            name: "Jiten · Top 500",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "frequency", packId: "jiten-frequency", size: 500 },
+          }),
+          pluginRow("deck:bad", {
+            id: "bad",
+            name: "Bad",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "frequency", packId: "jiten-frequency", size: "500" },
+          }),
+        ],
+      });
+      const { decks } = await loadStudyData(WORKSPACE_ID);
+      expect(decks.find((d) => d.id === "d-frq-jiten-frequency-d4514a31")?.source).toEqual({
+        type: "frequency",
+        packId: "jiten-frequency",
+        size: 500,
+      });
+      expect(decks.find((d) => d.id === "bad")?.source).toBeUndefined();
+    });
+
+    it("loadRawStudyData returns the live deck settings", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: [], newOrder: { by: "frequency" } }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.deckSettings?.d1?.newOrder).toEqual({ by: "frequency" });
+    });
+
     it("loadRawStudyData keeps stored duplicates the merged read folds away", async () => {
       respondPull({
         pluginData: [
@@ -1856,5 +1981,74 @@ describe("queued reviews count in the loaded history", () => {
     const data = await loadStudyData();
 
     expect(data.reviews).toEqual([]);
+  });
+});
+
+describe("goal row", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(3);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+  const goal = {
+    version: 1,
+    showStreak: true,
+    note: "kept",
+    history: [{ from: "2026-11-16", metric: "activity:review", target: 50, by: "android" }],
+  };
+  function pull(rows: PluginDataRow[]) {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      if (String(input).startsWith("/api/events")) return jsonResponse([]);
+      return jsonResponse({ pluginData: rows });
+    });
+  }
+
+  it("reads the goals:workspace row of the workspace only", async () => {
+    pull([
+      pluginRow("goals:workspace", goal, { workspaceId: 3 }),
+      pluginRow("goals:workspace", { ...goal, showStreak: false }, { workspaceId: null }),
+    ]);
+    expect((await loadStudyData(3)).goals).toEqual(goal);
+    expect((await loadStudyData(4)).goals).toBeUndefined();
+  });
+
+  it("ignores a user-global row with the key", async () => {
+    pull([pluginRow("goals:workspace", goal, { workspaceId: null })]);
+    expect((await loadStudyData(3)).goals).toBeUndefined();
+  });
+
+  it("ignores a tombstoned row", async () => {
+    pull([pluginRow("goals:workspace", goal, { workspaceId: 3, deletedAt: "2026-11-16T00:00:00Z" })]);
+    expect((await loadStudyData(3)).goals).toBeUndefined();
+  });
+
+  it("reads a newer row as 'newer'", async () => {
+    pull([pluginRow("goals:workspace", { version: 2 }, { workspaceId: 3 })]);
+    expect((await loadStudyData(3)).goals).toBe("newer");
+  });
+
+  it("saveGoals PUTs the row verbatim to the workspace it was given and drops caches", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    const seen: number[] = [];
+    const off = onStudyWrite((w) => seen.push(w));
+    // The current workspace has moved on: the caller's captured id wins.
+    selectWorkspace(4);
+    await saveGoals(3, goal as never);
+    off();
+    expect(putBodies()).toEqual([
+      { url: `/api/plugins/${PLUGIN_ID}/data/goals:workspace?workspace=3`, body: goal },
+    ]);
+    expect(seen).toEqual([3]);
+  });
+
+  it("saveGoals refuses an id that is not a workspace", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+    await expect(saveGoals(0, goal as never)).rejects.toThrow(/workspace/);
+    await expect(saveGoals(1.5, goal as never)).rejects.toThrow(/workspace/);
+    expect(calls()).toHaveLength(0);
   });
 });

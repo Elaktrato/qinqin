@@ -208,6 +208,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/frequency-packs/{id}/top",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/grammar",
 		"access": "public"
 	},
@@ -489,6 +493,10 @@
 	},
 	{
 		"pattern": "POST /api/entries/bases",
+		"access": "user"
+	},
+	{
+		"pattern": "POST /api/entries/frequency-ranks",
 		"access": "user"
 	},
 	{

@@ -17,6 +17,8 @@ export interface UnresolvedEntry {
 	language: string;
 	cards: number;
 	overlays: number;
+	/** Personal notes on the word; missing from servers older than notes (read as 0). */
+	notes?: number;
 }
 
 export interface Report {
@@ -67,7 +69,12 @@ export function restoreSentence(r: Report): string {
 /** The words the backup mentions that this server does not have. */
 export function unresolvedLines(r: Report): string[] {
 	const lines = r.unresolved.entries.map((e) => {
-		const bits = [e.cards ? `${e.cards} card${e.cards === 1 ? '' : 's'}` : '', e.overlays ? `${e.overlays} edit${e.overlays === 1 ? '' : 's'}` : ''].filter(Boolean);
+		const notes = e.notes ?? 0;
+		const bits = [
+			e.cards ? `${e.cards} card${e.cards === 1 ? '' : 's'}` : '',
+			e.overlays ? `${e.overlays} edit${e.overlays === 1 ? '' : 's'}` : '',
+			notes ? `${notes} note${notes === 1 ? '' : 's'}` : ''
+		].filter(Boolean);
 		return bits.length ? `${e.written || '(unknown word)'} (${bits.join(', ')})` : e.written || '(unknown word)';
 	});
 	const more = r.unresolved.entryCount - r.unresolved.entries.length;

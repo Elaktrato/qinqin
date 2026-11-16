@@ -495,3 +495,47 @@ describe('buildQueue with daily limits', () => {
 		expect(buildQueue({ ...base, cards: many, ctx: ctxWith({ new: null }) })).toHaveLength(30);
 	});
 });
+
+describe('buildQueue with a new-card key (#75)', () => {
+	const newCard = (id: string, entryId: number, deckIds = ['general'], createdAt = '2026-01-01T00:00:00.000Z'): StudyCard => ({
+		id,
+		kind: 'vocab',
+		entryId,
+		deckIds,
+		createdAt
+	});
+	const cards = [
+		newCard('due', 9),
+		newCard('a', 1, ['general'], '2026-01-02T00:00:00.000Z'),
+		newCard('b', 2, ['general'], '2026-01-03T00:00:00.000Z'),
+		newCard('c', 3, ['general'], '2026-01-04T00:00:00.000Z'),
+		newCard('d', 4, ['general'], '2026-01-05T00:00:00.000Z')
+	];
+	const reviews = [review('due', 3, '2026-01-01T00:00:00.000Z', eventId(1))];
+	const ranks: Record<number, number> = { 1: 900, 2: 40, 3: 5, 9: 1 };
+	const newKey = (c: StudyCard) => ranks[c.entryId] ?? null;
+	const base = { ctx: UTC_CONTEXT, w: DEFAULT_W, cards, reviews, deckIds: ['general'], reviewLimit: 100, now: NOW };
+
+	it('takes the best-ranked new cards under the new limit; reviews stay first', () => {
+		expect(buildQueue({ ...base, newLimit: 2, newKey }).map((c) => c.id)).toEqual(['due', 'c', 'b']);
+		// Unranked cards follow in the order added.
+		expect(buildQueue({ ...base, newLimit: 10, newKey }).map((c) => c.id)).toEqual(['due', 'c', 'b', 'a', 'd']);
+	});
+
+	it('without a key the order added is kept', () => {
+		expect(buildQueue({ ...base, newLimit: 2 }).map((c) => c.id)).toEqual(['due', 'a', 'b']);
+	});
+
+	it('the daily limits still admit per deck', () => {
+		const split = [
+			newCard('x', 3, ['full'], '2026-01-02T00:00:00.000Z'),
+			newCard('y', 1, ['open'], '2026-01-03T00:00:00.000Z'),
+			newCard('z', 2, ['open'], '2026-01-04T00:00:00.000Z')
+		];
+		const ctx: StudyContext = { ...UTC_CONTEXT, limits: { workspace: null, decks: { full: { new: 0 } }, existingDecks: null } };
+		const opts = { ...base, ctx, cards: split, reviews: [], deckIds: ['full', 'open'], newLimit: 1 };
+		// x ranks best but its deck takes no new cards today: the next-ranked z of the open deck.
+		expect(buildQueue({ ...opts, newKey }).map((c) => c.id)).toEqual(['z']);
+		expect(buildQueue(opts).map((c) => c.id)).toEqual(['y']);
+	});
+});

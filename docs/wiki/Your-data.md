@@ -4,7 +4,7 @@ Settings, Account, **Your data** lets every user download all their data and res
 
 ## Download my data
 
-You get a zip of JSON files (format version 1). It contains: workspaces and settings, study history, flashcards and decks, vacation periods and limits, word edits, your own sentences, library books with bookmarks and highlights, plugin switches and your time-zone history. The download link is a one-time ticket valid for 60 seconds, and you can make six downloads per hour.
+You get a zip of JSON files (format version 1). It contains: workspaces and settings, study history, flashcards and decks, vacation periods, limits and daily goals, word edits, personal notes on words, your own sentences, library books with bookmarks and highlights, plugin switches and your time-zone history. The download link is a one-time ticket valid for 60 seconds, and you can make six downloads per hour.
 
 It never contains: your password, email, sessions, two-step secrets and recovery codes, AI keys, invites, the audit log, SMTP settings, the server secret, journal photo drafts, deleted rows, or dictionary and pack content. After moving to another server you enter your AI keys again.
 
@@ -20,7 +20,7 @@ Restore **replaces all** your data with the backup's, in one transaction: if it 
 
 Before anything changes the server saves your current data to a safety export (newest only, kept 7 days); the app links to it so you can undo a restore. Your other devices are signed out and reload. Your sign-in, password and two-step setup are never touched.
 
-Words are matched by dictionary identity, not internal id, so a backup restores onto another server. Cards, reviews, edits and sentences of words that server does not have are dropped, never guessed: the report lists them and you must tick "drop them". Install the dictionary and restore again to bring them back.
+Words are matched by dictionary identity, not internal id, so a backup restores onto another server. Cards, reviews, edits, personal notes and sentences of words that server does not have are dropped, never guessed: the report lists them and you must tick "drop them". Install the dictionary and restore again to bring them back.
 
 Limits and side effects:
 

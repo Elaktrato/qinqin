@@ -8,6 +8,7 @@
 	import { createDecksData } from './decksData.svelte';
 	import DeckStatsPanel from './DeckStatsPanel.svelte';
 	import SystemDecks from './SystemDecks.svelte';
+	import StarterDecks from './StarterDecks.svelte';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { deckLeftText } from '$lib/study/limitsText';
@@ -151,6 +152,7 @@
 		{/if}
 	</form>
 
+	<StarterDecks language={$workspaces.current?.language ?? ''} {ownedEntryIds} />
 	<SystemDecks language={$workspaces.current?.language ?? ''} {ownedEntryIds} />
 {/if}
 

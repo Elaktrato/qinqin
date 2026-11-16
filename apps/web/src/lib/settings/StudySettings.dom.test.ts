@@ -8,6 +8,9 @@ vi.mock('$lib/time/zone', () => ({
 }));
 vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
 vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
+vi.mock('$lib/api/stats', () => ({
+	fetchActivity: vi.fn(() => Promise.resolve({ from: '', to: '', timeZone: 'UTC', sources: [], cells: [] }))
+}));
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	saveVacation: vi.fn(() => Promise.resolve()),
@@ -15,7 +18,13 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 	deleteVacation: vi.fn(() => Promise.resolve())
 }));
 
+vi.mock('$lib/notes/store', () => ({
+	loadNoteCfg: vi.fn(() => Promise.resolve({ onAnswer: true, extra: {} })),
+	saveNoteCfg: vi.fn(() => Promise.resolve())
+}));
+
 import { loadWorkspaceEvents } from '$lib/events';
+import { loadNoteCfg, saveNoteCfg } from '$lib/notes/store';
 import { deleteVacation, saveVacation, saveWorkspaceLimits } from '$lib/study/store';
 import { getStudyData } from '$lib/study/studyData';
 import type { VacationPeriod } from '$lib/study/vacation';
@@ -166,5 +175,80 @@ describe('StudySettings limits wording', () => {
 	it('says the limits are per deck and the workspace value is the default', async () => {
 		setup();
 		expect((await screen.findByText(/Each deck gets at most/)).textContent).toMatch(/workspace value is the default for every deck/);
+	});
+});
+
+describe('StudySettings daily goal', () => {
+	it('has the daily goal section above the vacation section', async () => {
+		setup();
+		const goal = await screen.findByRole('heading', { name: 'Daily goal' });
+		const vacation = screen.getByRole('heading', { name: 'Vacation' });
+		expect(goal.compareDocumentPosition(vacation) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+});
+
+describe('StudySettings note switch', () => {
+	const label = 'Show my notes on the answer side';
+
+	it('is checked by default in the workspace part', async () => {
+		setup();
+		const box = (await screen.findByLabelText(label)) as HTMLInputElement;
+		await waitFor(() => expect(loadNoteCfg).toHaveBeenCalledWith(1));
+		expect(box.checked).toBe(true);
+		const limits = screen.getByRole('heading', { name: 'Daily limits' });
+		expect(limits.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+
+	it('unchecking stores notecfg off and keeps unknown members of the loaded row', async () => {
+		vi.mocked(loadNoteCfg).mockResolvedValueOnce({ onAnswer: true, extra: { later: 1 } });
+		setup();
+		const box = (await screen.findByLabelText(label)) as HTMLInputElement;
+		await waitFor(() => expect(loadNoteCfg).toHaveBeenCalled());
+		await new Promise((r) => setTimeout(r, 0));
+		await fireEvent.click(box);
+		await waitFor(() => expect(saveNoteCfg).toHaveBeenCalledWith(1, false, { onAnswer: true, extra: { later: 1 } }));
+		expect(box.checked).toBe(false);
+	});
+
+	it('shows a stored off value', async () => {
+		vi.mocked(loadNoteCfg).mockResolvedValueOnce({ onAnswer: false, extra: {} });
+		setup();
+		const box = (await screen.findByLabelText(label)) as HTMLInputElement;
+		await waitFor(() => expect(box.checked).toBe(false));
+	});
+
+	it('stays disabled until the stored value has loaded, then saves with its members', async () => {
+		let resolve!: (v: { onAnswer: boolean; extra: Record<string, unknown> }) => void;
+		vi.mocked(loadNoteCfg).mockReturnValueOnce(new Promise((r) => (resolve = r)));
+		setup();
+		const box = (await screen.findByLabelText(label)) as HTMLInputElement;
+		expect(box.disabled).toBe(true);
+		await fireEvent.click(box);
+		expect(saveNoteCfg).not.toHaveBeenCalled();
+		resolve({ onAnswer: false, extra: { later: 2 } });
+		await waitFor(() => expect(box.disabled).toBe(false));
+		expect(box.checked).toBe(false);
+		await fireEvent.click(box);
+		await waitFor(() => expect(saveNoteCfg).toHaveBeenCalledWith(1, true, { onAnswer: false, extra: { later: 2 } }));
+		expect(box.checked).toBe(true);
+	});
+
+	it('a failed load reads as on and the box can be used', async () => {
+		vi.mocked(loadNoteCfg).mockRejectedValueOnce(new Error('down'));
+		setup();
+		const box = (await screen.findByLabelText(label)) as HTMLInputElement;
+		await waitFor(() => expect(box.disabled).toBe(false));
+		expect(box.checked).toBe(true);
+	});
+
+	it('a failed save reverts the box and shows an alert', async () => {
+		vi.mocked(saveNoteCfg).mockRejectedValueOnce(new Error('offline'));
+		setup();
+		const box = (await screen.findByLabelText(label)) as HTMLInputElement;
+		await waitFor(() => expect(loadNoteCfg).toHaveBeenCalled());
+		await new Promise((r) => setTimeout(r, 0));
+		await fireEvent.click(box);
+		expect((await screen.findByRole('alert')).textContent).toMatch(/could not save/i);
+		expect(box.checked).toBe(true);
 	});
 });

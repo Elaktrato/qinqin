@@ -63,6 +63,11 @@ import type { Run } from '$lib/study/vacation';
 	import { COMPANION_NOTE, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
 	import { offline } from '$lib/pwa/offlineState';
 	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
+	import { getFrequencyPacks } from '$lib/api/frequency';
+	import { loadRanks } from '$lib/study/frequencyRanks';
+	import { loadLevelKeys } from '$lib/study/levelKeys';
+	import { sessionNewOrder } from '$lib/study/session';
+	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/study/sessionOrder';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -76,6 +81,8 @@ import type { Run } from '$lib/study/vacation';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { newUlid } from '$lib/ulid';
 	import { workspaces } from '$lib/workspaces';
+	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
+	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
 	const GRADE_LABELS: { grade: ReviewGrade; label: string }[] = [
@@ -202,6 +209,8 @@ import type { Run } from '$lib/study/vacation';
 	let loadError = $state('');
 	// True when this session was planned from saved data (no companion cards).
 	let offlineSession = $state(false);
+	// Why the new cards keep the order added (#75): mixed decks, no pack, offline.
+	let orderNote = $state('');
 	let workspaceMismatch = $state('');
 	let noWorkspace = $state(false);
 	let sessionWorkspaceId = $state<number | null>(null);
@@ -234,6 +243,19 @@ import type { Run } from '$lib/study/vacation';
 	let audioSettled = $state(false);
 	let entryError = $state('');
 	let gradeError = $state('');
+	// The learner's notes of this workspace (entry id -> text), loaded once per
+	// session next to the start and never awaited by it; empty while loading,
+	// after a failure, when the workspace switched them off, and offline.
+	let sessionNotes = $state.raw<Map<number, string>>(new Map());
+
+	async function loadSessionNotes(workspaceId: number, seq: number): Promise<void> {
+		try {
+			const [notes, cfg] = await Promise.all([loadNotes(workspaceId), loadNoteCfg(workspaceId)]);
+			if (seq === requestSeq && cfg.onAnswer) sessionNotes = notes;
+		} catch {
+			// Notes are optional help: a failed load shows none.
+		}
+	}
 	let grading = $state(false);
 
 	// The card being shown and how far the learner got with it. `done`
@@ -362,6 +384,7 @@ import type { Run } from '$lib/study/vacation';
 		index = 0;
 		reshown = 0;
 		buryNote = '';
+		orderNote = '';
 		segmentCache = new Map();
 		entries = {};
 		audioMap = {};
@@ -371,11 +394,13 @@ import type { Run } from '$lib/study/vacation';
 		grading = false;
 		pendingEntryId = null;
 
+		sessionNotes = new Map();
 		if (workspaceId === null) {
 			noWorkspace = true;
 			loading = false;
 			return;
 		}
+		if ($offline.online) void loadSessionNotes(workspaceId, seq);
 
 		try {
 			// Queued reviews must land before the history is read: the
@@ -406,6 +431,31 @@ import type { Run } from '$lib/study/vacation';
 			const w = weights;
 			cards = data.cards;
 			const now = new Date();
+			// The order of new cards (#75): ranks or level keys only for entries
+			// that can be new; offline or on failure the order added, with a note.
+			const order = await sessionNewKey(
+				{
+					mode: config.mode,
+					order: sessionNewOrder(config),
+					language: language ?? '',
+					deckOrders: deckOrdersOf(config.deckIds, data.decks, data.deckSettings),
+					levelUnit: levelRequest.unit,
+					newEntryIds:
+						config.mode === 'levels'
+							? candidateNewEntries({
+									cards: data.cards,
+									reviews: history,
+									entries: levelRequest.entries.map((entry) => entry.id),
+									kinds
+								})
+							: candidateNewEntries({ cards: data.cards, reviews: history, deckIds: config.deckIds }),
+					online: !offlineSession
+				},
+				{ packs: getFrequencyPacks, schemes: getSchemes, ranks: loadRanks, levelKeys: loadLevelKeys }
+			);
+			if (seq !== requestSeq) return;
+			orderNote = order.note ?? '';
+			const keyOf = order.key;
 			if (config.mode === 'levels') {
 				// Character levels study recognition and writing; word levels vocab
 				// only. Companions are deck-only. A dropped virtual item (no stroke
@@ -428,7 +478,8 @@ import type { Run } from '$lib/study/vacation';
 					ctx,
 					hasStrokes: hasStrokeData,
 					skip: loadIneligible(workspaceId),
-					excludeEntries: buriedLevelEntries(buried, data.cards)
+					excludeEntries: buriedLevelEntries(buried, data.cards),
+					newKey: keyOf ?? undefined
 				});
 				queue = levelSessionItems(plan.queue, data.cards, kinds, buried);
 				reserve = levelSessionItems(plan.reserve, data.cards, kinds, buried);
@@ -448,7 +499,8 @@ import type { Run } from '$lib/study/vacation';
 					offline: offlineSession,
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
-					skip: loadIneligible(workspaceId)
+					skip: loadIneligible(workspaceId),
+					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId)
 				});
 				queue = plan.queue;
 				reserve = plan.reserve;
@@ -1037,6 +1089,10 @@ import type { Run } from '$lib/study/vacation';
 			<p class="hint" role="status">{buryNote}</p>
 		{/if}
 
+		{#if orderNote}
+			<p class="hint" role="status">{orderNote}</p>
+		{/if}
+
 		{#if showCompanionNote({ offline: offlineSession, kinds })}
 			<p class="hint">{COMPANION_NOTE}</p>
 		{/if}
@@ -1127,6 +1183,8 @@ import type { Run } from '$lib/study/vacation';
 						/>
 					{/if}
 				{/key}
+
+				<NoteAnswer text={done && !offlineSession ? sessionNotes.get(current.item.entryId) : undefined} />
 
 				{#if gradeError}
 					<p class="error" role="alert">{gradeError}</p>

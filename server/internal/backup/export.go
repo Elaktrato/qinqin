@@ -444,6 +444,10 @@ func writePluginData(ctx context.Context, tx *sql.Tx, a *archiveWriter, userID i
 			if r.PluginID == FlashcardsPlugin && strings.HasPrefix(r.Key, "card:") {
 				noteCard(refs, r.Key, r.Data)
 			}
+			// a personal note names its entry, so a restore can move it to the same word
+			if id, ok := noteEntryID(r); ok {
+				refs.entries[id] = struct{}{}
+			}
 			return r, nil
 		})
 }

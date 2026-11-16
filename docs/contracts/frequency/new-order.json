@@ -1,0 +1,187 @@
+{
+ "version": 1,
+ "rule": "frequency/new-order",
+ "cases": [
+  {
+   "name": "no keys: the incoming order is kept",
+   "items": [
+    {
+     "id": "c1",
+     "entryId": 10
+    },
+    {
+     "id": "c2",
+     "entryId": 11
+    },
+    {
+     "id": "c3",
+     "entryId": 12
+    }
+   ],
+   "keys": {},
+   "expected": [
+    "c1",
+    "c2",
+    "c3"
+   ]
+  },
+  {
+   "name": "ranks reorder ascending",
+   "items": [
+    {
+     "id": "c1",
+     "entryId": 10
+    },
+    {
+     "id": "c2",
+     "entryId": 11
+    },
+    {
+     "id": "c3",
+     "entryId": 12
+    }
+   ],
+   "keys": {
+    "10": 300,
+    "11": 2,
+    "12": 45
+   },
+   "expected": [
+    "c2",
+    "c3",
+    "c1"
+   ]
+  },
+  {
+   "name": "ties keep the incoming order",
+   "items": [
+    {
+     "id": "c1",
+     "entryId": 10
+    },
+    {
+     "id": "c2",
+     "entryId": 11
+    },
+    {
+     "id": "c3",
+     "entryId": 12
+    }
+   ],
+   "keys": {
+    "10": 7,
+    "11": 3,
+    "12": 7
+   },
+   "expected": [
+    "c2",
+    "c1",
+    "c3"
+   ]
+  },
+  {
+   "name": "null keys follow all keyed items in their incoming order",
+   "items": [
+    {
+     "id": "c1",
+     "entryId": 10
+    },
+    {
+     "id": "c2",
+     "entryId": 11
+    },
+    {
+     "id": "c3",
+     "entryId": 12
+    },
+    {
+     "id": "c4",
+     "entryId": 13
+    },
+    {
+     "id": "c5",
+     "entryId": 14
+    }
+   ],
+   "keys": {
+    "10": null,
+    "11": 9,
+    "13": 1
+   },
+   "expected": [
+    "c4",
+    "c2",
+    "c1",
+    "c3",
+    "c5"
+   ]
+  },
+  {
+   "name": "items of one entry share its key and keep their order",
+   "items": [
+    {
+     "id": "c1",
+     "entryId": 10
+    },
+    {
+     "id": "c2",
+     "entryId": 11
+    },
+    {
+     "id": "c3",
+     "entryId": 10
+    }
+   ],
+   "keys": {
+    "10": 5,
+    "11": 1
+   },
+   "expected": [
+    "c2",
+    "c1",
+    "c3"
+   ]
+  },
+  {
+   "name": "level keys are level ords",
+   "items": [
+    {
+     "id": "c1",
+     "entryId": 20
+    },
+    {
+     "id": "c2",
+     "entryId": 21
+    },
+    {
+     "id": "c3",
+     "entryId": 22
+    },
+    {
+     "id": "c4",
+     "entryId": 23
+    }
+   ],
+   "keys": {
+    "20": 3,
+    "21": 1,
+    "22": 2,
+    "23": 1
+   },
+   "expected": [
+    "c2",
+    "c4",
+    "c3",
+    "c1"
+   ]
+  },
+  {
+   "name": "empty list",
+   "items": [],
+   "keys": {
+    "1": 1
+   },
+   "expected": []
+  }
+ ]
+}

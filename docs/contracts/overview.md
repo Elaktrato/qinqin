@@ -11,9 +11,10 @@ Derived from the code on `develop`; each owner path below is where the rule is i
 | --- | --- |
 | Identity and transport | `auth/` (token, restrictions, errors, two-step sign-in), `pwa/` (outbox, cache rules) |
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
-| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits) |
+| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak) |
 | Reader | `reader/` (display settings, furigana, smart readings) |
 | Data safety | `backup/` (archive format v1, id remapping) |
+| Personal data on entries | `notes/` (notes and the answer-side switch) |
 
 Read order: `auth/` -> `study-day/` -> this page's sync model -> `cards/` -> `scheduler/` -> `decks/` -> `levels/`.
 
@@ -45,23 +46,26 @@ Read order: `auth/` -> `study-day/` -> this page's sync model -> `cards/` -> `sc
   lists them. Event shape: `{id (ULID), workspaceId, device, ts (RFC 3339), type, payload}`, `type` one of
   `session|view|lookup|review|read|journal` (`apps/web/src/lib/events.ts`). A card's schedule is never
   stored: it is derived by replaying `review` events (`scheduler/`).
-- Only the flashcards rows are plugin data of plugin `qinqin-flashcards` (`FLASHCARDS_PLUGIN_ID`).
+- The flashcards rows are plugin data of plugin `qinqin-flashcards` (`FLASHCARDS_PLUGIN_ID`); personal notes (`note:*`, `notecfg`) are plugin data of the built-in plugin `qinqin-core` (`CORE_PLUGIN_ID`, which also holds user-global UI rows such as the home layout and the activity view).
 
 ## Row-key conventions
 
-All rows belong to plugin `qinqin-flashcards` (`apps/web/src/lib/study/store.ts`). "Pinned by" names the
+Rows belong to plugin `qinqin-flashcards` (`apps/web/src/lib/study/store.ts`) unless the Key column names `qinqin-core`. "Pinned by" names the
 fixture or the contract text that fixes the shape.
 
 | Key | Scope | JSON shape | Owner code path | Pinned by |
 | --- | --- | --- | --- | --- |
-| `deck:<deckId>` | workspace | `{id: string, name: string, createdAt: string, source?: {type:"level", packId, level} \| {type:"plugin", pluginId, key}}`. User decks use a ULID id; copies of system decks use `d-lvl-...` / `d-plg-...`. The implicit `general` deck has no row. | `study/store.ts` (`createDeck`, `renameDeck`, `deleteDeck`), `study/types.ts` `Deck` | `decks/system-deck-ids.json`, `decks/add-to-deck.json` |
+| `deck:<deckId>` | workspace | `{id: string, name: string, createdAt: string, source?: {type:"level", packId, level} \| {type:"plugin", pluginId, key} \| {type:"frequency", packId, size}}`. User decks use a ULID id; copies of system decks use `d-lvl-...` / `d-plg-...` / `d-frq-...`. The implicit `general` deck has no row. | `study/store.ts` (`createDeck`, `renameDeck`, `deleteDeck`), `study/types.ts` `Deck` | `decks/system-deck-ids.json`, `decks/add-to-deck.json`, `frequency/starter-deck-ids.json` |
 | `card:<cardId>` | workspace | `{id, kind: vocab\|sentence\|writing\|tone\|reverse\|cloze, entryId: int, written?, entryKind?: "character", sentenceId?: int, skipKinds?: kind[], deckIds: string[], createdAt}`. Id `c-<kind>-<entryId>`. A card may be in several decks. | `study/canonical.ts` (`newCardId`), `study/store.ts`, `study/types.ts` `StudyCard` | `cards/card-ids.json`, `cards/burying.json`, `levels/level-card-ids.json` |
-| `deckcfg:<deckId>` | workspace (also for `general`) | `{deckId, cardTypes: ("reverse"\|"cloze")[], updatedAt, ...unknown kept verbatim}` | `study/deckSettings.ts` | `cards/README.md` (Data); no JSON fixture |
+| `deckcfg:<deckId>` | workspace (also for `general`) | `{deckId, cardTypes: ("reverse"\|"cloze")[], newOrder?: {by:"added"} \| {by:"frequency"} \| {by:"level", packId}, updatedAt, ...unknown kept verbatim}` | `study/deckSettings.ts`, `study/newOrder.ts` | `cards/README.md` (Data); `newOrder`: `frequency/deckcfg-new-order.json` |
 | `limits:workspace` | workspace | `{version:1, new?: int 0..9999 \| null, reviews?: same}`; null = unlimited | `study/limits.ts` | `scheduler/limits-rows.json`, `scheduler/daily-limits.json` |
 | `limits:deck:<deckId>` | workspace (`general` allowed) | same fields; deck field, else workspace, else default 20 new / 200 reviews | `study/limits.ts` | same |
+| `goals:workspace` | workspace | `{version:1, showStreak: bool, history: [{from: "YYYY-MM-DD", metric: "activity:<type>"\|"flashcards:new"\|"flashcards:studyTime"\|null, target: int\|null}]}`; the goal of day D is the last entry with `from <= D`; a version above 1 is never overwritten; unknown keys kept; at most 400 entries; progress is never stored | `goals/goals.ts` | `goals/goal-rows.json` |
 | `vacation:<ULID>` | **user-global** (`workspaceId: null`; written without `workspace`) | `{version:1, id, start: "YYYY-MM-DD", end: day \| null, scope: "all" \| {workspaces: int[]}, createdDay, createdAt}` | `study/vacation.ts`, `study/store.ts` (reads rows with no workspace) | `scheduler/vacation-days.json`, `scheduler/vacation-schedule.json` |
 | `fsrs:set:<setId>` | workspace | `{id, w: 21 numbers, createdAt, source: "optimized"\|"imported", labelled?, logLoss?, baselineLogLoss?}`; weights outside ts-fsrs clamp ranges make the row unusable | `study/fsrs/params.ts`, `study/store.ts` | `scheduler/optimizer-steps*.json` (steps only); the row shape has no fixture |
 | `fsrs:active` | workspace | `{setId: string \| null, changedAt}`; missing, null or dangling = default weights | `study/fsrs/params.ts` `resolveState` | no fixture |
+| `note:<entryId>` (plugin **`qinqin-core`**) | workspace (the current one, even for an entry of another language) | `{version:1, entryId: int (= the key's number), text: string (plain text, non-empty after trim), ...unknown kept}`; key decimal, positive, no leading zero; absent unless all hold; editor cap 2000 code points; delete = tombstone; restore rewrites key and `entryId` to the target entry, drops it when unresolved | `notes/notes.ts`, `notes/store.ts`; restore: `server/internal/backup/remap.go` | `notes/note-rows.json`, `notes/note-text.json`, `backup/remap.json` |
+| `notecfg` (plugin **`qinqin-core`**) | workspace | `{version:1, onAnswer: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = on | `notes/notes.ts` | `notes/note-rows.json` |
 | `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}}`; an unknown `mode` reads as `vocab` | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `server/internal/events` | `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
 | workspace settings key `reader` | workspace row of `workspaces.settings` (not plugin data) | `{version:1, bookRuby: bool, readings: never\|always\|smart, smartThreshold: 10..100, rubyScale: 0.45\|0.55\|0.65\|0.75, font: default\|sans\|serif\|kai}`; written via `PUT /api/workspaces/{id}` with `settings` merged as RFC 7396; unknown keys kept | `plugins/reader/displaySettings.ts` | `reader/display-settings.json` |
 | Reader library, bookmarks, highlights, book position | **not sync rows**: server tables under `/api/library/books/{id}[/bookmarks\|/highlights\|/position]` | see `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/api` library handlers | `plugins/reader/bookmarks.ts`, `highlights.ts` | only through `backup/sample-v1/library/*`; no API fixture |
@@ -90,6 +94,8 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
 - Clock, vacation, due, streak, limits: `scheduler/` (vacation shifts the study clock by whole days;
   limits count by the learner's day). Level sessions: `levels/`. Deck numbers and system deck ids: `decks/`.
 - Reverse and cloze cards, sibling burying: `cards/`.
+- Daily goal, its amounts (activity cells of the workspace, new cards and capped answer time from the review
+  log), day status and goal streak (vacation days neutral): `goals/`.
 
 ## Backup archive (`backup/`)
 
@@ -119,7 +125,8 @@ other permanent 4xx drop the item; 5xx, 408, 429 and network errors keep it; for
 
 ## Gaps (no fixture yet)
 
-- No JSON fixture for the shapes of `deck:*`, `card:*` rows, `deckcfg:*`, `fsrs:set:*`, `fsrs:active` (only
+- No JSON fixture for the shapes of `deck:*`, `card:*` rows, `deckcfg:*` (except its `newOrder` field:
+  `frequency/deckcfg-new-order.json`), `fsrs:set:*`, `fsrs:active` (only
   the ids and the derived rules are pinned); the table above is derived from the TypeScript parsers.
 - Reader library, bookmarks, highlights, position and `read` event payloads have no contract fixture; they
   are not part of the sync pull (Delta has no library collection).

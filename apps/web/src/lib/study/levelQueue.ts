@@ -7,6 +7,7 @@
 import { compareCanonical } from './canonical';
 import { backfillLimit } from './cardFlow';
 import { existingDecksOf, isValidReview, limitsOf, scheduleFor, sortedReviews } from './scheduler';
+import { orderNew } from './newOrder';
 import { admit, dayCountsCached, type Candidate } from './limits';
 import { isDueNow, type StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
@@ -65,6 +66,13 @@ export interface BuildLevelQueueOptions {
 	 * buried word never uses a limit slot; the next word takes it.
 	 */
 	excludeEntries?: ReadonlySet<number>;
+	/**
+	 * The new-item order (#75): a key per entry, lower first, null after
+	 * every keyed item (orderNew). A word plan orders its whole new bucket
+	 * (real and virtual); a character plan orders inside the writing and
+	 * the recognition group. Absent: level order.
+	 */
+	newKey?: (entryId: number) => number | null;
 }
 
 /** A level session: the queue plus new items held back for dropped ones. */
@@ -172,8 +180,14 @@ function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
 	return admitPlan(
 		options,
 		due.map((entry) => entry.item),
-		[...fresh, ...virtual]
+		ordered(options, [...fresh, ...virtual])
 	);
+}
+
+/** ordered applies the session's new-item key, if any. */
+function ordered(options: BuildLevelQueueOptions, items: LevelQueueItem[]): LevelQueueItem[] {
+	const key = options.newKey;
+	return key === undefined ? items : orderNew(items, (item) => key(item.entryId));
 }
 
 /**
@@ -294,7 +308,7 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 	return admitPlan(
 		options,
 		due.map((entry) => entry.item),
-		[...freshWriting, ...freshVocab]
+		[...ordered(options, freshWriting), ...ordered(options, freshVocab)]
 	);
 }
 

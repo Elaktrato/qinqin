@@ -30,14 +30,26 @@ database with a SvelteKit single-page app embedded in the binary.
   of dictionary entries with frequency chips, and popups open from inside popups.
 - **Editing** — correct written forms and readings per user without mutating
   the shared dictionary data.
+- **Personal notes** — one plain-text note per word and workspace (a mnemonic,
+  a usage warning) on the entry page, shown below a flashcard once its answer is
+  revealed (switch in **Settings → Study**), synced and included in the backup
+  (`docs/contracts/notes/`).
 - **Study mode** — add any word from its entry page and review it with Anki-style
   grading; the flashcards plugin derives FSRS schedules and EXP/levels from the
   event log.
 - **Decks, limits and vacation** — a decks view with per-deck numbers (studied,
-  mastered, due, 30-day reviews, retention) and copies of level decks; optional
+  mastered, due, 30-day reviews, retention) and copies of level decks; starter decks
+  (Top 500/1000/2000 of an installed frequency list, known words skipped) and a
+  per-deck and per-session order for new cards (added, most frequent first, by level); optional
   reverse and cloze cards per deck; daily limits for new cards and reviews (per
   workspace, overridable per deck); vacation mode that pauses your schedule
   without piling up reviews. Rules: `docs/contracts/`.
+- **Daily goals** — one target per workspace and learner day (flashcard reviews,
+  new cards, minutes of flashcard study, or any other activity the statistics
+  count), set in **Settings → Study**: a progress ring on the home page and in the
+  flashcards widget, a "Goal reached" state, and an optional goal streak; target
+  changes apply from today, vacation days pause the goal. Progress is derived from
+  the event log, never stored (`docs/contracts/goals/`).
 - **Installable app** — the web app installs as a PWA and keeps studying
   offline; reviews wait in a per-user outbox and sync when you are back online.
 - **Accounts** — sessions you can end, registration modes and invites, password
@@ -51,7 +63,7 @@ database with a SvelteKit single-page app embedded in the binary.
   ruby size and a system font choice (see [Reader display](#reader-display)).
 - **Home widgets** — the home page renders widgets from a per-user layout stored
   on the server (shared by every device and workspace; by default the activity
-  heatmap, then the flashcards summary). A widget that does not apply to the
+  heatmap, the flashcards summary, then the daily goal). A widget that does not apply to the
   current language, or whose plugin is disabled, is left out. **Settings → Home**
   (`/settings?tab=home`) chooses and orders them: an "On the home page" switch
   per widget, **Move up** / **Move down** buttons (or drag a row by its handle),
@@ -266,7 +278,7 @@ Two kinds, both in the app (issue [#61](https://github.com/Elaktrato/qinqin/issu
 
 - *Download my data* gives a zip of JSON (format v1, `docs/contracts/backup/`): workspaces and settings,
   study history, flashcards and decks, vacation periods and limits (all plugin rows, user-global ones
-  included), word edits, your own sentences, library books with bookmarks and highlights, plugin switches
+  included), word edits, personal notes, your own sentences, library books with bookmarks and highlights, plugin switches
   and your time zone history. The link is a one-time ticket valid 60 s; six downloads per hour.
 - The download never holds your password, email, sessions, two-factor secrets and recovery codes, AI keys,
   invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo drafts, deleted rows, or dictionary
@@ -278,7 +290,7 @@ Two kinds, both in the app (issue [#61](https://github.com/Elaktrato/qinqin/issu
   `/data/backups/pre-restore/<id>/` (newest only, kept 7 days; the app links to it). Your other devices
   are signed out and reload; your sign-in, password and two-factor setup are never touched.
 - Words are matched by dictionary identity, not by internal id, so a backup restores onto another server.
-  Cards, reviews, edits and sentences of words this server does not have are dropped, never guessed: the
+  Cards, reviews, edits, notes and sentences of words this server does not have are dropped, never guessed: the
   report lists them and you must tick "drop them". Installing the dictionary and restoring again brings
   them back. A restore holds the database write lock for its whole transaction: **it blocks every other
   write on the server for about 30 seconds per million study events**, so other users' saves wait (and
@@ -1191,7 +1203,9 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/audio/clips/{file}` | Signed-in. One stored clip, `file` being `<sha256>.<opus\|ogg\|mp3>` exactly as in a clip's `url`; Range and conditional requests work, served `private, max-age=31536000, immutable` with `nosniff`. Any other name, or a clip no installed pack references under that extension, is 404 |
 | `GET /api/audio-packs` | The installed audio packs with `license`, `attribution`, `notice`, `language` and `clipCount` (the Sources page lists them) |
 | `GET /api/audio-packs/{id}/credits?offset=&limit=` | The per-recording credits of a pack (`{total, offset, limit, clips: [{kind, form, reading, license, attribution, source}]}` (`reading` is the stored match key: hiragana for Japanese, numbered pinyin such as `ni3hao3` for Chinese; empty for a word clip without a reading), text only, `limit` up to 500, default 100); unknown pack 404 |
-| `GET /api/frequency-packs` | The installed frequency packs in priority order, with `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
+| `GET /api/frequency-packs` | The installed frequency packs in priority order, with `packId` (the manifest id), `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
+| `GET /api/frequency-packs/{id}/top?size=500\|1000\|2000` | Signed-in. A starter deck: `{packId, name, size, entries}` with the entry base fields and the `rank` of each word, in rank order; computed from the installed pack (resolved once per pack content), shared data with no overlay. 404 for an unknown or uninstalled pack, 400 for another size |
+| `POST /api/entries/frequency-ranks` `{language, ids}` | Signed-in. Each entry's rank in the language's first frequency pack: `{pack: {id, packId, name, license, attribution} \| null, ranks: [{id, rank}]}` in request order, entries without data omitted; 1 to 500 ids (400 otherwise, 400 without `language`), body up to 16 KiB (413) |
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
