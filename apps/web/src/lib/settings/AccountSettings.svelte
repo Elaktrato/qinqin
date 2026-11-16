@@ -23,6 +23,7 @@
 		type SessionDto
 	} from '$lib/account/sessionsView';
 	import { loadMe, logout, user } from '$lib/auth';
+	import { clearPending } from '$lib/study/events';
 
 	let current = $state('');
 	let next = $state('');
@@ -322,6 +323,8 @@
 		onclose={() => (deleting = false)}
 		ondone={() => {
 			deleting = false;
+			// The account is gone: its unsent reviews can never be sent.
+			if ($user) clearPending($user.id);
 			logout();
 		}}
 	/>

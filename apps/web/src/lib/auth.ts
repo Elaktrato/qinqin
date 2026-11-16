@@ -7,6 +7,7 @@ import { hasSession, stepFor, type LoginStep, type MfaChallenge } from './accoun
 import { emailLoginVerify, mfaStep, type LoginBody } from './api/mfa';
 import { clearStudyDay } from './time/zone';
 import { setOutboxUser } from './study/outboxUser';
+import { cleanupPartitions, ownPartition } from './pwa/partitions';
 import {
 	api,
 	clearToken,
@@ -83,6 +84,9 @@ export async function loadMe(known?: string): Promise<User | null> {
 
 	const me = await api<User>('/api/auth/me');
 	auth.set({ token: stored, user: me });
+	// Offline copies of any other credential (another user on this device, an
+	// earlier login of this one) are not this session's: remove them.
+	void ownPartition(stored).then((own) => cleanupPartitions(undefined, own), () => undefined);
 	return me;
 }
 
@@ -186,6 +190,8 @@ export function logout(): void {
 		api('/api/auth/logout', { method: 'POST', body: {} }).catch(() => undefined);
 	}
 	clearToken();
+	// Offline API copies belong to the session that just ended.
+	void cleanupPartitions(undefined, null);
 	// Recordings fetched for this user must not outlive the session.
 	clearClipCache();
 	clearAudioCache();

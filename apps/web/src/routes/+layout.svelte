@@ -9,7 +9,7 @@
 	import { iconFor } from '$lib/components/navIcons';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
-	import { auth, loadMe, logout, restriction, user } from '$lib/auth';
+	import { auth, loadMe, restriction, user } from '$lib/auth';
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
@@ -24,6 +24,9 @@
 		routeAccess
 	} from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
+	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
+	import { requestSignOut } from '$lib/account/signOut';
+	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import {
 		load as loadWorkspaces,
@@ -220,7 +223,7 @@
 					{#if $user}
 						<span class="username">{$user.username}</span>
 					{/if}
-					<button type="button" class="sign-out" title="Sign out" onclick={logout}
+					<button type="button" class="sign-out" title="Sign out" onclick={() => void requestSignOut()}
 						><NavIcon name={iconFor('signout')} size={18} /><span class="label">Sign out</span
 						></button
 					>
@@ -263,6 +266,8 @@
 				</p>
 			{/if}
 		</div>
+
+		{#if $logoutPrompt !== null}<LogoutDialog />{/if}
 
 		<div class="content" id="main-content" tabindex="-1">
 			{#if signedIn && !restricted && noWorkspaces}
