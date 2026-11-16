@@ -44,7 +44,7 @@ func writeUserError(w http.ResponseWriter, err error) bool {
 // password_required (nothing counted), wrong is 403 wrong_password through
 // the reauth limiter, which a right password refunds. Then, for an
 // administrator with an authenticator, a current authenticator or unused
-// recovery code (403 code_invalid through the per-user code budget). An
+// recovery code (403 code_invalid through its own per-user "reauth-code" budget, separate from the sign-in code budget). An
 // administrator whose only second step is the emailed code is asked for the
 // password alone (sending a code here would make the mailbox the proof).
 // False: a response was written.
@@ -57,7 +57,7 @@ func (s *server) requireAdminReauth(w http.ResponseWriter, r *http.Request, admi
 		writeInternal(w, r)
 		return false
 	}
-	return !has || s.secondFactorOK(w, r, adminID, code)
+	return !has || s.adminReauthCodeOK(w, r, adminID, code)
 }
 
 // requireAdminPassword is the password step of requireAdminReauth; nothing

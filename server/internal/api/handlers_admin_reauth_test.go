@@ -239,3 +239,29 @@ func TestTighteningAdminChangesNeedNoReauth(t *testing.T) {
 		}
 	}
 }
+
+// Wrong re-authentication codes have their own budget: they cannot lock the
+// administrator out of signing in (the sign-in code budget is untouched), and
+// they are still limited.
+func TestWrongReauthCodesDoNotSpendTheSignInCodeBudget(t *testing.T) {
+	e := newMailEnv(t, mailOpts{configure: true})
+	secret, _ := e.enrolTOTP(t, e.owner, "secret-pass-owner")
+	e.clk.advance(31 * time.Second)
+	registerUser(t, e.ts.URL, "bobby", e.owner)
+	path := "/api/admin/users/" + userIDOf(t, e, "bobby") + "/reset-link"
+	for i := 0; i < 10; i++ {
+		if r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner", "code": "000000"}); r.StatusCode != 403 {
+			t.Fatalf("wrong code %d = %d", i+1, r.StatusCode)
+		}
+	}
+	if r := doJSON(t, "POST", e.ts.URL, path, e.owner, map[string]any{"currentPassword": "secret-pass-owner", "code": "000000"}); r.StatusCode != 429 {
+		t.Errorf("11th wrong reauth code = %d, want 429", r.StatusCode)
+	}
+	st, body := e.loginAs(t, "owner")
+	if st != 200 || body["status"] != "mfa_required" {
+		t.Fatalf("login = %d %v", st, body)
+	}
+	if st, body := e.mfaStep(t, body["challenge"].(string), "totp", e.code(secret, 0)); st != 200 || body["status"] != "ok" {
+		t.Errorf("sign-in after wrong reauth codes = %d %v", st, body)
+	}
+}
