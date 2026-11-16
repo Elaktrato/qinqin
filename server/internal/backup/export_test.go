@@ -7,6 +7,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -16,6 +17,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 var testMeta = Meta{AppVersion: "0.3.0", SchemaVersion: "035_user_time_zones", Now: time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)}
@@ -344,4 +348,74 @@ func TestExportTypedFamilyLeftovers(t *testing.T) {
 	if c.PluginData != man.Counts["pluginData"] || c.PluginData != 6 || c.Cards != 3 {
 		t.Errorf("CurrentCounts %+v, export counts %v", c, man.Counts)
 	}
+}
+
+// Every typed study family travels as its legacy qinqin-flashcards row
+// (rows.ToLegacy): key, data, version, updatedAt and modifiedAt of the
+// typed row; the archive opens (no duplicate keys) and stays format v1.
+func TestExportEveryTypedFamilyAsItsLegacyRow(t *testing.T) {
+	w := newWorld(t)
+	uid := w.AliceUID
+	legacy := map[string]string{
+		"deck:d-1":         `{"id":"d-1","name":"Words","createdAt":"2026-11-01T00:00:00Z","source":{"type":"frequency","packId":"zh-freq","size":500}}`,
+		"deckcfg:d-1":      `{"deckId":"d-1","cardTypes":["reverse"],"newOrder":{"by":"level","packId":"hsk"},"x-keep":1}`,
+		"limits:workspace": `{"version":1,"new":{"limit":10},"reviews":{"limit":null}}`,
+		"limits:deck:d-1":  `{"version":1,"new":{"limit":0}}`,
+		"fsrs:set:s-1":     `{"id":"s-1","w":[0.2,1.2,3.1,15.6,7.2,0.5,1.4,0.005,1.5,0.1,1,1.9,0.1,0.3,2.3,0.2,3,0.5,0.6,0.1,0.5],"createdAt":"2026-11-01T00:00:00Z","source":"optimized","labelled":120,"logLoss":0.31,"baselineLogLoss":0.35}`,
+		"fsrs:active":      `{"setId":"s-1","changedAt":"2026-11-02T00:00:00Z"}`,
+	}
+	want := map[string]rows.Row{}
+	for key, data := range legacy {
+		r, err := rows.FromLegacy(key, json.RawMessage(data))
+		if err != nil {
+			t.Fatalf("%s: %v", key, err)
+		}
+		r.M().WorkspaceID = w.Alice.WS2
+		if err := study.InsertStored(context.Background(), w.DB, uid, r, 7, "2026-11-12T10:00:00Z", "2026-11-12T09:59:58Z", nil); err != nil {
+			t.Fatal(err)
+		}
+		r.M().ModifiedAt = time.Date(2026, 11, 12, 9, 59, 58, 0, time.UTC) // what ToLegacy writes into deckcfg
+		want[key] = r
+	}
+	data, man := exportBytes(t, w, uid)
+	if man.FormatVersion != 1 {
+		t.Errorf("formatVersion %d", man.FormatVersion)
+	}
+	files, _ := unzipAll(t, data)
+	got := map[string]PluginRow{}
+	for _, l := range lines(files[PartName(NamePluginData, 1)]) {
+		var r PluginRow
+		strictDecode(t, []byte(l), &r)
+		if r.WorkspaceID != nil && *r.WorkspaceID == w.Alice.WS2 {
+			got[r.Key] = r
+		}
+	}
+	for key, r := range want {
+		g, ok := got[key]
+		if !ok {
+			t.Errorf("%s not exported", key)
+			continue
+		}
+		wantKey, wantData := rows.ToLegacy(r)
+		var a, b any
+		json.Unmarshal(g.Data, &a)
+		json.Unmarshal(wantData, &b)
+		if wantKey != key || fmt.Sprint(a) != fmt.Sprint(b) || g.PluginID != FlashcardsPlugin || g.Version != 7 ||
+			g.UpdatedAt != "2026-11-12T10:00:00Z" || g.ModifiedAt == nil || *g.ModifiedAt != "2026-11-12T09:59:58Z" {
+			t.Errorf("%s exported %+v %s, want %s", key, g, g.Data, wantData)
+		}
+	}
+	// deckcfg's inner updatedAt is the row's edit time; unknown members are kept.
+	var cfg map[string]any
+	json.Unmarshal(got["deckcfg:d-1"].Data, &cfg)
+	if cfg["updatedAt"] != "2026-11-12T09:59:58Z" || cfg["x-keep"] != float64(1) {
+		t.Errorf("deckcfg data %s", got["deckcfg:d-1"].Data)
+	}
+	p := filepath.Join(t.TempDir(), "a.zip")
+	os.WriteFile(p, data, 0o644)
+	a, err := Open(p)
+	if err != nil {
+		t.Fatalf("the archive does not open: %v", err)
+	}
+	a.Close()
 }

@@ -689,3 +689,27 @@ deviations with reasons, the `sample-v1` change, what was not verified).
 - Gate: `gofmt -l .` empty; `go vet` + `go test -count=1 -p 2 ./internal/library/... ./internal/api
   ./internal/backup ./internal/auth` exit 0 (all ok, first run stopped at a vet error in my test, fixed);
   `gen-api-docs --check` exit 0; web `contractsDocs` + `wikiDocs` passed.
+
+#### A12 — backup export: typed rows as v1 legacy rows
+
+- The implementation is the first builder's WIP in `23758a5` (`backup/export.go` `writePluginData`:
+  keyed plugin rows, then readable unshadowed leftovers (`study.ReadableLeftover`), then every live typed
+  row through `rows.ToLegacy` with its `version`, `updatedAt`, `modifiedAt`, card refs noted;
+  `backup/plan.go` `CurrentCounts` counts the same rows; `study.ForEach`, `study.LegacyKeySQL`).
+  Verified test-first after the fact: with `export.go` and `plan.go` put back to their `3035232` (pre-WIP)
+  versions, the WIP's tests and the new one fail (`TestWriteUserLayoutAndContent`,
+  `TestExportTypedFamilyLeftovers`, 7 plan/restore/notes tests whose seeds are typed now, and the new
+  `TestExportEveryTypedFamilyAsItsLegacyRow` with all six keys "not exported"); with the WIP code they
+  pass. The files were restored byte for byte (`git diff --quiet HEAD` checked).
+- New test `TestExportEveryTypedFamilyAsItsLegacyRow`: one row of each non-card family (deck with a
+  frequency source, deckcfg with `newOrder` and an unknown member, both limits rows, an FSRS set with
+  every optional number, `fsrs:active`) exports as its `ToLegacy` row with version 7 and both stamps;
+  deckcfg's inner `updatedAt` = the row's `modified_at`; the archive opens; `formatVersion` 1.
+- Ruling (kept from the WIP): a typed-family `plugin_data` row is exported only when it is still a
+  readable study row whose key no typed row (live or tombstoned) holds — why: the spec forbids exporting
+  unreadable leftovers (duplicate keys would make the archive invalid, and no client reads them), while a
+  readable one (only possible from an older server's write) is user data — cost if wrong: such a row is
+  restored as a typed row (A13) instead of staying a leftover.
+- Gate: `gofmt -l .` empty; `go vet` + `go test -count=1 -p 2 ./internal/backup ./internal/api
+  ./internal/study/...` exit 0 (all ok).
+- Not verified here: that a v0.4 archive restores on a v0.3.0 server (plan C2, real-app step 6).
