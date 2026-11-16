@@ -327,5 +327,97 @@ implementers in parallel; never two full suites at once.
 
 ## Execution record
 
-(empty — filled by the builder: commits per task, test-first deviations, mutation checks, real-app check
-results, what was not verified)
+Built 2026-11-16 by one implementer, inline (no subagents, no independent review wave yet).
+
+**Start.** `feature/v0.3.0-stretch` merged into the branch (`4c9bb32`, no conflicts): #77 notes
+(`backup.CorePlugin` branch, invalid `note:` rows dropped and counted), #68 unknown words
+(`familiarity`/`KnownIndex`, "I know this", `known:` rows, null-workspace marks dropped), #67, #75, #71.
+`npm ci` once. The route table has no `token` field (personal access tokens #83 not merged when the build
+started), so nothing to do for tokens; the new route is a plain `accUser` row.
+
+**Adaptations to the merged code (Rulings).**
+
+- Ruling: an unparseable `lookups` row (not a version 1 object, a JSON string holding one is decoded first)
+  **and a `lookups` row without a workspace** are dropped on restore and counted in `droppedRows` — the same
+  strictness #77/#68 got after review (invalid `note:` / null-workspace `known:` dropped) — cost: a corrupt
+  or misplaced history is lost.
+- Ruling: the restore branch sits before the `CorePlugin` note branch (`isLookupsRow`), so `note:` handling
+  is untouched; the sample archive's note test now selects `key LIKE 'note:%'` because the sample carries a
+  `lookups` row too.
+- Ruling: the page's "No card / In study / Known" and the prompt use #68's `familiarity` with the full
+  `KnownIndex` (cards replayed as the reader does, `loadStudyHistory` + `scheduleIndex`), not just "has a
+  card"; add uses #68's `addWords` (the decks view's idempotent `planAddToDeck`).
+- Ruling: **the service worker never saves the lookup rows** (`classify.ts`: `qinqin-core` key routes
+  `lookup*` and list reads whose prefix can match them are `bypass`), and Clear/Remove delete the current
+  credential's saved copies that can still hold them (whole-account pulls, event logs, `qinqin-core` data)
+  — "nothing in browser storage" covers Cache Storage too — cost: those offline copies are fetched again on
+  the next page that needs them.
+- Ruling: timestamps are case-sensitive RFC 3339 with a real calendar date on the web as in Go (fixture
+  cases "a lowercase t", "30 February"); the web checks days per month without `Date.UTC` (UTC guard).
+- Ruling: source counts are clamped to 1 000 000 like `count` (fixture cases), so a merge can never grow a
+  member without bound.
+- Ruling: the realistic 500-item row is 78.5 KB (limit 80 000 in the fixture); 500 items at the field maxima
+  are about 103 KB (limit 110 000), both well inside the 256 KiB value cap. The spec's "about 65 KB" was low.
+- Ruling: the dedupe compares `|at − lastAt| < 10 min` (a hit older than the stored `lastAt` outside the
+  window counts but does not move `lastAt`; its book is appended), exactly 10 minutes counts again.
+- The recorder's per-tab singleton `lookupRecorder()` lives in `store.ts` (not `recorder.ts`) so the
+  recorder class stays free of I/O imports; sign-out and a 401 call `resetLookupRecorder()` (`auth.ts`).
+- `recorder.test.ts` is `recorder.dom.test.ts` (it needs `document` and `Storage`).
+- The popup hint reads `lookupRecorder().countOf` for the root popup's first result (`first` prop through
+  `EntryCard`); the book loads the copy once (`load(ws)` on open).
+
+**Commits (one per task, plus one fix).**
+
+| Task | Commit |
+| --- | --- |
+| merge | `4c9bb32` Merge feature/v0.3.0-stretch |
+| 1 | `27d98c4` docs(contracts): lookup history rows and rules |
+| 2 | `b2e724d` feat(lookups): lookup history rules |
+| 3 | `93e2bec` feat(lookups): buffered recorder and hover dwell |
+| 4 | `adacd14` feat(lookups): history store (also the `classify.ts` bypass) |
+| 5 | `71fa74b` feat(events): delete a workspace's lookup events |
+| 6 | `aa0b61a` feat(api): delete lookup events of a workspace |
+| 8 | `192d590` feat(reader): record lookups in the history |
+| 7 | `6e95617` feat(backup): remap lookup history on restore |
+| 9 | `45e5336` feat(search): record opened results instead of queries |
+| 10 | `e7a18c6` feat(lookups): lookup history page (also the case-sensitive timestamp cases, a typed mock in the Task 8 test) |
+| 11 | `c84c6d5` feat(reader): prompt to add often looked-up words |
+| 12 | `1cf80c9` docs(lookups): wiki and README for lookup history |
+| fix | `517aaf1` fix(lookups): calendar check without UTC date calls, hint after its state |
+| 12 | this commit: docs(lookups): execution record |
+
+**Test-first.** Every task's tests were run and seen failing first (module missing, 404 for the unrouted
+route, remap cases failing, the search/page/popup assertions failing), except: `pageData.test.ts` (Task 10)
+was written in the same step as `pageData.ts` and only seen passing; the `sink.test.ts` source guards and
+`sink.ts` failed first, then passed. The fix commit came from the full gates (`svelte-check`: the hint's
+`$derived` read `inStudy`/`marked` before their declaration; the UTC guard test flagged `Date.UTC` in
+`lookups.ts`); both were invisible to the targeted vitest runs. No separate mutation runs were made beyond
+watching the new assertions fail before the code existed.
+
+**Gates (final tree).**
+
+- Web: `npm run check` exit 0 (1205 files, 0 errors, 0 warnings); `npm test` exit 0 (357 files, 5609 tests);
+  `npm run build` exit 0; Node 26.13.1 `npx vitest run` exit 0 (357 files, 5609 tests).
+- Go, one full run (proxy variables unset, under the lock): `gofmt -l` printed nothing, `go vet ./...` clean,
+  `go test ./...`: 37 packages ok, 1 FAIL `internal/ai` with exactly `TestHostnameResolvingToEmbeddedFormIsRefused`
+  (no IPv6 sockets here, the known environment failure). Targeted gates per Go task (`./internal/events`,
+  `./internal/backup`, `./internal/api`) were green.
+
+**Real-app check (API only, no browser).** Scratch copy built with `go build ./cmd/qinqin`; server A seeded
+with cedict, server B with es-demo first (4 entries) then cedict, so B's ids differ (马 117113 → 117117);
+users via `adduser` with the password from the environment; served on 127.0.0.1:18731 and :18732. A Python
+script (`python3 -I`, 45 checks, all passed): alice's zh workspace, an uploaded EPUB, an old-style `lookup`
+and a `review` event, a 3-item `lookups` row (one with the book) and a user-global `lookupcfg
+{record:false}`; bob: GET/PUT of alice's `lookups` → 404, `DELETE /api/events/lookups` with her workspace →
+404, no token → 401, alice's events unchanged; export: the row in `plugin-data`, its three entries in
+`refs/entries.json`, every manifest SHA-256 correct; restore onto B (a book uploaded on B first): items carry
+B's entry ids in order, the book id follows the restored book (1 → 2); clear on A: PUT of the cleared row,
+`DELETE` → `{"deleted":1}`, the review event remains, the row holds no item, the pull has the live cleared row
+with none of the old ids, and the SQLite file has one live cleared row and no `lookup` event. Both servers
+were killed and the scratch copy and data directories deleted.
+
+**Not verified.** The hover dwell's feel and the popup flows in a real browser (jsdom only); the
+`visibilitychange` flush in real browsers; two real devices racing a flush against a Clear (only the pure
+`staleAfterClear` and the recorder's read-before-write are tested); the service worker's actual Cache
+Storage contents in a browser (the classify rule and `forgetOfflineLookups` are unit-tested with fakes);
+Android. No independent review has been run on this branch.
