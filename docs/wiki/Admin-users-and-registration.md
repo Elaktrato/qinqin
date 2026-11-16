@@ -20,8 +20,9 @@ Create a link with 1 to 100 uses, an expiry of 1, 7, 30 or 90 days or none, and 
 
 - **Create a user.** The new user gets a temporary password and must choose their own at first sign-in; their session can do nothing else until then.
 - **Reset link.** A row action; shown once, valid 24 hours by default (1 to 168), usable once. Using it sets the password, signs the person out everywhere and signs them in on that device. You can revoke a pending link.
-- **Disable, enable, make administrator, reset two-step sign-in, end sessions.** Disabling deletes the account's sessions; re-enabling does not bring them back.
-- **Delete a user.** A preview lists what goes (the same as when users delete themselves). Deleting another user, issuing a reset link and making someone an administrator ask for your own password again.
+- **Disable, enable, make administrator, end sessions.** Disabling deletes the account's sessions; re-enabling does not bring them back.
+- **Reset two-step sign-in.** For someone who lost their authenticator and recovery codes. The row action appears only for another user who has a second step (an authenticator app or emailed codes); your own are in Settings, Account. A dialog says what happens: their authenticator app and all of its recovery codes are removed, emailed codes are turned off, they are signed out on every device and their personal access tokens are revoked. They then sign in with the password alone, or set up a second step again if the server requires one. It asks for your own password and, if you have an authenticator, your authenticator or recovery code. Make sure the request really comes from them.
+- **Delete a user.** A preview lists what goes (the same as when users delete themselves). Deleting another user, issuing a reset link, making someone an administrator and resetting someone's two-step sign-in ask for your own password again.
 - The **last active administrator** cannot be demoted, disabled or deleted; the server enforces this even if two admins act at once.
 
 Disabled accounts answer `account_disabled` when the right password is given, so the person knows why; a wrong password still gets the usual 401.

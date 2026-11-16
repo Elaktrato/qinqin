@@ -21,7 +21,7 @@ In Admin, Security an administrator can **require two-step sign-in for everyone*
 
 People whose only second step is an emailed code are protected by their mailbox alone, and cannot sign in while email is down (the sign-in answers 503; Admin, Email says how many people are affected). Suggest an authenticator app to them. Changing an email address needs the authenticator code too.
 
-Locked-out users: a recovery code, an administrator's "reset two-factor" (Admin, Users), or `qinqin recover --username NAME --reset-mfa`.
+Locked-out users: a recovery code, an administrator's **Reset two-step sign-in** (Admin, Users; see [Users, registration and invites](Admin-users-and-registration)), or `qinqin recover --username NAME --reset-mfa`.
 
 ## Passwords, sessions and tokens
 
