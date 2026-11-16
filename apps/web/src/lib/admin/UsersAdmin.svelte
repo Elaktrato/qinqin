@@ -18,7 +18,7 @@
 	import { resetNotice, type MfaFactors } from './mfaResetView';
 	import ReauthFields from './ReauthFields.svelte';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady, type Reauth } from './reauth';
-	import { NEEDS_PASSWORD, generateTempPassword, userRows, type UserActionId } from './usersView';
+	import { actionNeedsReauth, generateTempPassword, userRows, type UserActionId } from './usersView';
 
 	let users = $state<AdminUserDto[]>([]);
 	let loaded = $state(false);
@@ -136,7 +136,8 @@
 			resettingMfa = { id: row.id, username: row.username, mfa };
 			return;
 		}
-		if (NEEDS_PASSWORD.has(id) && !reauth) {
+		const target = users.find((u) => u.id === row.id);
+		if (actionNeedsReauth(id, { admin: !!target?.admin, self: row.id === $me?.id }) && !reauth) {
 			askPassword = { id: row.id, username: row.username, action: id };
 			ownPassword = ownCode = '';
 			error = '';
@@ -153,10 +154,10 @@
 					await patchUser(row.id, { admin: true, ...reauth });
 					break;
 				case 'removeAdmin':
-					await patchUser(row.id, { admin: false });
+					await patchUser(row.id, { admin: false, ...reauth });
 					break;
 				case 'disable':
-					await patchUser(row.id, { disabled: true });
+					await patchUser(row.id, { disabled: true, ...reauth });
 					break;
 				case 'enable':
 					await patchUser(row.id, { disabled: false });

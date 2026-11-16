@@ -1,8 +1,38 @@
 import type { AdminUserDto } from '$lib/api/adminUsers';
 import { hasSecondStep } from './mfaResetView';
+import { userPatchNeedsReauth, type UserPatchChange } from './adminReauthRules';
 
-/** Actions that ask the acting administrator for their own password (and code, with an authenticator) first. */
-export const NEEDS_PASSWORD: ReadonlySet<UserActionId> = new Set(['makeAdmin', 'resetLink', 'delete']);
+/** Actions that always ask the acting administrator for their own password (and code, with an authenticator) first. */
+const ALWAYS_REAUTH: ReadonlySet<UserActionId> = new Set(['makeAdmin', 'resetLink', 'delete']);
+
+/** The PATCH a row action sends (none for the other actions). */
+export function actionPatch(id: UserActionId): UserPatchChange | null {
+	switch (id) {
+		case 'makeAdmin':
+			return { admin: true };
+		case 'removeAdmin':
+			return { admin: false };
+		case 'disable':
+			return { disabled: true };
+		case 'enable':
+			return { disabled: false };
+		case 'requirePasswordChange':
+			return { mustChangePassword: true };
+		default:
+			return null;
+	}
+}
+
+/**
+ * Whether a row action asks for re-authentication first, by the server's
+ * rule (docs/contracts/auth/admin-reauth.json). The two-step reset has its
+ * own dialog with the same fields.
+ */
+export function actionNeedsReauth(id: UserActionId, target: { admin: boolean; self: boolean }): boolean {
+	if (ALWAYS_REAUTH.has(id)) return true;
+	const p = actionPatch(id);
+	return p !== null && userPatchNeedsReauth(target.admin, target.self, p);
+}
 
 export const LAST_ADMIN_REASON = 'The last administrator cannot be removed.';
 

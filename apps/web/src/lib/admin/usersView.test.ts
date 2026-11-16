@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AdminUserDto } from '$lib/api/adminUsers';
-import { LAST_ADMIN_REASON, NEEDS_PASSWORD, generateTempPassword, lastSeenLabel, userRows } from './usersView';
+import { LAST_ADMIN_REASON, actionNeedsReauth, generateTempPassword, lastSeenLabel, userRows } from './usersView';
 
 const u = (id: number, o: Partial<AdminUserDto> = {}): AdminUserDto => ({
 	id,
@@ -105,7 +105,20 @@ describe('generateTempPassword', () => {
 
 describe('password-gated actions', () => {
 	it('names exactly the sensitive ones and offers revoking a pending link', () => {
-		expect([...NEEDS_PASSWORD].sort()).toEqual(['delete', 'makeAdmin', 'resetLink']);
+		const admin = { admin: true, self: false };
+		const plain = { admin: false, self: false };
+		const own = { admin: true, self: true };
+		for (const id of ['makeAdmin', 'resetLink', 'delete'] as const) expect(actionNeedsReauth(id, plain)).toBe(true);
+		// taking another administrator out of the way re-authenticates too
+		expect(actionNeedsReauth('removeAdmin', admin)).toBe(true);
+		expect(actionNeedsReauth('disable', admin)).toBe(true);
+		expect(actionNeedsReauth('removeAdmin', own)).toBe(false);
+		expect(actionNeedsReauth('disable', plain)).toBe(false);
+		for (const id of ['enable', 'requirePasswordChange', 'revokeResetLink', 'signOutEverywhere'] as const) {
+			expect(actionNeedsReauth(id, admin)).toBe(false);
+		}
+		// the two-step reset has its own dialog with the same fields
+		expect(actionNeedsReauth('resetMfa', plain)).toBe(false);
 		const rows = userRows([u(1, { admin: true }), u(2)], 1, now);
 		expect(rows[1].actions.map((a) => a.id)).toContain('revokeResetLink');
 	});

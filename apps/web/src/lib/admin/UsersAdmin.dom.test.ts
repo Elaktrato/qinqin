@@ -388,3 +388,40 @@ describe('UsersAdmin: a stale copy of the signed-in administrator', () => {
 		await waitFor(() => expect(adminUsers.resetUserMfa).toHaveBeenLastCalledWith(2, { currentPassword: 'pw-pw', code: '123456' }));
 	});
 });
+
+describe('UsersAdmin: taking another administrator out of the way', () => {
+	beforeEach(() => {
+		auth.set({
+			token: 't',
+			user: { id: 1, username: 'user1', admin: true, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't', mfa: { totp: false, email: false, recoveryCodesLeft: 0 } }
+		});
+		vi.mocked(adminUsers.listUsers).mockResolvedValue([dto(1, { admin: true }), dto(2, { admin: true }), dto(3)] as never);
+		vi.mocked(adminUsers.patchUser).mockResolvedValue(dto(2) as never);
+	});
+	async function act(user: string, name: string): Promise<void> {
+		render(UsersAdmin);
+		await screen.findByRole('table', { name: 'Users' });
+		const row = screen.getByRole('row', { name: new RegExp(user) });
+		await fireEvent.click(within(row).getByText(`Actions for ${user}`));
+		await fireEvent.click(within(row).getByRole('button', { name }));
+	}
+	it('asks for the password before demoting another administrator', async () => {
+		await act('user2', 'Remove admin');
+		expect(adminUsers.patchUser).not.toHaveBeenCalled();
+		await fireEvent.input(await screen.findByLabelText(/Your own password, to confirm/), { target: { value: 'pw-pw' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+		await waitFor(() => expect(adminUsers.patchUser).toHaveBeenCalledWith(2, { admin: false, currentPassword: 'pw-pw' }));
+	});
+	it('asks for the password before disabling another administrator', async () => {
+		await act('user2', 'Disable');
+		expect(adminUsers.patchUser).not.toHaveBeenCalled();
+		await fireEvent.input(await screen.findByLabelText(/Your own password, to confirm/), { target: { value: 'pw-pw' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+		await waitFor(() => expect(adminUsers.patchUser).toHaveBeenCalledWith(2, { disabled: true, currentPassword: 'pw-pw' }));
+	});
+	it('disables a plain user at once', async () => {
+		await act('user3', 'Disable');
+		await waitFor(() => expect(adminUsers.patchUser).toHaveBeenCalledWith(3, { disabled: true }));
+		expect(screen.queryByLabelText(/Your own password, to confirm/)).toBeNull();
+	});
+});

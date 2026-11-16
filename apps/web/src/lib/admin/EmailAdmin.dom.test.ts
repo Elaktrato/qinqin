@@ -2,6 +2,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/sv
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
+const me = await vi.hoisted(async () => {
+	const { writable } = await import('svelte/store');
+	return writable<unknown>({ username: 'owner', mfa: { totp: false } });
+});
+vi.mock('$lib/auth', () => ({ user: me }));
+
 vi.mock('$lib/api/adminSettings', () => ({ getSmtp: vi.fn(), putSmtp: vi.fn(), deleteSmtp: vi.fn(), testSmtp: vi.fn() }));
 import * as api from '$lib/api/adminSettings';
 import EmailAdmin from './EmailAdmin.svelte';
@@ -17,7 +23,8 @@ describe('EmailAdmin', () => {
 		vi.mocked(api.putSmtp).mockResolvedValue(saved() as never);
 		render(EmailAdmin);
 		expect(await screen.findByText('A password is saved.')).toBeTruthy();
-		expect(document.querySelector('input[type=password]')).toBeNull();
+		expect(document.querySelector('input[name=password]')).toBeNull();
+		await fireEvent.input(screen.getByLabelText(/Your own password, to save/), { target: { value: 'my-pw' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		await waitFor(() => expect(api.putSmtp).toHaveBeenCalled());
 		expect('password' in vi.mocked(api.putSmtp).mock.calls[0][0]).toBe(false);
@@ -26,6 +33,7 @@ describe('EmailAdmin', () => {
 		vi.mocked(api.putSmtp).mockResolvedValue(saved({ password: 'none' }) as never);
 		render(EmailAdmin);
 		await fireEvent.click(await screen.findByRole('button', { name: 'Remove' }));
+		await fireEvent.input(screen.getByLabelText(/Your own password, to save/), { target: { value: 'my-pw' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 		await waitFor(() => expect(vi.mocked(api.putSmtp).mock.calls[0][0].password).toBe(''));
 	});
@@ -55,5 +63,44 @@ describe('EmailAdmin', () => {
 		render(EmailAdmin);
 		await screen.findByText('A password is saved.');
 		expect(screen.queryByRole('alert')).toBeNull();
+	});
+});
+
+describe('EmailAdmin: saving and removing re-authenticate', () => {
+	it('sends the own password (and code) with the settings; Save waits for them', async () => {
+		me.set({ username: 'owner', mfa: { totp: true } });
+		vi.mocked(api.putSmtp).mockResolvedValue(saved() as never);
+		render(EmailAdmin);
+		const save = (await screen.findByRole('button', { name: 'Save' })) as HTMLButtonElement;
+		expect(save.disabled).toBe(true);
+		await fireEvent.input(screen.getByLabelText(/Your own password, to save/), { target: { value: 'my-pw' } });
+		expect(save.disabled).toBe(true);
+		const code = screen.getByLabelText(/Authenticator or recovery code/) as HTMLInputElement;
+		expect(code.getAttribute('spellcheck')).toBe('false');
+		await fireEvent.input(code, { target: { value: '123456' } });
+		await fireEvent.click(save);
+		await waitFor(() => expect(api.putSmtp).toHaveBeenCalled());
+		expect(vi.mocked(api.putSmtp).mock.calls[0][0]).toMatchObject({ currentPassword: 'my-pw', code: '123456', host: 'mail.example.org' });
+		me.set({ username: 'owner', mfa: { totp: false } });
+	});
+	it('a wrong own password is said in a fixed sentence and focuses the field', async () => {
+		render(EmailAdmin);
+		const own = (await screen.findByLabelText(/Your own password, to save/)) as HTMLInputElement;
+		await fireEvent.input(own, { target: { value: 'bad' } });
+		vi.mocked(api.putSmtp).mockRejectedValueOnce(new ApiError(403, JSON.stringify({ error: 'wrong_password', message: 'x' })));
+		await fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+		expect((await screen.findByRole('alert')).textContent).toBe('Your password is wrong.');
+		await waitFor(() => expect(document.activeElement).toBe(own));
+		expect(own.value).toBe('');
+	});
+	it('removing asks for the own password and sends it', async () => {
+		vi.mocked(api.deleteSmtp).mockResolvedValue(undefined);
+		render(EmailAdmin);
+		await fireEvent.click(await screen.findByRole('button', { name: 'Remove email setup…' }));
+		const yes = screen.getByRole('button', { name: 'Yes, remove' }) as HTMLButtonElement;
+		expect(yes.disabled).toBe(true);
+		await fireEvent.input(screen.getByLabelText(/Your own password, to remove/), { target: { value: 'my-pw' } });
+		await fireEvent.click(yes);
+		await waitFor(() => expect(api.deleteSmtp).toHaveBeenCalledWith({ currentPassword: 'my-pw' }));
 	});
 });
