@@ -1,4 +1,4 @@
-// The reader plugin's manifest: a page-only plugin, reachable at /p/reader.
+// The reader plugin's manifest: a page-only plugin, reachable at /reader.
 // `sources` credits the text sources it fetches from and the conversion
 // library it bundles; the Sources page lists them under "Plugins".
 import reader from '$builtin/reader.json';

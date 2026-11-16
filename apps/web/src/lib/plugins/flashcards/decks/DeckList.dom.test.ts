@@ -64,8 +64,8 @@ describe('DeckList', () => {
 		expect(screen.getByRole('status').textContent).toContain('Loading');
 		await screen.findByRole('link', { name: 'Verbs' });
 		const general = screen.getByRole('link', { name: 'General' });
-		expect(general.getAttribute('href')).toBe('/p/flashcards/deck/general');
-		expect(screen.getByRole('link', { name: 'Verbs' }).getAttribute('href')).toBe('/p/flashcards/deck/d1');
+		expect(general.getAttribute('href')).toBe('/flashcards/deck/general');
+		expect(screen.getByRole('link', { name: 'Verbs' }).getAttribute('href')).toBe('/flashcards/deck/d1');
 		const row = screen.getByRole('link', { name: 'Verbs' }).closest('li') as HTMLElement;
 		expect(row.textContent).toContain('2 words · 2 cards');
 		expect(within(row).getByText('0 due')).toBeTruthy();
@@ -127,7 +127,7 @@ describe('DeckList', () => {
 		render(DeckList);
 		const row = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
 		expect(within(row).getByRole('link', { name: 'Settings for Verbs' }).getAttribute('href')).toBe(
-			'/p/flashcards/deck/d1/settings'
+			'/flashcards/deck/d1/settings'
 		);
 	});
 

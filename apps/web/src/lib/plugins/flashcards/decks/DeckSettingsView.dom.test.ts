@@ -74,7 +74,7 @@ describe('DeckSettingsView', () => {
 		expect(deleteDeck).not.toHaveBeenCalled();
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete “Greetings”' }));
 		await waitFor(() => expect(deleteDeck).toHaveBeenCalledWith('d1'));
-		await waitFor(() => expect(goto).toHaveBeenCalledWith('/p/flashcards'));
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/flashcards'));
 	});
 
 	it('Cancel closes the confirmation without deleting', async () => {

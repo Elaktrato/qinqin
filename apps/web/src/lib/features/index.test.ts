@@ -18,6 +18,7 @@ describe('core features', () => {
 		]);
 		expect(FLASHCARDS_ID).toBe('qinqin-flashcards');
 		expect(READER_ID).toBe('qinqin-reader');
+		expect(coreFeatures.map((f) => f.href)).toEqual(['/flashcards', '/reader']);
 		expect(webPlugins.map((p) => p.manifest.id)).toEqual(['qinqin-journal', 'qinqin-grammar']);
 	});
 

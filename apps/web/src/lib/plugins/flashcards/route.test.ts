@@ -18,8 +18,8 @@ describe('flashcards route', () => {
 	for (const route of ROUTES) {
 		it(`round-trips ${JSON.stringify(route)}`, () => {
 			const href = flashcardsHref(route);
-			expect(href.startsWith('/p/flashcards')).toBe(true);
-			expect(parseFlashcardsRoute(href.slice('/p/flashcards'.length).replace(/^\//, ''))).toEqual(route);
+			expect(href.startsWith('/flashcards')).toBe(true);
+			expect(parseFlashcardsRoute(href.slice('/flashcards'.length).replace(/^\//, ''))).toEqual(route);
 		});
 	}
 
@@ -50,9 +50,9 @@ describe('flashcards route', () => {
 
 	it('encodes each segment', () => {
 		expect(flashcardsHref({ view: 'system-level', packId: 'hsk-words', level: 'HSK 7–9' })).toBe(
-			'/p/flashcards/system/level/hsk-words/HSK%207%E2%80%939'
+			'/flashcards/system/level/hsk-words/HSK%207%E2%80%939'
 		);
-		expect(flashcardsHref({ view: 'list' })).toBe('/p/flashcards');
+		expect(flashcardsHref({ view: 'list' })).toBe('/flashcards');
 	});
 });
 

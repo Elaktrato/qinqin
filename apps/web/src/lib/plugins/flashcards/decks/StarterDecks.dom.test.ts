@@ -63,7 +63,7 @@ describe('StarterDecks', () => {
 		const links = screen.getAllByRole('link', { name: /^Top / });
 		expect(links.map((a) => a.textContent)).toEqual(['Top 500', 'Top 1000', 'Top 2000']);
 		expect(links[0].getAttribute('href')).toBe(
-			'/p/flashcards/system/frequency/jiten-frequency/500'
+			'/flashcards/system/frequency/jiten-frequency/500'
 		);
 		await waitFor(() => expect(screen.getAllByText('1 of 5 in your decks')).toHaveLength(3));
 		expect(getStarterEntries).toHaveBeenCalledTimes(1);

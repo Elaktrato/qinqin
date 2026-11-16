@@ -142,7 +142,7 @@ describe('StarterDeckDetail', () => {
 		]);
 		expect(pushed[1].data).toMatchObject({ deckId: OWNED, newOrder: { by: 'frequency' } });
 		const open = await screen.findByRole('link', { name: 'Open my copy' });
-		expect(open.getAttribute('href')).toBe(`/p/flashcards/deck/${OWNED}`);
+		expect(open.getAttribute('href')).toBe(`/flashcards/deck/${OWNED}`);
 
 		const before = pushed.length;
 		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));

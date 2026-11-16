@@ -137,7 +137,7 @@ describe('DeckDetail', () => {
 		expect(screen.getByRole('heading', { level: 1, name: 'Verbs' })).toBeTruthy();
 		const header = screen.getByRole('region', { name: 'Verbs numbers' });
 		expect(header.textContent).toContain('3 words');
-		expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/p/flashcards/deck/d1/settings');
+		expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/flashcards/deck/d1/settings');
 		await fireEvent.click(screen.getByRole('button', { name: 'Study' }));
 		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string)).toMatchObject({ mode: 'decks', deckIds: ['d1'] });
 		expect(goto).toHaveBeenCalledWith('/study/session');

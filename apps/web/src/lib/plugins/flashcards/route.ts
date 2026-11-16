@@ -1,4 +1,4 @@
-// Routing inside /p/flashcards: `rest` is what follows the slug.
+// Routing inside /flashcards: `rest` is what follows the slug.
 
 export type FlashcardsRoute =
 	| { view: 'list' }
@@ -58,17 +58,17 @@ const enc = encodeURIComponent;
 export function flashcardsHref(route: FlashcardsRoute): string {
 	switch (route.view) {
 		case 'list':
-			return '/p/flashcards';
+			return '/flashcards';
 		case 'deck':
-			return `/p/flashcards/deck/${enc(route.deckId)}`;
+			return `/flashcards/deck/${enc(route.deckId)}`;
 		case 'settings':
-			return `/p/flashcards/deck/${enc(route.deckId)}/settings`;
+			return `/flashcards/deck/${enc(route.deckId)}/settings`;
 		case 'system-level':
-			return `/p/flashcards/system/level/${enc(route.packId)}/${enc(route.level)}`;
+			return `/flashcards/system/level/${enc(route.packId)}/${enc(route.level)}`;
 		case 'system-plugin':
-			return `/p/flashcards/system/plugin/${enc(route.plugin)}/${enc(route.key)}`;
+			return `/flashcards/system/plugin/${enc(route.plugin)}/${enc(route.key)}`;
 		case 'system-frequency':
-			return `/p/flashcards/system/frequency/${enc(route.packId)}/${route.size}`;
+			return `/flashcards/system/frequency/${enc(route.packId)}/${route.size}`;
 	}
 }
 

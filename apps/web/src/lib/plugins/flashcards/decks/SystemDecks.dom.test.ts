@@ -70,7 +70,7 @@ describe('SystemDecks', () => {
 		expect(getSchemeEntries).toHaveBeenCalledTimes(3);
 		expect(maxActive).toBeLessThanOrEqual(2);
 		expect(screen.getByRole('link', { name: 'HSK 1' }).getAttribute('href')).toBe(
-			'/p/flashcards/system/level/hsk-words/HSK%201'
+			'/flashcards/system/level/hsk-words/HSK%201'
 		);
 	});
 

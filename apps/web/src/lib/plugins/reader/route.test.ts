@@ -40,10 +40,10 @@ describe('parseRoute', () => {
 
 describe('hrefs', () => {
 	it('builds paths', () => {
-		expect(LIBRARY_HREF).toBe('/p/reader');
-		expect(SOURCES_HREF).toBe('/p/reader/sources');
-		expect(bookHref(12)).toBe('/p/reader/book/12/0');
-		expect(bookHref(12, 3)).toBe('/p/reader/book/12/3');
+		expect(LIBRARY_HREF).toBe('/reader');
+		expect(SOURCES_HREF).toBe('/reader/sources');
+		expect(bookHref(12)).toBe('/reader/book/12/0');
+		expect(bookHref(12, 3)).toBe('/reader/book/12/3');
 	});
 });
 

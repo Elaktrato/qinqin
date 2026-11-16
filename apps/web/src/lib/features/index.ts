@@ -27,6 +27,10 @@ export interface CoreFeature {
 	id: string;
 	/** The nav and page title. */
 	title: string;
+	/** What the switched-off notice calls it: "<label> … switched off". */
+	label: string;
+	/** The verb of that notice: `is` or `are`. */
+	verb: 'is' | 'are';
 	/** The URL segment. */
 	slug: string;
 	href: string;
@@ -40,16 +44,20 @@ export const coreFeatures: readonly CoreFeature[] = [
 	{
 		id: FLASHCARDS_ID,
 		title: 'Decks',
+		label: 'Flashcards',
+		verb: 'are',
 		slug: 'flashcards',
-		href: '/p/flashcards',
+		href: '/flashcards',
 		manifest: flashcardsManifest,
 		component: FlashcardsPage
 	},
 	{
 		id: READER_ID,
 		title: 'Reader',
+		label: 'The reader',
+		verb: 'is',
 		slug: 'reader',
-		href: '/p/reader',
+		href: '/reader',
 		manifest: readerManifest,
 		component: ReaderPage
 	}
@@ -71,6 +79,13 @@ export function featureEnabled(id: string, states: readonly PluginInfo[]): boole
  */
 export function featureWidgets(states: readonly PluginInfo[]) {
 	return coreFeatures.flatMap((f) => (stateOf(f.id, states)?.enabled ? (f.manifest.widgets ?? []) : []));
+}
+
+/** featureById: the core feature of a reserved id. */
+export function featureById(id: string): CoreFeature {
+	const feature = coreFeatures.find((f) => f.id === id);
+	if (feature === undefined) throw new Error(`not a core feature: ${id}`);
+	return feature;
 }
 
 /** findFeature resolves a feature by its slug; a switched-off one is undefined. */

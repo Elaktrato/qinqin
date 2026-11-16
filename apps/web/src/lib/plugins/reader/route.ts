@@ -3,8 +3,8 @@ export type ReaderRoute =
 	| { view: 'sources' }
 	| { view: 'book'; id: number; chapter: number };
 
-export const LIBRARY_HREF = '/p/reader';
-export const SOURCES_HREF = '/p/reader/sources';
+export const LIBRARY_HREF = '/reader';
+export const SOURCES_HREF = '/reader/sources';
 
 export function bookHref(id: number, chapter = 0): string {
 	return `${LIBRARY_HREF}/book/${id}/${chapter}`;
@@ -24,7 +24,7 @@ function parseIndex(part: string): number | null {
 	return Number.isSafeInteger(n) ? n : null;
 }
 
-/** Maps the part of the URL after /p/reader to a view; unknown input is the library. */
+/** Maps the part of the URL after /reader to a view; unknown input is the library. */
 export function parseRoute(rest: string): ReaderRoute {
 	const parts = rest.split('/').filter((part) => part !== '');
 	if (parts.length === 0) return library;
