@@ -57,4 +57,12 @@ describe('loadEntryExtras', () => {
 		const out = await loadEntryExtras({ id: 5, kind: 'word', radicalId: 9 }, d);
 		expect(out).toEqual({ chars: [], radicalWritten: '亻' });
 	});
+
+	it('a radical that is its own radical uses its own written form without a second request', async () => {
+		const d = deps();
+		const out = await loadEntryExtras({ id: 9, kind: 'character', radicalId: 9, written: '人' }, d);
+		expect(out.radicalWritten).toBe('人');
+		expect(d.entry).not.toHaveBeenCalled();
+		expect(d.chars).toHaveBeenCalledWith(9);
+	});
 });
