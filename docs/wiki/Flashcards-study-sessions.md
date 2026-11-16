@@ -1,6 +1,6 @@
 # Flashcards: study sessions
 
-Studying is provided by the flashcards plugin. To add a word open any word or character entry and press **Add to study**; the card joins the General deck.
+Flashcards are part of the app (you can switch them off for yourself in [Settings → Features](Settings-tour#features)). To add a word open any word or character entry and press **Add to study**; the card joins the General deck.
 
 ## Starting a session
 
