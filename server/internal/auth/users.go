@@ -592,10 +592,12 @@ func (u *Users) ResetUserMFA(ctx context.Context, actorID, id int64) error {
 	} else if err != nil {
 		return fmt.Errorf("read user: %w", err)
 	}
-	if err := ResetMFA(ctx, tx, id); err != nil {
+	sessions, tokens, err := ResetMFA(ctx, tx, id)
+	if err != nil {
 		return err
 	}
-	if err := Audit(ctx, tx, AuditEvent{Action: "mfa_reset", ActorID: actorID, TargetID: &id}); err != nil {
+	if err := Audit(ctx, tx, AuditEvent{Action: "mfa_reset", ActorID: actorID, TargetID: &id,
+		Detail: map[string]any{"revoked": sessions, "tokens": tokens}}); err != nil {
 		return err
 	}
 	return tx.Commit()

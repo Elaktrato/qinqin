@@ -429,4 +429,10 @@ func TestAdminMFAResetRemovesPendingSetupChallengesAndTokens(t *testing.T) {
 	if r := doJSON(t, "GET", e.ts.URL, "/api/workspaces", tk.Token, nil); r.StatusCode != 401 {
 		t.Errorf("token after reset = %d, want 401", r.StatusCode)
 	}
+	// the audit row says how much was revoked (counts only, never a secret)
+	var detail string
+	e.db.QueryRow(`SELECT detail FROM auth_audit WHERE action = 'mfa_reset'`).Scan(&detail)
+	if detail != `{"revoked":1,"tokens":1}` {
+		t.Errorf("audit detail = %s", detail)
+	}
 }
