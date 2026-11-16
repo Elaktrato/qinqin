@@ -1,5 +1,6 @@
 import { clearAudioCache } from './api/audio';
 import { clearEntryBasesCache } from './api/entryBases';
+import { resetLookupRecorder } from './lookups/store';
 import { clearClipCache } from './audio/source';
 import { derived, get, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
@@ -61,6 +62,8 @@ auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null, $auth.token));
 setUnauthorizedHandler(() => {
 	auth.set({ token: null, user: null });
 	forgetOfflineCopies();
+	// Looked-up words buffered for the lookup history belong to the session that ended.
+	resetLookupRecorder();
 });
 
 // A 403 that names a restriction means the session changed under us (an admin
@@ -242,5 +245,7 @@ export function logout(): void {
 	clearStudyDay();
 	// Entry bases carry this user's own edits.
 	clearEntryBasesCache();
+	// The lookup history's buffer and copies (memory only) belong to this user.
+	resetLookupRecorder();
 	auth.set({ token: null, user: null });
 }

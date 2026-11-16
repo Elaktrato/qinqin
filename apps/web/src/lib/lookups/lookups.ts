@@ -40,7 +40,7 @@ export interface LookupHit {
 
 export type LookupState = 'new' | 'learning' | 'known';
 
-const RFC3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/i;
+const RFC3339 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/;
 
 /** instant of an RFC 3339 timestamp in ms, or null. */
 export function instant(v: unknown): number | null {

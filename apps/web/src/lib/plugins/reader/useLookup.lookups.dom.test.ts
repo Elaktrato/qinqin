@@ -37,13 +37,13 @@ const result = (entryId: number) => ({ entryId, term: 'x', matched: 'x', start: 
 const shown = (ids: number[]): HoverShown => ({ span: { p: 0, start: 0, end: 1 }, text: '马', offset: 0, results: ids.map(result), error: '' });
 
 const mouse = { pointerType: 'mouse' } as PointerEvent;
-let onLookup: ReturnType<typeof vi.fn>;
+let onLookup: ReturnType<typeof vi.fn<(entryId: number, mode: 'hover' | 'selection') => void>>;
 let ctl: LookupController;
 let detach: () => void;
 
 beforeEach(() => {
 	vi.useFakeTimers();
-	onLookup = vi.fn();
+	onLookup = vi.fn<(entryId: number, mode: 'hover' | 'selection') => void>();
 	const container = document.createElement('div');
 	document.body.append(container);
 	ctl = new LookupController({

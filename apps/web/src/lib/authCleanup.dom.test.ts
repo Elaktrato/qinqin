@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeCacheStorage } from './testing/fakeCaches';
 import { auth, loadMe, logout } from './auth';
 import { notifyUnauthorized } from './api/client';
+import { lookupRecorder } from './lookups/store';
 
 let fake: FakeCacheStorage;
 async function seed(): Promise<void> {
@@ -45,5 +46,22 @@ describe('saved API copies follow the session', () => {
 		logout();
 		await vi.waitFor(async () => expect(await empty()).toEqual([]));
 		expect(localStorage.getItem('qinqin.pwa.prepared.1.7')).toBeNull();
+	});
+});
+
+describe('the lookup history recorder follows the session (#72)', () => {
+	it('logout and a 401 drop its buffered lookups and copies', async () => {
+		const r = lookupRecorder();
+		r.note(3, { entryId: 7, source: 'reader' });
+		expect(r.countOf(3, 7)).toBe(1);
+		localStorage.setItem('qinqin.token', 'tok');
+		logout();
+		expect(r.countOf(3, 7)).toBe(0);
+		r.note(3, { entryId: 8, source: 'reader' });
+		localStorage.setItem('qinqin.token', 'tok');
+		notifyUnauthorized();
+		expect(r.countOf(3, 8)).toBe(0);
+		await r.flush();
+		expect(vi.mocked(fetch).mock.calls.some(([u]) => String(u).includes('lookups'))).toBe(false);
 	});
 });

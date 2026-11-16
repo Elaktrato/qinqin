@@ -37,7 +37,8 @@ is decoded first, as the web SDK does for every row) or whose `version` is not t
   - it is an object;
   - `entryId` is an integer ≥ 1 (a JSON number with no fraction; `"12"` and `1.5` are not);
   - `count` is an integer ≥ 1; a count above **1 000 000** is clamped to 1 000 000;
-  - `firstAt` and `lastAt` are RFC 3339 timestamp strings (`YYYY-MM-DDTHH:MM:SS[.fraction](Z|±HH:MM)`).
+  - `firstAt` and `lastAt` are RFC 3339 timestamp strings (`YYYY-MM-DDTHH:MM:SS[.fraction](Z|±HH:MM)`, upper-case
+    `T` and `Z`, a real calendar date and time).
 - `firstAt` later than `lastAt` reads as `firstAt = lastAt`.
 - `sources`: an object; members whose value is not an integer ≥ 0 are dropped, values above 1 000 000 are
   clamped; a missing or non-object `sources` is `{}`. Known keys are `reader`, `lesson`, `search`; other keys are kept and shown nowhere.

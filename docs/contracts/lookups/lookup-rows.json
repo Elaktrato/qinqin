@@ -846,6 +846,104 @@
       }
     },
     {
+      "name": "item with a lowercase t in lastAt is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12t18:30:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "item with lastAt 30 February is skipped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-02-30T10:00:00Z",
+              "sources": {
+                "reader": 2
+              },
+              "books": []
+            },
+            {
+              "entryId": 9,
+              "count": 1,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-10T09:00:00Z",
+              "sources": {
+                "search": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 9,
+            "count": 1,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-10T09:00:00Z",
+            "sources": {
+              "search": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
       "name": "item with item not an object is skipped",
       "op": "rows",
       "input": {
