@@ -132,6 +132,22 @@ describe('radical and part lookup page', () => {
 		expect(within(parts).getByRole('button', { name: '可' })).toBeTruthy();
 	});
 
+	it('chosen parts the picker hides are shown as removable chips', async () => {
+		setUrl('/search/parts?r=85&p=%E5%8F%AF');
+		render(Page);
+		await waitFor(() => expect(cells()).toEqual(['河']));
+		const parts = screen.getByRole('group', { name: 'Parts' });
+		expect(within(parts).queryByRole('button', { name: '可' })).toBeNull();
+		const chosen = screen.getByRole('group', { name: 'Selected' });
+		expect(within(chosen).getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
+			'Remove radical 水 (85)',
+			'Remove part 可'
+		]);
+		await fireEvent.click(within(chosen).getByRole('button', { name: 'Remove part 可' }));
+		expect(page.url.search).toBe('?r=85');
+		await waitFor(() => expect(cells()).toHaveLength(4));
+	});
+
 	it('a typed 氵 selects radical 85; a typed part adds it', async () => {
 		render(Page);
 		const input = await screen.findByLabelText('Type a radical or part');

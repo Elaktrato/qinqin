@@ -76,3 +76,32 @@ export function entryRadicalLinks(written: string, kind: string, radicalWritten:
 	if (own > 0 && radicalChar(own) === written) links.browse = partsHref({ r: own, p: [] });
 	return links;
 }
+
+export interface SelectionChip {
+	key: string;
+	/** visible text */
+	label: string;
+	/** what the chip is, for "Remove <name>" */
+	name: string;
+	/** the selection without this pick */
+	next: Selection;
+}
+
+/**
+ * selectionChips lists the current picks (radical, each part, strokes) as
+ * removable chips, so a pick the pickers do not show (a rare part from a
+ * link, ?p=吾) stays visible and removable.
+ */
+export function selectionChips(sel: Selection): SelectionChip[] {
+	const chips: SelectionChip[] = [];
+	if (sel.r !== undefined) {
+		const c = radicalChar(sel.r);
+		chips.push({ key: 'r', label: c, name: `radical ${c} (${sel.r})`, next: toggleRadical(sel, sel.r) });
+	}
+	for (const x of sel.p) chips.push({ key: `p:${x}`, label: x, name: `part ${x}`, next: togglePart(sel, x) });
+	if (sel.s !== undefined) {
+		const label = strokesLabel(sel.s);
+		chips.push({ key: 's', label, name: label, next: toggleStrokes(sel, sel.s) });
+	}
+	return chips;
+}

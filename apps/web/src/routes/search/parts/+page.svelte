@@ -12,6 +12,7 @@
 	import { primaryLanguage, radicalTable } from '$lib/radicals/kangxi';
 	import { buildIndex, isEmpty, lookup, pickerParts, RESULT_CAP, type Selection } from '$lib/radicals/lookup';
 	import {
+		selectionChips,
 		statusLine,
 		strokesLabel,
 		togglePart,
@@ -116,6 +117,22 @@
 			<button type="submit">Add</button>
 			<button type="button" class="clear" disabled={isEmpty(sel)} onclick={() => go({ p: [] })}>Clear</button>
 		</form>
+
+		{#if !isEmpty(sel)}
+			<div class="chips selected" role="group" aria-label="Selected">
+				{#each selectionChips(sel) as chip (chip.key)}
+					<button
+						type="button"
+						class="chip"
+						lang={glyphLang}
+						aria-label={`Remove ${chip.name}`}
+						onclick={() => go(chip.next)}
+					>
+						{chip.label} <span aria-hidden="true">×</span>
+					</button>
+				{/each}
+			</div>
+		{/if}
 
 		<section aria-labelledby="radicals-heading">
 			<h2 id="radicals-heading">Radical</h2>
@@ -244,6 +261,10 @@
 		background: transparent;
 		color: inherit;
 		cursor: pointer;
+	}
+
+	.selected {
+		margin-top: 0.75rem;
 	}
 
 	.clear:disabled {

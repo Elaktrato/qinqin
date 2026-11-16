@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	entryRadicalLinks,
+	selectionChips,
 	statusLine,
 	strokesLabel,
 	togglePart,
@@ -70,5 +71,17 @@ describe('entryRadicalLinks', () => {
 		expect(entryRadicalLinks('氵', 'character', '')).toEqual({});
 		expect(entryRadicalLinks('他', 'character', '')).toEqual({});
 		expect(entryRadicalLinks('他', 'character', 'x')).toEqual({});
+	});
+});
+
+describe('selectionChips', () => {
+	it('lists the radical, each part and the strokes, each with the selection without it', () => {
+		expect(selectionChips({ r: 85, p: ['口', '吾'], s: 8 })).toEqual([
+			{ key: 'r', label: '水', name: 'radical 水 (85)', next: { p: ['口', '吾'], s: 8 } },
+			{ key: 'p:口', label: '口', name: 'part 口', next: { r: 85, p: ['吾'], s: 8 } },
+			{ key: 'p:吾', label: '吾', name: 'part 吾', next: { r: 85, p: ['口'], s: 8 } },
+			{ key: 's', label: '8 strokes', name: '8 strokes', next: { r: 85, p: ['口', '吾'] } }
+		]);
+		expect(selectionChips({ p: [] })).toEqual([]);
 	});
 });
