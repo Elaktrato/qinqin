@@ -18,7 +18,7 @@ func TestBuiltinManifestsValid(t *testing.T) {
 		events      []string
 	}{
 		{"qinqin-core", []string{}, []string{"owns-data", "write:study-events"}, []string{"session", "view", "lookup"}},
-		{"qinqin-flashcards", []string{"home-widget"}, []string{"owns-data", "read:entries", "read:study-events", "write:study-events"}, []string{"review"}},
+		{"qinqin-flashcards", []string{"home-widget", "page"}, []string{"owns-data", "read:entries", "read:study-events", "write:study-events"}, []string{"review"}},
 		{"qinqin-reader", []string{"page", "home-widget"}, []string{"read:entries", "read:study-events", "write:study-events"}, []string{"read"}},
 		{"qinqin-journal", []string{"page"}, []string{"owns-data", "write:study-events"}, []string{"journal"}},
 		{"qinqin-grammar", []string{"page"}, []string{"owns-data"}, nil},
@@ -39,7 +39,11 @@ func TestBuiltinManifestsValid(t *testing.T) {
 		for _, e := range m.Events {
 			events = append(events, e.Type)
 		}
-		if m.ID != w.id || m.Version != "1.1" || m.SDK != 1 || m.Type != "feature" ||
+		version := "1.1"
+		if m.ID == "qinqin-flashcards" {
+			version = "1.2" // gained the decks page surface
+		}
+		if m.ID != w.id || m.Version != version || m.SDK != 1 || m.Type != "feature" ||
 			!reflect.DeepEqual(m.Surfaces, w.surfaces) || !reflect.DeepEqual(m.Permissions, w.permissions) ||
 			!reflect.DeepEqual(events, w.events) || len(m.Hooks) != 0 || m.Description == "" {
 			t.Errorf("builtin %s = %+v, want %+v", m.ID, m, w)

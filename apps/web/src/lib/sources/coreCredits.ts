@@ -29,5 +29,13 @@ export const coreCredits: SourceCredit[] = [
 		license: 'MIT',
 		attribution: 'Copyright (c) 2026 Open Spaced Repetition',
 		notice: 'Schedules flashcard reviews.'
+	},
+	{
+		name: 'uqr',
+		url: 'https://github.com/unjs/uqr',
+		license: 'MIT',
+		attribution: 'Copyright (c) Project Nayuki; Copyright (c) 2023 Anthony Fu',
+		notice: 'Draws the QR code for two-step sign-in setup in your browser. The code is never sent anywhere.',
+		licenseTexts: [{ label: 'MIT license text', path: '/UQR-LICENSE.TXT' }]
 	}
 ];

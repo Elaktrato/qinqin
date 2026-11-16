@@ -242,7 +242,14 @@ describe('validateConfig', () => {
 	});
 
 	it('offers all four card types', () => {
-		expect(CARD_TYPES.map((type) => type.id)).toEqual(['vocab', 'sentence', 'writing', 'tone']);
+		expect(CARD_TYPES.map((type) => type.id)).toEqual([
+			'vocab',
+			'sentence',
+			'writing',
+			'tone',
+			'reverse',
+			'cloze'
+		]);
 		expect(CARD_TYPES.every((type) => type.available)).toBe(true);
 	});
 

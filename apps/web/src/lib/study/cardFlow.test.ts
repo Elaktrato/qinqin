@@ -7,6 +7,9 @@ import {
 	deckSessionPlan,
 	dropItem,
 	backfillLimit,
+	buryAfterAnswer,
+	clozeDistractorPool,
+	revealsOnKey,
 	isChinese,
 	isEligible,
 	levelSessionItems,
@@ -414,7 +417,7 @@ describe('sessionCounts', () => {
 		expect(sessionCounts(items, reviews)).toEqual({
 			due: 1,
 			fresh: 3,
-			byKind: { vocab: 2, sentence: 0, writing: 0, tone: 2 }
+			byKind: { vocab: 2, sentence: 0, writing: 0, tone: 2, reverse: 0, cloze: 0 }
 		});
 	});
 });
@@ -582,5 +585,131 @@ describe('tonePadLabels', () => {
 
 	it('falls back when a character is not Han', () => {
 		expect(tonePadLabels('T恤', 2)).toBeNull();
+	});
+});
+
+describe('buryAfterAnswer', () => {
+	function item(cardId: string, kind: StudyCardKind, entryId: number, virtual = false, extra: Partial<FlowItem> = {}): FlowItem {
+		return { cardId, kind, entryId, virtual, card: null, ...extra };
+	}
+	const answered = (kind: StudyCardKind, entryId: number, cardId: string) => ({ kind, entryId, cardId });
+
+	it('removes later items of the word that the answer buries and backfills a virtual one', () => {
+		const plan = {
+			queue: [
+				item('c-vocab-1', 'vocab', 1),
+				item('c-vocab-2', 'vocab', 2),
+				item('companion:reverse:1', 'reverse', 1, true)
+			],
+			reserve: [item('companion:sentence:5', 'sentence', 5, true)],
+			backfillLeft: 3
+		};
+		const out = buryAfterAnswer(plan, 0, answered('vocab', 1, 'c-vocab-1'));
+		expect(out.buried).toBe(1);
+		expect(out.plan.queue.map((i) => i.cardId)).toEqual(['c-vocab-1', 'c-vocab-2', 'companion:sentence:5']);
+		expect(out.plan.reserve).toEqual([]);
+		expect(out.plan.backfillLeft).toBe(2);
+	});
+
+	it('a removed real card frees no slot', () => {
+		const plan = {
+			queue: [item('c-reverse-1', 'reverse', 1), item('c-vocab-1', 'vocab', 1)],
+			reserve: [item('companion:sentence:5', 'sentence', 5, true)],
+			backfillLeft: 3
+		};
+		const out = buryAfterAnswer(plan, 0, answered('reverse', 1, 'c-reverse-1'));
+		expect(out.buried).toBe(1);
+		expect(out.plan.queue.map((i) => i.cardId)).toEqual(['c-reverse-1']);
+		expect(out.plan.reserve).toHaveLength(1);
+	});
+
+	it('keeps a pending re-show of the same card and items before the answered index', () => {
+		const plan = {
+			queue: [
+				item('c-reverse-1', 'reverse', 1),
+				item('c-vocab-1', 'vocab', 1),
+				item('c-reverse-1', 'reverse', 1, false, { reshow: 1 })
+			],
+			reserve: [],
+			backfillLeft: 0
+		};
+		const out = buryAfterAnswer(plan, 1, answered('vocab', 1, 'c-vocab-1'));
+		expect(out.buried).toBe(0);
+		expect(out.plan).toEqual(plan);
+	});
+
+	it('leaves the legacy pair vocab then writing untouched', () => {
+		const plan = {
+			queue: [item('c-vocab-1', 'vocab', 1), item('c-writing-1', 'writing', 1)],
+			reserve: [],
+			backfillLeft: 0
+		};
+		const out = buryAfterAnswer(plan, 0, answered('vocab', 1, 'c-vocab-1'));
+		expect(out.buried).toBe(0);
+		expect(out.plan.queue).toHaveLength(2);
+	});
+
+	it('removes a backfilled item that is itself buried', () => {
+		const plan = {
+			queue: [item('c-reverse-1', 'reverse', 1), item('companion:cloze:1', 'cloze', 1, true)],
+			reserve: [item('companion:writing:1', 'writing', 1, true), item('companion:tone:9', 'tone', 9, true)],
+			backfillLeft: 5
+		};
+		const out = buryAfterAnswer(plan, 0, answered('reverse', 1, 'c-reverse-1'));
+		expect(out.buried).toBe(2);
+		expect(out.plan.queue.map((i) => i.cardId)).toEqual(['c-reverse-1', 'companion:tone:9']);
+	});
+});
+
+describe('eligibility of reverse and cloze', () => {
+	const ctx = { language: 'zh', hasSentence: false };
+	const word = { ...zhEntry, kind: 'word', senses: [{}] };
+
+	it('reverse needs a word entry with a gloss', () => {
+		expect(isEligible('reverse', word, ctx)).toBe(true);
+		expect(isEligible('reverse', { ...zhEntry, kind: 'character', senses: [{}] }, ctx)).toBe(false);
+		expect(isEligible('reverse', { ...word, senses: [] }, ctx)).toBe(false);
+		expect(isEligible('reverse', zhEntry, ctx)).toBe(false);
+	});
+
+	it('cloze needs a resolved eligible sentence', () => {
+		expect(isEligible('cloze', word, { ...ctx, hasCloze: true })).toBe(true);
+		expect(isEligible('cloze', word, ctx)).toBe(false);
+	});
+
+	it('a transient drop is never remembered', () => {
+		const item = {
+			cardId: 'companion:cloze:1',
+			kind: 'cloze',
+			entryId: 1,
+			virtual: true,
+			card: null
+		} as FlowItem;
+		expect(rememberDrop(item, '学习')).toBe(true);
+		expect(rememberDrop(item, '学习', undefined, { transient: true })).toBe(false);
+		expect(rememberDrop({ ...item, kind: 'reverse' }, '学习')).toBe(true);
+	});
+});
+
+describe('runner helpers for reverse and cloze', () => {
+	it('revealsOnKey: vocab and reverse reveal on Space/Enter, the others own their keys', () => {
+		expect(revealsOnKey('vocab')).toBe(true);
+		expect(revealsOnKey('reverse')).toBe(true);
+		for (const kind of ['sentence', 'writing', 'tone', 'cloze'] as const) {
+			expect(revealsOnKey(kind)).toBe(false);
+		}
+	});
+
+	it('clozeDistractorPool: written snapshots of other vocab cards in the session decks', () => {
+		const cards = [
+			card('v1', 'vocab', 1, { written: '喜欢' }),
+			card('v2', 'vocab', 2, { written: '朋友' }),
+			card('v3', 'vocab', 3, { written: '学习', deckIds: ['other'] }),
+			card('v4', 'vocab', 4, { written: '' }),
+			card('w2', 'writing', 5, { written: '工作' }),
+			card('v6', 'vocab', 6, { written: '朋友' })
+		];
+		expect(clozeDistractorPool(cards, ['general'], 1)).toEqual(['朋友']);
+		expect(clozeDistractorPool(cards, ['general', 'other'], 1).sort()).toEqual(['学习', '朋友']);
 	});
 });

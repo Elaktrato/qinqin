@@ -16,6 +16,10 @@ import {
   PartialCardsError,
   deleteCards,
   deleteDeck,
+  saveDeckCardTypes,
+  dropSiblingCards,
+  skipKind,
+  unskipKind,
   loadStudyData,
   moveCards,
   restoreCards,
@@ -25,6 +29,10 @@ import {
   setActiveSet,
   deleteParamSet,
   activeWeights,
+  loadRawStudyData,
+  pushStudyRows,
+  PartialPushError,
+  studyRowKey,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
 
@@ -131,6 +139,13 @@ function putBodies(): Array<{ url: string; body: unknown }> {
       url: String(url),
       body: JSON.parse(String(init?.body)),
     }));
+}
+
+/** The rows batch-written through POST /api/sync/push, in order. */
+function pushedRows(): Array<{ key: string; data: unknown; updatedAt: string }> {
+  return calls()
+    .filter(([url]) => String(url) === "/api/sync/push")
+    .flatMap(([, init]) => JSON.parse(String(init?.body)).pluginData);
 }
 
 /**
@@ -255,6 +270,28 @@ describe("study store", () => {
       const data = await loadStudyData();
 
       expect(data.cards).toEqual(good);
+    });
+
+    it("keeps a clean skipKinds list on a vocab row and drops bad entries", async () => {
+      const row = {
+        ...card("c-vocab-1", 1, ["general"]),
+        skipKinds: ["reverse", "reverse", "bogus", "vocab"],
+      };
+      const plain = card("c-vocab-2", 2, ["general"]);
+      const empty = { ...card("c-vocab-3", 3, ["general"]), skipKinds: ["bogus"] };
+      respondPull({
+        pluginData: [
+          pluginRow("card:c-vocab-1", row),
+          pluginRow("card:c-vocab-2", plain),
+          pluginRow("card:c-vocab-3", empty),
+        ],
+      });
+
+      const data = await loadStudyData();
+
+      expect(data.cards[0]!.skipKinds).toEqual(["reverse"]);
+      expect("skipKinds" in data.cards[1]!).toBe(false);
+      expect("skipKinds" in data.cards[2]!).toBe(false);
     });
 
     it("returns empty arrays when the pull has no plugin data", async () => {
@@ -422,6 +459,208 @@ describe("study store", () => {
     });
   });
 
+  describe("deck card type settings", () => {
+    const cfgUrl = (id: string) =>
+      `/api/plugins/${PLUGIN_ID}/data/deckcfg:${id}?workspace=${WORKSPACE_ID}`;
+
+    it("loads deckcfg rows into deckSettings", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deckcfg:general", {
+            deckId: "general",
+            cardTypes: ["reverse"],
+            updatedAt: "2026-01-01T00:00:00Z",
+          }),
+          pluginRow("deckcfg:bad", { deckId: "other", cardTypes: ["cloze"] }),
+        ],
+      });
+      const data = await loadStudyData();
+      expect(Object.keys(data.deckSettings ?? {})).toEqual(["general"]);
+      expect(data.deckSettings?.general?.cardTypes).toEqual(["reverse"]);
+    });
+
+    it("saveDeckCardTypes keeps unknown fields of the stored row", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deckcfg:general", {
+              deckId: "general",
+              cardTypes: [],
+              updatedAt: "2026-01-01T00:00:00Z",
+              limits: { new: 5 },
+            }),
+          ],
+        });
+      });
+      const saved = await saveDeckCardTypes("general", ["cloze", "reverse"]);
+      expect(saved.cardTypes).toEqual(["reverse", "cloze"]);
+      expect(putBodies()).toHaveLength(1);
+      expect(putBodies()[0]!.url).toBe(cfgUrl("general"));
+      expect(putBodies()[0]!.body).toMatchObject({
+        deckId: "general",
+        cardTypes: ["reverse", "cloze"],
+        limits: { new: 5 },
+      });
+    });
+
+    it("saveDeckCardTypes creates the row when none exists", async () => {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 1 });
+        return jsonResponse({ pluginData: [] });
+      });
+      await saveDeckCardTypes("d9", ["reverse"]);
+      expect(putBodies()[0]!.body).toMatchObject({ deckId: "d9", cardTypes: ["reverse"] });
+    });
+
+    it("deleteDeck tombstones the deck's deckcfg row after the deck row; a 404 is fine", async () => {
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (init?.method === "DELETE") {
+          return String(input).includes("deckcfg:")
+            ? new Response(null, { status: 404 })
+            : new Response(null, { status: 204 });
+        }
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deck:d1", deck("d1", "Doomed")),
+            pluginRow("deckcfg:d1", { deckId: "d1", cardTypes: ["reverse"] }),
+          ],
+        });
+      });
+      await deleteDeck("d1");
+      expect(
+        calls()
+          .filter(([, init]) => init?.method === "DELETE")
+          .map(([url]) => String(url)),
+      ).toEqual([
+        `/api/plugins/${PLUGIN_ID}/data/deck:d1?workspace=${WORKSPACE_ID}`,
+        cfgUrl("d1"),
+      ]);
+    });
+  });
+
+  describe("sibling kinds of a word", () => {
+    const rowUrl = (id: string) =>
+      `/api/plugins/${PLUGIN_ID}/data/card:${id}?workspace=${WORKSPACE_ID}`;
+    const typed = (id: string, kind: string, entryId: number): StudyCard => ({
+      ...card(id, entryId, ["general"]),
+      kind,
+    }) as StudyCard;
+
+    function stub(rows: StudyCard[]): void {
+      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+        if (init?.method === "DELETE") return new Response(null, { status: 204 });
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: rows.map((row) => pluginRow(`card:${row.id}`, row)),
+        });
+      });
+    }
+    const deletes = () =>
+      calls()
+        .filter(([, init]) => init?.method === "DELETE")
+        .map(([url]) => String(url));
+
+    it("dropSiblingCards tombstones the sibling and adds its kind to the vocab row", async () => {
+      const vocab = typed("c-vocab-7", "vocab", 7);
+      const reverse = typed("c-reverse-7", "reverse", 7);
+      const cloze = typed("c-cloze-7", "cloze", 7);
+      stub([vocab, reverse, cloze]);
+
+      const previous = await dropSiblingCards(["c-reverse-7"]);
+
+      expect(deletes()).toEqual([rowUrl("c-reverse-7")]);
+      expect(putBodies()).toEqual([
+        { url: rowUrl("c-vocab-7"), body: { ...vocab, skipKinds: ["reverse"] } },
+      ]);
+      expect(previous.map((row) => row.id).sort()).toEqual(["c-reverse-7", "c-vocab-7"]);
+    });
+
+    it("undo through restoreCards brings back the vocab row and the sibling", async () => {
+      const vocab = typed("c-vocab-7", "vocab", 7);
+      const reverse = typed("c-reverse-7", "reverse", 7);
+      stub([vocab, reverse]);
+      const previous = await dropSiblingCards(["c-reverse-7"]);
+      vi.mocked(fetch).mockClear();
+      stub([vocab]);
+      await restoreCards(previous);
+      const bodies = putBodies();
+      expect(bodies.map((b) => b.url).sort()).toEqual(
+        [rowUrl("c-reverse-7"), rowUrl("c-vocab-7")].sort(),
+      );
+      const restoredVocab = bodies.find((b) => b.url === rowUrl("c-vocab-7"))!.body as StudyCard;
+      expect("skipKinds" in restoredVocab).toBe(false);
+    });
+
+    it("a stray sibling without a vocab row is only tombstoned", async () => {
+      stub([typed("c-cloze-9", "cloze", 9)]);
+      await dropSiblingCards(["c-cloze-9"]);
+      expect(deletes()).toEqual([rowUrl("c-cloze-9")]);
+      expect(putBodies()).toEqual([]);
+    });
+
+    it("refuses a vocab id", async () => {
+      stub([typed("c-vocab-7", "vocab", 7)]);
+      await expect(dropSiblingCards(["c-vocab-7"])).rejects.toThrow();
+      expect(deletes()).toEqual([]);
+    });
+
+    it("skipKind and unskipKind write only the vocab rows", async () => {
+      const vocab = typed("c-vocab-7", "vocab", 7);
+      stub([vocab]);
+      const before = await skipKind(7, "cloze");
+      expect(before).toEqual([vocab]);
+      expect(putBodies()[0]!.body).toEqual({ ...vocab, skipKinds: ["cloze"] });
+
+      vi.mocked(fetch).mockClear();
+      const skipped = { ...vocab, skipKinds: ["reverse", "cloze"] } as StudyCard;
+      stub([skipped]);
+      const prev = await unskipKind(7, "cloze");
+      expect(prev).toEqual([skipped]);
+      expect(putBodies()[0]!.body).toEqual({ ...vocab, skipKinds: ["reverse"] });
+    });
+
+    it("unskipKind drops the field when the list empties; no vocab row is an error", async () => {
+      const skipped = { ...typed("c-vocab-7", "vocab", 7), skipKinds: ["reverse"] } as StudyCard;
+      stub([skipped]);
+      await unskipKind(7, "reverse");
+      expect("skipKinds" in (putBodies()[0]!.body as object)).toBe(false);
+      stub([]);
+      await expect(skipKind(8, "reverse")).rejects.toThrow();
+    });
+
+    it("deleting the word also tombstones its reverse and cloze cards", async () => {
+      stub([
+        typed("c-vocab-7", "vocab", 7),
+        typed("c-reverse-7", "reverse", 7),
+        typed("c-cloze-7", "cloze", 7),
+      ]);
+      await deleteCards(["c-vocab-7"]);
+      expect(deletes().sort()).toEqual(
+        [rowUrl("c-vocab-7"), rowUrl("c-reverse-7"), rowUrl("c-cloze-7")].sort(),
+      );
+    });
+
+    it("moving the word moves its reverse and cloze cards", async () => {
+      vi.mocked(fetch).mockImplementation(async (_i, init) => {
+        if (init?.method === "PUT") return jsonResponse({ version: 2 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deck:d2", deck("d2", "Two")),
+            ...["c-vocab-7:vocab", "c-reverse-7:reverse", "c-cloze-7:cloze"].map((spec) => {
+              const [id, kind] = spec.split(":");
+              return pluginRow(`card:${id}`, typed(id!, kind!, 7));
+            }),
+          ],
+        });
+      });
+      await moveCards(["c-vocab-7"], "d2");
+      expect(putBodies().map((b) => b.url).sort()).toEqual(
+        [rowUrl("c-vocab-7"), rowUrl("c-reverse-7"), rowUrl("c-cloze-7")].sort(),
+      );
+    });
+  });
+
   describe("deleteDeck", () => {
     it("deletes the deck and moves cards that only lived there to general", async () => {
       const orphan = card(
@@ -455,15 +694,11 @@ describe("study store", () => {
           expect.objectContaining({ method: "DELETE" }),
         ],
       ]);
-      expect(putBodies()).toEqual([
-        {
-          url: `/api/plugins/${PLUGIN_ID}/data/card:card-orphan?workspace=${WORKSPACE_ID}`,
-          body: { ...orphan, deckIds: [GENERAL_DECK_ID] },
-        },
-        {
-          url: `/api/plugins/${PLUGIN_ID}/data/card:card-shared?workspace=${WORKSPACE_ID}`,
-          body: { ...shared, deckIds: ["deck-2"] },
-        },
+      // The cards go out as one batch, before the tombstone.
+      expect(putBodies()).toEqual([]);
+      expect(pushedRows().map(({ key, data }) => ({ key, data }))).toEqual([
+        { key: "card:card-orphan", data: { ...orphan, deckIds: [GENERAL_DECK_ID] } },
+        { key: "card:card-shared", data: { ...shared, deckIds: ["deck-2"] } },
       ]);
     });
 
@@ -485,10 +720,7 @@ describe("study store", () => {
 
       await deleteDeck("deck-1");
 
-      expect(putBodies().map((entry) => entry.url)).toEqual([
-        `/api/plugins/${PLUGIN_ID}/data/card:card-early?workspace=${WORKSPACE_ID}`,
-        `/api/plugins/${PLUGIN_ID}/data/card:card-late?workspace=${WORKSPACE_ID}`,
-      ]);
+      expect(pushedRows().map((row) => row.key)).toEqual(["card:card-early", "card:card-late"]);
     });
 
     it("refuses to delete the implicit general deck without touching the server", async () => {
@@ -513,11 +745,8 @@ describe("study store", () => {
 
       await deleteDeck("deck-1");
 
-      expect(putBodies()).toEqual([
-        {
-          url: `/api/plugins/${PLUGIN_ID}/data/card:card-shared?workspace=${WORKSPACE_ID}`,
-          body: { ...shared, deckIds: ["deck-2"] },
-        },
+      expect(pushedRows().map(({ key, data }) => ({ key, data }))).toEqual([
+        { key: "card:card-shared", data: { ...shared, deckIds: ["deck-2"] } },
       ]);
       expect(calls().some(([, init]) => init?.method === "DELETE")).toBe(true);
     });
@@ -535,11 +764,10 @@ describe("study store", () => {
         return path.split("?")[0];
       };
       vi.mocked(fetch).mockImplementation(async (input, init) => {
-        if (init?.method === "PUT") {
-          const key = keyOf(input);
-          const body = JSON.parse(String(init.body)) as StudyCard;
-          cards.set(key, body);
-          return jsonResponse({ version: 2 });
+        if (String(input) === "/api/sync/push") {
+          const rows = JSON.parse(String(init?.body)).pluginData as Array<{ key: string; data: StudyCard }>;
+          for (const row of rows) cards.set(row.key, row.data);
+          return jsonResponse({ dataAccepted: rows.length, dataSkipped: 0, dataRefused: 0 });
         }
         if (init?.method === "DELETE") {
           decks.delete(keyOf(input));
@@ -557,9 +785,10 @@ describe("study store", () => {
       await deleteDeck("deck-2");
 
       expect(cards.get("card:card-1")?.deckIds).toEqual([GENERAL_DECK_ID]);
-      expect(
-        putBodies().map((entry) => (entry.body as StudyCard).deckIds),
-      ).toEqual([["deck-2"], [GENERAL_DECK_ID]]);
+      expect(pushedRows().map((row) => (row.data as StudyCard).deckIds)).toEqual([
+        ["deck-2"],
+        [GENERAL_DECK_ID],
+      ]);
     });
   });
 
@@ -1244,6 +1473,185 @@ describe("study store", () => {
       expect(String(deletes[0][0])).toBe(
         `/api/plugins/${PLUGIN_ID}/data/fsrs:set:A?workspace=${WORKSPACE_ID}`,
       );
+    });
+  });
+
+  describe("deleting a big deck and clock skew", () => {
+    it("deleteDeck rewrites 450 cards in 3 requests, then tombstones the deck", async () => {
+      const cards = Array.from({ length: 450 }, (_, i) => card(`card-${i}`, i, ["deck-1"]));
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (String(input) === "/api/sync/push") {
+          const n = JSON.parse(String(init?.body)).pluginData.length;
+          return jsonResponse({ dataAccepted: n, dataSkipped: 0, dataRefused: 0 });
+        }
+        if (init?.method === "DELETE") return new Response(null, { status: 204 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deck:deck-1", deck("deck-1", "Big")),
+            ...cards.map((c) => pluginRow(`card:${c.id}`, c)),
+          ],
+        });
+      });
+      await deleteDeck("deck-1");
+      const order = calls().map(([url, init]) => (String(url) === "/api/sync/push" ? "push" : String(init?.method ?? "GET")));
+      expect(order.filter((o) => o === "push")).toHaveLength(3);
+      expect(order.indexOf("DELETE")).toBeGreaterThan(order.lastIndexOf("push"));
+      expect(putBodies()).toEqual([]);
+    });
+
+    it("deleteDeck stops before the tombstone when a chunk fails", async () => {
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
+        if (String(input) === "/api/sync/push") return new Response("boom", { status: 500 });
+        if (init?.method === "DELETE") return new Response(null, { status: 204 });
+        return jsonResponse({
+          pluginData: [
+            pluginRow("deck:deck-1", deck("deck-1", "Doomed")),
+            pluginRow("card:card-1", card("card-1", 1, ["deck-1"])),
+          ],
+        });
+      });
+      await expect(deleteDeck("deck-1")).rejects.toThrow();
+      expect(calls().some(([, init]) => init?.method === "DELETE")).toBe(false);
+    });
+
+    it("stamps a row after the newest time the client knows of it, even with a clock behind the server", async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-03-10T12:00:00.000Z"));
+      try {
+        vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 2, dataSkipped: 0, dataRefused: 0 }));
+        await pushStudyRows(WORKSPACE_ID, [
+          { key: "card:a", data: {}, knownAt: "2026-03-10T12:00:05.250Z" }, // server tombstone is ahead
+          { key: "card:b", data: {}, knownAt: "2026-03-09T00:00:00.000Z" }, // known time is older: now wins
+          { key: "card:c", data: {} },
+        ]);
+        const stamps = pushedRows().map((r) => [r.key, r.updatedAt]);
+        expect(stamps).toEqual([
+          ["card:a", "2026-03-10T12:00:05.251Z"],
+          ["card:b", "2026-03-10T12:00:00.000Z"],
+          ["card:c", "2026-03-10T12:00:00.000Z"],
+        ]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("loadRawStudyData reports the newest known time of every row, tombstones included", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("card:live", { id: "live", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }, { updatedAt: "2026-02-01T00:00:00Z" }),
+          pluginRow("card:gone", { id: "gone" }, { updatedAt: "2026-02-02T00:00:00Z", deletedAt: "2026-02-03T00:00:00Z" }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.knownAt.get("card:live")).toBe("2026-02-01T00:00:00Z");
+      expect(raw.knownAt.get("card:gone")).toBe("2026-02-03T00:00:00Z");
+      expect(raw.cards.map((c) => c.id)).toEqual(["live"]);
+    });
+  });
+
+  describe("copied decks and batch writes", () => {
+    it("keeps the source of a copied deck", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("deck:d-lvl-hsk-words-b06fd2ac", {
+            id: "d-lvl-hsk-words-b06fd2ac",
+            name: "HSK words · HSK 1",
+            createdAt: "2026-01-01T00:00:00Z",
+            source: { type: "level", packId: "hsk-words", level: "HSK 1" },
+          }),
+          pluginRow("deck:plain", { id: "plain", name: "Plain", createdAt: "2026-01-01T00:00:00Z", source: { type: 7 } }),
+        ],
+      });
+      const { decks } = await loadStudyData(WORKSPACE_ID);
+      expect(decks.find((d) => d.id === "d-lvl-hsk-words-b06fd2ac")?.source).toEqual({
+        type: "level",
+        packId: "hsk-words",
+        level: "HSK 1",
+      });
+      // An unknown source shape is dropped, the deck stays.
+      expect(decks.find((d) => d.id === "plain")?.source).toBeUndefined();
+    });
+
+    it("loadRawStudyData keeps stored duplicates the merged read folds away", async () => {
+      respondPull({
+        pluginData: [
+          pluginRow("card:c-vocab-1", { id: "c-vocab-1", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-01T00:00:00Z" }),
+          pluginRow("card:01JDUP", { id: "01JDUP", kind: "vocab", entryId: 1, deckIds: ["general"], createdAt: "2026-01-02T00:00:00Z" }),
+        ],
+      });
+      const raw = await loadRawStudyData(WORKSPACE_ID);
+      expect(raw.cards.map((c) => c.id).sort()).toEqual(["01JDUP", "c-vocab-1"]);
+    });
+
+    function pushRows(n: number) {
+      return Array.from({ length: n }, (_, i) => ({ key: `card:c-vocab-${i}`, data: { id: `c-vocab-${i}` } }));
+    }
+    function pushBodies(): Array<{ pluginData: Array<Record<string, unknown>> }> {
+      return calls()
+        .filter(([url]) => String(url) === "/api/sync/push")
+        .map(([, init]) => JSON.parse(String(init?.body)));
+    }
+
+    it("pushes rows in sequential chunks of 200 with the workspace and an updatedAt", async () => {
+      vi.mocked(fetch).mockImplementation(async (_url, init) =>
+        jsonResponse({
+          eventsAccepted: 0,
+          eventDuplicates: 0,
+          dataAccepted: JSON.parse(String(init?.body)).pluginData.length,
+          dataSkipped: 0,
+          dataRefused: 0,
+        }),
+      );
+      const progress: Array<[number, number]> = [];
+      const written: number[] = [];
+      const off = onStudyWrite((id) => written.push(id));
+      await pushStudyRows(WORKSPACE_ID, pushRows(450), { onProgress: (d, t) => progress.push([d, t]) });
+      off();
+      const bodies = pushBodies();
+      expect(bodies.map((b) => b.pluginData.length)).toEqual([200, 200, 50]);
+      expect(bodies[0].pluginData[0]).toMatchObject({
+        pluginId: PLUGIN_ID,
+        key: "card:c-vocab-0",
+        workspaceId: WORKSPACE_ID,
+        data: { id: "c-vocab-0" },
+      });
+      expect(Number.isNaN(Date.parse(String(bodies[0].pluginData[0].updatedAt)))).toBe(false);
+      expect(progress).toEqual([[200, 450], [400, 450], [450, 450]]);
+      expect(written).toEqual([WORKSPACE_ID, WORKSPACE_ID, WORKSPACE_ID]);
+    });
+
+    it("pushes nothing for no rows", async () => {
+      await pushStudyRows(WORKSPACE_ID, []);
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("reports how many rows landed when a later chunk fails", async () => {
+      let n = 0;
+      vi.mocked(fetch).mockImplementation(async () =>
+        ++n === 1
+          ? jsonResponse({ dataAccepted: 200, dataSkipped: 0, dataRefused: 0 })
+          : new Response("boom", { status: 500 }),
+      );
+      const error = await pushStudyRows(WORKSPACE_ID, pushRows(450)).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(PartialPushError);
+      expect((error as PartialPushError).done).toBe(200);
+      expect((error as PartialPushError).skipped).toBe(0);
+    });
+
+    it("a chunk with skipped or refused rows is an error, never a silent success", async () => {
+      vi.mocked(fetch).mockImplementation(async () =>
+        jsonResponse({ dataAccepted: 198, dataSkipped: 1, dataRefused: 1 }),
+      );
+      const error = await pushStudyRows(WORKSPACE_ID, pushRows(200)).catch((e: unknown) => e);
+      expect(error).toBeInstanceOf(PartialPushError);
+      expect((error as PartialPushError).done).toBe(198);
+      expect((error as PartialPushError).skipped).toBe(2);
+      expect((error as PartialPushError).message).toMatch(/2 rows/);
+    });
+
+    it("exposes the row keys the planner needs", () => {
+      expect(studyRowKey.deck("d1")).toBe("deck:d1");
+      expect(studyRowKey.card("c-vocab-1")).toBe("card:c-vocab-1");
     });
   });
 });

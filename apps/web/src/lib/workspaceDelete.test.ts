@@ -70,6 +70,7 @@ describe('forgetWorkspace', () => {
 			'qinqin.session.17.2026-11-14': '1',
 			'qinqin.session.3.2026-11-14': '1',
 			'qinqin.study.cardTypes': JSON.stringify({ '7': ['vocab'], '3': ['tone'] }),
+			'qinqin.study.extraTypes': JSON.stringify({ '7': { reverse: false }, '3': { cloze: false } }),
 			'qinqin.study.pending': JSON.stringify([
 				{ id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} },
 				{ id: 'b', workspaceId: 3, ts: 't', type: 'review', device: 'web', payload: {} }
@@ -89,6 +90,7 @@ describe('forgetWorkspace', () => {
 			'qinqin.session.17.2026-11-14': '1',
 			'qinqin.session.3.2026-11-14': '1',
 			'qinqin.study.cardTypes': JSON.stringify({ '3': ['tone'] }),
+			'qinqin.study.extraTypes': JSON.stringify({ '3': { cloze: false } }),
 			'qinqin.study.pending': JSON.stringify([
 				{ id: 'b', workspaceId: 3, ts: 't', type: 'review', device: 'web', payload: {} }
 			]),

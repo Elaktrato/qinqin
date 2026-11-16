@@ -1,0 +1,25 @@
+{
+  "ok": {
+    "request": {"method": "POST", "path": "/api/auth/login", "body": {"username": "alice", "password": "<password>", "deviceName": "qinqin Android - Pixel 8"}},
+    "status": 200,
+    "body": {
+      "status": "ok",
+      "token": "tok_example",
+      "user": {"id": 1, "username": "alice", "admin": true, "email": null, "emailVerified": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z"}
+    }
+  },
+  "password_change_required": {
+    "request": {"method": "POST", "path": "/api/auth/login", "body": {"username": "bobby", "password": "<temporary password>"}},
+    "status": 200,
+    "body": {
+      "status": "password_change_required",
+      "token": "tok_example",
+      "user": {"id": 2, "username": "bobby", "admin": false, "email": null, "emailVerified": false, "mustChangePassword": true, "createdAt": "2026-11-15T12:00:00Z"}
+    }
+  },
+  "account_disabled": {
+    "request": {"method": "POST", "path": "/api/auth/login", "body": {"username": "dora", "password": "<right password>"}},
+    "status": 403,
+    "body": {"error": "account_disabled", "message": "This account has been disabled. Ask an administrator."}
+  }
+}

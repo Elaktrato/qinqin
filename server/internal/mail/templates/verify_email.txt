@@ -1,0 +1,7 @@
+Confirm this email address for your {{.Site}} account with this code:
+
+{{.Code}}
+
+It is valid for {{.Minutes}} minutes.
+
+If this was not you, ignore this message: the address stays unconfirmed.

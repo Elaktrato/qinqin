@@ -408,7 +408,7 @@ func TestAuthLimitNamedLimiter(t *testing.T) {
 // registerAs posts a registration with an optional bearer token.
 func registerAs(t *testing.T, ts *httptest.Server, xff, bearer, user string) authResp {
 	t.Helper()
-	b, _ := json.Marshal(map[string]string{"username": user, "password": "pw-" + user})
+	b, _ := json.Marshal(map[string]string{"username": user, "password": "secret-pass-" + user})
 	return authRaw(t, ts, "/api/auth/register", xff, bearer, bytes.NewReader(b))
 }
 
@@ -434,12 +434,12 @@ func TestAuthLimitRegisterAnonymousThrottled(t *testing.T) {
 		return auth.CreateUser(ctx, d, user, pass, admin)
 	}
 	ts, sqlDB, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{CreateUser: hook}))
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
 		t.Fatal(err)
 	}
 	for i := 0; i < 10; i++ {
-		if r := registerAs(t, ts, "198.51.100.1", "", fmt.Sprintf("u%d", i)); r.Status != 403 || r.Err != "admin_required" {
-			t.Fatalf("anonymous %d = %+v, want 403 admin_required", i+1, r)
+		if r := registerAs(t, ts, "198.51.100.1", "", fmt.Sprintf("u%d", i)); r.Status != 403 || r.Err != "registration_closed" {
+			t.Fatalf("anonymous %d = %+v, want 403 registration_closed", i+1, r)
 		}
 	}
 	if r := registerAs(t, ts, "198.51.100.1", "", "u11"); r.Status != 429 || r.Err != "rate_limited" {
@@ -456,10 +456,10 @@ func TestAuthLimitRegisterAnonymousThrottled(t *testing.T) {
 
 func TestAuthLimitRegisterAdminBulkNotThrottled(t *testing.T) {
 	ts, sqlDB, _ := newLimitServer(t)
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
 		t.Fatal(err)
 	}
-	token, err := auth.Login(context.Background(), sqlDB, "owner", "pw-owner")
+	token, err := auth.Login(context.Background(), sqlDB, "owner", "secret-pass-owner")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -520,10 +520,10 @@ func TestAuthLimitContractFixtures(t *testing.T) {
 	}
 	h := &fastLogin{}
 	ts, sqlDB, _ := newLimitServer(t, api.WithAuthHooks(api.AuthHooks{Login: h.login}))
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
 		t.Fatal(err)
 	}
-	token, _ := auth.Login(context.Background(), sqlDB, "owner", "pw-owner")
+	token, _ := auth.Login(context.Background(), sqlDB, "owner", "secret-pass-owner")
 	same := func(name string, got authResp) {
 		t.Helper()
 		f := fx[name]
@@ -533,7 +533,7 @@ func TestAuthLimitContractFixtures(t *testing.T) {
 		}
 	}
 	same("login_bad_credentials", login1(t, ts, "198.51.100.1", "owner", "wrong"))
-	same("register_admin_required", registerAs(t, ts, "198.51.100.2", "", "x"))
+	same("register_closed", registerAs(t, ts, "198.51.100.2", "", "x"))
 	same("register_username_taken", registerAs(t, ts, "198.51.100.2", token, "owner"))
 	same("bad_request", authRaw(t, ts, "/api/auth/login", "198.51.100.3", "", strings.NewReader("{")))
 	big := `{"username":"a","password":"` + strings.Repeat("x", 5000) + `"}`
@@ -584,7 +584,7 @@ func TestAuthLimitForwardedLoggedOnce(t *testing.T) {
 
 func TestAuthLimitRegisterWording(t *testing.T) {
 	ts, sqlDB, _ := newLimitServer(t)
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
 		t.Fatal(err)
 	}
 	var last authResp
@@ -609,10 +609,10 @@ func TestAuthLimitRegisterWording(t *testing.T) {
 // even by 20 parallel creations.
 func TestAuthLimitAdminParallelCreates(t *testing.T) {
 	ts, sqlDB, _ := newLimitServer(t)
-	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "pw-owner"); err != nil {
+	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
 		t.Fatal(err)
 	}
-	token, _ := auth.Login(context.Background(), sqlDB, "owner", "pw-owner")
+	token, _ := auth.Login(context.Background(), sqlDB, "owner", "secret-pass-owner")
 	var wg sync.WaitGroup
 	statuses := make([]int, 20)
 	for i := 0; i < 20; i++ {

@@ -59,6 +59,11 @@ export interface BuildLevelQueueOptions {
 	 * unaffected. Absent: every glyph qualifies.
 	 */
 	hasStrokes?: (glyph: string) => boolean;
+	/**
+	 * Entries left out entirely (neither their card nor a virtual item), so a
+	 * buried word never uses a limit slot; the next word takes it.
+	 */
+	excludeEntries?: ReadonlySet<number>;
 }
 
 /** A level session: the queue plus new items held back for dropped ones. */
@@ -132,6 +137,7 @@ function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
 
 	for (const entry of entries) {
 		if (entry.kind !== 'word' || seen.has(entry.id)) continue;
+		if (options.excludeEntries?.has(entry.id)) continue;
 		seen.add(entry.id);
 
 		const card = cardByEntry.get(entry.id);
@@ -204,6 +210,7 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 
 	for (const entry of entries) {
 		if (entry.kind !== 'character' || seen.has(entry.id)) continue;
+		if (options.excludeEntries?.has(entry.id)) continue;
 		seen.add(entry.id);
 
 		for (const kind of wanted) {

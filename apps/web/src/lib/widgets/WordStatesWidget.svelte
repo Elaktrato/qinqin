@@ -10,6 +10,7 @@
 	import { loadStudyHistory } from '$lib/study/history';
 	import { activeWeights } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
+	import { flashcardsHref } from '$lib/plugins/flashcards/route';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
 
@@ -159,7 +160,7 @@
 					<tbody>
 						{#each result.decks as row (row.id)}
 							<tr>
-								<th scope="row">{row.name}</th>
+								<th scope="row"><a href={flashcardsHref({ view: 'deck', deckId: row.id })}>{row.name}</a></th>
 								{#each WORD_STATES as item (item.state)}
 									<td class="num">{row.counts[item.state]}</td>
 								{/each}

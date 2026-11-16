@@ -1,0 +1,410 @@
+{
+ "version": 1,
+ "rule": "decks/deck-stats",
+ "cases": [
+  {
+   "name": "three scopes, reverse cards, burying, short retention window",
+   "now": "2026-03-10T12:00:00.000Z",
+   "today": "2026-03-10",
+   "decks": [
+    {
+     "id": "d1",
+     "name": "Verbs"
+    }
+   ],
+   "deckSettings": {
+    "d1": [
+     "reverse"
+    ]
+   },
+   "cards": [
+    {
+     "id": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "schedule": {
+      "state": 2,
+      "stability": 200,
+      "due": "2026-09-01T00:00:00.000Z"
+     }
+    },
+    {
+     "id": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "deckIds": [
+      "d1"
+     ],
+     "schedule": {
+      "state": 2,
+      "stability": 5,
+      "due": "2026-03-09T09:00:00.000Z"
+     }
+    },
+    {
+     "id": "c-vocab-3",
+     "kind": "vocab",
+     "entryId": 3,
+     "deckIds": [
+      "general"
+     ],
+     "schedule": {
+      "state": 1,
+      "stability": 0.4,
+      "due": "2026-03-10T11:00:00.000Z"
+     }
+    },
+    {
+     "id": "c-vocab-4",
+     "kind": "vocab",
+     "entryId": 4,
+     "deckIds": [
+      "d1"
+     ],
+     "schedule": null
+    },
+    {
+     "id": "c-vocab-5",
+     "kind": "vocab",
+     "entryId": 5,
+     "deckIds": [
+      "d1"
+     ],
+     "schedule": {
+      "state": 2,
+      "stability": 8,
+      "due": "2026-03-09T09:00:00.000Z"
+     }
+    },
+    {
+     "id": "c-writing-1",
+     "kind": "writing",
+     "entryId": 1,
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "schedule": {
+      "state": 2,
+      "stability": 2,
+      "due": "2026-03-20T00:00:00.000Z"
+     }
+    },
+    {
+     "id": "c-reverse-1",
+     "kind": "reverse",
+     "entryId": 1,
+     "deckIds": [
+      "d1"
+     ],
+     "schedule": {
+      "state": 2,
+      "stability": 300,
+      "due": "2026-04-01T00:00:00.000Z"
+     }
+    },
+    {
+     "id": "c-reverse-2",
+     "kind": "reverse",
+     "entryId": 2,
+     "deckIds": [
+      "d1"
+     ],
+     "schedule": {
+      "state": 1,
+      "stability": 0.3,
+      "due": "2026-03-10T09:30:00.000Z"
+     }
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "c-vocab-1",
+     "ts": "2026-02-01T10:00:00.000Z",
+     "day": "2026-02-01",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-1",
+     "ts": "2026-02-20T10:00:00.000Z",
+     "day": "2026-02-20",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-1",
+     "ts": "2026-03-01T10:00:00.000Z",
+     "day": "2026-03-01",
+     "grade": 1
+    },
+    {
+     "cardId": "c-vocab-2",
+     "ts": "2026-03-02T09:00:00.000Z",
+     "day": "2026-03-02",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-2",
+     "ts": "2026-03-09T09:00:00.000Z",
+     "day": "2026-03-09",
+     "grade": 4
+    },
+    {
+     "cardId": "c-reverse-1",
+     "ts": "2026-03-10T08:00:00.000Z",
+     "day": "2026-03-10",
+     "grade": 3
+    },
+    {
+     "cardId": "c-reverse-2",
+     "ts": "2026-03-10T09:00:00.000Z",
+     "day": "2026-03-10",
+     "grade": 1
+    },
+    {
+     "cardId": "c-vocab-3",
+     "ts": "2026-03-10T10:00:00.000Z",
+     "day": "2026-03-10",
+     "grade": 2
+    },
+    {
+     "cardId": "c-vocab-5",
+     "ts": "2026-03-05T09:00:00.000Z",
+     "day": "2026-03-05",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-5",
+     "ts": "2026-03-09T09:00:00.000Z",
+     "day": "2026-03-09",
+     "grade": 3
+    }
+   ],
+   "expected": [
+    {
+     "deckId": "general",
+     "kinds": [
+      "vocab"
+     ],
+     "numbers": {
+      "words": 2,
+      "cards": 3,
+      "states": {
+       "new": 0,
+       "learning": 1,
+       "young": 0,
+       "mature": 1,
+       "total": 2
+      },
+      "studied": 2,
+      "mastered": 1,
+      "due": 1,
+      "fresh": 0,
+      "reviews30": 3,
+      "retention": null,
+      "retentionBase": 2
+     }
+    },
+    {
+     "deckId": "d1",
+     "kinds": [
+      "vocab",
+      "reverse"
+     ],
+     "numbers": {
+      "words": 4,
+      "cards": 7,
+      "states": {
+       "new": 1,
+       "learning": 0,
+       "young": 2,
+       "mature": 1,
+       "total": 4
+      },
+      "studied": 3,
+      "mastered": 1,
+      "due": 2,
+      "fresh": 1,
+      "reviews30": 8,
+      "retention": null,
+      "retentionBase": 4
+     }
+    },
+    {
+     "deckId": null,
+     "kinds": [
+      "vocab",
+      "reverse"
+     ],
+     "numbers": {
+      "words": 5,
+      "cards": 8,
+      "states": {
+       "new": 1,
+       "learning": 1,
+       "young": 2,
+       "mature": 1,
+       "total": 5
+      },
+      "studied": 4,
+      "mastered": 1,
+      "due": 3,
+      "fresh": 1,
+      "reviews30": 9,
+      "retention": null,
+      "retentionBase": 4
+     }
+    }
+   ]
+  },
+  {
+   "name": "retention shown from 10 eligible reviews",
+   "now": "2026-03-14T12:00:00.000Z",
+   "today": "2026-03-14",
+   "decks": [],
+   "deckSettings": {},
+   "cards": [
+    {
+     "id": "c-vocab-9",
+     "kind": "vocab",
+     "entryId": 9,
+     "deckIds": [
+      "general"
+     ],
+     "schedule": {
+      "state": 2,
+      "stability": 10,
+      "due": "2026-04-01T00:00:00.000Z"
+     }
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-02T09:00:00.000Z",
+     "day": "2026-03-02",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-03T09:00:00.000Z",
+     "day": "2026-03-03",
+     "grade": 1
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-04T09:00:00.000Z",
+     "day": "2026-03-04",
+     "grade": 1
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-05T09:00:00.000Z",
+     "day": "2026-03-05",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-06T09:00:00.000Z",
+     "day": "2026-03-06",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-07T09:00:00.000Z",
+     "day": "2026-03-07",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-08T09:00:00.000Z",
+     "day": "2026-03-08",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-09T09:00:00.000Z",
+     "day": "2026-03-09",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-10T09:00:00.000Z",
+     "day": "2026-03-10",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-11T09:00:00.000Z",
+     "day": "2026-03-11",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-12T09:00:00.000Z",
+     "day": "2026-03-12",
+     "grade": 3
+    },
+    {
+     "cardId": "c-vocab-9",
+     "ts": "2026-03-13T09:00:00.000Z",
+     "day": "2026-03-13",
+     "grade": 3
+    }
+   ],
+   "expected": [
+    {
+     "deckId": "general",
+     "kinds": [
+      "vocab"
+     ],
+     "numbers": {
+      "words": 1,
+      "cards": 1,
+      "states": {
+       "new": 0,
+       "learning": 0,
+       "young": 1,
+       "mature": 0,
+       "total": 1
+      },
+      "studied": 1,
+      "mastered": 0,
+      "due": 0,
+      "fresh": 0,
+      "reviews30": 12,
+      "retention": 0.8182,
+      "retentionBase": 11
+     }
+    },
+    {
+     "deckId": null,
+     "kinds": [
+      "vocab"
+     ],
+     "numbers": {
+      "words": 1,
+      "cards": 1,
+      "states": {
+       "new": 0,
+       "learning": 0,
+       "young": 1,
+       "mature": 0,
+       "total": 1
+      },
+      "studied": 1,
+      "mastered": 0,
+      "due": 0,
+      "fresh": 0,
+      "reviews30": 12,
+      "retention": 0.8182,
+      "retentionBase": 11
+     }
+    }
+   ]
+  }
+ ]
+}

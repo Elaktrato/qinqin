@@ -1,12 +1,18 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '$lib/api/client';
 
-vi.mock('$lib/auth', () => ({ login: vi.fn() }));
+vi.mock('$lib/auth', () => ({ signIn: vi.fn(), completeMfa: vi.fn(), completeEmailLogin: vi.fn() }));
+vi.mock('$lib/api/account', () => ({ getAuthOptions: vi.fn() }));
+vi.mock('$lib/api/mfa', () => ({ mfaSendEmail: vi.fn(), emailLoginStart: vi.fn() }));
 
-import { login } from '$lib/auth';
+import { signIn as login } from '$lib/auth';
+import { getAuthOptions } from '$lib/api/account';
 import Page from './+page.svelte';
 
+beforeEach(() => {
+	vi.mocked(getAuthOptions).mockRejectedValue(new Error('offline'));
+});
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
@@ -43,5 +49,54 @@ describe('login page throttling', () => {
 		render(Page);
 		await submit();
 		expect((await screen.findByRole('alert')).textContent).toBe('Wrong username or password.');
+	});
+
+	it('shows the disabled-account sentence for 403 account_disabled', async () => {
+		vi.mocked(login).mockRejectedValue(
+			new ApiError(403, JSON.stringify({ error: 'account_disabled', message: 'x' }))
+		);
+		render(Page);
+		await submit();
+		expect((await screen.findByRole('alert')).textContent).toBe(
+			'This account is disabled. Ask an administrator to enable it.'
+		);
+	});
+});
+
+describe('login page links follow the instance options', () => {
+	const opts = (o: object) => ({
+		bootstrap: false,
+		registration: 'closed',
+		emailPolicy: 'off',
+		passwordReset: false,
+		emailCodeLogin: false,
+		passwordMinLength: 10,
+		...o
+	});
+	it('offers account creation on a fresh instance and in open mode', async () => {
+		vi.mocked(getAuthOptions).mockResolvedValue(opts({ bootstrap: true }) as never);
+		render(Page);
+		expect(await screen.findByRole('link', { name: 'Create one' })).toBeTruthy();
+		cleanup();
+		vi.mocked(getAuthOptions).mockResolvedValue(opts({ registration: 'open' }) as never);
+		render(Page);
+		expect(await screen.findByRole('link', { name: 'Create one' })).toBeTruthy();
+	});
+	it('tells invite-only visitors to open their link, and offers nothing when closed', async () => {
+		vi.mocked(getAuthOptions).mockResolvedValue(opts({ registration: 'invite' }) as never);
+		render(Page);
+		expect(await screen.findByText('Have an invite link? Open it to register.')).toBeTruthy();
+		expect(screen.queryByRole('link', { name: 'Create one' })).toBeNull();
+		cleanup();
+		vi.mocked(getAuthOptions).mockResolvedValue(opts({}) as never);
+		render(Page);
+		await screen.findByText(/Ask your administrator for a reset link/);
+		expect(screen.queryByRole('link', { name: 'Create one' })).toBeNull();
+		expect(screen.queryByText(/invite link/)).toBeNull();
+	});
+	it('shows Forgot password only when mail can reset passwords', async () => {
+		vi.mocked(getAuthOptions).mockResolvedValue(opts({ passwordReset: true }) as never);
+		render(Page);
+		expect(await screen.findByRole('link', { name: 'Forgot password?' })).toBeTruthy();
 	});
 });

@@ -1,0 +1,484 @@
+{
+ "version": 1,
+ "rule": "decks/add-to-deck",
+ "cases": [
+  {
+   "name": "fresh add creates the deck and the cards in level order",
+   "now": "2026-03-10T12:00:00.000Z",
+   "items": [
+    {
+     "entryId": 1,
+     "written": "你"
+    },
+    {
+     "entryId": 2,
+     "written": "好"
+    }
+   ],
+   "target": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "existingDeck": null,
+   "rawCards": [],
+   "expected": {
+    "deck": {
+     "id": "d-lvl-hsk-words-b06fd2ac",
+     "name": "HSK words · HSK 1",
+     "createdAt": "2026-03-10T12:00:00.000Z",
+     "source": {
+      "type": "level",
+      "packId": "hsk-words",
+      "level": "HSK 1"
+     }
+    },
+    "writes": [
+     {
+      "id": "c-vocab-1",
+      "kind": "vocab",
+      "entryId": 1,
+      "deckIds": [
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-03-10T12:00:00.000Z",
+      "written": "你"
+     },
+     {
+      "id": "c-vocab-2",
+      "kind": "vocab",
+      "entryId": 2,
+      "deckIds": [
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-03-10T12:00:00.001Z",
+      "written": "好"
+     }
+    ],
+    "created": 2,
+    "joined": 0,
+    "skipped": 0
+   }
+  },
+  {
+   "name": "re-adding writes nothing",
+   "now": "2026-03-11T08:00:00.000Z",
+   "items": [
+    {
+     "entryId": 1,
+     "written": "你"
+    },
+    {
+     "entryId": 2,
+     "written": "好"
+    }
+   ],
+   "target": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "existingDeck": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "createdAt": "2026-03-10T12:00:00.000Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "rawCards": [
+    {
+     "id": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "deckIds": [
+      "d-lvl-hsk-words-b06fd2ac"
+     ],
+     "createdAt": "2026-03-10T12:00:00.000Z",
+     "written": "你"
+    },
+    {
+     "id": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "deckIds": [
+      "d-lvl-hsk-words-b06fd2ac"
+     ],
+     "createdAt": "2026-03-10T12:00:00.001Z",
+     "written": "好"
+    }
+   ],
+   "expected": {
+    "deck": null,
+    "writes": [],
+    "created": 0,
+    "joined": 0,
+    "skipped": 2
+   }
+  },
+  {
+   "name": "partial overlap: a word elsewhere joins with its writing sibling, a word already in the deck is skipped, a new word is created",
+   "now": "2026-03-10T12:00:00.000Z",
+   "items": [
+    {
+     "entryId": 1,
+     "written": "你"
+    },
+    {
+     "entryId": 2,
+     "written": "好"
+    },
+    {
+     "entryId": 3,
+     "written": "我"
+    }
+   ],
+   "target": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "existingDeck": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "createdAt": "2026-03-10T12:00:00.000Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "rawCards": [
+    {
+     "id": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00.000Z",
+     "written": "你"
+    },
+    {
+     "id": "c-writing-1",
+     "kind": "writing",
+     "entryId": 1,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00.000Z",
+     "written": "你"
+    },
+    {
+     "id": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "deckIds": [
+      "d-lvl-hsk-words-b06fd2ac"
+     ],
+     "createdAt": "2026-01-01T00:00:00.000Z",
+     "written": "好"
+    },
+    {
+     "id": "c-writing-2",
+     "kind": "writing",
+     "entryId": 2,
+     "deckIds": [
+      "other"
+     ],
+     "createdAt": "2026-01-01T00:00:00.000Z",
+     "written": "好"
+    }
+   ],
+   "expected": {
+    "deck": null,
+    "writes": [
+     {
+      "id": "c-vocab-1",
+      "kind": "vocab",
+      "entryId": 1,
+      "deckIds": [
+       "general",
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "written": "你"
+     },
+     {
+      "id": "c-writing-1",
+      "kind": "writing",
+      "entryId": 1,
+      "deckIds": [
+       "general",
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "written": "你"
+     },
+     {
+      "id": "c-vocab-3",
+      "kind": "vocab",
+      "entryId": 3,
+      "deckIds": [
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-03-10T12:00:00.002Z",
+      "written": "我"
+     }
+    ],
+    "created": 1,
+    "joined": 1,
+    "skipped": 1
+   }
+  },
+  {
+   "name": "a renamed existing copy keeps its name: no deck write",
+   "now": "2026-03-10T12:00:00.000Z",
+   "items": [
+    {
+     "entryId": 1,
+     "written": "你"
+    }
+   ],
+   "target": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "existingDeck": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "My HSK 1",
+    "createdAt": "2026-02-01T00:00:00.000Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "rawCards": [],
+   "expected": {
+    "deck": null,
+    "writes": [
+     {
+      "id": "c-vocab-1",
+      "kind": "vocab",
+      "entryId": 1,
+      "deckIds": [
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-03-10T12:00:00.000Z",
+      "written": "你"
+     }
+    ],
+    "created": 1,
+    "joined": 0,
+    "skipped": 0
+   }
+  },
+  {
+   "name": "stored duplicates of a word all join",
+   "now": "2026-03-10T12:00:00.000Z",
+   "items": [
+    {
+     "entryId": 4,
+     "written": "他"
+    }
+   ],
+   "target": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "existingDeck": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "createdAt": "2026-03-10T12:00:00.000Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "rawCards": [
+    {
+     "id": "c-vocab-4",
+     "kind": "vocab",
+     "entryId": 4,
+     "deckIds": [
+      "a"
+     ],
+     "createdAt": "2026-01-01T00:00:00.000Z",
+     "written": "他"
+    },
+    {
+     "id": "01JDUP4",
+     "kind": "vocab",
+     "entryId": 4,
+     "deckIds": [
+      "a",
+      "d-lvl-hsk-words-b06fd2ac"
+     ],
+     "createdAt": "2026-01-01T00:00:00.000Z",
+     "written": "他"
+    }
+   ],
+   "expected": {
+    "deck": null,
+    "writes": [
+     {
+      "id": "c-vocab-4",
+      "kind": "vocab",
+      "entryId": 4,
+      "deckIds": [
+       "a",
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "written": "他"
+     }
+    ],
+    "created": 0,
+    "joined": 1,
+    "skipped": 0
+   }
+  },
+  {
+   "name": "character items keep the character snapshot",
+   "now": "2026-03-10T12:00:00.000Z",
+   "items": [
+    {
+     "entryId": 5,
+     "written": "学",
+     "entryKind": "character"
+    }
+   ],
+   "target": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "existingDeck": null,
+   "rawCards": [],
+   "expected": {
+    "deck": {
+     "id": "d-lvl-hsk-words-b06fd2ac",
+     "name": "HSK words · HSK 1",
+     "createdAt": "2026-03-10T12:00:00.000Z",
+     "source": {
+      "type": "level",
+      "packId": "hsk-words",
+      "level": "HSK 1"
+     }
+    },
+    "writes": [
+     {
+      "id": "c-vocab-5",
+      "kind": "vocab",
+      "entryId": 5,
+      "deckIds": [
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-03-10T12:00:00.000Z",
+      "written": "学",
+      "entryKind": "character"
+     }
+    ],
+    "created": 1,
+    "joined": 0,
+    "skipped": 0
+   }
+  },
+  {
+   "name": "adding to General or an existing deck never writes a deck row",
+   "now": "2026-03-10T12:00:00.000Z",
+   "items": [
+    {
+     "entryId": 6,
+     "written": "她"
+    }
+   ],
+   "target": {
+    "id": "general",
+    "name": "General"
+   },
+   "existingDeck": null,
+   "rawCards": [],
+   "expected": {
+    "deck": null,
+    "writes": [
+     {
+      "id": "c-vocab-6",
+      "kind": "vocab",
+      "entryId": 6,
+      "deckIds": [
+       "general"
+      ],
+      "createdAt": "2026-03-10T12:00:00.000Z",
+      "written": "她"
+     }
+    ],
+    "created": 1,
+    "joined": 0,
+    "skipped": 0
+   }
+  },
+  {
+   "name": "a tombstoned copy (no live deck row) is revived with a fresh row",
+   "now": "2026-03-10T12:00:00.000Z",
+   "items": [],
+   "target": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "existingDeck": null,
+   "rawCards": [],
+   "expected": {
+    "deck": {
+     "id": "d-lvl-hsk-words-b06fd2ac",
+     "name": "HSK words · HSK 1",
+     "createdAt": "2026-03-10T12:00:00.000Z",
+     "source": {
+      "type": "level",
+      "packId": "hsk-words",
+      "level": "HSK 1"
+     }
+    },
+    "writes": [],
+    "created": 0,
+    "joined": 0,
+    "skipped": 0
+   }
+  }
+ ]
+}

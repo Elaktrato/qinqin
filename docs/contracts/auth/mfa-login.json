@@ -1,0 +1,38 @@
+{
+  "_doc": "Second step of sign-in. POST /api/auth/login answers mfa_required (NO token: no session exists yet) for a user with an authenticator or the email method, or when two-step sign-in is required and the address is verified. Answer it with POST /api/auth/login/mfa {challenge, method: totp|recovery|email, code}. method email first needs POST /api/auth/login/mfa/email {challenge} (202 {resendAfter: 60}). Wrong codes on these anonymous steps are 401 (code_invalid with attemptsLeft; challenge_expired restarts at the password step); five wrong codes per challenge, ten minutes, 3 mails per challenge. mfa_enrollment_required carries a TOKEN of a restricted session: send the user to the two-factor setup (me.restriction is mfa_enrollment). The client never stores a challenge beyond the screen; codes are typed by the user (no client-side TOTP).",
+  "mfa_required": {
+    "request": {"method": "POST", "path": "/api/auth/login", "body": {"username": "bobby", "password": "<password>"}},
+    "status": 200,
+    "body": {"status": "mfa_required", "challenge": "chal_example", "methods": ["totp", "recovery"], "emailHint": null, "expiresAt": "2026-11-15T12:10:00Z"}
+  },
+  "second_step_ok": {
+    "request": {"method": "POST", "path": "/api/auth/login/mfa", "body": {"challenge": "chal_example", "method": "totp", "code": "123456"}},
+    "status": 200,
+    "body": {"status": "ok", "token": "tok_example", "user": {"id": 2, "username": "bobby", "admin": false, "email": "bobby@example.org", "emailVerified": true, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z"}}
+  },
+  "code_invalid": {
+    "request": {"method": "POST", "path": "/api/auth/login/mfa", "body": {"challenge": "chal_example", "method": "totp", "code": "000000"}},
+    "status": 401,
+    "body": {"error": "code_invalid", "message": "That code is not right.", "attemptsLeft": 4}
+  },
+  "challenge_expired": {
+    "request": {"method": "POST", "path": "/api/auth/login/mfa", "body": {"challenge": "chal_gone", "method": "totp", "code": "000000"}},
+    "status": 401,
+    "body": {"error": "challenge_expired", "message": "This code has expired or was tried too often. Ask for a new one."}
+  },
+  "mfa_enrollment_required": {
+    "request": {"method": "POST", "path": "/api/auth/login", "body": {"username": "carol", "password": "<password>"}},
+    "status": 200,
+    "body": {"status": "mfa_enrollment_required", "token": "tok_example", "methods": ["totp", "email"], "user": {"id": 3, "username": "carol", "admin": false, "email": null, "emailVerified": false, "mustChangePassword": false, "createdAt": "2026-11-15T12:00:00Z"}}
+  },
+  "email_login_start": {
+    "request": {"method": "POST", "path": "/api/auth/email-login/start", "body": {"login": "bobby"}},
+    "status": 202,
+    "body": {"challenge": "chal_example", "resendAfter": 60, "expiresAt": "2026-11-15T12:10:00Z"}
+  },
+  "email_login_password_required": {
+    "request": {"method": "POST", "path": "/api/auth/email-login/verify", "body": {"challenge": "chal_example", "code": "123456"}},
+    "status": 403,
+    "body": {"error": "password_login_required", "message": "Two-step sign-in is required here: sign in with your password."}
+  }
+}

@@ -203,7 +203,8 @@ describe('declared credits', () => {
 			'/LEPTONICA-LICENSE.TXT',
 			'/OPENCC-APACHE-2.0.TXT',
 			'/OPENCC-JS-LICENSE.TXT',
-			'/TESSERACT-APACHE-2.0.TXT'
+			'/TESSERACT-APACHE-2.0.TXT',
+			'/UQR-LICENSE.TXT'
 		]);
 		for (const path of paths) {
 			expect(localLicensePath(path)).toBe(path);

@@ -136,7 +136,7 @@ the server waits at most 5 s (`busy_timeout`) before a write fails.
 > `qinqin seed` prints a `WARNING` line whenever the database holds user edits or
 > flashcards.
 
-The `adduser` command prompts for a password. Then open
+The `adduser` command prompts for a password (10 to 256 characters, not the username). Then open
 <http://localhost:8080>.
 
 The SQLite database and installed packs live in `./data` next to the compose
@@ -203,7 +203,9 @@ uploads), so a read-only root filesystem is not enabled.
    see [Reverse proxy and HTTPS](#reverse-proxy-and-https)), and
    `QINQIN_AI_PROVIDER=fake` is for testing only. Deploy the stack.
 4. **First run, before exposing the port beyond your LAN** (until a user
-   exists, the first registration over the API becomes admin). Portainer:
+   exists, the first registration over the API becomes admin in every
+   registration mode; afterwards the default mode `closed` refuses everyone
+   but an administrator). Portainer:
    Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
 
    ```sh
@@ -254,7 +256,8 @@ separately.
 
 ### Upgrading
 
-Back up first. Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
+Back up first (a backup taken before upgrading to a release with migration 032 still holds the old
+plaintext session tokens: store it like the database and delete it after the upgrade). Change the tag in `QINQIN_IMAGE` (or pull `latest`) and
 redeploy with *Pull latest image* enabled. Migrations are embedded in the
 binary and applied automatically at start (`server/internal/db`); they are
 one-way. **Downgrading is not supported**: going back to an older image needs
@@ -349,10 +352,109 @@ Known-good marks live in their own table (also capped at 65,536), so a flood of
 new failing keys cannot erase them. A locked key is refused (429, `Retry-After`) before the password is checked,
 unknown usernames behave exactly like known ones, and an administrator creating
 users is not throttled. Errors of both routes are JSON `{"error","message"}`
-(`rate_limited`, `busy`, `bad_credentials`, `admin_required`,
+(`rate_limited`, `busy`, `bad_credentials`, `registration_closed`,
 `username_taken`, `bad_request`, `too_large`); see `docs/contracts/auth/`.
 A distributed attack can keep an account refused for new devices and networks
 while it lasts; the owner's usual device keeps signing in.
+
+### Accounts and sign-in
+
+Bearer tokens are 64 random hex characters, shown once at login; the database keeps only their
+SHA-256, so a copied database file or backup hands out no live session. A session unused for 90
+days stops working and is pruned (an hourly janitor also drops audit rows older than 180 days).
+Logging out in the web app now ends the session on the server, and Settings, Account lists the
+signed-in devices (a coarse label such as "Firefox on Linux", never the raw User-Agent, never an
+address), revokes one, "Log out everywhere else", "Log out everywhere", and changes the password
+(other sessions are signed out by default).
+
+New passwords need 10 to 256 characters and may not equal the username; there are no other rules.
+New usernames are 3 to 32 letters, digits, dots, underscores or hyphens, stored in Unicode NFC, and
+unique by their NFKC form with case folded (so `Bob`, `bob` and a fullwidth `Ｂob` are one name; a name that mixes Latin with
+Cyrillic or Greek letters is refused). Older accounts whose names collide under that rule keep working, login still matches
+the exact name, but their names cannot be taken again. Existing accounts keep working unchanged on upgrade: their sessions are hashed in
+place by migration 032, existing passwords are grandfathered. A session whose user must change the
+password (an administrator's temporary password) is restricted: it can only change the password,
+read `me`, log out and open the Sources page, and the web app sends it to the change page. The
+rules for clients are in `docs/contracts/auth/README.md`.
+
+#### Registration, invites and user management
+
+Who may create an account is an instance setting, **Settings, Admin, Security**: `closed` (the
+default: nobody registers, administrators create accounts), `invite` (only people holding an invite
+link) or `open` (anyone who reaches the server). The very first registration on an empty database always
+works and becomes the administrator, in every mode. An email policy decides whether addresses are
+collected: `off` (default: nothing personal is asked or shown), `optional` or `required` (new accounts
+need one; existing accounts are only asked, never locked out).
+
+**Invite links** (Admin, Invites): uses 1 to 100, expiry 1, 7, 30 or 90 days or none, an optional note.
+The link `https://your-server/register#invite=...` is shown once, when it is created; the server keeps
+only a hash, and the token sits in the URL fragment, which browsers never send to a server. Revoke a link
+at any time. While registration is `closed` invites are kept but inactive; an expired, used up, revoked or
+unknown link all get the same answer. **Administrator-created users** (Admin, Users) get a temporary
+password and must choose their own at the first sign-in; their sessions can do nothing else until then.
+**Reset links** (a row action) are shown once, last 24 hours by default (1 to 168) and may be used once: using
+one sets the password, signs the person out of every device and signs them in on this one. Disabling an
+account deletes its sessions and re-enabling never brings one back. The last active administrator cannot be
+demoted, disabled or deleted (the Admin tab says why; the server enforces it even when two admins act at the
+same moment). Pending reset links die with every containment action (a password change, a forced change, disabling, signing out
+everywhere, `qinqin recover`, using a link), and an administrator can revoke a pending link. Deleting another user,
+issuing a reset link and making someone an administrator ask the acting administrator for their own password again.
+Email addresses are stored with the domain in its ASCII (punycode) form, so `bücher.de` and `xn--bcher-kva.de` are one
+address; a part before the `@` with non-ASCII letters is refused until internationalised mailboxes are supported. Every
+response carries `Referrer-Policy: no-referrer` and `X-Frame-Options: DENY`; at startup the server removes the book and
+photo folders of users that no longer exist. The audit log (Admin, Security) lists who did what, never a password,
+token or address.
+
+**Deleting an account** (an administrator, or you yourself in Settings, Account with your password and your
+username typed): the account and these are removed in one step: workspaces, study events, plugin data
+(flashcards, journal entries, reader settings), edited dictionary entries, sentences you added, library books
+with their bookmarks and highlights and their files, journal photo drafts and their files, AI keys and selection,
+AI usage records, time-zone history, sessions, reset links, invites the account created. **Kept**: admin-registered
+AI endpoints (their creator becomes nobody), installed packs, languages, plugins and dictionaries, and the audit log
+(the name in it becomes `deleted user #id`). The last active administrator cannot delete themselves. **Locked out?**
+`qinqin recover --username NAME [--enable] [--admin]` (new password from `QINQIN_PASSWORD` or stdin; a terminal echoes what is typed, so prefer the variable or a pipe; `--admin` on a disabled account needs `--enable`; it must be
+changed at the next sign-in; every session of that account ends; `--reset-mfa` also removes the account's
+authenticator app, recovery codes and email-code method).
+
+Security notes. (1) Migration 032 stores only hashes of the session tokens and zeroes the database pages that
+held the old plaintext ones (including the write-ahead log once it is checkpointed), but **a backup taken before the
+upgrade still contains the plaintext tokens of that moment**: keep it as private as the database itself, and delete
+it once the upgrade is confirmed. Sessions that were idle count as used at the upgrade time, so nobody is signed out
+because of it. (2) Signing in to a disabled account with the right password answers `account_disabled` (so a person
+knows why), and a wrong password still answers the usual 401; this tells someone who already holds the password that
+the account exists and is disabled, which was judged better than a mystery refusal. (3) Forcing a password change
+signs the user out everywhere.
+
+#### Email (SMTP)
+
+Email is optional and lives in the server itself: **Settings, Admin, Email**. Fields: server, connection
+security (`STARTTLS` on port 587, the default and required to succeed, never silently downgraded; `TLS` on 465;
+`None`, plain text, allowed only without a user name and password), user name and password, sender address and
+name, and the address people use to reach the site (it goes into reset links). Certificates are always verified.
+The password is encrypted with `QINQIN_SECRET` and never shown again or logged: the form says "A password is
+saved" and offers Replace and Remove; changing the server, port, security or user name makes you type the password
+again, so a session cannot send it somewhere else. **Send test mail** reports a category (`connect`, `blocked`, `tls`,
+`auth`, `sender`, `recipient`, `timeout`, `protocol`) and the SMTP reply code, never the server's own text. Mail goes
+out in the background (one queue, at most 200 mails an hour for the whole server, never an address or code in the log).
+By default the server may not connect to loopback or private addresses; set `QINQIN_SMTP_ALLOW_PRIVATE=1` for a relay in
+your LAN or a container (cloud metadata and link-local addresses are never allowed). Docker example: a relay service
+`smtp` in the same stack, host `smtp`, port 25, security None, and `QINQIN_SMTP_ALLOW_PRIVATE=1` on qinqin. To try it
+without a provider run `python3 scripts/smtp-sink.py --port 2525 --dir ./mail` (stores each message as `.eml`, prints
+the subject only) and use host `127.0.0.1` (or the container name), port 2525, security None.
+Without email these features are hidden, not broken: forgot-password by mail, address confirmation, emailed codes,
+required two-step sign-in and sign-in by code. Removing the email setup switches them off again.
+
+#### Two-step sign-in
+
+Everyone may add an **authenticator app** (TOTP, RFC 6238, 6 digits, 30 s) in Settings, Account, with 10 single-use
+recovery codes; it needs `QINQIN_SECRET`, not email. Where email works, an **emailed code** is a second method. Each
+code can be tried 5 times and lives 10 minutes; at most 10 wrong codes per account per 15 minutes count across all
+sign-ins. An authenticator code works once (replay is refused). The administrator can require two-step sign-in for
+everyone (**Admin, Security**; needs email): it applies at each person's next sign-in, optionally signing everyone else
+out now. A person without an address is sent to a setup page first. **Sign in with an emailed code** (another switch)
+adds a password-free route; an account with an authenticator still asks for it, and while two steps are required an
+account without one must use the password. A password reset or reset link never removes two-step sign-in, and a reset link or an emailed code is never accepted as a second step after itself. People whose only second step is an emailed code are protected by their mailbox alone, by construction: while email does not work they cannot sign in (503), and Admin, Email says how many; give them an authenticator app for independence from mail. Changing your email address asks for the authenticator code too, cancels open reset links and tells the old address. Locked out:
+a recovery code, an administrator (Admin, Users: reset two-factor) or `qinqin recover --username NAME --reset-mfa`.
 
 ### AI journal
 
@@ -400,6 +502,9 @@ cost matters (calls are limited to 30 per user and hour across all providers).
 | 502/504 on an AI review | Proxy timeout below 180 s |
 | "port is already allocated" | Change `QINQIN_PORT` |
 | Unhealthy | `wget` against `127.0.0.1:8080/healthz` inside the container; see the log; a slow first start can exceed the 15 s start period on a slow disk |
+| Test mail fails with `tls` | The server needs STARTTLS (587), implicit TLS (465), or choose None only on a private relay; the certificate must match the host name |
+| Test mail fails with `blocked` | The address is private: set `QINQIN_SMTP_ALLOW_PRIVATE=1` (metadata and link-local are never allowed) |
+| Test mail fails with `auth` | Wrong user name or password; Microsoft 365 needs an app password or SMTP AUTH enabled |
 | "database is locked" during seed | Seed while the app is idle (5 s busy timeout) |
 
 ## Workspaces
@@ -598,6 +703,47 @@ workspace (the home widget counts the same types).
 | **Word Salad** | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, **Check**, or **Show answer** | an example sentence |
 | **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Reveal character** animates it | Han characters with bundled stroke data; kana stay visible |
 | **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
+
+**Reverse and cloze cards** are opt-in per deck. Each deck row on `/study` has a
+Reverse and a Cloze switch (stored per deck, General included); a deck that never
+turns them on behaves exactly as before. In a session, their checkboxes appear
+when a selected deck enables the kind and start checked unless you unchecked that
+kind before in this workspace.
+
+| Type | What you do | Needs |
+|---|---|---|
+| **Reverse** | See the meaning, recall the word; optionally **Show reading** (a hint) and type the word, then **Show answer** | a word (not a character) with a gloss |
+| **Cloze** | Fill the gap in an example sentence of the word (choose at first, type once it is learned); the translation is shown, the reading after the answer | a word with an example sentence that contains it |
+
+Both are created the first time you grade them, like the other companions, with
+one reverse or cloze card at most per word and session (reverse first). A word's
+other cards are **buried until your next learner day** once a reverse or cloze
+card of it is answered (and the other way round); vocab, sentence, writing and
+tone cards do not bury each other. Buried cards stay due and are left out of the
+queue and the due counts. Reverse and cloze reviews give XP and count for streaks
+and the heatmap, but not for character mastery. Rules and fixtures for other
+clients: `docs/contracts/cards/`.
+
+**Decks page.** The flashcards plugin has a page of its own, **Decks** (`/p/flashcards`,
+in the main navigation): your overall numbers (words, studied, mastered, retention and
+reviews of the last 30 learner days), then every deck with its words and cards, what is
+due and new, a progress bar and **Study** (a session over that deck only, with the saved
+limits and the card types the deck enables). A deck opens to its words: search by word,
+reading or id, filter by state, card kind or due now, sort, select several to **Move** or
+**Delete** (with the same ten-second Undo as the Card manager on `/study`), and per word
+**Remove** or **Turn back on** its reverse and cloze cards. **Settings** renames or deletes
+a deck (the confirmation says where its cards go) and holds the Reverse and Cloze switches;
+General can be configured but not renamed or deleted. "Mastered" means a memory score of 80
+or more (the "Learned" band of Stats → Characters); "Young" is a word in review that holds
+under 21 days.
+
+**Level decks.** Below your decks the page lists the installed level packs (HSK, JLPT, …)
+as read-only level decks, collapsed by scheme. A level shows how many of its words are
+already in your decks, can be studied as a level session, and can be copied with **Add to
+my decks**: into a new deck of your own (named like the level, with a fixed id so adding
+again never makes a second one) or into a deck you pick. Adding again only adds what is
+new; words you already have join the deck without losing their history. Rules and test
+vectors for other clients: `docs/contracts/decks/`.
 
 Sentence, writing and tone cards are **companions** of the vocab cards in the
 chosen decks. They are planned as virtual cards that share the new-card limit, and
@@ -845,7 +991,17 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/languages` | Public. The languages with an installed dictionary: `[{code, name, installed}]` sorted by code (`name` is the code unless a `languages` row names it) |
-| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (the first user on an empty database becomes the admin without a token; afterwards an admin token is required), log in for a bearer token, read the current user. Login and register bodies up to 4 KiB |
+| `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` | Register (`{username, password, email?, invite?}`: the first user on an empty database becomes the admin without a token; afterwards the registration mode decides: `closed` 403 `registration_closed`, `invite` needs a valid invite (403 `invite_invalid`), `open` takes anyone; an admin token still creates a plain user; username, password and email follow the policies), log in (`{username, password, deviceName?}` answers `{status: "ok" \| "password_change_required", token, user}`), read the current user and the session's `restriction`. Login and register bodies up to 4 KiB |
+| `GET /api/auth/options` | Public: `{bootstrap, registration, emailPolicy, passwordReset, emailCodeLogin, passwordMinLength}`, never cached |
+| `POST /api/auth/invite/check` `{invite}`, `POST /api/auth/reset/check` `{token}`, `POST /api/auth/reset` `{token, password, deviceName?}` | Public: is this invite usable (403 `invite_invalid`); whose reset link is this (400 `token_invalid`); spend a reset link (login-shaped answer) |
+| `GET`/`PATCH /api/admin/settings/auth` | Admin: registration mode, email policy (and, once mail exists, MFA / email-code switches; 409 `mail_unavailable` before) |
+| `GET`/`POST /api/admin/invites`, `DELETE /api/admin/invites/{id}` | Admin: list (never a token), create (`{maxUses, expiresInDays, note}`; the token and `path` only in the 201), revoke |
+| `GET`/`POST /api/admin/users`, `GET`/`PATCH /api/admin/users/{id}`, `POST …/{id}/sessions/revoke`, `POST …/{id}/reset-link`, `GET …/{id}/deletion-preview`, `DELETE …/{id}` `{confirm}` | Admin user management (409 `last_admin`, 409 `self_target`, 422 `confirm_mismatch`) |
+| `GET /api/admin/audit?before&limit` | Admin: audit events, newest first, `next` id for the following page |
+| `PUT /api/account/email` `{email, currentPassword}`, `GET /api/account/deletion-preview`, `DELETE /api/account` `{password, confirm}` | Set or clear your own address under the email policy; what deleting your account removes; delete it |
+| `POST /api/auth/logout` | Ends the session the request came in on (204); allowed for a restricted session |
+| `POST /api/account/password` `{currentPassword, newPassword, signOutOthers?}` | Change the caller's password; wrong current password is 403 `wrong_password`, a policy failure 422; other sessions are signed out unless `signOutOthers` is false (always after a forced change) |
+| `GET /api/account/sessions`, `DELETE /api/account/sessions/{id}`, `POST /api/account/sessions/revoke` `{scope: "others" \| "all"}` | The caller's signed-in devices (no tokens), end one (204; another user's id is 404), end the others or all |
 | `GET /healthz` | Liveness check |
 | `GET /api/entries/{id}/chars` | Public. The characters classified under a radical entry, ordered by headword; an empty array for a radical without any, 404 for an unknown id |
 | `PUT /api/entries/{id}` | Store the caller's own patch of an entry (a `null` field reverts to the shared value); body up to 64 KiB, 401 without a user; an unknown or malformed id is 404 (checked before the body, so a bad body on a missing entry is still 404) |
@@ -1115,12 +1271,13 @@ head -c 32 /dev/urandom | base64
 
 Without a valid secret the server still starts, AI shows as disabled with the reason (not set, or not 32 bytes of base64), and no key can be stored.
 
-Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot be read and users must enter them again; it is never written to `/data`. Rotate it by moving the old value to `QINQIN_SECRET_PREVIOUS` for one restart: on startup the keys sealed with the previous secret are re-encrypted with the new one, after which the previous value can be removed. A key sealed with a secret the server no longer knows shows as "re-enter your key" instead of failing.
+`QINQIN_SECRET` also seals the mail password and the authenticator secrets (a mail password cannot be stored without it, and authenticator apps are unavailable; recovery codes still work). Back up `QINQIN_SECRET` separately from `/data`; without it stored keys cannot be read and users must enter them again; it is never written to `/data`. Rotate it by moving the old value to `QINQIN_SECRET_PREVIOUS` for one restart: on startup the keys sealed with the previous secret are re-encrypted with the new one, after which the previous value can be removed. A key sealed with a secret the server no longer knows shows as "re-enter your key" instead of failing.
 
 | Variable | Meaning |
 |---|---|
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
+| `QINQIN_SMTP_ALLOW_PRIVATE` | `1` or `true` lets the mail server be on loopback or a private network (a relay container, a LAN host). Off by default |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
 | `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks (see [Reverse proxy and HTTPS](#reverse-proxy-and-https)). Set `none` when no reverse proxy sits in front |
 | `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |
@@ -1319,7 +1476,7 @@ Dockerfile copies that directory into the Go binary before compiling.
 
 | Path | Contents |
 |---|---|
-| `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`) |
+| `server/` | Go API, SQLite migrations, dictionary and frequency importers (`internal/dict`, `internal/freq`), the lookup engine (`internal/lookup`) and tokenizer (`internal/segment`), and the `qinqin` CLI (`serve`, `seed`, `adduser`, `recover`) |
 | `apps/web/` | SvelteKit SPA (adapter-static) |
 | `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the HSK 3.0 character and word and JLPT kanji level lists) with their licenses and attribution notices |
 | `plugins/data-local/` | Gitignored: local-only packs such as frequency lists with unclear licences |

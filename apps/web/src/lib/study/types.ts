@@ -3,18 +3,38 @@
 // `card:<id>`; review history and scheduling are separate (events, never
 // stored schedules).
 
+import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrs/params';
+
+/** Where an owned copy of a system deck came from (decks view, "Add to my decks"). */
+export type DeckSource =
+	| { type: 'level'; packId: string; level: string }
+	| { type: 'plugin'; pluginId: string; key: string };
 
 /** One user-created deck. The implicit `general` deck has no stored row. */
 export interface Deck {
 	id: string;
 	name: string;
 	createdAt: string;
+	/** Set on a copy of a level or plugin deck: "Copied from HSK 1". */
+	source?: DeckSource;
 }
 
-export type StudyCardKind = 'vocab' | 'sentence' | 'writing' | 'tone';
+export type StudyCardKind = 'vocab' | 'sentence' | 'writing' | 'tone' | 'reverse' | 'cloze';
 
-export const CARD_KINDS: readonly StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone'];
+export const CARD_KINDS: readonly StudyCardKind[] = [
+	'vocab',
+	'sentence',
+	'writing',
+	'tone',
+	'reverse',
+	'cloze'
+];
+
+/** Kinds a deck must switch on (deckcfg:) before they are planned. */
+export type OptInKind = 'reverse' | 'cloze';
+
+export const OPT_IN_KINDS: readonly OptInKind[] = ['reverse', 'cloze'];
 
 /** Anki-style grades: 1 Again, 2 Hard, 3 Good, 4 Easy. */
 export type ReviewGrade = 1 | 2 | 3 | 4;
@@ -64,6 +84,11 @@ export interface StudyCard {
 	// sentence or tone companions, writing unlocks a learner day later.
 	entryKind?: 'character';
 	sentenceId?: number;
+	/**
+	 * Vocab rows only: non-vocab kinds the learner removed for this word, so
+	 * lazy creation does not bring them back. Absent = nothing skipped.
+	 */
+	skipKinds?: StudyCardKind[];
 	deckIds: string[];
 	createdAt: string;
 }
@@ -74,6 +99,8 @@ export interface StudyData {
 	cards: StudyCard[];
 	/** The workspace's FSRS parameter sets; always set by the store. */
 	fsrs?: FsrsState;
+	/** Per-deck card type switches (`deckcfg:` rows), by deck id. */
+	deckSettings?: Record<string, DeckSettings>;
 }
 
 /**

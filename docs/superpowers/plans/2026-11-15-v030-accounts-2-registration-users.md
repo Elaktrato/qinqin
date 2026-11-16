@@ -229,6 +229,19 @@ Full gates. Real-app check (curl only, free port, fresh data dir in `$SP/acct2`)
    no password or token text (grep the body for the test passwords and token prefixes).
 Kill, remove `$SP/acct2`.
 
+## Requirements carried over from plan 1's review (each needs a test)
+
+- **Force-change revokes ALL sessions**: admin create (temporary password), `PATCH mustChangePassword:true`,
+  reset-link use and CLI `recover` call `auth.ForcePasswordChange` (flag + watermark + delete every session of
+  the user + audit, one transaction; it exists since plan 1). Test: user with 3 sessions, force, all gone, the
+  next login is `password_change_required` and its token may change the password without the current one.
+- **Disable deletes sessions in the same transaction** as `disabled_at`; **re-enable never resurrects** an
+  old session (enable, then the earlier token is 401). Same for CLI `--enable`.
+- Admin create uses `auth.CheckNewUsername` after `auth.NormalizeUsername`, and `CreateUser` fills `username_key`
+  (unique, NFKC + case fold).
+- Audit details only use the keys in `auth.auditKeys`; extend that list deliberately (invite and settings actions).
+- Deleting a user also deletes from `user_time_zones` (migration 035) and every table the schema guard names.
+
 ## Review Focus
 
 - **Last-admin races**: guarded statements are the first write; `usersMu` held; `-race` test.
@@ -251,3 +264,89 @@ Kill, remove `$SP/acct2`.
 - Kotlin client: reads `options` before showing sign-in; registration by invite uses the token
   from the link fragment (deep link `…/register#invite=`); admin screens are web-only for v0.4.0
   (say so in the contract README).
+
+## Execution record (built on `feature/v030-accounts-2`)
+
+Tasks 1-17 were built test-first in dependency order, one commit each (SHAs in the order built):
+1 `0be39fc`, 2 `33b6c98`, 3 `240c4d1`, 4 `0329e4a`, 5 `d19b71d`, 6 `1cb4816`, 7 `9833a76`, 8 `089597d`,
+9 `1ac4c60`, 10 `dabc468`, 11 `771183c`, 12 `e8353ea`, 13 `b20ef68`, 14 `02439ff`, 15 `65b00bb`, 16 `30ae4ea`,
+plus `ad0d3a9` (the janitor drops spent reset links after a week). Task 17 is the gate run and the real-app check
+(a built server on a scratch copy, curl-style Python driver, previous-binary upgrade, 50+ checks, all passed).
+
+### Rulings and deviations made while building
+
+- Ruling: migration 033 as planned (034 stays free for plan 3, 035 is the study-day one; the runner applies by name).
+- Ruling: `closed` registration answers anonymous callers 403 `registration_closed` (the throttle fixture
+  `register_admin_required` became `register_closed`; `admin_required` left the catalogue) — the rate-limiting spec said
+  "#64 renames per mode" — cost if wrong: a client matching the old code (none exists yet).
+- Ruling: an invite supplied in `open` mode is spent and must be valid (403 `invite_invalid` otherwise) — a stale link
+  should say so instead of silently registering without its use — cost if wrong: an open-mode visitor with an old link
+  deletes the fragment.
+- Ruling: `expiresInDays` absent means 7 days, explicit `null` means no expiry (the spec only gave the UI default).
+- Ruling: `NewUser` carries the precomputed `Hash` instead of a `Password` — the digest is computed behind
+  `withHashGate` before any `BeginTx`, as the plan's own rule demands; `CreateUserWith(ctx, execer, NewUser)` takes a `*sql.Tx`.
+- Ruling: removing the admin bit of, disabling or deleting a DISABLED admin is allowed without another admin (a disabled
+  admin is not an "active admin"), enforced in the same guarded statements.
+- Ruling: disabling and re-enabling both delete the user's sessions in the same transaction (re-enable is
+  defence in depth); `RecoverAccount` (CLI) and reset use do flag + watermark + delete-all in one transaction like
+  `ForcePasswordChange`; admin create records the watermark in the insert (a new user has no sessions to revoke).
+- Ruling: `Audit` gained `ActorName` (label for a system actor: `cli`) and the key `admin` joined `auditKeys`.
+- Ruling: `userTables` (removed) and `keptTables` (reference kept, anonymised or nulled) are exported through
+  `auth.UserTables()`; each entry carries an `Export` decision (`ExportRows` or `ExportSkip` + reason) NOW, so the backup
+  design's personal export iterates the same registry (the schema guard fails on an unset decision). Every table with a
+  `user_id`/`created_by`/`updated_by`/`actor_id`/`target_id` column is listed: workspaces, study_events, plugin_states,
+  plugin_data, user_edits, sentences, library_books/bookmarks/highlights, user_time_zones (#84), journal_photos, ai_keys,
+  ai_selection, ai_calls, sessions, password_resets (user rows deleted, issuer set NULL), invites; kept: ai_custom_providers
+  (created_by 0), auth_settings (updated_by NULL), auth_audit (names become `deleted user #id`). `auth.UserDirs` lists the
+  directories removed after commit; `(*Users).WithUserLock` is the lock the restore must take first.
+- Ruling: reset tokens and invite tokens are 32 random bytes as 43 base64url characters, SHA-256 hex stored; every bad
+  reset token is one 400 `token_invalid` body, every bad invite one 403 `invite_invalid` body; limiter named policy
+  `reset` (10 burst, one per 30 s per client) was added to `DefaultAuthPolicy().Named`; check/register routes also spend
+  the client bucket. The reset answer is login-shaped and creates its session in one place (`handleReset`) where plan 3
+  puts the MFA branch.
+- Deviation (needed by task 15): `PUT /api/account/email {email|null, currentPassword}` was added (accSession, allows an
+  enrolment session): the plan's profile UI had no route to write to. It re-asks the password (reauth limiter, 403
+  `wrong_password`), applies the email policy and stores the address UNVERIFIED (re-saving the same address keeps it
+  verified). Plan 3 adds the verification code and resend on top.
+- Deviation: `hideEmailWhenOff` blanks the stored email in `me`, login and reset answers (and the admin user list) while
+  the policy is `off`, as the spec's section 1 says; the data stays.
+- Deviation: `routes()` got 18 new `route{}` rows (all covered by the walk test with the right `access`).
+- Deviation: `login()` in `auth.ts` now refuses a status the app does not know (`stepFor`/`hasSession` in
+  `lib/account/loginFlow.ts`), so plan 3's `mfa_required` cannot be mistaken for a session by an old client.
+- Not in the plan, added: `docs/contracts/auth/reset.json` besides the three planned fixture files.
+
+### Gates
+
+Full `go vet ./... && go test -count=1 -p 2 ./...` green (api package 179 s); `-race` on the whole `auth` package and on
+the api invite-race, reset-race, admin-patch and admin-delete tests; web `check` (0 errors), `test` (214 files, 3575 tests)
+and `run build` exit 0; the full vitest run is also green under Node 26 (docker `node:26`). `git status` clean, no
+root-owned files. The real-app check ran against a built binary: upgrade from the previous binary (old session survives,
+033 tables appear), registration modes, invites (uses, expiry, revocation, 8-way race, rollback on a clash), admin
+create with forced change, forced-change session revocation, reset links, last-admin races (20 rounds of two admins
+demoting each other), disable/enable, user deletion with a DB walk of every `user_id` table and the removed files,
+self-delete with re-auth, the audit body (no password, token or address text) and `qinqin recover`.
+
+### Not verified
+
+No browser run (rules): the dialogs use `showModal()` with an `open` attribute fallback and were only exercised in jsdom;
+focus return and the Admin tab layout at 360 px are untested. The upgrade rehearsal used the feature/v0.3.0 tip (plan 1)
+as the previous binary, not a v0.2.x release. Deleting a user does not stop a request of theirs that is still in flight
+from writing a row after the commit (the session is gone, so only a request already past authentication; such a row is
+orphaned and inert, and the guard test would not see it).
+
+### What plan 3 (SMTP / MFA) must know
+
+- `s.mailConfigured()` (`handlers_admin_settings.go`) is the single seam for "mail is configured" (options, settings
+  409 `mail_unavailable`); replace its body with `mail.Configured`. `options.passwordReset` / `emailCodeLogin` and the
+  MFA switches in Security (`switchStates`) follow it.
+- Add the 034 tables (`auth_challenges`, `mfa_totp`, `mfa_recovery_codes`) to `userTables` with an `Export` decision (the
+  schema guard `TestSchemaGuardEveryUserTableIsListed` fails otherwise) and a seed row in `seedSQL` of `delete_test.go`.
+- Reset use: `handleReset` creates the session right after `auth.UseReset`; branch there for a user with MFA
+  (`mfa_required`). `loginFlow.ts` is where the web client learns new steps; `login()` throws on an unknown status.
+- `DELETE /api/account` takes `{password, confirm}` now; add `code` (TOTP) there, and `PUT /api/account/email` needs the
+  verification step (`email_verified_at` is NULL after a self-entered address).
+- `RecoverAccount`/`--reset-mfa`: the flag is accepted and prints "no two-factor data"; wire the TOTP/recovery-code deletion
+  in `recoverCmd` and the audit row (`mfa_reset`).
+- Named limiter policies live in `DefaultAuthPolicy().Named` (`reauth`, `reset`); new routes use `s.authLimiter(name)`.
+- `auth.Audit` keys: extend `auditKeys` deliberately (the allowlist refuses anything else).
+- The personal export (backup design) iterates `auth.UserTables()`; restore must call `Users.WithUserLock` before `BeginTx`.

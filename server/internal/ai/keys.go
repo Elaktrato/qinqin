@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"qinqin/internal/secretbox"
 )
 
 // KeyState tells whether a stored key can be used with the current secret.
@@ -285,7 +287,8 @@ func (k *KeyStore) DeleteProvider(ctx context.Context, provider string) error {
 // Rotate re-seals every key sealed under Previous with Current and returns
 // how many it moved. Rows that neither secret opens are left alone.
 func (k *KeyStore) Rotate(ctx context.Context) (int, error) {
-	if k.Previous == nil || k.Current == nil || k.Previous.Fingerprint() == k.Current.Fingerprint() {
+	rot := secretbox.Rotator{Current: k.Current, Previous: k.Previous}
+	if !rot.Active() {
 		return 0, nil
 	}
 	tx, err := k.DB.BeginTx(ctx, nil)
@@ -293,47 +296,15 @@ func (k *KeyStore) Rotate(ctx context.Context) (int, error) {
 		return 0, err
 	}
 	defer tx.Rollback()
-	rows, err := tx.QueryContext(ctx, `SELECT user_id, provider, ciphertext, nonce FROM ai_keys WHERE secret_fp = ?`, k.Previous.Fingerprint())
+	n, err := rot.Rotate(ctx, tx, secretbox.Column{
+		Table: "ai_keys", Keys: []string{"user_id", "provider"}, Ct: "ciphertext", Nonce: "nonce", FP: "secret_fp",
+		AAD: func(keys []any) (string, error) {
+			user, _ := keys[0].(int64)
+			provider, _ := keys[1].(string)
+			return k.aad(user, provider)
+		}})
 	if err != nil {
 		return 0, err
-	}
-	type old struct {
-		user      int64
-		provider  string
-		ct, nonce []byte
-	}
-	var olds []old
-	for rows.Next() {
-		var o old
-		if err := rows.Scan(&o.user, &o.provider, &o.ct, &o.nonce); err != nil {
-			rows.Close()
-			return 0, err
-		}
-		olds = append(olds, o)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return 0, err
-	}
-	n := 0
-	for _, o := range olds {
-		aad, err := k.aad(o.user, o.provider)
-		if err != nil {
-			continue
-		}
-		plain, err := k.Previous.Open(o.ct, o.nonce, aad)
-		if err != nil {
-			continue
-		}
-		ct, nonce, err := k.Current.Seal(plain, aad)
-		if err != nil {
-			return 0, err
-		}
-		if _, err := tx.ExecContext(ctx, `UPDATE ai_keys SET ciphertext = ?, nonce = ?, secret_fp = ? WHERE user_id = ? AND provider = ?`,
-			ct, nonce, k.Current.Fingerprint(), o.user, o.provider); err != nil {
-			return 0, err
-		}
-		n++
 	}
 	return n, tx.Commit()
 }

@@ -13,7 +13,18 @@
 	import { workspaces } from '$lib/workspaces';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
-	import { hasTabSetup, loadRememberedTypes, rememberCardTypes } from '$lib/study/cardTypesMemory';
+	import {
+		defaultExtraTypes,
+		hasTabSetup,
+		loadExtraChoices,
+		loadRememberedTypes,
+		rememberCardTypes,
+		rememberExtraChoice,
+		type ExtraChoices
+	} from '$lib/study/cardTypesMemory';
+	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
+	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import {
 		levelEntryCount,
@@ -43,6 +54,8 @@
 	} from '$lib/study/store';
 	import {
 		CARD_KINDS,
+		OPT_IN_KINDS,
+		type OptInKind,
 		type Deck,
 		type ReviewEvent,
 		type StudyCard,
@@ -66,7 +79,9 @@
 			'Rebuild an example sentence from shuffled tiles; words without sentences are skipped.',
 		writing:
 			'Draw each Han character stroke by stroke; words without Han characters are skipped.',
-		tone: 'Swipe or type the tone of every syllable (Chinese only).'
+		tone: 'Swipe or type the tone of every syllable (Chinese only).',
+		reverse: 'See the meaning, recall the word (words only; switched on per deck).',
+		cloze: 'Fill the gap in an example sentence (switched on per deck).'
 	};
 
 	// Restore this tab's setup before the first render: on an SPA the
@@ -77,6 +92,9 @@
 	let cards = $state<StudyCard[]>([]);
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
+	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
+	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
+	let extraChoices = $state.raw<ExtraChoices>({});
 	let schedulingLabel = $state('default parameters');
 	let loading = $state(true);
 	let loadError = $state('');
@@ -164,6 +182,7 @@
 		}
 		schemesLoaded = false;
 		schemeError = '';
+		extraChoices = workspaceId === null ? {} : loadExtraChoices(workspaceId);
 
 		if (workspaceId === null) {
 			decks = [];
@@ -185,6 +204,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
@@ -213,6 +233,7 @@
 			decks = data.decks;
 			cards = data.cards;
 			reviews = data.reviews;
+			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
@@ -366,22 +387,44 @@
 	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
 	// hidden type stays in the saved setup (switching back restores it)
 	// but never counts or reaches a session.
-	const visibleTypes = $derived(
-		CARD_TYPES.filter((type) => type.id !== 'tone' || isChinese(workspaceLanguage ?? ''))
-	);
+	// Reverse and cloze are offered only when a selected deck switches them on;
+	// they start checked unless the learner unchecked them before in this workspace.
+	const enabledOptIn = $derived(enabledKinds(deckSettings, selectedDeckIds));
 
-	const selectedKinds = $derived(
-		CARD_KINDS.filter(
-			(kind) => cardTypes.includes(kind) && visibleTypes.some((type) => type.id === kind)
+	const visibleTypes = $derived(
+		CARD_TYPES.filter(
+			(type) =>
+				(type.id !== 'tone' || isChinese(workspaceLanguage ?? '')) &&
+				(!isOptIn(type.id) || enabledOptIn.has(type.id as OptInKind))
 		)
 	);
+
+	function isOptIn(kind: string): boolean {
+		return (OPT_IN_KINDS as readonly string[]).includes(kind);
+	}
+
+	const extraKinds = $derived(defaultExtraTypes(enabledOptIn, extraChoices));
+
+	const selectedKinds = $derived([
+		...CARD_KINDS.filter(
+			(kind) =>
+				!isOptIn(kind) &&
+				cardTypes.includes(kind) &&
+				visibleTypes.some((type) => type.id === kind)
+		),
+		...extraKinds
+	]);
+
+	function isChecked(id: string): boolean {
+		return isOptIn(id) ? extraKinds.includes(id as OptInKind) : cardTypes.includes(id);
+	}
 
 	// Due and new are counted separately so the setup shows what a
 	// session would actually contain today, with the selected types and
 	// the companion cards a deck session would plan. Cards reviewed but
 	// not due yet belong to neither bucket.
 	const deckPlan = $derived.by(() => {
-		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0 } };
+		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
 		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
 		const items = deckSessionItems({
 			cards,
@@ -393,6 +436,8 @@
 			now: new Date(),
 			w: weights,
 			language: workspaceLanguage ?? '',
+			deckSettings,
+			studyDay: currentStudyDay(),
 			// Words this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
@@ -405,15 +450,23 @@
 	// a sentence, stroke data or a clean pinyin reading is only known when
 	// it comes up, and unsuitable words are skipped then.
 	const plannedCompanions = $derived(
-		deckPlan.byKind.sentence + deckPlan.byKind.writing + deckPlan.byKind.tone
+		deckPlan.byKind.sentence +
+			deckPlan.byKind.writing +
+			deckPlan.byKind.tone +
+			deckPlan.byKind.reverse +
+			deckPlan.byKind.cloze
 	);
+
+	// Level sessions never plan reverse or cloze: they do not count towards the
+	// level's usable kinds or its "vocab only" warning.
+	const levelKinds = $derived(selectedKinds.filter((kind) => !isOptIn(kind)));
 
 	// A character scheme studies recognition and writing cards; every
 	// other scheme is a word scheme (vocab only).
 	const levelUnit = $derived<LevelUnit>(selectedScheme?.unit === 'character' ? 'character' : 'word');
 
 	const levelCounts = $derived.by(() => {
-		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, selectedKinds)) {
+		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, levelKinds)) {
 			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
 		}
 		return levelPlanCounts({
@@ -423,9 +476,14 @@
 			now: new Date(),
 			w: weights,
 			unit: levelUnit,
-			kinds: selectedKinds,
+			kinds: levelKinds,
 			studyDay: currentStudyDay(),
 			hasStrokes: hasStrokeData,
+			// A word buried by a reverse or cloze answer today is left out, as in the session.
+			excludeEntries: buriedLevelEntries(
+				buriedNow({ cards, reviews, now: new Date(), studyDay: currentStudyDay() }),
+				cards
+			),
 			// Items this tab already found unsuitable are not counted.
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
@@ -434,7 +492,7 @@
 	// Selected types that have nothing to study: a warning, not a block,
 	// as long as another selected type has cards.
 	const typeWarnings = $derived.by((): string[] => {
-		if (mode === 'levels') return levelTypeWarnings(levelUnit, selectedKinds);
+		if (mode === 'levels') return levelTypeWarnings(levelUnit, levelKinds);
 		if (selectedCards.length === 0) return [];
 		return selectedKinds
 			.filter((kind) => deckPlan.byKind[kind] === 0)
@@ -471,7 +529,7 @@
 			if (levelEntries.length === 0) {
 				return `This level has no ${levelUnit === 'character' ? 'characters' : 'words'} yet.`;
 			}
-			if (!levelUsable(levelUnit, selectedKinds)) {
+			if (!levelUsable(levelUnit, levelKinds)) {
 				return levelUnit === 'character'
 					? 'Character levels study Vocab (recognition) and Writing cards. Select one of them, or switch to My decks.'
 					: 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
@@ -504,6 +562,12 @@
 
 	function toggleCardType(id: string): void {
 		errors = [];
+		if (isOptIn(id)) {
+			const next = !extraKinds.includes(id as OptInKind);
+			extraChoices = { ...extraChoices, [id]: next };
+			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, id as OptInKind, next);
+			return;
+		}
 		cardTypes = cardTypes.includes(id)
 			? cardTypes.filter((type) => type !== id)
 			: [...cardTypes, id];
@@ -607,7 +671,8 @@
 			deckIds: [...selectedDeckIds],
 			newLimit,
 			reviewLimit,
-			cardTypes: [...cardTypes]
+			// Existing kinds as set up (hidden ones stay), plus the checked opt-in kinds.
+			cardTypes: [...cardTypes.filter((kind) => !isOptIn(kind)), ...extraKinds]
 		};
 		// Validate what the session will actually use: a type hidden in
 		// this workspace does not count towards "at least one".
@@ -727,6 +792,14 @@
 										</button>
 									</div>
 								{/if}
+								<div class="deck-types">
+									<DeckCardTypes
+										deckId={deck.id}
+										deckName={deck.name}
+										cardTypes={deckSettings[deck.id]?.cardTypes ?? []}
+										onSaved={(saved) => (deckSettings = { ...deckSettings, [deck.id]: saved })}
+									/>
+								</div>
 							{/if}
 						</li>
 					{/each}
@@ -825,7 +898,7 @@
 						<label class="type-choice">
 							<input
 								type="checkbox"
-								checked={cardTypes.includes(type.id)}
+								checked={isChecked(type.id)}
 								aria-describedby={`type-${type.id}-info`}
 								onchange={() => toggleCardType(type.id)}
 							/>
@@ -983,6 +1056,10 @@
 		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 		border-radius: 0.4rem;
 		padding: 0.6rem 0.75rem;
+	}
+
+	.deck-types {
+		flex-basis: 100%;
 	}
 
 	.deck-choice,

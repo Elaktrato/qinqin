@@ -86,9 +86,11 @@ allowlist.
 
 - `POST /api/account/password` `{currentPassword, newPassword, signOutOthers}` → 200
   `{"status":"ok"}`. `currentPassword` is required for a full session (403 `wrong_password`
-  if wrong) and ignored for a `password_change` session **only if that session was created after the flag
-  was set** (`sessions.created_at >= users.must_change_set_at`, i.e. it came from a login with the
-  temporary password); a live session restricted by a flag an admin set later must still give the
+  if wrong) and ignored for a `password_change` session **only if that session is the one born from the login with
+  the temporary password**: `users.must_change_after` holds the session-id watermark (the AUTOINCREMENT
+  high-water mark when the change was forced) and the session's id must be above it (no timestamps,
+  so no clock precision or step-back issue; NULL means unknown: the current password is required);
+  a live session restricted by a flag an admin set later must still give the
   current password — otherwise a stolen old session could take the account over. `signOutOthers` defaults to **true** (the UI shows it checked);
   forced changes always sign out the others. Clears `must_change_password`, sets
   `password_changed_at`, audits `password_changed`.
@@ -100,6 +102,15 @@ allowlist.
   is allowed (= logout).
 - `POST /api/account/sessions/revoke` `{"scope":"others"|"all"}` → `{"revoked":n}`. "Log out
   everywhere else" is `others`; "Log out everywhere" is `all` (the web app then signs out).
+
+**Forcing a change deletes every session (requirement).** Every flow that sets
+`must_change_password` or hands out a temporary password (admin create, `PATCH mustChangePassword`,
+reset link use, CLI `recover`) goes through `auth.ForcePasswordChange(ctx, db, userID, actorID)`: flag, watermark and
+`DELETE FROM sessions WHERE user_id = ?` in ONE transaction. Test hook: after the call the user has no
+sessions, and a login afterwards is `TemporarySession`; a session inserted with an id at or below the
+watermark never is. **Disable and re-enable (requirement):** `disabled:true` deletes the user's sessions in
+the same transaction as setting `disabled_at`; re-enabling creates nothing back, so an old session can never be
+resurrected (a test enables a user and asserts the earlier token is 401).
 
 ## 4. User management (admin)
 

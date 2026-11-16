@@ -9,9 +9,18 @@ vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('./audio/source', () => ({ clearClipCache }));
 vi.mock('./api/audio', () => ({ clearAudioCache }));
 
-import { auth, loadMe, login, logout, register } from './auth';
+import { getToken } from './api/client';
+import { auth, loadMe, login, logout, register, restriction } from './auth';
 
-const user = { id: 1, username: 'ada', admin: true };
+const user = {
+	id: 1,
+	username: 'ada',
+	admin: true,
+	email: null,
+	emailVerified: false,
+	mustChangePassword: false,
+	createdAt: '2026-01-01T00:00:00Z'
+};
 
 function fakeStorage(): Storage {
 	const data = new Map<string, string>();
@@ -42,7 +51,7 @@ describe('auth store', () => {
 			vi.fn(async (input: RequestInfo | URL) => {
 				const url = String(input);
 				if (url === '/api/auth/register') return jsonResponse(user, 201);
-				if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+				if (url === '/api/auth/login') return jsonResponse({ status: 'ok', token: 'token-1' });
 				if (url === '/api/auth/me') return jsonResponse(user);
 				return new Response('not found', { status: 404 });
 			})
@@ -64,6 +73,29 @@ describe('auth store', () => {
 			'/api/auth/login',
 			'/api/auth/me'
 		]);
+	});
+
+	it('login keeps the token for a forced password change and exposes the restriction', async () => {
+		const restricted = { ...user, mustChangePassword: true, restriction: 'password_change' };
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url === '/api/auth/login') {
+				return jsonResponse({ status: 'password_change_required', token: 'token-2', user: restricted });
+			}
+			if (url === '/api/auth/me') return jsonResponse(restricted);
+			return new Response('not found', { status: 404 });
+		});
+
+		await login('ada', 'pw');
+
+		expect(localStorage.getItem('qinqin.token')).toBe('token-2');
+		expect(get(auth).token).toBe('token-2');
+		expect(get(restriction)).toBe('password_change');
+	});
+
+	it('a full session has no restriction', async () => {
+		await login('ada', 'pw');
+		expect(get(restriction)).toBeNull();
 	});
 
 	it('registers and then auto-logs-in', async () => {
@@ -106,7 +138,7 @@ describe('auth store', () => {
 	it('login drops the token again when the user cannot be loaded (non-401 failure)', async () => {
 		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
 			const url = String(input);
-			if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+			if (url === '/api/auth/login') return jsonResponse({ status: 'ok', token: 'token-1' });
 			return new Response('boom', { status: 500 });
 		});
 
@@ -121,7 +153,7 @@ describe('auth store', () => {
 		// login page away before it shows the error.
 		expect(seen.every((t) => t === null)).toBe(true);
 
-		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		expect(getToken()).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
 	});
 
@@ -136,7 +168,7 @@ describe('auth store', () => {
 		const calls: Array<string | undefined> = [];
 		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
 			const url = String(input);
-			if (url === '/api/auth/login') return jsonResponse({ token: 'token-1' });
+			if (url === '/api/auth/login') return jsonResponse({ status: 'ok', token: 'token-1' });
 			calls.push((init?.headers as Record<string, string>).authorization);
 			return jsonResponse(user);
 		});
@@ -159,14 +191,62 @@ describe('auth store', () => {
 
 		logout();
 
-		expect(localStorage.getItem('qinqin.token')).toBeNull();
+		expect(getToken()).toBeNull();
 		expect(get(auth)).toEqual({ token: null, user: null });
 		expect(goto).not.toHaveBeenCalled();
+	});
+
+	it('logout asks the server to end the session, then clears local state', async () => {
+		localStorage.setItem('qinqin.token', 'stored');
+		auth.set({ token: 'stored', user });
+		vi.mocked(fetch).mockImplementation(async () => new Response(null, { status: 204 }));
+
+		logout();
+
+		// State is cleared at once, without waiting for the request.
+		expect(get(auth)).toEqual({ token: null, user: null });
+		expect(getToken()).toBeNull();
+		await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+		const [url, init] = vi.mocked(fetch).mock.calls[0];
+		expect(String(url)).toBe('/api/auth/logout');
+		expect(init?.method).toBe('POST');
+		// The token was read before it was cleared.
+		expect((init?.headers as Record<string, string>).authorization).toBe('Bearer stored');
+	});
+
+	it('logout clears local state even when the request fails', async () => {
+		localStorage.setItem('qinqin.token', 'stored');
+		auth.set({ token: 'stored', user });
+		vi.mocked(fetch).mockRejectedValue(new TypeError('offline'));
+
+		expect(() => logout()).not.toThrow();
+
+		expect(get(auth)).toEqual({ token: null, user: null });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(get(auth)).toEqual({ token: null, user: null });
+	});
+
+	it('logout without a token sends nothing', () => {
+		logout();
+		expect(fetch).not.toHaveBeenCalled();
 	});
 
 	it('logout forgets the audio caches (blob URLs and resolutions of the signed-out user)', () => {
 		logout();
 		expect(clearClipCache).toHaveBeenCalled();
 		expect(clearAudioCache).toHaveBeenCalled();
+	});
+});
+
+describe('an unknown login status', () => {
+	it('is not stored as a session', async () => {
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => jsonResponse({ status: 'mfa_required', token: 'half' }))
+		);
+		auth.set({ token: null, user: null });
+		await expect(login('ada', 'pw')).rejects.toThrow(/not supported/);
+		expect(getToken()).toBeNull();
+		vi.unstubAllGlobals();
 	});
 });

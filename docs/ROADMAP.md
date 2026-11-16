@@ -57,7 +57,8 @@ Direction: `docs/superpowers/directions/2026-11-15-v0.3.0-web-build.md`. Collect
 - ~~[#86](https://github.com/Elaktrato/qinqin/issues/86) login rate limiting and lockout~~ — done (develop)
 - ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) the learner's local day~~ — done (develop)
 - ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character schemes~~ — done (develop)
-- In progress or next: accounts (#64), reverse and cloze cards (#65), decks view (#90), vacation mode (#88), daily limits (#89), backup (#61), PWA (#79), reader display settings (#78), `docs/contracts/` for Android; stretch list in the direction document.
+- [#90](https://github.com/Elaktrato/qinqin/issues/90) decks view — built on `feature/v030-decks-view` (not yet merged); its daily-limit display waits for #89 (integration point: `apps/web/src/lib/plugins/flashcards/decks/DeckLimitsSlot.ts`)
+- In progress or next: accounts (#64), reverse and cloze cards (#65), vacation mode (#88), daily limits (#89), backup (#61), PWA (#79), reader display settings (#78), `docs/contracts/` for Android; stretch list in the direction document.
 
 ## v0.4.0 — Android client (milestone)
 
@@ -89,14 +90,14 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 
 **Accounts and data**
 
-- [#64](https://github.com/Elaktrato/qinqin/issues/64) accounts: change password, admin user management, password reset, session control
+- [#64](https://github.com/Elaktrato/qinqin/issues/64) accounts: change password, admin user management, password reset, session control (done on `feature/v0.3.0`: sessions, registration modes, invites, SMTP, email verification, reset by mail, TOTP and email-code two-step sign-in, sign-in by code)
 - [#83](https://github.com/Elaktrato/qinqin/issues/83) accounts: personal access tokens for scripts and integrations
 - [#61](https://github.com/Elaktrato/qinqin/issues/61) backup: export and restore your own data, plus server backup
 - [#86](https://github.com/Elaktrato/qinqin/issues/86) auth: login/register rate limiting (done: per-client, per-pair and per-username limits, hash gate, trusted proxies)
 
 **Study**
 
-- [#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards
+- [#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards (built on `feature/v030-cards-reverse-cloze`: per-deck switch, sibling burying, contract fixtures in `docs/contracts/cards/`)
 - [#66](https://github.com/Elaktrato/qinqin/issues/66) leech handling with a per-user policy
 - [#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals
 - [#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks

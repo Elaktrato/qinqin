@@ -24,10 +24,10 @@
     "headers": {"Retry-After": "2", "Content-Type": "application/json"},
     "body": {"error": "busy", "message": "The server is busy. Try again in a moment."}
   },
-  "register_admin_required": {
+  "register_closed": {
     "status": 403,
     "headers": {"Content-Type": "application/json"},
-    "body": {"error": "admin_required", "message": "Registration needs an administrator."}
+    "body": {"error": "registration_closed", "message": "Registration is closed. Ask an administrator for an invite link or an account."}
   },
   "register_username_taken": {
     "status": 409,

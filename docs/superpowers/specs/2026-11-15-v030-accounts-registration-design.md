@@ -22,7 +22,7 @@ INSERT INTO auth_settings (id, updated_at) VALUES (1, strftime('%Y-%m-%dT%H:%M:%
 `users` gains `email TEXT`, `email_norm TEXT` (lower-cased, unique where not null),
 `email_verified_at TEXT`, `disabled_at TEXT`, `must_change_password INTEGER NOT NULL DEFAULT 0`,
 `created_at TEXT NOT NULL DEFAULT ''` (back-filled from `updated_at`), `password_changed_at TEXT`,
-`must_change_set_at TEXT` (users spec §3). 032 rebuilds `users` with `AUTOINCREMENT` (overview).
+`must_change_after INTEGER` (session-id watermark, users spec §3). 032 rebuilds `users` with `AUTOINCREMENT` (overview).
 `me` returns `email: null` while the policy is `off` (stored emails are hidden, §5).
 
 - `GET /api/admin/settings/auth` → `{registration, emailPolicy, mfaEnforced, emailCodeLogin,
@@ -68,7 +68,7 @@ links must revoke them (the UI says so).
 Errors: 409 `username_taken`, 409 `email_taken`, 422 `weak_password`, 422 `invalid_username`,
 422 `email_required`, 422 `invalid_email`, 422 `email_disabled` (policy off and an email was sent).
 Username and email collisions are disclosed — unavoidable for registration — and rate-limited
-(#86 limiter, key `register`).
+(#86 per-client bucket, the same one login uses; there is no separate `register` key).
 
 ## 3. Invites
 

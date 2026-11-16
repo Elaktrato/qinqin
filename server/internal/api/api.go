@@ -13,9 +13,12 @@ import (
 	"time"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/auth"
 	"qinqin/internal/dict"
 	"qinqin/internal/journal"
 	"qinqin/internal/library/sources"
+	"qinqin/internal/mail"
+	"qinqin/internal/secretbox"
 )
 
 // server carries the shared database handle and data directory for all
@@ -53,9 +56,15 @@ type server struct {
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies
 
-	authPolicy *AuthPolicy // nil: DefaultAuthPolicy
-	limits     *authLimits // sign-in throttling state, built by New
-	hash       hashers     // password hashing entry points (tests swap them)
+	authPolicy  *AuthPolicy // nil: DefaultAuthPolicy
+	limits      *authLimits // sign-in throttling state, built by New
+	hash        hashers     // password hashing entry points (tests swap them)
+	mfa         *auth.MFA   // TOTP secrets and recovery codes (always set; no sealer = unavailable)
+	sealCur     *secretbox.Sealer
+	sealPrev    *secretbox.Sealer
+	mailDownLog sync.Once     // logs the mail-outage sign-in refusal once per start
+	mail        *mail.Service // nil: mail is not configured and cannot be
+	users       *auth.Users   // admin changes of the users table (last-admin rule, deletion)
 }
 
 // Option configures optional parts of the server.
@@ -64,6 +73,17 @@ type Option func(*server)
 // WithAI mounts the AI service the /api/ai routes use; without it they
 // report AI as disabled.
 func WithAI(svc *ai.Service) Option { return func(s *server) { s.ai = svc } }
+
+// WithSecrets hands the sealers derived from QINQIN_SECRET (and the
+// previous one, for rotation) to the two-factor store. Without a current
+// sealer an authenticator cannot be enrolled or verified.
+func WithSecrets(current, previous *secretbox.Sealer) Option {
+	return func(s *server) { s.sealCur, s.sealPrev = current, previous }
+}
+
+// WithMail mounts the mail service (SMTP settings, queue); without it every
+// mail-dependent feature is hidden.
+func WithMail(svc *mail.Service) Option { return func(s *server) { s.mail = svc } }
 
 // WithOCR mounts the offline reader the transcribe route and the
 // capabilities use; without it offline reading is unavailable.
@@ -74,6 +94,11 @@ func WithOCR(o journal.OCR) Option { return func(s *server) { s.ocr = o } }
 // added to the mux by later tasks, all sharing sqlDB. srcs are the
 // public-domain text sources the library can search and import from.
 func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) http.Handler {
+	return newServer(sqlDB, dataDir, srcs, opts...).handler()
+}
+
+// newServer builds the server state New and the in-package tests share.
+func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) *server {
 	s := &server{db: sqlDB, dataDir: dataDir, sources: srcs, hash: defaultHashers()}
 	for _, o := range opts {
 		o(s)
@@ -83,104 +108,190 @@ func New(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Option) h
 		policy = *s.authPolicy
 	}
 	s.limits = newAuthLimits(policy)
+	s.users = auth.NewUsers(sqlDB)
+	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
+	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
 		go s.runStageSweeper()
 	}
+	return s
+}
+
+// handler mounts routes() on a fresh mux. It is the only place routes are
+// registered (a static test fails on any other mux registration).
+func (s *server) handler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", handleHealthz)
-	mux.HandleFunc("POST /api/auth/register", s.handleRegister)
-	mux.HandleFunc("POST /api/auth/login", s.handleLogin)
-	mux.HandleFunc("GET /api/auth/me", s.handleMe)
-	mux.HandleFunc("GET /api/me/time-zone", s.handleGetTimeZone)
-	mux.HandleFunc("PUT /api/me/time-zone", s.handlePutTimeZone)
-	mux.HandleFunc("GET /api/entries/{id}", s.handleGetEntry)
-	mux.HandleFunc("GET /api/entries/{id}/chars", s.handleCharsUnderRadical)
-	mux.HandleFunc("PUT /api/entries/{id}", s.handlePutEntry)
-	mux.HandleFunc("POST /api/entries/{id}/sentences", s.handleAddSentence)
-	mux.HandleFunc("GET /api/search", s.handleSearch)
-	mux.HandleFunc("GET /api/segment/at", s.handleSegmentAt)
-	mux.HandleFunc("POST /api/segment", s.handleSegment)
-	mux.HandleFunc("GET /api/lookup", s.handleLookup)
-	mux.HandleFunc("GET /api/sync/pull", s.handleSyncPull)
-	mux.HandleFunc("POST /api/sync/push", s.handleSyncPush)
-	mux.HandleFunc("POST /api/workspaces", s.handleCreateWorkspace)
-	mux.HandleFunc("GET /api/workspaces", s.handleListWorkspaces)
-	mux.HandleFunc("PUT /api/workspaces/{id}", s.handleUpdateWorkspace)
-	mux.HandleFunc("DELETE /api/workspaces/{id}", s.handleDeleteWorkspace)
-	mux.HandleFunc("GET /api/languages", s.handleListLanguages)
-	mux.HandleFunc("POST /api/admin/languages", s.handleRegisterLanguage)
-	mux.HandleFunc("DELETE /api/admin/languages/{code}", s.handleDeleteLanguage)
-	mux.HandleFunc("GET /api/admin/languages/usage", s.handleLanguageUsage)
-	mux.HandleFunc("GET /api/characters", s.handleListCharacters)
-	mux.HandleFunc("POST /api/events/batch", s.handleEventBatch)
-	mux.HandleFunc("GET /api/events", s.handleListEvents)
-	mux.HandleFunc("GET /api/stats/activity", s.handleActivity)
-	mux.HandleFunc("GET /api/dictionaries", s.handleListDictionaries)
-	mux.HandleFunc("POST /api/admin/dictionaries", s.handleInstallDictionary)
-	mux.HandleFunc("DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary)
-	mux.HandleFunc("GET /api/frequency-packs", s.handleListFrequencyPacks)
-	mux.HandleFunc("GET /api/grammar", s.handleListGrammar)
-	mux.HandleFunc("GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson)
-	mux.HandleFunc("GET /api/audio/entries/{id}", s.handleAudioEntry)
-	mux.HandleFunc("POST /api/audio/resolve", s.handleAudioResolve)
-	mux.HandleFunc("GET /api/audio/clips/{file}", s.handleAudioClip)
-	mux.HandleFunc("GET /api/audio-packs", s.handleListAudioPacks)
-	mux.HandleFunc("GET /api/audio-packs/{id}/credits", s.handleAudioCredits)
-	mux.HandleFunc("GET /api/schemes", s.handleListSchemes)
-	mux.HandleFunc("GET /api/schemes/{id}/entries", s.handleSchemeEntries)
-	mux.HandleFunc("GET /api/schemes/{id}/characters", s.handleSchemeCharacters)
-	mux.HandleFunc("DELETE /api/admin/schemes/{id}", s.handleUninstallScheme)
-	mux.HandleFunc("DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences)
-	mux.HandleFunc("GET /api/admin/packs", s.handleListPacks)
-	mux.HandleFunc("POST /api/admin/packs", s.handleStagePack)
-	mux.HandleFunc("POST /api/admin/packs/staged/{token}", s.handleInstallStaged)
-	mux.HandleFunc("GET /api/admin/packs/staged/{token}", s.handleStagedStatus)
-	mux.HandleFunc("DELETE /api/admin/packs/staged/{token}", s.handleDiscardStaged)
-	mux.HandleFunc("DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack)
-	mux.HandleFunc("GET /api/sentence-packs", s.handleListSentencePacks)
-	mux.HandleFunc("POST /api/admin/plugins", s.handleRegisterPlugin)
-	mux.HandleFunc("GET /api/ai/status", s.handleAIStatus)
-	mux.HandleFunc("GET /api/ai/providers", s.handleAIProviders)
-	mux.HandleFunc("PUT /api/ai/keys/{provider}", s.handlePutAIKey)
-	mux.HandleFunc("POST /api/ai/keys/{provider}/test", s.handleTestAIKey)
-	mux.HandleFunc("DELETE /api/ai/keys/{provider}", s.handleDeleteAIKey)
-	mux.HandleFunc("PUT /api/ai/active", s.handleSetActiveAI)
-	mux.HandleFunc("POST /api/ai/custom-providers", s.handleCreateCustomProvider)
-	mux.HandleFunc("PATCH /api/ai/custom-providers/{id}", s.handlePatchCustomProvider)
-	mux.HandleFunc("DELETE /api/ai/custom-providers/{id}", s.handleDeleteCustomProvider)
-	mux.HandleFunc("POST /api/journal/review", s.handleJournalReview)
-	mux.HandleFunc("POST /api/journal/suggestions", s.handleJournalSuggestions)
-	mux.HandleFunc("GET /api/journal/capabilities", s.handleJournalCapabilities)
-	mux.HandleFunc("POST /api/journal/transcribe", s.handleJournalTranscribe)
-	mux.HandleFunc("POST /api/journal/photos", s.handleUploadPhoto)
-	mux.HandleFunc("GET /api/journal/photos/{id}", s.handleGetPhoto)
-	mux.HandleFunc("PUT /api/journal/photos/{id}/keepalive", s.handlePhotoKeepalive)
-	mux.HandleFunc("DELETE /api/journal/photos/{id}", s.handleDeletePhoto)
-	mux.HandleFunc("GET /api/plugins", s.handleListPlugins)
-	mux.HandleFunc("POST /api/library/upload", s.handleUploadBook)
-	mux.HandleFunc("GET /api/library/books", s.handleListBooks)
-	mux.HandleFunc("GET /api/library/books/{id}", s.handleGetBook)
-	mux.HandleFunc("GET /api/library/books/{id}/chapters/{n}", s.handleGetChapter)
-	mux.HandleFunc("PUT /api/library/books/{id}/position", s.handleSetBookPosition)
-	mux.HandleFunc("DELETE /api/library/books/{id}", s.handleDeleteBook)
-	mux.HandleFunc("GET /api/library/books/{id}/bookmarks", s.handleListBookmarks)
-	mux.HandleFunc("POST /api/library/books/{id}/bookmarks", s.handleAddBookmark)
-	mux.HandleFunc("PUT /api/library/books/{id}/bookmarks/{bid}", s.handleRenameBookmark)
-	mux.HandleFunc("DELETE /api/library/books/{id}/bookmarks/{bid}", s.handleDeleteBookmark)
-	mux.HandleFunc("GET /api/library/books/{id}/highlights", s.handleListHighlights)
-	mux.HandleFunc("POST /api/library/books/{id}/highlights", s.handleAddHighlight)
-	mux.HandleFunc("PUT /api/library/books/{id}/highlights/{hid}", s.handleUpdateHighlight)
-	mux.HandleFunc("DELETE /api/library/books/{id}/highlights/{hid}", s.handleDeleteHighlight)
-	mux.HandleFunc("GET /api/library/sources", s.handleListSources)
-	mux.HandleFunc("GET /api/library/sources/{source}/search", s.handleSearchSource)
-	mux.HandleFunc("GET /api/library/sources/{source}/browse", s.handleBrowseSource)
-	mux.HandleFunc("POST /api/library/sources/{source}/import", s.handleImportSource)
-	mux.HandleFunc("PUT /api/plugins/{id}/state", s.handleSetPluginState)
-	mux.HandleFunc("GET /api/plugins/{id}/data", s.handleListPluginData)
-	mux.HandleFunc("GET /api/plugins/{id}/data/{key}", s.handleGetPluginData)
-	mux.HandleFunc("PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData)
-	mux.HandleFunc("DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData)
+	for _, rt := range s.routes() {
+		mux.HandleFunc(rt.pattern, rt.handler)
+	}
 	return mux
+}
+
+// access is the route's declared policy, checked against the handler's real
+// behaviour by the route walk in gate_test.go.
+type access string
+
+const (
+	accPublic access = "public" // no session needed; a restricted session is treated as anonymous
+	accUser   access = "user"   // requireUser: a full session
+	accAdmin  access = "admin"  // requireAdmin: a full admin session
+	// accAdminSignedIn is accAdmin for routes that tell an anonymous caller 401
+	// (sign in) and a signed-in non-admin 403 forbidden: the AI custom endpoints.
+	accAdminSignedIn access = "admin-signed-in"
+	accSession       access = "session" // requirePrincipal with the restrictions listed in route.allow
+)
+
+// route is one mounted pattern, its handler and its declared policy.
+type route struct {
+	pattern string
+	handler http.HandlerFunc
+	access  access
+	allow   []string // accSession: the restrictions the handler accepts
+}
+
+// routes is the whole route table.
+func (s *server) routes() []route {
+	return []route{
+		{"GET /healthz", handleHealthz, accPublic, nil},
+		{"POST /api/auth/register", s.handleRegister, accPublic, nil},
+		{"POST /api/auth/login", s.handleLogin, accPublic, nil},
+		{"POST /api/auth/login/mfa", s.handleLoginMFA, accPublic, nil},
+		{"POST /api/auth/login/mfa/email", s.handleLoginMFAEmail, accPublic, nil},
+		{"POST /api/auth/email-login/start", s.handleEmailLoginStart, accPublic, nil},
+		{"POST /api/auth/email-login/verify", s.handleEmailLoginVerify, accPublic, nil},
+		{"POST /api/auth/logout", s.handleLogout, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
+		{"POST /api/account/password", s.handleChangePassword, accSession, []string{restrictionPasswordChange}},
+		{"GET /api/account/sessions", s.handleListSessions, accUser, nil},
+		{"DELETE /api/account/sessions/{id}", s.handleRevokeSession, accUser, nil},
+		{"POST /api/account/sessions/revoke", s.handleRevokeSessions, accUser, nil},
+		{"GET /api/auth/options", s.handleAuthOptions, accPublic, nil},
+		{"GET /api/admin/settings/auth", s.handleGetAuthSettings, accAdmin, nil},
+		{"PATCH /api/admin/settings/auth", s.handlePatchAuthSettings, accAdmin, nil},
+		{"GET /api/admin/settings/smtp", s.handleGetSMTP, accAdmin, nil},
+		{"PUT /api/admin/settings/smtp", s.handlePutSMTP, accAdmin, nil},
+		{"DELETE /api/admin/settings/smtp", s.handleDeleteSMTP, accAdmin, nil},
+		{"POST /api/admin/settings/smtp/test", s.handleTestSMTP, accAdmin, nil},
+		{"POST /api/auth/invite/check", s.handleCheckInvite, accPublic, nil},
+		{"POST /api/admin/invites", s.handleCreateInvite, accAdmin, nil},
+		{"GET /api/admin/invites", s.handleListInvites, accAdmin, nil},
+		{"DELETE /api/admin/invites/{id}", s.handleRevokeInvite, accAdmin, nil},
+		{"GET /api/admin/users", s.handleAdminListUsers, accAdmin, nil},
+		{"POST /api/admin/users", s.handleAdminCreateUser, accAdmin, nil},
+		{"GET /api/admin/users/{id}", s.handleAdminGetUser, accAdmin, nil},
+		{"PATCH /api/admin/users/{id}", s.handleAdminPatchUser, accAdmin, nil},
+		{"POST /api/admin/users/{id}/sessions/revoke", s.handleAdminRevokeSessions, accAdmin, nil},
+		{"POST /api/admin/users/{id}/mfa/reset", s.handleAdminResetMFA, accAdmin, nil},
+		{"POST /api/admin/users/{id}/reset-link", s.handleAdminResetLink, accAdmin, nil},
+		{"DELETE /api/admin/users/{id}/reset-link", s.handleAdminRevokeResetLink, accAdmin, nil},
+		{"POST /api/auth/reset/check", s.handleResetCheck, accPublic, nil},
+		{"POST /api/auth/reset", s.handleReset, accPublic, nil},
+		{"POST /api/auth/reset-request", s.handleResetRequest, accPublic, nil},
+		{"GET /api/admin/users/{id}/deletion-preview", s.handleAdminDeletionPreview, accAdmin, nil},
+		{"DELETE /api/admin/users/{id}", s.handleAdminDeleteUser, accAdmin, nil},
+		{"PUT /api/account/email", s.handlePutEmail, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/email/verify", s.handleEmailVerify, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/email/resend", s.handleEmailResend, accSession, []string{restrictionMFAEnrollment}},
+		{"GET /api/account/deletion-preview", s.handleAccountDeletionPreview, accUser, nil},
+		{"DELETE /api/account", s.handleDeleteAccount, accUser, nil},
+		{"GET /api/admin/audit", s.handleAdminAudit, accAdmin, nil},
+		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil},
+		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil},
+		{"POST /api/account/mfa/totp/setup", s.handleTOTPSetup, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/mfa/totp/confirm", s.handleTOTPConfirm, accSession, []string{restrictionMFAEnrollment}},
+		{"DELETE /api/account/mfa/totp", s.handleTOTPDisable, accUser, nil},
+		{"POST /api/account/mfa/recovery-codes", s.handleRecoveryCodes, accUser, nil},
+		{"POST /api/account/mfa/email", s.handleMFAEmail, accSession, []string{restrictionMFAEnrollment}},
+		{"POST /api/account/mfa/email/confirm", s.handleMFAEmailConfirm, accSession, []string{restrictionMFAEnrollment}},
+		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
+		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
+		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},
+		{"POST /api/entries/bases", s.handleEntryBases, accUser, nil},
+		{"PUT /api/entries/{id}", s.handlePutEntry, accUser, nil},
+		{"POST /api/entries/{id}/sentences", s.handleAddSentence, accUser, nil},
+		{"GET /api/search", s.handleSearch, accPublic, nil},
+		{"GET /api/segment/at", s.handleSegmentAt, accPublic, nil},
+		{"POST /api/segment", s.handleSegment, accUser, nil},
+		{"GET /api/lookup", s.handleLookup, accPublic, nil},
+		{"GET /api/sync/pull", s.handleSyncPull, accUser, nil},
+		{"POST /api/sync/push", s.handleSyncPush, accUser, nil},
+		{"POST /api/workspaces", s.handleCreateWorkspace, accUser, nil},
+		{"GET /api/workspaces", s.handleListWorkspaces, accUser, nil},
+		{"PUT /api/workspaces/{id}", s.handleUpdateWorkspace, accUser, nil},
+		{"DELETE /api/workspaces/{id}", s.handleDeleteWorkspace, accUser, nil},
+		{"GET /api/languages", s.handleListLanguages, accPublic, nil},
+		{"POST /api/admin/languages", s.handleRegisterLanguage, accAdmin, nil},
+		{"DELETE /api/admin/languages/{code}", s.handleDeleteLanguage, accAdmin, nil},
+		{"GET /api/admin/languages/usage", s.handleLanguageUsage, accAdmin, nil},
+		{"GET /api/characters", s.handleListCharacters, accPublic, nil},
+		{"POST /api/events/batch", s.handleEventBatch, accUser, nil},
+		{"GET /api/events", s.handleListEvents, accUser, nil},
+		{"GET /api/stats/activity", s.handleActivity, accUser, nil},
+		{"GET /api/dictionaries", s.handleListDictionaries, accPublic, nil},
+		{"POST /api/admin/dictionaries", s.handleInstallDictionary, accAdmin, nil},
+		{"DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary, accAdmin, nil},
+		{"GET /api/frequency-packs", s.handleListFrequencyPacks, accPublic, nil},
+		{"GET /api/grammar", s.handleListGrammar, accPublic, nil},
+		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil},
+		{"GET /api/audio/entries/{id}", s.handleAudioEntry, accUser, nil},
+		{"POST /api/audio/resolve", s.handleAudioResolve, accUser, nil},
+		{"GET /api/audio/clips/{file}", s.handleAudioClip, accUser, nil},
+		{"GET /api/audio-packs", s.handleListAudioPacks, accPublic, nil},
+		{"GET /api/audio-packs/{id}/credits", s.handleAudioCredits, accPublic, nil},
+		{"GET /api/schemes", s.handleListSchemes, accPublic, nil},
+		{"GET /api/schemes/{id}/entries", s.handleSchemeEntries, accPublic, nil},
+		{"GET /api/schemes/{id}/characters", s.handleSchemeCharacters, accPublic, nil},
+		{"DELETE /api/admin/schemes/{id}", s.handleUninstallScheme, accAdmin, nil},
+		{"DELETE /api/admin/sentences/{pack}", s.handleUninstallSentences, accAdmin, nil},
+		{"GET /api/admin/packs", s.handleListPacks, accAdmin, nil},
+		{"POST /api/admin/packs", s.handleStagePack, accAdmin, nil},
+		{"POST /api/admin/packs/staged/{token}", s.handleInstallStaged, accAdmin, nil},
+		{"GET /api/admin/packs/staged/{token}", s.handleStagedStatus, accAdmin, nil},
+		{"DELETE /api/admin/packs/staged/{token}", s.handleDiscardStaged, accAdmin, nil},
+		{"DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack, accAdmin, nil},
+		{"GET /api/sentence-packs", s.handleListSentencePacks, accPublic, nil},
+		{"POST /api/admin/plugins", s.handleRegisterPlugin, accAdmin, nil},
+		{"GET /api/ai/status", s.handleAIStatus, accUser, nil},
+		{"GET /api/ai/providers", s.handleAIProviders, accUser, nil},
+		{"PUT /api/ai/keys/{provider}", s.handlePutAIKey, accUser, nil},
+		{"POST /api/ai/keys/{provider}/test", s.handleTestAIKey, accUser, nil},
+		{"DELETE /api/ai/keys/{provider}", s.handleDeleteAIKey, accUser, nil},
+		{"PUT /api/ai/active", s.handleSetActiveAI, accUser, nil},
+		{"POST /api/ai/custom-providers", s.handleCreateCustomProvider, accAdminSignedIn, nil},
+		{"PATCH /api/ai/custom-providers/{id}", s.handlePatchCustomProvider, accAdminSignedIn, nil},
+		{"DELETE /api/ai/custom-providers/{id}", s.handleDeleteCustomProvider, accAdminSignedIn, nil},
+		{"POST /api/journal/review", s.handleJournalReview, accUser, nil},
+		{"POST /api/journal/suggestions", s.handleJournalSuggestions, accUser, nil},
+		{"GET /api/journal/capabilities", s.handleJournalCapabilities, accUser, nil},
+		{"POST /api/journal/transcribe", s.handleJournalTranscribe, accUser, nil},
+		{"POST /api/journal/photos", s.handleUploadPhoto, accUser, nil},
+		{"GET /api/journal/photos/{id}", s.handleGetPhoto, accUser, nil},
+		{"PUT /api/journal/photos/{id}/keepalive", s.handlePhotoKeepalive, accUser, nil},
+		{"DELETE /api/journal/photos/{id}", s.handleDeletePhoto, accUser, nil},
+		{"GET /api/plugins", s.handleListPlugins, accUser, nil},
+		{"POST /api/library/upload", s.handleUploadBook, accUser, nil},
+		{"GET /api/library/books", s.handleListBooks, accUser, nil},
+		{"GET /api/library/books/{id}", s.handleGetBook, accUser, nil},
+		{"GET /api/library/books/{id}/chapters/{n}", s.handleGetChapter, accUser, nil},
+		{"PUT /api/library/books/{id}/position", s.handleSetBookPosition, accUser, nil},
+		{"DELETE /api/library/books/{id}", s.handleDeleteBook, accUser, nil},
+		{"GET /api/library/books/{id}/bookmarks", s.handleListBookmarks, accUser, nil},
+		{"POST /api/library/books/{id}/bookmarks", s.handleAddBookmark, accUser, nil},
+		{"PUT /api/library/books/{id}/bookmarks/{bid}", s.handleRenameBookmark, accUser, nil},
+		{"DELETE /api/library/books/{id}/bookmarks/{bid}", s.handleDeleteBookmark, accUser, nil},
+		{"GET /api/library/books/{id}/highlights", s.handleListHighlights, accUser, nil},
+		{"POST /api/library/books/{id}/highlights", s.handleAddHighlight, accUser, nil},
+		{"PUT /api/library/books/{id}/highlights/{hid}", s.handleUpdateHighlight, accUser, nil},
+		{"DELETE /api/library/books/{id}/highlights/{hid}", s.handleDeleteHighlight, accUser, nil},
+		{"GET /api/library/sources", s.handleListSources, accUser, nil},
+		{"GET /api/library/sources/{source}/search", s.handleSearchSource, accUser, nil},
+		{"GET /api/library/sources/{source}/browse", s.handleBrowseSource, accUser, nil},
+		{"POST /api/library/sources/{source}/import", s.handleImportSource, accUser, nil},
+		{"PUT /api/plugins/{id}/state", s.handleSetPluginState, accUser, nil},
+		{"GET /api/plugins/{id}/data", s.handleListPluginData, accUser, nil},
+		{"GET /api/plugins/{id}/data/{key}", s.handleGetPluginData, accUser, nil},
+		{"PUT /api/plugins/{id}/data/{key}", s.handlePutPluginData, accUser, nil},
+		{"DELETE /api/plugins/{id}/data/{key}", s.handleDeletePluginData, accUser, nil},
+	}
 }
 
 // Request size limits: body caps of the bulk write routes (the largest
