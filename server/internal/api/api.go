@@ -54,7 +54,8 @@ type server struct {
 
 	chars charactersCache // GET /api/characters payloads
 
-	freqTop freq.TopCache // GET /api/frequency-packs/{id}/top: resolved starter decks per pack content
+	freqTop       freq.TopCache // GET /api/frequency-packs/{id}/top: resolved starter decks per pack content
+	freqTopBodies starterBodies // and its answers per pack, size and lexicon version
 
 	forwardedOnce sync.Once      // logs the first honoured X-Forwarded-For
 	trusted       []netip.Prefix // proxies whose X-Forwarded-For is believed; nil: DefaultTrustedProxies

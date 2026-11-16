@@ -120,8 +120,9 @@ func (s Store) Top(ctx context.Context, r Resolver, pack PackInfo, size int) ([]
 const MaxTopSize = 2000
 
 type topKey struct {
-	pack int64
-	hash string
+	pack    int64
+	hash    string
+	lexicon string
 }
 
 type topSlot struct {
@@ -130,10 +131,12 @@ type topSlot struct {
 	err     error
 }
 
-// TopCache memoises Top(…, MaxTopSize) per (pack id, content hash) and
+// TopCache memoises Top(…, MaxTopSize) per (pack id, content hash,
+// lexicon version — lexicon.Store.CharactersVersion: a dictionary install
+// changes what the rows resolve to) and
 // answers a smaller size from it exactly as Top(size) would (the first
 // size entries taken within 4*size rows). A re-import with other rows
-// changes the hash, so the next Get recomputes; concurrent Gets of one
+// or a dictionary change changes the key, so the next Get recomputes; concurrent Gets of one
 // key share one computation. The zero value is ready; safe for
 // concurrent use.
 type TopCache struct {
@@ -142,11 +145,11 @@ type TopCache struct {
 }
 
 // Get returns the pack's top size entries.
-func (c *TopCache) Get(ctx context.Context, s Store, r Resolver, pack PackInfo, size int) ([]TopEntry, error) {
+func (c *TopCache) Get(ctx context.Context, s Store, r Resolver, pack PackInfo, lexiconVersion string, size int) ([]TopEntry, error) {
 	if size > MaxTopSize {
 		return s.Top(ctx, r, pack, size)
 	}
-	key := topKey{pack.ID, pack.ContentHash}
+	key := topKey{pack.ID, pack.ContentHash, lexiconVersion}
 	c.mu.Lock()
 	if c.slots == nil {
 		c.slots = map[topKey]*topSlot{}
@@ -155,23 +158,15 @@ func (c *TopCache) Get(ctx context.Context, s Store, r Resolver, pack PackInfo, 
 	if !ok {
 		for k := range c.slots {
 			if k.pack == pack.ID {
-				delete(c.slots, k) // an older content of the pack
+				delete(c.slots, k) // an older content of the pack or the lexicon
 			}
 		}
 		slot = &topSlot{done: make(chan struct{})}
 		c.slots[key] = slot
 		c.mu.Unlock()
-		// The computation is shared: it runs to completion even if this
-		// caller goes away.
-		slot.entries, slot.err = s.Top(context.WithoutCancel(ctx), r, pack, MaxTopSize)
-		if slot.err != nil {
-			c.mu.Lock()
-			if c.slots[key] == slot {
-				delete(c.slots, key) // retry on the next Get
-			}
-			c.mu.Unlock()
-		}
-		close(slot.done)
+		c.compute(ctx, slot, key, func(ctx context.Context) ([]TopEntry, error) {
+			return s.Top(ctx, r, pack, MaxTopSize)
+		})
 	} else {
 		c.mu.Unlock()
 	}
@@ -191,4 +186,26 @@ func (c *TopCache) Get(ctx context.Context, s Store, r Resolver, pack PackInfo, 
 		out = append(out, e)
 	}
 	return out, nil
+}
+
+// errTopAborted is what waiters of a computation that panicked get.
+var errTopAborted = errors.New("starter deck resolution aborted")
+
+// compute fills slot; the computation is shared, so it runs to completion
+// even if this caller goes away. Whatever happens — an error or a panic,
+// which still reaches this caller — the waiters are released and a failed
+// slot is dropped so the next Get computes afresh.
+func (c *TopCache) compute(ctx context.Context, slot *topSlot, key topKey, top func(context.Context) ([]TopEntry, error)) {
+	slot.err = errTopAborted
+	defer func() {
+		if slot.err != nil {
+			c.mu.Lock()
+			if c.slots[key] == slot {
+				delete(c.slots, key)
+			}
+			c.mu.Unlock()
+		}
+		close(slot.done)
+	}()
+	slot.entries, slot.err = top(context.WithoutCancel(ctx))
 }

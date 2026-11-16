@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 
 	"qinqin/internal/freq"
 	"qinqin/internal/lexicon"
@@ -148,7 +149,19 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	store := lexicon.Store{DB: s.db}
-	top, err := s.freqTop.Get(r.Context(), fs, freq.StarterResolver{Lexicon: store}, *pack, size)
+	// A dictionary install or edit changes what the rows resolve to and the
+	// entries' base fields: the lexicon version is part of every cache key.
+	version, err := store.CharactersVersion(r.Context())
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	key := starterBodyKey{pack.ID, pack.ContentHash, version, size}
+	if body, ok := s.freqTopBodies.get(key); ok {
+		writeRawJSON(w, body)
+		return
+	}
+	top, err := s.freqTop.Get(r.Context(), fs, freq.StarterResolver{Lexicon: store}, *pack, version, size)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -175,10 +188,63 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 			entries = append(entries, starterEntryBody{EntryBase: b, Rank: rank[b.ID]})
 		}
 	}
-	writeJSON(w, http.StatusOK, struct {
+	body, err := json.Marshal(struct {
 		PackID  string             `json:"packId"`
 		Name    string             `json:"name"`
 		Size    int                `json:"size"`
 		Entries []starterEntryBody `json:"entries"`
 	}{pack.PackID, pack.Name, size, entries})
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	s.freqTopBodies.put(key, body)
+	writeRawJSON(w, body)
+}
+
+func writeRawJSON(w http.ResponseWriter, body []byte) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(body)
+}
+
+// starterBodyKey identifies one answer of GET /api/frequency-packs/{id}/top:
+// the pack's content, the lexicon version and the size.
+type starterBodyKey struct {
+	pack    int64
+	hash    string
+	lexicon string
+	size    int
+}
+
+// starterBodies keeps the latest answer per (pack, size) — the shared
+// response has no per-user data — so a cached deck is not rebuilt from
+// 2000 entry loads per request. An answer under an older key is replaced.
+type starterBodies struct {
+	mu     sync.Mutex
+	bodies map[[2]int64]starterBody
+}
+
+type starterBody struct {
+	key  starterBodyKey
+	body []byte
+}
+
+func (c *starterBodies) get(key starterBodyKey) ([]byte, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	b, ok := c.bodies[[2]int64{key.pack, int64(key.size)}]
+	if !ok || b.key != key {
+		return nil, false
+	}
+	return b.body, true
+}
+
+func (c *starterBodies) put(key starterBodyKey, body []byte) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.bodies == nil {
+		c.bodies = map[[2]int64]starterBody{}
+	}
+	c.bodies[[2]int64{key.pack, int64(key.size)}] = starterBody{key, body}
 }

@@ -224,3 +224,33 @@ func TestFrequencyTopEntriesInRankOrder(t *testing.T) {
 		t.Errorf("after re-import top = %+v, want only 刷る", again)
 	}
 }
+
+// TestFrequencyTopFollowsDictionaryInstalls: a dictionary installed after
+// the first answer resolves rows that were skipped before.
+func TestFrequencyTopFollowsDictionaryInstalls(t *testing.T) {
+	tsURL, sqlDB, packID := seedRanks(t)
+	alice := registerUser(t, tsURL, "alice", "")
+	var first topBody
+	decodeJSON(t, getTop(t, tsURL, alice, packID, "?size=500"), &first)
+	if len(first.Entries) != 2 {
+		t.Fatalf("top = %+v, want 2 entries", first)
+	}
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "jmdict-more", Name: "JMdict more", Version: "1", Type: "dictionary", Language: "ja",
+		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
+	}, "jmdict.xml", `<?xml version="1.0" encoding="UTF-8"?>
+<JMdict>
+<entry>
+<ent_seq>1529520</ent_seq>
+<k_ele><keb>無い</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>ない</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><gloss>nonexistent</gloss></sense>
+</entry>
+</JMdict>
+`)
+	var second topBody
+	decodeJSON(t, getTop(t, tsURL, alice, packID, "?size=500"), &second)
+	if len(second.Entries) != 3 || second.Entries[1].Written != "無い" || second.Entries[1].Rank != 2 {
+		t.Errorf("after the install top = %+v, want 無い second", second)
+	}
+}
