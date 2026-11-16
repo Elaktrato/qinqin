@@ -60,6 +60,21 @@ describe('labelMatches', () => {
 	});
 });
 
+describe('forgetWorkspace outbox v2', () => {
+	it('purges the deleted workspace from every user\'s v2 items only', () => {
+		const item = (id: string, userId: number, ws: number) => ({
+			userId,
+			queuedAt: '2026-11-10T08:00:00.000Z',
+			event: { id, workspaceId: ws, ts: 't', type: 'review', device: 'web', payload: {} }
+		});
+		const local = fakeStorage({
+			'qinqin.study.pending.v2': JSON.stringify([item('a', 1, 7), item('b', 2, 7), item('c', 1, 3)])
+		});
+		forgetWorkspace(7, local, null);
+		expect(JSON.parse(local.getItem('qinqin.study.pending.v2') ?? '[]')).toEqual([item('c', 1, 3)]);
+	});
+});
+
 describe('forgetWorkspace', () => {
 	it('removes what the browser keeps for one workspace and nothing else', () => {
 		const local = fakeStorage({

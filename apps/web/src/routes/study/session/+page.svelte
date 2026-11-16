@@ -60,6 +60,8 @@ import type { Run } from '$lib/study/vacation';
 	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
+	import { COMPANION_NOTE, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
+	import { offline } from '$lib/pwa/offlineState';
 	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
 	import {
 		CARD_KINDS,
@@ -198,6 +200,8 @@ import type { Run } from '$lib/study/vacation';
 
 	let loading = $state(true);
 	let loadError = $state('');
+	// True when this session was planned from saved data (no companion cards).
+	let offlineSession = $state(false);
 	let workspaceMismatch = $state('');
 	let noWorkspace = $state(false);
 	let sessionWorkspaceId = $state<number | null>(null);
@@ -391,6 +395,8 @@ import type { Run } from '$lib/study/vacation';
 			]);
 			if (seq !== requestSeq) return;
 
+			// Offline (or answered from the saved copy): real cards only, see planCompanions.
+			offlineSession = !$offline.online || $offline.servedFromCacheAt !== null;
 			const history = data.reviews;
 			reviews = history;
 			weights = activeWeights(data);
@@ -439,6 +445,7 @@ import type { Run } from '$lib/study/vacation';
 					w,
 					ctx: contextForData(data, workspaceId),
 					deckSettings: data.deckSettings,
+					offline: offlineSession,
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
 					skip: loadIneligible(workspaceId)
@@ -456,7 +463,11 @@ import type { Run } from '$lib/study/vacation';
 			if (err instanceof LevelWorkspaceMismatch) {
 				workspaceMismatch = err.message;
 			} else {
-				loadError = message(err, 'Could not start your session.');
+				loadError = sessionStartError({
+					offline: !$offline.online || err instanceof TypeError,
+					mode: config.mode,
+					fallback: message(err, 'Could not start your session.')
+				});
 			}
 		} finally {
 			if (seq === requestSeq) loading = false;
@@ -1024,6 +1035,10 @@ import type { Run } from '$lib/study/vacation';
 
 		{#if buryNote}
 			<p class="hint" role="status">{buryNote}</p>
+		{/if}
+
+		{#if showCompanionNote({ offline: offlineSession, kinds })}
+			<p class="hint">{COMPANION_NOTE}</p>
 		{/if}
 
 		{#if entryError}

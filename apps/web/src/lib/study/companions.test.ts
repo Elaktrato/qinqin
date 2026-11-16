@@ -172,3 +172,19 @@ describe('planCompanions for character cards', () => {
 		]);
 	});
 });
+
+describe('planCompanions offline', () => {
+	const cards = [card('a', 'vocab', 1), card('b', 'vocab', 2)];
+
+	it('plans no virtual item of any kind: creating a card is a plugin-data write', () => {
+		const base = {
+			cards,
+			kinds: ['sentence', 'writing', 'tone', 'reverse', 'cloze'] as StudyCardKind[],
+			deckIds: ['general'],
+			newBudget: 50,
+			deckSettings: { general: { reverse: true, cloze: true } } as never
+		};
+		expect(planCompanions({ ...base }).length).toBeGreaterThan(0);
+		expect(planCompanions({ ...base, offline: true })).toEqual([]);
+	});
+});

@@ -10,7 +10,7 @@ import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
 import { workspaces } from "../workspaces";
-import type { StudyEvent } from "../events";
+import { fullLogPath, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
 import {
   ACTIVE_KEY,
@@ -37,6 +37,9 @@ import {
   parseLimitRow,
   type LimitPair,
 } from "./limits";
+import { pendingReviews } from "./events";
+import { outboxUser } from "./outboxUser";
+import { recentSentReviews } from "./recentSent";
 import {
   CARD_KINDS,
   type Deck,
@@ -56,7 +59,8 @@ export const GENERAL_DECK_ID = "general";
 
 const DECK_PREFIX = "deck:";
 const CARD_PREFIX = "card:";
-const SYNC_PULL_PATH =
+/** Every plugin row of the user (decks, cards, FSRS sets, vacation and limits rows). */
+export const SYNC_PULL_PATH =
   "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates";
 
 // Only the fields the study layer reads; the server sends more.
@@ -427,13 +431,9 @@ async function deleteData(workspaceId: number, key: string): Promise<void> {
   }
 }
 
-function eventsPath(workspaceId: number): string {
-  return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
-}
-
 /** fetchEvents reads the workspace's whole event log, uncached. */
 async function fetchEvents(workspaceId: number): Promise<StudyEvent[]> {
-  const events = await api<StudyEvent[]>(eventsPath(workspaceId));
+  const events = await api<StudyEvent[]>(fullLogPath(workspaceId));
   return Array.isArray(events) ? events : [];
 }
 
@@ -447,6 +447,34 @@ function reviewsOf(
       event.workspaceId === workspaceId ? parseReview(event) : null,
     )
     .filter((event): event is ReviewEvent => event !== null);
+}
+
+/**
+ * withQueued adds the signed-in user's reviews that wait in the outbox (or were
+ * sent since the log was read) to the log (deduplicated by id), so a card reviewed offline - or just before a
+ * reload - is not shown as due again before the review has been sent. Another
+ * user's queue, or any queue while no user is known, is never read.
+ */
+function withQueued(
+  workspaceId: number,
+  events: readonly StudyEvent[],
+): readonly StudyEvent[] {
+  const user = outboxUser();
+  if (user === null) return events;
+  // Unsent reviews, and reviews sent since the (possibly cached) log was read.
+  const queued = [
+    ...pendingReviews(user, workspaceId),
+    ...recentSentReviews(user, workspaceId),
+  ];
+  if (queued.length === 0) return events;
+  const known = new Set(events.map((event) => event.id));
+  const extra: StudyEvent[] = [];
+  for (const event of queued) {
+    if (known.has(event.id)) continue;
+    known.add(event.id);
+    extra.push(event);
+  }
+  return [...events, ...extra];
 }
 
 /**
@@ -481,7 +509,7 @@ export async function loadStudyDataWith(
   ]);
   const { cards, reviews, merged } = canonicalCards(
     data.cards,
-    reviewsOf(workspaceId, events),
+    reviewsOf(workspaceId, withQueued(workspaceId, events)),
   );
   return {
     decks: data.decks,

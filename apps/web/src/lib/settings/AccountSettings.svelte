@@ -24,6 +24,8 @@
 		type SessionDto
 	} from '$lib/account/sessionsView';
 	import { loadMe, logout, user } from '$lib/auth';
+	import { clearPending } from '$lib/study/events';
+	import AppSection from '$lib/pwa/AppSection.svelte';
 
 	let current = $state('');
 	let next = $state('');
@@ -313,6 +315,8 @@
 
 <YourData />
 
+<AppSection />
+
 <section aria-labelledby="account-delete-heading" class="block">
 	<h2 id="account-delete-heading">Delete account</h2>
 	<p class="hint">Permanently deletes your account and everything in it.</p>
@@ -325,6 +329,8 @@
 		onclose={() => (deleting = false)}
 		ondone={() => {
 			deleting = false;
+			// The account is gone: its unsent reviews can never be sent.
+			if ($user) clearPending($user.id);
 			logout();
 		}}
 	/>

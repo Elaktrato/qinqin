@@ -9,7 +9,7 @@
 	import { iconFor } from '$lib/components/navIcons';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
-	import { auth, loadMe, logout, restriction, user } from '$lib/auth';
+	import { auth, loadMe, restriction, user } from '$lib/auth';
 	import { visibleNavPages, webPlugins } from '$lib/plugins';
 	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
@@ -24,6 +24,14 @@
 		routeAccess
 	} from '$lib/routeAccess';
 	import { startReviewOutbox } from '$lib/study/events';
+	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
+	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
+	import { registerWorker } from '$lib/pwa/register';
+	import { captureInstallPrompt, persistOnceNow } from '$lib/pwa/install';
+	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
+	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
+	import { requestSignOut } from '$lib/account/signOut';
+	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import {
 		load as loadWorkspaces,
@@ -108,6 +116,10 @@
 		// A workspace deleted in another tab or on another device: the
 		// first "workspace not found" reloads the list and falls back.
 		watchDeletedWorkspaces();
+		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
+		void registerWorker();
+		captureInstallPrompt(window); // the root layout lives as long as the page
+		void persistOnceNow();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();
@@ -142,6 +154,24 @@
 		startReviewOutbox();
 		void loadPluginStates();
 		void loadShellWorkspaces();
+	});
+
+	// Keep today's study queue available offline: a few seconds after the
+	// active workspace is up, and again whenever the app comes back to the
+	// front (throttled inside; a no-op without a controlling worker).
+	$effect(() => {
+		const id = $workspacesLoaded && $restriction === null ? ($workspaces.current?.id ?? null) : null;
+		if (id === null) return;
+		const run = () => void prepareActiveWorkspace();
+		const timer = setTimeout(run, 4000);
+		const onVisible = () => {
+			if (document.visibilityState === 'visible') run();
+		};
+		document.addEventListener('visibilitychange', onVisible);
+		return () => {
+			clearTimeout(timer);
+			document.removeEventListener('visibilitychange', onVisible);
+		};
 	});
 
 	// The learner's time zone history (and, once per account, the browser
@@ -180,6 +210,8 @@
 	<!-- First focusable element: jumps past the header and its nav. -->
 	<a class="skip-link" href="#main-content" onclick={skipToContent}>Skip to content</a>
 	<div class="app" class:with-bar={signedIn}>
+		<UpdateBanner />
+		<OfflineBanner />
 		{#if signedIn}
 			<header class="shell">
 				<!-- The logo is the home link (there is no separate Home tab). -->
@@ -220,7 +252,7 @@
 					{#if $user}
 						<span class="username">{$user.username}</span>
 					{/if}
-					<button type="button" class="sign-out" title="Sign out" onclick={logout}
+					<button type="button" class="sign-out" title="Sign out" onclick={() => void requestSignOut()}
 						><NavIcon name={iconFor('signout')} size={18} /><span class="label">Sign out</span
 						></button
 					>
@@ -263,6 +295,8 @@
 				</p>
 			{/if}
 		</div>
+
+		{#if $logoutPrompt !== null}<LogoutDialog />{/if}
 
 		<div class="content" id="main-content" tabindex="-1">
 			{#if signedIn && !restricted && noWorkspaces}

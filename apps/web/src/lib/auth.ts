@@ -1,13 +1,18 @@
 import { clearAudioCache } from './api/audio';
 import { clearEntryBasesCache } from './api/entryBases';
 import { clearClipCache } from './audio/source';
-import { derived, writable } from 'svelte/store';
+import { derived, get, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
 import { hasSession, stepFor, type LoginStep, type MfaChallenge } from './account/loginFlow';
 import { emailLoginVerify, mfaStep, type LoginBody } from './api/mfa';
 import { clearStudyDay } from './time/zone';
+import { setOutboxUser } from './study/outboxUser';
+import { clearRecentSent } from './study/recentSent';
+import { cleanupPartitions, ownPartition } from './pwa/partitions';
+import { clearReceipts } from './pwa/prepareOffline';
 import {
 	api,
+	TOKEN_KEY,
 	clearToken,
 	getToken,
 	setRestrictedHandler,
@@ -48,14 +53,51 @@ export const user = derived(auth, ($auth) => $auth.user);
 /** The restriction of the current session (from `me`), or null. */
 export const restriction = derived(auth, ($auth): Restriction | null => $auth.user?.restriction || null);
 
+// The review outbox belongs to the user `me` named; null when signed out.
+auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null, $auth.token));
+
 // A 401 anywhere clears the token in the client; mirror that in the store.
-setUnauthorizedHandler(() => auth.set({ token: null, user: null }));
+// Its offline copies and receipts are worthless too (the worker deletes the partition itself).
+setUnauthorizedHandler(() => {
+	auth.set({ token: null, user: null });
+	forgetOfflineCopies();
+});
 
 // A 403 that names a restriction means the session changed under us (an admin
 // forced a password change): reload `me` so the layout guard moves it.
 setRestrictedHandler(() => {
 	void loadMe().catch(() => undefined);
 });
+
+/** Offline copies of the API (all partitions) and the "prepared" receipts. Best effort. */
+function forgetOfflineCopies(): void {
+	void cleanupPartitions(undefined, null);
+	try {
+		clearReceipts(typeof localStorage === 'undefined' ? null : localStorage);
+	} catch {
+		// Storage denied.
+	}
+}
+
+/**
+ * Another tab signed in, out or as someone else: localStorage holds the one
+ * token, so this tab must follow at once (a stale tab would otherwise act, and
+ * send queued reviews, as the user it last knew).
+ */
+function followTokenAcrossTabs(): void {
+	if (typeof window === 'undefined') return;
+	window.addEventListener('storage', (event) => {
+		if (event.key !== TOKEN_KEY && event.key !== null) return;
+		const stored = getToken();
+		if (stored === get(auth).token) return;
+		if (stored === null) {
+			auth.set({ token: null, user: null });
+			return;
+		}
+		void loadMe().catch(() => undefined);
+	});
+}
+followTokenAcrossTabs();
 
 /**
  * loadMe hydrates the user for the stored token (or `known`, a token the
@@ -67,6 +109,8 @@ export async function loadMe(known?: string): Promise<User | null> {
 	const stored = known ?? getToken();
 	if (!stored) {
 		auth.set({ token: null, user: null });
+		// Booting without a session: nothing saved may linger for the next sign-in.
+		forgetOfflineCopies();
 		return null;
 	}
 
@@ -79,6 +123,9 @@ export async function loadMe(known?: string): Promise<User | null> {
 
 	const me = await api<User>('/api/auth/me');
 	auth.set({ token: stored, user: me });
+	// Offline copies of any other credential (another user on this device, an
+	// earlier login of this one) are not this session's: remove them.
+	void ownPartition(stored).then((own) => cleanupPartitions(undefined, own), () => undefined);
 	return me;
 }
 
@@ -182,6 +229,9 @@ export function logout(): void {
 		api('/api/auth/logout', { method: 'POST', body: {} }).catch(() => undefined);
 	}
 	clearToken();
+	// Offline API copies and the list of recently sent reviews belong to the session that just ended.
+	clearRecentSent();
+	forgetOfflineCopies();
 	// Recordings fetched for this user must not outlive the session.
 	clearClipCache();
 	clearAudioCache();
