@@ -29,7 +29,8 @@
 		lang,
 		textLang,
 		study,
-		hidden = new Set<number>()
+		hidden = new Set<number>(),
+		first = false
 	}: {
 		result: LookupResult;
 		lang: string;
@@ -43,6 +44,8 @@
 		};
 		/** Ids of dictionaries the workspace hides; their senses sit behind a button. */
 		hidden?: ReadonlySet<number>;
+		/** The first result of the root popup (the lookup history's hint). */
+		first?: boolean;
 	} = $props();
 
 	const ruby = $derived(rubyReading(result, lang));
@@ -80,6 +83,7 @@
 				paragraph={study.paragraph}
 				hold={study.hold}
 				stateLine={study.stateLine ? study.stateLine(result.entryId) : null}
+				{first}
 			/>
 		{/if}
 	</header>

@@ -316,9 +316,11 @@ func (m *Maps) vacationScope(data json.RawMessage) (json.RawMessage, bool) {
 // known marks. Every other row is restored as it is. drop is true for a row
 // of an unknown workspace, a card of an unresolved entry or sentence, a
 // vacation with no workspace left, a note or known mark of an unresolved
-// entry or one that loses its target to a newer row (RegisterNote), and a
+// entry or one that loses its target to a newer row (RegisterNote), a
 // note: / known: row that is not valid (key not canonical, entryId missing
-// or different; a known: row without a workspace).
+// or different; a known: row without a workspace), and a qinqin-core
+// lookups row that is not a version 1 object or has no workspace (its items
+// follow their entries and books, see lookups).
 func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 	src := r
 	if r.WorkspaceID != nil {
@@ -327,6 +329,9 @@ func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 			return r, true
 		}
 		r.WorkspaceID = &nw
+	}
+	if isLookupsRow(r) {
+		return m.lookups(r)
 	}
 	if r.PluginID == CorePlugin {
 		return m.note(src, r)

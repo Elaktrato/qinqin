@@ -3,6 +3,7 @@
 // tested with fakes (src/lib/testing/fakeCaches.ts).
 
 import { normalizeUrl, type Kind } from './classify';
+import { scrubForCache } from './scrub';
 
 export const HANZI_CACHE = 'qinqin-hanzi-v1';
 export const HANZI_CAP = 4000;
@@ -129,7 +130,11 @@ async function apiRequest(req: Request, d: Deps): Promise<Response> {
 				const headers = new Headers(res.headers);
 				headers.set(SAVED_AT_HEADER, new Date(d.now()).toISOString());
 				const copy = res.clone();
-				await cache.put(key, new Response(copy.body, { status: 200, statusText: copy.statusText, headers }));
+				// The lookup history never reaches Cache Storage (scrub.ts).
+				const body = scrubForCache(new URL(key).pathname, await copy.text());
+				if (body === null) return;
+				headers.delete('content-length');
+				await cache.put(key, new Response(body, { status: 200, statusText: copy.statusText, headers }));
 			} catch {
 				// Quota or a closed cache: the live response is still returned.
 			}

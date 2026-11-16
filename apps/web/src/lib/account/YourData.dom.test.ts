@@ -38,6 +38,11 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
 describe('YourData', () => {
+	it('links the lookup history (#72)', () => {
+		render(YourData);
+		expect(screen.getByRole('link', { name: 'Lookup history' }).getAttribute('href')).toBe('/lookups');
+	});
+
 	it('downloads through a ticket and navigates to it', async () => {
 		const assign = vi.fn();
 		vi.mocked(api.downloadMyData).mockImplementation(async (a) => a?.('/api/account/export/t1'));

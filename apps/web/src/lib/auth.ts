@@ -1,5 +1,6 @@
 import { clearAudioCache } from './api/audio';
 import { clearEntryBasesCache } from './api/entryBases';
+import { resetLookupRecorder } from './lookups/store';
 import { clearClipCache } from './audio/source';
 import { derived, get, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
@@ -56,11 +57,23 @@ export const restriction = derived(auth, ($auth): Restriction | null => $auth.us
 // The review outbox belongs to the user `me` named; null when signed out.
 auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null, $auth.token));
 
+// The lookup history's buffer and copies (memory only) belong to one user:
+// whenever the signed-in user changes (sign-out, another tab signing in as
+// someone else, a token swap) they are dropped.
+let lookupUser: number | null = null;
+auth.subscribe(($auth) => {
+	const id = $auth.user?.id ?? null;
+	if (id !== lookupUser) resetLookupRecorder();
+	lookupUser = id;
+});
+
 // A 401 anywhere clears the token in the client; mirror that in the store.
 // Its offline copies and receipts are worthless too (the worker deletes the partition itself).
 setUnauthorizedHandler(() => {
 	auth.set({ token: null, user: null });
 	forgetOfflineCopies();
+	// Looked-up words buffered for the lookup history belong to the session that ended.
+	resetLookupRecorder();
 });
 
 // A 403 that names a restriction means the session changed under us (an admin
@@ -242,5 +255,7 @@ export function logout(): void {
 	clearStudyDay();
 	// Entry bases carry this user's own edits.
 	clearEntryBasesCache();
+	// The lookup history's buffer and copies (memory only) belong to this user.
+	resetLookupRecorder();
 	auth.set({ token: null, user: null });
 }

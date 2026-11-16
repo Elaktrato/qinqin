@@ -113,7 +113,7 @@
 				<p class="hint">No dictionary entry found for <span lang={info.textLang}>{frame.text}</span>.</p>
 			{:else}
 				{#each results.slice(0, visible) as result, i (`${result.entryId}:${result.kind}:${i}`)}
-					<EntryCard {result} lang={info.lang} textLang={info.textLang} {study} hidden={hiddenIds} />
+					<EntryCard {result} lang={info.lang} textLang={info.textLang} {study} hidden={hiddenIds} first={isRoot && i === 0} />
 				{/each}
 				{#if hidden > 0}
 					<button type="button" class="more" onclick={() => (shown = visibleCount(results.length, shown))}>

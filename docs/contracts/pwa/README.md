@@ -46,7 +46,11 @@ when the request carries an `Authorization` header: `/api/auth/me`,
 in it), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=`,
 and `/api/entries/{id}`; plus stroke data `/hanzi/U<HEX>.json` without credentials.
 Everything else (every non-GET request, admin, account, auth except `me`, AI,
-journal photos, audio, lookups, search) is never touched. Only `200` responses are
+journal photos, audio, lookups, search) is never touched. The lookup history (#72,
+`../lookups/`) never reaches the cache: `qinqin-core` data reads of `lookup*` keys (or with a `prefix` that can
+match one; paths are compared decoded) are not cached, and a saved pull loses its `qinqin-core` `lookup*` rows
+and a saved event log its `lookup` events before it is stored (`apps/web/src/lib/pwa/sw/scrub.ts`); after a
+Clear or Remove the page filters copies saved earlier the same way. Only `200` responses are
 stored; a 401 deletes the partition; a 4xx or 5xx other than 502/503/504 is
 passed through.
 

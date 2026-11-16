@@ -82,6 +82,8 @@
 	import { browserStorage, loadPrefs, saveFurigana, saveVariant } from './prefs';
 	import { LIBRARY_HREF, bookHref, safeHttpUrl } from './route';
 	import { LookupController } from './useLookup.svelte';
+	import { recordLookup } from '$lib/lookups/sink';
+	import { lookupRecorder } from '$lib/lookups/store';
 	import { prepareVariant, type Variant } from './variants';
 
 	let { id, chapter }: { id: number; chapter: number } = $props();
@@ -316,9 +318,16 @@
 		container: () => container,
 		lang: () => book?.language ?? '',
 		textLang: () => textLang,
-		runsOf: (p) => paragraphs[p]
+		runsOf: (p) => paragraphs[p],
+		// The lookup history (#72), in the book's workspace like "+".
+		onLookup: (entryId) => recordLookup(studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id })
 	});
 	$effect(() => lookup.attach());
+	// One read of the history for the popup's "looked up N times" hint.
+	$effect(() => {
+		const ws = studyWorkspaceId;
+		if (ws !== null) void lookupRecorder().load(ws).catch(() => undefined);
+	});
 	// The text under a popup is re-rendered (chapter, script or furigana
 	// change): drop the popup rather than leave it pointing at nothing.
 	$effect(() => {

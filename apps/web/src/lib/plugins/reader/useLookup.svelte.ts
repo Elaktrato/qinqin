@@ -6,6 +6,7 @@
 // text offsets. The timing (grace, aborts, stale results) lives in the
 // DOM-free HoverLookup and NestedScan.
 import { lookupAt } from '$lib/api/lookup';
+import { DwellCounter } from '$lib/lookups/dwell';
 import {
 	caretFromPoint,
 	highlightSpan,
@@ -53,6 +54,12 @@ export interface LookupOptions {
 	/** The reader text's lang attribute (zh-Hans/zh-Hant select glyphs). */
 	textLang: () => string;
 	runsOf: RunsOf;
+	/**
+	 * A lookup for the lookup history (#72): a root hover popup that stayed
+	 * open HOVER_DWELL_MS or was entered, or a selection popup with results;
+	 * the entry is the popup's first result. Nested popups never count.
+	 */
+	onLookup?: (entryId: number, mode: 'hover' | 'selection') => void;
 }
 
 export class LookupController {
@@ -73,6 +80,7 @@ export class LookupController {
 	#selectionTimer: ReturnType<typeof setTimeout> | undefined;
 	#selectionSpan: Span | null = null;
 	#frame = 0;
+	#dwell: DwellCounter;
 	/**
 	 * The selection a selection popup was opened for, as the highlighter
 	 * needs it (untrimmed, clamped to its first paragraph); null otherwise.
@@ -81,6 +89,7 @@ export class LookupController {
 
 	constructor(opts: LookupOptions) {
 		this.#opts = opts;
+		this.#dwell = new DwellCounter((entryId) => this.#opts.onLookup?.(entryId, 'hover'));
 		this.#hover = new HoverLookup({
 			lookup: this.#lookup,
 			lang: opts.lang,
@@ -96,6 +105,7 @@ export class LookupController {
 			entered: () => {
 				clearTimeout(this.#hoverTimer);
 				this.#hover.enterPopup();
+				if (this.info?.mode === 'hover') this.#dwell.entered();
 			},
 			left: () => this.#hover.leavePopup()
 		});
@@ -185,6 +195,7 @@ export class LookupController {
 	close(): void {
 		clearTimeout(this.#hoverTimer);
 		this.#hover.close();
+		this.#dwell.closed();
 		this.popups.cancel();
 		this.#selectionSeq++;
 		this.#selectionAbort?.abort();
@@ -275,6 +286,7 @@ export class LookupController {
 			note: '',
 			paragraph: runs ? paragraphString(runs) : ''
 		};
+		this.#dwell.shown(shown.results[0]?.entryId ?? null);
 	}
 
 	// --- selection ---
@@ -330,6 +342,8 @@ export class LookupController {
 			if (seq !== this.#selectionSeq || !this.info) return;
 			this.stack.update(id, { results: found.results });
 			this.info = { ...this.info, note: found.note };
+			const first = found.results[0];
+			if (first) this.#opts.onLookup?.(first.entryId, 'selection');
 		} catch (err) {
 			if (abort.signal.aborted || seq !== this.#selectionSeq) return;
 			this.stack.update(id, { results: [], error: apiErrorMessage(err, 'lookup') });
