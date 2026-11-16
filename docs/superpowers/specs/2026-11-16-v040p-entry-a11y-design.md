@@ -19,6 +19,9 @@ comments. Web only: no server change, no new route, no contract change.
 | Radical shows `Radical entry #{id}` | Done: a second `getEntry(radicalId)` fetches the written form; dom test exists. The id text remains as the fallback when that fetch fails. | Keep; the fallback is covered by the new failing-radical test. |
 | Variants/chars use raw `readings[0].value` | Done: both lists call `formatReading`; the chars list has a dom test, variants have none. | Add a dom test for the variants list (verification only: expected to pass on first run, recorded as such). |
 
+Added during the build (real-app check): a radical that is its own radical (人, `radicalId` equal to its
+own id) takes its own written form instead of fetching itself again.
+
 ### Licence links
 
 `$lib/licenses.ts` exports `licenseUrl(name): string | null`. The name is trimmed, inner whitespace
