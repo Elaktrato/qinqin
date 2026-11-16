@@ -32,6 +32,10 @@ Data with an unclear or restrictive licence is never committed or bundled. Put i
 
 Administrators can also install a dictionary pack as a zip in Settings, Data.
 
+## Frequency order and starter decks
+
+"Most frequent first" and the starter decks (Top 500/1000/2000) are computed at request time from the frequency packs installed on the server; nothing extra is bundled for them. Japanese uses the bundled Jiten list (CC BY-SA 4.0, with attribution, shown on every starter deck). For Chinese no word frequency list with a clearly compatible licence was found (checked 2026-11-16): wordfreq's Chinese data includes word lists of unknown provenance, jieba's counts have no stated source, SUBTLEX-CH has unclear terms and the Leiden Weibo corpus is non-commercial, so these are local-only packs an operator may add for their own server. Unihan's character readings counts and KANJIDIC2's newspaper ranks are character data, not word ranks, and are not used here.
+
 ## Adding a credit
 
 Packs: `license`, `attribution` and an optional `notice` (plain text, links only as `[text](https://...)`, at most 4,000 bytes) in the manifest, plus a row in `docs/sources.md`. `node scripts/check-sources.mjs` (run in CI) keeps manifests and docs in agreement.

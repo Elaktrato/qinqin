@@ -32,6 +32,8 @@ characters). Owned copies get a deterministic id:
 - `slug(s)` = NFC, lower case, every Unicode code point outside `[a-z0-9-]` replaced by one `-`.
 - `fnv1a32(s)` = FNV-1a 32 bit over the UTF-8 of the NFC text, 8 lower-case hex digits.
 - level deck: `d-lvl-<slug(packId)>-<fnv1a32(packId + "\0" + levelName)>`; plugin deck: `d-plg-<slug(pluginId)>-<fnv1a32(pluginId + "\0" + key)>`.
+- starter deck (frequency, #75): `d-frq-<slug(packId)>-<fnv1a32(packId + "\0" + "top-" + size)>`; see
+  [`../frequency/`](../frequency/README.md).
 
 ## Add to my decks (`add-to-deck.json`)
 

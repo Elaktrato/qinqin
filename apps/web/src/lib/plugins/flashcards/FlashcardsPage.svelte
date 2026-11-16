@@ -3,6 +3,7 @@
 	import DeckDetail from './decks/DeckDetail.svelte';
 	import DeckSettingsView from './decks/DeckSettingsView.svelte';
 	import SystemDeckDetail from './decks/SystemDeckDetail.svelte';
+	import StarterDeckDetail from './decks/StarterDeckDetail.svelte';
 	import DeckList from './decks/DeckList.svelte';
 	import { parseDecodedFlashcardsRoute } from './route';
 
@@ -23,6 +24,8 @@
 		<DeckSettingsView deckId={route.deckId} />
 	{:else if route.view === 'system-level' || route.view === 'system-plugin'}
 		<SystemDeckDetail {route} />
+	{:else if route.view === 'system-frequency'}
+		<StarterDeckDetail {route} />
 	{:else}
 		<DeckList />
 	{/if}

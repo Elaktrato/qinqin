@@ -10,6 +10,7 @@ import (
 // GET /api/frequency-packs, with the credits the Sources page shows.
 type frequencyPackBody struct {
 	ID          int64  `json:"id"`
+	PackID      string `json:"packId"`
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Language    string `json:"language"`
@@ -28,7 +29,7 @@ func (s *server) handleListFrequencyPacks(w http.ResponseWriter, r *http.Request
 	}
 	list := make([]frequencyPackBody, 0, len(packs))
 	for _, p := range packs {
-		list = append(list, frequencyPackBody{ID: p.ID, Name: p.Name, Version: p.Version,
+		list = append(list, frequencyPackBody{ID: p.ID, PackID: p.PackID, Name: p.Name, Version: p.Version,
 			Language: p.Language, License: p.License, Attribution: p.Attribution, Notice: p.Notice})
 	}
 	writeJSON(w, http.StatusOK, list)

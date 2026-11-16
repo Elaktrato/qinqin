@@ -79,11 +79,10 @@ func variants(r lexicon.Reading) []string {
 // Frequency data only ranks and decorates: when it cannot be read the
 // lookup goes on without it, so the error is logged, not returned.
 func (s Service) frequencies(ctx context.Context, language string, es []lexicon.Entry) ([][]Frequency, []int64) {
-	out := make([][]Frequency, len(es))
 	packs, err := s.Freq.Packs(ctx)
 	if err != nil {
 		log.Printf("lookup: frequency packs unavailable, ranking without them: %v", err)
-		return out, nil
+		return make([][]Frequency, len(es)), nil
 	}
 	var packIDs []int64
 	for _, p := range packs {
@@ -91,6 +90,50 @@ func (s Service) frequencies(ctx context.Context, language string, es []lexicon.
 			packIDs = append(packIDs, p.ID)
 		}
 	}
+	out, err := s.packFrequencies(ctx, language, es, packIDs)
+	if err != nil {
+		log.Printf("lookup: frequency rows unavailable, ranking without them: %v", err)
+		return make([][]Frequency, len(es)), nil
+	}
+	return out, packIDs
+}
+
+// EntryRanks returns the ranking pack of language — its first installed
+// frequency pack by priority, fixed whatever the entries are — and each
+// entry's rank there (0 = no data), with frequencies' semantics (term
+// groups, kana fallback, no word rank for a Japanese character). pack is
+// nil when the language has no pack. Unlike lookups, errors are returned.
+func (s Service) EntryRanks(ctx context.Context, language string, es []lexicon.Entry) (*freq.PackInfo, []int, error) {
+	ranks := make([]int, len(es))
+	packs, err := s.Freq.Packs(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	var pack *freq.PackInfo
+	for i := range packs {
+		if strings.EqualFold(packs[i].Language, language) {
+			pack = &packs[i]
+			break
+		}
+	}
+	if pack == nil {
+		return nil, ranks, nil
+	}
+	freqs, err := s.packFrequencies(ctx, language, es, []int64{pack.ID})
+	if err != nil {
+		return nil, nil, err
+	}
+	for i, fs := range freqs {
+		if len(fs) > 0 {
+			ranks[i] = fs[0].Rank
+		}
+	}
+	return pack, ranks, nil
+}
+
+// packFrequencies is frequencies over the given packs (priority order).
+func (s Service) packFrequencies(ctx context.Context, language string, es []lexicon.Entry, packIDs []int64) ([][]Frequency, error) {
+	out := make([][]Frequency, len(es))
 	if len(packIDs) == 0 {
 		return out, nil
 	}
@@ -104,12 +147,11 @@ func (s Service) frequencies(ctx context.Context, language string, es []lexicon.
 		}
 	}
 	if len(terms) == 0 {
-		return out, packIDs
+		return out, nil
 	}
 	rows, err := s.Freq.Rows(ctx, terms)
 	if err != nil {
-		log.Printf("lookup: frequency rows unavailable, ranking without them: %v", err)
-		return out, nil
+		return nil, err
 	}
 
 	for i := range es {
@@ -144,7 +186,7 @@ func (s Service) frequencies(ctx context.Context, language string, es []lexicon.
 			}
 		}
 	}
-	return out, packIDs
+	return out, nil
 }
 
 // Hiragana ぁ..ゖ and katakana ァ..ヶ are 0x60 apart.

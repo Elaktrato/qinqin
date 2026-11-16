@@ -4,6 +4,7 @@
 // sessionStorage rather than the server: no sync, no stale setup on the
 // next device.
 
+import { parseNewOrder, type SessionNewOrder } from './newOrder';
 import { CARD_KINDS } from './types';
 
 /**
@@ -26,6 +27,16 @@ export interface StudySessionConfig {
 	newLimit: number;
 	reviewLimit: number;
 	cardTypes: string[];
+	/**
+	 * The order of new cards (#75). Absent = 'deck': the selected decks'
+	 * own order (level order in a level session).
+	 */
+	newOrder?: SessionNewOrder;
+}
+
+/** sessionNewOrder is the setup's order of new cards, 'deck' by default. */
+export function sessionNewOrder(config: StudySessionConfig): SessionNewOrder {
+	return config.newOrder ?? 'deck';
 }
 
 /** sessionStorage key of the setup. */
@@ -147,7 +158,7 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes } = parsed;
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder } = parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
 
@@ -164,6 +175,9 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		reviewLimit,
 		cardTypes: [...cardTypes]
 	};
+	// A missing or unreadable order is the deck setting; it never discards the setup.
+	const order = parseNewOrder(newOrder);
+	if (order !== null) config.newOrder = order;
 	return validateConfig(config).length === 0 ? config : null;
 }
 

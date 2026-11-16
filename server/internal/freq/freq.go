@@ -544,18 +544,20 @@ type Hit struct {
 	Display  string
 }
 
-// PackInfo describes an installed frequency pack.
+// PackInfo describes an installed frequency pack. ContentHash
+// fingerprints its rows (it changes when a re-import changes them).
 type PackInfo struct {
 	ID                                                            int64
 	PackID, Name, Version, Language, License, Attribution, Notice string
 	Ord                                                           int
+	ContentHash                                                   string
 }
 
 // Packs lists the installed packs in priority order (ord): the first pack
 // with data for a term is the one whose frequency ordering applies.
 func (s Store) Packs(ctx context.Context) ([]PackInfo, error) {
 	rows, err := s.DB.QueryContext(ctx, `
-		SELECT id, pack_id, name, version, language, license, attribution, notice, ord
+		SELECT id, pack_id, name, version, language, license, attribution, notice, ord, content_hash
 		FROM frequency_packs WHERE deleted_at IS NULL ORDER BY ord, id`)
 	if err != nil {
 		return nil, err
@@ -564,7 +566,7 @@ func (s Store) Packs(ctx context.Context) ([]PackInfo, error) {
 	var out []PackInfo
 	for rows.Next() {
 		var p PackInfo
-		if err := rows.Scan(&p.ID, &p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Notice, &p.Ord); err != nil {
+		if err := rows.Scan(&p.ID, &p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Notice, &p.Ord, &p.ContentHash); err != nil {
 			return nil, err
 		}
 		out = append(out, p)

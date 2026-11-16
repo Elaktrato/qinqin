@@ -6,6 +6,7 @@ import {
 	SESSION_CONFIG_KEY,
 	loadConfig,
 	saveConfig,
+	sessionNewOrder,
 	validateConfig,
 	type StudySessionConfig
 } from './session';
@@ -264,5 +265,46 @@ describe('validateConfig', () => {
 		expect(
 			validateConfig(config({ mode: 'levels', schemeId: 1, levelName: null })).join(' ')
 		).toMatch(/level/i);
+	});
+});
+
+describe('newOrder in the setup (#75)', () => {
+	beforeEach(() => {
+		vi.stubGlobal('sessionStorage', fakeStorage());
+	});
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('defaults to the deck setting', () => {
+		expect(sessionNewOrder(DEFAULT_CONFIG)).toBe('deck');
+		expect(sessionNewOrder(config())).toBe('deck');
+	});
+
+	it('round-trips an explicit order', () => {
+		for (const newOrder of [
+			{ by: 'frequency' },
+			{ by: 'added' },
+			{ by: 'level', packId: 'hsk-words' }
+		] as const) {
+			saveConfig(config({ newOrder }));
+			expect(loadConfig()).toEqual(config({ newOrder }));
+			expect(sessionNewOrder(loadConfig())).toEqual(newOrder);
+		}
+	});
+
+	it("an old setup without the field still loads, as 'deck'", () => {
+		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify(config()));
+		expect(loadConfig()).toEqual(config());
+		expect(sessionNewOrder(loadConfig())).toBe('deck');
+	});
+
+	it("a stored 'deck' or a malformed order loads as 'deck' and keeps the setup", () => {
+		for (const newOrder of ['deck', { by: 'level' }, 'frequency', 7]) {
+			sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...config({ newLimit: 7 }), newOrder }));
+			const loaded = loadConfig();
+			expect(loaded.newLimit).toBe(7);
+			expect(sessionNewOrder(loaded)).toBe('deck');
+		}
 	});
 });

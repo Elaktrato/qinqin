@@ -119,7 +119,15 @@ Jiten: lookups use the snapshot only.
 In short: a refresh is a single manual download of the published file (see
 article 5(b) of the terms), never automated in CI.
 `GET /api/frequency-packs` exposes each installed frequency pack's `license`
-and `attribution`, and the Sources page lists them. An opt-in test seeds the
+and `attribution`, and the Sources page lists them.
+The new-card order "most frequent first" and the starter decks (Top 500/1000/2000,
+#75) use the installed frequency packs only (the first pack of the language by
+priority); no additional frequency data is bundled for them, and every starter deck
+names its pack and licence. wordfreq was re-checked on 2026-11-16: its data may be
+redistributed under CC BY-SA 4.0, but its Chinese list includes jieba's word list of
+unknown provenance and SUBTLEX data under an e-mail permission, so it stays
+local-only, as do jieba counts, SUBTLEX-CH, the Leiden Weibo corpus, BCCWJ and the
+JPDB/Innocent/CC100 lists. An opt-in test seeds the
 real bundle and checks lookups against it (about a minute):
 `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` (from `server/`).
 
