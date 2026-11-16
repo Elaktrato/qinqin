@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 import { ALL_SENT_MS, offline, resetOffline } from '../pwa/offlineState';
-import { flushPendingReviews, recordReview, startReviewOutbox } from './events';
+import { flushPendingReviews, recordReview, resetOutboxForTests, startReviewOutbox } from './events';
 import { setOutboxUser } from './outboxUser';
 
 function ok(): Response {
@@ -14,11 +14,12 @@ function setVisibility(state: 'visible' | 'hidden'): void {
 }
 
 beforeEach(() => {
+	resetOutboxForTests();
 	vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'Date'] });
 	localStorage.clear();
 	localStorage.setItem('qinqin.token', 'tok');
 	resetOffline();
-	setOutboxUser(1);
+	setOutboxUser(1, 'tok');
 	vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('offline'))));
 	vi.spyOn(console, 'warn').mockImplementation(() => {});
 	setVisibility('visible');
@@ -26,7 +27,7 @@ beforeEach(() => {
 afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
-	setOutboxUser(null);
+	setOutboxUser(null, null);
 	vi.useRealTimers();
 });
 
@@ -47,13 +48,30 @@ describe('review sync triggers', () => {
 
 		fetchMock.mockReset();
 		fetchMock.mockImplementation(async () => ok());
-		await vi.advanceTimersByTimeAsync(60_000);
+		await vi.advanceTimersByTimeAsync(120_000); // the first failure backed the poll off
 		expect(fetchMock).toHaveBeenCalledTimes(1); // the successful flush
 		expect(get(offline).queued).toBe(0);
 
 		fetchMock.mockClear();
 		await vi.advanceTimersByTimeAsync(180_000);
 		expect(fetchMock).not.toHaveBeenCalled(); // queue empty: the interval is gone
+	});
+
+	it('backs off after a failed retry: the next poll waits two minutes, a reconnect does not', async () => {
+		startReviewOutbox();
+		await recordReview(1, 'c1', 3);
+		const fetchMock = vi.mocked(fetch);
+		fetchMock.mockClear();
+		await vi.advanceTimersByTimeAsync(60_000); // first poll fails
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		await vi.advanceTimersByTimeAsync(60_000); // backed off
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		await vi.advanceTimersByTimeAsync(60_000);
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		fetchMock.mockImplementation(async () => ok());
+		window.dispatchEvent(new Event('online')); // explicit trigger ignores the back-off
+		await vi.advanceTimersByTimeAsync(0);
+		expect(fetchMock).toHaveBeenCalledTimes(3);
 	});
 
 	it('does not poll while the page is hidden; becoming visible flushes at once', async () => {

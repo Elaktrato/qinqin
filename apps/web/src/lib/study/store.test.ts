@@ -1776,10 +1776,10 @@ describe("queued reviews count in the loaded history", () => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
     selectWorkspace(WORKSPACE_ID);
-    setOutboxUser(1);
+    setOutboxUser(1, 't');
   });
   afterEach(() => {
-    setOutboxUser(null);
+    setOutboxUser(null, null);
     vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
@@ -1851,7 +1851,7 @@ describe("queued reviews count in the loaded history", () => {
   it("nothing is merged while no user is known", async () => {
     respondPull(pull, []);
     queue(1, reviewEvent("Q1", "card-1"));
-    setOutboxUser(null);
+    setOutboxUser(null, null);
 
     const data = await loadStudyData();
 

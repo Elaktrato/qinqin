@@ -1,7 +1,7 @@
 import { clearAudioCache } from './api/audio';
 import { clearEntryBasesCache } from './api/entryBases';
 import { clearClipCache } from './audio/source';
-import { derived, writable } from 'svelte/store';
+import { derived, get, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
 import { hasSession, stepFor, type LoginStep, type MfaChallenge } from './account/loginFlow';
 import { emailLoginVerify, mfaStep, type LoginBody } from './api/mfa';
@@ -11,6 +11,7 @@ import { clearRecentSent } from './study/recentSent';
 import { cleanupPartitions, ownPartition } from './pwa/partitions';
 import {
 	api,
+	TOKEN_KEY,
 	clearToken,
 	getToken,
 	setRestrictedHandler,
@@ -52,7 +53,7 @@ export const user = derived(auth, ($auth) => $auth.user);
 export const restriction = derived(auth, ($auth): Restriction | null => $auth.user?.restriction || null);
 
 // The review outbox belongs to the user `me` named; null when signed out.
-auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null));
+auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null, $auth.token));
 
 // A 401 anywhere clears the token in the client; mirror that in the store.
 setUnauthorizedHandler(() => auth.set({ token: null, user: null }));
@@ -62,6 +63,26 @@ setUnauthorizedHandler(() => auth.set({ token: null, user: null }));
 setRestrictedHandler(() => {
 	void loadMe().catch(() => undefined);
 });
+
+/**
+ * Another tab signed in, out or as someone else: localStorage holds the one
+ * token, so this tab must follow at once (a stale tab would otherwise act, and
+ * send queued reviews, as the user it last knew).
+ */
+function followTokenAcrossTabs(): void {
+	if (typeof window === 'undefined') return;
+	window.addEventListener('storage', (event) => {
+		if (event.key !== TOKEN_KEY && event.key !== null) return;
+		const stored = getToken();
+		if (stored === get(auth).token) return;
+		if (stored === null) {
+			auth.set({ token: null, user: null });
+			return;
+		}
+		void loadMe().catch(() => undefined);
+	});
+}
+followTokenAcrossTabs();
 
 /**
  * loadMe hydrates the user for the stored token (or `known`, a token the

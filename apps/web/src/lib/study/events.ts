@@ -10,7 +10,7 @@ import { postEvents } from '../events';
 import { newUlid } from '../ulid';
 import { notifyAllSent, setQueued } from '../pwa/offlineState';
 import { flushable, settle, type OutboxItem, type OutboxState } from './outbox';
-import { onOutboxUser, outboxUser } from './outboxUser';
+import { onOutboxUser, outboxToken, outboxUser, resetOutboxUserForTests } from './outboxUser';
 import { rememberSent } from './recentSent';
 import type {
 	ReviewEvent,
@@ -130,7 +130,9 @@ function pageVisible(): boolean {
 function syncPolling(queued: boolean): void {
 	const want = outboxStarted && queued && pageVisible();
 	if (want && pollTimer === null) {
-		pollTimer = setInterval(() => void flushPendingReviews(), POLL_MS);
+		pollTimer = setInterval(() => {
+			if (Date.now() >= backoffUntil) void flushPendingReviews();
+		}, POLL_MS);
 	} else if (!want && pollTimer !== null) {
 		clearInterval(pollTimer);
 		pollTimer = null;
@@ -205,6 +207,13 @@ function isWorkspaceGone(err: unknown): boolean {
 // for a retry, and sharing the promise keeps them from sending the same
 // queued event twice.
 let flushing: Promise<void> | null = null;
+// After a transient failure the one-minute poll waits (2, 4, 8... up to 10 minutes);
+// explicit triggers (online, back to the app, sign-in) still try at once.
+let backoffUntil = 0;
+let failureRun = 0;
+function backoffMs(run: number): number {
+	return Math.min(POLL_MS * 2 ** run, 10 * 60_000);
+}
 let outboxStarted = false;
 
 /**
@@ -230,7 +239,11 @@ async function flushOnce(): Promise<void> {
 	// session instead. The same holds until `me` has told who is signed in:
 	// only that user's items may be sent.
 	const user = outboxUser();
-	if (getToken() === null || user === null) return;
+	const token = getToken();
+	// The pair (user, token) is captured once. The user was loaded with
+	// `outboxToken()`; if the stored token is another one (a second tab signed
+	// in as someone else) this tab's idea of the user is stale: send nothing.
+	if (token === null || user === null || token !== outboxToken()) return;
 	const all = load();
 	refreshQueued(all);
 	const queued = flushable(all, user);
@@ -238,7 +251,10 @@ async function flushOnce(): Promise<void> {
 
 	let gone = 0;
 	let sent = 0;
+	let failures = 0;
 	for (const { event } of queued) {
+		// Re-checked before every event: a sign-in elsewhere replaced the token.
+		if (getToken() !== token || outboxUser() !== user) break;
 		try {
 			await postEvents([event]);
 			rememberSent(user, [event]);
@@ -252,15 +268,22 @@ async function flushOnce(): Promise<void> {
 				console.warn('review outbox paused: the session cannot send right now', err);
 				break;
 			}
+			// A refusal only counts for this user while the request was theirs.
+			if (getToken() !== token || outboxUser() !== user) break;
 			if (isPermanentFailure(err)) {
 				if (isWorkspaceGone(err)) gone++;
 				console.warn(`review event "${event.id}" rejected permanently; dropped`, err);
 				removePending(event.id);
 			} else {
+				// Transient (network, 5xx, 429): the next events would fail the same
+				// way. Stop and back off; the next trigger tries again.
 				console.warn(`review event "${event.id}" not flushed; kept for retry`, err);
+				failures++;
+				break;
 			}
 		}
 	}
+	backoffUntil = failures > 0 ? Date.now() + backoffMs(++failureRun) : ((failureRun = 0), 0);
 	if (sent > 0 && pendingCount(user) === 0) notifyAllSent();
 	// Reviews of a workspace deleted elsewhere are lost for good: say so.
 	if (gone > 0) {
@@ -318,4 +341,16 @@ export function startReviewOutbox(): void {
 		}
 	}
 	void flushPendingReviews();
+}
+
+
+/** Test hook: forget the module's timers and flags so each test starts clean. */
+export function resetOutboxForTests(): void {
+	resetOutboxUserForTests();
+	flushing = null;
+	outboxStarted = false;
+	backoffUntil = 0;
+	failureRun = 0;
+	if (pollTimer !== null) clearInterval(pollTimer);
+	pollTimer = null;
 }

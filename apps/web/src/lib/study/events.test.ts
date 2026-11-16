@@ -14,10 +14,16 @@ import {
 	pendingCount,
 	pendingReviews,
 	recordReview,
+	resetOutboxForTests,
 	startReviewOutbox
 } from './events';
 import { setOutboxUser } from './outboxUser';
 import { recentSentReviews } from './recentSent';
+
+beforeEach(() => {
+	resetOutboxForTests();
+	setOutboxUser(null, null);
+});
 
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
@@ -70,7 +76,7 @@ function sentEvents(): Record<string, unknown>[] {
 
 describe('recordReview', () => {
 	beforeEach(() => {
-		setOutboxUser(1);
+		setOutboxUser(1, 'secret');
 		vi.stubGlobal('localStorage', fakeStorage());
 		vi.stubGlobal('fetch', vi.fn());
 		vi.useFakeTimers({ toFake: ['Date'] });
@@ -174,7 +180,7 @@ describe('recordReview', () => {
 
 describe('flushPendingReviews', () => {
 	beforeEach(() => {
-		setOutboxUser(1);
+		setOutboxUser(1, 'secret');
 		vi.stubGlobal('localStorage', fakeStorage());
 		localStorage.setItem('qinqin.token', 'secret');
 		vi.stubGlobal('fetch', vi.fn());
@@ -391,7 +397,7 @@ describe('flushPendingReviews', () => {
 });
 
 describe('startReviewOutbox', () => {
-	beforeEach(() => setOutboxUser(1));
+	beforeEach(() => setOutboxUser(1, 'secret'));
 	afterEach(() => {
 		vi.unstubAllGlobals();
 	});
@@ -437,7 +443,7 @@ describe('startReviewOutbox', () => {
 
 describe('outbox per user', () => {
 	beforeEach(() => {
-		setOutboxUser(1);
+		setOutboxUser(1, 'secret');
 		vi.stubGlobal('localStorage', fakeStorage());
 		localStorage.setItem('qinqin.token', 'secret');
 		vi.stubGlobal('fetch', vi.fn());
@@ -446,11 +452,17 @@ describe('outbox per user', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
 		vi.unstubAllGlobals();
-		setOutboxUser(null);
+		setOutboxUser(null, null);
 	});
 
+	// Signing in as `user` replaces the stored token and the outbox user together.
+	function signInAs(user: number): void {
+		localStorage.setItem('qinqin.token', `tok${user}`);
+		setOutboxUser(user, `tok${user}`);
+	}
+
 	async function queueAs(user: number, ws: number, card: string): Promise<void> {
-		setOutboxUser(user);
+		signInAs(user);
 		vi.mocked(fetch).mockRejectedValueOnce(new Error('offline'));
 		await recordReview(ws, card, 3);
 	}
@@ -466,22 +478,59 @@ describe('outbox per user', () => {
 	it("never sends another user's reviews; the owner's next session sends them", async () => {
 		await queueAs(1, 7, 'a1');
 		const aId = pending()[0].id;
-		setOutboxUser(2);
+		signInAs(2);
 		vi.mocked(fetch).mockClear();
 		vi.mocked(fetch).mockResolvedValue(jsonResponse({ accepted: 1, duplicates: 0 }));
 		await flushPendingReviews();
 		expect(fetch).not.toHaveBeenCalled();
 		expect(pending()).toHaveLength(1);
 
-		setOutboxUser(1);
+		signInAs(1);
 		await flushPendingReviews();
 		expect(sentEvents().map((e) => e.id)).toEqual([aId]);
 		expect(pending()).toEqual([]);
 	});
 
+	it('a tab whose token was replaced by another user sends nothing and drops nothing', async () => {
+		// Tab 1: A is signed in and has a queue.
+		await queueAs(1, 7, 'a1');
+		await queueAs(1, 7, 'a2');
+		// Tab 2 signs in as B: the shared localStorage token changes, tab 1 does not know yet.
+		localStorage.setItem('qinqin.token', 'tokB');
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch).mockResolvedValue(new Response('workspace not found', { status: 404 }));
+		await flushPendingReviews(); // the poll fires in tab 1
+		expect(fetch).not.toHaveBeenCalled();
+		expect(pending()).toHaveLength(2);
+	});
+
+	it('a token replaced during the flush stops it; a 404 for the new user never drops the old owner\'s review', async () => {
+		await queueAs(1, 7, 'a1');
+		await queueAs(1, 7, 'a2');
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch).mockImplementation(async () => {
+			localStorage.setItem('qinqin.token', 'tokB');
+			return new Response('workspace not found', { status: 404 });
+		});
+		await flushPendingReviews();
+		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(pending()).toHaveLength(2);
+	});
+
+	it('stops at the first transient failure instead of hammering the server', async () => {
+		await queueAs(1, 7, 'a1');
+		await queueAs(1, 7, 'a2');
+		await queueAs(1, 7, 'a3');
+		vi.mocked(fetch).mockClear();
+		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 503 }));
+		await flushPendingReviews();
+		expect(fetch).toHaveBeenCalledTimes(1);
+		expect(pending()).toHaveLength(3);
+	});
+
 	it('sends nothing before a user is known', async () => {
 		await queueAs(1, 7, 'a1');
-		setOutboxUser(null);
+		setOutboxUser(null, null);
 		vi.mocked(fetch).mockClear();
 		await flushPendingReviews();
 		expect(fetch).not.toHaveBeenCalled();
@@ -561,14 +610,14 @@ describe('outbox per user', () => {
 
 describe('sent reviews are remembered for the offline history', () => {
 	beforeEach(() => {
-		setOutboxUser(1);
+		setOutboxUser(1, 'secret');
 		vi.stubGlobal('localStorage', fakeStorage());
 		localStorage.setItem('qinqin.token', 'secret');
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ accepted: 1, duplicates: 0 })));
 	});
 	afterEach(() => {
 		vi.unstubAllGlobals();
-		setOutboxUser(null);
+		setOutboxUser(null, null);
 	});
 
 	it('a review that was accepted at once is kept in the recent list', async () => {

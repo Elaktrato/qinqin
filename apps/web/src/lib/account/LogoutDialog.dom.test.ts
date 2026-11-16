@@ -28,7 +28,7 @@ beforeEach(() => {
 	localStorage.clear();
 	localStorage.setItem('qinqin.token', 'tok');
 	auth.set({ token: 'tok', user: { id: 1, username: 'u' } as never });
-	setOutboxUser(1);
+	setOutboxUser(1, 'tok');
 	logoutPrompt.set(null);
 	vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('offline'))));
 	vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -37,7 +37,7 @@ afterEach(() => {
 	cleanup();
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
-	setOutboxUser(null);
+	setOutboxUser(null, null);
 });
 
 describe('sign-out with unsent reviews', () => {
