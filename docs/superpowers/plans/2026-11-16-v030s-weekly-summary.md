@@ -389,12 +389,13 @@ collection branch `feature/v0.3.0-stretch` (#67, #75, #77, #71) was merged in (`
   dropped to 0 is worth showing — cost: a "0" row for a source unused this week (in the contract README).
 - Ruling: today's open goal day is left out of the goal line until met (`of = met + missed`) — "1 of 2 days" on a
   Friday morning would read as a miss — cost: the denominator grows during the day (in the contract README).
-- Ruling: the home widget's "study time" is flashcards + reading together; offline (reading unknown) it says "Not
-  available offline" rather than a flashcards-only number — one label, one meaning — cost: the widget hides the
-  known flashcard time offline (the Week tab still shows it on its own row).
+- Ruling: the home widget's "study time" is flashcards + reading together; offline (reading unknown) it shows the
+  flashcard time alone, marked "(flashcards only)", without a comparison (changed in the review fix wave; first
+  built as "Not available offline") — cost: one label with two meanings, disambiguated by the marker.
 - Ruling: the week heading is announced by `aria-live="polite"` and focus stays on the followed link
   (`data-sveltekit-keepfocus`); the heading does not take focus — moving focus would fight keepfocus, and the
   spec's two sentences conflict — cost: a screen-reader user hears the new heading instead of landing on it.
+- Superseded in the review fix wave: the widget was first on both surfaces; it is now home-only (see below).
 - Ruling: the Week tab exists whenever a workspace is chosen (Overview only without one) — the summary is per
   workspace — cost: none.
 - Ruling: the current week links as `/stats/week` (no parameter); normalisation also replaces an explicit
@@ -453,3 +454,46 @@ not tried with a screen reader. The week heading's exact range text depends on t
 the spaces around the dash). The 10 s performance bound was measured locally only (about 2 s), not on CI hardware.
 Characters learned against a live server was not exercised (no character data seeded in the scratch server; the
 crossing logic is covered by the fixtures).
+
+**Review fixes** (one fix wave after the independent review: no MUST-FIX, the scheduler refactor verified
+equivalent by the reviewer's A/B harness; SHOULD 1–5 treated as blocking, NITs 6–10 done). First
+`feature/v0.3.0-stretch` (now with #68 and #83) was merged in (`dbdad0f`). One conflict in
+`docs/contracts/overview.md` (both sides edited the "Cards and study" and "Reader" rows; kept both). #68's
+`study/known.ts` change and the stretch changes merged without touching `scheduler.ts` or `mastery.ts`; the
+study, weekly, stats and goals tests (91 files, 1537 tests) passed after the merge. The merge commit's message
+ends with git's "# Conflicts:" lines after the trailer (the `--no-edit` commit kept them); it was not amended
+(no amending in the fix wave). Each fix was test-first (seen to fail, then pass):
+
+1. Memo across a reloaded history (`ab8de93`): `timelinesFor` and the summary's per-day log pass were keyed on the
+   history object, which `loadStudyHistory` replaces after its 8 s TTL, so the next week link replayed
+   everything. Both are now keyed by `reviewsKey` (the count and an FNV-1a hash of each event's id, ts, card and
+   grade; once per array), plus the weights and clock runs for the timelines; four entries each. The perf test now
+   reloads an equal history and browses three more weeks with no replay and no log pass; the replay test covers
+   new content, a merge moving a review to another card, other weights and another clock. Spec ruling corrected.
+2. + 10. Week page (`2c0028e`): the heading names the week whose numbers are shown (`view.summary.monday`); while
+   the next week loads the old summary stays dimmed with `aria-busy="true"`, and the live heading changes only
+   with the new numbers. The page reloads on `onEventLogChange` and `onStudyWrite` for its workspace (or a
+   user-global write). DOM tests for both.
+3. Widget home-only (`996667f`): `surfaces: ['home']`, as the daily goal; wiki Weekly-summary and
+   Stats-and-heatmap updated; registry test.
+4. Characters offline (`76f5d47`): a failed character load leaves the row with "Not available offline", a line
+   above the rows names what is missing (`offlineText`) and Retry loads again; wiki updated; weekText, component
+   and page tests.
+5. + 7. Days active (`405056d`): today joins the denominator only once it is active (new fixture case in
+   `week-summary.json`, contract README). NIT 7 picked "document as intended": the in-progress comparison ends with
+   the whole of `today − 7`, because activity cells are whole learner days (Ruling in the contract README and
+   spec).
+6. `scheduleFor` hot path (`e3b4a65`): `scheduleFor` and `scheduleTimeline` share one `replay`; `scheduleFor`
+   formats only the last due (test: one `toISOString` call instead of one per review — 30 before). Benchmark
+   (scratch, not committed: 5 000 cards × 10 reviews, `scheduleFor` per card, five runs, ms; noisy shared machine):
+   before the weekly branch 267 252 226 172 174, after Task 3 226 215 213 204 203, after this fix 177 211 184 177
+   176 — back to the pre-branch cost.
+8. + 9. (`e9d8842`): offline widget study time "N min (flashcards only)"; the strip `<ol>` has
+   `aria-label="Days of the week"`.
+
+Fix-wave gates: `run check` 0 (0 errors, 0 warnings), `npm test` 0 (362 files, 5663 tests), `run build` 0, Node 26
+full vitest 0 (362 files, 5663 tests). No Go file changed in the fix wave, so no Go run.
+
+**Open items:** milestones (first 100 words, 1000 reviews, streak lengths, level completions; "shown once, then a
+history list") are deferred by the spec's ruling and need a follow-up issue (a stored "last seen" row per user).
+
