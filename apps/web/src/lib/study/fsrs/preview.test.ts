@@ -1,3 +1,4 @@
+import { UTC_CONTEXT } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
 import type { ReviewEvent, StudyCard } from '../types';
@@ -40,7 +41,7 @@ function history() {
 describe('previewChange', () => {
 	it('shows no change for identical weights', () => {
 		const { cards, reviews } = history();
-		const p = previewChange({ cards, reviews, from: DEFAULT_W, to: [...DEFAULT_W], now: NOW });
+		const p = previewChange({ ctx: UTC_CONTEXT, cards, reviews, from: DEFAULT_W, to: [...DEFAULT_W], now: NOW });
 		expect(p.dueNow[0]).toBe(p.dueNow[1]);
 		expect(p.due7[0]).toBe(p.due7[1]);
 		expect(p.due30[0]).toBe(p.due30[1]);
@@ -53,7 +54,7 @@ describe('previewChange', () => {
 		const { cards, reviews } = history();
 		const to = [...DEFAULT_W];
 		to[8] *= 2;
-		const p = previewChange({ cards, reviews, from: DEFAULT_W, to, now: NOW });
+		const p = previewChange({ ctx: UTC_CONTEXT, cards, reviews, from: DEFAULT_W, to, now: NOW });
 		expect(p.medianIntervalDays[1]).toBeGreaterThan(p.medianIntervalDays[0]);
 		expect(p.moved).toHaveLength(10);
 		expect(p.moved[0]).toMatchObject({ written: expect.stringMatching(/^字c/) });

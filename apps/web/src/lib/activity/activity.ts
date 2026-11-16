@@ -6,6 +6,7 @@
 
 import type { ActivityResponse, ActivitySource } from '../api/stats';
 import { addDays, type StudyDay } from '../time/studyDay';
+import { isVacationDay, vacationRuns, type VacationPeriod } from '../study/vacation';
 
 /** Days covered by the heatmap: 13 weeks of 7 cells. */
 export const HEATMAP_DAYS = 91;
@@ -26,6 +27,42 @@ export interface DayActivity {
 	raw: Record<string, number>;
 	/** Points per workspace; filled only for the combined view. */
 	byWorkspace: Record<number, number>;
+	/** 'all': every workspace of the view is on vacation; 'some': only `vacationIn`. */
+	vacation: 'all' | 'some' | null;
+	vacationIn: number[];
+}
+
+/** A vacation mark of one day: who is away. */
+export interface VacationMark {
+	mode: 'all' | 'some';
+	workspaces: number[];
+}
+
+/**
+ * vacationMarks says, per learner day of the window, which workspaces of the
+ * view are on vacation. A single-workspace view marks its own days 'all'; the
+ * combined view marks 'all' when every workspace is away and 'some' otherwise.
+ */
+export function vacationMarks(
+	periods: readonly VacationPeriod[],
+	workspaceIds: readonly number[],
+	workspace: number | null,
+	day: StudyDay,
+	now: Date = new Date(),
+	days: number = HEATMAP_DAYS
+): Map<string, VacationMark> {
+	const marks = new Map<string, VacationMark>();
+	const today = day.today(now.getTime());
+	const start = windowStart(day, now, days);
+	const scope = workspace === null ? [...workspaceIds] : [workspace];
+	if (scope.length === 0 || periods.length === 0) return marks;
+	const runs = new Map(scope.map((id) => [id, vacationRuns(periods, id, today)]));
+	for (let key = start; key <= today; key = addDays(key, 1)) {
+		const away = scope.filter((id) => isVacationDay(runs.get(id) ?? [], key));
+		if (away.length === 0) continue;
+		marks.set(key, { mode: away.length === scope.length ? 'all' : 'some', workspaces: away });
+	}
+	return marks;
 }
 
 function windowLength(days: number): number {
@@ -59,7 +96,8 @@ export function foldActivity(
 	view: ActivityView,
 	day: StudyDay,
 	now: Date = new Date(),
-	days: number = HEATMAP_DAYS
+	days: number = HEATMAP_DAYS,
+	marks?: ReadonlyMap<string, VacationMark>
 ): Map<string, DayActivity> {
 	const windowDays = windowLength(days);
 	const result = new Map<string, DayActivity>();
@@ -68,7 +106,16 @@ export function foldActivity(
 	const today = day.today(now.getTime());
 	const start = windowStart(day, now, windowDays);
 	for (let key = start; key <= today; key = addDays(key, 1)) {
-		result.set(key, { day: key, total: 0, bySource: {}, raw: {}, byWorkspace: {} });
+		const mark = marks?.get(key);
+		result.set(key, {
+			day: key,
+			total: 0,
+			bySource: {},
+			raw: {},
+			byWorkspace: {},
+			vacation: mark?.mode ?? null,
+			vacationIn: mark?.workspaces ?? []
+		});
 	}
 
 	const known = new Set(resp.sources.map((s) => s.type));
@@ -113,6 +160,13 @@ export function sourcePoints(map: Map<string, DayActivity>): Record<string, numb
 	return totals;
 }
 
+/** The tooltip's vacation suffix: " · On vacation" or " · Vacation in 中文, 日本語". */
+function vacationNote(day: DayActivity, workspaceName: (id: number) => string): string {
+	if (day.vacation === 'all') return ' · On vacation';
+	if (day.vacation === 'some') return ` · Vacation in ${day.vacationIn.map(workspaceName).join(', ')}`;
+	return '';
+}
+
 /**
  * dayTooltip describes a day in the sources' fixed order, e.g.
  * "2026-11-13: 12 points — 9 flashcard reviews, 15 minutes of reading";
@@ -125,7 +179,8 @@ export function dayTooltip(
 	allHidden = false
 ): string {
 	if (allHidden) return `${day.day}: all activity types hidden`;
-	if (day.total <= 0) return `${day.day}: no activity`;
+	const away = vacationNote(day, workspaceName);
+	if (day.total <= 0) return `${day.day}: no activity${away}`;
 	const parts: string[] = [];
 	for (const source of sources) {
 		if (!day.bySource[source.type]) continue;
@@ -138,7 +193,7 @@ export function dayTooltip(
 	if (spaces.length > 0) {
 		text += ` · ${spaces.map((s) => `${workspaceName(s.id)} ${s.points}`).join(', ')}`;
 	}
-	return text;
+	return text + away;
 }
 
 /**

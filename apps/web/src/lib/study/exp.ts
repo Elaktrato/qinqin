@@ -3,6 +3,7 @@
 // for the whole log, so every device agrees on what "today" is.
 
 import { addDays, type StudyDay } from '../time/studyDay';
+import { isVacationDay, type Run } from './vacation';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
 
 /** Base XP of one review by card kind. */
@@ -118,33 +119,44 @@ export function levelFromXp(xp: number): number {
 export function dailyStreak(
 	reviews: readonly ReviewEvent[],
 	now: number,
-	day: StudyDay
+	day: StudyDay,
+	vacation: readonly Run[] = []
 ): { current: number; best: number; todayDone: boolean } {
 	const today = day.today(now);
+	const onVacation = (d: string): boolean => isVacationDay(vacation, d);
+	// Vacation days are neutral: they neither extend nor break a run, and a
+	// review on one does not count (docs/contracts/scheduler/).
 	const days = [
 		...new Set(
 			validReviews(reviews)
 				.map((review) => day.dayOf(review.at))
-				.filter((d) => d <= today)
+				.filter((d) => d <= today && !onVacation(d))
 		)
 	].sort();
 	const set = new Set(days);
+	/** The nearest date before `d` that is not a vacation day. */
+	const before = (d: string): string => {
+		let c = addDays(d, -1);
+		for (let guard = 0; onVacation(c) && guard < 100_000; guard++) c = addDays(c, -1);
+		return c;
+	};
 
 	let best = 0;
 	let run = 0;
 	let prev: string | null = null;
 	for (const d of days) {
-		run = prev !== null && d === addDays(prev, 1) ? run + 1 : 1;
+		run = prev !== null && before(d) === prev ? run + 1 : 1;
 		best = Math.max(best, run);
 		prev = d;
 	}
 
-	const todayDone = set.has(today);
-	let cursor = todayDone ? today : addDays(today, -1);
+	const todayVacation = onVacation(today);
+	const todayDone = todayVacation || set.has(today);
+	let cursor = set.has(today) ? today : before(today);
 	let current = 0;
 	while (set.has(cursor)) {
 		current += 1;
-		cursor = addDays(cursor, -1);
+		cursor = before(cursor);
 	}
 	return { current, best, todayDone };
 }

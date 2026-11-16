@@ -282,3 +282,47 @@ Cross-plan: the whole study-day plan first; #90 before Task 12 (or its fallback)
 - `due-today.json` (Task 5), `streak.json` (Task 8), `limits-rows.json`, `daily-limits.json` (Tasks 10–11).
 - Android: read `vacation:*` (user-global) and `limits:*` rows, use the learner's day, port `v`/`v⁻¹` with
   whole-day shifts, keep instant due ness.
+
+## Execution record (branch `feature/v030-vacation-limits`, Tasks 1-13)
+
+Built after #84, #57, #65 and #90 were merged into `feature/v0.3.0`. Differences from the plan as written:
+
+- Ruling: Tasks 4 and 5 are one commit - `scheduleFor` takes the clock and every queue takes the context, and
+  the tree does not compile with only one of them - cost: a larger commit.
+- Ruling: the golden test of Task 4 compares `scheduleFor` with an identity clock against an inline plain
+  ts-fsrs replay of 2,000 seeded reviews instead of a snapshot of the old implementation, and
+  `fsrs/syntheticLog.ts` was not created - same proof, no extra module - cost: none.
+- Ruling: `StudyContext` also carries `vacation` (the workspace's runs), `history` (the zone history `day` was
+  built from, so the optimizer worker rebuilds the context) and `limits` (the parsed `limits:*` rows plus the ids
+  of the existing decks); `contextForData(data, workspaceId)` (`currentContext.ts`) builds it from loaded study
+  data and `onContextStale` fires at the learner's midnight and on a zone change - cost: a wider context.
+- Ruling: `dailyStreak` takes the vacation runs, not a list of dates - cost: none.
+- Ruling: `dueCounts` applies the daily limits only with `applyDailyLimits: true`; the decks view keeps raw due
+  and new numbers (they are what the deck holds) and shows `limitsLeftToday` beside them. `buildQueue` always
+  applies them (it is the session). `leftToday` (same module) is the home widget's number.
+- Ruling: a field of a limit row that is not usable (fraction, negative, above 9999, a string) is ignored and
+  follows the workspace/default instead of dropping the whole row - cost: a typo silently falls back.
+- Ruling: `admit()` returns `left.limitedOut` (candidates a daily limit refused) so the widget can tell "Done for
+  today - daily limit reached" from "Nothing due today"; `left.unlimited` is false without candidates.
+- Ruling: the deck-session reserve is what the daily limits allow beyond the session `newLimit` (queue and reserve
+  together never exceed the allowance), so a dropped companion is replaced only while the allowance holds.
+- Ruling: the home widget counts with the session caps removed ("what is left today"), not with this tab's
+  setup limits - cost: the widget no longer mirrors the setup page's session limits.
+- Ruling: the fallback "Daily limits disclosure in /study's deck list" of Task 12 was not built: #90 is merged,
+  the editor is `DeckLimitsEditor` in `DeckLimitsSlot.ts` and `/study` has no per-deck control to delete.
+- Ruling: the slot `limitsLeftToday` is `(deckId, data, kinds) => {new, reviews}` (the hand-over had no data
+  argument); a field is `null` when that deck's effective limit is unlimited and the list shows nothing for it.
+- Ruling: the heatmap reads vacations through the shared `getStudyData` cache of the current workspace (the rows are
+  user-global, any workspace carries them); `DayActivity` gained `vacation` and `vacationIn`; no server change,
+  `server/internal/stats` and the activity route are untouched.
+- Ruling: `levelPlanCounts` and the study page's "This session" numbers apply the daily limits (they show what a
+  session would hold today); the new "Today: ... (daily limits applied)" line states it.
+- Test-first notes: `studyClock.ts`, `currentContext.ts` and the first version of `StudySettings` were written
+  together with their tests in one step, the test run afterwards; every other task saw the test fail first.
+- Real-app check (built server from a scratchpad copy, curl/Python plus a temporary vitest file that was never
+  committed): `PUT .../data/vacation:<ulid>` without a workspace stores `workspaceId: null`; `GET /api/sync/pull`
+  returns it next to `limits:workspace` and the card; the events of the "7-day vacation" history were read back and
+  the pure modules gave: nothing due and no new card on a vacation day, the post-vacation due equal to plain
+  ts-fsrs plus 7 days, the stored limits honoured (5 of 12 new) and the defaults 20/200 without a row.
+- Not verified: the UI in a browser (no browser rules); Android; the study session page across a midnight
+  (queue built once per session); `limits:*` rows written by two devices at once (last write wins per key).

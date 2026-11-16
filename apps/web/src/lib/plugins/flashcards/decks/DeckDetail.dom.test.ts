@@ -29,6 +29,7 @@ import {
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
+import { currentStudyDay } from '$lib/time/zone';
 import DeckDetail from './DeckDetail.svelte';
 
 const verbs: Deck = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' };
@@ -296,5 +297,36 @@ describe('DeckDetail', () => {
 	it('says when the deck does not exist', async () => {
 		render(DeckDetail, { deckId: 'nope' });
 		expect(await screen.findByText('Deck not found.')).toBeTruthy();
+	});
+});
+
+describe('DeckDetail daily limits and vacation', () => {
+	it('shows what is left today under the numbers', async () => {
+		vi.mocked(loadStudyHistory).mockImplementation(async () => ({
+			decks: [verbs, nouns],
+			cards: structuredClone(cards),
+			reviews: [],
+			merged: 0,
+			deckSettings: settings as never,
+			limits: { workspace: { new: 2 }, decks: {} }
+		}));
+		await open();
+		expect(await screen.findByText('2 new · 0 reviews left today')).toBeTruthy();
+	});
+
+	it('says "On vacation" instead of due and new', async () => {
+		const today = currentStudyDay().today();
+		vi.mocked(loadStudyHistory).mockImplementation(async () => ({
+			decks: [verbs, nouns],
+			cards: structuredClone(cards),
+			reviews: [],
+			merged: 0,
+			deckSettings: settings as never,
+			vacations: [{ version: 1, id: 'V', start: today, end: null, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
+		}));
+		await open();
+		const numbers = document.querySelector('.numbers p') as HTMLElement;
+		expect(numbers.textContent).toMatch(/On vacation/);
+		expect(numbers.textContent).not.toMatch(/ due/);
 	});
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { BASE_XP, dailyStreak, levelFromXp, levelProgress, xpByKind, xpFromReviews } from './exp';
+import streakFixture from '../../../../../docs/contracts/scheduler/streak.json';
 import { studyDay } from '../time/studyDay';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
 
@@ -214,4 +215,14 @@ describe('the learner\'s day', () => {
 		const r = [ev(1, '2026-11-10T15:30:00Z'), ev(2, '2026-11-11T20:00:00Z'), ev(3, '2026-11-12T09:00:00Z')];
 		expect(dailyStreak(r, Date.parse('2026-11-12T10:00:00Z'), trip)).toEqual({ current: 2, best: 2, todayDone: true });
 	});
+});
+
+describe('fixtures: streak with vacation days', () => {
+	for (const c of streakFixture.cases) {
+		it(c.name, () => {
+			const day = c.zone === 'UTC' ? UTC : studyDay([{ zone: c.zone, from: null }]);
+			const reviews = c.reviews.map((ts, i) => ev(i + 1, ts));
+			expect(dailyStreak(reviews, Date.parse(c.now), day, c.vacation)).toEqual(c.expect);
+		});
+	}
 });

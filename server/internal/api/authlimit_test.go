@@ -608,7 +608,11 @@ func TestAuthLimitRegisterWording(t *testing.T) {
 // An administrator is never counted against the anonymous bucket, not
 // even by 20 parallel creations.
 func TestAuthLimitAdminParallelCreates(t *testing.T) {
-	ts, sqlDB, _ := newLimitServer(t)
+	// The point is that admin creates are never rate limited (429); a slow CI
+	// runner must not turn queued hashes into 503 busy, so the gate may wait.
+	pol := api.DefaultAuthPolicy()
+	pol.HashWait = 60 * time.Second
+	ts, sqlDB, _ := newLimitServer(t, api.WithAuthPolicy(pol))
 	if _, err := auth.CreateFirstUser(context.Background(), sqlDB, "owner", "secret-pass-owner"); err != nil {
 		t.Fatal(err)
 	}

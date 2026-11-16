@@ -30,6 +30,9 @@
 	} from './deckRows';
 	import { deckNumbers } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
+	import { onContextStale } from '$lib/study/currentContext';
+	import { deckLeftText } from '$lib/study/limitsText';
+	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
 
 	let { deckId }: { deckId: string } = $props();
@@ -39,6 +42,8 @@
 	$effect(() => {
 		void store.load(workspaceId);
 	});
+	// A new learner day (or zone) changes what is due and on vacation.
+	$effect(() => onContextStale(() => void store.load(workspaceId)));
 
 	const KIND_LABEL: Record<StudyCardKind, string> = {
 		vocab: 'Vocab',
@@ -118,6 +123,14 @@
 	});
 	const shown = $derived(filtered.slice(0, visibleCount(filtered.length, pages)));
 	const remaining = $derived(filtered.length - shown.length);
+
+	const leftText = $derived(
+		data === null || limitsLeftToday === null
+			? null
+			: deckLeftText(
+					limitsLeftToday(deckId, data, sessionKinds(data.workspaceId, [deckId], data.deckSettings))
+				)
+	);
 
 	const numbers = $derived(
 		data === null || deck === null
@@ -266,7 +279,7 @@
 
 	function dueText(row: DeckRow): string {
 		if (row.nextDue === null || data === null) return '—';
-		return data.day.dayOf(Date.parse(row.nextDue));
+		return data.ctx.day.dayOf(Date.parse(row.nextDue));
 	}
 </script>
 
@@ -293,9 +306,13 @@
 		{/if}
 		<section class="numbers" aria-label={`${deck.name} numbers`}>
 			<p>
-				{plural(numbers.words, 'word')} · {plural(numbers.cards, 'card')} · {numbers.due} due ·
-				{numbers.fresh} new · {numbers.studied} studied · {numbers.mastered} mastered
+				{plural(numbers.words, 'word')} · {plural(numbers.cards, 'card')} ·
+				{#if data?.ctx.vacationToday}On vacation{:else}{numbers.due} due · {numbers.fresh} new{/if} ·
+				{numbers.studied} studied · {numbers.mastered} mastered
 			</p>
+			{#if leftText !== null && !data?.ctx.vacationToday}
+				<p class="left">{leftText}</p>
+			{/if}
 			<div class="actions">
 				<button type="button" class="primary" onclick={study}>Study</button>
 				<a href={flashcardsHref({ view: 'settings', deckId })}>Settings</a>

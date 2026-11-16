@@ -18,6 +18,7 @@ import { createDeck } from '$lib/study/store';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
+import { currentStudyDay } from '$lib/time/zone';
 import DeckList from './DeckList.svelte';
 
 const verbs: Deck = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' };
@@ -164,5 +165,38 @@ describe('DeckList', () => {
 		workspaces.set({ list: [], current: null });
 		render(DeckList);
 		await waitFor(() => expect(screen.getByRole('status').textContent).toContain('workspace'));
+	});
+});
+
+describe('DeckList daily limits and vacation', () => {
+	it('shows what is left today beside due and new', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(
+			history({ limits: { workspace: { new: 1 }, decks: {} } })
+		);
+		render(DeckList);
+		const verbsRow = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
+		expect(within(verbsRow).getByText('1 new · 0 reviews left today')).toBeTruthy();
+	});
+
+	it('shows nothing for an unlimited deck', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(
+			history({ limits: { workspace: { new: null, reviews: null }, decks: {} } })
+		);
+		render(DeckList);
+		await screen.findByRole('link', { name: 'Verbs' });
+		expect(document.querySelector('.left')).toBeNull();
+	});
+
+	it('says "On vacation" where the numbers are', async () => {
+		const today = currentStudyDay().today();
+		vi.mocked(loadStudyHistory).mockResolvedValue(
+			history({
+				vacations: [{ version: 1, id: 'V', start: today, end: null, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
+			})
+		);
+		render(DeckList);
+		const verbsRow = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
+		expect(within(verbsRow).getByText('On vacation')).toBeTruthy();
+		expect(within(verbsRow).queryByText(/ due$/)).toBeNull();
 	});
 });

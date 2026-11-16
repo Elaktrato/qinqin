@@ -27,6 +27,7 @@ vi.mock('$lib/plugins/flashcards/Mascot.svelte', () => ({ default: () => ({}) })
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
+	currentStudyHistory: vi.fn(() => []),
 	onStudyDayChange: vi.fn(() => () => {})
 }));
 

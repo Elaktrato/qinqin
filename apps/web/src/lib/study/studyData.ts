@@ -5,7 +5,7 @@
 // Every study-data write (store.ts) drops the workspace's cached copy.
 
 import { createWorkspaceCache, type WorkspaceCache } from '../workspaceCache';
-import { loadStudyDataFor, onStudyWrite } from './store';
+import { ALL_WORKSPACES, loadStudyDataFor, onStudyWrite } from './store';
 import type { StudyCard, StudyData } from './types';
 
 export const STUDY_DATA_TTL_MS = 30_000;
@@ -24,7 +24,9 @@ export function createStudyDataCache(
 }
 
 const shared = createStudyDataCache(loadStudyDataFor);
-onStudyWrite((workspaceId) => shared.invalidate(workspaceId));
+onStudyWrite((workspaceId) =>
+	shared.invalidate(workspaceId === ALL_WORKSPACES ? undefined : workspaceId)
+);
 
 /** getStudyData reads one workspace's decks and cards through the shared cache. */
 export function getStudyData(workspaceId: number, opts?: { force?: boolean }): Promise<StudyData> {
