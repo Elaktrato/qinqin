@@ -86,6 +86,10 @@ var userTables = []UserTable{
 	{Name: "ai_calls", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM ai_calls WHERE user_id = ?1`}, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	{Name: "sessions", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM sessions WHERE user_id = ?1`},
 		PreviewKey: "sessions", Count: `SELECT COUNT(*) FROM sessions WHERE user_id = ?1`, Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
+	// Personal access tokens (only their hashes are stored): never exported,
+	// kept on a personal restore (a restore is not a security action).
+	{Name: "access_tokens", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM access_tokens WHERE user_id = ?1`},
+		Export: ExportSkip, ExportReason: skipSecurity, Restore: RestoreKeep},
 	// Reset links of the user go; links the user issued for others stay,
 	// without the issuer.
 	{Name: "password_resets", Columns: []string{"user_id", "created_by"},

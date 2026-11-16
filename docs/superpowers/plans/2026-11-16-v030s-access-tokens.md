@@ -25,7 +25,7 @@ Base: `2026-11-15-v030-accounts-users-sessions-design.md`, `2026-11-15-v030-rate
 (`<wt>`). Rebase-free: if the collection branch moved (e.g. #71 added a migration), merge it in before Task 2.
 
 **Migration number:** the NEXT FREE number at build time (`ls server/internal/db/migrations | tail -1` + 1).
-On this branch today that is `036`; #71 or another item may take it first. Never reuse or renumber a merged
+On this branch today that is `036`; #71 or another item may take it first. **Taken at build time: `037_access_tokens.sql`** (#71 radicals, built in parallel, holds `036_components.sql`; the runner applies a missing version by name, so the gap on this branch is harmless). Never reuse or renumber a merged
 migration; if a collision appears at merge, renumber only this branch's unmerged file and re-run the db tests.
 
 ## Gates
