@@ -26,9 +26,15 @@ Parsing (`goal-rows.json`, `op: "parse"`):
 - `showStreak`: a boolean, else `true`.
 - `history`: an array, else `[]`. Each entry is an object with `from` (a real `YYYY-MM-DD` date), and either
   `metric: null, target: null` (no goal from that date) or a valid metric with a valid target. An invalid
-  entry is dropped; the others are sorted by `from` (stable); of entries with the same `from` the later
+  entry is left out of the parsed history (and kept for writing, see below); the others are sorted by `from` (stable); of entries with the same `from` the later
   array position wins.
 - Unknown top-level keys and unknown entry keys are kept verbatim and written back unchanged.
+- An entry this client does not understand (an unknown metric of a newer client, a bad date or target) is
+  left out of the parsed history, so it never decides a day's goal, but it is **written back verbatim** after
+  the understood entries, in its original order (`goal-rows.json`, "written back verbatim").
+- Ruling: an entry whose `from` is after the writer's `today` is kept (a device whose clock or zone is ahead
+  wrote it); it takes effect on its date and an edit today is placed before it — dropping it would erase
+  another device's edit — cost: a device far ahead can schedule a change the others only see later.
 
 Metrics and targets (integers, in display units):
 
@@ -52,8 +58,8 @@ Edits (`goal-rows.json`, `op: "edit"`, `expect: null` = nothing is written) on t
   in effect on `today - 1`, it is removed instead (editing back and forth on one day leaves no trace).
 - `{showStreak}`: nothing is written when the value is unchanged (`true` for no row); otherwise the field is
   set (a new row `{version: 1, showStreak, history: []}` when there was none).
-- A new row is `{version: 1, showStreak: true, history: [...]}`. At most 400 entries are written: the oldest
-  are dropped.
+- A new row is `{version: 1, showStreak: true, history: [...]}`. At most 400 understood entries are written: the oldest
+  are dropped (entries kept verbatim come on top).
 - A `"newer"` row is never edited.
 
 ## Amounts (`goal-amounts.json`)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GoalsRow } from '$lib/goals/goals';
+import { parseGoalsRow, type GoalsRow } from '$lib/goals/goals';
 import type { MetricOption } from '$lib/goals/goalText';
 import { formFrom, limitHint, planForm, validateForm } from './goalForm';
 
@@ -100,6 +100,26 @@ describe('planForm', () => {
 					{ from: '2026-11-01', metric: 'activity:review', target: 50 },
 					{ from: today, metric: 'activity:review', target: 60 },
 					{ from: '2026-11-20', metric: null, target: null }
+				]
+			}
+		});
+	});
+
+	it('keeps entries it does not understand, once, through a goal and streak change', () => {
+		const row = parseGoalsRow({
+			version: 1,
+			showStreak: true,
+			history: [{ from: '2026-11-01', metric: 'activity:review', target: 50 }, { from: '2026-11-02', metric: 'weekly:x', target: 1 }]
+		}) as GoalsRow;
+		const plan = planForm(row, { metric: 'activity:review', target: '60', showStreak: false }, OPTIONS, today);
+		expect(plan).toEqual({
+			row: {
+				version: 1,
+				showStreak: false,
+				history: [
+					{ from: '2026-11-01', metric: 'activity:review', target: 50 },
+					{ from: today, metric: 'activity:review', target: 60 },
+					{ from: '2026-11-02', metric: 'weekly:x', target: 1 }
 				]
 			}
 		});

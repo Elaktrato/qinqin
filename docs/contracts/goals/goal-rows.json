@@ -862,6 +862,112 @@
       }
     },
     {
+      "name": "entries this client does not understand are written back verbatim",
+      "op": "edit",
+      "today": "2026-11-16",
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:review",
+            "target": 50
+          },
+          {
+            "from": "2026-11-12",
+            "metric": "weekly:review",
+            "target": 3
+          },
+          "x",
+          {
+            "from": "2026-02-30",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "edit": {
+        "metric": "activity:review",
+        "target": 60
+      },
+      "expect": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:review",
+            "target": 50
+          },
+          {
+            "from": "2026-11-16",
+            "metric": "activity:review",
+            "target": 60
+          },
+          {
+            "from": "2026-11-12",
+            "metric": "weekly:review",
+            "target": 3
+          },
+          "x",
+          {
+            "from": "2026-02-30",
+            "metric": "activity:review",
+            "target": 5
+          }
+        ]
+      },
+      "note": "the parsed view ignores them (goalOn never sees them); on write they follow the understood entries in their original order"
+    },
+    {
+      "name": "an entry after today is kept (a device ahead)",
+      "op": "edit",
+      "today": "2026-11-16",
+      "row": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:review",
+            "target": 50
+          },
+          {
+            "from": "2026-11-20",
+            "metric": "activity:review",
+            "target": 70
+          }
+        ]
+      },
+      "edit": {
+        "metric": "activity:review",
+        "target": 60
+      },
+      "expect": {
+        "version": 1,
+        "showStreak": true,
+        "history": [
+          {
+            "from": "2026-11-10",
+            "metric": "activity:review",
+            "target": 50
+          },
+          {
+            "from": "2026-11-16",
+            "metric": "activity:review",
+            "target": 60
+          },
+          {
+            "from": "2026-11-20",
+            "metric": "activity:review",
+            "target": 70
+          }
+        ]
+      },
+      "note": "the 2026-11-20 entry was written by a device whose today is later; it takes effect on its date"
+    },
+    {
       "name": "at most 400 entries: the oldest is dropped",
       "op": "edit",
       "today": "2026-11-16",

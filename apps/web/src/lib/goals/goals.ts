@@ -83,24 +83,39 @@ function sortEntries(entries: readonly GoalEntry[]): GoalEntry[] {
 	return [...byFrom.values()].sort((a, b) => (a.from < b.from ? -1 : a.from > b.from ? 1 : 0));
 }
 
+// Entries a row holds that this client does not understand (another
+// client's metric, a bad date): left out of the parsed history, so goalOn
+// never sees them, and written back verbatim after the understood ones.
+const foreignEntries = new WeakMap<GoalsRow, readonly unknown[]>();
+
 export function parseGoalsRow(raw: unknown): ParsedGoals {
 	if (!isRecord(raw)) return null;
 	const { version } = raw;
 	if (typeof version !== 'number' || !Number.isInteger(version)) return null;
 	if (version > 1) return 'newer';
 	if (version !== 1) return null;
-	const entries = Array.isArray(raw.history)
-		? raw.history.flatMap((value) => {
-				const entry = parseEntry(value);
-				return entry === null ? [] : [{ ...entry }];
-			})
-		: [];
-	return {
+	const entries: GoalEntry[] = [];
+	const foreign: unknown[] = [];
+	for (const value of Array.isArray(raw.history) ? raw.history : []) {
+		const entry = parseEntry(value);
+		if (entry === null) foreign.push(value);
+		else entries.push({ ...entry });
+	}
+	const row: GoalsRow = {
 		...raw,
 		version: 1,
 		showStreak: typeof raw.showStreak === 'boolean' ? raw.showStreak : true,
 		history: sortEntries(entries)
 	};
+	if (foreign.length > 0) foreignEntries.set(row, foreign);
+	return row;
+}
+
+/** withForeign is the row to write: the understood history plus the entries kept verbatim. */
+function withForeign(source: GoalsRow | null, next: GoalsRow): GoalsRow {
+	const foreign = source === null ? undefined : foreignEntries.get(source);
+	if (foreign === undefined) return next;
+	return { ...next, history: [...next.history, ...(foreign as GoalEntry[])] };
 }
 
 function entryOn(row: GoalsRow | null, day: string): GoalEntry | null {
@@ -145,7 +160,7 @@ export function planGoalEdit(row: ParsedGoals, edit: GoalEdit, today: string): G
 		if (edit.showStreak === current) return null;
 		return row === null
 			? { version: 1, showStreak: edit.showStreak, history: [] }
-			: { ...row, showStreak: edit.showStreak };
+			: withForeign(row, { ...row, showStreak: edit.showStreak });
 	}
 	if (edit !== null && (!isGoalMetric(edit.metric) || !validTarget(edit.metric, edit.target))) {
 		throw new RangeError('invalid goal');
@@ -165,5 +180,5 @@ export function planGoalEdit(row: ParsedGoals, edit: GoalEdit, today: string): G
 		history.push(values);
 	}
 	const sorted = sortEntries(history);
-	return { ...base, history: sorted.slice(Math.max(0, sorted.length - MAX_GOAL_ENTRIES)) };
+	return withForeign(row, { ...base, history: sorted.slice(Math.max(0, sorted.length - MAX_GOAL_ENTRIES)) });
 }
