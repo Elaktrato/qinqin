@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { webPlugins } from '$lib/plugins';
+import { coreFeatures } from '$lib/features';
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
@@ -160,7 +161,7 @@ describe('pluginCredits', () => {
 
 	it('credits the reader sources from the real registry', () => {
 		const result = pluginCredits(
-			webPlugins.map((plugin) => plugin.manifest),
+			[...coreFeatures, ...webPlugins].map((owner) => owner.manifest),
 			coreCredits
 		);
 		expect(result.map((plugin) => plugin.id)).toEqual(['qinqin-reader', 'qinqin-journal']);
@@ -178,7 +179,7 @@ describe('pluginCredits', () => {
 });
 
 describe('declared credits', () => {
-	const all = [...coreCredits, ...webPlugins.flatMap((plugin) => plugin.manifest.sources ?? [])];
+	const all = [...coreCredits, ...[...coreFeatures, ...webPlugins].flatMap((owner) => owner.manifest.sources ?? [])];
 
 	it('use only https upstream links and notices that parse to https links', () => {
 		for (const credit of all) {

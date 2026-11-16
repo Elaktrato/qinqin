@@ -2,12 +2,14 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { findFeature } from '$lib/features';
 	import { findPlugin, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
 
 	const view = $derived(
 		$pluginStates.status === 'ready'
-			? findPlugin(page.params.plugin ?? '', webPlugins, $pluginStates.list)?.pages?.[0]
+			? (findPlugin(page.params.plugin ?? '', webPlugins, $pluginStates.list)?.pages?.[0] ??
+				findFeature(page.params.plugin ?? '', $pluginStates.list))
 			: undefined
 	);
 

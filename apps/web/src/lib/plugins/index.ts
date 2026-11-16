@@ -1,5 +1,6 @@
 // The web plugin registry: a compile-time list of the feature plugins
-// this build can render. The server registry stays the source of truth
+// this build can render (the journal and grammar; flashcards and the
+// reader are core features, lib/features). The server registry stays the source of truth
 // for what is installed and enabled; this list says what the SPA has a
 // component for (pages, widgets), and the shell intersects the two.
 
@@ -10,14 +11,10 @@ import type { WidgetDef } from '$lib/widgets/types';
 import type { ContractManifest } from './contract';
 import { CORE_PLUGIN_ID } from './core/manifest';
 import type { PluginStatesValue } from './states';
-import FlashcardsPage from './flashcards/FlashcardsPage.svelte';
-import { flashcardsManifest } from './flashcards/manifest';
 import GrammarPage from './grammar/GrammarPage.svelte';
 import { grammarManifest } from './grammar/manifest';
 import JournalPage from './journal/JournalPage.svelte';
 import { journalManifest } from './journal/manifest';
-import ReaderPage from './reader/ReaderPage.svelte';
-import { readerManifest } from './reader/manifest';
 
 /**
  * PluginManifest is the checked contract (ContractManifest, the server's
@@ -51,14 +48,6 @@ export interface WebPlugin {
 }
 
 export const webPlugins: WebPlugin[] = [
-	{
-		manifest: flashcardsManifest,
-		pages: [{ title: 'Decks', nav: true, component: FlashcardsPage }]
-	},
-	{
-		manifest: readerManifest,
-		pages: [{ title: 'Reader', nav: true, component: ReaderPage }]
-	},
 	{
 		manifest: journalManifest,
 		pages: [{ title: 'Journal', nav: true, component: JournalPage }]

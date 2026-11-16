@@ -11,8 +11,8 @@
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { isCorePlugin, webPlugins } from '$lib/plugins';
-	import { pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
+	import { webPlugins } from '$lib/plugins';
+	import { listedPlugins, pluginRowInfo, validOrder } from '$lib/settings/pluginRows';
 	import { loadPluginStates } from '$lib/plugins/states';
 	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
 	import AccountSettings from '$lib/settings/AccountSettings.svelte';
@@ -115,9 +115,8 @@
 		pluginsError = '';
 		try {
 			const list = (await api<PluginInfo[]>('/api/plugins')).filter((p) => !isDataPackPlugin(p));
-			// The server flags the app's own surface-less built-ins (the core
-			// registry row); the id check keeps an older server working.
-			plugins = list.filter((plugin) => !plugin.hidden && !isCorePlugin(plugin.id)).map((plugin) => ({
+			// Plugins only: never the core row or the core features (lib/features).
+			plugins = listedPlugins(list).map((plugin) => ({
 				id: plugin.id,
 				name: pluginName(plugin),
 				enabled: plugin.enabled,
