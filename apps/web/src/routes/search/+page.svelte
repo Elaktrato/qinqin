@@ -101,7 +101,9 @@
 	}
 
 	// Opening a result is the look-up (#72): it goes to the lookup history
-	// of the current workspace. Typed queries are never recorded.
+	// of the current workspace (a click, Enter, Ctrl/Cmd-click or a middle
+	// click; "open in new tab" from the context menu is not seen). Typed
+	// queries are never recorded.
 	function openedHit(entryId: number): void {
 		recordLookup(get(workspaces).current?.id, { entryId, source: 'search' });
 	}
@@ -302,7 +304,8 @@
 		<ul class="results" aria-label="Search results">
 			{#each hits as hit (hit.id)}
 				<li class="result">
-					<a class="written" href={`/entry/${hit.id}`} onclick={() => openedHit(hit.id)}>{hit.written}</a>
+					<a class="written" href={`/entry/${hit.id}`} onclick={() => openedHit(hit.id)}
+						onauxclick={(e) => e.button === 1 && openedHit(hit.id)}>{hit.written}</a>
 
 					<div class="details">
 						{#if hit.readings.length > 0}

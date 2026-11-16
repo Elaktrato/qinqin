@@ -54,7 +54,7 @@ Press **Add to study** next to an entry's title. The card joins the General deck
 What counts as a lookup:
 
 - In the reader and in grammar lessons: a hover popup that stays open for a second, or that you move the pointer into, and every selection popup that finds something. The word recorded is the popup's first entry. Moving the mouse across a line records nothing, and popups opened from inside a popup never count.
-- In search: opening a result. Typing a query records nothing.
+- In search: opening a result (a click, Enter or a middle click; opening it from the right-click menu is not noticed). Typing a query records nothing.
 - Looking the same word up again within ten minutes only updates "last" (rereading a paragraph does not inflate the count). Visiting an entry page from a link is not a lookup.
 
 The box **You keep looking these up** names up to ten words you looked up at least three times that have no card and are not marked known, with a button to add them all. Every row has **Add** (to the deck chosen at the top: General first, then your decks) and **Remove**; select several rows for **Add selected** and **Remove selected**, and filter to **No card yet**. Adding twice creates nothing new; added words stay in the history. The reader popup says "You've looked this up 4 times." under the buttons of a word you looked up at least three times without a card.

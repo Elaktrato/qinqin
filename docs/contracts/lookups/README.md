@@ -41,7 +41,9 @@ is decoded first, as the web SDK does for every row) or whose `version` is not t
     `T` and `Z`, a real calendar date and time).
 - `firstAt` later than `lastAt` reads as `firstAt = lastAt`.
 - `sources`: an object; members whose value is not an integer ≥ 0 are dropped, values above 1 000 000 are
-  clamped; a missing or non-object `sources` is `{}`. Known keys are `reader`, `lesson`, `search`; other keys are kept and shown nowhere.
+  clamped; a missing or non-object `sources` is `{}`. Known keys are `reader`, `lesson`, `search`; other keys are
+  kept and shown nowhere, but at most 13 of them (in order; the known keys always stay, so at most 16 members)
+  and none longer than 32 characters. A restore merge applies the same cap.
 - `books`: an array; non-integers and integers < 1 are dropped, then duplicates (the first stays), then
   everything after the third; missing or not an array is `[]`. Most recent first.
 - A later item with an `entryId` already seen is skipped (the first stays).

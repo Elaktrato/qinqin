@@ -1233,6 +1233,122 @@
       }
     },
     {
+      "name": "more than 16 source keys: the known ones stay, then the first 13 others",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "k00": 1,
+                "k01": 1,
+                "k02": 1,
+                "k03": 1,
+                "k04": 1,
+                "k05": 1,
+                "k06": 1,
+                "k07": 1,
+                "k08": 1,
+                "k09": 1,
+                "k10": 1,
+                "k11": 1,
+                "k12": 1,
+                "k13": 1,
+                "k14": 1,
+                "k15": 1,
+                "k16": 1,
+                "k17": 1,
+                "k18": 1,
+                "k19": 1,
+                "search": 4,
+                "reader": 2
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "k00": 1,
+              "k01": 1,
+              "k02": 1,
+              "k03": 1,
+              "k04": 1,
+              "k05": 1,
+              "k06": 1,
+              "k07": 1,
+              "k08": 1,
+              "k09": 1,
+              "k10": 1,
+              "k11": 1,
+              "k12": 1,
+              "search": 4,
+              "reader": 2
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
+      "name": "a source key longer than 32 characters is dropped",
+      "op": "rows",
+      "input": {
+        "data": {
+          "version": 1,
+          "clearedAt": null,
+          "items": [
+            {
+              "entryId": 5,
+              "count": 2,
+              "firstAt": "2026-11-10T09:00:00Z",
+              "lastAt": "2026-11-12T18:30:00Z",
+              "sources": {
+                "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx": 1,
+                "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy": 1,
+                "reader": 1
+              },
+              "books": []
+            }
+          ]
+        },
+        "deletedAt": null
+      },
+      "expect": {
+        "clearedAt": null,
+        "items": [
+          {
+            "entryId": 5,
+            "count": 2,
+            "firstAt": "2026-11-10T09:00:00Z",
+            "lastAt": "2026-11-12T18:30:00Z",
+            "sources": {
+              "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy": 1,
+              "reader": 1
+            },
+            "books": []
+          }
+        ],
+        "extra": {}
+      }
+    },
+    {
       "name": "sources missing or not an object is empty",
       "op": "rows",
       "input": {

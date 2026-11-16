@@ -199,4 +199,15 @@ describe('search page', () => {
 		render(Page);
 		expect(screen.getByRole('link', { name: 'Lookup history' }).getAttribute('href')).toBe('/lookups');
 	});
+
+	it('a middle-click open records too; a right-button auxclick does not', async () => {
+		searchMock.mockResolvedValue([hit(7, '你好')]);
+		setUrl('/search?q=ni');
+		render(Page);
+		const link = await screen.findByText('你好');
+		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 2 }));
+		expect(recordLookup).not.toHaveBeenCalled();
+		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 1 }));
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+	});
 });

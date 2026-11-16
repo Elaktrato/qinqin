@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
@@ -186,5 +187,38 @@ func TestLookupsRemapClampsSums(t *testing.T) {
 	want := `{"version":1,"clearedAt":null,"items":[{"entryId":9,"count":1000000,"firstAt":"2026-11-01T09:00:00Z","lastAt":"2026-11-02T09:00:00Z","sources":{"reader":1000000},"books":[]}]}`
 	if string(r.Data) != want {
 		t.Errorf("got %s\nwant %s", r.Data, want)
+	}
+}
+
+// Source keys are capped as the parse rule says (docs/contracts/lookups,
+// lookup-rows.json): known keys always stay, at most 13 others of at most 32
+// characters, also when two items merge.
+func TestLookupsRemapCapsSourceKeys(t *testing.T) {
+	m := NewMaps()
+	m.Entries[1], m.Entries[2] = 9, 9
+	ws := int64(1)
+	m.Workspaces[1] = 1
+	src := func(prefix string) string {
+		out := `"reader":1`
+		for i := 0; i < 10; i++ {
+			out += fmt.Sprintf(`,"%s%02d":1`, prefix, i)
+		}
+		return out + `,"` + strings.Repeat("x", 33) + `":1`
+	}
+	data := lookupsJSON(
+		`{"entryId":1,"count":1,"firstAt":"2026-11-01T09:00:00Z","lastAt":"2026-11-01T09:00:00Z","sources":{`+src("a")+`},"books":[]}`,
+		`{"entryId":2,"count":1,"firstAt":"2026-11-02T09:00:00Z","lastAt":"2026-11-02T09:00:00Z","sources":{`+src("b")+`,"search":2},"books":[]}`)
+	r, _ := m.PluginRow(PluginRow{PluginID: CorePlugin, WorkspaceID: &ws, Key: "lookups", Data: json.RawMessage(data)})
+	var got struct {
+		Items []struct {
+			Sources map[string]int64 `json:"sources"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(r.Data, &got); err != nil || len(got.Items) != 1 {
+		t.Fatalf("%s", r.Data)
+	}
+	s := got.Items[0].Sources
+	if len(s) != 15 || s["reader"] != 2 || s["search"] != 2 || s["a00"] != 1 || s["b02"] != 1 || s["b03"] != 0 {
+		t.Errorf("sources %v (%d keys), want reader, search, a00..a09, b00..b02", s, len(s))
 	}
 }

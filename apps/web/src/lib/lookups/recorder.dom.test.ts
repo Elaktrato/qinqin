@@ -320,4 +320,26 @@ describe('LookupRecorder', () => {
 		spy.mockRestore();
 		detach();
 	});
+
+	it('a write refused as too large (413) drops those lookups instead of retrying forever', async () => {
+		const io = fakeIO();
+		const write = io.writeRow;
+		let refuse = true;
+		io.writeRow = async (ws, data) => {
+			if (refuse) {
+				io.log.push(`write ${ws}`);
+				throw Object.assign(new Error('too large'), { status: 413 });
+			}
+			return write(ws, data);
+		};
+		const r = new LookupRecorder(io);
+		r.note(3, { entryId: 7, source: 'reader' });
+		await r.flush();
+		refuse = false;
+		io.log.length = 0;
+		await vi.advanceTimersByTimeAsync(FLUSH_MAX_MS * 3);
+		await r.flush();
+		expect(io.log).toEqual([]);
+		expect(r.countOf(3, 7)).toBe(0);
+	});
 });

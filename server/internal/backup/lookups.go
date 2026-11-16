@@ -16,11 +16,16 @@ import (
 // refs/entries.json, a restore moves the items to the target's entries and
 // books. The parse rules mirror apps/web/src/lib/lookups/lookups.ts.
 const (
-	lookupsKey      = "lookups"
-	lookupCap       = 500
-	lookupMaxCount  = 1_000_000
-	lookupMaxBooks  = 3
-	maxSafeJSONInts = 1<<53 - 1
+	lookupsKey     = "lookups"
+	lookupCap      = 500
+	lookupMaxCount = 1_000_000
+	lookupMaxBooks = 3
+	// lookupMaxSources caps the members of an item's sources;
+	// lookupMaxSourceKey the length of one key (in bytes here, in UTF-16
+	// code units on the web: the same for the ASCII keys clients write).
+	lookupMaxSources   = 16
+	lookupMaxSourceKey = 32
+	maxSafeJSONInts    = 1<<53 - 1
 )
 
 var rfc3339Re = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$`)
@@ -137,16 +142,28 @@ func parseLookupItem(raw json.RawMessage) (lookupItem, bool) {
 	return it, true
 }
 
-// addSource adds n to the source key (a new key goes last), clamped.
+// addSource adds n to the source key (a new key goes last), clamped. The
+// known keys (reader, lesson, search) are always added; at most
+// lookupMaxSources-3 other keys are held, none longer than
+// lookupMaxSourceKey bytes.
 func addSource(s []lookupSource, key string, n int64) []lookupSource {
+	others := 0
 	for i := range s {
 		if s[i].key == key {
 			s[i].n = min(s[i].n+n, lookupMaxCount)
 			return s
 		}
+		if !knownSource(s[i].key) {
+			others++
+		}
+	}
+	if len(key) > lookupMaxSourceKey || (!knownSource(key) && others >= lookupMaxSources-3) {
+		return s
 	}
 	return append(s, lookupSource{key, min(n, lookupMaxCount)})
 }
+
+func knownSource(key string) bool { return key == "reader" || key == "lesson" || key == "search" }
 
 // appendBook appends a distinct book while fewer than lookupMaxBooks are held.
 func appendBook(books []int64, id int64) []int64 {

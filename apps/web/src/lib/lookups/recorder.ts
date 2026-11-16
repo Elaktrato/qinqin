@@ -113,8 +113,9 @@ export class LookupRecorder {
 					await this.#io.writeRow(ws, serializeLookups(merged));
 					if (generation !== this.#generation) return;
 					this.#copies.set(ws, merged);
-				} catch {
-					failed.push(...hits.map((hit) => ({ ws, hit })));
+				} catch (err) {
+					// 413: the row with these lookups is over the value cap; retrying would fail forever.
+					if ((err as { status?: unknown } | null)?.status !== 413) failed.push(...hits.map((hit) => ({ ws, hit })));
 				}
 			}
 		} catch {

@@ -12,6 +12,9 @@ export const LOOKUP_MAX_COUNT = 1_000_000;
 export const LOOKUP_MAX_BOOKS = 3;
 export const PROMPT_MIN_COUNT = 3;
 export const PROMPT_MAX = 10;
+export const SOURCE_MAX_KEYS = 16;
+export const SOURCE_MAX_KEY_LENGTH = 32;
+const KNOWN_SOURCES: readonly string[] = ['reader', 'lesson', 'search'];
 
 export type LookupSource = 'reader' | 'lesson' | 'search';
 
@@ -85,8 +88,15 @@ function parseItem(raw: unknown): LookupItem | null {
 	if (first === null || last === null) return null;
 	const sources: Record<string, number> = {};
 	if (isObject(raw.sources)) {
+		// The known sources always stay; at most SOURCE_MAX_KEYS members, keys of at most SOURCE_MAX_KEY_LENGTH.
+		let others = SOURCE_MAX_KEYS - KNOWN_SOURCES.length;
 		for (const [k, v] of Object.entries(raw.sources)) {
-			if (typeof v === 'number' && Number.isSafeInteger(v) && v >= 0) sources[k] = clamp(v);
+			if (typeof v !== 'number' || !Number.isSafeInteger(v) || v < 0 || k.length > SOURCE_MAX_KEY_LENGTH) continue;
+			if (!KNOWN_SOURCES.includes(k)) {
+				if (others === 0) continue;
+				others--;
+			}
+			sources[k] = clamp(v);
 		}
 	}
 	const books: number[] = [];
