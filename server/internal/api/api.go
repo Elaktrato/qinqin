@@ -65,6 +65,9 @@ type server struct {
 	mailDownLog sync.Once     // logs the mail-outage sign-in refusal once per start
 	mail        *mail.Service // nil: mail is not configured and cannot be
 	users       *auth.Users   // admin changes of the users table (last-admin rule, deletion)
+
+	tickets *ticketStore // single-use download tickets (personal export, admin backup)
+	backups backupState  // in-flight exports, restores and server backups
 }
 
 // Option configures optional parts of the server.
@@ -109,6 +112,8 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 	}
 	s.limits = newAuthLimits(policy)
 	s.users = auth.NewUsers(sqlDB)
+	s.tickets = newTicketStore()
+	s.backups = newBackupState()
 	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
@@ -203,6 +208,11 @@ func (s *server) routes() []route {
 		{"POST /api/account/mfa/email", s.handleMFAEmail, accSession, []string{restrictionMFAEnrollment}},
 		{"POST /api/account/mfa/email/confirm", s.handleMFAEmailConfirm, accSession, []string{restrictionMFAEnrollment}},
 		{"GET /api/auth/me", s.handleMe, accSession, []string{restrictionPasswordChange, restrictionMFAEnrollment}},
+		// The ticket routes are unauthenticated by design: the single-use
+		// ticket in the path is the credential, and anything but a live
+		// ticket is a 404 (a browser navigation cannot send a bearer token).
+		{"POST /api/account/export", s.handleExportStart, accUser, nil},
+		{"GET /api/account/export/{ticket}", s.handleExportDownload, accPublic, nil},
 		{"GET /api/entries/{id}", s.handleGetEntry, accPublic, nil},
 		{"GET /api/entries/{id}/chars", s.handleCharsUnderRadical, accPublic, nil},
 		{"POST /api/entries/bases", s.handleEntryBases, accUser, nil},

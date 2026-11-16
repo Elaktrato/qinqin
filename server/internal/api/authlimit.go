@@ -77,6 +77,11 @@ func DefaultAuthPolicy() AuthPolicy {
 			// sign-in codes): 10 per hour.
 			"mailreq":   {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 			"smtp-test": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
+			// Personal exports per user: 6 per hour. Restore uploads per user:
+			// 5 per hour. Server backups (admin): 1 per minute.
+			"export":        {Burst: 6, Every: 10 * time.Minute, MaxKeys: authTableCap},
+			"restore":       {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
+			"server-backup": {Burst: 1, Every: time.Minute, MaxKeys: authTableCap},
 		},
 	}
 }
