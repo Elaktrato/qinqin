@@ -21,7 +21,7 @@ func bigWorld(t *testing.T) *baseWorld {
 	u := w.AliceUID
 	exec(t, w.DB, `WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i < 1000000)
 		INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at)
-		SELECT printf('BIG%010d', i), ?1, ?2, 'web', printf('2026-01-01T00:00:00.%06dZ', i), 'review',
+		SELECT printf('01JDBIG%019d', i), ?1, ?2, 'web', printf('2026-01-01T00:00:00.%06dZ', i), 'review',
 			printf('{"cardId":"c-vocab-%d","mode":"vocab","grade":3}', ?3), 't' FROM n`, u, w.Alice.WS1, w.E1)
 	exec(t, w.DB, `WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i < 20000)
 		INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)

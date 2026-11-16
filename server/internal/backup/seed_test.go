@@ -96,16 +96,18 @@ func seedUserData(t *testing.T, sqlDB *sql.DB, dataDir string, uid, e1, e2, dict
 	s.WS2 = ins(`INSERT INTO workspaces (user_id, language, name, settings, updated_at) VALUES (?, 'ja', 'JP', '{}', '2026-11-02T00:00:00Z')`, uid)
 	s.OwnSentence = ins(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, 'user', ?, '你好吗', 'p', 't', 't')`, e1, uid)
 	ins(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at) VALUES (?, 'user', ?, 'GONE', 'p', 't', 't', 't')`, e1, uid)
-	s.PackSent = ins(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, 'tatoeba', NULL, 'packsatz', 'p', 't', 't')`, e2)
+	sqlDB.Exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
+		SELECT ?, 'tatoeba', NULL, 'packsatz', 'p', 't', 't' WHERE NOT EXISTS (SELECT 1 FROM sentences WHERE source_pack = 'tatoeba' AND hanzi = 'packsatz')`, e2)
+	sqlDB.QueryRow(`SELECT id FROM sentences WHERE source_pack = 'tatoeba' AND hanzi = 'packsatz'`).Scan(&s.PackSent)
 	ev := func(id string, ws int64, ts, typ, payload string) {
 		exec(t, sqlDB, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES (?, ?, ?, 'web', ?, ?, ?, ?)`, id, uid, ws, ts, typ, payload, ts)
 		s.EventCount++
 	}
 	u := strconv.FormatInt(uid, 10)
-	ev("EV"+u+"A", s.WS1, "2026-11-10T09:00:00Z", "review", fmt.Sprintf(`{"cardId":"c-vocab-%d","mode":"vocab","grade":3}`, e1))
-	ev("EV"+u+"B", s.WS1, "2026-11-10T09:01:00Z", "review", fmt.Sprintf(`{"cardId":"c-reverse-%d","mode":"reverse","grade":2}`, e1))
-	ev("EV"+u+"C", s.WS1, "2026-11-11T09:00:00Z", "review", `{"cardId":"c-vocab-424242","mode":"vocab","grade":1}`)
-	ev("EV"+u+"D", s.WS2, "2026-11-12T09:00:00Z", "view", fmt.Sprintf(`{"entryId":%d}`, e2))
+	ev(evID(uid, "A"), s.WS1, "2026-11-10T09:00:00Z", "review", fmt.Sprintf(`{"cardId":"c-vocab-%d","mode":"vocab","grade":3}`, e1))
+	ev(evID(uid, "B"), s.WS1, "2026-11-10T09:01:00Z", "review", fmt.Sprintf(`{"cardId":"c-reverse-%d","mode":"reverse","grade":2}`, e1))
+	ev(evID(uid, "C"), s.WS1, "2026-11-11T09:00:00Z", "review", `{"cardId":"c-vocab-424242","mode":"vocab","grade":1}`)
+	ev(evID(uid, "D"), s.WS2, "2026-11-12T09:00:00Z", "view", fmt.Sprintf(`{"entryId":%d}`, e2))
 	pd := func(pack string, ws any, key, data string, modified any) {
 		exec(t, sqlDB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, ?, 2, '2026-11-10T08:00:00Z', ?)`, pack, uid, ws, key, data, modified)
 		s.PluginCount++
@@ -174,3 +176,6 @@ func newWorld(t *testing.T) *baseWorld {
 	w.Bob = seedUserData(t, w.DB, w.Data, w.BobID, w.E1, w.E2, w.Dict)
 	return w
 }
+
+// evID is a valid 26-character ULID-shaped event id unique per user and suffix.
+func evID(uid int64, c string) string { return fmt.Sprintf("01JD000000000000000%06d%s", uid, c) }
