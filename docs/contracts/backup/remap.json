@@ -1,5 +1,5 @@
 {
- "_doc": "Pure remapping of a restored archive (docs/contracts/backup/README.md). maps: source id -> target id per table (JSON keys are decimal strings). ops: card {key,data} -> {drop,key,data}; events {cards,events} -> {events:[{drop,workspaceId,payload}]} (every card row is registered first, then the events are mapped); pluginRow -> {drop,workspaceId,key,data}; workspaceSettings -> settings. Go: backup/remap_test.go.",
+ "_doc": "Pure remapping of a restored archive (docs/contracts/backup/README.md). maps: source id -> target id per table (JSON keys are decimal strings). ops: card {key,data} -> {drop,key,data}; events {cards,events} -> {events:[{drop,workspaceId,payload}]} (every card row is registered first, then the events are mapped); pluginRow -> {drop,workspaceId,key,data} (qinqin-core note:<entryId> rows follow their entry; each case is a single row, so it is its own winner: the newest-wins rule for two notes on one target is tested in Go); workspaceSettings -> settings. Go: backup/remap_test.go.",
  "version": 1,
  "rule": "backup/remap",
  "cases": [
@@ -833,6 +833,204 @@
    },
    "expect": {
     "a": 1
+   },
+   "note": ""
+  },
+  {
+   "name": "note: identity map keeps the row",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1201
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "Horse"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "Horse"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "note: shifted entry id rewrites key and entryId, other members kept",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "Horse: four dots.\nNot 吗.",
+     "attachments": [
+      {
+       "id": "a1"
+      }
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "note:1250",
+    "data": {
+     "version": 1,
+     "entryId": 1250,
+     "text": "Horse: four dots.\nNot 吗.",
+     "attachments": [
+      {
+       "id": "a1"
+      }
+     ]
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "note: unresolved entry drops the note",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {}
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1201,
+     "text": "Horse"
+    }
+   },
+   "expect": {
+    "drop": true
+   },
+   "note": "never guessed: a note on a word this server lacks is dropped and reported"
+  },
+  {
+   "name": "note: key and entryId disagree, restored unchanged",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "1201": 1250,
+     "1202": 1260
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": 7,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1202,
+     "text": "x"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "note:1201",
+    "data": {
+     "version": 1,
+     "entryId": 1202,
+     "text": "x"
+    }
+   },
+   "note": "not a note by the notes/rows rule; kept byte for byte"
+  },
+  {
+   "name": "note: a qinqin-flashcards row keyed note: is untouched",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "5": 50
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "note:5",
+    "data": {
+     "version": 1,
+     "entryId": 5,
+     "text": "x"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 70,
+    "key": "note:5",
+    "data": {
+     "version": 1,
+     "entryId": 5,
+     "text": "x"
+    }
+   },
+   "note": ""
+  },
+  {
+   "name": "core: home-layout is restored as it is",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    },
+    "entries": {
+     "5": 50
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": null,
+    "key": "home-layout",
+    "data": {
+     "version": 1,
+     "entryId": 5
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "home-layout",
+    "data": {
+     "version": 1,
+     "entryId": 5
+    }
    },
    "note": ""
   }

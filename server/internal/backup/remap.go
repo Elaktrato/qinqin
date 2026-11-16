@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Maps translate the archive's source ids into this server's ids. An id
@@ -20,18 +21,28 @@ type Maps struct {
 	// Cards maps every old card id of the archive to its new id, or to
 	// "orphan:<old>" for a dropped card. Filled by RegisterCard.
 	Cards map[string]string
+	// noteWinner names, per (source workspace, target note key), the
+	// archive note row that is restored there. Filled by RegisterNote.
+	noteWinner map[string]noteCandidate
+}
+
+type noteCandidate struct {
+	sourceID int64
+	at       time.Time
 }
 
 // NewMaps returns Maps with every table allocated.
 func NewMaps() *Maps {
 	return &Maps{Entries: map[int64]int64{}, Sentences: map[int64]int64{}, Workspaces: map[int64]int64{},
-		Books: map[int64]int64{}, Dicts: map[int64]int64{}, Cards: map[string]string{}}
+		Books: map[int64]int64{}, Dicts: map[int64]int64{}, Cards: map[string]string{},
+		noteWinner: map[string]noteCandidate{}}
 }
 
 const (
 	cardKeyPrefix     = "card:"
 	vacationKeyPrefix = "vacation:"
 	orphanPrefix      = "orphan:"
+	noteKeyPrefix     = "note:"
 )
 
 type kv struct {
@@ -299,16 +310,22 @@ func (m *Maps) vacationScope(data json.RawMessage) (json.RawMessage, bool) {
 }
 
 // PluginRow remaps one plugin data row: its workspace (null stays null),
-// flashcards card rows and vacation periods. Every other row is restored as
-// it is. drop is true for a row of an unknown workspace, a card of an
-// unresolved entry or sentence, and a vacation with no workspace left.
+// flashcards card rows, vacation periods and qinqin-core notes. Every other
+// row is restored as it is. drop is true for a row of an unknown workspace,
+// a card of an unresolved entry or sentence, a vacation with no workspace
+// left, and a note of an unresolved entry or one that loses its target to a
+// newer note (RegisterNote).
 func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
+	src := r
 	if r.WorkspaceID != nil {
 		nw, ok := m.Workspaces[*r.WorkspaceID]
 		if !ok {
 			return r, true
 		}
 		r.WorkspaceID = &nw
+	}
+	if r.PluginID == CorePlugin {
+		return m.note(src, r)
 	}
 	if r.PluginID != FlashcardsPlugin {
 		return r, false
@@ -327,5 +344,117 @@ func (m *Maps) PluginRow(r PluginRow) (PluginRow, bool) {
 		}
 		r.Data = nd
 	}
+	return r, false
+}
+
+// noteEntryID is the entry id of a qinqin-core note row: the key is
+// note:<n> with n canonical decimal (positive, no sign, no leading zero)
+// and data.entryId is the same n. Anything else is not a note.
+func noteEntryID(r PluginRow) (int64, bool) {
+	if r.PluginID != CorePlugin || !strings.HasPrefix(r.Key, noteKeyPrefix) {
+		return 0, false
+	}
+	digits := strings.TrimPrefix(r.Key, noteKeyPrefix)
+	if digits == "" || digits[0] < '1' || digits[0] > '9' {
+		return 0, false
+	}
+	for _, c := range digits {
+		if c < '0' || c > '9' {
+			return 0, false
+		}
+	}
+	n, err := strconv.ParseInt(digits, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	if id, ok := intMember(r.Data, "entryId"); !ok || id != n {
+		return 0, false
+	}
+	return n, true
+}
+
+// noteSlot is the winner-map key of a note's target: the source workspace
+// (workspaces map one to one) and the target entry.
+func noteSlot(r PluginRow, target int64) string {
+	ws := "null"
+	if r.WorkspaceID != nil {
+		ws = strconv.FormatInt(*r.WorkspaceID, 10)
+	}
+	return ws + "\x00" + strconv.FormatInt(target, 10)
+}
+
+func noteTime(r PluginRow) time.Time {
+	s := r.UpdatedAt
+	if r.ModifiedAt != nil && *r.ModifiedAt != "" {
+		s = *r.ModifiedAt
+	}
+	t, err := time.Parse(time.RFC3339Nano, s)
+	if err != nil {
+		return time.Time{}
+	}
+	return t
+}
+
+// RegisterNote records, per target note, the archive row that wins it: the
+// newest modifiedAt ?? updatedAt, ties to the smaller source entry id. Call
+// it for every archive row (non-notes are ignored) before PluginRow; without
+// it every note is its own winner.
+func (m *Maps) RegisterNote(r PluginRow) {
+	src, ok := noteEntryID(r)
+	if !ok {
+		return
+	}
+	target, ok := m.Entries[src]
+	if !ok {
+		return
+	}
+	if m.noteWinner == nil {
+		m.noteWinner = map[string]noteCandidate{}
+	}
+	cand := noteCandidate{sourceID: src, at: noteTime(r)}
+	slot := noteSlot(r, target)
+	cur, has := m.noteWinner[slot]
+	if !has || cand.at.After(cur.at) || (cand.at.Equal(cur.at) && cand.sourceID < cur.sourceID) {
+		m.noteWinner[slot] = cand
+	}
+}
+
+// IsNoteLoser reports a note row that maps to a resolved entry but loses
+// that target to another archive note (see RegisterNote).
+func (m *Maps) IsNoteLoser(r PluginRow) bool {
+	src, ok := noteEntryID(r)
+	if !ok {
+		return false
+	}
+	target, ok := m.Entries[src]
+	if !ok {
+		return false
+	}
+	w, has := m.noteWinner[noteSlot(r, target)]
+	return has && w.sourceID != src
+}
+
+// NoteEntryID is the source entry id of a qinqin-core note row, if it is one.
+func NoteEntryID(r PluginRow) (int64, bool) { return noteEntryID(r) }
+
+// note remaps a qinqin-core row (src as in the archive, r with its
+// workspace already mapped): a note
+// follows its entry (key and entryId rewritten together, other bytes kept),
+// is dropped when the entry is unresolved or another note wins the target;
+// any other core row is restored as it is.
+func (m *Maps) note(src, r PluginRow) (PluginRow, bool) {
+	id, ok := noteEntryID(src)
+	if !ok {
+		return r, false
+	}
+	target, ok := m.Entries[id]
+	if !ok {
+		return r, true
+	}
+	if m.IsNoteLoser(src) {
+		return r, true
+	}
+	r.Key = noteKeyPrefix + strconv.FormatInt(target, 10)
+	r.Data = rewriteObject(r.Data, map[string]json.RawMessage{"entryId": num(target)})
 	return r, false
 }
