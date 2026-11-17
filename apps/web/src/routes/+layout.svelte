@@ -29,6 +29,7 @@
 	import { registerWorker } from '$lib/pwa/register';
 	import { captureInstallPrompt, persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
+	import Logo from '$lib/components/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { requestSignOut } from '$lib/account/signOut';
 	import { logoutPrompt } from '$lib/account/logoutFlow';
@@ -219,10 +220,9 @@
 				<a
 					class="brand"
 					href="/"
-					lang="zh"
 					aria-label={`${APP_NAME}, home`}
 					title={`${APP_NAME} – home`}
-					aria-current={path === '/' ? 'page' : undefined}>{APP_NAME_HANZI}</a
+					aria-current={path === '/' ? 'page' : undefined}><Logo size={30} /></a
 				>
 
 				<!-- Wide screens: pills in the header. Below 720 px: a fixed
@@ -275,9 +275,8 @@
 				<a
 					class="brand"
 					href="/login"
-					lang="zh"
 					aria-label={`${APP_NAME}, sign in`}
-					title={`${APP_NAME} – sign in`}>{APP_NAME_HANZI}</a
+					title={`${APP_NAME} – sign in`}><Logo size={30} /></a
 				>
 				<div class="account guest">
 					<a class="sign-in" href="/login"
@@ -418,6 +417,9 @@
 	}
 
 	.brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
 		font-size: 1.15rem;
 		font-weight: 700;
 		text-decoration: none;
