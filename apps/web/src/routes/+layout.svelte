@@ -36,6 +36,7 @@
 	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import { themeStore } from '$lib/theme/store.svelte';
+	import ThemeSwitch from '$lib/theme/ThemeSwitch.svelte';
 	import {
 		load as loadWorkspaces,
 		workspaces,
@@ -264,6 +265,9 @@
 				</div>
 				{/if}
 				<div class="account">
+					<!-- The quick theme switch; the account menu of the frame
+					     rework (#99) takes it over. -->
+					{#if !restricted}<ThemeSwitch />{/if}
 					{#if $user}
 						<span class="username">{$user.username}</span>
 					{/if}

@@ -219,4 +219,15 @@ describe('layout theme store', () => {
 			expect(calls().filter((u) => u.startsWith('/api/plugins/qinqin-core/data') && u.includes('prefix=appearance'))).toHaveLength(1)
 		);
 	});
+
+	it('puts the quick theme switch in the account area when signed in, not signed out', async () => {
+		const out = mountAt('/sources', null);
+		await out.findByText('page body');
+		expect(out.queryByRole('button', { name: /^Theme:/ })).toBeNull();
+		cleanup();
+		const view = mountAt('/search', 'tok');
+		await view.findByText('page body');
+		const button = view.getByRole('button', { name: /^Theme:/ });
+		expect(button.closest('.account')).not.toBeNull();
+	});
 });
