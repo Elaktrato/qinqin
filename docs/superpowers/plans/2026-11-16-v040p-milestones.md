@@ -438,8 +438,11 @@ Build (2026-11-17, Tasks 1–11; Task 12 is the orchestrator's):
 
 - Adaptation: item 6 merged (`9f0be5c`), but `lib/eventPayloads.ts` has **builders** only (`readPayload`,
   `journalPayload`), no parsers. `read` is counted through `readSeconds` (`stats/readingTime.ts`, which already
-  pins the consume rule of `events/payloads.json`); Task 3 adds the one missing reader, `journalEntryId(payload)`
-  (a non-empty string or null), to `lib/eventPayloads.ts` beside its builder, tested there.
+  pins the consume rule of `events/payloads.json`); the one missing reader, `journalEntryId(payload)` (a non-empty
+  string or null), lives in `lib/milestones/reached.ts` — `eventPayloads.test.ts` pins that module's exports to
+  exactly one builder per written type, so a parser there would break item 6's contract test.
+- Adaptation: the streak rule is shared, not copied: `study/exp.ts` exports `streakRuns(days, vacation)` (the run
+  length each review date ends); `dailyStreak` takes its best run from it (its tests unchanged, one new test).
 - Adaptation: `docs/contracts/overview.md` also lists `milestones/` in "Read order" (between `weekly/` and
   `reader/`): `contractsDocs.test.ts` requires every folder there.
 - Ruling: Task 1 adds `lib/milestones/fixtures.test.ts` (rule names, unique case names, id grammar, level ids
