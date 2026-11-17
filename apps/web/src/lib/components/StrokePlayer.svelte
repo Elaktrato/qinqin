@@ -39,8 +39,8 @@
 
 		void (async () => {
 			try {
-				// The stroke data is copied into static/hanzi by the prebuild
-				// step under codepoint names (U597D.json); fetchStrokeData builds
+				// The server serves the stroke data package under /hanzi/ with
+				// codepoint names (U597D.json); fetchStrokeData builds
 				// the URL, caches good and missing results and never caches a
 				// transient failure.
 				if (symbol.codePointAt(0) === undefined) {

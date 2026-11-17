@@ -4,7 +4,7 @@
 # throw-away copy of server/, build the real binary, start it on a free
 # loopback port and assert through HTTP what the unit tests cannot (they use
 # fstest.MapFS): the index, an SPA deep link, a hashed _app/immutable asset,
-# stroke data (/hanzi/U597D.json) and the licence text, plus the cache and
+# the licence text (stroke data is a server-side package now), plus the cache and
 # sniffing headers. Also runs scripts/check-archives.sh.
 #
 #   scripts/smoke-embed.sh [--build-web]
@@ -77,7 +77,6 @@ asset="$(cd "$web" && find _app/immutable/entry -name 'start.*.js' | sort | head
 expect "index" / 200 text/html no-store "<!doctype html>"
 expect "deep link" /entry/5 200 text/html no-store "<!doctype html>"
 expect "hashed asset" "/$asset" 200 javascript "public, max-age=31536000, immutable" "import"
-expect "stroke data" /hanzi/U597D.json 200 json "" "strokes"
 expect "licence text" /ARPHICPL.TXT 200 text/plain "" "Arphic"
 expect "missing asset falls back to index" /_app/immutable/nope.js 200 text/html no-store "<!doctype html>"
 
