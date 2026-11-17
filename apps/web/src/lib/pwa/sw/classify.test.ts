@@ -75,6 +75,13 @@ describe('classify: spec table', () => {
 		}
 	});
 
+	it('data packages are never cached by the worker (decision: bypass; the client stores the files itself)', () => {
+		for (const url of ['/api/packages', '/api/packages?languages=all', '/api/packages/lexicon.zh/3']) {
+			expect(kind(url), url).toBe('bypass');
+			expect(kind(url, { method: 'GET', mode: 'cors' }), url).toBe('bypass');
+		}
+	});
+
 	it('api without Authorization is never classified api', () => {
 		expect(kind('/api/workspaces', { auth: false })).toBe('bypass');
 		expect(kind('/api/entries/12', { auth: false })).toBe('bypass');

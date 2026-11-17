@@ -75,6 +75,7 @@
   "sync_cursor_expired": {"status": 410, "meaning": "The paged pull's since cursor is older than the server keeps deletions for. Discard local user data and pull again without since (docs/contracts/sync/). Defined for a future tombstone purge."},
   "package_not_found": {"status": 404, "meaning": "No data package with that id and revision (or the id is not a package id). Re-read GET /api/packages."},
   "package_revision_gone": {"status": 410, "meaning": "That package revision was replaced and its file purged. Re-read GET /api/packages and download the current revision."},
+  "download_busy": {"status": 429, "meaning": "GET /api/packages/{id}/{revision}: two package downloads of this account (sessions and tokens together) are already running. Unlike rate_limited this may be retried automatically after Retry-After (5 seconds); resume with Range."},
   "token_limit": {"status": 409, "meaning": "20 live access tokens already; revoke one first. Expired tokens do not count."},
   "invalid_token_request": {"status": 422, "meaning": "Name (1-64 characters), scope (read or write) or expiry (1-365 days) out of range; the message names the field."}
 }

@@ -331,6 +331,10 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/grammar/{pack}/{lesson}":  tokReadGlobal,
 	"POST /api/segment":                 tokReadGlobal,
 	"POST /api/entries/bases":           tokReadGlobal,
+	// Data packages (item 5 spec, Q5 Ruling): not personal data, so read
+	// tokens of any workspace limit may mirror them.
+	"GET /api/packages":                 tokReadGlobal,
+	"GET /api/packages/{id}/{revision}": tokReadGlobal,
 
 	"GET /api/workspaces":                      tokReadAny,
 	"GET /api/sync/pull":                       tokReadAny,

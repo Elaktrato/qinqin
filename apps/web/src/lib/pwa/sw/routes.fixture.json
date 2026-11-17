@@ -296,6 +296,14 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/packages",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/packages/{id}/{revision}",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/plugins",
 		"access": "user"
 	},

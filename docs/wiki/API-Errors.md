@@ -81,5 +81,6 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `sync_cursor_expired` | 410 | The paged pull's since cursor is older than the server keeps deletions for. Discard local user data and pull again without since (docs/contracts/sync/). Defined for a future tombstone purge. |
 | `package_not_found` | 404 | No data package with that id and revision (or the id is not a package id). Re-read GET /api/packages. |
 | `package_revision_gone` | 410 | That package revision was replaced and its file purged. Re-read GET /api/packages and download the current revision. |
+| `download_busy` | 429 | GET /api/packages/{id}/{revision}: two package downloads of this account (sessions and tokens together) are already running. Unlike rate_limited this may be retried automatically after Retry-After (5 seconds); resume with Range. |
 | `token_limit` | 409 | 20 live access tokens already; revoke one first. Expired tokens do not count. |
 | `invalid_token_request` | 422 | Name (1-64 characters), scope (read or write) or expiry (1-365 days) out of range; the message names the field. |

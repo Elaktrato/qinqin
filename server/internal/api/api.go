@@ -80,6 +80,7 @@ type server struct {
 	restoreCap int64            // upload cap in bytes; 0: backup.MaxUpload (tests lower it)
 	stageDone  chan int64       // test hook: receives a user id when a stage finishes validating or restoring
 	packages   *datapkg.Builder // nil: no data packages (pack changes kick nothing)
+	downloads  downloadSlots    // running package downloads per user
 	bg         context.Context  // lives as long as the server; background jobs run under it
 }
 
@@ -310,6 +311,8 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/packs/staged/{token}", s.handleDiscardStaged, accAdmin, nil, noTok},
 		{"DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack, accAdmin, nil, noTok},
 		{"GET /api/sentence-packs", s.handleListSentencePacks, accPublic, nil, tokReadGlobal},
+		{"GET /api/packages", s.handlePackageCatalogue, accUser, nil, tokReadGlobal},
+		{"GET /api/packages/{id}/{revision}", s.handlePackageDownload, accUser, nil, tokReadGlobal},
 		{"POST /api/admin/plugins", s.handleRegisterPlugin, accAdmin, nil, noTok},
 		{"GET /api/ai/status", s.handleAIStatus, accUser, nil, noTok},
 		{"GET /api/ai/providers", s.handleAIProviders, accUser, nil, noTok},

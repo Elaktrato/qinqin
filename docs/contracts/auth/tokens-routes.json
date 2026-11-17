@@ -132,6 +132,16 @@
 			"workspace": "refused"
 		},
 		{
+			"pattern": "GET /api/packages",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
+			"pattern": "GET /api/packages/{id}/{revision}",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
 			"pattern": "GET /api/plugins",
 			"scope": "read",
 			"workspace": "refused"
