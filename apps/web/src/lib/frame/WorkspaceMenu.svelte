@@ -27,7 +27,7 @@
 	);
 </script>
 
-<Menu {label} menuLabel={t('app.workspaces.picker.list')} {align} {direction} triggerClass="workspace-flag">
+<Menu {label} menuLabel={t('app.workspaces.picker.list')} {align} {direction} tooltipPlacement={direction === 'up' ? 'above' : align === 'end' ? 'below-end' : 'below'} triggerClass="workspace-flag">
 	{#snippet trigger()}
 		{#if current}<Flag code={current.language} size={20} decorative />{:else}<Icon name="flag" />{/if}
 	{/snippet}

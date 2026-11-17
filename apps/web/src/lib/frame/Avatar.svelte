@@ -16,9 +16,8 @@
 		width: 1.75rem;
 		height: 1.75rem;
 		border-radius: 50%;
-		background: var(--raised);
-		color: var(--text);
-		box-shadow: inset 0 0 0 1px var(--hair);
+		background: var(--selected-wash);
+		color: var(--reading-accent);
 		font-size: var(--font-size-label);
 		font-weight: var(--weight-strong);
 		line-height: 1;

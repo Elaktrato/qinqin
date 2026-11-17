@@ -79,4 +79,12 @@ describe('TopBar', () => {
 		expect(order.indexOf(avatar)).toBeGreaterThan(order.indexOf(flag));
 		expect(nav.contains(flag)).toBe(false);
 	});
+
+	it('the flag and avatar tooltips open toward the start (never past the window edge)', () => {
+		mount('/');
+		for (const name of [/^Workspace:/, /^Account menu$/]) {
+			const tip = screen.getByRole('button', { name }).parentElement?.querySelector('[role="tooltip"]');
+			expect(tip?.classList.contains('below-end')).toBe(true);
+		}
+	});
 });

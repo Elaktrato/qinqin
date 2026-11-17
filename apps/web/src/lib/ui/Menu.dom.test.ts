@@ -131,5 +131,7 @@ describe('Menu', () => {
 		expect(css).toMatch(/box-shadow: var\(--shadow-float\)/);
 		expect(css).toMatch(/var\(--motion-fast\)/);
 		expect(css).toMatch(/z-index: var\(--layer-float\)/);
+		// Sized by its items, not by the (narrow) trigger it hangs from.
+		expect(css).toMatch(/width: max-content/);
 	});
 });

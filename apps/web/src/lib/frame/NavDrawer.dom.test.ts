@@ -53,6 +53,8 @@ describe('NavDrawer', () => {
 			'Workspace: Chinese, Novels'
 		]);
 		expect(flags.map((f) => f.getAttribute('aria-current'))).toEqual([null, null, 'true']);
+		// Tooltips open toward the end: the drawer clips at its start edge.
+		for (const f of flags) expect(f.parentElement?.querySelector('[role="tooltip"]')?.classList.contains('below-start')).toBe(true);
 		await waitFor(() => expect(document.activeElement).toBe(flags[2]));
 	});
 

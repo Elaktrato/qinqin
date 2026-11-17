@@ -6,13 +6,15 @@
 	// A keepOpen item leaves the menu open (it changes the menu's content,
 	// e.g. a drill-in level); focus then moves to the item marked `focus`.
 	//
-	// API: <MenuItem onselect? href? checked? icon? keepOpen? focus? label? separator?>text</MenuItem>
+	// API: <MenuItem onselect? href? checked? icon? keepOpen? focus? label? tone? separator?>text</MenuItem>
 	//   onselect   runs after the menu closes
 	//   href       a link item
 	//   checked    makes it a radio item (true/false); leave out for an action
 	//   icon       a decorative IconName before the text
 	//   keepOpen   the pick keeps the menu open (onselect runs, focus settles)
 	//   focus      this item takes focus when the content settles after a keepOpen pick
+	//   tone       'bad': the words in the readable bad colour (Sign out; the
+	//              icon and the words carry the meaning, not the colour)
 	//   label      an accessible name when the visible text is laid out in parts
 	//              (it must contain the visible words, WCAG 2.5.3)
 	//   separator  a hairline between groups (no text)
@@ -29,6 +31,7 @@
 		keepOpen = false,
 		focus = false,
 		label,
+		tone,
 		separator = false,
 		children
 	}: {
@@ -39,6 +42,7 @@
 		keepOpen?: boolean;
 		focus?: boolean;
 		label?: string;
+		tone?: 'bad';
 		separator?: boolean;
 		children?: Snippet;
 	} = $props();
@@ -59,13 +63,13 @@
 {#if separator}
 	<div class="separator" role="separator"></div>
 {:else if href}
-	<a class="item" role="menuitem" tabindex="-1" {href} aria-label={label} data-menu-focus={focus || undefined} onclick={select}
+	<a class="item {tone ?? ''}" role="menuitem" tabindex="-1" {href} aria-label={label} data-menu-focus={focus || undefined} onclick={select}
 		>{#if icon}<Icon name={icon} size="s" />{/if}<span class="text">{@render children?.()}</span></a
 	>
 {:else}
 	<button
 		type="button"
-		class="item"
+		class="item {tone ?? ''}"
 		role={checked === undefined ? 'menuitem' : 'menuitemradio'}
 		aria-checked={checked === undefined ? undefined : checked}
 		tabindex="-1"
@@ -94,6 +98,9 @@
 		text-decoration: none;
 		cursor: pointer;
 	}
+	.bad {
+		color: var(--readable-bad);
+	}
 	.item:hover {
 		background: var(--raised);
 	}
@@ -113,6 +120,7 @@
 		color: var(--accent);
 	}
 	.text {
+		flex: 1;
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}

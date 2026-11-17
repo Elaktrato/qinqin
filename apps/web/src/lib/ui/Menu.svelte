@@ -17,6 +17,7 @@
 	//              button is named by label and shows it as a tooltip)
 	//   menuLabel  the popup's accessible name, when it differs from label
 	//   align      'end' (default: the popup's end edge under the trigger's) | 'start'
+	//   tooltipPlacement  where the trigger's tooltip opens (Tooltip; default below)
 	//   direction  'down' (default) | 'up' (the popup opens above the trigger)
 	//   open       bindable (the gallery renders it open)
 	//   A MenuItem with keepOpen leaves the menu open after its pick (a level
@@ -36,6 +37,7 @@
 		menuLabel,
 		align = 'end',
 		direction = 'down',
+		tooltipPlacement = 'below',
 		open = $bindable(false),
 		triggerClass = '',
 		trigger: triggerContent,
@@ -47,6 +49,7 @@
 		menuLabel?: string;
 		align?: 'start' | 'end';
 		direction?: 'down' | 'up';
+		tooltipPlacement?: 'below' | 'above' | 'start' | 'end' | 'below-end';
 		open?: boolean;
 		triggerClass?: string;
 		trigger?: Snippet;
@@ -131,7 +134,7 @@
 
 <div class="menu-wrap" bind:this={wrapper}>
 	{#if triggerContent}
-		<Tooltip text={label} suppress={open}>
+		<Tooltip text={label} suppress={open} placement={tooltipPlacement}>
 			{#snippet children()}
 				<button
 					bind:this={trigger}
@@ -155,6 +158,7 @@
 			aria-expanded={open}
 			aria-controls={open ? menuId : undefined}
 			tooltipSuppressed={open}
+			placement={tooltipPlacement}
 			onclick={toggle}
 		/>
 	{:else}
@@ -230,6 +234,8 @@
 		top: calc(100% + var(--space-1));
 		z-index: var(--layer-float);
 		box-sizing: border-box;
+		/* Its own width, not the trigger's (the containing block). */
+		width: max-content;
 		min-width: 12rem;
 		max-width: min(20rem, calc(100vw - 2 * var(--space-4)));
 		max-height: 70vh;

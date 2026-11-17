@@ -44,7 +44,7 @@
 	<div class="ws-row" role="group" aria-label={t('app.workspaces.picker.list')}>
 		{#each list as workspace (workspace.id)}
 			{@const name = flagName(workspace)}
-			<Tooltip text={name}>
+			<Tooltip text={name} placement="below-start">
 				{#snippet children()}
 					<button
 						type="button"

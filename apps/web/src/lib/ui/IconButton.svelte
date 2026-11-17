@@ -28,7 +28,7 @@
 		href?: string;
 		disabled?: boolean;
 		tooltip?: boolean;
-		placement?: 'below' | 'above' | 'start' | 'end';
+		placement?: 'below' | 'above' | 'start' | 'end' | 'below-end';
 		tooltipSuppressed?: boolean;
 		onclick?: (e: MouseEvent) => void;
 		element?: HTMLElement;

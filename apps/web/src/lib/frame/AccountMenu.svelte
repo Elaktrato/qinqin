@@ -59,11 +59,12 @@
 </script>
 
 <div class="account-menu" bind:this={wrapper}>
-	<Menu label={t('nav.account.menu')} bind:open {align} {direction} triggerClass="avatar-trigger">
+	<Menu label={t('nav.account.menu')} bind:open {align} {direction} tooltipPlacement={direction === 'up' ? 'above' : align === 'end' ? 'below-end' : 'below'} triggerClass="avatar-trigger">
 		{#snippet trigger()}<Avatar {name} />{/snippet}
 		{#if level === 'top'}
 			<div class="group" role="group" aria-labelledby="{uid}-who">
-				<div class="who" id="{uid}-who">{name}</div>
+				<div class="who"><Avatar {name} size="l" /><b id="{uid}-who">{name}</b></div>
+				<MenuItem separator />
 				{#if !restricted}
 					<MenuItem href="/settings" icon="settings">{t('nav.settings')}</MenuItem>
 					<MenuItem
@@ -72,7 +73,9 @@
 						icon="palette"
 						label={t('account.menu.theme', { name: themeName })}
 						onselect={() => (level = 'theme')}
-						>{t('nav.account.theme')} <span class="value">{themeName}</span><Icon name="forward" size="s" /></MenuItem
+						><span class="row"
+							><span>{t('nav.account.theme')}</span> <span class="value">{themeName}<Icon name="forward" size="s" /></span></span
+						></MenuItem
 					>
 					{#if $user?.admin}
 						<MenuItem href="/settings?tab=admin" icon="admin">{t('nav.account.adminSettings')}</MenuItem>
@@ -80,7 +83,7 @@
 					<MenuItem href="/sources" icon="library">{t('nav.sources')}</MenuItem>
 					<MenuItem separator />
 				{/if}
-				<MenuItem icon="sign-out" onselect={() => void requestSignOut()}>{t('nav.signOut')}</MenuItem>
+				<MenuItem icon="sign-out" tone="bad" onselect={() => void requestSignOut()}>{t('nav.signOut')}</MenuItem>
 			</div>
 		{:else}
 			<!-- The group only listens for ArrowLeft bubbling from its items (back one level). -->
@@ -102,17 +105,26 @@
 		display: contents;
 	}
 	.who {
-		padding: var(--space-2) var(--space-3) var(--space-1);
-		color: var(--readable-muted);
-		font-size: var(--font-size-label);
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: var(--space-2) var(--space-3);
+	}
+	.who b {
+		min-width: 0;
 		overflow-wrap: anywhere;
+		font-weight: var(--weight-strong);
+	}
+	.row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
 	}
 	.value {
-		margin-inline: var(--space-1);
-		color: var(--readable-muted);
-	}
-	.value + :global(svg) {
-		vertical-align: middle;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		margin-inline-start: auto;
 		color: var(--readable-muted);
 	}
 	.error {

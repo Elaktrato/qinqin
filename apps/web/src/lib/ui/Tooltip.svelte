@@ -6,7 +6,9 @@
 	//
 	// API: <Tooltip text placement? describe? open?>{#snippet children(tipId)}…{/snippet}</Tooltip>
 	//   text       the tip's words (the caller passes t(…))
-	//   placement  'below' (default) | 'above' | 'start' | 'end'
+	//   placement  'below' (default) | 'above' | 'start' | 'end' | 'below-end' | 'below-start'
+	//              ('below-end' / 'below-start': under the trigger, aligned to its end / start edge —
+	//              for triggers at the window's end, so the tip never overflows)
 	//   describe   false (default): the tip repeats the trigger's own name
 	//              (IconButton) and is hidden from assistive tech; true: the
 	//              trigger must set aria-describedby={tipId}
@@ -23,7 +25,7 @@
 		children
 	}: {
 		text: string;
-		placement?: 'below' | 'above' | 'start' | 'end';
+		placement?: 'below' | 'above' | 'start' | 'end' | 'below-end' | 'below-start';
 		describe?: boolean;
 		open?: boolean;
 		suppress?: boolean;
@@ -131,6 +133,14 @@
 		top: calc(100% + var(--space-1));
 		left: 50%;
 		translate: -50% 0;
+	}
+	.below-start {
+		top: calc(100% + var(--space-1));
+		inset-inline-start: 0;
+	}
+	.below-end {
+		top: calc(100% + var(--space-1));
+		inset-inline-end: 0;
 	}
 	.above {
 		bottom: calc(100% + var(--space-1));
