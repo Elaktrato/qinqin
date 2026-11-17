@@ -450,3 +450,15 @@ of each other in content but share the web gates; one implementer at a time. Tas
 - Observation (pinned, not a bug): the settings 400s are plain text but the 413 is JSON
   `{"error": "workspace settings too large"}`; `activity-view` reads only `version: 1` (a newer row reads as the
   default) while `home-layout` reads newer versions leniently.
+- Task 10 (overlays): 13 PUT cases and 6 apply cases; PUT answers and stored rows from a scratch Go test (deleted)
+  that sent each step and read `user_edits`; the shared 发 entry read from `GET /api/entries/{id}`. Go
+  `TestContractOverlays` and `TestContractOverlayApply` with the fixture absent → FAIL; present → PASS; the
+  "later arrival" row written B → A and one apply `readings` [] → null → FAIL in each. Each case also checks the
+  pull v2 `overlays` row, that bob pulls nothing and that an anonymous read sees the shared entry. Gates:
+  `go.sh 'gofmt -l . ; go vet ./internal/api ./internal/overlay && go test ... ./internal/api ./internal/overlay'` →
+  gofmt empty, exit 0; web `contractsDocs`/`wikiDocs` (doc row for `overlays/`) → 93 passed.
+- Adaptation: the cases are step lists (`put`, `unknownId`, `age`: set the stored stamp to 2026-01-01 so the next
+  write shows a fresh stamp) followed by the stored `row`; "two PUTs, the later arrival wins" and "revert keeps the
+  row with a fresh stamp" are checked through the stamp, not by comparing wall-clock seconds.
+- Observation (pinned, not a bug): stored readings carry all four members of an entry reading,
+  `{type, value, plain, ord}`, so a `{type, value}` sent comes back with `plain: ""`, `ord: 0`; the README says so.
