@@ -62,12 +62,15 @@ Contrast is **measured and reported**, never a reason to refuse a theme (design 
 - Ratio: `(L1 + 0.05)/(L2 + 0.05)` with `L1` the lighter, **rounded to two decimals half up**
   (`floor(r*100 + 0.5)/100`). Every comparison uses the rounded ratio, so implementations in IEEE doubles agree.
 - The review checks of one theme, in this order: `text` on `panel`, `text` on `chrome`, `muted` on `panel`,
-  `muted` on `chrome` (each at least **4.5**); `gradeAgain`, `gradeHard`, `gradeGood`, `gradeEasy` on `panel`
-  (at least **3**); every accent `accent:<key>` on `panel` (at least **3**), in file order. Each check is
-  `{fg, bg, min, ratio, pass}`; `failing` counts the checks that do not pass.
+  `muted` on `chrome`, `muted` on `raised`, `bad` on `panel` (each at least **4.5**); `gradeAgain`, `gradeHard`,
+  `gradeGood`, `gradeEasy` on `panel` (at least **3**); `onAccent` on `accent:<defaultAccent>` — the derived
+  on-accent colour (Derived tokens) on the default accent, button text — (at least **4.5**); every accent
+  `accent:<key>` on `panel` (at least **3**), in file order. Each check is `{fg, bg, min, ratio, pass}`;
+  `failing` counts the checks that do not pass. Every built-in theme passes `text` on `panel` and `onAccent`
+  (`server/internal/themes/builtin_test.go`).
 
 Fixture: `contrast.json` (single ratios, including both sides of the rounding at 4.5 and 3, and the review of
-Catppuccin Mocha and Latte).
+Catppuccin Mocha and Latte, and of Solarized Light with the blue accent, whose on-accent check fails).
 
 **The licence review** (`POST /api/admin/packs`, the staged upload): for a theme pack the answer carries
 `themes: [{id, name, family, scheme, checks: [{fg, bg, min, ratio, pass}], failing}]` in file order (other pack

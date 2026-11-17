@@ -1,10 +1,8 @@
 // Derived tokens (docs/contracts/themes/README.md, "Derived tokens"): one
 // rule for the server, the web and Android; never stored in a theme file.
 
-import { MIN_GRAPH, MIN_TEXT, ratio } from './contrast';
+import { MIN_GRAPH, MIN_TEXT, onAccent, ratio } from './contrast';
 import type { Derived, Theme } from './types';
-
-const WHITE = '#ffffff';
 
 /** withAlpha: `#rrggbb` plus the two hex digits of floor((p*255 + 50) / 100). */
 export function withAlpha(color: string, p: number): string {
@@ -40,7 +38,7 @@ export function derive(theme: Theme, accent: string | null): Derived {
 	return {
 		accentKey,
 		accent: acc,
-		onAccent: ratio(c.chrome, acc) >= ratio(WHITE, acc) ? c.chrome : WHITE,
+		onAccent: onAccent(c.chrome, acc),
 		hair,
 		accentTints: tints,
 		primaryWash: tints['14'],

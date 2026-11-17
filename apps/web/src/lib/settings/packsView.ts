@@ -166,6 +166,9 @@ export function packageLine(row: CatalogueRow): { text: string; error: string | 
 const COLOR_NAMES: Record<string, MessageKey> = {
 	text: 'packs.contrast.color.text',
 	muted: 'packs.contrast.color.muted',
+	raised: 'packs.contrast.color.raised',
+	bad: 'packs.contrast.color.bad',
+	onAccent: 'packs.contrast.color.onAccent',
 	panel: 'packs.contrast.color.panel',
 	chrome: 'packs.contrast.color.chrome',
 	gradeAgain: 'packs.contrast.color.gradeAgain',

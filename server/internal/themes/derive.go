@@ -33,6 +33,15 @@ func WithAlpha(color string, p int) string {
 	return color + fmt.Sprintf("%02x", (p*255+50)/100)
 }
 
+// onAccent is the text colour on a filled accent: chrome when it contrasts
+// at least as much as white, else white.
+func onAccent(chrome, accent string) string {
+	if Ratio(chrome, accent) >= Ratio("#ffffff", accent) {
+		return chrome
+	}
+	return "#ffffff"
+}
+
 // AccentChoices are the accents offered in the picker: those at least 3:1
 // on panel, in file order; never empty (the default accent alone).
 func AccentChoices(t Theme) []string {
@@ -60,10 +69,7 @@ func Derive(t Theme, accent string) Derived {
 	}
 	acc, _ := t.Accent(key)
 	c := t.Colors
-	on := "#ffffff"
-	if Ratio(c.Chrome, acc) >= Ratio("#ffffff", acc) {
-		on = c.Chrome
-	}
+	on := onAccent(c.Chrome, acc)
 	tints := map[string]string{}
 	for _, p := range []int{14, 32, 58, 100} {
 		tints[fmt.Sprint(p)] = WithAlpha(acc, p)

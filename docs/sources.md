@@ -682,7 +682,8 @@ Pine Dawn's text is the current palette's `#464261`, not the former `#575279`).
   background, as upstream.
 - **Solarized** (`solarized`, built in): Solarized Light and Dark. MIT,
   © 2011 Ethan Schoonover. [altercation/solarized](https://github.com/altercation/solarized)
-  (commit `62f656a02f93`).
+  (commit `62f656a02f93`). The default accent is magenta, not blue: white
+  button text on blue is 3.68:1, on magenta 4.55:1.
 - **Tokyo Night** (`tokyo-night`, built in): the Night variant. MIT,
   © 2018-present Enkia. [tokyo-night/tokyo-night-vscode-theme](https://github.com/tokyo-night/tokyo-night-vscode-theme)
   (commit `7c0f11eaef32`; the original theme, not the Apache-2.0 Neovim port).
@@ -695,7 +696,7 @@ Pine Dawn's text is the current palette's `#464261`, not the former `#575279`).
 
 Measured contrast (`docs/contracts/themes/README.md`, "Contrast") is reported,
 never a reason to leave a theme out; every built-in theme reaches 4.5:1 for
-text on its panel. An administrator can add more themes by uploading a theme
+text on its panel and for button text on its default accent. An administrator can add more themes by uploading a theme
 pack (Settings → Data), whose review shows the measured contrast.
 
 ## Reader text sources

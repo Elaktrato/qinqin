@@ -5,6 +5,7 @@ import type { ColorKey, Theme } from './types';
 
 export const MIN_TEXT = 4.5;
 export const MIN_GRAPH = 3;
+const WHITE = '#ffffff';
 
 function channel(v: number): number {
 	const c = v / 255;
@@ -15,6 +16,11 @@ function channel(v: number): number {
 export function luminance(hex: string): number {
 	const n = parseInt(hex.slice(1, 7), 16);
 	return 0.2126 * channel((n >> 16) & 255) + 0.7152 * channel((n >> 8) & 255) + 0.0722 * channel(n & 255);
+}
+
+/** onAccent: text on a filled accent — `chrome` when it contrasts at least as much as white, else white. */
+export function onAccent(chrome: string, accent: string): string {
+	return ratio(chrome, accent) >= ratio(WHITE, accent) ? chrome : WHITE;
 }
 
 /** ratio: the contrast ratio of two colours, rounded to two decimals half up. */
@@ -38,6 +44,8 @@ const PAIRS: ReadonlyArray<[ColorKey, ColorKey, number]> = [
 	['text', 'chrome', MIN_TEXT],
 	['muted', 'panel', MIN_TEXT],
 	['muted', 'chrome', MIN_TEXT],
+	['muted', 'raised', MIN_TEXT],
+	['bad', 'panel', MIN_TEXT],
 	['gradeAgain', 'panel', MIN_GRAPH],
 	['gradeHard', 'panel', MIN_GRAPH],
 	['gradeGood', 'panel', MIN_GRAPH],
@@ -50,6 +58,10 @@ export function review(theme: Theme): Check[] {
 		const r = ratio(theme.colors[fg], theme.colors[bg]);
 		return { fg, bg, min, ratio: r, pass: r >= min };
 	});
+	// Button text on a filled accent: the derived on-accent colour on the default accent.
+	const acc = theme.accents[theme.defaultAccent];
+	const on = ratio(onAccent(theme.colors.chrome, acc), acc);
+	out.push({ fg: 'onAccent', bg: `accent:${theme.defaultAccent}`, min: MIN_TEXT, ratio: on, pass: on >= MIN_TEXT });
 	for (const [key, color] of Object.entries(theme.accents)) {
 		const r = ratio(color, theme.colors.panel);
 		out.push({

@@ -50,22 +50,29 @@ type Check struct {
 	Pass  bool    `json:"pass"`
 }
 
-// reviewPairs are the fixed checks, in order; the accents follow.
+// reviewPairs are the fixed checks, in order; on-accent on the default
+// accent and the accents follow.
 var reviewPairs = []struct {
 	fg, bg string
 	min    float64
 }{
 	{"text", "panel", MinText}, {"text", "chrome", MinText}, {"muted", "panel", MinText}, {"muted", "chrome", MinText},
+	{"muted", "raised", MinText}, {"bad", "panel", MinText},
 	{"gradeAgain", "panel", MinGraph}, {"gradeHard", "panel", MinGraph}, {"gradeGood", "panel", MinGraph}, {"gradeEasy", "panel", MinGraph},
 }
 
 // Review measures a theme the way the staged-upload review reports it.
 func Review(t Theme) []Check {
-	out := make([]Check, 0, len(reviewPairs)+len(t.Accents))
+	out := make([]Check, 0, len(reviewPairs)+1+len(t.Accents))
 	for _, p := range reviewPairs {
 		r := Ratio(t.Colors.Get(p.fg), t.Colors.Get(p.bg))
 		out = append(out, Check{FG: p.fg, BG: p.bg, Min: p.min, Ratio: r, Pass: r >= p.min})
 	}
+	// Button text on a filled accent: the derived on-accent colour on the
+	// default accent (the one painted when the person chose none).
+	acc, _ := t.Accent(t.DefaultAccent)
+	r := Ratio(onAccent(t.Colors.Chrome, acc), acc)
+	out = append(out, Check{FG: "onAccent", BG: "accent:" + t.DefaultAccent, Min: MinText, Ratio: r, Pass: r >= MinText})
 	for _, a := range t.Accents {
 		r := Ratio(a.Color, t.Colors.Panel)
 		out = append(out, Check{FG: "accent:" + a.Key, BG: "panel", Min: MinGraph, Ratio: r, Pass: r >= MinGraph})
