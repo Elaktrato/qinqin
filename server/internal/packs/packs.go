@@ -1,6 +1,6 @@
 // Package packs is the one place that imports, uninstalls and lists data
 // packs of every type — dictionaries, frequency lists, level lists,
-// sentence, grammar, audio, components and strokes packs. The seed CLI and the admin API both go through it, so
+// sentence, grammar, audio, components, strokes and theme packs. The seed CLI and the admin API both go through it, so
 // a pack installs, shows up and goes away the same way however it
 // arrived.
 package packs
@@ -20,13 +20,15 @@ import (
 	"qinqin/internal/levels"
 	"qinqin/internal/sentences"
 	"qinqin/internal/strokes"
+	"qinqin/internal/themes"
 )
 
 // Installed is one installed pack as the admin list shows it. License
 // and Attribution are the strings the pack stated when it was imported,
 // verbatim; a legacy sentence pack carries none of them. A strokes pack
 // serves several languages: Language is empty and Languages lists them
-// (sorted); every other type has Language and no Languages.
+// (sorted); a theme pack has neither; every other type has Language and no
+// Languages.
 type Installed struct {
 	Type        string   `json:"type"`
 	PackID      string   `json:"packId"`
@@ -56,6 +58,7 @@ var typeOrder = map[string]int{
 	dict.TypeAudio:      5,
 	dict.TypeComponents: 6,
 	dict.TypeStrokes:    7,
+	dict.TypeTheme:      8,
 }
 
 // Supported reports whether typ is a pack type this package manages.
@@ -195,6 +198,12 @@ func importData(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (
 			return "", err
 		}
 		return fmt.Sprintf("%d characters", r.Chars), nil
+	case dict.TypeTheme:
+		r, err := themes.Import(ctx, sqlDB, pack)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d themes", r.Themes), nil
 	}
 	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 }
@@ -249,12 +258,14 @@ func uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, o options
 		err = components.Uninstall(ctx, sqlDB, packID)
 	case dict.TypeStrokes:
 		err = strokes.Uninstall(ctx, sqlDB, packID)
+	case dict.TypeTheme:
+		err = themes.Uninstall(ctx, sqlDB, packID)
 	default:
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
 	if errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
 		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) || errors.Is(err, audio.ErrPackNotFound) ||
-		errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) {
+		errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) || errors.Is(err, themes.ErrNotFound) {
 		return ErrNotFound
 	}
 	if err != nil {
@@ -292,7 +303,9 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 
 // List returns every live pack of every type, ordered by type
 // (dictionary, frequency, levels, sentences, grammar, audio,
-// components, strokes), then name, then pack id.
+// components, strokes, theme), then name, then pack id. Built-in theme
+// packs live in the binary and are not listed (GET /api/themes credits
+// them).
 // Sentence packs imported before the registry existed list with only
 // their type and id, after the registered ones: their licence is not
 // recorded, and the list must not make them look like known packs.
@@ -313,6 +326,8 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 			FROM audio_packs WHERE deleted_at IS NULL`},
 		{dict.TypeComponents, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
 			FROM component_packs WHERE deleted_at IS NULL`},
+		{dict.TypeTheme, `SELECT pack_id, name, version, '', license, attribution, notice, updated_at
+			FROM theme_packs WHERE deleted_at IS NULL`},
 	} {
 		rows, err := sqlDB.QueryContext(ctx, q.query)
 		if err != nil {
