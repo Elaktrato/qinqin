@@ -5,10 +5,13 @@
 //
 // The Sources page (/sources) is built from the pack manifests; this check
 // keeps the repository honest about them:
-//   a. every pack directory under plugins/data and plugins/samples has a
-//      manifest.json with a non-empty `license` and `attribution`;
-//   b. every bundled pack (plugins/data) has its manifest `id` mentioned,
-//      in backticks, in docs/sources.md;
+//   a. every pack directory under plugins/data, plugins/samples and
+//      server/internal/themes/builtin (the theme packs built into the
+//      binary) has a manifest.json with a non-empty `license` and
+//      `attribution`; a built-in theme pack also a non-empty LICENSE file
+//      (the upstream licence text, shipped in the binary);
+//   b. every bundled pack (plugins/data, the built-in theme packs) has its
+//      manifest `id` mentioned, in backticks, in docs/sources.md;
 //   c. every pack id docs/sources.md names in a "Pack" table row or in a
 //      "- **Name** (`id`" list item exists under plugins/data or
 //      plugins/samples, or is one of the optional local-only packs the docs
@@ -43,6 +46,8 @@ export const LOCAL_ONLY_PACKS = [
  */
 export const FETCHED_PACKS = ['kanjialive-audio', 'hanzi-writer-strokes'];
 export const MAX_NOTICE_BYTES = 4000;
+/** The theme packs built into the server binary (server/internal/themes). */
+export const BUILTIN_THEMES = 'server/internal/themes/builtin';
 
 // Go's RE2 `\s` is ASCII whitespace only ([\t\n\f\r ]), so the URL part
 // spells it out: a no-break space in a URL is part of the URL, as on the
@@ -217,7 +222,7 @@ export function checkSources(root) {
 	const bundled = new Map(); // manifest id -> dir (plugins/data)
 	const known = new Set([...LOCAL_ONLY_PACKS, ...FETCHED_PACKS]);
 
-	for (const base of ['plugins/data', 'plugins/samples']) {
+	for (const base of ['plugins/data', 'plugins/samples', BUILTIN_THEMES]) {
 		for (const name of packDirs(join(root, base))) {
 			const rel = `${base}/${name}`;
 			const file = join(root, rel, 'manifest.json');
@@ -236,7 +241,13 @@ export function checkSources(root) {
 			if (!id) problems.push(`${rel}/manifest.json: missing "id"`);
 			else {
 				known.add(id);
-				if (base === 'plugins/data') bundled.set(id, rel);
+				if (base !== 'plugins/samples') bundled.set(id, rel);
+			}
+			if (base === BUILTIN_THEMES) {
+				const lic = join(root, rel, 'LICENSE');
+				if (!existsSync(lic) || readFileSync(lic, 'utf8').trim() === '') {
+					problems.push(`${rel}: LICENSE is missing or empty; copy the palette's licence text verbatim from upstream`);
+				}
 			}
 			for (const f of ['license', 'attribution']) {
 				if (typeof m[f] !== 'string' || m[f].trim() === '') {

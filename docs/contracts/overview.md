@@ -24,6 +24,7 @@ where the rule is implemented today.
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Settings | `settings/` (workspace settings keys and their merge; the `qinqin-core` user rows `home-layout` and `activity-view`) |
 | Data safety | `backup/` (archive format v1, id remapping) |
+| Look | `themes/` (theme files and packs, contrast, derived tokens, the `appearance` row, `GET /api/themes`) |
 | Interface text | `i18n/` (catalogue format, key scheme, message syntax, Android conversion, interface-language negotiation, formatting locale) |
 
 ## Read order
@@ -32,7 +33,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `study-day/` → `packages/` → `sync/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `milestones/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `settings/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `settings/` → `themes/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
@@ -169,6 +170,7 @@ fixture or the contract text that fixes the shape.
 | workspace settings keys `hiddenDictionaries`, `audioAutoplay`, `audioDeviceVoice` | workspace row of `workspaces.settings` | `hiddenDictionaries`: positive integer dictionary ids (others ignored); `audioAutoplay`: bool, default false; `audioDeviceVoice`: bool, default true; same merge | `dictionaryVisibility.ts`, `audio/settings.ts` | `settings/workspace-settings.json` |
 | `home-layout` (plugin **`qinqin-core`**) | **user-global** | `{version: 1, widgets: [widget id]}`; a newer version is read leniently; unknown ids are kept stored, in place; no row = the default layout | `widgets/layout.ts` | `settings/core-rows.json` |
 | `activity-view` (plugin **`qinqin-core`**) | **user-global** | `{version: 1, scope: "workspace"\|"all", hidden: [activity type]}`; any other version reads as the default | `activity/viewPrefs.ts` | `settings/core-rows.json` |
+| `appearance` (plugin **`qinqin-core`**) | **user-global** | `{version: 1, mode: "system"\|"light"\|"dark", light: {theme, accent}, dark: {theme, accent}, corners: "sharp"\|"soft"\|"round", spacing: "compact"\|"comfortable", hanziFont: "sans"\|"serif"\|"kai"}`; no row = the defaults (Catppuccin Latte / Mocha, mauve); each member falls back on its own; a newer version is read leniently; unknown members kept on write; never validated by the server, never remapped on restore | `theme/appearance.ts` (next run) | `themes/appearance.json` |
 | Overlays (entry edits) | per user and entry (`user_edits`, not plugin data); pulled as `overlays` | `{entryId, written: string\|null, readings: [{type, value}]\|null, updatedAt}`; `null` = untouched; server-stamped, last arrival wins | `server/internal/overlay` | `overlays/overlay.json` |
 | Reader library, bookmarks, highlights, book position | written through `/api/library/books/{id}[/bookmarks\|/highlights\|/position]`; pulled as the `books`, `bookmarks`, `highlights` collections of the paged pull (`sync/`), deletions as tombstones from `library_deletions` | see `library/README.md`, `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/library` | `features/reader/bookmarks.ts`, `highlights.ts` | `library/rows.json` |
 | `read`, `journal`, `session`, `view` events | workspace (events table, not rows) | see the Events section | `lib/eventPayloads.ts` | `events/payloads.json`, `events/activity.json` |

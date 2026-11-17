@@ -336,6 +336,9 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/packages":                 tokReadGlobal,
 	"GET /api/packages/{id}/{revision}": tokReadGlobal,
 	"GET /api/stroke-packs":             tokReadGlobal,
+	// Themes (#96, docs/contracts/themes/README.md "GET /api/themes"):
+	// public, nothing personal; a read token of any workspace may read it.
+	"GET /api/themes": tokReadGlobal,
 
 	"GET /api/workspaces":                      tokReadAny,
 	"GET /api/sync/pull":                       tokReadAny,

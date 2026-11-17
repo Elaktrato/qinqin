@@ -352,6 +352,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/themes",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/workspaces",
 		"access": "user"
 	},

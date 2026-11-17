@@ -2278,6 +2278,56 @@
     }
    },
    "note": "the level deck id is derived from packId and level name, not from a server id; unknown members kept"
+  },
+  {
+   "name": "qinqin-core appearance: user-global, restored unchanged",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 70
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-core",
+    "workspaceId": null,
+    "key": "appearance",
+    "data": {
+     "version": 1,
+     "mode": "dark",
+     "light": {
+      "theme": "rose-pine-dawn",
+      "accent": "pine"
+     },
+     "dark": {
+      "theme": "nord",
+      "accent": "glacier"
+     },
+     "corners": "round",
+     "spacing": "compact",
+     "hanziFont": "kai"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": null,
+    "key": "appearance",
+    "data": {
+     "version": 1,
+     "mode": "dark",
+     "light": {
+      "theme": "rose-pine-dawn",
+      "accent": "pine"
+     },
+     "dark": {
+      "theme": "nord",
+      "accent": "glacier"
+     },
+     "corners": "round",
+     "spacing": "compact",
+     "hanziFont": "kai"
+    }
+   },
+   "note": "the person's theme choice (themes/appearance.json) names no entry, card, book or workspace: nothing is remapped"
   }
  ]
 }

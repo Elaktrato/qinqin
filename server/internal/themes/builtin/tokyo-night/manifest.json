@@ -1,0 +1,10 @@
+{
+	"id": "tokyo-night",
+	"name": "Tokyo Night",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2018-present Enkia (tokyo-night/tokyo-night-vscode-theme)",
+	"notice": "Tokyo Night (Night). Colours from the [Tokyo Night VS Code theme](https://github.com/tokyo-night/tokyo-night-vscode-theme) (README palette and themes/tokyo-night-color-theme.json, commit 7c0f11eaef32).",
+	"format": "themes-json"
+}

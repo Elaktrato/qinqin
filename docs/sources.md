@@ -640,6 +640,59 @@ committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim from the
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).
 
+## Themes
+
+Colour themes are packs of type `theme` (format `themes-json`, see
+`docs/contracts/themes/`). These packs are **built into the server binary**
+(`server/internal/themes/builtin/<id>/`: `manifest.json`, `themes.json` and the
+upstream `LICENSE`, copied verbatim) and are always present; the Sources page
+credits them from `GET /api/themes`. Only colour values are taken from each
+project (no code, fonts or images); every palette is under the MIT licence,
+checked against the upstream LICENSE file on 2026-11-17. The eight themes of
+the approved design use the mockup's values, cross-checked against the
+upstream palettes; two mockup values that belonged to another variant are
+corrected (Rosé Pine's `pine` accent is `#31748f`, not Moon's `#3e8fb0`; Rosé
+Pine Dawn's text is the current palette's `#464261`, not the former `#575279`).
+
+- **Catppuccin** (`catppuccin`, built in): Latte, Frappé, Macchiato, Mocha.
+  MIT, © 2021 Catppuccin. [catppuccin/palette](https://github.com/catppuccin/palette)
+  (`palette.json` 1.8.0, commit `07d02aa110ef`). The light flavour uses mantle
+  for raised surfaces and surface0 for lines, as in the design.
+- **Rosé Pine** (`rose-pine`, built in): Rosé Pine, Moon, Dawn. MIT, © mvllow.
+  [rose-pine/palette](https://github.com/rose-pine/palette) (commit `92af52b465ab`).
+- **Nord** (`nord`, built in): MIT, © 2016-present Sven Greb.
+  [nordtheme/nord](https://github.com/nordtheme/nord) (commit `1cef71605416`).
+  The frame (`#242933`) and the secondary text (`#a3adc2`) are shades between
+  Nord's colours, as in the design.
+- **Gruvbox** (`gruvbox`, built in): the dark theme with the bright accents.
+  MIT, © 2018 Pavel Pertsev. Colours from
+  [morhetz/gruvbox](https://github.com/morhetz/gruvbox) (`colors/gruvbox.vim`,
+  commit `ef8864bb42bf`), whose README and `package.json` state MIT but which
+  ships no licence file; the `LICENSE` is the MIT text of the maintained fork
+  [gruvbox-community/gruvbox](https://github.com/gruvbox-community/gruvbox)
+  (`LICENSE.md`, commit `180ad8597134`), naming the same author.
+- **Dracula** (`dracula`, built in): MIT, © 2020 Dracula Theme.
+  [dracula/spec](https://github.com/dracula/spec) (`dracula-spec.md`, commit
+  `ccf5974d14ec`). Its secondary text colour (Comment) is below 4.5:1 on the
+  background, as upstream.
+- **Solarized** (`solarized`, built in): Solarized Light and Dark. MIT,
+  © 2011 Ethan Schoonover. [altercation/solarized](https://github.com/altercation/solarized)
+  (commit `62f656a02f93`).
+- **Tokyo Night** (`tokyo-night`, built in): the Night variant. MIT,
+  © 2018-present Enkia. [tokyo-night/tokyo-night-vscode-theme](https://github.com/tokyo-night/tokyo-night-vscode-theme)
+  (commit `7c0f11eaef32`; the original theme, not the Apache-2.0 Neovim port).
+- **Everforest** (`everforest`, built in): Everforest Dark, medium contrast.
+  MIT, © 2019 sainnhe. [sainnhe/everforest](https://github.com/sainnhe/everforest)
+  (`palette.md`, commit `85a86eb62409`).
+- **Kanagawa** (`kanagawa`, built in): Kanagawa Wave. MIT, © 2021 Tommaso
+  Laurenzi. [rebelot/kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim)
+  (`lua/kanagawa/colors.lua`, commit `bb85e4bfc8d8`).
+
+Measured contrast (`docs/contracts/themes/README.md`, "Contrast") is reported,
+never a reason to leave a theme out; every built-in theme reaches 4.5:1 for
+text on its panel. An administrator can add more themes by uploading a theme
+pack (Settings → Data), whose review shows the measured contrast.
+
 ## Reader text sources
 
 The Reader (see the README) imports public-domain works on user request. Nothing

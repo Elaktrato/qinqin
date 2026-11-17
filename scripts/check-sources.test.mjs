@@ -160,3 +160,17 @@ test('the local-only zh components pack the docs name is accepted', () => {
 	const doc = DOC + '- **Chinese components** (`zh-components`, local)\n';
 	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
 });
+
+test('built-in theme packs are bundled packs that need a LICENSE and a docs entry', () => {
+	const p = okPacks();
+	p['server/internal/themes/builtin/night'] = { id: 'night', ...GOOD };
+	p['server/internal/themes/builtin/day'] = { id: 'day', ...GOOD };
+	const root = repo(p, DOC + '- **Night** (`night`, built in)\n');
+	writeFileSync(join(root, 'server/internal/themes/builtin/night/LICENSE'), 'MIT License\n');
+	writeFileSync(join(root, 'server/internal/themes/builtin/day/LICENSE'), '  \n');
+	const out = checkSources(root).join('\n');
+	assert.match(out, /server\/internal\/themes\/builtin\/day: LICENSE is missing or empty/);
+	assert.match(out, /bundled pack "day"/);
+	assert.doesNotMatch(out, /"night"/);
+	assert.doesNotMatch(out, /builtin\/night/);
+});

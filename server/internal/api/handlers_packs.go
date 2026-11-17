@@ -13,6 +13,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
+	"qinqin/internal/themes"
 )
 
 // handleListPacks serves GET /api/admin/packs: every live pack of every
@@ -163,7 +164,20 @@ type stagedReplaces struct {
 	Attribution string `json:"attribution"`
 }
 
+// stagedTheme is one theme of a staged theme pack with its measured
+// contrast (docs/contracts/themes/README.md, Contrast): reported for the
+// review, never a reason to refuse the pack.
+type stagedTheme struct {
+	ID      string         `json:"id"`
+	Name    string         `json:"name"`
+	Family  string         `json:"family"`
+	Scheme  string         `json:"scheme"`
+	Checks  []themes.Check `json:"checks"`
+	Failing int            `json:"failing"`
+}
+
 // stagedResponse is the body of a successful POST /api/admin/packs.
+// Themes is present for a theme pack only.
 type stagedResponse struct {
 	Token     string          `json:"token"`
 	ExpiresAt string          `json:"expiresAt"`
@@ -171,6 +185,7 @@ type stagedResponse struct {
 	Replaces  *stagedReplaces `json:"replaces"`
 	Files     int             `json:"files"`
 	Bytes     int64           `json:"bytes"`
+	Themes    []stagedTheme   `json:"themes,omitempty"`
 }
 
 const tooLargeMessage = "pack zip larger than 128 MiB — use qinqin seed for larger packs"
@@ -264,6 +279,21 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid pack: the id and version must be plain names", http.StatusBadRequest)
 		return
 	}
+	// A theme pack's themes.json is validated now and every theme measured,
+	// so the admin reviews the contrast with the licence.
+	var review []stagedTheme
+	if m.Type == dict.TypeTheme {
+		list, err := themes.CheckPack(pack)
+		if err != nil {
+			http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
+			return
+		}
+		for _, t := range list {
+			checks := themes.Review(t)
+			review = append(review, stagedTheme{ID: t.ID, Name: t.Name, Family: t.Family, Scheme: t.Scheme,
+				Checks: checks, Failing: themes.Failing(checks)})
+		}
+	}
 	// The registry row a pack's import writes can differ from its manifest
 	// (KANJIDIC2 stores its fixed terms under a fixed id): review and echo
 	// what will actually be stored.
@@ -272,7 +302,8 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		registryID, license, attribution = dict.RegistryTerms(m)
 	}
 	resp := stagedResponse{Token: token, Manifest: stagedManifest{ID: m.ID, Name: m.Name, Version: m.Version,
-		Type: m.Type, Language: m.Language, Languages: m.Languages, License: license, Attribution: attribution, Notice: m.Notice, Format: m.Format}}
+		Type: m.Type, Language: m.Language, Languages: m.Languages, License: license, Attribution: attribution, Notice: m.Notice, Format: m.Format},
+		Themes: review}
 	switch old, err := packs.Find(r.Context(), s.db, m.Type, registryID); {
 	case err == nil:
 		resp.Replaces = &stagedReplaces{Version: old.Version, License: old.License, Attribution: old.Attribution}

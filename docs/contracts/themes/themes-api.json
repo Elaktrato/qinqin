@@ -1,0 +1,67 @@
+{
+ "version": 1,
+ "rule": "themes/themes-api",
+ "_doc": "GET /api/themes (docs/contracts/themes/README.md). builtinPacks: the built-in theme packs and their theme ids, in the order the answer lists them (always present, before every installed pack).",
+ "builtinPacks": [
+  {
+   "packId": "catppuccin",
+   "themes": [
+    "catppuccin-latte",
+    "catppuccin-frappe",
+    "catppuccin-macchiato",
+    "catppuccin-mocha"
+   ]
+  },
+  {
+   "packId": "rose-pine",
+   "themes": [
+    "rose-pine",
+    "rose-pine-moon",
+    "rose-pine-dawn"
+   ]
+  },
+  {
+   "packId": "nord",
+   "themes": [
+    "nord"
+   ]
+  },
+  {
+   "packId": "gruvbox",
+   "themes": [
+    "gruvbox"
+   ]
+  },
+  {
+   "packId": "dracula",
+   "themes": [
+    "dracula"
+   ]
+  },
+  {
+   "packId": "solarized",
+   "themes": [
+    "solarized-light",
+    "solarized-dark"
+   ]
+  },
+  {
+   "packId": "tokyo-night",
+   "themes": [
+    "tokyo-night"
+   ]
+  },
+  {
+   "packId": "everforest",
+   "themes": [
+    "everforest-dark"
+   ]
+  },
+  {
+   "packId": "kanagawa",
+   "themes": [
+    "kanagawa-wave"
+   ]
+  }
+ ]
+}

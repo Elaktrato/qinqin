@@ -216,7 +216,8 @@ describe('classify: the server route table', () => {
 		'GET /api/plugins/{id}/data',
 		'GET /api/plugins/{id}/data/{key}',
 		'GET /api/events',
-		'GET /api/entries/{id}'
+		'GET /api/entries/{id}',
+		'GET /api/themes'
 	]);
 
 	function sample(pattern: string): string {

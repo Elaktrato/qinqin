@@ -1,0 +1,10 @@
+{
+	"id": "kanagawa",
+	"name": "Kanagawa",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2021 Tommaso Laurenzi (rebelot/kanagawa.nvim)",
+	"notice": "Kanagawa Wave. Colours from [kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim) (lua/kanagawa/colors.lua, commit bb85e4bfc8d8); springViolet1 serves as secondary text.",
+	"format": "themes-json"
+}

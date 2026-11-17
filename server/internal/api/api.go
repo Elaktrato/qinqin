@@ -313,6 +313,7 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack, accAdmin, nil, noTok},
 		{"GET /api/sentence-packs", s.handleListSentencePacks, accPublic, nil, tokReadGlobal},
 		{"GET /api/stroke-packs", s.handleListStrokePacks, accPublic, nil, tokReadGlobal},
+		{"GET /api/themes", s.handleListThemes, accPublic, nil, tokReadGlobal},
 		// Stroke files keep the URL of v0.3's static files (rootHandler
 		// forwards /hanzi/ here): public, and fetched without credentials by
 		// the service worker, so no token either.

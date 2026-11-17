@@ -202,6 +202,11 @@
 			"workspace": "refused"
 		},
 		{
+			"pattern": "GET /api/themes",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
 			"pattern": "GET /api/workspaces",
 			"scope": "read",
 			"workspace": "refused"
