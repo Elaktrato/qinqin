@@ -2,6 +2,10 @@
 # in ./data next to this file. For Portainer (named volume, required
 # QINQIN_SECRET, limits) use deploy/portainer-stack.yml instead.
 #
+# The image also ships the stroke-order data pack; serve installs it at start
+# when no strokes pack is installed, and builds the data packages clients
+# download into ./data/packages.
+#
 # First run — seed the sample packs and create the admin user:
 #   docker compose exec qinqin qinqin seed
 #   docker compose exec qinqin qinqin adduser --username <name> --admin

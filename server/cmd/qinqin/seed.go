@@ -42,16 +42,21 @@ const localPacks = "plugins/data-local"
 // maintainer scripts (gitignored for size); it is used only when it exists.
 const audioPacks = "plugins/data-audio"
 
+// strokePacks is the default root of the stroke-order data pack built by
+// scripts/prepare-strokes-pack.mjs (gitignored for size); it is used only
+// when it exists.
+const strokePacks = "plugins/data-strokes"
+
 // defaultPacks is the --packs default: $QINQIN_PACKS (comma-separated; the
-// image sets it to the sample packs it ships), or the repo's plugins/data
-// followed by plugins/data-audio, then plugins/data-local, when those
-// directories exist.
+// image sets it to the packs it ships), or the repo's plugins/data followed
+// by plugins/data-audio, plugins/data-strokes, then plugins/data-local, when
+// those directories exist.
 func defaultPacks() []string {
 	if p := os.Getenv("QINQIN_PACKS"); p != "" {
 		return splitRoots(p)
 	}
 	roots := []string{"plugins/data"}
-	for _, extra := range []string{audioPacks, localPacks} {
+	for _, extra := range []string{audioPacks, strokePacks, localPacks} {
 		if info, err := os.Stat(extra); err == nil && info.IsDir() {
 			roots = append(roots, extra)
 		}

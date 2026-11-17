@@ -79,6 +79,12 @@ test('fetched and local-only audio packs the docs name are accepted', () => {
 	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
 });
 
+test('the fetched strokes pack the docs name is accepted', () => {
+	assert.ok(FETCHED_PACKS.includes('hanzi-writer-strokes'));
+	const doc = DOC + '- **Hanzi Writer stroke data** (`hanzi-writer-strokes`, fetched at build time)\n';
+	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
+});
+
 test('ids outside table rows and list items are not pack names', () => {
 	assert.deepEqual(
 		[...docPackIds('See `some-flag` and `freq-csv`.\n| Pack | x |\n|---|---|\n| **A** (`pack-a`) | `other-thing` |\n')],
