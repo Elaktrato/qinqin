@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { AUDIO_AUTOPLAY_KEY, AUDIO_DEVICE_VOICE_KEY, readAudioSettings } from '$lib/audio/settings';
 
 	let {
@@ -24,7 +25,7 @@
 		try {
 			await onChange({ [key]: value });
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : 'Could not save this setting.';
+			error = err instanceof Error && err.message ? err.message : t('settings.saveFailed');
 		} finally {
 			const { [key]: _done, ...rest } = pending;
 			pending = rest;
@@ -34,14 +35,14 @@
 </script>
 
 <fieldset class="audio" aria-busy={saving}>
-	<legend>Audio</legend>
+	<legend>{t('settings.audio.title')}</legend>
 	<label>
 		<input
 			type="checkbox"
 			checked={pending[AUDIO_AUTOPLAY_KEY] ?? current.autoplay}
 			onchange={(event) => change(AUDIO_AUTOPLAY_KEY, event.currentTarget.checked)}
 		/>
-		Play audio on reveal
+		{t('settings.audio.autoplay')}
 	</label>
 	<label>
 		<input
@@ -49,7 +50,7 @@
 			checked={pending[AUDIO_DEVICE_VOICE_KEY] ?? current.deviceVoice}
 			onchange={(event) => change(AUDIO_DEVICE_VOICE_KEY, event.currentTarget.checked)}
 		/>
-		Use device voice when no recording exists
+		{t('settings.audio.deviceVoice')}
 	</label>
 	{#if error}
 		<p class="error" role="alert">{error}</p>

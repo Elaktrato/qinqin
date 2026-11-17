@@ -15,6 +15,7 @@
 	"nav.brand.home": "Accessible name of the logo link to the home page; {app} is the product name.",
 	"search.matched": "Under a search result: which field matched; {source} is search.matchedWritten or a reading type such as pinyin.",
 	"search.parts.radicalName": "Accessible name of a chip; {char} is the radical glyph, {n} its Kangxi number.",
+	"settings.home.parked": "Follows a list of widget names (\"Journal (qinqin-journal) stays in your layout …\"); the plural follows how many.",
 	"stats.duration.hours": "{minutes} is two digits (\"1 h 05 min\").",
 	"stats.duration.underMinute": "\"Less than one minute\"; {less} is the sign \"<\" (a literal \"<\" is not allowed in a message).",
 	"stats.map.filtered": "{shown} and {total} are formatted numbers; the plural follows the shown count.",

@@ -7,6 +7,7 @@
 	// right now (lib/widgets/editor.ts). Saves are optimistic: the change
 	// shows at once, a failed save says so and offers Retry.
 	import { onMount, tick } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { errorMessage } from '$lib/stats/errors';
 	import { languageLabel } from '$lib/languages';
 	import { coreFeatures } from '$lib/features';
@@ -83,7 +84,7 @@
 	});
 
 	function ownerLabel(owner: string): string {
-		if (owner === 'core') return 'Core';
+		if (owner === 'core') return t('settings.home.core');
 		const plugin = owners.find((p) => p.manifest.id === owner);
 		if (plugin) return plugin.manifest.name;
 		const name = pluginState(owner, states)?.manifest?.name;
@@ -98,7 +99,7 @@
 			confirmed = stored;
 			loadStatus = 'ready';
 		} catch (err) {
-			loadError = errorMessage(err, 'Could not load your home layout.');
+			loadError = errorMessage(err, t('settings.home.loadFailed'));
 			loadStatus = 'error';
 		}
 	}
@@ -132,7 +133,7 @@
 			saveStatus = 'saved';
 		} catch (err) {
 			pending = false;
-			saveError = errorMessage(err, 'The server did not answer.');
+			saveError = errorMessage(err, t('settings.home.noAnswer'));
 			saveStatus = 'error';
 		} finally {
 			inFlight = false;
@@ -149,7 +150,7 @@
 		stored = confirmed;
 		saveStatus = 'idle';
 		saveError = '';
-		announcement = 'Change discarded.';
+		announcement = t('settings.home.discarded');
 	}
 
 	function positionOf(id: string, layout: string[]): { position: number; count: number } {
@@ -165,8 +166,8 @@
 		apply(
 			next,
 			on
-				? `${item.widget.title} added to the home page at position ${position} of ${count}.`
-				: `${item.widget.title} removed from the home page.`
+				? t('settings.home.added', { widget: item.widget.title, position, count })
+				: t('settings.home.removed', { widget: item.widget.title })
 		);
 		// The row moved between the groups: keep focus on its switch.
 		await tick();
@@ -175,7 +176,7 @@
 
 	function movedMessage(item: EditorItem, next: string[]): string {
 		const { position, count } = positionOf(item.widget.id, next);
-		return `${item.widget.title} moved to position ${position} of ${count}.`;
+		return t('settings.home.moved', { widget: item.widget.title, position, count });
 	}
 
 	async function move(item: EditorItem, direction: -1 | 1): Promise<void> {
@@ -199,7 +200,7 @@
 
 	async function closeReset(reset: boolean): Promise<void> {
 		confirmingReset = false;
-		if (reset) apply(resetLayout(), 'Home page reset to the default layout.');
+		if (reset) apply(resetLayout(), t('settings.home.wasReset'));
 		await tick();
 		resetButton?.focus();
 	}
@@ -261,34 +262,30 @@
 	}
 </script>
 
-<h2>Home page</h2>
-<p class="hint">
-	Choose the widgets on your home page and their order. The layout belongs to your account, so it
-	is the same in every workspace and on every device; a widget that does not fit a workspace's
-	language is left out there.
-</p>
+<h2>{t('settings.home.title')}</h2>
+<p class="hint">{t('settings.home.hint')}</p>
 
 <p class="sr-only" aria-live="polite">{announcement}</p>
 
 {#if loadStatus === 'loading'}
-	<p>Loading your home layout…</p>
+	<p>{t('settings.home.loading')}</p>
 {:else if loadStatus === 'error'}
 	<p class="error" role="alert">{loadError}</p>
-	<button type="button" onclick={load}>Retry</button>
+	<button type="button" onclick={load}>{t('settings.home.retry')}</button>
 {:else}
 	<div class="toolbar">
 		<span class="save-status" class:failed={saveStatus === 'error'}>
 			{#if saveStatus === 'saving'}
-				Saving…
+				{t('common.state.saving')}
 			{:else if saveStatus === 'saved'}
-				Saved
+				{t('settings.home.saved')}
 			{/if}
 		</span>
 		{#if confirmingReset}
-			<span class="confirm" role="group" aria-label="Reset to default">
-				<span>Go back to the default home page ({defaultTitles})?</span>
-				<button type="button" bind:this={resetConfirm} onclick={() => closeReset(true)}>Reset</button>
-				<button type="button" class="secondary" onclick={() => closeReset(false)}>Cancel</button>
+			<span class="confirm" role="group" aria-label={t('settings.home.resetLabel')}>
+				<span>{t('settings.home.resetConfirm', { widgets: defaultTitles })}</span>
+				<button type="button" bind:this={resetConfirm} onclick={() => closeReset(true)}>{t('settings.home.reset')}</button>
+				<button type="button" class="secondary" onclick={() => closeReset(false)}>{t('common.action.cancel')}</button>
 			</span>
 		{:else}
 			<button
@@ -298,33 +295,31 @@
 				disabled={isDefault}
 				onclick={askReset}
 			>
-				Reset to default
+				{t('settings.home.resetLabel')}
 			</button>
 		{/if}
 	</div>
 
 	{#if saveStatus === 'error'}
 		<div class="save-error" role="alert">
-			<p>
-				Could not save your home layout ({saveError}). The change shows here but is not saved yet.
-			</p>
-			<button type="button" onclick={persist}>Retry</button>
-			<button type="button" class="secondary" onclick={discard}>Discard change</button>
+			<p>{t('settings.home.saveFailed', { reason: saveError })}</p>
+			<button type="button" onclick={persist}>{t('settings.home.retry')}</button>
+			<button type="button" class="secondary" onclick={discard}>{t('settings.home.discard')}</button>
 		</div>
 	{/if}
 
 	{#if $pluginStates.status === 'loading' || $pluginStates.status === 'idle'}
-		<p class="hint">Loading the plugins' widgets…</p>
+		<p class="hint">{t('settings.home.loadingPlugins')}</p>
 	{:else if $pluginStates.status === 'error'}
 		<p class="error">
-			Could not load the plugins, so only the core widgets are listed. Your layout keeps the others.
-			<button type="button" class="secondary" onclick={loadPluginStates}>Retry</button>
+			{t('settings.home.pluginsFailed')}
+			<button type="button" class="secondary" onclick={loadPluginStates}>{t('settings.home.retry')}</button>
 		</p>
 	{/if}
 
-	<h3 id="home-on-heading">On the home page</h3>
+	<h3 id="home-on-heading">{t('settings.home.on')}</h3>
 	{#if onItems.length === 0}
-		<p class="hint">No widgets: the home page shows a link to this tab.</p>
+		<p class="hint">{t('settings.home.noWidgets')}</p>
 	{:else}
 		<ol class="items" aria-labelledby="home-on-heading">
 			{#each onItems as item, index (item.widget.id)}
@@ -334,7 +329,7 @@
 	{/if}
 
 	{#if offItems.length > 0}
-		<h3 id="home-off-heading">Not on the home page</h3>
+		<h3 id="home-off-heading">{t('settings.home.off')}</h3>
 		<ul class="items" aria-labelledby="home-off-heading">
 			{#each offItems as item, index (item.widget.id)}
 				{@render row(item, index)}
@@ -346,18 +341,16 @@
 		<p class="hint parked">
 			{#each parked as widget, index (widget.id)}{index > 0 ? ', ' : ''}<strong>{widget.title}</strong
 				> ({widget.plugin}){/each}
-			{parked.length === 1 ? 'stays' : 'stay'} in your layout while the plugin is disabled and
-			{parked.length === 1 ? 'comes' : 'come'} back when you enable it under Plugins.
+			{t('settings.home.parked', { count: parked.length })}
 		</p>
 	{/if}
 
-	<h3 id="home-preview-heading">Preview</h3>
+	<h3 id="home-preview-heading">{t('settings.home.preview')}</h3>
 	<p class="hint">
-		The home page{language ? ` in this ${language} workspace` : ''}, on a wide screen. Phones show
-		one column in the same order.
+		{language ? t('settings.home.previewHintLanguage', { language }) : t('settings.home.previewHint')}
 	</p>
 	{#if preview.length === 0}
-		<p class="preview-empty">No widgets.</p>
+		<p class="preview-empty">{t('settings.home.previewEmpty')}</p>
 	{:else}
 		<ol class="preview" aria-labelledby="home-preview-heading">
 			{#each preview as { widget, span } (widget.id)}
@@ -383,7 +376,7 @@
 			<span
 				class="handle"
 				aria-hidden="true"
-				title="Drag to reorder"
+				title={t('settings.home.drag')}
 				onpointerdown={(event) => dragStart(event, item)}
 				onpointermove={dragMove}
 				onpointerup={dragEnd}
@@ -401,16 +394,14 @@
 				<strong id="widget-title-{id}">{item.widget.title}</strong>
 				<span class="owner">{ownerLabel(item.widget.owner)}</span>
 				{#if item.position !== null}
-					<span class="position">{item.position} of {item.onCount}</span>
+					<span class="position">{t('settings.home.position', { position: item.position, count: item.onCount })}</span>
 				{/if}
 			</div>
 			<p class="description" id="widget-description-{id}">{item.widget.description}</p>
 			{#if !item.applies}
 				<p class="reason" id="widget-reason-{id}">
-					Not available for {language}.
-					{item.on
-						? 'Hidden in this workspace; it stays in your layout for workspaces where it applies.'
-						: 'If you add it, it shows in workspaces where it applies.'}
+					{t('settings.home.notFor', { language })}
+					{item.on ? t('settings.home.hiddenHere') : t('settings.home.ifAdded')}
 				</p>
 			{/if}
 		</div>
@@ -426,7 +417,7 @@
 					onchange={(event) => toggle(item, event.currentTarget.checked)}
 				/>
 				<span class="track" aria-hidden="true"></span>
-				<span id="widget-switch-label-{id}">On the home page</span>
+				<span id="widget-switch-label-{id}">{t('settings.home.on')}</span>
 			</label>
 			{#if item.on}
 				<span class="moves">
@@ -435,16 +426,16 @@
 						class="secondary move"
 						id="widget-up-{id}"
 						disabled={item.position === 1}
-						aria-label="Move {item.widget.title} up"
-						onclick={() => move(item, -1)}>Move up</button
+						aria-label={t('settings.home.moveUpLabel', { widget: item.widget.title })}
+						onclick={() => move(item, -1)}>{t('settings.home.moveUp')}</button
 					>
 					<button
 						type="button"
 						class="secondary move"
 						id="widget-down-{id}"
 						disabled={item.position === item.onCount}
-						aria-label="Move {item.widget.title} down"
-						onclick={() => move(item, 1)}>Move down</button
+						aria-label={t('settings.home.moveDownLabel', { widget: item.widget.title })}
+						onclick={() => move(item, 1)}>{t('settings.home.moveDown')}</button
 					>
 				</span>
 			{/if}

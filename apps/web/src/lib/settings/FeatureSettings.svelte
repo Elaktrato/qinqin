@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Settings -> Features: switch Decks or the Reader off for yourself.
 	import { pluginStates } from '$lib/plugins/states';
+	import { t } from '$lib/i18n';
 	import { featureSwitches, saveFeatureSwitch } from './featureSwitches';
 
 	const switches = $derived(featureSwitches($pluginStates.list));
@@ -19,24 +20,20 @@
 			saved = id;
 		} catch (err) {
 			box.checked = !enabled;
-			error = err instanceof Error && err.message ? err.message : 'Could not save the switch.';
+			error = err instanceof Error && err.message ? err.message : t('settings.features.saveFailed');
 		} finally {
 			saving = null;
 		}
 	}
 </script>
 
-<h2>Features</h2>
-<p class="hint">
-	Decks and the Reader are part of the app. Switching one off hides its page, its navigation link
-	and its widgets for you; nothing is deleted, and reviews and reading from your other devices still
-	count in your stats and goals.
-</p>
+<h2>{t('settings.features.title')}</h2>
+<p class="hint">{t('settings.features.hint')}</p>
 
 {#if $pluginStates.status === 'loading' || $pluginStates.status === 'idle'}
-	<p>Loading…</p>
+	<p>{t('common.loading')}</p>
 {:else if $pluginStates.status === 'error'}
-	<p class="error" role="alert">Could not load your settings.</p>
+	<p class="error" role="alert">{t('settings.features.loadFailed')}</p>
 {:else}
 	<ul class="features">
 		{#each switches as feature (feature.id)}
@@ -50,7 +47,7 @@
 					/>
 					{feature.title}
 				</label>
-				{#if saved === feature.id}<span class="saved">Saved</span>{/if}
+				{#if saved === feature.id}<span class="saved">{t('settings.features.saved')}</span>{/if}
 			</li>
 		{/each}
 	</ul>

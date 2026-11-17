@@ -8,6 +8,7 @@ import EmailVerify from '$lib/account/EmailVerify.svelte';
 import Badges from '$lib/components/Badges.svelte';
 import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
 import StageBar from '$lib/components/map/StageBar.svelte';
+import LimitField from '$lib/settings/LimitField.svelte';
 
 // The pseudo-locale sample (spec Ruling): each extraction task adds one component of its area to SAMPLES; the
 // test renders it in en-XA and fails on any text node that is still plain ASCII English (a missed string, or
@@ -35,6 +36,12 @@ const SAMPLES: Sample[] = [
 		name: 'StageBar',
 		component: StageBar,
 		props: { byStage: { unknown: 3, fresh: 2, learning: 1, mature: 1, learned: 4 } }
+	},
+	// settings, part 1 (Task 15)
+	{
+		name: 'LimitField',
+		component: LimitField,
+		props: { legend: '每日新卡', name: 'x', state: { mode: 'value', value: '20' }, workspaceLabel: null }
 	}
 ];
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import type { FieldState } from './limitsForm';
 
 	// One limit field: "use workspace" (decks only), an own number, or unlimited.
@@ -23,17 +24,17 @@
 	{/if}
 	<label class="own">
 		<input type="radio" {name} value="value" bind:group={state.mode} />
-		<span class="sr-only">{legend} own value</span>
+		<span class="sr-only">{t('settings.limitField.own', { legend })}</span>
 		<input
 			type="text"
 			inputmode="numeric"
 			pattern="[0-9]*"
-			aria-label={`${legend} value`}
+			aria-label={t('settings.limitField.value', { legend })}
 			disabled={state.mode !== 'value'}
 			bind:value={state.value}
 		/>
 	</label>
-	<label><input type="radio" {name} value="unlimited" bind:group={state.mode} /> Unlimited</label>
+	<label><input type="radio" {name} value="unlimited" bind:group={state.mode} /> {t('settings.limitField.unlimited')}</label>
 </fieldset>
 
 <style>

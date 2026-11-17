@@ -1,5 +1,6 @@
 // The daily limit forms (workspace and deck): field states <-> rows. Pure.
 
+import { t } from '$lib/i18n';
 import { DEFAULT_LIMITS, MAX_LIMIT, type LimitPair } from '$lib/study/limits';
 
 export type FieldMode = 'workspace' | 'value' | 'unlimited';
@@ -11,7 +12,6 @@ export interface FieldState {
 
 export type Field = keyof LimitPair;
 
-const INVALID = 'Enter a whole number from 0 to 9999.';
 
 /** deckFieldFrom: a deck row's field as a form state (absent follows the workspace). */
 export function deckFieldFrom(row: Partial<LimitPair> | null, field: Field): FieldState {
@@ -46,7 +46,7 @@ function build(
 	const row: Partial<LimitPair> = {};
 	for (const field of ['new', 'reviews'] as const) {
 		const v = fieldValue(states[field]);
-		if (v === 'invalid') return { error: INVALID };
+		if (v === 'invalid') return { error: t('settings.limits.invalid') };
 		if (v !== undefined) row[field] = v;
 	}
 	return { row };
@@ -69,5 +69,5 @@ export function workspaceRowFrom(
 }
 
 export function workspaceChoiceLabel(value: number | null): string {
-	return `Use workspace limit (${value === null ? 'unlimited' : value})`;
+	return t('settings.limits.useWorkspace', { value: value === null ? t('settings.limits.unlimited') : value });
 }

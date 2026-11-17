@@ -1,5 +1,6 @@
 // Texts and small rules of the vacation settings (pure; the component is thin).
 
+import { t, type MessageKey } from '$lib/i18n';
 import type { StudyDay } from '$lib/time/studyDay';
 import { currentVacation, vacationRuns, type Run, type VacationPeriod } from '$lib/study/vacation';
 
@@ -18,10 +19,10 @@ export interface NamedWorkspace {
 }
 
 function scopeLabel(scope: VacationPeriod['scope'], spaces: readonly NamedWorkspace[]): string {
-	if (scope === 'all') return 'all workspaces';
+	if (scope === 'all') return t('settings.vacation.allWorkspaces');
 	const names = new Map(spaces.map((w) => [w.id, w.name]));
 	const ids = [...scope.workspaces].sort((a, b) => a - b);
-	return ids.map((id) => names.get(id) ?? `Workspace ${id}`).join(', ');
+	return ids.map((id) => names.get(id) ?? t('settings.vacation.workspaceN', { id })).join(', ');
 }
 
 /** describePeriod: "3 Jan – 17 Jan, all workspaces". */
@@ -31,8 +32,8 @@ export function describePeriod(
 	spaces: readonly NamedWorkspace[]
 ): string {
 	const where = scopeLabel(period.scope, spaces);
-	if (period.end === null) return `from ${dateLabel(period.start, today)} until you end it, ${where}`;
-	return `${dateLabel(period.start, today)} – ${dateLabel(period.end, today)}, ${where}`;
+	if (period.end === null) return t('settings.vacation.openPeriod', { start: dateLabel(period.start, today), where });
+	return t('settings.vacation.period', { start: dateLabel(period.start, today), end: dateLabel(period.end, today), where });
 }
 
 /** The first day a period freezes: the createdDay clamp applies. */
@@ -74,34 +75,33 @@ export function vacationStatus(
 
 export function vacationBanner(state: VacationState | null, today: string): string | null {
 	if (state === null) return null;
-	if (state.open) return 'On vacation (no end date)';
-	return `Vacation until ${dateLabel(state.run.end, today)}`;
+	if (state.open) return t('settings.vacation.openEnded');
+	return t('settings.vacation.until', { date: dateLabel(state.run.end, today) });
 }
 
 /** The home widget's line: "On vacation until 3 Jan". */
 export function vacationLine(state: VacationState | null, today: string): string | null {
 	if (state === null) return null;
-	if (state.open) return 'On vacation (no end date)';
-	return `On vacation until ${dateLabel(state.run.end, today)}`;
+	if (state.open) return t('settings.vacation.openEnded');
+	return t('settings.vacation.onUntil', { date: dateLabel(state.run.end, today) });
 }
 
 export function startNowNote(startsTomorrow: boolean): string {
-	return startsTomorrow ? 'Starts tomorrow — you already studied today' : '';
+	return startsTomorrow ? t('settings.vacation.startsTomorrow') : '';
 }
 
-const ERRORS: Record<string, string> = {
-	'start-before-today': 'The start cannot be in the past.',
-	'start-missing': 'Choose a start date.',
-	'end-before-start-tomorrow':
-		'Your vacation starts tomorrow because you already studied today; the end cannot be before that.',
-	'end-before-start': 'The end must not be before the start.',
-	'too-long': 'A vacation can be at most 366 days.',
-	'no-workspaces': 'Choose at least one workspace.',
-	started: 'A vacation that has started can only be ended.'
+const ERRORS: Record<string, MessageKey> = {
+	'start-before-today': 'settings.vacation.error.startBeforeToday',
+	'start-missing': 'settings.vacation.error.startMissing',
+	'end-before-start-tomorrow': 'settings.vacation.error.endBeforeStartTomorrow',
+	'end-before-start': 'settings.vacation.error.endBeforeStart',
+	'too-long': 'settings.vacation.error.tooLong',
+	'no-workspaces': 'settings.vacation.error.noWorkspaces',
+	started: 'settings.vacation.error.started'
 };
 
 export function errorText(code: string): string {
-	return ERRORS[code] ?? 'Could not save the vacation.';
+	return t(Object.hasOwn(ERRORS, code) ? ERRORS[code] : 'settings.vacation.error.failed');
 }
 
 /** reviewedTodayIn: whether a workspace (or any) has a review on the learner's today. */

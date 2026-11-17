@@ -170,7 +170,15 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 		'1 card could not be resolved, so this map may under-report mastery.',
 		'2 cards could not be resolved, so this map may under-report mastery.'
 	],
-	['stats.map.sections', {}, '1 section', '2 sections']
+	['stats.map.sections', {}, '1 section', '2 sections'],
+	// settings, part 1 (Task 15)
+	['settings.zone.matches', {}, '1 time zone matches.', '2 time zones match.'],
+	[
+		'settings.home.parked',
+		{},
+		'stays in your layout while the plugin is disabled and comes back when you enable it under Plugins.',
+		'stay in your layout while the plugin is disabled and come back when you enable it under Plugins.'
+	]
 ];
 
 describe('catalogue plurals keep their English', () => {
