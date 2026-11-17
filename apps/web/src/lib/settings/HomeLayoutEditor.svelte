@@ -25,6 +25,14 @@
 	} from '$lib/widgets/editor';
 	import { DEFAULT_LAYOUT, loadLayout, placeWidgets, resolveLayout, saveLayout } from '$lib/widgets/layout';
 	import { coreWidgets } from '$lib/widgets/core';
+	import {
+		DEFAULT_HEATMAP_LAYOUT,
+		HEATMAP_LAYOUTS,
+		loadWidgetOptions,
+		saveHeatmapLayout,
+		type HeatmapLayout
+	} from '$lib/widgets/options';
+	import type { MessageKey } from '$lib/i18n';
 	import { allWidgets } from '$lib/widgets/registry';
 	import { currentLanguage } from '$lib/workspaces';
 
@@ -41,6 +49,39 @@
 	let confirmingReset = $state(false);
 	let resetButton = $state<HTMLButtonElement | null>(null);
 	let resetConfirm = $state<HTMLButtonElement | null>(null);
+
+	// The home heatmap's layout (the `widget-options` row, separate from the
+	// layout): saved on change, re-read before the write so other keys survive.
+	let heatmapLayout = $state<HeatmapLayout>(DEFAULT_HEATMAP_LAYOUT);
+	let layoutError = $state('');
+	const LAYOUT_TEXT: Record<HeatmapLayout, { label: MessageKey; description: MessageKey }> = {
+		garden: { label: 'settings.home.layout.garden', description: 'settings.home.layout.gardenDescription' },
+		month: { label: 'settings.home.layout.month', description: 'settings.home.layout.monthDescription' },
+		week: { label: 'settings.home.layout.week', description: 'settings.home.layout.weekDescription' }
+	};
+
+	async function loadOptions(): Promise<void> {
+		try {
+			heatmapLayout = (await loadWidgetOptions()).heatmapLayout;
+		} catch (err) {
+			// The garden stays checked; a save still re-reads the row first.
+			console.warn('widget options not loaded', err);
+		}
+	}
+
+	async function chooseLayout(next: HeatmapLayout): Promise<void> {
+		const previous = heatmapLayout;
+		heatmapLayout = next;
+		layoutError = '';
+		try {
+			await saveHeatmapLayout(next);
+			announcement = t('settings.home.layoutSaved', { layout: t(LAYOUT_TEXT[next].label) });
+		} catch (err) {
+			heatmapLayout = previous;
+			layoutError = t('settings.home.layoutSaveFailed', { reason: errorMessage(err, t('settings.home.noAnswer')) });
+			announcement = layoutError;
+		}
+	}
 
 	// Every widget owner this build knows: the core features, then the plugins.
 	const owners = [...coreFeatures, ...webPlugins];
@@ -110,6 +151,7 @@
 	onMount(() => {
 		if ($pluginStates.status === 'idle') void loadPluginStates();
 		void load();
+		void loadOptions();
 	});
 
 	// One save at a time, and always of the newest layout: changes made
@@ -407,6 +449,34 @@
 					{item.on ? t('settings.home.hiddenHere') : t('settings.home.ifAdded')}
 				</p>
 			{/if}
+			{#if id === 'activity-heatmap' && item.on}
+				<fieldset class="heatmap-layout">
+					<legend>{t('settings.home.heatmapLayout')}</legend>
+					{#each HEATMAP_LAYOUTS as option (option)}
+						<div class="layout-option">
+							<input
+								type="radio"
+								name="heatmap-layout"
+								id="heatmap-layout-{option}"
+								value={option}
+								checked={heatmapLayout === option}
+								aria-describedby="heatmap-layout-{option}-description"
+								onchange={() => chooseLayout(option)}
+							/>
+							<span>
+								<label class="layout-name" for="heatmap-layout-{option}">{t(LAYOUT_TEXT[option].label)}</label>
+								<span class="layout-description" id="heatmap-layout-{option}-description">
+									{t(LAYOUT_TEXT[option].description)}
+								</span>
+							</span>
+						</div>
+					{/each}
+					<p class="layout-note">{t('settings.home.layoutStats')}</p>
+					{#if layoutError}
+						<p class="error">{layoutError}</p>
+					{/if}
+				</fieldset>
+			{/if}
 		</div>
 		<div class="controls">
 			<label class="switch">
@@ -449,6 +519,56 @@
 <style>
 	.hint {
 		color: var(--readable-muted);
+	}
+
+	.heatmap-layout {
+		display: grid;
+		gap: var(--space-2);
+		margin: var(--space-3) 0 0;
+		padding: 0;
+		border: 0;
+	}
+
+	.heatmap-layout legend {
+		padding: 0;
+		margin-bottom: var(--space-2);
+		font-size: var(--font-size-label);
+		color: var(--readable-muted);
+	}
+
+	.layout-option {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
+	}
+
+	.layout-option label {
+		cursor: pointer;
+	}
+
+	.layout-option input {
+		margin-top: 0.2rem;
+	}
+
+	.layout-option input:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
+	}
+
+	.layout-name {
+		display: block;
+		font-weight: var(--weight-medium);
+	}
+
+	.layout-description,
+	.layout-note {
+		display: block;
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
+	}
+
+	.layout-note {
+		margin: 0;
 	}
 
 	h3 {

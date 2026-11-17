@@ -3,6 +3,7 @@
 import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
 import { t } from '$lib/i18n';
 import { usesHan } from '$lib/languages';
+import ActivityHome from './ActivityHome.svelte';
 import CharacterMapSummary from './CharacterMapSummary.svelte';
 import DailyGoalWidget from './DailyGoalWidget.svelte';
 import WeeklySummaryWidget from './WeeklySummaryWidget.svelte';
@@ -20,7 +21,9 @@ export const coreWidgets: WidgetDef[] = [
 		owner: 'core',
 		size: 'wide',
 		surfaces: ['stats', 'home'],
-		component: ActivityHeatmap
+		component: ActivityHeatmap,
+		// Home shows the layout chosen in Settings → Home; Stats the garden grid.
+		homeComponent: ActivityHome
 	},
 	{
 		id: 'character-map-summary',
