@@ -5,8 +5,9 @@
 // - Exempt by path: the theme machinery (`lib/theme/**`: it reads the OS preference and paints the tokens by design),
 //   test support (`*.test.svelte`, `testing/` folders — never shipped). `.ts` files are not scanned; `app.html`
 //   (the first paint) is not a `.svelte`/`.css` file.
-// - allowlist.json: `{rule, file, text, reason}` — a finding that must stay (reason required); an entry that matches
-//   nothing fails.
+// - allowlist.json: `{rule, file, text, within?, count, reason}` — a finding that must stay (reason required): `text`
+//   in `file`, on a source line that holds `within` when given (app.css's `rgb(` only in the `--shadow-float`
+//   declaration); exactly `count` findings match, so a new one of the same text in the same file fails.
 // - pending.json: per rule, the ratchet baseline while the migration lands in batches — a listed file may still
 //   hold findings, a clean listed file fails ("remove it"), and each list may only shrink (PENDING_LENGTH).
 //   `UPDATE_STYLE_PENDING=1` rewrites it from the current findings.
@@ -52,8 +53,16 @@ const all: Record<Rule, Map<string, Finding[]>> = {
 	colour: new Map(files.map((rel) => [rel, colourFindings(sources.get(rel)!, kindOf(rel))])),
 	opacity: new Map(files.map((rel) => [rel, LINTS.opacity(sources.get(rel)!, kindOf(rel))]))
 };
+type Entry = { rule: string; file: string; text: string; within?: string; count: number; reason: string };
+const entries: Entry[] = allowlist;
+
+/** Whether allowlist entry `a` admits finding `f` of `rel` (whose source is `src`). */
+function admits(a: Entry, rel: string, f: Finding, src: string): boolean {
+	if (a.file !== rel || a.text !== f.text) return false;
+	return a.within === undefined || (src.split('\n')[f.line - 1] ?? '').includes(a.within);
+}
 const allowed = (rule: Rule, rel: string, f: Finding): boolean =>
-	allowlist.some((a) => a.rule === rule && a.file === rel && a.text === f.text);
+	entries.some((a) => a.rule === rule && admits(a, rel, f, sources.get(rel)!));
 const offenders = (rule: Rule): string[] =>
 	files.filter((rel) => all[rule].get(rel)!.some((f) => !allowed(rule, rel, f)));
 
@@ -66,6 +75,17 @@ describe('the walk', () => {
 	it('covers the components and the global CSS', () => {
 		expect(files.length).toBeGreaterThan(150);
 		expect(files).toContain('app.css');
+	});
+});
+
+describe('the allowlist matching', () => {
+	const shadow = entries.find((a) => a.file === 'app.css' && a.text === 'rgb(')!;
+	const css = ':root {\n\t--shadow-float: 0 1px 3px rgb(0 0 0 / 0.12);\n\t--glow: rgb(255 0 0);\n}\n';
+
+	it("app.css's rgb( is admitted only in the --shadow-float declaration", () => {
+		expect(shadow.within).toBe('--shadow-float:');
+		const found = colourFindings(css, 'css');
+		expect(found.map((f) => admits(shadow, 'app.css', f, css))).toEqual([true, false]);
 	});
 });
 
@@ -91,13 +111,12 @@ describe.each(['colour', 'opacity'] as const)('%s lint', (rule) => {
 		expect(list.length).toBe(PENDING_LENGTH[rule]);
 	});
 
-	it('every allowlist entry has a reason and matches a finding', () => {
-		for (const a of allowlist.filter((x) => x.rule === rule)) {
+	it('every allowlist entry has a reason and matches exactly its count of findings', () => {
+		for (const a of entries.filter((x) => x.rule === rule)) {
 			expect(a.reason.trim().length, `${a.file} ${a.text}`).toBeGreaterThan(10);
-			expect(
-				all[rule].get(a.file)?.some((f) => f.text === a.text),
-				`${a.file} ${a.text} matches nothing`
-			).toBe(true);
+			expect(Number.isInteger(a.count) && a.count > 0, `${a.file} ${a.text} count`).toBe(true);
+			const matched = (all[rule].get(a.file) ?? []).filter((f) => admits(a, a.file, f, sources.get(a.file)!));
+			expect(matched.length, `${a.file} ${a.text}`).toBe(a.count);
 		}
 	});
 });
