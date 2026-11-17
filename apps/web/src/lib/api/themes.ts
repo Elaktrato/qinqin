@@ -21,6 +21,8 @@ export interface ThemePack {
 	license: string;
 	attribution: string;
 	notice: string;
+	/** The full licence text (built-in packs); "" when the answer has none. */
+	licenseText: string;
 	builtin: boolean;
 	themes: string[];
 }
@@ -66,7 +68,7 @@ function parseTheme(raw: unknown): ListedTheme | null {
 
 function parsePack(raw: unknown): ThemePack | null {
 	if (!isObject(raw)) return null;
-	const { packId, name, version, license, attribution, notice, builtin, themes } = raw;
+	const { packId, name, version, license, attribution, notice, licenseText, builtin, themes } = raw;
 	if (typeof packId !== 'string' || packId === '' || typeof name !== 'string') return null;
 	if (!Array.isArray(themes) || !themes.every((t) => typeof t === 'string')) return null;
 	const text = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -77,6 +79,7 @@ function parsePack(raw: unknown): ThemePack | null {
 		license: text(license),
 		attribution: text(attribution),
 		notice: text(notice),
+		licenseText: text(licenseText),
 		builtin: builtin === true,
 		themes: [...themes]
 	};

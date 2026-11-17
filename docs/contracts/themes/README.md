@@ -189,13 +189,17 @@ Public (no session needed; a read token is allowed), the same answer for everyon
                 "colors": { "chrome": "#dce0e8", "...": "..." }, "accents": { "mauve": "#8839ef", "...": "..." },
                 "defaultAccent": "mauve", "packId": "catppuccin", "builtin": true } ],
   "packs":  [ { "packId": "catppuccin", "name": "Catppuccin", "version": "1.0", "license": "MIT",
-                "attribution": "© 2021 Catppuccin (catppuccin/palette)", "notice": "...", "builtin": true,
+                "attribution": "© 2021 Catppuccin (catppuccin/palette)", "notice": "...",
+                "licenseText": "MIT License\n\nCopyright (c) 2021 Catppuccin\n...", "builtin": true,
                 "themes": ["catppuccin-latte", "catppuccin-frappe", "catppuccin-macchiato", "catppuccin-mocha"] } ] }
 ```
 
 - Built-in packs first in their fixed order (`themes-api.json`), then the installed packs by name, then pack id;
   themes in pack order, each pack's in file order; `accents` keep the file's order; `family` is `""` when the
   theme has none.
+- `licenseText` is a built-in pack's full licence text (its embedded `LICENSE`, verbatim); `""` for an installed
+  pack, whose licence files the administrator reviewed at upload and which are not kept. The Sources page shows
+  each text behind a disclosure under the Themes table.
 - An installed theme whose id a newer binary made built-in is left out (the built-in one wins); a stored theme
   that no longer parses is skipped (logged), never a 500.
 - `ETag` (strong) and `Cache-Control: no-cache`: clients revalidate with `If-None-Match` and get `304`. The web's

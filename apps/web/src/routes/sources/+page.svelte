@@ -525,6 +525,12 @@
 					</table>
 				</div>
 				{@render notes(themes.table)}
+				{#each themes.licenseTexts as licence (licence.key)}
+					<details class="licence-text">
+						<summary>{licence.label}</summary>
+						<pre>{licence.text}</pre>
+					</details>
+				{/each}
 			{/if}
 			<p class="notice">
 				{t('sources.themes.notice')}
@@ -961,6 +967,17 @@
 	.license-texts {
 		margin: 0.4rem 0 0;
 		font-size: 0.9rem;
+	}
+
+	.licence-text {
+		margin: 0.4rem 0 0;
+		font-size: 0.9rem;
+	}
+
+	.licence-text pre {
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		font-size: 0.8rem;
 	}
 
 	.error {

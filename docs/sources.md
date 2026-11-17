@@ -648,7 +648,10 @@ Colour themes are packs of type `theme` (format `themes-json`, see
 upstream `LICENSE`, copied verbatim) and are always present; the Sources page
 credits them from `GET /api/themes`. Only colour values are taken from each
 project (no code, fonts or images); every palette is under the MIT licence,
-checked against the upstream LICENSE file on 2026-11-17. The eight themes of
+checked against the upstream LICENSE file on 2026-11-17. Each pack's LICENSE
+ships inside the server binary and reaches users verbatim: `GET /api/themes`
+serves it as the pack's `licenseText`, and the Sources page shows it under the
+Themes table. The eight themes of
 the approved design use the mockup's values, cross-checked against the
 upstream palettes; two mockup values that belonged to another variant are
 corrected (Rosé Pine's `pine` accent is `#31748f`, not Moon's `#3e8fb0`; Rosé

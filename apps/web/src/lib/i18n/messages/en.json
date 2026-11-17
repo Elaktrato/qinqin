@@ -2352,6 +2352,7 @@
 	"sources.themes.colOrigin": "Origin",
 	"sources.themes.colThemes": "Themes",
 	"sources.themes.installed": "Installed on this server",
+	"sources.themes.licenseText": "{name}: {license} license text",
 	"sources.themes.notice": "Colour themes are theme packs: only their colour values are used. The built-in packs ship inside the server and are always present; an administrator can install more. Each pack is credited with the licence and attribution it states.",
 	"sources.themes.title": "Themes",
 	"sources.title": "Sources",

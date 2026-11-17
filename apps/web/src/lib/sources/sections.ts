@@ -98,7 +98,13 @@ export function strokesSection(
 export function themesSection(
 	answer: { themes: readonly { id: string; name: string }[]; packs: readonly ThemePack[] },
 	error: string
-): { show: boolean; table: PackTable; themeNames: Record<number, string>; builtin: Record<number, boolean> } {
+): {
+	show: boolean;
+	table: PackTable;
+	themeNames: Record<number, string>;
+	builtin: Record<number, boolean>;
+	licenseTexts: { key: number; label: string; text: string }[];
+} {
 	const names = new Map(answer.themes.map((th) => [th.id, th.name]));
 	const table = packTable(
 		'themes',
@@ -120,7 +126,12 @@ export function themesSection(
 			.join(', ');
 		builtin[i] = p.builtin;
 	});
-	return { show: error !== '' || answer.packs.length > 0, table, themeNames, builtin };
+	const licenseTexts = answer.packs.flatMap((p, i) =>
+		p.licenseText === ''
+			? []
+			: [{ key: i, label: t('sources.themes.licenseText', { name: p.name, license: p.license }), text: p.licenseText }]
+	);
+	return { show: error !== '' || answer.packs.length > 0, table, themeNames, builtin, licenseTexts };
 }
 
 /**
