@@ -152,7 +152,7 @@
 
 		--st-edge: var(--hair);
 		--st-unknown-bg: color-mix(in srgb, currentColor 4%, transparent);
-		--st-unknown-bar: var(--mastery-0);
+		--st-unknown-edge: var(--muted);
 		--st-fresh-bar: var(--mastery-1);
 		--st-learning-bar: var(--mastery-2);
 		--st-mature-bar: var(--mastery-3);
@@ -199,8 +199,11 @@
 		border: 1px solid var(--st-edge);
 	}
 
+	/* Not studied: no fill, a dashed outline (as the map's own legend). */
 	.st-unknown {
-		background: var(--st-unknown-bar);
+		background: transparent;
+		border-style: dashed;
+		border-color: var(--st-unknown-edge);
 	}
 
 	.st-fresh {

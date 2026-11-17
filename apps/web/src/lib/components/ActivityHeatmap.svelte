@@ -267,7 +267,7 @@
 	}
 
 	.scope label.disabled {
-		color: color-mix(in srgb, currentColor 70%, transparent);
+		color: var(--readable-muted);
 		cursor: default;
 	}
 
@@ -307,7 +307,7 @@
 
 	.chip:focus-visible,
 	.scope input:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 

@@ -56,4 +56,21 @@ describe('opacityFindings', () => {
 			{ line: 2, text: '.x' }
 		]);
 	});
+
+	it('text faded through a transparent colour mix is a finding too', () => {
+		expect(
+			texts(
+				'.meta { color: color-mix(in srgb, currentColor 70%, transparent); }\n' +
+					'.x { color: color-mix(in srgb, var(--text) 50%, transparent 50%) }\n' +
+					'.ok { color: color-mix(in srgb, var(--accent) 40%, var(--text)); }\n' +
+					'.border { border-color: color-mix(in srgb, currentColor 35%, transparent); }\n' +
+					'.bg { background: color-mix(in srgb, var(--accent) 14%, transparent); }\n' +
+					'.full { color: color-mix(in srgb, currentColor 100%, transparent); }'
+			)
+		).toEqual(['.meta', '.x']);
+	});
+
+	it('a disabled state may fade its colour (WCAG exempts it)', () => {
+		expect(texts('button:disabled { color: color-mix(in srgb, currentColor 60%, transparent); }')).toEqual([]);
+	});
 });

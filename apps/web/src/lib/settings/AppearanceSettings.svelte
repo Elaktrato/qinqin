@@ -425,12 +425,12 @@
 			0 0 0 4px var(--text);
 	}
 	.accent:has(input:focus-visible) {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 4px;
 	}
 	.segmented label:has(input:focus-visible),
 	.chip:has(input:focus-visible) {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 	@media (forced-colors: active) {

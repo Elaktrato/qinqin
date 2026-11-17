@@ -14,7 +14,8 @@
 	//   placement  where the tooltip opens (Tooltip)
 	//   tooltipSuppressed  hides the tooltip for now (its menu is open)
 	//   class      extra classes (kept with the component's own)
-	//   …rest      passed to the <button>/<a> (aria-haspopup, aria-expanded, …)
+	//   …rest      passed to the <button>/<a> (aria-haspopup, aria-expanded, …);
+	//              the component's own name and pressed state win over it
 	import type { HTMLAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
 	import Tooltip from './Tooltip.svelte';
@@ -50,21 +51,27 @@
 		class: className = '',
 		...rest
 	}: Props = $props();
+
+	// An unnamed icon-only control is an accessibility bug: fail loudly in
+	// development and tests (a blank translation, a forgotten prop).
+	$effect.pre(() => {
+		if (import.meta.env.DEV && !label?.trim()) throw new Error('IconButton: `label` must not be empty');
+	});
 </script>
 
 {#snippet control()}
 	{#if href}
-		<a bind:this={element} class="icon-button {className}" {href} aria-label={label} {onclick} {...rest}><Icon name={icon} {size} /></a>
+		<a {...rest} bind:this={element} class="icon-button {className}" {href} aria-label={label} {onclick}><Icon name={icon} {size} /></a>
 	{:else}
 		<button
+			{...rest}
 			bind:this={element}
 			type="button"
 			class="icon-button {className}"
 			aria-label={label}
-			aria-pressed={pressed === undefined ? undefined : pressed}
+			aria-pressed={pressed === undefined ? rest['aria-pressed'] : pressed}
 			{disabled}
-			{onclick}
-			{...rest}><Icon name={icon} {size} /></button
+			{onclick}><Icon name={icon} {size} /></button
 		>
 	{/if}
 {/snippet}

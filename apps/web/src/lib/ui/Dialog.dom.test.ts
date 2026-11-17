@@ -77,6 +77,39 @@ describe('Dialog', () => {
 		expect(onclose).not.toHaveBeenCalled();
 	});
 
+	it('a native close (a second browser Escape while busy) syncs open and still calls onclose', async () => {
+		const { dialog, onclose } = await open({ dismissible: false });
+		dialog.dispatchEvent(new Event('close'));
+		await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+		expect(screen.getByTestId('state').textContent).toBe('closed');
+		expect(onclose).toHaveBeenCalledTimes(1);
+	});
+
+	it('a close that follows our own closing does not call onclose again', async () => {
+		const { dialog, onclose } = await open();
+		await fireEvent.keyDown(dialog, { key: 'Escape' });
+		dialog.dispatchEvent(new Event('close'));
+		expect(onclose).toHaveBeenCalledTimes(1);
+	});
+
+	it('without showModal (the fallback) the page around it is inert while open, and only then', async () => {
+		const { opener } = await open();
+		expect(opener.closest('[inert]')).not.toBeNull();
+		const dialog = screen.getByRole('dialog');
+		expect(dialog.closest('[inert]')).toBeNull();
+		await fireEvent.keyDown(dialog, { key: 'Escape' });
+		expect(document.querySelector('[inert]')).toBeNull();
+	});
+
+	it('the fallback leaves alone what was inert before', async () => {
+		const outside = document.body.appendChild(document.createElement('div'));
+		outside.setAttribute('inert', '');
+		const { dialog } = await open();
+		await fireEvent.keyDown(dialog, { key: 'Escape' });
+		expect(outside.hasAttribute('inert')).toBe(true);
+		outside.remove();
+	});
+
 	it('describedBy names content inside the dialog as its description instead', () => {
 		render(DialogHarness, { startOpen: true, describedBy: 'harness-what' });
 		expect(screen.getByRole('dialog', { description: 'Three decks go.' })).toBeTruthy();

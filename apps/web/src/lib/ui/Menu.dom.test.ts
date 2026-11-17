@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { describe, expect, it, vi } from 'vitest';
 import MenuHarness from './testing/MenuHarness.svelte';
+import MenuInDialogHarness from './testing/MenuInDialogHarness.svelte';
 import source from './Menu.svelte?raw';
 
 async function openMenu() {
@@ -85,6 +86,17 @@ describe('Menu', () => {
 		const before = screen.getByRole('button', { name: 'Before' });
 		await fireEvent.pointerDown(before);
 		expect(screen.queryByRole('menu')).toBeNull();
+	});
+
+	it('Escape in the menu stops there: the Dialog around it does not close on the same key', async () => {
+		const onclose = vi.fn();
+		render(MenuInDialogHarness, { onclose });
+		const { trigger, menu } = await openMenu();
+		await fireEvent.keyDown(menu, { key: 'Escape' });
+		expect(screen.queryByRole('menu')).toBeNull();
+		expect(screen.getByRole('dialog', { name: 'Edit deck' })).toBeTruthy();
+		expect(onclose).not.toHaveBeenCalled();
+		expect(document.activeElement).toBe(trigger);
 	});
 
 	it('a text trigger is named by its text; the menu has its own name', async () => {
