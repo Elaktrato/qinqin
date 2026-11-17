@@ -26,6 +26,9 @@ Fixtures:
   `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
   Decoded by `apps/web/src/lib/study/reviewParse.test.ts`, `study/scheduler.test.ts` (`isValidReview`,
   `sortedReviews`) and `study/exp.test.ts` (XP counts exactly the valid ones).
+- `activity.json` — heatmap cells of the built-in activity rules over a case's events (zone history, window
+  `from`..`to`). Decoded by `server/internal/stats/contract_activity_test.go` (every cell) and
+  `apps/web/src/lib/stats/readingTime.test.ts` (the `read` cells through `readingPoints`/`readSeconds`).
 
 ## Envelope
 
@@ -162,4 +165,25 @@ event as a review in two steps, both pinned by `review-parse.json`:
 An event counts as a review exactly when it parses and is valid. Replay order is `(instant of ts, id)`: the
 instant, not the text (`10:00:00+01:00` and `09:00:00Z` tie and the id decides); see Order above for why the
 stored whole-second copy is the one to order.
+
+## Activity scoring (`activity.json`)
+
+The heatmap, goals and the weekly summary read cells `{day, workspace, type, points, raw}` from
+`GET /api/stats/activity` (server: `server/internal/stats/activity.go`, rules from the manifests' `activity`
+members; `rules` in the fixture lists the built-in ones). A client that scores offline must give the same cells.
+
+- Events are bucketed by the **learner day** of their stored `ts` (zone history, `study-day/`) and their
+  workspace; one cell per day, workspace and type with points > 0, sorted by day, workspace, type. Types without
+  a rule (`session`, `view`, `lookup`, unknown types) make no cells.
+- **count** (`review`): points = raw = the number of events; the payload is not read.
+- **measure** (`read`: field `seconds`, min 30, max 7200, `pointsPer` 300): the field must be a JSON number
+  (integer or real), else the event is ignored; values below `min` are ignored; each event counts
+  `r = min(value, max)`; points = the sum over events of `ceil(r / pointsPer)` (per event, not from the day's
+  total), raw = the sum of `r`. A `read` without `bookId` counts.
+- **distinct** (`journal`: `distinctBy` `entryId`): points = raw = the number of distinct JSON **string** values
+  of the field that day; a number never counts.
+- `raw` is what goals and the weekly summary read (seconds for `read`).
+
+The web's per-event clamp (`stats/readingTime.ts` `readingPoints`, `readSeconds`) equals the server's for every
+`read` case.
 

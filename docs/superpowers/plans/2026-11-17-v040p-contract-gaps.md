@@ -427,3 +427,12 @@ of each other in content but share the web gates; one implementer at a time. Tas
   takes a number from code, not from a stored row.
 - Observation (pinned, not a bug): the XP daily bonus counts vacation days (the streak does not); a counted card
   of stability 0 leaves its glyph at score 0, stage `unknown`, with `reviewedCards` > 0.
+- Task 8 (activity): 13 cases; cells produced by a scratch Go test (deleted) that ran `stats.Activity` with the
+  built-in rules on the case events. Go `TestContractActivity` with the fixture absent → FAIL (no such file);
+  present → PASS; one `points` 3 → 1 → FAIL in Go and web. Web `readingTime.test.ts` read cases: absent → FAIL,
+  present → PASS (27). The web per-event clamp equals the server's for every `read` case: no disagreement.
+  Gates: `go.sh 'gofmt -l . ; go vet ./internal/stats && go test -count=1 -p 2 -timeout 30m ./internal/stats'` →
+  gofmt empty, exit 0; `npm run check` 0; `npm test` 0 (398 files, 6643 passed).
+- Adaptation: the Go test reuses `activity_days_test.go`'s `dayFixtureCase` (history, from, to, cells) and adds
+  an optional per-event `workspace` (default 1); the fixture's `rules` member is compared with the registered
+  built-in rules.

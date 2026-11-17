@@ -1,0 +1,626 @@
+{
+ "version": 1,
+ "rule": "events/activity",
+ "note": "cells of GET /api/stats/activity for the built-in activity rules (rules lists them as the manifests declare them); events default to workspace 1",
+ "rules": [
+  {
+   "type": "review",
+   "rule": {
+    "label": "Flashcard reviews",
+    "describe": {
+     "one": "{n} flashcard review",
+     "other": "{n} flashcard reviews"
+    }
+   }
+  },
+  {
+   "type": "read",
+   "rule": {
+    "label": "Reading",
+    "describe": {
+     "one": "{n} minute of reading",
+     "other": "{n} minutes of reading"
+    },
+    "measure": {
+     "field": "seconds",
+     "unit": "seconds",
+     "min": 30,
+     "max": 7200
+    },
+    "pointsPer": 300
+   }
+  },
+  {
+   "type": "journal",
+   "rule": {
+    "label": "Journal entries",
+    "describe": {
+     "one": "{n} journal entry",
+     "other": "{n} journal entries"
+    },
+    "distinctBy": "entryId"
+   }
+  }
+ ],
+ "cases": [
+  {
+   "name": "read: under 30 s scores nothing",
+   "note": "a measure below min (30 s) is dropped",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 29
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "read"
+    }
+   ],
+   "cells": []
+  },
+  {
+   "name": "read: 30 s is one point",
+   "note": "points = ceil(seconds / 300) per event; raw is the seconds",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 30
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "read"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "read",
+     "points": 1,
+     "raw": 30
+    }
+   ]
+  },
+  {
+   "name": "read: 300 s is one point, 301 s two",
+   "note": "ceil, not round: a started 5 minutes counts",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 300
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 301
+     },
+     "ts": "2026-11-02T10:00:00Z",
+     "type": "read"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "read",
+     "points": 1,
+     "raw": 300
+    },
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "read",
+     "points": 2,
+     "raw": 301
+    }
+   ]
+  },
+  {
+   "name": "read: capped at 7200 s (24 points) per event",
+   "note": "seconds above max count as max (raw too)",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 7200
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 7201
+     },
+     "ts": "2026-11-02T10:00:00Z",
+     "type": "read"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "read",
+     "points": 24,
+     "raw": 7200
+    },
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "read",
+     "points": 24,
+     "raw": 7200
+    }
+   ]
+  },
+  {
+   "name": "read: points are summed per event, not computed from the day's total",
+   "note": "two events of 200 s are 2 points (raw 400); one event of 400 s would also be 2, three of 100 s are 3",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 200
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "bookId": 2,
+      "seconds": 200
+     },
+     "ts": "2026-11-01T11:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "seconds": 100
+     },
+     "ts": "2026-11-02T10:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "seconds": 100
+     },
+     "ts": "2026-11-02T11:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "seconds": 100
+     },
+     "ts": "2026-11-02T12:00:00Z",
+     "type": "read"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "read",
+     "points": 2,
+     "raw": 400
+    },
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "read",
+     "points": 3,
+     "raw": 300
+    }
+   ]
+  },
+  {
+   "name": "read: a real number counts, a string or a missing field does not",
+   "note": "the field must be a JSON number (integer or real); a read without bookId still counts",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-04",
+   "events": [
+    {
+     "payload": {
+      "seconds": 30.5
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": "600"
+     },
+     "ts": "2026-11-02T10:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "bookId": 1
+     },
+     "ts": "2026-11-03T10:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": null,
+     "ts": "2026-11-03T11:00:00Z",
+     "type": "read"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "read",
+     "points": 1,
+     "raw": 30.5
+    }
+   ]
+  },
+  {
+   "name": "journal: one entry edited twice in a day counts once",
+   "note": "distinctBy entryId: distinct string values per learner day and workspace",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "entryId": "01KA00000000000000000000J1"
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "journal"
+    },
+    {
+     "payload": {
+      "entryId": "01KA00000000000000000000J1"
+     },
+     "ts": "2026-11-01T20:00:00Z",
+     "type": "journal"
+    },
+    {
+     "payload": {
+      "entryId": "01KA00000000000000000000J2"
+     },
+     "ts": "2026-11-01T21:00:00Z",
+     "type": "journal"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "journal",
+     "points": 2,
+     "raw": 2
+    }
+   ]
+  },
+  {
+   "name": "journal: the same entry on two days counts on each",
+   "note": "distinct values are per day",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "entryId": "01KA00000000000000000000J1"
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "journal"
+    },
+    {
+     "payload": {
+      "entryId": "01KA00000000000000000000J1"
+     },
+     "ts": "2026-11-02T10:00:00Z",
+     "type": "journal"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "journal",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "journal",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "journal: a numeric entryId never counts",
+   "note": "only JSON strings count (json_type text); a day with none has no cell",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "entryId": 5
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "journal"
+    },
+    {
+     "payload": {
+      "entryId": 5
+     },
+     "ts": "2026-11-02T10:00:00Z",
+     "type": "journal"
+    },
+    {
+     "payload": {
+      "entryId": "5"
+     },
+     "ts": "2026-11-02T11:00:00Z",
+     "type": "journal"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "journal",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "review: every event counts, whatever its payload",
+   "note": "a count rule counts events; the payload is not read",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "cardId": "c1",
+      "grade": 3
+     },
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "review"
+    },
+    {
+     "payload": {
+      "cardId": "c1",
+      "grade": 9
+     },
+     "ts": "2026-11-01T10:01:00Z",
+     "type": "review"
+    },
+    {
+     "payload": null,
+     "ts": "2026-11-01T10:02:00Z",
+     "type": "review"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "review",
+     "points": 3,
+     "raw": 3
+    }
+   ]
+  },
+  {
+   "name": "session, view, lookup and unknown types score nothing",
+   "note": "only types with an activity rule make cells",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": null,
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "session"
+    },
+    {
+     "payload": {
+      "entryId": 3
+     },
+     "ts": "2026-11-01T10:01:00Z",
+     "type": "view"
+    },
+    {
+     "payload": {
+      "query": "x"
+     },
+     "ts": "2026-11-01T10:02:00Z",
+     "type": "lookup"
+    },
+    {
+     "payload": {
+      "seconds": 600
+     },
+     "ts": "2026-11-01T10:03:00Z",
+     "type": "x-test"
+    }
+   ],
+   "cells": []
+  },
+  {
+   "name": "workspaces are separate cells",
+   "note": "cells are per learner day, workspace and type, sorted by day, workspace, type",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": null,
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "review",
+     "workspace": 2
+    },
+    {
+     "payload": null,
+     "ts": "2026-11-01T10:00:00Z",
+     "type": "review",
+     "workspace": 1
+    },
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 60
+     },
+     "ts": "2026-11-01T11:00:00Z",
+     "type": "read",
+     "workspace": 1
+    },
+    {
+     "payload": {
+      "entryId": "J"
+     },
+     "ts": "2026-11-01T11:00:00Z",
+     "type": "journal",
+     "workspace": 2
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "read",
+     "points": 1,
+     "raw": 60
+    },
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-01",
+     "workspace": 2,
+     "type": "journal",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-01",
+     "workspace": 2,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "the learner day in a non-UTC zone",
+   "note": "Asia/Tokyo: 14:59:59Z is the 1st, 15:00:00Z the 2nd; read, journal and review alike",
+   "history": [
+    {
+     "from": null,
+     "zone": "Asia/Tokyo"
+    }
+   ],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 400
+     },
+     "ts": "2026-11-01T14:59:59Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "bookId": 1,
+      "seconds": 400
+     },
+     "ts": "2026-11-01T15:00:00Z",
+     "type": "read"
+    },
+    {
+     "payload": {
+      "entryId": "J"
+     },
+     "ts": "2026-11-01T14:00:00Z",
+     "type": "journal"
+    },
+    {
+     "payload": {
+      "entryId": "J"
+     },
+     "ts": "2026-11-01T16:00:00Z",
+     "type": "journal"
+    },
+    {
+     "payload": null,
+     "ts": "2026-11-01T15:30:00Z",
+     "type": "review"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "journal",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "read",
+     "points": 2,
+     "raw": 400
+    },
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "journal",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "read",
+     "points": 2,
+     "raw": 400
+    },
+    {
+     "day": "2026-11-02",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  }
+ ]
+}
