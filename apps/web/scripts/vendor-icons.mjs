@@ -4,17 +4,39 @@
 // icons MIT). Never run by the build — run it by hand when an icon is added:
 //
 //   mkdir /tmp/lucide && cd /tmp/lucide
-//   curl -sSO https://registry.npmjs.org/lucide-static/-/lucide-static-1.66.0.tgz
+//   curl -sSO https://registry.npmjs.org/lucide-static/-/lucide-static-1.66.0.tgz   (PINNED_VERSION)
 //   tar xzf lucide-static-1.66.0.tgz
 //   node apps/web/scripts/vendor-icons.mjs /tmp/lucide/package
 //
-// Then copy the package's LICENSE byte for byte to static/LUCIDE-LICENSE.TXT
-// when the version changes (lib/ui/icons/lucide.test.ts pins its hash), and
+// The script refuses a package that is not PINNED_VERSION or whose LICENSE is
+// not byte for byte static/LUCIDE-LICENSE.TXT. To move to a new release: change
+// PINNED_VERSION, copy the package's LICENSE byte for byte to
+// static/LUCIDE-LICENSE.TXT (lib/ui/icons/lucide.test.ts pins its hash), and
 // keep docs/sources.md "Icons" in step. Only the data travels: no npm
 // dependency, and the stroke width is ours (Icon.svelte draws at 1.5).
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/** The lucide-static release lucide.ts is made from (and whose LICENSE we ship). */
+export const PINNED_VERSION = '1.66.0';
+
+/**
+ * checkPackage: why the lucide-static package in `dir` may not be used —
+ * not the pinned release, or a LICENSE that differs from our copy at
+ * `licenceCopy` by even one byte. Empty when it may.
+ */
+export function checkPackage(dir, licenceCopy) {
+	const problems = [];
+	const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+	if (pkg.version !== PINNED_VERSION) {
+		problems.push(`lucide-static ${pkg.version} is not the pinned ${PINNED_VERSION}: change PINNED_VERSION on purpose`);
+	}
+	if (!readFileSync(join(dir, 'LICENSE')).equals(readFileSync(licenceCopy))) {
+		problems.push(`the package LICENSE differs from ${licenceCopy}: copy it byte for byte and update its hash in lucide.test.ts`);
+	}
+	return problems;
+}
 
 /** Our icon name → the Lucide icon drawn for it. Sorted by our name. */
 export const WANTED = {
@@ -70,6 +92,12 @@ function main() {
 		console.error('usage: node scripts/vendor-icons.mjs <lucide-static package dir>');
 		process.exit(2);
 	}
+	const web = join(dirname(fileURLToPath(import.meta.url)), '..');
+	const problems = checkPackage(dir, join(web, 'static', 'LUCIDE-LICENSE.TXT'));
+	if (problems.length > 0) {
+		for (const p of problems) console.error(p);
+		process.exit(1);
+	}
 	const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
 	const nodes = JSON.parse(readFileSync(join(dir, 'icon-nodes.json'), 'utf8'));
 	const lines = [
@@ -92,7 +120,7 @@ function main() {
 		lines.push(`\t${JSON.stringify(ours)}: ${JSON.stringify(icon)},`);
 	}
 	lines.push('};', '');
-	const out = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'lib', 'ui', 'icons', 'lucide.ts');
+	const out = join(web, 'src', 'lib', 'ui', 'icons', 'lucide.ts');
 	writeFileSync(out, lines.join('\n'));
 	console.log(`wrote ${Object.keys(WANTED).length} icons to ${out}`);
 }

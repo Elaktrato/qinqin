@@ -1,10 +1,11 @@
 // The vendored icon data (scripts/vendor-icons.mjs) and its licence text.
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ICONS, LUCIDE_NAMES, LUCIDE_VERSION } from './lucide';
-import { WANTED } from '../../../../scripts/vendor-icons.mjs';
+import { PINNED_VERSION, WANTED, checkPackage } from '../../../../scripts/vendor-icons.mjs';
 
 const web = join(__dirname, '..', '..', '..', '..');
 const GEOMETRY = new Set(['d', 'cx', 'cy', 'r', 'x', 'y', 'width', 'height', 'rx', 'ry', 'x1', 'x2', 'y1', 'y2', 'points']);
@@ -43,5 +44,34 @@ describe('vendored Lucide icons', () => {
 		);
 		expect(text.toString()).toContain('Copyright (c) 2026 Lucide Icons and Contributors');
 		expect(text.toString()).toContain('Copyright (c) 2013-present Cole Bemis');
+	});
+
+	describe('the script refuses a package it was not pinned to', () => {
+		const licence = join(web, 'static', 'LUCIDE-LICENSE.TXT');
+		function pkg(version: string, licenceText: Buffer | string): string {
+			const dir = mkdtempSync(join(tmpdir(), 'lucide-'));
+			writeFileSync(join(dir, 'package.json'), JSON.stringify({ version, license: 'ISC' }));
+			writeFileSync(join(dir, 'LICENSE'), licenceText);
+			return dir;
+		}
+
+		it('pins the version lucide.ts is made from', () => {
+			expect(PINNED_VERSION).toBe(LUCIDE_VERSION);
+		});
+
+		it('accepts the pinned release with a byte-identical LICENSE', () => {
+			const dir = pkg(PINNED_VERSION, readFileSync(licence));
+			expect(checkPackage(dir, licence)).toEqual([]);
+			rmSync(dir, { recursive: true });
+		});
+
+		it('refuses another version, and a LICENSE that differs by one byte', () => {
+			const dir = pkg('1.67.0', readFileSync(licence).toString() + ' ');
+			const problems = checkPackage(dir, licence);
+			expect(problems).toHaveLength(2);
+			expect(problems[0]).toMatch(/1\.67\.0.*pinned 1\.66\.0/);
+			expect(problems[1]).toMatch(/LICENSE/);
+			rmSync(dir, { recursive: true });
+		});
 	});
 });
