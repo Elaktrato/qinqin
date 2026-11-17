@@ -1,9 +1,11 @@
 import { readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { APP_NAME } from '$lib/app';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
-import { PHONE_MAX_WIDTH, PHONE_MEDIA_QUERY, FRAME_PHONE_BREAKPOINT } from './breakpoint';
+import { PHONE_MAX_WIDTH, PHONE_MEDIA_QUERY, FRAME_PHONE_BREAKPOINT, onLeavePhoneFrame } from './breakpoint';
+import phoneBar from './PhoneBar.svelte?raw';
+import breakpointSource from './breakpoint.ts?raw';
 import { phoneTitle } from './pageFrame.svelte';
 import { currentSection, frameSections } from './sections';
 import layout from '../../routes/+layout.svelte?raw';
@@ -79,5 +81,33 @@ describe('the phone breakpoint', () => {
 
 	it('is the width the layout switches the bars at', () => {
 		expect(layout).toContain(`@media ${PHONE_MEDIA_QUERY}`);
+	});
+
+	it('onLeavePhoneFrame runs only when the query stops matching, and unsubscribes', () => {
+		let listener: ((e: { matches: boolean }) => void) | null = null;
+		const remove = vi.fn();
+		vi.stubGlobal(
+			'matchMedia',
+			vi.fn(() => ({ addEventListener: (_: string, fn: typeof listener) => (listener = fn), removeEventListener: remove }))
+		);
+		try {
+			const run = vi.fn();
+			const stop = onLeavePhoneFrame(run);
+			listener!({ matches: true });
+			expect(run).not.toHaveBeenCalled();
+			listener!({ matches: false });
+			expect(run).toHaveBeenCalledTimes(1);
+			stop();
+			expect(remove).toHaveBeenCalledWith('change', listener);
+			vi.stubGlobal('matchMedia', undefined);
+			expect(() => onLeavePhoneFrame(run)()).not.toThrow();
+		} finally {
+			vi.unstubAllGlobals();
+		}
+	});
+
+	it('the users the comment names really use it', () => {
+		expect(breakpointSource).toContain('PhoneBar closes its drawer through');
+		expect(phoneBar).toMatch(/import \{ onLeavePhoneFrame \} from '\.\/breakpoint'/);
 	});
 });
