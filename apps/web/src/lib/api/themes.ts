@@ -51,7 +51,7 @@ function parseTheme(raw: unknown): ListedTheme | null {
 	if (!isObject(accents)) return null;
 	const entries = Object.entries(accents);
 	if (entries.length === 0 || !entries.every(([k, v]) => isAccentKey(k) && isColor(v))) return null;
-	if (typeof defaultAccent !== 'string' || !(defaultAccent in accents)) return null;
+	if (typeof defaultAccent !== 'string' || !Object.hasOwn(accents, defaultAccent)) return null;
 	const pickedColors = Object.fromEntries(COLOR_KEYS.map((k) => [k, colors[k] as string])) as Theme['colors'];
 	return {
 		id,

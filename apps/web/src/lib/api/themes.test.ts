@@ -48,6 +48,8 @@ describe('parseThemesAnswer', () => {
 			{ ...mocha, id: 'x5', scheme: 'sepia' },
 			{ ...mocha, id: 'x6', name: '' },
 			{ ...mocha, id: 'x7', accents: { mauve: '#CBA6F7' } },
+			// An inherited property name is not an accent of the theme.
+			{ ...mocha, id: 'x8', defaultAccent: 'constructor' },
 			null,
 			'nord'
 		];
