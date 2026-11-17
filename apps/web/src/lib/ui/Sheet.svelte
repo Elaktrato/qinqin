@@ -11,7 +11,7 @@
 	// API: <Sheet bind:open label onclose? onnext? onprev? initialFocus?>content</Sheet>
 	//   open          bindable; the sheet exists only while open
 	//   label         the accessible name (t(…)), e.g. the looked-up word
-	//   onclose       called when the person dismisses it
+	//   onclose       called when the person dismisses it (or the browser closes it natively)
 	//   onnext/onprev paging (swipe toward the start = next, mirrored in right-to-left text)
 	//   initialFocus  a selector inside to focus first (else the first focusable)
 	import type { Snippet } from 'svelte';
@@ -127,6 +127,7 @@
 		style:translate={dragY ? `0 ${dragY}px` : undefined}
 		aria-modal="true"
 		aria-label={label}
+		onclose={dismiss}
 		oncancel={(e) => {
 			e.preventDefault();
 			dismiss();

@@ -26,6 +26,13 @@ describe('Sheet', () => {
 		await waitFor(() => expect(document.activeElement).toBe(opener));
 	});
 
+	it('a native close syncs open and calls onclose once', async () => {
+		const { sheet, onclose } = await open();
+		sheet.dispatchEvent(new Event('close'));
+		await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+		expect(onclose).toHaveBeenCalledTimes(1);
+	});
+
 	it('Escape closes it once; Tab wraps inside', async () => {
 		const { sheet, onclose } = await open();
 		const close = screen.getByRole('button', { name: 'Close' });

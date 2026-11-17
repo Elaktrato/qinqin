@@ -10,7 +10,10 @@
 	//   title         the heading and accessible name (t(…))
 	//   description   a short line under the title; the accessible description
 	//   describedBy   the id of content inside the dialog that describes it (a list, say), instead
-	//   onclose       called when the person dismisses it (Escape, cancel)
+	//   onclose       called when the person dismisses it (Escape, cancel), and
+	//                 whenever the browser closes it on its own (a native `close`
+	//                 while still open: Chrome closes a modal on a second Escape
+	//                 even when cancel is prevented), dismissible or not
 	//   initialFocus  a selector inside the dialog to focus first (else the first focusable)
 	//   dismissible   false while an action runs: Escape and cancel do nothing (default true)
 	//   actions       the buttons row (Button components), end-aligned
@@ -42,6 +45,15 @@
 	const uid = $props.id();
 	let dialog = $state<HTMLDialogElement>();
 
+	// The browser closed the <dialog> itself: it is no longer modal or
+	// visible, so `open` must follow and the caller must hear of it (else an
+	// error renders into an invisible dialog and the opener stays dead).
+	function closedNatively(): void {
+		if (!open) return;
+		open = false;
+		onclose?.();
+	}
+
 	function dismiss(): void {
 		if (!open || !dismissible) return;
 		open = false;
@@ -57,6 +69,7 @@
 		aria-modal="true"
 		aria-labelledby="{uid}-title"
 		aria-describedby={describedBy ?? (description ? `${uid}-text` : undefined)}
+		onclose={closedNatively}
 		oncancel={(e) => {
 			e.preventDefault();
 			dismiss();
