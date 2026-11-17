@@ -1,0 +1,309 @@
+{
+ "version": 1,
+ "rule": "settings/workspace-settings",
+ "maxSettingsBytes": 65536,
+ "note": "\"$string:n\" is a JSON string of n x characters",
+ "keys": [
+  {
+   "key": "reader",
+   "shape": "object",
+   "default": "see reader/display-settings.json",
+   "owner": "apps/web/src/lib/features/reader/displaySettings.ts"
+  },
+  {
+   "key": "hiddenDictionaries",
+   "shape": "array of positive integer dictionary ids",
+   "default": [],
+   "owner": "apps/web/src/lib/dictionaryVisibility.ts"
+  },
+  {
+   "key": "audioAutoplay",
+   "shape": "boolean",
+   "default": false,
+   "owner": "apps/web/src/lib/audio/settings.ts"
+  },
+  {
+   "key": "audioDeviceVoice",
+   "shape": "boolean",
+   "default": true,
+   "owner": "apps/web/src/lib/audio/settings.ts"
+  }
+ ],
+ "parse": [
+  {
+   "name": "no keys: the defaults",
+   "note": "autoplay off, device voice on, no hidden dictionaries",
+   "settings": {},
+   "expect": {
+    "audio": {
+     "autoplay": false,
+     "deviceVoice": true
+    },
+    "hiddenDictionaries": []
+   }
+  },
+  {
+   "name": "null settings",
+   "note": "a workspace without a settings object reads as the defaults",
+   "settings": null,
+   "expect": {
+    "audio": {
+     "autoplay": false,
+     "deviceVoice": true
+    },
+    "hiddenDictionaries": []
+   }
+  },
+  {
+   "name": "every key set",
+   "note": "booleans as stored; hiddenDictionaries as a set of ids",
+   "settings": {
+    "audioAutoplay": true,
+    "audioDeviceVoice": false,
+    "hiddenDictionaries": [
+     3,
+     7
+    ]
+   },
+   "expect": {
+    "audio": {
+     "autoplay": true,
+     "deviceVoice": false
+    },
+    "hiddenDictionaries": [
+     3,
+     7
+    ]
+   }
+  },
+  {
+   "name": "a non-boolean falls back to the default",
+   "note": "strings and numbers are not booleans",
+   "settings": {
+    "audioAutoplay": "true",
+    "audioDeviceVoice": 0
+   },
+   "expect": {
+    "audio": {
+     "autoplay": false,
+     "deviceVoice": true
+    },
+    "hiddenDictionaries": []
+   }
+  },
+  {
+   "name": "malformed dictionary ids are ignored",
+   "note": "only positive integers count; duplicates collapse",
+   "settings": {
+    "hiddenDictionaries": [
+     3,
+     "4",
+     2.5,
+     -1,
+     0,
+     3,
+     null,
+     9
+    ]
+   },
+   "expect": {
+    "audio": {
+     "autoplay": false,
+     "deviceVoice": true
+    },
+    "hiddenDictionaries": [
+     3,
+     9
+    ]
+   }
+  },
+  {
+   "name": "hiddenDictionaries not a list",
+   "note": "anything but an array hides nothing",
+   "settings": {
+    "hiddenDictionaries": {
+     "3": true
+    }
+   },
+   "expect": {
+    "audio": {
+     "autoplay": false,
+     "deviceVoice": true
+    },
+    "hiddenDictionaries": []
+   }
+  },
+  {
+   "name": "unknown keys are ignored by the readers",
+   "note": "other keys (reader, a newer client's) do not change these values",
+   "settings": {
+    "reader": {
+     "furigana": "all"
+    },
+    "futureKey": 1,
+    "audioAutoplay": true
+   },
+   "expect": {
+    "audio": {
+     "autoplay": true,
+     "deviceVoice": true
+    },
+    "hiddenDictionaries": []
+   }
+  }
+ ],
+ "merge": [
+  {
+   "name": "update and add keys",
+   "note": "RFC 7396: existing keys are replaced, new keys added, others kept",
+   "stored": {
+    "audioAutoplay": false,
+    "reader": {
+     "size": 2
+    }
+   },
+   "patch": {
+    "audioAutoplay": true,
+    "hiddenDictionaries": [
+     3
+    ]
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "audioAutoplay": true,
+     "reader": {
+      "size": 2
+     },
+     "hiddenDictionaries": [
+      3
+     ]
+    }
+   }
+  },
+  {
+   "name": "null deletes a key",
+   "note": "a null member removes the key",
+   "stored": {
+    "audioAutoplay": true,
+    "audioDeviceVoice": false
+   },
+   "patch": {
+    "audioDeviceVoice": null
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "audioAutoplay": true
+    }
+   }
+  },
+  {
+   "name": "nested objects merge",
+   "note": "an object value is merged recursively; an array value replaces",
+   "stored": {
+    "reader": {
+     "size": 2,
+     "furigana": "all"
+    },
+    "hiddenDictionaries": [
+     1,
+     2
+    ]
+   },
+   "patch": {
+    "reader": {
+     "furigana": "none",
+     "font": "serif"
+    },
+    "hiddenDictionaries": [
+     5
+    ]
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "reader": {
+      "size": 2,
+      "furigana": "none",
+      "font": "serif"
+     },
+     "hiddenDictionaries": [
+      5
+     ]
+    }
+   }
+  },
+  {
+   "name": "an empty patch changes nothing",
+   "note": "{} is a valid patch",
+   "stored": {
+    "audioAutoplay": true
+   },
+   "patch": {},
+   "expect": {
+    "status": 200,
+    "settings": {
+     "audioAutoplay": true
+    }
+   }
+  },
+  {
+   "name": "settings must be an object",
+   "note": "an array (or a scalar) is 400 plain text; nothing changes",
+   "stored": {
+    "audioAutoplay": true
+   },
+   "rawPatch": "[1]",
+   "expect": {
+    "status": 400,
+    "text": "settings must be an object\n"
+   }
+  },
+  {
+   "name": "settings null and no name",
+   "note": "a null settings member counts as absent: 400 plain text",
+   "stored": {
+    "audioAutoplay": true
+   },
+   "rawPatch": "null",
+   "expect": {
+    "status": 400,
+    "text": "name or settings required\n"
+   }
+  },
+  {
+   "name": "a merged object over 64 KiB is 413 and changes nothing",
+   "note": "the limit applies to the merged object (bytes of its JSON text), not to the patch",
+   "stored": {
+    "big": "$string:60000"
+   },
+   "patch": {
+    "more": "$string:6000"
+   },
+   "expect": {
+    "status": 413,
+    "json": {
+     "error": "workspace settings too large"
+    }
+   }
+  },
+  {
+   "name": "a large value replaced by a small one",
+   "note": "the limit is measured on the merged object: deleting a large key makes room",
+   "stored": {
+    "big": "$string:60000"
+   },
+   "patch": {
+    "big": null,
+    "small": "x"
+   },
+   "expect": {
+    "status": 200,
+    "settings": {
+     "small": "x"
+    }
+   }
+  }
+ ]
+}

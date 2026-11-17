@@ -129,7 +129,8 @@ type Badge struct {
 // session tick — pushed by a client in batches and stored append-only:
 // rows are never updated or deleted. ID is the client-generated ULID,
 // so a retried push of the same batch counts as duplicates instead of
-// errors. TS is the client's event time, kept verbatim; WorkspaceID
+// errors. TS is the client's event time, stored as UTC whole seconds
+// (fraction truncated); WorkspaceID
 // scopes the event to one of the owner's language workspaces; Payload
 // carries the event-type-specific details verbatim.
 type StudyEvent struct {

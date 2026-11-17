@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import pageFixture from '../../../../../docs/contracts/sync/pull-page.json';
 import roundsFixture from '../../../../../docs/contracts/sync/pull-rounds.json';
+import envelopeFixture from '../../../../../docs/contracts/events/envelope.json';
 import { normalizeUrl } from '../pwa/sw/classify';
 import { firstPageUrl, nextPageUrl, parsePullPage, pullAll, V2_STUDY_COLLECTIONS } from './pager';
 
@@ -84,5 +85,28 @@ describe('pullAll over the fixture round (first, middle, last)', () => {
 		expect(out.scope.languages).toEqual(['ja', 'zh']);
 		const total = (k: string) => pages.reduce((s, p) => s + ((p as { collections: Record<string, unknown[]> }).collections[k]?.length ?? 0), 0);
 		for (const k of seq[0].requested) expect(out.collections[k]).toHaveLength(total(k));
+	});
+});
+
+describe('docs/contracts/events/envelope.json: pull v2 never ships lookup events', () => {
+	interface EnvelopeStep {
+		post?: { events?: { type: string }[] };
+		pull?: boolean;
+		expect: { types?: string[] };
+	}
+	const envelope = envelopeFixture as unknown as { cases: { name: string; steps: EnvelopeStep[] }[] };
+	const pull = envelope.cases.find((c) => c.steps.some((s) => s.pull));
+	const template = cases.find((c) => c.valid && c.position === 'last');
+	it('accepts exactly the event types the server ships', () => {
+		expect(pull).toBeDefined();
+		expect(template).toBeDefined();
+		const shipped = pull!.steps.find((s) => s.pull)!.expect.types!;
+		const posted = pull!.steps.flatMap((s) => s.post?.events ?? []);
+		expect(posted.length).toBeGreaterThan(shipped.length);
+		for (const ev of posted) {
+			const page = structuredClone(template!.page) as { collections: { events: Record<string, unknown>[] } };
+			page.collections.events = [{ ...page.collections.events[0], type: ev.type }];
+			expect(parsePullPage(page, template!.requested) !== null, ev.type).toBe(shipped.includes(ev.type));
+		}
 	});
 });

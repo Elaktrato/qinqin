@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { studyDay } from '../../time/studyDay';
+import { studyDay, type ZoneChange } from '../../time/studyDay';
+import payloadsFixture from '../../../../../../docs/contracts/events/payloads.json';
 import { AUTOSAVE_MS, MAX_REVIEW_CHARS, codePoints, journalEventDue } from './entryDraft';
 
 const UTC = studyDay([]);
@@ -49,4 +50,27 @@ describe('limits', () => {
 		expect(MAX_REVIEW_CHARS).toBe(5000);
 		expect(AUTOSAVE_MS).toBe(1500);
 	});
+});
+
+describe('docs/contracts/events/payloads.json: when a journal event is emitted', () => {
+	interface Step {
+		entryId: string;
+		textChanged: boolean;
+		now: string;
+		expect: boolean;
+	}
+	const fixture = payloadsFixture as unknown as {
+		cases: { kind: string; type: string; name: string; history?: ZoneChange[]; steps?: Step[] }[];
+	};
+	const cases = fixture.cases.filter((x) => x.kind === 'emit' && x.type === 'journal');
+	it('has cases', () => expect(cases.length).toBeGreaterThan(0));
+	for (const c of cases) {
+		it(c.name, () => {
+			const day = studyDay(c.history!);
+			const sent = new Map<string, string>();
+			for (const s of c.steps!) {
+				expect(journalEventDue(s.entryId, s.textChanged, new Date(s.now), sent, day.dayOf), s.now).toBe(s.expect);
+			}
+		});
+	}
 });

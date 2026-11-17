@@ -1,7 +1,9 @@
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
-import { UTC_CONTEXT, type StudyContext } from '$lib/study/studyContext';
+import { contextFor, NO_LIMIT_ROWS, UTC_CONTEXT, type LimitRows, type StudyContext } from '$lib/study/studyContext';
 import { describe, expect, it } from 'vitest';
 
+import deckSessionFixture from '../../../../../docs/contracts/cards/deck-session.json';
+import { studyDay, type ZoneChange } from '../time/studyDay';
 import { DEFAULT_W } from './fsrs/params';
 import {
 	cardedSentenceIds,
@@ -28,9 +30,11 @@ import {
 	toneVerdict
 } from './cardFlow';
 import { parsePinyin } from './tones';
-import type { FlowItem } from './cardFlow';
+import type { DeckSessionOptions, DeckSessionPlan, EligibilityContext, EntryLike, FlowItem } from './cardFlow';
+import type { LimitPair } from './limits';
+import type { Run } from './vacation';
 import type { LevelQueueItem } from './levelQueue';
-import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
+import type { OptInKind, ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 function card(
 	id: string,
@@ -873,4 +877,125 @@ describe('deckSessionPlan with a new-card key (#75)', () => {
 		const ranked = deckSessionPlan({ ...options, newKey: (c: StudyCard) => ({ 3: 1, 2: 2 })[c.entryId] ?? null });
 		expect(ranked.queue.map((i) => i.cardId)).toEqual(['v3', 'v2']);
 	});
+});
+
+describe('docs/contracts/cards/deck-session.json', () => {
+	interface DeckCase {
+		name: string;
+		note: string;
+		history: ZoneChange[];
+		now: string;
+		language: string;
+		deckIds: string[];
+		kinds: StudyCardKind[];
+		newLimit: number;
+		reviewLimit: number;
+		weights: 'default';
+		cards: StudyCard[];
+		reviews: { cardId: string; ts: string; grade: ReviewGrade }[];
+		offline?: boolean;
+		skip?: string[];
+		vacation?: Run[];
+		limits?: { workspace: Partial<LimitPair> | null; decks: Record<string, Partial<LimitPair>> };
+		deckSettings?: Record<string, OptInKind[]>;
+		newRank?: Record<string, number>;
+	}
+
+	/** The deckSessionPlan options of a fixture case (reviews get ids in list order). */
+	function deckOptions(c: DeckCase): DeckSessionOptions {
+		const now = new Date(c.now);
+		const limits: LimitRows = c.limits ? { ...c.limits, existingDecks: null } : NO_LIMIT_ROWS;
+		const ctx = contextFor(studyDay(c.history), c.vacation ?? [], now.getTime(), c.history, limits);
+		const kindOf = new Map(c.cards.map((card) => [card.id, card.kind]));
+		const reviews: ReviewEvent[] = c.reviews.map((r, i) => ({
+			id: `01KA${String(i + 1).padStart(22, '0')}`,
+			workspaceId: 7,
+			device: 'web',
+			ts: r.ts,
+			type: 'review',
+			payload: { cardId: r.cardId, mode: kindOf.get(r.cardId) ?? 'vocab', grade: r.grade }
+		}));
+		const deckSettings =
+			c.deckSettings === undefined
+				? undefined
+				: Object.fromEntries(Object.entries(c.deckSettings).map(([deckId, cardTypes]) => [deckId, { deckId, cardTypes, extra: {} }]));
+		const rank = c.newRank;
+		return {
+			cards: c.cards,
+			reviews,
+			deckIds: c.deckIds,
+			kinds: c.kinds,
+			newLimit: c.newLimit,
+			reviewLimit: c.reviewLimit,
+			now,
+			language: c.language,
+			w: DEFAULT_W,
+			ctx,
+			...(c.skip ? { skip: new Set(c.skip) } : {}),
+			...(deckSettings ? { deckSettings } : {}),
+			...(c.offline ? { offline: true } : {}),
+			...(rank ? { newKey: (card: StudyCard) => rank[String(card.entryId)] ?? null } : {})
+		};
+	}
+
+	const planIds = (p: DeckSessionPlan) => ({
+		queue: p.queue.map((i) => i.cardId),
+		reserve: p.reserve.map((i) => i.cardId),
+		backfillLeft: p.backfillLeft
+	});
+
+	const fixture = deckSessionFixture as unknown as {
+		rule: string;
+		plans: (DeckCase & { expect: ReturnType<typeof planIds> })[];
+		steps: (DeckCase & {
+			expect: ReturnType<typeof planIds>;
+			steps: (
+				| { op: 'drop'; cardId: string; expect?: ReturnType<typeof planIds> }
+				| {
+						op: 'bury';
+						index: number;
+						answered: { kind: StudyCardKind; entryId: number; cardId: string };
+						expect?: ReturnType<typeof planIds> & { buried: number };
+				  }
+			)[];
+		})[];
+		eligible: { name: string; kind: StudyCardKind; entry: EntryLike; ctx: EligibilityContext; expect: boolean }[];
+	};
+
+	it('has the case lists', () => {
+		expect(fixture.rule).toBe('cards/deck-session');
+		expect(fixture.plans.length).toBeGreaterThanOrEqual(20);
+		expect(fixture.steps.length).toBeGreaterThanOrEqual(3);
+		expect(fixture.eligible.length).toBeGreaterThanOrEqual(10);
+		// "default" is the only weight set the cases use: deckOptions passes DEFAULT_W (scheduler/fsrs.json).
+		for (const c of [...fixture.plans, ...fixture.steps]) expect(c.weights, c.name).toBe('default');
+	});
+	for (const c of fixture.plans) {
+		it(`plan: ${c.name}`, () => {
+			const options = deckOptions(c);
+			expect(planIds(deckSessionPlan(options))).toEqual(c.expect);
+			expect(backfillLimit(c.newLimit)).toBe(c.expect.backfillLeft);
+		});
+	}
+	for (const c of fixture.steps) {
+		it(`steps: ${c.name}`, () => {
+			let plan = deckSessionPlan(deckOptions(c));
+			expect(planIds(plan)).toEqual(c.expect);
+			for (const s of c.steps) {
+				if (s.op === 'drop') {
+					plan = dropItem(plan, s.cardId);
+					if (s.expect) expect(planIds(plan), s.cardId).toEqual(s.expect);
+				} else {
+					const res = buryAfterAnswer(plan, s.index, s.answered);
+					plan = res.plan;
+					expect({ ...planIds(plan), buried: res.buried }).toEqual(s.expect);
+				}
+			}
+		});
+	}
+	for (const c of fixture.eligible) {
+		it(`isEligible: ${c.name}`, () => {
+			expect(isEligible(c.kind, c.entry, c.ctx)).toBe(c.expect);
+		});
+	}
 });

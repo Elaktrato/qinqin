@@ -364,3 +364,66 @@ func TestReadingsBatch(t *testing.T) {
 		t.Errorf("written-only patch Readings = %v, want none", got)
 	}
 }
+
+// docs/contracts/overlays/overlay.json `apply` cases: a stored patch (the
+// pull v2 overlays row: null = untouched) over a shared entry view gives
+// the entry the user sees. Apply reads the row back from user_edits.
+func TestContractOverlayApply(t *testing.T) {
+	raw, err := os.ReadFile("../../../docs/contracts/overlays/overlay.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file struct {
+		Apply []struct {
+			Name   string `json:"name"`
+			Note   string `json:"note"`
+			Shared struct {
+				Written  string          `json:"written"`
+				Readings []model.Reading `json:"readings"`
+			} `json:"shared"`
+			Row *struct {
+				Written  *string          `json:"written"`
+				Readings *[]model.Reading `json:"readings"`
+			} `json:"row"`
+			Expect struct {
+				Written  string          `json:"written"`
+				Readings []model.Reading `json:"readings"`
+			} `json:"expect"`
+		} `json:"apply"`
+	}
+	if err := json.Unmarshal(raw, &file); err != nil {
+		t.Fatal(err)
+	}
+	if len(file.Apply) < 4 {
+		t.Fatalf("%d apply cases", len(file.Apply))
+	}
+	for _, c := range file.Apply {
+		t.Run(c.Name, func(t *testing.T) {
+			ctx := context.Background()
+			sqlDB := newDB(t)
+			alice := createUser(t, sqlDB, "alice")
+			const entry = 42
+			if c.Row != nil {
+				patch := model.EntryPatch{Written: c.Row.Written}
+				if c.Row.Readings != nil {
+					patch.Readings = *c.Row.Readings
+					if patch.Readings == nil {
+						patch.Readings = []model.Reading{}
+					}
+				}
+				if err := overlay.Put(ctx, sqlDB, alice.ID, entry, patch); err != nil {
+					t.Fatal(err)
+				}
+			}
+			e := model.EntryBase{ID: entry, Written: c.Shared.Written, Readings: c.Shared.Readings}
+			if err := overlay.Apply(ctx, sqlDB, alice.ID, &e); err != nil {
+				t.Fatal(err)
+			}
+			got, _ := json.Marshal(map[string]any{"written": e.Written, "readings": e.Readings})
+			want, _ := json.Marshal(map[string]any{"written": c.Expect.Written, "readings": c.Expect.Readings})
+			if string(got) != string(want) {
+				t.Errorf("view %s, want %s", got, want)
+			}
+		})
+	}
+}

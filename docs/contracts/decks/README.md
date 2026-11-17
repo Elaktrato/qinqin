@@ -45,6 +45,27 @@ that id exists. Re-adding writes nothing new; two devices planning from the same
 identical rows. Writes go through `POST /api/sync/push` (`pluginData`), 200 rows per request, deck row
 first; a response with `dataSkipped` or `dataRefused` > 0 is a failure.
 
+## Character mastery (`char-mastery.json`)
+
+The character map scores every glyph from the cards that contain it (web: `lib/study/mastery.ts`
+`masteryFromSchedules`, `stageOf`; `lib/study/charGroups.ts` `cellStates`; decoded by `mastery.test.ts` and
+`charGroups.test.ts`). Nothing is stored; no server code.
+
+- A card counts for a glyph when its kind is one of `masteryKinds` (`vocab`, `sentence`, `writing`, `tone`;
+  reverse and cloze never move the map), it has a non-empty `written` snapshot that contains the glyph, and it
+  has a schedule (it was reviewed; the schedule is the FSRS replay of `scheduler/fsrs.json`, given directly in
+  the cases as `schedules`: card id → stability, `null` = never reviewed). A glyph repeated in one snapshot
+  counts the card once. The empty string never matches.
+- Card strength = `min(1, log2(1 + max(0, stability)) / log2(1 + 365))` (non-finite stability: 0); the glyph's
+  `score` = `round(100 · mean strength)` over its counted cards, `reviewedCards` = their number. A glyph with
+  no counted card is `{score: 0, stage: "unknown", reviewedCards: 0}`; a counted card of stability 0 also
+  gives score 0 and stage `unknown`, with the card counted.
+- Stages (`stages` cases): `0` unknown, `< 25` fresh, `< 50` learning, `< 80` mature, else learned (80 is the
+  mastered threshold, as in `deck-stats.json`).
+- Cells (`cells` cases): a map cell shows the **best** form among its glyph `c` and its variant glyphs `v` —
+  the highest score, never a sum; on equal scores the larger `reviewedCards`; that form's card count is shown.
+  A form missing from the scores counts as 0.
+
 ## Entry bases
 
 `POST /api/entries/bases` `{"ids":[int...]}` (1..500 ids, body <= 16 KiB) -> the `EntryBase` rows of

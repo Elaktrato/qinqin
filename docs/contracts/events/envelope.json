@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "rule": "events/envelope",
+  "limits": {
+    "bodyBytes": 4194304
+  },
+  "placeholders": {
+    "$ws": "a workspace of the caller (alice)",
+    "$bobWs": "a workspace of another user (bob)"
+  },
+  "cases": [
+    {
+      "name": "ts with milliseconds and an offset is stored as UTC whole seconds",
+      "note": "events.Append stores ts.UTC() formatted RFC 3339 without a fraction: the offset is converted, the fraction cut off (never rounded: .999 stays in its second)",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA0000000000000000000001", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T10:00:00.789+01:00", "type": "review", "payload": {"cardId": "c1", "mode": "vocab", "grade": 3}},
+            {"id": "01KA0000000000000000000002", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T09:59:59.999Z", "type": "review", "payload": {"cardId": "c1", "mode": "vocab", "grade": 4}}
+          ]},
+          "expect": {"status": 200, "json": {"accepted": 2, "duplicates": 0}}
+        }
+      ],
+      "stored": [
+        {"id": "01KA0000000000000000000001", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T09:00:00Z", "type": "review", "payload": {"cardId": "c1", "mode": "vocab", "grade": 3}},
+        {"id": "01KA0000000000000000000002", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T09:59:59Z", "type": "review", "payload": {"cardId": "c1", "mode": "vocab", "grade": 4}}
+      ]
+    },
+    {
+      "name": "an absent payload is stored as null, an explicit null too",
+      "note": "a missing payload member becomes JSON null; device may be absent (empty string)",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA0000000000000000000003", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"},
+            {"id": "01KA0000000000000000000004", "workspaceId": "$ws", "ts": "2026-11-17T08:00:01Z", "type": "session", "payload": null}
+          ]},
+          "expect": {"status": 200, "json": {"accepted": 2, "duplicates": 0}}
+        }
+      ],
+      "stored": [
+        {"id": "01KA0000000000000000000003", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session", "payload": null},
+        {"id": "01KA0000000000000000000004", "workspaceId": "$ws", "device": "", "ts": "2026-11-17T08:00:01Z", "type": "session", "payload": null}
+      ]
+    },
+    {
+      "name": "any type and any payload are stored; the payload comes back compact with its member order",
+      "note": "the server never validates type or payload; it keeps the payload's JSON as sent and answers it compacted (whitespace removed, member order kept)",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA0000000000000000000005", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "x-test", "payload": [1, "a"]},
+            {"id": "01KA0000000000000000000006", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "read", "payload": {"seconds": 45, "bookId": 3, "extra": {"z": true}}}
+          ]},
+          "expect": {"status": 200, "json": {"accepted": 2, "duplicates": 0}}
+        }
+      ],
+      "stored": [
+        {"id": "01KA0000000000000000000005", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "x-test", "payload": [1,"a"]},
+        {"id": "01KA0000000000000000000006", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "read", "payload": {"seconds":45,"bookId":3,"extra":{"z":true}}}
+      ]
+    },
+    {
+      "name": "the userId of the body is replaced by the caller",
+      "note": "userId is forced to the signed-in user; a client need not send it",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA0000000000000000000007", "userId": 999, "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "view", "payload": {"entryId": 12}}
+          ]},
+          "expect": {"status": 200, "json": {"accepted": 1, "duplicates": 0}}
+        }
+      ],
+      "stored": [
+        {"id": "01KA0000000000000000000007", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "view", "payload": {"entryId": 12}}
+      ]
+    },
+    {
+      "name": "a repeated id is a duplicate, never an error, and the first copy stays",
+      "note": "ON CONFLICT (id) DO NOTHING: inside one batch and across batches a known id counts as a duplicate; a duplicate with other content does not replace the stored event",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA0000000000000000000008", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}},
+            {"id": "01KA0000000000000000000008", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}}
+          ]},
+          "expect": {"status": 200, "json": {"accepted": 1, "duplicates": 1}}
+        },
+        {
+          "post": {"events": [
+            {"id": "01KA0000000000000000000008", "workspaceId": "$ws", "device": "phone", "ts": "2026-11-17T09:00:00Z", "type": "review", "payload": {"cardId": "c1", "grade": 1}},
+            {"id": "01KA0000000000000000000009", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:06Z", "type": "review", "payload": {"cardId": "c1", "grade": 4}}
+          ]},
+          "expect": {"status": 200, "json": {"accepted": 1, "duplicates": 1}}
+        },
+        {
+          "post": {"events": []},
+          "expect": {"status": 200, "json": {"accepted": 0, "duplicates": 0}}
+        }
+      ],
+      "stored": [
+        {"id": "01KA0000000000000000000008", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}},
+        {"id": "01KA0000000000000000000009", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:06Z", "type": "review", "payload": {"cardId": "c1", "grade": 4}}
+      ]
+    },
+    {
+      "name": "validation errors are plain-text 400s and store nothing of the batch",
+      "note": "the events are checked in order before anything is stored; the first failing check answers (text/plain, trailing newline); a valid event ahead of the bad one is not stored either",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"},
+            {"id": "not-a-ulid", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"}
+          ]},
+          "expect": {"status": 400, "text": "event id must be a ULID\n"}
+        },
+        {
+          "post": {"events": [
+            {"id": "81KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"}
+          ]},
+          "expect": {"status": 400, "text": "event id must be a ULID\n"}
+        },
+        {
+          "post": {"events": [
+            {"id": "01KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "type": "session"}
+          ]},
+          "expect": {"status": 400, "text": "event ts is required\n"}
+        },
+        {
+          "post": {"events": [
+            {"id": "01KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00", "type": "session"}
+          ]},
+          "expect": {"status": 400, "text": "malformed request body\n"}
+        },
+        {
+          "post": {"events": [
+            {"id": "01KA000000000000000000000A", "workspaceId": 0, "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"}
+          ]},
+          "expect": {"status": 400, "text": "event workspaceId is required\n"}
+        },
+        {
+          "post": {},
+          "expect": {"status": 400, "text": "events array required\n"}
+        }
+      ],
+      "stored": []
+    },
+    {
+      "name": "another user's workspace is 404 and stores nothing",
+      "note": "a foreign or unknown workspace is indistinguishable: 404 text, the whole batch refused",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA000000000000000000000B", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"},
+            {"id": "01KA000000000000000000000C", "workspaceId": "$bobWs", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"}
+          ]},
+          "expect": {"status": 404, "text": "workspace not found\n"}
+        }
+      ],
+      "stored": []
+    },
+    {
+      "name": "list order is ts then id; since is inclusive at whole seconds",
+      "note": "two events in one second come back in id order whatever their milliseconds or the batch order; since is cut to its second, so an event of that second is included",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA000000000000000000000E", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T09:00:00.100Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}},
+            {"id": "01KA000000000000000000000D", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T09:00:00.900Z", "type": "review", "payload": {"cardId": "c1", "grade": 1}},
+            {"id": "01KA000000000000000000000F", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:59:59Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}}
+          ]},
+          "expect": {"status": 200, "json": {"accepted": 3, "duplicates": 0}}
+        },
+        {
+          "list": "",
+          "expect": {"status": 200, "ids": ["01KA000000000000000000000F", "01KA000000000000000000000D", "01KA000000000000000000000E"]}
+        },
+        {
+          "list": "?since=2026-11-17T09:00:00.500Z&workspace=$ws",
+          "expect": {"status": 200, "ids": ["01KA000000000000000000000D", "01KA000000000000000000000E"]}
+        },
+        {
+          "list": "?since=2026-11-17T10:00:00%2B01:00",
+          "expect": {"status": 200, "ids": ["01KA000000000000000000000D", "01KA000000000000000000000E"]}
+        },
+        {
+          "list": "?since=2026-11-17T09:00:01Z",
+          "expect": {"status": 200, "ids": []}
+        },
+        {
+          "list": "?workspace=$bobWs",
+          "expect": {"status": 404, "text": "workspace not found\n"}
+        }
+      ],
+      "stored": [
+        {"id": "01KA000000000000000000000F", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:59:59Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}},
+        {"id": "01KA000000000000000000000D", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T09:00:00Z", "type": "review", "payload": {"cardId": "c1", "grade": 1}},
+        {"id": "01KA000000000000000000000E", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T09:00:00Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}}
+      ]
+    },
+    {
+      "name": "pull v2 never ships lookup events",
+      "note": "the events collection of GET /api/sync/pull?v=2 holds every type but lookup; GET /api/events still lists it until DELETE /api/events/lookups",
+      "steps": [
+        {
+          "post": {"events": [
+            {"id": "01KA000000000000000000000G", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "lookup", "payload": {"query": "ni hao"}},
+            {"id": "01KA000000000000000000000H", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:01Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}},
+            {"id": "01KA000000000000000000000J", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:02Z", "type": "x-plugin", "payload": null}
+          ]},
+          "expect": {"status": 200, "json": {"accepted": 3, "duplicates": 0}}
+        },
+        {
+          "pull": true,
+          "expect": {"status": 200, "types": ["review", "x-plugin"]}
+        }
+      ],
+      "stored": [
+        {"id": "01KA000000000000000000000G", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "lookup", "payload": {"query": "ni hao"}},
+        {"id": "01KA000000000000000000000H", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:01Z", "type": "review", "payload": {"cardId": "c1", "grade": 3}},
+        {"id": "01KA000000000000000000000J", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:02Z", "type": "x-plugin", "payload": null}
+      ]
+    }
+  ]
+}

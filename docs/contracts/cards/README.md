@@ -1,6 +1,7 @@
-# Card ids, burying and cloze (reverse and cloze cards, #65)
+# Card ids, burying, cloze and deck sessions (reverse and cloze cards, #65)
 
-Rules every client implements identically. Fixtures: `{"version":1,"rule":"cards/<name>","cases":[...]}`.
+Rules every client implements identically. Fixtures: `{"version":1,"rule":"cards/<name>","cases":[...]}`;
+`deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`.
 
 ## Card kinds and ids
 
@@ -61,3 +62,60 @@ Case: `{name, cardId, entry: {id, written, forms?: [{text}]}, sentences: [{id, h
 matchesBySentence: {"<id>": [{start, end, entries: [{id}]}]}, reviews: n, eligibleIds, shownId (null),
 spans: [[s, e]], before, after, answer}`; `before`/`after` are arrays of strings and extra gaps `{"gap": true, "answer": "<that span's own text>"}`
 (shown after the answer, so 食べて … 食べた keep their own forms).
+
+## Deck sessions (`deck-session.json`)
+
+A deck session studies the cards of the chosen decks (`deckIds`) and kinds (`kinds`) with a session new-card
+limit (`newLimit`) and review limit (`reviewLimit`). Level sessions follow their own plan
+(`levels/character-level-queue.json`). `deckSessionPlan` (web: `lib/study/cardFlow.ts`, with
+`companions.ts` and `scheduler.ts` `buildQueue`) returns `{queue, reserve, backfillLeft}`; `plans` cases pin
+the ids of each, decoded by `apps/web/src/lib/study/cardFlow.test.ts`. Inputs: zone `history`, `now`,
+`language`, `cards`, `reviews` (`{cardId, ts, grade}`; event ids are given in list order, `mode` is the card's
+kind), optional `vacation` runs, `limits` rows (`scheduler/`), `deckSettings` (deck id → enabled opt-in kinds),
+`newRank` (entry id → frequency rank, the `orderNew` key of `frequency/`), `skip` and `offline`; `weights`
+`"default"` is `default_w` (`scheduler/fsrs.json`).
+
+1. **Nothing on a vacation day**: today inside a vacation run gives an empty queue and reserve.
+2. **Session kinds**: `kinds` without `tone` unless the workspace language is Chinese (`zh`, `zh-*`, `zh_*`).
+3. **Before the limits** leave: cards outside the session decks or kinds; cards **buried** today (an opt-in
+   card of a word answered today, `burying.json`); a non-vocab card whose word's vocab card lists its kind in
+   `skipKinds`; a reverse or cloze card without a vocab card of its word, or without a session deck (among its
+   own decks) whose `deckSettings` enable its kind. They never use up a slot.
+4. **Real cards** (`buildQueue`): due cards first, earliest due first, equal due by id; then never-reviewed
+   cards in the order added (`createdAt`, then id) or by `orderNew` with the frequency key (ranked first by
+   rank, unranked after them in the order added); admitted by the daily limits of `scheduler/` and the
+   session limits (`daily-limits.json`).
+5. **Companions** (virtual items, created on their first grade): for every vocab card in a session deck,
+   oldest first (`createdAt`, then id), one item per selected companion kind it has no card of: `sentence`,
+   `writing`, `tone`, then the opt-in `reverse` and `cloze`. Never for a kind the word skips, a `kind:entryId`
+   in `skip` (remembered ineligible), a kind buried today, or writing when the vocab card's `written` snapshot
+   has no Han character (no snapshot: decided when shown). Character vocab cards (`entryKind: "character"`)
+   get only writing, from the learner day after their first review. Opt-in kinds: only from a session deck that
+   enables them, never for a word with a queued real card, **at most one per word, reverse preferred** (cloze
+   when reverse cannot be planned). Items are taken round-robin by kind (one of each kind per round, in kind
+   order). **Offline nothing is planned** (a companion becomes a card by a row write; the offline outbox
+   carries review events only).
+6. **Budget and reserve**: companions are new cards. The queue holds the real cards, then the companions the
+   session's new limit still admits (after the real new cards) and each deck's daily new limit allows; the
+   companions the daily limits allow beyond the session limit are the **reserve**, in planning order.
+7. **`backfillLeft`** = `backfillLimit(newLimit)` = `max(30, 2 · max(0, floor(newLimit)))`.
+
+`steps` cases replay the runner's two queue edits on a plan:
+
+- `drop` (`dropItem`): an item that proved ineligible leaves the queue. A dropped **virtual** item frees its
+  slot: the first reserve item is appended while `backfillLeft > 0` (which then decreases); a dropped real card
+  frees nothing; an unknown id changes nothing.
+- `bury` (`buryAfterAnswer`): after an answer at `index`, every later item of the same word (another card,
+  not a re-show) that the answer buries (`burying.json`: either kind opt-in) is removed, each like a `drop`;
+  `buried` counts them.
+
+`eligible` cases pin `isEligible(kind, entry, ctx)`, decided when an item is about to be shown: vocab always;
+sentence when a sentence resolved; writing when the word has Han characters with stroke data (`usableChars`)
+and is not a character entry without glosses; tone when the workspace language is Chinese and a pinyin
+reading parses as clean toned pinyin (tone marks, not numbers); reverse for a `word` entry with a gloss;
+cloze when an eligible cloze sentence resolved.
+
+Ruling: the fixture pins the **plan** and eligibility, not which sentence a sentence card shows or how a
+virtual item is graded — sentence choice and cloze are already pinned (`cloze.json`), grade suggestions are
+deferred (spec D2) — cost: none.
+

@@ -1,4 +1,4 @@
-# Scheduler contract: vacation, study clock, due, streak, daily limits
+# Scheduler contract: FSRS, XP, vacation, study clock, due, streak, daily limits
 
 Issues #88 (vacation mode) and #89 (daily limits). Rule source:
 `docs/superpowers/specs/2026-11-15-v030-vacation-and-limits-design.md`; the learner's day is
@@ -36,6 +36,64 @@ zone history in effect). `v(t) = t - sum(clamp(t - a_i, 0, n_i * DAY))`. `invers
 in ascending order, if `t >= a_i` then `t += n_i * DAY`. Shifts are whole days (not the run's real length),
 so the UTC time of day is preserved. No runs: both are the identity.
 
+## FSRS (`fsrs.json`, generated)
+
+The scheduler is **ts-fsrs 5.4.2** (`tsFsrs` in the file), used as `fsrs({w})`: only the weights `w` are
+passed, every other option is the library default. `parameters` in the file is the full
+`generatorParameters()` object, i.e. exactly:
+
+| Parameter | Value |
+| --- | --- |
+| `request_retention` | 0.9 |
+| `maximum_interval` | 36500 (days) |
+| `enable_fuzz` | false |
+| `enable_short_term` | true |
+| `learning_steps` | `["1m", "10m"]` |
+| `relearning_steps` | `["10m"]` |
+| `w` (`default_w`, FSRS-6, 21 numbers) | 0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722, 0.1666, 0.796, 1.4835, 0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425, 0.0912, 0.0658, 0.1542 |
+
+Grades map 1 Again, 2 Hard, 3 Good, 4 Easy. States: 0 New, 1 Learning, 2 Review, 3 Relearning.
+
+- **Weights** (`weights` cases; web `study/fsrs/params.ts` `checkWeights`, `validWeights`): a weight list is
+  17, 19 or 21 JSON numbers, all finite (ts-fsrs `checkParameters`), each raw value inside
+  `clampRanges[i]` (`CLAMP_PARAMETERS(2, true)`, by position, ends included). A value outside is **rejected**,
+  never clipped. A valid list is migrated to 21 by ts-fsrs `migrateParameters` (19: append `0, 0.5`; 17: convert
+  w4..w6 and append `0, 0, 0, 0.5`). `expect` gives `{ok: true, migrated}` or `{ok: false, reason, position?}`
+  with `reason` `notNumbers` | `nonFinite` | `length` | `range` and the 1-based position. `1e999` in the file
+  is Infinity: read the file with a parser that maps it so (a JSON import that makes it `null` does not test the
+  rule).
+- **Parameter sets** (`paramSet` cases; `parseParamSet`): an `fsrs:set:<id>` row is valid only when the key
+  names its `id`, `createdAt` is a string, `source` is `optimized` or `imported`, `w` is exactly 21 numbers that
+  pass the weight check, and `labelled`, `logLoss`, `baselineLogLoss` are absent or finite numbers (`null` is
+  invalid). The parsed set holds the migrated weights; an invalid row is ignored.
+- **Active set** (`resolve` cases; `resolveState`): sets are listed newest first (`createdAt` descending, then
+  `id` descending). `fsrs:active {setId}` names the active set; a missing row, a `setId` that is not a string, or a
+  `setId` naming no valid set means the default weights (`pointer` still reports a string `setId`).
+- **Replay** (`replay` cases): a card's valid reviews in `(instant, id)` order (`order` lists the ids) are fed to
+  `createEmptyCard(t_0)` and `next(card, t_i, grade)` with the case's weights (`"default"` = `default_w`; a
+  migrated set gives the 21 migrated weights and the list it came `from`). `points` is the card after **every**
+  review: `due`, `stability`, `difficulty`, `state`, `reps`, `lapses`, `scheduled_days`, `learning_steps`. The
+  cases cover both learning steps, Again in learning and relearning, Hard and Easy from new, lapses after months,
+  sub-day reviews of a review card, early and very late reviews, the maximum interval (ts-fsrs 5.4.2 reports
+  `scheduled_days` 36502 there while stability is capped at 36500: pinned as the library does it), two reviews
+  in the same instant ordered by id, a custom 21-weight set and migrated 17- and 19-weight sets. Compare `due`
+  exactly and the numbers to 8 decimals. The web decodes the four members it stores (`due`, `stability`,
+  `difficulty`, `state`) through `scheduleTimeline` and checks with a spy that `scheduler.ts` passes only `{w}` to
+  `fsrs`.
+
+Ruling: `fsrs.json` is generated from plain ts-fsrs, not from `scheduler.ts` — the oracle must be the library
+Android ports against (the vacation fixture's precedent); the web test then proves `scheduler.ts` equals it —
+cost: if ts-fsrs is upgraded the fixture is regenerated and Android must follow (a version bump is a contract
+change).
+
+Ruling: the expected values carry every member of the ts-fsrs card a port needs to step forward (`reps`,
+`lapses`, `learning_steps`, `scheduled_days`), not only the four the web stores — a port that only matches the
+final schedule can hide a wrong intermediate state — cost: a larger file (tens of KB).
+
+**Upgrading ts-fsrs** is a contract change: bump the web dependency, regenerate (`gen-scheduler-fixtures.mjs`),
+review the diff of `fsrs.json`, `vacation-schedule.json` and `optimizer-steps.json`, and ship the Android port of
+the new version in the same release.
+
 ## Replay (`vacation-schedule.json`)
 
 `f_i = max(v(ts_i), f_{i-1})` is fed to ts-fsrs (`createEmptyCard(f_0)`, `next(card, f_i, grade)`, default
@@ -51,6 +109,19 @@ at the frozen instant (`optimizer-steps.inside` cases).
 `labelled` counts steps after the first with `t >= 1`. The training days (holdout split) stay the real
 `floor(ts / DAY)`.
 
+## XP and levels (`xp.json`)
+
+Derived from the review log, never stored (web: `lib/study/exp.ts`, decoded by `exp.test.ts`; no server code).
+Only reviews that count (`events/review-parse.json`: parsable `ts`, non-empty `cardId`, grade 1–4) earn XP.
+
+- Per review: `baseXp[mode]` (vocab 10, sentence 15, writing 20, tone 8, reverse 10, cloze 15; a missing or
+  unknown mode is vocab) + grade bonus (Again 0, Hard 0, Good 5, Easy 10). `byKind` sums these per kind.
+- Plus `dailyBonus` 10 per distinct **learner day** (zone history, `study-day/`) with at least one counted
+  review; vacation days are not excluded. The total never depends on event order.
+- Level: start at level 1; going from level L to L+1 costs `100 · L` XP. `levelProgress(xp)` floors `xp`,
+  treats a negative or non-finite value as 0 and returns `{level, xpInto, xpForNext}` (`levels` cases:
+  boundaries 99/100, 299/300, 599/600, a million, negative, fractional, NaN, Infinity).
+
 ## Due and streak (`due-today.json`, `streak.json`)
 
 On a vacation day (the learner's `today` is a date of a run of the workspace) nothing is due and no new card
@@ -60,7 +131,7 @@ vacation day, and "consecutive" means the next non-vacation date.
 
 ## Limits (`limits-rows.json`, `daily-limits.json`)
 
-Per deck `d` (current members, after the canonical merge), learner day `D`: `newDone(d)` counts cards whose
+Per deck `d` (current members, after the canonical merge: `study/canonical.json`), learner day `D`: `newDone(d)` counts cards whose
 first valid review is on `D`, `reviewDone(d)` cards first reviewed before `D` that have a valid review on `D`.
 Admission walks the candidates in queue order and skips what does not fit: `continuing` (due, already reviewed
 today) is admitted without touching the counts but is capped by the session review limit; `review` and
@@ -82,7 +153,7 @@ its own `today`.
 
 ```sh
 npm --prefix apps/web ci
-node scripts/contracts/gen-scheduler-fixtures.mjs          # writes vacation-schedule.json, optimizer-steps.json
+node scripts/contracts/gen-scheduler-fixtures.mjs          # writes vacation-schedule.json, optimizer-steps.json, fsrs.json
 node scripts/contracts/gen-scheduler-fixtures.mjs --check  # exit 1 when they are out of date
 ```
 

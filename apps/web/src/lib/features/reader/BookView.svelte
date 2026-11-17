@@ -2,6 +2,7 @@
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { record as recordEvent } from '$lib/events';
+	import { readPayload } from '$lib/eventPayloads';
 	import { setSettings, workspaces } from '$lib/workspaces';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
@@ -1037,7 +1038,7 @@
 		const send = (): void => {
 			const seconds = timer.flush(Date.now());
 			if (seconds > 0 && workspaceId !== null) {
-				void recordEvent('read', workspaceId, { bookId, seconds });
+				void recordEvent('read', workspaceId, readPayload(bookId, seconds));
 			}
 		};
 		// subscribe() calls back at once with the current selection.
