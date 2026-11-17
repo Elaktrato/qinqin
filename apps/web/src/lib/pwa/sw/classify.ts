@@ -2,7 +2,7 @@
 // worker may do with it. Everything not named here is `bypass` (the worker
 // does not touch it), so a new route is never cached by accident.
 
-export type Kind = 'shell' | 'navigate' | 'hanzi' | 'api' | 'bypass';
+export type Kind = 'shell' | 'navigate' | 'hanzi' | 'font' | 'api' | 'bypass';
 
 export interface ReqLike {
 	method: string;
@@ -50,7 +50,9 @@ const API_PATTERNS: RegExp[] = [
 	new RegExp(`^/api/plugins/${SEGMENT}/data$`),
 	new RegExp(`^/api/plugins/${SEGMENT}/data/${SEGMENT}$`),
 	/^\/api\/entries\/[0-9]+$/,
-	/^\/api\/themes$/
+	/^\/api\/themes$/,
+	// The installed font faces (#97): kept so the pack faces stay registered offline.
+	/^\/api\/fonts$/
 ];
 
 const CORE_DATA = '/api/plugins/qinqin-core/data';
@@ -115,6 +117,8 @@ function apiAllowed(url: URL): boolean {
 }
 
 const HANZI = /^\/hanzi\/U[0-9A-F]+\.json$/;
+/** A font pack slice: named by the sha256 of its bytes, public (docs/contracts/fonts). */
+const FONT = /^\/fonts\/[0-9a-f]{64}\.woff2$/;
 
 export function classify(req: ReqLike, ctx: ClassifyCtx): Kind {
 	if (req.method !== 'GET') return 'bypass';
@@ -134,6 +138,7 @@ export function classify(req: ReqLike, ctx: ClassifyCtx): Kind {
 	}
 	if (req.mode === 'navigate') return 'navigate';
 	if (HANZI.test(pathname)) return 'hanzi';
+	if (FONT.test(pathname)) return 'font';
 	if (
 		ctx.shellUrls.has(pathname) ||
 		pathname === '/' ||

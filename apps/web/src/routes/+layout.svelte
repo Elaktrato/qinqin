@@ -37,6 +37,7 @@
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import { themeStore } from '$lib/theme/store.svelte';
 	import ThemeSwitch from '$lib/theme/ThemeSwitch.svelte';
+	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import {
 		load as loadWorkspaces,
 		workspaces,
@@ -189,6 +190,9 @@
 		if (id === themeUser) return;
 		themeUser = id;
 		void themeStore.setUser(id);
+		// The installed font pack faces (#97): the list needs a session.
+		if (id === null) packFaces.clear();
+		else void packFaces.load();
 	});
 
 	// The learner's time zone history (and, once per account, the browser

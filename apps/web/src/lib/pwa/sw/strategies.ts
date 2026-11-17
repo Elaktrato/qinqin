@@ -7,6 +7,9 @@ import { scrubForCache } from './scrub';
 
 export const HANZI_CACHE = 'qinqin-hanzi-v1';
 export const HANZI_CAP = 4000;
+/** Font pack slices (#97): content-addressed and public, so one cache for everyone, kept on sign-out. */
+export const FONT_CACHE = 'qinqin-fonts-v1';
+export const FONT_CAP = 4000;
 /** Set on a response served from a saved copy. */
 export const OFFLINE_HEADER = 'X-Qinqin-Offline';
 /** ISO time the served copy was saved. */
@@ -156,8 +159,9 @@ async function shellRequest(req: Request, d: Deps): Promise<Response> {
 	return hit ?? d.fetch(req);
 }
 
-async function hanziRequest(req: Request, d: Deps): Promise<Response> {
-	const cache = await d.caches.open(HANZI_CACHE);
+/** cacheFirst: a public, immutable file kept on demand in a shared cache of at most `cap` entries, oldest out first. */
+async function cacheFirst(req: Request, d: Deps, name: string, cap: number): Promise<Response> {
+	const cache = await d.caches.open(name);
 	const key = new URL(new URL(req.url).pathname, d.origin).href;
 	const hit = await cache.match(key);
 	if (hit) return hit;
@@ -166,9 +170,9 @@ async function hanziRequest(req: Request, d: Deps): Promise<Response> {
 		try {
 			await cache.put(key, res.clone());
 			const keys = await cache.keys();
-			for (const old of keys.slice(0, Math.max(0, keys.length - HANZI_CAP))) await cache.delete(old);
+			for (const old of keys.slice(0, Math.max(0, keys.length - cap))) await cache.delete(old);
 		} catch {
-			// Not stored; the character is simply fetched again next time.
+			// Not stored; the file is simply fetched again next time.
 		}
 	}
 	return res;
@@ -184,6 +188,8 @@ export function handleFetch(kind: Exclude<Kind, 'bypass'>, req: Request, d: Deps
 		case 'shell':
 			return shellRequest(req, d);
 		case 'hanzi':
-			return hanziRequest(req, d);
+			return cacheFirst(req, d, HANZI_CACHE, HANZI_CAP);
+		case 'font':
+			return cacheFirst(req, d, FONT_CACHE, FONT_CAP);
 	}
 }
