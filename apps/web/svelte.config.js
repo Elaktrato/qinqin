@@ -6,6 +6,12 @@ import adapter from '@sveltejs/adapter-static';
  * pipeline); otherwise the git short hash plus the build time, so two builds
  * of different content can never share a version (an identical rebuild shows
  * the update banner once, which is harmless; a missed update would not be).
+ *
+ * SvelteKit evaluates this file several times in one `vite build` (per vite
+ * environment, then for the postbuild analysis and the fallback page). The
+ * id is minted once and written back to process.env, so every later
+ * evaluation, and any child process, reuses it; otherwise index.html and the
+ * chunks name different `__sveltekit_<hash>` globals and the app is blank.
  */
 function buildId() {
 	if (process.env.QINQIN_BUILD_ID) return process.env.QINQIN_BUILD_ID;
@@ -15,7 +21,8 @@ function buildId() {
 	} catch {
 		// Built outside a git checkout (a Docker context without .git).
 	}
-	return `${hash}.${Date.now().toString(36)}`;
+	process.env.QINQIN_BUILD_ID = `${hash}.${Date.now().toString(36)}`;
+	return process.env.QINQIN_BUILD_ID;
 }
 
 /** @type {import('@sveltejs/kit').Config} */
