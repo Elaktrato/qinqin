@@ -12,13 +12,14 @@ import { intlFindings, langFindings, markupFindings, tsFindings, type Finding } 
 // - intl: `Intl.*Format(`, `Intl.PluralRules(`, `toLocale*String(` outside lib/i18n/.
 // - lang: a literal `lang="…"` in markup (study text takes `studyLang`, interface text inherits <html lang>).
 //
-// A finding fails unless allowlist.json names it ({file, text, reason}) or pending.json lists its file under
-// the rule (the extraction baseline: files not yet moved to the catalogue; it only shrinks).
+// A finding fails unless allowlist.json names it ({file, text, reason}). The text and Intl rules are strict (the
+// extraction baseline is gone, Task 23); pending.json lists only the files whose literal `lang` attributes the study
+// language work (Task 29) replaces, and it only shrinks.
 
 const src = resolve(__dirname, '../..');
 
 type Rule = 'text' | 'intl' | 'lang';
-const pendingFiles: Record<Rule, string[]> = pending;
+const pendingFiles: Record<Rule, string[]> = { text: [], intl: [], lang: pending.lang };
 
 /** Test support never ships: tests, `*.test.svelte` stubs, declaration files and `testing/` folders. */
 const isLinted = (rel: string): boolean =>
@@ -56,6 +57,12 @@ describe('the walk', () => {
 			.sort();
 		expect(globbed.length).toBeGreaterThan(300);
 		expect(files).toEqual(globbed);
+	});
+});
+
+describe('pending.json', () => {
+	it('holds no text or Intl baseline any more: those rules are strict', () => {
+		expect(Object.keys(pending)).toEqual(['lang']);
 	});
 });
 

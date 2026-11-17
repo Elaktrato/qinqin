@@ -10,7 +10,7 @@
 //   formatted for you.
 import en from './messages/en.json';
 import { formatMessage, formatParts, type Part } from './message';
-import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, formatLocale, negotiate } from './negotiate';
+import { DEFAULT_FORMAT_LOCALE, DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, formatLocale, negotiate } from './negotiate';
 
 export type MessageKey = keyof typeof en;
 export type MessageArgs = Readonly<Record<string, string | number>>;
@@ -23,7 +23,7 @@ const strict: boolean = import.meta.env.DEV || import.meta.env.MODE === 'test';
 
 let language = DEFAULT_LANGUAGE;
 let messages: Readonly<Record<string, string>> = english;
-let fmtLocale = DEFAULT_LANGUAGE;
+let fmtLocale = DEFAULT_FORMAT_LOCALE;
 const warned = new Set<string>();
 
 /** Lazily loaded non-English catalogues; `en` is in the main bundle. */
@@ -106,7 +106,7 @@ export function installCatalogue(lang: string, catalogue: Readonly<Record<string
 	fmtLocale = locale;
 }
 
-/** Tests: back to the English catalogue and the `en` format locale. */
+/** Tests: back to the English catalogue and the default (en-GB) format locale. */
 export function resetCatalogue(): void {
-	installCatalogue(DEFAULT_LANGUAGE, english);
+	installCatalogue(DEFAULT_LANGUAGE, english, DEFAULT_FORMAT_LOCALE);
 }

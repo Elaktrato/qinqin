@@ -5,6 +5,7 @@
 
 import type { ActivitySource } from '../api/stats';
 import { t, type MessageKey } from '../i18n';
+import { formatDay, formatDayRange, formatWeekday } from '../i18n/format';
 import { formatDuration } from '../stats/readingTime';
 import { activityLabel } from '../plugins/manifestText';
 import { addDays } from '../time/studyDay';
@@ -15,14 +16,9 @@ function offline(): string {
 	return t('weekly.offline');
 }
 
-function utcDate(day: string): Date {
-	return new Date(`${day}T00:00:00Z`);
-}
-
 /** weekRange: "16–22 November 2026" in the locale's own range form. */
 export function weekRange(monday: string, locale?: string): string {
-	const fmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-	return fmt.formatRange(utcDate(monday), utcDate(addDays(monday, 6)));
+	return formatDayRange(monday, addDays(monday, 6), { day: 'numeric', month: 'long', year: 'numeric' }, locale);
 }
 
 /** weekHeading: "This week (16–22 November 2026)", "Last week (…)", "Week of …". */
@@ -49,7 +45,7 @@ export function compareText(value: number, previous: number, unit: 'count' | 'se
 }
 
 function weekdayLong(day: string, locale?: string): string {
-	return new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(utcDate(day));
+	return formatWeekday(day, 'long', locale);
 }
 
 /** compareWindowText: what the comparison covers, once above the rows. */
@@ -88,17 +84,12 @@ export function rowValue(row: Pick<CountRow, 'value' | 'unit'>): string {
 
 /** dayShort: the visible weekday of a strip item ("Mon"). */
 export function dayShort(date: string, locale?: string): string {
-	return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(utcDate(date));
+	return formatWeekday(date, 'short', locale);
 }
 
 /** dayName: the strip item's accessible name, "Monday 16 November: active, 42 reviews". */
 export function dayName(day: WeekDay, locale?: string): string {
-	const label = new Intl.DateTimeFormat(locale, {
-		weekday: 'long',
-		day: 'numeric',
-		month: 'long',
-		timeZone: 'UTC'
-	}).format(utcDate(day.date));
+	const label = formatDay(day.date, { weekday: 'long', day: 'numeric', month: 'long' }, locale);
 	const reviews = day.reviews !== null && day.reviews > 0 ? t('weekly.day.reviews', { count: day.reviews }) : null;
 	const state: Record<WeekDay['state'], () => string> = {
 		active: () => (reviews === null ? t('weekly.day.active') : t('weekly.day.activeReviews', { reviews })),

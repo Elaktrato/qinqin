@@ -1,16 +1,14 @@
 // Texts and small rules of the vacation settings (pure; the component is thin).
 
 import { t, type MessageKey } from '$lib/i18n';
+import { formatDay } from '$lib/i18n/format';
 import type { StudyDay } from '$lib/time/studyDay';
 import { currentVacation, vacationRuns, type Run, type VacationPeriod } from '$lib/study/vacation';
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** "3 Jan", or "3 Jan 2027" when the year is not today's. */
+/** "3 Jan", or "3 Jan 2027" when the year is not today's (the format locale's short day). */
 function dateLabel(day: string, today: string): string {
-	const [y, m, d] = day.split('-').map(Number);
-	const base = `${d} ${MONTHS[m - 1]}`;
-	return String(y) === today.slice(0, 4) ? base : `${base} ${y}`;
+	const sameYear = day.slice(0, 4) === today.slice(0, 4);
+	return formatDay(day, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export interface NamedWorkspace {

@@ -7,6 +7,13 @@ export const SUPPORTED_LANGUAGES: readonly string[] = ['en'];
 
 export const DEFAULT_LANGUAGE = 'en';
 
+/**
+ * The format locale of English without a region: day before month ("16 November 2026", 24-hour times), the English
+ * the interface has always written (docs/contracts/i18n/README.md, Interface language). Also the fallback for a
+ * locale the platform cannot resolve.
+ */
+export const DEFAULT_FORMAT_LOCALE = 'en-GB';
+
 const SETTING = /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$/;
 
 /** The stored interface-language setting: `''` (follow the browser) or a canonical-case tag. Syntax only. */
@@ -58,7 +65,8 @@ function regionOf(tag: string): string {
 
 /**
  * The locale for dates and numbers: the interface language plus the region of the first device language with
- * the same primary subtag, unless the interface language has its own region; `en` when Intl cannot resolve it.
+ * the same primary subtag, unless the interface language has its own region; English without a region and anything
+ * Intl cannot resolve format as `DEFAULT_FORMAT_LOCALE` (en-GB).
  */
 export function formatLocale(interfaceLanguage: string, deviceLanguages: readonly string[]): string {
 	let result = interfaceLanguage;
@@ -70,8 +78,8 @@ export function formatLocale(interfaceLanguage: string, deviceLanguages: readonl
 	}
 	try {
 		const [canonical] = Intl.getCanonicalLocales(result);
-		return canonical ?? DEFAULT_LANGUAGE;
+		return canonical === undefined || canonical === DEFAULT_LANGUAGE ? DEFAULT_FORMAT_LOCALE : canonical;
 	} catch {
-		return DEFAULT_LANGUAGE;
+		return DEFAULT_FORMAT_LOCALE;
 	}
 }

@@ -2567,6 +2567,7 @@
 	"study.setup.levelOption": "{level} — {learned} of {total} learned",
 	"study.setup.masteryMap": "View the mastery map →",
 	"study.setup.myDecks": "My decks",
+	"study.setup.nothingOfType": "{type}: nothing to study in the selected decks right now.",
 	"study.setup.reloadFailed": "Could not reload your cards.",
 	"study.setup.schedDefault": "default parameters",
 	"study.setup.schedImported": "imported on {day}",

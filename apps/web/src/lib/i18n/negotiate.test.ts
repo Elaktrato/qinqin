@@ -24,11 +24,15 @@ describe('negotiate', () => {
 describe('formatLocale', () => {
 	it('adds the device region to the interface language', () => {
 		expect(formatLocale('en', ['en-GB'])).toBe('en-GB');
-		expect(formatLocale('en', ['fr-FR'])).toBe('en');
+		expect(formatLocale('en', ['en-US'])).toBe('en-US');
 	});
-	it('falls back to en when Intl cannot resolve the result', () => {
-		expect(formatLocale('not a tag', [])).toBe('en');
-		expect(formatLocale('en', ['en-!!'])).toBe('en');
+	it('formats English without a device region as en-GB (day before month, as the interface always wrote dates)', () => {
+		expect(formatLocale('en', ['fr-FR'])).toBe('en-GB');
+		expect(formatLocale('en', [])).toBe('en-GB');
+	});
+	it('falls back to en-GB when Intl cannot resolve the result', () => {
+		expect(formatLocale('not a tag', [])).toBe('en-GB');
+		expect(formatLocale('en', ['en-!!'])).toBe('en-GB');
 	});
 	it('ignores device entries that are not strings', () => {
 		expect(formatLocale('en', [undefined as unknown as string, 'en-NZ'])).toBe('en-NZ');

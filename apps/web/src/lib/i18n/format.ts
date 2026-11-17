@@ -37,9 +37,14 @@ function toDate(instant: Instant): Date | null {
 	return Number.isNaN(d.getTime()) ? null : d;
 }
 
+const FIELDS = ['weekday', 'era', 'year', 'month', 'day', 'hour', 'minute', 'second'] as const;
+
 function formatInstant(instant: Instant, base: Intl.DateTimeFormatOptions, opts: Intl.DateTimeFormatOptions): string {
 	const d = toDate(instant);
-	return d === null ? '' : dateFormat({ ...base, ...opts }).format(d);
+	if (d === null) return '';
+	// Date fields and the date/time styles cannot be mixed: fields replace the default style.
+	const fields = FIELDS.some((f) => opts[f] !== undefined);
+	return dateFormat(fields ? opts : { ...base, ...opts }).format(d);
 }
 
 /** The date of an instant in the device's zone (`Nov 16, 2026`); '' for an invalid instant. */

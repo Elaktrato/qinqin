@@ -1,9 +1,4 @@
 {
-	"text": [],
-	"intl": [
-		"lib/account/sessionsView.ts",
-		"lib/weekly/weekText.ts"
-	],
 	"lang": [
 		"lib/components/CardManager.svelte",
 		"lib/features/flashcards/cards/ToneCard.svelte"

@@ -2,7 +2,7 @@
 // GET /api/account/sessions. Pure: the clock is passed in.
 
 import { t } from '$lib/i18n';
-import { formatRelative } from '$lib/i18n/format';
+import { formatDate, formatRelative } from '$lib/i18n/format';
 
 export interface SessionDto {
 	id: number;
@@ -32,15 +32,11 @@ function ago(n: number, unit: 'minute' | 'hour' | 'day'): string {
 	return formatRelative(-n, unit);
 }
 
-// "1 September 2026" in the viewer's own zone (tz undefined), or the zone a
-// test names; Intl does the calendar work, so no day arithmetic lives here.
+// "1 September 2026" (the format locale's long date) in the viewer's own zone
+// (tz undefined), or the zone a test names; Intl does the calendar work, so no
+// day arithmetic lives here.
 function dateText(d: Date, tz?: string): string {
-	return new Intl.DateTimeFormat('en-GB', {
-		day: 'numeric',
-		month: 'long',
-		year: 'numeric',
-		timeZone: tz
-	}).format(d);
+	return formatDate(d, { day: 'numeric', month: 'long', year: 'numeric', timeZone: tz });
 }
 
 /** "just now", "5 minutes ago", ... up to 30 days, then "1 September 2026". */

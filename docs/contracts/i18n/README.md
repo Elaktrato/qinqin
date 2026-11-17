@@ -94,8 +94,9 @@ spells it; no hit → `en`. Today the supported list is `["en"]`.
 
 Formatting locale (web and Android; `negotiate.json` `formatLocale`): dates and numbers use the interface
 language plus the region of the first device language with the same primary subtag (`en` + `en-GB` → `en-GB`),
-unless the interface language has its own region; else the interface language; a locale the platform cannot
-resolve → `en`. Contract data (learner days, instants, row keys, payloads) is never localised.
+unless the interface language has its own region; else the interface language — except English without a region,
+which formats as `en-GB` (day before month, 24-hour times: the English the interface has always written; a device
+set to `en-US` still gets `en-US`); a locale the platform cannot resolve → `en-GB`. Contract data (learner days, instants, row keys, payloads) is never localised.
 
 The stored setting (`language-tags.json`): `''` (follow the browser/device) or a tag matching
 `^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$`. The server validates syntax only, never support.

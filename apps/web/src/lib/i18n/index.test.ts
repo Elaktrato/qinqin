@@ -67,7 +67,11 @@ describe('loadCatalogue', () => {
 	it('a language without a catalogue resolves to en', async () => {
 		await loadCatalogue('zz', ['zz-ZZ']);
 		expect(getLanguage()).toBe('en');
-		expect(getFormatLocale()).toBe('en');
+		expect(getFormatLocale()).toBe('en-GB');
+	});
+
+	it('the default before any catalogue is loaded formats like en-GB', () => {
+		expect(getFormatLocale()).toBe('en-GB');
 	});
 });
 

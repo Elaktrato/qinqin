@@ -3,6 +3,7 @@
 
 import { readingBeside } from '$lib/entry/displayForm';
 import { t } from '$lib/i18n';
+import { formatDay } from '$lib/i18n/format';
 import type { EntryBase } from '$lib/api/types';
 import { GENERAL_DECK_ID } from '$lib/study/store';
 import type { Deck } from '$lib/study/types';
@@ -44,13 +45,10 @@ export function whereText(item: LookupItem, books: ReadonlyMap<number, string>):
 	return parts.join(', ');
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** dayLabel: "3 Nov", with the year when it is not today's year. */
+/** dayLabel: "3 Nov", with the year when it is not today's year (the format locale's short day). */
 export function dayLabel(day: string, today: string): string {
-	const [y, m, d] = day.split('-').map(Number);
-	const label = `${d} ${MONTHS[m - 1] ?? '?'}`;
-	return day.slice(0, 4) === today.slice(0, 4) ? label : `${label} ${y}`;
+	const sameYear = day.slice(0, 4) === today.slice(0, 4);
+	return formatDay(day, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function historyRows(

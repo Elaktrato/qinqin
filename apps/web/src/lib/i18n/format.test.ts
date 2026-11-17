@@ -31,6 +31,8 @@ const utc = { timeZone: 'UTC' } as const;
 describe('numbers', () => {
 	it('formatNumber and formatPercent follow the format locale', () => {
 		expect(formatNumber(1234.5)).toBe('1,234.5');
+		inLocale('en-US');
+		expect(formatNumber(1234.5)).toBe('1,234.5');
 		expect(formatPercent(0.256, { maximumFractionDigits: 1 })).toBe('25.6%');
 		inLocale('de');
 		expect(formatNumber(1234.5)).toBe('1.234,5');
@@ -39,7 +41,10 @@ describe('numbers', () => {
 });
 
 describe('instants', () => {
-	it('formatDate, formatDateTime, formatTime in en, en-GB and de', () => {
+	it('formatDate, formatDateTime, formatTime in en-US, en-GB (the default) and de', () => {
+		expect(formatDate(instant, utc)).toBe('16 Nov 2026');
+		expect(plain(formatTime(instant, utc))).toBe('14:05');
+		inLocale('en-US');
 		expect(formatDate(instant, utc)).toBe('Nov 16, 2026');
 		expect(plain(formatDateTime(instant, utc))).toBe('Nov 16, 2026, 2:05 PM');
 		expect(plain(formatTime(instant, utc))).toBe('2:05 PM');
@@ -49,6 +54,12 @@ describe('instants', () => {
 		expect(formatTime('2026-11-16T14:05:00Z', utc)).toBe('14:05');
 		inLocale('de');
 		expect(formatDate(instant, utc)).toBe('16.11.2026');
+	});
+
+	it('date fields replace the default style instead of clashing with it', () => {
+		const long = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' } as const;
+		expect(formatDate(instant, long)).toBe('16 November 2026');
+		expect(plain(formatDateTime(instant, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }))).toBe('14:05');
 	});
 
 	it('an invalid instant formats as an empty string, never throws', () => {
@@ -63,7 +74,7 @@ describe('learner days', () => {
 		try {
 			for (const tz of ['Pacific/Kiritimati', 'Pacific/Pago_Pago', 'UTC']) {
 				process.env.TZ = tz;
-				expect(formatDay('2026-11-16')).toBe('Nov 16, 2026');
+				expect(formatDay('2026-11-16')).toBe('16 Nov 2026');
 				expect(formatWeekday('2026-11-16')).toBe('Monday');
 				expect(formatWeekday('2026-11-16', 'short')).toBe('Mon');
 			}
@@ -142,9 +153,9 @@ describe('formatDuration', () => {
 
 describe('lists and language names', () => {
 	it('formatList', () => {
-		expect(formatList(['a', 'b', 'c'])).toBe('a, b, and c');
-		inLocale('en-GB');
 		expect(formatList(['a', 'b', 'c'])).toBe('a, b and c');
+		inLocale('en-US');
+		expect(formatList(['a', 'b', 'c'])).toBe('a, b, and c');
 		expect(formatList(['a', 'b'], 'disjunction')).toBe('a or b');
 	});
 	it('languageName in the interface language, the code for unknown or broken codes', () => {

@@ -531,7 +531,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			.filter((kind) => deckPlan.byKind[kind] === 0)
 			.map(
 				(kind) =>
-					`${CARD_TYPES.find((type) => type.id === kind)?.label ?? kind}: nothing to study in the selected decks right now.`
+					t('study.setup.nothingOfType', { type: CARD_TYPES.find((type) => type.id === kind)?.label ?? kind })
 			);
 	});
 
