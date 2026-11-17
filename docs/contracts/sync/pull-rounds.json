@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "sync/pull-rounds",
- "_doc": "Scenarios run by server/internal/sync (B2) against one fresh database each. setup: workspaces (ref, user, language), entries (ref, language; created live), rows (ref, user, collection, workspace ref or null for user-global, entry/book ref, updatedAt (workspaces default to defaults.workspaceUpdatedAt; pluginData rows use plugin defaults.plugin and key = ref), deletedAt when the row is a tombstone — for books/bookmarks/highlights a library_deletions row instead of the row; dataString n makes pluginData data a JSON string of n 'x' characters; events carry type). The test writes rows with exactly these stamps. requests run in order with the server clock at now; query: collections (list, comma-joined), limit, workspace (a workspace ref or a literal id), since ($cursor = the cursor of the last completed round of this case), page ($next = the next token of the previous answer); v=2 is implied. before: writes applied just before the request (op write: restamp a row's data at at; op delete: tombstone or delete-and-log at at; op insert: a new setup row). expect: status; error (the JSON error code); rows: per collection the row refs in page order (collections not listed are []); tombstones: refs that must come with deletedAt set; scope: whether scope is set (default: set on a request without page); scopeLanguages, scopeWorkspaces (refs, sorted by id); restarted (default []); catalogueChanged: scope.catalogue differs from the previous round's; keys: exactly these collection keys; more; cursorAt: the time inside the returned cursor (until - 30 s, only on the last page). more is false exactly when no row of the round remains (the server looks one row ahead), so only a round without rows ends on an empty page.",
+ "_doc": "Scenarios run by server/internal/sync (B2) against one fresh database each. setup: workspaces (ref, user, language), entries (ref, language; created live), rows (ref, user, collection, workspace ref or null for user-global, entry/book ref, updatedAt (workspaces default to defaults.workspaceUpdatedAt; pluginData rows use plugin defaults.plugin and key = ref), deletedAt when the row is a tombstone — for books/bookmarks/highlights a library_deletions row instead of the row; dataString n makes pluginData data a JSON string of n 'x' characters; events carry type). The test writes rows with exactly these stamps. requests run in order with the server clock at now; query: collections (list, comma-joined), limit, workspace (a workspace ref or a literal id), since ($cursor = the cursor of the last completed round of this case), page ($next = the next token of the previous answer), tombstones (the literal value, \"1\" asks a round from no since for tombstones too); v=2 is implied. before: writes applied just before the request (op write: restamp a row's data at at; op delete: tombstone or delete-and-log at at; op insert: a new setup row). expect: status; error (the JSON error code); rows: per collection the row refs in page order (collections not listed are []); tombstones: refs that must come with deletedAt set; scope: whether scope is set (default: set on a request without page); scopeLanguages, scopeWorkspaces (refs, sorted by id); restarted (default []); catalogueChanged: scope.catalogue differs from the previous round's; keys: exactly these collection keys; more; cursorAt: the time inside the returned cursor (until - 30 s, only on the last page). more is false exactly when no row of the round remains (the server looks one row ahead), so only a round without rows ends on an empty page.",
  "defaults": {
   "workspaceUpdatedAt": "2026-11-12T07:00:00Z",
   "plugin": "qinqin-core"
@@ -1701,6 +1701,239 @@
       },
       "more": false,
       "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "tombstones=1 ships tombstones in a round from no since too (the web study pull asks for it) and binds the cursor",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "entries": [
+     {
+      "ref": "e1",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "d1",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:01:00Z"
+     },
+     {
+      "ref": "d2",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:02:00Z",
+      "deletedAt": "2026-11-12T08:02:00Z"
+     },
+     {
+      "ref": "c1",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:03:00Z"
+     },
+     {
+      "ref": "c2",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:04:00Z",
+      "deletedAt": "2026-11-12T08:04:00Z"
+     },
+     {
+      "ref": "b1",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:05:00Z"
+     },
+     {
+      "ref": "b2",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:06:00Z",
+      "deletedAt": "2026-11-12T08:06:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ],
+       "cards": [
+        "c1"
+       ],
+       "books": [
+        "b1"
+       ]
+      },
+      "more": false
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "tombstones": "1"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1",
+        "d2"
+       ],
+       "cards": [
+        "c1",
+        "c2"
+       ],
+       "books": [
+        "b1",
+        "b2"
+       ]
+      },
+      "tombstones": [
+       "d2",
+       "c2",
+       "b2"
+      ],
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "since": "$cursor",
+      "tombstones": "1"
+     },
+     "expect": {
+      "status": 200,
+      "more": false
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "tombstones": "yes"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "limit": 1,
+      "tombstones": "1"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ]
+      },
+      "more": true
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "page": "$next",
+      "tombstones": "1"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d2"
+       ]
+      },
+      "tombstones": [
+       "d2"
+      ],
+      "more": true
      }
     }
    ]

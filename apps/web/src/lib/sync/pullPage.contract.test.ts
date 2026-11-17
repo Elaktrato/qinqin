@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import pageFixture from '../../../../../docs/contracts/sync/pull-page.json';
 import roundsFixture from '../../../../../docs/contracts/sync/pull-rounds.json';
+import { normalizeUrl } from '../pwa/sw/classify';
 import { firstPageUrl, nextPageUrl, parsePullPage, pullAll, V2_STUDY_COLLECTIONS } from './pager';
 
 interface PageCase {
@@ -41,6 +42,7 @@ describe('pull-rounds.json requests are expressible by the client', () => {
 		workspace?: string | number;
 		since?: string;
 		page?: string;
+		tombstones?: string;
 	}
 	it('every non-error request builds a first or next URL', () => {
 		let n = 0;
@@ -53,9 +55,11 @@ describe('pull-rounds.json requests are expressible by the client', () => {
 					continue;
 				}
 				const ws = typeof r.query.workspace === 'number' ? r.query.workspace : undefined;
-				const url = firstPageUrl({ collections: r.query.collections ?? [], workspace: ws, since: r.query.since === '$cursor' ? 'c2.x' : r.query.since, limit: r.query.limit });
+				const url = firstPageUrl({ collections: r.query.collections ?? [], workspace: ws, since: r.query.since === '$cursor' ? 'c2.x' : r.query.since, limit: r.query.limit, tombstones: r.query.tombstones === '1' });
 				expect(url.startsWith('/api/sync/pull?')).toBe(true);
 				expect(url).toContain('v=2');
+				expect(url.includes('tombstones=1')).toBe(r.query.tombstones === '1');
+				expect(url, 'keys sorted as the worker cache key').toBe(normalizeUrl(url));
 			}
 		}
 		expect(n).toBeGreaterThan(5);

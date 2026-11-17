@@ -103,7 +103,9 @@ export function studyPullPages(workspaceId: number): number {
 }
 
 async function pullStudy(workspaceId: number): Promise<SyncDelta> {
-  const first = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: workspaceId });
+  // tombstones=1: the stamps in knownAt must include the server's
+  // tombstones, or a re-add from a slower clock loses to them (stampOf).
+  const first = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: workspaceId, tombstones: true });
   const round = await pullAll((path) => api<unknown>(path), first, V2_STUDY_COLLECTIONS);
   pulledPages.set(workspaceId, round.pages);
   return round.collections as SyncDelta;

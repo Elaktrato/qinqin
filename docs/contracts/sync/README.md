@@ -23,7 +23,7 @@ Error codes are in `docs/contracts/auth/errors.json`: `sync_collection_moved` (4
 ## Pull v2
 
 ```
-GET /api/sync/pull?v=2[&since=<cursor>][&limit=1..2000][&collections=a,b][&workspace=<id>]
+GET /api/sync/pull?v=2[&since=<cursor>][&limit=1..2000][&collections=a,b][&workspace=<id>][&tombstones=1]
 GET /api/sync/pull?v=2&page=<next>          continuation: nothing else may be repeated
 ```
 
@@ -48,14 +48,20 @@ Round order (fixed): `workspaces`, `pluginStates`, `pluginData`, `cards`, `decks
 - A row rewritten during a round gets a stamp `>= until`: it is not shipped twice in one round and comes in
   the next one.
 - From no `since` a round ships live rows only. With a `since` it ships tombstones too (`deletedAt` set).
+  `tombstones=1` (the only value) makes a round from no `since` ship tombstones as well, library
+  `library_deletions` rows included; with a `since` it changes nothing. A client that stamps its writes after
+  the times the server holds (the web study pull: a re-add from a slower clock must not lose to a newer
+  tombstone) asks for it. It is a filter like the others: the page token and the cursor bind it, so the
+  next round sends it again.
 - Within a library collection (`books`, `bookmarks`, `highlights`) the tombstones follow the live rows
   instead of interleaving by stamp: the live rows by `updatedAt`, then the `library_deletions` rows by
   `deletedAt`. Library ids are never reused, so no live row and tombstone of one round share an id; upsert
   and delete by id and the order does not matter.
 - `page` and `since` tokens are opaque (`p2.…`, `c2.…`; only the prefixes are a contract). A page token binds
-  the user and every filter; a cursor binds the collections and workspace filter, so a client keeps one
+  the user and every filter; a cursor binds the collections, workspace and tombstones filters, so a client keeps one
   cursor per filter set. Another user's token, a token of other filters, a garbled token, a `page=` request
-  that repeats `since`/`collections`/`workspace`/`limit`, or a `limit` outside 1..2000 is 400
+  that repeats `since`/`collections`/`workspace`/`limit`/`tombstones`, a `tombstones` value other than `1`, or
+  a `limit` outside 1..2000 is 400
   `sync_page_invalid`.
 - 410 `sync_cursor_expired` (defined, not yet sent): discard local user data and pull without `since`.
 

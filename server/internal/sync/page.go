@@ -49,15 +49,18 @@ const (
 
 // PageRequest is one v2 pull request. A continuation carries only Page (the
 // round's filters are inside it). Limit 0 is the default; Only nil (or
-// empty) is every collection; Workspace 0 is none. Now is the server clock
+// empty) is every collection; Workspace 0 is none. Tombstones (tombstones=1)
+// ships tombstones in a round from no since too; it is bound into the page
+// token and the cursor like the other filters. Now is the server clock
 // (zero: time.Now); tests set it.
 type PageRequest struct {
-	Since     string
-	Page      string
-	Limit     int
-	Only      map[string]bool
-	Workspace int64
-	Now       time.Time
+	Since      string
+	Page       string
+	Limit      int
+	Only       map[string]bool
+	Workspace  int64
+	Tombstones bool
+	Now        time.Time
 }
 
 // Page is one answer. Collections holds every requested name as an encoded
@@ -94,10 +97,10 @@ type CatalogueFunc func(ctx context.Context, languages []string) (string, error)
 
 // ParsePageRequest reads the v2 query parameters (v itself is the caller's
 // business). A continuation (page) may repeat none of since, collections,
-// workspace and limit.
+// workspace, limit and tombstones.
 func ParsePageRequest(q url.Values) (PageRequest, error) {
 	if q.Has("page") {
-		for _, name := range []string{"since", "collections", "workspace", "limit"} {
+		for _, name := range []string{"since", "collections", "workspace", "limit", "tombstones"} {
 			if q.Has(name) {
 				return PageRequest{}, fmt.Errorf("%w: a continuation repeats %s", ErrPageInvalid, name)
 			}
@@ -108,6 +111,12 @@ func ParsePageRequest(q url.Values) (PageRequest, error) {
 		return PageRequest{Page: q.Get("page")}, nil
 	}
 	req := PageRequest{Since: q.Get("since")}
+	if q.Has("tombstones") {
+		if q.Get("tombstones") != "1" {
+			return PageRequest{}, fmt.Errorf("%w: tombstones must be 1", ErrPageInvalid)
+		}
+		req.Tombstones = true
+	}
 	if q.Has("limit") {
 		n, err := strconv.Atoi(q.Get("limit"))
 		if err != nil || n < 1 || n > MaxPageLimit {
@@ -164,8 +173,8 @@ type segment struct {
 	table string
 	stamp string // the column paged over
 	cols  string // the select list after rowid
-	tomb  bool   // the table has deleted_at: live rows only without since
-	log   bool   // a deletion log: walked only with since
+	tomb  bool   // the table has deleted_at: live rows only without since (unless tombstones=1)
+	log   bool   // a deletion log: walked only with since (or tombstones=1)
 	// extra is the WHERE fragment that narrows the segment; it may use ?7
 	// (the workspace id, 0 for none) and ?8 (the language set, a JSON array).
 	extra func(workspace int64) string
@@ -195,13 +204,13 @@ func keysetQuery(cols, table, stamp, extra string) string {
 }
 
 // query is the segment's keyset scan for a round from since ("" = none:
-// live rows only) under the workspace filter.
-func (s segment) query(since string, workspace int64) string {
+// live rows only unless tombs) under the workspace filter.
+func (s segment) query(since string, workspace int64, tombs bool) string {
 	extra := ""
 	if s.extra != nil {
 		extra = s.extra(workspace)
 	}
-	if s.tomb && since == "" {
+	if s.tomb && since == "" && !tombs {
 		extra += " AND deleted_at IS NULL"
 	}
 	return keysetQuery(s.cols, s.table, s.stamp, extra)
@@ -229,7 +238,7 @@ func pullPage(ctx context.Context, sqlDB *sql.DB, userID int64, req PageRequest,
 	var st pageToken
 	var scope *Scope
 	if req.Page != "" {
-		if req.Since != "" || req.Only != nil || req.Workspace != 0 || req.Limit != 0 {
+		if req.Since != "" || req.Only != nil || req.Workspace != 0 || req.Limit != 0 || req.Tombstones {
 			return Page{}, fmt.Errorf("%w: a continuation repeats a filter", ErrPageInvalid)
 		}
 		var err error
@@ -261,7 +270,7 @@ func pullPage(ctx context.Context, sqlDB *sql.DB, userID int64, req PageRequest,
 			}
 			colls = slices.DeleteFunc(colls, func(c string) bool { return !only[c] })
 		}
-		f := filters{Collections: colls, Workspace: req.Workspace}
+		f := filters{Collections: colls, Workspace: req.Workspace, Tombstones: req.Tombstones}
 		var cur cursorToken
 		if req.Since != "" {
 			var err error
@@ -324,13 +333,13 @@ func walk(ctx context.Context, sqlDB *sql.DB, st pageToken, set roundSet) (Page,
 		if slices.Contains(page.Restarted, s.coll) {
 			since = ""
 		}
-		if s.log && since == "" {
+		if s.log && since == "" && !st.Filters.Tombstones {
 			continue
 		}
 		if seg != st.Pos.Seg {
 			pos = position{Seg: seg}
 		}
-		query := s.query(since, st.Filters.Workspace)
+		query := s.query(since, st.Filters.Workspace, st.Filters.Tombstones)
 		args := s.args(query, st.User, since, st.Until, pos, st.Limit-shipped+1, st.Filters.Workspace, st.Languages)
 		stop, err := func() (bool, error) {
 			rows, err := sqlDB.QueryContext(ctx, query, args...)
