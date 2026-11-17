@@ -261,6 +261,20 @@ describe('Stats week page', () => {
 			expect(row?.querySelector('dd')?.textContent?.trim()).toBe('100 reviews');
 		});
 
+		it('the status region is there before the week loads; the card sits outside it', async () => {
+			const later = deferred<WeekView>();
+			vi.mocked(loadWeek).mockReturnValueOnce(later.promise);
+			vi.mocked(loadMilestones).mockResolvedValue(someMilestones());
+			render(Page);
+			const status = document.querySelector('.milestone-status[role="status"]')!;
+			expect(status).not.toBeNull();
+			later.resolve(view('2026-11-16'));
+			const button = await screen.findByRole('button', { name: 'Dismiss' });
+			expect(document.querySelector('.milestone-status[role="status"]')).toBe(status);
+			expect(status.textContent).toBe('Milestone reached: 100 reviews');
+			expect(status.contains(button)).toBe(false);
+		});
+
 		it('outside Han languages the universe is null', async () => {
 			select(1, 'es');
 			const timelines = givenTimelines({});

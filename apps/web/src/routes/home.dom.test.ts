@@ -74,6 +74,19 @@ describe('home milestones', () => {
 		expect(screen.getByText(/^100 reviews, reached/)).toBeTruthy();
 	});
 
+	it('the status region is there before the card loads, and the card sits outside it', async () => {
+		const later = deferred<MilestonesView>();
+		vi.mocked(loadMilestones).mockReturnValueOnce(later.promise);
+		render(Page);
+		const status = document.querySelector('.milestone-status[role="status"]')!;
+		expect(status).not.toBeNull();
+		later.resolve(milestones());
+		await waitFor(() => expect(cardHeading()).toBeTruthy());
+		expect(document.querySelector('.milestone-status[role="status"]')).toBe(status);
+		expect(status.textContent).toBe('Milestone reached: 100 reviews');
+		expect(status.contains(cardHeading())).toBe(false);
+	});
+
 	it('Dismiss hides it and marks the covered ids', async () => {
 		const ms = milestones();
 		vi.mocked(loadMilestones).mockResolvedValue(ms);

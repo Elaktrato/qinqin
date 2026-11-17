@@ -46,6 +46,17 @@ export function cardHeading(plan: CardPlan, locale?: string): string {
 	return `You have reached ${count} ${plan.count === 1 ? 'milestone' : 'milestones'}`;
 }
 
+/**
+ * statusText: what the status region announces when a card appears —
+ * "Milestone reached: 100 reviews", "2 milestones reached: …", "You have
+ * reached 14 milestones"; '' for no card.
+ */
+export function statusText(plan: CardPlan, titles: ReadonlyMap<string, string>, locale?: string): string {
+	const heading = cardHeading(plan, locale);
+	if (plan.kind !== 'recent') return heading;
+	return `${heading}: ${plan.items.map((r) => titles.get(r.id) ?? r.id).join(', ')}`;
+}
+
 /** "and 11 more" under a summary card's three names. */
 export function moreText(more: number, locale?: string): string {
 	return `and ${new Intl.NumberFormat(locale).format(more)} more`;

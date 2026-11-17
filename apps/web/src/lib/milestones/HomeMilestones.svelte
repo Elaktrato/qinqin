@@ -61,6 +61,5 @@
 	}
 </script>
 
-{#if view !== null}
-	<MilestoneCard {view} ondismiss={dismiss} />
-{/if}
+<!-- Always rendered: the status region must exist before the card's text arrives. -->
+<MilestoneCard {view} ondismiss={dismiss} />

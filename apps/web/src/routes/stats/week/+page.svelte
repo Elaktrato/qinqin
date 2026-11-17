@@ -174,6 +174,9 @@
 		{/if}
 	</nav>
 
+	<!-- Always rendered: the status region must exist before the card's text arrives. -->
+	<MilestoneCard view={view === null ? null : milestones} ondismiss={dismissMilestones} />
+
 	{#if workspaceId === null}
 		<p class="hint">Choose a workspace in the header to see its week.</p>
 	{:else if loading && view === null}
@@ -186,9 +189,6 @@
 			>
 		</p>
 	{:else if view !== null}
-		{#if milestones !== null}
-			<MilestoneCard view={milestones} ondismiss={dismissMilestones} />
-		{/if}
 		<div class="week-body" class:stale={busy} aria-busy={busy}>
 			<WeekSummary
 				{view}

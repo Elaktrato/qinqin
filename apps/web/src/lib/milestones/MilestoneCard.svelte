@@ -2,13 +2,15 @@
 	// The shown-once milestone card (docs/contracts/milestones/): nothing for
 	// no plan; "recent" names each milestone with its day; "summary" names the
 	// three newest and links to the history. Dismiss (and the link) marks every
-	// covered milestone. The status container is always there, so a card that
-	// appears after loading is announced once. No animation, no sound.
+	// covered milestone. Parents render this component always (view null while
+	// loading), so the status region exists before its text arrives and a card
+	// that appears after loading is announced once; the interactive card sits
+	// outside the region. No animation, no sound.
 	import type { MilestonesView } from './loadMilestones';
-	import { MILESTONE_TEXT, cardHeading, moreText, titleWithDay } from './milestoneText';
+	import { MILESTONE_TEXT, cardHeading, moreText, statusText, titleWithDay } from './milestoneText';
 
 	interface Props {
-		view: MilestonesView;
+		view: MilestonesView | null;
 		ondismiss: () => void;
 		locale?: string;
 	}
@@ -16,11 +18,12 @@
 	let { view, ondismiss, locale }: Props = $props();
 
 	const headingId = $props.id();
-	const plan = $derived(view.plan);
+	const plan = $derived(view?.plan ?? { kind: 'none' as const });
+	const status = $derived(view === null ? '' : statusText(view.plan, view.titles, locale));
 	const named = $derived(plan.kind === 'recent' ? plan.items : plan.kind === 'summary' ? plan.named : []);
 
 	function line(id: string, day: string): string {
-		return titleWithDay(view.titles.get(id) ?? id, day, locale);
+		return titleWithDay(view?.titles.get(id) ?? id, day, locale);
 	}
 
 	function focusPageHeading(): void {
@@ -37,8 +40,8 @@
 	}
 </script>
 
-<div class="milestone-status" role="status">
-	{#if plan.kind !== 'none'}
+<div class="milestone-status visually-hidden" role="status">{status}</div>
+{#if plan.kind !== 'none'}
 		<section class="milestone-card" aria-labelledby={headingId}>
 			<span class="icon" aria-hidden="true">★</span>
 			<div class="body">
@@ -57,10 +60,21 @@
 				</button>
 			</div>
 		</section>
-	{/if}
-</div>
+{/if}
 
 <style>
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
 	.milestone-card {
 		display: flex;
 		gap: 0.75rem;

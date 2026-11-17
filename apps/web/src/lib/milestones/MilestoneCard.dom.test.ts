@@ -30,19 +30,44 @@ function withH1(): HTMLHeadingElement {
 }
 
 describe('MilestoneCard', () => {
-	it('renders nothing but the status container for no card', () => {
+	it('renders nothing but the empty status container for no card or no view', () => {
 		const { container } = render(MilestoneCard, { view: view({ kind: 'none' }), ondismiss: () => {} });
-		expect(container.querySelector('[role="status"]')).not.toBeNull();
+		expect(container.querySelector('[role="status"]')?.textContent).toBe('');
 		expect(container.querySelector('section')).toBeNull();
+		cleanup();
+		const empty = render(MilestoneCard, { view: null, ondismiss: () => {} });
+		expect(empty.container.querySelector('[role="status"]')?.textContent).toBe('');
 	});
 
-	it('recent: names each milestone with its date, in a labelled section inside a status container', () => {
+	it('the status container exists before the card and gets a short text when it appears; the card is outside it', async () => {
+		const { container, rerender } = render(MilestoneCard, { view: null, ondismiss: () => {} });
+		const status = container.querySelector('[role="status"]')!;
+		const items = [r('streak:7', '2026-11-16')];
+		await rerender({ view: view({ kind: 'recent', items, ids: ['streak:7'] }), ondismiss: () => {} });
+		expect(container.querySelector('[role="status"]')).toBe(status);
+		expect(status.textContent).toBe('Milestone reached: 7-day streak');
+		const section = container.querySelector('section')!;
+		expect(status.contains(section)).toBe(false);
+		expect(status.querySelector('button, a')).toBeNull();
+	});
+
+	it('the status text of a summary and of several recent ones', async () => {
+		const { container, rerender } = render(MilestoneCard, {
+			view: view({ kind: 'summary', count: 14, named: [r('streak:7', '2026-11-16')], more: 13, ids: [] }),
+			ondismiss: () => {}
+		});
+		expect(container.querySelector('[role="status"]')?.textContent).toBe('You have reached 14 milestones');
+		const items = [r('streak:7', '2026-11-16'), r('reviews:1000', '2026-11-03')];
+		await rerender({ view: view({ kind: 'recent', items, ids: [] }), ondismiss: () => {} });
+		expect(container.querySelector('[role="status"]')?.textContent).toBe('2 milestones reached: 7-day streak, 1,000 reviews');
+	});
+
+	it('recent: names each milestone with its date, in a labelled section', () => {
 		const items = [r('streak:7', '2026-11-16'), r('reviews:1000', '2026-11-03')];
 		render(MilestoneCard, { view: view({ kind: 'recent', items, ids: items.map((i) => i.id) }), ondismiss: () => {}, locale: 'en-GB' });
 		const section = document.querySelector('section')!;
 		const heading = screen.getByRole('heading', { level: 2, name: '2 milestones reached' });
 		expect(section.getAttribute('aria-labelledby')).toBe(heading.id);
-		expect(section.closest('[role="status"]')).not.toBeNull();
 		expect(screen.getByText('7-day streak, reached 16 November 2026')).toBeTruthy();
 		expect(screen.getByText('1,000 reviews, reached 3 November 2026')).toBeTruthy();
 		expect(document.querySelector('.icon')?.getAttribute('aria-hidden')).toBe('true');
