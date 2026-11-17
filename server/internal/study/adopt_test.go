@@ -31,9 +31,14 @@ func TestAdoptLeftoversAfterADowngrade(t *testing.T) {
 	ins(1, 9, "card:c-vocab-4", `{"id":"c-vocab-4","kind":"vocab","entryId":4,"deckIds":[],"createdAt":"t"}`)     // bob's workspace
 	ins(1, 7, "known:5", `{"version":1,"entryId":5,"createdAt":"t"}`)                                             // keyed row
 
-	moved, err := study.AdoptLeftovers(ctx, sqlDB)
-	if err != nil || moved != 2 {
-		t.Fatalf("AdoptLeftovers = %d, %v; want 2", moved, err)
+	got, err := study.AdoptLeftovers(ctx, sqlDB)
+	if err != nil || got.Moved != 2 {
+		t.Fatalf("AdoptLeftovers = %+v, %v; want 2 moved", got, err)
+	}
+	// The shadowed card:c-vocab-1 leftover (edited 2026-11-14) is newer than
+	// its typed row (2026-11-12): counted, left alone.
+	if got.NewerShadowed != 1 || got.Failed != 0 {
+		t.Errorf("report %+v, want 1 newer shadowed, 0 failed", got)
 	}
 	r, ok, err := study.Get(ctx, sqlDB, 1, 7, "cards", "c-vocab-2")
 	if err != nil || !ok || r.M().Version != 2 || r.M().ModifiedAt.Format("15:04:05") != "07:59:59" {
@@ -62,7 +67,34 @@ func TestAdoptLeftoversAfterADowngrade(t *testing.T) {
 	if c, _, _ := study.Get(ctx, sqlDB, 1, 7, "cards", "c-vocab-1"); c.M().Version != 1 {
 		t.Error("the shadowing typed row changed")
 	}
-	if again, err := study.AdoptLeftovers(ctx, sqlDB); err != nil || again != 0 {
-		t.Errorf("second run = %d, %v", again, err)
+	if again, err := study.AdoptLeftovers(ctx, sqlDB); err != nil || again.Moved != 0 {
+		t.Errorf("second run = %+v, %v", again, err)
+	}
+}
+
+// A row that fails to move is logged and left; the others still move and
+// the server starts (review fix, phases B–D, NIT 1).
+func TestAdoptLeftoversContinuesPastAFailingRow(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := openDB(t)
+	for _, q := range []string{
+		`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
+			VALUES ('qinqin-flashcards', 1, 7, 'deck:BAD', '{"id":"BAD","name":"x","createdAt":"t"}', 1, 't', 't')`,
+		`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
+			VALUES ('qinqin-flashcards', 1, 7, 'deck:OK', '{"id":"OK","name":"y","createdAt":"t"}', 1, 't', 't')`,
+		`CREATE TRIGGER refuse_bad BEFORE INSERT ON study_decks WHEN NEW.id = 'BAD' BEGIN SELECT RAISE(ABORT, 'refused'); END`,
+	} {
+		if _, err := sqlDB.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := study.AdoptLeftovers(ctx, sqlDB)
+	if err != nil || got.Moved != 1 || got.Failed != 1 {
+		t.Fatalf("AdoptLeftovers = %+v, %v; want 1 moved, 1 failed, no error", got, err)
+	}
+	var n int
+	sqlDB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE key = 'deck:BAD'`).Scan(&n)
+	if n != 1 {
+		t.Errorf("the failing row left plugin_data (%d rows)", n)
 	}
 }
