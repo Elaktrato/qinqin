@@ -18,6 +18,8 @@
 	} from '$lib/activity/activity';
 	import type { HeatCell } from '$lib/activity/cells';
 	import HeatmapGarden from '$lib/activity/HeatmapGarden.svelte';
+	import HeatmapMonth from '$lib/activity/HeatmapMonth.svelte';
+	import { earliestMonth, monthOf, monthWindow, nextMonth, prevMonth } from '$lib/activity/calendar';
 	import { stageAmounts, stagesFor, type DayStage } from '$lib/activity/stages';
 	import type { GoalsRow } from '$lib/goals/goals';
 	import { formatNumber } from '$lib/i18n/format';
@@ -73,6 +75,8 @@
 	let response = $state<ActivityResponse | null>(null);
 	// The window `response` covers (learner days, inclusive).
 	let range = $state({ from: '', to: '' });
+	// The month calendar's page (the one requested; `range` says which is on screen).
+	let month = $state(monthOf(currentStudyDay().today(Date.now())));
 	let prefs = $state(initialPrefs());
 	let loading = $state(true);
 	let error = $state('');
@@ -168,10 +172,33 @@
 		heatmapStatus({ hasData: response !== null, loading, prefsLoaded: prefs.loaded })
 	);
 
-	/** The window the layout needs. */
+	/** The window the layout needs: 13 weeks, or one month (never past today). */
 	function wanted(now: Date): { from: string; to: string } {
-		return { from: windowStart(studyDay, now), to: studyDay.today(now.getTime()) };
+		const day = studyDay.today(now.getTime());
+		if (layout === 'month') return monthWindow(month, day);
+		return { from: windowStart(studyDay, now), to: day };
 	}
+
+	// Month paging: back to the activity route's 366-day cap, never past the current month.
+	const canPrev = $derived(month > earliestMonth(today));
+	const canNext = $derived(month < monthOf(today));
+	function page(next: string): void {
+		month = next;
+		void load(false);
+	}
+
+	/** "Goal reached on 2 of 6 days": past goal days (and today once met), vacation days left out. */
+	const goalSummary = $derived.by((): string | null => {
+		let total = 0;
+		let met = 0;
+		for (const cell of cells) {
+			if (cell.stage === null || cell.stage.status === 'vacation') continue;
+			if (cell.day === today && cell.stage.status !== 'met') continue;
+			total++;
+			if (cell.stage.status === 'met') met++;
+		}
+		return stages.size === 0 ? null : t('widgets.activity.month.goalDays', { count: total, met });
+	});
 
 	/** load requests the layout's window; without `force` an already loaded window is kept. */
 	async function load(force = true): Promise<void> {
@@ -308,13 +335,28 @@
 	     tech gets the window summary and one list item per day with activity
 	     or a flower stage (HeatmapDayList). -->
 	<div class="heatmap">
-		<HeatmapGarden {cells} />
+		{#if layout === 'month'}
+			<HeatmapMonth
+				month={monthOf(range.from)}
+				{today}
+				{cells}
+				{canPrev}
+				{canNext}
+				onprev={() => page(prevMonth(month))}
+				onnext={() => page(nextMonth(month))}
+				summary={goalSummary}
+			/>
+		{:else}
+			<HeatmapGarden {cells} />
+			<p class="visually-hidden">{summary}</p>
+		{/if}
 	</div>
-	<p class="visually-hidden">{summary}</p>
 
 	<footer class="legend">
 		<span>
-			{#if allHidden}
+			{#if layout === 'month'}
+				<!-- The month's own summary is in its header. -->
+			{:else if allHidden}
 				{t('stats.activity.allHidden')}
 			{:else if windowTotal === 0}
 				{t('stats.activity.noneYet', { weeks })}

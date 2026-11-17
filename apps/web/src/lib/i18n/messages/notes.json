@@ -86,6 +86,7 @@
 	"stats.map.filtered": "{shown} and {total} are formatted numbers; the plural follows the shown count.",
 	"study.summary.cardsIn": "Between bold numbers: \"<b>12</b> cards in <b>2</b> decks · <b>3</b> due · <b>5</b> new\"; each fragment is one message.",
 	"weekly.day.name": "Accessible name of a day in the week strip; {date} is \"Monday 16 November\", {state} one of weekly.day.*.",
+	"widgets.activity.month.goalDays": "Above the heatmap's month calendar: {met} is how many of the month's goal days (# of them, vacation days left out) reached the daily goal.",
 	"widgets.activity.stage.bloom": "Flower stage: the day's goal reached.",
 	"widgets.activity.stage.bud": "Flower stage: a third of the day's goal or more done.",
 	"widgets.activity.stage.opening": "Flower stage: two thirds of the day's goal or more done.",
