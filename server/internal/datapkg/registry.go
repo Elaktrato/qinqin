@@ -388,7 +388,13 @@ func specKey(s Spec) string {
 // under the same name, e.g. after an interrupted commit).
 func (r Registry) stale(p pkgRow, s Spec) bool {
 	return p.state != stateReady || p.formatVersion != FormatVersion || p.errText != "" ||
-		p.meta != specKey(s) || !r.fileExists(p.id, p.revision) || r.fileSize(p.id, p.revision) != p.bytes
+		p.meta != specKey(s) || !r.fileIntact(p)
+}
+
+// fileIntact reports whether the row's current revision has its file on
+// disk at the row's size.
+func (r Registry) fileIntact(p pkgRow) bool {
+	return r.fileExists(p.id, p.revision) && r.fileSize(p.id, p.revision) == p.bytes
 }
 
 // fileSize is the size of a revision's file (-1 when it cannot be read).
@@ -484,10 +490,11 @@ func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail
 	}
 	maxRev = max(maxRev, row.revision)
 
-	// A ready revision whose file is missing (a restored database): build
-	// that revision again; only a content change makes a new one.
+	// A ready revision whose file is missing (a restored database) or not
+	// of the row's size: build that revision again and replace the file;
+	// only a content change makes a new one.
 	cand := maxRev + 1
-	if row.state == stateReady && row.revision >= 1 && !r.fileExists(id, row.revision) {
+	if row.state == stateReady && row.revision >= 1 && !r.fileIntact(row) {
 		cand = row.revision
 	}
 	built, err := r.buildFile(ctx, spec, cand, now)
@@ -503,12 +510,12 @@ func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail
 	switch {
 	case same && cand == row.revision:
 		return r.commit(ctx, spec, built, cand, now)
-	case same && r.fileExists(id, row.revision):
+	case same && r.fileIntact(row):
 		os.Remove(built.Path)
 		return r.revive(ctx, row, spec, stamp)
 	case same:
-		// The current revision's file is gone (purged after a tombstone):
-		// rebuild it under its own number.
+		// The current revision's file is gone (purged after a tombstone) or
+		// damaged: rebuild it under its own number.
 		os.Remove(built.Path)
 		again, err := r.buildFile(ctx, spec, row.revision, now)
 		if err != nil {
