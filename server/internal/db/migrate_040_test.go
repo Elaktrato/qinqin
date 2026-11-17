@@ -6,7 +6,7 @@ import (
 	"qinqin/internal/db"
 )
 
-// Migration 040 (#73): users.interface_language, '' (follow the
+// Migration 040 (#73): users.interface_language, "" (follow the
 // browser/device) for every existing and new account.
 func TestMigration040InterfaceLanguage(t *testing.T) {
 	sqlDB := open030(t)

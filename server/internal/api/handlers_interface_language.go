@@ -12,7 +12,7 @@ import (
 const maxInterfaceLanguageBody = 1 << 10
 
 // handlePutInterfaceLanguage serves PUT /api/me/interface-language: stores
-// the caller's interface language, '' (follow the browser/device) or a
+// the caller's interface language, "" (follow the browser/device) or a
 // canonical language tag (docs/contracts/i18n/). Syntax only: a well-formed
 // tag no client supports is stored. GET /api/auth/me reads it back.
 func (s *server) handlePutInterfaceLanguage(w http.ResponseWriter, r *http.Request) {

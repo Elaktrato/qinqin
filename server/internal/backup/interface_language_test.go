@@ -7,7 +7,7 @@ import (
 )
 
 // account.json carries the interface language (#73): exported always
-// (also ''), restored when present and valid; an archive without the key
+// (also ""), restored when present and valid; an archive without the key
 // (every v1 archive before #73) leaves the current value, and an invalid
 // value is ignored without failing the restore.
 func TestInterfaceLanguageExportAndRestore(t *testing.T) {
@@ -31,7 +31,7 @@ func TestInterfaceLanguageExportAndRestore(t *testing.T) {
 		t.Errorf("restored %q, want zh-Hant", got)
 	}
 
-	// '' is exported as '' and restores as ''.
+	// "" is exported as "" and restores as "".
 	exec(t, src.DB, `UPDATE users SET interface_language = '' WHERE id = ?`, src.AliceUID)
 	data, _ = exportBytes(t, src, src.AliceUID)
 	files, _ = unzipAll(t, data)
@@ -50,9 +50,9 @@ func TestInterfaceLanguageExportAndRestore(t *testing.T) {
 
 func TestInterfaceLanguageAbsentOrInvalidKeepsTheCurrentValue(t *testing.T) {
 	for name, edit := range map[string]func(acc map[string]any){
-		"absent":     func(acc map[string]any) { delete(acc, "interfaceLanguage") },
-		"invalid":    func(acc map[string]any) { acc["interfaceLanguage"] = "EN_us" },
-		"null":       func(acc map[string]any) { acc["interfaceLanguage"] = nil },
+		"absent":  func(acc map[string]any) { delete(acc, "interfaceLanguage") },
+		"invalid": func(acc map[string]any) { acc["interfaceLanguage"] = "EN_us" },
+		"null":    func(acc map[string]any) { acc["interfaceLanguage"] = nil },
 	} {
 		t.Run(name, func(t *testing.T) {
 			files := sampleFiles(t)

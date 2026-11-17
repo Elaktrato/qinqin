@@ -12,7 +12,7 @@ type queryer interface {
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 }
 
-// InterfaceLanguage returns the user's stored interface language ('' =
+// InterfaceLanguage returns the user's stored interface language ("" =
 // follow the browser/device, also for an unknown user).
 func InterfaceLanguage(ctx context.Context, q queryer, userID int64) (string, error) {
 	var lang string
