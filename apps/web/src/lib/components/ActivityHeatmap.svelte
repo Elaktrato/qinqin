@@ -224,6 +224,8 @@
 	// Month paging: back to the activity route's 366-day cap, never past the current month.
 	const canPrev = $derived(month > earliestMonth(today));
 	const canNext = $derived(month < monthOf(today));
+	// `month` moves ahead of the screen while a page loads, so quick clicks
+	// page on from the newest request; a failed page puts it back (load).
 	function page(next: string): void {
 		month = next;
 		void load(false);
@@ -268,6 +270,8 @@
 				monthError = t('widgets.activity.month.loadFailed');
 				console.warn('activity month not loaded', err);
 				failedMonth = month;
+				// Paging stays in step with the month on screen (#100 review).
+				if (shownMonth !== null) month = shownMonth;
 			} else console.warn('activity refresh failed', err);
 		} finally {
 			if (requests.isCurrent(seq)) loading = false;

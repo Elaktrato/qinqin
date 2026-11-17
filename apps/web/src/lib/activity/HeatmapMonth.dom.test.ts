@@ -180,4 +180,19 @@ describe('HeatmapMonth', () => {
 		await waitFor(() => expect(screen.getByRole('list', { name: 'Daily activity' }).textContent).toMatch(/of 5/));
 		expect(screen.queryByText(/Goal reached on/)).toBeNull();
 	});
+
+	it('a failed page keeps the month on screen and the paging in step with it (#100 review)', async () => {
+		render(ActivityHeatmap, { layout: 'month' });
+		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
+		vi.mocked(fetchActivity).mockRejectedValueOnce(new Error('offline'));
+		await fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
+		expect(await screen.findByText(/Could not load this month/)).toBeTruthy();
+		expect(monthName()?.textContent).toBe('November 2026');
+		// Still November: Next stays disabled and Previous asks for October again, not September.
+		expect(screen.getByRole('button', { name: 'Next month' }).hasAttribute('disabled')).toBe(true);
+		await fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
+		await waitFor(() => expect(monthName()?.textContent).toBe('October 2026'));
+		expect(vi.mocked(fetchActivity).mock.calls.at(-1)).toEqual(['2026-10-01', '2026-10-31']);
+		expect(screen.queryByText(/Could not load this month/)).toBeNull();
+	});
 });
