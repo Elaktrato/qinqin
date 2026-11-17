@@ -36,7 +36,7 @@ const READER_V030_SOURCES: SourceCredit[] = [
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
-import { componentsSection, creditView, packTable, pluginCredits, sentencePackSources } from './sections';
+import { componentsSection, creditView, packTable, pluginCredits, sentencePackSources, strokesSection } from './sections';
 
 describe('packTable', () => {
 	it('builds rows and a note per pack with a notice, with unique ids', () => {
@@ -245,7 +245,6 @@ describe('declared credits', () => {
 		const paths = all.flatMap((credit) => (credit.licenseTexts ?? []).map((text) => text.path));
 		expect(paths.sort()).toEqual([
 			'/ANTHROPIC-SDK-GO-LICENSE.TXT',
-			'/ARPHICPL.TXT',
 			'/LEPTONICA-LICENSE.TXT',
 			'/OPENCC-APACHE-2.0.TXT',
 			'/OPENCC-JS-LICENSE.TXT',
@@ -300,5 +299,42 @@ describe('componentsSection', () => {
 	});
 	it('shows on an error so the retry is reachable', () => {
 		expect(componentsSection([], 'down').show).toBe(true);
+	});
+});
+
+describe('strokesSection', () => {
+	const pack = {
+		packId: 'hanzi-writer-strokes',
+		name: 'Hanzi Writer stroke data',
+		version: '0.2.0',
+		language: 'zh',
+		license: 'Arphic Public License',
+		attribution: 'Make Me a Hanzi, hanzi-writer-data',
+		notice: 'Derived from [Make Me a Hanzi](https://github.com/skishore/makemeahanzi).'
+	};
+	it('is hidden without packs and without an error, shown on an error', () => {
+		expect(strokesSection([], '').show).toBe(false);
+		expect(strokesSection([], 'down').show).toBe(true);
+	});
+	it('shows licence, attribution and notice, and links the Arphic text that ships with the app', async () => {
+		const s = strokesSection([pack], '');
+		expect(s.table.rows.map((r) => [r.name, r.license, r.attribution])).toEqual([
+			['Hanzi Writer stroke data', 'Arphic Public License', 'Make Me a Hanzi, hanzi-writer-data']
+		]);
+		expect(s.table.notes[0].id).toBe('note-strokes-0');
+		expect(s.licenseHref).toEqual({ 0: '/ARPHICPL.TXT' });
+		const shipped = import.meta.glob('../../../static/*', { query: '?url', import: 'default' });
+		expect(Object.keys(shipped).map((p) => `/${p.split('/').pop()}`)).toContain('/ARPHICPL.TXT');
+		expect(localLicensePath('/ARPHICPL.TXT')).toBe('/ARPHICPL.TXT');
+	});
+	it('links nothing for another licence', () => {
+		expect(strokesSection([{ ...pack, license: 'MIT' }], '').licenseHref).toEqual({});
+	});
+});
+
+describe('the app credits no longer carry the stroke data', () => {
+	it('lists no hanzi-writer-data credit (the stroke packs are credited from the server)', () => {
+		expect(coreCredits.map((c) => c.name)).not.toContain('hanzi-writer-data');
+		expect(coreCredits.map((c) => c.name)).toContain('hanzi-writer');
 	});
 });

@@ -11,14 +11,19 @@
 		type InstalledPack,
 		type StagedPack
 	} from '$lib/api/packs';
+	import { getCatalogue, type Catalogue } from '$lib/api/packages';
 	import type { UploadProgress } from '$lib/api/upload';
 	import { languageLabel } from '$lib/languages';
 	import {
 		LICENCE_CONFIRMATION,
 		LICENCE_LABEL,
+		PACKAGES_BUILDING,
+		PACKAGES_UNAVAILABLE,
 		groupPacks,
 		licenceCaution,
 		licenceLine,
+		packageLine,
+		packagesOf,
 		progressText,
 		replaceLines,
 		uninstallWarning
@@ -29,6 +34,20 @@
 	let packs = $state<InstalledPack[]>([]);
 	let loading = $state(true);
 	let loadError = $state('');
+
+	// What the server has built from the installed packs (GET /api/packages); null until read.
+	let catalogue = $state<Catalogue | null>(null);
+	let catalogueFailed = $state(false);
+
+	async function loadCatalogue(): Promise<void> {
+		try {
+			catalogue = await getCatalogue();
+			catalogueFailed = false;
+		} catch {
+			catalogue = null;
+			catalogueFailed = true;
+		}
+	}
 
 	let phase = $state<Phase>('idle');
 	let fileInput = $state<HTMLInputElement>();
@@ -63,6 +82,7 @@
 		loadError = '';
 		try {
 			packs = await listPacks();
+			void loadCatalogue();
 		} catch (err) {
 			packs = [];
 			loadError = message(err, 'Could not load the installed packs.');
@@ -297,6 +317,12 @@
 		<p class="error" role="alert">{error}</p>
 	{/if}
 
+	{#if catalogue?.building}
+		<p class="notice" role="status">{PACKAGES_BUILDING}</p>
+	{:else if catalogueFailed}
+		<p class="hint">{PACKAGES_UNAVAILABLE}</p>
+	{/if}
+
 	{#if loading}
 		<p>Loading installed packs…</p>
 	{:else if loadError}
@@ -324,6 +350,11 @@
 						{#if pack.attribution}
 							<p><span class="label">Attribution:</span> {pack.attribution}</p>
 						{/if}
+						{#each packagesOf(pack, catalogue?.packages ?? []) as row (row.id)}
+							{@const line = packageLine(row)}
+							<p class="package"><span class="label">Package</span> {line.text}</p>
+							{#if line.error}<p class="error package-error">Last build failed: {line.error}</p>{/if}
+						{/each}
 						<button type="button" class="uninstall" onclick={() => askUninstall(pack)}>
 							Uninstall<span class="sr"> {pack.name || pack.packId}</span>
 						</button>

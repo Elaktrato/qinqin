@@ -53,6 +53,37 @@ export function componentsSection(list: ComponentPack[], error: string): { show:
 	return { show: error !== '' || list.length > 0, table };
 }
 
+/** Where the Arphic Public License text ships in apps/web/static (the stroke data's licence). */
+const ARPHIC_TEXT = '/ARPHICPL.TXT';
+
+/**
+ * strokesSection is the Sources page's "Stroke data" block: the table of GET
+ * /api/stroke-packs, with the licence text link for the Arphic Public License.
+ * It shows only while a pack is installed, or on a load error.
+ */
+export function strokesSection(
+	list: ComponentPack[],
+	error: string
+): { show: boolean; table: PackTable; licenseHref: Record<number, string> } {
+	const table = packTable(
+		'strokes',
+		list.map((p, i) => ({
+			id: i,
+			name: p.name,
+			language: p.language,
+			version: p.version,
+			license: p.license,
+			attribution: p.attribution,
+			notice: p.notice
+		}))
+	);
+	const licenseHref: Record<number, string> = {};
+	list.forEach((p, i) => {
+		if (/arphic public license/i.test(p.license) && localLicensePath(ARPHIC_TEXT) !== null) licenseHref[i] = ARPHIC_TEXT;
+	});
+	return { show: error !== '' || list.length > 0, table, licenseHref };
+}
+
 export interface PackRow {
 	key: number;
 	name: string;

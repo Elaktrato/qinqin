@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { InstalledPack, PackType, StagedPack } from '$lib/api/packs';
+import type { CatalogueRow } from '$lib/api/packages';
 import {
 	LICENCE_CAUTION,
 	LICENCE_CONFIRMATION,
@@ -9,6 +10,9 @@ import {
 	groupPacks,
 	licenceCaution,
 	licenceLine,
+	PACKAGES_BUILDING,
+	packageLine,
+	packagesOf,
 	progressText,
 	replaceLines,
 	uninstallWarning
@@ -186,5 +190,60 @@ describe('wording', () => {
 			for (const l of replaceLines(staged({ replaces: r }))) out.push(l.text);
 		}
 		for (const s of out) expect(s).not.toMatch(FORBIDDEN);
+	});
+});
+
+function row(over: Partial<CatalogueRow> & { id: string; packId: string }): CatalogueRow {
+	const { packId, ...rest } = over;
+	return {
+		type: 'lexicon',
+		languages: ['zh'],
+		formatVersion: 1,
+		revision: 3,
+		contentHash: `sha256:${'a'.repeat(64)}`,
+		sha256: 'b'.repeat(64),
+		bytes: 24117248,
+		url: `/api/packages/${over.id}/3`,
+		state: 'ready',
+		builtAt: '2026-11-16T10:00:00Z',
+		requires: [],
+		optional: false,
+		licenseTexts: true,
+		sources: [{ type: 'dictionary', packId, name: 'n', version: '1', license: 'MIT', attribution: 'a', notice: '' }],
+		updatedAt: '2026-11-16T10:00:00Z',
+		deletedAt: null,
+		...rest
+	} as CatalogueRow;
+}
+
+describe('packagesOf', () => {
+	it('finds the packages built from an installed pack by their sources, tombstones left out', () => {
+		const rows = [
+			row({ id: 'lexicon.zh', packId: 'cedict' }),
+			row({ id: 'levels.hsk', type: 'levels', packId: 'hsk', sources: [{ type: 'levels', packId: 'hsk', name: 'n', version: '1', license: 'x', attribution: 'a', notice: '' }] }),
+			row({ id: 'frequency.cedict', type: 'frequency', packId: 'cedict', state: 'deleted', deletedAt: '2026-11-16T10:00:00Z', url: null })
+		];
+		expect(packagesOf(pack('dictionary', 'cedict', 'CC-CEDICT'), rows).map((r) => r.id)).toEqual(['lexicon.zh']);
+		expect(packagesOf(pack('dictionary', 'other', 'X'), rows)).toEqual([]);
+	});
+});
+
+describe('packageLine', () => {
+	it('shows revision, size in MB and state of a ready package', () => {
+		expect(packageLine(row({ id: 'lexicon.zh', packId: 'cedict' }))).toEqual({ text: 'lexicon.zh: revision 3, 23.0 MB, ready', error: null });
+	});
+	it('says a first build is pending or failed, without a size', () => {
+		const base = { revision: 0, contentHash: '', sha256: '', bytes: 0, url: null, builtAt: null } as const;
+		expect(packageLine(row({ id: 'lexicon.zh', packId: 'c', state: 'building', ...base })).text).toBe('lexicon.zh: being built');
+		expect(packageLine(row({ id: 'lexicon.zh', packId: 'c', state: 'failed', ...base })).text).toBe('lexicon.zh: build failed');
+	});
+	it('carries the administrator error text, also on a ready row of an older revision', () => {
+		expect(packageLine(row({ id: 'lexicon.zh', packId: 'c', error: 'disk full' }))).toEqual({
+			text: 'lexicon.zh: revision 3, 23.0 MB, ready',
+			error: 'disk full'
+		});
+	});
+	it('names the building notice', () => {
+		expect(PACKAGES_BUILDING).toBe('Packages are being built');
 	});
 });

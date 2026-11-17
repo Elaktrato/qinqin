@@ -17,6 +17,17 @@ const pack = {
 };
 
 let components: () => Response;
+let strokes: () => Response;
+
+const strokePack = {
+	packId: 'hanzi-writer-strokes',
+	name: 'Hanzi Writer stroke data',
+	version: '0.2.0',
+	language: 'zh',
+	license: 'Arphic Public License',
+	attribution: 'Make Me a Hanzi, hanzi-writer-data',
+	notice: 'Stroke order data derived from Make Me a Hanzi.'
+};
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -24,11 +35,13 @@ function json(body: unknown, status = 200): Response {
 
 beforeEach(() => {
 	components = () => json([pack]);
+	strokes = () => json([strokePack]);
 	vi.stubGlobal(
 		'fetch',
 		vi.fn(async (input: RequestInfo | URL) => {
 			const path = new URL(String(input), 'http://localhost').pathname;
 			if (path === '/api/component-packs') return components();
+			if (path === '/api/stroke-packs') return strokes();
 			return json([]);
 		})
 	);
@@ -70,6 +83,38 @@ describe('sources page: character components', () => {
 		await screen.findByRole('heading', { name: 'Frequency lists' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('heading', { name: 'Character components' })).toBeNull();
+	});
+});
+
+describe('sources page: stroke packs', () => {
+	it('lists each stroke pack with licence, attribution, notice and the Arphic text link', async () => {
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Stroke data' });
+		const section = heading.closest('section')!;
+		await waitFor(() => expect(within(section).getAllByText('Hanzi Writer stroke data').length).toBeGreaterThan(0));
+		expect(within(section).getByText(/Make Me a Hanzi, hanzi-writer-data/)).toBeTruthy();
+		expect(within(section).getByText('Stroke order data derived from Make Me a Hanzi.')).toBeTruthy();
+		expect(within(section).getByRole('link', { name: 'Arphic Public License' }).getAttribute('href')).toBe('/ARPHICPL.TXT');
+	});
+
+	it('no longer lists the stroke data under Built into the app', async () => {
+		render(Page);
+		const core = screen.getByRole('list', { name: 'Built into the app' });
+		expect(within(core).queryByRole('heading', { name: 'hanzi-writer-data' })).toBeNull();
+		expect(within(core).getByRole('heading', { name: 'hanzi-writer' })).toBeTruthy();
+	});
+
+	it('shows an error with a retry, and hides when no pack is installed', async () => {
+		strokes = () => json({ error: 'x', message: 'down' }, 500);
+		render(Page);
+		const section = (await screen.findByRole('heading', { name: 'Stroke data' })).closest('section')!;
+		await waitFor(() => expect(within(section).getByRole('alert')).toBeTruthy());
+		cleanup();
+		strokes = () => json([]);
+		render(Page);
+		await screen.findByRole('heading', { name: 'Frequency lists' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('heading', { name: 'Stroke data' })).toBeNull();
 	});
 });
 
