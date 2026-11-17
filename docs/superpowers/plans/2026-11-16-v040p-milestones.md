@@ -531,3 +531,26 @@ Real-app check (2026-11-17, Task 12 Step 1 as dispatched; no browser):
 - Not run here: the Task 12 reached-day assertions over a real event log (cards, 120 reviews, `read` / `journal`
   events, Berlin zone) through a `realapp.check.test.ts` against the server; Step 2 gates. Defects found: none.
 - Cleanup: server killed, scratch copy, binary, data dir and script deleted; `git status` clean before this commit.
+
+Review fixes (2026-11-17, findings 1–8, one commit each, test-first):
+
+- Ruling: `MilestonesView.workspaceId`; `markSeen(view)` writes into the view's workspace only; both pages drop a
+  foreign card when a switch starts loading and refuse its dismiss (read with `untrack`, or the load effect would
+  depend on the view it replaces) — a dismiss after a switch would mark the old workspace's ids in the new one —
+  cost: none.
+- Ruling: the log memo keys the event log by content (read/journal id, workspace, ts, type, payload) and filters
+  the workspace inside the pass; the perf guard loads twice through `loadMilestones` (`reachedStats.passes`) —
+  cost: one O(n) hash per new log array.
+- Ruling: `MilestoneCard` renders an always-present, visually hidden status region ("Milestone reached: 100
+  reviews") beside, not around, the interactive card; parents render it always (`view` null while loading) —
+  cost: the card text is announced in short form only.
+- Ruling: a write over a pulled tombstone carries its newest stamp (`knownAt`, `tombstoneStamps`);
+  `saveSeenMilestones` answers 'done' | 'pending' and only 'done' drops pending ids — supersedes the plan's and
+  spec's "skipped = success" (a skip means the server holds a newer row, not "another device wrote it first";
+  under LWW the later writer wins) — cost: a refused row is retried at every flush (at most every 30 s).
+- Ruling: the `online` flush filters against the last load's live rows (`flushOnOnline`), never an empty set.
+- Ruling: the Week card heading is an h3 (`headingLevel`) inside `section.week`; the history keeps its h2.
+- Ruling: the replay memo is keyed without `now` and holds while `now` stays in the sweep's window (latest
+  included point … earliest point after `now`), so a future-stamped review counts once now passes it.
+- Gates (Node 26.13.1, after the last code commit b8ed176): `npm run check` 0, `npx vitest run` 0 (410 files,
+  7012 tests), `npm run build` 0. Go unchanged, not run.
