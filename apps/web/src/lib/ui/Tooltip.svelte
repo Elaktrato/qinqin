@@ -122,7 +122,7 @@
 		transition: opacity var(--motion-fast) var(--ease-standard);
 	}
 	/* Bridges the gap to the trigger, so moving onto the tip keeps it open. */
-	.tip::before {
+	.tip[data-open='true']::before {
 		content: '';
 		position: absolute;
 		inset: calc(-1 * var(--space-1) - 1px);

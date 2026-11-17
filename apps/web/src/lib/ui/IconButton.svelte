@@ -13,6 +13,7 @@
 	//   tooltip    false only where the same words are visible next to it
 	//   placement  where the tooltip opens (Tooltip)
 	//   tooltipSuppressed  hides the tooltip for now (its menu is open)
+	//   class      extra classes (kept with the component's own)
 	//   …rest      passed to the <button>/<a> (aria-haspopup, aria-expanded, …)
 	import type { HTMLAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
@@ -31,7 +32,8 @@
 		tooltipSuppressed?: boolean;
 		onclick?: (e: MouseEvent) => void;
 		element?: HTMLElement;
-	} & Omit<HTMLAttributes<HTMLElement>, 'onclick'>;
+		class?: string;
+	} & Omit<HTMLAttributes<HTMLElement>, 'onclick' | 'class'>;
 
 	let {
 		label,
@@ -45,18 +47,19 @@
 		tooltipSuppressed = false,
 		onclick,
 		element = $bindable(),
+		class: className = '',
 		...rest
 	}: Props = $props();
 </script>
 
 {#snippet control()}
 	{#if href}
-		<a bind:this={element} class="icon-button" {href} aria-label={label} {onclick} {...rest}><Icon name={icon} {size} /></a>
+		<a bind:this={element} class="icon-button {className}" {href} aria-label={label} {onclick} {...rest}><Icon name={icon} {size} /></a>
 	{:else}
 		<button
 			bind:this={element}
 			type="button"
-			class="icon-button"
+			class="icon-button {className}"
 			aria-label={label}
 			aria-pressed={pressed === undefined ? undefined : pressed}
 			{disabled}

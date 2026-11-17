@@ -73,9 +73,11 @@ describe('IconButton', () => {
 		expect(link.getAttribute('href')).toBe('/');
 	});
 
-	it('passes other attributes through (aria-haspopup, aria-expanded)', () => {
-		render(IconButton, { label: 'More', icon: 'more', 'aria-haspopup': 'menu', 'aria-expanded': false });
+	it('passes other attributes through (aria-haspopup, aria-expanded) and keeps its own class', () => {
+		render(IconButton, { label: 'More', icon: 'more', 'aria-haspopup': 'menu', 'aria-expanded': false, class: 'extra' });
 		const button = screen.getByRole('button', { name: 'More' });
+		expect(button.className).toContain('icon-button');
+		expect(button.className).toContain('extra');
 		expect(button.getAttribute('aria-haspopup')).toBe('menu');
 		expect(button.getAttribute('aria-expanded')).toBe('false');
 	});
