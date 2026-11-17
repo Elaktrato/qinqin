@@ -228,6 +228,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/fonts",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/frequency-packs",
 		"access": "public"
 	},
@@ -358,6 +362,10 @@
 	{
 		"pattern": "GET /api/workspaces",
 		"access": "user"
+	},
+	{
+		"pattern": "GET /fonts/{file}",
+		"access": "public"
 	},
 	{
 		"pattern": "GET /hanzi/{file}",

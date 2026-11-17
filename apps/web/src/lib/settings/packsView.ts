@@ -30,10 +30,11 @@ export const PACK_TYPE_LABELS: Readonly<Record<PackType, string>> = labelRecord(
 	grammar: 'packs.type.grammar',
 	audio: 'packs.type.audio',
 	components: 'packs.type.components',
-	strokes: 'packs.type.strokes'
+	strokes: 'packs.type.strokes',
+	font: 'packs.type.font'
 });
 
-const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes'];
+const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'font'];
 
 /** packLanguages is the languages a listed pack covers: a strokes pack's list, else its one language. */
 export function packLanguages(pack: InstalledPack): string[] {
@@ -106,7 +107,8 @@ const UNINSTALL: Record<PackType, MessageKey> = {
 	grammar: 'packs.uninstall.grammar',
 	components: 'packs.uninstall.components',
 	strokes: 'packs.uninstall.strokes',
-	audio: 'packs.uninstall.audio'
+	audio: 'packs.uninstall.audio',
+	font: 'packs.uninstall.font'
 };
 
 /** uninstallWarning says what an uninstall removes and what stays. */

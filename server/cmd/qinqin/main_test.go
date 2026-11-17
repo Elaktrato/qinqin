@@ -60,6 +60,8 @@ func TestRootMuxKeepsAPI(t *testing.T) {
 			// Stroke files are served by the API from the installed strokes
 			// pack, even when an old web build still carries hanzi/ files.
 			{"GET", "/hanzi/U597D.json"}, {"GET", "/hanzi/nope"},
+			// Font slices are served by the API from the installed font packs.
+			{"GET", "/fonts/" + strings.Repeat("a", 64) + ".woff2"}, {"GET", "/fonts/nope"},
 		} {
 			resp, body := reach(t, c.method, c.path)
 			if resp.Header.Get("X-Stub-API") != "1" || body != "stub-api "+c.method+" "+c.path {

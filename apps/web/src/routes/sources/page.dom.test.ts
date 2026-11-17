@@ -18,6 +18,34 @@ const pack = {
 
 let components: () => Response;
 let strokes: () => Response;
+let fonts: () => Response;
+const fontsAsked = vi.fn();
+
+const fontList = {
+	faces: [
+		{
+			packId: 'klee-one',
+			face: 'kai',
+			script: 'Jpan',
+			original: 'Klee One',
+			weight: '400',
+			style: 'normal',
+			license: 'OFL-1.1',
+			attribution: 'Klee One by Fontworks',
+			slices: []
+		}
+	],
+	packs: [
+		{
+			packId: 'klee-one',
+			name: 'qinqin Kai JP (Klee One, subset)',
+			version: '1.100-q1',
+			license: 'OFL-1.1',
+			attribution: 'Klee One by Fontworks (SIL OFL 1.1)',
+			notice: 'qinqin Kai JP is a modified version of Klee One.'
+		}
+	]
+};
 
 const strokePack = {
 	packId: 'hanzi-writer-strokes',
@@ -36,12 +64,18 @@ function json(body: unknown, status = 200): Response {
 beforeEach(() => {
 	components = () => json([pack]);
 	strokes = () => json([strokePack]);
+	fonts = () => json(fontList);
+	fontsAsked.mockClear();
 	vi.stubGlobal(
 		'fetch',
 		vi.fn(async (input: RequestInfo | URL) => {
 			const path = new URL(String(input), 'http://localhost').pathname;
 			if (path === '/api/component-packs') return components();
 			if (path === '/api/stroke-packs') return strokes();
+			if (path === '/api/fonts') {
+				fontsAsked();
+				return fonts();
+			}
 			return json([]);
 		})
 	);
@@ -50,6 +84,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
+	localStorage.removeItem('qinqin.token');
 });
 
 describe('sources page: character components', () => {
@@ -115,6 +150,37 @@ describe('sources page: stroke packs', () => {
 		await screen.findByRole('heading', { name: 'Frequency lists' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('heading', { name: 'Stroke data' })).toBeNull();
+	});
+});
+
+describe('sources page: font packs', () => {
+	it('credits each installed font pack for a signed-in visitor, with the face it modifies', async () => {
+		localStorage.setItem('qinqin.token', 'tok');
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Fonts' });
+		const section = heading.closest('section')!;
+		await waitFor(() => expect(within(section).getAllByText('qinqin Kai JP (Klee One, subset)').length).toBeGreaterThan(0));
+		expect(within(section).getByRole('link', { name: 'OFL-1.1' }).getAttribute('href')).toBe('https://openfontlicense.org/');
+		expect(within(section).getByText('qinqin Kai JP is a modified version of Klee One.')).toBeTruthy();
+		expect(within(section).getByText(/a modified \(subset, renamed\) version of Klee One/)).toBeTruthy();
+	});
+
+	it('asks nothing and shows nothing when signed out (the list needs a session)', async () => {
+		render(Page);
+		await screen.findByRole('heading', { name: 'Frequency lists' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(fontsAsked).not.toHaveBeenCalled();
+		expect(screen.queryByRole('heading', { name: 'Fonts' })).toBeNull();
+	});
+
+	it('is hidden when no font pack is installed', async () => {
+		localStorage.setItem('qinqin.token', 'tok');
+		fonts = () => json({ faces: [], packs: [] });
+		render(Page);
+		await screen.findByRole('heading', { name: 'Frequency lists' });
+		await waitFor(() => expect(fontsAsked).toHaveBeenCalled());
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('heading', { name: 'Fonts' })).toBeNull();
 	});
 });
 

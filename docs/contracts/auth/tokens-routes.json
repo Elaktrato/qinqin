@@ -77,6 +77,11 @@
 			"workspace": "query"
 		},
 		{
+			"pattern": "GET /api/fonts",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
 			"pattern": "GET /api/frequency-packs",
 			"scope": "read",
 			"workspace": "any"

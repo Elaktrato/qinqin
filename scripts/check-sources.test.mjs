@@ -85,6 +85,13 @@ test('the fetched strokes pack the docs name is accepted', () => {
 	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
 });
 
+test('the fetched font packs are exactly the sources of prepare-font-pack.mjs, and the docs may name them', async () => {
+	const { SOURCES } = await import('./prepare-font-pack.mjs');
+	for (const id of Object.keys(SOURCES)) assert.ok(FETCHED_PACKS.includes(id), `${id} is not in FETCHED_PACKS`);
+	const doc = DOC + '| Pack | Provides |\n|---|---|\n' + Object.keys(SOURCES).map((id) => `| **F** (\`${id}\`) | x |`).join('\n') + '\n';
+	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
+});
+
 test('ids outside table rows and list items are not pack names', () => {
 	assert.deepEqual(
 		[...docPackIds('See `some-flag` and `freq-csv`.\n| Pack | x |\n|---|---|\n| **A** (`pack-a`) | `other-thing` |\n')],

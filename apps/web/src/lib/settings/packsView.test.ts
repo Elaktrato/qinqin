@@ -105,6 +105,14 @@ describe('groupPacks', () => {
 		expect(packLanguages(pack('dictionary', 'd', 'D'))).toEqual(['es']);
 		expect(packLanguages({ ...pack('audio', 'a', 'A'), language: '' })).toEqual([]);
 	});
+	it('lists font packs after stroke packs, with their label and uninstall warning', () => {
+		const groups = groupPacks([{ ...pack('font', 'klee-one', 'qinqin Kai JP'), language: '' }, pack('strokes', 's', 'S')]);
+		expect(groups.map((g) => [g.type, g.label])).toEqual([
+			['strokes', 'Stroke data'],
+			['font', 'Fonts']
+		]);
+		expect(uninstallWarning('font')).toMatch(/device's own fonts/);
+	});
 	it('lists audio packs last', () => {
 		const groups = groupPacks([pack('audio', 'k', 'K'), pack('grammar', 'g', 'G'), pack('dictionary', 'd', 'D')]);
 		expect(groups.map((g) => g.type)).toEqual(['dictionary', 'grammar', 'audio']);

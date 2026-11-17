@@ -1,0 +1,16 @@
+{
+ "version": 1,
+ "rule": "fonts/fonts-api",
+ "_doc": "GET /api/fonts (docs/contracts/fonts/README.md): the members of the answer, of a face, of a slice and of a pack, in the order the server writes them; urlPattern every slice url matches; empty is the answer with no font pack installed. order lists the faces (face, script, weight) the Go test pack yields, in answer order: faces.json lists them as kai/Jpan, sans/Hans 700, sans/Hans 400.",
+ "members": ["faces", "packs"],
+ "faceMembers": ["packId", "face", "script", "original", "weight", "style", "license", "attribution", "slices"],
+ "sliceMembers": ["url", "unicodeRange"],
+ "packMembers": ["packId", "name", "version", "license", "attribution", "notice"],
+ "urlPattern": "^/fonts/[0-9a-f]{64}\\.woff2$",
+ "empty": { "faces": [], "packs": [] },
+ "order": [
+  { "face": "sans", "script": "Hans", "weight": "400" },
+  { "face": "sans", "script": "Hans", "weight": "700" },
+  { "face": "kai", "script": "Jpan", "weight": "400" }
+ ]
+}

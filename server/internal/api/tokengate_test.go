@@ -339,6 +339,10 @@ var v1TokenRoutes = map[string]tokenRule{
 	// Themes (#96, docs/contracts/themes/README.md "GET /api/themes"):
 	// public, nothing personal; a read token of any workspace may read it.
 	"GET /api/themes": tokReadGlobal,
+	// Fonts (#97, docs/contracts/fonts/README.md "GET /api/fonts"): signed
+	// in, but instance-wide and not personal; a read token of any
+	// workspace may read it. The slices (/fonts/{file}) take no token.
+	"GET /api/fonts": tokReadGlobal,
 
 	"GET /api/workspaces":                      tokReadAny,
 	"GET /api/sync/pull":                       tokReadAny,
