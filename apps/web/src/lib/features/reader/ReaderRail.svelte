@@ -100,7 +100,7 @@
 	//   confirmation) take their Escape first, and so does an open lookup
 	//   popup, which is drawn on top.
 	function railKey(event: KeyboardEvent): void {
-		if (mode !== 'drawer' || !open) return;
+		if (mode !== 'sheet' || !open) return;
 		if (event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey) {
 			const list = focusables();
 			const current = list.indexOf(document.activeElement as HTMLElement);
@@ -119,7 +119,7 @@
 	// Safety net for the Tab wrap: focus moving to the page outside (a
 	// click target, a screen reader's virtual cursor) closes the drawer.
 	function railFocusOut(event: FocusEvent): void {
-		if (mode !== 'drawer' || !open) return;
+		if (mode !== 'sheet' || !open) return;
 		const next = event.relatedTarget as Node | null;
 		if (!next || rail?.contains(next) || opener?.contains(next) || inPopup(next) || inOverlay(next)) return;
 		onToggle(false);
@@ -146,7 +146,7 @@
 	// A click or tap outside the open drawer closes it. Focus then goes
 	// where the click put it.
 	$effect(() => {
-		if (mode !== 'drawer' || !open) return;
+		if (mode !== 'sheet' || !open) return;
 		const onDown = (event: PointerEvent): void => {
 			const target = event.target as Node | null;
 			if (!target || rail?.contains(target) || opener?.contains(target) || inPopup(target) || inOverlay(target))
@@ -158,7 +158,7 @@
 	});
 </script>
 
-{#if mode === 'drawer'}
+{#if mode === 'sheet'}
 	<button
 		bind:this={opener}
 		type="button"
@@ -186,9 +186,9 @@
 <aside
 	bind:this={rail}
 	id="reader-rail"
-	class="rail {mode}"
+	class="rail {mode === 'sheet' ? 'drawer' : mode}"
 	class:open
-	hidden={mode === 'drawer' && !open}
+	hidden={mode === 'sheet' && !open}
 	aria-label={t('reader.rail.bookmarks')}
 	onkeydown={railKey}
 	onfocusout={railFocusOut}

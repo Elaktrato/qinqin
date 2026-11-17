@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	DEFAULT_RAIL_STATE,
 	RAIL_COLUMN_MIN_WIDTH,
+	RAIL_TABS,
 	loadRailState,
 	railMode,
 	saveRailState,
@@ -30,6 +31,20 @@ const throwing = {
 const KEY = 'qinqin.reader.rail';
 
 describe('rail state', () => {
+	it('RAIL_TABS is contents, bookmarks, highlights, words, display', () => {
+		expect(RAIL_TABS).toEqual(['contents', 'bookmarks', 'highlights', 'words', 'display']);
+	});
+
+	it('an old stored state {open, tab} still loads, and the new tabs load too', () => {
+		expect(loadRailState(memoryStorage({ [KEY]: '{"open":false,"tab":"words"}' }))).toEqual({ open: false, tab: 'words' });
+		expect(loadRailState(memoryStorage({ [KEY]: '{"open":true,"tab":"contents"}' }))).toEqual({ open: true, tab: 'contents' });
+		expect(loadRailState(memoryStorage({ [KEY]: '{"open":true,"tab":"display"}' }))).toEqual({ open: true, tab: 'display' });
+	});
+
+	it('an unknown tab falls back to the default', () => {
+		expect(loadRailState(memoryStorage({ [KEY]: '{"open":true,"tab":"drawer"}' })).tab).toBe(DEFAULT_RAIL_STATE.tab);
+	});
+
 	it('keeps a stored words tab', () => {
 		expect(loadRailState(memoryStorage({ [KEY]: '{"open":true,"tab":"words"}' }))).toEqual({ open: true, tab: 'words' });
 	});
@@ -81,19 +96,19 @@ describe('rail state', () => {
 });
 
 describe('railMode', () => {
-	it('is a column from 1000 px and a drawer below', () => {
+	it('is a column from 1000 px and a sheet below', () => {
 		expect(RAIL_COLUMN_MIN_WIDTH).toBe(1000);
 		expect(railMode(1000)).toBe('column');
 		expect(railMode(1280)).toBe('column');
-		expect(railMode(999.5)).toBe('drawer');
-		expect(railMode(999)).toBe('drawer');
-		expect(railMode(390)).toBe('drawer');
-		expect(railMode(0)).toBe('drawer');
+		expect(railMode(999.5)).toBe('sheet');
+		expect(railMode(999)).toBe('sheet');
+		expect(railMode(390)).toBe('sheet');
+		expect(railMode(0)).toBe('sheet');
 	});
 
-	it('falls back to the drawer for an unknown width', () => {
-		expect(railMode(Number.NaN)).toBe('drawer');
-		expect(railMode(-1)).toBe('drawer');
+	it('falls back to the sheet for an unknown width', () => {
+		expect(railMode(Number.NaN)).toBe('sheet');
+		expect(railMode(-1)).toBe('sheet');
 	});
 });
 
