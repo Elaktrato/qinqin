@@ -85,6 +85,21 @@ describe('IconButton', () => {
 		expect(link.getAttribute('href')).toBe('/');
 	});
 
+	it('its own name and pressed state win over passed-through attributes', () => {
+		render(IconButton, { label: 'Bold', icon: 'display', pressed: true, 'aria-label': 'Other', 'aria-pressed': 'false' });
+		const button = screen.getByRole('button', { name: 'Bold' });
+		expect(button.getAttribute('aria-pressed')).toBe('true');
+		render(IconButton, { label: 'Home', icon: 'home', href: '/', 'aria-label': 'Other' });
+		expect(screen.getByRole('link', { name: 'Home' })).toBeTruthy();
+	});
+
+	it('refuses an empty or blank label (an unnamed control)', () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		expect(() => render(IconButton, { label: '', icon: 'close' })).toThrow(/label/);
+		expect(() => render(IconButton, { label: '  ', icon: 'close' })).toThrow(/label/);
+		vi.restoreAllMocks();
+	});
+
 	it('passes other attributes through (aria-haspopup, aria-expanded) and keeps its own class', () => {
 		render(IconButton, { label: 'More', icon: 'more', 'aria-haspopup': 'menu', 'aria-expanded': false, class: 'extra' });
 		const button = screen.getByRole('button', { name: 'More' });

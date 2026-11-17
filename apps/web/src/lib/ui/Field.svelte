@@ -13,7 +13,8 @@
 	//   error      error text; sets aria-invalid
 	//   hideLabel  keeps the label for assistive tech only
 	//   multiline  a <textarea>
-	//   …rest      passed to the input (placeholder, autocomplete, required, …)
+	//   …rest      passed to the input (placeholder, autocomplete, required, …);
+	//              the component's own id, invalid state and descriptions win
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
 	type Props = {
@@ -42,31 +43,38 @@
 		...rest
 	}: Props = $props();
 
+	$effect.pre(() => {
+		if (import.meta.env.DEV && !label?.trim()) throw new Error('Field: `label` must not be empty');
+	});
+
 	const hintId = $derived(`${id}-hint`);
 	const errorId = $derived(`${id}-error`);
-	const describedby = $derived([hint ? hintId : '', error ? errorId : ''].filter(Boolean).join(' ') || undefined);
+	// The hint and error, then any description the caller passes.
+	const describedby = $derived(
+		[hint ? hintId : '', error ? errorId : '', rest['aria-describedby'] ?? ''].filter(Boolean).join(' ') || undefined
+	);
 </script>
 
 <div class="field" class:invalid={!!error}>
 	<label for={id} class={hideLabel ? 'visually-hidden' : 'label'}>{label}</label>
 	{#if multiline}
 		<textarea
+			{...rest as Record<string, unknown>}
 			bind:this={element}
 			{id}
 			bind:value
 			aria-invalid={error ? 'true' : undefined}
 			aria-describedby={describedby}
-			{...rest as Record<string, unknown>}
 		></textarea>
 	{:else}
 		<input
+			{...rest}
 			bind:this={element}
 			{id}
 			{type}
 			bind:value
 			aria-invalid={error ? 'true' : undefined}
 			aria-describedby={describedby}
-			{...rest}
 		/>
 	{/if}
 	{#if hint}<p class="hint" id={hintId}>{hint}</p>{/if}

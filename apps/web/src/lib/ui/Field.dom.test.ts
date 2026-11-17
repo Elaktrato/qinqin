@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import Field from './Field.svelte';
 import FieldHarness from './testing/FieldHarness.svelte';
 import source from './Field.svelte?raw';
@@ -13,6 +13,20 @@ describe('Field', () => {
 		expect(input.getAttribute('type')).toBe('text');
 		const label = document.querySelector('label')!;
 		expect(label.className).not.toContain('visually-hidden');
+	});
+
+	it('its own label link, invalid state and descriptions win over passed-through attributes', () => {
+		render(Field, { label: 'Name', hint: 'As shown', error: 'Too long', 'aria-invalid': 'false', 'aria-describedby': 'x' });
+		const input = screen.getByLabelText('Name');
+		expect(input.getAttribute('aria-invalid')).toBe('true');
+		expect(input.getAttribute('aria-describedby')).toMatch(/-hint \S+-error x$/);
+	});
+
+	it('refuses an empty or blank label', () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		expect(() => render(Field, { label: '' })).toThrow(/label/);
+		expect(() => render(Field, { label: ' ' })).toThrow(/label/);
+		vi.restoreAllMocks();
 	});
 
 	it('can hide the label visually and keep the name (search fields)', () => {
