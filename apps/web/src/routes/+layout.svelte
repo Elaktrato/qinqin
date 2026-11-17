@@ -256,7 +256,7 @@
 		{:else if framed}
 			<!-- A restricted session (forced password change, MFA enrolment)
 			     and a signed-out visitor of an open page: the logo and the
-			     account menu (Sign out only) or a sign-in link; no sections,
+			     account menu (Sources and Sign out only) or a sign-in link; no sections,
 			     no workspace, nothing private. -->
 			<header class="bar">
 				<div class="minimal">

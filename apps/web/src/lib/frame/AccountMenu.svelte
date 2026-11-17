@@ -6,7 +6,7 @@
 	// theme level: Back, the painted slot's themes, Appearance settings…;
 	// ArrowLeft or Back returns to the first level with focus on Theme,
 	// Escape closes the whole menu. A restricted session (forced password
-	// change, MFA enrolment) gets Sign out only.
+	// change, MFA enrolment) gets Sources (an open page) and Sign out only.
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { user } from '$lib/auth';
@@ -80,9 +80,10 @@
 					{#if $user?.admin}
 						<MenuItem href="/settings?tab=admin" icon="admin">{t('nav.account.adminSettings')}</MenuItem>
 					{/if}
-					<MenuItem href="/sources" icon="library">{t('nav.sources')}</MenuItem>
-					<MenuItem separator />
 				{/if}
+				<!-- The open Sources page, for a restricted session too. -->
+				<MenuItem href="/sources" icon="library">{t('nav.sources')}</MenuItem>
+				<MenuItem separator />
 				<MenuItem icon="sign-out" tone="bad" onselect={() => void requestSignOut()}>{t('nav.signOut')}</MenuItem>
 			</div>
 		{:else}

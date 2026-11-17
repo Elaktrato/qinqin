@@ -128,10 +128,12 @@ describe('AccountMenu', () => {
 		expect(requestSignOut).toHaveBeenCalledTimes(1);
 	});
 
-	it('a restricted session gets Sign out only', async () => {
+	it('a restricted session gets Sources and Sign out only', async () => {
 		const trigger = await mount(me(false, 'password_change'), true);
 		await fireEvent.click(trigger);
-		expect(names()).toEqual(['Sign out']);
+		expect(names()).toEqual(['Sources', 'Sign out']);
+		// The open Sources page stays reachable (the old footer linked it).
+		expect(screen.getByRole('menuitem', { name: 'Sources' }).getAttribute('href')).toBe('/sources');
 		expect(screen.queryAllByRole('menuitemradio')).toEqual([]);
 	});
 });

@@ -234,10 +234,10 @@ describe('layout restricted sessions', () => {
 		);
 		await findByText('page body');
 		expect(goto).not.toHaveBeenCalled();
-		// The logo and an account menu holding Sign out only (#99).
+		// The logo and an account menu holding the open Sources page and Sign out only (#99).
 		expect(getByRole('link', { name: 'qinqin, home' })).toBeTruthy();
 		await fireEvent.click(getByRole('button', { name: 'Account menu' }));
-		expect(getAllByRole('menuitem').map((i) => i.textContent?.trim())).toEqual(['Sign out']);
+		expect(getAllByRole('menuitem').map((i) => i.textContent?.trim())).toEqual(['Sources', 'Sign out']);
 		// No navigation into the app while restricted.
 		expect(queryByRole('navigation', { name: 'Main' })).toBeNull();
 		expect(queryByRole('button', { name: /^Workspace/ })).toBeNull();
