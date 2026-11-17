@@ -210,6 +210,11 @@ write). Not inside `home-layout`, because today's `home-layout` writer rewrites 
   a gentle sway. **Until the drawings exist, tiles show the tint only** and the stage is exposed as text (tooltip,
   accessible name). The drawings will be SVGs with a few flat areas the app recolours from tokens (petals = accent,
   leaves/stem = good, centre = warn).
+- **The flower is a lotus** (owner decision 2026-11-17; 莲/蓮 is shared by both languages and 出淤泥而不染 fits the
+  learner's growth). Stages: still water (soil), lily pad (sprout), bud, opening, in bloom with the seed pod,
+  closed for the night with a small moon (rest). Colour areas: petals = `accent` (the person's accent, so the
+  lotus is not always pink; owner decision), pad and stem = `good`, seed pod = `warn`, water = `line`; back petals
+  by opacity, no outlines. Reference sketch and drawing notes: the "Lotus stages" section of the mockups.
 
 **Flashcards — "open page".** No card box. Every kind (Recognise, Recall, Fill the gap, Build the sentence, Write,
 Tones) has the same four parts in the same places: kind label (with deck and level on the right), prompt, the answer
@@ -293,7 +298,7 @@ entry #104; stats #105; remaining pages #106; owner drawings #107; house theme #
 - Visual rework (epic) linking this document and the mockups, with one sub-issue per migration step above.
 - `theme` pack type and appearance settings (contract `docs/contracts/themes/`, built-in palettes with licence check).
 - Font packs for hanzi/kanji (OFL faces, subsetting) and the bundled interface font.
-- **Owner:** draw the flower stages (soil, sprout, bud, opening, bloom, resting), level badges and day markers as
+- **Owner:** draw the lotus stages (still water, lily pad, bud, opening, bloom, closed for the night), level badges and day markers as
   SVGs (flat areas, recoloured from tokens; 24-unit grid; guidance to be written with the owner).
 - A qinqin house theme (light and dark), designed with the owner.
 - Journal: `kind` (mistake/suggestion) in the review schema.
