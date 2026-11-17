@@ -99,3 +99,24 @@ func TestAFailedRenameKeepsThePreviousRevision(t *testing.T) {
 		t.Fatalf("after the retry: %s r%d error %q, want ready r2", row.State, row.Revision, row.Error)
 	}
 }
+
+// A lock file this user cannot write (created by root, say) still locks:
+// flock needs only a read descriptor.
+func TestAReadOnlyLockFileStillLocks(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	dir := filepath.Join(t.TempDir(), "packages")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, ".lock"), nil, 0o444); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := packs.Import(ctx, sqlDB, versionPack(t, "dictionary", "cedict", "zh", "v1")); err != nil {
+		t.Fatal(err)
+	}
+	reg := datapkg.Registry{DB: sqlDB, Dir: dir, AudioDir: t.TempDir()}
+	if err := reg.Reconcile(ctx); err != nil {
+		t.Fatalf("reconcile with a read-only lock file: %v", err)
+	}
+}

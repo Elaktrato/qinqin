@@ -23,9 +23,14 @@ func (r Registry) lock(ctx context.Context) (unlock func(), err error) {
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		return nil, err
 	}
-	f, err := os.OpenFile(filepath.Join(r.Dir, lockFileName), os.O_RDWR|os.O_CREATE, 0o644)
+	// Read-only: flock needs no write access, so a lock file another user
+	// (root) created still works.
+	path := filepath.Join(r.Dir, lockFileName)
+	f, err := os.OpenFile(path, os.O_RDONLY|os.O_CREATE, 0o644)
 	if err != nil {
-		return nil, err
+		if f, err = os.Open(path); err != nil {
+			return nil, err
+		}
 	}
 	for {
 		held, err := tryLockFile(f)
