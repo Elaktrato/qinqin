@@ -143,13 +143,15 @@
 		margin-top: 1rem;
 	}
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 	.danger {
-		background: #b3261e;
-		border-color: #b3261e;
-		color: #fff;
+		background: color-mix(in srgb, var(--bad) 14%, transparent);
+		border-color: var(--bad);
+		color: var(--readable-bad);
 	}
 	button:disabled {
 		opacity: 0.55;

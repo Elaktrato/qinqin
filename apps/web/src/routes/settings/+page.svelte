@@ -576,36 +576,28 @@
 		min-height: 2.75rem;
 		padding: 0.5rem 1rem;
 		border: 0;
-		border-bottom: 3px solid transparent;
+		border-bottom: 2px solid transparent;
 		border-radius: 0;
 		margin-bottom: -1px;
 		background: transparent;
-		color: inherit;
+		color: var(--readable-muted);
 		font-weight: 500;
-		opacity: 0.8;
 		white-space: nowrap;
 	}
 
 	.settings .tabs [role='tab'][aria-selected='true'] {
-		opacity: 1;
 		font-weight: 600;
-		color: #0b6bcb;
-		border-bottom-color: currentColor;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.settings .tabs [role='tab'][aria-selected='true'] {
-			color: #6cb4ff;
-		}
+		color: var(--text);
+		border-bottom-color: var(--accent);
 	}
 
 	.settings .tabs [role='tab']:focus-visible {
-		outline: 2px solid currentColor;
+		outline: var(--focus-ring);
 		outline-offset: -4px;
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.workspaces,
@@ -639,15 +631,9 @@
 	/* .secondary.delete-button: beats `.settings button.secondary`
 	   (color: inherit), which comes later and used to win. */
 	.settings button.secondary.delete-button {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
-	/* #c62828 is about 3.3:1 on the dark Canvas; this red is 8.2:1. */
-	@media (prefers-color-scheme: dark) {
-		.settings button.secondary.delete-button {
-			color: #ff8a80;
-		}
-	}
 
 	h2[tabindex='-1']:focus {
 		outline: none;
@@ -759,8 +745,8 @@
 		padding: 0.45rem 0.85rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 		cursor: pointer;
 	}
@@ -772,12 +758,25 @@
 
 	.error {
 		margin: 0.5rem 0 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
+	/* Success: the text in --text, a --good dot as the shape cue (design §5). */
 	.saved {
-		color: #2e7d32;
+		color: var(--text);
 		font-weight: 600;
+	}
+	.saved::before {
+		content: '';
+		display: inline-block;
+		width: 0.5em;
+		height: 0.5em;
+		margin-inline-end: 0.35em;
+		border-radius: 50%;
+		background: var(--good);
+		vertical-align: 0.1em;
 	}
 </style>

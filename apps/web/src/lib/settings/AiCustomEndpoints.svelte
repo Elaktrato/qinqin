@@ -312,7 +312,7 @@
 
 	.muted,
 	.hint {
-		opacity: 0.8;
+		color: var(--readable-muted);
 		overflow-wrap: anywhere;
 	}
 
@@ -338,18 +338,11 @@
 
 	button.secondary.danger,
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
 	.error {
 		font-weight: 600;
 		margin: 0;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		button.secondary.danger,
-		.error {
-			color: #ff8a80;
-		}
 	}
 </style>

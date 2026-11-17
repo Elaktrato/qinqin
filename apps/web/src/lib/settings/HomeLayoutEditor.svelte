@@ -448,7 +448,7 @@
 
 <style>
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	h3 {
@@ -467,7 +467,7 @@
 
 	.save-status {
 		margin-right: auto;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.confirm {
@@ -494,7 +494,7 @@
 		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 		border-radius: 0.4rem;
 		padding: 0.6rem 0.75rem;
-		background: Canvas;
+		background: var(--panel);
 	}
 
 	.item.off {
@@ -503,7 +503,7 @@
 
 	.item.dragging {
 		z-index: 1;
-		box-shadow: 0 0.4rem 1.2rem color-mix(in srgb, CanvasText 25%, transparent);
+		box-shadow: var(--shadow-float);
 	}
 
 	.item.drop-before::before,
@@ -514,7 +514,7 @@
 		right: 0;
 		height: 3px;
 		border-radius: 2px;
-		background: #0b6bcb;
+		background: var(--accent);
 	}
 
 	.item.drop-before::before {
@@ -534,7 +534,7 @@
 		margin-left: -0.35rem;
 		cursor: grab;
 		touch-action: none;
-		opacity: 0.6;
+		color: var(--readable-muted);
 	}
 
 	.dragging .handle {
@@ -563,7 +563,7 @@
 
 	.position {
 		border-color: transparent;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.description,
@@ -572,12 +572,14 @@
 	}
 
 	.description {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
+	/* Why the widget does not apply: --text with the --warn bar as the cue. */
 	.reason {
 		font-size: 0.9rem;
-		color: #8a5300;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--warn);
 	}
 
 	.controls {
@@ -634,12 +636,12 @@
 		width: 1.1rem;
 		height: 1.1rem;
 		border-radius: 50%;
-		background: Canvas;
+		background: var(--panel);
 		transition: transform 0.15s;
 	}
 
 	.switch input:checked + .track {
-		background: #0b6bcb;
+		background: var(--accent);
 	}
 
 	.switch input:checked + .track::after {
@@ -647,7 +649,7 @@
 	}
 
 	.switch input:focus-visible + .track {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
@@ -656,8 +658,8 @@
 		padding: 0.45rem 0.85rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 		cursor: pointer;
 	}
@@ -682,8 +684,10 @@
 	.error,
 	.save-error p {
 		margin: 0.5rem 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.save-error {
@@ -719,14 +723,14 @@
 		counter-increment: preview;
 		padding: 0.6rem 0.5rem;
 		border-radius: 0.3rem;
-		background: color-mix(in srgb, #0b6bcb 14%, transparent);
+		background: color-mix(in srgb, var(--accent) 14%, transparent);
 		font-size: 0.9rem;
 		overflow-wrap: anywhere;
 	}
 
 	.preview li::before {
 		content: counter(preview) '. ';
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.preview li.span {
@@ -734,7 +738,7 @@
 	}
 
 	.preview-empty {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.sr-only {
@@ -747,26 +751,5 @@
 		clip: rect(0 0 0 0);
 		white-space: nowrap;
 		border: 0;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.reason {
-			color: #ffcc80;
-		}
-
-		.error,
-		.save-error p {
-			color: #ff8a80;
-		}
-
-		.switch input:checked + .track,
-		.item.drop-before::before,
-		.item.drop-after::after {
-			background: #3d8fe0;
-		}
-
-		.switch input:focus-visible + .track {
-			outline-color: #6cb4ff;
-		}
 	}
 </style>

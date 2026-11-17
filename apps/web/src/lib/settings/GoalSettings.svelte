@@ -228,7 +228,7 @@
 		width: 100%;
 	}
 	.unit {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 	.error,
 	.note {

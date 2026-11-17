@@ -476,7 +476,7 @@
 		white-space: pre-line;
 	}
 	.caution {
-		border-left: 4px solid #b45309;
+		border-left: 4px solid var(--warn);
 		padding: 0.4rem 0.75rem;
 		font-weight: 600;
 	}
@@ -521,21 +521,18 @@
 		align-items: baseline;
 	}
 	.label {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 	.unrecorded {
 		font-style: italic;
 	}
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 	.error {
-		color: #b42318;
-	}
-	@media (prefers-color-scheme: dark) {
-		.error {
-			color: #ff8a80;
-		}
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 	.sr {
 		position: absolute;
