@@ -4,6 +4,7 @@
 	import { ApiError, api } from '$lib/api/client';
 	import type { ComponentPack, Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
 	import { getComponentPacks } from '$lib/api/components';
+	import { getStrokePacks } from '$lib/api/packages';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
 	import { webPlugins } from '$lib/plugins';
@@ -18,6 +19,7 @@
 		packTable,
 		pluginCredits,
 		sentencePackSources,
+		strokesSection,
 		type CreditView,
 		type PackTable
 	} from '$lib/sources/sections';
@@ -117,6 +119,21 @@
 		}
 	}
 
+	// The Stroke data section exists only while a stroke pack is installed.
+	let strokePacks = $state<ComponentPack[]>([]);
+	let strokesError = $state('');
+	const strokes = $derived(strokesSection(strokePacks, strokesError));
+
+	async function loadStrokes(): Promise<void> {
+		strokesError = '';
+		try {
+			strokePacks = await getStrokePacks();
+		} catch (err) {
+			strokePacks = [];
+			strokesError = message(err, 'Could not load stroke data credits.');
+		}
+	}
+
 	let schemes = $state<Scheme[]>([]);
 	let schemesLoading = $state(true);
 	let schemesError = $state('');
@@ -166,6 +183,7 @@
 		loadAudio();
 		loadSchemes();
 		loadComponents();
+		loadStrokes();
 	});
 </script>
 
@@ -435,6 +453,54 @@
 			<p class="notice">
 				Character components power the radical and part lookup. Only decompositions under a
 				redistributable licence are bundled; others stay local to an instance.
+			</p>
+		</section>
+	{/if}
+
+	{#if strokes.show}
+		<section>
+			<h2 id="sources-strokes">Stroke data</h2>
+			{#if strokesError}
+				<p class="error" role="alert">{strokesError}</p>
+				<button type="button" onclick={loadStrokes}>Retry</button>
+			{:else}
+				<div class="table-wrap">
+					<table aria-labelledby="sources-strokes">
+						<thead>
+							<tr>
+								<th scope="col">Name</th>
+								{@render noteHeader(strokes.table)}
+								<th scope="col">Language</th>
+								<th scope="col">Version</th>
+								<th scope="col">License</th>
+								<th scope="col">Attribution</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each strokes.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(strokes.table, row.noteId, row.name)}
+									<td title={row.language}>{languageLabel(row.language)}</td>
+									<td>{row.version}</td>
+									<td>
+										{#if strokes.licenseHref[row.key]}
+											<a href={strokes.licenseHref[row.key]} data-sveltekit-reload>{row.license}</a>
+										{:else}
+											{@render cell(row.license, row.language)}
+										{/if}
+									</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{@render notes(strokes.table)}
+			{/if}
+			<p class="notice">
+				Stroke-order animations and the writing cards draw from this data. It is served by this
+				server from an installed stroke pack, unmodified; the licence text ships with the app.
 			</p>
 		</section>
 	{/if}

@@ -30,9 +30,9 @@ const config = {
 		// page's decision (lib/pwa/register.ts: secure contexts only).
 		serviceWorker: {
 			register: false,
-			// Stroke data (thousands of files, fetched on demand) and licence
-			// texts are not part of the precached shell.
-			files: (filename) => !/^hanzi\//.test(filename) && !/\.TXT$/i.test(filename) && !filename.endsWith('.DS_Store')
+			// Licence texts are not part of the precached shell. (Stroke data is
+			// a package the server serves, not a build file.)
+			files: (filename) => !/\.TXT$/i.test(filename) && !filename.endsWith('.DS_Store')
 		},
 		version: { name: buildId() },
 		adapter: adapter({

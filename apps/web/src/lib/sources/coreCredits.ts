@@ -2,22 +2,15 @@
 // plugin), shown under "Built into the app" on the Sources page. Licence
 // names and copyright lines are taken from each package's own
 // package.json/LICENSE; the licence texts listed ship under
-// apps/web/static, copied verbatim from the packages. The text sources
+// apps/web/static, copied verbatim from the packages. The stroke data is not
+// built in: it is a pack on the server, credited from GET /api/stroke-packs
+// (the Sources page's Stroke data section). The text sources
 // the reader fetches from (not bundled) are credited here too: the reader
 // is part of the app.
 
 import type { SourceCredit } from './credits';
 
 export const coreCredits: SourceCredit[] = [
-	{
-		name: 'hanzi-writer-data',
-		url: 'https://www.npmjs.com/package/hanzi-writer-data',
-		license: 'Arphic Public License',
-		attribution: 'Make Me a Hanzi, hanzi-writer-data',
-		notice:
-			'Stroke-order animations use hanzi-writer-data, derived from the [Make Me a Hanzi](https://github.com/skishore/makemeahanzi) dataset. That data is licensed under the Arphic Public License and is used unmodified. The full license text ships with this app.',
-		licenseTexts: [{ label: 'Arphic Public License text', path: '/ARPHICPL.TXT' }]
-	},
 	{
 		name: 'hanzi-writer',
 		url: 'https://github.com/chanind/hanzi-writer',

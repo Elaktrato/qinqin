@@ -16,6 +16,29 @@ describe('scrubForCache (#72)', () => {
 		expect(out.cursor).toBe('c');
 	});
 
+	it('drops the lookup rows from every v2 page, first or continuation', () => {
+		const page = (pluginData: unknown[], extra: object = {}) => ({
+			format: 2,
+			until: '2026-11-17T00:00:00Z',
+			collections: { pluginStates: [{ pluginId: 'x' }], pluginData, cards: [] },
+			more: false,
+			next: null,
+			cursor: 'c2.x',
+			...extra
+		});
+		const body = page([row('qinqin-core', 'lookups'), row('qinqin-core', 'lookupcfg'), row('qinqin-core', 'note:5'), row('qinqin-flashcards', 'goals:workspace')]);
+		const out = JSON.parse(scrubForCache('/api/sync/pull', JSON.stringify(body)) as string);
+		expect(out.collections.pluginData.map((r: { key: string }) => r.key)).toEqual(['note:5', 'goals:workspace']);
+		expect(out.collections.pluginStates).toEqual([{ pluginId: 'x' }]);
+		expect(out.cursor).toBe('c2.x');
+		expect(out.more).toBe(false);
+		const clean = JSON.stringify(page([row('qinqin-core', 'note:5')]));
+		expect(scrubForCache('/api/sync/pull', clean)).toBe(clean);
+		// a v2 page without pluginData (cards only) is kept byte for byte
+		const cards = JSON.stringify({ format: 2, collections: { cards: [] } });
+		expect(scrubForCache('/api/sync/pull', cards)).toBe(cards);
+	});
+
 	it('drops lookup events from a saved event log', () => {
 		const evs = [{ id: '1', type: 'review' }, { id: '2', type: 'lookup', payload: { query: 'ma' } }, { id: '3', type: 'view' }];
 		expect(JSON.parse(scrubForCache('/api/events', JSON.stringify(evs)) as string).map((e: { id: string }) => e.id)).toEqual(['1', '3']);

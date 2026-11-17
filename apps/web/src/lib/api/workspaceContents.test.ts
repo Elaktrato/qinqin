@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import { fetchWorkspaceContents } from './workspaceContents';
-import { typedPull } from '../study/testing/legacyCodec';
+import { pagedPull } from '../study/testing/legacyCodec';
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -43,7 +43,7 @@ describe('fetchWorkspaceContents', () => {
 			const url = String(input);
 			if (url === '/api/library/books?workspace=7') return jsonResponse([{ id: 1 }, { id: 2 }]);
 			if (url.startsWith('/api/sync/pull')) {
-				return jsonResponse(typedPull({
+				return jsonResponse(pagedPull({
 					pluginData: [
 						row(`card:${a.id}`, a),
 						row(`card:${aDup.id}`, aDup),

@@ -8,15 +8,16 @@ export default defineConfig({
 		fs: { allow: [searchForWorkspaceRoot('.'), '../../server/internal/plugins/builtin'] },
 		// The Go API on :8080 is the development backend.
 		proxy: {
-			'/api': 'http://127.0.0.1:8080'
+			'/api': 'http://127.0.0.1:8080',
+			// Stroke data is a package the server serves (item 5), not a static file.
+			'/hanzi': 'http://127.0.0.1:8080'
 		}
 	},
 	build: {
 		rollupOptions: {
 			output: {
-				// ASCII-only asset names: the stroke-order data ships a file per
-				// character (including non-Latin names like ⺀.json), and go:embed
-				// rejects such names — hash-only names keep the Go embed working.
+				// ASCII-only, hash-only asset names: go:embed rejects some
+				// non-Latin file names, so no asset name may carry source text.
 				assetFileNames: 'assets/[hash][extname]'
 			}
 		}
