@@ -98,7 +98,9 @@
 		else if (e.key === 'Home') next = 0;
 		else if (e.key === 'End') next = list.length - 1;
 		else if (e.key === 'Escape') {
+			// Closes this menu only: an enclosing drawer or dialog stays open.
 			e.preventDefault();
+			e.stopPropagation();
 			close(true);
 			return;
 		} else if (e.key === 'Tab') {

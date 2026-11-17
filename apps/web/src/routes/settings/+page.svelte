@@ -388,7 +388,8 @@
 			/>
 		{/if}
 
-		<h3>{t('settings.workspaces.new')}</h3>
+		<!-- The phone drawer's + lands here (#99). -->
+		<h3 id="new-workspace" tabindex="-1">{t('settings.workspaces.new')}</h3>
 		<WorkspaceCreateForm idPrefix="settings-new" />
 	</div>
 

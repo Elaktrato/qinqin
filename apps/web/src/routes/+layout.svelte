@@ -10,6 +10,7 @@
 	import { auth, loadMe, restriction, user } from '$lib/auth';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
 	import { currentSection, frameSections } from '$lib/frame/sections';
+	import PhoneBar from '$lib/frame/PhoneBar.svelte';
 	import TopBar from '$lib/frame/TopBar.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
@@ -244,9 +245,13 @@
 	<a class="skip-link" href="#main-content" onclick={skipToContent}>{t('nav.skipToContent')}</a>
 	<div class="frame" class:framed>
 		{#if signedIn && !restricted}
-			<!-- One banner landmark; the desktop bar (#99, frame A). -->
+			<!-- One banner landmark holding both bars (#99): the desktop bar
+			     (frame A) at 720px and wider, the phone bar below. A CSS switch
+			     (no layout jump, follows zoom); the hidden one is display: none,
+			     so it is out of the accessibility tree and the tab order. -->
 			<header class="bar">
 				<div class="desktop" data-frame="desktop"><TopBar {sections} {current} /></div>
+				<div class="phone" data-frame="phone"><PhoneBar {sections} {current} /></div>
 			</header>
 		{:else if framed}
 			<!-- A restricted session (forced password change, MFA enrolment)
@@ -468,6 +473,25 @@
 
 	.empty-workspaces h2 {
 		margin-top: 0;
+	}
+
+	.phone {
+		display: none;
+	}
+
+	/* The phone frame (lib/frame/breakpoint.ts): the phone bar, and the page
+	   takes the whole width. */
+	@media (max-width: 719.98px) {
+		.desktop {
+			display: none;
+		}
+		.phone {
+			display: block;
+		}
+		.framed .panel {
+			margin: 0;
+			border-radius: 0;
+		}
 	}
 
 	@media (forced-colors: active) {

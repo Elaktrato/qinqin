@@ -112,6 +112,18 @@ describe('layout auth guard', () => {
 		expect(document.activeElement?.id).toBe('main-content');
 	});
 
+	it('the phone bar: the menu button, the title and the flag; no nav until the drawer opens', async () => {
+		const { findByText, container } = mountAt('/stats/week', 'tok');
+		await findByText('page body');
+		const phone = container.querySelector('[data-frame="phone"]') as HTMLElement;
+		expect(phone.closest('header')).toBe(desktop(container).closest('header'));
+		expect(within(phone).getByRole('button', { name: 'Open menu' })).toBeTruthy();
+		expect(phone.querySelector('.title')?.textContent).toBe('Stats');
+		expect(within(phone).queryByRole('navigation')).toBeNull();
+		// Only the desktop nav exists (CSS hides it on the phone).
+		expect(container.querySelectorAll('nav[aria-label="Main"]')).toHaveLength(1);
+	});
+
 	it('signed out on /sources: the logo links to /login, a Sign in link shows, no nav', async () => {
 		const { findByText, getByRole, queryByRole } = mountAt('/sources', null);
 		await findByText('page body');

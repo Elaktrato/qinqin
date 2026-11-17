@@ -7,9 +7,10 @@
 	// width (mirrored in right-to-left text). Slides in with --motion-medium
 	// (the motion tokens are 0 under reduced motion, app.css).
 	//
-	// API: <Drawer bind:open label initialFocus? onclose?>content</Drawer>
+	// API: <Drawer bind:open label id? initialFocus? onclose?>content</Drawer>
 	//   open          bindable; the drawer exists only while open
 	//   label         the accessible name (t(…))
+	//   id            the dialog's id (the opener's aria-controls)
 	//   initialFocus  a selector inside to focus first (else the first focusable)
 	//   onclose       called when the person dismisses it (Escape, scrim, swipe)
 	import type { Snippet } from 'svelte';
@@ -18,12 +19,14 @@
 	let {
 		open = $bindable(false),
 		label,
+		id,
 		initialFocus,
 		onclose,
 		children
 	}: {
 		open?: boolean;
 		label: string;
+		id?: string;
 		initialFocus?: string;
 		onclose?: () => void;
 		children?: Snippet;
@@ -99,6 +102,7 @@
 {#if open}
 	<dialog
 		use:modal={initialFocus}
+		{id}
 		class="drawer"
 		class:dragging
 		style:--drag={dragX ? `${dragX}px` : undefined}
