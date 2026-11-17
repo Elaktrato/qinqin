@@ -1,7 +1,16 @@
 import { ApiError, api } from './client';
 import { uploadWithProgress, type UploadProgress } from './upload';
 
-export type PackType = 'dictionary' | 'frequency' | 'levels' | 'sentences' | 'grammar' | 'audio' | 'components' | 'strokes';
+export type PackType =
+	| 'dictionary'
+	| 'frequency'
+	| 'levels'
+	| 'sentences'
+	| 'grammar'
+	| 'audio'
+	| 'components'
+	| 'strokes'
+	| 'font';
 
 export interface InstalledPack {
 	type: PackType;

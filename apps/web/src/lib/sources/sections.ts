@@ -5,6 +5,9 @@
 import { pluginName } from '$lib/plugins/manifestText';
 import type { SentencePack } from '$lib/api/packs';
 import type { ComponentPack, StrokePack } from '$lib/api/types';
+import type { FontList } from '$lib/api/fonts';
+import { t } from '$lib/i18n';
+import { licenseUrl } from '$lib/licenses';
 import type { PluginManifest } from '$lib/plugins';
 import { localLicensePath, type LicenseText, type SourceCredit } from './credits';
 import { cjkLang, parseNotice, safeHref, type NoticeParagraph } from './notice';
@@ -83,6 +86,45 @@ export function strokesSection(
 		if (/arphic public license/i.test(p.license) && localLicensePath(ARPHIC_TEXT) !== null) licenseHref[i] = ARPHIC_TEXT;
 	});
 	return { show: error !== '' || list.length > 0, table, licenseHref };
+}
+
+/**
+ * fontsSection is the Sources page's "Fonts" block: one row per installed
+ * font pack from GET /api/fonts (licence linked when known), its notice,
+ * and a line naming the face each pack modifies (the slices are renamed
+ * modified versions under the OFL). Shown while a pack is installed, or on
+ * a load error.
+ */
+export function fontsSection(
+	list: FontList,
+	error: string
+): { show: boolean; table: PackTable; licenseHref: Record<number, string>; modified: string[] } {
+	const language = (packId: string) => {
+		const scripts = list.faces.filter((f) => f.packId === packId).map((f) => f.script);
+		if (scripts.length === 0) return '';
+		return scripts.every((s) => s === 'Jpan') ? 'ja' : scripts.every((s) => s !== 'Jpan') ? 'zh' : '';
+	};
+	const table = packTable(
+		'fonts',
+		list.packs.map((p, i) => ({
+			id: i,
+			name: p.name,
+			language: language(p.packId),
+			version: p.version,
+			license: p.license,
+			attribution: p.attribution,
+			notice: p.notice
+		}))
+	);
+	const licenseHref: Record<number, string> = {};
+	const modified: string[] = [];
+	list.packs.forEach((p, i) => {
+		const href = licenseUrl(p.license);
+		if (href) licenseHref[i] = href;
+		const originals = [...new Set(list.faces.filter((f) => f.packId === p.packId).map((f) => f.original))];
+		if (originals.length > 0) modified.push(t('sources.fonts.modified', { name: p.name, original: originals.join(', ') }));
+	});
+	return { show: error !== '' || list.packs.length > 0, table, licenseHref, modified };
 }
 
 export interface PackRow {
