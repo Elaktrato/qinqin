@@ -331,7 +331,7 @@ func TestPackageDownload(t *testing.T) {
 		"ETag": etag, "Content-Length": strconv.Itoa(len(full)), "Accept-Ranges": "bytes",
 		// no-cache, not immutable: after a restore a revision number may come
 		// back with other bytes, so a cached copy revalidates by its ETag.
-		"Cache-Control": "private, no-cache", "Content-Type": "application/zip",
+		"Cache-Control": "private, no-cache", "Content-Type": "application/zip", "X-Content-Type-Options": "nosniff",
 	} {
 		if hd.Get(k) != v {
 			t.Errorf("%s = %q, want %q", k, hd.Get(k), v)

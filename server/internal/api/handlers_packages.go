@@ -216,6 +216,7 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 	// the strong ETag).
 	h.Set("Cache-Control", "private, no-cache")
 	h.Set("Content-Type", "application/zip")
+	h.Set("X-Content-Type-Options", "nosniff")
 	// The zero modification time: the ETag alone validates (a rebuilt file
 	// of the same revision after a restore has a new time, not new bytes
 	// that matter to the client rule).
