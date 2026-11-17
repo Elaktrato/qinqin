@@ -24,5 +24,9 @@ func TestMigrationCodeImportsNoLiveStudyCode(t *testing.T) {
 		if strings.Contains(string(src), `"qinqin/internal/study`) {
 			t.Errorf("%s imports live study code", f)
 		}
+		// The frozen copy depends on nothing of the application at all.
+		if strings.HasPrefix(f, "step038/") && strings.Contains(string(src), `"qinqin/`) {
+			t.Errorf("%s imports application code; a frozen step may use the standard library only", f)
+		}
 	}
 }
