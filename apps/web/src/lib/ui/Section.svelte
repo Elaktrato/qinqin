@@ -20,7 +20,7 @@
 	const uid = $props.id();
 </script>
 
-<section class="section" aria-labelledby={title ? `${uid}-h` : undefined}>
+<section class="section qq-section" aria-labelledby={title ? `${uid}-h` : undefined}>
 	{#if title || actions}
 		<div class="head">
 			{#if title}<svelte:element this={`h${level}`} id="{uid}-h" class="title">{title}</svelte:element>{/if}
@@ -34,7 +34,8 @@
 	.section {
 		padding-block: var(--space-4);
 	}
-	.section + .section {
+	/* Sections are separate component instances: the sibling rule is global. */
+	:global(.qq-section + .qq-section) {
 		border-top: 1px solid var(--hair);
 	}
 	.head {

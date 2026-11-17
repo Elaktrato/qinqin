@@ -18,7 +18,9 @@ describe('Section and Panel', () => {
 		expect(screen.getByRole('heading', { level: 3, name: 'Characters' })).toBeTruthy();
 		expect(screen.getByRole('region', { name: 'Characters' }).querySelector('button')!.textContent).toBe('Edit');
 		expect(css(sectionSource)).not.toMatch(/background|box-shadow/);
-		expect(css(sectionSource)).toMatch(/border-top: 1px solid var\(--hair\)/);
+		expect(css(sectionSource)).toMatch(/:global\(\.qq-section \+ \.qq-section\) \{\s*border-top: 1px solid var\(--hair\)/);
+		// The line sits between instances: every Section carries the global class.
+		expect(meanings.className).toContain('qq-section');
 	});
 
 	it('a Panel is the one box: a surface with the large radius, attributes passed through', () => {
