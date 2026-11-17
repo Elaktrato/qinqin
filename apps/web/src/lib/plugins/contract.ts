@@ -49,6 +49,8 @@ export interface ContractManifest {
 	type: 'feature';
 	sdk: number;
 	description?: string;
+	/** The nav page's icon: a name of the app's icon set (lib/ui/icons); unknown names show a generic icon. */
+	icon?: string;
 	surfaces: Surface[];
 	permissions: Permission[];
 	hooks: Hook[];

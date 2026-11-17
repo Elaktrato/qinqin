@@ -3,6 +3,7 @@ package plugins_test
 import (
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -130,5 +131,67 @@ func TestManifestHas(t *testing.T) {
 	}
 	if !m.Has("owns-data") || m.Has("read:entries") {
 		t.Errorf("Has wrong for %v", m.Permissions)
+	}
+}
+
+func TestParseManifestIcon(t *testing.T) {
+	t.Run("a name parses into Icon", func(t *testing.T) {
+		got, err := plugins.ParseManifest(marshalMutated(t, func(m map[string]any) { m["icon"] = "journal" }))
+		if err != nil {
+			t.Fatalf("ParseManifest: %v", err)
+		}
+		if got.Icon != "journal" {
+			t.Errorf("Icon = %q, want journal", got.Icon)
+		}
+	})
+	t.Run("absent is empty", func(t *testing.T) {
+		got, err := plugins.ParseManifest(marshalMutated(t, func(map[string]any) {}))
+		if err != nil {
+			t.Fatalf("ParseManifest: %v", err)
+		}
+		if got.Icon != "" {
+			t.Errorf("Icon = %q, want empty", got.Icon)
+		}
+	})
+	bad := map[string]any{
+		"upper case":      "Journal",
+		"present, empty":  "",
+		"space":           "a b",
+		"33 characters":   "a" + strings.Repeat("b", 32),
+		"leading digit":   "1abc",
+		"not a string":    7,
+		"null is no icon": nil,
+	}
+	for name, value := range bad {
+		t.Run(name, func(t *testing.T) {
+			_, err := plugins.ParseManifest(marshalMutated(t, func(m map[string]any) { m["icon"] = value }))
+			if !errors.Is(err, plugins.ErrInvalidManifest) || !strings.Contains(err.Error(), "icon") {
+				t.Errorf("err = %v, want an invalid-manifest error naming icon", err)
+			}
+		})
+	}
+	t.Run("32 characters is fine", func(t *testing.T) {
+		if _, err := plugins.ParseManifest(marshalMutated(t, func(m map[string]any) { m["icon"] = "a" + strings.Repeat("-", 31) })); err != nil {
+			t.Errorf("err = %v", err)
+		}
+	})
+}
+
+func TestBuiltinPageManifestsHaveIcons(t *testing.T) {
+	for _, raw := range plugins.Builtin() {
+		m, err := plugins.ParseManifest(raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if slices.Contains(m.Surfaces, "page") && m.Icon == "" {
+			t.Errorf("%s has a page but no icon", m.ID)
+		}
+	}
+	want := map[string]string{"qinqin-journal": "journal", "qinqin-grammar": "grammar"}
+	for _, raw := range plugins.Builtin() {
+		m, _ := plugins.ParseManifest(raw)
+		if w, ok := want[m.ID]; ok && m.Icon != w {
+			t.Errorf("%s icon = %q, want %q", m.ID, m.Icon, w)
+		}
 	}
 }

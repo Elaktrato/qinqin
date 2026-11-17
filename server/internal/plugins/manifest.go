@@ -26,7 +26,10 @@ var (
 	idPattern      = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 	versionPattern = regexp.MustCompile(`^\d+\.\d+(\.\d+)?$`)
 	eventPattern   = regexp.MustCompile(`^[a-z][a-z0-9-]*$`)
-	unknownField   = regexp.MustCompile(`unknown field "[^"]*"`)
+	// iconPattern is the form of an icon name; which names exist is the
+	// clients' business (an unknown one shows a generic icon).
+	iconPattern  = regexp.MustCompile(`^[a-z][a-z0-9-]{0,31}$`)
+	unknownField = regexp.MustCompile(`unknown field "[^"]*"`)
 )
 
 // EventDecl is one event type a plugin emits. Activity is the optional
@@ -39,12 +42,15 @@ type EventDecl struct {
 
 // Manifest is a feature-plugin manifest of the SDK contract.
 type Manifest struct {
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	Version     string      `json:"version"`
-	Type        string      `json:"type"`
-	SDK         int         `json:"sdk"`
-	Description string      `json:"description,omitempty"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Type        string `json:"type"`
+	SDK         int    `json:"sdk"`
+	Description string `json:"description,omitempty"`
+	// Icon names the icon of the plugin's nav page in the app's icon set
+	// (optional; the form is checked here, the name by the clients).
+	Icon        string      `json:"icon,omitempty"`
 	Surfaces    []string    `json:"surfaces"`
 	Permissions []string    `json:"permissions"`
 	Hooks       []string    `json:"hooks"`
@@ -103,6 +109,13 @@ func ParseManifest(raw []byte) (Manifest, error) {
 	}
 	if len([]rune(m.Description)) > 200 {
 		add("description must be at most 200 characters")
+	}
+	// A plain string field cannot tell "" or null from absent, so look again.
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(raw, &fields) == nil {
+		if icon, ok := fields["icon"]; ok && (isNull(icon) || !iconPattern.MatchString(m.Icon)) {
+			add("icon %s must match %s", string(icon), iconPattern)
+		}
 	}
 	checkList := func(field string, values, known []string) {
 		seen := map[string]bool{}

@@ -16,6 +16,7 @@ The Grammar plugin (`server/internal/plugins/builtin/grammar.json`):
   "type": "feature",
   "sdk": 1,
   "description": "Short grammar lessons with examples and practice.",
+  "icon": "grammar",
   "surfaces": ["page"],
   "permissions": ["owns-data"],
   "hooks": [],
@@ -33,6 +34,7 @@ The Grammar plugin (`server/internal/plugins/builtin/grammar.json`):
 | `type` | Must be `"feature"`. |
 | `sdk` | A whole number; this server accepts 1 only (`SDKMin`..`SDKMax`). |
 | `description` | Optional, at most 200 characters. |
+| `icon` | Optional. The icon of the plugin's page in the app's navigation: a name of the app's icon set (the names in `apps/web/src/lib/ui/icons/lucide.ts`, such as `journal` or `grammar`). The server checks only the form: a lowercase letter, then up to 31 lowercase letters, digits and hyphens (`^[a-z][a-z0-9-]{0,31}$`); present but empty, `null` or not a string is an error. The apps show a generic icon for a name they do not know (or no icon field). |
 | `surfaces` | Any of `home-widget`, `page`, `hook`; no repeats. |
 | `permissions` | Any of the four below; no repeats. |
 | `hooks` | Only `study-event` is known. Must be non-empty with the `hook` surface and empty without it. |
