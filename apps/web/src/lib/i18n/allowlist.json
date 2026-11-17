@@ -43,5 +43,35 @@
 		"file": "lib/plugins/journal/manifest.ts",
 		"text": "Anthropic Go SDK",
 		"reason": "A credited product's name on the Sources page (data, like pack names), not interface text."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright (c) 2014 David Chanin",
+		"reason": "A copyright line, quoted verbatim from the package's LICENSE (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright (c) 2026 Open Spaced Repetition",
+		"reason": "A copyright line, quoted verbatim from the package's LICENSE (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright (c) Project Nayuki; Copyright (c) 2023 Anthony Fu",
+		"reason": "Copyright lines, quoted verbatim from the package's LICENSE (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Aozora Bunko",
+		"reason": "A credited source's proper name (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Project Gutenberg",
+		"reason": "A credited source's proper name (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "MIT AND Apache-2.0",
+		"reason": "An SPDX licence expression (data)."
 	}
 ]

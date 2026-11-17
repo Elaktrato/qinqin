@@ -74,7 +74,7 @@
 	// A workspace no longer in the store still counts, under a fallback name.
 	function workspaceName(id: number): string {
 		const ws = $workspaces.list.find((w) => w.id === id);
-		if (!ws) return `Workspace ${id}`;
+		if (!ws) return t('stats.activity.workspaceN', { id });
 		const display = workspaceDisplay($workspaces.list, ws);
 		return display.showName ? display.name : display.label;
 	}

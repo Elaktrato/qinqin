@@ -300,7 +300,10 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 		{ missing: '3' },
 		'Review ready: 1 correction, 3 no longer in the text.',
 		'Review ready: 2 corrections, 3 no longer in the text.'
-	]
+	],
+	// the rest (Task 21)
+	['stats.map.tipCards', {}, '1 card', '2 cards'],
+	['stats.wordStateSummary.text', { parts: '1 new' }, '1 word: 1 new', '2 words: 1 new']
 ];
 
 describe('catalogue plurals keep their English', () => {

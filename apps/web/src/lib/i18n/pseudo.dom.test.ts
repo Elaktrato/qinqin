@@ -14,6 +14,7 @@ import ResetMfaDialog from '$lib/admin/ResetMfaDialog.svelte';
 import DeckStatsPanel from '$lib/features/flashcards/decks/DeckStatsPanel.svelte';
 import HighlightBar from '$lib/features/reader/HighlightBar.svelte';
 import OverallReview from '$lib/plugins/journal/OverallReview.svelte';
+import PlayButton from '$lib/components/PlayButton.svelte';
 
 // The pseudo-locale sample (spec Ruling): each extraction task adds one component of its area to SAMPLES; the
 // test renders it in en-XA and fails on any text node that is still plain ASCII English (a missed string, or
@@ -86,6 +87,17 @@ const SAMPLES: Sample[] = [
 			}
 		},
 		allow: ['m-1']
+	},
+	// the rest (Task 21): the play button's name comes from lib/audio
+	{
+		name: 'PlayButton',
+		component: PlayButton,
+		props: {
+			clips: [{ url: '/a.mp3', packId: 'p', license: '公有领域', attribution: '某人', source: '来源' }],
+			lang: 'zh',
+			deviceVoice: false,
+			label: '行'
+		}
 	}
 ];
 

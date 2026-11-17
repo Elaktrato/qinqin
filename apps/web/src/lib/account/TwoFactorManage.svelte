@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { apiErrorBody } from '$lib/api/client';
 	import type { AuthOptions } from '$lib/api/account';
 	import { newRecoveryCodes, setEmailMethod, totpDisable } from '$lib/api/mfa';
@@ -47,7 +48,7 @@
 					? t('account.mfa.wrongPassword')
 					: body?.error === 'code_invalid'
 						? t('account.mfa.codeWrong')
-						: body?.message || t('account.mfa.failed');
+						: errorText(err, t('account.mfa.failed'));
 		} finally {
 			busy = false;
 		}

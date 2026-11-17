@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onDestroy, onMount } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { resendEmailCode, verifyEmailCode } from '$lib/api/mfa';
@@ -71,7 +72,7 @@
 			countdown(res.resendAfter ?? 60);
 			live = t('account.verify.newCodeSent', { address });
 		} catch (err) {
-			error = apiErrorBody(err)?.message || t('account.verify.resendFailed');
+			error = errorText(err, t('account.verify.resendFailed'));
 		} finally {
 			busy = false;
 		}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -27,16 +28,16 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle(view ? '' : 'Plugin')}</title>
+	<title>{pageTitle(view ? '' : t('app.plugin.title'))}</title>
 </svelte:head>
 
 {#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
-	<main><p>Loading…</p></main>
+	<main><p>{t('app.plugin.loading')}</p></main>
 {:else if $pluginStates.status === 'error'}
-	<main><p role="alert">Could not load plugins.</p></main>
+	<main><p role="alert">{t('app.plugin.loadFailed')}</p></main>
 {:else if view}
 	{@const Page = view.component}
 	<Page rest={page.params.rest ?? ''} />
 {:else}
-	<main><p>Plugin not available.</p></main>
+	<main><p>{t('app.plugin.unavailable')}</p></main>
 {/if}

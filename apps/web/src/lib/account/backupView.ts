@@ -1,5 +1,6 @@
 // Pure logic of Settings -> Account -> Your data (export and restore).
 
+import { API_ERROR_KEYS, apiErrorText } from '$lib/api/apiErrors';
 import { t, type MessageKey } from '$lib/i18n';
 import { formatNumber } from '$lib/i18n/format';
 
@@ -125,15 +126,17 @@ const ERRORS: Record<string, MessageKey> = {
 	not_found: 'account.backup.error.notFound'
 };
 
+/** The backup screens' sentence for an error code, else the API error text of a known code, else `fallback`. */
 export function errorText(code: string | undefined, fallback: string): string {
-	const key = code && Object.hasOwn(ERRORS, code) ? ERRORS[code] : undefined;
-	return key ? t(key) : fallback;
+	if (code && Object.hasOwn(ERRORS, code)) return t(ERRORS[code]);
+	if (code && Object.hasOwn(API_ERROR_KEYS, code)) return t(API_ERROR_KEYS[code]);
+	return fallback;
 }
 
 /** Sentence for a stage that ended badly; the detail never holds file content. */
 export function stageProblem(v: StageView): string {
 	if (!v.error) return '';
-	const base = errorText(v.error.code, v.error.message);
+	const base = errorText(v.error.code, apiErrorText(v.error.code));
 	return v.error.detail ? `${base} ${v.error.detail}` : base;
 }
 

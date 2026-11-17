@@ -38,8 +38,8 @@
 	const status = $derived.by(() => {
 		if (tip === null) return '';
 		const { stage, score, reviewedCards } = tip.cell;
-		const parts = [STAGE_LABEL[stage], `${score}/100`];
-		if (reviewedCards > 0) parts.push(`${reviewedCards} ${reviewedCards === 1 ? 'card' : 'cards'}`);
+		const parts = [STAGE_LABEL[stage], t('stats.map.tipScore', { score })];
+		if (reviewedCards > 0) parts.push(t('stats.map.tipCards', { count: reviewedCards }));
 		return parts.join(' · ');
 	});
 </script>

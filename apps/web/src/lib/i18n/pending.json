@@ -1,12 +1,5 @@
 {
-	"text": [
-		"lib/api/upload.ts",
-		"lib/audio/button.ts",
-		"lib/sources/audioSection.ts",
-		"lib/sources/coreCredits.ts",
-		"routes/p/[plugin]/[...rest]/+page.svelte",
-		"routes/sources/+page.svelte"
-	],
+	"text": [],
 	"intl": [
 		"lib/account/sessionsView.ts",
 		"lib/weekly/weekText.ts"

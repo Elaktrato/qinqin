@@ -53,7 +53,7 @@
 			await downloadMyData(assign);
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || t('account.data.downloadFailed'));
+			error = errorText(b?.error, t('account.data.downloadFailed'));
 		} finally {
 			busy = false;
 		}
@@ -69,7 +69,7 @@
 			view = await restoreStatus(token);
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || t('account.data.statusFailed'));
+			error = errorText(b?.error, t('account.data.statusFailed'));
 			view = null;
 			return;
 		}
@@ -109,7 +109,7 @@
 		} catch (err) {
 			progress = null;
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || t('account.data.uploadFailed'));
+			error = errorText(b?.error, t('account.data.uploadFailed'));
 		} finally {
 			busy = false;
 		}
@@ -121,7 +121,7 @@
 			assign((await safetyExportTicket()).url);
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || t('account.data.noEarlier'));
+			error = errorText(b?.error, t('account.data.noEarlier'));
 		}
 	}
 
@@ -144,7 +144,7 @@
 			await focusHeading();
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || t('account.data.restoreFailed'));
+			error = errorText(b?.error, t('account.data.restoreFailed'));
 		} finally {
 			busy = false;
 		}

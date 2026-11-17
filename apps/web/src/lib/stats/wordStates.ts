@@ -130,10 +130,17 @@ export function wordStateCounts(
 	};
 }
 
+const SUMMARY: Record<WordState, MessageKey> = {
+	new: 'stats.wordStateSummary.new',
+	learning: 'stats.wordStateSummary.learning',
+	young: 'stats.wordStateSummary.young',
+	mature: 'stats.wordStateSummary.mature'
+};
+
 /** wordStateSummary is the bar's text alternative, e.g. "16 words: 3 new, 1 learning, …". */
 export function wordStateSummary(counts: WordStateCounts): string {
-	const parts = WORD_STATES.map(({ state }) => `${counts[state]} ${state}`);
-	return `${counts.total} ${counts.total === 1 ? 'word' : 'words'}: ${parts.join(', ')}`;
+	const parts = WORD_STATES.map(({ state }) => t(SUMMARY[state], { count: counts[state] }));
+	return t('stats.wordStateSummary.text', { count: counts.total, parts: parts.join(', ') });
 }
 
 /** wordStateShares are the non-empty parts of the stacked bar, in percent. */

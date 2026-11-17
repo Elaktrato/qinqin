@@ -1,6 +1,7 @@
 // The one-time-code field of the sign-in steps: what to strip, what
 // attributes to set, and the sentences for a refused code. Pure.
 
+import { API_ERROR_KEYS, apiErrorText } from '$lib/api/apiErrors';
 import { t } from '$lib/i18n';
 import type { MfaMethod } from './loginFlow';
 
@@ -71,5 +72,5 @@ export function codeFailure(body: { error: string; message: string; attemptsLeft
 				: t('account.otp.codeWrong');
 		return { text, restart: false };
 	}
-	return { text: body.message || fallback, restart: false };
+	return { text: Object.hasOwn(API_ERROR_KEYS, body.error) ? apiErrorText(body.error) : fallback, restart: false };
 }

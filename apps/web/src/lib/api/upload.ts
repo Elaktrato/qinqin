@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { ApiError, getToken, isOwnApiPath, notifyUnauthorized } from './client';
 
 export interface UploadProgress {
@@ -60,7 +61,7 @@ export function uploadWithProgress<T>(path: string, form: FormData | Blob, opts:
 					try {
 						resolve((xhr.responseText ? JSON.parse(xhr.responseText) : undefined) as T);
 					} catch {
-						reject(new ApiError(xhr.status, 'The server sent an unreadable answer.'));
+						reject(new ApiError(xhr.status, t('common.upload.unreadable')));
 					}
 					return;
 				}
@@ -68,7 +69,7 @@ export function uploadWithProgress<T>(path: string, form: FormData | Blob, opts:
 				reject(new ApiError(xhr.status, xhr.responseText.trim() || `HTTP ${xhr.status}`));
 			});
 		xhr.onerror = () =>
-			finish(() => reject(new ApiError(0, 'Network error: the upload did not reach the server.')));
+			finish(() => reject(new ApiError(0, t('common.upload.network'))));
 		xhr.onabort = () => finish(() => reject(abortError()));
 		xhr.send(form);
 	});

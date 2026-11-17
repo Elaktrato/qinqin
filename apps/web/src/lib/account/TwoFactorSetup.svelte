@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { putEmail, type AuthOptions } from '$lib/api/account';
@@ -54,7 +55,7 @@
 		const body = apiErrorBody(err);
 		if (body?.error === 'wrong_password') return t('account.mfa.wrongPassword');
 		if (body?.error === 'code_invalid') return codeFailure(body, fallback).text;
-		return body?.message || (err instanceof Error ? err.message : '') || fallback;
+		return errorText(err, fallback);
 	}
 
 	async function startTotp(event?: SubmitEvent) {
