@@ -58,5 +58,17 @@
 		"file": "app.css",
 		"text": "rgb(",
 		"reason": "--shadow-float, the one shadow token (fixed scale tokens): a translucent black that darkens any theme's surface."
+	},
+	{
+		"rule": "opacity",
+		"file": "lib/features/flashcards/cards/WritingPad.svelte",
+		"text": ".outline.scaffold",
+		"reason": "The writing pad's scaffold: a faint drawing of the character to trace over (a graphic, not text)."
+	},
+	{
+		"rule": "opacity",
+		"file": "lib/features/flashcards/cards/WritingPad.svelte",
+		"text": ".glow, .start",
+		"reason": "The stroke-start marker held still under reduced motion: a graphic dot, not text."
 	}
 ]

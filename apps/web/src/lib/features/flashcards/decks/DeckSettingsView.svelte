@@ -263,23 +263,25 @@
 	}
 
 	.danger {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
 	.confirm {
 		margin-top: 0.75rem;
 		padding: 0.75rem;
-		border: 1px solid #c62828;
+		border: 1px solid var(--bad);
 		border-radius: 0.5rem;
 	}
 
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.hint {
-		opacity: 0.8;
+		color: var(--readable-muted);
 		margin: 0.25rem 0;
 	}
 </style>

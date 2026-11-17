@@ -576,27 +576,27 @@
 
 	.primary {
 		padding: 0 1rem;
-		border: 1px solid #0b6bcb;
+		border: 1px solid var(--accent);
 		border-radius: 999px;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 	}
 
 	.danger {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
 	.source {
 		margin: 0.1rem 0;
 		font-size: 0.85rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.count {
 		margin: 0.25rem 0;
 		font-size: 0.85rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.rows,
@@ -612,7 +612,7 @@
 	}
 
 	.rows > li.picked {
-		background: color-mix(in srgb, #0b6bcb 12%, transparent);
+		background: color-mix(in srgb, var(--accent) 12%, transparent);
 	}
 
 	.line {
@@ -636,7 +636,7 @@
 	.state,
 	.due {
 		font-size: 0.85rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.chip {
@@ -648,7 +648,7 @@
 	}
 
 	.chip.off {
-		opacity: 0.6;
+		color: var(--readable-muted);
 		text-decoration: line-through;
 	}
 
@@ -671,13 +671,15 @@
 	.confirm {
 		margin: 0.5rem 0;
 		padding: 0.75rem;
-		border: 1px solid #c62828;
+		border: 1px solid var(--bad);
 		border-radius: 0.5rem;
 	}
 
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.toast-region {
@@ -694,12 +696,14 @@
 		gap: 1rem;
 		align-items: center;
 		padding: 0.5rem 1rem;
+		border: 1px solid var(--hair);
 		border-radius: 0.5rem;
-		background: #222;
-		color: #fff;
+		background: var(--panel);
+		color: var(--text);
+		box-shadow: var(--shadow-float);
 	}
 
 	.hint {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 </style>
