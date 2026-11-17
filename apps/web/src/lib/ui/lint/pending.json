@@ -1,27 +1,4 @@
 {
-	"colour": [
-		"app.css",
-		"routes/+layout.svelte",
-		"routes/+page.svelte",
-		"routes/entry/[id]/+page.svelte",
-		"routes/lookups/+page.svelte",
-		"routes/search/+page.svelte",
-		"routes/search/parts/+page.svelte",
-		"routes/sources/+page.svelte",
-		"routes/stats/+layout.svelte",
-		"routes/stats/characters/+page.svelte"
-	],
-	"opacity": [
-		"lib/milestones/MilestoneHistory.svelte",
-		"routes/+layout.svelte",
-		"routes/+page.svelte",
-		"routes/entry/[id]/+page.svelte",
-		"routes/search/+page.svelte",
-		"routes/search/parts/+page.svelte",
-		"routes/sources/+page.svelte",
-		"routes/stats/+layout.svelte",
-		"routes/stats/+page.svelte",
-		"routes/stats/characters/+page.svelte",
-		"routes/stats/week/+page.svelte"
-	]
+	"colour": [],
+	"opacity": []
 }

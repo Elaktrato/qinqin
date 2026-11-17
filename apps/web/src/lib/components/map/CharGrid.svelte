@@ -292,9 +292,11 @@
 		color: var(--st-learning-fg);
 	}
 
+	/* Mature: an inner accent ring on top of its fill (the map's legend). */
 	.st-mature {
 		background: var(--st-mature-bg);
 		color: var(--st-mature-fg);
+		box-shadow: inset 0 0 0 2px var(--accent);
 	}
 
 	.st-learned {

@@ -315,13 +315,15 @@
 <style>
 	.hint {
 		margin-top: 1.5rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
 		margin-top: 1.5rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.retry {
@@ -361,7 +363,7 @@
 	.credit {
 		margin: 0.5rem 0 0;
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.written {
@@ -386,7 +388,7 @@
 		padding: 0.15rem 0.5rem;
 		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		border-radius: 999px;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.actions {
@@ -407,8 +409,8 @@
 
 	.edit:hover,
 	.edit:focus-visible {
-		border-color: #0b6bcb;
-		color: #0b6bcb;
+		border-color: var(--accent);
+		color: var(--reading-accent);
 	}
 
 	.variants,
@@ -424,7 +426,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.variants ul,
@@ -466,7 +468,7 @@
 
 	.reading {
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.radical p {

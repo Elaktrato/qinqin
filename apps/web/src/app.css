@@ -82,8 +82,8 @@
 
 body {
 	margin: 0;
-	background: var(--panel, Canvas);
-	color: var(--text, CanvasText);
+	background: var(--panel);
+	color: var(--text);
 }
 
 main {

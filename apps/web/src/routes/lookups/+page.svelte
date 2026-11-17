@@ -320,9 +320,9 @@
 	}
 
 	.switch[aria-checked='true'] {
-		background: #0b6bcb;
-		border-color: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.prompt {
@@ -370,7 +370,7 @@
 	}
 
 	.danger {
-		color: #b3261e;
+		color: var(--readable-bad);
 	}
 
 	.list {

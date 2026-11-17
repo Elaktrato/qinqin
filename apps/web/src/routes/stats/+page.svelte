@@ -57,6 +57,6 @@
 	}
 
 	.empty {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 </style>

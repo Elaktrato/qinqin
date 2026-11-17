@@ -816,11 +816,11 @@
 
 	.lede {
 		margin-top: 0;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.visually-hidden {
@@ -861,7 +861,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		opacity: 0.75;
+		color: var(--readable-muted);
 		white-space: nowrap;
 	}
 
@@ -878,7 +878,7 @@
 	.notice {
 		margin: 0.9rem 0 0;
 		font-size: 0.9rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.notes-heading {
@@ -956,7 +956,7 @@
 	}
 
 	.facts dt {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.facts dd {
@@ -982,8 +982,10 @@
 
 	.error {
 		margin: 0 0 0.6rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	button {
@@ -992,8 +994,8 @@
 		padding: 0.45rem 0.85rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		cursor: pointer;
 	}
 
