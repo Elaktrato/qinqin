@@ -95,6 +95,8 @@
 	"widgets.activity.stage.sprout": "Flower stage: under a third of the day's goal done.",
 	"widgets.activity.stageNote": "Appended to a heatmap day's tooltip: {progress} is goals.progress.amountOfTarget (\"21 of 50\"), {stage} one of widgets.activity.stage.*.",
 	"widgets.activity.today": "Appended to the tooltip of today's heatmap tile, after \" · \"; lower case mid-sentence.",
+	"widgets.activity.week.link": "Accessible name of the heatmap's This week block, a link to the Week tab of Stats.",
+	"widgets.activity.week.toGo": "{amount} is an activity amount such as \"29 flashcard reviews\" (the plugin's own count wording).",
 	"widgets.characters.stale": "<code> wraps the command name; keep it untranslated.",
 	"widgets.words.inDecks": "Follows the bold total (\"12 words in your decks ·\"); the number itself is shown before it, outside the message."
 }

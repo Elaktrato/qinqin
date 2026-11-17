@@ -19,7 +19,9 @@
 	import type { HeatCell } from '$lib/activity/cells';
 	import HeatmapGarden from '$lib/activity/HeatmapGarden.svelte';
 	import HeatmapMonth from '$lib/activity/HeatmapMonth.svelte';
-	import { earliestMonth, monthOf, monthWindow, nextMonth, prevMonth } from '$lib/activity/calendar';
+	import HeatmapWeek from '$lib/activity/HeatmapWeek.svelte';
+	import { earliestMonth, monthOf, monthWindow, nextMonth, prevMonth, weekDays } from '$lib/activity/calendar';
+	import { toGoText } from '$lib/goals/goalText';
 	import { stageAmounts, stagesFor, type DayStage } from '$lib/activity/stages';
 	import type { GoalsRow } from '$lib/goals/goals';
 	import { formatNumber } from '$lib/i18n/format';
@@ -178,6 +180,26 @@
 		if (layout === 'month') return monthWindow(month, day);
 		return { from: windowStart(studyDay, now), to: day };
 	}
+
+	// This week: Monday..Sunday from the 13-week window (no request of its own).
+	const weekCells = $derived.by((): HeatCell[] => {
+		const byDay = new Map(cells.map((cell) => [cell.day, cell]));
+		return weekDays(today).map(
+			({ day, future }) =>
+				byDay.get(day) ?? { day, level: 0, vacation: false, today: false, future, label: '', stage: null, amountText: '' }
+		);
+	});
+	const weekSummary = $derived.by((): string => {
+		const stage = stages.get(today) ?? null;
+		if (stage !== null) {
+			if (stage.status === 'met') return t('goals.status.reached');
+			if (stage.status === 'vacation') return t('goals.status.vacation');
+			const left = toGoText(stage, sources);
+			if (left !== null) return left;
+		}
+		const points = weekCells.reduce((sum, cell) => sum + (byDay.get(cell.day)?.total ?? 0), 0);
+		return t('widgets.activity.week.points', { count: points });
+	});
 
 	// Month paging: back to the activity route's 366-day cap, never past the current month.
 	const canPrev = $derived(month > earliestMonth(today));
@@ -346,6 +368,8 @@
 				onnext={() => page(nextMonth(month))}
 				summary={goalSummary}
 			/>
+		{:else if layout === 'week'}
+			<HeatmapWeek cells={weekCells} summary={weekSummary} />
 		{:else}
 			<HeatmapGarden {cells} />
 			<p class="visually-hidden">{summary}</p>
@@ -354,8 +378,8 @@
 
 	<footer class="legend">
 		<span>
-			{#if layout === 'month'}
-				<!-- The month's own summary is in its header. -->
+			{#if layout !== 'garden'}
+				<!-- The month and the week have their own summary line. -->
 			{:else if allHidden}
 				{t('stats.activity.allHidden')}
 			{:else if windowTotal === 0}
