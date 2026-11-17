@@ -94,6 +94,36 @@ describe('Menu', () => {
 		expect(screen.getByRole('menu', { name: 'Workspaces' })).toBeTruthy();
 	});
 
+	it('a trigger snippet renders inside the trigger button, which keeps its name, aria-haspopup and tooltip', () => {
+		render(MenuHarness);
+		const trigger = screen.getByRole('button', { name: 'Account menu' });
+		expect(trigger.contains(screen.getByTestId('avatar'))).toBe(true);
+		expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+		expect(trigger.getAttribute('aria-expanded')).toBe('false');
+		const tip = trigger.parentElement?.querySelector('[role="tooltip"]');
+		expect(tip?.textContent).toBe('Account menu');
+		expect(tip?.getAttribute('aria-hidden')).toBe('true');
+	});
+
+	it('a keepOpen item runs onselect and leaves the menu open with focus on the first item of the new content', async () => {
+		const picked = vi.fn();
+		render(MenuHarness, { picked });
+		const trigger = screen.getByRole('button', { name: 'Account menu' });
+		await fireEvent.click(trigger);
+		const menu = screen.getByRole('menu', { name: 'Account menu' });
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Theme' }));
+		expect(picked).toHaveBeenCalledWith('drill');
+		expect(screen.getByRole('menu', { name: 'Account menu' })).toBe(menu);
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
+		await waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Back'));
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Back' }));
+		await waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Theme'));
+		// An ordinary item still closes and returns focus.
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+		expect(screen.queryByRole('menu', { name: 'Account menu' })).toBeNull();
+		expect(document.activeElement).toBe(trigger);
+	});
+
 	it('the popup is a floating layer in tokens and fades with the motion token', () => {
 		const css = source.slice(source.indexOf('<style>'));
 		expect(css).toMatch(/background: var\(--panel\)/);

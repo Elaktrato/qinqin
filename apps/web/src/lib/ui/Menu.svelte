@@ -1,23 +1,31 @@
 <script lang="ts">
 	// A menu button and its popup (APG menu button pattern; design §5: menus
 	// are a floating layer that fades in). The trigger is an icon button with
-	// a tooltip (`icon`) or a text button (`text`); the popup holds MenuItems.
+	// a tooltip (`icon`), a text button (`text`) or custom content with a
+// tooltip (`trigger`: the frame's flag and avatar); the popup holds MenuItems.
 	// Opening focuses the checked item, else the first; Up/Down wrap,
 	// Home/End jump, a letter jumps to the next item starting with it; Escape
 	// closes and returns focus to the trigger; Tab and a pointer outside close
 	// without taking focus.
 	//
-	// API: <Menu label icon?|text? menuLabel? align? bind:open? triggerClass?>…MenuItems…</Menu>
+	// API: <Menu label icon?|text?|trigger? menuLabel? align? direction? bind:open? triggerClass?>…MenuItems…</Menu>
 	//   label      the trigger's accessible name (icon trigger) and the menu's
 	//              name unless menuLabel is given (t(…))
 	//   icon       an IconName: an icon-only trigger with a tooltip
 	//   text       visible trigger text (its name; label is then unused)
+	//   trigger    a snippet drawn inside the trigger button (decorative: the
+	//              button is named by label and shows it as a tooltip)
 	//   menuLabel  the popup's accessible name, when it differs from label
 	//   align      'end' (default: the popup's end edge under the trigger's) | 'start'
+	//   direction  'down' (default) | 'up' (the popup opens above the trigger)
 	//   open       bindable (the gallery renders it open)
+	//   A MenuItem with keepOpen leaves the menu open after its pick (a level
+	//   inside the same popup): focus then goes to the item marked `focus`,
+	//   else the first item of the new content.
 	import { tick, type Snippet } from 'svelte';
 	import Icon from './Icon.svelte';
 	import IconButton from './IconButton.svelte';
+	import Tooltip from './Tooltip.svelte';
 	import type { IconName } from './icons/lucide';
 	import { setMenuContext } from './menu';
 
@@ -27,8 +35,10 @@
 		text,
 		menuLabel,
 		align = 'end',
+		direction = 'down',
 		open = $bindable(false),
 		triggerClass = '',
+		trigger: triggerContent,
 		children
 	}: {
 		label: string;
@@ -36,8 +46,10 @@
 		text?: string;
 		menuLabel?: string;
 		align?: 'start' | 'end';
+		direction?: 'down' | 'up';
 		open?: boolean;
 		triggerClass?: string;
+		trigger?: Snippet;
 		children: Snippet;
 	} = $props();
 
@@ -58,7 +70,15 @@
 		if (returnFocus) trigger?.focus();
 	}
 
-	setMenuContext({ close });
+	// After a keepOpen pick the popup's content may change: focus the item
+	// marked to take it, else the first one.
+	async function settle(): Promise<void> {
+		await tick();
+		const list = items();
+		(list.find((el) => el.hasAttribute('data-menu-focus')) ?? list[0])?.focus();
+	}
+
+	setMenuContext({ close, settle });
 
 	async function toggle(): Promise<void> {
 		open = !open;
@@ -108,7 +128,22 @@
 <svelte:document onpointerdown={outside} />
 
 <div class="menu-wrap" bind:this={wrapper}>
-	{#if icon && !text}
+	{#if triggerContent}
+		<Tooltip text={label} suppress={open}>
+			{#snippet children()}
+				<button
+					bind:this={trigger}
+					type="button"
+					class="custom-trigger {triggerClass}"
+					aria-label={label}
+					aria-haspopup="menu"
+					aria-expanded={open}
+					aria-controls={open ? menuId : undefined}
+					onclick={toggle}>{@render triggerContent()}</button
+				>
+			{/snippet}
+		</Tooltip>
+	{:else if icon && !text}
 		<IconButton
 			bind:element={trigger}
 			{label}
@@ -135,7 +170,7 @@
 	{#if open}
 		<!-- svelte-ignore a11y_interactive_supports_focus -->
 		<div
-			class="menu {align}"
+			class="menu {align} {direction}"
 			id={menuId}
 			role="menu"
 			aria-label={menuLabel ?? label}
@@ -165,10 +200,26 @@
 		font: inherit;
 		cursor: pointer;
 	}
-	.text-trigger:hover {
+	.custom-trigger {
+		display: inline-grid;
+		place-items: center;
+		box-sizing: border-box;
+		min-width: 2.25rem;
+		min-height: 2.25rem;
+		padding: var(--space-1);
+		border: 1px solid transparent;
+		border-radius: var(--radius);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+	}
+	.text-trigger:hover,
+	.custom-trigger:hover {
 		background: var(--raised);
 	}
-	.text-trigger:focus-visible {
+	.text-trigger:focus-visible,
+	.custom-trigger:focus-visible {
 		outline: var(--focus-ring);
 		outline-offset: var(--focus-ring-offset);
 	}
@@ -190,6 +241,10 @@
 		box-shadow: var(--shadow-float);
 		animation: menu-in var(--motion-fast) var(--ease-standard);
 	}
+	.up {
+		top: auto;
+		bottom: calc(100% + var(--space-1));
+	}
 	.end {
 		inset-inline-end: 0;
 	}
@@ -206,8 +261,15 @@
 		.menu {
 			border-color: CanvasText;
 		}
-		.text-trigger:focus-visible {
+		.text-trigger:focus-visible,
+		.custom-trigger:focus-visible {
 			outline-color: Highlight;
+		}
+	}
+	@media (pointer: coarse) {
+		.custom-trigger {
+			min-width: var(--hit);
+			min-height: var(--hit);
 		}
 	}
 </style>
