@@ -3,12 +3,26 @@
 Rules every qinqin client (Go server, web, future Android/Kotlin) must implement identically. Each rule
 has a folder with a README (the rule) and JSON fixtures that all implementations run.
 
-Fixture format: `{"version": 1, "rule": "<name>", "cases": [ ... ]}`. Go tests read the files with
-`os.ReadFile` (relative to the test's package), web tests import the JSON directly
-(`resolveJsonModule`). A fixture is only changed after re-deriving the value from its source of truth;
-never to match an implementation. Add one row per area; a Go or web test must decode each fixture.
+Fixture formats:
 
-Start with [`overview.md`](overview.md): how the folders fit, the sync model and every row-key convention (the Android entry point).
+- **Case lists** (most files): `{"version": 1, "rule": "<folder>/<name>", "cases": [ ... ]}`, each case with a
+  `name` and usually a `note` (the rule in words). Some rules need named members beside the cases (limits,
+  constants, the rules they were derived from) or several case lists instead of one (`scheduler/fsrs.json`,
+  `cards/deck-session.json`, `settings/*.json`, `scheduler/xp.json`, `decks/char-mastery.json`,
+  `overlays/overlay.json`); each folder's README says which.
+- **Named examples** (`auth/`): maps from an example name to a request and its answer.
+- **Generated files** carry `generator` (the script) and `tsFsrs`; regenerate, never edit by hand, and check them
+  with the script's `--check` (`scheduler/vacation-schedule.json`, `optimizer-steps.json`, `fsrs.json`).
+
+Go tests read the files with `os.ReadFile` (relative to the test's package); web tests import the JSON directly
+(`resolveJsonModule`), or read it with `JSON.parse` where a value such as `1e999` (Infinity) must survive. A
+fixture is only changed after re-deriving the value from its source of truth; never to match an implementation.
+Add one row per area. A Go or web test must decode each fixture; the guard in
+`apps/web/src/lib/contractsDocs.test.ts` checks that every fixture is named by a test, except generator input
+(`scheduler/optimizer-steps.inside.json`) and the sample archive `backup/sample-v1/` (decoded as a whole by
+`server/internal/backup/format_test.go` and `restore_typed_test.go`).
+
+Start with [`overview.md`](overview.md), the single Android entry point: the read order of every folder, how the folders fit, the sync model, events, every row-key convention, what is device-local and what is not specified on purpose.
 
 | Folder | Rule |
 | --- | --- |

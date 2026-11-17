@@ -462,3 +462,48 @@ of each other in content but share the web gates; one implementer at a time. Tas
   row with a fresh stamp" are checked through the stamp, not by comparing wall-clock seconds.
 - Observation (pinned, not a bug): stored readings carry all four members of an entry reading,
   `{type, value, plain, ord}`, so a `{type, value}` sent comes back with `plain: ""`, `ord: 0`; the README says so.
+- Task 11 (overview, README, guard): `contractsDocs.test.ts` extended (every `docs/contracts/**/*.json` named by a
+  web test file or a Go test package, allowlist `scheduler/optimizer-steps.inside.json` (generator input) and
+  `backup/sample-v1/` (decoded as an archive); every folder in the overview's `## Read order`). With the old
+  overview → FAIL (22 folders not in the read order; 8 `auth/*.json` not named by path); the guard was then
+  taught the Go auth tests' naming (`contractDir` + bare `"me.json"` in the same package) → only the read order
+  failed; overview rewritten → PASS.
+- Adaptation: a fixture counts as named when a web test file contains `<folder>/<file>.json`, or when a web test
+  file or a Go test package contains `contracts/<folder>` and the quoted bare file name (the Go auth tests keep the
+  directory in a constant of another file of the package).
+- Overview/README audit (Appendix B re-run, each statement against the code):
+
+  | Statement | Code | Verdict |
+  | --- | --- | --- |
+  | Events: server "keeps `ts` verbatim" | `events/events.go:49` `ev.TS.UTC().Format(time.RFC3339)` | corrected: UTC whole seconds, fraction truncated |
+  | Events: "`type` one of session\|view\|lookup\|review\|read\|journal" | `api/handlers_events.go` (no type check), `plugins/builtin/*.json` | corrected: any type stored; declared types per manifest |
+  | Events: idempotent by ULID, `userId` forced, workspace owned else 404 | `handlers_events.go`, `sync/sync.go:174` | correct; plain-text 400s added |
+  | Events: owner can delete `lookup` events; web no longer emits them | `events.DeleteLookups`; no `record('lookup')` | correct |
+  | Pull v2 `events` ships every type but `lookup` | `sync/page_collections.go:100` | correct (pinned) |
+  | Row `read` events: "free payload", owner `readingTimer.ts`, "no fixture" | `BookView.svelte` → `eventPayloads.ts` | replaced: `events/payloads.json` |
+  | Row `review` event payload, unknown `mode` as `vocab` | `study/reviewParse.ts` | correct; pinned `events/review-parse.json` |
+  | Row workspace settings key `reader`, RFC 7396 merge | `api/handlers_workspaces.go:354` (`json_patch`), `api.go:377` (64 KiB) | correct; cap and other keys added |
+  | `workspaceId: null` rows incl. `qinqin-core` UI rows | `widgets/layout.ts`, `activity/viewPrefs.ts` | correct; shapes added (`settings/core-rows.json`) |
+  | Overlays in the pull | `sync/page_collections.go:292`, `overlay/overlay.go` | row added (`overlays/`) |
+  | Auth: 64-hex bearer, SHA-256 kept, idle 90 days | `auth/session.go:18` | correct |
+  | PAT `qq_pat_` + 64 hex | `auth/tokens.go:21` | correct |
+  | Push: value ≤ 256 KiB (413) | `api/api.go:386` | correct |
+  | "How the folders fit" | folders on disk | corrected: all 22 folders |
+  | Read order | folders on disk | corrected: 22 of 22 (was 10 of 19) |
+  | Gaps section | — | replaced by "Not specified (on purpose)" (D1–D7 with owners) |
+  | Device-local state | `localStorage` keys under `apps/web/src/lib` | added |
+  | README fixture format `{version, rule, cases}` | `auth/*.json`, generated files, multi-list files | corrected |
+  | README "a Go or web test must decode each fixture" | `scheduler/optimizer-steps.inside.json` | one exception, allowlisted by the guard |
+
+- `docs/wiki/`: grepped for event rules (`verbatim`, `read event`, `session event`, `ts`): no page states an event
+  rule now pinned differently; unchanged.
+- Observation (not changed: production code, out of this item's edits): the comments of `model.StudyEvent`,
+  `handleEventBatch` and the web `StudyEvent` type still say `ts` is "kept verbatim"; the contract is correct, the
+  comments are stale.
+- Adaptation: `backup/sample-v1/` is decoded by `server/internal/backup/format_test.go` and `restore_typed_test.go` (the spec named `api/contract_backup_test.go`); the README says so.
+- Final gates before this commit (tree = this commit): ONE full Go gate
+  `go.sh 'gofmt -l . ; go vet ./... && go test -count=1 -p 2 -timeout 30m ./...'` → gofmt empty, vet clean, 43
+  packages ok, exit 0 (the IPv6 test passed too); Node v26.13.1: generator `--check` 0, `npm run check` 0,
+  `npm test` (full vitest) 0 — 398 files, 6795 tests passed — `npm run build` 0. Task 12 (real-app check,
+  review, final gates) is left to the orchestrator.
+
