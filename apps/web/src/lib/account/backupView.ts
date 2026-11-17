@@ -1,5 +1,8 @@
 // Pure logic of Settings -> Account -> Your data (export and restore).
 
+import { t, type MessageKey } from '$lib/i18n';
+import { formatNumber } from '$lib/i18n/format';
+
 export interface Counts {
 	workspaces: number;
 	events: number;
@@ -42,28 +45,26 @@ export interface StageView {
 	result: { restored: Counts; droppedRows: number; revokedSessions: number } | null;
 }
 
-const nf = new Intl.NumberFormat('en');
-
 /** "3 workspaces, 9 876 reviews, ..." for the non-zero counts. */
 export function countsLine(c: Counts): string {
-	const parts: Array<[number, string, string]> = [
-		[c.workspaces, 'workspace', 'workspaces'],
-		[c.events, 'study event', 'study events'],
-		[c.cards, 'card', 'cards'],
-		[c.books, 'book', 'books'],
-		[c.overlays, 'word edit', 'word edits'],
-		[c.sentences, 'own sentence', 'own sentences']
+	const parts: Array<[number, MessageKey]> = [
+		[c.workspaces, 'account.backup.countWorkspaces'],
+		[c.events, 'account.backup.countEvents'],
+		[c.cards, 'account.backup.countCards'],
+		[c.books, 'account.backup.countBooks'],
+		[c.overlays, 'account.backup.countEdits'],
+		[c.sentences, 'account.backup.countSentences']
 	];
-	const out = parts.filter(([n]) => n > 0).map(([n, one, many]) => `${nf.format(n)} ${n === 1 ? one : many}`);
-	return out.length ? out.join(', ') : 'nothing';
+	const out = parts.filter(([n]) => n > 0).map(([n, key]) => t(key, { count: n }));
+	return out.length ? out.join(', ') : t('account.backup.nothing');
 }
 
 export function replaceSentence(r: Report): string {
-	return `This will replace everything you have now: ${countsLine(r.replaces)}.`;
+	return t('account.backup.replaces', { counts: countsLine(r.replaces) });
 }
 
 export function restoreSentence(r: Report): string {
-	return `From the backup (made ${r.backup.createdAt.slice(0, 10)}): ${countsLine(r.restores)}.`;
+	return t('account.backup.restores', { day: r.backup.createdAt.slice(0, 10), counts: countsLine(r.restores) });
 }
 
 /** The words the backup mentions that this server does not have. */
@@ -71,14 +72,15 @@ export function unresolvedLines(r: Report): string[] {
 	const lines = r.unresolved.entries.map((e) => {
 		const notes = e.notes ?? 0;
 		const bits = [
-			e.cards ? `${e.cards} card${e.cards === 1 ? '' : 's'}` : '',
-			e.overlays ? `${e.overlays} edit${e.overlays === 1 ? '' : 's'}` : '',
-			notes ? `${notes} note${notes === 1 ? '' : 's'}` : ''
+			e.cards ? t('account.backup.entryCards', { count: e.cards }) : '',
+			e.overlays ? t('account.backup.entryEdits', { count: e.overlays }) : '',
+			notes ? t('account.backup.entryNotes', { count: notes }) : ''
 		].filter(Boolean);
-		return bits.length ? `${e.written || '(unknown word)'} (${bits.join(', ')})` : e.written || '(unknown word)';
+		const word = e.written || t('account.backup.unknownWord');
+		return bits.length ? `${word} (${bits.join(', ')})` : word;
 	});
 	const more = r.unresolved.entryCount - r.unresolved.entries.length;
-	if (more > 0) lines.push(`and ${nf.format(more)} more`);
+	if (more > 0) lines.push(t('account.backup.more', { count: formatNumber(more) }));
 	return lines;
 }
 
@@ -107,24 +109,25 @@ export function canApply(f: ApplyForm): boolean {
 	return true;
 }
 
-const ERRORS: Record<string, string> = {
-	backup_invalid: 'This file is not a valid qinqin backup.',
-	backup_too_large: 'This backup is larger than the limits allow.',
-	backup_version_unsupported: 'This backup has a format this server cannot read.',
-	wrong_password: 'The password is wrong.',
-	current_password_required: 'Enter your password.',
-	code_invalid: 'That code is not right.',
-	confirm_mismatch: 'Type your username exactly.',
-	unresolved_entries: 'Confirm that the missing words are dropped.',
-	restore_running: 'A restore is already running.',
-	export_running: 'An export is already running. Try again in a moment.',
-	stage_not_ready: 'This upload is not ready to be restored.',
-	rate_limited: 'Too many attempts. Try again later.',
-	not_found: 'This upload has expired. Choose the file again.'
+const ERRORS: Record<string, MessageKey> = {
+	backup_invalid: 'account.backup.error.backupInvalid',
+	backup_too_large: 'account.backup.error.backupTooLarge',
+	backup_version_unsupported: 'account.backup.error.backupVersionUnsupported',
+	wrong_password: 'account.backup.error.wrongPassword',
+	current_password_required: 'account.backup.error.currentPasswordRequired',
+	code_invalid: 'account.backup.error.codeInvalid',
+	confirm_mismatch: 'account.backup.error.confirmMismatch',
+	unresolved_entries: 'account.backup.error.unresolvedEntries',
+	restore_running: 'account.backup.error.restoreRunning',
+	export_running: 'account.backup.error.exportRunning',
+	stage_not_ready: 'account.backup.error.stageNotReady',
+	rate_limited: 'account.backup.error.rateLimited',
+	not_found: 'account.backup.error.notFound'
 };
 
 export function errorText(code: string | undefined, fallback: string): string {
-	return (code && ERRORS[code]) || fallback;
+	const key = code && Object.hasOwn(ERRORS, code) ? ERRORS[code] : undefined;
+	return key ? t(key) : fallback;
 }
 
 /** Sentence for a stage that ended badly; the detail never holds file content. */
@@ -141,8 +144,8 @@ export function nextPollDelay(attempt: number): number {
 
 export function formatBytes(n: number): string {
 	if (n < 1024) return `${n} B`;
-	if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KiB`;
-	return `${(n / 1048576).toFixed(1)} MiB`;
+	if (n < 1024 * 1024) return t('account.backup.sizeKib', { n: formatNumber(n / 1024, { maximumFractionDigits: 0 }) });
+	return t('account.backup.sizeMib', { n: formatNumber(n / 1048576, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
 }
 
 export const LOCAL_KEYS_AFTER_RESTORE = ['qinqin.workspace', 'qinqin.study.session', 'qinqin.study.pending'] as const;

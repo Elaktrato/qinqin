@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { signOutAndDelete, staySignedIn } from './signOut';
 	import { logoutPrompt, unsentText } from './logoutFlow';
 
@@ -25,11 +26,11 @@
 		staySignedIn();
 	}}
 >
-	<h2 id="{uid}-title">Sign out with unsent reviews?</h2>
+	<h2 id="{uid}-title">{t('account.logout.title')}</h2>
 	<p id="{uid}-text">{unsentText($logoutPrompt ?? 0)}</p>
 	<div class="buttons">
-		<button bind:this={stay} type="button" onclick={staySignedIn}>Stay signed in</button>
-		<button type="button" class="danger" onclick={signOutAndDelete}>Sign out and delete them</button>
+		<button bind:this={stay} type="button" onclick={staySignedIn}>{t('account.logout.stay')}</button>
+		<button type="button" class="danger" onclick={signOutAndDelete}>{t('account.logout.delete')}</button>
 	</div>
 </dialog>
 

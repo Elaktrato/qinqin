@@ -19,7 +19,7 @@
 	import { mailAvailable } from '$lib/account/mfaView';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
 	import {
-		LOGOUT_EVERYWHERE_CONFIRM,
+		logoutEverywhereConfirm,
 		sessionRows,
 		type SessionDto
 	} from '$lib/account/sessionsView';
@@ -317,7 +317,7 @@
 	{#if tokenNote}<p class="hint">Logging out other devices or everywhere: {tokenNote}</p>{/if}
 	{#if confirmingAll}
 		<div class="confirm" role="group" aria-label="Confirm log out everywhere">
-			<p>{LOGOUT_EVERYWHERE_CONFIRM}{#if tokenNote}{' '}{tokenNote}{/if}</p>
+			<p>{logoutEverywhereConfirm()}{#if tokenNote}{' '}{tokenNote}{/if}</p>
 			<button type="button" disabled={busy} onclick={revokeAll}>Yes, log out everywhere</button>
 			<button type="button" disabled={busy} onclick={() => (confirmingAll = false)}>Cancel</button>
 		</div>

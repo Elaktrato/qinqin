@@ -2,6 +2,8 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { resendEmailCode, verifyEmailCode } from '$lib/api/mfa';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from './otpInput';
 
 	// Confirms a self-entered address with the six-digit code the server mailed
@@ -12,7 +14,7 @@
 		onverified,
 		verify = verifyEmailCode,
 		resend: resendCode = resendEmailCode,
-		submitLabel = 'Confirm address'
+		submitLabel = t('account.verify.confirmAddress')
 	}: {
 		address: string;
 		resendAfter?: number;
@@ -41,7 +43,7 @@
 	onMount(() => {
 		// A code was just mailed when this opens.
 		countdown(resendAfter);
-		live = `A code was sent to ${address}.`;
+		live = t('account.verify.codeSent', { address });
 	});
 	onDestroy(() => clearInterval(timer));
 
@@ -54,7 +56,7 @@
 			await verify(code);
 			onverified();
 		} catch (err) {
-			error = codeFailure(apiErrorBody(err), 'Could not check the code.').text;
+			error = codeFailure(apiErrorBody(err), t('account.verify.checkFailed')).text;
 		} finally {
 			busy = false;
 		}
@@ -67,9 +69,9 @@
 		try {
 			const res = await resendCode();
 			countdown(res.resendAfter ?? 60);
-			live = `A new code was sent to ${address}.`;
+			live = t('account.verify.newCodeSent', { address });
 		} catch (err) {
-			error = apiErrorBody(err)?.message || 'Could not send a new code.';
+			error = apiErrorBody(err)?.message || t('account.verify.resendFailed');
 		} finally {
 			busy = false;
 		}
@@ -77,7 +79,9 @@
 </script>
 
 <form onsubmit={submit} class="verify">
-	<p>We emailed a 6-digit code to <strong>{address}</strong>. It is valid for 10 minutes.</p>
+	<p>
+		<Msg key="account.verify.intro" args={{ address }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
+	</p>
 	<label>
 		{attrs.label}
 		<input
@@ -97,7 +101,7 @@
 	<button type="submit" disabled={busy || !otpComplete(code, 'email')}>{submitLabel}</button>
 	<p class="hint">
 		{resendText(left)}
-		<button type="button" class="link" disabled={busy || left > 0} onclick={resend}>Send a new code</button>
+		<button type="button" class="link" disabled={busy || left > 0} onclick={resend}>{t('account.verify.sendNew')}</button>
 	</p>
 	<p class="sr-only" aria-live="polite">{live}</p>
 </form>

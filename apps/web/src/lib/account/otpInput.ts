@@ -1,6 +1,7 @@
 // The one-time-code field of the sign-in steps: what to strip, what
 // attributes to set, and the sentences for a refused code. Pure.
 
+import { t } from '$lib/i18n';
 import type { MfaMethod } from './loginFlow';
 
 export interface OtpAttrs {
@@ -12,12 +13,12 @@ export interface OtpAttrs {
 
 /** The field attributes of a method (the authenticator and email codes are 6 digits). */
 export function otpAttrs(method: MfaMethod): OtpAttrs {
-	if (method === 'recovery') return { inputmode: 'text', autocomplete: 'off', maxlength: 24, label: 'Recovery code' };
+	if (method === 'recovery') return { inputmode: 'text', autocomplete: 'off', maxlength: 24, label: t('account.otp.recoveryCode') };
 	return {
 		inputmode: 'numeric',
 		autocomplete: 'one-time-code',
 		maxlength: 6,
-		label: method === 'email' ? 'Code from the email' : 'Code from your authenticator app'
+		label: method === 'email' ? t('account.otp.emailCode') : t('account.otp.appCode')
 	};
 }
 
@@ -39,13 +40,13 @@ export function otpComplete(code: string, method: MfaMethod): boolean {
 
 /** "3 attempts left", "1 attempt left". */
 export function attemptsText(n: number): string {
-	return n === 1 ? '1 attempt left' : `${n} attempts left`;
+	return t('account.otp.attemptsLeft', { count: n });
 }
 
 /** The seconds on a resend countdown, as the text the page announces. */
 export function resendText(secondsLeft: number): string {
-	if (secondsLeft <= 0) return 'You can ask for a new code now.';
-	return `You can ask for a new code in ${secondsLeft} ${secondsLeft === 1 ? 'second' : 'seconds'}.`;
+	if (secondsLeft <= 0) return t('account.otp.resendNow');
+	return t('account.otp.resendIn', { count: secondsLeft });
 }
 
 export interface CodeFailure {
@@ -55,16 +56,20 @@ export interface CodeFailure {
 	restart: boolean;
 }
 
-export const CHALLENGE_EXPIRED_TEXT =
-	'That sign-in took too long or had too many wrong codes. Enter your details again to get a new one.';
+export function challengeExpiredText(): string {
+	return t('account.otp.challengeExpired');
+}
 
 /** codeFailure words a refused code from the server's error body. */
 export function codeFailure(body: { error: string; message: string; attemptsLeft?: number } | null, fallback: string): CodeFailure {
 	if (!body) return { text: fallback, restart: false };
-	if (body.error === 'challenge_expired') return { text: CHALLENGE_EXPIRED_TEXT, restart: true };
+	if (body.error === 'challenge_expired') return { text: challengeExpiredText(), restart: true };
 	if (body.error === 'code_invalid') {
-		const left = typeof body.attemptsLeft === 'number' ? ` ${attemptsText(body.attemptsLeft)}.` : '';
-		return { text: `That code is not right.${left}`, restart: false };
+		const text =
+			typeof body.attemptsLeft === 'number'
+				? t('account.otp.codeWrongLeft', { left: attemptsText(body.attemptsLeft) })
+				: t('account.otp.codeWrong');
+		return { text, restart: false };
 	}
 	return { text: body.message || fallback, restart: false };
 }

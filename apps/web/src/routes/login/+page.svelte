@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { apiErrorBody } from '$lib/api/client';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
@@ -51,7 +53,7 @@
 			resendLeft = Math.max(0, resendLeft - 1);
 			if (resendLeft === 0) {
 				clearInterval(timer);
-				live = 'A new code can be requested now.';
+				live = t('auth.mfa.canRequestNow');
 			}
 		}, 1000);
 	}
@@ -100,13 +102,13 @@
 	function submitPassword(event: SubmitEvent) {
 		event.preventDefault();
 		notice = '';
-		void run(async () => settled(await signIn(username.trim(), password)), 'Login failed.');
+		void run(async () => settled(await signIn(username.trim(), password)), t('auth.signIn.failed'));
 	}
 
 	function submitCode(event: SubmitEvent) {
 		event.preventDefault();
 		if (!mfa || !otpComplete(code, method)) return;
-		void run(async () => settled(await completeMfa(mfa!.challenge, method, code)), 'Could not check the code.');
+		void run(async () => settled(await completeMfa(mfa!.challenge, method, code)), t('account.verify.checkFailed'));
 	}
 
 	function pick(next: MfaMethod) {
@@ -120,10 +122,10 @@
 		if (!mfa) return;
 		await run(async () => {
 			const res = await mfaSendEmail(mfa!.challenge);
-			sentTo = mfa!.emailHint ?? 'your email address';
-			live = `A code was sent to ${sentTo}.`;
+			sentTo = mfa!.emailHint ?? t('auth.mfa.yourEmail');
+			live = t('account.verify.codeSent', { address: sentTo });
 			startCountdown(res.resendAfter);
-		}, 'Could not send the code.');
+		}, t('auth.mfa.sendFailed'));
 	}
 
 	function startEmailLogin(event?: SubmitEvent) {
@@ -131,17 +133,17 @@
 		void run(async () => {
 			const started = await emailLoginStart(emailLogin.trim());
 			codeChallenge = started.challenge;
-			sentTo = 'the address on the account, if it has a confirmed one';
-			live = 'Code requested.';
+			sentTo = t('auth.emailLogin.sentTo');
+			live = t('auth.emailLogin.requested');
 			startCountdown(started.resendAfter);
 			await enter('emailCode');
-		}, 'Could not send a code.');
+		}, t('auth.emailLogin.sendFailed'));
 	}
 
 	function submitEmailLogin(event: SubmitEvent) {
 		event.preventDefault();
 		if (!otpComplete(code, 'email')) return;
-		void run(async () => settled(await completeEmailLogin(codeChallenge, code)), 'Could not check the code.');
+		void run(async () => settled(await completeEmailLogin(codeChallenge, code)), t('account.verify.checkFailed'));
 	}
 
 	function oninput(event: Event, as: MfaMethod) {
@@ -152,21 +154,21 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Sign in')}</title>
+	<title>{pageTitle(t('auth.signIn.title'))}</title>
 </svelte:head>
 
 <main class="auth">
 	{#if view === 'password'}
-		<h1 tabindex="-1" bind:this={heading}>Sign in</h1>
+		<h1 tabindex="-1" bind:this={heading}>{t('auth.signIn.title')}</h1>
 
 		<form onsubmit={submitPassword}>
 			<label>
-				Username
+				{t('auth.signIn.username')}
 				<input name="username" autocomplete="username" bind:value={username} required />
 			</label>
 
 			<label>
-				Password
+				{t('account.field.password')}
 				<input
 					name="password"
 					type="password"
@@ -183,21 +185,26 @@
 				<p class="error" role="alert">{error}</p>
 			{/if}
 
-			<button type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+			<button type="submit" disabled={busy}>{busy ? t('auth.signIn.signingIn') : t('auth.signIn.submit')}</button>
 		</form>
 
 		{#if options?.emailCodeLogin}
-			<p class="hint"><button type="button" class="link" onclick={() => enter('emailStart')}>Email me a sign-in code</button></p>
+			<p class="hint"><button type="button" class="link" onclick={() => enter('emailStart')}>{t('auth.signIn.emailCodeLink')}</button></p>
 		{/if}
 	{:else if view === 'mfa' && mfa}
-		<h1 tabindex="-1" bind:this={heading}>Two-step check</h1>
+		<h1 tabindex="-1" bind:this={heading}>{t('auth.mfa.title')}</h1>
 		<form onsubmit={submitCode}>
 			{#if method === 'email'}
-				<p>We emailed a code to <strong>{mfa.emailHint ?? 'your address'}</strong>. {sentTo ? '' : 'Sending it…'}</p>
+				<p>
+					<Msg key="auth.mfa.emailedTo" args={{ address: mfa.emailHint ?? t('auth.mfa.yourAddress') }}
+						>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+					>
+					{sentTo ? '' : t('auth.mfa.sending')}
+				</p>
 			{:else if method === 'recovery'}
-				<p>Enter one of the recovery codes you saved when you set up two-step sign-in. Each works once.</p>
+				<p>{t('auth.mfa.recoveryIntro')}</p>
 			{:else}
-				<p>Enter the 6-digit code from your authenticator app.</p>
+				<p>{t('auth.mfa.appIntro')}</p>
 			{/if}
 			<label>
 				{attrs.label}
@@ -214,42 +221,42 @@
 			{#if error}
 				<p class="error" role="alert">{error}</p>
 			{/if}
-			<button type="submit" disabled={busy || !otpComplete(code, method)}>{busy ? 'Checking…' : 'Continue'}</button>
+			<button type="submit" disabled={busy || !otpComplete(code, method)}>{busy ? t('auth.mfa.checking') : t('common.action.continue')}</button>
 		</form>
 		{#if method === 'email'}
 			<p class="hint">
 				{resendText(resendLeft)}
-				<button type="button" class="link" disabled={busy || resendLeft > 0} onclick={sendMfaEmail}>Send a new code</button>
+				<button type="button" class="link" disabled={busy || resendLeft > 0} onclick={sendMfaEmail}>{t('account.verify.sendNew')}</button>
 			</p>
 		{/if}
 		<p class="hint">
 			{#each others as other (other)}
 				<button type="button" class="link" onclick={() => pick(other)}>
-					{other === 'recovery' ? 'Use a recovery code' : other === 'email' ? 'Email me a code instead' : 'Use my authenticator app'}
+					{other === 'recovery' ? t('auth.mfa.useRecovery') : other === 'email' ? t('auth.mfa.useEmail') : t('auth.mfa.useApp')}
 				</button>
 			{/each}
-			<button type="button" class="link" onclick={() => backToStart('')}>Back to sign in</button>
+			<button type="button" class="link" onclick={() => backToStart('')}>{t('auth.mfa.backToSignIn')}</button>
 		</p>
 		<p class="sr-only" aria-live="polite">{live}</p>
 	{:else if view === 'emailStart'}
-		<h1 tabindex="-1" bind:this={heading}>Sign in with an emailed code</h1>
+		<h1 tabindex="-1" bind:this={heading}>{t('auth.emailLogin.title')}</h1>
 		<form onsubmit={startEmailLogin}>
 			<label>
-				Username or email address
+				{t('auth.emailLogin.login')}
 				<input name="login" autocomplete="username" bind:value={emailLogin} required />
 			</label>
 			{#if error}
 				<p class="error" role="alert">{error}</p>
 			{/if}
-			<button type="submit" disabled={busy}>{busy ? 'Sending…' : 'Email me a code'}</button>
+			<button type="submit" disabled={busy}>{busy ? t('auth.emailLogin.sending') : t('auth.emailLogin.submit')}</button>
 		</form>
-		<p class="hint"><button type="button" class="link" onclick={() => enter('password')}>Back to sign in</button></p>
+		<p class="hint"><button type="button" class="link" onclick={() => enter('password')}>{t('auth.mfa.backToSignIn')}</button></p>
 	{:else if view === 'emailCode'}
-		<h1 tabindex="-1" bind:this={heading}>Enter your code</h1>
+		<h1 tabindex="-1" bind:this={heading}>{t('auth.emailLogin.codeTitle')}</h1>
 		<form onsubmit={submitEmailLogin}>
-			<p>If the account has a confirmed email address, we sent it a 6-digit code.</p>
+			<p>{t('auth.emailLogin.sentIntro')}</p>
 			<label>
-				Code from the email
+				{t('account.otp.emailCode')}
 				<input
 					name="code"
 					inputmode="numeric"
@@ -263,26 +270,28 @@
 			{#if error}
 				<p class="error" role="alert">{error}</p>
 			{/if}
-			<button type="submit" disabled={busy || !otpComplete(code, 'email')}>{busy ? 'Checking…' : 'Sign in'}</button>
+			<button type="submit" disabled={busy || !otpComplete(code, 'email')}>{busy ? t('auth.mfa.checking') : t('auth.signIn.submit')}</button>
 		</form>
 		<p class="hint">
 			{resendText(resendLeft)}
-			<button type="button" class="link" disabled={busy || resendLeft > 0} onclick={() => startEmailLogin()}>Send a new code</button>
+			<button type="button" class="link" disabled={busy || resendLeft > 0} onclick={() => startEmailLogin()}>{t('account.verify.sendNew')}</button>
 		</p>
-		<p class="hint"><button type="button" class="link" onclick={() => backToStart('')}>Back to sign in</button></p>
+		<p class="hint"><button type="button" class="link" onclick={() => backToStart('')}>{t('auth.mfa.backToSignIn')}</button></p>
 		<p class="sr-only" aria-live="polite">{live}</p>
 	{/if}
 
 	{#if view === 'password' && options}
 		{#if options.bootstrap || options.registration === 'open'}
-			<p class="hint">No account yet? <a href="/register">Create one</a>.</p>
+			<p class="hint">
+				<Msg key="auth.signIn.noAccount">{#snippet link(text: string)}<a href="/register">{text}</a>{/snippet}</Msg>
+			</p>
 		{:else if options.registration === 'invite'}
-			<p class="hint">Have an invite link? Open it to register.</p>
+			<p class="hint">{t('auth.signIn.invite')}</p>
 		{/if}
 		{#if options.passwordReset}
-			<p class="hint"><a href="/reset">Forgot password?</a></p>
+			<p class="hint"><a href="/reset">{t('auth.signIn.forgot')}</a></p>
 		{:else}
-			<p class="hint">Forgot your password? Ask your administrator for a reset link.</p>
+			<p class="hint">{t('auth.signIn.forgotAsk')}</p>
 		{/if}
 	{/if}
 </main>

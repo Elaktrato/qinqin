@@ -1,4 +1,9 @@
 {
+	"account.backup.replaces": "{counts} is a comma-separated list such as \"3 workspaces, 120 cards\" or the word account.backup.nothing.",
+	"account.data.nothingChanged": "{problem} is a full sentence explaining why the restore failed.",
+	"account.otp.codeWrongLeft": "{left} is account.otp.attemptsLeft (\"2 attempts left\").",
+	"account.recovery.fileTitle": "First line of the downloaded recovery-codes text file; {site} is the server's host name.",
+	"account.verify.intro": "<strong> wraps the email address.",
 	"app.name": "The product name, shown last in every page title (\"Stats · qinqin\"). Keep it as is unless the product has an established name in the language.",
 	"features.switchedOff.text": "<link> wraps the link to Settings → Features; keep the arrow or use the language's own menu path notation.",
 	"nav.brand.home": "Accessible name of the logo link to the home page; {app} is the product name."

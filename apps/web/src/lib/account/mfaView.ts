@@ -2,6 +2,7 @@
 // account's own state. Pure; the components only render it.
 
 import type { AuthOptions } from '$lib/api/account';
+import { t } from '$lib/i18n';
 
 export interface MfaState {
 	totp: boolean;
@@ -19,9 +20,12 @@ export interface TwoFactorChoices {
 	emailWhy: string;
 }
 
-export const TOTP_UNAVAILABLE_TEXT =
-	'Authenticator apps need QINQIN_SECRET to be set on the server. Ask your administrator.';
-export const EMAIL_UNAVAILABLE_TEXT = 'Emailed codes need email to be set up on this server.';
+export function totpUnavailableText(): string {
+	return t('account.mfa.totpUnavailable');
+}
+export function emailUnavailableText(): string {
+	return t('account.mfa.emailUnavailable');
+}
 
 /**
  * mailAvailable: the server can send mail. `passwordReset` in the public
@@ -37,28 +41,24 @@ export function twoFactorChoices(options: AuthOptions | null): TwoFactorChoices 
 	const email = mailAvailable(options) && options?.emailPolicy !== 'off';
 	return {
 		totp,
-		totpWhy: totp ? '' : options === null ? '' : TOTP_UNAVAILABLE_TEXT,
+		totpWhy: totp ? '' : options === null ? '' : totpUnavailableText(),
 		email,
-		emailWhy: email ? '' : EMAIL_UNAVAILABLE_TEXT
+		emailWhy: email ? '' : emailUnavailableText()
 	};
 }
 
 /** The one-line state of the account's two-factor setup. */
 export function stateSentence(mfa: MfaState | undefined): string {
-	if (!mfa || (!mfa.totp && !mfa.email)) return 'Two-step sign-in is off.';
-	const parts: string[] = [];
-	if (mfa.totp) parts.push('an authenticator app');
-	if (mfa.email) parts.push('emailed codes');
-	return `Two-step sign-in is on with ${parts.join(' and ')}.`;
+	if (!mfa || (!mfa.totp && !mfa.email)) return t('account.mfa.stateOff');
+	if (mfa.totp && mfa.email) return t('account.mfa.stateBoth');
+	return mfa.totp ? t('account.mfa.stateApp') : t('account.mfa.stateEmail');
 }
 
 /** A warning when few recovery codes remain, else null. */
 export function recoveryWarning(mfa: MfaState | undefined): string | null {
 	if (!mfa?.totp) return null;
-	if (mfa.recoveryCodesLeft === 0) return 'You have no recovery codes left. Make new ones now.';
-	if (mfa.recoveryCodesLeft <= 3) {
-		return `Only ${mfa.recoveryCodesLeft} recovery ${mfa.recoveryCodesLeft === 1 ? 'code is' : 'codes are'} left. Consider making new ones.`;
-	}
+	if (mfa.recoveryCodesLeft === 0) return t('account.mfa.noRecoveryLeft');
+	if (mfa.recoveryCodesLeft <= 3) return t('account.mfa.fewRecoveryLeft', { count: mfa.recoveryCodesLeft });
 	return null;
 }
 

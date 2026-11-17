@@ -3,6 +3,7 @@
 	import type { AuthOptions } from '$lib/api/account';
 	import { newRecoveryCodes, setEmailMethod, totpDisable } from '$lib/api/mfa';
 	import { loadMe, user } from '$lib/auth';
+	import { t } from '$lib/i18n';
 	import { recoveryWarning, stateSentence, twoFactorChoices } from './mfaView';
 	import RecoveryCodes from './RecoveryCodes.svelte';
 	import TwoFactorSetup from './TwoFactorSetup.svelte';
@@ -43,10 +44,10 @@
 			const body = apiErrorBody(err);
 			error =
 				body?.error === 'wrong_password'
-					? 'The password is wrong.'
+					? t('account.mfa.wrongPassword')
 					: body?.error === 'code_invalid'
-						? 'That code is not right.'
-						: body?.message || 'That did not work.';
+						? t('account.mfa.codeWrong')
+						: body?.message || t('account.mfa.failed');
 		} finally {
 			busy = false;
 		}
@@ -54,7 +55,7 @@
 </script>
 
 <section aria-labelledby="account-2fa-heading" class="block">
-	<h2 id="account-2fa-heading">Two-step sign-in</h2>
+	<h2 id="account-2fa-heading">{t('account.mfa.title')}</h2>
 	<p>{stateSentence(mfa)}</p>
 	{#if warning}<p class="error" role="status">{warning}</p>{/if}
 	{#if nothingToOffer && options}
@@ -67,36 +68,36 @@
 	{:else if action === 'disable' || action === 'regen' || action === 'emailOff'}
 		<form onsubmit={submit} class="stack">
 			<label>
-				Your password
+				{t('account.field.yourPassword')}
 				<input type="password" autocomplete="current-password" bind:value={password} required />
 			</label>
 			{#if action !== 'emailOff'}
 				<label>
-					Code from your app, or a recovery code
+					{t('account.mfa.codeOrRecovery')}
 					<input name="code" autocomplete="one-time-code" bind:value={code} required />
 				</label>
 			{/if}
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
 			<div class="actions">
 				<button type="submit" disabled={busy}>
-					{action === 'disable' ? 'Turn off the authenticator app' : action === 'regen' ? 'Make new recovery codes' : 'Turn off email codes'}
+					{action === 'disable' ? t('account.mfa.turnOffApp') : action === 'regen' ? t('account.mfa.makeRecovery') : t('account.mfa.turnOffEmail')}
 				</button>
-				<button type="button" onclick={() => open('none')}>Cancel</button>
+				<button type="button" onclick={() => open('none')}>{t('common.action.cancel')}</button>
 			</div>
 		</form>
 	{:else}
 		<div class="actions">
 			{#if (choices.totp || choices.email) && !mfa?.totp}
-				<button type="button" onclick={() => open('setup')}>Set up two-step sign-in</button>
+				<button type="button" onclick={() => open('setup')}>{t('account.mfa.setUp')}</button>
 			{/if}
 			{#if mfa?.totp}
-				<button type="button" onclick={() => open('regen')}>New recovery codes</button>
-				<button type="button" onclick={() => open('disable')}>Turn off the authenticator app</button>
+				<button type="button" onclick={() => open('regen')}>{t('account.mfa.newRecovery')}</button>
+				<button type="button" onclick={() => open('disable')}>{t('account.mfa.turnOffApp')}</button>
 			{/if}
 			{#if mfa?.email}
-				<button type="button" onclick={() => open('emailOff')}>Turn off email codes</button>
+				<button type="button" onclick={() => open('emailOff')}>{t('account.mfa.turnOffEmail')}</button>
 			{:else if mfa?.totp && choices.email && $user?.emailVerified}
-				<button type="button" onclick={() => open('setup')}>Add email codes</button>
+				<button type="button" onclick={() => open('setup')}>{t('account.mfa.addEmail')}</button>
 			{/if}
 		</div>
 	{/if}

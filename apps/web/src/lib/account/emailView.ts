@@ -1,4 +1,5 @@
 import type { AuthOptions } from '$lib/api/account';
+import { t } from '$lib/i18n';
 
 export interface EmailSection {
 	/** Show the email field at all (policy off: hidden, nothing personal is collected). */
@@ -10,8 +11,9 @@ export interface EmailSection {
 	banner: boolean;
 }
 
-export const EMAIL_BANNER_TEXT =
-	'This server asks everyone to add an email address. Add yours in Settings, Account.';
+export function emailBannerText(): string {
+	return t('account.email.bannerText');
+}
 
 /**
  * emailSection decides what the profile shows for the instance's email
@@ -23,7 +25,7 @@ export function emailSection(policy: AuthOptions['emailPolicy'] | null, email: s
 	return {
 		visible: true,
 		canClear: policy === 'optional' && email !== null,
-		label: policy === 'required' ? 'Email' : 'Email (optional)',
+		label: policy === 'required' ? t('account.email.label') : t('account.email.labelOptional'),
 		banner: policy === 'required' && !email
 	};
 }

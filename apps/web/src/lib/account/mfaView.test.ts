@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthOptions } from '$lib/api/account';
-import { EMAIL_UNAVAILABLE_TEXT, TOTP_UNAVAILABLE_TEXT, groupSecret, mailAvailable, recoveryWarning, stateSentence, twoFactorChoices } from './mfaView';
+import { emailUnavailableText, totpUnavailableText, groupSecret, mailAvailable, recoveryWarning, stateSentence, twoFactorChoices } from './mfaView';
 
 const base: AuthOptions = {
 	bootstrap: false,
@@ -20,10 +20,10 @@ describe('mfaView', () => {
 	it('hides the authenticator with the secret sentence', () => {
 		const c = twoFactorChoices({ ...base, totpAvailable: false });
 		expect(c.totp).toBe(false);
-		expect(c.totpWhy).toBe(TOTP_UNAVAILABLE_TEXT);
+		expect(c.totpWhy).toBe(totpUnavailableText());
 	});
 	it('hides emailed codes without mail or without addresses', () => {
-		expect(twoFactorChoices({ ...base, passwordReset: false })).toMatchObject({ email: false, emailWhy: EMAIL_UNAVAILABLE_TEXT });
+		expect(twoFactorChoices({ ...base, passwordReset: false })).toMatchObject({ email: false, emailWhy: emailUnavailableText() });
 		expect(twoFactorChoices({ ...base, emailPolicy: 'off' }).email).toBe(false);
 		expect(mailAvailable(null)).toBe(false);
 	});
