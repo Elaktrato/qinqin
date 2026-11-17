@@ -3,7 +3,7 @@
 // and the app's own credits. The page only renders what this returns.
 
 import type { SentencePack } from '$lib/api/packs';
-import type { ComponentPack } from '$lib/api/types';
+import type { ComponentPack, StrokePack } from '$lib/api/types';
 import type { PluginManifest } from '$lib/plugins';
 import { localLicensePath, type LicenseText, type SourceCredit } from './credits';
 import { cjkLang, parseNotice, safeHref, type NoticeParagraph } from './notice';
@@ -62,7 +62,7 @@ const ARPHIC_TEXT = '/ARPHICPL.TXT';
  * It shows only while a pack is installed, or on a load error.
  */
 export function strokesSection(
-	list: ComponentPack[],
+	list: StrokePack[],
 	error: string
 ): { show: boolean; table: PackTable; licenseHref: Record<number, string> } {
 	const table = packTable(
@@ -70,7 +70,7 @@ export function strokesSection(
 		list.map((p, i) => ({
 			id: i,
 			name: p.name,
-			language: p.language,
+			language: p.languages[0] ?? '',
 			version: p.version,
 			license: p.license,
 			attribution: p.attribution,

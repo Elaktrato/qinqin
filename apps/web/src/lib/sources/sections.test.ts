@@ -307,7 +307,7 @@ describe('strokesSection', () => {
 		packId: 'hanzi-writer-strokes',
 		name: 'Hanzi Writer stroke data',
 		version: '0.2.0',
-		language: 'zh',
+		languages: ['zh'],
 		license: 'Arphic Public License',
 		attribution: 'Make Me a Hanzi, hanzi-writer-data',
 		notice: 'Derived from [Make Me a Hanzi](https://github.com/skishore/makemeahanzi).'
@@ -326,6 +326,11 @@ describe('strokesSection', () => {
 		const shipped = import.meta.glob('../../../static/*', { query: '?url', import: 'default' });
 		expect(Object.keys(shipped).map((p) => `/${p.split('/').pop()}`)).toContain('/ARPHICPL.TXT');
 		expect(localLicensePath('/ARPHICPL.TXT')).toBe('/ARPHICPL.TXT');
+	});
+	it('takes the typography language from the first of the pack languages', () => {
+		const s = strokesSection([{ ...pack, languages: ['ja', 'zh'] }], '');
+		expect(s.table.rows[0].language).toBe('ja');
+		expect(strokesSection([{ ...pack, languages: [] }], '').table.rows[0].language).toBe('');
 	});
 	it('links nothing for another licence', () => {
 		expect(strokesSection([{ ...pack, license: 'MIT' }], '').licenseHref).toEqual({});

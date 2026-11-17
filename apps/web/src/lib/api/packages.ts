@@ -3,7 +3,7 @@
 // native client does). Decoding is strict: a catalogue that does not match the
 // contract is refused whole, never guessed at.
 import { api } from './client';
-import type { ComponentPack } from './types';
+import type { StrokePack } from './types';
 
 export type PackageType = 'lexicon' | 'levels' | 'sentences' | 'frequency' | 'components' | 'audio' | 'grammar' | 'strokes';
 export type PackageState = 'building' | 'ready' | 'failed' | 'deleted';
@@ -123,6 +123,6 @@ export async function getCatalogue(): Promise<Catalogue> {
 }
 
 /** getStrokePacks reads GET /api/stroke-packs: the installed stroke packs' credit lines (public). */
-export function getStrokePacks(): Promise<ComponentPack[]> {
-	return api<ComponentPack[]>('/api/stroke-packs', { auth: false });
+export function getStrokePacks(): Promise<StrokePack[]> {
+	return api<StrokePack[]>('/api/stroke-packs', { auth: false });
 }

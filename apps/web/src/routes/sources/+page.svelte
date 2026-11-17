@@ -2,7 +2,7 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { ApiError, api } from '$lib/api/client';
-	import type { ComponentPack, Dictionary, FrequencyPack, Scheme } from '$lib/api/types';
+	import type { ComponentPack, Dictionary, FrequencyPack, Scheme, StrokePack } from '$lib/api/types';
 	import { getComponentPacks } from '$lib/api/components';
 	import { getStrokePacks } from '$lib/api/packages';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
@@ -120,7 +120,7 @@
 	}
 
 	// The Stroke data section exists only while a stroke pack is installed.
-	let strokePacks = $state<ComponentPack[]>([]);
+	let strokePacks = $state<StrokePack[]>([]);
 	let strokesError = $state('');
 	const strokes = $derived(strokesSection(strokePacks, strokesError));
 

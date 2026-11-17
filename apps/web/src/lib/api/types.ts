@@ -183,6 +183,18 @@ export interface ComponentsResponse {
 	chars: Record<string, string[]>;
 }
 
+// StrokePack is one element of GET /api/stroke-packs: an installed strokes
+// pack's credit line (a strokes pack has languages, sorted, not one language).
+export interface StrokePack {
+	packId: string;
+	name: string;
+	version: string;
+	languages: string[];
+	license: string;
+	attribution: string;
+	notice: string;
+}
+
 // ComponentPack is one element of GET /api/component-packs: an installed
 // character components pack's credit line.
 export interface ComponentPack {

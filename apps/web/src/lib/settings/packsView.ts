@@ -19,10 +19,17 @@ export const PACK_TYPE_LABELS: Record<PackType, string> = {
 	sentences: 'Sentences',
 	grammar: 'Grammar lessons',
 	audio: 'Audio',
-	components: 'Character components'
+	components: 'Character components',
+	strokes: 'Stroke data'
 };
 
-const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components'];
+const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes'];
+
+/** packLanguages is the languages a listed pack covers: a strokes pack's list, else its one language. */
+export function packLanguages(pack: InstalledPack): string[] {
+	if (pack.languages && pack.languages.length > 0) return pack.languages;
+	return pack.language ? [pack.language] : [];
+}
 
 /** groupPacks groups the server's list (already ordered) by type; empty groups are dropped. */
 export function groupPacks(list: InstalledPack[]): { type: PackType; label: string; packs: InstalledPack[] }[] {
@@ -98,6 +105,8 @@ export function uninstallWarning(type: PackType): string {
 			return `Its grammar lessons disappear. ${RESEED}`;
 		case 'components':
 			return `Its character components disappear from the radical and part lookup; radicals and stroke counts keep working. ${RESEED}`;
+		case 'strokes':
+			return `Its stroke order data disappears from the character writing view; characters it alone carried show no strokes. ${RESEED}`;
 		case 'audio':
 			return `Its recordings are deleted from the data directory and the play buttons that used them fall back to the device voice. Install it again with the fetch script and \`qinqin seed\`; audio packs cannot be uploaded here.`;
 	}

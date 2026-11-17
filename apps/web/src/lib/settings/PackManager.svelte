@@ -22,6 +22,7 @@
 		groupPacks,
 		licenceCaution,
 		licenceLine,
+		packLanguages,
 		packageLine,
 		packagesOf,
 		progressText,
@@ -272,8 +273,13 @@
 				<dd>{staged.manifest.version}</dd>
 				<dt>Type</dt>
 				<dd>{staged.manifest.type}</dd>
-				<dt>Language</dt>
-				<dd>{languageLabel(staged.manifest.language)}</dd>
+				{#if staged.manifest.languages?.length}
+					<dt>Languages</dt>
+					<dd>{staged.manifest.languages.map((l) => languageLabel(l)).join(', ')}</dd>
+				{:else}
+					<dt>Language</dt>
+					<dd>{languageLabel(staged.manifest.language)}</dd>
+				{/if}
 				<dt>{LICENCE_LABEL}</dt>
 				<dd class="licence">{staged.manifest.license}</dd>
 				<dt>Attribution</dt>
@@ -340,7 +346,7 @@
 						<div class="pack-head">
 							<strong>{pack.name || pack.packId}</strong>
 							<code>{pack.packId}</code>
-							{#if pack.language}<span>{languageLabel(pack.language)}</span>{/if}
+							{#each packLanguages(pack) as lang (lang)}<span>{languageLabel(lang)}</span>{/each}
 							{#if pack.version}<span>{pack.version}</span>{/if}
 							{#if pack.updatedAt}<span>{fmtDate(pack.updatedAt)}</span>{/if}
 						</div>

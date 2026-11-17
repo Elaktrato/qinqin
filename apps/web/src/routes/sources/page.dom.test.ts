@@ -23,7 +23,7 @@ const strokePack = {
 	packId: 'hanzi-writer-strokes',
 	name: 'Hanzi Writer stroke data',
 	version: '0.2.0',
-	language: 'zh',
+	languages: ['zh'],
 	license: 'Arphic Public License',
 	attribution: 'Make Me a Hanzi, hanzi-writer-data',
 	notice: 'Stroke order data derived from Make Me a Hanzi.'

@@ -10,6 +10,7 @@ import {
 	groupPacks,
 	licenceCaution,
 	licenceLine,
+	packLanguages,
 	PACKAGES_BUILDING,
 	packageLine,
 	packagesOf,
@@ -93,6 +94,16 @@ describe('groupPacks', () => {
 			['components', 'Character components']
 		]);
 		expect(uninstallWarning('components')).toMatch(/radical and part lookup/);
+	});
+	it('groups a strokes pack with its languages instead of dropping it', () => {
+		const sp = { ...pack('strokes', 's', 'S'), language: '', languages: ['ja', 'zh'] };
+		const groups = groupPacks([pack('dictionary', 'd', 'D'), sp]);
+		expect(groups.map((g) => g.type)).toEqual(['dictionary', 'strokes']);
+		expect(groups[1].label).toBe(PACK_TYPE_LABELS.strokes);
+		expect(groups[1].packs[0].languages).toEqual(['ja', 'zh']);
+		expect(packLanguages(sp)).toEqual(['ja', 'zh']);
+		expect(packLanguages(pack('dictionary', 'd', 'D'))).toEqual(['es']);
+		expect(packLanguages({ ...pack('audio', 'a', 'A'), language: '' })).toEqual([]);
 	});
 	it('lists audio packs last', () => {
 		const groups = groupPacks([pack('audio', 'k', 'K'), pack('grammar', 'g', 'G'), pack('dictionary', 'd', 'D')]);
