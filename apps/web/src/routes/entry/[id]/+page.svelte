@@ -175,7 +175,7 @@
 	<title>{pageTitle(notFound ? t('entry.page.notFound') : (entry?.written ?? ''))}</title>
 </svelte:head>
 
-<main class="entry-page">
+<div class="page-body entry-page">
 	{#if loading}
 		<p class="hint" aria-live="polite">{t('entry.page.loading')}</p>
 	{:else if notFound}
@@ -310,7 +310,7 @@
 
 		<Sentences sentences={entry.sentences} language={entry.language} />
 	{/if}
-</main>
+</div>
 
 <style>
 	.hint {

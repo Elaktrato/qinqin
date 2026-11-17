@@ -73,7 +73,7 @@
 	<title>{pageTitle(t('journal.title'))}</title>
 </svelte:head>
 
-<main class="journal">
+<div class="page-body journal">
 	{#if !workspace}
 		<h1>{t('journal.title')}</h1>
 		<p>{t('journal.chooseWorkspace')}</p>
@@ -98,7 +98,7 @@
 			<EntryList workspaceId={workspace.id} workspaceName={workspace.name} gate={ideasGate} />
 		{/key}
 	{/if}
-</main>
+</div>
 
 <style>
 	.journal {

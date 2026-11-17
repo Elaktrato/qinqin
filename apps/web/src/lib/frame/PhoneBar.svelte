@@ -8,6 +8,7 @@
 	import { t } from '$lib/i18n';
 	import Drawer from '$lib/ui/Drawer.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
+	import { onLeavePhoneFrame } from './breakpoint';
 	import NavDrawer from './NavDrawer.svelte';
 	import { pageFrame, phoneTitle } from './pageFrame.svelte';
 	import type { FrameSection } from './sections';
@@ -19,7 +20,7 @@
 	const drawerId = `${uid}-drawer`;
 	let open = $state(false);
 
-	const title = $derived(phoneTitle(pageFrame.title, current, sections));
+	const title = $derived(phoneTitle(pageFrame.title, current, sections, page.url?.pathname ?? '/'));
 
 	// A navigation (a link, Back, a redirect) closes the drawer.
 	let lastPath: string | undefined;
@@ -27,6 +28,17 @@
 		const path = page.url?.pathname;
 		if (lastPath !== undefined && path !== lastPath) open = false;
 		lastPath = path;
+	});
+
+	// Leaving the phone frame with the drawer open closes it. The menu button
+	// is hidden with the bar then, so focus goes to the page instead (after
+	// the drawer's own focus return to the button).
+	$effect(() => {
+		if (!open) return;
+		return onLeavePhoneFrame(() => {
+			open = false;
+			setTimeout(() => document.getElementById('main-content')?.focus());
+		});
 	});
 </script>
 

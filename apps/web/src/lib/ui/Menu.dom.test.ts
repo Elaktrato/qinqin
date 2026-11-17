@@ -12,6 +12,32 @@ async function openMenu() {
 }
 
 describe('Menu', () => {
+	it('ArrowDown on the closed trigger opens the menu on the first item, ArrowUp on the last (APG)', async () => {
+		render(MenuHarness);
+		const label = () => document.activeElement?.textContent?.trim();
+		for (const [name, key, first] of [
+			['More actions', 'ArrowDown', 'Rename'],
+			['More actions', 'ArrowUp', 'Settings'],
+			['Chinese', 'ArrowDown', 'Japanese'],
+			['Account menu', 'ArrowUp', 'Sign out']
+		] as const) {
+			const trigger = screen.getByRole('button', { name: new RegExp(`^${name}`) });
+			trigger.focus();
+			await fireEvent.keyDown(trigger, { key });
+			expect(trigger.getAttribute('aria-expanded'), `${name} ${key}`).toBe('true');
+			await waitFor(() => expect(label(), `${name} ${key}`).toBe(first));
+			await fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+			expect(document.activeElement).toBe(trigger);
+		}
+	});
+
+	it('an arrow on an open trigger does not close the menu', async () => {
+		render(MenuHarness);
+		const { trigger } = await openMenu();
+		await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
+	});
+
 	it('an icon trigger is a named menu button with a tooltip, closed at first', () => {
 		render(MenuHarness);
 		const trigger = screen.getByRole('button', { name: 'More actions' });

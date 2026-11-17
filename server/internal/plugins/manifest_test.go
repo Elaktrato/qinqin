@@ -170,6 +170,20 @@ func TestParseManifestIcon(t *testing.T) {
 			}
 		})
 	}
+	t.Run("the error names the pattern, never the raw value", func(t *testing.T) {
+		long := "a" + strings.Repeat("B", 100_000)
+		_, err := plugins.ParseManifest(marshalMutated(t, func(m map[string]any) { m["icon"] = long }))
+		if !errors.Is(err, plugins.ErrInvalidManifest) {
+			t.Fatalf("err = %v, want an invalid-manifest error", err)
+		}
+		msg := err.Error()
+		if strings.Contains(msg, "BBBB") || len(msg) > 300 {
+			t.Errorf("error echoes the value (%d bytes): %.120s…", len(msg), msg)
+		}
+		if !strings.Contains(msg, "icon must match ^[a-z][a-z0-9-]{0,31}$") {
+			t.Errorf("err = %.120s…, want the pattern named", msg)
+		}
+	})
 	t.Run("32 characters is fine", func(t *testing.T) {
 		if _, err := plugins.ParseManifest(marshalMutated(t, func(m map[string]any) { m["icon"] = "a" + strings.Repeat("-", 31) })); err != nil {
 			t.Errorf("err = %v", err)

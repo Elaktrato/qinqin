@@ -82,7 +82,9 @@ body {
 	color: var(--text);
 }
 
-main {
+/* The page column: a page's root container (the frame's <main> holds every
+   page and stays full width; pages bring no <main> of their own). */
+.page-body {
 	margin: 0 auto;
 	max-width: 48rem;
 	padding: 3rem 1.5rem;

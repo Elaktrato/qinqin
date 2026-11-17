@@ -61,7 +61,7 @@
 	<title>{pageTitle()}</title>
 </svelte:head>
 
-<main class="home">
+<div class="page-body home">
 	<header class="greet">
 		<h1>{greeting}</h1>
 		<p class="date">{dateLine}</p>
@@ -105,7 +105,7 @@
 			</p>
 		{/if}
 	{/if}
-</main>
+</div>
 
 <style>
 	.greet {
