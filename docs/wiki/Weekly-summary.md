@@ -42,10 +42,14 @@ Seven boxes, Monday to Sunday: active (a tick, filled), not active (a dot), vaca
 
 Without a connection the summary still shows what this device knows: new cards, study time, the streak and mature words. Reviews, reading, journal entries and plugin activity say "Not available offline"; so does **Characters learned** when the language's character list was not loaded yet in this session. **Retry** loads them again. Days active then counts flashcard reviews only and says so.
 
+## Milestones
+
+Above the summary a card names milestones you reached and have not seen yet ("1,000 reviews", "a 7-day streak", "HSK 1 complete"); **Dismiss** puts it away for good. Below it, the **Milestones** section lists every milestone you have reached, newest first, new ones marked **New**. The summary's **Milestones** line names the milestones of the week shown. See [Milestones](Milestones).
+
 ## The home widget
 
 **This week** shows the current week so far: reviews, new cards, study time (flashcards and reading together), days active with the day strip and the streak, each compared with last week up to the same weekday. Offline its study time is the flashcard time alone, marked "(flashcards only)". New accounts have it on the home page after the daily goal; an existing home layout is not changed (add it under Settings, Home).
 
 ## Related
 
-[Stats and heatmap](Stats-and-heatmap), [Daily goals](Daily-goals). Rules for other clients: `docs/contracts/weekly/`.
+[Stats and heatmap](Stats-and-heatmap), [Daily goals](Daily-goals), [Milestones](Milestones). Rules for other clients: `docs/contracts/weekly/`.
