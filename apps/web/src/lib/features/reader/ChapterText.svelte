@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { planParagraph, type PlanSeg } from './chapterPlan';
-	import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
-	import { fontStack } from './fonts';
+	import { DEFAULT_DISPLAY, fontStack, type ReaderDisplay } from './displaySettings';
 	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import type { Highlight } from './highlights';
 	import type { Run } from './paragraphText';

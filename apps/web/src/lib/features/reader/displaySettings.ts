@@ -2,7 +2,24 @@
 // workspace settings (docs/contracts/reader/). Parsing is per field and
 // forgiving; unknown keys are kept on write so a newer client's fields
 // survive an older one saving.
-import { READER_FONTS, type ReaderFont } from './fonts';
+import { hanziScript, hanziStack, installedFaces, type InstalledFaces } from '$lib/fonts/hanzi';
+
+/** The reader's font setting; the stacks are the app-wide hanzi font's ($lib/fonts/hanzi, #97). */
+export type ReaderFont = 'default' | 'sans' | 'serif' | 'kai';
+
+export const READER_FONTS: readonly ReaderFont[] = ['default', 'sans', 'serif', 'kai'];
+
+const NO_FACES = installedFaces([]);
+
+/**
+ * fontStack maps the setting to a CSS font-family value for a study lang (`zh-Hant`, `ja`, …). `default` is the
+ * app-wide hanzi font (appearance.hanziFont, `--font-hanzi` set by lib/fonts/hanzi.css) for Chinese and Japanese,
+ * the app's own font otherwise; `sans`/`serif`/`kai` override it.
+ */
+export function fontStack(font: ReaderFont, lang: string, installed: InstalledFaces = NO_FACES): string {
+	if (font === 'default') return hanziScript(lang) === null ? 'inherit' : 'var(--font-hanzi)';
+	return hanziStack(font, lang, installed);
+}
 
 export type ReadingsMode = 'never' | 'always' | 'smart';
 export const READINGS_MODES: readonly ReadingsMode[] = ['never', 'always', 'smart'];

@@ -114,7 +114,7 @@ describe('BookView readings', () => {
 	it('switching to Never makes the readings go and saves one patch', async () => {
 		render(BookView, { id: 1, chapter: 0 });
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(2));
-		await fireEvent.click(screen.getByRole('button', { name: 'Display' }));
+		// The Display settings have no disclosure of their own any more (#102).
 		await fireEvent.click(screen.getByRole('radio', { name: /^Never/ }));
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(0));
 		await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(1), { timeout: 2000 });
@@ -138,8 +138,9 @@ describe('BookView word states', () => {
 	it('highlighting on with readings never: loads matches and marks the new word only', async () => {
 		setReader({ readings: 'never', highlightWords: true });
 		render(BookView, { id: 1, chapter: 0 });
-		await waitFor(() => expect(document.querySelectorAll('.w-new')).toHaveLength(1));
-		expect(document.querySelector('.w-new')?.textContent).toBe('世界');
+		// In the text (the Display legend draws a sample mark too).
+		await waitFor(() => expect(document.querySelectorAll('.chapter-text .w-new')).toHaveLength(1));
+		expect(document.querySelector('.chapter-text .w-new')?.textContent).toBe('世界');
 		expect(document.querySelector('ruby.gen')).toBeNull();
 		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
 	});
