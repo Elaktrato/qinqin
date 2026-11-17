@@ -25,6 +25,9 @@ export const PINNED_VERSION = '1.66.0';
  * checkPackage: why the lucide-static package in `dir` may not be used —
  * not the pinned release, or a LICENSE that differs from our copy at
  * `licenceCopy` by even one byte. Empty when it may.
+ * @param {string} dir
+ * @param {string} licenceCopy
+ * @returns {string[]}
  */
 export function checkPackage(dir, licenceCopy) {
 	const problems = [];
