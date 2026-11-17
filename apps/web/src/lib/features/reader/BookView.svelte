@@ -896,9 +896,9 @@
 	}
 
 	const railTabs = $derived([
-		{ id: 'bookmarks' as const, label: t('reader.bookmarks.title'), alert: bookmarksFailed || bookmarks.error !== '' },
-		{ id: 'highlights' as const, label: t('reader.highlights.title'), alert: highlightsFailed || highlights.error !== '' },
-		{ id: 'words' as const, label: t('reader.words.title') }
+		{ id: 'bookmarks' as const, label: t('reader.bookmarks.title'), icon: 'bookmark' as const, alert: bookmarksFailed || bookmarks.error !== '' },
+		{ id: 'highlights' as const, label: t('reader.highlights.title'), icon: 'highlight' as const, alert: highlightsFailed || highlights.error !== '' },
+		{ id: 'words' as const, label: t('reader.words.title'), icon: 'words' as const }
 	]);
 
 	// --- words panel: coverage and unknown words (#68) ---
@@ -1226,7 +1226,6 @@
 			open={railOpen}
 			onToggle={toggleRail}
 			{mode}
-			escapeBlocked={() => lookup.info !== null}
 		>
 			{#snippet panel(tab: RailTab)}
 				{#if tab === 'bookmarks'}
