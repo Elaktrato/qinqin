@@ -237,7 +237,7 @@ describe('loadMilestones', () => {
 describe('markSeen', () => {
 	it('pushes the rows of every covered id, then drops them from the pending list', async () => {
 		const view = await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
-		await markSeen(WS, view);
+		await markSeen(view);
 		const [ws, rows] = vi.mocked(saveSeenMilestones).mock.calls[0];
 		expect(ws).toBe(WS);
 		expect(rows.map((r) => r.key).sort()).toEqual(view.plan.kind === 'none' ? [] : view.plan.ids.map((id) => `milestone:${id}`).sort());
@@ -247,7 +247,7 @@ describe('markSeen', () => {
 	it('offline: the ids stay pending and the next load shows no card', async () => {
 		const view = await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
 		vi.mocked(saveSeenMilestones).mockRejectedValue(new PartialPushError('offline', 0));
-		await expect(markSeen(WS, view)).resolves.toBeUndefined();
+		await expect(markSeen(view)).resolves.toBeUndefined();
 		expect(ids(readPending(1, WS)).sort()).toEqual(view.plan.kind === 'none' ? [] : [...view.plan.ids].sort());
 		resetMilestonesForTests();
 		const next = await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
@@ -257,13 +257,23 @@ describe('markSeen', () => {
 	it('writes only ids whose row is not live', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ seenMilestones: new Map([['reviews:100', { id: 'reviews:100', seenAt: null, reachedDay: null }]]) }));
 		const view = await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
-		await markSeen(WS, view);
+		await markSeen(view);
 		const rows = vi.mocked(saveSeenMilestones).mock.calls.at(-1)?.[1] ?? [];
 		expect(rows.map((r) => r.key)).not.toContain('milestone:reviews:100');
 	});
 
+	it('writes into the workspace the view was loaded for', async () => {
+		const view = await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
+		expect(view.workspaceId).toBe(WS);
+		vi.mocked(saveSeenMilestones).mockRejectedValue(new PartialPushError('offline', 0));
+		await markSeen({ ...view, workspaceId: 9 });
+		expect(vi.mocked(saveSeenMilestones).mock.calls.at(-1)?.[0]).toBe(9);
+		expect(readPending(1, 9).length).toBeGreaterThan(0);
+		expect(readPending(1, WS)).toEqual([]);
+	});
+
 	it('nothing to mark for no card', async () => {
-		await markSeen(WS, { plan: { kind: 'none' }, history: [], titles: new Map(), reached: [], live: new Map() });
+		await markSeen({ workspaceId: WS, plan: { kind: 'none' }, history: [], titles: new Map(), reached: [], live: new Map() });
 		expect(saveSeenMilestones).not.toHaveBeenCalled();
 	});
 });

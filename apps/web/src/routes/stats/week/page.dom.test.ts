@@ -73,7 +73,7 @@ beforeEach(() => {
 });
 
 function noMilestones(): MilestonesView {
-	return { plan: { kind: 'none' }, history: [], titles: new Map(), reached: [], live: new Map() };
+	return { plan: { kind: 'none' }, history: [], titles: new Map(), reached: [], live: new Map(), workspaceId: 1 };
 }
 
 function someMilestones(title = '100 reviews'): MilestonesView {
@@ -89,7 +89,8 @@ function someMilestones(title = '100 reviews'): MilestonesView {
 			['streak:3', '3-day streak']
 		]),
 		reached: [r],
-		live: new Map()
+		live: new Map(),
+		workspaceId: 1
 	};
 }
 afterEach(() => {
@@ -275,10 +276,22 @@ describe('Stats week page', () => {
 			render(Page);
 			const button = await screen.findByRole('button', { name: 'Dismiss' });
 			await fireEvent.click(button);
-			expect(markSeen).toHaveBeenCalledWith(1, ms);
+			expect(markSeen).toHaveBeenCalledWith(ms);
 			expect(screen.queryByRole('heading', { name: 'Milestone reached' })).toBeNull();
 			// The history stays.
 			expect(document.getElementById('milestones')).not.toBeNull();
+		});
+
+		it('a workspace switch removes the old card at once', async () => {
+			vi.mocked(loadMilestones).mockResolvedValue(someMilestones());
+			render(Page);
+			await screen.findByRole('button', { name: 'Dismiss' });
+			const next = deferred<WeekView>();
+			vi.mocked(loadWeek).mockReturnValueOnce(next.promise);
+			select(2);
+			await tick();
+			expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+			expect(markSeen).not.toHaveBeenCalled();
 		});
 
 		it('a workspace switch drops a stale milestones answer', async () => {

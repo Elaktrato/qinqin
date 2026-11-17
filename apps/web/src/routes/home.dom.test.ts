@@ -36,7 +36,8 @@ function milestones(title = '100 reviews'): MilestonesView {
 		history: [],
 		titles: new Map([['reviews:100', title]]),
 		reached: [r],
-		live: new Map()
+		live: new Map(),
+		workspaceId: 1
 	};
 }
 
@@ -79,7 +80,7 @@ describe('home milestones', () => {
 		render(Page);
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		await fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-		expect(markSeen).toHaveBeenCalledWith(1, ms);
+		expect(markSeen).toHaveBeenCalledWith(ms);
 		expect(cardHeading()).toBeNull();
 		expect(document.activeElement?.tagName).toBe('H1');
 	});
@@ -93,6 +94,18 @@ describe('home milestones', () => {
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		select(null);
 		await waitFor(() => expect(cardHeading()).toBeNull());
+	});
+
+	it('a workspace switch removes the old card at once: its ids are never written into the new workspace', async () => {
+		render(Page);
+		await waitFor(() => expect(cardHeading()).toBeTruthy());
+		const next = deferred<MilestonesView>();
+		vi.mocked(loadMilestones).mockReturnValueOnce(next.promise);
+		select(2);
+		await tick();
+		expect(cardHeading()).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull();
+		expect(markSeen).not.toHaveBeenCalled();
 	});
 
 	it('a workspace switch reloads and drops the stale answer', async () => {

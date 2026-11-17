@@ -2,6 +2,7 @@
 	// Stats → Week: one week's summary of the current workspace, previous
 	// weeks browsable by link (?week=<Monday>). All logic lives in
 	// lib/weekly (week.ts for the URL, loadWeek.ts for the load).
+	import { untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onEventLogChange } from '$lib/events';
@@ -56,6 +57,9 @@
 		const seq = ++requestSeq;
 		error = '';
 		characters = null;
+		// Another workspace's milestones never stay on screen while this one loads.
+		// untrack: the load must not depend on the milestones it replaces.
+		if (untrack(() => milestones !== null && milestones.workspaceId !== id)) milestones = null;
 		if (id === null) {
 			view = null;
 			milestones = null;
@@ -121,9 +125,9 @@
 
 	function dismissMilestones(): void {
 		const shown = milestones;
-		if (shown === null || workspaceId === null) return;
+		if (shown === null || shown.workspaceId !== workspaceId) return;
 		milestones = { ...shown, plan: { kind: 'none' } };
-		void markSeen(workspaceId, shown);
+		void markSeen(shown);
 	}
 
 	$effect(() => {

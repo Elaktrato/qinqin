@@ -39,6 +39,8 @@ import {
 export const JOURNAL_PLUGIN_ID = 'qinqin-journal';
 
 export interface MilestonesView {
+	/** The workspace this view was loaded for: a dismiss writes there, never into another one. */
+	workspaceId: number;
 	plan: CardPlan;
 	history: HistoryItem[];
 	/** Titles of every id in the plan and the history. */
@@ -226,16 +228,18 @@ export async function loadMilestones(
 	// A level no longer installed has no name: it stays seen, unlisted.
 	const history = milestoneHistory(reached, live, pending, day).filter((item) => title(item.id) !== null);
 	if (plan.kind !== 'none') for (const id of plan.ids) title(id);
-	return { plan, history, titles, reached, live };
+	return { workspaceId, plan, history, titles, reached, live };
 }
 
 /**
- * markSeen marks every milestone the card covered: the ids go into the
+ * markSeen marks every milestone the card covered, in the view's own
+ * workspace: the ids go into the
  * pending list first, then the rows of the ids without a live row are
  * pushed; on success they leave the pending list. Never throws.
  */
-export async function markSeen(workspaceId: number, view: MilestonesView): Promise<void> {
+export async function markSeen(view: MilestonesView): Promise<void> {
 	if (view.plan.kind === 'none') return;
+	const { workspaceId } = view;
 	const covered = new Set(view.plan.ids);
 	const mark = view.reached.filter((r) => covered.has(r.id));
 	const now = new Date();

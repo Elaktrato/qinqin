@@ -19,7 +19,7 @@ const TITLES = new Map([
 ]);
 
 function view(plan: CardPlan): MilestonesView {
-	return { plan, history: [], titles: TITLES, reached: [], live: new Map() };
+	return { workspaceId: 1, plan, history: [], titles: TITLES, reached: [], live: new Map() };
 }
 
 function withH1(): HTMLHeadingElement {
