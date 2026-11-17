@@ -95,6 +95,11 @@ resolve → `en`. Contract data (learner days, instants, row keys, payloads) is 
 The stored setting (`language-tags.json`): `''` (follow the browser/device) or a tag matching
 `^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$`. The server validates syntax only, never support.
 
+Route (`interface-language-api.json`): `GET /api/auth/me` carries `interfaceLanguage` (`''` until set);
+`PUT /api/me/interface-language {language}` → `200 {language}`, 422 `invalid_language` for a value the pattern
+refuses, 400 `bad_request` for a missing or non-string `language`. A full session only (401 anonymous, 403 for a
+restricted session); personal access tokens are refused (403 `token_not_allowed`).
+
 ## Fixtures
 
 | File | What | Decoded by |
@@ -104,5 +109,6 @@ The stored setting (`language-tags.json`): `''` (follow the browser/device) or a
 | `plural-categories.json` | locale, integer → CLDR category (en, fr, ru, ar, ja) | web `contract.test.ts`; Go |
 | `negotiate.json` | candidates, supported → language; `formatLocale` cases | web `contract.test.ts`; Go (`cases`) |
 | `language-tags.json` | setting value → valid | web `contract.test.ts`; Go |
+| `interface-language-api.json` | the setting route: request → status, body, `me` afterwards | Go `internal/api` |
 | `android-convert.json` | catalogue (+ English, notes) → `strings.xml` | web `contract.test.ts` |
 | `retired-keys.json` | keys no catalogue may contain | web `lib/i18n/catalogue.test.ts` |
