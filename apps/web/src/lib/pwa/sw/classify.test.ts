@@ -120,6 +120,40 @@ describe('classify: spec table', () => {
 		}
 	});
 
+	it('a v2 study page is cacheable: first page with workspace and a study subset, and a p2 continuation', () => {
+		const study = 'pluginStates,pluginData,cards,decks,deckSettings,limits,fsrsSets,fsrsActive';
+		for (const url of [
+			`/api/sync/pull?collections=${study}&v=2&workspace=3`,
+			`/api/sync/pull?collections=cards&limit=100&v=2&workspace=3`,
+			'/api/sync/pull?collections=pluginData&v=2&workspace=12',
+			'/api/sync/pull?page=p2.abcDEF-_123&v=2'
+		]) {
+			expect(kind(url), url).toBe('api');
+		}
+	});
+
+	it('a v2 pull outside the study set is not cacheable', () => {
+		for (const url of [
+			'/api/sync/pull?collections=cards&v=2', // no workspace
+			'/api/sync/pull?v=2&workspace=3', // no collections: the whole account
+			'/api/sync/pull?collections=cards,events&v=2&workspace=3',
+			'/api/sync/pull?collections=overlays&v=2&workspace=3',
+			'/api/sync/pull?collections=books&v=2&workspace=3',
+			'/api/sync/pull?collections=cards,entries&v=2&workspace=3',
+			'/api/sync/pull?collections=cards&since=2026-01-01T00:00:00Z&v=2&workspace=3', // deltas are not offline data
+			'/api/sync/pull?collections=cards&v=2&workspace=x',
+			'/api/sync/pull?collections=cards&limit=x&v=2&workspace=3',
+			'/api/sync/pull?collections=cards&v=3&workspace=3',
+			'/api/sync/pull?page=c2.abc&v=2', // a cursor is not a page
+			'/api/sync/pull?page=&v=2',
+			'/api/sync/pull?page=p2.abc&v=2&collections=events', // a continuation carries nothing else
+			'/api/sync/pull?page=p2.abc'
+		]) {
+			expect(kind(url), url).toBe('bypass');
+		}
+		expect(kind('/api/sync/pull?collections=cards&v=2&workspace=3', { auth: false }), 'no Authorization').toBe('bypass');
+	});
+
 	it('the cacheable pull collections are the plugin ones and every typed study collection', () => {
 		expect(CACHEABLE_PULL_COLLECTIONS).toEqual(['pluginData', 'pluginStates', ...STUDY_COLLECTIONS]);
 	});

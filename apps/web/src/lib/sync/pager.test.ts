@@ -47,6 +47,7 @@ describe('pullAll', () => {
 		const answers = [first(), page({}, [card('b')])];
 		const asked: string[] = [];
 		const out = await pullAll(async (p) => { asked.push(p); return answers.shift(); }, firstPageUrl({ collections: REQ }), REQ);
+		expect(out.pages).toBe(asked.length);
 		expect(asked).toEqual([firstPageUrl({ collections: REQ }), '/api/sync/pull?page=p2.n1&v=2']);
 		expect((out.collections.cards as { id: string }[]).map((r) => r.id)).toEqual(['a', 'b']);
 		expect(out.cursor).toBe('c2.abc');

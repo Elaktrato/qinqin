@@ -47,7 +47,15 @@ export function scrubForCache(pathname: string, text: string): string | null {
 		return kept.length === body.length ? text : JSON.stringify(kept);
 	}
 	if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
-	const pull = body as { pluginData?: unknown };
+	const pull = body as { pluginData?: unknown; collections?: unknown };
+	// A v2 page keeps its rows under `collections` (docs/contracts/sync/).
+	const paged = pull.collections;
+	if (typeof paged === 'object' && paged !== null && !Array.isArray(paged)) {
+		const rows = (paged as { pluginData?: unknown }).pluginData;
+		if (!Array.isArray(rows)) return text;
+		const keptRows = rows.filter((r) => !isLookupRow(r));
+		return keptRows.length === rows.length ? text : JSON.stringify({ ...pull, collections: { ...paged, pluginData: keptRows } });
+	}
 	if (!Array.isArray(pull.pluginData)) return text;
 	const kept = pull.pluginData.filter((r) => !isLookupRow(r));
 	return kept.length === pull.pluginData.length ? text : JSON.stringify({ ...pull, pluginData: kept });

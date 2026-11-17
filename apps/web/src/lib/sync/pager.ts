@@ -148,7 +148,7 @@ export async function pullAll(
 	first: string,
 	requested: readonly string[],
 	opts: { maxPages?: number } = {}
-): Promise<{ collections: Record<string, unknown[]>; scope: PullScope; cursor: string; instanceId: string; restarted: string[] }> {
+): Promise<{ collections: Record<string, unknown[]>; scope: PullScope; cursor: string; instanceId: string; restarted: string[]; pages: number }> {
 	const maxPages = opts.maxPages ?? 1000;
 	const collections: Record<string, unknown[]> = Object.fromEntries(requested.map((n) => [n, []]));
 	let scope: PullScope | null = null;
@@ -168,7 +168,7 @@ export async function pullAll(
 		}
 		restarted = [...new Set([...restarted, ...page.restarted])];
 		for (const name of requested) collections[name].push(...page.collections[name]);
-		if (!page.more) return { collections, scope: scope as PullScope, cursor: page.cursor as string, instanceId, restarted };
+		if (!page.more) return { collections, scope: scope as PullScope, cursor: page.cursor as string, instanceId, restarted, pages: n };
 		path = nextPageUrl(page.next as string);
 	}
 }

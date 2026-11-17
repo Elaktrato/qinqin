@@ -95,9 +95,17 @@ type SyncDelta = { pluginData?: unknown } & Partial<Record<StudyCollection, unkn
  * (goals, known marks, vacations), the feature switches and the six typed study
  * collections of one workspace plus user-global rows, merged in page order.
  */
+const pulledPages = new Map<number, number>();
+
+/** How many pages the last study pull of a workspace took (the offline receipt counts them). */
+export function studyPullPages(workspaceId: number): number {
+  return pulledPages.get(workspaceId) ?? 0;
+}
+
 async function pullStudy(workspaceId: number): Promise<SyncDelta> {
   const first = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: workspaceId });
   const round = await pullAll((path) => api<unknown>(path), first, V2_STUDY_COLLECTIONS);
+  pulledPages.set(workspaceId, round.pages);
   return round.collections as SyncDelta;
 }
 
