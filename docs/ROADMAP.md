@@ -59,6 +59,14 @@ Direction: `docs/superpowers/directions/2026-11-15-v0.3.0-web-build.md`. Collect
 - Stretch (`feature/v0.3.0-stretch`, brief `docs/superpowers/directions/2026-11-16-v0.3.0-stretch-agent-brief.md`): ~~[#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals~~ (merge 93f70f9, `docs/contracts/goals/`), ~~[#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks~~ (merge ed99015, `docs/contracts/frequency/`; no new data bundled, no clearly licensed Chinese word list exists), ~~[#77](https://github.com/Elaktrato/qinqin/issues/77) personal notes and mnemonics~~ (merge ab1352b, `docs/contracts/notes/`), ~~[#71](https://github.com/Elaktrato/qinqin/issues/71) radical and component lookup~~ (merge d91bf90, `docs/contracts/radicals/`; KanjiVG components bundled, Chinese components local-only), ~~[#68](https://github.com/Elaktrato/qinqin/issues/68) unknown-word highlighting and text coverage~~ (merge f0ab056, `docs/contracts/reader/`), ~~[#83](https://github.com/Elaktrato/qinqin/issues/83) personal access tokens~~ (merge f10435e, `docs/contracts/auth/tokens*.json`, wiki `API-Access-tokens.md`), ~~[#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary~~ (merge 78ce8de, in-app only, `docs/contracts/weekly/`; milestones deferred), ~~[#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history~~ (merge ef0e450, `docs/contracts/lookups/`). Handoff: `docs/superpowers/handoffs/2026-11-16-v0.3.0-stretch-handoff.md`.
 - Stretch still open: [#80](https://github.com/Elaktrato/qinqin/issues/80) (wiki source kept current in `docs/wiki/`; publishing is the owner's step).
 
+## v0.4.0 prep — web and server ready for Android (in progress, paused after item 4)
+
+Direction: `docs/superpowers/directions/2026-11-16-v0.4.0-prep.md`; takeover brief:
+`docs/superpowers/handoffs/2026-11-17-v0.4.0-prep-takeover.md`.
+
+- Done on develop: ~~[#91](https://github.com/Elaktrato/qinqin/issues/91) MFA reset button and admin re-authentication~~ (merge 0c884d8), ~~[#92](https://github.com/Elaktrato/qinqin/issues/92) kana display forms~~ (merge 5b9c18d), ~~[#17](https://github.com/Elaktrato/qinqin/issues/17) entry view and [#12](https://github.com/Elaktrato/qinqin/issues/12) titles/accessibility~~ (merge 2714fc7), ~~[#85](https://github.com/Elaktrato/qinqin/issues/85) flashcards and reader as core features~~ (merge f1c6957, `docs/contracts/study/`, `docs/contracts/library/`).
+- Left (specs and plans written for 5, 7, 8): [#93](https://github.com/Elaktrato/qinqin/issues/93) data packages and paged sync (covers [#18](https://github.com/Elaktrato/qinqin/issues/18)'s asset size), remaining contract gaps, [#94](https://github.com/Elaktrato/qinqin/issues/94) weekly milestones, [#73](https://github.com/Elaktrato/qinqin/issues/73) translatable interface.
+
 ## v0.4.0 — Android client (milestone)
 
 Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flutter plan.
@@ -71,7 +79,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 
 ## Future (milestone)
 
-- ~~[#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK~~ — done (strict manifest contract, permissions, embedded built-in manifests, web SDK, study-event hook; design `docs/superpowers/specs/2026-11-15-plugin-sdk-design.md`). Follow-up: [#85](https://github.com/Elaktrato/qinqin/issues/85) move flashcards and reader onto the SDK
+- ~~[#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK~~ — done (strict manifest contract, permissions, embedded built-in manifests, web SDK, study-event hook; design `docs/superpowers/specs/2026-11-15-plugin-sdk-design.md`). Follow-up: ~~[#85](https://github.com/Elaktrato/qinqin/issues/85) move flashcards and reader onto the SDK~~ — reworked: they became core features (v0.4.0 prep)
 - ~~[#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI~~ — done (Settings → Data: staged upload with licence review, list, uninstall; design `docs/superpowers/specs/2026-11-15-pack-management-design.md`)
 - ~~[#41](https://github.com/Elaktrato/qinqin/issues/41) language and workspace management UI~~ — done (Settings → Data → Languages, per-workspace hidden dictionaries, coverage hints, code validation; design `docs/superpowers/specs/2026-11-15-language-management-design.md`)
 - [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs: bundled `joyo-grades` (KANJIDIC2) and
