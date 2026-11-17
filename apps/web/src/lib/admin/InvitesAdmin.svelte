@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiErrorBody } from '$lib/api/client';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
 	import {
 		createInvite,
 		getAuthSettings,
@@ -9,7 +10,7 @@
 		type InviteDto
 	} from '$lib/api/adminSettings';
 	import {
-		CLOSED_NOTE,
+		closedNote,
 		DEFAULT_EXPIRY_DAYS,
 		EXPIRY_CHOICES,
 		inviteLink,
@@ -32,9 +33,7 @@
 
 	const rows = $derived(inviteRows(invites));
 
-	function message(err: unknown, fallback: string): string {
-		return apiErrorBody(err)?.message || (err instanceof Error ? err.message : '') || fallback;
-	}
+	const message = errorText;
 
 	async function load(): Promise<void> {
 		try {
@@ -43,7 +42,7 @@
 			closed = settings.registration === 'closed';
 			error = '';
 		} catch (err) {
-			error = message(err, 'Could not load the invites.');
+			error = message(err, t('admin.invites.error.load'));
 		} finally {
 			loaded = true;
 		}
@@ -63,7 +62,7 @@
 			note = '';
 			await load();
 		} catch (err) {
-			error = message(err, 'Could not create the invite.');
+			error = message(err, t('admin.invites.error.create'));
 		} finally {
 			busy = false;
 		}
@@ -76,7 +75,7 @@
 			await revokeInvite(id);
 			await load();
 		} catch (err) {
-			error = message(err, 'Could not revoke the invite.');
+			error = message(err, t('admin.invites.error.revoke'));
 		} finally {
 			busy = false;
 		}
@@ -88,23 +87,23 @@
 			await navigator.clipboard.writeText(created);
 			copied = true;
 		} catch {
-			error = 'Could not copy. Select the link and copy it by hand.';
+			error = t('admin.invites.error.copy');
 		}
 	}
 </script>
 
 <section aria-labelledby="admin-invites-heading">
-	<h2 id="admin-invites-heading">Invites</h2>
-	{#if closed}<p class="note" role="note">{CLOSED_NOTE}</p>{/if}
+	<h2 id="admin-invites-heading">{t('admin.invites.title')}</h2>
+	{#if closed}<p class="note" role="note">{closedNote()}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 
 	<form onsubmit={create} class="stack">
 		<label>
-			Uses (1 to 100)
+			{t('admin.invites.uses.label')}
 			<input type="number" min="1" max="100" bind:value={maxUses} required />
 		</label>
 		<label>
-			Expires
+			{t('admin.invites.expires')}
 			<select bind:value={expiry}>
 				{#each EXPIRY_CHOICES as c (c.label)}
 					<option value={c.days === null ? 'none' : String(c.days)}>{c.label}</option>
@@ -112,30 +111,30 @@
 			</select>
 		</label>
 		<label>
-			Note (optional)
+			{t('admin.invites.note')}
 			<input bind:value={note} maxlength="100" autocomplete="off" />
 		</label>
-		<button type="submit" disabled={busy}>Create invite link</button>
+		<button type="submit" disabled={busy}>{t('admin.invites.create')}</button>
 	</form>
 
 	{#if created}
-		<div class="link" role="group" aria-label="New invite link">
-			<p>This link is shown once. Copy it now and hand it over.</p>
-			<input readonly value={created} aria-label="Invite link" onfocus={(e) => e.currentTarget.select()} />
-			<button type="button" onclick={copy}>{copied ? 'Copied' : 'Copy'}</button>
-			<button type="button" onclick={() => (created = null)}>Close</button>
+		<div class="link" role="group" aria-label={t('admin.invites.newLink')}>
+			<p>{t('admin.invites.shownOnce')}</p>
+			<input readonly value={created} aria-label={t('admin.invites.link')} onfocus={(e) => e.currentTarget.select()} />
+			<button type="button" onclick={copy}>{copied ? t('common.action.copied') : t('common.action.copy')}</button>
+			<button type="button" onclick={() => (created = null)}>{t('admin.invites.close')}</button>
 		</div>
 	{/if}
 
 	{#if loaded && rows.length > 0}
-		<table aria-label="Invites">
+		<table aria-label={t('admin.invites.title')}>
 			<thead>
 				<tr>
-					<th scope="col">Note</th>
-					<th scope="col">State</th>
-					<th scope="col">Uses</th>
-					<th scope="col">Expires</th>
-					<th scope="col"><span class="visually-hidden">Actions</span></th>
+					<th scope="col">{t('admin.invites.colNote')}</th>
+					<th scope="col">{t('admin.invites.colState')}</th>
+					<th scope="col">{t('admin.invites.colUses')}</th>
+					<th scope="col">{t('admin.invites.colExpires')}</th>
+					<th scope="col"><span class="visually-hidden">{t('admin.invites.colActions')}</span></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -147,7 +146,9 @@
 						<td>{row.expires}</td>
 						<td>
 							{#if row.canRevoke}
-								<button type="button" disabled={busy} aria-label={`Revoke invite ${row.note}`} onclick={() => revoke(row.id)}>Revoke</button>
+								<button type="button" disabled={busy} aria-label={t('admin.invites.revokeNamed', { note: row.note })}
+									onclick={() => revoke(row.id)}>{t('admin.invites.revoke')}</button
+								>
 							{/if}
 						</td>
 					</tr>
@@ -155,7 +156,7 @@
 			</tbody>
 		</table>
 	{:else if loaded}
-		<p class="hint">No invites yet.</p>
+		<p class="hint">{t('admin.invites.none')}</p>
 	{/if}
 </section>
 

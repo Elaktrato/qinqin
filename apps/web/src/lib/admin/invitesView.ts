@@ -1,11 +1,22 @@
 import type { InviteDto } from '$lib/api/adminSettings';
+import { t, type MessageKey } from '$lib/i18n';
+import { formatDate } from '$lib/i18n/format';
 
-export const EXPIRY_CHOICES: ReadonlyArray<{ label: string; days: number | null }> = [
-	{ label: '1 day', days: 1 },
-	{ label: '7 days', days: 7 },
-	{ label: '30 days', days: 30 },
-	{ label: '90 days', days: 90 },
-	{ label: 'No expiry', days: null }
+function choice(days: number | null): { readonly label: string; days: number | null } {
+	return {
+		days,
+		get label() {
+			return days === null ? t('admin.invites.expiry.none') : t('admin.invites.expiry.days', { count: days });
+		}
+	};
+}
+
+export const EXPIRY_CHOICES: ReadonlyArray<{ readonly label: string; days: number | null }> = [
+	choice(1),
+	choice(7),
+	choice(30),
+	choice(90),
+	choice(null)
 ];
 
 export const DEFAULT_EXPIRY_DAYS = 7;
@@ -20,16 +31,16 @@ export function invitePayload(
 	return { maxUses: uses, expiresInDays, note: note.trim() };
 }
 
-const STATE_LABELS: Record<InviteDto['state'], string> = {
-	active: 'Active',
-	expired: 'Expired',
-	used_up: 'Used up',
-	revoked: 'Revoked',
-	inactive: 'Inactive while registration is closed'
+const STATE_LABELS: Record<InviteDto['state'], MessageKey> = {
+	active: 'admin.invites.state.active',
+	expired: 'admin.invites.state.expired',
+	used_up: 'admin.invites.state.usedUp',
+	revoked: 'admin.invites.state.revoked',
+	inactive: 'admin.invites.state.inactive'
 };
 
 export function stateLabel(state: InviteDto['state']): string {
-	return STATE_LABELS[state] ?? state;
+	return Object.hasOwn(STATE_LABELS, state) ? t(STATE_LABELS[state]) : state;
 }
 
 export interface InviteRow {
@@ -45,15 +56,17 @@ export interface InviteRow {
 export function inviteRows(invites: readonly InviteDto[]): InviteRow[] {
 	return invites.map((i) => ({
 		id: i.id,
-		note: i.note || 'No note',
+		note: i.note || t('admin.invites.noNote'),
 		state: stateLabel(i.state),
-		uses: `${i.uses} / ${i.maxUses}`,
-		expires: i.expiresAt ? new Date(i.expiresAt).toLocaleDateString() : 'Never',
+		uses: t('admin.invites.uses', { uses: i.uses, max: i.maxUses }),
+		expires: i.expiresAt ? formatDate(i.expiresAt) : t('admin.invites.never'),
 		canRevoke: i.state !== 'revoked'
 	}));
 }
 
-export const CLOSED_NOTE = 'Invites do not work while registration is closed. Change the mode under Security.';
+export function closedNote(): string {
+	return t('admin.invites.closedNote');
+}
 
 /** The full link an admin hands over: origin plus the server's path (the token stays in the fragment). */
 export function inviteLink(origin: string, path: string): string {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AdminUserDto } from '$lib/api/adminUsers';
-import { LAST_ADMIN_REASON, actionNeedsReauth, generateTempPassword, lastSeenLabel, userRows } from './usersView';
+import { lastAdminReason, actionNeedsReauth, generateTempPassword, lastSeenLabel, userRows } from './usersView';
 
 const u = (id: number, o: Partial<AdminUserDto> = {}): AdminUserDto => ({
 	id,
@@ -51,7 +51,7 @@ describe('userRows', () => {
 		for (const id of ['removeAdmin', 'disable', 'delete']) {
 			const a = last.actions.find((x) => x.id === id)!;
 			expect(a.disabled).toBe(true);
-			expect(a.reason).toBe(LAST_ADMIN_REASON);
+			expect(a.reason).toBe(lastAdminReason());
 		}
 		// the disabled admin is not counted, and is no last admin
 		expect(rows[1].actions.find((x) => x.id === 'removeAdmin')!.disabled).toBe(false);

@@ -183,7 +183,27 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	['settings.tokens.expiresInDays', {}, 'Expires in 1 day', 'Expires in 2 days'],
 	['settings.tokens.expiresInHours', {}, 'Expires in 1 hour', 'Expires in 2 hours'],
 	['settings.tokens.create.days', {}, '1 day', '2 days'],
-	['packs.progress.bytes', {}, '1 byte', '2 bytes']
+	['packs.progress.bytes', {}, '1 byte', '2 bytes'],
+	// admin (Task 17)
+	['admin.delete.preview.workspaces', {}, '1 workspace', '2 workspaces'],
+	['admin.delete.preview.studyEvents', {}, '1 recorded review and study event', '2 recorded reviews and study events'],
+	['admin.delete.preview.cards', {}, '1 flashcard, with its decks and study settings', '2 flashcards, with their decks and study settings'],
+	['admin.delete.preview.pluginData', {}, '1 other saved item (journal entries, notes, known words, settings)', '2 other saved items (journal entries, notes, known words, settings)'],
+	['admin.delete.preview.books', {}, '1 book in the library, with its bookmarks and highlights', '2 books in the library, with their bookmarks and highlights'],
+	['admin.delete.preview.overlays', {}, '1 edited dictionary entry', '2 edited dictionary entries'],
+	['admin.delete.preview.sentences', {}, '1 sentence they added', '2 sentences they added'],
+	['admin.delete.preview.journalPhotos', {}, '1 journal photo draft', '2 journal photo drafts'],
+	['admin.delete.preview.aiKeys', {}, '1 stored AI key', '2 stored AI keys'],
+	['admin.delete.preview.sessions', {}, '1 signed-in session', '2 signed-in sessions'],
+	['admin.delete.preview.accessTokens', {}, '1 personal access token', '2 personal access tokens'],
+	['admin.invites.expiry.days', {}, '1 day', '2 days'],
+	[
+		'admin.email.dependents',
+		{},
+		'1 person has email codes as their only second step and cannot sign in while email does not work. Fix the setup below, or reset their two-factor under Users.',
+		'2 people have email codes as their only second step and cannot sign in while email does not work. Fix the setup below, or reset their two-factor under Users.'
+	],
+	['admin.users.notice.signedOut', { name: 'li' }, 'li was signed out of 1 session.', 'li was signed out of 2 sessions.']
 ];
 
 describe('catalogue plurals keep their English', () => {

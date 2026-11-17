@@ -28,5 +28,10 @@
 		"file": "lib/settings/aiSettingsView.ts",
 		"text": "Google Gemini",
 		"reason": "A product name (the fallback name of a built-in AI provider the server turned off), not interface text."
+	},
+	{
+		"file": "lib/admin/EmailAdmin.svelte",
+		"text": "https://qinqin.example.org",
+		"reason": "An example URL as the placeholder of the site-address field: the same in every language."
 	}
 ]

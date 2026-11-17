@@ -1,15 +1,30 @@
 import type { AuditEvent, AuthSettings, EmailPolicy, Registration } from '$lib/api/adminSettings';
+import { t, type MessageKey } from '$lib/i18n';
 
-export const REGISTRATION_CHOICES: ReadonlyArray<{ value: Registration; label: string; hint: string }> = [
-	{ value: 'closed', label: 'Closed', hint: 'Nobody can register; administrators create accounts. Invite links stop working.' },
-	{ value: 'invite', label: 'By invite', hint: 'Only people with an invite link can register.' },
-	{ value: 'open', label: 'Open', hint: 'Anyone who reaches this server can register. Invite links work too.' }
+type Choice<V> = { value: V; readonly label: string; readonly hint: string };
+
+function choice<V>(value: V, label: MessageKey, hint: MessageKey): Choice<V> {
+	return {
+		value,
+		get label() {
+			return t(label);
+		},
+		get hint() {
+			return t(hint);
+		}
+	};
+}
+
+export const REGISTRATION_CHOICES: ReadonlyArray<Choice<Registration>> = [
+	choice('closed', 'admin.security.registration.closed', 'admin.security.registration.closedHint'),
+	choice('invite', 'admin.security.registration.invite', 'admin.security.registration.inviteHint'),
+	choice('open', 'admin.security.registration.open', 'admin.security.registration.openHint')
 ];
 
-export const EMAIL_CHOICES: ReadonlyArray<{ value: EmailPolicy; label: string; hint: string }> = [
-	{ value: 'off', label: 'Off', hint: 'No email addresses are collected or shown.' },
-	{ value: 'optional', label: 'Optional', hint: 'People may add an address in their account settings.' },
-	{ value: 'required', label: 'Required', hint: 'Registration and new accounts need an address; existing accounts are asked to add one.' }
+export const EMAIL_CHOICES: ReadonlyArray<Choice<EmailPolicy>> = [
+	choice('off', 'admin.security.email.off', 'admin.security.email.offHint'),
+	choice('optional', 'admin.security.email.optional', 'admin.security.email.optionalHint'),
+	choice('required', 'admin.security.email.required', 'admin.security.email.requiredHint')
 ];
 
 export interface SwitchState {
@@ -18,45 +33,48 @@ export interface SwitchState {
 	reason: string;
 }
 
-export const NEEDS_EMAIL = 'Needs email: set up a mail server first.';
+export function needsEmail(): string {
+	return t('admin.security.needsEmail');
+}
 
 /** The two mail-dependent switches: hidden behind a sentence while mail is not configured. */
 export function switchStates(s: Pick<AuthSettings, 'mail'>): { mfa: SwitchState; emailCode: SwitchState } {
 	const ok = s.mail.configured;
 	return {
-		mfa: { available: ok, reason: ok ? '' : NEEDS_EMAIL },
-		emailCode: { available: ok, reason: ok ? '' : NEEDS_EMAIL }
+		mfa: { available: ok, reason: ok ? '' : needsEmail() },
+		emailCode: { available: ok, reason: ok ? '' : needsEmail() }
 	};
 }
 
-const ACTION_TEXT: Record<string, string> = {
-	user_created: 'created the account',
-	user_deleted: 'deleted the account',
-	account_deleted: 'deleted their own account',
-	user_disabled: 'disabled the account',
-	user_enabled: 'enabled the account',
-	admin_granted: 'made an administrator',
-	admin_revoked: 'removed as administrator',
-	password_changed: 'changed their password',
-	password_change_forced: 'must change the password',
-	reset_link_issued: 'got a reset link',
-	password_reset: 'reset their password',
-	invite_created: 'created an invite',
-	invite_revoked: 'revoked an invite',
-	invite_used: 'registered with an invite',
-	settings_changed: 'changed a setting',
-	sessions_revoked: 'signed out sessions',
-	mfa_reset: 'reset the two-step sign-in',
-	data_exported: 'downloaded their data',
-	data_restored: 'restored their data from a backup',
-	server_backup_created: 'created a server backup'
+const ACTION_TEXT: Record<string, MessageKey> = {
+	user_created: 'admin.audit.action.userCreated',
+	user_deleted: 'admin.audit.action.userDeleted',
+	account_deleted: 'admin.audit.action.accountDeleted',
+	user_disabled: 'admin.audit.action.userDisabled',
+	user_enabled: 'admin.audit.action.userEnabled',
+	admin_granted: 'admin.audit.action.adminGranted',
+	admin_revoked: 'admin.audit.action.adminRevoked',
+	password_changed: 'admin.audit.action.passwordChanged',
+	password_change_forced: 'admin.audit.action.passwordChangeForced',
+	reset_link_issued: 'admin.audit.action.resetLinkIssued',
+	password_reset: 'admin.audit.action.passwordReset',
+	invite_created: 'admin.audit.action.inviteCreated',
+	invite_revoked: 'admin.audit.action.inviteRevoked',
+	invite_used: 'admin.audit.action.inviteUsed',
+	settings_changed: 'admin.audit.action.settingsChanged',
+	sessions_revoked: 'admin.audit.action.sessionsRevoked',
+	mfa_reset: 'admin.audit.action.mfaReset',
+	data_exported: 'admin.audit.action.dataExported',
+	data_restored: 'admin.audit.action.dataRestored',
+	server_backup_created: 'admin.audit.action.serverBackupCreated'
 };
 
 /** One sentence per audit event: "alice: created the account bobby". */
 export function auditLine(e: AuditEvent): string {
-	const who = e.actor?.name || 'System';
-	const what = ACTION_TEXT[e.action] ?? e.action.replaceAll('_', ' ');
-	const target = e.target && e.target.id !== e.actor?.id ? ` (${e.target.name})` : '';
-	const field = typeof e.detail?.field === 'string' ? `: ${e.detail.field}` : '';
-	return `${who} ${what}${target}${field}`;
+	const who = e.actor?.name || t('admin.audit.system');
+	const what = Object.hasOwn(ACTION_TEXT, e.action) ? t(ACTION_TEXT[e.action]) : e.action.replaceAll('_', ' ');
+	let line = t('admin.audit.line', { who, what });
+	if (e.target && e.target.id !== e.actor?.id) line = t('admin.audit.withTarget', { line, target: e.target.name });
+	if (typeof e.detail?.field === 'string') line = t('admin.audit.withField', { line, field: e.detail.field });
+	return line;
 }
