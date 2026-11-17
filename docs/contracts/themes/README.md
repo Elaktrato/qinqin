@@ -119,7 +119,29 @@ a theme whose every accent fails, both sides of the 4.5 and 3 roundings).
 
 ## `GET /api/themes`
 
-(Task 7.)
+Public (no session needed; a read token is allowed), the same answer for everyone, small:
+
+```json
+{ "themes": [ { "id": "catppuccin-latte", "name": "Latte", "family": "Catppuccin", "scheme": "light",
+                "colors": { "chrome": "#dce0e8", "...": "..." }, "accents": { "mauve": "#8839ef", "...": "..." },
+                "defaultAccent": "mauve", "packId": "catppuccin", "builtin": true } ],
+  "packs":  [ { "packId": "catppuccin", "name": "Catppuccin", "version": "1.0", "license": "MIT",
+                "attribution": "© 2021 Catppuccin (catppuccin/palette)", "notice": "...", "builtin": true,
+                "themes": ["catppuccin-latte", "catppuccin-frappe", "catppuccin-macchiato", "catppuccin-mocha"] } ] }
+```
+
+- Built-in packs first in their fixed order (`themes-api.json`), then the installed packs by name, then pack id;
+  themes in pack order, each pack's in file order; `accents` keep the file's order; `family` is `""` when the
+  theme has none.
+- An installed theme whose id a newer binary made built-in is left out (the built-in one wins); a stored theme
+  that no longer parses is skipped (logged), never a 500.
+- `ETag` (strong) and `Cache-Control: no-cache`: clients revalidate with `If-None-Match` and get `304`. The web's
+  service worker keeps it per credential like its other reads (`pwa/`); the web also keeps the last applied
+  tokens on the device for the first paint and compiles Catppuccin Latte and Mocha in as the fallback.
+
+Ruling: public, not signed-in only — the sign-in page paints with a theme, the Sources page credits the packs
+without a session (like every other pack list), and the answer holds nothing personal — cost: anyone can see
+which theme packs an administrator installed.
 
 ## Built-in themes
 
@@ -159,5 +181,5 @@ it implements the validation only if it ever installs theme packs itself (it doe
 | --- | --- | --- |
 | `theme-file.json` | validation codes and paths, limits, accent order | Go `server/internal/themes/file_test.go` |
 | `contrast.json` | ratios, rounding, the review checks | Go `server/internal/themes/contrast_test.go`; web `apps/web/src/lib/theme/contrast.test.ts` |
-| `themes-api.json` | the built-in packs and theme ids in order | Go `server/internal/themes/builtin_test.go` |
+| `themes-api.json` | the built-in packs and theme ids in order | Go `server/internal/themes/builtin_test.go`, `server/internal/api/handlers_themes_test.go` |
 | `derive.json` | derived tokens | Go `server/internal/themes/derive_test.go`; web `apps/web/src/lib/theme/derive.test.ts` (also the CSS property table) |

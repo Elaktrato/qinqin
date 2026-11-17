@@ -49,7 +49,8 @@ const API_PATTERNS: RegExp[] = [
 	/^\/api\/me\/time-zone$/,
 	new RegExp(`^/api/plugins/${SEGMENT}/data$`),
 	new RegExp(`^/api/plugins/${SEGMENT}/data/${SEGMENT}$`),
-	/^\/api\/entries\/[0-9]+$/
+	/^\/api\/entries\/[0-9]+$/,
+	/^\/api\/themes$/
 ];
 
 const CORE_DATA = '/api/plugins/qinqin-core/data';
