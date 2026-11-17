@@ -178,6 +178,8 @@ func serveCmd(args []string) error {
 	}
 	// The Sources page shows the stored terms; say when seed is due.
 	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)
+	// Data packages carry each pack's licence files; say which packs lack them.
+	warnMissingPackTexts(context.Background(), sqlDB, log.Printf)
 
 	aiSvc := aiFromEnv(sqlDB, os.Getenv, log.Printf)
 	sec := secretsFromEnv(os.Getenv)

@@ -90,8 +90,22 @@ var errNoAudioStore = errors.New("packs: audio packs need an audio store directo
 
 // Import installs pack by its manifest type and returns the one-line
 // summary the seed CLI prints.
+//
+// After the type's import commits, the pack's licence files are kept
+// (StoreTexts); a failure there is returned although the pack is installed.
 func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) (string, error) {
-	o := collect(opts)
+	line, err := importData(ctx, sqlDB, pack, collect(opts))
+	if err != nil {
+		return "", err
+	}
+	if err := storeTextsAfterImport(ctx, sqlDB, pack); err != nil {
+		return "", err
+	}
+	return line, nil
+}
+
+// importData imports pack by its type, in the type importer's transaction.
+func importData(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error) {
 	switch pack.Type {
 	case dict.TypeDictionary:
 		r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
@@ -150,7 +164,8 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) 
 	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 }
 
-// Uninstall removes the live pack of type typ with manifest id packID.
+// Uninstall removes the live pack of type typ with registry id packID and
+// its licence texts.
 // Unknown types return ErrUnknownType, packs that are not installed
 // ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...Option) error {
@@ -190,7 +205,11 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...O
 		errors.Is(err, components.ErrNotFound) {
 		return ErrNotFound
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	// The pack is gone; so are its licence texts.
+	return deleteTexts(ctx, sqlDB, typ, packID)
 }
 
 func rowID(ctx context.Context, sqlDB *sql.DB, query, packID string) (int64, error) {

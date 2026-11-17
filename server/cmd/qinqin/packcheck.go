@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"qinqin/internal/dict"
+	"qinqin/internal/packs"
 )
 
 // storedTerms is what an installed pack's registry row holds of its
@@ -99,4 +100,26 @@ func loadStoredTerms(ctx context.Context, sqlDB *sql.DB, table string) (map[stri
 		out[id] = t
 	}
 	return out, rows.Err()
+}
+
+// warnMissingPackTexts logs one line per installed pack whose licence
+// files were never collected (imported before the server kept them), so
+// its data package says licenseTexts false until an administrator re-seeds.
+// Advisory and read-only like warnStalePackTerms: a failed query is logged.
+func warnMissingPackTexts(ctx context.Context, sqlDB *sql.DB, logf func(format string, args ...any)) {
+	installed, err := packs.List(ctx, sqlDB)
+	if err != nil {
+		logf("pack licence text check: %v", err)
+		return
+	}
+	for _, p := range installed {
+		ok, err := packs.TextsStored(ctx, sqlDB, p.Type, p.PackID)
+		if err != nil {
+			logf("pack licence text check: %v", err)
+			return
+		}
+		if !ok {
+			logf(`pack %s: no licence texts stored; run "qinqin seed"`, p.PackID)
+		}
+	}
 }
