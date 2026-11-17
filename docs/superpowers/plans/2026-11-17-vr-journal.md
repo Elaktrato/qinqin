@@ -489,6 +489,32 @@ Files: `EntryEditor.dom.test.ts`, `JournalPage.dom.test.ts` (new cases).
 4; 6 → 7 → 8 → 9; 10 independent of 5–9; 11 after 8, 9 and 10; 12 after 11; 13 after 12; 14 after 11; 15
 after 14; 16 last.
 
+## Adaptations to the prep run
+
+The design predates the v0.4.0-prep run; the direction
+`docs/superpowers/directions/2026-11-17-visual-rework-prep-run-additions.md` lists what it added. For this item:
+
+- **Errors by code** (prep item 8): review and save failures are shown through `errorText()` (the AI and generic
+  error codes of `apiError.*`). Task 12 adds `a coded review error shows its
+  catalogue text in the overall-review slot` and `a save error shows its catalogue text under the editor`; Task 11's
+  margin shows no correction while an error is shown.
+- **Dates**: the entries column ("Mon 16 Nov") and the page date ("Monday, 16 November 2026") through
+  `formatDate` with the learner day, never the device day; Task 10 asserts the English output against the mock's
+  strings with a fixed zone.
+- **Event payloads** (prep item 6): the restyle does not touch `lib/eventPayloads.ts`; the journal `{entryId}`
+  payload stays byte-identical (its fixture test stays green).
+- **Plugin switched off**: `/p/journal` with the plugin disabled shows the plugin shell's unavailable state (#106
+  P21), not the three columns — Task 11 keeps the existing case.
+- **Milestones**: journal-entry milestones show on Home and Stats → Week only; nothing in the journal changes.
+- General: `/p/journal` keeps `pageTitle(t('journal.title'))`.
+
+General acceptance (direction `docs/superpowers/directions/2026-11-17-visual-rework-prep-run-additions.md` §5): page
+titles — `routeTitles.test.ts` and `pageTitles.dom.test.ts` pass unchanged unless a Ruling below adds a case;
+errors keep coming from `errorText()` / `apiError.<code>` (no restyle rewords or hard-codes an error; one coded error
+is asserted in its new slot); dates and numbers only through `lib/i18n/format.ts` (English shows en-GB, "16 Nov
+2026"); study text keeps its study-language `lang`, interface text carries none; a word shown from a card, deck row,
+lookup or search hit is the text the data carries (snapshot / `written` / `shownWritten`), never `forms[0]`.
+
 ## Execution record
 
 (empty — filled by the builder)

@@ -493,6 +493,36 @@ the generated `API-Routes.md` is unchanged), `README.md` (only where it describe
 2 and 3 independent (server first: Task 5 uses 2's fields, Task 9 uses 3's); 4 → 5; 6 → 7 → 8 → 9 → 10; 11
 needs 4, 5 and 10; 12 after 11; 13 after 12; 14 after 13; 15 after 13; 16 last.
 
+## Adaptations to the prep run
+
+The design predates the v0.4.0-prep run; the direction
+`docs/superpowers/directions/2026-11-17-visual-rework-prep-run-additions.md` lists what it added. For this item:
+
+- **Search hits show the written form the server sends** (prep item 2, kana plan finding 7: a Japanese
+  written-form hit shows the searched form unless it is search-only). Task 5 adds `the row shows hit.written as
+  given (為る searched shows 為る; こと shows こと)` — `rowText.ts` never re-derives the word from forms.
+- **Entry header word** (Task 7): the large word is `entry.written` (the display form: の for the particle entry);
+  other written forms stay in the "Also written" line for Japanese and never take the "variant" slot, which is for
+  Chinese traditional/simplified only — test with a Japanese kana entry.
+- **Licence links on senses** (#17): kept as Task 8 says; the existing licence-link cases stay green.
+- **Entry robustness** (#17): the existing not-found, partial-data and unknown-dictionary cases stay green after
+  the `EntryView` extraction (Task 6 runs them first).
+- **Stroke data from a pack** (prep item 5): the stroke player (Task 9) keeps its loading ("Loading stroke order…")
+  and failed ("Stroke order could not be loaded.") states in the side column, and with no strokes pack installed
+  the player shows the failed text, not an empty box — test with `loadStrokeData` rejecting.
+- **Title for a selected entry** (Ruling): `/search` with an entry selected sets the document title to
+  `pageTitle(written, t('search.title'))`; without a selection the title is unchanged — the page now shows an entry,
+  and the entry page's own title names it — cost: one extra case in `pageTitles.dom.test.ts` (Task 11).
+- **Search by parts** (`/search/parts`) keeps its route and title; if this item does not restyle it, #106 P22
+  takes it (the pages plan's guard says so).
+
+General acceptance (direction `docs/superpowers/directions/2026-11-17-visual-rework-prep-run-additions.md` §5): page
+titles — `routeTitles.test.ts` and `pageTitles.dom.test.ts` pass unchanged unless a Ruling below adds a case;
+errors keep coming from `errorText()` / `apiError.<code>` (no restyle rewords or hard-codes an error; one coded error
+is asserted in its new slot); dates and numbers only through `lib/i18n/format.ts` (English shows en-GB, "16 Nov
+2026"); study text keeps its study-language `lang`, interface text carries none; a word shown from a card, deck row,
+lookup or search hit is the text the data carries (snapshot / `written` / `shownWritten`), never `forms[0]`.
+
 ## Execution record
 
 (empty — filled by the builder)
