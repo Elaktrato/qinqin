@@ -429,7 +429,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 			id: 77, bookId, position, label, createdAt: '2026-11-17T10:00:00Z'
 		}) as never);
 		vi.mocked(addHighlight).mockReset();
-		vi.mocked(addHighlight).mockImplementation(async (bookId: number, h: Record<string, unknown>) => ({
+		vi.mocked(addHighlight).mockImplementation(async (bookId: number, h: object) => ({
 			id: 88, bookId, ...h, note: '', createdAt: '', updatedAt: ''
 		}) as never);
 	});
