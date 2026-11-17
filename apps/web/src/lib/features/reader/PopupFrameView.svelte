@@ -26,7 +26,8 @@
 		lookup,
 		studyWorkspaceId,
 		highlighter = null,
-		stateLine = null
+		stateLine = null,
+		sheet = false
 	}: {
 		frame: PopupFrame;
 		info: StackInfo;
@@ -35,6 +36,8 @@
 		highlighter?: HighlightActions | null;
 		/** The word-state line per entry (word highlighting on). */
 		stateLine?: ((entryId: number) => string) | null;
+		/** Inside the phone's LookupSheet: no placement, no close button (the sheet has one), no pointer scanning. */
+		sheet?: boolean;
 	} = $props();
 
 	let popup = $state<HTMLElement | null>(null);
@@ -83,30 +86,16 @@
 	});
 </script>
 
-<div
-	bind:this={popup}
-	bind:offsetWidth={width}
-	class="popup depth-{frame.depth}"
-	class:scanning={lookup.popups.shiftHeld && frame.depth < MAX_DEPTH}
-	data-lookup-popup
-	role="dialog"
-	tabindex="-1"
-	aria-label={t('reader.popup.label', { text: frame.text })}
-	style:left="{position.left}px"
-	style:top="{position.top}px"
-	style:max-height="min(26rem, {position.maxHeight}px)"
-	style:z-index={50 + frame.depth}
-	onpointerenter={lookup.popups.enter}
-	onpointerleave={lookup.popups.leave}
-	onpointermove={(e) => lookup.popups.move(e, frame.id)}
->
+{#snippet content()}
 	<div class="inner" bind:offsetHeight={contentHeight}>
+		{#if !sheet || (isRoot && info.mode === 'selection')}
 		<div class="bar">
 			{#if isRoot && info.mode === 'selection'}<span class="selected" lang={info.textLang}>{frame.text}</span>{/if}
-			<span class="close"
-				><IconButton label={t('reader.popup.close')} icon="close" size="s" placement="start" onclick={() => lookup.closeFrame(frame.id)} /></span
-			>
+			{#if !sheet}<span class="close"
+					><IconButton label={t('reader.popup.close')} icon="close" size="s" placement="start" onclick={() => lookup.closeFrame(frame.id)} /></span
+				>{/if}
 		</div>
+		{/if}
 		{#if isRoot && info.mode === 'selection' && highlighter}<HighlightBar actions={highlighter} />{/if}
 		<div class="content" aria-live="polite">
 			{#if isRoot && info.note}<p class="note">{info.note}</p>{/if}
@@ -132,7 +121,31 @@
 			{/if}
 		</div>
 	</div>
-</div>
+{/snippet}
+
+{#if sheet}
+	<div class="in-sheet" data-lookup-popup>{@render content()}</div>
+{:else}
+	<div
+		bind:this={popup}
+		bind:offsetWidth={width}
+		class="popup depth-{frame.depth}"
+		class:scanning={lookup.popups.shiftHeld && frame.depth < MAX_DEPTH}
+		data-lookup-popup
+		role="dialog"
+		tabindex="-1"
+		aria-label={t('reader.popup.label', { text: frame.text })}
+		style:left="{position.left}px"
+		style:top="{position.top}px"
+		style:max-height="min(26rem, {position.maxHeight}px)"
+		style:z-index={50 + frame.depth}
+		onpointerenter={lookup.popups.enter}
+		onpointerleave={lookup.popups.leave}
+		onpointermove={(e) => lookup.popups.move(e, frame.id)}
+	>
+		{@render content()}
+	</div>
+{/if}
 
 <style>
 	/* The lookup popup (design §9 "Reader"): a floating layer below the word
