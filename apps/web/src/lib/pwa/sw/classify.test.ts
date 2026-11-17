@@ -138,6 +138,7 @@ describe('classify: spec table', () => {
 		const study = 'pluginStates,pluginData,cards,decks,deckSettings,limits,fsrsSets,fsrsActive';
 		for (const url of [
 			`/api/sync/pull?collections=${study}&v=2&workspace=3`,
+			`/api/sync/pull?collections=${study}&tombstones=1&v=2&workspace=3`, // the web study pull
 			`/api/sync/pull?collections=cards&limit=100&v=2&workspace=3`,
 			'/api/sync/pull?collections=pluginData&v=2&workspace=12',
 			'/api/sync/pull?page=p2.abcDEF-_123&v=2'
@@ -161,7 +162,11 @@ describe('classify: spec table', () => {
 			'/api/sync/pull?page=c2.abc&v=2', // a cursor is not a page
 			'/api/sync/pull?page=&v=2',
 			'/api/sync/pull?page=p2.abc&v=2&collections=events', // a continuation carries nothing else
-			'/api/sync/pull?page=p2.abc'
+			'/api/sync/pull?page=p2.abc',
+			'/api/sync/pull?collections=cards&tombstones=0&v=2&workspace=3',
+			'/api/sync/pull?collections=cards&tombstones=1&tombstones=1&v=2&workspace=3',
+			'/api/sync/pull?collections=cards&since=c2.x&tombstones=1&v=2&workspace=3', // still a delta
+			'/api/sync/pull?page=p2.abc&tombstones=1&v=2'
 		]) {
 			expect(kind(url), url).toBe('bypass');
 		}

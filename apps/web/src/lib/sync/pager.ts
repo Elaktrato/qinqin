@@ -127,11 +127,22 @@ function build(pairs: [string, string][]): string {
 	return `${PATH}?${new URLSearchParams(pairs).toString()}`;
 }
 
-/** firstPageUrl: the request that opens a round (no collections = every collection). */
-export function firstPageUrl(opts: { collections: readonly string[]; workspace?: number; since?: string; limit?: number }): string {
+/**
+ * firstPageUrl: the request that opens a round (no collections = every collection).
+ * tombstones asks a round from no since for tombstones too (a client that stamps
+ * its writes after the server's times needs them); the cursor binds it.
+ */
+export function firstPageUrl(opts: {
+	collections: readonly string[];
+	workspace?: number;
+	since?: string;
+	limit?: number;
+	tombstones?: boolean;
+}): string {
 	const pairs: [string, string][] = [['v', '2']];
 	if (opts.collections.length > 0) pairs.push(['collections', opts.collections.join(',')]);
 	if (opts.workspace !== undefined) pairs.push(['workspace', String(opts.workspace)]);
+	if (opts.tombstones === true) pairs.push(['tombstones', '1']);
 	if (opts.since !== undefined) pairs.push(['since', opts.since]);
 	if (opts.limit !== undefined) pairs.push(['limit', String(opts.limit)]);
 	return build(pairs);

@@ -656,6 +656,8 @@ func TestContractPullRounds(t *testing.T) {
 						if id, ok := w.ws[s]; ok {
 							s = strconv.FormatInt(id, 10)
 						}
+					case "tombstones":
+						json.Unmarshal(raw, &s)
 					case "since", "page":
 						json.Unmarshal(raw, &s)
 						switch s {

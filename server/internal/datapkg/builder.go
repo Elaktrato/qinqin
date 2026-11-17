@@ -136,11 +136,7 @@ func (b *Builder) Run(ctx context.Context) {
 }
 
 func (b *Builder) build(ctx context.Context, id string) error {
-	specs, err := Plan(ctx, b.reg.DB)
-	if err != nil {
-		return err
-	}
-	return b.reg.build(ctx, id, specs)
+	return b.reg.build(ctx, id)
 }
 
 // Wait returns once the builder is idle with nothing queued, or when ctx

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 
 	"qinqin/internal/dict"
@@ -78,7 +79,8 @@ func TestStrokeFiles(t *testing.T) {
 			t.Fatalf("%s: %d %q", who, rec.Code, rec.Body)
 		}
 		hd := rec.Header()
-		if hd.Get("Content-Type") != "application/json" || hd.Get("Cache-Control") != "public, max-age=86400" || len(hd.Get("ETag")) < 10 {
+		if hd.Get("Content-Type") != "application/json" || hd.Get("Cache-Control") != "public, max-age=86400" || len(hd.Get("ETag")) < 10 ||
+			hd.Get("X-Content-Type-Options") != "nosniff" {
 			t.Errorf("%s headers %v", who, hd)
 		}
 	}
@@ -100,6 +102,8 @@ func TestStrokeFiles(t *testing.T) {
 	} {
 		if rec := serveGet(h, "GET", p, "", nil); rec.Code != 404 {
 			t.Errorf("%s: %d, want 404", p, rec.Code)
+		} else if strings.Count(p, "/") == 2 && p != "/hanzi/" && rec.Header().Get("X-Content-Type-Options") != "nosniff" {
+			t.Errorf("%s: 404 without nosniff", p)
 		}
 	}
 	// noTok: a token is refused even though the route is public.

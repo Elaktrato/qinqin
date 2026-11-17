@@ -75,7 +75,9 @@ workspace languages; `all` lists every package. A row is listed when any of its 
 ## Download: `GET /api/packages/{id}/{revision}`
 
 Signed-in users (read tokens allowed). The zip file of that revision: `ETag: "<sha256>"`,
-`Accept-Ranges: bytes`, `Range`/`If-Range` (206), `Cache-Control: private, max-age=31536000, immutable`.
+`Content-Type: application/zip`, `X-Content-Type-Options: nosniff`, `Accept-Ranges: bytes`, `Range`/`If-Range` (206), `Cache-Control: private, no-cache` (a cached copy revalidates:
+`If-None-Match` with the ETag answers 304; not `immutable`, since a server restored from a backup may build a
+revision number again with other bytes).
 404 `package_not_found` (unknown id or revision, or not a package id), 410 `package_revision_gone` (a replaced
 revision whose file was purged; the previous revision is kept 7 days), 429 `download_busy` with
 `Retry-After: 5` (at most 2 concurrent downloads per user; unlike `rate_limited` a client may retry it
@@ -129,8 +131,10 @@ change.
   table in `schemas.json` order with rows in its `order`, `qq_sources`, the licence texts); not over
   `qq_package`. Opaque to clients: compare it, never compute it. Equal content gives an equal hash whatever
   the SQLite version or row insertion order.
-- `revision` — +1 whenever `contentHash` changes, never reused, continued after an uninstall and reinstall.
-  A rebuild with an equal hash changes nothing (no new revision, no new file).
+- `revision` — +1 whenever `contentHash` changes, or the manifest's `languages` or `requires` (which the hash
+  does not cover) change, so `manifest.json` always agrees with the catalogue row; never reused, continued
+  after an uninstall and reinstall. A rebuild with an equal hash and equal manifest fields changes nothing (no
+  new revision, no new file; a change of the catalogue-only `optional` updates the row in place).
 - `sha256`, `bytes` — of the file; what a download is checked against.
 - `instanceId` — a ULID the server creates once (migration 039, `server_meta`). It is in the catalogue, every
   manifest and every pull page. A different one means another database: discard packages and local user

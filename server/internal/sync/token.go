@@ -28,14 +28,16 @@ type position struct {
 
 // filters are the request parameters a round is bound to. Collections is
 // the canonical list (round order, every requested name); Workspace 0 is
-// none.
+// none; Tombstones is tombstones=1 (omitted when false, so tokens of rounds
+// without it keep their bytes).
 type filters struct {
 	Collections []string `json:"c"`
 	Workspace   int64    `json:"w"`
+	Tombstones  bool     `json:"t,omitempty"`
 }
 
 func (f filters) equal(o filters) bool {
-	return f.Workspace == o.Workspace && slices.Equal(f.Collections, o.Collections)
+	return f.Workspace == o.Workspace && f.Tombstones == o.Tombstones && slices.Equal(f.Collections, o.Collections)
 }
 
 // pageToken is the state of a round between two pages. It is not signed:

@@ -44,7 +44,7 @@ when the request carries an `Authorization` header: `/api/auth/me`,
 `/api/sync/pull` in two forms. Paged (`v=2`, `docs/contracts/sync/`): a round's first
 page with `workspace=<id>` and `collections` a non-empty subset of
 `pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive`
-(optionally `limit`; never `since`, a delta is not offline data, never `events`,
+(optionally `limit` and `tombstones=1`, which the web study pull sends; never `since`, a delta is not offline data, never `events`,
 `overlays`, `books` or a moved name), and its continuations `v=2&page=p2.<token>`
 (nothing else in the query; the token carries its filters, the server validates
 them, and the URL is the cache key). Each page is a separate saved copy, so offline

@@ -23,7 +23,7 @@ Error codes are in `docs/contracts/auth/errors.json`: `sync_collection_moved` (4
 ## Pull v2
 
 ```
-GET /api/sync/pull?v=2[&since=<cursor>][&limit=1..2000][&collections=a,b][&workspace=<id>]
+GET /api/sync/pull?v=2[&since=<cursor>][&limit=1..2000][&collections=a,b][&workspace=<id>][&tombstones=1]
 GET /api/sync/pull?v=2&page=<next>          continuation: nothing else may be repeated
 ```
 
@@ -46,16 +46,26 @@ Round order (fixed): `workspaces`, `pluginStates`, `pluginData`, `cards`, `decks
   without rows ends on an empty page. Then `next` is null and `cursor` is set: `until − 30 s`, so a row
   stamped before a slow commit comes next round (rows of the last 30 s may arrive twice: upsert by key).
 - A row rewritten during a round gets a stamp `>= until`: it is not shipped twice in one round and comes in
-  the next one.
+  the next one. A client that reads only from-scratch rounds and drops the cursor (the web study read) can
+  therefore miss a row edited while its multi-page round runs, if the row's old stamp sorted onto a page not
+  yet read: that load lacks the row, and the next load (a new round) has it. Accepted: the window is one
+  round and nothing is lost on the server; until the next load a local write to that row is stamped by the
+  local clock alone (no server time known for it), as for a row the client never saw.
 - From no `since` a round ships live rows only. With a `since` it ships tombstones too (`deletedAt` set).
+  `tombstones=1` (the only value) makes a round from no `since` ship tombstones as well, library
+  `library_deletions` rows included; with a `since` it changes nothing. A client that stamps its writes after
+  the times the server holds (the web study pull: a re-add from a slower clock must not lose to a newer
+  tombstone) asks for it. It is a filter like the others: the page token and the cursor bind it, so the
+  next round sends it again.
 - Within a library collection (`books`, `bookmarks`, `highlights`) the tombstones follow the live rows
   instead of interleaving by stamp: the live rows by `updatedAt`, then the `library_deletions` rows by
   `deletedAt`. Library ids are never reused, so no live row and tombstone of one round share an id; upsert
   and delete by id and the order does not matter.
 - `page` and `since` tokens are opaque (`p2.…`, `c2.…`; only the prefixes are a contract). A page token binds
-  the user and every filter; a cursor binds the collections and workspace filter, so a client keeps one
+  the user and every filter; a cursor binds the collections, workspace and tombstones filters, so a client keeps one
   cursor per filter set. Another user's token, a token of other filters, a garbled token, a `page=` request
-  that repeats `since`/`collections`/`workspace`/`limit`, or a `limit` outside 1..2000 is 400
+  that repeats `since`/`collections`/`workspace`/`limit`/`tombstones`, a `tombstones` value other than `1`, or
+  a `limit` outside 1..2000 is 400
   `sync_page_invalid`.
 - 410 `sync_cursor_expired` (defined, not yet sent): discard local user data and pull without `since`.
 
@@ -114,7 +124,9 @@ counts `dataAccepted` without a write.
 
 Any pull without `v=2`: `cursor` (RFC 3339, optional) and `collections` exactly as in v0.3.x, one JSON
 object, streamed row by row. It answers `Deprecation: true` and
-`Link: </api/sync/pull?v=2>; rel="successor-version"`.
+`Link: </api/sync/pull?v=2>; rel="successor-version"`. A client that reads nothing for 60 s is cut (the
+write deadline moves forward as rows go out), so a stalled reader does not hold the server's read
+transaction; the truncated JSON makes it retry, as after a network cut.
 
 - Item 4's legacy view applies unchanged (`docs/contracts/study/legacy-view.json`): a pull naming
   `pluginData` and none of the typed collections gets the typed rows as `qinqin-flashcards` rows in

@@ -160,6 +160,8 @@ func TestParsePageRequest(t *testing.T) {
 		{"v=2&limit=2000", PageRequest{Limit: 2000}},
 		{"v=2&page=p2.x", PageRequest{Page: "p2.x"}},
 		{"v=2&collections=", PageRequest{}},
+		{"v=2&tombstones=1", PageRequest{Tombstones: true}},
+		{"v=2&tombstones=1&since=c2.x", PageRequest{Tombstones: true, Since: "c2.x"}},
 	}
 	for _, tc := range ok {
 		q, _ := url.ParseQuery(tc.query)
@@ -168,7 +170,7 @@ func TestParsePageRequest(t *testing.T) {
 			t.Errorf("%s: %v", tc.query, err)
 			continue
 		}
-		if got.Since != tc.want.Since || got.Page != tc.want.Page || got.Limit != tc.want.Limit || got.Workspace != tc.want.Workspace || len(got.Only) != len(tc.want.Only) {
+		if got.Since != tc.want.Since || got.Page != tc.want.Page || got.Limit != tc.want.Limit || got.Workspace != tc.want.Workspace || got.Tombstones != tc.want.Tombstones || len(got.Only) != len(tc.want.Only) {
 			t.Errorf("%s = %+v, want %+v", tc.query, got, tc.want)
 		}
 		for k := range tc.want.Only {
@@ -192,6 +194,10 @@ func TestParsePageRequest(t *testing.T) {
 		"v=2&workspace=abc":                  ErrPageInvalid,
 		"v=2&workspace=0":                    ErrPageInvalid,
 		"v=2&workspace=-3":                   ErrPageInvalid,
+		"v=2&tombstones=0":                   ErrPageInvalid,
+		"v=2&tombstones=":                    ErrPageInvalid,
+		"v=2&tombstones=true":                ErrPageInvalid,
+		"v=2&page=p2.x&tombstones=1":         ErrPageInvalid,
 	}
 	for query, wantErr := range bad {
 		q, _ := url.ParseQuery(query)
@@ -216,6 +222,7 @@ func TestPullPageRefusesBadRequests(t *testing.T) {
 		"page with limit":       {PageRequest{Page: "p2.x", Limit: 3}, ErrPageInvalid},
 		"page with collections": {PageRequest{Page: "p2.x", Only: map[string]bool{"alpha": true}}, ErrPageInvalid},
 		"page with workspace":   {PageRequest{Page: "p2.x", Workspace: 7}, ErrPageInvalid},
+		"page with tombstones":  {PageRequest{Page: "p2.x", Tombstones: true}, ErrPageInvalid},
 		"garbled page":          {PageRequest{Page: "p2.not-base64!"}, ErrPageInvalid},
 		"an RFC 3339 since":     {PageRequest{Since: "2026-11-12T09:00:00Z"}, ErrPageInvalid},
 		"a foreign workspace":   {PageRequest{Workspace: 9}, ErrNotFound},
@@ -369,6 +376,46 @@ func TestTombstonesOnlyWithSince(t *testing.T) {
 	got, dead = vs(t, p, "alpha")
 	want(t, "delta", got, []string{"dead"})
 	want(t, "delta tombstones", dead, []string{"dead"})
+}
+
+// tombstones=1 ships tombstones in a round from no since too (a client that
+// stamps its writes after the server's must see them), on every page of the
+// round, and binds the cursor: the next round must ask for it again.
+func TestTombstonesFlagShipsTombstonesFromNoSince(t *testing.T) {
+	sqlDB := coreDB(t)
+	put(t, sqlDB, "alpha_rows", 1, "live", "2026-11-12T09:00:00Z", false)
+	put(t, sqlDB, "alpha_rows", 1, "dead", "2026-11-12T09:01:00Z", true)
+	put(t, sqlDB, "beta_rows", 1, "gone", "2026-11-12T09:02:00Z", true)
+	put(t, sqlDB, "alpha_rows", 2, "other", "2026-11-12T09:02:00Z", true)
+	now := at("2026-11-12T09:30:00Z")
+	p := corePull(t, sqlDB, 1, PageRequest{Limit: 1, Tombstones: true, Now: now})
+	got, dead := vs(t, p, "alpha")
+	want(t, "first page", got, []string{"live"})
+	want(t, "first page tombstones", dead, []string{})
+	p = corePull(t, sqlDB, 1, PageRequest{Page: next(t, p)})
+	got, dead = vs(t, p, "alpha")
+	want(t, "second page", got, []string{"dead"})
+	want(t, "second page tombstones", dead, []string{"dead"})
+	p = corePull(t, sqlDB, 1, PageRequest{Page: next(t, p)})
+	got, dead = vs(t, p, "beta")
+	want(t, "third page", got, []string{"gone"})
+	want(t, "third page tombstones", dead, []string{"gone"})
+	cur := last(t, p)
+
+	plain := corePull(t, sqlDB, 1, PageRequest{Now: now})
+	got, _ = vs(t, plain, "alpha")
+	want(t, "without the flag", got, []string{"live"})
+	got, _ = vs(t, plain, "beta")
+	want(t, "without the flag (beta)", got, []string{})
+
+	if _, err := pullPage(context.Background(), sqlDB, 1, PageRequest{Since: cur, Now: now}, fakeSet(), nil); !errors.Is(err, ErrPageInvalid) {
+		t.Errorf("a tombstones cursor without the flag: err = %v, want ErrPageInvalid", err)
+	}
+	if _, err := pullPage(context.Background(), sqlDB, 1, PageRequest{Since: last(t, plain), Tombstones: true, Now: now}, fakeSet(), nil); !errors.Is(err, ErrPageInvalid) {
+		t.Errorf("a plain cursor with the flag: err = %v, want ErrPageInvalid", err)
+	}
+	p = corePull(t, sqlDB, 1, PageRequest{Since: cur, Tombstones: true, Now: at("2026-11-12T10:00:00Z")})
+	last(t, p)
 }
 
 func TestTheCursorLagsUntilByThirtySeconds(t *testing.T) {

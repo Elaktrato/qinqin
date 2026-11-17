@@ -350,8 +350,12 @@ func TestV2SegmentQueriesUseAnIndex(t *testing.T) {
 	w := newWorld(t)
 	for _, s := range v2Set.segs {
 		for _, ws := range []int64{0, 7} {
-			for _, since := range []string{"", "2026-11-12T00:00:00Z"} {
-				query := s.query(since, ws)
+			for _, since := range []string{"", "2026-11-12T00:00:00Z", "tombs"} {
+				tombs := since == "tombs"
+				if tombs {
+					since = ""
+				}
+				query := s.query(since, ws, tombs)
 				args := s.args(query, 1, since, "2026-11-12T10:00:00Z", position{}, 10, ws, []string{"zh"})
 				plan := explain(t, w.db, query, args)
 				if !strings.Contains(plan, "USING INDEX") && !strings.Contains(plan, "USING COVERING INDEX") &&
