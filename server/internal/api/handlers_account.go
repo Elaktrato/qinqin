@@ -365,14 +365,14 @@ func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if s.mailConfigured(r.Context()) {
-			s.mail.Enqueue(mail.Job{Kind: mail.KindEmailChanged, UserID: p.User.ID, To: *oldEmail})
+			s.mail.Enqueue(mail.Job{Kind: mail.KindEmailChanged, UserID: p.User.ID, To: *oldEmail, AcceptLanguage: r.Header.Get("Accept-Language")})
 		}
 	}
 	verification := "none"
 	if u.Email != nil && !u.EmailVerified {
 		verification = "unavailable"
 		if s.mailConfigured(r.Context()) {
-			if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, nu.EmailNorm); err != nil {
+			if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, nu.EmailNorm, r.Header.Get("Accept-Language")); err != nil {
 				writeInternal(w, r)
 				return
 			}
@@ -423,7 +423,7 @@ func (s *server) verifyOwnPassword(w http.ResponseWriter, r *http.Request, userI
 
 // startEmailVerification replaces the user's verification challenge with a
 // new one and mails its first code.
-func (s *server) startEmailVerification(ctx context.Context, userID int64, email string, norm *string) error {
+func (s *server) startEmailVerification(ctx context.Context, userID int64, email string, norm *string, acceptLanguage string) error {
 	if err := auth.DropUserChallenges(ctx, s.db, userID, auth.ChallengeEmailVerify); err != nil {
 		return err
 	}
@@ -439,18 +439,18 @@ func (s *server) startEmailVerification(ctx context.Context, userID int64, email
 	if err != nil {
 		return err
 	}
-	s.mailCode(userID, mail.KindVerifyEmail, email, code)
+	s.mailCode(userID, mail.KindVerifyEmail, email, code, acceptLanguage)
 	return nil
 }
 
 // mailCode queues a code mail unless the user's hourly budget of code mails
 // is spent (silently: the answer to the request must not depend on it).
-func (s *server) mailCode(userID int64, kind mail.Kind, to, code string) {
+func (s *server) mailCode(userID int64, kind mail.Kind, to, code, acceptLanguage string) {
 	if ok, _ := s.authLimiter("mailcode").Allow(int64Key(userID)); !ok {
 		s.logThrottled("mailcode")
 		return
 	}
-	s.mail.Enqueue(mail.Job{Kind: kind, UserID: userID, To: to, Data: mail.TemplateData{Code: code}})
+	s.mail.Enqueue(mail.Job{Kind: kind, UserID: userID, To: to, AcceptLanguage: acceptLanguage, Data: mail.TemplateData{Code: code}})
 }
 
 // writeCodeError answers a refused one-time code. authenticated routes
@@ -526,7 +526,7 @@ func (s *server) handleEmailResend(w http.ResponseWriter, r *http.Request) {
 	}
 	ch, err := auth.LoadUserChallenge(r.Context(), s.db, p.User.ID, auth.ChallengeEmailVerify)
 	if errors.Is(err, auth.ErrChallengeInvalid) {
-		if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, &norm); err != nil {
+		if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, &norm, r.Header.Get("Accept-Language")); err != nil {
 			writeInternal(w, r)
 			return
 		}
@@ -543,7 +543,7 @@ func (s *server) handleEmailResend(w http.ResponseWriter, r *http.Request) {
 	case errors.As(err, &ce):
 		writeRateLimitedAs(w, ce.Retry, "code requests")
 	case errors.Is(err, auth.ErrChallengeInvalid):
-		if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, &norm); err != nil {
+		if err := s.startEmailVerification(r.Context(), u.ID, *u.Email, &norm, r.Header.Get("Accept-Language")); err != nil {
 			writeInternal(w, r)
 			return
 		}
@@ -551,7 +551,7 @@ func (s *server) handleEmailResend(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		writeInternal(w, r)
 	default:
-		s.mailCode(u.ID, mail.KindVerifyEmail, *u.Email, code)
+		s.mailCode(u.ID, mail.KindVerifyEmail, *u.Email, code, r.Header.Get("Accept-Language"))
 		writeJSON(w, http.StatusAccepted, map[string]int{"resendAfter": int(auth.ResendEvery.Seconds())})
 	}
 }

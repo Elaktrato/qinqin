@@ -4,7 +4,7 @@ Every user-visible client string comes from a message catalogue; a second interf
 file plus a human translation, nothing else (issue #73). This folder is the rule every client (web, Android, the
 Go server's mails) implements identically. Translations are written by people; no machine bulk translation is
 ever committed. Status: the format, key scheme, syntax, negotiation and Android conversion are final; the
-interface-language route and the mail catalogue are added by later tasks of item 8 (this README grows with them).
+interface-language route and the server's mail catalogue are in place (below).
 
 ## Catalogue files
 
@@ -12,7 +12,12 @@ interface-language route and the mail catalogue are added by later tasks of item
   (`en.json` only today). The web catalogue is the source of truth for every client key; Android converts it
   (below) and keeps Android-only keys under `android.*` in its own file.
 - Optional translator notes: `apps/web/src/lib/i18n/messages/notes.json` (`key → note`, English, never shown).
-- The server's mails: `server/internal/mail/messages/<lang>.json`, same format, keys under `mail.*` only.
+- The server's mails: `server/internal/mail/messages/<lang>.json`, same format, keys `mail.<kind>.subject` and
+  `mail.<kind>.body` (`reset`, `loginCode`, `mfaCode`, `verifyEmail`, `test`, `emailChanged`), arguments `site`,
+  `link`, `code`, `minutes`, `hours`; a subject never names `code` or `link`. A mail's language: the recipient's
+  stored setting if set, else the triggering request's `Accept-Language` (by q-value), negotiated against the
+  languages with a mail catalogue; `en` when nothing matches. The Go formatter (`server/internal/i18n`) decodes the
+  same fixtures as the web.
 - A key missing from a non-English catalogue falls back to `en` per key (a half-translated language stays
   usable). Every non-`en` key must exist in `en` with the same argument names, the same tags and the same
   plural-ness; its plural has exactly the categories `Intl.PluralRules(lang)` (CLDR) lists for the language.

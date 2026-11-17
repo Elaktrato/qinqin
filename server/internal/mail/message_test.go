@@ -101,7 +101,7 @@ func TestComposeBodyQuotedPrintable(t *testing.T) {
 func TestTemplatesNameTheSiteAndTheNotYouSentence(t *testing.T) {
 	d := TemplateData{Site: "words.example.org", Link: "https://words.example.org/reset#t=abc", Code: "123456", Minutes: 10, Hours: 1}
 	for _, k := range []Kind{KindReset, KindLoginCode, KindMFACode, KindVerifyEmail, KindTest} {
-		m, err := Render(k, d)
+		m, err := Render(k, "en", d)
 		if err != nil {
 			t.Fatalf("%s: %v", k, err)
 		}
@@ -115,15 +115,15 @@ func TestTemplatesNameTheSiteAndTheNotYouSentence(t *testing.T) {
 			t.Errorf("%s: code or link in the subject: %q", k, m.Subject)
 		}
 	}
-	m, _ := Render(KindReset, d)
+	m, _ := Render(KindReset, "en", d)
 	if !strings.Contains(m.Body, d.Link) {
 		t.Error("reset mail lacks the link")
 	}
-	m, _ = Render(KindLoginCode, d)
+	m, _ = Render(KindLoginCode, "en", d)
 	if !strings.Contains(m.Body, "123456") {
 		t.Error("login code mail lacks the code")
 	}
-	if _, err := Render("nope", d); err == nil {
+	if _, err := Render("nope", "en", d); err == nil {
 		t.Error("unknown kind rendered")
 	}
 }

@@ -1,0 +1,14 @@
+{
+	"mail.emailChanged.body": "The email address of your {site} account was changed.\n\nFrom now on, password reset links and sign-in codes go to the new address. Reset links that were still open were cancelled.\n\nIf this was not you, someone with access to your session changed it: sign in, review Settings, Account, and ask your administrator for help if you cannot.\n",
+	"mail.emailChanged.subject": "Your qinqin email address was changed",
+	"mail.loginCode.body": "Your sign-in code for {site} is:\n\n{code}\n\nIt is valid for {minutes} minutes and works once.\n\nIf this was not you, ignore this message and do not share the code with anyone.\n",
+	"mail.loginCode.subject": "Your qinqin sign-in code",
+	"mail.mfaCode.body": "Your two-step check code for {site} is:\n\n{code}\n\nIt is valid for {minutes} minutes and works once.\n\nIf this was not you, someone knows your password: change it and ignore this code.\n",
+	"mail.mfaCode.subject": "Your qinqin two-step code",
+	"mail.reset.body": "{hours, plural, one {Someone asked to reset the password of your {site} account.\n\nOpen this link within # hour to choose a new password:\n\n{link}\n\nIf this was not you, ignore this message: nothing changes until the link is used.\n} other {Someone asked to reset the password of your {site} account.\n\nOpen this link within # hours to choose a new password:\n\n{link}\n\nIf this was not you, ignore this message: nothing changes until the link is used.\n}}",
+	"mail.reset.subject": "Reset your qinqin password",
+	"mail.test.body": "This is a test message from {site}. Email delivery works.\n\nIf this was not you, ignore this message: it was sent by an administrator of the site.\n",
+	"mail.test.subject": "qinqin test message",
+	"mail.verifyEmail.body": "Confirm this email address for your {site} account with this code:\n\n{code}\n\nIt is valid for {minutes} minutes.\n\nIf this was not you, ignore this message: the address stays unconfirmed.\n",
+	"mail.verifyEmail.subject": "Confirm your email address for qinqin"
+}

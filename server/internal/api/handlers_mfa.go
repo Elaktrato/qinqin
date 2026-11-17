@@ -397,7 +397,7 @@ func (s *server) startEmailMethodConfirm(w http.ResponseWriter, r *http.Request,
 	case err != nil:
 		writeInternal(w, r)
 	default:
-		s.mailCode(u.ID, mail.KindVerifyEmail, *u.Email, code)
+		s.mailCode(u.ID, mail.KindVerifyEmail, *u.Email, code, r.Header.Get("Accept-Language"))
 		writeJSON(w, http.StatusAccepted, map[string]any{"confirm": true, "resendAfter": int(auth.ResendEvery.Seconds())})
 	}
 }

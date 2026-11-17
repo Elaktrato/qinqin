@@ -242,7 +242,12 @@ func (s *server) handleTestSMTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	msg, err := mail.Render(mail.KindTest, mail.TemplateData{Site: p.Site()})
+	setting, err := auth.InterfaceLanguage(r.Context(), s.db, admin.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	msg, err := mail.Render(mail.KindTest, mail.Language(setting, r.Header.Get("Accept-Language")), mail.TemplateData{Site: p.Site()})
 	if err != nil {
 		writeInternal(w, r)
 		return
