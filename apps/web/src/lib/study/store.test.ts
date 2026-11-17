@@ -1622,15 +1622,15 @@ describe("study store", () => {
     });
 
     it("writes the active pointer, null meaning the defaults", async () => {
-      vi.mocked(fetch).mockImplementation(async () =>
-        jsonResponse({ version: 1 }),
-      );
-      await setActiveSet(WORKSPACE_ID, null);
+      vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
       await setActiveSet(WORKSPACE_ID, "A");
+      // The server now holds A: switching back to the defaults writes setId null.
+      respondPull({ pluginData: [pluginRow("fsrs:active", { setId: "A", changedAt: "2026-01-06T00:00:00Z" })] });
+      await setActiveSet(WORKSPACE_ID, null);
       const [first, second] = writtenRows();
       expect(first.key).toBe("fsrs:active");
-      expect(first.body).toEqual({ setId: null, changedAt: expect.any(String) });
-      expect(second.body).toEqual({ setId: "A", changedAt: expect.any(String) });
+      expect(first.body).toEqual({ setId: "A", changedAt: expect.any(String) });
+      expect(second.body).toEqual({ setId: null, changedAt: expect.any(String) });
     });
 
     it("refuses to delete the active set and deletes another", async () => {
@@ -2043,6 +2043,22 @@ describe("typed study collections", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("setActiveSet writes nothing when that set is already active (no new changedAt)", async () => {
+    serve({ fsrsActive: [{ setId: "S1", changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }] });
+    await setActiveSet(WORKSPACE_ID, "S1");
+    expect(writes()).toEqual([]);
+    await setActiveSet(WORKSPACE_ID, "S2");
+    expect(writes().map((w) => w.item.setId)).toEqual(["S2"]);
+  });
+
+  it("setActiveSet(null) writes nothing while the defaults are in use (no row, or setId null)", async () => {
+    serve({});
+    await setActiveSet(WORKSPACE_ID, null);
+    serve({ fsrsActive: [{ setId: null, changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }] });
+    await setActiveSet(WORKSPACE_ID, null);
+    expect(writes()).toEqual([]);
   });
 
   it("a row stored only as a tombstone gets no second tombstone (deleteParamSet, deleteDeck)", async () => {

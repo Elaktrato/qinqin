@@ -679,6 +679,10 @@ export async function setActiveSet(
 ): Promise<void> {
   const snap = newSnapshot();
   await fetchStudyData(workspaceId, snap);
+  // Already in use: no write (a new changedAt would be a change of nothing).
+  const stored = snap.stored.get(studyKey("fsrsActive", ""));
+  const current = stored === undefined || stored.deletedAt !== null ? null : (stored as FsrsActiveRow).setId;
+  if (current === setId) return;
   const write = studyWrite(
     snap,
     "fsrsActive",
