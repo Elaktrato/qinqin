@@ -78,7 +78,7 @@ Signed-in users (read tokens allowed). The zip file of that revision: `ETag: "<s
 `Content-Type: application/zip`, `X-Content-Type-Options: nosniff`, `Accept-Ranges: bytes`, `Range`/`If-Range` (206), `Cache-Control: private, no-cache` (a cached copy revalidates:
 `If-None-Match` with the ETag answers 304; not `immutable`, since a server restored from a backup may build a
 revision number again with other bytes).
-404 `package_not_found` (unknown id or revision, or not a package id), 410 `package_revision_gone` (a replaced
+404 `package_not_found` (unknown id or revision, or not a package id; a catalogue read may briefly precede the file of a revision it just listed, so a 404 for such a revision is retried after a short delay), 410 `package_revision_gone` (a replaced
 revision whose file was purged; the previous revision is kept 7 days), 429 `download_busy` with
 `Retry-After: 5` (at most 2 concurrent downloads per user; unlike `rate_limited` a client may retry it
 automatically after the wait). Error codes: `docs/contracts/auth/errors.json`.
