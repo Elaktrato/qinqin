@@ -1,6 +1,6 @@
 <script lang="ts">
 	// A text button (design §5): one primary action per view in the soft accent
-	// tint; secondary actions a hairline outline or plain text; a filled accent
+	// tint (--primary-wash behind --text); secondary actions a hairline outline or plain text; a filled accent
 	// only where a fill is the needed cue (rare).
 	//
 	// API: <Button variant? tone? type? href? disabled? busy? icon? onclick? …rest>text</Button>
@@ -91,34 +91,31 @@
 		outline: var(--focus-ring);
 		outline-offset: var(--focus-ring-offset);
 	}
+	/* Hover never changes the text colour or the fill (a tint or --raised
+	   under coloured text drops below 4.5:1 in some themes): an underline,
+	   and a stronger outline for secondary. Button.contrast.test.ts. */
+	.button:hover:not(:disabled) {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
 	.primary {
 		background: var(--primary-wash);
-		color: var(--reading-accent);
+		color: var(--text);
 		font-weight: var(--weight-strong);
-	}
-	.primary:hover {
-		background: var(--accent-32);
 	}
 	.secondary {
 		border-color: var(--hair);
 	}
-	.secondary:hover {
-		background: var(--raised);
+	.secondary:hover:not(:disabled) {
+		border-color: var(--line);
 	}
 	.plain {
 		padding-inline: var(--space-2);
-	}
-	.plain:hover {
-		text-decoration: underline;
-		text-underline-offset: 0.2em;
 	}
 	.filled {
 		background: var(--accent);
 		color: var(--on-accent);
 		font-weight: var(--weight-strong);
-	}
-	.filled:hover {
-		background: var(--accent-58);
 	}
 	.danger {
 		color: var(--readable-bad);

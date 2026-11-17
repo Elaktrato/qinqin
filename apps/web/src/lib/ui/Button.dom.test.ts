@@ -61,7 +61,7 @@ describe('Button', () => {
 
 	it('paints with tokens: soft accent tint for primary, on-accent for filled, hairline for secondary', () => {
 		expect(rule('.primary')).toMatch(/background: var\(--primary-wash\)/);
-		expect(rule('.primary')).toMatch(/color: var\(--reading-accent\)/);
+		expect(rule('.primary')).toMatch(/color: var\(--text\)/);
 		expect(rule('.filled')).toMatch(/background: var\(--accent\)/);
 		expect(rule('.filled')).toMatch(/color: var\(--on-accent\)/);
 		expect(rule('.secondary')).toMatch(/border-color: var\(--hair\)/);

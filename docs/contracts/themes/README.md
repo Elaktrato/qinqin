@@ -170,7 +170,9 @@ components.
 - **Hairlines, not blocks.** Separators and outlines are 1px `--hair`.
 - **Colour only where it means something:** the accent (current place, the primary action, readings), grades,
   semantic states, data. Neutral (`--text`, `--readable-muted`, `--hair`, `--raised`) everywhere else.
-- **One primary action per view** in the soft accent tint (`--primary-wash` behind `--reading-accent` text).
+- **One primary action per view** in the soft accent tint (`--primary-wash` behind `--text`: the tint carries the
+  accent; accent-coloured text on it falls below 4.5:1 in some themes). Hover changes no text colour or fill (an
+  underline; secondary's outline turns `--line`).
   Secondary actions are a `--hair` outline or plain text. A filled accent (`--accent` behind `--on-accent`) is
   rare.
 - **Type tops out at 600** (`--weight-strong`). Big numbers are `--weight-regular`, large, `--line-tight`,
