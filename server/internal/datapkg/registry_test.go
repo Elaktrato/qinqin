@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -345,4 +347,90 @@ func sorted(in []string) []string {
 	out := slices.Clone(in)
 	slices.Sort(out)
 	return out
+}
+
+// Two registries on one directory and database (qinqin seed next to a
+// running serve) build the same package at the same time: the builds take
+// turns under <data>/packages/.lock, so neither deletes the other's
+// temporary files and every ready row matches the file on disk.
+func TestTwoRegistriesBuildOneDirectoryInTurn(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
+	dir := filepath.Join(t.TempDir(), "packages")
+	if _, err := packs.Import(ctx, sqlDB, versionPack(t, "dictionary", "cedict", "zh", "v1")); err != nil {
+		t.Fatal(err)
+	}
+	// Each build waits (up to a bound) for the other registry's build of the
+	// same id, so without the lock both run at once.
+	var mu sync.Mutex
+	arrived := map[string]int{}
+	restore := datapkg.SetBuildHookForTest(func(id string) error {
+		mu.Lock()
+		arrived[id]++
+		mu.Unlock()
+		deadline := time.Now().Add(300 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			mu.Lock()
+			n := arrived[id]
+			mu.Unlock()
+			if n >= 2 {
+				break
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+		return nil
+	})
+	defer restore()
+	regs := []datapkg.Registry{
+		{DB: sqlDB, Dir: dir, AudioDir: t.TempDir(), Now: clock.Now},
+		{DB: sqlDB, Dir: dir, AudioDir: t.TempDir(), Now: clock.Now},
+	}
+	var wg sync.WaitGroup
+	for _, r := range regs {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := r.Reconcile(ctx); err != nil {
+				t.Errorf("reconcile: %v", err)
+			}
+		}()
+	}
+	wg.Wait()
+	cat, err := regs[0].Catalogue(ctx, []string{"all"}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cat.Packages) == 0 {
+		t.Fatal("no packages")
+	}
+	for _, row := range cat.Packages {
+		if row.State != "ready" || row.Error != "" {
+			t.Errorf("row %s: %s %q", row.ID, row.State, row.Error)
+			continue
+		}
+		body, err := os.ReadFile(filepath.Join(dir, row.ID, "r"+strconv.Itoa(row.Revision)+".qqpkg"))
+		if err != nil {
+			t.Errorf("row %s: %v", row.ID, err)
+			continue
+		}
+		if got := sha(body); got != row.SHA256 || int64(len(body)) != row.Bytes {
+			t.Errorf("row %s r%d: catalogue sha256 %s bytes %d, file %s bytes %d", row.ID, row.Revision, row.SHA256, row.Bytes, got, len(body))
+		}
+		f, info, err := regs[1].Open(ctx, row.ID, row.Revision)
+		if err != nil {
+			t.Errorf("open %s: %v", row.ID, err)
+			continue
+		}
+		f.Close()
+		if info.SHA256 != row.SHA256 {
+			t.Errorf("row %s: package_files sha256 %s, packages %s", row.ID, info.SHA256, row.SHA256)
+		}
+	}
+	ents, _ := os.ReadDir(dir)
+	for _, e := range ents {
+		if strings.HasSuffix(e.Name(), ".tmp") {
+			t.Errorf("leftover %s", e.Name())
+		}
+	}
 }
