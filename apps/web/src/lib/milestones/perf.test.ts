@@ -5,7 +5,9 @@ vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
 vi.mock('$lib/time/zone', async () => {
 	const { studyDay } = await import('$lib/time/studyDay');
-	return { currentStudyDay: () => studyDay([]), currentStudyHistory: () => [], onStudyDayChange: () => () => {} };
+	// One rule object, as the app's cached currentStudyDay gives.
+	const day = studyDay([]);
+	return { currentStudyDay: () => day, currentStudyHistory: () => [], onStudyDayChange: () => () => {} };
 });
 
 import type { CharRow } from '$lib/api/types';
@@ -21,7 +23,7 @@ import { studyDay } from '$lib/time/studyDay';
 import { replayStats, timelinesFor } from '$lib/weekly/replay';
 import { enabledFamilies } from './catalogue';
 import { loadMilestones } from './loadMilestones';
-import { reachedFromLog } from './reached';
+import { reachedFromLog, reachedStats } from './reached';
 import { reachedFromReplay } from './replayReached';
 
 // A guard against an extra replay and a repeated log pass: 5 000 cards,
@@ -121,6 +123,12 @@ describe('milestones performance', () => {
 		// Home: no replay at all.
 		await loadMilestones(1, { scope: 'home', language: 'zh', now: NOW });
 		expect(replayStats.timelines).toBe(built);
+		// A reload (new, equal history and event log arrays after the caches' TTL) walks the log no more.
+		const passes = reachedStats.passes;
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: w.cards, reviews: w.reviews.map((r) => ({ ...r })), merged: 0 });
+		vi.mocked(loadWorkspaceEvents).mockResolvedValue(w.events.map((e) => ({ ...e })));
+		await loadMilestones(1, { scope: 'home', language: 'zh', now: NOW });
+		expect(reachedStats.passes).toBe(passes);
 		pluginStates.set({ list: [], status: 'idle' });
 	}, 60_000);
 });

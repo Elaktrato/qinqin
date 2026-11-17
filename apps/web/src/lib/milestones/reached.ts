@@ -33,7 +33,12 @@ export interface LogInputs {
 	vacation: readonly Run[];
 	now: number;
 	families: ReadonlySet<MilestoneFamily>;
+	/** When set, events of other workspaces in `events` are ignored. */
+	workspaceId?: number;
 }
+
+/** Counts full log passes; the tests read it (a memo hit adds nothing). */
+export const reachedStats = { passes: 0 };
 
 /**
  * journalEntryId: the entry a `journal` payload names, a non-empty string,
@@ -68,6 +73,7 @@ type Item =
 	| { at: number; id: string; kind: 'journal'; entryId: string };
 
 function compute(input: LogInputs): Reached[] {
+	reachedStats.passes += 1;
 	const { day, vacation, now, families } = input;
 	const items: Item[] = [];
 	for (const review of input.reviews) {
@@ -77,6 +83,7 @@ function compute(input: LogInputs): Reached[] {
 	}
 	for (const event of input.events) {
 		if (event === null || typeof event !== 'object' || typeof event.ts !== 'string') continue;
+		if (input.workspaceId !== undefined && event.workspaceId !== input.workspaceId) continue;
 		const at = Date.parse(event.ts);
 		if (Number.isNaN(at) || at > now) continue;
 		if (event.type === 'read') {
@@ -187,7 +194,8 @@ export function cardsKey(cards: readonly StudyCard[], deckIds: ReadonlySet<strin
 export function reachedFromLog(input: LogInputs): Reached[] {
 	const key = [
 		reviewsKey(input.reviews),
-		identity(input.events),
+		eventsKey(input.events),
+		input.workspaceId ?? '',
 		identity(input.day),
 		input.day.today(input.now),
 		input.now >= latestInstant(input) ? 'all' : String(input.now),
@@ -205,6 +213,32 @@ export function reachedFromLog(input: LogInputs): Reached[] {
 	if (memo.size >= MAX_MEMO) memo.delete(memo.keys().next().value as string);
 	memo.set(key, result);
 	return result;
+}
+
+const eventKeys = new WeakMap<object, string>();
+
+/**
+ * eventsKey identifies the counted events of a log by content (FNV-1a over
+ * id, workspace, ts, type and payload of every `read` and `journal` event),
+ * once per array, so a reloaded log (a new array, the same events) hits.
+ */
+function eventsKey(events: readonly StudyEvent[]): string {
+	const cached = eventKeys.get(events);
+	if (cached !== undefined) return cached;
+	let h = 0x811c9dc5;
+	let n = 0;
+	for (const event of events) {
+		if (event?.type !== 'read' && event?.type !== 'journal') continue;
+		n += 1;
+		const text = `${event.id}|${event.workspaceId}|${event.ts}|${event.type}|${JSON.stringify(event.payload ?? null)};`;
+		for (let i = 0; i < text.length; i++) {
+			h ^= text.charCodeAt(i);
+			h = Math.imul(h, 0x01000193) >>> 0;
+		}
+	}
+	const key = `${n}:${h.toString(36)}`;
+	eventKeys.set(events, key);
+	return key;
 }
 
 const latestOf = new WeakMap<object, number>();

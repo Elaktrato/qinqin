@@ -7,7 +7,7 @@ import type { ReviewEvent, StudyCard } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';
 import { readSeconds } from '$lib/stats/readingTime';
 import { FAMILIES, enabledFamilies, milestoneId, type MilestoneFamily } from './catalogue';
-import { journalEntryId, reachedFromLog, type LogInputs } from './reached';
+import { journalEntryId, reachedFromLog, reachedStats, type LogInputs } from './reached';
 import { asFixture, decodeCase, expectedOf, type ReachedCase } from './testing/reachedCase';
 
 const cases = fixture.cases as unknown as ReachedCase[];
@@ -205,6 +205,23 @@ describe('reachedFromLog', () => {
 	it('journalEntryId reads a non-empty string only', () => {
 		expect(journalEntryId({ entryId: '01KA' })).toBe('01KA');
 		for (const p of [{ entryId: 1 }, { entryId: '' }, {}, null, 'x', [1]]) expect(journalEntryId(p)).toBeNull();
+	});
+
+	it('memoises by content: a reloaded (copied) event log is a hit, no second pass', () => {
+		const events = [event(1, START, 'read', { seconds: 3600 }), event(2, START, 'journal', { entryId: 'J' })];
+		const first = reachedFromLog({ ...base(), reviews: hundred, events });
+		const passes = reachedStats.passes;
+		expect(reachedFromLog({ ...base(), reviews: hundred, events: events.map((e) => ({ ...e })) })).toBe(first);
+		expect(reachedStats.passes).toBe(passes);
+		// A changed payload is a different log.
+		const longer = events.map((e) => (e.type === 'read' ? { ...e, payload: { seconds: 7200 } } : e));
+		expect(reachedFromLog({ ...base(), reviews: hundred, events: longer })).not.toBe(first);
+	});
+
+	it('with workspaceId, events of another workspace are ignored', () => {
+		const events = [event(1, START, 'read', { seconds: 3600 }), { ...event(2, START, 'journal', { entryId: 'J' }), workspaceId: 2 }];
+		expect(reachedFromLog({ ...base(), events, workspaceId: 1 }).map((r) => r.id)).toEqual(['reading-hours:1']);
+		expect(reachedFromLog({ ...base(), events, workspaceId: 2 }).map((r) => r.id)).toEqual(['journal-entries:1']);
 	});
 
 	it('memoises: an equal reloaded log returns the same array', () => {

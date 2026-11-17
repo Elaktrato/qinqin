@@ -196,8 +196,8 @@ export async function loadMilestones(
 		const families = opts.scope === 'home' || opts.week === undefined ? logFamilies(all) : all;
 		const deckIds = new Set([GENERAL_DECK_ID, ...data.decks.map((d) => d.id)]);
 		const vacation = vacationRuns(data.vacations ?? [], workspaceId, today);
-		const events = log.filter((e) => e.workspaceId === workspaceId);
-		reached = reachedFromLog({ reviews: data.reviews, events, cards: data.cards, deckIds, day, vacation, now, families });
+		// The log as loaded (filtered inside, keyed by content): a reload is a memo hit.
+		reached = reachedFromLog({ reviews: data.reviews, events: log, workspaceId, cards: data.cards, deckIds, day, vacation, now, families });
 		if (opts.scope === 'week' && opts.week !== undefined && families.has('words-mature')) {
 			const chars = families.has('characters-learned') ? opts.week.chars : null;
 			const loaded = families.has('level-complete') ? await loadLevels(opts.language, opts.week.chars) : null;
