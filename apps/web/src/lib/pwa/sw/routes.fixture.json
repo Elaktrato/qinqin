@@ -632,6 +632,10 @@
 		"access": "user"
 	},
 	{
+		"pattern": "PUT /api/me/interface-language",
+		"access": "user"
+	},
+	{
 		"pattern": "PUT /api/me/time-zone",
 		"access": "user"
 	},

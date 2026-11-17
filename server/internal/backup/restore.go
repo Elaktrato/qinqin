@@ -19,6 +19,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/i18n"
 	"qinqin/internal/lang"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
@@ -312,6 +313,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		if _, err := tx.ExecContext(ctx, `INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?, ?, ?, ?, ?)`,
 			userID, ps.PluginID, en, ps.Order, now); err != nil {
 			return nil, fmt.Errorf("backup: plugin state: %w", err)
+		}
+	}
+	if l := a.Account.InterfaceLanguage; l != nil && i18n.IsLanguageSetting(*l) {
+		if _, err := tx.ExecContext(ctx, `UPDATE users SET interface_language = ? WHERE id = ?`, *l, userID); err != nil {
+			return nil, fmt.Errorf("backup: interface language: %w", err)
 		}
 	}
 	for i, tz := range a.Account.TimeZones {

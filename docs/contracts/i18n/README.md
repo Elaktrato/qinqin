@@ -4,7 +4,7 @@ Every user-visible client string comes from a message catalogue; a second interf
 file plus a human translation, nothing else (issue #73). This folder is the rule every client (web, Android, the
 Go server's mails) implements identically. Translations are written by people; no machine bulk translation is
 ever committed. Status: the format, key scheme, syntax, negotiation and Android conversion are final; the
-interface-language route and the mail catalogue are added by later tasks of item 8 (this README grows with them).
+interface-language route and the server's mail catalogue are in place (below).
 
 ## Catalogue files
 
@@ -12,7 +12,12 @@ interface-language route and the mail catalogue are added by later tasks of item
   (`en.json` only today). The web catalogue is the source of truth for every client key; Android converts it
   (below) and keeps Android-only keys under `android.*` in its own file.
 - Optional translator notes: `apps/web/src/lib/i18n/messages/notes.json` (`key → note`, English, never shown).
-- The server's mails: `server/internal/mail/messages/<lang>.json`, same format, keys under `mail.*` only.
+- The server's mails: `server/internal/mail/messages/<lang>.json`, same format, keys `mail.<kind>.subject` and
+  `mail.<kind>.body` (`reset`, `loginCode`, `mfaCode`, `verifyEmail`, `test`, `emailChanged`), arguments `site`,
+  `link`, `code`, `minutes`, `hours`; a subject never names `code` or `link`. A mail's language: the recipient's
+  stored setting if set, else the triggering request's `Accept-Language` (by q-value), negotiated against the
+  languages with a mail catalogue; `en` when nothing matches. The Go formatter (`server/internal/i18n`) decodes the
+  same fixtures as the web.
 - A key missing from a non-English catalogue falls back to `en` per key (a half-translated language stays
   usable). Every non-`en` key must exist in `en` with the same argument names, the same tags and the same
   plural-ness; its plural has exactly the categories `Intl.PluralRules(lang)` (CLDR) lists for the language.
@@ -95,6 +100,11 @@ resolve → `en`. Contract data (learner days, instants, row keys, payloads) is 
 The stored setting (`language-tags.json`): `''` (follow the browser/device) or a tag matching
 `^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$`. The server validates syntax only, never support.
 
+Route (`interface-language-api.json`): `GET /api/auth/me` carries `interfaceLanguage` (`''` until set);
+`PUT /api/me/interface-language {language}` → `200 {language}`, 422 `invalid_language` for a value the pattern
+refuses, 400 `bad_request` for a missing or non-string `language`. A full session only (401 anonymous, 403 for a
+restricted session); personal access tokens are refused (403 `token_not_allowed`).
+
 ## Fixtures
 
 | File | What | Decoded by |
@@ -104,5 +114,6 @@ The stored setting (`language-tags.json`): `''` (follow the browser/device) or a
 | `plural-categories.json` | locale, integer → CLDR category (en, fr, ru, ar, ja) | web `contract.test.ts`; Go |
 | `negotiate.json` | candidates, supported → language; `formatLocale` cases | web `contract.test.ts`; Go (`cases`) |
 | `language-tags.json` | setting value → valid | web `contract.test.ts`; Go |
+| `interface-language-api.json` | the setting route: request → status, body, `me` afterwards | Go `internal/api` |
 | `android-convert.json` | catalogue (+ English, notes) → `strings.xml` | web `contract.test.ts` |
 | `retired-keys.json` | keys no catalogue may contain | web `lib/i18n/catalogue.test.ts` |

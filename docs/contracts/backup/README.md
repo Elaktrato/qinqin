@@ -10,7 +10,8 @@ A user's own data as a zip of JSON (`qinqin-<username>-<YYYYMMDD-HHMMSS>.zip`). 
 ```
 manifest.json            written LAST: format, formatVersion (1), appVersion, schemaVersion, createdAt,
                          user {id, username}, counts, files [{name, bytes, sha256}]
-account.json             {username, timeZones [{zone, from, createdAt}], pluginStates [{pluginId, enabled, order}]}
+account.json             {username, timeZones [{zone, from, createdAt}], pluginStates [{pluginId, enabled, order}],
+                         interfaceLanguage?}  optional (#73): '' or a language tag (i18n/language-tags.json)
 refs/entries.json        [{id, language, kind, extKey, written}]   entries any exported row refers to (cards, notes, edits, events)
 refs/dictionaries.json   [{id, packId}]                              dictionaries named by hiddenDictionaries
 refs/sentences.json      [{id, entryId, own, sourcePack, hanzi}]    sentences cards point at
@@ -57,6 +58,12 @@ restore.
 `formatVersion` is the only compatibility key. A reader accepts exactly the versions it knows (1) and
 rejects everything else (`backup_version_unsupported`); `appVersion`/`schemaVersion` are informational.
 A newer server must keep reading v1; an older server rejects a newer format.
+
+Optional additions stay version 1: `account.json` `interfaceLanguage` (#73) is written by every export since
+then; a restore sets it when present and valid (`i18n/language-tags.json`), leaves the current setting when the
+key is absent or null (older archives), and ignores an invalid tag without failing (a preference is not worth a
+refused restore). A server from before #73 decodes `account.json` strictly and refuses such an archive as malformed: restoring
+into an older server is not supported.
 
 ## Never in an archive
 

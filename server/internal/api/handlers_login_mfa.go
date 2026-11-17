@@ -277,7 +277,7 @@ func (s *server) handleLoginMFAEmail(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		writeInternal(w, r)
 	default:
-		s.mailCode(u.ID, mail.KindMFACode, *u.Email, code)
+		s.mailCode(u.ID, mail.KindMFACode, *u.Email, code, r.Header.Get("Accept-Language"))
 		writeJSON(w, http.StatusAccepted, map[string]int{"resendAfter": int(auth.ResendEvery.Seconds())})
 	}
 }
@@ -449,7 +449,7 @@ func (s *server) handleEmailLoginStart(w http.ResponseWriter, r *http.Request) {
 		key = int64Key(target.UserID)
 	}
 	if allowed, _ := s.authLimiter("mailcode").Allow(key); eligible && allowed {
-		s.mail.Enqueue(mail.Job{Kind: mail.KindLoginCode, UserID: target.UserID, To: target.Email, Data: mail.TemplateData{Code: code}})
+		s.mail.Enqueue(mail.Job{Kind: mail.KindLoginCode, UserID: target.UserID, To: target.Email, AcceptLanguage: r.Header.Get("Accept-Language"), Data: mail.TemplateData{Code: code}})
 	}
 	writeJSON(w, http.StatusAccepted, map[string]any{"challenge": token, "resendAfter": int(auth.ResendEvery.Seconds()),
 		"expiresAt": ch.ExpiresAt.UTC().Format(time.RFC3339)})

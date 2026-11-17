@@ -162,6 +162,11 @@ type Account struct {
 	Username     string        `json:"username"`
 	TimeZones    []TimeZone    `json:"timeZones"`
 	PluginStates []PluginState `json:"pluginStates"`
+	// InterfaceLanguage is the stored interface language ('' = follow the
+	// browser; docs/contracts/i18n/). Optional: an archive without it (every
+	// v1 archive before #73) leaves the setting unchanged on restore, and an
+	// invalid tag is ignored.
+	InterfaceLanguage *string `json:"interfaceLanguage,omitempty"`
 }
 
 // EntryRef identifies a dictionary entry portably: (language, kind,

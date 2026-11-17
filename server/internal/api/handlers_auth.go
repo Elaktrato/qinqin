@@ -397,6 +397,11 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
+	lang, err := auth.InterfaceLanguage(r.Context(), s.db, p.User.ID)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
 	writeJSON(w, http.StatusOK, struct {
 		model.User
 		MFA         auth.MFAState `json:"mfa"`
@@ -405,7 +410,10 @@ func (s *server) handleMe(w http.ResponseWriter, r *http.Request) {
 		// for the current password up front (everything but the session born
 		// from the temporary-password login).
 		NeedsCurrentPassword bool `json:"needsCurrentPassword"`
-	}{p.User, st, p.Restriction(), !p.TemporarySession})
+		// InterfaceLanguage is the stored interface language, '' = follow
+		// the browser/device (PUT /api/me/interface-language).
+		InterfaceLanguage string `json:"interfaceLanguage"`
+	}{p.User, st, p.Restriction(), !p.TemporarySession, lang})
 }
 
 // The access gate. Every handler reaches a session through one of the
