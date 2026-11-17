@@ -1,6 +1,6 @@
 // The study state of a workspace. Cards, decks, deck settings, limits and
 // FSRS sets are typed core rows (docs/contracts/study/), read from one sync
-// pull; the keyed rows goals:workspace, known:* and vacation:* stay plugin
+// pull; the keyed rows goals:workspace, known:*, vacation:* and milestone:* stay plugin
 // data of the study namespace `qinqin-flashcards`. A missing current workspace is an error: study
 // data must never fall back to user-global or another workspace's rows.
 // The one explicit exception: `vacation:*` rows are user-global (they
@@ -63,6 +63,8 @@ import { pendingReviews } from "./events";
 import { outboxUser } from "./outboxUser";
 import { recentSentReviews } from "./recentSent";
 import { KNOWN_PREFIX, knownMarkKey, knownMarkRow, parseKnownMark } from "./knownMarks";
+import { MILESTONE_KEY_PREFIX } from "../milestones/catalogue";
+import { parseSeenRows } from "../milestones/seen";
 import {
   type Deck,
   type OptInKind,
@@ -202,6 +204,7 @@ async function fetchStudyData(
   let activeRaw: unknown = null;
   let goals: ParsedGoals = null;
   const known: number[] = [];
+  const milestoneRows: { key: string; data: unknown; deletedAt: string | null }[] = [];
 
   for (const collection of STUDY_COLLECTIONS) {
     const list = delta?.[collection];
@@ -263,6 +266,15 @@ async function fetchStudyData(
       const newest = newestOf([row.updatedAt, row.deletedAt]);
       if (newest !== undefined) knownAt.set(row.key, newest);
     }
+    if (row.key.startsWith(MILESTONE_KEY_PREFIX)) {
+      // Seen milestones: tombstones too (a tombstone reads as not seen).
+      milestoneRows.push({
+        key: row.key,
+        data: row.deletedAt != null ? null : decodeData(row.data),
+        deletedAt: row.deletedAt == null ? null : String(row.deletedAt),
+      });
+      continue;
+    }
     if (row.deletedAt != null) continue;
 
     const data = decodeData(row.data);
@@ -274,6 +286,7 @@ async function fetchStudyData(
     }
   }
 
+  const seenMilestones = parseSeenRows(milestoneRows);
   // Absent (not empty) without any deckcfg row: workspaces that never
   // configured a deck read exactly as before.
   return {
@@ -287,6 +300,7 @@ async function fetchStudyData(
       : {}),
     ...(goals === null ? {} : { goals }),
     ...(known.length > 0 ? { known } : {}),
+    ...(seenMilestones.size > 0 ? { seenMilestones } : {}),
   };
 }
 
@@ -650,6 +664,7 @@ export async function loadStudyDataWith(
     ...(data.limits === undefined ? {} : { limits: data.limits }),
     ...(data.goals === undefined ? {} : { goals: data.goals }),
     ...(data.known === undefined ? {} : { known: data.known }),
+    ...(data.seenMilestones === undefined ? {} : { seenMilestones: data.seenMilestones }),
     reviews,
     merged,
   };
@@ -1374,4 +1389,32 @@ export async function setKnownMarks(
     return on ? { ...row, ...stamp } : { key: row.key, data: {}, deleted: true as const, ...stamp };
   });
   await pushKeyedRows(workspaceId, rows, opts);
+}
+
+/**
+ * saveSeenMilestones writes `milestone:<id>` rows (docs/contracts/milestones/)
+ * in one push: never a tombstone, the caller passes only keys that are not
+ * live (seenWritePlan). A skipped row (another device wrote it first) or a
+ * refused one counts as written; a failed request rejects and the caller
+ * keeps the ids pending. Listeners are notified either way.
+ */
+export async function saveSeenMilestones(
+  workspaceId: number,
+  rows: readonly { key: string; data: unknown }[],
+): Promise<void> {
+  requireWorkspaceArg(workspaceId, "saveSeenMilestones");
+  for (const row of rows) {
+    if (!row.key.startsWith(MILESTONE_KEY_PREFIX)) throw new Error(`${row.key}: not a milestone row`);
+  }
+  if (rows.length === 0) return;
+  try {
+    await pushKeyedRows(
+      workspaceId,
+      rows.map((row) => ({ key: row.key, data: row.data })),
+      { chunk: rows.length },
+    );
+  } catch (err) {
+    if (err instanceof PartialPushError && err.skipped > 0) return;
+    throw err;
+  }
 }

@@ -7,6 +7,7 @@ import type { ParsedGoals } from '../goals/goals';
 import type { DeckSettings } from './deckSettings';
 import type { FsrsState } from './fsrs/params';
 import type { LimitPair } from './limits';
+import type { SeenMilestone } from '../milestones/seen';
 import type { VacationPeriod } from './vacation';
 
 /** Where an owned copy of a system deck came from (decks view, "Add to my decks"). */
@@ -119,6 +120,8 @@ export interface StudyData {
 	goals?: Exclude<ParsedGoals, null>;
 	/** Entries the learner marked known (live `known:` rows), absent without any. */
 	known?: number[];
+	/** Seen milestones (live `milestone:` rows) by id, absent without any. */
+	seenMilestones?: ReadonlyMap<string, SeenMilestone>;
 }
 
 /**
