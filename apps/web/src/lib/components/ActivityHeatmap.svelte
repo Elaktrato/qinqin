@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { errorMessage } from '$lib/stats/errors';
+	import { t } from '$lib/i18n';
 	import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
 	import {
 		HEATMAP_DAYS,
@@ -118,7 +119,7 @@
 			void loadVacations();
 		} catch (err) {
 			if (!requests.isCurrent(seq)) return;
-			if (response === null) error = errorMessage(err, 'Could not load your activity.');
+			if (response === null) error = errorMessage(err, t('stats.activity.loadFailed'));
 			else console.warn('activity refresh failed', err);
 		} finally {
 			if (requests.isCurrent(seq)) loading = false;
@@ -158,17 +159,17 @@
 </script>
 
 <WidgetCard
-	title="Activity"
+	title={t('widgets.activity.title')}
 	headingId="activity-heading"
 	{status}
-	loadingText="Loading activity…"
+	loadingText={t('stats.activity.loading')}
 	{error}
 	onretry={() => void load()}
 >
 	{#snippet actions()}
 		{#if status === 'ready'}
 		<fieldset class="scope">
-			<legend class="sr-only">Show activity for</legend>
+			<legend class="sr-only">{t('stats.activity.showFor')}</legend>
 			<label class:disabled={workspaceId === null}>
 				<input
 					type="radio"
@@ -178,7 +179,7 @@
 					disabled={workspaceId === null}
 					onchange={() => remember({ ...stored, scope: 'workspace' })}
 				/>
-				This workspace
+				{t('stats.activity.thisWorkspace')}
 			</label>
 			<label>
 				<input
@@ -188,14 +189,14 @@
 					checked={scope === 'all'}
 					onchange={() => remember({ ...stored, scope: 'all' })}
 				/>
-				All workspaces
+				{t('stats.activity.allWorkspaces')}
 			</label>
 		</fieldset>
 		{/if}
 	{/snippet}
 
 	{#if sources.length > 0}
-		<div class="chips" role="group" aria-label="Activity types">
+		<div class="chips" role="group" aria-label={t('stats.activity.types')}>
 			{#each sources as source (source.type)}
 				<button
 					type="button"
@@ -219,7 +220,7 @@
 		{/each}
 	</div>
 	<p class="visually-hidden">{summary}</p>
-	<ul class="visually-hidden" aria-label="Daily activity">
+	<ul class="visually-hidden" aria-label={t('stats.activity.daily')}>
 		{#each cells.filter((cell) => cell.level > 0 || cell.vacation) as cell (cell.day)}
 			<li>{cell.title}</li>
 		{/each}
@@ -228,20 +229,19 @@
 	<footer class="legend">
 		<span>
 			{#if allHidden}
-				All activity types are hidden.
+				{t('stats.activity.allHidden')}
 			{:else if windowTotal === 0}
-				No activity in the last {weeks} weeks yet
+				{t('stats.activity.noneYet', { weeks })}
 			{:else}
-				{windowTotal}
-				{windowTotal === 1 ? 'point' : 'points'} in the last {weeks} weeks
+				{t('stats.activity.pointsInWindow', { count: windowTotal, weeks })}
 			{/if}
 		</span>
 		<span class="scale" aria-hidden="true">
-			Less
+			{t('stats.activity.less')}
 			{#each [0, 1, 2, 3, 4] as level (level)}
 				<span class="cell level-{level}"></span>
 			{/each}
-			More
+			{t('stats.activity.more')}
 		</span>
 	</footer>
 </WidgetCard>

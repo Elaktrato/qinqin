@@ -4,6 +4,7 @@
 // the heatmap's reading points (readingPoints below): nothing under
 // 30 s or when not a finite number, at most 2 hours per event.
 
+import { t } from '../i18n';
 import { addDays, type StudyDay } from '../time/studyDay';
 
 /** Seconds of reading that make up one point (5 minutes). */
@@ -127,21 +128,21 @@ export function topBooks(
 	return books.slice(0, limit).map(({ bookId, seconds }) => {
 		const key = bookId === null ? 'unknown' : String(bookId);
 		if (bookId !== null && titles === null) {
-			return { key, title: `Book ${bookId}`, seconds, removed: false };
+			return { key, title: t('stats.reading.bookN', { id: bookId }), seconds, removed: false };
 		}
 		const title = bookId === null ? undefined : titles?.get(bookId);
-		if (title === undefined) return { key, title: 'A removed book', seconds, removed: true };
-		return { key, title: title.trim() || 'Untitled book', seconds, removed: false };
+		if (title === undefined) return { key, title: t('stats.reading.removedBook'), seconds, removed: true };
+		return { key, title: title.trim() || t('stats.reading.untitled'), seconds, removed: false };
 	});
 }
 
 /** formatDuration writes seconds as "1 h 05 min", "12 min" or "< 1 min". */
 export function formatDuration(seconds: number): string {
 	const value = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
-	if (value === 0) return '0 min';
-	if (value < 60) return '< 1 min';
+	if (value === 0) return t('stats.duration.zero');
+	if (value < 60) return t('stats.duration.underMinute', { less: '<' });
 	const minutes = Math.floor(value / 60);
-	if (minutes < 60) return `${minutes} min`;
+	if (minutes < 60) return t('stats.duration.minutes', { minutes });
 	const hours = Math.floor(minutes / 60);
-	return `${hours} h ${String(minutes % 60).padStart(2, '0')} min`;
+	return t('stats.duration.hours', { hours, minutes: String(minutes % 60).padStart(2, '0') });
 }

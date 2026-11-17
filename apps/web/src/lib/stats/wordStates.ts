@@ -7,6 +7,7 @@
 // state; Young = in review with a stability under 21 days; Mature = 21
 // days or more (the same edge the Word Salad tiers use).
 
+import { t, type MessageKey } from '$lib/i18n';
 import { GENERAL_DECK_ID } from '$lib/study/store';
 import { scheduleFor, type Schedule } from '$lib/study/scheduler';
 import type { StudyClock } from '$lib/study/studyClock';
@@ -15,11 +16,20 @@ import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
 export type WordState = 'new' | 'learning' | 'young' | 'mature';
 
 /** The four states in display order, with their visible names. */
-export const WORD_STATES: readonly { state: WordState; label: string }[] = [
-	{ state: 'new', label: 'New' },
-	{ state: 'learning', label: 'Learning' },
-	{ state: 'young', label: 'Young' },
-	{ state: 'mature', label: 'Mature' }
+function wordState(state: WordState, label: MessageKey): { state: WordState; readonly label: string } {
+	return {
+		state,
+		get label() {
+			return t(label);
+		}
+	};
+}
+
+export const WORD_STATES: readonly { state: WordState; readonly label: string }[] = [
+	wordState('new', 'stats.wordState.new'),
+	wordState('learning', 'stats.wordState.learning'),
+	wordState('young', 'stats.wordState.young'),
+	wordState('mature', 'stats.wordState.mature')
 ];
 
 /** Stability in days from which a word in review counts as mature. */

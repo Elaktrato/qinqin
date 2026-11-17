@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { tick, untrack } from 'svelte';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { ApiError } from '$lib/api/client';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
@@ -48,10 +50,10 @@ import type { StudyContext } from '$lib/study/studyContext';
 	const SEARCH_DELAY_MS = 200;
 
 	const FILTERS: { value: StageFilter; label: string; stages: Stage[] }[] = [
-		{ value: 'all', label: 'All', stages: [] },
-		{ value: 'not-started', label: 'Not studied', stages: ['unknown'] },
-		{ value: 'learning', label: 'In progress', stages: ['fresh', 'learning', 'mature'] },
-		{ value: 'learned', label: 'Learned', stages: ['learned'] }
+		{ value: 'all', label: t('stats.map.filter.all'), stages: [] },
+		{ value: 'not-started', label: t('stats.map.filter.notStarted'), stages: ['unknown'] },
+		{ value: 'learning', label: t('stats.map.filter.learning'), stages: ['fresh', 'learning', 'mature'] },
+		{ value: 'learned', label: t('stats.map.filter.learned'), stages: ['learned'] }
 	];
 
 	let workspaceId = $state<number | null>(null);
@@ -133,7 +135,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			return await getSchemes();
 		} catch (err) {
 			// The built-in groupings work without the scheme list.
-			schemesError = message(err, 'Could not load the installed level schemes.');
+			schemesError = message(err, t('stats.map.schemesFailed'));
 			return [];
 		}
 	}
@@ -183,7 +185,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
-			loadError = message(err, 'Could not load the character map.');
+			loadError = message(err, t('stats.map.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -245,7 +247,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			members = { schemeId: id, levels };
 		} catch (err) {
 			if (seq !== membersSeq) return;
-			membersError = message(err, 'Could not load the levels of this scheme.');
+			membersError = message(err, t('stats.map.membersFailed'));
 		} finally {
 			if (seq === membersSeq) membersLoading = false;
 		}
@@ -442,7 +444,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			}
 		}
 		if (found === null) {
-			announcement = `${glyph} is not in this map.`;
+			announcement = t('stats.map.jumpMissing', { glyph });
 			return;
 		}
 		const target = found;
@@ -459,7 +461,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 		void el.offsetWidth;
 		el.classList.add('flash');
 		const label = views.find((view) => view.id === target.sectionId)?.label ?? '';
-		announcement = `${el.textContent ?? glyph} is in ${label}.`;
+		announcement = t('stats.map.jumpFound', { glyph: el.textContent ?? glyph, section: label });
 	}
 
 	/** headerName is a section button's name: "Grade 2, 0 of 160 learned". */
@@ -467,9 +469,12 @@ import type { StudyContext } from '$lib/study/studyContext';
 		view: { label: string; stats: { learned: number; total: number }; shown: unknown[]; variants: number },
 		filtered: boolean
 	): string {
-		const extra = view.variants > 0 ? `, including ${formatCount(view.variants)} variant forms` : '';
-		const base = `${view.label}, ${formatCount(view.stats.learned)} of ${formatCount(view.stats.total)} learned${extra}`;
-		return filtered ? `${base}, ${formatCount(view.shown.length)} shown` : base;
+		const args = { section: view.label, learned: formatCount(view.stats.learned), total: formatCount(view.stats.total) };
+		const base =
+			view.variants > 0
+				? t('stats.map.headerVariants', { ...args, variants: formatCount(view.variants) })
+				: t('stats.map.header', args);
+		return filtered ? t('stats.map.headerShown', { name: base, shown: formatCount(view.shown.length) }) : base;
 	}
 
 	const langTag = $derived(language.toLowerCase().startsWith('ja') ? 'ja' : 'zh-Hans');
@@ -479,30 +484,26 @@ import type { StudyContext } from '$lib/study/studyContext';
      heading and the tablist, so this view's headings start at h2. -->
 <div class="map" onfocusin={trackFocus}>
 	<header class="head">
-		<h2>Mastery map</h2>
+		<h2>{t('stats.map.title')}</h2>
 		{#if !notHan}
-			<p class="hint">
-				Every character of the dictionary, grouped by level and coloured by how firmly its cards
-				have settled into memory. Mastery is derived from review history, so it updates as you
-				study.
-			</p>
+			<p class="hint">{t('stats.map.intro')}</p>
 		{/if}
 	</header>
 
 	{#if notHan}
 		<p class="hint" role="status">
-			The character map is for Chinese and Japanese workspaces.
-			<a href="/stats">See the Overview</a>
+			{t('stats.map.notHan')}
+			<a href="/stats">{t('stats.map.seeOverview')}</a>
 		</p>
 	{:else if noWorkspace}
-		<p class="hint" role="status">Choose a workspace in the header to see its mastery map.</p>
+		<p class="hint" role="status">{t('stats.map.noWorkspace')}</p>
 	{:else if loadError}
 		<div class="error-box" role="alert">
 			<p class="error">{loadError}</p>
-			<button type="button" class="btn" onclick={retry}>Retry</button>
+			<button type="button" class="btn" onclick={retry}>{t('stats.map.retry')}</button>
 		</div>
 	{:else if loading || universe === null}
-		<div class="skeleton" role="status" aria-label="Loading the character map">
+		<div class="skeleton" role="status" aria-label={t('stats.map.loading')}>
 			<span class="sk-line wide"></span>
 			<span class="sk-line"></span>
 			{#each [0, 1, 2] as n (n)}
@@ -511,17 +512,16 @@ import type { StudyContext } from '$lib/study/studyContext';
 		</div>
 	{:else if universe.count === 0}
 		<p class="banner" role="status">
-			No characters are installed for this language. Level data missing — run <code>qinqin seed</code>
-			to refresh.
+			<Msg key="stats.map.noneInstalled">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 		</p>
 	{:else}
-		<section class="summary" aria-label="Summary">
+		<section class="summary" aria-label={t('stats.map.summary')}>
 			<p class="total">
 				<strong>{learnedSummary(totals.learned, totals.total)}</strong>
-				<span class="hint small">Learned = {MASTERY_THRESHOLD}/100 or more.</span>
+				<span class="hint small">{t('widgets.characters.learnedRule', { threshold: MASTERY_THRESHOLD })}</span>
 			</p>
 			<StageBar byStage={totals.byStage} size="large" />
-			<div class="legend" role="group" aria-label="Show stage">
+			<div class="legend" role="group" aria-label={t('stats.map.showStage')}>
 				{#each FILTERS as item (item.value)}
 					<button
 						type="button"
@@ -530,7 +530,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 						onclick={() => (stageFilter = item.value)}
 					>
 						{#if item.stages.length === 0}
-							<span>All</span>
+							<span>{t('stats.map.filter.all')}</span>
 							<span class="num">{formatCount(filterCounts.all)}</span>
 						{:else if item.stages.length === 1}
 							<span class="swatch st-{item.stages[0]}" aria-hidden="true"></span>
@@ -552,21 +552,19 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 		{#if levelHint}
 			<p class="banner" role="status">
-				Level data missing — run <code>qinqin seed</code> to refresh.
+				<Msg key="stats.map.stale">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 			</p>
 		{/if}
 
 		{#if unresolvedCards > 0}
 			<p class="hint note" role="status">
-				{unresolvedCards}
-				{unresolvedCards === 1 ? 'card' : 'cards'} could not be resolved, so this map may under-report
-				mastery.
+				{t('stats.map.unresolved', { count: unresolvedCards })}
 			</p>
 		{/if}
 
-		<section class="controls" aria-label="Map controls">
+		<section class="controls" aria-label={t('stats.map.controls')}>
 			<label class="field">
-				<span>Group by</span>
+				<span>{t('stats.map.groupBy')}</span>
 				<select
 					value={groupKey}
 					onchange={(event) => chooseGroup(event.currentTarget.value as GroupKey)}
@@ -577,10 +575,10 @@ import type { StudyContext } from '$lib/study/studyContext';
 				</select>
 			</label>
 			<label class="field grow">
-				<span>Search</span>
+				<span>{t('stats.map.search')}</span>
 				<input
 					type="search"
-					placeholder="Character, reading or meaning"
+					placeholder={t('stats.map.searchPlaceholder')}
 					bind:this={searchBox}
 					bind:value={queryInput}
 					oninput={onSearchInput}
@@ -588,16 +586,16 @@ import type { StudyContext } from '$lib/study/studyContext';
 				/>
 			</label>
 			<form class="field jump" onsubmit={jump}>
-				<label for="map-jump">Jump to character</label>
+				<label for="map-jump">{t('stats.map.jump')}</label>
 				<span class="row">
 					<input id="map-jump" type="text" maxlength="8" autocomplete="off" bind:value={jumpInput} />
-					<button type="submit" class="btn">Go</button>
+					<button type="submit" class="btn">{t('stats.map.go')}</button>
 				</span>
 			</form>
 		</section>
 		{#if attributionLine}
 			<p class="hint small attribution">
-				{attributionLine} · <a href="/sources">Sources</a>
+				{attributionLine} · <a href="/sources">{t('stats.map.sources')}</a>
 			</p>
 		{/if}
 		{#if schemesError}
@@ -610,30 +608,29 @@ import type { StudyContext } from '$lib/study/studyContext';
 			<div class="error-box" role="alert">
 				<p class="error">{membersError}</p>
 				<button type="button" class="btn" onclick={() => schemeId !== null && loadMembers(schemeId)}
-					>Retry</button
+					>{t('stats.map.retry')}</button
 				>
 			</div>
 		{:else if grouping === null}
-			<p class="hint" role="status">{membersLoading ? 'Loading the levels of this scheme…' : ''}</p>
+			<p class="hint" role="status">{membersLoading ? t('stats.map.loadingLevels') : ''}</p>
 		{:else}
 			<div class="bar-row">
 				<p class="hint small">
 					{#if filtering}
-						{formatCount(shownTotal)} of {formatCount(totals.total)} shown
+						{t('stats.map.shownOf', { shown: formatCount(shownTotal), total: formatCount(totals.total) })}
 					{:else}
-						{visibleViews.length}
-						{visibleViews.length === 1 ? 'section' : 'sections'}
+						{t('stats.map.sections', { count: visibleViews.length })}
 					{/if}
 				</p>
 				{#if visibleViews.length > 1}
 					<button type="button" class="btn quiet" onclick={toggleAll}>
-						{allOpen ? 'Collapse all' : 'Expand all'}
+						{allOpen ? t('stats.map.collapseAll') : t('stats.map.expandAll')}
 					</button>
 				{/if}
 			</div>
 
 			{#if filtering && shownTotal === 0}
-				<p class="hint">No characters match.</p>
+				<p class="hint">{t('stats.map.noMatch')}</p>
 			{/if}
 
 			{#each visibleViews as view, index (view.id)}
@@ -654,14 +651,14 @@ import type { StudyContext } from '$lib/study/studyContext';
 								class="count"
 								aria-hidden="true"
 								title={view.variants > 0
-									? `${formatCount(view.stats.total)} includes ${formatCount(view.variants)} variant forms of listed characters`
+									? t('stats.map.variantsTitle', { total: formatCount(view.stats.total), variants: formatCount(view.variants) })
 									: undefined}
 							>
 								<strong>{formatCount(view.stats.learned)}</strong>/{formatCount(view.stats.total)}{#if view.variants > 0}
-									<small>(incl. {formatCount(view.variants)} variant forms)</small>{/if}
+									<small>{t('stats.map.variantsSmall', { variants: formatCount(view.variants) })}</small>{/if}
 							</span>
 							{#if filtering}
-								<span class="shown" aria-hidden="true">{formatCount(view.shown.length)} shown</span>
+								<span class="shown" aria-hidden="true">{t('stats.map.shown', { shown: formatCount(view.shown.length) })}</span>
 							{/if}
 							<StageBar byStage={view.stats.byStage} decorative />
 						</button>
@@ -687,9 +684,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 			{#if language.toLowerCase().startsWith('zh')}
 				<p class="hint small foot">
-					Lists the standard characters (通用规范汉字表) and every character with a CC-CEDICT
-					reading. Rarer Unihan characters are not listed. A traditional form shares the cell of its
-					simplified form.
+					{t('stats.map.zhFoot')}
 				</p>
 			{/if}
 		{/if}

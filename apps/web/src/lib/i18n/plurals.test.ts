@@ -141,7 +141,36 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	],
 	['study.session.reviews', {}, 'review', 'reviews'],
 	['study.session.reshows', {}, 're-show (practice, not counted)', 're-shows (practice, not counted)'],
-	['study.session.streakDays', {}, 'day', 'days']
+	['study.session.streakDays', {}, 'day', 'days'],
+	// stats and weekly (Task 14)
+	['weekly.day.reviews', {}, '1 review', '2 reviews'],
+	['weekly.daysActive.text', { active: 1 }, 'Active on 1 of 1 day', 'Active on 1 of 2 days'],
+	['weekly.daysActive.soFar', { active: 1 }, 'Active on 1 of 1 day so far', 'Active on 1 of 2 days so far'],
+	['weekly.streak.text', {}, 'Study streak: 1 day', 'Study streak: 2 days'],
+	['weekly.streak.endOfWeek', {}, 'Study streak at the end of the week: 1 day', 'Study streak at the end of the week: 2 days'],
+	['weekly.goal.text', { met: 1 }, 'Daily goal met on 1 of 1 day', 'Daily goal met on 1 of 2 days'],
+	['weekly.goal.soFar', { met: 1 }, 'Daily goal met on 1 of 1 day so far', 'Daily goal met on 1 of 2 days so far'],
+	['stats.activity.points', {}, '1 point', '2 points'],
+	[
+		'stats.activity.summaryWorkspace',
+		{},
+		'Learning activity in this workspace for the last week',
+		'Learning activity in this workspace for the last 2 weeks'
+	],
+	[
+		'stats.activity.summaryAll',
+		{},
+		'Learning activity in all workspaces for the last week',
+		'Learning activity in all workspaces for the last 2 weeks'
+	],
+	['stats.activity.pointsInWindow', { weeks: 13 }, '1 point in the last 13 weeks', '2 points in the last 13 weeks'],
+	[
+		'stats.map.unresolved',
+		{},
+		'1 card could not be resolved, so this map may under-report mastery.',
+		'2 cards could not be resolved, so this map may under-report mastery.'
+	],
+	['stats.map.sections', {}, '1 section', '2 sections']
 ];
 
 describe('catalogue plurals keep their English', () => {

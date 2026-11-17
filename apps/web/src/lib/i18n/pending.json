@@ -1,7 +1,6 @@
 {
 	"text": [
 		"lib/account/tokensView.ts",
-		"lib/activity/activity.ts",
 		"lib/admin/DeleteUserDialog.svelte",
 		"lib/admin/EmailAdmin.svelte",
 		"lib/admin/InvitesAdmin.svelte",
@@ -22,7 +21,6 @@
 		"lib/api/packs.ts",
 		"lib/api/upload.ts",
 		"lib/audio/button.ts",
-		"lib/components/ActivityHeatmap.svelte",
 		"lib/features/flashcards/FlashcardsWidget.svelte",
 		"lib/features/flashcards/Mascot.svelte",
 		"lib/features/flashcards/cards/ClozeCard.svelte",
@@ -121,18 +119,9 @@
 		"lib/settings/zoneSettings.ts",
 		"lib/sources/audioSection.ts",
 		"lib/sources/coreCredits.ts",
-		"lib/stats/readingTime.ts",
-		"lib/weekly/WeekStrip.svelte",
-		"lib/weekly/WeekSummary.svelte",
-		"lib/weekly/loadWeek.ts",
-		"lib/weekly/weekText.ts",
 		"routes/p/[plugin]/[...rest]/+page.svelte",
 		"routes/settings/+page.svelte",
-		"routes/sources/+page.svelte",
-		"routes/stats/+layout.svelte",
-		"routes/stats/+page.svelte",
-		"routes/stats/characters/+page.svelte",
-		"routes/stats/week/+page.svelte"
+		"routes/sources/+page.svelte"
 	],
 	"intl": [
 		"lib/account/sessionsView.ts",

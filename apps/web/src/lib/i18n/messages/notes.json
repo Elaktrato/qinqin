@@ -15,8 +15,11 @@
 	"nav.brand.home": "Accessible name of the logo link to the home page; {app} is the product name.",
 	"search.matched": "Under a search result: which field matched; {source} is search.matchedWritten or a reading type such as pinyin.",
 	"search.parts.radicalName": "Accessible name of a chip; {char} is the radical glyph, {n} its Kangxi number.",
+	"stats.duration.hours": "{minutes} is two digits (\"1 h 05 min\").",
+	"stats.duration.underMinute": "\"Less than one minute\"; {less} is the sign \"<\" (a literal \"<\" is not allowed in a message).",
 	"stats.map.filtered": "{shown} and {total} are formatted numbers; the plural follows the shown count.",
 	"study.summary.cardsIn": "Between bold numbers: \"<b>12</b> cards in <b>2</b> decks · <b>3</b> due · <b>5</b> new\"; each fragment is one message.",
+	"weekly.day.name": "Accessible name of a day in the week strip; {date} is \"Monday 16 November\", {state} one of weekly.day.*.",
 	"widgets.characters.stale": "<code> wraps the command name; keep it untranslated.",
 	"widgets.words.inDecks": "Follows the bold total (\"12 words in your decks ·\"); the number itself is shown before it, outside the message."
 }

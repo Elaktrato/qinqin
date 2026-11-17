@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { webPlugins } from '$lib/plugins';
+	import { t } from '$lib/i18n';
 	import { pluginStates } from '$lib/plugins/states';
 	import { placeWidgets } from '$lib/widgets/layout';
 	import { allWidgets } from '$lib/widgets/registry';
@@ -29,7 +30,7 @@
 		{/each}
 	</div>
 {:else}
-	<p class="empty">No statistics are available for this workspace yet.</p>
+	<p class="empty">{t('stats.empty')}</p>
 {/if}
 
 <style>
