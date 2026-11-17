@@ -1,0 +1,10 @@
+{
+	"id": "dracula",
+	"name": "Dracula",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2020 Dracula Theme (dracula/spec)",
+	"notice": "Dracula. Colours from the [Dracula specification](https://github.com/dracula/spec) (dracula-spec.md, commit ccf5974d14ec); its secondary text (Comment, #6272a4) is below 4.5:1 on the background, as upstream.",
+	"format": "themes-json"
+}

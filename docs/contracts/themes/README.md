@@ -117,7 +117,19 @@ a theme whose every accent fails, both sides of the 4.5 and 3 roundings).
 
 ## Built-in themes
 
-(Task 5.)
+Embedded in the server binary (`server/internal/themes/builtin/<pack>/`), always present, never stored, never
+uninstalled; an uploaded pack may not use a built-in pack id or theme id (`400 invalid pack`). Order (pinned by
+`themes-api.json` `builtinPacks`): `catppuccin` (`catppuccin-latte`, `catppuccin-frappe`, `catppuccin-macchiato`,
+`catppuccin-mocha`), `rose-pine` (`rose-pine`, `rose-pine-moon`, `rose-pine-dawn`), `nord`, `gruvbox`, `dracula`,
+`solarized` (`solarized-light`, `solarized-dark`), `tokyo-night`, `everforest` (`everforest-dark`), `kanagawa`
+(`kanagawa-wave`). Licences, sources and the two corrections of mockup values: `docs/sources.md`, "Themes". Every
+built-in theme reaches 4.5:1 for `text` on `panel`; their other measured pairs below the minimums (reported, by
+design): Catppuccin Latte (muted, two grades, six accents), Rosé Pine Moon (muted on panel 4.46), Rosé Pine Dawn
+(muted, `gradeHard`, two accents), Dracula (muted 3.03 / 3.36), Solarized Light (text on chrome 4.39, muted, a grade,
+three accents), Solarized Dark (muted on chrome 4.11).
+
+The default pair is `catppuccin-latte` (light) and `catppuccin-mocha` (dark) until a qinqin house theme exists
+(design §10, #108).
 
 ## Android
 
@@ -141,4 +153,5 @@ it implements the validation only if it ever installs theme packs itself (it doe
 | --- | --- | --- |
 | `theme-file.json` | validation codes and paths, limits, accent order | Go `server/internal/themes/file_test.go` |
 | `contrast.json` | ratios, rounding, the review checks | Go `server/internal/themes/contrast_test.go`; web `apps/web/src/lib/theme/contrast.test.ts` |
+| `themes-api.json` | the built-in packs and theme ids in order | Go `server/internal/themes/builtin_test.go` |
 | `derive.json` | derived tokens | Go `server/internal/themes/derive_test.go`; web `apps/web/src/lib/theme/derive.test.ts` (also the CSS property table) |

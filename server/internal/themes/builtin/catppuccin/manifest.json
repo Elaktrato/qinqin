@@ -1,0 +1,10 @@
+{
+	"id": "catppuccin",
+	"name": "Catppuccin",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2021 Catppuccin (catppuccin/palette)",
+	"notice": "The four Catppuccin flavours. Colours from the [Catppuccin palette](https://github.com/catppuccin/palette) (palette.json 1.8.0, commit 07d02aa110ef); the light flavour uses mantle for raised surfaces and surface0 for lines.",
+	"format": "themes-json"
+}

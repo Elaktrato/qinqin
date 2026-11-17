@@ -1,0 +1,10 @@
+{
+	"id": "gruvbox",
+	"name": "Gruvbox",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2018 Pavel Pertsev (morhetz/gruvbox)",
+	"notice": "Gruvbox (dark, bright accents). Colours from [gruvbox](https://github.com/morhetz/gruvbox) (colors/gruvbox.vim, commit ef8864bb42bf), whose README and package.json state MIT; the licence text is the one of the maintained fork [gruvbox-community/gruvbox](https://github.com/gruvbox-community/gruvbox) (LICENSE.md, commit 180ad8597134), naming the same author.",
+	"format": "themes-json"
+}

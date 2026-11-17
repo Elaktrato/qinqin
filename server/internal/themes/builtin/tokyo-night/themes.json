@@ -1,0 +1,3 @@
+[
+	{"id": "tokyo-night", "name": "Tokyo Night", "family": "Tokyo Night", "scheme": "dark", "colors": {"chrome": "#16161e", "panel": "#1a1b26", "raised": "#202330", "line": "#414868", "text": "#c0caf5", "muted": "#9aa5ce", "good": "#9ece6a", "warn": "#e0af68", "bad": "#f7768e", "gradeAgain": "#f7768e", "gradeHard": "#ff9e64", "gradeGood": "#9ece6a", "gradeEasy": "#7aa2f7"}, "accents": {"blue": "#7aa2f7", "magenta": "#bb9af7", "cyan": "#7dcfff", "teal": "#73daca", "green": "#9ece6a", "orange": "#ff9e64", "red": "#f7768e"}, "defaultAccent": "blue"}
+]

@@ -1,0 +1,3 @@
+[
+	{"id": "kanagawa-wave", "name": "Kanagawa Wave", "family": "Kanagawa", "scheme": "dark", "colors": {"chrome": "#16161d", "panel": "#1f1f28", "raised": "#2a2a37", "line": "#54546d", "text": "#dcd7ba", "muted": "#938aa9", "good": "#98bb6c", "warn": "#e6c384", "bad": "#e46876", "gradeAgain": "#e46876", "gradeHard": "#ffa066", "gradeGood": "#98bb6c", "gradeEasy": "#7e9cd8"}, "accents": {"crystal-blue": "#7e9cd8", "oni-violet": "#957fb8", "sakura-pink": "#d27e99", "spring-blue": "#7fb4ca", "wave-aqua": "#7aa89f", "spring-green": "#98bb6c", "carp-yellow": "#e6c384", "surimi-orange": "#ffa066"}, "defaultAccent": "crystal-blue"}
+]
