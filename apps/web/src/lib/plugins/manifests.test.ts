@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EventType } from '$lib/events';
 import { builtinManifests } from './contract';
+import { ICONS } from '$lib/ui/icons/lucide';
 import { webPlugins } from './index';
 import { coreFeatures } from '$lib/features';
 
@@ -27,6 +28,12 @@ describe('web plugin manifests', () => {
 			expect(plugin.manifest.surfaces).toEqual(json!.surfaces);
 		});
 	}
+
+	it('every built-in manifest icon is a name of the icon set', () => {
+		const named = builtinManifests().filter((m) => m.icon !== undefined);
+		expect(named.map((m) => m.id)).toEqual(['qinqin-journal', 'qinqin-grammar']);
+		for (const m of named) expect(Object.keys(ICONS), m.id).toContain(m.icon);
+	});
 
 	// Flashcards and the reader are core features since v0.4.0: their
 	// registry rows are reserved, declare no surface and no event.
