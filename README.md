@@ -819,8 +819,9 @@ a Japanese one on Aozora.
 
 ### Reader display
 
-The **Display** button above a chapter opens the reading display settings. They are saved
-per workspace (workspace settings, key `reader`), so they follow you across devices.
+The **Display** tab of the side rail holds the reading display settings (Chinese and Japanese
+books, books with ruby; for Chinese books also the **Script** choice). They are saved per
+workspace (workspace settings, key `reader`), so they follow you across devices.
 
 - **Book ruby** (only for a book that has ruby): the reading marks printed in the book.
 - **Readings over words**: *Never* (default), *Always*, or *Smart*. Chinese words get pinyin,
@@ -836,8 +837,8 @@ per workspace (workspace settings, key `reader`), so they follow you across devi
   **Show all readings** to see hidden readings.
 - **Ruby size** and **Font** (default, sans, serif, kai: system fonts only, nothing is downloaded).
 - **Mark words by how well I know them** (off by default): new words (no flashcard) get a
-  solid underline and a light tint, words you are learning a dotted one; known words stay
-  plain. A word is known from the threshold's memory score, or when you marked it with
+  thin solid underline in the accent, words you are learning a thin dotted one (no tint);
+  known words stay plain. A word is known from the threshold's memory score, or when you marked it with
   **I know this** in the popup (a workspace row `known:<entryId>`, synced and in the backup;
   it creates no card). The same rule hides readings in Smart mode and leaves words out of
   starter decks.
@@ -850,9 +851,12 @@ per workspace (workspace settings, key `reader`), so they follow you across devi
 The reader only: entry pages, flashcards and study cards always show readings. Rules and
 fixtures for other clients: [`docs/contracts/reader/`](docs/contracts/reader/README.md).
 
-**Add to study from the popup.** Every entry in the Reader's lookup popup has a
-**+** button that adds the word to the General deck of the book's workspace. The
-**⋯** deck menu appears only when the workspace has custom decks. The sentence of
+**Add to study from the popup.** The lookup popup opens below the word (above it
+only without room; a bottom sheet on a phone). Each entry shows the word, its
+reading, level chips (from the lookup's `levels`) and frequency chips, numbered
+meanings and the source dictionary, and an **Add to deck** button that adds the
+word to the General deck of the book's workspace in one click. The **Choose a
+deck** menu beside it appears only when the workspace has custom decks. The sentence of
 the book around the word (up to 200 characters, cut at 。！？ and similar
 terminators) is saved as the user's own example sentence on the entry and linked
 to the card; an identical sentence is reused. A sentence that cannot be saved
@@ -860,12 +864,13 @@ leaves the card without one and says so. Example sentences saved by a user are
 private to that user: other users, and anonymous callers, see only the pack's
 sentences.
 
-**Side rail.** Beside the text sits a rail with two tabs, **Bookmarks** and
-**Highlights**. On screens 1000 px and wider it is a column next to the text that
-can be collapsed to a thin tab strip; below 1000 px it is a drawer on the right
-edge, opened from a floating button and closed by Escape or a click outside. The
-open/closed state and the last tab are remembered in the browser. The reading
-toolbar is a plain strip at the top of the page; it is not sticky.
+**Side rail.** At the right edge of the page sits a column of five icon tabs,
+**Contents**, **Bookmarks**, **Highlights**, **Words** and **Display** (a vertical
+tablist; each icon has a tooltip). On screens 1000 px and wider the open tab's panel
+sits between the text and the icons; activating the open tab collapses it. Below
+1000 px one button (in the phone top bar, or above the text between 720 and 1000 px)
+opens the same tabs in a bottom sheet. The open/closed state and the last tab are
+remembered in the browser.
 
 **Bookmarks.** The rail's **Add bookmark here** button (or the `b` key) bookmarks
 the first paragraph in view and toggles it off again. The Bookmarks tab lists them
