@@ -22,5 +22,8 @@ describe('/reader', () => {
 		render(Page);
 		expect(screen.getByRole('heading', { name: 'The reader is switched off' })).toBeTruthy();
 		expect(document.title).toBe('Reader · qinqin');
+		// #102: no rail and no rail button behind the notice.
+		expect(screen.queryByRole('tablist')).toBeNull();
+		expect(screen.queryByRole('button', { name: /Contents, bookmarks/ })).toBeNull();
 	});
 });

@@ -159,9 +159,13 @@
 </div>
 
 <style>
+	/* The reading column (design §9): 40em of the reader text, centred;
+	   line height 2.2 leaves room for ruby. */
 	.chapter-text {
 		font-size: 1.25rem;
-		line-height: 2;
+		line-height: 2.2;
+		max-width: 40em;
+		margin-inline: auto;
 		font-family: var(--reader-font, inherit);
 	}
 

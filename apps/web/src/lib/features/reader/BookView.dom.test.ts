@@ -1,5 +1,5 @@
 import { pagedPull } from '$lib/study/testing/legacyCodec';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -44,7 +44,7 @@ vi.mock('$lib/workspaces', async () => {
 	return { workspaces: state, setSettings: vi.fn(async () => ({})) };
 });
 
-import { getBook, getChapter } from '$lib/api/library';
+import { getBook, getChapter, listBookmarks, listHighlights } from '$lib/api/library';
 import { loadStudyHistory } from '$lib/study/history';
 import { segmentWithReadings } from '$lib/api/segment';
 import { setSettings, workspaces } from '$lib/workspaces';
@@ -114,7 +114,8 @@ describe('BookView readings', () => {
 	it('switching to Never makes the readings go and saves one patch', async () => {
 		render(BookView, { id: 1, chapter: 0 });
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(2));
-		// The Display settings have no disclosure of their own any more (#102).
+		// The Display settings are the rail's Display tab now (#102).
+		await fireEvent.click(screen.getByRole('tab', { name: 'Display' }));
 		await fireEvent.click(screen.getByRole('radio', { name: /^Never/ }));
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(0));
 		await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(1), { timeout: 2000 });
@@ -258,5 +259,163 @@ describe('BookView in another language', () => {
 		await screen.findByText('你好世界');
 		await new Promise((r) => setTimeout(r, 30));
 		expect(loadStudyHistory).not.toHaveBeenCalled();
+	});
+});
+
+// #102: the rail at the right edge, the book line, the phone sheet.
+
+// Reports every observed paragraph as in view, so "the paragraph in view" exists.
+class VisibleObserver {
+	constructor(private callback: (records: unknown[]) => void) {}
+	observe(el: Element) {
+		this.callback([{ isIntersecting: true, target: el }]);
+	}
+	unobserve() {}
+	disconnect() {}
+	takeRecords() {
+		return [];
+	}
+}
+
+function setWidth(px: number): void {
+	Object.defineProperty(window, 'innerWidth', { configurable: true, value: px });
+}
+
+const RAIL_BUTTON = 'Contents, bookmarks, highlights, words and display';
+
+describe('BookView rail (#102)', () => {
+	beforeEach(() => {
+		Element.prototype.scrollIntoView ??= function () {};
+	});
+	afterEach(() => setWidth(1024));
+
+	it('the rail lists Contents, Bookmarks, Highlights, Words, Display', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		const list = await screen.findByRole('tablist', { name: 'Side panel' });
+		expect(within(list).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
+			'Contents',
+			'Bookmarks',
+			'Highlights',
+			'Words',
+			'Display'
+		]);
+	});
+
+	it('the Display settings and script choice are not above the text any more', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		expect(screen.queryByRole('radio', { name: /^Never/ })).toBeNull();
+		expect(screen.queryByRole('combobox', { name: 'Script' })).toBeNull();
+		await fireEvent.click(screen.getByRole('tab', { name: 'Display' }));
+		const panel = screen.getByRole('tabpanel');
+		expect(within(panel).getByRole('radio', { name: /^Never/ })).toBeTruthy();
+		expect(within(panel).getByRole('combobox', { name: 'Script' })).toBeTruthy();
+	});
+
+	it('chapter navigation: Contents panel links and prev/next icon buttons at the chapter end', async () => {
+		setWidth(1280);
+		vi.mocked(getBook).mockResolvedValue({
+			id: 1, workspaceId: 7, language: 'zh', title: 'T', author: '', source: '', sourceId: '', sourceUrl: '',
+			attribution: '', licenseNote: '', chapterCount: 3, position: '', createdAt: ''
+		});
+		render(BookView, { id: 1, chapter: 1 });
+		await screen.findByText('你好世界');
+		expect(screen.queryByRole('combobox', { name: /Chapter/ })).toBeNull();
+		const prev = screen.getByRole('link', { name: 'Previous chapter' });
+		const next = screen.getByRole('link', { name: 'Next chapter' });
+		expect(prev.getAttribute('href')).toBe('/reader/book/1/0');
+		expect(next.getAttribute('href')).toBe('/reader/book/1/2');
+		await fireEvent.click(screen.getByRole('tab', { name: 'Contents' }));
+		const nav = screen.getByRole('navigation', { name: 'Contents' });
+		expect(within(nav).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+			'/reader/book/1/0',
+			'/reader/book/1/1',
+			'/reader/book/1/2'
+		]);
+		expect(within(nav).getByRole('link', { name: 'One (reading now)' }).getAttribute('aria-current')).toBe('page');
+	});
+
+	it('the book line shows title · author and a bookmarked state for the paragraph in view', async () => {
+		setWidth(1280);
+		vi.stubGlobal('IntersectionObserver', VisibleObserver);
+		vi.mocked(getBook).mockResolvedValue({
+			id: 1, workspaceId: 7, language: 'zh', title: '故乡', author: '鲁迅', source: '', sourceId: '', sourceUrl: '',
+			attribution: '', licenseNote: '', chapterCount: 1, position: '', createdAt: ''
+		});
+		vi.mocked(listBookmarks).mockResolvedValueOnce([
+			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
+		] as never);
+		render(BookView, { id: 1, chapter: 0 });
+		const heading = await screen.findByRole('heading', { level: 1, name: '故乡' });
+		const line = heading.closest('.book-line') as HTMLElement;
+		expect(line.textContent).toContain('鲁迅');
+		expect(heading.getAttribute('lang')).toBe('zh');
+		expect(await within(line).findByRole('img', { name: 'This place is bookmarked' })).toBeTruthy();
+	});
+
+	it('below 1000px one button opens a sheet with the five tabs', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		expect(screen.queryByRole('tablist')).toBeNull();
+		const buttons = screen.getAllByRole('button', { name: RAIL_BUTTON });
+		expect(buttons).toHaveLength(1);
+		await fireEvent.click(buttons[0]);
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		expect(within(sheet).getAllByRole('tab').map((tab) => tab.textContent?.trim())).toEqual([
+			'Contents',
+			'Bookmarks',
+			'Highlights',
+			'Words',
+			'Display'
+		]);
+	});
+
+	it('jumping from a panel in the sheet closes it and moves to the place', async () => {
+		setWidth(800);
+		vi.mocked(listBookmarks).mockResolvedValueOnce([
+			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
+		] as never);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(within(sheet).getByRole('tab', { name: /Bookmarks/ }));
+		await fireEvent.click(await within(sheet).findByRole('button', { name: '你好' }));
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+		await waitFor(() => expect(document.activeElement?.getAttribute('data-p')).toBe('0'));
+	});
+
+	it('editing a highlight from the sheet closes it and opens the editor', async () => {
+		setWidth(800);
+		vi.mocked(listHighlights).mockResolvedValueOnce([
+			{ id: 9, bookId: 1, chapter: 0, paragraph: 0, start: 0, end: 2, text: '你好', color: 'yellow', note: '', createdAt: '', updatedAt: '' }
+		] as never);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelector('mark[data-h="9"]')).toBeTruthy());
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(within(sheet).getByRole('tab', { name: /Highlights/ }));
+		await fireEvent.click(await within(sheet).findByRole('button', { name: 'Edit highlight 你好' }));
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+		expect(await screen.findByRole('button', { name: 'Close the highlight editor' })).toBeTruthy();
+	});
+
+	it('the bookmark and highlight live regions are outside the rail and the sheet', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		const rail = await screen.findByRole('complementary', { name: 'Side panel' });
+		const regions = [...document.querySelectorAll('[role="status"], [role="alert"]')].filter((el) =>
+			el.classList.contains('visually-hidden')
+		);
+		expect(regions).toHaveLength(4);
+		for (const region of regions) expect(rail.contains(region)).toBe(false);
+	});
+
+	it('existing: the Words tab is found by its name', async () => {
+		render(BookView, { id: 1, chapter: 0 });
+		expect(await screen.findByRole('tab', { name: /Words/ })).toBeTruthy();
 	});
 });
