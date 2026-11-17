@@ -509,7 +509,7 @@ func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail
 		row.languages == m.languages && row.requires == m.requires
 	switch {
 	case same && cand == row.revision:
-		return r.commit(ctx, spec, built, cand, now)
+		return r.place(ctx, row, spec, built, cand, now, stamp)
 	case same && r.fileIntact(row):
 		os.Remove(built.Path)
 		return r.revive(ctx, row, spec, stamp)
@@ -521,7 +521,7 @@ func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail
 		if err != nil {
 			return r.recordFailure(ctx, row, spec, err, stamp)
 		}
-		return r.commit(ctx, spec, again, row.revision, now)
+		return r.place(ctx, row, spec, again, row.revision, now, stamp)
 	case cand == row.revision:
 		// Restored database, but the content differs: a new revision.
 		os.Remove(built.Path)
@@ -529,9 +529,9 @@ func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail
 		if err != nil {
 			return r.recordFailure(ctx, row, spec, err, stamp)
 		}
-		return r.commit(ctx, spec, again, maxRev+1, now)
+		return r.place(ctx, row, spec, again, maxRev+1, now, stamp)
 	}
-	return r.commit(ctx, spec, built, cand, now)
+	return r.place(ctx, row, spec, built, cand, now, stamp)
 }
 
 // buildHook runs before every package build (tests count builds and inject
@@ -554,29 +554,39 @@ func (r Registry) buildFile(ctx context.Context, spec Spec, revision int, now ti
 	return Build(ctx, r.DB, spec, BuildMeta{InstanceID: instance, Revision: revision, Now: now, AudioDir: r.AudioDir}, r.Dir)
 }
 
+// place commits a built file as revision rev (commit); a failure is the
+// build's recorded failure (a ready row keeps serving its revision, and the
+// error makes the next reconcile retry).
+func (r Registry) place(ctx context.Context, row pkgRow, spec Spec, b Built, rev int, now time.Time, stamp string) error {
+	if err := r.commit(ctx, spec, b, rev, now); err != nil {
+		return r.recordFailure(ctx, row, spec, err, stamp)
+	}
+	return nil
+}
+
 // commit makes a built file the package's ready revision rev and moves it
 // into place; every other live file of the package starts its retention.
-// The rows go first: an interruption before the rename leaves a ready row
-// without its file (the next reconcile rebuilds it), never a file whose
-// bytes the rows do not describe.
+// The rename runs inside the rows' transaction, just before its commit: a
+// failed rename rolls the rows back (the previous revision stays the
+// served one), and the window in which the rows describe a file not yet in
+// place is closed.
 func (r Registry) commit(ctx context.Context, spec Spec, b Built, rev int, now time.Time) error {
 	dest := r.filePath(spec.ID, rev)
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		os.Remove(b.Path)
 		return err
 	}
-	if err := r.commitRows(ctx, spec, b, rev, now); err != nil {
-		os.Remove(b.Path)
-		return err
-	}
-	if err := os.Rename(b.Path, dest); err != nil {
+	if err := r.commitRows(ctx, spec, b, rev, now, func() error { return renameFile(b.Path, dest) }); err != nil {
 		os.Remove(b.Path)
 		return err
 	}
 	return nil
 }
 
-func (r Registry) commitRows(ctx context.Context, spec Spec, b Built, rev int, now time.Time) error {
+// renameFile moves a built file into place (tests inject failures).
+var renameFile = os.Rename
+
+func (r Registry) commitRows(ctx context.Context, spec Spec, b Built, rev int, now time.Time, move func() error) error {
 	stamp := now.Format(time.RFC3339)
 	m := metaOf(spec)
 	tx, err := r.DB.BeginTx(ctx, nil)
@@ -598,6 +608,9 @@ func (r Registry) commitRows(ctx context.Context, spec Spec, b Built, rev int, n
 		license_texts = ?, updated_at = ?, deleted_at = NULL WHERE id = ?`,
 		string(spec.Type), m.languages, FormatVersion, rev, b.ContentHash, b.SHA256, b.Bytes, b.Manifest.BuiltAt,
 		m.requires, spec.Optional, m.sources, spec.LicenseTexts(), stamp, spec.ID); err != nil {
+		return err
+	}
+	if err := move(); err != nil {
 		return err
 	}
 	return tx.Commit()
