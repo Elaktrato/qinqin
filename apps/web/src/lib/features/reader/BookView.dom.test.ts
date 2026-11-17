@@ -44,7 +44,7 @@ vi.mock('$lib/workspaces', async () => {
 	return { workspaces: state, setSettings: vi.fn(async () => ({})) };
 });
 
-import { getBook, getChapter, listBookmarks, listHighlights } from '$lib/api/library';
+import { addBookmark, addHighlight, getBook, getChapter, listBookmarks, listHighlights } from '$lib/api/library';
 import { loadStudyHistory } from '$lib/study/history';
 import { segmentWithReadings } from '$lib/api/segment';
 import { setSettings, workspaces } from '$lib/workspaces';
@@ -417,5 +417,97 @@ describe('BookView rail (#102)', () => {
 	it('existing: the Words tab is found by its name', async () => {
 		render(BookView, { id: 1, chapter: 0 });
 		expect(await screen.findByRole('tab', { name: /Words/ })).toBeTruthy();
+	});
+});
+
+describe('BookView shortcuts and focus across the new layout (#102)', () => {
+	beforeEach(() => {
+		Element.prototype.scrollIntoView ??= function () {};
+		vi.stubGlobal('IntersectionObserver', VisibleObserver);
+		vi.mocked(addBookmark).mockReset();
+		vi.mocked(addBookmark).mockImplementation(async (bookId: number, position: string, label: string) => ({
+			id: 77, bookId, position, label, createdAt: '2026-11-17T10:00:00Z'
+		}) as never);
+		vi.mocked(addHighlight).mockReset();
+		vi.mocked(addHighlight).mockImplementation(async (bookId: number, h: Record<string, unknown>) => ({
+			id: 88, bookId, ...h, note: '', createdAt: '', updatedAt: ''
+		}) as never);
+	});
+	afterEach(() => setWidth(1024));
+
+	async function ready(): Promise<void> {
+		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
+		await tick();
+	}
+
+	it('b toggles the bookmark with the rail collapsed and with the sheet closed', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		const active = screen.getByRole('tab', { selected: true });
+		await fireEvent.click(active);
+		expect(screen.queryByRole('tabpanel')).toBeNull();
+		await fireEvent.keyDown(window, { key: 'b' });
+		await waitFor(() => expect(addBookmark).toHaveBeenCalledTimes(1));
+		cleanup();
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		expect(screen.queryByRole('dialog')).toBeNull();
+		await fireEvent.keyDown(window, { key: 'b' });
+		await waitFor(() => expect(addBookmark).toHaveBeenCalledTimes(2));
+	});
+
+	it('h highlights the selection', async () => {
+		setReader({ readings: 'never', highlightWords: false });
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		const text = document.querySelector('p[data-p="0"] [data-r="0"]')!.firstChild!;
+		const range = document.createRange();
+		range.setStart(text, 0);
+		range.setEnd(text, 2);
+		window.getSelection()!.removeAllRanges();
+		window.getSelection()!.addRange(range);
+		await fireEvent.keyDown(window, { key: 'h' });
+		await waitFor(() => expect(addHighlight).toHaveBeenCalledTimes(1));
+		const [, body] = vi.mocked(addHighlight).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		expect(body).toMatchObject({ chapter: 0, paragraph: 0, start: 0, end: 2 });
+	});
+
+	it('R reveals all readings in smart mode with the sheet closed', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(2));
+		const root = document.querySelector('.chapter-text')!;
+		await fireEvent.keyDown(window, { key: 'R' });
+		expect(root.classList.contains('show-all')).toBe(true);
+	});
+
+	it('Escape in the open rail sheet closes it and focus returns to the rail button', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		const button = screen.getByRole('button', { name: RAIL_BUTTON });
+		button.focus();
+		await fireEvent.click(button);
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		expect(sheet.contains(document.activeElement)).toBe(true);
+		await fireEvent.keyDown(sheet, { key: 'Escape' });
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+		expect(document.activeElement).toBe(button);
+	});
+
+	it('crossing 1000px with focus in the rail moves focus to the rail button and back to the active tab', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		screen.getByRole('tab', { selected: true }).focus();
+		setWidth(800);
+		window.dispatchEvent(new Event('resize'));
+		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: RAIL_BUTTON })));
+		setWidth(1280);
+		window.dispatchEvent(new Event('resize'));
+		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('tab', { selected: true })));
 	});
 });

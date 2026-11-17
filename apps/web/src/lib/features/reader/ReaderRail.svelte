@@ -73,7 +73,21 @@
 
 	// Crossing the 1000 px line swaps the column and the sheet. Focus in the
 	// rail would be lost with the element that held it: it goes to the active
-	// tab (column) or the sheet's button (sheet) instead.
+	// tab (column) or the sheet's button (sheet) instead. The last focus is
+	// tracked because the button (earlier in the page) may already be gone
+	// when this runs.
+	function isRail(node: EventTarget | null): boolean {
+		if (!(node instanceof Node)) return false;
+		const button = opener();
+		const sheet = document.getElementById('reader-rail-sheet');
+		return !!rail?.contains(node) || !!button?.contains(node) || !!sheet?.contains(node);
+	}
+	let focusInRail = false;
+	$effect(() => {
+		const onFocus = (e: FocusEvent): void => void (focusInRail = isRail(e.target));
+		document.addEventListener('focusin', onFocus);
+		return () => document.removeEventListener('focusin', onFocus);
+	});
 	let lastMode: RailMode | null = null;
 	$effect.pre(() => {
 		const now = mode;
@@ -81,11 +95,8 @@
 		lastMode = now;
 		if (before === null || before === now) return;
 		const focused = document.activeElement;
-		const button = opener();
-		const sheet = document.getElementById('reader-rail-sheet');
-		const inside =
-			!!focused && (!!rail?.contains(focused) || !!button?.contains(focused) || !!sheet?.contains(focused));
-		if (!inside) return;
+		const lost = !focused || focused === document.body;
+		if (!isRail(focused) && !(lost && focusInRail)) return;
 		void tick().then(() => {
 			if (now === 'column') focusTab(active);
 			else opener()?.focus({ preventScroll: true });
