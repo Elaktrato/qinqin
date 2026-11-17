@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { encodePng, rasterize } from '../../../scripts/icons/raster.mjs';
-import { ICONS, faviconSvg, markShapes } from '../../../scripts/icons/shapes.mjs';
+import { ICONS, faviconSvg, logoPath, markShapes } from '../../../scripts/icons/shapes.mjs';
 import icon192 from '../../../static/icons/icon-192.png?inline';
 import icon512 from '../../../static/icons/icon-512.png?inline';
 import maskable512 from '../../../static/icons/maskable-512.png?inline';
@@ -108,5 +108,11 @@ describe('committed icons', () => {
 	it('favicon.svg is committed, self-contained and has no text', () => {
 		expect(faviconShipped).toBe(faviconSvg());
 		expect(faviconShipped).not.toMatch(/<text|href=|url\(|<image|<script/);
+	});
+
+	it('favicon.svg is the logo and follows the browser colour scheme', () => {
+		expect(faviconShipped).toContain(`<path d="${logoPath()}"/>`);
+		// Light mark by default is dark, and it flips to light under a dark scheme.
+		expect(faviconShipped).toMatch(/path\{fill:#111827\}@media \(prefers-color-scheme:dark\)\{path\{fill:#f9fafb\}\}/);
 	});
 });
