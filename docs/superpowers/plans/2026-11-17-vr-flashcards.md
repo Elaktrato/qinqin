@@ -458,4 +458,111 @@ the component list should name the face: it is a feature, not a base component �
 
 ## Execution record
 
-(empty — filled by the builder)
+Built 2026-11-17 inline in one session (the dispatch forbids subagents), branch `feature/vr-flashcards` cut from
+`feature/visual-rework` f7ef932 (tokens migrated, #98 base components and #99 frame merged; `pending.json` empty), test
+first per task. `feature/visual-rework` (the frame fix wave: pages bring no `<main>`; the prep-run reconciliation
+bd6c9176) was merged in before the docs task (1f2444d0; one conflict in the session page: kept the open page on
+`<div class="page-body session">`). The merge commit's message lacks the Co-Authored-By line (left as is: no history
+rewrite).
+
+**Commits:** 5fabd0e8 contracts (Task 2) · d4fefef5 `nextIntervals` (3) · 5024cdfd readable grade tokens, Go + web (4)
+· 1a726ed0 interval text (5) · 6dfcff9f study face (6) · f743f9f7 GradeBar (7) · d8486d35 Recognise/Recall (8) ·
+c1c71b14 Fill the gap (9) · 72ab8505 Build the sentence (10) · b01400f6 Write (11) · ab29d1f1 Tones (12) · 18d181fd
+session (13, with prep-run items 1, 2) · 1f2444d0 merge · 7a1118a9 docs (14) · 85935aa5 fix found in the visual check
+(15) · gallery images and this record (16).
+
+**Test first:** every task's new tests were run red before the implementation (missing module / missing members /
+assertion), then green. Between Task 8 and Task 13 the session page test was red (7 of 18 failed: the session did not
+provide the face yet), as the plan's order implies; green from 18d181fd on.
+
+**Gates** (Node 26.13.1; exit codes read, never behind a pipe):
+- Web, full: `npx vitest run` → exit 0, 493 files, 10332 passed, 2 skipped (a first full run failed 1:
+  `utcGuard.test.ts` flagged `/ DAY` in `intervalText.ts`, an interval length, not a day bucket — allow-listed with
+  its reason in the final commit; this belonged to Task 5); `npm run check` → exit 0 (0 errors, 0 warnings);
+  `npm run build` → exit 0. Targeted vitest per task, `src/lib/i18n`, `src/lib/ui/lint`, the doc tests
+  (`contractsDocs`, `wikiDocs`) green after each task that touched them.
+- Go: `gofmt -l .` empty; `go vet ./internal/themes/... && go test ./internal/themes/...` → ok (Task 4); full
+  `go vet ./... && go test -count=1 -p 2 -timeout 30m ./...` → exit 0 (46 packages ok, no timing or IPv6 failure).
+- `node scripts/contracts/gen-scheduler-fixtures.mjs --check` → exit 0 (run by `scheduler.test.ts`);
+  `node scripts/check-sources.mjs` → exit 0.
+
+**Adaptations**
+- Task 2: the coverage guard (`contractsDocs.test.ts`) fails on a fixture no test names, so Task 2 added a shape test of
+  both new fixtures to `scheduler.test.ts`; `next-intervals.json` is in the generator's `--check` (byte-for-byte).
+- `study.interval.under` is `{lt}{value}` (lt = `<`): a literal `<` is invalid in the message syntax (i18n contract);
+  a note for translators says so.
+- English narrow months read like minutes (`2m`): a locale whose narrow month equals its narrow minute writes the
+  month short (`2 mths`). Ruling below; README rule and test.
+- Keys added beyond the plan's list: `study.session.cardHeading` ("{kind} card, {position} of {total}", the focused
+  heading), `study.session.levelName` ("{scheme} {level}"), `study.session.gradePracticeSuggested`,
+  `study.session.xpGained` ("+{xp}"). Removed: `gradeKey`, `gradeSuggested`, `press`, `suggested`,
+  `flashcards.writing.reveal`.
+- `CardHarness` takes `cardProps` (testing-library treats a top-level `props` key as its own option) and exposes
+  `cardInstance()` for `ReverseCard.finish`.
+- `ClozeChoice` and `WordSaladBoard` are shared with the grammar plugin: Fill the gap renders its own choose mode
+  (same `choiceForKeyEvent` keys, same results) instead of `ClozeChoice`, which is untouched; `WordSaladBoard` gained
+  an optional `dockCheck` callback (given: Check is docked, not rendered) and its restyle (hairline slots, outlined
+  tiles, Button) also applies in grammar practice.
+- The play button stays the shared `PlayButton` (already a round outlined button), coloured in the reading accent
+  inside the answer (`.fa-play`), not an `IconButton` (the entry page #104 owns it).
+- `WritingPad`: the pad is 12.5rem; ink reads `--accent` and misses `--bad` from computed style (the literal miss red
+  went); finished outlines stay `--accent` (no `--good` switch: the fill is the reveal/hint feedback, not a verdict).
+- The face heading is the kind label (`h1`, `tabindex=-1`); the page's old "Flashcards" `h1` is gone from the session
+  view (the `<title>` is unchanged).
+- Prep-run additions (coordinator, bd6c9176): 1. the session applies `withShownWritten` before every face (unchanged);
+  tests: a kana-row card shows の, not 乃, on Recognise (session test) and Recall (card test); 2. stroke data stays the
+  installed strokes pack; a missing character keeps the fail text and Continue, and **Show strokes is not offered
+  while no data is loaded** (tests); 3. offline: the banners sit at the top of the panel, the dock at the bottom
+  (measured 360×640 with the offline banner: banner 48–84 px, progress line 96–134, dock 571–640, no overlap); the
+  companion note test is unchanged and green; 4. title, live regions, error texts and the `/study` links are
+  unchanged; "Recall" kept.
+
+**Rulings added while building**
+- Ruling: a month label falls back to the short unit where the narrow one equals the minute's — `2m` would read as two
+  minutes — cost: English shows `2 mths` (wider than the mockup's style).
+- Ruling: deck · level for a level-session item with no deck yet shows the level alone ("JLPT kanji N5") — the item has
+  no deck until it is graded — cost: none.
+- Ruling: the re-show chip is a neutral `Chip` (the old red outline went): its words carry the meaning — cost: none.
+- Ruling: the session reload loop (below) is fixed here although it predates #101 — the session cannot be checked or
+  used without it — cost: one extra commit in this branch.
+- Ruling: no "before" gallery image — the merge-base build never left "Loading your session…" in a real browser (the
+  loop below) — cost: no visual before/after pair; the after images are kept.
+
+**Found in the real-app check and fixed (85935aa5):** the session page reloaded for ever in a real browser (thousands
+of `/api/sync/pull` and `/api/events` requests in 3 s, then `ERR_INSUFFICIENT_RESOURCES`), also on the merge base
+`feature/visual-rework` (built and measured: 5124 requests in 3 s). Cause: the workspace effect tracked `$offline`
+read inside `load()`, which the load itself changes (outbox flush, cached answer). Fix: only the workspace is tracked
+(`untrack(load)`); test: an offline-state change does not reload the session (red first: 2 loads).
+
+**Visual check (Playwright library, permitted):** web build embedded into a scratch Go binary on 127.0.0.1:18731, scratch
+data dir seeded with `plugins/samples` (zh-mini, hsk-mini), the strokes pack from `prepare-strokes-pack.mjs`, three
+scratch example sentences inserted into the scratch database (never in the repo), user registered via the API, five
+words added through the entry page, Reverse/Cloze and every card type enabled on `/study`; one session per kind
+(`sessionStorage` config with that kind). Every kind before and after the answer at 360×640, 1024×768, 1440×900 in
+Latte, Mocha, Gruvbox and Nord (appearance row PUT through the API), plus forced colours (Latte) and reduced motion
+(Mocha) at 1024: 84 + 12 + 12 screenshots. Compared by eye with the mockup's Lighter weight: same four parts in the
+same places, dock at the bottom, grade underlines in grade colours, suggested wash (Tones, Fill the gap). Measured:
+- grade names on `--panel` (WCAG): Latte Again 4.80, Hard/Good/Easy 7.06 (they read in `--text`: their colours are
+  2.64/2.96/4.34); Mocha 7.08/9.27/11.03/7.79; Gruvbox 10.75 (Again in `--text`)/5.84/7.14/5.48; Nord
+  10.84/10.84/6.13/4.64; forced colours 21.00 — all ≥ 4.5 (the suggested wash itself not measured);
+- dock inside the viewport in every run (360×640: 543–616, or 567–640 when the content scrolls under it); no
+  horizontal scroll at any width;
+- interval labels of the new cards `<1m · 6m · 10m · 8d` = `next-intervals.json` "a new card";
+- console: no errors except `ERR_ABORTED` chunk loads cancelled by the script's own navigations; no failed API request
+  after the loop fix (before it: the loop);
+- `--motion-medium` computes to `0ms` under reduced motion (`.2s` otherwise).
+Kept: `docs/superpowers/handoffs/assets/vr-flashcards-after-1440-latte.png` (Tones, after, Good suggested, 52 kB) and
+`vr-flashcards-after-360-mocha.png` (Fill the gap, after, 33 kB); every other screenshot, the scratch binary and data
+dir deleted.
+
+**Existing tests changed and why:** `routes/study/session/page.dom.test.ts` labels `Vocab/Writing/Reverse/Cloze/Word
+Salad/Tone card` → `Recognise/Write/Recall/Fill the gap/Build the sentence/Tones card` (design: the card is named by its
+task); `VocabCard`, `ReverseCard`, `ClozeCard` dom tests, `audioButton.test.ts` and `i18n/studyLang.dom.test.ts` render
+the card through `testing/CardHarness` (a card needs the face; assertions unchanged); `derive.test.ts` expects 40
+tokens and the four new ones; `derive.json` cases gained `readableGrades`.
+
+**Not verified:** a screen reader (live region wording and the heading focus are tested in jsdom only); a real
+offline session from the service worker's cached pull in Playwright (the context's offline mode did not take the page
+offline; the banner was raised with an `offline` event; the offline session itself is covered by the jsdom test);
+touch gestures on the pads; audio (no audio pack in the scratch data, so no play button was seen); the summary screen
+after a whole session (restyled on `Section`/`Stat`, jsdom only); Android.
