@@ -118,7 +118,7 @@ vacation day, and "consecutive" means the next non-vacation date.
 
 ## Limits (`limits-rows.json`, `daily-limits.json`)
 
-Per deck `d` (current members, after the canonical merge), learner day `D`: `newDone(d)` counts cards whose
+Per deck `d` (current members, after the canonical merge: `study/canonical.json`), learner day `D`: `newDone(d)` counts cards whose
 first valid review is on `D`, `reviewDone(d)` cards first reviewed before `D` that have a valid review on `D`.
 Admission walks the candidates in queue order and skips what does not fit: `continuing` (due, already reviewed
 today) is admitted without touching the counts but is capped by the session review limit; `review` and

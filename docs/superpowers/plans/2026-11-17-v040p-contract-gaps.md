@@ -394,3 +394,10 @@ of each other in content but share the web gates; one implementer at a time. Tas
   migrated weights come from ts-fsrs — cost: a change to those rules edits the generator's case table.
 - Observation (not a bug, pinned): at the maximum interval ts-fsrs 5.4.2 reports `scheduled_days` 36502 while
   stability is 36500; the fixture keeps the library's numbers.
+- Task 5 (canonical): 16 cases; expectations produced by a scratch vitest file (deleted) running
+  `canonicalCards`, each checked against the rule by hand (note per case). `canonical.test.ts` with the fixture
+  absent → FAIL; present → PASS (34; each case also asserts untouched inputs and idempotence); `merged` 3 → 2 →
+  FAIL. Gates: `npm run check` 0; `npm test` 0 (398 files, 6574 passed).
+- Observation (kept, not a bug): a survivor whose own `skipKinds` hold an unknown kind keeps them as stored
+  unless a duplicate has `skipKinds` (then the union is cleaned); not pinned, as the wire decode
+  (`study/rows.json`) already rejects unknown kinds.
