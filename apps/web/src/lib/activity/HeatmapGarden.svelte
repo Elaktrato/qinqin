@@ -31,7 +31,7 @@
 		margin-top: var(--space-4);
 		overflow-x: auto;
 		/* Room for today's ring inside the scroll box. */
-		padding: 0.15rem;
+		padding: 0.2rem;
 	}
 
 	.cell {

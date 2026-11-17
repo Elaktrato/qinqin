@@ -51,6 +51,12 @@ describe('heatmap tint ramp', () => {
 		}
 	});
 
+	it("today's ring is doubled: a --panel gap, then the accent (#100 review), so it shows on a level-4 tile too", () => {
+		expect(decls('.heatmap :global(.tile.today)')['box-shadow']).toBe('0 0 0 1.5px var(--panel), 0 0 0 3px var(--accent)');
+		const forced = source.slice(source.indexOf('@media (forced-colors'));
+		expect(forced).toMatch(/\.heatmap :global\(\.tile\.today\) \{\s*outline: 2px solid Highlight;\s*outline-offset: 1px;/);
+	});
+
 	for (const theme of BUILTIN_THEMES) {
 		for (const accent of accentChoices(theme)) {
 			it(`${theme.id} / ${accent}: level 0 vs 4 ≥ 3:1 and a visible 0 → 1 step`, () => {

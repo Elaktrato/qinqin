@@ -568,8 +568,10 @@
 		background-image: repeating-linear-gradient(45deg, var(--line) 0 2px, transparent 2px 5px);
 	}
 
+	/* Today: a --panel gap inside an accent ring, so the ring shows on the
+	   accent-filled level-4 tile too (#100 review). */
 	.heatmap :global(.tile.today) {
-		box-shadow: 0 0 0 1.5px var(--accent);
+		box-shadow: 0 0 0 1.5px var(--panel), 0 0 0 3px var(--accent);
 	}
 
 	/* A day still to come: a dashed outline, so it never reads as an empty past day. */
@@ -588,6 +590,7 @@
 
 		.heatmap :global(.tile.today) {
 			outline: 2px solid Highlight;
+			outline-offset: 1px;
 		}
 	}
 
