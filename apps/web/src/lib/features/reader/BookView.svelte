@@ -870,7 +870,7 @@
 	}
 
 	function jumpToHighlight(h: Highlight): void {
-		if (mode === 'drawer') drawerOpen = false;
+		if (mode === 'sheet') drawerOpen = false;
 		focusMark = h.id;
 		if (!jumpTo(formatPosition(h.chapter, h.paragraph))) {
 			focusMark = null;
@@ -891,7 +891,7 @@
 	// The drawer covers the text: a jump closes it so the bookmark shows
 	// (focus goes to the paragraph, as with every jump).
 	function jumpFromRail(b: Bookmark): void {
-		if (mode === 'drawer') drawerOpen = false;
+		if (mode === 'sheet') drawerOpen = false;
 		jumpToBookmark(b);
 	}
 
