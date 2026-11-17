@@ -65,10 +65,6 @@
 	--hit: 2.75rem;
 	--layer-float: 50;
 	--layer-modal: 100;
-
-	/* Today's colour variables, now from the theme (the pages move to the
-	   tokens themselves in #98+). */
-	--link: var(--reading-accent);
 }
 
 /* Every component animates with the motion tokens, so this one block
@@ -82,8 +78,8 @@
 
 body {
 	margin: 0;
-	background: var(--panel, Canvas);
-	color: var(--text, CanvasText);
+	background: var(--panel);
+	color: var(--text);
 }
 
 main {
@@ -176,7 +172,7 @@ button.link {
 	padding: 0;
 	margin: 0 0.75em 0 0;
 	font: inherit;
-	color: var(--link);
+	color: var(--reading-accent);
 	text-decoration: underline;
 	cursor: pointer;
 }

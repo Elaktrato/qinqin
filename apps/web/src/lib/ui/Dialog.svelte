@@ -5,12 +5,14 @@
 	// --chrome. Escape (or the browser's cancel) closes it once; focus
 	// returns to where it was.
 	//
-	// API: <Dialog bind:open title description? onclose? initialFocus?>content{#snippet actions()}…{/snippet}</Dialog>
+	// API: <Dialog bind:open title description? describedBy? onclose? initialFocus? dismissible?>content{#snippet actions()}…{/snippet}</Dialog>
 	//   open          bindable; the dialog exists only while open
 	//   title         the heading and accessible name (t(…))
 	//   description   a short line under the title; the accessible description
+	//   describedBy   the id of content inside the dialog that describes it (a list, say), instead
 	//   onclose       called when the person dismisses it (Escape, cancel)
 	//   initialFocus  a selector inside the dialog to focus first (else the first focusable)
+	//   dismissible   false while an action runs: Escape and cancel do nothing (default true)
 	//   actions       the buttons row (Button components), end-aligned
 	import type { Snippet } from 'svelte';
 	import { modal, wrapTab } from './modal';
@@ -19,16 +21,20 @@
 		open = $bindable(false),
 		title,
 		description,
+		describedBy,
 		onclose,
 		initialFocus,
+		dismissible = true,
 		children,
 		actions
 	}: {
 		open?: boolean;
 		title: string;
 		description?: string;
+		describedBy?: string;
 		onclose?: () => void;
 		initialFocus?: string;
+		dismissible?: boolean;
 		children?: Snippet;
 		actions?: Snippet;
 	} = $props();
@@ -37,7 +43,7 @@
 	let dialog = $state<HTMLDialogElement>();
 
 	function dismiss(): void {
-		if (!open) return;
+		if (!open || !dismissible) return;
 		open = false;
 		onclose?.();
 	}
@@ -50,7 +56,7 @@
 		class="dialog"
 		aria-modal="true"
 		aria-labelledby="{uid}-title"
-		aria-describedby={description ? `${uid}-text` : undefined}
+		aria-describedby={describedBy ?? (description ? `${uid}-text` : undefined)}
 		oncancel={(e) => {
 			e.preventDefault();
 			dismiss();

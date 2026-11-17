@@ -146,7 +146,7 @@
 	.credit,
 	.hint {
 		font-weight: 400;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.levels li {

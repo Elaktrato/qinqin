@@ -117,8 +117,8 @@
 		padding: 0.6rem 1rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		cursor: pointer;
 	}
 
@@ -147,6 +147,6 @@
 
 	.empty {
 		margin-top: 2.5rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 </style>

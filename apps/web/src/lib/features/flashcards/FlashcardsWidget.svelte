@@ -232,20 +232,13 @@
 	.study {
 		font-size: 0.8rem;
 		padding: 0.2rem 0.65rem;
-		border: 1px solid #0b6bcb;
+		border: 1px solid var(--accent);
 		border-radius: 999px;
-		color: #0b6bcb;
+		color: var(--reading-accent);
 		font-weight: 600;
 		text-decoration: none;
 	}
 
-	/* After the base rule: same specificity, so the later rule wins. */
-	@media (prefers-color-scheme: dark) {
-		.study {
-			border-color: #6cb4ff;
-			color: #6cb4ff;
-		}
-	}
 
 	.buddy {
 		display: flex;
@@ -270,7 +263,7 @@
 	.bar span {
 		display: block;
 		height: 100%;
-		background: #0b6bcb;
+		background: var(--accent);
 	}
 
 	.streak {
@@ -279,7 +272,7 @@
 	}
 
 	.streak.idle {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.streak.idle .flame {
@@ -298,6 +291,6 @@
 	.stats {
 		margin: 0;
 		font-size: 0.9rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 </style>

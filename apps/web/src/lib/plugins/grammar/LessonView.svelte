@@ -172,14 +172,14 @@
 
 	.summary {
 		margin: 0 0 1rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.pattern {
 		margin: 0 0 1rem;
 		padding: 0.6rem 0.9rem;
 		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-inline-start: 4px solid #0b6bcb;
+		border-inline-start: 4px solid var(--accent);
 		border-radius: 0.4rem;
 		background: color-mix(in srgb, currentColor 5%, transparent);
 		font-size: 1.25rem;
@@ -219,11 +219,11 @@
 	}
 
 	.reading {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.translation {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.practice {
@@ -236,15 +236,15 @@
 		min-height: 44px;
 		padding: 0 1.4rem;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 		text-decoration: none;
 	}
 
 	.button:focus-visible,
 	a:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
@@ -257,10 +257,12 @@
 	.credits {
 		margin-top: 1rem;
 		font-size: 0.85rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

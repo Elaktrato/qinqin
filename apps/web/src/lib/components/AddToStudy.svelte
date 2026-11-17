@@ -186,8 +186,8 @@
 
 	.action:hover,
 	.action:focus-visible {
-		border-color: #0b6bcb;
-		color: #0b6bcb;
+		border-color: var(--accent);
+		color: var(--reading-accent);
 	}
 
 	.action.added {
@@ -199,13 +199,15 @@
 	.note {
 		margin: 0;
 		font-size: 0.85rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.error {
 		margin: 0;
 		font-size: 0.85rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

@@ -152,10 +152,10 @@
 	.counter {
 		margin: 0.25rem 0;
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 	.counter.over {
-		color: #c62828;
+		color: var(--readable-bad);
 		opacity: 1;
 	}
 	.buttons {
@@ -176,10 +176,12 @@
 		cursor: default;
 	}
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

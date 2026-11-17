@@ -62,6 +62,26 @@ describe('Dialog', () => {
 		expect(onclose).toHaveBeenCalledTimes(1);
 	});
 
+	it('focus moves in as soon as it is mounted open (no wait for a later task)', () => {
+		render(DialogHarness, { initialFocus: '.keep', startOpen: true });
+		expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Keep' }));
+	});
+
+	it('dismissible={false} ignores Escape and cancel (an action is running)', async () => {
+		const { dialog, onclose } = await open({ dismissible: false });
+		await fireEvent.keyDown(dialog, { key: 'Escape' });
+		const cancel = new Event('cancel', { cancelable: true });
+		dialog.dispatchEvent(cancel);
+		expect(cancel.defaultPrevented).toBe(true);
+		expect(screen.getByRole('dialog')).toBe(dialog);
+		expect(onclose).not.toHaveBeenCalled();
+	});
+
+	it('describedBy names content inside the dialog as its description instead', () => {
+		render(DialogHarness, { startOpen: true, describedBy: 'harness-what' });
+		expect(screen.getByRole('dialog', { description: 'Three decks go.' })).toBeTruthy();
+	});
+
 	it('closing from inside (an action) also returns focus', async () => {
 		const { opener } = await open();
 		await fireEvent.click(screen.getByRole('button', { name: 'Keep' }));

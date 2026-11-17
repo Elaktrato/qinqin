@@ -7,6 +7,7 @@
 	//   variant  'secondary' (default) | 'primary' | 'plain' | 'filled'
 	//   tone     'default' | 'danger' (destructive: --readable-bad text, --bad line)
 	//   type     'button' (default) | 'submit' | 'reset'
+	//   form     the id of the form a submit button belongs to (a Dialog action outside its form)
 	//   href     renders a link styled as the button
 	//   busy     aria-busy + disabled while an action runs
 	//   icon     a decorative IconName before the text
@@ -19,6 +20,7 @@
 		variant?: 'primary' | 'secondary' | 'plain' | 'filled';
 		tone?: 'default' | 'danger';
 		type?: 'button' | 'submit' | 'reset';
+		form?: string;
 		href?: string;
 		disabled?: boolean;
 		busy?: boolean;
@@ -32,6 +34,7 @@
 		variant = 'secondary',
 		tone = 'default',
 		type = 'button',
+		form,
 		href,
 		disabled = false,
 		busy = false,
@@ -54,6 +57,7 @@
 		bind:this={element}
 		class={classes}
 		{type}
+		{form}
 		disabled={disabled || busy}
 		aria-busy={busy ? 'true' : undefined}
 		{onclick}

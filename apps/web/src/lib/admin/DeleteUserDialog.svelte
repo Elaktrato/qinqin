@@ -8,12 +8,14 @@
 	import { previewLines } from './deleteView';
 	import { user as me } from '$lib/auth';
 	import ReauthFields from './ReauthFields.svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import Dialog from '$lib/ui/Dialog.svelte';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
 
 	// Confirmation for deleting someone else's account: says exactly what
 	// goes (the server's own counts) and asks for the username to be typed.
-	// A modal <dialog>: the browser traps focus and closes it on Escape; the
-	// opener gets focus back through `onclose`.
+	// A modal Dialog (lib/ui): focus is trapped and Escape closes it (not
+	// while deleting); the opener gets focus back through `onclose`.
 	let {
 		id,
 		username,
@@ -21,7 +23,6 @@
 	}: { id: number; username: string; onclose: (deleted: boolean) => void } = $props();
 
 	const uid = $props.id();
-	let dialog = $state<HTMLDialogElement | null>(null);
 	let input = $state<HTMLInputElement | null>(null);
 	let typed = $state('');
 	let password = $state('');
@@ -40,10 +41,6 @@
 	function finish(deleted: boolean): void {
 		if (closed) return;
 		closed = true;
-		if (dialog?.open) {
-			if (typeof dialog.close === 'function') dialog.close();
-			else dialog.removeAttribute('open');
-		}
 		onclose(deleted);
 	}
 
@@ -70,9 +67,6 @@
 	}
 
 	onMount(() => {
-		if (typeof dialog?.showModal === 'function') dialog.showModal();
-		else dialog?.setAttribute('open', '');
-		input?.focus();
 		deletionPreview(id).then(
 			(p) => (preview = p),
 			() => (previewFailed = true)
@@ -80,18 +74,15 @@
 	});
 </script>
 
-<dialog
-	bind:this={dialog}
-	aria-labelledby="{uid}-title"
-	aria-describedby="{uid}-what"
-	oncancel={(event) => {
-		event.preventDefault();
-		if (!busy) finish(false);
-	}}
+<Dialog
+	open
+	title={t('admin.delete.title', { name: username })}
+	describedBy="{uid}-what"
+	initialFocus="input"
+	dismissible={!busy}
 	onclose={() => finish(false)}
 >
-	<form onsubmit={submit}>
-		<h2 id="{uid}-title">{t('admin.delete.title', { name: username })}</h2>
+	<form id="{uid}-form" onsubmit={submit}>
 		<div id="{uid}-what">
 			<p>{t('admin.delete.what')}</p>
 			{#if preview}
@@ -113,18 +104,16 @@
 		</label>
 		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} />
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
-		<div class="buttons">
-			<button type="button" onclick={() => finish(false)} disabled={busy}>{t('common.action.cancel')}</button>
-			<button type="submit" class="danger" disabled={!ready}>{busy ? t('admin.delete.deleting') : t('admin.delete.submit')}</button>
-		</div>
 	</form>
-</dialog>
+	{#snippet actions()}
+		<Button onclick={() => finish(false)} disabled={busy}>{t('common.action.cancel')}</Button>
+		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready}
+			>{busy ? t('admin.delete.deleting') : t('admin.delete.submit')}</Button
+		>
+	{/snippet}
+</Dialog>
 
 <style>
-	dialog {
-		max-width: min(34rem, calc(100vw - 2rem));
-		padding: 1.2rem;
-	}
 	label {
 		display: grid;
 		gap: 0.3rem;
@@ -134,23 +123,10 @@
 		font: inherit;
 		padding: 0.45rem 0.6rem;
 	}
-	.buttons {
-		display: flex;
-		gap: 0.6rem;
-		justify-content: flex-end;
-		margin-top: 1rem;
-	}
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
-	}
-	.danger {
-		background: #b3261e;
-		border-color: #b3261e;
-		color: #fff;
-	}
-	button:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

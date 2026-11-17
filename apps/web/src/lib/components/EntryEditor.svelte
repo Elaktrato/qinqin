@@ -248,7 +248,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.written-field {
@@ -262,7 +262,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.written-field input,
@@ -288,7 +288,7 @@
 
 	.hint {
 		margin: 0 0 0.5rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.rows {
@@ -346,14 +346,14 @@
 
 	.save {
 		font-weight: 600;
-		border-color: #0b6bcb;
-		color: #0b6bcb;
+		border-color: var(--accent);
+		color: var(--reading-accent);
 	}
 
 	button:hover:not(:disabled),
 	button:focus-visible {
-		border-color: #0b6bcb;
-		color: #0b6bcb;
+		border-color: var(--accent);
+		color: var(--reading-accent);
 	}
 
 	button:disabled {
@@ -361,15 +361,28 @@
 		cursor: default;
 	}
 
+	/* Success: --text with a --good dot as the shape cue. */
 	.saved {
 		margin: 0.75rem 0 0;
-		color: #2e7d32;
+		color: var(--text);
 		font-weight: 600;
+	}
+	.saved::before {
+		content: '';
+		display: inline-block;
+		width: 0.5em;
+		height: 0.5em;
+		margin-inline-end: 0.35em;
+		border-radius: 50%;
+		background: var(--good);
+		vertical-align: 0.1em;
 	}
 
 	.error {
 		margin: 0.75rem 0 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

@@ -465,7 +465,9 @@ import type { StudyContext } from '$lib/study/studyContext';
 	}
 
 	.error {
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.toast-region {
@@ -482,10 +484,11 @@ import type { StudyContext } from '$lib/study/studyContext';
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		background: #222;
-		color: #fff;
+		background: var(--panel);
+		color: var(--text);
+		border: 1px solid var(--hair);
 		border-radius: 0.5rem;
 		padding: 0.6rem 1rem;
-		box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
+		box-shadow: var(--shadow-float);
 	}
 </style>

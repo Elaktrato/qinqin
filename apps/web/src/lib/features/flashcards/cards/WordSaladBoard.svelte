@@ -178,7 +178,7 @@
 
 	.empty {
 		align-self: center;
-		opacity: 0.6;
+		color: var(--readable-muted);
 	}
 
 	.token {
@@ -195,7 +195,7 @@
 	}
 
 	.token.placed {
-		background: color-mix(in srgb, #0b6bcb 12%, transparent);
+		background: color-mix(in srgb, var(--accent) 12%, transparent);
 	}
 
 	/* A finished sentence stays fully legible: locked, not faded. */
@@ -208,7 +208,7 @@
 
 	.token.right,
 	.token.placed.right:disabled {
-		border-color: #2e7d32;
+		border-color: var(--good);
 	}
 
 	.actions {
@@ -228,8 +228,8 @@
 
 	.primary {
 		border: 0;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.secondary {
@@ -244,23 +244,23 @@
 	}
 
 	button:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
 	.token:hover:not(:disabled),
 	.secondary:hover:not(:disabled) {
-		border-color: #0b6bcb;
+		border-color: var(--accent);
 	}
 
 	.feedback {
 		min-height: 1.4rem;
 		margin: 0.75rem 0 0;
 		font-weight: 600;
-		color: #2e7d32;
+		color: var(--text);
 	}
 
 	.feedback.bad {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 </style>

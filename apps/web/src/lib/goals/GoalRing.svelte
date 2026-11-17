@@ -66,9 +66,9 @@
 {/if}
 
 <style>
-	/* Fill #0b6bcb on light (5.3:1 against white) and #6cb4ff on dark (about
-	   8.6:1 against a #121212 canvas); the track is currentColor at 50 % (about
-	   3.9:1 light, 5.3:1 dark). The card itself has no background of its own. */
+	/* Fill in the theme's --accent (every offered accent is at least 3:1 on
+	   panel); the track is currentColor at 50 %. The card itself has no
+	   background of its own. */
 	.goal-ring {
 		display: flex;
 		align-items: center;
@@ -92,15 +92,9 @@
 	}
 
 	.fill {
-		stroke: #0b6bcb;
+		stroke: var(--accent);
 		stroke-linecap: round;
 		transition: stroke-dashoffset 0.4s ease-out;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.fill {
-			stroke: #6cb4ff;
-		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -121,13 +115,7 @@
 
 	.check {
 		font-weight: 700;
-		color: #1b7f3b;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.check {
-			color: #6fd08c;
-		}
+		color: var(--good);
 	}
 
 	.reached-word {
@@ -142,6 +130,6 @@
 	.status {
 		margin: 0;
 		font-size: 0.9rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 </style>

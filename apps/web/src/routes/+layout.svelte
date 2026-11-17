@@ -386,10 +386,11 @@
 
 <style>
 	.app {
-		/* Nav accent: the theme's accent; text on its tint uses the reading
-		   accent (the accent where it reaches 4.5:1, else the text colour). */
+		/* Nav accent: the current item sits on an accent tint with its icon in
+		   the accent; its words stay --text (the reading accent fell to about
+		   3.9:1 on the tint in Catppuccin Latte, measured in #98 B5). */
 		--nav-accent: var(--accent);
-		--nav-accent-text: var(--reading-accent);
+		--nav-accent-text: var(--text);
 		/* The fixed bottom tab bar's height (0 while there is none). Fixed
 		   elements further down, such as the reader's drawer button, keep
 		   clear of the bar with it. */
@@ -418,16 +419,16 @@
 		z-index: 100;
 		padding: 0.5rem 0.9rem;
 		border-radius: 0.5rem;
-		background: Canvas;
-		color: CanvasText;
+		background: var(--panel);
+		color: var(--text);
 		font-weight: 600;
-		box-shadow: 0 0.125rem 0.75rem rgb(0 0 0 / 0.2);
+		box-shadow: var(--shadow-float);
 		transform: translateY(-200%);
 	}
 
 	.skip-link:focus {
 		transform: none;
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
@@ -481,24 +482,27 @@
 		gap: 0.4rem;
 		padding: 0.4rem 0.8rem 0.4rem 0.65rem;
 		border-radius: 999px;
-		color: inherit;
+		color: var(--readable-muted);
 		text-decoration: none;
-		opacity: 0.85;
 		transition:
 			background-color 0.12s ease,
 			color 0.12s ease;
 	}
 
 	.main-nav a:hover {
-		opacity: 1;
+		color: var(--text);
 		background: color-mix(in srgb, currentColor 8%, transparent);
 	}
 
 	.main-nav a[aria-current='page'] {
-		opacity: 1;
 		font-weight: 600;
 		color: var(--nav-accent-text);
 		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
+	}
+
+	.main-nav a[aria-current='page'] :global(.nav-icon),
+	.footer a[aria-current='page'] :global(.nav-icon) {
+		color: var(--nav-accent);
 	}
 
 	.workspace {
@@ -566,8 +570,10 @@
 	.workspace-error {
 		margin: 0;
 		padding: 0.5rem 1.5rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.workspace-error .retry {
@@ -645,25 +651,23 @@
 		gap: 0.35rem;
 		padding: 0.3rem 0.65rem 0.3rem 0.55rem;
 		border-radius: 999px;
-		color: inherit;
+		color: var(--readable-muted);
 		text-decoration: none;
-		opacity: 0.85;
 	}
 
 	.footer a:hover {
-		opacity: 1;
+		color: var(--text);
 		background: color-mix(in srgb, currentColor 8%, transparent);
 	}
 
 	.footer a[aria-current='page'] {
-		opacity: 1;
 		font-weight: 600;
 		color: var(--nav-accent-text);
 		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
 	}
 
 	.version {
-		opacity: 0.65;
+		color: var(--readable-muted);
 	}
 
 	/* Phones and narrow windows: the main nav becomes a fixed bottom tab
@@ -710,10 +714,9 @@
 			gap: 0;
 			padding: 0.3rem 0.5rem env(safe-area-inset-bottom, 0px);
 			overflow-x: auto;
-			background: Canvas;
-			color: CanvasText;
-			border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-			box-shadow: 0 -0.125rem 0.75rem rgb(0 0 0 / 0.08);
+			background: var(--panel);
+			color: var(--text);
+			border-top: 1px solid var(--hair);
 		}
 
 		.main-nav a {

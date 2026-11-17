@@ -264,10 +264,10 @@
 
 	.primary {
 		padding: 0 1rem;
-		border: 1px solid #0b6bcb;
+		border: 1px solid var(--accent);
 		border-radius: 999px;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 	}
 
@@ -294,12 +294,14 @@
 	.reading,
 	.state,
 	.hint {
-		opacity: 0.8;
+		color: var(--readable-muted);
 		font-size: 0.9rem;
 	}
 
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

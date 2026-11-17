@@ -194,11 +194,11 @@ Android builds the same set in Compose). Every visible word is a prop the caller
 | `Icon` | `name`, `size` (`s`/`m`/`l` or px), `label?` | Lucide shapes (`icons/lucide.ts`), stroke 1.5, `currentColor`; decorative unless labelled |
 | `IconButton` | `label` (required), `icon`, `size?`, `pressed?`, `href?`, `disabled?`, `tooltip?`, `placement?` | named + tooltip on hover/focus; no box at rest; 44px target on touch |
 | `Tooltip` | `text`, `placement?`, `describe?`, `open?`, `suppress?`, children(`tipId`) | hover and keyboard focus, hoverable, Escape hides (WCAG 1.4.13) |
-| `Button` | `variant` (`secondary`/`primary`/`plain`/`filled`), `tone?` (`danger`), `type?`, `href?`, `busy?`, `icon?` | one primary in the soft tint; secondary a hairline; filled rare; disabled not faded |
+| `Button` | `variant` (`secondary`/`primary`/`plain`/`filled`), `tone?` (`danger`), `type?`, `form?`, `href?`, `busy?`, `icon?` | one primary in the soft tint; secondary a hairline; filled rare; disabled not faded |
 | `Field` | `label`, `bind:value`, `type?`, `hint?`, `error?`, `hideLabel?`, `multiline?` | an underline; 2px accent on focus; hint and error linked; error has a `bad` bar |
 | `Tabs` | `label`, `tabs` (`{id, label, href?}`), `bind:selected`, `onselect?`, `panel?` | text tabs, 2px accent underline; APG tabs, or links with `aria-current` for routes |
 | `Menu` / `MenuItem` | `label`, `icon?` / `text?`, `menuLabel?`, `align?`, `bind:open` / `onselect?`, `href?`, `checked?`, `icon?`, `separator?` | floating layer; roving focus, typeahead, Escape returns focus; a check mark for the chosen item |
-| `Dialog` | `bind:open`, `title`, `description?`, `onclose?`, `initialFocus?`, `actions` | native modal `<dialog>`; focus in, trapped, returned; Escape closes once |
+| `Dialog` | `bind:open`, `title`, `description?`, `describedBy?`, `onclose?`, `initialFocus?`, `dismissible?`, `actions` | native modal `<dialog>`; focus in, trapped, returned; Escape closes once |
 | `Sheet` | `bind:open`, `label`, `onclose?`, `onnext?`, `onprev?`, `initialFocus?` | the bottom sheet of the reader lookup and the journal corrections; drag down to close, swipe or arrows to page |
 | `Chip` | `tone?` (`neutral`/`accent`/`good`) | small text on `raised`, no border; `good` adds a dot |
 | `Stat` | `value`, `label`, `change?` (`{text, direction}`) | big light number, small muted label; the change in words plus an arrow |

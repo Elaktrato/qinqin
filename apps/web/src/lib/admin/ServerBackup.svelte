@@ -89,5 +89,5 @@
 <style>
 	.stack { display: grid; gap: 0.9rem; max-width: 28rem; }
 	label { display: grid; gap: 0.15rem; }
-	.hint { opacity: 0.75; font-size: 0.9em; }
+	.hint { color: var(--readable-muted); font-size: 0.9em; }
 </style>

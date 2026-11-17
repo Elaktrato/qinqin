@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { onMount, tick } from 'svelte';
+	import { tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { resetUserMfa } from '$lib/api/adminUsers';
 	import { user as me } from '$lib/auth';
 	import ReauthFields from './ReauthFields.svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import Dialog from '$lib/ui/Dialog.svelte';
 	import { resetError, resetLines, type MfaFactors } from './mfaResetView';
 	import { reauthBody, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
 
 	// Confirmation for resetting someone else's two-step sign-in: says what
 	// goes and asks for the acting administrator's own password (and code,
-	// when they have an authenticator). A modal <dialog> like the delete
-	// dialog; the opener gets focus back through `onclose`.
+	// when they have an authenticator). A modal Dialog (lib/ui) like the
+	// delete dialog; the opener gets focus back through `onclose`.
 	let {
 		id,
 		username,
@@ -30,7 +32,6 @@
 	const uid = $props.id();
 	let sawCodeInvalid = $state(false);
 	const needsCode = $derived(reauthNeedsCode($me?.mfa?.totp, sawCodeInvalid));
-	let dialog = $state<HTMLDialogElement | null>(null);
 	let fields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let password = $state('');
 	let code = $state('');
@@ -43,10 +44,6 @@
 	function finish(reset: boolean): void {
 		if (closed) return;
 		closed = true;
-		if (dialog?.open) {
-			if (typeof dialog.close === 'function') dialog.close();
-			else dialog.removeAttribute('open');
-		}
 		onclose(reset);
 	}
 
@@ -72,60 +69,34 @@
 			fields?.focusField(f.focus);
 		}
 	}
-
-	onMount(() => {
-		if (typeof dialog?.showModal === 'function') dialog.showModal();
-		else dialog?.setAttribute('open', '');
-		fields?.focusField('password');
-	});
 </script>
 
-<dialog
-	bind:this={dialog}
-	aria-labelledby="{uid}-title"
-	aria-describedby="{uid}-what"
-	oncancel={(event) => {
-		event.preventDefault();
-		if (!busy) finish(false);
-	}}
+<Dialog
+	open
+	title={t('admin.mfaReset.title', { name: username })}
+	describedBy="{uid}-what"
+	initialFocus="input[type='password']"
+	dismissible={!busy}
 	onclose={() => finish(false)}
 >
-	<form onsubmit={submit}>
-		<h2 id="{uid}-title">{t('admin.mfaReset.title', { name: username })}</h2>
+	<form id="{uid}-form" onsubmit={submit}>
 		<ul id="{uid}-what">
 			{#each resetLines(mfa) as line (line)}<li>{line}</li>{/each}
 		</ul>
 		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} />
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
-		<div class="buttons">
-			<button type="button" onclick={() => finish(false)} disabled={busy}>{t('common.action.cancel')}</button>
-			<button type="submit" class="danger" disabled={!ready}>{t('admin.mfaReset.submit')}</button>
-		</div>
 	</form>
-</dialog>
+	{#snippet actions()}
+		<Button onclick={() => finish(false)} disabled={busy}>{t('common.action.cancel')}</Button>
+		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready}>{t('admin.mfaReset.submit')}</Button>
+	{/snippet}
+</Dialog>
 
 <style>
-	dialog {
-		max-width: min(34rem, calc(100vw - 2rem));
-		padding: 1.2rem;
-	}
-	.buttons {
-		display: flex;
-		gap: 0.6rem;
-		justify-content: flex-end;
-		margin-top: 1rem;
-	}
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
-	}
-	.danger {
-		background: #b3261e;
-		border-color: #b3261e;
-		color: #fff;
-	}
-	button:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

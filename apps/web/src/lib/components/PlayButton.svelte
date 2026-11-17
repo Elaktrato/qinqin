@@ -94,12 +94,12 @@
 		font-size: 0.8rem;
 		line-height: 1;
 		cursor: pointer;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.play:hover,
 	.play:focus-visible,
 	.play[aria-pressed='true'] {
-		opacity: 1;
+		color: var(--text);
 	}
 </style>

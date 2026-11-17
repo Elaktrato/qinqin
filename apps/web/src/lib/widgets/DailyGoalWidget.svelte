@@ -102,7 +102,7 @@
 	.hint {
 		margin: 0.9rem 0 0.5rem;
 		font-size: 0.9rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.streak {
@@ -114,22 +114,14 @@
 	.set {
 		font-size: 0.8rem;
 		padding: 0.2rem 0.65rem;
-		border: 1px solid #0b6bcb;
+		border: 1px solid var(--accent);
 		border-radius: 999px;
-		color: #0b6bcb;
+		color: var(--reading-accent);
 		font-weight: 600;
 		text-decoration: none;
 	}
 
 	.set {
 		display: inline-block;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.edit,
-		.set {
-			border-color: #6cb4ff;
-			color: #6cb4ff;
-		}
 	}
 </style>

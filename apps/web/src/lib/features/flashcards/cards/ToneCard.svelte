@@ -310,7 +310,7 @@
 
 	.prompt {
 		margin: 0.35rem 0 0;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.syllables {
@@ -343,15 +343,15 @@
 	}
 
 	.syllable.active .pad {
-		border-color: #0b6bcb;
+		border-color: var(--accent);
 	}
 
 	.pad.right {
-		border-color: #2e7d32;
+		border-color: var(--good);
 	}
 
 	.pad.wrong {
-		border-color: #c62828;
+		border-color: var(--bad);
 	}
 
 	.contour {
@@ -360,7 +360,7 @@
 		width: 100%;
 		height: 100%;
 		fill: none;
-		stroke: #0b6bcb;
+		stroke: var(--accent);
 		stroke-width: 6;
 		stroke-linecap: round;
 	}
@@ -389,7 +389,7 @@
 	}
 
 	.contour circle {
-		fill: #0b6bcb;
+		fill: var(--accent);
 		stroke: none;
 	}
 
@@ -403,13 +403,13 @@
 		margin-bottom: 0.35rem;
 		font-size: 1.1rem;
 		font-weight: 600;
-		opacity: 0.55;
+		color: var(--readable-muted);
 	}
 
 	.plain.char {
 		font-size: 3rem;
 		line-height: 1;
-		opacity: 0.35;
+		color: var(--readable-muted);
 	}
 
 	.tone-buttons {
@@ -430,8 +430,8 @@
 	}
 
 	.tone-buttons button.selected {
-		border-color: #0b6bcb;
-		background: color-mix(in srgb, #0b6bcb 15%, transparent);
+		border-color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 15%, transparent);
 	}
 
 	.answer {
@@ -441,11 +441,11 @@
 	}
 
 	.right {
-		color: #2e7d32;
+		color: var(--text);
 	}
 
 	.wrong {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
 	.pad.right,
@@ -458,8 +458,8 @@
 		padding: 0.45rem 0.9rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font: inherit;
 		font-weight: 600;
 		cursor: pointer;
@@ -471,7 +471,7 @@
 	}
 
 	button:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
@@ -479,11 +479,11 @@
 		min-height: 1.4rem;
 		margin: 0.75rem 0 0;
 		font-weight: 600;
-		color: #2e7d32;
+		color: var(--text);
 	}
 
 	.feedback.bad {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
 	.readings {
@@ -493,6 +493,6 @@
 	.credit {
 		margin: 0.25rem 0 0;
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 </style>

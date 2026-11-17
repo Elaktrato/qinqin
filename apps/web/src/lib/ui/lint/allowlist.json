@@ -1,0 +1,74 @@
+[
+	{
+		"rule": "colour",
+		"file": "lib/components/Flag.svelte",
+		"text": "#de2910",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"rule": "colour",
+		"file": "lib/components/Flag.svelte",
+		"text": "#ffde00",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"rule": "colour",
+		"file": "lib/components/Flag.svelte",
+		"text": "#ffffff",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"rule": "colour",
+		"file": "lib/components/Flag.svelte",
+		"text": "#bc002d",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"rule": "colour",
+		"file": "lib/components/Flag.svelte",
+		"text": "#000",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"rule": "colour",
+		"file": "lib/components/Flag.svelte",
+		"text": "#aa151b",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"rule": "colour",
+		"file": "lib/components/Flag.svelte",
+		"text": "#f1bf00",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"rule": "colour",
+		"file": "lib/account/QrCode.svelte",
+		"text": "#fff",
+		"reason": "Black modules on a white quiet zone: scanners need the fixed dark-on-light contrast of a QR code, whatever the theme."
+	},
+	{
+		"rule": "colour",
+		"file": "lib/account/QrCode.svelte",
+		"text": "#000",
+		"reason": "Black modules on a white quiet zone: scanners need the fixed dark-on-light contrast of a QR code, whatever the theme."
+	},
+	{
+		"rule": "colour",
+		"file": "app.css",
+		"text": "rgb(",
+		"reason": "--shadow-float, the one shadow token (fixed scale tokens): a translucent black that darkens any theme's surface."
+	},
+	{
+		"rule": "opacity",
+		"file": "lib/features/flashcards/cards/WritingPad.svelte",
+		"text": ".outline.scaffold",
+		"reason": "The writing pad's scaffold: a faint drawing of the character to trace over (a graphic, not text)."
+	},
+	{
+		"rule": "opacity",
+		"file": "lib/features/flashcards/cards/WritingPad.svelte",
+		"text": ".glow, .start",
+		"reason": "The stroke-start marker held still under reduced motion: a graphic dot, not text."
+	}
+]

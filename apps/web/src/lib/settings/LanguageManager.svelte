@@ -219,7 +219,7 @@
 	.flag {
 		margin-left: 0.4rem;
 		font-size: 0.75rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
 	}
 
@@ -233,7 +233,7 @@
 	}
 
 	.none {
-		opacity: 0.6;
+		color: var(--readable-muted);
 	}
 
 	.add {
@@ -244,13 +244,15 @@
 
 	.hint {
 		margin: 0;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.error {
 		margin: 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	input,
@@ -263,7 +265,7 @@
 
 	input {
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: Canvas;
+		background: var(--panel);
 		color: inherit;
 	}
 
@@ -276,8 +278,8 @@
 
 	.primary {
 		border: 0;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 	}
 
@@ -287,7 +289,7 @@
 	}
 
 	.danger {
-		border-color: #c62828;
-		color: #c62828;
+		border-color: var(--bad);
+		color: var(--readable-bad);
 	}
 </style>

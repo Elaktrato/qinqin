@@ -232,12 +232,12 @@
 
 	/* The previous week's numbers while the next one loads. */
 	.stale {
-		opacity: 0.55;
+		color: var(--readable-muted);
 	}
 
 	.hint {
 		margin: 1rem 0 0;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.retry {

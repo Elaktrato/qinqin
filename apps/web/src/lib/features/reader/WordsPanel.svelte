@@ -262,7 +262,9 @@
 	}
 	.error {
 		margin: 0.35rem 0;
-		color: #c62828;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 	.scope {
 		border: 0;

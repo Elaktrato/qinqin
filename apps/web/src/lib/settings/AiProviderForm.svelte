@@ -153,7 +153,7 @@
 	.hint,
 	.admin-line {
 		margin: 0;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.admin-line {

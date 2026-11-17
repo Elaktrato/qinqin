@@ -74,10 +74,12 @@
 		align-items: center;
 	}
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 	.error {
 		margin-block: 0.5rem;
-		color: #c62828;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

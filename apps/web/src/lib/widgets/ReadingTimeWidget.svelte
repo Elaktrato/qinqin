@@ -145,18 +145,11 @@
 	.open {
 		font-size: 0.8rem;
 		padding: 0.2rem 0.65rem;
-		border: 1px solid #0b6bcb;
+		border: 1px solid var(--accent);
 		border-radius: 999px;
-		color: #0b6bcb;
+		color: var(--reading-accent);
 		font-weight: 600;
 		text-decoration: none;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.open {
-			border-color: #6cb4ff;
-			color: #6cb4ff;
-		}
 	}
 
 	.totals {
@@ -168,7 +161,7 @@
 
 	.totals dt {
 		font-size: 0.75rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.totals dd {
@@ -183,7 +176,7 @@
 		margin: 1rem 0 0;
 		font-size: 0.8rem;
 		font-weight: 600;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.books {
@@ -208,7 +201,7 @@
 
 	.removed .title {
 		font-style: italic;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.time {
@@ -219,6 +212,6 @@
 	.note {
 		margin: 0.75rem 0 0;
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 </style>

@@ -122,7 +122,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.35rem 1rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.back-readings {
@@ -142,7 +142,7 @@
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.sound {
@@ -156,7 +156,7 @@
 	.credit {
 		margin: 0;
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.reveal {
@@ -164,15 +164,15 @@
 		padding: 0.55rem 1rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font: inherit;
 		font-weight: 600;
 		cursor: pointer;
 	}
 
 	.reveal:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
@@ -187,7 +187,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.dictionary + .dictionary {

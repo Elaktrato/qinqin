@@ -374,14 +374,14 @@
 	}
 
 	.chip[aria-pressed='true'] {
-		background: #0b6bcb;
-		border-color: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.chip:focus-visible,
 	.clear:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
@@ -393,7 +393,7 @@
 	.note {
 		margin: 0;
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.search {
@@ -419,20 +419,22 @@
 		padding: 0.6rem 1rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		cursor: pointer;
 	}
 
 	.hint {
 		margin-top: 1.5rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
 		margin-top: 1.5rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.retry {
@@ -495,7 +497,7 @@
 
 	.source {
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		border-radius: 999px;
 		padding: 0.05rem 0.5rem;

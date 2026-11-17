@@ -98,27 +98,26 @@
 		min-height: 2.75rem;
 		padding: 0 1rem;
 		margin-bottom: -1px;
-		border-bottom: 3px solid transparent;
-		color: inherit;
+		border-bottom: 2px solid transparent;
+		color: var(--readable-muted);
 		text-decoration: none;
 		font-weight: 500;
-		opacity: 0.85;
 	}
 
 	.tab:hover {
-		opacity: 1;
+		color: var(--text);
 		background: color-mix(in srgb, currentColor 6%, transparent);
 	}
 
+	/* Selected: --text at 600 with the 2px accent underline (design §5). */
 	.tab[aria-selected='true'] {
-		opacity: 1;
-		font-weight: 650;
-		color: #0957a6;
-		border-bottom-color: #0b6bcb;
+		font-weight: 600;
+		color: var(--text);
+		border-bottom-color: var(--accent);
 	}
 
 	.tab:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: -2px;
 		border-radius: 0.4rem 0.4rem 0 0;
 	}
@@ -128,20 +127,8 @@
 	}
 
 	.panel:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 0.5rem;
 		border-radius: 0.25rem;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.tab[aria-selected='true'] {
-			color: #8cc4ff;
-			border-bottom-color: #6cb4ff;
-		}
-
-		.tab:focus-visible,
-		.panel:focus-visible {
-			outline-color: #6cb4ff;
-		}
 	}
 </style>
