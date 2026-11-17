@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "rule": "i18n/negotiate",
+  "note": "cases: the interface language from candidates (the stored setting if non-empty, else navigator.languages / the device list / Accept-Language by q-value) against the supported list. For each candidate in order: an exact match ignoring case; then, for a zh candidate without a script, the script is inserted (zh-TW, zh-HK, zh-MO -> zh-Hant-<region>, any other zh -> zh-Hans[-<region>]); then trailing subtags are dropped one at a time, each tried ignoring case. The first hit wins and is returned as the supported list spells it; no hit -> en. Empty candidates are skipped. formatLocale: the locale for dates and numbers (web and Android only): the interface language plus the region of the first device language with the same primary subtag (ignoring case), unless the interface language has a region of its own; a region is the first 2-letter or 3-digit subtag after the primary one; no such device language -> the interface language itself. A result the platform cannot resolve becomes en (not in the fixture).",
+  "cases": [
+    {"name": "nothing supported matches", "candidates": ["fr-FR", "de"], "supported": ["en"], "result": "en"},
+    {"name": "no candidates", "candidates": [], "supported": ["en", "de"], "result": "en"},
+    {"name": "empty candidate skipped", "candidates": ["", "de"], "supported": ["en", "de"], "result": "de"},
+    {"name": "exact match", "candidates": ["de"], "supported": ["en", "de"], "result": "de"},
+    {"name": "exact match ignores case, returns the supported spelling", "candidates": ["PT-br"], "supported": ["en", "pt-BR"], "result": "pt-BR"},
+    {"name": "first candidate wins", "candidates": ["fr", "de"], "supported": ["en", "de", "fr"], "result": "fr"},
+    {"name": "later candidate when the first has no hit", "candidates": ["it", "de-AT"], "supported": ["en", "de"], "result": "de"},
+    {"name": "region dropped", "candidates": ["en-GB"], "supported": ["en"], "result": "en"},
+    {"name": "exact regional match before truncation", "candidates": ["pt-BR"], "supported": ["pt", "pt-BR"], "result": "pt-BR"},
+    {"name": "no widening from base to region", "candidates": ["pt"], "supported": ["en", "pt-BR"], "result": "en"},
+    {"name": "several subtags dropped", "candidates": ["sr-Latn-RS"], "supported": ["en", "sr"], "result": "sr"},
+    {"name": "extension dropped", "candidates": ["de-DE-u-co-phonebk"], "supported": ["en", "de"], "result": "de"},
+    {"name": "zh-TW implies zh-Hant", "candidates": ["zh-TW"], "supported": ["en", "zh-Hans", "zh-Hant"], "result": "zh-Hant"},
+    {"name": "zh-HK implies zh-Hant", "candidates": ["zh-HK"], "supported": ["en", "zh-Hans", "zh-Hant"], "result": "zh-Hant"},
+    {"name": "zh-MO implies zh-Hant", "candidates": ["zh-mo"], "supported": ["en", "zh-Hans", "zh-Hant"], "result": "zh-Hant"},
+    {"name": "zh-CN implies zh-Hans", "candidates": ["zh-CN"], "supported": ["en", "zh-Hans", "zh-Hant"], "result": "zh-Hans"},
+    {"name": "zh-SG implies zh-Hans", "candidates": ["zh-SG"], "supported": ["en", "zh-Hans", "zh-Hant"], "result": "zh-Hans"},
+    {"name": "bare zh implies zh-Hans", "candidates": ["zh"], "supported": ["en", "zh-Hans", "zh-Hant"], "result": "zh-Hans"},
+    {"name": "explicit script kept", "candidates": ["zh-Hant-CN"], "supported": ["en", "zh-Hans", "zh-Hant"], "result": "zh-Hant"},
+    {"name": "exact zh-TW before the alias", "candidates": ["zh-TW"], "supported": ["en", "zh-TW", "zh-Hant"], "result": "zh-TW"},
+    {"name": "zh alias falls back to zh", "candidates": ["zh-TW"], "supported": ["en", "zh"], "result": "zh"},
+    {"name": "Hant does not match Hans", "candidates": ["zh-HK"], "supported": ["en", "zh-Hans"], "result": "en"},
+    {"name": "en supported explicitly", "candidates": ["en-US"], "supported": ["en"], "result": "en"},
+    {"name": "today's list: everything is en", "candidates": ["ja-JP", "zh-TW"], "supported": ["en"], "result": "en"}
+  ],
+  "formatLocale": [
+    {"name": "region of the first same-language device locale", "interface": "en", "device": ["en-GB", "en-US"], "result": "en-GB"},
+    {"name": "other languages skipped", "interface": "en", "device": ["de-DE", "en-AU"], "result": "en-AU"},
+    {"name": "no same-language device locale", "interface": "en", "device": ["de-DE", "fr"], "result": "en"},
+    {"name": "same language without a region", "interface": "en", "device": ["en", "en-GB"], "result": "en"},
+    {"name": "no device locales", "interface": "en", "device": [], "result": "en"},
+    {"name": "primary subtag compared ignoring case", "interface": "de", "device": ["DE-ch"], "result": "de-CH"},
+    {"name": "script kept, region added", "interface": "zh-Hant", "device": ["zh-TW"], "result": "zh-Hant-TW"},
+    {"name": "device script skipped to find the region", "interface": "zh-Hans", "device": ["zh-Hans-SG"], "result": "zh-Hans-SG"},
+    {"name": "numeric region", "interface": "es", "device": ["es-419"], "result": "es-419"},
+    {"name": "the interface region wins", "interface": "pt-BR", "device": ["pt-PT"], "result": "pt-BR"}
+  ]
+}

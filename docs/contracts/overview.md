@@ -24,6 +24,7 @@ where the rule is implemented today.
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Settings | `settings/` (workspace settings keys and their merge; the `qinqin-core` user rows `home-layout` and `activity-view`) |
 | Data safety | `backup/` (archive format v1, id remapping) |
+| Interface text | `i18n/` (catalogue format, key scheme, message syntax, Android conversion, interface-language negotiation, formatting locale) |
 
 ## Read order
 
@@ -31,7 +32,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `study-day/` → `packages/` → `sync/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `milestones/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `settings/` → `overlays/` → `backup/` → `pwa/`
+`radicals/` → `settings/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
