@@ -1,3 +1,7 @@
 {
-	"app.name": "qinqin"
+	"app.name": "qinqin",
+	"format.duration.days": "{count, plural, one {# day} other {# days}}",
+	"format.duration.hours": "{count, plural, one {# hour} other {# hours}}",
+	"format.duration.minutes": "{count, plural, one {# minute} other {# minutes}}",
+	"format.duration.seconds": "{count, plural, one {# second} other {# seconds}}"
 }

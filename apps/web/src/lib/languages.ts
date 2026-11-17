@@ -1,4 +1,6 @@
 import type { Language, Workspace } from './api/types';
+import { getLanguage } from './i18n';
+import { languageName } from './i18n/format';
 
 /** A language the UI can offer: its code and a human label. */
 export interface LanguageInfo {
@@ -10,21 +12,6 @@ export interface LanguageInfo {
 
 export type FlagKind = 'cn' | 'jp' | 'es' | 'globe';
 
-const namesCache = new Map<string, Intl.DisplayNames | null>();
-
-function displayNames(locale: string): Intl.DisplayNames | null {
-	if (!namesCache.has(locale)) {
-		let names: Intl.DisplayNames | null = null;
-		try {
-			names = new Intl.DisplayNames([locale], { type: 'language', fallback: 'code' });
-		} catch {
-			names = null;
-		}
-		namesCache.set(locale, names);
-	}
-	return namesCache.get(locale) ?? null;
-}
-
 /** primarySubtag returns the lowercased language part of a code (`zh` of `zh-TW`). */
 function primarySubtag(code: string): string {
 	return code.trim().toLowerCase().split(/[-_]/)[0] ?? '';
@@ -32,21 +19,12 @@ function primarySubtag(code: string): string {
 
 /**
  * languageLabel names a language code for people (`ja` → "Japanese"),
- * via Intl.DisplayNames in `locale` (English by default, matching the
- * UI). Codes the runtime does not know, or malformed ones, come back
+ * via Intl.DisplayNames in `locale` (the interface language by default).
+ * Codes the runtime does not know, or malformed ones, come back
  * unchanged, so the label is never empty for a non-empty code.
  */
-export function languageLabel(code: string, locale = 'en'): string {
-	if (!code) return code;
-	const names = displayNames(locale);
-	if (!names) return code;
-	try {
-		const label = names.of(code.replace(/_/g, '-'));
-		if (!label || label.toLowerCase() === code.toLowerCase()) return code;
-		return label;
-	} catch {
-		return code;
-	}
+export function languageLabel(code: string, locale: string = getLanguage()): string {
+	return languageName(code, locale);
 }
 
 /** flagFor picks the hand-drawn flag for a language code; anything unknown gets a globe. */
@@ -116,6 +94,6 @@ export function languageOptions(
 		codes.set(normalized, { code: normalized, label: languageLabel(normalized), hasDictionary });
 	}
 	return [...codes.values()].sort(
-		(a, b) => a.label.localeCompare(b.label, 'en', { sensitivity: 'base' }) || a.code.localeCompare(b.code)
+		(a, b) => a.label.localeCompare(b.label, getLanguage(), { sensitivity: 'base' }) || a.code.localeCompare(b.code)
 	);
 }
