@@ -49,6 +49,18 @@ describe('IconButton', () => {
 		expect(tip().dataset.open).toBe('false');
 	});
 
+	it('Escape hides a hovered tooltip wherever focus is (WCAG 1.4.13), and stops listening once hidden', async () => {
+		render(IconButton, { label: 'Search', icon: 'search' });
+		await fireEvent.pointerEnter(screen.getByRole('button').parentElement!);
+		expect(tip().dataset.open).toBe('true');
+		document.body.focus();
+		await fireEvent.keyDown(document.body, { key: 'Escape' });
+		expect(tip().dataset.open).toBe('false');
+		await fireEvent.pointerLeave(screen.getByRole('button').parentElement!);
+		await fireEvent.pointerEnter(screen.getByRole('button').parentElement!);
+		expect(tip().dataset.open).toBe('true');
+	});
+
 	it('keeps the tooltip out of the accessible name (no double reading)', () => {
 		render(IconButton, { label: 'Search', icon: 'search' });
 		expect(tip().getAttribute('aria-hidden')).toBe('true');

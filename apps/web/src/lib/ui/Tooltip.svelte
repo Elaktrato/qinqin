@@ -2,7 +2,9 @@
 	// A tooltip (design §5; WCAG 1.4.13): shown while its trigger is hovered
 	// or has keyboard focus, stays while the pointer is over the tip itself,
 	// and Escape hides it without moving focus (the key stops here, so a
-	// surrounding menu or dialog closes only on the next Escape).
+	// surrounding menu or dialog closes only on the next Escape). A tip open
+	// by hover alone also hides on an Escape anywhere in the document, with
+	// focus elsewhere (that key goes on to whatever has focus).
 	//
 	// API: <Tooltip text placement? describe? open?>{#snippet children(tipId)}…{/snippet}</Tooltip>
 	//   text       the tip's words (the caller passes t(…))
@@ -39,6 +41,23 @@
 		open = hovered || focused;
 	}
 
+	function hide(): void {
+		hovered = false;
+		focused = false;
+		open = false;
+	}
+
+	// While open, an Escape outside the anchor hides it too (the anchor's own
+	// handler stops the key first when focus is inside).
+	$effect(() => {
+		if (!open) return;
+		const onKey = (e: KeyboardEvent): void => {
+			if (e.key === 'Escape') hide();
+		};
+		document.addEventListener('keydown', onKey);
+		return () => document.removeEventListener('keydown', onKey);
+	});
+
 	function keyboardFocus(target: EventTarget | null): boolean {
 		if (!(target instanceof Element)) return false;
 		try {
@@ -73,9 +92,7 @@
 		if (e.key === 'Escape' && open) {
 			e.preventDefault();
 			e.stopPropagation();
-			hovered = false;
-			focused = false;
-			open = false;
+			hide();
 		}
 	}}
 >
