@@ -11,6 +11,20 @@ export function setsTitle(source: string): boolean {
 }
 
 /**
+ * featurePageImports: the page components lib/features/index.ts registers
+ * (`component: X` with `import X from '$lib/...'`), as paths under src/lib.
+ */
+export function featurePageImports(featuresSource: string): string[] {
+	const imports = new Map<string, string>();
+	for (const m of featuresSource.matchAll(/^import\s+(\w+)\s+from\s+'([^']+)';/gm)) imports.set(m[1], m[2]);
+	return [...featuresSource.matchAll(/^\s*component:\s*(\w+),?\s*$/gm)].map((c) => {
+		const path = imports.get(c[1]);
+		if (!path?.startsWith('$lib/')) throw new Error(`feature page component ${c[1]} has no $lib default import`);
+		return path.slice('$lib/'.length);
+	});
+}
+
+/**
  * pluginPageImports lists the import paths of the components registered as
  * plugin pages (`pages: [{ …, component: X }]`) in the plugin index source.
  */

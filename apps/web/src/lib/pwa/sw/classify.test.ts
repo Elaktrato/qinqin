@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import routes from './routes.fixture.json';
-import { classify, normalizeUrl, type ReqLike } from './classify';
+import { CACHEABLE_PULL_COLLECTIONS, classify, normalizeUrl, type ReqLike } from './classify';
+import { STUDY_COLLECTIONS } from '../../study/rows';
 
 const ORIGIN = 'https://qinqin.example';
 const ctx = { origin: ORIGIN, shellUrls: new Set(['/_app/immutable/entry/start.abc.js', '/_app/version.json']) };
@@ -98,6 +99,29 @@ describe('classify: spec table', () => {
 		expect(kind('/api/account/tokens')).toBe('bypass');
 		expect(kind('/api/account/tokens/4')).toBe('bypass');
 		expect(kind('/api/account/tokens', { method: 'POST' })).toBe('bypass');
+	});
+
+	it('sync/pull with a subset of the plugin and typed study collections is cacheable', () => {
+		for (const url of [
+			'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive',
+			'/api/sync/pull?collections=cards',
+			'/api/sync/pull?collections=fsrsActive,pluginData',
+			'/api/sync/pull?collections=pluginData,pluginStates'
+		]) {
+			expect(kind(url), url).toBe('api');
+		}
+		for (const url of [
+			'/api/sync/pull?collections=card',
+			'/api/sync/pull?collections=cards,entries',
+			'/api/sync/pull?collections=cards,',
+			'/api/sync/pull?collections=library'
+		]) {
+			expect(kind(url), url).toBe('bypass');
+		}
+	});
+
+	it('the cacheable pull collections are the plugin ones and every typed study collection', () => {
+		expect(CACHEABLE_PULL_COLLECTIONS).toEqual(['pluginData', 'pluginStates', ...STUDY_COLLECTIONS]);
 	});
 
 	it('sync/pull only for the plugin collections', () => {

@@ -17,9 +17,12 @@ func TestBuiltinManifestsValid(t *testing.T) {
 		permissions []string
 		events      []string
 	}{
-		{"qinqin-core", []string{}, []string{"owns-data", "write:study-events"}, []string{"session", "view", "lookup"}},
-		{"qinqin-flashcards", []string{"home-widget", "page"}, []string{"owns-data", "read:entries", "read:study-events", "write:study-events"}, []string{"review"}},
-		{"qinqin-reader", []string{"page", "home-widget"}, []string{"read:entries", "read:study-events", "write:study-events"}, []string{"read"}},
+		// review and read moved into the core (v0.4.0): flashcards and the
+		// reader are core features; their rows stay as reserved registry
+		// rows (the study namespace, the reader's switch) with no surface.
+		{"qinqin-core", []string{}, []string{"owns-data", "write:study-events"}, []string{"session", "view", "lookup", "review", "read"}},
+		{"qinqin-flashcards", []string{}, []string{"owns-data"}, nil},
+		{"qinqin-reader", []string{}, []string{}, nil},
 		{"qinqin-journal", []string{"page"}, []string{"owns-data", "write:study-events"}, []string{"journal"}},
 		{"qinqin-grammar", []string{"page"}, []string{"owns-data"}, nil},
 	}
@@ -39,9 +42,9 @@ func TestBuiltinManifestsValid(t *testing.T) {
 		for _, e := range m.Events {
 			events = append(events, e.Type)
 		}
-		version := "1.1"
-		if m.ID == "qinqin-flashcards" {
-			version = "1.2" // gained the decks page surface
+		version := map[string]string{"qinqin-core": "1.2", "qinqin-flashcards": "2.0", "qinqin-reader": "2.0"}[m.ID]
+		if version == "" {
+			version = "1.1"
 		}
 		if m.ID != w.id || m.Version != version || m.SDK != 1 || m.Type != "feature" ||
 			!reflect.DeepEqual(m.Surfaces, w.surfaces) || !reflect.DeepEqual(m.Permissions, w.permissions) ||
@@ -57,17 +60,17 @@ func TestBuiltinManifestsValid(t *testing.T) {
 func TestRegisterRejectsOwnedEventType(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
-	flashcards := plugins.Builtin()[1]
-	if _, err := plugins.RegisterBuiltin(ctx, sqlDB, flashcards); err != nil {
-		t.Fatalf("register flashcards: %v", err)
+	core := plugins.Builtin()[0]
+	if _, err := plugins.RegisterBuiltin(ctx, sqlDB, core); err != nil {
+		t.Fatalf("register core: %v", err)
 	}
 	other := validManifest("qinqin-other", `"permissions":["write:study-events"],"events":[{"type":"review"}]`)
 	err := plugins.Register(ctx, sqlDB, []byte(other))
-	if !errors.Is(err, plugins.ErrInvalidManifest) || !strings.Contains(err.Error(), `event type "review" is already owned by qinqin-flashcards`) {
+	if !errors.Is(err, plugins.ErrInvalidManifest) || !strings.Contains(err.Error(), `event type "review" is already owned by qinqin-core`) {
 		t.Errorf("err = %v", err)
 	}
-	if _, err := plugins.RegisterBuiltin(ctx, sqlDB, flashcards); err != nil {
-		t.Errorf("re-register flashcards: %v", err)
+	if _, err := plugins.RegisterBuiltin(ctx, sqlDB, core); err != nil {
+		t.Errorf("re-register core: %v", err)
 	}
 }
 
@@ -88,7 +91,7 @@ func TestRegisterBuiltinWinsConflict(t *testing.T) {
 	if err := plugins.Register(ctx, sqlDB, []byte(other)); err != nil {
 		t.Fatal(err)
 	}
-	conflicts, err := plugins.RegisterBuiltin(ctx, sqlDB, plugins.Builtin()[2])
+	conflicts, err := plugins.RegisterBuiltin(ctx, sqlDB, plugins.Builtin()[0])
 	if err != nil {
 		t.Fatalf("RegisterBuiltin: %v", err)
 	}
@@ -96,10 +99,52 @@ func TestRegisterBuiltinWinsConflict(t *testing.T) {
 		t.Errorf("conflicts = %v", conflicts)
 	}
 	var n int
-	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM plugin_registry WHERE pack_id = 'qinqin-reader'`).Scan(&n); err != nil || n != 1 {
-		t.Errorf("reader row count = %d, err %v", n, err)
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM plugin_registry WHERE pack_id = 'qinqin-core'`).Scan(&n); err != nil || n != 1 {
+		t.Errorf("core row count = %d, err %v", n, err)
 	}
 	if _, err := plugins.RegisterBuiltin(ctx, sqlDB, []byte(`{"id":"x"}`)); !errors.Is(err, plugins.ErrInvalidManifest) {
 		t.Errorf("unparsable built-in err = %v", err)
+	}
+}
+
+// The v0.3.0 registry rows of flashcards (owning review) and the reader
+// (owning read) are in every upgraded database. Registering the v0.4.0
+// built-ins over them in Builtin() order reports no conflict (a built-in
+// never conflicts with another built-in's stale row), and afterwards the
+// core owns both event types.
+func TestRegisterBuiltinsOverV030Rows(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	for id, raw := range map[string]string{
+		"qinqin-flashcards": `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.2","type":"feature","sdk":1,"description":"d","surfaces":["home-widget","page"],"permissions":["owns-data","read:entries","read:study-events","write:study-events"],"hooks":[],"events":[{"type":"review","activity":{"label":"Flashcard reviews","describe":{"one":"{n} flashcard review","other":"{n} flashcard reviews"}}}]}`,
+		"qinqin-reader":     `{"id":"qinqin-reader","name":"Reader","version":"1.1","type":"feature","sdk":1,"description":"d","surfaces":["page","home-widget"],"permissions":["read:entries","read:study-events","write:study-events"],"hooks":[],"events":[{"type":"read","activity":{"label":"Reading","describe":{"one":"{n} minute of reading","other":"{n} minutes of reading"},"measure":{"field":"seconds","unit":"seconds","min":30,"max":7200},"pointsPer":300}}]}`,
+		"qinqin-core":       `{"id":"qinqin-core","name":"Core","version":"1.1","type":"feature","sdk":1,"description":"d","surfaces":[],"permissions":["owns-data","write:study-events"],"hooks":[],"events":[{"type":"session"},{"type":"view"},{"type":"lookup"}]}`,
+	} {
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES (?, ?, '2026-11-01T00:00:00Z')`, id, raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, raw := range plugins.Builtin() {
+		conflicts, err := plugins.RegisterBuiltin(ctx, sqlDB, raw)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(conflicts) != 0 {
+			m, _ := plugins.ParseManifest(raw)
+			t.Errorf("registering %s reported conflicts %v", m.ID, conflicts)
+		}
+	}
+	got, err := plugins.ActivityRules(ctx, sqlDB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"review/qinqin-core", "read/qinqin-core", "journal/qinqin-journal"}; !reflect.DeepEqual(pairs(got), want) {
+		t.Errorf("rules = %v, want %v", pairs(got), want)
+	}
+	// An admin plugin claiming review still conflicts with the core.
+	other := validManifest("qinqin-other", `"permissions":["write:study-events"],"events":[{"type":"review"}]`)
+	if err := plugins.Register(ctx, sqlDB, []byte(other)); !errors.Is(err, plugins.ErrInvalidManifest) ||
+		!strings.Contains(err.Error(), "already owned by qinqin-core") {
+		t.Errorf("register a review claimer: %v", err)
 	}
 }

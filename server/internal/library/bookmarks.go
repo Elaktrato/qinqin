@@ -39,6 +39,8 @@ type Bookmark struct {
 	Position  string    `json:"position"`
 	Label     string    `json:"label"`
 	CreatedAt time.Time `json:"createdAt"`
+	// UpdatedAt is the write stamp: creation, then every relabel.
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // checkPosition is the rule every stored position follows.
@@ -72,13 +74,13 @@ func cleanLabel(raw string) (string, error) {
 	return label, nil
 }
 
-const bookmarkColumns = `id, book_id, position, label, created_at`
+const bookmarkColumns = `id, book_id, position, label, created_at, updated_at`
 
 // scanBookmark reads one bookmark row (bookmarkColumns).
 func scanBookmark(row interface{ Scan(...any) error }) (Bookmark, error) {
 	var m Bookmark
-	var created string
-	if err := row.Scan(&m.ID, &m.BookID, &m.Position, &m.Label, &created); err != nil {
+	var created, updated string
+	if err := row.Scan(&m.ID, &m.BookID, &m.Position, &m.Label, &created, &updated); err != nil {
 		return Bookmark{}, err
 	}
 	t, err := time.Parse(time.RFC3339, created)
@@ -86,6 +88,7 @@ func scanBookmark(row interface{ Scan(...any) error }) (Bookmark, error) {
 		return Bookmark{}, fmt.Errorf("library: parse created_at %q: %w", created, err)
 	}
 	m.CreatedAt = t
+	m.UpdatedAt = stampOr(updated, t)
 	return m, nil
 }
 
@@ -149,8 +152,8 @@ func (s Store) AddBookmark(ctx context.Context, userID, bookID int64, position, 
 	// under the write lock; UNIQUE(book_id, position) settles concurrent
 	// adds at one position.
 	m, err := scanBookmark(s.DB.QueryRowContext(ctx, `
-		INSERT INTO library_bookmarks (user_id, book_id, position, label, created_at)
-		SELECT ?1, b.id, ?3, ?4, ?5 FROM library_books b
+		INSERT INTO library_bookmarks (user_id, book_id, position, label, created_at, updated_at)
+		SELECT ?1, b.id, ?3, ?4, ?5, ?5 FROM library_books b
 		WHERE b.id = ?2 AND b.user_id = ?1
 		  AND (SELECT COUNT(*) FROM library_bookmarks WHERE book_id = ?2) < ?6
 		ON CONFLICT (book_id, position) DO NOTHING
@@ -189,8 +192,8 @@ func (s Store) RenameBookmark(ctx context.Context, userID, bookID, bookmarkID in
 		return Bookmark{}, err
 	}
 	m, err := scanBookmark(s.DB.QueryRowContext(ctx, `
-		UPDATE library_bookmarks SET label = ? WHERE id = ? AND book_id = ? AND user_id = ?
-		RETURNING `+bookmarkColumns, label, bookmarkID, bookID, userID))
+		UPDATE library_bookmarks SET label = ?, updated_at = ? WHERE id = ? AND book_id = ? AND user_id = ?
+		RETURNING `+bookmarkColumns, label, nowStamp(), bookmarkID, bookID, userID))
 	if errors.Is(err, sql.ErrNoRows) {
 		return Bookmark{}, ErrNotFound
 	}
@@ -203,15 +206,34 @@ func (s Store) RenameBookmark(ctx context.Context, userID, bookID, bookmarkID in
 // DeleteBookmark removes a bookmark of one of the user's books; a
 // bookmark that is not in that book of the user is ErrNotFound.
 func (s Store) DeleteBookmark(ctx context.Context, userID, bookID, bookmarkID int64) error {
-	res, err := s.DB.ExecContext(ctx,
-		`DELETE FROM library_bookmarks WHERE id = ? AND book_id = ? AND user_id = ?`, bookmarkID, bookID, userID)
+	return s.deleteChild(ctx, "bookmarks", "library_bookmarks", userID, bookID, bookmarkID)
+}
+
+// deleteChild deletes one bookmark or highlight of one of the user's
+// books and logs it in library_deletions, in one transaction.
+func (s Store) deleteChild(ctx context.Context, collection, table string, userID, bookID, id int64) error {
+	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("library: delete bookmark %d: %w", bookmarkID, err)
+		return fmt.Errorf("library: delete %s %d: %w", collection, id, err)
+	}
+	defer tx.Rollback()
+	if err := logDeletions(ctx, tx, collection, `SELECT x.user_id, b.workspace_id, x.id FROM `+table+` x
+		JOIN library_books b ON b.id = x.book_id WHERE x.id = ?1 AND x.book_id = ?2 AND x.user_id = ?3 AND b.user_id = ?3`,
+		id, bookID, userID); err != nil {
+		return fmt.Errorf("library: delete %s %d: %w", collection, id, err)
+	}
+	res, err := tx.ExecContext(ctx,
+		`DELETE FROM `+table+` WHERE id = ? AND book_id = ? AND user_id = ?`, id, bookID, userID)
+	if err != nil {
+		return fmt.Errorf("library: delete %s %d: %w", collection, id, err)
 	}
 	if n, err := res.RowsAffected(); err != nil {
-		return fmt.Errorf("library: delete bookmark %d: %w", bookmarkID, err)
+		return fmt.Errorf("library: delete %s %d: %w", collection, id, err)
 	} else if n == 0 {
 		return ErrNotFound
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("library: delete %s %d: %w", collection, id, err)
 	}
 	return nil
 }

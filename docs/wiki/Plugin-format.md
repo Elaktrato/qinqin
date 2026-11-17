@@ -60,10 +60,15 @@ Each entry of `events` has a `type` (lowercase letter first, then lowercase lett
 
 | Id | Surfaces | Permissions |
 |---|---|---|
-| `qinqin-core` | none | `owns-data`, `write:study-events` |
-| `qinqin-flashcards` | `home-widget`, `page` | `owns-data`, `read:entries`, `read:study-events`, `write:study-events` |
+| `qinqin-core` | none | `owns-data`, `write:study-events` (declares the `session`, `view`, `lookup`, `review` and `read` events) |
 | `qinqin-grammar` | `page` | `owns-data` |
 | `qinqin-journal` | `page` | `owns-data`, `write:study-events` |
-| `qinqin-reader` | `page`, `home-widget` | `read:entries`, `read:study-events`, `write:study-events` |
+
+`qinqin-flashcards` and `qinqin-reader` are reserved registry ids, not plugins: flashcards (the decks
+page, study sessions) and the reader are core features of the app since v0.4.0, at `/flashcards` and
+`/reader`. Their registry rows declare no surface and no event (`qinqin-flashcards` keeps `owns-data`: it
+is the namespace of the keyed study rows such as `known:*`, `goals:workspace` and `vacation:*`), and each
+user's state row of the two ids is that user's switch in **Settings → Features**. An admin cannot register
+a plugin under a reserved id (409).
 
 Data packs (dictionaries, level lists and so on) are a different kind of plugin: see [Data pack format](Data-pack-format).

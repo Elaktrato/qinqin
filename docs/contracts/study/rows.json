@@ -1,0 +1,1533 @@
+{
+ "version": 1,
+ "rule": "study/rows",
+ "collections": [
+  "cards",
+  "decks",
+  "deckSettings",
+  "limits",
+  "fsrsSets",
+  "fsrsActive"
+ ],
+ "identity": {
+  "cards": "id",
+  "decks": "id",
+  "deckSettings": "deckId",
+  "limits": "deckId",
+  "fsrsSets": "id",
+  "fsrsActive": ""
+ },
+ "cases": [
+  {
+   "name": "vocab card, every optional member null",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "every optional member set",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": "你好",
+    "entryKind": "character",
+    "sentenceId": null,
+    "skipKinds": [
+     "writing",
+     "tone"
+    ],
+    "deckIds": [
+     "general",
+     "01JDECK0000000000000000001"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "sentence card with its sentence",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-sentence-1201",
+    "kind": "sentence",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": 88,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "each kind: writing",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-writing-1201",
+    "kind": "writing",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "each kind: tone",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-tone-1201",
+    "kind": "tone",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "each kind: reverse",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-reverse-1201",
+    "kind": "reverse",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "each kind: cloze",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-cloze-1201",
+    "kind": "cloze",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "a card in no deck is valid (the web puts it in general)",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "extra members a newer client wrote",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {
+     "color": "red",
+     "nested": {
+      "a": [
+       1,
+       2
+      ]
+     }
+    },
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "a tombstone carries its last data",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": "2026-11-12T10:00:00Z"
+   }
+  },
+  {
+   "name": "the largest entry id",
+   "collection": "cards",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 9007199254740991,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "user deck without a source",
+   "collection": "decks",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "copy of a level",
+   "collection": "decks",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "d-lvl-hsk-1",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk",
+     "level": "1"
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "copy of a plugin deck",
+   "collection": "decks",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "d-plg-x",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "plugin",
+     "pluginId": "qinqin-journal",
+     "key": "deck:1"
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "starter deck by frequency",
+   "collection": "decks",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "d-frq-subtlex-1000",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "frequency",
+     "packId": "subtlex",
+     "size": 1000
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "no order (added)",
+   "collection": "deckSettings",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": "general",
+    "cardTypes": [],
+    "newOrder": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "order added",
+   "collection": "deckSettings",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": "general",
+    "cardTypes": [],
+    "newOrder": {
+     "by": "added"
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "order frequency",
+   "collection": "deckSettings",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": "general",
+    "cardTypes": [],
+    "newOrder": {
+     "by": "frequency"
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "order level",
+   "collection": "deckSettings",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": "01JDECK0000000000000000001",
+    "cardTypes": [
+     "reverse",
+     "cloze"
+    ],
+    "newOrder": {
+     "by": "level",
+     "packId": "hsk-words"
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "an unreadable order a newer client wrote lives in extra",
+   "collection": "deckSettings",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": "general",
+    "cardTypes": [],
+    "newOrder": null,
+    "extra": {
+     "newOrder": {
+      "by": "level"
+     }
+    },
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "workspace row, nothing set",
+   "collection": "limits",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": null,
+    "new": null,
+    "reviews": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "workspace row, unlimited new",
+   "collection": "limits",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": null,
+    "new": {
+     "limit": null
+    },
+    "reviews": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "deck row, zero new and the largest review limit",
+   "collection": "limits",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": "general",
+    "new": {
+     "limit": 0
+    },
+    "reviews": {
+     "limit": 9999
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "deck row of a user deck",
+   "collection": "limits",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "deckId": "01JDECK0000000000000000001",
+    "new": null,
+    "reviews": {
+     "limit": 50
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "optimized set with its statistics",
+   "collection": "fsrsSets",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "labelled": 420,
+    "logLoss": 0.31,
+    "baselineLogLoss": 0.35,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "imported set without statistics",
+   "collection": "fsrsSets",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "id": "01JSET00000000000000000002",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "imported",
+    "labelled": null,
+    "logLoss": null,
+    "baselineLogLoss": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "the defaults (no set)",
+   "collection": "fsrsActive",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "setId": null,
+    "changedAt": "2026-11-11T07:00:00.000Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "a chosen set",
+   "collection": "fsrsActive",
+   "valid": true,
+   "row": {
+    "workspaceId": 7,
+    "setId": "01JSET00000000000000000001",
+    "changedAt": "2026-11-11T07:00:00.000Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "unknown kind",
+   "collection": "cards",
+   "valid": false,
+   "member": "kind",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "flash",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "fractional entry id",
+   "collection": "cards",
+   "valid": false,
+   "member": "entryId",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1.5,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "entry id zero",
+   "collection": "cards",
+   "valid": false,
+   "member": "entryId",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 0,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "entry id above 2^53-1",
+   "collection": "cards",
+   "valid": false,
+   "member": "entryId",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 9007199254740992,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "entry id as a string",
+   "collection": "cards",
+   "valid": false,
+   "member": "entryId",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": "1201",
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "fractional sentence id",
+   "collection": "cards",
+   "valid": false,
+   "member": "sentenceId",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "sentence",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": 2.5,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "entryKind other than character",
+   "collection": "cards",
+   "valid": false,
+   "member": "entryKind",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": "word",
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "skipKinds on a sentence card",
+   "collection": "cards",
+   "valid": false,
+   "member": "skipKinds",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "sentence",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [
+     "tone"
+    ],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "vocab in skipKinds",
+   "collection": "cards",
+   "valid": false,
+   "member": "skipKinds",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [
+     "vocab"
+    ],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "duplicate skipKinds",
+   "collection": "cards",
+   "valid": false,
+   "member": "skipKinds",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [
+     "tone",
+     "tone"
+    ],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "duplicate deck ids",
+   "collection": "cards",
+   "valid": false,
+   "member": "deckIds",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general",
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "a deck id that is not a string",
+   "collection": "cards",
+   "valid": false,
+   "member": "deckIds",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     5
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "missing key written",
+   "collection": "cards",
+   "valid": false,
+   "member": "written",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "missing key extra",
+   "collection": "cards",
+   "valid": false,
+   "member": "extra",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "extra not an object",
+   "collection": "cards",
+   "valid": false,
+   "member": "extra",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": [],
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "unknown top-level member",
+   "collection": "cards",
+   "valid": false,
+   "member": "color",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null,
+    "color": "red"
+   }
+  },
+  {
+   "name": "workspace id zero",
+   "collection": "cards",
+   "valid": false,
+   "member": "workspaceId",
+   "row": {
+    "workspaceId": 0,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "missing workspace id",
+   "collection": "cards",
+   "valid": false,
+   "member": "workspaceId",
+   "row": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "updatedAt not a time",
+   "collection": "cards",
+   "valid": false,
+   "member": "updatedAt",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "yesterday",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "updatedAt the zero time (refused like a zero plugin-data stamp)",
+   "collection": "cards",
+   "valid": false,
+   "member": "updatedAt",
+   "row": {
+    "workspaceId": 7,
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "written": null,
+    "entryKind": null,
+    "sentenceId": null,
+    "skipKinds": [],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "extra": {},
+    "version": 3,
+    "updatedAt": "0001-01-01T00:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "unknown source type",
+   "collection": "decks",
+   "valid": false,
+   "member": "source",
+   "row": {
+    "workspaceId": 7,
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "web",
+     "url": "x"
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "frequency source of size 0",
+   "collection": "decks",
+   "valid": false,
+   "member": "source",
+   "row": {
+    "workspaceId": 7,
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "frequency",
+     "packId": "subtlex",
+     "size": 0
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "source with a member beyond its variant",
+   "collection": "decks",
+   "valid": false,
+   "member": "source",
+   "row": {
+    "workspaceId": 7,
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk",
+     "level": "1",
+     "x": 1
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "name not a string",
+   "collection": "decks",
+   "valid": false,
+   "member": "name",
+   "row": {
+    "workspaceId": 7,
+    "id": "01JDECK0000000000000000001",
+    "name": null,
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "an always-on kind as a card type",
+   "collection": "deckSettings",
+   "valid": false,
+   "member": "cardTypes",
+   "row": {
+    "workspaceId": 7,
+    "deckId": "general",
+    "cardTypes": [
+     "vocab"
+    ],
+    "newOrder": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "duplicate card types",
+   "collection": "deckSettings",
+   "valid": false,
+   "member": "cardTypes",
+   "row": {
+    "workspaceId": 7,
+    "deckId": "general",
+    "cardTypes": [
+     "reverse",
+     "reverse"
+    ],
+    "newOrder": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "level order without a pack",
+   "collection": "deckSettings",
+   "valid": false,
+   "member": "newOrder",
+   "row": {
+    "workspaceId": 7,
+    "deckId": "general",
+    "cardTypes": [],
+    "newOrder": {
+     "by": "level"
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "empty deck id",
+   "collection": "deckSettings",
+   "valid": false,
+   "member": "deckId",
+   "row": {
+    "workspaceId": 7,
+    "deckId": "",
+    "cardTypes": [],
+    "newOrder": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "limit 10000",
+   "collection": "limits",
+   "valid": false,
+   "member": "new",
+   "row": {
+    "workspaceId": 7,
+    "deckId": null,
+    "new": {
+     "limit": 10000
+    },
+    "reviews": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "negative limit",
+   "collection": "limits",
+   "valid": false,
+   "member": "reviews",
+   "row": {
+    "workspaceId": 7,
+    "deckId": null,
+    "new": null,
+    "reviews": {
+     "limit": -1
+    },
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "fractional limit",
+   "collection": "limits",
+   "valid": false,
+   "member": "new",
+   "row": {
+    "workspaceId": 7,
+    "deckId": null,
+    "new": {
+     "limit": 2.5
+    },
+    "reviews": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "limit object without limit",
+   "collection": "limits",
+   "valid": false,
+   "member": "new",
+   "row": {
+    "workspaceId": 7,
+    "deckId": null,
+    "new": {},
+    "reviews": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "empty deck id (the workspace row is null)",
+   "collection": "limits",
+   "valid": false,
+   "member": "deckId",
+   "row": {
+    "workspaceId": 7,
+    "deckId": "",
+    "new": null,
+    "reviews": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "20 weights",
+   "collection": "fsrsSets",
+   "valid": false,
+   "member": "w",
+   "row": {
+    "workspaceId": 7,
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "labelled": null,
+    "logLoss": null,
+    "baselineLogLoss": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "a weight that is not a number",
+   "collection": "fsrsSets",
+   "valid": false,
+   "member": "w",
+   "row": {
+    "workspaceId": 7,
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     "x"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "labelled": null,
+    "logLoss": null,
+    "baselineLogLoss": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "unknown source",
+   "collection": "fsrsSets",
+   "valid": false,
+   "member": "source",
+   "row": {
+    "workspaceId": 7,
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "other",
+    "labelled": null,
+    "logLoss": null,
+    "baselineLogLoss": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "labelled as a string",
+   "collection": "fsrsSets",
+   "valid": false,
+   "member": "labelled",
+   "row": {
+    "workspaceId": 7,
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "labelled": "420",
+    "logLoss": null,
+    "baselineLogLoss": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "setId not a string",
+   "collection": "fsrsActive",
+   "valid": false,
+   "member": "setId",
+   "row": {
+    "workspaceId": 7,
+    "setId": 5,
+    "changedAt": null,
+    "extra": {},
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "deletedAt": null
+   }
+  }
+ ]
+}

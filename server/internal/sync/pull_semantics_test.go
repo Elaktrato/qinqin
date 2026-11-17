@@ -15,7 +15,8 @@ import (
 )
 
 var allCollections = []string{"entries", "links", "senses", "levelMembers", "sentences",
-	"pluginData", "pluginStates", "overlays", "dictionaries", "schemes", "levels"}
+	"pluginData", "pluginStates", "overlays", "dictionaries", "schemes", "levels",
+	"cards", "decks", "deckSettings", "limits", "fsrsSets", "fsrsActive"}
 
 // Plugin data is the caller's: bob's row never reaches alice.
 func TestPullIsUserScoped(t *testing.T) {

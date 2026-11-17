@@ -11,6 +11,7 @@ vi.mock('../time/zone', async () => {
 
 import { invalidateStudyHistory } from '../study/history';
 import { loadGoalStatus } from './loadGoal';
+import { typedPull } from '../study/testing/legacyCodec';
 
 const NOW = Date.parse('2026-11-16T12:00:00Z');
 const json = (body: unknown) =>
@@ -58,7 +59,7 @@ describe('loadGoalStatus through the canonical merge', () => {
 			vi.fn(async (input: RequestInfo | URL) => {
 				const url = String(input);
 				if (url.startsWith('/api/sync/pull')) {
-					return json({
+					return json(typedPull({
 						pluginData: [
 							row('goals:workspace', {
 								version: 1,
@@ -69,7 +70,7 @@ describe('loadGoalStatus through the canonical merge', () => {
 							row('card:01JOLDCARD0000000000000001', { id: '01JOLDCARD0000000000000001', kind: 'vocab', entryId: 7, deckIds: ['general'], createdAt: '2026-01-01T00:00:00Z' }),
 							row('card:01JOLDCARD0000000000000002', { id: '01JOLDCARD0000000000000002', kind: 'vocab', entryId: 7, deckIds: ['general'], createdAt: '2026-01-02T00:00:00Z' })
 						]
-					});
+					}));
 				}
 				if (url.startsWith('/api/events')) {
 					return json([

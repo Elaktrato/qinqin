@@ -1,0 +1,1057 @@
+{
+ "version": 1,
+ "rule": "study/lww",
+ "now": "2026-11-12T12:00:00Z",
+ "cases": [
+  {
+   "name": "absent row: applied as version 1",
+   "stored": null,
+   "push": {
+    "updatedAt": "2026-11-12T11:00:00.250Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T11:00:00Z",
+    "version": 1,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "newer edit wins",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:00:05Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:05Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "older edit is skipped",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:05Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:06Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:00:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "skipped",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:05Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:06Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "same second: the client wins",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:05Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:06Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:00:05.400Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:05Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "an edit time in the future is clamped to now",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2099-01-01T00:00:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T12:00:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "equal content is unchanged: counted dataAccepted, nothing written (an idempotent retry)",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T11:00:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "unchanged",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "equal content stamped before the stored edit is unchanged too (a late retry)",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-01T00:00:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "unchanged",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "equal extra compares as JSON values",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "a": 1,
+      "b": [
+       1
+      ]
+     }
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T11:00:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "b": [
+       1
+      ],
+      "a": 1
+     }
+    }
+   },
+   "expect": "unchanged",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "a": 1,
+      "b": [
+       1
+      ]
+     }
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "deleting a live row tombstones it with its last data",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:30:00Z",
+    "deletedAt": "2026-11-12T10:30:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:30:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": "2026-11-12T12:00:00Z"
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "deletedAt later than updatedAt is the edit time",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T09:00:00Z",
+    "deletedAt": "2026-11-12T10:30:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:30:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": "2026-11-12T12:00:00Z"
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "an older deletion is skipped",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T09:00:00Z",
+    "deletedAt": "2026-11-12T09:00:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "skipped",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "deleting an absent row is skipped",
+   "stored": null,
+   "push": {
+    "updatedAt": "2026-11-12T10:30:00Z",
+    "deletedAt": "2026-11-12T10:30:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "skipped",
+   "storedAfter": null,
+   "collection": "cards"
+  },
+  {
+   "name": "deleting a deleted row is skipped",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": "2026-11-12T10:00:01Z"
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:30:00Z",
+    "deletedAt": "2026-11-12T10:30:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "skipped",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": "2026-11-12T10:00:01Z"
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "a newer write revives a tombstone",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": "2026-11-12T10:00:01Z"
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:30:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:30:00Z",
+    "version": 5,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "equal content revives a tombstone",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": "2026-11-12T10:00:01Z"
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:30:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:30:00Z",
+    "version": 5,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "an older write does not revive a tombstone",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": "2026-11-12T10:00:01Z"
+   },
+   "push": {
+    "updatedAt": "2026-11-12T09:30:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "skipped",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 4,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": "2026-11-12T10:00:01Z"
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "limits rows follow the same rule",
+   "collection": "limits",
+   "stored": {
+    "row": {
+     "deckId": null,
+     "new": {
+      "limit": 10
+     },
+     "reviews": null,
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 1,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:10:00Z",
+    "row": {
+     "deckId": null,
+     "new": {
+      "limit": null
+     },
+     "reviews": null,
+     "extra": {}
+    }
+   },
+   "expect": "applied",
+   "storedAfter": {
+    "row": {
+     "deckId": null,
+     "new": {
+      "limit": null
+     },
+     "reviews": null,
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:10:00Z",
+    "version": 2,
+    "updatedAt": "2026-11-12T12:00:00Z",
+    "deletedAt": null
+   }
+  },
+  {
+   "name": "the active set follows the same rule (equal content: unchanged)",
+   "collection": "fsrsActive",
+   "stored": {
+    "row": {
+     "setId": "s1",
+     "changedAt": "x",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 1,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-12T10:10:00Z",
+    "row": {
+     "setId": "s1",
+     "changedAt": "x",
+     "extra": {}
+    }
+   },
+   "expect": "unchanged",
+   "storedAfter": {
+    "row": {
+     "setId": "s1",
+     "changedAt": "x",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 1,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   }
+  }
+ ],
+ "outcomes": {
+  "applied": "written: version bumped, updatedAt = now; counted dataAccepted",
+  "skipped": "not written: the stored edit is newer, or a tombstone of an absent or deleted row; counted dataSkipped",
+  "unchanged": "not written: equal to the stored live row (typed members and extra as JSON values), whatever its stamp; counted dataAccepted"
+ }
+}

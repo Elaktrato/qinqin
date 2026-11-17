@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { workspaces } from '$lib/workspaces';
-	import PopupStackView from '../reader/PopupStackView.svelte';
-	import { LookupController } from '../reader/useLookup.svelte';
+	import PopupStackView from '$lib/features/reader/PopupStackView.svelte';
+	import { LookupController } from '$lib/features/reader/useLookup.svelte';
 	import { recordLookup } from '$lib/lookups/sink';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
 	import { browserReadingsStorage, loadReadings, saveReadings } from './readings';

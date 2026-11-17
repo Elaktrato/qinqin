@@ -75,5 +75,6 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `token_not_allowed` | 403 | Access tokens cannot be used on this route (account, sign-in, admin, backup, AI, journal, workspace management, the token routes themselves). Use a signed-in session. |
 | `token_read_only` | 403 | The access token is read-only and the route writes. |
 | `token_workspace` | 403 | The access token is limited to one workspace and the request is not inside it: ?workspace= is missing or names another workspace, or the route spans workspaces or addresses objects by id. |
+| `study_row_invalid` | 400 | A plugin-data write of a typed study key (qinqin-flashcards card:, deck:, deckcfg:, limits:, fsrs:set:, fsrs:active) whose data the legacy codec cannot read, or that has no ?workspace=. Nothing is stored. New clients write these rows through POST /api/sync/push (docs/contracts/study/). |
 | `token_limit` | 409 | 20 live access tokens already; revoke one first. Expired tokens do not count. |
 | `invalid_token_request` | 422 | Name (1-64 characters), scope (read or write) or expiry (1-365 days) out of range; the message names the field. |

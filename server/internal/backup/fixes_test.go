@@ -159,7 +159,7 @@ func TestPlanBlocksTwoCardsThatWouldGetTheSameId(t *testing.T) {
 	tg := newTarget(t, nil)
 	files := exportFiles(t, src, src.AliceUID)
 	row := func(key string, entry int64) string {
-		return `{"pluginId":"qinqin-flashcards","workspaceId":` + itoa64(src.Alice.WS1) + `,"key":"card:` + key + `","data":{"id":"` + key + `","entryId":` + itoa64(entry) + `},"version":1,"updatedAt":"t","modifiedAt":null}` + "\n"
+		return `{"pluginId":"qinqin-flashcards","workspaceId":` + itoa64(src.Alice.WS1) + `,"key":"card:` + key + `","data":{"id":"` + key + `","kind":"vocab","entryId":` + itoa64(entry) + `,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"},"version":1,"updatedAt":"t","modifiedAt":null}` + "\n"
 	}
 	// card 1 is derived (c-vocab-<E1> of entry E1) and moves to c-vocab-<target E1>; card 2 is NOT derived
 	// (its number is not its own entry) and keeps the id c-vocab-<target E1>.

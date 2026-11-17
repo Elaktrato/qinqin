@@ -77,8 +77,8 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 		}
 	}
 	put(w.wsZh, fmt.Sprintf("card:c-vocab-%d", w.e1), fmt.Sprintf(`{"id":"c-vocab-%d","kind":"vocab","entryId":%d,"deckIds":["general"],"createdAt":"2026-11-10T08:00:00Z"}`, w.e1, w.e1))
-	put(w.wsZh, fmt.Sprintf("card:c-reverse-%d", w.e1), fmt.Sprintf(`{"id":"c-reverse-%d","kind":"reverse","entryId":%d,"deckIds":["general"]}`, w.e1, w.e1))
-	put(w.wsZh, "card:SENT0000000000000000000001", fmt.Sprintf(`{"id":"SENT0000000000000000000001","kind":"sentence","entryId":%d,"sentenceId":%d,"deckIds":[]}`, w.e1, sent.ID))
+	put(w.wsZh, fmt.Sprintf("card:c-reverse-%d", w.e1), fmt.Sprintf(`{"id":"c-reverse-%d","kind":"reverse","entryId":%d,"deckIds":["general"],"createdAt":"2026-11-10T08:00:00Z"}`, w.e1, w.e1))
+	put(w.wsZh, "card:SENT0000000000000000000001", fmt.Sprintf(`{"id":"SENT0000000000000000000001","kind":"sentence","entryId":%d,"sentenceId":%d,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"}`, w.e1, sent.ID))
 	put(w.wsJa, "deck:kana", `{"id":"kana","name":"Kana","createdAt":"2026-11-10T08:00:00Z"}`)
 	put(0, "vacation:V0000000000000000000000001", fmt.Sprintf(`{"version":1,"id":"V0000000000000000000000001","start":"2026-12-20","end":null,"scope":{"workspaces":[%d]},"createdDay":"2026-11-15","createdAt":"2026-11-15T10:00:00Z"}`, w.wsZh))
 	evs := []map[string]any{
@@ -110,7 +110,7 @@ func (w *rtWorld) seedAlice(t *testing.T) {
 		{"id": "01JD0000000000000000000004", "workspaceId": w.wsZh, "device": "web", "ts": "2026-11-10T10:00:00Z", "type": "read", "payload": map[string]any{"bookId": b.ID, "seconds": 90}}}})
 	// bob has data of his own
 	wsB := createWorkspace(t, e.ts.URL, w.bob, "zh", "")
-	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/card:bobs?workspace="+itoa(wsB), w.bob, `{"id":"bobs"}`)
+	doRaw(t, "PUT", e.ts.URL, "/api/plugins/qinqin-flashcards/data/card:bobs?workspace="+itoa(wsB), w.bob, `{"id":"bobs","kind":"vocab","entryId":1,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"}`)
 }
 
 func getJSON(t *testing.T, base, path, token string) any {
@@ -177,7 +177,8 @@ func (w *rtWorld) snapshot(t *testing.T, mapEntry func(float64) string) string {
 		out = append(out, fmt.Sprintf("BOOK %v ws=%s pos=%v chapters=%v", m["title"], name[m["workspaceId"].(float64)], m["position"], m["chapterCount"]))
 		bm, _ := json.Marshal(getJSON(t, e.ts.URL, fmt.Sprintf("/api/library/books/%d/bookmarks", id), w.alice))
 		hl, _ := json.Marshal(getJSON(t, e.ts.URL, fmt.Sprintf("/api/library/books/%d/highlights", id), w.alice))
-		out = append(out, "BM "+stripIDs(string(bm)), "HL "+stripIDs(string(hl)))
+		// updatedAt is a write stamp a restore resets (the restore time), like the ids.
+		out = append(out, "BM "+stripStamps(stripIDs(string(bm))), "HL "+stripStamps(stripIDs(string(hl))))
 		out = append(out, "CH "+fmt.Sprint(getJSON(t, e.ts.URL, fmt.Sprintf("/api/library/books/%d/chapters/0", id), w.alice)))
 	}
 	ent := getJSON(t, e.ts.URL, fmt.Sprintf("/api/entries/%d", w.e1), w.alice).(map[string]any)
@@ -219,6 +220,8 @@ func rewriteIDs(s string, f func(float64) string) string {
 }
 
 func stripIDs(s string) string { return regexpMust(`"(id|bookId)":\d+,?`).ReplaceAllString(s, "") }
+
+func stripStamps(s string) string { return regexpMust(`,?"updatedAt":"[^"]*"`).ReplaceAllString(s, "") }
 
 func TestRoundTripOnTheSameServer(t *testing.T) {
 	w := newRTWorld(t, 0)

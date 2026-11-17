@@ -24,7 +24,7 @@ The logo is the link to the home page. The home page shows widgets in the order 
 
 ## Finding your way around
 
-- The **navigation** (a bottom tab bar on narrow screens, under 720 px) holds Search and one item per enabled plugin page (for example Decks, Reader, Journal; the exact set depends on which plugins are on under Settings, Plugins). Study sessions start from `/study`, the Decks page and the home widget.
+- The **navigation** (a bottom tab bar on narrow screens, under 720 px) holds Search, then Decks and Reader (unless you switched them off under Settings, Features), then one item per enabled plugin page (for example Journal; the set depends on which plugins are on under Settings, Plugins). Study sessions start from `/study`, the Decks page and the home widget.
 - The **workspace picker** in the header switches between your study spaces and can create a new one ([Workspaces and languages](Workspaces-and-languages)).
 - **Stats**, **Sources** and **Settings** live in the footer of every signed-in page. Sources (credits and licences for all bundled data) is also open to visitors who are not signed in.
 - The first Tab stop on every page is a "Skip to content" link.

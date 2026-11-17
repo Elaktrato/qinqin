@@ -64,6 +64,8 @@ curl -sS -H "Authorization: Bearer $QQ_TOKEN" -H 'Content-Type: application/json
 curl -sS -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/plugins/qinqin-flashcards/data?workspace=3"
 ```
 
+Since v0.4.0 cards, decks, deck settings, limits and FSRS sets are typed collections of the sync pull and push (`docs/contracts/study/`). A script that reads cards from `pluginData` must ask for it the old way, `collections=pluginData` (it then gets them as `card:` rows), or read the `cards` collection: a pull **without** `collections` carries them only in `cards`. The plugin data routes above still answer the old keys.
+
 `events.json` holds `{"events": [...]}` in the shape the app sends, for example
 `{"events": [{"id": "01JD0000000000000000000001", "workspaceId": 3, "device": "script", "ts": "2026-11-16T10:00:00Z", "type": "review", "payload": {"cardId": "c-word-12"}}]}`;
 event ids are ULIDs and a repeated id is accepted once. Pushing events needs a read and write token.

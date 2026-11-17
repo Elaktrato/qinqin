@@ -3,7 +3,8 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { APP_NAME } from './app';
 import { webPlugins } from './plugins';
-import { pluginPageImports, setsTitle } from './testing/routeTitles';
+import { coreFeatures } from './features';
+import { featurePageImports, pluginPageImports, setsTitle } from './testing/routeTitles';
 
 // Route-walk (#12): every page in the route tree sets a document title
 // with pageTitle(), itself or through an ancestor +layout.svelte, and so
@@ -60,15 +61,19 @@ describe('document titles on every route', () => {
 	const index = resolve(web, 'src/lib/plugins/index.ts');
 	const pluginPages = pluginPageImports(readFileSync(index, 'utf8')).map((p) => resolve(dirname(index), p));
 
-	it('finds every registered plugin page', () => {
-		// The source scan must see exactly the pages webPlugins registers, so a
-		// page registered in another form cannot slip past the title check.
+	const featuresFile = resolve(web, 'src/lib/features/index.ts');
+	const featurePages = featurePageImports(readFileSync(featuresFile, 'utf8')).map((p) => resolve(web, 'src/lib', p));
+
+	it('finds every registered plugin and core feature page', () => {
+		// The source scan must see exactly the pages webPlugins and coreFeatures
+		// register, so a page registered in another form cannot slip past the title check.
 		const registered = webPlugins.flatMap((plugin) => plugin.pages ?? []);
-		expect(registered.length).toBeGreaterThanOrEqual(4);
+		expect(registered.length).toBeGreaterThanOrEqual(2);
 		expect(pluginPages).toHaveLength(registered.length);
+		expect(featurePages).toHaveLength(coreFeatures.length);
 	});
 
-	it.each(pluginPages.map((p) => [relative(web, p), p]))('plugin page %s sets a title', (_name, page) => {
+	it.each([...pluginPages, ...featurePages].map((p) => [relative(web, p), p]))('plugin or feature page %s sets a title', (_name, page) => {
 		expect(setsTitle(readFileSync(page, 'utf8'))).toBe(true);
 	});
 

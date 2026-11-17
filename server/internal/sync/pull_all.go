@@ -5,17 +5,21 @@ import (
 	"database/sql"
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 	"time"
 
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 // Collections are the names of the Delta collections, as they appear in
 // its JSON. A pull may be limited to a subset of them.
 var Collections = []string{"entries", "links", "senses", "levelMembers", "sentences",
-	"pluginData", "pluginStates", "overlays", "dictionaries", "schemes", "levels"}
+	"pluginData", "pluginStates", "overlays", "dictionaries", "schemes", "levels",
+	"cards", "decks", "deckSettings", "limits", "fsrsSets", "fsrsActive"}
 
 // ParseCollections parses a comma-separated list of collection names into
 // the set Pull takes. An empty list means every collection (nil set); an
@@ -35,6 +39,57 @@ func ParseCollections(list string) (map[string]bool, error) {
 	return set, nil
 }
 
+// legacyView reports whether a pull is an old web shell's: it names
+// pluginData and none of the typed study collections. Such a pull gets the
+// typed study rows as legacy qinqin-flashcards rows in pluginData. A pull
+// without collections (nil) names every collection, typed ones included.
+func legacyView(only map[string]bool) bool {
+	if only == nil || !only["pluginData"] {
+		return false
+	}
+	for _, f := range rows.Families {
+		if only[string(f)] {
+			return false
+		}
+	}
+	return true
+}
+
+// withLegacyRows appends the typed rows changed since cursor as legacy rows
+// and drops a leftover plugin row whose key a typed row holds (the typed row
+// wins, so an old shell sees one row per key), in pull order.
+func withLegacyRows(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, data []model.PluginData) ([]model.PluginData, error) {
+	kept := data[:0]
+	for _, r := range data {
+		if r.PluginID == rows.Namespace && r.WorkspaceID != nil {
+			shadowed, err := study.HasTypedRow(ctx, sqlDB, userID, *r.WorkspaceID, r.Key)
+			if err != nil {
+				return nil, fmt.Errorf("sync pull: %w", err)
+			}
+			if shadowed {
+				continue
+			}
+		}
+		kept = append(kept, r)
+	}
+	legacy, err := study.LegacyRows(ctx, sqlDB, userID, cursor)
+	if err != nil {
+		return nil, fmt.Errorf("sync pull: %w", err)
+	}
+	out := append(kept, legacy...)
+	sort.SliceStable(out, func(i, j int) bool {
+		a, b := out[i], out[j]
+		if !a.UpdatedAt.Equal(b.UpdatedAt) {
+			return a.UpdatedAt.Before(b.UpdatedAt)
+		}
+		if a.PluginID != b.PluginID {
+			return a.PluginID < b.PluginID
+		}
+		return a.Key < b.Key
+	})
+	return out, nil
+}
+
 // Pull returns every row changed at or after cursor (the zero time means
 // everything), tombstones included — except from the zero cursor, where
 // the client holds nothing to delete and only live rows ship. The
@@ -51,6 +106,8 @@ func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, on
 		Entries: []Entry{}, Links: []Link{}, Senses: []Sense{}, LevelMembers: []LevelMember{},
 		Sentences: []model.Sentence{}, PluginData: []model.PluginData{}, PluginStates: []model.PluginState{},
 		Overlays: []Overlay{}, Dictionaries: []model.Dictionary{}, Schemes: []model.Scheme{}, Levels: []model.Level{},
+		Cards: []rows.Card{}, Decks: []rows.Deck{}, DeckSettings: []rows.DeckSettingsRow{}, Limits: []rows.LimitsRow{},
+		FsrsSets: []rows.FsrsSet{}, FsrsActive: []rows.FsrsActiveRow{},
 	}
 	since := cursor.UTC().Format(time.RFC3339)
 	live := ""
@@ -92,6 +149,11 @@ func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, on
 		if cursor.IsZero() {
 			d.PluginData = slices.DeleteFunc(d.PluginData, func(r model.PluginData) bool { return r.DeletedAt != nil })
 		}
+		if legacyView(only) {
+			if d.PluginData, err = withLegacyRows(ctx, sqlDB, userID, cursor, d.PluginData); err != nil {
+				return Delta{}, err
+			}
+		}
 	}
 	if want("overlays") {
 		if d.Overlays, err = pullOverlays(ctx, sqlDB, userID, since); err != nil {
@@ -117,6 +179,20 @@ func Pull(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, on
 		if d.PluginStates, err = pullPluginStates(ctx, sqlDB, userID, since); err != nil {
 			return Delta{}, err
 		}
+	}
+	families := map[rows.Family]bool{}
+	for _, f := range rows.Families {
+		if want(string(f)) {
+			families[f] = true
+		}
+	}
+	if len(families) > 0 {
+		typed, err := study.Pull(ctx, sqlDB, userID, cursor, families)
+		if err != nil {
+			return Delta{}, fmt.Errorf("sync pull: %w", err)
+		}
+		d.Cards, d.Decks, d.DeckSettings = typed.Cards, typed.Decks, typed.DeckSettings
+		d.Limits, d.FsrsSets, d.FsrsActive = typed.Limits, typed.FsrsSets, typed.FsrsActive
 	}
 	return d, nil
 }

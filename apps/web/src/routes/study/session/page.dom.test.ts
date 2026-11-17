@@ -23,17 +23,17 @@ vi.mock('$lib/study/writing', async (importOriginal) => ({
 const { fakeCard } = vi.hoisted(() => ({
 	fakeCard: async () => ({ default: (await import('$lib/testing/FakeCard.svelte')).default })
 }));
-vi.mock('$lib/plugins/flashcards/cards/WritingCard.svelte', fakeCard);
-vi.mock('$lib/plugins/flashcards/cards/SentenceCard.svelte', fakeCard);
-vi.mock('$lib/plugins/flashcards/cards/ToneCard.svelte', fakeCard);
-vi.mock('$lib/plugins/flashcards/cards/ReverseCard.svelte', fakeCard);
-vi.mock('$lib/plugins/flashcards/cards/ClozeCard.svelte', fakeCard);
+vi.mock('$lib/features/flashcards/cards/WritingCard.svelte', fakeCard);
+vi.mock('$lib/features/flashcards/cards/SentenceCard.svelte', fakeCard);
+vi.mock('$lib/features/flashcards/cards/ToneCard.svelte', fakeCard);
+vi.mock('$lib/features/flashcards/cards/ReverseCard.svelte', fakeCard);
+vi.mock('$lib/features/flashcards/cards/ClozeCard.svelte', fakeCard);
 vi.mock('$lib/api/segment', () => ({ segmentBatch: vi.fn(async () => []) }));
 vi.mock('$lib/notes/store', () => ({
 	loadNotes: vi.fn(async () => new Map()),
 	loadNoteCfg: vi.fn(async () => ({ onAnswer: true, extra: {} }))
 }));
-vi.mock('$lib/plugins/flashcards/Mascot.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/features/flashcards/Mascot.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),

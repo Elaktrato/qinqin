@@ -1,5 +1,5 @@
 // The card management controller shared by the Card manager on /study and
-// the deck detail on /p/flashcards: serialized writes (an old undo can
+// the deck detail on /flashcards: serialized writes (an old undo can
 // never overlap or follow a newer delete it would resurrect),
 // PartialCardsError handling (the part that landed stays undoable), a
 // single-slot undo that expires after 10 s and pauses while a write runs

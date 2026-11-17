@@ -72,3 +72,18 @@ describe('sources page: character components', () => {
 		expect(screen.queryByRole('heading', { name: 'Character components' })).toBeNull();
 	});
 });
+
+describe('sources page: the reader sources are core credits (v0.4.0)', () => {
+	it('lists Aozora Bunko, Project Gutenberg and opencc-js under Built into the app, with both opencc licence texts', async () => {
+		render(Page);
+		const core = screen.getByRole('list', { name: 'Built into the app' });
+		for (const name of ['Aozora Bunko', 'Project Gutenberg', 'opencc-js']) {
+			expect(within(core).getByRole('heading', { name })).toBeTruthy();
+		}
+		const mit = within(core).getAllByRole('link', { name: 'MIT license text' }).map((a) => a.getAttribute('href'));
+		expect(mit).toContain('/OPENCC-JS-LICENSE.TXT');
+		expect(within(core).getByRole('link', { name: 'Apache-2.0 license text' }).getAttribute('href')).toBe('/OPENCC-APACHE-2.0.TXT');
+		// No plugin section for the reader any more.
+		expect(screen.queryByRole('list', { name: 'Reader sources' })).toBeNull();
+	});
+});

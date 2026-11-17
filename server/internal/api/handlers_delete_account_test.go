@@ -24,7 +24,7 @@ func TestAdminDeletesUserEverythingGoes(t *testing.T) {
 
 	var prev map[string]int
 	decodeJSON(t, doJSON(t, "GET", ts.URL, "/api/admin/users/"+itoa(bobID)+"/deletion-preview", owner, nil), &prev)
-	if prev["workspaces"] != 1 || prev["studyEvents"] != 1 || prev["books"] != 1 || prev["pluginData"] != 2 || prev["sessions"] != 1 {
+	if prev["workspaces"] != 1 || prev["studyEvents"] != 1 || prev["books"] != 1 || prev["pluginData"] != 2 || prev["sessions"] != 1 || prev["cards"] != 1 {
 		t.Errorf("preview = %v", prev)
 	}
 	path := "/api/admin/users/" + itoa(bobID)
@@ -45,6 +45,9 @@ func TestAdminDeletesUserEverythingGoes(t *testing.T) {
 		`SELECT COUNT(*) FROM workspaces WHERE user_id = ?`, `SELECT COUNT(*) FROM study_events WHERE user_id = ?`,
 		`SELECT COUNT(*) FROM plugin_data WHERE user_id = ?`, `SELECT COUNT(*) FROM library_books WHERE user_id = ?`,
 		`SELECT COUNT(*) FROM library_bookmarks WHERE user_id = ?`, `SELECT COUNT(*) FROM users WHERE id = ?`,
+		`SELECT COUNT(*) FROM study_cards WHERE user_id = ?`, `SELECT COUNT(*) FROM study_decks WHERE user_id = ?`,
+		`SELECT COUNT(*) FROM study_deck_settings WHERE user_id = ?`, `SELECT COUNT(*) FROM study_limits WHERE user_id = ?`,
+		`SELECT COUNT(*) FROM study_fsrs_sets WHERE user_id = ?`, `SELECT COUNT(*) FROM study_fsrs_active WHERE user_id = ?`,
 	} {
 		if n := countWhere(t, sqlDB, q, bobID); n != 0 {
 			t.Errorf("%s = %d after deletion", q, n)

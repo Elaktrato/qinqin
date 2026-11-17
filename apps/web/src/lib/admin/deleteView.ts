@@ -11,7 +11,8 @@ export function previewLines(p: DeletionPreview): string[] {
 	const lines: string[] = [];
 	if (p.workspaces) lines.push(plural(p.workspaces, 'workspace', 'workspaces'));
 	if (p.studyEvents) lines.push(plural(p.studyEvents, 'recorded review and study event', 'recorded reviews and study events'));
-	if (p.pluginData) lines.push(plural(p.pluginData, 'plugin data item (flashcards, journal entries, settings)', 'plugin data items (flashcards, journal entries, settings)'));
+	if (p.cards) lines.push(plural(p.cards, 'flashcard, with its decks and study settings', 'flashcards, with their decks and study settings'));
+	if (p.pluginData) lines.push(plural(p.pluginData, 'other saved item (journal entries, notes, known words, settings)', 'other saved items (journal entries, notes, known words, settings)'));
 	if (p.books) lines.push(plural(p.books, 'book in the library, with its bookmarks and highlights', 'books in the library, with their bookmarks and highlights'));
 	if (p.overlays) lines.push(plural(p.overlays, 'edited dictionary entry', 'edited dictionary entries'));
 	if (p.sentences) lines.push(plural(p.sentences, 'sentence they added', 'sentences they added'));

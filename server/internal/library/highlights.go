@@ -319,15 +319,5 @@ func (s Store) UpdateHighlight(ctx context.Context, userID, bookID, highlightID 
 // DeleteHighlight removes a highlight of one of the user's books; a
 // highlight that is not in that book of the user is ErrNotFound.
 func (s Store) DeleteHighlight(ctx context.Context, userID, bookID, highlightID int64) error {
-	res, err := s.DB.ExecContext(ctx,
-		`DELETE FROM library_highlights WHERE id = ? AND book_id = ? AND user_id = ?`, highlightID, bookID, userID)
-	if err != nil {
-		return fmt.Errorf("library: delete highlight %d: %w", highlightID, err)
-	}
-	if n, err := res.RowsAffected(); err != nil {
-		return fmt.Errorf("library: delete highlight %d: %w", highlightID, err)
-	} else if n == 0 {
-		return ErrNotFound
-	}
-	return nil
+	return s.deleteChild(ctx, "highlights", "library_highlights", userID, bookID, highlightID)
 }

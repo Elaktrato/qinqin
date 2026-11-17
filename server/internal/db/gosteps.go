@@ -1,12 +1,15 @@
 package db
 
 import (
-	"log"
-
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"log"
+
+	"qinqin/internal/db/step038"
 	"qinqin/internal/model"
 )
 
@@ -17,7 +20,8 @@ import (
 // checks every key names an embedded migration, so renumbering a file
 // cannot silently skip its step.
 var goSteps = map[string]func(*sql.Tx) error{
-	"032_accounts": accountsStep,
+	"032_accounts":   accountsStep,
+	"038_core_study": coreStudyStep,
 }
 
 // hashSessionTokens replaces the plaintext bearer tokens migration 032
@@ -102,5 +106,89 @@ func fillUsernameKeys(tx *sql.Tx) error {
 	if skipped > 0 {
 		log.Printf("migration 032: %d legacy username(s) collide with another when case and compatibility forms are ignored; they keep working but cannot be taken again as a new name", skipped)
 	}
+	return nil
+}
+
+// coreStudyStep is the Go half of migration 038: it moves every readable
+// qinqin-flashcards row of a typed study family (card:, deck:, deckcfg:,
+// limits:, fsrs:set:, fsrs:active) into its study_* table with the same
+// user, workspace, identity, version, updated_at, modified_at (NULL reads as
+// updated_at, as everywhere) and deleted_at (a tombstone moves as a tombstone
+// with its last data), and deletes the plugin_data row. A row whose workspace
+// is NULL or not the row user's, or whose data the codec refuses, stays in
+// plugin_data untouched: no client could read it before either. Study events
+// are not touched. One log line counts what moved and what stayed. It uses
+// only the frozen codec and insert of package step038, never the live study
+// code, so a later change there cannot change how an old database upgrades.
+func coreStudyStep(tx *sql.Tx) error {
+	ctx := context.Background()
+	q, err := tx.QueryContext(ctx, `
+		SELECT p.rowid, p.user_id, p.workspace_id, w.user_id, p.key, p.data, p.version, p.updated_at,
+			COALESCE(p.modified_at, p.updated_at), p.deleted_at
+		FROM plugin_data p LEFT JOIN workspaces w ON w.id = p.workspace_id
+		WHERE p.pack_id = ? ORDER BY p.rowid`, step038.Namespace)
+	if err != nil {
+		return fmt.Errorf("read study rows: %w", err)
+	}
+	type legacy struct {
+		rowid, user       int64
+		ws, wsOwner       sql.NullInt64
+		key, data         string
+		version           int
+		updated, modified string
+		deleted           sql.NullString
+	}
+	var all []legacy
+	for q.Next() {
+		var l legacy
+		if err := q.Scan(&l.rowid, &l.user, &l.ws, &l.wsOwner, &l.key, &l.data, &l.version, &l.updated, &l.modified, &l.deleted); err != nil {
+			q.Close()
+			return fmt.Errorf("scan study row: %w", err)
+		}
+		all = append(all, l)
+	}
+	if err := q.Err(); err != nil {
+		q.Close()
+		return fmt.Errorf("read study rows: %w", err)
+	}
+	q.Close()
+
+	moved := map[step038.Family]int{}
+	total, left := 0, 0
+	for _, l := range all {
+		if _, typed := step038.FamilyOf(l.key); !typed {
+			continue
+		}
+		if !l.ws.Valid || !l.wsOwner.Valid || l.wsOwner.Int64 != l.user {
+			left++
+			continue
+		}
+		r, err := step038.FromLegacy(l.key, json.RawMessage(l.data))
+		if err == nil {
+			r.M().WorkspaceID = l.ws.Int64
+			err = step038.Validate(r)
+		}
+		if err != nil {
+			left++
+			continue
+		}
+		var deleted *string
+		if l.deleted.Valid {
+			deleted = &l.deleted.String
+		}
+		if err := step038.Insert(ctx, tx, l.user, r, l.version, l.updated, l.modified, deleted); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `DELETE FROM plugin_data WHERE rowid = ?`, l.rowid); err != nil {
+			return fmt.Errorf("remove moved row %s: %w", l.key, err)
+		}
+		moved[r.Family()]++
+		total++
+	}
+	if total+left == 0 {
+		return nil // a database without study rows (a fresh install) has nothing to report
+	}
+	log.Printf("migration 038: moved %d study rows (cards %d, decks %d, deckSettings %d, limits %d, fsrsSets %d, fsrsActive %d), left %d unreadable rows in plugin_data",
+		total, moved[step038.Cards], moved[step038.Decks], moved[step038.DeckSettings], moved[step038.Limits], moved[step038.FsrsSets], moved[step038.FsrsActive], left)
 	return nil
 }

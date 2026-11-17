@@ -1,5 +1,38 @@
 import { describe, expect, it } from 'vitest';
 import { webPlugins } from '$lib/plugins';
+import { coreFeatures } from '$lib/features';
+import type { SourceCredit } from './credits';
+
+// The reader's credits as its v0.3.0 manifest declared them (licensing first:
+// moving them to the core credits changes no word).
+const READER_V030_SOURCES: SourceCredit[] = [
+	{
+		name: 'Aozora Bunko',
+		url: 'https://www.aozora.gr.jp/',
+		license: 'Public domain works only; catalog CC BY 4.0',
+		lang: 'ja',
+		notice:
+			'Nothing from Aozora Bunko is bundled: the server fetches its catalog and, when a user imports one, a work from aozora.gr.jp. Only works in the public domain are listed or importable: the catalog’s work copyright flag and person copyright flag must both say no copyright, and a row that does not is skipped. The catalog is used under CC BY 4.0, as stated on aozora.gr.jp, and each book keeps its 底本 (source edition) credit.'
+	},
+	{
+		name: 'Project Gutenberg',
+		url: 'https://www.gutenberg.org/',
+		license: 'Public domain in the USA',
+		notice:
+			'Nothing from Project Gutenberg is bundled: the server fetches its catalog and, when a user imports one, a Chinese or Japanese text ebook from gutenberg.org. The catalog has no rights column, so each imported book carries the note “Distributed by Project Gutenberg as public domain in the USA; copyright status elsewhere may differ.”'
+	},
+	{
+		name: 'opencc-js',
+		url: 'https://github.com/nk2028/opencc-js',
+		license: 'MIT AND Apache-2.0',
+		notice:
+			'Traditional/simplified conversion in the Reader uses opencc-js: the library is under the MIT License, and its conversion dictionaries, generated from [opencc-data](https://github.com/nk2028/opencc-data), under the Apache License, Version 2.0. Both license texts ship with this app.',
+		licenseTexts: [
+			{ label: 'MIT license text', path: '/OPENCC-JS-LICENSE.TXT' },
+			{ label: 'Apache-2.0 license text', path: '/OPENCC-APACHE-2.0.TXT' }
+		]
+	}
+];
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
@@ -158,18 +191,31 @@ describe('pluginCredits', () => {
 		]);
 	});
 
-	it('credits the reader sources from the real registry', () => {
+	it('credits the reader sources as core credits, not as a plugin', () => {
+		// The reader is a core feature (v0.4.0): its sources are "Built into the app".
+		expect(coreCredits.map((credit) => credit.name)).toEqual(
+			expect.arrayContaining(['Aozora Bunko', 'Project Gutenberg', 'opencc-js'])
+		);
+		expect(coreFeatures.flatMap((f) => f.manifest.sources ?? [])).toEqual([]);
+		const opencc = coreCredits.find((credit) => credit.name === 'opencc-js')!;
+		expect(opencc.license).toBe('MIT AND Apache-2.0');
+		expect(opencc.licenseTexts).toEqual([
+			{ label: 'MIT license text', path: '/OPENCC-JS-LICENSE.TXT' },
+			{ label: 'Apache-2.0 license text', path: '/OPENCC-APACHE-2.0.TXT' }
+		]);
+		// The notices are the v0.3.0 reader manifest's, word for word.
+		expect(coreCredits.find((c) => c.name === 'Aozora Bunko')).toEqual(READER_V030_SOURCES[0]);
+		expect(coreCredits.find((c) => c.name === 'Project Gutenberg')).toEqual(READER_V030_SOURCES[1]);
+		expect(opencc).toEqual(READER_V030_SOURCES[2]);
+	});
+
+	it('credits the plugin sources from the real registry', () => {
 		const result = pluginCredits(
 			webPlugins.map((plugin) => plugin.manifest),
 			coreCredits
 		);
-		expect(result.map((plugin) => plugin.id)).toEqual(['qinqin-reader', 'qinqin-journal']);
+		expect(result.map((plugin) => plugin.id)).toEqual(['qinqin-journal']);
 		expect(result[0].credits.map((credit) => credit.name)).toEqual([
-			'Aozora Bunko',
-			'Project Gutenberg',
-			'opencc-js'
-		]);
-		expect(result[1].credits.map((credit) => credit.name)).toEqual([
 			'Tesseract OCR',
 			'Leptonica',
 			'Anthropic Go SDK'
@@ -178,7 +224,7 @@ describe('pluginCredits', () => {
 });
 
 describe('declared credits', () => {
-	const all = [...coreCredits, ...webPlugins.flatMap((plugin) => plugin.manifest.sources ?? [])];
+	const all = [...coreCredits, ...[...coreFeatures, ...webPlugins].flatMap((owner) => owner.manifest.sources ?? [])];
 
 	it('use only https upstream links and notices that parse to https links', () => {
 		for (const credit of all) {

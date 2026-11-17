@@ -3,6 +3,7 @@ package backup
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -11,6 +12,7 @@ import (
 	"strings"
 
 	"qinqin/internal/lang"
+	"qinqin/internal/study"
 )
 
 // Counts is a set of row counts shown before a restore.
@@ -329,6 +331,12 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	collisions := 0
 	if err := a.PluginRows(func(r PluginRow) error {
 		nr, drop := m.PluginRow(r)
+		if !drop {
+			// a typed study row the codec cannot read is dropped (restore does the same)
+			if _, typed, ok := typedRow(nr); typed && !ok {
+				drop = true
+			}
+		}
 		noteID, isNote := noteEntryID(r)
 		_, isKeyed := entryKeyedID(r)
 		// notes and known marks never collide: RegisterNote picked one winner per target
@@ -436,6 +444,15 @@ func Plan(ctx context.Context, db *sql.DB, a *Archive, userID int64) (Report, *M
 	return rep, m, nil
 }
 
+// typedLiveCount adds the user's live typed study rows (?1) to a count.
+var typedLiveCount = func() string {
+	out := ""
+	for _, t := range study.Tables() {
+		out += ` + (SELECT COUNT(*) FROM ` + t + ` WHERE user_id = ?1 AND deleted_at IS NULL)`
+	}
+	return out
+}()
+
 // CurrentCounts counts the user's rows a restore replaces.
 func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error) {
 	var c Counts
@@ -445,8 +462,11 @@ func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error
 	}{
 		{&c.Workspaces, `SELECT COUNT(*) FROM workspaces WHERE user_id = ?`},
 		{&c.Events, `SELECT COUNT(*) FROM study_events WHERE user_id = ?`},
-		{&c.Cards, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND deleted_at IS NULL AND pack_id = '` + FlashcardsPlugin + `' AND key LIKE 'card:%'`},
-		{&c.PluginData, `SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND deleted_at IS NULL`},
+		// cards and the other typed study rows live in their tables; typed-family
+		// plugin rows are counted below, as the export decides them
+		{&c.Cards, `SELECT COUNT(*) FROM study_cards WHERE user_id = ? AND deleted_at IS NULL`},
+		{&c.PluginData, `SELECT (SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND deleted_at IS NULL
+			AND NOT (pack_id = '` + FlashcardsPlugin + `' AND ` + study.LegacyKeySQL + `))` + typedLiveCount},
 		{&c.Overlays, `SELECT COUNT(*) FROM user_edits WHERE user_id = ?`},
 		{&c.Sentences, `SELECT COUNT(*) FROM sentences WHERE user_id = ? AND deleted_at IS NULL`},
 		{&c.Books, `SELECT COUNT(*) FROM library_books WHERE user_id = ?`},
@@ -455,6 +475,40 @@ func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error
 	} {
 		if err := db.QueryRowContext(ctx, q.sql, userID).Scan(q.dst); err != nil {
 			return c, fmt.Errorf("count: %w", err)
+		}
+	}
+	// typed-family plugin rows: only the ones an export carries
+	rs, err := db.QueryContext(ctx, `SELECT workspace_id, key, data FROM plugin_data WHERE user_id = ? AND deleted_at IS NULL
+		AND pack_id = '`+FlashcardsPlugin+`' AND `+study.LegacyKeySQL, userID)
+	if err != nil {
+		return c, fmt.Errorf("count: %w", err)
+	}
+	type leftover struct {
+		ws        *int64
+		key, data string
+	}
+	var all []leftover
+	for rs.Next() {
+		var l leftover
+		if err := rs.Scan(&l.ws, &l.key, &l.data); err != nil {
+			rs.Close()
+			return c, fmt.Errorf("count: %w", err)
+		}
+		all = append(all, l)
+	}
+	if err := closeRows(rs); err != nil {
+		return c, err
+	}
+	for _, l := range all {
+		keep, err := study.ReadableLeftover(ctx, db, userID, l.ws, l.key, json.RawMessage(l.data))
+		if err != nil {
+			return c, fmt.Errorf("count: %w", err)
+		}
+		if keep {
+			c.PluginData++
+			if strings.HasPrefix(l.key, cardKeyPrefix) {
+				c.Cards++
+			}
 		}
 	}
 	return c, nil

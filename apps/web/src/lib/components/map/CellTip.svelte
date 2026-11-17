@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { placePopup } from '$lib/plugins/reader/placement';
+	import { placePopup } from '$lib/features/reader/placement';
 	import { STAGE_INFO, type TipRequest } from '$lib/study/mapGrid';
 
 	let { tip, id, lang }: { tip: TipRequest | null; id: string; lang: string } = $props();

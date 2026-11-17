@@ -31,7 +31,7 @@ describe('WordStatesWidget', () => {
 	it('links each deck of the table to its view in the decks page', async () => {
 		render(WordStatesWidget);
 		const general = await screen.findByRole('link', { name: 'General' });
-		expect(general.getAttribute('href')).toBe('/p/flashcards/deck/general');
-		expect(screen.getByRole('link', { name: 'Verbs' }).getAttribute('href')).toBe('/p/flashcards/deck/d1');
+		expect(general.getAttribute('href')).toBe('/flashcards/deck/general');
+		expect(screen.getByRole('link', { name: 'Verbs' }).getAttribute('href')).toBe('/flashcards/deck/d1');
 	});
 });

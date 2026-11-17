@@ -9,6 +9,7 @@
 	import { onMount, tick } from 'svelte';
 	import { errorMessage } from '$lib/stats/errors';
 	import { languageLabel } from '$lib/languages';
+	import { coreFeatures } from '$lib/features';
 	import { pluginState, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
 	import {
@@ -39,6 +40,8 @@
 	let resetButton = $state<HTMLButtonElement | null>(null);
 	let resetConfirm = $state<HTMLButtonElement | null>(null);
 
+	// Every widget owner this build knows: the core features, then the plugins.
+	const owners = [...coreFeatures, ...webPlugins];
 	const states = $derived($pluginStates.status === 'ready' ? $pluginStates.list : []);
 	// Every enabled plugin's widgets, whatever the language: the layout
 	// is global, so a Chinese-only widget can be placed from a Spanish
@@ -65,7 +68,7 @@
 		const shown = new Set(listed);
 		return editableLayout(stored).flatMap((id) => {
 			if (shown.has(id)) return [];
-			for (const plugin of webPlugins) {
+			for (const plugin of owners) {
 				const widget = plugin.manifest.widgets?.find((w) => w.id === id);
 				if (widget) return [{ id, title: widget.title, plugin: plugin.manifest.name }];
 			}
@@ -75,13 +78,13 @@
 
 	// The default layout's titles, from every widget this build knows.
 	const defaultTitles = $derived.by(() => {
-		const known = [...coreWidgets, ...webPlugins.flatMap((p) => p.manifest.widgets ?? [])];
+		const known = [...coreWidgets, ...owners.flatMap((p) => p.manifest.widgets ?? [])];
 		return DEFAULT_LAYOUT.map((id) => known.find((w) => w.id === id)?.title ?? id).join(', then ');
 	});
 
 	function ownerLabel(owner: string): string {
 		if (owner === 'core') return 'Core';
-		const plugin = webPlugins.find((p) => p.manifest.id === owner);
+		const plugin = owners.find((p) => p.manifest.id === owner);
 		if (plugin) return plugin.manifest.name;
 		const name = pluginState(owner, states)?.manifest?.name;
 		return typeof name === 'string' && name.trim() ? name : owner;

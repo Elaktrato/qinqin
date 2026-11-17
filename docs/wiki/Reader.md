@@ -1,6 +1,6 @@
 # Reader
 
-The Reader is a library of books you import, with a lookup popup in the style of Yomitan, bookmarks, highlights and notes. The library belongs to a workspace: the library page lists the current workspace's books only, and reading time counts for the book's workspace. If the current library is empty but other workspaces hold books, the page lists them with a button to switch.
+The Reader (`/reader`, in the main navigation) is part of the app; you can switch it off for yourself in [Settings → Features](Settings-tour#features). It is a library of books you import, with a lookup popup in the style of Yomitan, bookmarks, highlights and notes. The library belongs to a workspace: the library page lists the current workspace's books only, and reading time counts for the book's workspace. If the current library is empty but other workspaces hold books, the page lists them with a button to switch.
 
 ## Importing books
 

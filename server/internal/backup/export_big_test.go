@@ -25,9 +25,9 @@ func bigWorld(t *testing.T) *baseWorld {
 		SELECT printf('01JDB6G%019d', i), ?1, ?2, 'web', printf('2026-01-01T00:00:00.%06dZ', i), 'review',
 			printf('{"cardId":"c-vocab-%d","mode":"vocab","grade":3}', ?3), 't' FROM n`, u, w.Alice.WS1, w.E1)
 	exec(t, w.DB, `WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM n WHERE i < 20000)
-		INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
-		SELECT 'qinqin-flashcards', ?1, ?2, printf('card:BIGCARD%06d', i),
-			printf('{"id":"BIGCARD%06d","kind":"vocab","entryId":%d,"deckIds":["general"]}', i, ?3), 1, 't', 't' FROM n`, u, w.Alice.WS1, w.E1)
+		INSERT INTO study_cards (user_id, workspace_id, id, kind, entry_id, deck_ids, created_at, version, updated_at, modified_at)
+		SELECT ?1, ?2, printf('BIGCARD%06d', i), 'vocab', ?3, '["general"]', '2026-01-01T00:00:00Z', 1,
+			'2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z' FROM n`, u, w.Alice.WS1, w.E1)
 	return w
 }
 

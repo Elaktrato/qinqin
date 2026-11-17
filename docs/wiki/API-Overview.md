@@ -43,7 +43,7 @@ Login and register are rate-limited per client, pair and username; limited answe
 
 ## Sync
 
-Study data is an event log plus plugin-data rows. `POST /api/events/batch` and `POST /api/sync/push` accept offline events idempotently by event id (plugin data is last-write-wins); `GET /api/sync/pull?cursor=` returns changes since a cursor. Row-key conventions for plugin data (`fsrs:*`, `vacation:*`, `limits:*`, deck and card ids) are in `docs/contracts/overview.md`.
+Study data is an event log, typed study rows and plugin-data rows. `POST /api/events/batch` and `POST /api/sync/push` accept offline events idempotently by event id; cards, decks, deck settings, limits and FSRS sets travel as the typed collections `cards`, `decks`, `deckSettings`, `limits`, `fsrsSets` and `fsrsActive` of the push and the pull, last write wins like plugin data (`docs/contracts/study/`); `GET /api/sync/pull?cursor=` returns changes since a cursor. When you pull `pluginData`, name a typed collection too: a pull naming only `pluginData` (and `pluginStates`) is the form of v0.3.x web shells and also gets the typed rows under their old plugin keys. Row-key conventions (`vacation:*`, `known:*`, `goals:workspace`, the typed rows) are in `docs/contracts/overview.md`.
 
 ## Contracts for client implementers
 

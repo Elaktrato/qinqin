@@ -327,6 +327,9 @@ func TestPluginDataRoute(t *testing.T) {
 }
 
 func TestListPluginDataRoute(t *testing.T) {
+	// Its own language pack: the test must not depend on another test having
+	// registered zh first (review fix, phase A, 10: it failed when run alone).
+	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)
@@ -562,4 +565,65 @@ func canonJSON(t *testing.T, raw []byte) string {
 	}
 	b, _ := json.Marshal(v)
 	return string(b)
+}
+
+// The core features keep their reserved registry rows (spec Q6): GET
+// /api/plugins lists qinqin-flashcards and qinqin-reader with the caller's
+// state (hidden: not plugins), PUT .../state switches them per user, and
+// the admin route cannot take their ids.
+func TestReservedFeatureRows(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	admin := registerUser(t, ts.URL, "root", "")
+	bob := registerUser(t, ts.URL, "bob", admin)
+	for _, raw := range plugins.Builtin() {
+		seedBuiltin(t, sqlDB, string(raw))
+	}
+	for _, id := range []string{"qinqin-reader", "qinqin-flashcards"} {
+		resp := registerPlugin(t, ts.URL, admin, validManifest(id, ""))
+		if resp.StatusCode != http.StatusConflict {
+			t.Errorf("register %s: status = %d, want 409", id, resp.StatusCode)
+		}
+	}
+	resp := doJSON(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-reader/state", admin, map[string]any{"enabled": false, "order": 0})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("PUT reader state: %d", resp.StatusCode)
+	}
+	state := func(token string) map[string]pluginInfoBody {
+		out := map[string]pluginInfoBody{}
+		for _, p := range listPlugins(t, ts.URL, token) {
+			out[p.ID] = p
+		}
+		return out
+	}
+	mine, his := state(admin), state(bob)
+	for _, id := range []string{"qinqin-flashcards", "qinqin-reader"} {
+		if _, ok := mine[id]; !ok {
+			t.Errorf("%s not listed", id)
+		}
+	}
+	if mine["qinqin-reader"].Enabled || !mine["qinqin-flashcards"].Enabled || !his["qinqin-reader"].Enabled {
+		t.Errorf("states: admin reader %v flashcards %v, bob reader %v", mine["qinqin-reader"].Enabled, mine["qinqin-flashcards"].Enabled, his["qinqin-reader"].Enabled)
+	}
+	raw := doJSON(t, http.MethodGet, ts.URL, "/api/plugins", admin, nil)
+	var list []json.RawMessage
+	decodeJSON(t, raw, &list)
+	for _, item := range list {
+		var p struct {
+			ID     string `json:"id"`
+			Hidden bool   `json:"hidden"`
+		}
+		json.Unmarshal(item, &p)
+		// Listed unhidden: a cached v0.3.x shell shows the switch only for
+		// unhidden rows; new clients know the reserved ids (review fix, phase A, 5).
+		if p.ID == "qinqin-reader" || p.ID == "qinqin-flashcards" {
+			if p.Hidden {
+				t.Errorf("%s hidden = true, want false (old shells must keep the switch)", p.ID)
+			}
+		}
+	}
+	// The study namespace still owns data: a keyed row is accepted.
+	ws := createWorkspace(t, ts.URL, admin, "zh", "")
+	if resp := doRaw(t, http.MethodPut, ts.URL, "/api/plugins/qinqin-flashcards/data/known:5?workspace="+strconv.FormatInt(ws, 10), admin, `{"at":"t"}`); resp.StatusCode != http.StatusOK {
+		t.Errorf("PUT known row: %d", resp.StatusCode)
+	}
 }

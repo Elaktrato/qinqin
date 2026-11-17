@@ -14,7 +14,7 @@ import { auth } from '$lib/auth';
 import { workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
 
-const plugin = { id: 'qinqin-reader', manifest: { name: 'Reader' }, enabled: true, order: 2 };
+const plugin = { id: 'qinqin-journal', manifest: { name: 'Journal' }, enabled: true, order: 2 };
 
 beforeEach(() => {
 	setUrl('/settings');
@@ -87,7 +87,7 @@ describe('hidden plugins', () => {
 			return (base as (...a: unknown[]) => unknown)(url, ...rest);
 		}) as never);
 		render(Page);
-		await screen.findByText('Reader');
+		await screen.findByText('Journal');
 		expect(screen.queryByText('Internal thing')).toBeNull();
 	});
 });

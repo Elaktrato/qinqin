@@ -147,8 +147,8 @@ func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, ou
 	return nil
 }
 
-// flashcardsPack is the plugin_data pack id of the flashcards feature,
-// whose card:<id> rows store an entryId.
+// flashcardsPack is the plugin_data namespace of the study rows; its
+// card:<id> rows (leftovers since migration 038) store an entryId.
 const flashcardsPack = "qinqin-flashcards"
 
 // warnEntryIDUsers prints a WARNING line to out when the database holds
@@ -160,9 +160,11 @@ func warnEntryIDUsers(ctx context.Context, sqlDB *sql.DB, out io.Writer) error {
 	if err := sqlDB.QueryRowContext(ctx, `SELECT COUNT(*) FROM user_edits`).Scan(&edits); err != nil {
 		return fmt.Errorf("seed: count user edits: %w", err)
 	}
+	// Live typed cards (migration 038), plus leftover card rows the
+	// migration could not read: both store an entry id.
 	if err := sqlDB.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM plugin_data
-		WHERE pack_id = ? AND key LIKE 'card:%' AND deleted_at IS NULL`, flashcardsPack).Scan(&cards); err != nil {
+		SELECT (SELECT COUNT(*) FROM study_cards WHERE deleted_at IS NULL) + (SELECT COUNT(*) FROM plugin_data
+		WHERE pack_id = ? AND key LIKE 'card:%' AND deleted_at IS NULL)`, flashcardsPack).Scan(&cards); err != nil {
 		return fmt.Errorf("seed: count flashcards: %w", err)
 	}
 	if edits == 0 && cards == 0 {

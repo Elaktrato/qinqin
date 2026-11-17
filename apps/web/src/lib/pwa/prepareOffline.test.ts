@@ -5,6 +5,7 @@ import { DEFAULT_W } from '../study/fsrs/params';
 import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
 import { SYNC_PULL_PATH } from '../study/store';
+import { STUDY_COLLECTIONS } from '../study/rows';
 import { fullLogPath } from '../events';
 import { entryPath } from '../api/entries';
 import { strokeUrl } from '../study/strokeData';
@@ -81,6 +82,9 @@ describe('the URLs prepared are the URLs the pages request', () => {
 			expect(classify(req, ctx), path).toBe('api');
 		}
 		expect(classify({ method: 'GET', url: `https://x.test${SYNC_PULL_PATH}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
+		// The study pull the offline copy holds names every typed study collection.
+		const named = new URL(SYNC_PULL_PATH, 'https://x.test').searchParams.get('collections')?.split(',') ?? [];
+		expect(named).toEqual(['pluginData', 'pluginStates', ...STUDY_COLLECTIONS]);
 		expect(classify({ method: 'GET', url: `https://x.test${fullLogPath(3)}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
 		expect(classify({ method: 'GET', url: `https://x.test${entryPath(12)}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
 		expect(classify({ method: 'GET', url: `https://x.test${strokeUrl('猫')}`, mode: 'cors', headers: { get: () => null } }, ctx)).toBe('hanzi');

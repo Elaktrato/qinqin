@@ -50,8 +50,8 @@ func BuiltinIDs() []string {
 // RegisterBuiltin parses and upserts a built-in manifest without the
 // event-type ownership check: a built-in wins a conflict, so an admin
 // row can never stop the server from starting. It returns the sorted
-// ids of other parsable rows that claim one of the built-in's event
-// types, for the caller to warn about.
+// ids of other parsable non-built-in rows that claim one of the
+// built-in's event types, for the caller to warn about.
 func RegisterBuiltin(ctx context.Context, sqlDB *sql.DB, raw []byte) (conflicts []string, err error) {
 	m, err := ParseManifest(raw)
 	if err != nil {
@@ -66,7 +66,13 @@ func RegisterBuiltin(ctx context.Context, sqlDB *sql.DB, raw []byte) (conflicts 
 	if err != nil {
 		return nil, err
 	}
+	// Another built-in's row is never a conflict: a stale row of an older
+	// build (v0.3.0's flashcards owned review, its reader read; both moved
+	// into the core) is replaced in the same start-up.
 	seen := map[string]bool{}
+	for _, id := range BuiltinIDs() {
+		seen[id] = true
+	}
 	for _, e := range m.Events {
 		if owner, ok := owners[e.Type]; ok && !seen[owner] {
 			seen[owner] = true

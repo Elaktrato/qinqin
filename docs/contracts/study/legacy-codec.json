@@ -1,0 +1,2429 @@
+{
+ "version": 1,
+ "rule": "study/legacy-codec",
+ "namespace": "qinqin-flashcards",
+ "modifiedAt": "2026-11-12T09:59:58Z",
+ "families": [
+  {
+   "key": "card:c-vocab-1",
+   "collection": "cards"
+  },
+  {
+   "key": "card:",
+   "collection": "cards"
+  },
+  {
+   "key": "deck:d1",
+   "collection": "decks"
+  },
+  {
+   "key": "deckcfg:d1",
+   "collection": "deckSettings"
+  },
+  {
+   "key": "limits:workspace",
+   "collection": "limits"
+  },
+  {
+   "key": "limits:deck:d1",
+   "collection": "limits"
+  },
+  {
+   "key": "limits:deck:",
+   "collection": "limits"
+  },
+  {
+   "key": "fsrs:set:s1",
+   "collection": "fsrsSets"
+  },
+  {
+   "key": "fsrs:active",
+   "collection": "fsrsActive"
+  },
+  {
+   "key": "goals:workspace",
+   "collection": null
+  },
+  {
+   "key": "known:5",
+   "collection": null
+  },
+  {
+   "key": "vacation:01JVAC",
+   "collection": null
+  },
+  {
+   "key": "limits:other",
+   "collection": null
+  },
+  {
+   "key": "limits:workspaces",
+   "collection": null
+  },
+  {
+   "key": "fsrs:other",
+   "collection": null
+  },
+  {
+   "key": "fsrs:activeX",
+   "collection": null
+  },
+  {
+   "key": "decks:x",
+   "collection": null
+  },
+  {
+   "key": "cards:x",
+   "collection": null
+  }
+ ],
+ "cases": [
+  {
+   "name": "plain vocab card",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   }
+  },
+  {
+   "name": "every member set, deck ids and skipKinds cleaned as the web parser does",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general",
+     "d1",
+     "general",
+     5
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "written": "你好",
+    "entryKind": "character",
+    "skipKinds": [
+     "tone",
+     "writing",
+     "tone",
+     "bogus",
+     "vocab"
+    ]
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": "你好",
+     "entryKind": "character",
+     "sentenceId": null,
+     "skipKinds": [
+      "writing",
+      "tone"
+     ],
+     "deckIds": [
+      "general",
+      "d1"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general",
+     "d1"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "written": "你好",
+    "entryKind": "character",
+    "skipKinds": [
+     "writing",
+     "tone"
+    ]
+   }
+  },
+  {
+   "name": "skipKinds that clean to nothing are dropped (the web never writes an empty list)",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "skipKinds": [
+     "vocab",
+     "x"
+    ]
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   }
+  },
+  {
+   "name": "skipKinds on a sentence card is not carried: kept in extra",
+   "key": "card:c-sentence-1201",
+   "data": {
+    "id": "c-sentence-1201",
+    "kind": "sentence",
+    "entryId": 1201,
+    "sentenceId": 77,
+    "skipKinds": [
+     "tone"
+    ],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-sentence-1201",
+     "kind": "sentence",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": 77,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "skipKinds": [
+       "tone"
+      ]
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-sentence-1201",
+    "kind": "sentence",
+    "entryId": 1201,
+    "sentenceId": 77,
+    "skipKinds": [
+     "tone"
+    ],
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   }
+  },
+  {
+   "name": "skipKinds not a list on a vocab card: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "skipKinds": "tone"
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "skipKinds": "tone"
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "skipKinds": "tone"
+   }
+  },
+  {
+   "name": "entryKind other than character: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "entryKind": "word"
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "entryKind": "word"
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "entryKind": "word"
+   }
+  },
+  {
+   "name": "written not a string: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "written": 5
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "written": 5
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "written": 5
+   }
+  },
+  {
+   "name": "sentenceId as a string: kept in extra",
+   "key": "card:c-sentence-1201",
+   "data": {
+    "id": "c-sentence-1201",
+    "kind": "sentence",
+    "entryId": 1201,
+    "sentenceId": "77",
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-sentence-1201",
+     "kind": "sentence",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "sentenceId": "77"
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-sentence-1201",
+    "kind": "sentence",
+    "entryId": 1201,
+    "sentenceId": "77",
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   }
+  },
+  {
+   "name": "sentenceId null: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": null
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "sentenceId": null
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": null
+   }
+  },
+  {
+   "name": "unknown members: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "foo": {
+     "a": 1
+    }
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "foo": {
+       "a": 1
+      }
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "foo": {
+     "a": 1
+    }
+   }
+  },
+  {
+   "name": "an integral entry id written as 1201.0 reads as 1201",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201.0,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   }
+  },
+  {
+   "name": "key and id disagree",
+   "key": "card:c-vocab-9",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "fractional entry id",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1.5,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "entry id zero",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 0,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "entry id as a string",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": "1201",
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "entry id above 2^53-1",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 9007199254740992,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "a fractional sentenceId: kept in extra (the v0.3.0 web read the card)",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 1.5
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "sentenceId": 1.5
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 1.5
+   }
+  },
+  {
+   "name": "sentenceId 0: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 0
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "sentenceId": 0
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 0
+   }
+  },
+  {
+   "name": "sentenceId above 2^53-1: kept in extra",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 9007199254740992
+   },
+   "expect": {
+    "collection": "cards",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {
+      "sentenceId": 9007199254740992
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "sentenceId": 9007199254740992
+   }
+  },
+  {
+   "name": "unknown kind",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "flash",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "deckIds missing",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "deckIds not a list",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": "general",
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "createdAt missing",
+   "key": "card:c-vocab-1201",
+   "data": {
+    "id": "c-vocab-1201",
+    "kind": "vocab",
+    "entryId": 1201,
+    "deckIds": [
+     "general"
+    ]
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "card data not an object",
+   "key": "card:c-vocab-1201",
+   "data": [
+    "x"
+   ],
+   "expect": "unreadable"
+  },
+  {
+   "name": "card data null",
+   "key": "card:c-vocab-1201",
+   "data": null,
+   "expect": "unreadable"
+  },
+  {
+   "name": "user deck",
+   "key": "deck:01JDECK0000000000000000001",
+   "data": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": {
+    "collection": "decks",
+    "row": {
+     "id": "01JDECK0000000000000000001",
+     "name": "Words",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z"
+   }
+  },
+  {
+   "name": "level copy",
+   "key": "deck:d-lvl-hsk-1",
+   "data": {
+    "id": "d-lvl-hsk-1",
+    "name": "HSK 1",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk",
+     "level": "1"
+    }
+   },
+   "expect": {
+    "collection": "decks",
+    "row": {
+     "id": "d-lvl-hsk-1",
+     "name": "HSK 1",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": {
+      "type": "level",
+      "packId": "hsk",
+      "level": "1"
+     },
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "d-lvl-hsk-1",
+    "name": "HSK 1",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk",
+     "level": "1"
+    }
+   }
+  },
+  {
+   "name": "plugin copy",
+   "key": "deck:d-plg-x",
+   "data": {
+    "id": "d-plg-x",
+    "name": "J",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "plugin",
+     "pluginId": "qinqin-journal",
+     "key": "deck:1"
+    }
+   },
+   "expect": {
+    "collection": "decks",
+    "row": {
+     "id": "d-plg-x",
+     "name": "J",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": {
+      "type": "plugin",
+      "pluginId": "qinqin-journal",
+      "key": "deck:1"
+     },
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "d-plg-x",
+    "name": "J",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "plugin",
+     "pluginId": "qinqin-journal",
+     "key": "deck:1"
+    }
+   }
+  },
+  {
+   "name": "frequency starter deck",
+   "key": "deck:d-frq-subtlex-1000",
+   "data": {
+    "id": "d-frq-subtlex-1000",
+    "name": "Top 1000",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "frequency",
+     "packId": "subtlex",
+     "size": 1000
+    }
+   },
+   "expect": {
+    "collection": "decks",
+    "row": {
+     "id": "d-frq-subtlex-1000",
+     "name": "Top 1000",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": {
+      "type": "frequency",
+      "packId": "subtlex",
+      "size": 1000
+     },
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "d-frq-subtlex-1000",
+    "name": "Top 1000",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "frequency",
+     "packId": "subtlex",
+     "size": 1000
+    }
+   }
+  },
+  {
+   "name": "an unreadable source is kept in extra",
+   "key": "deck:01JDECK0000000000000000001",
+   "data": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "frequency",
+     "packId": "subtlex",
+     "size": 0
+    }
+   },
+   "expect": {
+    "collection": "decks",
+    "row": {
+     "id": "01JDECK0000000000000000001",
+     "name": "Words",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": null,
+     "extra": {
+      "source": {
+       "type": "frequency",
+       "packId": "subtlex",
+       "size": 0
+      }
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "frequency",
+     "packId": "subtlex",
+     "size": 0
+    }
+   }
+  },
+  {
+   "name": "source null is kept in extra",
+   "key": "deck:01JDECK0000000000000000001",
+   "data": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": null
+   },
+   "expect": {
+    "collection": "decks",
+    "row": {
+     "id": "01JDECK0000000000000000001",
+     "name": "Words",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": null,
+     "extra": {
+      "source": null
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": null
+   }
+  },
+  {
+   "name": "members beyond the source variant are dropped as the web parser drops them",
+   "key": "deck:d-lvl-hsk-1",
+   "data": {
+    "id": "d-lvl-hsk-1",
+    "name": "HSK 1",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk",
+     "level": "1",
+     "x": 1
+    }
+   },
+   "expect": {
+    "collection": "decks",
+    "row": {
+     "id": "d-lvl-hsk-1",
+     "name": "HSK 1",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": {
+      "type": "level",
+      "packId": "hsk",
+      "level": "1"
+     },
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "d-lvl-hsk-1",
+    "name": "HSK 1",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": {
+     "type": "level",
+     "packId": "hsk",
+     "level": "1"
+    }
+   }
+  },
+  {
+   "name": "unknown deck members are kept in extra",
+   "key": "deck:01JDECK0000000000000000001",
+   "data": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "color": "red"
+   },
+   "expect": {
+    "collection": "decks",
+    "row": {
+     "id": "01JDECK0000000000000000001",
+     "name": "Words",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": null,
+     "extra": {
+      "color": "red"
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z",
+    "color": "red"
+   }
+  },
+  {
+   "name": "deck key and id disagree",
+   "key": "deck:other",
+   "data": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words",
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "deck name not a string",
+   "key": "deck:01JDECK0000000000000000001",
+   "data": {
+    "id": "01JDECK0000000000000000001",
+    "name": 5,
+    "createdAt": "2026-11-10T08:00:00Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "deck createdAt missing",
+   "key": "deck:01JDECK0000000000000000001",
+   "data": {
+    "id": "01JDECK0000000000000000001",
+    "name": "Words"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "deck settings: the inner updatedAt is dropped and written back as the row's modifiedAt",
+   "key": "deckcfg:general",
+   "data": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-11T07:00:00.000Z"
+   },
+   "expect": {
+    "collection": "deckSettings",
+    "row": {
+     "deckId": "general",
+     "cardTypes": [
+      "reverse"
+     ],
+     "newOrder": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-12T09:59:58Z"
+   }
+  },
+  {
+   "name": "level order, card types cleaned",
+   "key": "deckcfg:01JDECK0000000000000000001",
+   "data": {
+    "deckId": "01JDECK0000000000000000001",
+    "cardTypes": [
+     "cloze",
+     "reverse",
+     "cloze",
+     "vocab"
+    ],
+    "newOrder": {
+     "by": "level",
+     "packId": "hsk-words"
+    },
+    "updatedAt": "2026-11-11T07:00:00.000Z"
+   },
+   "expect": {
+    "collection": "deckSettings",
+    "row": {
+     "deckId": "01JDECK0000000000000000001",
+     "cardTypes": [
+      "reverse",
+      "cloze"
+     ],
+     "newOrder": {
+      "by": "level",
+      "packId": "hsk-words"
+     },
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "deckId": "01JDECK0000000000000000001",
+    "cardTypes": [
+     "reverse",
+     "cloze"
+    ],
+    "newOrder": {
+     "by": "level",
+     "packId": "hsk-words"
+    },
+    "updatedAt": "2026-11-12T09:59:58Z"
+   }
+  },
+  {
+   "name": "an unreadable order is kept in extra (frequency/deckcfg-new-order.json)",
+   "key": "deckcfg:general",
+   "data": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-11T07:00:00.000Z",
+    "newOrder": {
+     "by": "level"
+    }
+   },
+   "expect": {
+    "collection": "deckSettings",
+    "row": {
+     "deckId": "general",
+     "cardTypes": [
+      "reverse"
+     ],
+     "newOrder": null,
+     "extra": {
+      "newOrder": {
+       "by": "level"
+      }
+     }
+    }
+   },
+   "roundTrip": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-12T09:59:58Z",
+    "newOrder": {
+     "by": "level"
+    }
+   }
+  },
+  {
+   "name": "newOrder null is kept in extra",
+   "key": "deckcfg:general",
+   "data": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-11T07:00:00.000Z",
+    "newOrder": null
+   },
+   "expect": {
+    "collection": "deckSettings",
+    "row": {
+     "deckId": "general",
+     "cardTypes": [
+      "reverse"
+     ],
+     "newOrder": null,
+     "extra": {
+      "newOrder": null
+     }
+    }
+   },
+   "roundTrip": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-12T09:59:58Z",
+    "newOrder": null
+   }
+  },
+  {
+   "name": "members beyond the order shape are dropped as the web parser drops them",
+   "key": "deckcfg:general",
+   "data": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-11T07:00:00.000Z",
+    "newOrder": {
+     "by": "frequency",
+     "x": 1
+    }
+   },
+   "expect": {
+    "collection": "deckSettings",
+    "row": {
+     "deckId": "general",
+     "cardTypes": [
+      "reverse"
+     ],
+     "newOrder": {
+      "by": "frequency"
+     },
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-12T09:59:58Z",
+    "newOrder": {
+     "by": "frequency"
+    }
+   }
+  },
+  {
+   "name": "missing card types read as none",
+   "key": "deckcfg:general",
+   "data": {
+    "deckId": "general"
+   },
+   "expect": {
+    "collection": "deckSettings",
+    "row": {
+     "deckId": "general",
+     "cardTypes": [],
+     "newOrder": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "deckId": "general",
+    "cardTypes": [],
+    "updatedAt": "2026-11-12T09:59:58Z"
+   }
+  },
+  {
+   "name": "card types not a list read as none",
+   "key": "deckcfg:general",
+   "data": {
+    "deckId": "general",
+    "cardTypes": "reverse"
+   },
+   "expect": {
+    "collection": "deckSettings",
+    "row": {
+     "deckId": "general",
+     "cardTypes": [],
+     "newOrder": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "deckId": "general",
+    "cardTypes": [],
+    "updatedAt": "2026-11-12T09:59:58Z"
+   }
+  },
+  {
+   "name": "unknown deck settings members are kept verbatim",
+   "key": "deckcfg:general",
+   "data": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-11T07:00:00.000Z",
+    "zoom": 2,
+    "other": {
+     "a": true
+    }
+   },
+   "expect": {
+    "collection": "deckSettings",
+    "row": {
+     "deckId": "general",
+     "cardTypes": [
+      "reverse"
+     ],
+     "newOrder": null,
+     "extra": {
+      "zoom": 2,
+      "other": {
+       "a": true
+      }
+     }
+    }
+   },
+   "roundTrip": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-12T09:59:58Z",
+    "zoom": 2,
+    "other": {
+     "a": true
+    }
+   }
+  },
+  {
+   "name": "deck settings key and deckId disagree",
+   "key": "deckcfg:other",
+   "data": {
+    "deckId": "general",
+    "cardTypes": [
+     "reverse"
+    ],
+    "updatedAt": "2026-11-11T07:00:00.000Z"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "empty deckId",
+   "key": "deckcfg:",
+   "data": {
+    "deckId": "",
+    "cardTypes": []
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "deck settings data not an object",
+   "key": "deckcfg:general",
+   "data": [
+    1
+   ],
+   "expect": "unreadable"
+  },
+  {
+   "name": "workspace limits",
+   "key": "limits:workspace",
+   "data": {
+    "version": 1,
+    "new": 10,
+    "reviews": 100
+   },
+   "expect": {
+    "collection": "limits",
+    "row": {
+     "deckId": null,
+     "new": {
+      "limit": 10
+     },
+     "reviews": {
+      "limit": 100
+     },
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "version": 1,
+    "new": 10,
+    "reviews": 100
+   }
+  },
+  {
+   "name": "general deck: unlimited new",
+   "key": "limits:deck:general",
+   "data": {
+    "version": 1,
+    "new": null
+   },
+   "expect": {
+    "collection": "limits",
+    "row": {
+     "deckId": "general",
+     "new": {
+      "limit": null
+     },
+     "reviews": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "version": 1,
+    "new": null
+   }
+  },
+  {
+   "name": "zero and 9999 are limits",
+   "key": "limits:deck:d1",
+   "data": {
+    "version": 1,
+    "new": 0,
+    "reviews": 9999
+   },
+   "expect": {
+    "collection": "limits",
+    "row": {
+     "deckId": "d1",
+     "new": {
+      "limit": 0
+     },
+     "reviews": {
+      "limit": 9999
+     },
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "version": 1,
+    "new": 0,
+    "reviews": 9999
+   }
+  },
+  {
+   "name": "an empty row follows the defaults",
+   "key": "limits:workspace",
+   "data": {
+    "version": 1
+   },
+   "expect": {
+    "collection": "limits",
+    "row": {
+     "deckId": null,
+     "new": null,
+     "reviews": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "version": 1
+   }
+  },
+  {
+   "name": "one usable and one unusable field: the unusable one is kept in extra",
+   "key": "limits:workspace",
+   "data": {
+    "version": 1,
+    "new": 10000,
+    "reviews": 50
+   },
+   "expect": {
+    "collection": "limits",
+    "row": {
+     "deckId": null,
+     "new": null,
+     "reviews": {
+      "limit": 50
+     },
+     "extra": {
+      "new": 10000
+     }
+    }
+   },
+   "roundTrip": {
+    "version": 1,
+    "new": 10000,
+    "reviews": 50
+   }
+  },
+  {
+   "name": "a fractional or string limit is kept in extra",
+   "key": "limits:workspace",
+   "data": {
+    "version": 1,
+    "new": 2.5,
+    "reviews": "20"
+   },
+   "expect": {
+    "collection": "limits",
+    "row": {
+     "deckId": null,
+     "new": null,
+     "reviews": null,
+     "extra": {
+      "new": 2.5,
+      "reviews": "20"
+     }
+    }
+   },
+   "roundTrip": {
+    "version": 1,
+    "new": 2.5,
+    "reviews": "20"
+   }
+  },
+  {
+   "name": "unknown limits members are kept in extra",
+   "key": "limits:workspace",
+   "data": {
+    "version": 1,
+    "note": "x"
+   },
+   "expect": {
+    "collection": "limits",
+    "row": {
+     "deckId": null,
+     "new": null,
+     "reviews": null,
+     "extra": {
+      "note": "x"
+     }
+    }
+   },
+   "roundTrip": {
+    "version": 1,
+    "note": "x"
+   }
+  },
+  {
+   "name": "version written as 1.0 is version 1",
+   "key": "limits:workspace",
+   "data": {
+    "version": 1.0,
+    "new": 3
+   },
+   "expect": {
+    "collection": "limits",
+    "row": {
+     "deckId": null,
+     "new": {
+      "limit": 3
+     },
+     "reviews": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "version": 1,
+    "new": 3
+   }
+  },
+  {
+   "name": "limits version 2",
+   "key": "limits:workspace",
+   "data": {
+    "version": 2,
+    "new": 1
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "limits without a version",
+   "key": "limits:workspace",
+   "data": {
+    "new": 1
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "limits data not an object",
+   "key": "limits:workspace",
+   "data": "x",
+   "expect": "unreadable"
+  },
+  {
+   "name": "a deck limits key without a deck id",
+   "key": "limits:deck:",
+   "data": {
+    "version": 1,
+    "new": 1
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "optimized set with statistics",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "labelled": 420,
+    "logLoss": 0.31,
+    "baselineLogLoss": 0.35
+   },
+   "expect": {
+    "collection": "fsrsSets",
+    "row": {
+     "id": "01JSET00000000000000000001",
+     "w": [
+      0.212,
+      1.2931,
+      2.3065,
+      8.2956,
+      6.4133,
+      0.8334,
+      3.0194,
+      0.001,
+      1.8722,
+      0.1666,
+      0.796,
+      1.4835,
+      0.0614,
+      0.2629,
+      1.6483,
+      0.6014,
+      1.8729,
+      0.5425,
+      0.0912,
+      0.0658,
+      0.1542
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": "optimized",
+     "labelled": 420,
+     "logLoss": 0.31,
+     "baselineLogLoss": 0.35,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "labelled": 420,
+    "logLoss": 0.31,
+    "baselineLogLoss": 0.35
+   }
+  },
+  {
+   "name": "imported set",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "imported"
+   },
+   "expect": {
+    "collection": "fsrsSets",
+    "row": {
+     "id": "01JSET00000000000000000001",
+     "w": [
+      0.212,
+      1.2931,
+      2.3065,
+      8.2956,
+      6.4133,
+      0.8334,
+      3.0194,
+      0.001,
+      1.8722,
+      0.1666,
+      0.796,
+      1.4835,
+      0.0614,
+      0.2629,
+      1.6483,
+      0.6014,
+      1.8729,
+      0.5425,
+      0.0912,
+      0.0658,
+      0.1542
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": "imported",
+     "labelled": null,
+     "logLoss": null,
+     "baselineLogLoss": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "imported"
+   }
+  },
+  {
+   "name": "weights outside the ts-fsrs ranges are carried (the range is a client rule)",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     500.0,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized"
+   },
+   "expect": {
+    "collection": "fsrsSets",
+    "row": {
+     "id": "01JSET00000000000000000001",
+     "w": [
+      500.0,
+      1.2931,
+      2.3065,
+      8.2956,
+      6.4133,
+      0.8334,
+      3.0194,
+      0.001,
+      1.8722,
+      0.1666,
+      0.796,
+      1.4835,
+      0.0614,
+      0.2629,
+      1.6483,
+      0.6014,
+      1.8729,
+      0.5425,
+      0.0912,
+      0.0658,
+      0.1542
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": "optimized",
+     "labelled": null,
+     "logLoss": null,
+     "baselineLogLoss": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     500.0,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized"
+   }
+  },
+  {
+   "name": "unknown set members are kept in extra",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "note": "ok"
+   },
+   "expect": {
+    "collection": "fsrsSets",
+    "row": {
+     "id": "01JSET00000000000000000001",
+     "w": [
+      0.212,
+      1.2931,
+      2.3065,
+      8.2956,
+      6.4133,
+      0.8334,
+      3.0194,
+      0.001,
+      1.8722,
+      0.1666,
+      0.796,
+      1.4835,
+      0.0614,
+      0.2629,
+      1.6483,
+      0.6014,
+      1.8729,
+      0.5425,
+      0.0912,
+      0.0658,
+      0.1542
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": "optimized",
+     "labelled": null,
+     "logLoss": null,
+     "baselineLogLoss": null,
+     "extra": {
+      "note": "ok"
+     }
+    }
+   },
+   "roundTrip": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "note": "ok"
+   }
+  },
+  {
+   "name": "20 weights",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "a weight that is not a number",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     "x"
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "unknown source",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "other"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "labelled as a string",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "labelled": "420"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "labelled null",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized",
+    "labelled": null
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "set key and id disagree",
+   "key": "fsrs:set:other",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "createdAt": "2026-11-10T08:00:00Z",
+    "source": "optimized"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "set createdAt missing",
+   "key": "fsrs:set:01JSET00000000000000000001",
+   "data": {
+    "id": "01JSET00000000000000000001",
+    "w": [
+     0.212,
+     1.2931,
+     2.3065,
+     8.2956,
+     6.4133,
+     0.8334,
+     3.0194,
+     0.001,
+     1.8722,
+     0.1666,
+     0.796,
+     1.4835,
+     0.0614,
+     0.2629,
+     1.6483,
+     0.6014,
+     1.8729,
+     0.5425,
+     0.0912,
+     0.0658,
+     0.1542
+    ],
+    "source": "optimized"
+   },
+   "expect": "unreadable"
+  },
+  {
+   "name": "active set",
+   "key": "fsrs:active",
+   "data": {
+    "setId": "01JSET00000000000000000001",
+    "changedAt": "2026-11-11T07:00:00.000Z"
+   },
+   "expect": {
+    "collection": "fsrsActive",
+    "row": {
+     "setId": "01JSET00000000000000000001",
+     "changedAt": "2026-11-11T07:00:00.000Z",
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "setId": "01JSET00000000000000000001",
+    "changedAt": "2026-11-11T07:00:00.000Z"
+   }
+  },
+  {
+   "name": "the defaults",
+   "key": "fsrs:active",
+   "data": {
+    "setId": null,
+    "changedAt": "2026-11-11T07:00:00.000Z"
+   },
+   "expect": {
+    "collection": "fsrsActive",
+    "row": {
+     "setId": null,
+     "changedAt": "2026-11-11T07:00:00.000Z",
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "setId": null,
+    "changedAt": "2026-11-11T07:00:00.000Z"
+   }
+  },
+  {
+   "name": "a missing setId means the defaults and is written back as null",
+   "key": "fsrs:active",
+   "data": {
+    "changedAt": "2026-11-11T07:00:00.000Z"
+   },
+   "expect": {
+    "collection": "fsrsActive",
+    "row": {
+     "setId": null,
+     "changedAt": "2026-11-11T07:00:00.000Z",
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "setId": null,
+    "changedAt": "2026-11-11T07:00:00.000Z"
+   }
+  },
+  {
+   "name": "a setId that is not a string is kept in extra",
+   "key": "fsrs:active",
+   "data": {
+    "setId": 5,
+    "changedAt": "2026-11-11T07:00:00.000Z"
+   },
+   "expect": {
+    "collection": "fsrsActive",
+    "row": {
+     "setId": null,
+     "changedAt": "2026-11-11T07:00:00.000Z",
+     "extra": {
+      "setId": 5
+     }
+    }
+   },
+   "roundTrip": {
+    "setId": 5,
+    "changedAt": "2026-11-11T07:00:00.000Z"
+   }
+  },
+  {
+   "name": "changedAt not a string is kept in extra",
+   "key": "fsrs:active",
+   "data": {
+    "setId": null,
+    "changedAt": 5
+   },
+   "expect": {
+    "collection": "fsrsActive",
+    "row": {
+     "setId": null,
+     "changedAt": null,
+     "extra": {
+      "changedAt": 5
+     }
+    }
+   },
+   "roundTrip": {
+    "setId": null,
+    "changedAt": 5
+   }
+  },
+  {
+   "name": "an empty object",
+   "key": "fsrs:active",
+   "data": {},
+   "expect": {
+    "collection": "fsrsActive",
+    "row": {
+     "setId": null,
+     "changedAt": null,
+     "extra": {}
+    }
+   },
+   "roundTrip": {
+    "setId": null,
+    "changedAt": null
+   }
+  },
+  {
+   "name": "active data a string",
+   "key": "fsrs:active",
+   "data": "x",
+   "expect": "unreadable"
+  },
+  {
+   "name": "active data a list",
+   "key": "fsrs:active",
+   "data": [],
+   "expect": "unreadable"
+  },
+  {
+   "name": "active data null",
+   "key": "fsrs:active",
+   "data": null,
+   "expect": "unreadable"
+  }
+ ]
+}

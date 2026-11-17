@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "rule": "library-rows",
+  "_doc": "The reader library's JSON rows as the library routes serve them, and a request sequence that pins their rules. shapes: every key of each row (always present). cases run in order against one server with two users, alice and bob; alice owns {book} (2 chapters: chapter 0 paragraph 0 is \"你好世界\", chapter 1 paragraph 0 is \"再见\"). Path placeholders {book}, {bookmark}, {highlight} are the ids alice's book and the saved bookmark/highlight have; save names a created row's id; expect is a subset of the JSON body (a value \"$highlight\" is the saved id); a body string \"$<n>\" is n bytes of \"0\"; shape names the row shape every returned row must have exactly; stampsEqual: updatedAt equals createdAt; listLength: the body is a list of that length. deletionsAfter: the library_deletions rows (collection, saved id) the sequence leaves for alice. Decoded by server/internal/api/contract_library_test.go.",
+  "shapes": {
+    "book": ["id", "workspaceId", "language", "title", "author", "source", "sourceId", "sourceUrl", "attribution", "licenseNote", "chapterCount", "position", "createdAt", "updatedAt"],
+    "bookmark": ["id", "bookId", "position", "label", "createdAt", "updatedAt"],
+    "highlight": ["id", "bookId", "chapter", "paragraph", "start", "end", "text", "color", "note", "createdAt", "updatedAt"]
+  },
+  "position": {
+    "grammar": "<chapter>:<paragraph>, both zero-based decimal integers; the server stores any string of at most maxBytes bytes and never parses it, clients write this grammar",
+    "examples": ["0:0", "1:0", "12:345"],
+    "maxBytes": 1024
+  },
+  "colors": ["yellow", "green", "blue", "pink"],
+  "defaultColor": "yellow",
+  "cases": [
+    {"name": "a new book has an empty position and updatedAt = createdAt", "as": "alice", "method": "GET", "path": "/api/library/books/{book}", "status": 200, "expect": {"position": "", "chapterCount": 2}, "shape": "book", "stampsEqual": true},
+    {"name": "a position write answers 204", "as": "alice", "method": "PUT", "path": "/api/library/books/{book}/position", "body": {"position": "1:0"}, "status": 204},
+    {"name": "the position is stored", "as": "alice", "method": "GET", "path": "/api/library/books/{book}", "status": 200, "expect": {"position": "1:0"}, "shape": "book"},
+    {"name": "a position over 1024 bytes is 413", "as": "alice", "method": "PUT", "path": "/api/library/books/{book}/position", "body": {"position": "$1025"}, "status": 413},
+    {"name": "a bookmark is created (201)", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/bookmarks", "body": {"position": "0:0", "label": "  start\n"}, "status": 201, "expect": {"position": "0:0", "label": "start"}, "shape": "bookmark", "save": "bookmark", "stampsEqual": true},
+    {"name": "a bookmark at the same position comes back unchanged (200)", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/bookmarks", "body": {"position": "0:0", "label": "other"}, "status": 200, "expect": {"label": "start"}, "shape": "bookmark"},
+    {"name": "a bookmark needs a position", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/bookmarks", "body": {"position": "", "label": "x"}, "status": 422},
+    {"name": "a relabel answers the bookmark", "as": "alice", "method": "PUT", "path": "/api/library/books/{book}/bookmarks/{bookmark}", "body": {"label": "beginning"}, "status": 200, "expect": {"label": "beginning"}, "shape": "bookmark"},
+    {"name": "a highlight is created with its code-point range and text", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/highlights", "body": {"chapter": 0, "paragraph": 0, "start": 0, "end": 2, "text": "你好", "color": "green", "note": ""}, "status": 201, "expect": {"chapter": 0, "paragraph": 0, "start": 0, "end": 2, "text": "你好", "color": "green", "note": ""}, "shape": "highlight", "save": "highlight", "stampsEqual": true},
+    {"name": "an overlapping range is 409 naming the existing highlight", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/highlights", "body": {"chapter": 0, "paragraph": 0, "start": 1, "end": 3, "text": "好世"}, "status": 409, "expect": {"existingId": "$highlight"}},
+    {"name": "a range that only touches is fine, and the colour defaults to yellow", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/highlights", "body": {"chapter": 0, "paragraph": 0, "start": 2, "end": 4, "text": "世界"}, "status": 201, "expect": {"color": "yellow"}, "shape": "highlight", "save": "other"},
+    {"name": "a colour outside the four is 422", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/highlights", "body": {"chapter": 1, "paragraph": 0, "start": 0, "end": 2, "text": "再见", "color": "red"}, "status": 422},
+    {"name": "the text must be exactly the range's code points (UTF-16 offsets are refused)", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/highlights", "body": {"chapter": 1, "paragraph": 0, "start": 0, "end": 4, "text": "再见"}, "status": 422},
+    {"name": "a chapter beyond the book is 422", "as": "alice", "method": "POST", "path": "/api/library/books/{book}/highlights", "body": {"chapter": 2, "paragraph": 0, "start": 0, "end": 2, "text": "再见"}, "status": 422},
+    {"name": "a note edit answers the highlight; range and text stay", "as": "alice", "method": "PUT", "path": "/api/library/books/{book}/highlights/{highlight}", "body": {"note": "greeting"}, "status": 200, "expect": {"note": "greeting", "start": 0, "end": 2, "text": "你好", "color": "green"}, "shape": "highlight"},
+    {"name": "highlights list by chapter, paragraph and start", "as": "alice", "method": "GET", "path": "/api/library/books/{book}/highlights", "status": 200, "listLength": 2, "shape": "highlight"},
+    {"name": "bookmarks list", "as": "alice", "method": "GET", "path": "/api/library/books/{book}/bookmarks", "status": 200, "listLength": 1, "shape": "bookmark"},
+    {"name": "bob cannot read alice's book", "as": "bob", "method": "GET", "path": "/api/library/books/{book}", "status": 404},
+    {"name": "bob cannot list its bookmarks", "as": "bob", "method": "GET", "path": "/api/library/books/{book}/bookmarks", "status": 404},
+    {"name": "bob cannot list its highlights", "as": "bob", "method": "GET", "path": "/api/library/books/{book}/highlights", "status": 404},
+    {"name": "bob cannot move its position", "as": "bob", "method": "PUT", "path": "/api/library/books/{book}/position", "body": {"position": "0:0"}, "status": 404},
+    {"name": "bob cannot relabel its bookmark", "as": "bob", "method": "PUT", "path": "/api/library/books/{book}/bookmarks/{bookmark}", "body": {"label": "mine"}, "status": 404},
+    {"name": "bob cannot highlight in it", "as": "bob", "method": "POST", "path": "/api/library/books/{book}/highlights", "body": {"chapter": 1, "paragraph": 0, "start": 0, "end": 2, "text": "再见"}, "status": 404},
+    {"name": "bob cannot delete its highlight", "as": "bob", "method": "DELETE", "path": "/api/library/books/{book}/highlights/{highlight}", "status": 404},
+    {"name": "bob cannot delete its bookmark", "as": "bob", "method": "DELETE", "path": "/api/library/books/{book}/bookmarks/{bookmark}", "status": 404},
+    {"name": "bob cannot delete the book", "as": "bob", "method": "DELETE", "path": "/api/library/books/{book}", "status": 404},
+    {"name": "alice deletes the bookmark", "as": "alice", "method": "DELETE", "path": "/api/library/books/{book}/bookmarks/{bookmark}", "status": 204},
+    {"name": "a deleted bookmark is 404", "as": "alice", "method": "DELETE", "path": "/api/library/books/{book}/bookmarks/{bookmark}", "status": 404},
+    {"name": "alice deletes the highlight", "as": "alice", "method": "DELETE", "path": "/api/library/books/{book}/highlights/{highlight}", "status": 204},
+    {"name": "alice deletes the book, with its other highlight", "as": "alice", "method": "DELETE", "path": "/api/library/books/{book}", "status": 204},
+    {"name": "a deleted book is 404", "as": "alice", "method": "GET", "path": "/api/library/books/{book}", "status": 404},
+    {"name": "no session is 401", "as": "", "method": "GET", "path": "/api/library/books/{book}", "status": 401}
+  ],
+  "deletionsAfter": [
+    {"collection": "bookmarks", "row": "$bookmark"},
+    {"collection": "highlights", "row": "$highlight"},
+    {"collection": "highlights", "row": "$other"},
+    {"collection": "books", "row": "$book"}
+  ]
+}
