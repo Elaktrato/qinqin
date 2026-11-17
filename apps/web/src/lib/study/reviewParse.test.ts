@@ -1,8 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import type { StudyEvent } from '../events';
 import { cardKey, parseReview } from './reviewParse';
-import reviewParseFixture from '../../../../../docs/contracts/events/review-parse.json';
+
+// Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
+// fixture means Infinity (what JSON.parse makes of a stored 1e999).
+const reviewParseFixture: unknown = JSON.parse(
+	readFileSync(resolve(__dirname, '../../../../../docs/contracts/events/review-parse.json'), 'utf8')
+);
 
 function event(payload: unknown, overrides: Partial<StudyEvent> = {}): StudyEvent {
 	return {
@@ -83,6 +90,8 @@ describe('docs/contracts/events/review-parse.json: parseReview', () => {
 	it('has cases', () => {
 		expect(fixture.rule).toBe('events/review-parse');
 		expect(fixture.cases.length).toBeGreaterThan(20);
+		const overflow = fixture.cases.find((c) => c.name === 'an overflowing durationMs drops meta');
+		expect((overflow?.event.payload as { meta: { durationMs: number } }).meta.durationMs).toBe(Infinity);
 	});
 	for (const c of fixture.cases) {
 		it(c.name, () => {

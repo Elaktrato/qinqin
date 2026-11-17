@@ -1,10 +1,17 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { BASE_XP, dailyStreak, levelFromXp, levelProgress, xpByKind, xpFromReviews } from './exp';
 import streakFixture from '../../../../../docs/contracts/scheduler/streak.json';
-import reviewParseFixture from '../../../../../docs/contracts/events/review-parse.json';
 import { studyDay } from '../time/studyDay';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
+
+// Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
+// fixture means Infinity (what JSON.parse makes of a stored 1e999).
+const reviewParseFixture: unknown = JSON.parse(
+	readFileSync(resolve(__dirname, '../../../../../docs/contracts/events/review-parse.json'), 'utf8')
+);
 
 const UTC = studyDay([]);
 const TOKYO = studyDay([{ zone: 'Asia/Tokyo', from: null }]);

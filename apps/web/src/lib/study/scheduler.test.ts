@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { studyDay } from '../time/studyDay';
 import { describe, expect, it } from 'vitest';
 
@@ -5,7 +7,6 @@ import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 import { createEmptyCard, fsrs, Rating, type Grade } from 'ts-fsrs';
 
 import envelopeFixture from '../../../../../docs/contracts/events/envelope.json';
-import reviewParseFixture from '../../../../../docs/contracts/events/review-parse.json';
 import vacationSchedule from '../../../../../docs/contracts/scheduler/vacation-schedule.json';
 import { DEFAULT_W } from './fsrs/params';
 import { clockFromRuns, IDENTITY_CLOCK } from './studyClock';
@@ -20,6 +21,12 @@ import {
 	sortedReviews,
 	xpFromReviews
 } from './scheduler';
+
+// Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
+// fixture means Infinity (what JSON.parse makes of a stored 1e999).
+const reviewParseFixture: unknown = JSON.parse(
+	readFileSync(resolve(__dirname, '../../../../../docs/contracts/events/review-parse.json'), 'utf8')
+);
 
 // ULIDs are lexicographically sortable: same-instant reviews break ties
 // on the id, exactly like the server's own ordering.
