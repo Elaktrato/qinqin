@@ -219,5 +219,5 @@ it implements the validation only if it ever installs theme packs itself (it doe
 | `theme-file.json` | validation codes and paths, limits, accent order | Go `server/internal/themes/file_test.go` |
 | `contrast.json` | ratios, rounding, the review checks | Go `server/internal/themes/contrast_test.go`; web `apps/web/src/lib/theme/contrast.test.ts` |
 | `themes-api.json` | the built-in packs and theme ids in order | Go `server/internal/themes/builtin_test.go`, `server/internal/api/handlers_themes_test.go` |
-| `appearance.json` | the `appearance` row: defaults, parse, resolve, write, the example row | Go `server/cmd/qinqin/core_appearance_test.go`, `server/internal/backup/appearance_test.go` (the example row through every pull form, push, export and restore); web (next run) `apps/web/src/lib/theme/appearance.test.ts` |
+| `appearance.json` | the `appearance` row: defaults, parse, resolve, write, the example row | Go `server/cmd/qinqin/core_appearance_test.go`, `server/internal/backup/appearance_test.go` (the example row through every pull form, push, export and restore); web `apps/web/src/lib/theme/appearance.test.ts` |
 | `derive.json` | derived tokens | Go `server/internal/themes/derive_test.go`; web `apps/web/src/lib/theme/derive.test.ts` (also the CSS property table) |
