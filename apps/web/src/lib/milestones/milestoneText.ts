@@ -72,5 +72,6 @@ export const MILESTONE_TEXT = {
 	seeAll: 'See all milestones',
 	isNew: 'New',
 	empty: 'No milestones yet.',
-	weekLine: 'Milestones'
+	weekLine: 'Milestones',
+	none: 'None'
 } as const;

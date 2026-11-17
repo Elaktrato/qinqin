@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/weekly/loadWeek', () => ({ loadWeek: vi.fn(), loadWeekCharacters: vi.fn() }));
+vi.mock('$lib/milestones/loadMilestones', () => ({ loadMilestones: vi.fn(), markSeen: vi.fn() }));
 vi.mock('$lib/study/currentContext', () => ({ onContextStale: vi.fn(() => () => {}) }));
 vi.mock('$lib/events', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/events')>()),
@@ -16,6 +17,9 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 }));
 
 import { goto } from '$app/navigation';
+import { fireEvent } from '@testing-library/svelte';
+import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
+import { givenTimelines } from '$lib/weekly/replay';
 import { onEventLogChange } from '$lib/events';
 import { onContextStale } from '$lib/study/currentContext';
 import { onStudyWrite } from '$lib/study/store';
@@ -63,8 +67,31 @@ beforeEach(() => {
 	setUrl('/stats/week');
 	select(1);
 	vi.mocked(loadWeek).mockImplementation(async (_ws, monday) => view(monday));
-	vi.mocked(loadWeekCharacters).mockResolvedValue({ value: 3, previous: 1 });
+	vi.mocked(loadWeekCharacters).mockResolvedValue({ value: 3, previous: 1 } as never);
+	vi.mocked(loadMilestones).mockResolvedValue(noMilestones());
+	vi.mocked(markSeen).mockResolvedValue(undefined);
 });
+
+function noMilestones(): MilestonesView {
+	return { plan: { kind: 'none' }, history: [], titles: new Map(), reached: [], live: new Map() };
+}
+
+function someMilestones(title = '100 reviews'): MilestonesView {
+	const r = { id: 'reviews:100', at: Date.parse('2026-11-17T09:00:00Z'), day: '2026-11-17' };
+	return {
+		plan: { kind: 'recent', items: [r], ids: ['reviews:100'] },
+		history: [
+			{ id: 'reviews:100', day: '2026-11-17', isNew: true },
+			{ id: 'streak:3', day: '2026-11-02', isNew: false }
+		],
+		titles: new Map([
+			['reviews:100', title],
+			['streak:3', '3-day streak']
+		]),
+		reached: [r],
+		live: new Map()
+	};
+}
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
@@ -78,7 +105,7 @@ describe('Stats week page', () => {
 		render(Page);
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
 		expect(loadWeek).toHaveBeenCalledWith(1, '2026-11-16', { detail: true, force: false });
-		const heading = screen.getByRole('heading', { level: 2 });
+		const heading = screen.getByRole('heading', { level: 2, name: /week/i });
 		expect(heading.textContent).toMatch(/^This week \(.*16.*22.*2026\)$/);
 		expect(heading.getAttribute('aria-live')).toBe('polite');
 		const prev = screen.getByRole('link', { name: 'Previous week' });
@@ -143,7 +170,7 @@ describe('Stats week page', () => {
 
 	it('renders the characters after the rest', async () => {
 		const chars = deferred<{ value: number; previous: number } | null>();
-		vi.mocked(loadWeekCharacters).mockReturnValueOnce(chars.promise);
+		vi.mocked(loadWeekCharacters).mockReturnValueOnce(chars.promise as never);
 		render(Page);
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
 		expect(screen.getByText('Counting characters…')).toBeTruthy();
@@ -168,14 +195,14 @@ describe('Stats week page', () => {
 		vi.mocked(loadWeek).mockReturnValueOnce(next.promise);
 		setUrl('/stats/week?week=2026-11-09');
 		await tick();
-		const heading = screen.getByRole('heading', { level: 2 });
+		const heading = screen.getByRole('heading', { level: 2, name: /week/i });
 		expect(heading.textContent).toMatch(/^This week/);
 		const body = document.querySelector('.week-body')!;
 		expect(body.getAttribute('aria-busy')).toBe('true');
 		expect(body.classList.contains('stale')).toBe(true);
 		next.resolve(view('2026-11-09', 5));
 		await waitFor(() => expect(reviewsValue()).toBe('5'));
-		expect(screen.getByRole('heading', { level: 2 }).textContent).toMatch(/^Last week/);
+		expect(screen.getByRole('heading', { level: 2, name: /week/i }).textContent).toMatch(/^Last week/);
 		expect(body.getAttribute('aria-busy')).toBe('false');
 		expect(document.querySelector('.week-body')!.classList.contains('stale')).toBe(false);
 	});
@@ -204,5 +231,75 @@ describe('Stats week page', () => {
 		expect(screen.getByText('Not available offline')).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
 	});
-});
 
+	describe('milestones', () => {
+		it('loads every family with the tab\'s timelines and universe: card above the summary, history below', async () => {
+			const timelines = givenTimelines({});
+			const universe = { chars: [{ i: 1, c: '好' }], cards: [], timelines };
+			vi.mocked(loadWeek).mockImplementation(async (_ws, monday) => ({ ...view(monday), timelines }));
+			vi.mocked(loadWeekCharacters).mockResolvedValue({ value: 3, previous: 1, universe } as never);
+			vi.mocked(loadMilestones).mockResolvedValue(someMilestones());
+			render(Page);
+			await waitFor(() => expect(screen.getByRole('heading', { level: 2, name: 'Milestone reached' })).toBeTruthy());
+			expect(loadMilestones).toHaveBeenCalledWith(1, {
+				scope: 'week',
+				language: 'zh',
+				week: { timelines, chars: universe.chars, cards: universe.cards }
+			});
+			const card = document.querySelector('.milestone-card')!;
+			const summary = document.querySelector('.week-summary')!;
+			expect(card.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+			const history = document.getElementById('milestones')!;
+			expect(history.querySelector('h2')?.textContent).toBe('Milestones');
+			expect([...history.querySelectorAll('ol li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+				expect.stringMatching(/^100 reviews, reached .*New$/),
+				expect.stringMatching(/^3-day streak, reached /)
+			]);
+			// The week's own line: only the item of the shown week.
+			const row = [...document.querySelectorAll('dl > div')].find((d) => d.querySelector('dt')?.textContent === 'Milestones');
+			expect(row?.querySelector('dd')?.textContent?.trim()).toBe('100 reviews');
+		});
+
+		it('outside Han languages the universe is null', async () => {
+			select(1, 'es');
+			const timelines = givenTimelines({});
+			vi.mocked(loadWeek).mockImplementation(async (_ws, monday) => ({ ...view(monday), timelines }));
+			render(Page);
+			await waitFor(() => expect(loadMilestones).toHaveBeenCalled());
+			expect(loadMilestones).toHaveBeenCalledWith(1, { scope: 'week', language: 'es', week: { timelines, chars: null } });
+		});
+
+		it('Dismiss hides the card and marks the covered milestones', async () => {
+			const ms = someMilestones();
+			vi.mocked(loadMilestones).mockResolvedValue(ms);
+			render(Page);
+			const button = await screen.findByRole('button', { name: 'Dismiss' });
+			await fireEvent.click(button);
+			expect(markSeen).toHaveBeenCalledWith(1, ms);
+			expect(screen.queryByRole('heading', { name: 'Milestone reached' })).toBeNull();
+			// The history stays.
+			expect(document.getElementById('milestones')).not.toBeNull();
+		});
+
+		it('a workspace switch drops a stale milestones answer', async () => {
+			const first = deferred<MilestonesView>();
+			vi.mocked(loadMilestones).mockReturnValueOnce(first.promise).mockResolvedValue(someMilestones('from workspace 2'));
+			render(Page);
+			await waitFor(() => expect(loadMilestones).toHaveBeenCalledTimes(1));
+			select(2);
+			await waitFor(() => expect(screen.getByText(/^from workspace 2, reached/, { selector: '.milestone-card li' })).toBeTruthy());
+			first.resolve(someMilestones('from workspace 1'));
+			await tick();
+			await Promise.resolve();
+			expect(screen.queryByText(/from workspace 1/)).toBeNull();
+		});
+
+		it('a study write in the workspace (another dismiss) loads them again', async () => {
+			render(Page);
+			await waitFor(() => expect(loadMilestones).toHaveBeenCalledTimes(1));
+			vi.mocked(loadMilestones).mockResolvedValue(someMilestones());
+			vi.mocked(onStudyWrite).mock.calls[0][0](1);
+			await waitFor(() => expect(screen.getByRole('heading', { name: 'Milestone reached' })).toBeTruthy());
+		});
+	});
+});

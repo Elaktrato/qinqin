@@ -478,3 +478,9 @@ Build (2026-11-17, Tasks 1–11; Task 12 is the orchestrator's):
   offline — cost: a flush can wait up to 30 s after reconnecting without an `online` event.
 - Adaptation: dates are built as `new Date(`${day}T00:00:00Z`)` (as `weekText.ts`), not `Date.UTC(`, which
   `time/utcGuard.test.ts` forbids outside its allow-list.
+- Adaptation: `loadWeek` returns its `timelines` with `detail`; `loadWeekCharacters` returns `universe: {chars,
+  cards, timelines}` beside `value` / `previous` (`WeekCharacters`); the Week page passes both to
+  `loadMilestones` after the characters (same sequence guard). Home's card lives in
+  `lib/milestones/HomeMilestones.svelte` (loads once the plugin states are ready, reloads on `onStudyWrite` /
+  `onEventLogChange` of the workspace, drops stale answers), placed under the search form, not a widget. Existing
+  week page tests select the week heading by name (a second `h2`, "Milestones", now exists).
