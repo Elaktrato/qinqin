@@ -416,25 +416,38 @@ func (r Registry) fileExists(id string, revision int) bool {
 // database: a tombstone when no spec plans it, else a build that becomes a
 // new revision only when its content hash differs from the current one.
 // A failed build keeps a ready revision ready and records the error. It
-// takes the registry lock and plans under it.
+// takes the registry lock and plans under it; a lock that cannot be taken
+// (an unusable directory) is that package's build failure, recorded on its
+// row without touching files.
 func (r Registry) build(ctx context.Context, id string) error {
 	if _, _, err := ParseID(id); err != nil {
 		return err
 	}
-	unlock, err := r.lock(ctx)
-	if err != nil {
-		return fmt.Errorf("datapkg: lock: %w", err)
+	unlock, lockErr := r.lock(ctx)
+	if lockErr != nil && ctx.Err() != nil {
+		return lockErr
 	}
-	defer unlock()
+	if lockErr == nil {
+		defer unlock()
+	}
 	specs, err := Plan(ctx, r.DB)
 	if err != nil {
 		return err
+	}
+	if lockErr != nil {
+		return r.buildOrFail(ctx, id, specs, fmt.Errorf("lock: %w", lockErr))
 	}
 	return r.buildLocked(ctx, id, specs)
 }
 
 // buildLocked is build under the registry lock, against specs.
 func (r Registry) buildLocked(ctx context.Context, id string, specs []Spec) error {
+	return r.buildOrFail(ctx, id, specs, nil)
+}
+
+// buildOrFail builds id, or with fail set only records fail as the build's
+// failure (rows only).
+func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail error) error {
 	if _, _, err := ParseID(id); err != nil {
 		return err
 	}
@@ -461,6 +474,9 @@ func (r Registry) buildLocked(ctx context.Context, id string, specs []Spec) erro
 			return err
 		}
 		row = pkgRow{id: id, state: stateBuilding}
+	}
+	if fail != nil {
+		return r.recordFailure(ctx, row, spec, fail, stamp)
 	}
 	maxRev := row.revision
 	if err := r.DB.QueryRowContext(ctx, `SELECT COALESCE(MAX(revision), 0) FROM package_files WHERE id = ?`, id).Scan(&maxRev); err != nil {

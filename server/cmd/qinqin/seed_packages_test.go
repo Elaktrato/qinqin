@@ -35,6 +35,12 @@ func TestSeedBuildsDataPackages(t *testing.T) {
 	}
 	var got []string
 	for _, e := range ents {
+		if !e.IsDir() {
+			if e.Name() != ".lock" { // the registry lock (datapkg/lock.go) is the only file
+				t.Errorf("stray file %s", e.Name())
+			}
+			continue
+		}
 		got = append(got, e.Name())
 		if _, err := os.Stat(filepath.Join(data, "packages", e.Name(), "r1.qqpkg")); err != nil {
 			t.Errorf("package file of %s: %v", e.Name(), err)
