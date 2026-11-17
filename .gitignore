@@ -6,6 +6,10 @@
 /plugins/data-local/
 /plugins/data-audio/
 /plugins/data-strokes/
+# font packs built by scripts/prepare-font-pack.mjs (large; never committed)
+/plugins/data-fonts/
+# build-time tools of scripts/prepare-font-pack.mjs
+/scripts/fonts/node_modules/
 
 # official syllabus inputs for scripts/prepare-hsk-syllabus.mjs: never commit
 *.syllabus.pdf

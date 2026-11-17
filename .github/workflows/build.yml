@@ -38,6 +38,13 @@ jobs:
         run: |
           npm run check
           npm test
+      # The font pack script's build test needs its subsetter (a build-time
+      # tool of the script only) and opencc-js from the web install above;
+      # without them the first script test run skips it.
+      - name: Font pack script
+        run: |
+          npm --prefix scripts/fonts ci
+          node --test scripts/prepare-font-pack.test.mjs
       - uses: actions/setup-go@v7
         with:
           go-version-file: server/go.mod
