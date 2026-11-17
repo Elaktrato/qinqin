@@ -1018,3 +1018,51 @@ v0.3.0 built from `git archive v0.3.0 server`, this branch from `git archive HEA
   (C1 legacyView, AdoptLeftovers ×2, the oneStorage guard bites by construction).
 - The C2 data used SQL-inserted dictionary entries, not a seeded pack; journal and grammar were not exercised.
 - No `-race` run (no new shared state).
+
+#### Review fixes (phases B–D)
+
+The independent B–D review raised no must-fix. Its should-fix and nit findings, each test-first:
+
+- S1 `5234138`: store test that `deleteParamSet` and `deleteDeck` against rows stored only as tombstones
+  send nothing. It passed against the code, and it kills the surviving mutant (a tombstone sent for a row
+  stored as a tombstone).
+- S2 `73ef392`: `storeGuard.test.ts` forges a typed-family key through a mocked key builder: `setKnownMark`
+  (PUT/DELETE) is refused with no request; `setKnownMarks` is refused before any push. It kills the `if (false)`
+  guard mutant. `oneStorage.test.ts` now scans all of `src/` (lib, routes, the service worker) except
+  `store.ts` and tests; a probe file under `routes/` naming the study plugin-data route is caught.
+- S3 `1a103c7`: typed push of content equal to the stored live row is `unchanged`: no write, counted
+  `dataAccepted`, whatever its stamp. This is the rule of the legacy fix `fe9fd83`, now on the typed path:
+  two tabs making the same edit and an Android batch retried after a lost answer no longer read as "newer
+  data". `study.ApplyOutcome` returns `Applied` / `Skipped` / `Unchanged`. `lww.json` was changed
+  deliberately: its equal cases expect `unchanged`, an equal write stamped earlier was added, and an
+  `outcomes` table. `study/README.md` and `overview.md` were amended. Go: `TestLWWFixture`, new
+  `TestTypedPushOfEqualContentIsAccepted`; `TestPushAndPullEachTypedCollection` expected the old skip and was
+  updated. Web: `rows.test.ts` decodes the new outcomes (its `sameBody` oracle is now `expect === 'unchanged'`).
+  Seen failing (Go), then passing. The web still never sends an equal write.
+- N1 `7d3d041`: the startup adoption logs and skips a row that fails to move instead of aborting. `main`
+  logs a read failure and starts anyway. Shadowed leftovers edited after their typed row are counted
+  (`AdoptResult{Moved, Failed, NewerShadowed}`) and logged. Test: a trigger makes one insert fail, the other
+  row still moves.
+- N2 `1695faf`: `setActiveSet` writes nothing when the set is already active (including `null` while the
+  defaults are in use). The old "null meaning the defaults" test, which wrote `null` over no row, now switches
+  A → defaults over a stored row.
+- N4 `390c183`: the `pluginPageImports` JSDoc is back on its function.
+- N5 `ad2048e`: `frozen_step_test.go` refuses any `"qinqin/` import in `step038/*.go`. A probe importing
+  `internal/lang` is caught.
+- N3 (nav flicker while toggling a feature: the shared states reload and the nav is empty until `ready`) is
+  left as a recorded follow-up.
+
+Gates on the final tree:
+
+- Web:
+  - `npm run check`: exit 0 (1288 files, 0 errors, 0 warnings).
+  - `npm test`: exit 0, 390 files / 6265 tests.
+  - `npm run build`: exit 0.
+  - Node 26.13.1 vitest: exit 0, 390 / 6265.
+  - `gen-api-docs --check`: exit 0.
+- Go, ONE full run with the proxies unset:
+  - `gofmt -l .` printed nothing; `go vet ./...` ok.
+  - 40 packages ok, 3 without tests.
+  - Only `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` failed (the known no-IPv6 sandbox failure); exit 1 for exactly that test.
+- The C2 real-app check was not repeated after these fixes. They change no migration or stored data, and S3
+  makes an equal typed push accepted instead of skipped (Go and web tests cover it).
