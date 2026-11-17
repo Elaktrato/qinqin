@@ -3,6 +3,8 @@
 // 1, named by its selector. Exempt: disabled states (`:disabled`, `[disabled]`, `[aria-disabled='true']`, which WCAG
 // exempts), transition and animation states (`@keyframes`, `.enter`, `.leave`, `[data-state]`). A non-text graphic
 // that may fade is an allowlist entry with a reason. Scanned: a `.css` file whole, a `.svelte` file's `<style>`.
+// The same fade through the colour is a finding too: `color:` with a `color-mix(…)` of `transparent` that leaves
+// the colour below 100%.
 import { lineAt, type Finding, type StyleKind } from './colours';
 
 const blank = (s: string): string => s.replace(/[^\n]/g, ' ');
@@ -16,6 +18,31 @@ function faded(value: string): boolean {
 	return v > 0 && v < 1;
 }
 
+/** The share of the visible colour in a `color-mix(in …, a [p%], b [q%])` with `transparent`, else null. */
+function mixedShare(value: string): number | null {
+	const m = /color-mix\(\s*in\s+[a-z-]+\s*,([\s\S]*)\)/i.exec(value);
+	if (!m) return null;
+	// The two stops: split at the top-level comma.
+	let depth = 0;
+	let cut = -1;
+	for (let i = 0; i < m[1].length; i++) {
+		const c = m[1][i];
+		if (c === '(') depth++;
+		else if (c === ')') depth--;
+		else if (c === ',' && depth === 0) cut = i;
+	}
+	if (cut < 0) return null;
+	const stops = [m[1].slice(0, cut), m[1].slice(cut + 1)].map((stop) => {
+		const p = /(\d*\.?\d+)%\s*$/.exec(stop.trim());
+		return { transparent: /^\s*transparent\b/i.test(stop), pct: p ? Number(p[1]) : null };
+	});
+	const seen = stops.findIndex((x) => !x.transparent);
+	if (seen < 0 || !stops.some((x) => x.transparent)) return null;
+	const own = stops[seen].pct;
+	const other = stops[1 - seen].pct;
+	return own ?? (other !== null ? 100 - other : 50);
+}
+
 function scan(css: string, at: number, src: string, out: Finding[]): void {
 	const text = css.replace(/\/\*[\s\S]*?\*\//g, blank);
 	const preludes: string[] = [];
@@ -25,7 +52,10 @@ function scan(css: string, at: number, src: string, out: Finding[]): void {
 	const declaration = (end: number) => {
 		const seg = text.slice(start, end);
 		const m = /^\s*opacity\s*:([\s\S]*)$/.exec(seg);
-		if (!m || !faded(m[1]) || reportedRule === rule) return;
+		const c = /^\s*color\s*:([\s\S]*)$/.exec(seg);
+		const share = c ? mixedShare(c[1]) : null;
+		const fades = (m && faded(m[1])) || (share !== null && share < 100);
+		if (!fades || reportedRule === rule) return;
 		if (preludes.some((p) => /^@(-webkit-)?keyframes\b/.test(p))) return;
 		const parts = (preludes.at(-1) ?? '').split(',').map((s) => s.trim());
 		if (parts.every((p) => EXEMPT.test(p))) return;

@@ -96,7 +96,7 @@
 	}
 
 	.muted {
-		color: color-mix(in srgb, currentColor 70%, transparent);
+		color: var(--readable-muted);
 	}
 
 	.retry {

@@ -76,7 +76,7 @@
 
 	.upcoming {
 		border-style: dotted;
-		color: color-mix(in srgb, currentColor 75%, transparent);
+		color: var(--readable-muted);
 	}
 
 	.skipped {
