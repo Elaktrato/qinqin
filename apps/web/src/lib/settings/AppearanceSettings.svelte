@@ -226,7 +226,9 @@
 		{/each}
 	</fieldset>
 
-	<fieldset class="segmented">
+	<!-- Saved in the row now; nothing paints with it until the shared hanzi
+	     font stacks land (#97 WEB-LATER tasks 11-13), so the group says so. -->
+	<fieldset class="segmented" aria-describedby="appearance-hanzi-font-pending">
 		<legend>{t('settings.appearance.hanziFont.legend')}</legend>
 		{#each HANZI_FONTS as font (font)}
 			<label
@@ -239,6 +241,7 @@
 				/><span>{t(FONT_LABELS[font])}</span></label
 			>
 		{/each}
+		<p class="hint" id="appearance-hanzi-font-pending">{t('settings.appearance.hanziFont.pending')}</p>
 	</fieldset>
 
 	<section class="preview" aria-labelledby="appearance-preview-title">

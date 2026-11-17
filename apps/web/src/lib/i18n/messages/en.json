@@ -1981,6 +1981,7 @@
 	"settings.appearance.discarded": "Changes discarded.",
 	"settings.appearance.hanziFont.kai": "Kai",
 	"settings.appearance.hanziFont.legend": "Hanzi and kanji font",
+	"settings.appearance.hanziFont.pending": "Saved with your appearance; hanzi and kanji text follows it from a coming update.",
 	"settings.appearance.hanziFont.sans": "Sans",
 	"settings.appearance.hanziFont.serif": "Serif",
 	"settings.appearance.hint": "Your theme and adjustments follow your account to every device. Changes show here right away; save to keep them.",

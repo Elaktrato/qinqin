@@ -57,7 +57,10 @@ describe('Settings → Appearance', () => {
 		const corners = screen.getByRole('group', { name: 'Corners' });
 		expect((within(corners).getByRole('radio', { name: 'Round' }) as HTMLInputElement).checked).toBe(true);
 		expect(screen.getByRole('group', { name: 'Spacing' })).toBeTruthy();
-		expect(screen.getByRole('group', { name: 'Hanzi and kanji font' })).toBeTruthy();
+		const hanzi = screen.getByRole('group', { name: 'Hanzi and kanji font' });
+		// Saved now, applied later (#97 web tasks): the group says so and is described by it.
+		const pending = within(hanzi).getByText('Saved with your appearance; hanzi and kanji text follows it from a coming update.');
+		expect(hanzi.getAttribute('aria-describedby')).toBe(pending.id);
 	});
 
 	it('offers only accents at 3:1 on panel, each named with a tooltip', async () => {
