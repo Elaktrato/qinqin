@@ -279,6 +279,10 @@ function formatCount(locale: string, n: number): string {
 
 type Args = Readonly<Record<string, string | number | undefined>>;
 
+/** An argument's value: own properties only, so `{constructor}` or `{toString}` never reads Object.prototype. */
+const argValue = (args: Args, name: string): string | number | undefined =>
+	Object.hasOwn(args, name) ? args[name] : undefined;
+
 /** Rich-text parts of a formatted message: text and tag spans, adjacent text merged, empty text dropped. */
 export function formatParts(
 	message: string | ParsedMessage,
@@ -290,12 +294,12 @@ export function formatParts(
 	const p = typeof message === 'string' ? parseMessage(message) : message;
 	const strict = (opts.missing ?? 'throw') === 'throw';
 	for (const name of messageShape(p).args)
-		if (args[name] === undefined && strict) throw new MessageError('missingArg', raw, name);
+		if (argValue(args, name) === undefined && strict) throw new MessageError('missingArg', raw, name);
 
 	let segments = p.segments;
 	let count = '';
 	if (p.plural) {
-		const v = args[p.plural.arg];
+		const v = argValue(args, p.plural.arg);
 		const branches = p.plural.branches;
 		if (typeof v === 'number' && Number.isFinite(v)) {
 			segments = branches[pluralCategory(locale, v)] ?? branches.other ?? [];
@@ -311,7 +315,7 @@ export function formatParts(
 		if (s.type === 'text') return s.value;
 		if (s.type === 'count') return count;
 		if (s.type === 'arg') {
-			const v = args[s.name];
+			const v = argValue(args, s.name);
 			return v === undefined ? `{${s.name}}` : String(v);
 		}
 		return s.children.map(text).join('');

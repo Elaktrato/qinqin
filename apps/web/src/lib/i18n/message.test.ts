@@ -82,6 +82,16 @@ describe('formatMessage', () => {
 		expect(formatMessage('{n, plural, one {# x} other {# {y}}}', 'en', { n: 2 }, { missing: 'keep' })).toBe('2 {y}');
 	});
 
+	it('an argument named like an Object.prototype member is missing unless passed (own properties only)', () => {
+		for (const name of ['constructor', 'toString', 'valueOf', 'hasOwnProperty']) {
+			expect(kind(() => formatMessage(`Hi {${name}}`, 'en', {}))).toBe('missingArg');
+			expect(formatMessage(`Hi {${name}}`, 'en', {}, { missing: 'keep' })).toBe(`Hi {${name}}`);
+			expect(formatMessage(`Hi {${name}}`, 'en', { [name]: 'x' })).toBe('Hi x');
+			expect(kind(() => formatParts(`{${name}, plural, other {# x}}`, 'en', {}))).toBe('missingArg');
+			expect(formatMessage(`{${name}, plural, other {# x}}`, 'en', {}, { missing: 'keep' })).toBe(`{${name}} x`);
+		}
+	});
+
 	it('in production mode a missing plural argument shows the other branch with {n}', () => {
 		expect(formatMessage('{n, plural, one {# day} other {# days}}', 'en', {}, { missing: 'keep' })).toBe('{n} days');
 	});
