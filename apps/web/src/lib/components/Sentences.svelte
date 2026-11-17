@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import type { Sentence } from '$lib/api/types';
 
 	let { sentences }: { sentences: Sentence[] } = $props();
@@ -17,7 +18,7 @@
 
 {#if sentences.length > 0}
 	<section class="sentences" aria-labelledby="sentences-heading">
-		<h2 id="sentences-heading">Example sentences</h2>
+		<h2 id="sentences-heading">{t('entry.sentences.title')}</h2>
 		<ul>
 			{#each sentences as sentence (sentence.id)}
 				<li class="sentence">

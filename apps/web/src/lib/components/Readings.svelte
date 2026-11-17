@@ -2,6 +2,7 @@
 	import type { Reading } from '$lib/api/types';
 	import type { AudioClip } from '$lib/api/audio';
 	import { formatReading } from '$lib/format';
+	import { t } from '$lib/i18n';
 	import PlayButton from './PlayButton.svelte';
 
 	let {
@@ -30,7 +31,7 @@
 
 {#if ordered.length > 0}
 	<section class="readings" aria-labelledby="readings-heading">
-		<h2 id="readings-heading">Readings</h2>
+		<h2 id="readings-heading">{t('entry.readings.title')}</h2>
 		<ul>
 			{#each ordered as reading, index (`${reading.type}:${reading.ord}:${index}`)}
 				<li data-type={reading.type}>

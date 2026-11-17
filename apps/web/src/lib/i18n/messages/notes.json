@@ -6,7 +6,12 @@
 	"account.verify.intro": "<strong> wraps the email address.",
 	"apiError.unknown": "Shown for an error code this app version does not know yet; {code} is the technical code (e.g. sync_page_invalid).",
 	"app.name": "The product name, shown last in every page title (\"Stats · qinqin\"). Keep it as is unless the product has an established name in the language.",
+	"app.workspaces.delete.cardsAndDecks": "{cards} is app.workspaces.delete.cards (\"12 flashcards\"), {decks} app.workspaces.delete.decks (\"2 decks\").",
 	"auth.error.rateLimitedSignIn": "{wait} is a format.duration.* text (\"6 seconds\", \"15 minutes\").",
+	"entry.reading.kun": "Japanese kun'yomi reading label.",
+	"entry.reading.on": "Japanese on'yomi reading label (\"On: カン\").",
 	"features.switchedOff.text": "<link> wraps the link to Settings → Features; keep the arrow or use the language's own menu path notation.",
-	"nav.brand.home": "Accessible name of the logo link to the home page; {app} is the product name."
+	"nav.brand.home": "Accessible name of the logo link to the home page; {app} is the product name.",
+	"search.matched": "Under a search result: which field matched; {source} is search.matchedWritten or a reading type such as pinyin.",
+	"search.parts.radicalName": "Accessible name of a chip; {char} is the radical glyph, {n} its Kangxi number."
 }

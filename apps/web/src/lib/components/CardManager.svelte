@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
 	import {
 		deleteCards,
@@ -73,7 +74,7 @@
 	});
 
 	function label(card: StudyCard): string {
-		return card.written ?? `Entry ${card.entryId}`;
+		return card.written ?? t('entry.cards.fallbackLabel', { id: card.entryId });
 	}
 
 	function decksOf(card: StudyCard): string {
@@ -149,16 +150,16 @@
 </script>
 
 <details class="manager" bind:this={root}>
-	<summary>Manage cards ({words.length})</summary>
+	<summary>{t('entry.cards.title', { count: words.length })}</summary>
 
 	{#if words.length === 0}
-		<p class="hint">No cards yet. Add words from their entry page.</p>
+		<p class="hint">{t('entry.cards.none')}</p>
 	{:else}
 		<div class="bar">
 			<label>
-				Show
+				{t('entry.cards.show')}
 				<select bind:value={filter}>
-					<option value="all">All decks</option>
+					<option value="all">{t('entry.cards.allDecks')}</option>
 					{#each decks as deck (deck.id)}
 						<option value={deck.id}>{deck.name}</option>
 					{/each}
@@ -166,28 +167,25 @@
 			</label>
 			<label class="all">
 				<input type="checkbox" checked={allChosen} onchange={toggleAll} />
-				Select all ({visible.length})
+				{t('entry.cards.selectAll', { count: visible.length })}
 			</label>
 		</div>
 
-		<p class="hint">
-			Deleting a word removes it from every deck, together with its sentence, writing and tone
-			cards. Moving a word puts it and those cards in the chosen deck only.
-		</p>
+		<p class="hint">{t('entry.cards.hint')}</p>
 
-		<div class="bar actions" role="group" aria-label="Selected cards">
-			<span>{chosen.length} selected</span>
+		<div class="bar actions" role="group" aria-label={t('entry.cards.selected')}>
+			<span>{t('entry.cards.selectedCount', { count: chosen.length })}</span>
 			<label>
-				Move to
+				{t('entry.cards.moveTo')}
 				<select bind:value={target} disabled={chosen.length === 0 || busy}>
-					<option value="">Choose a deck</option>
+					<option value="">{t('entry.cards.chooseDeck')}</option>
 					{#each decks as deck (deck.id)}
 						<option value={deck.id}>{deck.name}</option>
 					{/each}
 				</select>
 			</label>
 			<button type="button" disabled={chosen.length === 0 || target === '' || busy} onclick={move}>
-				Move
+				{t('entry.cards.move')}
 			</button>
 			<button
 				type="button"
@@ -195,7 +193,7 @@
 				disabled={chosen.length === 0 || busy}
 				onclick={() => (chosen.length > 1 ? openConfirm() : remove([...chosen]))}
 			>
-				Delete
+				{t('common.action.delete')}
 			</button>
 		</div>
 
@@ -203,19 +201,16 @@
 			<div
 				class="confirm"
 				role="alertdialog"
-				aria-label="Confirm delete"
+				aria-label={t('entry.cards.confirmDelete')}
 				tabindex="-1"
 				onkeydown={confirmKey}
 			>
-				<p>
-					Delete {chosen.length} words from every deck, with their other cards? You can undo
-					this right after.
-				</p>
+				<p>{t('entry.cards.confirmText', { count: chosen.length })}</p>
 				<button type="button" class="danger" onclick={() => remove([...chosen])}>
-					Delete {chosen.length} cards
+					{t('entry.cards.deleteCount', { count: chosen.length })}
 				</button>
 				<button type="button" class="secondary" onclick={() => (confirming = false)}>
-					Cancel
+					{t('common.action.cancel')}
 				</button>
 			</div>
 		{/if}
@@ -236,16 +231,16 @@
 					<button
 						type="button"
 						class="danger"
-						aria-label={`Delete ${label(card)}`}
+						aria-label={t('entry.cards.deleteOne', { word: label(card) })}
 						disabled={busy}
 						onclick={() => remove([card.id])}
 					>
-						Delete
+						{t('common.action.delete')}
 					</button>
 				</li>
 			{/each}
 			{#if visible.length === 0}
-				<li class="hint">No cards in this deck.</li>
+				<li class="hint">{t('entry.cards.noneInDeck')}</li>
 			{/if}
 		</ul>
 	{/if}
@@ -266,7 +261,7 @@
 			onfocusout={() => actions.resumeTimer()}
 		>
 			<span>{undo.text}</span>
-			<button type="button" disabled={busy} onclick={undoLast}>Undo</button>
+			<button type="button" disabled={busy} onclick={undoLast}>{t('common.action.undo')}</button>
 		</div>
 	{/if}
 </div>

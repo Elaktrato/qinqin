@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { ApiError } from '$lib/api/client';
 	import { getSharedEntry } from '$lib/api/entries';
 	import { buildPatch, updateEntry, type EntryPatchReading } from '$lib/api/edit';
@@ -67,7 +68,7 @@
 				if (!cancelled) baseline = shared;
 			})
 			.catch((err) => {
-				if (!cancelled) baselineError = message(err, 'Could not prepare the editor.');
+				if (!cancelled) baselineError = message(err, t('entry.editor.prepareFailed'));
 			});
 		return () => {
 			cancelled = true;
@@ -147,83 +148,83 @@
 			written = updated.written;
 			rows = toRows(updated);
 			current = updated;
-			saved = 'Saved.';
+			saved = t('common.state.saved');
 			onSaved(updated);
 		} catch (err) {
-			error = message(err, 'Could not save your changes.');
+			error = message(err, t('entry.editor.saveFailed'));
 		} finally {
 			saving = false;
 		}
 	}
 </script>
 
-<form class="editor" aria-label="Edit entry" onsubmit={save} oninput={clearMessages}>
-	<h2>Edit entry</h2>
+<form class="editor" aria-label={t('entry.editor.title')} onsubmit={save} oninput={clearMessages}>
+	<h2>{t('entry.editor.title')}</h2>
 
 	{#if baselineError}
 		<p class="error" role="alert">{baselineError}</p>
-		<button type="button" class="retry" onclick={() => baselineAttempt++}>Try again</button>
+		<button type="button" class="retry" onclick={() => baselineAttempt++}>{t('common.action.retry')}</button>
 	{:else if baseline === null}
-		<p class="hint" aria-live="polite">Preparing editor…</p>
+		<p class="hint" aria-live="polite">{t('entry.editor.preparing')}</p>
 	{/if}
 
 	<label class="written-field">
-		<span>Written form</span>
+		<span>{t('entry.editor.written')}</span>
 		<input bind:value={written} name="written" autocomplete="off" required />
 		{#if blankWritten}
-			<span class="hint" role="status">The written form must not be empty.</span>
+			<span class="hint" role="status">{t('entry.editor.writtenEmpty')}</span>
 		{/if}
 	</label>
 
 	<fieldset class="readings">
-		<legend>Readings</legend>
+		<legend>{t('entry.editor.readings')}</legend>
 		{#if rows.length === 0}
-			<p class="hint">No readings. Add one below to replace them.</p>
+			<p class="hint">{t('entry.editor.noReadings')}</p>
 		{/if}
 		<ul class="rows">
 			{#each rows as row, index (row.key)}
 				<li class="row">
 					<input
 						class="type"
-						aria-label={`Reading ${index + 1} type`}
-						placeholder="type"
+						aria-label={t('entry.editor.readingType', { n: index + 1 })}
+						placeholder={t('entry.editor.typePlaceholder')}
 						autocomplete="off"
 						bind:value={row.type}
 					/>
 					<input
 						class="value"
-						aria-label={`Reading ${index + 1} value`}
-						placeholder="value"
+						aria-label={t('entry.editor.readingValue', { n: index + 1 })}
+						placeholder={t('entry.editor.valuePlaceholder')}
 						autocomplete="off"
 						bind:value={row.value}
 					/>
 					<button
 						type="button"
 						class="remove"
-						aria-label={`Remove reading ${index + 1}`}
+						aria-label={t('entry.editor.removeReading', { n: index + 1 })}
 						onclick={() => removeRow(row.key)}
 					>
-						Remove
+						{t('common.action.remove')}
 					</button>
 				</li>
 			{/each}
 		</ul>
-		<button type="button" class="add" onclick={addRow}>Add reading</button>
+		<button type="button" class="add" onclick={addRow}>{t('entry.editor.addReading')}</button>
 		{#if blankReading}
-			<p class="hint" role="status">Every reading needs a type and a value.</p>
+			<p class="hint" role="status">{t('entry.editor.readingBlank')}</p>
 		{/if}
 	</fieldset>
 
 	<div class="actions">
 		<button type="submit" class="save" disabled={saving || !hasChanges || blankReading || blankWritten}>
-			{saving ? 'Saving…' : 'Save'}
+			{saving ? t('common.state.saving') : t('common.action.save')}
 		</button>
 		{#if differsFromShared}
 			<button type="button" class="revert" onclick={revertToShared} disabled={saving}>
-				Revert to shared
+				{t('entry.editor.revert')}
 			</button>
 		{/if}
-		<button type="button" class="cancel" onclick={onCancel} disabled={saving}>Cancel</button>
+		<button type="button" class="cancel" onclick={onCancel} disabled={saving}>{t('common.action.cancel')}</button>
 	</div>
 
 	{#if saved}

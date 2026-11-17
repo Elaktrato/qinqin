@@ -5,6 +5,7 @@ import { resetCatalogue } from './index';
 import PseudoStub from './PseudoStub.test.svelte';
 import AppSection from '$lib/pwa/AppSection.svelte';
 import EmailVerify from '$lib/account/EmailVerify.svelte';
+import Badges from '$lib/components/Badges.svelte';
 
 // The pseudo-locale sample (spec Ruling): each extraction task adds one component of its area to SAMPLES; the
 // test renders it in en-XA and fails on any text node that is still plain ASCII English (a missed string, or
@@ -18,7 +19,13 @@ const SAMPLES: Sample[] = [
 	// shell (Task 9): jsdom is not a secure context, so the HTTPS note shows
 	{ name: 'AppSection', component: AppSection, props: {} },
 	// auth and account (Task 10)
-	{ name: 'EmailVerify', component: EmailVerify, props: { address: '勤勤@例.中国', onverified: () => {} } }
+	{ name: 'EmailVerify', component: EmailVerify, props: { address: '勤勤@例.中国', onverified: () => {} } },
+	// search, entry and shared components (Task 12)
+	{
+		name: 'Badges',
+		component: Badges,
+		props: { badges: [{ schemeId: 1, schemeName: '汉语 (approximate)', levelName: '一级', derived: true }] }
+	}
 ];
 
 describe('renderPseudo', () => {

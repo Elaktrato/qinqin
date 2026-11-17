@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { t } from '$lib/i18n';
 	import type { Workspace } from '$lib/api/types';
 	import { workspaceDisplay } from '$lib/languages';
 	import { listboxKey } from '$lib/listbox';
@@ -29,8 +30,10 @@
 	const currentDisplay = $derived(current ? workspaceDisplay(list, current) : null);
 	const buttonLabel = $derived(
 		currentDisplay
-			? `Workspace: ${currentDisplay.label}${currentDisplay.showName && currentDisplay.name !== currentDisplay.label ? `, ${currentDisplay.name}` : ''}`
-			: 'Workspace: none'
+			? currentDisplay.showName && currentDisplay.name !== currentDisplay.label
+				? t('app.workspaces.picker.currentNamed', { label: currentDisplay.label, name: currentDisplay.name })
+				: t('app.workspaces.picker.current', { label: currentDisplay.label })
+			: t('app.workspaces.picker.none')
 	);
 
 	function optionId(workspace: Workspace): string {
@@ -165,7 +168,7 @@
 		{#if current}
 			<WorkspaceLabel workspace={current} {list} size={14} />
 		{:else}
-			<span class="none">No workspace</span>
+			<span class="none">{t('app.workspaces.picker.noWorkspace')}</span>
 		{/if}
 		<svg class="caret" viewBox="0 0 10 6" width="10" height="6" aria-hidden="true">
 			<path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" />
@@ -180,7 +183,7 @@
 					id={listId}
 					class="options"
 					role="listbox"
-					aria-label="Workspaces"
+					aria-label={t('app.workspaces.picker.list')}
 					tabindex="-1"
 					bind:this={listbox}
 					aria-activedescendant={active >= 0 && list[active] ? optionId(list[active]) : undefined}
@@ -218,7 +221,7 @@
 					/>
 				</div>
 			{:else}
-				<button type="button" class="new" onclick={startCreate}>+ New workspace</button>
+				<button type="button" class="new" onclick={startCreate}>{t('app.workspaces.picker.new')}</button>
 			{/if}
 		</div>
 	{/if}

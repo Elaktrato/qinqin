@@ -1,4 +1,5 @@
 import type { Dictionary, Scheme } from './api/types';
+import { t } from './i18n';
 
 /**
  * coverage tells what a language has installed: its dictionaries and the
@@ -19,11 +20,11 @@ export function coverage(
 /** dictionaryHint explains a language without a dictionary and the next step. */
 export function dictionaryHint(label: string, admin: boolean): string {
 	return admin
-		? `No dictionary is installed for ${label}. Install one in Settings → Data.`
-		: `No dictionary is installed for ${label}. Ask the administrator of this server to install one.`;
+		? t('search.coverage.noDictionaryAdmin', { language: label })
+		: t('search.coverage.noDictionary', { language: label });
 }
 
 /** levelsHint explains a language without level lists. */
 export function levelsHint(label: string): string {
-	return `No level lists for ${label}: level badges and filters are unavailable.`;
+	return t('search.coverage.noLevels', { language: label });
 }

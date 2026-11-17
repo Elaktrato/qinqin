@@ -1,12 +1,14 @@
+import { t, type MessageKey } from '$lib/i18n';
+
 // Reading types a language pack may attach to an entry. Types outside
 // this map are pack-defined extensions and render as their value alone.
-const READING_LABELS: Record<string, string> = {
-	pinyin: 'Pinyin',
-	bopomofo: 'Bopomofo',
-	kana: 'Kana',
-	romaji: 'Romaji',
-	on: 'On',
-	kun: 'Kun'
+const READING_LABELS: Record<string, MessageKey> = {
+	pinyin: 'entry.reading.pinyin',
+	bopomofo: 'entry.reading.bopomofo',
+	kana: 'entry.reading.kana',
+	romaji: 'entry.reading.romaji',
+	on: 'entry.reading.on',
+	kun: 'entry.reading.kun'
 };
 
 /**
@@ -17,6 +19,6 @@ const READING_LABELS: Record<string, string> = {
  */
 export function formatReading(type: string, value: string): string {
 	const key = type.trim().toLowerCase();
-	const label = READING_LABELS[key];
-	return label ? `${label}: ${value}` : value;
+	const label = Object.hasOwn(READING_LABELS, key) ? READING_LABELS[key] : undefined;
+	return label ? t('entry.reading.withLabel', { label: t(label), value }) : value;
 }

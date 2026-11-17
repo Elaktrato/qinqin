@@ -54,7 +54,33 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	['account.backup.countSentences', {}, '1 own sentence', '2 own sentences'],
 	['account.backup.entryCards', {}, '1 card', '2 cards'],
 	['account.backup.entryEdits', {}, '1 edit', '2 edits'],
-	['account.backup.entryNotes', {}, '1 note', '2 notes']
+	['account.backup.entryNotes', {}, '1 note', '2 notes'],
+	// search, entry and shared components (Task 12)
+	['entry.cards.selectedCount', {}, '1 selected', '2 selected'],
+	[
+		'entry.cards.confirmText',
+		{},
+		'Delete 1 word from every deck, with its other cards? You can undo this right after.',
+		'Delete 2 words from every deck, with their other cards? You can undo this right after.'
+	],
+	['entry.cards.deleteCount', {}, 'Delete 1 card', 'Delete 2 cards'],
+	[
+		'app.workspaces.delete.books',
+		{},
+		'1 book in its library, with their bookmarks and highlights',
+		'2 books in its library, with their bookmarks and highlights'
+	],
+	['app.workspaces.delete.cards', {}, '1 flashcard', '2 flashcards'],
+	['app.workspaces.delete.decks', {}, '1 deck', '2 decks'],
+	[
+		'app.workspaces.delete.reviews',
+		{},
+		'1 recorded review and the rest of its study history',
+		'2 recorded reviews and the rest of its study history'
+	],
+	['search.resultsAnnounce', { query: '水' }, '1 result for “水”.', '2 results for “水”.'],
+	['search.parts.count', {}, '1 character', '2 characters'],
+	['search.parts.strokes', {}, '1 stroke', '2 strokes']
 ];
 
 describe('catalogue plurals keep their English', () => {
