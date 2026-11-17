@@ -12,6 +12,7 @@ export type PackType =
 	| 'audio'
 	| 'components'
 	| 'strokes'
+	| 'font'
 	| 'theme';
 
 /** One theme of a staged theme pack with its measured contrast (docs/contracts/themes/README.md, Contrast). */

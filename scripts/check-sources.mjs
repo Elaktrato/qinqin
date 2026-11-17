@@ -45,10 +45,23 @@ export const LOCAL_ONLY_PACKS = [
 ];
 /**
  * Packs with a clear, redistributable licence that are fetched by a script
- * (and baked into the Docker image) instead of being committed, because of
- * their size: the docs may name them like a bundled pack.
+ * instead of being committed, because of their size: the docs may name them
+ * like a bundled pack. The audio and strokes packs are baked into the
+ * Docker image; the font packs (scripts/prepare-font-pack.mjs, one per
+ * pinned source) are built on demand and installed by an administrator.
  */
-export const FETCHED_PACKS = ['kanjialive-audio', 'hanzi-writer-strokes'];
+export const FETCHED_PACKS = [
+	'kanjialive-audio',
+	'hanzi-writer-strokes',
+	'noto-sans-sc',
+	'noto-sans-tc',
+	'noto-sans-jp',
+	'noto-serif-sc',
+	'noto-serif-tc',
+	'noto-serif-jp',
+	'lxgw-wenkai',
+	'klee-one'
+];
 export const MAX_NOTICE_BYTES = 4000;
 /** The theme packs built into the server binary (server/internal/themes). */
 export const BUILTIN_THEMES = 'server/internal/themes/builtin';

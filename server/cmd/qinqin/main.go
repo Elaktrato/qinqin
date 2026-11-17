@@ -251,7 +251,7 @@ func lexiconPinyin(st lexicon.Store) sources.Phonetics {
 	}
 }
 
-// rootHandler mounts the API on /api/, /hanzi/ and /healthz and the web frontend on
+// rootHandler mounts the API on /api/, /hanzi/, /fonts/ and /healthz and the web frontend on
 // everything else. The SPA handler must never shadow the API, and the API's
 // own mux stays the sole owner of its routes.
 func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
@@ -261,6 +261,8 @@ func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
 	// Stroke files come from the installed strokes pack (same URL as the
 	// static files of v0.3, so old shells and the worker keep working).
 	mux.Handle("/hanzi/", apiHandler)
+	// Font pack slices (#97) come from <data>/fonts through the API.
+	mux.Handle("/fonts/", apiHandler)
 	// The trailing-slash form would otherwise fall through to the SPA and
 	// answer 200 HTML to a health probe.
 	mux.Handle("/healthz/{$}", http.RedirectHandler("/healthz", http.StatusPermanentRedirect))

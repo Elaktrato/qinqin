@@ -8,6 +8,7 @@
 	import type { ComponentPack, Dictionary, FrequencyPack, Scheme, StrokePack } from '$lib/api/types';
 	import { getComponentPacks } from '$lib/api/components';
 	import { getStrokePacks } from '$lib/api/packages';
+	import { getFonts, type FontList } from '$lib/api/fonts';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
 	import { webPlugins } from '$lib/plugins';
@@ -20,6 +21,7 @@
 	import {
 		componentsSection,
 		creditView,
+		fontsSection,
 		packTable,
 		pluginCredits,
 		sentencePackSources,
@@ -150,6 +152,22 @@
 		}
 	}
 
+	// The Fonts section exists only while a font pack is installed; the list
+	// needs a session, so a signed-out visitor sees none.
+	let fontList = $state<FontList>({ faces: [], packs: [] });
+	let fontsError = $state('');
+	const fonts = $derived(fontsSection(fontList, fontsError));
+
+	async function loadFonts(): Promise<void> {
+		fontsError = '';
+		try {
+			fontList = await getFonts();
+		} catch (err) {
+			fontList = { faces: [], packs: [] };
+			fontsError = message(err, t('sources.error.fonts'));
+		}
+	}
+
 	let schemes = $state<Scheme[]>([]);
 	let schemesLoading = $state(true);
 	let schemesError = $state('');
@@ -201,6 +219,7 @@
 		loadComponents();
 		loadStrokes();
 		loadThemes();
+		loadFonts();
 	});
 </script>
 
@@ -556,6 +575,56 @@
 			{/if}
 			<p class="notice">
 				{t('sources.strokes.notice')}
+			</p>
+		</section>
+	{/if}
+
+	{#if fonts.show}
+		<section>
+			<h2 id="sources-fonts">{t('sources.fonts.title')}</h2>
+			{#if fontsError}
+				<p class="error" role="alert">{fontsError}</p>
+				<button type="button" onclick={loadFonts}>{t('sources.retry')}</button>
+			{:else}
+				<div class="table-wrap">
+					<table aria-labelledby="sources-fonts">
+						<thead>
+							<tr>
+								<th scope="col">{t('sources.col.name')}</th>
+								{@render noteHeader(fonts.table)}
+								<th scope="col">{t('sources.col.language')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each fonts.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(fonts.table, row.noteId, row.name)}
+									<td title={row.language}>{languageLabel(row.language)}</td>
+									<td>{row.version}</td>
+									<td>
+										{#if fonts.licenseHref[row.key]}
+											<a href={fonts.licenseHref[row.key]} rel="noreferrer">{row.license}</a>
+										{:else}
+											{@render cell(row.license, row.language)}
+										{/if}
+									</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{#each fonts.modified as line, i (i)}
+					<p>{line}</p>
+				{/each}
+				{@render notes(fonts.table)}
+			{/if}
+			<p class="notice">
+				{t('sources.fonts.notice')}
 			</p>
 		</section>
 	{/if}

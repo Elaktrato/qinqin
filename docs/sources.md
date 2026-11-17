@@ -746,10 +746,55 @@ app. It is never loaded from a third-party host. The licence text is the upstrea
 and served by the running app at `/FIGTREE-OFL.TXT`; a web test pins both files' SHA-256.
 The Sources page credits it under "Built into the app".
 
-Hanzi and kanji faces (Noto Sans/Serif SC/TC/JP, LXGW WenKai, Klee One; all SIL OFL 1.1)
-are not bundled: they are planned as installable font packs
-(`docs/superpowers/plans/2026-11-17-vr-fonts.md`). Until one is installed, Chinese and
-Japanese text uses the device's own fonts.
+Hanzi and kanji faces are not bundled: they are installable font packs (next section).
+Until one is installed, Chinese and Japanese text uses the device's own fonts.
+
+## Hanzi and kanji font packs
+
+Sans, Serif and Kai faces for simplified Chinese, traditional Chinese and Japanese come as
+packs of type `font` (format `font-slices`, see `docs/contracts/fonts/`): each face cut into
+WOFF2 slices by Unicode range, so a page downloads only the slices of the characters it
+shows. The packs are **never committed** and no Docker image bakes one (whether the image
+should carry a default `noto-sans-sc` is an open owner decision); an administrator builds one
+and installs it (Settings → Data upload, or `qinqin seed` with the gitignored
+`plugins/data-fonts/` as a pack root):
+
+    npm --prefix scripts/fonts ci      # the subsetter, a build-time tool of the script only
+    node scripts/prepare-font-pack.mjs --source klee-one --out plugins/data-fonts/klee-one
+
+Every source is pinned in `scripts/prepare-font-pack.mjs` (URL at a commit or release, the
+SHA-256 of each font file and of its `OFL.txt`); the script refuses to build when a download
+differs. Each licence text was compared with the canonical SIL OFL 1.1 text on 2026-11-17.
+
+| Pack | Face | Original | Licence |
+|---|---|---|---|
+| **qinqin Sans SC** (`noto-sans-sc`) | Sans, simplified Chinese | Noto Sans SC, [google/fonts](https://github.com/google/fonts) `ofl/notosanssc` at `7af0d90b4d53` (upstream [notofonts/noto-cjk](https://github.com/notofonts/noto-cjk)) | SIL OFL 1.1; "Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'" |
+| **qinqin Sans TC** (`noto-sans-tc`) | Sans, traditional Chinese | Noto Sans TC, same commit | SIL OFL 1.1 (as above) |
+| **qinqin Sans JP** (`noto-sans-jp`) | Sans, Japanese | Noto Sans JP, same commit | SIL OFL 1.1 (as above) |
+| **qinqin Serif SC** (`noto-serif-sc`) | Serif, simplified Chinese | Noto Serif SC, same commit | SIL OFL 1.1; "Copyright 2012 Google Inc." |
+| **qinqin Serif TC** (`noto-serif-tc`) | Serif, traditional Chinese | Noto Serif TC, same commit | SIL OFL 1.1 (as above) |
+| **qinqin Serif JP** (`noto-serif-jp`) | Serif, Japanese | Noto Serif JP, same commit | SIL OFL 1.1 (as above) |
+| **qinqin Kai SC** (`lxgw-wenkai`) | Kai, simplified Chinese | LXGW WenKai Regular, [lxgw/LxgwWenKai](https://github.com/lxgw/LxgwWenKai) release v1.530 | SIL OFL 1.1 with Reserved Font Names '霞鹜', '霞鶩', '落霞孤鹜', '落霞孤鶩', 'LXGW' and an additional permission for unrenamed web subsets (not relied on: the slices are renamed) |
+| **qinqin Kai JP** (`klee-one`) | Kai (textbook style), Japanese | Klee One Regular and SemiBold, google/fonts `ofl/kleeone` at `7af0d90b4d53` (upstream [fontworks-fonts/Klee](https://github.com/fontworks-fonts/Klee)) | SIL OFL 1.1; "Copyright 2020 The Klee Project Authors" |
+
+Every slice is a **Modified Version** under the OFL (subset and converted), so the script
+renames it: family, full, PostScript and unique names become `qinqin <Face> <SC|TC|JP>`,
+the copyright and licence entries are kept unchanged, and the trademark, vendor, designer
+and description entries are dropped; a test checks that no slice name keeps "Noto",
+"Source", "LXGW", "Klee" or LXGW's Chinese Reserved Font Names. The pack carries the
+original's `OFL.txt` byte for byte as `LICENSE` and an `ATTRIBUTION.md` naming the original,
+its authors and the modification; the Sources page credits each installed pack from
+`GET /api/fonts`. The original names appear only in these credits, as the OFL allows.
+The slice table (`scripts/testdata/font-slices.json`) is generated from the bundled level
+lists `tgh-chars`, `joyo-grades` and `jlpt-kanji` (traditional forms through `opencc-js`);
+it contains character lists only. LXGW WenKai TC (a separate repository) is not packed:
+its licence has not been verified yet.
+
+The script's build-time tools (`scripts/fonts/package.json`, never part of the app or the
+image): [subset-font](https://github.com/papandreou/subset-font) (BSD-3-Clause) with
+[harfbuzzjs](https://github.com/harfbuzz/harfbuzzjs) (MIT; HarfBuzz is under the Old MIT
+licence), [fontverter](https://github.com/papandreou/fontverter) (BSD-3-Clause) with
+[wawoff2](https://github.com/fontello/wawoff2) (MIT; Google's WOFF2 encoder).
 
 ## Level packs
 

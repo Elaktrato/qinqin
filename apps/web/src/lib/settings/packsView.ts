@@ -31,10 +31,11 @@ export const PACK_TYPE_LABELS: Readonly<Record<PackType, string>> = labelRecord(
 	audio: 'packs.type.audio',
 	components: 'packs.type.components',
 	strokes: 'packs.type.strokes',
+	font: 'packs.type.font',
 	theme: 'packs.type.theme'
 });
 
-const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'theme'];
+const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'font', 'theme'];
 
 /** packLanguages is the languages a listed pack covers: a strokes pack's list, else its one language. */
 export function packLanguages(pack: InstalledPack): string[] {
@@ -108,6 +109,7 @@ const UNINSTALL: Record<PackType, MessageKey> = {
 	components: 'packs.uninstall.components',
 	strokes: 'packs.uninstall.strokes',
 	audio: 'packs.uninstall.audio',
+	font: 'packs.uninstall.font',
 	theme: 'packs.uninstall.theme'
 };
 

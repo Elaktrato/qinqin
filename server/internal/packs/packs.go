@@ -1,6 +1,6 @@
 // Package packs is the one place that imports, uninstalls and lists data
 // packs of every type — dictionaries, frequency lists, level lists,
-// sentence, grammar, audio, components, strokes and theme packs. The seed CLI and the admin API both go through it, so
+// sentence, grammar, audio, components, strokes, theme and font packs. The seed CLI and the admin API both go through it, so
 // a pack installs, shows up and goes away the same way however it
 // arrived.
 package packs
@@ -15,6 +15,7 @@ import (
 	"qinqin/internal/audio"
 	"qinqin/internal/components"
 	"qinqin/internal/dict"
+	"qinqin/internal/fonts"
 	"qinqin/internal/freq"
 	"qinqin/internal/grammar"
 	"qinqin/internal/levels"
@@ -27,7 +28,7 @@ import (
 // and Attribution are the strings the pack stated when it was imported,
 // verbatim; a legacy sentence pack carries none of them. A strokes pack
 // serves several languages: Language is empty and Languages lists them
-// (sorted); a theme pack has neither; every other type has Language and no
+// (sorted); a theme or font pack has neither; every other type has Language and no
 // Languages.
 type Installed struct {
 	Type        string   `json:"type"`
@@ -59,6 +60,7 @@ var typeOrder = map[string]int{
 	dict.TypeComponents: 6,
 	dict.TypeStrokes:    7,
 	dict.TypeTheme:      8,
+	dict.TypeFont:       9,
 }
 
 // Supported reports whether typ is a pack type this package manages.
@@ -72,6 +74,9 @@ func Supported(typ string) bool {
 // clips exceeds the upload's file and size limits and keeps its files under
 // <data>/audio, so they are installed with scripts/fetch-audio-*.sh or
 // `qinqin seed`; listing and uninstalling them work as for any pack.
+// Font packs may: a face sliced for the web is a few MB in a few hundred
+// files, well inside the limits, and the upload's licence review is the
+// point of installing one.
 func Installable(typ string) bool {
 	return Supported(typ) && typ != dict.TypeAudio
 }
@@ -81,12 +86,17 @@ type Option func(*options)
 
 type options struct {
 	audioStore string
+	fontStore  string
 	onChange   func(typ, packID, language string)
 }
 
 // WithAudioStore names the directory audio clips live in (<data>/audio);
 // importing or uninstalling an audio pack needs it.
 func WithAudioStore(dir string) Option { return func(o *options) { o.audioStore = dir } }
+
+// WithFontStore names the directory font slices live in (<data>/fonts);
+// importing or uninstalling a font pack needs it.
+func WithFontStore(dir string) Option { return func(o *options) { o.fontStore = dir } }
 
 // WithOnChange has fn called after an import or an uninstall committed,
 // with the pack's type, registry id and language ("" for a strokes pack,
@@ -113,6 +123,9 @@ func collect(opts []Option) options {
 
 // errNoAudioStore reports an audio pack handled without WithAudioStore.
 var errNoAudioStore = errors.New("packs: audio packs need an audio store directory (WithAudioStore)")
+
+// errNoFontStore reports a font pack handled without WithFontStore.
+var errNoFontStore = errors.New("packs: font packs need a font store directory (WithFontStore)")
 
 // Import installs pack by its manifest type and returns the one-line
 // summary the seed CLI prints.
@@ -204,6 +217,15 @@ func importData(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (
 			return "", err
 		}
 		return fmt.Sprintf("%d themes", r.Themes), nil
+	case dict.TypeFont:
+		if o.fontStore == "" {
+			return "", errNoFontStore
+		}
+		r, err := fonts.Import(ctx, sqlDB, pack, o.fontStore)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d faces, %d slices", r.Faces, r.Slices), nil
 	}
 	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 }
@@ -260,12 +282,18 @@ func uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, o options
 		err = strokes.Uninstall(ctx, sqlDB, packID)
 	case dict.TypeTheme:
 		err = themes.Uninstall(ctx, sqlDB, packID)
+	case dict.TypeFont:
+		if o.fontStore == "" {
+			return errNoFontStore
+		}
+		err = fonts.Uninstall(ctx, sqlDB, packID, o.fontStore)
 	default:
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
 	if errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
 		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) || errors.Is(err, audio.ErrPackNotFound) ||
-		errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) || errors.Is(err, themes.ErrNotFound) {
+		errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) || errors.Is(err, themes.ErrNotFound) ||
+		errors.Is(err, fonts.ErrNotFound) {
 		return ErrNotFound
 	}
 	if err != nil {
@@ -303,7 +331,7 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 
 // List returns every live pack of every type, ordered by type
 // (dictionary, frequency, levels, sentences, grammar, audio,
-// components, strokes, theme), then name, then pack id. Built-in theme
+// components, strokes, theme, font), then name, then pack id. Built-in theme
 // packs live in the binary and are not listed (GET /api/themes credits
 // them).
 // Sentence packs imported before the registry existed list with only
@@ -328,6 +356,8 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 			FROM component_packs WHERE deleted_at IS NULL`},
 		{dict.TypeTheme, `SELECT pack_id, name, version, '', license, attribution, notice, updated_at
 			FROM theme_packs WHERE deleted_at IS NULL`},
+		{dict.TypeFont, `SELECT pack_id, name, version, '', license, attribution, notice, updated_at
+			FROM font_packs WHERE deleted_at IS NULL`},
 	} {
 		rows, err := sqlDB.QueryContext(ctx, q.query)
 		if err != nil {

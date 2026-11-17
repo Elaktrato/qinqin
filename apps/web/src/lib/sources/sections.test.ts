@@ -36,7 +36,7 @@ const READER_V030_SOURCES: SourceCredit[] = [
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
-import { componentsSection, creditView, packTable, pluginCredits, sentencePackSources, strokesSection, themesSection } from './sections';
+import { componentsSection, creditView, fontsSection, packTable, pluginCredits, sentencePackSources, strokesSection, themesSection } from './sections';
 
 describe('packTable', () => {
 	it('builds rows and a note per pack with a notice, with unique ids', () => {
@@ -321,6 +321,47 @@ describe('componentsSection', () => {
 	});
 	it('shows on an error so the retry is reachable', () => {
 		expect(componentsSection([], 'down').show).toBe(true);
+	});
+});
+
+describe('fontsSection', () => {
+	const kai = (weight: string) => ({
+		packId: 'klee-one',
+		face: 'kai' as const,
+		script: 'Jpan' as const,
+		original: 'Klee One',
+		weight,
+		style: 'normal',
+		license: 'OFL-1.1',
+		attribution: 'Klee One by Fontworks',
+		slices: [{ url: `/fonts/${'a'.repeat(64)}.woff2`, unicodeRange: 'U+4E00' }]
+	});
+	const list = {
+		faces: [kai('400'), kai('600')],
+		packs: [
+			{
+				packId: 'klee-one',
+				name: 'qinqin Kai JP (Klee One, subset)',
+				version: '1.100-q1',
+				license: 'OFL-1.1',
+				attribution: 'Klee One by Fontworks (SIL OFL 1.1)',
+				notice: 'qinqin Kai JP is a modified version of Klee One.'
+			}
+		]
+	};
+	it('is hidden without packs and without an error, shown on an error', () => {
+		expect(fontsSection({ faces: [], packs: [] }, '').show).toBe(false);
+		expect(fontsSection({ faces: [], packs: [] }, 'down').show).toBe(true);
+	});
+	it('credits each pack with its licence link, notice and the face it modifies', () => {
+		const s = fontsSection(list, '');
+		expect(s.show).toBe(true);
+		expect(s.table.rows.map((r) => [r.name, r.language, r.version, r.license, r.attribution])).toEqual([
+			['qinqin Kai JP (Klee One, subset)', 'ja', '1.100-q1', 'OFL-1.1', 'Klee One by Fontworks (SIL OFL 1.1)']
+		]);
+		expect(s.table.notes).toHaveLength(1);
+		expect(s.licenseHref[0]).toBe('https://openfontlicense.org/');
+		expect(s.modified).toEqual(['qinqin Kai JP (Klee One, subset): a modified (subset, renamed) version of Klee One']);
 	});
 });
 

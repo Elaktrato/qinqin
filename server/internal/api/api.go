@@ -318,6 +318,12 @@ func (s *server) routes() []route {
 		// forwards /hanzi/ here): public, and fetched without credentials by
 		// the service worker, so no token either.
 		{"GET /hanzi/{file}", s.handleStrokeFile, accPublic, nil, noTok},
+		// Font packs (#97, docs/contracts/fonts/README.md): the faces list
+		// needs a session but reads no per-workspace data; the slices are
+		// public and token-free like the stroke files (rootHandler forwards
+		// /fonts/ here): browsers fetch @font-face URLs without credentials.
+		{"GET /api/fonts", s.handleListFonts, accUser, nil, tokReadGlobal},
+		{"GET /fonts/{file}", s.handleFontFile, accPublic, nil, noTok},
 		{"GET /api/packages", s.handlePackageCatalogue, accUser, nil, tokReadGlobal},
 		{"GET /api/packages/{id}/{revision}", s.handlePackageDownload, accUser, nil, tokReadGlobal},
 		{"POST /api/admin/plugins", s.handleRegisterPlugin, accAdmin, nil, noTok},

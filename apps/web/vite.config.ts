@@ -10,7 +10,9 @@ export default defineConfig({
 		proxy: {
 			'/api': 'http://127.0.0.1:8080',
 			// Stroke data is a package the server serves (item 5), not a static file.
-			'/hanzi': 'http://127.0.0.1:8080'
+			'/hanzi': 'http://127.0.0.1:8080',
+			// Font pack slices (#97) are served by the server from <data>/fonts.
+			'/fonts/': 'http://127.0.0.1:8080'
 		}
 	},
 	build: {
