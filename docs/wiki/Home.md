@@ -12,7 +12,7 @@ This wiki has four parts. Pick the one that matches why you are here.
 - [Flashcards: study sessions](Flashcards-study-sessions), [Decks, limits and vacation](Flashcards-decks-limits-vacation), [Daily goals](Daily-goals), [Scheduling and the FSRS optimizer](Scheduling-and-FSRS)
 - [Reader](Reader)
 - [Journal and AI providers](Journal-and-AI)
-- [Stats and the activity heatmap](Stats-and-heatmap), [Weekly summary](Weekly-summary)
+- [Stats and the activity heatmap](Stats-and-heatmap), [Weekly summary](Weekly-summary), [Milestones](Milestones)
 - [Settings tour](Settings-tour)
 - [Accounts and sign-in](Accounts-and-sign-in)
 - [Your data: export and restore](Your-data)

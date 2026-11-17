@@ -66,6 +66,11 @@ database with a SvelteKit single-page app embedded in the binary.
   mature, characters learned and goal days, each compared with the week before
   (up to the same weekday while the week is in progress); 52 weeks back. Computed
   from events, never stored (`docs/contracts/weekly/`).
+- **Milestones** — "1,000 reviews", streaks, days active, reading hours, journal
+  entries, words studied and mature, characters learned and complete levels, per
+  workspace: shown once in a card on home and **Stats → Week**, then listed on
+  Stats → Week and in the week's summary. Derived from events; only the fact that
+  you saw one is stored (synced, in your backup) (`docs/contracts/milestones/`).
 - **Installable app** — the web app installs as a PWA and keeps studying
   offline; reviews wait in a per-user outbox and sync when you are back online.
 - **Accounts** — sessions you can end, registration modes and invites, password
