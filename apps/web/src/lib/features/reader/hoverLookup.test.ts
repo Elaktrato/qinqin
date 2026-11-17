@@ -24,6 +24,7 @@ function result(term: string, start: number): LookupResult {
 		reasons: [],
 		tags: [],
 		frequencies: [],
+		levels: [],
 		senses: [],
 		pri: 0
 	};

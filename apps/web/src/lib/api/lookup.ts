@@ -37,6 +37,7 @@ export async function lookupAt(
 		tags: r.tags ?? [],
 		frequencies: r.frequencies ?? [],
 		senses: r.senses ?? [],
+		levels: r.levels ?? [],
 		start: r.start + offset,
 		end: r.end + offset
 	}));

@@ -35,6 +35,11 @@ type lookupFrequency struct {
 	Display  string `json:"display,omitempty"`
 }
 
+type lookupLevel struct {
+	Scheme string `json:"scheme"`
+	Level  string `json:"level"`
+}
+
 type lookupSense struct {
 	DictionaryID   int64    `json:"dictionaryId"`
 	DictionaryName string   `json:"dictionaryName"`
@@ -60,6 +65,8 @@ type lookupResult struct {
 	Frequencies []lookupFrequency `json:"frequencies"`
 	Senses      []lookupSense     `json:"senses"`
 	Pri         int               `json:"pri"`
+	// Levels: the entry's lowest level per installed levels scheme.
+	Levels []lookupLevel `json:"levels"`
 }
 
 // nonNil returns s, or an empty slice for nil, so it encodes as [].
@@ -80,6 +87,10 @@ func toLookupResult(r lookup.Result) lookupResult {
 		Frequencies: make([]lookupFrequency, 0, len(r.Frequencies)),
 		Senses:      make([]lookupSense, 0, len(r.Senses)),
 		Pri:         r.Pri,
+		Levels:      make([]lookupLevel, 0, len(r.Levels)),
+	}
+	for _, l := range r.Levels {
+		out.Levels = append(out.Levels, lookupLevel{Scheme: l.SchemeName, Level: l.LevelName})
 	}
 	for _, f := range r.Forms {
 		out.Forms = append(out.Forms, lookupForm{Text: f.Text, Flags: nonNil(f.Flags)})
@@ -129,6 +140,7 @@ func (s *server) handleLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	svc := s.lookupService()
+	svc.WithLevels = true
 	found, err := svc.Lookup(r.Context(), language, text, offset, kinds)
 	if err != nil {
 		log.Printf("lookup %s: %v", language, err)

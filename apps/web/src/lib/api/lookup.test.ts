@@ -58,7 +58,7 @@ describe('lookupAt', () => {
 			jsonResponse({ results: [{ entryId: 1, start: 0, end: 1 }] })
 		);
 		const [r] = await lookupAt('ja', '食', 0);
-		for (const key of ['forms', 'readings', 'reasons', 'tags', 'frequencies', 'senses'] as const) {
+		for (const key of ['forms', 'readings', 'reasons', 'tags', 'frequencies', 'senses', 'levels'] as const) {
 			expect(r[key]).toEqual([]);
 		}
 	});

@@ -14,6 +14,8 @@ type countingConnector struct {
 	drv   driver.Driver
 	dsn   string
 	count *atomic.Int64
+	// onQuery, when set, sees the text of every statement.
+	onQuery func(string)
 }
 
 func (c countingConnector) Connect(context.Context) (driver.Conn, error) {
@@ -21,18 +23,26 @@ func (c countingConnector) Connect(context.Context) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return countingConn{conn, c.count}, nil
+	return countingConn{conn, c.count, c.onQuery}, nil
 }
 
 func (c countingConnector) Driver() driver.Driver { return c.drv }
 
 type countingConn struct {
 	driver.Conn
-	count *atomic.Int64
+	count   *atomic.Int64
+	onQuery func(string)
+}
+
+func (c countingConn) seen(query string) {
+	c.count.Add(1)
+	if c.onQuery != nil {
+		c.onQuery(query)
+	}
 }
 
 func (c countingConn) Prepare(query string) (driver.Stmt, error) {
-	c.count.Add(1)
+	c.seen(query)
 	return c.Conn.Prepare(query)
 }
 
@@ -41,7 +51,7 @@ func (c countingConn) QueryContext(ctx context.Context, query string, args []dri
 	if !ok {
 		return nil, driver.ErrSkip
 	}
-	c.count.Add(1)
+	c.seen(query)
 	return q.QueryContext(ctx, query, args)
 }
 
@@ -50,7 +60,7 @@ func (c countingConn) ExecContext(ctx context.Context, query string, args []driv
 	if !ok {
 		return nil, driver.ErrSkip
 	}
-	c.count.Add(1)
+	c.seen(query)
 	return e.ExecContext(ctx, query, args)
 }
 

@@ -35,6 +35,7 @@ function result(kind: 'word' | 'character'): LookupResult {
 		reasons: [],
 		tags: [],
 		frequencies: [],
+		levels: [],
 		senses: [],
 		pri: 0
 	} as unknown as LookupResult;

@@ -15,6 +15,7 @@ import (
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/lang"
+	"qinqin/internal/levels"
 )
 
 const lookupJMdict = `<?xml version="1.0" encoding="UTF-8"?>
@@ -126,13 +127,13 @@ func TestLookupHappyPath(t *testing.T) {
 	}
 	first := body.Results[0]
 	for _, k := range []string{"entryId", "kind", "term", "reading", "forms", "readings", "matched", "start", "end",
-		"reasons", "tags", "frequencies", "senses", "pri"} {
+		"reasons", "tags", "frequencies", "senses", "pri", "levels"} {
 		if _, ok := first[k]; !ok {
 			t.Errorf("result lacks field %q: %s", k, raw)
 		}
 	}
-	if len(first) != 14 {
-		t.Errorf("result has %d fields, want exactly 14: %s", len(first), raw)
+	if len(first) != 15 {
+		t.Errorf("result has %d fields, want exactly 15: %s", len(first), raw)
 	}
 	var got struct {
 		Term, Reading, Kind, Matched string
@@ -206,6 +207,44 @@ func TestLookupArraysNeverNull(t *testing.T) {
 	}
 	if !strings.Contains(raw, `"frequencies":[]`) || !strings.Contains(raw, `"reasons":[]`) {
 		t.Errorf("want empty arrays for frequencies and reasons: %s", raw)
+	}
+}
+
+// TestLookupLevels: a result carries the lowest level of each installed
+// scheme it belongs to, and an entry in no scheme has "levels":[].
+func TestLookupLevels(t *testing.T) {
+	lang.Register(lang.Zh{})
+	ts, sqlDB := newServer(t)
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
+		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict",
+	}, "dictionary.txt", lookupCedict+"行 行 [xing2] /to walk/\n")
+	dir := t.TempDir()
+	m, _ := json.Marshal(dict.Manifest{ID: "hsk-test", Name: "HSK", Version: "1", Type: dict.TypeLevels,
+		Language: "zh", License: "CC BY-SA 4.0", Attribution: "test", Format: "json"})
+	for name, body := range map[string]string{"manifest.json": string(m),
+		"levels.json": `{"unit": "word", "levels": [{"name": "3", "entries": ["学习"]}]}`} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p, err := dict.LoadPack(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := levels.Import(context.Background(), sqlDB, p); err != nil {
+		t.Fatal(err)
+	}
+	status, raw := lookupRaw(t, ts.URL, lookupPath("zh", "学习", "0", "word"))
+	if status != http.StatusOK {
+		t.Fatalf("status = %d (%s)", status, raw)
+	}
+	if !strings.Contains(raw, `"levels":[{"scheme":"HSK","level":"3"}]`) {
+		t.Errorf("want 学习 at HSK 3: %s", raw)
+	}
+	_, raw = lookupRaw(t, ts.URL, lookupPath("zh", "行", "0"))
+	if !strings.Contains(raw, `"levels":[]`) || strings.Contains(raw, "null") {
+		t.Errorf("want an empty levels array for 行: %s", raw)
 	}
 }
 

@@ -28,6 +28,7 @@ function result(patch: Partial<LookupResult>): LookupResult {
 		reasons: [],
 		tags: [],
 		frequencies: [],
+		levels: [],
 		senses: [],
 		pri: 0,
 		...patch

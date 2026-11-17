@@ -20,6 +20,7 @@ const result = {
 	reasons: [],
 	tags: [],
 	frequencies: [],
+	levels: [],
 	senses: [sense(1, 'hello'), sense(2, 'greeting')],
 	pri: 0
 } as unknown as LookupResult;
