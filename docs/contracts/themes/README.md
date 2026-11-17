@@ -115,7 +115,44 @@ a theme whose every accent fails, both sides of the 4.5 and 3 roundings).
 
 ## The `appearance` row
 
-(Task 8.)
+The person's choice: a plugin data row of `qinqin-core`, key `appearance`, **user-global** (`workspaceId: null`;
+written with `PUT /api/plugins/qinqin-core/data/appearance` without `workspace`, or pushed). One per user, shared
+by every device and by Android, last write wins (`sync/`); it backs up and restores unchanged (`backup/`). The
+server stores it like any plugin row and never validates it.
+
+```json
+{ "version": 1, "mode": "system",
+  "light": { "theme": "catppuccin-latte", "accent": "mauve" },
+  "dark":  { "theme": "catppuccin-mocha", "accent": "mauve" },
+  "corners": "soft", "spacing": "comfortable", "hanziFont": "sans" }
+```
+
+- **Defaults** (no row, a deleted row, or anything that is not a row): the object above.
+- **Parse**: a value that is not an object, or whose `version` is not an integer ≥ 1, is the defaults; a newer
+  `version` is read leniently. Then member by member: `mode` `system` | `light` | `dark`, else `system`; a slot
+  (`light`, `dark`) that is not an object is the slot's default; in a slot, `theme` must be a theme id (the id
+  grammar of the theme file) else the slot's default theme, and `accent` an accent key else `null` (= the theme's
+  `defaultAccent`); `corners` `sharp` | `soft` | `round` else `soft`; `spacing` `compact` | `comfortable` else
+  `comfortable`; `hanziFont` `sans` | `serif` | `kai` else `sans`.
+- **Resolve**: the slot is `mode`, or for `system` the device's dark preference (`prefers-color-scheme`, Android's
+  night mode); the theme is the slot's theme when it is installed (`GET /api/themes`), else the slot's default
+  theme (a removed pack: the row is not rewritten, so the choice comes back when the pack does); the accent is
+  chosen by the derive rule (`accentKey`) on that theme. A slot may hold a theme of either scheme.
+- **Write**: start from the stored object (the defaults when there is none or it is not an object), set the
+  changed members — a slot change is merged into the stored slot — keep every unknown member (top level and in a
+  slot), and write `version: 1`.
+- **Adjustments** (never in a theme file): corner radius `sharp` 4px, `soft` 10px, `round` 16px; spacing scale
+  `compact` 0.75, `comfortable` 1; hanzi/kanji font `sans`, `serif`, `kai` (the reader's font stacks until a font
+  pack is installed; the reader's own `reader.font` overrides it when not `default`).
+
+Fixture: `appearance.json` (`defaults`, `adjustments`, the example `row`, `parse`, `resolve` — with stand-in
+`themes` listing each theme's `accentChoices` — and `write` cases).
+
+Ruling: the appearance is per account, not per device — the design's call (§10), and it is what lets Android
+match the web — cost: a person who wants a different theme on one device switches `mode` there by hand.
+
+Ruling: the slot default theme, not the other slot's theme, replaces a removed theme — the default pair is always
+present and of the expected scheme — cost: none.
 
 ## `GET /api/themes`
 
@@ -182,4 +219,5 @@ it implements the validation only if it ever installs theme packs itself (it doe
 | `theme-file.json` | validation codes and paths, limits, accent order | Go `server/internal/themes/file_test.go` |
 | `contrast.json` | ratios, rounding, the review checks | Go `server/internal/themes/contrast_test.go`; web `apps/web/src/lib/theme/contrast.test.ts` |
 | `themes-api.json` | the built-in packs and theme ids in order | Go `server/internal/themes/builtin_test.go`, `server/internal/api/handlers_themes_test.go` |
+| `appearance.json` | the `appearance` row: defaults, parse, resolve, write, the example row | Go `server/cmd/qinqin/core_appearance_test.go`, `server/internal/backup/appearance_test.go` (the example row through every pull form, push, export and restore); web (next run) `apps/web/src/lib/theme/appearance.test.ts` |
 | `derive.json` | derived tokens | Go `server/internal/themes/derive_test.go`; web `apps/web/src/lib/theme/derive.test.ts` (also the CSS property table) |

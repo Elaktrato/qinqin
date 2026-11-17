@@ -74,3 +74,6 @@ heatmap's scope and hidden activity types.
 - Write: `{version: 1, scope, hidden}`.
 
 Ruling: Android writes `activity-view` with `version: 1` only — cost: none.
+
+**`appearance`** — the person's theme, accent and adjustments: a third user-global `qinqin-core` row, specified
+with the themes in [`themes/README.md`](../themes/README.md) ("The `appearance` row", fixture `themes/appearance.json`).
