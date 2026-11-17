@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import {
 	ACTIVE_KEY,
 	DEFAULT_W,
@@ -13,6 +16,11 @@ import {
 	weightsKey,
 	type ParamSet
 } from './params';
+
+// Read with JSON.parse, not imported: a JSON import turns 1e999 (Infinity) into null.
+const fsrsFixture: unknown = JSON.parse(
+	readFileSync(resolve(__dirname, '../../../../../../docs/contracts/scheduler/fsrs.json'), 'utf8')
+);
 
 function set(id: string, createdAt: string, w: readonly number[] = DEFAULT_W): ParamSet {
 	return { id, w: [...w], createdAt, source: 'optimized' };
@@ -219,4 +227,61 @@ describe('resolveState', () => {
 		expect(SET_PREFIX).toBe('fsrs:set:');
 		expect(ACTIVE_KEY).toBe('fsrs:active');
 	});
+});
+
+describe('docs/contracts/scheduler/fsrs.json: weights, parameter sets, active set', () => {
+	type Verdict = { ok: true; migrated: number[] } | { ok: false; reason: string; position?: number };
+	const fixture = fsrsFixture as unknown as {
+		rule: string;
+		parameters: { w: number[] };
+		weights: { name: string; w: unknown; expect: Verdict }[];
+		paramSet: { name: string; key: string; raw: unknown; expect: ParamSet | null }[];
+		resolve: {
+			name: string;
+			sets: ParamSet[];
+			active: unknown;
+			expect: { order: string[]; active: string | null; w: string; pointer: string | null };
+		}[];
+	};
+	// checkWeights reports English messages; the fixture names the reason.
+	function reasonOf(error: string): { reason: string; position?: number } {
+		const at = /^Weight (\d+) /.exec(error);
+		if (/not a finite number/.test(error)) return { reason: 'nonFinite', position: Number(at![1]) };
+		if (/is outside/.test(error)) return { reason: 'range', position: Number(at![1]) };
+		if (/^Expected 17, 19 or 21 numbers/.test(error)) return { reason: 'length' };
+		if (error === 'Not a list of numbers.') return { reason: 'notNumbers' };
+		return { reason: `unknown: ${error}` };
+	}
+
+	it('DEFAULT_W is the generator default_w', () => {
+		expect(fixture.rule).toBe('scheduler/fsrs');
+		expect([...DEFAULT_W]).toEqual(fixture.parameters.w);
+	});
+	for (const c of fixture.weights) {
+		it(`weights: ${c.name}`, () => {
+			const got = checkWeights(c.w);
+			if (c.expect.ok) {
+				expect(got).toEqual({ ok: true, w: c.w });
+				expect(validWeights(c.w)).toEqual(c.expect.migrated);
+			} else {
+				expect(got.ok).toBe(false);
+				if (!got.ok) expect(reasonOf(got.error)).toEqual({ reason: c.expect.reason, ...(c.expect.position ? { position: c.expect.position } : {}) });
+				expect(validWeights(c.w)).toBeNull();
+			}
+		});
+	}
+	for (const c of fixture.paramSet) {
+		it(`paramSet: ${c.name}`, () => {
+			expect(parseParamSet(c.key, c.raw)).toEqual(c.expect);
+		});
+	}
+	for (const c of fixture.resolve) {
+		it(`resolve: ${c.name}`, () => {
+			const state = resolveState(c.sets, c.active);
+			expect(state.sets.map((s) => s.id)).toEqual(c.expect.order);
+			expect(state.active?.id ?? null).toBe(c.expect.active);
+			expect(state.w).toEqual(c.expect.w === 'default' ? fixture.parameters.w : c.sets.find((s) => s.id === c.expect.w)!.w);
+			expect(state.pointer).toBe(c.expect.pointer);
+		});
+	}
 });

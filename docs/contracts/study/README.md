@@ -64,7 +64,8 @@ Decode rules (`rows.json`): an unknown top-level member, a missing key, a wrong 
 an object, an `entryId`/`sentenceId` that is not an integer in `1..2^53-1`, an unknown kind, `skipKinds` on a
 non-vocab card, a duplicate in `deckIds`, `skipKinds` or `cardTypes`, a source or order outside its variants,
 a limit outside `0..9999`, a weight list that is not 21 numbers and an `updatedAt` that is not an RFC 3339 time or is the zero time (`0001-01-01T00:00:00Z`) are invalid. The server checks structure
-only: FSRS weight ranges stay a client rule (a set outside the ts-fsrs ranges is unusable = default weights).
+only: FSRS weight ranges stay a client rule (a set outside the ts-fsrs ranges is unusable = default weights;
+the rule and its cases are `scheduler/fsrs.json`).
 On push `version` is ignored and may be left out, and `deletedAt` may be left out (= live).
 
 `extra` holds every member the typed shape does not carry, verbatim (a newer client's member, or a known

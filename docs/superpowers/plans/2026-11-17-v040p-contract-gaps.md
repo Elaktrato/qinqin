@@ -376,3 +376,21 @@ of each other in content but share the web gates; one implementer at a time. Tas
 - Ruling: non-finite numbers are written `1e999` in fixtures (JSON has no Infinity; `JSON.parse` reads it as
   Infinity, as a stored payload would) — cost: a JSON parser that rejects overflowing numbers must special-case
   it in tests.
+- Bug in my own Task 3 tests, fixed in its own commit `0fbac99` (`test(contracts): read review-parse.json with
+  JSON.parse`): a JSON module import (Vite) turns the fixture's `1e999` into `null`, so the "overflowing
+  durationMs" case passed for the wrong reason. The decoders of `review-parse.json` and `fsrs.json` read the file
+  with `JSON.parse(readFileSync(...))` and assert the Infinity. Not a production bug.
+- Task 4 (FSRS): `params.test.ts` + `scheduler.test.ts` with `fsrs.json` absent → 2 files FAIL (module not
+  found); generated → PASS (156); a replay `stability` digit changed (0.212 → 0.213) → FAIL and generator
+  `--check` exit 1; restored → PASS, `--check` 0. Gates: generator `--check` 0; `npm run check` 0; `npm test` 0
+  (398 files, 6557 passed). 22 replay sequences.
+- Adaptation: weight verdicts carry `reason` (`notNumbers`/`nonFinite`/`length`/`range`) and `position`, not the
+  web's English messages (interface strings are item 8); the web test maps its messages to the reasons.
+- Adaptation: the `fsrs` spy is a `vi.mock('ts-fsrs')` passthrough over the whole `scheduler.test.ts` file;
+  the installed version is read from `node_modules/ts-fsrs/package.json` with `readFileSync` (the package does
+  not export `./package.json`).
+- Ruling: `paramSet` and `resolve` expectations are written down in the generator, not computed by ts-fsrs —
+  they are project rules (key, source, optional numbers, newest-first order, dangling pointer); only the
+  migrated weights come from ts-fsrs — cost: a change to those rules edits the generator's case table.
+- Observation (not a bug, pinned): at the maximum interval ts-fsrs 5.4.2 reports `scheduled_days` 36502 while
+  stability is 36500; the fixture keeps the library's numbers.
