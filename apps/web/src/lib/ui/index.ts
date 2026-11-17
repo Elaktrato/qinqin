@@ -3,6 +3,7 @@
 export { default as Button } from './Button.svelte';
 export { default as Chip } from './Chip.svelte';
 export { default as Dialog } from './Dialog.svelte';
+export { default as Drawer } from './Drawer.svelte';
 export { default as Field } from './Field.svelte';
 export { default as Icon } from './Icon.svelte';
 export { default as IconButton } from './IconButton.svelte';

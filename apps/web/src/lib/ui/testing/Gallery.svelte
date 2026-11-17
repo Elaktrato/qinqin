@@ -7,7 +7,9 @@
 	import Button from '../Button.svelte';
 	import Chip from '../Chip.svelte';
 	import Dialog from '../Dialog.svelte';
+	import Drawer from '../Drawer.svelte';
 	import Field from '../Field.svelte';
+	import Flag from '$lib/components/Flag.svelte';
 	import Icon from '../Icon.svelte';
 	import IconButton from '../IconButton.svelte';
 	import Menu from '../Menu.svelte';
@@ -95,6 +97,15 @@
 			<Menu label="More actions" icon="more">
 				<MenuItem icon="edit">Rename</MenuItem>
 			</Menu>
+			<!-- Custom triggers (#99): the frame's flag and avatar. -->
+			<Menu label="Workspace: Chinese">
+				{#snippet trigger()}<Flag code="zh" size={20} decorative />{/snippet}
+				<MenuItem checked={true}>Chinese</MenuItem>
+			</Menu>
+			<Menu label="Account menu">
+				{#snippet trigger()}<span class="avatar" aria-hidden="true">U</span>{/snippet}
+				<MenuItem keepOpen icon="palette">Theme</MenuItem>
+			</Menu>
 		</div>
 	</section>
 
@@ -143,6 +154,16 @@
 		</div>
 	</section>
 
+	<section data-gallery="Drawer">
+		<h2>Drawer</h2>
+		<div class="frame">
+			<Drawer open label="Menu">
+				<a href="#home">Home</a>
+				<a href="#decks">Decks</a>
+			</Drawer>
+		</div>
+	</section>
+
 	<section data-gallery="Sheet">
 		<h2>Sheet</h2>
 		<div class="frame">
@@ -182,6 +203,15 @@
 	.menus {
 		min-height: 13rem;
 		align-items: flex-start;
+	}
+	.avatar {
+		display: inline-grid;
+		place-items: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 50%;
+		background: var(--raised);
+		font-weight: var(--weight-strong);
 	}
 	.icons {
 		gap: var(--space-2);

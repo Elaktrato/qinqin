@@ -4,14 +4,16 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
-	import { APP_NAME, APP_NAME_HANZI } from '$lib/app';
+	import { APP_NAME } from '$lib/app';
 	import { t } from '$lib/i18n';
-	import NavIcon from '$lib/components/NavIcon.svelte';
-	import { iconFor } from '$lib/components/navIcons';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
-	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
 	import { auth, loadMe, restriction, user } from '$lib/auth';
-	import { navLinks } from '$lib/features';
+	import AccountMenu from '$lib/frame/AccountMenu.svelte';
+	import { currentSection, frameSections } from '$lib/frame/sections';
+	import PhoneBar from '$lib/frame/PhoneBar.svelte';
+	import TopBar from '$lib/frame/TopBar.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
+	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionWhenSettled } from '$lib/events';
@@ -32,11 +34,9 @@
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
 	import Logo from '$lib/components/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
-	import { requestSignOut } from '$lib/account/signOut';
 	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import { themeStore } from '$lib/theme/store.svelte';
-	import ThemeSwitch from '$lib/theme/ThemeSwitch.svelte';
 	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
 	import {
@@ -57,15 +57,17 @@
 	const workspaceError = $derived($workspacesLoadError);
 
 	const path = $derived(normalizePath(page.url.pathname));
-	// The core features first, then the enabled plugins in the user's order.
-	const pluginLinks = $derived(navLinks($pluginStates));
+	// The frame's sections (lib/frame/sections.ts): the core features, the
+	// enabled plugin pages in the user's order, Search, Stats.
+	const sections = $derived(frameSections($pluginStates));
+	const current = $derived(currentSection(path, sections));
 	// The study-event hook delivers only to plugins the user enabled.
 	$effect(() => {
 		setHookStates($pluginStates.status === 'ready' ? $pluginStates.list : []);
 	});
 	const signedIn = $derived($auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
-	// shell: the brand, a sign-in link and the footer, nothing private.
+	// bar: the logo (to sign in) and a sign-in link, nothing private.
 	const openSignedOut = $derived(!signedIn && routeAccess(path) === 'open');
 	// Render a route only when the session matches it: protected pages
 	// never flash while a redirect is in flight, auth pages do not show
@@ -76,9 +78,9 @@
 	const allowed = $derived(
 		routeAllowed(path, signedIn, booted) && restrictedTarget(path, $restriction) === null
 	);
-	// Stats (and its Characters view, the map) is one nav item for
-	// every workspace; the tab itself appears only for Han languages.
-	const inStats = $derived(path === '/stats' || path.startsWith('/stats/'));
+	// The frame (window frame, bar, raised panel) shows with a bar: signed
+	// in, or signed out on an open page. Sign-in pages stay plain.
+	const framed = $derived(signedIn || openSignedOut);
 	const noWorkspaces = $derived(
 		$workspacesLoaded && !workspaceError && $workspaces.list.length === 0
 	);
@@ -239,61 +241,51 @@
 </script>
 
 {#if allowed}
-	<!-- First focusable element: jumps past the header and its nav. -->
+	<!-- First focusable element on every page: jumps past the bar. -->
 	<a class="skip-link" href="#main-content" onclick={skipToContent}>{t('nav.skipToContent')}</a>
-	<div class="app" class:with-bar={signedIn}>
-		<UpdateBanner />
-		<OfflineBanner />
-		{#if signedIn}
-			<header class="shell">
-				<!-- The logo is the home link (there is no separate Home tab). -->
-				<a
-					class="brand"
-					href="/"
-					aria-label={t('nav.brand.home', { app: APP_NAME })}
-					title={t('nav.brand.homeTitle', { app: APP_NAME })}
-					aria-current={path === '/' ? 'page' : undefined}><Logo size={30} /></a
-				>
-
-				<!-- Wide screens: pills in the header. Below 720 px: a fixed
-				     bottom tab bar (see the styles). -->
-				{#if !restricted}
-				<nav class="main-nav" aria-label={t('nav.main')}>
-					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}
-						><NavIcon name={iconFor('search')} /><span class="label">{t('nav.search')}</span></a
-					>
-					{#each pluginLinks as link (`${link.slug}:${link.title}`)}
-						<a
-							href={link.href}
-							aria-current={path === link.href || path.startsWith(`${link.href}/`)
-								? 'page'
-								: undefined}
-							><NavIcon name={iconFor(link.slug, link.title)} /><span class="label"
-								>{link.title}</span
-							></a
-						>
-					{/each}
-				</nav>
-
-				<div class="workspace">
-					<WorkspacePicker />
-				</div>
-				{/if}
-				<div class="account">
-					<!-- The quick theme switch; the account menu of the frame
-					     rework (#99) takes it over. -->
-					{#if !restricted}<ThemeSwitch />{/if}
-					{#if $user}
-						<span class="username">{$user.username}</span>
+	<div class="frame" class:framed>
+		{#if signedIn && !restricted}
+			<!-- One banner landmark holding both bars (#99): the desktop bar
+			     (frame A) at 720px and wider, the phone bar below. A CSS switch
+			     (no layout jump, follows zoom); the hidden one is display: none,
+			     so it is out of the accessibility tree and the tab order. -->
+			<header class="bar">
+				<div class="desktop" data-frame="desktop"><TopBar {sections} {current} /></div>
+				<div class="phone" data-frame="phone"><PhoneBar {sections} {current} /></div>
+			</header>
+		{:else if framed}
+			<!-- A restricted session (forced password change, MFA enrolment)
+			     and a signed-out visitor of an open page: the logo and the
+			     account menu (Sign out only) or a sign-in link; no sections,
+			     no workspace, nothing private. -->
+			<header class="bar">
+				<div class="minimal">
+					<Tooltip text={signedIn ? t('nav.home') : t('nav.brand.signInTitle', { app: APP_NAME })}>
+						{#snippet children()}
+							<a
+								class="brand"
+								href={signedIn ? '/' : '/login'}
+								aria-label={signedIn
+									? t('nav.brand.home', { app: APP_NAME })
+									: t('nav.brand.signIn', { app: APP_NAME })}><Logo size={26} /></a
+							>
+						{/snippet}
+					</Tooltip>
+					{#if signedIn}
+						<AccountMenu restricted />
+					{:else}
+						<a class="sign-in" href="/login"><Icon name="sign-in" size="s" /><span>{t('nav.signIn')}</span></a>
 					{/if}
-					<button type="button" class="sign-out" title={t('nav.signOut')} onclick={() => void requestSignOut()}
-						><NavIcon name={iconFor('signout')} size={18} /><span class="label">{t('nav.signOut')}</span
-						></button
-					>
 				</div>
 			</header>
+		{/if}
 
-			{#if workspaceError && !restricted}
+		<!-- The page: a raised panel on the window frame (desktop), the
+		     whole width on the phone. Notices about the page sit at its top. -->
+		<div class="panel">
+			<UpdateBanner />
+			<OfflineBanner />
+			{#if workspaceError && signedIn && !restricted}
 				<p class="workspace-error" role="alert">
 					{workspaceError}
 					<button type="button" class="retry" onclick={() => void loadShellWorkspaces()}>
@@ -301,105 +293,66 @@
 					</button>
 				</p>
 			{/if}
-		{:else if openSignedOut}
-			<!-- Signed out on an open page: no nav of private pages, no
-			     workspace picker, no account. -->
-			<header class="shell">
-				<a
-					class="brand"
-					href="/login"
-					aria-label={t('nav.brand.signIn', { app: APP_NAME })}
-					title={t('nav.brand.signInTitle', { app: APP_NAME })}><Logo size={30} /></a
-				>
-				<div class="account guest">
-					<a class="sign-in" href="/login"
-						><NavIcon name={iconFor('signin')} size={18} /><span>{t('nav.signIn')}</span></a
-					>
-				</div>
-			</header>
-		{/if}
 
-		<!-- Always in the DOM, so screen readers announce what arrives. -->
-		<div class="notice-region" role="status">
-			{#if signedIn && $notice}
-				<p class="notice">
-					<span>{$notice}</span>
-					<button type="button" class="notice-dismiss" onclick={dismissNotice}>{t('app.notice.dismiss')}</button>
-				</p>
-			{/if}
+			<!-- Always in the DOM, so screen readers announce what arrives. -->
+			<div class="notice-region" role="status">
+				{#if signedIn && $notice}
+					<p class="notice">
+						<span>{$notice}</span>
+						<button type="button" class="notice-dismiss" onclick={dismissNotice}>{t('app.notice.dismiss')}</button>
+					</p>
+				{/if}
+			</div>
+
+			{#if $logoutPrompt !== null}<LogoutDialog />{/if}
+
+			<div class="content" id="main-content" tabindex="-1">
+				{#if signedIn && !restricted && noWorkspaces}
+					<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
+						<h2 id="empty-workspaces-heading">{t('app.workspaces.emptyTitle')}</h2>
+						<p>{t('app.workspaces.emptyText')}</p>
+						<WorkspaceCreateForm idPrefix="empty-new" />
+					</section>
+				{/if}
+
+				{@render children()}
+			</div>
 		</div>
-
-		{#if $logoutPrompt !== null}<LogoutDialog />{/if}
-
-		<div class="content" id="main-content" tabindex="-1">
-			{#if signedIn && !restricted && noWorkspaces}
-				<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
-					<h2 id="empty-workspaces-heading">{t('app.workspaces.emptyTitle')}</h2>
-					<p>{t('app.workspaces.emptyText')}</p>
-					<WorkspaceCreateForm idPrefix="empty-new" />
-				</section>
-			{/if}
-
-			{@render children()}
-		</div>
-
-		{#if signedIn}
-			<footer class="footer">
-				<nav class="footer-links" aria-label={t('nav.footer')}>
-					{#if !restricted}
-						<a href="/stats" aria-current={inStats ? 'page' : undefined}
-							><NavIcon name={iconFor('stats')} size={16} /><span>{t('nav.stats')}</span></a
-						>
-					{/if}
-					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
-						><NavIcon name={iconFor('sources')} size={16} /><span>{t('nav.sources')}</span></a
-					>
-					{#if !restricted}
-						<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}
-							><NavIcon name={iconFor('settings')} size={16} /><span>{t('nav.settings')}</span></a
-						>
-					{/if}
-				</nav>
-				<span class="version">
-					<span lang="zh">{APP_NAME_HANZI}</span>
-					{APP_NAME}
-				</span>
-			</footer>
-		{:else if openSignedOut}
-			<footer class="footer">
-				<nav class="footer-links" aria-label={t('nav.footer')}>
-					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
-						><NavIcon name={iconFor('sources')} size={16} /><span>{t('nav.sources')}</span></a
-					>
-					<a href="/login"><NavIcon name={iconFor('signin')} size={16} /><span>{t('nav.signIn')}</span></a>
-				</nav>
-				<span class="version">
-					<span lang="zh">{APP_NAME_HANZI}</span>
-					{APP_NAME}
-				</span>
-			</footer>
-		{/if}
 	</div>
 {:else}
 	<p class="booting">{t('app.loading')}</p>
 {/if}
 
 <style>
-	.app {
-		/* Nav accent: the current item sits on an accent tint with its icon in
-		   the accent; its words stay --text (the reading accent fell to about
-		   3.9:1 on the tint in Catppuccin Latte, measured in #98 B5). */
-		--nav-accent: var(--accent);
-		--nav-accent-text: var(--text);
-		/* The fixed bottom tab bar's height (0 while there is none). Fixed
-		   elements further down, such as the reader's drawer button, keep
-		   clear of the bar with it. */
-		--bottom-bar-height: 0px;
+	/* The frame (#99, design §9 frame A): the window frame in --chrome holds
+	   the bar; the page is a raised --panel inset 0.5rem with large corners.
+	   The page scrolls with the window (not inside the panel), so find in
+	   page, scroll restoration and fragment jumps keep working. */
+	.frame {
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
 		min-height: 100dvh;
+		background: var(--panel);
+	}
+
+	.frame.framed {
+		background: var(--chrome);
+	}
+
+	.panel {
+		flex: 1 0 auto;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		background: var(--panel);
+		color: var(--text);
+	}
+
+	.framed .panel {
+		margin: 0 0.5rem 0.5rem;
+		border-radius: var(--radius-large);
 	}
 
 	.content {
@@ -416,173 +369,86 @@
 		position: absolute;
 		top: 0.5rem;
 		left: 0.5rem;
-		z-index: 100;
+		z-index: var(--layer-modal);
 		padding: 0.5rem 0.9rem;
-		border-radius: 0.5rem;
+		border-radius: var(--radius);
 		background: var(--panel);
 		color: var(--text);
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 		box-shadow: var(--shadow-float);
 		transform: translateY(-200%);
 	}
 
 	.skip-link:focus {
 		transform: none;
-		outline: 2px solid var(--accent);
-		outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
-	.shell {
+	.bar {
+		color: var(--text);
+	}
+
+	.minimal {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.75rem 1.25rem;
-		padding: 0.6rem 1.5rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		justify-content: space-between;
+		gap: var(--space-4);
+		min-height: 3rem;
+		padding: 0 var(--space-3);
 	}
 
 	.brand {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 1.15rem;
-		font-weight: 700;
-		text-decoration: none;
-		color: inherit;
-		padding: 0.2rem 0.45rem;
-		border-radius: 0.5rem;
+		display: inline-grid;
+		place-items: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: var(--radius);
+		color: var(--accent);
 	}
 
-	.brand:hover {
-		background: color-mix(in srgb, currentColor 8%, transparent);
-	}
-
-	.brand[aria-current='page'] {
-		color: var(--nav-accent-text);
-		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
+	.brand:hover,
+	.sign-in:hover {
+		background: var(--raised);
 	}
 
 	.brand:focus-visible,
-	.main-nav a:focus-visible,
-	.footer a:focus-visible,
-	.account button:focus-visible {
-		outline: 2px solid var(--nav-accent);
-		outline-offset: 2px;
-	}
-
-	.main-nav {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem;
-	}
-
-	.main-nav a {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.4rem 0.8rem 0.4rem 0.65rem;
-		border-radius: 999px;
-		color: var(--readable-muted);
-		text-decoration: none;
-		transition:
-			background-color 0.12s ease,
-			color 0.12s ease;
-	}
-
-	.main-nav a:hover {
-		color: var(--text);
-		background: color-mix(in srgb, currentColor 8%, transparent);
-	}
-
-	.main-nav a[aria-current='page'] {
-		font-weight: 600;
-		color: var(--nav-accent-text);
-		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
-	}
-
-	.main-nav a[aria-current='page'] :global(.nav-icon),
-	.footer a[aria-current='page'] :global(.nav-icon) {
-		color: var(--nav-accent);
-	}
-
-	.workspace {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.5rem;
-		margin-left: auto;
-	}
-
-	.account {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.9rem;
-	}
-
-	.username {
-		font-weight: 600;
-	}
-
-	.account button {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		font: inherit;
-		padding: 0.3rem 0.65rem 0.3rem 0.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 999px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-
-	.account button:hover {
-		background: color-mix(in srgb, currentColor 8%, transparent);
-	}
-
-	/* Signed out: the sign-in link sits where the account would. */
-	.account.guest {
-		margin-left: auto;
+	.sign-in:focus-visible,
+	.retry:focus-visible,
+	.notice-dismiss:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.sign-in {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
-		padding: 0.3rem 0.75rem 0.3rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 999px;
+		gap: var(--space-1);
+		min-height: 2.25rem;
+		padding: 0 var(--space-3);
+		border-radius: var(--radius);
 		color: inherit;
 		text-decoration: none;
-		font-weight: 600;
-	}
-
-	.sign-in:hover {
-		background: color-mix(in srgb, currentColor 8%, transparent);
-	}
-
-	.sign-in:focus-visible {
-		outline: 2px solid var(--nav-accent);
-		outline-offset: 2px;
+		font-weight: var(--weight-strong);
 	}
 
 	.workspace-error {
 		margin: 0;
-		padding: 0.5rem 1.5rem;
-		color: var(--readable-bad);
-		font-weight: 600;
-		padding-inline-start: var(--space-2);
+		padding: var(--space-2) var(--space-4);
+		padding-inline-start: var(--space-3);
 		border-inline-start: 3px solid var(--bad);
+		color: var(--readable-bad);
+		font-weight: var(--weight-strong);
 	}
 
-	.workspace-error .retry {
-		margin-left: 0.75rem;
+	.retry,
+	.notice-dismiss {
+		margin-inline-start: var(--space-3);
 		font: inherit;
-		font-weight: 500;
+		font-weight: var(--weight-medium);
 		padding: 0.15rem 0.6rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
+		border: 1px solid var(--hair);
+		border-radius: var(--radius);
 		background: transparent;
 		color: inherit;
 		cursor: pointer;
@@ -592,191 +458,49 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 1rem;
+		gap: var(--space-2) var(--space-4);
 		margin: 0;
-		padding: 0.5rem 1.5rem;
-		background: color-mix(in srgb, var(--nav-accent) 12%, transparent);
-		border-bottom: 1px solid color-mix(in srgb, var(--nav-accent) 30%, transparent);
-	}
-
-	.notice-dismiss {
-		font: inherit;
-		font-size: 0.9rem;
-		padding: 0.2rem 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-
-	.notice-dismiss:focus-visible {
-		outline: 2px solid var(--nav-accent);
-		outline-offset: 2px;
+		padding: var(--space-2) var(--space-4);
+		background: var(--primary-wash);
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.empty-workspaces {
 		margin: 2rem auto 0;
 		max-width: 28rem;
 		padding: 1.25rem 1.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.5rem;
 	}
 
 	.empty-workspaces h2 {
 		margin-top: 0;
 	}
 
-	.footer {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem 1.5rem;
-		padding: 1rem 1.5rem;
-		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		font-size: 0.9rem;
+	.phone {
+		display: none;
 	}
 
-	.footer-links {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem 0.5rem;
-		margin-inline-start: -0.55rem;
-	}
-
-	.footer a {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		padding: 0.3rem 0.65rem 0.3rem 0.55rem;
-		border-radius: 999px;
-		color: var(--readable-muted);
-		text-decoration: none;
-	}
-
-	.footer a:hover {
-		color: var(--text);
-		background: color-mix(in srgb, currentColor 8%, transparent);
-	}
-
-	.footer a[aria-current='page'] {
-		font-weight: 600;
-		color: var(--nav-accent-text);
-		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
-	}
-
-	.version {
-		color: var(--readable-muted);
-	}
-
-	/* Phones and narrow windows: the main nav becomes a fixed bottom tab
-	   bar (icon above label), like a mobile app. The header keeps the
-	   logo, the workspace picker and the account. */
+	/* The phone frame (lib/frame/breakpoint.ts): the phone bar, and the page
+	   takes the whole width. */
 	@media (max-width: 719.98px) {
-		.app.with-bar {
-			--bottom-bar-height: calc(3.75rem + env(safe-area-inset-bottom, 0px));
-			/* Nothing (the footer included) ends up behind the bar. */
-			padding-bottom: var(--bottom-bar-height);
+		.desktop {
+			display: none;
 		}
-
-		/* Keyboard focus, scrollIntoView and fragment jumps stop above the
-		   bar, not behind it (WCAG 2.4.11): the bar's height (the same
-		   expression as --bottom-bar-height, which lives on .app and so
-		   is not visible on the root) plus a margin. The bar is a width
-		   query, so this also covers desktop browsers at high zoom. */
-		:global(html:has(.app.with-bar)) {
-			scroll-padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px) + 0.75rem);
+		.phone {
+			display: block;
 		}
-
-		.shell {
-			flex-wrap: nowrap;
-			gap: 0.5rem;
-			padding: 0.5rem 1rem;
+		.framed .panel {
+			margin: 0;
+			border-radius: 0;
 		}
+	}
 
-		.workspace {
-			min-width: 0;
+	@media (forced-colors: active) {
+		/* Fills vanish: the panel keeps an edge. */
+		.framed .panel {
+			outline: 1px solid CanvasText;
 		}
-
-		.main-nav {
-			position: fixed;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			/* Under the reader drawer (30), its button (25) and lookup
-			   popups (50+). */
-			z-index: 20;
-			box-sizing: border-box;
-			height: var(--bottom-bar-height);
-			flex-wrap: nowrap;
-			justify-content: space-around;
-			gap: 0;
-			padding: 0.3rem 0.5rem env(safe-area-inset-bottom, 0px);
-			overflow-x: auto;
-			background: var(--panel);
-			color: var(--text);
-			border-top: 1px solid var(--hair);
-		}
-
-		.main-nav a {
-			flex: 1 1 0;
-			min-width: 3.5rem;
-			max-width: 7rem;
-			flex-direction: column;
-			justify-content: center;
-			gap: 0.15rem;
-			padding: 0.25rem 0.25rem;
-			border-radius: 0.75rem;
-			font-size: 0.72rem;
-			line-height: 1.1;
-		}
-
-		.main-nav a:focus-visible {
-			outline-offset: -2px;
-		}
-
-		.main-nav .label {
-			max-width: 100%;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		/* The tint sits on the icon, like a mobile tab bar. */
-		.main-nav a[aria-current='page'] {
-			background: none;
-		}
-
-		.main-nav a :global(.nav-icon) {
-			box-sizing: content-box;
-			padding: 0.15rem 0.9rem;
-			border-radius: 999px;
-		}
-
-		.main-nav a[aria-current='page'] :global(.nav-icon) {
-			background: color-mix(in srgb, var(--nav-accent) 16%, transparent);
-		}
-
-		.username {
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-			max-width: 6rem;
-		}
-
-		/* Icon-only on phones; the label stays as the accessible name. */
-		.sign-out {
-			padding: 0.35rem;
-		}
-
-		.sign-out .label {
-			position: absolute;
-			width: 1px;
-			height: 1px;
-			overflow: hidden;
-			clip-path: inset(50%);
-			white-space: nowrap;
+		.brand {
+			color: LinkText;
 		}
 	}
 

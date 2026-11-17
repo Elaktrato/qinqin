@@ -688,7 +688,7 @@ characters; ZWJ, ZWNJ and emoji tag sequences are allowed). Without a name, a
 workspace shows its language; unnamed workspaces of one language are numbered
 ("Chinese", "Chinese 2").
 
-- **Flags.** The header picker and Settings show a flag per language: China for
+- **Flags.** The workspace menu, the phone drawer and Settings show a flag per language: China for
   `zh`, Japan for `ja`, Spain for `es`, a globe for any other language. A single
   unnamed workspace shows only its flag.
 - **Creating.** The language list comes from `GET /api/languages`, which lists
@@ -719,26 +719,40 @@ workspace shows its language; unnamed workspaces of one language are numbered
 - **Defaults.** A user with no workspace gets one unnamed workspace per installed
   language on their first `GET /api/workspaces`. A user who already has a
   workspace is never touched.
-- **Switching** happens in the workspace picker in the header (it can also create
-  one). **Settings** and **Sources** live in the footer of every signed-in page, not in the nav;
-  Settings has three tabs, Workspaces (create, rename, delete), Home (the home
-  page widgets) and Plugins, each with a link of its own (`/settings?tab=home`,
-  `?tab=plugins`). The logo is the home link (there
-  is no Home item); every nav item has an icon, and below 720 px the nav becomes a
-  bottom tab bar. The nav has **Stats** (bar-chart icon) for every workspace; it
-  replaced the former **Map** item, which showed only in zh and ja workspaces.
+- **Switching** happens behind the workspace **flag** in the top bar: it opens the
+  workspace menu (each workspace with its flag, language and name, a check on the
+  current one, and **Manage workspaces**, which opens Settings). New workspaces are
+  made in Settings, Workspaces. Settings has a tab per area, Workspaces (create,
+  rename, delete), Home (the home page widgets), Plugins and so on, each with a
+  link of its own (`/settings?tab=home`, `?tab=plugins`).
+- **The frame.** On wide screens (720 px and up) the page is a raised panel on the
+  window frame, under a top bar: the logo is the home link (there is no Home
+  item), the sections sit in the middle as icons with tooltips (Decks, Reader,
+  then the enabled plugin pages such as Journal and Grammar, then Search and
+  **Stats**; the current one has an accent dot), and on the right the flag and
+  your avatar. The avatar opens the account menu: your name, **Settings**,
+  **Theme** (a quick switch between the themes of the current light or dark
+  mode), **Admin settings** for administrators, **Sources** and **Sign out**.
+  Below 720 px a bar holds a menu button, the page title and the flag; the menu
+  button opens a drawer with the workspaces as a row of flags (tap to switch,
+  + to add one), the sections with their names (Home first) and your account
+  at the bottom. There is no footer and no bottom tab bar. A plugin's section
+  icon comes from its manifest (`icon`, a generic icon otherwise). Stats is there
+  for every workspace; it replaced the former **Map** item, which showed only in
+  zh and ja workspaces.
 - **Public pages.** The Sources page (`/sources`) is open to everyone, signed in
   or not, so the licence and attribution credits are always reachable. Signed out
-  it shows a minimal header (the logo and a **Sign in** link) and the footer, with
-  no nav, workspace picker or other private page; signed in it has the usual
-  shell. A stale token there signs the user out quietly instead of redirecting.
+  it shows a minimal bar (the logo and a **Sign in** link), with no sections,
+  workspace flag or other private page; signed in it has the usual frame. A stale token there signs the user out quietly instead of redirecting.
   `/login` and `/register` are for signed-out visitors only; every other page
   needs a signed-in user. The rules live in `apps/web/src/lib/routeAccess.ts`.
 - **Navigation and focus.** The first Tab stop on every signed-in page (and on the
   public Sources page) is a "Skip to content" link, which moves focus to the page content. The logo is
-  named "qinqin, home". Below 720 px, while the bottom tab bar is shown, the page
-  keeps scroll padding below the focus so a focused control or map cell is not
-  hidden behind the bar.
+  named "qinqin, home"; every icon-only control (sections, flag, avatar, menu
+  button) has a name and a tooltip, and the current section is marked for screen
+  readers. The phone drawer is a modal dialog: focus moves to the current
+  workspace's flag, stays inside until it closes (Escape, a tap outside, a swipe
+  toward the edge, or following a link) and then returns to the menu button.
 - **Deleting.** Settings shows a **Delete** button on each workspace while the
   user has more than one. A modal dialog lists what goes (books with their
   bookmarks and highlights, flashcards and decks, recorded reviews and the rest

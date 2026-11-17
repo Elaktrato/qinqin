@@ -62,6 +62,7 @@ export const WANTED = {
 	external: 'external-link',
 	flag: 'flag',
 	forward: 'chevron-right',
+	grammar: 'spell-check',
 	highlight: 'highlighter',
 	home: 'house',
 	info: 'info',

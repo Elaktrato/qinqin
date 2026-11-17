@@ -370,7 +370,7 @@
 	.opener {
 		position: fixed;
 		right: 0;
-		bottom: calc(1.25rem + var(--bottom-bar-height, 0px));
+		bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
 		z-index: 25;
 		display: inline-flex;
 		align-items: center;

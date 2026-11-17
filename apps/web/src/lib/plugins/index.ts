@@ -106,20 +106,25 @@ export function pluginSlug(id: string): string {
 	return id.startsWith('qinqin-') ? id.slice('qinqin-'.length) : id;
 }
 
+/** A plugin's nav page; `icon` is the manifest's icon name (the frame maps unknown ones to a generic icon). */
+export interface NavPage {
+	slug: string;
+	title: string;
+	href: string;
+	icon?: string;
+}
+
 /**
  * navPages lists the shell nav links of enabled plugins that declare a
  * nav page, in the user's plugin order.
  */
-export function navPages(
-	plugins: WebPlugin[],
-	states: PluginInfo[]
-): { slug: string; title: string; href: string }[] {
+export function navPages(plugins: WebPlugin[], states: PluginInfo[]): NavPage[] {
 	const enabled = plugins.filter((plugin) => pluginEnabled(plugin.manifest.id, states));
 	return orderPlugins(enabled, states).flatMap((plugin) => {
 		const slug = pluginSlug(plugin.manifest.id);
 		return (plugin.pages ?? [])
 			.filter((page) => page.nav)
-			.map((page) => ({ slug, title: page.title, href: `/p/${slug}` }));
+			.map((page) => ({ slug, title: page.title, href: `/p/${slug}`, icon: plugin.manifest.icon }));
 	});
 }
 
@@ -128,10 +133,7 @@ export function navPages(
  * plugin link shows before they are ready or when they failed to load,
  * so a plugin the user disabled never flashes in the nav.
  */
-export function visibleNavPages(
-	plugins: WebPlugin[],
-	state: PluginStatesValue
-): { slug: string; title: string; href: string }[] {
+export function visibleNavPages(plugins: WebPlugin[], state: PluginStatesValue): NavPage[] {
 	return state.status === 'ready' ? navPages(plugins, state.list) : [];
 }
 

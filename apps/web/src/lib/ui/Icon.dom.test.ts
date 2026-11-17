@@ -1,8 +1,6 @@
 import { render } from '@testing-library/svelte';
 import { describe, expect, it } from 'vitest';
 import Icon from './Icon.svelte';
-import NavIcon from '$lib/components/NavIcon.svelte';
-import type { NavIconName } from '$lib/components/navIcons';
 
 function svg(container: HTMLElement): SVGSVGElement {
 	return container.querySelector('svg')!;
@@ -41,17 +39,5 @@ describe('Icon', () => {
 		const px = svg(render(Icon, { name: 'home', size: 18 }).container);
 		expect(px.getAttribute('width')).toBe('18');
 		expect(px.getAttribute('height')).toBe('18');
-	});
-});
-
-describe('NavIcon (kept API, Lucide glyphs)', () => {
-	const names: NavIconName[] = ['search', 'map', 'chart', 'cards', 'book', 'books', 'gear', 'signin', 'signout', 'palette', 'plugin'];
-	it.each(names)('%s draws a 1.5-stroke icon of the set', (name) => {
-		const el = svg(render(NavIcon, { name, size: 20 }).container);
-		expect(el.getAttribute('stroke-width')).toBe('1.5');
-		expect(el.getAttribute('width')).toBe('20');
-		expect(el.getAttribute('aria-hidden')).toBe('true');
-		expect(el.getAttribute('class')).toContain('nav-icon');
-		expect(el.children.length).toBeGreaterThan(0);
 	});
 });

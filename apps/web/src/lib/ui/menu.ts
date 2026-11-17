@@ -4,6 +4,8 @@ import { getContext, setContext } from 'svelte';
 export interface MenuContext {
 	/** close hides the menu; returnFocus moves focus back to its trigger. */
 	close(returnFocus: boolean): void;
+	/** settle refocuses after a keepOpen pick changed the content (the item marked `focus`, else the first). */
+	settle(): void;
 }
 
 const KEY = Symbol('qinqin-menu');

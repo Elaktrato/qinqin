@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { PluginInfo } from '$lib/api/types';
 import { webPlugins } from '$lib/plugins';
 import { allWidgets } from '$lib/widgets/registry';
-import { FLASHCARDS_ID, READER_ID, RESERVED_IDS, coreFeatures, featureEnabled, findFeature, navLinks } from './index';
+import { FLASHCARDS_ID, READER_ID, RESERVED_IDS, coreFeatures, featureEnabled, findFeature } from './index';
 
 function state(id: string, order: number, enabled = true): PluginInfo {
 	return { id, manifest: {}, enabled, order };
@@ -39,32 +39,7 @@ describe('core features', () => {
 	});
 });
 
-describe('navLinks', () => {
-	it('shows nothing until the states are loaded', () => {
-		for (const status of ['idle', 'loading', 'error'] as const) {
-			expect(navLinks({ list: [], status })).toEqual([]);
-		}
-	});
-
-	it('puts the features first in a fixed order, then plugins in the user order', () => {
-		const links = navLinks(
-			ready([
-				// Journal was first among the v0.3.0 plugins: it stays after the features.
-				state('qinqin-journal', 0),
-				state('qinqin-grammar', 1),
-				state(READER_ID, 5),
-				state(FLASHCARDS_ID, 9)
-			])
-		);
-		expect(links.map((l) => l.title)).toEqual(['Decks', 'Reader', 'Journal', 'Grammar']);
-		expect(links[0]).toEqual({ slug: 'flashcards', title: 'Decks', href: coreFeatures[0].href });
-	});
-
-	it('hides a switched-off feature and a disabled plugin', () => {
-		const links = navLinks(ready([state(FLASHCARDS_ID, 0, false), state('qinqin-grammar', 0, false)]));
-		expect(links.map((l) => l.title)).toEqual(['Reader', 'Journal']);
-	});
-});
+// navLinks moved into the frame's sections (lib/frame/sections.test.ts, #99).
 
 describe('feature widgets', () => {
 	it('exist while the feature is on, as in v0.3.0', () => {
