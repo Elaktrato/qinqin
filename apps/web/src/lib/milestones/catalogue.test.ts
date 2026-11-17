@@ -56,7 +56,7 @@ describe('catalogue', () => {
 	it('every level id of the decks contract parses back to its deck id', () => {
 		for (const d of systemDeckIds.cases) {
 			if (d.kind !== 'level') continue;
-			const id = levelMilestoneId(d.packId, d.level as string);
+			const id = levelMilestoneId(d.packId as string, d.level as string);
 			expect(id).toBe(`level-complete:${d.id}`);
 			expect(parseMilestoneId(id)).toEqual({ family: 'level-complete', deckId: d.id });
 		}
