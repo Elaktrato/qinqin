@@ -177,7 +177,8 @@ func (w *rtWorld) snapshot(t *testing.T, mapEntry func(float64) string) string {
 		out = append(out, fmt.Sprintf("BOOK %v ws=%s pos=%v chapters=%v", m["title"], name[m["workspaceId"].(float64)], m["position"], m["chapterCount"]))
 		bm, _ := json.Marshal(getJSON(t, e.ts.URL, fmt.Sprintf("/api/library/books/%d/bookmarks", id), w.alice))
 		hl, _ := json.Marshal(getJSON(t, e.ts.URL, fmt.Sprintf("/api/library/books/%d/highlights", id), w.alice))
-		out = append(out, "BM "+stripIDs(string(bm)), "HL "+stripIDs(string(hl)))
+		// updatedAt is a write stamp a restore resets (the restore time), like the ids.
+		out = append(out, "BM "+stripStamps(stripIDs(string(bm))), "HL "+stripStamps(stripIDs(string(hl))))
 		out = append(out, "CH "+fmt.Sprint(getJSON(t, e.ts.URL, fmt.Sprintf("/api/library/books/%d/chapters/0", id), w.alice)))
 	}
 	ent := getJSON(t, e.ts.URL, fmt.Sprintf("/api/entries/%d", w.e1), w.alice).(map[string]any)
@@ -219,6 +220,8 @@ func rewriteIDs(s string, f func(float64) string) string {
 }
 
 func stripIDs(s string) string { return regexpMust(`"(id|bookId)":\d+,?`).ReplaceAllString(s, "") }
+
+func stripStamps(s string) string { return regexpMust(`,?"updatedAt":"[^"]*"`).ReplaceAllString(s, "") }
 
 func TestRoundTripOnTheSameServer(t *testing.T) {
 	w := newRTWorld(t, 0)
