@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ReadingText from './ReadingText.svelte';
+	import { studyLang } from '$lib/i18n/lang';
 	import type { Reading } from '$lib/api/types';
 	import type { AudioClip } from '$lib/api/audio';
 	import { formatReading } from '$lib/format';
@@ -10,7 +12,8 @@
 		audioFor,
 		lang = '',
 		deviceVoice = false,
-		word = ''
+		word = '',
+		language = ''
 	}: {
 		readings: Reading[];
 		/**
@@ -22,6 +25,8 @@
 		deviceVoice?: boolean;
 		/** The headword, for the play buttons' accessible names. */
 		word?: string;
+		/** The entry's language: the readings' `lang` (lib/i18n/lang.ts). */
+		language?: string;
 	} = $props();
 
 	// The API orders readings, but ord is the contract: sort a copy so a
@@ -35,7 +40,7 @@
 		<ul>
 			{#each ordered as reading, index (`${reading.type}:${reading.ord}:${index}`)}
 				<li data-type={reading.type}>
-					{formatReading(reading.type, reading.value)}
+					<ReadingText type={reading.type} value={reading.value} language={studyLang(language) ?? ''} />
 					{#if audioFor && reading.type === 'pinyin'}
 						<PlayButton
 							clips={audioFor(reading, index) ?? []}

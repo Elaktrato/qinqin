@@ -21,6 +21,7 @@
 	} from '$lib/study/store';
 	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
+	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref } from '../route';
 	import {
 		PAGE_SIZE,
@@ -445,8 +446,10 @@
 								checked={chosen.includes(row.entryId)}
 								onchange={() => (selected = toggleNum(selected, row.entryId))}
 							/>
-							<a class="word" href={`/entry/${row.entryId}`}>{row.written}</a>
-							<span class="reading">{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span>
+							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang($workspaces.current?.language)}>{row.written}</a>
+							<span class="reading" lang={wordReadingLang($workspaces.current?.language)}
+								>{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span
+							>
 							<span class="state">{WORD_STATES.find((s) => s.state === row.state)?.label}</span>
 							<span class="chips">
 								{#each chips(row) as chip (chip.kind)}

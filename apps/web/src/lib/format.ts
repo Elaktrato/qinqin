@@ -22,3 +22,9 @@ export function formatReading(type: string, value: string): string {
 	const label = Object.hasOwn(READING_LABELS, key) ? READING_LABELS[key] : undefined;
 	return label ? t('entry.reading.withLabel', { label: t(label), value }) : value;
 }
+
+/** The interface label of a reading type ("Pinyin"), or null for a pack-defined type shown as its value alone. */
+export function readingLabel(type: string): string | null {
+	const key = type.trim().toLowerCase();
+	return Object.hasOwn(READING_LABELS, key) ? t(READING_LABELS[key]) : null;
+}

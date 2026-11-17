@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
+	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -308,13 +309,15 @@
 			{#each hits as hit (hit.id)}
 				<li class="result">
 					<a class="written" href={`/entry/${hit.id}`} onclick={() => openedHit(hit.id)}
-						onauxclick={(e) => e.button === 1 && openedHit(hit.id)}>{hit.written}</a>
+						onauxclick={(e) => e.button === 1 && openedHit(hit.id)}
+						lang={studyLang(hit.language)}>{hit.written}</a
+					>
 
 					<div class="details">
 						{#if hit.readings.length > 0}
 							<span class="readings">
 								{#each hit.readings as reading (reading.ord)}
-									<span class="reading" data-type={reading.type}>{reading.value}</span>
+									<span class="reading" data-type={reading.type} lang={readingLang(reading.type, hit.language)}>{reading.value}</span>
 								{/each}
 							</span>
 						{/if}

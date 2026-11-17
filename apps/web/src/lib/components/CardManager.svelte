@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
 	import { t } from '$lib/i18n';
+	import { studyLang } from '$lib/i18n/lang';
+	import { workspaces } from '$lib/workspaces';
 	import { createCardActions, type CardActionsState } from '$lib/study/cardActions';
 	import {
 		deleteCards,
@@ -225,7 +227,7 @@
 							onclick={(event) => pick(card, event)}
 							onkeydown={(event) => rowKey(event, card)}
 						/>
-						<span class="word" lang="zh">{label(card)}</span>
+						<span class="word" lang={studyLang($workspaces.current?.language)}>{label(card)}</span>
 						<span class="decks">{decksOf(card)}</span>
 					</label>
 					<button

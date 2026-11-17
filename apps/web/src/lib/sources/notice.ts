@@ -4,6 +4,7 @@
 // renders with Svelte elements, so no notice is ever parsed as HTML.
 // Anything that is not a well-formed https link (http:, javascript:,
 // data:, relative paths, unbalanced brackets) stays plain text.
+import { studyLang } from '$lib/i18n/lang';
 
 export type NoticePart = { type: 'text'; text: string } | { type: 'link'; text: string; href: string };
 
@@ -118,7 +119,7 @@ export function cjkLang(text: string, language?: string): string {
 	if (KANA.test(text)) return 'ja';
 	const tag = (language ?? '').trim();
 	const primary = tag.toLowerCase().split(/[-_]/)[0];
-	if (primary === 'zh') return tag.toLowerCase() === 'zh' ? 'zh-Hans' : tag;
+	if (primary === 'zh') return studyLang(tag) ?? tag;
 	if (primary === 'ja' || primary === 'ko') return tag;
 	return 'und';
 }

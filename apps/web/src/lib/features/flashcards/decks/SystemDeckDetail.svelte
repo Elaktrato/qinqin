@@ -9,6 +9,7 @@
 	import { loadConfig, saveConfig } from '$lib/study/session';
 	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
+	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
 	import { createDecksData } from './decksData.svelte';
@@ -233,8 +234,8 @@
 		<ul class="items">
 			{#each items as item (item.id)}
 				<li>
-					<span class="word">{item.written}</span>
-					<span class="reading">{readingBeside(item.written, item.readings)}</span>
+					<span class="word" lang={studyLang(workspace?.language)}>{item.written}</span>
+					<span class="reading" lang={wordReadingLang(workspace?.language)}>{readingBeside(item.written, item.readings)}</span>
 					<span class="state">{stateLabel(item.id)}</span>
 				</li>
 			{/each}

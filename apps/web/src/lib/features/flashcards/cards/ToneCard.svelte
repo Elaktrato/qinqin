@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { readingLang, studyLang } from '$lib/i18n/lang';
+	import { workspaces } from '$lib/workspaces';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { onDestroy } from 'svelte';
 	import type { Entry } from '$lib/api/types';
@@ -27,6 +29,9 @@
 	}
 
 	let { item, entry, done, onDone, audio }: Props = $props();
+
+	// The workspace's script (a zh-Hant workspace shows traditional forms), else the entry's language.
+	const textLang = $derived(studyLang($workspaces.current?.language ?? entry.language));
 
 	const TONES: { tone: Tone; glyph: string; name: string }[] = [
 		{ tone: 1, glyph: 'ˉ', name: t('flashcards.tone.name1') },
@@ -201,7 +206,7 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<p class="written" lang="zh">{entry.written}</p>
+<p class="written" lang={textLang}>{entry.written}</p>
 <p class="prompt">{t('flashcards.tone.prompt')}</p>
 
 <ol class="syllables" aria-label={t('flashcards.tone.syllables')} data-card-input>
@@ -237,7 +242,7 @@
 						<polyline class="trace" points={polyline(trace, pads[index] ?? null)} />
 					{/if}
 				</svg>
-				<span class="plain" class:char={labels !== null} lang={labels === null ? undefined : 'zh'}>{labels?.[index] ?? syllable.plain}</span>
+				<span class="plain" class:char={labels !== null} lang={labels === null ? readingLang('pinyin', entry.language) : textLang}>{labels?.[index] ?? syllable.plain}</span>
 			</div>
 			<div class="tone-buttons" role="group" aria-label={labels === null
 					? t('flashcards.tone.toneFor', { syllable: syllable.plain })

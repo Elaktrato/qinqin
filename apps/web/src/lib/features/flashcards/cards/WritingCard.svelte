@@ -1,8 +1,9 @@
 <script lang="ts">
+	import ReadingText from '$lib/components/ReadingText.svelte';
+	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { untrack } from 'svelte';
 	import type { Entry } from '$lib/api/types';
-	import { formatReading } from '$lib/format';
 	import { maskWritten, type CardResult, type FlowItem } from '$lib/study/cardFlow';
 	import { loadStrokeData } from '$lib/study/strokeData';
 	import { suggestWritingGrade, type CharOutcome } from '$lib/study/writing';
@@ -145,14 +146,14 @@
 	}
 </script>
 
-<p class="written" aria-label={done ? written : t('flashcards.writing.wordLabel')}>
+<p class="written" lang={studyLang(entry.language)} aria-label={done ? written : t('flashcards.writing.wordLabel')}>
 	{masked}
 </p>
 
 {#if entry.readings.length > 0}
 	<ul class="readings" aria-label={t('flashcards.card.readings')}>
 		{#each entry.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
-			<li>{formatReading(reading.type, reading.value)}</li>
+			<li><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
 		{/each}
 	</ul>
 {/if}

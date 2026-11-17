@@ -18,6 +18,7 @@
 	import { GENERAL_DECK_ID } from '$lib/study/store';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaces } from '$lib/workspaces';
+	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 
 	// The lookup history of the current workspace (#72): what the learner
 	// looked up, add to a deck, remove, clear, and the recording switch. The
@@ -267,8 +268,8 @@
 								checked={selected.includes(row.entryId)}
 								onchange={(e) => toggle(row.entryId, e.currentTarget.checked)}
 							/>
-							<a class="word" href={`/entry/${row.entryId}`}>{row.written}</a>
-							{#if row.reading}<span class="reading">{row.reading}</span>{/if}
+							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang(ws?.language)}>{row.written}</a>
+							{#if row.reading}<span class="reading" lang={wordReadingLang(ws?.language)}>{row.reading}</span>{/if}
 						{/if}
 						<span class="count">×{row.count}</span>
 						<span class="when">{t('lookups.last', { day: dayLabel(row.lastDay, today) })}</span>

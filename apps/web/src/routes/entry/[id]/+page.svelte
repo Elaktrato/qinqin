@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
@@ -21,7 +22,8 @@
 	import { record } from '$lib/events';
 	import { viewPayload } from '$lib/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
-	import { formatReading } from '$lib/format';
+	import ReadingText from '$lib/components/ReadingText.svelte';
+	import { studyLang } from '$lib/i18n/lang';
 	import { languageLabel } from '$lib/languages';
 	import { entryRadicalLinks } from '$lib/radicals/selection';
 	import { workspaces } from '$lib/workspaces';
@@ -189,7 +191,7 @@
 		<header class="head">
 			<div>
 				<div class="headword">
-					<h1 class="written">{entry.written}</h1>
+					<h1 class="written" lang={studyLang(entry.language)}>{entry.written}</h1>
 					<PlayButton
 						clips={headClips}
 						speakText={entry.written}
@@ -199,8 +201,10 @@
 					/>
 				</div>
 				{#if alsoWritten.length > 0}
-					<p class="also-written" lang={entry.language}>
-						{t('entry.page.alsoWritten', { forms: joinForms(alsoWritten, entry.language) })}
+					<p class="also-written">
+						<Msg key="entry.page.alsoWritten" args={{ forms: joinForms(alsoWritten, entry.language) }}
+							>{#snippet forms(text: string)}<span lang={studyLang(entry?.language)}>{text}</span>{/snippet}</Msg
+						>
 					</p>
 				{/if}
 				<div class="chips">
@@ -234,6 +238,7 @@
 				audioFor={audioFor ?? undefined}
 				word={entry.written}
 				lang={entry.language}
+				language={entry.language}
 				deviceVoice={audioSettings.deviceVoice}
 			/>
 			{#if credit}
@@ -256,9 +261,11 @@
 				<ul>
 					{#each entry.variants as variant (variant.id)}
 						<li>
-							<a href={`/entry/${variant.id}`}>{variant.written}</a>
+							<a href={`/entry/${variant.id}`} lang={studyLang(entry.language)}>{variant.written}</a>
 							{#if variant.readings.length > 0}
-								<span class="reading">{formatReading(variant.readings[0].type, variant.readings[0].value)}</span>
+								<span class="reading"
+									><ReadingText type={variant.readings[0].type} value={variant.readings[0].value} language={entry.language} /></span
+								>
 							{/if}
 						</li>
 					{/each}
@@ -289,9 +296,11 @@
 				<ul>
 					{#each chars as char (char.id)}
 						<li>
-							<a href={`/entry/${char.id}`}>{char.written}</a>
+							<a href={`/entry/${char.id}`} lang={studyLang(entry.language)}>{char.written}</a>
 							{#if char.readings.length > 0}
-								<span class="reading">{formatReading(char.readings[0].type, char.readings[0].value)}</span>
+								<span class="reading"
+									><ReadingText type={char.readings[0].type} value={char.readings[0].value} language={entry.language} /></span
+								>
 							{/if}
 						</li>
 					{/each}
@@ -299,7 +308,7 @@
 			</section>
 		{/if}
 
-		<Sentences sentences={entry.sentences} />
+		<Sentences sentences={entry.sentences} language={entry.language} />
 	{/if}
 </main>
 

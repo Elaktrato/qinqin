@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -123,13 +124,7 @@
 	const paragraphs = $derived(content ? content.data.paragraphs.map((p) => displayRuns(p, variant)) : []);
 	const hasRuby = $derived(content?.data.paragraphs.some((p) => p.some((run) => run.ruby)) ?? false);
 	// zh-Hans/zh-Hant pick the right glyph forms in fonts covering both.
-	const textLang = $derived(
-		book?.language === 'zh' && variant !== 'original'
-			? variant === 'simplified'
-				? 'zh-Hans'
-				: 'zh-Hant'
-			: (book?.language ?? '')
-	);
+	const textLang = $derived(studyLang(book?.language, { variant }) ?? '');
 	const chapterCount = $derived(book?.chapterCount ?? 0);
 	const sourceUrl = $derived(safeHttpUrl(book?.sourceUrl ?? ''));
 	// Words looked up in the book are added to study in the book's workspace.

@@ -1,6 +1,0 @@
-{
-	"lang": [
-		"lib/components/CardManager.svelte",
-		"lib/features/flashcards/cards/ToneCard.svelte"
-	]
-}

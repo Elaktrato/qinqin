@@ -2,7 +2,6 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import allowlist from './allowlist.json';
-import pending from './pending.json';
 import { intlFindings, langFindings, markupFindings, tsFindings, type Finding } from './lint';
 
 // The lint against hard-coded interface strings, fixed-locale formatting and literal `lang` attributes (spec
@@ -12,14 +11,13 @@ import { intlFindings, langFindings, markupFindings, tsFindings, type Finding } 
 // - intl: `Intl.*Format(`, `Intl.PluralRules(`, `toLocale*String(` outside lib/i18n/.
 // - lang: a literal `lang="…"` in markup (study text takes `studyLang`, interface text inherits <html lang>).
 //
-// A finding fails unless allowlist.json names it ({file, text, reason}). The text and Intl rules are strict (the
-// extraction baseline is gone, Task 23); pending.json lists only the files whose literal `lang` attributes the study
-// language work (Task 29) replaces, and it only shrinks.
+// A finding fails unless allowlist.json names it ({file, text, reason}). Every rule is strict: the extraction
+// baseline (pending.json) is gone (Tasks 23 and 29).
 
 const src = resolve(__dirname, '../..');
 
 type Rule = 'text' | 'intl' | 'lang';
-const pendingFiles: Record<Rule, string[]> = { text: [], intl: [], lang: pending.lang };
+const pendingFiles: Record<Rule, string[]> = { text: [], intl: [], lang: [] };
 
 /** Test support never ships: tests, `*.test.svelte` stubs, declaration files and `testing/` folders. */
 const isLinted = (rel: string): boolean =>
@@ -61,8 +59,8 @@ describe('the walk', () => {
 });
 
 describe('pending.json', () => {
-	it('holds no text or Intl baseline any more: those rules are strict', () => {
-		expect(Object.keys(pending)).toEqual(['lang']);
+	it('is gone: every rule is strict', () => {
+		expect(Object.keys(import.meta.glob('./pending.json'))).toEqual([]);
 	});
 });
 

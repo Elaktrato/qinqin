@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { glossLang } from '$lib/i18n/lang';
 	import type { SenseView } from '$lib/api/types';
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
@@ -75,7 +76,7 @@
 				<h3>{group.dictionaryName}</h3>
 				<ol class="glosses">
 					{#each group.glosses as gloss, index (index)}
-						<li>{gloss}</li>
+						<li lang={glossLang(undefined)}>{gloss}</li>
 					{/each}
 				</ol>
 				{#if group.license || group.attribution}

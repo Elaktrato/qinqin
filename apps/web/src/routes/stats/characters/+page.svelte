@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { studyLang } from '$lib/i18n/lang';
 	import { tick, untrack } from 'svelte';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
@@ -477,7 +478,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 		return filtered ? t('stats.map.headerShown', { name: base, shown: formatCount(view.shown.length) }) : base;
 	}
 
-	const langTag = $derived(language.toLowerCase().startsWith('ja') ? 'ja' : 'zh-Hans');
+	const langTag = $derived(studyLang(language) ?? '');
 </script>
 
 <!-- The Characters view of Stats: the Stats layout gives the page

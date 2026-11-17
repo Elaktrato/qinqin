@@ -1,8 +1,9 @@
 <script lang="ts">
+	import ReadingText from '$lib/components/ReadingText.svelte';
+	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import type { Entry } from '$lib/api/types';
-	import { formatReading } from '$lib/format';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
 	import type { CardAudio } from '$lib/study/audioCue';
@@ -80,7 +81,7 @@
 		{#if readingShown && faces.readings.length > 0}
 			<ul class="readings" aria-label={t('flashcards.card.readings')}>
 				{#each faces.readings as reading, i (`${reading.type}:${i}`)}
-					<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
+					<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
 				{/each}
 			</ul>
 		{:else if faces.readings.length > 0}
@@ -115,11 +116,11 @@
 				{verdict === 'right' ? t('flashcards.card.correct') : t('flashcards.card.notQuite')}
 			</p>
 		{/if}
-		<p class="written" lang={language}>{faces.written}</p>
+		<p class="written" lang={studyLang(language)}>{faces.written}</p>
 		{#if faces.readings.length > 0}
 			<ul class="readings" aria-label={t('flashcards.card.readings')}>
 				{#each faces.readings as reading, i (`${reading.type}:${i}`)}
-					<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
+					<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
 				{/each}
 			</ul>
 		{/if}
