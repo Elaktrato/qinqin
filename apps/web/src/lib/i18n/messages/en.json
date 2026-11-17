@@ -658,6 +658,7 @@
 	"auth.signIn.username": "Username",
 	"common.action.back": "Back",
 	"common.action.cancel": "Cancel",
+	"common.action.close": "Close",
 	"common.action.continue": "Continue",
 	"common.action.copied": "Copied",
 	"common.action.copy": "Copy",
