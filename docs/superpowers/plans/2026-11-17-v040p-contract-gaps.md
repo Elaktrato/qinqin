@@ -401,3 +401,19 @@ of each other in content but share the web gates; one implementer at a time. Tas
 - Observation (kept, not a bug): a survivor whose own `skipKinds` hold an unknown kind keeps them as stored
   unless a duplicate has `skipKinds` (then the union is cleaned); not pinned, as the wire decode
   (`study/rows.json`) already rejects unknown kinds.
+- Task 6 (deck sessions): 22 `plans`, 3 `steps` cases (drop with backfill, backfill exhausted after 30, bury
+  of a real and a virtual item), 15 `eligible` cases; expectations from a scratch vitest file (deleted) that ran
+  `deckSessionPlan`, `dropItem`, `buryAfterAnswer`, `isEligible` through the same `deckOptions` helper the test
+  uses. Every case was read against its note; seven first-draft inputs did not show their rule (the "settled"
+  cards were still due on `now`, the 33-word backfill case ran out of daily allowance before the backfill
+  bound, the bury case had no later opt-in item) and were re-built — inputs changed, expectations always
+  re-derived from the code. `cardFlow.test.ts` with the fixture absent → FAIL; present → PASS (111); one queue
+  id altered → FAIL. Gates: `npm run check` 0; `npm test` 0 (398 files, 6615 passed); generator `--check` 0.
+- Adaptation: `deck-session.json` holds three named case lists (`plans`, `steps`, `eligible`) instead of one
+  `cases` list (as `scheduler/fsrs.json`); `cards/README.md` says so. Steps of the long backfill case carry
+  `expect` only on the first and the last two drops.
+- Observation (pinned, not a bug): with `newLimit` 0 companions still fill the reserve (the daily allowance
+  admits them) although nothing in the queue can free a slot; harmless, as only a dropped virtual item pulls from
+  the reserve.
+- Observation (pinned, not a bug): `isEligible` for tone reads the session context's language, not the
+  entry's, and only clean toned pinyin counts (`xue2 xi2` is not eligible, `xué xí` is).
