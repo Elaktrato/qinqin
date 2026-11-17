@@ -60,25 +60,54 @@
 		week: { label: 'settings.home.layout.week', description: 'settings.home.layout.weekDescription' }
 	};
 
+	// The layout the server last confirmed: where a failed newest save goes back to.
+	let savedLayout: HeatmapLayout = DEFAULT_HEATMAP_LAYOUT;
+
 	async function loadOptions(): Promise<void> {
 		try {
-			heatmapLayout = (await loadWidgetOptions()).heatmapLayout;
+			heatmapLayout = savedLayout = (await loadWidgetOptions()).heatmapLayout;
 		} catch (err) {
 			// The garden stays checked; a save still re-reads the row first.
 			console.warn('widget options not loaded', err);
 		}
 	}
 
+	// Layout saves queue like the widget layout's (persist below): one at a
+	// time, always of the newest choice. A failed earlier save is superseded by
+	// the newer one; only a failed newest save resets the radio, to the last
+	// layout the server confirmed (#100 review).
+	let layoutInFlight = false;
+	let layoutPending = false;
+
 	async function chooseLayout(next: HeatmapLayout): Promise<void> {
-		const previous = heatmapLayout;
 		heatmapLayout = next;
 		layoutError = '';
+		if (layoutInFlight) {
+			layoutPending = true;
+			return;
+		}
+		layoutInFlight = true;
+		let failure: unknown = null;
 		try {
-			await saveHeatmapLayout(next);
-			announcement = t('settings.home.layoutSaved', { layout: t(LAYOUT_TEXT[next].label) });
-		} catch (err) {
-			heatmapLayout = previous;
-			layoutError = t('settings.home.layoutSaveFailed', { reason: errorMessage(err, t('settings.home.noAnswer')) });
+			do {
+				layoutPending = false;
+				const value = heatmapLayout;
+				try {
+					await saveHeatmapLayout(value);
+					savedLayout = value;
+					failure = null;
+				} catch (err) {
+					failure = err;
+				}
+			} while (layoutPending);
+		} finally {
+			layoutInFlight = false;
+		}
+		if (failure === null) {
+			announcement = t('settings.home.layoutSaved', { layout: t(LAYOUT_TEXT[heatmapLayout].label) });
+		} else {
+			heatmapLayout = savedLayout;
+			layoutError = t('settings.home.layoutSaveFailed', { reason: errorMessage(failure, t('settings.home.noAnswer')) });
 			announcement = layoutError;
 		}
 	}
