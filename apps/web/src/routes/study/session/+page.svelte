@@ -989,10 +989,13 @@ import type { Run } from '$lib/study/vacation';
 	// Refetch when the active workspace changes; the header switcher makes
 	// that possible without leaving the page, and the session is
 	// workspace-scoped just like the setup that created it.
+	// Only the workspace is tracked: load() reads the offline state, which the
+	// load itself changes (the outbox flush, a cached answer), and a tracked
+	// read there reloaded the session for ever in a real browser.
 	$effect(() => {
 		if (missingConfig) return;
 		const workspace = $workspaces.current;
-		void load(workspace?.id ?? null, workspace?.language ?? null);
+		untrack(() => void load(workspace?.id ?? null, workspace?.language ?? null));
 	});
 </script>
 

@@ -379,3 +379,18 @@ describe('personal note on the answer side', () => {
 		expect(screen.queryByRole('note', { name: 'Your note' })).toBeNull();
 	});
 });
+
+describe('the session loads once', () => {
+	it('a change of the offline state (a flushed outbox, a cached answer) does not reload the session', async () => {
+		configure(['vocab']);
+		render(Page);
+		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		expect(loadStudyData).toHaveBeenCalledTimes(1);
+		offline.update((s) => ({ ...s, allSentAt: Date.now() }));
+		offline.update((s) => ({ ...s, queued: 3 }));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(loadStudyData).toHaveBeenCalledTimes(1);
+		expect(screen.getByLabelText('Vocab card')).toBeTruthy();
+		resetOffline();
+	});
+});
