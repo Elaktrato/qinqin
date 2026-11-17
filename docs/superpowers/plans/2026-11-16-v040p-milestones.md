@@ -433,3 +433,30 @@ Re-read of spec and plan against the built items 4 and 5 (2026-11-17, docs only,
   refused row is not seen on other devices (one extra card there).
 - Ruling: a `read` event without `bookId` counts; a `journal` event without a string `entryId` does not — agrees
   with the heatmap and the reading totals — cost: an old numeric-id journal event earns nothing.
+
+Build (2026-11-17, Tasks 1–11; Task 12 is the orchestrator's):
+
+- Adaptation: item 6 merged (`9f0be5c`), but `lib/eventPayloads.ts` has **builders** only (`readPayload`,
+  `journalPayload`), no parsers. `read` is counted through `readSeconds` (`stats/readingTime.ts`, which already
+  pins the consume rule of `events/payloads.json`); Task 3 adds the one missing reader, `journalEntryId(payload)`
+  (a non-empty string or null), to `lib/eventPayloads.ts` beside its builder, tested there.
+- Adaptation: `docs/contracts/overview.md` also lists `milestones/` in "Read order" (between `weekly/` and
+  `reader/`): `contractsDocs.test.ts` requires every folder there.
+- Ruling: Task 1 adds `lib/milestones/fixtures.test.ts` (rule names, unique case names, id grammar, level ids
+  against `decks/system-deck-ids.json`, plan ids = every unseen id) — the contracts coverage guard needs every
+  fixture named by a test in the commit that adds it; the behaviour tests follow in Tasks 2–6 — cost: one small
+  extra test file.
+- Ruling: `reached.json` gives `enabled` as the feature switches `{flashcards, reader, journal}` (the families
+  follow from `enabledFamilies` and the language) and `expect` lists every reached id of both the log and the
+  replay families; each test file checks its own families — the fixture pins the whole derivation of a case, as
+  Android will run it — cost: the log and replay tests filter `expect`.
+- Ruling: the fixtures were derived by a scratch Python reference (not committed) that computes the replay
+  families from **snapshots** at every distinct timeline instant (no incremental state) and the days with
+  `zoneinfo`; every case's `note` holds a hand check — an implementation-independent oracle for the incremental
+  sweep — cost: none.
+- Ruling: character milestones count every live card of the mastery kinds, without a deck scope, as the
+  character map and the weekly "characters learned" do; mature words keep the deck scope of the decks view —
+  one meaning per number across the app — cost: none.
+- Adaptation: backup is pinned twice: the two `pluginRow` cases of `backup/remap.json` and a Go pinning test
+  `server/internal/backup/milestones_test.go` (export: two live rows, the tombstone left out; restore: rows in
+  the remapped zh / ja workspaces, key and data unchanged). Both pass without Go code changes (generic path).
