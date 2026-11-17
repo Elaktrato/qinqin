@@ -490,3 +490,44 @@ Build (2026-11-17, Tasks 1–11; Task 12 is the orchestrator's):
   mean sits within 1e-6 of a rounding edge; the seeded snapshot equivalence tests still pass. Test-first evidence for
   the guard: a stub loader that rebuilds timelines (`timelinesFor([...reviews], DEFAULT_W, <another clock>)`)
   failed the "no replay" assertion; a copied log on the same clock does not rebuild (memoised by `reviewsKey`).
+
+Real-app check (2026-11-17, Task 12 Step 1 as dispatched; no browser):
+
+- Setup: worktree copied (`rsync`, no `node_modules` / `.git`) to a scratch dir, server built under the Go lock
+  (`go build ./cmd/qinqin`, exit 0) **without** an embedded web build (API check only; the SPA served the
+  placeholder), run with a fresh data dir on `127.0.0.1:18471`. A scratch Python script (not committed) drove it
+  with bearer tokens: user 1 (admin, first registration), users 2 and 3 registered by user 1; workspaces A (zh),
+  B (ja) of user 1. 32 / 32 checks passed:
+  - `POST /api/sync/push` of 6 `milestone:<id>` rows into A (one request, no `deletedAt`, as
+    `saveSeenMilestones`) → `dataAccepted: 6`; one into B → 1; `PUT /api/plugins/qinqin-flashcards/data/milestone:days-active:7?workspace=A`
+    → 200 and `GET` returns it; a push of a live key with an `updatedAt` one hour older → `dataSkipped: 1`, row
+    unchanged; user 2 pushing into A → 404.
+  - `GET /api/sync/pull?v=2&collections=pluginData&workspace=A&limit=2` → 4 pages, exactly the 7 rows of A with the
+    full row shape, `deletedAt: null`, data unchanged; `workspace=B` → only B's row; user 2's pull has none, user 2
+    with `workspace=A` → 404.
+  - `DELETE …/milestone:streak:7?workspace=A` → 204; pull without `tombstones` → 6 live, `streak:7` absent; with
+    `tombstones=1` → the `streak:7` tombstone (`deletedAt` set); `tombstones=2` → 400.
+  - Not typed: a v2 pull of `cards,decks,deckSettings,limits,fsrsSets,fsrsActive` (with tombstones) holds no
+    `milestone` text; the legacy pull (`collections=pluginData`) ships them as plain `qinqin-flashcards` rows (7 live);
+    `GET /api/plugins/qinqin-flashcards/data?workspace=A` lists them.
+  - `POST /api/account/export` + `GET` of the ticket URL: `plugin-data/*.jsonl` holds the 7 live rows (A's 6 and
+    B's 1), the `streak:7` tombstone is left out, `milestone` appears in no other archive file.
+  - Restore into user 2 (`POST /api/account/restore` → `ready` → `POST /api/account/restore/{token}`): workspaces
+    "Milestones A" / "Milestones B" with new ids (4, 5); A has the 6 rows, B `streak:3`, all `workspaceId`
+    remapped, data unchanged, no `milestone:` tombstone at all (`tombstones=1` pull), no `streak:7`; user 1's rows
+    untouched.
+  - The v1 sample (`docs/contracts/backup/sample-v1`, zipped with `manifest.json` last) restores into user 3
+    (`ready`, 8 plugin rows, 6 events, 2 workspaces, a book) and a v2 pull afterwards answers 200 (typed rows
+    adopted: `decks` 1, `deckSettings` 1, `limits` 2, `fsrsSets` 1, `fsrsActive` 1).
+- Observation (item 5 behaviour, not a milestones defect): a v2 round's `until` is the server clock truncated to
+  the second (`sync/page.go`), so a fresh round started in the same second as a write does not ship that row
+  (the first script run pulled 0 rows right after the pushes; with a 1.1 s pause every check passed). For
+  milestones this is covered by the rule "seen = live ∪ pending" (`prunePending` drops only ids that are live),
+  so a reload right after `markSeen` shows no card again; the row arrives with the next load.
+- Sweep timing (a one-off vitest file in the worktree, deleted, never committed; Node 26, 4 cores, WSL2): 2 000
+  vocab cards, 20 000 seeded reviews over 365 days, 1 500-glyph universe, 6 word levels of 300 members:
+  `timelinesFor` + `of()` for every card 290 ms, `reachedFromReplay` sweep 181 ms (8 replay ids), the same call
+  again on the same timelines 10 ms (memo), `reachedFromLog` 92 ms (26 log ids).
+- Not run here: the Task 12 reached-day assertions over a real event log (cards, 120 reviews, `read` / `journal`
+  events, Berlin zone) through a `realapp.check.test.ts` against the server; Step 2 gates. Defects found: none.
+- Cleanup: server killed, scratch copy, binary, data dir and script deleted; `git status` clean before this commit.
