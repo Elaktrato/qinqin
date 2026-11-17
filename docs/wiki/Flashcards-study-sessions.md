@@ -16,7 +16,7 @@ You can also draw from a level instead of a deck: choose **By level**, pick an i
 |---|---|---|
 | Vocab | See the word and readings and the example sentence with the word blanked; press **Show answer** for the meanings | any word |
 | Word Salad | Rebuild the example sentence from shuffled tiles, then **Check** (or **Show answer**) | an example sentence |
-| Writing | Draw each Han character stroke by stroke (order and direction are checked); **Reveal character** animates it | Han characters with bundled stroke data |
+| Writing | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character | Han characters with stroke data from the installed strokes pack |
 | Tone | Swipe the tone's shape on each syllable pad, use the tone buttons, or press 1 to 5 | a Chinese word with pinyin (Chinese workspaces only) |
 | Reverse | See the meaning, recall the word; optional **Show reading** hint and typing, then **Show answer** | a word (not a character) with a meaning |
 | Cloze | Fill the gap in an example sentence of the word (choose at first, type once learned) | a word with an example sentence that contains it |
@@ -27,13 +27,32 @@ Sentence, writing and tone cards are **companions** of vocab cards: a companion 
 
 They are opt-in per deck: each deck row on `/study` has a **Reverse** and a **Cloze** switch. A deck that never turns them on behaves as before. After you answer a reverse or cloze card of a word, its other cards are buried until your next learner day (they stay due but are left out of the queue and counts); vocab, sentence, writing and tone cards do not bury each other. Reverse and cloze reviews give XP and count for streaks and the heatmap but not for character mastery.
 
+## The session screen
+
+A session is an open page, not a card in a box. At the top: a close button (back to `/study`), a thin progress line and the count. Every card type then has the same four parts in the same places: the **task name** in the accent colour (with the deck and level on the right, and small labels such as the Word Salad tier, "Again, look 2 of 3" on a re-show, or "new"), the **prompt**, the **answer area** (nothing, an underlined field, choices, word tiles, the writing pad or the tone pads) and, below a thin line, the **answer** (reading and play button, meanings and source, your note). The card types are not colour-coded.
+
+The session names each exercise by what you do; settings, decks and the XP breakdown keep the card type names:
+
+| On the card | Card type |
+|---|---|
+| Recognise | Vocab |
+| Recall | Reverse |
+| Fill the gap | Cloze |
+| Build the sentence | Word Salad |
+| Write | Writing |
+| Tones | Tone |
+
+The actions sit at the bottom of the screen. Before the answer there is one button: **Show answer** (Recognise; Recall while the field is empty; Fill the gap when choosing, where picking a choice is the answer), **Check** (Recall once something is typed, Fill the gap when typing, Build the sentence, Tones) or **Show strokes** (Write; only once the character's stroke data has loaded). After the answer the four grade buttons take its place.
+
 ## Your notes on the answer side
 
 When a card's answer is shown, your note on the word (see [Searching and entries](Searching-and-entries)) appears below the card, for every card type, level sessions included. It never shows before the answer, since a mnemonic often gives it away. Notes are loaded once when a session starts, so a note edited meanwhile in another tab appears in the next session; an offline session shows none, and a session never waits for them. Turn them off per workspace in Settings, Study: **Show my notes on the answer side**.
 
 ## Grading
 
-Grade each card **Again**, **Hard**, **Good** or **Easy** (keys 1 to 4). After a check the exercise suggests a grade by highlighting and focusing a button; it never submits one, and never suggests Easy.
+Grade each card **Again**, **Hard**, **Good** or **Easy** (keys 1 to 4). Under each grade its button shows when the card would come back with it (`<1m`, `6m`, `10m`, `1d`, `4d`, `2 mths`, `1.4y`): the same scheduler computes it from the card's history, so the label is the schedule the grade gives. Screen readers hear it in full ("Good, next review in 10 minutes, key 3"), and after a grade a short message confirms it ("Good. Next review in 10 minutes."); focus then moves to the next card's name. A re-show of a card you already graded in this session is practice: its buttons say **practice** instead of an interval, and nothing is recorded.
+
+After a check the exercise suggests a grade: the suggested button gets a faint wash and a full-strength line, is focused and is named "(suggested)"; it never submits one, and never suggests Easy.
 
 | Type | Good | Hard | Again |
 |---|---|---|---|
@@ -41,7 +60,7 @@ Grade each card **Again**, **Hard**, **Good** or **Easy** (keys 1 to 4). After a
 | Writing | no mistakes | mistakes on at most 25 % of the strokes | more mistakes, or a revealed character |
 | Tone | all tones right | one tone wrong | two or more wrong |
 
-Keys: Space or Enter shows a vocab answer; in Tone 1 to 5 set the highlighted syllable's tone (5 is neutral), arrow keys move, Backspace clears, Enter checks.
+Keys (unchanged): Space or Enter shows a Recognise answer (and a Recall answer outside the field); P plays the word after the answer; in Tone 1 to 5 set the highlighted syllable's tone (5 is neutral), arrow keys move, Backspace clears, Enter checks.
 
 Word Salad gets harder as a card settles: new or short-memory cards show word tiles with the translation, middle cards hide the translation behind a reveal (counts as a hint), and long-memory cards (stability of 21 days or more) split words into single characters.
 

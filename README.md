@@ -1020,8 +1020,16 @@ workspace (the home widget counts the same types).
 |---|---|---|
 | **Vocab** | See the word, its readings and the example sentence with the word blanked, then **Show answer** for the meanings | any word |
 | **Word Salad** | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, **Check**, or **Show answer** | an example sentence |
-| **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Reveal character** animates it | Han characters with bundled stroke data; kana stay visible |
+| **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character | Han characters with stroke data from the installed strokes pack; kana stay visible |
 | **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
+
+**The session** is an open page (#101): a close button, a thin progress line and the
+count at the top; every card type has its task name (Recognise, Recall, Fill the gap,
+Build the sentence, Write, Tones) with the deck and level, the prompt, the answer area and
+the answer below a thin line; one action button docked at the bottom before the answer,
+and after it four grade buttons that each show the interval that grade gives (`<1m`,
+`6m`, `1d`, …, computed by the same scheduler; a re-show says **practice**). Keys are
+unchanged.
 
 **Reverse and cloze cards** are opt-in per deck. Each deck row on `/study` has a
 Reverse and a Cloze switch (stored per deck, General included); a deck that never
