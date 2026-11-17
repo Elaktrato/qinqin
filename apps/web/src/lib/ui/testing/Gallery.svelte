@@ -7,6 +7,7 @@
 	import Button from '../Button.svelte';
 	import Chip from '../Chip.svelte';
 	import Dialog from '../Dialog.svelte';
+	import Drawer from '../Drawer.svelte';
 	import Field from '../Field.svelte';
 	import Flag from '$lib/components/Flag.svelte';
 	import Icon from '../Icon.svelte';
@@ -150,6 +151,16 @@
 					<Button tone="danger">Delete</Button>
 				{/snippet}
 			</Dialog>
+		</div>
+	</section>
+
+	<section data-gallery="Drawer">
+		<h2>Drawer</h2>
+		<div class="frame">
+			<Drawer open label="Menu">
+				<a href="#home">Home</a>
+				<a href="#decks">Decks</a>
+			</Drawer>
 		</div>
 	</section>
 
