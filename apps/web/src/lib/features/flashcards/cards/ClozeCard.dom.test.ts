@@ -5,6 +5,7 @@ import type { FlowItem } from '$lib/study/cardFlow';
 import { clozePrompt } from '$lib/study/cloze';
 
 import ClozeCard from './ClozeCard.svelte';
+import CardHarness from '../face/testing/CardHarness.svelte';
 
 const entry = { id: 1, language: 'zh', kind: 'word', written: '喜欢', readings: [], senses: [], variants: [], sentences: [], badges: [] } as unknown as Entry;
 const sentence = { id: 9, entryId: 1, sourcePack: 'p', userId: null, hanzi: '我喜欢喝茶，他也喜欢。', pinyin: 'wo3 xi3 huan5', translation: 'I like tea, he does too.' } as Sentence;
@@ -18,7 +19,8 @@ afterEach(cleanup);
 
 function setup(over: Record<string, unknown> = {}) {
 	const onDone = vi.fn();
-	const view = render(ClozeCard, {
+	// The card renders inside the study face (#101): the harness provides it.
+	const props = {
 		item,
 		entry,
 		sentence,
@@ -30,7 +32,8 @@ function setup(over: Record<string, unknown> = {}) {
 		done: false,
 		onDone,
 		...over
-	});
+	};
+	const view = render(CardHarness, { card: ClozeCard, cardProps: props, kindLabel: 'Fill the gap', done: props.done as boolean });
 	return { onDone, ...view };
 }
 
@@ -126,5 +129,44 @@ describe('ClozeCard extra gaps', () => {
 		const gaps = [...container.querySelectorAll('.gap')].map((g) => g.textContent);
 		expect(gaps[0]).toContain('食べて');
 		expect(gaps[1]).toContain('食べた');
+	});
+});
+
+describe('ClozeCard on the open page (#101)', () => {
+	const choices = ['朋友', '喜欢', '学习', '工作'];
+
+	it('type mode: primary Check disabled while empty, Show answer is a plain button in the work area', async () => {
+		const { onDone } = setup();
+		const check = screen.getByRole('button', { name: 'Check' }) as HTMLButtonElement;
+		expect(check.closest('.dock')).not.toBeNull();
+		expect(check.disabled).toBe(true);
+		const giveUp = screen.getByRole('button', { name: 'Show answer' });
+		expect(giveUp.closest('.face-work')).not.toBeNull();
+		expect(giveUp.classList.contains('plain')).toBe(true);
+		await fireEvent.input(screen.getByLabelText('Type the word'), { target: { value: '喜欢' } });
+		expect(check.disabled).toBe(false);
+		await fireEvent.click(check);
+		expect(onDone.mock.calls[0][0].suggested).toBe(3);
+	});
+
+	it('choose mode: primary Show answer gives up; choices are buttons with their digit', async () => {
+		const { onDone } = setup({ mode: 'choose', choices });
+		const buttons = [...document.querySelectorAll('.face-work .choice')] as HTMLButtonElement[];
+		expect(buttons.map((b) => b.getAttribute('aria-keyshortcuts'))).toEqual(['1', '2', '3', '4']);
+		expect(buttons.map((b) => b.querySelector('kbd')?.textContent)).toEqual(['1', '2', '3', '4']);
+		const giveUp = screen.getByRole('button', { name: 'Show answer' });
+		expect(giveUp.closest('.dock')).not.toBeNull();
+		await fireEvent.click(giveUp);
+		expect(onDone.mock.calls[0][0].suggested).toBe(1);
+	});
+
+	it('the sentence is the prompt; the feedback has a shape', async () => {
+		setup();
+		expect(document.querySelector('.face-prompt .fp-sentence')).not.toBeNull();
+		await fireEvent.input(screen.getByLabelText('Type the word'), { target: { value: '喜欢' } });
+		await fireEvent.keyDown(screen.getByLabelText('Type the word'), { key: 'Enter' });
+		const status = screen.getByRole('status');
+		expect(status.textContent).toContain('Correct!');
+		expect(status.querySelector('svg')).not.toBeNull();
 	});
 });

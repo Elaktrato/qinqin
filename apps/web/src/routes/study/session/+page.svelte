@@ -85,14 +85,28 @@ import type { Run } from '$lib/study/vacation';
 	import { workspaces } from '$lib/workspaces';
 	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
 	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
+	import StudyFace from '$lib/features/flashcards/face/StudyFace.svelte';
+	import GradeBar from '$lib/features/flashcards/face/GradeBar.svelte';
+	import { provideCardFace } from '$lib/features/flashcards/face/cardFace.svelte';
+	import { KIND_TASK_LABELS } from '$lib/features/flashcards/face/kinds';
+	import { nextIntervals } from '$lib/study/scheduler';
+	import { longInterval } from '$lib/study/intervalText';
+	import { formatNumber } from '$lib/i18n/format';
+	import Button from '$lib/ui/Button.svelte';
+	import Chip from '$lib/ui/Chip.svelte';
+	import Section from '$lib/ui/Section.svelte';
+	import Stat from '$lib/ui/Stat.svelte';
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
-	const GRADE_LABELS: { grade: ReviewGrade; label: string }[] = [
-		{ grade: 1, label: t('study.grade.again') },
-		{ grade: 2, label: t('study.grade.hard') },
-		{ grade: 3, label: t('study.grade.good') },
-		{ grade: 4, label: t('study.grade.easy') }
-	];
+	const GRADE_NAMES: Record<ReviewGrade, string> = {
+		1: t('study.grade.again'),
+		2: t('study.grade.hard'),
+		3: t('study.grade.good'),
+		4: t('study.grade.easy')
+	};
+
+	// The open page (#101): the card registers its primary action here.
+	provideCardFace();
 
 	const KIND_LABELS: Record<StudyCardKind, string> = {
 		vocab: t('study.cardType.vocab'),
@@ -173,6 +187,9 @@ import type { Run } from '$lib/study/vacation';
 		const scheme = schemes.find(
 			(candidate) => candidate.id === config.schemeId && candidate.language === language
 		);
+		if (scheme !== undefined && config.levelName !== null) {
+			sessionLevel = t('study.session.levelName', { scheme: scheme.name, level: config.levelName });
+		}
 		if (scheme === undefined) {
 			throw new LevelWorkspaceMismatch(
 				t('study.session.schemeMissing')
@@ -258,6 +275,15 @@ import type { Run } from '$lib/study/vacation';
 		}
 	}
 	let grading = $state(false);
+	// The names of the workspace's decks (deck · level on the kind label).
+	let deckNames = $state.raw<Map<string, string>>(new Map());
+	// A level session's level, as "JLPT kanji N5".
+	let sessionLevel = $state('');
+	// The polite announcement of the last grade (outside the card, so it survives the next card).
+	let gradedMessage = $state('');
+	// When the current card was finished: the interval preview's `now`.
+	let finishedAt = $state<number | null>(null);
+	let faceHeading = $state<HTMLElement>();
 
 	// The card being shown and how far the learner got with it. `done`
 	// unlocks the grade buttons; `suggested` is preselected on them.
@@ -396,6 +422,9 @@ import type { Run } from '$lib/study/vacation';
 		pendingEntryId = null;
 
 		sessionNotes = new Map();
+		deckNames = new Map();
+		sessionLevel = '';
+		gradedMessage = '';
 		if (workspaceId === null) {
 			noWorkspace = true;
 			loading = false;
@@ -431,6 +460,7 @@ import type { Run } from '$lib/study/vacation';
 			sessionVacation = loaded.vacation;
 			const w = weights;
 			cards = data.cards;
+			deckNames = new Map(data.decks.map((deck) => [deck.id, deck.name]));
 			const now = new Date();
 			// The order of new cards (#75): ranks or level keys only for entries
 			// that can be new; offline or on failure the order added, with a note.
@@ -768,6 +798,7 @@ import type { Run } from '$lib/study/vacation';
 			suggested = null;
 			doneMeta = {};
 			gradeError = '';
+			finishedAt = null;
 		});
 		if (item === undefined || entry === undefined) return;
 
@@ -796,9 +827,41 @@ import type { Run } from '$lib/study/vacation';
 	}
 
 
+	/**
+	 * The next interval of each grade (#101): the same replay, weights and
+	 * study clock as the grade itself, at the moment the card was finished.
+	 * A re-show is practice (never recorded): no interval.
+	 */
+	const intervals = $derived.by((): Record<ReviewGrade, number> | null => {
+		if (!done || resolved === null || finishedAt === null || resolved.item.reshow !== undefined) return null;
+		const item = resolved.item;
+		return nextIntervals(
+			item.virtual ? null : item.cardId,
+			[...reviews, ...sessionReviews],
+			new Date(finishedAt),
+			weights,
+			sessionClock
+		);
+	});
+
+	/** deckLevelText: the card's first deck (General for general) and the level, "General · JLPT kanji N5". */
+	function deckLevelText(item: FlowItem): string | null {
+		const deckId = (item.card?.deckIds ?? item.deckIds ?? [])[0];
+		const deck =
+			deckId === undefined ? '' : deckId === 'general' ? t('flashcards.deck.general') : (deckNames.get(deckId) ?? '');
+		const entry = entries[item.entryId];
+		const badge = entry?.badges?.[0];
+		const level =
+			sessionLevel ||
+			(badge === undefined ? '' : t('study.session.levelName', { scheme: badge.schemeName, level: badge.levelName }));
+		if (deck && level) return t('study.session.deckLevel', { deck, level });
+		return deck || level || null;
+	}
+
 	/** onCardDone unlocks grading and preselects the card's suggestion. */
 	async function onCardDone(result: CardResult): Promise<void> {
 		if (resolved === null || done) return;
+		finishedAt = Date.now();
 		done = true;
 		suggestionFocusedAt = null;
 		// Easy is never suggested automatically.
@@ -854,6 +917,7 @@ import type { Run } from '$lib/study/vacation';
 
 		const item = current.item;
 		const meta: ReviewMeta = { ...doneMeta };
+		const shownIntervals = intervals;
 
 		gradeError = '';
 		grading = true;
@@ -901,8 +965,12 @@ import type { Run } from '$lib/study/vacation';
 					sessionReview(result.card, value, workspaceId, item.kind, meta)
 				];
 			}
-			// The focused grade button is disabled for the next card; drop the
-			// focus so Space/Enter reach the window in every browser.
+			gradedMessage =
+				shownIntervals === null
+					? t('study.session.gradedPractice', { grade: GRADE_NAMES[value] })
+					: t('study.session.graded', { grade: GRADE_NAMES[value], when: longInterval(shownIntervals[value]) });
+			// The grade bar goes with the card; the next card's heading takes the
+			// focus (below), so Space/Enter keep reaching the window.
 			if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 			buryNote = '';
 			if (result !== null) {
@@ -923,6 +991,9 @@ import type { Run } from '$lib/study/vacation';
 			}
 			index = step.index;
 			ensureEntry(queue[index]);
+			// Screen readers hear the new card; keyboard users keep Space/Enter.
+			await tick();
+			faceHeading?.focus();
 		} finally {
 			grading = false;
 		}
@@ -989,10 +1060,13 @@ import type { Run } from '$lib/study/vacation';
 	// Refetch when the active workspace changes; the header switcher makes
 	// that possible without leaving the page, and the session is
 	// workspace-scoped just like the setup that created it.
+	// Only the workspace is tracked: load() reads the offline state, which the
+	// load itself changes (the outbox flush, a cached answer), and a tracked
+	// read there reloaded the session for ever in a real browser.
 	$effect(() => {
 		if (missingConfig) return;
 		const workspace = $workspaces.current;
-		void load(workspace?.id ?? null, workspace?.language ?? null);
+		untrack(() => void load(workspace?.id ?? null, workspace?.language ?? null));
 	});
 </script>
 
@@ -1002,49 +1076,45 @@ import type { Run } from '$lib/study/vacation';
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="page-body session">
+<div class="page-body session" class:open={currentItem !== undefined && !complete}>
 	{#if missingConfig}
 		<p class="hint" role="status">{t('study.session.opening')}</p>
 	{:else if workspaceMismatch}
-		<section class="state" aria-labelledby="mismatch-heading">
-			<h1 id="mismatch-heading">{t('study.session.unavailable')}</h1>
+		<Section title={t('study.session.unavailable')} level={2}>
 			<p class="error" role="alert">{workspaceMismatch}</p>
-			<a href="/study">{t('study.session.back')}</a>
-		</section>
+			<div class="actions"><Button href="/study">{t('study.session.back')}</Button></div>
+		</Section>
 	{:else if loadError}
-		<section class="state" aria-labelledby="error-heading">
-			<h1 id="error-heading">{t('study.session.unavailable')}</h1>
+		<Section title={t('study.session.unavailable')} level={2}>
 			<p class="error" role="alert">{loadError}</p>
-			<button type="button" onclick={retryLoad}>{t('study.session.retry')}</button>
-			<a href="/study">{t('study.session.back')}</a>
-		</section>
+			<div class="actions">
+				<Button variant="primary" onclick={retryLoad}>{t('study.session.retry')}</Button>
+				<Button href="/study">{t('study.session.back')}</Button>
+			</div>
+		</Section>
 	{:else if noWorkspace}
-		<section class="state">
-			<h1>{t('study.session.noWorkspace')}</h1>
+		<Section title={t('study.session.noWorkspace')} level={2}>
 			<p class="hint">{t('study.session.noWorkspaceText')}</p>
-			<a href="/study">{t('study.session.back')}</a>
-		</section>
+			<div class="actions"><Button href="/study">{t('study.session.back')}</Button></div>
+		</Section>
 	{:else if loading}
 		<p class="hint" role="status">{t('study.session.loading')}</p>
 	{:else if queue.length === 0}
-		<section class="state" aria-labelledby="empty-heading">
-			<h1 id="empty-heading">{t('study.session.empty')}</h1>
-			<p>{t('study.session.emptyText')}</p>
-			<a href="/study">{t('study.session.back')}</a>
-		</section>
+		<Section title={t('study.session.empty')} level={2}>
+			<p class="hint">{t('study.session.emptyText')}</p>
+			<div class="actions"><Button href="/study">{t('study.session.back')}</Button></div>
+		</Section>
 	{:else if complete}
-		<section class="summary" aria-labelledby="summary-heading">
-			<h1 id="summary-heading">{t('study.session.complete')}</h1>
-			<p class="stat">
-				<strong>{sessionReviews.length}</strong>
-				{t('study.session.reviews', { count: sessionReviews.length })}
-			</p>
-			{#if reshown > 0}
-				<p class="stat">
-					<strong>{reshown}</strong> {t('study.session.reshows', { count: reshown })}
-				</p>
-			{/if}
-			<p class="stat"><strong>+{sessionXp}</strong> {t('study.session.xp')}</p>
+		<h1 class="summary-title">{t('study.session.complete')}</h1>
+		<Section>
+			<div class="stats">
+				<Stat value={formatNumber(sessionReviews.length)} label={t('study.session.reviews', { count: sessionReviews.length })} />
+				{#if reshown > 0}
+					<Stat value={formatNumber(reshown)} label={t('study.session.reshows', { count: reshown })} />
+				{/if}
+				<Stat value={t('study.session.xpGained', { xp: formatNumber(sessionXp) })} label={t('study.session.xp')} />
+				<Stat value={formatNumber(progress.level)} label={t('study.session.level')} />
+			</div>
 			<ul class="breakdown" aria-label={t('study.session.xpByType')}>
 				{#each STUDY_KINDS as kind (kind)}
 					{#if kindXp[kind] > 0}
@@ -1055,7 +1125,8 @@ import type { Run } from '$lib/study/vacation';
 					<li>{t('study.session.dailyBonus')} <strong>+{dailyBonusXp}</strong></li>
 				{/if}
 			</ul>
-			<p class="stat">{t('study.session.level')} <strong>{progress.level}</strong></p>
+		</Section>
+		<Section>
 			<div
 				class="bar"
 				role="progressbar"
@@ -1069,68 +1140,88 @@ import type { Run } from '$lib/study/vacation';
 			<p class="hint">
 				{t('study.session.xpToLevel', { into: progress.xpInto, next: progress.xpForNext, level: progress.level + 1 })}
 			</p>
-			<p class="stat">
+			<p class="streak">
 				<span aria-hidden="true">🔥</span> {t('study.session.streak')} <strong>{streak.current}</strong>
 				{t('study.session.streakDays', { count: streak.current })}
 			</p>
-			<Mascot
-				level={progress.level}
-				streak={streak.current}
-				todayDone={streak.todayDone}
-				size={72}
-			/>
-			<a href="/study">{t('study.session.back')}</a>
-		</section>
-	{:else}
-		<header class="top">
-			<h1>{t('study.setup.title')}</h1>
-			<p class="progress" aria-live="polite">
-					{#if queueProgress.pending > 0}{t('study.session.progressRepeat', {
-							position: queueProgress.position,
-							total: queueProgress.total,
-							count: queueProgress.pending
-						})}{:else}{queueProgress.position} / {queueProgress.total}{/if}
-				</p>
-			<a href="/study">{t('study.session.end')}</a>
-		</header>
+			<Mascot level={progress.level} streak={streak.current} todayDone={streak.todayDone} size={72} />
+			<div class="actions"><Button variant="primary" href="/study">{t('study.session.back')}</Button></div>
+		</Section>
+	{:else if currentItem !== undefined}
+		{@const item = resolved?.item ?? currentItem}
+		{@const kindLabel = KIND_TASK_LABELS[item.kind]}
+		<StudyFace
+			{kindLabel}
+			deckLevel={deckLevelText(item)}
+			cardLabel={t('study.session.cardLabel', { kind: kindLabel })}
+			headingLabel={t('study.session.cardHeading', {
+				kind: kindLabel,
+				position: queueProgress.position,
+				total: queueProgress.total
+			})}
+			progress={queueProgress}
+			countText={queueProgress.pending > 0
+				? t('study.session.progressRepeat', {
+						position: queueProgress.position,
+						total: queueProgress.total,
+						count: queueProgress.pending
+					})
+				: t('study.session.count', { position: queueProgress.position, total: queueProgress.total })}
+			done={done && resolved !== null}
+			keys={done && canSound(currentAudio)
+				? t('study.session.keysPlays', { keys: KEY_HINTS[item.kind] })
+				: KEY_HINTS[item.kind]}
+			bind:heading={faceHeading}
+		>
+			{#snippet chips()}
+				{#if item.kind === 'sentence' && resolved !== null}
+					<Chip>{TIER_LABELS[resolved.tier]}</Chip>
+				{/if}
+				{#if item.reshow !== undefined}
+					<Chip>{t('study.session.again', { n: item.reshow + 1, max: MAX_RESHOWS + 1 })}</Chip>
+				{/if}
+				{#if item.virtual && item.kind !== 'vocab'}
+					<Chip>{t('study.session.new')}</Chip>
+				{/if}
+			{/snippet}
+			{#snippet note()}
+				{#if resolved !== null}
+					<NoteAnswer text={done && !offlineSession ? sessionNotes.get(resolved.item.entryId) : undefined} />
+				{/if}
+			{/snippet}
+			{#snippet status()}
+				{#if gradeError}
+					<p class="error" role="alert">{gradeError}</p>
+				{/if}
+				{#if buryNote}
+					<p class="hint" role="status">{buryNote}</p>
+				{/if}
+				{#if orderNote}
+					<p class="hint" role="status">{orderNote}</p>
+				{/if}
+				{#if showCompanionNote({ offline: offlineSession, kinds })}
+					<p class="hint">{companionNote()}</p>
+				{/if}
+			{/snippet}
+			{#snippet grades()}
+				<GradeBar
+					{intervals}
+					{suggested}
+					busy={grading}
+					ongrade={(grade, source) => void submitGrade(grade, source)}
+					bind:buttons={gradeButtons}
+				/>
+			{/snippet}
 
-		{#if buryNote}
-			<p class="hint" role="status">{buryNote}</p>
-		{/if}
-
-		{#if orderNote}
-			<p class="hint" role="status">{orderNote}</p>
-		{/if}
-
-		{#if showCompanionNote({ offline: offlineSession, kinds })}
-			<p class="hint">{companionNote()}</p>
-		{/if}
-
-		{#if entryError}
-			<section class="state">
-				<p class="error" role="alert">{entryError}</p>
-				<button type="button" onclick={retryEntry}>{t('study.session.retry')}</button>
-			</section>
-		{:else if resolved === null}
-			<p class="hint" role="status">{t('study.session.loadingCard')}</p>
-		{:else}
-			{@const current = resolved}
-			<article class="card" aria-label={t('study.session.cardLabel', { kind: KIND_LABELS[current.item.kind] })}>
-				<p class="badges">
-					<span class="badge kind-{current.item.kind}">{KIND_LABELS[current.item.kind]}</span>
-					{#if current.item.kind === 'sentence'}
-						<span class="badge">{TIER_LABELS[current.tier]}</span>
-					{/if}
-					{#if current.item.reshow !== undefined}
-						<span class="badge badge-again"
-							>{t('study.session.again', { n: current.item.reshow + 1, max: MAX_RESHOWS + 1 })}</span
-						>
-					{/if}
-					{#if current.item.virtual && current.item.kind !== 'vocab'}
-						<span class="badge">{t('study.session.new')}</span>
-					{/if}
-				</p>
-
+			{#if entryError}
+				<div class="card-state">
+					<p class="error" role="alert">{entryError}</p>
+					<Button onclick={retryEntry}>{t('study.session.retry')}</Button>
+				</div>
+			{:else if resolved === null}
+				<p class="hint loading-card" role="status">{t('study.session.loadingCard')}</p>
+			{:else}
+				{@const current = resolved}
 				{#key index}
 					{#if current.item.kind === 'vocab'}
 						<VocabCard
@@ -1152,13 +1243,7 @@ import type { Run } from '$lib/study/vacation';
 							onDone={onCardDone}
 						/>
 					{:else if current.item.kind === 'writing'}
-						<WritingCard
-							item={current.item}
-							entry={current.entry}
-							chars={current.chars}
-							{done}
-							onDone={onCardDone}
-						/>
+						<WritingCard item={current.item} entry={current.entry} chars={current.chars} {done} onDone={onCardDone} />
 					{:else if current.item.kind === 'reverse'}
 						<ReverseCard
 							bind:this={reverseCard}
@@ -1192,226 +1277,83 @@ import type { Run } from '$lib/study/vacation';
 						/>
 					{/if}
 				{/key}
-
-				<NoteAnswer text={done && !offlineSession ? sessionNotes.get(current.item.entryId) : undefined} />
-
-				{#if gradeError}
-					<p class="error" role="alert">{gradeError}</p>
-				{/if}
-
-				<div class="grades" role="group" aria-label={t('study.session.grades')}>
-					{#each GRADE_LABELS as option (option.grade)}
-						<button
-							type="button"
-							class="grade grade-{option.grade}"
-							class:suggested={done && suggested === option.grade}
-							bind:this={gradeButtons[option.grade - 1]}
-							disabled={!done || grading}
-							title={t('study.session.press', { key: option.grade })}
-							aria-label={done && suggested === option.grade
-								? t('study.session.gradeSuggested', { grade: option.label, key: option.grade })
-								: t('study.session.gradeKey', { grade: option.label, key: option.grade })}
-							onclick={(event) =>
-								// detail 0: activated from the keyboard, not a pointer.
-								void submitGrade(option.grade, event.detail === 0 ? 'activation' : 'click')}
-						>
-							{option.label}
-							{#if done && suggested === option.grade}
-								<span class="suggested-tag" aria-hidden="true">{t('study.session.suggested')}</span>
-							{/if}
-						</button>
-					{/each}
-				</div>
-				<p class="keys">
-					{done && canSound(currentAudio)
-						? t('study.session.keysPlays', { keys: KEY_HINTS[current.item.kind] })
-						: KEY_HINTS[current.item.kind]}
-				</p>
-			</article>
-		{/if}
+			{/if}
+		</StudyFace>
 	{/if}
+	<!-- Always present: each grade is announced once, after its card has gone. -->
+	<p class="graded visually-hidden" role="status" aria-live="polite">{gradedMessage}</p>
 </div>
 
 <style>
-	.session {
-		margin: 0 auto;
-		max-width: 44rem;
-		padding: 2.5rem 1.5rem;
+	.session.open {
+		max-width: none;
+		padding: 0;
 	}
 
-	h1 {
-		margin-bottom: 0.5rem;
+	.summary-title {
+		margin: 0 0 var(--space-4);
+		font-size: var(--font-size-xl);
+		font-weight: var(--weight-strong);
 	}
 
 	.hint {
+		margin: 0;
 		color: var(--readable-muted);
 	}
 
+	.loading-card {
+		text-align: center;
+	}
+
 	.error {
-		margin: 0.5rem 0 0;
+		margin: 0;
 		color: var(--readable-bad);
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
 
-	.state {
-		margin-top: 1.5rem;
-		border: 1px dashed color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 0.4rem;
-		padding: 1rem 1.15rem;
-	}
-
-	.state h1 {
-		margin-top: 0;
-	}
-
-	.state a,
-	.summary a {
-		display: inline-block;
-		margin-top: 0.75rem;
-	}
-
-	.top {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.5rem 1rem;
-	}
-
-	.top h1 {
-		margin: 0;
-	}
-
-	.progress {
-		margin: 0;
-		font-variant-numeric: tabular-nums;
-		color: var(--readable-muted);
-	}
-
-	.top a {
-		margin-left: auto;
-	}
-
-	.card {
-		margin-top: 1.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.6rem;
-		padding: 1.5rem;
-	}
-
-	.badges {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-		margin: 0 0 0.9rem;
-	}
-
-	.badge {
-		font-size: 0.75rem;
-		font-weight: 600;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
-		padding: 0.05rem 0.55rem;
-		color: var(--readable-muted);
-	}
-
-	.badge.badge-again {
-		border-color: var(--bad);
-		color: var(--readable-bad);
-	}
-
-	.grades {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		margin-top: 1.5rem;
-	}
-
-	.session button {
-		font: inherit;
-	}
-
-	.grades button {
-		flex: 1 1 6rem;
+	.card-state {
 		display: grid;
-		justify-items: center;
-		padding: 0.6rem 0.8rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		font-weight: 600;
-		cursor: pointer;
+		gap: var(--space-3);
+		justify-items: start;
 	}
 
-	/* Each grade's own colour on its outline (design §6); the word names it. */
-	.grade-1 {
-		border-color: var(--grade-again);
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-4);
 	}
 
-	.grade-2 {
-		border-color: var(--grade-hard);
-	}
-
-	.grade-3 {
-		border-color: var(--grade-good);
-	}
-
-	.grade-4 {
-		border-color: var(--grade-easy);
-	}
-
-	.grades button.suggested {
-		border-width: 2px;
-		border-color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 14%, transparent);
-	}
-
-	.grades button:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
-	}
-
-	.suggested-tag {
-		font-size: 0.7rem;
-		font-weight: 500;
-		color: var(--readable-muted);
-	}
-
-	.session button:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-	}
-
-	.keys {
-		margin: 0.75rem 0 0;
-		font-size: 0.85rem;
-		color: var(--readable-muted);
-	}
-
-	.stat {
-		margin: 0.4rem 0;
-		font-size: 1.1rem;
+	.stats {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4) var(--space-6);
 	}
 
 	.breakdown {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
-		margin: 0 0 0.6rem;
+		gap: var(--space-1) var(--space-4);
+		margin: var(--space-4) 0 0;
 		padding: 0;
 		list-style: none;
-		font-size: 0.9rem;
+		font-size: var(--font-size-s);
 		color: var(--readable-muted);
 	}
 
+	.breakdown strong {
+		color: var(--text);
+		font-weight: var(--weight-medium);
+	}
+
 	.bar {
-		height: 0.5rem;
+		height: 3px;
 		max-width: 20rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, currentColor 15%, transparent);
+		margin-bottom: var(--space-2);
+		border-radius: 3px;
+		background: var(--raised);
 		overflow: hidden;
 	}
 
@@ -1419,5 +1361,19 @@ import type { Run } from '$lib/study/vacation';
 		display: block;
 		height: 100%;
 		background: var(--accent);
+	}
+
+	.streak {
+		margin: var(--space-3) 0;
+	}
+
+	@media (forced-colors: active) {
+		.bar {
+			outline: 1px solid CanvasText;
+		}
+		.bar span {
+			forced-color-adjust: none;
+			background: Highlight;
+		}
 	}
 </style>

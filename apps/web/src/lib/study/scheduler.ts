@@ -138,7 +138,7 @@ function replay(
 	reviews: readonly ReviewEvent[],
 	w: readonly number[],
 	clock: StudyClock,
-	onStep: (card: Card, realTs: number) => void
+	onStep: (card: Card, realTs: number, fedTs: number) => void
 ): void {
 	const scheduler = schedulerFor(w);
 	const history = sortedReviews(
@@ -150,7 +150,7 @@ function replay(
 	let card: Card = createEmptyCard(new Date(fed[0]));
 	history.forEach((review, i) => {
 		card = scheduler.next(card, new Date(fed[i]), RATING[review.payload.grade]).card;
-		onStep(card, real[i]);
+		onStep(card, real[i], fed[i]);
 	});
 }
 
@@ -219,6 +219,38 @@ export function scheduleFor(
 		last = card;
 	});
 	return last === null ? null : toSchedule(last, clock);
+}
+
+/**
+ * nextIntervals previews the four grades of a card at `now` (#101): the
+ * milliseconds from `now` to the due instant each grade would give. The
+ * card is replayed exactly as scheduleFor does (same instance, weights and
+ * study clock), `now` is fed as a review would be (`max(v(now), last fed)`)
+ * and ts-fsrs `repeat` gives the outcomes, mapped back with `clock.inverse`.
+ * `null` (a virtual item) or a card with no review previews an empty card,
+ * the card the first review creates. Rule: docs/contracts/scheduler/.
+ */
+export function nextIntervals(
+	cardId: string | null,
+	reviews: readonly ReviewEvent[],
+	now: Date,
+	w: readonly number[],
+	clock: StudyClock
+): Record<ReviewGrade, number> {
+	let last: Card | null = null;
+	let lastFed = -Infinity;
+	if (cardId !== null) {
+		replay(cardId, reviews, w, clock, (card, _real, fed) => {
+			last = card;
+			lastFed = fed;
+		});
+	}
+	const fedNow = Math.max(clock.v(now.getTime()), lastFed);
+	const card: Card = last ?? createEmptyCard(new Date(fedNow));
+	const outcomes = schedulerFor(w).repeat(card, new Date(fedNow));
+	const after = (grade: ReviewGrade): number =>
+		clock.inverse(outcomes[RATING[grade]].card.due.getTime()) - now.getTime();
+	return { 1: after(1), 2: after(2), 3: after(3), 4: after(4) };
 }
 
 /** isDue reports whether a schedule has reached its due instant. */

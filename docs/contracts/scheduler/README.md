@@ -140,6 +140,31 @@ admission uses one slot of all its decks. `left` is the same pass without sessio
 continuing cards); `unlimited` is true when every involved deck is unlimited in both fields (false with no
 candidates); `limitedOut` counts candidates refused by a daily limit.
 
+## Next intervals (`next-intervals.json`, generated)
+
+Issue #101: each grade button shows when the card would come back. The preview replays the card exactly as the
+schedule does (same weights, same study clock: `f_i = max(v(ts_i), f_{i-1})`), feeds `now` the same way
+(`f_now = max(v(now), f_last)`), asks ts-fsrs `repeat(card, f_now)` for the four outcomes and maps each due back
+with `inverse`. A card with no review yet (a virtual item) previews `createEmptyCard(f_now)`, the card the first
+review creates. `expected` gives per grade 1–4 the `due` instant and `ms = due - now` (real time). Grading at
+`now` and replaying must give exactly the previewed due. The file is **generated from plain ts-fsrs** with
+plainly shifted dates (cases: a new card, learning steps 1 and 2, a review card on its due date and reviewed
+early, a relearning card, the maximum interval, a vacation run between the last review and `now`, a custom
+21-weight set). A re-show of a card already graded in the session is practice (never recorded) and shows no
+interval.
+
+## Interval text (`interval-text.json`)
+
+The short label of an interval `ms` (hand-written cases on both sides of every edge): `ms <= 60 000` →
+`lessThanMinute` (`<1m`, also for 0 and negative values: Anki shows the 1 minute step so); `< 60 min` →
+`minute`, `round(ms / 60 000)`, at least 1; `< 24 h` → `hour`, rounded; `< 30 days` → `day`, rounded;
+`< 365 days` → `month`, `round(days / 30)`, at least 1; else `year`, `days / 365` rounded to one decimal.
+Rounding is half up. The text is the locale's narrow unit (`Intl.NumberFormat` `style: "unit"`, `unitDisplay:
+"narrow"`: English `6m`, `3h`, `1d`, `1.4y`; a locale whose narrow month reads like its narrow minute, as
+English `2m`, writes the month short: `2 mths`; `<1m` is the catalogue key `study.interval.under` with the
+narrow 1 minute) and the screen-reader text is the relative form ("in 6 minutes"). The
+fixture fixes the bucket and the value, not the string. Fixtures win over code.
+
 ## Android and other clients
 
 Read the user-global `vacation:*` plugin rows (they arrive with `workspaceId: null`) and the typed `limits`
@@ -147,13 +172,14 @@ and `fsrsSets`/`fsrsActive` rows from one pull that names those collections. Use
 `v` and `inverse` with whole-day shifts (`n * 86 400 000 ms`, never the run's real length), feed ts-fsrs
 `f_i = max(v(ts_i), f_{i-1})`, map the due back with `inverse`, keep the instant due rule
 (`due <= now`), and build every queue from the same admission. A client must not write a vacation date before
-its own `today`.
+its own `today`. Grade buttons show the next interval of each grade from the same replay (`next-intervals.json`)
+with the buckets of `interval-text.json`.
 
 ## Regenerating the generated files
 
 ```sh
 npm --prefix apps/web ci
-node scripts/contracts/gen-scheduler-fixtures.mjs          # writes vacation-schedule.json, optimizer-steps.json, fsrs.json
+node scripts/contracts/gen-scheduler-fixtures.mjs          # writes vacation-schedule.json, optimizer-steps.json, fsrs.json, next-intervals.json
 node scripts/contracts/gen-scheduler-fixtures.mjs --check  # exit 1 when they are out of date
 ```
 

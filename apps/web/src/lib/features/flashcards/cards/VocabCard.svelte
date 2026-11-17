@@ -8,6 +8,9 @@
 	import type { CardAudio } from '$lib/study/audioCue';
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
 	import { buildVocabFaces } from '$lib/study/cardView';
+	import FaceAnswer from '../face/FaceAnswer.svelte';
+	import FacePrompt from '../face/FacePrompt.svelte';
+	import { usePrimary } from '../face/cardFace.svelte';
 
 	interface Props {
 		item: FlowItem;
@@ -44,165 +47,89 @@
 	function reveal(): void {
 		onDone({ suggested: null, meta: {} });
 	}
+
+	// The docked primary (#101): Show answer until the reveal.
+	usePrimary(() => (revealed ? null : { label: t('flashcards.card.showAnswer'), run: reveal }));
 </script>
 
-<p class="written" lang={studyLang(entry.language)}>{faces.front.written}</p>
-
-{#if faces.front.readings.length > 0}
-	<ul class="readings" aria-label={t('flashcards.card.readings')}>
-		{#each faces.front.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
-			<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
-		{/each}
-	</ul>
-{/if}
-
-{#if faces.front.sentenceLines.length > 0}
-	<div class="sentences">
+<FacePrompt>
+	<p class="fp-word" lang={studyLang(entry.language)}>{faces.front.written}</p>
+	{#if faces.front.readings.length > 0}
+		<ul class="readings fp-sub" aria-label={t('flashcards.card.readings')}>
+			{#each faces.front.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
+				<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
+			{/each}
+		</ul>
+	{/if}
+	{#if faces.front.sentenceLines.length > 0}
 		{#each faces.front.sentenceLines as line, lineIndex (lineIndex)}
 			<p class="sentence">{line}</p>
 		{/each}
-	</div>
-{/if}
+	{/if}
+</FacePrompt>
 
 {#if revealed}
-	<section class="answer" aria-labelledby="answer-heading">
-		<h2 id="answer-heading">{t('flashcards.card.answer')}</h2>
-		{#if showsBackReadings}
-			<ul class="readings back-readings" aria-label={t('flashcards.card.readings')}>
-				{#each faces.back.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
-					<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
-				{/each}
-			</ul>
-		{/if}
-		{#if audio}
-			<div class="sound">
-				<PlayButton
-					clips={audio.clips}
-					speakText={audio.speakText}
-					lang={audio.lang}
-					deviceVoice={audio.deviceVoice}
-					label={entry.written}
-				/>
-				{#if credit}
-					<p class="credit">{credit}</p>
+	<FaceAnswer>
+		{#if showsBackReadings || audio}
+			<div class="fa-readings">
+				{#if showsBackReadings}
+					<ul class="fa-readings back-readings" aria-label={t('flashcards.card.readings')}>
+						{#each faces.back.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
+							<li class="fa-reading" data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
+						{/each}
+					</ul>
+				{/if}
+				{#if audio}
+					<span class="fa-play">
+						<PlayButton
+							clips={audio.clips}
+							speakText={audio.speakText}
+							lang={audio.lang}
+							deviceVoice={audio.deviceVoice}
+							label={entry.written}
+						/>
+					</span>
 				{/if}
 			</div>
 		{/if}
 		{#if faces.back.glosses.length > 0}
 			{#each faces.back.glosses as group (group.dictionaryName)}
 				<article class="dictionary">
-					<h3>{group.dictionaryName}</h3>
-					<ol class="glosses">
+					<ol class="fa-glosses">
 						{#each group.glosses as gloss, glossIndex (glossIndex)}
 							<li>{gloss}</li>
 						{/each}
 					</ol>
+					<p class="fa-source">{group.dictionaryName}</p>
 				</article>
 			{/each}
 		{:else if !showsBackReadings}
 			<p class="hint">{t('flashcards.card.noGlosses')}</p>
 		{/if}
-	</section>
-{:else}
-	<button type="button" class="reveal" onclick={reveal}>{t('flashcards.card.showAnswer')}</button>
+		{#if credit}
+			<p class="credit fa-source">{credit}</p>
+		{/if}
+	</FaceAnswer>
 {/if}
 
 <style>
-	.written {
-		margin: 0;
-		font-size: 2.75rem;
-		font-weight: 700;
-		line-height: 1.2;
-	}
-
 	.readings {
-		list-style: none;
-		margin: 0.5rem 0 0;
-		padding: 0;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.35rem 1rem;
-		color: var(--readable-muted);
+		justify-content: center;
+		gap: var(--space-1) var(--space-3);
+		padding: 0;
+		list-style: none;
 	}
-
-	.back-readings {
-		margin: 0 0 0.75rem;
-		font-size: 1.15rem;
-	}
-
-	.sentences {
-		margin-top: 1.25rem;
-		display: grid;
-		gap: 0.35rem;
-	}
-
 	.sentence {
-		margin: 0;
-		font-size: 1.15rem;
+		font-family: var(--font-hanzi);
+		font-size: var(--font-size-l);
 	}
-
 	.hint {
 		color: var(--readable-muted);
 	}
-
-	.sound {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		flex-wrap: wrap;
-		margin: 0 0 0.75rem;
-	}
-
-	.credit {
-		margin: 0;
-		font-size: 0.8rem;
-		color: var(--readable-muted);
-	}
-
-	.reveal {
-		margin-top: 1.5rem;
-		padding: 0.55rem 1rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font: inherit;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.reveal:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
-	}
-
-	.answer {
-		margin-top: 1.5rem;
-		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		padding-top: 1rem;
-	}
-
-	.answer h2 {
-		margin: 0 0 0.5rem;
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--readable-muted);
-	}
-
-	.dictionary + .dictionary {
-		margin-top: 0.9rem;
-	}
-
-	.dictionary h3 {
-		margin: 0;
-		font-size: 1rem;
-	}
-
-	.glosses {
-		margin: 0.35rem 0 0;
-		padding-left: 1.4rem;
+	.dictionary {
 		display: grid;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 </style>

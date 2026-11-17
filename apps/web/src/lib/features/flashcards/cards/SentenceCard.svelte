@@ -4,6 +4,10 @@
 	import { segmentBatch } from '$lib/api/segment';
 	import type { Entry, Sentence } from '$lib/api/types';
 	import WordSaladBoard from './WordSaladBoard.svelte';
+	import FaceAnswer from '../face/FaceAnswer.svelte';
+	import FacePrompt from '../face/FacePrompt.svelte';
+	import FaceWork from '../face/FaceWork.svelte';
+	import { usePrimary, type FacePrimary } from '../face/cardFace.svelte';
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
 	import {
 		loadTokens,
@@ -61,75 +65,74 @@
 	function showTranslation(): void {
 		translationShown = true;
 	}
+
+	// The board's Check is the docked primary (#101), disabled until a tile is placed.
+	let boardCheck = $state.raw<FacePrimary | null>(null);
+	usePrimary(() => (done ? null : boardCheck));
 </script>
 
-<div class="prompt">
+<FacePrompt>
 	{#if !hidesTranslation || translationShown || done}
-		<p class="translation">{sentence.translation || t('flashcards.card.noTranslation')}</p>
+		<p class="fp-meaning translation">{sentence.translation || t('flashcards.card.noTranslation')}</p>
 	{:else}
 		<button type="button" class="cloze" onclick={showTranslation}>
 			<span aria-hidden="true" class="blur">{sentence.translation || '—'}</span>
 			<span class="cloze-label">{t('flashcards.card.showTranslation')}</span>
 		</button>
 	{/if}
-	<p class="target">
+	<p class="fp-sub target">
 		<Msg key="flashcards.card.uses" args={{ word: entry.written }}
 			>{#snippet strong(text: string)}<strong lang={language}>{text}</strong>{/snippet}</Msg
 		>
 	</p>
-</div>
+</FacePrompt>
 
-{#if solution === null}
-	<p class="hint" role="status">{t('flashcards.card.preparing')}</p>
-{:else}
-	<WordSaladBoard {solution} {seed} disabled={done} onResult={finish} language={language} />
-{/if}
+<FaceWork>
+	{#if solution === null}
+		<p class="hint" role="status">{t('flashcards.card.preparing')}</p>
+	{:else}
+		<WordSaladBoard
+			{solution}
+			{seed}
+			disabled={done}
+			onResult={finish}
+			{language}
+			dockCheck={(check) => (boardCheck = check)}
+		/>
+	{/if}
+</FaceWork>
 
 {#if done}
-	<section class="reveal" aria-label={t('flashcards.card.theSentence')}>
-		<p class="sentence" lang={language}>{sentence.hanzi}</p>
-		{#if sentence.pinyin}
-			<p class="pinyin">{sentence.pinyin}</p>
-		{/if}
-		{#if sentence.translation}
-			<p class="translation">{sentence.translation}</p>
-		{/if}
-	</section>
+	<FaceAnswer>
+		<section class="reveal" aria-label={t('flashcards.card.theSentence')}>
+			<p class="sentence" lang={language}>{sentence.hanzi}</p>
+			{#if sentence.pinyin}
+				<p class="fa-reading">{sentence.pinyin}</p>
+			{/if}
+			{#if sentence.translation}
+				<p class="translation">{sentence.translation}</p>
+			{/if}
+		</section>
+	</FaceAnswer>
 {/if}
 
 <style>
-	.prompt {
-		display: grid;
-		gap: 0.5rem;
-	}
-
-	.translation {
-		margin: 0;
-		font-size: 1.15rem;
-	}
-
-	.target {
-		margin: 0;
-		color: var(--readable-muted);
-	}
-
 	.cloze {
 		position: relative;
 		display: grid;
-		justify-items: start;
-		padding: 0.5rem 0.75rem;
-		border: 1px dashed color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
+		justify-items: center;
+		padding: var(--space-2) var(--space-3);
+		border: 1px dashed var(--hair);
+		border-radius: var(--radius);
 		background: transparent;
 		color: inherit;
 		font: inherit;
-		text-align: left;
 		cursor: pointer;
 	}
 
 	.cloze:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.blur {
@@ -138,33 +141,25 @@
 	}
 
 	.cloze-label {
-		margin-top: 0.25rem;
-		font-size: 0.85rem;
-		font-weight: 600;
+		margin-top: var(--space-1);
+		font-size: var(--font-size-s);
+		font-weight: var(--weight-strong);
 		color: var(--reading-accent);
 	}
 
 	.hint {
+		margin: 0;
 		color: var(--readable-muted);
 	}
 
 	.reveal {
-		margin-top: 1rem;
-		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		padding-top: 1rem;
 		display: grid;
-		gap: 0.35rem;
-	}
-
-	.reveal p {
-		margin: 0;
+		gap: var(--space-1);
 	}
 
 	.sentence {
-		font-size: 1.35rem;
-	}
-
-	.pinyin {
-		color: var(--readable-muted);
+		font-family: var(--font-hanzi);
+		font-size: var(--font-size-xl);
+		line-height: 1.6;
 	}
 </style>

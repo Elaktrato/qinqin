@@ -87,6 +87,7 @@
 	"stats.duration.hours": "{minutes} is two digits (\"1 h 05 min\").",
 	"stats.duration.underMinute": "\"Less than one minute\"; {less} is the sign \"<\" (a literal \"<\" is not allowed in a message).",
 	"stats.map.filtered": "{shown} and {total} are formatted numbers; the plural follows the shown count.",
+	"study.interval.under": "An interval under a minute on a grade button (\"<1m\"). {lt} is the less-than sign \"<\" (a literal < is not allowed in a message); {value} is \"1 minute\" in the locale's narrow unit (\"1m\").",
 	"study.summary.cardsIn": "Between bold numbers: \"<b>12</b> cards in <b>2</b> decks · <b>3</b> due · <b>5</b> new\"; each fragment is one message.",
 	"weekly.day.name": "Accessible name of a day in the week strip; {date} is \"Monday 16 November\", {state} one of weekly.day.*.",
 	"widgets.activity.month.goalDays": "Above the heatmap's month calendar: {met} is how many of the month's goal days (# of them, vacation days left out) reached the daily goal.",

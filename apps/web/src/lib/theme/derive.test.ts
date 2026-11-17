@@ -23,7 +23,7 @@ describe('cssVariables', () => {
 
 	it('sets exactly the properties of the README table', () => {
 		expect(Object.keys(vars).sort()).toEqual([...TOKEN_NAMES].sort());
-		expect(TOKEN_NAMES).toHaveLength(36);
+		expect(TOKEN_NAMES).toHaveLength(40);
 	});
 
 	it('maps theme colours, grades and derived tokens', () => {
@@ -39,5 +39,9 @@ describe('cssVariables', () => {
 		expect(vars['--reading-accent']).toBe('#cba6f7');
 		expect(vars['--readable-bad']).toBe('#f38ba8');
 		expect(vars['--readable-muted']).toBe('#a6adc8');
+		expect(vars['--readable-grade-again']).toBe('#f38ba8');
+		expect(vars['--readable-grade-hard']).toBe('#fab387');
+		expect(vars['--readable-grade-good']).toBe('#a6e3a1');
+		expect(vars['--readable-grade-easy']).toBe('#89b4fa');
 	});
 });

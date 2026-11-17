@@ -6,6 +6,8 @@ import type { FlowItem } from '$lib/study/cardFlow';
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 
 import ReverseCard from './ReverseCard.svelte';
+import { withShownWritten } from '$lib/study/cardView';
+import CardHarness from '../face/testing/CardHarness.svelte';
 
 function entry(over: Partial<Entry> = {}): Entry {
 	return {
@@ -32,14 +34,12 @@ afterEach(cleanup);
 
 function setup(over: { revealed?: boolean } = {}) {
 	const onDone = vi.fn();
-	const view = render(ReverseCard, {
-		item,
-		entry: entry(),
-		revealed: over.revealed ?? false,
-		language: 'zh',
-		onDone
+	// The card renders inside the study face (#101): the harness provides it.
+	const view = render(CardHarness, {
+		card: ReverseCard,
+		cardProps: { item, entry: entry(), revealed: over.revealed ?? false, language: 'zh', onDone }
 	});
-	return { onDone, ...view };
+	return { onDone, ...view, component: (view.component as unknown as { cardInstance: () => unknown }).cardInstance() };
 }
 
 describe('ReverseCard', () => {
@@ -126,5 +126,63 @@ describe('ReverseCard.finish (the runner key path)', () => {
 		expect(onDone).toHaveBeenCalledTimes(1);
 		expect(onDone.mock.calls[0][0].suggested).toBe(2);
 		expect(onDone.mock.calls[0][0].meta.hints).toBe(1);
+	});
+});
+
+describe('ReverseCard on the open page (#101)', () => {
+	it('the primary reads Show answer while empty and Check once something is typed', async () => {
+		const { onDone } = setup();
+		const dock = document.querySelector('.dock')!;
+		expect(dock.querySelector('button')?.textContent).toBe('Show answer');
+		await fireEvent.input(screen.getByLabelText('Type the word'), { target: { value: '喜欢' } });
+		expect(dock.querySelector('button')?.textContent).toBe('Check');
+		await fireEvent.click(screen.getByRole('button', { name: 'Check' }));
+		expect(onDone.mock.calls[0][0].suggested).toBe(3);
+	});
+
+	it('the field is an underline Field with its visible label', () => {
+		setup();
+		const field = screen.getByLabelText('Type the word');
+		expect(field.closest('.field')).not.toBeNull();
+		expect(document.querySelector('label.label')?.textContent).toBe('Type the word');
+		expect(field.closest('.face-work')).not.toBeNull();
+	});
+
+	it('Show reading is a plain button in the work area', () => {
+		setup();
+		const button = screen.getByRole('button', { name: 'Show reading' });
+		expect(button.closest('.face-work')).not.toBeNull();
+		expect(button.classList.contains('plain')).toBe(true);
+	});
+
+	it('the verdict has a shape next to its text', async () => {
+		cleanup();
+		const onDone = vi.fn();
+		const view = render(CardHarness, {
+			card: ReverseCard,
+			cardProps: { item, entry: entry(), revealed: false, language: 'zh', onDone }
+		});
+		await fireEvent.input(screen.getByLabelText('Type the word'), { target: { value: '喜欢' } });
+		await view.rerender({ card: ReverseCard, cardProps: { item, entry: entry(), revealed: true, language: 'zh', onDone } });
+		const status = screen.getByRole('status');
+		expect(status.textContent).toContain('Correct!');
+		expect(status.querySelector('svg')).not.toBeNull();
+	});
+});
+
+describe('ReverseCard with a kana display form (#101, prep-run item 1)', () => {
+	it('a kana-row card shows の, not 乃, in the answer', () => {
+		const no = withShownWritten(
+			entry({
+				language: 'ja',
+				written: '乃',
+				forms: [],
+				readings: [{ type: 'kana', value: 'の', plain: 'no', ord: 0 }]
+			} as Partial<Entry>),
+			'の'
+		);
+		render(CardHarness, { card: ReverseCard, cardProps: { item, entry: no, revealed: true, language: 'ja', onDone: vi.fn() } });
+		expect(document.querySelector('.face-answer .fa-word')?.textContent).toBe('の');
+		expect(document.querySelector('.fc')?.textContent).not.toContain('乃');
 	});
 });

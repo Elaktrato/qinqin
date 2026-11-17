@@ -49,6 +49,8 @@ export interface Derived {
 	readableBad: string;
 	/** Secondary text: `muted` when it is at least 4.5:1 on panel, else `text`. */
 	readableMuted: string;
+	/** Grade names as text: each grade colour when it is at least 4.5:1 on panel, else `text` (#101). */
+	readableGrades: { again: string; hard: string; good: string; easy: string };
 	/** The focus ring: `accent` when it is at least 3:1 on panel, raised and chrome, else `text`. */
 	focusRing: string;
 	highlightWash: string;

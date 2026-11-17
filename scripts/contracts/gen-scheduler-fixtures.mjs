@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Generates docs/contracts/scheduler/vacation-schedule.json, the
-// "plain" part of optimizer-steps.json and fsrs.json (the FSRS pin: every
+// "plain" part of optimizer-steps.json, next-intervals.json (the interval
+// each grade would give, #101) and fsrs.json (the FSRS pin: every
 // parameter, the clamp ranges, weight validation and migration, parameter
 // sets, the active set and a replay oracle) from PLAIN ts-fsrs, as an oracle that
 // shares no code with the project: a history that has a vacation is replayed
@@ -322,10 +323,78 @@ const fsrsPin = {
 	})
 };
 
+// --- next-intervals.json: the interval each grade would give (#101) ----------
+// The card is replayed exactly as above (plainly shifted dates for a vacation),
+// `now` is fed as max(shifted now, the last fed instant), plain ts-fsrs
+// `repeat(card, fedNow)` gives the four outcomes and each due is moved back
+// past the runs it reaches. No history: an empty card created at fedNow.
+const NEXT_CASES = [
+	{ name: 'a new card', w: DEFAULT, runs: [], reviews: [], now: '2026-01-05T09:00:00Z', note: 'no card yet (a virtual item): an empty card is previewed' },
+	{ name: 'after one Again (learning step 1)', w: DEFAULT, runs: [], reviews: [['2026-01-05T09:00:00Z', 1]], now: '2026-01-05T09:01:00Z', note: 'shown again at its 1 minute step' },
+	{ name: 'after Good (learning step 2)', w: DEFAULT, runs: [], reviews: [['2026-01-05T09:00:00Z', 3]], now: '2026-01-05T09:10:00Z', note: 'at the 10 minute step' },
+	{ name: 'a review card on its due date', w: DEFAULT, runs: [], reviews: [['2026-01-05T09:00:00Z', 3], ['2026-01-05T09:10:00Z', 3], ['2026-01-08T09:10:00Z', 3]], now: 'due', note: 'reviewed when due (`now` is the due instant of the history)' },
+	{ name: 'a review card reviewed early (same day)', w: DEFAULT, runs: [], reviews: [['2026-01-05T09:00:00Z', 4]], now: '2026-01-05T15:00:00Z', note: 'the short-term formula of a same-day review' },
+	{ name: 'a relearning card', w: DEFAULT, runs: [], reviews: [['2026-01-05T09:00:00Z', 4], ['2026-01-25T09:00:00Z', 1]], now: '2026-01-25T09:10:00Z', note: 'after a lapse, at the 10 minute relearning step' },
+	{ name: 'a card at the maximum interval', w: DEFAULT, runs: [], reviews: (() => { const out = []; let t = Date.parse('2026-01-05T09:00:00Z'); const f = fsrs(); let card = createEmptyCard(new Date(t)); for (let i = 0; i < 9; i++) { out.push([iso(t), 4]); card = f.next(card, new Date(t), Rating.Easy).card; t = card.due.getTime(); } return out; })(), now: 'due', note: 'Easy on every due date; no interval exceeds maximum_interval' },
+	{ name: 'a vacation run between the last review and now', w: DEFAULT, runs: [{ start: '2026-01-05', a: '2026-01-04T15:00:00Z', n: 7 }], zone: 'Asia/Tokyo', reviews: [['2025-12-28T03:00:00Z', 3], ['2025-12-28T03:10:00Z', 3], ['2026-01-02T03:00:00Z', 3]], now: '2026-01-14T03:00:00Z', note: 'now is moved earlier by the run (7 x 24 h) before it is fed; every previewed due is past the run start, so it moves later by the same amount' },
+	{ name: 'a custom 21-weight set', w: CUSTOM_W, runs: [], reviews: [['2026-01-05T09:00:00Z', 3], ['2026-01-05T09:10:00Z', 3]], now: '2026-01-09T09:00:00Z', note: 'the active set\'s weights' },
+	{ name: 'a new card with a custom 21-weight set', w: CUSTOM_W, runs: [], reviews: [], now: '2026-01-05T09:00:00Z', note: 'the weights change the Easy interval of a new card' }
+];
+
+function shiftBy(runs, t) {
+	let shift = 0;
+	for (const r of runs) if (t >= r.a + r.n * DAY) shift += r.n * DAY;
+	return t - shift;
+}
+
+function nextIntervals(c) {
+	const w = c.w === DEFAULT ? [...default_w] : c.w;
+	const f = fsrs({ w });
+	const runs = c.runs.map((r) => ({ a: ms(r.a), n: r.n }));
+	let card = null;
+	let lastFed = -Infinity;
+	for (const [ts, grade] of c.reviews) {
+		const fed = Math.max(shiftBy(runs, ms(ts)), lastFed);
+		if (card === null) card = createEmptyCard(new Date(fed));
+		card = f.next(card, new Date(fed), RATING[grade]).card;
+		lastFed = fed;
+	}
+	let now = c.now;
+	if (now === 'due') {
+		let due = card.due.getTime();
+		for (const r of runs) if (due >= r.a) due += r.n * DAY;
+		now = iso(due);
+	}
+	const fedNow = Math.max(shiftBy(runs, ms(now)), lastFed);
+	const previewed = card ?? createEmptyCard(new Date(fedNow));
+	const outcomes = f.repeat(previewed, new Date(fedNow));
+	const expected = [1, 2, 3, 4].map((grade) => {
+		let due = outcomes[RATING[grade]].card.due.getTime();
+		for (const r of runs) if (due >= r.a) due += r.n * DAY;
+		return { grade, due: iso(due), ms: due - ms(now) };
+	});
+	return { now, expected };
+}
+
+const nextPin = {
+	version: 1,
+	rule: 'scheduler/next-intervals',
+	generator: 'scripts/contracts/gen-scheduler-fixtures.mjs',
+	tsFsrs: version,
+	parameters: 'ts-fsrs parameters with the case\'s weights ("default" = default_w), short-term on, fuzz off',
+	cases: NEXT_CASES.map((c) => {
+		const r = nextIntervals(c);
+		const out = { name: c.name, note: c.note, w: c.w };
+		if (c.zone) out.zone = c.zone;
+		return { ...out, runs: c.runs.map(({ start, a, n }) => ({ start, a, n })), reviews: c.reviews.map(([ts, grade]) => ({ ts, grade })), now: r.now, expected: r.expected };
+	})
+};
+
 const outputs = [
 	['vacation-schedule.json', schedule],
 	['optimizer-steps.json', optimizer],
-	['fsrs.json', fsrsPin]
+	['fsrs.json', fsrsPin],
+	['next-intervals.json', nextPin]
 ];
 let differs = false;
 for (const [file, data] of outputs) {
