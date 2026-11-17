@@ -76,5 +76,10 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `token_read_only` | 403 | The access token is read-only and the route writes. |
 | `token_workspace` | 403 | The access token is limited to one workspace and the request is not inside it: ?workspace= is missing or names another workspace, or the route spans workspaces or addresses objects by id. |
 | `study_row_invalid` | 400 | A plugin-data write of a typed study key (qinqin-flashcards card:, deck:, deckcfg:, limits:, fsrs:set:, fsrs:active) whose data the legacy codec cannot read, or that has no ?workspace=. Nothing is stored. New clients write these rows through POST /api/sync/push (docs/contracts/study/). |
+| `sync_collection_moved` | 400 | GET /api/sync/pull named a lexicon collection (entries, links, senses, levelMembers, dictionaries, schemes, levels). Those moved to data packages: read GET /api/packages (docs/contracts/packages/). Both the paged (v=2) and the legacy form answer this. |
+| `sync_page_invalid` | 400 | A paged pull (v=2) parameter is wrong: a page or since token that is malformed, belongs to another user or to other filters (collections, workspace), a page= request that repeats since, collections, workspace or limit, a limit outside 1-2000, or an unknown collection. Start the round again without page (docs/contracts/sync/). |
+| `sync_cursor_expired` | 410 | The paged pull's since cursor is older than the server keeps deletions for. Discard local user data and pull again without since (docs/contracts/sync/). Defined for a future tombstone purge. |
+| `package_not_found` | 404 | No data package with that id and revision (or the id is not a package id). Re-read GET /api/packages. |
+| `package_revision_gone` | 410 | That package revision was replaced and its file purged. Re-read GET /api/packages and download the current revision. |
 | `token_limit` | 409 | 20 live access tokens already; revoke one first. Expired tokens do not count. |
 | `invalid_token_request` | 422 | Name (1-64 characters), scope (read or write) or expiry (1-365 days) out of range; the message names the field. |
