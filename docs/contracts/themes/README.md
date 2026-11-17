@@ -69,6 +69,12 @@ Contrast is **measured and reported**, never a reason to refuse a theme (design 
 Fixture: `contrast.json` (single ratios, including both sides of the rounding at 4.5 and 3, and the review of
 Catppuccin Mocha and Latte).
 
+**The licence review** (`POST /api/admin/packs`, the staged upload): for a theme pack the answer carries
+`themes: [{id, name, family, scheme, checks: [{fg, bg, min, ratio, pass}], failing}]` in file order (other pack
+types have no `themes` member). `family` is `""` when the theme has none. The admin installs a pack with failing
+checks like any other; the web shows the table with the result in words, not by colour alone. Pinned by
+`server/internal/api/pack_stage_theme_test.go` against `contrast.json`.
+
 ## Derived tokens
 
 Never in a theme file; computed by every client from the theme and the person's accent (design §6). Ratios are
