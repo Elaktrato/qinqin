@@ -112,7 +112,7 @@
 	</form>
 	{#snippet actions()}
 		<Button onclick={finish} disabled={busy}>{t('common.action.cancel')}</Button>
-		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready}
+		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready} {busy}
 			>{busy ? t('settings.account.delete.deleting') : t('settings.account.delete.submit')}</Button
 		>
 	{/snippet}

@@ -19,6 +19,7 @@
 
 	const uid = $props.id();
 	let nameInput = $state<HTMLInputElement | null>(null);
+	let passwordInput = $state<HTMLInputElement | null>(null);
 	let name = $state('');
 	let scope = $state<'read' | 'write'>('read');
 	let workspace = $state('');
@@ -46,6 +47,8 @@
 		const check = validateTokenForm(form);
 		if (!check.ok) {
 			error = check.message;
+			await tick();
+			(check.field === 'password' ? passwordInput : nameInput)?.focus();
 			return;
 		}
 		busy = true;
@@ -62,8 +65,9 @@
 			oncreated(out.accessToken);
 		} catch (err) {
 			error = errorText(err, t('settings.tokens.create.error'));
+			busy = false;
 			await tick();
-			nameInput?.focus();
+			passwordInput?.focus();
 		} finally {
 			busy = false;
 		}
@@ -134,7 +138,7 @@
 			</label>
 			<label>
 				{t('account.field.yourPassword')}
-				<input type="password" autocomplete="current-password" bind:value={password} />
+				<input bind:this={passwordInput} type="password" autocomplete="current-password" bind:value={password} />
 			</label>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
 		</form>
@@ -144,7 +148,7 @@
 			<Button variant="primary" onclick={finish}>{t('settings.tokens.created.done')}</Button>
 		{:else}
 			<Button onclick={finish} disabled={busy}>{t('common.action.cancel')}</Button>
-			<Button type="submit" form="{uid}-form" variant="primary" disabled={busy}
+			<Button type="submit" form="{uid}-form" variant="primary" {busy}
 				>{busy ? t('settings.tokens.create.creating') : t('settings.tokens.create.submit')}</Button
 			>
 		{/if}
