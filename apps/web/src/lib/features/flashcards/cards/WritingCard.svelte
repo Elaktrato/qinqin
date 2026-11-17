@@ -147,9 +147,12 @@
 	}
 
 	// The docked primary (#101): Show strokes reveals the current character
-	// (the give-up path; its suggestion is unchanged).
+	// (the give-up path; its suggestion is unchanged). Not offered while the
+	// character's stroke data (the installed strokes pack) is loading or missing.
 	usePrimary(() =>
-		done || failed !== '' ? null : { label: t('flashcards.writing.showStrokes'), run: reveal, disabled: busy }
+		done || failed !== '' || current === null
+			? null
+			: { label: t('flashcards.writing.showStrokes'), run: reveal, disabled: busy }
 	);
 
 	function giveUpOnError(): void {

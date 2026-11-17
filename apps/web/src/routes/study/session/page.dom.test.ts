@@ -53,6 +53,19 @@ import { currentStudyDay } from '$lib/time/zone';
 import { offline, resetOffline } from '$lib/pwa/offlineState';
 import { workspaces } from '$lib/workspaces';
 import Page from './+page.svelte';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { DEFAULT_W } from '$lib/study/fsrs/params';
+import { shortInterval } from '$lib/study/intervalText';
+import { scheduleFor } from '$lib/study/scheduler';
+import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+
+// The generated preview of a new card with the default weights (#101): never adjusted to the test.
+const NEW_CARD = (
+	JSON.parse(
+		readFileSync(resolve(__dirname, '../../../../../../docs/contracts/scheduler/next-intervals.json'), 'utf8')
+	) as { cases: { name: string; expected: { grade: number; ms: number }[] }[] }
+).cases.find((c) => c.name === 'a new card')!.expected;
 
 const scheme = {
 	id: 3,
@@ -140,7 +153,7 @@ describe('character level session', () => {
 	it('shows the glyph first, readings after the reveal, and grades into one card', async () => {
 		configure(['vocab']);
 		render(Page);
-		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		expect(screen.getByText('日')).toBeTruthy();
 		expect(screen.queryByLabelText('Readings')).toBeNull();
 
@@ -184,7 +197,7 @@ describe('character level session', () => {
 			]
 		);
 		render(Page);
-		expect(await screen.findByLabelText('Writing card')).toBeTruthy();
+		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 	});
 
 	it('skips a writing item without stroke data and shows the next reserve item', async () => {
@@ -193,7 +206,7 @@ describe('character level session', () => {
 			written === '日' ? [] : [...written]
 		);
 		render(Page);
-		expect(await screen.findByLabelText('Writing card')).toBeTruthy();
+		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(12));
 		expect(addCard).not.toHaveBeenCalled();
 	});
@@ -201,7 +214,7 @@ describe('character level session', () => {
 	it('runs a writing-only session', async () => {
 		configure(['writing']);
 		render(Page);
-		expect(await screen.findByLabelText('Writing card')).toBeTruthy();
+		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 	});
 
 	it('drops a character without glosses from a writing session and remembers it', async () => {
@@ -211,7 +224,7 @@ describe('character level session', () => {
 			senses: id === 11 ? [] : kanji(id, '?').senses
 		}));
 		render(Page);
-		expect(await screen.findByLabelText('Writing card')).toBeTruthy();
+		expect(await screen.findByLabelText('Write card')).toBeTruthy();
 		await waitFor(() => expect(getEntry).toHaveBeenCalledWith(12));
 		expect(addCard).not.toHaveBeenCalled();
 		expect(sessionStorage.getItem('qinqin.study.ineligible') ?? '').toContain('writing:11');
@@ -251,7 +264,7 @@ describe('offline start', () => {
 		configureDecks(['vocab', 'sentence']);
 		history([word(11), word(12)], []);
 		render(Page);
-		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		expect(screen.getByText('Companion cards return when you are online.')).toBeTruthy();
 	});
 });
@@ -300,12 +313,12 @@ describe('personal note on the answer side', () => {
 	afterEach(() => resetOffline());
 
 	const LABELS: Record<string, string> = {
-		vocab: 'Vocab card',
-		reverse: 'Reverse card',
-		cloze: 'Cloze card',
-		sentence: 'Word Salad card',
-		writing: 'Writing card',
-		tone: 'Tone card'
+		vocab: 'Recognise card',
+		reverse: 'Recall card',
+		cloze: 'Fill the gap card',
+		sentence: 'Build the sentence card',
+		writing: 'Write card',
+		tone: 'Tones card'
 	};
 
 	it.each(['vocab', 'reverse', 'cloze', 'sentence', 'writing', 'tone'])(
@@ -338,7 +351,7 @@ describe('personal note on the answer side', () => {
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
 		render(Page);
-		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		await waitFor(() => expect(loadNoteCfg).toHaveBeenCalledWith(2));
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await new Promise((r) => setTimeout(r, 0));
@@ -350,7 +363,7 @@ describe('personal note on the answer side', () => {
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
 		render(Page);
-		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('note', { name: 'Your note' })).toBeNull();
@@ -364,7 +377,7 @@ describe('personal note on the answer side', () => {
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
 		render(Page);
-		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 	});
 
 	it('an offline session makes no notes request', async () => {
@@ -372,10 +385,172 @@ describe('personal note on the answer side', () => {
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
 		render(Page);
-		expect(await screen.findByLabelText('Vocab card')).toBeTruthy();
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		expect(loadNotes).not.toHaveBeenCalled();
 		expect(loadNoteCfg).not.toHaveBeenCalled();
 		expect(screen.queryByRole('note', { name: 'Your note' })).toBeNull();
 	});
+});
+
+describe('the open page (#101)', () => {
+	function shown(): string[] {
+		return screen.getAllByRole('button').filter((b) => b.closest('[role="group"]')).map((b) => b.querySelector('.when')?.textContent ?? '');
+	}
+
+	it('shows the next interval on each grade button once the card is done', async () => {
+		configure(['vocab']);
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		expect(screen.queryByRole('group', { name: 'Grade this card' })).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		expect(shown()).toEqual(NEW_CARD.map((e) => shortInterval(e.ms)));
+		expect(shown().slice(0, 3)).toEqual(['<1m', '6m', '10m']);
+	});
+
+	it('the label equals the schedule the grade produces', async () => {
+		configure(['vocab']);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		const good = await screen.findByRole('button', { name: /^Good, next review/ });
+		await fireEvent.click(good);
+		await waitFor(() => expect(recordReview).toHaveBeenCalledTimes(1));
+		const at = new Date();
+		const due = scheduleFor(
+			'c-vocab-11',
+			[{ id: '01JTESTREVIEW0000000000009', workspaceId: 1, device: 'web', ts: at.toISOString(), type: 'review', payload: { cardId: 'c-vocab-11', mode: 'vocab', grade: 3 } }],
+			at,
+			DEFAULT_W,
+			IDENTITY_CLOCK
+		)!.due;
+		expect(shortInterval(Date.parse(due) - at.getTime())).toBe(good.querySelector('.when')!.textContent);
+	});
+
+	it('announces "Good. Next review in 10 minutes." in a polite status after a grade', async () => {
+		configure(['vocab']);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await fireEvent.click(await screen.findByRole('button', { name: /^Good, next review/ }));
+		const live = await waitFor(() => {
+			const el = document.querySelector('.graded[role="status"]');
+			expect(el?.textContent).toBe('Good. Next review in 10 minutes.');
+			return el!;
+		});
+		expect(live.getAttribute('aria-live')).toBe('polite');
+	});
+
+	it('a re-show says practice and announces practice only', async () => {
+		configure(['vocab'], 1);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await fireEvent.click(await screen.findByRole('button', { name: /^Again, next review/ }));
+		await waitFor(() => expect(screen.getByText(/Again, look 2 of/)).toBeTruthy());
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		expect(shown()).toEqual(Array(4).fill('practice'));
+		await fireEvent.click(screen.getByRole('button', { name: /^Good, practice only/ }));
+		await waitFor(() =>
+			expect(document.querySelector('.graded[role="status"]')?.textContent).toBe('Good. Practice only, not counted.')
+		);
+		expect(recordReview).toHaveBeenCalledTimes(1);
+	});
+
+	it("moves focus to the next card's heading after a grade", async () => {
+		configure(['vocab']);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await fireEvent.click(await screen.findByRole('button', { name: /^Good, next review/ }));
+		await waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('Recognise card, 2 of 3'));
+		expect(document.activeElement?.tagName).toBe('H1');
+	});
+
+	it('Space reveals and 1–4 grade (unchanged)', async () => {
+		configure(['vocab']);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: '3', bubbles: true, cancelable: true }));
+		await waitFor(() => expect(recordReview).toHaveBeenCalledWith(1, 'c-vocab-11', 3, 'vocab', expect.anything()));
+	});
+
+	it('the kind label reads Recognise and the deck · level shows the level', async () => {
+		// A level item has no deck yet: the level alone.
+		configure(['vocab']);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		const head = document.querySelector('.face-head')!;
+		expect(head.querySelector('.kind')?.textContent).toBe('Recognise');
+		expect(head.querySelector('.deck')?.textContent).toBe('JLPT kanji N5');
+	});
+});
+
+describe('deck · level in a deck session (#101)', () => {
+	it('names the card\'s first deck and its level badge', async () => {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['d1'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'] })
+		);
+		vi.mocked(getEntry).mockImplementation(async (id: number) => ({
+			...kanji(id, GLYPHS[id] ?? '?'),
+			badges: [{ schemeId: 3, schemeName: 'JLPT kanji', levelName: 'N5', derived: false }]
+		}));
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [{ id: 'd1', name: 'Kanji', createdAt: '2026-01-01T00:00:00.000Z' }],
+			cards: [{ id: 'v11', kind: 'vocab', entryId: 11, written: '日', deckIds: ['d1'], createdAt: '2026-01-01T00:00:00.000Z' }],
+			reviews: [],
+			merged: 0
+		} as never);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		await waitFor(() => expect(document.querySelector('.face-head .deck')?.textContent).toBe('Kanji · JLPT kanji N5'));
+	});
+});
+
+describe('kana display forms on the faces (#101, prep-run item 1)', () => {
+	const no = {
+		id: 41,
+		language: 'ja',
+		kind: 'word',
+		written: '乃',
+		readings: [{ type: 'kana', value: 'の', plain: 'no', ord: 0 }],
+		badges: [],
+		variants: [],
+		sentences: [],
+		senses: [{ dictionaryId: 1, dictionaryName: 'JMdict', packId: 'j', license: 'x', attribution: 'x', gloss: "possessive particle" }]
+	} as unknown as Entry;
+	const card = (kind: string): StudyCard =>
+		({ id: `k-${kind}`, kind, entryId: 41, written: 'の', deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' }) as StudyCard;
+
+	function decks(kind: string): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: [kind] })
+		);
+		vi.mocked(getEntry).mockResolvedValue(no);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [],
+			cards: [card(kind)],
+			reviews: [],
+			merged: 0,
+		} as never);
+	}
+
+	// Recall draws from the same resolved entry (resolveItem applies withShownWritten to every kind);
+	// its face is checked with the real card in ReverseCard.dom.test.ts.
+	it('Recognise shows の, not 乃, in the prompt and the answer', async () => {
+		decks('vocab');
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		expect(document.querySelector('.face-prompt')?.textContent).toContain('の');
+		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
+		await screen.findByRole('group', { name: 'Grade this card' });
+		expect(document.querySelector('.fc')?.textContent).not.toContain('乃');
+	});
+
 });

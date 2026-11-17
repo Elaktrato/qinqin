@@ -6,6 +6,7 @@ import type { FlowItem } from '$lib/study/cardFlow';
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 
 import ReverseCard from './ReverseCard.svelte';
+import { withShownWritten } from '$lib/study/cardView';
 import CardHarness from '../face/testing/CardHarness.svelte';
 
 function entry(over: Partial<Entry> = {}): Entry {
@@ -166,5 +167,22 @@ describe('ReverseCard on the open page (#101)', () => {
 		const status = screen.getByRole('status');
 		expect(status.textContent).toContain('Correct!');
 		expect(status.querySelector('svg')).not.toBeNull();
+	});
+});
+
+describe('ReverseCard with a kana display form (#101, prep-run item 1)', () => {
+	it('a kana-row card shows の, not 乃, in the answer', () => {
+		const no = withShownWritten(
+			entry({
+				language: 'ja',
+				written: '乃',
+				forms: [],
+				readings: [{ type: 'kana', value: 'の', plain: 'no', ord: 0 }]
+			} as Partial<Entry>),
+			'の'
+		);
+		render(CardHarness, { card: ReverseCard, cardProps: { item, entry: no, revealed: true, language: 'ja', onDone: vi.fn() } });
+		expect(document.querySelector('.face-answer .fa-word')?.textContent).toBe('の');
+		expect(document.querySelector('.fc')?.textContent).not.toContain('乃');
 	});
 });

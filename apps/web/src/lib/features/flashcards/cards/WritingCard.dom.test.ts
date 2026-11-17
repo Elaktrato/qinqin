@@ -14,6 +14,7 @@ vi.mock('$lib/study/strokeData', () => ({
 import WritingCard from './WritingCard.svelte';
 import CardHarness from '../face/testing/CardHarness.svelte';
 import padSource from './WritingPad.svelte?raw';
+import { loadStrokeData } from '$lib/study/strokeData';
 
 const entry = {
 	id: 3,
@@ -83,5 +84,24 @@ describe('WritingCard on the open page (#101)', () => {
 		expect(style).toMatch(/border:\s*1px solid var\(--hair\)/);
 		expect(style).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/);
 		expect(padSource).toMatch(/getPropertyValue\('--accent'\)/);
+	});
+});
+
+describe('WritingCard without stroke data (#101, prep-run item 2)', () => {
+	it('keeps the fail path with its words and offers no Show strokes', async () => {
+		vi.mocked(loadStrokeData).mockResolvedValueOnce(null);
+		const onDone = vi.fn();
+		render(CardHarness, { card: WritingCard, cardProps: { item, entry, chars: ['你'], done: false, onDone } });
+		const alert = await screen.findByRole('alert');
+		expect(alert.textContent).toBe('The writing pad could not load this character. Continue and grade this card yourself.');
+		expect(screen.queryByRole('button', { name: 'Show strokes' })).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+		expect(onDone.mock.calls[0][0].suggested).toBe(1);
+	});
+
+	it('offers no Show strokes while the data is loading', () => {
+		vi.mocked(loadStrokeData).mockReturnValueOnce(new Promise(() => {}));
+		render(CardHarness, { card: WritingCard, cardProps: { item, entry, chars: ['你'], done: false, onDone: vi.fn() } });
+		expect(screen.queryByRole('button', { name: 'Show strokes' })).toBeNull();
 	});
 });
