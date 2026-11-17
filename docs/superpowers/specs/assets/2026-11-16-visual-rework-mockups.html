@@ -617,6 +617,33 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 .sp-week b { font-weight: 600; font-size: 14px; }
 .sp-week .ib[disabled] { opacity: .35; }
 .sp-wbars { gap: 8px; height: 100px; }
+
+/* ---------- lotus sketch ---------- */
+.lotus-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.lotus-row .ls { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.lotus-row .ls .t { display: grid; place-items: center; border-radius: calc(var(--r) * .7); background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.lotus-row.big .ls .t { width: 86px; height: 86px; }
+.lotus-row.big .ls .t svg { width: 70px; height: 70px; }
+.lotus-row .ls b { font-size: 13px; font-weight: 600; }
+.lotus-row .ls small { color: var(--muted); font-size: 11.5px; display: block; }
+.lotus-row.s24 { gap: 4px; }
+.lotus-row.s24 .t, .lotus-row.s40 .t { display: grid; place-items: center; border-radius: 5px; background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.lotus-row.s24 .t { width: 28px; height: 28px; }
+.lotus-row.s24 .t svg { width: 24px; height: 24px; }
+.lotus-row.s40 { gap: 6px; }
+.lotus-row.s40 .t { width: 48px; height: 48px; }
+.lotus-row.s40 .t svg { width: 40px; height: 40px; }
+.lotus-sizes { display: flex; gap: 36px; flex-wrap: wrap; }
+.lotus-sizes > div { display: grid; gap: 8px; }
+.lotus-sizes .muted { font-size: 12.5px; }
+.lotus-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.lt { border-radius: var(--r); padding: 10px 12px; display: grid; gap: 6px; background: var(--panel); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+.lt p { font-size: 12px; color: var(--muted); }
+.lt .lotus-row { gap: 3px; }
+.lt .t { width: 34px; height: 34px; border-radius: 6px; display: grid; place-items: center; background: color-mix(in srgb, var(--raised) 60%, transparent); }
+.lt .t svg { width: 28px; height: 28px; }
+.lotus-notes { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: var(--muted); max-width: 75ch; }
+.lotus-notes b { color: var(--text); font-weight: 600; }
 @media (prefers-reduced-motion: no-preference) {
 	.tile.today svg { animation: sway 3.2s ease-in-out infinite; transform-origin: 50% 85%; }
 	@keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
@@ -654,9 +681,9 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 
 <div class="page">
 	<header class="intro">
-		<span class="eyebrow">Visual rework · round 6</span>
-		<h1>Reader, journal, search, entries and stats</h1>
-		<p class="lede">The reader, journal, search, dictionary entries and stats in the lighter design. The reader shows a chapter of Lu Xun's 故乡 (public domain) with the lookup open; the journal shows an entry while writing and after the AI review, with its corrections. Everything further down is decided, including the lighter weight (the Weight switch still compares it with round 3). Tell me in the chat what you think of them.</p>
+		<span class="eyebrow">Visual rework · lotus sketch</span>
+		<h1>The lotus heatmap</h1>
+		<p class="lede">A rough reference for drawing the heatmap stages as a lotus (issue #107): six stages from still water to full bloom, then closed for the night on rest days. They are shown large, at the real heatmap sizes, and in every theme. The heatmap mocks further down use these sketches too. They are placeholders to react to, not final art.</p>
 	</header>
 
 	<section aria-labelledby="themes-h">
@@ -675,6 +702,39 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 				<div class="seg" id="density"><button type="button" data-v="0.75">Compact</button><button type="button" data-v="1" aria-pressed="true">Comfortable</button></div></div>
 			<div class="ctl-row"><span class="lbl">Hanzi font</span>
 				<div class="seg" id="cjk"><button type="button" data-v="sans" aria-pressed="true">Sans</button><button type="button" data-v="serif">Serif</button><button type="button" data-v="kai">Brush (kai)</button></div></div>
+		</div>
+	</section>
+
+	<section aria-labelledby="lotus-h">
+		<div class="sechead">
+			<h2 id="lotus-h">Lotus stages</h2>
+			<p>Each stage uses four colour areas the app recolours from the theme: petals in the accent colour, the pad and stem in the theme's green, the seed pod in the warning yellow, and the water in the line colour. Petals that sit further back are the same colour with less opacity, so no outlines are needed.</p>
+		</div>
+		<div class="hcard">
+			<h3>Large (week strip, about 70 px)</h3>
+			<div class="lotus-row big" id="lotus-big"></div>
+		</div>
+		<div class="hcard">
+			<h3>Actual heatmap sizes</h3>
+			<div class="lotus-sizes">
+				<div><p class="muted">Garden grid tile, 24 px</p><div class="lotus-row s24" id="lotus-24"></div></div>
+				<div><p class="muted">Month calendar, 40 px</p><div class="lotus-row s40" id="lotus-40"></div></div>
+			</div>
+		</div>
+		<div class="hcard">
+			<h3>In every theme</h3>
+			<div class="lotus-themes" id="lotus-themes"></div>
+		</div>
+		<div class="hcard">
+			<h3>Notes for drawing</h3>
+			<ul class="lotus-notes">
+				<li><b>Grid:</b> 24 × 24 units; keep the water line near the bottom (y ≈ 19–20) so every stage stands on the same base.</li>
+				<li><b>Colour areas only:</b> flat fills, no gradients, no outlines, no baked-in colours. Mark each shape as petal, pad/stem, seed pod or water; the app colours them.</li>
+				<li><b>Depth by opacity:</b> back petals about 70%, middle about 85%, front 100%.</li>
+				<li><b>Read at 24 px:</b> the bud and the open bloom must be told apart by silhouette alone (tall and narrow vs wide), not by detail.</li>
+				<li><b>Resting:</b> a closed flower, quieter than the bud (lower opacity), with a small moon. It should not look wilted or sad.</li>
+				<li><b>Tone:</b> cheerful and colourful. Avoid a lone white lotus on a dark ground (the funerary look).</li>
+			</ul>
 		</div>
 	</section>
 
@@ -1238,12 +1298,12 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 		DATA[k] = { amount: amt };
 	}
 	const STAGES = [
-		{ id: 'soil', name: 'Nothing yet', note: 'no reviews' },
-		{ id: 'sprout', name: 'Sprout', note: 'under a third' },
+		{ id: 'soil', name: 'Still water', note: 'no reviews' },
+		{ id: 'sprout', name: 'Lily pad', note: 'under a third' },
 		{ id: 'bud', name: 'Bud', note: 'a third or more' },
 		{ id: 'open', name: 'Opening', note: 'two thirds or more' },
 		{ id: 'bloom', name: 'In bloom', note: 'goal reached' },
-		{ id: 'rest', name: 'Resting', note: 'vacation day' }
+		{ id: 'rest', name: 'Closed for the night', note: 'vacation day' }
 	];
 	function stageOf(v) {
 		if (v.vacation) return 'rest';
@@ -1254,7 +1314,35 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 		if (r >= 1 / 3) return 'bud';
 		return 'sprout';
 	}
-	function flower(stage) {
+	function lotus(stage) {
+		const water = '<path d="M3 20c1.5-.9 3-.9 4.5 0s3 .9 4.5 0 3-.9 4.5 0 3 .9 4.5 0" stroke="var(--line)" stroke-width="1.3" stroke-linecap="round" fill="none"/>';
+		const pad = '<path d="M12 18.6 18.6 18.6A6.6 1.9 0 1 1 17.7 17.65Z" fill="var(--good)"/>';
+		const stem = (top) => '<path d="M12 18.2V' + top + '" stroke="var(--good)" stroke-width="1.4" stroke-linecap="round"/>';
+		const bud = (o) => '<path d="M12 5.4c2.1 1.9 2.9 3.8 2.5 5.4-.3 1.3-1.3 2-2.5 2s-2.2-.7-2.5-2c-.4-1.6.4-3.5 2.5-5.4Z" fill="var(--accent)"' + (o ? ' opacity="' + o + '"' : '') + '/>';
+		const P = (d, o) => '<path d="' + d + '" fill="var(--accent)" opacity="' + o + '"/>';
+		const svg = (inner) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + inner + '</svg>';
+		switch (stage) {
+			case 'soil': return svg(water + '<path d="M7 17.2c1.1-.6 2.2-.6 3.3 0" stroke="var(--line)" stroke-width="1.1" stroke-linecap="round" fill="none" opacity=".7"/>');
+			case 'sprout': return svg(water + pad);
+			case 'bud': return svg(water + stem(12) + pad + bud());
+			case 'open': return svg(water + stem(13) + pad +
+				P('M12 12.8c-2.7-.1-4.8-1.8-5.3-4.7 2.5.2 4.5 1.8 5.3 4.7Z', .75) +
+				P('M12 12.8c2.7-.1 4.8-1.8 5.3-4.7-2.5.2-4.5 1.8-5.3 4.7Z', .75) + bud());
+			case 'bloom': return svg(water + stem(13.4) + pad +
+				P('M12 13.2c-3.7.7-6.8-.5-8.3-3.1 3.3-.9 6.4.2 8.3 3.1Z', .62) +
+				P('M12 13.2c3.7.7 6.8-.5 8.3-3.1-3.3-.9-6.4.2-8.3 3.1Z', .62) +
+				P('M12 13.2c-2.5-.9-4-3.1-3.8-6 2.3 1.1 3.7 3.3 3.8 6Z', .82) +
+				P('M12 13.2c2.5-.9 4-3.1 3.8-6-2.3 1.1-3.7 3.3-3.8 6Z', .82) +
+				P('M12 5.2c1.7 1.7 2.3 3.6 1.9 5.2-.3 1.4-1 2.4-1.9 2.6-.9-.2-1.6-1.2-1.9-2.6-.4-1.6.2-3.5 1.9-5.2Z', 1) +
+				'<ellipse cx="12" cy="11.2" rx="1.8" ry=".8" fill="var(--warn)"/>');
+			case 'rest': return svg(water + stem(12.4) + pad +
+				'<path d="M12 6.6c1.5 1.6 2 3.2 1.7 4.5-.2 1-.9 1.6-1.7 1.6s-1.5-.6-1.7-1.6c-.3-1.3.2-2.9 1.7-4.5Z" fill="var(--accent)" opacity=".5"/>' +
+				'<path d="M18.6 3.4a2.6 2.6 0 1 0 1.9 4.2 2.1 2.1 0 0 1-1.9-4.2Z" fill="var(--muted)" opacity=".8"/>');
+		}
+		return '';
+	}
+	function flower(stage) { return lotus(stage); }
+	function flowerOld(stage) {
 		const soil = '<ellipse cx="12" cy="20.5" rx="5.5" ry="1.7" fill="var(--line)"/>';
 		const stem = (top) => '<path d="M12 20.3V' + top + '" stroke="var(--good)" stroke-width="1.6" stroke-linecap="round" fill="none"/>';
 		const leaves = (y) => '<path d="M12 ' + y + 'c-2.6-.2-4.2-1.6-4.6-3.6 2.4 0 4.1 1.2 4.6 3.6Z" fill="var(--good)"/><path d="M12 ' + (y - 1.6) + 'c2.4-.1 3.9-1.4 4.3-3.3-2.2 0-3.8 1.1-4.3 3.3Z" fill="var(--good)"/>';
@@ -1408,6 +1496,23 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 	seg('fc-kind', (v) => { fcState.kind = v; renderFc(); });
 	seg('fc-moment', (v) => { fcState.after = v === '1'; renderFc(); });
 		renderFc();
+
+
+	// ---------- lotus sketch sheet ----------
+	(function () {
+		const L = [['soil', 'Still water', 'nothing yet'], ['sprout', 'Lily pad', 'under a third'], ['bud', 'Bud', 'a third or more'],
+			['open', 'Opening', 'two thirds or more'], ['bloom', 'In bloom', 'goal reached'], ['rest', 'Closed for the night', 'vacation day']];
+		document.getElementById('lotus-big').innerHTML = L.map(([k, n, d]) => '<div class="ls"><span class="t">' + lotus(k) + '</span><span><b>' + n + '</b><small>' + d + '</small></span></div>').join('');
+		const small = L.map(([k, n]) => '<span class="t" title="' + n + '">' + lotus(k) + '</span>').join('');
+		document.getElementById('lotus-24').innerHTML = small;
+		document.getElementById('lotus-40').innerHTML = small;
+		document.getElementById('lotus-themes').innerHTML = Object.values(THEMES).map((t) => {
+			const vars = '--panel:' + t.panel + ';--raised:' + t.raised + ';--line:' + t.line + ';--text:' + t.text + ';--muted:' + t.muted +
+				';--accent:' + t.accents[t.accent] + ';--good:' + t.good + ';--warn:' + t.warn;
+			return '<div class="lt" style="' + vars + '"><p>' + (t.group === 'Catppuccin' ? 'Catppuccin ' : '') + t.name + '</p><div class="lotus-row">' +
+				L.map(([k, n]) => '<span class="t" title="' + n + '">' + lotus(k) + '</span>').join('') + '</div></div>';
+		}).join('');
+	})();
 
 	let dark = false;
 	try { dark = root.dataset.theme === 'dark' || (root.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
