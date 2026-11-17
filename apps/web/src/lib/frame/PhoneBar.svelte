@@ -20,7 +20,7 @@
 	const drawerId = `${uid}-drawer`;
 	let open = $state(false);
 
-	const title = $derived(phoneTitle(pageFrame.title, current, sections));
+	const title = $derived(phoneTitle(pageFrame.title, current, sections, page.url?.pathname ?? '/'));
 
 	// A navigation (a link, Back, a redirect) closes the drawer.
 	let lastPath: string | undefined;
